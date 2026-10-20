@@ -107,6 +107,13 @@ export const zSiteAcceptInvitationInput = z.object({
 });
 
 /**
+ * Request body for adding a Join domain
+ */
+export const zSiteAddJoinDomainInput = z.object({
+  domain: z.string()
+});
+
+/**
  * Automation counts (point-in-time snapshot)
  */
 export const zSiteAnalyticsAutomations = z.object({
@@ -375,25 +382,6 @@ export const zSiteCustomFieldType = z.enum([
   'bool',
   'datetime'
 ]);
-
-/**
- * Confirmation of User deletion (ADR 0050): the User's own email typed in, their password
- * (a User with no password sends the token of the mailed link instead) and, when a Second
- * factor is enrolled, a current code.
- */
-export const zSiteDeleteUserInput = z.object({
-  email: zEmailAddress,
-  currentPassword: z.exactOptional(z.string()),
-  token: z.exactOptional(z.string()),
-  code: z.exactOptional(z.string())
-});
-
-/**
- * The request for the one-time deletion link of a User with no password (ADR 0050)
- */
-export const zSiteDeleteUserLinkInput = z.object({
-  email: zEmailAddress
-});
 
 /**
  * Delete a Workspace (ADR 0043): the typed name must equal the stored name.
@@ -1563,6 +1551,22 @@ export const zSiteCreateInvitationResponse = z.object({
 });
 
 /**
+ * A Join domain: a domain whose Users may join the Workspace once domain join
+ * is on, proven by a TXT record. `verified` is a live property: it holds while the record
+ * is published. Any Workspace may claim a domain, and only one holds it verified.
+ */
+export const zSiteJoinDomainResource = z.object({
+  id: zEntityId,
+  domain: z.string(),
+  verified: z.boolean(),
+  record: zSiteDnsRecord,
+  lastCheckedAt: z.exactOptional(zTimestamp.nullable()),
+  verifiedAt: z.exactOptional(zTimestamp.nullable()),
+  createdAt: zTimestamp,
+  updatedAt: zTimestamp
+});
+
+/**
  * One Linked identity of the authenticated User (ADR 0048): a Sign-in provider the User
  * can sign in with. The provider's subject is never returned.
  */
@@ -1773,8 +1777,7 @@ export const zSiteDeletedWorkspaceResource = z.object({
   id: zWorkspaceId,
   name: z.string(),
   discardedAt: zTimestamp,
-  eraseAt: zTimestamp,
-  onlyOwner: z.boolean()
+  eraseAt: zTimestamp
 });
 
 /**
@@ -1789,33 +1792,6 @@ export const zSiteOAuthDecisionInput = z.object({
   workspaceId: zWorkspaceId,
   approve: z.boolean(),
   allowSend: z.exactOptional(z.boolean())
-});
-
-/**
- * A Workspace the User is the only Owner of, which blocks User deletion
- */
-export const zSiteSoleOwnedWorkspace = z.object({
-  id: zWorkspaceId,
-  name: z.string()
-});
-
-/**
- * The body of a refused User deletion: ProblemDetails plus, when the User is the only Owner
- * of Workspaces, the list of them (empty when the typed email did not match)
- */
-export const zSiteDeleteUserProblemDetails = z.object({
-  code: z.exactOptional(zProblemCode),
-  type: z.exactOptional(z.string()),
-  title: z.exactOptional(z.string()),
-  status: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
-  detail: z.exactOptional(z.string()),
-  instance: z.exactOptional(z.string()),
-  errors: z.exactOptional(z.record(z.string(), z.array(z.string()))),
-  form: z.exactOptional(z.string()),
-  fields: z.exactOptional(z.record(z.string(), z.string())),
-  retryAfter: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
-  debug: z.exactOptional(zProblemDebug),
-  workspaces: z.array(zSiteSoleOwnedWorkspace)
 });
 
 /**
@@ -2297,15 +2273,6 @@ export const zSiteUserUpdateMeBody = zSiteUpdateMeInput;
  * The request has succeeded.
  */
 export const zSiteUserUpdateMeResponse = zSiteUserResource;
-
-export const zSiteUserDeleteUserBody = zSiteDeleteUserInput;
-
-/**
- * There is no content to send for this request, but the headers may be useful.
- */
-export const zSiteUserDeleteUserResponse = z.void();
-
-export const zSiteUserDeleteUserLinkBody = zSiteDeleteUserLinkInput;
 
 export const zSiteUserEmailChangeBody = zSiteEmailChangeInput;
 
@@ -3108,14 +3075,45 @@ export const zSiteInvitationsDeletePath = z.object({
  */
 export const zSiteInvitationsDeleteResponse = z.void();
 
-export const zSiteWorkspacesLeavePath = z.object({
+export const zSiteJoinDomainsListPath = z.object({
   workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteJoinDomainsListResponse = z.array(zSiteJoinDomainResource);
+
+export const zSiteJoinDomainsAddBody = zSiteAddJoinDomainInput;
+
+export const zSiteJoinDomainsAddPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded and a new resource has been created as a result.
+ */
+export const zSiteJoinDomainsAddResponse = zSiteJoinDomainResource;
+
+export const zSiteJoinDomainsRemovePath = z.object({
+  workspaceId: zWorkspaceId,
+  id: zEntityId
 });
 
 /**
  * There is no content to send for this request, but the headers may be useful.
  */
-export const zSiteWorkspacesLeaveResponse = z.void();
+export const zSiteJoinDomainsRemoveResponse = z.void();
+
+export const zSiteJoinDomainsVerifyPath = z.object({
+  workspaceId: zWorkspaceId,
+  id: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteJoinDomainsVerifyResponse = zSiteJoinDomainResource;
 
 export const zSiteMembershipsListPath = z.object({
   workspaceId: zWorkspaceId

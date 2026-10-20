@@ -1,0 +1,85 @@
+using TypeSpec.Http;
+using TypeSpec.OpenAPI;
+
+namespace Sphericon;
+
+/** A Join domain: a domain whose Users may join the Workspace once domain join
+ * is on, proven by a TXT record. `verified` is a live property: it holds while the record
+ * is published. Any Workspace may claim a domain, and only one holds it verified. */
+model SiteJoinDomainResource {
+  /** Unique identifier */
+  id: EntityId;
+
+  /** The canonical domain: lower case, Unicode as punycode */
+  domain: string;
+
+  /** Whether the TXT record was found and the Workspace holds the domain */
+  verified: boolean;
+
+  /** The TXT record to publish to prove the domain */
+  record: SiteDnsRecord;
+
+  /** When the TXT record was most recently checked (null = never) */
+  lastCheckedAt?: Timestamp | null;
+
+  /** When the domain most recently became verified (null = pending) */
+  verifiedAt?: Timestamp | null;
+
+  /** Creation timestamp */
+  createdAt: Timestamp;
+
+  /** Last update timestamp */
+  updatedAt: Timestamp;
+}
+
+/** Request body for adding a Join domain */
+model SiteAddJoinDomainInput {
+  /** The domain, e.g. "acme.com"; any case or Unicode, stored canonical */
+  domain: string;
+}
+
+@route("/workspaces/{workspaceId}/join-domains")
+@tag("Site Join Domains")
+namespace SiteJoinDomains {
+  /** List the Workspace's Join domains (owner only), pending and verified. */
+  @get
+  op list(@path workspaceId: WorkspaceId):
+    | SiteJoinDomainResource[]
+    | ForbiddenProblem
+    | NotFoundProblem;
+
+  /** Add a Join domain (owner only). It starts pending, with the TXT record to publish at
+   * `_sphericon-join.<domain>`. Another Workspace's claim never blocks it. An invalid
+   * hostname is 422, a domain the Workspace already has is 409. */
+  @post
+  op add(@path workspaceId: WorkspaceId, @body body: SiteAddJoinDomainInput):
+    | {
+        @statusCode statusCode: 201;
+        @body body: SiteJoinDomainResource;
+      }
+    | ForbiddenProblem
+    | NotFoundProblem
+    | ConflictProblem
+    | UnprocessableEntityProblem;
+
+  /** Check the TXT record now (owner only) and verify the domain when it is published. A
+   * domain another Workspace has verified is re-checked at that Workspace first: 409 while
+   * its record is still published, otherwise the domain moves here. 422 when the record is
+   * not found. */
+  @post
+  @route("/{id}/verify")
+  op verify(@path workspaceId: WorkspaceId, @path id: EntityId):
+    | SiteJoinDomainResource
+    | ForbiddenProblem
+    | NotFoundProblem
+    | ConflictProblem
+    | UnprocessableEntityProblem;
+
+  /** Remove a Join domain (owner only): only the claim goes, no Membership is touched. */
+  @delete
+  @route("/{id}")
+  op remove(@path workspaceId: WorkspaceId, @path id: EntityId):
+    | NoContentResponse
+    | ForbiddenProblem
+    | NotFoundProblem;
+}

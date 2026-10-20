@@ -32,6 +32,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/instancestate"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/invitation"
+	"github.com/getsphericon/sphericon/ent/joindomain"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/oauthclient"
 	"github.com/getsphericon/sphericon/ent/oauthcode"
@@ -136,6 +137,7 @@ func checkColumn(t, c string) error {
 			instancestate.Table:      instancestate.ValidColumn,
 			integration.Table:        integration.ValidColumn,
 			invitation.Table:         invitation.ValidColumn,
+			joindomain.Table:         joindomain.ValidColumn,
 			membership.Table:         membership.ValidColumn,
 			oauthclient.Table:        oauthclient.ValidColumn,
 			oauthcode.Table:          oauthcode.ValidColumn,

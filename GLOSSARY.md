@@ -592,6 +592,16 @@ The browser that submitted a registration. It holds a random value that the veri
 carries (hashed), so the link can tell it is being opened where the registration happened.
 _Avoid_: Same device, trusted browser
 
+**Join domain**:
+A Workspace-scoped, DNS-verified domain whose Users may join the Workspace automatically. An Owner
+adds it and proves control by publishing a TXT record at `_sphericon-join.<domain>` whose value is
+a random token; it stays verified only while the record is published. Any Workspace may hold a
+pending claim of a domain, and only one holds it verified across the Instance: a Workspace that
+proves a domain another one holds re-checks the holder's record first, and the domain moves to it
+only when that record is gone. Removing a Join domain removes only the claim, never a Membership.
+A domain is exact: `acme.com` does not cover `eu.acme.com`.
+_Avoid_: Allowed domain, trusted domain, SSO domain
+
 **Sign-in provider**:
 An external service that proves a person's email address so they can register or log in without a
 password of ours: Google, GitHub. The Instance operator enables one by setting its OAuth client id

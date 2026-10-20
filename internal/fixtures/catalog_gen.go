@@ -705,6 +705,18 @@ const (
 	InvitationStaleUnverifiedEmail = "stale@unverified.test"
 	// InvitationStaleUnverifiedID is from fixtures/invitations.
 	InvitationStaleUnverifiedID = 901
+	// JoinDomainGlobexDomain is from fixtures/join_domains.
+	JoinDomainGlobexDomain = "globex.test"
+	// JoinDomainGlobexID is from fixtures/join_domains.
+	JoinDomainGlobexID = 900
+	// JoinDomainPendingDomain is from fixtures/join_domains.
+	JoinDomainPendingDomain = "eu.acme.com"
+	// JoinDomainPendingID is from fixtures/join_domains.
+	JoinDomainPendingID = 2
+	// JoinDomainVerifiedDomain is from fixtures/join_domains.
+	JoinDomainVerifiedDomain = "acme.com"
+	// JoinDomainVerifiedID is from fixtures/join_domains.
+	JoinDomainVerifiedID = 1
 	// KramericaCollectKey is from fixtures/workspaces.
 	KramericaCollectKey = "omck_test_kramerica_collect_key"
 	// KramericaID is from fixtures/workspaces.

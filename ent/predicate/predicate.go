@@ -66,6 +66,9 @@ type Integration func(*sql.Selector)
 // Invitation is the predicate function for invitation builders.
 type Invitation func(*sql.Selector)
 
+// JoinDomain is the predicate function for joindomain builders.
+type JoinDomain func(*sql.Selector)
+
 // Membership is the predicate function for membership builders.
 type Membership func(*sql.Selector)
 

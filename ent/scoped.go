@@ -28,6 +28,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/invitation"
+	"github.com/getsphericon/sphericon/ent/joindomain"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
@@ -375,6 +376,22 @@ func (s *Scoped) verifyInvitation(ctx context.Context, ids []int64) error {
 	}
 	if n != len(ids) {
 		return fmt.Errorf("Invitation: %w", ErrNotInWorkspace)
+	}
+	return nil
+}
+
+// verifyJoinDomain fails with ErrNotInWorkspace unless every id is a JoinDomain of the Workspace.
+func (s *Scoped) verifyJoinDomain(ctx context.Context, ids []int64) error {
+	ids = uniqueIDs(ids)
+	if len(ids) == 0 {
+		return nil
+	}
+	n, err := s.c.JoinDomain.Query().Where(joindomain.IDIn(ids...), joindomain.WorkspaceID(s.ws)).Count(ctx)
+	if err != nil {
+		return err
+	}
+	if n != len(ids) {
+		return fmt.Errorf("JoinDomain: %w", ErrNotInWorkspace)
 	}
 	return nil
 }
@@ -15892,6 +15909,770 @@ func (x *InvitationScopedUpdate) Save(ctx context.Context) (int, error) {
 
 // Exec is like Save, discarding the count.
 func (x *InvitationScopedUpdate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// JoinDomainScoped reaches JoinDomain entities of one Workspace.
+type JoinDomainScoped struct{ s *Scoped }
+
+// JoinDomain returns the JoinDomain entities of the Workspace.
+func (s *Scoped) JoinDomain() *JoinDomainScoped { return &JoinDomainScoped{s: s} }
+
+// Query returns a JoinDomain query already confined to the Workspace.
+func (t *JoinDomainScoped) Query() *JoinDomainQuery {
+	return t.s.c.JoinDomain.Query().Where(joindomain.WorkspaceID(t.s.ws))
+}
+
+// Get returns the JoinDomain with the id; a row of another Workspace is not found.
+func (t *JoinDomainScoped) Get(ctx context.Context, id int64) (*JoinDomain, error) {
+	return t.Query().Where(joindomain.ID(id)).Only(ctx)
+}
+
+// JoinDomainScopedDeleteOne wraps JoinDomainDeleteOne.
+type JoinDomainScopedDeleteOne struct {
+	s *Scoped
+	b *JoinDomainDeleteOne
+}
+
+// DeleteOneID deletes the JoinDomain with the id; a row of another Workspace is not found.
+func (t *JoinDomainScoped) DeleteOneID(id int64) *JoinDomainScopedDeleteOne {
+	return &JoinDomainScopedDeleteOne{s: t.s, b: t.s.c.JoinDomain.DeleteOneID(id).Where(joindomain.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *JoinDomainScopedDeleteOne) Where(ps ...predicate.JoinDomain) *JoinDomainScopedDeleteOne {
+	x.b.Where(ps...)
+	return x
+}
+
+// Exec deletes the row; a missing row is a NotFoundError.
+func (x *JoinDomainScopedDeleteOne) Exec(ctx context.Context) error {
+	if x.s.auditing() {
+		return x.s.audited(ctx, func(ts *Scoped) error {
+			before, err := ts.c.JoinDomain.Query().Where(x.b._d.mutation.predicates...).Only(ctx)
+			if err != nil {
+				return err
+			}
+			x.b._d.auditRebind(ts.c)
+			if err := x.b.Exec(ctx); err != nil {
+				return err
+			}
+			return ts.record(ctx, auditChangeJoinDomain("delete", before, nil))
+		})
+	}
+	return x.b.Exec(ctx)
+}
+
+// JoinDomainScopedDelete wraps JoinDomainDelete.
+type JoinDomainScopedDelete struct {
+	s *Scoped
+	b *JoinDomainDelete
+}
+
+// Delete deletes the JoinDomain entities of the Workspace that match the predicates.
+func (t *JoinDomainScoped) Delete() *JoinDomainScopedDelete {
+	return &JoinDomainScopedDelete{s: t.s, b: t.s.c.JoinDomain.Delete().Where(joindomain.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *JoinDomainScopedDelete) Where(ps ...predicate.JoinDomain) *JoinDomainScopedDelete {
+	x.b.Where(ps...)
+	return x
+}
+
+// Exec deletes the rows and returns how many were deleted.
+func (x *JoinDomainScopedDelete) Exec(ctx context.Context) (int, error) {
+	if x.s.auditing() {
+		var n int
+		err := x.s.audited(ctx, func(ts *Scoped) error {
+			rows, err := ts.c.JoinDomain.Query().Where(x.b.mutation.predicates...).All(ctx)
+			if err != nil {
+				return err
+			}
+			x.b.auditRebind(ts.c)
+			if n, err = x.b.Exec(ctx); err != nil {
+				return err
+			}
+			for _, row := range rows {
+				if err := ts.record(ctx, auditChangeJoinDomain("delete", row, nil)); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+		return n, err
+	}
+	return x.b.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- create
+
+// JoinDomainScopedCreate wraps JoinDomainCreate. It has no way to name a Workspace.
+type JoinDomainScopedCreate struct {
+	s *Scoped
+	b *JoinDomainCreate
+}
+
+// Create starts a JoinDomain in the Workspace.
+func (t *JoinDomainScoped) Create() *JoinDomainScopedCreate {
+	return &JoinDomainScopedCreate{s: t.s, b: t.s.c.JoinDomain.Create().SetWorkspaceID(t.s.ws)}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (x *JoinDomainScopedCreate) SetCreatedAt(v time.Time) *JoinDomainScopedCreate {
+	x.b.SetCreatedAt(v)
+	return x
+}
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (x *JoinDomainScopedCreate) SetNillableCreatedAt(v *time.Time) *JoinDomainScopedCreate {
+	x.b.SetNillableCreatedAt(v)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *JoinDomainScopedCreate) SetUpdatedAt(v time.Time) *JoinDomainScopedCreate {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (x *JoinDomainScopedCreate) SetNillableUpdatedAt(v *time.Time) *JoinDomainScopedCreate {
+	x.b.SetNillableUpdatedAt(v)
+	return x
+}
+
+// SetDomain sets the "domain" field.
+func (x *JoinDomainScopedCreate) SetDomain(v string) *JoinDomainScopedCreate {
+	x.b.SetDomain(v)
+	return x
+}
+
+// SetToken sets the "token" field.
+func (x *JoinDomainScopedCreate) SetToken(v string) *JoinDomainScopedCreate {
+	x.b.SetToken(v)
+	return x
+}
+
+// SetVerifiedAt sets the "verified_at" field.
+func (x *JoinDomainScopedCreate) SetVerifiedAt(v time.Time) *JoinDomainScopedCreate {
+	x.b.SetVerifiedAt(v)
+	return x
+}
+
+// SetNillableVerifiedAt sets the "verified_at" field if the given value is not nil.
+func (x *JoinDomainScopedCreate) SetNillableVerifiedAt(v *time.Time) *JoinDomainScopedCreate {
+	x.b.SetNillableVerifiedAt(v)
+	return x
+}
+
+// SetLastCheckedAt sets the "last_checked_at" field.
+func (x *JoinDomainScopedCreate) SetLastCheckedAt(v time.Time) *JoinDomainScopedCreate {
+	x.b.SetLastCheckedAt(v)
+	return x
+}
+
+// SetNillableLastCheckedAt sets the "last_checked_at" field if the given value is not nil.
+func (x *JoinDomainScopedCreate) SetNillableLastCheckedAt(v *time.Time) *JoinDomainScopedCreate {
+	x.b.SetNillableLastCheckedAt(v)
+	return x
+}
+
+func (x *JoinDomainScopedCreate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	return nil
+}
+
+// Save verifies the references against the Workspace, then creates the JoinDomain.
+func (x *JoinDomainScopedCreate) Save(ctx context.Context) (*JoinDomain, error) {
+	if err := x.check(ctx); err != nil {
+		return nil, err
+	}
+	if x.s.auditing() {
+		var created *JoinDomain
+		err := x.s.audited(ctx, func(ts *Scoped) error {
+			x.b.auditRebind(ts.c)
+			var err error
+			if created, err = x.b.Save(ctx); err != nil {
+				return err
+			}
+			return ts.record(ctx, auditChangeJoinDomain("create", nil, created))
+		})
+		return created, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *JoinDomainScopedCreate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- create bulk
+
+// JoinDomainScopedCreateBulk creates several JoinDomain entities of one Workspace at once.
+type JoinDomainScopedCreateBulk struct {
+	s  *Scoped
+	xs []*JoinDomainScopedCreate
+}
+
+// CreateBulk batches creates started on this Workspace.
+func (t *JoinDomainScoped) CreateBulk(xs ...*JoinDomainScopedCreate) *JoinDomainScopedCreateBulk {
+	return &JoinDomainScopedCreateBulk{s: t.s, xs: xs}
+}
+
+func (b *JoinDomainScopedCreateBulk) raw(ctx context.Context) (*JoinDomainCreateBulk, error) {
+	builders := make([]*JoinDomainCreate, len(b.xs))
+	for i, x := range b.xs {
+		if x.s.ws != b.s.ws {
+			return nil, fmt.Errorf("JoinDomain: builder of another scope: %w", ErrNotInWorkspace)
+		}
+		if err := x.check(ctx); err != nil {
+			return nil, err
+		}
+		builders[i] = x.b
+	}
+	return b.s.c.JoinDomain.CreateBulk(builders...), nil
+}
+
+// Save verifies every builder's references, then creates the JoinDomain entities.
+func (b *JoinDomainScopedCreateBulk) Save(ctx context.Context) ([]*JoinDomain, error) {
+	raw, err := b.raw(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if b.s.auditing() {
+		var created []*JoinDomain
+		err := b.s.audited(ctx, func(ts *Scoped) error {
+			raw.auditRebind(ts.c)
+			var err error
+			if created, err = raw.Save(ctx); err != nil {
+				return err
+			}
+			for _, row := range created {
+				if err := ts.record(ctx, auditChangeJoinDomain("create", nil, row)); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+		return created, err
+	}
+	return raw.Save(ctx)
+}
+
+// Exec is like Save, discarding the entities.
+func (b *JoinDomainScopedCreateBulk) Exec(ctx context.Context) error {
+	_, err := b.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- upsert
+
+// JoinDomainScopedUpsert is the "ON CONFLICT ... DO UPDATE" setter. It cannot move a row to
+// another Workspace or point a reference at a value that was not verified on create.
+type JoinDomainScopedUpsert struct{ u *sql.UpdateSet }
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *JoinDomainScopedUpsert) SetUpdatedAt(v time.Time) *JoinDomainScopedUpsert {
+	u.u.Set(joindomain.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *JoinDomainScopedUpsert) UpdateUpdatedAt() *JoinDomainScopedUpsert {
+	u.u.SetExcluded(joindomain.FieldUpdatedAt)
+	return u
+}
+
+// SetDomain sets the "domain" field.
+func (u *JoinDomainScopedUpsert) SetDomain(v string) *JoinDomainScopedUpsert {
+	u.u.Set(joindomain.FieldDomain, v)
+	return u
+}
+
+// UpdateDomain sets the "domain" field to the value that was provided on create.
+func (u *JoinDomainScopedUpsert) UpdateDomain() *JoinDomainScopedUpsert {
+	u.u.SetExcluded(joindomain.FieldDomain)
+	return u
+}
+
+// SetToken sets the "token" field.
+func (u *JoinDomainScopedUpsert) SetToken(v string) *JoinDomainScopedUpsert {
+	u.u.Set(joindomain.FieldToken, v)
+	return u
+}
+
+// UpdateToken sets the "token" field to the value that was provided on create.
+func (u *JoinDomainScopedUpsert) UpdateToken() *JoinDomainScopedUpsert {
+	u.u.SetExcluded(joindomain.FieldToken)
+	return u
+}
+
+// SetVerifiedAt sets the "verified_at" field.
+func (u *JoinDomainScopedUpsert) SetVerifiedAt(v time.Time) *JoinDomainScopedUpsert {
+	u.u.Set(joindomain.FieldVerifiedAt, v)
+	return u
+}
+
+// UpdateVerifiedAt sets the "verified_at" field to the value that was provided on create.
+func (u *JoinDomainScopedUpsert) UpdateVerifiedAt() *JoinDomainScopedUpsert {
+	u.u.SetExcluded(joindomain.FieldVerifiedAt)
+	return u
+}
+
+// ClearVerifiedAt clears the value of the "verified_at" field.
+func (u *JoinDomainScopedUpsert) ClearVerifiedAt() *JoinDomainScopedUpsert {
+	u.u.SetNull(joindomain.FieldVerifiedAt)
+	return u
+}
+
+// SetLastCheckedAt sets the "last_checked_at" field.
+func (u *JoinDomainScopedUpsert) SetLastCheckedAt(v time.Time) *JoinDomainScopedUpsert {
+	u.u.Set(joindomain.FieldLastCheckedAt, v)
+	return u
+}
+
+// UpdateLastCheckedAt sets the "last_checked_at" field to the value that was provided on create.
+func (u *JoinDomainScopedUpsert) UpdateLastCheckedAt() *JoinDomainScopedUpsert {
+	u.u.SetExcluded(joindomain.FieldLastCheckedAt)
+	return u
+}
+
+// ClearLastCheckedAt clears the value of the "last_checked_at" field.
+func (u *JoinDomainScopedUpsert) ClearLastCheckedAt() *JoinDomainScopedUpsert {
+	u.u.SetNull(joindomain.FieldLastCheckedAt)
+	return u
+}
+
+// conflictOptions confines the DO UPDATE part to rows of the Workspace.
+func (t *JoinDomainScoped) conflictOptions(columns []string) []sql.ConflictOption {
+	return []sql.ConflictOption{
+		sql.ConflictColumns(columns...),
+		sql.UpdateWhere(sql.EQ(joindomain.FieldWorkspaceID, t.s.ws)),
+	}
+}
+
+// JoinDomainScopedUpsertOne is the "upsert" of one JoinDomain.
+type JoinDomainScopedUpsertOne struct {
+	x *JoinDomainScopedCreate
+	u *JoinDomainUpsertOne
+	// doNothing: the conflict action is DO NOTHING (the only upsert an audited entity allows).
+	doNothing bool
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (x *JoinDomainScopedCreate) OnConflictColumns(columns ...string) *JoinDomainScopedUpsertOne {
+	return &JoinDomainScopedUpsertOne{x: x, u: x.b.OnConflict((&JoinDomainScoped{s: x.s}).conflictOptions(columns)...)}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *JoinDomainScopedUpsertOne) UpdateNewValues() *JoinDomainScopedUpsertOne {
+	u.u.UpdateNewValues()
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *JoinDomainScopedUpsertOne) Ignore() *JoinDomainScopedUpsertOne {
+	u.u.Ignore()
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *JoinDomainScopedUpsertOne) DoNothing() *JoinDomainScopedUpsertOne {
+	u.u.DoNothing()
+	u.doNothing = true
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *JoinDomainScopedUpsertOne) Update(set func(*JoinDomainScopedUpsert)) *JoinDomainScopedUpsertOne {
+	u.u.Update(func(s *JoinDomainUpsert) { set(&JoinDomainScopedUpsert{u: s.UpdateSet}) })
+	return u
+}
+
+// Exec verifies the references, then executes the upsert.
+func (u *JoinDomainScopedUpsertOne) Exec(ctx context.Context) error {
+	if err := u.x.check(ctx); err != nil {
+		return err
+	}
+	if u.x.s.auditing() {
+		_, err := u.audited(ctx)
+		return err
+	}
+	return u.u.Exec(ctx)
+}
+
+// ID is like Exec, returning the inserted or updated id.
+func (u *JoinDomainScopedUpsertOne) ID(ctx context.Context) (int64, error) {
+	if err := u.x.check(ctx); err != nil {
+		return 0, err
+	}
+	if u.x.s.auditing() {
+		return u.audited(ctx)
+	}
+	return u.u.ID(ctx)
+}
+
+// audited runs a DO NOTHING upsert with its entry: an insert is a create, a conflict
+// (sql.ErrNoRows) writes nothing and records nothing.
+func (u *JoinDomainScopedUpsertOne) audited(ctx context.Context) (int64, error) {
+	if !u.doNothing {
+		return 0, ErrAuditUpsert
+	}
+	var id int64
+	err := u.x.s.audited(ctx, func(ts *Scoped) error {
+		u.x.b.auditRebind(ts.c)
+		var err error
+		if id, err = u.u.ID(ctx); err != nil {
+			return err
+		}
+		row, err := ts.c.JoinDomain.Get(ctx, id)
+		if err != nil {
+			return err
+		}
+		return ts.record(ctx, auditChangeJoinDomain("create", nil, row))
+	})
+	return id, err
+}
+
+// JoinDomainScopedUpsertBulk is the "upsert" of several JoinDomain entities.
+type JoinDomainScopedUpsertBulk struct {
+	b       *JoinDomainScopedCreateBulk
+	t       *JoinDomainScoped
+	columns []string
+	opts    []func(*JoinDomainUpsertBulk)
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (b *JoinDomainScopedCreateBulk) OnConflictColumns(columns ...string) *JoinDomainScopedUpsertBulk {
+	return &JoinDomainScopedUpsertBulk{b: b, t: &JoinDomainScoped{s: b.s}, columns: columns}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *JoinDomainScopedUpsertBulk) UpdateNewValues() *JoinDomainScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *JoinDomainUpsertBulk) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *JoinDomainScopedUpsertBulk) Ignore() *JoinDomainScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *JoinDomainUpsertBulk) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *JoinDomainScopedUpsertBulk) DoNothing() *JoinDomainScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *JoinDomainUpsertBulk) { r.DoNothing() })
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *JoinDomainScopedUpsertBulk) Update(set func(*JoinDomainScopedUpsert)) *JoinDomainScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *JoinDomainUpsertBulk) {
+		r.Update(func(s *JoinDomainUpsert) { set(&JoinDomainScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// Exec verifies every builder's references, then executes the upsert.
+func (u *JoinDomainScopedUpsertBulk) Exec(ctx context.Context) error {
+	if u.b.s.auditing() {
+		return ErrAuditUpsert
+	}
+	raw, err := u.b.raw(ctx)
+	if err != nil {
+		return err
+	}
+	r := raw.OnConflict(u.t.conflictOptions(u.columns)...)
+	for _, o := range u.opts {
+		o(r)
+	}
+	return r.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- update
+
+// JoinDomainScopedUpdateOne wraps JoinDomainUpdateOne. It has no way to move the row to another Workspace.
+type JoinDomainScopedUpdateOne struct {
+	s *Scoped
+	b *JoinDomainUpdateOne
+}
+
+// UpdateOneID updates the JoinDomain with the id; a row of another Workspace is not found.
+func (t *JoinDomainScoped) UpdateOneID(id int64) *JoinDomainScopedUpdateOne {
+	return &JoinDomainScopedUpdateOne{s: t.s, b: t.s.c.JoinDomain.UpdateOneID(id).Where(joindomain.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *JoinDomainScopedUpdateOne) Where(ps ...predicate.JoinDomain) *JoinDomainScopedUpdateOne {
+	x.b.Where(ps...)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *JoinDomainScopedUpdateOne) SetUpdatedAt(v time.Time) *JoinDomainScopedUpdateOne {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetDomain sets the "domain" field.
+func (x *JoinDomainScopedUpdateOne) SetDomain(v string) *JoinDomainScopedUpdateOne {
+	x.b.SetDomain(v)
+	return x
+}
+
+// SetNillableDomain sets the "domain" field if the given value is not nil.
+func (x *JoinDomainScopedUpdateOne) SetNillableDomain(v *string) *JoinDomainScopedUpdateOne {
+	x.b.SetNillableDomain(v)
+	return x
+}
+
+// SetToken sets the "token" field.
+func (x *JoinDomainScopedUpdateOne) SetToken(v string) *JoinDomainScopedUpdateOne {
+	x.b.SetToken(v)
+	return x
+}
+
+// SetNillableToken sets the "token" field if the given value is not nil.
+func (x *JoinDomainScopedUpdateOne) SetNillableToken(v *string) *JoinDomainScopedUpdateOne {
+	x.b.SetNillableToken(v)
+	return x
+}
+
+// SetVerifiedAt sets the "verified_at" field.
+func (x *JoinDomainScopedUpdateOne) SetVerifiedAt(v time.Time) *JoinDomainScopedUpdateOne {
+	x.b.SetVerifiedAt(v)
+	return x
+}
+
+// SetNillableVerifiedAt sets the "verified_at" field if the given value is not nil.
+func (x *JoinDomainScopedUpdateOne) SetNillableVerifiedAt(v *time.Time) *JoinDomainScopedUpdateOne {
+	x.b.SetNillableVerifiedAt(v)
+	return x
+}
+
+// ClearVerifiedAt clears the value of the "verified_at" field.
+func (x *JoinDomainScopedUpdateOne) ClearVerifiedAt() *JoinDomainScopedUpdateOne {
+	x.b.ClearVerifiedAt()
+	return x
+}
+
+// SetLastCheckedAt sets the "last_checked_at" field.
+func (x *JoinDomainScopedUpdateOne) SetLastCheckedAt(v time.Time) *JoinDomainScopedUpdateOne {
+	x.b.SetLastCheckedAt(v)
+	return x
+}
+
+// SetNillableLastCheckedAt sets the "last_checked_at" field if the given value is not nil.
+func (x *JoinDomainScopedUpdateOne) SetNillableLastCheckedAt(v *time.Time) *JoinDomainScopedUpdateOne {
+	x.b.SetNillableLastCheckedAt(v)
+	return x
+}
+
+// ClearLastCheckedAt clears the value of the "last_checked_at" field.
+func (x *JoinDomainScopedUpdateOne) ClearLastCheckedAt() *JoinDomainScopedUpdateOne {
+	x.b.ClearLastCheckedAt()
+	return x
+}
+
+func (x *JoinDomainScopedUpdateOne) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	return nil
+}
+
+// Save verifies the references against the Workspace, then updates the JoinDomain.
+func (x *JoinDomainScopedUpdateOne) Save(ctx context.Context) (*JoinDomain, error) {
+	if err := x.check(ctx); err != nil {
+		return nil, err
+	}
+	if x.s.auditing() {
+		var updated *JoinDomain
+		err := x.s.audited(ctx, func(ts *Scoped) error {
+			id, _ := x.b.Mutation().ID()
+			before, err := ts.c.JoinDomain.Query().Where(x.b.mutation.predicates...).Where(joindomain.ID(id)).Only(ctx)
+			if err != nil {
+				return err
+			}
+			x.b.auditRebind(ts.c)
+			if updated, err = x.b.Save(ctx); err != nil {
+				return err
+			}
+			return ts.record(ctx, auditChangeJoinDomain("update", before, updated))
+		})
+		return updated, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *JoinDomainScopedUpdateOne) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// JoinDomainScopedUpdate wraps JoinDomainUpdate: a conditional bulk update of one Workspace.
+type JoinDomainScopedUpdate struct {
+	s *Scoped
+	b *JoinDomainUpdate
+	// modErr is set when a Modify modifier tried to assign workspace_id.
+	modErr error
+}
+
+// Update updates the JoinDomain entities of the Workspace that match the predicates.
+func (t *JoinDomainScoped) Update() *JoinDomainScopedUpdate {
+	return &JoinDomainScopedUpdate{s: t.s, b: t.s.c.JoinDomain.Update().Where(joindomain.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *JoinDomainScopedUpdate) Where(ps ...predicate.JoinDomain) *JoinDomainScopedUpdate {
+	x.b.Where(ps...)
+	return x
+}
+
+// Modify adds a statement modifier for computed assignments the typed setters cannot
+// express (SET col = LEAST(col + ..., ...)). A modifier gets assignment-only access
+// (ScopedAssign), so it cannot widen the Workspace predicate; an assignment to
+// workspace_id is refused: each modifier is probed against a scratch statement here, and
+// Save fails with ErrWorkspaceAssign.
+func (x *JoinDomainScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *JoinDomainScopedUpdate {
+	for _, m := range modifiers {
+		probe := &ScopedAssign{u: sql.Update(joindomain.Table)}
+		m(probe)
+		if probe.workspace {
+			x.modErr = ErrWorkspaceAssign
+		}
+		x.b.Modify(func(u *sql.UpdateBuilder) { m(&ScopedAssign{u: u}) })
+	}
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *JoinDomainScopedUpdate) SetUpdatedAt(v time.Time) *JoinDomainScopedUpdate {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetDomain sets the "domain" field.
+func (x *JoinDomainScopedUpdate) SetDomain(v string) *JoinDomainScopedUpdate {
+	x.b.SetDomain(v)
+	return x
+}
+
+// SetNillableDomain sets the "domain" field if the given value is not nil.
+func (x *JoinDomainScopedUpdate) SetNillableDomain(v *string) *JoinDomainScopedUpdate {
+	x.b.SetNillableDomain(v)
+	return x
+}
+
+// SetToken sets the "token" field.
+func (x *JoinDomainScopedUpdate) SetToken(v string) *JoinDomainScopedUpdate {
+	x.b.SetToken(v)
+	return x
+}
+
+// SetNillableToken sets the "token" field if the given value is not nil.
+func (x *JoinDomainScopedUpdate) SetNillableToken(v *string) *JoinDomainScopedUpdate {
+	x.b.SetNillableToken(v)
+	return x
+}
+
+// SetVerifiedAt sets the "verified_at" field.
+func (x *JoinDomainScopedUpdate) SetVerifiedAt(v time.Time) *JoinDomainScopedUpdate {
+	x.b.SetVerifiedAt(v)
+	return x
+}
+
+// SetNillableVerifiedAt sets the "verified_at" field if the given value is not nil.
+func (x *JoinDomainScopedUpdate) SetNillableVerifiedAt(v *time.Time) *JoinDomainScopedUpdate {
+	x.b.SetNillableVerifiedAt(v)
+	return x
+}
+
+// ClearVerifiedAt clears the value of the "verified_at" field.
+func (x *JoinDomainScopedUpdate) ClearVerifiedAt() *JoinDomainScopedUpdate {
+	x.b.ClearVerifiedAt()
+	return x
+}
+
+// SetLastCheckedAt sets the "last_checked_at" field.
+func (x *JoinDomainScopedUpdate) SetLastCheckedAt(v time.Time) *JoinDomainScopedUpdate {
+	x.b.SetLastCheckedAt(v)
+	return x
+}
+
+// SetNillableLastCheckedAt sets the "last_checked_at" field if the given value is not nil.
+func (x *JoinDomainScopedUpdate) SetNillableLastCheckedAt(v *time.Time) *JoinDomainScopedUpdate {
+	x.b.SetNillableLastCheckedAt(v)
+	return x
+}
+
+// ClearLastCheckedAt clears the value of the "last_checked_at" field.
+func (x *JoinDomainScopedUpdate) ClearLastCheckedAt() *JoinDomainScopedUpdate {
+	x.b.ClearLastCheckedAt()
+	return x
+}
+
+func (x *JoinDomainScopedUpdate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	return nil
+}
+
+// Save verifies the references against the Workspace, then updates the rows and
+// returns how many changed.
+func (x *JoinDomainScopedUpdate) Save(ctx context.Context) (int, error) {
+	if x.modErr != nil {
+		return 0, x.modErr
+	}
+	if err := x.check(ctx); err != nil {
+		return 0, err
+	}
+	if x.s.auditing() {
+		var n int
+		err := x.s.audited(ctx, func(ts *Scoped) error {
+			before, err := ts.c.JoinDomain.Query().Where(x.b.mutation.predicates...).All(ctx)
+			if err != nil {
+				return err
+			}
+			x.b.auditRebind(ts.c)
+			if n, err = x.b.Save(ctx); err != nil {
+				return err
+			}
+			ids := make([]int64, len(before))
+			for i, row := range before {
+				ids[i] = row.ID
+			}
+			after, err := ts.c.JoinDomain.Query().Where(joindomain.IDIn(ids...)).All(ctx)
+			if err != nil {
+				return err
+			}
+			byID := make(map[int64]*JoinDomain, len(after))
+			for _, row := range after {
+				byID[row.ID] = row
+			}
+			for _, row := range before {
+				if now, ok := byID[row.ID]; ok {
+					if err := ts.record(ctx, auditChangeJoinDomain("update", row, now)); err != nil {
+						return err
+					}
+				}
+			}
+			return nil
+		})
+		return n, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the count.
+func (x *JoinDomainScopedUpdate) Exec(ctx context.Context) error {
 	_, err := x.Save(ctx)
 	return err
 }

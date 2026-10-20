@@ -24,6 +24,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/invitation"
+	"github.com/getsphericon/sphericon/ent/joindomain"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/oauthcode"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
@@ -231,6 +232,7 @@ var eraseSteps = []eraseStep{
 	// The tracking host change log hook records each released host here.
 	stepOf((*ent.Scoped).SendingDomain, sendingdomain.IDIn),
 	stepOf((*ent.Scoped).Integration, integration.IDIn),
+	stepOf((*ent.Scoped).JoinDomain, joindomain.IDIn),
 	// Owner Memberships last: the owner hook advances the feed as they go.
 	stepOf((*ent.Scoped).Membership, membership.IDIn),
 }

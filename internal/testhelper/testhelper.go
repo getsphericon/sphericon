@@ -47,6 +47,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/instance"
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/joindomains"
 	"github.com/getsphericon/sphericon/internal/mcpserver"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/oauthserver"
@@ -56,6 +57,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/secondfactor"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/segments"
+	"github.com/getsphericon/sphericon/internal/sending"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/server"
 	"github.com/getsphericon/sphericon/internal/signin"
@@ -209,9 +211,17 @@ type setup struct {
 	noSystemSender bool
 	// noSystemFrom gives the System sender no default From (it is not a DefaultFromer).
 	noSystemFrom bool
+	// txt is the TXT resolver Sending domain and Join domain verification use; nil is the
+	// always-NXDOMAIN stub (WithTXTLookup).
+	txt sending.TXTLookup
 	// signinOpts point the Sign-in registry at a fake provider (WithSignin).
 	signinOpts []signin.Option
 }
+
+// WithTXTLookup replaces the TXT resolver of Sending domain and Join domain verification, so a
+// test publishes and withdraws records in a zone of its own (dnstest.NewZone). The default
+// answers NXDOMAIN to everything.
+func WithTXTLookup(lookup sending.TXTLookup) Option { return func(s *setup) { s.txt = lookup } }
 
 // WithOAuthFetcher replaces the client that downloads OAuth Client ID Metadata Documents, so a
 // test serves a document from an httptest TLS server (the production client refuses loopback).
@@ -309,8 +319,11 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	resolver := fixedResolver{sender: customerMail}
 	// stubTXT keeps sending-domain verification off real DNS: every lookup is
 	// NXDOMAIN, so an inline verify deterministically resolves to "not published".
-	stubTXT := func(context.Context, string) ([]string, error) {
+	var stubTXT sending.TXTLookup = func(context.Context, string) ([]string, error) {
 		return nil, &net.DNSError{IsNotFound: true}
+	}
+	if st.txt != nil {
+		stubTXT = st.txt
 	}
 	tracker := tracking.New(cfg.JWTSecret, cfg.AppURL, cfg.JWTVerifySecrets()...)
 	// Cipher (over the fixture-sealing key) and provider catalog for the site
@@ -383,6 +396,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	confirmations := &Confirmations{}
 	integrationsModule := integrations.New(bus, cipher, catalog, inline, presets, cfg.AppURL, integrations.WithSubscriptionConfirmer(confirmations.confirm))
 	sendingDomainsModule := sendingdomains.New(bus, cipher, inline, cfg.TrackingCNAMETarget)
+	joinDomainsModule := joindomains.New(client, bus, stubTXT, st.now)
 	automationsModule := automations.New(cipher, bus)
 	broadcastsModule := broadcasts.New(inline)
 	acc := accounts.New(client, bus)
@@ -415,7 +429,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		Accounts: acc, Attempts: attempts, OAuth: oauthserver.NewService(client, oauthFetcher), Bus: bus, Webhooks: webhooksModule, Outbound: sender,
 		Segments: segmentsModule, EventLog: eventLog, Contacts: contactsModule, Erasure: erasureModule, Tags: tagsModule, Templates: templatesModule, BrandKit: brandKitModule,
 		Automations: automationsModule, Broadcasts: broadcastsModule,
-		Welcome: inline, SysMail: inline, SendingDomains: sendingDomainsModule, Integrations: integrationsModule,
+		Welcome: inline, SysMail: inline, SendingDomains: sendingDomainsModule, JoinDomains: joinDomainsModule, Integrations: integrationsModule,
 		Tokens: authtoken.New(baseCfg.JWTSecret).WithClock(st.now), Tracker: tracker, AppURL: baseCfg.AppURL, Audit: edition.Audit, Analytics: analytics.New(),
 		SecondFactor:             secondFactor,
 		Clock:                    st.now,

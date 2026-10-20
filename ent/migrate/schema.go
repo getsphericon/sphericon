@@ -827,6 +827,51 @@ var (
 			},
 		},
 	}
+	// JoinDomainsColumns holds the columns for the "join_domains" table.
+	JoinDomainsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "domain", Type: field.TypeString},
+		{Name: "token", Type: field.TypeString},
+		{Name: "verified_at", Type: field.TypeTime, Nullable: true},
+		{Name: "last_checked_at", Type: field.TypeTime, Nullable: true},
+		{Name: "workspace_id", Type: field.TypeInt64},
+	}
+	// JoinDomainsTable holds the schema information for the "join_domains" table.
+	JoinDomainsTable = &schema.Table{
+		Name:       "join_domains",
+		Columns:    JoinDomainsColumns,
+		PrimaryKey: []*schema.Column{JoinDomainsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "join_domains_workspaces_join_domains",
+				Columns:    []*schema.Column{JoinDomainsColumns[7]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "joindomain_workspace_id_domain",
+				Unique:  true,
+				Columns: []*schema.Column{JoinDomainsColumns[7], JoinDomainsColumns[3]},
+			},
+			{
+				Name:    "joindomain_domain",
+				Unique:  true,
+				Columns: []*schema.Column{JoinDomainsColumns[3]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "verified_at IS NOT NULL",
+				},
+			},
+			{
+				Name:    "joindomain_last_checked_at",
+				Unique:  false,
+				Columns: []*schema.Column{JoinDomainsColumns[6]},
+			},
+		},
+	}
 	// MembershipsColumns holds the columns for the "memberships" table.
 	MembershipsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -1602,6 +1647,7 @@ var (
 		InstanceStateTable,
 		IntegrationsTable,
 		InvitationsTable,
+		JoinDomainsTable,
 		MembershipsTable,
 		OauthClientsTable,
 		OauthCodesTable,
@@ -1739,6 +1785,10 @@ func init() {
 	}
 	InvitationsTable.Annotation.Checks = map[string]string{
 		"invitations_role_check": "role IN ('admin', 'member')",
+	}
+	JoinDomainsTable.ForeignKeys[0].RefTable = WorkspacesTable
+	JoinDomainsTable.Annotation = &entsql.Annotation{
+		Table: "join_domains",
 	}
 	MembershipsTable.ForeignKeys[0].RefTable = UsersTable
 	MembershipsTable.ForeignKeys[1].RefTable = WorkspacesTable

@@ -4883,6 +4883,23 @@ func (s *SiteAccountLinkResource) SetExpiresAt(val Timestamp) {
 
 func (*SiteAccountLinkResource) siteWorkspacesAccountLinkRes() {}
 
+// Request body for adding a Join domain.
+// Ref: #/components/schemas/SiteAddJoinDomainInput
+type SiteAddJoinDomainInput struct {
+	// The domain, e.g. "acme.com"; any case or Unicode, stored canonical.
+	Domain string `json:"domain"`
+}
+
+// GetDomain returns the value of Domain.
+func (s *SiteAddJoinDomainInput) GetDomain() string {
+	return s.Domain
+}
+
+// SetDomain sets the value of Domain.
+func (s *SiteAddJoinDomainInput) SetDomain(val string) {
+	s.Domain = val
+}
+
 // Automation counts (point-in-time snapshot).
 // Ref: #/components/schemas/SiteAnalyticsAutomations
 type SiteAnalyticsAutomations struct {
@@ -10979,6 +10996,169 @@ func (*SiteInvitationsDeleteNotFound) siteInvitationsDeleteRes() {}
 type SiteInvitationsListOKApplicationJSON []SiteInvitationResource
 
 func (*SiteInvitationsListOKApplicationJSON) siteInvitationsListRes() {}
+
+// A Join domain: a domain whose Users may join the Workspace once domain join is on, proven by a TXT
+// record. `verified` is a live property: it holds while the record is published. Any Workspace may
+// claim a domain, and only one holds it verified.
+// Ref: #/components/schemas/SiteJoinDomainResource
+type SiteJoinDomainResource struct {
+	// Unique identifier.
+	ID EntityId `json:"id"`
+	// The canonical domain: lower case, Unicode as punycode.
+	Domain string `json:"domain"`
+	// Whether the TXT record was found and the Workspace holds the domain.
+	Verified bool `json:"verified"`
+	// The TXT record to publish to prove the domain.
+	Record SiteDnsRecord `json:"record"`
+	// When the TXT record was most recently checked (null = never).
+	LastCheckedAt OptNilTimestamp `json:"lastCheckedAt"`
+	// When the domain most recently became verified (null = pending).
+	VerifiedAt OptNilTimestamp `json:"verifiedAt"`
+	// Creation timestamp.
+	CreatedAt Timestamp `json:"createdAt"`
+	// Last update timestamp.
+	UpdatedAt Timestamp `json:"updatedAt"`
+}
+
+// GetID returns the value of ID.
+func (s *SiteJoinDomainResource) GetID() EntityId {
+	return s.ID
+}
+
+// GetDomain returns the value of Domain.
+func (s *SiteJoinDomainResource) GetDomain() string {
+	return s.Domain
+}
+
+// GetVerified returns the value of Verified.
+func (s *SiteJoinDomainResource) GetVerified() bool {
+	return s.Verified
+}
+
+// GetRecord returns the value of Record.
+func (s *SiteJoinDomainResource) GetRecord() SiteDnsRecord {
+	return s.Record
+}
+
+// GetLastCheckedAt returns the value of LastCheckedAt.
+func (s *SiteJoinDomainResource) GetLastCheckedAt() OptNilTimestamp {
+	return s.LastCheckedAt
+}
+
+// GetVerifiedAt returns the value of VerifiedAt.
+func (s *SiteJoinDomainResource) GetVerifiedAt() OptNilTimestamp {
+	return s.VerifiedAt
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *SiteJoinDomainResource) GetCreatedAt() Timestamp {
+	return s.CreatedAt
+}
+
+// GetUpdatedAt returns the value of UpdatedAt.
+func (s *SiteJoinDomainResource) GetUpdatedAt() Timestamp {
+	return s.UpdatedAt
+}
+
+// SetID sets the value of ID.
+func (s *SiteJoinDomainResource) SetID(val EntityId) {
+	s.ID = val
+}
+
+// SetDomain sets the value of Domain.
+func (s *SiteJoinDomainResource) SetDomain(val string) {
+	s.Domain = val
+}
+
+// SetVerified sets the value of Verified.
+func (s *SiteJoinDomainResource) SetVerified(val bool) {
+	s.Verified = val
+}
+
+// SetRecord sets the value of Record.
+func (s *SiteJoinDomainResource) SetRecord(val SiteDnsRecord) {
+	s.Record = val
+}
+
+// SetLastCheckedAt sets the value of LastCheckedAt.
+func (s *SiteJoinDomainResource) SetLastCheckedAt(val OptNilTimestamp) {
+	s.LastCheckedAt = val
+}
+
+// SetVerifiedAt sets the value of VerifiedAt.
+func (s *SiteJoinDomainResource) SetVerifiedAt(val OptNilTimestamp) {
+	s.VerifiedAt = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *SiteJoinDomainResource) SetCreatedAt(val Timestamp) {
+	s.CreatedAt = val
+}
+
+// SetUpdatedAt sets the value of UpdatedAt.
+func (s *SiteJoinDomainResource) SetUpdatedAt(val Timestamp) {
+	s.UpdatedAt = val
+}
+
+func (*SiteJoinDomainResource) siteJoinDomainsAddRes()    {}
+func (*SiteJoinDomainResource) siteJoinDomainsVerifyRes() {}
+
+type SiteJoinDomainsAddConflict ProblemDetails
+
+func (*SiteJoinDomainsAddConflict) siteJoinDomainsAddRes() {}
+
+type SiteJoinDomainsAddForbidden ProblemDetails
+
+func (*SiteJoinDomainsAddForbidden) siteJoinDomainsAddRes() {}
+
+type SiteJoinDomainsAddNotFound ProblemDetails
+
+func (*SiteJoinDomainsAddNotFound) siteJoinDomainsAddRes() {}
+
+type SiteJoinDomainsAddUnprocessableEntity ProblemDetails
+
+func (*SiteJoinDomainsAddUnprocessableEntity) siteJoinDomainsAddRes() {}
+
+type SiteJoinDomainsListForbidden ProblemDetails
+
+func (*SiteJoinDomainsListForbidden) siteJoinDomainsListRes() {}
+
+type SiteJoinDomainsListNotFound ProblemDetails
+
+func (*SiteJoinDomainsListNotFound) siteJoinDomainsListRes() {}
+
+type SiteJoinDomainsListOKApplicationJSON []SiteJoinDomainResource
+
+func (*SiteJoinDomainsListOKApplicationJSON) siteJoinDomainsListRes() {}
+
+type SiteJoinDomainsRemoveForbidden ProblemDetails
+
+func (*SiteJoinDomainsRemoveForbidden) siteJoinDomainsRemoveRes() {}
+
+// SiteJoinDomainsRemoveNoContent is response for SiteJoinDomainsRemove operation.
+type SiteJoinDomainsRemoveNoContent struct{}
+
+func (*SiteJoinDomainsRemoveNoContent) siteJoinDomainsRemoveRes() {}
+
+type SiteJoinDomainsRemoveNotFound ProblemDetails
+
+func (*SiteJoinDomainsRemoveNotFound) siteJoinDomainsRemoveRes() {}
+
+type SiteJoinDomainsVerifyConflict ProblemDetails
+
+func (*SiteJoinDomainsVerifyConflict) siteJoinDomainsVerifyRes() {}
+
+type SiteJoinDomainsVerifyForbidden ProblemDetails
+
+func (*SiteJoinDomainsVerifyForbidden) siteJoinDomainsVerifyRes() {}
+
+type SiteJoinDomainsVerifyNotFound ProblemDetails
+
+func (*SiteJoinDomainsVerifyNotFound) siteJoinDomainsVerifyRes() {}
+
+type SiteJoinDomainsVerifyUnprocessableEntity ProblemDetails
+
+func (*SiteJoinDomainsVerifyUnprocessableEntity) siteJoinDomainsVerifyRes() {}
 
 // The Linked identities of the authenticated User.
 // Ref: #/components/schemas/SiteLinkedIdentities

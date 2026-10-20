@@ -23,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/invitation"
+	"github.com/getsphericon/sphericon/ent/joindomain"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/segment"
@@ -1062,6 +1063,51 @@ func ScopedEntities() []ScopedEntity {
 				b.SetExpiresAt(src.ExpiresAt)
 				if src.AcceptedAt != nil {
 					b.SetAcceptedAt(*src.AcceptedAt)
+				}
+				created, err := b.Save(ctx)
+				if err != nil {
+					return 0, err
+				}
+				return created.WorkspaceID, nil
+			},
+			Refs: []ScopedRef{},
+		},
+		{
+			Name:    "JoinDomain",
+			Audited: true,
+			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
+				return c.JoinDomain.Query().Where(joindomain.WorkspaceID(ws)).Order(Asc(joindomain.FieldID)).IDs(ctx)
+			},
+			Get: func(ctx context.Context, s *Scoped, id int64) error {
+				_, err := s.JoinDomain().Get(ctx, id)
+				return err
+			},
+			Touch: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.JoinDomain().UpdateOneID(id).Exec(ctx)
+			},
+			BulkTouch: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.JoinDomain().Update().Where(joindomain.ID(id)).Save(ctx)
+			},
+			Delete: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.JoinDomain().DeleteOneID(id).Exec(ctx)
+			},
+			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.JoinDomain().Delete().Where(joindomain.ID(id)).Exec(ctx)
+			},
+			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
+				src, err := s.c.JoinDomain.Get(ctx, id)
+				if err != nil {
+					return 0, err
+				}
+				_ = remap
+				b := s.JoinDomain().Create()
+				b.SetDomain(src.Domain)
+				b.SetToken(src.Token)
+				if src.VerifiedAt != nil {
+					b.SetVerifiedAt(*src.VerifiedAt)
+				}
+				if src.LastCheckedAt != nil {
+					b.SetLastCheckedAt(*src.LastCheckedAt)
 				}
 				created, err := b.Save(ctx)
 				if err != nil {

@@ -28,6 +28,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/invitation"
+	"github.com/getsphericon/sphericon/ent/joindomain"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/segment"
@@ -445,6 +446,21 @@ func (_c *WorkspaceCreate) AddSendingDomains(v ...*SendingDomain) *WorkspaceCrea
 		ids[i] = v[i].ID
 	}
 	return _c.AddSendingDomainIDs(ids...)
+}
+
+// AddJoinDomainIDs adds the "join_domains" edge to the JoinDomain entity by IDs.
+func (_c *WorkspaceCreate) AddJoinDomainIDs(ids ...int64) *WorkspaceCreate {
+	_c.mutation.AddJoinDomainIDs(ids...)
+	return _c
+}
+
+// AddJoinDomains adds the "join_domains" edges to the JoinDomain entity.
+func (_c *WorkspaceCreate) AddJoinDomains(v ...*JoinDomain) *WorkspaceCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddJoinDomainIDs(ids...)
 }
 
 // AddSendLimiterIDs adds the "send_limiters" edge to the SendLimiter entity by IDs.
@@ -1089,6 +1105,22 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(sendingdomain.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.JoinDomainsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.JoinDomainsTable,
+			Columns: []string{workspace.JoinDomainsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(joindomain.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

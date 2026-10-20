@@ -547,6 +547,29 @@ export default interface Resources {
         "title": "A new version is available"
       }
     },
+    "joinDomains": {
+      "add": "Add domain",
+      "addError": "Could not add the domain",
+      "added": "Domain added",
+      "description": "Prove you control a domain by publishing a DNS TXT record, and the domain is reserved for this workspace. Nobody is added to the workspace yet: verifying a domain only claims it.",
+      "domainLabel": "Domain",
+      "empty": "No domains yet.",
+      "forbidden": "Only owners can manage domain access.",
+      "loadError": "Could not load the domains",
+      "pending": "Pending",
+      "recordHint": "Publish this TXT record at your DNS provider, then press Verify.",
+      "recordHost": "Host",
+      "recordValue": "Value",
+      "remove": "Remove",
+      "removeConfirmDescription": "The workspace stops claiming the domain. Existing members stay.",
+      "removeConfirmTitle": "Remove this domain?",
+      "removeError": "Could not remove the domain",
+      "title": "Domain access",
+      "verified": "Verified",
+      "verifiedToast": "Domain verified",
+      "verify": "Verify",
+      "verifyError": "Could not verify the domain"
+    },
     "login": {
       "codeLabel": "Authentication code",
       "emailLabel": "Email",

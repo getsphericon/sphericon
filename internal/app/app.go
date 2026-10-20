@@ -42,6 +42,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/instance"
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/joindomains"
 	"github.com/getsphericon/sphericon/internal/mcpserver"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/messaging/registry"
@@ -1189,6 +1190,22 @@ func register(injector do.Injector, env string, o options) {
 		return sendingdomains.New(bus.Bus, cipher, jc.Client, cfg.TrackingCNAMETarget), nil
 	})
 
+	do.Provide(injector, func(i do.Injector) (*joindomains.Module, error) {
+		client, err := do.Invoke[*entClient](i)
+		if err != nil {
+			return nil, err
+		}
+		bus, err := do.Invoke[*eventsBus](i)
+		if err != nil {
+			return nil, err
+		}
+		lookup, err := do.Invoke[*dkimLookup](i)
+		if err != nil {
+			return nil, err
+		}
+		return joindomains.New(client.Client, bus.Bus, lookup.TXTLookup, time.Now), nil
+	})
+
 	do.Provide(injector, func(do.Injector) (*templates.Module, error) {
 		return templates.New(), nil
 	})
@@ -1564,6 +1581,10 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 	if err != nil {
 		return apisite.Deps{}, err
 	}
+	jd, err := do.Invoke[*joindomains.Module](i)
+	if err != nil {
+		return apisite.Deps{}, err
+	}
 	sf, err := do.Invoke[*secondfactor.Module](i)
 	if err != nil {
 		return apisite.Deps{}, err
@@ -1590,7 +1611,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		AccountLink: accountLink, Holds: edition.Holds(), AbuseWatch: edition.AbuseWatch(), SupportEmail: cfg.SupportEmail, MCPURL: cfg.MCPOrigin(),
 		Accounts: acc, Attempts: attempts, OAuth: oauthserver.NewService(client.Client, oauthserver.NewFetcher(cfg.OutboundAllow)), Bus: bus.Bus, Webhooks: wh, Outbound: sender.Module,
 		Segments: seg, EventLog: evlog, Contacts: con, Erasure: er, Tags: tg, Templates: tpl, BrandKit: bk, Automations: auto,
-		Broadcasts: bc, Welcome: jc.Client, SysMail: jc.Client, SendingDomains: sd, Integrations: integ,
+		Broadcasts: bc, Welcome: jc.Client, SysMail: jc.Client, SendingDomains: sd, JoinDomains: jd, Integrations: integ,
 		Tokens: tokens, Tracker: tracker, AppURL: cfg.AppURL, Audit: edition.Audit, SecondFactor: sf, Analytics: an,
 		RequireEmailVerification: cfg.RequireEmailVerification, SignupOpen: cfg.SignupOpen,
 		Signin: signin.FromConfig(cfg, nil),

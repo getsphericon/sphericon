@@ -632,6 +632,16 @@ export type SiteAccountLinkResource = {
 };
 
 /**
+ * Request body for adding a Join domain
+ */
+export type SiteAddJoinDomainInput = {
+  /**
+   * The domain, e.g. "acme.com"; any case or Unicode, stored canonical
+   */
+  domain: string;
+};
+
+/**
  * Automation counts (point-in-time snapshot)
  */
 export type SiteAnalyticsAutomations = {
@@ -1672,99 +1682,6 @@ export const SiteCustomFieldType = {
 export type SiteCustomFieldType = typeof SiteCustomFieldType[keyof typeof SiteCustomFieldType];
 
 /**
- * Confirmation of User deletion (ADR 0050): the User's own email typed in, their password
- * (a User with no password sends the token of the mailed link instead) and, when a Second
- * factor is enrolled, a current code.
- */
-export type SiteDeleteUserInput = {
-  /**
-   * The User's own email address, typed in
-   */
-  email: EmailAddress;
-  /**
-   * Current password; required of a User who has one
-   */
-  currentPassword?: string;
-  /**
-   * The token of the one-time link mailed to a User with no password; required of that User
-   */
-  token?: string;
-  /**
-   * A current TOTP code, or an unused Recovery code; required when a Second factor is enrolled
-   */
-  code?: string;
-};
-
-/**
- * The request for the one-time deletion link of a User with no password (ADR 0050)
- */
-export type SiteDeleteUserLinkInput = {
-  /**
-   * The User's own email address, typed in
-   */
-  email: EmailAddress;
-};
-
-/**
- * The body of a refused User deletion: ProblemDetails plus, when the User is the only Owner
- * of Workspaces, the list of them (empty when the typed email did not match)
- */
-export type SiteDeleteUserProblemDetails = {
-  /**
-   * Why the request was refused, when the client should act on it
-   */
-  code?: ProblemCode;
-  /**
-   * A URI reference that identifies the problem type
-   */
-  type?: string;
-  /**
-   * A short, human-readable summary of the problem type
-   */
-  title?: string;
-  /**
-   * HTTP status code
-   */
-  status?: number;
-  /**
-   * A human-readable explanation specific to this occurrence
-   */
-  detail?: string;
-  /**
-   * A URI reference that identifies the specific occurrence
-   */
-  instance?: string;
-  /**
-   * Validation errors grouped by field
-   */
-  errors?: {
-    [key: string]: Array<string>;
-  };
-  /**
-   * Form-level validation error
-   */
-  form?: string;
-  /**
-   * Field validation errors
-   */
-  fields?: {
-    [key: string]: string;
-  };
-  /**
-   * Seconds to wait before retrying; set on a 429 so a client that only sees the body can show the wait
-   */
-  retryAfter?: number;
-  /**
-   * Why a 500 happened, sent only by a development server (`SPHERICON_ENV=development`)
-   */
-  debug?: ProblemDebug;
-  /**
-   * The live Workspaces the User is the only Owner of; each is handed over or deleted first
-   */
-  workspaces: Array<SiteSoleOwnedWorkspace>;
-};
-
-/**
  * Delete a Workspace (ADR 0043): the typed name must equal the stored name.
  */
 export type SiteDeleteWorkspaceInput = {
@@ -1795,11 +1712,6 @@ export type SiteDeletedWorkspaceResource = {
    * When its data will be erased: 30 days after it was deleted
    */
   eraseAt: Timestamp;
-  /**
-   * Whether the caller is its only Owner: it then has no one to restore it once the
-   * caller's User is deleted (ADR 0050)
-   */
-  onlyOwner: boolean;
 };
 
 /**
@@ -2284,6 +2196,46 @@ export type SiteInvitationResource = {
    * Creation timestamp
    */
   createdAt: Timestamp;
+};
+
+/**
+ * A Join domain: a domain whose Users may join the Workspace once domain join
+ * is on, proven by a TXT record. `verified` is a live property: it holds while the record
+ * is published. Any Workspace may claim a domain, and only one holds it verified.
+ */
+export type SiteJoinDomainResource = {
+  /**
+   * Unique identifier
+   */
+  id: EntityId;
+  /**
+   * The canonical domain: lower case, Unicode as punycode
+   */
+  domain: string;
+  /**
+   * Whether the TXT record was found and the Workspace holds the domain
+   */
+  verified: boolean;
+  /**
+   * The TXT record to publish to prove the domain
+   */
+  record: SiteDnsRecord;
+  /**
+   * When the TXT record was most recently checked (null = never)
+   */
+  lastCheckedAt?: Timestamp | null;
+  /**
+   * When the domain most recently became verified (null = pending)
+   */
+  verifiedAt?: Timestamp | null;
+  /**
+   * Creation timestamp
+   */
+  createdAt: Timestamp;
+  /**
+   * Last update timestamp
+   */
+  updatedAt: Timestamp;
 };
 
 /**
@@ -3124,20 +3076,6 @@ export type SiteSmtpConfigInput = {
   password?: string | null;
   from: EmailAddress;
   fromName?: string | null;
-};
-
-/**
- * A Workspace the User is the only Owner of, which blocks User deletion
- */
-export type SiteSoleOwnedWorkspace = {
-  /**
-   * The Workspace id
-   */
-  id: WorkspaceId;
-  /**
-   * Display name
-   */
-  name: string;
 };
 
 /**
@@ -4758,66 +4696,6 @@ export type SiteUserUpdateMeResponses = {
 };
 
 export type SiteUserUpdateMeResponse = SiteUserUpdateMeResponses[keyof SiteUserUpdateMeResponses];
-
-export type SiteUserDeleteUserData = {
-  body: SiteDeleteUserInput;
-  path?: never;
-  query?: never;
-  url: '/me/delete';
-};
-
-export type SiteUserDeleteUserErrors = {
-  /**
-   * RFC 7807 bad request response
-   */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 validation response of User deletion
-   */
-  422: SiteDeleteUserProblemDetails;
-  /**
-   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
-   */
-  429: ProblemDetails;
-};
-
-export type SiteUserDeleteUserError = SiteUserDeleteUserErrors[keyof SiteUserDeleteUserErrors];
-
-export type SiteUserDeleteUserResponses = {
-  /**
-   * There is no content to send for this request, but the headers may be useful.
-   */
-  204: void;
-};
-
-export type SiteUserDeleteUserResponse = SiteUserDeleteUserResponses[keyof SiteUserDeleteUserResponses];
-
-export type SiteUserDeleteUserLinkData = {
-  body: SiteDeleteUserLinkInput;
-  path?: never;
-  query?: never;
-  url: '/me/delete/link';
-};
-
-export type SiteUserDeleteUserLinkErrors = {
-  /**
-   * RFC 7807 validation response of User deletion
-   */
-  422: SiteDeleteUserProblemDetails;
-};
-
-export type SiteUserDeleteUserLinkError = SiteUserDeleteUserLinkErrors[keyof SiteUserDeleteUserLinkErrors];
-
-export type SiteUserDeleteUserLinkResponses = {
-  /**
-   * The request has been accepted for processing, but processing has not yet completed.
-   */
-  202: unknown;
-};
 
 export type SiteUserEmailChangeData = {
   body: SiteEmailChangeInput;
@@ -7746,36 +7624,147 @@ export type SiteInvitationsDeleteResponses = {
 
 export type SiteInvitationsDeleteResponse = SiteInvitationsDeleteResponses[keyof SiteInvitationsDeleteResponses];
 
-export type SiteWorkspacesLeaveData = {
+export type SiteJoinDomainsListData = {
   body?: never;
   path: {
     workspaceId: WorkspaceId;
   };
   query?: never;
-  url: '/workspaces/{workspaceId}/leave';
+  url: '/workspaces/{workspaceId}/join-domains';
 };
 
-export type SiteWorkspacesLeaveErrors = {
+export type SiteJoinDomainsListErrors = {
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
+};
+
+export type SiteJoinDomainsListError = SiteJoinDomainsListErrors[keyof SiteJoinDomainsListErrors];
+
+export type SiteJoinDomainsListResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: Array<SiteJoinDomainResource>;
+};
+
+export type SiteJoinDomainsListResponse = SiteJoinDomainsListResponses[keyof SiteJoinDomainsListResponses];
+
+export type SiteJoinDomainsAddData = {
+  body: SiteAddJoinDomainInput;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/join-domains';
+};
+
+export type SiteJoinDomainsAddErrors = {
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 conflict response
+   */
+  409: ProblemDetails;
   /**
    * RFC 7807 validation response
    */
   422: ProblemDetails;
 };
 
-export type SiteWorkspacesLeaveError = SiteWorkspacesLeaveErrors[keyof SiteWorkspacesLeaveErrors];
+export type SiteJoinDomainsAddError = SiteJoinDomainsAddErrors[keyof SiteJoinDomainsAddErrors];
 
-export type SiteWorkspacesLeaveResponses = {
+export type SiteJoinDomainsAddResponses = {
+  /**
+   * The request has succeeded and a new resource has been created as a result.
+   */
+  201: SiteJoinDomainResource;
+};
+
+export type SiteJoinDomainsAddResponse = SiteJoinDomainsAddResponses[keyof SiteJoinDomainsAddResponses];
+
+export type SiteJoinDomainsRemoveData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+    id: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/join-domains/{id}';
+};
+
+export type SiteJoinDomainsRemoveErrors = {
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteJoinDomainsRemoveError = SiteJoinDomainsRemoveErrors[keyof SiteJoinDomainsRemoveErrors];
+
+export type SiteJoinDomainsRemoveResponses = {
   /**
    * There is no content to send for this request, but the headers may be useful.
    */
   204: void;
 };
 
-export type SiteWorkspacesLeaveResponse = SiteWorkspacesLeaveResponses[keyof SiteWorkspacesLeaveResponses];
+export type SiteJoinDomainsRemoveResponse = SiteJoinDomainsRemoveResponses[keyof SiteJoinDomainsRemoveResponses];
+
+export type SiteJoinDomainsVerifyData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+    id: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/join-domains/{id}/verify';
+};
+
+export type SiteJoinDomainsVerifyErrors = {
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 conflict response
+   */
+  409: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+};
+
+export type SiteJoinDomainsVerifyError = SiteJoinDomainsVerifyErrors[keyof SiteJoinDomainsVerifyErrors];
+
+export type SiteJoinDomainsVerifyResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteJoinDomainResource;
+};
+
+export type SiteJoinDomainsVerifyResponse = SiteJoinDomainsVerifyResponses[keyof SiteJoinDomainsVerifyResponses];
 
 export type SiteMembershipsListData = {
   body?: never;

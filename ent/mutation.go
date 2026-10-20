@@ -32,6 +32,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/instancestate"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/invitation"
+	"github.com/getsphericon/sphericon/ent/joindomain"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/oauthclient"
 	"github.com/getsphericon/sphericon/ent/oauthcode"
@@ -88,6 +89,7 @@ const (
 	TypeInstanceState      = "InstanceState"
 	TypeIntegration        = "Integration"
 	TypeInvitation         = "Invitation"
+	TypeJoinDomain         = "JoinDomain"
 	TypeMembership         = "Membership"
 	TypeOAuthClient        = "OAuthClient"
 	TypeOAuthCode          = "OAuthCode"
@@ -20052,6 +20054,760 @@ func (m *InvitationMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown Invitation edge %s", name)
 }
 
+// JoinDomainMutation represents an operation that mutates the JoinDomain nodes in the graph.
+type JoinDomainMutation struct {
+	config
+	op               Op
+	typ              string
+	id               *int64
+	created_at       *time.Time
+	updated_at       *time.Time
+	domain           *string
+	token            *string
+	verified_at      *time.Time
+	last_checked_at  *time.Time
+	clearedFields    map[string]struct{}
+	workspace        *int64
+	clearedworkspace bool
+	done             bool
+	oldValue         func(context.Context) (*JoinDomain, error)
+	predicates       []predicate.JoinDomain
+}
+
+var _ ent.Mutation = (*JoinDomainMutation)(nil)
+
+// joindomainOption allows management of the mutation configuration using functional options.
+type joindomainOption func(*JoinDomainMutation)
+
+// newJoinDomainMutation creates new mutation for the JoinDomain entity.
+func newJoinDomainMutation(c config, op Op, opts ...joindomainOption) *JoinDomainMutation {
+	m := &JoinDomainMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeJoinDomain,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withJoinDomainID sets the ID field of the mutation.
+func withJoinDomainID(id int64) joindomainOption {
+	return func(m *JoinDomainMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *JoinDomain
+		)
+		m.oldValue = func(ctx context.Context) (*JoinDomain, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().JoinDomain.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withJoinDomain sets the old JoinDomain of the mutation.
+func withJoinDomain(node *JoinDomain) joindomainOption {
+	return func(m *JoinDomainMutation) {
+		m.oldValue = func(context.Context) (*JoinDomain, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m JoinDomainMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m JoinDomainMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of JoinDomain entities.
+func (m *JoinDomainMutation) SetID(id int64) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *JoinDomainMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *JoinDomainMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().JoinDomain.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *JoinDomainMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *JoinDomainMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the JoinDomain entity.
+// If the JoinDomain object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *JoinDomainMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *JoinDomainMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *JoinDomainMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *JoinDomainMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the JoinDomain entity.
+// If the JoinDomain object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *JoinDomainMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *JoinDomainMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetWorkspaceID sets the "workspace_id" field.
+func (m *JoinDomainMutation) SetWorkspaceID(i int64) {
+	m.workspace = &i
+}
+
+// WorkspaceID returns the value of the "workspace_id" field in the mutation.
+func (m *JoinDomainMutation) WorkspaceID() (r int64, exists bool) {
+	v := m.workspace
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWorkspaceID returns the old "workspace_id" field's value of the JoinDomain entity.
+// If the JoinDomain object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *JoinDomainMutation) OldWorkspaceID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWorkspaceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWorkspaceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWorkspaceID: %w", err)
+	}
+	return oldValue.WorkspaceID, nil
+}
+
+// ResetWorkspaceID resets all changes to the "workspace_id" field.
+func (m *JoinDomainMutation) ResetWorkspaceID() {
+	m.workspace = nil
+}
+
+// SetDomain sets the "domain" field.
+func (m *JoinDomainMutation) SetDomain(s string) {
+	m.domain = &s
+}
+
+// Domain returns the value of the "domain" field in the mutation.
+func (m *JoinDomainMutation) Domain() (r string, exists bool) {
+	v := m.domain
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDomain returns the old "domain" field's value of the JoinDomain entity.
+// If the JoinDomain object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *JoinDomainMutation) OldDomain(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDomain is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDomain requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDomain: %w", err)
+	}
+	return oldValue.Domain, nil
+}
+
+// ResetDomain resets all changes to the "domain" field.
+func (m *JoinDomainMutation) ResetDomain() {
+	m.domain = nil
+}
+
+// SetToken sets the "token" field.
+func (m *JoinDomainMutation) SetToken(s string) {
+	m.token = &s
+}
+
+// Token returns the value of the "token" field in the mutation.
+func (m *JoinDomainMutation) Token() (r string, exists bool) {
+	v := m.token
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldToken returns the old "token" field's value of the JoinDomain entity.
+// If the JoinDomain object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *JoinDomainMutation) OldToken(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldToken is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldToken requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldToken: %w", err)
+	}
+	return oldValue.Token, nil
+}
+
+// ResetToken resets all changes to the "token" field.
+func (m *JoinDomainMutation) ResetToken() {
+	m.token = nil
+}
+
+// SetVerifiedAt sets the "verified_at" field.
+func (m *JoinDomainMutation) SetVerifiedAt(t time.Time) {
+	m.verified_at = &t
+}
+
+// VerifiedAt returns the value of the "verified_at" field in the mutation.
+func (m *JoinDomainMutation) VerifiedAt() (r time.Time, exists bool) {
+	v := m.verified_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVerifiedAt returns the old "verified_at" field's value of the JoinDomain entity.
+// If the JoinDomain object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *JoinDomainMutation) OldVerifiedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVerifiedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVerifiedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVerifiedAt: %w", err)
+	}
+	return oldValue.VerifiedAt, nil
+}
+
+// ClearVerifiedAt clears the value of the "verified_at" field.
+func (m *JoinDomainMutation) ClearVerifiedAt() {
+	m.verified_at = nil
+	m.clearedFields[joindomain.FieldVerifiedAt] = struct{}{}
+}
+
+// VerifiedAtCleared returns if the "verified_at" field was cleared in this mutation.
+func (m *JoinDomainMutation) VerifiedAtCleared() bool {
+	_, ok := m.clearedFields[joindomain.FieldVerifiedAt]
+	return ok
+}
+
+// ResetVerifiedAt resets all changes to the "verified_at" field.
+func (m *JoinDomainMutation) ResetVerifiedAt() {
+	m.verified_at = nil
+	delete(m.clearedFields, joindomain.FieldVerifiedAt)
+}
+
+// SetLastCheckedAt sets the "last_checked_at" field.
+func (m *JoinDomainMutation) SetLastCheckedAt(t time.Time) {
+	m.last_checked_at = &t
+}
+
+// LastCheckedAt returns the value of the "last_checked_at" field in the mutation.
+func (m *JoinDomainMutation) LastCheckedAt() (r time.Time, exists bool) {
+	v := m.last_checked_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastCheckedAt returns the old "last_checked_at" field's value of the JoinDomain entity.
+// If the JoinDomain object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *JoinDomainMutation) OldLastCheckedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastCheckedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastCheckedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastCheckedAt: %w", err)
+	}
+	return oldValue.LastCheckedAt, nil
+}
+
+// ClearLastCheckedAt clears the value of the "last_checked_at" field.
+func (m *JoinDomainMutation) ClearLastCheckedAt() {
+	m.last_checked_at = nil
+	m.clearedFields[joindomain.FieldLastCheckedAt] = struct{}{}
+}
+
+// LastCheckedAtCleared returns if the "last_checked_at" field was cleared in this mutation.
+func (m *JoinDomainMutation) LastCheckedAtCleared() bool {
+	_, ok := m.clearedFields[joindomain.FieldLastCheckedAt]
+	return ok
+}
+
+// ResetLastCheckedAt resets all changes to the "last_checked_at" field.
+func (m *JoinDomainMutation) ResetLastCheckedAt() {
+	m.last_checked_at = nil
+	delete(m.clearedFields, joindomain.FieldLastCheckedAt)
+}
+
+// ClearWorkspace clears the "workspace" edge to the Workspace entity.
+func (m *JoinDomainMutation) ClearWorkspace() {
+	m.clearedworkspace = true
+	m.clearedFields[joindomain.FieldWorkspaceID] = struct{}{}
+}
+
+// WorkspaceCleared reports if the "workspace" edge to the Workspace entity was cleared.
+func (m *JoinDomainMutation) WorkspaceCleared() bool {
+	return m.clearedworkspace
+}
+
+// WorkspaceIDs returns the "workspace" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// WorkspaceID instead. It exists only for internal usage by the builders.
+func (m *JoinDomainMutation) WorkspaceIDs() (ids []int64) {
+	if id := m.workspace; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetWorkspace resets all changes to the "workspace" edge.
+func (m *JoinDomainMutation) ResetWorkspace() {
+	m.workspace = nil
+	m.clearedworkspace = false
+}
+
+// Where appends a list predicates to the JoinDomainMutation builder.
+func (m *JoinDomainMutation) Where(ps ...predicate.JoinDomain) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the JoinDomainMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *JoinDomainMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.JoinDomain, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *JoinDomainMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *JoinDomainMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (JoinDomain).
+func (m *JoinDomainMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *JoinDomainMutation) Fields() []string {
+	fields := make([]string, 0, 7)
+	if m.created_at != nil {
+		fields = append(fields, joindomain.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, joindomain.FieldUpdatedAt)
+	}
+	if m.workspace != nil {
+		fields = append(fields, joindomain.FieldWorkspaceID)
+	}
+	if m.domain != nil {
+		fields = append(fields, joindomain.FieldDomain)
+	}
+	if m.token != nil {
+		fields = append(fields, joindomain.FieldToken)
+	}
+	if m.verified_at != nil {
+		fields = append(fields, joindomain.FieldVerifiedAt)
+	}
+	if m.last_checked_at != nil {
+		fields = append(fields, joindomain.FieldLastCheckedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *JoinDomainMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case joindomain.FieldCreatedAt:
+		return m.CreatedAt()
+	case joindomain.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case joindomain.FieldWorkspaceID:
+		return m.WorkspaceID()
+	case joindomain.FieldDomain:
+		return m.Domain()
+	case joindomain.FieldToken:
+		return m.Token()
+	case joindomain.FieldVerifiedAt:
+		return m.VerifiedAt()
+	case joindomain.FieldLastCheckedAt:
+		return m.LastCheckedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *JoinDomainMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case joindomain.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case joindomain.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case joindomain.FieldWorkspaceID:
+		return m.OldWorkspaceID(ctx)
+	case joindomain.FieldDomain:
+		return m.OldDomain(ctx)
+	case joindomain.FieldToken:
+		return m.OldToken(ctx)
+	case joindomain.FieldVerifiedAt:
+		return m.OldVerifiedAt(ctx)
+	case joindomain.FieldLastCheckedAt:
+		return m.OldLastCheckedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown JoinDomain field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *JoinDomainMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case joindomain.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case joindomain.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case joindomain.FieldWorkspaceID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWorkspaceID(v)
+		return nil
+	case joindomain.FieldDomain:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDomain(v)
+		return nil
+	case joindomain.FieldToken:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetToken(v)
+		return nil
+	case joindomain.FieldVerifiedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVerifiedAt(v)
+		return nil
+	case joindomain.FieldLastCheckedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastCheckedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown JoinDomain field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *JoinDomainMutation) AddedFields() []string {
+	var fields []string
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *JoinDomainMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *JoinDomainMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown JoinDomain numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *JoinDomainMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(joindomain.FieldVerifiedAt) {
+		fields = append(fields, joindomain.FieldVerifiedAt)
+	}
+	if m.FieldCleared(joindomain.FieldLastCheckedAt) {
+		fields = append(fields, joindomain.FieldLastCheckedAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *JoinDomainMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *JoinDomainMutation) ClearField(name string) error {
+	switch name {
+	case joindomain.FieldVerifiedAt:
+		m.ClearVerifiedAt()
+		return nil
+	case joindomain.FieldLastCheckedAt:
+		m.ClearLastCheckedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown JoinDomain nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *JoinDomainMutation) ResetField(name string) error {
+	switch name {
+	case joindomain.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case joindomain.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case joindomain.FieldWorkspaceID:
+		m.ResetWorkspaceID()
+		return nil
+	case joindomain.FieldDomain:
+		m.ResetDomain()
+		return nil
+	case joindomain.FieldToken:
+		m.ResetToken()
+		return nil
+	case joindomain.FieldVerifiedAt:
+		m.ResetVerifiedAt()
+		return nil
+	case joindomain.FieldLastCheckedAt:
+		m.ResetLastCheckedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown JoinDomain field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *JoinDomainMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.workspace != nil {
+		edges = append(edges, joindomain.EdgeWorkspace)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *JoinDomainMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case joindomain.EdgeWorkspace:
+		if id := m.workspace; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *JoinDomainMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *JoinDomainMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *JoinDomainMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedworkspace {
+		edges = append(edges, joindomain.EdgeWorkspace)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *JoinDomainMutation) EdgeCleared(name string) bool {
+	switch name {
+	case joindomain.EdgeWorkspace:
+		return m.clearedworkspace
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *JoinDomainMutation) ClearEdge(name string) error {
+	switch name {
+	case joindomain.EdgeWorkspace:
+		m.ClearWorkspace()
+		return nil
+	}
+	return fmt.Errorf("unknown JoinDomain unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *JoinDomainMutation) ResetEdge(name string) error {
+	switch name {
+	case joindomain.EdgeWorkspace:
+		m.ResetWorkspace()
+		return nil
+	}
+	return fmt.Errorf("unknown JoinDomain edge %s", name)
+}
+
 // MembershipMutation represents an operation that mutates the Membership nodes in the graph.
 type MembershipMutation struct {
 	config
@@ -39609,6 +40365,9 @@ type WorkspaceMutation struct {
 	sending_domains             map[int64]struct{}
 	removedsending_domains      map[int64]struct{}
 	clearedsending_domains      bool
+	join_domains                map[int64]struct{}
+	removedjoin_domains         map[int64]struct{}
+	clearedjoin_domains         bool
 	send_limiters               map[int64]struct{}
 	removedsend_limiters        map[int64]struct{}
 	clearedsend_limiters        bool
@@ -41176,6 +41935,60 @@ func (m *WorkspaceMutation) ResetSendingDomains() {
 	m.sending_domains = nil
 	m.clearedsending_domains = false
 	m.removedsending_domains = nil
+}
+
+// AddJoinDomainIDs adds the "join_domains" edge to the JoinDomain entity by ids.
+func (m *WorkspaceMutation) AddJoinDomainIDs(ids ...int64) {
+	if m.join_domains == nil {
+		m.join_domains = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.join_domains[ids[i]] = struct{}{}
+	}
+}
+
+// ClearJoinDomains clears the "join_domains" edge to the JoinDomain entity.
+func (m *WorkspaceMutation) ClearJoinDomains() {
+	m.clearedjoin_domains = true
+}
+
+// JoinDomainsCleared reports if the "join_domains" edge to the JoinDomain entity was cleared.
+func (m *WorkspaceMutation) JoinDomainsCleared() bool {
+	return m.clearedjoin_domains
+}
+
+// RemoveJoinDomainIDs removes the "join_domains" edge to the JoinDomain entity by IDs.
+func (m *WorkspaceMutation) RemoveJoinDomainIDs(ids ...int64) {
+	if m.removedjoin_domains == nil {
+		m.removedjoin_domains = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.join_domains, ids[i])
+		m.removedjoin_domains[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedJoinDomains returns the removed IDs of the "join_domains" edge to the JoinDomain entity.
+func (m *WorkspaceMutation) RemovedJoinDomainsIDs() (ids []int64) {
+	for id := range m.removedjoin_domains {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// JoinDomainsIDs returns the "join_domains" edge IDs in the mutation.
+func (m *WorkspaceMutation) JoinDomainsIDs() (ids []int64) {
+	for id := range m.join_domains {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetJoinDomains resets all changes to the "join_domains" edge.
+func (m *WorkspaceMutation) ResetJoinDomains() {
+	m.join_domains = nil
+	m.clearedjoin_domains = false
+	m.removedjoin_domains = nil
 }
 
 // AddSendLimiterIDs adds the "send_limiters" edge to the SendLimiter entity by ids.
@@ -42762,7 +43575,7 @@ func (m *WorkspaceMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *WorkspaceMutation) AddedEdges() []string {
-	edges := make([]string, 0, 28)
+	edges := make([]string, 0, 29)
 	if m.contacts != nil {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -42789,6 +43602,9 @@ func (m *WorkspaceMutation) AddedEdges() []string {
 	}
 	if m.sending_domains != nil {
 		edges = append(edges, workspace.EdgeSendingDomains)
+	}
+	if m.join_domains != nil {
+		edges = append(edges, workspace.EdgeJoinDomains)
 	}
 	if m.send_limiters != nil {
 		edges = append(edges, workspace.EdgeSendLimiters)
@@ -42905,6 +43721,12 @@ func (m *WorkspaceMutation) AddedIDs(name string) []ent.Value {
 	case workspace.EdgeSendingDomains:
 		ids := make([]ent.Value, 0, len(m.sending_domains))
 		for id := range m.sending_domains {
+			ids = append(ids, id)
+		}
+		return ids
+	case workspace.EdgeJoinDomains:
+		ids := make([]ent.Value, 0, len(m.join_domains))
+		for id := range m.join_domains {
 			ids = append(ids, id)
 		}
 		return ids
@@ -43028,7 +43850,7 @@ func (m *WorkspaceMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *WorkspaceMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 28)
+	edges := make([]string, 0, 29)
 	if m.removedcontacts != nil {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -43055,6 +43877,9 @@ func (m *WorkspaceMutation) RemovedEdges() []string {
 	}
 	if m.removedsending_domains != nil {
 		edges = append(edges, workspace.EdgeSendingDomains)
+	}
+	if m.removedjoin_domains != nil {
+		edges = append(edges, workspace.EdgeJoinDomains)
 	}
 	if m.removedsend_limiters != nil {
 		edges = append(edges, workspace.EdgeSendLimiters)
@@ -43171,6 +43996,12 @@ func (m *WorkspaceMutation) RemovedIDs(name string) []ent.Value {
 	case workspace.EdgeSendingDomains:
 		ids := make([]ent.Value, 0, len(m.removedsending_domains))
 		for id := range m.removedsending_domains {
+			ids = append(ids, id)
+		}
+		return ids
+	case workspace.EdgeJoinDomains:
+		ids := make([]ent.Value, 0, len(m.removedjoin_domains))
+		for id := range m.removedjoin_domains {
 			ids = append(ids, id)
 		}
 		return ids
@@ -43294,7 +44125,7 @@ func (m *WorkspaceMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *WorkspaceMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 28)
+	edges := make([]string, 0, 29)
 	if m.clearedcontacts {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -43321,6 +44152,9 @@ func (m *WorkspaceMutation) ClearedEdges() []string {
 	}
 	if m.clearedsending_domains {
 		edges = append(edges, workspace.EdgeSendingDomains)
+	}
+	if m.clearedjoin_domains {
+		edges = append(edges, workspace.EdgeJoinDomains)
 	}
 	if m.clearedsend_limiters {
 		edges = append(edges, workspace.EdgeSendLimiters)
@@ -43404,6 +44238,8 @@ func (m *WorkspaceMutation) EdgeCleared(name string) bool {
 		return m.clearedintegrations
 	case workspace.EdgeSendingDomains:
 		return m.clearedsending_domains
+	case workspace.EdgeJoinDomains:
+		return m.clearedjoin_domains
 	case workspace.EdgeSendLimiters:
 		return m.clearedsend_limiters
 	case workspace.EdgeHolds:
@@ -43484,6 +44320,9 @@ func (m *WorkspaceMutation) ResetEdge(name string) error {
 		return nil
 	case workspace.EdgeSendingDomains:
 		m.ResetSendingDomains()
+		return nil
+	case workspace.EdgeJoinDomains:
+		m.ResetJoinDomains()
 		return nil
 	case workspace.EdgeSendLimiters:
 		m.ResetSendLimiters()

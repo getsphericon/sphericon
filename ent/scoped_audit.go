@@ -632,6 +632,58 @@ func (b *IntegrationCreateBulk) auditRebind(c *Client) {
 	}
 }
 
+// JoinDomainAuditSensitive lists the JoinDomain fields whose values never reach the Audit log.
+var JoinDomainAuditSensitive = map[string]bool{
+	"token": true,
+}
+
+// auditFields maps every audited field of the JoinDomain to its value.
+func (e *JoinDomain) auditFields() map[string]any {
+	return map[string]any{
+		"domain":          e.Domain,
+		"token":           e.Token,
+		"verified_at":     derefAudit(e.VerifiedAt),
+		"last_checked_at": derefAudit(e.LastCheckedAt),
+	}
+}
+
+// auditChangeJoinDomain describes a JoinDomain create (before is nil), update or delete
+// (after is nil).
+func auditChangeJoinDomain(verb string, before, after *JoinDomain) AuditChange {
+	var b, a map[string]any
+	target := before
+	if before != nil {
+		b = before.auditFields()
+	}
+	if after != nil {
+		a = after.auditFields()
+		target = after
+	}
+	change := AuditChange{
+		Action:     "join_domain." + verb,
+		TargetType: "join_domain",
+		TargetID:   auditID(target.ID),
+		Diff:       AuditDiff(b, a, JoinDomainAuditSensitive),
+	}
+	change.TargetName = fmt.Sprint(derefAudit(target.Domain))
+	return change
+}
+
+// auditRebind points the builders at the client of the transaction that carries the
+// entry, so the mutation and the entry commit together.
+func (b *JoinDomainCreate) auditRebind(c *Client) { b.config, b.mutation.config = c.config, c.config }
+func (b *JoinDomainUpdateOne) auditRebind(c *Client) {
+	b.config, b.mutation.config = c.config, c.config
+}
+func (b *JoinDomainUpdate) auditRebind(c *Client) { b.config, b.mutation.config = c.config, c.config }
+func (b *JoinDomainDelete) auditRebind(c *Client) { b.config, b.mutation.config = c.config, c.config }
+func (b *JoinDomainCreateBulk) auditRebind(c *Client) {
+	b.config = c.config
+	for _, x := range b.builders {
+		x.auditRebind(c)
+	}
+}
+
 // SegmentAuditSensitive lists the Segment fields whose values never reach the Audit log.
 var SegmentAuditSensitive = map[string]bool{}
 
