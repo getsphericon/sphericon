@@ -273,6 +273,15 @@ type Handler interface {
 	//
 	// POST /events
 	EventsCreate(ctx context.Context, req *RecordEventsInput) (EventsCreateRes, error)
+	// ExportErasures implements Export_erasures operation.
+	//
+	// Read the Workspace's Erasures, oldest first (Enterprise; needs the `export:read` scope). Each line
+	// of the body is an `ExportErasureRow`; every key is always present. Rows live for the instance's
+	// Event retention window and are kept for good when retention is off: a consumer absent for longer
+	// re-seeds from an empty cursor.
+	//
+	// GET /export/erasures
+	ExportErasures(ctx context.Context, params ExportErasuresParams) (ExportErasuresRes, error)
 	// ExportEvents implements Export_events operation.
 	//
 	// Read the Workspace's Events, oldest change first (Enterprise; needs the `export:read` scope). Each

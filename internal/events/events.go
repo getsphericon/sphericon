@@ -208,13 +208,23 @@ func (e *ContactCreated) Project() Projection {
 // record, and the signal the customer's webhook uses to erase downstream copies.
 // SubjectID is the Contact's own subject_id, or its sphericon id when it had none. It
 // exists only in this message (so the webhook payload carries it): Project() leaves
-// it, and any Contact reference or address, off the stored Event.
+// it, and any Contact reference or address, off the stored Event. The keys below it
+// are for the Erasures Export stream and stay off the stored Event too.
 type ContactErased struct {
 	WorkspaceID    int64  `json:"workspaceId"`
 	SubjectID      string `json:"subjectId"`
 	IdentifierKind string `json:"identifierKind"` // what the requester identified the person by
 	RequesterKind  string `json:"requesterKind"`  // user|api_token
 	RequesterID    int64  `json:"requesterId"`
+
+	// The keys Erasure matched on (ADR 0045), for the Erasures Export stream: the erased
+	// Contact's id (the row is gone, so the id points at nothing), the anonymous devices
+	// erased with it, and SHA-256 (hex) of the lowercased address and of the phone, computed
+	// before publishing so no address or phone reaches the outbox. Empty when there was none.
+	ContactID  int64    `json:"contactId,omitempty"`
+	VisitorIDs []string `json:"visitorIds,omitempty"`
+	EmailHash  string   `json:"emailHash,omitempty"`
+	PhoneHash  string   `json:"phoneHash,omitempty"`
 }
 
 func (*ContactErased) EventName() string  { return NameContactErased }

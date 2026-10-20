@@ -984,7 +984,7 @@ func register(injector do.Injector, env string, o options) {
 		}
 		jc, err := jobs.NewClient(pool.Pool, client.Client, sender.Module, cipher, bus.Bus, sys.EmailSender, lookup.TXTLookup, trackingVerifier(cfg, bus.Bus), catalog, cfg.AppURL, cfg.OutboundAllow,
 			jobs.Retention{OutboxFloor: cfg.OutboxFloor, Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention},
-			edition.Jobs(bus.Bus, sys.EmailSender), inst.Jobs(), reporter.Jobs())
+			edition.Jobs(bus.Bus, sys.EmailSender), edition.ExportJobs(cfg.EventsRetention), inst.Jobs(), reporter.Jobs())
 		if err != nil {
 			return nil, err
 		}

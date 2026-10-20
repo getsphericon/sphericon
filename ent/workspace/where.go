@@ -1605,6 +1605,29 @@ func HasAuditEntriesWith(preds ...predicate.AuditEntry) predicate.Workspace {
 	})
 }
 
+// HasErasures applies the HasEdge predicate on the "erasures" edge.
+func HasErasures() predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ErasuresTable, ErasuresColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasErasuresWith applies the HasEdge predicate on the "erasures" edge with a given conditions (other predicates).
+func HasErasuresWith(preds ...predicate.Erasure) predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := newErasuresStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasUsages applies the HasEdge predicate on the "usages" edge.
 func HasUsages() predicate.Workspace {
 	return predicate.Workspace(func(s *sql.Selector) {

@@ -38,6 +38,8 @@ type Tx struct {
 	CustomField *CustomFieldClient
 	// EmailTemplate is the client for interacting with the EmailTemplate builders.
 	EmailTemplate *EmailTemplateClient
+	// Erasure is the client for interacting with the Erasure builders.
+	Erasure *ErasureClient
 	// Event is the client for interacting with the Event builders.
 	Event *EventClient
 	// Hold is the client for interacting with the Hold builders.
@@ -237,6 +239,7 @@ func (tx *Tx) init() {
 	tx.Contact = NewContactClient(tx.config)
 	tx.CustomField = NewCustomFieldClient(tx.config)
 	tx.EmailTemplate = NewEmailTemplateClient(tx.config)
+	tx.Erasure = NewErasureClient(tx.config)
 	tx.Event = NewEventClient(tx.config)
 	tx.Hold = NewHoldClient(tx.config)
 	tx.InstanceState = NewInstanceStateClient(tx.config)

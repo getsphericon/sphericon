@@ -169,6 +169,10 @@ type EventsCreateRes interface {
 	eventsCreateRes()
 }
 
+type ExportErasuresRes interface {
+	exportErasuresRes()
+}
+
 type ExportEventsRes interface {
 	exportEventsRes()
 }

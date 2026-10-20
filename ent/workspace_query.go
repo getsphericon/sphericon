@@ -24,6 +24,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
+	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/integration"
@@ -75,6 +76,7 @@ type WorkspaceQuery struct {
 	withMemberships         *MembershipQuery
 	withInvitations         *InvitationQuery
 	withAuditEntries        *AuditEntryQuery
+	withErasures            *ErasureQuery
 	withUsages              *UsageQuery
 	modifiers               []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
@@ -663,6 +665,28 @@ func (_q *WorkspaceQuery) QueryAuditEntries() *AuditEntryQuery {
 	return query
 }
 
+// QueryErasures chains the current query on the "erasures" edge.
+func (_q *WorkspaceQuery) QueryErasures() *ErasureQuery {
+	query := (&ErasureClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
+			sqlgraph.To(erasure.Table, erasure.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.ErasuresTable, workspace.ErasuresColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // QueryUsages chains the current query on the "usages" edge.
 func (_q *WorkspaceQuery) QueryUsages() *UsageQuery {
 	query := (&UsageClient{config: _q.config}).Query()
@@ -902,6 +926,7 @@ func (_q *WorkspaceQuery) Clone() *WorkspaceQuery {
 		withMemberships:         _q.withMemberships.Clone(),
 		withInvitations:         _q.withInvitations.Clone(),
 		withAuditEntries:        _q.withAuditEntries.Clone(),
+		withErasures:            _q.withErasures.Clone(),
 		withUsages:              _q.withUsages.Clone(),
 		// clone intermediate query.
 		sql:       _q.sql.Clone(),
@@ -1185,6 +1210,17 @@ func (_q *WorkspaceQuery) WithAuditEntries(opts ...func(*AuditEntryQuery)) *Work
 	return _q
 }
 
+// WithErasures tells the query-builder to eager-load the nodes that are connected to
+// the "erasures" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *WorkspaceQuery) WithErasures(opts ...func(*ErasureQuery)) *WorkspaceQuery {
+	query := (&ErasureClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withErasures = query
+	return _q
+}
+
 // WithUsages tells the query-builder to eager-load the nodes that are connected to
 // the "usages" edge. The optional arguments are used to configure the query builder of the edge.
 func (_q *WorkspaceQuery) WithUsages(opts ...func(*UsageQuery)) *WorkspaceQuery {
@@ -1274,7 +1310,7 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 	var (
 		nodes       = []*Workspace{}
 		_spec       = _q.querySpec()
-		loadedTypes = [26]bool{
+		loadedTypes = [27]bool{
 			_q.withContacts != nil,
 			_q.withCustomFields != nil,
 			_q.withTags != nil,
@@ -1300,6 +1336,7 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 			_q.withMemberships != nil,
 			_q.withInvitations != nil,
 			_q.withAuditEntries != nil,
+			_q.withErasures != nil,
 			_q.withUsages != nil,
 		}
 	)
@@ -1498,6 +1535,13 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 		if err := _q.loadAuditEntries(ctx, query, nodes,
 			func(n *Workspace) { n.Edges.AuditEntries = []*AuditEntry{} },
 			func(n *Workspace, e *AuditEntry) { n.Edges.AuditEntries = append(n.Edges.AuditEntries, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withErasures; query != nil {
+		if err := _q.loadErasures(ctx, query, nodes,
+			func(n *Workspace) { n.Edges.Erasures = []*Erasure{} },
+			func(n *Workspace, e *Erasure) { n.Edges.Erasures = append(n.Edges.Erasures, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -2246,6 +2290,36 @@ func (_q *WorkspaceQuery) loadAuditEntries(ctx context.Context, query *AuditEntr
 	}
 	query.Where(predicate.AuditEntry(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(workspace.AuditEntriesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.WorkspaceID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "workspace_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *WorkspaceQuery) loadErasures(ctx context.Context, query *ErasureQuery, nodes []*Workspace, init func(*Workspace), assign func(*Workspace, *Erasure)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Workspace)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(erasure.FieldWorkspaceID)
+	}
+	query.Where(predicate.Erasure(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(workspace.ErasuresColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

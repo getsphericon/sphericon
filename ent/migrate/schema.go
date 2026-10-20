@@ -479,6 +479,51 @@ var (
 			},
 		},
 	}
+	// ErasuresColumns holds the columns for the "erasures" table.
+	ErasuresColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "erasure_key", Type: field.TypeString},
+		{Name: "contact_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "subject_id", Type: field.TypeString, Default: ""},
+		{Name: "visitor_ids", Type: field.TypeJSON},
+		{Name: "email_sha256", Type: field.TypeString, Nullable: true},
+		{Name: "phone_sha256", Type: field.TypeString, Nullable: true},
+		{Name: "erased_at", Type: field.TypeTime},
+		{Name: "workspace_id", Type: field.TypeInt64},
+	}
+	// ErasuresTable holds the schema information for the "erasures" table.
+	ErasuresTable = &schema.Table{
+		Name:       "erasures",
+		Columns:    ErasuresColumns,
+		PrimaryKey: []*schema.Column{ErasuresColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "erasures_workspaces_erasures",
+				Columns:    []*schema.Column{ErasuresColumns[10]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "erasures_workspace_id_erasure_key",
+				Unique:  true,
+				Columns: []*schema.Column{ErasuresColumns[10], ErasuresColumns[3]},
+			},
+			{
+				Name:    "erasure_workspace_id_updated_at_id",
+				Unique:  false,
+				Columns: []*schema.Column{ErasuresColumns[10], ErasuresColumns[2], ErasuresColumns[0]},
+			},
+			{
+				Name:    "erasure_erased_at",
+				Unique:  false,
+				Columns: []*schema.Column{ErasuresColumns[9]},
+			},
+		},
+	}
 	// EventsColumns holds the columns for the "events" table.
 	EventsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -1379,6 +1424,7 @@ var (
 		ContactsTable,
 		CustomFieldsTable,
 		EmailTemplatesTable,
+		ErasuresTable,
 		EventsTable,
 		HoldsTable,
 		InstanceStateTable,
@@ -1458,6 +1504,10 @@ func init() {
 	EmailTemplatesTable.ForeignKeys[0].RefTable = WorkspacesTable
 	EmailTemplatesTable.Annotation = &entsql.Annotation{
 		Table: "email_templates",
+	}
+	ErasuresTable.ForeignKeys[0].RefTable = WorkspacesTable
+	ErasuresTable.Annotation = &entsql.Annotation{
+		Table: "erasures",
 	}
 	EventsTable.ForeignKeys[0].RefTable = ContactsTable
 	EventsTable.ForeignKeys[1].RefTable = WorkspacesTable

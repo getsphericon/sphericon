@@ -1,0 +1,33 @@
+# Erasures stream (Enterprise, ADR 0045): the keys past Erasures matched on. Acme has one
+# far past the 400-day Event retention window and one recent, so the prune tests show
+# which goes; Globex has one so tenant-isolation tests can show Acme never reads it.
+- id: 1 # fixture: AcmeOldErasure
+  workspace_id: 1
+  erasure_key: fixture-acme-old-erasure
+  contact_id: 7001
+  subject_id: user-old-7001
+  visitor_ids: '["vis-old-7001"]'
+  email_sha256: '1111111111111111111111111111111111111111111111111111111111111111'
+  erased_at: '{{daysAgo 500}}'
+  created_at: '{{daysAgo 500}}'
+  updated_at: '{{daysAgo 500}}'
+- id: 2 # fixture: AcmeRecentErasure
+  workspace_id: 1
+  erasure_key: fixture-acme-recent-erasure
+  contact_id: 7002
+  subject_id: user-recent-7002
+  visitor_ids: '[]'
+  email_sha256: '2222222222222222222222222222222222222222222222222222222222222222'
+  phone_sha256: '3333333333333333333333333333333333333333333333333333333333333333'
+  erased_at: '{{daysAgo 3}}'
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 3}}'
+- id: 900 # fixture: GlobexErasure
+  workspace_id: 2
+  erasure_key: fixture-globex-erasure
+  subject_id: ''
+  visitor_ids: '[]'
+  email_sha256: '4444444444444444444444444444444444444444444444444444444444444444'
+  erased_at: '{{daysAgo 3}}'
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 3}}'

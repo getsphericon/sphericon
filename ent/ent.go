@@ -24,6 +24,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
+	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/instancestate"
@@ -124,6 +125,7 @@ func checkColumn(t, c string) error {
 			contact.Table:            contact.ValidColumn,
 			customfield.Table:        customfield.ValidColumn,
 			emailtemplate.Table:      emailtemplate.ValidColumn,
+			erasure.Table:            erasure.ValidColumn,
 			event.Table:              event.ValidColumn,
 			hold.Table:               hold.ValidColumn,
 			instancestate.Table:      instancestate.ValidColumn,
