@@ -88,7 +88,9 @@ is not blocked; surviving opt-outs still apply to them. The Workspace is the con
 the processor, so Erasure is a Workspace action, never a data-subject self-service form. A request
 names a person by address, so the Workspace's owners and admins can also start it from an address
 (a **Privacy request**), even when no Contact holds that address any more: then only the delivery
-records of the address are anonymized.
+records of the address are anonymized. A Privacy request starts with a lookup that shows counts
+only, never content; "nothing held" is a valid result (zeros, not a not-found). Erase is offered
+only while a Contact or delivery records hold the address: opt-outs alone are not erasable.
 _Avoid_: Anonymization (that is only what happens to the delivery rows), forget, purge (purge is
 bulk retention policy, a separate concern)
 
