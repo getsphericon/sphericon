@@ -3,19 +3,16 @@ package erasure
 import (
 	"context"
 
-	"github.com/samber/lo"
-
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
-	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/jobkind"
 )
 
 // cancelInFlight stops work already under way for the subject and clears the internal
-// queues of what refers to it: the Contact's recipients in unsent Broadcasts are
-// removed (a Broadcast left with nothing pending settles), and the domain-event outbox
+// queues of what refers to it: the Broadcast delivery module cancels the Contact's unsent
+// recipients (a Broadcast left with nothing pending settles), and the domain-event outbox
 // rows and river job arguments naming the Contact, its runs or its recipients are
 // deleted, as are the queued webhook deliveries whose payload names the Contact or
 // its address, and the queued HTTP-step calls of its runs (a failure's response excerpt
@@ -29,15 +26,9 @@ func cancelInFlight(ctx context.Context, s *ent.Scoped, t *Target, purger events
 	if err != nil {
 		return err
 	}
-	unsent, err := s.BroadcastRecipient().Query().
-		Where(broadcastrecipient.ContactID(t.ContactID), broadcasts.Pending()).
-		All(ctx)
-	if err != nil {
+	if err := broadcasts.CancelPending(ctx, s, t.ContactID, purger); err != nil {
 		return err
 	}
-	recipientIDs := lo.Map(unsent, func(r *ent.BroadcastRecipient, _ int) int64 { return r.ID })
-	affected := lo.Uniq(lo.Map(unsent, func(r *ent.BroadcastRecipient, _ int) int64 { return r.BroadcastID }))
-
 	if err := purger.PurgeOutbox(ctx, s.WorkspaceID(), t.ContactID, t.Destinations); err != nil {
 		return err
 	}
@@ -56,23 +47,6 @@ func cancelInFlight(ctx context.Context, s *ent.Scoped, t *Target, purger events
 	}
 	if err := purger.PurgeJobs(ctx, jobkind.HTTPStep, runIDs); err != nil {
 		return err
-	}
-	if err := purger.PurgeJobs(ctx, jobkind.SendRecipient, recipientIDs); err != nil {
-		return err
-	}
-
-	if len(recipientIDs) == 0 {
-		return nil
-	}
-	if _, err := s.BroadcastRecipient().Delete().Where(broadcastrecipient.IDIn(recipientIDs...)).Exec(ctx); err != nil {
-		return err
-	}
-	for _, id := range affected {
-		// The Broadcast's figures are read from its rows, so removing the recipients is all
-		// they need; one left with nothing pending settles.
-		if err := broadcasts.Finalize(ctx, s, id); err != nil {
-			return err
-		}
 	}
 	return nil
 }
