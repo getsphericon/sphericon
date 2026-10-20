@@ -150,6 +150,8 @@ func (w *RecheckTrackingDomainsWorker) Work(ctx context.Context, job *river.Job[
 // It answers a Join domain's proof record the same way: the name
 // _sphericon-join.<domain> resolves to the tokens every Workspace's claim of the domain
 // stores, so a domain an Owner adds in the members settings verifies without DNS.
+// Because it answers every Workspace's token, two Workspaces claiming one domain both verify, so
+// a hand-over (the loser of a take-over) can never fire in dev or e2e.
 // Production uses net.DefaultResolver.LookupTXT — this trust must never be wired
 // outside a dev env.
 func DevTXTLookup(client *ent.Client) sending.TXTLookup {
