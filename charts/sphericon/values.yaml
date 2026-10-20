@@ -13,7 +13,7 @@ replicaCount: 2
 # resources, so the Secret must already exist.
 existingSecret: ''
 
-# Alternative to existingSecret for Docker/Kubernetes-style secret files (docs/self-hosting.md,
+# Alternative to existingSecret for Docker/Kubernetes-style secret files (https://getsphericon.com/docs/self-hosting,
 # "Secrets from files"). secretName is an existing Secret mounted at /run/secrets/sphericon; keys lists
 # the variables it holds (DATABASE_URL, SPHERICON_JWT_SECRET, SPHERICON_ENCRYPTION_KEY,
 # SPHERICON_SMTP_PASS, SPHERICON_LICENSE_KEY), each exported as <KEY>_FILE. Set existingSecret too for
@@ -46,7 +46,7 @@ metrics:
     enabled: false
     interval: 30s
     labels: {}
-  # Example alerting rules (docs/operations/monitoring.md). Requires the Prometheus Operator
+  # Example alerting rules (https://getsphericon.com/docs/operations/monitoring). Requires the Prometheus Operator
   # CRDs and metrics.enabled. Off by default.
   prometheusRule:
     enabled: false

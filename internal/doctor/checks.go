@@ -22,7 +22,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/sending"
 )
 
-const upgradeGuide = "docs/operations/upgrading.md"
+const upgradeGuide = "https://getsphericon.com/docs/operations/upgrading"
 
 // checkDatabase covers the connection, the schema Major (what `migrate --status` reads) and
 // the Postgres major.

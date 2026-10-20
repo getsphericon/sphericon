@@ -1,7 +1,7 @@
 # Example Prometheus alerting rules for sphericon. This file is the single source: the Helm chart
-# renders it into a PrometheusRule, and docs/operations/monitoring.md includes it verbatim.
-# Every alert has a section with the same name in docs/operations/runbook.md (mise run
-# check:helm enforces it). Thresholds are starting points; tune them to your traffic.
+# renders it into a PrometheusRule, and the monitoring page of the documentation site shows it.
+# Every alert's runbook_url points at the section of the runbook page with the same name.
+# Thresholds are starting points; tune them to your traffic.
 #
 # The three API surfaces share one set of HTTP metrics and are told apart by operation_id:
 # Collect* is /collect, Site* is /site, everything else is the external /api.

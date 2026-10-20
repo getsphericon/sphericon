@@ -12,7 +12,7 @@ import (
 )
 
 // UpgradeGuideURL is where every refusal sends the reader.
-const UpgradeGuideURL = "https://github.com/getsphericon/sphericon/blob/main/docs/operations/upgrading.md"
+const UpgradeGuideURL = "https://getsphericon.com/docs/operations/upgrading"
 
 // Major is one Major of the schema (ADR 0033): its number, a counter that starts at 1 and grows
 // by one with each destructive migration, and its Floor, the last release of the previous

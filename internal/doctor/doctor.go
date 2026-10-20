@@ -26,7 +26,7 @@ import (
 )
 
 // Postgres majors the Instance supports: the oldest we document, and the newest the test
-// suite runs against. docs/self-hosting.md cites the same range.
+// suite runs against. the self-hosting guide on the documentation site cites the same range.
 const (
 	MinPostgresMajor       = 14
 	MaxTestedPostgresMajor = 18
@@ -107,7 +107,7 @@ func Run(ctx context.Context, in Input) Report {
 	var r Report
 	if in.ConfigErr != nil || in.Config == nil {
 		r.add("configuration", Fail, fmt.Sprintf("the configuration did not load: %v", in.ConfigErr),
-			"Set the variable named in the message (see the table in docs/configuration.md), then run `sphericon doctor` again.")
+			"Set the variable named in the message (see https://getsphericon.com/docs/configuration), then run `sphericon doctor` again.")
 		return r
 	}
 	r.add("configuration", Pass, "the configuration loads", "")
