@@ -299,19 +299,33 @@ func TestSwitchingDomainJoinIsAuditedAsAWorkspaceUpdate(t *testing.T) {
 	assert.JSONEq(t, `{"domain_join_enabled": {"from": false, "to": true}}`, string(diff))
 }
 
-func TestOnlyAnOwnerReadsOrSwitchesDomainJoin(t *testing.T) {
+// requireDomainJoinForbidden asserts that the user may neither read nor switch domain join.
+func requireDomainJoinForbidden(t *testing.T, env *testhelper.TestEnv, email string) {
+	t.Helper()
+	c := env.SiteActor(t, email)
+	read, err := c.SiteDomainJoinGet(context.Background(), siteapi.SiteDomainJoinGetParams{WorkspaceId: fixtures.AcmePublicID})
+	require.NoError(t, err)
+	assert.IsType(t, &siteapi.SiteDomainJoinGetForbidden{}, read)
+	assert.IsType(t, &siteapi.SiteDomainJoinSetForbidden{}, setDomainJoin(t, c, true))
+}
+
+func TestAnAdminCannotReadOrSwitchDomainJoin(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
 
-	for _, email := range []string{fixtures.AdminAliceEmail, fixtures.MemberMaryEmail} {
-		c := env.SiteActor(t, email)
-		read, err := c.SiteDomainJoinGet(ctx, siteapi.SiteDomainJoinGetParams{WorkspaceId: fixtures.AcmePublicID})
-		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteDomainJoinGetForbidden{}, read, email)
-		assert.IsType(t, &siteapi.SiteDomainJoinSetForbidden{}, setDomainJoin(t, c, true), email)
-	}
+	requireDomainJoinForbidden(t, env, fixtures.AdminAliceEmail)
+}
 
-	read, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteDomainJoinGet(ctx, siteapi.SiteDomainJoinGetParams{WorkspaceId: fixtures.AcmePublicID})
+func TestAMemberCannotReadOrSwitchDomainJoin(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	requireDomainJoinForbidden(t, env, fixtures.MemberMaryEmail)
+}
+
+func TestAnOwnerReadsDomainJoin(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	read, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteDomainJoinGet(context.Background(), siteapi.SiteDomainJoinGetParams{WorkspaceId: fixtures.AcmePublicID})
+
 	require.NoError(t, err)
 	assert.Equal(t, &siteapi.SiteDomainJoinResource{Enabled: false}, read)
 }
