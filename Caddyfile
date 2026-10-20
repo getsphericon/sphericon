@@ -16,8 +16,19 @@
 	}
 }
 
+# A backend that is down or refused to start (pending migrations, a bad config) leaves Caddy with
+# nothing to proxy to: instead of an empty 502, answer with a problem the SPA shows as it is.
+(backend_down) {
+	handle_errors {
+		@backendDown expression {err.status_code} in [502, 503, 504]
+		header @backendDown Content-Type application/problem+json
+		respond @backendDown `\{"status":502,"title":"Bad Gateway","detail":"The backend is not answering on port {$BACKEND_PORT}. It may have refused to start (pending migrations, a bad config): run: mise daemons logs backend"\}` 502
+	}
+}
+
 {$APP_HOST}:{$CADDY_PORT} {
 	tls internal
+	import backend_down
 
 	# API → Go backend
 	@api path /site* /staff* /collect* /auth* /avatar* /api* /mcp* /.well-known/* /oauth/authorize /oauth/token /oauth/register
@@ -29,6 +40,7 @@
 
 {$API_HOST}:{$CADDY_PORT} {
 	tls internal
+	import backend_down
 
 	# Subdomain root maps to the binary's /api path prefix (RudderStack-style edge).
 	# The Go binary stays path-based (/api); the public subdomain lives only here.
