@@ -20,6 +20,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/authattempt"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/brandkit"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
@@ -77,6 +78,8 @@ type Client struct {
 	Automation *AutomationClient
 	// AutomationRun is the client for interacting with the AutomationRun builders.
 	AutomationRun *AutomationRunClient
+	// AutomationVersion is the client for interacting with the AutomationVersion builders.
+	AutomationVersion *AutomationVersionClient
 	// BrandKit is the client for interacting with the BrandKit builders.
 	BrandKit *BrandKitClient
 	// Broadcast is the client for interacting with the Broadcast builders.
@@ -169,6 +172,7 @@ func (c *Client) init() {
 	c.AuthAttempt = NewAuthAttemptClient(c.config)
 	c.Automation = NewAutomationClient(c.config)
 	c.AutomationRun = NewAutomationRunClient(c.config)
+	c.AutomationVersion = NewAutomationVersionClient(c.config)
 	c.BrandKit = NewBrandKitClient(c.config)
 	c.Broadcast = NewBroadcastClient(c.config)
 	c.BroadcastRecipient = NewBroadcastRecipientClient(c.config)
@@ -304,6 +308,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		AuthAttempt:        NewAuthAttemptClient(cfg),
 		Automation:         NewAutomationClient(cfg),
 		AutomationRun:      NewAutomationRunClient(cfg),
+		AutomationVersion:  NewAutomationVersionClient(cfg),
 		BrandKit:           NewBrandKitClient(cfg),
 		Broadcast:          NewBroadcastClient(cfg),
 		BroadcastRecipient: NewBroadcastRecipientClient(cfg),
@@ -366,6 +371,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		AuthAttempt:        NewAuthAttemptClient(cfg),
 		Automation:         NewAutomationClient(cfg),
 		AutomationRun:      NewAutomationRunClient(cfg),
+		AutomationVersion:  NewAutomationVersionClient(cfg),
 		BrandKit:           NewBrandKitClient(cfg),
 		Broadcast:          NewBroadcastClient(cfg),
 		BroadcastRecipient: NewBroadcastRecipientClient(cfg),
@@ -434,14 +440,14 @@ func (c *Client) Close() error {
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.ApiToken, c.AuditEntry, c.AuthAttempt, c.Automation, c.AutomationRun,
-		c.BrandKit, c.Broadcast, c.BroadcastRecipient, c.Confirmation, c.Contact,
-		c.ContactTag, c.CustomField, c.EmailTemplate, c.Erasure, c.Event, c.Hold,
-		c.InstanceState, c.Integration, c.Invitation, c.Membership, c.OAuthClient,
-		c.OAuthCode, c.OAuthRefreshToken, c.OutboundMessage, c.OutboxMessage,
-		c.OutboxOffset, c.RecoveryCode, c.SchemaState, c.Segment, c.SendLimiter,
-		c.SendingDomain, c.ServiceCredential, c.StaffMember, c.Suppression, c.Tag,
-		c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User, c.UserIdentity,
-		c.Visitor, c.WebhookEndpoint, c.Workspace,
+		c.AutomationVersion, c.BrandKit, c.Broadcast, c.BroadcastRecipient,
+		c.Confirmation, c.Contact, c.ContactTag, c.CustomField, c.EmailTemplate,
+		c.Erasure, c.Event, c.Hold, c.InstanceState, c.Integration, c.Invitation,
+		c.Membership, c.OAuthClient, c.OAuthCode, c.OAuthRefreshToken,
+		c.OutboundMessage, c.OutboxMessage, c.OutboxOffset, c.RecoveryCode,
+		c.SchemaState, c.Segment, c.SendLimiter, c.SendingDomain, c.ServiceCredential,
+		c.StaffMember, c.Suppression, c.Tag, c.TrackingHostChange, c.Unsubscribe,
+		c.Usage, c.User, c.UserIdentity, c.Visitor, c.WebhookEndpoint, c.Workspace,
 	} {
 		n.Use(hooks...)
 	}
@@ -452,14 +458,14 @@ func (c *Client) Use(hooks ...Hook) {
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.ApiToken, c.AuditEntry, c.AuthAttempt, c.Automation, c.AutomationRun,
-		c.BrandKit, c.Broadcast, c.BroadcastRecipient, c.Confirmation, c.Contact,
-		c.ContactTag, c.CustomField, c.EmailTemplate, c.Erasure, c.Event, c.Hold,
-		c.InstanceState, c.Integration, c.Invitation, c.Membership, c.OAuthClient,
-		c.OAuthCode, c.OAuthRefreshToken, c.OutboundMessage, c.OutboxMessage,
-		c.OutboxOffset, c.RecoveryCode, c.SchemaState, c.Segment, c.SendLimiter,
-		c.SendingDomain, c.ServiceCredential, c.StaffMember, c.Suppression, c.Tag,
-		c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User, c.UserIdentity,
-		c.Visitor, c.WebhookEndpoint, c.Workspace,
+		c.AutomationVersion, c.BrandKit, c.Broadcast, c.BroadcastRecipient,
+		c.Confirmation, c.Contact, c.ContactTag, c.CustomField, c.EmailTemplate,
+		c.Erasure, c.Event, c.Hold, c.InstanceState, c.Integration, c.Invitation,
+		c.Membership, c.OAuthClient, c.OAuthCode, c.OAuthRefreshToken,
+		c.OutboundMessage, c.OutboxMessage, c.OutboxOffset, c.RecoveryCode,
+		c.SchemaState, c.Segment, c.SendLimiter, c.SendingDomain, c.ServiceCredential,
+		c.StaffMember, c.Suppression, c.Tag, c.TrackingHostChange, c.Unsubscribe,
+		c.Usage, c.User, c.UserIdentity, c.Visitor, c.WebhookEndpoint, c.Workspace,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -478,6 +484,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Automation.mutate(ctx, m)
 	case *AutomationRunMutation:
 		return c.AutomationRun.mutate(ctx, m)
+	case *AutomationVersionMutation:
+		return c.AutomationVersion.mutate(ctx, m)
 	case *BrandKitMutation:
 		return c.BrandKit.mutate(ctx, m)
 	case *BroadcastMutation:
@@ -1130,6 +1138,22 @@ func (c *AutomationClient) QueryRuns(_m *Automation) *AutomationRunQuery {
 	return query
 }
 
+// QueryVersions queries the versions edge of a Automation.
+func (c *AutomationClient) QueryVersions(_m *Automation) *AutomationVersionQuery {
+	query := (&AutomationVersionClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(automation.Table, automation.FieldID, id),
+			sqlgraph.To(automationversion.Table, automationversion.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, automation.VersionsTable, automation.VersionsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *AutomationClient) Hooks() []Hook {
 	return c.hooks.Automation
@@ -1295,6 +1319,22 @@ func (c *AutomationRunClient) QueryAutomation(_m *AutomationRun) *AutomationQuer
 	return query
 }
 
+// QueryVersion queries the version edge of a AutomationRun.
+func (c *AutomationRunClient) QueryVersion(_m *AutomationRun) *AutomationVersionQuery {
+	query := (&AutomationVersionClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(automationrun.Table, automationrun.FieldID, id),
+			sqlgraph.To(automationversion.Table, automationversion.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, automationrun.VersionTable, automationrun.VersionColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *AutomationRunClient) Hooks() []Hook {
 	return c.hooks.AutomationRun
@@ -1317,6 +1357,187 @@ func (c *AutomationRunClient) mutate(ctx context.Context, m *AutomationRunMutati
 		return (&AutomationRunDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown AutomationRun mutation op: %q", m.Op())
+	}
+}
+
+// AutomationVersionClient is a client for the AutomationVersion schema.
+type AutomationVersionClient struct {
+	config
+}
+
+// NewAutomationVersionClient returns a client for the AutomationVersion from the given config.
+func NewAutomationVersionClient(c config) *AutomationVersionClient {
+	return &AutomationVersionClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `automationversion.Hooks(f(g(h())))`.
+func (c *AutomationVersionClient) Use(hooks ...Hook) {
+	c.hooks.AutomationVersion = append(c.hooks.AutomationVersion, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `automationversion.Intercept(f(g(h())))`.
+func (c *AutomationVersionClient) Intercept(interceptors ...Interceptor) {
+	c.inters.AutomationVersion = append(c.inters.AutomationVersion, interceptors...)
+}
+
+// Create returns a builder for creating a AutomationVersion entity.
+func (c *AutomationVersionClient) Create() *AutomationVersionCreate {
+	mutation := newAutomationVersionMutation(c.config, OpCreate)
+	return &AutomationVersionCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of AutomationVersion entities.
+func (c *AutomationVersionClient) CreateBulk(builders ...*AutomationVersionCreate) *AutomationVersionCreateBulk {
+	return &AutomationVersionCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *AutomationVersionClient) MapCreateBulk(slice any, setFunc func(*AutomationVersionCreate, int)) *AutomationVersionCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &AutomationVersionCreateBulk{err: fmt.Errorf("calling to AutomationVersionClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*AutomationVersionCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &AutomationVersionCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for AutomationVersion.
+func (c *AutomationVersionClient) Update() *AutomationVersionUpdate {
+	mutation := newAutomationVersionMutation(c.config, OpUpdate)
+	return &AutomationVersionUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *AutomationVersionClient) UpdateOne(_m *AutomationVersion) *AutomationVersionUpdateOne {
+	mutation := newAutomationVersionMutation(c.config, OpUpdateOne, withAutomationVersion(_m))
+	return &AutomationVersionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *AutomationVersionClient) UpdateOneID(id int64) *AutomationVersionUpdateOne {
+	mutation := newAutomationVersionMutation(c.config, OpUpdateOne, withAutomationVersionID(id))
+	return &AutomationVersionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for AutomationVersion.
+func (c *AutomationVersionClient) Delete() *AutomationVersionDelete {
+	mutation := newAutomationVersionMutation(c.config, OpDelete)
+	return &AutomationVersionDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *AutomationVersionClient) DeleteOne(_m *AutomationVersion) *AutomationVersionDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *AutomationVersionClient) DeleteOneID(id int64) *AutomationVersionDeleteOne {
+	builder := c.Delete().Where(automationversion.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &AutomationVersionDeleteOne{builder}
+}
+
+// Query returns a query builder for AutomationVersion.
+func (c *AutomationVersionClient) Query() *AutomationVersionQuery {
+	return &AutomationVersionQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeAutomationVersion},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a AutomationVersion entity by its id.
+func (c *AutomationVersionClient) Get(ctx context.Context, id int64) (*AutomationVersion, error) {
+	return c.Query().Where(automationversion.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *AutomationVersionClient) GetX(ctx context.Context, id int64) *AutomationVersion {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryWorkspace queries the workspace edge of a AutomationVersion.
+func (c *AutomationVersionClient) QueryWorkspace(_m *AutomationVersion) *WorkspaceQuery {
+	query := (&WorkspaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(automationversion.Table, automationversion.FieldID, id),
+			sqlgraph.To(workspace.Table, workspace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, automationversion.WorkspaceTable, automationversion.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryAutomation queries the automation edge of a AutomationVersion.
+func (c *AutomationVersionClient) QueryAutomation(_m *AutomationVersion) *AutomationQuery {
+	query := (&AutomationClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(automationversion.Table, automationversion.FieldID, id),
+			sqlgraph.To(automation.Table, automation.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, automationversion.AutomationTable, automationversion.AutomationColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryRuns queries the runs edge of a AutomationVersion.
+func (c *AutomationVersionClient) QueryRuns(_m *AutomationVersion) *AutomationRunQuery {
+	query := (&AutomationRunClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(automationversion.Table, automationversion.FieldID, id),
+			sqlgraph.To(automationrun.Table, automationrun.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, automationversion.RunsTable, automationversion.RunsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *AutomationVersionClient) Hooks() []Hook {
+	return c.hooks.AutomationVersion
+}
+
+// Interceptors returns the client interceptors.
+func (c *AutomationVersionClient) Interceptors() []Interceptor {
+	return c.inters.AutomationVersion
+}
+
+func (c *AutomationVersionClient) mutate(ctx context.Context, m *AutomationVersionMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&AutomationVersionCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&AutomationVersionUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&AutomationVersionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&AutomationVersionDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown AutomationVersion mutation op: %q", m.Op())
 	}
 }
 
@@ -7356,6 +7577,22 @@ func (c *WorkspaceClient) QueryAutomations(_m *Workspace) *AutomationQuery {
 	return query
 }
 
+// QueryAutomationVersions queries the automation_versions edge of a Workspace.
+func (c *WorkspaceClient) QueryAutomationVersions(_m *Workspace) *AutomationVersionQuery {
+	query := (&AutomationVersionClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, id),
+			sqlgraph.To(automationversion.Table, automationversion.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.AutomationVersionsTable, workspace.AutomationVersionsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryAutomationRuns queries the automation_runs edge of a Workspace.
 func (c *WorkspaceClient) QueryAutomationRuns(_m *Workspace) *AutomationRunQuery {
 	query := (&AutomationRunClient{config: c.config}).Query()
@@ -7560,24 +7797,24 @@ func (c *WorkspaceClient) mutate(ctx context.Context, m *WorkspaceMutation) (Val
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, BrandKit,
-		Broadcast, BroadcastRecipient, Confirmation, Contact, ContactTag, CustomField,
-		EmailTemplate, Erasure, Event, Hold, InstanceState, Integration, Invitation,
-		Membership, OAuthClient, OAuthCode, OAuthRefreshToken, OutboundMessage,
-		OutboxMessage, OutboxOffset, RecoveryCode, SchemaState, Segment, SendLimiter,
-		SendingDomain, ServiceCredential, StaffMember, Suppression, Tag,
-		TrackingHostChange, Unsubscribe, Usage, User, UserIdentity, Visitor,
-		WebhookEndpoint, Workspace []ent.Hook
+		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, AutomationVersion,
+		BrandKit, Broadcast, BroadcastRecipient, Confirmation, Contact, ContactTag,
+		CustomField, EmailTemplate, Erasure, Event, Hold, InstanceState, Integration,
+		Invitation, Membership, OAuthClient, OAuthCode, OAuthRefreshToken,
+		OutboundMessage, OutboxMessage, OutboxOffset, RecoveryCode, SchemaState,
+		Segment, SendLimiter, SendingDomain, ServiceCredential, StaffMember,
+		Suppression, Tag, TrackingHostChange, Unsubscribe, Usage, User, UserIdentity,
+		Visitor, WebhookEndpoint, Workspace []ent.Hook
 	}
 	inters struct {
-		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, BrandKit,
-		Broadcast, BroadcastRecipient, Confirmation, Contact, ContactTag, CustomField,
-		EmailTemplate, Erasure, Event, Hold, InstanceState, Integration, Invitation,
-		Membership, OAuthClient, OAuthCode, OAuthRefreshToken, OutboundMessage,
-		OutboxMessage, OutboxOffset, RecoveryCode, SchemaState, Segment, SendLimiter,
-		SendingDomain, ServiceCredential, StaffMember, Suppression, Tag,
-		TrackingHostChange, Unsubscribe, Usage, User, UserIdentity, Visitor,
-		WebhookEndpoint, Workspace []ent.Interceptor
+		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, AutomationVersion,
+		BrandKit, Broadcast, BroadcastRecipient, Confirmation, Contact, ContactTag,
+		CustomField, EmailTemplate, Erasure, Event, Hold, InstanceState, Integration,
+		Invitation, Membership, OAuthClient, OAuthCode, OAuthRefreshToken,
+		OutboundMessage, OutboxMessage, OutboxOffset, RecoveryCode, SchemaState,
+		Segment, SendLimiter, SendingDomain, ServiceCredential, StaffMember,
+		Suppression, Tag, TrackingHostChange, Unsubscribe, Usage, User, UserIdentity,
+		Visitor, WebhookEndpoint, Workspace []ent.Interceptor
 	}
 )
 

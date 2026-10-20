@@ -60,8 +60,9 @@ func (AutomationVersion) Edges() []ent.Edge {
 
 func (AutomationVersion) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("automation_id", "version").
+		index.Fields("workspace_id", "automation_id", "version").
 			Unique().
-			StorageKey("automation_versions_automation_id_version"),
+			StorageKey("automation_versions_workspace_id_automation_id_version"),
+		index.Fields("automation_id"),
 	}
 }

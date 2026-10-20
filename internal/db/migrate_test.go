@@ -178,12 +178,12 @@ func TestMigrateRefusesToDropARecipientOutcomeThatHasNoOutboundMessage(t *testin
 // version yet (the river job backfill_automation_versions): the steps would be lost (ADR 0049).
 func TestMigrateRefusesToDropTheDefinitionBeforeTheBackfill(t *testing.T) {
 	sqlDB := openEmpty(t)
-	legacy := migrationsWhere(t, func(name string) bool { return name < "20261020191942" })
+	legacy := migrationsWhere(t, func(name string) bool { return name < "20261020210001" })
 	_, err := db.MigrateFS(t.Context(), sqlDB, legacy)
 	require.NoError(t, err)
 	testhelper.InsertLegacyAutomations(t, sqlDB)
 	all := migrationsWhere(t, func(string) bool { return true })
-	beforeDrop := migrationsWhere(t, func(name string) bool { return name < "20261020191944" })
+	beforeDrop := migrationsWhere(t, func(name string) bool { return name < "20261020210003" })
 	_, err = db.MigrateFS(t.Context(), sqlDB, beforeDrop)
 	require.NoError(t, err)
 
@@ -196,12 +196,12 @@ func TestMigrateRefusesToDropTheDefinitionBeforeTheBackfill(t *testing.T) {
 // had, and points its Enrollments at it; only then does the migration drop the column.
 func TestBackfillGivesEveryAutomationVersionOneAndMovesItsEnrollments(t *testing.T) {
 	sqlDB := openEmpty(t)
-	legacy := migrationsWhere(t, func(name string) bool { return name < "20261020191942" })
+	legacy := migrationsWhere(t, func(name string) bool { return name < "20261020210001" })
 	_, err := db.MigrateFS(t.Context(), sqlDB, legacy)
 	require.NoError(t, err)
 	testhelper.InsertLegacyAutomations(t, sqlDB)
 	all := migrationsWhere(t, func(string) bool { return true })
-	beforeDrop := migrationsWhere(t, func(name string) bool { return name < "20261020191944" })
+	beforeDrop := migrationsWhere(t, func(name string) bool { return name < "20261020210003" })
 	_, err = db.MigrateFS(t.Context(), sqlDB, beforeDrop)
 	require.NoError(t, err)
 	client := db.NewEntClient(sqlDB)
