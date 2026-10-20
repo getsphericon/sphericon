@@ -30,7 +30,7 @@ session cannot enroll a factor of its own and sign the real User out elsewhere).
 - **Hard lock until an admin unlocks (Cal.com, Mailchimp's 24h lock)**: rejected, it lets an
   attacker lock a victim out by failing on purpose.
 - **A server-side session table**: rejected, it adds a store lookup and cleanup for a need the
-  epoch covers; the User row is already read on every `/w/{slug}` request.
+  epoch covers; the User row is already read on every `/w/{id}` request.
 - **Redis or in-memory counters**: rejected, a second datastore for self-hosters, and in-memory
   state is lost across restarts and instances.
 

@@ -11,7 +11,7 @@ import spec from '../../openapi/telemetry.openapi.json'
 # Telemetry report schema
 
 The exact body of the anonymous Telemetry report an Instance sends once a day. It carries no
-name, slug, domain, address, host, error text, licence key or exact number. Counts are orders of
+name, domain, address, host, error text, licence key or exact number. Counts are orders of
 magnitude, never exact figures. The schema below is the contract: every report an Instance builds
 is checked against it.
 

@@ -21,8 +21,6 @@ const (
 	AcmeOwnerMembershipID = 1
 	// AcmePublicID is from fixtures/workspaces.
 	AcmePublicID = "AcmeWs01"
-	// AcmeSlug is from fixtures/workspaces.
-	AcmeSlug = "acme"
 	// AcmeUsageSnapshotID is from fixtures/usages.
 	AcmeUsageSnapshotID = 1
 	// AnchorTokenID is from fixtures/api_tokens.
@@ -399,8 +397,6 @@ const (
 	GlobexPublicID = "GlobxWs2"
 	// GlobexSamMembershipID is from fixtures/memberships.
 	GlobexSamMembershipID = 9
-	// GlobexSlug is from fixtures/workspaces.
-	GlobexSlug = "globex"
 	// GlobexUsageSnapshotID is from fixtures/usages.
 	GlobexUsageSnapshotID = 2
 	// HoldAcmeLapsedID is from fixtures/holds.
@@ -421,8 +417,6 @@ const (
 	HooliPublicID = "HooliWs5"
 	// HooliSallyMembershipID is from fixtures/memberships.
 	HooliSallyMembershipID = 17
-	// HooliSlug is from fixtures/workspaces.
-	HooliSlug = "hooli"
 	// InitechAdminAdaEmail is from fixtures/users.
 	InitechAdminAdaEmail = "ada@initech.test"
 	// InitechAdminAdaID is from fixtures/users.
@@ -481,8 +475,6 @@ const (
 	InitechPublicID = "InitcWs3"
 	// InitechRitaMembershipID is from fixtures/memberships.
 	InitechRitaMembershipID = 13
-	// InitechSlug is from fixtures/workspaces.
-	InitechSlug = "initech"
 	// IntegrationAcmeDefaultID is from fixtures/integrations.
 	IntegrationAcmeDefaultID = 1
 	// IntegrationAcmeDefaultIngestKey is from fixtures/integrations.
@@ -563,8 +555,6 @@ const (
 	KramericaOwnerNewmanPassword = "newman-test-password"
 	// KramericaPublicID is from fixtures/workspaces.
 	KramericaPublicID = "KramrWs8"
-	// KramericaSlug is from fixtures/workspaces.
-	KramericaSlug = "kramerica"
 	// MemberMaryEmail is from fixtures/users.
 	MemberMaryEmail = "mary@acme.test"
 	// MemberMaryID is from fixtures/users.
@@ -767,8 +757,6 @@ const (
 	SoylentName = "Soylent"
 	// SoylentPublicID is from fixtures/workspaces.
 	SoylentPublicID = "SoylnWs6"
-	// SoylentSlug is from fixtures/workspaces.
-	SoylentSlug = "soylent"
 	// StaffAlsoCustomerEmail is from fixtures/staff_members.
 	StaffAlsoCustomerEmail = "info@getsphericon.com"
 	// StaffAlsoCustomerID is from fixtures/staff_members.
@@ -879,8 +867,6 @@ const (
 	UmbrellaRitaMembershipID = 10
 	// UmbrellaSamMembershipID is from fixtures/memberships.
 	UmbrellaSamMembershipID = 12
-	// UmbrellaSlug is from fixtures/workspaces.
-	UmbrellaSlug = "umbrella"
 	// UnsubscribeErasableDestination is from fixtures/unsubscribes.
 	UnsubscribeErasableDestination = "erin@initech.test"
 	// UnsubscribeErasableID is from fixtures/unsubscribes.
@@ -917,8 +903,6 @@ const (
 	VandelayOwnerCosmoPassword = "cosmo-test-password"
 	// VandelayPublicID is from fixtures/workspaces.
 	VandelayPublicID = "VandlWs7"
-	// VandelaySlug is from fixtures/workspaces.
-	VandelaySlug = "vandelay"
 	// VisitorAnonymousID is from fixtures/visitors.
 	VisitorAnonymousID = 301
 	// VisitorErasableID is from fixtures/visitors.
@@ -933,8 +917,6 @@ const (
 	WayneName = "Wayne"
 	// WaynePublicID is from fixtures/workspaces.
 	WaynePublicID = "WayneWs9"
-	// WayneSlug is from fixtures/workspaces.
-	WayneSlug = "wayne"
 	// WebhookCodebasicsDisabledID is from fixtures/webhook_endpoints.
 	WebhookCodebasicsDisabledID = 101
 	// WebhookCodebasicsDisabledURL is from fixtures/webhook_endpoints.

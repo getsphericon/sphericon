@@ -124,6 +124,37 @@ func TestMigrateGivesExistingWorkspacesAnIdAndEndsRequired(t *testing.T) {
 	assert.Len(t, seen, 3, "every id is its own")
 
 	// The ids are unique now: a fourth Workspace cannot take one of them.
-	err = client.Workspace.Create().SetName("y").SetSlug("y").SetCollectKey("y").SetPublicID(workspaces[0].PublicID).Exec(t.Context())
+	err = client.Workspace.Create().SetName("y").SetCollectKey("y").SetPublicID(workspaces[0].PublicID).Exec(t.Context())
 	assert.True(t, db.IsUniqueViolation(err))
+}
+
+// Dropping the slug refuses an Instance whose Workspaces have not all got their id yet: it would
+// leave them with no address (ADR 0033 guard).
+func TestMigrateRefusesToDropTheSlugBeforeEveryWorkspaceHasAnId(t *testing.T) {
+	sqlDB := openEmpty(t)
+	all, err := fs.Sub(sphericon.MigrationsFS, "migrations")
+	require.NoError(t, err)
+	skipping := fstest.MapFS{}
+	entries, err := fs.ReadDir(all, ".")
+	require.NoError(t, err)
+	for _, e := range entries {
+		if e.Name() >= "20261020004439" && e.Name() < "20261020021648" {
+			continue // the id backfill and the migration that requires the id
+		}
+		data, err := fs.ReadFile(all, e.Name())
+		require.NoError(t, err)
+		skipping[e.Name()] = &fstest.MapFile{Data: data}
+	}
+	before := fstest.MapFS{}
+	for name, f := range skipping {
+		if name < "20261020021648" {
+			before[name] = f
+		}
+	}
+	_, err = db.MigrateFS(t.Context(), sqlDB, before)
+	require.NoError(t, err)
+	testhelper.InsertLegacyWorkspaces(t, sqlDB, "one")
+
+	_, err = db.MigrateFS(t.Context(), sqlDB, skipping)
+	require.ErrorContains(t, err, "workspaces.slug cannot be dropped")
 }

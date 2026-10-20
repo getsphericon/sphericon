@@ -13,7 +13,7 @@ import (
 
 func TestWriteGeneratesTheCatalogFile(t *testing.T) {
 	dir := writeFixtures(t, map[string]string{
-		"workspaces.yml": "- id: 1 # fixture: Acme\n  slug: acme\n",
+		"workspaces.yml": "- id: 1 # fixture: Acme\n  public_id: acme\n",
 	})
 	out := filepath.Join(t.TempDir(), "catalog_gen.go")
 
@@ -73,7 +73,7 @@ func TestGenerateIgnoresNonRowContent(t *testing.T) {
 		"empty.yml":      "",
 		"mapping.yml":    "key: value\n",
 		"scalars.yml":    "- just a scalar\n- {}\n",
-		"workspaces.yml": "- id: 1 # fixture: Acme\n  slug: acme\n",
+		"workspaces.yml": "- id: 1 # fixture: Acme\n  public_id: acme\n",
 	})
 	src, err := fixturegen.Generate(dir)
 	require.NoError(t, err)

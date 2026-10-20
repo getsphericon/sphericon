@@ -30,8 +30,8 @@ func signer(t *testing.T) *authtoken.Signer {
 }
 
 // Verifying an address creates a Workspace named "Personal" for each User: the name is not
-// unique, so the workspaceID it derives gets a numeric suffix on the second one.
-func TestSiteAuthVerifyNamesEveryFirstWorkspacePersonalWithAUniqueSlug(t *testing.T) {
+// unique, so two Users both get "Personal", each under an id of its own.
+func TestSiteAuthVerifyNamesEveryFirstWorkspacePersonal(t *testing.T) {
 	env := testhelper.Setup(t)
 
 	wsOf := func(email string) (*ent.Workspace, membership.Role) {
@@ -47,12 +47,11 @@ func TestSiteAuthVerifyNamesEveryFirstWorkspacePersonalWithAUniqueSlug(t *testin
 
 	first, role := wsOf("one@example.com")
 	assert.Equal(t, "Personal", first.Name)
-	assert.Equal(t, "personal", first.Slug)
 	assert.Equal(t, membership.RoleOwner, role)
 
 	second, _ := wsOf("two@example.com")
 	assert.Equal(t, "Personal", second.Name)
-	assert.Equal(t, "personal-2", second.Slug)
+	assert.NotEqual(t, first.PublicID, second.PublicID)
 }
 
 func TestSiteAuthRecoveryRejectsBadTokens(t *testing.T) {

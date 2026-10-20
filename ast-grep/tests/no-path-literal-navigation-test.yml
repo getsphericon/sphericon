@@ -1,7 +1,7 @@
 id: no-path-literal-navigation
 valid:
   - |-
-    navigate({ to: contactsRoute.to, params: { slug } })
+    navigate({ to: contactsRoute.to, params: { workspaceId } })
   - |-
     <Link to={contactsRoute.to}>x</Link>
   - |-
@@ -10,7 +10,7 @@ invalid:
   - |-
     navigate({ to: '/login' })
   - |-
-    redirect({ to: `/w/${slug}` })
+    redirect({ to: `/w/${workspaceId}` })
   - |-
     <Link to="/login">x</Link>
   - |-

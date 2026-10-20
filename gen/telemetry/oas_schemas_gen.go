@@ -266,7 +266,7 @@ func (s *TelemetryLocale) UnmarshalText(data []byte) error {
 	}
 }
 
-// What an Instance reports about itself. It carries no name, slug, domain, address, host, error text,
+// What an Instance reports about itself. It carries no name, domain, address, host, error text,
 // licence key or exact number, and nothing that identifies a Workspace or a person. A new field is a
 // change to this schema and to its documentation in the same commit.
 // Ref: #/components/schemas/TelemetryReport

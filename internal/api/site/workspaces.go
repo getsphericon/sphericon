@@ -153,7 +153,7 @@ func (h *Handlers) SiteWorkspacesSetSecondFactorRequirement(ctx context.Context,
 }
 
 // SiteWorkspacesUpdate renames a workspace owned by the authenticated user. The
-// slug is immutable, so only the display name changes.
+// id is immutable, so only the display name changes.
 func (h *Handlers) SiteWorkspacesUpdate(ctx context.Context, req *siteapi.SiteUpdateWorkspaceInput, params siteapi.SiteWorkspacesUpdateParams) (siteapi.SiteWorkspacesUpdateRes, error) {
 	s, m, err := h.membershipFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {

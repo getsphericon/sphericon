@@ -79,7 +79,7 @@ To send nothing at all, set `SPHERICON_TELEMETRY=false` and `SPHERICON_RELEASE_C
 
 ## What is never sent
 
-No name, slug, domain, email address, host name, error text,
+No name, domain, email address, host name, error text,
 licence key, Contact, message content or exact number. Nothing identifies a Workspace or a person.
 The Instance id is random and cannot be tied to you. A database cloned from another Instance (a
 staging copy) shares its id.

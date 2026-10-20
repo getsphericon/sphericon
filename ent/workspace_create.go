@@ -82,12 +82,6 @@ func (_c *WorkspaceCreate) SetName(v string) *WorkspaceCreate {
 	return _c
 }
 
-// SetSlug sets the "slug" field.
-func (_c *WorkspaceCreate) SetSlug(v string) *WorkspaceCreate {
-	_c.mutation.SetSlug(v)
-	return _c
-}
-
 // SetPublicID sets the "public_id" field.
 func (_c *WorkspaceCreate) SetPublicID(v string) *WorkspaceCreate {
 	_c.mutation.SetPublicID(v)
@@ -755,14 +749,6 @@ func (_c *WorkspaceCreate) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Workspace.name": %w`, err)}
 		}
 	}
-	if _, ok := _c.mutation.Slug(); !ok {
-		return &ValidationError{Name: "slug", err: errors.New(`ent: missing required field "Workspace.slug"`)}
-	}
-	if v, ok := _c.mutation.Slug(); ok {
-		if err := workspace.SlugValidator(v); err != nil {
-			return &ValidationError{Name: "slug", err: fmt.Errorf(`ent: validator failed for field "Workspace.slug": %w`, err)}
-		}
-	}
 	if _, ok := _c.mutation.PublicID(); !ok {
 		return &ValidationError{Name: "public_id", err: errors.New(`ent: missing required field "Workspace.public_id"`)}
 	}
@@ -842,10 +828,6 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Name(); ok {
 		_spec.SetField(workspace.FieldName, field.TypeString, value)
 		_node.Name = value
-	}
-	if value, ok := _c.mutation.Slug(); ok {
-		_spec.SetField(workspace.FieldSlug, field.TypeString, value)
-		_node.Slug = value
 	}
 	if value, ok := _c.mutation.PublicID(); ok {
 		_spec.SetField(workspace.FieldPublicID, field.TypeString, value)
@@ -1399,18 +1381,6 @@ func (u *WorkspaceUpsert) UpdateName() *WorkspaceUpsert {
 	return u
 }
 
-// SetSlug sets the "slug" field.
-func (u *WorkspaceUpsert) SetSlug(v string) *WorkspaceUpsert {
-	u.Set(workspace.FieldSlug, v)
-	return u
-}
-
-// UpdateSlug sets the "slug" field to the value that was provided on create.
-func (u *WorkspaceUpsert) UpdateSlug() *WorkspaceUpsert {
-	u.SetExcluded(workspace.FieldSlug)
-	return u
-}
-
 // SetCollectKey sets the "collect_key" field.
 func (u *WorkspaceUpsert) SetCollectKey(v string) *WorkspaceUpsert {
 	u.Set(workspace.FieldCollectKey, v)
@@ -1730,20 +1700,6 @@ func (u *WorkspaceUpsertOne) SetName(v string) *WorkspaceUpsertOne {
 func (u *WorkspaceUpsertOne) UpdateName() *WorkspaceUpsertOne {
 	return u.Update(func(s *WorkspaceUpsert) {
 		s.UpdateName()
-	})
-}
-
-// SetSlug sets the "slug" field.
-func (u *WorkspaceUpsertOne) SetSlug(v string) *WorkspaceUpsertOne {
-	return u.Update(func(s *WorkspaceUpsert) {
-		s.SetSlug(v)
-	})
-}
-
-// UpdateSlug sets the "slug" field to the value that was provided on create.
-func (u *WorkspaceUpsertOne) UpdateSlug() *WorkspaceUpsertOne {
-	return u.Update(func(s *WorkspaceUpsert) {
-		s.UpdateSlug()
 	})
 }
 
@@ -2272,20 +2228,6 @@ func (u *WorkspaceUpsertBulk) SetName(v string) *WorkspaceUpsertBulk {
 func (u *WorkspaceUpsertBulk) UpdateName() *WorkspaceUpsertBulk {
 	return u.Update(func(s *WorkspaceUpsert) {
 		s.UpdateName()
-	})
-}
-
-// SetSlug sets the "slug" field.
-func (u *WorkspaceUpsertBulk) SetSlug(v string) *WorkspaceUpsertBulk {
-	return u.Update(func(s *WorkspaceUpsert) {
-		s.SetSlug(v)
-	})
-}
-
-// UpdateSlug sets the "slug" field to the value that was provided on create.
-func (u *WorkspaceUpsertBulk) UpdateSlug() *WorkspaceUpsertBulk {
-	return u.Update(func(s *WorkspaceUpsert) {
-		s.UpdateSlug()
 	})
 }
 

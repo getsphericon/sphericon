@@ -75,7 +75,7 @@ password, no cookie, no TOTP, no console access.
 
 ### Console v1 shows metadata only
 
-Workspace list and search by slug, suspension state (actor, reason, time), Complaint and Bounce
+Workspace list and search by Workspace id, suspension state (actor, reason, time), Complaint and Bounce
 rates, send volume, the Audit log. Actions: suspend with a reason, unsuspend, set or clear the
 detector exemption. No Contacts, content or Events; impersonation stays deferred (ADR 0008).
 
