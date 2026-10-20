@@ -5496,6 +5496,60 @@ type EventsCreateUnprocessableEntity ProblemDetails
 
 func (*EventsCreateUnprocessableEntity) eventsCreateRes() {}
 
+type ExportContactsBadRequest ProblemDetails
+
+func (*ExportContactsBadRequest) exportContactsRes() {}
+
+type ExportContactsNotFound ProblemDetails
+
+func (*ExportContactsNotFound) exportContactsRes() {}
+
+type ExportContactsOK struct {
+	Data io.Reader
+}
+
+// Read reads data from the Data reader.
+//
+// Kept to satisfy the io.Reader interface.
+func (s ExportContactsOK) Read(p []byte) (n int, err error) {
+	if s.Data == nil {
+		return 0, io.EOF
+	}
+	return s.Data.Read(p)
+}
+
+// ExportContactsOKHeaders wraps ExportContactsOK with response headers.
+type ExportContactsOKHeaders struct {
+	XNextCursor string
+	Response    ExportContactsOK
+}
+
+// GetXNextCursor returns the value of XNextCursor.
+func (s *ExportContactsOKHeaders) GetXNextCursor() string {
+	return s.XNextCursor
+}
+
+// GetResponse returns the value of Response.
+func (s *ExportContactsOKHeaders) GetResponse() ExportContactsOK {
+	return s.Response
+}
+
+// SetXNextCursor sets the value of XNextCursor.
+func (s *ExportContactsOKHeaders) SetXNextCursor(val string) {
+	s.XNextCursor = val
+}
+
+// SetResponse sets the value of Response.
+func (s *ExportContactsOKHeaders) SetResponse(val ExportContactsOK) {
+	s.Response = val
+}
+
+func (*ExportContactsOKHeaders) exportContactsRes() {}
+
+type ExportContactsUnauthorized ProblemDetails
+
+func (*ExportContactsUnauthorized) exportContactsRes() {}
+
 type ExportEventsBadRequest ProblemDetails
 
 func (*ExportEventsBadRequest) exportEventsRes() {}

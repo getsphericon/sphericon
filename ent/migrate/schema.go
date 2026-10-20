@@ -406,6 +406,11 @@ var (
 				Columns: []*schema.Column{ContactsColumns[5], ContactsColumns[10]},
 			},
 			{
+				Name:    "contact_workspace_id_updated_at_id",
+				Unique:  false,
+				Columns: []*schema.Column{ContactsColumns[10], ContactsColumns[2], ContactsColumns[0]},
+			},
+			{
 				Name:    "contacts_workspace_id_identified",
 				Unique:  false,
 				Columns: []*schema.Column{ContactsColumns[10]},

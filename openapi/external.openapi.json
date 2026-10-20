@@ -4868,6 +4868,76 @@
         }
       }
     },
+    "/export/contacts": {
+      "get": {
+        "operationId": "Export_contacts",
+        "description": "Read the Workspace's Contacts, oldest change first (Enterprise; needs the `export:read`\nscope). Each line of the body is an `ExportContactRow`; every key is always present.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ExportPageQuery.cursor"
+          },
+          {
+            "$ref": "#/components/parameters/ExportPageQuery.limit"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One page of an Export stream (Enterprise, ADR 0045): newline-delimited JSON, one row\nper line with no envelope, so the body loads as ClickHouse `JSONEachRow`. The row\nschema is named by each operation. The next cursor is the `X-Next-Cursor` header;\npass it as `cursor` for the next page. The cursor is the position after the last row of\nthe page and the next page includes everything at or after it, so rows that share an\n`updated_at` across a page edge are not lost. A page with no rows returns the cursor it\nwas given. A row that changes is delivered again with a newer `updated_at`: keep the\nnewest version per `id`.",
+            "headers": {
+              "X-Next-Cursor": {
+                "required": true,
+                "description": "Opaque cursor for the next page",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/x-ndjson": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Export"],
+        "x-mcp": {
+          "hidden": true
+        }
+      }
+    },
     "/export/events": {
       "get": {
         "operationId": "Export_events",
@@ -11046,6 +11116,94 @@
           }
         },
         "description": "Event payload"
+      },
+      "ExportContactRow": {
+        "type": "object",
+        "required": [
+          "id",
+          "subject_id",
+          "email",
+          "phone",
+          "first_name",
+          "last_name",
+          "time_zone",
+          "custom_fields",
+          "tags",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Unique identifier"
+          },
+          "subject_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "The customer's own user id; absent when the Contact has none"
+          },
+          "email": {
+            "type": "string",
+            "nullable": true,
+            "description": "Email address; absent for an anonymous Contact"
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true,
+            "description": "Phone number; absent when the Contact has none"
+          },
+          "first_name": {
+            "type": "string",
+            "nullable": true,
+            "description": "First name"
+          },
+          "last_name": {
+            "type": "string",
+            "nullable": true,
+            "description": "Last name"
+          },
+          "time_zone": {
+            "type": "string",
+            "nullable": true,
+            "description": "IANA time zone identifier"
+          },
+          "custom_fields": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContactExportJson"
+              }
+            ],
+            "description": "Custom field values keyed by the field's machine key, as one JSON column"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Names of the Tags the Contact has, ordered by name"
+          },
+          "created_at": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "Creation timestamp"
+          },
+          "updated_at": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "Last change timestamp, a Tag change included: the cursor column and the version of the row"
+          }
+        },
+        "description": "One row of the Contacts stream. A row is delivered again whenever it changes: a column or Custom field edit, a Tag attached or detached, an Erasure's anonymization"
       },
       "ExportEventRow": {
         "type": "object",

@@ -404,6 +404,16 @@ func (UnimplementedHandler) EventsCreate(ctx context.Context, req *RecordEventsI
 	return r, ht.ErrNotImplemented
 }
 
+// ExportContacts implements Export_contacts operation.
+//
+// Read the Workspace's Contacts, oldest change first (Enterprise; needs the `export:read` scope). Each
+// line of the body is an `ExportContactRow`; every key is always present.
+//
+// GET /export/contacts
+func (UnimplementedHandler) ExportContacts(ctx context.Context, params ExportContactsParams) (r ExportContactsRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // ExportEvents implements Export_events operation.
 //
 // Read the Workspace's Events, oldest change first (Enterprise; needs the `export:read` scope). Each

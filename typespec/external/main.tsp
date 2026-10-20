@@ -28,6 +28,7 @@ import "./resources/webhooks.tsp";
 import "./resources/auth.tsp";
 import "./resources/audit.tsp";
 import "./resources/export.tsp";
+import "./resources/export-contacts.tsp";
 import "./mcp.tsp";
 
 using TypeSpec.Http;
