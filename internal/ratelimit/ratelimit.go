@@ -125,6 +125,7 @@ func (p *Policy) Blocked(w http.ResponseWriter, r *http.Request, key string) err
 	}
 	w.Header().Set("X-RateLimit-Limit", strconv.Itoa(p.limit))
 	w.Header().Set("X-RateLimit-Remaining", "0")
+	w.Header().Set("X-RateLimit-Reset", strconv.FormatInt(time.Now().Add(p.window).Unix(), 10))
 	w.Header().Set("Retry-After", strconv.Itoa(int(p.window.Seconds())))
 	Rejected(r.Context(), p.name)
 	return &LimitedError{Policy: p.name}
