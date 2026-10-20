@@ -21,6 +21,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
+	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/integration"
@@ -93,6 +94,15 @@ var erasureSteps = []erasureStep{
 		},
 		func(ctx context.Context, s *ent.Scoped, ids []int64) error {
 			_, err := s.AuditEntry().Delete().Where(auditentry.IDIn(ids...)).Exec(ctx)
+			return err
+		},
+	},
+	{
+		func(ctx context.Context, s *ent.Scoped, n int) ([]int64, error) {
+			return s.Erasure().Query().Limit(n).IDs(ctx)
+		},
+		func(ctx context.Context, s *ent.Scoped, ids []int64) error {
+			_, err := s.Erasure().Delete().Where(erasure.IDIn(ids...)).Exec(ctx)
 			return err
 		},
 	},
