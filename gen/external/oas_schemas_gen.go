@@ -5496,6 +5496,60 @@ type EventsCreateUnprocessableEntity ProblemDetails
 
 func (*EventsCreateUnprocessableEntity) eventsCreateRes() {}
 
+type ExportAuditBadRequest ProblemDetails
+
+func (*ExportAuditBadRequest) exportAuditRes() {}
+
+type ExportAuditNotFound ProblemDetails
+
+func (*ExportAuditNotFound) exportAuditRes() {}
+
+type ExportAuditOK struct {
+	Data io.Reader
+}
+
+// Read reads data from the Data reader.
+//
+// Kept to satisfy the io.Reader interface.
+func (s ExportAuditOK) Read(p []byte) (n int, err error) {
+	if s.Data == nil {
+		return 0, io.EOF
+	}
+	return s.Data.Read(p)
+}
+
+// ExportAuditOKHeaders wraps ExportAuditOK with response headers.
+type ExportAuditOKHeaders struct {
+	XNextCursor string
+	Response    ExportAuditOK
+}
+
+// GetXNextCursor returns the value of XNextCursor.
+func (s *ExportAuditOKHeaders) GetXNextCursor() string {
+	return s.XNextCursor
+}
+
+// GetResponse returns the value of Response.
+func (s *ExportAuditOKHeaders) GetResponse() ExportAuditOK {
+	return s.Response
+}
+
+// SetXNextCursor sets the value of XNextCursor.
+func (s *ExportAuditOKHeaders) SetXNextCursor(val string) {
+	s.XNextCursor = val
+}
+
+// SetResponse sets the value of Response.
+func (s *ExportAuditOKHeaders) SetResponse(val ExportAuditOK) {
+	s.Response = val
+}
+
+func (*ExportAuditOKHeaders) exportAuditRes() {}
+
+type ExportAuditUnauthorized ProblemDetails
+
+func (*ExportAuditUnauthorized) exportAuditRes() {}
+
 type ExportEventsBadRequest ProblemDetails
 
 func (*ExportEventsBadRequest) exportEventsRes() {}

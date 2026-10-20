@@ -4869,6 +4869,80 @@ func encodeEventsCreateResponse(response EventsCreateRes, w http.ResponseWriter,
 	}
 }
 
+func encodeExportAuditResponse(response ExportAuditRes, w http.ResponseWriter, span trace.Span) error {
+	switch response := response.(type) {
+	case *ExportAuditOKHeaders:
+		w.Header().Set("Content-Type", "application/x-ndjson")
+		w.Header().Set("Access-Control-Expose-Headers", "X-Next-Cursor")
+		// Encoding response headers.
+		{
+			h := uri.NewHeaderEncoder(w.Header())
+			// Encode "X-Next-Cursor" header.
+			{
+				cfg := uri.HeaderParameterEncodingConfig{
+					Name:    "X-Next-Cursor",
+					Explode: false,
+				}
+				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
+					return e.EncodeValue(conv.StringToString(response.XNextCursor))
+				}); err != nil {
+					return errors.Wrap(err, "encode X-Next-Cursor header")
+				}
+			}
+		}
+		w.WriteHeader(200)
+
+		writer := w
+		if closer, ok := response.Response.Data.(io.Closer); ok {
+			defer closer.Close()
+		}
+		if _, err := io.Copy(writer, response.Response); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *ExportAuditBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *ExportAuditUnauthorized:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(401)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *ExportAuditNotFound:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(404)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
+}
+
 func encodeExportEventsResponse(response ExportEventsRes, w http.ResponseWriter, span trace.Span) error {
 	switch response := response.(type) {
 	case *ExportEventsOKHeaders:

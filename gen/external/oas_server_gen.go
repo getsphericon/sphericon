@@ -273,6 +273,14 @@ type Handler interface {
 	//
 	// POST /events
 	EventsCreate(ctx context.Context, req *RecordEventsInput) (EventsCreateRes, error)
+	// ExportAudit implements Export_audit operation.
+	//
+	// Read the Workspace's Audit entries, oldest first (Enterprise; needs the `export:read` scope and the
+	// `audit` feature). Each line of the body is an `ExportAuditRow`; every key is always present. The
+	// Audit log list is the human read; this is the machine stream.
+	//
+	// GET /export/audit
+	ExportAudit(ctx context.Context, params ExportAuditParams) (ExportAuditRes, error)
 	// ExportEvents implements Export_events operation.
 	//
 	// Read the Workspace's Events, oldest change first (Enterprise; needs the `export:read` scope). Each
