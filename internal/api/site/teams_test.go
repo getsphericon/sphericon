@@ -153,6 +153,7 @@ func TestSiteMembershipsList(t *testing.T) {
 	}
 	assert.Equal(t, map[siteapi.EmailAddress]siteapi.SiteMembershipRole{
 		fixtures.OwnerJohnEmail:  siteapi.SiteMembershipRoleOwner,
+		fixtures.AdminAliceEmail: siteapi.SiteMembershipRoleAdmin,
 		fixtures.MemberMaryEmail: siteapi.SiteMembershipRoleMember,
 	}, roles)
 }
