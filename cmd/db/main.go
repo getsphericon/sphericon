@@ -139,7 +139,7 @@ func requireDiffDatabase(ctx context.Context, url string) error {
 // generateMigration writes the next Atlas migration from the ent schema. The community
 // Atlas binary cannot read ent:// itself, so ent's own versioned-migration engine
 // (the Atlas library) diffs the schema against migrations/ using the scratch
-// DIFF_DB_URL database and writes the SQL file plus atlas.sum.
+// DIFF_DB_URL database and writes the SQL file (no atlas.sum: see sumlessDir).
 func generateMigration(ctx context.Context, name string) error {
 	// Atlas opens the dev URL with the "postgres" driver name; pgx registers itself
 	// as "pgx", so alias it (guarded: registering twice panics).
@@ -158,7 +158,7 @@ func generateMigration(ctx context.Context, name string) error {
 		return fmt.Errorf("open migrations dir: %w", err)
 	}
 	if err := migrate.NamedDiff(ctx, devURL, name,
-		schema.WithDir(dir),
+		schema.WithDir(sumlessDir{dir}),
 		schema.WithMigrationMode(schema.ModeReplay),
 		// A removal is a destructive migration (ADR 0033): written here, guarded by hand.
 		schema.WithDropColumn(true),

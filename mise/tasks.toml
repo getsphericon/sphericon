@@ -101,7 +101,7 @@ run = 'go run ./cmd/db generate "${usage_name}"'
 
 ["db:river-migration"]
 description = "Write the migrations for river versions the migrations/ directory lacks (after a river upgrade); river's SQL comes from the go.mod version"
-run = ["go run ./cmd/db river-migration", "atlas migrate hash --env local"]
+run = "go run ./cmd/db river-migration"
 
 ["gen:encryption-key"]
 description = "Mint a fresh SPHERICON_ENCRYPTION_KEY (base64 Tink keyset) to paste into your .env"
