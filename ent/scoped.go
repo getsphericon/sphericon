@@ -16005,6 +16005,18 @@ func (x *MembershipScopedCreate) SetRole(v membership.Role) *MembershipScopedCre
 	return x
 }
 
+// SetSource sets the "source" field.
+func (x *MembershipScopedCreate) SetSource(v membership.Source) *MembershipScopedCreate {
+	x.b.SetSource(v)
+	return x
+}
+
+// SetNillableSource sets the "source" field if the given value is not nil.
+func (x *MembershipScopedCreate) SetNillableSource(v *membership.Source) *MembershipScopedCreate {
+	x.b.SetNillableSource(v)
+	return x
+}
+
 // SetSecondFactorRemindedAt sets the "second_factor_reminded_at" field.
 func (x *MembershipScopedCreate) SetSecondFactorRemindedAt(v time.Time) *MembershipScopedCreate {
 	x.b.SetSecondFactorRemindedAt(v)
@@ -16124,6 +16136,24 @@ func (u *MembershipScopedUpsert) SetRole(v membership.Role) *MembershipScopedUps
 // UpdateRole sets the "role" field to the value that was provided on create.
 func (u *MembershipScopedUpsert) UpdateRole() *MembershipScopedUpsert {
 	u.u.SetExcluded(membership.FieldRole)
+	return u
+}
+
+// SetSource sets the "source" field.
+func (u *MembershipScopedUpsert) SetSource(v membership.Source) *MembershipScopedUpsert {
+	u.u.Set(membership.FieldSource, v)
+	return u
+}
+
+// UpdateSource sets the "source" field to the value that was provided on create.
+func (u *MembershipScopedUpsert) UpdateSource() *MembershipScopedUpsert {
+	u.u.SetExcluded(membership.FieldSource)
+	return u
+}
+
+// ClearSource clears the value of the "source" field.
+func (u *MembershipScopedUpsert) ClearSource() *MembershipScopedUpsert {
+	u.u.SetNull(membership.FieldSource)
 	return u
 }
 
@@ -16310,6 +16340,24 @@ func (x *MembershipScopedUpdateOne) SetNillableRole(v *membership.Role) *Members
 	return x
 }
 
+// SetSource sets the "source" field.
+func (x *MembershipScopedUpdateOne) SetSource(v membership.Source) *MembershipScopedUpdateOne {
+	x.b.SetSource(v)
+	return x
+}
+
+// SetNillableSource sets the "source" field if the given value is not nil.
+func (x *MembershipScopedUpdateOne) SetNillableSource(v *membership.Source) *MembershipScopedUpdateOne {
+	x.b.SetNillableSource(v)
+	return x
+}
+
+// ClearSource clears the value of the "source" field.
+func (x *MembershipScopedUpdateOne) ClearSource() *MembershipScopedUpdateOne {
+	x.b.ClearSource()
+	return x
+}
+
 // SetSecondFactorRemindedAt sets the "second_factor_reminded_at" field.
 func (x *MembershipScopedUpdateOne) SetSecondFactorRemindedAt(v time.Time) *MembershipScopedUpdateOne {
 	x.b.SetSecondFactorRemindedAt(v)
@@ -16423,6 +16471,24 @@ func (x *MembershipScopedUpdate) SetRole(v membership.Role) *MembershipScopedUpd
 // SetNillableRole sets the "role" field if the given value is not nil.
 func (x *MembershipScopedUpdate) SetNillableRole(v *membership.Role) *MembershipScopedUpdate {
 	x.b.SetNillableRole(v)
+	return x
+}
+
+// SetSource sets the "source" field.
+func (x *MembershipScopedUpdate) SetSource(v membership.Source) *MembershipScopedUpdate {
+	x.b.SetSource(v)
+	return x
+}
+
+// SetNillableSource sets the "source" field if the given value is not nil.
+func (x *MembershipScopedUpdate) SetNillableSource(v *membership.Source) *MembershipScopedUpdate {
+	x.b.SetNillableSource(v)
+	return x
+}
+
+// ClearSource clears the value of the "source" field.
+func (x *MembershipScopedUpdate) ClearSource() *MembershipScopedUpdate {
+	x.b.ClearSource()
 	return x
 }
 

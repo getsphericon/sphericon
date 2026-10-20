@@ -12284,6 +12284,14 @@
             ],
             "description": "The member's role in this workspace"
           },
+          "source": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteMembershipSource"
+              }
+            ],
+            "description": "How the member got in; absent for a member from before it was recorded"
+          },
           "createdAt": {
             "allOf": [
               {
@@ -12299,6 +12307,11 @@
         "type": "string",
         "enum": ["owner", "admin", "member"],
         "description": "A User's permission level in a Workspace"
+      },
+      "SiteMembershipSource": {
+        "type": "string",
+        "enum": ["creator", "invitation", "domain"],
+        "description": "How a member got in"
       },
       "SiteOAuthAuthorizationRequest": {
         "type": "object",

@@ -583,6 +583,15 @@ export const zSiteMembershipRole = z.enum([
 ]);
 
 /**
+ * How a member got in
+ */
+export const zSiteMembershipSource = z.enum([
+  'creator',
+  'invitation',
+  'domain'
+]);
+
+/**
  * What an MCP client (dynamically registered) is asking permission for, as
  * validated by the authorization server. Rendered on the consent screen.
  */
@@ -1580,6 +1589,7 @@ export const zSiteMembershipResource = z.object({
   email: zEmailAddress,
   name: z.string(),
   role: zSiteMembershipRole,
+  source: z.exactOptional(zSiteMembershipSource),
   createdAt: zTimestamp
 });
 

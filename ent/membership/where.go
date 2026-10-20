@@ -220,6 +220,36 @@ func RoleNotIn(vs ...Role) predicate.Membership {
 	return predicate.Membership(sql.FieldNotIn(FieldRole, vs...))
 }
 
+// SourceEQ applies the EQ predicate on the "source" field.
+func SourceEQ(v Source) predicate.Membership {
+	return predicate.Membership(sql.FieldEQ(FieldSource, v))
+}
+
+// SourceNEQ applies the NEQ predicate on the "source" field.
+func SourceNEQ(v Source) predicate.Membership {
+	return predicate.Membership(sql.FieldNEQ(FieldSource, v))
+}
+
+// SourceIn applies the In predicate on the "source" field.
+func SourceIn(vs ...Source) predicate.Membership {
+	return predicate.Membership(sql.FieldIn(FieldSource, vs...))
+}
+
+// SourceNotIn applies the NotIn predicate on the "source" field.
+func SourceNotIn(vs ...Source) predicate.Membership {
+	return predicate.Membership(sql.FieldNotIn(FieldSource, vs...))
+}
+
+// SourceIsNil applies the IsNil predicate on the "source" field.
+func SourceIsNil() predicate.Membership {
+	return predicate.Membership(sql.FieldIsNull(FieldSource))
+}
+
+// SourceNotNil applies the NotNil predicate on the "source" field.
+func SourceNotNil() predicate.Membership {
+	return predicate.Membership(sql.FieldNotNull(FieldSource))
+}
+
 // SecondFactorRemindedAtEQ applies the EQ predicate on the "second_factor_reminded_at" field.
 func SecondFactorRemindedAtEQ(v time.Time) predicate.Membership {
 	return predicate.Membership(sql.FieldEQ(FieldSecondFactorRemindedAt, v))

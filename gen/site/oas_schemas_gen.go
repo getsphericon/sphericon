@@ -3751,6 +3751,52 @@ func (o OptSiteInstanceTelemetryLock) Or(d SiteInstanceTelemetryLock) SiteInstan
 	return d
 }
 
+// NewOptSiteMembershipSource returns new OptSiteMembershipSource with value set to v.
+func NewOptSiteMembershipSource(v SiteMembershipSource) OptSiteMembershipSource {
+	return OptSiteMembershipSource{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSiteMembershipSource is optional SiteMembershipSource.
+type OptSiteMembershipSource struct {
+	Value SiteMembershipSource
+	Set   bool
+}
+
+// IsSet returns true if OptSiteMembershipSource was set.
+func (o OptSiteMembershipSource) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSiteMembershipSource) Reset() {
+	var v SiteMembershipSource
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSiteMembershipSource) SetTo(v SiteMembershipSource) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSiteMembershipSource) Get() (v SiteMembershipSource, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSiteMembershipSource) Or(d SiteMembershipSource) SiteMembershipSource {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptSiteSegmentRuleGroup returns new OptSiteSegmentRuleGroup with value set to v.
 func NewOptSiteSegmentRuleGroup(v SiteSegmentRuleGroup) OptSiteSegmentRuleGroup {
 	return OptSiteSegmentRuleGroup{
@@ -11179,6 +11225,8 @@ type SiteMembershipResource struct {
 	Name string `json:"name"`
 	// The member's role in this workspace.
 	Role SiteMembershipRole `json:"role"`
+	// How the member got in; absent for a member from before it was recorded.
+	Source OptSiteMembershipSource `json:"source"`
 	// When the member joined.
 	CreatedAt Timestamp `json:"createdAt"`
 }
@@ -11206,6 +11254,11 @@ func (s *SiteMembershipResource) GetName() string {
 // GetRole returns the value of Role.
 func (s *SiteMembershipResource) GetRole() SiteMembershipRole {
 	return s.Role
+}
+
+// GetSource returns the value of Source.
+func (s *SiteMembershipResource) GetSource() OptSiteMembershipSource {
+	return s.Source
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -11236,6 +11289,11 @@ func (s *SiteMembershipResource) SetName(val string) {
 // SetRole sets the value of Role.
 func (s *SiteMembershipResource) SetRole(val SiteMembershipRole) {
 	s.Role = val
+}
+
+// SetSource sets the value of Source.
+func (s *SiteMembershipResource) SetSource(val OptSiteMembershipSource) {
+	s.Source = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.
@@ -11289,6 +11347,56 @@ func (s *SiteMembershipRole) UnmarshalText(data []byte) error {
 		return nil
 	case SiteMembershipRoleMember:
 		*s = SiteMembershipRoleMember
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// How a member got in.
+// Ref: #/components/schemas/SiteMembershipSource
+type SiteMembershipSource string
+
+const (
+	SiteMembershipSourceCreator    SiteMembershipSource = "creator"
+	SiteMembershipSourceInvitation SiteMembershipSource = "invitation"
+	SiteMembershipSourceDomain     SiteMembershipSource = "domain"
+)
+
+// AllValues returns all SiteMembershipSource values.
+func (SiteMembershipSource) AllValues() []SiteMembershipSource {
+	return []SiteMembershipSource{
+		SiteMembershipSourceCreator,
+		SiteMembershipSourceInvitation,
+		SiteMembershipSourceDomain,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteMembershipSource) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteMembershipSourceCreator:
+		return []byte(s), nil
+	case SiteMembershipSourceInvitation:
+		return []byte(s), nil
+	case SiteMembershipSourceDomain:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteMembershipSource) UnmarshalText(data []byte) error {
+	switch SiteMembershipSource(data) {
+	case SiteMembershipSourceCreator:
+		*s = SiteMembershipSourceCreator
+		return nil
+	case SiteMembershipSourceInvitation:
+		*s = SiteMembershipSourceInvitation
+		return nil
+	case SiteMembershipSourceDomain:
+		*s = SiteMembershipSourceDomain
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)

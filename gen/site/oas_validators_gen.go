@@ -3586,6 +3586,24 @@ func (s *SiteMembershipResource) Validate() error {
 			Error: err,
 		})
 	}
+	if err := func() error {
+		if value, ok := s.Source.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "source",
+			Error: err,
+		})
+	}
 	if len(failures) > 0 {
 		return &validate.Error{Fields: failures}
 	}
@@ -3599,6 +3617,19 @@ func (s SiteMembershipRole) Validate() error {
 	case "admin":
 		return nil
 	case "member":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s SiteMembershipSource) Validate() error {
+	switch s {
+	case "creator":
+		return nil
+	case "invitation":
+		return nil
+	case "domain":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)

@@ -11,6 +11,13 @@ enum SiteMembershipRole {
   member,
 }
 
+/** How a member got in */
+enum SiteMembershipSource {
+  creator,
+  invitation,
+  domain,
+}
+
 /** A Membership — the join granting a User access to the workspace with a Role */
 @resource("memberships")
 @segment("memberships")
@@ -31,6 +38,9 @@ model SiteMembershipResource {
 
   /** The member's role in this workspace */
   role: SiteMembershipRole;
+
+  /** How the member got in; absent for a member from before it was recorded */
+  source?: SiteMembershipSource;
 
   /** When the member joined */
   createdAt: Timestamp;

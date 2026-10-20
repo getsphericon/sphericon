@@ -4551,6 +4551,39 @@ func (s *OptSiteInstanceTelemetryLock) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes SiteMembershipSource as json.
+func (o OptSiteMembershipSource) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	e.Str(string(o.Value))
+}
+
+// Decode decodes SiteMembershipSource from json.
+func (o *OptSiteMembershipSource) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptSiteMembershipSource to nil")
+	}
+	o.Set = true
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptSiteMembershipSource) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptSiteMembershipSource) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes SiteSegmentRuleGroup as json.
 func (o OptSiteSegmentRuleGroup) Encode(e *jx.Encoder) {
 	if !o.Set {
@@ -24080,18 +24113,25 @@ func (s *SiteMembershipResource) encodeFields(e *jx.Encoder) {
 		s.Role.Encode(e)
 	}
 	{
+		if s.Source.Set {
+			e.FieldStart("source")
+			s.Source.Encode(e)
+		}
+	}
+	{
 		e.FieldStart("createdAt")
 		s.CreatedAt.Encode(e)
 	}
 }
 
-var jsonFieldsNameOfSiteMembershipResource = [6]string{
+var jsonFieldsNameOfSiteMembershipResource = [7]string{
 	0: "id",
 	1: "userId",
 	2: "email",
 	3: "name",
 	4: "role",
-	5: "createdAt",
+	5: "source",
+	6: "createdAt",
 }
 
 // Decode decodes SiteMembershipResource from json.
@@ -24155,8 +24195,18 @@ func (s *SiteMembershipResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"role\"")
 			}
+		case "source":
+			if err := func() error {
+				s.Source.Reset()
+				if err := s.Source.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"source\"")
+			}
 		case "createdAt":
-			requiredBitSet[0] |= 1 << 5
+			requiredBitSet[0] |= 1 << 6
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -24175,7 +24225,7 @@ func (s *SiteMembershipResource) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00111111,
+		0b01011111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -24259,6 +24309,48 @@ func (s SiteMembershipRole) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *SiteMembershipRole) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SiteMembershipSource as json.
+func (s SiteMembershipSource) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes SiteMembershipSource from json.
+func (s *SiteMembershipSource) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteMembershipSource to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch SiteMembershipSource(v) {
+	case SiteMembershipSourceCreator:
+		*s = SiteMembershipSourceCreator
+	case SiteMembershipSourceInvitation:
+		*s = SiteMembershipSourceInvitation
+	case SiteMembershipSourceDomain:
+		*s = SiteMembershipSourceDomain
+	default:
+		*s = SiteMembershipSource(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s SiteMembershipSource) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteMembershipSource) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

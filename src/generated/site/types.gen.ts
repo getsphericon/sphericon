@@ -2394,6 +2394,10 @@ export type SiteMembershipResource = {
    */
   role: SiteMembershipRole;
   /**
+   * How the member got in; absent for a member from before it was recorded
+   */
+  source?: SiteMembershipSource;
+  /**
    * When the member joined
    */
   createdAt: Timestamp;
@@ -2412,6 +2416,20 @@ export const SiteMembershipRole = {
  * A User's permission level in a Workspace
  */
 export type SiteMembershipRole = typeof SiteMembershipRole[keyof typeof SiteMembershipRole];
+
+/**
+ * How a member got in
+ */
+export const SiteMembershipSource = {
+  CREATOR: 'creator',
+  INVITATION: 'invitation',
+  DOMAIN: 'domain'
+} as const;
+
+/**
+ * How a member got in
+ */
+export type SiteMembershipSource = typeof SiteMembershipSource[keyof typeof SiteMembershipSource];
 
 /**
  * What an MCP client (dynamically registered) is asking permission for, as

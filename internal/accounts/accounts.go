@@ -280,6 +280,7 @@ func createWorkspaceIn(ctx context.Context, tx *ent.Client, userID int64, name, 
 		SetUserID(userID).
 		SetWorkspaceID(ws.ID).
 		SetRole(membership.RoleOwner).
+		SetSource(membership.SourceCreator).
 		Save(ctx); err != nil {
 		return nil, err
 	}
@@ -654,14 +655,37 @@ func (a *Accounts) AcceptInvitation(ctx context.Context, inv *ent.Invitation, na
 		}
 
 		ts := tx.Scoped(inv.WorkspaceID)
-		if _, merr := ts.Membership().Create().
-			SetUserID(u.ID).
-			SetRole(role).
-			Save(ctx); merr != nil && !db.IsUniqueViolation(merr) {
+		actor := events.Actor{Kind: events.ActorUser, ID: strconv.FormatInt(u.ID, 10), Name: u.Name}
+		existing, merr := ts.Membership().Query().Where(membership.UserID(u.ID)).Only(ctx)
+		if merr != nil && !ent.IsNotFound(merr) {
 			return merr
 		}
+		if ent.IsNotFound(merr) {
+			if _, cerr := ts.Membership().Create().
+				SetUserID(u.ID).
+				SetRole(role).
+				SetSource(membership.SourceInvitation).
+				Save(ctx); cerr != nil {
+				return cerr
+			}
+		} else if existing.Role == membership.RoleMember && role == membership.RoleAdmin {
+			// An explicit Invitation raises a member to admin; it never lowers a Role.
+			if err := ts.Membership().UpdateOneID(existing.ID).SetRole(membership.RoleAdmin).Exec(ctx); err != nil {
+				return err
+			}
+			if err := events.RecordAudit(ctx, pub, &events.AuditEntry{
+				WorkspaceID: inv.WorkspaceID,
+				Actor:       actor,
+				Action:      events.ActionMembershipUpdate,
+				TargetType:  membership.Label,
+				TargetID:    strconv.FormatInt(existing.ID, 10),
+				TargetName:  u.Email,
+				Diff:        map[string]any{"role": map[string]any{"from": string(existing.Role), "to": string(role)}},
+			}); err != nil {
+				return err
+			}
+		}
 
-		actor := events.Actor{Kind: events.ActorUser, ID: strconv.FormatInt(u.ID, 10), Name: u.Name}
 		if err := ts.Invitation().UpdateOneID(inv.ID).SetAcceptedAt(time.Now()).Exec(ctx); err != nil {
 			return err
 		}

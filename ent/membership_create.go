@@ -70,6 +70,20 @@ func (_c *MembershipCreate) SetRole(v membership.Role) *MembershipCreate {
 	return _c
 }
 
+// SetSource sets the "source" field.
+func (_c *MembershipCreate) SetSource(v membership.Source) *MembershipCreate {
+	_c.mutation.SetSource(v)
+	return _c
+}
+
+// SetNillableSource sets the "source" field if the given value is not nil.
+func (_c *MembershipCreate) SetNillableSource(v *membership.Source) *MembershipCreate {
+	if v != nil {
+		_c.SetSource(*v)
+	}
+	return _c
+}
+
 // SetSecondFactorRemindedAt sets the "second_factor_reminded_at" field.
 func (_c *MembershipCreate) SetSecondFactorRemindedAt(v time.Time) *MembershipCreate {
 	_c.mutation.SetSecondFactorRemindedAt(v)
@@ -167,6 +181,11 @@ func (_c *MembershipCreate) check() error {
 			return &ValidationError{Name: "role", err: fmt.Errorf(`ent: validator failed for field "Membership.role": %w`, err)}
 		}
 	}
+	if v, ok := _c.mutation.Source(); ok {
+		if err := membership.SourceValidator(v); err != nil {
+			return &ValidationError{Name: "source", err: fmt.Errorf(`ent: validator failed for field "Membership.source": %w`, err)}
+		}
+	}
 	if len(_c.mutation.WorkspaceIDs()) == 0 {
 		return &ValidationError{Name: "workspace", err: errors.New(`ent: missing required edge "Membership.workspace"`)}
 	}
@@ -217,6 +236,10 @@ func (_c *MembershipCreate) createSpec() (*Membership, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Role(); ok {
 		_spec.SetField(membership.FieldRole, field.TypeEnum, value)
 		_node.Role = value
+	}
+	if value, ok := _c.mutation.Source(); ok {
+		_spec.SetField(membership.FieldSource, field.TypeEnum, value)
+		_node.Source = &value
 	}
 	if value, ok := _c.mutation.SecondFactorRemindedAt(); ok {
 		_spec.SetField(membership.FieldSecondFactorRemindedAt, field.TypeTime, value)
@@ -356,6 +379,24 @@ func (u *MembershipUpsert) UpdateRole() *MembershipUpsert {
 	return u
 }
 
+// SetSource sets the "source" field.
+func (u *MembershipUpsert) SetSource(v membership.Source) *MembershipUpsert {
+	u.Set(membership.FieldSource, v)
+	return u
+}
+
+// UpdateSource sets the "source" field to the value that was provided on create.
+func (u *MembershipUpsert) UpdateSource() *MembershipUpsert {
+	u.SetExcluded(membership.FieldSource)
+	return u
+}
+
+// ClearSource clears the value of the "source" field.
+func (u *MembershipUpsert) ClearSource() *MembershipUpsert {
+	u.SetNull(membership.FieldSource)
+	return u
+}
+
 // SetSecondFactorRemindedAt sets the "second_factor_reminded_at" field.
 func (u *MembershipUpsert) SetSecondFactorRemindedAt(v time.Time) *MembershipUpsert {
 	u.Set(membership.FieldSecondFactorRemindedAt, v)
@@ -478,6 +519,27 @@ func (u *MembershipUpsertOne) SetRole(v membership.Role) *MembershipUpsertOne {
 func (u *MembershipUpsertOne) UpdateRole() *MembershipUpsertOne {
 	return u.Update(func(s *MembershipUpsert) {
 		s.UpdateRole()
+	})
+}
+
+// SetSource sets the "source" field.
+func (u *MembershipUpsertOne) SetSource(v membership.Source) *MembershipUpsertOne {
+	return u.Update(func(s *MembershipUpsert) {
+		s.SetSource(v)
+	})
+}
+
+// UpdateSource sets the "source" field to the value that was provided on create.
+func (u *MembershipUpsertOne) UpdateSource() *MembershipUpsertOne {
+	return u.Update(func(s *MembershipUpsert) {
+		s.UpdateSource()
+	})
+}
+
+// ClearSource clears the value of the "source" field.
+func (u *MembershipUpsertOne) ClearSource() *MembershipUpsertOne {
+	return u.Update(func(s *MembershipUpsert) {
+		s.ClearSource()
 	})
 }
 
@@ -772,6 +834,27 @@ func (u *MembershipUpsertBulk) SetRole(v membership.Role) *MembershipUpsertBulk 
 func (u *MembershipUpsertBulk) UpdateRole() *MembershipUpsertBulk {
 	return u.Update(func(s *MembershipUpsert) {
 		s.UpdateRole()
+	})
+}
+
+// SetSource sets the "source" field.
+func (u *MembershipUpsertBulk) SetSource(v membership.Source) *MembershipUpsertBulk {
+	return u.Update(func(s *MembershipUpsert) {
+		s.SetSource(v)
+	})
+}
+
+// UpdateSource sets the "source" field to the value that was provided on create.
+func (u *MembershipUpsertBulk) UpdateSource() *MembershipUpsertBulk {
+	return u.Update(func(s *MembershipUpsert) {
+		s.UpdateSource()
+	})
+}
+
+// ClearSource clears the value of the "source" field.
+func (u *MembershipUpsertBulk) ClearSource() *MembershipUpsertBulk {
+	return u.Update(func(s *MembershipUpsert) {
+		s.ClearSource()
 	})
 }
 

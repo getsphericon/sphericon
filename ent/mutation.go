@@ -20061,6 +20061,7 @@ type MembershipMutation struct {
 	created_at                *time.Time
 	updated_at                *time.Time
 	role                      *membership.Role
+	source                    *membership.Source
 	second_factor_reminded_at *time.Time
 	clearedFields             map[string]struct{}
 	workspace                 *int64
@@ -20356,6 +20357,55 @@ func (m *MembershipMutation) ResetRole() {
 	m.role = nil
 }
 
+// SetSource sets the "source" field.
+func (m *MembershipMutation) SetSource(value membership.Source) {
+	m.source = &value
+}
+
+// Source returns the value of the "source" field in the mutation.
+func (m *MembershipMutation) Source() (r membership.Source, exists bool) {
+	v := m.source
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSource returns the old "source" field's value of the Membership entity.
+// If the Membership object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *MembershipMutation) OldSource(ctx context.Context) (v *membership.Source, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSource is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSource requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSource: %w", err)
+	}
+	return oldValue.Source, nil
+}
+
+// ClearSource clears the value of the "source" field.
+func (m *MembershipMutation) ClearSource() {
+	m.source = nil
+	m.clearedFields[membership.FieldSource] = struct{}{}
+}
+
+// SourceCleared returns if the "source" field was cleared in this mutation.
+func (m *MembershipMutation) SourceCleared() bool {
+	_, ok := m.clearedFields[membership.FieldSource]
+	return ok
+}
+
+// ResetSource resets all changes to the "source" field.
+func (m *MembershipMutation) ResetSource() {
+	m.source = nil
+	delete(m.clearedFields, membership.FieldSource)
+}
+
 // SetSecondFactorRemindedAt sets the "second_factor_reminded_at" field.
 func (m *MembershipMutation) SetSecondFactorRemindedAt(t time.Time) {
 	m.second_factor_reminded_at = &t
@@ -20493,7 +20543,7 @@ func (m *MembershipMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *MembershipMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 7)
 	if m.created_at != nil {
 		fields = append(fields, membership.FieldCreatedAt)
 	}
@@ -20508,6 +20558,9 @@ func (m *MembershipMutation) Fields() []string {
 	}
 	if m.role != nil {
 		fields = append(fields, membership.FieldRole)
+	}
+	if m.source != nil {
+		fields = append(fields, membership.FieldSource)
 	}
 	if m.second_factor_reminded_at != nil {
 		fields = append(fields, membership.FieldSecondFactorRemindedAt)
@@ -20530,6 +20583,8 @@ func (m *MembershipMutation) Field(name string) (ent.Value, bool) {
 		return m.UserID()
 	case membership.FieldRole:
 		return m.Role()
+	case membership.FieldSource:
+		return m.Source()
 	case membership.FieldSecondFactorRemindedAt:
 		return m.SecondFactorRemindedAt()
 	}
@@ -20551,6 +20606,8 @@ func (m *MembershipMutation) OldField(ctx context.Context, name string) (ent.Val
 		return m.OldUserID(ctx)
 	case membership.FieldRole:
 		return m.OldRole(ctx)
+	case membership.FieldSource:
+		return m.OldSource(ctx)
 	case membership.FieldSecondFactorRemindedAt:
 		return m.OldSecondFactorRemindedAt(ctx)
 	}
@@ -20597,6 +20654,13 @@ func (m *MembershipMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetRole(v)
 		return nil
+	case membership.FieldSource:
+		v, ok := value.(membership.Source)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSource(v)
+		return nil
 	case membership.FieldSecondFactorRemindedAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -20637,6 +20701,9 @@ func (m *MembershipMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *MembershipMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(membership.FieldSource) {
+		fields = append(fields, membership.FieldSource)
+	}
 	if m.FieldCleared(membership.FieldSecondFactorRemindedAt) {
 		fields = append(fields, membership.FieldSecondFactorRemindedAt)
 	}
@@ -20654,6 +20721,9 @@ func (m *MembershipMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *MembershipMutation) ClearField(name string) error {
 	switch name {
+	case membership.FieldSource:
+		m.ClearSource()
+		return nil
 	case membership.FieldSecondFactorRemindedAt:
 		m.ClearSecondFactorRemindedAt()
 		return nil
@@ -20679,6 +20749,9 @@ func (m *MembershipMutation) ResetField(name string) error {
 		return nil
 	case membership.FieldRole:
 		m.ResetRole()
+		return nil
+	case membership.FieldSource:
+		m.ResetSource()
 		return nil
 	case membership.FieldSecondFactorRemindedAt:
 		m.ResetSecondFactorRemindedAt()

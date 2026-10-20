@@ -18,7 +18,7 @@ import (
 // site DTO — a join view of the member's identity and role.
 func membershipResource(m *ent.Membership) siteapi.SiteMembershipResource {
 	u := m.Edges.User
-	return siteapi.SiteMembershipResource{
+	res := siteapi.SiteMembershipResource{
 		ID:        siteapi.EntityId(m.ID),
 		UserId:    siteapi.EntityId(m.UserID),
 		Email:     siteapi.EmailAddress(u.Email),
@@ -26,6 +26,10 @@ func membershipResource(m *ent.Membership) siteapi.SiteMembershipResource {
 		Role:      siteapi.SiteMembershipRole(m.Role),
 		CreatedAt: siteapi.Timestamp(m.CreatedAt),
 	}
+	if m.Source != nil {
+		res.Source = siteapi.NewOptSiteMembershipSource(siteapi.SiteMembershipSource(*m.Source))
+	}
+	return res
 }
 
 // SiteMembershipsList returns the workspace's members. Any member may view them.

@@ -972,6 +972,12 @@ export default interface Resources {
         "revokeError": "Failed to revoke invitation",
         "roleLabel": "Role",
         "roleUpdateError": "Failed to update role",
+        "source": {
+          "creator": "Workspace creator",
+          "domain": "Joined by domain",
+          "invitation": "Invited"
+        },
+        "sourceLabel": "Joined",
         "title": "Members"
       },
       "nameLabel": "Workspace name",

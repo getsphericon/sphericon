@@ -209,6 +209,12 @@ export function MembersSection({ workspaceId }: { workspaceId: string }) {
                 ),
               },
               {
+                accessor: 'source',
+                title: t(($) => $.settings.members.sourceLabel),
+                render: ({ source }) =>
+                  source ? t(($) => $.settings.members.source[source]) : null,
+              },
+              {
                 accessor: 'actions',
                 title: '',
                 render: (record) => (

@@ -1102,6 +1102,9 @@ func ScopedEntities() []ScopedEntity {
 				b := s.Membership().Create()
 				b.SetUserID(src.UserID)
 				b.SetRole(src.Role)
+				if src.Source != nil {
+					b.SetSource(*src.Source)
+				}
 				if src.SecondFactorRemindedAt != nil {
 					b.SetSecondFactorRemindedAt(*src.SecondFactorRemindedAt)
 				}

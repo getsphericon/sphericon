@@ -681,6 +681,18 @@ const (
 	IntegrationGlobexSesNoTopicName = "Globex SES (stored without an SNS topic)"
 	// IntegrationGlobexSesNoTopicProvider is from fixtures/integrations.
 	IntegrationGlobexSesNoTopicProvider = "ses"
+	// InvitationAcmeAliceMemberEmail is from fixtures/invitations.
+	InvitationAcmeAliceMemberEmail = "alice@acme.test"
+	// InvitationAcmeAliceMemberID is from fixtures/invitations.
+	InvitationAcmeAliceMemberID = 903
+	// InvitationAcmeJohnAdminEmail is from fixtures/invitations.
+	InvitationAcmeJohnAdminEmail = "info@getsphericon.com"
+	// InvitationAcmeJohnAdminID is from fixtures/invitations.
+	InvitationAcmeJohnAdminID = 904
+	// InvitationAcmeMaryAdminEmail is from fixtures/invitations.
+	InvitationAcmeMaryAdminEmail = "mary@acme.test"
+	// InvitationAcmeMaryAdminID is from fixtures/invitations.
+	InvitationAcmeMaryAdminID = 902
 	// InvitationGlobexEmail is from fixtures/invitations.
 	InvitationGlobexEmail = "invited@globex.test"
 	// InvitationGlobexID is from fixtures/invitations.

@@ -25,6 +25,8 @@ const (
 	FieldUserID = "user_id"
 	// FieldRole holds the string denoting the role field in the database.
 	FieldRole = "role"
+	// FieldSource holds the string denoting the source field in the database.
+	FieldSource = "source"
 	// FieldSecondFactorRemindedAt holds the string denoting the second_factor_reminded_at field in the database.
 	FieldSecondFactorRemindedAt = "second_factor_reminded_at"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
@@ -57,6 +59,7 @@ var Columns = []string{
 	FieldWorkspaceID,
 	FieldUserID,
 	FieldRole,
+	FieldSource,
 	FieldSecondFactorRemindedAt,
 }
 
@@ -103,6 +106,30 @@ func RoleValidator(r Role) error {
 	}
 }
 
+// Source defines the type for the "source" enum field.
+type Source string
+
+// Source values.
+const (
+	SourceCreator    Source = "creator"
+	SourceInvitation Source = "invitation"
+	SourceDomain     Source = "domain"
+)
+
+func (s Source) String() string {
+	return string(s)
+}
+
+// SourceValidator is a validator for the "source" field enum values. It is called by the builders before save.
+func SourceValidator(s Source) error {
+	switch s {
+	case SourceCreator, SourceInvitation, SourceDomain:
+		return nil
+	default:
+		return fmt.Errorf("membership: invalid enum value for source field: %q", s)
+	}
+}
+
 // OrderOption defines the ordering options for the Membership queries.
 type OrderOption func(*sql.Selector)
 
@@ -134,6 +161,11 @@ func ByUserID(opts ...sql.OrderTermOption) OrderOption {
 // ByRole orders the results by the role field.
 func ByRole(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldRole, opts...).ToFunc()
+}
+
+// BySource orders the results by the source field.
+func BySource(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSource, opts...).ToFunc()
 }
 
 // BySecondFactorRemindedAt orders the results by the second_factor_reminded_at field.
