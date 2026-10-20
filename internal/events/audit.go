@@ -47,7 +47,12 @@ const (
 	ActionInvitationCreate = "invitation.create"
 	ActionInvitationAccept = "invitation.accept"
 	ActionInvitationRevoke = "invitation.revoke"
-	ActionUserLogin        = "user.login"
+	// A successful sign-in; its diff names the method: "password" or a Sign-in provider (ADR 0048).
+	ActionUserLogin = "user.login"
+	// A Sign-in provider account was linked to, or unlinked from, the User (ADR 0048); the
+	// diff names the provider and never the subject.
+	ActionUserIdentityLink   = "user.identity_link"
+	ActionUserIdentityUnlink = "user.identity_unlink"
 	// The User proved its email by the emailed link and set its password (ADR 0030).
 	ActionUserEmailVerify    = "user.email_verify"
 	ActionUserPasswordChange = "user.password_change"
@@ -80,6 +85,8 @@ var ExplicitAuditActions = []string{
 	ActionInvitationAccept,
 	ActionInvitationRevoke,
 	ActionUserLogin,
+	ActionUserIdentityLink,
+	ActionUserIdentityUnlink,
 	ActionUserEmailVerify,
 	ActionUserPasswordChange,
 	ActionUserSignOutEverywhere,

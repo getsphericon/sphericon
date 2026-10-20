@@ -1,0 +1,16 @@
+# Linked identities (ADR 0048): the Sign-in provider and the provider's subject of a User.
+# MemberMary signs in with Google as fixtures.MaryGoogleIdentitySubject, whatever address her
+# Google account carries now. SecondFactorSam has a Second factor, which a provider sign-in must
+# not get around.
+- id: 1 # fixture: MaryGoogleIdentity
+  user_id: 3
+  provider: google
+  subject: google-subject-of-mary
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 2 # fixture: SamGoogleIdentity
+  user_id: 9
+  provider: google
+  subject: google-subject-of-sam
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

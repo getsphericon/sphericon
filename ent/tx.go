@@ -90,6 +90,8 @@ type Tx struct {
 	Usage *UsageClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
+	// UserIdentity is the client for interacting with the UserIdentity builders.
+	UserIdentity *UserIdentityClient
 	// Visitor is the client for interacting with the Visitor builders.
 	Visitor *VisitorClient
 	// WebhookEndpoint is the client for interacting with the WebhookEndpoint builders.
@@ -265,6 +267,7 @@ func (tx *Tx) init() {
 	tx.Unsubscribe = NewUnsubscribeClient(tx.config)
 	tx.Usage = NewUsageClient(tx.config)
 	tx.User = NewUserClient(tx.config)
+	tx.UserIdentity = NewUserIdentityClient(tx.config)
 	tx.Visitor = NewVisitorClient(tx.config)
 	tx.WebhookEndpoint = NewWebhookEndpointClient(tx.config)
 	tx.Workspace = NewWorkspaceClient(tx.config)

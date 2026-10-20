@@ -722,6 +722,8 @@ export default interface Resources {
       "offDescription": "Protect your account with a code from an authenticator app in addition to your password.",
       "on": "On",
       "passwordLabel": "Current password",
+      "providerLoginHint": "This account has no password, so changing two-factor settings needs a fresh sign-in with your provider. Continue with one of them and you will come back here.",
+      "providerLoginTitle": "Sign in again with your provider",
       "qrAlt": "QR code for the authenticator app",
       "recoveryCodesHint": "Each code works once in place of a code from the app. Store them somewhere safe: they will not be shown again.",
       "recoveryCodesTitle": "Save your recovery codes",
@@ -1130,6 +1132,40 @@ export default interface Resources {
       },
       "title": "Set up Sphericon",
       "waitingForDns": "Waiting for DNS"
+    },
+    "signin": {
+      "continueWith": "Continue with {{provider}}",
+      "errorTitle": "Could not sign in with your account",
+      "errors": {
+        "denied": "You did not allow access, so you were not signed in. Try again, or use your email and password.",
+        "email_not_trusted": "This provider does not vouch for that email address. Create your account with your email address instead.",
+        "email_unverified": "The provider has not verified your email address. Verify it there, or create your account with your email address instead.",
+        "identity_in_use": "That account is already linked to another user, so it cannot be linked here.",
+        "invalid_state": "The sign-in could not be completed in this browser. Start again.",
+        "invitation_email_mismatch": "This invitation is for a different email address than the one this provider vouches for. Use the account with the invited address, or sign in another way.",
+        "invitation_invalid": "This invitation is no longer valid. Ask for a new one.",
+        "provider_error": "The provider could not complete the sign-in. Try again.",
+        "provider_unavailable": "That sign-in method is not available on this instance.",
+        "signup_closed": "Sign-up is closed on this instance. Ask an owner for an invitation."
+      },
+      "linked": {
+        "empty": "No provider is linked to your account yet.",
+        "errorTitle": "Could not link the account",
+        "link": "Link a {{provider}} account",
+        "title": "Sign-in providers",
+        "unlink": "Unlink",
+        "unlinkErrorTitle": "Could not unlink the provider",
+        "unlinked": "Provider unlinked"
+      },
+      "or": "or"
+    },
+    "signinNotMe": {
+      "errorBody": "This link is invalid, has expired or was already used.",
+      "errorTitle": "Link not accepted",
+      "goToLogin": "Go to sign in",
+      "successBody": "The sign-in provider was unlinked and every session of your account has ended. If you forgot your password, you can reset it from the sign-in page.",
+      "successTitle": "Provider unlinked",
+      "working": "Unlinking the sign-in provider…"
     },
     "status": {
       "active": "Active",

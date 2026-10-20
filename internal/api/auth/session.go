@@ -16,6 +16,10 @@ import (
 const (
 	ClaimUserID = "uid"
 	ClaimEpoch  = "epoch"
+	// ClaimProviderLogin is the Unix time, in seconds, of the Sign-in provider login the session
+	// began with (ADR 0048). It is the stateless proof that stands in for the password of a User
+	// who has none; only a provider login sets it, and a reissue keeps the original time.
+	ClaimProviderLogin = "provider_login"
 )
 
 // SessionCookie is the name of the cookie that carries the session token; the
@@ -56,6 +60,13 @@ func NewSessions(jwtSecret string, ttl time.Duration, secure bool, now func() ti
 // Issue signs a session for u, stamped with its id and current session epoch, and
 // returns the cookie that carries it.
 func (s *Sessions) Issue(u *ent.User) (*http.Cookie, error) {
+	return s.IssueAfterProviderLogin(u, time.Time{})
+}
+
+// IssueAfterProviderLogin is Issue for a session that began with a Sign-in provider login at
+// providerLoginAt (the zero time for one that did not): the time rides the token, so a step
+// that asks a passwordless User for proof can tell how recent the login was without a store.
+func (s *Sessions) IssueAfterProviderLogin(u *ent.User, providerLoginAt time.Time) (*http.Cookie, error) {
 	now := s.now()
 	claims := gptoken.Claims{
 		Issuer:    sessionIssuer,
@@ -65,6 +76,9 @@ func (s *Sessions) Issue(u *ent.User) (*http.Cookie, error) {
 		User:      &gptoken.User{Name: u.Email, ID: "user_" + strconv.FormatInt(u.ID, 10), Email: u.Email},
 	}
 	StampUser(&claims, u)
+	if !providerLoginAt.IsZero() {
+		claims.User.SetStrAttr(ClaimProviderLogin, strconv.FormatInt(providerLoginAt.Unix(), 10))
+	}
 	tk, err := s.verifier[0].Token(claims)
 	if err != nil {
 		return nil, err
@@ -88,6 +102,19 @@ func (s *Sessions) Holder(raw string) (id, epoch int64, ok bool) {
 	return sessionUser(claims)
 }
 
+// ProviderLoginOf is the time of the Sign-in provider login a raw session token began with;
+// the zero time for a token that did not begin with one or does not verify.
+func (s *Sessions) ProviderLoginOf(raw string) time.Time {
+	if raw == "" {
+		return time.Time{}
+	}
+	claims, err := s.verifier.parse(raw)
+	if err != nil || claims.ExpiresAt == nil || !s.now().Before(claims.ExpiresAt.Time) {
+		return time.Time{}
+	}
+	return providerLogin(claims)
+}
+
 // Cleared is the cookie that ends the session on the client: empty and expired.
 func (s *Sessions) Cleared() *http.Cookie {
 	c := s.cookie("", -1)
@@ -107,6 +134,19 @@ func (s *Sessions) cookie(value string, maxAge int) *http.Cookie {
 func StampUser(claims *gptoken.Claims, u *ent.User) {
 	claims.User.SetStrAttr(ClaimUserID, strconv.FormatInt(u.ID, 10))
 	claims.User.SetStrAttr(ClaimEpoch, strconv.FormatInt(u.SessionEpoch, 10))
+}
+
+// providerLogin reads the time of the Sign-in provider login a session token began with; the
+// zero time when it did not.
+func providerLogin(claims gptoken.Claims) time.Time {
+	if claims.User == nil {
+		return time.Time{}
+	}
+	sec, err := strconv.ParseInt(claims.User.StrAttr(ClaimProviderLogin), 10, 64)
+	if err != nil {
+		return time.Time{}
+	}
+	return time.Unix(sec, 0)
 }
 
 // sessionUser reads the User id and epoch a session token carries. ok is false

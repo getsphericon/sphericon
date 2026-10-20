@@ -2,6 +2,7 @@ import { HttpResponse } from 'msw'
 import { expect, test } from 'vitest'
 
 import {
+  handleSiteAuthSigninProviders,
   handleSiteSecondFactorConfirmEnrollment,
   handleSiteSecondFactorDisable,
   handleSiteSecondFactorGetStatus,
@@ -54,13 +55,13 @@ function serveSecurity(
     handleSiteSecondFactorGetStatus(() => HttpResponse.json(status)),
     handleSiteSecondFactorStartEnrollment(({ request }) =>
       serve('start', () => {
-        status = { enabled: false, pending: true, recoveryCodesRemaining: 0 }
+        status = { ...initial, enabled: false, pending: true, recoveryCodesRemaining: 0 }
         return HttpResponse.json(enrollment)
       })(request),
     ),
     handleSiteSecondFactorConfirmEnrollment(({ request }) =>
       serve('confirm', () => {
-        status = { enabled: true, pending: false, recoveryCodesRemaining: codes.length }
+        status = { ...initial, enabled: true, pending: false, recoveryCodesRemaining: codes.length }
         return HttpResponse.json({ codes })
       })(request),
     ),
@@ -69,15 +70,26 @@ function serveSecurity(
     ),
     handleSiteSecondFactorDisable(({ request }) =>
       serve('disable', () => {
-        status = { enabled: false, pending: false, recoveryCodesRemaining: 0 }
+        status = { ...initial, enabled: false, pending: false, recoveryCodesRemaining: 0 }
         return new HttpResponse(null, { status: 204 })
       })(request),
     ),
   )
 }
 
-const off: SiteSecondFactorStatus = { enabled: false, pending: false, recoveryCodesRemaining: 0 }
-const on: SiteSecondFactorStatus = { enabled: true, pending: false, recoveryCodesRemaining: 3 }
+const withPassword = { passwordSet: true, providerLoginFresh: false }
+const off: SiteSecondFactorStatus = {
+  enabled: false,
+  pending: false,
+  recoveryCodesRemaining: 0,
+  ...withPassword,
+}
+const on: SiteSecondFactorStatus = {
+  enabled: true,
+  pending: false,
+  recoveryCodesRemaining: 3,
+  ...withPassword,
+}
 
 const renderPage = () => renderWithRouter(<SecurityPage />, routeMount(securityRoute))
 
@@ -164,4 +176,42 @@ test('disables the second factor with the password and a code', async () => {
   await expect
     .element(screen.getByRole('button', { name: 'Set up authenticator app' }))
     .toBeInTheDocument()
+})
+
+const passwordless = { passwordSet: false, providerLoginFresh: true }
+
+test('a User with no password enrolls with a fresh provider login and no password field', async () => {
+  const calls: Call[] = []
+  serveSecurity(calls, { ...off, ...passwordless })
+  const { screen } = await renderPage()
+
+  await expect
+    .element(screen.getByRole('button', { name: 'Set up authenticator app' }))
+    .toBeInTheDocument()
+  expect(screen.getByLabelText(/^Current password/).elements()).toHaveLength(0)
+  await screen.getByRole('button', { name: 'Set up authenticator app' }).click()
+  await screen.getByLabelText(/^Code from the app/).fill('123456')
+  await screen.getByRole('button', { name: 'Turn on' }).click()
+
+  await expect.element(screen.getByText('Save your recovery codes')).toBeInTheDocument()
+  expect(calls).toEqual([
+    { op: 'start', body: {} },
+    { op: 'confirm', body: { code: '123456' } },
+  ])
+})
+
+test('a User with no password and an old provider login is sent to sign in with a provider again', async () => {
+  serveSecurity([], { ...off, passwordSet: false, providerLoginFresh: false })
+  worker.use(
+    handleSiteAuthSigninProviders({ body: { items: [{ name: 'google', displayName: 'Google' }] } }),
+  )
+  const { screen } = await renderPage()
+
+  await expect.element(screen.getByText('Sign in again with your provider')).toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('link', { name: 'Continue with Google' }))
+    .toHaveAttribute('href', '/site/auth/signin/google/start?return_to=%2Faccount%2Fsecurity')
+  expect(screen.getByRole('button', { name: 'Set up authenticator app' }).elements()).toHaveLength(
+    0,
+  )
 })

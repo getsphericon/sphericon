@@ -134,6 +134,43 @@ type Invoker interface {
 	//
 	// POST /auth/second-factor
 	SiteAuthSecondFactor(ctx context.Context, request *SiteLoginSecondFactorInput) (SiteAuthSecondFactorRes, error)
+	// SiteAuthSigninCallback invokes SiteAuth_signinCallback operation.
+	//
+	// Where the provider sends the browser back (the redirect URI derived from the app URL). Always
+	// answers 302: to `return_to` (or `/`) with the session cookie when the sign-in succeeds, and to
+	// `/login?error=<code>` (see SiteSigninError) when it does not. A known identity signs in; a new,
+	// trusted email creates a Verified User with its first Workspace and no mail. A User with a Second
+	// factor gets no session and no cookie: the redirect is to `/login?challenge=<token>`, the challenge
+	// of `/auth/second-factor` (ADR 0020), which a TOTP or Recovery code finishes under the Login
+	// throttle. Every parameter is optional so that a denied consent (`error` only) or a stray visit
+	// reaches the handler and gets the same redirect as any other refusal.
+	//
+	// GET /auth/signin/{provider}/callback
+	SiteAuthSigninCallback(ctx context.Context, params SiteAuthSigninCallbackParams) (*SiteAuthSigninCallbackFound, error)
+	// SiteAuthSigninNotMe invokes SiteAuth_signinNotMe operation.
+	//
+	// Undo a silent link from the notice mailed to the owner (ADR 0048): the token names one Linked
+	// identity of the User, which is unlinked, and every session of the User ends. Public: the link may be
+	// opened from a browser without a session. A link works once; one whose identity is gone answers 400.
+	//
+	// POST /auth/signin-not-me
+	SiteAuthSigninNotMe(ctx context.Context, request *SiteSigninNotMeInput) (SiteAuthSigninNotMeRes, error)
+	// SiteAuthSigninProviders invokes SiteAuth_signinProviders operation.
+	//
+	// The Sign-in providers this Instance offers, for the buttons of the login and register pages. Public;
+	// empty when none is configured.
+	//
+	// GET /auth/signin-providers
+	SiteAuthSigninProviders(ctx context.Context) (*SiteSigninProviders, error)
+	// SiteAuthSigninStart invokes SiteAuth_signinStart operation.
+	//
+	// Start a sign-in with a Sign-in provider: draws the flow's `state`, PKCE verifier and `nonce`, keeps
+	// them (with the validated `return_to`) in a short-lived signed cookie (httpOnly, SameSite=Lax, scoped
+	// to the signin prefix) and redirects (302) the browser to the provider. `return_to` is honoured only
+	// as a relative in-app path; anything else is dropped. 404 for a provider that is not configured.
+	//
+	// GET /auth/signin/{provider}/start
+	SiteAuthSigninStart(ctx context.Context, params SiteAuthSigninStartParams) (SiteAuthSigninStartRes, error)
 	// SiteAuthVerifyEmail invokes SiteAuth_verifyEmail operation.
 	//
 	// Complete a registration from the verification link (the token is the credential): stamps the
@@ -351,6 +388,29 @@ type Invoker interface {
 	//
 	// GET /workspaces/{workspaceId}/events
 	SiteEventsList(ctx context.Context, params SiteEventsListParams) (SiteEventsListRes, error)
+	// SiteIdentitiesLink invokes SiteIdentities_link operation.
+	//
+	// Start linking another Sign-in provider account to the authenticated User. Works like `start` of a
+	// sign-in, but the flow cookie also names the User, and the shared callback adds the provider's
+	// subject to that User whatever email the provider reports. The callback redirects to `return_to`
+	// (default the account security page); a refusal goes to the account security page with the `error`
+	// code (see SiteSigninError). 404 for a provider that is not configured.
+	//
+	// GET /me/identities/{provider}/link
+	SiteIdentitiesLink(ctx context.Context, params SiteIdentitiesLinkParams) (SiteIdentitiesLinkRes, error)
+	// SiteIdentitiesList invokes SiteIdentities_list operation.
+	//
+	// List the authenticated User's Linked identities.
+	//
+	// GET /me/identities
+	SiteIdentitiesList(ctx context.Context) (*SiteLinkedIdentities, error)
+	// SiteIdentitiesUnlink invokes SiteIdentities_unlink operation.
+	//
+	// Unlink an identity. 409 when it would leave the User no way to sign in (no password and no other
+	// identity). Every other session ends; the acting one continues under the cookie set here.
+	//
+	// DELETE /me/identities/{id}
+	SiteIdentitiesUnlink(ctx context.Context, params SiteIdentitiesUnlinkParams) (SiteIdentitiesUnlinkRes, error)
 	// SiteInstanceAcknowledgeNotice invokes SiteInstance_acknowledgeNotice operation.
 	//
 	// Acknowledge the one-time Telemetry report notice. Idempotent.
@@ -509,8 +569,9 @@ type Invoker interface {
 	//
 	// Confirm the pending enrollment with the password and a code from the app. On success the Second
 	// factor is active, every other session ends and the acting one continues under the cookie set here;
-	// the Recovery codes are returned once. 403 on a wrong password (it feeds the Login throttle: 429
-	// while its delay runs), 422 on a wrong code, 409 without a pending enrollment.
+	// the Recovery codes are returned once. 403 on a wrong password (or, for a User with no password, no
+	// provider sign-in in the last few minutes) (it feeds the Login throttle: 429 while its delay runs),
+	// 422 on a wrong code, 409 without a pending enrollment.
 	//
 	// POST /me/second-factor/enrollment/confirm
 	SiteSecondFactorConfirmEnrollment(ctx context.Context, request *SiteSecondFactorConfirmInput) (SiteSecondFactorConfirmEnrollmentRes, error)
@@ -531,17 +592,19 @@ type Invoker interface {
 	// SiteSecondFactorRegenerateRecoveryCodes invokes SiteSecondFactor_regenerateRecoveryCodes operation.
 	//
 	// Replace the Recovery codes with a fresh set (the previous set stops working). Every other session
-	// ends; the acting one continues under the cookie set here. 403 on a wrong password (it feeds the
-	// Login throttle: 429 while its delay runs), 409 without an active Second factor.
+	// ends; the acting one continues under the cookie set here. 403 on a wrong password (or, for a User
+	// with no password, no provider sign-in in the last few minutes) (it feeds the Login throttle: 429
+	// while its delay runs), 409 without an active Second factor.
 	//
 	// POST /me/second-factor/recovery-codes
 	SiteSecondFactorRegenerateRecoveryCodes(ctx context.Context, request *SiteRecoveryCodesInput) (SiteSecondFactorRegenerateRecoveryCodesRes, error)
 	// SiteSecondFactorStartEnrollment invokes SiteSecondFactor_startEnrollment operation.
 	//
 	// Start enrolling a TOTP Second factor, proving the password: creates a pending secret (replacing an
-	// earlier pending one). It counts as a Second factor only once confirmed. 403 on a wrong password, 409
-	// when a Second factor is already active. A wrong password feeds the Login throttle, which answers 429
-	// even for a correct one while its delay runs (ADR 0025).
+	// earlier pending one). It counts as a Second factor only once confirmed. 403 on a wrong password (or,
+	// for a User with no password, no provider sign-in in the last few minutes), 409 when a Second factor
+	// is already active. A wrong password feeds the Login throttle, which answers 429 even for a correct
+	// one while its delay runs (ADR 0025).
 	//
 	// POST /me/second-factor/enrollment
 	SiteSecondFactorStartEnrollment(ctx context.Context, request *SiteSecondFactorStartInput) (SiteSecondFactorStartEnrollmentRes, error)
@@ -2664,6 +2727,508 @@ func (c *Client) sendSiteAuthSecondFactor(ctx context.Context, request *SiteLogi
 
 	stage = "DecodeResponse"
 	result, err := decodeSiteAuthSecondFactorResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SiteAuthSigninCallback invokes SiteAuth_signinCallback operation.
+//
+// Where the provider sends the browser back (the redirect URI derived from the app URL). Always
+// answers 302: to `return_to` (or `/`) with the session cookie when the sign-in succeeds, and to
+// `/login?error=<code>` (see SiteSigninError) when it does not. A known identity signs in; a new,
+// trusted email creates a Verified User with its first Workspace and no mail. A User with a Second
+// factor gets no session and no cookie: the redirect is to `/login?challenge=<token>`, the challenge
+// of `/auth/second-factor` (ADR 0020), which a TOTP or Recovery code finishes under the Login
+// throttle. Every parameter is optional so that a denied consent (`error` only) or a stray visit
+// reaches the handler and gets the same redirect as any other refusal.
+//
+// GET /auth/signin/{provider}/callback
+func (c *Client) SiteAuthSigninCallback(ctx context.Context, params SiteAuthSigninCallbackParams) (*SiteAuthSigninCallbackFound, error) {
+	res, err := c.sendSiteAuthSigninCallback(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendSiteAuthSigninCallback(ctx context.Context, params SiteAuthSigninCallbackParams) (res *SiteAuthSigninCallbackFound, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteAuth_signinCallback"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/auth/signin/{provider}/callback"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteAuthSigninCallbackOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/auth/signin/"
+	{
+		// Encode "provider" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "provider",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.StringToString(params.Provider))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/callback"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "code" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "code",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Code.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "state" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "state",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.State.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "error" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "error",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Error.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "EncodeCookieParams"
+	cookie := uri.NewCookieEncoder(r)
+	{
+		// Encode "SIGNIN" parameter.
+		cfg := uri.CookieParameterEncodingConfig{
+			Name:    "SIGNIN",
+			Explode: false,
+		}
+
+		if err := cookie.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.SIGNIN.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode cookie")
+		}
+	}
+	{
+		// Encode "JWT" parameter.
+		cfg := uri.CookieParameterEncodingConfig{
+			Name:    "JWT",
+			Explode: false,
+		}
+
+		if err := cookie.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.JWT.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode cookie")
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteAuthSigninCallbackResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SiteAuthSigninNotMe invokes SiteAuth_signinNotMe operation.
+//
+// Undo a silent link from the notice mailed to the owner (ADR 0048): the token names one Linked
+// identity of the User, which is unlinked, and every session of the User ends. Public: the link may be
+// opened from a browser without a session. A link works once; one whose identity is gone answers 400.
+//
+// POST /auth/signin-not-me
+func (c *Client) SiteAuthSigninNotMe(ctx context.Context, request *SiteSigninNotMeInput) (SiteAuthSigninNotMeRes, error) {
+	res, err := c.sendSiteAuthSigninNotMe(ctx, request)
+	return res, err
+}
+
+func (c *Client) sendSiteAuthSigninNotMe(ctx context.Context, request *SiteSigninNotMeInput) (res SiteAuthSigninNotMeRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteAuth_signinNotMe"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/auth/signin-not-me"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteAuthSigninNotMeOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/auth/signin-not-me"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSiteAuthSigninNotMeRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteAuthSigninNotMeResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SiteAuthSigninProviders invokes SiteAuth_signinProviders operation.
+//
+// The Sign-in providers this Instance offers, for the buttons of the login and register pages. Public;
+// empty when none is configured.
+//
+// GET /auth/signin-providers
+func (c *Client) SiteAuthSigninProviders(ctx context.Context) (*SiteSigninProviders, error) {
+	res, err := c.sendSiteAuthSigninProviders(ctx)
+	return res, err
+}
+
+func (c *Client) sendSiteAuthSigninProviders(ctx context.Context) (res *SiteSigninProviders, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteAuth_signinProviders"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/auth/signin-providers"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteAuthSigninProvidersOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/auth/signin-providers"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteAuthSigninProvidersResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SiteAuthSigninStart invokes SiteAuth_signinStart operation.
+//
+// Start a sign-in with a Sign-in provider: draws the flow's `state`, PKCE verifier and `nonce`, keeps
+// them (with the validated `return_to`) in a short-lived signed cookie (httpOnly, SameSite=Lax, scoped
+// to the signin prefix) and redirects (302) the browser to the provider. `return_to` is honoured only
+// as a relative in-app path; anything else is dropped. 404 for a provider that is not configured.
+//
+// GET /auth/signin/{provider}/start
+func (c *Client) SiteAuthSigninStart(ctx context.Context, params SiteAuthSigninStartParams) (SiteAuthSigninStartRes, error) {
+	res, err := c.sendSiteAuthSigninStart(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendSiteAuthSigninStart(ctx context.Context, params SiteAuthSigninStartParams) (res SiteAuthSigninStartRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteAuth_signinStart"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/auth/signin/{provider}/start"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteAuthSigninStartOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/auth/signin/"
+	{
+		// Encode "provider" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "provider",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.StringToString(params.Provider))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/start"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "return_to" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "return_to",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.ReturnTo.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "invitation" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "invitation",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Invitation.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteAuthSigninStartResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -7864,6 +8429,411 @@ func (c *Client) sendSiteEventsList(ctx context.Context, params SiteEventsListPa
 	return result, nil
 }
 
+// SiteIdentitiesLink invokes SiteIdentities_link operation.
+//
+// Start linking another Sign-in provider account to the authenticated User. Works like `start` of a
+// sign-in, but the flow cookie also names the User, and the shared callback adds the provider's
+// subject to that User whatever email the provider reports. The callback redirects to `return_to`
+// (default the account security page); a refusal goes to the account security page with the `error`
+// code (see SiteSigninError). 404 for a provider that is not configured.
+//
+// GET /me/identities/{provider}/link
+func (c *Client) SiteIdentitiesLink(ctx context.Context, params SiteIdentitiesLinkParams) (SiteIdentitiesLinkRes, error) {
+	res, err := c.sendSiteIdentitiesLink(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendSiteIdentitiesLink(ctx context.Context, params SiteIdentitiesLinkParams) (res SiteIdentitiesLinkRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteIdentities_link"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/me/identities/{provider}/link"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteIdentitiesLinkOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/me/identities/"
+	{
+		// Encode "provider" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "provider",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.StringToString(params.Provider))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/link"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "return_to" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "return_to",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.ReturnTo.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, SiteIdentitiesLinkOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteIdentitiesLinkResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SiteIdentitiesList invokes SiteIdentities_list operation.
+//
+// List the authenticated User's Linked identities.
+//
+// GET /me/identities
+func (c *Client) SiteIdentitiesList(ctx context.Context) (*SiteLinkedIdentities, error) {
+	res, err := c.sendSiteIdentitiesList(ctx)
+	return res, err
+}
+
+func (c *Client) sendSiteIdentitiesList(ctx context.Context) (res *SiteLinkedIdentities, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteIdentities_list"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/me/identities"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteIdentitiesListOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/me/identities"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, SiteIdentitiesListOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteIdentitiesListResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SiteIdentitiesUnlink invokes SiteIdentities_unlink operation.
+//
+// Unlink an identity. 409 when it would leave the User no way to sign in (no password and no other
+// identity). Every other session ends; the acting one continues under the cookie set here.
+//
+// DELETE /me/identities/{id}
+func (c *Client) SiteIdentitiesUnlink(ctx context.Context, params SiteIdentitiesUnlinkParams) (SiteIdentitiesUnlinkRes, error) {
+	res, err := c.sendSiteIdentitiesUnlink(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendSiteIdentitiesUnlink(ctx context.Context, params SiteIdentitiesUnlinkParams) (res SiteIdentitiesUnlinkRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteIdentities_unlink"),
+		semconv.HTTPRequestMethodKey.String("DELETE"),
+		semconv.URLTemplateKey.String("/me/identities/{id}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteIdentitiesUnlinkOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/me/identities/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "DELETE", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, SiteIdentitiesUnlinkOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteIdentitiesUnlinkResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
 // SiteInstanceAcknowledgeNotice invokes SiteInstance_acknowledgeNotice operation.
 //
 // Acknowledge the one-time Telemetry report notice. Idempotent.
@@ -11091,8 +12061,9 @@ func (c *Client) sendSitePublicUnsubscribesPerform(ctx context.Context, params S
 //
 // Confirm the pending enrollment with the password and a code from the app. On success the Second
 // factor is active, every other session ends and the acting one continues under the cookie set here;
-// the Recovery codes are returned once. 403 on a wrong password (it feeds the Login throttle: 429
-// while its delay runs), 422 on a wrong code, 409 without a pending enrollment.
+// the Recovery codes are returned once. 403 on a wrong password (or, for a User with no password, no
+// provider sign-in in the last few minutes) (it feeds the Login throttle: 429 while its delay runs),
+// 422 on a wrong code, 409 without a pending enrollment.
 //
 // POST /me/second-factor/enrollment/confirm
 func (c *Client) SiteSecondFactorConfirmEnrollment(ctx context.Context, request *SiteSecondFactorConfirmInput) (SiteSecondFactorConfirmEnrollmentRes, error) {
@@ -11440,8 +12411,9 @@ func (c *Client) sendSiteSecondFactorGetStatus(ctx context.Context) (res *SiteSe
 // SiteSecondFactorRegenerateRecoveryCodes invokes SiteSecondFactor_regenerateRecoveryCodes operation.
 //
 // Replace the Recovery codes with a fresh set (the previous set stops working). Every other session
-// ends; the acting one continues under the cookie set here. 403 on a wrong password (it feeds the
-// Login throttle: 429 while its delay runs), 409 without an active Second factor.
+// ends; the acting one continues under the cookie set here. 403 on a wrong password (or, for a User
+// with no password, no provider sign-in in the last few minutes) (it feeds the Login throttle: 429
+// while its delay runs), 409 without an active Second factor.
 //
 // POST /me/second-factor/recovery-codes
 func (c *Client) SiteSecondFactorRegenerateRecoveryCodes(ctx context.Context, request *SiteRecoveryCodesInput) (SiteSecondFactorRegenerateRecoveryCodesRes, error) {
@@ -11558,9 +12530,10 @@ func (c *Client) sendSiteSecondFactorRegenerateRecoveryCodes(ctx context.Context
 // SiteSecondFactorStartEnrollment invokes SiteSecondFactor_startEnrollment operation.
 //
 // Start enrolling a TOTP Second factor, proving the password: creates a pending secret (replacing an
-// earlier pending one). It counts as a Second factor only once confirmed. 403 on a wrong password, 409
-// when a Second factor is already active. A wrong password feeds the Login throttle, which answers 429
-// even for a correct one while its delay runs (ADR 0025).
+// earlier pending one). It counts as a Second factor only once confirmed. 403 on a wrong password (or,
+// for a User with no password, no provider sign-in in the last few minutes), 409 when a Second factor
+// is already active. A wrong password feeds the Login throttle, which answers 429 even for a correct
+// one while its delay runs (ADR 0025).
 //
 // POST /me/second-factor/enrollment
 func (c *Client) SiteSecondFactorStartEnrollment(ctx context.Context, request *SiteSecondFactorStartInput) (SiteSecondFactorStartEnrollmentRes, error) {

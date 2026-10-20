@@ -75,6 +75,60 @@ model SiteConfirmEmailChangeInput {
   token: string;
 }
 
+/** The "this was not me" link of the notice mailed when a Sign-in provider was linked to an account */
+model SiteSigninNotMeInput {
+  token: string;
+}
+
+/** One Sign-in provider an Instance offers (ADR 0048) */
+model SiteSigninProvider {
+  /** The registry name, the path segment of its `start` and `callback` operations */
+  name: string;
+
+  /** What the button says: the provider's own name (`Google`) */
+  displayName: string;
+}
+
+/** The Sign-in providers this Instance has configured. Empty on an Instance that
+ * configured none, which leaves the login and register pages as they are. */
+model SiteSigninProviders {
+  items: SiteSigninProvider[];
+}
+
+/** Why a provider sign-in did not start a session. The callback redirects to `/login` with
+ * one of these as the `error` query parameter, and the SPA renders it through i18n. */
+enum SiteSigninError {
+  /** The person denied consent at the provider */
+  denied,
+
+  /** The provider answered with an error, or its answer could not be verified */
+  providerError: "provider_error",
+
+  /** The flow's `state` was missing, expired or did not match: a callback this browser did not start */
+  invalidState: "invalid_state",
+
+  /** The provider is not configured on this Instance */
+  providerUnavailable: "provider_unavailable",
+
+  /** The provider did not vouch for the email address (unverified) */
+  emailUnverified: "email_unverified",
+
+  /** The provider's proof of the address is not accepted (a Google address that is neither Gmail nor a hosted domain) */
+  emailNotTrusted: "email_not_trusted",
+
+  /** The Instance closed public sign-up (ADR 0042) */
+  signupClosed: "signup_closed",
+
+  /** Linking only: the provider account is already linked to another User */
+  identityInUse: "identity_in_use",
+
+  /** Accepting an Invitation: the provider's trusted email is not the invited address */
+  invitationEmailMismatch: "invitation_email_mismatch",
+
+  /** Accepting an Invitation: the link is not a pending Invitation (unknown, expired or used) */
+  invitationInvalid: "invitation_invalid",
+}
+
 @route("/auth")
 @tag("Site Auth")
 namespace SiteAuth {
@@ -149,6 +203,85 @@ namespace SiteAuth {
       }
     | UnauthorizedProblem
     | TooManyRequestsProblem;
+
+  /** The Sign-in providers this Instance offers, for the buttons of the login and register
+   * pages. Public; empty when none is configured. */
+  @useAuth(NoAuth)
+  @get
+  @route("/signin-providers")
+  op signinProviders(): {
+    @statusCode statusCode: 200;
+    @body body: SiteSigninProviders;
+  };
+
+  /** Start a sign-in with a Sign-in provider: draws the flow's `state`, PKCE verifier and
+   * `nonce`, keeps them (with the validated `return_to`) in a short-lived signed cookie
+   * (httpOnly, SameSite=Lax, scoped to the signin prefix) and redirects (302) the browser to
+   * the provider. `return_to` is honoured only as a relative in-app path; anything else
+   * is dropped. 404 for a provider that is not configured. */
+  @useAuth(NoAuth)
+  @get
+  @route("/signin/{provider}/start")
+  op signinStart(
+    @path provider: string,
+
+    /** A relative in-app path to land on after signing in */
+    @query(#{ name: "return_to" }) returnTo?: string,
+
+    /** The token of an Invitation link: the sign-in then accepts that Invitation when the
+     * provider's trusted email is the invited address, and an Invitation opens a closed
+     * registration for that address (ADR 0042). A mismatch creates nothing. */
+    @query invitation?: string,
+  ):
+    | {
+        @statusCode statusCode: 302;
+
+        /** The provider's authorization URL */
+        @header("Location") location: string;
+
+        /** The flow cookie */
+        @header("Set-Cookie") setCookie: string;
+      }
+    | NotFoundProblem;
+
+  /** Where the provider sends the browser back (the redirect URI derived from the app URL).
+   * Always answers 302: to `return_to` (or `/`) with the session cookie when the sign-in
+   * succeeds, and to `/login?error=<code>` (see SiteSigninError) when it does not. A known
+   * identity signs in; a new, trusted email creates a Verified User with its first Workspace
+   * and no mail. A User with a Second factor gets no session and no cookie: the redirect is
+   * to `/login?challenge=<token>`, the challenge of `/auth/second-factor` (ADR 0020), which
+   * a TOTP or Recovery code finishes under the Login throttle. Every parameter is optional so that a denied consent (`error` only) or a
+   * stray visit reaches the handler and gets the same redirect as any other refusal. */
+  @useAuth(NoAuth)
+  @get
+  @route("/signin/{provider}/callback")
+  op signinCallback(
+    @path provider: string,
+
+    /** The authorization code */
+    @query code?: string,
+
+    /** The flow's `state`, echoed by the provider */
+    @query state?: string,
+
+    /** The provider's error code, present when consent was denied or the request failed */
+    @query error?: string,
+
+    /** The flow cookie set by `start` */
+    @cookie("SIGNIN") flow?: string,
+
+    /** The session cookie: read only when the flow is a link (it names a User), which
+     * must be completed by the browser that is signed in as that User */
+    @cookie("JWT") session?: string,
+  ): {
+    @statusCode statusCode: 302;
+
+    /** Where to go next */
+    @header("Location") location: string;
+
+    /** The session cookie on success; the expired flow cookie on a refusal */
+    @header("Set-Cookie") setCookie?: string;
+  };
 
   /** End the session on this browser: clears the session cookie. */
   @useAuth(NoAuth)
@@ -246,5 +379,16 @@ namespace SiteAuth {
         /** The confirming session reissued, set when the request carried one */
         @header("Set-Cookie") setCookie?: string;
       }
+    | BadRequestProblem;
+
+  /** Undo a silent link from the notice mailed to the owner (ADR 0048): the token names
+   * one Linked identity of the User, which is unlinked, and every session of the User ends.
+   * Public: the link may be opened from a browser without a session. A link works once; one
+   * whose identity is gone answers 400. */
+  @useAuth(NoAuth)
+  @post
+  @route("/signin-not-me")
+  op signinNotMe(@body body: SiteSigninNotMeInput):
+    | OkResponse
     | BadRequestProblem;
 }

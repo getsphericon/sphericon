@@ -42,6 +42,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/usage"
 	"github.com/getsphericon/sphericon/ent/user"
+	"github.com/getsphericon/sphericon/ent/useridentity"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/ent/workspace"
@@ -946,13 +947,36 @@ func init() {
 	// user.EmailValidator is a validator for the "email" field. It is called by the builders before save.
 	user.EmailValidator = userDescEmail.Validators[0].(func(string) error)
 	// userDescSessionEpoch is the schema descriptor for session_epoch field.
-	userDescSessionEpoch := userFields[5].Descriptor()
+	userDescSessionEpoch := userFields[6].Descriptor()
 	// user.DefaultSessionEpoch holds the default value on creation for the session_epoch field.
 	user.DefaultSessionEpoch = userDescSessionEpoch.Default.(int64)
 	// userDescSecondFactorLastStep is the schema descriptor for second_factor_last_step field.
-	userDescSecondFactorLastStep := userFields[8].Descriptor()
+	userDescSecondFactorLastStep := userFields[9].Descriptor()
 	// user.DefaultSecondFactorLastStep holds the default value on creation for the second_factor_last_step field.
 	user.DefaultSecondFactorLastStep = userDescSecondFactorLastStep.Default.(int64)
+	useridentityMixin := schema.UserIdentity{}.Mixin()
+	useridentityMixinFields0 := useridentityMixin[0].Fields()
+	_ = useridentityMixinFields0
+	useridentityFields := schema.UserIdentity{}.Fields()
+	_ = useridentityFields
+	// useridentityDescCreatedAt is the schema descriptor for created_at field.
+	useridentityDescCreatedAt := useridentityMixinFields0[0].Descriptor()
+	// useridentity.DefaultCreatedAt holds the default value on creation for the created_at field.
+	useridentity.DefaultCreatedAt = useridentityDescCreatedAt.Default.(func() time.Time)
+	// useridentityDescUpdatedAt is the schema descriptor for updated_at field.
+	useridentityDescUpdatedAt := useridentityMixinFields0[1].Descriptor()
+	// useridentity.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	useridentity.DefaultUpdatedAt = useridentityDescUpdatedAt.Default.(func() time.Time)
+	// useridentity.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	useridentity.UpdateDefaultUpdatedAt = useridentityDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// useridentityDescProvider is the schema descriptor for provider field.
+	useridentityDescProvider := useridentityFields[2].Descriptor()
+	// useridentity.ProviderValidator is a validator for the "provider" field. It is called by the builders before save.
+	useridentity.ProviderValidator = useridentityDescProvider.Validators[0].(func(string) error)
+	// useridentityDescSubject is the schema descriptor for subject field.
+	useridentityDescSubject := useridentityFields[3].Descriptor()
+	// useridentity.SubjectValidator is a validator for the "subject" field. It is called by the builders before save.
+	useridentity.SubjectValidator = useridentityDescSubject.Validators[0].(func(string) error)
 	visitorMixin := schema.Visitor{}.Mixin()
 	visitorMixinFields0 := visitorMixin[0].Fields()
 	_ = visitorMixinFields0

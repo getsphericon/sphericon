@@ -2131,6 +2131,36 @@ export type SiteInvitationResource = {
 };
 
 /**
+ * The Linked identities of the authenticated User
+ */
+export type SiteLinkedIdentities = {
+  items: Array<SiteLinkedIdentity>;
+};
+
+/**
+ * One Linked identity of the authenticated User (ADR 0048): a Sign-in provider the User
+ * can sign in with. The provider's subject is never returned.
+ */
+export type SiteLinkedIdentity = {
+  /**
+   * Unique identifier, the key of the unlink operation
+   */
+  id: EntityId;
+  /**
+   * The provider's registry name
+   */
+  provider: string;
+  /**
+   * What the provider is called to a person (the registry name when the Instance no longer offers it)
+   */
+  displayName: string;
+  /**
+   * When the identity was linked
+   */
+  createdAt: Timestamp;
+};
+
+/**
  * Sign in with an email and password. The email is a plain string: a malformed
  * address must answer like an unknown one.
  */
@@ -2348,13 +2378,14 @@ export type SiteRecoveryCodes = {
 };
 
 /**
- * Proof of the User's password, for regenerating Recovery codes
+ * Proof of the User's password (or a fresh provider login), for regenerating Recovery codes
  */
 export type SiteRecoveryCodesInput = {
   /**
-   * Current password
+   * Current password. Left out by a User with no password, who proves a provider
+   * sign-in of the last few minutes instead (ADR 0048).
    */
-  currentPassword: string;
+  currentPassword?: string;
 };
 
 /**
@@ -2441,13 +2472,14 @@ export type SiteScheduleBroadcastInput = {
 };
 
 /**
- * Proof of the User's password and a code from the authenticator app
+ * Proof of the User's password (or a fresh provider login) and a code from the authenticator app
  */
 export type SiteSecondFactorConfirmInput = {
   /**
-   * Current password
+   * Current password. Left out by a User with no password, who proves a provider
+   * sign-in of the last few minutes instead (ADR 0048).
    */
-  currentPassword: string;
+  currentPassword?: string;
   /**
    * The current 6-digit TOTP code
    */
@@ -2455,13 +2487,14 @@ export type SiteSecondFactorConfirmInput = {
 };
 
 /**
- * Proof of password and possession, for disabling the Second factor
+ * Proof of password (or a fresh provider login) and possession, for disabling the Second factor
  */
 export type SiteSecondFactorDisableInput = {
   /**
-   * Current password
+   * Current password. Left out by a User with no password, who proves a provider
+   * sign-in of the last few minutes instead (ADR 0048).
    */
-  currentPassword: string;
+  currentPassword?: string;
   /**
    * A current TOTP code, or an unused Recovery code
    */
@@ -2497,13 +2530,14 @@ export type SiteSecondFactorRequirementInput = {
 };
 
 /**
- * Proof of the User's password, for starting an enrollment
+ * Proof of the User's password (or a fresh provider login), for starting an enrollment
  */
 export type SiteSecondFactorStartInput = {
   /**
-   * Current password
+   * Current password. Left out by a User with no password, who proves a provider
+   * sign-in of the last few minutes instead (ADR 0048).
    */
-  currentPassword: string;
+  currentPassword?: string;
 };
 
 /**
@@ -2523,6 +2557,17 @@ export type SiteSecondFactorStatus = {
    * Unused Recovery codes left (0 without a Second factor)
    */
   recoveryCodesRemaining: number;
+  /**
+   * Whether the User has a password. Without one, the steps that ask for the password
+   * accept a fresh sign-in with a Sign-in provider instead.
+   */
+  passwordSet: boolean;
+  /**
+   * Whether the session began with a Sign-in provider login recent enough to stand in for
+   * the password (a User with a password always proves the password). When a User with no
+   * password sees false, the next step is to sign in with a provider again.
+   */
+  providerLoginFresh: boolean;
 };
 
 /**
@@ -2828,6 +2873,58 @@ export type SiteSetupSteps = {
    * At least one Outbound message was sent, from any surface (a Test send is not one)
    */
   sentEmail: SiteSetupStepStatus;
+};
+
+/**
+ * Why a provider sign-in did not start a session. The callback redirects to `/login` with
+ * one of these as the `error` query parameter, and the SPA renders it through i18n.
+ */
+export const SiteSigninError = {
+  DENIED: 'denied',
+  PROVIDER_ERROR: 'provider_error',
+  INVALID_STATE: 'invalid_state',
+  PROVIDER_UNAVAILABLE: 'provider_unavailable',
+  EMAIL_UNVERIFIED: 'email_unverified',
+  EMAIL_NOT_TRUSTED: 'email_not_trusted',
+  SIGNUP_CLOSED: 'signup_closed',
+  IDENTITY_IN_USE: 'identity_in_use',
+  INVITATION_EMAIL_MISMATCH: 'invitation_email_mismatch',
+  INVITATION_INVALID: 'invitation_invalid'
+} as const;
+
+/**
+ * Why a provider sign-in did not start a session. The callback redirects to `/login` with
+ * one of these as the `error` query parameter, and the SPA renders it through i18n.
+ */
+export type SiteSigninError = typeof SiteSigninError[keyof typeof SiteSigninError];
+
+/**
+ * The "this was not me" link of the notice mailed when a Sign-in provider was linked to an account
+ */
+export type SiteSigninNotMeInput = {
+  token: string;
+};
+
+/**
+ * One Sign-in provider an Instance offers (ADR 0048)
+ */
+export type SiteSigninProvider = {
+  /**
+   * The registry name, the path segment of its `start` and `callback` operations
+   */
+  name: string;
+  /**
+   * What the button says: the provider's own name (`Google`)
+   */
+  displayName: string;
+};
+
+/**
+ * The Sign-in providers this Instance has configured. Empty on an Instance that
+ * configured none, which leaves the login and register pages as they are.
+ */
+export type SiteSigninProviders = {
+  items: Array<SiteSigninProvider>;
 };
 
 /**
@@ -4043,6 +4140,96 @@ export type SiteAuthSecondFactorResponses = {
 
 export type SiteAuthSecondFactorResponse = SiteAuthSecondFactorResponses[keyof SiteAuthSecondFactorResponses];
 
+export type SiteAuthSigninNotMeData = {
+  body: SiteSigninNotMeInput;
+  path?: never;
+  query?: never;
+  url: '/auth/signin-not-me';
+};
+
+export type SiteAuthSigninNotMeErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+};
+
+export type SiteAuthSigninNotMeError = SiteAuthSigninNotMeErrors[keyof SiteAuthSigninNotMeErrors];
+
+export type SiteAuthSigninNotMeResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: unknown;
+};
+
+export type SiteAuthSigninProvidersData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/auth/signin-providers';
+};
+
+export type SiteAuthSigninProvidersResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteSigninProviders;
+};
+
+export type SiteAuthSigninProvidersResponse = SiteAuthSigninProvidersResponses[keyof SiteAuthSigninProvidersResponses];
+
+export type SiteAuthSigninCallbackData = {
+  body?: never;
+  path: {
+    provider: string;
+  };
+  query?: {
+    /**
+     * The authorization code
+     */
+    code?: string;
+    /**
+     * The flow's `state`, echoed by the provider
+     */
+    state?: string;
+    /**
+     * The provider's error code, present when consent was denied or the request failed
+     */
+    error?: string;
+  };
+  url: '/auth/signin/{provider}/callback';
+};
+
+export type SiteAuthSigninStartData = {
+  body?: never;
+  path: {
+    provider: string;
+  };
+  query?: {
+    /**
+     * A relative in-app path to land on after signing in
+     */
+    return_to?: string;
+    /**
+     * The token of an Invitation link: the sign-in then accepts that Invitation when the
+     * provider's trusted email is the invited address, and an Invitation opens a closed
+     * registration for that address (ADR 0042). A mismatch creates nothing.
+     */
+    invitation?: string;
+  };
+  url: '/auth/signin/{provider}/start';
+};
+
+export type SiteAuthSigninStartErrors = {
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteAuthSigninStartError = SiteAuthSigninStartErrors[keyof SiteAuthSigninStartErrors];
+
 export type SiteAuthVerifyEmailData = {
   body: SiteVerifyEmailInput;
   path?: never;
@@ -4355,6 +4542,76 @@ export type SiteUserEmailChangeResponses = {
    */
   202: unknown;
 };
+
+export type SiteIdentitiesListData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/me/identities';
+};
+
+export type SiteIdentitiesListResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteLinkedIdentities;
+};
+
+export type SiteIdentitiesListResponse = SiteIdentitiesListResponses[keyof SiteIdentitiesListResponses];
+
+export type SiteIdentitiesUnlinkData = {
+  body?: never;
+  path: {
+    id: EntityId;
+  };
+  query?: never;
+  url: '/me/identities/{id}';
+};
+
+export type SiteIdentitiesUnlinkErrors = {
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 conflict response
+   */
+  409: ProblemDetails;
+};
+
+export type SiteIdentitiesUnlinkError = SiteIdentitiesUnlinkErrors[keyof SiteIdentitiesUnlinkErrors];
+
+export type SiteIdentitiesUnlinkResponses = {
+  /**
+   * There is no content to send for this request, but the headers may be useful.
+   */
+  204: void;
+};
+
+export type SiteIdentitiesUnlinkResponse = SiteIdentitiesUnlinkResponses[keyof SiteIdentitiesUnlinkResponses];
+
+export type SiteIdentitiesLinkData = {
+  body?: never;
+  path: {
+    provider: string;
+  };
+  query?: {
+    /**
+     * A relative in-app path to land on afterwards
+     */
+    return_to?: string;
+  };
+  url: '/me/identities/{provider}/link';
+};
+
+export type SiteIdentitiesLinkErrors = {
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteIdentitiesLinkError = SiteIdentitiesLinkErrors[keyof SiteIdentitiesLinkErrors];
 
 export type SiteSecondFactorGetStatusData = {
   body?: never;

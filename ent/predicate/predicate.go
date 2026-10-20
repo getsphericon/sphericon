@@ -120,6 +120,9 @@ type Usage func(*sql.Selector)
 // User is the predicate function for user builders.
 type User func(*sql.Selector)
 
+// UserIdentity is the predicate function for useridentity builders.
+type UserIdentity func(*sql.Selector)
+
 // Visitor is the predicate function for visitor builders.
 type Visitor func(*sql.Selector)
 

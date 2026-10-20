@@ -13,6 +13,15 @@ model SiteSecondFactorStatus {
 
   /** Unused Recovery codes left (0 without a Second factor) */
   recoveryCodesRemaining: int32;
+
+  /** Whether the User has a password. Without one, the steps that ask for the password
+   * accept a fresh sign-in with a Sign-in provider instead. */
+  passwordSet: boolean;
+
+  /** Whether the session began with a Sign-in provider login recent enough to stand in for
+   * the password (a User with a password always proves the password). When a User with no
+   * password sees false, the next step is to sign in with a provider again. */
+  providerLoginFresh: boolean;
 }
 
 /** A pending enrollment: the TOTP secret to add to an authenticator app */
@@ -27,16 +36,18 @@ model SiteSecondFactorEnrollment {
   qrCode: string;
 }
 
-/** Proof of the User's password, for starting an enrollment */
+/** Proof of the User's password (or a fresh provider login), for starting an enrollment */
 model SiteSecondFactorStartInput {
-  /** Current password */
-  currentPassword: string;
+  /** Current password. Left out by a User with no password, who proves a provider
+   * sign-in of the last few minutes instead (ADR 0048). */
+  currentPassword?: string;
 }
 
-/** Proof of the User's password and a code from the authenticator app */
+/** Proof of the User's password (or a fresh provider login) and a code from the authenticator app */
 model SiteSecondFactorConfirmInput {
-  /** Current password */
-  currentPassword: string;
+  /** Current password. Left out by a User with no password, who proves a provider
+   * sign-in of the last few minutes instead (ADR 0048). */
+  currentPassword?: string;
 
   /** The current 6-digit TOTP code */
   code: string;
@@ -48,16 +59,18 @@ model SiteRecoveryCodes {
   codes: string[];
 }
 
-/** Proof of the User's password, for regenerating Recovery codes */
+/** Proof of the User's password (or a fresh provider login), for regenerating Recovery codes */
 model SiteRecoveryCodesInput {
-  /** Current password */
-  currentPassword: string;
+  /** Current password. Left out by a User with no password, who proves a provider
+   * sign-in of the last few minutes instead (ADR 0048). */
+  currentPassword?: string;
 }
 
-/** Proof of password and possession, for disabling the Second factor */
+/** Proof of password (or a fresh provider login) and possession, for disabling the Second factor */
 model SiteSecondFactorDisableInput {
-  /** Current password */
-  currentPassword: string;
+  /** Current password. Left out by a User with no password, who proves a provider
+   * sign-in of the last few minutes instead (ADR 0048). */
+  currentPassword?: string;
 
   /** A current TOTP code, or an unused Recovery code */
   code: string;
@@ -75,7 +88,7 @@ namespace SiteSecondFactor {
 
   /** Start enrolling a TOTP Second factor, proving the password: creates a pending
    * secret (replacing an earlier pending one). It counts as a Second factor only
-   * once confirmed. 403 on a wrong password, 409 when a Second factor is already
+   * once confirmed. 403 on a wrong password (or, for a User with no password, no provider sign-in in the last few minutes), 409 when a Second factor is already
    * active. A wrong password feeds the Login throttle, which answers 429 even for a
    * correct one while its delay runs (ADR 0025). */
   @post
@@ -92,7 +105,7 @@ namespace SiteSecondFactor {
   /** Confirm the pending enrollment with the password and a code from the app. On
    * success the Second factor is active, every other session ends and the acting
    * one continues under the cookie set here; the Recovery codes are returned once.
-   * 403 on a wrong password (it feeds the Login throttle: 429 while its delay
+   * 403 on a wrong password (or, for a User with no password, no provider sign-in in the last few minutes) (it feeds the Login throttle: 429 while its delay
    * runs), 422 on a wrong code, 409 without a pending enrollment. */
   @post
   @route("/enrollment/confirm")
@@ -112,7 +125,7 @@ namespace SiteSecondFactor {
 
   /** Replace the Recovery codes with a fresh set (the previous set stops working).
    * Every other session ends; the acting one continues under the cookie set here.
-   * 403 on a wrong password (it feeds the Login throttle: 429 while its delay
+   * 403 on a wrong password (or, for a User with no password, no provider sign-in in the last few minutes) (it feeds the Login throttle: 429 while its delay
    * runs), 409 without an active Second factor. */
   @post
   @route("/recovery-codes")

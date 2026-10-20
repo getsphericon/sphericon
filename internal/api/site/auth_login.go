@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
@@ -62,7 +63,7 @@ func (h *Handlers) SiteAuthLogin(ctx context.Context, req *siteapi.SiteLoginInpu
 		return &v, nil
 	}
 	if secondfactor.Active(u) {
-		challenge, err := h.mintLoginChallenge(ctx, u)
+		challenge, err := h.mintLoginChallenge(ctx, u, accounts.LoginPassword, time.Time{})
 		if err != nil {
 			return nil, err
 		}
@@ -71,27 +72,37 @@ func (h *Handlers) SiteAuthLogin(ctx context.Context, req *siteapi.SiteLoginInpu
 			Challenge: siteapi.NewOptString(challenge),
 		}}, nil
 	}
-	return h.startSession(ctx, u)
+	return h.startSession(ctx, u, accounts.LoginPassword, time.Time{})
 }
 
 // startSession ends a successful login: it resets the address's counter, issues
 // the session cookie and records `user.login`.
-func (h *Handlers) startSession(ctx context.Context, u *ent.User) (*siteapi.SiteLoginResultHeaders, error) {
+func (h *Handlers) startSession(ctx context.Context, u *ent.User, method string, providerLoginAt time.Time) (*siteapi.SiteLoginResultHeaders, error) {
 	if err := h.attempts.RecordSuccess(ctx, accounts.KindLogin, u.Email); err != nil {
 		return nil, err
 	}
-	cookie, err := h.sessions.Issue(u)
+	cookie, err := h.issueSession(ctx, u, method, providerLoginAt)
 	if err != nil {
 		return nil, err
-	}
-	if err := h.accounts.RecordLogin(ctx, u); err != nil {
-		// The session is already granted; the entry cannot veto it.
-		slog.ErrorContext(ctx, "audit: login not recorded", "error", err)
 	}
 	return &siteapi.SiteLoginResultHeaders{
 		SetCookie: siteapi.NewOptString(cookie.String()),
 		Response:  siteapi.SiteLoginResult{Outcome: siteapi.SiteLoginOutcomeSession},
 	}, nil
+}
+
+// issueSession is the one place a successful sign-in, by password or by a Sign-in provider,
+// is granted: it mints the session cookie and records `user.login`. The session is already
+// granted when the entry is written, so a failed entry cannot veto it.
+func (h *Handlers) issueSession(ctx context.Context, u *ent.User, method string, providerLoginAt time.Time) (*http.Cookie, error) {
+	cookie, err := h.sessions.IssueAfterProviderLogin(u, providerLoginAt)
+	if err != nil {
+		return nil, err
+	}
+	if err := h.accounts.RecordLogin(ctx, u, method); err != nil {
+		slog.ErrorContext(ctx, "audit: login not recorded", "error", err)
+	}
+	return cookie, nil
 }
 
 // SiteAuthLogout ends the session on this browser by clearing its cookie. A token

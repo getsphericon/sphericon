@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/recoverycode"
 	"github.com/getsphericon/sphericon/ent/user"
+	"github.com/getsphericon/sphericon/ent/useridentity"
 )
 
 // UserCreate is the builder for creating a User entity.
@@ -89,6 +90,20 @@ func (_c *UserCreate) SetEmailVerifiedAt(v time.Time) *UserCreate {
 func (_c *UserCreate) SetNillableEmailVerifiedAt(v *time.Time) *UserCreate {
 	if v != nil {
 		_c.SetEmailVerifiedAt(*v)
+	}
+	return _c
+}
+
+// SetEmailProvenAt sets the "email_proven_at" field.
+func (_c *UserCreate) SetEmailProvenAt(v time.Time) *UserCreate {
+	_c.mutation.SetEmailProvenAt(v)
+	return _c
+}
+
+// SetNillableEmailProvenAt sets the "email_proven_at" field if the given value is not nil.
+func (_c *UserCreate) SetNillableEmailProvenAt(v *time.Time) *UserCreate {
+	if v != nil {
+		_c.SetEmailProvenAt(*v)
 	}
 	return _c
 }
@@ -198,6 +213,21 @@ func (_c *UserCreate) AddRecoveryCodes(v ...*RecoveryCode) *UserCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddRecoveryCodeIDs(ids...)
+}
+
+// AddIdentityIDs adds the "identities" edge to the UserIdentity entity by IDs.
+func (_c *UserCreate) AddIdentityIDs(ids ...int64) *UserCreate {
+	_c.mutation.AddIdentityIDs(ids...)
+	return _c
+}
+
+// AddIdentities adds the "identities" edges to the UserIdentity entity.
+func (_c *UserCreate) AddIdentities(v ...*UserIdentity) *UserCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddIdentityIDs(ids...)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -340,6 +370,10 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 		_spec.SetField(user.FieldEmailVerifiedAt, field.TypeTime, value)
 		_node.EmailVerifiedAt = &value
 	}
+	if value, ok := _c.mutation.EmailProvenAt(); ok {
+		_spec.SetField(user.FieldEmailProvenAt, field.TypeTime, value)
+		_node.EmailProvenAt = &value
+	}
 	if value, ok := _c.mutation.SessionEpoch(); ok {
 		_spec.SetField(user.FieldSessionEpoch, field.TypeInt64, value)
 		_node.SessionEpoch = value
@@ -397,6 +431,22 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(recoverycode.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.IdentitiesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.IdentitiesTable,
+			Columns: []string{user.IdentitiesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(useridentity.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -525,6 +575,24 @@ func (u *UserUpsert) UpdateEmailVerifiedAt() *UserUpsert {
 // ClearEmailVerifiedAt clears the value of the "email_verified_at" field.
 func (u *UserUpsert) ClearEmailVerifiedAt() *UserUpsert {
 	u.SetNull(user.FieldEmailVerifiedAt)
+	return u
+}
+
+// SetEmailProvenAt sets the "email_proven_at" field.
+func (u *UserUpsert) SetEmailProvenAt(v time.Time) *UserUpsert {
+	u.Set(user.FieldEmailProvenAt, v)
+	return u
+}
+
+// UpdateEmailProvenAt sets the "email_proven_at" field to the value that was provided on create.
+func (u *UserUpsert) UpdateEmailProvenAt() *UserUpsert {
+	u.SetExcluded(user.FieldEmailProvenAt)
+	return u
+}
+
+// ClearEmailProvenAt clears the value of the "email_proven_at" field.
+func (u *UserUpsert) ClearEmailProvenAt() *UserUpsert {
+	u.SetNull(user.FieldEmailProvenAt)
 	return u
 }
 
@@ -732,6 +800,27 @@ func (u *UserUpsertOne) UpdateEmailVerifiedAt() *UserUpsertOne {
 func (u *UserUpsertOne) ClearEmailVerifiedAt() *UserUpsertOne {
 	return u.Update(func(s *UserUpsert) {
 		s.ClearEmailVerifiedAt()
+	})
+}
+
+// SetEmailProvenAt sets the "email_proven_at" field.
+func (u *UserUpsertOne) SetEmailProvenAt(v time.Time) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetEmailProvenAt(v)
+	})
+}
+
+// UpdateEmailProvenAt sets the "email_proven_at" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdateEmailProvenAt() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateEmailProvenAt()
+	})
+}
+
+// ClearEmailProvenAt clears the value of the "email_proven_at" field.
+func (u *UserUpsertOne) ClearEmailProvenAt() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearEmailProvenAt()
 	})
 }
 
@@ -1117,6 +1206,27 @@ func (u *UserUpsertBulk) UpdateEmailVerifiedAt() *UserUpsertBulk {
 func (u *UserUpsertBulk) ClearEmailVerifiedAt() *UserUpsertBulk {
 	return u.Update(func(s *UserUpsert) {
 		s.ClearEmailVerifiedAt()
+	})
+}
+
+// SetEmailProvenAt sets the "email_proven_at" field.
+func (u *UserUpsertBulk) SetEmailProvenAt(v time.Time) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetEmailProvenAt(v)
+	})
+}
+
+// UpdateEmailProvenAt sets the "email_proven_at" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdateEmailProvenAt() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateEmailProvenAt()
+	})
+}
+
+// ClearEmailProvenAt clears the value of the "email_proven_at" field.
+func (u *UserUpsertBulk) ClearEmailProvenAt() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearEmailProvenAt()
 	})
 }
 

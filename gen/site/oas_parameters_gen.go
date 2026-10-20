@@ -1717,6 +1717,502 @@ func decodeSiteAuthResendVerificationParams(args [0]string, argsEscaped bool, r 
 	return params, nil
 }
 
+// SiteAuthSigninCallbackParams is parameters of SiteAuth_signinCallback operation.
+type SiteAuthSigninCallbackParams struct {
+	Provider string
+	// The authorization code.
+	Code OptString `json:",omitempty,omitzero"`
+	// The flow's `state`, echoed by the provider.
+	State OptString `json:",omitempty,omitzero"`
+	// The provider's error code, present when consent was denied or the request failed.
+	Error OptString `json:",omitempty,omitzero"`
+	// The flow cookie set by `start`.
+	SIGNIN OptString `json:",omitempty,omitzero"`
+	// The session cookie: read only when the flow is a link (it names a User), which must be completed by
+	// the browser that is signed in as that User.
+	JWT OptString `json:",omitempty,omitzero"`
+}
+
+func unpackSiteAuthSigninCallbackParams(packed middleware.Parameters) (params SiteAuthSigninCallbackParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "provider",
+			In:   "path",
+		}
+		params.Provider = packed[key].(string)
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "code",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.Code = v.(OptString)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "state",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.State = v.(OptString)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "error",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.Error = v.(OptString)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "SIGNIN",
+			In:   "cookie",
+		}
+		if v, ok := packed[key]; ok {
+			params.SIGNIN = v.(OptString)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "JWT",
+			In:   "cookie",
+		}
+		if v, ok := packed[key]; ok {
+			params.JWT = v.(OptString)
+		}
+	}
+	return params
+}
+
+func decodeSiteAuthSigninCallbackParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteAuthSigninCallbackParams, _ error) {
+	q := uri.NewQueryDecoder(r.URL.Query())
+	c := uri.NewCookieDecoder(r)
+	// Decode path: provider.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "provider",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToString(val)
+				if err != nil {
+					return err
+				}
+
+				params.Provider = c
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "provider",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	// Decode query: code.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "code",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotCodeVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotCodeVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.Code.SetTo(paramsDotCodeVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "code",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: state.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "state",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotStateVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotStateVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.State.SetTo(paramsDotStateVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "state",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: error.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "error",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotErrorVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotErrorVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.Error.SetTo(paramsDotErrorVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "error",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode cookie: SIGNIN.
+	if err := func() error {
+		cfg := uri.CookieParameterDecodingConfig{
+			Name:    "SIGNIN",
+			Explode: false,
+		}
+		if err := c.HasParam(cfg); err == nil {
+			if err := c.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotSIGNINVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotSIGNINVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.SIGNIN.SetTo(paramsDotSIGNINVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "SIGNIN",
+			In:   "cookie",
+			Err:  err,
+		}
+	}
+	// Decode cookie: JWT.
+	if err := func() error {
+		cfg := uri.CookieParameterDecodingConfig{
+			Name:    "JWT",
+			Explode: false,
+		}
+		if err := c.HasParam(cfg); err == nil {
+			if err := c.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotJWTVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotJWTVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.JWT.SetTo(paramsDotJWTVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "JWT",
+			In:   "cookie",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// SiteAuthSigninStartParams is parameters of SiteAuth_signinStart operation.
+type SiteAuthSigninStartParams struct {
+	Provider string
+	// A relative in-app path to land on after signing in.
+	ReturnTo OptString `json:",omitempty,omitzero"`
+	// The token of an Invitation link: the sign-in then accepts that Invitation when the provider's
+	// trusted email is the invited address, and an Invitation opens a closed registration for that address
+	// (ADR 0042). A mismatch creates nothing.
+	Invitation OptString `json:",omitempty,omitzero"`
+}
+
+func unpackSiteAuthSigninStartParams(packed middleware.Parameters) (params SiteAuthSigninStartParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "provider",
+			In:   "path",
+		}
+		params.Provider = packed[key].(string)
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "return_to",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.ReturnTo = v.(OptString)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "invitation",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.Invitation = v.(OptString)
+		}
+	}
+	return params
+}
+
+func decodeSiteAuthSigninStartParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteAuthSigninStartParams, _ error) {
+	q := uri.NewQueryDecoder(r.URL.Query())
+	// Decode path: provider.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "provider",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToString(val)
+				if err != nil {
+					return err
+				}
+
+				params.Provider = c
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "provider",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	// Decode query: return_to.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "return_to",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotReturnToVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotReturnToVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.ReturnTo.SetTo(paramsDotReturnToVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "return_to",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: invitation.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "invitation",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotInvitationVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotInvitationVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.Invitation.SetTo(paramsDotInvitationVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "invitation",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
 // SiteAuthVerifyEmailParams is parameters of SiteAuth_verifyEmail operation.
 type SiteAuthVerifyEmailParams struct {
 	// The registration cookie of the browser that registered, if any. Its path is the auth prefix shared
@@ -6547,6 +7043,196 @@ func decodeSiteEventsListParams(args [1]string, argsEscaped bool, r *http.Reques
 		return params, &ogenerrors.DecodeParamError{
 			Name: "email",
 			In:   "query",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// SiteIdentitiesLinkParams is parameters of SiteIdentities_link operation.
+type SiteIdentitiesLinkParams struct {
+	Provider string
+	// A relative in-app path to land on afterwards.
+	ReturnTo OptString `json:",omitempty,omitzero"`
+}
+
+func unpackSiteIdentitiesLinkParams(packed middleware.Parameters) (params SiteIdentitiesLinkParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "provider",
+			In:   "path",
+		}
+		params.Provider = packed[key].(string)
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "return_to",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.ReturnTo = v.(OptString)
+		}
+	}
+	return params
+}
+
+func decodeSiteIdentitiesLinkParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteIdentitiesLinkParams, _ error) {
+	q := uri.NewQueryDecoder(r.URL.Query())
+	// Decode path: provider.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "provider",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToString(val)
+				if err != nil {
+					return err
+				}
+
+				params.Provider = c
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "provider",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	// Decode query: return_to.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "return_to",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotReturnToVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotReturnToVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.ReturnTo.SetTo(paramsDotReturnToVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "return_to",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// SiteIdentitiesUnlinkParams is parameters of SiteIdentities_unlink operation.
+type SiteIdentitiesUnlinkParams struct {
+	ID EntityId
+}
+
+func unpackSiteIdentitiesUnlinkParams(packed middleware.Parameters) (params SiteIdentitiesUnlinkParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "id",
+			In:   "path",
+		}
+		params.ID = packed[key].(EntityId)
+	}
+	return params
+}
+
+func decodeSiteIdentitiesUnlinkParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteIdentitiesUnlinkParams, _ error) {
+	// Decode path: id.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "id",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotIDVal int64
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToStringInt64(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotIDVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.ID = EntityId(paramsDotIDVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "id",
+			In:   "path",
 			Err:  err,
 		}
 	}

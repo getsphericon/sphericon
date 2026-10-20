@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
+	gptoken "github.com/go-pkgz/auth/v2/token"
 	"github.com/ogen-go/ogen/ogenerrors"
 	"github.com/samber/lo"
 )
@@ -233,6 +234,9 @@ func (h *CollectSecurityHandler) workspaceByKey(ctx context.Context, key string)
 type SiteAuth struct {
 	UserID int64
 	Email  string
+	// ProviderLoginAt is when the session's Sign-in provider login happened (ADR 0048); zero
+	// for a session that began with a password.
+	ProviderLoginAt time.Time
 }
 
 var siteAuthKey = struct{ name string }{"siteAuth"}
@@ -272,7 +276,7 @@ func NewSiteSecurityHandler(jwtSecret string, client *ent.Client, now func() tim
 var _ siteapi.SecurityHandler = (*SiteSecurityHandler)(nil)
 
 func (h *SiteSecurityHandler) HandleApiKeyAuth(ctx context.Context, op siteapi.OperationName, t siteapi.ApiKeyAuth) (context.Context, error) {
-	u, err := h.Verify(ctx, t.APIKey)
+	u, claims, err := h.verify(ctx, t.APIKey)
 	if errors.Is(err, ErrUnauthorized) && op == siteapi.SitePublicInvitationsAcceptOperation {
 		// The session is optional here: a stale cookie is the same as none, so an
 		// invitee with no Verified User is not blocked by it.
@@ -281,33 +285,39 @@ func (h *SiteSecurityHandler) HandleApiKeyAuth(ctx context.Context, op siteapi.O
 	if err != nil {
 		return ctx, err
 	}
-	return WithSiteAuth(ctx, &SiteAuth{UserID: u.ID, Email: u.Email}), nil
+	return WithSiteAuth(ctx, &SiteAuth{UserID: u.ID, Email: u.Email, ProviderLoginAt: providerLogin(claims)}), nil
 }
 
 // Verify checks a raw session token (signature, expiry, User id and epoch) and
 // returns the User it belongs to, or ErrUnauthorized.
 func (h *SiteSecurityHandler) Verify(ctx context.Context, raw string) (*ent.User, error) {
+	u, _, err := h.verify(ctx, raw)
+	return u, err
+}
+
+// verify is Verify that also returns the token's claims.
+func (h *SiteSecurityHandler) verify(ctx context.Context, raw string) (*ent.User, gptoken.Claims, error) {
 	claims, err := h.verifier.parse(raw)
 	if err != nil {
-		return nil, ErrUnauthorized
+		return nil, claims, ErrUnauthorized
 	}
 	if claims.ExpiresAt == nil || !h.now().Before(claims.ExpiresAt.Time) {
-		return nil, ErrUnauthorized
+		return nil, claims, ErrUnauthorized
 	}
 	id, epoch, ok := sessionUser(claims)
 	if !ok {
-		return nil, ErrUnauthorized
+		return nil, claims, ErrUnauthorized
 	}
 
 	u, err := h.ent.User.Get(ctx, id)
 	if ent.IsNotFound(err) {
-		return nil, ErrUnauthorized
+		return nil, claims, ErrUnauthorized
 	}
 	if err != nil {
-		return nil, err
+		return nil, claims, err
 	}
 	if u.SessionEpoch != epoch {
-		return nil, ErrUnauthorized
+		return nil, claims, ErrUnauthorized
 	}
-	return u, nil
+	return u, claims, nil
 }

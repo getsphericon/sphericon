@@ -15,11 +15,14 @@ import {
   TextInput,
   Title,
 } from '@mantine/core'
+import type { PasswordInputProps } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { LinkedIdentities } from '../../components/LinkedIdentities.tsx'
+import { SigninProviders } from '../../components/SigninProviders.tsx'
 import {
   siteSecondFactorConfirmEnrollmentMutation,
   siteSecondFactorDisableMutation,
@@ -34,6 +37,24 @@ import type {
   SiteSecondFactorStatus,
 } from '../../generated/site/types.gen.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
+import { Route as securityRoute } from '../../routes/account/security.tsx'
+
+// The proof a step carries: the password, or nothing for a User who has none (the server then
+// reads the fresh provider login from the session, ADR 0048).
+interface Proof {
+  currentPassword?: string
+}
+
+// The form field of a password, shown only to a User who has one.
+function PasswordField({ passwordless, ...props }: { passwordless: boolean } & PasswordInputProps) {
+  const { t } = useTranslation()
+  return passwordless ? null : (
+    <PasswordInput label={t(($) => $.security.passwordLabel)} required {...props} />
+  )
+}
+
+const proofOf = (passwordless: boolean, currentPassword: string): Proof =>
+  passwordless ? {} : { currentPassword }
 
 // RecoveryCodes shows a fresh set once: the server never returns them again.
 function RecoveryCodes({ codes, onDone }: { codes: string[]; onDone: () => void }) {
@@ -63,14 +84,14 @@ function RecoveryCodes({ codes, onDone }: { codes: string[]; onDone: () => void 
 }
 
 // Enrollment shows the pending secret (QR code and key) and confirms it with a
-// code from the authenticator app and the password proven when it started.
+// code from the authenticator app and the proof given when it started.
 function Enrollment({
   enrollment,
-  currentPassword,
+  proof,
   onConfirmed,
 }: {
   enrollment: SiteSecondFactorEnrollment
-  currentPassword: string
+  proof: Proof
   onConfirmed: (codes: string[]) => void
 }) {
   const { t } = useTranslation()
@@ -87,9 +108,7 @@ function Enrollment({
 
   return (
     <form
-      onSubmit={form.onSubmit((v) =>
-        confirm.mutate({ body: { currentPassword, code: v.code.trim() } }),
-      )}
+      onSubmit={form.onSubmit((v) => confirm.mutate({ body: { ...proof, code: v.code.trim() } }))}
     >
       <Stack>
         <Text size="sm">{t(($) => $.security.scanHint)}</Text>
@@ -124,44 +143,41 @@ function Enrollment({
 
 // Disabled is the state without a Second factor: start enrolling, proving the
 // password (both enrollment steps require it, so a hijacked session cannot enroll).
-function Disabled({ onCodes }: { onCodes: (codes: string[]) => void }) {
+function Disabled({
+  passwordless,
+  onCodes,
+}: {
+  passwordless: boolean
+  onCodes: (codes: string[]) => void
+}) {
   const { t } = useTranslation()
   const form = useForm({ initialValues: { currentPassword: '' } })
   const [started, setStarted] = useState<{
     enrollment: SiteSecondFactorEnrollment
-    currentPassword: string
+    proof: Proof
   } | null>(null)
   const start = useResourceMutation({
     mutation: siteSecondFactorStartEnrollmentMutation(),
     errorTitle: t(($) => $.security.startErrorTitle),
-    onDone: (data, variables) =>
-      setStarted({ enrollment: data, currentPassword: variables.body.currentPassword }),
+    onDone: (data, variables) => setStarted({ enrollment: data, proof: variables.body }),
   })
 
   if (started) {
     return (
-      <Enrollment
-        enrollment={started.enrollment}
-        currentPassword={started.currentPassword}
-        onConfirmed={onCodes}
-      />
+      <Enrollment enrollment={started.enrollment} proof={started.proof} onConfirmed={onCodes} />
     )
   }
   return (
     <form
       onSubmit={form.onSubmit((v) =>
-        start.mutate({ body: { currentPassword: v.currentPassword } }),
+        start.mutate({ body: proofOf(passwordless, v.currentPassword) }),
       )}
     >
       <Stack>
         <Text size="sm" c="dimmed">
           {t(($) => $.security.offDescription)}
         </Text>
-        <PasswordInput
-          label={t(($) => $.security.passwordLabel)}
-          required
-          {...form.getInputProps('currentPassword')}
-        />
+        <PasswordField passwordless={passwordless} {...form.getInputProps('currentPassword')} />
         <Group justify="flex-end">
           <Button type="submit" loading={start.isPending}>
             {t(($) => $.security.setUpButton)}
@@ -176,9 +192,11 @@ function Disabled({ onCodes }: { onCodes: (codes: string[]) => void }) {
 // disable it.
 function Enabled({
   status,
+  passwordless,
   onCodes,
 }: {
   status: SiteSecondFactorStatus
+  passwordless: boolean
   onCodes: (codes: string[]) => void
 }) {
   const { t } = useTranslation()
@@ -209,7 +227,7 @@ function Enabled({
 
       <form
         onSubmit={regenerateForm.onSubmit((v) =>
-          regenerate.mutate({ body: { currentPassword: v.currentPassword } }),
+          regenerate.mutate({ body: proofOf(passwordless, v.currentPassword) }),
         )}
       >
         <Stack>
@@ -217,9 +235,8 @@ function Enabled({
           <Text size="sm" c="dimmed">
             {t(($) => $.security.regenerateDescription)}
           </Text>
-          <PasswordInput
-            label={t(($) => $.security.passwordLabel)}
-            required
+          <PasswordField
+            passwordless={passwordless}
             {...regenerateForm.getInputProps('currentPassword')}
           />
           <Group justify="flex-end">
@@ -232,14 +249,15 @@ function Enabled({
 
       <form
         onSubmit={disableForm.onSubmit((v) =>
-          disable.mutate({ body: { currentPassword: v.currentPassword, code: v.code.trim() } }),
+          disable.mutate({
+            body: { ...proofOf(passwordless, v.currentPassword), code: v.code.trim() },
+          }),
         )}
       >
         <Stack>
           <Divider label={t(($) => $.security.disableTitle)} />
-          <PasswordInput
-            label={t(($) => $.security.passwordLabel)}
-            required
+          <PasswordField
+            passwordless={passwordless}
             {...disableForm.getInputProps('currentPassword')}
           />
           <TextInput
@@ -256,6 +274,34 @@ function Enabled({
         </Stack>
       </form>
     </Stack>
+  )
+}
+
+// SecurityBody is the state of the Second factor, or, for a User with no password whose provider
+// login is too old to count, the way to a fresh one (ADR 0048): the steps need that proof.
+function SecurityBody({
+  status,
+  onCodes,
+}: {
+  status: SiteSecondFactorStatus
+  onCodes: (codes: string[]) => void
+}) {
+  const { t } = useTranslation()
+  const passwordless = !status.passwordSet
+  if (passwordless && !status.providerLoginFresh) {
+    return (
+      <Stack>
+        <Alert color="blue" title={t(($) => $.security.providerLoginTitle)}>
+          {t(($) => $.security.providerLoginHint)}
+        </Alert>
+        <SigninProviders returnTo={securityRoute.to} separated={false} />
+      </Stack>
+    )
+  }
+  return status.enabled ? (
+    <Enabled status={status} passwordless={passwordless} onCodes={onCodes} />
+  ) : (
+    <Disabled passwordless={passwordless} onCodes={onCodes} />
   )
 }
 
@@ -286,12 +332,10 @@ export function SecurityPage() {
       {codes ? <RecoveryCodes codes={codes} onDone={() => setCodes(null)} /> : null}
 
       {statusQuery.data && !codes ? (
-        statusQuery.data.enabled ? (
-          <Enabled status={statusQuery.data} onCodes={setCodes} />
-        ) : (
-          <Disabled onCodes={setCodes} />
-        )
+        <SecurityBody status={statusQuery.data} onCodes={setCodes} />
       ) : null}
+
+      <LinkedIdentities />
     </Stack>
   )
 }

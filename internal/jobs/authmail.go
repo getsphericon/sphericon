@@ -21,6 +21,9 @@ const (
 	// flowAddressTaken is the notice to the owner of a Taken address (ADR 0031): it
 	// carries no token, only the sign-in and forgot-password pages.
 	flowAddressTaken = "address_taken"
+	// flowIdentityLinked is the notice that a Sign-in provider was linked to the account
+	// (ADR 0048): Provider names it, Token is the "this was not me" link.
+	flowIdentityLinked = "identity_linked"
 )
 
 // SendAuthMailArgs is the river payload for a self-service account email. Flow
@@ -29,6 +32,8 @@ type SendAuthMailArgs struct {
 	Flow  string `json:"flow"`
 	Email string `json:"email"`
 	Token string `json:"token"`
+	// Provider is the display name of the Sign-in provider (identity_linked only).
+	Provider string `json:"provider,omitempty"`
 	// Discard builds the mail and drops it. Forgot-password enqueues a Discard job
 	// for an address that gets no mail (unknown, or over its budget), so every
 	// request does the same work and the response time says nothing about the
@@ -70,6 +75,9 @@ func buildAuthMail(appURL string, args SendAuthMailArgs) (messaging.EmailMessage
 	if args.Flow == flowAddressTaken {
 		return buildAddressTakenMail(appURL, args.Email), nil
 	}
+	if args.Flow == flowIdentityLinked {
+		return buildIdentityLinkedMail(appURL, args), nil
+	}
 	subjectID, path, introID := authMailCopy(args.Flow)
 	if path == "" {
 		return messaging.EmailMessage{}, fmt.Errorf("send auth mail: unknown flow %q", args.Flow)
@@ -89,6 +97,17 @@ func buildAddressTakenMail(appURL, to string) messaging.EmailMessage {
 		i18n.T("email.address_taken.reset", nil), base+"/forgot-password",
 		i18n.T("email.auth.footer", nil))
 	return messaging.EmailMessage{To: to, Subject: i18n.T("email.address_taken.subject", nil), Text: body}
+}
+
+// buildIdentityLinkedMail renders the notice a silent link of a Sign-in provider sends the
+// owner of the account, with the link that undoes it.
+func buildIdentityLinkedMail(appURL string, args SendAuthMailArgs) messaging.EmailMessage {
+	link := strings.TrimRight(appURL, "/") + "/signin-not-me?token=" + url.QueryEscape(args.Token)
+	body := fmt.Sprintf("%s\n\n%s\n%s\n\n%s\n",
+		i18n.T("email.identity_linked.intro", map[string]any{"Provider": args.Provider}),
+		i18n.T("email.identity_linked.not_me", nil), link,
+		i18n.T("email.auth.footer", nil))
+	return messaging.EmailMessage{To: args.Email, Subject: i18n.T("email.identity_linked.subject", nil), Text: body}
 }
 
 // authMailCopy returns the subject message id, SPA path, and intro message id
@@ -132,6 +151,12 @@ func (c *Client) EnqueueEmailChangeConfirm(ctx context.Context, email, token str
 // mail, so a request's work does not depend on whether the address was taken.
 func (c *Client) EnqueueAddressTakenNotice(ctx context.Context, email string, send bool) error {
 	return c.enqueue(ctx, SendAuthMailArgs{Flow: flowAddressTaken, Email: email, Discard: !send})
+}
+
+// EnqueueIdentityLinkedNotice schedules the notice to the owner of an account that a Sign-in
+// provider was linked to silently, with the token of its "this was not me" link.
+func (c *Client) EnqueueIdentityLinkedNotice(ctx context.Context, email, provider, token string) error {
+	return c.enqueue(ctx, SendAuthMailArgs{Flow: flowIdentityLinked, Email: email, Provider: provider, Token: token})
 }
 
 func (c *Client) enqueue(ctx context.Context, args SendAuthMailArgs) error {

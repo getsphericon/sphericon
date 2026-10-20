@@ -50,6 +50,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/usage"
 	"github.com/getsphericon/sphericon/ent/user"
+	"github.com/getsphericon/sphericon/ent/useridentity"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/ent/workspace"
@@ -151,6 +152,7 @@ func checkColumn(t, c string) error {
 			unsubscribe.Table:        unsubscribe.ValidColumn,
 			usage.Table:              usage.ValidColumn,
 			user.Table:               user.ValidColumn,
+			useridentity.Table:       useridentity.ValidColumn,
 			visitor.Table:            visitor.ValidColumn,
 			webhookendpoint.Table:    webhookendpoint.ValidColumn,
 			workspace.Table:          workspace.ValidColumn,

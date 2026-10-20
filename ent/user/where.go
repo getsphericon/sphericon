@@ -85,6 +85,11 @@ func EmailVerifiedAt(v time.Time) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldEmailVerifiedAt, v))
 }
 
+// EmailProvenAt applies equality check predicate on the "email_proven_at" field. It's identical to EmailProvenAtEQ.
+func EmailProvenAt(v time.Time) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldEmailProvenAt, v))
+}
+
 // SessionEpoch applies equality check predicate on the "session_epoch" field. It's identical to SessionEpochEQ.
 func SessionEpoch(v int64) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldSessionEpoch, v))
@@ -440,6 +445,56 @@ func EmailVerifiedAtNotNil() predicate.User {
 	return predicate.User(sql.FieldNotNull(FieldEmailVerifiedAt))
 }
 
+// EmailProvenAtEQ applies the EQ predicate on the "email_proven_at" field.
+func EmailProvenAtEQ(v time.Time) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldEmailProvenAt, v))
+}
+
+// EmailProvenAtNEQ applies the NEQ predicate on the "email_proven_at" field.
+func EmailProvenAtNEQ(v time.Time) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldEmailProvenAt, v))
+}
+
+// EmailProvenAtIn applies the In predicate on the "email_proven_at" field.
+func EmailProvenAtIn(vs ...time.Time) predicate.User {
+	return predicate.User(sql.FieldIn(FieldEmailProvenAt, vs...))
+}
+
+// EmailProvenAtNotIn applies the NotIn predicate on the "email_proven_at" field.
+func EmailProvenAtNotIn(vs ...time.Time) predicate.User {
+	return predicate.User(sql.FieldNotIn(FieldEmailProvenAt, vs...))
+}
+
+// EmailProvenAtGT applies the GT predicate on the "email_proven_at" field.
+func EmailProvenAtGT(v time.Time) predicate.User {
+	return predicate.User(sql.FieldGT(FieldEmailProvenAt, v))
+}
+
+// EmailProvenAtGTE applies the GTE predicate on the "email_proven_at" field.
+func EmailProvenAtGTE(v time.Time) predicate.User {
+	return predicate.User(sql.FieldGTE(FieldEmailProvenAt, v))
+}
+
+// EmailProvenAtLT applies the LT predicate on the "email_proven_at" field.
+func EmailProvenAtLT(v time.Time) predicate.User {
+	return predicate.User(sql.FieldLT(FieldEmailProvenAt, v))
+}
+
+// EmailProvenAtLTE applies the LTE predicate on the "email_proven_at" field.
+func EmailProvenAtLTE(v time.Time) predicate.User {
+	return predicate.User(sql.FieldLTE(FieldEmailProvenAt, v))
+}
+
+// EmailProvenAtIsNil applies the IsNil predicate on the "email_proven_at" field.
+func EmailProvenAtIsNil() predicate.User {
+	return predicate.User(sql.FieldIsNull(FieldEmailProvenAt))
+}
+
+// EmailProvenAtNotNil applies the NotNil predicate on the "email_proven_at" field.
+func EmailProvenAtNotNil() predicate.User {
+	return predicate.User(sql.FieldNotNull(FieldEmailProvenAt))
+}
+
 // SessionEpochEQ applies the EQ predicate on the "session_epoch" field.
 func SessionEpochEQ(v int64) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldSessionEpoch, v))
@@ -706,6 +761,29 @@ func HasRecoveryCodes() predicate.User {
 func HasRecoveryCodesWith(preds ...predicate.RecoveryCode) predicate.User {
 	return predicate.User(func(s *sql.Selector) {
 		step := newRecoveryCodesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasIdentities applies the HasEdge predicate on the "identities" edge.
+func HasIdentities() predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, IdentitiesTable, IdentitiesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasIdentitiesWith applies the HasEdge predicate on the "identities" edge with a given conditions (other predicates).
+func HasIdentitiesWith(preds ...predicate.UserIdentity) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := newIdentitiesStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

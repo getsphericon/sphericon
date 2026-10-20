@@ -41,6 +41,14 @@ func (User) Fields() []ent.Field {
 		field.Time("email_verified_at").
 			Optional().
 			Nillable(),
+		// When the User's address was proven to be theirs (ADR 0048): set by a Sign-in
+		// provider's verified email (and, from the other flows, by a verify link, an
+		// accepted Invitation and a confirmed email change). It differs from
+		// email_verified_at, which an install that turned verification off sets at
+		// registration without any proof; only a proven address may be linked silently.
+		field.Time("email_proven_at").
+			Optional().
+			Nillable(),
 		// The generation of the User's sessions (ADR 0020): every session token
 		// carries the value current at issuance, and a token whose value differs is
 		// rejected. Bumping it ends every session of the User at once.
@@ -69,6 +77,8 @@ func (User) Edges() []ent.Edge {
 		edge.To("memberships", Membership.Type),
 		edge.To("sent_invitations", Invitation.Type),
 		edge.To("recovery_codes", RecoveryCode.Type).
+			Annotations(entsql.OnDelete(entsql.Cascade)),
+		edge.To("identities", UserIdentity.Type).
 			Annotations(entsql.OnDelete(entsql.Cascade)),
 	}
 }

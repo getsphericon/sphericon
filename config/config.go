@@ -211,6 +211,11 @@ type Config struct {
 	// Invitation or `sphericon user create-owner`.
 	SignupOpen bool
 
+	// Signin holds the credentials of the Sign-in providers the Instance enabled, by registry
+	// name (ADR 0048): SPHERICON_SIGNIN_<PROVIDER>_CLIENT_ID and _CLIENT_SECRET, both or
+	// neither (a half-configured provider stops the start). A provider not in the map is off.
+	Signin map[string]SigninCredentials
+
 	// Logging: level is one of debug|info|warn|error; format is text|json.
 	// Dev defaults to a human-readable coloured text handler, prod to JSON.
 	LogLevel  string
@@ -344,6 +349,11 @@ type environment struct {
 	RequireEmailVerification string `env:"SPHERICON_REQUIRE_EMAIL_VERIFICATION"`
 	SignupOpen               string `env:"SPHERICON_SIGNUP_OPEN"`
 
+	SigninGoogleClientID     string `env:"SPHERICON_SIGNIN_GOOGLE_CLIENT_ID"`
+	SigninGoogleClientSecret string `env:"SPHERICON_SIGNIN_GOOGLE_CLIENT_SECRET"`
+	SigninGitHubClientID     string `env:"SPHERICON_SIGNIN_GITHUB_CLIENT_ID"`
+	SigninGitHubClientSecret string `env:"SPHERICON_SIGNIN_GITHUB_CLIENT_SECRET"`
+
 	LogLevel        string `env:"SPHERICON_LOG_LEVEL" envDefault:"info"`
 	LogFormat       string `env:"SPHERICON_LOG_FORMAT"`
 	OtelServiceName string `env:"OTEL_SERVICE_NAME" envDefault:"sphericon"`
@@ -419,6 +429,14 @@ func Load(envName string) (*Config, error) {
 	}
 
 	edgeCIDRs, err := parseCIDRs("SPHERICON_TRACKING_EDGE_CIDRS", e.TrackingEdgeCIDRs)
+	if err != nil {
+		return nil, err
+	}
+
+	signin, err := signinCredentials([]signinVars{
+		{name: "google", id: e.SigninGoogleClientID, secret: e.SigninGoogleClientSecret, idName: "SPHERICON_SIGNIN_GOOGLE_CLIENT_ID", secretName: "SPHERICON_SIGNIN_GOOGLE_CLIENT_SECRET"},
+		{name: "github", id: e.SigninGitHubClientID, secret: e.SigninGitHubClientSecret, idName: "SPHERICON_SIGNIN_GITHUB_CLIENT_ID", secretName: "SPHERICON_SIGNIN_GITHUB_CLIENT_SECRET"},
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -499,6 +517,7 @@ func Load(envName string) (*Config, error) {
 
 		RequireEmailVerification: strings.TrimSpace(e.RequireEmailVerification) != "false",
 		SignupOpen:               !strings.EqualFold(strings.TrimSpace(e.SignupOpen), "false"),
+		Signin:                   signin,
 		LogLevel:                 e.LogLevel,
 		LogFormat:                e.LogFormat,
 

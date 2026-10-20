@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"time"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
@@ -25,20 +26,25 @@ func (h *Handlers) SiteSecondFactorGetStatus(ctx context.Context) (*siteapi.Site
 	if err != nil {
 		return nil, err
 	}
+	u, err := h.accounts.User(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
 	return &siteapi.SiteSecondFactorStatus{
 		Enabled: st.Enabled, Pending: st.Pending, RecoveryCodesRemaining: int32(st.RecoveryCodesRemaining),
+		PasswordSet: u.PasswordHash != "", ProviderLoginFresh: u.PasswordHash == "" && h.providerLoginFresh(ctx),
 	}, nil
 }
 
 // SiteSecondFactorStartEnrollment creates a pending TOTP secret (ADR 0020) once the
 // password is proven: a hijacked session alone cannot enroll a factor of its own.
 func (h *Handlers) SiteSecondFactorStartEnrollment(ctx context.Context, req *siteapi.SiteSecondFactorStartInput) (siteapi.SiteSecondFactorStartEnrollmentRes, error) {
-	userID, ok, err := h.provePassword(ctx, req.CurrentPassword)
+	userID, denied, err := h.proveIdentity(ctx, req.CurrentPassword)
 	if err != nil {
 		return nil, err
 	}
-	if !ok {
-		v := siteapi.SiteSecondFactorStartEnrollmentForbidden(passwordIncorrectProblem())
+	if denied != nil {
+		v := siteapi.SiteSecondFactorStartEnrollmentForbidden(*denied)
 		return &v, nil
 	}
 	e, err := h.secondFactor.StartEnrollment(ctx, userID)
@@ -56,12 +62,12 @@ func (h *Handlers) SiteSecondFactorStartEnrollment(ctx context.Context, req *sit
 // and a valid code, returns the Recovery codes once and reissues the acting session
 // (the epoch moved).
 func (h *Handlers) SiteSecondFactorConfirmEnrollment(ctx context.Context, req *siteapi.SiteSecondFactorConfirmInput) (siteapi.SiteSecondFactorConfirmEnrollmentRes, error) {
-	userID, ok, err := h.provePassword(ctx, req.CurrentPassword)
+	userID, denied, err := h.proveIdentity(ctx, req.CurrentPassword)
 	if err != nil {
 		return nil, err
 	}
-	if !ok {
-		v := siteapi.SiteSecondFactorConfirmEnrollmentForbidden(passwordIncorrectProblem())
+	if denied != nil {
+		v := siteapi.SiteSecondFactorConfirmEnrollmentForbidden(*denied)
 		return &v, nil
 	}
 	u, codes, err := h.secondFactor.ConfirmEnrollment(ctx, userID, req.Code)
@@ -78,7 +84,7 @@ func (h *Handlers) SiteSecondFactorConfirmEnrollment(ctx context.Context, req *s
 	case err != nil:
 		return nil, err
 	}
-	cookie, err := h.sessions.Issue(u)
+	cookie, err := h.sessions.IssueAfterProviderLogin(u, providerLoginAt(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -88,12 +94,12 @@ func (h *Handlers) SiteSecondFactorConfirmEnrollment(ctx context.Context, req *s
 // SiteSecondFactorRegenerateRecoveryCodes replaces the Recovery codes after the
 // password is proven, and reissues the acting session.
 func (h *Handlers) SiteSecondFactorRegenerateRecoveryCodes(ctx context.Context, req *siteapi.SiteRecoveryCodesInput) (siteapi.SiteSecondFactorRegenerateRecoveryCodesRes, error) {
-	userID, ok, err := h.provePassword(ctx, req.CurrentPassword)
+	userID, denied, err := h.proveIdentity(ctx, req.CurrentPassword)
 	if err != nil {
 		return nil, err
 	}
-	if !ok {
-		v := siteapi.SiteSecondFactorRegenerateRecoveryCodesForbidden(passwordIncorrectProblem())
+	if denied != nil {
+		v := siteapi.SiteSecondFactorRegenerateRecoveryCodesForbidden(*denied)
 		return &v, nil
 	}
 	u, codes, err := h.secondFactor.RegenerateRecoveryCodes(ctx, userID)
@@ -104,7 +110,7 @@ func (h *Handlers) SiteSecondFactorRegenerateRecoveryCodes(ctx context.Context, 
 	if err != nil {
 		return nil, err
 	}
-	cookie, err := h.sessions.Issue(u)
+	cookie, err := h.sessions.IssueAfterProviderLogin(u, providerLoginAt(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -114,12 +120,12 @@ func (h *Handlers) SiteSecondFactorRegenerateRecoveryCodes(ctx context.Context, 
 // SiteSecondFactorDisable removes the Second factor after the password and a
 // current code are proven, and reissues the acting session.
 func (h *Handlers) SiteSecondFactorDisable(ctx context.Context, req *siteapi.SiteSecondFactorDisableInput) (siteapi.SiteSecondFactorDisableRes, error) {
-	userID, ok, err := h.provePassword(ctx, req.CurrentPassword)
+	userID, denied, err := h.proveIdentity(ctx, req.CurrentPassword)
 	if err != nil {
 		return nil, err
 	}
-	if !ok {
-		v := siteapi.SiteSecondFactorDisableForbidden(passwordIncorrectProblem())
+	if denied != nil {
+		v := siteapi.SiteSecondFactorDisableForbidden(*denied)
 		return &v, nil
 	}
 	u, err := h.secondFactor.Disable(ctx, userID, req.Code)
@@ -133,7 +139,7 @@ func (h *Handlers) SiteSecondFactorDisable(ctx context.Context, req *siteapi.Sit
 	case err != nil:
 		return nil, err
 	}
-	cookie, err := h.sessions.Issue(u)
+	cookie, err := h.sessions.IssueAfterProviderLogin(u, providerLoginAt(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -149,32 +155,67 @@ func sessionUserID(ctx context.Context) (int64, error) {
 	return a.UserID, nil
 }
 
-// provePassword checks the session User's current password the way a login does
-// (ADR 0020, ADR 0025): while the account's Login throttle delay runs it fails with
-// the 429 rejection even for the right password, and a wrong password counts as a
-// failure of the account. A right one does not reset the counter: only a completed
-// login does, else a session holder could clear a run of second-step guesses. ok is
-// false for a wrong password.
-func (h *Handlers) provePassword(ctx context.Context, password string) (userID int64, ok bool, err error) {
+// providerLoginProofTTL is how long a Sign-in provider login stands in for the password of a
+// User who has none (ADR 0048): the proof is the time carried by the session, so it needs no
+// store and ends by itself.
+const providerLoginProofTTL = 5 * time.Minute
+
+// proveIdentity is the proof the steps that ask for the password need (ADR 0020, ADR 0048).
+// A User with a password proves it the way a login does (ADR 0025): while the account's Login
+// throttle delay runs it fails with the 429 rejection even for the right password, and a wrong
+// password counts as a failure of the account. A right one does not reset the counter: only a
+// completed login does, else a session holder could clear a run of second-step guesses. A User
+// with no password proves a Sign-in provider login of the last providerLoginProofTTL instead,
+// carried by the session; there is nothing to guess, so nothing is counted. denied is the
+// problem to answer with when the proof fails, nil when it holds.
+func (h *Handlers) proveIdentity(ctx context.Context, password siteapi.OptString) (userID int64, denied *siteapi.ProblemDetails, err error) {
 	if userID, err = sessionUserID(ctx); err != nil {
-		return 0, false, err
+		return 0, nil, err
 	}
 	u, err := h.accounts.User(ctx, userID)
 	if err != nil {
-		return 0, false, err
+		return 0, nil, err
+	}
+	if u.PasswordHash == "" {
+		if h.providerLoginFresh(ctx) {
+			return userID, nil, nil
+		}
+		v := problem(http.StatusForbidden, i18n.T("errors.provider_login_required", nil))
+		return userID, &v, nil
 	}
 	wait, err := h.attempts.Delay(ctx, accounts.KindLogin, u.Email)
 	if err != nil {
-		return 0, false, err
+		return 0, nil, err
 	}
 	if wait > 0 {
-		return 0, false, ratelimit.FromContext(ctx).Delay(ctx, ratelimit.PolicyLoginAccount,
+		return 0, nil, ratelimit.FromContext(ctx).Delay(ctx, ratelimit.PolicyLoginAccount,
 			h.attempts.Limit(accounts.KindLogin), wait, h.attempts.Now())
 	}
-	if u.PasswordHash != "" && credentials.VerifyPassword(u.PasswordHash, password) {
-		return userID, true, nil
+	if password.Set && credentials.VerifyPassword(u.PasswordHash, password.Value) {
+		return userID, nil, nil
 	}
-	return userID, false, h.attempts.RecordFailure(ctx, accounts.KindLogin, u.Email)
+	v := passwordIncorrectProblem()
+	return userID, &v, h.attempts.RecordFailure(ctx, accounts.KindLogin, u.Email)
+}
+
+// providerLoginFresh is whether the request's session began with a Sign-in provider login
+// recent enough to count as a proof.
+func (h *Handlers) providerLoginFresh(ctx context.Context) bool {
+	a := auth.GetSiteAuth(ctx)
+	if a == nil || a.ProviderLoginAt.IsZero() {
+		return false
+	}
+	age := h.now().Sub(a.ProviderLoginAt)
+	return age >= 0 && age <= providerLoginProofTTL
+}
+
+// providerLoginAt is the provider login time the request's session carries, to hand to the
+// session that replaces it.
+func providerLoginAt(ctx context.Context) time.Time {
+	if a := auth.GetSiteAuth(ctx); a != nil {
+		return a.ProviderLoginAt
+	}
+	return time.Time{}
 }
 
 func passwordIncorrectProblem() siteapi.ProblemDetails {

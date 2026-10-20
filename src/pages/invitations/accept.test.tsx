@@ -2,6 +2,7 @@ import { HttpResponse } from 'msw'
 import { expect, test } from 'vitest'
 
 import {
+  handleSiteAuthSigninProviders,
   handleSitePublicInvitationsAccept,
   handleSitePublicInvitationsLookup,
   handleSiteWorkspacesList,
@@ -111,5 +112,33 @@ test('an unknown invitation shows the invalid alert', async () => {
 
   await expect
     .element(screen.getByText('This invitation is invalid or has expired.'))
+    .toBeInTheDocument()
+})
+
+test('an invitation offers each enabled provider and hands the provider flow its token', async () => {
+  worker.use(
+    handleSiteWorkspacesList(() => problem(401)),
+    handleSitePublicInvitationsLookup({ body: invite }),
+    handleSiteAuthSigninProviders({ body: { items: [{ name: 'google', displayName: 'Google' }] } }),
+  )
+  const { screen } = await renderWithRouter(<AcceptInvitationPage />, MOUNT)
+
+  await expect
+    .element(screen.getByRole('link', { name: 'Continue with Google' }))
+    .toHaveAttribute('href', '/site/auth/signin/google/start?invitation=inv-1')
+})
+
+test('a provider sign-in refused for the invited address says so on the invitation', async () => {
+  worker.use(
+    handleSiteWorkspacesList(() => problem(401)),
+    handleSitePublicInvitationsLookup({ body: invite }),
+  )
+  const { screen } = await renderWithRouter(<AcceptInvitationPage />, {
+    ...MOUNT,
+    initialPath: `${MOUNT.initialPath}?error=invitation_email_mismatch`,
+  })
+
+  await expect
+    .element(screen.getByText(/This invitation is for a different email address/))
     .toBeInTheDocument()
 })

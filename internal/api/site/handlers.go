@@ -31,6 +31,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/secondfactor"
 	"github.com/getsphericon/sphericon/internal/segments"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
+	"github.com/getsphericon/sphericon/internal/signin"
 	"github.com/getsphericon/sphericon/internal/tags"
 	"github.com/getsphericon/sphericon/internal/templates"
 	"github.com/getsphericon/sphericon/internal/tracking"
@@ -64,6 +65,9 @@ type SystemMailEnqueuer interface {
 	// EnqueueAddressTakenNotice queues the tokenless notice to the owner of a Taken
 	// address (ADR 0031). With send false the job is queued but its mail is dropped.
 	EnqueueAddressTakenNotice(ctx context.Context, email string, send bool) error
+	// EnqueueIdentityLinkedNotice queues the notice to the owner of an account that a Sign-in
+	// provider was linked to silently (ADR 0048); token is its "this was not me" link.
+	EnqueueIdentityLinkedNotice(ctx context.Context, email, provider, token string) error
 	// EnqueueMemberInvite sends the workspace invite email. It is best-effort:
 	// the invite also returns a copy-link, so a missing/failed mailer (common on
 	// self-hosted with no SMTP) must not fail the invite.
@@ -114,6 +118,8 @@ type Handlers struct {
 	signupOpen bool
 	// challenges signs the login challenge on the env clock (ADR 0020).
 	challenges *authtoken.Signer
+	// signin is the Sign-in providers of the Instance (ADR 0048).
+	signin *signin.Providers
 }
 
 // AuditLog is the read seam of the Enterprise Audit log (ADR 0022), implemented by
@@ -205,6 +211,9 @@ type Deps struct {
 	RequireEmailVerification bool
 	// SignupOpen is SPHERICON_SIGNUP_OPEN (ADR 0042): when false, register answers 403.
 	SignupOpen bool
+	// Signin is the Sign-in providers the Instance enabled (ADR 0048); none enabled when
+	// no provider is configured.
+	Signin *signin.Providers
 }
 
 func NewHandlers(d Deps) *Handlers {
@@ -218,6 +227,7 @@ func NewHandlers(d Deps) *Handlers {
 		automations: d.Automations, broadcasts: d.Broadcasts, welcome: d.Welcome,
 		sysmail: d.SysMail, sendingDomains: d.SendingDomains, integrations: d.Integrations, tokens: d.Tokens, tracker: d.Tracker, appURL: d.AppURL,
 		oauth: d.OAuth, audit: d.Audit, abuseWatch: d.AbuseWatch, supportEmail: d.SupportEmail, mcpURL: d.MCPURL, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, now: now, instance: d.Instance, accountLink: d.AccountLink, holdsHonoured: d.HoldsHonoured, requireVerification: d.RequireEmailVerification, signupOpen: d.SignupOpen,
+		signin:     d.Signin,
 		challenges: d.Tokens.WithClock(d.Clock),
 	}
 }

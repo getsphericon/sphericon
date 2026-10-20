@@ -554,6 +554,24 @@ The browser that submitted a registration. It holds a random value that the veri
 carries (hashed), so the link can tell it is being opened where the registration happened.
 _Avoid_: Same device, trusted browser
 
+**Sign-in provider**:
+An external service that proves a person's email address so they can register or log in without a
+password of ours: Google, GitHub. The Instance operator enables one by setting its OAuth client id
+and secret; a provider replaces only the password step (an enrolled Second factor, the Login throttle
+and registration gates still apply). A person's own account at a provider, not an organization's
+identity system: per-Workspace federation stays Enterprise (ADR 0014).
+_Avoid_: SSO, social login, OAuth provider (that is the OAuth server for MCP clients)
+
+**Linked identity**:
+A Sign-in provider and the provider's immutable subject for one person, attached to a User. A
+sign-in finds the User by this pair and never by email, so a person who changes the address at
+the provider still reaches the same account. When a sign-in with an unknown subject carries a
+trusted email that a Verified User holds, the identity is linked silently and the owner is mailed a
+notice with a "this was not me" link that unlinks it and ends every session. If that address was
+never proven (an install with verification off marks it Verified without proof), the link also
+clears the password, so whoever proves the address is the one who controls it.
+_Avoid_: Social account, connected account
+
 **Taken address**:
 An email that already belongs to a User. Nobody but its owner may learn that it is taken: a
 request that would hit it gets the same answer as one that would not, and the owner is told by
