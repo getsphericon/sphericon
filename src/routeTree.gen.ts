@@ -23,6 +23,7 @@ import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as UnsubscribedRouteImport } from './routes/unsubscribed'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as AccountIndexRouteImport } from './routes/account/index'
+import { Route as AccountDeleteRouteImport } from './routes/account/delete'
 import { Route as AccountInstanceRouteImport } from './routes/account/instance'
 import { Route as AccountSecurityRouteImport } from './routes/account/security'
 import { Route as ConsoleAuthedRouteRouteImport } from './routes/console/_authed/route'
@@ -131,6 +132,11 @@ const VerifyEmailRoute = VerifyEmailRouteImport.update({
 const AccountIndexRoute = AccountIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AccountRouteRoute,
+} as any)
+const AccountDeleteRoute = AccountDeleteRouteImport.update({
+  id: '/delete',
+  path: '/delete',
   getParentRoute: () => AccountRouteRoute,
 } as any)
 const AccountInstanceRoute = AccountInstanceRouteImport.update({
@@ -374,6 +380,7 @@ export interface FileRoutesByFullPath {
   '/unsubscribed': typeof UnsubscribedRoute
   '/verify-email': typeof VerifyEmailRoute
   '/workspaces/$workspaceId': typeof WorkspacesWorkspaceIdRouteRouteWithChildren
+  '/account/delete': typeof AccountDeleteRoute
   '/account/instance': typeof AccountInstanceRoute
   '/account/security': typeof AccountSecurityRoute
   '/console/login': typeof ConsoleLoginRoute
@@ -426,6 +433,7 @@ export interface FileRoutesByTo {
   '/unsubscribe': typeof UnsubscribeRoute
   '/unsubscribed': typeof UnsubscribedRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/account/delete': typeof AccountDeleteRoute
   '/account/instance': typeof AccountInstanceRoute
   '/account/security': typeof AccountSecurityRoute
   '/console/login': typeof ConsoleLoginRoute
@@ -480,6 +488,7 @@ export interface FileRoutesById {
   '/verify-email': typeof VerifyEmailRoute
   '/console/_authed': typeof ConsoleAuthedRouteRouteWithChildren
   '/workspaces/$workspaceId': typeof WorkspacesWorkspaceIdRouteRouteWithChildren
+  '/account/delete': typeof AccountDeleteRoute
   '/account/instance': typeof AccountInstanceRoute
   '/account/security': typeof AccountSecurityRoute
   '/console/login': typeof ConsoleLoginRoute
@@ -536,6 +545,7 @@ export interface FileRouteTypes {
     | '/unsubscribed'
     | '/verify-email'
     | '/workspaces/$workspaceId'
+    | '/account/delete'
     | '/account/instance'
     | '/account/security'
     | '/console/login'
@@ -588,6 +598,7 @@ export interface FileRouteTypes {
     | '/unsubscribe'
     | '/unsubscribed'
     | '/verify-email'
+    | '/account/delete'
     | '/account/instance'
     | '/account/security'
     | '/console/login'
@@ -641,6 +652,7 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/console/_authed'
     | '/workspaces/$workspaceId'
+    | '/account/delete'
     | '/account/instance'
     | '/account/security'
     | '/console/login'
@@ -799,6 +811,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/account/'
       preLoaderRoute: typeof AccountIndexRouteImport
+      parentRoute: typeof AccountRouteRoute
+    }
+    '/account/delete': {
+      id: '/account/delete'
+      path: '/delete'
+      fullPath: '/account/delete'
+      preLoaderRoute: typeof AccountDeleteRouteImport
       parentRoute: typeof AccountRouteRoute
     }
     '/account/instance': {
@@ -1078,12 +1097,14 @@ declare module '@tanstack/react-router' {
 }
 
 interface AccountRouteRouteChildren {
+  AccountDeleteRoute: typeof AccountDeleteRoute
   AccountInstanceRoute: typeof AccountInstanceRoute
   AccountSecurityRoute: typeof AccountSecurityRoute
   AccountIndexRoute: typeof AccountIndexRoute
 }
 
 const AccountRouteRouteChildren: AccountRouteRouteChildren = {
+  AccountDeleteRoute: AccountDeleteRoute,
   AccountInstanceRoute: AccountInstanceRoute,
   AccountSecurityRoute: AccountSecurityRoute,
   AccountIndexRoute: AccountIndexRoute,

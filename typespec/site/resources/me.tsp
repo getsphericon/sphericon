@@ -53,16 +53,26 @@ model SiteSoleOwnedWorkspace {
 }
 
 /** Confirmation of User deletion (ADR 0050): the User's own email typed in, their password
- * and, when a Second factor is enrolled, a current code. */
+ * (a User with no password sends the token of the mailed link instead) and, when a Second
+ * factor is enrolled, a current code. */
 model SiteDeleteUserInput {
   /** The User's own email address, typed in */
   email: EmailAddress;
 
-  /** Current password */
-  currentPassword: string;
+  /** Current password; required of a User who has one */
+  currentPassword?: string;
+
+  /** The token of the one-time link mailed to a User with no password; required of that User */
+  token?: string;
 
   /** A current TOTP code, or an unused Recovery code; required when a Second factor is enrolled */
   code?: string;
+}
+
+/** The request for the one-time deletion link of a User with no password (ADR 0050) */
+model SiteDeleteUserLinkInput {
+  /** The User's own email address, typed in */
+  email: EmailAddress;
 }
 
 /** The body of a refused User deletion: ProblemDetails plus, when the User is the only Owner
@@ -134,8 +144,10 @@ namespace SiteUser {
   /** Delete the User, immediately and irreversibly (User deletion, ADR 0050): every Membership,
    * Linked identity, the Second factor and the Recovery codes go, every session ends (the
    * cookie is cleared here) and one email tells the address. Needs the User's own email, the
-   * password and, with a Second factor, a current code. 403 on a wrong password or code (both
-   * feed the Login throttle: 429 while its delay runs). 422 when the typed email is not the
+   * password (a User with no password, signed in only through a Sign-in provider, sends the
+   * token of the link mailed by `deleteUserLink` instead: 400 when it is expired, used, or
+   * was issued to another User) and, with a Second factor, a current code. 403 on a wrong
+   * password or code (both feed the Login throttle: 429 while its delay runs). 422 when the typed email is not the
    * User's, or while the User is the only Owner of a Workspace that is not in its deletion
    * window: the Workspaces are listed and nothing is deleted. A Workspace in its deletion
    * window does not block. */
@@ -148,7 +160,19 @@ namespace SiteUser {
         /** The expired session cookie */
         @header("Set-Cookie") setCookie: string;
       }
+    | BadRequestProblem
     | ForbiddenProblem
     | SiteDeleteUserRefusedProblem
     | TooManyRequestsProblem;
+
+  /** Mail the one-time deletion link to a User with no password (ADR 0050): it goes to the
+   * User's Verified email, is bound to the User (not the address), expires after an hour and
+   * works once. 202 whether or not a mail is due (a mail flood is throttled silently). 422
+   * when the typed email is not the User's, or when the User has a password and confirms with
+   * it instead. */
+  @post
+  @route("/delete/link")
+  op deleteUserLink(@body body: SiteDeleteUserLinkInput):
+    | AcceptedResponse
+    | SiteDeleteUserRefusedProblem;
 }

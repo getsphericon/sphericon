@@ -437,6 +437,10 @@ type SiteTransactionalEmailsListRes interface {
 	siteTransactionalEmailsListRes()
 }
 
+type SiteUserDeleteUserLinkRes interface {
+	siteUserDeleteUserLinkRes()
+}
+
 type SiteUserDeleteUserRes interface {
 	siteUserDeleteUserRes()
 }

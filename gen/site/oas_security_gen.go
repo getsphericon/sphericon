@@ -134,6 +134,7 @@ var operationRolesApiKeyAuth = map[string][]string{
 	SiteTokensListOperation:                           []string{},
 	SiteTransactionalEmailsListOperation:              []string{},
 	SiteUserDeleteUserOperation:                       []string{},
+	SiteUserDeleteUserLinkOperation:                   []string{},
 	SiteUserEmailChangeOperation:                      []string{},
 	SiteUserGetMeOperation:                            []string{},
 	SiteUserSignOutEverywhereOperation:                []string{},

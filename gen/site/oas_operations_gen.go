@@ -122,6 +122,7 @@ const (
 	SiteTokensListOperation                           OperationName = "SiteTokensList"
 	SiteTransactionalEmailsListOperation              OperationName = "SiteTransactionalEmailsList"
 	SiteUserDeleteUserOperation                       OperationName = "SiteUserDeleteUser"
+	SiteUserDeleteUserLinkOperation                   OperationName = "SiteUserDeleteUserLink"
 	SiteUserEmailChangeOperation                      OperationName = "SiteUserEmailChange"
 	SiteUserGetMeOperation                            OperationName = "SiteUserGetMe"
 	SiteUserSignOutEverywhereOperation                OperationName = "SiteUserSignOutEverywhere"

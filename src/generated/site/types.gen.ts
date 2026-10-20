@@ -1673,7 +1673,8 @@ export type SiteCustomFieldType = typeof SiteCustomFieldType[keyof typeof SiteCu
 
 /**
  * Confirmation of User deletion (ADR 0050): the User's own email typed in, their password
- * and, when a Second factor is enrolled, a current code.
+ * (a User with no password sends the token of the mailed link instead) and, when a Second
+ * factor is enrolled, a current code.
  */
 export type SiteDeleteUserInput = {
   /**
@@ -1681,13 +1682,27 @@ export type SiteDeleteUserInput = {
    */
   email: EmailAddress;
   /**
-   * Current password
+   * Current password; required of a User who has one
    */
-  currentPassword: string;
+  currentPassword?: string;
+  /**
+   * The token of the one-time link mailed to a User with no password; required of that User
+   */
+  token?: string;
   /**
    * A current TOTP code, or an unused Recovery code; required when a Second factor is enrolled
    */
   code?: string;
+};
+
+/**
+ * The request for the one-time deletion link of a User with no password (ADR 0050)
+ */
+export type SiteDeleteUserLinkInput = {
+  /**
+   * The User's own email address, typed in
+   */
+  email: EmailAddress;
 };
 
 /**
@@ -4730,6 +4745,10 @@ export type SiteUserDeleteUserData = {
 
 export type SiteUserDeleteUserErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 forbidden response
    */
   403: ProblemDetails;
@@ -4753,6 +4772,29 @@ export type SiteUserDeleteUserResponses = {
 };
 
 export type SiteUserDeleteUserResponse = SiteUserDeleteUserResponses[keyof SiteUserDeleteUserResponses];
+
+export type SiteUserDeleteUserLinkData = {
+  body: SiteDeleteUserLinkInput;
+  path?: never;
+  query?: never;
+  url: '/me/delete/link';
+};
+
+export type SiteUserDeleteUserLinkErrors = {
+  /**
+   * RFC 7807 validation response of User deletion
+   */
+  422: SiteDeleteUserProblemDetails;
+};
+
+export type SiteUserDeleteUserLinkError = SiteUserDeleteUserLinkErrors[keyof SiteUserDeleteUserLinkErrors];
+
+export type SiteUserDeleteUserLinkResponses = {
+  /**
+   * The request has been accepted for processing, but processing has not yet completed.
+   */
+  202: unknown;
+};
 
 export type SiteUserEmailChangeData = {
   body: SiteEmailChangeInput;

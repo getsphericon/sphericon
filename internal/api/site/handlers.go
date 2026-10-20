@@ -74,6 +74,9 @@ type SystemMailEnqueuer interface {
 	// EnqueueUserDeletedNotice queues the one mail that tells an address its User was deleted
 	// (ADR 0050).
 	EnqueueUserDeletedNotice(ctx context.Context, email string) error
+	// EnqueueUserDeletionLink queues the one-time link that confirms a passwordless User's
+	// deletion (ADR 0050). With send false the job is queued but its mail is dropped.
+	EnqueueUserDeletionLink(ctx context.Context, email, token string, send bool) error
 	// EnqueueMemberInvite sends the workspace invite email. It is best-effort:
 	// the invite also returns a copy-link, so a missing/failed mailer (common on
 	// self-hosted with no SMTP) must not fail the invite.

@@ -791,14 +791,25 @@ type Handler interface {
 	//
 	// Delete the User, immediately and irreversibly (User deletion, ADR 0050): every Membership, Linked
 	// identity, the Second factor and the Recovery codes go, every session ends (the cookie is cleared
-	// here) and one email tells the address. Needs the User's own email, the password and, with a Second
-	// factor, a current code. 403 on a wrong password or code (both feed the Login throttle: 429 while its
-	// delay runs). 422 when the typed email is not the User's, or while the User is the only Owner of a
-	// Workspace that is not in its deletion window: the Workspaces are listed and nothing is deleted. A
-	// Workspace in its deletion window does not block.
+	// here) and one email tells the address. Needs the User's own email, the password (a User with no
+	// password, signed in only through a Sign-in provider, sends the token of the link mailed by
+	// `deleteUserLink` instead: 400 when it is expired, used, or was issued to another User) and, with a
+	// Second factor, a current code. 403 on a wrong password or code (both feed the Login throttle: 429
+	// while its delay runs). 422 when the typed email is not the User's, or while the User is the only
+	// Owner of a Workspace that is not in its deletion window: the Workspaces are listed and nothing is
+	// deleted. A Workspace in its deletion window does not block.
 	//
 	// POST /me/delete
 	SiteUserDeleteUser(ctx context.Context, req *SiteDeleteUserInput) (SiteUserDeleteUserRes, error)
+	// SiteUserDeleteUserLink implements SiteUser_deleteUserLink operation.
+	//
+	// Mail the one-time deletion link to a User with no password (ADR 0050): it goes to the User's
+	// Verified email, is bound to the User (not the address), expires after an hour and works once. 202
+	// whether or not a mail is due (a mail flood is throttled silently). 422 when the typed email is not
+	// the User's, or when the User has a password and confirms with it instead.
+	//
+	// POST /me/delete/link
+	SiteUserDeleteUserLink(ctx context.Context, req *SiteDeleteUserLinkInput) (SiteUserDeleteUserLinkRes, error)
 	// SiteUserEmailChange implements SiteUser_emailChange operation.
 	//
 	// Request an email change; sends a confirmation link to the new address. Requires the current

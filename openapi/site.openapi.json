@@ -1490,7 +1490,7 @@
     "/me/delete": {
       "post": {
         "operationId": "SiteUser_deleteUser",
-        "description": "Delete the User, immediately and irreversibly (User deletion, ADR 0050): every Membership,\nLinked identity, the Second factor and the Recovery codes go, every session ends (the\ncookie is cleared here) and one email tells the address. Needs the User's own email, the\npassword and, with a Second factor, a current code. 403 on a wrong password or code (both\nfeed the Login throttle: 429 while its delay runs). 422 when the typed email is not the\nUser's, or while the User is the only Owner of a Workspace that is not in its deletion\nwindow: the Workspaces are listed and nothing is deleted. A Workspace in its deletion\nwindow does not block.",
+        "description": "Delete the User, immediately and irreversibly (User deletion, ADR 0050): every Membership,\nLinked identity, the Second factor and the Recovery codes go, every session ends (the\ncookie is cleared here) and one email tells the address. Needs the User's own email, the\npassword (a User with no password, signed in only through a Sign-in provider, sends the\ntoken of the link mailed by `deleteUserLink` instead: 400 when it is expired, used, or\nwas issued to another User) and, with a Second factor, a current code. 403 on a wrong\npassword or code (both feed the Login throttle: 429 while its delay runs). 422 when the typed email is not the\nUser's, or while the User is the only Owner of a Workspace that is not in its deletion\nwindow: the Workspaces are listed and nothing is deleted. A Workspace in its deletion\nwindow does not block.",
         "parameters": [],
         "responses": {
           "204": {
@@ -1501,6 +1501,16 @@
                 "description": "The expired session cookie",
                 "schema": {
                   "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -1577,6 +1587,39 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/SiteDeleteUserInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/delete/link": {
+      "post": {
+        "operationId": "SiteUser_deleteUserLink",
+        "description": "Mail the one-time deletion link to a User with no password (ADR 0050): it goes to the\nUser's Verified email, is bound to the User (not the address), expires after an hour and\nworks once. 202 whether or not a mail is due (a mail flood is throttled silently). 422\nwhen the typed email is not the User's, or when the User has a password and confirms with\nit instead.",
+        "parameters": [],
+        "responses": {
+          "202": {
+            "description": "The request has been accepted for processing, but processing has not yet completed."
+          },
+          "422": {
+            "description": "RFC 7807 validation response of User deletion",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteDeleteUserProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site User"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteDeleteUserLinkInput"
               }
             }
           }
@@ -11274,7 +11317,7 @@
       },
       "SiteDeleteUserInput": {
         "type": "object",
-        "required": ["email", "currentPassword"],
+        "required": ["email"],
         "properties": {
           "email": {
             "allOf": [
@@ -11286,14 +11329,33 @@
           },
           "currentPassword": {
             "type": "string",
-            "description": "Current password"
+            "description": "Current password; required of a User who has one"
+          },
+          "token": {
+            "type": "string",
+            "description": "The token of the one-time link mailed to a User with no password; required of that User"
           },
           "code": {
             "type": "string",
             "description": "A current TOTP code, or an unused Recovery code; required when a Second factor is enrolled"
           }
         },
-        "description": "Confirmation of User deletion (ADR 0050): the User's own email typed in, their password\nand, when a Second factor is enrolled, a current code."
+        "description": "Confirmation of User deletion (ADR 0050): the User's own email typed in, their password\n(a User with no password sends the token of the mailed link instead) and, when a Second\nfactor is enrolled, a current code."
+      },
+      "SiteDeleteUserLinkInput": {
+        "type": "object",
+        "required": ["email"],
+        "properties": {
+          "email": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EmailAddress"
+              }
+            ],
+            "description": "The User's own email address, typed in"
+          }
+        },
+        "description": "The request for the one-time deletion link of a User with no password (ADR 0050)"
       },
       "SiteDeleteUserProblemDetails": {
         "type": "object",

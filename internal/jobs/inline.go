@@ -82,6 +82,11 @@ func (i *Inline) EnqueueIdentityLinkedNotice(ctx context.Context, email, provide
 	return SendAuthMail(ctx, i.systemSender, i.appURL, SendAuthMailArgs{Flow: flowIdentityLinked, Email: email, Provider: provider, Token: token})
 }
 
+// EnqueueUserDeletionLink sends the deletion link mail now (nothing when send is false).
+func (i *Inline) EnqueueUserDeletionLink(ctx context.Context, email, token string, send bool) error {
+	return SendAuthMail(ctx, i.systemSender, i.appURL, SendAuthMailArgs{Flow: flowUserDeletion, Email: email, Token: token, Discard: !send})
+}
+
 // EnqueueUserDeletedNotice sends the User-deleted notice now.
 func (i *Inline) EnqueueUserDeletedNotice(ctx context.Context, email string) error {
 	return SendAuthMail(ctx, i.systemSender, i.appURL, SendAuthMailArgs{Flow: flowUserDeleted, Email: email})

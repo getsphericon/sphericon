@@ -6246,7 +6246,19 @@ func encodeSiteUserDeleteUserResponse(response SiteUserDeleteUserRes, w http.Res
 
 		return nil
 
-	case *ProblemDetails:
+	case *SiteUserDeleteUserBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteUserDeleteUserForbidden:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(403)
 
@@ -6329,6 +6341,30 @@ func encodeSiteUserDeleteUserResponse(response SiteUserDeleteUserRes, w http.Res
 
 		e := new(jx.Encoder)
 		response.Response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
+}
+
+func encodeSiteUserDeleteUserLinkResponse(response SiteUserDeleteUserLinkRes, w http.ResponseWriter, span trace.Span) error {
+	switch response := response.(type) {
+	case *SiteUserDeleteUserLinkAccepted:
+		w.WriteHeader(202)
+
+		return nil
+
+	case *SiteDeleteUserProblemDetails:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(422)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
 		if _, err := e.WriteTo(w); err != nil {
 			return errors.Wrap(err, "write")
 		}

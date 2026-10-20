@@ -812,14 +812,25 @@ type Invoker interface {
 	//
 	// Delete the User, immediately and irreversibly (User deletion, ADR 0050): every Membership, Linked
 	// identity, the Second factor and the Recovery codes go, every session ends (the cookie is cleared
-	// here) and one email tells the address. Needs the User's own email, the password and, with a Second
-	// factor, a current code. 403 on a wrong password or code (both feed the Login throttle: 429 while its
-	// delay runs). 422 when the typed email is not the User's, or while the User is the only Owner of a
-	// Workspace that is not in its deletion window: the Workspaces are listed and nothing is deleted. A
-	// Workspace in its deletion window does not block.
+	// here) and one email tells the address. Needs the User's own email, the password (a User with no
+	// password, signed in only through a Sign-in provider, sends the token of the link mailed by
+	// `deleteUserLink` instead: 400 when it is expired, used, or was issued to another User) and, with a
+	// Second factor, a current code. 403 on a wrong password or code (both feed the Login throttle: 429
+	// while its delay runs). 422 when the typed email is not the User's, or while the User is the only
+	// Owner of a Workspace that is not in its deletion window: the Workspaces are listed and nothing is
+	// deleted. A Workspace in its deletion window does not block.
 	//
 	// POST /me/delete
 	SiteUserDeleteUser(ctx context.Context, request *SiteDeleteUserInput) (SiteUserDeleteUserRes, error)
+	// SiteUserDeleteUserLink invokes SiteUser_deleteUserLink operation.
+	//
+	// Mail the one-time deletion link to a User with no password (ADR 0050): it goes to the User's
+	// Verified email, is bound to the User (not the address), expires after an hour and works once. 202
+	// whether or not a mail is due (a mail flood is throttled silently). 422 when the typed email is not
+	// the User's, or when the User has a password and confirms with it instead.
+	//
+	// POST /me/delete/link
+	SiteUserDeleteUserLink(ctx context.Context, request *SiteDeleteUserLinkInput) (SiteUserDeleteUserLinkRes, error)
 	// SiteUserEmailChange invokes SiteUser_emailChange operation.
 	//
 	// Request an email change; sends a confirmation link to the new address. Requires the current
@@ -17914,11 +17925,13 @@ func (c *Client) sendSiteTransactionalEmailsList(ctx context.Context, params Sit
 //
 // Delete the User, immediately and irreversibly (User deletion, ADR 0050): every Membership, Linked
 // identity, the Second factor and the Recovery codes go, every session ends (the cookie is cleared
-// here) and one email tells the address. Needs the User's own email, the password and, with a Second
-// factor, a current code. 403 on a wrong password or code (both feed the Login throttle: 429 while its
-// delay runs). 422 when the typed email is not the User's, or while the User is the only Owner of a
-// Workspace that is not in its deletion window: the Workspaces are listed and nothing is deleted. A
-// Workspace in its deletion window does not block.
+// here) and one email tells the address. Needs the User's own email, the password (a User with no
+// password, signed in only through a Sign-in provider, sends the token of the link mailed by
+// `deleteUserLink` instead: 400 when it is expired, used, or was issued to another User) and, with a
+// Second factor, a current code. 403 on a wrong password or code (both feed the Login throttle: 429
+// while its delay runs). 422 when the typed email is not the User's, or while the User is the only
+// Owner of a Workspace that is not in its deletion window: the Workspaces are listed and nothing is
+// deleted. A Workspace in its deletion window does not block.
 //
 // POST /me/delete
 func (c *Client) SiteUserDeleteUser(ctx context.Context, request *SiteDeleteUserInput) (SiteUserDeleteUserRes, error) {
@@ -18025,6 +18038,125 @@ func (c *Client) sendSiteUserDeleteUser(ctx context.Context, request *SiteDelete
 
 	stage = "DecodeResponse"
 	result, err := decodeSiteUserDeleteUserResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SiteUserDeleteUserLink invokes SiteUser_deleteUserLink operation.
+//
+// Mail the one-time deletion link to a User with no password (ADR 0050): it goes to the User's
+// Verified email, is bound to the User (not the address), expires after an hour and works once. 202
+// whether or not a mail is due (a mail flood is throttled silently). 422 when the typed email is not
+// the User's, or when the User has a password and confirms with it instead.
+//
+// POST /me/delete/link
+func (c *Client) SiteUserDeleteUserLink(ctx context.Context, request *SiteDeleteUserLinkInput) (SiteUserDeleteUserLinkRes, error) {
+	res, err := c.sendSiteUserDeleteUserLink(ctx, request)
+	return res, err
+}
+
+func (c *Client) sendSiteUserDeleteUserLink(ctx context.Context, request *SiteDeleteUserLinkInput) (res SiteUserDeleteUserLinkRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteUser_deleteUserLink"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/me/delete/link"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteUserDeleteUserLinkOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/me/delete/link"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSiteUserDeleteUserLinkRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, SiteUserDeleteUserLinkOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteUserDeleteUserLinkResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}

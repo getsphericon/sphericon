@@ -19,6 +19,7 @@ import { useTranslation } from 'react-i18next'
 
 import {
   siteSecondFactorGetStatusOptions,
+  siteUserDeleteUserLinkMutation,
   siteUserDeleteUserMutation,
   siteUserEmailChangeMutation,
   siteUserGetMeOptions,
@@ -198,7 +199,8 @@ function SessionsSection() {
 
 // DeleteUserSection erases the User at once (User deletion, ADR 0050): the typed email, the
 // password and, with a Second factor, a code. A Workspace waiting for erasure is named, since
-// it can no longer be restored afterwards. A User with no password has no way yet.
+// it can no longer be restored afterwards. A User with no password asks for a one-time link to
+// their Verified email instead of typing a password; the link lands on the confirm page.
 function DeleteUserSection() {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -206,6 +208,13 @@ function DeleteUserSection() {
   const statusQuery = useQuery(siteSecondFactorGetStatusOptions())
   const deletedQuery = useQuery(siteWorkspacesListDeletedOptions())
   const form = useForm({ initialValues: { email: '', currentPassword: '', code: '' } })
+  const linkForm = useForm({ initialValues: { email: '' } })
+
+  const requestLink = useResourceMutation({
+    mutation: siteUserDeleteUserLinkMutation(),
+    errorTitle: t(($) => $.profile.deleteUserLinkErrorTitle),
+    successMessage: t(($) => $.profile.deleteUserLinkSent),
+  })
 
   const deleteUser = useResourceMutation({
     mutation: siteUserDeleteUserMutation(),
@@ -217,7 +226,7 @@ function DeleteUserSection() {
   })
 
   const status = statusQuery.data
-  if (!status?.passwordSet) {
+  if (!status) {
     return null
   }
   const waiting = deletedQuery.data ?? []
@@ -240,6 +249,34 @@ function DeleteUserSection() {
       confirmProps: { color: 'red' },
       onConfirm: () => deleteUser.mutate({ body }),
     })
+  }
+
+  if (!status.passwordSet) {
+    return (
+      <form
+        onSubmit={linkForm.onSubmit((values) =>
+          requestLink.mutate({ body: { email: values.email.trim() } }),
+        )}
+      >
+        <Stack maw={420}>
+          <Divider label={t(($) => $.profile.deleteUserSectionTitle)} />
+          <Text size="sm" c="dimmed">
+            {t(($) => $.profile.deleteUserLinkDescription)}
+          </Text>
+          <TextInput
+            label={t(($) => $.profile.deleteUserEmailLabel)}
+            type="email"
+            required
+            {...linkForm.getInputProps('email')}
+          />
+          <Group justify="flex-end">
+            <Button type="submit" color="red" variant="light" loading={requestLink.isPending}>
+              {t(($) => $.profile.deleteUserLinkButton)}
+            </Button>
+          </Group>
+        </Stack>
+      </form>
+    )
   }
 
   return (

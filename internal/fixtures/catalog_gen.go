@@ -771,6 +771,18 @@ const (
 	OwnerSallyName = "Sally"
 	// OwnerSallyPassword is from fixtures/users.
 	OwnerSallyPassword = "password"
+	// PaxGoogleIdentityID is from fixtures/user_identities.
+	PaxGoogleIdentityID = 4
+	// PaxGoogleIdentityProvider is from fixtures/user_identities.
+	PaxGoogleIdentityProvider = "google"
+	// PaxGoogleIdentitySubject is from fixtures/user_identities.
+	PaxGoogleIdentitySubject = "google-subject-of-pax"
+	// PiaGoogleIdentityID is from fixtures/user_identities.
+	PiaGoogleIdentityID = 3
+	// PiaGoogleIdentityProvider is from fixtures/user_identities.
+	PiaGoogleIdentityProvider = "google"
+	// PiaGoogleIdentitySubject is from fixtures/user_identities.
+	PiaGoogleIdentitySubject = "google-subject-of-pia"
 	// PiedPiperCollectKey is from fixtures/workspaces.
 	PiedPiperCollectKey = "omck_test_piedpiper_collect_key"
 	// PiedPiperDoraMembershipID is from fixtures/memberships.
@@ -781,6 +793,20 @@ const (
 	PiedPiperName = "Pied Piper"
 	// PiedPiperPublicID is from fixtures/workspaces.
 	PiedPiperPublicID = "PiperW10"
+	// ProviderOnlyPaxEmail is from fixtures/users.
+	ProviderOnlyPaxEmail = "pax@hooli.test"
+	// ProviderOnlyPaxID is from fixtures/users.
+	ProviderOnlyPaxID = 23
+	// ProviderOnlyPaxName is from fixtures/users.
+	ProviderOnlyPaxName = "Pax"
+	// ProviderOnlyPaxTotpSecret is from fixtures/users.
+	ProviderOnlyPaxTotpSecret = "JBSWY3DPEHPK3PXP"
+	// ProviderOnlyPiaEmail is from fixtures/users.
+	ProviderOnlyPiaEmail = "pia@hooli.test"
+	// ProviderOnlyPiaID is from fixtures/users.
+	ProviderOnlyPiaID = 22
+	// ProviderOnlyPiaName is from fixtures/users.
+	ProviderOnlyPiaName = "Pia"
 	// SamGoogleIdentityID is from fixtures/user_identities.
 	SamGoogleIdentityID = 2
 	// SamGoogleIdentityProvider is from fixtures/user_identities.

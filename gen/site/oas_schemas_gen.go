@@ -4576,7 +4576,6 @@ func (*ProblemDetails) sitePublicInvitationsLookupRes()        {}
 func (*ProblemDetails) sitePublicUnsubscribesPerformRes()      {}
 func (*ProblemDetails) siteSetupChecklistGetRes()              {}
 func (*ProblemDetails) siteTokensListRes()                     {}
-func (*ProblemDetails) siteUserDeleteUserRes()                 {}
 
 // Validation errors grouped by field.
 type ProblemDetailsErrors map[string][]string
@@ -8748,14 +8747,17 @@ func (s *SiteCustomFieldsListOK) SetTotalPages(val int32) {
 
 func (*SiteCustomFieldsListOK) siteCustomFieldsListRes() {}
 
-// Confirmation of User deletion (ADR 0050): the User's own email typed in, their password and, when a
-// Second factor is enrolled, a current code.
+// Confirmation of User deletion (ADR 0050): the User's own email typed in, their password (a User with
+// no password sends the token of the mailed link instead) and, when a Second factor is enrolled, a
+// current code.
 // Ref: #/components/schemas/SiteDeleteUserInput
 type SiteDeleteUserInput struct {
 	// The User's own email address, typed in.
 	Email EmailAddress `json:"email"`
-	// Current password.
-	CurrentPassword string `json:"currentPassword"`
+	// Current password; required of a User who has one.
+	CurrentPassword OptString `json:"currentPassword"`
+	// The token of the one-time link mailed to a User with no password; required of that User.
+	Token OptString `json:"token"`
 	// A current TOTP code, or an unused Recovery code; required when a Second factor is enrolled.
 	Code OptString `json:"code"`
 }
@@ -8766,8 +8768,13 @@ func (s *SiteDeleteUserInput) GetEmail() EmailAddress {
 }
 
 // GetCurrentPassword returns the value of CurrentPassword.
-func (s *SiteDeleteUserInput) GetCurrentPassword() string {
+func (s *SiteDeleteUserInput) GetCurrentPassword() OptString {
 	return s.CurrentPassword
+}
+
+// GetToken returns the value of Token.
+func (s *SiteDeleteUserInput) GetToken() OptString {
+	return s.Token
 }
 
 // GetCode returns the value of Code.
@@ -8781,13 +8788,35 @@ func (s *SiteDeleteUserInput) SetEmail(val EmailAddress) {
 }
 
 // SetCurrentPassword sets the value of CurrentPassword.
-func (s *SiteDeleteUserInput) SetCurrentPassword(val string) {
+func (s *SiteDeleteUserInput) SetCurrentPassword(val OptString) {
 	s.CurrentPassword = val
+}
+
+// SetToken sets the value of Token.
+func (s *SiteDeleteUserInput) SetToken(val OptString) {
+	s.Token = val
 }
 
 // SetCode sets the value of Code.
 func (s *SiteDeleteUserInput) SetCode(val OptString) {
 	s.Code = val
+}
+
+// The request for the one-time deletion link of a User with no password (ADR 0050).
+// Ref: #/components/schemas/SiteDeleteUserLinkInput
+type SiteDeleteUserLinkInput struct {
+	// The User's own email address, typed in.
+	Email EmailAddress `json:"email"`
+}
+
+// GetEmail returns the value of Email.
+func (s *SiteDeleteUserLinkInput) GetEmail() EmailAddress {
+	return s.Email
+}
+
+// SetEmail sets the value of Email.
+func (s *SiteDeleteUserLinkInput) SetEmail(val EmailAddress) {
+	s.Email = val
 }
 
 // The body of a refused User deletion: ProblemDetails plus, when the User is the only Owner of
@@ -8940,7 +8969,8 @@ func (s *SiteDeleteUserProblemDetails) SetWorkspaces(val []SiteSoleOwnedWorkspac
 	s.Workspaces = val
 }
 
-func (*SiteDeleteUserProblemDetails) siteUserDeleteUserRes() {}
+func (*SiteDeleteUserProblemDetails) siteUserDeleteUserLinkRes() {}
+func (*SiteDeleteUserProblemDetails) siteUserDeleteUserRes()     {}
 
 // Validation errors grouped by field.
 type SiteDeleteUserProblemDetailsErrors map[string][]string
@@ -15704,6 +15734,19 @@ func (s *SiteUpdateWorkspaceInput) SetName(val string) {
 func (s *SiteUpdateWorkspaceInput) SetPostalAddress(val OptString) {
 	s.PostalAddress = val
 }
+
+type SiteUserDeleteUserBadRequest ProblemDetails
+
+func (*SiteUserDeleteUserBadRequest) siteUserDeleteUserRes() {}
+
+type SiteUserDeleteUserForbidden ProblemDetails
+
+func (*SiteUserDeleteUserForbidden) siteUserDeleteUserRes() {}
+
+// SiteUserDeleteUserLinkAccepted is response for SiteUserDeleteUserLink operation.
+type SiteUserDeleteUserLinkAccepted struct{}
+
+func (*SiteUserDeleteUserLinkAccepted) siteUserDeleteUserLinkRes() {}
 
 // SiteUserDeleteUserNoContent is response for SiteUserDeleteUser operation.
 type SiteUserDeleteUserNoContent struct {

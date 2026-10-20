@@ -42,7 +42,7 @@ func TestAUserWithAPasswordDeletesThemself(t *testing.T) {
 
 	res := deleteUser(t, mary, &siteapi.SiteDeleteUserInput{
 		Email:           fixtures.MemberMaryEmail,
-		CurrentPassword: fixtures.MemberMaryPassword,
+		CurrentPassword: siteapi.NewOptString(fixtures.MemberMaryPassword),
 	})
 	assert.IsType(t, &siteapi.SiteUserDeleteUserNoContent{}, res)
 
@@ -60,13 +60,13 @@ func TestAWrongPasswordDeletesNothingAndCountsOnTheLoginBudget(t *testing.T) {
 	mary := env.SiteActor(t, fixtures.MemberMaryEmail)
 
 	for range 3 {
-		res := deleteUser(t, mary, &siteapi.SiteDeleteUserInput{Email: fixtures.MemberMaryEmail, CurrentPassword: "wrong"})
-		require.IsType(t, &siteapi.ProblemDetails{}, res)
+		res := deleteUser(t, mary, &siteapi.SiteDeleteUserInput{Email: fixtures.MemberMaryEmail, CurrentPassword: siteapi.NewOptString("wrong")})
+		require.IsType(t, &siteapi.SiteUserDeleteUserForbidden{}, res)
 	}
 
 	assert.True(t, userExists(t, env, fixtures.MemberMaryEmail))
 	assert.Equal(t, http.StatusTooManyRequests, loginStatus(t, env, fixtures.MemberMaryEmail, fixtures.MemberMaryPassword))
-	right := deleteUser(t, mary, &siteapi.SiteDeleteUserInput{Email: fixtures.MemberMaryEmail, CurrentPassword: fixtures.MemberMaryPassword})
+	right := deleteUser(t, mary, &siteapi.SiteDeleteUserInput{Email: fixtures.MemberMaryEmail, CurrentPassword: siteapi.NewOptString(fixtures.MemberMaryPassword)})
 	assert.IsType(t, &siteapi.ProblemDetailsHeaders{}, right, "while the delay runs even the right password is refused")
 	assert.True(t, userExists(t, env, fixtures.MemberMaryEmail))
 }
@@ -75,7 +75,7 @@ func TestATypedEmailThatIsNotTheirsIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 	mary := env.SiteActor(t, fixtures.MemberMaryEmail)
 
-	res := deleteUser(t, mary, &siteapi.SiteDeleteUserInput{Email: fixtures.OwnerJohnEmail, CurrentPassword: fixtures.MemberMaryPassword})
+	res := deleteUser(t, mary, &siteapi.SiteDeleteUserInput{Email: fixtures.OwnerJohnEmail, CurrentPassword: siteapi.NewOptString(fixtures.MemberMaryPassword)})
 
 	refused, ok := res.(*siteapi.SiteDeleteUserProblemDetails)
 	require.Truef(t, ok, "got %T", res)
@@ -97,7 +97,7 @@ func TestAUserWithASecondFactorConfirmsWithTheirCodeAndItsRowsGo(t *testing.T) {
 
 	res := deleteUser(t, sam, &siteapi.SiteDeleteUserInput{
 		Email:           fixtures.SecondFactorSamEmail,
-		CurrentPassword: fixtures.SecondFactorSamPassword,
+		CurrentPassword: siteapi.NewOptString(fixtures.SecondFactorSamPassword),
 		Code:            siteapi.NewOptString(totpCode(t)),
 	})
 	require.IsType(t, &siteapi.SiteUserDeleteUserNoContent{}, res)
@@ -120,7 +120,7 @@ func TestAUserWithASecondFactorCanConfirmWithARecoveryCode(t *testing.T) {
 
 	res := deleteUser(t, sam, &siteapi.SiteDeleteUserInput{
 		Email:           fixtures.SecondFactorSamEmail,
-		CurrentPassword: fixtures.SecondFactorSamPassword,
+		CurrentPassword: siteapi.NewOptString(fixtures.SecondFactorSamPassword),
 		Code:            siteapi.NewOptString(fixtures.SecondFactorSamRecoveryCode),
 	})
 
@@ -131,14 +131,14 @@ func TestAMissingOrWrongCodeDeletesNothingAndCountsOnTheLoginBudget(t *testing.T
 	env := testhelper.Setup(t, testhelper.WithRateLimits(config.RateLimits{LoginFailures: 3}))
 	sam := env.SiteActor(t, fixtures.SecondFactorSamEmail)
 	input := func(code siteapi.OptString) *siteapi.SiteDeleteUserInput {
-		return &siteapi.SiteDeleteUserInput{Email: fixtures.SecondFactorSamEmail, CurrentPassword: fixtures.SecondFactorSamPassword, Code: code}
+		return &siteapi.SiteDeleteUserInput{Email: fixtures.SecondFactorSamEmail, CurrentPassword: siteapi.NewOptString(fixtures.SecondFactorSamPassword), Code: code}
 	}
 
 	missing := deleteUser(t, sam, input(siteapi.OptString{}))
-	require.IsType(t, &siteapi.ProblemDetails{}, missing)
+	require.IsType(t, &siteapi.SiteUserDeleteUserForbidden{}, missing)
 	for range 2 {
 		wrong := deleteUser(t, sam, input(siteapi.NewOptString("000000")))
-		require.IsType(t, &siteapi.ProblemDetails{}, wrong)
+		require.IsType(t, &siteapi.SiteUserDeleteUserForbidden{}, wrong)
 	}
 
 	assert.True(t, userExists(t, env, fixtures.SecondFactorSamEmail))
@@ -151,7 +151,7 @@ func TestTheOnlyOwnerOfLiveWorkspacesIsRefusedWithTheirList(t *testing.T) {
 	env := testhelper.Setup(t)
 	dora := env.SiteActor(t, fixtures.SoleOwnerDoraEmail)
 
-	res := deleteUser(t, dora, &siteapi.SiteDeleteUserInput{Email: fixtures.SoleOwnerDoraEmail, CurrentPassword: fixtures.SoleOwnerDoraPassword})
+	res := deleteUser(t, dora, &siteapi.SiteDeleteUserInput{Email: fixtures.SoleOwnerDoraEmail, CurrentPassword: siteapi.NewOptString(fixtures.SoleOwnerDoraPassword)})
 
 	refused, ok := res.(*siteapi.SiteDeleteUserProblemDetails)
 	require.Truef(t, ok, "got %T", res)
@@ -168,7 +168,7 @@ func TestTheOnlyOwnerOfAWorkspaceInItsDeletionWindowIsNotBlocked(t *testing.T) {
 	dan := env.SiteActor(t, fixtures.DeletedWorkspaceOwnerDanEmail)
 
 	res := deleteUser(t, dan, &siteapi.SiteDeleteUserInput{
-		Email: fixtures.DeletedWorkspaceOwnerDanEmail, CurrentPassword: fixtures.DeletedWorkspaceOwnerDanPassword,
+		Email: fixtures.DeletedWorkspaceOwnerDanEmail, CurrentPassword: siteapi.NewOptString(fixtures.DeletedWorkspaceOwnerDanPassword),
 	})
 
 	require.IsType(t, &siteapi.SiteUserDeleteUserNoContent{}, res)
@@ -181,7 +181,7 @@ func TestTheOnlyOwnerOfAWorkspaceInItsDeletionWindowIsNotBlocked(t *testing.T) {
 func TestADeletedAddressRegistersAgainWhereSignupIsOpen(t *testing.T) {
 	env := testhelper.Setup(t)
 	deleteUser(t, env.SiteActor(t, fixtures.MemberMaryEmail), &siteapi.SiteDeleteUserInput{
-		Email: fixtures.MemberMaryEmail, CurrentPassword: fixtures.MemberMaryPassword,
+		Email: fixtures.MemberMaryEmail, CurrentPassword: siteapi.NewOptString(fixtures.MemberMaryPassword),
 	})
 
 	res := registerWithPassword(t, env, "Mary Again", fixtures.MemberMaryEmail, formPassword)
@@ -196,7 +196,7 @@ func TestADeletedAddressRegistersAgainWhereSignupIsOpen(t *testing.T) {
 func TestADeletedAddressCannotRegisterWhereSignupIsClosed(t *testing.T) {
 	env := closedInstance(t)
 	deleteUser(t, env.SiteActor(t, fixtures.MemberMaryEmail), &siteapi.SiteDeleteUserInput{
-		Email: fixtures.MemberMaryEmail, CurrentPassword: fixtures.MemberMaryPassword,
+		Email: fixtures.MemberMaryEmail, CurrentPassword: siteapi.NewOptString(fixtures.MemberMaryPassword),
 	})
 
 	res := registerWithPassword(t, env, "Mary Again", fixtures.MemberMaryEmail, formPassword)
@@ -208,7 +208,7 @@ func TestADeletedAddressCannotRegisterWhereSignupIsClosed(t *testing.T) {
 func TestAnInvitationSentByTheDeletedUserStaysValidWithoutASenderAndCanBeRevoked(t *testing.T) {
 	env := testhelper.Setup(t)
 	deleteUser(t, env.SiteActor(t, fixtures.AdminAliceEmail), &siteapi.SiteDeleteUserInput{
-		Email: fixtures.AdminAliceEmail, CurrentPassword: fixtures.AdminAlicePassword,
+		Email: fixtures.AdminAliceEmail, CurrentPassword: siteapi.NewOptString(fixtures.AdminAlicePassword),
 	})
 	john := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
@@ -232,7 +232,7 @@ func TestAnInvitationSentByTheDeletedUserStaysValidWithoutASenderAndCanBeRevoked
 func TestAuditEntriesOfTheDeletedUserKeepTheirIdAndName(t *testing.T) {
 	env := testhelper.Setup(t)
 	deleteUser(t, env.SiteActor(t, fixtures.MemberMaryEmail), &siteapi.SiteDeleteUserInput{
-		Email: fixtures.MemberMaryEmail, CurrentPassword: fixtures.MemberMaryPassword,
+		Email: fixtures.MemberMaryEmail, CurrentPassword: siteapi.NewOptString(fixtures.MemberMaryPassword),
 	})
 
 	got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, events.ActionMembershipDelete)

@@ -4,6 +4,7 @@ import { expect, test } from 'vitest'
 import {
   handleSiteSecondFactorGetStatus,
   handleSiteUserDeleteUser,
+  handleSiteUserDeleteUserLink,
   handleSiteUserGetMe,
   handleSiteWorkspacesListDeleted,
 } from '../../generated/site/msw.gen.ts'
@@ -121,4 +122,22 @@ test('a refusal for a sole owned workspace names the workspaces and stays put', 
 
   await expect.element(screen.getByText(/only owner of: Pied Piper/)).toBeInTheDocument()
   expect(navigate).not.toHaveBeenCalledWith({ to: loginRoute.to })
+})
+
+test('a user with no password asks for the mailed link with their typed email', async () => {
+  const bodies: unknown[] = []
+  serve([], { passwordSet: false })(noContent)
+  worker.use(
+    handleSiteUserDeleteUserLink(async ({ request }) => {
+      bodies.push(await request.clone().json())
+      return new Response(null, { status: 202 })
+    }),
+  )
+  const { screen } = await renderWithRouter(<ProfilePage />)
+
+  await expect.element(screen.getByLabelText(/^Password to confirm/)).not.toBeInTheDocument()
+  await screen.getByLabelText(/^Type your email/).fill('info@getsphericon.com')
+  await screen.getByRole('button', { name: 'Email me a link' }).click()
+
+  await expect.poll(() => bodies).toEqual([{ email: 'info@getsphericon.com' }])
 })

@@ -35,6 +35,10 @@ const (
 	// Sign-in provider was linked silently (ADR 0048). It carries the Linked identity to
 	// undo and has no binding: once the identity is gone the link has nothing left to do.
 	PurposeIdentityNotMe Purpose = "identity_not_me"
+	// PurposeUserDeletion is the one-time link mailed to a User with no password to confirm
+	// their own User deletion (ADR 0050). Keyed to the User id and session epoch, never to
+	// the address.
+	PurposeUserDeletion Purpose = "user_deletion"
 	// PurposeLoginChallenge is the challenge between the password step and the
 	// Second factor step of a login (ADR 0020).
 	PurposeLoginChallenge Purpose = "login_challenge"

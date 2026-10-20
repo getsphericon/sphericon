@@ -165,3 +165,21 @@
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
   email_verified_at: '2026-01-01 00:00:00'
+# Pia signs in only through a Sign-in provider: no password, a Linked identity, no Second factor.
+# Her User deletion confirms with a mailed link.
+- id: 22 # fixture: ProviderOnlyPia
+  name: Pia
+  email: pia@hooli.test
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+  email_verified_at: '2026-01-01 00:00:00'
+# Pax signs in only through a Sign-in provider and has an active TOTP Second factor: the link
+# is not enough, his deletion needs a code as well.
+- id: 23 # fixture: ProviderOnlyPax
+  name: Pax
+  email: pax@hooli.test
+  second_factor_secret_encrypted: '{{encrypt "JBSWY3DPEHPK3PXP"}}'
+  second_factor_confirmed_at: '2026-01-01 00:00:00'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+  email_verified_at: '2026-01-01 00:00:00'

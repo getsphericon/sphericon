@@ -18,6 +18,9 @@ const (
 	flowPasswordReset = "password_reset"
 	flowEmailVerify   = "email_verify"
 	flowEmailChange   = "email_change"
+	// flowUserDeletion is the one-time link a User with no password confirms their User
+	// deletion with (ADR 0050).
+	flowUserDeletion = "user_deletion"
 	// flowAddressTaken is the notice to the owner of a Taken address (ADR 0031): it
 	// carries no token, only the sign-in and forgot-password pages.
 	flowAddressTaken = "address_taken"
@@ -134,6 +137,8 @@ func authMailCopy(flow string) (subjectID, path, introID string) {
 		return "email.email_verify.subject", "/verify-email", "email.email_verify.intro"
 	case flowEmailChange:
 		return "email.email_change.subject", "/confirm-email-change", "email.email_change.intro"
+	case flowUserDeletion:
+		return "email.user_deletion.subject", "/account/delete", "email.user_deletion.intro"
 	default:
 		return "", "", ""
 	}
@@ -157,6 +162,12 @@ func (c *Client) EnqueueEmailVerification(ctx context.Context, email, token stri
 // worker drops the mail.
 func (c *Client) EnqueueEmailChangeConfirm(ctx context.Context, email, token string, send bool) error {
 	return c.enqueue(ctx, SendAuthMailArgs{Flow: flowEmailChange, Email: email, Token: token, Discard: !send})
+}
+
+// EnqueueUserDeletionLink schedules the deletion link mail of a User with no password. With
+// send false the job is queued all the same but its worker drops the mail.
+func (c *Client) EnqueueUserDeletionLink(ctx context.Context, email, token string, send bool) error {
+	return c.enqueue(ctx, SendAuthMailArgs{Flow: flowUserDeletion, Email: email, Token: token, Discard: !send})
 }
 
 // EnqueueAddressTakenNotice schedules the tokenless notice to the owner of a Taken

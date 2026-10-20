@@ -378,12 +378,21 @@ export const zSiteCustomFieldType = z.enum([
 
 /**
  * Confirmation of User deletion (ADR 0050): the User's own email typed in, their password
- * and, when a Second factor is enrolled, a current code.
+ * (a User with no password sends the token of the mailed link instead) and, when a Second
+ * factor is enrolled, a current code.
  */
 export const zSiteDeleteUserInput = z.object({
   email: zEmailAddress,
-  currentPassword: z.string(),
+  currentPassword: z.exactOptional(z.string()),
+  token: z.exactOptional(z.string()),
   code: z.exactOptional(z.string())
+});
+
+/**
+ * The request for the one-time deletion link of a User with no password (ADR 0050)
+ */
+export const zSiteDeleteUserLinkInput = z.object({
+  email: zEmailAddress
 });
 
 /**
@@ -2284,6 +2293,8 @@ export const zSiteUserDeleteUserBody = zSiteDeleteUserInput;
  * There is no content to send for this request, but the headers may be useful.
  */
 export const zSiteUserDeleteUserResponse = z.void();
+
+export const zSiteUserDeleteUserLinkBody = zSiteDeleteUserLinkInput;
 
 export const zSiteUserEmailChangeBody = zSiteEmailChangeInput;
 
