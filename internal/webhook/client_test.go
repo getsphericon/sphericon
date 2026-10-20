@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	standardwebhooks "github.com/standard-webhooks/standard-webhooks/libraries/go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -72,11 +73,9 @@ func TestAllowlistNamesThePortToo(t *testing.T) {
 	srv, _ := receiver(t, ok)
 	u, err := url.Parse(srv.URL)
 	require.NoError(t, err)
-	other := "127.0.0.1:1"
-	if u.Port() == "1" {
-		other = "127.0.0.1:2"
-	}
-	allow, err := webhook.ParseAllowlist(other)
+	// Another port on the same host, whichever port the receiver took.
+	otherPort := lo.Ternary(u.Port() == "1", "2", "1")
+	allow, err := webhook.ParseAllowlist("127.0.0.1:" + otherPort)
 	require.NoError(t, err)
 
 	err = webhook.Send(t.Context(), webhook.NewClientAllowing(2*time.Second, allow), srv.URL, testSecret, "x", "msg_1", []byte(`{}`))

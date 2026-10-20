@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/getsphericon/sphericon/internal/emaildoc"
 )
 
@@ -30,13 +32,8 @@ func FuzzPrepareNeverPanicsAndRefusesCleanly(f *testing.F) {
 	f.Fuzz(func(t *testing.T, doc []byte) {
 		err := emaildoc.Prepare(r, doc)
 
-		if err == nil {
-			return
-		}
-		known := errors.Is(err, emaildoc.ErrInvalid) || errors.Is(err, emaildoc.ErrTooLarge) ||
+		refusedCleanly := err == nil || errors.Is(err, emaildoc.ErrInvalid) || errors.Is(err, emaildoc.ErrTooLarge) ||
 			errors.Is(err, emaildoc.ErrTooDeep) || errors.Is(err, emaildoc.ErrTooManyNodes)
-		if !known {
-			t.Fatalf("%q was refused with an error of no known kind: %v", doc, err)
-		}
+		require.Truef(t, refusedCleanly, "%q was refused with an error of no known kind: %v", doc, err)
 	})
 }

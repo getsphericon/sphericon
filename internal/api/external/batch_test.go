@@ -9,6 +9,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -104,9 +105,13 @@ func TestExternalEventsBatchSubmitMixedItems(t *testing.T) {
 	for i, r := range ok.Results {
 		assert.EqualValues(t, i, r.Index)
 		assert.Equal(t, want[i], r.Status)
-		if r.Status == externalapi.EventBatchStatusFailed {
-			assert.NotEmpty(t, r.Error.Or(""))
-		}
+	}
+	failed := lo.Filter(ok.Results, func(r externalapi.EventBatchItemResult, _ int) bool {
+		return r.Status == externalapi.EventBatchStatusFailed
+	})
+	require.Len(t, failed, 2)
+	for _, r := range failed {
+		assert.NotEmpty(t, r.Error.Or(""))
 	}
 
 	var actions []string

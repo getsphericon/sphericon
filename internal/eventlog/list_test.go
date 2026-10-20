@@ -2,11 +2,15 @@ package eventlog_test
 
 import (
 	"context"
+	"sort"
 	"testing"
+	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/eventlog"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/pagination"
@@ -23,12 +27,11 @@ func TestListFiltersByActionAndOrdersNewestFirst(t *testing.T) {
 	require.NoError(t, err)
 	require.GreaterOrEqual(t, len(p.Items), 2)
 	assert.Equal(t, len(p.Items), p.TotalItems)
-	for i, e := range p.Items {
+	for _, e := range p.Items {
 		assert.Equal(t, "purchase", e.Action)
-		if i > 0 {
-			assert.False(t, e.CreatedAt.After(p.Items[i-1].CreatedAt), "newest first")
-		}
 	}
+	created := lo.Map(p.Items, func(e *ent.Event, _ int) time.Time { return e.CreatedAt })
+	assert.True(t, sort.SliceIsSorted(created, func(i, j int) bool { return created[i].After(created[j]) }), "newest first")
 }
 
 func TestListBreaksCreatedAtTiesByIDDescending(t *testing.T) {

@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	gptoken "github.com/go-pkgz/auth/v2/token"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -42,13 +43,8 @@ func TestSiteSessionEndsAfterTheConfiguredLifetime(t *testing.T) {
 	rec := postLogin(t, env, fixtures.OwnerJohnEmail, fixtures.OwnerJohnPassword)
 	require.Equal(t, http.StatusOK, rec.Code, "body: %s", rec.Body.String())
 
-	var cookie *http.Cookie
-	for _, ck := range rec.Result().Cookies() {
-		if ck.Name == "JWT" {
-			cookie = ck
-		}
-	}
-	require.NotNil(t, cookie)
+	cookie, hasCookie := lo.Find(rec.Result().Cookies(), func(ck *http.Cookie) bool { return ck.Name == "JWT" })
+	require.True(t, hasCookie)
 	assert.Equal(t, int(cfg.SessionTTL.Seconds()), cookie.MaxAge, "the cookie lives as long as the session")
 
 	c.t = c.t.Add(cfg.SessionTTL - time.Minute)

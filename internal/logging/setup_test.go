@@ -5,6 +5,9 @@ import (
 	"log/slog"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/getsphericon/sphericon/config"
 )
 
@@ -15,19 +18,16 @@ func TestSetupInstallsDefaultLogger(t *testing.T) {
 	Setup(&config.Config{LogFormat: "json", LogLevel: "error"})
 
 	def := slog.Default()
-	if def.Enabled(context.Background(), slog.LevelWarn) {
-		t.Fatal("default logger should be at error level after Setup")
-	}
-	if !def.Enabled(context.Background(), slog.LevelError) {
-		t.Fatal("default logger should emit errors after Setup")
-	}
+	warnEnabled := def.Enabled(context.Background(), slog.LevelWarn)
+	errorEnabled := def.Enabled(context.Background(), slog.LevelError)
+	require.False(t, warnEnabled, "default logger should be at error level after Setup")
+	require.True(t, errorEnabled, "default logger should emit errors after Setup")
 }
 
 func TestNewTextFormatIsCaseInsensitive(t *testing.T) {
 	logger := New(&config.Config{LogFormat: "TEXT", LogLevel: "debug"})
-	if !logger.Enabled(context.Background(), slog.LevelDebug) {
-		t.Fatal("text handler at debug level should emit debug")
-	}
+	debugEnabled := logger.Enabled(context.Background(), slog.LevelDebug)
+	require.True(t, debugEnabled, "text handler at debug level should emit debug")
 }
 
 func TestParseLevelNamedLevels(t *testing.T) {
@@ -38,8 +38,7 @@ func TestParseLevelNamedLevels(t *testing.T) {
 		"info":      slog.LevelInfo,
 		"":          slog.LevelInfo,
 	} {
-		if got := parseLevel(in); got != want {
-			t.Errorf("parseLevel(%q) = %v, want %v", in, got, want)
-		}
+		got := parseLevel(in)
+		assert.Equalf(t, want, got, "parseLevel(%q) = %v, want %v", in, got, want)
 	}
 }

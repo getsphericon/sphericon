@@ -41,15 +41,13 @@ const splitMCPURL = "https://mcp.sphericon.example"
 func TestMCPChallengePointsAtProtectedResourceMetadata(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	for name, auth := range map[string]string{
-		"no token":      "",
-		"unknown token": "Bearer omtk_deadbeef_invalidsecret",
+	for name, auth := range map[string][]string{
+		"no token":      nil,
+		"unknown token": {"Bearer omtk_deadbeef_invalidsecret"},
 	} {
 		t.Run(name, func(t *testing.T) {
 			req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, testhelper.MCPEndpoint, strings.NewReader(`{}`))
-			if auth != "" {
-				req.Header.Set("Authorization", auth)
-			}
+			req.Header["Authorization"] = auth
 			rec := serve(env, req)
 
 			assert.Equal(t, http.StatusUnauthorized, rec.Code)

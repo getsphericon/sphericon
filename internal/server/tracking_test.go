@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/tracking"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -256,12 +257,8 @@ func TestTrackingEndpoints(t *testing.T) {
 	// The persist + automations subscribers consume these (the router isn't run
 	// under txdb; delivery and projection are covered by the events package
 	// tests). Assert the outbox carries all three events for this recipient.
-	var names []string
-	for _, m := range env.Outbox(t) {
-		if m.Data["email"] == *c.Email {
-			names = append(names, m.Envelope.Name)
-		}
-	}
+	forRecipient := lo.Filter(env.Outbox(t), func(m testhelper.OutboxMessage, _ int) bool { return m.Data["email"] == *c.Email })
+	names := lo.Map(forRecipient, func(m testhelper.OutboxMessage, _ int) string { return m.Envelope.Name })
 	assert.Contains(t, names, "email.opened")
 	assert.Contains(t, names, "email.clicked")
 	assert.Contains(t, names, "email.unsubscribed")

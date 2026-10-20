@@ -156,18 +156,18 @@ func TestSiteInstanceTelemetrySettingFollowsTheEnvironment(t *testing.T) {
 		name       string
 		telemetry  *bool
 		doNotTrack bool
-		stored     *bool
+		stored     []bool // none: no stored setting; one: its value
 		enabled    bool
 		locked     bool
 		lockedBy   siteapi.SiteInstanceTelemetryLock
 	}{
 		{name: "unset is on", enabled: true},
-		{name: "stored off", stored: &no, enabled: false},
-		{name: "stored on", stored: &yes, enabled: true},
-		{name: "true is on and locked over a stored off", telemetry: &yes, stored: &no, enabled: true, locked: true, lockedBy: siteapi.SiteInstanceTelemetryLockEnvironment},
-		{name: "false is off and locked over a stored on", telemetry: &no, stored: &yes, locked: true, lockedBy: siteapi.SiteInstanceTelemetryLockEnvironment},
+		{name: "stored off", stored: []bool{false}, enabled: false},
+		{name: "stored on", stored: []bool{true}, enabled: true},
+		{name: "true is on and locked over a stored off", telemetry: &yes, stored: []bool{false}, enabled: true, locked: true, lockedBy: siteapi.SiteInstanceTelemetryLockEnvironment},
+		{name: "false is off and locked over a stored on", telemetry: &no, stored: []bool{true}, locked: true, lockedBy: siteapi.SiteInstanceTelemetryLockEnvironment},
 		{name: "do not track is off and locked", doNotTrack: true, locked: true, lockedBy: siteapi.SiteInstanceTelemetryLockDoNotTrack},
-		{name: "do not track never switches on, even over true", telemetry: &yes, doNotTrack: true, stored: &yes, locked: true, lockedBy: siteapi.SiteInstanceTelemetryLockDoNotTrack},
+		{name: "do not track never switches on, even over true", telemetry: &yes, doNotTrack: true, stored: []bool{true}, locked: true, lockedBy: siteapi.SiteInstanceTelemetryLockDoNotTrack},
 		{name: "false wins over do not track", telemetry: &no, doNotTrack: true, locked: true, lockedBy: siteapi.SiteInstanceTelemetryLockEnvironment},
 	}
 	for _, tc := range tests {
@@ -177,19 +177,16 @@ func TestSiteInstanceTelemetrySettingFollowsTheEnvironment(t *testing.T) {
 				c.DoNotTrack = tc.doNotTrack
 			}))
 			john := env.SiteActor(t, fixtures.OwnerJohnEmail)
-			if tc.stored != nil {
-				require.NoError(t, env.DB.InstanceState.Create().SetID(1).SetTelemetryEnabled(*tc.stored).Exec(t.Context()))
+			for _, stored := range tc.stored {
+				require.NoError(t, env.DB.InstanceState.Create().SetID(1).SetTelemetryEnabled(stored).Exec(t.Context()))
 			}
 
 			state := instanceState(t, john)
 
 			assert.Equal(t, tc.enabled, state.Telemetry.Enabled)
 			assert.Equal(t, tc.locked, state.Telemetry.Locked)
-			if tc.locked {
-				assert.Equal(t, tc.lockedBy, state.Telemetry.LockedBy.Value)
-			} else {
-				assert.False(t, state.Telemetry.LockedBy.Set)
-			}
+			assert.Equal(t, tc.locked, state.Telemetry.LockedBy.Set)
+			assert.Equal(t, tc.lockedBy, state.Telemetry.LockedBy.Value)
 		})
 	}
 }

@@ -4,10 +4,12 @@ import (
 	"context"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/rekey"
 	"github.com/getsphericon/sphericon/internal/secrets"
@@ -74,10 +76,11 @@ func TestRotateReencryptAndRetireLeaveEveryStoredSecretReadable(t *testing.T) {
 	for _, row := range integrations {
 		_, err := retired.Decrypt(row.ConfigEncrypted)
 		require.NoError(t, err, "integration %d under the retired keyset", row.ID)
-		if row.ParamsEncrypted != "" {
-			_, err := retired.Decrypt(row.ParamsEncrypted)
-			require.NoError(t, err, "integration %d params", row.ID)
-		}
+	}
+	withParams := lo.Filter(integrations, func(row *ent.Integration, _ int) bool { return row.ParamsEncrypted != "" })
+	for _, row := range withParams {
+		_, err := retired.Decrypt(row.ParamsEncrypted)
+		require.NoError(t, err, "integration %d params", row.ID)
 	}
 	webhooks, err := env.DB.WebhookEndpoint.Query().All(ctx)
 	require.NoError(t, err)
@@ -93,19 +96,17 @@ func TestRotateReencryptAndRetireLeaveEveryStoredSecretReadable(t *testing.T) {
 	}
 	staff, err := env.DB.StaffMember.Query().All(ctx)
 	require.NoError(t, err)
-	for _, row := range staff {
-		if row.TotpSecretEncrypted != "" {
-			_, err := retired.Decrypt(row.TotpSecretEncrypted)
-			require.NoError(t, err, "staff member %d", row.ID)
-		}
+	enrolled := lo.Filter(staff, func(row *ent.StaffMember, _ int) bool { return row.TotpSecretEncrypted != "" })
+	for _, row := range enrolled {
+		_, err := retired.Decrypt(row.TotpSecretEncrypted)
+		require.NoError(t, err, "staff member %d", row.ID)
 	}
 	users, err := env.DB.User.Query().All(ctx)
 	require.NoError(t, err)
-	for _, row := range users {
-		if row.SecondFactorSecretEncrypted != "" {
-			_, err := retired.Decrypt(row.SecondFactorSecretEncrypted)
-			require.NoError(t, err, "user %d", row.ID)
-		}
+	withSecondFactor := lo.Filter(users, func(row *ent.User, _ int) bool { return row.SecondFactorSecretEncrypted != "" })
+	for _, row := range withSecondFactor {
+		_, err := retired.Decrypt(row.SecondFactorSecretEncrypted)
+		require.NoError(t, err, "user %d", row.ID)
 	}
 	rows, err := env.DB.Automation.Query().All(ctx)
 	require.NoError(t, err)
@@ -113,10 +114,8 @@ func TestRotateReencryptAndRetireLeaveEveryStoredSecretReadable(t *testing.T) {
 	for _, row := range rows {
 		steps, err := automations.Decode(row.Definition)
 		require.NoError(t, err)
-		for _, s := range steps {
-			if s.Type != automations.StepHTTP {
-				continue
-			}
+		httpSteps := lo.Filter(steps, func(s automations.Step, _ int) bool { return s.Type == automations.StepHTTP })
+		for _, s := range httpSteps {
 			fields := []string{s.URL, s.Secret}
 			for _, h := range s.Headers {
 				fields = append(fields, h.Value)

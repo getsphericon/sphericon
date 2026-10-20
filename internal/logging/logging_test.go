@@ -5,8 +5,9 @@ import (
 	"context"
 	"encoding/json"
 	"log/slog"
-	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/config"
 )
@@ -21,12 +22,9 @@ func TestFromContextTagsRequestID(t *testing.T) {
 	FromContext(ctx).Info("hello")
 
 	var rec map[string]any
-	if err := json.Unmarshal(bytes.TrimSpace(buf.Bytes()), &rec); err != nil {
-		t.Fatalf("parse log line: %v", err)
-	}
-	if rec["request_id"] != "req-123" {
-		t.Fatalf("request_id = %v, want req-123", rec["request_id"])
-	}
+	err := json.Unmarshal(bytes.TrimSpace(buf.Bytes()), &rec)
+	require.NoErrorf(t, err, "parse log line: %v", err)
+	require.Equalf(t, "req-123", rec["request_id"], "request_id = %v, want req-123", rec["request_id"])
 }
 
 func TestFromContextWithoutRequestID(t *testing.T) {
@@ -36,27 +34,21 @@ func TestFromContextWithoutRequestID(t *testing.T) {
 	t.Cleanup(func() { slog.SetDefault(prev) })
 
 	FromContext(context.Background()).Info("hello")
-	if strings.Contains(buf.String(), "request_id") {
-		t.Fatalf("did not expect request_id attr: %s", buf.String())
-	}
+	require.NotContainsf(t, buf.String(), "request_id", "did not expect request_id attr: %s", buf.String())
 }
 
 func TestNewHonoursFormatAndLevel(t *testing.T) {
 	// JSON handler at warn level: an info line is dropped, a warn line kept.
 	logger := New(&config.Config{LogFormat: "json", LogLevel: "warn"})
-	if logger.Enabled(context.Background(), slog.LevelInfo) {
-		t.Fatal("info should be disabled at warn level")
-	}
-	if !logger.Enabled(context.Background(), slog.LevelWarn) {
-		t.Fatal("warn should be enabled at warn level")
-	}
+	infoEnabled := logger.Enabled(context.Background(), slog.LevelInfo)
+	warnEnabled := logger.Enabled(context.Background(), slog.LevelWarn)
+	require.False(t, infoEnabled, "info should be disabled at warn level")
+	require.True(t, warnEnabled, "warn should be enabled at warn level")
 }
 
 func TestParseLevelDefaultsToInfo(t *testing.T) {
-	if got := parseLevel("nonsense"); got != slog.LevelInfo {
-		t.Fatalf("parseLevel(nonsense) = %v, want info", got)
-	}
-	if got := parseLevel("DEBUG"); got != slog.LevelDebug {
-		t.Fatalf("parseLevel(DEBUG) = %v, want debug", got)
-	}
+	got := parseLevel("nonsense")
+	require.Equalf(t, slog.LevelInfo, got, "parseLevel(nonsense) = %v, want info", got)
+	got = parseLevel("DEBUG")
+	require.Equalf(t, slog.LevelDebug, got, "parseLevel(DEBUG) = %v, want debug", got)
 }

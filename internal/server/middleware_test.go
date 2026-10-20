@@ -154,11 +154,7 @@ func TestCrossOriginGuardProtectsCookiePathsOnly(t *testing.T) {
 	}
 	for _, c := range cases {
 		reached = false
-		headers := map[string]string{}
-		if c.site != "" {
-			headers["Sec-Fetch-Site"] = c.site
-		}
-		rec := do(t, h, c.method, c.path, headers)
+		rec := do(t, h, c.method, c.path, map[string]string{"Sec-Fetch-Site": c.site})
 		assert.Equal(t, c.want, rec.Code, c.name)
 		assert.Equal(t, c.want == http.StatusNoContent, reached, c.name)
 	}

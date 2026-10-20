@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -37,18 +38,16 @@ func TestMCPRequiresBearerToken(t *testing.T) {
 	env := testhelper.Setup(t)
 	body := `{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"x","version":"0"}}}`
 
-	for name, auth := range map[string]string{
-		"missing":   "",
-		"malformed": "Bearer nonsense",
-		"unknown":   "Bearer omtk_deadbeef_invalidsecret",
+	for name, auth := range map[string][]string{
+		"missing":   nil,
+		"malformed": {"Bearer nonsense"},
+		"unknown":   {"Bearer omtk_deadbeef_invalidsecret"},
 	} {
 		t.Run(name, func(t *testing.T) {
 			req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, testhelper.MCPEndpoint, strings.NewReader(body))
 			req.Header.Set("Content-Type", "application/json")
 			req.Header.Set("Accept", "application/json, text/event-stream")
-			if auth != "" {
-				req.Header.Set("Authorization", auth)
-			}
+			req.Header["Authorization"] = auth
 			rec := httptest.NewRecorder()
 			env.Server.ServeHTTP(rec, req)
 			assert.Equal(t, http.StatusUnauthorized, rec.Code)
@@ -362,14 +361,17 @@ func TestMCPConsentOnlyNarrows(t *testing.T) {
 	list, err := s.ListTools(context.Background(), nil)
 	require.NoError(t, err)
 	for _, tool := range list.Tools {
+		assert.NotContains(t, strings.ToLower(tool.Name), "resubscribe")
+	}
+	consentTools := lo.Filter(list.Tools, func(tool *mcp.Tool, _ int) bool {
 		name := strings.ToLower(tool.Name)
-		assert.NotContains(t, name, "resubscribe")
-		if strings.Contains(name, "suppression") || strings.Contains(name, "unsubscribe") {
-			assert.True(t, strings.HasSuffix(name, "_create"), "%s: consent tools only create", tool.Name)
-			require.NotNil(t, tool.Annotations)
-			require.NotNil(t, tool.Annotations.DestructiveHint)
-			assert.False(t, *tool.Annotations.DestructiveHint)
-		}
+		return strings.Contains(name, "suppression") || strings.Contains(name, "unsubscribe")
+	})
+	for _, tool := range consentTools {
+		assert.True(t, strings.HasSuffix(strings.ToLower(tool.Name), "_create"), "%s: consent tools only create", tool.Name)
+		require.NotNil(t, tool.Annotations)
+		require.NotNil(t, tool.Annotations.DestructiveHint)
+		assert.False(t, *tool.Annotations.DestructiveHint)
 	}
 
 	res := call(t, s, "unsubscribes_create", map[string]any{"destination": "alice@example.com"})

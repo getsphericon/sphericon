@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -115,13 +116,12 @@ func TestApiTokenRevocationIsAudited(t *testing.T) {
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SiteTokensDeleteNoContent{}, del)
 
-	var revoke *events.AuditEntry
-	for _, ev := range env.OutboxEvents(t, events.NameAuditEntry) {
-		if e := ev.(*events.AuditEntry); e.Action == "api_token.update" {
-			revoke = e
-		}
-	}
-	require.NotNil(t, revoke, "revocation emits api_token.update")
+	updates := lo.FilterMap(env.OutboxEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) (*events.AuditEntry, bool) {
+		e := ev.(*events.AuditEntry)
+		return e, e.Action == "api_token.update"
+	})
+	require.NotEmpty(t, updates, "revocation emits api_token.update")
+	revoke := updates[len(updates)-1]
 	assert.Equal(t, "to-revoke", revoke.TargetName)
 	assert.Contains(t, revoke.Diff, "revoked_at")
 	assert.NotContains(t, revoke.Diff, "secret_hash")
