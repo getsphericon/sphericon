@@ -110,3 +110,24 @@ func TestRecheckTrackingDomainsWorker_demotesAServingHostThatStopsAnswering(t *t
 	require.NoError(t, err)
 	assert.Equal(t, sendingdomain.TrackingStateDNSVerified, row.TrackingState)
 }
+
+func TestVerifyTrackingDomainByID_staleCheckLosesWithoutErrorOrNotice(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	s := env.DB.Scoped(fixtures.UmbrellaID)
+
+	v := trackingVerifier(t, env, nil, nil)
+	lookup := v.Lookup
+	v.Lookup = func(ctx context.Context, host string) (string, error) {
+		// A concurrent check moves the row after this one read it.
+		moved := s.SendingDomain().UpdateOneID(fixtures.SendingDomainTrackingServingID).
+			SetTrackingState(sendingdomain.TrackingStateDNSVerified).Exec(ctx)
+		require.NoError(t, moved)
+		return lookup(ctx, host)
+	}
+	require.NoError(t, jobs.VerifyTrackingDomainByID(ctx, env.DB, v, env.SystemMail, fixtures.SendingDomainTrackingServingID))
+
+	row, err := s.SendingDomain().Get(ctx, fixtures.SendingDomainTrackingServingID)
+	require.NoError(t, err)
+	assert.Equal(t, sendingdomain.TrackingStateDNSVerified, row.TrackingState)
+}

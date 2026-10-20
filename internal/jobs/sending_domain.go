@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/sending"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
@@ -255,7 +256,8 @@ func NotifySendingDomainUnverified(ctx context.Context, client *ent.Client, send
 // VerifyTrackingDomainByID re-checks a Sending domain's Tracking domain (the CNAME, then
 // the HTTPS probe) and stores the state (ADR 0038). A nil verifier (the feature is off)
 // does nothing. A host another Workspace already holds leaves this claim pending and is
-// not an error: retrying cannot change it. A host that was dns_verified or serving and
+// not an error: retrying cannot change it. Neither is a state another check changed first
+// (lifecycle.ErrInvalidTransition): the stale answer is dropped. A host that was dns_verified or serving and
 // went back a step notifies the Workspace's Owners, best-effort; every change publishes
 // its domain event inside the Check.
 func VerifyTrackingDomainByID(ctx context.Context, client *ent.Client, v *trackingdomain.Verifier, sender messaging.EmailSender, id int64) error {
@@ -269,6 +271,13 @@ func VerifyTrackingDomainByID(ctx context.Context, client *ent.Client, v *tracki
 	next, err := v.Check(ctx, client.Scoped(dom.WorkspaceID), id)
 	if errors.Is(err, trackingdomain.ErrHostTaken) {
 		slog.InfoContext(ctx, "tracking host held by another workspace",
+			"sending_domain_id", id, "workspace_id", dom.WorkspaceID, "domain", dom.Domain)
+		return nil
+	}
+	if errors.Is(err, lifecycle.ErrInvalidTransition) {
+		// Another check moved the row after this one read it: this answer is stale, and
+		// the check that won stored a fresher one. Retrying would only repeat the lookup.
+		slog.InfoContext(ctx, "tracking state changed during the check",
 			"sending_domain_id", id, "workspace_id", dom.WorkspaceID, "domain", dom.Domain)
 		return nil
 	}
