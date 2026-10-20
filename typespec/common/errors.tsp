@@ -103,6 +103,43 @@ model ConflictProblem is Response<409> {
   @body body: ProblemDetails;
 }
 
+/** What kind of row a refused removal names as a user of the row (ADR 0049). One value per kind
+ * of live user a removal can find, so a client branches on it without parsing text. */
+enum UsedByKind {
+  /** A Broadcast that has not finished sending */
+  broadcast,
+}
+
+/** A row that uses the one a removal was refused for: what a client shows to say what to
+ * change first */
+model UsedBy {
+  /** What kind of row it is */
+  kind: UsedByKind;
+
+  /** Its id */
+  id: EntityId;
+
+  /** Its name */
+  name: string;
+}
+
+/** The body of a refused removal (ADR 0049): ProblemDetails plus the rows that use it */
+model InUseProblemDetails {
+  ...ProblemDetails;
+
+  /** The live rows that use the one a removal was refused for, never empty */
+  usedBy: UsedBy[];
+}
+
+/** RFC 7807 conflict response for a removal refused because live work still uses the row
+ * (ADR 0049): 409 with `usedBy` naming the users. Every refused removal of a Segment, Tag,
+ * Integration, Sending domain or Automation answers it. */
+@error
+model InUseProblem is Response<409> {
+  @header contentType: "application/problem+json";
+  @body body: InUseProblemDetails;
+}
+
 /** RFC 7807 not found response */
 @error
 model NotFoundProblem is Response<404> {

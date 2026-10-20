@@ -180,10 +180,10 @@ func TestSiteSegmentsErrorBranches(t *testing.T) {
 	d3, err := c.SiteSegmentsDelete(ctx, siteapi.SiteSegmentsDeleteParams{WorkspaceId: acme, ID: missing})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSegmentsDeleteNotFound{}, d3)
-	d4, err := c.SiteSegmentsDelete(ctx, siteapi.SiteSegmentsDeleteParams{WorkspaceId: acme, ID: known})
+	d4, err := c.SiteSegmentsDelete(ctx, siteapi.SiteSegmentsDeleteParams{WorkspaceId: acme, ID: idStr(fixtures.SegmentBlackFridayID)})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSegmentsDeleteNoContent{}, d4)
-	exists, err := env.DB.Segment.Query().Where(segment.ID(fixtures.SegmentProPlanID)).Exist(ctx)
+	exists, err := env.DB.Segment.Query().Where(segment.ID(fixtures.SegmentBlackFridayID)).Exist(ctx)
 	require.NoError(t, err)
 	assert.False(t, exists)
 }

@@ -378,6 +378,64 @@ export type EmailAddress = string;
 export type EntityId = string;
 
 /**
+ * The body of a refused removal (ADR 0049): ProblemDetails plus the rows that use it
+ */
+export type InUseProblemDetails = {
+  /**
+   * Why the request was refused, when the client should act on it
+   */
+  code?: ProblemCode;
+  /**
+   * A URI reference that identifies the problem type
+   */
+  type?: string;
+  /**
+   * A short, human-readable summary of the problem type
+   */
+  title?: string;
+  /**
+   * HTTP status code
+   */
+  status?: number;
+  /**
+   * A human-readable explanation specific to this occurrence
+   */
+  detail?: string;
+  /**
+   * A URI reference that identifies the specific occurrence
+   */
+  instance?: string;
+  /**
+   * Validation errors grouped by field
+   */
+  errors?: {
+    [key: string]: Array<string>;
+  };
+  /**
+   * Form-level validation error
+   */
+  form?: string;
+  /**
+   * Field validation errors
+   */
+  fields?: {
+    [key: string]: string;
+  };
+  /**
+   * Seconds to wait before retrying; set on a 429 so a client that only sees the body can show the wait
+   */
+  retryAfter?: number;
+  /**
+   * Why a 500 happened, sent only by a development server (`SPHERICON_ENV=development`)
+   */
+  debug?: ProblemDebug;
+  /**
+   * The live rows that use the one a removal was refused for, never empty
+   */
+  usedBy: Array<UsedBy>;
+};
+
+/**
  * What a lint finding is about (ADR 0040)
  */
 export const LintCode = {
@@ -3638,6 +3696,37 @@ export type SiteWorkspaceResource = {
 export type TimeZoneName = string;
 
 export type Timestamp = string;
+
+/**
+ * A row that uses the one a removal was refused for: what a client shows to say what to
+ * change first
+ */
+export type UsedBy = {
+  /**
+   * What kind of row it is
+   */
+  kind: UsedByKind;
+  /**
+   * Its id
+   */
+  id: EntityId;
+  /**
+   * Its name
+   */
+  name: string;
+};
+
+/**
+ * What kind of row a refused removal names as a user of the row (ADR 0049). One value per kind
+ * of live user a removal can find, so a client branches on it without parsing text.
+ */
+export const UsedByKind = { BROADCAST: 'broadcast' } as const;
+
+/**
+ * What kind of row a refused removal names as a user of the row (ADR 0049). One value per kind
+ * of live user a removal can find, so a client branches on it without parsing text.
+ */
+export type UsedByKind = typeof UsedByKind[keyof typeof UsedByKind];
 
 /**
  * A Workspace id (ADR 0043): 8 random base62 characters, assigned once at creation and the
@@ -7640,6 +7729,12 @@ export type SiteSegmentsDeleteErrors = {
    * RFC 7807 not found response
    */
   404: ProblemDetails;
+  /**
+   * RFC 7807 conflict response for a removal refused because live work still uses the row
+   * (ADR 0049): 409 with `usedBy` naming the users. Every refused removal of a Segment, Tag,
+   * Integration, Sending domain or Automation answers it.
+   */
+  409: InUseProblemDetails;
 };
 
 export type SiteSegmentsDeleteError = SiteSegmentsDeleteErrors[keyof SiteSegmentsDeleteErrors];

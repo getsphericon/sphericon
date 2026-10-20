@@ -121,7 +121,9 @@ interface SiteSegments
   extends WorkspaceCrud<
       SiteSegmentResource,
       SiteCreateSegmentInput,
-      SiteUpdateSegmentInput
+      SiteUpdateSegmentInput,
+      never,
+      InUseProblem
     > {
   /** Preview how many active contacts match a rule definition */
   @collectionAction(SiteSegmentResource, "preview")

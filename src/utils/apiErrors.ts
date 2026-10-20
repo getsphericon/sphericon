@@ -1,5 +1,5 @@
 import { ProblemCode } from '../generated/site/types.gen.ts'
-import type { ProblemDebug } from '../generated/site/types.gen.ts'
+import type { ProblemDebug, UsedBy } from '../generated/site/types.gen.ts'
 
 export interface ApiErrorLike {
   detail?: string | null
@@ -10,6 +10,7 @@ export interface ApiErrorLike {
   retryAfter?: number | null
   code?: string | null
   debug?: ProblemDebug | null
+  usedBy?: UsedBy[] | null
 }
 
 function isApiErrorLike(error: unknown): error is ApiErrorLike {
@@ -89,4 +90,13 @@ export function getApiErrorMessage(error: unknown, fallback: string) {
 // stack of a panic and the request. A production Instance never sends it.
 export function getProblemDebug(error: unknown) {
   return isApiErrorLike(error) ? (error.debug ?? undefined) : undefined
+}
+
+// The rows that use the one a refused removal named (the `usedBy` member of a 409, ADR 0049),
+// or undefined when the error is not such a refusal.
+export function getUsedBy(error: unknown) {
+  if (!isApiErrorLike(error) || error.status !== 409 || !error.usedBy?.length) {
+    return undefined
+  }
+  return error.usedBy
 }

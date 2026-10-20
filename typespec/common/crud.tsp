@@ -110,7 +110,8 @@ interface ExternalCrud<
   Resource extends {},
   CreateInput,
   UpdateInput,
-  WriteConflict = never
+  WriteConflict = never,
+  DeleteDenied = never
 > {
   /** List resources with pagination */
   @listsResource(Resource)
@@ -172,9 +173,21 @@ interface ExternalCrud<
     | UnauthorizedProblem
     | TooManyRequestsProblem
     | NotFoundProblem
-    | UnprocessableEntityProblem;
+    | UnprocessableEntityProblem
+    | DeleteDenied;
 }
 
 /** Flat external CRUD for a resource with a unique key (adds 409 on writes). */
-interface ExternalCrudUnique<Resource extends {}, CreateInput, UpdateInput>
-  extends ExternalCrud<Resource, CreateInput, UpdateInput, ConflictProblem> {}
+interface ExternalCrudUnique<
+  Resource extends {},
+  CreateInput,
+  UpdateInput,
+  DeleteDenied = never
+>
+  extends ExternalCrud<
+      Resource,
+      CreateInput,
+      UpdateInput,
+      ConflictProblem,
+      DeleteDenied
+    > {}

@@ -303,6 +303,49 @@ export const zStaffSuspension = z.object({
 });
 
 /**
+ * What kind of row a refused removal names as a user of the row (ADR 0049). One value per kind
+ * of live user a removal can find, so a client branches on it without parsing text.
+ */
+export const zUsedByKind = z.enum(['broadcast']);
+
+/**
+ * A row that uses the one a removal was refused for: what a client shows to say what to
+ * change first
+ */
+export const zUsedBy = z.object({
+  kind: zUsedByKind,
+  id: zEntityId,
+  name: z.string()
+});
+
+/**
+ * The body of a refused removal (ADR 0049): ProblemDetails plus the rows that use it
+ */
+export const zInUseProblemDetails = z.object({
+  code: z.exactOptional(zProblemCode),
+  type: z.exactOptional(z.string()),
+  title: z.exactOptional(z.string()),
+  status: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
+  detail: z.exactOptional(z.string()),
+  instance: z.exactOptional(z.string()),
+  errors: z.exactOptional(z.record(z.string(), z.array(z.string()))),
+  form: z.exactOptional(z.string()),
+  fields: z.exactOptional(z.record(z.string(), z.string())),
+  retryAfter: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
+  debug: z.exactOptional(zProblemDebug),
+  usedBy: z.array(zUsedBy)
+});
+
+/**
+ * RFC 7807 conflict response for a removal refused because live work still uses the row
+ * (ADR 0049): 409 with `usedBy` naming the users. Every refused removal of a Segment, Tag,
+ * Integration, Sending domain or Automation answers it.
+ */
+export const zInUseProblem = z.object({
+  body: zInUseProblemDetails
+});
+
+/**
  * A Workspace id (ADR 0043): 8 random base62 characters, assigned once at creation and the
  * Workspace's one public address.
  */

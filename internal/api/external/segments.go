@@ -11,6 +11,7 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/convert"
+	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/segments"
 )
@@ -121,9 +122,12 @@ func (h *Handlers) SegmentsDelete(ctx context.Context, params externalapi.Segmen
 	}
 
 	ws := auth.TokenScoped(ctx)
-	id := int64(params.ID)
-	err := ws.Segment().DeleteOneID(id).Exec(ctx)
-	if ent.IsNotFound(err) {
+	err := h.segments.Delete(ctx, ws, int64(params.ID))
+	if refused, ok := inuse.As(err); ok {
+		res := inUseProblem(refused)
+		return &res, nil
+	}
+	if errors.Is(err, segments.ErrNotFound) {
 		res := externalapi.SegmentsDeleteNotFound(problem(http.StatusNotFound, "segment not found"))
 		return &res, nil
 	}

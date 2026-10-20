@@ -6,7 +6,9 @@ import (
 	"fmt"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/segment"
+	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
@@ -116,4 +118,32 @@ func (s *Module) List(ctx context.Context, ws *ent.Scoped, p pagination.Params) 
 		func(ctx context.Context, limit, offset int) ([]*ent.Segment, error) {
 			return ws.Segment().Query().Order(ent.Asc(segment.FieldID)).Limit(limit).Offset(offset).All(ctx)
 		})
+}
+
+// Delete removes a Segment, unless a draft or scheduled Broadcast uses it: then it returns an
+// *inuse.Error naming those Broadcasts (ADR 0049). A sent or failed Broadcast keeps its stored
+// reference as history and does not block. A missing Segment is ErrNotFound.
+func (s *Module) Delete(ctx context.Context, ws *ent.Scoped, id int64) error {
+	exists, err := ws.Segment().Query().Where(segment.ID(id)).Exist(ctx)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return ErrNotFound
+	}
+	live, err := ws.Broadcast().Query().
+		Where(broadcast.SegmentID(id), broadcast.StatusIn(broadcast.StatusDraft, broadcast.StatusScheduled)).
+		Order(ent.Asc(broadcast.FieldID)).
+		All(ctx)
+	if err != nil {
+		return err
+	}
+	if len(live) > 0 {
+		users := make([]inuse.User, len(live))
+		for i, b := range live {
+			users[i] = inuse.User{Kind: inuse.Broadcast, ID: b.ID, Name: b.Name}
+		}
+		return &inuse.Error{What: "segment", Users: users}
+	}
+	return ws.Segment().DeleteOneID(id).Exec(ctx)
 }

@@ -120,7 +120,9 @@ interface Segments
   extends ExternalCrud<
       SegmentResource,
       CreateSegmentInput,
-      UpdateSegmentInput
+      UpdateSegmentInput,
+      never,
+      InUseProblem
     > {
   /** Count the contacts matching an unsaved rule definition */
   @collectionAction(SegmentResource, "preview")

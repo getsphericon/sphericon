@@ -773,6 +773,93 @@
         },
         "description": "RFC 7807 gone response: the resource existed but is no longer available (an expired link)"
       },
+      "InUseProblem": {
+        "type": "object",
+        "required": ["body"],
+        "properties": {
+          "body": {
+            "$ref": "#/components/schemas/InUseProblemDetails"
+          }
+        },
+        "description": "RFC 7807 conflict response for a removal refused because live work still uses the row\n(ADR 0049): 409 with `usedBy` naming the users. Every refused removal of a Segment, Tag,\nIntegration, Sending domain or Automation answers it."
+      },
+      "InUseProblemDetails": {
+        "type": "object",
+        "required": ["usedBy"],
+        "properties": {
+          "code": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProblemCode"
+              }
+            ],
+            "description": "Why the request was refused, when the client should act on it"
+          },
+          "type": {
+            "type": "string",
+            "description": "A URI reference that identifies the problem type"
+          },
+          "title": {
+            "type": "string",
+            "description": "A short, human-readable summary of the problem type"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "description": "HTTP status code"
+          },
+          "detail": {
+            "type": "string",
+            "description": "A human-readable explanation specific to this occurrence"
+          },
+          "instance": {
+            "type": "string",
+            "description": "A URI reference that identifies the specific occurrence"
+          },
+          "errors": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "description": "Validation errors grouped by field"
+          },
+          "form": {
+            "type": "string",
+            "description": "Form-level validation error"
+          },
+          "fields": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Field validation errors"
+          },
+          "retryAfter": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Seconds to wait before retrying; set on a 429 so a client that only sees the body can show the wait"
+          },
+          "debug": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProblemDebug"
+              }
+            ],
+            "description": "Why a 500 happened, sent only by a development server (`SPHERICON_ENV=development`)"
+          },
+          "usedBy": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UsedBy"
+            },
+            "description": "The live rows that use the one a removal was refused for, never empty"
+          }
+        },
+        "description": "The body of a refused removal (ADR 0049): ProblemDetails plus the rows that use it"
+      },
       "PaymentRequiredProblem": {
         "type": "object",
         "required": ["body"],
@@ -1574,6 +1661,38 @@
       "Timestamp": {
         "type": "string",
         "format": "date-time"
+      },
+      "UsedBy": {
+        "type": "object",
+        "required": ["kind", "id", "name"],
+        "properties": {
+          "kind": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UsedByKind"
+              }
+            ],
+            "description": "What kind of row it is"
+          },
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Its id"
+          },
+          "name": {
+            "type": "string",
+            "description": "Its name"
+          }
+        },
+        "description": "A row that uses the one a removal was refused for: what a client shows to say what to\nchange first"
+      },
+      "UsedByKind": {
+        "type": "string",
+        "enum": ["broadcast"],
+        "description": "What kind of row a refused removal names as a user of the row (ADR 0049). One value per kind\nof live user a removal can find, so a client branches on it without parsing text."
       },
       "WorkspaceId": {
         "type": "string",

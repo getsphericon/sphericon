@@ -91,3 +91,24 @@ test('deleting a segment asks for confirmation, deletes it and refreshes the lis
   await expect.poll(() => listFetches).toBe(2)
   await expect.element(screen.getByText('VIP customers')).not.toBeInTheDocument()
 })
+
+test('a segment a live broadcast uses is not deleted and the broadcast is named', async () => {
+  worker.use(
+    handleSiteSegmentsList({ body: page([VIPS], 1) }),
+    handleSiteSegmentsDelete(() =>
+      problem(409, {
+        usedBy: [{ kind: 'broadcast', id: '7', name: 'Summer sale teaser' }],
+      }),
+    ),
+  )
+
+  const { screen } = await renderWithRouter(<SegmentsListPage />, LIST_ROUTE)
+  await expect.element(screen.getByText('VIP customers')).toBeInTheDocument()
+
+  await screen.getByRole('button', { name: 'Delete' }).first().click()
+  await screen.getByRole('dialog').getByRole('button', { name: 'Delete' }).click()
+
+  await expect.element(screen.getByText('Failed to delete segment')).toBeInTheDocument()
+  await expect.element(screen.getByText(/Broadcast "Summer sale teaser"/)).toBeInTheDocument()
+  await expect.element(screen.getByText('VIP customers')).toBeInTheDocument()
+})

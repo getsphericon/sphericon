@@ -2,6 +2,7 @@ package external_test
 
 import (
 	"context"
+	"github.com/samber/lo"
 	"testing"
 
 	"github.com/getsphericon/sphericon/ent/segment"
@@ -158,4 +159,23 @@ func TestExternalSegmentsWorkspaceIsolation(t *testing.T) {
 	del, err := c.SegmentsDelete(ctx, externalapi.SegmentsDeleteParams{ID: id})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.SegmentsDeleteNotFound{}, del)
+}
+
+// A Segment that a draft or scheduled Broadcast uses cannot be deleted: the 409 names the
+// Broadcasts (ADR 0049); one only a failed Broadcast used is deleted.
+func TestExternalSegmentDeleteRefusedWhileLiveBroadcastUsesIt(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	c := env.ExternalScoped(t, "segments:write")
+
+	got, err := c.SegmentsDelete(ctx, externalapi.SegmentsDeleteParams{ID: entityIDString(fixtures.SegmentProPlanID)})
+	require.NoError(t, err)
+	refused, ok := got.(*externalapi.InUseProblemDetails)
+	require.Truef(t, ok, "got %T", got)
+	names := lo.Map(refused.UsedBy, func(u externalapi.UsedBy, _ int) string { return u.Name })
+	assert.Equal(t, []string{fixtures.BroadcastProSegmentName}, names)
+
+	done, err := c.SegmentsDelete(ctx, externalapi.SegmentsDeleteParams{ID: entityIDString(fixtures.SegmentRetiredID)})
+	require.NoError(t, err)
+	assert.IsType(t, &externalapi.SegmentsDeleteNoContent{}, done)
 }

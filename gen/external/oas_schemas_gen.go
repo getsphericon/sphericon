@@ -5774,6 +5774,181 @@ type ExportMessagesUnauthorized ProblemDetails
 
 func (*ExportMessagesUnauthorized) exportMessagesRes() {}
 
+// The body of a refused removal (ADR 0049): ProblemDetails plus the rows that use it.
+// Ref: #/components/schemas/InUseProblemDetails
+type InUseProblemDetails struct {
+	// Why the request was refused, when the client should act on it.
+	Code OptProblemCode `json:"code"`
+	// A URI reference that identifies the problem type.
+	Type OptString `json:"type"`
+	// A short, human-readable summary of the problem type.
+	Title OptString `json:"title"`
+	// HTTP status code.
+	Status OptInt32 `json:"status"`
+	// A human-readable explanation specific to this occurrence.
+	Detail OptString `json:"detail"`
+	// A URI reference that identifies the specific occurrence.
+	Instance OptString `json:"instance"`
+	// Validation errors grouped by field.
+	Errors OptInUseProblemDetailsErrors `json:"errors"`
+	// Form-level validation error.
+	Form OptString `json:"form"`
+	// Field validation errors.
+	Fields OptInUseProblemDetailsFields `json:"fields"`
+	// Seconds to wait before retrying; set on a 429 so a client that only sees the body can show the wait.
+	RetryAfter OptInt32 `json:"retryAfter"`
+	// Why a 500 happened, sent only by a development server (`SPHERICON_ENV=development`).
+	Debug OptProblemDebug `json:"debug"`
+	// The live rows that use the one a removal was refused for, never empty.
+	UsedBy []UsedBy `json:"usedBy"`
+}
+
+// GetCode returns the value of Code.
+func (s *InUseProblemDetails) GetCode() OptProblemCode {
+	return s.Code
+}
+
+// GetType returns the value of Type.
+func (s *InUseProblemDetails) GetType() OptString {
+	return s.Type
+}
+
+// GetTitle returns the value of Title.
+func (s *InUseProblemDetails) GetTitle() OptString {
+	return s.Title
+}
+
+// GetStatus returns the value of Status.
+func (s *InUseProblemDetails) GetStatus() OptInt32 {
+	return s.Status
+}
+
+// GetDetail returns the value of Detail.
+func (s *InUseProblemDetails) GetDetail() OptString {
+	return s.Detail
+}
+
+// GetInstance returns the value of Instance.
+func (s *InUseProblemDetails) GetInstance() OptString {
+	return s.Instance
+}
+
+// GetErrors returns the value of Errors.
+func (s *InUseProblemDetails) GetErrors() OptInUseProblemDetailsErrors {
+	return s.Errors
+}
+
+// GetForm returns the value of Form.
+func (s *InUseProblemDetails) GetForm() OptString {
+	return s.Form
+}
+
+// GetFields returns the value of Fields.
+func (s *InUseProblemDetails) GetFields() OptInUseProblemDetailsFields {
+	return s.Fields
+}
+
+// GetRetryAfter returns the value of RetryAfter.
+func (s *InUseProblemDetails) GetRetryAfter() OptInt32 {
+	return s.RetryAfter
+}
+
+// GetDebug returns the value of Debug.
+func (s *InUseProblemDetails) GetDebug() OptProblemDebug {
+	return s.Debug
+}
+
+// GetUsedBy returns the value of UsedBy.
+func (s *InUseProblemDetails) GetUsedBy() []UsedBy {
+	return s.UsedBy
+}
+
+// SetCode sets the value of Code.
+func (s *InUseProblemDetails) SetCode(val OptProblemCode) {
+	s.Code = val
+}
+
+// SetType sets the value of Type.
+func (s *InUseProblemDetails) SetType(val OptString) {
+	s.Type = val
+}
+
+// SetTitle sets the value of Title.
+func (s *InUseProblemDetails) SetTitle(val OptString) {
+	s.Title = val
+}
+
+// SetStatus sets the value of Status.
+func (s *InUseProblemDetails) SetStatus(val OptInt32) {
+	s.Status = val
+}
+
+// SetDetail sets the value of Detail.
+func (s *InUseProblemDetails) SetDetail(val OptString) {
+	s.Detail = val
+}
+
+// SetInstance sets the value of Instance.
+func (s *InUseProblemDetails) SetInstance(val OptString) {
+	s.Instance = val
+}
+
+// SetErrors sets the value of Errors.
+func (s *InUseProblemDetails) SetErrors(val OptInUseProblemDetailsErrors) {
+	s.Errors = val
+}
+
+// SetForm sets the value of Form.
+func (s *InUseProblemDetails) SetForm(val OptString) {
+	s.Form = val
+}
+
+// SetFields sets the value of Fields.
+func (s *InUseProblemDetails) SetFields(val OptInUseProblemDetailsFields) {
+	s.Fields = val
+}
+
+// SetRetryAfter sets the value of RetryAfter.
+func (s *InUseProblemDetails) SetRetryAfter(val OptInt32) {
+	s.RetryAfter = val
+}
+
+// SetDebug sets the value of Debug.
+func (s *InUseProblemDetails) SetDebug(val OptProblemDebug) {
+	s.Debug = val
+}
+
+// SetUsedBy sets the value of UsedBy.
+func (s *InUseProblemDetails) SetUsedBy(val []UsedBy) {
+	s.UsedBy = val
+}
+
+func (*InUseProblemDetails) segmentsDeleteRes() {}
+
+// Validation errors grouped by field.
+type InUseProblemDetailsErrors map[string][]string
+
+func (s *InUseProblemDetailsErrors) init() InUseProblemDetailsErrors {
+	m := *s
+	if m == nil {
+		m = map[string][]string{}
+		*s = m
+	}
+	return m
+}
+
+// Field validation errors.
+type InUseProblemDetailsFields map[string]string
+
+func (s *InUseProblemDetailsFields) init() InUseProblemDetailsFields {
+	m := *s
+	if m == nil {
+		m = map[string]string{}
+		*s = m
+	}
+	return m
+}
+
 // Delivery channel an integration belongs to.
 // Ref: #/components/schemas/IntegrationChannel
 type IntegrationChannel string
@@ -7346,6 +7521,98 @@ func (o OptEntityId) Get() (v EntityId, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptEntityId) Or(d EntityId) EntityId {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptInUseProblemDetailsErrors returns new OptInUseProblemDetailsErrors with value set to v.
+func NewOptInUseProblemDetailsErrors(v InUseProblemDetailsErrors) OptInUseProblemDetailsErrors {
+	return OptInUseProblemDetailsErrors{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptInUseProblemDetailsErrors is optional InUseProblemDetailsErrors.
+type OptInUseProblemDetailsErrors struct {
+	Value InUseProblemDetailsErrors
+	Set   bool
+}
+
+// IsSet returns true if OptInUseProblemDetailsErrors was set.
+func (o OptInUseProblemDetailsErrors) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptInUseProblemDetailsErrors) Reset() {
+	var v InUseProblemDetailsErrors
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptInUseProblemDetailsErrors) SetTo(v InUseProblemDetailsErrors) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptInUseProblemDetailsErrors) Get() (v InUseProblemDetailsErrors, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptInUseProblemDetailsErrors) Or(d InUseProblemDetailsErrors) InUseProblemDetailsErrors {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptInUseProblemDetailsFields returns new OptInUseProblemDetailsFields with value set to v.
+func NewOptInUseProblemDetailsFields(v InUseProblemDetailsFields) OptInUseProblemDetailsFields {
+	return OptInUseProblemDetailsFields{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptInUseProblemDetailsFields is optional InUseProblemDetailsFields.
+type OptInUseProblemDetailsFields struct {
+	Value InUseProblemDetailsFields
+	Set   bool
+}
+
+// IsSet returns true if OptInUseProblemDetailsFields was set.
+func (o OptInUseProblemDetailsFields) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptInUseProblemDetailsFields) Reset() {
+	var v InUseProblemDetailsFields
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptInUseProblemDetailsFields) SetTo(v InUseProblemDetailsFields) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptInUseProblemDetailsFields) Get() (v InUseProblemDetailsFields, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptInUseProblemDetailsFields) Or(d InUseProblemDetailsFields) InUseProblemDetailsFields {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -13534,6 +13801,84 @@ func (s *UpsertContactsResult) SetResults(val []ContactBatchItemResult) {
 }
 
 func (*UpsertContactsResult) contactsBatchUpsertRes() {}
+
+// A row that uses the one a removal was refused for: what a client shows to say what to change first.
+// Ref: #/components/schemas/UsedBy
+type UsedBy struct {
+	// What kind of row it is.
+	Kind UsedByKind `json:"kind"`
+	// Its id.
+	ID EntityId `json:"id"`
+	// Its name.
+	Name string `json:"name"`
+}
+
+// GetKind returns the value of Kind.
+func (s *UsedBy) GetKind() UsedByKind {
+	return s.Kind
+}
+
+// GetID returns the value of ID.
+func (s *UsedBy) GetID() EntityId {
+	return s.ID
+}
+
+// GetName returns the value of Name.
+func (s *UsedBy) GetName() string {
+	return s.Name
+}
+
+// SetKind sets the value of Kind.
+func (s *UsedBy) SetKind(val UsedByKind) {
+	s.Kind = val
+}
+
+// SetID sets the value of ID.
+func (s *UsedBy) SetID(val EntityId) {
+	s.ID = val
+}
+
+// SetName sets the value of Name.
+func (s *UsedBy) SetName(val string) {
+	s.Name = val
+}
+
+// What kind of row a refused removal names as a user of the row (ADR 0049). One value per kind of live
+// user a removal can find, so a client branches on it without parsing text.
+// Ref: #/components/schemas/UsedByKind
+type UsedByKind string
+
+const (
+	UsedByKindBroadcast UsedByKind = "broadcast"
+)
+
+// AllValues returns all UsedByKind values.
+func (UsedByKind) AllValues() []UsedByKind {
+	return []UsedByKind{
+		UsedByKindBroadcast,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s UsedByKind) MarshalText() ([]byte, error) {
+	switch s {
+	case UsedByKindBroadcast:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *UsedByKind) UnmarshalText(data []byte) error {
+	switch UsedByKind(data) {
+	case UsedByKindBroadcast:
+		*s = UsedByKindBroadcast
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
 
 // Why an endpoint turned itself off. A closed set: `gone` (the receiver answered 410 Gone) and
 // `persistent_failure` (deliveries failed for longer than the window). Absent for an endpoint an owner

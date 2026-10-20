@@ -721,6 +721,10 @@ const (
 	SegmentActiveID = 1
 	// SegmentActiveName is from fixtures/segments.
 	SegmentActiveName = "Active subscribers"
+	// SegmentBlackFridayID is from fixtures/segments.
+	SegmentBlackFridayID = 102
+	// SegmentBlackFridayName is from fixtures/segments.
+	SegmentBlackFridayName = "Black Friday 2026 audience"
 	// SegmentGlobexID is from fixtures/segments.
 	SegmentGlobexID = 900
 	// SegmentGlobexName is from fixtures/segments.
@@ -733,6 +737,10 @@ const (
 	SegmentProPlanID = 100
 	// SegmentProPlanName is from fixtures/segments.
 	SegmentProPlanName = "Pro & team members"
+	// SegmentRetiredID is from fixtures/segments.
+	SegmentRetiredID = 104
+	// SegmentRetiredName is from fixtures/segments.
+	SegmentRetiredName = "Retired audience"
 	// SendLimiterAcmeID is from fixtures/send_limiters.
 	SendLimiterAcmeID = 1
 	// SendLimiterGlobexID is from fixtures/send_limiters.

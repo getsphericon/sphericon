@@ -596,6 +596,7 @@ export default interface Resources {
       "contactErased": "Contact erased",
       "contactUpdated": "Contact updated",
       "errorMessage": "Something went wrong. Please try again.",
+      "inUse": "Still in use by: {{users}}. Change or finish those first.",
       "rateLimited": "Too many requests. Please wait a minute and try again.",
       "rateLimitedMinutes": "Too many attempts. Try again in {{count}} minutes." | "Too many attempts. Try again in {{count}} minute." | "Too many attempts. Try again in {{count}} minutes.",
       "rateLimitedSeconds": "Too many attempts. Try again in {{count}} seconds." | "Too many attempts. Try again in {{count}} second." | "Too many attempts. Try again in {{count}} seconds.",
@@ -1219,6 +1220,9 @@ export default interface Resources {
       "body": "You will no longer receive these emails.",
       "title": "Unsubscribed",
       "unsubscribeAll": "Unsubscribe from all emails"
+    },
+    "usedByKind": {
+      "broadcast": "Broadcast"
     },
     "userMenu": {
       "account": "Account",

@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/convert"
+	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/segments"
 )
@@ -137,9 +138,12 @@ func (h *Handlers) SiteSegmentsDelete(ctx context.Context, params siteapi.SiteSe
 		return nil, err
 	}
 
-	id := int64(params.ID)
-	err = ws.Segment().DeleteOneID(id).Exec(ctx)
-	if ent.IsNotFound(err) {
+	err = h.segments.Delete(ctx, ws, int64(params.ID))
+	if refused, ok := inuse.As(err); ok {
+		v := inUseProblem(refused)
+		return &v, nil
+	}
+	if errors.Is(err, segments.ErrNotFound) {
 		v := siteapi.SiteSegmentsDeleteNotFound(problem(http.StatusNotFound, "segment not found"))
 		return &v, nil
 	}
