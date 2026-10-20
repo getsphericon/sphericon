@@ -6,10 +6,9 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"time"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
+	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/consent"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/events"
@@ -190,7 +189,7 @@ func confirmRedirect(tracker *tracking.Tracker, appURL, tokenStr string, target 
 
 // The record* helpers commit the state change and publish the engagement event in
 // one transaction (transactional outbox). The state write is a conditional UPDATE
-// (… WHERE opened_at IS NULL, etc.) and the counter increment + publish are gated
+// (… WHERE opened_at IS NULL, etc., in the broadcasts module) and the publish is gated
 // on its rows-affected, so concurrent or redelivered hits are counted exactly once
 // (no double-count race). The persist subscriber writes the Event log row and the
 // automations subscriber enrolls the contact — both off the bus. Automation emails
@@ -201,19 +200,15 @@ func recordOpen(ctx context.Context, client *ent.Client, bus *events.Bus, recipi
 	if err != nil {
 		return
 	}
-	c, err := client.Contact.Get(ctx, rec.ContactID)
+	s := client.Scoped(rec.WorkspaceID) // the Workspace comes from the recipient row the token names
+	c, err := s.Contact().Get(ctx, rec.ContactID)
 	if err != nil {
 		return
 	}
-	err = bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		n, err := tx.BroadcastRecipient.Update().
-			Where(broadcastrecipient.ID(rec.ID), broadcastrecipient.OpenedAtIsNil()).
-			SetOpenedAt(time.Now()).Save(ctx)
-		if err != nil || n == 0 {
-			return err // n == 0: already counted, nothing to publish
-		}
-		if _, err := tx.Broadcast.UpdateOneID(rec.BroadcastID).AddOpenedCount(1).Save(ctx); err != nil {
-			return err
+	err = bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
+		first, err := broadcasts.RecordOpen(ctx, ts, rec.ID)
+		if err != nil || !first {
+			return err // not first: already counted, nothing to publish
 		}
 		return pub.Publish(ctx, &events.EmailEngagement{
 			Action: events.NameEmailOpened, WorkspaceID: rec.WorkspaceID, ContactID: rec.ContactID,
@@ -230,18 +225,14 @@ func recordClick(ctx context.Context, client *ent.Client, bus *events.Bus, recip
 	if err != nil {
 		return
 	}
-	c, err := client.Contact.Get(ctx, rec.ContactID)
+	s := client.Scoped(rec.WorkspaceID)
+	c, err := s.Contact().Get(ctx, rec.ContactID)
 	if err != nil {
 		return
 	}
-	err = bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		n, err := tx.BroadcastRecipient.Update().
-			Where(broadcastrecipient.ID(rec.ID), broadcastrecipient.ClickedAtIsNil()).
-			SetClickedAt(time.Now()).Save(ctx)
-		if err != nil || n == 0 {
-			return err
-		}
-		if _, err := tx.Broadcast.UpdateOneID(rec.BroadcastID).AddClickedCount(1).Save(ctx); err != nil {
+	err = bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
+		first, err := broadcasts.RecordClick(ctx, ts, rec.ID)
+		if err != nil || !first {
 			return err
 		}
 		return pub.Publish(ctx, &events.EmailEngagement{

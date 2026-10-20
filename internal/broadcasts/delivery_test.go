@@ -92,6 +92,13 @@ func (d *delivery) broadcastRow() *ent.Broadcast {
 	return d.env.DB.Broadcast.GetX(d.ctx, fixtures.BroadcastSendingID)
 }
 
+// stats is the sending Broadcast's delivery figures, read from its rows.
+func (d *delivery) stats() broadcasts.Stats {
+	figures, err := broadcasts.StatsOf(d.ctx, d.s, fixtures.BroadcastSendingID)
+	require.NoError(d.t, err)
+	return figures[fixtures.BroadcastSendingID]
+}
+
 // messageOf is the one Outbound message of a recipient's send.
 func (d *delivery) messageOf(recipientID int64) *ent.OutboundMessage {
 	return d.env.DB.OutboundMessage.Query().
@@ -126,7 +133,7 @@ func TestSentRecipientIsRecordedAndSettlesTheBroadcast(t *testing.T) {
 	b := d.broadcastRow()
 	assert.Nil(t, b.HoldReason, "a send clears the hold reason")
 	assert.Equal(t, broadcast.StatusSent, b.Status, "the last pending recipient settles the Broadcast")
-	assert.Equal(t, 1, b.SentCount)
+	assert.Equal(t, broadcasts.Stats{Recipients: 1, Sent: 1}, d.stats())
 }
 
 func TestSendRecipientIsIdempotent(t *testing.T) {
@@ -150,7 +157,7 @@ func TestRecipientWithoutEmailFailsWithAReason(t *testing.T) {
 	assert.Equal(t, broadcastrecipient.StatusFailed, rec.Status)
 	require.NotNil(t, rec.Error)
 	assert.Equal(t, "contact has no email", *rec.Error)
-	assert.Equal(t, 1, d.broadcastRow().FailedCount)
+	assert.Equal(t, broadcasts.Stats{Recipients: 1, Failed: 1}, d.stats())
 	assert.Empty(t, d.box.sent)
 
 	msg := d.messageOf(id)
@@ -169,10 +176,7 @@ func TestSuppressedRecipientIsSkippedNotFailed(t *testing.T) {
 	require.NoError(t, d.del.SendRecipient(d.ctx, d.s, id))
 
 	assert.Equal(t, broadcastrecipient.StatusSkipped, d.recipientRow(id).Status)
-	b := d.broadcastRow()
-	assert.Equal(t, 1, b.SkippedCount)
-	assert.Zero(t, b.SentCount)
-	assert.Zero(t, b.FailedCount)
+	assert.Equal(t, broadcasts.Stats{Recipients: 1, Skipped: 1}, d.stats())
 	assert.Empty(t, d.box.sent)
 }
 
@@ -247,9 +251,8 @@ func TestGiveUpFailsTheRecipientWithTheCauseAndSettlesTheBroadcast(t *testing.T)
 	assert.Equal(t, broadcastrecipient.StatusFailed, rec.Status)
 	require.NotNil(t, rec.Error)
 	assert.Equal(t, "smtp unavailable", *rec.Error)
-	b := d.broadcastRow()
-	assert.Equal(t, broadcast.StatusSent, b.Status)
-	assert.Equal(t, 1, b.FailedCount)
+	assert.Equal(t, broadcast.StatusSent, d.broadcastRow().Status)
+	assert.Equal(t, broadcasts.Stats{Recipients: 1, Failed: 1}, d.stats())
 
 	msg := d.messageOf(id)
 	assert.Equal(t, outboundmessage.StatusFailed, msg.Status, "a give-up before any claim still records the one message")

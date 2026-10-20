@@ -310,3 +310,931 @@
   workspace_id: 8
   created_at: '{{daysAgo 60}}'
   updated_at: '{{daysAgo 60}}'
+# Broadcast sends (kind: broadcast): the one message of every decided broadcast recipient in
+# broadcast_recipients.yml (ADR 0015). Ids are 10000 + the recipient id; the key is the
+# recipient key format ("broadcast:<recipient id>"). Pending recipients have no message.
+- id: 11000
+  kind: broadcast
+  idempotency_key: 'broadcast:1000'
+  channel: email
+  contact_id: 100
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 3}}'
+  claimed_at: '{{daysAgo 3}}'
+  broadcast_id: 200
+  broadcast_recipient_id: 1000
+  workspace_id: 1
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 2}}'
+- id: 11001
+  kind: broadcast
+  idempotency_key: 'broadcast:1001'
+  channel: email
+  contact_id: 101
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 3}}'
+  claimed_at: '{{daysAgo 3}}'
+  broadcast_id: 200
+  broadcast_recipient_id: 1001
+  workspace_id: 1
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 2}}'
+- id: 11002
+  kind: broadcast
+  idempotency_key: 'broadcast:1002'
+  channel: email
+  contact_id: 102
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 3}}'
+  claimed_at: '{{daysAgo 3}}'
+  broadcast_id: 200
+  broadcast_recipient_id: 1002
+  workspace_id: 1
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 2}}'
+- id: 11003
+  kind: broadcast
+  idempotency_key: 'broadcast:1003'
+  channel: email
+  contact_id: 103
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 3}}'
+  claimed_at: '{{daysAgo 3}}'
+  broadcast_id: 200
+  broadcast_recipient_id: 1003
+  workspace_id: 1
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 2}}'
+- id: 11004
+  kind: broadcast
+  idempotency_key: 'broadcast:1004'
+  channel: email
+  contact_id: 104
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 3}}'
+  claimed_at: '{{daysAgo 3}}'
+  broadcast_id: 200
+  broadcast_recipient_id: 1004
+  workspace_id: 1
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 2}}'
+- id: 11005
+  kind: broadcast
+  idempotency_key: 'broadcast:1005'
+  channel: email
+  contact_id: 105
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 3}}'
+  claimed_at: '{{daysAgo 3}}'
+  broadcast_id: 200
+  broadcast_recipient_id: 1005
+  workspace_id: 1
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 3}}'
+- id: 11006
+  kind: broadcast
+  idempotency_key: 'broadcast:1006'
+  channel: email
+  contact_id: 106
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 3}}'
+  claimed_at: '{{daysAgo 3}}'
+  broadcast_id: 200
+  broadcast_recipient_id: 1006
+  workspace_id: 1
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 3}}'
+- id: 11007
+  kind: broadcast
+  idempotency_key: 'broadcast:1007'
+  channel: email
+  contact_id: 107
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 3}}'
+  claimed_at: '{{daysAgo 3}}'
+  broadcast_id: 200
+  broadcast_recipient_id: 1007
+  workspace_id: 1
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 3}}'
+- id: 11008
+  kind: broadcast
+  idempotency_key: 'broadcast:1008'
+  channel: email
+  contact_id: 108
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 3}}'
+  claimed_at: '{{daysAgo 3}}'
+  broadcast_id: 200
+  broadcast_recipient_id: 1008
+  workspace_id: 1
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 3}}'
+- id: 11009
+  kind: broadcast
+  idempotency_key: 'broadcast:1009'
+  channel: email
+  contact_id: 109
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 3}}'
+  claimed_at: '{{daysAgo 3}}'
+  broadcast_id: 200
+  broadcast_recipient_id: 1009
+  workspace_id: 1
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 3}}'
+- id: 11010
+  kind: broadcast
+  idempotency_key: 'broadcast:1010'
+  channel: email
+  contact_id: 105
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 9}}'
+  claimed_at: '{{daysAgo 9}}'
+  broadcast_id: 201
+  broadcast_recipient_id: 1010
+  workspace_id: 1
+  created_at: '{{daysAgo 9}}'
+  updated_at: '{{daysAgo 8}}'
+- id: 11011
+  kind: broadcast
+  idempotency_key: 'broadcast:1011'
+  channel: email
+  contact_id: 106
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 9}}'
+  claimed_at: '{{daysAgo 9}}'
+  broadcast_id: 201
+  broadcast_recipient_id: 1011
+  workspace_id: 1
+  created_at: '{{daysAgo 9}}'
+  updated_at: '{{daysAgo 8}}'
+- id: 11012
+  kind: broadcast
+  idempotency_key: 'broadcast:1012'
+  channel: email
+  contact_id: 107
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 9}}'
+  claimed_at: '{{daysAgo 9}}'
+  broadcast_id: 201
+  broadcast_recipient_id: 1012
+  workspace_id: 1
+  created_at: '{{daysAgo 9}}'
+  updated_at: '{{daysAgo 8}}'
+- id: 11013
+  kind: broadcast
+  idempotency_key: 'broadcast:1013'
+  channel: email
+  contact_id: 108
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 9}}'
+  claimed_at: '{{daysAgo 9}}'
+  broadcast_id: 201
+  broadcast_recipient_id: 1013
+  workspace_id: 1
+  created_at: '{{daysAgo 9}}'
+  updated_at: '{{daysAgo 8}}'
+- id: 11014
+  kind: broadcast
+  idempotency_key: 'broadcast:1014'
+  channel: email
+  contact_id: 109
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 9}}'
+  claimed_at: '{{daysAgo 9}}'
+  broadcast_id: 201
+  broadcast_recipient_id: 1014
+  workspace_id: 1
+  created_at: '{{daysAgo 9}}'
+  updated_at: '{{daysAgo 9}}'
+- id: 11015
+  kind: broadcast
+  idempotency_key: 'broadcast:1015'
+  channel: email
+  contact_id: 110
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 9}}'
+  claimed_at: '{{daysAgo 9}}'
+  broadcast_id: 201
+  broadcast_recipient_id: 1015
+  workspace_id: 1
+  created_at: '{{daysAgo 9}}'
+  updated_at: '{{daysAgo 9}}'
+- id: 11016
+  kind: broadcast
+  idempotency_key: 'broadcast:1016'
+  channel: email
+  contact_id: 111
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 9}}'
+  claimed_at: '{{daysAgo 9}}'
+  broadcast_id: 201
+  broadcast_recipient_id: 1016
+  workspace_id: 1
+  created_at: '{{daysAgo 9}}'
+  updated_at: '{{daysAgo 9}}'
+- id: 11017
+  kind: broadcast
+  idempotency_key: 'broadcast:1017'
+  channel: email
+  contact_id: 112
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 9}}'
+  claimed_at: '{{daysAgo 9}}'
+  broadcast_id: 201
+  broadcast_recipient_id: 1017
+  workspace_id: 1
+  created_at: '{{daysAgo 9}}'
+  updated_at: '{{daysAgo 9}}'
+- id: 11018
+  kind: broadcast
+  idempotency_key: 'broadcast:1018'
+  channel: email
+  contact_id: 113
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 9}}'
+  claimed_at: '{{daysAgo 9}}'
+  broadcast_id: 201
+  broadcast_recipient_id: 1018
+  workspace_id: 1
+  created_at: '{{daysAgo 9}}'
+  updated_at: '{{daysAgo 9}}'
+- id: 11019
+  kind: broadcast
+  idempotency_key: 'broadcast:1019'
+  channel: email
+  contact_id: 114
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 9}}'
+  claimed_at: '{{daysAgo 9}}'
+  broadcast_id: 201
+  broadcast_recipient_id: 1019
+  workspace_id: 1
+  created_at: '{{daysAgo 9}}'
+  updated_at: '{{daysAgo 9}}'
+- id: 11020
+  kind: broadcast
+  idempotency_key: 'broadcast:1020'
+  channel: email
+  contact_id: 110
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 16}}'
+  claimed_at: '{{daysAgo 16}}'
+  broadcast_id: 202
+  broadcast_recipient_id: 1020
+  workspace_id: 1
+  created_at: '{{daysAgo 16}}'
+  updated_at: '{{daysAgo 15}}'
+- id: 11021
+  kind: broadcast
+  idempotency_key: 'broadcast:1021'
+  channel: email
+  contact_id: 111
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 16}}'
+  claimed_at: '{{daysAgo 16}}'
+  broadcast_id: 202
+  broadcast_recipient_id: 1021
+  workspace_id: 1
+  created_at: '{{daysAgo 16}}'
+  updated_at: '{{daysAgo 15}}'
+- id: 11022
+  kind: broadcast
+  idempotency_key: 'broadcast:1022'
+  channel: email
+  contact_id: 112
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 16}}'
+  claimed_at: '{{daysAgo 16}}'
+  broadcast_id: 202
+  broadcast_recipient_id: 1022
+  workspace_id: 1
+  created_at: '{{daysAgo 16}}'
+  updated_at: '{{daysAgo 15}}'
+- id: 11023
+  kind: broadcast
+  idempotency_key: 'broadcast:1023'
+  channel: email
+  contact_id: 113
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 16}}'
+  claimed_at: '{{daysAgo 16}}'
+  broadcast_id: 202
+  broadcast_recipient_id: 1023
+  workspace_id: 1
+  created_at: '{{daysAgo 16}}'
+  updated_at: '{{daysAgo 15}}'
+- id: 11024
+  kind: broadcast
+  idempotency_key: 'broadcast:1024'
+  channel: email
+  contact_id: 114
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 16}}'
+  claimed_at: '{{daysAgo 16}}'
+  broadcast_id: 202
+  broadcast_recipient_id: 1024
+  workspace_id: 1
+  created_at: '{{daysAgo 16}}'
+  updated_at: '{{daysAgo 15}}'
+- id: 11025
+  kind: broadcast
+  idempotency_key: 'broadcast:1025'
+  channel: email
+  contact_id: 115
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 16}}'
+  claimed_at: '{{daysAgo 16}}'
+  broadcast_id: 202
+  broadcast_recipient_id: 1025
+  workspace_id: 1
+  created_at: '{{daysAgo 16}}'
+  updated_at: '{{daysAgo 16}}'
+- id: 11026
+  kind: broadcast
+  idempotency_key: 'broadcast:1026'
+  channel: email
+  contact_id: 116
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 16}}'
+  claimed_at: '{{daysAgo 16}}'
+  broadcast_id: 202
+  broadcast_recipient_id: 1026
+  workspace_id: 1
+  created_at: '{{daysAgo 16}}'
+  updated_at: '{{daysAgo 16}}'
+- id: 11027
+  kind: broadcast
+  idempotency_key: 'broadcast:1027'
+  channel: email
+  contact_id: 117
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 16}}'
+  claimed_at: '{{daysAgo 16}}'
+  broadcast_id: 202
+  broadcast_recipient_id: 1027
+  workspace_id: 1
+  created_at: '{{daysAgo 16}}'
+  updated_at: '{{daysAgo 16}}'
+- id: 11028
+  kind: broadcast
+  idempotency_key: 'broadcast:1028'
+  channel: email
+  contact_id: 118
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 16}}'
+  claimed_at: '{{daysAgo 16}}'
+  broadcast_id: 202
+  broadcast_recipient_id: 1028
+  workspace_id: 1
+  created_at: '{{daysAgo 16}}'
+  updated_at: '{{daysAgo 16}}'
+- id: 11029
+  kind: broadcast
+  idempotency_key: 'broadcast:1029'
+  channel: email
+  contact_id: 119
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 16}}'
+  claimed_at: '{{daysAgo 16}}'
+  broadcast_id: 202
+  broadcast_recipient_id: 1029
+  workspace_id: 1
+  created_at: '{{daysAgo 16}}'
+  updated_at: '{{daysAgo 16}}'
+- id: 11030
+  kind: broadcast
+  idempotency_key: 'broadcast:1030'
+  channel: email
+  contact_id: 115
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 24}}'
+  claimed_at: '{{daysAgo 24}}'
+  broadcast_id: 203
+  broadcast_recipient_id: 1030
+  workspace_id: 1
+  created_at: '{{daysAgo 24}}'
+  updated_at: '{{daysAgo 23}}'
+- id: 11031
+  kind: broadcast
+  idempotency_key: 'broadcast:1031'
+  channel: email
+  contact_id: 116
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 24}}'
+  claimed_at: '{{daysAgo 24}}'
+  broadcast_id: 203
+  broadcast_recipient_id: 1031
+  workspace_id: 1
+  created_at: '{{daysAgo 24}}'
+  updated_at: '{{daysAgo 23}}'
+- id: 11032
+  kind: broadcast
+  idempotency_key: 'broadcast:1032'
+  channel: email
+  contact_id: 117
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 24}}'
+  claimed_at: '{{daysAgo 24}}'
+  broadcast_id: 203
+  broadcast_recipient_id: 1032
+  workspace_id: 1
+  created_at: '{{daysAgo 24}}'
+  updated_at: '{{daysAgo 23}}'
+- id: 11033
+  kind: broadcast
+  idempotency_key: 'broadcast:1033'
+  channel: email
+  contact_id: 118
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 24}}'
+  claimed_at: '{{daysAgo 24}}'
+  broadcast_id: 203
+  broadcast_recipient_id: 1033
+  workspace_id: 1
+  created_at: '{{daysAgo 24}}'
+  updated_at: '{{daysAgo 23}}'
+- id: 11034
+  kind: broadcast
+  idempotency_key: 'broadcast:1034'
+  channel: email
+  contact_id: 119
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 24}}'
+  claimed_at: '{{daysAgo 24}}'
+  broadcast_id: 203
+  broadcast_recipient_id: 1034
+  workspace_id: 1
+  created_at: '{{daysAgo 24}}'
+  updated_at: '{{daysAgo 24}}'
+- id: 11035
+  kind: broadcast
+  idempotency_key: 'broadcast:1035'
+  channel: email
+  contact_id: 120
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 24}}'
+  claimed_at: '{{daysAgo 24}}'
+  broadcast_id: 203
+  broadcast_recipient_id: 1035
+  workspace_id: 1
+  created_at: '{{daysAgo 24}}'
+  updated_at: '{{daysAgo 24}}'
+- id: 11036
+  kind: broadcast
+  idempotency_key: 'broadcast:1036'
+  channel: email
+  contact_id: 121
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 24}}'
+  claimed_at: '{{daysAgo 24}}'
+  broadcast_id: 203
+  broadcast_recipient_id: 1036
+  workspace_id: 1
+  created_at: '{{daysAgo 24}}'
+  updated_at: '{{daysAgo 24}}'
+- id: 11037
+  kind: broadcast
+  idempotency_key: 'broadcast:1037'
+  channel: email
+  contact_id: 122
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 24}}'
+  claimed_at: '{{daysAgo 24}}'
+  broadcast_id: 203
+  broadcast_recipient_id: 1037
+  workspace_id: 1
+  created_at: '{{daysAgo 24}}'
+  updated_at: '{{daysAgo 24}}'
+- id: 11038
+  kind: broadcast
+  idempotency_key: 'broadcast:1038'
+  channel: email
+  contact_id: 123
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 24}}'
+  claimed_at: '{{daysAgo 24}}'
+  broadcast_id: 203
+  broadcast_recipient_id: 1038
+  workspace_id: 1
+  created_at: '{{daysAgo 24}}'
+  updated_at: '{{daysAgo 24}}'
+- id: 11039
+  kind: broadcast
+  idempotency_key: 'broadcast:1039'
+  channel: email
+  contact_id: 124
+  sending_source: broadcasts
+  status: failed
+  reason: '550 mailbox unavailable'
+  claimed_at: '{{daysAgo 24}}'
+  broadcast_id: 203
+  broadcast_recipient_id: 1039
+  workspace_id: 1
+  created_at: '{{daysAgo 24}}'
+  updated_at: '{{daysAgo 24}}'
+- id: 11040
+  kind: broadcast
+  idempotency_key: 'broadcast:1040'
+  channel: email
+  contact_id: 120
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 40}}'
+  claimed_at: '{{daysAgo 40}}'
+  broadcast_id: 204
+  broadcast_recipient_id: 1040
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 39}}'
+- id: 11041
+  kind: broadcast
+  idempotency_key: 'broadcast:1041'
+  channel: email
+  contact_id: 121
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 40}}'
+  claimed_at: '{{daysAgo 40}}'
+  broadcast_id: 204
+  broadcast_recipient_id: 1041
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 39}}'
+- id: 11042
+  kind: broadcast
+  idempotency_key: 'broadcast:1042'
+  channel: email
+  contact_id: 122
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 40}}'
+  claimed_at: '{{daysAgo 40}}'
+  broadcast_id: 204
+  broadcast_recipient_id: 1042
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 39}}'
+- id: 11043
+  kind: broadcast
+  idempotency_key: 'broadcast:1043'
+  channel: email
+  contact_id: 123
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 40}}'
+  claimed_at: '{{daysAgo 40}}'
+  broadcast_id: 204
+  broadcast_recipient_id: 1043
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 39}}'
+- id: 11044
+  kind: broadcast
+  idempotency_key: 'broadcast:1044'
+  channel: email
+  contact_id: 124
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 40}}'
+  claimed_at: '{{daysAgo 40}}'
+  broadcast_id: 204
+  broadcast_recipient_id: 1044
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 39}}'
+- id: 11045
+  kind: broadcast
+  idempotency_key: 'broadcast:1045'
+  channel: email
+  contact_id: 125
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 40}}'
+  claimed_at: '{{daysAgo 40}}'
+  broadcast_id: 204
+  broadcast_recipient_id: 1045
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 39}}'
+- id: 11046
+  kind: broadcast
+  idempotency_key: 'broadcast:1046'
+  channel: email
+  contact_id: 126
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 40}}'
+  claimed_at: '{{daysAgo 40}}'
+  broadcast_id: 204
+  broadcast_recipient_id: 1046
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 40}}'
+- id: 11047
+  kind: broadcast
+  idempotency_key: 'broadcast:1047'
+  channel: email
+  contact_id: 127
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 40}}'
+  claimed_at: '{{daysAgo 40}}'
+  broadcast_id: 204
+  broadcast_recipient_id: 1047
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 40}}'
+- id: 11048
+  kind: broadcast
+  idempotency_key: 'broadcast:1048'
+  channel: email
+  contact_id: 128
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 40}}'
+  claimed_at: '{{daysAgo 40}}'
+  broadcast_id: 204
+  broadcast_recipient_id: 1048
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 40}}'
+- id: 11049
+  kind: broadcast
+  idempotency_key: 'broadcast:1049'
+  channel: email
+  contact_id: 129
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 40}}'
+  claimed_at: '{{daysAgo 40}}'
+  broadcast_id: 204
+  broadcast_recipient_id: 1049
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 40}}'
+- id: 11050
+  kind: broadcast
+  idempotency_key: 'broadcast:1050'
+  channel: email
+  contact_id: 100
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 70}}'
+  claimed_at: '{{daysAgo 70}}'
+  broadcast_id: 205
+  broadcast_recipient_id: 1050
+  workspace_id: 1
+  created_at: '{{daysAgo 70}}'
+  updated_at: '{{daysAgo 69}}'
+- id: 11051
+  kind: broadcast
+  idempotency_key: 'broadcast:1051'
+  channel: email
+  contact_id: 103
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 70}}'
+  claimed_at: '{{daysAgo 70}}'
+  broadcast_id: 205
+  broadcast_recipient_id: 1051
+  workspace_id: 1
+  created_at: '{{daysAgo 70}}'
+  updated_at: '{{daysAgo 69}}'
+- id: 11052
+  kind: broadcast
+  idempotency_key: 'broadcast:1052'
+  channel: email
+  contact_id: 105
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 70}}'
+  claimed_at: '{{daysAgo 70}}'
+  broadcast_id: 205
+  broadcast_recipient_id: 1052
+  workspace_id: 1
+  created_at: '{{daysAgo 70}}'
+  updated_at: '{{daysAgo 69}}'
+- id: 11053
+  kind: broadcast
+  idempotency_key: 'broadcast:1053'
+  channel: email
+  contact_id: 107
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 70}}'
+  claimed_at: '{{daysAgo 70}}'
+  broadcast_id: 205
+  broadcast_recipient_id: 1053
+  workspace_id: 1
+  created_at: '{{daysAgo 70}}'
+  updated_at: '{{daysAgo 69}}'
+- id: 11054
+  kind: broadcast
+  idempotency_key: 'broadcast:1054'
+  channel: email
+  contact_id: 110
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 70}}'
+  claimed_at: '{{daysAgo 70}}'
+  broadcast_id: 205
+  broadcast_recipient_id: 1054
+  workspace_id: 1
+  created_at: '{{daysAgo 70}}'
+  updated_at: '{{daysAgo 70}}'
+- id: 11055
+  kind: broadcast
+  idempotency_key: 'broadcast:1055'
+  channel: email
+  contact_id: 113
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 70}}'
+  claimed_at: '{{daysAgo 70}}'
+  broadcast_id: 205
+  broadcast_recipient_id: 1055
+  workspace_id: 1
+  created_at: '{{daysAgo 70}}'
+  updated_at: '{{daysAgo 70}}'
+- id: 11056
+  kind: broadcast
+  idempotency_key: 'broadcast:1056'
+  channel: email
+  contact_id: 115
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 70}}'
+  claimed_at: '{{daysAgo 70}}'
+  broadcast_id: 205
+  broadcast_recipient_id: 1056
+  workspace_id: 1
+  created_at: '{{daysAgo 70}}'
+  updated_at: '{{daysAgo 70}}'
+- id: 11057
+  kind: broadcast
+  idempotency_key: 'broadcast:1057'
+  channel: email
+  contact_id: 118
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 70}}'
+  claimed_at: '{{daysAgo 70}}'
+  broadcast_id: 205
+  broadcast_recipient_id: 1057
+  workspace_id: 1
+  created_at: '{{daysAgo 70}}'
+  updated_at: '{{daysAgo 70}}'
+- id: 11058
+  kind: broadcast
+  idempotency_key: 'broadcast:1058'
+  channel: email
+  contact_id: 120
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 70}}'
+  claimed_at: '{{daysAgo 70}}'
+  broadcast_id: 205
+  broadcast_recipient_id: 1058
+  workspace_id: 1
+  created_at: '{{daysAgo 70}}'
+  updated_at: '{{daysAgo 70}}'
+- id: 11059
+  kind: broadcast
+  idempotency_key: 'broadcast:1059'
+  channel: email
+  contact_id: 125
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 70}}'
+  claimed_at: '{{daysAgo 70}}'
+  broadcast_id: 205
+  broadcast_recipient_id: 1059
+  workspace_id: 1
+  created_at: '{{daysAgo 70}}'
+  updated_at: '{{daysAgo 70}}'
+- id: 10800
+  kind: broadcast
+  idempotency_key: 'broadcast:800'
+  channel: email
+  contact_id: 800
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 3}}'
+  claimed_at: '{{daysAgo 3}}'
+  broadcast_id: 200
+  broadcast_recipient_id: 800
+  workspace_id: 1
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 3}}'
+# Broadcast 103's sends (BroadcastFailed): the messages of recipients 1100-1104.
+- id: 11100
+  kind: broadcast
+  idempotency_key: 'broadcast:1100'
+  channel: email
+  contact_id: 100
+  sending_source: broadcasts
+  status: failed
+  reason: '550 mailbox unavailable'
+  claimed_at: '{{daysAgo 7}}'
+  broadcast_id: 103
+  broadcast_recipient_id: 1100
+  workspace_id: 1
+  created_at: '{{daysAgo 7}}'
+  updated_at: '{{daysAgo 7}}'
+- id: 11101
+  kind: broadcast
+  idempotency_key: 'broadcast:1101'
+  channel: email
+  contact_id: 101
+  sending_source: broadcasts
+  status: failed
+  reason: '550 mailbox unavailable'
+  claimed_at: '{{daysAgo 7}}'
+  broadcast_id: 103
+  broadcast_recipient_id: 1101
+  workspace_id: 1
+  created_at: '{{daysAgo 7}}'
+  updated_at: '{{daysAgo 7}}'
+- id: 11102
+  kind: broadcast
+  idempotency_key: 'broadcast:1102'
+  channel: email
+  contact_id: 102
+  sending_source: broadcasts
+  status: failed
+  reason: '421 try again later'
+  claimed_at: '{{daysAgo 7}}'
+  broadcast_id: 103
+  broadcast_recipient_id: 1102
+  workspace_id: 1
+  created_at: '{{daysAgo 7}}'
+  updated_at: '{{daysAgo 7}}'
+- id: 11103
+  kind: broadcast
+  idempotency_key: 'broadcast:1103'
+  channel: email
+  contact_id: 103
+  sending_source: broadcasts
+  status: skipped
+  reason: 'suppressed'
+  claimed_at: '{{daysAgo 7}}'
+  broadcast_id: 103
+  broadcast_recipient_id: 1103
+  workspace_id: 1
+  created_at: '{{daysAgo 7}}'
+  updated_at: '{{daysAgo 7}}'
+- id: 11104
+  kind: broadcast
+  idempotency_key: 'broadcast:1104'
+  channel: email
+  contact_id: 104
+  sending_source: broadcasts
+  status: skipped
+  reason: 'unsubscribed_source'
+  claimed_at: '{{daysAgo 7}}'
+  broadcast_id: 103
+  broadcast_recipient_id: 1104
+  workspace_id: 1
+  created_at: '{{daysAgo 7}}'
+  updated_at: '{{daysAgo 7}}'

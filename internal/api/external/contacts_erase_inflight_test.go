@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
+	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobkind"
@@ -47,10 +48,12 @@ func TestExternalContactsEraseRemovesUnsentBroadcastRecipients(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, broadcast.StatusSending, still.Status)
 
-	// recipients_total follows the recipient rows: one pending recipient removed from
-	// each Broadcast, so reports' rates do not divide by recipients that are gone.
-	assert.Equal(t, 0, solo.RecipientsTotal)
-	assert.Equal(t, 1, still.RecipientsTotal)
+	// The figures follow the recipient rows: one pending recipient removed from each
+	// Broadcast, so reports' rates do not divide by recipients that are gone.
+	figures, err := broadcasts.StatsOf(ctx, env.DB.Scoped(fixtures.InitechID), solo.ID, still.ID)
+	require.NoError(t, err)
+	assert.Zero(t, figures[solo.ID].Recipients)
+	assert.Equal(t, 1, figures[still.ID].Recipients)
 }
 
 func TestExternalContactsEraseClearsOutboxAndJobArguments(t *testing.T) {

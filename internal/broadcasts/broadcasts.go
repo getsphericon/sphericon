@@ -296,25 +296,23 @@ type Report struct {
 	ClickRate    float32
 }
 
-// Report reads the Broadcast's denormalized delivery counters.
+// Report reads the Broadcast's delivery figures (see Stats).
 func (m *Module) Report(ctx context.Context, s *ent.Scoped, id int64) (Report, error) {
 	b, err := m.Get(ctx, s, id)
 	if err != nil {
 		return Report{}, err
 	}
+	figures, err := StatsOf(ctx, s, id)
+	if err != nil {
+		return Report{}, err
+	}
+	st := figures[id]
 	return Report{
 		Status: b.Status, HoldReason: b.HoldReason,
-		Recipients: b.RecipientsTotal, Sent: b.SentCount, Skipped: b.SkippedCount, Failed: b.FailedCount,
-		Opened: b.OpenedCount, Clicked: b.ClickedCount, Unsubscribed: b.UnsubscribedCount,
-		OpenRate: ratio(b.OpenedCount, b.SentCount), ClickRate: ratio(b.ClickedCount, b.SentCount),
+		Recipients: st.Recipients, Sent: st.Sent, Skipped: st.Skipped, Failed: st.Failed,
+		Opened: st.Opened, Clicked: st.Clicked, Unsubscribed: st.Unsubscribed,
+		OpenRate: Ratio(st.Opened, st.Sent), ClickRate: Ratio(st.Clicked, st.Sent),
 	}, nil
-}
-
-func ratio(num, denom int) float32 {
-	if denom <= 0 {
-		return 0
-	}
-	return float32(num) / float32(denom)
 }
 
 func draftOf(id int64) predicate.Broadcast {

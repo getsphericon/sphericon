@@ -6,7 +6,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcast"
-	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 )
 
 // Progress is how far a sending Broadcast has got (ADR 0023). A Broadcast stays
@@ -31,13 +30,12 @@ func ProgressOf(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, now time.T
 	if b.Status != broadcast.StatusSending {
 		return nil, nil
 	}
-	pending, err := s.BroadcastRecipient().Query().
-		Where(broadcastrecipient.BroadcastID(b.ID), broadcastrecipient.StatusEQ(broadcastrecipient.StatusPending)).
-		Count(ctx)
+	figures, err := StatsOf(ctx, s, b.ID)
 	if err != nil {
 		return nil, err
 	}
-	p := &Progress{Remaining: pending, Processed: max(0, b.RecipientsTotal-pending)}
+	pending := figures[b.ID].Pending
+	p := &Progress{Remaining: pending, Processed: figures[b.ID].Processed()}
 	if pending == 0 || b.HoldReason != nil {
 		return p, nil
 	}

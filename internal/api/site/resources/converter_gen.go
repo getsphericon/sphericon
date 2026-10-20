@@ -33,6 +33,7 @@ func (c *ConverterImpl) BroadcastRecipientToExport(source *ent.BroadcastRecipien
 		siteapiContactExportBroadcastRecipient.SentAt = optNilTimestamp((*source).SentAt)
 		siteapiContactExportBroadcastRecipient.OpenedAt = optNilTimestamp((*source).OpenedAt)
 		siteapiContactExportBroadcastRecipient.ClickedAt = optNilTimestamp((*source).ClickedAt)
+		siteapiContactExportBroadcastRecipient.UnsubscribedAt = optNilTimestamp((*source).UnsubscribedAt)
 		siteapiContactExportBroadcastRecipient.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return siteapiContactExportBroadcastRecipient
@@ -55,7 +56,6 @@ func (c *ConverterImpl) BroadcastToResource(source *ent.Broadcast) site.SiteBroa
 		siteapiSiteBroadcastResource.HoldReason = optNilString((*source).HoldReason)
 		siteapiSiteBroadcastResource.ScheduledAt = optNilTimestamp((*source).ScheduledAt)
 		siteapiSiteBroadcastResource.SentAt = optNilTimestamp((*source).SentAt)
-		siteapiSiteBroadcastResource.Stats = broadcastStats((*source))
 		siteapiSiteBroadcastResource.CreatedAt = timestamp((*source).CreatedAt)
 		siteapiSiteBroadcastResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}

@@ -43,7 +43,7 @@ func TestSiteContactsExportIsOpenToAnyMember(t *testing.T) {
 	doc := readSiteExport(t, res)
 
 	assert.Len(t, doc.Events, 3)
-	assert.Len(t, doc.OutboundMessages, 2)
+	assert.Len(t, doc.OutboundMessages, 3)
 	assert.Len(t, doc.BroadcastRecipients, 1)
 }
 

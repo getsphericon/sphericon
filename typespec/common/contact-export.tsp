@@ -224,6 +224,9 @@ model ContactExportBroadcastRecipient {
   /** When the contact clicked it */
   clickedAt?: Timestamp | null;
 
+  /** When the contact unsubscribed from it */
+  unsubscribedAt?: Timestamp | null;
+
   /** Creation timestamp */
   createdAt: Timestamp;
 }

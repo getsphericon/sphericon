@@ -99,9 +99,7 @@ func TestSendBroadcastDeliversToEligibleContacts(t *testing.T) {
 	// Broadcast is marked sent with accurate counters.
 	got := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID)
 	assert.Equal(t, broadcast.StatusSent, got.Status)
-	assert.Equal(t, eligibleCount, got.RecipientsTotal)
-	assert.Equal(t, eligibleCount, got.SentCount)
-	assert.Equal(t, 0, got.FailedCount)
+	assert.Equal(t, broadcasts.Stats{Recipients: eligibleCount, Sent: eligibleCount}, figuresOf(t, env, fixtures.BroadcastDraftID))
 	require.NotNil(t, got.SentAt)
 
 	// A recipient row exists per eligible contact, all marked sent.
@@ -215,10 +213,8 @@ func TestSendBroadcastSkipsSuppressed(t *testing.T) {
 	}
 	assert.Len(t, fs.sent, eligibleBefore-1)
 
-	// Counters exclude the suppressed contact, and she has no recipient row.
-	got := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastScheduledID)
-	assert.Equal(t, eligibleBefore-1, got.RecipientsTotal)
-	assert.Equal(t, eligibleBefore-1, got.SentCount)
+	// The figures exclude the suppressed contact, and she has no recipient row.
+	assert.Equal(t, broadcasts.Stats{Recipients: eligibleBefore - 1, Sent: eligibleBefore - 1}, figuresOf(t, env, fixtures.BroadcastScheduledID))
 	n, err := env.DB.BroadcastRecipient.Query().
 		Where(broadcastrecipient.BroadcastID(fixtures.BroadcastScheduledID), broadcastrecipient.ContactID(alice.ID)).
 		Count(ctx)
@@ -290,7 +286,7 @@ func TestSendBroadcastToRuleSegment(t *testing.T) {
 	assert.Contains(t, got, *liam.Email, "a pro-plan contact receives the broadcast")
 	assert.NotContains(t, got, *noah.Email, "a free-plan contact is excluded by the segment")
 	// recipients_total matches what was actually sent (all segment matches eligible).
-	assert.Equal(t, len(fs.sent), env.DB.Broadcast.GetX(ctx, fixtures.BroadcastProSegmentID).RecipientsTotal)
+	assert.Equal(t, len(fs.sent), figuresOf(t, env, fixtures.BroadcastProSegmentID).Recipients)
 }
 
 // A send failure marks the recipient rows failed, finalizes the broadcast with
@@ -310,9 +306,7 @@ func TestSendBroadcastMarksFailedOnSendError(t *testing.T) {
 
 	got := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastScheduledID)
 	assert.Equal(t, broadcast.StatusSent, got.Status, "broadcast finalizes even when every send fails")
-	assert.Equal(t, eligible, got.RecipientsTotal)
-	assert.Equal(t, 0, got.SentCount)
-	assert.Equal(t, eligible, got.FailedCount)
+	assert.Equal(t, broadcasts.Stats{Recipients: eligible, Failed: eligible}, figuresOf(t, env, fixtures.BroadcastScheduledID))
 	require.NotNil(t, got.SentAt)
 
 	recs, err := env.DB.BroadcastRecipient.Query().
@@ -363,7 +357,7 @@ func TestSendBroadcastRunsTheProductionSequence(t *testing.T) {
 	got := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID)
 	assert.Equal(t, broadcast.StatusSent, got.Status)
 	assert.NotNil(t, got.LastScheduledAt, "paced like production")
-	assert.Len(t, fs.sent, got.SentCount)
+	assert.Len(t, fs.sent, figuresOf(t, env, fixtures.BroadcastDraftID).Sent)
 }
 
 // A sent Broadcast stays sent when the synchronous adapter is run on it again.
@@ -375,4 +369,12 @@ func TestSendBroadcastOnASentBroadcastIsRefused(t *testing.T) {
 
 	require.ErrorIs(t, err, lifecycle.ErrInvalidTransition)
 	assert.Equal(t, broadcast.StatusSent, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastSentID).Status)
+}
+
+// figuresOf is a Broadcast's delivery figures, derived from its rows.
+func figuresOf(t *testing.T, env *testhelper.TestEnv, broadcastID int64) broadcasts.Stats {
+	t.Helper()
+	got, err := broadcasts.StatsOf(context.Background(), env.DB.Scoped(fixtures.AcmeID), broadcastID)
+	require.NoError(t, err)
+	return got[broadcastID]
 }

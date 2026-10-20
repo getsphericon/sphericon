@@ -9,6 +9,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/api/site/resources"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/emailrender"
@@ -19,11 +20,26 @@ import (
 	"github.com/samber/lo"
 )
 
+// withStats maps a Broadcast and attaches its delivery figures, which are derived from its
+// recipients and their Outbound messages rather than stored on it.
+func withStats(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (siteapi.SiteBroadcastResource, error) {
+	figures, err := broadcasts.StatsOf(ctx, s, b.ID)
+	if err != nil {
+		return siteapi.SiteBroadcastResource{}, err
+	}
+	res := mapper.BroadcastToResource(b)
+	res.Stats = resources.BroadcastStats(figures[b.ID])
+	return res, nil
+}
+
 // broadcastResource maps a Broadcast and, while it is sending, attaches its progress
 // and ETA (ADR 0023), derived on the server from its recipients. Only the single-row
 // responses (get, send) use it: the list leaves progress out.
 func broadcastResource(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (siteapi.SiteBroadcastResource, error) {
-	res := mapper.BroadcastToResource(b)
+	res, err := withStats(ctx, s, b)
+	if err != nil {
+		return res, err
+	}
 	p, err := broadcasts.ProgressOf(ctx, s, b, time.Now())
 	if err != nil || p == nil {
 		return res, err
@@ -54,9 +70,18 @@ func (h *Handlers) SiteBroadcastsList(ctx context.Context, params siteapi.SiteBr
 		return nil, err
 	}
 
+	// The figures of the whole page are two grouped queries. No progress here: it costs a
+	// query per sending row and the list does not show it.
+	figures, err := broadcasts.StatsOf(ctx, ws, lo.Map(page.Items, func(b *ent.Broadcast, _ int) int64 { return b.ID })...)
+	if err != nil {
+		return nil, err
+	}
 	return &siteapi.SiteBroadcastsListOK{
-		// No progress here: it costs a query per sending row and the list does not show it.
-		Items:      lo.Map(page.Items, func(b *ent.Broadcast, _ int) siteapi.SiteBroadcastResource { return mapper.BroadcastToResource(b) }),
+		Items: lo.Map(page.Items, func(b *ent.Broadcast, _ int) siteapi.SiteBroadcastResource {
+			res := mapper.BroadcastToResource(b)
+			res.Stats = resources.BroadcastStats(figures[b.ID])
+			return res
+		}),
 		Page:       int32(page.Page),
 		PageSize:   int32(page.PageSize),
 		TotalItems: int32(page.TotalItems),
@@ -94,7 +119,10 @@ func (h *Handlers) SiteBroadcastsCreate(ctx context.Context, req *siteapi.SiteCr
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.BroadcastToResource(b)
+	res, err := withStats(ctx, ws, b)
+	if err != nil {
+		return nil, err
+	}
 	if res.Warnings, err = h.lintWarnings(ctx, ws, b.Subject, req.Body, b.Body); err != nil {
 		return nil, err
 	}
@@ -171,7 +199,10 @@ func (h *Handlers) SiteBroadcastsUpdate(ctx context.Context, req *siteapi.SiteUp
 	case err != nil:
 		return nil, err
 	}
-	res := mapper.BroadcastToResource(b)
+	res, err := withStats(ctx, ws, b)
+	if err != nil {
+		return nil, err
+	}
 	if res.Warnings, err = h.lintWarnings(ctx, ws, b.Subject, req.Body, b.Body); err != nil {
 		return nil, err
 	}
@@ -256,7 +287,10 @@ func (h *Handlers) SiteBroadcastsSchedule(ctx context.Context, req *siteapi.Site
 	case err != nil:
 		return nil, err
 	}
-	res := mapper.BroadcastToResource(b)
+	res, err := withStats(ctx, ws, b)
+	if err != nil {
+		return nil, err
+	}
 	return &res, nil
 }
 

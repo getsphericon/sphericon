@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -137,16 +138,19 @@ func TestReport(t *testing.T) {
 	m := broadcasts.New(&recorder{})
 	ctx := context.Background()
 
-	env.DB.Broadcast.UpdateOneID(fixtures.BroadcastSentID).
-		SetSentCount(4).SetOpenedCount(2).SetClickedCount(1).SetUnsubscribedCount(1).ExecX(ctx)
+	// The figures are the rows': 11 recipients of the sent Broadcast, all sent, 5 opened and 2
+	// clicked in the fixtures; one more unsubscribes now.
+	env.DB.BroadcastRecipient.UpdateOneID(fixtures.BroadcastRecipientSentID).SetUnsubscribedAt(time.Now()).ExecX(ctx)
 	r, err := m.Report(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastSentID)
 	require.NoError(t, err)
 	assert.Equal(t, broadcast.StatusSent, r.Status)
-	assert.Equal(t, 4, r.Sent)
-	assert.Equal(t, 2, r.Opened)
+	assert.Equal(t, 11, r.Recipients)
+	assert.Equal(t, 11, r.Sent)
+	assert.Equal(t, 5, r.Opened)
+	assert.Equal(t, 2, r.Clicked)
 	assert.Equal(t, 1, r.Unsubscribed)
-	assert.InDelta(t, 0.5, r.OpenRate, 1e-6)
-	assert.InDelta(t, 0.25, r.ClickRate, 1e-6)
+	assert.InDelta(t, 5.0/11, r.OpenRate, 1e-6)
+	assert.InDelta(t, 2.0/11, r.ClickRate, 1e-6)
 
 	zero, err := m.Report(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID)
 	require.NoError(t, err)

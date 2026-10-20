@@ -196,7 +196,7 @@ func (d *Delivery) retryLater(ctx context.Context, s *ent.Scoped, b *ent.Broadca
 	ahead, cerr := s.BroadcastRecipient().Query().
 		Where(
 			broadcastrecipient.BroadcastID(rec.BroadcastID),
-			broadcastrecipient.StatusEQ(broadcastrecipient.StatusPending),
+			Pending(),
 			broadcastrecipient.IDLT(rec.ID),
 			// Only the awake ones queue for a token; a recipient asleep on its own
 			// Deferral is not ahead of this one yet.

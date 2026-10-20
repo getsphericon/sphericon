@@ -2,6 +2,7 @@ package outbound_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -19,7 +20,9 @@ func TestRequestConstructorsDeduplicateTheSameLogicalSend(t *testing.T) {
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
-	rec := env.DB.BroadcastRecipient.GetX(ctx, fixtures.BroadcastRecipientSentID)
+	// A recipient still to be sent (the fixture recipients already have their message).
+	rec := env.DB.BroadcastRecipient.Create().SetWorkspaceID(fixtures.AcmeID).
+		SetBroadcastID(fixtures.BroadcastDraftID).SetContactID(fixtures.ContactAliceID).SaveX(ctx)
 	bc := env.DB.Broadcast.GetX(ctx, rec.BroadcastID)
 	contact := env.DB.Contact.GetX(ctx, rec.ContactID)
 	automation := env.DB.Automation.GetX(ctx, fixtures.AutomationWelcomeSeriesID)
@@ -75,16 +78,18 @@ func TestConstructorsKeepTheStoredKeyFormats(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
-	rec := env.DB.BroadcastRecipient.GetX(ctx, fixtures.BroadcastRecipientSentID)
+	// A recipient still to be sent (the fixture recipients already have their message).
+	rec := env.DB.BroadcastRecipient.Create().SetWorkspaceID(fixtures.AcmeID).
+		SetBroadcastID(fixtures.BroadcastDraftID).SetContactID(fixtures.ContactAliceID).SaveX(ctx)
 	bc := env.DB.Broadcast.GetX(ctx, rec.BroadcastID)
 	contact := env.DB.Contact.GetX(ctx, rec.ContactID)
 	automation := env.DB.Automation.GetX(ctx, fixtures.AutomationWelcomeSeriesID)
 	run := env.DB.AutomationRun.GetX(ctx, fixtures.AutomationRunWelcomeCompletedID)
 
 	for want, req := range map[string]outbound.Request{
-		"broadcast:1000":    outbound.BroadcastRecipient(bc, rec, contact),
-		"automation:1000:2": outbound.AutomationStep(automation, run, 2, contact, "Hi", "<p>Hi</p>"),
-		"transactional:k1":  outbound.Transactional(outbound.TransactionalMessage{ClientKey: "k1", Destination: "a@example.com"}),
+		fmt.Sprintf("broadcast:%d", rec.ID): outbound.BroadcastRecipient(bc, rec, contact),
+		"automation:1000:2":                 outbound.AutomationStep(automation, run, 2, contact, "Hi", "<p>Hi</p>"),
+		"transactional:k1":                  outbound.Transactional(outbound.TransactionalMessage{ClientKey: "k1", Destination: "a@example.com"}),
 	} {
 		res, err := newModule(env).Send(ctx, s, req)
 		require.NoError(t, err)

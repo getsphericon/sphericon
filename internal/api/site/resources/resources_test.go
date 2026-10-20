@@ -5,20 +5,19 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/broadcasts"
 )
 
 func TestBroadcastStatsRates(t *testing.T) {
 	// 100 targeted, 80 delivered, 40 opened, 20 clicked, 5 unsubscribed, 20 failed.
-	b := ent.Broadcast{
-		RecipientsTotal:   100,
-		SentCount:         80,
-		OpenedCount:       40,
-		ClickedCount:      20,
-		UnsubscribedCount: 5,
-		FailedCount:       20,
-	}
-	got := broadcastStats(b)
+	got := BroadcastStats(broadcasts.Stats{
+		Recipients:   100,
+		Sent:         80,
+		Opened:       40,
+		Clicked:      20,
+		Unsubscribed: 5,
+		Failed:       20,
+	})
 
 	cases := []struct {
 		name string
@@ -36,7 +35,7 @@ func TestBroadcastStatsRates(t *testing.T) {
 		assert.InDeltaf(t, c.want, c.got, 1e-9, "%s = %v, want %v", c.name, c.got, c.want)
 	}
 
-	// Counters pass through unchanged.
+	// Figures pass through unchanged.
 	assert.EqualValues(t, 100, got.RecipientsTotal)
 	assert.EqualValues(t, 80, got.SentCount)
 	assert.EqualValues(t, 20, got.FailedCount)
@@ -44,7 +43,7 @@ func TestBroadcastStatsRates(t *testing.T) {
 
 func TestBroadcastStatsZeroDenominators(t *testing.T) {
 	// An all-zero broadcast (never sent): every rate must be 0, no NaN/Inf.
-	got := broadcastStats(ent.Broadcast{})
+	got := BroadcastStats(broadcasts.Stats{})
 	rates := map[string]float32{
 		"deliveryRate":    got.DeliveryRate,
 		"openRate":        got.OpenRate,
@@ -58,7 +57,7 @@ func TestBroadcastStatsZeroDenominators(t *testing.T) {
 	}
 
 	// Delivered but nobody opened: openRate defined (0), clickToOpenRate guarded (0).
-	got = broadcastStats(ent.Broadcast{RecipientsTotal: 10, SentCount: 10})
+	got = BroadcastStats(broadcasts.Stats{Recipients: 10, Sent: 10})
 	assert.InDeltaf(t, 1, got.DeliveryRate, 1e-9, "deliveryRate = %v, want 1", got.DeliveryRate)
 	assert.InDelta(t, 0, got.OpenRate, 1e-9)
 	assert.InDelta(t, 0, got.ClickToOpenRate, 1e-9)

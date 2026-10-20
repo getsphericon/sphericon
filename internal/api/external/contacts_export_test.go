@@ -85,7 +85,7 @@ func TestExternalContactsExportByIDReturnsTheFullBundle(t *testing.T) {
 	assert.Len(t, doc.Unsubscribes, 1)
 	assert.Len(t, doc.Suppressions, 1)
 	assert.Len(t, doc.Confirmations, 1)
-	assert.Len(t, doc.OutboundMessages, 2, "includes the send to the address that has no Contact link")
+	assert.Len(t, doc.OutboundMessages, 3, "the transactional sends, one to an address with no Contact link, and the Broadcast recipient's own")
 	assert.Len(t, doc.BroadcastRecipients, 1)
 }
 

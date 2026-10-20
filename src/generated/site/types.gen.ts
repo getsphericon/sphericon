@@ -38,6 +38,10 @@ export type ContactExportBroadcastRecipient = {
    */
   clickedAt?: Timestamp | null;
   /**
+   * When the contact unsubscribed from it
+   */
+  unsubscribedAt?: Timestamp | null;
+  /**
    * Creation timestamp
    */
   createdAt: Timestamp;

@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
+	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -209,14 +210,14 @@ func TestTrackingEndpoints(t *testing.T) {
 
 	gotRec := env.DB.BroadcastRecipient.GetX(ctx, rec.ID)
 	assert.NotNil(t, gotRec.OpenedAt)
-	assert.Equal(t, 1, env.DB.Broadcast.GetX(ctx, b.ID).OpenedCount)
+	assert.Equal(t, 1, figures(t, env, b.ID).Opened)
 
 	// Click: records the click and 302-redirects to the destination.
 	resp = get("/e/c/" + token + "?u=https%3A%2F%2Fdest.test%2Fx")
 	assert.Equal(t, http.StatusFound, resp.Code)
 	assert.Equal(t, "https://dest.test/x", resp.Header().Get("Location"))
 	assert.NotNil(t, env.DB.BroadcastRecipient.GetX(ctx, rec.ID).ClickedAt)
-	assert.Equal(t, 1, env.DB.Broadcast.GetX(ctx, b.ID).ClickedCount)
+	assert.Equal(t, 1, figures(t, env, b.ID).Clicked)
 
 	// Unsubscribe (ADR 0012 / RFC 8058): the broadcast footer link is a
 	// "broadcasts"-scoped token. GET is safe — it 303-redirects to the SPA confirm
@@ -241,19 +242,19 @@ func TestTrackingEndpoints(t *testing.T) {
 	assert.Equal(t, http.StatusSeeOther, resp.Code)
 	assert.True(t, strings.HasPrefix(resp.Header().Get("Location"), cfg.AppURL+"/unsubscribe?"))
 	assert.False(t, optedOut(), "GET records nothing")
-	assert.Equal(t, 0, env.DB.Broadcast.GetX(ctx, b.ID).UnsubscribedCount)
+	assert.Equal(t, 0, figures(t, env, b.ID).Unsubscribed)
 
 	// POST performs the opt-out and bumps the counter once.
 	resp = post(uPath)
 	assert.Equal(t, http.StatusNoContent, resp.Code)
 	assert.True(t, optedOut(), "POST writes a broadcasts-scoped opt-out")
-	assert.Equal(t, 1, env.DB.Broadcast.GetX(ctx, b.ID).UnsubscribedCount)
+	assert.Equal(t, 1, figures(t, env, b.ID).Unsubscribed)
 	unsubscribedAt := env.DB.BroadcastRecipient.GetX(ctx, rec.ID).UnsubscribedAt
 	require.NotNil(t, unsubscribedAt, "the recipient records the unsubscribe")
 
 	// A repeated POST (mailbox retry / double click) must not double-count.
 	post(uPath)
-	assert.Equal(t, 1, env.DB.Broadcast.GetX(ctx, b.ID).UnsubscribedCount)
+	assert.Equal(t, 1, figures(t, env, b.ID).Unsubscribed)
 	assert.True(t, unsubscribedAt.Equal(*env.DB.BroadcastRecipient.GetX(ctx, rec.ID).UnsubscribedAt), "set once")
 
 	// Each endpoint published an engagement event onto the transactional outbox.
@@ -394,4 +395,12 @@ func TestUnsubscribeOneClickWriteFailureIsServerError(t *testing.T) {
 	env.Server.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
+}
+
+// figures is the Broadcast's delivery figures, derived from its rows.
+func figures(t *testing.T, env *testhelper.TestEnv, broadcastID int64) broadcasts.Stats {
+	t.Helper()
+	got, err := broadcasts.StatsOf(context.Background(), env.DB.Scoped(fixtures.AcmeID), broadcastID)
+	require.NoError(t, err)
+	return got[broadcastID]
 }

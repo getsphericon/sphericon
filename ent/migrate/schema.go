@@ -932,6 +932,14 @@ var (
 					Where: "broadcast_recipient_id IS NOT NULL",
 				},
 			},
+			{
+				Name:    "outbound_messages_workspace_id_sent_at_broadcast",
+				Unique:  false,
+				Columns: []*schema.Column{OutboundMessagesColumns[23], OutboundMessagesColumns[14]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "broadcast_recipient_id IS NOT NULL",
+				},
+			},
 		},
 	}
 	// RecoveryCodesColumns holds the columns for the "recovery_codes" table.

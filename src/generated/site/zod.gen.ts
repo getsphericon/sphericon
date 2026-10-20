@@ -1147,6 +1147,7 @@ export const zContactExportBroadcastRecipient = z.object({
   sentAt: z.exactOptional(zTimestamp.nullable()),
   openedAt: z.exactOptional(zTimestamp.nullable()),
   clickedAt: z.exactOptional(zTimestamp.nullable()),
+  unsubscribedAt: z.exactOptional(zTimestamp.nullable()),
   createdAt: zTimestamp
 });
 

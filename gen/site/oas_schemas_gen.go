@@ -52,6 +52,8 @@ type ContactExportBroadcastRecipient struct {
 	OpenedAt OptNilTimestamp `json:"openedAt"`
 	// When the contact clicked it.
 	ClickedAt OptNilTimestamp `json:"clickedAt"`
+	// When the contact unsubscribed from it.
+	UnsubscribedAt OptNilTimestamp `json:"unsubscribedAt"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 }
@@ -89,6 +91,11 @@ func (s *ContactExportBroadcastRecipient) GetOpenedAt() OptNilTimestamp {
 // GetClickedAt returns the value of ClickedAt.
 func (s *ContactExportBroadcastRecipient) GetClickedAt() OptNilTimestamp {
 	return s.ClickedAt
+}
+
+// GetUnsubscribedAt returns the value of UnsubscribedAt.
+func (s *ContactExportBroadcastRecipient) GetUnsubscribedAt() OptNilTimestamp {
+	return s.UnsubscribedAt
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -129,6 +136,11 @@ func (s *ContactExportBroadcastRecipient) SetOpenedAt(val OptNilTimestamp) {
 // SetClickedAt sets the value of ClickedAt.
 func (s *ContactExportBroadcastRecipient) SetClickedAt(val OptNilTimestamp) {
 	s.ClickedAt = val
+}
+
+// SetUnsubscribedAt sets the value of UnsubscribedAt.
+func (s *ContactExportBroadcastRecipient) SetUnsubscribedAt(val OptNilTimestamp) {
+	s.UnsubscribedAt = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.

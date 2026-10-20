@@ -2,6 +2,7 @@ package site_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
+	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -36,12 +38,18 @@ func TestSiteBroadcastProgressAndETA(t *testing.T) {
 	assert.False(t, get().Progress.IsSet(), "a draft has no progress")
 
 	eta := time.Now().Add(90 * time.Minute).Truncate(time.Microsecond)
-	require.NoError(t, s.Broadcast().UpdateOneID(id).SetStatus(broadcast.StatusSending).SetRecipientsTotal(3).SetLastScheduledAt(eta).Exec(ctx))
-	statuses := []broadcastrecipient.Status{broadcastrecipient.StatusSent, broadcastrecipient.StatusPending, broadcastrecipient.StatusPending}
-	for i, contactID := range []int64{fixtures.ContactAliceID, fixtures.ContactBobID, fixtures.ContactCarolID} {
-		_, err := s.BroadcastRecipient().Create().SetBroadcastID(id).SetContactID(contactID).SetStatus(statuses[i]).Save(ctx)
+	require.NoError(t, s.Broadcast().UpdateOneID(id).SetStatus(broadcast.StatusSending).SetLastScheduledAt(eta).Exec(ctx))
+	var recipients []int64
+	for _, contactID := range []int64{fixtures.ContactAliceID, fixtures.ContactBobID, fixtures.ContactCarolID} {
+		rec, err := s.BroadcastRecipient().Create().SetBroadcastID(id).SetContactID(contactID).SetStatus(broadcastrecipient.StatusPending).Save(ctx)
 		require.NoError(t, err)
+		recipients = append(recipients, rec.ID)
 	}
+	// The first recipient is decided by its Outbound message (ADR 0015); the other two are pending.
+	require.NoError(t, s.OutboundMessage().Create().
+		SetKind(outboundmessage.KindBroadcast).SetIdempotencyKey(fmt.Sprintf("broadcast:%d", recipients[0])).
+		SetBroadcastID(id).SetBroadcastRecipientID(recipients[0]).SetStatus(outboundmessage.StatusSent).
+		Exec(ctx))
 
 	progress, ok := get().Progress.Get()
 	require.True(t, ok)

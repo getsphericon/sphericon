@@ -139,5 +139,9 @@ func (OutboundMessage) Indexes() []ent.Index {
 		index.Fields("broadcast_recipient_id").
 			StorageKey("outbound_messages_broadcast_recipient_id").
 			Annotations(entsql.IndexWhere("broadcast_recipient_id IS NOT NULL")),
+		// The workspace analytics dashboard's send cohort: Broadcast sends by send time.
+		index.Fields("workspace_id", "sent_at").
+			StorageKey("outbound_messages_workspace_id_sent_at_broadcast").
+			Annotations(entsql.IndexWhere("broadcast_recipient_id IS NOT NULL")),
 	}
 }

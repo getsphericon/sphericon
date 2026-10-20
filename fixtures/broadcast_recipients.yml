@@ -728,3 +728,55 @@
     created_at: '{{daysAgo 3}}',
     updated_at: '{{daysAgo 3}}',
   }
+
+# --- Broadcast 103 (BroadcastFailed): 3 failed, 2 skipped, no engagement ---
+- {
+    id: 1100,
+    broadcast_id: 103,
+    contact_id: 100,
+    workspace_id: 1,
+    status: failed,
+    error: '550 mailbox unavailable',
+    created_at: '{{daysAgo 7}}',
+    updated_at: '{{daysAgo 7}}',
+  }
+- {
+    id: 1101,
+    broadcast_id: 103,
+    contact_id: 101,
+    workspace_id: 1,
+    status: failed,
+    error: '550 mailbox unavailable',
+    created_at: '{{daysAgo 7}}',
+    updated_at: '{{daysAgo 7}}',
+  }
+- {
+    id: 1102,
+    broadcast_id: 103,
+    contact_id: 102,
+    workspace_id: 1,
+    status: failed,
+    error: '421 try again later',
+    created_at: '{{daysAgo 7}}',
+    updated_at: '{{daysAgo 7}}',
+  }
+- {
+    id: 1103,
+    broadcast_id: 103,
+    contact_id: 103,
+    workspace_id: 1,
+    status: skipped,
+    error: 'suppressed',
+    created_at: '{{daysAgo 7}}',
+    updated_at: '{{daysAgo 7}}',
+  }
+- {
+    id: 1104,
+    broadcast_id: 103,
+    contact_id: 104,
+    workspace_id: 1,
+    status: skipped,
+    error: 'unsubscribed_source',
+    created_at: '{{daysAgo 7}}',
+    updated_at: '{{daysAgo 7}}',
+  }

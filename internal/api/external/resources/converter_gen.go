@@ -52,6 +52,7 @@ func (c *ConverterImpl) BroadcastRecipientToExport(source *ent.BroadcastRecipien
 		externalapiContactExportBroadcastRecipient.SentAt = optNilTimestamp((*source).SentAt)
 		externalapiContactExportBroadcastRecipient.OpenedAt = optNilTimestamp((*source).OpenedAt)
 		externalapiContactExportBroadcastRecipient.ClickedAt = optNilTimestamp((*source).ClickedAt)
+		externalapiContactExportBroadcastRecipient.UnsubscribedAt = optNilTimestamp((*source).UnsubscribedAt)
 		externalapiContactExportBroadcastRecipient.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return externalapiContactExportBroadcastRecipient

@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/automations"
+	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/segments"
 	"github.com/go-faster/jx"
 	"github.com/samber/lo"
@@ -37,7 +38,6 @@ import (
 // goverter:extend eventProperties
 // goverter:extend templateDoc
 // goverter:extend broadcastDoc
-// goverter:extend broadcastStats
 // goverter:extend automationSteps
 // goverter:extend segmentDefinition
 // goverter:extend emailVerified
@@ -69,9 +69,9 @@ type Converter interface {
 	WorkspaceToResource(source *ent.Workspace) siteapi.SiteWorkspaceResource
 	EventToResource(source *ent.Event) siteapi.SiteEventResource
 
-	// The flat stat counters on the broadcast are folded into the nested Stats
-	// object; map the whole source through broadcastStats.
-	// goverter:map . Stats
+	// The delivery figures are derived from the Broadcast's recipients and their Outbound
+	// messages, which the mapper cannot see: the handler attaches them (BroadcastStats).
+	// goverter:ignore Stats
 	// Progress is derived from the recipients, which the mapper cannot see: the
 	// handler attaches it.
 	// goverter:ignore Progress
@@ -218,33 +218,23 @@ func optNilEntityID(v *int64) siteapi.OptNilEntityId {
 	return siteapi.NewOptNilEntityId(siteapi.EntityId(*v))
 }
 
-// broadcastStats folds the broadcast's flat delivery counters into the nested
-// Stats DTO and computes the derived engagement rates. Rates are ratios in [0,1];
-// a zero denominator yields 0 (see ratio). It is wired as a goverter extend so the
-// `. -> Stats` mapping on BroadcastToResource routes through it.
-func broadcastStats(b ent.Broadcast) siteapi.SiteBroadcastStats {
+// BroadcastStats nests a Broadcast's delivery figures in the Stats DTO and computes the
+// derived engagement rates. Rates are ratios in [0,1]; a zero denominator yields 0.
+func BroadcastStats(st broadcasts.Stats) siteapi.SiteBroadcastStats {
 	return siteapi.SiteBroadcastStats{
-		RecipientsTotal:   int32(b.RecipientsTotal),
-		SentCount:         int32(b.SentCount),
-		OpenedCount:       int32(b.OpenedCount),
-		ClickedCount:      int32(b.ClickedCount),
-		UnsubscribedCount: int32(b.UnsubscribedCount),
-		FailedCount:       int32(b.FailedCount),
-		DeliveryRate:      ratio(b.SentCount, b.RecipientsTotal),
-		OpenRate:          ratio(b.OpenedCount, b.SentCount),
-		ClickRate:         ratio(b.ClickedCount, b.SentCount),
-		ClickToOpenRate:   ratio(b.ClickedCount, b.OpenedCount),
-		UnsubscribeRate:   ratio(b.UnsubscribedCount, b.SentCount),
-		FailureRate:       ratio(b.FailedCount, b.RecipientsTotal),
+		RecipientsTotal:   int32(st.Recipients),
+		SentCount:         int32(st.Sent),
+		OpenedCount:       int32(st.Opened),
+		ClickedCount:      int32(st.Clicked),
+		UnsubscribedCount: int32(st.Unsubscribed),
+		FailedCount:       int32(st.Failed),
+		DeliveryRate:      broadcasts.Ratio(st.Sent, st.Recipients),
+		OpenRate:          broadcasts.Ratio(st.Opened, st.Sent),
+		ClickRate:         broadcasts.Ratio(st.Clicked, st.Sent),
+		ClickToOpenRate:   broadcasts.Ratio(st.Clicked, st.Opened),
+		UnsubscribeRate:   broadcasts.Ratio(st.Unsubscribed, st.Sent),
+		FailureRate:       broadcasts.Ratio(st.Failed, st.Recipients),
 	}
-}
-
-// ratio is num/denom as a float32 in [0,1], guarding against a zero denominator.
-func ratio(num, denom int) float32 {
-	if denom <= 0 {
-		return 0
-	}
-	return float32(num) / float32(denom)
 }
 
 func optNilTimeZone(v *string) siteapi.OptNilTimeZoneName {

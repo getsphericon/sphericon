@@ -6650,12 +6650,18 @@ func (s *ContactExportBroadcastRecipient) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.UnsubscribedAt.Set {
+			e.FieldStart("unsubscribedAt")
+			s.UnsubscribedAt.Encode(e)
+		}
+	}
+	{
 		e.FieldStart("createdAt")
 		s.CreatedAt.Encode(e)
 	}
 }
 
-var jsonFieldsNameOfContactExportBroadcastRecipient = [8]string{
+var jsonFieldsNameOfContactExportBroadcastRecipient = [9]string{
 	0: "id",
 	1: "broadcastId",
 	2: "status",
@@ -6663,7 +6669,8 @@ var jsonFieldsNameOfContactExportBroadcastRecipient = [8]string{
 	4: "sentAt",
 	5: "openedAt",
 	6: "clickedAt",
-	7: "createdAt",
+	7: "unsubscribedAt",
+	8: "createdAt",
 }
 
 // Decode decodes ContactExportBroadcastRecipient from json.
@@ -6671,7 +6678,7 @@ func (s *ContactExportBroadcastRecipient) Decode(d *jx.Decoder) error {
 	if s == nil {
 		return errors.New("invalid: unable to decode ContactExportBroadcastRecipient to nil")
 	}
-	var requiredBitSet [1]uint8
+	var requiredBitSet [2]uint8
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
@@ -6747,8 +6754,18 @@ func (s *ContactExportBroadcastRecipient) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"clickedAt\"")
 			}
+		case "unsubscribedAt":
+			if err := func() error {
+				s.UnsubscribedAt.Reset()
+				if err := s.UnsubscribedAt.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"unsubscribedAt\"")
+			}
 		case "createdAt":
-			requiredBitSet[0] |= 1 << 7
+			requiredBitSet[1] |= 1 << 0
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -6766,8 +6783,9 @@ func (s *ContactExportBroadcastRecipient) Decode(d *jx.Decoder) error {
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
-	for i, mask := range [1]uint8{
-		0b10000111,
+	for i, mask := range [2]uint8{
+		0b00000111,
+		0b00000001,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

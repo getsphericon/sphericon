@@ -83,7 +83,6 @@ func TestPlanCreatesOnePendingRecipientPerEligibleContact(t *testing.T) {
 	require.NotEmpty(t, ids)
 	b := d.env.DB.Broadcast.GetX(d.ctx, fixtures.BroadcastDraftID)
 	assert.Equal(t, broadcast.StatusSending, b.Status)
-	assert.Equal(t, len(ids), b.RecipientsTotal)
 	assert.Equal(t, len(ids), d.recipientCount(fixtures.BroadcastDraftID))
 
 	again, err := d.del.Plan(d.ctx, d.s, fixtures.BroadcastDraftID)
@@ -171,8 +170,9 @@ func TestEmptyAudienceFinalizes(t *testing.T) {
 	assert.Empty(t, sched.sends, "nothing to schedule")
 	got := d.env.DB.Broadcast.GetX(d.ctx, fixtures.BroadcastEmptyAudienceID)
 	assert.Equal(t, broadcast.StatusSent, got.Status)
-	assert.Zero(t, got.RecipientsTotal)
-	assert.Zero(t, got.SentCount)
+	figures, err := broadcasts.StatsOf(d.ctx, d.s, fixtures.BroadcastEmptyAudienceID)
+	require.NoError(t, err)
+	assert.Zero(t, figures[fixtures.BroadcastEmptyAudienceID])
 	assert.NotNil(t, got.SentAt)
 }
 

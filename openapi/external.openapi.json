@@ -10281,6 +10281,16 @@
             "nullable": true,
             "description": "When the contact clicked it"
           },
+          "unsubscribedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the contact unsubscribed from it"
+          },
           "createdAt": {
             "allOf": [
               {

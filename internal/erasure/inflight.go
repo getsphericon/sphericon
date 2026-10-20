@@ -30,13 +30,13 @@ func cancelInFlight(ctx context.Context, s *ent.Scoped, t *Target, purger events
 		return err
 	}
 	unsent, err := s.BroadcastRecipient().Query().
-		Where(broadcastrecipient.ContactID(t.ContactID), broadcastrecipient.StatusEQ(broadcastrecipient.StatusPending)).
+		Where(broadcastrecipient.ContactID(t.ContactID), broadcasts.Pending()).
 		All(ctx)
 	if err != nil {
 		return err
 	}
 	recipientIDs := lo.Map(unsent, func(r *ent.BroadcastRecipient, _ int) int64 { return r.ID })
-	removedBy := lo.CountValuesBy(unsent, func(r *ent.BroadcastRecipient) int64 { return r.BroadcastID })
+	affected := lo.Uniq(lo.Map(unsent, func(r *ent.BroadcastRecipient, _ int) int64 { return r.BroadcastID }))
 
 	if err := purger.PurgeOutbox(ctx, s.WorkspaceID(), t.ContactID, t.Destinations); err != nil {
 		return err
@@ -67,12 +67,9 @@ func cancelInFlight(ctx context.Context, s *ent.Scoped, t *Target, purger events
 	if _, err := s.BroadcastRecipient().Delete().Where(broadcastrecipient.IDIn(recipientIDs...)).Exec(ctx); err != nil {
 		return err
 	}
-	for id, removed := range removedBy {
-		// recipients_total counts the Broadcast's recipient rows (it is what the delivery
-		// and failure rates divide by), so it shrinks with them.
-		if err := s.Broadcast().UpdateOneID(id).AddRecipientsTotal(-removed).Exec(ctx); err != nil {
-			return err
-		}
+	for _, id := range affected {
+		// The Broadcast's figures are read from its rows, so removing the recipients is all
+		// they need; one left with nothing pending settles.
 		if err := broadcasts.Finalize(ctx, s, id); err != nil {
 			return err
 		}

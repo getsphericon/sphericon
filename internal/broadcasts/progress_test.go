@@ -22,7 +22,7 @@ func sendingWithPending(t *testing.T, env *testhelper.TestEnv, n int) *broadcast
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	id := int64(fixtures.BroadcastDraftID)
-	require.NoError(t, s.Broadcast().UpdateOneID(id).SetStatus(broadcast.StatusSending).SetRecipientsTotal(n).Exec(ctx))
+	require.NoError(t, s.Broadcast().UpdateOneID(id).SetStatus(broadcast.StatusSending).Exec(ctx))
 	contacts := []int64{fixtures.ContactAliceID, fixtures.ContactBobID, fixtures.ContactCarolID}
 	for _, c := range contacts[:n] {
 		_, err := s.BroadcastRecipient().Create().SetBroadcastID(id).SetContactID(c).SetStatus(broadcastrecipient.StatusPending).Save(ctx)

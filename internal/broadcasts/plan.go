@@ -222,10 +222,6 @@ func (d *Delivery) plan(ctx context.Context, s *ent.Scoped, id int64, t trigger)
 		return nil, err
 	}
 
-	if err := s.Broadcast().UpdateOneID(b.ID).SetRecipientsTotal(len(ids)).Exec(ctx); err != nil {
-		return nil, err
-	}
-
 	if len(ids) == 0 {
 		if err := Finalize(ctx, s, b.ID); err != nil {
 			return nil, err

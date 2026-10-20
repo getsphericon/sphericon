@@ -161,10 +161,11 @@ func TestExternalBroadcastReport(t *testing.T) {
 	sent, err := c.BroadcastsReport(ctx, externalapi.BroadcastsReportParams{ID: sentBroadcast})
 	require.NoError(t, err)
 	sr := sent.(*externalapi.BroadcastReport)
-	b := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastSentID)
-	assert.EqualValues(t, b.SentCount, sr.SentCount)
-	assert.EqualValues(t, b.OpenedCount, sr.OpenedCount)
-	assert.EqualValues(t, b.ClickedCount, sr.ClickedCount)
+	// The figures are the recipients' (fixtures: 11 sent, 5 opened, 2 clicked).
+	assert.EqualValues(t, 11, sr.RecipientsTotal)
+	assert.EqualValues(t, 11, sr.SentCount)
+	assert.EqualValues(t, 5, sr.OpenedCount)
+	assert.EqualValues(t, 2, sr.ClickedCount)
 }
 
 func TestExternalBroadcastsRequireScopes(t *testing.T) {
