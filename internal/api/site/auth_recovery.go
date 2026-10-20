@@ -117,7 +117,7 @@ func (h *Handlers) SiteAuthVerifyEmail(ctx context.Context, req *siteapi.SiteVer
 	if err != nil {
 		return nil, err
 	}
-	if _, err := h.accounts.VerifyEmail(ctx, uid, hash, u.Name); errors.Is(err, accounts.ErrAlreadyVerified) {
+	if _, err := h.accounts.VerifyEmail(ctx, uid, hash); errors.Is(err, accounts.ErrAlreadyVerified) {
 		v := problem(http.StatusBadRequest, i18n.T("errors.verify_link_bad", nil))
 		return &v, nil
 	} else if err != nil {

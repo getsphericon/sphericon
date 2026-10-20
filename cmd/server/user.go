@@ -50,7 +50,7 @@ func userCommand(d deps) *cli.Command {
 				if err != nil {
 					return err
 				}
-				_, _ = fmt.Fprintf(out(cmd), "owner %q created with its first workspace\npassword (shown once): %s\nsign in and change it\n", email, password)
+				_, _ = fmt.Fprintf(out(cmd), "owner %q created with its first workspace \"Personal\"\npassword (shown once): %s\nsign in and change it\n", email, password)
 				return nil
 			}),
 		},

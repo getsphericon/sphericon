@@ -21,9 +21,9 @@ func TestVerifyEmailLandsOnlyOnAnUnverifiedUser(t *testing.T) {
 	u, err := acc.Register(t.Context(), "Grace", "grace@example.com")
 	require.NoError(t, err)
 
-	_, err = acc.VerifyEmail(t.Context(), u.ID, "hash-one", "Grace")
+	_, err = acc.VerifyEmail(t.Context(), u.ID, "hash-one")
 	require.NoError(t, err)
-	_, err = acc.VerifyEmail(t.Context(), u.ID, "hash-two", "Second")
+	_, err = acc.VerifyEmail(t.Context(), u.ID, "hash-two")
 	require.ErrorIs(t, err, accounts.ErrAlreadyVerified)
 
 	stored, err := acc.User(t.Context(), u.ID)
