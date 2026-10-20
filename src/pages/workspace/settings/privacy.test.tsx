@@ -1,6 +1,8 @@
-import { expect, test } from 'vitest'
+import { HttpResponse } from 'msw'
+import { expect, test, vi } from 'vitest'
 
 import {
+  handleSiteContactsExport,
   handleSiteContactsLookup,
   handleSiteWorkspacesList,
 } from '../../../generated/site/msw.gen.ts'
@@ -11,6 +13,14 @@ import { renderWithRouter } from '../../../test/renderWithRouter.tsx'
 import { routeMount } from '../../../test/routeMount.ts'
 import { worker } from '../../../test/worker.ts'
 import { PrivacyPage } from './privacy.tsx'
+
+const saved = vi.hoisted((): (string | undefined)[] => [])
+
+vi.mock('file-saver', () => ({
+  saveAs: (_data: Blob | string, filename?: string) => {
+    saved.push(filename)
+  },
+}))
 
 const PRIVACY_ROUTE = routeMount(privacyRoute, { slug: 'test' })
 
@@ -96,6 +106,43 @@ test('an admin sees the section', async () => {
   const { screen } = await renderWithRouter(<PrivacyPage />, PRIVACY_ROUTE)
 
   await expect.element(screen.getByLabelText('Email address')).toBeInTheDocument()
+})
+
+test('a found Contact can be exported by the looked-up address', async () => {
+  const asked: (string | null)[] = []
+  worker.use(
+    handleSiteWorkspacesList({ body: [workspace] }),
+    handleSiteContactsLookup({ body: held }),
+    handleSiteContactsExport(({ request }) => {
+      asked.push(new URL(request.url).searchParams.get('email'))
+      return HttpResponse.json(
+        { id: '9' },
+        { headers: { 'Content-Disposition': 'attachment; filename="alice.json"' } },
+      )
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<PrivacyPage />, PRIVACY_ROUTE)
+  await lookUp(screen, 'Alice@Example.com')
+  await screen.getByRole('button', { name: 'Export data' }).click()
+
+  await expect.poll(() => saved).toEqual(['alice.json'])
+  expect(asked).toEqual(['alice@example.com'])
+})
+
+test('Export is disabled when the address has no Contact', async () => {
+  worker.use(
+    handleSiteWorkspacesList({ body: [workspace] }),
+    handleSiteContactsLookup({
+      body: { contactHeld: false, events: 4, deliveryRecords: 0, unsubscribes: 0, suppressions: 0 },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<PrivacyPage />, PRIVACY_ROUTE)
+  await lookUp(screen, 'ghost@example.com')
+
+  await expect.element(screen.getByText('Contact: none')).toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Export data' })).toBeDisabled()
 })
 
 test('a plain member is not offered the section', async () => {

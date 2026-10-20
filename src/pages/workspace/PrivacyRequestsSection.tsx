@@ -5,12 +5,22 @@ import { useTranslation } from 'react-i18next'
 
 import { siteContactsLookupOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteContactLookup } from '../../generated/site/types.gen.ts'
+import { useContactExport } from '../../hooks/useContactExport.ts'
 
 // LookupResult shows what the Workspace holds for the looked-up address, as counts.
 // Erase and Export build on this result: they read the same lookup to decide whether
 // they are offered (a Contact or delivery records hold the address).
-function LookupResult({ held }: { held: SiteContactLookup }) {
+function LookupResult({
+  slug,
+  email,
+  held,
+}: {
+  slug: string
+  email: string
+  held: SiteContactLookup
+}) {
   const { t } = useTranslation()
+  const exportMutation = useContactExport(slug)
   const nothingHeld =
     !held.contactHeld &&
     held.events === 0 &&
@@ -33,6 +43,16 @@ function LookupResult({ held }: { held: SiteContactLookup }) {
       <Text>{t(($) => $.settings.privacy.deliveryRecords, { n: held.deliveryRecords })}</Text>
       <Text>{t(($) => $.settings.privacy.unsubscribes, { n: held.unsubscribes })}</Text>
       <Text>{t(($) => $.settings.privacy.suppressions, { n: held.suppressions })}</Text>
+      <Group>
+        <Button
+          variant="default"
+          disabled={!held.contactHeld}
+          loading={exportMutation.isPending}
+          onClick={() => exportMutation.mutate({ email })}
+        >
+          {t(($) => $.contacts.export)}
+        </Button>
+      </Group>
     </Stack>
   )
 }
@@ -77,7 +97,7 @@ export function PrivacyRequestsSection({ slug }: { slug: string }) {
         {lookup.isError ? (
           <Alert color="red">{t(($) => $.settings.privacy.lookupError)}</Alert>
         ) : null}
-        {lookup.data ? <LookupResult held={lookup.data} /> : null}
+        {lookup.data ? <LookupResult slug={slug} email={email} held={lookup.data} /> : null}
       </Stack>
     </Box>
   )
