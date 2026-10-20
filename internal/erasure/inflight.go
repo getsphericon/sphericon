@@ -4,35 +4,29 @@ import (
 	"context"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/events"
-	"github.com/getsphericon/sphericon/internal/jobkind"
 )
 
 // cancelInFlight stops work already under way for the subject and clears the internal
 // queues of what refers to it: the Broadcast delivery module cancels the Contact's unsent
-// recipients (a Broadcast left with nothing pending settles), and the domain-event outbox
-// rows and river job arguments naming the Contact, its runs or its recipients are
-// deleted, as are the queued webhook deliveries whose payload names the Contact or
-// its address, and the queued HTTP-step calls of its runs (a failure's response excerpt
-// sits on the run, which Erasure deletes). A send a worker already handed to the provider is not recalled; one queued
-// but not started finds its row gone and, at the send chokepoint, its Contact gone.
+// recipients (a Broadcast left with nothing pending settles), the Automation module
+// cancels the queued step calls and trigger evaluations (a failure's response excerpt
+// sits on the run, which Erasure deletes), and the domain-event outbox rows and the queued
+// webhook deliveries whose payload names the Contact or its address are deleted. A send a worker already handed to the provider is not recalled; one
+// queued but not started finds its row gone and, at the send chokepoint, its Contact gone.
 //
 // It must run before the steps that delete the rows it reads ids from, and before the
 // erasure publishes its own signal, which names no Contact.
 func cancelInFlight(ctx context.Context, s *ent.Scoped, t *Target, purger events.PurgingPublisher) error {
-	runIDs, err := s.AutomationRun().Query().Where(automationrun.ContactID(t.ContactID)).IDs(ctx)
-	if err != nil {
-		return err
-	}
 	if err := broadcasts.CancelPending(ctx, s, t.ContactID, purger); err != nil {
 		return err
 	}
 	if err := purger.PurgeOutbox(ctx, s.WorkspaceID(), t.ContactID, t.Destinations); err != nil {
 		return err
 	}
-	if err := purger.PurgeJobs(ctx, jobkind.EvaluateTrigger, []int64{t.ContactID}); err != nil {
+	if err := automations.CancelPending(ctx, s, t.ContactID, purger); err != nil {
 		return err
 	}
 	endpointIDs, err := s.WebhookEndpoint().Query().IDs(ctx)
@@ -40,12 +34,6 @@ func cancelInFlight(ctx context.Context, s *ent.Scoped, t *Target, purger events
 		return err
 	}
 	if err := purger.PurgeWebhookJobs(ctx, endpointIDs, t.ContactID, t.Destinations); err != nil {
-		return err
-	}
-	if err := purger.PurgeJobs(ctx, jobkind.RunStep, runIDs); err != nil {
-		return err
-	}
-	if err := purger.PurgeJobs(ctx, jobkind.HTTPStep, runIDs); err != nil {
 		return err
 	}
 	return nil
