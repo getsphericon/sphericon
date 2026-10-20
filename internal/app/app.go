@@ -1203,7 +1203,11 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		return joindomains.New(client.Client, bus.Bus, lookup.TXTLookup, time.Now), nil
+		sys, err := do.Invoke[*systemSender](i)
+		if err != nil {
+			return nil, err
+		}
+		return joindomains.New(client.Client, bus.Bus, lookup.TXTLookup, time.Now, jobs.OwnerNotifier(client.Client, sys.EmailSender)), nil
 	})
 
 	do.Provide(injector, func(do.Injector) (*templates.Module, error) {

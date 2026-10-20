@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/joindomains"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/secrets"
@@ -106,6 +107,10 @@ func NewClient(pool *pgxpool.Pool, entClient *ent.Client, mod *outbound.Module, 
 	// DNS; verified is a live property re-validated by the periodic job below.
 	river.AddWorker(workers, &VerifySendingDomainWorker{ent: entClient, lookup: lookup, sender: systemSender, tracking: tracking})
 	river.AddWorker(workers, &RecheckSendingDomainsWorker{ent: entClient})
+	// Join domains stay verified only while their TXT record is published.
+	joinDomains := joindomains.New(entClient, bus, lookup, time.Now, OwnerNotifier(entClient, systemSender))
+	river.AddWorker(workers, &VerifyJoinDomainWorker{mod: joinDomains})
+	river.AddWorker(workers, &RecheckJoinDomainsWorker{mod: joinDomains})
 	river.AddWorker(workers, &VerifyTrackingDomainWorker{ent: entClient, sender: systemSender, tracking: tracking})
 	river.AddWorker(workers, &RecheckTrackingDomainsWorker{ent: entClient})
 	// SES send quota discovery (ADR 0023): refreshed hourly because quotas grow as an
@@ -169,6 +174,13 @@ func newRiverConfig(workers *river.Workers, logger *slog.Logger, extra ...*river
 				river.PeriodicInterval(15*time.Minute),
 				func() (river.JobArgs, *river.InsertOpts) {
 					return RecheckSendingDomainsArgs{}, nil
+				},
+				&river.PeriodicJobOpts{RunOnStart: true},
+			),
+			river.NewPeriodicJob(
+				river.PeriodicInterval(15*time.Minute),
+				func() (river.JobArgs, *river.InsertOpts) {
+					return RecheckJoinDomainsArgs{}, nil
 				},
 				&river.PeriodicJobOpts{RunOnStart: true},
 			),

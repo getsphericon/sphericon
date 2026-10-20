@@ -3,6 +3,7 @@ package site_test
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"testing"
 
 	"github.com/samber/lo"
@@ -214,6 +215,30 @@ func TestJoinDomainsDomainMovesWhenTheHoldersRecordIsGone(t *testing.T) {
 	gained := entriesNamed(t, env, fixtures.OwnerJaneEmail, fixtures.GlobexPublicID, "join_domain.update")
 	require.NotEmpty(t, gained)
 	assert.Equal(t, siteapi.SiteAuditActorKindUser, gained[0].Actor.Kind)
+
+	msgs := env.SystemMail.Messages()
+	require.Len(t, msgs, 1, "the previous Owners are told, and only they")
+	assert.Equal(t, fixtures.OwnerJohnEmail, msgs[0].To)
+	assert.Contains(t, msgs[0].Subject, "changed-hands.test")
+}
+
+func TestJoinDomainsAMailFailureDoesNotUndoTheMove(t *testing.T) {
+	env, zone := joinDomainsEnv(t)
+	john := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	jane := env.SiteActor(t, fixtures.OwnerJaneEmail)
+	acme := mustAddJoinDomain(t, john, fixtures.AcmePublicID, "mail-down.test")
+	zone.PublishTXT(t, acme.Record.Host, acme.Record.Value)
+	require.IsType(t, &siteapi.SiteJoinDomainResource{}, verifyJoinDomain(t, john, fixtures.AcmePublicID, acme.ID))
+	globex := mustAddJoinDomain(t, jane, fixtures.GlobexPublicID, "mail-down.test")
+	zone.WithdrawTXT(acme.Record.Host)
+	zone.PublishTXT(t, globex.Record.Host, globex.Record.Value)
+	env.SystemMail.SetErr(errors.New("smtp down"))
+
+	res := verifyJoinDomain(t, jane, fixtures.GlobexPublicID, globex.ID)
+
+	moved, ok := res.(*siteapi.SiteJoinDomainResource)
+	require.Truef(t, ok, "got %T", res)
+	assert.True(t, moved.Verified)
 }
 
 func TestJoinDomainsRemoveDeletesOnlyTheClaim(t *testing.T) {

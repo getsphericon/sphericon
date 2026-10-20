@@ -396,7 +396,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	confirmations := &Confirmations{}
 	integrationsModule := integrations.New(bus, cipher, catalog, inline, presets, cfg.AppURL, integrations.WithSubscriptionConfirmer(confirmations.confirm))
 	sendingDomainsModule := sendingdomains.New(bus, cipher, inline, cfg.TrackingCNAMETarget)
-	joinDomainsModule := joindomains.New(client, bus, stubTXT, st.now)
+	joinDomainsModule := joindomains.New(client, bus, stubTXT, st.now, jobs.OwnerNotifier(client, systemMail))
 	automationsModule := automations.New(cipher, bus)
 	broadcastsModule := broadcasts.New(inline)
 	acc := accounts.New(client, bus)

@@ -31,6 +31,8 @@
   "email.webhook_disabled.body": "Sphericon stopped sending events to the webhook endpoint {{.URL}} in your workspace {{.Workspace}}.\n\n{{.Reason}}\n\nNothing else changed. Fix the receiver, then enable the endpoint again in the workspace settings: its failure history is cleared when you do.\n",
   "email.sending_domain_unverified.subject": "Action required: sending domain {{.Domain}} is no longer verified",
   "email.sending_domain_unverified.body": "The sending domain \"{{.Domain}}\" in your workspace is no longer verified: its DKIM DNS record ({{.Record}}) could not be found.\n\nEmail sent from this domain is now blocked until you re-publish the record and re-verify the domain in your Sphericon settings.\n",
+  "email.join_domain_unverified.subject": "Action required: join domain {{.Domain}} is no longer verified",
+  "email.join_domain_unverified.body": "The join domain \"{{.Domain}}\" of your workspace is no longer verified: its TXT record ({{.Record}}) could not be found, or another workspace now proves the domain.\n\nPeople with an address on this domain can no longer join your workspace by themselves. Members who already joined stay. To turn it back on, publish the record again and verify the domain in your workspace settings.\n",
   "email.tracking_domain_regressed.subject": "Action required: tracking domain {{.Host}} stopped working",
   "email.tracking_domain_regressed.body": "The tracking domain \"{{.Host}}\" of your sending domain \"{{.Domain}}\" is now {{.To}} instead of {{.From}}: its CNAME must point at {{.Target}} and the host must answer over HTTPS.\n\nLinks in your email fall back to the app address until it works again.\n",
   "email.abuse_warning.subject": "Warning: email deliverability problem in {{.Workspace}}",

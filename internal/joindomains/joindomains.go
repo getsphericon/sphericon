@@ -6,7 +6,9 @@
 // one Workspace across the Instance, so looking up who holds it, and moving it from the
 // Workspace that held it to the one that now proves it, happens before and across
 // Workspace scopes. Everything else goes through the caller's *ent.Scoped. The periodic
-// re-check of verified domains joins this package in a later ticket.
+// re-check of verified domains (Due, Recheck) runs on the raw client too: a job lists the
+// due domains of every Workspace and scopes to each one's Workspace only after its row is
+// loaded.
 package joindomains
 
 import (
@@ -14,9 +16,12 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net"
 	"slices"
 	"time"
+
+	"entgo.io/ent/dialect/sql"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/joindomain"
@@ -54,18 +59,24 @@ type Record struct {
 	Value string
 }
 
+// Notify mails the Owners of a Workspace through the system sender. A nil Notify sends
+// nothing.
+type Notify func(ctx context.Context, workspaceID int64, subject, body string) error
+
 // Module holds the shared collaborators; it is stateless otherwise.
 type Module struct {
 	client *ent.Client
 	bus    *events.Bus
 	lookup sending.TXTLookup
 	now    func() time.Time
+	notify Notify
 }
 
 // New builds the module. lookup is the injectable TXT resolver Sending domain
-// verification uses; now is the clock the check times are stamped with.
-func New(client *ent.Client, bus *events.Bus, lookup sending.TXTLookup, now func() time.Time) *Module {
-	return &Module{client: client, bus: bus, lookup: lookup, now: now}
+// verification uses; now is the clock the check times are stamped with; notify mails a
+// Workspace's Owners when it loses a verified domain.
+func New(client *ent.Client, bus *events.Bus, lookup sending.TXTLookup, now func() time.Time, notify Notify) *Module {
+	return &Module{client: client, bus: bus, lookup: lookup, now: now, notify: notify}
 }
 
 // RecordOf derives the TXT record to publish for a stored domain.
@@ -176,7 +187,69 @@ func (m *Module) Verify(ctx context.Context, s *ent.Scoped, id int64) (*ent.Join
 	if err != nil {
 		return nil, err
 	}
+	if holder != nil {
+		// After the commit: a failed mail must not undo or fail the move.
+		m.notifyLost(ctx, holder)
+	}
 	return verified, nil
+}
+
+// Due returns up to limit ids of verified Join domains to re-check, across every
+// Workspace, least-recently-checked first with never-checked ones before the rest (plain
+// ascending order would put NULLs last in Postgres).
+func (m *Module) Due(ctx context.Context, limit int) ([]int64, error) {
+	return m.client.JoinDomain.Query().
+		Where(joindomain.VerifiedAtNotNil()).
+		Order(joindomain.ByLastCheckedAt(sql.OrderAsc(), sql.OrderNullsFirst())).
+		Limit(limit).
+		IDs(ctx)
+}
+
+// Recheck re-reads a verified domain's TXT record. A record that is gone (or carries
+// another value) reverts the domain to unverified at once, under the system actor, and
+// mails the Workspace's Owners; it reports whether it did. A resolver failure is returned
+// and changes nothing, so the job retries. A domain that is not verified (it changed
+// since the job was queued) is left alone. Memberships are never touched.
+func (m *Module) Recheck(ctx context.Context, id int64) (flipped bool, err error) {
+	row, err := m.client.JoinDomain.Get(ctx, id)
+	if err != nil {
+		return false, err
+	}
+	if !Verified(row) {
+		return false, nil
+	}
+	published, err := m.published(ctx, row)
+	if err != nil {
+		return false, err
+	}
+	s := m.client.Scoped(row.WorkspaceID)
+	if published {
+		return false, events.Unaudited(s).JoinDomain().UpdateOneID(id).SetLastCheckedAt(m.now()).Exec(ctx)
+	}
+	slog.WarnContext(ctx, "join domain verification lost",
+		"join_domain_id", id, "workspace_id", row.WorkspaceID, "domain", row.Domain)
+	system := m.bus.Act(s, events.Actor{Kind: events.ActorSystem})
+	err = system.JoinDomain().UpdateOneID(id).ClearVerifiedAt().SetLastCheckedAt(m.now()).Exec(ctx)
+	if err != nil {
+		return false, err
+	}
+	m.notifyLost(ctx, row)
+	return true, nil
+}
+
+// notifyLost mails the Owners of the Workspace that held the domain, best-effort: a mail
+// failure is logged, never returned.
+func (m *Module) notifyLost(ctx context.Context, row *ent.JoinDomain) {
+	if m.notify == nil {
+		return
+	}
+	data := map[string]any{"Domain": row.Domain, "Record": RecordOf(row).Host}
+	subject := i18n.T("email.join_domain_unverified.subject", data)
+	body := i18n.T("email.join_domain_unverified.body", data)
+	if err := m.notify(ctx, row.WorkspaceID, subject, body); err != nil {
+		slog.WarnContext(ctx, "notify join domain unverified failed",
+			"join_domain_id", row.ID, "workspace_id", row.WorkspaceID, "err", err)
+	}
 }
 
 // Holder returns the Join domain row that has the domain verified, across every

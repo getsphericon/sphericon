@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/joindomains"
 	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/sending"
@@ -306,4 +307,59 @@ func trackingRank(s sendingdomain.TrackingState) int {
 	default:
 		return 0
 	}
+}
+
+// OwnerNotifier is the joindomains.Notify that mails a Workspace's Owners through the
+// system sender (a nil sender sends nothing).
+func OwnerNotifier(client *ent.Client, sender messaging.EmailSender) joindomains.Notify {
+	if sender == nil {
+		return nil
+	}
+	return func(ctx context.Context, workspaceID int64, subject, body string) error {
+		return NotifyWorkspaceOwners(ctx, client, sender, workspaceID, subject, body)
+	}
+}
+
+// --- periodic re-check of verified Join domains (the same shape as the Sending domain one) ---
+
+type VerifyJoinDomainArgs struct {
+	JoinDomainID int64 `json:"join_domain_id"`
+}
+
+func (VerifyJoinDomainArgs) Kind() string { return "join_domain_verify" }
+
+type VerifyJoinDomainWorker struct {
+	river.WorkerDefaults[VerifyJoinDomainArgs]
+	mod *joindomains.Module
+}
+
+// Work re-checks one domain. The Owners' mail is sent by the module, best-effort.
+func (w *VerifyJoinDomainWorker) Work(ctx context.Context, job *river.Job[VerifyJoinDomainArgs]) error {
+	_, err := w.mod.Recheck(ctx, job.Args.JoinDomainID)
+	return err
+}
+
+type RecheckJoinDomainsArgs struct{}
+
+func (RecheckJoinDomainsArgs) Kind() string { return "join_domain_recheck" }
+
+type RecheckJoinDomainsWorker struct {
+	river.WorkerDefaults[RecheckJoinDomainsArgs]
+	mod *joindomains.Module
+}
+
+// Work fans the tick out into one VerifyJoinDomain job per due domain, up to
+// recheckBatchSize, least-recently-checked first.
+func (w *RecheckJoinDomainsWorker) Work(ctx context.Context, job *river.Job[RecheckJoinDomainsArgs]) error {
+	ids, err := w.mod.Due(ctx, recheckBatchSize)
+	if err != nil {
+		return err
+	}
+	rc := river.ClientFromContext[pgx.Tx](ctx)
+	for _, id := range ids {
+		if _, err := rc.Insert(ctx, VerifyJoinDomainArgs{JoinDomainID: id}, nil); err != nil {
+			return err
+		}
+	}
+	return nil
 }
