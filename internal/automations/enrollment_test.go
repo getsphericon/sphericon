@@ -3,6 +3,7 @@ package automations_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -137,4 +138,45 @@ func TestEnrollRefusesAContactOrAutomationOfAnotherWorkspace(t *testing.T) {
 	require.ErrorIs(t, err, ent.ErrNotInWorkspace, "Globex cannot enroll an Acme Contact")
 	_, _, err = automations.Enroll(ctx, acme, fixtures.AutomationGlobexID, c.ID)
 	assert.ErrorIs(t, err, ent.ErrNotInWorkspace, "Acme cannot enroll into a Globex Automation")
+}
+
+func TestAdvanceMovesOnlyAnActiveEnrollment(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	s := env.DB.Scoped(fixtures.AcmeID)
+	live, _, err := automations.Enroll(ctx, s, fixtures.AutomationWelcomeSeriesID, newContact(t, s, "adv-live@example.com").ID)
+	require.NoError(t, err)
+	gone, _, err := automations.Enroll(ctx, s, fixtures.AutomationWelcomeSeriesID, newContact(t, s, "adv-gone@example.com").ID)
+	require.NoError(t, err)
+	require.NoError(t, automations.ExitRun(ctx, s, gone))
+	resume := time.Now().Add(time.Hour)
+
+	require.NoError(t, automations.Advance(ctx, s, live, 1, &resume))
+	require.ErrorIs(t, automations.Advance(ctx, s, gone, 1, &resume), lifecycle.ErrInvalidTransition)
+
+	run, err := s.AutomationRun().Get(ctx, live)
+	require.NoError(t, err)
+	assert.Equal(t, 1, run.CurrentStep)
+	require.NotNil(t, run.ResumeAt)
+	run, err = s.AutomationRun().Get(ctx, gone)
+	require.NoError(t, err)
+	assert.Equal(t, 0, run.CurrentStep)
+	assert.Nil(t, run.ResumeAt)
+}
+
+func TestIsActiveReadsTheLifecycle(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	s := env.DB.Scoped(fixtures.AcmeID)
+	runID, _, err := automations.Enroll(ctx, s, fixtures.AutomationWelcomeSeriesID, newContact(t, s, "isactive@example.com").ID)
+	require.NoError(t, err)
+
+	ok, err := automations.IsActive(ctx, s, runID)
+	require.NoError(t, err)
+	assert.True(t, ok)
+
+	require.NoError(t, automations.ExitRun(ctx, s, runID))
+	ok, err = automations.IsActive(ctx, s, runID)
+	require.NoError(t, err)
+	assert.False(t, ok)
 }

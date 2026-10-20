@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/tracking"
 )
 
 const staleClaimKey = "transactional:fixture-stale-claim"
@@ -536,6 +537,60 @@ func TestFinishErrors(t *testing.T) {
 		_, err := newModule(env).Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:finish", suppressd))
 		assert.ErrorIs(t, err, outbound.ErrInProgress)
 	})
+}
+
+// A stale claim token cannot write any final status: whichever attempt took the claim over
+// owns the row, and the late one is told so (ErrInProgress) and leaves it untouched.
+func TestAStaleClaimTokenCannotWriteFailed(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	req := transactional("tx:stale-failed", "a@example.com")
+	req.Subject = "{% if %}broken"
+	onOutboundMutation(env, func(ctx context.Context, m *ent.OutboundMessageMutation, next ent.Mutator) (ent.Value, error) {
+		if st, ok := m.Status(); ok && st == outboundmessage.StatusFailed {
+			// Another attempt takes the claim over just before this one writes.
+			env.DB.OutboundMessage.Update().Where(outboundmessage.IdempotencyKey(req.Key)).
+				SetClaimedAt(time.Now().Add(-time.Hour)).ExecX(ctx)
+		}
+		return next.Mutate(ctx, m)
+	})
+
+	_, err := newModule(env).Send(ctx, env.DB.Scoped(fixtures.AcmeID), req)
+
+	require.ErrorIs(t, err, outbound.ErrInProgress)
+	assert.Equal(t, outboundmessage.StatusPending, byKey(t, env, req.Key).Status)
+}
+
+// takeoverSender is a provider whose call outlives the lease: another attempt takes the claim
+// over while it runs.
+type takeoverSender struct {
+	messaging.EmailSender
+	takeOver func(context.Context)
+}
+
+func (s takeoverSender) DefaultFrom() (string, string) {
+	return s.EmailSender.(messaging.DefaultFromer).DefaultFrom()
+}
+
+func (s takeoverSender) Send(ctx context.Context, msg messaging.EmailMessage) (messaging.Receipt, error) {
+	s.takeOver(ctx)
+	return s.EmailSender.Send(ctx, msg)
+}
+
+func TestAStaleClaimTokenCannotWriteSent(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	req := transactional("tx:stale-sent", "a@example.com")
+	slow := takeoverSender{EmailSender: env.CustomerMail, takeOver: func(ctx context.Context) {
+		env.DB.OutboundMessage.Update().Where(outboundmessage.IdempotencyKey(req.Key)).
+			SetClaimedAt(time.Now().Add(-time.Hour)).ExecX(ctx)
+	}}
+	m := outbound.New(env.Bus, senders{sender: slow}, tracking.New("test-secret", "http://local"))
+
+	_, err := m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), req)
+
+	require.ErrorIs(t, err, outbound.ErrInProgress)
+	assert.Equal(t, outboundmessage.StatusPending, byKey(t, env, req.Key).Status)
 }
 
 func TestPreflightErrors(t *testing.T) {

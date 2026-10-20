@@ -312,3 +312,67 @@ func TestAutomationExitedMidStepStaysExitedAndTheLateStepFinishesQuietly(t *test
 	assert.True(t, res.Done)
 	assert.Equal(t, automationrun.StatusExited, env.DB.AutomationRun.GetX(ctx, runIDs[0]).Status)
 }
+
+// exitedRun enrolls the Contact into the Automation and exits the Enrollment at once, so the step
+// that runs next finds the run already exited.
+func exitedRun(t *testing.T, env *testhelper.TestEnv, automationID, contactID int64) int64 {
+	t.Helper()
+	ctx := context.Background()
+	s := env.DB.Scoped(fixtures.AcmeID)
+	runID, enrolled, err := automations.Enroll(ctx, s, automationID, contactID)
+	require.NoError(t, err)
+	require.True(t, enrolled)
+	require.NoError(t, automations.ExitRun(ctx, s, runID))
+	return runID
+}
+
+func TestStepOnAnExitedRunSendsNothingAndStaysPut(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	fs := &fakeSender{}
+	runID := exitedRun(t, env, fixtures.AutomationHoldDemoID, fixtures.ContactAliceID)
+
+	res, err := jobs.RunStep(ctx, env.DB, newMod(env, resolvingTo(fs)), runID)
+
+	require.NoError(t, err)
+	assert.True(t, res.Done)
+	assert.Empty(t, fs.sent, "nothing is sent after an exit")
+	run := env.DB.AutomationRun.GetX(ctx, runID)
+	assert.Equal(t, automationrun.StatusExited, run.Status)
+	assert.Equal(t, 0, run.CurrentStep)
+}
+
+func TestTagStepOnAnExitedRunChangesNoTagAndDoesNotAdvance(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	before := env.DB.Contact.GetX(ctx, fixtures.ContactBobID).QueryTags().CountX(ctx)
+	runID := exitedRun(t, env, fixtures.AutomationTagOnEngagementID, fixtures.ContactBobID)
+
+	res, err := jobs.RunStep(ctx, env.DB, newMod(env, resolvingTo(&fakeSender{})), runID)
+
+	require.NoError(t, err)
+	assert.True(t, res.Done)
+	assert.Equal(t, before, env.DB.Contact.GetX(ctx, fixtures.ContactBobID).QueryTags().CountX(ctx))
+	assert.Equal(t, 0, env.DB.AutomationRun.GetX(ctx, runID).CurrentStep)
+}
+
+func TestWaitStepOnAnExitedRunDoesNotSetResumeAt(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	s := env.DB.Scoped(fixtures.AcmeID)
+	runID, _, err := automations.Enroll(ctx, s, fixtures.AutomationWelcomeSeriesID, fixtures.ContactCarolID)
+	require.NoError(t, err)
+	_, err = jobs.RunStep(ctx, env.DB, newMod(env, resolvingTo(&fakeSender{})), runID) // the email
+	require.NoError(t, err)
+	require.NoError(t, automations.ExitRun(ctx, s, runID))
+
+	res, err := jobs.RunStep(ctx, env.DB, newMod(env, resolvingTo(&fakeSender{})), runID) // the wait
+
+	require.NoError(t, err)
+	assert.True(t, res.Done)
+	assert.Nil(t, res.ResumeAt)
+	run := env.DB.AutomationRun.GetX(ctx, runID)
+	assert.Equal(t, automationrun.StatusExited, run.Status)
+	assert.Nil(t, run.ResumeAt)
+	assert.Equal(t, 1, run.CurrentStep)
+}
