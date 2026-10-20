@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -81,6 +82,48 @@ func TestExitRunEndsOneEnrollment(t *testing.T) {
 	run, err := s.AutomationRun().Get(ctx, runID)
 	require.NoError(t, err)
 	assert.Equal(t, automationrun.StatusExited, run.Status)
+}
+
+func TestAnExitedEnrollmentIsNeitherCompletedNorFailed(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	s := env.DB.Scoped(fixtures.AcmeID)
+	c := newContact(t, s, "late-step@example.com")
+	runID, _, err := automations.Enroll(ctx, s, fixtures.AutomationWelcomeSeriesID, c.ID)
+	require.NoError(t, err)
+	require.NoError(t, automations.ExitRun(ctx, s, runID))
+
+	require.ErrorIs(t, automations.Complete(ctx, s, runID), lifecycle.ErrInvalidTransition)
+	require.ErrorIs(t, automations.Fail(ctx, s, runID, automations.Failure{}), lifecycle.ErrInvalidTransition)
+	require.ErrorIs(t, automations.ExitRun(ctx, s, runID), lifecycle.ErrInvalidTransition)
+	run, err := s.AutomationRun().Get(ctx, runID)
+	require.NoError(t, err)
+	assert.Equal(t, automationrun.StatusExited, run.Status)
+}
+
+func TestFailKeepsTheReasonAndCompleteEndsTheRun(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	s := env.DB.Scoped(fixtures.AcmeID)
+	failing, _, err := automations.Enroll(ctx, s, fixtures.AutomationWelcomeSeriesID, newContact(t, s, "fail@example.com").ID)
+	require.NoError(t, err)
+	done, _, err := automations.Enroll(ctx, s, fixtures.AutomationWelcomeSeriesID, newContact(t, s, "done@example.com").ID)
+	require.NoError(t, err)
+
+	require.NoError(t, automations.Fail(ctx, s, failing, automations.Failure{
+		Kind: automationrun.FailureKindHTTPStatus, Status: 500, Excerpt: "boom",
+	}))
+	require.NoError(t, automations.Complete(ctx, s, done))
+
+	run, err := s.AutomationRun().Get(ctx, failing)
+	require.NoError(t, err)
+	assert.Equal(t, automationrun.StatusFailed, run.Status)
+	assert.Equal(t, automationrun.FailureKindHTTPStatus, *run.FailureKind)
+	assert.Equal(t, 500, *run.FailureStatus)
+	assert.Equal(t, "boom", *run.FailureExcerpt)
+	run, err = s.AutomationRun().Get(ctx, done)
+	require.NoError(t, err)
+	assert.Equal(t, automationrun.StatusCompleted, run.Status)
 }
 
 func TestEnrollRefusesAContactOrAutomationOfAnotherWorkspace(t *testing.T) {

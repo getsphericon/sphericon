@@ -48,13 +48,14 @@ func runStatus(ctx context.Context, t *testing.T, env *testhelper.TestEnv, id in
 func TestRunStepOutcomes(t *testing.T) {
 	ctx := context.Background()
 
-	t.Run("a finished run is done without work", func(t *testing.T) {
+	t.Run("a finished run stays finished and the step ends quietly", func(t *testing.T) {
 		env := testhelper.Setup(t)
-		id := enroll(ctx, t, env, "["+emailStep+"]", true)
-		env.DB.AutomationRun.UpdateOneID(id).SetStatus(automationrun.StatusCompleted).ExecX(ctx)
+		id := enroll(ctx, t, env, "[]", true)
+		env.DB.AutomationRun.UpdateOneID(id).SetStatus(automationrun.StatusFailed).ExecX(ctx)
 		res, err := jobs.RunStep(ctx, env.DB, newMod(env, resolvingTo(&fakeSender{})), id)
 		require.NoError(t, err)
 		assert.True(t, res.Done)
+		assert.Equal(t, automationrun.StatusFailed, runStatus(ctx, t, env, id))
 	})
 
 	t.Run("a run past its last step completes", func(t *testing.T) {

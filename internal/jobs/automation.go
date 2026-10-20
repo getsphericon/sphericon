@@ -2,6 +2,7 @@ package jobs
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -10,9 +11,9 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
-	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/jobkind"
+	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/tags"
 )
@@ -146,9 +147,6 @@ func RunStep(ctx context.Context, client *ent.Client, mod *outbound.Module, runI
 	if err != nil {
 		return StepResult{}, fmt.Errorf("load run %d: %w", runID, err)
 	}
-	if run.Status != automationrun.StatusActive {
-		return StepResult{Done: true}, nil
-	}
 	// Job entry point: the scoped client is built from the loaded row's Workspace
 	// (ADR 0017), then handed to the modules.
 	scoped := client.Scoped(run.WorkspaceID)
@@ -159,13 +157,11 @@ func RunStep(ctx context.Context, client *ent.Client, mod *outbound.Module, runI
 	}
 	steps, err := automations.Decode(a.Definition)
 	if err != nil {
-		_, _ = scoped.AutomationRun().UpdateOneID(run.ID).SetStatus(automationrun.StatusFailed).Save(ctx)
-		return StepResult{}, fmt.Errorf("automation %d definition: %w", a.ID, err)
+		return failRun(ctx, scoped, run.ID, fmt.Errorf("automation %d definition: %w", a.ID, err))
 	}
 
 	if run.CurrentStep >= len(steps) {
-		_, _ = scoped.AutomationRun().UpdateOneID(run.ID).SetStatus(automationrun.StatusCompleted).ClearResumeAt().Save(ctx)
-		return StepResult{Done: true}, nil
+		return completeRun(ctx, scoped, run.ID)
 	}
 
 	switch s := steps[run.CurrentStep]; s.Type {
@@ -206,8 +202,7 @@ func RunStep(ctx context.Context, client *ent.Client, mod *outbound.Module, runI
 		// Email channel: a Contact with no email address can't receive this step.
 		// Not an opt-out — the sequence simply completes.
 		if c.Email == nil {
-			_, _ = scoped.AutomationRun().UpdateOneID(run.ID).SetStatus(automationrun.StatusCompleted).ClearResumeAt().Save(ctx)
-			return StepResult{Done: true}, nil
+			return completeRun(ctx, scoped, run.ID)
 		}
 		step := run.CurrentStep
 		res, err := mod.Send(ctx, scoped, outbound.AutomationStep(a, run, step, c, s.Subject, s.Body))
@@ -233,15 +228,43 @@ func RunStep(ctx context.Context, client *ent.Client, mod *outbound.Module, runI
 			// An ineligible destination (suppressed, or unsubscribed from this
 			// automation / from everything) exits the enrollment — a run never
 			// silently keeps walking steps while skipping every email.
-			_ = automations.ExitRun(ctx, scoped, run.ID)
+			if err := automations.ExitRun(ctx, scoped, run.ID); !settled(err) {
+				return StepResult{}, err
+			}
 			return StepResult{Done: true}, nil
 		default: // outbound.Failed
-			_, _ = scoped.AutomationRun().UpdateOneID(run.ID).SetStatus(automationrun.StatusFailed).Save(ctx)
-			return StepResult{}, fmt.Errorf("email step %d: %s", step, res.Reason)
+			return failRun(ctx, scoped, run.ID, fmt.Errorf("email step %d: %s", step, res.Reason))
 		}
 
 	default:
-		_, _ = scoped.AutomationRun().UpdateOneID(run.ID).SetStatus(automationrun.StatusFailed).Save(ctx)
-		return StepResult{}, fmt.Errorf("unknown step type %q", s.Type)
+		return failRun(ctx, scoped, run.ID, fmt.Errorf("unknown step type %q", s.Type))
 	}
+}
+
+// settled reports whether a state write left nothing to report: it succeeded, or the
+// Enrollment had already left `active` (an exit won while the step ran) or was erased with
+// its Contact, so the late step finishes quietly. Any other error is returned.
+func settled(err error) bool {
+	return err == nil || errors.Is(err, lifecycle.ErrInvalidTransition) || ent.IsNotFound(err)
+}
+
+// completeRun ends the Enrollment `completed`; a run that is no longer active stays as it is.
+func completeRun(ctx context.Context, s *ent.Scoped, runID int64) (StepResult, error) {
+	if err := automations.Complete(ctx, s, runID); !settled(err) {
+		return StepResult{}, err
+	}
+	return StepResult{Done: true}, nil
+}
+
+// failRun ends the Enrollment `failed` and returns cause for the job, or nothing when the
+// run had already left `active`. A failed write is returned with the cause, never dropped.
+func failRun(ctx context.Context, s *ent.Scoped, runID int64, cause error) (StepResult, error) {
+	err := automations.Fail(ctx, s, runID, automations.Failure{})
+	if errors.Is(err, lifecycle.ErrInvalidTransition) || ent.IsNotFound(err) {
+		return StepResult{Done: true}, nil
+	}
+	if err != nil {
+		return StepResult{}, errors.Join(cause, fmt.Errorf("fail run %d: %w", runID, err))
+	}
+	return StepResult{}, cause
 }

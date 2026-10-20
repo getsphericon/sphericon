@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/jobkind"
+	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/webhook"
 )
 
@@ -54,9 +55,6 @@ func (w *RunHTTPStepWorker) Work(ctx context.Context, job *river.Job[RunHTTPStep
 	}
 	if err != nil {
 		return err
-	}
-	if run.Status != automationrun.StatusActive {
-		return nil
 	}
 	s := w.ent.Scoped(run.WorkspaceID)
 	switch run.CurrentStep {
@@ -158,17 +156,16 @@ type failure struct {
 	excerpt string
 }
 
-// fail ends the Enrollment `failed` with the reason and returns result for the job.
+// fail ends the Enrollment `failed` with the reason and returns result for the job. A run
+// that already left `active` (an exit won) stays as it is and the job ends quietly.
 func (w *RunHTTPStepWorker) fail(ctx context.Context, run *ent.AutomationRun, f failure, result error) error {
-	u := w.ent.Scoped(run.WorkspaceID).AutomationRun().UpdateOneID(run.ID).
-		SetStatus(automationrun.StatusFailed).ClearResumeAt().SetFailureKind(f.kind)
-	if f.status != 0 {
-		u.SetFailureStatus(f.status)
+	err := automations.Fail(ctx, w.ent.Scoped(run.WorkspaceID), run.ID, automations.Failure{
+		Kind: f.kind, Status: f.status, Excerpt: f.excerpt,
+	})
+	if errors.Is(err, lifecycle.ErrInvalidTransition) || ent.IsNotFound(err) {
+		return nil
 	}
-	if f.excerpt != "" {
-		u.SetFailureExcerpt(f.excerpt)
-	}
-	if err := u.Exec(ctx); err != nil {
+	if err != nil {
 		return err
 	}
 	return result

@@ -2,9 +2,11 @@ package automations
 
 import (
 	"context"
+	"errors"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/internal/lifecycle"
 )
 
 // Enrollment rules (GLOSSARY: Enrollment). A Contact is enrolled into an Automation
@@ -41,25 +43,31 @@ func Enroll(ctx context.Context, s *ent.Scoped, automationID, contactID int64) (
 
 // Exit ends the Contact's active Enrollment in the Automation (status exited, no
 // pending resume). It reports whether an active Enrollment was ended; a finished or
-// absent one is left alone.
+// absent one is left alone, and so is one another writer moved first.
 func Exit(ctx context.Context, s *ent.Scoped, automationID, contactID int64) (bool, error) {
-	n, err := s.AutomationRun().Update().
+	runID, err := s.AutomationRun().Query().
 		Where(
 			automationrun.AutomationID(automationID),
 			automationrun.ContactID(contactID),
 			automationrun.StatusEQ(automationrun.StatusActive),
 		).
-		SetStatus(automationrun.StatusExited).
-		ClearResumeAt().
-		Save(ctx)
-	return n > 0, err
+		OnlyID(ctx)
+	if ent.IsNotFound(err) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	err = ExitRun(ctx, s, runID)
+	if errors.Is(err, lifecycle.ErrInvalidTransition) {
+		return false, nil // another writer moved it out of active first
+	}
+	return err == nil, err
 }
 
 // ExitRun ends one Enrollment by run id, for the step executor that already holds
 // the run (an ineligible destination exits it rather than walk on skipping mail).
+// lifecycle.ErrInvalidTransition when it is no longer active.
 func ExitRun(ctx context.Context, s *ent.Scoped, runID int64) error {
-	return s.AutomationRun().UpdateOneID(runID).
-		SetStatus(automationrun.StatusExited).
-		ClearResumeAt().
-		Exec(ctx)
+	return move(ctx, s, runID, triggerExit, nil)
 }
