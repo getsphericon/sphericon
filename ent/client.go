@@ -25,6 +25,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/contacttag"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/erasure"
@@ -86,6 +87,8 @@ type Client struct {
 	Confirmation *ConfirmationClient
 	// Contact is the client for interacting with the Contact builders.
 	Contact *ContactClient
+	// ContactTag is the client for interacting with the ContactTag builders.
+	ContactTag *ContactTagClient
 	// CustomField is the client for interacting with the CustomField builders.
 	CustomField *CustomFieldClient
 	// EmailTemplate is the client for interacting with the EmailTemplate builders.
@@ -171,6 +174,7 @@ func (c *Client) init() {
 	c.BroadcastRecipient = NewBroadcastRecipientClient(c.config)
 	c.Confirmation = NewConfirmationClient(c.config)
 	c.Contact = NewContactClient(c.config)
+	c.ContactTag = NewContactTagClient(c.config)
 	c.CustomField = NewCustomFieldClient(c.config)
 	c.EmailTemplate = NewEmailTemplateClient(c.config)
 	c.Erasure = NewErasureClient(c.config)
@@ -305,6 +309,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		BroadcastRecipient: NewBroadcastRecipientClient(cfg),
 		Confirmation:       NewConfirmationClient(cfg),
 		Contact:            NewContactClient(cfg),
+		ContactTag:         NewContactTagClient(cfg),
 		CustomField:        NewCustomFieldClient(cfg),
 		EmailTemplate:      NewEmailTemplateClient(cfg),
 		Erasure:            NewErasureClient(cfg),
@@ -366,6 +371,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		BroadcastRecipient: NewBroadcastRecipientClient(cfg),
 		Confirmation:       NewConfirmationClient(cfg),
 		Contact:            NewContactClient(cfg),
+		ContactTag:         NewContactTagClient(cfg),
 		CustomField:        NewCustomFieldClient(cfg),
 		EmailTemplate:      NewEmailTemplateClient(cfg),
 		Erasure:            NewErasureClient(cfg),
@@ -429,13 +435,13 @@ func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.ApiToken, c.AuditEntry, c.AuthAttempt, c.Automation, c.AutomationRun,
 		c.BrandKit, c.Broadcast, c.BroadcastRecipient, c.Confirmation, c.Contact,
-		c.CustomField, c.EmailTemplate, c.Erasure, c.Event, c.Hold, c.InstanceState,
-		c.Integration, c.Invitation, c.Membership, c.OAuthClient, c.OAuthCode,
-		c.OAuthRefreshToken, c.OutboundMessage, c.OutboxMessage, c.OutboxOffset,
-		c.RecoveryCode, c.SchemaState, c.Segment, c.SendLimiter, c.SendingDomain,
-		c.ServiceCredential, c.StaffMember, c.Suppression, c.Tag, c.TrackingHostChange,
-		c.Unsubscribe, c.Usage, c.User, c.UserIdentity, c.Visitor, c.WebhookEndpoint,
-		c.Workspace,
+		c.ContactTag, c.CustomField, c.EmailTemplate, c.Erasure, c.Event, c.Hold,
+		c.InstanceState, c.Integration, c.Invitation, c.Membership, c.OAuthClient,
+		c.OAuthCode, c.OAuthRefreshToken, c.OutboundMessage, c.OutboxMessage,
+		c.OutboxOffset, c.RecoveryCode, c.SchemaState, c.Segment, c.SendLimiter,
+		c.SendingDomain, c.ServiceCredential, c.StaffMember, c.Suppression, c.Tag,
+		c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User, c.UserIdentity,
+		c.Visitor, c.WebhookEndpoint, c.Workspace,
 	} {
 		n.Use(hooks...)
 	}
@@ -447,13 +453,13 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.ApiToken, c.AuditEntry, c.AuthAttempt, c.Automation, c.AutomationRun,
 		c.BrandKit, c.Broadcast, c.BroadcastRecipient, c.Confirmation, c.Contact,
-		c.CustomField, c.EmailTemplate, c.Erasure, c.Event, c.Hold, c.InstanceState,
-		c.Integration, c.Invitation, c.Membership, c.OAuthClient, c.OAuthCode,
-		c.OAuthRefreshToken, c.OutboundMessage, c.OutboxMessage, c.OutboxOffset,
-		c.RecoveryCode, c.SchemaState, c.Segment, c.SendLimiter, c.SendingDomain,
-		c.ServiceCredential, c.StaffMember, c.Suppression, c.Tag, c.TrackingHostChange,
-		c.Unsubscribe, c.Usage, c.User, c.UserIdentity, c.Visitor, c.WebhookEndpoint,
-		c.Workspace,
+		c.ContactTag, c.CustomField, c.EmailTemplate, c.Erasure, c.Event, c.Hold,
+		c.InstanceState, c.Integration, c.Invitation, c.Membership, c.OAuthClient,
+		c.OAuthCode, c.OAuthRefreshToken, c.OutboundMessage, c.OutboxMessage,
+		c.OutboxOffset, c.RecoveryCode, c.SchemaState, c.Segment, c.SendLimiter,
+		c.SendingDomain, c.ServiceCredential, c.StaffMember, c.Suppression, c.Tag,
+		c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User, c.UserIdentity,
+		c.Visitor, c.WebhookEndpoint, c.Workspace,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -482,6 +488,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Confirmation.mutate(ctx, m)
 	case *ContactMutation:
 		return c.Contact.mutate(ctx, m)
+	case *ContactTagMutation:
+		return c.ContactTag.mutate(ctx, m)
 	case *CustomFieldMutation:
 		return c.CustomField.mutate(ctx, m)
 	case *EmailTemplateMutation:
@@ -2112,6 +2120,22 @@ func (c *ContactClient) QueryEvents(_m *Contact) *EventQuery {
 	return query
 }
 
+// QueryContactTags queries the contact_tags edge of a Contact.
+func (c *ContactClient) QueryContactTags(_m *Contact) *ContactTagQuery {
+	query := (&ContactTagClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(contact.Table, contact.FieldID, id),
+			sqlgraph.To(contacttag.Table, contacttag.ContactColumn),
+			sqlgraph.Edge(sqlgraph.O2M, true, contact.ContactTagsTable, contact.ContactTagsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *ContactClient) Hooks() []Hook {
 	return c.hooks.Contact
@@ -2134,6 +2158,122 @@ func (c *ContactClient) mutate(ctx context.Context, m *ContactMutation) (Value, 
 		return (&ContactDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Contact mutation op: %q", m.Op())
+	}
+}
+
+// ContactTagClient is a client for the ContactTag schema.
+type ContactTagClient struct {
+	config
+}
+
+// NewContactTagClient returns a client for the ContactTag from the given config.
+func NewContactTagClient(c config) *ContactTagClient {
+	return &ContactTagClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `contacttag.Hooks(f(g(h())))`.
+func (c *ContactTagClient) Use(hooks ...Hook) {
+	c.hooks.ContactTag = append(c.hooks.ContactTag, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `contacttag.Intercept(f(g(h())))`.
+func (c *ContactTagClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ContactTag = append(c.inters.ContactTag, interceptors...)
+}
+
+// Create returns a builder for creating a ContactTag entity.
+func (c *ContactTagClient) Create() *ContactTagCreate {
+	mutation := newContactTagMutation(c.config, OpCreate)
+	return &ContactTagCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ContactTag entities.
+func (c *ContactTagClient) CreateBulk(builders ...*ContactTagCreate) *ContactTagCreateBulk {
+	return &ContactTagCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ContactTagClient) MapCreateBulk(slice any, setFunc func(*ContactTagCreate, int)) *ContactTagCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ContactTagCreateBulk{err: fmt.Errorf("calling to ContactTagClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ContactTagCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ContactTagCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ContactTag.
+func (c *ContactTagClient) Update() *ContactTagUpdate {
+	mutation := newContactTagMutation(c.config, OpUpdate)
+	return &ContactTagUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ContactTagClient) UpdateOne(_m *ContactTag) *ContactTagUpdateOne {
+	mutation := newContactTagMutation(c.config, OpUpdateOne)
+	mutation.contact = &_m.ContactID
+	mutation.tag = &_m.TagID
+	return &ContactTagUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ContactTag.
+func (c *ContactTagClient) Delete() *ContactTagDelete {
+	mutation := newContactTagMutation(c.config, OpDelete)
+	return &ContactTagDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Query returns a query builder for ContactTag.
+func (c *ContactTagClient) Query() *ContactTagQuery {
+	return &ContactTagQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeContactTag},
+		inters: c.Interceptors(),
+	}
+}
+
+// QueryContact queries the contact edge of a ContactTag.
+func (c *ContactTagClient) QueryContact(_m *ContactTag) *ContactQuery {
+	return c.Query().
+		Where(contacttag.ContactID(_m.ContactID), contacttag.TagID(_m.TagID)).
+		QueryContact()
+}
+
+// QueryTag queries the tag edge of a ContactTag.
+func (c *ContactTagClient) QueryTag(_m *ContactTag) *TagQuery {
+	return c.Query().
+		Where(contacttag.ContactID(_m.ContactID), contacttag.TagID(_m.TagID)).
+		QueryTag()
+}
+
+// Hooks returns the client hooks.
+func (c *ContactTagClient) Hooks() []Hook {
+	return c.hooks.ContactTag
+}
+
+// Interceptors returns the client interceptors.
+func (c *ContactTagClient) Interceptors() []Interceptor {
+	return c.inters.ContactTag
+}
+
+func (c *ContactTagClient) mutate(ctx context.Context, m *ContactTagMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ContactTagCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ContactTagUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ContactTagUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ContactTagDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ContactTag mutation op: %q", m.Op())
 	}
 }
 
@@ -5720,6 +5860,22 @@ func (c *TagClient) QueryContacts(_m *Tag) *ContactQuery {
 	return query
 }
 
+// QueryContactTags queries the contact_tags edge of a Tag.
+func (c *TagClient) QueryContactTags(_m *Tag) *ContactTagQuery {
+	query := (&ContactTagClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(tag.Table, tag.FieldID, id),
+			sqlgraph.To(contacttag.Table, contacttag.TagColumn),
+			sqlgraph.Edge(sqlgraph.O2M, true, tag.ContactTagsTable, tag.ContactTagsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *TagClient) Hooks() []Hook {
 	return c.hooks.Tag
@@ -7405,7 +7561,7 @@ func (c *WorkspaceClient) mutate(ctx context.Context, m *WorkspaceMutation) (Val
 type (
 	hooks struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, BrandKit,
-		Broadcast, BroadcastRecipient, Confirmation, Contact, CustomField,
+		Broadcast, BroadcastRecipient, Confirmation, Contact, ContactTag, CustomField,
 		EmailTemplate, Erasure, Event, Hold, InstanceState, Integration, Invitation,
 		Membership, OAuthClient, OAuthCode, OAuthRefreshToken, OutboundMessage,
 		OutboxMessage, OutboxOffset, RecoveryCode, SchemaState, Segment, SendLimiter,
@@ -7415,7 +7571,7 @@ type (
 	}
 	inters struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, BrandKit,
-		Broadcast, BroadcastRecipient, Confirmation, Contact, CustomField,
+		Broadcast, BroadcastRecipient, Confirmation, Contact, ContactTag, CustomField,
 		EmailTemplate, Erasure, Event, Hold, InstanceState, Integration, Invitation,
 		Membership, OAuthClient, OAuthCode, OAuthRefreshToken, OutboundMessage,
 		OutboxMessage, OutboxOffset, RecoveryCode, SchemaState, Segment, SendLimiter,

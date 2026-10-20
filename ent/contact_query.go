@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/contacttag"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/tag"
@@ -24,15 +25,16 @@ import (
 // ContactQuery is the builder for querying Contact entities.
 type ContactQuery struct {
 	config
-	ctx           *QueryContext
-	order         []contact.OrderOption
-	inters        []Interceptor
-	predicates    []predicate.Contact
-	withWorkspace *WorkspaceQuery
-	withVisitors  *VisitorQuery
-	withTags      *TagQuery
-	withEvents    *EventQuery
-	modifiers     []func(*sql.Selector)
+	ctx             *QueryContext
+	order           []contact.OrderOption
+	inters          []Interceptor
+	predicates      []predicate.Contact
+	withWorkspace   *WorkspaceQuery
+	withVisitors    *VisitorQuery
+	withTags        *TagQuery
+	withEvents      *EventQuery
+	withContactTags *ContactTagQuery
+	modifiers       []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -150,6 +152,28 @@ func (_q *ContactQuery) QueryEvents() *EventQuery {
 			sqlgraph.From(contact.Table, contact.FieldID, selector),
 			sqlgraph.To(event.Table, event.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, contact.EventsTable, contact.EventsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryContactTags chains the current query on the "contact_tags" edge.
+func (_q *ContactQuery) QueryContactTags() *ContactTagQuery {
+	query := (&ContactTagClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(contact.Table, contact.FieldID, selector),
+			sqlgraph.To(contacttag.Table, contacttag.ContactColumn),
+			sqlgraph.Edge(sqlgraph.O2M, true, contact.ContactTagsTable, contact.ContactTagsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -344,15 +368,16 @@ func (_q *ContactQuery) Clone() *ContactQuery {
 		return nil
 	}
 	return &ContactQuery{
-		config:        _q.config,
-		ctx:           _q.ctx.Clone(),
-		order:         append([]contact.OrderOption{}, _q.order...),
-		inters:        append([]Interceptor{}, _q.inters...),
-		predicates:    append([]predicate.Contact{}, _q.predicates...),
-		withWorkspace: _q.withWorkspace.Clone(),
-		withVisitors:  _q.withVisitors.Clone(),
-		withTags:      _q.withTags.Clone(),
-		withEvents:    _q.withEvents.Clone(),
+		config:          _q.config,
+		ctx:             _q.ctx.Clone(),
+		order:           append([]contact.OrderOption{}, _q.order...),
+		inters:          append([]Interceptor{}, _q.inters...),
+		predicates:      append([]predicate.Contact{}, _q.predicates...),
+		withWorkspace:   _q.withWorkspace.Clone(),
+		withVisitors:    _q.withVisitors.Clone(),
+		withTags:        _q.withTags.Clone(),
+		withEvents:      _q.withEvents.Clone(),
+		withContactTags: _q.withContactTags.Clone(),
 		// clone intermediate query.
 		sql:       _q.sql.Clone(),
 		path:      _q.path,
@@ -401,6 +426,17 @@ func (_q *ContactQuery) WithEvents(opts ...func(*EventQuery)) *ContactQuery {
 		opt(query)
 	}
 	_q.withEvents = query
+	return _q
+}
+
+// WithContactTags tells the query-builder to eager-load the nodes that are connected to
+// the "contact_tags" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *ContactQuery) WithContactTags(opts ...func(*ContactTagQuery)) *ContactQuery {
+	query := (&ContactTagClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withContactTags = query
 	return _q
 }
 
@@ -482,11 +518,12 @@ func (_q *ContactQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Cont
 	var (
 		nodes       = []*Contact{}
 		_spec       = _q.querySpec()
-		loadedTypes = [4]bool{
+		loadedTypes = [5]bool{
 			_q.withWorkspace != nil,
 			_q.withVisitors != nil,
 			_q.withTags != nil,
 			_q.withEvents != nil,
+			_q.withContactTags != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -534,6 +571,13 @@ func (_q *ContactQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Cont
 		if err := _q.loadEvents(ctx, query, nodes,
 			func(n *Contact) { n.Edges.Events = []*Event{} },
 			func(n *Contact, e *Event) { n.Edges.Events = append(n.Edges.Events, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withContactTags; query != nil {
+		if err := _q.loadContactTags(ctx, query, nodes,
+			func(n *Contact) { n.Edges.ContactTags = []*ContactTag{} },
+			func(n *Contact, e *ContactTag) { n.Edges.ContactTags = append(n.Edges.ContactTags, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -691,6 +735,36 @@ func (_q *ContactQuery) loadEvents(ctx context.Context, query *EventQuery, nodes
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "contact_id" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *ContactQuery) loadContactTags(ctx context.Context, query *ContactTagQuery, nodes []*Contact, init func(*Contact), assign func(*Contact, *ContactTag)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Contact)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(contacttag.FieldContactID)
+	}
+	query.Where(predicate.ContactTag(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(contact.ContactTagsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.ContactID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "contact_id" returned %v for node %v`, fk, n)
 		}
 		assign(node, n)
 	}

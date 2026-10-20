@@ -2,7 +2,6 @@ package schema
 
 import (
 	"entgo.io/ent"
-	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
@@ -19,7 +18,7 @@ type AutomationRun struct {
 
 func (AutomationRun) Annotations() []schema.Annotation {
 	return []schema.Annotation{
-		entsql.Annotation{Table: "automation_runs"},
+		TableWithEnumChecks("automation_runs", AutomationRun{}.Fields()),
 	}
 }
 

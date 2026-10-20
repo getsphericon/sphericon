@@ -15,7 +15,7 @@ type Workspace struct {
 
 func (Workspace) Annotations() []schema.Annotation {
 	return []schema.Annotation{
-		entsql.Annotation{Table: "workspaces"},
+		workspaceTable(),
 	}
 }
 
@@ -167,4 +167,13 @@ func (Workspace) Edges() []ent.Edge {
 		edge.To("erasures", Erasure.Type),
 		edge.To("usages", Usage.Type),
 	}
+}
+
+// workspaceTable adds the length of the public id to the enum checks: ent stores it as an
+// unbounded varchar.
+func workspaceTable() entsql.Annotation {
+	a := TableWithEnumChecks("workspaces", Workspace{}.Fields())
+	a.Checks["workspaces_public_id_max_length_check"] = "char_length(public_id) <= 8"
+	a.Checks["workspaces_public_id_min_length_check"] = "char_length(public_id) >= 8"
+	return a
 }

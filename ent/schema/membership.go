@@ -2,7 +2,6 @@ package schema
 
 import (
 	"entgo.io/ent"
-	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
@@ -17,7 +16,7 @@ type Membership struct {
 
 func (Membership) Annotations() []schema.Annotation {
 	return []schema.Annotation{
-		entsql.Annotation{Table: "memberships"},
+		TableWithEnumChecks("memberships", Membership{}.Fields()),
 	}
 }
 

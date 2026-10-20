@@ -52,7 +52,7 @@ func TestSiteInstanceStateDefaultsToOnAndUnacknowledged(t *testing.T) {
 	row, err := env.DB.InstanceState.Get(t.Context(), 1)
 	require.NoError(t, err)
 	assert.NotEmpty(t, row.InstanceID)
-	assert.Nil(t, row.TelemetryEnabled)
+	assert.True(t, row.TelemetryEnabled)
 }
 
 func TestSiteInstanceKeepsOneInstanceIDAcrossReads(t *testing.T) {
@@ -80,8 +80,7 @@ func TestSiteInstanceOwnerSwitchesTelemetryOffAndOn(t *testing.T) {
 	assert.False(t, off.Telemetry.Enabled)
 	row, err := env.DB.InstanceState.Get(t.Context(), 1)
 	require.NoError(t, err)
-	require.NotNil(t, row.TelemetryEnabled)
-	assert.False(t, *row.TelemetryEnabled)
+	assert.False(t, row.TelemetryEnabled)
 	assert.False(t, instanceState(t, john).Telemetry.Enabled)
 
 	_, err = john.SiteInstanceSetTelemetry(t.Context(), &siteapi.SiteInstanceTelemetryInput{Enabled: true})
@@ -204,7 +203,7 @@ func TestSiteInstanceRefusesToChangeALockedSetting(t *testing.T) {
 	assert.NotEmpty(t, conflict.Detail.Value)
 	row, err := env.DB.InstanceState.Get(t.Context(), 1)
 	require.NoError(t, err)
-	assert.Nil(t, row.TelemetryEnabled)
+	assert.True(t, row.TelemetryEnabled)
 	assert.True(t, instanceState(t, john).Telemetry.Enabled)
 }
 

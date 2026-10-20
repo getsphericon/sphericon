@@ -22,6 +22,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/contacttag"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/erasure"
@@ -124,6 +125,7 @@ func checkColumn(t, c string) error {
 			broadcastrecipient.Table: broadcastrecipient.ValidColumn,
 			confirmation.Table:       confirmation.ValidColumn,
 			contact.Table:            contact.ValidColumn,
+			contacttag.Table:         contacttag.ValidColumn,
 			customfield.Table:        customfield.ValidColumn,
 			emailtemplate.Table:      emailtemplate.ValidColumn,
 			erasure.Table:            erasure.ValidColumn,

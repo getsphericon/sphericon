@@ -49,12 +49,6 @@ func (_u *InstanceStateUpdate) SetNillableTelemetryEnabled(v *bool) *InstanceSta
 	return _u
 }
 
-// ClearTelemetryEnabled clears the value of the "telemetry_enabled" field.
-func (_u *InstanceStateUpdate) ClearTelemetryEnabled() *InstanceStateUpdate {
-	_u.mutation.ClearTelemetryEnabled()
-	return _u
-}
-
 // SetNoticeAcknowledgedAt sets the "notice_acknowledged_at" field.
 func (_u *InstanceStateUpdate) SetNoticeAcknowledgedAt(v time.Time) *InstanceStateUpdate {
 	_u.mutation.SetNoticeAcknowledgedAt(v)
@@ -197,9 +191,6 @@ func (_u *InstanceStateUpdate) sqlSave(ctx context.Context) (_node int, err erro
 	if value, ok := _u.mutation.TelemetryEnabled(); ok {
 		_spec.SetField(instancestate.FieldTelemetryEnabled, field.TypeBool, value)
 	}
-	if _u.mutation.TelemetryEnabledCleared() {
-		_spec.ClearField(instancestate.FieldTelemetryEnabled, field.TypeBool)
-	}
 	if value, ok := _u.mutation.NoticeAcknowledgedAt(); ok {
 		_spec.SetField(instancestate.FieldNoticeAcknowledgedAt, field.TypeTime, value)
 	}
@@ -263,12 +254,6 @@ func (_u *InstanceStateUpdateOne) SetNillableTelemetryEnabled(v *bool) *Instance
 	if v != nil {
 		_u.SetTelemetryEnabled(*v)
 	}
-	return _u
-}
-
-// ClearTelemetryEnabled clears the value of the "telemetry_enabled" field.
-func (_u *InstanceStateUpdateOne) ClearTelemetryEnabled() *InstanceStateUpdateOne {
-	_u.mutation.ClearTelemetryEnabled()
 	return _u
 }
 
@@ -443,9 +428,6 @@ func (_u *InstanceStateUpdateOne) sqlSave(ctx context.Context) (_node *InstanceS
 	}
 	if value, ok := _u.mutation.TelemetryEnabled(); ok {
 		_spec.SetField(instancestate.FieldTelemetryEnabled, field.TypeBool, value)
-	}
-	if _u.mutation.TelemetryEnabledCleared() {
-		_spec.ClearField(instancestate.FieldTelemetryEnabled, field.TypeBool)
 	}
 	if value, ok := _u.mutation.NoticeAcknowledgedAt(); ok {
 		_spec.SetField(instancestate.FieldNoticeAcknowledgedAt, field.TypeTime, value)

@@ -249,16 +249,6 @@ func TelemetryEnabledNEQ(v bool) predicate.InstanceState {
 	return predicate.InstanceState(sql.FieldNEQ(FieldTelemetryEnabled, v))
 }
 
-// TelemetryEnabledIsNil applies the IsNil predicate on the "telemetry_enabled" field.
-func TelemetryEnabledIsNil() predicate.InstanceState {
-	return predicate.InstanceState(sql.FieldIsNull(FieldTelemetryEnabled))
-}
-
-// TelemetryEnabledNotNil applies the NotNil predicate on the "telemetry_enabled" field.
-func TelemetryEnabledNotNil() predicate.InstanceState {
-	return predicate.InstanceState(sql.FieldNotNull(FieldTelemetryEnabled))
-}
-
 // NoticeAcknowledgedAtEQ applies the EQ predicate on the "notice_acknowledged_at" field.
 func NoticeAcknowledgedAtEQ(v time.Time) predicate.InstanceState {
 	return predicate.InstanceState(sql.FieldEQ(FieldNoticeAcknowledgedAt, v))

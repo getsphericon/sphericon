@@ -20,7 +20,7 @@ type Integration struct {
 
 func (Integration) Annotations() []schema.Annotation {
 	return []schema.Annotation{
-		entsql.Annotation{Table: "integrations"},
+		TableWithEnumChecks("integrations", Integration{}.Fields()),
 		Audited{Action: "integration", NameField: "name"},
 	}
 }

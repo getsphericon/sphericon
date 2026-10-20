@@ -64,11 +64,11 @@ type Setting struct {
 	LockedBy Lock
 }
 
-// Effective applies ADR 0032 to the environment and the stored in-app setting (nil is
-// unset, which is on): off if SPHERICON_TELEMETRY is false or DO_NOT_TRACK=1; on and
+// Effective applies ADR 0032 to the environment and the stored in-app setting (on until
+// an Owner switches it off): off if SPHERICON_TELEMETRY is false or DO_NOT_TRACK=1; on and
 // locked if SPHERICON_TELEMETRY is true; otherwise the stored setting decides. DO_NOT_TRACK
 // only ever switches off. The sender of the report reuses it.
-func Effective(env Environment, stored *bool) Setting {
+func Effective(env Environment, stored bool) Setting {
 	switch {
 	case env.Telemetry != nil && !*env.Telemetry:
 		return Setting{Locked: true, LockedBy: LockEnvironment}
@@ -77,7 +77,7 @@ func Effective(env Environment, stored *bool) Setting {
 	case env.Telemetry != nil:
 		return Setting{Enabled: true, Locked: true, LockedBy: LockEnvironment}
 	}
-	return Setting{Enabled: stored == nil || *stored}
+	return Setting{Enabled: stored}
 }
 
 // State is what an Owner sees about the Instance.

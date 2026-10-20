@@ -2,7 +2,6 @@ package schema
 
 import (
 	"entgo.io/ent"
-	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
@@ -22,7 +21,7 @@ type AuthAttempt struct {
 
 func (AuthAttempt) Annotations() []schema.Annotation {
 	return []schema.Annotation{
-		entsql.Annotation{Table: "auth_attempts"},
+		TableWithEnumChecks("auth_attempts", AuthAttempt{}.Fields()),
 	}
 }
 

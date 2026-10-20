@@ -37,11 +37,10 @@ func (InstanceState) Fields() []ent.Field {
 		field.String("instance_id").
 			Immutable().
 			DefaultFunc(rand.Text),
-		// TelemetryEnabled is the Owner's in-app choice; nil means unset, which is the
-		// default (on). The environment can override it (see internal/instance).
+		// TelemetryEnabled is the Owner's in-app choice, on until they switch it off
+		// (ADR 0032). The environment can override it (see internal/instance).
 		field.Bool("telemetry_enabled").
-			Optional().
-			Nillable(),
+			Default(true),
 		// NoticeAcknowledgedAt is when an Owner acknowledged the one-time notice.
 		field.Time("notice_acknowledged_at").
 			Optional().

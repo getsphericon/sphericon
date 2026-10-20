@@ -2,7 +2,6 @@ package schema
 
 import (
 	"entgo.io/ent"
-	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
@@ -17,7 +16,7 @@ type WebhookEndpoint struct {
 
 func (WebhookEndpoint) Annotations() []schema.Annotation {
 	return []schema.Annotation{
-		entsql.Annotation{Table: "webhook_endpoints"},
+		TableWithEnumChecks("webhook_endpoints", WebhookEndpoint{}.Fields()),
 		Audited{Action: "webhook_endpoint", NameField: "url", NameIsURL: true},
 	}
 }

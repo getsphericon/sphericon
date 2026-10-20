@@ -26,6 +26,8 @@ const (
 	EdgeWorkspace = "workspace"
 	// EdgeContacts holds the string denoting the contacts edge name in mutations.
 	EdgeContacts = "contacts"
+	// EdgeContactTags holds the string denoting the contact_tags edge name in mutations.
+	EdgeContactTags = "contact_tags"
 	// Table holds the table name of the tag in the database.
 	Table = "tags"
 	// WorkspaceTable is the table that holds the workspace relation/edge.
@@ -40,6 +42,13 @@ const (
 	// ContactsInverseTable is the table name for the Contact entity.
 	// It exists in this package in order to avoid circular dependency with the "contact" package.
 	ContactsInverseTable = "contacts"
+	// ContactTagsTable is the table that holds the contact_tags relation/edge.
+	ContactTagsTable = "contact_tags"
+	// ContactTagsInverseTable is the table name for the ContactTag entity.
+	// It exists in this package in order to avoid circular dependency with the "contacttag" package.
+	ContactTagsInverseTable = "contact_tags"
+	// ContactTagsColumn is the table column denoting the contact_tags relation/edge.
+	ContactTagsColumn = "tag_id"
 )
 
 // Columns holds all SQL columns for tag fields.
@@ -126,6 +135,20 @@ func ByContacts(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newContactsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByContactTagsCount orders the results by contact_tags count.
+func ByContactTagsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newContactTagsStep(), opts...)
+	}
+}
+
+// ByContactTags orders the results by contact_tags terms.
+func ByContactTags(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newContactTagsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newWorkspaceStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -138,5 +161,12 @@ func newContactsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ContactsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2M, true, ContactsTable, ContactsPrimaryKey...),
+	)
+}
+func newContactTagsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ContactTagsInverseTable, ContactTagsColumn),
+		sqlgraph.Edge(sqlgraph.O2M, true, ContactTagsTable, ContactTagsColumn),
 	)
 }

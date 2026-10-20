@@ -24,7 +24,7 @@ type InstanceState struct {
 	// InstanceID holds the value of the "instance_id" field.
 	InstanceID string `json:"instance_id,omitempty"`
 	// TelemetryEnabled holds the value of the "telemetry_enabled" field.
-	TelemetryEnabled *bool `json:"telemetry_enabled,omitempty"`
+	TelemetryEnabled bool `json:"telemetry_enabled,omitempty"`
 	// NoticeAcknowledgedAt holds the value of the "notice_acknowledged_at" field.
 	NoticeAcknowledgedAt *time.Time `json:"notice_acknowledged_at,omitempty"`
 	// LastReportSentAt holds the value of the "last_report_sent_at" field.
@@ -92,8 +92,7 @@ func (_m *InstanceState) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullBool); !ok {
 				return fmt.Errorf("unexpected type %T for field telemetry_enabled", values[i])
 			} else if value.Valid {
-				_m.TelemetryEnabled = new(bool)
-				*_m.TelemetryEnabled = value.Bool
+				_m.TelemetryEnabled = value.Bool
 			}
 		case instancestate.FieldNoticeAcknowledgedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -168,10 +167,8 @@ func (_m *InstanceState) String() string {
 	builder.WriteString("instance_id=")
 	builder.WriteString(_m.InstanceID)
 	builder.WriteString(", ")
-	if v := _m.TelemetryEnabled; v != nil {
-		builder.WriteString("telemetry_enabled=")
-		builder.WriteString(fmt.Sprintf("%v", *v))
-	}
+	builder.WriteString("telemetry_enabled=")
+	builder.WriteString(fmt.Sprintf("%v", _m.TelemetryEnabled))
 	builder.WriteString(", ")
 	if v := _m.NoticeAcknowledgedAt; v != nil {
 		builder.WriteString("notice_acknowledged_at=")

@@ -19,7 +19,7 @@ type Automation struct {
 
 func (Automation) Annotations() []schema.Annotation {
 	return []schema.Annotation{
-		entsql.Annotation{Table: "automations"},
+		TableWithEnumChecks("automations", Automation{}.Fields()),
 		Audited{Action: "automation", NameField: "name"},
 	}
 }

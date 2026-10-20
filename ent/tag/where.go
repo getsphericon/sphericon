@@ -286,6 +286,29 @@ func HasContactsWith(preds ...predicate.Contact) predicate.Tag {
 	})
 }
 
+// HasContactTags applies the HasEdge predicate on the "contact_tags" edge.
+func HasContactTags() predicate.Tag {
+	return predicate.Tag(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, ContactTagsTable, ContactTagsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasContactTagsWith applies the HasEdge predicate on the "contact_tags" edge with a given conditions (other predicates).
+func HasContactTagsWith(preds ...predicate.ContactTag) predicate.Tag {
+	return predicate.Tag(func(s *sql.Selector) {
+		step := newContactTagsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Tag) predicate.Tag {
 	return predicate.Tag(sql.AndPredicates(predicates...))

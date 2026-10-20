@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/contacttag"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/ent/workspace"
@@ -22,13 +23,14 @@ import (
 // TagQuery is the builder for querying Tag entities.
 type TagQuery struct {
 	config
-	ctx           *QueryContext
-	order         []tag.OrderOption
-	inters        []Interceptor
-	predicates    []predicate.Tag
-	withWorkspace *WorkspaceQuery
-	withContacts  *ContactQuery
-	modifiers     []func(*sql.Selector)
+	ctx             *QueryContext
+	order           []tag.OrderOption
+	inters          []Interceptor
+	predicates      []predicate.Tag
+	withWorkspace   *WorkspaceQuery
+	withContacts    *ContactQuery
+	withContactTags *ContactTagQuery
+	modifiers       []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -102,6 +104,28 @@ func (_q *TagQuery) QueryContacts() *ContactQuery {
 			sqlgraph.From(tag.Table, tag.FieldID, selector),
 			sqlgraph.To(contact.Table, contact.FieldID),
 			sqlgraph.Edge(sqlgraph.M2M, true, tag.ContactsTable, tag.ContactsPrimaryKey...),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryContactTags chains the current query on the "contact_tags" edge.
+func (_q *TagQuery) QueryContactTags() *ContactTagQuery {
+	query := (&ContactTagClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(tag.Table, tag.FieldID, selector),
+			sqlgraph.To(contacttag.Table, contacttag.TagColumn),
+			sqlgraph.Edge(sqlgraph.O2M, true, tag.ContactTagsTable, tag.ContactTagsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -296,13 +320,14 @@ func (_q *TagQuery) Clone() *TagQuery {
 		return nil
 	}
 	return &TagQuery{
-		config:        _q.config,
-		ctx:           _q.ctx.Clone(),
-		order:         append([]tag.OrderOption{}, _q.order...),
-		inters:        append([]Interceptor{}, _q.inters...),
-		predicates:    append([]predicate.Tag{}, _q.predicates...),
-		withWorkspace: _q.withWorkspace.Clone(),
-		withContacts:  _q.withContacts.Clone(),
+		config:          _q.config,
+		ctx:             _q.ctx.Clone(),
+		order:           append([]tag.OrderOption{}, _q.order...),
+		inters:          append([]Interceptor{}, _q.inters...),
+		predicates:      append([]predicate.Tag{}, _q.predicates...),
+		withWorkspace:   _q.withWorkspace.Clone(),
+		withContacts:    _q.withContacts.Clone(),
+		withContactTags: _q.withContactTags.Clone(),
 		// clone intermediate query.
 		sql:       _q.sql.Clone(),
 		path:      _q.path,
@@ -329,6 +354,17 @@ func (_q *TagQuery) WithContacts(opts ...func(*ContactQuery)) *TagQuery {
 		opt(query)
 	}
 	_q.withContacts = query
+	return _q
+}
+
+// WithContactTags tells the query-builder to eager-load the nodes that are connected to
+// the "contact_tags" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *TagQuery) WithContactTags(opts ...func(*ContactTagQuery)) *TagQuery {
+	query := (&ContactTagClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withContactTags = query
 	return _q
 }
 
@@ -410,9 +446,10 @@ func (_q *TagQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Tag, err
 	var (
 		nodes       = []*Tag{}
 		_spec       = _q.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
 			_q.withWorkspace != nil,
 			_q.withContacts != nil,
+			_q.withContactTags != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -446,6 +483,13 @@ func (_q *TagQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Tag, err
 		if err := _q.loadContacts(ctx, query, nodes,
 			func(n *Tag) { n.Edges.Contacts = []*Contact{} },
 			func(n *Tag, e *Contact) { n.Edges.Contacts = append(n.Edges.Contacts, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withContactTags; query != nil {
+		if err := _q.loadContactTags(ctx, query, nodes,
+			func(n *Tag) { n.Edges.ContactTags = []*ContactTag{} },
+			func(n *Tag, e *ContactTag) { n.Edges.ContactTags = append(n.Edges.ContactTags, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -539,6 +583,36 @@ func (_q *TagQuery) loadContacts(ctx context.Context, query *ContactQuery, nodes
 		for kn := range nodes {
 			assign(kn, n)
 		}
+	}
+	return nil
+}
+func (_q *TagQuery) loadContactTags(ctx context.Context, query *ContactTagQuery, nodes []*Tag, init func(*Tag), assign func(*Tag, *ContactTag)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Tag)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(contacttag.FieldTagID)
+	}
+	query.Where(predicate.ContactTag(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(tag.ContactTagsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.TagID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "tag_id" returned %v for node %v`, fk, n)
+		}
+		assign(node, n)
 	}
 	return nil
 }

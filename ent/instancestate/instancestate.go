@@ -65,6 +65,8 @@ var (
 	UpdateDefaultUpdatedAt func() time.Time
 	// DefaultInstanceID holds the default value on creation for the "instance_id" field.
 	DefaultInstanceID func() string
+	// DefaultTelemetryEnabled holds the default value on creation for the "telemetry_enabled" field.
+	DefaultTelemetryEnabled bool
 )
 
 // OrderOption defines the ordering options for the InstanceState queries.

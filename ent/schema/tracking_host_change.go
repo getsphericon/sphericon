@@ -2,7 +2,6 @@ package schema
 
 import (
 	"entgo.io/ent"
-	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
@@ -24,7 +23,7 @@ type TrackingHostChange struct {
 
 func (TrackingHostChange) Annotations() []schema.Annotation {
 	return []schema.Annotation{
-		entsql.Annotation{Table: "tracking_host_changes"},
+		TableWithEnumChecks("tracking_host_changes", TrackingHostChange{}.Fields()),
 	}
 }
 

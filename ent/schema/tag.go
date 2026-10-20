@@ -43,7 +43,8 @@ func (Tag) Fields() []ent.Field {
 func (Tag) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("contacts", Contact.Type).
-			Ref("tags"),
+			Ref("tags").
+			Through("contact_tags", ContactTag.Type),
 	}
 }
 

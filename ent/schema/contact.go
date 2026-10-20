@@ -64,7 +64,8 @@ func (Contact) Edges() []ent.Edge {
 		// Contact before Identify; once bound, one Contact owns many Visitors.
 		edge.To("visitors", Visitor.Type),
 		// Presence-only labels (GLOSSARY: Tag), many-to-many via contact_tags.
-		edge.To("tags", Tag.Type),
+		edge.To("tags", Tag.Type).
+			Through("contact_tags", ContactTag.Type),
 		// The Contact's Events. The FK is nullable and SET NULL: an Event outlives its
 		// Contact (GLOSSARY: Event), so deleting the Contact only unlinks them.
 		edge.To("events", Event.Type).

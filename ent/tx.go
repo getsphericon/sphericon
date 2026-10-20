@@ -34,6 +34,8 @@ type Tx struct {
 	Confirmation *ConfirmationClient
 	// Contact is the client for interacting with the Contact builders.
 	Contact *ContactClient
+	// ContactTag is the client for interacting with the ContactTag builders.
+	ContactTag *ContactTagClient
 	// CustomField is the client for interacting with the CustomField builders.
 	CustomField *CustomFieldClient
 	// EmailTemplate is the client for interacting with the EmailTemplate builders.
@@ -239,6 +241,7 @@ func (tx *Tx) init() {
 	tx.BroadcastRecipient = NewBroadcastRecipientClient(tx.config)
 	tx.Confirmation = NewConfirmationClient(tx.config)
 	tx.Contact = NewContactClient(tx.config)
+	tx.ContactTag = NewContactTagClient(tx.config)
 	tx.CustomField = NewCustomFieldClient(tx.config)
 	tx.EmailTemplate = NewEmailTemplateClient(tx.config)
 	tx.Erasure = NewErasureClient(tx.config)

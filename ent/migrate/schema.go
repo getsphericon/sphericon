@@ -417,6 +417,38 @@ var (
 			},
 		},
 	}
+	// ContactTagsColumns holds the columns for the "contact_tags" table.
+	ContactTagsColumns = []*schema.Column{
+		{Name: "contact_id", Type: field.TypeInt64},
+		{Name: "tag_id", Type: field.TypeInt64},
+	}
+	// ContactTagsTable holds the schema information for the "contact_tags" table.
+	ContactTagsTable = &schema.Table{
+		Name:       "contact_tags",
+		Columns:    ContactTagsColumns,
+		PrimaryKey: []*schema.Column{ContactTagsColumns[0], ContactTagsColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "contact_tags_contact_id",
+				Columns:    []*schema.Column{ContactTagsColumns[0]},
+				RefColumns: []*schema.Column{ContactsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "contact_tags_tag_id",
+				Columns:    []*schema.Column{ContactTagsColumns[1]},
+				RefColumns: []*schema.Column{TagsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "contacttag_tag_id",
+				Unique:  false,
+				Columns: []*schema.Column{ContactTagsColumns[1]},
+			},
+		},
+	}
 	// CustomFieldsColumns holds the columns for the "custom_fields" table.
 	CustomFieldsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -632,7 +664,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "instance_id", Type: field.TypeString},
-		{Name: "telemetry_enabled", Type: field.TypeBool, Nullable: true},
+		{Name: "telemetry_enabled", Type: field.TypeBool, Default: true},
 		{Name: "notice_acknowledged_at", Type: field.TypeTime, Nullable: true},
 		{Name: "last_report_sent_at", Type: field.TypeTime, Nullable: true},
 		{Name: "latest_release", Type: field.TypeString, Nullable: true},
@@ -1492,31 +1524,6 @@ var (
 			},
 		},
 	}
-	// ContactTagsColumns holds the columns for the "contact_tags" table.
-	ContactTagsColumns = []*schema.Column{
-		{Name: "contact_id", Type: field.TypeInt64},
-		{Name: "tag_id", Type: field.TypeInt64},
-	}
-	// ContactTagsTable holds the schema information for the "contact_tags" table.
-	ContactTagsTable = &schema.Table{
-		Name:       "contact_tags",
-		Columns:    ContactTagsColumns,
-		PrimaryKey: []*schema.Column{ContactTagsColumns[0], ContactTagsColumns[1]},
-		ForeignKeys: []*schema.ForeignKey{
-			{
-				Symbol:     "contact_tags_contact_id",
-				Columns:    []*schema.Column{ContactTagsColumns[0]},
-				RefColumns: []*schema.Column{ContactsColumns[0]},
-				OnDelete:   schema.Cascade,
-			},
-			{
-				Symbol:     "contact_tags_tag_id",
-				Columns:    []*schema.Column{ContactTagsColumns[1]},
-				RefColumns: []*schema.Column{TagsColumns[0]},
-				OnDelete:   schema.Cascade,
-			},
-		},
-	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		APITokensTable,
@@ -1529,6 +1536,7 @@ var (
 		BroadcastRecipientsTable,
 		ConfirmationsTable,
 		ContactsTable,
+		ContactTagsTable,
 		CustomFieldsTable,
 		EmailTemplatesTable,
 		ErasuresTable,
@@ -1559,7 +1567,6 @@ var (
 		VisitorsTable,
 		WebhookEndpointsTable,
 		WorkspacesTable,
-		ContactTagsTable,
 	}
 )
 
@@ -1575,14 +1582,24 @@ func init() {
 	AuthAttemptsTable.Annotation = &entsql.Annotation{
 		Table: "auth_attempts",
 	}
+	AuthAttemptsTable.Annotation.Checks = map[string]string{
+		"auth_attempts_kind_check": "kind IN ('login', 'staff_login', 'password_reset', 'register', 'email_change', 'test_send_user', 'test_send_workspace')",
+	}
 	AutomationsTable.ForeignKeys[0].RefTable = WorkspacesTable
 	AutomationsTable.Annotation = &entsql.Annotation{
 		Table: "automations",
+	}
+	AutomationsTable.Annotation.Checks = map[string]string{
+		"automations_status_check": "status IN ('draft', 'active')",
 	}
 	AutomationRunsTable.ForeignKeys[0].RefTable = AutomationsTable
 	AutomationRunsTable.ForeignKeys[1].RefTable = WorkspacesTable
 	AutomationRunsTable.Annotation = &entsql.Annotation{
 		Table: "automation_runs",
+	}
+	AutomationRunsTable.Annotation.Checks = map[string]string{
+		"automation_runs_failure_kind_check": "failure_kind IN ('invalid_body', 'timeout', 'blocked_address', 'http_status', 'network')",
+		"automation_runs_status_check":       "status IN ('active', 'completed', 'failed', 'exited')",
 	}
 	BrandKitsTable.ForeignKeys[0].RefTable = WorkspacesTable
 	BrandKitsTable.Annotation = &entsql.Annotation{
@@ -1591,6 +1608,9 @@ func init() {
 	BroadcastsTable.ForeignKeys[0].RefTable = WorkspacesTable
 	BroadcastsTable.Annotation = &entsql.Annotation{
 		Table: "broadcasts",
+	}
+	BroadcastsTable.Annotation.Checks = map[string]string{
+		"broadcasts_status_check": "status IN ('draft', 'scheduled', 'sending', 'sent', 'failed')",
 	}
 	BroadcastRecipientsTable.ForeignKeys[0].RefTable = BroadcastsTable
 	BroadcastRecipientsTable.ForeignKeys[1].RefTable = WorkspacesTable
@@ -1601,13 +1621,25 @@ func init() {
 	ConfirmationsTable.Annotation = &entsql.Annotation{
 		Table: "confirmations",
 	}
+	ConfirmationsTable.Annotation.Checks = map[string]string{
+		"confirmations_channel_check":    "channel IN ('email')",
+		"confirmations_provenance_check": "provenance IN ('double_opt_in', 'grandfathered', 'imported')",
+	}
 	ContactsTable.ForeignKeys[0].RefTable = WorkspacesTable
 	ContactsTable.Annotation = &entsql.Annotation{
 		Table: "contacts",
 	}
+	ContactTagsTable.ForeignKeys[0].RefTable = ContactsTable
+	ContactTagsTable.ForeignKeys[1].RefTable = TagsTable
+	ContactTagsTable.Annotation = &entsql.Annotation{
+		Table: "contact_tags",
+	}
 	CustomFieldsTable.ForeignKeys[0].RefTable = WorkspacesTable
 	CustomFieldsTable.Annotation = &entsql.Annotation{
 		Table: "custom_fields",
+	}
+	CustomFieldsTable.Annotation.Checks = map[string]string{
+		"custom_fields_type_check": "type IN ('string', 'number', 'bool', 'datetime')",
 	}
 	EmailTemplatesTable.ForeignKeys[0].RefTable = WorkspacesTable
 	EmailTemplatesTable.Annotation = &entsql.Annotation{
@@ -1633,15 +1665,25 @@ func init() {
 	IntegrationsTable.Annotation = &entsql.Annotation{
 		Table: "integrations",
 	}
+	IntegrationsTable.Annotation.Checks = map[string]string{
+		"integrations_channel_check":  "channel IN ('email', 'sms')",
+		"integrations_provider_check": "provider IN ('smtp', 'ses')",
+	}
 	InvitationsTable.ForeignKeys[0].RefTable = UsersTable
 	InvitationsTable.ForeignKeys[1].RefTable = WorkspacesTable
 	InvitationsTable.Annotation = &entsql.Annotation{
 		Table: "invitations",
 	}
+	InvitationsTable.Annotation.Checks = map[string]string{
+		"invitations_role_check": "role IN ('admin', 'member')",
+	}
 	MembershipsTable.ForeignKeys[0].RefTable = UsersTable
 	MembershipsTable.ForeignKeys[1].RefTable = WorkspacesTable
 	MembershipsTable.Annotation = &entsql.Annotation{
 		Table: "memberships",
+	}
+	MembershipsTable.Annotation.Checks = map[string]string{
+		"memberships_role_check": "role IN ('owner', 'admin', 'member')",
 	}
 	OauthClientsTable.Annotation = &entsql.Annotation{
 		Table: "oauth_clients",
@@ -1658,6 +1700,11 @@ func init() {
 	OutboundMessagesTable.ForeignKeys[0].RefTable = WorkspacesTable
 	OutboundMessagesTable.Annotation = &entsql.Annotation{
 		Table: "outbound_messages",
+	}
+	OutboundMessagesTable.Annotation.Checks = map[string]string{
+		"outbound_messages_channel_check": "channel IN ('email')",
+		"outbound_messages_kind_check":    "kind IN ('broadcast', 'automation', 'transactional')",
+		"outbound_messages_status_check":  "status IN ('pending', 'sent', 'skipped', 'failed')",
 	}
 	RecoveryCodesTable.ForeignKeys[0].RefTable = UsersTable
 	RecoveryCodesTable.Annotation = &entsql.Annotation{
@@ -1679,6 +1726,10 @@ func init() {
 	SendingDomainsTable.Annotation = &entsql.Annotation{
 		Table: "sending_domains",
 	}
+	SendingDomainsTable.Annotation.Checks = map[string]string{
+		"sending_domains_tracking_reason_check": "tracking_reason IN ('host_taken')",
+		"sending_domains_tracking_state_check":  "tracking_state IN ('pending', 'dns_verified', 'serving')",
+	}
 	ServiceCredentialsTable.Annotation = &entsql.Annotation{
 		Table: "service_credentials",
 	}
@@ -1689,6 +1740,10 @@ func init() {
 	SuppressionsTable.Annotation = &entsql.Annotation{
 		Table: "suppressions",
 	}
+	SuppressionsTable.Annotation.Checks = map[string]string{
+		"suppressions_channel_check": "channel IN ('email')",
+		"suppressions_reason_check":  "reason IN ('bounce', 'complaint', 'manual')",
+	}
 	TagsTable.ForeignKeys[0].RefTable = WorkspacesTable
 	TagsTable.Annotation = &entsql.Annotation{
 		Table: "tags",
@@ -1696,9 +1751,15 @@ func init() {
 	TrackingHostChangesTable.Annotation = &entsql.Annotation{
 		Table: "tracking_host_changes",
 	}
+	TrackingHostChangesTable.Annotation.Checks = map[string]string{
+		"tracking_host_changes_state_check": "state IN ('dns_verified', 'serving', 'removed')",
+	}
 	UnsubscribesTable.ForeignKeys[0].RefTable = WorkspacesTable
 	UnsubscribesTable.Annotation = &entsql.Annotation{
 		Table: "unsubscribes",
+	}
+	UnsubscribesTable.Annotation.Checks = map[string]string{
+		"unsubscribes_channel_check": "channel IN ('email')",
 	}
 	UsagesTable.ForeignKeys[0].RefTable = WorkspacesTable
 	UsagesTable.Annotation = &entsql.Annotation{
@@ -1720,9 +1781,16 @@ func init() {
 	WebhookEndpointsTable.Annotation = &entsql.Annotation{
 		Table: "webhook_endpoints",
 	}
+	WebhookEndpointsTable.Annotation.Checks = map[string]string{
+		"webhook_endpoints_disabled_reason_check": "disabled_reason IN ('gone', 'persistent_failure')",
+		"webhook_endpoints_last_error_kind_check": "last_error_kind IN ('timeout', 'blocked_address', 'http_status', 'network')",
+	}
 	WorkspacesTable.Annotation = &entsql.Annotation{
 		Table: "workspaces",
 	}
-	ContactTagsTable.ForeignKeys[0].RefTable = ContactsTable
-	ContactTagsTable.ForeignKeys[1].RefTable = TagsTable
+	WorkspacesTable.Annotation.Checks = map[string]string{
+		"workspaces_public_id_max_length_check": "char_length(public_id) <= 8",
+		"workspaces_public_id_min_length_check": "char_length(public_id) >= 8",
+		"workspaces_suspended_by_kind_check":    "suspended_by_kind IN ('system', 'cli', 'staff')",
+	}
 }

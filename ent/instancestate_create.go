@@ -187,6 +187,10 @@ func (_c *InstanceStateCreate) defaults() {
 		v := instancestate.DefaultInstanceID()
 		_c.mutation.SetInstanceID(v)
 	}
+	if _, ok := _c.mutation.TelemetryEnabled(); !ok {
+		v := instancestate.DefaultTelemetryEnabled
+		_c.mutation.SetTelemetryEnabled(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -199,6 +203,9 @@ func (_c *InstanceStateCreate) check() error {
 	}
 	if _, ok := _c.mutation.InstanceID(); !ok {
 		return &ValidationError{Name: "instance_id", err: errors.New(`ent: missing required field "InstanceState.instance_id"`)}
+	}
+	if _, ok := _c.mutation.TelemetryEnabled(); !ok {
+		return &ValidationError{Name: "telemetry_enabled", err: errors.New(`ent: missing required field "InstanceState.telemetry_enabled"`)}
 	}
 	return nil
 }
@@ -247,7 +254,7 @@ func (_c *InstanceStateCreate) createSpec() (*InstanceState, *sqlgraph.CreateSpe
 	}
 	if value, ok := _c.mutation.TelemetryEnabled(); ok {
 		_spec.SetField(instancestate.FieldTelemetryEnabled, field.TypeBool, value)
-		_node.TelemetryEnabled = &value
+		_node.TelemetryEnabled = value
 	}
 	if value, ok := _c.mutation.NoticeAcknowledgedAt(); ok {
 		_spec.SetField(instancestate.FieldNoticeAcknowledgedAt, field.TypeTime, value)
@@ -338,12 +345,6 @@ func (u *InstanceStateUpsert) SetTelemetryEnabled(v bool) *InstanceStateUpsert {
 // UpdateTelemetryEnabled sets the "telemetry_enabled" field to the value that was provided on create.
 func (u *InstanceStateUpsert) UpdateTelemetryEnabled() *InstanceStateUpsert {
 	u.SetExcluded(instancestate.FieldTelemetryEnabled)
-	return u
-}
-
-// ClearTelemetryEnabled clears the value of the "telemetry_enabled" field.
-func (u *InstanceStateUpsert) ClearTelemetryEnabled() *InstanceStateUpsert {
-	u.SetNull(instancestate.FieldTelemetryEnabled)
 	return u
 }
 
@@ -498,13 +499,6 @@ func (u *InstanceStateUpsertOne) SetTelemetryEnabled(v bool) *InstanceStateUpser
 func (u *InstanceStateUpsertOne) UpdateTelemetryEnabled() *InstanceStateUpsertOne {
 	return u.Update(func(s *InstanceStateUpsert) {
 		s.UpdateTelemetryEnabled()
-	})
-}
-
-// ClearTelemetryEnabled clears the value of the "telemetry_enabled" field.
-func (u *InstanceStateUpsertOne) ClearTelemetryEnabled() *InstanceStateUpsertOne {
-	return u.Update(func(s *InstanceStateUpsert) {
-		s.ClearTelemetryEnabled()
 	})
 }
 
@@ -837,13 +831,6 @@ func (u *InstanceStateUpsertBulk) SetTelemetryEnabled(v bool) *InstanceStateUpse
 func (u *InstanceStateUpsertBulk) UpdateTelemetryEnabled() *InstanceStateUpsertBulk {
 	return u.Update(func(s *InstanceStateUpsert) {
 		s.UpdateTelemetryEnabled()
-	})
-}
-
-// ClearTelemetryEnabled clears the value of the "telemetry_enabled" field.
-func (u *InstanceStateUpsertBulk) ClearTelemetryEnabled() *InstanceStateUpsertBulk {
-	return u.Update(func(s *InstanceStateUpsert) {
-		s.ClearTelemetryEnabled()
 	})
 }
 

@@ -430,6 +430,10 @@ func init() {
 	instancestateDescInstanceID := instancestateFields[1].Descriptor()
 	// instancestate.DefaultInstanceID holds the default value on creation for the instance_id field.
 	instancestate.DefaultInstanceID = instancestateDescInstanceID.Default.(func() string)
+	// instancestateDescTelemetryEnabled is the schema descriptor for telemetry_enabled field.
+	instancestateDescTelemetryEnabled := instancestateFields[2].Descriptor()
+	// instancestate.DefaultTelemetryEnabled holds the default value on creation for the telemetry_enabled field.
+	instancestate.DefaultTelemetryEnabled = instancestateDescTelemetryEnabled.Default.(bool)
 	integrationMixin := schema.Integration{}.Mixin()
 	integrationMixinFields0 := integrationMixin[0].Fields()
 	_ = integrationMixinFields0

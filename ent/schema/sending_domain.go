@@ -25,7 +25,7 @@ type SendingDomain struct {
 
 func (SendingDomain) Annotations() []schema.Annotation {
 	return []schema.Annotation{
-		entsql.Annotation{Table: "sending_domains"},
+		TableWithEnumChecks("sending_domains", SendingDomain{}.Fields()),
 		Audited{Action: "sending_domain", NameField: "domain"},
 	}
 }

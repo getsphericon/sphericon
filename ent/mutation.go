@@ -22,6 +22,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/contacttag"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/erasure"
@@ -76,6 +77,7 @@ const (
 	TypeBroadcastRecipient = "BroadcastRecipient"
 	TypeConfirmation       = "Confirmation"
 	TypeContact            = "Contact"
+	TypeContactTag         = "ContactTag"
 	TypeCustomField        = "CustomField"
 	TypeEmailTemplate      = "EmailTemplate"
 	TypeErasure            = "Erasure"
@@ -10721,6 +10723,388 @@ func (m *ContactMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown Contact edge %s", name)
 }
 
+// ContactTagMutation represents an operation that mutates the ContactTag nodes in the graph.
+type ContactTagMutation struct {
+	config
+	op             Op
+	typ            string
+	clearedFields  map[string]struct{}
+	contact        *int64
+	clearedcontact bool
+	tag            *int64
+	clearedtag     bool
+	done           bool
+	oldValue       func(context.Context) (*ContactTag, error)
+	predicates     []predicate.ContactTag
+}
+
+var _ ent.Mutation = (*ContactTagMutation)(nil)
+
+// contacttagOption allows management of the mutation configuration using functional options.
+type contacttagOption func(*ContactTagMutation)
+
+// newContactTagMutation creates new mutation for the ContactTag entity.
+func newContactTagMutation(c config, op Op, opts ...contacttagOption) *ContactTagMutation {
+	m := &ContactTagMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeContactTag,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ContactTagMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ContactTagMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetContactID sets the "contact_id" field.
+func (m *ContactTagMutation) SetContactID(i int64) {
+	m.contact = &i
+}
+
+// ContactID returns the value of the "contact_id" field in the mutation.
+func (m *ContactTagMutation) ContactID() (r int64, exists bool) {
+	v := m.contact
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetContactID resets all changes to the "contact_id" field.
+func (m *ContactTagMutation) ResetContactID() {
+	m.contact = nil
+}
+
+// SetTagID sets the "tag_id" field.
+func (m *ContactTagMutation) SetTagID(i int64) {
+	m.tag = &i
+}
+
+// TagID returns the value of the "tag_id" field in the mutation.
+func (m *ContactTagMutation) TagID() (r int64, exists bool) {
+	v := m.tag
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetTagID resets all changes to the "tag_id" field.
+func (m *ContactTagMutation) ResetTagID() {
+	m.tag = nil
+}
+
+// ClearContact clears the "contact" edge to the Contact entity.
+func (m *ContactTagMutation) ClearContact() {
+	m.clearedcontact = true
+	m.clearedFields[contacttag.FieldContactID] = struct{}{}
+}
+
+// ContactCleared reports if the "contact" edge to the Contact entity was cleared.
+func (m *ContactTagMutation) ContactCleared() bool {
+	return m.clearedcontact
+}
+
+// ContactIDs returns the "contact" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ContactID instead. It exists only for internal usage by the builders.
+func (m *ContactTagMutation) ContactIDs() (ids []int64) {
+	if id := m.contact; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetContact resets all changes to the "contact" edge.
+func (m *ContactTagMutation) ResetContact() {
+	m.contact = nil
+	m.clearedcontact = false
+}
+
+// ClearTag clears the "tag" edge to the Tag entity.
+func (m *ContactTagMutation) ClearTag() {
+	m.clearedtag = true
+	m.clearedFields[contacttag.FieldTagID] = struct{}{}
+}
+
+// TagCleared reports if the "tag" edge to the Tag entity was cleared.
+func (m *ContactTagMutation) TagCleared() bool {
+	return m.clearedtag
+}
+
+// TagIDs returns the "tag" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// TagID instead. It exists only for internal usage by the builders.
+func (m *ContactTagMutation) TagIDs() (ids []int64) {
+	if id := m.tag; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetTag resets all changes to the "tag" edge.
+func (m *ContactTagMutation) ResetTag() {
+	m.tag = nil
+	m.clearedtag = false
+}
+
+// Where appends a list predicates to the ContactTagMutation builder.
+func (m *ContactTagMutation) Where(ps ...predicate.ContactTag) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the ContactTagMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *ContactTagMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.ContactTag, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *ContactTagMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *ContactTagMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (ContactTag).
+func (m *ContactTagMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *ContactTagMutation) Fields() []string {
+	fields := make([]string, 0, 2)
+	if m.contact != nil {
+		fields = append(fields, contacttag.FieldContactID)
+	}
+	if m.tag != nil {
+		fields = append(fields, contacttag.FieldTagID)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *ContactTagMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case contacttag.FieldContactID:
+		return m.ContactID()
+	case contacttag.FieldTagID:
+		return m.TagID()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *ContactTagMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	return nil, errors.New("edge schema ContactTag does not support getting old values")
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ContactTagMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case contacttag.FieldContactID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetContactID(v)
+		return nil
+	case contacttag.FieldTagID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTagID(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ContactTag field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *ContactTagMutation) AddedFields() []string {
+	var fields []string
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *ContactTagMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ContactTagMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown ContactTag numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *ContactTagMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *ContactTagMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ContactTagMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown ContactTag nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *ContactTagMutation) ResetField(name string) error {
+	switch name {
+	case contacttag.FieldContactID:
+		m.ResetContactID()
+		return nil
+	case contacttag.FieldTagID:
+		m.ResetTagID()
+		return nil
+	}
+	return fmt.Errorf("unknown ContactTag field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *ContactTagMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.contact != nil {
+		edges = append(edges, contacttag.EdgeContact)
+	}
+	if m.tag != nil {
+		edges = append(edges, contacttag.EdgeTag)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *ContactTagMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case contacttag.EdgeContact:
+		if id := m.contact; id != nil {
+			return []ent.Value{*id}
+		}
+	case contacttag.EdgeTag:
+		if id := m.tag; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *ContactTagMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *ContactTagMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *ContactTagMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedcontact {
+		edges = append(edges, contacttag.EdgeContact)
+	}
+	if m.clearedtag {
+		edges = append(edges, contacttag.EdgeTag)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *ContactTagMutation) EdgeCleared(name string) bool {
+	switch name {
+	case contacttag.EdgeContact:
+		return m.clearedcontact
+	case contacttag.EdgeTag:
+		return m.clearedtag
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *ContactTagMutation) ClearEdge(name string) error {
+	switch name {
+	case contacttag.EdgeContact:
+		m.ClearContact()
+		return nil
+	case contacttag.EdgeTag:
+		m.ClearTag()
+		return nil
+	}
+	return fmt.Errorf("unknown ContactTag unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *ContactTagMutation) ResetEdge(name string) error {
+	switch name {
+	case contacttag.EdgeContact:
+		m.ResetContact()
+		return nil
+	case contacttag.EdgeTag:
+		m.ResetTag()
+		return nil
+	}
+	return fmt.Errorf("unknown ContactTag edge %s", name)
+}
+
 // CustomFieldMutation represents an operation that mutates the CustomField nodes in the graph.
 type CustomFieldMutation struct {
 	config
@@ -15466,7 +15850,7 @@ func (m *InstanceStateMutation) TelemetryEnabled() (r bool, exists bool) {
 // OldTelemetryEnabled returns the old "telemetry_enabled" field's value of the InstanceState entity.
 // If the InstanceState object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *InstanceStateMutation) OldTelemetryEnabled(ctx context.Context) (v *bool, err error) {
+func (m *InstanceStateMutation) OldTelemetryEnabled(ctx context.Context) (v bool, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldTelemetryEnabled is only allowed on UpdateOne operations")
 	}
@@ -15480,22 +15864,9 @@ func (m *InstanceStateMutation) OldTelemetryEnabled(ctx context.Context) (v *boo
 	return oldValue.TelemetryEnabled, nil
 }
 
-// ClearTelemetryEnabled clears the value of the "telemetry_enabled" field.
-func (m *InstanceStateMutation) ClearTelemetryEnabled() {
-	m.telemetry_enabled = nil
-	m.clearedFields[instancestate.FieldTelemetryEnabled] = struct{}{}
-}
-
-// TelemetryEnabledCleared returns if the "telemetry_enabled" field was cleared in this mutation.
-func (m *InstanceStateMutation) TelemetryEnabledCleared() bool {
-	_, ok := m.clearedFields[instancestate.FieldTelemetryEnabled]
-	return ok
-}
-
 // ResetTelemetryEnabled resets all changes to the "telemetry_enabled" field.
 func (m *InstanceStateMutation) ResetTelemetryEnabled() {
 	m.telemetry_enabled = nil
-	delete(m.clearedFields, instancestate.FieldTelemetryEnabled)
 }
 
 // SetNoticeAcknowledgedAt sets the "notice_acknowledged_at" field.
@@ -15897,9 +16268,6 @@ func (m *InstanceStateMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *InstanceStateMutation) ClearedFields() []string {
 	var fields []string
-	if m.FieldCleared(instancestate.FieldTelemetryEnabled) {
-		fields = append(fields, instancestate.FieldTelemetryEnabled)
-	}
 	if m.FieldCleared(instancestate.FieldNoticeAcknowledgedAt) {
 		fields = append(fields, instancestate.FieldNoticeAcknowledgedAt)
 	}
@@ -15926,9 +16294,6 @@ func (m *InstanceStateMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *InstanceStateMutation) ClearField(name string) error {
 	switch name {
-	case instancestate.FieldTelemetryEnabled:
-		m.ClearTelemetryEnabled()
-		return nil
 	case instancestate.FieldNoticeAcknowledgedAt:
 		m.ClearNoticeAcknowledgedAt()
 		return nil

@@ -24,7 +24,7 @@ type OutboundMessage struct {
 
 func (OutboundMessage) Annotations() []schema.Annotation {
 	return []schema.Annotation{
-		entsql.Annotation{Table: "outbound_messages"},
+		TableWithEnumChecks("outbound_messages", OutboundMessage{}.Fields()),
 	}
 }
 

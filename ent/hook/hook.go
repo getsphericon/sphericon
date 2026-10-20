@@ -129,6 +129,18 @@ func (f ContactFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, err
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ContactMutation", m)
 }
 
+// The ContactTagFunc type is an adapter to allow the use of ordinary
+// function as ContactTag mutator.
+type ContactTagFunc func(context.Context, *ent.ContactTagMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ContactTagFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ContactTagMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ContactTagMutation", m)
+}
+
 // The CustomFieldFunc type is an adapter to allow the use of ordinary
 // function as CustomField mutator.
 type CustomFieldFunc func(context.Context, *ent.CustomFieldMutation) (ent.Value, error)

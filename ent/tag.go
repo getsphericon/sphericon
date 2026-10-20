@@ -38,9 +38,11 @@ type TagEdges struct {
 	Workspace *Workspace `json:"workspace,omitempty"`
 	// Contacts holds the value of the contacts edge.
 	Contacts []*Contact `json:"contacts,omitempty"`
+	// ContactTags holds the value of the contact_tags edge.
+	ContactTags []*ContactTag `json:"contact_tags,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 }
 
 // WorkspaceOrErr returns the Workspace value or an error if the edge
@@ -61,6 +63,15 @@ func (e TagEdges) ContactsOrErr() ([]*Contact, error) {
 		return e.Contacts, nil
 	}
 	return nil, &NotLoadedError{edge: "contacts"}
+}
+
+// ContactTagsOrErr returns the ContactTags value or an error if the edge
+// was not loaded in eager-loading.
+func (e TagEdges) ContactTagsOrErr() ([]*ContactTag, error) {
+	if e.loadedTypes[2] {
+		return e.ContactTags, nil
+	}
+	return nil, &NotLoadedError{edge: "contact_tags"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -140,6 +151,11 @@ func (_m *Tag) QueryWorkspace() *WorkspaceQuery {
 // QueryContacts queries the "contacts" edge of the Tag entity.
 func (_m *Tag) QueryContacts() *ContactQuery {
 	return NewTagClient(_m.config).QueryContacts(_m)
+}
+
+// QueryContactTags queries the "contact_tags" edge of the Tag entity.
+func (_m *Tag) QueryContactTags() *ContactTagQuery {
+	return NewTagClient(_m.config).QueryContactTags(_m)
 }
 
 // Update returns a builder for updating this Tag.
