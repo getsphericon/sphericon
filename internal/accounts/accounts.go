@@ -10,6 +10,7 @@ package accounts
 import (
 	"context"
 	"crypto/rand"
+	"database/sql"
 	"errors"
 	"fmt"
 	"strconv"
@@ -707,14 +708,26 @@ func (a *Accounts) AcceptInvitation(ctx context.Context, inv *ent.Invitation, na
 			return merr
 		}
 		if ent.IsNotFound(merr) {
-			if _, cerr := ts.Membership().Create().
+			// DO NOTHING rather than catching a unique violation, which would abort the
+			// transaction. A concurrent accept that inserted first leaves nothing to write
+			// (sql.ErrNoRows); its Membership is read back, so the rules below still apply.
+			cerr := ts.Membership().Create().
 				SetUserID(u.ID).
 				SetRole(role).
 				SetSource(membership.SourceInvitation).
-				Save(ctx); cerr != nil {
+				OnConflictColumns(membership.FieldUserID, membership.FieldWorkspaceID).
+				DoNothing().
+				Exec(ctx)
+			if cerr != nil && !errors.Is(cerr, sql.ErrNoRows) {
 				return cerr
 			}
-		} else if existing.Role == membership.RoleMember && role == membership.RoleAdmin {
+			if errors.Is(cerr, sql.ErrNoRows) {
+				if existing, merr = ts.Membership().Query().Where(membership.UserID(u.ID)).Only(ctx); merr != nil {
+					return merr
+				}
+			}
+		}
+		if existing != nil && existing.Role == membership.RoleMember && role == membership.RoleAdmin {
 			// An explicit Invitation raises a member to admin; it never lowers a Role.
 			if err := ts.Membership().UpdateOneID(existing.ID).SetRole(membership.RoleAdmin).Exec(ctx); err != nil {
 				return err

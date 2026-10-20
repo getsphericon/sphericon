@@ -1,12 +1,17 @@
 package accounts_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/hook"
 	"github.com/getsphericon/sphericon/ent/invitation"
+	"github.com/getsphericon/sphericon/ent/membership"
+	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -44,4 +49,46 @@ func TestAcceptInvitationOfAVerifiedUserNeedsTheirSession(t *testing.T) {
 	require.ErrorIs(t, acc.AcceptInvitation(t.Context(), inv, "", "", ""), accounts.ErrSignInRequired)
 	require.ErrorIs(t, acc.AcceptInvitation(t.Context(), inv, "", "", fixtures.OwnerJaneEmail), accounts.ErrWrongAccount)
 	require.NoError(t, acc.AcceptInvitation(t.Context(), inv, "", "", fixtures.OutsiderOscarEmail))
+}
+
+// firstInsertMember is an ent hook that, just before an invitation's Membership is
+// written, lets a concurrent accept win the race: it inserts the User's `member` Membership.
+func firstInsertMember(next ent.Mutator) ent.Mutator {
+	return hook.MembershipFunc(func(ctx context.Context, m *ent.MembershipMutation) (ent.Value, error) {
+		source, _ := m.Source()
+		if source != membership.SourceInvitation {
+			return next.Mutate(ctx, m)
+		}
+		userID, _ := m.UserID()
+		workspaceID, _ := m.WorkspaceID()
+		err := m.Client().Membership.Create().
+			SetUserID(userID).
+			SetWorkspaceID(workspaceID).
+			SetRole(membership.RoleMember).
+			SetSource(membership.SourceDomain).
+			Exec(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return next.Mutate(ctx, m)
+	})
+}
+
+// A concurrent double accept: the Membership another accept inserted first is not an error,
+// and the explicit Invitation's admin Role still raises it.
+func TestAcceptInvitationToleratesAMembershipInsertedFirst(t *testing.T) {
+	env := testhelper.Setup(t)
+	acc := accounts.New(env.DB, env.Bus)
+	inv, _, err := acc.Invite(t.Context(), env.DB.Scoped(fixtures.AcmeID), events.Actor{Kind: events.ActorUser},
+		accounts.InviteInput{Email: fixtures.OutsiderOscarEmail, Role: invitation.RoleAdmin, InvitedBy: fixtures.OwnerJohnID})
+	require.NoError(t, err)
+	env.Bus.Use(hook.On(firstInsertMember, ent.OpCreate))
+
+	err = acc.AcceptInvitation(t.Context(), inv, "", "", fixtures.OutsiderOscarEmail)
+
+	require.NoError(t, err)
+	oscar := env.DB.User.Query().Where(user.EmailEqualFold(fixtures.OutsiderOscarEmail)).OnlyX(t.Context())
+	memberships := env.DB.Scoped(fixtures.AcmeID).Membership().Query().Where(membership.UserID(oscar.ID)).AllX(t.Context())
+	require.Len(t, memberships, 1)
+	assert.Equal(t, membership.RoleAdmin, memberships[0].Role)
 }
