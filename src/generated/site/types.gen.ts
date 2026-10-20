@@ -1682,6 +1682,99 @@ export const SiteCustomFieldType = {
 export type SiteCustomFieldType = typeof SiteCustomFieldType[keyof typeof SiteCustomFieldType];
 
 /**
+ * Confirmation of User deletion (ADR 0050): the User's own email typed in, their password
+ * (a User with no password sends the token of the mailed link instead) and, when a Second
+ * factor is enrolled, a current code.
+ */
+export type SiteDeleteUserInput = {
+  /**
+   * The User's own email address, typed in
+   */
+  email: EmailAddress;
+  /**
+   * Current password; required of a User who has one
+   */
+  currentPassword?: string;
+  /**
+   * The token of the one-time link mailed to a User with no password; required of that User
+   */
+  token?: string;
+  /**
+   * A current TOTP code, or an unused Recovery code; required when a Second factor is enrolled
+   */
+  code?: string;
+};
+
+/**
+ * The request for the one-time deletion link of a User with no password (ADR 0050)
+ */
+export type SiteDeleteUserLinkInput = {
+  /**
+   * The User's own email address, typed in
+   */
+  email: EmailAddress;
+};
+
+/**
+ * The body of a refused User deletion: ProblemDetails plus, when the User is the only Owner
+ * of Workspaces, the list of them (empty when the typed email did not match)
+ */
+export type SiteDeleteUserProblemDetails = {
+  /**
+   * Why the request was refused, when the client should act on it
+   */
+  code?: ProblemCode;
+  /**
+   * A URI reference that identifies the problem type
+   */
+  type?: string;
+  /**
+   * A short, human-readable summary of the problem type
+   */
+  title?: string;
+  /**
+   * HTTP status code
+   */
+  status?: number;
+  /**
+   * A human-readable explanation specific to this occurrence
+   */
+  detail?: string;
+  /**
+   * A URI reference that identifies the specific occurrence
+   */
+  instance?: string;
+  /**
+   * Validation errors grouped by field
+   */
+  errors?: {
+    [key: string]: Array<string>;
+  };
+  /**
+   * Form-level validation error
+   */
+  form?: string;
+  /**
+   * Field validation errors
+   */
+  fields?: {
+    [key: string]: string;
+  };
+  /**
+   * Seconds to wait before retrying; set on a 429 so a client that only sees the body can show the wait
+   */
+  retryAfter?: number;
+  /**
+   * Why a 500 happened, sent only by a development server (`SPHERICON_ENV=development`)
+   */
+  debug?: ProblemDebug;
+  /**
+   * The live Workspaces the User is the only Owner of; each is handed over or deleted first
+   */
+  workspaces: Array<SiteSoleOwnedWorkspace>;
+};
+
+/**
  * Delete a Workspace (ADR 0043): the typed name must equal the stored name.
  */
 export type SiteDeleteWorkspaceInput = {
@@ -1712,6 +1805,11 @@ export type SiteDeletedWorkspaceResource = {
    * When its data will be erased: 30 days after it was deleted
    */
   eraseAt: Timestamp;
+  /**
+   * Whether the caller is its only Owner: it then has no one to restore it once the
+   * caller's User is deleted (ADR 0050)
+   */
+  onlyOwner: boolean;
 };
 
 /**
@@ -3097,6 +3195,20 @@ export type SiteSmtpConfigInput = {
   password?: string | null;
   from: EmailAddress;
   fromName?: string | null;
+};
+
+/**
+ * A Workspace the User is the only Owner of, which blocks User deletion
+ */
+export type SiteSoleOwnedWorkspace = {
+  /**
+   * The Workspace id
+   */
+  id: WorkspaceId;
+  /**
+   * Display name
+   */
+  name: string;
 };
 
 /**
@@ -4730,6 +4842,66 @@ export type SiteUserUpdateMeResponses = {
 };
 
 export type SiteUserUpdateMeResponse = SiteUserUpdateMeResponses[keyof SiteUserUpdateMeResponses];
+
+export type SiteUserDeleteUserData = {
+  body: SiteDeleteUserInput;
+  path?: never;
+  query?: never;
+  url: '/me/delete';
+};
+
+export type SiteUserDeleteUserErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 validation response of User deletion
+   */
+  422: SiteDeleteUserProblemDetails;
+  /**
+   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
+   */
+  429: ProblemDetails;
+};
+
+export type SiteUserDeleteUserError = SiteUserDeleteUserErrors[keyof SiteUserDeleteUserErrors];
+
+export type SiteUserDeleteUserResponses = {
+  /**
+   * There is no content to send for this request, but the headers may be useful.
+   */
+  204: void;
+};
+
+export type SiteUserDeleteUserResponse = SiteUserDeleteUserResponses[keyof SiteUserDeleteUserResponses];
+
+export type SiteUserDeleteUserLinkData = {
+  body: SiteDeleteUserLinkInput;
+  path?: never;
+  query?: never;
+  url: '/me/delete/link';
+};
+
+export type SiteUserDeleteUserLinkErrors = {
+  /**
+   * RFC 7807 validation response of User deletion
+   */
+  422: SiteDeleteUserProblemDetails;
+};
+
+export type SiteUserDeleteUserLinkError = SiteUserDeleteUserLinkErrors[keyof SiteUserDeleteUserLinkErrors];
+
+export type SiteUserDeleteUserLinkResponses = {
+  /**
+   * The request has been accepted for processing, but processing has not yet completed.
+   */
+  202: unknown;
+};
 
 export type SiteUserEmailChangeData = {
   body: SiteEmailChangeInput;
@@ -7861,6 +8033,37 @@ export type SiteJoinDomainsVerifyResponses = {
 };
 
 export type SiteJoinDomainsVerifyResponse = SiteJoinDomainsVerifyResponses[keyof SiteJoinDomainsVerifyResponses];
+
+export type SiteWorkspacesLeaveData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/leave';
+};
+
+export type SiteWorkspacesLeaveErrors = {
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+};
+
+export type SiteWorkspacesLeaveError = SiteWorkspacesLeaveErrors[keyof SiteWorkspacesLeaveErrors];
+
+export type SiteWorkspacesLeaveResponses = {
+  /**
+   * There is no content to send for this request, but the headers may be useful.
+   */
+  204: void;
+};
+
+export type SiteWorkspacesLeaveResponse = SiteWorkspacesLeaveResponses[keyof SiteWorkspacesLeaveResponses];
 
 export type SiteMembershipsListData = {
   body?: never;
