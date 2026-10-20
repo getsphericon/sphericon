@@ -16,7 +16,8 @@ factor, regenerating Recovery codes, a Second factor reset and "sign out everywh
 the direct provider cannot see the request (no IP) or return a "second factor required" outcome,
 so a thin handler replaces it, checks the password, answers with a short-lived single-use
 challenge, and `/site/auth/second-factor` verifies a TOTP (`pquerna/otp`) or Recovery code before
-issuing the cookie. The handler is the `login` operation of the `/site` contract; an ogen handler
+issuing the cookie. The sequence itself (throttle, password check, gate, challenge, second step) lives in the core
+`internal/login` module, which the `/site` handler and the Staff console ([[0026-operator-console-and-abuse-detector]]) both drive as adapters. The handler is the `login` operation of the `/site` contract; an ogen handler
 has no response writer, so the cookie comes from one issuer (`auth.Sessions`, a go-pkgz token
 service) as the operation's declared `Set-Cookie` header, not through `TokenService().Set`. `/auth/` is no longer mounted, so no second path
 mints a session around the Second factor. Failed password, Second factor and Recovery code

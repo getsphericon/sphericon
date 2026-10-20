@@ -24,6 +24,8 @@ The Staff member, its console and the detector ship under a single license featu
   a separate cookie and JWT secret, a shorter session than a customer's with no "remember me",
   attempts limited by [[0025-rate-limiting-hybrid-store-workspace-key]]. A lost TOTP is reset
   only through the CLI.
+- The Staff sign-in is the second adapter of the core `internal/login` module (ADR 0020): `ee/staff`
+  supplies its Staff member store, challenge and TOTP check, the module owns the order of steps.
 - Login hardening reuses the ADR 0025 machinery: failed password and TOTP attempts feed one
   `auth_attempt` counter per address under its own kind, `staff_login`, so a Staff member and a
   User of the same address never share a counter. The delay answers the standard 429 even for a

@@ -22,7 +22,7 @@ ingress. The edge may add its own limits on top.
   password. A hard lockout would let anyone lock any account (a DoS); `forgot-password` always
   works. `auth_attempt` rows are also created for unknown emails so the table cannot enumerate
   accounts; a river job purges stale rows.
-  The login operation of the `/site` contract (ADR 0020) consults `auth_attempt` before it checks
+  The login module (`internal/login`, ADR 0020, used by `/site` and `/staff`) consults `auth_attempt` before it checks
   the password, answers 429 itself, and records the failure or success. The check and the count
   are two steps, so wrong passwords sent in parallel before the first failure is recorded all pass
   the delay check. The excess is bounded by the in-flight requests of one client (the per-IP login

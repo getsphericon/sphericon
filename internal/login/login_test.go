@@ -83,7 +83,13 @@ var errCounter = errors.New("counter down")
 
 func (failingCounter) RecordFailure(context.Context, string) error { return errCounter }
 
+// clock is a settable time source for the counter.
+type clock struct{ t time.Time }
+
+func (c *clock) now() time.Time { return c.t }
+
 type rig struct {
+	clock  *clock
 	factor *factor
 	module *login.Module[*ent.User]
 	login  login.Throttle
@@ -94,10 +100,12 @@ type rig struct {
 func newRig(t *testing.T, opts ...func(*login.Config[*ent.User])) rig {
 	t.Helper()
 	env := testhelper.Setup(t)
+	clk := &clock{t: time.Now()}
 	counters := accounts.NewAttempts(env.DB,
+		accounts.WithClock(clk.now),
 		accounts.WithRule(accounts.KindLogin, accounts.LoginRule(2)),
 		accounts.WithRule(accounts.KindStaffLogin, accounts.LoginRule(2)))
-	r := rig{login: counters.For(accounts.KindLogin), staff: counters.For(accounts.KindStaffLogin)}
+	r := rig{clock: clk, login: counters.For(accounts.KindLogin), staff: counters.For(accounts.KindStaffLogin)}
 	cfg := login.Config[*ent.User]{
 		Throttle: r.login,
 		Store:    store{env.DB},
@@ -114,7 +122,7 @@ func newRig(t *testing.T, opts ...func(*login.Config[*ent.User])) rig {
 	return r
 }
 
-func (r rig) second(t *testing.T, challenge, code string) login.Result[*ent.User] {
+func (r rig) second(t *testing.T, challenge, code string) login.SecondResult[*ent.User] {
 	t.Helper()
 	res, err := r.module.SecondFactor(t.Context(), challenge, code)
 	require.NoError(t, err)
@@ -154,6 +162,18 @@ func TestThrottlePrecedesThePasswordCheckEvenForACorrectPassword(t *testing.T) {
 	assert.Equal(t, login.Throttled, res.Outcome)
 	assert.Positive(t, res.Wait)
 	assert.Equal(t, 2, res.Limit)
+}
+
+func TestThePasswordStepWorksAgainOnceTheDelayHasPassed(t *testing.T) {
+	r := newRig(t)
+	for range 2 {
+		require.Equal(t, login.InvalidCredentials, r.password(t, fixtures.OwnerJohnEmail, "wrong").Outcome)
+	}
+	require.Equal(t, login.Throttled, r.password(t, fixtures.OwnerJohnEmail, fixtures.OwnerJohnPassword).Outcome)
+
+	r.clock.t = r.clock.t.Add(2 * time.Second)
+
+	assert.Equal(t, login.Authenticated, r.password(t, fixtures.OwnerJohnEmail, fixtures.OwnerJohnPassword).Outcome)
 }
 
 func TestAnUnknownAddressFollowsTheSamePathAsAKnownOne(t *testing.T) {
@@ -219,7 +239,7 @@ var samChallenge = "challenge-" + strconv.Itoa(fixtures.SecondFactorSamID)
 func TestABadChallengeIsRefusedWithoutCountingAFailure(t *testing.T) {
 	r := newRig(t)
 	for range 3 {
-		assert.Equal(t, login.InvalidChallenge, r.second(t, "forged", "123456").Outcome)
+		assert.Equal(t, login.SecondInvalidChallenge, r.second(t, "forged", "123456").Outcome)
 	}
 	assert.Zero(t, delayOf(t, r.login, fixtures.SecondFactorSamEmail))
 	assert.Zero(t, r.factor.verifyHit, "a bad challenge never reaches the code check")
@@ -229,7 +249,7 @@ func TestAChallengeThatMovedIsRefusedWithoutCountingAFailure(t *testing.T) {
 	r := newRig(t)
 	r.factor.moved = true
 	for range 3 {
-		assert.Equal(t, login.InvalidChallenge, r.second(t, samChallenge, "123456").Outcome)
+		assert.Equal(t, login.SecondInvalidChallenge, r.second(t, samChallenge, "123456").Outcome)
 	}
 	assert.Zero(t, delayOf(t, r.login, fixtures.SecondFactorSamEmail))
 }
@@ -237,40 +257,40 @@ func TestAChallengeThatMovedIsRefusedWithoutCountingAFailure(t *testing.T) {
 func TestAWrongCodeCountsAgainstTheBudgetOfAWrongPassword(t *testing.T) {
 	r := newRig(t)
 	require.Equal(t, login.InvalidCredentials, r.password(t, fixtures.SecondFactorSamEmail, "wrong").Outcome)
-	assert.Equal(t, login.InvalidCode, r.second(t, samChallenge, "000000").Outcome)
+	assert.Equal(t, login.SecondInvalidCode, r.second(t, samChallenge, "000000").Outcome)
 	// One password failure and one code failure reach the threshold of two.
-	assert.Equal(t, login.Throttled, r.second(t, samChallenge, "123456").Outcome, "a correct code does not skip the delay")
+	assert.Equal(t, login.SecondThrottled, r.second(t, samChallenge, "123456").Outcome, "a correct code does not skip the delay")
 	assert.Equal(t, login.Throttled, r.password(t, fixtures.SecondFactorSamEmail, fixtures.SecondFactorSamPassword).Outcome)
 }
 
 func TestARecoveryCodeIsSpentOnce(t *testing.T) {
 	r := newRig(t)
-	assert.Equal(t, login.Authenticated, r.second(t, samChallenge, "recovery").Outcome)
-	assert.Equal(t, login.InvalidCode, r.second(t, samChallenge, "recovery").Outcome)
+	assert.Equal(t, login.SecondAuthenticated, r.second(t, samChallenge, "recovery").Outcome)
+	assert.Equal(t, login.SecondInvalidCode, r.second(t, samChallenge, "recovery").Outcome)
 }
 
 func TestAGoodCodeAuthenticatesAndResetsTheCounter(t *testing.T) {
 	r := newRig(t)
-	require.Equal(t, login.InvalidCode, r.second(t, samChallenge, "000000").Outcome)
+	require.Equal(t, login.SecondInvalidCode, r.second(t, samChallenge, "000000").Outcome)
 	res := r.second(t, samChallenge, "123456")
-	require.Equal(t, login.Authenticated, res.Outcome)
+	require.Equal(t, login.SecondAuthenticated, res.Outcome)
 	assert.Equal(t, int64(fixtures.SecondFactorSamID), res.Principal.ID)
 	assert.Equal(t, "password", res.Method)
 
-	require.Equal(t, login.InvalidCode, r.second(t, samChallenge, "000000").Outcome)
-	assert.Equal(t, login.InvalidCode, r.second(t, samChallenge, "000000").Outcome, "the count restarted at the success")
+	require.Equal(t, login.SecondInvalidCode, r.second(t, samChallenge, "000000").Outcome)
+	assert.Equal(t, login.SecondInvalidCode, r.second(t, samChallenge, "000000").Outcome, "the count restarted at the success")
 }
 
 func TestAFailingCounterResetAfterACommittedSecondFactorStillAuthenticates(t *testing.T) {
 	r := newRig(t, func(c *login.Config[*ent.User]) { c.Throttle = resetFailing{c.Throttle} })
-	assert.Equal(t, login.Authenticated, r.second(t, samChallenge, "123456").Outcome)
+	assert.Equal(t, login.SecondAuthenticated, r.second(t, samChallenge, "123456").Outcome)
 }
 
 func TestAnErrorFromRecordingACodeFailureRefusesTheAttempt(t *testing.T) {
 	r := newRig(t, func(c *login.Config[*ent.User]) { c.Throttle = failingCounter{c.Throttle} })
 	res, err := r.module.SecondFactor(t.Context(), samChallenge, "000000")
 	require.ErrorIs(t, err, errCounter)
-	assert.NotEqual(t, login.Authenticated, res.Outcome)
+	assert.NotEqual(t, login.SecondAuthenticated, res.Outcome)
 }
 
 func TestTheModuleImportsNoDatabaseClient(t *testing.T) {

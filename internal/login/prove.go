@@ -2,7 +2,6 @@ package login
 
 import (
 	"context"
-	"time"
 
 	"github.com/getsphericon/sphericon/internal/accounts"
 )
@@ -23,10 +22,8 @@ const (
 // ProofResult is the one answer of Prove.
 type ProofResult struct {
 	Proof Proof
-	// Wait, Limit and Now are set for ProofThrottled, as in Result.
-	Wait  time.Duration
-	Limit int
-	Now   time.Time
+	// Delay is set for ProofThrottled.
+	Delay
 }
 
 // Prove is the one path every password-gated action takes (second-factor enrol, disable
@@ -37,12 +34,12 @@ type ProofResult struct {
 func (m *Module[P]) Prove(ctx context.Context, address, passwordHash, password string) (ProofResult, error) {
 	address = accounts.NormalizeEmail(address)
 
-	wait, err := m.cfg.Throttle.Delay(ctx, address)
+	delay, wait, err := m.throttle(ctx, address)
 	if err != nil {
 		return ProofResult{}, err
 	}
-	if wait > 0 {
-		return ProofResult{Proof: ProofThrottled, Wait: wait, Limit: m.cfg.Throttle.Limit(), Now: m.cfg.Throttle.Now()}, nil
+	if wait {
+		return ProofResult{Proof: ProofThrottled, Delay: delay}, nil
 	}
 	if verify(passwordHash, password) {
 		return ProofResult{Proof: ProofHolds}, nil

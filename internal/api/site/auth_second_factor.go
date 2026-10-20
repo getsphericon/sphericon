@@ -63,15 +63,15 @@ func (h *Handlers) SiteAuthSecondFactor(ctx context.Context, req *siteapi.SiteLo
 		return nil, err
 	}
 	switch res.Outcome {
-	case login.Throttled:
+	case login.SecondThrottled:
 		return nil, ratelimit.FromContext(ctx).Delay(ctx, ratelimit.PolicyLoginAccount, res.Limit, res.Wait, res.Now)
-	case login.InvalidChallenge:
+	case login.SecondInvalidChallenge:
 		v := problem(http.StatusUnauthorized, i18n.T("errors.login_challenge_invalid", nil))
 		return &v, nil
-	case login.InvalidCode:
+	case login.SecondInvalidCode:
 		v := problem(http.StatusUnauthorized, i18n.T("errors.second_factor_code_invalid", nil))
 		return &v, nil
-	case login.Authenticated:
+	case login.SecondAuthenticated:
 		cookie, err := h.issueSession(ctx, res.Principal, res.Method, res.ProviderLoginAt)
 		if err != nil {
 			return nil, err
@@ -80,8 +80,6 @@ func (h *Handlers) SiteAuthSecondFactor(ctx context.Context, req *siteapi.SiteLo
 			SetCookie: siteapi.NewOptString(cookie.String()),
 			Response:  siteapi.SiteLoginResult{Outcome: siteapi.SiteLoginOutcomeSession},
 		}, nil
-	case login.InvalidCredentials, login.Gated, login.SecondFactor:
-		// Password-step outcomes: the second step never returns them.
 	}
 	return nil, fmt.Errorf("login: unhandled outcome %d", res.Outcome)
 }

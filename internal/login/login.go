@@ -49,12 +49,24 @@ const (
 	// Authenticated: the password is right and nothing else is needed. The counter is
 	// reset; the adapter issues the session.
 	Authenticated
-	// InvalidChallenge (second step): the challenge is forged, expired, spent, moved or
-	// its account is gone. It has no trusted address, so nothing is counted.
-	InvalidChallenge
-	// InvalidCode (second step): the code is wrong. The failure is counted against the
-	// same budget as a wrong password.
-	InvalidCode
+)
+
+// SecondOutcome is what the second step decided.
+type SecondOutcome int
+
+const (
+	// SecondThrottled: the address's delay is running. SecondResult.Wait, Limit and Now
+	// say how long.
+	SecondThrottled SecondOutcome = iota + 1
+	// SecondInvalidChallenge: the challenge is forged, expired, spent, moved or its
+	// account is gone. It has no trusted address, so nothing is counted.
+	SecondInvalidChallenge
+	// SecondInvalidCode: the code is wrong. The failure is counted against the same
+	// budget as a wrong password.
+	SecondInvalidCode
+	// SecondAuthenticated: the code is right. The counter is reset; the adapter issues
+	// the session.
+	SecondAuthenticated
 )
 
 var (
@@ -79,20 +91,32 @@ type Pending[P any] struct {
 	Binding string
 }
 
+// Delay is the throttle's refusal: how long the address must still wait, the failure
+// threshold and the throttle's clock. A throttled result of any step carries it.
+type Delay struct {
+	Wait  time.Duration
+	Limit int
+	Now   time.Time
+}
+
 // Result is the one answer of the password step. Principal is set for Gated,
 // SecondFactor and Authenticated.
 type Result[P any] struct {
 	Outcome   Outcome
 	Principal P
-	// Wait is how long the address must still wait, Limit the failure threshold and
-	// Now the throttle's clock, for a Throttled result.
-	Wait  time.Duration
-	Limit int
-	Now   time.Time
+	// Delay is set for a Throttled result.
+	Delay
 	// Challenge is the second step's token, for a SecondFactor result.
 	Challenge string
-	// Method and ProviderLoginAt come from the challenge, for the second step's
-	// Authenticated result.
+}
+
+// SecondResult is the one answer of the second step. Principal, Method and
+// ProviderLoginAt (the last two come from the challenge) are set for SecondAuthenticated.
+type SecondResult[P any] struct {
+	Outcome   SecondOutcome
+	Principal P
+	// Delay is set for a SecondThrottled result.
+	Delay
 	Method          string
 	ProviderLoginAt time.Time
 }
@@ -146,16 +170,26 @@ type Module[P any] struct{ cfg Config[P] }
 // New builds the module over a surface's adapter.
 func New[P any](cfg Config[P]) *Module[P] { return &Module[P]{cfg: cfg} }
 
+// throttle consults the throttle for a normalized address; wait is true, with the Delay
+// to report, while the address must wait whatever the password or code.
+func (m *Module[P]) throttle(ctx context.Context, address string) (delay Delay, wait bool, err error) {
+	d, err := m.cfg.Throttle.Delay(ctx, address)
+	if err != nil || d <= 0 {
+		return Delay{}, false, err
+	}
+	return Delay{Wait: d, Limit: m.cfg.Throttle.Limit(), Now: m.cfg.Throttle.Now()}, true, nil
+}
+
 // Password runs the first step for an address and a password as typed.
 func (m *Module[P]) Password(ctx context.Context, address, password string) (Result[P], error) {
 	address = accounts.NormalizeEmail(address)
 
-	wait, err := m.cfg.Throttle.Delay(ctx, address)
+	delay, wait, err := m.throttle(ctx, address)
 	if err != nil {
 		return Result[P]{}, err
 	}
-	if wait > 0 {
-		return Result[P]{Outcome: Throttled, Wait: wait, Limit: m.cfg.Throttle.Limit(), Now: m.cfg.Throttle.Now()}, nil
+	if wait {
+		return Result[P]{Outcome: Throttled, Delay: delay}, nil
 	}
 
 	acc, found, err := m.cfg.Store.Lookup(ctx, address)
@@ -192,41 +226,41 @@ func (m *Module[P]) Password(ctx context.Context, address, password string) (Res
 // a correct code is refused while the delay runs; a wrong code counts against the same
 // budget as a wrong password (a counting error refuses the attempt); a committed second
 // factor resets the counter, and a reset that fails is logged, not fatal.
-func (m *Module[P]) SecondFactor(ctx context.Context, challenge, code string) (Result[P], error) {
+func (m *Module[P]) SecondFactor(ctx context.Context, challenge, code string) (SecondResult[P], error) {
 	p, err := m.cfg.Parse(ctx, challenge)
 	if errors.Is(err, ErrChallengeInvalid) {
-		return Result[P]{Outcome: InvalidChallenge}, nil
+		return SecondResult[P]{Outcome: SecondInvalidChallenge}, nil
 	}
 	if err != nil {
-		return Result[P]{}, err
+		return SecondResult[P]{}, err
 	}
 	address := accounts.NormalizeEmail(p.Address)
 
-	wait, err := m.cfg.Throttle.Delay(ctx, address)
+	delay, wait, err := m.throttle(ctx, address)
 	if err != nil {
-		return Result[P]{}, err
+		return SecondResult[P]{}, err
 	}
-	if wait > 0 {
-		return Result[P]{Outcome: Throttled, Wait: wait, Limit: m.cfg.Throttle.Limit(), Now: m.cfg.Throttle.Now()}, nil
+	if wait {
+		return SecondResult[P]{Outcome: SecondThrottled, Delay: delay}, nil
 	}
 
 	switch err := m.cfg.Verify(ctx, p, code); {
 	case errors.Is(err, ErrInvalidCode):
 		if err := m.cfg.Throttle.RecordFailure(ctx, address); err != nil {
-			return Result[P]{}, err
+			return SecondResult[P]{}, err
 		}
-		return Result[P]{Outcome: InvalidCode}, nil
+		return SecondResult[P]{Outcome: SecondInvalidCode}, nil
 	case errors.Is(err, ErrChallengeInvalid):
-		return Result[P]{Outcome: InvalidChallenge}, nil
+		return SecondResult[P]{Outcome: SecondInvalidChallenge}, nil
 	case err != nil:
-		return Result[P]{}, err
+		return SecondResult[P]{}, err
 	}
 	if err := m.cfg.Throttle.RecordSuccess(ctx, address); err != nil {
 		// The second factor is committed (a code is spent); a counter that did not reset
 		// must not cost the sign-in.
 		slog.ErrorContext(ctx, "login: counter not reset", "error", err)
 	}
-	return Result[P]{Outcome: Authenticated, Principal: p.Principal, Method: p.Method, ProviderLoginAt: p.ProviderLoginAt}, nil
+	return SecondResult[P]{Outcome: SecondAuthenticated, Principal: p.Principal, Method: p.Method, ProviderLoginAt: p.ProviderLoginAt}, nil
 }
 
 // verify checks the password; an empty hash (no account, or no password) is checked

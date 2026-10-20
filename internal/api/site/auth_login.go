@@ -62,8 +62,6 @@ func (h *Handlers) SiteAuthLogin(ctx context.Context, req *siteapi.SiteLoginInpu
 			SetCookie: siteapi.NewOptString(cookie.String()),
 			Response:  siteapi.SiteLoginResult{Outcome: siteapi.SiteLoginOutcomeSession},
 		}, nil
-	case login.InvalidChallenge, login.InvalidCode:
-		// Second-step outcomes: the password step never returns them.
 	}
 	return nil, fmt.Errorf("login: unhandled outcome %d", res.Outcome)
 }

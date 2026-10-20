@@ -18,9 +18,6 @@ import (
 // so a User of the same address never shares a counter.
 const loginKind = accounts.KindStaffLogin
 
-// loginMethod is the method a Staff member's first step proves the person by.
-const loginMethod = "password"
-
 // staffStore is the Staff member's side of the login module's seam.
 type staffStore struct{ m *Module }
 
@@ -61,12 +58,12 @@ func (m *Module) CheckPassword(ctx context.Context, email, password string) (log
 // Complete is the second login step, run by the login module. On Authenticated the
 // principal is the Staff member as stored after the step (a confirming code bumps the
 // session epoch, which the session must carry).
-func (m *Module) Complete(ctx context.Context, challenge, code string) (login.Result[*ent.StaffMember], error) {
+func (m *Module) Complete(ctx context.Context, challenge, code string) (login.SecondResult[*ent.StaffMember], error) {
 	if err := m.licensed(); err != nil {
-		return login.Result[*ent.StaffMember]{}, err
+		return login.SecondResult[*ent.StaffMember]{}, err
 	}
 	res, err := m.login.SecondFactor(ctx, challenge, code)
-	if err != nil || res.Outcome != login.Authenticated {
+	if err != nil || res.Outcome != login.SecondAuthenticated {
 		return res, err
 	}
 	res.Principal, err = m.ent.StaffMember.Get(ctx, res.Principal.ID)
@@ -167,7 +164,7 @@ func (m *Module) parseChallenge(ctx context.Context, challenge string) (login.Pe
 	if err != nil {
 		return login.Pending[*ent.StaffMember]{}, login.ErrChallengeInvalid
 	}
-	return login.Pending[*ent.StaffMember]{Principal: op, Address: op.Email, Method: loginMethod, Binding: held}, nil
+	return login.Pending[*ent.StaffMember]{Principal: op, Address: op.Email, Method: accounts.LoginPassword, Binding: held}, nil
 }
 
 // verifyCode is the login module's Verify: the code check in a transaction with the

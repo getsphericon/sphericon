@@ -60,7 +60,7 @@ func (h *Handlers) StaffAuthLogin(ctx context.Context, req *staffapi.StaffLoginI
 	}
 	switch res.Outcome {
 	case login.Throttled:
-		return nil, throttled(ctx, res)
+		return nil, throttled(ctx, res.Delay)
 	case login.InvalidCredentials:
 		return unauthorized(i18n.T("errors.invalid_credentials", nil)), nil
 	case login.SecondFactor:
@@ -74,9 +74,8 @@ func (h *Handlers) StaffAuthLogin(ctx context.Context, req *staffapi.StaffLoginI
 			out.Enrolment = staffapi.NewOptStaffEnrolment(staffapi.StaffEnrolment{Secret: key.Secret, URI: key.URI, QrCode: key.QRCode})
 		}
 		return out, nil
-	case login.Gated, login.Authenticated, login.InvalidChallenge, login.InvalidCode:
-		// The Staff login has no gate, always has a second step and the password step
-		// never returns the second step's outcomes.
+	case login.Gated, login.Authenticated:
+		// The Staff login has no gate and always has a second step.
 	}
 	return nil, fmt.Errorf("staff: unhandled login outcome %d", res.Outcome)
 }
@@ -89,21 +88,19 @@ func (h *Handlers) StaffAuthSecondFactor(ctx context.Context, req *staffapi.Staf
 		return nil, err
 	}
 	switch res.Outcome {
-	case login.Throttled:
-		return nil, throttled(ctx, res)
-	case login.InvalidChallenge:
+	case login.SecondThrottled:
+		return nil, throttled(ctx, res.Delay)
+	case login.SecondInvalidChallenge:
 		return unauthorized(i18n.T("errors.login_challenge_invalid", nil)), nil
-	case login.InvalidCode:
+	case login.SecondInvalidCode:
 		return unauthorized(i18n.T("errors.second_factor_code_invalid", nil)), nil
-	case login.Authenticated:
+	case login.SecondAuthenticated:
 		// No audit entry: the Staff member belongs to no Workspace.
 		cookie, err := h.sessions.Issue(res.Principal)
 		if err != nil {
 			return nil, err
 		}
 		return &staffapi.StaffResourceHeaders{SetCookie: cookie.String(), Response: resource(res.Principal)}, nil
-	case login.InvalidCredentials, login.Gated, login.SecondFactor:
-		// Password-step outcomes: the second step never returns them.
 	}
 	return nil, fmt.Errorf("staff: unhandled login outcome %d", res.Outcome)
 }
@@ -126,7 +123,7 @@ func (h *Handlers) StaffMeGet(ctx context.Context) (staffapi.StaffMeGetRes, erro
 // throttled is the login throttle's refusal as the standard 429 (ADR 0025): the
 // Retry-After and X-RateLimit headers are set on the response and the error handler
 // renders the problem.
-func throttled(ctx context.Context, res login.Result[*ent.StaffMember]) error {
+func throttled(ctx context.Context, res login.Delay) error {
 	return ratelimit.FromContext(ctx).Delay(ctx, ratelimit.PolicyLoginAccount, res.Limit, res.Wait, res.Now)
 }
 
