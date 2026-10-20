@@ -5008,6 +5008,76 @@
         }
       }
     },
+    "/export/erasures": {
+      "get": {
+        "operationId": "Export_erasures",
+        "description": "Read the Workspace's Erasures, oldest first (Enterprise; needs the `export:read` scope).\nEach line of the body is an `ExportErasureRow`; every key is always present. Rows live for\nthe instance's Event retention window and are kept for good when retention is off: a\nconsumer absent for longer re-seeds from an empty cursor.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ExportPageQuery.cursor"
+          },
+          {
+            "$ref": "#/components/parameters/ExportPageQuery.limit"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One page of an Export stream (Enterprise, ADR 0045): newline-delimited JSON, one row\nper line with no envelope, so the body loads as ClickHouse `JSONEachRow`. The row\nschema is named by each operation. The next cursor is the `X-Next-Cursor` header;\npass it as `cursor` for the next page. The cursor is the position after the last row of\nthe page and the next page includes everything at or after it, so rows that share an\n`updated_at` across a page edge are not lost. A page with no rows returns the cursor it\nwas given. A row that changes is delivered again with a newer `updated_at`: keep the\nnewest version per `id`.",
+            "headers": {
+              "X-Next-Cursor": {
+                "required": true,
+                "description": "Opaque cursor for the next page",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/x-ndjson": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Export"],
+        "x-mcp": {
+          "hidden": true
+        }
+      }
+    },
     "/export/events": {
       "get": {
         "operationId": "Export_events",
@@ -11454,6 +11524,86 @@
           }
         },
         "description": "One row of the Contacts stream. A row is delivered again whenever it changes: a column or Custom field edit, a Tag attached or detached, an Erasure's anonymization"
+      },
+      "ExportErasureRow": {
+        "type": "object",
+        "required": [
+          "id",
+          "contact_id",
+          "subject_id",
+          "visitor_ids",
+          "email_sha256",
+          "phone_sha256",
+          "erased_at",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Unique identifier"
+          },
+          "contact_id": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "nullable": true,
+            "description": "The erased Contact; absent when the Erasure named an address or an anonymous Visitor with no Contact"
+          },
+          "subject_id": {
+            "type": "string",
+            "description": "The customer's own id for the person (the Contact's `subject_id`, or its Sphericon id when it had none); empty when there was none"
+          },
+          "visitor_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The anonymous devices erased with the Contact"
+          },
+          "email_sha256": {
+            "type": "string",
+            "nullable": true,
+            "description": "SHA-256, as lowercase hex, of the lowercased email address; absent when there was none"
+          },
+          "phone_sha256": {
+            "type": "string",
+            "nullable": true,
+            "description": "SHA-256, as lowercase hex, of the phone number; absent when there was none"
+          },
+          "erased_at": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the Erasure happened"
+          },
+          "created_at": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "Creation timestamp"
+          },
+          "updated_at": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "Last change timestamp: the cursor column and the version of the row"
+          }
+        },
+        "description": "One row of the Erasures stream: the keys one Erasure matched on, so a consumer deletes the\nsame rows from its copy. Match on any of them: `contact_id` on Events and Contacts,\n`subject_id` on Events, `visitor_ids` on Events, `email_sha256` and `phone_sha256` against\nthe SHA-256 (hex) of the lowercased address or of the phone number as stored. The address\nand the phone themselves are never part of the stream. A row is never changed once written."
       },
       "ExportEventRow": {
         "type": "object",

@@ -25,6 +25,7 @@ namespace Sphericon;
 @@extension(Export.contacts, "x-mcp", #{ hidden: true });
 @@extension(Export.messages, "x-mcp", #{ hidden: true });
 @@extension(Export.audit, "x-mcp", #{ hidden: true });
+@@extension(Export.erasures, "x-mcp", #{ hidden: true });
 
 // Names in sphericon vocabulary where the default would read poorly.
 @@extension(Auth.meGet, "x-mcp", #{ name: "whoami" });

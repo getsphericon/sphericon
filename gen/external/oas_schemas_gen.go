@@ -5604,6 +5604,60 @@ type ExportContactsUnauthorized ProblemDetails
 
 func (*ExportContactsUnauthorized) exportContactsRes() {}
 
+type ExportErasuresBadRequest ProblemDetails
+
+func (*ExportErasuresBadRequest) exportErasuresRes() {}
+
+type ExportErasuresNotFound ProblemDetails
+
+func (*ExportErasuresNotFound) exportErasuresRes() {}
+
+type ExportErasuresOK struct {
+	Data io.Reader
+}
+
+// Read reads data from the Data reader.
+//
+// Kept to satisfy the io.Reader interface.
+func (s ExportErasuresOK) Read(p []byte) (n int, err error) {
+	if s.Data == nil {
+		return 0, io.EOF
+	}
+	return s.Data.Read(p)
+}
+
+// ExportErasuresOKHeaders wraps ExportErasuresOK with response headers.
+type ExportErasuresOKHeaders struct {
+	XNextCursor string
+	Response    ExportErasuresOK
+}
+
+// GetXNextCursor returns the value of XNextCursor.
+func (s *ExportErasuresOKHeaders) GetXNextCursor() string {
+	return s.XNextCursor
+}
+
+// GetResponse returns the value of Response.
+func (s *ExportErasuresOKHeaders) GetResponse() ExportErasuresOK {
+	return s.Response
+}
+
+// SetXNextCursor sets the value of XNextCursor.
+func (s *ExportErasuresOKHeaders) SetXNextCursor(val string) {
+	s.XNextCursor = val
+}
+
+// SetResponse sets the value of Response.
+func (s *ExportErasuresOKHeaders) SetResponse(val ExportErasuresOK) {
+	s.Response = val
+}
+
+func (*ExportErasuresOKHeaders) exportErasuresRes() {}
+
+type ExportErasuresUnauthorized ProblemDetails
+
+func (*ExportErasuresUnauthorized) exportErasuresRes() {}
+
 type ExportEventsBadRequest ProblemDetails
 
 func (*ExportEventsBadRequest) exportEventsRes() {}

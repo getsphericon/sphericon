@@ -425,6 +425,18 @@ func (UnimplementedHandler) ExportContacts(ctx context.Context, params ExportCon
 	return r, ht.ErrNotImplemented
 }
 
+// ExportErasures implements Export_erasures operation.
+//
+// Read the Workspace's Erasures, oldest first (Enterprise; needs the `export:read` scope). Each line
+// of the body is an `ExportErasureRow`; every key is always present. Rows live for the instance's
+// Event retention window and are kept for good when retention is off: a consumer absent for longer
+// re-seeds from an empty cursor.
+//
+// GET /export/erasures
+func (UnimplementedHandler) ExportErasures(ctx context.Context, params ExportErasuresParams) (r ExportErasuresRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // ExportEvents implements Export_events operation.
 //
 // Read the Workspace's Events, oldest change first (Enterprise; needs the `export:read` scope). Each

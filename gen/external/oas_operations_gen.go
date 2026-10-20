@@ -50,6 +50,7 @@ const (
 	EventsCreateOperation              OperationName = "EventsCreate"
 	ExportAuditOperation               OperationName = "ExportAudit"
 	ExportContactsOperation            OperationName = "ExportContacts"
+	ExportErasuresOperation            OperationName = "ExportErasures"
 	ExportEventsOperation              OperationName = "ExportEvents"
 	ExportMessagesOperation            OperationName = "ExportMessages"
 	IntegrationsCreateOperation        OperationName = "IntegrationsCreate"

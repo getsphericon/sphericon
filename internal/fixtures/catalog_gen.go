@@ -17,8 +17,12 @@ const (
 	AcmeMemberMembershipID = 3
 	// AcmeName is from fixtures/workspaces.
 	AcmeName = "Acme"
+	// AcmeOldErasureID is from fixtures/erasures.
+	AcmeOldErasureID = 1
 	// AcmeOwnerMembershipID is from fixtures/memberships.
 	AcmeOwnerMembershipID = 1
+	// AcmeRecentErasureID is from fixtures/erasures.
+	AcmeRecentErasureID = 2
 	// AcmeSlug is from fixtures/workspaces.
 	AcmeSlug = "acme"
 	// AcmeUsageSnapshotID is from fixtures/usages.
@@ -385,6 +389,8 @@ const (
 	GlobexAuditWebhookCreateID = 4
 	// GlobexCollectKey is from fixtures/workspaces.
 	GlobexCollectKey = "omck_test_globex_collect_key"
+	// GlobexErasureID is from fixtures/erasures.
+	GlobexErasureID = 900
 	// GlobexID is from fixtures/workspaces.
 	GlobexID = 2
 	// GlobexMaryMembershipID is from fixtures/memberships.

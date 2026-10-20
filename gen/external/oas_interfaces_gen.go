@@ -177,6 +177,10 @@ type ExportContactsRes interface {
 	exportContactsRes()
 }
 
+type ExportErasuresRes interface {
+	exportErasuresRes()
+}
+
 type ExportEventsRes interface {
 	exportEventsRes()
 }

@@ -130,8 +130,15 @@ select `contact.erased`). The delivery body is the standard webhook payload; its
 ```
 
 `data.subjectId` is the contact's own `subject_id` (your user id for the person) or, when the
-contact had none, its Sphericon contact id. It exists only in the delivered payload and is never stored
-on the event. Deliveries are retried, so a receiver may see duplicates; dedupe on the delivery id
+contact had none, its Sphericon contact id; an Erasure by an address that matched no contact has
+none. It exists only in the delivered payload and is never stored on the event. The payload also
+carries the keys the Erasure matched on, when there were any: `contactId`, `visitorIds`, and
+`emailHash` and `phoneHash` (lowercase hex SHA-256 of the lowercased address and of the phone
+number). The address and the phone themselves are never in the message.
+
+A Workspace that keeps a warehouse copy reads the same keys, one row per Erasure, from the
+Enterprise `GET /export/erasures` [Export stream](/guide/api): delete the rows that match any of
+them. Rows are kept for the instance's Event retention window, or for good when retention is off. Deliveries are retried, so a receiver may see duplicates; dedupe on the delivery id
 (the `webhook-id` header).
 
 ## Backups
