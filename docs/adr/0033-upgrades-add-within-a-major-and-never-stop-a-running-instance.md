@@ -19,9 +19,16 @@ research behind them is `docs/research/self-hoster-upgrade-prior-art.md`.
   crosses. Until 1.0 each `0.MINOR` is a Major.
 - **A destructive migration comes with a breaking commit** (`!` or `BREAKING CHANGE:`), so release-please
   cuts the Major itself, and CI runs Squawk over the new migrations and fails a
-  destructive finding (the `DestructiveRules` table in `cmd/upgradecheck`: a dropped or renamed
+  destructive finding (the `destructiveRules` table in `cmd/upgradecheck`: a dropped or renamed
   column or table, a changed column type, a NOT NULL column without a default) whose commit is not
-  breaking; Squawk's other rules are advice and never fail. The migration starts with a check that the data it
+  breaking. It also fails a **blocking** finding under any title (the `blockingRules` table: an index
+  built or dropped without `CONCURRENTLY`, a UNIQUE, FOREIGN KEY or CHECK constraint added without
+  `NOT VALID`, `SET NOT NULL`, a volatile default), because a lock on a live table stops writes
+  whether or not the Major changes. A statement the author has checked, such as a constraint on an
+  empty table, carries `-- squawk-ignore <rule>` on the line before it. A migration is linted as
+  goose runs it, in a transaction unless it says `-- +goose NO TRANSACTION`, so an index or a
+  constraint on a table the same migration creates passes. Squawk's other rules are advice and never
+  fail. The migration starts with a check that the data it
   strands is already moved (a `DO` block that raises), so an Upgrade that skipped a release fails
   instead of losing data. Job and event payloads follow the same rule as columns.
 - **Heavy data work is a river job after the Upgrade, never a migration.** A migration is fast

@@ -65,13 +65,76 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS t_a ON t (a);`})
 }
 
 func TestAdviceOnlyFindingsNeverFail(t *testing.T) {
-	// squawk warns about the 32-bit integer, the missing lock_timeout and the blocking index.
+	// squawk warns about the 32-bit integer and the missing lock_timeout.
 	findings := lint(t, map[string]string{"20260105000000_advice.sql": `
-ALTER TABLE t ADD COLUMN IF NOT EXISTS a int NULL;
-CREATE INDEX IF NOT EXISTS t_a ON t (a);`})
+ALTER TABLE t ADD COLUMN IF NOT EXISTS a int NULL;`})
 
 	assert.Empty(t, findings)
 	require.NoError(t, CheckMigrations("feat: a", findings))
+}
+
+func TestEveryBlockingRuleFailsTheCheckUnderAnyTitle(t *testing.T) {
+	for _, tc := range []struct{ rule, sql string }{
+		{"require-concurrent-index-creation", "CREATE INDEX IF NOT EXISTS t_a ON t (a);"},
+		{"require-concurrent-index-deletion", "DROP INDEX IF EXISTS t_a;"},
+		{"require-concurrent-reindex", "REINDEX TABLE t;"},
+		{"disallowed-unique-constraint", "ALTER TABLE t ADD CONSTRAINT t_u UNIQUE (a);"},
+		{"adding-foreign-key-constraint", "ALTER TABLE t ADD CONSTRAINT t_f FOREIGN KEY (a) REFERENCES o (id);"},
+		{"constraint-missing-not-valid", "ALTER TABLE t ADD CONSTRAINT t_c CHECK (a > 0);"},
+		{"adding-not-nullable-field", "ALTER TABLE t ALTER COLUMN a SET NOT NULL;"},
+		{"adding-field-with-default", "ALTER TABLE t ADD COLUMN IF NOT EXISTS c double precision NOT NULL DEFAULT random();"},
+		{"adding-serial-primary-key-field", "ALTER TABLE t ADD PRIMARY KEY (id);"},
+	} {
+		t.Run(tc.rule, func(t *testing.T) {
+			findings := lint(t, map[string]string{"20260109000000_lock.sql": tc.sql})
+
+			codes := make([]string, 0, len(findings))
+			for _, f := range findings {
+				codes = append(codes, f.Code)
+			}
+			assert.Contains(t, codes, tc.rule)
+			require.ErrorContains(t, CheckMigrations("feat: a", findings), "20260109000000_lock.sql")
+			require.ErrorContains(t, CheckMigrations("feat!: a", findings), "20260109000000_lock.sql")
+		})
+	}
+}
+
+func TestIndexBuiltConcurrentlyWithoutATransactionPasses(t *testing.T) {
+	findings := lint(t, map[string]string{"20260110000000_concurrently.sql": `-- +goose NO TRANSACTION
+CREATE INDEX CONCURRENTLY IF NOT EXISTS t_a ON t (a);`})
+
+	assert.Empty(t, findings)
+}
+
+func TestIndexAndConstraintsOnATableTheMigrationCreatesPass(t *testing.T) {
+	findings := lint(t, map[string]string{"20260111000000_new_table.sql": `
+CREATE TABLE IF NOT EXISTS w (id bigint NOT NULL, a bigint NULL);
+CREATE INDEX IF NOT EXISTS w_a ON w (a);
+ALTER TABLE w ADD CONSTRAINT w_f FOREIGN KEY (a) REFERENCES o (id);
+ALTER TABLE w ADD CONSTRAINT w_u UNIQUE (a);`})
+
+	assert.Empty(t, findings)
+}
+
+func TestSquawkIgnoreAllowsOneCheckedStatement(t *testing.T) {
+	findings := lint(t, map[string]string{"20260112000000_ignore.sql": `
+-- squawk-ignore require-concurrent-index-creation
+CREATE INDEX IF NOT EXISTS t_a ON t (a);
+CREATE INDEX IF NOT EXISTS t_b ON t (b);`})
+
+	require.Len(t, findings, 1)
+	assert.Equal(t, Blocking, findings[0].Class)
+}
+
+func TestABreakingTitleClearsTheDestructiveFindingButNotTheBlockingOne(t *testing.T) {
+	findings := lint(t, map[string]string{"20260113000000_both.sql": `
+CREATE INDEX IF NOT EXISTS t_a ON t (a);
+ALTER TABLE t DROP COLUMN IF EXISTS b;`})
+
+	err := CheckMigrations("feat!: a", findings)
+
+	require.ErrorContains(t, err, "require-concurrent-index-creation")
+	assert.NotContains(t, err.Error(), "ban-drop-column")
 }
 
 func TestGeneratedRiverMigrationsAreSkipped(t *testing.T) {
@@ -80,8 +143,8 @@ func TestGeneratedRiverMigrationsAreSkipped(t *testing.T) {
 	assert.Empty(t, findings)
 }
 
-func TestDestructiveRejectsGarbage(t *testing.T) {
-	_, err := Destructive([]byte("not json"))
+func TestFindingsRejectsGarbage(t *testing.T) {
+	_, err := Findings([]byte("not json"))
 
 	require.Error(t, err)
 }

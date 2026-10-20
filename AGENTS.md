@@ -202,7 +202,9 @@ Rules for writing tests (what to assert, no direct SQL, no manual cleanup) are i
   migration starts with a check that the data it strands has moved (a `DO` block that raises), so
   an Upgrade that skipped a release fails instead of losing data. CI (`mise run check:upgrade`,
   `cmd/upgradecheck`) lints the migrations a PR adds, skipping the generated river ones, and fails
-  a destructive finding unless the PR title is breaking (`!`); a breaking PR title or commit needs
+  a destructive finding unless the PR title is breaking (`!`), and a blocking one (an index without
+  `CONCURRENTLY`, a constraint without `NOT VALID`, `SET NOT NULL`) under any title unless the
+  statement has `-- squawk-ignore <rule>` on the line before it; a breaking PR title or commit needs
   an `Upgrade:` line inside its `BREAKING CHANGE:` footer, in a commit message or the PR body,
   saying what a Self-hoster does (`BREAKING CHANGE: <what broke>` then a line `Upgrade: <what to do>`;
   release-please renders only the text of that footer into CHANGELOG.md, never a footer of its own,

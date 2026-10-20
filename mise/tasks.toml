@@ -403,7 +403,7 @@ fi
 '''
 
 ["check:upgrade"]
-description = "ADR 0033 in CI: a destructive migration needs a breaking PR title, a breaking change needs an `Upgrade:` line in its `BREAKING CHANGE:` footer (cmd/upgradecheck runs Squawk over the added migrations; PR_TITLE, PR_BODY_FILE and BASE come from the pull request, default to the last commit against origin/main)"
+description = "ADR 0033 in CI: a destructive migration needs a breaking PR title, a migration that locks a live table fails under any title, a breaking change needs an `Upgrade:` line in its `BREAKING CHANGE:` footer (cmd/upgradecheck runs Squawk over the added migrations; PR_TITLE, PR_BODY_FILE and BASE come from the pull request, default to the last commit against origin/main)"
 run = '''
 #!/usr/bin/env bash
 set -euo pipefail
