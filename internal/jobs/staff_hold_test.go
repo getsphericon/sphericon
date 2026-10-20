@@ -57,7 +57,7 @@ func TestAnStaffHoldMidBroadcastPausesRecipientsAndResumesOnItsOwn(t *testing.T)
 	err = deliverRecipient(ctx, env.DB, mod, ids[1])
 	var held *broadcasts.HeldError
 	require.ErrorAs(t, err, &held)
-	assert.Equal(t, outbound.HoldStaff, held.Reason)
+	assert.Equal(t, holds.ReasonStaff, held.Reason)
 	assert.Equal(t, broadcastrecipient.StatusPending, env.DB.BroadcastRecipient.GetX(ctx, ids[1]).Status, "the recipient is neither failed nor consumed")
 	assert.Len(t, fs.sent, 1)
 

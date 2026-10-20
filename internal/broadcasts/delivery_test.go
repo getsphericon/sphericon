@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/outbound"
@@ -92,7 +93,7 @@ func (d *delivery) broadcastRow() *ent.Broadcast {
 func TestSentRecipientIsRecordedAndSettlesTheBroadcast(t *testing.T) {
 	d := newDelivery(t)
 	id := d.recipient(fixtures.ContactAliceID)
-	d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastSendingID).SetHoldReason(outbound.HoldSuspended).ExecX(d.ctx)
+	d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastSendingID).SetHoldReason(holds.ReasonSuspended).ExecX(d.ctx)
 
 	require.NoError(t, d.del.SendRecipient(d.ctx, d.s, id))
 
@@ -170,12 +171,12 @@ func TestHeldRecipientStaysPendingAndRecordsTheHold(t *testing.T) {
 
 	var held *broadcasts.HeldError
 	require.ErrorAs(t, err, &held)
-	assert.Equal(t, outbound.HoldSuspended, held.Reason)
+	assert.Equal(t, holds.ReasonSuspended, held.Reason)
 	assert.True(t, broadcasts.IsRetryLater(err))
 	assert.Equal(t, broadcastrecipient.StatusPending, d.recipientRow(id).Status)
 	b := d.broadcastRow()
 	require.NotNil(t, b.HoldReason)
-	assert.Equal(t, outbound.HoldSuspended, *b.HoldReason)
+	assert.Equal(t, holds.ReasonSuspended, *b.HoldReason)
 	assert.Equal(t, broadcast.StatusSending, b.Status, "a hold keeps the status")
 }
 

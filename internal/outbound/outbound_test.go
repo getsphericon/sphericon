@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -211,7 +212,7 @@ func TestSuspendedWorkspaceIsHeldNotConsumed(t *testing.T) {
 	res, err := m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), marketing(t, env, "bc:held", fixtures.ContactAliceID))
 	require.NoError(t, err)
 	assert.Equal(t, outbound.Held, res.Outcome)
-	assert.Equal(t, outbound.HoldSuspended, res.Reason)
+	assert.Equal(t, holds.ReasonSuspended, res.Reason)
 	assert.Zero(t, res.MessageID, "nothing is recorded for a hold")
 	assert.Empty(t, env.CustomerMail.Messages())
 
@@ -233,9 +234,15 @@ func TestPendingDeletionWorkspaceIsHeldNotConsumed(t *testing.T) {
 	res, err := m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), marketing(t, env, "bc:deleted", fixtures.ContactAliceID))
 	require.NoError(t, err)
 	assert.Equal(t, outbound.Held, res.Outcome)
-	assert.Equal(t, outbound.HoldPendingDeletion, res.Reason)
+	assert.Equal(t, holds.ReasonPendingDeletion, res.Reason)
 	assert.Zero(t, res.MessageID)
 	assert.Empty(t, env.CustomerMail.Messages())
+
+	// The owner's Hold is the same rule: the send gate's reason and wording.
+	owner := holds.PendingDeletion(env.DB.Workspace.GetX(ctx, fixtures.AcmeID))
+	require.Len(t, owner, 1)
+	assert.Equal(t, res.Reason, owner[0].ReasonCode)
+	assert.Equal(t, outbound.Detail(res.Reason), owner[0].Message)
 
 	tx, err := m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:deleted", "a@example.com"))
 	require.NoError(t, err)
@@ -390,7 +397,7 @@ func TestSendTestSkipsEligibilityAndRecordsNothingButHonorsTheFreeze(t *testing.
 	res, err = m.SendTest(ctx, env.DB.Scoped(fixtures.AcmeID), outbound.TestRequest{To: "a@example.com", Subject: "s", Body: htmlBody})
 	require.NoError(t, err)
 	assert.Equal(t, outbound.Held, res.Outcome)
-	assert.Equal(t, outbound.HoldSuspended, res.Reason)
+	assert.Equal(t, holds.ReasonSuspended, res.Reason)
 	assert.Len(t, env.CustomerMail.Messages(), 1)
 }
 

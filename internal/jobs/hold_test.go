@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/internal/broadcasts"
+	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/outbound"
 )
 
@@ -25,7 +26,7 @@ func snoozeOf(t *testing.T, err error) *rivertype.JobSnoozeError {
 // long hold must not exhaust a recipient's retry budget, and an attempt that merely
 // raced another must not be marked failed.
 func TestDeferrableErrorsBecomeSnoozes(t *testing.T) {
-	held := snoozeIfDeferrable(&broadcasts.HeldError{Reason: outbound.HoldSuspended})
+	held := snoozeIfDeferrable(&broadcasts.HeldError{Reason: holds.ReasonSuspended})
 	raced := snoozeIfDeferrable(fmt.Errorf("wrapped: %w", outbound.ErrInProgress))
 	heldSnooze := snoozeOf(t, held)
 	racedSnooze := snoozeOf(t, raced)

@@ -71,7 +71,7 @@ func (h *harness) requireHeld(t *testing.T, to string) {
 	t.Helper()
 	held, ok := h.sendOnAPI(t, to).(*externalapi.EmailsSendUnprocessableEntity)
 	require.True(t, ok, "a send is refused with a 4xx")
-	assert.Equal(t, outbound.Detail(outbound.HoldStaff), held.Detail.Value)
+	assert.Equal(t, outbound.Detail(holds.ReasonStaff), held.Detail.Value)
 }
 
 func TestAHoldFreezesSendingAndClearingItResumes(t *testing.T) {
@@ -175,7 +175,7 @@ func TestAHoldListReportsThePendingDeletionOfADeletedWorkspace(t *testing.T) {
 	items := h.listHolds(t)
 	require.Len(t, items, 2)
 	assert.Equal(t, holds.KeyPendingDeletion, items[0].Key)
-	assert.Equal(t, outbound.HoldPendingDeletion, items[0].ReasonCode)
+	assert.Equal(t, holds.ReasonPendingDeletion, items[0].ReasonCode)
 	assert.Equal(t, "k1", items[1].Key)
 
 	h.env.DB.Workspace.UpdateOneID(fixtures.AcmeID).ClearDeletedAt().ExecX(t.Context())

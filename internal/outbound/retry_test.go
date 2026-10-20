@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/outbound"
 )
 
@@ -24,7 +25,7 @@ func TestOnlyAHoldOrADeferralWantsARetry(t *testing.T) {
 // A Hold retries after a fixed backoff whatever the source, so a Broadcast recipient and an
 // Automation run held by the same freeze come back on the same schedule.
 func TestAHoldRetriesAfterTheHoldBackoffForEverySource(t *testing.T) {
-	for _, reason := range []string{outbound.HoldSuspended, outbound.HoldStaff, outbound.HoldNoIntegration} {
+	for _, reason := range []string{holds.ReasonSuspended, holds.ReasonStaff, outbound.HoldNoIntegration} {
 		retry := outbound.Result{Outcome: outbound.Held, Reason: reason}.Retry(0)
 		assert.Equal(t, 15*time.Minute, retry.After, reason)
 	}

@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/suspension"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -158,5 +159,5 @@ func TestAWorkspaceFrozenByTheDetectorRefusesSendsOnTheAPI(t *testing.T) {
 
 	held, ok := h.sendOnAPI(t, "held@example.com").(*externalapi.EmailsSendUnprocessableEntity)
 	require.True(t, ok, "a send is refused with a 4xx")
-	assert.Equal(t, outbound.Detail(outbound.HoldSuspended), held.Detail.Value)
+	assert.Equal(t, outbound.Detail(holds.ReasonSuspended), held.Detail.Value)
 }

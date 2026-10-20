@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/messaging"
@@ -145,7 +146,7 @@ func TestSuspensionMidBroadcastPausesRecipientsAndResumes(t *testing.T) {
 	err = deliverRecipient(ctx, env.DB, mod, ids[1])
 	var held *broadcasts.HeldError
 	require.ErrorAs(t, err, &held)
-	assert.Equal(t, outbound.HoldSuspended, held.Reason)
+	assert.Equal(t, holds.ReasonSuspended, held.Reason)
 	assert.Equal(t, broadcastrecipient.StatusPending, env.DB.BroadcastRecipient.GetX(ctx, ids[1]).Status)
 	require.NotNil(t, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID).HoldReason)
 	assert.Len(t, fs.sent, 1)

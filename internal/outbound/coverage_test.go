@@ -72,7 +72,7 @@ func (s cancelingSenders) EmailSender(context.Context, *ent.Scoped) (messaging.E
 }
 
 func TestDetailWordsEveryHold(t *testing.T) {
-	assert.Equal(t, "sending is suspended for this workspace", outbound.Detail(outbound.HoldSuspended))
+	assert.Equal(t, "sending is suspended for this workspace", outbound.Detail(holds.ReasonSuspended))
 	assert.Equal(t, "no default email provider configured", outbound.Detail(outbound.HoldNoIntegration))
 	assert.Equal(t, "sender domain is not a verified sending domain", outbound.Detail(outbound.HoldUnverifiedDomain))
 	assert.Equal(t, "sending is currently on hold for this workspace: custom_reason", outbound.Detail("custom_reason"))
@@ -198,7 +198,7 @@ func TestSendAndPreflightAgreeOnAStaffHold(t *testing.T) {
 	// The fixture Workspace already carries a lapsed hold.
 	agree("tx:lapsed", "")
 	create("active", time.Now().Add(time.Hour))
-	agree("tx:active", outbound.HoldStaff)
+	agree("tx:active", holds.ReasonStaff)
 	honoured = false
 	agree("tx:unlicensed", "")
 }
@@ -211,7 +211,7 @@ func TestSuspensionIsCheckedBeforeFreezers(t *testing.T) {
 
 	res, err := newModule(env, outbound.WithFreezers(f)).Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:susp", "a@example.com"))
 	require.NoError(t, err)
-	assert.Equal(t, outbound.HoldSuspended, res.Reason)
+	assert.Equal(t, holds.ReasonSuspended, res.Reason)
 	assert.Zero(t, f.calls)
 }
 
@@ -682,7 +682,7 @@ func TestSendBroadcastTestWordsEveryOutcome(t *testing.T) {
 		env := testhelper.Setup(t)
 		env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSuspendedAt(time.Now()).ExecX(ctx)
 		got := newModule(env).SendBroadcastTest(ctx, env.DB.Scoped(fixtures.AcmeID), broadcast("s", htmlBody), "me@example.com", nil).Detail
-		assert.Equal(t, outbound.Detail(outbound.HoldSuspended), got)
+		assert.Equal(t, outbound.Detail(holds.ReasonSuspended), got)
 	})
 
 	t.Run("send error", func(t *testing.T) {

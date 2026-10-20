@@ -12,6 +12,7 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/outbound"
 )
 
@@ -39,7 +40,7 @@ func TestLiftingAHoldLeavesTheSuspensionInForce(t *testing.T) {
 
 	held, ok := h.sendOnAPI(t, "still-held@example.com").(*externalapi.EmailsSendUnprocessableEntity)
 	require.True(t, ok, "the suspension still refuses sends")
-	assert.Equal(t, outbound.Detail(outbound.HoldSuspended), held.Detail.Value)
+	assert.Equal(t, outbound.Detail(holds.ReasonSuspended), held.Detail.Value)
 	assert.NotNil(t, h.env.DB.Workspace.GetX(t.Context(), fixtures.AcmeID).SuspendedAt)
 }
 

@@ -17,8 +17,32 @@ import (
 	enthold "github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/accounts"
-	"github.com/getsphericon/sphericon/internal/outbound"
 )
+
+// The Workspace-level reasons a send is Held. They describe the Workspace, not one send, so
+// they live with the holds (ADR 0009) and Outbound send reports them. Suspension (ADR 0007)
+// is neither a Hold row nor the pending-deletion Hold: it keeps its own state and fields,
+// and only its reason code is declared here.
+const (
+	ReasonSuspended       = "workspace_suspended"
+	ReasonPendingDeletion = "workspace_pending_deletion"
+	ReasonStaff           = "staff_hold"
+)
+
+// Message words a Workspace-level reason for a human, "" for any other reason. Outbound
+// send's Detail reads it, so every surface that reports a Held outcome agrees.
+func Message(reason string) string {
+	switch reason {
+	case ReasonSuspended:
+		return "sending is suspended for this workspace"
+	case ReasonPendingDeletion:
+		return "this workspace is deleted and pending erasure"
+	case ReasonStaff:
+		return "sending is on hold for this workspace"
+	default:
+		return ""
+	}
+}
 
 // ActiveAt is the one rule for an active hold: its expiry is after now. Every read
 // goes through it, in SQL here and in Go in Live.
@@ -30,14 +54,16 @@ const KeyPendingDeletion = "pending_deletion"
 // PendingDeletion is the pending-deletion Hold of a deleted Workspace, none for a live one.
 // It is not a row: Workspace deletion is its own Hold source beside the Staff holds, and
 // lifts when the Workspace is restored. It lasts to the erase date, the end of the window.
+// It is the one statement of "a deleted Workspace is held": the send gate and the owner's
+// list both read it.
 func PendingDeletion(ws *ent.Workspace) []*ent.Hold {
 	if ws.DeletedAt == nil {
 		return nil
 	}
 	return []*ent.Hold{{
 		Key:        KeyPendingDeletion,
-		ReasonCode: outbound.HoldPendingDeletion,
-		Message:    outbound.Detail(outbound.HoldPendingDeletion),
+		ReasonCode: ReasonPendingDeletion,
+		Message:    Message(ReasonPendingDeletion),
 		SetBy:      "system",
 		CreatedAt:  *ws.DeletedAt,
 		ExpiresAt:  accounts.EraseDate(*ws.DeletedAt),
@@ -70,8 +96,8 @@ func Live(rows []*ent.Hold, now time.Time) []*ent.Hold {
 }
 
 // Freezer answers the send path's "may this Workspace send now" from the active holds
-// (outbound.Freezer): any one active hold freezes sending, and a second keeps it frozen
-// after the first is cleared.
+// (it satisfies outbound.Freezer, which the edition's wiring returns it as): any one active
+// hold freezes sending, and a second keeps it frozen after the first is cleared.
 type Freezer struct {
 	// Now is the clock; nil is time.Now.
 	Now func() time.Time
@@ -79,8 +105,6 @@ type Freezer struct {
 	// is always.
 	Enabled func() bool
 }
-
-var _ outbound.Freezer = Freezer{}
 
 // Frozen implements outbound.Freezer.
 func (f Freezer) Frozen(ctx context.Context, s *ent.Scoped, _ *ent.Workspace) (string, error) {
@@ -95,5 +119,5 @@ func (f Freezer) Frozen(ctx context.Context, s *ent.Scoped, _ *ent.Workspace) (s
 	if err != nil || !held {
 		return "", err
 	}
-	return outbound.HoldStaff, nil
+	return ReasonStaff, nil
 }

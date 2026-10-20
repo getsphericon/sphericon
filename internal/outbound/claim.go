@@ -105,7 +105,7 @@ func (m *Module) takeOver(ctx context.Context, s *ent.Scoped, existing *ent.Outb
 		return nil, ErrInProgress
 	}
 	n, err := s.OutboundMessage().Update().
-		Where(holds(existing)...).
+		Where(ownsClaim(existing)...).
 		SetClaimedAt(claimTime()).
 		Save(ctx)
 	if err != nil {
@@ -121,11 +121,11 @@ func (m *Module) takeOver(ctx context.Context, s *ent.Scoped, existing *ent.Outb
 // token read back from the row compares equal to the one we wrote.
 func claimTime() time.Time { return time.Now().Truncate(time.Microsecond) }
 
-// holds is the fence for every write an attempt makes to its own claim: the row must
+// ownsClaim is the fence for every write an attempt makes to its own claim: the row must
 // still be pending AND still carry the exact claimed_at token the attempt holds. An
 // attempt that outlived its lease and was taken over matches nothing, so it can never
 // record a result, release a claim or delete a row that now belongs to someone else.
-func holds(msg *ent.OutboundMessage) []predicate.OutboundMessage {
+func ownsClaim(msg *ent.OutboundMessage) []predicate.OutboundMessage {
 	return append([]predicate.OutboundMessage{
 		outboundmessage.ID(msg.ID),
 		outboundmessage.StatusEQ(outboundmessage.StatusPending),
@@ -142,7 +142,7 @@ func claimFence(msg *ent.OutboundMessage) []predicate.OutboundMessage {
 // lease. Best effort: if it fails, the lease expires on its own.
 func (m *Module) release(ctx context.Context, s *ent.Scoped, msg *ent.OutboundMessage) {
 	if _, err := s.OutboundMessage().Update().
-		Where(holds(msg)...).
+		Where(ownsClaim(msg)...).
 		SetClaimedAt(time.Unix(0, 0)).
 		Save(ctx); err != nil {
 		logging.FromContext(ctx).Warn("outbound: release claim failed", "message_id", msg.ID, "err", err)

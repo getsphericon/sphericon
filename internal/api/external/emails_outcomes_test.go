@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/suspension"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -62,7 +63,7 @@ func TestExternalEmailsSendIsHeldWhileTheWorkspaceIsSuspended(t *testing.T) {
 	require.NoError(t, err)
 	held, ok := res.(*externalapi.EmailsSendUnprocessableEntity)
 	require.Truef(t, ok, "got %T", res)
-	assert.Equal(t, outbound.Detail(outbound.HoldSuspended), held.Detail.Value)
+	assert.Equal(t, outbound.Detail(holds.ReasonSuspended), held.Detail.Value)
 	assert.Empty(t, env.CustomerMail.Messages())
 	n, err := env.DB.OutboundMessage.Query().Where(outboundmessage.Destination("held@example.com")).Count(ctx)
 	require.NoError(t, err)

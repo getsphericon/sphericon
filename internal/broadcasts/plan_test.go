@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/outbound"
@@ -345,11 +346,11 @@ func TestPlanHoldsOnAWorkspaceFreezeAndResumes(t *testing.T) {
 
 	var held *broadcasts.HeldError
 	require.ErrorAs(t, err, &held)
-	assert.Equal(t, outbound.HoldSuspended, held.Reason)
+	assert.Equal(t, holds.ReasonSuspended, held.Reason)
 	b := d.env.DB.Broadcast.GetX(d.ctx, fixtures.BroadcastDraftID)
 	assert.Equal(t, broadcast.StatusDraft, b.Status)
 	require.NotNil(t, b.HoldReason)
-	assert.Equal(t, outbound.HoldSuspended, *b.HoldReason)
+	assert.Equal(t, holds.ReasonSuspended, *b.HoldReason)
 	assert.Zero(t, d.recipientCount(fixtures.BroadcastDraftID))
 
 	d.env.DB.Workspace.UpdateOneID(fixtures.AcmeID).ClearSuspendedAt().ExecX(d.ctx)

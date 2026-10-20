@@ -35,6 +35,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
@@ -92,11 +93,9 @@ func deferralBackoff(err error) time.Duration {
 // carry the erased person's address.
 const SkipContactErased = "contact_erased"
 
-// Reasons an Outbound send is Held.
+// Reasons an Outbound send is Held by its own source-level checks. The Workspace-level
+// reasons (suspended, pending deletion, Staff hold) are declared by the holds package.
 const (
-	HoldSuspended        = "workspace_suspended"
-	HoldPendingDeletion  = "workspace_pending_deletion"
-	HoldStaff            = "staff_hold"
 	HoldNoIntegration    = "no_integration"
 	HoldUnverifiedDomain = "unverified_domain"
 )
@@ -114,13 +113,10 @@ const (
 // Detail words a Hold or Refuse reason for a human (an API problem detail). The single
 // place the wording lives, so every surface that reports a Held or Refused outcome agrees.
 func Detail(reason string) string {
+	if msg := holds.Message(reason); msg != "" {
+		return msg
+	}
 	switch reason {
-	case HoldSuspended:
-		return "sending is suspended for this workspace"
-	case HoldPendingDeletion:
-		return "this workspace is deleted and pending erasure"
-	case HoldStaff:
-		return "sending is on hold for this workspace"
 	case HoldNoIntegration:
 		return "no default email provider configured"
 	case HoldUnverifiedDomain:
@@ -379,7 +375,7 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 	} else if wait > 0 {
 		// Busy, not blocked: drop the claim so the retry starts clean and no attempt
 		// is consumed.
-		_, _ = s.OutboundMessage().Delete().Where(holds(msg)...).Exec(ctx)
+		_, _ = s.OutboundMessage().Delete().Where(ownsClaim(msg)...).Exec(ctx)
 		return Result{Outcome: Deferral, Wait: wait}, nil
 	}
 
@@ -388,7 +384,7 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 		if errors.Is(err, messaging.ErrUnverifiedSendingDomain) {
 			// The domain lost verification between our check and the signer's: a hold,
 			// not a failure. The claim is dropped so the same Request can run again.
-			_, _ = s.OutboundMessage().Delete().Where(holds(msg)...).Exec(ctx)
+			_, _ = s.OutboundMessage().Delete().Where(ownsClaim(msg)...).Exec(ctx)
 			return Result{Outcome: Held, Reason: HoldUnverifiedDomain}, nil
 		}
 		if wait := deferralBackoff(err); wait > 0 && req.Kind != outboundmessage.KindTransactional {
@@ -397,7 +393,7 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 			// is dropped, no attempt is consumed and the same Request runs again later.
 			// Transactional mail never defers (ADR 0023): it falls through to the
 			// retryable error below, which releases the claim for the caller's retry.
-			_, _ = s.OutboundMessage().Delete().Where(holds(msg)...).Exec(ctx)
+			_, _ = s.OutboundMessage().Delete().Where(ownsClaim(msg)...).Exec(ctx)
 			return Result{Outcome: Deferral, Wait: wait}, nil
 		}
 		m.release(ctx, s, msg)
@@ -476,11 +472,11 @@ func (m *Module) frozen(ctx context.Context, s *ent.Scoped, ws *ent.Workspace) (
 	// Workspace deletion (ADR 0043) is its own Hold source, not the suspension: restoring
 	// clears it and leaves a suspension in place. Checked first, so a suspended and deleted
 	// Workspace reports the deletion.
-	if ws.DeletedAt != nil {
-		return HoldPendingDeletion, nil
+	if deleted := holds.PendingDeletion(ws); len(deleted) > 0 {
+		return deleted[0].ReasonCode, nil
 	}
 	if ws.SuspendedAt != nil {
-		return HoldSuspended, nil
+		return holds.ReasonSuspended, nil
 	}
 	for _, f := range m.freezers {
 		reason, err := f.Frozen(ctx, s, ws)
