@@ -4,9 +4,11 @@ import { afterEach, expect, test } from 'vitest'
 
 import {
   handleSiteAutomationsActivate,
+  handleSiteAutomationsArchive,
   handleSiteAutomationsDeactivate,
   handleSiteAutomationsDelete,
   handleSiteAutomationsList,
+  handleSiteAutomationsUnarchive,
 } from '../../generated/site/msw.gen.ts'
 import type { SiteAutomationResource } from '../../generated/site/types.gen.ts'
 import { Route as automationsRoute } from '../../routes/workspaces/$workspaceId/automations/index.tsx'
@@ -146,4 +148,66 @@ test('deleting an automation asks for confirmation first', async () => {
 
   await expect.poll(() => deleted).toEqual(['1'])
   await expect.element(screen.getByText('Automation deleted')).toBeInTheDocument()
+})
+
+test('the archived view lists archived automations and restores one', async () => {
+  const flags: (string | null)[] = []
+  const restored: string[] = []
+  worker.use(
+    handleSiteAutomationsList(({ request }) => {
+      flags.push(new URL(request.url).searchParams.get('archived'))
+      return HttpResponse.json({ items: [{ ...NURTURE, archivedAt: NOW }], totalItems: 1 })
+    }),
+    handleSiteAutomationsUnarchive(({ params }) => {
+      restored.push(params.id)
+      return HttpResponse.json(NURTURE)
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<AutomationsListPage />, LIST_ROUTE)
+  await screen.getByRole('switch', { name: 'Show archived' }).click()
+  await expect.poll(() => flags).toEqual(['false', 'true'])
+
+  await screen.getByRole('button', { name: 'Restore' }).click()
+
+  await expect.poll(() => restored).toEqual(['2'])
+  await expect.element(screen.getByText('Automation restored')).toBeInTheDocument()
+})
+
+test('archiving an automation calls archive and refreshes the list', async () => {
+  const archived: string[] = []
+  let listFetches = 0
+  worker.use(
+    handleSiteAutomationsList(() => {
+      listFetches++
+      return HttpResponse.json({ items: [NURTURE], totalItems: 1 })
+    }),
+    handleSiteAutomationsArchive(({ params }) => {
+      archived.push(params.id)
+      return HttpResponse.json({ ...NURTURE, archivedAt: NOW })
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<AutomationsListPage />, LIST_ROUTE)
+  await screen.getByRole('button', { name: 'Archive' }).click()
+
+  await expect.poll(() => archived).toEqual(['2'])
+  await expect.element(screen.getByText('Automation archived')).toBeInTheDocument()
+  await expect.poll(() => listFetches).toBe(2)
+})
+
+test('an automation with active enrollments is not archived and their count is shown', async () => {
+  worker.use(
+    handleSiteAutomationsList(() => HttpResponse.json({ items: [WELCOME], totalItems: 1 })),
+    handleSiteAutomationsArchive(() =>
+      problem(409, { usedBy: [{ kind: 'enrollment', id: '1', name: 'Welcome flow', count: 3 }] }),
+    ),
+  )
+
+  const { screen } = await renderWithRouter(<AutomationsListPage />, LIST_ROUTE)
+  await screen.getByRole('button', { name: 'Archive' }).click()
+
+  await expect
+    .element(screen.getByText(/3 active enrollments of "Welcome flow"/))
+    .toBeInTheDocument()
 })

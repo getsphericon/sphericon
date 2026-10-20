@@ -829,6 +829,8 @@ type AutomationResource struct {
 	TriggerEvent string `json:"triggerEvent"`
 	// The automation's ordered, linear steps.
 	Steps []AutomationStep `json:"steps"`
+	// When the automation was archived; null while it is kept.
+	ArchivedAt OptNilTimestamp `json:"archivedAt"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -858,6 +860,11 @@ func (s *AutomationResource) GetTriggerEvent() string {
 // GetSteps returns the value of Steps.
 func (s *AutomationResource) GetSteps() []AutomationStep {
 	return s.Steps
+}
+
+// GetArchivedAt returns the value of ArchivedAt.
+func (s *AutomationResource) GetArchivedAt() OptNilTimestamp {
+	return s.ArchivedAt
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -895,6 +902,11 @@ func (s *AutomationResource) SetSteps(val []AutomationStep) {
 	s.Steps = val
 }
 
+// SetArchivedAt sets the value of ArchivedAt.
+func (s *AutomationResource) SetArchivedAt(val OptNilTimestamp) {
+	s.ArchivedAt = val
+}
+
 // SetCreatedAt sets the value of CreatedAt.
 func (s *AutomationResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
@@ -906,9 +918,11 @@ func (s *AutomationResource) SetUpdatedAt(val Timestamp) {
 }
 
 func (*AutomationResource) automationsActivateRes()   {}
+func (*AutomationResource) automationsArchiveRes()    {}
 func (*AutomationResource) automationsCreateRes()     {}
 func (*AutomationResource) automationsDeactivateRes() {}
 func (*AutomationResource) automationsGetRes()        {}
+func (*AutomationResource) automationsUnarchiveRes()  {}
 func (*AutomationResource) automationsUpdateRes()     {}
 
 // Automation lifecycle status.
@@ -1217,6 +1231,18 @@ type AutomationsActivateUnprocessableEntity ProblemDetails
 
 func (*AutomationsActivateUnprocessableEntity) automationsActivateRes() {}
 
+type AutomationsArchiveBadRequest ProblemDetails
+
+func (*AutomationsArchiveBadRequest) automationsArchiveRes() {}
+
+type AutomationsArchiveNotFound ProblemDetails
+
+func (*AutomationsArchiveNotFound) automationsArchiveRes() {}
+
+type AutomationsArchiveUnauthorized ProblemDetails
+
+func (*AutomationsArchiveUnauthorized) automationsArchiveRes() {}
+
 type AutomationsCreateBadRequest ProblemDetails
 
 func (*AutomationsCreateBadRequest) automationsCreateRes() {}
@@ -1367,6 +1393,18 @@ func (*AutomationsListUnauthorized) automationsListRes() {}
 type AutomationsListUnprocessableEntity ProblemDetails
 
 func (*AutomationsListUnprocessableEntity) automationsListRes() {}
+
+type AutomationsUnarchiveBadRequest ProblemDetails
+
+func (*AutomationsUnarchiveBadRequest) automationsUnarchiveRes() {}
+
+type AutomationsUnarchiveNotFound ProblemDetails
+
+func (*AutomationsUnarchiveNotFound) automationsUnarchiveRes() {}
+
+type AutomationsUnarchiveUnauthorized ProblemDetails
+
+func (*AutomationsUnarchiveUnauthorized) automationsUnarchiveRes() {}
 
 type AutomationsUpdateBadRequest ProblemDetails
 
@@ -5965,6 +6003,7 @@ func (s *InUseProblemDetails) SetUsedBy(val []UsedBy) {
 	s.UsedBy = val
 }
 
+func (*InUseProblemDetails) automationsArchiveRes()   {}
 func (*InUseProblemDetails) integrationsDeleteRes()   {}
 func (*InUseProblemDetails) segmentsDeleteRes()       {}
 func (*InUseProblemDetails) sendingDomainsDeleteRes() {}
@@ -10221,12 +10260,14 @@ func (*ProblemDetailsHeaders) authTokensCreateRes()          {}
 func (*ProblemDetailsHeaders) authTokensDeleteRes()          {}
 func (*ProblemDetailsHeaders) authTokensListRes()            {}
 func (*ProblemDetailsHeaders) automationsActivateRes()       {}
+func (*ProblemDetailsHeaders) automationsArchiveRes()        {}
 func (*ProblemDetailsHeaders) automationsCreateRes()         {}
 func (*ProblemDetailsHeaders) automationsDeactivateRes()     {}
 func (*ProblemDetailsHeaders) automationsDeleteRes()         {}
 func (*ProblemDetailsHeaders) automationsDryRunHttpStepRes() {}
 func (*ProblemDetailsHeaders) automationsGetRes()            {}
 func (*ProblemDetailsHeaders) automationsListRes()           {}
+func (*ProblemDetailsHeaders) automationsUnarchiveRes()      {}
 func (*ProblemDetailsHeaders) automationsUpdateRes()         {}
 func (*ProblemDetailsHeaders) brandKitGetRes()               {}
 func (*ProblemDetailsHeaders) broadcastsArchiveRes()         {}
@@ -13876,6 +13917,9 @@ type UsedBy struct {
 	ID EntityId `json:"id"`
 	// Its name.
 	Name string `json:"name"`
+	// How many rows the entry stands for; absent means one. An `enrollment` entry names the Automation
+	// (id, name) and counts its active Enrollments.
+	Count OptInt32 `json:"count"`
 }
 
 // GetKind returns the value of Kind.
@@ -13893,6 +13937,11 @@ func (s *UsedBy) GetName() string {
 	return s.Name
 }
 
+// GetCount returns the value of Count.
+func (s *UsedBy) GetCount() OptInt32 {
+	return s.Count
+}
+
 // SetKind sets the value of Kind.
 func (s *UsedBy) SetKind(val UsedByKind) {
 	s.Kind = val
@@ -13908,6 +13957,11 @@ func (s *UsedBy) SetName(val string) {
 	s.Name = val
 }
 
+// SetCount sets the value of Count.
+func (s *UsedBy) SetCount(val OptInt32) {
+	s.Count = val
+}
+
 // What kind of row a refused removal names as a user of the row (ADR 0049). One value per kind of live
 // user a removal can find, so a client branches on it without parsing text.
 // Ref: #/components/schemas/UsedByKind
@@ -13917,6 +13971,7 @@ const (
 	UsedByKindBroadcast  UsedByKind = "broadcast"
 	UsedByKindAutomation UsedByKind = "automation"
 	UsedByKindSegment    UsedByKind = "segment"
+	UsedByKindEnrollment UsedByKind = "enrollment"
 )
 
 // AllValues returns all UsedByKind values.
@@ -13925,6 +13980,7 @@ func (UsedByKind) AllValues() []UsedByKind {
 		UsedByKindBroadcast,
 		UsedByKindAutomation,
 		UsedByKindSegment,
+		UsedByKindEnrollment,
 	}
 }
 
@@ -13936,6 +13992,8 @@ func (s UsedByKind) MarshalText() ([]byte, error) {
 	case UsedByKindAutomation:
 		return []byte(s), nil
 	case UsedByKindSegment:
+		return []byte(s), nil
+	case UsedByKindEnrollment:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -13953,6 +14011,9 @@ func (s *UsedByKind) UnmarshalText(data []byte) error {
 		return nil
 	case UsedByKindSegment:
 		*s = UsedByKindSegment
+		return nil
+	case UsedByKindEnrollment:
+		*s = UsedByKindEnrollment
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)

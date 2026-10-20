@@ -221,7 +221,7 @@ var eraseSteps = []eraseStep{
 	stepOf((*ent.Scoped).Invitation, invitation.IDIn),
 	stepOf((*ent.Scoped).ApiToken, apitoken.IDIn),
 	purgeStepOf((*ent.Scoped).Broadcast, broadcast.IDIn),
-	stepOf((*ent.Scoped).Automation, automation.IDIn),
+	purgeStepOf((*ent.Scoped).Automation, automation.IDIn),
 	stepOf((*ent.Scoped).Segment, segment.IDIn),
 	stepOf((*ent.Scoped).EmailTemplate, emailtemplate.IDIn),
 	stepOf((*ent.Scoped).BrandKit, brandkit.IDIn),

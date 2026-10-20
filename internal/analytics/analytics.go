@@ -151,11 +151,11 @@ func emailCounts(ctx context.Context, s *ent.Scoped, since, until time.Time) (Em
 }
 
 func automationCounts(ctx context.Context, s *ent.Scoped) (Automations, error) {
-	total, err := s.Automation().Query().Count(ctx)
+	total, err := s.Automation().QueryWithDiscarded().Count(ctx)
 	if err != nil {
 		return Automations{}, err
 	}
-	active, err := s.Automation().Query().Where(automation.StatusEQ(automation.StatusActive)).Count(ctx)
+	active, err := s.Automation().QueryWithDiscarded().Where(automation.StatusEQ(automation.StatusActive)).Count(ctx)
 	if err != nil {
 		return Automations{}, err
 	}

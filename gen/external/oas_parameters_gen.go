@@ -835,6 +835,79 @@ func decodeAutomationsActivateParams(args [1]string, argsEscaped bool, r *http.R
 	return params, nil
 }
 
+// AutomationsArchiveParams is parameters of Automations_archive operation.
+type AutomationsArchiveParams struct {
+	// Unique identifier.
+	ID EntityId
+}
+
+func unpackAutomationsArchiveParams(packed middleware.Parameters) (params AutomationsArchiveParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "id",
+			In:   "path",
+		}
+		params.ID = packed[key].(EntityId)
+	}
+	return params
+}
+
+func decodeAutomationsArchiveParams(args [1]string, argsEscaped bool, r *http.Request) (params AutomationsArchiveParams, _ error) {
+	// Decode path: id.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "id",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotIDVal int64
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToStringInt64(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotIDVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.ID = EntityId(paramsDotIDVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "id",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
 // AutomationsDeactivateParams is parameters of Automations_deactivate operation.
 type AutomationsDeactivateParams struct {
 	// Unique identifier.
@@ -1060,6 +1133,8 @@ type AutomationsListParams struct {
 	Page OptInt32 `json:",omitempty,omitzero"`
 	// Page size.
 	PageSize OptInt32 `json:",omitempty,omitzero"`
+	// True lists the archived automations instead of the kept ones; the default hides them.
+	Archived OptBool `json:",omitempty,omitzero"`
 }
 
 func unpackAutomationsListParams(packed middleware.Parameters) (params AutomationsListParams) {
@@ -1079,6 +1154,15 @@ func unpackAutomationsListParams(packed middleware.Parameters) (params Automatio
 		}
 		if v, ok := packed[key]; ok {
 			params.PageSize = v.(OptInt32)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "archived",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.Archived = v.(OptBool)
 		}
 	}
 	return params
@@ -1175,6 +1259,120 @@ func decodeAutomationsListParams(args [0]string, argsEscaped bool, r *http.Reque
 		return params, &ogenerrors.DecodeParamError{
 			Name: "pageSize",
 			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: archived.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "archived",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotArchivedVal bool
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToBool(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotArchivedVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.Archived.SetTo(paramsDotArchivedVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "archived",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// AutomationsUnarchiveParams is parameters of Automations_unarchive operation.
+type AutomationsUnarchiveParams struct {
+	// Unique identifier.
+	ID EntityId
+}
+
+func unpackAutomationsUnarchiveParams(packed middleware.Parameters) (params AutomationsUnarchiveParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "id",
+			In:   "path",
+		}
+		params.ID = packed[key].(EntityId)
+	}
+	return params
+}
+
+func decodeAutomationsUnarchiveParams(args [1]string, argsEscaped bool, r *http.Request) (params AutomationsUnarchiveParams, _ error) {
+	// Decode path: id.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "id",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotIDVal int64
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToStringInt64(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotIDVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.ID = EntityId(paramsDotIDVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "id",
+			In:   "path",
 			Err:  err,
 		}
 	}

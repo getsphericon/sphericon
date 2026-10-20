@@ -18,7 +18,11 @@ func inUseProblem(e *inuse.Error) siteapi.InUseProblemDetails {
 		Title:  base.Title,
 		Detail: base.Detail,
 		UsedBy: lo.Map(e.Users, func(u inuse.User, _ int) siteapi.UsedBy {
-			return siteapi.UsedBy{Kind: siteapi.UsedByKind(u.Kind), ID: siteapi.EntityId(u.ID), Name: u.Name}
+			by := siteapi.UsedBy{Kind: siteapi.UsedByKind(u.Kind), ID: siteapi.EntityId(u.ID), Name: u.Name}
+			if u.Count > 0 {
+				by.Count = siteapi.NewOptInt32(int32(u.Count))
+			}
+			return by
 		}),
 	}
 }

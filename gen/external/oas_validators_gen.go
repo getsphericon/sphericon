@@ -538,6 +538,30 @@ func (s *AutomationsActivateUnprocessableEntity) Validate() error {
 	return nil
 }
 
+func (s *AutomationsArchiveBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *AutomationsArchiveNotFound) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *AutomationsArchiveUnauthorized) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *AutomationsCreateBadRequest) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -731,6 +755,30 @@ func (s *AutomationsListUnauthorized) Validate() error {
 }
 
 func (s *AutomationsListUnprocessableEntity) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *AutomationsUnarchiveBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *AutomationsUnarchiveNotFound) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *AutomationsUnarchiveUnauthorized) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -5690,6 +5738,8 @@ func (s UsedByKind) Validate() error {
 	case "automation":
 		return nil
 	case "segment":
+		return nil
+	case "enrollment":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)

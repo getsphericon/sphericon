@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/api/site/resources"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/convert"
+	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/samber/lo"
 )
@@ -24,7 +25,7 @@ func (h *Handlers) SiteAutomationsList(ctx context.Context, params siteapi.SiteA
 		return nil, err
 	}
 
-	page, err := h.automations.List(ctx, ws, pagination.ParamsOf(params.Page, params.PageSize))
+	page, err := h.automations.List(ctx, ws, pagination.ParamsOf(params.Page, params.PageSize), params.Archived.Or(false))
 	if err != nil {
 		return nil, err
 	}
@@ -134,14 +135,78 @@ func (h *Handlers) SiteAutomationsDelete(ctx context.Context, params siteapi.Sit
 
 	id := int64(params.ID)
 	err = h.automations.Delete(ctx, ws, id)
-	if errors.Is(err, automations.ErrNotFound) {
+	switch {
+	case errors.Is(err, automations.ErrNotFound):
 		v := siteapi.SiteAutomationsDeleteNotFound(problem(http.StatusNotFound, "automation not found"))
+		return &v, nil
+	case errors.Is(err, automations.ErrHasEnrollments):
+		v := siteapi.SiteAutomationsDeleteUnprocessableEntity(problem(http.StatusUnprocessableEntity, "an automation with enrollments cannot be deleted; archive it"))
+		return &v, nil
+	case err != nil:
+		return nil, err
+	}
+	return &siteapi.SiteAutomationsDeleteNoContent{}, nil
+}
+
+// SiteAutomationsArchive archives an automation (ADR 0049): it leaves the list and enrolls
+// nobody, and keeps its enrollments. Active enrollments refuse it with 409.
+func (h *Handlers) SiteAutomationsArchive(ctx context.Context, params siteapi.SiteAutomationsArchiveParams) (siteapi.SiteAutomationsArchiveRes, error) {
+	ws, err := h.scopedFor(ctx, params.WorkspaceId)
+	if ent.IsNotFound(err) {
+		v := siteapi.SiteAutomationsArchiveNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	return &siteapi.SiteAutomationsDeleteNoContent{}, nil
+
+	id := int64(params.ID)
+	err = h.automations.Archive(ctx, ws, id)
+	if refused, ok := inuse.As(err); ok {
+		v := inUseProblem(refused)
+		return &v, nil
+	}
+	if errors.Is(err, automations.ErrNotFound) {
+		v := siteapi.SiteAutomationsArchiveNotFound(problem(http.StatusNotFound, "automation not found"))
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	a, err := h.automations.Get(ctx, ws, id)
+	if err != nil {
+		return nil, err
+	}
+	res := mapper.AutomationToResource(a)
+	return &res, nil
+}
+
+// SiteAutomationsUnarchive restores an archived automation to the list.
+func (h *Handlers) SiteAutomationsUnarchive(ctx context.Context, params siteapi.SiteAutomationsUnarchiveParams) (siteapi.SiteAutomationsUnarchiveRes, error) {
+	ws, err := h.scopedFor(ctx, params.WorkspaceId)
+	if ent.IsNotFound(err) {
+		v := siteapi.SiteAutomationsUnarchiveNotFound(problem(http.StatusNotFound, "workspace not found"))
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	id := int64(params.ID)
+	err = h.automations.Unarchive(ctx, ws, id)
+	if errors.Is(err, automations.ErrNotFound) {
+		v := siteapi.SiteAutomationsUnarchiveNotFound(problem(http.StatusNotFound, "automation not found"))
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	a, err := h.automations.Get(ctx, ws, id)
+	if err != nil {
+		return nil, err
+	}
+	res := mapper.AutomationToResource(a)
+	return &res, nil
 }
 
 func (h *Handlers) SiteAutomationsActivate(ctx context.Context, params siteapi.SiteAutomationsActivateParams) (siteapi.SiteAutomationsActivateRes, error) {

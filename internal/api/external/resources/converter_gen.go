@@ -37,6 +37,7 @@ func (c *ConverterImpl) AutomationToResource(source *ent.Automation) external.Au
 		externalapiAutomationResource.Status = external.AutomationStatus((*source).Status)
 		externalapiAutomationResource.TriggerEvent = (*source).TriggerEvent
 		externalapiAutomationResource.Steps = automationSteps(source)
+		externalapiAutomationResource.ArchivedAt = optNilTimestamp((*source).DiscardedAt)
 		externalapiAutomationResource.CreatedAt = timestamp((*source).CreatedAt)
 		externalapiAutomationResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}

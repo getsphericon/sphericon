@@ -975,6 +975,10 @@ export type SiteAutomationResource = {
    */
   steps: Array<SiteAutomationStep>;
   /**
+   * When the automation was archived; null while it is kept
+   */
+  archivedAt?: Timestamp | null;
+  /**
    * Creation timestamp
    */
   createdAt: Timestamp;
@@ -3718,6 +3722,11 @@ export type UsedBy = {
    * Its name
    */
   name: string;
+  /**
+   * How many rows the entry stands for; absent means one. An `enrollment` entry names the
+   * Automation (id, name) and counts its active Enrollments.
+   */
+  count?: number;
 };
 
 /**
@@ -3727,7 +3736,8 @@ export type UsedBy = {
 export const UsedByKind = {
   BROADCAST: 'broadcast',
   AUTOMATION: 'automation',
-  SEGMENT: 'segment'
+  SEGMENT: 'segment',
+  ENROLLMENT: 'enrollment'
 } as const;
 
 /**
@@ -3830,6 +3840,11 @@ export type SiteAutomationResourceKeyWorkspaceId = WorkspaceId;
  * workspace resources (ADR 0043)
  */
 export type SiteAutomationResourceParentKey = WorkspaceId;
+
+/**
+ * true lists the archived automations instead of the kept ones; the default hides them
+ */
+export type SiteAutomationsListFilter = boolean;
 
 /**
  * Unique identifier
@@ -5403,6 +5418,10 @@ export type SiteAutomationsListData = {
      * Page size
      */
     pageSize?: number;
+    /**
+     * true lists the archived automations instead of the kept ones; the default hides them
+     */
+    archived?: boolean;
   };
   url: '/workspaces/{workspaceId}/automations';
 };
@@ -5653,6 +5672,10 @@ export type SiteAutomationsDeleteErrors = {
    * RFC 7807 not found response
    */
   404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
 };
 
 export type SiteAutomationsDeleteError = SiteAutomationsDeleteErrors[keyof SiteAutomationsDeleteErrors];
@@ -5791,6 +5814,51 @@ export type SiteAutomationsActivateResponses = {
 
 export type SiteAutomationsActivateResponse = SiteAutomationsActivateResponses[keyof SiteAutomationsActivateResponses];
 
+export type SiteAutomationsArchiveData = {
+  body?: never;
+  path: {
+    /**
+     * The Workspace id: its short opaque public address and the route key for nested
+     * workspace resources (ADR 0043)
+     */
+    workspaceId: WorkspaceId;
+    /**
+     * Unique identifier
+     */
+    id: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/automations/{id}/archive';
+};
+
+export type SiteAutomationsArchiveErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 conflict response for a removal refused because live work still uses the row
+   * (ADR 0049): 409 with `usedBy` naming the users. Every refused removal of a Segment, Tag,
+   * Integration, Sending domain or Automation answers it.
+   */
+  409: InUseProblemDetails;
+};
+
+export type SiteAutomationsArchiveError = SiteAutomationsArchiveErrors[keyof SiteAutomationsArchiveErrors];
+
+export type SiteAutomationsArchiveResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteAutomationResource;
+};
+
+export type SiteAutomationsArchiveResponse = SiteAutomationsArchiveResponses[keyof SiteAutomationsArchiveResponses];
+
 export type SiteAutomationsDeactivateData = {
   body?: never;
   path: {
@@ -5829,6 +5897,45 @@ export type SiteAutomationsDeactivateResponses = {
 };
 
 export type SiteAutomationsDeactivateResponse = SiteAutomationsDeactivateResponses[keyof SiteAutomationsDeactivateResponses];
+
+export type SiteAutomationsUnarchiveData = {
+  body?: never;
+  path: {
+    /**
+     * The Workspace id: its short opaque public address and the route key for nested
+     * workspace resources (ADR 0043)
+     */
+    workspaceId: WorkspaceId;
+    /**
+     * Unique identifier
+     */
+    id: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/automations/{id}/unarchive';
+};
+
+export type SiteAutomationsUnarchiveErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteAutomationsUnarchiveError = SiteAutomationsUnarchiveErrors[keyof SiteAutomationsUnarchiveErrors];
+
+export type SiteAutomationsUnarchiveResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteAutomationResource;
+};
+
+export type SiteAutomationsUnarchiveResponse = SiteAutomationsUnarchiveResponses[keyof SiteAutomationsUnarchiveResponses];
 
 export type SiteBrandKitGetData = {
   body?: never;

@@ -114,6 +114,9 @@ enum UsedByKind {
 
   /** A Segment, through a rule that names a Tag */
   segment,
+
+  /** The active Enrollments of an Automation, as one entry carrying their count */
+  enrollment,
 }
 
 /** A row that uses the one a removal was refused for: what a client shows to say what to
@@ -127,6 +130,10 @@ model UsedBy {
 
   /** Its name */
   name: string;
+
+  /** How many rows the entry stands for; absent means one. An `enrollment` entry names the
+   * Automation (id, name) and counts its active Enrollments. */
+  count?: int32;
 }
 
 /** The body of a refused removal (ADR 0049): ProblemDetails plus the rows that use it */

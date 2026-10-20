@@ -1230,6 +1230,61 @@ func encodeSiteAutomationsActivateResponse(response SiteAutomationsActivateRes, 
 	}
 }
 
+func encodeSiteAutomationsArchiveResponse(response SiteAutomationsArchiveRes, w http.ResponseWriter, span trace.Span) error {
+	switch response := response.(type) {
+	case *SiteAutomationResource:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(200)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteAutomationsArchiveBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteAutomationsArchiveNotFound:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(404)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *InUseProblemDetails:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(409)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
+}
+
 func encodeSiteAutomationsCreateResponse(response SiteAutomationsCreateRes, w http.ResponseWriter, span trace.Span) error {
 	switch response := response.(type) {
 	case *SiteAutomationResource:
@@ -1338,6 +1393,18 @@ func encodeSiteAutomationsDeleteResponse(response SiteAutomationsDeleteRes, w ht
 	case *SiteAutomationsDeleteNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteAutomationsDeleteUnprocessableEntity:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(422)
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -1491,6 +1558,49 @@ func encodeSiteAutomationsListResponse(response SiteAutomationsListRes, w http.R
 	case *SiteAutomationsListUnprocessableEntity:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(422)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
+}
+
+func encodeSiteAutomationsUnarchiveResponse(response SiteAutomationsUnarchiveRes, w http.ResponseWriter, span trace.Span) error {
+	switch response := response.(type) {
+	case *SiteAutomationResource:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(200)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteAutomationsUnarchiveBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteAutomationsUnarchiveNotFound:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(404)
 
 		e := new(jx.Encoder)
 		response.Encode(e)

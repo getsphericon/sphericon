@@ -719,6 +719,9 @@
           },
           {
             "$ref": "#/components/parameters/PageQuery.pageSize"
+          },
+          {
+            "$ref": "#/components/parameters/AutomationsListFilter"
           }
         ],
         "responses": {
@@ -1742,10 +1745,216 @@
         }
       }
     },
+    "/automations/{id}/archive": {
+      "post": {
+        "operationId": "Automations_archive",
+        "description": "Archive an automation: it leaves the list, enrolls nobody and keeps its enrollments, and can be restored. Refused with 409 while it has active enrollments (`usedBy` carries their count).",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AutomationResourceKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutomationResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "RFC 7807 conflict response for a removal refused because live work still uses the row\n(ADR 0049): 409 with `usedBy` naming the users. Every refused removal of a Segment, Tag,\nIntegration, Sending domain or Automation answers it.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InUseProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Automations"]
+      }
+    },
     "/automations/{id}/deactivate": {
       "post": {
         "operationId": "Automations_deactivate",
         "description": "Deactivate an automation (stops new enrollments; in-flight ones finish). Needs the automations:activate scope.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AutomationResourceKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutomationResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Automations"]
+      }
+    },
+    "/automations/{id}/unarchive": {
+      "post": {
+        "operationId": "Automations_unarchive",
+        "description": "Restore an archived automation to the list",
         "parameters": [
           {
             "$ref": "#/components/parameters/AutomationResourceKey"
@@ -9761,6 +9970,16 @@
           "$ref": "#/components/schemas/EntityId"
         }
       },
+      "AutomationsListFilter": {
+        "name": "archived",
+        "in": "query",
+        "required": false,
+        "description": "true lists the archived automations instead of the kept ones; the default hides them",
+        "schema": {
+          "type": "boolean"
+        },
+        "explode": false
+      },
       "BroadcastResourceKey": {
         "name": "id",
         "in": "path",
@@ -10181,6 +10400,16 @@
               "$ref": "#/components/schemas/AutomationStep"
             },
             "description": "The automation's ordered, linear steps"
+          },
+          "archivedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the automation was archived; null while it is kept"
           },
           "createdAt": {
             "allOf": [
@@ -14255,13 +14484,18 @@
           "name": {
             "type": "string",
             "description": "Its name"
+          },
+          "count": {
+            "type": "integer",
+            "format": "int32",
+            "description": "How many rows the entry stands for; absent means one. An `enrollment` entry names the\nAutomation (id, name) and counts its active Enrollments."
           }
         },
         "description": "A row that uses the one a removal was refused for: what a client shows to say what to\nchange first"
       },
       "UsedByKind": {
         "type": "string",
-        "enum": ["broadcast", "automation", "segment"],
+        "enum": ["broadcast", "automation", "segment", "enrollment"],
         "description": "What kind of row a refused removal names as a user of the row (ADR 0049). One value per kind\nof live user a removal can find, so a client branches on it without parsing text."
       },
       "Versions": {

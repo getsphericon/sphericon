@@ -168,6 +168,13 @@ type Handler interface {
 	//
 	// POST /workspaces/{workspaceId}/automations/{id}/activate
 	SiteAutomationsActivate(ctx context.Context, params SiteAutomationsActivateParams) (SiteAutomationsActivateRes, error)
+	// SiteAutomationsArchive implements SiteAutomations_archive operation.
+	//
+	// Archive an automation: it leaves the list, enrolls nobody and keeps its enrollments, and can be
+	// restored. Refused with 409 while it has active enrollments (`usedBy` carries their count).
+	//
+	// POST /workspaces/{workspaceId}/automations/{id}/archive
+	SiteAutomationsArchive(ctx context.Context, params SiteAutomationsArchiveParams) (SiteAutomationsArchiveRes, error)
 	// SiteAutomationsCreate implements SiteAutomations_create operation.
 	//
 	// Create a resource from the site UI.
@@ -204,6 +211,12 @@ type Handler interface {
 	//
 	// GET /workspaces/{workspaceId}/automations
 	SiteAutomationsList(ctx context.Context, params SiteAutomationsListParams) (SiteAutomationsListRes, error)
+	// SiteAutomationsUnarchive implements SiteAutomations_unarchive operation.
+	//
+	// Restore an archived automation to the list.
+	//
+	// POST /workspaces/{workspaceId}/automations/{id}/unarchive
+	SiteAutomationsUnarchive(ctx context.Context, params SiteAutomationsUnarchiveParams) (SiteAutomationsUnarchiveRes, error)
 	// SiteAutomationsUpdate implements SiteAutomations_update operation.
 	//
 	// Update a resource from the site UI.

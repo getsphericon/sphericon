@@ -23,7 +23,7 @@ func TestExternalAutomationsRead(t *testing.T) {
 	require.NoError(t, err)
 	listed, ok := list.(*externalapi.AutomationsListOK)
 	require.Truef(t, ok, "got %T", list)
-	total, err := env.DB.Automation.Query().Where(automation.WorkspaceID(fixtures.AcmeID)).Count(ctx)
+	total, err := env.DB.Automation.Query().Where(automation.WorkspaceID(fixtures.AcmeID), automation.DiscardedAtIsNil()).Count(ctx)
 	require.NoError(t, err)
 	assert.EqualValues(t, total, listed.TotalItems)
 

@@ -31,7 +31,7 @@ func TestModuleIsConfinedToTheScopedWorkspace(t *testing.T) {
 	require.NoError(t, err)
 	assert.EqualValues(t, fixtures.AcmeID, created.WorkspaceID)
 
-	page, err := m.List(ctx, globex, pagination.Params{Page: 1, PageSize: 100})
+	page, err := m.List(ctx, globex, pagination.Params{Page: 1, PageSize: 100}, false)
 	require.NoError(t, err)
 	for _, a := range page.Items {
 		assert.EqualValues(t, fixtures.GlobexID, a.WorkspaceID)

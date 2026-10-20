@@ -52,8 +52,10 @@ export default interface Resources {
       "title": "Activity"
     },
     "alerts": {
+      "automationArchiveErrorTitle": "Failed to archive automation",
       "automationDeleteErrorTitle": "Failed to delete automation",
       "automationLoadErrorTitle": "Failed to load automations",
+      "automationRestoreErrorTitle": "Failed to restore automation",
       "automationSaveErrorMessage": "We couldn't save your automation. Please try again.",
       "automationSaveErrorTitle": "Failed to save automation",
       "automationStatusErrorTitle": "Failed to change automation status",
@@ -174,6 +176,7 @@ export default interface Resources {
       "nameLabel": "Name",
       "noRecords": "No automations yet",
       "removeTagNodeDescription": "Take a tag off the contact.",
+      "showArchived": "Show archived",
       "statusActive": "Active",
       "statusDraft": "Draft",
       "statusLabel": "Status",
@@ -588,9 +591,11 @@ export default interface Resources {
     },
     "notifications": {
       "automationActivated": "Automation activated",
+      "automationArchived": "Automation archived",
       "automationCreated": "Automation created",
       "automationDeactivated": "Automation deactivated",
       "automationDeleted": "Automation deleted",
+      "automationRestored": "Automation restored",
       "automationUpdated": "Automation updated",
       "broadcastArchived": "Broadcast archived",
       "broadcastCreated": "Broadcast created",
@@ -614,7 +619,8 @@ export default interface Resources {
       "templateCreated": "Template created",
       "templateDeleted": "Template deleted",
       "templateUpdated": "Template updated",
-      "testSent": "Test email sent"
+      "testSent": "Test email sent",
+      "usedByEnrollments": "{{count}} active enrollments of \"{{name}}\"" | "{{count}} active enrollment of \"{{name}}\"" | "{{count}} active enrollments of \"{{name}}\""
     },
     "oauthConsent": {
       "allow": "Allow access",
@@ -1231,6 +1237,7 @@ export default interface Resources {
     "usedByKind": {
       "automation": "Automation",
       "broadcast": "Broadcast",
+      "enrollment": "Enrollment",
       "segment": "Segment"
     },
     "userMenu": {

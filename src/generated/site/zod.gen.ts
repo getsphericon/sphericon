@@ -1327,6 +1327,7 @@ export const zSiteAutomationResource = z.object({
   status: zSiteAutomationStatus,
   triggerEvent: z.string(),
   steps: z.array(zSiteAutomationStep),
+  archivedAt: z.exactOptional(zTimestamp.nullable()),
   createdAt: zTimestamp,
   updatedAt: zTimestamp
 });
@@ -1696,7 +1697,8 @@ export const zSiteWorkspaceHold = z.object({
 export const zUsedByKind = z.enum([
   'broadcast',
   'automation',
-  'segment'
+  'segment',
+  'enrollment'
 ]);
 
 /**
@@ -1706,7 +1708,8 @@ export const zUsedByKind = z.enum([
 export const zUsedBy = z.object({
   kind: zUsedByKind,
   id: zEntityId,
-  name: z.string()
+  name: z.string(),
+  count: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }))
 });
 
 /**
@@ -1919,6 +1922,11 @@ export const zSiteAutomationResourceKeyWorkspaceId = zWorkspaceId;
  * workspace resources (ADR 0043)
  */
 export const zSiteAutomationResourceParentKey = zWorkspaceId;
+
+/**
+ * true lists the archived automations instead of the kept ones; the default hides them
+ */
+export const zSiteAutomationsListFilter = z.boolean();
 
 /**
  * Unique identifier
@@ -2447,7 +2455,8 @@ export const zSiteAutomationsListPath = z.object({
 
 export const zSiteAutomationsListQuery = z.object({
   page: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
-  pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(25)
+  pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(25),
+  archived: z.exactOptional(z.boolean())
 });
 
 /**
@@ -2558,6 +2567,16 @@ export const zSiteAutomationsActivatePath = z.object({
  */
 export const zSiteAutomationsActivateResponse = zSiteAutomationResource;
 
+export const zSiteAutomationsArchivePath = z.object({
+  workspaceId: zWorkspaceId,
+  id: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteAutomationsArchiveResponse = zSiteAutomationResource;
+
 export const zSiteAutomationsDeactivatePath = z.object({
   workspaceId: zWorkspaceId,
   id: zEntityId
@@ -2567,6 +2586,16 @@ export const zSiteAutomationsDeactivatePath = z.object({
  * The request has succeeded.
  */
 export const zSiteAutomationsDeactivateResponse = zSiteAutomationResource;
+
+export const zSiteAutomationsUnarchivePath = z.object({
+  workspaceId: zWorkspaceId,
+  id: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteAutomationsUnarchiveResponse = zSiteAutomationResource;
 
 export const zSiteBrandKitGetPath = z.object({
   workspaceId: zWorkspaceId

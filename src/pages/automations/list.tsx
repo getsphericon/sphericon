@@ -1,14 +1,17 @@
-import { Badge, Button, Group, Stack, Title } from '@mantine/core'
+import { Badge, Button, Group, Stack, Switch, Title } from '@mantine/core'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { PagedTable } from '../../components/PagedTable.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
 import {
   siteAutomationsActivateMutation,
+  siteAutomationsArchiveMutation,
   siteAutomationsDeactivateMutation,
   siteAutomationsDeleteMutation,
   siteAutomationsListOptions,
   siteAutomationsListQueryKey,
+  siteAutomationsUnarchiveMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { useDeleteResource } from '../../hooks/useDeleteResource.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
@@ -44,6 +47,22 @@ export function AutomationsListPage() {
     errorTitle: t(($) => $.alerts.automationStatusErrorTitle),
   })
 
+  const archiveMutation = useResourceMutation({
+    mutation: siteAutomationsArchiveMutation(),
+    invalidate: [listQueryKey],
+    successMessage: t(($) => $.notifications.automationArchived),
+    errorTitle: t(($) => $.alerts.automationArchiveErrorTitle),
+  })
+
+  const restoreMutation = useResourceMutation({
+    mutation: siteAutomationsUnarchiveMutation(),
+    invalidate: [listQueryKey],
+    successMessage: t(($) => $.notifications.automationRestored),
+    errorTitle: t(($) => $.alerts.automationRestoreErrorTitle),
+  })
+
+  const [archived, setArchived] = useState(false)
+
   return (
     <Stack>
       <Group justify="space-between" align="center">
@@ -53,8 +72,17 @@ export function AutomationsListPage() {
         </ButtonLink>
       </Group>
 
+      <Switch
+        label={t(($) => $.automations.showArchived)}
+        checked={archived}
+        onChange={(event) => setArchived(event.currentTarget.checked)}
+      />
+
       <PagedTable
-        options={(query) => siteAutomationsListOptions({ path: { workspaceId }, query })}
+        key={String(archived)}
+        options={(query) =>
+          siteAutomationsListOptions({ path: { workspaceId }, query: { ...query, archived } })
+        }
         loadErrorTitle={t(($) => $.alerts.automationLoadErrorTitle)}
         noRecordsText={t(($) => $.automations.noRecords)}
         emptyState={t(($) => $.automations.emptyState)}
@@ -77,46 +105,70 @@ export function AutomationsListPage() {
             title: t(($) => $.table.actions),
             render: (record) => (
               <Group gap="xs">
-                {record.status === 'active' ? (
+                {record.archivedAt ? (
                   <Button
                     size="compact-sm"
                     variant="light"
-                    color="orange"
-                    loading={deactivateMutation.isPending}
-                    onClick={() =>
-                      deactivateMutation.mutate({ path: { workspaceId, id: record.id } })
-                    }
+                    loading={restoreMutation.isPending}
+                    onClick={() => restoreMutation.mutate({ path: { workspaceId, id: record.id } })}
                   >
-                    {t(($) => $.automations.deactivate)}
+                    {t(($) => $.actions.unarchive)}
                   </Button>
                 ) : (
-                  <Button
-                    size="compact-sm"
-                    variant="light"
-                    color="teal"
-                    loading={activateMutation.isPending}
-                    onClick={() =>
-                      activateMutation.mutate({ path: { workspaceId, id: record.id } })
-                    }
-                  >
-                    {t(($) => $.automations.activate)}
-                  </Button>
+                  <>
+                    {record.status === 'active' ? (
+                      <Button
+                        size="compact-sm"
+                        variant="light"
+                        color="orange"
+                        loading={deactivateMutation.isPending}
+                        onClick={() =>
+                          deactivateMutation.mutate({ path: { workspaceId, id: record.id } })
+                        }
+                      >
+                        {t(($) => $.automations.deactivate)}
+                      </Button>
+                    ) : (
+                      <Button
+                        size="compact-sm"
+                        variant="light"
+                        color="teal"
+                        loading={activateMutation.isPending}
+                        onClick={() =>
+                          activateMutation.mutate({ path: { workspaceId, id: record.id } })
+                        }
+                      >
+                        {t(($) => $.automations.activate)}
+                      </Button>
+                    )}
+                    <ButtonLink
+                      size="compact-sm"
+                      to={automationsEditRoute.to}
+                      params={{ workspaceId, automationId: record.id }}
+                    >
+                      {t(($) => $.actions.edit)}
+                    </ButtonLink>
+                    <Button
+                      size="compact-sm"
+                      color="red"
+                      variant="light"
+                      loading={archiveMutation.isPending}
+                      onClick={() =>
+                        archiveMutation.mutate({ path: { workspaceId, id: record.id } })
+                      }
+                    >
+                      {t(($) => $.actions.archive)}
+                    </Button>
+                    <Button
+                      size="compact-sm"
+                      color="red"
+                      variant="light"
+                      onClick={() => deleteAutomation(record.id)}
+                    >
+                      {t(($) => $.actions.delete)}
+                    </Button>
+                  </>
                 )}
-                <ButtonLink
-                  size="compact-sm"
-                  to={automationsEditRoute.to}
-                  params={{ workspaceId, automationId: record.id }}
-                >
-                  {t(($) => $.actions.edit)}
-                </ButtonLink>
-                <Button
-                  size="compact-sm"
-                  color="red"
-                  variant="light"
-                  onClick={() => deleteAutomation(record.id)}
-                >
-                  {t(($) => $.actions.delete)}
-                </Button>
               </Group>
             ),
           },

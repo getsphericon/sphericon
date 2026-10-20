@@ -106,6 +106,8 @@ type Converter interface {
 	EmailTemplateToResource(source *ent.EmailTemplate) externalapi.TemplateResource
 	CustomFieldToResource(source *ent.CustomField) externalapi.CustomFieldResource
 	TagToResource(source *ent.Tag) externalapi.TagResource
+	// The contract names the discarded state "archived" (ADR 0049).
+	// goverter:map DiscardedAt ArchivedAt
 	// goverter:map . Steps | automationSteps
 	AutomationToResource(source *ent.Automation) externalapi.AutomationResource
 

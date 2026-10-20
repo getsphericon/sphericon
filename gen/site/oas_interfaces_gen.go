@@ -65,6 +65,10 @@ type SiteAutomationsActivateRes interface {
 	siteAutomationsActivateRes()
 }
 
+type SiteAutomationsArchiveRes interface {
+	siteAutomationsArchiveRes()
+}
+
 type SiteAutomationsCreateRes interface {
 	siteAutomationsCreateRes()
 }
@@ -87,6 +91,10 @@ type SiteAutomationsGetRes interface {
 
 type SiteAutomationsListRes interface {
 	siteAutomationsListRes()
+}
+
+type SiteAutomationsUnarchiveRes interface {
+	siteAutomationsUnarchiveRes()
 }
 
 type SiteAutomationsUpdateRes interface {

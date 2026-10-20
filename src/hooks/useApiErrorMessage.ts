@@ -19,8 +19,18 @@ export function useApiErrorMessage() {
         broadcast: t(($) => $.usedByKind.broadcast),
         automation: t(($) => $.usedByKind.automation),
         segment: t(($) => $.usedByKind.segment),
+        enrollment: t(($) => $.usedByKind.enrollment),
       }
-      const users = usedBy.map((user) => `${kinds[user.kind]} "${user.name}"`).join(', ')
+      const users = usedBy
+        .map((user) =>
+          user.kind === 'enrollment'
+            ? t(($) => $.notifications.usedByEnrollments, {
+                count: user.count ?? 1,
+                name: user.name,
+              })
+            : `${kinds[user.kind]} "${user.name}"`,
+        )
+        .join(', ')
       return t(($) => $.notifications.inUse, { users })
     }
     const wait = getRateLimitWait(error)

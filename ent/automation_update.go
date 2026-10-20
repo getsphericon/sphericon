@@ -52,6 +52,26 @@ func (_u *AutomationUpdate) SetNillableWorkspaceID(v *int64) *AutomationUpdate {
 	return _u
 }
 
+// SetDiscardedAt sets the "discarded_at" field.
+func (_u *AutomationUpdate) SetDiscardedAt(v time.Time) *AutomationUpdate {
+	_u.mutation.SetDiscardedAt(v)
+	return _u
+}
+
+// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
+func (_u *AutomationUpdate) SetNillableDiscardedAt(v *time.Time) *AutomationUpdate {
+	if v != nil {
+		_u.SetDiscardedAt(*v)
+	}
+	return _u
+}
+
+// ClearDiscardedAt clears the value of the "discarded_at" field.
+func (_u *AutomationUpdate) ClearDiscardedAt() *AutomationUpdate {
+	_u.mutation.ClearDiscardedAt()
+	return _u
+}
+
 // SetName sets the "name" field.
 func (_u *AutomationUpdate) SetName(v string) *AutomationUpdate {
 	_u.mutation.SetName(v)
@@ -262,6 +282,12 @@ func (_u *AutomationUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(automation.FieldUpdatedAt, field.TypeTime, value)
 	}
+	if value, ok := _u.mutation.DiscardedAt(); ok {
+		_spec.SetField(automation.FieldDiscardedAt, field.TypeTime, value)
+	}
+	if _u.mutation.DiscardedAtCleared() {
+		_spec.ClearField(automation.FieldDiscardedAt, field.TypeTime)
+	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(automation.FieldName, field.TypeString, value)
 	}
@@ -429,6 +455,26 @@ func (_u *AutomationUpdateOne) SetNillableWorkspaceID(v *int64) *AutomationUpdat
 	if v != nil {
 		_u.SetWorkspaceID(*v)
 	}
+	return _u
+}
+
+// SetDiscardedAt sets the "discarded_at" field.
+func (_u *AutomationUpdateOne) SetDiscardedAt(v time.Time) *AutomationUpdateOne {
+	_u.mutation.SetDiscardedAt(v)
+	return _u
+}
+
+// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
+func (_u *AutomationUpdateOne) SetNillableDiscardedAt(v *time.Time) *AutomationUpdateOne {
+	if v != nil {
+		_u.SetDiscardedAt(*v)
+	}
+	return _u
+}
+
+// ClearDiscardedAt clears the value of the "discarded_at" field.
+func (_u *AutomationUpdateOne) ClearDiscardedAt() *AutomationUpdateOne {
+	_u.mutation.ClearDiscardedAt()
 	return _u
 }
 
@@ -671,6 +717,12 @@ func (_u *AutomationUpdateOne) sqlSave(ctx context.Context) (_node *Automation, 
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(automation.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.DiscardedAt(); ok {
+		_spec.SetField(automation.FieldDiscardedAt, field.TypeTime, value)
+	}
+	if _u.mutation.DiscardedAtCleared() {
+		_spec.ClearField(automation.FieldDiscardedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(automation.FieldName, field.TypeString, value)

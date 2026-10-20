@@ -66,6 +66,16 @@ func (UnimplementedHandler) AutomationsActivate(ctx context.Context, params Auto
 	return r, ht.ErrNotImplemented
 }
 
+// AutomationsArchive implements Automations_archive operation.
+//
+// Archive an automation: it leaves the list, enrolls nobody and keeps its enrollments, and can be
+// restored. Refused with 409 while it has active enrollments (`usedBy` carries their count).
+//
+// POST /automations/{id}/archive
+func (UnimplementedHandler) AutomationsArchive(ctx context.Context, params AutomationsArchiveParams) (r AutomationsArchiveRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // AutomationsCreate implements Automations_create operation.
 //
 // Create a resource.
@@ -118,6 +128,15 @@ func (UnimplementedHandler) AutomationsGet(ctx context.Context, params Automatio
 //
 // GET /automations
 func (UnimplementedHandler) AutomationsList(ctx context.Context, params AutomationsListParams) (r AutomationsListRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// AutomationsUnarchive implements Automations_unarchive operation.
+//
+// Restore an archived automation to the list.
+//
+// POST /automations/{id}/unarchive
+func (UnimplementedHandler) AutomationsUnarchive(ctx context.Context, params AutomationsUnarchiveParams) (r AutomationsUnarchiveRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

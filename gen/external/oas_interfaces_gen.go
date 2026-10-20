@@ -29,6 +29,10 @@ type AutomationsActivateRes interface {
 	automationsActivateRes()
 }
 
+type AutomationsArchiveRes interface {
+	automationsArchiveRes()
+}
+
 type AutomationsCreateRes interface {
 	automationsCreateRes()
 }
@@ -51,6 +55,10 @@ type AutomationsGetRes interface {
 
 type AutomationsListRes interface {
 	automationsListRes()
+}
+
+type AutomationsUnarchiveRes interface {
+	automationsUnarchiveRes()
 }
 
 type AutomationsUpdateRes interface {

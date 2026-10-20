@@ -14,12 +14,12 @@ import (
 	"github.com/getsphericon/sphericon/internal/inuse"
 )
 
-// EmailAutomations returns the active Automations whose current steps send an email, as users.
+// EmailAutomations returns the active, unarchived Automations whose current steps send an email, as users.
 // Such an Automation sends through the Workspace's default email Integration with its
 // configured From, so the Integration and the Sending domain of that From are in use by it.
 func EmailAutomations(ctx context.Context, s *ent.Scoped) ([]inuse.User, error) {
 	versions, err := s.AutomationVersion().Query().
-		Where(automationversion.HasAutomationWith(automation.StatusEQ(automation.StatusActive))).
+		Where(automationversion.HasAutomationWith(automation.StatusEQ(automation.StatusActive), automation.DiscardedAtIsNil())).
 		WithAutomation().
 		Order(ent.Asc(automationversion.FieldAutomationID), ent.Desc(automationversion.FieldVersion)).
 		All(ctx)

@@ -85,6 +85,8 @@ type Converter interface {
 	// goverter:ignore Warnings
 	EmailTemplateToResource(source *ent.EmailTemplate) siteapi.SiteEmailTemplateResource
 
+	// The contract names the discarded state "archived" (ADR 0049).
+	// goverter:map DiscardedAt ArchivedAt
 	// The stored definition string (the executor's JSON format) is decoded into
 	// the typed steps DTO at this boundary.
 	// goverter:map . Steps | automationSteps

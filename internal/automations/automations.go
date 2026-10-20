@@ -20,6 +20,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/secrets"
 )
@@ -66,6 +67,10 @@ var (
 	// ErrInvalidStep: a step has an unknown type, a negative wait, or a tag step
 	// without a tag name, or an email step whose content cannot render.
 	ErrInvalidStep = errors.New("automations: invalid step")
+
+	// ErrHasEnrollments: the Automation has Enrollments, which are history, so it is archived
+	// rather than deleted (ADR 0049).
+	ErrHasEnrollments = errors.New("automations: automation has enrollments; archive it instead")
 
 	// ErrNoVersion: the Automation has no version yet. Only an Automation made before versions
 	// existed can be in that state, until the backfill job (internal/jobs) has run.
@@ -209,24 +214,33 @@ func CurrentSteps(a *ent.Automation) ([]Step, error) {
 }
 
 // Loaded returns the Workspace's Automations matching preds, each carrying its current steps
-// (CurrentSteps). A live-dependency check reads them to see which Tag, Integration or Sending
-// domain an Automation's steps use (ADR 0049).
+// (CurrentSteps). Archived Automations are not loaded: they enroll nobody and use nothing. A
+// live-dependency check reads them to see which Tag, Integration or Sending domain an
+// Automation's steps use (ADR 0049).
 func Loaded(ctx context.Context, s *ent.Scoped, preds ...predicate.Automation) ([]*ent.Automation, error) {
 	return s.Automation().Query().Where(preds...).WithVersions(latest).Order(ent.Asc(automation.FieldID)).All(ctx)
 }
 
-// List returns one page of the Workspace's Automations, newest first.
-func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params) (pagination.Page[*ent.Automation], error) {
+// List returns one page of the Workspace's Automations, newest first: the kept ones, or with
+// archived the archived ones.
+func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params, archived bool) (pagination.Page[*ent.Automation], error) {
+	rows := func() *ent.AutomationQuery {
+		if archived {
+			return s.Automation().QueryWithDiscarded().Where(automation.DiscardedAtNotNil())
+		}
+		return s.Automation().Query()
+	}
 	return pagination.List(ctx, p,
-		func(ctx context.Context) (int, error) { return s.Automation().Query().Count(ctx) },
+		func(ctx context.Context) (int, error) { return rows().Count(ctx) },
 		func(ctx context.Context, limit, offset int) ([]*ent.Automation, error) {
-			return s.Automation().Query().WithVersions(latest).Order(ent.Desc(automation.FieldID)).Limit(limit).Offset(offset).All(ctx)
+			return rows().WithVersions(latest).Order(ent.Desc(automation.FieldID)).Limit(limit).Offset(offset).All(ctx)
 		})
 }
 
-// Get returns one Automation of the Workspace.
+// Get returns one Automation of the Workspace, archived or not: an archived Automation is
+// still addressable (viewed, restored, its Enrollments listed).
 func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.Automation, error) {
-	a, err := s.Automation().Query().Where(automation.ID(id)).WithVersions(latest).Only(ctx)
+	a, err := s.Automation().QueryWithDiscarded().Where(automation.ID(id)).WithVersions(latest).Only(ctx)
 	return a, notFound(err)
 }
 
@@ -345,10 +359,54 @@ func (m *Module) saveSteps(ctx context.Context, s *ent.Scoped, automationID int6
 		Exec(ctx)
 }
 
-// Delete removes the Automation, its versions and its Enrollments.
+// Delete purges an Automation that has no Enrollments, with its versions (ADR 0049). One with
+// any Enrollment is history and is archived instead: ErrHasEnrollments.
 func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
-	err := s.Automation().DeleteOneID(id).Exec(ctx)
-	return notFound(err)
+	n, err := s.Automation().Purge().Where(automation.ID(id), automation.Not(automation.HasRuns())).Exec(ctx)
+	if err != nil {
+		return err
+	}
+	if n > 0 {
+		return nil
+	}
+	if _, err := m.Get(ctx, s, id); err != nil {
+		return err
+	}
+	return ErrHasEnrollments
+}
+
+// Archive discards an Automation (ADR 0049): it leaves the lists and enrolls nobody, and its
+// Enrollments stay. An Automation with active Enrollments is refused with an *inuse.Error
+// carrying their count. Archiving an archived Automation changes nothing.
+func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) error {
+	a, err := m.Get(ctx, s, id)
+	if err != nil {
+		return err
+	}
+	if a.DiscardedAt != nil {
+		return nil
+	}
+	active, err := s.AutomationRun().Query().
+		Where(automationrun.AutomationID(id), automationrun.StatusEQ(automationrun.StatusActive)).
+		Count(ctx)
+	if err != nil {
+		return err
+	}
+	if active > 0 {
+		return &inuse.Error{What: "automation", Users: []inuse.User{{Kind: inuse.Enrollment, ID: id, Name: a.Name, Count: active}}}
+	}
+	return notFound(s.Automation().Discard(ctx, id))
+}
+
+// Unarchive brings an archived Automation back to the lists. Restoring one that is not
+// archived changes nothing.
+func (m *Module) Unarchive(ctx context.Context, s *ent.Scoped, id int64) error {
+	err := s.Automation().Undiscard(ctx, id)
+	if !ent.IsNotFound(err) {
+		return err
+	}
+	_, err = m.Get(ctx, s, id)
+	return err
 }
 
 // Activate starts enrolling Contacts into the Automation.

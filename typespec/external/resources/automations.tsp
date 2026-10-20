@@ -121,6 +121,9 @@ model AutomationResource {
   /** The automation's ordered, linear steps */
   steps: AutomationStep[];
 
+  /** When the automation was archived; null while it is kept */
+  archivedAt?: Timestamp | null;
+
   /** Creation timestamp */
   createdAt: Timestamp;
 
@@ -142,13 +145,47 @@ model UpdateAutomationInput {
   steps?: AutomationStep[];
 }
 
+/** Filter of the automation list */
+model AutomationsListFilter {
+  /** true lists the archived automations instead of the kept ones; the default hides them */
+  @query archived?: boolean;
+}
+
+/**
+ * Delete removes an automation that has no enrollments for good; one with enrollments is
+ * history and is archived instead (ADR 0049), so a delete of it is a 422.
+ */
 @tag("Automations")
 interface Automations
   extends ExternalCrud<
       AutomationResource,
       CreateAutomationInput,
-      UpdateAutomationInput
+      UpdateAutomationInput,
+      never,
+      never,
+      AutomationsListFilter
     > {
+  /** Archive an automation: it leaves the list, enrolls nobody and keeps its enrollments, and can be restored. Refused with 409 while it has active enrollments (`usedBy` carries their count). */
+  @action("archive")
+  @autoRoute
+  archive(...ResourceParameters<AutomationResource>):
+    | AutomationResource
+    | BadRequestProblem
+    | UnauthorizedProblem
+    | TooManyRequestsProblem
+    | NotFoundProblem
+    | InUseProblem;
+
+  /** Restore an archived automation to the list */
+  @action("unarchive")
+  @autoRoute
+  unarchive(...ResourceParameters<AutomationResource>):
+    | AutomationResource
+    | BadRequestProblem
+    | UnauthorizedProblem
+    | TooManyRequestsProblem
+    | NotFoundProblem;
+
   /** Activate an automation (starts enrolling contacts). Needs the automations:activate scope. */
   @action("activate")
   @autoRoute

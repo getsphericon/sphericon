@@ -1156,6 +1156,7 @@ func (s *InUseProblemDetails) SetUsedBy(val []UsedBy) {
 	s.UsedBy = val
 }
 
+func (*InUseProblemDetails) siteAutomationsArchiveRes()   {}
 func (*InUseProblemDetails) siteIntegrationsDeleteRes()   {}
 func (*InUseProblemDetails) siteSegmentsDeleteRes()       {}
 func (*InUseProblemDetails) siteSendingDomainsDeleteRes() {}
@@ -5871,6 +5872,8 @@ type SiteAutomationResource struct {
 	TriggerEvent string `json:"triggerEvent"`
 	// The automation's ordered, linear steps.
 	Steps []SiteAutomationStep `json:"steps"`
+	// When the automation was archived; null while it is kept.
+	ArchivedAt OptNilTimestamp `json:"archivedAt"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -5900,6 +5903,11 @@ func (s *SiteAutomationResource) GetTriggerEvent() string {
 // GetSteps returns the value of Steps.
 func (s *SiteAutomationResource) GetSteps() []SiteAutomationStep {
 	return s.Steps
+}
+
+// GetArchivedAt returns the value of ArchivedAt.
+func (s *SiteAutomationResource) GetArchivedAt() OptNilTimestamp {
+	return s.ArchivedAt
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -5937,6 +5945,11 @@ func (s *SiteAutomationResource) SetSteps(val []SiteAutomationStep) {
 	s.Steps = val
 }
 
+// SetArchivedAt sets the value of ArchivedAt.
+func (s *SiteAutomationResource) SetArchivedAt(val OptNilTimestamp) {
+	s.ArchivedAt = val
+}
+
 // SetCreatedAt sets the value of CreatedAt.
 func (s *SiteAutomationResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
@@ -5948,9 +5961,11 @@ func (s *SiteAutomationResource) SetUpdatedAt(val Timestamp) {
 }
 
 func (*SiteAutomationResource) siteAutomationsActivateRes()   {}
+func (*SiteAutomationResource) siteAutomationsArchiveRes()    {}
 func (*SiteAutomationResource) siteAutomationsCreateRes()     {}
 func (*SiteAutomationResource) siteAutomationsDeactivateRes() {}
 func (*SiteAutomationResource) siteAutomationsGetRes()        {}
+func (*SiteAutomationResource) siteAutomationsUnarchiveRes()  {}
 func (*SiteAutomationResource) siteAutomationsUpdateRes()     {}
 
 // Automation lifecycle status.
@@ -6255,6 +6270,14 @@ type SiteAutomationsActivateUnprocessableEntity ProblemDetails
 
 func (*SiteAutomationsActivateUnprocessableEntity) siteAutomationsActivateRes() {}
 
+type SiteAutomationsArchiveBadRequest ProblemDetails
+
+func (*SiteAutomationsArchiveBadRequest) siteAutomationsArchiveRes() {}
+
+type SiteAutomationsArchiveNotFound ProblemDetails
+
+func (*SiteAutomationsArchiveNotFound) siteAutomationsArchiveRes() {}
+
 type SiteAutomationsCreateNotFound ProblemDetails
 
 func (*SiteAutomationsCreateNotFound) siteAutomationsCreateRes() {}
@@ -6283,6 +6306,10 @@ func (*SiteAutomationsDeleteNoContent) siteAutomationsDeleteRes() {}
 type SiteAutomationsDeleteNotFound ProblemDetails
 
 func (*SiteAutomationsDeleteNotFound) siteAutomationsDeleteRes() {}
+
+type SiteAutomationsDeleteUnprocessableEntity ProblemDetails
+
+func (*SiteAutomationsDeleteUnprocessableEntity) siteAutomationsDeleteRes() {}
 
 type SiteAutomationsDryRunHttpStepBadRequest ProblemDetails
 
@@ -6381,6 +6408,14 @@ func (*SiteAutomationsListOK) siteAutomationsListRes() {}
 type SiteAutomationsListUnprocessableEntity ProblemDetails
 
 func (*SiteAutomationsListUnprocessableEntity) siteAutomationsListRes() {}
+
+type SiteAutomationsUnarchiveBadRequest ProblemDetails
+
+func (*SiteAutomationsUnarchiveBadRequest) siteAutomationsUnarchiveRes() {}
+
+type SiteAutomationsUnarchiveNotFound ProblemDetails
+
+func (*SiteAutomationsUnarchiveNotFound) siteAutomationsUnarchiveRes() {}
 
 type SiteAutomationsUpdateBadRequest ProblemDetails
 
@@ -16289,6 +16324,9 @@ type UsedBy struct {
 	ID EntityId `json:"id"`
 	// Its name.
 	Name string `json:"name"`
+	// How many rows the entry stands for; absent means one. An `enrollment` entry names the Automation
+	// (id, name) and counts its active Enrollments.
+	Count OptInt32 `json:"count"`
 }
 
 // GetKind returns the value of Kind.
@@ -16306,6 +16344,11 @@ func (s *UsedBy) GetName() string {
 	return s.Name
 }
 
+// GetCount returns the value of Count.
+func (s *UsedBy) GetCount() OptInt32 {
+	return s.Count
+}
+
 // SetKind sets the value of Kind.
 func (s *UsedBy) SetKind(val UsedByKind) {
 	s.Kind = val
@@ -16321,6 +16364,11 @@ func (s *UsedBy) SetName(val string) {
 	s.Name = val
 }
 
+// SetCount sets the value of Count.
+func (s *UsedBy) SetCount(val OptInt32) {
+	s.Count = val
+}
+
 // What kind of row a refused removal names as a user of the row (ADR 0049). One value per kind of live
 // user a removal can find, so a client branches on it without parsing text.
 // Ref: #/components/schemas/UsedByKind
@@ -16330,6 +16378,7 @@ const (
 	UsedByKindBroadcast  UsedByKind = "broadcast"
 	UsedByKindAutomation UsedByKind = "automation"
 	UsedByKindSegment    UsedByKind = "segment"
+	UsedByKindEnrollment UsedByKind = "enrollment"
 )
 
 // AllValues returns all UsedByKind values.
@@ -16338,6 +16387,7 @@ func (UsedByKind) AllValues() []UsedByKind {
 		UsedByKindBroadcast,
 		UsedByKindAutomation,
 		UsedByKindSegment,
+		UsedByKindEnrollment,
 	}
 }
 
@@ -16349,6 +16399,8 @@ func (s UsedByKind) MarshalText() ([]byte, error) {
 	case UsedByKindAutomation:
 		return []byte(s), nil
 	case UsedByKindSegment:
+		return []byte(s), nil
+	case UsedByKindEnrollment:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -16366,6 +16418,9 @@ func (s *UsedByKind) UnmarshalText(data []byte) error {
 		return nil
 	case UsedByKindSegment:
 		*s = UsedByKindSegment
+		return nil
+	case UsedByKindEnrollment:
+		*s = UsedByKindEnrollment
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)

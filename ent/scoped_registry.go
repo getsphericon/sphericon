@@ -210,10 +210,10 @@ func ScopedEntities() []ScopedEntity {
 				return s.Automation().Update().Where(automation.ID(id)).Save(ctx)
 			},
 			Delete: func(ctx context.Context, s *Scoped, id int64) error {
-				return s.Automation().DeleteOneID(id).Exec(ctx)
+				return s.Automation().PurgeOneID(id).Exec(ctx)
 			},
 			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
-				return s.Automation().Delete().Where(automation.ID(id)).Exec(ctx)
+				return s.Automation().Purge().Where(automation.ID(id)).Exec(ctx)
 			},
 			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
 				src, err := s.c.Automation.Get(ctx, id)
@@ -222,6 +222,9 @@ func ScopedEntities() []ScopedEntity {
 				}
 				_ = remap
 				b := s.Automation().Create()
+				if src.DiscardedAt != nil {
+					b.SetDiscardedAt(*src.DiscardedAt)
+				}
 				b.SetName(src.Name)
 				b.SetStatus(src.Status)
 				b.SetTriggerEvent(src.TriggerEvent)

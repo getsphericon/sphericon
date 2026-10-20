@@ -3065,6 +3065,7 @@ type AutomationMutation struct {
 	id               *int64
 	created_at       *time.Time
 	updated_at       *time.Time
+	discarded_at     *time.Time
 	name             *string
 	status           *automation.Status
 	trigger_event    *string
@@ -3292,6 +3293,55 @@ func (m *AutomationMutation) OldWorkspaceID(ctx context.Context) (v int64, err e
 // ResetWorkspaceID resets all changes to the "workspace_id" field.
 func (m *AutomationMutation) ResetWorkspaceID() {
 	m.workspace = nil
+}
+
+// SetDiscardedAt sets the "discarded_at" field.
+func (m *AutomationMutation) SetDiscardedAt(t time.Time) {
+	m.discarded_at = &t
+}
+
+// DiscardedAt returns the value of the "discarded_at" field in the mutation.
+func (m *AutomationMutation) DiscardedAt() (r time.Time, exists bool) {
+	v := m.discarded_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDiscardedAt returns the old "discarded_at" field's value of the Automation entity.
+// If the Automation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationMutation) OldDiscardedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDiscardedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDiscardedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDiscardedAt: %w", err)
+	}
+	return oldValue.DiscardedAt, nil
+}
+
+// ClearDiscardedAt clears the value of the "discarded_at" field.
+func (m *AutomationMutation) ClearDiscardedAt() {
+	m.discarded_at = nil
+	m.clearedFields[automation.FieldDiscardedAt] = struct{}{}
+}
+
+// DiscardedAtCleared returns if the "discarded_at" field was cleared in this mutation.
+func (m *AutomationMutation) DiscardedAtCleared() bool {
+	_, ok := m.clearedFields[automation.FieldDiscardedAt]
+	return ok
+}
+
+// ResetDiscardedAt resets all changes to the "discarded_at" field.
+func (m *AutomationMutation) ResetDiscardedAt() {
+	m.discarded_at = nil
+	delete(m.clearedFields, automation.FieldDiscardedAt)
 }
 
 // SetName sets the "name" field.
@@ -3571,7 +3621,7 @@ func (m *AutomationMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *AutomationMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 7)
 	if m.created_at != nil {
 		fields = append(fields, automation.FieldCreatedAt)
 	}
@@ -3580,6 +3630,9 @@ func (m *AutomationMutation) Fields() []string {
 	}
 	if m.workspace != nil {
 		fields = append(fields, automation.FieldWorkspaceID)
+	}
+	if m.discarded_at != nil {
+		fields = append(fields, automation.FieldDiscardedAt)
 	}
 	if m.name != nil {
 		fields = append(fields, automation.FieldName)
@@ -3604,6 +3657,8 @@ func (m *AutomationMutation) Field(name string) (ent.Value, bool) {
 		return m.UpdatedAt()
 	case automation.FieldWorkspaceID:
 		return m.WorkspaceID()
+	case automation.FieldDiscardedAt:
+		return m.DiscardedAt()
 	case automation.FieldName:
 		return m.Name()
 	case automation.FieldStatus:
@@ -3625,6 +3680,8 @@ func (m *AutomationMutation) OldField(ctx context.Context, name string) (ent.Val
 		return m.OldUpdatedAt(ctx)
 	case automation.FieldWorkspaceID:
 		return m.OldWorkspaceID(ctx)
+	case automation.FieldDiscardedAt:
+		return m.OldDiscardedAt(ctx)
 	case automation.FieldName:
 		return m.OldName(ctx)
 	case automation.FieldStatus:
@@ -3660,6 +3717,13 @@ func (m *AutomationMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetWorkspaceID(v)
+		return nil
+	case automation.FieldDiscardedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDiscardedAt(v)
 		return nil
 	case automation.FieldName:
 		v, ok := value.(string)
@@ -3714,7 +3778,11 @@ func (m *AutomationMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *AutomationMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(automation.FieldDiscardedAt) {
+		fields = append(fields, automation.FieldDiscardedAt)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -3727,6 +3795,11 @@ func (m *AutomationMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *AutomationMutation) ClearField(name string) error {
+	switch name {
+	case automation.FieldDiscardedAt:
+		m.ClearDiscardedAt()
+		return nil
+	}
 	return fmt.Errorf("unknown Automation nullable field %s", name)
 }
 
@@ -3742,6 +3815,9 @@ func (m *AutomationMutation) ResetField(name string) error {
 		return nil
 	case automation.FieldWorkspaceID:
 		m.ResetWorkspaceID()
+		return nil
+	case automation.FieldDiscardedAt:
+		m.ResetDiscardedAt()
 		return nil
 	case automation.FieldName:
 		m.ResetName()

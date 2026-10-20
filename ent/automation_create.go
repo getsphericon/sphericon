@@ -59,6 +59,20 @@ func (_c *AutomationCreate) SetWorkspaceID(v int64) *AutomationCreate {
 	return _c
 }
 
+// SetDiscardedAt sets the "discarded_at" field.
+func (_c *AutomationCreate) SetDiscardedAt(v time.Time) *AutomationCreate {
+	_c.mutation.SetDiscardedAt(v)
+	return _c
+}
+
+// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
+func (_c *AutomationCreate) SetNillableDiscardedAt(v *time.Time) *AutomationCreate {
+	if v != nil {
+		_c.SetDiscardedAt(*v)
+	}
+	return _c
+}
+
 // SetName sets the "name" field.
 func (_c *AutomationCreate) SetName(v string) *AutomationCreate {
 	_c.mutation.SetName(v)
@@ -254,6 +268,10 @@ func (_c *AutomationCreate) createSpec() (*Automation, *sqlgraph.CreateSpec) {
 		_spec.SetField(automation.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
+	if value, ok := _c.mutation.DiscardedAt(); ok {
+		_spec.SetField(automation.FieldDiscardedAt, field.TypeTime, value)
+		_node.DiscardedAt = &value
+	}
 	if value, ok := _c.mutation.Name(); ok {
 		_spec.SetField(automation.FieldName, field.TypeString, value)
 		_node.Name = value
@@ -391,6 +409,24 @@ func (u *AutomationUpsert) UpdateWorkspaceID() *AutomationUpsert {
 	return u
 }
 
+// SetDiscardedAt sets the "discarded_at" field.
+func (u *AutomationUpsert) SetDiscardedAt(v time.Time) *AutomationUpsert {
+	u.Set(automation.FieldDiscardedAt, v)
+	return u
+}
+
+// UpdateDiscardedAt sets the "discarded_at" field to the value that was provided on create.
+func (u *AutomationUpsert) UpdateDiscardedAt() *AutomationUpsert {
+	u.SetExcluded(automation.FieldDiscardedAt)
+	return u
+}
+
+// ClearDiscardedAt clears the value of the "discarded_at" field.
+func (u *AutomationUpsert) ClearDiscardedAt() *AutomationUpsert {
+	u.SetNull(automation.FieldDiscardedAt)
+	return u
+}
+
 // SetName sets the "name" field.
 func (u *AutomationUpsert) SetName(v string) *AutomationUpsert {
 	u.Set(automation.FieldName, v)
@@ -503,6 +539,27 @@ func (u *AutomationUpsertOne) SetWorkspaceID(v int64) *AutomationUpsertOne {
 func (u *AutomationUpsertOne) UpdateWorkspaceID() *AutomationUpsertOne {
 	return u.Update(func(s *AutomationUpsert) {
 		s.UpdateWorkspaceID()
+	})
+}
+
+// SetDiscardedAt sets the "discarded_at" field.
+func (u *AutomationUpsertOne) SetDiscardedAt(v time.Time) *AutomationUpsertOne {
+	return u.Update(func(s *AutomationUpsert) {
+		s.SetDiscardedAt(v)
+	})
+}
+
+// UpdateDiscardedAt sets the "discarded_at" field to the value that was provided on create.
+func (u *AutomationUpsertOne) UpdateDiscardedAt() *AutomationUpsertOne {
+	return u.Update(func(s *AutomationUpsert) {
+		s.UpdateDiscardedAt()
+	})
+}
+
+// ClearDiscardedAt clears the value of the "discarded_at" field.
+func (u *AutomationUpsertOne) ClearDiscardedAt() *AutomationUpsertOne {
+	return u.Update(func(s *AutomationUpsert) {
+		s.ClearDiscardedAt()
 	})
 }
 
@@ -790,6 +847,27 @@ func (u *AutomationUpsertBulk) SetWorkspaceID(v int64) *AutomationUpsertBulk {
 func (u *AutomationUpsertBulk) UpdateWorkspaceID() *AutomationUpsertBulk {
 	return u.Update(func(s *AutomationUpsert) {
 		s.UpdateWorkspaceID()
+	})
+}
+
+// SetDiscardedAt sets the "discarded_at" field.
+func (u *AutomationUpsertBulk) SetDiscardedAt(v time.Time) *AutomationUpsertBulk {
+	return u.Update(func(s *AutomationUpsert) {
+		s.SetDiscardedAt(v)
+	})
+}
+
+// UpdateDiscardedAt sets the "discarded_at" field to the value that was provided on create.
+func (u *AutomationUpsertBulk) UpdateDiscardedAt() *AutomationUpsertBulk {
+	return u.Update(func(s *AutomationUpsert) {
+		s.UpdateDiscardedAt()
+	})
+}
+
+// ClearDiscardedAt clears the value of the "discarded_at" field.
+func (u *AutomationUpsertBulk) ClearDiscardedAt() *AutomationUpsertBulk {
+	return u.Update(func(s *AutomationUpsert) {
+		s.ClearDiscardedAt()
 	})
 }
 

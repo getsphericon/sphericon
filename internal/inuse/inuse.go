@@ -20,6 +20,9 @@ const (
 	Automation Kind = "automation"
 	// Segment is a Segment whose rule names the row.
 	Segment Kind = "segment"
+	// Enrollment stands for the active Enrollments of an Automation: one User naming the
+	// Automation, with their Count.
+	Enrollment Kind = "enrollment"
 )
 
 // User is one row that uses the row a removal was refused for.
@@ -27,6 +30,8 @@ type User struct {
 	Kind Kind
 	ID   int64
 	Name string
+	// Count is how many rows the User stands for; zero means one.
+	Count int
 }
 
 // Error is a removal refused because Users still use the row. Callers match it with As.
@@ -40,6 +45,9 @@ func (e *Error) Error() string {
 	names := make([]string, len(e.Users))
 	for i, u := range e.Users {
 		names[i] = fmt.Sprintf("%s %q", u.Kind, u.Name)
+		if u.Count > 0 {
+			names[i] = fmt.Sprintf("%d active %ss of %q", u.Count, u.Kind, u.Name)
+		}
 	}
 	return fmt.Sprintf("%s is in use by %s", e.What, strings.Join(names, ", "))
 }

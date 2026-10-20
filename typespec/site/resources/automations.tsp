@@ -121,6 +121,9 @@ model SiteAutomationResource {
   /** The automation's ordered, linear steps */
   steps: SiteAutomationStep[];
 
+  /** When the automation was archived; null while it is kept */
+  archivedAt?: Timestamp | null;
+
   /** Creation timestamp */
   createdAt: Timestamp;
 
@@ -142,13 +145,46 @@ model SiteUpdateAutomationInput {
   steps?: SiteAutomationStep[];
 }
 
+/** Filter of the automation list */
+model SiteAutomationsListFilter {
+  /** true lists the archived automations instead of the kept ones; the default hides them */
+  @query archived?: boolean;
+}
+
+/**
+ * Delete removes an automation that has no enrollments for good; one with enrollments is
+ * history and is archived instead (ADR 0049), so a delete of it is a 422.
+ */
 @tag("Site Automations")
 interface SiteAutomations
   extends WorkspaceCrud<
       SiteAutomationResource,
       SiteCreateAutomationInput,
-      SiteUpdateAutomationInput
+      SiteUpdateAutomationInput,
+      never,
+      UnprocessableEntityProblem,
+      SiteAutomationsListFilter
     > {
+  /**
+   * Archive an automation: it leaves the list, enrolls nobody and keeps its enrollments, and can
+   * be restored. Refused with 409 while it has active enrollments (`usedBy` carries their count).
+   */
+  @action("archive")
+  @autoRoute
+  archive(...ResourceParameters<SiteAutomationResource>):
+    | SiteAutomationResource
+    | BadRequestProblem
+    | NotFoundProblem
+    | InUseProblem;
+
+  /** Restore an archived automation to the list */
+  @action("unarchive")
+  @autoRoute
+  unarchive(...ResourceParameters<SiteAutomationResource>):
+    | SiteAutomationResource
+    | BadRequestProblem
+    | NotFoundProblem;
+
   /** Activate an automation (starts enrolling contacts) */
   @action("activate")
   @autoRoute

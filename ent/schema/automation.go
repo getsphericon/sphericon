@@ -25,7 +25,7 @@ func (Automation) Annotations() []schema.Annotation {
 }
 
 func (Automation) Mixin() []ent.Mixin {
-	return []ent.Mixin{TimeMixin{}, WorkspaceMixin{Ref: "automations"}}
+	return []ent.Mixin{TimeMixin{}, WorkspaceMixin{Ref: "automations"}, DiscardMixin{}}
 }
 
 func (Automation) Fields() []ent.Field {
@@ -47,7 +47,8 @@ func (Automation) Fields() []ent.Field {
 
 func (Automation) Edges() []ent.Edge {
 	return []ent.Edge{
-		// Deleting an Automation deletes its Enrollments with it.
+		// Purging an Automation (only one with no Enrollments, ADR 0049) purges its Enrollments
+		// with it; an Automation with history is discarded instead.
 		edge.To("runs", AutomationRun.Type).
 			Annotations(entsql.OnDelete(entsql.Cascade)),
 		// The steps live in the versions (ADR 0049); the latest one is the Automation's

@@ -40,6 +40,13 @@ type Handler interface {
 	//
 	// POST /automations/{id}/activate
 	AutomationsActivate(ctx context.Context, params AutomationsActivateParams) (AutomationsActivateRes, error)
+	// AutomationsArchive implements Automations_archive operation.
+	//
+	// Archive an automation: it leaves the list, enrolls nobody and keeps its enrollments, and can be
+	// restored. Refused with 409 while it has active enrollments (`usedBy` carries their count).
+	//
+	// POST /automations/{id}/archive
+	AutomationsArchive(ctx context.Context, params AutomationsArchiveParams) (AutomationsArchiveRes, error)
 	// AutomationsCreate implements Automations_create operation.
 	//
 	// Create a resource.
@@ -77,6 +84,12 @@ type Handler interface {
 	//
 	// GET /automations
 	AutomationsList(ctx context.Context, params AutomationsListParams) (AutomationsListRes, error)
+	// AutomationsUnarchive implements Automations_unarchive operation.
+	//
+	// Restore an archived automation to the list.
+	//
+	// POST /automations/{id}/unarchive
+	AutomationsUnarchive(ctx context.Context, params AutomationsUnarchiveParams) (AutomationsUnarchiveRes, error)
 	// AutomationsUpdate implements Automations_update operation.
 	//
 	// Update a resource.

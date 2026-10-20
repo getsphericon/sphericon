@@ -1963,14 +1963,69 @@ type AutomationScoped struct{ s *Scoped }
 // Automation returns the Automation entities of the Workspace.
 func (s *Scoped) Automation() *AutomationScoped { return &AutomationScoped{s: s} }
 
-// Query returns a Automation query already confined to the Workspace.
+// Query returns a Automation query already confined to the Workspace, hiding discarded rows
+// (a list query; QueryWithDiscarded sees them too).
 func (t *AutomationScoped) Query() *AutomationQuery {
+	return t.s.c.Automation.Query().Where(automation.WorkspaceID(t.s.ws), automation.DiscardedAtIsNil())
+}
+
+// QueryWithDiscarded returns a Automation query confined to the Workspace that also sees discarded rows.
+func (t *AutomationScoped) QueryWithDiscarded() *AutomationQuery {
 	return t.s.c.Automation.Query().Where(automation.WorkspaceID(t.s.ws))
 }
 
-// Get returns the Automation with the id; a row of another Workspace is not found.
+// Get returns the Automation with the id, discarded or not; a row of another Workspace is not found.
 func (t *AutomationScoped) Get(ctx context.Context, id int64) (*Automation, error) {
-	return t.Query().Where(automation.ID(id)).Only(ctx)
+	return t.QueryWithDiscarded().Where(automation.ID(id)).Only(ctx)
+}
+
+// Discard stamps discarded_at on the kept Automation with the id (ps fence it further); a row of
+// another Workspace, an already discarded row or one a predicate excludes is not found.
+func (t *AutomationScoped) Discard(ctx context.Context, id int64, ps ...predicate.Automation) error {
+	return t.setDiscarded(ctx, id, true, ps)
+}
+
+// Undiscard clears discarded_at on the discarded Automation with the id; a row that is not
+// discarded is not found.
+func (t *AutomationScoped) Undiscard(ctx context.Context, id int64) error {
+	return t.setDiscarded(ctx, id, false, nil)
+}
+
+func (t *AutomationScoped) setDiscarded(ctx context.Context, id int64, discard bool, ps []predicate.Automation) error {
+	where := append([]predicate.Automation{automation.ID(id), automation.WorkspaceID(t.s.ws)}, ps...)
+	if discard {
+		where = append(where, automation.DiscardedAtIsNil())
+	} else {
+		where = append(where, automation.DiscardedAtNotNil())
+	}
+	write := func(c *Client) (*Automation, error) {
+		u := c.Automation.UpdateOneID(id).Where(where...)
+		if discard {
+			u.SetDiscardedAt(time.Now())
+		} else {
+			u.ClearDiscardedAt()
+		}
+		return u.Save(ctx)
+	}
+	if t.s.auditing() {
+		verb := "restore"
+		if discard {
+			verb = "discard"
+		}
+		return t.s.audited(ctx, func(ts *Scoped) error {
+			before, err := ts.c.Automation.Query().Where(where...).Only(ctx)
+			if err != nil {
+				return err
+			}
+			after, err := write(ts.c)
+			if err != nil {
+				return err
+			}
+			return ts.record(ctx, auditChangeAutomation(verb, before, after))
+		})
+	}
+	_, err := write(t.s.c)
+	return err
 }
 
 // AutomationScopedDeleteOne wraps AutomationDeleteOne.
@@ -1979,8 +2034,8 @@ type AutomationScopedDeleteOne struct {
 	b *AutomationDeleteOne
 }
 
-// DeleteOneID deletes the Automation with the id; a row of another Workspace is not found.
-func (t *AutomationScoped) DeleteOneID(id int64) *AutomationScopedDeleteOne {
+// PurgeOneID physically removes the Automation with the id; a row of another Workspace is not found.
+func (t *AutomationScoped) PurgeOneID(id int64) *AutomationScopedDeleteOne {
 	return &AutomationScopedDeleteOne{s: t.s, b: t.s.c.Automation.DeleteOneID(id).Where(automation.WorkspaceID(t.s.ws))}
 }
 
@@ -2014,8 +2069,8 @@ type AutomationScopedDelete struct {
 	b *AutomationDelete
 }
 
-// Delete deletes the Automation entities of the Workspace that match the predicates.
-func (t *AutomationScoped) Delete() *AutomationScopedDelete {
+// Purge physically removes the Automation entities of the Workspace that match the predicates.
+func (t *AutomationScoped) Purge() *AutomationScopedDelete {
 	return &AutomationScopedDelete{s: t.s, b: t.s.c.Automation.Delete().Where(automation.WorkspaceID(t.s.ws))}
 }
 
@@ -2084,6 +2139,18 @@ func (x *AutomationScopedCreate) SetUpdatedAt(v time.Time) *AutomationScopedCrea
 // SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
 func (x *AutomationScopedCreate) SetNillableUpdatedAt(v *time.Time) *AutomationScopedCreate {
 	x.b.SetNillableUpdatedAt(v)
+	return x
+}
+
+// SetDiscardedAt sets the "discarded_at" field.
+func (x *AutomationScopedCreate) SetDiscardedAt(v time.Time) *AutomationScopedCreate {
+	x.b.SetDiscardedAt(v)
+	return x
+}
+
+// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
+func (x *AutomationScopedCreate) SetNillableDiscardedAt(v *time.Time) *AutomationScopedCreate {
+	x.b.SetNillableDiscardedAt(v)
 	return x
 }
 
@@ -2247,6 +2314,24 @@ func (u *AutomationScopedUpsert) SetUpdatedAt(v time.Time) *AutomationScopedUpse
 // UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
 func (u *AutomationScopedUpsert) UpdateUpdatedAt() *AutomationScopedUpsert {
 	u.u.SetExcluded(automation.FieldUpdatedAt)
+	return u
+}
+
+// SetDiscardedAt sets the "discarded_at" field.
+func (u *AutomationScopedUpsert) SetDiscardedAt(v time.Time) *AutomationScopedUpsert {
+	u.u.Set(automation.FieldDiscardedAt, v)
+	return u
+}
+
+// UpdateDiscardedAt sets the "discarded_at" field to the value that was provided on create.
+func (u *AutomationScopedUpsert) UpdateDiscardedAt() *AutomationScopedUpsert {
+	u.u.SetExcluded(automation.FieldDiscardedAt)
+	return u
+}
+
+// ClearDiscardedAt clears the value of the "discarded_at" field.
+func (u *AutomationScopedUpsert) ClearDiscardedAt() *AutomationScopedUpsert {
+	u.u.SetNull(automation.FieldDiscardedAt)
 	return u
 }
 
@@ -2459,6 +2544,24 @@ func (x *AutomationScopedUpdateOne) SetUpdatedAt(v time.Time) *AutomationScopedU
 	return x
 }
 
+// SetDiscardedAt sets the "discarded_at" field.
+func (x *AutomationScopedUpdateOne) SetDiscardedAt(v time.Time) *AutomationScopedUpdateOne {
+	x.b.SetDiscardedAt(v)
+	return x
+}
+
+// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
+func (x *AutomationScopedUpdateOne) SetNillableDiscardedAt(v *time.Time) *AutomationScopedUpdateOne {
+	x.b.SetNillableDiscardedAt(v)
+	return x
+}
+
+// ClearDiscardedAt clears the value of the "discarded_at" field.
+func (x *AutomationScopedUpdateOne) ClearDiscardedAt() *AutomationScopedUpdateOne {
+	x.b.ClearDiscardedAt()
+	return x
+}
+
 // SetName sets the "name" field.
 func (x *AutomationScopedUpdateOne) SetName(v string) *AutomationScopedUpdateOne {
 	x.b.SetName(v)
@@ -2636,6 +2739,24 @@ func (x *AutomationScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *Aut
 // SetUpdatedAt sets the "updated_at" field.
 func (x *AutomationScopedUpdate) SetUpdatedAt(v time.Time) *AutomationScopedUpdate {
 	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetDiscardedAt sets the "discarded_at" field.
+func (x *AutomationScopedUpdate) SetDiscardedAt(v time.Time) *AutomationScopedUpdate {
+	x.b.SetDiscardedAt(v)
+	return x
+}
+
+// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
+func (x *AutomationScopedUpdate) SetNillableDiscardedAt(v *time.Time) *AutomationScopedUpdate {
+	x.b.SetNillableDiscardedAt(v)
+	return x
+}
+
+// ClearDiscardedAt clears the value of the "discarded_at" field.
+func (x *AutomationScopedUpdate) ClearDiscardedAt() *AutomationScopedUpdate {
+	x.b.ClearDiscardedAt()
 	return x
 }
 

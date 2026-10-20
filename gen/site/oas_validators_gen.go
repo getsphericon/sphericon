@@ -980,6 +980,22 @@ func (s *SiteAutomationsActivateUnprocessableEntity) Validate() error {
 	return nil
 }
 
+func (s *SiteAutomationsArchiveBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteAutomationsArchiveNotFound) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *SiteAutomationsCreateNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -1021,6 +1037,14 @@ func (s *SiteAutomationsDeleteBadRequest) Validate() error {
 }
 
 func (s *SiteAutomationsDeleteNotFound) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteAutomationsDeleteUnprocessableEntity) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -1125,6 +1149,22 @@ func (s *SiteAutomationsListOK) Validate() error {
 }
 
 func (s *SiteAutomationsListUnprocessableEntity) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteAutomationsUnarchiveBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteAutomationsUnarchiveNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -6412,6 +6452,8 @@ func (s UsedByKind) Validate() error {
 	case "automation":
 		return nil
 	case "segment":
+		return nil
+	case "enrollment":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)

@@ -74,7 +74,7 @@ var (
 		"webhooks_regenerate_secret", "webhooks_test",
 		"tags_list", "tags_list_for_contact", "tags_apply", "tags_remove", "tags_delete",
 		"automations_list", "automations_create", "automations_get", "automations_update", "automations_delete",
-		"automations_deactivate", "automations_dry_run_http_step", "enrollments_list", "enrollments_get",
+		"automations_deactivate", "automations_archive", "automations_unarchive", "automations_dry_run_http_step", "enrollments_list", "enrollments_get",
 	}
 	sendTools = []string{"emails_send", "broadcasts_schedule", "broadcasts_unschedule", "automations_activate"}
 )

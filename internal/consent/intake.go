@@ -63,7 +63,7 @@ func validateSource(ctx context.Context, s *ent.Scoped, source string) error {
 	case source == eligibility.SourceBroadcasts || source == eligibility.SourceEverything:
 		return nil
 	case isAutomation:
-		exists, err := s.Automation().Query().Where(automation.ID(automationID)).Exist(ctx)
+		exists, err := s.Automation().QueryWithDiscarded().Where(automation.ID(automationID)).Exist(ctx)
 		if err != nil {
 			return err
 		}

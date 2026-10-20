@@ -45,6 +45,12 @@ const (
 	AnchorTokenPrefix = "testprefix01"
 	// AnchorTokenSecret is from fixtures/api_tokens.
 	AnchorTokenSecret = "test-anchor-token-secret"
+	// AutomationArchivedID is from fixtures/automations.
+	AutomationArchivedID = 107
+	// AutomationArchivedName is from fixtures/automations.
+	AutomationArchivedName = "Old referral nudge"
+	// AutomationArchivedVersionID is from fixtures/automation_versions.
+	AutomationArchivedVersionID = 107
 	// AutomationGlobexID is from fixtures/automations.
 	AutomationGlobexID = 900
 	// AutomationGlobexName is from fixtures/automations.
@@ -55,6 +61,12 @@ const (
 	AutomationHoldDemoName = "Hold demo"
 	// AutomationHoldDemoVersionID is from fixtures/automation_versions.
 	AutomationHoldDemoVersionID = 103
+	// AutomationInitechArchivedID is from fixtures/automations.
+	AutomationInitechArchivedID = 302
+	// AutomationInitechArchivedName is from fixtures/automations.
+	AutomationInitechArchivedName = "Initech retired drip"
+	// AutomationInitechArchivedVersionID is from fixtures/automation_versions.
+	AutomationInitechArchivedVersionID = 302
 	// AutomationInitechHTTPID is from fixtures/automations.
 	AutomationInitechHTTPID = 301
 	// AutomationInitechHTTPName is from fixtures/automations.
@@ -81,6 +93,8 @@ const (
 	AutomationOnboardingDripVersion1ID = 106
 	// AutomationOnboardingDripVersion2ID is from fixtures/automation_versions.
 	AutomationOnboardingDripVersion2ID = 1060
+	// AutomationRunArchivedErasableID is from fixtures/automation_runs.
+	AutomationRunArchivedErasableID = 3003
 	// AutomationRunBystanderHTTPFailedID is from fixtures/automation_runs.
 	AutomationRunBystanderHTTPFailedID = 3002
 	// AutomationRunErasableHTTPFailedID is from fixtures/automation_runs.

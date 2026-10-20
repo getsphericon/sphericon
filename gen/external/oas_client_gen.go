@@ -61,6 +61,13 @@ type Invoker interface {
 	//
 	// POST /automations/{id}/activate
 	AutomationsActivate(ctx context.Context, params AutomationsActivateParams) (AutomationsActivateRes, error)
+	// AutomationsArchive invokes Automations_archive operation.
+	//
+	// Archive an automation: it leaves the list, enrolls nobody and keeps its enrollments, and can be
+	// restored. Refused with 409 while it has active enrollments (`usedBy` carries their count).
+	//
+	// POST /automations/{id}/archive
+	AutomationsArchive(ctx context.Context, params AutomationsArchiveParams) (AutomationsArchiveRes, error)
 	// AutomationsCreate invokes Automations_create operation.
 	//
 	// Create a resource.
@@ -98,6 +105,12 @@ type Invoker interface {
 	//
 	// GET /automations
 	AutomationsList(ctx context.Context, params AutomationsListParams) (AutomationsListRes, error)
+	// AutomationsUnarchive invokes Automations_unarchive operation.
+	//
+	// Restore an archived automation to the list.
+	//
+	// POST /automations/{id}/unarchive
+	AutomationsUnarchive(ctx context.Context, params AutomationsUnarchiveParams) (AutomationsUnarchiveRes, error)
 	// AutomationsUpdate invokes Automations_update operation.
 	//
 	// Update a resource.
@@ -1639,6 +1652,142 @@ func (c *Client) sendAutomationsActivate(ctx context.Context, params Automations
 	return result, nil
 }
 
+// AutomationsArchive invokes Automations_archive operation.
+//
+// Archive an automation: it leaves the list, enrolls nobody and keeps its enrollments, and can be
+// restored. Refused with 409 while it has active enrollments (`usedBy` carries their count).
+//
+// POST /automations/{id}/archive
+func (c *Client) AutomationsArchive(ctx context.Context, params AutomationsArchiveParams) (AutomationsArchiveRes, error) {
+	res, err := c.sendAutomationsArchive(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendAutomationsArchive(ctx context.Context, params AutomationsArchiveParams) (res AutomationsArchiveRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("Automations_archive"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/automations/{id}/archive"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, AutomationsArchiveOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/automations/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/archive"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:BearerAuth"
+			switch err := c.securityBearerAuth(ctx, AutomationsArchiveOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"BearerAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeAutomationsArchiveResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
 // AutomationsCreate invokes Automations_create operation.
 //
 // Create a resource.
@@ -2362,6 +2511,23 @@ func (c *Client) sendAutomationsList(ctx context.Context, params AutomationsList
 			return res, errors.Wrap(err, "encode query")
 		}
 	}
+	{
+		// Encode "archived" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "archived",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Archived.Get(); ok {
+				return e.EncodeValue(conv.BoolToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
 	u.RawQuery = q.Values().Encode()
 
 	stage = "EncodeRequest"
@@ -2419,6 +2585,141 @@ func (c *Client) sendAutomationsList(ctx context.Context, params AutomationsList
 
 	stage = "DecodeResponse"
 	result, err := decodeAutomationsListResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// AutomationsUnarchive invokes Automations_unarchive operation.
+//
+// Restore an archived automation to the list.
+//
+// POST /automations/{id}/unarchive
+func (c *Client) AutomationsUnarchive(ctx context.Context, params AutomationsUnarchiveParams) (AutomationsUnarchiveRes, error) {
+	res, err := c.sendAutomationsUnarchive(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendAutomationsUnarchive(ctx context.Context, params AutomationsUnarchiveParams) (res AutomationsUnarchiveRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("Automations_unarchive"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/automations/{id}/unarchive"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, AutomationsUnarchiveOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/automations/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/unarchive"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:BearerAuth"
+			switch err := c.securityBearerAuth(ctx, AutomationsUnarchiveOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"BearerAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeAutomationsUnarchiveResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}

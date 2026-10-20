@@ -50,8 +50,10 @@
     "title": "Activity"
   },
   "alerts": {
+    "automationArchiveErrorTitle": "Failed to archive automation",
     "automationDeleteErrorTitle": "Failed to delete automation",
     "automationLoadErrorTitle": "Failed to load automations",
+    "automationRestoreErrorTitle": "Failed to restore automation",
     "automationSaveErrorMessage": "We couldn't save your automation. Please try again.",
     "automationSaveErrorTitle": "Failed to save automation",
     "automationStatusErrorTitle": "Failed to change automation status",
@@ -172,6 +174,7 @@
     "nameLabel": "Name",
     "noRecords": "No automations yet",
     "removeTagNodeDescription": "Take a tag off the contact.",
+    "showArchived": "Show archived",
     "statusActive": "Active",
     "statusDraft": "Draft",
     "statusLabel": "Status",
@@ -590,9 +593,11 @@
   },
   "notifications": {
     "automationActivated": "Automation activated",
+    "automationArchived": "Automation archived",
     "automationCreated": "Automation created",
     "automationDeactivated": "Automation deactivated",
     "automationDeleted": "Automation deleted",
+    "automationRestored": "Automation restored",
     "automationUpdated": "Automation updated",
     "broadcastArchived": "Broadcast archived",
     "broadcastCreated": "Broadcast created",
@@ -620,7 +625,10 @@
     "templateCreated": "Template created",
     "templateDeleted": "Template deleted",
     "templateUpdated": "Template updated",
-    "testSent": "Test email sent"
+    "testSent": "Test email sent",
+    "usedByEnrollments": "{{count}} active enrollments of \"{{name}}\"",
+    "usedByEnrollments_one": "{{count}} active enrollment of \"{{name}}\"",
+    "usedByEnrollments_other": "{{count}} active enrollments of \"{{name}}\""
   },
   "oauthConsent": {
     "allow": "Allow access",
@@ -1242,6 +1250,7 @@
   "usedByKind": {
     "automation": "Automation",
     "broadcast": "Broadcast",
+    "enrollment": "Enrollment",
     "segment": "Segment"
   },
   "userMenu": {

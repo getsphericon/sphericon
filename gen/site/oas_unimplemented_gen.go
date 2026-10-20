@@ -230,6 +230,16 @@ func (UnimplementedHandler) SiteAutomationsActivate(ctx context.Context, params 
 	return r, ht.ErrNotImplemented
 }
 
+// SiteAutomationsArchive implements SiteAutomations_archive operation.
+//
+// Archive an automation: it leaves the list, enrolls nobody and keeps its enrollments, and can be
+// restored. Refused with 409 while it has active enrollments (`usedBy` carries their count).
+//
+// POST /workspaces/{workspaceId}/automations/{id}/archive
+func (UnimplementedHandler) SiteAutomationsArchive(ctx context.Context, params SiteAutomationsArchiveParams) (r SiteAutomationsArchiveRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteAutomationsCreate implements SiteAutomations_create operation.
 //
 // Create a resource from the site UI.
@@ -281,6 +291,15 @@ func (UnimplementedHandler) SiteAutomationsGet(ctx context.Context, params SiteA
 //
 // GET /workspaces/{workspaceId}/automations
 func (UnimplementedHandler) SiteAutomationsList(ctx context.Context, params SiteAutomationsListParams) (r SiteAutomationsListRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteAutomationsUnarchive implements SiteAutomations_unarchive operation.
+//
+// Restore an archived automation to the list.
+//
+// POST /workspaces/{workspaceId}/automations/{id}/unarchive
+func (UnimplementedHandler) SiteAutomationsUnarchive(ctx context.Context, params SiteAutomationsUnarchiveParams) (r SiteAutomationsUnarchiveRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

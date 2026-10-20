@@ -304,7 +304,9 @@ _Avoid_: Notification, system email, trigger (that is the Automation term), API 
 A workspace-scoped, event-triggered sequence: when its Trigger fires for a Contact, the
 Contact is enrolled and walks the Automation's ordered steps (send email, wait, …). Each
 Automation is its own unsubscribe Sending source. Activating starts enrolling; deactivating
-stops _new_ enrollments but lets in-flight Enrollments finish (deactivate ≠ halt).
+stops _new_ enrollments but lets in-flight Enrollments finish (deactivate ≠ halt). Removing
+one is **Archive** (a **Discard**) once no Enrollment is active, which hides it and enrolls
+nobody while its Enrollments stay; only an Automation with no Enrollments at all is purged.
 _Avoid_: Workflow, flow, journey, drip, campaign
 
 **Automation version**:

@@ -309,7 +309,8 @@ export const zStaffSuspension = z.object({
 export const zUsedByKind = z.enum([
   'broadcast',
   'automation',
-  'segment'
+  'segment',
+  'enrollment'
 ]);
 
 /**
@@ -319,7 +320,8 @@ export const zUsedByKind = z.enum([
 export const zUsedBy = z.object({
   kind: zUsedByKind,
   id: zEntityId,
-  name: z.string()
+  name: z.string(),
+  count: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }))
 });
 
 /**

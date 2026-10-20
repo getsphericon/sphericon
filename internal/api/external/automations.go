@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/api/external/resources"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/convert"
+	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/samber/lo"
 )
@@ -27,7 +28,7 @@ func (h *Handlers) AutomationsList(ctx context.Context, params externalapi.Autom
 		return &res, nil
 	}
 
-	page, err := h.automations.List(ctx, auth.TokenScoped(ctx), pagination.ParamsOf(params.Page, params.PageSize))
+	page, err := h.automations.List(ctx, auth.TokenScoped(ctx), pagination.ParamsOf(params.Page, params.PageSize), params.Archived.Or(false))
 	if err != nil {
 		return nil, err
 	}
@@ -118,14 +119,69 @@ func (h *Handlers) AutomationsDelete(ctx context.Context, params externalapi.Aut
 	}
 	id := int64(params.ID)
 	err := h.automations.Delete(ctx, auth.TokenScoped(ctx), id)
-	if errors.Is(err, automations.ErrNotFound) {
+	switch {
+	case errors.Is(err, automations.ErrNotFound):
 		res := externalapi.AutomationsDeleteNotFound(problem(http.StatusNotFound, "automation not found"))
+		return &res, nil
+	case errors.Is(err, automations.ErrHasEnrollments):
+		res := externalapi.AutomationsDeleteUnprocessableEntity(problem(http.StatusUnprocessableEntity, "an automation with enrollments cannot be deleted; archive it"))
+		return &res, nil
+	case err != nil:
+		return nil, err
+	}
+	return &externalapi.AutomationsDeleteNoContent{}, nil
+}
+
+// AutomationsArchive archives an automation (ADR 0049); active enrollments refuse it with 409.
+func (h *Handlers) AutomationsArchive(ctx context.Context, params externalapi.AutomationsArchiveParams) (externalapi.AutomationsArchiveRes, error) {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), scopeAutomationsWrite) {
+		res := externalapi.AutomationsArchiveUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
+		return &res, nil
+	}
+	ws := auth.TokenScoped(ctx)
+	id := int64(params.ID)
+	err := h.automations.Archive(ctx, ws, id)
+	if refused, ok := inuse.As(err); ok {
+		res := inUseProblem(refused)
+		return &res, nil
+	}
+	if errors.Is(err, automations.ErrNotFound) {
+		res := externalapi.AutomationsArchiveNotFound(problem(http.StatusNotFound, "automation not found"))
 		return &res, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	return &externalapi.AutomationsDeleteNoContent{}, nil
+	a, err := h.automations.Get(ctx, ws, id)
+	if err != nil {
+		return nil, err
+	}
+	res := mapper.AutomationToResource(a)
+	return &res, nil
+}
+
+// AutomationsUnarchive restores an archived automation.
+func (h *Handlers) AutomationsUnarchive(ctx context.Context, params externalapi.AutomationsUnarchiveParams) (externalapi.AutomationsUnarchiveRes, error) {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), scopeAutomationsWrite) {
+		res := externalapi.AutomationsUnarchiveUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
+		return &res, nil
+	}
+	ws := auth.TokenScoped(ctx)
+	id := int64(params.ID)
+	err := h.automations.Unarchive(ctx, ws, id)
+	if errors.Is(err, automations.ErrNotFound) {
+		res := externalapi.AutomationsUnarchiveNotFound(problem(http.StatusNotFound, "automation not found"))
+		return &res, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	a, err := h.automations.Get(ctx, ws, id)
+	if err != nil {
+		return nil, err
+	}
+	res := mapper.AutomationToResource(a)
+	return &res, nil
 }
 
 // AutomationsActivate and AutomationsDeactivate need automations:activate, which
