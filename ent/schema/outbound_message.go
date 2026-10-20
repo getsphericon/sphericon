@@ -130,5 +130,7 @@ func (OutboundMessage) Indexes() []ent.Index {
 		index.Fields("workspace_id", "integration_id", "sent_at"),
 		// Deliverability windows per Sending domain (ADR 0011).
 		index.Fields("workspace_id", "sending_domain", "created_at"),
+		// The Outbound messages Export stream's cursor (ADR 0045).
+		index.Fields("workspace_id", "updated_at", "id"),
 	}
 }

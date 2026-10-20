@@ -5550,6 +5550,60 @@ type ExportEventsUnauthorized ProblemDetails
 
 func (*ExportEventsUnauthorized) exportEventsRes() {}
 
+type ExportMessagesBadRequest ProblemDetails
+
+func (*ExportMessagesBadRequest) exportMessagesRes() {}
+
+type ExportMessagesNotFound ProblemDetails
+
+func (*ExportMessagesNotFound) exportMessagesRes() {}
+
+type ExportMessagesOK struct {
+	Data io.Reader
+}
+
+// Read reads data from the Data reader.
+//
+// Kept to satisfy the io.Reader interface.
+func (s ExportMessagesOK) Read(p []byte) (n int, err error) {
+	if s.Data == nil {
+		return 0, io.EOF
+	}
+	return s.Data.Read(p)
+}
+
+// ExportMessagesOKHeaders wraps ExportMessagesOK with response headers.
+type ExportMessagesOKHeaders struct {
+	XNextCursor string
+	Response    ExportMessagesOK
+}
+
+// GetXNextCursor returns the value of XNextCursor.
+func (s *ExportMessagesOKHeaders) GetXNextCursor() string {
+	return s.XNextCursor
+}
+
+// GetResponse returns the value of Response.
+func (s *ExportMessagesOKHeaders) GetResponse() ExportMessagesOK {
+	return s.Response
+}
+
+// SetXNextCursor sets the value of XNextCursor.
+func (s *ExportMessagesOKHeaders) SetXNextCursor(val string) {
+	s.XNextCursor = val
+}
+
+// SetResponse sets the value of Response.
+func (s *ExportMessagesOKHeaders) SetResponse(val ExportMessagesOK) {
+	s.Response = val
+}
+
+func (*ExportMessagesOKHeaders) exportMessagesRes() {}
+
+type ExportMessagesUnauthorized ProblemDetails
+
+func (*ExportMessagesUnauthorized) exportMessagesRes() {}
+
 // Delivery channel an integration belongs to.
 // Ref: #/components/schemas/IntegrationChannel
 type IntegrationChannel string

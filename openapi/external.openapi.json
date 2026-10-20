@@ -4938,6 +4938,76 @@
         }
       }
     },
+    "/export/messages": {
+      "get": {
+        "operationId": "Export_messages",
+        "description": "Read the Workspace's Outbound messages, oldest change first (Enterprise; needs the\n`export:read` scope). Each line of the body is an `ExportMessageRow`; every key is\nalways present.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ExportPageQuery.cursor"
+          },
+          {
+            "$ref": "#/components/parameters/ExportPageQuery.limit"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One page of an Export stream (Enterprise, ADR 0045): newline-delimited JSON, one row\nper line with no envelope, so the body loads as ClickHouse `JSONEachRow`. The row\nschema is named by each operation. The next cursor is the `X-Next-Cursor` header;\npass it as `cursor` for the next page. The cursor is the position after the last row of\nthe page and the next page includes everything at or after it, so rows that share an\n`updated_at` across a page edge are not lost. A page with no rows returns the cursor it\nwas given. A row that changes is delivered again with a newer `updated_at`: keep the\nnewest version per `id`.",
+            "headers": {
+              "X-Next-Cursor": {
+                "required": true,
+                "description": "Opaque cursor for the next page",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/x-ndjson": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Export"],
+        "x-mcp": {
+          "hidden": true
+        }
+      }
+    },
     "/integrations": {
       "get": {
         "operationId": "Integrations_list",
@@ -11140,6 +11210,179 @@
           }
         },
         "description": "One row of the Events stream. A row is delivered again whenever it changes (an anonymous Event stitched onto a Contact, an `email.*` Event anonymized by an Erasure)"
+      },
+      "ExportMessageRow": {
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "channel",
+          "destination",
+          "status",
+          "reason",
+          "contact_id",
+          "broadcast_id",
+          "automation_id",
+          "automation_run_id",
+          "automation_step",
+          "integration_id",
+          "template_id",
+          "sending_source",
+          "sending_domain",
+          "provider_message_id",
+          "claimed_at",
+          "sent_at",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Unique identifier"
+          },
+          "kind": {
+            "type": "string",
+            "description": "Which surface asked for the send: `broadcast`, `automation` or `transactional`"
+          },
+          "channel": {
+            "type": "string",
+            "description": "Delivery channel"
+          },
+          "destination": {
+            "type": "string",
+            "nullable": true,
+            "description": "Lower-cased destination address; absent once an Erasure anonymized the row"
+          },
+          "status": {
+            "type": "string",
+            "description": "`pending` (claimed, provider not yet answered), `sent`, `skipped` or `failed`"
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why the message was skipped, or the failure text"
+          },
+          "contact_id": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "nullable": true,
+            "description": "The Contact the destination resolved to; absent for a stranger or after an Erasure"
+          },
+          "broadcast_id": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "nullable": true,
+            "description": "The Broadcast the message belongs to"
+          },
+          "automation_id": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "nullable": true,
+            "description": "The Automation the message belongs to"
+          },
+          "automation_run_id": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "nullable": true,
+            "description": "The Automation run that sent the message"
+          },
+          "automation_step": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true,
+            "description": "The step of the Automation that sent the message"
+          },
+          "integration_id": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "nullable": true,
+            "description": "The Integration the message went out through"
+          },
+          "template_id": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "nullable": true,
+            "description": "The Template a transactional send referenced"
+          },
+          "sending_source": {
+            "type": "string",
+            "nullable": true,
+            "description": "The unsubscribe Sending source; absent for a transactional send"
+          },
+          "sending_domain": {
+            "type": "string",
+            "nullable": true,
+            "description": "Domain of the effective From address"
+          },
+          "provider_message_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "The provider's id for the accepted message"
+          },
+          "claimed_at": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the send was claimed, before the provider was called"
+          },
+          "sent_at": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the provider accepted the message"
+          },
+          "created_at": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "Creation timestamp"
+          },
+          "updated_at": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "Last change timestamp: the cursor column and the version of the row"
+          }
+        },
+        "description": "One row of the Outbound messages stream: the delivery record of one send, whichever\nsurface asked for it. It carries provenance and outcome only, never a subject or a body.\nA row is delivered again whenever it changes (a status change, an Erasure clearing the\ndestination and the Contact)."
       },
       "GoneProblem": {
         "type": "object",

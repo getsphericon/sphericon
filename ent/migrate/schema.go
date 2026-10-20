@@ -858,6 +858,11 @@ var (
 				Unique:  false,
 				Columns: []*schema.Column{OutboundMessagesColumns[23], OutboundMessagesColumns[9], OutboundMessagesColumns[1]},
 			},
+			{
+				Name:    "outboundmessage_workspace_id_updated_at_id",
+				Unique:  false,
+				Columns: []*schema.Column{OutboundMessagesColumns[23], OutboundMessagesColumns[2], OutboundMessagesColumns[0]},
+			},
 		},
 	}
 	// RecoveryCodesColumns holds the columns for the "recovery_codes" table.

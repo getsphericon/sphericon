@@ -173,6 +173,10 @@ type ExportEventsRes interface {
 	exportEventsRes()
 }
 
+type ExportMessagesRes interface {
+	exportMessagesRes()
+}
+
 type IntegrationsCreateRes interface {
 	integrationsCreateRes()
 }

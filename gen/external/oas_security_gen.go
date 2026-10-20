@@ -76,6 +76,7 @@ var operationRolesBearerAuth = map[string][]string{
 	EventsBatchSubmitOperation:         []string{},
 	EventsCreateOperation:              []string{},
 	ExportEventsOperation:              []string{},
+	ExportMessagesOperation:            []string{},
 	IntegrationsCreateOperation:        []string{},
 	IntegrationsDeleteOperation:        []string{},
 	IntegrationsGetOperation:           []string{},

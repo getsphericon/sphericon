@@ -280,6 +280,13 @@ type Handler interface {
 	//
 	// GET /export/events
 	ExportEvents(ctx context.Context, params ExportEventsParams) (ExportEventsRes, error)
+	// ExportMessages implements Export_messages operation.
+	//
+	// Read the Workspace's Outbound messages, oldest change first (Enterprise; needs the `export:read`
+	// scope). Each line of the body is an `ExportMessageRow`; every key is always present.
+	//
+	// GET /export/messages
+	ExportMessages(ctx context.Context, params ExportMessagesParams) (ExportMessagesRes, error)
 	// IntegrationsCreate implements Integrations_create operation.
 	//
 	// Create a resource.
