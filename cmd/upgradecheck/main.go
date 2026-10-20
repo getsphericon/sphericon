@@ -76,7 +76,7 @@ func runMigrations(title, base string) error {
 	}
 	var added []string
 	for line := range strings.FieldsSeq(out) {
-		if strings.HasSuffix(line, ".sql") && !isRiver(filepath.Base(line)) {
+		if strings.HasSuffix(line, ".sql") {
 			added = append(added, line)
 		}
 	}
@@ -91,16 +91,54 @@ func runMigrations(title, base string) error {
 	return CheckMigrations(title, findings)
 }
 
-// LintFiles runs squawk over the migration files and returns its destructive findings.
+// LintFiles runs squawk over the Up section of each migration file and returns its destructive
+// findings, named after the original files. The generated river migrations are skipped. Only the
+// Up section is linted: the generator writes a Down that reverses the Up (a DROP COLUMN for an
+// added column), and a Down is never applied in production.
 // squawk exits non-zero when it reports a finding, with the report on stdout: the report is the
 // verdict, so an exit error with a report is not a failure to run.
 func LintFiles(paths []string) ([]Finding, error) {
-	report, err := output("squawk", append([]string{"--reporter", "json"}, paths...)...)
+	dir, err := os.MkdirTemp("", "upgradecheck-")
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = os.RemoveAll(dir) }()
+	var up []string
+	for _, p := range paths {
+		if isRiver(filepath.Base(p)) {
+			continue
+		}
+		src, err := os.ReadFile(p)
+		if err != nil {
+			return nil, err
+		}
+		dst := filepath.Join(dir, filepath.Base(p))
+		if err := os.WriteFile(dst, []byte(UpSection(string(src))), 0o600); err != nil {
+			return nil, err
+		}
+		up = append(up, dst)
+	}
+	if len(up) == 0 {
+		return nil, nil
+	}
+	report, err := output("squawk", append([]string{"--reporter", "json"}, up...)...)
 	var exit *exec.ExitError
 	if err != nil && (!errors.As(err, &exit) || !strings.HasPrefix(strings.TrimSpace(report), "[")) {
 		return nil, err
 	}
 	return Destructive([]byte(report))
+}
+
+// UpSection returns a goose migration up to its `-- +goose Down` marker.
+func UpSection(sql string) string {
+	var b strings.Builder
+	for line := range strings.Lines(sql) {
+		if strings.HasPrefix(strings.TrimSpace(line), "-- +goose Down") {
+			break
+		}
+		b.WriteString(line)
+	}
+	return b.String()
 }
 
 func output(name string, args ...string) (string, error) {

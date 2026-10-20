@@ -1,10 +1,8 @@
 package main
 
 import (
-	"maps"
 	"os"
 	"path/filepath"
-	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -14,11 +12,17 @@ import (
 // lint writes the migrations (name -> SQL) to a temp dir and runs the real squawk over them.
 func lint(t *testing.T, migrations map[string]string) []Finding {
 	t.Helper()
+	return lintWithDown(t, migrations, "")
+}
+
+// lintWithDown is lint with the same Down section under every migration.
+func lintWithDown(t *testing.T, migrations map[string]string, down string) []Finding {
+	t.Helper()
 	dir := t.TempDir()
 	var paths []string
 	for name, sql := range migrations {
 		path := filepath.Join(dir, name)
-		require.NoError(t, os.WriteFile(path, []byte("-- +goose Up\n"+sql+"\n-- +goose Down\n"), 0o600))
+		require.NoError(t, os.WriteFile(path, []byte("-- +goose Up\n"+sql+"\n-- +goose Down\n"+down), 0o600))
 		paths = append(paths, path)
 	}
 	findings, err := LintFiles(paths)
@@ -47,12 +51,6 @@ func TestEveryDestructiveRuleFailsTheCheckUnderAPlainTitle(t *testing.T) {
 			require.NoError(t, CheckMigrations("feat!: a", findings))
 		})
 	}
-}
-
-func TestDestructiveRuleTableCoversTheSpec(t *testing.T) {
-	assert.ElementsMatch(t, []string{
-		"ban-drop-column", "ban-drop-table", "renaming-column", "renaming-table", "changing-column-type", "adding-required-field",
-	}, slices.Collect(maps.Keys(DestructiveRules)))
 }
 
 func TestSafeMigrationsPass(t *testing.T) {
@@ -86,4 +84,21 @@ func TestDestructiveRejectsGarbage(t *testing.T) {
 	_, err := Destructive([]byte("not json"))
 
 	require.Error(t, err)
+}
+
+func TestOnlyTheUpSectionIsLinted(t *testing.T) {
+	// The generator writes a Down that reverses the Up: a safe additive Up has a DROP COLUMN Down.
+	safeUp := map[string]string{"20260106000000_add.sql": "ALTER TABLE t ADD COLUMN IF NOT EXISTS a bigint NULL;"}
+	destructiveUp := map[string]string{"20260107000000_drop.sql": "ALTER TABLE t DROP COLUMN IF EXISTS a;"}
+
+	assert.Empty(t, lintWithDown(t, safeUp, "ALTER TABLE t DROP COLUMN IF EXISTS a;"))
+	assert.NotEmpty(t, lintWithDown(t, destructiveUp, ""))
+	assert.NotEmpty(t, lintWithDown(t, destructiveUp, "ALTER TABLE t ADD COLUMN IF NOT EXISTS a bigint NULL;"))
+}
+
+func TestFindingsKeepTheMigrationFileName(t *testing.T) {
+	findings := lintWithDown(t, map[string]string{"20260108000000_drop.sql": "DROP TABLE IF EXISTS t;"}, "SELECT 1;")
+
+	require.Len(t, findings, 1)
+	assert.Equal(t, "20260108000000_drop.sql", findings[0].File)
 }

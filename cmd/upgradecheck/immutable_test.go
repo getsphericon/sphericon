@@ -4,6 +4,7 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"pgregory.net/rapid"
@@ -20,16 +21,14 @@ func TestImmutabilityReportsExactlyModifiedAndDeleted(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
 		modified := rapid.SliceOf(migrationName()).Draw(t, "modified")
 		deleted := rapid.SliceOf(migrationName()).Draw(t, "deleted")
-		added := rapid.SliceOf(migrationName()).Draw(t, "added")
+		// Added files are never passed in; draw names distinct from the changed ones.
+		changed := slices.Concat(modified, deleted)
+		added := lo.Without(rapid.SliceOf(migrationName()).Draw(t, "added"), changed...)
 
 		got := Immutability(modified, deleted, false)
-		want := slices.Compact(slices.Sorted(slices.Values(slices.Concat(modified, deleted))))
-		assert.Equal(t, want, got)
-		for _, a := range added {
-			if !slices.Contains(want, a) {
-				assert.NotContains(t, got, a)
-			}
-		}
+
+		assert.Equal(t, slices.Compact(slices.Sorted(slices.Values(changed))), got)
+		assert.Empty(t, lo.Intersect(got, added))
 		assert.Empty(t, Immutability(modified, deleted, true))
 	})
 }

@@ -56,16 +56,24 @@ type Finding struct {
 	Text string
 }
 
-// DestructiveRules is the table of Squawk rules that count as destructive for ADR 0033: what each
-// one catches. Every other Squawk rule is advice (locking, idempotence, naming, integer width) and
-// never fails the check. The names come from `squawk --reporter json` run over SQL for each case.
-var DestructiveRules = map[string]string{
-	"ban-drop-column":       "a dropped column",
-	"ban-drop-table":        "a dropped table",
-	"renaming-column":       "a renamed column",
-	"renaming-table":        "a renamed table",
-	"changing-column-type":  "a changed column type",
-	"adding-required-field": "a NOT NULL column added without a default",
+// destructiveRules is the set of Squawk rules that count as destructive for ADR 0033:
+//
+//	ban-drop-column       a dropped column
+//	ban-drop-table        a dropped table
+//	renaming-column       a renamed column
+//	renaming-table        a renamed table
+//	changing-column-type  a changed column type
+//	adding-required-field a NOT NULL column added without a default
+//
+// Every other Squawk rule is advice (locking, idempotence, naming, integer width) and never fails
+// the check. The names come from `squawk --reporter json` run over SQL for each case.
+var destructiveRules = map[string]struct{}{
+	"ban-drop-column":       {},
+	"ban-drop-table":        {},
+	"renaming-column":       {},
+	"renaming-table":        {},
+	"changing-column-type":  {},
+	"adding-required-field": {},
 }
 
 type squawkFinding struct {
@@ -75,7 +83,7 @@ type squawkFinding struct {
 }
 
 // Destructive reads `squawk --reporter json` output and returns the findings whose rule is in
-// DestructiveRules, for the migrations a person wrote. The generated river migrations are skipped.
+// destructiveRules.
 func Destructive(squawkJSON []byte) ([]Finding, error) {
 	var found []squawkFinding
 	if err := json.Unmarshal(squawkJSON, &found); err != nil {
@@ -83,7 +91,7 @@ func Destructive(squawkJSON []byte) ([]Finding, error) {
 	}
 	var out []Finding
 	for _, f := range found {
-		if _, ok := DestructiveRules[f.RuleName]; !ok || isRiver(filepath.Base(f.File)) {
+		if _, ok := destructiveRules[f.RuleName]; !ok {
 			continue
 		}
 		out = append(out, Finding{File: filepath.Base(f.File), Code: f.RuleName, Text: f.Message})

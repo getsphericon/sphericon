@@ -62,7 +62,7 @@ func newRoot() *cli.Command {
 			},
 			{
 				Name:      "generate",
-				Usage:     "write the next Atlas migration from the ent schema",
+				Usage:     "write the next migration from the ent schema",
 				ArgsUsage: "<migration-name>",
 				Arguments: []cli.Argument{&cli.StringArg{Name: "name", Required: true}},
 				Action: func(ctx context.Context, cmd *cli.Command) error {
@@ -136,28 +136,27 @@ func requireDiffDatabase(ctx context.Context, url string) error {
 	return nil
 }
 
-// generateMigration writes the next Atlas migration from the ent schema. The community
-// Atlas binary cannot read ent:// itself, so ent's own versioned-migration engine
-// (the Atlas library) diffs the schema against migrations/ using the scratch
+// generateMigration writes the next migration from the ent schema. ent's own
+// versioned-migration engine (the Atlas library, no Atlas binary) diffs the schema against migrations/ using the scratch
 // DIFF_DB_URL database and writes the SQL file (no atlas.sum: see sumlessDir).
 func generateMigration(ctx context.Context, name string) error {
-	// Atlas opens the dev URL with the "postgres" driver name; pgx registers itself
+	// The diff engine opens the diff URL with the "postgres" driver name; pgx registers itself
 	// as "pgx", so alias it (guarded: registering twice panics).
 	if !slices.Contains(sql.Drivers(), "postgres") {
 		sql.Register("postgres", stdlib.GetDefaultDriver())
 	}
-	devURL := os.Getenv("DIFF_DB_URL")
-	if devURL == "" {
+	diffURL := os.Getenv("DIFF_DB_URL")
+	if diffURL == "" {
 		return errors.New("DIFF_DB_URL is not set (the diff database migrations are generated against)")
 	}
-	if err := requireDiffDatabase(ctx, devURL); err != nil {
+	if err := requireDiffDatabase(ctx, diffURL); err != nil {
 		return err
 	}
 	dir, err := sqltool.NewGooseDir("migrations")
 	if err != nil {
 		return fmt.Errorf("open migrations dir: %w", err)
 	}
-	if err := migrate.NamedDiff(ctx, devURL, name,
+	if err := migrate.NamedDiff(ctx, diffURL, name,
 		schema.WithDir(sumlessDir{dir}),
 		schema.WithMigrationMode(schema.ModeReplay),
 		// A removal is a destructive migration (ADR 0033): written here, guarded by hand.
