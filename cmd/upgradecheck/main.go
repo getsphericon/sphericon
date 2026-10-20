@@ -9,14 +9,13 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"slices"
-	"strconv"
 	"strings"
 )
 
 const usage = `usage:
   upgradecheck breaking   --title T [--body-file F] --base REF
-  upgradecheck migrations --title T --base REF`
+  upgradecheck migrations --title T --base REF
+  upgradecheck immutable  [--body-file F] --base REF`
 
 func main() {
 	if err := run(os.Args[1:]); err != nil {
@@ -41,6 +40,8 @@ func run(args []string) error {
 		return runBreaking(*title, *bodyFile, *base)
 	case "migrations":
 		return runMigrations(*title, *base)
+	case "immutable":
+		return runImmutable(*bodyFile, *base)
 	default:
 		return errors.New(usage)
 	}
@@ -69,16 +70,6 @@ func runBreaking(title, bodyFile, base string) error {
 }
 
 func runMigrations(title, base string) error {
-	files, err := filepath.Glob("migrations/*.sql")
-	if err != nil {
-		return err
-	}
-	all := make([]string, 0, len(files))
-	for _, f := range files {
-		all = append(all, filepath.Base(f))
-	}
-	slices.Sort(all)
-
 	out, err := output("git", "diff", "--name-only", "--diff-filter=A", base+"...HEAD", "--", "migrations")
 	if err != nil {
 		return err
@@ -86,26 +77,68 @@ func runMigrations(title, base string) error {
 	var added []string
 	for line := range strings.FieldsSeq(out) {
 		if strings.HasSuffix(line, ".sql") {
-			added = append(added, filepath.Base(line))
+			added = append(added, line)
 		}
 	}
-	n := LintWindow(all, added)
-	if n == 0 {
+	if len(added) == 0 {
 		fmt.Println("no migration added; nothing to lint")
 		return nil
 	}
-	// atlas exits non-zero when it reports a finding, with the report on stdout: the report is
-	// the verdict here, so an exit error with a report is not a failure to run.
-	lint, err := output("atlas", "migrate", "lint", "--env", "local", "--latest", strconv.Itoa(n), "--format", "{{ json .Files }}")
-	var exit *exec.ExitError
-	if err != nil && (!errors.As(err, &exit) || !strings.HasPrefix(lint, "[")) {
-		return err
-	}
-	findings, err := Destructive([]byte(lint))
+	findings, err := LintFiles(added)
 	if err != nil {
 		return err
 	}
 	return CheckMigrations(title, findings)
+}
+
+// LintFiles runs squawk over the Up section of each migration file and returns its destructive
+// findings, named after the original files. The generated river migrations are skipped. Only the
+// Up section is linted: the generator writes a Down that reverses the Up (a DROP COLUMN for an
+// added column), and a Down is never applied in production.
+// squawk exits non-zero when it reports a finding, with the report on stdout: the report is the
+// verdict, so an exit error with a report is not a failure to run.
+func LintFiles(paths []string) ([]Finding, error) {
+	dir, err := os.MkdirTemp("", "upgradecheck-")
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = os.RemoveAll(dir) }()
+	var up []string
+	for _, p := range paths {
+		if isRiver(filepath.Base(p)) {
+			continue
+		}
+		src, err := os.ReadFile(p)
+		if err != nil {
+			return nil, err
+		}
+		dst := filepath.Join(dir, filepath.Base(p))
+		if err := os.WriteFile(dst, []byte(UpSection(string(src))), 0o600); err != nil {
+			return nil, err
+		}
+		up = append(up, dst)
+	}
+	if len(up) == 0 {
+		return nil, nil
+	}
+	report, err := output("squawk", append([]string{"--reporter", "json"}, up...)...)
+	var exit *exec.ExitError
+	if err != nil && (!errors.As(err, &exit) || !strings.HasPrefix(strings.TrimSpace(report), "[")) {
+		return nil, err
+	}
+	return Destructive([]byte(report))
+}
+
+// UpSection returns a goose migration up to its `-- +goose Down` marker.
+func UpSection(sql string) string {
+	var b strings.Builder
+	for line := range strings.Lines(sql) {
+		if strings.HasPrefix(strings.TrimSpace(line), "-- +goose Down") {
+			break
+		}
+		b.WriteString(line)
+	}
+	return b.String()
 }
 
 func output(name string, args ...string) (string, error) {

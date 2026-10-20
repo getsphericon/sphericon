@@ -1,6 +1,6 @@
 // Package jobs is the river-backed (Postgres) async job queue. It owns the
 // worker registry, the typed enqueue API the HTTP handlers call, and river's own
-// schema migration (kept out of Atlas — see Migrate).
+// schema migration (kept out of the ent diff — see Migrate).
 package jobs
 
 import (

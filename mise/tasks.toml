@@ -76,7 +76,7 @@ env = { SPHERICON_ENV = "test", DATABASE_URL = "{{env.TEST_DB_URL}}" }
 run = "go run ./cmd/db drop"
 
 ["db:migrate"]
-description = "Apply the migrations: the app schema, river's tables and the domain-event outbox (`sphericon migrate`: goose, the runner the start guard and the tests read, not Atlas)"
+description = "Apply the migrations: the app schema, river's tables and the domain-event outbox (`sphericon migrate`: goose, the runner the start guard and the tests read)"
 depends = ["db:up"]
 run = "go run ./cmd/server migrate"
 
@@ -86,7 +86,7 @@ depends = ["db:migrate"]
 run = "go run ./cmd/seed"
 
 ["db:reset"]
-description = "Drop, recreate and migrate the dev database"
+description = "Drop, recreate and migrate the dev database (run once on a dev database made before the goose-only switch)"
 run = [{ task = "db:drop" }, "go run ./cmd/db create", { task = "db:migrate" }]
 
 ["db:reset-test"]
@@ -94,14 +94,14 @@ description = "Drop and recreate the test database"
 run = [{ task = "db:drop-test" }, { task = "db:up" }]
 
 ["db:generate"]
-description = "Generate an Atlas migration from the ent schema (ent's own diff engine; the community Atlas binary cannot read ent://)"
+description = "Generate the next migration from the ent schema (ent's own diff engine, written as a goose file)"
 depends = ["db:up"]
 usage = 'arg "<name>" help="migration name"'
 run = 'go run ./cmd/db generate "${usage_name}"'
 
 ["db:river-migration"]
 description = "Write the migrations for river versions the migrations/ directory lacks (after a river upgrade); river's SQL comes from the go.mod version"
-run = ["go run ./cmd/db river-migration", "atlas migrate hash --env local"]
+run = "go run ./cmd/db river-migration"
 
 ["gen:encryption-key"]
 description = "Mint a fresh SPHERICON_ENCRYPTION_KEY (base64 Tink keyset) to paste into your .env"
@@ -240,7 +240,7 @@ usage = 'arg "[go_test_args]" var=#true default="./e2e/..." help="packages and f
 run = [
   "go run ./cmd/db drop",
   "go run ./cmd/db create",
-  "atlas migrate apply --env local --allow-dirty --tx-mode none",
+  "go run ./cmd/server migrate",
   '''eval "set -- $usage_go_test_args"; mise/scripts/heavy.sh go test -tags e2e -count=1 -p 1 -shuffle=on "$@"''',
 ]
 
@@ -403,8 +403,7 @@ fi
 '''
 
 ["check:upgrade"]
-description = "ADR 0033 in CI: a destructive migration needs a breaking PR title, a breaking change needs an `Upgrade:` line in its `BREAKING CHANGE:` footer (cmd/upgradecheck; PR_TITLE, PR_BODY_FILE and BASE come from the pull request, default to the last commit against origin/main)"
-depends = ["db:up"]
+description = "ADR 0033 in CI: a destructive migration needs a breaking PR title, a breaking change needs an `Upgrade:` line in its `BREAKING CHANGE:` footer (cmd/upgradecheck runs Squawk over the added migrations; PR_TITLE, PR_BODY_FILE and BASE come from the pull request, default to the last commit against origin/main)"
 run = '''
 #!/usr/bin/env bash
 set -euo pipefail
@@ -413,6 +412,7 @@ title="${PR_TITLE:-$(git log -1 --format=%s)}"
 args=(--title "$title" --base "$base")
 go run ./cmd/upgradecheck migrations "${args[@]}"
 go run ./cmd/upgradecheck breaking "${args[@]}" ${PR_BODY_FILE:+--body-file "$PR_BODY_FILE"}
+go run ./cmd/upgradecheck immutable --base "$base" ${PR_BODY_FILE:+--body-file "$PR_BODY_FILE"}
 '''
 
 ["check:env"]
@@ -516,7 +516,7 @@ env = { SPHERICON_ENV = "e2e", DATABASE_URL = "{{env.E2E_DB_URL}}", SPHERICON_ME
 run = [
   "go run ./cmd/db drop",
   "go run ./cmd/db create",
-  "atlas migrate apply --env local --allow-dirty --tx-mode none",
+  "go run ./cmd/server migrate",
   "go run ./cmd/seed",
   "mise/scripts/contract.sh",
 ]

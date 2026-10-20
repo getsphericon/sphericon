@@ -96,8 +96,8 @@ commit that has this setup.
 identical in every checkout without a daemon (a `db` daemon exports its own offset port and
 database for a linked worktree, which `[env]` overrides). The database is `sphericon_<dir>`: the
 checkout's directory name lowercased to `[a-z0-9_]`, cut to 31 characters plus a hash of the path
-when it exceeds 40, so with the `_test`, `_e2e` and `_atlas` twins (`TEST_DB_URL`, `E2E_DB_URL`,
-`ATLAS_DEV_URL`; `DB_NAMES` lists all four) every name stays under Postgres's 63-byte identifier
+when it exceeds 40, so with the `_test`, `_e2e` and `_diff` twins (`TEST_DB_URL`, `E2E_DB_URL`,
+`DIFF_DB_URL`; `DB_NAMES` lists all four) every name stays under Postgres's 63-byte identifier
 limit and nothing is truncated or collides. Never set `DATABASE_URL` in `.env`: explicit values
 override it. `SPHERICON_PG_HOST` / `SPHERICON_PG_PORT` point every checkout at another server (an
 external Postgres): one that answers is used as is and never started. CI runs the same path: its
@@ -173,9 +173,13 @@ Rules for writing tests (what to assert, no direct SQL, no manual cleanup) are i
 ## Database & migrations
 
 - ORM is **ent**; schemas live in `ent/schema/*.go`, generated code in `ent/`.
-- Migrations are managed by **Atlas** (`atlas.hcl`, dir `migrations/`), run natively, diffed from the ent schema: `mise run db:generate name=<desc>` then `mise run db:migrate`.
-  Atlas reads its target/dev DB URLs from the environment (`DATABASE_URL` / `ATLAS_DEV_URL`),
-  using a scratch `<PGDATABASE>_atlas` database on the same server instead of `docker://`.
+- Migrations: **ent diffs, goose applies, Squawk lints, CI guards immutability.** `mise run db:generate name=<desc>`
+  (`cmd/db`, ent's diff engine as a library, no CLI and no checksum file) diffs the ent schema against
+  `migrations/` in the scratch `<PGDATABASE>_diff` database (`DIFF_DB_URL`) and writes a goose `.sql` file;
+  `mise run db:migrate` (`sphericon migrate`) applies it with goose, the one runner of dev, tests and
+  production; `cmd/upgradecheck` runs Squawk over the added files; and `cmd/upgradecheck immutable`
+  fails a PR that rewrites a migration already on `main` unless its body has `History-Collapse:`
+  (ADR 0047). A developer whose dev database predates this runs `mise run db:reset` once.
 - **`migrations/` is the whole schema**: the app tables (diffed from ent), river's tables and the
   domain-event outbox (watermill-sql's two tables, a hand-written migration: `ent/schema/outbox_*.go`
   model them as skipped entities, ent's diff leaves them alone). Nothing creates schema at boot: the
@@ -187,6 +191,9 @@ Rules for writing tests (what to assert, no direct SQL, no manual cleanup) are i
   in a transaction of its own), written by `mise run db:river-migration` from the river version in
   `go.mod`; after a river upgrade run it again and `rivermigrate.Validate` in
   `cmd/server/migrate_test.go` tells you when it is due. Do not edit those files by hand.
+- **Migrations are immutable.** `cmd/upgradecheck immutable` (in `check:upgrade`) fails a PR that
+  modifies or deletes a goose `.sql` or Go migration already on `main`, naming each file; only a PR
+  whose body has a line `History-Collapse: <reason>` may rewrite history.
 - **Migration rules (ADR 0033).** Between two Majors a migration only adds (a table, a nullable
   column, an index built `CONCURRENTLY`, a new payload field); a removal or a rename waits for a
   Major (before 1.0 every `0.MINOR` is one). Heavy data work is a river job that runs after the
@@ -384,7 +391,7 @@ the subdomain root mirrors the binary's `/api` path (RudderStack-style edge; the
 stays path-based). In prod the ingress in front of the binary does the same rewrite for
 `api.getsphericon.app`. Daemons: `db`, `mailpit` (SMTP UI at :8025, SMTP :1025),
 `backend` (real Go server under air on `:3300`, hot reload), `frontend` (Vite on `:5173`),
-`caddy` (:443). Inspect with `mise daemons ls|logs|status`. Migrations run via atlas
+`caddy` (:443). Inspect with `mise daemons ls|logs|status`. Migrations run via goose
 (`mise run db:migrate`); the backend does not self-migrate. Dev defaults (JWT secret, dev
 `SPHERICON_ENCRYPTION_KEY`, SMTP) live in the `[env]` table of `.mise.toml`; personal overrides go in
 the gitignored `.env` (read by the app) or `.mise.local.toml`.

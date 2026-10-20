@@ -18,8 +18,10 @@ research behind them is `docs/research/self-hoster-upgrade-prior-art.md`.
   any releases inside a Major; across Majors it goes through the last release of each Major it
   crosses. Until 1.0 each `0.MINOR` is a Major.
 - **A destructive migration comes with a breaking commit** (`!` or `BREAKING CHANGE:`), so release-please
-  cuts the Major itself, and CI runs `atlas migrate lint` over the new migrations and fails a
-  destructive one whose commit is not breaking. The migration starts with a check that the data it
+  cuts the Major itself, and CI runs Squawk over the new migrations and fails a
+  destructive finding (the `DestructiveRules` table in `cmd/upgradecheck`: a dropped or renamed
+  column or table, a changed column type, a NOT NULL column without a default) whose commit is not
+  breaking; Squawk's other rules are advice and never fail. The migration starts with a check that the data it
   strands is already moved (a `DO` block that raises), so an Upgrade that skipped a release fails
   instead of losing data. Job and event payloads follow the same rule as columns.
 - **Heavy data work is a river job after the Upgrade, never a migration.** A migration is fast

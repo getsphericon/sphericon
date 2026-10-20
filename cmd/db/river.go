@@ -95,7 +95,6 @@ func generateRiverMigration(dir string) error {
 		}
 		fmt.Println("river: wrote", name)
 	}
-	fmt.Println("river: run `atlas migrate hash --env local` next")
 	return nil
 }
 
