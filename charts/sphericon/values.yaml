@@ -53,7 +53,7 @@ metrics:
     # Extra labels, e.g. the release label your Prometheus ruleSelector matches.
     labels: {}
     # Base URL of the runbook; each alert links to <runbookUrl>#<alertname>.
-    runbookUrl: https://docs.getsphericon.app/operations/runbook
+    runbookUrl: https://getsphericon.com/docs/operations/runbook
 
 migrate:
   backoffLimit: 1

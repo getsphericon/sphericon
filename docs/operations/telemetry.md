@@ -14,7 +14,7 @@ declines telemetry still learns about a security release.
 
 ## The Telemetry report
 
-Once a day the Instance sends one JSON document to `https://telemetry.getsphericon.app`. The
+Once a day the Instance sends one JSON document to `https://telemetry.getsphericon.com`. The
 receiver stores no source address. The report carries:
 
 - **Identity of the Instance:** a random `instanceId` stored in your database and derived from

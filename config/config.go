@@ -85,10 +85,10 @@ type DBPool struct {
 }
 
 // telemetryReceiverURL is the address of the Telemetry report receiver, fixed in the binary.
-const telemetryReceiverURL = "https://telemetry.getsphericon.app"
+const telemetryReceiverURL = "https://telemetry.getsphericon.com"
 
 // telemetrySchemaURL is the page that documents the Telemetry report's schema.
-const telemetrySchemaURL = "https://docs.getsphericon.app/operations/telemetry-schema"
+const telemetrySchemaURL = "https://getsphericon.com/docs/operations/telemetry-schema"
 
 type Config struct {
 	DatabaseURL    string

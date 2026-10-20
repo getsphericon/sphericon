@@ -39,7 +39,7 @@ test('links to the MCP guide', async () => {
 
   await expect
     .element(screen.getByRole('link', { name: 'Other ways to connect' }))
-    .toHaveAttribute('href', 'https://docs.getsphericon.app/guide/mcp')
+    .toHaveAttribute('href', 'https://getsphericon.com/docs/guide/mcp')
 })
 
 test('tells a plain member that only an owner or admin can connect an agent', async () => {

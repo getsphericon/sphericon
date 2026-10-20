@@ -202,7 +202,7 @@
   },
   "servers": [
     {
-      "url": "https://telemetry.getsphericon.app",
+      "url": "https://telemetry.getsphericon.com",
       "description": "Telemetry receiver",
       "variables": {}
     }

@@ -13,5 +13,5 @@ using TypeSpec.Http;
  */
 @service(#{ title: "Sphericon Telemetry API" })
 @info(#{ version: "1.0.0" })
-@server("https://telemetry.getsphericon.app", "Telemetry receiver")
+@server("https://telemetry.getsphericon.com", "Telemetry receiver")
 namespace Sphericon;
