@@ -975,6 +975,46 @@ checksum = "sha256:9964ed64ec9a387391eb4cc006ad5c531154821aef29b793e02c448de4686
 url = "https://github.com/google/osv-scanner/releases/download/v2.7.0/osv-scanner_windows_amd64.exe"
 url_api = "https://api.github.com/repos/google/osv-scanner/releases/assets/632251671"
 
+[[tools."github:sbdchd/squawk"]]
+version = "2.70.0"
+backend = "github:sbdchd/squawk"
+specifiers = ["latest"]
+
+[tools."github:sbdchd/squawk"."platforms.linux-arm64"]
+checksum = "sha256:fdb1ceff1d45252ccce44be8888d45a45206ba901804713124b0aa6eacc92e0e"
+url = "https://github.com/sbdchd/squawk/releases/download/v2.70.0/squawk-linux-arm64"
+url_api = "https://api.github.com/repos/sbdchd/squawk/releases/assets/644033476"
+
+[tools."github:sbdchd/squawk"."platforms.linux-arm64-musl"]
+checksum = "sha256:b367318e0b56dabe0dc7b485f36660a7c71e9dd112269c2eab9ae2d4b3361387"
+url = "https://github.com/sbdchd/squawk/releases/download/v2.70.0/squawk-linux-musl-arm64"
+url_api = "https://api.github.com/repos/sbdchd/squawk/releases/assets/644032894"
+
+[tools."github:sbdchd/squawk"."platforms.linux-x64"]
+checksum = "sha256:836ba2ab0c0ec30ae02c9f2cec065b341ff853765ceaa3965c22109c2f53eb1c"
+url = "https://github.com/sbdchd/squawk/releases/download/v2.70.0/squawk-linux-x64"
+url_api = "https://api.github.com/repos/sbdchd/squawk/releases/assets/644023854"
+
+[tools."github:sbdchd/squawk"."platforms.linux-x64-musl"]
+checksum = "sha256:b6d57c2e37fb9cedd3c07285d2a8e8865e7204f3c329e8bee52c7cfc91465011"
+url = "https://github.com/sbdchd/squawk/releases/download/v2.70.0/squawk-linux-musl-x64"
+url_api = "https://api.github.com/repos/sbdchd/squawk/releases/assets/644028129"
+
+[tools."github:sbdchd/squawk"."platforms.macos-arm64"]
+checksum = "sha256:6d96c07032109202a43802e212b2c592d48a11b208d661b2c8814a7eca4a984a"
+url = "https://github.com/sbdchd/squawk/releases/download/v2.70.0/squawk-darwin-arm64"
+url_api = "https://api.github.com/repos/sbdchd/squawk/releases/assets/644031759"
+
+[tools."github:sbdchd/squawk"."platforms.macos-x64"]
+checksum = "sha256:0369f5cc2beb7e224952d5d30068a92f9e23d65af99d7e7565c9a4fda916c379"
+url = "https://github.com/sbdchd/squawk/releases/download/v2.70.0/squawk-darwin-x64"
+url_api = "https://api.github.com/repos/sbdchd/squawk/releases/assets/644027874"
+
+[tools."github:sbdchd/squawk"."platforms.windows-x64"]
+checksum = "sha256:a076936531b5fa26b95cdcebe33ecaa3fa8e764dc000a607a06fc6da5d2098bd"
+url = "https://github.com/sbdchd/squawk/releases/download/v2.70.0/squawk-windows-x64.exe"
+url_api = "https://api.github.com/repos/sbdchd/squawk/releases/assets/644034501"
+
 [[tools.gitleaks]]
 version = "8.30.1"
 backend = "aqua:gitleaks/gitleaks"

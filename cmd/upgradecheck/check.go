@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"regexp"
 	"slices"
 	"strings"
@@ -48,43 +49,44 @@ func CheckBreaking(title, body string, commits []string) error {
 		"CHANGELOG.md), for example `BREAKING CHANGE: the env var is renamed\nUpgrade: set SPHERICON_X before starting`")
 }
 
-// Finding is one destructive or backward-incompatible diagnostic Atlas reports on a migration.
+// Finding is one destructive diagnostic Squawk reports on a migration.
 type Finding struct {
 	File string
 	Code string
 	Text string
 }
 
-type atlasFile struct {
-	Name    string
-	Reports []struct {
-		Diagnostics []struct {
-			Code string
-			Text string
-		}
-	}
+// DestructiveRules is the table of Squawk rules that count as destructive for ADR 0033: what each
+// one catches. Every other Squawk rule is advice (locking, idempotence, naming, integer width) and
+// never fails the check. The names come from `squawk --reporter json` run over SQL for each case.
+var DestructiveRules = map[string]string{
+	"ban-drop-column":       "a dropped column",
+	"ban-drop-table":        "a dropped table",
+	"renaming-column":       "a renamed column",
+	"renaming-table":        "a renamed table",
+	"changing-column-type":  "a changed column type",
+	"adding-required-field": "a NOT NULL column added without a default",
 }
 
-// Destructive reads `atlas migrate lint --format '{{ json .Files }}'` and returns the destructive
-// (DS) and backward-incompatible (BC) findings of the migrations a person wrote. The generated
-// river migrations are skipped.
-func Destructive(atlasJSON []byte) ([]Finding, error) {
-	var files []atlasFile
-	if err := json.Unmarshal(atlasJSON, &files); err != nil {
-		return nil, fmt.Errorf("read atlas lint output: %w", err)
+type squawkFinding struct {
+	File     string `json:"file"`
+	RuleName string `json:"rule_name"`
+	Message  string `json:"message"`
+}
+
+// Destructive reads `squawk --reporter json` output and returns the findings whose rule is in
+// DestructiveRules, for the migrations a person wrote. The generated river migrations are skipped.
+func Destructive(squawkJSON []byte) ([]Finding, error) {
+	var found []squawkFinding
+	if err := json.Unmarshal(squawkJSON, &found); err != nil {
+		return nil, fmt.Errorf("read squawk output: %w", err)
 	}
 	var out []Finding
-	for _, f := range files {
-		if isRiver(f.Name) {
+	for _, f := range found {
+		if _, ok := DestructiveRules[f.RuleName]; !ok || isRiver(filepath.Base(f.File)) {
 			continue
 		}
-		for _, r := range f.Reports {
-			for _, d := range r.Diagnostics {
-				if strings.HasPrefix(d.Code, "DS") || strings.HasPrefix(d.Code, "BC") {
-					out = append(out, Finding{File: f.Name, Code: d.Code, Text: d.Text})
-				}
-			}
-		}
+		out = append(out, Finding{File: filepath.Base(f.File), Code: f.RuleName, Text: f.Message})
 	}
 	return out, nil
 }
@@ -103,22 +105,3 @@ func CheckMigrations(title string, findings []Finding) error {
 }
 
 func isRiver(name string) bool { return strings.Contains(name, "_river_") }
-
-// LintWindow is N for `atlas migrate lint --latest N`: how many of the newest migrations (all,
-// sorted by name) reach back to the oldest one added that is not a river migration. 0 means
-// there is nothing to lint.
-func LintWindow(all, added []string) int {
-	oldest := -1
-	for _, name := range added {
-		if isRiver(name) {
-			continue
-		}
-		if i := slices.Index(all, name); i >= 0 && (oldest < 0 || i < oldest) {
-			oldest = i
-		}
-	}
-	if oldest < 0 {
-		return 0
-	}
-	return len(all) - oldest
-}

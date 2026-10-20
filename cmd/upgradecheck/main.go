@@ -9,8 +9,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"slices"
-	"strconv"
 	"strings"
 )
 
@@ -72,43 +70,37 @@ func runBreaking(title, bodyFile, base string) error {
 }
 
 func runMigrations(title, base string) error {
-	files, err := filepath.Glob("migrations/*.sql")
-	if err != nil {
-		return err
-	}
-	all := make([]string, 0, len(files))
-	for _, f := range files {
-		all = append(all, filepath.Base(f))
-	}
-	slices.Sort(all)
-
 	out, err := output("git", "diff", "--name-only", "--diff-filter=A", base+"...HEAD", "--", "migrations")
 	if err != nil {
 		return err
 	}
 	var added []string
 	for line := range strings.FieldsSeq(out) {
-		if strings.HasSuffix(line, ".sql") {
-			added = append(added, filepath.Base(line))
+		if strings.HasSuffix(line, ".sql") && !isRiver(filepath.Base(line)) {
+			added = append(added, line)
 		}
 	}
-	n := LintWindow(all, added)
-	if n == 0 {
+	if len(added) == 0 {
 		fmt.Println("no migration added; nothing to lint")
 		return nil
 	}
-	// atlas exits non-zero when it reports a finding, with the report on stdout: the report is
-	// the verdict here, so an exit error with a report is not a failure to run.
-	lint, err := output("atlas", "migrate", "lint", "--env", "local", "--latest", strconv.Itoa(n), "--format", "{{ json .Files }}")
-	var exit *exec.ExitError
-	if err != nil && (!errors.As(err, &exit) || !strings.HasPrefix(lint, "[")) {
-		return err
-	}
-	findings, err := Destructive([]byte(lint))
+	findings, err := LintFiles(added)
 	if err != nil {
 		return err
 	}
 	return CheckMigrations(title, findings)
+}
+
+// LintFiles runs squawk over the migration files and returns its destructive findings.
+// squawk exits non-zero when it reports a finding, with the report on stdout: the report is the
+// verdict, so an exit error with a report is not a failure to run.
+func LintFiles(paths []string) ([]Finding, error) {
+	report, err := output("squawk", append([]string{"--reporter", "json"}, paths...)...)
+	var exit *exec.ExitError
+	if err != nil && (!errors.As(err, &exit) || !strings.HasPrefix(strings.TrimSpace(report), "[")) {
+		return nil, err
+	}
+	return Destructive([]byte(report))
 }
 
 func output(name string, args ...string) (string, error) {
