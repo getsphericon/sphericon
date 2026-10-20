@@ -3,6 +3,7 @@ package staff
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -13,6 +14,7 @@ import (
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/login"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/paths"
@@ -48,55 +50,62 @@ type Handlers struct {
 
 var _ staffapi.Handler = (*Handlers)(nil)
 
-// StaffAuthLogin is the password step: it answers a challenge (or, at first login,
-// an enrolment) and never a session. An unknown email and a wrong password answer the
-// same 401.
+// StaffAuthLogin is the password step, run by the login module: it answers a challenge
+// (or, at first login, an enrolment) and never a session. An unknown email and a wrong
+// password answer the same 401.
 func (h *Handlers) StaffAuthLogin(ctx context.Context, req *staffapi.StaffLoginInput) (staffapi.StaffAuthLoginRes, error) {
-	op, err := h.module.CheckPassword(ctx, req.Email, req.Password)
-	if limited := throttled(ctx, err); limited != nil {
-		return nil, limited
+	res, err := h.module.CheckPassword(ctx, req.Email, req.Password)
+	if err != nil {
+		return nil, err
 	}
-	if errors.Is(err, ErrInvalidCredentials) {
+	switch res.Outcome {
+	case login.Throttled:
+		return nil, throttled(ctx, res)
+	case login.InvalidCredentials:
 		return unauthorized(i18n.T("errors.invalid_credentials", nil)), nil
+	case login.SecondFactor:
+		out := &staffapi.StaffLoginResult{Outcome: staffapi.StaffLoginOutcomeChallenge, Challenge: res.Challenge}
+		key, err := h.module.Enrolment(ctx, res.Principal)
+		if err != nil {
+			return nil, err
+		}
+		if key != nil {
+			out.Outcome = staffapi.StaffLoginOutcomeEnrolment
+			out.Enrolment = staffapi.NewOptStaffEnrolment(staffapi.StaffEnrolment{Secret: key.Secret, URI: key.URI, QrCode: key.QRCode})
+		}
+		return out, nil
+	case login.Gated, login.Authenticated, login.InvalidChallenge, login.InvalidCode:
+		// The Staff login has no gate, always has a second step and the password step
+		// never returns the second step's outcomes.
 	}
-	if err != nil {
-		return nil, err
-	}
-	step, err := h.module.StartSecondStep(ctx, op)
-	if err != nil {
-		return nil, err
-	}
-	res := &staffapi.StaffLoginResult{Outcome: staffapi.StaffLoginOutcomeChallenge, Challenge: step.Challenge}
-	if step.Enrolment != nil {
-		res.Outcome = staffapi.StaffLoginOutcomeEnrolment
-		res.Enrolment = staffapi.NewOptStaffEnrolment(staffapi.StaffEnrolment{
-			Secret: step.Enrolment.Secret, URI: step.Enrolment.URI, QrCode: step.Enrolment.QRCode,
-		})
-	}
-	return res, nil
+	return nil, fmt.Errorf("staff: unhandled login outcome %d", res.Outcome)
 }
 
 // StaffAuthSecondFactor is the second step: a valid challenge and a current TOTP
 // code start the session. A bad challenge and a wrong code answer the same 401.
 func (h *Handlers) StaffAuthSecondFactor(ctx context.Context, req *staffapi.StaffSecondFactorInput) (staffapi.StaffAuthSecondFactorRes, error) {
-	op, err := h.module.Complete(ctx, req.Challenge, req.Code)
-	if limited := throttled(ctx, err); limited != nil {
-		return nil, limited
+	res, err := h.module.Complete(ctx, req.Challenge, req.Code)
+	if err != nil {
+		return nil, err
 	}
-	if errors.Is(err, ErrInvalidChallenge) {
+	switch res.Outcome {
+	case login.Throttled:
+		return nil, throttled(ctx, res)
+	case login.InvalidChallenge:
 		return unauthorized(i18n.T("errors.login_challenge_invalid", nil)), nil
-	}
-	if errors.Is(err, ErrInvalidCode) {
+	case login.InvalidCode:
 		return unauthorized(i18n.T("errors.second_factor_code_invalid", nil)), nil
+	case login.Authenticated:
+		// No audit entry: the Staff member belongs to no Workspace.
+		cookie, err := h.sessions.Issue(res.Principal)
+		if err != nil {
+			return nil, err
+		}
+		return &staffapi.StaffResourceHeaders{SetCookie: cookie.String(), Response: resource(res.Principal)}, nil
+	case login.InvalidCredentials, login.Gated, login.SecondFactor:
+		// Password-step outcomes: the second step never returns them.
 	}
-	if err != nil {
-		return nil, err
-	}
-	cookie, err := h.sessions.Issue(op)
-	if err != nil {
-		return nil, err
-	}
-	return &staffapi.StaffResourceHeaders{SetCookie: cookie.String(), Response: resource(op)}, nil
+	return nil, fmt.Errorf("staff: unhandled login outcome %d", res.Outcome)
 }
 
 // StaffAuthLogout ends the Staff member's sessions server-side (the session epoch is
@@ -114,15 +123,11 @@ func (h *Handlers) StaffMeGet(ctx context.Context) (staffapi.StaffMeGetRes, erro
 	return &res, nil
 }
 
-// throttled turns the login throttle's refusal into the standard 429 (ADR 0025): the
+// throttled is the login throttle's refusal as the standard 429 (ADR 0025): the
 // Retry-After and X-RateLimit headers are set on the response and the error handler
-// renders the problem. It is nil for any other error and for nil.
-func throttled(ctx context.Context, err error) error {
-	var t *ThrottledError
-	if !errors.As(err, &t) {
-		return nil
-	}
-	return ratelimit.FromContext(ctx).Delay(ctx, ratelimit.PolicyLoginAccount, t.Limit, t.Wait, t.Now)
+// renders the problem.
+func throttled(ctx context.Context, res login.Result[*ent.StaffMember]) error {
+	return ratelimit.FromContext(ctx).Delay(ctx, ratelimit.PolicyLoginAccount, res.Limit, res.Wait, res.Now)
 }
 
 func resource(op *ent.StaffMember) staffapi.StaffResource {
