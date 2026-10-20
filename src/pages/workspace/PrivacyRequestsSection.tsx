@@ -1,15 +1,99 @@
 import { Alert, Box, Button, Group, Stack, Text, TextInput, Title } from '@mantine/core'
-import { useQuery } from '@tanstack/react-query'
+import { notifications } from '@mantine/notifications'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { siteContactsLookupOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
+import {
+  siteContactsEraseMutation,
+  siteContactsLookupOptions,
+  siteContactsLookupQueryKey,
+} from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteContactLookup } from '../../generated/site/types.gen.ts'
+import { useApiErrorMessage } from '../../hooks/useApiErrorMessage.ts'
+import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation.tsx'
+import { hasErrorStatus } from '../../utils/apiErrors.ts'
+
+// EraseAction is offered exactly while Erasure would find something: a Contact or
+// delivery records hold the address (kept opt-outs alone do not count). A not-found
+// answer means someone erased it meanwhile: say so and refresh the lookup.
+function EraseAction({
+  slug,
+  email,
+  held,
+}: {
+  slug: string
+  email: string
+  held: SiteContactLookup
+}) {
+  const { t } = useTranslation()
+  const queryClient = useQueryClient()
+  const confirm = useDeleteConfirmation()
+  const apiErrorMessage = useApiErrorMessage()
+  const refreshLookup = () =>
+    queryClient.invalidateQueries({
+      queryKey: siteContactsLookupQueryKey({ path: { slug }, query: { email } }),
+    })
+  const erase = useMutation({
+    ...siteContactsEraseMutation(),
+    onSuccess: async () => {
+      notifications.show({
+        color: 'teal',
+        title: t(($) => $.notifications.successTitle),
+        message: t(($) => $.settings.privacy.erased),
+      })
+      await refreshLookup()
+    },
+    onError: async (error) => {
+      if (hasErrorStatus(error, [404])) {
+        notifications.show({ message: t(($) => $.settings.privacy.nothingFound) })
+        await refreshLookup()
+        return
+      }
+      notifications.show({
+        color: 'red',
+        title: t(($) => $.alerts.eraseErrorTitle),
+        message: apiErrorMessage(
+          error,
+          t(($) => $.notifications.errorMessage),
+        ),
+      })
+    },
+  })
+
+  return (
+    <Button
+      color="red"
+      variant="light"
+      w="fit-content"
+      disabled={!held.contactHeld && held.deliveryRecords === 0}
+      loading={erase.isPending}
+      onClick={() =>
+        confirm({
+          title: t(($) => $.settings.privacy.eraseConfirmTitle, { email }),
+          description: t(($) => $.settings.privacy.eraseConfirmDescription),
+          confirmLabel: t(($) => $.contacts.erase),
+          onConfirm: () => erase.mutate({ path: { slug }, query: { email } }),
+        })
+      }
+    >
+      {t(($) => $.contacts.erase)}
+    </Button>
+  )
+}
 
 // LookupResult shows what the Workspace holds for the looked-up address, as counts.
 // Erase and Export build on this result: they read the same lookup to decide whether
 // they are offered (a Contact or delivery records hold the address).
-function LookupResult({ held }: { held: SiteContactLookup }) {
+function LookupResult({
+  slug,
+  email,
+  held,
+}: {
+  slug: string
+  email: string
+  held: SiteContactLookup
+}) {
   const { t } = useTranslation()
   const nothingHeld =
     !held.contactHeld &&
@@ -33,6 +117,7 @@ function LookupResult({ held }: { held: SiteContactLookup }) {
       <Text>{t(($) => $.settings.privacy.deliveryRecords, { n: held.deliveryRecords })}</Text>
       <Text>{t(($) => $.settings.privacy.unsubscribes, { n: held.unsubscribes })}</Text>
       <Text>{t(($) => $.settings.privacy.suppressions, { n: held.suppressions })}</Text>
+      <EraseAction slug={slug} email={email} held={held} />
     </Stack>
   )
 }
@@ -77,7 +162,7 @@ export function PrivacyRequestsSection({ slug }: { slug: string }) {
         {lookup.isError ? (
           <Alert color="red">{t(($) => $.settings.privacy.lookupError)}</Alert>
         ) : null}
-        {lookup.data ? <LookupResult held={lookup.data} /> : null}
+        {lookup.data ? <LookupResult slug={slug} email={email} held={lookup.data} /> : null}
       </Stack>
     </Box>
   )

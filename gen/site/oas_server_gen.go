@@ -253,6 +253,15 @@ type Handler interface {
 	//
 	// DELETE /workspaces/{slug}/contacts/{id}
 	SiteContactsDelete(ctx context.Context, params SiteContactsDeleteParams) (SiteContactsDeleteRes, error)
+	// SiteContactsErase implements SiteContacts_erase operation.
+	//
+	// Erase by email address (GDPR Art. 17, a Privacy request), the same Erasure as deleting a contact:
+	// personal data is removed, delivery records to the address are anonymized (also when no contact holds
+	// it) and opt-outs survive. Answers 404 when neither a contact nor delivery records hold the address.
+	// Owner or admin only.
+	//
+	// DELETE /workspaces/{slug}/contacts/erase
+	SiteContactsErase(ctx context.Context, params SiteContactsEraseParams) (SiteContactsEraseRes, error)
 	// SiteContactsExport implements SiteContacts_export operation.
 	//
 	// Export everything held about one contact as a streamed JSON download. Identify the contact by

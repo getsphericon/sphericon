@@ -16,7 +16,7 @@ func lookup(t *testing.T, c *siteapi.Client, slug, email string) siteapi.SiteCon
 	t.Helper()
 	res, err := c.SiteContactsLookup(context.Background(), siteapi.SiteContactsLookupParams{
 		Slug:  slug,
-		Email: siteapi.EmailAddress(email),
+		Email: email,
 	})
 	require.NoError(t, err)
 	return res
@@ -109,4 +109,17 @@ func TestSiteContactsLookupRejectsAnInvalidAddress(t *testing.T) {
 	res := lookup(t, c, fixtures.AcmeSlug, "not an address")
 
 	assert.IsType(t, &siteapi.SiteContactsLookupBadRequest{}, res)
+}
+
+// A padded, mixed-case address is trimmed and lowercased, not refused by the
+// generated format check (Privacy request, story 20).
+func TestSiteContactsLookupAcceptsAPaddedAddress(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+
+	res := lookup(t, c, fixtures.AcmeSlug, " Export.Subject@Example.com ")
+
+	got, ok := res.(*siteapi.SiteContactLookup)
+	require.Truef(t, ok, "got %T", res)
+	assert.True(t, got.ContactHeld)
 }

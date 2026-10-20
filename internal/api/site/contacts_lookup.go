@@ -28,7 +28,7 @@ func (h *Handlers) SiteContactsLookup(ctx context.Context, params siteapi.SiteCo
 		return &v, nil
 	}
 
-	held, err := erasure.Lookup(ctx, scoped, string(params.Email))
+	held, err := erasure.Lookup(ctx, scoped, params.Email)
 	if errors.Is(err, erasure.ErrInvalidEmail) {
 		v := siteapi.SiteContactsLookupBadRequest(problem(http.StatusBadRequest, "invalid email address"))
 		return &v, nil

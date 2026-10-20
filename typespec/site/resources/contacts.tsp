@@ -161,9 +161,26 @@ interface SiteContacts
   lookup(
     ...ResourceCollectionParameters<SiteContactResource>,
 
-    /** The email address */
-    @query email: EmailAddress,
+    /** The email address, as typed: trimmed and validated by the handler, not by the format check */
+    @maxLength(320) @query email: string,
   ): SiteContactLookup | BadRequestProblem | ForbiddenProblem | NotFoundProblem;
+
+  /**
+   * Erase by email address (GDPR Art. 17, a Privacy request), the same Erasure as
+   * deleting a contact: personal data is removed, delivery records to the address
+   * are anonymized (also when no contact holds it) and opt-outs survive. Answers
+   * 404 when neither a contact nor delivery records hold the address. Owner or
+   * admin only.
+   */
+  @delete
+  @collectionAction(SiteContactResource, "erase")
+  @autoRoute
+  erase(
+    ...ResourceCollectionParameters<SiteContactResource>,
+
+    /** The email address to erase, as typed: trimmed and validated by the handler */
+    @maxLength(320) @query email: string,
+  ): NoContentResponse | BadRequestProblem | ForbiddenProblem | NotFoundProblem;
 }
 
 @@doc(

@@ -3866,6 +3866,64 @@
         }
       }
     },
+    "/workspaces/{slug}/contacts/erase": {
+      "delete": {
+        "operationId": "SiteContacts_erase",
+        "description": "Erase by email address (GDPR Art. 17, a Privacy request), the same Erasure as\ndeleting a contact: personal data is removed, delivery records to the address\nare anonymized (also when no contact holds it) and opt-outs survive. Answers\n404 when neither a contact nor delivery records hold the address. Owner or\nadmin only.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SiteContactResourceParentKey"
+          },
+          {
+            "name": "email",
+            "in": "query",
+            "required": true,
+            "description": "The email address to erase, as typed: trimmed and validated by the handler",
+            "schema": {
+              "type": "string",
+              "maxLength": 320
+            },
+            "explode": false
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "There is no content to send for this request, but the headers may be useful."
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Contacts"]
+      }
+    },
     "/workspaces/{slug}/contacts/export": {
       "post": {
         "operationId": "SiteContacts_export",
@@ -3956,9 +4014,10 @@
             "name": "email",
             "in": "query",
             "required": true,
-            "description": "The email address",
+            "description": "The email address, as typed: trimmed and validated by the handler, not by the format check",
             "schema": {
-              "$ref": "#/components/schemas/EmailAddress"
+              "type": "string",
+              "maxLength": 320
             },
             "explode": false
           }

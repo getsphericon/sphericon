@@ -41,6 +41,7 @@ const (
 	SiteBroadcastsUpdateOperation                     OperationName = "SiteBroadcastsUpdate"
 	SiteContactsCreateOperation                       OperationName = "SiteContactsCreate"
 	SiteContactsDeleteOperation                       OperationName = "SiteContactsDelete"
+	SiteContactsEraseOperation                        OperationName = "SiteContactsErase"
 	SiteContactsExportOperation                       OperationName = "SiteContactsExport"
 	SiteContactsGetOperation                          OperationName = "SiteContactsGet"
 	SiteContactsListOperation                         OperationName = "SiteContactsList"
