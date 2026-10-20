@@ -92,19 +92,8 @@ func TestMigrateFSAppliesAMigrationUnderAContextWithNoDeadline(t *testing.T) {
 // and the column ends required and unique (ADR 0043).
 func TestMigrateGivesExistingWorkspacesAnIdAndEndsRequired(t *testing.T) {
 	sqlDB := openEmpty(t)
-	all, err := fs.Sub(sphericon.MigrationsFS, "migrations")
-	require.NoError(t, err)
-	before := fstest.MapFS{}
-	entries, err := fs.ReadDir(all, ".")
-	require.NoError(t, err)
-	for _, e := range entries {
-		if e.Name() < "20261020030001" {
-			data, err := fs.ReadFile(all, e.Name())
-			require.NoError(t, err)
-			before[e.Name()] = &fstest.MapFile{Data: data}
-		}
-	}
-	_, err = db.MigrateFS(t.Context(), sqlDB, before)
+	before := migrationsWhere(t, func(name string) bool { return name < "20261020030001" })
+	_, err := db.MigrateFS(t.Context(), sqlDB, before)
 	require.NoError(t, err)
 	testhelper.InsertLegacyWorkspaces(t, sqlDB, "one", "two", "three")
 
@@ -132,29 +121,31 @@ func TestMigrateGivesExistingWorkspacesAnIdAndEndsRequired(t *testing.T) {
 // leave them with no address (ADR 0033 guard).
 func TestMigrateRefusesToDropTheSlugBeforeEveryWorkspaceHasAnId(t *testing.T) {
 	sqlDB := openEmpty(t)
-	all, err := fs.Sub(sphericon.MigrationsFS, "migrations")
-	require.NoError(t, err)
-	skipping := fstest.MapFS{}
-	entries, err := fs.ReadDir(all, ".")
-	require.NoError(t, err)
-	for _, e := range entries {
-		if e.Name() >= "20261020030002" && e.Name() < "20261020030004" {
-			continue // the id backfill and the migration that requires the id
-		}
-		data, err := fs.ReadFile(all, e.Name())
-		require.NoError(t, err)
-		skipping[e.Name()] = &fstest.MapFile{Data: data}
-	}
-	before := fstest.MapFS{}
-	for name, f := range skipping {
-		if name < "20261020030004" {
-			before[name] = f
-		}
-	}
-	_, err = db.MigrateFS(t.Context(), sqlDB, before)
+	// Skip the id backfill and the migration that requires the id.
+	skipping := migrationsWhere(t, func(name string) bool { return name < "20261020030002" || name >= "20261020030004" })
+	before := migrationsWhere(t, func(name string) bool { return name < "20261020030002" })
+	_, err := db.MigrateFS(t.Context(), sqlDB, before)
 	require.NoError(t, err)
 	testhelper.InsertLegacyWorkspaces(t, sqlDB, "one")
 
 	_, err = db.MigrateFS(t.Context(), sqlDB, skipping)
 	require.ErrorContains(t, err, "workspaces.slug cannot be dropped")
+}
+
+// migrationsWhere is the embedded migrations whose file name satisfies keep.
+func migrationsWhere(t *testing.T, keep func(name string) bool) fstest.MapFS {
+	t.Helper()
+	all, err := fs.Sub(sphericon.MigrationsFS, "migrations")
+	require.NoError(t, err)
+	entries, err := fs.ReadDir(all, ".")
+	require.NoError(t, err)
+	out := fstest.MapFS{}
+	for _, e := range entries {
+		if keep(e.Name()) {
+			data, err := fs.ReadFile(all, e.Name())
+			require.NoError(t, err)
+			out[e.Name()] = &fstest.MapFile{Data: data}
+		}
+	}
+	return out
 }
