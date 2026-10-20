@@ -466,8 +466,10 @@ outside `schema/`, `src/generated/`) unless that is the point of the search.
   commitlint runs on every commit; the header fits 120 characters and each body line 100.
   **Never create a merge commit** (`chore: merge origin/main` and the like): history stays linear.
   Bring `main` in with `git fetch origin && git rebase origin/main`, never `git merge`.
-- A new environment variable gets one row in the env table of `docs/configuration.md`, the only
-  table (`mise run check:env`); the README links to it.
+- A new environment variable is documented in the configuration reference of the documentation site
+  repository (`getsphericon/getsphericon.github.io`, served at
+  https://getsphericon.com/docs/configuration); no automated check enforces it, and the README
+  links to the page. All public documentation lives in that repository, not here.
 - **Agent guidance lives in this file, not in personal agent memory.** The repo has several
   developers: a rule an agent should follow goes here (or in `docs/`), never into one person's
   memory.
