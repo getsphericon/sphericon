@@ -5,7 +5,7 @@ status: accepted
 # Tracking domains are a core feature; the edge that terminates their TLS is not
 
 Customers want the links in their mail on their own hostname (a CNAME). Links are built from the one
-`SPHERICON_APP_URL` today. ADR 0028 left the edge open: its ALB holds 25 certificates by default, a
+`SPHERICON_APP_URL` today. The SaaS deployment (ADR 0002 in the platform repository) left the edge open: its ALB holds 25 certificates by default, a
 quota AWS lists as adjustable with no stated maximum, so the quota is not what decides this. What
 decides it is that an ALB certificate needs a DNS validation record in the customer's zone as well
 as the CNAME, while a CloudFront multi-tenant distribution validates over HTTP and renews on its own.
