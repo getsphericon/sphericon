@@ -3,7 +3,6 @@ package jobs
 import (
 	"context"
 	"fmt"
-	"math/rand/v2"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -215,6 +214,13 @@ func RunStep(ctx context.Context, client *ent.Client, mod *outbound.Module, runI
 		if err != nil {
 			return StepResult{}, err // retryable: the worker's retry replays the same key
 		}
+		// A Hold or a Deferral waits, unchanged, and asks again later (an Automation step
+		// cannot snooze, so it reschedules itself).
+		retry := res.Retry(0)
+		if retry.Wanted {
+			resume := time.Now().Add(retry.After)
+			return StepResult{ResumeAt: &resume}, nil
+		}
 		switch res.Outcome {
 		case outbound.Sent:
 			// Advance past the email step. A crash between the send and this write
@@ -229,17 +235,9 @@ func RunStep(ctx context.Context, client *ent.Client, mod *outbound.Module, runI
 			// silently keeps walking steps while skipping every email.
 			_ = automations.ExitRun(ctx, scoped, run.ID)
 			return StepResult{Done: true}, nil
-		case outbound.Failed:
+		default: // outbound.Failed
 			_, _ = scoped.AutomationRun().UpdateOneID(run.ID).SetStatus(automationrun.StatusFailed).Save(ctx)
 			return StepResult{}, fmt.Errorf("email step %d: %s", step, res.Reason)
-		case outbound.Deferral:
-			// The Integration is busy: the enrollment waits, unchanged, for the limit's wait
-			// (an Automation step cannot snooze, so it reschedules itself like a Hold).
-			resume := time.Now().Add(res.Retry(0, rand.Float64()).After)
-			return StepResult{ResumeAt: &resume}, nil
-		default: // outbound.Held: the enrollment waits, unchanged, and asks again later
-			resume := time.Now().Add(res.Retry(0, rand.Float64()).After)
-			return StepResult{ResumeAt: &resume}, nil
 		}
 
 	default:

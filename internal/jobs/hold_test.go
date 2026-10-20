@@ -24,18 +24,20 @@ func snoozeOf(t *testing.T, err error) *rivertype.JobSnoozeError {
 // long hold must not exhaust a recipient's retry budget, and an attempt that merely
 // raced another must not be marked failed.
 func TestDeferrableErrorsBecomeSnoozes(t *testing.T) {
-	assert.Equal(t, outbound.HoldBackoff, snoozeOf(t, snoozeIfDeferrable(&HeldError{Reason: outbound.HoldSuspended})).Duration)
-	assert.Equal(t, inProgressRetryDelay,
-		snoozeOf(t, snoozeIfDeferrable(fmt.Errorf("wrapped: %w", outbound.ErrInProgress))).Duration)
+	held := snoozeIfDeferrable(&HeldError{Reason: outbound.HoldSuspended})
+	raced := snoozeIfDeferrable(fmt.Errorf("wrapped: %w", outbound.ErrInProgress))
+	heldSnooze := snoozeOf(t, held)
+	racedSnooze := snoozeOf(t, raced)
+	assert.Equal(t, outbound.HoldBackoff, heldSnooze.Duration)
+	assert.Equal(t, inProgressRetryDelay, racedSnooze.Duration)
 }
 
-// A Deferral is deferrable like a hold and snoozes by the Outbound retry policy.
-func TestDeferredErrorSnoozesByThePolicy(t *testing.T) {
-	d := &DeferredError{Wait: time.Second, Backlog: 2}
+// A Deferral is deferrable like a hold and snoozes by the delay the Outbound retry policy chose.
+func TestDeferredErrorSnoozesByItsDelay(t *testing.T) {
+	d := &DeferredError{Delay: 3500 * time.Millisecond}
 	assert.True(t, isDeferrable(fmt.Errorf("wrapped: %w", d)))
-	got := snoozeOf(t, snoozeIfDeferrable(d)).Duration
-	assert.GreaterOrEqual(t, got, 3*time.Second)
-	assert.LessOrEqual(t, got, 3600*time.Millisecond)
+	snooze := snoozeOf(t, snoozeIfDeferrable(d))
+	assert.Equal(t, 3500*time.Millisecond, snooze.Duration)
 }
 
 func TestOtherErrorsPassThroughUnchanged(t *testing.T) {

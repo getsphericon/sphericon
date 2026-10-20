@@ -361,7 +361,7 @@ func TestMarkFailedOnlyTouchesPendingClaims(t *testing.T) {
 	env.CustomerMail.SetErr(errors.New("down"))
 	_, err := m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:giveup", "a@example.com"))
 	require.Error(t, err)
-	require.NoError(t, m.MarkFailed(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:giveup", "a@example.com"), errors.New("retries exhausted")))
+	require.NoError(t, m.MarkFailed(ctx, env.DB.Scoped(fixtures.AcmeID), "tx:giveup", errors.New("retries exhausted")))
 	row := byKey(t, env, "tx:giveup")
 	assert.Equal(t, outboundmessage.StatusFailed, row.Status)
 	require.NotNil(t, row.Reason)

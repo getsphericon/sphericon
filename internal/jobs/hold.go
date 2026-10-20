@@ -3,7 +3,6 @@ package jobs
 import (
 	"context"
 	"errors"
-	"math/rand/v2"
 	"time"
 
 	"github.com/riverqueue/river"
@@ -24,15 +23,9 @@ func (e *HeldError) Error() string { return "send held: " + e.Reason }
 
 // DeferredError reports that Outbound send found the Integration's Send rate limit
 // spent (outbound.Deferral). Nothing was consumed: the caller retries the same work
-// after Wait, and a Broadcast recipient additionally queues behind Backlog others.
+// after Delay.
 type DeferredError struct {
-	// Wait is how long until capacity returns for one more message.
-	Wait time.Duration
-	// Backlog is how many recipients of the same Broadcast are still pending, awake (not
-	// themselves sleeping on a Deferral) and ahead of
-	// this one; each needs a token of its own before this one gets its turn.
-	Backlog int
-	// Delay, when set, is the snooze already chosen for this deferral (it was recorded
+	// Delay is the snooze the Outbound retry policy chose for this deferral (it was recorded
 	// on the recipient so the backlog of later jobs can tell it is asleep).
 	Delay time.Duration
 }
@@ -64,13 +57,11 @@ func isDeferrable(err error) bool {
 // Workers call it on the error from their pure function.
 func snoozeIfDeferrable(err error) error {
 	if _, held := asHeld(err); held {
-		return river.JobSnooze(outbound.Result{Outcome: outbound.Held}.Retry(0, 0).After)
+		retry := outbound.HoldRetry()
+		return river.JobSnooze(retry.After)
 	}
 	if d, deferred := asDeferred(err); deferred {
-		if d.Delay > 0 {
-			return river.JobSnooze(d.Delay)
-		}
-		return river.JobSnooze(deferralResult(d.Wait).Retry(d.Backlog, rand.Float64()).After)
+		return river.JobSnooze(d.Delay)
 	}
 	if errors.Is(err, outbound.ErrInProgress) {
 		return river.JobSnooze(inProgressRetryDelay)
@@ -89,10 +80,4 @@ func setBroadcastHold(ctx context.Context, s *ent.Scoped, broadcastID int64, rea
 		upd.SetHoldReason(reason)
 	}
 	_ = upd.Exec(ctx)
-}
-
-// deferralResult is the Outbound Result of a Deferral that waits for capacity, the input
-// of the retry policy for a caller that holds only the wait.
-func deferralResult(wait time.Duration) outbound.Result {
-	return outbound.Result{Outcome: outbound.Deferral, Wait: wait}
 }

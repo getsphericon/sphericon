@@ -1,7 +1,6 @@
 package outbound
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/oklog/ulid/v2"
@@ -87,10 +86,4 @@ func Transactional(m TransactionalMessage) Request {
 		Variables:   m.Variables,
 		Ref:         Ref{TemplateID: m.TemplateID},
 	}
-}
-
-// MarkRecipientFailed gives up the pending claim of a Broadcast recipient's send for
-// good, recording cause (see MarkFailed).
-func (m *Module) MarkRecipientFailed(ctx context.Context, s *ent.Scoped, recipientID int64, cause error) error {
-	return m.MarkFailed(ctx, s, Request{Key: broadcastRecipientKey(recipientID)}, cause)
 }

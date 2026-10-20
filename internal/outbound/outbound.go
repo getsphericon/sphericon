@@ -436,10 +436,10 @@ func (m *Module) Preflight(ctx context.Context, s *ent.Scoped, fromEmail string)
 // MarkFailed gives up on a pending claim for good (a queue worker calls it when the
 // final retry is spent), recording cause. It is a no-op for a message that already
 // reached a final status or whose claim another attempt currently holds.
-func (m *Module) MarkFailed(ctx context.Context, s *ent.Scoped, req Request, cause error) error {
+func (m *Module) MarkFailed(ctx context.Context, s *ent.Scoped, key string, cause error) error {
 	return s.OutboundMessage().Update().
 		Where(
-			outboundmessage.IdempotencyKey(req.Key),
+			outboundmessage.IdempotencyKey(key),
 			outboundmessage.StatusEQ(outboundmessage.StatusPending),
 			// Never fail a message another attempt is working on: only a claim that
 			// was released (a definite provider failure) or whose lease has expired.
@@ -448,6 +448,12 @@ func (m *Module) MarkFailed(ctx context.Context, s *ent.Scoped, req Request, cau
 		SetStatus(outboundmessage.StatusFailed).
 		SetReason(cause.Error()).
 		Exec(ctx)
+}
+
+// MarkRecipientFailed gives up the pending claim of a Broadcast recipient's send for
+// good, recording cause (see MarkFailed).
+func (m *Module) MarkRecipientFailed(ctx context.Context, s *ent.Scoped, recipientID int64, cause error) error {
+	return m.MarkFailed(ctx, s, broadcastRecipientKey(recipientID), cause)
 }
 
 // workspace loads the Workspace row the scoped client is confined to.

@@ -1,6 +1,9 @@
 package outbound
 
-import "time"
+import (
+	"math/rand/v2"
+	"time"
+)
 
 // Retry says whether an Outbound Outcome wants another attempt and after how long. It is
 // the one retry policy: a queue adapter turns After into its own wait (a River snooze, an
@@ -29,27 +32,37 @@ const (
 	deferralJitter = 0.2
 )
 
+// HoldRetry is the retry of a Hold: HoldBackoff, whatever the source.
+func HoldRetry() Retry {
+	return Retry{Wanted: true, After: HoldBackoff}
+}
+
 // Retry is the retry policy for this Result. backlog is how many sends of the same source
 // are awake and ahead of this one (each needs a token of its own first; 0 for a source
-// with no queue), and jitter, in [0, 1), is the caller's random draw.
+// with no queue). The jitter of a Deferral is drawn here, the one place it is used.
 //
 // A Deferral waits the wait until capacity returns scaled by the backlog, floored at
 // deferralFloor and capped at deferralCeiling, plus up to deferralJitter of random spread.
 // A Hold waits HoldBackoff.
-func (r Result) Retry(backlog int, jitter float64) Retry {
+func (r Result) Retry(backlog int) Retry {
 	switch r.Outcome {
 	case Held:
-		return Retry{Wanted: true, After: HoldBackoff}
+		return HoldRetry()
 	case Deferral:
-		// The product saturates at the ceiling instead of overflowing int64: a long wait
-		// behind a large backlog would otherwise wrap negative and wake the job after the floor.
-		ahead := time.Duration(1 + backlog)
-		base := deferralCeiling
-		if r.Wait <= deferralCeiling/ahead {
-			base = min(max(r.Wait*ahead, deferralFloor), deferralCeiling)
-		}
-		return Retry{Wanted: true, After: base + time.Duration(float64(base)*deferralJitter*jitter)}
+		return deferralRetry(r.Wait, backlog, rand.Float64())
 	default:
 		return Retry{}
 	}
+}
+
+// deferralRetry is the Deferral policy with the jitter, in [0, 1), given.
+func deferralRetry(wait time.Duration, backlog int, jitter float64) Retry {
+	// The product saturates at the ceiling instead of overflowing int64: a long wait
+	// behind a large backlog would otherwise wrap negative and wake the job after the floor.
+	ahead := time.Duration(1 + backlog)
+	base := deferralCeiling
+	if wait <= deferralCeiling/ahead {
+		base = min(max(wait*ahead, deferralFloor), deferralCeiling)
+	}
+	return Retry{Wanted: true, After: base + time.Duration(float64(base)*deferralJitter*jitter)}
 }
