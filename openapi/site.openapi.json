@@ -10930,7 +10930,7 @@
       },
       "SiteDeletedWorkspaceResource": {
         "type": "object",
-        "required": ["id", "name", "deletedAt", "eraseAt"],
+        "required": ["id", "name", "discardedAt", "eraseAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -10944,7 +10944,7 @@
             "type": "string",
             "description": "Display name"
           },
-          "deletedAt": {
+          "discardedAt": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/Timestamp"

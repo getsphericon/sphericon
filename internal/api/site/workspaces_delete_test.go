@@ -31,8 +31,8 @@ func TestOwnerDeletesWorkspaceByTypingItsName(t *testing.T) {
 	deleted, ok := res.(*siteapi.SiteDeletedWorkspaceResource)
 	require.Truef(t, ok, "got %T", res)
 	assert.Equal(t, siteapi.WorkspaceId(fixtures.InitechPublicID), deleted.ID)
-	assert.WithinDuration(t, time.Now(), time.Time(deleted.DeletedAt), time.Minute)
-	assert.Equal(t, time.Time(deleted.DeletedAt).Add(workspacedeletion.DeletionWindow), time.Time(deleted.EraseAt),
+	assert.WithinDuration(t, time.Now(), time.Time(deleted.DiscardedAt), time.Minute)
+	assert.Equal(t, time.Time(deleted.DiscardedAt).Add(workspacedeletion.DeletionWindow), time.Time(deleted.EraseAt),
 		"the data is erased 30 days after the deletion")
 
 	list, err := c.SiteWorkspacesList(ctx)
@@ -89,7 +89,7 @@ func TestDeletedWorkspaceIsHiddenFromEveryMemberAndListedForOwners(t *testing.T)
 		require.NoError(t, err)
 		require.Len(t, got, 1, email)
 		assert.Equal(t, "Initech", got[0].Name)
-		assert.Equal(t, time.Time(got[0].DeletedAt).Add(workspacedeletion.DeletionWindow), time.Time(got[0].EraseAt))
+		assert.Equal(t, time.Time(got[0].DiscardedAt).Add(workspacedeletion.DeletionWindow), time.Time(got[0].EraseAt))
 	}
 	for _, email := range []string{fixtures.InitechAdminAdaEmail, fixtures.InitechMemberMaxEmail, fixtures.OwnerJohnEmail} {
 		got, err := env.SiteActor(t, email).SiteWorkspacesListDeleted(ctx)

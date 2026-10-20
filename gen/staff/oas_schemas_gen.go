@@ -2302,7 +2302,7 @@ type StaffWorkspaceDetailResource struct {
 	// When the Workspace was created.
 	CreatedAt Timestamp `json:"createdAt"`
 	// When the Workspace was deleted; present from deletion until a restore (ADR 0043).
-	DeletedAt OptNilTimestamp `json:"deletedAt"`
+	DiscardedAt OptNilTimestamp `json:"discardedAt"`
 	// When the Workspace's data was erased; the row stays as a tombstone.
 	ErasedAt OptNilTimestamp `json:"erasedAt"`
 	// Present only while sending is suspended.
@@ -2332,9 +2332,9 @@ func (s *StaffWorkspaceDetailResource) GetCreatedAt() Timestamp {
 	return s.CreatedAt
 }
 
-// GetDeletedAt returns the value of DeletedAt.
-func (s *StaffWorkspaceDetailResource) GetDeletedAt() OptNilTimestamp {
-	return s.DeletedAt
+// GetDiscardedAt returns the value of DiscardedAt.
+func (s *StaffWorkspaceDetailResource) GetDiscardedAt() OptNilTimestamp {
+	return s.DiscardedAt
 }
 
 // GetErasedAt returns the value of ErasedAt.
@@ -2387,9 +2387,9 @@ func (s *StaffWorkspaceDetailResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
 }
 
-// SetDeletedAt sets the value of DeletedAt.
-func (s *StaffWorkspaceDetailResource) SetDeletedAt(val OptNilTimestamp) {
-	s.DeletedAt = val
+// SetDiscardedAt sets the value of DiscardedAt.
+func (s *StaffWorkspaceDetailResource) SetDiscardedAt(val OptNilTimestamp) {
+	s.DiscardedAt = val
 }
 
 // SetErasedAt sets the value of ErasedAt.
@@ -2439,7 +2439,7 @@ type StaffWorkspaceResource struct {
 	// When the Workspace was created.
 	CreatedAt Timestamp `json:"createdAt"`
 	// When the Workspace was deleted; present from deletion until a restore (ADR 0043).
-	DeletedAt OptNilTimestamp `json:"deletedAt"`
+	DiscardedAt OptNilTimestamp `json:"discardedAt"`
 	// When the Workspace's data was erased; the row stays as a tombstone.
 	ErasedAt OptNilTimestamp `json:"erasedAt"`
 	// Present only while sending is suspended.
@@ -2465,9 +2465,9 @@ func (s *StaffWorkspaceResource) GetCreatedAt() Timestamp {
 	return s.CreatedAt
 }
 
-// GetDeletedAt returns the value of DeletedAt.
-func (s *StaffWorkspaceResource) GetDeletedAt() OptNilTimestamp {
-	return s.DeletedAt
+// GetDiscardedAt returns the value of DiscardedAt.
+func (s *StaffWorkspaceResource) GetDiscardedAt() OptNilTimestamp {
+	return s.DiscardedAt
 }
 
 // GetErasedAt returns the value of ErasedAt.
@@ -2505,9 +2505,9 @@ func (s *StaffWorkspaceResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
 }
 
-// SetDeletedAt sets the value of DeletedAt.
-func (s *StaffWorkspaceResource) SetDeletedAt(val OptNilTimestamp) {
-	s.DeletedAt = val
+// SetDiscardedAt sets the value of DiscardedAt.
+func (s *StaffWorkspaceResource) SetDiscardedAt(val OptNilTimestamp) {
+	s.DiscardedAt = val
 }
 
 // SetErasedAt sets the value of ErasedAt.

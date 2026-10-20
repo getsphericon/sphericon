@@ -26,7 +26,7 @@ model ServiceWorkspaceResource {
 
   /** When the Workspace was deleted; absent while it is live or after a restore. Its
    * 30-day window runs from here. */
-  deletedAt?: Timestamp | null;
+  discardedAt?: Timestamp | null;
 
   /** When the erasure job removed the Workspace's data; absent until then. An erased
    * Workspace stays in the feed as a tombstone: its name is blank and it has no owners. */

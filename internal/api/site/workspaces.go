@@ -245,10 +245,10 @@ func workspaceNotFoundProblem() siteapi.ProblemDetails {
 // will be erased.
 func deletedWorkspaceResource(w *ent.Workspace) siteapi.SiteDeletedWorkspaceResource {
 	return siteapi.SiteDeletedWorkspaceResource{
-		ID:        siteapi.WorkspaceId(w.PublicID),
-		Name:      w.Name,
-		DeletedAt: siteapi.Timestamp(*w.DiscardedAt),
-		EraseAt:   siteapi.Timestamp(workspacedeletion.EraseDate(*w.DiscardedAt)),
+		ID:          siteapi.WorkspaceId(w.PublicID),
+		Name:        w.Name,
+		DiscardedAt: siteapi.Timestamp(*w.DiscardedAt),
+		EraseAt:     siteapi.Timestamp(workspacedeletion.EraseDate(*w.DiscardedAt)),
 	}
 }
 

@@ -4215,9 +4215,9 @@ func (s *StaffWorkspaceDetailResource) encodeFields(e *jx.Encoder) {
 		s.CreatedAt.Encode(e)
 	}
 	{
-		if s.DeletedAt.Set {
-			e.FieldStart("deletedAt")
-			s.DeletedAt.Encode(e)
+		if s.DiscardedAt.Set {
+			e.FieldStart("discardedAt")
+			s.DiscardedAt.Encode(e)
 		}
 	}
 	{
@@ -4262,7 +4262,7 @@ var jsonFieldsNameOfStaffWorkspaceDetailResource = [11]string{
 	0:  "id",
 	1:  "name",
 	2:  "createdAt",
-	3:  "deletedAt",
+	3:  "discardedAt",
 	4:  "erasedAt",
 	5:  "suspension",
 	6:  "exempt",
@@ -4313,15 +4313,15 @@ func (s *StaffWorkspaceDetailResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"createdAt\"")
 			}
-		case "deletedAt":
+		case "discardedAt":
 			if err := func() error {
-				s.DeletedAt.Reset()
-				if err := s.DeletedAt.Decode(d); err != nil {
+				s.DiscardedAt.Reset()
+				if err := s.DiscardedAt.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"deletedAt\"")
+				return errors.Wrap(err, "decode field \"discardedAt\"")
 			}
 		case "erasedAt":
 			if err := func() error {
@@ -4484,9 +4484,9 @@ func (s *StaffWorkspaceResource) encodeFields(e *jx.Encoder) {
 		s.CreatedAt.Encode(e)
 	}
 	{
-		if s.DeletedAt.Set {
-			e.FieldStart("deletedAt")
-			s.DeletedAt.Encode(e)
+		if s.DiscardedAt.Set {
+			e.FieldStart("discardedAt")
+			s.DiscardedAt.Encode(e)
 		}
 	}
 	{
@@ -4515,7 +4515,7 @@ var jsonFieldsNameOfStaffWorkspaceResource = [8]string{
 	0: "id",
 	1: "name",
 	2: "createdAt",
-	3: "deletedAt",
+	3: "discardedAt",
 	4: "erasedAt",
 	5: "suspension",
 	6: "exempt",
@@ -4563,15 +4563,15 @@ func (s *StaffWorkspaceResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"createdAt\"")
 			}
-		case "deletedAt":
+		case "discardedAt":
 			if err := func() error {
-				s.DeletedAt.Reset()
-				if err := s.DeletedAt.Decode(d); err != nil {
+				s.DiscardedAt.Reset()
+				if err := s.DiscardedAt.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"deletedAt\"")
+				return errors.Wrap(err, "decode field \"discardedAt\"")
 			}
 		case "erasedAt":
 			if err := func() error {

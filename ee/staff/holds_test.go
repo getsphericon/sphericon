@@ -169,8 +169,8 @@ func TestTheMaximumExpiryIsConfigurable(t *testing.T) {
 func TestAHoldListReportsThePendingDeletionOfADeletedWorkspace(t *testing.T) {
 	h := newHarness(t)
 	h.setHoldResult(t, "k1", time.Hour)
-	deletedAt := h.clock.now().Add(-time.Hour).UTC().Truncate(time.Second)
-	h.env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetDiscardedAt(deletedAt).ExecX(t.Context())
+	discardedAt := h.clock.now().Add(-time.Hour).UTC().Truncate(time.Second)
+	h.env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetDiscardedAt(discardedAt).ExecX(t.Context())
 
 	items := h.listHolds(t)
 	require.Len(t, items, 2)

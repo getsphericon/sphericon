@@ -8645,7 +8645,7 @@ type SiteDeletedWorkspaceResource struct {
 	// Display name.
 	Name string `json:"name"`
 	// When the Workspace was deleted.
-	DeletedAt Timestamp `json:"deletedAt"`
+	DiscardedAt Timestamp `json:"discardedAt"`
 	// When its data will be erased: 30 days after it was deleted.
 	EraseAt Timestamp `json:"eraseAt"`
 }
@@ -8660,9 +8660,9 @@ func (s *SiteDeletedWorkspaceResource) GetName() string {
 	return s.Name
 }
 
-// GetDeletedAt returns the value of DeletedAt.
-func (s *SiteDeletedWorkspaceResource) GetDeletedAt() Timestamp {
-	return s.DeletedAt
+// GetDiscardedAt returns the value of DiscardedAt.
+func (s *SiteDeletedWorkspaceResource) GetDiscardedAt() Timestamp {
+	return s.DiscardedAt
 }
 
 // GetEraseAt returns the value of EraseAt.
@@ -8680,9 +8680,9 @@ func (s *SiteDeletedWorkspaceResource) SetName(val string) {
 	s.Name = val
 }
 
-// SetDeletedAt sets the value of DeletedAt.
-func (s *SiteDeletedWorkspaceResource) SetDeletedAt(val Timestamp) {
-	s.DeletedAt = val
+// SetDiscardedAt sets the value of DiscardedAt.
+func (s *SiteDeletedWorkspaceResource) SetDiscardedAt(val Timestamp) {
+	s.DiscardedAt = val
 }
 
 // SetEraseAt sets the value of EraseAt.

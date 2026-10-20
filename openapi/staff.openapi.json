@@ -1532,7 +1532,7 @@
             ],
             "description": "When the Workspace was created"
           },
-          "deletedAt": {
+          "discardedAt": {
             "type": "string",
             "allOf": [
               {
@@ -1609,7 +1609,7 @@
             ],
             "description": "When the Workspace was created"
           },
-          "deletedAt": {
+          "discardedAt": {
             "type": "string",
             "allOf": [
               {

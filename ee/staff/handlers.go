@@ -371,7 +371,7 @@ func workspaceResource(w *ent.Workspace) staffapi.StaffWorkspaceResource {
 		Warned:    w.AbuseWarningNotifiedAt != nil,
 	}
 	if w.DiscardedAt != nil {
-		res.DeletedAt = staffapi.NewOptNilTimestamp(staffapi.Timestamp(*w.DiscardedAt))
+		res.DiscardedAt = staffapi.NewOptNilTimestamp(staffapi.Timestamp(*w.DiscardedAt))
 	}
 	if w.ErasedAt != nil {
 		res.ErasedAt = staffapi.NewOptNilTimestamp(staffapi.Timestamp(*w.ErasedAt))

@@ -235,7 +235,7 @@ func TestDeletingAndRestoringAWorkspaceEachPutItBackInTheFeedInOrder(t *testing.
 	require.NoError(t, err)
 	got, saved := feedFrom(t, c, "")
 	live := entry(t, got, fixtures.InitechPublicID)
-	assert.False(t, live.DeletedAt.IsSet())
+	assert.False(t, live.DiscardedAt.IsSet())
 	assert.False(t, live.ErasedAt.IsSet())
 
 	now := time.Now().UTC().Truncate(time.Second)
@@ -243,9 +243,9 @@ func TestDeletingAndRestoringAWorkspaceEachPutItBackInTheFeedInOrder(t *testing.
 	require.NoError(t, err)
 	got, afterDelete := feedFrom(t, c, saved)
 	require.Equal(t, []string{fixtures.InitechPublicID}, feedIDs(got))
-	deletedAt, ok := got[0].DeletedAt.Get()
+	discardedAt, ok := got[0].DiscardedAt.Get()
 	require.True(t, ok)
-	assert.WithinDuration(t, now, time.Time(deletedAt), time.Second)
+	assert.WithinDuration(t, now, time.Time(discardedAt), time.Second)
 	assert.False(t, got[0].ErasedAt.IsSet())
 	assert.NotEmpty(t, got[0].Owners)
 
@@ -258,5 +258,5 @@ func TestDeletingAndRestoringAWorkspaceEachPutItBackInTheFeedInOrder(t *testing.
 	require.NoError(t, err)
 	got, _ = feedFrom(t, c, afterDelete)
 	require.Equal(t, []string{fixtures.InitechPublicID}, feedIDs(got))
-	assert.False(t, got[0].DeletedAt.IsSet())
+	assert.False(t, got[0].DiscardedAt.IsSet())
 }

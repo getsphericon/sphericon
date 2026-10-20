@@ -127,7 +127,7 @@ test('the account link item opens the external page with the token', async () =>
 const deletedInitech = {
   id: 'InitcWs3',
   name: 'Initech',
-  deletedAt: '2026-02-01T00:00:00Z',
+  discardedAt: '2026-02-01T00:00:00Z',
   eraseAt: '2026-03-03T00:00:00Z',
 }
 

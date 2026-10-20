@@ -36,8 +36,8 @@ import (
 // erased (ADR 0043). A constant, not configuration.
 const DeletionWindow = 30 * 24 * time.Hour
 
-// EraseDate is when the data of a Workspace deleted at deletedAt is erased.
-func EraseDate(deletedAt time.Time) time.Time { return deletedAt.Add(DeletionWindow) }
+// EraseDate is when the data of a Workspace deleted at discardedAt is erased.
+func EraseDate(discardedAt time.Time) time.Time { return discardedAt.Add(DeletionWindow) }
 
 // ErrNameMismatch refuses deleting a Workspace whose typed name differs from the stored one.
 var ErrNameMismatch = errors.New("workspacedeletion: the typed name does not match the workspace name")

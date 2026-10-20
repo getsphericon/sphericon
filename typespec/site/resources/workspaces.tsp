@@ -133,7 +133,7 @@ model SiteDeletedWorkspaceResource {
   name: string;
 
   /** When the Workspace was deleted */
-  deletedAt: Timestamp;
+  discardedAt: Timestamp;
 
   /** When its data will be erased: 30 days after it was deleted */
   eraseAt: Timestamp;

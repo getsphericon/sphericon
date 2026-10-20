@@ -1736,7 +1736,7 @@ export const zWorkspaceId = z.string().regex(/^[0-9A-Za-z]{8}$/);
 export const zSiteDeletedWorkspaceResource = z.object({
   id: zWorkspaceId,
   name: z.string(),
-  deletedAt: zTimestamp,
+  discardedAt: zTimestamp,
   eraseAt: zTimestamp
 });
 

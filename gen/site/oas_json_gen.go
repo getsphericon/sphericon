@@ -17326,8 +17326,8 @@ func (s *SiteDeletedWorkspaceResource) encodeFields(e *jx.Encoder) {
 		e.Str(s.Name)
 	}
 	{
-		e.FieldStart("deletedAt")
-		s.DeletedAt.Encode(e)
+		e.FieldStart("discardedAt")
+		s.DiscardedAt.Encode(e)
 	}
 	{
 		e.FieldStart("eraseAt")
@@ -17338,7 +17338,7 @@ func (s *SiteDeletedWorkspaceResource) encodeFields(e *jx.Encoder) {
 var jsonFieldsNameOfSiteDeletedWorkspaceResource = [4]string{
 	0: "id",
 	1: "name",
-	2: "deletedAt",
+	2: "discardedAt",
 	3: "eraseAt",
 }
 
@@ -17373,15 +17373,15 @@ func (s *SiteDeletedWorkspaceResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"name\"")
 			}
-		case "deletedAt":
+		case "discardedAt":
 			requiredBitSet[0] |= 1 << 2
 			if err := func() error {
-				if err := s.DeletedAt.Decode(d); err != nil {
+				if err := s.DiscardedAt.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"deletedAt\"")
+				return errors.Wrap(err, "decode field \"discardedAt\"")
 			}
 		case "eraseAt":
 			requiredBitSet[0] |= 1 << 3

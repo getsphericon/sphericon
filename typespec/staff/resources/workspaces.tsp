@@ -41,7 +41,7 @@ model StaffWorkspaceResource {
   createdAt: Timestamp;
 
   /** When the Workspace was deleted; present from deletion until a restore (ADR 0043) */
-  deletedAt?: Timestamp | null;
+  discardedAt?: Timestamp | null;
 
   /** When the Workspace's data was erased; the row stays as a tombstone */
   erasedAt?: Timestamp | null;

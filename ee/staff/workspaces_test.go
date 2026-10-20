@@ -21,7 +21,7 @@ import (
 // (never Contacts, content, Events or the Workspace's secret keys).
 func requireMetadataOnly(t *testing.T, w map[string]any) {
 	t.Helper()
-	allowed := []string{"id", "name", "createdAt", "suspension", "deliverability", "holds", "exempt", "warned", "abuse", "deletedAt", "erasedAt"}
+	allowed := []string{"id", "name", "createdAt", "suspension", "deliverability", "holds", "exempt", "warned", "abuse", "discardedAt", "erasedAt"}
 	for k := range w {
 		assert.Contains(t, allowed, k)
 	}
@@ -348,8 +348,8 @@ func TestAnExpiredHoldIsNotListedAndAnUnaffectedWorkspaceShowsNone(t *testing.T)
 func TestTheWorkspaceListHidesADeletedWorkspaceUnlessFilteredToDeleted(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
-	deletedAt := time.Now().UTC().Truncate(time.Second)
-	h.env.DB.Workspace.UpdateOneID(fixtures.GlobexID).SetDiscardedAt(deletedAt).ExecX(t.Context())
+	discardedAt := time.Now().UTC().Truncate(time.Second)
+	h.env.DB.Workspace.UpdateOneID(fixtures.GlobexID).SetDiscardedAt(discardedAt).ExecX(t.Context())
 
 	all := h.listWorkspaces(t, c, staffapi.StaffWorkspacesListParams{})
 	deleted := h.listWorkspaces(t, c, staffapi.StaffWorkspacesListParams{Review: staffapi.NewOptStaffWorkspaceReview(staffapi.StaffWorkspaceReviewDeleted)})
@@ -357,7 +357,7 @@ func TestTheWorkspaceListHidesADeletedWorkspaceUnlessFilteredToDeleted(t *testin
 	assert.NotContains(t, names(all.Items), "Globex")
 	assert.EqualValues(t, 8, all.TotalItems)
 	require.Equal(t, []string{"Globex"}, names(deleted.Items))
-	got, ok := deleted.Items[0].DeletedAt.Get()
+	got, ok := deleted.Items[0].DiscardedAt.Get()
 	require.True(t, ok)
-	assert.WithinDuration(t, deletedAt, time.Time(got), time.Second)
+	assert.WithinDuration(t, discardedAt, time.Time(got), time.Second)
 }
