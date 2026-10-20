@@ -81,16 +81,14 @@ are development fixtures only; never reuse the credentials anywhere else.
 
 Sign in at `https://sphericon.localhost/login`:
 
-| Role   | Workspace | Email                   | Password             |
-| ------ | --------- | ----------------------- | -------------------- |
-| owner  | Acme      | `info@getsphericon.com` | `password`           |
-| member | Acme      | `mary@acme.test`        | `mary-test-password` |
-| owner  | Globex    | `jane@globex.test`      | `jane-test-password` |
-| admin  | Initech   | `ada@initech.test`      | `ada-test-password`  |
+| Role   | Workspace | Email                   | Password              |
+| ------ | --------- | ----------------------- | --------------------- |
+| owner  | Acme      | `info@getsphericon.com` | `password`            |
+| admin  | Acme      | `alice@acme.test`       | `alice-test-password` |
+| member | Acme      | `mary@acme.test`        | `mary-test-password`  |
+| owner  | Globex    | `jane@globex.test`      | `jane-test-password`  |
 
-Acme has no admin; Initech is the Workspace with all three roles (owners `olga@initech.test` and
-`owen@initech.test`, member `max@initech.test`, passwords `<name>-test-password`).
-`sam@globex.test` / `sam-test-password` has a TOTP Second factor, secret `JBSWY3DPEHPK3PXP`.
+Acme has all three roles, so one Workspace is enough for development. `sam@globex.test` / `sam-test-password` has a TOTP Second factor, secret `JBSWY3DPEHPK3PXP`.
 
 The Staff console is at `https://sphericon.localhost/console` (Enterprise, license feature
 `staff`: without a license key it answers 404). Sign-in needs a password and a TOTP code:
