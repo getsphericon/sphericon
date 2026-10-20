@@ -345,7 +345,7 @@ func TestPasswordResetOfAVerifiedUserCreatesNoWorkspaceAndSendsNoWelcome(t *test
 func resend(t *testing.T, env *testhelper.TestEnv, email string) siteapi.SiteAuthResendVerificationRes {
 	t.Helper()
 	res, err := env.SiteAnonymous(t).SiteAuthResendVerification(t.Context(),
-		&siteapi.SiteResendVerificationInput{Email: siteapi.EmailAddress(email)})
+		&siteapi.SiteResendVerificationInput{Email: siteapi.EmailAddress(email)}, siteapi.SiteAuthResendVerificationParams{})
 	require.NoError(t, err)
 	return res
 }
@@ -539,7 +539,7 @@ func TestRegistrationSetsAScopedStrictHttpOnlyCookieForTheLifeOfTheLink(t *testi
 	assert.NotEmpty(t, cookie.Value)
 	assert.True(t, cookie.HttpOnly)
 	assert.Equal(t, http.SameSiteStrictMode, cookie.SameSite)
-	assert.Equal(t, "/site/auth/verify-email", cookie.Path)
+	assert.Equal(t, "/site/auth", cookie.Path)
 	assert.Equal(t, 24*60*60, cookie.MaxAge)
 }
 
@@ -652,18 +652,49 @@ func TestRegisteringAVerifiedAddressSetsTheSameCookieAndStoresNothing(t *testing
 	assert.Equal(t, http.StatusUnauthorized, loginStatus(t, env, fixtures.OwnerJohnEmail, "mallory-password-1"))
 }
 
-func TestResendAsksForAPasswordEvenInTheRegistrationBrowser(t *testing.T) {
-	env := testhelper.Setup(t)
-	browser := env.SiteBrowser(t)
-	registerIn(t, env, browser, "Grace Hopper", "grace@example.com", formPassword)
-	res, err := browser.SiteAuthResendVerification(t.Context(), &siteapi.SiteResendVerificationInput{Email: "grace@example.com"})
+// resendIn asks for the link again from one browser and returns the token of the new mail.
+func resendIn(t *testing.T, env *testhelper.TestEnv, browser *siteapi.Client, email string) string {
+	t.Helper()
+	res, err := browser.SiteAuthResendVerification(t.Context(), &siteapi.SiteResendVerificationInput{Email: siteapi.EmailAddress(email)},
+		siteapi.SiteAuthResendVerificationParams{})
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SiteAuthResendVerificationAccepted{}, res)
 	_, body := lastSystemEmail(t, env)
-	resent := tokenFromEmail(t, body)
+	return tokenFromEmail(t, body)
+}
+
+func TestResendFromTheRegistrationBrowserGivesALinkThatKeepsThePasswordAndSignsIn(t *testing.T) {
+	env := testhelper.Setup(t)
+	browser := env.SiteBrowser(t)
+	registerIn(t, env, browser, "Grace Hopper", "grace@example.com", formPassword)
+	resent := resendIn(t, env, browser, "grace@example.com")
+
+	session := sessionOf(t, verifyIn(t, browser, resent, ""))
+
+	landsInFirstWorkspace(t, env, session, "grace-hopper")
+	assert.Equal(t, http.StatusOK, loginStatus(t, env, "grace@example.com", formPassword))
+}
+
+func TestResendFromABrowserWithoutTheCookieGivesALinkThatAsksForAPassword(t *testing.T) {
+	env := testhelper.Setup(t)
+	registerIn(t, env, env.SiteBrowser(t), "Grace Hopper", "grace@example.com", formPassword)
+	resent := resendIn(t, env, env.SiteBrowser(t), "grace@example.com")
+	browser := env.SiteBrowser(t)
 
 	assert.IsType(t, &siteapi.SiteAuthVerifyEmailPreconditionRequired{}, verifyIn(t, browser, resent, ""))
 	assert.IsType(t, &siteapi.SiteAuthVerifyEmailOK{}, verifyIn(t, browser, resent, "grace-password-2"))
+	assert.Equal(t, http.StatusUnauthorized, loginStatus(t, env, "grace@example.com", formPassword))
+}
+
+// Story 24: verifying ends every session issued before it.
+func TestVerifyingEndsASessionIssuedBeforeIt(t *testing.T) {
+	env := testhelper.Setup(t)
+	token := register(t, env, "Grace Hopper", "grace@example.com")
+	earlier := env.SiteToken(t, "grace@example.com", nil)
+
+	require.IsType(t, &siteapi.SiteAuthVerifyEmailOK{}, verify(t, env, token, "grace-password-1"))
+
+	assert.Equal(t, http.StatusUnauthorized, workspacesStatus(t, env, earlier))
 }
 
 func TestABrowsersCookieDoesNotVouchForAnotherRegistrationsLink(t *testing.T) {

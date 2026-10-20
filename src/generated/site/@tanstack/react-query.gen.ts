@@ -94,7 +94,7 @@ export const siteAuthLogoutMutation = (options?: Partial<Options<SiteAuthLogoutD
  * email with the link is on its way (202), and 202 is the answer for every address,
  * taken or not (ADR 0031): the owner of a taken address gets a notice by mail
  * instead. The answer always sets the registration cookie (httpOnly, SameSite=Strict,
- * scoped to the verification path), which binds the link to this browser, so the
+ * scoped to the auth prefix shared by verify and resend), which binds the link to this browser, so the
  * header does not say whether the address is taken either. The password is required
  * (422 otherwise). With `SPHERICON_REQUIRE_EMAIL_VERIFICATION=false` there is no
  * mail to carry that notice and no link: the request creates a Verified User with its

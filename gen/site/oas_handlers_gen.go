@@ -1653,13 +1653,13 @@ func (s *Server) handleSiteAuthLogoutRequest(args [0]string, argsEscaped bool, w
 // Create an Unverified User (ADR 0030): no session, no Workspace. A verification email with the link
 // is on its way (202), and 202 is the answer for every address, taken or not (ADR 0031): the owner of
 // a taken address gets a notice by mail instead. The answer always sets the registration cookie
-// (httpOnly, SameSite=Strict, scoped to the verification path), which binds the link to this browser,
-// so the header does not say whether the address is taken either. The password is required (422
-// otherwise). With `SPHERICON_REQUIRE_EMAIL_VERIFICATION=false` there is no mail to carry that notice
-// and no link: the request creates a Verified User with its first Workspace at once (202, no session
-// and no cookie: the User signs in next), and a taken address answers 409. An Instance that closed
-// sign-up (`SPHERICON_SIGNUP_OPEN=false`, ADR 0042) answers 403 with code `signup_closed` before
-// anything is read or created; accepting an Invitation still works.
+// (httpOnly, SameSite=Strict, scoped to the auth prefix shared by verify and resend), which binds the
+// link to this browser, so the header does not say whether the address is taken either. The password
+// is required (422 otherwise). With `SPHERICON_REQUIRE_EMAIL_VERIFICATION=false` there is no mail to
+// carry that notice and no link: the request creates a Verified User with its first Workspace at once
+// (202, no session and no cookie: the User signs in next), and a taken address answers 409. An
+// Instance that closed sign-up (`SPHERICON_SIGNUP_OPEN=false`, ADR 0042) answers 403 with code
+// `signup_closed` before anything is read or created; accepting an Invitation still works.
 //
 // POST /auth/register
 func (s *Server) handleSiteAuthRegisterRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -1878,6 +1878,16 @@ func (s *Server) handleSiteAuthResendVerificationRequest(args [0]string, argsEsc
 			ID:   "SiteAuth_resendVerification",
 		}
 	)
+	params, err := decodeSiteAuthResendVerificationParams(args, argsEscaped, r)
+	if err != nil {
+		err = &ogenerrors.DecodeParamsError{
+			OperationContext: opErrContext,
+			Err:              err,
+		}
+		defer recordError("DecodeParams", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
 
 	var rawBody []byte
 	request, rawBody, close, err := s.decodeSiteAuthResendVerificationRequest(r)
@@ -1905,13 +1915,18 @@ func (s *Server) handleSiteAuthResendVerificationRequest(args [0]string, argsEsc
 			OperationID:      "SiteAuth_resendVerification",
 			Body:             request,
 			RawBody:          rawBody,
-			Params:           middleware.Parameters{},
-			Raw:              r,
+			Params: middleware.Parameters{
+				{
+					Name: "REG",
+					In:   "cookie",
+				}: params.REG,
+			},
+			Raw: r,
 		}
 
 		type (
 			Request  = *SiteResendVerificationInput
-			Params   = struct{}
+			Params   = SiteAuthResendVerificationParams
 			Response = SiteAuthResendVerificationRes
 		)
 		response, err = middleware.HookMiddleware[
@@ -1921,14 +1936,14 @@ func (s *Server) handleSiteAuthResendVerificationRequest(args [0]string, argsEsc
 		](
 			m,
 			mreq,
-			nil,
+			unpackSiteAuthResendVerificationParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SiteAuthResendVerification(ctx, request)
+				response, err = s.h.SiteAuthResendVerification(ctx, request, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SiteAuthResendVerification(ctx, request)
+		response, err = s.h.SiteAuthResendVerification(ctx, request, params)
 	}
 	if err != nil {
 		defer recordError("Internal", err)

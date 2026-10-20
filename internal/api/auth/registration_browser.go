@@ -14,12 +14,13 @@ import (
 // password from the form only when it comes back with it.
 const RegistrationCookie = "REG"
 
-// registrationCookiePath is the path of the operation that reads the cookie, so the
-// browser sends it nowhere else.
-const registrationCookiePath = "/site/auth/verify-email"
+// registrationCookiePath is the auth prefix shared by the two operations that read the
+// cookie, verify and resend; a narrower path would hide it from one of them. The cookie
+// is httpOnly and SameSite=Strict, so the browser still sends it to nothing else.
+const registrationCookiePath = "/site/auth"
 
 // NewRegistrationBrowser draws the random value that marks one browser, returning the
-// cookie that carries it (httpOnly, SameSite=Strict, scoped to the verification path,
+// cookie that carries it (httpOnly, SameSite=Strict, scoped to the auth prefix,
 // living for ttl) and the hash that goes into the verification token. The value itself
 // never leaves the browser.
 func (s *Sessions) NewRegistrationBrowser(ttl time.Duration) (cookie *http.Cookie, hash string) {

@@ -8,6 +8,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/authtoken"
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/db"
@@ -153,7 +154,7 @@ func emailTaken() siteapi.SiteAuthRegisterRes {
 // job is queued); only an Unverified User's job delivers, the others' is a no-send one,
 // so neither the answer nor its timing says whether the address has an account. The
 // per-IP cap answers 429 in the rate limit middleware, before this runs.
-func (h *Handlers) SiteAuthResendVerification(ctx context.Context, req *siteapi.SiteResendVerificationInput) (siteapi.SiteAuthResendVerificationRes, error) {
+func (h *Handlers) SiteAuthResendVerification(ctx context.Context, req *siteapi.SiteResendVerificationInput, params siteapi.SiteAuthResendVerificationParams) (siteapi.SiteAuthResendVerificationRes, error) {
 	email := strings.TrimSpace(string(req.Email))
 	if email == "" {
 		return &siteapi.SiteAuthResendVerificationAccepted{}, nil
@@ -163,15 +164,16 @@ func (h *Handlers) SiteAuthResendVerification(ctx context.Context, req *siteapi.
 		return nil, err
 	}
 	// The same binding as at registration: the link works until the password is replaced
-	// or the address verified. The token carries no browser hash (resend with the
-	// registration cookie is a later change), so the link asks for a password.
+	// or the address verified. It carries the hash of the registration cookie the request
+	// holds, none otherwise (then the link asks for a password); every request hashes the
+	// same way, so a cookie changes no timing.
 	var uid int64
 	var binding string
 	to := email
 	if u != nil {
 		uid, binding, to = u.ID, u.PasswordHash, u.Email
 	}
-	token, err := h.tokens.Mint(authtoken.PurposeEmailVerify, uid, binding, verifyTokenTTL, map[string]string{"email": to})
+	token, err := h.tokens.Mint(authtoken.PurposeEmailVerify, uid, binding, verifyTokenTTL, map[string]string{"email": to, "rb": auth.RegistrationHash(params.REG.Or(""))})
 	if err != nil {
 		return nil, err
 	}

@@ -340,7 +340,7 @@
     "/auth/register": {
       "post": {
         "operationId": "SiteAuth_register",
-        "description": "Create an Unverified User (ADR 0030): no session, no Workspace. A verification\nemail with the link is on its way (202), and 202 is the answer for every address,\ntaken or not (ADR 0031): the owner of a taken address gets a notice by mail\ninstead. The answer always sets the registration cookie (httpOnly, SameSite=Strict,\nscoped to the verification path), which binds the link to this browser, so the\nheader does not say whether the address is taken either. The password is required\n(422 otherwise). With `SPHERICON_REQUIRE_EMAIL_VERIFICATION=false` there is no\nmail to carry that notice and no link: the request creates a Verified User with its\nfirst Workspace at once (202, no session and no cookie: the User signs in next), and\na taken address answers 409. An Instance that closed sign-up\n(`SPHERICON_SIGNUP_OPEN=false`, ADR 0042) answers 403 with code `signup_closed`\nbefore anything is read or created; accepting an Invitation still works.",
+        "description": "Create an Unverified User (ADR 0030): no session, no Workspace. A verification\nemail with the link is on its way (202), and 202 is the answer for every address,\ntaken or not (ADR 0031): the owner of a taken address gets a notice by mail\ninstead. The answer always sets the registration cookie (httpOnly, SameSite=Strict,\nscoped to the auth prefix shared by verify and resend), which binds the link to this browser, so the\nheader does not say whether the address is taken either. The password is required\n(422 otherwise). With `SPHERICON_REQUIRE_EMAIL_VERIFICATION=false` there is no\nmail to carry that notice and no link: the request creates a Verified User with its\nfirst Workspace at once (202, no session and no cookie: the User signs in next), and\na taken address answers 409. An Instance that closed sign-up\n(`SPHERICON_SIGNUP_OPEN=false`, ADR 0042) answers 403 with code `signup_closed`\nbefore anything is read or created; accepting an Invitation still works.",
         "parameters": [],
         "responses": {
           "202": {
@@ -448,7 +448,18 @@
       "post": {
         "operationId": "SiteAuth_resendVerification",
         "description": "Send the verification link again to an Unverified User. Answers 202 the same\nway whether the address is unknown, already verified or unverified, so it adds no\nenumeration; only an Unverified User gets a mail. Rate limited per IP\nlike registration.",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "REG",
+            "in": "cookie",
+            "required": false,
+            "description": "The registration cookie of the browser asking, if any: the new link then signs\nthat browser in without a password",
+            "schema": {
+              "type": "string"
+            },
+            "explode": false
+          }
+        ],
         "responses": {
           "202": {
             "description": "The request has been accepted for processing, but processing has not yet completed."

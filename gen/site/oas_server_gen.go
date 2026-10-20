@@ -80,13 +80,13 @@ type Handler interface {
 	// Create an Unverified User (ADR 0030): no session, no Workspace. A verification email with the link
 	// is on its way (202), and 202 is the answer for every address, taken or not (ADR 0031): the owner of
 	// a taken address gets a notice by mail instead. The answer always sets the registration cookie
-	// (httpOnly, SameSite=Strict, scoped to the verification path), which binds the link to this browser,
-	// so the header does not say whether the address is taken either. The password is required (422
-	// otherwise). With `SPHERICON_REQUIRE_EMAIL_VERIFICATION=false` there is no mail to carry that notice
-	// and no link: the request creates a Verified User with its first Workspace at once (202, no session
-	// and no cookie: the User signs in next), and a taken address answers 409. An Instance that closed
-	// sign-up (`SPHERICON_SIGNUP_OPEN=false`, ADR 0042) answers 403 with code `signup_closed` before
-	// anything is read or created; accepting an Invitation still works.
+	// (httpOnly, SameSite=Strict, scoped to the auth prefix shared by verify and resend), which binds the
+	// link to this browser, so the header does not say whether the address is taken either. The password
+	// is required (422 otherwise). With `SPHERICON_REQUIRE_EMAIL_VERIFICATION=false` there is no mail to
+	// carry that notice and no link: the request creates a Verified User with its first Workspace at once
+	// (202, no session and no cookie: the User signs in next), and a taken address answers 409. An
+	// Instance that closed sign-up (`SPHERICON_SIGNUP_OPEN=false`, ADR 0042) answers 403 with code
+	// `signup_closed` before anything is read or created; accepting an Invitation still works.
 	//
 	// POST /auth/register
 	SiteAuthRegister(ctx context.Context, req *SiteRegisterInput) (SiteAuthRegisterRes, error)
@@ -97,7 +97,7 @@ type Handler interface {
 	// a mail. Rate limited per IP like registration.
 	//
 	// POST /auth/resend-verification
-	SiteAuthResendVerification(ctx context.Context, req *SiteResendVerificationInput) (SiteAuthResendVerificationRes, error)
+	SiteAuthResendVerification(ctx context.Context, req *SiteResendVerificationInput, params SiteAuthResendVerificationParams) (SiteAuthResendVerificationRes, error)
 	// SiteAuthResetPassword implements SiteAuth_resetPassword operation.
 	//
 	// Set a new password from a reset token.
