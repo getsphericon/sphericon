@@ -10,6 +10,7 @@ import { Route as indexRoute } from './routes/index.tsx'
 import { Route as loginRoute } from './routes/login.tsx'
 import { Route as oauthConsentRoute } from './routes/oauth/consent.tsx'
 import { Route as workspaceRoute } from './routes/workspaces/$workspaceId/route.tsx'
+import { Route as newWorkspaceRoute } from './routes/workspaces/new.tsx'
 import { problem } from './test/problem.ts'
 import { worker } from './test/worker.ts'
 
@@ -50,13 +51,13 @@ test('the index route sends a signed-in user to their first workspace', async ()
   )
 })
 
-test('the index route sends a user without workspaces to login', async () => {
+test('the index route sends a user without workspaces to the create screen', async () => {
   const router = newRouter()
   serveWorkspaces([])
 
   await router.navigate({ to: indexRoute.to })
 
-  expect(router.state.location.pathname).toBe(loginRoute.to)
+  expect(router.state.location.pathname).toBe(newWorkspaceRoute.to)
 })
 
 test('the index route sends an unauthorized user to login', async () => {
@@ -79,13 +80,13 @@ test('an unknown workspace workspaceId falls back to the first workspace', async
   )
 })
 
-test('an unknown workspace workspaceId with no workspaces goes to login', async () => {
+test('an unknown workspace workspaceId with no workspaces goes to the create screen', async () => {
   const router = newRouter()
   serveWorkspaces([])
 
   await router.navigate({ to: workspaceRoute.to, params: { workspaceId: 'nope' } })
 
-  expect(router.state.location.pathname).toBe(loginRoute.to)
+  expect(router.state.location.pathname).toBe(newWorkspaceRoute.to)
 })
 
 test('the console sends a visitor without a staff member session to the console login', async () => {

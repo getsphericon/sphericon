@@ -1092,6 +1092,17 @@ func (UnimplementedHandler) SiteWorkspacesAccountLink(ctx context.Context, param
 	return r, ht.ErrNotImplemented
 }
 
+// SiteWorkspacesCreate implements SiteWorkspaces_create operation.
+//
+// Create a Workspace; the authenticated User becomes its Owner. Names are free text and need not be
+// unique. An Unverified User is refused with 403 and code `email_verification_required`. The creation
+// is recorded as an Audit entry.
+//
+// POST /workspaces
+func (UnimplementedHandler) SiteWorkspacesCreate(ctx context.Context, req *SiteCreateWorkspaceInput) (r SiteWorkspacesCreateRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteWorkspacesList implements SiteWorkspaces_list operation.
 //
 // List workspaces owned by the authenticated user.
@@ -1114,7 +1125,7 @@ func (UnimplementedHandler) SiteWorkspacesSetSecondFactorRequirement(ctx context
 
 // SiteWorkspacesUpdate implements SiteWorkspaces_update operation.
 //
-// Rename a workspace owned by the authenticated user.
+// Rename a workspace or change its postal address (Owner and Admin only). The id never changes.
 //
 // PUT /workspaces/{workspaceId}
 func (UnimplementedHandler) SiteWorkspacesUpdate(ctx context.Context, req *SiteUpdateWorkspaceInput, params SiteWorkspacesUpdateParams) (r SiteWorkspacesUpdateRes, _ error) {

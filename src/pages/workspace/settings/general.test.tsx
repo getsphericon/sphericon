@@ -49,6 +49,14 @@ test('renames the workspace', async () => {
   expect(puts[0]).toContain('"name":"Acme Inc"')
 })
 
+test('a plain member sees the name read-only', async () => {
+  worker.use(handleSiteWorkspacesList({ body: [{ ...workspace, role: 'member' as const }] }))
+
+  const { screen } = await renderWithRouter(<GeneralPage />, GENERAL_ROUTE)
+
+  await expect.element(screen.getByLabelText(/^Workspace name/)).toBeDisabled()
+})
+
 test('shows an error alert when the workspaces fail to load', async () => {
   worker.use(handleSiteWorkspacesList(() => problem(500, { detail: 'boom' })))
   const { screen } = await renderWithRouter(<GeneralPage />, GENERAL_ROUTE)

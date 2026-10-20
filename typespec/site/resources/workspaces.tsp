@@ -115,6 +115,12 @@ model SiteUpdateWorkspaceInput {
   postalAddress?: string;
 }
 
+/** Create a Workspace (ADR 0043) */
+model SiteCreateWorkspaceInput {
+  /** Display name: free text, not unique */
+  name: string;
+}
+
 /** Switch the Two-factor requirement on or off */
 model SiteSecondFactorRequirementInput {
   /** Whether every User with a Membership must have a Second factor */
@@ -131,13 +137,30 @@ namespace SiteWorkspaces {
     @body body: SiteWorkspaceResource[];
   };
 
-  /** Rename a workspace owned by the authenticated user */
+  /** Create a Workspace; the authenticated User becomes its Owner. Names are free text
+   * and need not be unique. An Unverified User is refused with 403 and code
+   * `email_verification_required`. The creation is recorded as an Audit entry. */
+  @post
+  op create(@body body: SiteCreateWorkspaceInput):
+    | {
+        @statusCode statusCode: 201;
+        @body body: SiteWorkspaceResource;
+      }
+    | ForbiddenProblem
+    | UnprocessableEntityProblem;
+
+  /** Rename a workspace or change its postal address (Owner and Admin only). The id
+   * never changes. */
   @put
   @route("/{workspaceId}")
   op update(
     @path workspaceId: WorkspaceId,
     @body body: SiteUpdateWorkspaceInput,
-  ): SiteWorkspaceResource | NotFoundProblem | UnprocessableEntityProblem;
+  ):
+    | SiteWorkspaceResource
+    | ForbiddenProblem
+    | NotFoundProblem
+    | UnprocessableEntityProblem;
 
   /** Switch the Two-factor requirement on or off (owner and admin only). Switching
    * it on while it is already on keeps the original start, so no one's grace

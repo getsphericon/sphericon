@@ -62,6 +62,9 @@ var (
 	rn71AllowedHeaders = map[string]string{
 		"POST": "Content-Type",
 	}
+	rn125AllowedHeaders = map[string]string{
+		"POST": "Content-Type",
+	}
 	rn2AllowedHeaders = map[string]string{
 		"PUT": "Content-Type",
 	}
@@ -1060,11 +1063,13 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					switch r.Method {
 					case "GET":
 						s.handleSiteWorkspacesListRequest([0]string{}, elemIsEscaped, w, r)
+					case "POST":
+						s.handleSiteWorkspacesCreateRequest([0]string{}, elemIsEscaped, w, r)
 					default:
 						s.notAllowed(w, r, notAllowedParams{
-							allowedMethods: "GET",
-							allowedHeaders: nil,
-							acceptPost:     "",
+							allowedMethods: "GET,POST",
+							allowedHeaders: rn125AllowedHeaders,
+							acceptPost:     "application/json",
 							acceptPatch:    "",
 						})
 					}
@@ -4091,6 +4096,15 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 						r.name = SiteWorkspacesListOperation
 						r.summary = ""
 						r.operationID = "SiteWorkspaces_list"
+						r.operationGroup = ""
+						r.pathPattern = "/workspaces"
+						r.args = args
+						r.count = 0
+						return r, true
+					case "POST":
+						r.name = SiteWorkspacesCreateOperation
+						r.summary = ""
+						r.operationID = "SiteWorkspaces_create"
 						r.operationGroup = ""
 						r.pathPattern = "/workspaces"
 						r.args = args

@@ -2,6 +2,7 @@ package site
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -80,6 +81,50 @@ func (h *Handlers) activeHolds(ctx context.Context, s *ent.Scoped, w *ent.Worksp
 	return holds.Active(ctx, s, h.now())
 }
 
+// SiteWorkspacesCreate creates a Workspace for the authenticated User, who becomes its
+// Owner (ADR 0043). Only a Verified User may create one.
+func (h *Handlers) SiteWorkspacesCreate(ctx context.Context, req *siteapi.SiteCreateWorkspaceInput) (siteapi.SiteWorkspacesCreateRes, error) {
+	a := auth.GetSiteAuth(ctx)
+	if a == nil {
+		return nil, &ent.NotFoundError{}
+	}
+	name := strings.TrimSpace(req.Name)
+	if name == "" {
+		v := siteapi.SiteWorkspacesCreateUnprocessableEntity(nameEmptyProblem())
+		return &v, nil
+	}
+	ws, err := h.accounts.CreateWorkspace(ctx, a.UserID, name)
+	if errors.Is(err, accounts.ErrEmailNotVerified) {
+		v := siteapi.SiteWorkspacesCreateForbidden(siteapi.ProblemDetails{
+			Code:   siteapi.NewOptProblemCode(siteapi.ProblemCodeEmailVerificationRequired),
+			Status: siteapi.NewOptInt32(http.StatusForbidden),
+			Title:  siteapi.NewOptString(http.StatusText(http.StatusForbidden)),
+			Detail: siteapi.NewOptString(i18n.T("errors.email_verification_required", nil)),
+		})
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	s, m, err := h.accounts.Scope(ctx, a.UserID, ws.PublicID)
+	if err != nil {
+		return nil, err
+	}
+	r, err := h.workspaceResource(ctx, s, m)
+	if err != nil {
+		return nil, err
+	}
+	return &r, nil
+}
+
+func nameEmptyProblem() siteapi.ProblemDetails {
+	return problemWithErrors(
+		http.StatusUnprocessableEntity,
+		i18n.T("errors.name_empty", nil),
+		map[string][]string{"name": {i18n.T("errors.name_empty", nil)}},
+	)
+}
+
 // SiteWorkspacesAccountLink mints the Owner's Account link token. Without the
 // installation's configuration it answers 404 before anything else; any role but
 // Owner is refused.
@@ -152,8 +197,7 @@ func (h *Handlers) SiteWorkspacesSetSecondFactorRequirement(ctx context.Context,
 	return &r, nil
 }
 
-// SiteWorkspacesUpdate renames a workspace owned by the authenticated user. The
-// slug is immutable, so only the display name changes.
+// SiteWorkspacesUpdate renames a workspace (Owner and Admin only). The id never changes.
 func (h *Handlers) SiteWorkspacesUpdate(ctx context.Context, req *siteapi.SiteUpdateWorkspaceInput, params siteapi.SiteWorkspacesUpdateParams) (siteapi.SiteWorkspacesUpdateRes, error) {
 	s, m, err := h.membershipFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
@@ -164,13 +208,14 @@ func (h *Handlers) SiteWorkspacesUpdate(ctx context.Context, req *siteapi.SiteUp
 		return nil, err
 	}
 
+	if !accounts.CanRenameWorkspace(m.Role) {
+		v := siteapi.SiteWorkspacesUpdateForbidden(problem(http.StatusForbidden, "only owners and admins can rename the workspace"))
+		return &v, nil
+	}
+
 	name := strings.TrimSpace(req.Name)
 	if name == "" {
-		v := siteapi.SiteWorkspacesUpdateUnprocessableEntity(problemWithErrors(
-			http.StatusUnprocessableEntity,
-			i18n.T("errors.name_empty", nil),
-			map[string][]string{"name": {i18n.T("errors.name_empty", nil)}},
-		))
+		v := siteapi.SiteWorkspacesUpdateUnprocessableEntity(nameEmptyProblem())
 		return &v, nil
 	}
 

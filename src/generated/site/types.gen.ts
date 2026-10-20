@@ -1503,6 +1503,16 @@ export type SiteCreateWebhookEndpointInput = {
 };
 
 /**
+ * Create a Workspace (ADR 0043)
+ */
+export type SiteCreateWorkspaceInput = {
+  /**
+   * Display name: free text, not unique
+   */
+  name: string;
+};
+
+/**
  * Custom field definition — a typed, named Contact attribute (ADR 0006). Auto-created
  *  on first sight from Identify; the catalogue feeds the segment builder.
  */
@@ -4547,6 +4557,35 @@ export type SiteWorkspacesListResponses = {
 
 export type SiteWorkspacesListResponse = SiteWorkspacesListResponses[keyof SiteWorkspacesListResponses];
 
+export type SiteWorkspacesCreateData = {
+  body: SiteCreateWorkspaceInput;
+  path?: never;
+  query?: never;
+  url: '/workspaces';
+};
+
+export type SiteWorkspacesCreateErrors = {
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+};
+
+export type SiteWorkspacesCreateError = SiteWorkspacesCreateErrors[keyof SiteWorkspacesCreateErrors];
+
+export type SiteWorkspacesCreateResponses = {
+  /**
+   * The request has succeeded and a new resource has been created as a result.
+   */
+  201: SiteWorkspaceResource;
+};
+
+export type SiteWorkspacesCreateResponse = SiteWorkspacesCreateResponses[keyof SiteWorkspacesCreateResponses];
+
 export type SiteWorkspacesUpdateData = {
   body: SiteUpdateWorkspaceInput;
   path: {
@@ -4557,6 +4596,10 @@ export type SiteWorkspacesUpdateData = {
 };
 
 export type SiteWorkspacesUpdateErrors = {
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 not found response
    */

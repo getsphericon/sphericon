@@ -2,7 +2,7 @@ import { createFileRoute, redirect } from '@tanstack/react-router'
 
 import { requireWorkspaces } from '../../../guards.ts'
 import { WorkspaceLayout } from '../../../layouts/WorkspaceLayout.tsx'
-import { Route as loginRoute } from '../../login.tsx'
+import { Route as newWorkspaceRoute } from '../new.tsx'
 import { Route as overviewRoute } from './index.tsx'
 
 export const Route = createFileRoute('/workspaces/$workspaceId')({
@@ -12,7 +12,7 @@ export const Route = createFileRoute('/workspaces/$workspaceId')({
     if (!workspaces.some((w) => w.id === params.workspaceId)) {
       const [fallback] = workspaces
       if (!fallback) {
-        throw redirect({ to: loginRoute.to })
+        throw redirect({ to: newWorkspaceRoute.to })
       }
       throw redirect({ to: overviewRoute.to, params: { workspaceId: fallback.id } })
     }

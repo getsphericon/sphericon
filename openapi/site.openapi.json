@@ -1880,12 +1880,60 @@
           }
         },
         "tags": ["Site Workspaces"]
+      },
+      "post": {
+        "operationId": "SiteWorkspaces_create",
+        "description": "Create a Workspace; the authenticated User becomes its Owner. Names are free text\nand need not be unique. An Unverified User is refused with 403 and code\n`email_verification_required`. The creation is recorded as an Audit entry.",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "The request has succeeded and a new resource has been created as a result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteWorkspaceResource"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Workspaces"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteCreateWorkspaceInput"
+              }
+            }
+          }
+        }
       }
     },
     "/workspaces/{workspaceId}": {
       "put": {
         "operationId": "SiteWorkspaces_update",
-        "description": "Rename a workspace owned by the authenticated user",
+        "description": "Rename a workspace or change its postal address (Owner and Admin only). The id\nnever changes.",
         "parameters": [
           {
             "name": "workspaceId",
@@ -1903,6 +1951,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SiteWorkspaceResource"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -9756,6 +9814,17 @@
           }
         },
         "description": "Site request body for creating a webhook endpoint"
+      },
+      "SiteCreateWorkspaceInput": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Display name: free text, not unique"
+          }
+        },
+        "description": "Create a Workspace (ADR 0043)"
       },
       "SiteCustomFieldResource": {
         "type": "object",

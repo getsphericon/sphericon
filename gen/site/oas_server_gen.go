@@ -748,6 +748,14 @@ type Handler interface {
 	//
 	// POST /workspaces/{workspaceId}/account-link
 	SiteWorkspacesAccountLink(ctx context.Context, params SiteWorkspacesAccountLinkParams) (SiteWorkspacesAccountLinkRes, error)
+	// SiteWorkspacesCreate implements SiteWorkspaces_create operation.
+	//
+	// Create a Workspace; the authenticated User becomes its Owner. Names are free text and need not be
+	// unique. An Unverified User is refused with 403 and code `email_verification_required`. The creation
+	// is recorded as an Audit entry.
+	//
+	// POST /workspaces
+	SiteWorkspacesCreate(ctx context.Context, req *SiteCreateWorkspaceInput) (SiteWorkspacesCreateRes, error)
 	// SiteWorkspacesList implements SiteWorkspaces_list operation.
 	//
 	// List workspaces owned by the authenticated user.
@@ -764,7 +772,7 @@ type Handler interface {
 	SiteWorkspacesSetSecondFactorRequirement(ctx context.Context, req *SiteSecondFactorRequirementInput, params SiteWorkspacesSetSecondFactorRequirementParams) (SiteWorkspacesSetSecondFactorRequirementRes, error)
 	// SiteWorkspacesUpdate implements SiteWorkspaces_update operation.
 	//
-	// Rename a workspace owned by the authenticated user.
+	// Rename a workspace or change its postal address (Owner and Admin only). The id never changes.
 	//
 	// PUT /workspaces/{workspaceId}
 	SiteWorkspacesUpdate(ctx context.Context, req *SiteUpdateWorkspaceInput, params SiteWorkspacesUpdateParams) (SiteWorkspacesUpdateRes, error)

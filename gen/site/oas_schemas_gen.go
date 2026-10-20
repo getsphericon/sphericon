@@ -7809,6 +7809,23 @@ func (s *SiteCreateWebhookEndpointInput) SetEnabled(val OptBool) {
 	s.Enabled = val
 }
 
+// Create a Workspace (ADR 0043).
+// Ref: #/components/schemas/SiteCreateWorkspaceInput
+type SiteCreateWorkspaceInput struct {
+	// Display name: free text, not unique.
+	Name string `json:"name"`
+}
+
+// GetName returns the value of Name.
+func (s *SiteCreateWorkspaceInput) GetName() string {
+	return s.Name
+}
+
+// SetName sets the value of Name.
+func (s *SiteCreateWorkspaceInput) SetName(val string) {
+	s.Name = val
+}
+
 // Custom field definition — a typed, named Contact attribute (ADR 0006). Auto-created on first sight
 // from Identify; the catalogue feeds the segment builder.
 // Ref: #/components/schemas/SiteCustomFieldResource
@@ -15318,6 +15335,7 @@ func (s *SiteWorkspaceResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
 }
 
+func (*SiteWorkspaceResource) siteWorkspacesCreateRes()                     {}
 func (*SiteWorkspaceResource) siteWorkspacesSetSecondFactorRequirementRes() {}
 func (*SiteWorkspaceResource) siteWorkspacesUpdateRes()                     {}
 
@@ -15329,6 +15347,14 @@ type SiteWorkspacesAccountLinkNotFound ProblemDetails
 
 func (*SiteWorkspacesAccountLinkNotFound) siteWorkspacesAccountLinkRes() {}
 
+type SiteWorkspacesCreateForbidden ProblemDetails
+
+func (*SiteWorkspacesCreateForbidden) siteWorkspacesCreateRes() {}
+
+type SiteWorkspacesCreateUnprocessableEntity ProblemDetails
+
+func (*SiteWorkspacesCreateUnprocessableEntity) siteWorkspacesCreateRes() {}
+
 type SiteWorkspacesSetSecondFactorRequirementForbidden ProblemDetails
 
 func (*SiteWorkspacesSetSecondFactorRequirementForbidden) siteWorkspacesSetSecondFactorRequirementRes() {
@@ -15338,6 +15364,10 @@ type SiteWorkspacesSetSecondFactorRequirementNotFound ProblemDetails
 
 func (*SiteWorkspacesSetSecondFactorRequirementNotFound) siteWorkspacesSetSecondFactorRequirementRes() {
 }
+
+type SiteWorkspacesUpdateForbidden ProblemDetails
+
+func (*SiteWorkspacesUpdateForbidden) siteWorkspacesUpdateRes() {}
 
 type SiteWorkspacesUpdateNotFound ProblemDetails
 

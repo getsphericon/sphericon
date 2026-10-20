@@ -254,6 +254,8 @@ func TestExplicitAuditPathsAreAllListed(t *testing.T) {
 	_, err = env.SiteActor(t, fixtures.OwnerJaneEmail).SiteMembershipsResetSecondFactor(ctx, // user.second_factor_reset
 		siteapi.SiteMembershipsResetSecondFactorParams{WorkspaceId: fixtures.GlobexPublicID, ID: idStr(fixtures.GlobexSamMembershipID)})
 	require.NoError(t, err)
+	_, err = owner.SiteWorkspacesCreate(ctx, &siteapi.SiteCreateWorkspaceInput{Name: "Acme Three"}) // workspace.create
+	require.NoError(t, err)
 	_, err = owner.SiteWorkspacesUpdate(ctx, &siteapi.SiteUpdateWorkspaceInput{Name: "Acme Two"}, // workspace.update
 		siteapi.SiteWorkspacesUpdateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)

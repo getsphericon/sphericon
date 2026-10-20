@@ -14,6 +14,7 @@ import { Route as securityRoute } from '../routes/account/security.tsx'
 import { Route as overviewRoute } from '../routes/workspaces/$workspaceId/index.tsx'
 import { Route as workspaceRoute } from '../routes/workspaces/$workspaceId/route.tsx'
 import { Route as teamRoute } from '../routes/workspaces/$workspaceId/settings/team.tsx'
+import { Route as newWorkspaceRoute } from '../routes/workspaces/new.tsx'
 import { page } from '../test/payloads.ts'
 import { problem } from '../test/problem.ts'
 import { renderWithRouter } from '../test/renderWithRouter.tsx'
@@ -50,6 +51,15 @@ test('renders the workspace sidebar and no suspension banner for an active works
 
   await expect.element(screen.getByText('Overview', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByText('Sending is suspended')).not.toBeInTheDocument()
+})
+
+test('the switcher links to the create screen', async () => {
+  worker.use(list([workspace({})]))
+  const { screen } = await renderWithRouter(<WorkspaceLayout />, MOUNT)
+
+  await expect
+    .element(screen.getByRole('link', { name: 'Create workspace' }))
+    .toHaveAttribute('href', newWorkspaceRoute.to)
 })
 
 test('the settings pages replace the workspace sidebar with the settings one', async () => {

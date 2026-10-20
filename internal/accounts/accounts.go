@@ -228,21 +228,40 @@ func ptrEqual(a, b *int) bool {
 	return *a == *b
 }
 
-// CreateWorkspace creates a User's initial Workspace with a unique slug derived from
-// name (falling back to "workspace"). Slugs are globally unique, so on collision a
-// numeric suffix is appended. The Workspace and the creator's owner Membership are
-// created atomically: a Workspace is reached through Memberships, so one without its
-// owner row would be inaccessible.
+// ErrEmailNotVerified refuses creating a Workspace for a User whose email is not proven
+// (ADR 0030): sign-up verification must not be bypassed by creating Workspaces first.
+var ErrEmailNotVerified = errors.New("accounts: the email is not verified")
+
+// CreateWorkspace creates a Workspace named name for a Verified User, who becomes its
+// Owner (ADR 0043). Names are free text and need not be unique. The Workspace, the Owner
+// Membership and the `workspace.create` Audit entry are written atomically: a Workspace is
+// reached through Memberships, so one without its owner row would be inaccessible. An
+// Unverified User gets ErrEmailNotVerified.
 func (a *Accounts) CreateWorkspace(ctx context.Context, userID int64, name string) (*ent.Workspace, error) {
 	for {
 		var ws *ent.Workspace
-		err := a.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
-			var err error
-			ws, err = createWorkspaceIn(ctx, tx, userID, name, a.newPublicID())
-			return err
+		err := a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+			u, err := tx.User.Get(ctx, userID)
+			if err != nil {
+				return err
+			}
+			if u.EmailVerifiedAt == nil {
+				return ErrEmailNotVerified
+			}
+			if ws, err = createWorkspaceIn(ctx, tx, userID, name, a.newPublicID()); err != nil {
+				return err
+			}
+			return events.RecordAudit(ctx, pub, &events.AuditEntry{
+				WorkspaceID: ws.ID,
+				Actor:       events.Actor{Kind: events.ActorUser, ID: strconv.FormatInt(u.ID, 10), Name: u.Name},
+				Action:      events.ActionWorkspaceCreate,
+				TargetType:  workspace.Label,
+				TargetID:    strconv.FormatInt(ws.ID, 10),
+				TargetName:  ws.Name,
+			})
 		})
 		if db.IsUniqueViolation(err) {
-			continue // lost a race on the slug or drew a taken id; the next attempt retries
+			continue // drew a taken id; the next attempt retries
 		}
 		return ws, err
 	}

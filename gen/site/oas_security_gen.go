@@ -135,6 +135,7 @@ var operationRolesApiKeyAuth = map[string][]string{
 	SiteWebhooksTestOperation:                         []string{},
 	SiteWebhooksUpdateOperation:                       []string{},
 	SiteWorkspacesAccountLinkOperation:                []string{},
+	SiteWorkspacesCreateOperation:                     []string{},
 	SiteWorkspacesListOperation:                       []string{},
 	SiteWorkspacesSetSecondFactorRequirementOperation: []string{},
 	SiteWorkspacesUpdateOperation:                     []string{},

@@ -470,6 +470,17 @@
     "statusFilter": "Filter by status",
     "updatedAt": "Updated at"
   },
+  "createWorkspace": {
+    "descriptionAnother": "Create another workspace to run a separate brand or client. You become its owner.",
+    "descriptionFirst": "You are not in a workspace yet. Create one to get started; you become its owner.",
+    "errorTitle": "Could not create the workspace",
+    "nameDescription": "Any name works, and it can be changed later. Two workspaces may share a name.",
+    "nameLabel": "Workspace name",
+    "submit": "Create workspace",
+    "switcherLabel": "Create workspace",
+    "title": "Create a workspace",
+    "verifyFirst": "Verify your email address before creating a workspace."
+  },
   "forgotPassword": {
     "backToLogin": "Back to sign in",
     "description": "Enter your email and we'll send you a reset link.",

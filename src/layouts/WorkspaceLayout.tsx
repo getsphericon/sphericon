@@ -1,5 +1,5 @@
-import { Alert, Anchor, Group, Select, Text } from '@mantine/core'
-import { IconCreditCard, IconPlayerPause } from '@tabler/icons-react'
+import { Alert, Anchor, Group, Select, Text, Tooltip } from '@mantine/core'
+import { IconCreditCard, IconPlayerPause, IconPlus } from '@tabler/icons-react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMatchRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next'
 import { AppNavbar } from '../components/AppNavbar.tsx'
 import { InstanceNotice } from '../components/InstanceNotice.tsx'
 import { LicenseBanner } from '../components/LicenseBanner.tsx'
+import { ActionIconLink } from '../components/RouterLink.tsx'
 import {
   SecondFactorBlocked,
   SecondFactorGraceBanner,
@@ -21,6 +22,7 @@ import type { SiteWorkspaceHold, SiteWorkspaceResource } from '../generated/site
 import { Route as overviewRoute } from '../routes/workspaces/$workspaceId/index.tsx'
 import { Route as workspaceRoute } from '../routes/workspaces/$workspaceId/route.tsx'
 import { Route as settingsRoute } from '../routes/workspaces/$workspaceId/settings/route.tsx'
+import { Route as newWorkspaceRoute } from '../routes/workspaces/new.tsx'
 import { isSecondFactorRequiredError } from '../utils/apiErrors.ts'
 import { DashboardShell } from './DashboardShell.tsx'
 
@@ -36,18 +38,32 @@ function WorkspaceSwitcher({
   const navigate = useNavigate()
   const data = workspaces.map((w) => ({ value: w.id, label: w.name }))
 
+  const { t } = useTranslation()
+
   return (
-    <Select
-      data={data}
-      value={workspaceId}
-      allowDeselect={false}
-      onChange={(value) => {
-        if (value && value !== workspaceId) {
-          void navigate({ to: overviewRoute.to, params: { workspaceId: value } })
-        }
-      }}
-      w={{ base: 140, sm: 220 }}
-    />
+    <Group gap="xs" wrap="nowrap">
+      <Select
+        data={data}
+        value={workspaceId}
+        allowDeselect={false}
+        onChange={(value) => {
+          if (value && value !== workspaceId) {
+            void navigate({ to: overviewRoute.to, params: { workspaceId: value } })
+          }
+        }}
+        w={{ base: 140, sm: 220 }}
+      />
+      <Tooltip label={t(($) => $.createWorkspace.switcherLabel)}>
+        <ActionIconLink
+          to={newWorkspaceRoute.to}
+          variant="default"
+          size="lg"
+          aria-label={t(($) => $.createWorkspace.switcherLabel)}
+        >
+          <IconPlus size={18} />
+        </ActionIconLink>
+      </Tooltip>
+    </Group>
   )
 }
 

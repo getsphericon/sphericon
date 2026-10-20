@@ -20,6 +20,9 @@ function GeneralSection({ workspace }: { workspace: SiteWorkspaceResource }) {
     initialValues: { name: workspace.name, postalAddress: workspace.postalAddress },
   })
 
+  // Renaming is for Owner and Admin (ADR 0043); a Member sees the values read-only.
+  const canEdit = workspace.role !== 'member'
+
   const updateMutation = useResourceMutation({
     mutation: siteWorkspacesUpdateMutation(),
     invalidate: [siteWorkspacesListQueryKey()],
@@ -41,6 +44,7 @@ function GeneralSection({ workspace }: { workspace: SiteWorkspaceResource }) {
           <TextInput
             label={t(($) => $.settings.nameLabel)}
             required
+            disabled={!canEdit}
             {...form.getInputProps('name')}
           />
           <Textarea
@@ -49,13 +53,16 @@ function GeneralSection({ workspace }: { workspace: SiteWorkspaceResource }) {
             placeholder={t(($) => $.settings.postalAddressPlaceholder)}
             autosize
             minRows={2}
+            disabled={!canEdit}
             {...form.getInputProps('postalAddress')}
           />
-          <Group justify="flex-end">
-            <Button type="submit" loading={updateMutation.isPending}>
-              {t(($) => $.actions.save)}
-            </Button>
-          </Group>
+          {canEdit ? (
+            <Group justify="flex-end">
+              <Button type="submit" loading={updateMutation.isPending}>
+                {t(($) => $.actions.save)}
+              </Button>
+            </Group>
+          ) : null}
         </Stack>
       </form>
     </Box>

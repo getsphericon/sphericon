@@ -433,6 +433,10 @@ type SiteWorkspacesAccountLinkRes interface {
 	siteWorkspacesAccountLinkRes()
 }
 
+type SiteWorkspacesCreateRes interface {
+	siteWorkspacesCreateRes()
+}
+
 type SiteWorkspacesSetSecondFactorRequirementRes interface {
 	siteWorkspacesSetSecondFactorRequirementRes()
 }

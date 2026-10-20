@@ -29,6 +29,7 @@ import { Route as ConsoleLoginRouteImport } from './routes/console/login'
 import { Route as InvitationsTokenRouteImport } from './routes/invitations/$token'
 import { Route as OauthConsentRouteImport } from './routes/oauth/consent'
 import { Route as WorkspacesWorkspaceIdRouteRouteImport } from './routes/workspaces/$workspaceId/route'
+import { Route as WorkspacesNewRouteImport } from './routes/workspaces/new'
 import { Route as ConsoleAuthedIndexRouteImport } from './routes/console/_authed/index'
 import { Route as WorkspacesWorkspaceIdIndexRouteImport } from './routes/workspaces/$workspaceId/index'
 import { Route as WorkspacesWorkspaceIdActivityRouteImport } from './routes/workspaces/$workspaceId/activity'
@@ -159,6 +160,11 @@ const WorkspacesWorkspaceIdRouteRoute =
     path: '/workspaces/$workspaceId',
     getParentRoute: () => rootRouteImport,
   } as any)
+const WorkspacesNewRoute = WorkspacesNewRouteImport.update({
+  id: '/workspaces/new',
+  path: '/workspaces/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ConsoleAuthedIndexRoute = ConsoleAuthedIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -352,6 +358,7 @@ export interface FileRoutesByFullPath {
   '/console/login': typeof ConsoleLoginRoute
   '/invitations/$token': typeof InvitationsTokenRoute
   '/oauth/consent': typeof OauthConsentRoute
+  '/workspaces/new': typeof WorkspacesNewRoute
   '/account/': typeof AccountIndexRoute
   '/workspaces/$workspaceId/settings': typeof WorkspacesWorkspaceIdSettingsRouteRouteWithChildren
   '/workspaces/$workspaceId/activity': typeof WorkspacesWorkspaceIdActivityRoute
@@ -400,6 +407,7 @@ export interface FileRoutesByTo {
   '/console/login': typeof ConsoleLoginRoute
   '/invitations/$token': typeof InvitationsTokenRoute
   '/oauth/consent': typeof OauthConsentRoute
+  '/workspaces/new': typeof WorkspacesNewRoute
   '/account': typeof AccountIndexRoute
   '/workspaces/$workspaceId/activity': typeof WorkspacesWorkspaceIdActivityRoute
   '/workspaces/$workspaceId': typeof WorkspacesWorkspaceIdIndexRoute
@@ -450,6 +458,7 @@ export interface FileRoutesById {
   '/console/login': typeof ConsoleLoginRoute
   '/invitations/$token': typeof InvitationsTokenRoute
   '/oauth/consent': typeof OauthConsentRoute
+  '/workspaces/new': typeof WorkspacesNewRoute
   '/account/': typeof AccountIndexRoute
   '/workspaces/$workspaceId/settings': typeof WorkspacesWorkspaceIdSettingsRouteRouteWithChildren
   '/workspaces/$workspaceId/activity': typeof WorkspacesWorkspaceIdActivityRoute
@@ -502,6 +511,7 @@ export interface FileRouteTypes {
     | '/console/login'
     | '/invitations/$token'
     | '/oauth/consent'
+    | '/workspaces/new'
     | '/account/'
     | '/workspaces/$workspaceId/settings'
     | '/workspaces/$workspaceId/activity'
@@ -550,6 +560,7 @@ export interface FileRouteTypes {
     | '/console/login'
     | '/invitations/$token'
     | '/oauth/consent'
+    | '/workspaces/new'
     | '/account'
     | '/workspaces/$workspaceId/activity'
     | '/workspaces/$workspaceId'
@@ -599,6 +610,7 @@ export interface FileRouteTypes {
     | '/console/login'
     | '/invitations/$token'
     | '/oauth/consent'
+    | '/workspaces/new'
     | '/account/'
     | '/workspaces/$workspaceId/settings'
     | '/workspaces/$workspaceId/activity'
@@ -647,6 +659,7 @@ export interface RootRouteChildren {
   WorkspacesWorkspaceIdRouteRoute: typeof WorkspacesWorkspaceIdRouteRouteWithChildren
   InvitationsTokenRoute: typeof InvitationsTokenRoute
   OauthConsentRoute: typeof OauthConsentRoute
+  WorkspacesNewRoute: typeof WorkspacesNewRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -789,6 +802,13 @@ declare module '@tanstack/react-router' {
       path: '/workspaces/$workspaceId'
       fullPath: '/workspaces/$workspaceId'
       preLoaderRoute: typeof WorkspacesWorkspaceIdRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/workspaces/new': {
+      id: '/workspaces/new'
+      path: '/workspaces/new'
+      fullPath: '/workspaces/new'
+      preLoaderRoute: typeof WorkspacesNewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/console/_authed/': {
@@ -1160,6 +1180,7 @@ const rootRouteChildren: RootRouteChildren = {
   WorkspacesWorkspaceIdRouteRoute: WorkspacesWorkspaceIdRouteRouteWithChildren,
   InvitationsTokenRoute: InvitationsTokenRoute,
   OauthConsentRoute: OauthConsentRoute,
+  WorkspacesNewRoute: WorkspacesNewRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

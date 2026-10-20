@@ -334,6 +334,13 @@ export const zSiteCreateWebhookEndpointInput = z.object({
 });
 
 /**
+ * Create a Workspace (ADR 0043)
+ */
+export const zSiteCreateWorkspaceInput = z.object({
+  name: z.string()
+});
+
+/**
  * A Custom field's value type
  */
 export const zSiteCustomFieldType = z.enum([
@@ -2127,6 +2134,13 @@ export const zSitePublicUnsubscribesPerformResponse = z.void();
  * The request has succeeded.
  */
 export const zSiteWorkspacesListResponse = z.array(zSiteWorkspaceResource);
+
+export const zSiteWorkspacesCreateBody = zSiteCreateWorkspaceInput;
+
+/**
+ * The request has succeeded and a new resource has been created as a result.
+ */
+export const zSiteWorkspacesCreateResponse = zSiteWorkspaceResource;
 
 export const zSiteWorkspacesUpdateBody = zSiteUpdateWorkspaceInput;
 
