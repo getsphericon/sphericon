@@ -75,14 +75,10 @@ depends = ["db:up"]
 env = { SPHERICON_ENV = "test", DATABASE_URL = "{{env.TEST_DB_URL}}" }
 run = "go run ./cmd/db drop"
 
-["db:migrate-atlas"]
-description = "Apply Atlas migrations"
-depends = ["db:up"]
-run = "atlas migrate apply --env local --allow-dirty --tx-mode none"
-
 ["db:migrate"]
-description = "Apply the migrations: the app schema, river's tables and the domain-event outbox"
-depends = ["db:migrate-atlas"]
+description = "Apply the migrations: the app schema, river's tables and the domain-event outbox (`sphericon migrate`: goose, the runner the start guard and the tests read, not Atlas)"
+depends = ["db:up"]
+run = "go run ./cmd/server migrate"
 
 ["db:seed"]
 description = "Load seed data into the dev database"
