@@ -113,6 +113,7 @@ func NewClient(pool *pgxpool.Pool, entClient *ent.Client, mod *outbound.Module, 
 	river.AddWorker(workers, &PruneOutboxWorker{ent: entClient, floor: retention.OutboxFloor})
 	river.AddWorker(workers, &PruneEventsWorker{ent: entClient, retention: retention.Events})
 	river.AddWorker(workers, &PruneUnverifiedUsersWorker{ent: entClient, retention: retention.UnverifiedUsers})
+	river.AddWorker(workers, &EraseWorkspacesWorker{ent: entClient, bus: bus, now: time.Now, batch: workspaceErasureBatch})
 
 	var extraPeriodic []*river.PeriodicJob
 	for _, e := range ext {
@@ -213,6 +214,14 @@ func newRiverConfig(workers *river.Workers, logger *slog.Logger, extra ...*river
 					return PruneEventsArgs{}, nil
 				},
 				nil,
+			),
+			// Erase Workspaces whose 30-day deletion window has passed (ADR 0043).
+			river.NewPeriodicJob(
+				river.PeriodicInterval(workspaceErasureInterval),
+				func() (river.JobArgs, *river.InsertOpts) {
+					return EraseWorkspacesArgs{}, nil
+				},
+				&river.PeriodicJobOpts{RunOnStart: true},
 			),
 			// Delete stale Unverified Users daily at 04:00 UTC (ADR 0030).
 			river.NewPeriodicJob(

@@ -990,10 +990,6 @@ func init() {
 	workspace.DefaultUpdatedAt = workspaceDescUpdatedAt.Default.(func() time.Time)
 	// workspace.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	workspace.UpdateDefaultUpdatedAt = workspaceDescUpdatedAt.UpdateDefault.(func() time.Time)
-	// workspaceDescName is the schema descriptor for name field.
-	workspaceDescName := workspaceFields[1].Descriptor()
-	// workspace.NameValidator is a validator for the "name" field. It is called by the builders before save.
-	workspace.NameValidator = workspaceDescName.Validators[0].(func(string) error)
 	// workspaceDescPublicID is the schema descriptor for public_id field.
 	workspaceDescPublicID := workspaceFields[2].Descriptor()
 	// workspace.PublicIDValidator is a validator for the "public_id" field. It is called by the builders before save.

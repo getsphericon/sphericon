@@ -1364,11 +1364,6 @@ func (_u *WorkspaceUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *WorkspaceUpdate) check() error {
-	if v, ok := _u.mutation.Name(); ok {
-		if err := workspace.NameValidator(v); err != nil {
-			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Workspace.name": %w`, err)}
-		}
-	}
 	if v, ok := _u.mutation.CollectKey(); ok {
 		if err := workspace.CollectKeyValidator(v); err != nil {
 			return &ValidationError{Name: "collect_key", err: fmt.Errorf(`ent: validator failed for field "Workspace.collect_key": %w`, err)}
@@ -4015,11 +4010,6 @@ func (_u *WorkspaceUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *WorkspaceUpdateOne) check() error {
-	if v, ok := _u.mutation.Name(); ok {
-		if err := workspace.NameValidator(v); err != nil {
-			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Workspace.name": %w`, err)}
-		}
-	}
 	if v, ok := _u.mutation.CollectKey(); ok {
 		if err := workspace.CollectKeyValidator(v); err != nil {
 			return &ValidationError{Name: "collect_key", err: fmt.Errorf(`ent: validator failed for field "Workspace.collect_key": %w`, err)}

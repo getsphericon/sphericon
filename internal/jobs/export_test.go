@@ -106,3 +106,10 @@ func NewRecheckTrackingDomainsWorker(client *ent.Client) *RecheckTrackingDomains
 func NewVerifyTrackingDomainWorker(client *ent.Client, sender messaging.EmailSender, tracking *trackingdomain.Verifier) *VerifyTrackingDomainWorker {
 	return &VerifyTrackingDomainWorker{ent: client, sender: sender, tracking: tracking}
 }
+
+func NewEraseWorkspacesWorker(client *ent.Client, bus *events.Bus, now func() time.Time, batch int) *EraseWorkspacesWorker {
+	return &EraseWorkspacesWorker{ent: client, bus: bus, now: now, batch: batch}
+}
+
+// ErasureStepCount is how many entities the erasure job removes, for a coverage test.
+func ErasureStepCount() int { return len(erasureSteps) }
