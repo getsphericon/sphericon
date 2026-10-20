@@ -87,7 +87,7 @@ run = "go run ./cmd/seed"
 
 ["db:reset"]
 description = "Drop, recreate and migrate the dev database"
-run = [{ task = "db:drop" }, { task = "db:up" }, { task = "db:migrate" }]
+run = [{ task = "db:drop" }, "go run ./cmd/db create", { task = "db:migrate" }]
 
 ["db:reset-test"]
 description = "Drop and recreate the test database"
