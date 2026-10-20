@@ -259,7 +259,7 @@ func createWorkspaceIn(ctx context.Context, tx *ent.Client, userID int64, name, 
 	}
 	slug := base
 	for i := 2; ; i++ {
-		exists, err := tx.Workspace.Query().Where(workspace.PublicID(publicID)).Exist(ctx)
+		exists, err := tx.Workspace.Query().Where(workspace.Slug(slug)).Exist(ctx)
 		if err != nil {
 			return nil, err
 		}
