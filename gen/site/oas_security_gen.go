@@ -147,6 +147,7 @@ var operationRolesApiKeyAuth = map[string][]string{
 	SiteWorkspacesAccountLinkOperation:                []string{},
 	SiteWorkspacesCreateOperation:                     []string{},
 	SiteWorkspacesDeleteOperation:                     []string{},
+	SiteWorkspacesLeaveOperation:                      []string{},
 	SiteWorkspacesListOperation:                       []string{},
 	SiteWorkspacesListDeletedOperation:                []string{},
 	SiteWorkspacesRestoreOperation:                    []string{},

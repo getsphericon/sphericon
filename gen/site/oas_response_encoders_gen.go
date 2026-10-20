@@ -6958,6 +6958,42 @@ func encodeSiteWorkspacesDeleteResponse(response SiteWorkspacesDeleteRes, w http
 	}
 }
 
+func encodeSiteWorkspacesLeaveResponse(response SiteWorkspacesLeaveRes, w http.ResponseWriter, span trace.Span) error {
+	switch response := response.(type) {
+	case *SiteWorkspacesLeaveNoContent:
+		w.WriteHeader(204)
+
+		return nil
+
+	case *SiteWorkspacesLeaveNotFound:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(404)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteWorkspacesLeaveUnprocessableEntity:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(422)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
+}
+
 func encodeSiteWorkspacesListResponse(response []SiteWorkspaceResource, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)

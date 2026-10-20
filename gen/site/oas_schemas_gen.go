@@ -16278,6 +16278,19 @@ type SiteWorkspacesDeleteUnprocessableEntity ProblemDetails
 
 func (*SiteWorkspacesDeleteUnprocessableEntity) siteWorkspacesDeleteRes() {}
 
+// SiteWorkspacesLeaveNoContent is response for SiteWorkspacesLeave operation.
+type SiteWorkspacesLeaveNoContent struct{}
+
+func (*SiteWorkspacesLeaveNoContent) siteWorkspacesLeaveRes() {}
+
+type SiteWorkspacesLeaveNotFound ProblemDetails
+
+func (*SiteWorkspacesLeaveNotFound) siteWorkspacesLeaveRes() {}
+
+type SiteWorkspacesLeaveUnprocessableEntity ProblemDetails
+
+func (*SiteWorkspacesLeaveUnprocessableEntity) siteWorkspacesLeaveRes() {}
+
 type SiteWorkspacesRestoreConflict ProblemDetails
 
 func (*SiteWorkspacesRestoreConflict) siteWorkspacesRestoreRes() {}

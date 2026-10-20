@@ -179,7 +179,7 @@ func (w *Workspace) DemoteConcurrently(ids ...int64) []error {
 func (w *Workspace) RemoveConcurrently(ids ...int64) []error {
 	w.t.Helper()
 	return w.concurrently(len(ids), func(i int) error {
-		return w.env.accounts.RemoveMembership(w.t.Context(), w.scoped, membership.RoleOwner, ids[i])
+		return w.env.accounts.RemoveMembership(w.t.Context(), w.scoped, events.Actor{Kind: events.ActorSystem}, membership.RoleOwner, ids[i])
 	})
 }
 
@@ -193,7 +193,7 @@ func (w *Workspace) DemoteAndRemoveConcurrently(demote, remove int64) []error {
 				membership.RoleOwner, demote, membership.RoleMember)
 			return err
 		}
-		return w.env.accounts.RemoveMembership(w.t.Context(), w.scoped, membership.RoleOwner, remove)
+		return w.env.accounts.RemoveMembership(w.t.Context(), w.scoped, events.Actor{Kind: events.ActorSystem}, membership.RoleOwner, remove)
 	})
 }
 

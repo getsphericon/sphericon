@@ -283,6 +283,32 @@ func (h *Handlers) SiteWorkspacesDelete(ctx context.Context, req *siteapi.SiteDe
 	return &r, nil
 }
 
+// SiteWorkspacesLeave removes the caller's own Membership (Leaving, ADR 0050). Any Role may
+// leave; the only Owner is refused.
+func (h *Handlers) SiteWorkspacesLeave(ctx context.Context, params siteapi.SiteWorkspacesLeaveParams) (siteapi.SiteWorkspacesLeaveRes, error) {
+	s, err := h.scopedFor(ctx, params.WorkspaceId)
+	if ent.IsNotFound(err) {
+		v := siteapi.SiteWorkspacesLeaveNotFound(workspaceNotFoundProblem())
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	err = h.accounts.Leave(ctx, s, auth.GetSiteAuth(ctx).UserID)
+	if errors.Is(err, accounts.ErrLastOwner) {
+		v := siteapi.SiteWorkspacesLeaveUnprocessableEntity(problemWithErrors(
+			http.StatusUnprocessableEntity,
+			i18n.T("errors.leave_only_owner", nil),
+			map[string][]string{"workspace": {i18n.T("errors.leave_only_owner", nil)}},
+		))
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &siteapi.SiteWorkspacesLeaveNoContent{}, nil
+}
+
 // SiteWorkspacesRestore restores a Workspace in its deletion window (Owner only).
 func (h *Handlers) SiteWorkspacesRestore(ctx context.Context, params siteapi.SiteWorkspacesRestoreParams) (siteapi.SiteWorkspacesRestoreRes, error) {
 	a := auth.GetSiteAuth(ctx)

@@ -6358,6 +6358,22 @@ func (s *SiteWorkspacesDeleteUnprocessableEntity) Validate() error {
 	return nil
 }
 
+func (s *SiteWorkspacesLeaveNotFound) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteWorkspacesLeaveUnprocessableEntity) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *SiteWorkspacesRestoreConflict) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {

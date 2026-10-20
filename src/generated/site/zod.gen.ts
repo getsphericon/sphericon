@@ -3042,6 +3042,15 @@ export const zSiteInvitationsDeletePath = z.object({
  */
 export const zSiteInvitationsDeleteResponse = z.void();
 
+export const zSiteWorkspacesLeavePath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * There is no content to send for this request, but the headers may be useful.
+ */
+export const zSiteWorkspacesLeaveResponse = z.void();
+
 export const zSiteMembershipsListPath = z.object({
   workspaceId: zWorkspaceId
 });

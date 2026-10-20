@@ -204,6 +204,17 @@ namespace SiteWorkspaces {
     | NotFoundProblem
     | ConflictProblem;
 
+  /** Leave a Workspace (any Role): the caller's own Membership is removed at once, with no
+   * Owner involved (Leaving, ADR 0050). 422 when the caller is the only Owner: another
+   * Member must become Owner, or the Workspace be deleted, first. Recorded as an Audit
+   * entry with the caller as actor. */
+  @post
+  @route("/{workspaceId}/leave")
+  op leave(@path workspaceId: WorkspaceId):
+    | NoContentResponse
+    | NotFoundProblem
+    | UnprocessableEntityProblem;
+
   /** Rename a workspace or change its postal address (Owner and Admin only). The id
    * never changes. */
   @put

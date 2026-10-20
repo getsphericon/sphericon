@@ -122,7 +122,7 @@ var (
 	rn90AllowedHeaders = map[string]string{
 		"PUT": "Content-Type",
 	}
-	rn153AllowedHeaders = map[string]string{
+	rn154AllowedHeaders = map[string]string{
 		"PUT": "Content-Type",
 	}
 	rn110AllowedHeaders = map[string]string{
@@ -2825,6 +2825,33 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 							}
 
+						case 'l': // Prefix: "leave"
+
+							if l := len("leave"); len(elem) >= l && elem[0:l] == "leave" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch r.Method {
+								case "POST":
+									s.handleSiteWorkspacesLeaveRequest([1]string{
+										args[0],
+									}, elemIsEscaped, w, r)
+								default:
+									s.notAllowed(w, r, notAllowedParams{
+										allowedMethods: "POST",
+										allowedHeaders: nil,
+										acceptPost:     "",
+										acceptPatch:    "",
+									})
+								}
+
+								return
+							}
+
 						case 'm': // Prefix: "memberships"
 
 							if l := len("memberships"); len(elem) >= l && elem[0:l] == "memberships" {
@@ -2993,7 +3020,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 										default:
 											s.notAllowed(w, r, notAllowedParams{
 												allowedMethods: "PUT",
-												allowedHeaders: rn153AllowedHeaders,
+												allowedHeaders: rn154AllowedHeaders,
 												acceptPost:     "",
 												acceptPatch:    "",
 											})
@@ -6414,6 +6441,31 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 
 								}
 
+							}
+
+						case 'l': // Prefix: "leave"
+
+							if l := len("leave"); len(elem) >= l && elem[0:l] == "leave" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch method {
+								case "POST":
+									r.name = SiteWorkspacesLeaveOperation
+									r.summary = ""
+									r.operationID = "SiteWorkspaces_leave"
+									r.operationGroup = ""
+									r.pathPattern = "/workspaces/{workspaceId}/leave"
+									r.args = args
+									r.count = 1
+									return r, true
+								default:
+									return
+								}
 							}
 
 						case 'm': // Prefix: "memberships"

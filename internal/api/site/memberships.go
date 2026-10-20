@@ -112,7 +112,7 @@ func (h *Handlers) SiteMembershipsDelete(ctx context.Context, params siteapi.Sit
 
 	id := int64(params.ID)
 
-	err = h.accounts.RemoveMembership(ctx, s, callerRole, id)
+	err = h.accounts.RemoveMembership(ctx, s, h.actor(ctx), callerRole, id)
 	switch {
 	case ent.IsNotFound(err):
 		v := siteapi.SiteMembershipsDeleteNotFound(problem(http.StatusNotFound, "member not found"))

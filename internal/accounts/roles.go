@@ -7,6 +7,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/membership"
+	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/events"
 )
 
@@ -87,7 +88,7 @@ func CanDeleteWorkspace(role membership.Role) bool {
 func (a *Accounts) ChangeMembershipRole(ctx context.Context, s *ent.Scoped, actor events.Actor, callerRole membership.Role, targetID int64, desired membership.Role) (*ent.Membership, error) {
 	var updated *ent.Membership
 	err := a.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
-		target, owners, err := lockedTarget(ctx, ts, targetID)
+		target, owners, err := lockedTarget(ctx, ts, membership.ID(targetID))
 		if err != nil {
 			return err
 		}
@@ -115,25 +116,68 @@ func (a *Accounts) ChangeMembershipRole(ctx context.Context, s *ent.Scoped, acto
 
 // RemoveMembership removes the Membership targetID from the Workspace s on behalf of a
 // caller holding callerRole, under the same Owner invariants and locking as
-// ChangeMembershipRole. A target outside the Workspace is an ent NotFound error.
-func (a *Accounts) RemoveMembership(ctx context.Context, s *ent.Scoped, callerRole membership.Role, targetID int64) error {
-	return a.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
-		target, owners, err := lockedTarget(ctx, ts, targetID)
+// ChangeMembershipRole, and records `membership.delete` with actor as an Audit entry in the
+// same transaction. A target outside the Workspace is an ent NotFound error.
+func (a *Accounts) RemoveMembership(ctx context.Context, s *ent.Scoped, actor events.Actor, callerRole membership.Role, targetID int64) error {
+	return a.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
+		target, owners, err := lockedTarget(ctx, ts, membership.ID(targetID))
 		if err != nil {
 			return err
 		}
-		// Removal is a demotion to no Role at all: it is never the owner Role.
-		if err := checkOwnerChange(callerRole, target, owners, ""); err != nil {
-			return err
-		}
-		return ts.Membership().DeleteOneID(target.ID).Exec(ctx)
+		return removeLocked(ctx, ts, pub, actor, callerRole, target, owners)
 	})
 }
 
-// lockedTarget locks the Workspace's owner rows, then loads the target Membership with its
-// User and returns the count of owners. Locking first serializes concurrent Owner changes:
-// the second waits, then reads the committed outcome of the first.
-func lockedTarget(ctx context.Context, ts *ent.Scoped, targetID int64) (*ent.Membership, int, error) {
+// Leave removes User userID's own Membership in the Workspace s (Leaving, ADR 0050) in a
+// transaction of its own. See LeaveIn for the rules.
+func (a *Accounts) Leave(ctx context.Context, s *ent.Scoped, userID int64) error {
+	return a.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
+		return LeaveIn(ctx, ts, pub, userID)
+	})
+}
+
+// LeaveIn removes User userID's own Membership through the scope ts, inside the transaction
+// ts is bound to (ts comes from Bus.WithinScopedTx, or from tx.Scoped in a caller's own
+// transaction, with pub that transaction's publisher). The User is the actor of the
+// `membership.delete` Audit entry, named by the User row. It locks the Workspace's Owner
+// rows first, like every Owner change, and refuses the only Owner with ErrLastOwner.
+// A User with no Membership in the Workspace is an ent NotFound error. User deletion
+// (ADR 0050) calls it once per Workspace in its own transaction.
+func LeaveIn(ctx context.Context, ts *ent.Scoped, pub events.Publisher, userID int64) error {
+	target, owners, err := lockedTarget(ctx, ts, membership.UserID(userID))
+	if err != nil {
+		return err
+	}
+	actor := events.Actor{Kind: events.ActorUser, ID: strconv.FormatInt(userID, 10), Name: target.Edges.User.Name}
+	// The caller is the member themself: their own Role is the caller's Role.
+	return removeLocked(ctx, ts, pub, actor, target.Role, target, owners)
+}
+
+// removeLocked applies the Owner invariants to removing target (whose Workspace's owner
+// rows the caller holds locked), deletes it and records the Audit entry.
+func removeLocked(ctx context.Context, ts *ent.Scoped, pub events.Publisher, actor events.Actor, callerRole membership.Role, target *ent.Membership, owners int) error {
+	// Removal is a demotion to no Role at all: it is never the owner Role.
+	if err := checkOwnerChange(callerRole, target, owners, ""); err != nil {
+		return err
+	}
+	if err := ts.Membership().DeleteOneID(target.ID).Exec(ctx); err != nil {
+		return err
+	}
+	return events.RecordAudit(ctx, pub, &events.AuditEntry{
+		WorkspaceID: ts.WorkspaceID(),
+		Actor:       actor,
+		Action:      events.ActionMembershipDelete,
+		TargetType:  "membership",
+		TargetID:    strconv.FormatInt(target.ID, 10),
+		TargetName:  target.Edges.User.Name,
+		Diff:        map[string]any{"role": map[string]any{"from": string(target.Role), "to": nil}},
+	})
+}
+
+// lockedTarget locks the Workspace's owner rows, then loads the one Membership matching
+// target with its User and returns the count of owners. Locking first serializes
+// concurrent Owner changes: the second waits, then reads the committed outcome of the first.
+func lockedTarget(ctx context.Context, ts *ent.Scoped, target predicate.Membership) (*ent.Membership, int, error) {
 	ownerIDs, err := ts.Membership().Query().
 		Where(membership.RoleEQ(membership.RoleOwner)).
 		ForUpdate().
@@ -141,14 +185,14 @@ func lockedTarget(ctx context.Context, ts *ent.Scoped, targetID int64) (*ent.Mem
 	if err != nil {
 		return nil, 0, err
 	}
-	target, err := ts.Membership().Query().
-		Where(membership.ID(targetID)).
+	m, err := ts.Membership().Query().
+		Where(target).
 		WithUser().
 		Only(ctx)
 	if err != nil {
 		return nil, 0, err
 	}
-	return target, len(ownerIDs), nil
+	return m, len(ownerIDs), nil
 }
 
 // checkOwnerChange applies the Owner invariants to turning target into desired ("" when

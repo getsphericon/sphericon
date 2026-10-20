@@ -882,6 +882,14 @@ type Handler interface {
 	//
 	// POST /workspaces/{workspaceId}/delete
 	SiteWorkspacesDelete(ctx context.Context, req *SiteDeleteWorkspaceInput, params SiteWorkspacesDeleteParams) (SiteWorkspacesDeleteRes, error)
+	// SiteWorkspacesLeave implements SiteWorkspaces_leave operation.
+	//
+	// Leave a Workspace (any Role): the caller's own Membership is removed at once, with no Owner involved
+	// (Leaving, ADR 0050). 422 when the caller is the only Owner: another Member must become Owner, or the
+	// Workspace be deleted, first. Recorded as an Audit entry with the caller as actor.
+	//
+	// POST /workspaces/{workspaceId}/leave
+	SiteWorkspacesLeave(ctx context.Context, params SiteWorkspacesLeaveParams) (SiteWorkspacesLeaveRes, error)
 	// SiteWorkspacesList implements SiteWorkspaces_list operation.
 	//
 	// List workspaces owned by the authenticated user.

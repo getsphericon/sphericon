@@ -46,6 +46,8 @@ type Actor = ent.Actor
 // ExplicitAuditActions, so adding an explicit path means listing it here.
 const (
 	ActionMembershipUpdate = "membership.update"
+	// A Membership was removed: by an Owner or Admin, or by the User leaving (ADR 0050).
+	ActionMembershipDelete = "membership.delete"
 	ActionInvitationCreate = "invitation.create"
 	ActionInvitationAccept = "invitation.accept"
 	ActionInvitationRevoke = "invitation.revoke"
@@ -83,6 +85,7 @@ const (
 // ExplicitAuditActions lists every action emitted by an explicit RecordAudit call.
 var ExplicitAuditActions = []string{
 	ActionMembershipUpdate,
+	ActionMembershipDelete,
 	ActionInvitationCreate,
 	ActionInvitationAccept,
 	ActionInvitationRevoke,

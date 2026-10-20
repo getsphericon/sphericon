@@ -2,8 +2,10 @@ package accounts_test
 
 import (
 	"context"
+	"sync"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -11,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -117,6 +120,7 @@ func TestRemoveMembershipInvariants(t *testing.T) {
 	acc := accounts.New(env.DB, env.Bus)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.InitechID)
+	actor := events.Actor{Kind: events.ActorUser}
 
 	exists := func(id int64) bool {
 		ok, err := env.DB.Membership.Query().Where(membership.ID(id)).Exist(ctx)
@@ -125,27 +129,112 @@ func TestRemoveMembershipInvariants(t *testing.T) {
 	}
 
 	t.Run("an admin cannot remove an owner", func(t *testing.T) {
-		err := acc.RemoveMembership(ctx, s, membership.RoleAdmin, fixtures.InitechCoOwnerMembershipID)
+		err := acc.RemoveMembership(ctx, s, actor, membership.RoleAdmin, fixtures.InitechCoOwnerMembershipID)
 		require.ErrorIs(t, err, accounts.ErrOwnerOnly)
 		assert.True(t, exists(fixtures.InitechCoOwnerMembershipID))
 	})
 
 	t.Run("an admin removes a member", func(t *testing.T) {
-		require.NoError(t, acc.RemoveMembership(ctx, s, membership.RoleAdmin, fixtures.InitechMemberMembershipID))
+		require.NoError(t, acc.RemoveMembership(ctx, s, actor, membership.RoleAdmin, fixtures.InitechMemberMembershipID))
 		assert.False(t, exists(fixtures.InitechMemberMembershipID))
 	})
 
 	t.Run("an owner removes a co-owner, then the last owner cannot be removed", func(t *testing.T) {
-		require.NoError(t, acc.RemoveMembership(ctx, s, membership.RoleOwner, fixtures.InitechCoOwnerMembershipID))
-		err := acc.RemoveMembership(ctx, s, membership.RoleOwner, fixtures.InitechOwnerMembershipID)
+		require.NoError(t, acc.RemoveMembership(ctx, s, actor, membership.RoleOwner, fixtures.InitechCoOwnerMembershipID))
+		err := acc.RemoveMembership(ctx, s, actor, membership.RoleOwner, fixtures.InitechOwnerMembershipID)
 		require.ErrorIs(t, err, accounts.ErrLastOwner)
 		assert.True(t, exists(fixtures.InitechOwnerMembershipID))
 	})
 
 	t.Run("a Membership of another Workspace is not found", func(t *testing.T) {
-		err := acc.RemoveMembership(ctx, s, membership.RoleOwner, fixtures.GlobexOwnerMembershipID)
+		err := acc.RemoveMembership(ctx, s, actor, membership.RoleOwner, fixtures.GlobexOwnerMembershipID)
 		require.Error(t, err)
 		assert.True(t, ent.IsNotFound(err))
 		assert.True(t, exists(fixtures.GlobexOwnerMembershipID))
 	})
+}
+
+func TestLeaveRemovesTheCallersOwnMembershipWhateverTheRole(t *testing.T) {
+	env := testhelper.Setup(t)
+	acc := accounts.New(env.DB, env.Bus)
+	ctx := context.Background()
+	s := env.DB.Scoped(fixtures.InitechID)
+
+	exists := func(id int64) bool {
+		ok, err := env.DB.Membership.Query().Where(membership.ID(id)).Exist(ctx)
+		require.NoError(t, err)
+		return ok
+	}
+
+	require.NoError(t, acc.Leave(ctx, s, fixtures.InitechMemberMaxID))
+	assert.False(t, exists(fixtures.InitechMemberMembershipID))
+
+	require.NoError(t, acc.Leave(ctx, s, fixtures.InitechAdminAdaID))
+	assert.False(t, exists(fixtures.InitechAdminMembershipID))
+
+	require.NoError(t, acc.Leave(ctx, s, fixtures.InitechCoOwnerOwenID))
+	assert.False(t, exists(fixtures.InitechCoOwnerMembershipID))
+}
+
+func TestLeaveRefusesTheOnlyOwner(t *testing.T) {
+	env := testhelper.Setup(t)
+	acc := accounts.New(env.DB, env.Bus)
+	ctx := context.Background()
+	s := env.DB.Scoped(fixtures.InitechID)
+
+	require.NoError(t, acc.Leave(ctx, s, fixtures.InitechCoOwnerOwenID))
+	err := acc.Leave(ctx, s, fixtures.InitechOwnerOlgaID)
+	require.ErrorIs(t, err, accounts.ErrLastOwner)
+
+	ok, err := env.DB.Membership.Query().Where(membership.ID(fixtures.InitechOwnerMembershipID)).Exist(ctx)
+	require.NoError(t, err)
+	assert.True(t, ok)
+}
+
+func TestLeaveByAUserWithoutMembershipIsNotFound(t *testing.T) {
+	env := testhelper.Setup(t)
+	acc := accounts.New(env.DB, env.Bus)
+
+	err := acc.Leave(t.Context(), env.DB.Scoped(fixtures.InitechID), fixtures.OwnerJohnID)
+	assert.True(t, ent.IsNotFound(err))
+}
+
+func TestLeaveAuditsTheUserAsActor(t *testing.T) {
+	env := testhelper.Setup(t)
+	acc := accounts.New(env.DB, env.Bus)
+	ctx := t.Context()
+
+	require.NoError(t, acc.Leave(ctx, env.DB.Scoped(fixtures.InitechID), fixtures.InitechMemberMaxID))
+	env.DeliverToEE(t)
+
+	entry, err := env.DB.AuditEntry.Query().Where(auditentry.Action(events.ActionMembershipDelete)).Only(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, events.ActorUser, entry.ActorKind)
+	assert.Equal(t, fixtures.InitechMemberMaxName, lo.FromPtr(entry.ActorName))
+	assert.Equal(t, fixtures.InitechMemberMaxName, lo.FromPtr(entry.TargetName))
+}
+
+// Two co-Owners leaving at the same moment serialize on the Workspace's Owner rows: the
+// second reads the first's committed outcome. The other tests ride one go-txdb transaction,
+// which serializes statements, so this one runs on a database of its own.
+func TestTwoCoOwnersLeavingAtOnceLeaveOneOwner(t *testing.T) {
+	sqlDB := testhelper.RealDB(t)
+	sqlDB.SetMaxOpenConns(8)
+	client := db.NewEntClient(sqlDB)
+	acc := accounts.New(client, events.New(sqlDB))
+	s := client.Scoped(fixtures.InitechID)
+
+	errs := make([]error, 2)
+	var wg sync.WaitGroup
+	for i, userID := range []int64{fixtures.InitechOwnerOlgaID, fixtures.InitechCoOwnerOwenID} {
+		wg.Go(func() { errs[i] = acc.Leave(t.Context(), s, userID) })
+	}
+	wg.Wait()
+
+	refused := lo.Filter(errs, func(err error, _ int) bool { return err != nil })
+	require.Len(t, refused, 1)
+	require.ErrorIs(t, refused[0], accounts.ErrLastOwner)
+	owners, err := s.Membership().Query().Where(membership.RoleEQ(membership.RoleOwner)).Count(t.Context())
+	require.NoError(t, err)
+	assert.Equal(t, 1, owners)
 }

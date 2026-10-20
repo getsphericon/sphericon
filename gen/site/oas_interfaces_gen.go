@@ -485,6 +485,10 @@ type SiteWorkspacesDeleteRes interface {
 	siteWorkspacesDeleteRes()
 }
 
+type SiteWorkspacesLeaveRes interface {
+	siteWorkspacesLeaveRes()
+}
+
 type SiteWorkspacesRestoreRes interface {
 	siteWorkspacesRestoreRes()
 }

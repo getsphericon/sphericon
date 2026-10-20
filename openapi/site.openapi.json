@@ -6060,6 +6060,48 @@
         "tags": ["Site Invitations"]
       }
     },
+    "/workspaces/{workspaceId}/leave": {
+      "post": {
+        "operationId": "SiteWorkspaces_leave",
+        "description": "Leave a Workspace (any Role): the caller's own Membership is removed at once, with no\nOwner involved (Leaving, ADR 0050). 422 when the caller is the only Owner: another\nMember must become Owner, or the Workspace be deleted, first. Recorded as an Audit\nentry with the caller as actor.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "There is no content to send for this request, but the headers may be useful."
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Workspaces"]
+      }
+    },
     "/workspaces/{workspaceId}/memberships": {
       "get": {
         "operationId": "SiteMemberships_list",

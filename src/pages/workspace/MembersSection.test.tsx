@@ -10,6 +10,7 @@ import {
   handleSiteMembershipsResetSecondFactor,
   handleSiteMembershipsUpdate,
   handleSiteUserGetMe,
+  handleSiteWorkspacesLeave,
 } from '../../generated/site/msw.gen.ts'
 import type {
   SiteInvitationResource,
@@ -196,4 +197,46 @@ test('a member is not offered a Second factor reset', async () => {
   await screen.getByRole('button', { name: 'More actions' }).last().click()
   await expect.element(screen.getByRole('menuitem', { name: 'Remove' })).toBeInTheDocument()
   await expect.element(screen.getByRole('menuitem', { name: 'Reset 2FA' })).not.toBeInTheDocument()
+})
+
+test('leaves the workspace after confirmation', async () => {
+  let left = false
+  worker.use(
+    ...members(),
+    invites([]),
+    handleSiteWorkspacesLeave(() => {
+      left = true
+      return new HttpResponse(null, { status: 204 })
+    }),
+  )
+  const { screen } = await renderWithRouter(<MembersSection workspaceId={WORKSPACE_ID} />)
+
+  await screen.getByRole('button', { name: 'Leave workspace' }).click()
+  await screen.getByRole('dialog').getByRole('button', { name: 'Leave' }).click()
+
+  await expect.poll(() => left).toBe(true)
+})
+
+test('keeps the workspace and says why when the only owner tries to leave', async () => {
+  worker.use(
+    ...members(),
+    invites([]),
+    handleSiteWorkspacesLeave(() =>
+      HttpResponse.json(
+        {
+          title: 'cannot leave as the only owner',
+          detail:
+            'you are the only owner: make another member an owner or delete the workspace first',
+          status: 422,
+        },
+        { status: 422, headers: { 'content-type': 'application/problem+json' } },
+      ),
+    ),
+  )
+  const { screen } = await renderWithRouter(<MembersSection workspaceId={WORKSPACE_ID} />)
+
+  await screen.getByRole('button', { name: 'Leave workspace' }).click()
+  await screen.getByRole('dialog').getByRole('button', { name: 'Leave' }).click()
+
+  await expect.element(screen.getByText(/make another member an owner/)).toBeInTheDocument()
 })

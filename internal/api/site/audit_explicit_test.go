@@ -222,7 +222,10 @@ func TestExplicitAuditPathsAreAllListed(t *testing.T) {
 	ctx := context.Background()
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	promoteMary(t, env)                              // membership.update
+	promoteMary(t, env)                                                             // membership.update
+	_, err := owner.SiteMembershipsDelete(ctx, siteapi.SiteMembershipsDeleteParams{ // membership.delete
+		WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.AcmeAdminMembershipID)})
+	require.NoError(t, err)
 	created, err := owner.SiteInvitationsCreate(ctx, // invitation.create
 		&siteapi.SiteCreateInvitationInput{Email: "x@acme.test", Role: siteapi.SiteInvitableRoleMember},
 		siteapi.SiteInvitationsCreateParams{WorkspaceId: fixtures.AcmePublicID})

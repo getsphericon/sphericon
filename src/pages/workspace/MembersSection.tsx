@@ -19,6 +19,7 @@ import {
 import { useForm } from '@mantine/form'
 import { useDisclosure } from '@mantine/hooks'
 import { useQuery } from '@tanstack/react-query'
+import { useNavigate } from '@tanstack/react-router'
 import { DataTable } from 'mantine-datatable'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -35,11 +36,14 @@ import {
   siteMembershipsResetSecondFactorMutation,
   siteMembershipsUpdateMutation,
   siteUserGetMeOptions,
+  siteWorkspacesLeaveMutation,
+  siteWorkspacesListQueryKey,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteInvitableRole, SiteMembershipRole } from '../../generated/site/types.gen.ts'
 import { canManage, useCurrentRole } from '../../hooks/useCurrentRole.ts'
 import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation.tsx'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
+import { Route as indexRoute } from '../../routes/index.tsx'
 import { formatDate } from '../../utils/datetime.ts'
 
 const MEMBER_ROLES: SiteMembershipRole[] = ['owner', 'admin', 'member']
@@ -48,6 +52,7 @@ const INVITABLE_ROLES: SiteInvitableRole[] = ['admin', 'member']
 export function MembersSection({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
   const confirmRemove = useDeleteConfirmation()
+  const navigate = useNavigate()
   const [inviteUrl, setInviteUrl] = useState<string | null>(null)
   const [inviteOpened, { open: openInvite, close }] = useDisclosure(false)
   const closeInvite = () => {
@@ -95,6 +100,15 @@ export function MembersSection({ workspaceId }: { workspaceId: string }) {
     errorTitle: t(($) => $.settings.members.removeError),
   })
 
+  const leaveMutation = useResourceMutation({
+    mutation: siteWorkspacesLeaveMutation(),
+    invalidate: [siteWorkspacesListQueryKey()],
+    successMessage: t(($) => $.settings.members.left),
+    errorTitle: t(($) => $.settings.members.leaveError),
+    // The index route sends the User to another Workspace, or to the create screen.
+    onDone: () => navigate({ to: indexRoute.to }),
+  })
+
   const resetMutation = useResourceMutation({
     mutation: siteMembershipsResetSecondFactorMutation(),
     invalidate: [membersKey],
@@ -107,6 +121,14 @@ export function MembersSection({ workspaceId }: { workspaceId: string }) {
       description: t(($) => $.settings.members.resetSecondFactorConfirmDescription),
       confirmLabel: t(($) => $.settings.members.resetSecondFactorConfirm),
       onConfirm: () => resetMutation.mutate({ path: { workspaceId, id } }),
+    })
+
+  const onLeave = () =>
+    confirmRemove({
+      title: t(($) => $.settings.members.leaveConfirmTitle),
+      description: t(($) => $.settings.members.leaveConfirmDescription),
+      confirmLabel: t(($) => $.settings.members.leaveConfirm),
+      onConfirm: () => leaveMutation.mutate({ path: { workspaceId } }),
     })
 
   const onRemove = (id: string) =>
@@ -127,7 +149,12 @@ export function MembersSection({ workspaceId }: { workspaceId: string }) {
     <Box>
       <Group justify="space-between" mb="sm">
         <Title order={4}>{t(($) => $.settings.members.title)}</Title>
-        <Button onClick={openInvite}>{t(($) => $.settings.members.invite)}</Button>
+        <Group>
+          <Button color="red" variant="light" onClick={onLeave}>
+            {t(($) => $.settings.members.leave)}
+          </Button>
+          <Button onClick={openInvite}>{t(($) => $.settings.members.invite)}</Button>
+        </Group>
       </Group>
 
       {membersQuery.isError ? (

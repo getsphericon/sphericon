@@ -7556,6 +7556,37 @@ export type SiteInvitationsDeleteResponses = {
 
 export type SiteInvitationsDeleteResponse = SiteInvitationsDeleteResponses[keyof SiteInvitationsDeleteResponses];
 
+export type SiteWorkspacesLeaveData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/leave';
+};
+
+export type SiteWorkspacesLeaveErrors = {
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+};
+
+export type SiteWorkspacesLeaveError = SiteWorkspacesLeaveErrors[keyof SiteWorkspacesLeaveErrors];
+
+export type SiteWorkspacesLeaveResponses = {
+  /**
+   * There is no content to send for this request, but the headers may be useful.
+   */
+  204: void;
+};
+
+export type SiteWorkspacesLeaveResponse = SiteWorkspacesLeaveResponses[keyof SiteWorkspacesLeaveResponses];
+
 export type SiteMembershipsListData = {
   body?: never;
   path: {

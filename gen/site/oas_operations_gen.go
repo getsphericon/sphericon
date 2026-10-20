@@ -135,6 +135,7 @@ const (
 	SiteWorkspacesAccountLinkOperation                OperationName = "SiteWorkspacesAccountLink"
 	SiteWorkspacesCreateOperation                     OperationName = "SiteWorkspacesCreate"
 	SiteWorkspacesDeleteOperation                     OperationName = "SiteWorkspacesDelete"
+	SiteWorkspacesLeaveOperation                      OperationName = "SiteWorkspacesLeave"
 	SiteWorkspacesListOperation                       OperationName = "SiteWorkspacesList"
 	SiteWorkspacesListDeletedOperation                OperationName = "SiteWorkspacesListDeleted"
 	SiteWorkspacesRestoreOperation                    OperationName = "SiteWorkspacesRestore"
