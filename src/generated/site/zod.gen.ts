@@ -288,7 +288,7 @@ export const zSiteConfirmEmailChangeInput = z.object({
 /**
  * What a Workspace holds for one email address, as counts only (a Privacy request lookup). Nothing held is all zeros and `contactHeld: false`.
  */
-export const zSiteContactLookup = z.object({
+export const zSiteContactHoldings = z.object({
   contactHeld: z.boolean(),
   events: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   deliveryRecords: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
@@ -2527,7 +2527,7 @@ export const zSiteContactsLookupQuery = z.object({
 /**
  * The request has succeeded.
  */
-export const zSiteContactsLookupResponse = zSiteContactLookup;
+export const zSiteContactsLookupResponse = zSiteContactHoldings;
 
 export const zSiteTagsListForContactPath = z.object({
   slug: z.string(),

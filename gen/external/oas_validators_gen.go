@@ -151,6 +151,8 @@ func (s ApiTokenScope) Validate() error {
 		return nil
 	case "audit:read":
 		return nil
+	case "export:read":
+		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
 	}
@@ -2553,6 +2555,30 @@ func (s *EventsCreateUnauthorized) Validate() error {
 }
 
 func (s *EventsCreateUnprocessableEntity) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *ExportEventsBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *ExportEventsNotFound) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *ExportEventsUnauthorized) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err

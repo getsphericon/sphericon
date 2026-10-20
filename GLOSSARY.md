@@ -508,6 +508,15 @@ to event types (empty = all) and signs each delivery (HMAC). It remembers its ow
 are told by email. Outbound only; the opposite of an Ingest hook.
 _Avoid_: Webhook (unqualified), callback
 
+**Export stream** (Enterprise):
+A Workspace's rows of one kind (Events, Outbound messages, Contacts, Erasures, Audit entries) that
+an external consumer reads page by page with a cursor, to keep its own copy in a warehouse such as
+ClickHouse. A changed row is delivered again, so the consumer keeps the latest version by id; a
+row that was removed is announced by the **Erasures** stream, never by silence. Delivery is
+at-least-once and carries no ordering guarantee across commits: the consumer overlaps its pages and
+deduplicates. Pull, the opposite direction from a Webhook endpoint, which pushes.
+_Avoid_: Sync, replication, feed, data export (that is one Contact's subject access bundle)
+
 **Ingest hook** (inbound provider webhook):
 The inbound endpoint of one Integration that **receives** its provider's callbacks (bounce /
 complaint), addressed by the Integration's ingest key and decoded by the Integration's Preset. The

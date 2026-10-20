@@ -104,7 +104,7 @@ model SiteContactExportTypedDownload {
 }
 
 /** What a Workspace holds for one email address, as counts only (a Privacy request lookup). Nothing held is all zeros and `contactHeld: false`. */
-model SiteContactLookup {
+model SiteContactHoldings {
   /** Whether a Contact holds the address */
   contactHeld: boolean;
 
@@ -163,7 +163,11 @@ interface SiteContacts
 
     /** The email address, as typed: trimmed and validated by the handler, not by the format check */
     @maxLength(320) @query email: string,
-  ): SiteContactLookup | BadRequestProblem | ForbiddenProblem | NotFoundProblem;
+  ):
+    | SiteContactHoldings
+    | BadRequestProblem
+    | ForbiddenProblem
+    | NotFoundProblem;
 
   /**
    * Erase by email address (GDPR Art. 17, a Privacy request), the same Erasure as

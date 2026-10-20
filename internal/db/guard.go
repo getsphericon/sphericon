@@ -114,7 +114,26 @@ func (g Guard) Check(ctx context.Context, sqlDB *sql.DB) error {
 			"%s is one Major ahead of the database (Major %d, binary Major %d): run `sphericon migrate`, or set SPHERICON_DB_AUTO_MIGRATE=true.%s",
 			who, state.Major, own, tail)}
 	}
+	if !g.AutoMigrate {
+		pending, err := pendingMigrations(ctx, sqlDB)
+		if err != nil {
+			return err
+		}
+		if pending > 0 {
+			return &RefusalError{message: fmt.Sprintf(
+				"%s needs %d migration(s) the database has not run: run `sphericon migrate` (in development `mise run db:migrate`), or set SPHERICON_DB_AUTO_MIGRATE=true.%s",
+				who, pending, tail)}
+		}
+	}
 	return nil
+}
+
+func pendingMigrations(ctx context.Context, sqlDB *sql.DB) (int, error) {
+	st, err := Status(ctx, sqlDB)
+	if err != nil {
+		return 0, fmt.Errorf("read pending migrations: %w", err)
+	}
+	return len(st.Pending), nil
 }
 
 func isUndefinedTable(err error) bool {

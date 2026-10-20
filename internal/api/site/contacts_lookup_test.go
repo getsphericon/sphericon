@@ -29,7 +29,7 @@ func TestSiteContactsLookupCountsWhatIsHeldForAContact(t *testing.T) {
 
 	res := lookup(t, c, fixtures.AcmeSlug, fixtures.ContactExportSubjectEmail)
 
-	got, ok := res.(*siteapi.SiteContactLookup)
+	got, ok := res.(*siteapi.SiteContactHoldings)
 	require.Truef(t, ok, "got %T", res)
 	assert.True(t, got.ContactHeld)
 	assert.Equal(t, int32(3), got.Events)
@@ -45,7 +45,7 @@ func TestSiteContactsLookupNormalizesTheAddress(t *testing.T) {
 
 	res := lookup(t, c, fixtures.AcmeSlug, "Export.Subject@Example.com")
 
-	got, ok := res.(*siteapi.SiteContactLookup)
+	got, ok := res.(*siteapi.SiteContactHoldings)
 	require.Truef(t, ok, "got %T", res)
 	assert.True(t, got.ContactHeld)
 }
@@ -57,7 +57,7 @@ func TestSiteContactsLookupAddressWithoutContact(t *testing.T) {
 
 	res := lookup(t, c, fixtures.InitechSlug, fixtures.OutboundMessageStrangerDestination)
 
-	got, ok := res.(*siteapi.SiteContactLookup)
+	got, ok := res.(*siteapi.SiteContactHoldings)
 	require.Truef(t, ok, "got %T", res)
 	assert.False(t, got.ContactHeld)
 	assert.Equal(t, int32(1), got.DeliveryRecords)
@@ -71,9 +71,9 @@ func TestSiteContactsLookupUnknownAddressIsZeros(t *testing.T) {
 
 	res := lookup(t, c, fixtures.AcmeSlug, "nobody@nowhere.test")
 
-	got, ok := res.(*siteapi.SiteContactLookup)
+	got, ok := res.(*siteapi.SiteContactHoldings)
 	require.Truef(t, ok, "got %T", res)
-	assert.Equal(t, siteapi.SiteContactLookup{}, *got)
+	assert.Equal(t, siteapi.SiteContactHoldings{}, *got)
 }
 
 // Another Workspace's data is never matched.
@@ -83,9 +83,9 @@ func TestSiteContactsLookupNeverMatchesAnotherWorkspace(t *testing.T) {
 
 	res := lookup(t, c, fixtures.AcmeSlug, "pat@globex.test")
 
-	got, ok := res.(*siteapi.SiteContactLookup)
+	got, ok := res.(*siteapi.SiteContactHoldings)
 	require.Truef(t, ok, "got %T", res)
-	assert.Equal(t, siteapi.SiteContactLookup{}, *got)
+	assert.Equal(t, siteapi.SiteContactHoldings{}, *got)
 }
 
 // An admin may look up; a plain member is refused.
@@ -94,7 +94,7 @@ func TestSiteContactsLookupIsOwnerAndAdminOnly(t *testing.T) {
 
 	admin := env.SiteActor(t, fixtures.InitechAdminAdaEmail)
 	res := lookup(t, admin, fixtures.InitechSlug, "erin@initech.test")
-	assert.IsType(t, &siteapi.SiteContactLookup{}, res)
+	assert.IsType(t, &siteapi.SiteContactHoldings{}, res)
 
 	member := env.SiteActor(t, fixtures.MemberMaryEmail)
 	res = lookup(t, member, fixtures.AcmeSlug, fixtures.ContactExportSubjectEmail)
@@ -119,7 +119,7 @@ func TestSiteContactsLookupAcceptsAPaddedAddress(t *testing.T) {
 
 	res := lookup(t, c, fixtures.AcmeSlug, " Export.Subject@Example.com ")
 
-	got, ok := res.(*siteapi.SiteContactLookup)
+	got, ok := res.(*siteapi.SiteContactHoldings)
 	require.Truef(t, ok, "got %T", res)
 	assert.True(t, got.ContactHeld)
 }

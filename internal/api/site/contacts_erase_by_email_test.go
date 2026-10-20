@@ -35,9 +35,9 @@ func TestSiteContactsEraseByEmailErasesTheContact(t *testing.T) {
 	require.NoError(t, err)
 	assert.False(t, still)
 
-	got, ok := lookup(t, c, fixtures.AcmeSlug, fixtures.ContactExportSubjectEmail).(*siteapi.SiteContactLookup)
+	got, ok := lookup(t, c, fixtures.AcmeSlug, fixtures.ContactExportSubjectEmail).(*siteapi.SiteContactHoldings)
 	require.True(t, ok)
-	assert.Equal(t, siteapi.SiteContactLookup{Unsubscribes: 1, Suppressions: 1}, *got)
+	assert.Equal(t, siteapi.SiteContactHoldings{Unsubscribes: 1, Suppressions: 1}, *got)
 }
 
 // An address with delivery records and no Contact is anonymized all the same.

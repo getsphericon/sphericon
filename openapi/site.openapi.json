@@ -4079,7 +4079,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SiteContactLookup"
+                  "$ref": "#/components/schemas/SiteContactHoldings"
                 }
               }
             }
@@ -9514,7 +9514,7 @@
         },
         "description": "Confirm a requested email change using the token sent to the new address"
       },
-      "SiteContactLookup": {
+      "SiteContactHoldings": {
         "type": "object",
         "required": ["contactHeld", "events", "deliveryRecords", "unsubscribes", "suppressions"],
         "properties": {

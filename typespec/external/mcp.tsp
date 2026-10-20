@@ -20,6 +20,9 @@ namespace Sphericon;
 // The Audit log is never an agent capability (ADR 0016, ADR 0022).
 @@extension(AuditEntries.list, "x-mcp", #{ hidden: true });
 
+// An Export stream is a bulk feed, never an agent capability (ADR 0016, ADR 0045).
+@@extension(Export.events, "x-mcp", #{ hidden: true });
+
 // Names in sphericon vocabulary where the default would read poorly.
 @@extension(Auth.meGet, "x-mcp", #{ name: "whoami" });
 @@extension(Events.create, "x-mcp", #{ name: "events_record" });

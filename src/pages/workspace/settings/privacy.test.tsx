@@ -7,7 +7,7 @@ import {
   handleSiteContactsLookup,
   handleSiteWorkspacesList,
 } from '../../../generated/site/msw.gen.ts'
-import type { SiteContactLookup } from '../../../generated/site/types.gen.ts'
+import type { SiteContactHoldings } from '../../../generated/site/types.gen.ts'
 import { Route as privacyRoute } from '../../../routes/workspaces/$slug/settings/privacy.tsx'
 import { problem } from '../../../test/problem.ts'
 import { renderWithRouter } from '../../../test/renderWithRouter.tsx'
@@ -38,7 +38,7 @@ const workspace = {
   createdAt: '2026-01-01T00:00:00Z',
 }
 
-const held: SiteContactLookup = {
+const held: SiteContactHoldings = {
   contactHeld: true,
   events: 12,
   deliveryRecords: 3,
