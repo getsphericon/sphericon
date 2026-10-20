@@ -254,8 +254,8 @@ func TestExternalRequestValidation(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, "contacts:write")
 
-	// Invalid email → ogen validation rejects with an undocumented 400, which
-	// the typed client surfaces as an error.
-	_, err := c.ContactsCreate(context.Background(), &externalapi.CreateContactInput{Email: externalapi.NewOptNilEmailAddress("not-an-email")})
-	require.Error(t, err)
+	// An invalid email is refused by ogen's validation with the documented 400.
+	res, err := c.ContactsCreate(context.Background(), &externalapi.CreateContactInput{Email: externalapi.NewOptNilEmailAddress("not-an-email")})
+	require.NoError(t, err)
+	assert.IsType(t, &externalapi.ContactsCreateBadRequest{}, res)
 }

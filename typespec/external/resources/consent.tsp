@@ -71,6 +71,7 @@ namespace Suppressions {
         @statusCode statusCode: 201;
         @body body: SuppressionResource;
       }
+    | BadRequestProblem
     | UnauthorizedProblem
     | TooManyRequestsProblem
     | UnprocessableEntityProblem;
@@ -89,6 +90,7 @@ namespace Unsubscribes {
         @statusCode statusCode: 201;
         @body body: UnsubscribeResource;
       }
+    | BadRequestProblem
     | UnauthorizedProblem
     | TooManyRequestsProblem
     | UnprocessableEntityProblem;
