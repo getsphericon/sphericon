@@ -28,6 +28,22 @@ type exportPage struct {
 	rows   []map[string]any
 }
 
+// pageThrough reads a stream in pages of limit until a page comes back empty (or maxPages have
+// been read) and returns every row id in the order served, with the cursor the last page left.
+func pageThrough(read func(cursor string, limit int32) exportPage, limit int32, maxPages int) ([]int64, string) {
+	var seen []int64
+	cursor := ""
+	for range maxPages {
+		page := read(cursor, limit)
+		if len(page.rows) == 0 {
+			break
+		}
+		seen = append(seen, page.ids()...)
+		cursor = page.cursor
+	}
+	return seen, cursor
+}
+
 func (p exportPage) ids() []int64 {
 	return lo.Map(p.rows, func(r map[string]any, _ int) int64 {
 		id, err := strconv.ParseInt(r["id"].(string), 10, 64)
@@ -195,16 +211,7 @@ func TestExportEventsPagingLosesNothingAcrossEqualUpdatedAt(t *testing.T) {
 	first, last := whole.rows[0]["updated_at"], whole.rows[len(whole.rows)-1]["updated_at"]
 	require.Equal(t, first, last, "the fixture rows share one updated_at, so every page edge is a tie")
 
-	var seen []int64
-	cursor := ""
-	for range len(whole.rows) + 1 {
-		page := readExportEvents(t, c, cursor, 3)
-		if len(page.rows) == 0 {
-			break
-		}
-		seen = append(seen, page.ids()...)
-		cursor = page.cursor
-	}
+	seen, _ := pageThrough(func(cursor string, limit int32) exportPage { return readExportEvents(t, c, cursor, limit) }, 3, len(whole.rows)+1)
 
 	assert.Equal(t, whole.ids(), seen, "every row exactly once, in order")
 }

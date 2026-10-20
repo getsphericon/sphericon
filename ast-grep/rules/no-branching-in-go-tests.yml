@@ -1,0 +1,33 @@
+id: no-branching-in-go-tests
+language: Go
+severity: error
+message: A test body does not branch; state what must hold with an assertion.
+note: An `if` or `switch` in a test chooses what to check, so a wrong run can take the branch that checks nothing. Use `require`/`assert` on a value read beforehand, a table of cases, or move the logic into a helper that returns the value to assert on.
+rule:
+  any:
+    - kind: if_statement
+    - kind: expression_switch_statement
+    - kind: type_switch_statement
+    - kind: select_statement
+  inside:
+    stopBy:
+      any:
+        - kind: function_declaration
+        - kind: func_literal
+    any:
+      - kind: function_declaration
+        has:
+          field: name
+          regex: ^(Test|Benchmark)
+      - kind: func_literal
+        has:
+          field: parameters
+          kind: parameter_list
+          has:
+            kind: parameter_declaration
+            regex: \*testing\.(T|F|B)
+files:
+  - '**/*_test.go'
+ignores:
+  - ent/**
+  - gen/**

@@ -5,6 +5,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/getsphericon/sphericon/ee/licensekey"
 )
 
@@ -23,11 +26,8 @@ func FuzzParseOfAnUnsignedKeyNeverLicenses(f *testing.F) {
 	f.Fuzz(func(t *testing.T, key string) {
 		license, err := licensekey.Parse(key, pub, now)
 
-		if (license == nil) == (err == nil) {
-			t.Fatalf("Parse(%q) returned license %v and error %v", key, license, err)
-		}
-		if key != "" && err == nil {
-			t.Fatalf("Parse accepted %q, which nobody signed", key)
-		}
+		require.NotEqualf(t, license == nil, err == nil, "Parse(%q) returned license %v and error %v", key, license, err)
+		accepted := key != "" && err == nil
+		assert.Falsef(t, accepted, "Parse accepted %q, which nobody signed", key)
 	})
 }

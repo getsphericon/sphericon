@@ -1,10 +1,10 @@
 package sidelistener_test
 
 import (
+	"github.com/getsphericon/sphericon/internal/testhelper"
 	"io"
 	"net/http"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -31,12 +31,8 @@ func TestServerBindsServesAndStops(t *testing.T) {
 	assert.Equal(t, "pong", string(body))
 
 	require.NoError(t, s.Shutdown(t.Context()))
-	select {
-	case err := <-served:
-		require.NoError(t, err, "a graceful Shutdown ends Serve without error")
-	case <-time.After(5 * time.Second):
-		t.Fatal("Serve did not return after Shutdown")
-	}
+	serveErr := testhelper.Receive(t, served, "Serve did not return after Shutdown")
+	require.NoError(t, serveErr, "a graceful Shutdown ends Serve without error")
 }
 
 func TestListenFailsWhenTheAddressIsTaken(t *testing.T) {

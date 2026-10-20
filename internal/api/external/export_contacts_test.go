@@ -90,16 +90,7 @@ func TestExportContactsPagingLosesNothing(t *testing.T) {
 	whole := readExportContacts(t, c, "", 0)
 	require.Greater(t, len(whole.rows), 3)
 
-	var seen []int64
-	cursor := ""
-	for range len(whole.rows) + 1 {
-		page := readExportContacts(t, c, cursor, 3)
-		if len(page.rows) == 0 {
-			break
-		}
-		seen = append(seen, page.ids()...)
-		cursor = page.cursor
-	}
+	seen, _ := pageThrough(func(cursor string, limit int32) exportPage { return readExportContacts(t, c, cursor, limit) }, 3, len(whole.rows)+1)
 
 	assert.Equal(t, whole.ids(), seen, "every row exactly once, in order")
 }

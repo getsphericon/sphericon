@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/riverqueue/river"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -151,18 +152,16 @@ func TestLoweringTheLimitMidSendDefersTheRemainingJobs(t *testing.T) {
 	rw := jobs.NewSendRecipientWorker(e.DB, newMod(e.TestEnv, resolvingTo(e.sender)))
 	recs := e.DB.BroadcastRecipient.Query().Where(broadcastrecipient.BroadcastID(fixtures.BroadcastDraftID)).AllX(ctx)
 	require.Greater(t, len(recs), 2)
-	var deferred int
-	for _, r := range recs {
-		err := rw.Work(ctx, job(jobs.SendRecipientArgs{RecipientID: r.ID, BroadcastID: fixtures.BroadcastDraftID}))
-		if err == nil {
-			continue
-		}
+	results := lo.Map(recs, func(r *ent.BroadcastRecipient, _ int) error {
+		return rw.Work(ctx, job(jobs.SendRecipientArgs{RecipientID: r.ID, BroadcastID: fixtures.BroadcastDraftID}))
+	})
+	deferred := lo.Compact(results)
+	for _, err := range deferred {
 		var snooze *river.JobSnoozeError
 		require.ErrorAs(t, err, &snooze)
-		deferred++
 	}
 	assert.Len(t, e.sender.sent, 1, "one second's worth went out")
-	assert.Equal(t, len(recs)-1, deferred)
+	assert.Len(t, deferred, len(recs)-1)
 	assert.Nil(t, e.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID).HoldReason, "busy is not a hold")
 }
 

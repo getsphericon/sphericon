@@ -119,16 +119,24 @@ func TestMCPAndAPIDrawFromOneBudgetAndAnMCPCallCostsOne(t *testing.T) {
 	assert.Equal(t, 2, remaining(t, before)-remaining(t, after))
 }
 
-func TestMCPAnswers429WhenTheWorkspaceBudgetIsSpent(t *testing.T) {
-	env := testhelper.Setup(t, testhelper.WithRateLimits(config.RateLimits{APIPerMinute: 8}))
-	session := env.MCPClient(t, env.ScopedBearer(t, "contacts:read"))
-
+// spendBudget calls the API until a call is refused with 429 (or attempts calls have been made) and
+// returns the last answer.
+func spendBudget(t *testing.T, env *testhelper.TestEnv, attempts int) *httptest.ResponseRecorder {
+	t.Helper()
 	var rec *httptest.ResponseRecorder
-	for range 20 {
+	for range attempts {
 		if rec = getAPI(t, env, anchorBearer(), nil); rec.Code == http.StatusTooManyRequests {
 			break
 		}
 	}
+	return rec
+}
+
+func TestMCPAnswers429WhenTheWorkspaceBudgetIsSpent(t *testing.T) {
+	env := testhelper.Setup(t, testhelper.WithRateLimits(config.RateLimits{APIPerMinute: 8}))
+	session := env.MCPClient(t, env.ScopedBearer(t, "contacts:read"))
+
+	rec := spendBudget(t, env, 20)
 	require.Equal(t, http.StatusTooManyRequests, rec.Code)
 	require.Error(t, whoami(session))
 }

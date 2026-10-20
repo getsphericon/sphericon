@@ -439,6 +439,33 @@
         "enum": ["second_factor_required", "email_verification_required", "signup_closed"],
         "description": "A machine-readable reason a client branches on, beyond the HTTP status"
       },
+      "ProblemDebug": {
+        "type": "object",
+        "required": ["error", "method", "path"],
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "The error that failed the request, or the panic value"
+          },
+          "stack": {
+            "type": "string",
+            "description": "The goroutine stack of a panic; absent for an error a handler returned"
+          },
+          "requestId": {
+            "type": "string",
+            "description": "The request id the server log carries for this request"
+          },
+          "method": {
+            "type": "string",
+            "description": "The HTTP method of the failed request"
+          },
+          "path": {
+            "type": "string",
+            "description": "The path of the failed request"
+          }
+        },
+        "description": "What a development server adds to a 500 so the page can show the fault; a production\nInstance never sends it"
+      },
       "ProblemDetails": {
         "type": "object",
         "properties": {
@@ -496,6 +523,14 @@
             "type": "integer",
             "format": "int32",
             "description": "Seconds to wait before retrying; set on a 429 so a client that only sees the body can show the wait"
+          },
+          "debug": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProblemDebug"
+              }
+            ],
+            "description": "Why a 500 happened, sent only by a development server (`SPHERICON_ENV=development`)"
           }
         },
         "description": "RFC 7807 Problem Details"

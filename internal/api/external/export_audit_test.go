@@ -47,16 +47,7 @@ func TestExportAuditPagesWithoutLosingARow(t *testing.T) {
 	c := exportClient(t, env, fixtures.GlobexID)
 	whole := readExportAudit(t, c, "", 0)
 
-	var seen []int64
-	cursor := ""
-	for range len(whole.rows) + 1 {
-		page := readExportAudit(t, c, cursor, 2)
-		if len(page.rows) == 0 {
-			break
-		}
-		seen = append(seen, page.ids()...)
-		cursor = page.cursor
-	}
+	seen, cursor := pageThrough(func(cursor string, limit int32) exportPage { return readExportAudit(t, c, cursor, limit) }, 2, len(whole.rows)+1)
 
 	assert.Equal(t, whole.ids(), seen)
 	caughtUp := readExportAudit(t, c, cursor, 2)

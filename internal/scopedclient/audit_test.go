@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -219,6 +220,27 @@ func TestAuditDiffRedactsSensitiveFields(t *testing.T) {
 	}
 }
 
+// makeRoomForPlanted clears a singleton entity's own row first: the scope without an actor writes
+// no entry, so the planted copy takes its place unaudited.
+func makeRoomForPlanted(t *testing.T, env *testhelper.TestEnv, e ent.ScopedEntity, ids []int64) {
+	t.Helper()
+	if singletonEntities[e.Name] {
+		require.NoError(t, e.Delete(t.Context(), env.DB.Scoped(acme), ids[0]), e.Name)
+	}
+}
+
+// idsAfterPlanting reloads a singleton entity's ids: the planted row is the only one now.
+func idsAfterPlanting(t *testing.T, env *testhelper.TestEnv, e ent.ScopedEntity, ids []int64) []int64 {
+	t.Helper()
+	if !singletonEntities[e.Name] {
+		return ids
+	}
+	reloaded, err := e.IDs(t.Context(), env.DB, acme)
+	require.NoError(t, err)
+	require.NotEmpty(t, reloaded, e.Name)
+	return reloaded
+}
+
 // Every entity that opts in emits on create, update and delete (so a new annotated entity
 // cannot silently miss a wrapper). The registry is generated from the schema.
 func TestEveryAuditedEntityEmitsOnCreateUpdateAndDelete(t *testing.T) {
@@ -226,12 +248,8 @@ func TestEveryAuditedEntityEmitsOnCreateUpdateAndDelete(t *testing.T) {
 	ctx := t.Context()
 	s := env.Bus.Act(env.DB.Scoped(acme), johnActor)
 
-	audited := 0
-	for _, e := range ent.ScopedEntities() {
-		if !e.Audited {
-			continue
-		}
-		audited++
+	auditedEntities := lo.Filter(ent.ScopedEntities(), func(e ent.ScopedEntity, _ int) bool { return e.Audited })
+	for _, e := range auditedEntities {
 		ids, err := e.IDs(ctx, env.DB, acme)
 		require.NoError(t, err)
 		require.NotEmpty(t, ids, e.Name)
@@ -240,9 +258,7 @@ func TestEveryAuditedEntityEmitsOnCreateUpdateAndDelete(t *testing.T) {
 		require.NotEmpty(t, foreign, e.Name)
 		// The scope without an actor writes no entry, so a singleton makes room for the planted row
 		// unaudited.
-		if singletonEntities[e.Name] {
-			require.NoError(t, e.Delete(ctx, env.DB.Scoped(acme), ids[0]), e.Name)
-		}
+		makeRoomForPlanted(t, env, e, ids)
 		before := len(auditEntries(t, env))
 
 		// Create a row by planting a copy of Globex's (no unique clash with Acme's rows),
@@ -259,11 +275,7 @@ func TestEveryAuditedEntityEmitsOnCreateUpdateAndDelete(t *testing.T) {
 		}
 		_, err = e.Replant(ctx, s, foreign[0], remap)
 		require.NoError(t, err, e.Name)
-		if singletonEntities[e.Name] {
-			ids, err = e.IDs(ctx, env.DB, acme)
-			require.NoError(t, err)
-			require.NotEmpty(t, ids, e.Name)
-		}
+		ids = idsAfterPlanting(t, env, e, ids)
 		require.NoError(t, e.Touch(ctx, s, ids[0]), e.Name)
 		require.NoError(t, e.Delete(ctx, s, ids[0]), e.Name)
 
@@ -274,5 +286,5 @@ func TestEveryAuditedEntityEmitsOnCreateUpdateAndDelete(t *testing.T) {
 			assert.Equal(t, johnActor, got[i].Actor, e.Name)
 		}
 	}
-	assert.Positive(t, audited, "Tag is audited")
+	assert.NotEmpty(t, auditedEntities, "Tag is audited")
 }

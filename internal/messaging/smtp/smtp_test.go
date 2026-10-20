@@ -17,6 +17,7 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/messaging/smtp"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 // capture is one message accepted by the test server.
@@ -289,11 +290,7 @@ func TestDescriptorValidate(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			err := d.Validate([]byte(tc.cfg))
-			if tc.wantErr == "" {
-				assert.NoError(t, err)
-				return
-			}
-			assert.ErrorContains(t, err, tc.wantErr)
+			testhelper.ErrorContainsOrNone(t, err, tc.wantErr)
 		})
 	}
 }

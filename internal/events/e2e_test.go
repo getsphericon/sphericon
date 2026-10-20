@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"testing"
-	"time"
 
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/getsphericon/sphericon/ent"
@@ -55,14 +54,10 @@ func TestDomainEventsRouterDelivery(t *testing.T) {
 		return pub.Publish(ctx, &events.ContactCreated{WorkspaceID: fixtures.AcmeID, ContactID: 7, Email: "e2e@example.com"})
 	}))
 
-	select {
-	case env := <-got:
-		assert.Equal(t, events.NameContactCreated, env.Name)
-		assert.EqualValues(t, fixtures.AcmeID, env.WorkspaceID)
-		ev, err := events.Decode(env)
-		require.NoError(t, err)
-		assert.Equal(t, "e2e@example.com", ev.Project().Subject)
-	case <-time.After(10 * time.Second):
-		t.Fatal("domain event was not delivered to the subscriber within 10s")
-	}
+	env := testhelper.Receive(t, got, "domain event was not delivered to the subscriber")
+	ev, err := events.Decode(env)
+	require.NoError(t, err)
+	assert.Equal(t, events.NameContactCreated, env.Name)
+	assert.EqualValues(t, fixtures.AcmeID, env.WorkspaceID)
+	assert.Equal(t, "e2e@example.com", ev.Project().Subject)
 }

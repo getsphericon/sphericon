@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -150,12 +151,7 @@ func TestTheAuditEntryShowsSphericonStaffAndNeverTheStaffMember(t *testing.T) {
 	require.NoError(t, err)
 	page, ok := res.(*siteapi.SiteAuditEntryList)
 	require.Truef(t, ok, "got %T", res)
-	var got []siteapi.SiteAuditEntryResource
-	for _, e := range page.Items {
-		if e.Action == events.ActionWorkspaceSuspend {
-			got = append(got, e)
-		}
-	}
+	got := lo.Filter(page.Items, func(e siteapi.SiteAuditEntryResource, _ int) bool { return e.Action == events.ActionWorkspaceSuspend })
 	require.Len(t, got, 1)
 	assert.Equal(t, "Sphericon staff", got[0].Actor.Name.Value)
 	assert.False(t, got[0].Actor.ID.IsSet() && got[0].Actor.ID.Value != "")

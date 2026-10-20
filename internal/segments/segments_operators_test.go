@@ -9,6 +9,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/segments"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -51,11 +52,8 @@ func TestPlainColumnOperators(t *testing.T) {
 		{"andy@ops.test", "Andy", ""},
 		{"bella@ops.test", "Bella", "+1666"},
 	} {
-		q := env.DB.Contact.Create().SetWorkspaceID(fixtures.AcmeID).SetEmail(c.email).SetFirstName(c.first)
-		if c.phone != "" {
-			q.SetPhone(c.phone)
-		}
-		_, err := q.Save(ctx)
+		_, err := env.DB.Contact.Create().SetWorkspaceID(fixtures.AcmeID).SetEmail(c.email).SetFirstName(c.first).
+			SetNillablePhone(lo.EmptyableToPtr(c.phone)).Save(ctx)
 		require.NoError(t, err)
 	}
 

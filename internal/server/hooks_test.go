@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/go-faster/jx"
+	"github.com/samber/lo"
 	standardwebhooks "github.com/standard-webhooks/standard-webhooks/libraries/go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -285,17 +286,16 @@ func TestChoosingAPresetAgainNeedsItsParamsInFull(t *testing.T) {
 	assert.Equal(t, http.StatusOK, signedPost(t, env, key, secretA, "msg_2", failureBody("evt_1", "a@example.com", true)).Code)
 
 	// Both changes of the Preset are in the Audit log, the secret in neither.
-	var presetChanges []any
+	var audit []*events.AuditEntry
 	for _, ev := range env.OutboxEvents(t, events.NameAuditEntry) {
 		e, ok := ev.(*events.AuditEntry)
 		require.Truef(t, ok, "got %T", ev)
-		if d, ok := e.Diff["preset"]; ok {
-			presetChanges = append(presetChanges, d)
-		}
+		audit = append(audit, e)
 		raw, err := json.Marshal(e)
 		require.NoError(t, err)
 		assert.NotContains(t, string(raw), secretA)
 	}
+	presetChanges := lo.Filter(audit, func(e *events.AuditEntry, _ int) bool { return e.Diff["preset"] != nil })
 	assert.Len(t, presetChanges, 2)
 }
 
@@ -308,13 +308,8 @@ func TestPresetsListCarriesTheParamsSchemaOfEachPreset(t *testing.T) {
 	require.NoError(t, err)
 	list, ok := res.(*externalapi.PresetsListOK)
 	require.Truef(t, ok, "got %T", res)
-	var generic *externalapi.PresetResource
-	for i := range list.Items {
-		if list.Items[i].Name == "generic" {
-			generic = &list.Items[i]
-		}
-	}
-	require.NotNil(t, generic)
+	generic, found := lo.Find(list.Items, func(p externalapi.PresetResource) bool { return p.Name == "generic" })
+	require.True(t, found)
 	assert.Contains(t, string(generic.ParamsSchema["properties"]), "writeOnly")
 }
 

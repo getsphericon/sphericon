@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/go-faster/jx"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -75,12 +76,10 @@ func TestSiteContactChangesCarryNamesOnly(t *testing.T) {
 	_, err = c.SiteContactsDelete(ctx, siteapi.SiteContactsDeleteParams{Slug: fixtures.AcmeSlug, ID: id})
 	require.NoError(t, err)
 
-	var contactEntries []*events.AuditEntry
-	for _, ev := range env.OutboxEvents(t, events.NameAuditEntry) {
-		if e := ev.(*events.AuditEntry); e.TargetType == "contact" {
-			contactEntries = append(contactEntries, e)
-		}
-	}
+	contactEntries := lo.FilterMap(env.OutboxEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) (*events.AuditEntry, bool) {
+		e := ev.(*events.AuditEntry)
+		return e, e.TargetType == "contact"
+	})
 	require.Len(t, contactEntries, 3)
 	assert.Equal(t, "contact.create", contactEntries[0].Action)
 	assert.Equal(t, "contact.update", contactEntries[1].Action)

@@ -126,6 +126,8 @@ export default interface Resources {
       "name": "Sphericon"
     },
     "appError": {
+      "debugRequest": "{{method}} {{path}}",
+      "debugRequestId": "request id {{id}}",
       "fallback": "The page could not be loaded.",
       "reload": "Reload",
       "title": "Something went wrong"

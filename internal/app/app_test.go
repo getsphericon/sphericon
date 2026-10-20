@@ -178,20 +178,10 @@ func TestRunEventsStopsWhenTheContextIsCancelled(t *testing.T) {
 	done := make(chan error, 1)
 	go func() { done <- a.runEvents(ctx) }()
 
-	select {
-	case <-a.events.router.Running():
-	case err := <-done:
-		t.Fatalf("router stopped before running: %v", err)
-	case <-time.After(10 * time.Second):
-		t.Fatal("router never started")
-	}
+	testhelper.Receive(t, a.events.router.Running(), "router never started")
 	cancel()
-	select {
-	case err := <-done:
-		require.NoError(t, err)
-	case <-time.After(10 * time.Second):
-		t.Fatal("RunEvents did not return after cancel")
-	}
+	runErr := testhelper.Receive(t, done, "RunEvents did not return after cancel")
+	require.NoError(t, runErr)
 	assert.Empty(t, a.Shutdown(context.Background()).Errors)
 }
 
@@ -474,13 +464,7 @@ func TestAppServesOnACallerProvidedListener(t *testing.T) {
 	eventsDone := make(chan error, 1)
 	served := make(chan error, 1)
 	go func() { eventsDone <- a.runEvents(ctx) }()
-	select {
-	case <-a.events.router.Running():
-	case err := <-eventsDone:
-		t.Fatalf("router stopped before running: %v", err)
-	case <-time.After(10 * time.Second):
-		t.Fatal("router never started")
-	}
+	testhelper.Receive(t, a.events.router.Running(), "router never started")
 	require.NoError(t, a.bindMetrics(t.Context()))
 	go func() { served <- a.serve() }()
 	t.Cleanup(func() {

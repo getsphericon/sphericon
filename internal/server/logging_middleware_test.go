@@ -6,8 +6,9 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -31,27 +32,16 @@ func TestRecovererLogsPanicWithRequestID(t *testing.T) {
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusInternalServerError {
-		t.Fatalf("status = %d, want 500", rec.Code)
-	}
-	if got := rec.Header().Get("X-Request-Id"); got != "req-abc" {
-		t.Fatalf("X-Request-Id header = %q, want req-abc", got)
-	}
+	require.Equalf(t, http.StatusInternalServerError, rec.Code, "status = %d, want 500", rec.Code)
+	got := rec.Header().Get("X-Request-Id")
+	require.Equalf(t, "req-abc", got, "X-Request-Id header = %q, want req-abc", got)
 
 	var line map[string]any
-	if err := json.Unmarshal(bytes.TrimSpace(buf.Bytes()), &line); err != nil {
-		t.Fatalf("parse panic log line %q: %v", buf.String(), err)
-	}
-	if line["msg"] != "panic recovered" {
-		t.Fatalf("msg = %v, want 'panic recovered'", line["msg"])
-	}
-	if line["request_id"] != "req-abc" {
-		t.Fatalf("request_id = %v, want req-abc", line["request_id"])
-	}
-	if line["path"] != "/explode" {
-		t.Fatalf("path = %v, want /explode", line["path"])
-	}
-	if stack, _ := line["stack"].(string); !strings.Contains(stack, "logging_middleware_test.go") {
-		t.Fatalf("stack does not point at the panic site: %v", line["stack"])
-	}
+	err := json.Unmarshal(bytes.TrimSpace(buf.Bytes()), &line)
+	require.NoErrorf(t, err, "parse panic log line %q: %v", buf.String(), err)
+	require.Equalf(t, "panic recovered", line["msg"], "msg = %v, want 'panic recovered'", line["msg"])
+	require.Equalf(t, "req-abc", line["request_id"], "request_id = %v, want req-abc", line["request_id"])
+	require.Equalf(t, "/explode", line["path"], "path = %v, want /explode", line["path"])
+	stack, _ := line["stack"].(string)
+	require.Contains(t, stack, "logging_middleware_test.go", "stack does not point at the panic site")
 }

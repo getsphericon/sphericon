@@ -46,17 +46,9 @@ func TestStartServesAndCloseStopsEverything(t *testing.T) {
 	require.NoError(t, a.Close(closeCtx(t)))
 
 	assert.True(t, a.events.router.IsClosed(), "Close stops the event router")
-	select {
-	case <-a.jobs.Stopped():
-	default:
-		t.Fatal("Close left the job workers running")
-	}
-	select {
-	case err := <-a.Done():
-		require.NoError(t, err, "a graceful close is not a server error")
-	case <-time.After(5 * time.Second):
-		t.Fatal("Done never reported")
-	}
+	testhelper.RequireClosed(t, a.jobs.Stopped(), "Close left the job workers running")
+	closeErr := testhelper.Receive(t, a.Done(), "Done never reported")
+	require.NoError(t, closeErr, "a graceful close is not a server error")
 	_, _, err := testhelper.TryHTTPGet(t.Context(), base+"/healthz")
 	assert.Error(t, err, "the listener is closed")
 }
@@ -120,11 +112,7 @@ func TestStartUnwindsWhenTheJobQueueCannotStart(t *testing.T) {
 	require.Error(t, a.Start(context.Background()))
 
 	assert.True(t, a.events.router.IsClosed(), "the router started before the failure is stopped again")
-	select {
-	case <-a.jobs.Stopped():
-	default:
-		t.Fatal("the job queue that failed to start is not reported stopped")
-	}
+	testhelper.RequireClosed(t, a.jobs.Stopped(), "the job queue that failed to start is not reported stopped")
 	_, _, err = testhelper.TryHTTPGet(t.Context(), "http://"+ln.Addr().String()+"/healthz")
 	assert.Error(t, err, "the public server was never left running")
 }

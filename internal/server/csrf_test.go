@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -34,13 +35,8 @@ func TestSessionCookieIsSameSiteLax(t *testing.T) {
 	rec := loginWithFetchSite(t, env, "same-origin")
 	require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
 
-	var jwt *http.Cookie
-	for _, c := range rec.Result().Cookies() {
-		if c.Name == "JWT" {
-			jwt = c
-		}
-	}
-	require.NotNil(t, jwt, "login sets the JWT cookie")
+	jwt, found := lo.Find(rec.Result().Cookies(), func(c *http.Cookie) bool { return c.Name == "JWT" })
+	require.True(t, found, "login sets the JWT cookie")
 	assert.Equal(t, http.SameSiteLaxMode, jwt.SameSite)
 	assert.True(t, jwt.HttpOnly)
 }

@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -73,13 +74,8 @@ func TestActionsAreDistinctSortedAndWorkspaceScoped(t *testing.T) {
 	assert.True(t, sort.StringsAreSorted(got))
 	assert.Contains(t, got, "purchase")
 	assert.NotContains(t, got, fixtures.EventGlobexAction)
-	count := 0
-	for _, a := range got {
-		if a == "page_view" {
-			count++
-		}
-	}
-	assert.Equal(t, 1, count, "distinct")
+	pageViews := lo.CountBy(got, func(a string) bool { return a == "page_view" })
+	assert.Equal(t, 1, pageViews, "distinct")
 
 	other, err := m.Actions(ctx, env.DB.Scoped(fixtures.GlobexID))
 	require.NoError(t, err)

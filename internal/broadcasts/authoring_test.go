@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -39,12 +40,11 @@ func TestListIsNewestFirstAndWorkspaceScoped(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, page.Items, page.TotalItems)
 	require.Greater(t, page.TotalItems, 2)
-	for i, b := range page.Items {
+	for _, b := range page.Items {
 		assert.EqualValues(t, fixtures.AcmeID, b.WorkspaceID)
-		if i > 0 {
-			assert.Greater(t, page.Items[i-1].ID, b.ID, "newest first")
-		}
 	}
+	ids := lo.Map(page.Items, func(b *ent.Broadcast, _ int) int64 { return b.ID })
+	assert.IsDecreasing(t, ids, "newest first")
 }
 
 func TestCreateReportsErrors(t *testing.T) {
