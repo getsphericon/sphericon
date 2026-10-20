@@ -23,17 +23,22 @@ import (
 
 // Module is the Events ingest and read module.
 type Module struct {
-	bus        *events.Bus
-	liveWindow time.Duration
-	now        func() time.Time
+	bus  *events.Bus
+	live LivePolicy
+}
+
+// LivePolicy says how old a live Event may be: an older one is history and arrives as a
+// Backfill, never as a live Event that could enroll an Automation. Now is the clock the
+// age is judged against.
+type LivePolicy struct {
+	Window time.Duration
+	Now    func() time.Time
 }
 
 // New builds the module over the domain-event bus (transactional publish). Reads
 // and identity resolution go through the Workspace-scoped client each call receives.
-// liveWindow is how old a live Event may be: an older one is history and arrives as a
-// Backfill, never as a live Event that could enroll an Automation.
-func New(bus *events.Bus, liveWindow time.Duration, now func() time.Time) *Module {
-	return &Module{bus: bus, liveWindow: liveWindow, now: now}
+func New(bus *events.Bus, live LivePolicy) *Module {
+	return &Module{bus: bus, live: live}
 }
 
 // Input is one customer Event to ingest. Action and Properties are the customer's
@@ -54,12 +59,6 @@ type Input struct {
 	Backfill bool
 }
 
-// DedupKey is the Event's source_id for a client event id: source_id is unique across
-// Workspaces, the client's id only within one.
-func DedupKey(workspaceID int64, clientEventID string) string {
-	return fmt.Sprintf("api:%d:%s", workspaceID, clientEventID)
-}
-
 // validate refuses an Event the module must not publish: one without an identity or an
 // action, one that claims a reserved action, a Backfill without a time that has passed,
 // and a live Event old enough to be history.
@@ -70,14 +69,14 @@ func (m *Module) validate(in Input) error {
 	if err := events.CheckAction(in.Action); err != nil {
 		return err
 	}
-	now := m.now()
+	now := m.live.Now()
 	switch {
 	case in.Backfill && in.OccurredAt.IsZero():
 		return &events.Rejection{Reason: "a backfilled event needs occurredAt"}
 	case in.Backfill && in.OccurredAt.After(now):
 		return &events.Rejection{Reason: "occurredAt of a backfilled event must not be in the future"}
-	case !in.Backfill && !in.OccurredAt.IsZero() && in.OccurredAt.Before(now.Add(-m.liveWindow)):
-		return &events.Rejection{Reason: fmt.Sprintf("occurredAt is more than %d hours ago: send history with backfill", int(m.liveWindow.Hours()))}
+	case !in.Backfill && !in.OccurredAt.IsZero() && in.OccurredAt.Before(now.Add(-m.live.Window)):
+		return &events.Rejection{Reason: fmt.Sprintf("occurredAt is more than %d hours ago: send history with backfill", int(m.live.Window.Hours()))}
 	}
 	return nil
 }
@@ -97,7 +96,7 @@ func (m *Module) Ingest(ctx context.Context, s *ent.Scoped, inputs []Input) erro
 		for _, in := range inputs {
 			dedupID := ""
 			if in.ClientEventID != "" {
-				dedupID = DedupKey(ts.WorkspaceID(), in.ClientEventID)
+				dedupID = events.DedupKey(events.SourceAPI, ts.WorkspaceID(), in.ClientEventID)
 				// A repeat inside this batch is the same Event. A stored one is a resend of an
 				// Event that arrived. One still on the outbox from another request is published
 				// again and the persist subscriber's unique source_id keeps one row; a live Event
@@ -106,11 +105,11 @@ func (m *Module) Ingest(ctx context.Context, s *ent.Scoped, inputs []Input) erro
 					continue
 				}
 				inBatch[dedupID] = true
-				seen, err := ts.Event().Query().Where(event.SourceID(dedupID)).Exist(ctx)
+				stored, err := alreadyStored(ctx, ts, dedupID)
 				if err != nil {
 					return err
 				}
-				if seen {
+				if stored {
 					continue
 				}
 			}
@@ -151,6 +150,11 @@ func (m *Module) IngestEach(ctx context.Context, s *ent.Scoped, inputs []Input) 
 		errs[i] = m.Ingest(ctx, s, []Input{in})
 	}
 	return errs
+}
+
+// alreadyStored reports whether an Event with this dedup key is already a row.
+func alreadyStored(ctx context.Context, s *ent.Scoped, dedupID string) (bool, error) {
+	return s.Event().Query().Where(event.SourceID(dedupID)).Exist(ctx)
 }
 
 // Actions returns the workspace's distinct Event actions, sorted.

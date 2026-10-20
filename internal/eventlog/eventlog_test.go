@@ -94,5 +94,5 @@ const liveWindow = 72 * time.Hour
 var testNow = time.Date(2026, 10, 19, 12, 0, 0, 0, time.UTC)
 
 func newModule(env *testhelper.TestEnv) *eventlog.Module {
-	return eventlog.New(env.Bus, liveWindow, func() time.Time { return testNow })
+	return eventlog.New(env.Bus, eventlog.LivePolicy{Window: liveWindow, Now: func() time.Time { return testNow }})
 }

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
-	"github.com/getsphericon/sphericon/internal/eventlog"
+	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/stretchr/testify/assert"
@@ -146,7 +146,7 @@ func TestExternalEventsBatchBackfill(t *testing.T) {
 	require.Len(t, ok.Results, 1)
 	assert.Equal(t, externalapi.EventBatchStatusAccepted, ok.Results[0].Status)
 
-	dedupID := eventlog.DedupKey(fixtures.AcmeID, "order-1")
+	dedupID := events.DedupKey(events.SourceAPI, fixtures.AcmeID, "order-1")
 	assert.Equal(t, 1, env.OutboxCount(t, "event.collected", map[string]any{"backfill": true, "dedupId": dedupID}))
 }
 

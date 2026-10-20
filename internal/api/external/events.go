@@ -3,7 +3,6 @@ package external
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"time"
 
@@ -30,8 +29,7 @@ func (h *Handlers) EventsCreate(ctx context.Context, req *externalapi.RecordEven
 	// The module resolves identity and publishes the batch atomically; rows land
 	// asynchronously (accept-then-process).
 	if err := h.eventlog.Ingest(ctx, auth.TokenScoped(ctx), inputs); err != nil {
-		var rejection *events.Rejection
-		if errors.As(err, &rejection) {
+		if rejection, ok := events.AsRejection(err); ok {
 			res := externalapi.EventsCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, rejection.Error()))
 			return &res, nil
 		}

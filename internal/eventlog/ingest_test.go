@@ -102,7 +102,7 @@ func TestIngestSkipsAnEventItAlreadyStored(t *testing.T) {
 
 	got := outboxCollected(t, env)
 	require.Len(t, got, 1, "the resend is not published again")
-	assert.Equal(t, eventlog.DedupKey(fixtures.AcmeID, "order-1"), got[0].DedupID)
+	assert.Equal(t, events.DedupKey(events.SourceAPI, fixtures.AcmeID, "order-1"), got[0].DedupID)
 }
 
 func rejected(t *testing.T, err error) string {

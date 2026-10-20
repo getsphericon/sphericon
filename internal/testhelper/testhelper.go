@@ -353,7 +353,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	// sending-domain verify).
 	// Domain modules, built once here and shared by /site and /api exactly like the
 	// app's DI singletons.
-	eventLog := eventlog.New(bus, cfg.EventLiveWindow, st.now)
+	eventLog := eventlog.New(bus, eventlog.LivePolicy{Window: cfg.EventLiveWindow, Now: st.now})
 	segmentsModule := segments.New()
 	contactsModule := contacts.New(bus)
 	erasureModule := erasure.New(bus)

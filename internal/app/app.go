@@ -1230,7 +1230,7 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		return eventlog.New(bus.Bus, cfg.EventLiveWindow, time.Now), nil
+		return eventlog.New(bus.Bus, eventlog.LivePolicy{Window: cfg.EventLiveWindow, Now: time.Now}), nil
 	})
 
 	do.Provide(injector, func(do.Injector) (*analytics.Module, error) {

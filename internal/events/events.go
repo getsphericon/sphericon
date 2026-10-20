@@ -16,6 +16,7 @@ package events
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"slices"
 	"strings"
@@ -54,10 +55,28 @@ func ReservedAction(action string) bool {
 	return slices.ContainsFunc(reservedPrefixes, func(prefix string) bool { return strings.HasPrefix(a, prefix) })
 }
 
+// The surfaces a customer's client event id arrives on; each has its own id space.
+const (
+	SourceCollect = "collect"
+	SourceAPI     = "api"
+)
+
+// DedupKey is the Event's source_id for a client event id: source_id is unique across
+// Workspaces and sources, the client's id only within one of each.
+func DedupKey(source string, workspaceID int64, clientEventID string) string {
+	return fmt.Sprintf("%s:%d:%s", source, workspaceID, clientEventID)
+}
+
 // Rejection is why a customer's Event was refused. Its message is worded for the caller.
 type Rejection struct{ Reason string }
 
 func (r *Rejection) Error() string { return r.Reason }
+
+// AsRejection reports whether err is a Rejection, and which.
+func AsRejection(err error) (*Rejection, bool) {
+	var r *Rejection
+	return r, errors.As(err, &r)
+}
 
 // CheckAction refuses an action that is empty or reserved for the system.
 func CheckAction(action string) error {
@@ -128,16 +147,16 @@ type identifiable interface {
 	EventID() string
 }
 
-// quiet is an optional DomainEvent capability: an event that is recorded but never
-// reacted to, so the webhooks and automations consumers skip it (a backfill of history).
-type quiet interface {
-	Quiet() bool
+// backfilled is an optional DomainEvent capability: an event that is history, recorded but
+// never reacted to, so the webhooks and automations consumers skip it.
+type backfilled interface {
+	Backfilled() bool
 }
 
-// IsQuiet reports whether ev is recorded without triggering automations or webhooks.
-func IsQuiet(ev DomainEvent) bool {
-	q, ok := ev.(quiet)
-	return ok && q.Quiet()
+// IsBackfill reports whether ev is a Backfill: recorded without triggering automations or webhooks.
+func IsBackfill(ev DomainEvent) bool {
+	b, ok := ev.(backfilled)
+	return ok && b.Backfilled()
 }
 
 // registry maps a bus event name to a constructor for its concrete type, so a
@@ -352,7 +371,7 @@ type CollectedEvent struct {
 	Properties  map[string]any `json:"properties,omitempty"`
 	OccurredAt  time.Time      `json:"occurredAt,omitempty"`
 	// DedupID is the persist idempotency key of an event the client gave a clientEventId
-	// (visitors.CollectDedupKey: the Workspace and that id). Empty for an event without one.
+	// (DedupKey: the source, the Workspace and that id). Empty for an event without one.
 	DedupID string `json:"dedupId,omitempty"`
 	// Backfill marks an event loaded from history: it is recorded, but no Automation enrolls
 	// on it and no webhook endpoint receives it.
@@ -363,7 +382,7 @@ func (*CollectedEvent) EventName() string  { return NameCollected }
 func (*CollectedEvent) EventVersion() int  { return 1 }
 func (e *CollectedEvent) Workspace() int64 { return e.WorkspaceID }
 func (e *CollectedEvent) EventID() string  { return e.DedupID }
-func (e *CollectedEvent) Quiet() bool      { return e.Backfill }
+func (e *CollectedEvent) Backfilled() bool { return e.Backfill }
 func (e *CollectedEvent) Project() Projection {
 	return Projection{
 		Subject:    e.SubjectID,

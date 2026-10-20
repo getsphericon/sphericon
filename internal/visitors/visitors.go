@@ -3,7 +3,6 @@ package visitors
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strings"
 	"time"
 
@@ -31,12 +30,6 @@ type CollectEventInput struct {
 	// ClientEventID is the client's own id for the event ("" = none). A repeat of an id
 	// in a Workspace is a no-op, so a client can retry a batch it never saw answered.
 	ClientEventID string
-}
-
-// CollectDedupKey is the Event's source_id for a client event id: source_id is unique
-// across Workspaces, the client's id only within one.
-func CollectDedupKey(workspaceID int64, clientEventID string) string {
-	return fmt.Sprintf("collect:%d:%s", workspaceID, clientEventID)
 }
 
 // Identify binds a Visitor to a Contact and asserts that Contact's alias keys
@@ -103,7 +96,7 @@ func Collect(ctx context.Context, bus *events.Bus, s *ent.Scoped, evts []Collect
 		visitorID := strings.TrimSpace(evt.VisitorID)
 		dedupID := ""
 		if evt.ClientEventID != "" {
-			dedupID = CollectDedupKey(s.WorkspaceID(), evt.ClientEventID)
+			dedupID = events.DedupKey(events.SourceCollect, s.WorkspaceID(), evt.ClientEventID)
 			// Already stored: a retry of an event that arrived. One still on the outbox, or
 			// racing this call, is published again and the persist subscriber's unique
 			// source_id keeps one Event row; the webhook id is the same key, so a receiver

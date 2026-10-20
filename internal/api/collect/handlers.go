@@ -3,7 +3,6 @@ package collect
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"time"
 
@@ -63,8 +62,7 @@ func (h *Handlers) CollectEventsCreate(ctx context.Context, req *collectapi.Coll
 	})
 
 	if err := visitors.Collect(ctx, h.bus, auth.CollectScoped(ctx), evts); err != nil {
-		var rejection *events.Rejection
-		if errors.As(err, &rejection) {
+		if rejection, ok := events.AsRejection(err); ok {
 			return &collectapi.CollectEventsCreateUnprocessableEntity{
 				Status: collectapi.NewOptInt32(http.StatusUnprocessableEntity),
 				Title:  collectapi.NewOptString(http.StatusText(http.StatusUnprocessableEntity)),

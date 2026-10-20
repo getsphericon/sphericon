@@ -221,7 +221,7 @@ func webhooksConsumer(client *ent.Client, dispatcher WebhookDispatcher) message.
 		if err != nil {
 			return err
 		}
-		if IsQuiet(ev) {
+		if IsBackfill(ev) {
 			return nil // loaded history: recorded, never delivered
 		}
 		p := ev.Project()
@@ -278,7 +278,7 @@ func automationsConsumer(enroller Enroller) message.NoPublishHandlerFunc {
 		if _, skip := ev.(Unprojected); skip {
 			return nil // an administrative action is never an automation trigger
 		}
-		if IsQuiet(ev) {
+		if IsBackfill(ev) {
 			return nil // loaded history never enrolls a contact
 		}
 		p := ev.Project()
