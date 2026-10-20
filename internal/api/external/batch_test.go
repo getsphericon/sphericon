@@ -13,6 +13,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// eventsNow is the clock of the tests that judge an Event's age against the live window.
+var eventsNow = time.Date(2026, 10, 19, 12, 0, 0, 0, time.UTC)
+
+func eventsClock() time.Time { return eventsNow }
+
 func contactsCreatedFor(t *testing.T, env *testhelper.TestEnv, email string) int {
 	t.Helper()
 	return env.OutboxCount(t, "contact.created", map[string]any{"email": email})
@@ -21,7 +26,7 @@ func contactsCreatedFor(t *testing.T, env *testhelper.TestEnv, email string) int
 // A batch mixing new, existing and unidentifiable contacts reports each item and
 // lets the valid ones through; only new contacts publish contact.created.
 func TestExternalContactsBatchUpsertMixedItems(t *testing.T) {
-	env := testhelper.Setup(t)
+	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
 	c := env.ExternalScoped(t, "contacts:write")
 
 	res, err := c.ContactsBatchUpsert(context.Background(), &externalapi.UpsertContactsInput{
@@ -55,7 +60,7 @@ func TestExternalContactsBatchUpsertMixedItems(t *testing.T) {
 }
 
 func TestExternalContactsBatchUpsertLimitAndScope(t *testing.T) {
-	env := testhelper.Setup(t)
+	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
 	ctx := context.Background()
 
 	writer := env.ExternalScoped(t, "contacts:write")
@@ -75,7 +80,7 @@ func TestExternalContactsBatchUpsertLimitAndScope(t *testing.T) {
 }
 
 func TestExternalEventsBatchSubmitMixedItems(t *testing.T) {
-	env := testhelper.Setup(t)
+	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
 	c := env.ExternalScoped(t, "events:write")
 
 	res, err := c.EventsBatchSubmit(context.Background(), &externalapi.RecordEventsBatchInput{
@@ -111,7 +116,7 @@ func TestExternalEventsBatchSubmitMixedItems(t *testing.T) {
 }
 
 func TestExternalEventsBatchSubmitScope(t *testing.T) {
-	env := testhelper.Setup(t)
+	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
 	c := env.ExternalScoped(t, "events:read")
 	res, err := c.EventsBatchSubmit(context.Background(), &externalapi.RecordEventsBatchInput{
 		Events: []externalapi.EventInput{{SubjectId: "u", Action: "a"}},
@@ -123,7 +128,7 @@ func TestExternalEventsBatchSubmitScope(t *testing.T) {
 // A backfilled batch is accepted per item and published as history; a client event id rides along as
 // the dedup key.
 func TestExternalEventsBatchBackfill(t *testing.T) {
-	env := testhelper.Setup(t)
+	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
 	c := env.ExternalScoped(t, "events:write")
 
 	res, err := c.EventsBatchSubmit(context.Background(), &externalapi.RecordEventsBatchInput{
@@ -131,7 +136,7 @@ func TestExternalEventsBatchBackfill(t *testing.T) {
 		Events: []externalapi.EventInput{
 			{
 				SubjectId: "s-1", Action: "order_paid", ClientEventId: externalapi.NewOptNilString("order-1"),
-				OccurredAt: externalapi.NewOptNilTimestamp(externalapi.Timestamp(time.Now().AddDate(-2, 0, 0))),
+				OccurredAt: externalapi.NewOptNilTimestamp(externalapi.Timestamp(eventsNow.AddDate(-2, 0, 0))),
 			},
 		},
 	})
@@ -141,15 +146,16 @@ func TestExternalEventsBatchBackfill(t *testing.T) {
 	require.Len(t, ok.Results, 1)
 	assert.Equal(t, externalapi.EventBatchStatusAccepted, ok.Results[0].Status)
 
-	assert.Equal(t, 1, env.OutboxCount(t, "event.collected", map[string]any{"backfill": true, "dedupId": eventlog.DedupKey(fixtures.AcmeID, "order-1")}))
+	dedupID := eventlog.DedupKey(fixtures.AcmeID, "order-1")
+	assert.Equal(t, 1, env.OutboxCount(t, "event.collected", map[string]any{"backfill": true, "dedupId": dedupID}))
 }
 
 // The live path refuses history and the system's own actions; the all-or-nothing endpoint
 // answers 422 with the reason, and the batch reports it per item.
 func TestExternalEventsRefuseHistoryAndReservedActionsOnTheLivePath(t *testing.T) {
-	env := testhelper.Setup(t)
+	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
 	c := env.ExternalScoped(t, "events:write")
-	old := externalapi.NewOptNilTimestamp(externalapi.Timestamp(time.Now().AddDate(-2, 0, 0)))
+	old := externalapi.NewOptNilTimestamp(externalapi.Timestamp(eventsNow.AddDate(-2, 0, 0)))
 
 	res, err := c.EventsCreate(context.Background(), &externalapi.RecordEventsInput{
 		Events: []externalapi.EventInput{{SubjectId: "s-1", Action: "order_paid", OccurredAt: old}},
@@ -157,7 +163,8 @@ func TestExternalEventsRefuseHistoryAndReservedActionsOnTheLivePath(t *testing.T
 	require.NoError(t, err)
 	refused, isRefused := res.(*externalapi.EventsCreateUnprocessableEntity)
 	require.Truef(t, isRefused, "got %T", res)
-	assert.Contains(t, refused.Detail.Or(""), "backfill")
+	detail := refused.Detail.Or("")
+	assert.Contains(t, detail, "backfill")
 
 	batch, err := c.EventsBatchSubmit(context.Background(), &externalapi.RecordEventsBatchInput{
 		Events: []externalapi.EventInput{
@@ -171,8 +178,9 @@ func TestExternalEventsRefuseHistoryAndReservedActionsOnTheLivePath(t *testing.T
 	require.Truef(t, isOK, "got %T", batch)
 	require.Len(t, ok.Results, 3)
 	assert.Equal(t, externalapi.EventBatchStatusFailed, ok.Results[0].Status)
-	assert.Contains(t, ok.Results[0].Error.Or(""), "backfill")
+	stale, reserved := ok.Results[0].Error.Or(""), ok.Results[1].Error.Or("")
+	assert.Contains(t, stale, "backfill")
 	assert.Equal(t, externalapi.EventBatchStatusFailed, ok.Results[1].Status)
-	assert.Contains(t, ok.Results[1].Error.Or(""), "reserved")
+	assert.Contains(t, reserved, "reserved")
 	assert.Equal(t, externalapi.EventBatchStatusAccepted, ok.Results[2].Status)
 }

@@ -54,6 +54,22 @@ func ReservedAction(action string) bool {
 	return slices.ContainsFunc(reservedPrefixes, func(prefix string) bool { return strings.HasPrefix(a, prefix) })
 }
 
+// Rejection is why a customer's Event was refused. Its message is worded for the caller.
+type Rejection struct{ Reason string }
+
+func (r *Rejection) Error() string { return r.Reason }
+
+// CheckAction refuses an action that is empty or reserved for the system.
+func CheckAction(action string) error {
+	switch {
+	case strings.TrimSpace(action) == "":
+		return &Rejection{"subject id and action are required"}
+	case ReservedAction(action):
+		return &Rejection{fmt.Sprintf("action %q is reserved for the system", action)}
+	}
+	return nil
+}
+
 // Bounce kinds carried by EmailDeliveryFailure. Only a permanent (hard) bounce
 // suppresses an address; a transient (soft) bounce is temporary.
 const (

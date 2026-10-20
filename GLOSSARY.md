@@ -76,17 +76,15 @@ customer-tracked actions, with no parallel event stream.
 _Avoid_: Activity, log entry, signal
 
 **Import**:
-Bringing records from a Workspace's earlier system into the Workspace. Contacts come in by file
-(with a choice of how their consent is treated); Events come in as a **Backfill**. Importing is
-repeatable: sending the same record again changes nothing.
+Bringing records from a Workspace's earlier system into the Workspace, repeatably: sending the
+same record again changes nothing. Contacts and Events are imported differently; Events are a
+**Backfill**.
 _Avoid_: Migration, sync
 
 **Backfill**:
-An **Import** of Events: Events that happened before the Workspace came to sphericon, recorded with
-the time they really happened. A backfilled Event is an ordinary Event to segmentation, but it is
-history: no Automation enrolls on it and no webhook endpoint receives it, so loading history never
-sends mail. A live Event that claims to be old is not a Backfill and is refused rather than
-treated as one.
+An **Import** of Events that happened before the Workspace came to sphericon, recorded with the
+time they really happened. To segmentation a backfilled Event is an ordinary Event; to Automations
+and webhooks it is history and never a trigger.
 _Avoid_: Historical import, replay, silent event
 
 **Erasure**:

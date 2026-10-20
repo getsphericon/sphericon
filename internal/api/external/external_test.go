@@ -40,7 +40,7 @@ func outboxCollected(t *testing.T, env *testhelper.TestEnv) []collectedRow {
 }
 
 func TestExternalContactsCRUD(t *testing.T) {
-	env := testhelper.Setup(t)
+	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
 	c := env.ExternalScoped(t, "contacts:read", "contacts:write", "contacts:erase")
 	ctx := context.Background()
 
@@ -77,7 +77,7 @@ func TestExternalContactsCRUD(t *testing.T) {
 // A contact created through /api enrolls into Automations like a UI-created one:
 // it publishes contact.created onto the outbox in the same transaction.
 func TestExternalContactsCreatePublishesContactCreated(t *testing.T) {
-	env := testhelper.Setup(t)
+	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
 	c := env.ExternalScoped(t, "contacts:write")
 
 	res, err := c.ContactsCreate(context.Background(), &externalapi.CreateContactInput{
@@ -93,7 +93,7 @@ func TestExternalContactsCreatePublishesContactCreated(t *testing.T) {
 
 // Isolated: the unique violation aborts this test's transaction.
 func TestExternalContactsConflict(t *testing.T) {
-	env := testhelper.Setup(t)
+	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
 	c := env.ExternalScoped(t, "contacts:write")
 
 	res, err := c.ContactsCreate(context.Background(), &externalapi.CreateContactInput{Email: externalapi.NewOptNilEmailAddress(fixtures.ContactAliceEmail)})
@@ -102,7 +102,7 @@ func TestExternalContactsConflict(t *testing.T) {
 }
 
 func TestExternalAuthAndScopes(t *testing.T) {
-	env := testhelper.Setup(t)
+	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
 	ctx := context.Background()
 
 	// No token / bad token → 401 Unauthorized variant.
@@ -129,11 +129,11 @@ func TestExternalAuthAndScopes(t *testing.T) {
 // token's workspace with all optional fields mapped — querying the DB afterwards
 // is what catches the NOT-NULL workspace_id bug (a bare 204 assertion would not).
 func TestExternalEventsCreate(t *testing.T) {
-	env := testhelper.Setup(t)
+	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
 	c := env.ExternalScoped(t, "events:write")
 	ctx := context.Background()
 
-	occurred := time.Now().UTC().Add(-time.Hour).Truncate(time.Second) // inside the live window
+	occurred := eventsNow.Add(-time.Hour) // inside the live window
 	res, err := c.EventsCreate(ctx, &externalapi.RecordEventsInput{
 		Events: []externalapi.EventInput{
 			{

@@ -88,9 +88,11 @@ func TestActionsAreDistinctSortedAndWorkspaceScoped(t *testing.T) {
 	assert.Equal(t, []string{fixtures.EventGlobexAction}, other)
 }
 
-// liveWindow is the test instance's live window, the production default.
+// liveWindow is the test instance's live window, the production default; testNow is its clock.
 const liveWindow = 72 * time.Hour
 
+var testNow = time.Date(2026, 10, 19, 12, 0, 0, 0, time.UTC)
+
 func newModule(env *testhelper.TestEnv) *eventlog.Module {
-	return eventlog.New(env.Bus, liveWindow, time.Now)
+	return eventlog.New(env.Bus, liveWindow, func() time.Time { return testNow })
 }

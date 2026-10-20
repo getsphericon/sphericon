@@ -13,7 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/erasure"
-	"github.com/getsphericon/sphericon/internal/eventlog"
+	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
@@ -210,7 +210,7 @@ func (h *Handlers) ContactsBatchUpsert(ctx context.Context, req *externalapi.Ups
 // message, anything else (storage) as a generic one so internals do not leak.
 func itemError(err error) string {
 	var conflict *contacts.ConflictError
-	var rejection *eventlog.Rejection
+	var rejection *events.Rejection
 	switch {
 	case errors.As(err, &conflict):
 		return conflict.Message()

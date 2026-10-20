@@ -23,6 +23,7 @@ func TestCollectRefusesReservedActions(t *testing.T) {
 	require.NoError(t, err)
 	refused, isRefused := res.(*collectapi.CollectEventsCreateUnprocessableEntity)
 	require.Truef(t, isRefused, "got %T", res)
-	assert.Contains(t, refused.Detail.Or(""), "reserved")
+	detail := refused.Detail.Or("")
+	assert.Contains(t, detail, "reserved")
 	assert.Empty(t, env.OutboxEnvelopes(t), "nothing of the batch is published")
 }

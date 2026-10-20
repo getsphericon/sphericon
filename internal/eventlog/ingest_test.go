@@ -54,7 +54,7 @@ func TestIngestEachIsolatesItems(t *testing.T) {
 
 	require.Len(t, errs, 5)
 	assert.NoError(t, errs[0])
-	var rejection *eventlog.Rejection
+	var rejection *events.Rejection
 	assert.ErrorAs(t, errs[1], &rejection, "blank subject id")
 	assert.ErrorAs(t, errs[2], &rejection, "blank action")
 	assert.Error(t, errs[3])
@@ -75,7 +75,7 @@ func TestIngestEachWithNoInputs(t *testing.T) {
 func TestIngestMarksBackfilledEvents(t *testing.T) {
 	env := testhelper.Setup(t)
 	require.NoError(t, newModule(env).Ingest(context.Background(), env.DB.Scoped(fixtures.AcmeID), []eventlog.Input{
-		{SubjectID: "s-1", Action: "purchase", Backfill: true, OccurredAt: time.Now().AddDate(-1, 0, 0)},
+		{SubjectID: "s-1", Action: "purchase", Backfill: true, OccurredAt: testNow.AddDate(-1, 0, 0)},
 		{SubjectID: "s-2", Action: "purchase"},
 	}))
 
@@ -107,7 +107,7 @@ func TestIngestSkipsAnEventItAlreadyStored(t *testing.T) {
 
 func rejected(t *testing.T, err error) string {
 	t.Helper()
-	var rejection *eventlog.Rejection
+	var rejection *events.Rejection
 	require.ErrorAs(t, err, &rejection)
 	return rejection.Reason
 }
@@ -118,7 +118,8 @@ func TestIngestRefusesReservedActions(t *testing.T) {
 	m := newModule(env)
 	for _, action := range []string{"email.opened", " Email.Clicked", "marketing.confirmed", "contact.created"} {
 		err := m.Ingest(context.Background(), env.DB.Scoped(fixtures.AcmeID), []eventlog.Input{{SubjectID: "s-1", Action: action}})
-		assert.Contains(t, rejected(t, err), "reserved", action)
+		reason := rejected(t, err)
+		assert.Contains(t, reason, "reserved", action)
 	}
 	assert.Empty(t, outboxCollected(t, env))
 }
@@ -128,11 +129,13 @@ func TestIngestRefusesALiveEventThatIsHistory(t *testing.T) {
 	m := newModule(env)
 	acme := env.DB.Scoped(fixtures.AcmeID)
 
-	stale := eventlog.Input{SubjectID: "s-1", Action: "purchase", OccurredAt: time.Now().Add(-liveWindow - time.Hour)}
-	assert.Contains(t, rejected(t, m.Ingest(context.Background(), acme, []eventlog.Input{stale})), "backfill")
+	stale := eventlog.Input{SubjectID: "s-1", Action: "purchase", OccurredAt: testNow.Add(-liveWindow - time.Hour)}
+	err := m.Ingest(context.Background(), acme, []eventlog.Input{stale})
+	reason := rejected(t, err)
+	assert.Contains(t, reason, "backfill")
 
 	require.NoError(t, m.Ingest(context.Background(), acme, []eventlog.Input{
-		{SubjectID: "s-1", Action: "purchase", OccurredAt: time.Now().Add(-liveWindow + time.Hour)},
+		{SubjectID: "s-1", Action: "purchase", OccurredAt: testNow.Add(-liveWindow + time.Hour)},
 		{SubjectID: "s-2", Action: "purchase"},
 	}), "an event inside the window, or without a time, is live")
 	assert.Len(t, outboxCollected(t, env), 2)
@@ -146,11 +149,23 @@ func TestBackfillNeedsATimeThatHasPassed(t *testing.T) {
 
 	errs := m.IngestEach(ctx, acme, []eventlog.Input{
 		{SubjectID: "s-1", Action: "purchase", Backfill: true},
-		{SubjectID: "s-2", Action: "purchase", Backfill: true, OccurredAt: time.Now().Add(time.Hour)},
-		{SubjectID: "s-3", Action: "purchase", Backfill: true, OccurredAt: time.Now().Add(-2 * liveWindow)},
+		{SubjectID: "s-2", Action: "purchase", Backfill: true, OccurredAt: testNow.Add(time.Hour)},
+		{SubjectID: "s-3", Action: "purchase", Backfill: true, OccurredAt: testNow.Add(-2 * liveWindow)},
 	})
 
-	assert.Contains(t, rejected(t, errs[0]), "needs occurredAt")
-	assert.Contains(t, rejected(t, errs[1]), "future")
+	noTime, future := rejected(t, errs[0]), rejected(t, errs[1])
+	assert.Contains(t, noTime, "needs occurredAt")
+	assert.Contains(t, future, "future")
 	assert.NoError(t, errs[2], "history older than the live window is exactly what a backfill is for")
+}
+
+// The same client id twice in one batch is one Event: a live one would otherwise enroll or
+// deliver twice before the persist consumer ever sees the repeat.
+func TestIngestPublishesARepeatedClientEventIDOnceInABatch(t *testing.T) {
+	env := testhelper.Setup(t)
+	in := eventlog.Input{SubjectID: "s-1", Action: "purchase", ClientEventID: "order-1"}
+
+	require.NoError(t, newModule(env).Ingest(context.Background(), env.DB.Scoped(fixtures.AcmeID), []eventlog.Input{in, in}))
+
+	assert.Len(t, outboxCollected(t, env), 1)
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/eventlog"
+	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
@@ -29,7 +30,7 @@ func (h *Handlers) EventsCreate(ctx context.Context, req *externalapi.RecordEven
 	// The module resolves identity and publishes the batch atomically; rows land
 	// asynchronously (accept-then-process).
 	if err := h.eventlog.Ingest(ctx, auth.TokenScoped(ctx), inputs); err != nil {
-		var rejection *eventlog.Rejection
+		var rejection *events.Rejection
 		if errors.As(err, &rejection) {
 			res := externalapi.EventsCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, rejection.Error()))
 			return &res, nil
