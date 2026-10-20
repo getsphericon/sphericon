@@ -404,6 +404,16 @@ func (UnimplementedHandler) EventsCreate(ctx context.Context, req *RecordEventsI
 	return r, ht.ErrNotImplemented
 }
 
+// ExportEvents implements Export_events operation.
+//
+// Read the Workspace's Events, oldest change first (Enterprise; needs the `export:read` scope). Each
+// line of the body is an `ExportEventRow`; every key is always present.
+//
+// GET /export/events
+func (UnimplementedHandler) ExportEvents(ctx context.Context, params ExportEventsParams) (r ExportEventsRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // IntegrationsCreate implements Integrations_create operation.
 //
 // Create a resource.

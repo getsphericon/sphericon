@@ -273,6 +273,13 @@ type Handler interface {
 	//
 	// POST /events
 	EventsCreate(ctx context.Context, req *RecordEventsInput) (EventsCreateRes, error)
+	// ExportEvents implements Export_events operation.
+	//
+	// Read the Workspace's Events, oldest change first (Enterprise; needs the `export:read` scope). Each
+	// line of the body is an `ExportEventRow`; every key is always present.
+	//
+	// GET /export/events
+	ExportEvents(ctx context.Context, params ExportEventsParams) (ExportEventsRes, error)
 	// IntegrationsCreate implements Integrations_create operation.
 	//
 	// Create a resource.
