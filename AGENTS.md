@@ -120,7 +120,7 @@ Run Go tests only through `mise run test`: it sets `SPHERICON_ENV=test` and the 
 `go test` opens the dev database and fails.
 
 Test packages run in parallel, each process on a database of its own, through
-`pgcleaner.WithTemplate` (wired in `internal/testhelper`): it leases `<test db>_w<i>` (an advisory
+`dbcleaner.WithTemplate` (wired in `internal/testhelper`): it leases `<test db>_w<i>` (an advisory
 lock on the shared test database, released when the process ends), cloned from
 `<test db>_tpl_<hash>`, a schema-only template built once per hash of the schema and the bus. The
 fixtures are loaded into the worker at the start of every process, because they use relative

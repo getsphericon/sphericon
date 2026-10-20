@@ -12,21 +12,21 @@
 - id: 2 # fixture: OwnerJane
   name: Jane
   email: jane@globex.test
-  password_hash: '{{argonHash "jane-test-password"}}'
+  password_hash: '{{argonHash "password"}}'
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
   email_verified_at: '2026-01-01 00:00:00'
 - id: 3 # fixture: MemberMary
   name: Mary
   email: mary@acme.test
-  password_hash: '{{argonHash "mary-test-password"}}'
+  password_hash: '{{argonHash "password"}}'
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
   email_verified_at: '2026-01-01 00:00:00'
 - id: 4 # fixture: OutsiderOscar
   name: Oscar
   email: oscar@nowhere.test
-  password_hash: '{{argonHash "oscar-test-password"}}'
+  password_hash: '{{argonHash "password"}}'
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
   email_verified_at: '2026-01-01 00:00:00'
@@ -35,28 +35,28 @@
 - id: 5 # fixture: InitechOwnerOlga
   name: Olga
   email: olga@initech.test
-  password_hash: '{{argonHash "olga-test-password"}}'
+  password_hash: '{{argonHash "password"}}'
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
   email_verified_at: '2026-01-01 00:00:00'
 - id: 6 # fixture: InitechCoOwnerOwen
   name: Owen
   email: owen@initech.test
-  password_hash: '{{argonHash "owen-test-password"}}'
+  password_hash: '{{argonHash "password"}}'
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
   email_verified_at: '2026-01-01 00:00:00'
 - id: 7 # fixture: InitechAdminAda
   name: Ada
   email: ada@initech.test
-  password_hash: '{{argonHash "ada-test-password"}}'
+  password_hash: '{{argonHash "password"}}'
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
   email_verified_at: '2026-01-01 00:00:00'
 - id: 8 # fixture: InitechMemberMax
   name: Max
   email: max@initech.test
-  password_hash: '{{argonHash "max-test-password"}}'
+  password_hash: '{{argonHash "password"}}'
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
   email_verified_at: '2026-01-01 00:00:00'
@@ -67,7 +67,7 @@
 - id: 9 # fixture: SecondFactorSam
   name: Sam
   email: sam@globex.test
-  password_hash: '{{argonHash "sam-test-password"}}'
+  password_hash: '{{argonHash "password"}}'
   second_factor_secret_encrypted: '{{encrypt "JBSWY3DPEHPK3PXP"}}'
   second_factor_confirmed_at: '2026-01-01 00:00:00'
   created_at: '2026-01-01 00:00:00'
@@ -79,7 +79,7 @@
 - id: 10 # fixture: UmbrellaOwnerRita
   name: Rita
   email: rita@umbrella.test
-  password_hash: '{{argonHash "rita-test-password"}}'
+  password_hash: '{{argonHash "password"}}'
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
   email_verified_at: '2026-01-01 00:00:00'
@@ -88,7 +88,7 @@
 - id: 11 # fixture: UmbrellaMemberNina
   name: Nina
   email: nina@umbrella.test
-  password_hash: '{{argonHash "nina-test-password"}}'
+  password_hash: '{{argonHash "password"}}'
   created_at: '2026-03-05 00:00:00'
   updated_at: '2026-03-05 00:00:00'
   email_verified_at: '2026-03-05 00:00:00'
@@ -96,21 +96,21 @@
 - id: 12 # fixture: VandelayOwnerArt
   name: Art
   email: art@vandelay.test
-  password_hash: '{{argonHash "art-test-password"}}'
+  password_hash: '{{argonHash "password"}}'
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
   email_verified_at: '2026-01-01 00:00:00'
 - id: 13 # fixture: VandelayOwnerCosmo
   name: Cosmo
   email: cosmo@vandelay.test
-  password_hash: '{{argonHash "cosmo-test-password"}}'
+  password_hash: '{{argonHash "password"}}'
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
   email_verified_at: '2026-01-01 00:00:00'
 - id: 14 # fixture: KramericaOwnerNewman
   name: Newman
   email: newman@kramerica.test
-  password_hash: '{{argonHash "newman-test-password"}}'
+  password_hash: '{{argonHash "password"}}'
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
   email_verified_at: '2026-01-01 00:00:00'
@@ -137,7 +137,7 @@
 - id: 18 # fixture: OwnerSally
   name: Sally
   email: sally@hooli.test
-  password_hash: '{{argonHash "sally-test-password"}}'
+  password_hash: '{{argonHash "password"}}'
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
   email_verified_at: '2026-01-01 00:00:00'
@@ -145,7 +145,7 @@
 - id: 19 # fixture: AdminAlice
   name: Alice
   email: alice@acme.test
-  password_hash: '{{argonHash "alice-test-password"}}'
+  password_hash: '{{argonHash "password"}}'
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
   email_verified_at: '2026-01-01 00:00:00'

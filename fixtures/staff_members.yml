@@ -6,19 +6,19 @@
 # meet.
 - id: 1 # fixture: StaffEnrolled
   email: staff@sphericon.test
-  password_hash: '{{argonHash "staff-test-password"}}'
+  password_hash: '{{argonHash "password"}}'
   totp_secret_encrypted: '{{encrypt "KRSXG5CTMVRXEZLU"}}'
   totp_confirmed_at: '2026-01-01 00:00:00'
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 2 # fixture: StaffFresh
   email: fresh-staff@sphericon.test
-  password_hash: '{{argonHash "staff-fresh-password"}}'
+  password_hash: '{{argonHash "password"}}'
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 3 # fixture: StaffAlsoCustomer
   email: info@getsphericon.com
-  password_hash: '{{argonHash "staff-both-password"}}'
+  password_hash: '{{argonHash "password"}}'
   totp_secret_encrypted: '{{encrypt "MFRGGZDFMZTWQ2LK"}}'
   totp_confirmed_at: '2026-01-01 00:00:00'
   created_at: '2026-01-01 00:00:00'

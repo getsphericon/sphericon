@@ -34,7 +34,7 @@ The rules a change is reviewed against. How the repo is built, run and generated
 - **Tests never clean up by hand, and never reset state at their start.** A test that needs a real
   commit (the outbox router, concurrent workers, a whole app) takes a database of its own from
   `testhelper.RealDB`, `RealDBURL` or `EmptyDBURL` (pgtestdb), dropped when the test ends; every
-  other test rides the transaction `pgcleaner` hands out, which rolls back. A `t.Cleanup` that
+  other test rides the transaction `dbcleaner` hands out, which rolls back. A `t.Cleanup` that
   deletes rows, a purge or a reset at the top of a test means a test is committing outside its
   transaction: fix that test.
 - **A test body does not branch.** No `if`, `switch` or `select` in a `Test…` function or its subtest

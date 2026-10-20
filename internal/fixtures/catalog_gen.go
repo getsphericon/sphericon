@@ -36,7 +36,7 @@ const (
 	// AdminAliceName is from fixtures/users.
 	AdminAliceName = "Alice"
 	// AdminAlicePassword is from fixtures/users.
-	AdminAlicePassword = "alice-test-password"
+	AdminAlicePassword = "password"
 	// AnchorTokenID is from fixtures/api_tokens.
 	AnchorTokenID = 1
 	// AnchorTokenName is from fixtures/api_tokens.
@@ -474,7 +474,7 @@ const (
 	// InitechAdminAdaName is from fixtures/users.
 	InitechAdminAdaName = "Ada"
 	// InitechAdminAdaPassword is from fixtures/users.
-	InitechAdminAdaPassword = "ada-test-password"
+	InitechAdminAdaPassword = "password"
 	// InitechAdminMembershipID is from fixtures/memberships.
 	InitechAdminMembershipID = 7
 	// InitechAuditStaffSuspendAction is from fixtures/audit_entries.
@@ -494,7 +494,7 @@ const (
 	// InitechCoOwnerOwenName is from fixtures/users.
 	InitechCoOwnerOwenName = "Owen"
 	// InitechCoOwnerOwenPassword is from fixtures/users.
-	InitechCoOwnerOwenPassword = "owen-test-password"
+	InitechCoOwnerOwenPassword = "password"
 	// InitechCollectKey is from fixtures/workspaces.
 	InitechCollectKey = "omck_test_initech_collect_key"
 	// InitechID is from fixtures/workspaces.
@@ -506,7 +506,7 @@ const (
 	// InitechMemberMaxName is from fixtures/users.
 	InitechMemberMaxName = "Max"
 	// InitechMemberMaxPassword is from fixtures/users.
-	InitechMemberMaxPassword = "max-test-password"
+	InitechMemberMaxPassword = "password"
 	// InitechMemberMembershipID is from fixtures/memberships.
 	InitechMemberMembershipID = 8
 	// InitechName is from fixtures/workspaces.
@@ -520,7 +520,7 @@ const (
 	// InitechOwnerOlgaName is from fixtures/users.
 	InitechOwnerOlgaName = "Olga"
 	// InitechOwnerOlgaPassword is from fixtures/users.
-	InitechOwnerOlgaPassword = "olga-test-password"
+	InitechOwnerOlgaPassword = "password"
 	// InitechPublicID is from fixtures/workspaces.
 	InitechPublicID = "InitcWs3"
 	// InitechRitaMembershipID is from fixtures/memberships.
@@ -620,7 +620,7 @@ const (
 	// KramericaOwnerNewmanName is from fixtures/users.
 	KramericaOwnerNewmanName = "Newman"
 	// KramericaOwnerNewmanPassword is from fixtures/users.
-	KramericaOwnerNewmanPassword = "newman-test-password"
+	KramericaOwnerNewmanPassword = "password"
 	// KramericaPublicID is from fixtures/workspaces.
 	KramericaPublicID = "KramrWs8"
 	// MaryGoogleIdentityID is from fixtures/user_identities.
@@ -636,7 +636,7 @@ const (
 	// MemberMaryName is from fixtures/users.
 	MemberMaryName = "Mary"
 	// MemberMaryPassword is from fixtures/users.
-	MemberMaryPassword = "mary-test-password"
+	MemberMaryPassword = "password"
 	// OutboundMessageBystanderDestination is from fixtures/outbound_messages.
 	OutboundMessageBystanderDestination = "ben@initech.test"
 	// OutboundMessageBystanderID is from fixtures/outbound_messages.
@@ -668,7 +668,7 @@ const (
 	// OutsiderOscarName is from fixtures/users.
 	OutsiderOscarName = "Oscar"
 	// OutsiderOscarPassword is from fixtures/users.
-	OutsiderOscarPassword = "oscar-test-password"
+	OutsiderOscarPassword = "password"
 	// OwnerJaneEmail is from fixtures/users.
 	OwnerJaneEmail = "jane@globex.test"
 	// OwnerJaneID is from fixtures/users.
@@ -676,7 +676,7 @@ const (
 	// OwnerJaneName is from fixtures/users.
 	OwnerJaneName = "Jane"
 	// OwnerJanePassword is from fixtures/users.
-	OwnerJanePassword = "jane-test-password"
+	OwnerJanePassword = "password"
 	// OwnerJohnEmail is from fixtures/users.
 	OwnerJohnEmail = "info@getsphericon.com"
 	// OwnerJohnID is from fixtures/users.
@@ -692,7 +692,7 @@ const (
 	// OwnerSallyName is from fixtures/users.
 	OwnerSallyName = "Sally"
 	// OwnerSallyPassword is from fixtures/users.
-	OwnerSallyPassword = "sally-test-password"
+	OwnerSallyPassword = "password"
 	// SamGoogleIdentityID is from fixtures/user_identities.
 	SamGoogleIdentityID = 2
 	// SamGoogleIdentityProvider is from fixtures/user_identities.
@@ -706,7 +706,7 @@ const (
 	// SecondFactorSamName is from fixtures/users.
 	SecondFactorSamName = "Sam"
 	// SecondFactorSamPassword is from fixtures/users.
-	SecondFactorSamPassword = "sam-test-password"
+	SecondFactorSamPassword = "password"
 	// SecondFactorSamRecoveryCode is from fixtures/recovery_codes.
 	SecondFactorSamRecoveryCode = "sam01-unusd"
 	// SecondFactorSamRecoveryID is from fixtures/recovery_codes.
@@ -842,7 +842,7 @@ const (
 	// StaffAlsoCustomerID is from fixtures/staff_members.
 	StaffAlsoCustomerID = 3
 	// StaffAlsoCustomerPassword is from fixtures/staff_members.
-	StaffAlsoCustomerPassword = "staff-both-password"
+	StaffAlsoCustomerPassword = "password"
 	// StaffAlsoCustomerTotpSecret is from fixtures/staff_members.
 	StaffAlsoCustomerTotpSecret = "MFRGGZDFMZTWQ2LK"
 	// StaffEnrolledEmail is from fixtures/staff_members.
@@ -850,7 +850,7 @@ const (
 	// StaffEnrolledID is from fixtures/staff_members.
 	StaffEnrolledID = 1
 	// StaffEnrolledPassword is from fixtures/staff_members.
-	StaffEnrolledPassword = "staff-test-password"
+	StaffEnrolledPassword = "password"
 	// StaffEnrolledTotpSecret is from fixtures/staff_members.
 	StaffEnrolledTotpSecret = "KRSXG5CTMVRXEZLU"
 	// StaffFreshEmail is from fixtures/staff_members.
@@ -858,7 +858,7 @@ const (
 	// StaffFreshID is from fixtures/staff_members.
 	StaffFreshID = 2
 	// StaffFreshPassword is from fixtures/staff_members.
-	StaffFreshPassword = "staff-fresh-password"
+	StaffFreshPassword = "password"
 	// StaleLoginAttemptEmail is from fixtures/auth_attempts.
 	StaleLoginAttemptEmail = "stale@attempts.test"
 	// StaleLoginAttemptID is from fixtures/auth_attempts.
@@ -934,7 +934,7 @@ const (
 	// UmbrellaMemberNinaName is from fixtures/users.
 	UmbrellaMemberNinaName = "Nina"
 	// UmbrellaMemberNinaPassword is from fixtures/users.
-	UmbrellaMemberNinaPassword = "nina-test-password"
+	UmbrellaMemberNinaPassword = "password"
 	// UmbrellaName is from fixtures/workspaces.
 	UmbrellaName = "Umbrella"
 	// UmbrellaNinaMembershipID is from fixtures/memberships.
@@ -946,7 +946,7 @@ const (
 	// UmbrellaOwnerRitaName is from fixtures/users.
 	UmbrellaOwnerRitaName = "Rita"
 	// UmbrellaOwnerRitaPassword is from fixtures/users.
-	UmbrellaOwnerRitaPassword = "rita-test-password"
+	UmbrellaOwnerRitaPassword = "password"
 	// UmbrellaPublicID is from fixtures/workspaces.
 	UmbrellaPublicID = "UmbrlWs4"
 	// UmbrellaRitaMembershipID is from fixtures/memberships.
@@ -978,7 +978,7 @@ const (
 	// VandelayOwnerArtName is from fixtures/users.
 	VandelayOwnerArtName = "Art"
 	// VandelayOwnerArtPassword is from fixtures/users.
-	VandelayOwnerArtPassword = "art-test-password"
+	VandelayOwnerArtPassword = "password"
 	// VandelayOwnerCosmoEmail is from fixtures/users.
 	VandelayOwnerCosmoEmail = "cosmo@vandelay.test"
 	// VandelayOwnerCosmoID is from fixtures/users.
@@ -986,7 +986,7 @@ const (
 	// VandelayOwnerCosmoName is from fixtures/users.
 	VandelayOwnerCosmoName = "Cosmo"
 	// VandelayOwnerCosmoPassword is from fixtures/users.
-	VandelayOwnerCosmoPassword = "cosmo-test-password"
+	VandelayOwnerCosmoPassword = "password"
 	// VandelayPublicID is from fixtures/workspaces.
 	VandelayPublicID = "VandlWs7"
 	// VisitorAnonymousID is from fixtures/visitors.

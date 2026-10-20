@@ -81,22 +81,22 @@ are development fixtures only; never reuse the credentials anywhere else.
 
 Sign in at `https://sphericon.localhost/login`:
 
-| Role   | Workspace | Email                   | Password              |
-| ------ | --------- | ----------------------- | --------------------- |
-| owner  | Acme      | `info@getsphericon.com` | `password`            |
-| admin  | Acme      | `alice@acme.test`       | `alice-test-password` |
-| member | Acme      | `mary@acme.test`        | `mary-test-password`  |
-| owner  | Globex    | `jane@globex.test`      | `jane-test-password`  |
+| Role   | Workspace | Email                   | Password   |
+| ------ | --------- | ----------------------- | ---------- |
+| owner  | Acme      | `info@getsphericon.com` | `password` |
+| admin  | Acme      | `alice@acme.test`       | `password` |
+| member | Acme      | `mary@acme.test`        | `password` |
+| owner  | Globex    | `jane@globex.test`      | `password` |
 
-Acme has all three roles, so one Workspace is enough for development. `sam@globex.test` / `sam-test-password` has a TOTP Second factor, secret `JBSWY3DPEHPK3PXP`.
+Acme has all three roles, so one Workspace is enough for development. `sam@globex.test` / `password` has a TOTP Second factor, secret `JBSWY3DPEHPK3PXP`.
 
 The Staff console is at `https://sphericon.localhost/console` (Enterprise, license feature
 `staff`: without a license key it answers 404). Sign-in needs a password and a TOTP code:
 
-| Staff member                 | Password               | TOTP                            |
-| ---------------------------- | ---------------------- | ------------------------------- |
-| `staff@sphericon.test`       | `staff-test-password`  | secret `KRSXG5CTMVRXEZLU`       |
-| `fresh-staff@sphericon.test` | `staff-fresh-password` | none yet: enrols at first login |
+| Staff member                 | Password   | TOTP                            |
+| ---------------------------- | ---------- | ------------------------------- |
+| `staff@sphericon.test`       | `password` | secret `KRSXG5CTMVRXEZLU`       |
+| `fresh-staff@sphericon.test` | `password` | none yet: enrols at first login |
 
 Get the current code with `oathtool --totp -b KRSXG5CTMVRXEZLU`, or add the secret to an
 authenticator app.

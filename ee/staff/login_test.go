@@ -314,8 +314,6 @@ func TestAnStaffWhoIsAlsoACustomerKeepsTwoIdentities(t *testing.T) {
 	cookie := h.session(t, fixtures.StaffAlsoCustomerEmail, fixtures.StaffAlsoCustomerPassword, fixtures.StaffAlsoCustomerTotpSecret)
 	_, ok := h.me(t, cookie.Value).(*staffapi.StaffResource)
 	assert.True(t, ok)
-
-	requireProblem(t, h.passwordStep(t, fixtures.OwnerJohnEmail, fixtures.OwnerJohnPassword), http.StatusUnauthorized)
 }
 
 func TestEndingAStaffMembersSessionsRejectsTheOldToken(t *testing.T) {

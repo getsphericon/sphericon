@@ -67,7 +67,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/workspacedeletion"
 	"github.com/go-testfixtures/testfixtures/v3"
 	_ "github.com/jackc/pgx/v5/stdlib"
-	"github.com/mokevnin/pgcleaner"
+	"github.com/mokevnin/dbcleaner"
+	_ "github.com/mokevnin/dbcleaner/postgres"
 	ht "github.com/ogen-go/ogen/http"
 	"github.com/stretchr/testify/require"
 )
@@ -75,13 +76,13 @@ import (
 // Every test process (one per package) leases a database of its own, cloned from a
 // schema-only template (see initBaseline), so packages run in parallel without sharing
 // rows or locks. Each test then asks the cleaner for a database: a real transaction that is
-// rolled back when the test ends (pgcleaner's Transaction strategy, go-txdb underneath), so
+// rolled back when the test ends (dbcleaner's Transaction strategy, go-txdb underneath), so
 // tests are fully isolated and the DB stays at the fixture state. No hand-rolled
 // transaction plumbing.
 var (
 	once    sync.Once
 	baseCfg *config.Config
-	cleaner *pgcleaner.Cleaner
+	cleaner *dbcleaner.Cleaner
 	errLoad error
 )
 
@@ -102,14 +103,14 @@ func initBaseline() {
 			return
 		}
 		// Every process leases a database of its own, cloned from a schema-only template
-		// (pgcleaner.WithTemplate), so packages run in parallel without sharing rows or
+		// (dbcleaner.WithTemplate), so packages run in parallel without sharing rows or
 		// locks. The fixtures go in at the start of every process, not into the template:
 		// their relative dates must be relative to now.
-		cleaner = pgcleaner.New(cfg.DatabaseURL,
-			pgcleaner.WithTemplate(version, func(ctx context.Context, sqlDB *sql.DB, _ string) error {
+		cleaner = dbcleaner.New(cfg.DatabaseURL,
+			dbcleaner.WithTemplate(version, func(ctx context.Context, sqlDB *sql.DB, _ string) error {
 				return migrateSchema(ctx, sqlDB)
 			}),
-			pgcleaner.WithSetup(func(ctx context.Context, sqlDB *sql.DB) error {
+			dbcleaner.WithSetup(func(ctx context.Context, sqlDB *sql.DB) error {
 				return loadFixtures(ctx, sqlDB, cfg, projectRoot)
 			}),
 		)

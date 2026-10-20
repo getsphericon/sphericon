@@ -37,7 +37,7 @@ require (
 	github.com/lmittmann/tint v1.2.1
 	github.com/microcosm-cc/bluemonday v1.0.27
 	github.com/modelcontextprotocol/go-sdk v1.8.0
-	github.com/mokevnin/pgcleaner v0.2.0
+	github.com/mokevnin/dbcleaner v1.0.0
 	github.com/nicksnyder/go-i18n/v2 v2.6.1
 	github.com/ogen-go/ogen v1.24.0
 	github.com/oklog/ulid/v2 v2.1.2
