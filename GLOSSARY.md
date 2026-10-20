@@ -602,6 +602,16 @@ only when that record is gone. Removing a Join domain removes only the claim, ne
 A domain is exact: `acme.com` does not cover `eu.acme.com`.
 _Avoid_: Allowed domain, trusted domain, SSO domain
 
+**Domain join**:
+A Membership created because its member proved an address on a Workspace's verified Join domain
+(ADR 0051): Role `member`, source `domain`. A Workspace has one switch for it, off by default, that
+only an Owner changes. It happens at the moment an address becomes a Proven email and never later:
+an address proven before the switch was turned on joins nobody, and turning it on adds and invites
+no one. It never admits a new User on an Instance with closed sign-up, ignores a suspended
+Workspace or one in its deletion window, and sends no mail. It is audited as `membership.domain_join`
+with the system as the actor.
+_Avoid_: Auto-join, domain capture, domain-based signup
+
 **Sign-in provider**:
 An external service that proves a person's email address so they can register or log in without a
 password of ours: Google, GitHub. The Instance operator enables one by setting its OAuth client id

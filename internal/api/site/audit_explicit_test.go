@@ -238,6 +238,8 @@ func TestExplicitAuditPathsAreAllListed(t *testing.T) {
 		siteapi.SitePublicInvitationsAcceptParams{Token: "inv_fixture_token_acme"})
 	require.NoError(t, err)
 	registerAndVerify(t, env, "Grace Hopper", "grace@example.com", "grace-password-1")              // user.email_verify
+	enableAcmeJoin(t, env)                                                                          // workspace.update (the domain join switch)
+	registerAndVerify(t, env, "Joiner", "joiner@acme.com", "joiner-password-1")                     // membership.domain_join
 	require.Equal(t, 200, loginStatus(t, env, fixtures.OwnerJohnEmail, fixtures.OwnerJohnPassword)) // user.login
 	_, err = owner.SiteUserUpdateMe(ctx, &siteapi.SiteUpdateMeInput{                                // user.password_change
 		CurrentPassword: siteapi.NewOptString(fixtures.OwnerJohnPassword), NewPassword: siteapi.NewOptString("another-pass-1")})
@@ -305,7 +307,7 @@ func TestExplicitAuditPathsAreAllListed(t *testing.T) {
 	slices.Sort(want)
 	assert.Equal(t, want, seen)
 
-	assert.Equal(t, []string{"internal/accounts/accounts.go", "internal/accounts/roles.go", "internal/api/site/audit.go", "internal/contacts/contacts.go", "internal/events/audit.go", "internal/suspension/suspension.go", "internal/webhooks/webhooks.go", "internal/workspacedeletion/workspacedeletion.go"},
+	assert.Equal(t, []string{"internal/accounts/accounts.go", "internal/accounts/join.go", "internal/accounts/roles.go", "internal/api/site/audit.go", "internal/contacts/contacts.go", "internal/events/audit.go", "internal/suspension/suspension.go", "internal/webhooks/webhooks.go", "internal/workspacedeletion/workspacedeletion.go"},
 		recordAuditCallSites(t), "a new explicit RecordAudit call site: list its actions and drive them above")
 }
 

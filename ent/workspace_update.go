@@ -173,6 +173,20 @@ func (_u *WorkspaceUpdate) ClearRetentionDays() *WorkspaceUpdate {
 	return _u
 }
 
+// SetDomainJoinEnabled sets the "domain_join_enabled" field.
+func (_u *WorkspaceUpdate) SetDomainJoinEnabled(v bool) *WorkspaceUpdate {
+	_u.mutation.SetDomainJoinEnabled(v)
+	return _u
+}
+
+// SetNillableDomainJoinEnabled sets the "domain_join_enabled" field if the given value is not nil.
+func (_u *WorkspaceUpdate) SetNillableDomainJoinEnabled(v *bool) *WorkspaceUpdate {
+	if v != nil {
+		_u.SetDomainJoinEnabled(*v)
+	}
+	return _u
+}
+
 // SetSecondFactorRequiredAt sets the "second_factor_required_at" field.
 func (_u *WorkspaceUpdate) SetSecondFactorRequiredAt(v time.Time) *WorkspaceUpdate {
 	_u.mutation.SetSecondFactorRequiredAt(v)
@@ -1543,6 +1557,9 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.RetentionDaysCleared() {
 		_spec.ClearField(workspace.FieldRetentionDays, field.TypeInt)
+	}
+	if value, ok := _u.mutation.DomainJoinEnabled(); ok {
+		_spec.SetField(workspace.FieldDomainJoinEnabled, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.SecondFactorRequiredAt(); ok {
 		_spec.SetField(workspace.FieldSecondFactorRequiredAt, field.TypeTime, value)
@@ -3049,6 +3066,20 @@ func (_u *WorkspaceUpdateOne) ClearRetentionDays() *WorkspaceUpdateOne {
 	return _u
 }
 
+// SetDomainJoinEnabled sets the "domain_join_enabled" field.
+func (_u *WorkspaceUpdateOne) SetDomainJoinEnabled(v bool) *WorkspaceUpdateOne {
+	_u.mutation.SetDomainJoinEnabled(v)
+	return _u
+}
+
+// SetNillableDomainJoinEnabled sets the "domain_join_enabled" field if the given value is not nil.
+func (_u *WorkspaceUpdateOne) SetNillableDomainJoinEnabled(v *bool) *WorkspaceUpdateOne {
+	if v != nil {
+		_u.SetDomainJoinEnabled(*v)
+	}
+	return _u
+}
+
 // SetSecondFactorRequiredAt sets the "second_factor_required_at" field.
 func (_u *WorkspaceUpdateOne) SetSecondFactorRequiredAt(v time.Time) *WorkspaceUpdateOne {
 	_u.mutation.SetSecondFactorRequiredAt(v)
@@ -4449,6 +4480,9 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 	}
 	if _u.mutation.RetentionDaysCleared() {
 		_spec.ClearField(workspace.FieldRetentionDays, field.TypeInt)
+	}
+	if value, ok := _u.mutation.DomainJoinEnabled(); ok {
+		_spec.SetField(workspace.FieldDomainJoinEnabled, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.SecondFactorRequiredAt(); ok {
 		_spec.SetField(workspace.FieldSecondFactorRequiredAt, field.TypeTime, value)

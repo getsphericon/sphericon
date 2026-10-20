@@ -189,6 +189,14 @@ type SiteCustomFieldsListRes interface {
 	siteCustomFieldsListRes()
 }
 
+type SiteDomainJoinGetRes interface {
+	siteDomainJoinGetRes()
+}
+
+type SiteDomainJoinSetRes interface {
+	siteDomainJoinSetRes()
+}
+
 type SiteEnrollmentsGetRes interface {
 	siteEnrollmentsGetRes()
 }

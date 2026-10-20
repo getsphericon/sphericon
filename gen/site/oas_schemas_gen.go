@@ -5930,23 +5930,6 @@ type SiteAuthVerifyEmailBadRequest ProblemDetails
 
 func (*SiteAuthVerifyEmailBadRequest) siteAuthVerifyEmailRes() {}
 
-// SiteAuthVerifyEmailOK is response for SiteAuthVerifyEmail operation.
-type SiteAuthVerifyEmailOK struct {
-	SetCookie string
-}
-
-// GetSetCookie returns the value of SetCookie.
-func (s *SiteAuthVerifyEmailOK) GetSetCookie() string {
-	return s.SetCookie
-}
-
-// SetSetCookie sets the value of SetCookie.
-func (s *SiteAuthVerifyEmailOK) SetSetCookie(val string) {
-	s.SetCookie = val
-}
-
-func (*SiteAuthVerifyEmailOK) siteAuthVerifyEmailRes() {}
-
 type SiteAuthVerifyEmailPreconditionRequired ProblemDetails
 
 func (*SiteAuthVerifyEmailPreconditionRequired) siteAuthVerifyEmailRes() {}
@@ -9220,6 +9203,43 @@ func (s *SiteDnsRecordType) UnmarshalText(data []byte) error {
 		return errors.Errorf("invalid value: %q", data)
 	}
 }
+
+type SiteDomainJoinGetForbidden ProblemDetails
+
+func (*SiteDomainJoinGetForbidden) siteDomainJoinGetRes() {}
+
+type SiteDomainJoinGetNotFound ProblemDetails
+
+func (*SiteDomainJoinGetNotFound) siteDomainJoinGetRes() {}
+
+// Whether the Workspace admits Users by Join domain.
+// Ref: #/components/schemas/SiteDomainJoinResource
+type SiteDomainJoinResource struct {
+	// On: a User who proves an address on one of the Workspace's verified Join domains becomes a member.
+	// Off by default.
+	Enabled bool `json:"enabled"`
+}
+
+// GetEnabled returns the value of Enabled.
+func (s *SiteDomainJoinResource) GetEnabled() bool {
+	return s.Enabled
+}
+
+// SetEnabled sets the value of Enabled.
+func (s *SiteDomainJoinResource) SetEnabled(val bool) {
+	s.Enabled = val
+}
+
+func (*SiteDomainJoinResource) siteDomainJoinGetRes() {}
+func (*SiteDomainJoinResource) siteDomainJoinSetRes() {}
+
+type SiteDomainJoinSetForbidden ProblemDetails
+
+func (*SiteDomainJoinSetForbidden) siteDomainJoinSetRes() {}
+
+type SiteDomainJoinSetNotFound ProblemDetails
+
+func (*SiteDomainJoinSetNotFound) siteDomainJoinSetRes() {}
 
 // Request body for rendering an HTTP step's body for a Contact.
 // Ref: #/components/schemas/SiteDryRunHttpStepInput
@@ -13798,6 +13818,23 @@ func (s *SiteSesConfigKind) UnmarshalText(data []byte) error {
 	}
 }
 
+// Switch domain join on or off.
+// Ref: #/components/schemas/SiteSetDomainJoinInput
+type SiteSetDomainJoinInput struct {
+	// Whether to admit Users by Join domain from now on.
+	Enabled bool `json:"enabled"`
+}
+
+// GetEnabled returns the value of Enabled.
+func (s *SiteSetDomainJoinInput) GetEnabled() bool {
+	return s.Enabled
+}
+
+// SetEnabled sets the value of Enabled.
+func (s *SiteSetDomainJoinInput) SetEnabled(val bool) {
+	s.Enabled = val
+}
+
 // The Workspace's Setup checklist: a point-in-time read model, never ticked by hand.
 // Ref: #/components/schemas/SiteSetupProgress
 type SiteSetupProgress struct {
@@ -16223,6 +16260,52 @@ func (s *SiteVerifyEmailInput) SetToken(val string) {
 func (s *SiteVerifyEmailInput) SetPassword(val OptString) {
 	s.Password = val
 }
+
+// Where a User who proved their address goes next.
+// Ref: #/components/schemas/SiteVerifyEmailResult
+type SiteVerifyEmailResult struct {
+	// The Workspace to open: the one the User joined by its Join domain (ADR 0051), else the first
+	// Workspace made for them.
+	LandingWorkspaceId WorkspaceId `json:"landingWorkspaceId"`
+}
+
+// GetLandingWorkspaceId returns the value of LandingWorkspaceId.
+func (s *SiteVerifyEmailResult) GetLandingWorkspaceId() WorkspaceId {
+	return s.LandingWorkspaceId
+}
+
+// SetLandingWorkspaceId sets the value of LandingWorkspaceId.
+func (s *SiteVerifyEmailResult) SetLandingWorkspaceId(val WorkspaceId) {
+	s.LandingWorkspaceId = val
+}
+
+// SiteVerifyEmailResultHeaders wraps SiteVerifyEmailResult with response headers.
+type SiteVerifyEmailResultHeaders struct {
+	SetCookie string
+	Response  SiteVerifyEmailResult
+}
+
+// GetSetCookie returns the value of SetCookie.
+func (s *SiteVerifyEmailResultHeaders) GetSetCookie() string {
+	return s.SetCookie
+}
+
+// GetResponse returns the value of Response.
+func (s *SiteVerifyEmailResultHeaders) GetResponse() SiteVerifyEmailResult {
+	return s.Response
+}
+
+// SetSetCookie sets the value of SetCookie.
+func (s *SiteVerifyEmailResultHeaders) SetSetCookie(val string) {
+	s.SetCookie = val
+}
+
+// SetResponse sets the value of Response.
+func (s *SiteVerifyEmailResultHeaders) SetResponse(val SiteVerifyEmailResult) {
+	s.Response = val
+}
+
+func (*SiteVerifyEmailResultHeaders) siteAuthVerifyEmailRes() {}
 
 // Why an endpoint turned itself off. A closed set: `gone` (the receiver answered 410 Gone) and
 // `persistent_failure` (deliveries failed for longer than the window). Absent for an endpoint an owner

@@ -293,7 +293,11 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
   5. transactions: `events.Bus.WithinScopedTx`, and `tx.Scoped(...)` inside
      `accounts.AcceptInvitation`, re-scope a transaction's client to the same Workspace;
      `events.Bus.WithinHandOverTx` also scopes it to the Workspace a Join domain moves away from
-     (acting as the system), after `joindomains` has read that Workspace off the holder's row; and
+     (acting as the system), after `joindomains` has read that Workspace off the holder's row;
+     the domain-join step of the verification transaction (`applyDomainJoin` in
+     `internal/accounts/join.go`, ADR 0051), which builds `tx.Scoped(...)` for the Workspace a
+     verified Join domain names, right after `joindomains.HolderIn` has loaded that row, to add
+     the joining User's Membership (every step that proves an address calls it explicitly); and
      `accounts.DeleteUser` (User deletion, ADR 0050) scopes its one transaction in turn to each
      Workspace the User belongs to (`tx.Scoped(m.WorkspaceID)`, from the User's own Memberships),
      to lock the Owner rows and remove the Membership;

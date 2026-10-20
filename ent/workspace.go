@@ -35,6 +35,8 @@ type Workspace struct {
 	PostalAddress string `json:"postal_address,omitempty"`
 	// RetentionDays holds the value of the "retention_days" field.
 	RetentionDays *int `json:"retention_days,omitempty"`
+	// DomainJoinEnabled holds the value of the "domain_join_enabled" field.
+	DomainJoinEnabled bool `json:"domain_join_enabled,omitempty"`
 	// SecondFactorRequiredAt holds the value of the "second_factor_required_at" field.
 	SecondFactorRequiredAt *time.Time `json:"second_factor_required_at,omitempty"`
 	// FeedPosition holds the value of the "feed_position" field.
@@ -394,7 +396,7 @@ func (*Workspace) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case workspace.FieldRequireConfirmedOptIn, workspace.FieldAbuseExempt:
+		case workspace.FieldRequireConfirmedOptIn, workspace.FieldDomainJoinEnabled, workspace.FieldAbuseExempt:
 			values[i] = new(sql.NullBool)
 		case workspace.FieldID, workspace.FieldRetentionDays, workspace.FieldFeedPosition:
 			values[i] = new(sql.NullInt64)
@@ -478,6 +480,12 @@ func (_m *Workspace) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.RetentionDays = new(int)
 				*_m.RetentionDays = int(value.Int64)
+			}
+		case workspace.FieldDomainJoinEnabled:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field domain_join_enabled", values[i])
+			} else if value.Valid {
+				_m.DomainJoinEnabled = value.Bool
 			}
 		case workspace.FieldSecondFactorRequiredAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -764,6 +772,9 @@ func (_m *Workspace) String() string {
 		builder.WriteString("retention_days=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
+	builder.WriteString(", ")
+	builder.WriteString("domain_join_enabled=")
+	builder.WriteString(fmt.Sprintf("%v", _m.DomainJoinEnabled))
 	builder.WriteString(", ")
 	if v := _m.SecondFactorRequiredAt; v != nil {
 		builder.WriteString("second_factor_required_at=")

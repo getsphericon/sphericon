@@ -153,6 +153,20 @@ func (_c *WorkspaceCreate) SetNillableRetentionDays(v *int) *WorkspaceCreate {
 	return _c
 }
 
+// SetDomainJoinEnabled sets the "domain_join_enabled" field.
+func (_c *WorkspaceCreate) SetDomainJoinEnabled(v bool) *WorkspaceCreate {
+	_c.mutation.SetDomainJoinEnabled(v)
+	return _c
+}
+
+// SetNillableDomainJoinEnabled sets the "domain_join_enabled" field if the given value is not nil.
+func (_c *WorkspaceCreate) SetNillableDomainJoinEnabled(v *bool) *WorkspaceCreate {
+	if v != nil {
+		_c.SetDomainJoinEnabled(*v)
+	}
+	return _c
+}
+
 // SetSecondFactorRequiredAt sets the "second_factor_required_at" field.
 func (_c *WorkspaceCreate) SetSecondFactorRequiredAt(v time.Time) *WorkspaceCreate {
 	_c.mutation.SetSecondFactorRequiredAt(v)
@@ -799,6 +813,10 @@ func (_c *WorkspaceCreate) defaults() {
 		v := workspace.DefaultPostalAddress
 		_c.mutation.SetPostalAddress(v)
 	}
+	if _, ok := _c.mutation.DomainJoinEnabled(); !ok {
+		v := workspace.DefaultDomainJoinEnabled
+		_c.mutation.SetDomainJoinEnabled(v)
+	}
 	if _, ok := _c.mutation.FeedPosition(); !ok {
 		v := workspace.DefaultFeedPosition
 		_c.mutation.SetFeedPosition(v)
@@ -843,6 +861,9 @@ func (_c *WorkspaceCreate) check() error {
 		if err := workspace.RetentionDaysValidator(v); err != nil {
 			return &ValidationError{Name: "retention_days", err: fmt.Errorf(`ent: validator failed for field "Workspace.retention_days": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.DomainJoinEnabled(); !ok {
+		return &ValidationError{Name: "domain_join_enabled", err: errors.New(`ent: missing required field "Workspace.domain_join_enabled"`)}
 	}
 	if _, ok := _c.mutation.FeedPosition(); !ok {
 		return &ValidationError{Name: "feed_position", err: errors.New(`ent: missing required field "Workspace.feed_position"`)}
@@ -923,6 +944,10 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.RetentionDays(); ok {
 		_spec.SetField(workspace.FieldRetentionDays, field.TypeInt, value)
 		_node.RetentionDays = &value
+	}
+	if value, ok := _c.mutation.DomainJoinEnabled(); ok {
+		_spec.SetField(workspace.FieldDomainJoinEnabled, field.TypeBool, value)
+		_node.DomainJoinEnabled = value
 	}
 	if value, ok := _c.mutation.SecondFactorRequiredAt(); ok {
 		_spec.SetField(workspace.FieldSecondFactorRequiredAt, field.TypeTime, value)
@@ -1592,6 +1617,18 @@ func (u *WorkspaceUpsert) ClearRetentionDays() *WorkspaceUpsert {
 	return u
 }
 
+// SetDomainJoinEnabled sets the "domain_join_enabled" field.
+func (u *WorkspaceUpsert) SetDomainJoinEnabled(v bool) *WorkspaceUpsert {
+	u.Set(workspace.FieldDomainJoinEnabled, v)
+	return u
+}
+
+// UpdateDomainJoinEnabled sets the "domain_join_enabled" field to the value that was provided on create.
+func (u *WorkspaceUpsert) UpdateDomainJoinEnabled() *WorkspaceUpsert {
+	u.SetExcluded(workspace.FieldDomainJoinEnabled)
+	return u
+}
+
 // SetSecondFactorRequiredAt sets the "second_factor_required_at" field.
 func (u *WorkspaceUpsert) SetSecondFactorRequiredAt(v time.Time) *WorkspaceUpsert {
 	u.Set(workspace.FieldSecondFactorRequiredAt, v)
@@ -1961,6 +1998,20 @@ func (u *WorkspaceUpsertOne) UpdateRetentionDays() *WorkspaceUpsertOne {
 func (u *WorkspaceUpsertOne) ClearRetentionDays() *WorkspaceUpsertOne {
 	return u.Update(func(s *WorkspaceUpsert) {
 		s.ClearRetentionDays()
+	})
+}
+
+// SetDomainJoinEnabled sets the "domain_join_enabled" field.
+func (u *WorkspaceUpsertOne) SetDomainJoinEnabled(v bool) *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetDomainJoinEnabled(v)
+	})
+}
+
+// UpdateDomainJoinEnabled sets the "domain_join_enabled" field to the value that was provided on create.
+func (u *WorkspaceUpsertOne) UpdateDomainJoinEnabled() *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateDomainJoinEnabled()
 	})
 }
 
@@ -2531,6 +2582,20 @@ func (u *WorkspaceUpsertBulk) UpdateRetentionDays() *WorkspaceUpsertBulk {
 func (u *WorkspaceUpsertBulk) ClearRetentionDays() *WorkspaceUpsertBulk {
 	return u.Update(func(s *WorkspaceUpsert) {
 		s.ClearRetentionDays()
+	})
+}
+
+// SetDomainJoinEnabled sets the "domain_join_enabled" field.
+func (u *WorkspaceUpsertBulk) SetDomainJoinEnabled(v bool) *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetDomainJoinEnabled(v)
+	})
+}
+
+// UpdateDomainJoinEnabled sets the "domain_join_enabled" field to the value that was provided on create.
+func (u *WorkspaceUpsertBulk) UpdateDomainJoinEnabled() *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateDomainJoinEnabled()
 	})
 }
 

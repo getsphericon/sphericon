@@ -149,3 +149,47 @@ func (h *Handlers) SiteJoinDomainsRemove(ctx context.Context, params siteapi.Sit
 	}
 	return &siteapi.SiteJoinDomainsRemoveNoContent{}, nil
 }
+
+// SiteDomainJoinGet reads the Workspace's domain join switch. Owners only.
+func (h *Handlers) SiteDomainJoinGet(ctx context.Context, params siteapi.SiteDomainJoinGetParams) (siteapi.SiteDomainJoinGetRes, error) {
+	s, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
+	if ent.IsNotFound(err) {
+		v := siteapi.SiteDomainJoinGetNotFound(workspaceNotFoundProblem())
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	if !accounts.CanManageJoinDomains(role) {
+		v := siteapi.SiteDomainJoinGetForbidden(problem(http.StatusForbidden, i18n.T("errors.join_domain_forbidden", nil)))
+		return &v, nil
+	}
+
+	enabled, err := h.accounts.DomainJoinEnabled(ctx, s)
+	if err != nil {
+		return nil, err
+	}
+	return &siteapi.SiteDomainJoinResource{Enabled: enabled}, nil
+}
+
+// SiteDomainJoinSet switches the Workspace's domain join on or off. Owners only.
+func (h *Handlers) SiteDomainJoinSet(ctx context.Context, req *siteapi.SiteSetDomainJoinInput, params siteapi.SiteDomainJoinSetParams) (siteapi.SiteDomainJoinSetRes, error) {
+	s, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
+	if ent.IsNotFound(err) {
+		v := siteapi.SiteDomainJoinSetNotFound(workspaceNotFoundProblem())
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	if !accounts.CanManageJoinDomains(role) {
+		v := siteapi.SiteDomainJoinSetForbidden(problem(http.StatusForbidden, i18n.T("errors.join_domain_forbidden", nil)))
+		return &v, nil
+	}
+
+	w, err := h.accounts.SetDomainJoin(ctx, s, h.actor(ctx), req.Enabled)
+	if err != nil {
+		return nil, err
+	}
+	return &siteapi.SiteDomainJoinResource{Enabled: w.DomainJoinEnabled}, nil
+}

@@ -2,15 +2,16 @@ import { HttpResponse } from 'msw'
 import { expect, test, vi } from 'vitest'
 
 import { handleSiteAuthVerifyEmail } from '../../generated/site/msw.gen.ts'
-import { Route as indexRoute } from '../../routes/index.tsx'
 import { Route as loginRoute } from '../../routes/login.tsx'
 import { Route as verifyEmailRoute } from '../../routes/verify-email.tsx'
+import { Route as overviewRoute } from '../../routes/workspaces/$workspaceId/index.tsx'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
 import { VerifyEmailPage } from './verify-email.tsx'
 
+const LANDING = 'JoinedWs'
 const mount = routeMount(verifyEmailRoute)
 const MOUNT = { ...mount, initialPath: `${mount.initialPath}?token=tok-v` }
 
@@ -23,18 +24,22 @@ async function fillAndSubmit(
   await screen.getByRole('button', { name: 'Set password' }).click()
 }
 
-test('sends the token alone first and enters the first workspace when it is accepted', async () => {
+test('sends the token alone first and opens the workspace the answer names when it is accepted', async () => {
   const bodies: unknown[] = []
   worker.use(
     handleSiteAuthVerifyEmail(async ({ request }) => {
       bodies.push(await request.json())
-      return HttpResponse.json({})
+      return HttpResponse.json({ landingWorkspaceId: LANDING })
     }),
   )
   const { screen, navigate } = await renderWithRouter(<VerifyEmailPage />, MOUNT)
 
   await vi.waitFor(() =>
-    expect(navigate).toHaveBeenCalledWith({ to: indexRoute.to, replace: true }),
+    expect(navigate).toHaveBeenCalledWith({
+      to: overviewRoute.to,
+      params: { workspaceId: LANDING },
+      replace: true,
+    }),
   )
   expect(bodies).toEqual([{ token: 'tok-v' }])
   await expect.element(screen.getByRole('button', { name: 'Set password' })).not.toBeInTheDocument()
@@ -49,7 +54,7 @@ test('asks for a password when the link is not in the registration browser and r
       if ((body as { password?: string }).password === undefined) {
         return problem(428, { detail: 'set a password' })
       }
-      return HttpResponse.json({})
+      return HttpResponse.json({ landingWorkspaceId: LANDING })
     }),
   )
   const { screen, navigate } = await renderWithRouter(<VerifyEmailPage />, MOUNT)
@@ -57,7 +62,11 @@ test('asks for a password when the link is not in the registration browser and r
   await fillAndSubmit(screen, 's3cret-pass')
 
   await vi.waitFor(() =>
-    expect(navigate).toHaveBeenCalledWith({ to: indexRoute.to, replace: true }),
+    expect(navigate).toHaveBeenCalledWith({
+      to: overviewRoute.to,
+      params: { workspaceId: LANDING },
+      replace: true,
+    }),
   )
   expect(bodies).toEqual([{ token: 'tok-v' }, { token: 'tok-v', password: 's3cret-pass' }])
 })
@@ -115,7 +124,9 @@ test('offers a retry that sends the token again after a server failure', async (
   worker.use(
     handleSiteAuthVerifyEmail(() => {
       calls += 1
-      return calls === 1 ? problem(500, { detail: 'boom' }) : HttpResponse.json({})
+      return calls === 1
+        ? problem(500, { detail: 'boom' })
+        : HttpResponse.json({ landingWorkspaceId: LANDING })
     }),
   )
   const { screen, navigate } = await renderWithRouter(<VerifyEmailPage />, MOUNT)
@@ -123,7 +134,11 @@ test('offers a retry that sends the token again after a server failure', async (
   await screen.getByRole('button', { name: 'Try again' }).click()
 
   await vi.waitFor(() =>
-    expect(navigate).toHaveBeenCalledWith({ to: indexRoute.to, replace: true }),
+    expect(navigate).toHaveBeenCalledWith({
+      to: overviewRoute.to,
+      params: { workspaceId: LANDING },
+      replace: true,
+    }),
   )
   expect(calls).toBe(2)
 })

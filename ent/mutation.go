@@ -40325,6 +40325,7 @@ type WorkspaceMutation struct {
 	postal_address              *string
 	retention_days              *int
 	addretention_days           *int
+	domain_join_enabled         *bool
 	second_factor_required_at   *time.Time
 	feed_position               *int64
 	addfeed_position            *int64
@@ -40916,6 +40917,42 @@ func (m *WorkspaceMutation) ResetRetentionDays() {
 	m.retention_days = nil
 	m.addretention_days = nil
 	delete(m.clearedFields, workspace.FieldRetentionDays)
+}
+
+// SetDomainJoinEnabled sets the "domain_join_enabled" field.
+func (m *WorkspaceMutation) SetDomainJoinEnabled(b bool) {
+	m.domain_join_enabled = &b
+}
+
+// DomainJoinEnabled returns the value of the "domain_join_enabled" field in the mutation.
+func (m *WorkspaceMutation) DomainJoinEnabled() (r bool, exists bool) {
+	v := m.domain_join_enabled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDomainJoinEnabled returns the old "domain_join_enabled" field's value of the Workspace entity.
+// If the Workspace object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WorkspaceMutation) OldDomainJoinEnabled(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDomainJoinEnabled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDomainJoinEnabled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDomainJoinEnabled: %w", err)
+	}
+	return oldValue.DomainJoinEnabled, nil
+}
+
+// ResetDomainJoinEnabled resets all changes to the "domain_join_enabled" field.
+func (m *WorkspaceMutation) ResetDomainJoinEnabled() {
+	m.domain_join_enabled = nil
 }
 
 // SetSecondFactorRequiredAt sets the "second_factor_required_at" field.
@@ -43051,7 +43088,7 @@ func (m *WorkspaceMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *WorkspaceMutation) Fields() []string {
-	fields := make([]string, 0, 20)
+	fields := make([]string, 0, 21)
 	if m.created_at != nil {
 		fields = append(fields, workspace.FieldCreatedAt)
 	}
@@ -43078,6 +43115,9 @@ func (m *WorkspaceMutation) Fields() []string {
 	}
 	if m.retention_days != nil {
 		fields = append(fields, workspace.FieldRetentionDays)
+	}
+	if m.domain_join_enabled != nil {
+		fields = append(fields, workspace.FieldDomainJoinEnabled)
 	}
 	if m.second_factor_required_at != nil {
 		fields = append(fields, workspace.FieldSecondFactorRequiredAt)
@@ -43138,6 +43178,8 @@ func (m *WorkspaceMutation) Field(name string) (ent.Value, bool) {
 		return m.PostalAddress()
 	case workspace.FieldRetentionDays:
 		return m.RetentionDays()
+	case workspace.FieldDomainJoinEnabled:
+		return m.DomainJoinEnabled()
 	case workspace.FieldSecondFactorRequiredAt:
 		return m.SecondFactorRequiredAt()
 	case workspace.FieldFeedPosition:
@@ -43187,6 +43229,8 @@ func (m *WorkspaceMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldPostalAddress(ctx)
 	case workspace.FieldRetentionDays:
 		return m.OldRetentionDays(ctx)
+	case workspace.FieldDomainJoinEnabled:
+		return m.OldDomainJoinEnabled(ctx)
 	case workspace.FieldSecondFactorRequiredAt:
 		return m.OldSecondFactorRequiredAt(ctx)
 	case workspace.FieldFeedPosition:
@@ -43280,6 +43324,13 @@ func (m *WorkspaceMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetRetentionDays(v)
+		return nil
+	case workspace.FieldDomainJoinEnabled:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDomainJoinEnabled(v)
 		return nil
 	case workspace.FieldSecondFactorRequiredAt:
 		v, ok := value.(time.Time)
@@ -43535,6 +43586,9 @@ func (m *WorkspaceMutation) ResetField(name string) error {
 		return nil
 	case workspace.FieldRetentionDays:
 		m.ResetRetentionDays()
+		return nil
+	case workspace.FieldDomainJoinEnabled:
+		m.ResetDomainJoinEnabled()
 		return nil
 	case workspace.FieldSecondFactorRequiredAt:
 		m.ResetSecondFactorRequiredAt()

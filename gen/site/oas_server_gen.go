@@ -369,6 +369,19 @@ type Handler interface {
 	//
 	// GET /workspaces/{workspaceId}/custom-fields
 	SiteCustomFieldsList(ctx context.Context, params SiteCustomFieldsListParams) (SiteCustomFieldsListRes, error)
+	// SiteDomainJoinGet implements SiteDomainJoin_get operation.
+	//
+	// Read the domain join switch (owner only).
+	//
+	// GET /workspaces/{workspaceId}/domain-join
+	SiteDomainJoinGet(ctx context.Context, params SiteDomainJoinGetParams) (SiteDomainJoinGetRes, error)
+	// SiteDomainJoinSet implements SiteDomainJoin_set operation.
+	//
+	// Switch domain join on or off (owner only). Switching it on adds nobody who is already a User: only
+	// an address proven afterwards joins. Recorded as an Audit entry.
+	//
+	// PUT /workspaces/{workspaceId}/domain-join
+	SiteDomainJoinSet(ctx context.Context, req *SiteSetDomainJoinInput, params SiteDomainJoinSetParams) (SiteDomainJoinSetRes, error)
 	// SiteEnrollmentsGet implements SiteEnrollments_get operation.
 	//
 	// Get one Enrollment of an Automation.

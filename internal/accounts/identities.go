@@ -178,7 +178,7 @@ func (a *Accounts) createFromProvider(ctx context.Context, in ProviderLogin) (*e
 	if name == "" {
 		name, _, _ = strings.Cut(email, "@")
 	}
-	return a.verified(ctx, func(tx *ent.Client) (*ent.User, error) {
+	u, _, err := a.verified(ctx, noJoin, func(tx *ent.Client) (*ent.User, error) {
 		now := time.Now()
 		u, err := tx.User.Create().
 			SetName(name).
@@ -194,6 +194,7 @@ func (a *Accounts) createFromProvider(ctx context.Context, in ProviderLogin) (*e
 		}
 		return u, nil
 	})
+	return u, err
 }
 
 var (
@@ -327,7 +328,7 @@ func (a *Accounts) linkToHolder(ctx context.Context, holderID int64, in Provider
 // User is no longer Unverified.
 func (a *Accounts) takeOver(ctx context.Context, holderID int64, in ProviderLogin) (*ent.User, error) {
 	name := strings.TrimSpace(in.Name)
-	return a.verified(ctx, func(tx *ent.Client) (*ent.User, error) {
+	u, _, err := a.verified(ctx, noJoin, func(tx *ent.Client) (*ent.User, error) {
 		now := time.Now()
 		upd := tx.User.Update().
 			Where(user.ID(holderID), user.EmailVerifiedAtIsNil()).
@@ -350,6 +351,7 @@ func (a *Accounts) takeOver(ctx context.Context, holderID int64, in ProviderLogi
 		}
 		return tx.User.Get(ctx, holderID)
 	})
+	return u, err
 }
 
 // UndoLink removes one Linked identity of a User and ends every session of the User: the

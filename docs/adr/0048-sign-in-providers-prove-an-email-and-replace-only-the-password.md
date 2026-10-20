@@ -71,8 +71,9 @@ Avoid list for this concept.
 
 - **Gates and Invitations.** A provider sign-up of a new address obeys the registration gate
   (`SPHERICON_SIGNUP_OPEN`, ADR 0042: `signup_closed`); a Linked identity or a matching Verified
-  User still signs in. The Instance has no other registration gate (no domain restriction), so
-  provider sign-up has none either. An Invitation link carries its token into the flow
+  User still signs in. The Instance has no other registration gate, so provider sign-up has
+  none either. A Workspace may admit by domain (ADR 0051) once an address is proven, but that
+  never opens or closes registration: it adds a Membership, not a User. An Invitation link carries its token into the flow
   (`start?invitation=`, kept in the flow cookie): the provider's trusted email must equal the
   invited address (case-insensitive) or the callback refuses with `invitation_email_mismatch`,
   before anything is created, and lands back on the Invitation page. A match opens a closed

@@ -15,6 +15,16 @@
   workspace_id: 1
   created_at: '{{daysAgo 2}}'
   updated_at: '{{daysAgo 2}}'
+# Hooli (workspace 5, suspended, domain join on) holds hooli.test verified: a suspended
+# Workspace admits nobody even with the switch on and the domain verified.
+- id: 3 # fixture: JoinDomainHooli
+  domain: hooli.test
+  token: 'sphericon-join=hooli-verified-token'
+  verified_at: '{{daysAgo 30}}'
+  last_checked_at: '{{daysAgo 1}}'
+  workspace_id: 5
+  created_at: '{{daysAgo 30}}'
+  updated_at: '{{daysAgo 1}}'
 
 # --- Globex (workspace 2) foreign row, pending — DO NOT change ---
 - id: 900 # fixture: JoinDomainGlobex

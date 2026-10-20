@@ -100,6 +100,11 @@ func RetentionDays(v int) predicate.Workspace {
 	return predicate.Workspace(sql.FieldEQ(FieldRetentionDays, v))
 }
 
+// DomainJoinEnabled applies equality check predicate on the "domain_join_enabled" field. It's identical to DomainJoinEnabledEQ.
+func DomainJoinEnabled(v bool) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEQ(FieldDomainJoinEnabled, v))
+}
+
 // SecondFactorRequiredAt applies equality check predicate on the "second_factor_required_at" field. It's identical to SecondFactorRequiredAtEQ.
 func SecondFactorRequiredAt(v time.Time) predicate.Workspace {
 	return predicate.Workspace(sql.FieldEQ(FieldSecondFactorRequiredAt, v))
@@ -608,6 +613,16 @@ func RetentionDaysIsNil() predicate.Workspace {
 // RetentionDaysNotNil applies the NotNil predicate on the "retention_days" field.
 func RetentionDaysNotNil() predicate.Workspace {
 	return predicate.Workspace(sql.FieldNotNull(FieldRetentionDays))
+}
+
+// DomainJoinEnabledEQ applies the EQ predicate on the "domain_join_enabled" field.
+func DomainJoinEnabledEQ(v bool) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEQ(FieldDomainJoinEnabled, v))
+}
+
+// DomainJoinEnabledNEQ applies the NEQ predicate on the "domain_join_enabled" field.
+func DomainJoinEnabledNEQ(v bool) predicate.Workspace {
+	return predicate.Workspace(sql.FieldNEQ(FieldDomainJoinEnabled, v))
 }
 
 // SecondFactorRequiredAtEQ applies the EQ predicate on the "second_factor_required_at" field.

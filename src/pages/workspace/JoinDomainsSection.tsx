@@ -9,6 +9,7 @@ import {
   Group,
   Loader,
   Stack,
+  Switch,
   Text,
   TextInput,
   Title,
@@ -18,6 +19,9 @@ import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
 import {
+  siteDomainJoinGetOptions,
+  siteDomainJoinGetQueryKey,
+  siteDomainJoinSetMutation,
   siteJoinDomainsAddMutation,
   siteJoinDomainsListOptions,
   siteJoinDomainsListQueryKey,
@@ -105,15 +109,25 @@ function JoinDomainRow({
 }
 
 // JoinDomainsSection is the Owner's "Domain access" panel: add a domain, publish
-// the TXT record it shows, Verify, and remove. Owners only: the page does not render it for
+// the TXT record it shows, Verify, remove, and switch domain join on or off (a person who
+// proves an address on a verified domain after that becomes a member). Owners only: the page does not render it for
 // anyone else, and the API refuses them.
 export function JoinDomainsSection({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
   const confirmDelete = useDeleteConfirmation()
   const queryKey = siteJoinDomainsListQueryKey({ path: { workspaceId } })
   const domainsQuery = useQuery(siteJoinDomainsListOptions({ path: { workspaceId } }))
+  const joinKey = siteDomainJoinGetQueryKey({ path: { workspaceId } })
+  const joinQuery = useQuery(siteDomainJoinGetOptions({ path: { workspaceId } }))
   const form = useForm<DomainFormValues>({ initialValues: { domain: '' } })
 
+  const joinMutation = useResourceMutation({
+    mutation: siteDomainJoinSetMutation(),
+    invalidate: [joinKey],
+    successMessage: t(($) => $.joinDomains.switchSaved),
+    errorTitle: t(($) => $.joinDomains.switchError),
+    forbiddenMessage: t(($) => $.joinDomains.forbidden),
+  })
   const addMutation = useResourceMutation({
     mutation: siteJoinDomainsAddMutation(),
     invalidate: [queryKey],
@@ -156,6 +170,19 @@ export function JoinDomainsSection({ workspaceId }: { workspaceId: string }) {
         <Text c="dimmed" size="sm">
           {t(($) => $.joinDomains.description)}
         </Text>
+
+        <Switch
+          label={t(($) => $.joinDomains.switchLabel)}
+          description={t(($) => $.joinDomains.switchDescription)}
+          checked={joinQuery.data?.enabled ?? false}
+          disabled={!joinQuery.isSuccess || joinMutation.isPending}
+          onChange={(event) =>
+            joinMutation.mutate({
+              path: { workspaceId },
+              body: { enabled: event.currentTarget.checked },
+            })
+          }
+        />
 
         {domainsQuery.isError ? (
           <Alert color="red" title={t(($) => $.joinDomains.loadError)} />

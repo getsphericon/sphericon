@@ -141,5 +141,5 @@ func TestJoinDomainsDueAreTheVerifiedOnes(t *testing.T) {
 	ids, err := mod.Due(context.Background(), 100)
 
 	require.NoError(t, err)
-	assert.Equal(t, []int64{fixtures.JoinDomainVerifiedID}, ids, "the pending domains are not due")
+	assert.ElementsMatch(t, []int64{fixtures.JoinDomainVerifiedID, fixtures.JoinDomainHooliID}, ids, "the pending domains are not due")
 }

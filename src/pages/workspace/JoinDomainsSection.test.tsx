@@ -1,7 +1,9 @@
 import { HttpResponse } from 'msw'
-import { expect, test } from 'vitest'
+import { beforeEach, expect, test } from 'vitest'
 
 import {
+  handleSiteDomainJoinGet,
+  handleSiteDomainJoinSet,
   handleSiteJoinDomainsAdd,
   handleSiteJoinDomainsList,
   handleSiteJoinDomainsRemove,
@@ -13,6 +15,11 @@ import { worker } from '../../test/worker.ts'
 import { JoinDomainsSection } from './JoinDomainsSection.tsx'
 
 const WORKSPACE_ID = 'TestWs01'
+
+// Every test starts with the switch off; the ones about it override this.
+beforeEach(() => {
+  worker.use(handleSiteDomainJoinGet({ body: { enabled: false } }))
+})
 
 function domain(over: Partial<SiteJoinDomainResource> = {}): SiteJoinDomainResource {
   return {
@@ -88,4 +95,31 @@ test('removes a domain after confirmation', async () => {
   await screen.getByRole('dialog').getByRole('button', { name: 'Remove' }).click()
 
   await expect.poll(() => removed).toBe(true)
+})
+
+test('shows the domain join switch as stored', async () => {
+  worker.use(
+    handleSiteJoinDomainsList({ body: [] }),
+    handleSiteDomainJoinGet({ body: { enabled: true } }),
+  )
+  const { screen } = await renderWithRouter(<JoinDomainsSection workspaceId={WORKSPACE_ID} />)
+
+  await expect.element(screen.getByRole('switch')).toBeChecked()
+})
+
+test('switches domain join on', async () => {
+  const bodies: unknown[] = []
+  worker.use(
+    handleSiteJoinDomainsList({ body: [] }),
+    handleSiteDomainJoinGet({ body: { enabled: false } }),
+    handleSiteDomainJoinSet(async ({ request }) => {
+      bodies.push(await request.json())
+      return HttpResponse.json({ enabled: true })
+    }),
+  )
+  const { screen } = await renderWithRouter(<JoinDomainsSection workspaceId={WORKSPACE_ID} />)
+
+  await screen.getByRole('switch').click()
+
+  await expect.poll(() => bodies).toEqual([{ enabled: true }])
 })

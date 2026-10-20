@@ -709,6 +709,10 @@ const (
 	JoinDomainGlobexDomain = "globex.test"
 	// JoinDomainGlobexID is from fixtures/join_domains.
 	JoinDomainGlobexID = 900
+	// JoinDomainHooliDomain is from fixtures/join_domains.
+	JoinDomainHooliDomain = "hooli.test"
+	// JoinDomainHooliID is from fixtures/join_domains.
+	JoinDomainHooliID = 3
 	// JoinDomainPendingDomain is from fixtures/join_domains.
 	JoinDomainPendingDomain = "eu.acme.com"
 	// JoinDomainPendingID is from fixtures/join_domains.

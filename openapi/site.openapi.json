@@ -898,6 +898,13 @@
                   "type": "string"
                 }
               }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteVerifyEmailResult"
+                }
+              }
             }
           },
           "400": {
@@ -5417,6 +5424,112 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/SiteDeleteWorkspaceInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workspaces/{workspaceId}/domain-join": {
+      "get": {
+        "operationId": "SiteDomainJoin_get",
+        "description": "Read the domain join switch (owner only).",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteDomainJoinResource"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Join Domains"]
+      },
+      "put": {
+        "operationId": "SiteDomainJoin_set",
+        "description": "Switch domain join on or off (owner only). Switching it on adds nobody who is already\na User: only an address proven afterwards joins. Recorded as an Audit entry.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteDomainJoinResource"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Join Domains"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteSetDomainJoinInput"
               }
             }
           }
@@ -11470,6 +11583,17 @@
         },
         "description": "A DNS record the user publishes to authenticate a sending domain"
       },
+      "SiteDomainJoinResource": {
+        "type": "object",
+        "required": ["enabled"],
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "On: a User who proves an address on one of the Workspace's verified Join domains\nbecomes a member. Off by default."
+          }
+        },
+        "description": "Whether the Workspace admits Users by Join domain"
+      },
       "SiteDryRunHttpStepInput": {
         "type": "object",
         "required": ["body", "contactId"],
@@ -13092,6 +13216,17 @@
         },
         "description": "SES credentials"
       },
+      "SiteSetDomainJoinInput": {
+        "type": "object",
+        "required": ["enabled"],
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "Whether to admit Users by Join domain from now on"
+          }
+        },
+        "description": "Switch domain join on or off"
+      },
       "SiteSetupProgress": {
         "type": "object",
         "required": ["steps", "complete"],
@@ -13874,6 +14009,21 @@
           }
         },
         "description": "Prove an email address with the token sent to it"
+      },
+      "SiteVerifyEmailResult": {
+        "type": "object",
+        "required": ["landingWorkspaceId"],
+        "properties": {
+          "landingWorkspaceId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WorkspaceId"
+              }
+            ],
+            "description": "The Workspace to open: the one the User joined by its Join domain (ADR 0051), else\nthe first Workspace made for them"
+          }
+        },
+        "description": "Where a User who proved their address goes next"
       },
       "SiteWebhookDisabledReason": {
         "type": "string",

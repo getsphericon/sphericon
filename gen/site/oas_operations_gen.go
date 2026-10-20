@@ -56,6 +56,8 @@ const (
 	SiteContactsLookupOperation                       OperationName = "SiteContactsLookup"
 	SiteContactsUpdateOperation                       OperationName = "SiteContactsUpdate"
 	SiteCustomFieldsListOperation                     OperationName = "SiteCustomFieldsList"
+	SiteDomainJoinGetOperation                        OperationName = "SiteDomainJoinGet"
+	SiteDomainJoinSetOperation                        OperationName = "SiteDomainJoinSet"
 	SiteEnrollmentsGetOperation                       OperationName = "SiteEnrollmentsGet"
 	SiteEnrollmentsListOperation                      OperationName = "SiteEnrollmentsList"
 	SiteEventsActionsOperation                        OperationName = "SiteEventsActions"

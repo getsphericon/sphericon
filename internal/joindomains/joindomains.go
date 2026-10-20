@@ -256,7 +256,14 @@ func (m *Module) notifyLost(ctx context.Context, row *ent.JoinDomain) {
 // Workspace, or nil when none does. It is the Instance-wide lookup that runs before any
 // Workspace scope exists.
 func (m *Module) Holder(ctx context.Context, domain string) (*ent.JoinDomain, error) {
-	row, err := m.client.JoinDomain.Query().
+	return HolderIn(ctx, m.client, domain)
+}
+
+// HolderIn is Holder over a given client, so a transaction can read the holder it is about
+// to join people to (the domain-join step of the accounts module). It reads the stored
+// verification only and never looks at DNS.
+func HolderIn(ctx context.Context, c *ent.Client, domain string) (*ent.JoinDomain, error) {
+	row, err := c.JoinDomain.Query().
 		Where(joindomain.Domain(domain), joindomain.VerifiedAtNotNil()).
 		Only(ctx)
 	if ent.IsNotFound(err) {

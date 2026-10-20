@@ -373,10 +373,13 @@ const FirstWorkspaceName = "Personal"
 // stored at registration), bumps the session epoch (ending every session issued before, as
 // a password change does) and creates the User's first Workspace, named FirstWorkspaceName,
 // with the User as owner. It records `user.email_verify` in that Workspace's Audit log and
-// returns the User.
+// returns the User. The address was just proven, so it is a domain-join step (ADR 0051): a
+// verified Join domain equal to its domain, with the switch on, makes the User a `member`
+// of that Workspace before the first Workspace is created. landing is where the User goes
+// next: the joined Workspace, else the first one.
 // ErrAlreadyVerified when the User is no longer Unverified (a used link).
-func (a *Accounts) VerifyEmail(ctx context.Context, id int64, passwordHash *string) (*ent.User, error) {
-	return a.verified(ctx, func(tx *ent.Client) (*ent.User, error) {
+func (a *Accounts) VerifyEmail(ctx context.Context, id int64, passwordHash *string) (u *ent.User, landing *ent.Workspace, err error) {
+	return a.verified(ctx, joinOnProof, func(tx *ent.Client) (*ent.User, error) {
 		return markVerified(ctx, tx, id, "", passwordHash)
 	})
 }
@@ -386,7 +389,7 @@ func (a *Accounts) VerifyEmail(ctx context.Context, id int64, passwordHash *stri
 // once with its password, and the first Workspace (FirstWorkspaceName), exactly as VerifyEmail does. The
 // unique index on the email refuses a taken address (see db.IsUniqueViolation).
 func (a *Accounts) RegisterVerified(ctx context.Context, name, email, passwordHash string) (*ent.User, error) {
-	return a.verified(ctx, func(tx *ent.Client) (*ent.User, error) {
+	u, _, err := a.verified(ctx, noJoin, func(tx *ent.Client) (*ent.User, error) {
 		return tx.User.Create().
 			SetName(name).
 			SetEmail(email).
@@ -394,6 +397,7 @@ func (a *Accounts) RegisterVerified(ctx context.Context, name, email, passwordHa
 			SetEmailVerifiedAt(time.Now()).
 			Save(ctx)
 	})
+	return u, err
 }
 
 // CreateOwner is the Instance operator's way to make a first Owner on an Instance that
@@ -413,12 +417,27 @@ func (a *Accounts) CreateOwner(ctx context.Context, email, name string) (passwor
 	return password, nil
 }
 
-// verified is what makes a User Verified, shared by VerifyEmail and RegisterVerified:
-// write stores the User's verified state, then the User's first Workspace is created
-// and `user.email_verify` recorded in its Audit log, all in one transaction.
-func (a *Accounts) verified(ctx context.Context, write func(tx *ent.Client) (*ent.User, error)) (*ent.User, error) {
+// joinMode says whether the step that makes a User Verified also proved the address, so it
+// takes part in domain join (ADR 0051).
+type joinMode bool
+
+const (
+	// joinOnProof: the step stamps email_proven_at from empty (the verify link).
+	joinOnProof joinMode = true
+	// noJoin: the step proves nothing (an Instance with verification off stamps only
+	// verified_at) or its proof point is wired by the provider sign-in.
+	noJoin joinMode = false
+)
+
+// verified is what makes a User Verified, shared by VerifyEmail, RegisterVerified and the
+// provider sign-in: write stores the User's verified state; then, when mode is joinOnProof,
+// the domain-join step runs; then the User's first Workspace is created and
+// `user.email_verify` recorded in its Audit log, all in one transaction. landing is the
+// Workspace the User goes to next: the one joined by domain, else the first.
+func (a *Accounts) verified(ctx context.Context, mode joinMode, write func(tx *ent.Client) (*ent.User, error)) (*ent.User, *ent.Workspace, error) {
 	for {
 		var verified *ent.User
+		var landing *ent.Workspace
 		written := false
 		err := a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
 			u, err := write(tx)
@@ -426,16 +445,27 @@ func (a *Accounts) verified(ctx context.Context, write func(tx *ent.Client) (*en
 				return err
 			}
 			written = true
-			if _, err := createWorkspaceIn(ctx, tx, u.ID, FirstWorkspaceName, a.newPublicID()); err != nil {
+			var joined *ent.Workspace
+			if mode == joinOnProof {
+				// The link follows a registration, so the User exists: the sign-up gate permits.
+				if joined, err = applyDomainJoin(ctx, tx, pub, u, proof{SignupPermits: true}); err != nil {
+					return err
+				}
+			}
+			first, err := createWorkspaceIn(ctx, tx, u.ID, FirstWorkspaceName, a.newPublicID())
+			if err != nil {
 				return err
 			}
-			verified = u
+			verified, landing = u, first
+			if joined != nil {
+				landing = joined
+			}
 			return RecordUserAction(ctx, tx, pub, u, events.ActionUserEmailVerify, nil)
 		})
 		if written && db.IsUniqueViolation(err) {
 			continue // drew a taken id; the next attempt retries
 		}
-		return verified, err
+		return verified, landing, err
 	}
 }
 
@@ -489,7 +519,7 @@ func (a *Accounts) ResetPassword(ctx context.Context, id int64, passwordHash str
 		return nil, false, err
 	}
 	if u.EmailVerifiedAt == nil {
-		u, err = a.VerifyEmail(ctx, id, &passwordHash)
+		u, _, err = a.VerifyEmail(ctx, id, &passwordHash)
 		if err == nil {
 			return u, true, nil
 		}

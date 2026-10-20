@@ -524,6 +524,25 @@ func (UnimplementedHandler) SiteCustomFieldsList(ctx context.Context, params Sit
 	return r, ht.ErrNotImplemented
 }
 
+// SiteDomainJoinGet implements SiteDomainJoin_get operation.
+//
+// Read the domain join switch (owner only).
+//
+// GET /workspaces/{workspaceId}/domain-join
+func (UnimplementedHandler) SiteDomainJoinGet(ctx context.Context, params SiteDomainJoinGetParams) (r SiteDomainJoinGetRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteDomainJoinSet implements SiteDomainJoin_set operation.
+//
+// Switch domain join on or off (owner only). Switching it on adds nobody who is already a User: only
+// an address proven afterwards joins. Recorded as an Audit entry.
+//
+// PUT /workspaces/{workspaceId}/domain-join
+func (UnimplementedHandler) SiteDomainJoinSet(ctx context.Context, req *SiteSetDomainJoinInput, params SiteDomainJoinSetParams) (r SiteDomainJoinSetRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteEnrollmentsGet implements SiteEnrollments_get operation.
 //
 // Get one Enrollment of an Automation.

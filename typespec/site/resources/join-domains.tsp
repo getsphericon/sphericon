@@ -83,3 +83,35 @@ namespace SiteJoinDomains {
     | ForbiddenProblem
     | NotFoundProblem;
 }
+
+/** Whether the Workspace admits Users by Join domain */
+model SiteDomainJoinResource {
+  /** On: a User who proves an address on one of the Workspace's verified Join domains
+   * becomes a member. Off by default. */
+  enabled: boolean;
+}
+
+/** Switch domain join on or off */
+model SiteSetDomainJoinInput {
+  /** Whether to admit Users by Join domain from now on */
+  enabled: boolean;
+}
+
+@route("/workspaces/{workspaceId}/domain-join")
+@tag("Site Join Domains")
+namespace SiteDomainJoin {
+  /** Read the domain join switch (owner only). */
+  @get
+  op get(@path workspaceId: WorkspaceId):
+    | SiteDomainJoinResource
+    | ForbiddenProblem
+    | NotFoundProblem;
+
+  /** Switch domain join on or off (owner only). Switching it on adds nobody who is already
+   * a User: only an address proven afterwards joins. Recorded as an Audit entry. */
+  @put
+  op set(@path workspaceId: WorkspaceId, @body body: SiteSetDomainJoinInput):
+    | SiteDomainJoinResource
+    | ForbiddenProblem
+    | NotFoundProblem;
+}

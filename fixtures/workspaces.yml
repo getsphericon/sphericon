@@ -44,6 +44,7 @@
   suspended_by_kind: staff
   suspended_by_id: op-fixture
   suspension_reason: abuse report
+  domain_join_enabled: true
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 # Sixth tenant (Soylent) - carries deliverability traffic inside the last day, the data the

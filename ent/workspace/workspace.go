@@ -33,6 +33,8 @@ const (
 	FieldPostalAddress = "postal_address"
 	// FieldRetentionDays holds the string denoting the retention_days field in the database.
 	FieldRetentionDays = "retention_days"
+	// FieldDomainJoinEnabled holds the string denoting the domain_join_enabled field in the database.
+	FieldDomainJoinEnabled = "domain_join_enabled"
 	// FieldSecondFactorRequiredAt holds the string denoting the second_factor_required_at field in the database.
 	FieldSecondFactorRequiredAt = "second_factor_required_at"
 	// FieldFeedPosition holds the string denoting the feed_position field in the database.
@@ -332,6 +334,7 @@ var Columns = []string{
 	FieldRequireConfirmedOptIn,
 	FieldPostalAddress,
 	FieldRetentionDays,
+	FieldDomainJoinEnabled,
 	FieldSecondFactorRequiredAt,
 	FieldFeedPosition,
 	FieldErasedAt,
@@ -372,6 +375,8 @@ var (
 	DefaultPostalAddress string
 	// RetentionDaysValidator is a validator for the "retention_days" field. It is called by the builders before save.
 	RetentionDaysValidator func(int) error
+	// DefaultDomainJoinEnabled holds the default value on creation for the "domain_join_enabled" field.
+	DefaultDomainJoinEnabled bool
 	// DefaultFeedPosition holds the default value on creation for the "feed_position" field.
 	DefaultFeedPosition int64
 	// DefaultAbuseExempt holds the default value on creation for the "abuse_exempt" field.
@@ -453,6 +458,11 @@ func ByPostalAddress(opts ...sql.OrderTermOption) OrderOption {
 // ByRetentionDays orders the results by the retention_days field.
 func ByRetentionDays(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldRetentionDays, opts...).ToFunc()
+}
+
+// ByDomainJoinEnabled orders the results by the domain_join_enabled field.
+func ByDomainJoinEnabled(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDomainJoinEnabled, opts...).ToFunc()
 }
 
 // BySecondFactorRequiredAt orders the results by the second_factor_required_at field.

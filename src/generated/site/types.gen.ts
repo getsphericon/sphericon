@@ -1733,6 +1733,17 @@ export type SiteDnsRecord = {
 };
 
 /**
+ * Whether the Workspace admits Users by Join domain
+ */
+export type SiteDomainJoinResource = {
+  /**
+   * On: a User who proves an address on one of the Workspace's verified Join domains
+   * becomes a member. Off by default.
+   */
+  enabled: boolean;
+};
+
+/**
  * Request body for rendering an HTTP step's body for a Contact
  */
 export type SiteDryRunHttpStepInput = {
@@ -2955,6 +2966,16 @@ export type SiteSesConfigInput = {
 };
 
 /**
+ * Switch domain join on or off
+ */
+export type SiteSetDomainJoinInput = {
+  /**
+   * Whether to admit Users by Join domain from now on
+   */
+  enabled: boolean;
+};
+
+/**
  * The Workspace's Setup checklist: a point-in-time read model, never ticked by hand
  */
 export type SiteSetupProgress = {
@@ -3541,6 +3562,17 @@ export type SiteVerifyEmailInput = {
    * the password given at registration. Ignored in the Registration browser.
    */
   password?: string;
+};
+
+/**
+ * Where a User who proved their address goes next
+ */
+export type SiteVerifyEmailResult = {
+  /**
+   * The Workspace to open: the one the User joined by its Join domain (ADR 0051), else
+   * the first Workspace made for them
+   */
+  landingWorkspaceId: WorkspaceId;
 };
 
 /**
@@ -4436,8 +4468,10 @@ export type SiteAuthVerifyEmailResponses = {
   /**
    * The request has succeeded.
    */
-  200: unknown;
+  200: SiteVerifyEmailResult;
 };
+
+export type SiteAuthVerifyEmailResponse = SiteAuthVerifyEmailResponses[keyof SiteAuthVerifyEmailResponses];
 
 export type SitePublicConfirmationsPerformData = {
   body?: never;
@@ -7150,6 +7184,68 @@ export type SiteWorkspacesDeleteResponses = {
 };
 
 export type SiteWorkspacesDeleteResponse = SiteWorkspacesDeleteResponses[keyof SiteWorkspacesDeleteResponses];
+
+export type SiteDomainJoinGetData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/domain-join';
+};
+
+export type SiteDomainJoinGetErrors = {
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteDomainJoinGetError = SiteDomainJoinGetErrors[keyof SiteDomainJoinGetErrors];
+
+export type SiteDomainJoinGetResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteDomainJoinResource;
+};
+
+export type SiteDomainJoinGetResponse = SiteDomainJoinGetResponses[keyof SiteDomainJoinGetResponses];
+
+export type SiteDomainJoinSetData = {
+  body: SiteSetDomainJoinInput;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/domain-join';
+};
+
+export type SiteDomainJoinSetErrors = {
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteDomainJoinSetError = SiteDomainJoinSetErrors[keyof SiteDomainJoinSetErrors];
+
+export type SiteDomainJoinSetResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteDomainJoinResource;
+};
+
+export type SiteDomainJoinSetResponse = SiteDomainJoinSetResponses[keyof SiteDomainJoinSetResponses];
 
 export type SiteEventsListData = {
   body?: never;

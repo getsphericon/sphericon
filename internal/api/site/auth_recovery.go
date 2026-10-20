@@ -128,7 +128,7 @@ func (h *Handlers) SiteAuthVerifyEmail(ctx context.Context, req *siteapi.SiteVer
 		}
 		hash = &replacement
 	}
-	verified, err := h.accounts.VerifyEmail(ctx, uid, hash)
+	verified, landing, err := h.accounts.VerifyEmail(ctx, uid, hash)
 	if errors.Is(err, accounts.ErrAlreadyVerified) {
 		v := siteapi.SiteAuthVerifyEmailBadRequest(problem(http.StatusBadRequest, i18n.T("errors.verify_link_bad", nil)))
 		return &v, nil
@@ -144,7 +144,10 @@ func (h *Handlers) SiteAuthVerifyEmail(ctx context.Context, req *siteapi.SiteVer
 	if err != nil {
 		return nil, err
 	}
-	return &siteapi.SiteAuthVerifyEmailOK{SetCookie: cookie.String()}, nil
+	return &siteapi.SiteVerifyEmailResultHeaders{
+		SetCookie: cookie.String(),
+		Response:  siteapi.SiteVerifyEmailResult{LandingWorkspaceId: siteapi.WorkspaceId(landing.PublicID)},
+	}, nil
 }
 
 // SiteAuthConfirmEmailChange applies a requested email change once the new

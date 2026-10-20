@@ -13,6 +13,7 @@ import (
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/joindomain"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/internal/i18n"
@@ -146,11 +147,17 @@ func (w *RecheckTrackingDomainsWorker) Work(ctx context.Context, job *river.Job[
 // instead of querying real DNS (which no local domain publishes), it echoes back
 // each domain's own stored public key, so any sending domain a developer adds
 // self-verifies and the send gate (ADR 0010) doesn't block the Mailpit loop.
+// It answers a Join domain's proof record the same way: the name
+// _sphericon-join.<domain> resolves to the tokens every Workspace's claim of the domain
+// stores, so a domain an Owner adds in the members settings verifies without DNS.
 // Production uses net.DefaultResolver.LookupTXT — this trust must never be wired
 // outside a dev env.
 func DevTXTLookup(client *ent.Client) sending.TXTLookup {
 	const marker = "._domainkey."
 	return func(ctx context.Context, name string) ([]string, error) {
+		if joined, ok := strings.CutPrefix(name, joindomains.RecordLabel); ok {
+			return devJoinTokens(ctx, client, name, strings.TrimSuffix(joined, "."))
+		}
 		_, after, ok := strings.Cut(name, marker)
 		if !ok {
 			return nil, &net.DNSError{IsNotFound: true, Name: name}
@@ -167,6 +174,23 @@ func DevTXTLookup(client *ent.Client) sending.TXTLookup {
 		}
 		return []string{row.DkimPublicKey}, nil
 	}
+}
+
+// devJoinTokens answers the proof record of a Join domain from the tokens stored for it, or
+// NXDOMAIN when no Workspace claims the domain.
+func devJoinTokens(ctx context.Context, client *ent.Client, name, domain string) ([]string, error) {
+	rows, err := client.JoinDomain.Query().Where(joindomain.Domain(domain)).All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if len(rows) == 0 {
+		return nil, &net.DNSError{IsNotFound: true, Name: name}
+	}
+	tokens := make([]string, len(rows))
+	for i, row := range rows {
+		tokens[i] = row.Token
+	}
+	return tokens, nil
 }
 
 // DomainsDueForRecheck returns up to limit sending-domain ids to re-verify,

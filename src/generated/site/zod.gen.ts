@@ -400,6 +400,13 @@ export const zSiteDnsRecord = z.object({
 });
 
 /**
+ * Whether the Workspace admits Users by Join domain
+ */
+export const zSiteDomainJoinResource = z.object({
+  enabled: z.boolean()
+});
+
+/**
  * Request body for rendering an HTTP step's body for a Contact
  */
 export const zSiteDryRunHttpStepInput = z.object({
@@ -806,6 +813,13 @@ export const zSiteSesConfigInput = z.object({
   from: zEmailAddress,
   fromName: z.exactOptional(z.string().nullable()),
   endpoint: z.exactOptional(z.string().nullable())
+});
+
+/**
+ * Switch domain join on or off
+ */
+export const zSiteSetDomainJoinInput = z.object({
+  enabled: z.boolean()
 });
 
 /**
@@ -1795,6 +1809,13 @@ export const zSiteOAuthDecisionInput = z.object({
 });
 
 /**
+ * Where a User who proved their address goes next
+ */
+export const zSiteVerifyEmailResult = z.object({
+  landingWorkspaceId: zWorkspaceId
+});
+
+/**
  * Workspace the current user belongs to
  */
 export const zSiteWorkspaceResource = z.object({
@@ -2215,6 +2236,11 @@ export const zSiteAuthSigninStartQuery = z.object({
 });
 
 export const zSiteAuthVerifyEmailBody = zSiteVerifyEmailInput;
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteAuthVerifyEmailResponse = zSiteVerifyEmailResult;
 
 export const zSitePublicConfirmationsPerformPath = z.object({
   token: z.string()
@@ -2950,6 +2976,26 @@ export const zSiteWorkspacesDeletePath = z.object({
  * The request has succeeded.
  */
 export const zSiteWorkspacesDeleteResponse = zSiteDeletedWorkspaceResource;
+
+export const zSiteDomainJoinGetPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteDomainJoinGetResponse = zSiteDomainJoinResource;
+
+export const zSiteDomainJoinSetBody = zSiteSetDomainJoinInput;
+
+export const zSiteDomainJoinSetPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteDomainJoinSetResponse = zSiteDomainJoinResource;
 
 export const zSiteEventsListPath = z.object({
   workspaceId: zWorkspaceId
