@@ -307,6 +307,12 @@ Automation is its own unsubscribe Sending source. Activating starts enrolling; d
 stops _new_ enrollments but lets in-flight Enrollments finish (deactivate ≠ halt).
 _Avoid_: Workflow, flow, journey, drip, campaign
 
+**Automation version**:
+One immutable copy of an Automation's steps. An Enrollment stays on the version it began on, so
+editing the steps changes only later Enrollments; a version no Enrollment stands on is rewritten
+rather than superseded. The name and Trigger belong to the Automation, not to a version.
+_Avoid_: Revision, snapshot, draft
+
 **Trigger**:
 The single Event action that enrolls a Contact into an Automation (e.g. "contact.created", a
 custom event). Not a separate entity — one Trigger per Automation. Matched by the Event's
@@ -372,6 +378,17 @@ already written.
 _Avoid_: Theme, style guide
 
 ### Operational
+
+**Discard**:
+Taking a row out of working lists while keeping it, by stamping `discarded_at`; **Undiscard**
+clears the stamp. It is the one mechanism behind what the UI calls Archive (a Broadcast, an
+Automation) or Delete (a Workspace, restorable for its window). A discarded row is hidden from
+lists and from new work, but not from history: reports still count it. A row that other live
+work depends on cannot be discarded. **Purge** is the physical removal, allowed only for what
+has no history (a draft Broadcast, an Automation with no Enrollments) and for erasure. The
+raw, undiscardable fact rows (Events, Outbound messages, Audit entries) are never discarded.
+_Avoid_: Soft delete, archive (as the mechanism), trash, tombstone (a tombstone is the row an
+erased Workspace leaves)
 
 **Integration**:
 A workspace-scoped, **outbound** connection to an external sending provider — channel-agnostic

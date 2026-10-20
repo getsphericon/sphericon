@@ -1,5 +1,6 @@
 ---
 status: accepted
+amended-by: 0049 (the deleted_at column is discarded_at)
 ---
 
 # Workspaces have no slug and are deleted softly
