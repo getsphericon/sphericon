@@ -49,3 +49,10 @@ func (m *Module[P]) Prove(ctx context.Context, address, passwordHash, password s
 	}
 	return ProofResult{Proof: ProofWrong}, nil
 }
+
+// CountFailure counts one wrong second-step code of an already proven password on the
+// address's budget, the same budget a wrong password feeds (a profile action that asks for
+// the password and then a code, such as User deletion).
+func (m *Module[P]) CountFailure(ctx context.Context, address string) error {
+	return m.cfg.Throttle.RecordFailure(ctx, accounts.NormalizeEmail(address))
+}

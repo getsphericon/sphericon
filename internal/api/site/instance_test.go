@@ -223,5 +223,5 @@ func TestSiteInstancePreviewIsTheValidReportAndWorksWithSendingOff(t *testing.T)
 	row, err := env.DB.InstanceState.Get(t.Context(), 1)
 	require.NoError(t, err)
 	assert.JSONEq(t, `"`+row.InstanceID+`"`, string((*preview)["instanceId"]))
-	assert.JSONEq(t, `"1-9"`, string((*preview)["workspaces"]))
+	assert.JSONEq(t, `"10-99"`, string((*preview)["workspaces"]))
 }

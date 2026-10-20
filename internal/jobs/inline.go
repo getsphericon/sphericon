@@ -82,6 +82,11 @@ func (i *Inline) EnqueueIdentityLinkedNotice(ctx context.Context, email, provide
 	return SendAuthMail(ctx, i.systemSender, i.appURL, SendAuthMailArgs{Flow: flowIdentityLinked, Email: email, Provider: provider, Token: token})
 }
 
+// EnqueueUserDeletedNotice sends the User-deleted notice now.
+func (i *Inline) EnqueueUserDeletedNotice(ctx context.Context, email string) error {
+	return SendAuthMail(ctx, i.systemSender, i.appURL, SendAuthMailArgs{Flow: flowUserDeleted, Email: email})
+}
+
 // EnqueueSendingDomainVerify re-checks the domain's DKIM DNS now, notifying the
 // workspace owner if this check flips the domain to unverified (ADR 0010 slice 3).
 func (i *Inline) EnqueueSendingDomainVerify(ctx context.Context, sendingDomainID int64) error {

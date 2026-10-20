@@ -3521,6 +3521,98 @@ func (o OptSiteCreateIntegrationInputParams) Or(d SiteCreateIntegrationInputPara
 	return d
 }
 
+// NewOptSiteDeleteUserProblemDetailsErrors returns new OptSiteDeleteUserProblemDetailsErrors with value set to v.
+func NewOptSiteDeleteUserProblemDetailsErrors(v SiteDeleteUserProblemDetailsErrors) OptSiteDeleteUserProblemDetailsErrors {
+	return OptSiteDeleteUserProblemDetailsErrors{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSiteDeleteUserProblemDetailsErrors is optional SiteDeleteUserProblemDetailsErrors.
+type OptSiteDeleteUserProblemDetailsErrors struct {
+	Value SiteDeleteUserProblemDetailsErrors
+	Set   bool
+}
+
+// IsSet returns true if OptSiteDeleteUserProblemDetailsErrors was set.
+func (o OptSiteDeleteUserProblemDetailsErrors) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSiteDeleteUserProblemDetailsErrors) Reset() {
+	var v SiteDeleteUserProblemDetailsErrors
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSiteDeleteUserProblemDetailsErrors) SetTo(v SiteDeleteUserProblemDetailsErrors) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSiteDeleteUserProblemDetailsErrors) Get() (v SiteDeleteUserProblemDetailsErrors, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSiteDeleteUserProblemDetailsErrors) Or(d SiteDeleteUserProblemDetailsErrors) SiteDeleteUserProblemDetailsErrors {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptSiteDeleteUserProblemDetailsFields returns new OptSiteDeleteUserProblemDetailsFields with value set to v.
+func NewOptSiteDeleteUserProblemDetailsFields(v SiteDeleteUserProblemDetailsFields) OptSiteDeleteUserProblemDetailsFields {
+	return OptSiteDeleteUserProblemDetailsFields{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSiteDeleteUserProblemDetailsFields is optional SiteDeleteUserProblemDetailsFields.
+type OptSiteDeleteUserProblemDetailsFields struct {
+	Value SiteDeleteUserProblemDetailsFields
+	Set   bool
+}
+
+// IsSet returns true if OptSiteDeleteUserProblemDetailsFields was set.
+func (o OptSiteDeleteUserProblemDetailsFields) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSiteDeleteUserProblemDetailsFields) Reset() {
+	var v SiteDeleteUserProblemDetailsFields
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSiteDeleteUserProblemDetailsFields) SetTo(v SiteDeleteUserProblemDetailsFields) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSiteDeleteUserProblemDetailsFields) Get() (v SiteDeleteUserProblemDetailsFields, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSiteDeleteUserProblemDetailsFields) Or(d SiteDeleteUserProblemDetailsFields) SiteDeleteUserProblemDetailsFields {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptSiteEnrollmentFailure returns new OptSiteEnrollmentFailure with value set to v.
 func NewOptSiteEnrollmentFailure(v SiteEnrollmentFailure) OptSiteEnrollmentFailure {
 	return OptSiteEnrollmentFailure{
@@ -4484,6 +4576,7 @@ func (*ProblemDetails) sitePublicInvitationsLookupRes()        {}
 func (*ProblemDetails) sitePublicUnsubscribesPerformRes()      {}
 func (*ProblemDetails) siteSetupChecklistGetRes()              {}
 func (*ProblemDetails) siteTokensListRes()                     {}
+func (*ProblemDetails) siteUserDeleteUserRes()                 {}
 
 // Validation errors grouped by field.
 type ProblemDetailsErrors map[string][]string
@@ -4581,6 +4674,7 @@ func (*ProblemDetailsHeaders) siteSecondFactorConfirmEnrollmentRes()       {}
 func (*ProblemDetailsHeaders) siteSecondFactorDisableRes()                 {}
 func (*ProblemDetailsHeaders) siteSecondFactorRegenerateRecoveryCodesRes() {}
 func (*ProblemDetailsHeaders) siteSecondFactorStartEnrollmentRes()         {}
+func (*ProblemDetailsHeaders) siteUserDeleteUserRes()                      {}
 func (*ProblemDetailsHeaders) siteUserEmailChangeRes()                     {}
 func (*ProblemDetailsHeaders) siteUserUpdateMeRes()                        {}
 
@@ -8653,6 +8747,224 @@ func (s *SiteCustomFieldsListOK) SetTotalPages(val int32) {
 }
 
 func (*SiteCustomFieldsListOK) siteCustomFieldsListRes() {}
+
+// Confirmation of User deletion (ADR 0050): the User's own email typed in, their password and, when a
+// Second factor is enrolled, a current code.
+// Ref: #/components/schemas/SiteDeleteUserInput
+type SiteDeleteUserInput struct {
+	// The User's own email address, typed in.
+	Email EmailAddress `json:"email"`
+	// Current password.
+	CurrentPassword string `json:"currentPassword"`
+	// A current TOTP code, or an unused Recovery code; required when a Second factor is enrolled.
+	Code OptString `json:"code"`
+}
+
+// GetEmail returns the value of Email.
+func (s *SiteDeleteUserInput) GetEmail() EmailAddress {
+	return s.Email
+}
+
+// GetCurrentPassword returns the value of CurrentPassword.
+func (s *SiteDeleteUserInput) GetCurrentPassword() string {
+	return s.CurrentPassword
+}
+
+// GetCode returns the value of Code.
+func (s *SiteDeleteUserInput) GetCode() OptString {
+	return s.Code
+}
+
+// SetEmail sets the value of Email.
+func (s *SiteDeleteUserInput) SetEmail(val EmailAddress) {
+	s.Email = val
+}
+
+// SetCurrentPassword sets the value of CurrentPassword.
+func (s *SiteDeleteUserInput) SetCurrentPassword(val string) {
+	s.CurrentPassword = val
+}
+
+// SetCode sets the value of Code.
+func (s *SiteDeleteUserInput) SetCode(val OptString) {
+	s.Code = val
+}
+
+// The body of a refused User deletion: ProblemDetails plus, when the User is the only Owner of
+// Workspaces, the list of them (empty when the typed email did not match).
+// Ref: #/components/schemas/SiteDeleteUserProblemDetails
+type SiteDeleteUserProblemDetails struct {
+	// Why the request was refused, when the client should act on it.
+	Code OptProblemCode `json:"code"`
+	// A URI reference that identifies the problem type.
+	Type OptString `json:"type"`
+	// A short, human-readable summary of the problem type.
+	Title OptString `json:"title"`
+	// HTTP status code.
+	Status OptInt32 `json:"status"`
+	// A human-readable explanation specific to this occurrence.
+	Detail OptString `json:"detail"`
+	// A URI reference that identifies the specific occurrence.
+	Instance OptString `json:"instance"`
+	// Validation errors grouped by field.
+	Errors OptSiteDeleteUserProblemDetailsErrors `json:"errors"`
+	// Form-level validation error.
+	Form OptString `json:"form"`
+	// Field validation errors.
+	Fields OptSiteDeleteUserProblemDetailsFields `json:"fields"`
+	// Seconds to wait before retrying; set on a 429 so a client that only sees the body can show the wait.
+	RetryAfter OptInt32 `json:"retryAfter"`
+	// Why a 500 happened, sent only by a development server (`SPHERICON_ENV=development`).
+	Debug OptProblemDebug `json:"debug"`
+	// The live Workspaces the User is the only Owner of; each is handed over or deleted first.
+	Workspaces []SiteSoleOwnedWorkspace `json:"workspaces"`
+}
+
+// GetCode returns the value of Code.
+func (s *SiteDeleteUserProblemDetails) GetCode() OptProblemCode {
+	return s.Code
+}
+
+// GetType returns the value of Type.
+func (s *SiteDeleteUserProblemDetails) GetType() OptString {
+	return s.Type
+}
+
+// GetTitle returns the value of Title.
+func (s *SiteDeleteUserProblemDetails) GetTitle() OptString {
+	return s.Title
+}
+
+// GetStatus returns the value of Status.
+func (s *SiteDeleteUserProblemDetails) GetStatus() OptInt32 {
+	return s.Status
+}
+
+// GetDetail returns the value of Detail.
+func (s *SiteDeleteUserProblemDetails) GetDetail() OptString {
+	return s.Detail
+}
+
+// GetInstance returns the value of Instance.
+func (s *SiteDeleteUserProblemDetails) GetInstance() OptString {
+	return s.Instance
+}
+
+// GetErrors returns the value of Errors.
+func (s *SiteDeleteUserProblemDetails) GetErrors() OptSiteDeleteUserProblemDetailsErrors {
+	return s.Errors
+}
+
+// GetForm returns the value of Form.
+func (s *SiteDeleteUserProblemDetails) GetForm() OptString {
+	return s.Form
+}
+
+// GetFields returns the value of Fields.
+func (s *SiteDeleteUserProblemDetails) GetFields() OptSiteDeleteUserProblemDetailsFields {
+	return s.Fields
+}
+
+// GetRetryAfter returns the value of RetryAfter.
+func (s *SiteDeleteUserProblemDetails) GetRetryAfter() OptInt32 {
+	return s.RetryAfter
+}
+
+// GetDebug returns the value of Debug.
+func (s *SiteDeleteUserProblemDetails) GetDebug() OptProblemDebug {
+	return s.Debug
+}
+
+// GetWorkspaces returns the value of Workspaces.
+func (s *SiteDeleteUserProblemDetails) GetWorkspaces() []SiteSoleOwnedWorkspace {
+	return s.Workspaces
+}
+
+// SetCode sets the value of Code.
+func (s *SiteDeleteUserProblemDetails) SetCode(val OptProblemCode) {
+	s.Code = val
+}
+
+// SetType sets the value of Type.
+func (s *SiteDeleteUserProblemDetails) SetType(val OptString) {
+	s.Type = val
+}
+
+// SetTitle sets the value of Title.
+func (s *SiteDeleteUserProblemDetails) SetTitle(val OptString) {
+	s.Title = val
+}
+
+// SetStatus sets the value of Status.
+func (s *SiteDeleteUserProblemDetails) SetStatus(val OptInt32) {
+	s.Status = val
+}
+
+// SetDetail sets the value of Detail.
+func (s *SiteDeleteUserProblemDetails) SetDetail(val OptString) {
+	s.Detail = val
+}
+
+// SetInstance sets the value of Instance.
+func (s *SiteDeleteUserProblemDetails) SetInstance(val OptString) {
+	s.Instance = val
+}
+
+// SetErrors sets the value of Errors.
+func (s *SiteDeleteUserProblemDetails) SetErrors(val OptSiteDeleteUserProblemDetailsErrors) {
+	s.Errors = val
+}
+
+// SetForm sets the value of Form.
+func (s *SiteDeleteUserProblemDetails) SetForm(val OptString) {
+	s.Form = val
+}
+
+// SetFields sets the value of Fields.
+func (s *SiteDeleteUserProblemDetails) SetFields(val OptSiteDeleteUserProblemDetailsFields) {
+	s.Fields = val
+}
+
+// SetRetryAfter sets the value of RetryAfter.
+func (s *SiteDeleteUserProblemDetails) SetRetryAfter(val OptInt32) {
+	s.RetryAfter = val
+}
+
+// SetDebug sets the value of Debug.
+func (s *SiteDeleteUserProblemDetails) SetDebug(val OptProblemDebug) {
+	s.Debug = val
+}
+
+// SetWorkspaces sets the value of Workspaces.
+func (s *SiteDeleteUserProblemDetails) SetWorkspaces(val []SiteSoleOwnedWorkspace) {
+	s.Workspaces = val
+}
+
+func (*SiteDeleteUserProblemDetails) siteUserDeleteUserRes() {}
+
+// Validation errors grouped by field.
+type SiteDeleteUserProblemDetailsErrors map[string][]string
+
+func (s *SiteDeleteUserProblemDetailsErrors) init() SiteDeleteUserProblemDetailsErrors {
+	m := *s
+	if m == nil {
+		m = map[string][]string{}
+		*s = m
+	}
+	return m
+}
+
+// Field validation errors.
+type SiteDeleteUserProblemDetailsFields map[string]string
+
+func (s *SiteDeleteUserProblemDetailsFields) init() SiteDeleteUserProblemDetailsFields {
+	m := *s
+	if m == nil {
+		m = map[string]string{}
+		*s = m
+	}
+	return m
+}
 
 // Delete a Workspace (ADR 0043): the typed name must equal the stored name.
 // Ref: #/components/schemas/SiteDeleteWorkspaceInput
@@ -13571,6 +13883,35 @@ func (s *SiteSmtpConfigKind) UnmarshalText(data []byte) error {
 	}
 }
 
+// A Workspace the User is the only Owner of, which blocks User deletion.
+// Ref: #/components/schemas/SiteSoleOwnedWorkspace
+type SiteSoleOwnedWorkspace struct {
+	// The Workspace id.
+	ID WorkspaceId `json:"id"`
+	// Display name.
+	Name string `json:"name"`
+}
+
+// GetID returns the value of ID.
+func (s *SiteSoleOwnedWorkspace) GetID() WorkspaceId {
+	return s.ID
+}
+
+// GetName returns the value of Name.
+func (s *SiteSoleOwnedWorkspace) GetName() string {
+	return s.Name
+}
+
+// SetID sets the value of ID.
+func (s *SiteSoleOwnedWorkspace) SetID(val WorkspaceId) {
+	s.ID = val
+}
+
+// SetName sets the value of Name.
+func (s *SiteSoleOwnedWorkspace) SetName(val string) {
+	s.Name = val
+}
+
 // The channel a suppression applies to (email today; sms reserved).
 // Ref: #/components/schemas/SiteSuppressionChannel
 type SiteSuppressionChannel string
@@ -15363,6 +15704,23 @@ func (s *SiteUpdateWorkspaceInput) SetName(val string) {
 func (s *SiteUpdateWorkspaceInput) SetPostalAddress(val OptString) {
 	s.PostalAddress = val
 }
+
+// SiteUserDeleteUserNoContent is response for SiteUserDeleteUser operation.
+type SiteUserDeleteUserNoContent struct {
+	SetCookie string
+}
+
+// GetSetCookie returns the value of SetCookie.
+func (s *SiteUserDeleteUserNoContent) GetSetCookie() string {
+	return s.SetCookie
+}
+
+// SetSetCookie sets the value of SetCookie.
+func (s *SiteUserDeleteUserNoContent) SetSetCookie(val string) {
+	s.SetCookie = val
+}
+
+func (*SiteUserDeleteUserNoContent) siteUserDeleteUserRes() {}
 
 // SiteUserEmailChangeAccepted is response for SiteUserEmailChange operation.
 type SiteUserEmailChangeAccepted struct{}

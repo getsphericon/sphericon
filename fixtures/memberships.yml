@@ -121,3 +121,21 @@
   role: admin
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+- id: 19 # fixture: PiedPiperDoraMembership
+  user_id: 20
+  workspace_id: 10
+  role: owner
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 20 # fixture: AviatoDoraMembership
+  user_id: 20
+  workspace_id: 11
+  role: owner
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 21 # fixture: BluthDanMembership
+  user_id: 21
+  workspace_id: 12
+  role: owner
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

@@ -2,10 +2,12 @@ import { HttpResponse } from 'msw'
 import { expect, test } from 'vitest'
 
 import {
+  handleSiteSecondFactorGetStatus,
   handleSiteUserEmailChange,
   handleSiteUserGetMe,
   handleSiteUserSignOutEverywhere,
   handleSiteUserUpdateMe,
+  handleSiteWorkspacesListDeleted,
 } from '../../generated/site/msw.gen.ts'
 import type { SiteUserResource } from '../../generated/site/types.gen.ts'
 import { Route as loginRoute } from '../../routes/login.tsx'
@@ -49,6 +51,16 @@ function serveProfile(
   const json = () => HttpResponse.json(me)
   worker.use(
     handleSiteUserGetMe(({ request }) => serve('get', json)(request)),
+    handleSiteSecondFactorGetStatus({
+      body: {
+        enabled: false,
+        pending: false,
+        recoveryCodesRemaining: 0,
+        passwordSet: true,
+        providerLoginFresh: false,
+      },
+    }),
+    handleSiteWorkspacesListDeleted({ body: [] }),
     handleSiteUserUpdateMe(({ request }) => serve('update', json)(request)),
     handleSiteUserEmailChange(({ request }) => serve('emailChange', noContent)(request)),
     handleSiteUserSignOutEverywhere(({ request }) =>

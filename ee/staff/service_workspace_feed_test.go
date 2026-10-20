@@ -159,6 +159,19 @@ func TestAnOwnerAddedRemovedOrTransferredPutsTheWorkspaceBackInTheFeed(t *testin
 	assert.Equal(t, []int64{5}, ownerIDs(got[0]))
 }
 
+func TestADeletedOwnerLeavesTheFeedAndTheirWorkspaceComesBackWithoutThem(t *testing.T) {
+	h := newHarness(t)
+	c := h.env.ServiceClient(t, primary)
+	_, saved := feedFrom(t, c, "")
+
+	_, err := accounts.New(h.env.DB, h.env.Bus).DeleteUser(t.Context(), fixtures.InitechCoOwnerOwenID, nil)
+	require.NoError(t, err)
+
+	got, _ := feedFrom(t, c, saved)
+	require.Equal(t, []string{fixtures.InitechPublicID}, feedIDs(got))
+	assert.Equal(t, []int64{fixtures.InitechOwnerOlgaID}, ownerIDs(got[0]))
+}
+
 func TestAMemberJoiningOrLeavingIsNotAChangeOfOwners(t *testing.T) {
 	h := newHarness(t)
 	c := h.env.ServiceClient(t, primary)

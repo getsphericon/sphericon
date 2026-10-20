@@ -144,11 +144,20 @@ func (a *Accounts) Leave(ctx context.Context, s *ent.Scoped, userID int64) error
 // A User with no Membership in the Workspace is an ent NotFound error. User deletion
 // (ADR 0050) calls it once per Workspace in its own transaction.
 func LeaveIn(ctx context.Context, ts *ent.Scoped, pub events.Publisher, userID int64) error {
+	return leaveIn(ctx, ts, pub, userID, false)
+}
+
+// leaveIn is LeaveIn; withLastOwner lets the only Owner go too, for User deletion of a
+// Workspace that is in its deletion window (ADR 0050): nobody is left to hand it to.
+func leaveIn(ctx context.Context, ts *ent.Scoped, pub events.Publisher, userID int64, withLastOwner bool) error {
 	target, owners, err := lockedTarget(ctx, ts, membership.UserID(userID))
 	if err != nil {
 		return err
 	}
 	actor := events.Actor{Kind: events.ActorUser, ID: strconv.FormatInt(userID, 10), Name: target.Edges.User.Name}
+	if withLastOwner {
+		return deleteLocked(ctx, ts, pub, actor, target)
+	}
 	// The caller is the member themself: their own Role is the caller's Role.
 	return removeLocked(ctx, ts, pub, actor, target.Role, target, owners)
 }
@@ -160,6 +169,11 @@ func removeLocked(ctx context.Context, ts *ent.Scoped, pub events.Publisher, act
 	if err := checkOwnerChange(callerRole, target, owners, ""); err != nil {
 		return err
 	}
+	return deleteLocked(ctx, ts, pub, actor, target)
+}
+
+// deleteLocked deletes target and records the Audit entry, with no invariant checked.
+func deleteLocked(ctx context.Context, ts *ent.Scoped, pub events.Publisher, actor events.Actor, target *ent.Membership) error {
 	if err := ts.Membership().DeleteOneID(target.ID).Exec(ctx); err != nil {
 		return err
 	}

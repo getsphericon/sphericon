@@ -1672,6 +1672,84 @@ export const SiteCustomFieldType = {
 export type SiteCustomFieldType = typeof SiteCustomFieldType[keyof typeof SiteCustomFieldType];
 
 /**
+ * Confirmation of User deletion (ADR 0050): the User's own email typed in, their password
+ * and, when a Second factor is enrolled, a current code.
+ */
+export type SiteDeleteUserInput = {
+  /**
+   * The User's own email address, typed in
+   */
+  email: EmailAddress;
+  /**
+   * Current password
+   */
+  currentPassword: string;
+  /**
+   * A current TOTP code, or an unused Recovery code; required when a Second factor is enrolled
+   */
+  code?: string;
+};
+
+/**
+ * The body of a refused User deletion: ProblemDetails plus, when the User is the only Owner
+ * of Workspaces, the list of them (empty when the typed email did not match)
+ */
+export type SiteDeleteUserProblemDetails = {
+  /**
+   * Why the request was refused, when the client should act on it
+   */
+  code?: ProblemCode;
+  /**
+   * A URI reference that identifies the problem type
+   */
+  type?: string;
+  /**
+   * A short, human-readable summary of the problem type
+   */
+  title?: string;
+  /**
+   * HTTP status code
+   */
+  status?: number;
+  /**
+   * A human-readable explanation specific to this occurrence
+   */
+  detail?: string;
+  /**
+   * A URI reference that identifies the specific occurrence
+   */
+  instance?: string;
+  /**
+   * Validation errors grouped by field
+   */
+  errors?: {
+    [key: string]: Array<string>;
+  };
+  /**
+   * Form-level validation error
+   */
+  form?: string;
+  /**
+   * Field validation errors
+   */
+  fields?: {
+    [key: string]: string;
+  };
+  /**
+   * Seconds to wait before retrying; set on a 429 so a client that only sees the body can show the wait
+   */
+  retryAfter?: number;
+  /**
+   * Why a 500 happened, sent only by a development server (`SPHERICON_ENV=development`)
+   */
+  debug?: ProblemDebug;
+  /**
+   * The live Workspaces the User is the only Owner of; each is handed over or deleted first
+   */
+  workspaces: Array<SiteSoleOwnedWorkspace>;
+};
+
+/**
  * Delete a Workspace (ADR 0043): the typed name must equal the stored name.
  */
 export type SiteDeleteWorkspaceInput = {
@@ -3008,6 +3086,20 @@ export type SiteSmtpConfigInput = {
   password?: string | null;
   from: EmailAddress;
   fromName?: string | null;
+};
+
+/**
+ * A Workspace the User is the only Owner of, which blocks User deletion
+ */
+export type SiteSoleOwnedWorkspace = {
+  /**
+   * The Workspace id
+   */
+  id: WorkspaceId;
+  /**
+   * Display name
+   */
+  name: string;
 };
 
 /**
@@ -4628,6 +4720,39 @@ export type SiteUserUpdateMeResponses = {
 };
 
 export type SiteUserUpdateMeResponse = SiteUserUpdateMeResponses[keyof SiteUserUpdateMeResponses];
+
+export type SiteUserDeleteUserData = {
+  body: SiteDeleteUserInput;
+  path?: never;
+  query?: never;
+  url: '/me/delete';
+};
+
+export type SiteUserDeleteUserErrors = {
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 validation response of User deletion
+   */
+  422: SiteDeleteUserProblemDetails;
+  /**
+   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
+   */
+  429: ProblemDetails;
+};
+
+export type SiteUserDeleteUserError = SiteUserDeleteUserErrors[keyof SiteUserDeleteUserErrors];
+
+export type SiteUserDeleteUserResponses = {
+  /**
+   * There is no content to send for this request, but the headers may be useful.
+   */
+  204: void;
+};
+
+export type SiteUserDeleteUserResponse = SiteUserDeleteUserResponses[keyof SiteUserDeleteUserResponses];
 
 export type SiteUserEmailChangeData = {
   body: SiteEmailChangeInput;

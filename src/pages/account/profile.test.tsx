@@ -1,7 +1,12 @@
 import { HttpResponse } from 'msw'
 import { expect, test } from 'vitest'
 
-import { handleSiteUserGetMe, handleSiteUserUpdateMe } from '../../generated/site/msw.gen.ts'
+import {
+  handleSiteSecondFactorGetStatus,
+  handleSiteUserGetMe,
+  handleSiteUserUpdateMe,
+  handleSiteWorkspacesListDeleted,
+} from '../../generated/site/msw.gen.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { worker } from '../../test/worker.ts'
 import { ProfilePage } from './profile.tsx'
@@ -18,6 +23,16 @@ test('loads the profile and submits a name change', async () => {
   const puts: string[] = []
   worker.use(
     handleSiteUserGetMe({ body: user }),
+    handleSiteSecondFactorGetStatus({
+      body: {
+        enabled: false,
+        pending: false,
+        recoveryCodesRemaining: 0,
+        passwordSet: true,
+        providerLoginFresh: false,
+      },
+    }),
+    handleSiteWorkspacesListDeleted({ body: [] }),
     handleSiteUserUpdateMe(async ({ request }) => {
       puts.push(await request.clone().text())
       return HttpResponse.json({ ...user, name: 'Renamed' })

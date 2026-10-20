@@ -787,6 +787,18 @@ type Handler interface {
 	//
 	// GET /workspaces/{workspaceId}/transactional-emails
 	SiteTransactionalEmailsList(ctx context.Context, params SiteTransactionalEmailsListParams) (SiteTransactionalEmailsListRes, error)
+	// SiteUserDeleteUser implements SiteUser_deleteUser operation.
+	//
+	// Delete the User, immediately and irreversibly (User deletion, ADR 0050): every Membership, Linked
+	// identity, the Second factor and the Recovery codes go, every session ends (the cookie is cleared
+	// here) and one email tells the address. Needs the User's own email, the password and, with a Second
+	// factor, a current code. 403 on a wrong password or code (both feed the Login throttle: 429 while its
+	// delay runs). 422 when the typed email is not the User's, or while the User is the only Owner of a
+	// Workspace that is not in its deletion window: the Workspaces are listed and nothing is deleted. A
+	// Workspace in its deletion window does not block.
+	//
+	// POST /me/delete
+	SiteUserDeleteUser(ctx context.Context, req *SiteDeleteUserInput) (SiteUserDeleteUserRes, error)
 	// SiteUserEmailChange implements SiteUser_emailChange operation.
 	//
 	// Request an email change; sends a confirmation link to the new address. Requires the current

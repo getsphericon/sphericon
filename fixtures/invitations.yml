@@ -44,3 +44,14 @@
   expires_at: '{{daysAhead 7}}'
   created_at: '{{daysAgo 1}}'
   updated_at: '{{daysAgo 1}}'
+
+# Pending invitation sent by Alice (an admin of Acme): it outlives her User deletion (ADR 0050).
+- id: 902 # fixture: InvitationSentByAlice
+  workspace_id: 1
+  email: invited-by-alice@acme.test
+  role: member
+  token_hash: '{{ inviteHash "inv_fixture_token_sent_by_alice" }}'
+  invited_by: 19
+  expires_at: '{{daysAhead 7}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'

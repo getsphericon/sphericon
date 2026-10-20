@@ -1,5 +1,5 @@
 import { ProblemCode } from '../generated/site/types.gen.ts'
-import type { ProblemDebug, UsedBy } from '../generated/site/types.gen.ts'
+import type { ProblemDebug, SiteSoleOwnedWorkspace, UsedBy } from '../generated/site/types.gen.ts'
 
 export interface ApiErrorLike {
   detail?: string | null
@@ -11,6 +11,7 @@ export interface ApiErrorLike {
   code?: string | null
   debug?: ProblemDebug | null
   usedBy?: UsedBy[] | null
+  workspaces?: SiteSoleOwnedWorkspace[] | null
 }
 
 function isApiErrorLike(error: unknown): error is ApiErrorLike {
@@ -99,4 +100,13 @@ export function getUsedBy(error: unknown) {
     return undefined
   }
   return error.usedBy
+}
+
+// The Workspaces a refused User deletion named (the `workspaces` member of its 422, ADR 0050):
+// the ones the User is the only Owner of. Undefined when the error is not such a refusal.
+export function getSoleOwnedWorkspaces(error: unknown) {
+  if (!isApiErrorLike(error) || error.status !== 422 || !error.workspaces?.length) {
+    return undefined
+  }
+  return error.workspaces
 }

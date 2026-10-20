@@ -24,6 +24,9 @@ const (
 	// flowIdentityLinked is the notice that a Sign-in provider was linked to the account
 	// (ADR 0048): Provider names it, Token is the "this was not me" link.
 	flowIdentityLinked = "identity_linked"
+	// flowUserDeleted is the notice, to the address, that its User was deleted (ADR 0050): no
+	// token and no link, so it can never be a way in.
+	flowUserDeleted = "user_deleted"
 )
 
 // SendAuthMailArgs is the river payload for a self-service account email. Flow
@@ -78,6 +81,9 @@ func buildAuthMail(appURL string, args SendAuthMailArgs) (messaging.EmailMessage
 	if args.Flow == flowIdentityLinked {
 		return buildIdentityLinkedMail(appURL, args), nil
 	}
+	if args.Flow == flowUserDeleted {
+		return buildUserDeletedMail(args.Email), nil
+	}
 	subjectID, path, introID := authMailCopy(args.Flow)
 	if path == "" {
 		return messaging.EmailMessage{}, fmt.Errorf("send auth mail: unknown flow %q", args.Flow)
@@ -97,6 +103,13 @@ func buildAddressTakenMail(appURL, to string) messaging.EmailMessage {
 		i18n.T("email.address_taken.reset", nil), base+"/forgot-password",
 		i18n.T("email.auth.footer", nil))
 	return messaging.EmailMessage{To: to, Subject: i18n.T("email.address_taken.subject", nil), Text: body}
+}
+
+// buildUserDeletedMail renders the one mail a User deletion sends the address: the owner of
+// the mailbox learns of a deletion they did not make.
+func buildUserDeletedMail(to string) messaging.EmailMessage {
+	body := fmt.Sprintf("%s\n\n%s\n", i18n.T("email.user_deleted.intro", nil), i18n.T("email.user_deleted.not_me", nil))
+	return messaging.EmailMessage{To: to, Subject: i18n.T("email.user_deleted.subject", nil), Text: body}
 }
 
 // buildIdentityLinkedMail renders the notice a silent link of a Sign-in provider sends the
@@ -157,6 +170,11 @@ func (c *Client) EnqueueAddressTakenNotice(ctx context.Context, email string, se
 // provider was linked to silently, with the token of its "this was not me" link.
 func (c *Client) EnqueueIdentityLinkedNotice(ctx context.Context, email, provider, token string) error {
 	return c.enqueue(ctx, SendAuthMailArgs{Flow: flowIdentityLinked, Email: email, Provider: provider, Token: token})
+}
+
+// EnqueueUserDeletedNotice schedules the notice that the User with this address was deleted.
+func (c *Client) EnqueueUserDeletedNotice(ctx context.Context, email string) error {
+	return c.enqueue(ctx, SendAuthMailArgs{Flow: flowUserDeleted, Email: email})
 }
 
 func (c *Client) enqueue(ctx context.Context, args SendAuthMailArgs) error {

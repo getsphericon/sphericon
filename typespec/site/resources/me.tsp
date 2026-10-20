@@ -43,6 +43,44 @@ model SiteUpdateMeInput {
   newPassword?: string;
 }
 
+/** A Workspace the User is the only Owner of, which blocks User deletion */
+model SiteSoleOwnedWorkspace {
+  /** The Workspace id */
+  id: WorkspaceId;
+
+  /** Display name */
+  name: string;
+}
+
+/** Confirmation of User deletion (ADR 0050): the User's own email typed in, their password
+ * and, when a Second factor is enrolled, a current code. */
+model SiteDeleteUserInput {
+  /** The User's own email address, typed in */
+  email: EmailAddress;
+
+  /** Current password */
+  currentPassword: string;
+
+  /** A current TOTP code, or an unused Recovery code; required when a Second factor is enrolled */
+  code?: string;
+}
+
+/** The body of a refused User deletion: ProblemDetails plus, when the User is the only Owner
+ * of Workspaces, the list of them (empty when the typed email did not match) */
+model SiteDeleteUserProblemDetails {
+  ...ProblemDetails;
+
+  /** The live Workspaces the User is the only Owner of; each is handed over or deleted first */
+  workspaces: SiteSoleOwnedWorkspace[];
+}
+
+/** RFC 7807 validation response of User deletion */
+@error
+model SiteDeleteUserRefusedProblem is Response<422> {
+  @header contentType: "application/problem+json";
+  @body body: SiteDeleteUserProblemDetails;
+}
+
 @route("/me")
 @tag("Site User")
 namespace SiteUser {
@@ -92,4 +130,25 @@ namespace SiteUser {
     /** The expired session cookie */
     @header("Set-Cookie") setCookie: string;
   };
+
+  /** Delete the User, immediately and irreversibly (User deletion, ADR 0050): every Membership,
+   * Linked identity, the Second factor and the Recovery codes go, every session ends (the
+   * cookie is cleared here) and one email tells the address. Needs the User's own email, the
+   * password and, with a Second factor, a current code. 403 on a wrong password or code (both
+   * feed the Login throttle: 429 while its delay runs). 422 when the typed email is not the
+   * User's, or while the User is the only Owner of a Workspace that is not in its deletion
+   * window: the Workspaces are listed and nothing is deleted. A Workspace in its deletion
+   * window does not block. */
+  @post
+  @route("/delete")
+  op deleteUser(@body body: SiteDeleteUserInput):
+    | {
+        @statusCode statusCode: 204;
+
+        /** The expired session cookie */
+        @header("Set-Cookie") setCookie: string;
+      }
+    | ForbiddenProblem
+    | SiteDeleteUserRefusedProblem
+    | TooManyRequestsProblem;
 }

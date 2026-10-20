@@ -275,6 +275,18 @@ func (m *Module) Verify(ctx context.Context, userID int64, binding, code string)
 	return method, err
 }
 
+// VerifyIn checks a code for the User u inside the caller's transaction tx (with pub its
+// publisher), for an action that needs the Second factor's proof and its own atomicity: the
+// code is spent (a TOTP step used, a Recovery code consumed) only if the caller's
+// transaction commits. The caller holds u's row locked. ErrNotActive without a Second
+// factor, ErrInvalidCode on a wrong code.
+func (m *Module) VerifyIn(ctx context.Context, tx *ent.Client, pub events.Publisher, u *ent.User, code string) (Method, error) {
+	if !Active(u) {
+		return "", ErrNotActive
+	}
+	return m.verify(ctx, tx, pub, u, code)
+}
+
 // ChallengeBinding is the value a login challenge (ADR 0020) is keyed to: it
 // changes on every successful Verify (a TOTP success moves the last accepted time
 // step, a Recovery code success lowers the count of unused codes), on a password

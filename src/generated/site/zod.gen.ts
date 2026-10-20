@@ -377,6 +377,16 @@ export const zSiteCustomFieldType = z.enum([
 ]);
 
 /**
+ * Confirmation of User deletion (ADR 0050): the User's own email typed in, their password
+ * and, when a Second factor is enrolled, a current code.
+ */
+export const zSiteDeleteUserInput = z.object({
+  email: zEmailAddress,
+  currentPassword: z.string(),
+  code: z.exactOptional(z.string())
+});
+
+/**
  * Delete a Workspace (ADR 0043): the typed name must equal the stored name.
  */
 export const zSiteDeleteWorkspaceInput = z.object({
@@ -1762,6 +1772,33 @@ export const zSiteOAuthDecisionInput = z.object({
 });
 
 /**
+ * A Workspace the User is the only Owner of, which blocks User deletion
+ */
+export const zSiteSoleOwnedWorkspace = z.object({
+  id: zWorkspaceId,
+  name: z.string()
+});
+
+/**
+ * The body of a refused User deletion: ProblemDetails plus, when the User is the only Owner
+ * of Workspaces, the list of them (empty when the typed email did not match)
+ */
+export const zSiteDeleteUserProblemDetails = z.object({
+  code: z.exactOptional(zProblemCode),
+  type: z.exactOptional(z.string()),
+  title: z.exactOptional(z.string()),
+  status: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
+  detail: z.exactOptional(z.string()),
+  instance: z.exactOptional(z.string()),
+  errors: z.exactOptional(z.record(z.string(), z.array(z.string()))),
+  form: z.exactOptional(z.string()),
+  fields: z.exactOptional(z.record(z.string(), z.string())),
+  retryAfter: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
+  debug: z.exactOptional(zProblemDebug),
+  workspaces: z.array(zSiteSoleOwnedWorkspace)
+});
+
+/**
  * Workspace the current user belongs to
  */
 export const zSiteWorkspaceResource = z.object({
@@ -2240,6 +2277,13 @@ export const zSiteUserUpdateMeBody = zSiteUpdateMeInput;
  * The request has succeeded.
  */
 export const zSiteUserUpdateMeResponse = zSiteUserResource;
+
+export const zSiteUserDeleteUserBody = zSiteDeleteUserInput;
+
+/**
+ * There is no content to send for this request, but the headers may be useful.
+ */
+export const zSiteUserDeleteUserResponse = z.void();
 
 export const zSiteUserEmailChangeBody = zSiteEmailChangeInput;
 

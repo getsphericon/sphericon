@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -68,8 +69,8 @@ func TestTheWorkspaceListShowsEveryWorkspaceNewestFirst(t *testing.T) {
 
 	page := h.listWorkspaces(t, c, staffapi.StaffWorkspacesListParams{})
 
-	assert.Equal(t, []string{"Wayne", "Kramerica", "Vandelay", "Soylent", "Hooli", "Umbrella", "Initech", "Globex", "Acme"}, names(page.Items))
-	assert.EqualValues(t, 9, page.TotalItems)
+	assert.Equal(t, []string{"Aviato", "Pied Piper", "Wayne", "Kramerica", "Vandelay", "Soylent", "Hooli", "Umbrella", "Initech", "Globex", "Acme"}, names(page.Items))
+	assert.EqualValues(t, 11, page.TotalItems)
 	assert.EqualValues(t, 1, page.TotalPages)
 	assert.EqualValues(t, 1, page.Page)
 }
@@ -82,9 +83,9 @@ func TestTheWorkspaceListIsPaginated(t *testing.T) {
 		Page: staffapi.NewOptInt32(2), PageSize: staffapi.NewOptInt32(2),
 	})
 
-	assert.Equal(t, []string{"Vandelay", "Soylent"}, names(second.Items))
-	assert.EqualValues(t, 9, second.TotalItems)
-	assert.EqualValues(t, 5, second.TotalPages)
+	assert.Equal(t, []string{"Wayne", "Kramerica"}, names(second.Items))
+	assert.EqualValues(t, 11, second.TotalItems)
+	assert.EqualValues(t, 6, second.TotalPages)
 	assert.EqualValues(t, 2, second.PageSize)
 }
 
@@ -355,9 +356,11 @@ func TestTheWorkspaceListHidesADeletedWorkspaceUnlessFilteredToDeleted(t *testin
 	deleted := h.listWorkspaces(t, c, staffapi.StaffWorkspacesListParams{Review: staffapi.NewOptStaffWorkspaceReview(staffapi.StaffWorkspaceReviewDeleted)})
 
 	assert.NotContains(t, names(all.Items), "Globex")
-	assert.EqualValues(t, 8, all.TotalItems)
-	require.Equal(t, []string{"Globex"}, names(deleted.Items))
-	got, ok := deleted.Items[0].DiscardedAt.Get()
+	assert.EqualValues(t, 10, all.TotalItems)
+	require.Equal(t, []string{"Bluth", "Globex"}, names(deleted.Items))
+	globex, found := lo.Find(deleted.Items, func(w staffapi.StaffWorkspaceResource) bool { return w.Name == "Globex" })
+	require.True(t, found)
+	got, ok := globex.DiscardedAt.Get()
 	require.True(t, ok)
 	assert.WithinDuration(t, discardedAt, time.Time(got), time.Second)
 }

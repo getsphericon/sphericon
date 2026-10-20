@@ -149,3 +149,19 @@
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
   email_verified_at: '2026-01-01 00:00:00'
+# Dora is the only Owner of two live Workspaces (PiedPiper, Aviato): her User deletion is refused.
+- id: 20 # fixture: SoleOwnerDora
+  name: Dora
+  email: dora@piedpiper.test
+  password_hash: '{{argonHash "password"}}'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+  email_verified_at: '2026-01-01 00:00:00'
+# Dan is the only Owner of Bluth, a Workspace in its deletion window.
+- id: 21 # fixture: DeletedWorkspaceOwnerDan
+  name: Dan
+  email: dan@bluth.test
+  password_hash: '{{argonHash "password"}}'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+  email_verified_at: '2026-01-01 00:00:00'

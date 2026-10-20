@@ -238,3 +238,29 @@ func TestTwoCoOwnersLeavingAtOnceLeaveOneOwner(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 1, owners)
 }
+
+// Two co-Owners deleting themselves at the same moment serialize on the Workspace's Owner
+// rows (ADR 0050): exactly one is deleted, the other is refused as the last Owner.
+func TestTwoCoOwnersDeletingThemselvesAtOnceDeleteExactlyOne(t *testing.T) {
+	sqlDB := testhelper.RealDB(t)
+	sqlDB.SetMaxOpenConns(8)
+	client := db.NewEntClient(sqlDB)
+	acc := accounts.New(client, events.New(sqlDB))
+
+	errs := make([]error, 2)
+	var wg sync.WaitGroup
+	for i, userID := range []int64{fixtures.InitechOwnerOlgaID, fixtures.InitechCoOwnerOwenID} {
+		wg.Go(func() { _, errs[i] = acc.DeleteUser(t.Context(), userID, nil) })
+	}
+	wg.Wait()
+
+	refused := lo.Filter(errs, func(err error, _ int) bool { return err != nil })
+	require.Len(t, refused, 1)
+	require.ErrorIs(t, refused[0], accounts.ErrLastOwner)
+	var sole *accounts.SoleOwnerError
+	require.ErrorAs(t, refused[0], &sole)
+	assert.Equal(t, fixtures.InitechName, sole.Workspaces[0].Name)
+	owners, err := client.Scoped(fixtures.InitechID).Membership().Query().Where(membership.RoleEQ(membership.RoleOwner)).Count(t.Context())
+	require.NoError(t, err)
+	assert.Equal(t, 1, owners)
+}

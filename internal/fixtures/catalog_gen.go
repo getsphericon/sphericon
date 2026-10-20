@@ -127,6 +127,26 @@ const (
 	AutomationWinBackName = "Win-back lapsed learners"
 	// AutomationWinBackVersionID is from fixtures/automation_versions.
 	AutomationWinBackVersionID = 102
+	// AviatoCollectKey is from fixtures/workspaces.
+	AviatoCollectKey = "omck_test_aviato_collect_key"
+	// AviatoDoraMembershipID is from fixtures/memberships.
+	AviatoDoraMembershipID = 20
+	// AviatoID is from fixtures/workspaces.
+	AviatoID = 11
+	// AviatoName is from fixtures/workspaces.
+	AviatoName = "Aviato"
+	// AviatoPublicID is from fixtures/workspaces.
+	AviatoPublicID = "AviatW11"
+	// BluthCollectKey is from fixtures/workspaces.
+	BluthCollectKey = "omck_test_bluth_collect_key"
+	// BluthDanMembershipID is from fixtures/memberships.
+	BluthDanMembershipID = 21
+	// BluthID is from fixtures/workspaces.
+	BluthID = 12
+	// BluthName is from fixtures/workspaces.
+	BluthName = "Bluth"
+	// BluthPublicID is from fixtures/workspaces.
+	BluthPublicID = "BluthW12"
 	// BrandKitAcmeID is from fixtures/brand_kits.
 	BrandKitAcmeID = 1
 	// BrandKitGlobexID is from fixtures/brand_kits.
@@ -299,6 +319,14 @@ const (
 	CustomFieldGlobexKey = "globex_only"
 	// CustomFieldGlobexName is from fixtures/custom_fields.
 	CustomFieldGlobexName = "Globex only"
+	// DeletedWorkspaceOwnerDanEmail is from fixtures/users.
+	DeletedWorkspaceOwnerDanEmail = "dan@bluth.test"
+	// DeletedWorkspaceOwnerDanID is from fixtures/users.
+	DeletedWorkspaceOwnerDanID = 21
+	// DeletedWorkspaceOwnerDanName is from fixtures/users.
+	DeletedWorkspaceOwnerDanName = "Dan"
+	// DeletedWorkspaceOwnerDanPassword is from fixtures/users.
+	DeletedWorkspaceOwnerDanPassword = "password"
 	// EventAnonymousVisitorAction is from fixtures/events.
 	EventAnonymousVisitorAction = "pricing_viewed"
 	// EventAnonymousVisitorID is from fixtures/events.
@@ -647,6 +675,10 @@ const (
 	InvitationGlobexEmail = "invited@globex.test"
 	// InvitationGlobexID is from fixtures/invitations.
 	InvitationGlobexID = 900
+	// InvitationSentByAliceEmail is from fixtures/invitations.
+	InvitationSentByAliceEmail = "invited-by-alice@acme.test"
+	// InvitationSentByAliceID is from fixtures/invitations.
+	InvitationSentByAliceID = 902
 	// InvitationStaleUnverifiedEmail is from fixtures/invitations.
 	InvitationStaleUnverifiedEmail = "stale@unverified.test"
 	// InvitationStaleUnverifiedID is from fixtures/invitations.
@@ -739,6 +771,16 @@ const (
 	OwnerSallyName = "Sally"
 	// OwnerSallyPassword is from fixtures/users.
 	OwnerSallyPassword = "password"
+	// PiedPiperCollectKey is from fixtures/workspaces.
+	PiedPiperCollectKey = "omck_test_piedpiper_collect_key"
+	// PiedPiperDoraMembershipID is from fixtures/memberships.
+	PiedPiperDoraMembershipID = 19
+	// PiedPiperID is from fixtures/workspaces.
+	PiedPiperID = 10
+	// PiedPiperName is from fixtures/workspaces.
+	PiedPiperName = "Pied Piper"
+	// PiedPiperPublicID is from fixtures/workspaces.
+	PiedPiperPublicID = "PiperW10"
 	// SamGoogleIdentityID is from fixtures/user_identities.
 	SamGoogleIdentityID = 2
 	// SamGoogleIdentityProvider is from fixtures/user_identities.
@@ -887,6 +929,14 @@ const (
 	ServiceCredentialSecondPrefix = "svcsecond002"
 	// ServiceCredentialSecondSecret is from fixtures/service_credentials.
 	ServiceCredentialSecondSecret = "service-second-secret"
+	// SoleOwnerDoraEmail is from fixtures/users.
+	SoleOwnerDoraEmail = "dora@piedpiper.test"
+	// SoleOwnerDoraID is from fixtures/users.
+	SoleOwnerDoraID = 20
+	// SoleOwnerDoraName is from fixtures/users.
+	SoleOwnerDoraName = "Dora"
+	// SoleOwnerDoraPassword is from fixtures/users.
+	SoleOwnerDoraPassword = "password"
 	// SoylentCollectKey is from fixtures/workspaces.
 	SoylentCollectKey = "omck_test_soylent_collect_key"
 	// SoylentID is from fixtures/workspaces.

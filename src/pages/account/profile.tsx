@@ -18,13 +18,17 @@ import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
 import {
+  siteSecondFactorGetStatusOptions,
+  siteUserDeleteUserMutation,
   siteUserEmailChangeMutation,
   siteUserGetMeOptions,
   siteUserGetMeQueryKey,
   siteUserSignOutEverywhereMutation,
   siteUserUpdateMeMutation,
+  siteWorkspacesListDeletedOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type {
+  SiteDeleteUserInput,
   SiteEmailChangeInput,
   SiteUpdateMeInput,
   SiteUserResource,
@@ -192,6 +196,94 @@ function SessionsSection() {
   )
 }
 
+// DeleteUserSection erases the User at once (User deletion, ADR 0050): the typed email, the
+// password and, with a Second factor, a code. A Workspace waiting for erasure is named, since
+// it can no longer be restored afterwards. A User with no password has no way yet.
+function DeleteUserSection() {
+  const { t } = useTranslation()
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const statusQuery = useQuery(siteSecondFactorGetStatusOptions())
+  const deletedQuery = useQuery(siteWorkspacesListDeletedOptions())
+  const form = useForm({ initialValues: { email: '', currentPassword: '', code: '' } })
+
+  const deleteUser = useResourceMutation({
+    mutation: siteUserDeleteUserMutation(),
+    errorTitle: t(($) => $.profile.deleteUserErrorTitle),
+    onDone: async () => {
+      queryClient.clear()
+      await navigate({ to: loginRoute.to })
+    },
+  })
+
+  const status = statusQuery.data
+  if (!status?.passwordSet) {
+    return null
+  }
+  const waiting = deletedQuery.data ?? []
+
+  const handleSubmit = (values: typeof form.values) => {
+    const body: SiteDeleteUserInput = {
+      email: values.email.trim(),
+      currentPassword: values.currentPassword,
+    }
+    if (status.enabled) {
+      body.code = values.code.trim()
+    }
+    modals.openConfirmModal({
+      title: t(($) => $.profile.deleteUserTitle),
+      children: <Text>{t(($) => $.profile.deleteUserConfirm)}</Text>,
+      labels: {
+        cancel: t(($) => $.actions.cancel),
+        confirm: t(($) => $.profile.deleteUserButton),
+      },
+      confirmProps: { color: 'red' },
+      onConfirm: () => deleteUser.mutate({ body }),
+    })
+  }
+
+  return (
+    <form onSubmit={form.onSubmit(handleSubmit)}>
+      <Stack maw={420}>
+        <Divider label={t(($) => $.profile.deleteUserSectionTitle)} />
+        <Text size="sm" c="dimmed">
+          {t(($) => $.profile.deleteUserDescription)}
+        </Text>
+        {waiting.length > 0 ? (
+          <Alert color="yellow">
+            {t(($) => $.profile.deleteUserWindowWarning, {
+              workspaces: waiting.map((workspace) => workspace.name).join(', '),
+            })}
+          </Alert>
+        ) : null}
+        <TextInput
+          label={t(($) => $.profile.deleteUserEmailLabel)}
+          type="email"
+          required
+          {...form.getInputProps('email')}
+        />
+        <PasswordInput
+          label={t(($) => $.profile.deleteUserPasswordLabel)}
+          required
+          {...form.getInputProps('currentPassword')}
+        />
+        {status.enabled ? (
+          <TextInput
+            label={t(($) => $.profile.deleteUserCodeLabel)}
+            required
+            {...form.getInputProps('code')}
+          />
+        ) : null}
+        <Group justify="flex-end">
+          <Button type="submit" color="red" loading={deleteUser.isPending}>
+            {t(($) => $.profile.deleteUserButton)}
+          </Button>
+        </Group>
+      </Stack>
+    </form>
+  )
+}
+
 export function ProfilePage() {
   const { t } = useTranslation()
   const meQuery = useQuery(siteUserGetMeOptions())
@@ -213,6 +305,7 @@ export function ProfilePage() {
           <ProfileForm user={meQuery.data} />
           <EmailSection />
           <SessionsSection />
+          <DeleteUserSection />
         </Stack>
       ) : null}
     </Stack>

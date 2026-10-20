@@ -1487,6 +1487,102 @@
         }
       }
     },
+    "/me/delete": {
+      "post": {
+        "operationId": "SiteUser_deleteUser",
+        "description": "Delete the User, immediately and irreversibly (User deletion, ADR 0050): every Membership,\nLinked identity, the Second factor and the Recovery codes go, every session ends (the\ncookie is cleared here) and one email tells the address. Needs the User's own email, the\npassword and, with a Second factor, a current code. 403 on a wrong password or code (both\nfeed the Login throttle: 429 while its delay runs). 422 when the typed email is not the\nUser's, or while the User is the only Owner of a Workspace that is not in its deletion\nwindow: the Workspaces are listed and nothing is deleted. A Workspace in its deletion\nwindow does not block.",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "There is no content to send for this request, but the headers may be useful. ",
+            "headers": {
+              "Set-Cookie": {
+                "required": true,
+                "description": "The expired session cookie",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response of User deletion",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteDeleteUserProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site User"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteDeleteUserInput"
+              }
+            }
+          }
+        }
+      }
+    },
     "/me/email-change": {
       "post": {
         "operationId": "SiteUser_emailChange",
@@ -11176,6 +11272,106 @@
         "enum": ["string", "number", "bool", "datetime"],
         "description": "A Custom field's value type"
       },
+      "SiteDeleteUserInput": {
+        "type": "object",
+        "required": ["email", "currentPassword"],
+        "properties": {
+          "email": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EmailAddress"
+              }
+            ],
+            "description": "The User's own email address, typed in"
+          },
+          "currentPassword": {
+            "type": "string",
+            "description": "Current password"
+          },
+          "code": {
+            "type": "string",
+            "description": "A current TOTP code, or an unused Recovery code; required when a Second factor is enrolled"
+          }
+        },
+        "description": "Confirmation of User deletion (ADR 0050): the User's own email typed in, their password\nand, when a Second factor is enrolled, a current code."
+      },
+      "SiteDeleteUserProblemDetails": {
+        "type": "object",
+        "required": ["workspaces"],
+        "properties": {
+          "code": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProblemCode"
+              }
+            ],
+            "description": "Why the request was refused, when the client should act on it"
+          },
+          "type": {
+            "type": "string",
+            "description": "A URI reference that identifies the problem type"
+          },
+          "title": {
+            "type": "string",
+            "description": "A short, human-readable summary of the problem type"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "description": "HTTP status code"
+          },
+          "detail": {
+            "type": "string",
+            "description": "A human-readable explanation specific to this occurrence"
+          },
+          "instance": {
+            "type": "string",
+            "description": "A URI reference that identifies the specific occurrence"
+          },
+          "errors": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "description": "Validation errors grouped by field"
+          },
+          "form": {
+            "type": "string",
+            "description": "Form-level validation error"
+          },
+          "fields": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Field validation errors"
+          },
+          "retryAfter": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Seconds to wait before retrying; set on a 429 so a client that only sees the body can show the wait"
+          },
+          "debug": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProblemDebug"
+              }
+            ],
+            "description": "Why a 500 happened, sent only by a development server (`SPHERICON_ENV=development`)"
+          },
+          "workspaces": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteSoleOwnedWorkspace"
+            },
+            "description": "The live Workspaces the User is the only Owner of; each is handed over or deleted first"
+          }
+        },
+        "description": "The body of a refused User deletion: ProblemDetails plus, when the User is the only Owner\nof Workspaces, the list of them (empty when the typed email did not match)"
+      },
       "SiteDeleteWorkspaceInput": {
         "type": "object",
         "required": ["name"],
@@ -12957,6 +13153,25 @@
           }
         },
         "description": "SMTP credentials"
+      },
+      "SiteSoleOwnedWorkspace": {
+        "type": "object",
+        "required": ["id", "name"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WorkspaceId"
+              }
+            ],
+            "description": "The Workspace id"
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name"
+          }
+        },
+        "description": "A Workspace the User is the only Owner of, which blocks User deletion"
       },
       "SiteSuppressionChannel": {
         "type": "string",

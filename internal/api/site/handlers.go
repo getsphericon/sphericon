@@ -71,6 +71,9 @@ type SystemMailEnqueuer interface {
 	// EnqueueIdentityLinkedNotice queues the notice to the owner of an account that a Sign-in
 	// provider was linked to silently (ADR 0048); token is its "this was not me" link.
 	EnqueueIdentityLinkedNotice(ctx context.Context, email, provider, token string) error
+	// EnqueueUserDeletedNotice queues the one mail that tells an address its User was deleted
+	// (ADR 0050).
+	EnqueueUserDeletedNotice(ctx context.Context, email string) error
 	// EnqueueMemberInvite sends the workspace invite email. It is best-effort:
 	// the invite also returns a copy-link, so a missing/failed mailer (common on
 	// self-hosted with no SMTP) must not fail the invite.
