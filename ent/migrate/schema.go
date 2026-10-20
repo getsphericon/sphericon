@@ -526,6 +526,11 @@ var (
 				Columns: []*schema.Column{EventsColumns[12], EventsColumns[4]},
 			},
 			{
+				Name:    "event_workspace_id_updated_at_id",
+				Unique:  false,
+				Columns: []*schema.Column{EventsColumns[12], EventsColumns[2], EventsColumns[0]},
+			},
+			{
 				Name:    "events_created_at_analytical_idx",
 				Unique:  false,
 				Columns: []*schema.Column{EventsColumns[1]},
@@ -543,6 +548,7 @@ var (
 		{Name: "key", Type: field.TypeString},
 		{Name: "reason_code", Type: field.TypeString},
 		{Name: "message", Type: field.TypeString},
+		{Name: "action_url", Type: field.TypeString, Nullable: true},
 		{Name: "expires_at", Type: field.TypeTime},
 		{Name: "set_by", Type: field.TypeString},
 		{Name: "workspace_id", Type: field.TypeInt64},
@@ -555,7 +561,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "holds_workspaces_holds",
-				Columns:    []*schema.Column{HoldsColumns[8]},
+				Columns:    []*schema.Column{HoldsColumns[9]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -564,7 +570,7 @@ var (
 			{
 				Name:    "holds_key_workspace_id",
 				Unique:  true,
-				Columns: []*schema.Column{HoldsColumns[3], HoldsColumns[8]},
+				Columns: []*schema.Column{HoldsColumns[3], HoldsColumns[9]},
 			},
 		},
 	}

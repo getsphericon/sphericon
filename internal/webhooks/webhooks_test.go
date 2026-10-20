@@ -88,11 +88,11 @@ func TestInvalidURLIsRefusedOnCreateAndUpdate(t *testing.T) {
 
 	for _, url := range []string{"ftp://example.com/hook", "example.com/hook", "https://", "/relative", "", "http://%zz", "not-a-url"} {
 		_, err := m.Create(ctx, acme, webhooks.CreateInput{URL: url})
-		assert.ErrorIs(t, err, webhooks.ErrInvalidURL, url)
+		require.ErrorIs(t, err, webhooks.ErrInvalidURL, url)
 
 		bad := url
 		_, err = m.Update(ctx, acme, fixtures.WebhookCodebasicsID, webhooks.UpdateInput{URL: &bad})
-		assert.ErrorIs(t, err, webhooks.ErrInvalidURL, url)
+		require.ErrorIs(t, err, webhooks.ErrInvalidURL, url)
 	}
 	ok := "http://example.com:8080/x"
 	got, err := m.Update(ctx, acme, fixtures.WebhookCodebasicsID, webhooks.UpdateInput{URL: &ok})
@@ -132,9 +132,9 @@ func TestAuditEntryNeedsALicenseOnCreateAndUpdate(t *testing.T) {
 	for name, lic := range map[string]webhooks.Licensing{"nil": nil, "unlicensed": license(false)} {
 		m := module(env, lic)
 		_, err := m.Create(ctx, acme, webhooks.CreateInput{URL: "https://example.com/a", EventTypes: audit})
-		assert.ErrorIs(t, err, webhooks.ErrAuditNeedsLicense, name)
+		require.ErrorIs(t, err, webhooks.ErrAuditNeedsLicense, name)
 		_, err = m.Update(ctx, acme, fixtures.WebhookCodebasicsID, webhooks.UpdateInput{EventTypes: audit})
-		assert.ErrorIs(t, err, webhooks.ErrAuditNeedsLicense, name)
+		require.ErrorIs(t, err, webhooks.ErrAuditNeedsLicense, name)
 	}
 
 	m := module(env, license(true))
@@ -248,7 +248,7 @@ func TestRegenerateSecretSignsWithTheNewSecretOnly(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Len(t, rcv.deliveries(), 1)
-	assert.NoError(t, rcv.deliveries()[0].verified, "the new secret verifies")
+	require.NoError(t, rcv.deliveries()[0].verified, "the new secret verifies")
 	require.Len(t, oldRcv.deliveries(), 1)
 	assert.Error(t, oldRcv.deliveries()[0].verified, "the old secret no longer verifies")
 }
@@ -273,7 +273,7 @@ func TestTestSendDeliversASignedSampleOfTheChosenTypeAndReportsTheStatus(t *test
 
 	got := rcv.deliveries()
 	require.Len(t, got, 1)
-	assert.NoError(t, got[0].verified)
+	require.NoError(t, got[0].verified)
 	assert.Equal(t, "email.opened", got[0].event)
 	assert.Contains(t, string(got[0].body), `"type":"email.opened"`)
 }
@@ -322,7 +322,7 @@ func TestTestSendWorksOnADisabledEndpointAndRefusesABlankType(t *testing.T) {
 	assert.True(t, res.Delivered)
 
 	_, err = m.TestSend(ctx, acme, fixtures.WebhookCodebasicsDisabledID, " ")
-	assert.ErrorIs(t, err, webhooks.ErrInvalidEventType)
+	require.ErrorIs(t, err, webhooks.ErrInvalidEventType)
 	_, err = m.TestSend(ctx, acme, fixtures.WebhookGlobexID, "contact.created")
 	assert.True(t, ent.IsNotFound(err))
 }

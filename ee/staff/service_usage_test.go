@@ -3,7 +3,6 @@ package staff_test
 import (
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 	"time"
 
@@ -118,5 +117,5 @@ func TestAMalformedPeriodIsRefusedAndThePublicPortHasNoUsageRoute(t *testing.T) 
 	req.Header.Set("Authorization", "Bearer "+primary)
 	h.env.Server.ServeHTTP(rec, req)
 	assert.Equal(t, http.StatusNotFound, rec.Code)
-	assert.False(t, strings.Contains(rec.Body.String(), "figures"))
+	assert.NotContains(t, rec.Body.String(), "figures")
 }

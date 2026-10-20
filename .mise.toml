@@ -18,11 +18,11 @@ pkl = "latest"
 pnpm = "12"
 typos = "latest"
 "aqua:boyter/scc" = "latest"
+"github:daveshanley/vacuum" = "latest"
+"github:google/osv-scanner" = "latest"
 zizmor = "latest"
-aws-cli = "latest"
 jq = "latest"
 shellcheck = "latest"
-terraform = "latest"
 
 # Install the git hooks (hk.pkl) once the toolchain is in place. `--mise` runs hk through
 # `mise x`, so a hook needs no shim on PATH. hk's version must match the package:// import

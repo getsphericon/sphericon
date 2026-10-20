@@ -24,7 +24,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Fragment, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { BillingBadge } from '../../components/BillingBadge.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
 import {
   siteAuditExportOptions,
@@ -133,12 +132,7 @@ function EntryRows({ entry }: { entry: SiteAuditEntryResource }) {
         <Table.Td>
           <ActorLabel entry={entry} />
         </Table.Td>
-        <Table.Td>
-          <Group gap="xs" wrap="nowrap">
-            {entry.action}
-            {entry.billing ? <BillingBadge /> : null}
-          </Group>
-        </Table.Td>
+        <Table.Td>{entry.action}</Table.Td>
         <Table.Td>
           <TargetLabel entry={entry} />
         </Table.Td>

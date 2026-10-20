@@ -69,7 +69,7 @@ func TestCollectIdentifyAndEvents(t *testing.T) {
 		Where(contact.Email("trav@example.com")).Only(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, "pro", ct.CustomFields["plan"])
-	assert.Equal(t, float64(3), ct.CustomFields["visits"])  // JSON numbers → float64
+	assert.InDelta(t, 3, ct.CustomFields["visits"], 0)      // JSON numbers → float64
 	assert.Equal(t, int64(fixtures.AcmeID), ct.WorkspaceID) // scoped to the key's workspace
 
 	// Each trait key auto-created a typed CustomField definition (declared-by-use).
@@ -115,7 +115,7 @@ func TestCollectIdentifyAndEvents(t *testing.T) {
 	// Visitor v1 was bound to the Contact at Identify, so the event resolves to it.
 	assert.Equal(t, ct.ID, ce.ContactID)
 	assert.Equal(t, "/pricing", ce.Properties["url"])
-	assert.Equal(t, float64(5), ce.Properties["n"])
+	assert.InDelta(t, 5, ce.Properties["n"], 0)
 }
 
 // The headline ADR 0002 behavior: an event recorded BEFORE Identify (anonymous,

@@ -1226,7 +1226,11 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		return eventlog.New(bus.Bus), nil
+		cfg, err := do.Invoke[*config.Config](i)
+		if err != nil {
+			return nil, err
+		}
+		return eventlog.New(bus.Bus, eventlog.LivePolicy{Window: cfg.EventLiveWindow, Now: time.Now}), nil
 	})
 
 	do.Provide(injector, func(do.Injector) (*analytics.Module, error) {
@@ -1444,7 +1448,7 @@ func externalDeps(i do.Injector) (apiexternal.Deps, error) {
 	return apiexternal.Deps{
 		Accounts: acc, Bus: bus.Bus, Webhooks: wh, Outbound: sender.Module,
 		Segments: seg, EventLog: evlog, Contacts: con, Erasure: er, Tags: tg, Templates: tpl, BrandKit: bk, Automations: auto,
-		Broadcasts: bc, Reputation: rep, Integrations: integ, SendingDomains: sd, BootstrapToken: cfg.BootstrapToken, Audit: edition.Audit,
+		Broadcasts: bc, Reputation: rep, Integrations: integ, SendingDomains: sd, BootstrapToken: cfg.BootstrapToken, Audit: edition.Audit, Export: edition.Export,
 	}, nil
 }
 
@@ -1559,7 +1563,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 	}
 	return apisite.Deps{
 		Instance:    inst,
-		AccountLink: accountLink, HoldsHonoured: edition.HoldsHonoured, AbuseWatch: edition.AbuseWatch(), SupportEmail: cfg.SupportEmail, BillingURL: cfg.BillingURL, MCPURL: cfg.MCPOrigin(),
+		AccountLink: accountLink, HoldsHonoured: edition.HoldsHonoured, AbuseWatch: edition.AbuseWatch(), SupportEmail: cfg.SupportEmail, MCPURL: cfg.MCPOrigin(),
 		Accounts: acc, Attempts: attempts, OAuth: oauthserver.NewService(client.Client, oauthserver.NewFetcher(cfg.OutboundAllow)), Bus: bus.Bus, Webhooks: wh, Outbound: sender.Module,
 		Segments: seg, EventLog: evlog, Contacts: con, Erasure: er, Tags: tg, Templates: tpl, BrandKit: bk, Automations: auto,
 		Broadcasts: bc, Welcome: jc.Client, SysMail: jc.Client, SendingDomains: sd, Integrations: integ,

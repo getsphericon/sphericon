@@ -1,6 +1,7 @@
 package preset
 
 import (
+	"bytes"
 	"context"
 	"crypto/x509"
 	_ "embed"
@@ -15,8 +16,6 @@ import (
 	"regexp"
 	"sync"
 	"time"
-
-	sns "github.com/robbiet480/go.sns"
 
 	"github.com/getsphericon/sphericon/internal/webhook"
 )
@@ -161,12 +160,70 @@ type snsVerifier struct {
 
 func (*snsVerifier) overBody() bool { return true }
 
-func snsPayload(body any) (*sns.Payload, error) {
+// snsMessage is the JSON body SNS posts to an HTTP endpoint.
+type snsMessage struct {
+	Message          string `json:"Message"`
+	MessageID        string `json:"MessageId"`
+	Signature        string `json:"Signature"`
+	SignatureVersion string `json:"SignatureVersion"`
+	SigningCertURL   string `json:"SigningCertURL"`
+	SubscribeURL     string `json:"SubscribeURL"`
+	Subject          string `json:"Subject"`
+	Timestamp        string `json:"Timestamp"`
+	Token            string `json:"Token"`
+	TopicArn         string `json:"TopicArn"`
+	Type             string `json:"Type"`
+}
+
+// stringToSign is what AWS signs: the fields its message type carries, each as its name and its
+// value on lines of their own, in alphabetical order (a Notification's Subject only when it has
+// one). https://docs.aws.amazon.com/sns/latest/dg/sns-verify-signature-of-message.html
+func (m *snsMessage) stringToSign() ([]byte, error) {
+	var fields []struct{ name, value string }
+	add := func(name, value string) { fields = append(fields, struct{ name, value string }{name, value}) }
+	switch m.Type {
+	case "Notification":
+		add("Message", m.Message)
+		add("MessageId", m.MessageID)
+		if m.Subject != "" {
+			add("Subject", m.Subject)
+		}
+		add("Timestamp", m.Timestamp)
+		add("TopicArn", m.TopicArn)
+		add("Type", m.Type)
+	case "SubscriptionConfirmation", "UnsubscribeConfirmation":
+		add("Message", m.Message)
+		add("MessageId", m.MessageID)
+		add("SubscribeURL", m.SubscribeURL)
+		add("Timestamp", m.Timestamp)
+		add("Token", m.Token)
+		add("TopicArn", m.TopicArn)
+		add("Type", m.Type)
+	default:
+		return nil, fmt.Errorf("message type %q is unknown", m.Type)
+	}
+	var b bytes.Buffer
+	for _, f := range fields {
+		b.WriteString(f.name + "\n" + f.value + "\n")
+	}
+	return b.Bytes(), nil
+}
+
+// algorithm is the signature algorithm of the message's signature version: 1 is SHA-1, 2 is
+// SHA-256, both over RSA.
+func (m *snsMessage) algorithm() x509.SignatureAlgorithm {
+	if m.SignatureVersion == "2" {
+		return x509.SHA256WithRSA
+	}
+	return x509.SHA1WithRSA
+}
+
+func snsPayload(body any) (*snsMessage, error) {
 	raw, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
-	var p sns.Payload
+	var p snsMessage
 	if err := json.Unmarshal(raw, &p); err != nil {
 		return nil, fmt.Errorf("the body is not an SNS message: %w", err)
 	}
@@ -202,7 +259,11 @@ func (s *snsVerifier) verify(ctx context.Context, _ Request, body any, params Pa
 	if err != nil {
 		return fmt.Errorf("%w: signing certificate: %w", ErrUnavailable, err)
 	}
-	if err := cert.CheckSignature(p.SignatureAlgorithm(), p.BuildSignature(), signature); err != nil {
+	signed, err := p.stringToSign()
+	if err != nil {
+		return err
+	}
+	if err := cert.CheckSignature(p.algorithm(), signed, signature); err != nil {
 		return fmt.Errorf("signature does not match: %w", err)
 	}
 	if p.Type == "SubscriptionConfirmation" {

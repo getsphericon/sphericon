@@ -5,8 +5,6 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/samber/lo"
-
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/site/resources"
@@ -27,7 +25,7 @@ func (h *Handlers) SiteContactsExport(ctx context.Context, params siteapi.SiteCo
 
 	var contactID *int64
 	if v, ok := params.ID.Get(); ok {
-		contactID = lo.ToPtr(int64(v))
+		contactID = new(int64(v))
 	}
 	c, err := contactexport.Find(ctx, scoped, contactID, contactexport.Ref(params.Email.Get()))
 	if errors.Is(err, contactexport.ErrIdentifier) {

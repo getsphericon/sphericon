@@ -31,8 +31,9 @@ out. The Workspace id and internal references (idempotency keys, run ids) are no
 Deleting a contact is erasure. There is no softer delete that keeps personal data, and no way to
 undo it.
 
-- **Site UI:** open the contact and choose **Erase**, then confirm. Only Workspace owners and admins
-  see the action; anyone else is refused.
+- **Site UI, from the contact:** open the contact and choose **Erase**, then confirm. Only Workspace
+  owners and admins see the action; anyone else is refused. The Contacts list has no delete action.
+- **Site UI, from an address:** use the Privacy requests section (below).
 - **External API, by id:** `DELETE /api/contacts/{id}` with a token that has the `contacts:erase`
   scope. A token with only `contacts:write` is refused. MCP inherits the scope (`contacts_delete`).
 - **External API, by email or visitor id:** `DELETE /api/contacts/erase?email=<address>` or
@@ -43,9 +44,29 @@ undo it.
   to, or, for an anonymous visitor that never identified, the visitor and its events. An
   identifier that matches nothing in the Workspace is reported as not found.
 
-The Site UI erases a contact by id only. Erasure is synchronous and atomic: it either completes or
+Erasure is synchronous and atomic: it either completes or
 changes nothing, and it returns an empty success. A contact in another Workspace is reported as not
 found.
+
+### Privacy requests: start from an address
+
+A request usually arrives as an email address, and your Workspace may hold no contact for it any
+more. The **Privacy requests** section of the Workspace settings starts from the address instead of
+a contact. Only Workspace owners and admins see it; anyone else is refused.
+
+1. Type the address the person wrote from and choose **Look up**.
+2. The result shows counts only, never content: whether a contact is held, and how many events,
+   delivery records, unsubscribes and suppressions the Workspace holds for the address. Nothing
+   held is a valid answer: the lookup shows that nothing is held, not an error.
+3. **Export** downloads the data export file described above. It is enabled only while a contact
+   is held for the address.
+4. **Erase** asks you to confirm, then runs the same erasure as the API does by email. It is offered
+   only while a contact or delivery records hold the address: opt-outs alone are not erasable.
+
+A second lookup after an erasure shows the result of the first request: no contact, no events,
+anonymous delivery records no longer counted against the address, and only the kept unsubscribes
+and suppressions. Those opt-outs stay so the person is still never mailed; Erase is disabled, and
+if nothing else remains the lookup says nothing is held.
 
 ### Work already under way
 

@@ -56,6 +56,14 @@ The rules a change is reviewed against. How the repo is built, run and generated
   with a simple model) and let the library search for a counterexample. Examples next to them stay
   for the cases that document a business rule. A counterexample rapid saves under `testdata/rapid`
   is committed as a regression.
+- **Code that parses outside input has a fuzz target.** A parser or validator that takes bytes from
+  an operator, an agent or the network (a document, a Preset file, a key) gets a `Fuzz…` test next
+  to it that states what must hold for any input (no panic, a result or an error and never both, a
+  refusal of a known kind), seeded from the real files. `mise run test:fuzz` runs the targets (the
+  nightly workflow for minutes each); a crash is saved under `testdata/fuzz` and committed.
+- **A package that starts goroutines checks that its tests stop them.** It has a `main_test.go`
+  with `goleak.VerifyTestMain`: a test that leaves a server, worker or subscriber running fails the
+  package. A new package that starts goroutines gets the same file.
 - **No tests of built-in behaviour.** A test exercises sphericon's own code. One whose only subject is a
   Mantine component, the standard library or another dependency (a copy button showing "Copied", a
   library's defaults or retries) is deleted, and none is added.

@@ -102,6 +102,14 @@ model ForbiddenProblem is Response<403> {
   @body body: ProblemDetails;
 }
 
+/** RFC 7807 precondition required response: the request needs something it did not carry
+ * (a verification link opened outside its Registration browser needs a password, ADR 0030) */
+@error
+model PreconditionRequiredProblem is Response<428> {
+  @header contentType: "application/problem+json";
+  @body body: ProblemDetails;
+}
+
 /** RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025) */
 @error
 model TooManyRequestsProblem is Response<429> {

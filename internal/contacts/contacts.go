@@ -376,7 +376,7 @@ func (a Attributes) normalized() Attributes {
 	a.SubjectID = trimmed(a.SubjectID)
 	a.Phone = trimmed(a.Phone)
 	if a.Email = trimmed(a.Email); a.Email != nil {
-		a.Email = lo.ToPtr(strings.ToLower(*a.Email))
+		a.Email = new(strings.ToLower(*a.Email))
 	}
 	return a
 }

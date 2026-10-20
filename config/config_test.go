@@ -554,3 +554,18 @@ func TestConfigLoadJWTSecretSecondary(t *testing.T) {
 		})
 	}
 }
+
+func TestConfigLoadEventLiveWindow(t *testing.T) {
+	cfg, err := Load("test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.EventLiveWindow != 72*time.Hour {
+		t.Fatalf("default EventLiveWindow = %v, want 72h", cfg.EventLiveWindow)
+	}
+
+	t.Setenv("SPHERICON_EVENT_LIVE_WINDOW_HOURS", "0")
+	if _, err := Load("test"); err == nil {
+		t.Fatal("a live window under an hour must be rejected: it cannot be switched off")
+	}
+}

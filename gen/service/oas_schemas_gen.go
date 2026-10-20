@@ -63,6 +63,9 @@ type HoldInput struct {
 	ReasonCode string `json:"reasonCode"`
 	// The message shown to the Workspace Owner, as given.
 	Message string `json:"message"`
+	// Where the Workspace's Owners and Admins can resolve the hold, shown as a link next to the message:
+	// an absolute https URL. Omit it to give none; setting the hold again without it removes a stored one.
+	ActionUrl OptNilString `json:"actionUrl"`
 	// Required; in the future and no further than the configured maximum from now.
 	ExpiresAt Timestamp `json:"expiresAt"`
 }
@@ -75,6 +78,11 @@ func (s *HoldInput) GetReasonCode() string {
 // GetMessage returns the value of Message.
 func (s *HoldInput) GetMessage() string {
 	return s.Message
+}
+
+// GetActionUrl returns the value of ActionUrl.
+func (s *HoldInput) GetActionUrl() OptNilString {
+	return s.ActionUrl
 }
 
 // GetExpiresAt returns the value of ExpiresAt.
@@ -90,6 +98,11 @@ func (s *HoldInput) SetReasonCode(val string) {
 // SetMessage sets the value of Message.
 func (s *HoldInput) SetMessage(val string) {
 	s.Message = val
+}
+
+// SetActionUrl sets the value of ActionUrl.
+func (s *HoldInput) SetActionUrl(val OptNilString) {
+	s.ActionUrl = val
 }
 
 // SetExpiresAt sets the value of ExpiresAt.
@@ -124,6 +137,8 @@ type HoldResource struct {
 	ReasonCode string `json:"reasonCode"`
 	// The message shown to the Workspace Owner, as given.
 	Message string `json:"message"`
+	// Where the Workspace's Owners and Admins can resolve the hold; absent when none was given.
+	ActionUrl OptNilString `json:"actionUrl"`
 	// When the hold stops freezing sending unless its setter renews it.
 	ExpiresAt Timestamp `json:"expiresAt"`
 	// The name of the Service credential that last set it.
@@ -147,6 +162,11 @@ func (s *HoldResource) GetReasonCode() string {
 // GetMessage returns the value of Message.
 func (s *HoldResource) GetMessage() string {
 	return s.Message
+}
+
+// GetActionUrl returns the value of ActionUrl.
+func (s *HoldResource) GetActionUrl() OptNilString {
+	return s.ActionUrl
 }
 
 // GetExpiresAt returns the value of ExpiresAt.
@@ -182,6 +202,11 @@ func (s *HoldResource) SetReasonCode(val string) {
 // SetMessage sets the value of Message.
 func (s *HoldResource) SetMessage(val string) {
 	s.Message = val
+}
+
+// SetActionUrl sets the value of ActionUrl.
+func (s *HoldResource) SetActionUrl(val OptNilString) {
+	s.ActionUrl = val
 }
 
 // SetExpiresAt sets the value of ExpiresAt.
@@ -275,6 +300,74 @@ func (o OptInt32) Get() (v int32, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptInt32) Or(d int32) int32 {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptNilString returns new OptNilString with value set to v.
+func NewOptNilString(v string) OptNilString {
+	return OptNilString{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilString is optional nullable string.
+type OptNilString struct {
+	Value string
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilString was set.
+func (o OptNilString) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilString) Reset() {
+	var v string
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilString) SetTo(v string) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilString) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilString) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v string
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilString) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilString) Get() (v string, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilString) Or(d string) string {
 	if v, ok := o.Get(); ok {
 		return v
 	}

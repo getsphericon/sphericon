@@ -20,7 +20,7 @@ environment value wins over the in-app switch, which then shows as locked. Other
 Instance's first Workspace decides in the app. That owner sees a notice once, with a link to the
 schema and a preview of the report as it would be sent (available even when sending is off), and the
 first send waits until the notice has been seen. The SaaS deployment sets `SPHERICON_TELEMETRY=false`
-in `infra/`; `dev` builds and the test environment never send.
+in its deployment (the platform repository); `dev` builds and the test environment never send.
 
 A send is fire-and-forget: a five-second timeout, no retry queue (the next cycle is the retry), a
 debug-level log line, no effect on boot, readiness or health. The receiving service lives outside this

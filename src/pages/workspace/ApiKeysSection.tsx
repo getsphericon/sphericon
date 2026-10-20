@@ -66,6 +66,7 @@ const SCOPE_OPTIONS = [
   'tokens:read',
   'tokens:write',
   'audit:read',
+  'export:read',
 ]
 
 export function ApiKeysSection({ workspaceId }: { workspaceId: string }) {

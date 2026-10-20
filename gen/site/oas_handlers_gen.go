@@ -1650,14 +1650,16 @@ func (s *Server) handleSiteAuthLogoutRequest(args [0]string, argsEscaped bool, w
 
 // handleSiteAuthRegisterRequest handles SiteAuth_register operation.
 //
-// Create an Unverified User (ADR 0030): no password, no session, no Workspace. A verification email
-// with the link to the set-password screen is on its way (202), and 202 is the answer for every
-// address, taken or not (ADR 0031): the owner of a taken address gets a notice by mail instead. With
-// `SPHERICON_REQUIRE_EMAIL_VERIFICATION=false` there is no mail to carry that notice: the request must
-// carry a password (422 otherwise), creates a Verified User with its first Workspace at once (202, no
-// session: the User signs in next), and a taken address answers 409. An Instance that closed sign-up
-// (`SPHERICON_SIGNUP_OPEN=false`, ADR 0042) answers 403 with code `signup_closed` before anything is
-// read or created; accepting an Invitation still works.
+// Create an Unverified User (ADR 0030): no session, no Workspace. A verification email with the link
+// is on its way (202), and 202 is the answer for every address, taken or not (ADR 0031): the owner of
+// a taken address gets a notice by mail instead. The answer always sets the registration cookie
+// (httpOnly, SameSite=Strict, scoped to the auth prefix shared by verify and resend), which binds the
+// link to this browser, so the header does not say whether the address is taken either. The password
+// is required (422 otherwise). With `SPHERICON_REQUIRE_EMAIL_VERIFICATION=false` there is no mail to
+// carry that notice and no link: the request creates a Verified User with its first Workspace at once
+// (202, no session and no cookie: the User signs in next), and a taken address answers 409. An
+// Instance that closed sign-up (`SPHERICON_SIGNUP_OPEN=false`, ADR 0042) answers 403 with code
+// `signup_closed` before anything is read or created; accepting an Invitation still works.
 //
 // POST /auth/register
 func (s *Server) handleSiteAuthRegisterRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -1876,6 +1878,16 @@ func (s *Server) handleSiteAuthResendVerificationRequest(args [0]string, argsEsc
 			ID:   "SiteAuth_resendVerification",
 		}
 	)
+	params, err := decodeSiteAuthResendVerificationParams(args, argsEscaped, r)
+	if err != nil {
+		err = &ogenerrors.DecodeParamsError{
+			OperationContext: opErrContext,
+			Err:              err,
+		}
+		defer recordError("DecodeParams", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
 
 	var rawBody []byte
 	request, rawBody, close, err := s.decodeSiteAuthResendVerificationRequest(r)
@@ -1903,13 +1915,18 @@ func (s *Server) handleSiteAuthResendVerificationRequest(args [0]string, argsEsc
 			OperationID:      "SiteAuth_resendVerification",
 			Body:             request,
 			RawBody:          rawBody,
-			Params:           middleware.Parameters{},
-			Raw:              r,
+			Params: middleware.Parameters{
+				{
+					Name: "REG",
+					In:   "cookie",
+				}: params.REG,
+			},
+			Raw: r,
 		}
 
 		type (
 			Request  = *SiteResendVerificationInput
-			Params   = struct{}
+			Params   = SiteAuthResendVerificationParams
 			Response = SiteAuthResendVerificationRes
 		)
 		response, err = middleware.HookMiddleware[
@@ -1919,14 +1936,14 @@ func (s *Server) handleSiteAuthResendVerificationRequest(args [0]string, argsEsc
 		](
 			m,
 			mreq,
-			nil,
+			unpackSiteAuthResendVerificationParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SiteAuthResendVerification(ctx, request)
+				response, err = s.h.SiteAuthResendVerification(ctx, request, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SiteAuthResendVerification(ctx, request)
+		response, err = s.h.SiteAuthResendVerification(ctx, request, params)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -2235,9 +2252,12 @@ func (s *Server) handleSiteAuthSecondFactorRequest(args [0]string, argsEscaped b
 // handleSiteAuthVerifyEmailRequest handles SiteAuth_verifyEmail operation.
 //
 // Complete a registration from the verification link (the token is the credential): stamps the
-// Verified email, sets the password, ends every earlier session, creates the User's first Workspace
-// and sends the welcome email. The User then signs in; the link alone starts no session. A link is
-// single use and scoped to the address it was sent to. Rate limited like registration.
+// Verified email, ends every earlier session, creates the User's first Workspace, sends the welcome
+// email and starts the session (the cookie is issued after the epoch bump, as login does, ADR 0020).
+// When the request carries the registration cookie the link was minted for, the password from
+// registration stays; otherwise the request must carry a password, which replaces it, and without one
+// the answer is 428 and nothing changes, the link stays valid (a mail scanner consumes nothing). A
+// link is single use and scoped to the address it was sent to. Rate limited like registration.
 //
 // POST /auth/verify-email
 func (s *Server) handleSiteAuthVerifyEmailRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -2311,6 +2331,16 @@ func (s *Server) handleSiteAuthVerifyEmailRequest(args [0]string, argsEscaped bo
 			ID:   "SiteAuth_verifyEmail",
 		}
 	)
+	params, err := decodeSiteAuthVerifyEmailParams(args, argsEscaped, r)
+	if err != nil {
+		err = &ogenerrors.DecodeParamsError{
+			OperationContext: opErrContext,
+			Err:              err,
+		}
+		defer recordError("DecodeParams", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
 
 	var rawBody []byte
 	request, rawBody, close, err := s.decodeSiteAuthVerifyEmailRequest(r)
@@ -2338,13 +2368,18 @@ func (s *Server) handleSiteAuthVerifyEmailRequest(args [0]string, argsEscaped bo
 			OperationID:      "SiteAuth_verifyEmail",
 			Body:             request,
 			RawBody:          rawBody,
-			Params:           middleware.Parameters{},
-			Raw:              r,
+			Params: middleware.Parameters{
+				{
+					Name: "REG",
+					In:   "cookie",
+				}: params.REG,
+			},
+			Raw: r,
 		}
 
 		type (
 			Request  = *SiteVerifyEmailInput
-			Params   = struct{}
+			Params   = SiteAuthVerifyEmailParams
 			Response = SiteAuthVerifyEmailRes
 		)
 		response, err = middleware.HookMiddleware[
@@ -2354,14 +2389,14 @@ func (s *Server) handleSiteAuthVerifyEmailRequest(args [0]string, argsEscaped bo
 		](
 			m,
 			mreq,
-			nil,
+			unpackSiteAuthVerifyEmailParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SiteAuthVerifyEmail(ctx, request)
+				response, err = s.h.SiteAuthVerifyEmail(ctx, request, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SiteAuthVerifyEmail(ctx, request)
+		response, err = s.h.SiteAuthVerifyEmail(ctx, request, params)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -6511,6 +6546,200 @@ func (s *Server) handleSiteContactsDeleteRequest(args [2]string, argsEscaped boo
 	}
 }
 
+// handleSiteContactsEraseRequest handles SiteContacts_erase operation.
+//
+// Erase by email address (GDPR Art. 17, a Privacy request), the same Erasure as deleting a contact:
+// personal data is removed, delivery records to the address are anonymized (also when no contact holds
+// it) and opt-outs survive. Answers 404 when neither a contact nor delivery records hold the address.
+// Owner or admin only.
+//
+// DELETE /workspaces/{workspaceId}/contacts/erase
+func (s *Server) handleSiteContactsEraseRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+	statusWriter := &codeRecorder{ResponseWriter: w}
+	w = statusWriter
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteContacts_erase"),
+		semconv.HTTPRequestMethodKey.String("DELETE"),
+		semconv.HTTPRouteKey.String("/workspaces/{workspaceId}/contacts/erase"),
+	}
+	// Add attributes from config.
+	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
+
+	// Start a span for this request.
+	ctx, span := s.cfg.Tracer.Start(r.Context(), SiteContactsEraseOperation,
+		trace.WithAttributes(otelAttrs...),
+		serverSpanKind,
+	)
+	defer span.End()
+
+	// Add Labeler to context.
+	labeler := &Labeler{attrs: otelAttrs}
+	ctx = contextWithLabeler(ctx, labeler)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		elapsedDuration := time.Since(startTime)
+
+		attrSet := labeler.AttributeSet()
+		attrs := attrSet.ToSlice()
+		code := statusWriter.status
+		if code != 0 {
+			codeAttr := semconv.HTTPResponseStatusCode(code)
+			attrs = append(attrs, codeAttr)
+			span.SetAttributes(attrs...)
+		}
+		attrOpt := metric.WithAttributes(attrs...)
+
+		// Increment request counter.
+		s.requests.Add(ctx, 1, attrOpt)
+
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		s.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), attrOpt)
+	}()
+
+	var (
+		recordError = func(stage string, err error) {
+			span.RecordError(err)
+
+			// https://opentelemetry.io/docs/specs/semconv/http/http-spans/#status
+			// Span Status MUST be left unset if HTTP status code was in the 1xx, 2xx or 3xx ranges,
+			// unless there was another error (e.g., network error receiving the response body; or 3xx codes with
+			// max redirects exceeded), in which case status MUST be set to Error.
+			code := statusWriter.status
+			if code < 100 || code >= 500 {
+				span.SetStatus(codes.Error, stage)
+			}
+
+			attrSet := labeler.AttributeSet()
+			attrs := attrSet.ToSlice()
+			if code != 0 {
+				attrs = append(attrs, semconv.HTTPResponseStatusCode(code))
+			}
+
+			s.errors.Add(ctx, 1, metric.WithAttributes(attrs...))
+		}
+		err          error
+		opErrContext = ogenerrors.OperationContext{
+			Name: SiteContactsEraseOperation,
+			ID:   "SiteContacts_erase",
+		}
+	)
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			sctx, ok, err := s.securityApiKeyAuth(ctx, SiteContactsEraseOperation, r)
+			if err != nil {
+				err = &ogenerrors.SecurityError{
+					OperationContext: opErrContext,
+					Security:         "ApiKeyAuth",
+					Err:              err,
+				}
+				defer recordError("Security:ApiKeyAuth", err)
+				s.cfg.ErrorHandler(ctx, w, r, err)
+				return
+			}
+			if ok {
+				satisfied[0] |= 1 << 0
+				ctx = sctx
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			err = &ogenerrors.SecurityError{
+				OperationContext: opErrContext,
+				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
+			}
+			defer recordError("Security", err)
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+	}
+	params, err := decodeSiteContactsEraseParams(args, argsEscaped, r)
+	if err != nil {
+		err = &ogenerrors.DecodeParamsError{
+			OperationContext: opErrContext,
+			Err:              err,
+		}
+		defer recordError("DecodeParams", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+
+	var rawBody []byte
+
+	var response SiteContactsEraseRes
+	if m := s.cfg.Middleware; m != nil {
+		mreq := middleware.Request{
+			Context:          ctx,
+			OperationName:    SiteContactsEraseOperation,
+			OperationSummary: "",
+			OperationID:      "SiteContacts_erase",
+			Body:             nil,
+			RawBody:          rawBody,
+			Params: middleware.Parameters{
+				{
+					Name: "workspaceId",
+					In:   "path",
+				}: params.WorkspaceId,
+				{
+					Name: "email",
+					In:   "query",
+				}: params.Email,
+			},
+			Raw: r,
+		}
+
+		type (
+			Request  = struct{}
+			Params   = SiteContactsEraseParams
+			Response = SiteContactsEraseRes
+		)
+		response, err = middleware.HookMiddleware[
+			Request,
+			Params,
+			Response,
+		](
+			m,
+			mreq,
+			unpackSiteContactsEraseParams,
+			func(ctx context.Context, request Request, params Params) (response Response, err error) {
+				response, err = s.h.SiteContactsErase(ctx, params)
+				return response, err
+			},
+		)
+	} else {
+		response, err = s.h.SiteContactsErase(ctx, params)
+	}
+	if err != nil {
+		defer recordError("Internal", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+
+	if err := encodeSiteContactsEraseResponse(response, w, span); err != nil {
+		defer recordError("EncodeResponse", err)
+		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+		}
+		return
+	}
+}
+
 // handleSiteContactsExportRequest handles SiteContacts_export operation.
 //
 // Export everything held about one contact as a streamed JSON download. Identify the contact by
@@ -7085,6 +7314,199 @@ func (s *Server) handleSiteContactsListRequest(args [1]string, argsEscaped bool,
 	}
 
 	if err := encodeSiteContactsListResponse(response, w, span); err != nil {
+		defer recordError("EncodeResponse", err)
+		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+		}
+		return
+	}
+}
+
+// handleSiteContactsLookupRequest handles SiteContacts_lookup operation.
+//
+// Look up what the Workspace holds for one email address (a Privacy request): counts only. The address
+// is trimmed and lowercased; an invalid one is rejected. An address nothing holds answers with zeros,
+// not 404. Owner or admin only.
+//
+// GET /workspaces/{workspaceId}/contacts/lookup
+func (s *Server) handleSiteContactsLookupRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+	statusWriter := &codeRecorder{ResponseWriter: w}
+	w = statusWriter
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteContacts_lookup"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.HTTPRouteKey.String("/workspaces/{workspaceId}/contacts/lookup"),
+	}
+	// Add attributes from config.
+	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
+
+	// Start a span for this request.
+	ctx, span := s.cfg.Tracer.Start(r.Context(), SiteContactsLookupOperation,
+		trace.WithAttributes(otelAttrs...),
+		serverSpanKind,
+	)
+	defer span.End()
+
+	// Add Labeler to context.
+	labeler := &Labeler{attrs: otelAttrs}
+	ctx = contextWithLabeler(ctx, labeler)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		elapsedDuration := time.Since(startTime)
+
+		attrSet := labeler.AttributeSet()
+		attrs := attrSet.ToSlice()
+		code := statusWriter.status
+		if code != 0 {
+			codeAttr := semconv.HTTPResponseStatusCode(code)
+			attrs = append(attrs, codeAttr)
+			span.SetAttributes(attrs...)
+		}
+		attrOpt := metric.WithAttributes(attrs...)
+
+		// Increment request counter.
+		s.requests.Add(ctx, 1, attrOpt)
+
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		s.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), attrOpt)
+	}()
+
+	var (
+		recordError = func(stage string, err error) {
+			span.RecordError(err)
+
+			// https://opentelemetry.io/docs/specs/semconv/http/http-spans/#status
+			// Span Status MUST be left unset if HTTP status code was in the 1xx, 2xx or 3xx ranges,
+			// unless there was another error (e.g., network error receiving the response body; or 3xx codes with
+			// max redirects exceeded), in which case status MUST be set to Error.
+			code := statusWriter.status
+			if code < 100 || code >= 500 {
+				span.SetStatus(codes.Error, stage)
+			}
+
+			attrSet := labeler.AttributeSet()
+			attrs := attrSet.ToSlice()
+			if code != 0 {
+				attrs = append(attrs, semconv.HTTPResponseStatusCode(code))
+			}
+
+			s.errors.Add(ctx, 1, metric.WithAttributes(attrs...))
+		}
+		err          error
+		opErrContext = ogenerrors.OperationContext{
+			Name: SiteContactsLookupOperation,
+			ID:   "SiteContacts_lookup",
+		}
+	)
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			sctx, ok, err := s.securityApiKeyAuth(ctx, SiteContactsLookupOperation, r)
+			if err != nil {
+				err = &ogenerrors.SecurityError{
+					OperationContext: opErrContext,
+					Security:         "ApiKeyAuth",
+					Err:              err,
+				}
+				defer recordError("Security:ApiKeyAuth", err)
+				s.cfg.ErrorHandler(ctx, w, r, err)
+				return
+			}
+			if ok {
+				satisfied[0] |= 1 << 0
+				ctx = sctx
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			err = &ogenerrors.SecurityError{
+				OperationContext: opErrContext,
+				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
+			}
+			defer recordError("Security", err)
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+	}
+	params, err := decodeSiteContactsLookupParams(args, argsEscaped, r)
+	if err != nil {
+		err = &ogenerrors.DecodeParamsError{
+			OperationContext: opErrContext,
+			Err:              err,
+		}
+		defer recordError("DecodeParams", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+
+	var rawBody []byte
+
+	var response SiteContactsLookupRes
+	if m := s.cfg.Middleware; m != nil {
+		mreq := middleware.Request{
+			Context:          ctx,
+			OperationName:    SiteContactsLookupOperation,
+			OperationSummary: "",
+			OperationID:      "SiteContacts_lookup",
+			Body:             nil,
+			RawBody:          rawBody,
+			Params: middleware.Parameters{
+				{
+					Name: "workspaceId",
+					In:   "path",
+				}: params.WorkspaceId,
+				{
+					Name: "email",
+					In:   "query",
+				}: params.Email,
+			},
+			Raw: r,
+		}
+
+		type (
+			Request  = struct{}
+			Params   = SiteContactsLookupParams
+			Response = SiteContactsLookupRes
+		)
+		response, err = middleware.HookMiddleware[
+			Request,
+			Params,
+			Response,
+		](
+			m,
+			mreq,
+			unpackSiteContactsLookupParams,
+			func(ctx context.Context, request Request, params Params) (response Response, err error) {
+				response, err = s.h.SiteContactsLookup(ctx, params)
+				return response, err
+			},
+		)
+	} else {
+		response, err = s.h.SiteContactsLookup(ctx, params)
+	}
+	if err != nil {
+		defer recordError("Internal", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+
+	if err := encodeSiteContactsLookupResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)

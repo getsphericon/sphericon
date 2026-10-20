@@ -97,7 +97,7 @@ test('lists the audit log with a staff member shown as Sphericon staff, and load
   await expect.element(screen.getByText('Peter')).toBeInTheDocument()
 })
 
-test('a billing hold change in the audit log names the credential and shows billing activity', async () => {
+test('a hold change in the audit log names the credential', async () => {
   worker.use(
     handleStaffWorkspacesGet({ body: HOOLI }),
     handleStaffWorkspaceAuditList({
@@ -106,10 +106,9 @@ test('a billing hold change in the audit log names the credential and shows bill
           {
             id: '3',
             occurredAt: '2026-02-01T00:00:00Z',
-            actor: { kind: 'service', id: '4', name: 'billing-plane' },
+            actor: { kind: 'service', id: '4', name: 'hold-service' },
             action: 'hold.create',
-            billing: true,
-            target: { type: 'hold', name: 'billing' },
+            target: { type: 'hold', name: 'review' },
           },
         ],
       },
@@ -117,8 +116,47 @@ test('a billing hold change in the audit log names the credential and shows bill
   )
   const { screen } = await renderWithRouter(<ConsoleWorkspacePage />, MOUNT)
 
-  await expect.element(screen.getByText('billing-plane')).toBeInTheDocument()
-  await expect.element(screen.getByText('Billing', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('hold-service')).toBeInTheDocument()
+})
+
+test('the audit log names a system actor and an API token by its name or its id', async () => {
+  worker.use(
+    handleStaffWorkspacesGet({ body: HOOLI }),
+    handleStaffWorkspaceAuditList({
+      body: {
+        items: [
+          {
+            id: '5',
+            occurredAt: '2026-02-01T00:00:00Z',
+            actor: { kind: 'system' },
+            action: 'workspace.suspend',
+            target: { type: 'workspace', id: '1' },
+          },
+          {
+            id: '4',
+            occurredAt: '2026-02-01T00:00:00Z',
+            actor: { kind: 'api_token', id: '7' },
+            action: 'tag.create',
+            target: { type: 'tag', name: 'vip' },
+          },
+          {
+            id: '3',
+            occurredAt: '2026-02-01T00:00:00Z',
+            actor: { kind: 'api_token', id: '8', name: 'Zapier' },
+            action: 'tag.delete',
+            target: { type: 'tag' },
+          },
+        ],
+      },
+    }),
+  )
+  const { screen } = await renderWithRouter(<ConsoleWorkspacePage />, MOUNT)
+
+  await expect.element(screen.getByText('System', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('API token #7')).toBeInTheDocument()
+  await expect.element(screen.getByText('Zapier')).toBeInTheDocument()
+  await expect.element(screen.getByText('workspace #1')).toBeInTheDocument()
+  await expect.element(screen.getByText('tag vip')).toBeInTheDocument()
 })
 
 test('an empty audit log says so', async () => {
@@ -295,16 +333,14 @@ test('lists the active holds with key, reason code, message, since, expiry and s
             createdAt: '2026-03-01T00:00:00Z',
             expiresAt: '2026-03-08T00:00:00Z',
             setBy: 'service-a',
-            billing: false,
           },
           {
             key: 'k2',
-            reasonCode: 'non_payment',
-            message: 'Invoice overdue.',
+            reasonCode: 'quota_reached',
+            message: 'Quota reached.',
             createdAt: '2026-03-01T00:00:00Z',
             expiresAt: '2026-03-08T00:00:00Z',
-            setBy: 'billing-plane',
-            billing: true,
+            setBy: 'service-b',
           },
         ],
       },
@@ -317,8 +353,7 @@ test('lists the active holds with key, reason code, message, since, expiry and s
   await expect.element(screen.getByText('review', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByText('Sending is paused for now.')).toBeInTheDocument()
   await expect.element(screen.getByText('service-a', { exact: true })).toBeInTheDocument()
-  await expect.element(screen.getByText('non_payment', { exact: true })).toBeInTheDocument()
-  await expect.element(screen.getByText('Billing', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('quota_reached', { exact: true })).toBeInTheDocument()
 })
 
 test('a workspace without holds says so', async () => {

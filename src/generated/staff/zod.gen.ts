@@ -66,6 +66,14 @@ export const zPaymentRequiredProblem = z.object({
 });
 
 /**
+ * RFC 7807 precondition required response: the request needs something it did not carry
+ * (a verification link opened outside its Registration browser needs a password, ADR 0030)
+ */
+export const zPreconditionRequiredProblem = z.object({
+  body: zProblemDetails
+});
+
+/**
  * Which metric of a Sending domain breached the abuse detector's warning limit
  */
 export const zStaffAbuseMetric = z.enum(['complaint', 'bounce']);
@@ -242,7 +250,6 @@ export const zStaffAuditEntryResource = z.object({
   occurredAt: zTimestamp,
   actor: zStaffAuditActor,
   action: z.string(),
-  billing: z.boolean(),
   target: zStaffAuditTarget,
   diff: z.exactOptional(z.record(z.string(), z.unknown()).nullable()),
   requestId: z.exactOptional(z.string().nullable()),
@@ -268,7 +275,7 @@ export const zStaffHold = z.object({
   createdAt: zTimestamp,
   expiresAt: zTimestamp,
   setBy: z.string(),
-  billing: z.boolean()
+  actionUrl: z.exactOptional(z.string().nullable())
 });
 
 /**

@@ -49,6 +49,7 @@
   "errors.reset_link_invalid": "invalid or expired reset link",
   "errors.verify_link_invalid": "invalid or expired verification link",
   "errors.verify_link_bad": "invalid verification link",
+  "errors.verify_password_needed": "this link was not opened in the browser that registered: set a password to continue",
   "errors.verify_link_stale": "verification link no longer valid",
   "errors.confirm_link_invalid": "invalid or expired confirmation link",
   "errors.confirm_link_bad": "invalid confirmation link",

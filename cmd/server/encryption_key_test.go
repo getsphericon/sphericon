@@ -73,7 +73,7 @@ func TestEncryptionKeyRetireKeepsOnlyThePrimary(t *testing.T) {
 func TestEncryptionKeyCommandsNeedAKeyset(t *testing.T) {
 	for _, sub := range []string{"rotate", "retire"} {
 		err := runDeps(keyDeps(""), &bytes.Buffer{}, "encryption-key", sub)
-		assert.ErrorContains(t, err, "SPHERICON_ENCRYPTION_KEY is not set", sub)
+		require.ErrorContains(t, err, "SPHERICON_ENCRYPTION_KEY is not set", sub)
 	}
 	failing := deps{env: "test", encryptionKey: func() (string, error) { return "", errors.New("boom") }}
 	assert.ErrorContains(t, runDeps(failing, &bytes.Buffer{}, "encryption-key", "rotate"), "boom")
@@ -108,7 +108,7 @@ func TestEncryptionKeyReencryptFailsAndStillShowsWhatItDid(t *testing.T) {
 
 	err := execute(ops, &out, "encryption-key", "reencrypt")
 
-	assert.ErrorContains(t, err, "row 4")
+	require.ErrorContains(t, err, "row 4")
 	assert.Contains(t, out.String(), "integrations.config_encrypted")
 }
 

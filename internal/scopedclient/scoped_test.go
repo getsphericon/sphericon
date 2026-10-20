@@ -1,7 +1,6 @@
 package scopedclient_test
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -275,7 +274,7 @@ func TestScopedNotInWorkspaceIsTyped(t *testing.T) {
 	env := testhelper.Setup(t)
 	_, err := env.DB.Scoped(acme).Tag().Create().SetName("x").AddContactIDs(fixtures.ContactGlobexID).Save(t.Context())
 	require.Error(t, err)
-	assert.True(t, errors.Is(err, ent.ErrNotInWorkspace))
+	assert.ErrorIs(t, err, ent.ErrNotInWorkspace)
 }
 
 func TestScopedWorkspaceIsTheOwnRow(t *testing.T) {

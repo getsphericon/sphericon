@@ -48,6 +48,7 @@ type Handlers struct {
 	automations    *automations.Module
 	bootstrapToken string
 	audit          AuditLog
+	export         ExportStreams
 }
 
 // AuditLog is the read seam of the Enterprise Audit log (ADR 0022), implemented by
@@ -58,6 +59,13 @@ type AuditLog interface {
 	// Entries returns up to limit entries, newest first, preceding the cursor entry
 	// id (0 = from the newest), and the next page's cursor (0 = last page).
 	Entries(ctx context.Context, s *ent.Scoped, f events.AuditFilter, cursor int64, limit int) ([]*ent.AuditEntry, int64, error)
+}
+
+// ExportStreams is the license seam of the Enterprise Export streams (ADR 0045),
+// implemented by ee/export. Core serves the streams itself (internal/exportstream) and
+// asks only whether the `export` feature is licensed: without it every stream answers 404.
+type ExportStreams interface {
+	Licensed() bool
 }
 
 // Deps is everything the /api handlers are built from. The domain modules are
@@ -82,6 +90,7 @@ type Deps struct {
 	Reputation     *reputation.Module
 	BootstrapToken string
 	Audit          AuditLog
+	Export         ExportStreams
 }
 
 func NewHandlers(d Deps) *Handlers {
@@ -89,7 +98,7 @@ func NewHandlers(d Deps) *Handlers {
 		accounts: d.Accounts, bus: d.Bus, webhooks: d.Webhooks, integrations: d.Integrations, sendingDomains: d.SendingDomains, outbound: d.Outbound, segments: d.Segments,
 		eventlog: d.EventLog, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, templates: d.Templates, brandKit: d.BrandKit, automations: d.Automations,
 		broadcasts: d.Broadcasts, reputation: d.Reputation, bootstrapToken: d.BootstrapToken,
-		audit: d.Audit,
+		audit: d.Audit, export: d.Export,
 	}
 }
 

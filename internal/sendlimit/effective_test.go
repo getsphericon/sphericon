@@ -38,11 +38,11 @@ func TestEffectiveOfTakesTheLowestOfManualAndProviderValues(t *testing.T) {
 		want             sendlimit.Value
 	}{
 		{"neither", nil, nil, sendlimit.Value{}},
-		{"provider only", nil, ptr(14), sendlimit.Value{Limit: ptr(14), Source: sendlimit.SourceProvider}},
-		{"manual only", ptr(5), nil, sendlimit.Value{Limit: ptr(5), Source: sendlimit.SourceManual}},
-		{"manual is lower", ptr(5), ptr(14), sendlimit.Value{Limit: ptr(5), Source: sendlimit.SourceManual}},
-		{"provider is lower", ptr(50), ptr(14), sendlimit.Value{Limit: ptr(14), Source: sendlimit.SourceProvider}},
-		{"manual wins a tie", ptr(14), ptr(14), sendlimit.Value{Limit: ptr(14), Source: sendlimit.SourceManual}},
+		{"provider only", nil, new(14), sendlimit.Value{Limit: new(14), Source: sendlimit.SourceProvider}},
+		{"manual only", new(5), nil, sendlimit.Value{Limit: new(5), Source: sendlimit.SourceManual}},
+		{"manual is lower", new(5), new(14), sendlimit.Value{Limit: new(5), Source: sendlimit.SourceManual}},
+		{"provider is lower", new(50), new(14), sendlimit.Value{Limit: new(14), Source: sendlimit.SourceProvider}},
+		{"manual wins a tie", new(14), new(14), sendlimit.Value{Limit: new(14), Source: sendlimit.SourceManual}},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -71,4 +71,25 @@ func TestUsageCountsSentMessagesPerIntegrationOverTheLastDay(t *testing.T) {
 		fixtures.IntegrationAcmeDefaultID: 2, // the third send is 30 hours old
 		fixtures.IntegrationAcmeSesID:     1,
 	}, got, "the pending, unstamped and Globex rows do not count")
+}
+
+func TestWarningsListsWhatIsWorthFlaggedInAStableOrder(t *testing.T) {
+	limited := sendlimit.Value{Limit: new(5), Source: sendlimit.SourceManual}
+	tests := []struct {
+		name string
+		eff  sendlimit.Effective
+		want []sendlimit.Warning
+	}{
+		{"nothing to flag", sendlimit.Effective{PerSecond: limited}, []sendlimit.Warning{}},
+		{"no ceiling at all", sendlimit.Effective{}, []sendlimit.Warning{sendlimit.WarningUnlimited}},
+		{"provider quota unreadable", sendlimit.Effective{PerDay: limited, ProviderQuotaUnavailable: true}, []sendlimit.Warning{sendlimit.WarningProviderQuotaUnavailable}},
+		{"both", sendlimit.Effective{ProviderQuotaUnavailable: true}, []sendlimit.Warning{sendlimit.WarningUnlimited, sendlimit.WarningProviderQuotaUnavailable}},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := tc.eff.Warnings()
+
+			assert.Equal(t, tc.want, got)
+		})
+	}
 }

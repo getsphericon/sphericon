@@ -78,10 +78,10 @@ func (s *Signer) WithClock(now func() time.Time) *Signer {
 // email for a change); nil is fine.
 func (s *Signer) Mint(purpose Purpose, userID int64, binding string, ttl time.Duration, extra map[string]string) (string, error) {
 	tok := jwt.NewWithClaims(jwt.SigningMethodHS256, &claims{
-		RegisteredClaims: jwt.RegisteredClaims{ExpiresAt: jwt.NewNumericDate(s.now().Add(ttl))},
-		UserID:           userID,
-		Purpose:          purpose,
-		Extra:            extra,
+		ExpiresAt: jwt.NewNumericDate(s.now().Add(ttl)),
+		UserID:    userID,
+		Purpose:   purpose,
+		Extra:     extra,
 	})
 	return tok.SignedString(s.deriveKey(purpose, userID, binding))
 }

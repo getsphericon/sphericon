@@ -17,7 +17,7 @@ var firstPage = pagination.Params{Page: 1, PageSize: 100}
 
 func TestListFiltersByActionAndOrdersNewestFirst(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := eventlog.New(env.Bus)
+	m := newModule(env)
 
 	p, err := m.List(context.Background(), env.DB.Scoped(fixtures.AcmeID), eventlog.Filter{Action: "purchase"}, firstPage)
 	require.NoError(t, err)
@@ -33,7 +33,7 @@ func TestListFiltersByActionAndOrdersNewestFirst(t *testing.T) {
 
 func TestListBreaksCreatedAtTiesByIDDescending(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := eventlog.New(env.Bus)
+	m := newModule(env)
 
 	p, err := m.List(context.Background(), env.DB.Scoped(fixtures.AcmeID), eventlog.Filter{Action: "tie_probe"}, firstPage)
 	require.NoError(t, err)
@@ -44,7 +44,7 @@ func TestListBreaksCreatedAtTiesByIDDescending(t *testing.T) {
 
 func TestListFiltersByContactID(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := eventlog.New(env.Bus)
+	m := newModule(env)
 	cid := int64(fixtures.ContactAliceID)
 
 	p, err := m.List(context.Background(), env.DB.Scoped(fixtures.AcmeID), eventlog.Filter{ContactID: &cid}, firstPage)
@@ -57,7 +57,7 @@ func TestListFiltersByContactID(t *testing.T) {
 
 func TestListFiltersByEmailCaseInsensitively(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := eventlog.New(env.Bus)
+	m := newModule(env)
 
 	p, err := m.List(context.Background(), env.DB.Scoped(fixtures.AcmeID), eventlog.Filter{Email: "ALICE@Example.com"}, firstPage)
 	require.NoError(t, err)
@@ -70,7 +70,7 @@ func TestListFiltersByEmailCaseInsensitively(t *testing.T) {
 
 func TestListPagesAndStaysInTheWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := eventlog.New(env.Bus)
+	m := newModule(env)
 	ctx := context.Background()
 
 	all, err := m.List(ctx, env.DB.Scoped(fixtures.AcmeID), eventlog.Filter{}, firstPage)
@@ -88,7 +88,7 @@ func TestListPagesAndStaysInTheWorkspace(t *testing.T) {
 
 func TestListActionsPagesTheDistinctActionsAscending(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := eventlog.New(env.Bus)
+	m := newModule(env)
 	s := env.DB.Scoped(fixtures.AcmeID)
 
 	all, err := m.Actions(context.Background(), s)

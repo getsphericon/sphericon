@@ -98,7 +98,7 @@ func TestMigrateGivesExistingWorkspacesAnIdAndEndsRequired(t *testing.T) {
 	entries, err := fs.ReadDir(all, ".")
 	require.NoError(t, err)
 	for _, e := range entries {
-		if e.Name() < "20261020004438" {
+		if e.Name() < "20261020030001" {
 			data, err := fs.ReadFile(all, e.Name())
 			require.NoError(t, err)
 			before[e.Name()] = &fstest.MapFile{Data: data}
@@ -138,7 +138,7 @@ func TestMigrateRefusesToDropTheSlugBeforeEveryWorkspaceHasAnId(t *testing.T) {
 	entries, err := fs.ReadDir(all, ".")
 	require.NoError(t, err)
 	for _, e := range entries {
-		if e.Name() >= "20261020004439" && e.Name() < "20261020021648" {
+		if e.Name() >= "20261020030002" && e.Name() < "20261020030004" {
 			continue // the id backfill and the migration that requires the id
 		}
 		data, err := fs.ReadFile(all, e.Name())
@@ -147,7 +147,7 @@ func TestMigrateRefusesToDropTheSlugBeforeEveryWorkspaceHasAnId(t *testing.T) {
 	}
 	before := fstest.MapFS{}
 	for name, f := range skipping {
-		if name < "20261020021648" {
+		if name < "20261020030004" {
 			before[name] = f
 		}
 	}

@@ -106,7 +106,6 @@ type Handlers struct {
 	accountLink    *accountlink.Link
 	instance       *instance.Module
 	holdsHonoured  func() bool
-	billingURL     string
 	mcpURL         string
 	// requireVerification is the email verification gate (ADR 0030): off only on an
 	// install that set SPHERICON_REQUIRE_EMAIL_VERIFICATION=false.
@@ -182,8 +181,6 @@ type Deps struct {
 	AbuseWatch     AbuseWatch
 	// SupportEmail is where a suspended Workspace's owner appeals (SPHERICON_SUPPORT_EMAIL).
 	SupportEmail string
-	// BillingURL is the billing site a member under a hold is pointed to (SPHERICON_BILLING_URL).
-	BillingURL string
 	// MCPURL is the public origin of the MCP endpoint (config.MCPOrigin).
 	MCPURL    string
 	Analytics *analytics.Module
@@ -220,7 +217,7 @@ func NewHandlers(d Deps) *Handlers {
 		segments: d.Segments, eventlog: d.EventLog, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, templates: d.Templates, brandKit: d.BrandKit,
 		automations: d.Automations, broadcasts: d.Broadcasts, welcome: d.Welcome,
 		sysmail: d.SysMail, sendingDomains: d.SendingDomains, integrations: d.Integrations, tokens: d.Tokens, tracker: d.Tracker, appURL: d.AppURL,
-		oauth: d.OAuth, audit: d.Audit, abuseWatch: d.AbuseWatch, supportEmail: d.SupportEmail, billingURL: d.BillingURL, mcpURL: d.MCPURL, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, now: now, instance: d.Instance, accountLink: d.AccountLink, holdsHonoured: d.HoldsHonoured, requireVerification: d.RequireEmailVerification, signupOpen: d.SignupOpen,
+		oauth: d.OAuth, audit: d.Audit, abuseWatch: d.AbuseWatch, supportEmail: d.SupportEmail, mcpURL: d.MCPURL, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, now: now, instance: d.Instance, accountLink: d.AccountLink, holdsHonoured: d.HoldsHonoured, requireVerification: d.RequireEmailVerification, signupOpen: d.SignupOpen,
 		challenges: d.Tokens.WithClock(d.Clock),
 	}
 }
@@ -266,7 +263,7 @@ func (h *Handlers) scopedWithRoleFor(ctx context.Context, publicID siteapi.Works
 // membershipFor is scopedFor plus the caller's Membership (its User and Workspace
 // loaded). It is where the Two-factor requirement is enforced (ADR 0020): once a
 // User's grace in a requiring Workspace has ended without a Second factor, every
-// request to that Workspace fails with errSecondFactorRequired (403
+// request to that Workspace fails with secondFactorRequiredError (403
 // second_factor_required); other Workspaces and the /me endpoints are unaffected.
 func (h *Handlers) membershipFor(ctx context.Context, publicID siteapi.WorkspaceId) (*ent.Scoped, *ent.Membership, error) {
 	s, m, err := h.membershipEvenIfWithheld(ctx, publicID)
@@ -274,7 +271,7 @@ func (h *Handlers) membershipFor(ctx context.Context, publicID siteapi.Workspace
 		return nil, nil, err
 	}
 	if secondfactor.Withheld(m, h.now()) {
-		return nil, nil, errSecondFactorRequired{}
+		return nil, nil, secondFactorRequiredError{}
 	}
 	return s, m, nil
 }
@@ -290,15 +287,15 @@ func (h *Handlers) membershipEvenIfWithheld(ctx context.Context, publicID siteap
 	return h.accounts.Scope(ctx, a.UserID, string(publicID))
 }
 
-// errSecondFactorRequired is secondfactor.ErrRequired as the problem the site
+// secondFactorRequiredError is secondfactor.ErrRequired as the problem the site
 // answers it with. Returned as an error, it is rendered by the server's error
 // handler, which reads it through its Problem method.
-type errSecondFactorRequired struct{}
+type secondFactorRequiredError struct{}
 
-func (errSecondFactorRequired) Error() string { return secondfactor.ErrRequired.Error() }
-func (errSecondFactorRequired) Unwrap() error { return secondfactor.ErrRequired }
+func (secondFactorRequiredError) Error() string { return secondfactor.ErrRequired.Error() }
+func (secondFactorRequiredError) Unwrap() error { return secondfactor.ErrRequired }
 
 // Problem is the 403 second_factor_required answer.
-func (errSecondFactorRequired) Problem() (status int, code, detail string) {
+func (secondFactorRequiredError) Problem() (status int, code, detail string) {
 	return http.StatusForbidden, string(siteapi.ProblemCodeSecondFactorRequired), i18n.T("errors.second_factor_required", nil)
 }

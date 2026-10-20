@@ -12,7 +12,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/workspace"
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
 	"github.com/getsphericon/sphericon/internal/events"
-	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/pagination"
@@ -208,7 +207,7 @@ func workspaceDetail(w *ent.Workspace, d Deliverability, active []*ent.Hold, war
 	for i, r := range active {
 		shown[i] = staffapi.StaffHold{
 			Key: r.Key, ReasonCode: r.ReasonCode, Message: r.Message, SetBy: r.SetBy,
-			CreatedAt: staffapi.Timestamp(r.CreatedAt), ExpiresAt: staffapi.Timestamp(r.ExpiresAt), Billing: holds.IsBilling(r.ReasonCode),
+			CreatedAt: staffapi.Timestamp(r.CreatedAt), ExpiresAt: staffapi.Timestamp(r.ExpiresAt), ActionUrl: nilableString(r.ActionURL),
 		}
 	}
 	base := workspaceResource(w)

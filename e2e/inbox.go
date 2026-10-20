@@ -42,9 +42,10 @@ type Inbox struct {
 	ids []string
 }
 
-func newInbox(t testing.TB, mp *Mailpit) *Inbox {
-	in := &Inbox{t: t, mp: mp}
-	t.Cleanup(in.cleanup)
+func newInbox(tb testing.TB, mp *Mailpit) *Inbox {
+	tb.Helper()
+	in := &Inbox{t: tb, mp: mp}
+	tb.Cleanup(in.cleanup)
 	return in
 }
 

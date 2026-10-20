@@ -22,6 +22,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"time"
 
 	"github.com/samber/lo"
@@ -377,7 +378,7 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 		// Busy, not blocked: drop the claim so the retry starts clean and no attempt
 		// is consumed.
 		_, _ = s.OutboundMessage().Delete().Where(holds(msg)...).Exec(ctx)
-		return Result{Outcome: Deferral, Refusal: ratelimit.Refusal{Wait: wait}}, nil
+		return Result{Outcome: Deferral, Wait: wait}, nil
 	}
 
 	receipt, err := g.sender.Send(ctx, built.msg)
@@ -395,7 +396,7 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 			// Transactional mail never defers (ADR 0023): it falls through to the
 			// retryable error below, which releases the claim for the caller's retry.
 			_, _ = s.OutboundMessage().Delete().Where(holds(msg)...).Exec(ctx)
-			return Result{Outcome: Deferral, Refusal: ratelimit.Refusal{Wait: wait}}, nil
+			return Result{Outcome: Deferral, Wait: wait}, nil
 		}
 		m.release(ctx, s, msg)
 		return Result{}, fmt.Errorf("outbound: send to %s: %w", dest, err)
@@ -624,9 +625,7 @@ func (m *Module) compose(ctx context.Context, s *ent.Scoped, domain string, req 
 func Bindings(c *ent.Contact, vars map[string]any) map[string]any {
 	b := map[string]any{}
 	if c != nil {
-		for k, v := range c.CustomFields {
-			b[k] = v
-		}
+		maps.Copy(b, c.CustomFields)
 		b["email"], b["first_name"], b["last_name"] = "", "", ""
 		if c.Email != nil {
 			b["email"] = *c.Email
@@ -638,9 +637,7 @@ func Bindings(c *ent.Contact, vars map[string]any) map[string]any {
 			b["last_name"] = *c.LastName
 		}
 	}
-	for k, v := range vars {
-		b[k] = v
-	}
+	maps.Copy(b, vars)
 	return b
 }
 

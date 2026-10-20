@@ -16,6 +16,7 @@ import (
 )
 
 func ask(t *testing.T, h http.Handler, domain string) int {
+	t.Helper()
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/tls/ask?domain="+url.QueryEscape(domain), nil)
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)

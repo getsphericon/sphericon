@@ -1,7 +1,6 @@
-import { Card, EmptyState, Group, Stack, Table, Text, Title } from '@mantine/core'
+import { Card, EmptyState, Stack, Table, Title } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
 
-import { BillingBadge } from '../components/BillingBadge.tsx'
 import type { StaffHold } from '../generated/staff/types.gen.ts'
 import { formatDateTime } from '../utils/datetime.ts'
 
@@ -33,14 +32,7 @@ export function HoldsCard({ holds }: { holds: StaffHold[] }) {
                 {holds.map((hold) => (
                   <Table.Tr key={hold.key}>
                     <Table.Td>{hold.key}</Table.Td>
-                    <Table.Td>
-                      <Group gap="xs" wrap="nowrap">
-                        <Text span size="sm">
-                          {hold.reasonCode}
-                        </Text>
-                        {hold.billing ? <BillingBadge /> : null}
-                      </Group>
-                    </Table.Td>
+                    <Table.Td>{hold.reasonCode}</Table.Td>
                     <Table.Td>{hold.message}</Table.Td>
                     <Table.Td>{formatDateTime(hold.createdAt)}</Table.Td>
                     <Table.Td>{formatDateTime(hold.expiresAt)}</Table.Td>

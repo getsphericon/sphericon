@@ -100,7 +100,7 @@ func TestSavingRefusesAnHTTPStepThatCannotBeSent(t *testing.T) {
 		"eleven steps":      tooMany,
 	} {
 		_, err := m.Create(ctx, acme, automations.CreateInput{Name: name, TriggerEvent: "signup", Steps: steps})
-		assert.ErrorIs(t, err, automations.ErrInvalidStep, name)
+		require.ErrorIs(t, err, automations.ErrInvalidStep, name)
 	}
 
 	five := httpStep("https://hooks.example.com/x")

@@ -69,17 +69,17 @@ func TestSiteAuthRecoveryRejectsBadTokens(t *testing.T) {
 	})
 
 	t.Run("verify rejects garbage", func(t *testing.T) {
-		res, err := c.SiteAuthVerifyEmail(ctx, &siteapi.SiteVerifyEmailInput{Token: "garbage", Password: "password123"})
+		res, err := c.SiteAuthVerifyEmail(ctx, &siteapi.SiteVerifyEmailInput{Token: "garbage", Password: siteapi.NewOptString("password123")}, siteapi.SiteAuthVerifyEmailParams{})
 		require.NoError(t, err)
-		assert.IsType(t, &siteapi.ProblemDetails{}, res)
+		assert.IsType(t, &siteapi.SiteAuthVerifyEmailBadRequest{}, res)
 	})
 
 	t.Run("verify rejects a token for a user that no longer exists", func(t *testing.T) {
 		tok, err := s.Mint(authtoken.PurposeEmailVerify, 987654, "", time.Hour, map[string]string{"email": "ghost@example.com"})
 		require.NoError(t, err)
-		res, err := c.SiteAuthVerifyEmail(ctx, &siteapi.SiteVerifyEmailInput{Token: tok, Password: "password123"})
+		res, err := c.SiteAuthVerifyEmail(ctx, &siteapi.SiteVerifyEmailInput{Token: tok, Password: siteapi.NewOptString("password123")}, siteapi.SiteAuthVerifyEmailParams{})
 		require.NoError(t, err)
-		assert.IsType(t, &siteapi.ProblemDetails{}, res)
+		assert.IsType(t, &siteapi.SiteAuthVerifyEmailBadRequest{}, res)
 	})
 
 	t.Run("confirm email change rejects garbage", func(t *testing.T) {

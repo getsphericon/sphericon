@@ -159,6 +159,7 @@ func (m *Module) ListWorkspaces(ctx context.Context, review Review, search strin
 			q = q.Where(accounts.Live())
 		}
 		switch review {
+		case ReviewNone, ReviewDeleted:
 		case ReviewWarned:
 			q = q.Where(entworkspace.AbuseWarningNotifiedAtNotNil(), entworkspace.SuspendedAtIsNil(), entworkspace.AbuseExempt(false))
 		case ReviewSystemFrozen:

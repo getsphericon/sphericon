@@ -28,6 +28,7 @@ integration only what it needs, for example:
 - `webhooks:read`, `webhooks:write`, and the separate `webhooks:regenerate` (replace an endpoint's signing secret) and `webhooks:test` (send it a sample event)
 - `integrations:read`, `integrations:write` for sending providers (credentials are write-only: no response ever contains a password or secret key)
 - `sending_domains:read`, `sending_domains:write` for sending domains: create one, publish the returned DKIM record, then `POST /sending-domains/{id}/verify` and read the domain to see whether it verified (the DKIM private key is never returned)
+- `export:read` (Enterprise) for the Export streams, `GET /export/events` and the other streams, which read a Workspace's rows page by page into a warehouse
 
 Sending, activating and erasing have their own scopes, so a token that can edit drafts cannot send mail and a token that can write contacts cannot erase them.
 

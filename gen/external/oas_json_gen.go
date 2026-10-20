@@ -414,6 +414,8 @@ func (s *ApiTokenScope) Decode(d *jx.Decoder) error {
 		*s = ApiTokenScopeTokensWrite
 	case ApiTokenScopeAuditRead:
 		*s = ApiTokenScopeAuditRead
+	case ApiTokenScopeExportRead:
+		*s = ApiTokenScopeExportRead
 	default:
 		*s = ApiTokenScope(v)
 	}
@@ -15239,15 +15241,22 @@ func (s *EventInput) encodeFields(e *jx.Encoder) {
 			s.OccurredAt.Encode(e)
 		}
 	}
+	{
+		if s.ClientEventId.Set {
+			e.FieldStart("clientEventId")
+			s.ClientEventId.Encode(e)
+		}
+	}
 }
 
-var jsonFieldsNameOfEventInput = [6]string{
+var jsonFieldsNameOfEventInput = [7]string{
 	0: "subjectId",
 	1: "action",
 	2: "email",
 	3: "phone",
 	4: "properties",
 	5: "occurredAt",
+	6: "clientEventId",
 }
 
 // Decode decodes EventInput from json.
@@ -15322,6 +15331,16 @@ func (s *EventInput) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"occurredAt\"")
+			}
+		case "clientEventId":
+			if err := func() error {
+				s.ClientEventId.Reset()
+				if err := s.ClientEventId.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"clientEventId\"")
 			}
 		default:
 			return d.Skip()
@@ -15585,6 +15604,120 @@ func (s *EventsCreateUnprocessableEntity) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *EventsCreateUnprocessableEntity) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ExportEventsBadRequest as json.
+func (s *ExportEventsBadRequest) Encode(e *jx.Encoder) {
+	unwrapped := (*ProblemDetails)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes ExportEventsBadRequest from json.
+func (s *ExportEventsBadRequest) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ExportEventsBadRequest to nil")
+	}
+	var unwrapped ProblemDetails
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = ExportEventsBadRequest(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *ExportEventsBadRequest) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ExportEventsBadRequest) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ExportEventsNotFound as json.
+func (s *ExportEventsNotFound) Encode(e *jx.Encoder) {
+	unwrapped := (*ProblemDetails)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes ExportEventsNotFound from json.
+func (s *ExportEventsNotFound) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ExportEventsNotFound to nil")
+	}
+	var unwrapped ProblemDetails
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = ExportEventsNotFound(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *ExportEventsNotFound) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ExportEventsNotFound) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ExportEventsUnauthorized as json.
+func (s *ExportEventsUnauthorized) Encode(e *jx.Encoder) {
+	unwrapped := (*ProblemDetails)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes ExportEventsUnauthorized from json.
+func (s *ExportEventsUnauthorized) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ExportEventsUnauthorized to nil")
+	}
+	var unwrapped ProblemDetails
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = ExportEventsUnauthorized(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *ExportEventsUnauthorized) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ExportEventsUnauthorized) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -21033,6 +21166,12 @@ func (s *RecordEventsBatchInput) Encode(e *jx.Encoder) {
 // encodeFields encodes fields.
 func (s *RecordEventsBatchInput) encodeFields(e *jx.Encoder) {
 	{
+		if s.Backfill.Set {
+			e.FieldStart("backfill")
+			s.Backfill.Encode(e)
+		}
+	}
+	{
 		e.FieldStart("events")
 		e.ArrStart()
 		for _, elem := range s.Events {
@@ -21042,8 +21181,9 @@ func (s *RecordEventsBatchInput) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfRecordEventsBatchInput = [1]string{
-	0: "events",
+var jsonFieldsNameOfRecordEventsBatchInput = [2]string{
+	0: "backfill",
+	1: "events",
 }
 
 // Decode decodes RecordEventsBatchInput from json.
@@ -21055,8 +21195,18 @@ func (s *RecordEventsBatchInput) Decode(d *jx.Decoder) error {
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
+		case "backfill":
+			if err := func() error {
+				s.Backfill.Reset()
+				if err := s.Backfill.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"backfill\"")
+			}
 		case "events":
-			requiredBitSet[0] |= 1 << 0
+			requiredBitSet[0] |= 1 << 1
 			if err := func() error {
 				s.Events = make([]EventInput, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
@@ -21083,7 +21233,7 @@ func (s *RecordEventsBatchInput) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00000001,
+		0b00000010,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

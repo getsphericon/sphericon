@@ -46,7 +46,8 @@ func answering(host string) probeAnswer {
 	return probeAnswer{status: http.StatusOK, body: trackingdomain.ProbeValue(secret, host)}
 }
 
-func verifier(env *testhelper.TestEnv, t *testing.T, zones map[string]mockdns.Zone) *trackingdomain.Verifier {
+func verifier(t *testing.T, env *testhelper.TestEnv, zones map[string]mockdns.Zone) *trackingdomain.Verifier {
+	t.Helper()
 	return &trackingdomain.Verifier{
 		Lookup: dnstest.Resolver(t, zones).LookupCNAME,
 		Target: edge,
@@ -70,7 +71,7 @@ func TestCheck_cnameAtEdgeVerifiesDNS(t *testing.T) {
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.UmbrellaID)
 
-	state, err := verifier(env, t, pointingAtEdge("track.pending.umbrella.test")).Check(ctx, s, fixtures.SendingDomainTrackingPendingID)
+	state, err := verifier(t, env, pointingAtEdge("track.pending.umbrella.test")).Check(ctx, s, fixtures.SendingDomainTrackingPendingID)
 	require.NoError(t, err)
 	assert.Equal(t, sendingdomain.TrackingStateDNSVerified, state)
 
@@ -91,7 +92,7 @@ func TestCheck_missingOrWrongCnameStaysPending(t *testing.T) {
 		"wrong":   {"track.pending.umbrella.test.": {CNAME: "elsewhere.example.net."}},
 	} {
 		t.Run(name, func(t *testing.T) {
-			state, err := verifier(env, t, zones).Check(ctx, s, fixtures.SendingDomainTrackingPendingID)
+			state, err := verifier(t, env, zones).Check(ctx, s, fixtures.SendingDomainTrackingPendingID)
 			require.NoError(t, err)
 			assert.Equal(t, sendingdomain.TrackingStatePending, state)
 
@@ -109,7 +110,7 @@ func TestCheck_lostCnameFallsBackToPending(t *testing.T) {
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.UmbrellaID)
 
-	state, err := verifier(env, t, nil).Check(ctx, s, fixtures.SendingDomainTrackingServingID)
+	state, err := verifier(t, env, nil).Check(ctx, s, fixtures.SendingDomainTrackingServingID)
 	require.NoError(t, err)
 	assert.Equal(t, sendingdomain.TrackingStatePending, state)
 }
@@ -119,7 +120,7 @@ func TestCheck_servingStaysServingWhileCnameHolds(t *testing.T) {
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.UmbrellaID)
 
-	state, err := verifier(env, t, pointingAtEdge("track.serving.umbrella.test")).Check(ctx, s, fixtures.SendingDomainTrackingServingID)
+	state, err := verifier(t, env, pointingAtEdge("track.serving.umbrella.test")).Check(ctx, s, fixtures.SendingDomainTrackingServingID)
 	require.NoError(t, err)
 	assert.Equal(t, sendingdomain.TrackingStateServing, state)
 }
@@ -151,7 +152,7 @@ func TestCheck_secondWorkspaceCannotVerifyHeldHost(t *testing.T) {
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.WayneID)
 
-	state, err := verifier(env, t, pointingAtEdge("track.serving.umbrella.test")).Check(ctx, s, fixtures.SendingDomainTrackingClaimID)
+	state, err := verifier(t, env, pointingAtEdge("track.serving.umbrella.test")).Check(ctx, s, fixtures.SendingDomainTrackingClaimID)
 	require.ErrorIs(t, err, trackingdomain.ErrHostTaken)
 	assert.Equal(t, sendingdomain.TrackingStatePending, state)
 
@@ -175,10 +176,10 @@ func TestCheck_hostTakenReasonIsClearedWhenTheCnameIsAbsent(t *testing.T) {
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.WayneID)
 
-	_, err := verifier(env, t, pointingAtEdge("track.serving.umbrella.test")).Check(ctx, s, fixtures.SendingDomainTrackingClaimID)
+	_, err := verifier(t, env, pointingAtEdge("track.serving.umbrella.test")).Check(ctx, s, fixtures.SendingDomainTrackingClaimID)
 	require.ErrorIs(t, err, trackingdomain.ErrHostTaken)
 
-	state, err := verifier(env, t, nil).Check(ctx, s, fixtures.SendingDomainTrackingClaimID)
+	state, err := verifier(t, env, nil).Check(ctx, s, fixtures.SendingDomainTrackingClaimID)
 	require.NoError(t, err)
 	assert.Equal(t, sendingdomain.TrackingStatePending, state)
 
@@ -194,7 +195,7 @@ func TestCheck_unverifiedClaimDoesNotBlockOwner(t *testing.T) {
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.UmbrellaID)
 
-	state, err := verifier(env, t, pointingAtEdge("track.serving.umbrella.test")).Check(ctx, s, fixtures.SendingDomainTrackingServingID)
+	state, err := verifier(t, env, pointingAtEdge("track.serving.umbrella.test")).Check(ctx, s, fixtures.SendingDomainTrackingServingID)
 	require.NoError(t, err)
 	assert.Equal(t, sendingdomain.TrackingStateServing, state)
 }
@@ -206,7 +207,7 @@ func TestCheck_answeringProbeMakesHostServingAndPublishesEvent(t *testing.T) {
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.UmbrellaID)
 
-	v := probing(verifier(env, t, pointingAtEdge(dnsHost)), answering(dnsHost))
+	v := probing(verifier(t, env, pointingAtEdge(dnsHost)), answering(dnsHost))
 	state, err := v.Check(ctx, s, fixtures.SendingDomainTrackingDNSVerifiedID)
 	require.NoError(t, err)
 	assert.Equal(t, sendingdomain.TrackingStateServing, state)
@@ -238,7 +239,7 @@ func TestCheck_noSuccessfulProbeNeverServes(t *testing.T) {
 			ctx := context.Background()
 			s := env.DB.Scoped(fixtures.UmbrellaID)
 
-			v := probing(verifier(env, t, pointingAtEdge(dnsHost)), answer)
+			v := probing(verifier(t, env, pointingAtEdge(dnsHost)), answer)
 			state, err := v.Check(ctx, s, fixtures.SendingDomainTrackingDNSVerifiedID)
 			require.NoError(t, err)
 			assert.Equal(t, sendingdomain.TrackingStateDNSVerified, state)
@@ -253,7 +254,7 @@ func TestCheck_pendingHostNeverSkipsToServingWithoutProbe(t *testing.T) {
 	s := env.DB.Scoped(fixtures.UmbrellaID)
 
 	// No HTTP client: DNS alone gets a host to dns_verified, never further.
-	state, err := verifier(env, t, pointingAtEdge("track.pending.umbrella.test")).Check(ctx, s, fixtures.SendingDomainTrackingPendingID)
+	state, err := verifier(t, env, pointingAtEdge("track.pending.umbrella.test")).Check(ctx, s, fixtures.SendingDomainTrackingPendingID)
 	require.NoError(t, err)
 	assert.Equal(t, sendingdomain.TrackingStateDNSVerified, state)
 }
@@ -263,7 +264,7 @@ func TestCheck_servingHostThatStopsAnsweringFallsBackToDNSVerified(t *testing.T)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.UmbrellaID)
 
-	v := probing(verifier(env, t, pointingAtEdge("track.serving.umbrella.test")), probeAnswer{err: errors.New("timeout")})
+	v := probing(verifier(t, env, pointingAtEdge("track.serving.umbrella.test")), probeAnswer{err: errors.New("timeout")})
 	state, err := v.Check(ctx, s, fixtures.SendingDomainTrackingServingID)
 	require.NoError(t, err)
 	assert.Equal(t, sendingdomain.TrackingStateDNSVerified, state)

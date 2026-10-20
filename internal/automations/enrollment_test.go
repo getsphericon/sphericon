@@ -91,7 +91,7 @@ func TestEnrollRefusesAContactOrAutomationOfAnotherWorkspace(t *testing.T) {
 	c := newContact(t, acme, "isolated@example.com")
 
 	_, _, err := automations.Enroll(ctx, globex, fixtures.AutomationGlobexID, c.ID)
-	assert.ErrorIs(t, err, ent.ErrNotInWorkspace, "Globex cannot enroll an Acme Contact")
+	require.ErrorIs(t, err, ent.ErrNotInWorkspace, "Globex cannot enroll an Acme Contact")
 	_, _, err = automations.Enroll(ctx, acme, fixtures.AutomationGlobexID, c.ID)
 	assert.ErrorIs(t, err, ent.ErrNotInWorkspace, "Acme cannot enroll into a Globex Automation")
 }

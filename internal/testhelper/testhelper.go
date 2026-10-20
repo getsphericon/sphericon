@@ -80,7 +80,7 @@ var (
 	once    sync.Once
 	baseCfg *config.Config
 	cleaner *pgcleaner.Cleaner
-	loadErr error
+	errLoad error
 )
 
 func initBaseline() {
@@ -91,12 +91,12 @@ func initBaseline() {
 
 		cfg, err := config.Load("test")
 		if err != nil {
-			loadErr = err
+			errLoad = err
 			return
 		}
 		version, err := schemaHash()
 		if err != nil {
-			loadErr = err
+			errLoad = err
 			return
 		}
 		// Every process leases a database of its own, cloned from a schema-only template
@@ -113,14 +113,14 @@ func initBaseline() {
 		)
 		url, err := cleaner.URL(context.Background())
 		if err != nil {
-			loadErr = err
+			errLoad = err
 			return
 		}
 		// A test that loads the config itself (to open a pool of its own) must reach this
 		// process's database, not the shared one.
 		cfg.DatabaseURL = url
 		if err := os.Setenv("DATABASE_URL", url); err != nil {
-			loadErr = err
+			errLoad = err
 			return
 		}
 		baseCfg = cfg
@@ -256,7 +256,7 @@ var testLicense = sync.OnceValues(func() (*licensekey.License, error) {
 	if err != nil {
 		return nil, err
 	}
-	key, err := licensekey.Issue(priv, nil, licensekey.FeatureAudit, licensekey.FeatureRetention, licensekey.FeatureStaff)
+	key, err := licensekey.Issue(priv, nil, licensekey.FeatureAudit, licensekey.FeatureRetention, licensekey.FeatureStaff, licensekey.FeatureExport)
 	if err != nil {
 		return nil, err
 	}
@@ -273,7 +273,7 @@ func WithLicenseKey(pub ed25519.PublicKey, key string) Option {
 func Setup(t *testing.T, opts ...Option) *TestEnv {
 	t.Helper()
 	initBaseline()
-	require.NoError(t, loadErr, "init test baseline")
+	require.NoError(t, errLoad, "init test baseline")
 
 	cfg := *baseCfg
 	cfg.RateLimits = config.RateLimits{}
@@ -353,7 +353,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	// sending-domain verify).
 	// Domain modules, built once here and shared by /site and /api exactly like the
 	// app's DI singletons.
-	eventLog := eventlog.New(bus)
+	eventLog := eventlog.New(bus, eventlog.LivePolicy{Window: cfg.EventLiveWindow, Now: st.now})
 	segmentsModule := segments.New()
 	contactsModule := contacts.New(bus)
 	erasureModule := erasure.New(bus)
@@ -381,7 +381,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		Accounts: acc, Bus: bus, Webhooks: webhooksModule, Outbound: sender,
 		Segments: segmentsModule, EventLog: eventLog, Contacts: contactsModule, Erasure: erasureModule, Tags: tagsModule, Templates: templatesModule,
 		Automations: automationsModule, Broadcasts: broadcastsModule, Reputation: reputation.New(), Integrations: integrationsModule, SendingDomains: sendingDomainsModule,
-		BootstrapToken: baseCfg.BootstrapToken, Audit: edition.Audit,
+		BootstrapToken: baseCfg.BootstrapToken, Audit: edition.Audit, Export: edition.Export,
 	})
 	require.NoError(t, err, "build external API")
 	mcpHandler, err := mcpserver.New(sphericon.ExternalOpenAPI, external, apiauth.NewExternalSecurityHandler(client, bus), mcpserver.WithResourceMetadataURL(oauthserver.ResourceMetadataURL(cfg.MCPOrigin())))
@@ -400,7 +400,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	lapsedAt, _ := edition.LicenseLapsedAt()
 	inst := instance.New(client, instance.EnvironmentOf(&cfg), instance.HostOf(&cfg, st.version, lapsedAt), st.now, instance.WithReleaseSource(source))
 	handler, err := server.New(&cfg, txDB, client, apisite.Deps{
-		AccountLink: accountLink, HoldsHonoured: edition.HoldsHonoured, AbuseWatch: edition.AbuseWatch(), SupportEmail: cfg.SupportEmail, BillingURL: cfg.BillingURL, MCPURL: cfg.MCPOrigin(),
+		AccountLink: accountLink, HoldsHonoured: edition.HoldsHonoured, AbuseWatch: edition.AbuseWatch(), SupportEmail: cfg.SupportEmail, MCPURL: cfg.MCPOrigin(),
 		Instance: inst,
 		Accounts: acc, Attempts: attempts, OAuth: oauthserver.NewService(client, oauthFetcher), Bus: bus, Webhooks: webhooksModule, Outbound: sender,
 		Segments: segmentsModule, EventLog: eventLog, Contacts: contactsModule, Erasure: erasureModule, Tags: tagsModule, Templates: templatesModule, BrandKit: brandKitModule,

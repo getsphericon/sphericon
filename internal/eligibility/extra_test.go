@@ -29,7 +29,7 @@ func TestCheckFailsClosedOnStoreErrorAndUnknownWorkspace(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	_, err := eligibility.Check(ctx, env.DB.Scoped(fixtures.AcmeID), eligibility.ChannelEmail, "a@example.com", eligibility.SourceBroadcasts)
-	assert.ErrorContains(t, err, "eligibility check")
+	require.ErrorContains(t, err, "eligibility check")
 
 	_, err = eligibility.Check(context.Background(), env.DB.Scoped(987654), eligibility.ChannelEmail, "a@example.com", eligibility.SourceBroadcasts)
 	assert.ErrorContains(t, err, "workspace 987654 not found")

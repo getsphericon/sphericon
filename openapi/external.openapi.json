@@ -2,7 +2,8 @@
   "openapi": "3.0.0",
   "info": {
     "title": "Sphericon External API",
-    "version": "1.0.0"
+    "version": "1.0.0",
+    "description": "The Sphericon external API: manage a workspace's contacts, events, segments, automations and broadcasts with a workspace API token."
   },
   "tags": [
     {
@@ -40,6 +41,9 @@
     },
     {
       "name": "Audit"
+    },
+    {
+      "name": "Export"
     },
     {
       "name": "Segments"
@@ -4864,6 +4868,76 @@
         }
       }
     },
+    "/export/events": {
+      "get": {
+        "operationId": "Export_events",
+        "description": "Read the Workspace's Events, oldest change first (Enterprise; needs the `export:read`\nscope). Each line of the body is an `ExportEventRow`; every key is always present.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ExportPageQuery.cursor"
+          },
+          {
+            "$ref": "#/components/parameters/ExportPageQuery.limit"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One page of an Export stream (Enterprise, ADR 0045): newline-delimited JSON, one row\nper line with no envelope, so the body loads as ClickHouse `JSONEachRow`. The row\nschema is named by each operation. The next cursor is the `X-Next-Cursor` header;\npass it as `cursor` for the next page. The cursor is the position after the last row of\nthe page and the next page includes everything at or after it, so rows that share an\n`updated_at` across a page edge are not lost. A page with no rows returns the cursor it\nwas given. A row that changes is delivered again with a newer `updated_at`: keep the\nnewest version per `id`.",
+            "headers": {
+              "X-Next-Cursor": {
+                "required": true,
+                "description": "Opaque cursor for the next page",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/x-ndjson": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Export"],
+        "x-mcp": {
+          "hidden": true
+        }
+      }
+    },
     "/integrations": {
       "get": {
         "operationId": "Integrations_list",
@@ -8798,6 +8872,30 @@
           "$ref": "#/components/schemas/EntityId"
         }
       },
+      "ExportPageQuery.cursor": {
+        "name": "cursor",
+        "in": "query",
+        "required": false,
+        "description": "Cursor from the `X-Next-Cursor` header of a previous page; empty reads from the beginning",
+        "schema": {
+          "type": "string"
+        },
+        "explode": false
+      },
+      "ExportPageQuery.limit": {
+        "name": "limit",
+        "in": "query",
+        "required": false,
+        "description": "Page size",
+        "schema": {
+          "type": "integer",
+          "format": "int32",
+          "minimum": 1,
+          "maximum": 10000,
+          "default": 1000
+        },
+        "explode": false
+      },
       "IntegrationResourceKey": {
         "name": "id",
         "in": "path",
@@ -8964,7 +9062,8 @@
           "mcp:send",
           "tokens:read",
           "tokens:write",
-          "audit:read"
+          "audit:read",
+          "export:read"
         ]
       },
       "ApplyTagInput": {
@@ -10937,9 +11036,110 @@
             ],
             "nullable": true,
             "description": "Event occurrence timestamp"
+          },
+          "clientEventId": {
+            "type": "string",
+            "nullable": true,
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "A client-chosen id that makes a retry safe. It is unique within the Workspace: sending an\nevent again with the same id changes nothing, so a load that broke off halfway is resent\nwhole. Generate it once per event (a UUID) and reuse it on every retry. An event without\none is not deduplicated."
           }
         },
         "description": "Event payload"
+      },
+      "ExportEventRow": {
+        "type": "object",
+        "required": [
+          "id",
+          "action",
+          "properties",
+          "contact_id",
+          "visitor_id",
+          "subject_id",
+          "email",
+          "phone",
+          "occurred_at",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Unique identifier"
+          },
+          "action": {
+            "type": "string",
+            "description": "Event action"
+          },
+          "properties": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContactExportJson"
+              }
+            ],
+            "description": "Event properties as one JSON column"
+          },
+          "contact_id": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "nullable": true,
+            "description": "The Contact the Event is about; absent for an anonymous Event"
+          },
+          "visitor_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "The anonymous device the Event came from"
+          },
+          "subject_id": {
+            "type": "string",
+            "description": "Canonical subject identifier snapshot; empty for an anonymous Event"
+          },
+          "email": {
+            "type": "string",
+            "nullable": true,
+            "description": "Email address snapshot; absent once anonymized"
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true,
+            "description": "Phone number snapshot; absent once anonymized"
+          },
+          "occurred_at": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the Event happened, as reported by the sender"
+          },
+          "created_at": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "Creation timestamp"
+          },
+          "updated_at": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "Last change timestamp: the cursor column and the version of the row"
+          }
+        },
+        "description": "One row of the Events stream. A row is delivered again whenever it changes (an anonymous Event stitched onto a Contact, an `email.*` Event anonymized by an Erasure)"
       },
       "GoneProblem": {
         "type": "object",
@@ -11220,6 +11420,16 @@
         "maximum": 10000,
         "description": "A per-second Send rate limit the caller may set"
       },
+      "PreconditionRequiredProblem": {
+        "type": "object",
+        "required": ["body"],
+        "properties": {
+          "body": {
+            "$ref": "#/components/schemas/ProblemDetails"
+          }
+        },
+        "description": "RFC 7807 precondition required response: the request needs something it did not carry\n(a verification link opened outside its Registration browser needs a password, ADR 0030)"
+      },
       "PresetResource": {
         "type": "object",
         "required": ["name", "description", "paramsSchema"],
@@ -11359,6 +11569,10 @@
         "type": "object",
         "required": ["events"],
         "properties": {
+          "backfill": {
+            "type": "boolean",
+            "description": "Load history: the events are only recorded, so segments see them but no Automation\nenrolls on them and no webhook endpoint receives them. Use it to bring the events of\nan earlier system into a new setup. Defaults to false."
+          },
           "events": {
             "type": "array",
             "items": {

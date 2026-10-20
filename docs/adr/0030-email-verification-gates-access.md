@@ -27,6 +27,15 @@ earlier mails stop working (their token is bound to the earlier hash). A registr
 address stores nothing but still hashes the password, so the answer's timing does not say the
 address is taken (ADR 0031).
 
+The registration cookie's Path is the `/site/auth` prefix, shared by verify and resend, so both
+read it. Verify cannot clear it (the answer has one `Set-Cookie`, the session's), so it stays until
+its lifetime, the link's, ends. Resend binds the new link to whatever registration cookie the
+caller holds, none when it holds none. The cookie is `SameSite=Strict`: the browser does not send it
+on the cross-site click from the mail, but sends it on the SPA's later same-site verify request,
+which is the one that is compared. Two registrations of one new address can race, and the loser
+then replaces the winner's password, as a repeated registration does, and the winner's link
+stops working.
+
 ## Considered Options
 
 - **Password only on the link** (the first version of this ADR): closes pre-hijacking outright,

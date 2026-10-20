@@ -7,8 +7,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/samber/lo"
-
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/apitoken"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
@@ -60,7 +58,7 @@ func (h *Handlers) SiteTokensCreate(ctx context.Context, req *siteapi.SiteCreate
 
 	in := apitokens.Input{Name: req.Name, Scopes: req.Scopes}
 	if v, ok := req.ExpiresAt.Get(); ok {
-		in.ExpiresAt = lo.ToPtr(time.Time(v))
+		in.ExpiresAt = new(time.Time(v))
 	}
 	// Owners and admins may grant any scope of the vocabulary.
 	minted, err := apitokens.Mint(ctx, scoped, in)

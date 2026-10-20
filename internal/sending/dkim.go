@@ -128,7 +128,7 @@ func VerifyDKIM(ctx context.Context, lookup TXTLookup, selector, domain, expecte
 func dkimPublicPart(txt string) string {
 	// A chunked TXT record arrives already joined by net.Resolver; still strip
 	// any interior whitespace the base64 may have picked up.
-	for _, tag := range strings.Split(txt, ";") {
+	for tag := range strings.SplitSeq(txt, ";") {
 		tag = strings.TrimSpace(tag)
 		if v, ok := strings.CutPrefix(tag, "p="); ok {
 			return strings.Join(strings.Fields(v), "")

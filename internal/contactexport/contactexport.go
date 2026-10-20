@@ -46,7 +46,7 @@ func Ref[T ~string](v T, ok bool) *string {
 	if !ok {
 		return nil
 	}
-	return lo.ToPtr(string(v))
+	return new(string(v))
 }
 
 // Find resolves the Contact to export by exactly one of its id or email, inside

@@ -140,6 +140,8 @@ func TestCrossOriginGuardProtectsCookiePathsOnly(t *testing.T) {
 	}{
 		{"cross-site site write", http.MethodPost, "/site/workspaces", "cross-site", http.StatusForbidden},
 		{"cross-site login", http.MethodPost, "/site/auth/login", "cross-site", http.StatusForbidden},
+		{"cross-site register", http.MethodPost, "/site/auth/register", "cross-site", http.StatusForbidden},
+		{"same-origin register", http.MethodPost, "/site/auth/register", "same-origin", http.StatusNoContent},
 		{"same-site subdomain write", http.MethodDelete, "/site/workspaces/AcmeWs01", "same-site", http.StatusForbidden},
 		{"same-origin site write", http.MethodPost, "/site/workspaces", "same-origin", http.StatusNoContent},
 		{"cross-site read", http.MethodGet, "/site/workspaces", "cross-site", http.StatusNoContent},

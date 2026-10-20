@@ -46,6 +46,7 @@ import { Route as WorkspacesWorkspaceIdSegmentsNewRouteImport } from './routes/w
 import { Route as WorkspacesWorkspaceIdSettingsIndexRouteImport } from './routes/workspaces/$workspaceId/settings/index'
 import { Route as WorkspacesWorkspaceIdSettingsDevelopersRouteImport } from './routes/workspaces/$workspaceId/settings/developers'
 import { Route as WorkspacesWorkspaceIdSettingsMcpRouteImport } from './routes/workspaces/$workspaceId/settings/mcp'
+import { Route as WorkspacesWorkspaceIdSettingsPrivacyRouteImport } from './routes/workspaces/$workspaceId/settings/privacy'
 import { Route as WorkspacesWorkspaceIdSettingsSendingRouteImport } from './routes/workspaces/$workspaceId/settings/sending'
 import { Route as WorkspacesWorkspaceIdSettingsTeamRouteImport } from './routes/workspaces/$workspaceId/settings/team'
 import { Route as WorkspacesWorkspaceIdSettingsTrackingRouteImport } from './routes/workspaces/$workspaceId/settings/tracking'
@@ -260,6 +261,12 @@ const WorkspacesWorkspaceIdSettingsMcpRoute =
     path: '/mcp',
     getParentRoute: () => WorkspacesWorkspaceIdSettingsRouteRoute,
   } as any)
+const WorkspacesWorkspaceIdSettingsPrivacyRoute =
+  WorkspacesWorkspaceIdSettingsPrivacyRouteImport.update({
+    id: '/privacy',
+    path: '/privacy',
+    getParentRoute: () => WorkspacesWorkspaceIdSettingsRouteRoute,
+  } as any)
 const WorkspacesWorkspaceIdSettingsSendingRoute =
   WorkspacesWorkspaceIdSettingsSendingRouteImport.update({
     id: '/sending',
@@ -371,6 +378,7 @@ export interface FileRoutesByFullPath {
   '/workspaces/$workspaceId/segments/new': typeof WorkspacesWorkspaceIdSegmentsNewRoute
   '/workspaces/$workspaceId/settings/developers': typeof WorkspacesWorkspaceIdSettingsDevelopersRoute
   '/workspaces/$workspaceId/settings/mcp': typeof WorkspacesWorkspaceIdSettingsMcpRoute
+  '/workspaces/$workspaceId/settings/privacy': typeof WorkspacesWorkspaceIdSettingsPrivacyRoute
   '/workspaces/$workspaceId/settings/sending': typeof WorkspacesWorkspaceIdSettingsSendingRoute
   '/workspaces/$workspaceId/settings/team': typeof WorkspacesWorkspaceIdSettingsTeamRoute
   '/workspaces/$workspaceId/settings/tracking': typeof WorkspacesWorkspaceIdSettingsTrackingRoute
@@ -418,6 +426,7 @@ export interface FileRoutesByTo {
   '/workspaces/$workspaceId/segments/new': typeof WorkspacesWorkspaceIdSegmentsNewRoute
   '/workspaces/$workspaceId/settings/developers': typeof WorkspacesWorkspaceIdSettingsDevelopersRoute
   '/workspaces/$workspaceId/settings/mcp': typeof WorkspacesWorkspaceIdSettingsMcpRoute
+  '/workspaces/$workspaceId/settings/privacy': typeof WorkspacesWorkspaceIdSettingsPrivacyRoute
   '/workspaces/$workspaceId/settings/sending': typeof WorkspacesWorkspaceIdSettingsSendingRoute
   '/workspaces/$workspaceId/settings/team': typeof WorkspacesWorkspaceIdSettingsTeamRoute
   '/workspaces/$workspaceId/settings/tracking': typeof WorkspacesWorkspaceIdSettingsTrackingRoute
@@ -471,6 +480,7 @@ export interface FileRoutesById {
   '/workspaces/$workspaceId/segments/new': typeof WorkspacesWorkspaceIdSegmentsNewRoute
   '/workspaces/$workspaceId/settings/developers': typeof WorkspacesWorkspaceIdSettingsDevelopersRoute
   '/workspaces/$workspaceId/settings/mcp': typeof WorkspacesWorkspaceIdSettingsMcpRoute
+  '/workspaces/$workspaceId/settings/privacy': typeof WorkspacesWorkspaceIdSettingsPrivacyRoute
   '/workspaces/$workspaceId/settings/sending': typeof WorkspacesWorkspaceIdSettingsSendingRoute
   '/workspaces/$workspaceId/settings/team': typeof WorkspacesWorkspaceIdSettingsTeamRoute
   '/workspaces/$workspaceId/settings/tracking': typeof WorkspacesWorkspaceIdSettingsTrackingRoute
@@ -524,6 +534,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/segments/new'
     | '/workspaces/$workspaceId/settings/developers'
     | '/workspaces/$workspaceId/settings/mcp'
+    | '/workspaces/$workspaceId/settings/privacy'
     | '/workspaces/$workspaceId/settings/sending'
     | '/workspaces/$workspaceId/settings/team'
     | '/workspaces/$workspaceId/settings/tracking'
@@ -571,6 +582,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/segments/new'
     | '/workspaces/$workspaceId/settings/developers'
     | '/workspaces/$workspaceId/settings/mcp'
+    | '/workspaces/$workspaceId/settings/privacy'
     | '/workspaces/$workspaceId/settings/sending'
     | '/workspaces/$workspaceId/settings/team'
     | '/workspaces/$workspaceId/settings/tracking'
@@ -623,6 +635,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/segments/new'
     | '/workspaces/$workspaceId/settings/developers'
     | '/workspaces/$workspaceId/settings/mcp'
+    | '/workspaces/$workspaceId/settings/privacy'
     | '/workspaces/$workspaceId/settings/sending'
     | '/workspaces/$workspaceId/settings/team'
     | '/workspaces/$workspaceId/settings/tracking'
@@ -923,6 +936,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspacesWorkspaceIdSettingsMcpRouteImport
       parentRoute: typeof WorkspacesWorkspaceIdSettingsRouteRoute
     }
+    '/workspaces/$workspaceId/settings/privacy': {
+      id: '/workspaces/$workspaceId/settings/privacy'
+      path: '/privacy'
+      fullPath: '/workspaces/$workspaceId/settings/privacy'
+      preLoaderRoute: typeof WorkspacesWorkspaceIdSettingsPrivacyRouteImport
+      parentRoute: typeof WorkspacesWorkspaceIdSettingsRouteRoute
+    }
     '/workspaces/$workspaceId/settings/sending': {
       id: '/workspaces/$workspaceId/settings/sending'
       path: '/sending'
@@ -1064,6 +1084,7 @@ const ConsoleRouteRouteWithChildren = ConsoleRouteRoute._addFileChildren(
 interface WorkspacesWorkspaceIdSettingsRouteRouteChildren {
   WorkspacesWorkspaceIdSettingsDevelopersRoute: typeof WorkspacesWorkspaceIdSettingsDevelopersRoute
   WorkspacesWorkspaceIdSettingsMcpRoute: typeof WorkspacesWorkspaceIdSettingsMcpRoute
+  WorkspacesWorkspaceIdSettingsPrivacyRoute: typeof WorkspacesWorkspaceIdSettingsPrivacyRoute
   WorkspacesWorkspaceIdSettingsSendingRoute: typeof WorkspacesWorkspaceIdSettingsSendingRoute
   WorkspacesWorkspaceIdSettingsTeamRoute: typeof WorkspacesWorkspaceIdSettingsTeamRoute
   WorkspacesWorkspaceIdSettingsTrackingRoute: typeof WorkspacesWorkspaceIdSettingsTrackingRoute
@@ -1076,6 +1097,8 @@ const WorkspacesWorkspaceIdSettingsRouteRouteChildren: WorkspacesWorkspaceIdSett
       WorkspacesWorkspaceIdSettingsDevelopersRoute,
     WorkspacesWorkspaceIdSettingsMcpRoute:
       WorkspacesWorkspaceIdSettingsMcpRoute,
+    WorkspacesWorkspaceIdSettingsPrivacyRoute:
+      WorkspacesWorkspaceIdSettingsPrivacyRoute,
     WorkspacesWorkspaceIdSettingsSendingRoute:
       WorkspacesWorkspaceIdSettingsSendingRoute,
     WorkspacesWorkspaceIdSettingsTeamRoute:

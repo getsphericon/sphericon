@@ -345,7 +345,7 @@ func (h *hmacBody) verify(_ context.Context, _ Request, body any, params Params,
 // bodyField reads a string or number at a dotted path of the parsed body.
 func bodyField(body any, path string) (string, error) {
 	cur := body
-	for _, key := range strings.Split(path, ".") {
+	for key := range strings.SplitSeq(path, ".") {
 		m, ok := cur.(map[string]any)
 		if !ok {
 			return "", fmt.Errorf("body field %s is missing", path)

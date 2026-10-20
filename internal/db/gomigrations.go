@@ -20,9 +20,9 @@ import (
 // re-run after an interrupted Upgrade finishes it (ADR 0033).
 func goMigrations() []*goose.Migration {
 	return []*goose.Migration{
-		// Between 20261020004438_workspace_public_id.sql (the nullable column) and
-		// 20261020004440_workspace_public_id_required.sql (NOT NULL and the unique index).
-		goose.NewGoMigration(20261020004439, &goose.GoFunc{RunTx: backfillWorkspacePublicIDs}, nil),
+		// Between 20261020030001_workspace_public_id.sql (the nullable column) and
+		// 20261020030003_workspace_public_id_required.sql (NOT NULL and the unique index).
+		goose.NewGoMigration(20261020030002, &goose.GoFunc{RunTx: backfillWorkspacePublicIDs}, nil),
 	}
 }
 

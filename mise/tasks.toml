@@ -205,6 +205,28 @@ env = { SPHERICON_ENV = "test", DATABASE_URL = "{{env.TEST_DB_URL}}" }
 usage = 'arg "[go_test_args]" var=#true default="./..." help="packages and flags for go test"'
 run = 'eval "set -- $usage_go_test_args"; mise/scripts/heavy.sh go test ${CI:+-shuffle=on} "$@"'
 
+["test:race"]
+description = "Go tests under the race detector, two packages at a time (the JavaScript runtime is several times slower with it, so this runs nightly, not per pull request)"
+depends = ["db:up"]
+env = { SPHERICON_ENV = "test", DATABASE_URL = "{{env.TEST_DB_URL}}" }
+run = "mise/scripts/heavy.sh go test -race -shuffle=on -p 2 ./..."
+
+["test:mutation"]
+description = "Mutation testing of the packages whose logic decides what is sent (go-mutesting, three workers); pass other packages after `--`. A surviving mutant is a change the tests do not notice: nightly, not per pull request"
+depends = ["db:up"]
+env = { SPHERICON_ENV = "test", DATABASE_URL = "{{env.TEST_DB_URL}}" }
+usage = 'arg "[packages]" var=#true help="packages to mutate (default: eligibility and sendlimit)"'
+run = 'eval "set -- $usage_packages"; [ $# -gt 0 ] || set -- ./internal/eligibility/... ./internal/sendlimit/...; go tool go-mutesting --workers 3 --quiet --no-diffs --min-msi 75 "$@"'
+
+["test:fuzz"]
+description = "Go native fuzzing of the parsers that take outside input (FUZZTIME per target, default 30s); a crash lands in the package's testdata/fuzz as a regression"
+env = { FUZZTIME = "30s" }
+run = [
+  "go test ./internal/emaildoc -run '^$' -fuzz '^FuzzPrepare' -fuzztime $FUZZTIME",
+  "go test ./internal/preset -run '^$' -fuzz '^FuzzParse' -fuzztime $FUZZTIME",
+  "go test ./ee/licensekey -run '^$' -fuzz '^FuzzParseOf' -fuzztime $FUZZTIME",
+]
+
 ["test:cover"]
 description = "Go tests with coverage over cmd/ and internal/ (ee/ too), failing under the total in .testcoverage.yml"
 depends = ["db:up"]
@@ -348,12 +370,11 @@ depends = [
   "check:deps",
   "check:security",
   "check:ast",
+  "check:openapi",
   "check:typos",
   "check:adr",
   "check:env",
-  "check:telemetry",
   "check:helm",
-  "check:infra",
   "check:shell",
 ]
 
@@ -484,41 +505,17 @@ test "$(helm show chart "$pkg" | sed -n 's/^appVersion: *//p' | tr -d '"')" = "$
 if [ -n "${usage_registry:-}" ]; then helm push "$pkg" "$usage_registry"; fi
 '''
 
-["check:telemetry"]
-description = "The hosted production task sets SPHERICON_TELEMETRY to false (ADR 0032)"
-run = '''
-if ! grep -qE '^[[:space:]]*SPHERICON_TELEMETRY[[:space:]]*=[[:space:]]*"false"[[:space:]]*$' infra/ecs.tf; then
-  echo 'error: infra/ecs.tf local.plain_env must set SPHERICON_TELEMETRY = "false" (the hosted deployment never reports on itself)'; exit 1
-fi
-'''
+["check:openapi"]
+description = "vacuum lints the generated OpenAPI documents (the recommended ruleset; a finding of severity error fails)"
+run = "for f in openapi/*.openapi.json; do vacuum lint --no-banner --silent --no-style --fail-severity error \"$f\" || exit 1; done"
 
-["check:infra"]
-description = "Terraform (infra/): fmt --check and validate (init without the backend, so no credentials or network state are needed)"
-# A data dir of its own (TF_DATA_DIR): the one `mise run infra` initializes holds the S3 backend,
-# which makes even `init -backend=false` ask for AWS credentials.
-run = [
-  "terraform -chdir=infra fmt -check -diff -recursive",
-  "TF_DATA_DIR=$PWD/infra/.terraform-check terraform -chdir=infra init -backend=false -input=false -lockfile=readonly",
-  "TF_DATA_DIR=$PWD/infra/.terraform-check terraform -chdir=infra validate",
-]
+["check:osv"]
+description = "osv-scanner over go.mod and pnpm-lock.yaml (nightly, like govulncheck: its answer changes with the advisory database, not with the diff); the advisories that stand are in osv-scanner.toml"
+run = "osv-scanner scan source --recursive --config osv-scanner.toml ."
 
 ["check:shell"]
 description = "shellcheck the scripts under mise/scripts/"
 run = "shellcheck -x --source-path=SCRIPTDIR mise/scripts/*.sh"
-
-# --- hosted deployment (infra/, ADR 0028) ----------------------------------------
-
-[infra]
-description = "Terraform for the hosted deployment with credentials from the `aws login` session: mise run infra -- init|plan|apply|destroy|output ..."
-run = "mise/scripts/infra.sh"
-
-["infra:bootstrap"]
-description = "Once, idempotent: the S3 state bucket and the app secret (SPHERICON_ENCRYPTION_KEY, SPHERICON_JWT_SECRET, SPHERICON_BOOTSTRAP_TOKEN; never rotated)"
-run = "mise/scripts/infra-bootstrap.sh"
-
-["infra:license"]
-description = "Store the optional EE SPHERICON_LICENSE_KEY (read from stdin) in the app secret"
-run = "mise/scripts/infra-license.sh"
 
 ["check:security"]
 description = "Secrets and workflow linters"

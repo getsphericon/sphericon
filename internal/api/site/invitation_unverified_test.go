@@ -86,8 +86,11 @@ func TestPreHijackingAnAttackerWhoRegisteredTheInviteesAddressGainsNothing(t *te
 // does, so the Staff member reading the Audit log sees who proved what (ADR 0030).
 func TestAcceptingAnInvitationThatVerifiesTheAddressIsAuditedAsEmailVerified(t *testing.T) {
 	for name, prepare := range map[string]func(*testing.T, *testhelper.TestEnv){
-		"new address":        func(*testing.T, *testhelper.TestEnv) {},
-		"unverified address": func(t *testing.T, env *testhelper.TestEnv) { register(t, env, "Squatter", "invitee@example.com") },
+		"new address": func(*testing.T, *testhelper.TestEnv) {},
+		"unverified address": func(t *testing.T, env *testhelper.TestEnv) {
+			t.Helper()
+			register(t, env, "Squatter", "invitee@example.com")
+		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			env := testhelper.Setup(t)

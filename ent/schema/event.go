@@ -67,7 +67,7 @@ func (Event) Fields() []ent.Field {
 			Nillable(),
 		field.String("action").
 			NotEmpty(),
-		field.JSON("properties", map[string]interface{}{}).
+		field.JSON("properties", map[string]any{}).
 			Optional(),
 		field.Time("occurred_at").
 			Optional().
@@ -94,6 +94,9 @@ func (Event) Indexes() []ent.Index {
 		index.Fields("workspace_id", "contact_id", "action"),
 		// Backs stitching anonymous events onto a Contact at Identify time.
 		index.Fields("workspace_id", "visitor_id"),
+		// Backs the Events Export stream (ADR 0045): the keyset page over
+		// (updated_at, id) inside one Workspace, so a deep back-fill never scans.
+		index.Fields("workspace_id", "updated_at", "id"),
 		// Backs the Event retention delete (ADR 0019): created_at is the age
 		// column (never null, unlike occurred_at). Partial: evidentiary Events are
 		// never deleted by age, so they stay out of the index. The predicate is shared

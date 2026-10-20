@@ -1,5 +1,5 @@
 import { Alert, Anchor, Group, Select, Text, Tooltip } from '@mantine/core'
-import { IconCreditCard, IconPlayerPause, IconPlus } from '@tabler/icons-react'
+import { IconPlayerPause, IconPlus } from '@tabler/icons-react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMatchRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
@@ -88,67 +88,56 @@ function SuspensionBanner({
   )
 }
 
-// BillingLink points an Owner or Admin to the configured billing site, and tells a plain
-// member to ask one of them; with no billing site configured it renders nothing.
-function BillingLink({
+// HoldAction points an Owner or Admin to where the setter of a hold says it can be resolved,
+// and tells a plain member to ask one of them; a hold with no action URL renders nothing.
+function HoldAction({
   role,
-  billingUrl,
+  actionUrl,
 }: {
   role: SiteWorkspaceResource['role']
-  billingUrl: string | null | undefined
+  actionUrl: string | null | undefined
 }) {
   const { t } = useTranslation()
-  if (!billingUrl) {
+  if (!actionUrl) {
     return null
   }
   return role === 'member' ? (
-    <Text size="sm" mt="xs">
-      {t(($) => $.workspaceHold.billingContact)}
-    </Text>
+    <Text size="sm">{t(($) => $.workspaceHold.actionContact)}</Text>
   ) : (
-    <Anchor size="sm" mt="xs" display="block" href={billingUrl}>
-      {t(($) => $.workspaceHold.billingLink)}
+    <Anchor size="sm" display="block" href={actionUrl}>
+      {t(($) => $.workspaceHold.actionLink)}
     </Anchor>
   )
 }
 
 // HoldBanner tells every member that outbound sending is held (ADR 0009) and shows each
-// setter's message as given. It is deliberately not the suspension banner: another color
-// and icon, another title. A billing hold (paid-for, not abuse) has its own color, icon
-// and title so nobody reads a payment problem as an abuse flag, and only it points to
-// the billing site.
+// setter's message as given, with the link to resolve it when the setter gave one. It is
+// deliberately not the suspension banner: another color and icon, another title.
 function HoldBanner({
-  variant,
   holds,
   role,
-  billingUrl,
 }: {
-  variant: 'generic' | 'billing'
   holds: SiteWorkspaceHold[]
   role: SiteWorkspaceResource['role']
-  billingUrl: string | null | undefined
 }) {
   const { t } = useTranslation()
-  const billing = variant === 'billing'
   return (
     <Alert
-      color={billing ? 'orange' : 'yellow'}
+      color="yellow"
       variant="outline"
-      icon={billing ? <IconCreditCard /> : <IconPlayerPause />}
-      title={billing ? t(($) => $.workspaceBillingHold.title) : t(($) => $.workspaceHold.title)}
+      icon={<IconPlayerPause />}
+      title={t(($) => $.workspaceHold.title)}
       mb="md"
     >
-      <Text size="sm">
-        {billing
-          ? t(($) => $.workspaceBillingHold.description)
-          : t(($) => $.workspaceHold.description)}
-      </Text>
+      <Text size="sm">{t(($) => $.workspaceHold.description)}</Text>
       {holds.map((hold) => (
-        <Text key={hold.key} size="sm" fw={500} mt="xs">
-          {hold.message}
-        </Text>
+        <div key={hold.key}>
+          <Text size="sm" fw={500} mt="xs">
+            {hold.message}
+          </Text>
+          <HoldAction role={role} actionUrl={hold.actionUrl} />
+        </div>
       ))}
-      {billing ? <BillingLink role={role} billingUrl={billingUrl} /> : null}
     </Alert>
   )
 }
@@ -187,8 +176,6 @@ export function WorkspaceLayout() {
   const workspaces = workspacesQuery.data ?? []
   const current = workspaces.find((w) => w.id === workspaceId)
   const holds = current?.holds ?? []
-  const billingHolds = holds.filter((hold) => hold.billing)
-  const otherHolds = holds.filter((hold) => !hold.billing)
   const [now] = useState(() => Date.now())
   const refused = useSecondFactorRefused(workspaceId, workspacesQuery.dataUpdatedAt)
   const standing = refused ? { kind: 'blocked' as const } : secondFactorStanding(current, now)
@@ -213,22 +200,7 @@ export function WorkspaceLayout() {
               supportEmail={current.supportEmail}
             />
           ) : null}
-          {otherHolds.length > 0 && current ? (
-            <HoldBanner
-              variant="generic"
-              holds={otherHolds}
-              role={current.role}
-              billingUrl={current.billingUrl}
-            />
-          ) : null}
-          {billingHolds.length > 0 && current ? (
-            <HoldBanner
-              variant="billing"
-              holds={billingHolds}
-              role={current.role}
-              billingUrl={current.billingUrl}
-            />
-          ) : null}
+          {holds.length > 0 && current ? <HoldBanner holds={holds} role={current.role} /> : null}
           {standing.kind === 'grace' ? <SecondFactorGraceBanner endsAt={standing.endsAt} /> : null}
         </>
       }

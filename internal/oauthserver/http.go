@@ -80,16 +80,14 @@ func (s *Server) authServerMetadata(w http.ResponseWriter, _ *http.Request) {
 		CodeChallengeMethodsSupported     []string `json:"code_challenge_methods_supported"`
 		ClientIDMetadataDocumentSupported bool     `json:"client_id_metadata_document_supported"`
 	}{
-		AuthServerMeta: oauthex.AuthServerMeta{
-			Issuer:                            s.issuer,
-			AuthorizationEndpoint:             s.issuer + authorizePath,
-			TokenEndpoint:                     s.issuer + tokenPath,
-			RegistrationEndpoint:              s.issuer + registerPath,
-			ScopesSupported:                   SupportedScopes(),
-			ResponseTypesSupported:            []string{"code"},
-			GrantTypesSupported:               []string{grantAuthorizationCode, grantRefreshToken},
-			TokenEndpointAuthMethodsSupported: []string{"none"},
-		},
+		Issuer:                            s.issuer,
+		AuthorizationEndpoint:             s.issuer + authorizePath,
+		TokenEndpoint:                     s.issuer + tokenPath,
+		RegistrationEndpoint:              s.issuer + registerPath,
+		ScopesSupported:                   SupportedScopes(),
+		ResponseTypesSupported:            []string{"code"},
+		GrantTypesSupported:               []string{grantAuthorizationCode, grantRefreshToken},
+		TokenEndpointAuthMethodsSupported: []string{"none"},
 		CodeChallengeMethodsSupported:     []string{"S256"},
 		ClientIDMetadataDocumentSupported: true,
 	}
@@ -140,15 +138,13 @@ func (s *Server) register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := oauthex.ClientRegistrationResponse{
-		ClientRegistrationMetadata: oauthex.ClientRegistrationMetadata{
-			RedirectURIs:            row.RedirectUris,
-			TokenEndpointAuthMethod: "none",
-			GrantTypes:              []string{grantAuthorizationCode, grantRefreshToken},
-			ResponseTypes:           []string{"code"},
-			ClientName:              row.Name,
-		},
-		ClientID:         row.ClientID,
-		ClientIDIssuedAt: row.CreatedAt,
+		RedirectURIs:            row.RedirectUris,
+		TokenEndpointAuthMethod: "none",
+		GrantTypes:              []string{grantAuthorizationCode, grantRefreshToken},
+		ResponseTypes:           []string{"code"},
+		ClientName:              row.Name,
+		ClientID:                row.ClientID,
+		ClientIDIssuedAt:        row.CreatedAt,
 	}
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	writeJSON(w, http.StatusCreated, &resp)

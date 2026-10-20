@@ -12,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -204,9 +205,7 @@ func (op *operation) handler(api http.Handler) mcp.ToolHandler {
 // request builds the in-process /api request for the given tool arguments.
 func (op *operation) request(ctx context.Context, args map[string]any, extra *mcp.RequestExtra) (*http.Request, error) {
 	rest := make(map[string]any, len(args))
-	for k, v := range args {
-		rest[k] = v
-	}
+	maps.Copy(rest, args)
 
 	path := op.path
 	query := url.Values{}
@@ -275,9 +274,7 @@ func (op *operation) request(ctx context.Context, args map[string]any, extra *mc
 	if err != nil {
 		return nil, err
 	}
-	for k, v := range headers {
-		httpReq.Header[k] = v
-	}
+	maps.Copy(httpReq.Header, headers)
 	if body != nil {
 		httpReq.Header.Set("Content-Type", "application/json")
 	}

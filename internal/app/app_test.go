@@ -188,7 +188,7 @@ func TestRunEventsStopsWhenTheContextIsCancelled(t *testing.T) {
 	cancel()
 	select {
 	case err := <-done:
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	case <-time.After(10 * time.Second):
 		t.Fatal("RunEvents did not return after cancel")
 	}
@@ -332,7 +332,7 @@ func TestSuspendWorkspaceKeepsTheSuspensionWhenTheNoticeFails(t *testing.T) {
 
 	changed, err := a.SuspendWorkspace(ctx, "AppSusp2", suspension.CLI, "abuse")
 	assert.True(t, changed)
-	assert.ErrorContains(t, err, "workspace suspended, but the owner notice could not be sent")
+	require.ErrorContains(t, err, "workspace suspended, but the owner notice could not be sent")
 
 	client, cerr := invokeEnt(a)
 	require.NoError(t, cerr)
@@ -347,9 +347,9 @@ func TestSuspendAndUnsuspendRejectBadInput(t *testing.T) {
 	ctx := context.Background()
 
 	_, err = a.SuspendWorkspace(ctx, "NoSuchId", suspension.CLI, "why")
-	assert.ErrorContains(t, err, `workspace "NoSuchId"`)
+	require.ErrorContains(t, err, `workspace "NoSuchId"`)
 	_, err = a.UnsuspendWorkspace(ctx, "NoSuchId", suspension.CLI)
-	assert.ErrorContains(t, err, `workspace "NoSuchId"`)
+	require.ErrorContains(t, err, `workspace "NoSuchId"`)
 
 	ownedWorkspace(t, a, "AppSusp3", "owner@app-suspend-input.test")
 	changed, err := a.SuspendWorkspace(ctx, "AppSusp3", suspension.Actor{}, "reason")
@@ -471,11 +471,12 @@ func TestAppServesOnACallerProvidedListener(t *testing.T) {
 	require.True(t, strings.HasPrefix(link, base+"/e/c/"), link)
 
 	ctx, cancel := context.WithCancel(context.Background())
+	eventsDone := make(chan error, 1)
 	served := make(chan error, 1)
-	go func() { served <- a.runEvents(ctx) }()
+	go func() { eventsDone <- a.runEvents(ctx) }()
 	select {
 	case <-a.events.router.Running():
-	case err := <-served:
+	case err := <-eventsDone:
 		t.Fatalf("router stopped before running: %v", err)
 	case <-time.After(10 * time.Second):
 		t.Fatal("router never started")

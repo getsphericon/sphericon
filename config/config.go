@@ -141,10 +141,7 @@ type Config struct {
 	// SupportEmail is the support contact shown with a suspension and in the owner notices
 	// (SPHERICON_SUPPORT_EMAIL): where an owner appeals. Empty shows none.
 	SupportEmail string
-	// BillingURL is the billing site a Workspace member under a hold is pointed to
-	// (SPHERICON_BILLING_URL). Empty (the self-host default) shows no link and no billing text.
-	BillingURL  string
-	AutoMigrate bool
+	AutoMigrate  bool
 	// MigrateTimeout bounds the lock wait and the run of a start with AutoMigrate on
 	// (SPHERICON_DB_MIGRATE_TIMEOUT); 0 is no limit.
 	MigrateTimeout time.Duration
@@ -156,6 +153,9 @@ type Config struct {
 	// EventsRetention is the age past which analytical Events are deleted
 	// (SPHERICON_EVENTS_RETENTION_DAYS, default 400, 0 disables; ADR 0019).
 	EventsRetention time.Duration
+	// EventLiveWindow is how old a live Event may be before the external API refuses it
+	// as history that belongs in a Backfill (SPHERICON_EVENT_LIVE_WINDOW_HOURS, default 72, at least 1).
+	EventLiveWindow time.Duration
 	// UnverifiedUserRetention is the age past which an Unverified User with no Membership
 	// is deleted (SPHERICON_UNVERIFIED_USER_RETENTION_DAYS, default 7, 0 disables; ADR 0030).
 	UnverifiedUserRetention time.Duration
@@ -304,7 +304,6 @@ type environment struct {
 	AbuseFreezeBouncePercent    float64 `env:"SPHERICON_ABUSE_FREEZE_BOUNCE_PERCENT" envDefault:"10"`
 
 	SupportEmail string `env:"SPHERICON_SUPPORT_EMAIL"`
-	BillingURL   string `env:"SPHERICON_BILLING_URL"`
 	AutoMigrate  bool   `env:"SPHERICON_DB_AUTO_MIGRATE"`
 
 	MigrateTimeout time.Duration `env:"SPHERICON_DB_MIGRATE_TIMEOUT" envDefault:"10m"`
@@ -329,6 +328,7 @@ type environment struct {
 	OutboxFloorDays             int `env:"SPHERICON_OUTBOX_RETENTION_FLOOR_DAYS" envDefault:"7"`
 	EventsRetentionDays         int `env:"SPHERICON_EVENTS_RETENTION_DAYS" envDefault:"400"`
 	UnverifiedUserRetentionDays int `env:"SPHERICON_UNVERIFIED_USER_RETENTION_DAYS" envDefault:"7"`
+	EventLiveWindowHours        int `env:"SPHERICON_EVENT_LIVE_WINDOW_HOURS" envDefault:"72"`
 
 	DBMaxOpenConns    int           `env:"SPHERICON_DB_MAX_OPEN_CONNS" envDefault:"15"`
 	DBMaxIdleConns    *int          `env:"SPHERICON_DB_MAX_IDLE_CONNS"`
@@ -455,7 +455,6 @@ func Load(envName string) (*Config, error) {
 		AbuseFreezeComplaintPercent: e.AbuseFreezeComplaintPercent,
 		AbuseFreezeBouncePercent:    e.AbuseFreezeBouncePercent,
 		SupportEmail:                strings.TrimSpace(e.SupportEmail),
-		BillingURL:                  strings.TrimSpace(e.BillingURL),
 		AutoMigrate:                 e.AutoMigrate,
 		MigrateTimeout:              e.MigrateTimeout,
 
@@ -486,6 +485,7 @@ func Load(envName string) (*Config, error) {
 		},
 		OutboxFloor:             time.Duration(e.OutboxFloorDays) * 24 * time.Hour,
 		EventsRetention:         time.Duration(e.EventsRetentionDays) * 24 * time.Hour,
+		EventLiveWindow:         time.Duration(e.EventLiveWindowHours) * time.Hour,
 		UnverifiedUserRetention: time.Duration(e.UnverifiedUserRetentionDays) * 24 * time.Hour,
 		IsDev:                   isDevEnv(envName),
 		SMTPAllowPrivateHosts:   e.SMTPAllowPrivateHosts,
@@ -745,6 +745,9 @@ func (c *Config) validate(envName string) error {
 	}
 	if c.EventsRetention < 0 {
 		return fmt.Errorf("SPHERICON_EVENTS_RETENTION_DAYS must not be negative")
+	}
+	if c.EventLiveWindow < time.Hour {
+		return fmt.Errorf("SPHERICON_EVENT_LIVE_WINDOW_HOURS must be at least 1")
 	}
 	if c.UnverifiedUserRetention < 0 {
 		return fmt.Errorf("SPHERICON_UNVERIFIED_USER_RETENTION_DAYS must not be negative")

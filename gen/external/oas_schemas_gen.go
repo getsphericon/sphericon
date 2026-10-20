@@ -155,6 +155,7 @@ const (
 	ApiTokenScopeTokensRead          ApiTokenScope = "tokens:read"
 	ApiTokenScopeTokensWrite         ApiTokenScope = "tokens:write"
 	ApiTokenScopeAuditRead           ApiTokenScope = "audit:read"
+	ApiTokenScopeExportRead          ApiTokenScope = "export:read"
 )
 
 // AllValues returns all ApiTokenScope values.
@@ -190,6 +191,7 @@ func (ApiTokenScope) AllValues() []ApiTokenScope {
 		ApiTokenScopeTokensRead,
 		ApiTokenScopeTokensWrite,
 		ApiTokenScopeAuditRead,
+		ApiTokenScopeExportRead,
 	}
 }
 
@@ -255,6 +257,8 @@ func (s ApiTokenScope) MarshalText() ([]byte, error) {
 	case ApiTokenScopeTokensWrite:
 		return []byte(s), nil
 	case ApiTokenScopeAuditRead:
+		return []byte(s), nil
+	case ApiTokenScopeExportRead:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -353,6 +357,9 @@ func (s *ApiTokenScope) UnmarshalText(data []byte) error {
 		return nil
 	case ApiTokenScopeAuditRead:
 		*s = ApiTokenScopeAuditRead
+		return nil
+	case ApiTokenScopeExportRead:
+		*s = ApiTokenScopeExportRead
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -5380,6 +5387,10 @@ type EventInput struct {
 	Properties OptNilEventInputProperties `json:"properties"`
 	// Event occurrence timestamp.
 	OccurredAt OptNilTimestamp `json:"occurredAt"`
+	// A client-chosen id that makes a retry safe. It is unique within the Workspace: sending an event
+	// again with the same id changes nothing, so a load that broke off halfway is resent whole. Generate
+	// it once per event (a UUID) and reuse it on every retry. An event without one is not deduplicated.
+	ClientEventId OptNilString `json:"clientEventId"`
 }
 
 // GetSubjectId returns the value of SubjectId.
@@ -5412,6 +5423,11 @@ func (s *EventInput) GetOccurredAt() OptNilTimestamp {
 	return s.OccurredAt
 }
 
+// GetClientEventId returns the value of ClientEventId.
+func (s *EventInput) GetClientEventId() OptNilString {
+	return s.ClientEventId
+}
+
 // SetSubjectId sets the value of SubjectId.
 func (s *EventInput) SetSubjectId(val string) {
 	s.SubjectId = val
@@ -5440,6 +5456,11 @@ func (s *EventInput) SetProperties(val OptNilEventInputProperties) {
 // SetOccurredAt sets the value of OccurredAt.
 func (s *EventInput) SetOccurredAt(val OptNilTimestamp) {
 	s.OccurredAt = val
+}
+
+// SetClientEventId sets the value of ClientEventId.
+func (s *EventInput) SetClientEventId(val OptNilString) {
+	s.ClientEventId = val
 }
 
 // Event properties.
@@ -5474,6 +5495,60 @@ func (*EventsCreateUnauthorized) eventsCreateRes() {}
 type EventsCreateUnprocessableEntity ProblemDetails
 
 func (*EventsCreateUnprocessableEntity) eventsCreateRes() {}
+
+type ExportEventsBadRequest ProblemDetails
+
+func (*ExportEventsBadRequest) exportEventsRes() {}
+
+type ExportEventsNotFound ProblemDetails
+
+func (*ExportEventsNotFound) exportEventsRes() {}
+
+type ExportEventsOK struct {
+	Data io.Reader
+}
+
+// Read reads data from the Data reader.
+//
+// Kept to satisfy the io.Reader interface.
+func (s ExportEventsOK) Read(p []byte) (n int, err error) {
+	if s.Data == nil {
+		return 0, io.EOF
+	}
+	return s.Data.Read(p)
+}
+
+// ExportEventsOKHeaders wraps ExportEventsOK with response headers.
+type ExportEventsOKHeaders struct {
+	XNextCursor string
+	Response    ExportEventsOK
+}
+
+// GetXNextCursor returns the value of XNextCursor.
+func (s *ExportEventsOKHeaders) GetXNextCursor() string {
+	return s.XNextCursor
+}
+
+// GetResponse returns the value of Response.
+func (s *ExportEventsOKHeaders) GetResponse() ExportEventsOK {
+	return s.Response
+}
+
+// SetXNextCursor sets the value of XNextCursor.
+func (s *ExportEventsOKHeaders) SetXNextCursor(val string) {
+	s.XNextCursor = val
+}
+
+// SetResponse sets the value of Response.
+func (s *ExportEventsOKHeaders) SetResponse(val ExportEventsOK) {
+	s.Response = val
+}
+
+func (*ExportEventsOKHeaders) exportEventsRes() {}
+
+type ExportEventsUnauthorized ProblemDetails
+
+func (*ExportEventsUnauthorized) exportEventsRes() {}
 
 // Delivery channel an integration belongs to.
 // Ref: #/components/schemas/IntegrationChannel
@@ -9598,13 +9673,27 @@ func (s *RateTriple) SetRate(val NilFloat64) {
 // Request body for recording events one by one with per-item results.
 // Ref: #/components/schemas/RecordEventsBatchInput
 type RecordEventsBatchInput struct {
+	// Load history: the events are only recorded, so segments see them but no Automation enrolls on them
+	// and no webhook endpoint receives them. Use it to bring the events of an earlier system into a new
+	// setup. Defaults to false.
+	Backfill OptBool `json:"backfill"`
 	// Events to record, at most 1000.
 	Events []EventInput `json:"events"`
+}
+
+// GetBackfill returns the value of Backfill.
+func (s *RecordEventsBatchInput) GetBackfill() OptBool {
+	return s.Backfill
 }
 
 // GetEvents returns the value of Events.
 func (s *RecordEventsBatchInput) GetEvents() []EventInput {
 	return s.Events
+}
+
+// SetBackfill sets the value of Backfill.
+func (s *RecordEventsBatchInput) SetBackfill(val OptBool) {
+	s.Backfill = val
 }
 
 // SetEvents sets the value of Events.

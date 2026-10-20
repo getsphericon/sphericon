@@ -75,36 +75,36 @@ func (b bearer) BearerAuth(context.Context, externalapi.OperationName) (external
 // NewWorkspace is the arrange step: a User, a Workspace and its first API token, made
 // with internal/accounts and internal/apitokens (the bootstrap token is not used, it
 // only addresses the oldest Workspace). Its Inbox deletes the test's own mail on cleanup.
-func (e *Env) NewWorkspace(t testing.TB) *Workspace {
-	t.Helper()
-	ctx := t.Context()
+func (e *Env) NewWorkspace(tb testing.TB) *Workspace {
+	tb.Helper()
+	ctx := tb.Context()
 	id := uniq()
 
 	user, err := e.accounts.CreateUser(ctx, "E2E "+id, "owner-"+id+"@e2e.test", "!")
-	require.NoError(t, err)
+	require.NoError(tb, err)
 	ws, err := e.accounts.CreateWorkspace(ctx, user.ID, "e2e "+id)
-	require.NoError(t, err)
+	require.NoError(tb, err)
 	scoped, _, err := e.accounts.Scope(ctx, user.ID, ws.PublicID)
-	require.NoError(t, err)
+	require.NoError(tb, err)
 	minted, err := apitokens.Mint(ctx, scoped, apitokens.Input{Name: "e2e", Scopes: tokenScopes})
-	require.NoError(t, err)
+	require.NoError(tb, err)
 
 	api, err := externalapi.NewClient(e.BaseURL+"/api", bearer(minted.Value))
-	require.NoError(t, err)
+	require.NoError(tb, err)
 
 	cookie, err := e.sessions.Issue(user)
-	require.NoError(t, err)
+	require.NoError(tb, err)
 	site, err := siteapi.NewClient(e.BaseURL+"/site", cookieSource(cookie.Value))
-	require.NoError(t, err)
+	require.NoError(tb, err)
 
 	w := &Workspace{
-		t: t, env: e, api: api, site: site, publicID: ws.PublicID, OwnerEmail: user.Email,
+		t: tb, env: e, api: api, site: site, publicID: ws.PublicID, OwnerEmail: user.Email,
 		Domain:    id + ".e2e.test",
 		FromEmail: "news@" + id + ".e2e.test",
 		FromName:  "E2E News",
 		scoped:    scoped,
 	}
-	w.Inbox = newInbox(t, e.mailpit)
+	w.Inbox = newInbox(tb, e.mailpit)
 	return w
 }
 
@@ -124,11 +124,11 @@ func (w *Workspace) NewRecipient() string {
 
 // ok unwraps an API result of the expected type or fails the test with whatever
 // the API answered instead (an RFC 7807 problem, typically).
-func ok[T any](t testing.TB, step string, res any, err error) *T {
-	t.Helper()
-	require.NoError(t, err, step)
+func ok[T any](tb testing.TB, step string, res any, err error) *T {
+	tb.Helper()
+	require.NoError(tb, err, step)
 	v, isT := res.(*T)
-	require.True(t, isT, "%s: unexpected response %T: %+v", step, res, res)
+	require.True(tb, isT, "%s: unexpected response %T: %+v", step, res, res)
 	return v
 }
 

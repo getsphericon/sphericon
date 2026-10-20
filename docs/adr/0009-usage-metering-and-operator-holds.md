@@ -32,13 +32,16 @@ external service have different lifecycles, and the two are not unified into one
   service and carries no outbound configuration for it.
 - **Staff hold.** A reversible Workspace freeze set through the Staff surface for a reason
   that is not reputation. Each hold is stored separately under an opaque key chosen by whoever
-  sets it, with a machine reason code, a message shown to the Workspace Owner and an **expiry that
-  the setter must renew**, so an unavailable service cannot freeze Workspaces for good. A hold is
+  sets it, with a machine reason code, a message shown to the Workspace Owner, an optional **action
+  URL** (an absolute https address where an Owner or Admin can resolve the hold, shown as a link
+  beside the message) and an **expiry that the setter must renew**, so an unavailable service cannot freeze Workspaces for good. A hold is
   cleared by its own setter or by its expiry; any active hold freezes sending. Every change
   records the Staff member that made it. It reuses the **same core send chokepoint** as suspension
   (ADR 0007, 0015) but is a distinct cause, never a repurposing of it. It freezes all three send
   surfaces, and messages are **held, not failed**: they wait and go out when the hold lifts. The
-  core has no grace period or retry logic of its own.
+  core has no grace period or retry logic of its own. The core attaches no meaning to a reason code:
+  every hold looks the same to the Workspace's members, and only the message and the action URL
+  tell them what to do. It holds no address of the setter and no setting that names one.
 - **The core keeps no allowance of its own.** The one question it answers is "may this Workspace
   send now", with several independent freeze reasons.
 - **An account link for the Owner.** When the app is configured with an address and a signing key,

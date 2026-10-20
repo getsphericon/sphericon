@@ -14,7 +14,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/events"
-	"github.com/getsphericon/sphericon/internal/holds"
 )
 
 const (
@@ -57,9 +56,6 @@ type View struct {
 	ActorID    *string
 	ActorName  *string
 	Action     string
-	// Billing is true for a change of a billing hold (holds.IsBilling): its set, renewal
-	// and lift alike, since a hold's audit diff always carries its reason code.
-	Billing    bool
 	TargetType string
 	TargetID   *string
 	TargetName *string
@@ -89,7 +85,6 @@ func ViewOf(e *ent.AuditEntry) View {
 		label := events.StaffLabel
 		v.ActorKind, v.ActorID, v.ActorName = events.ActorStaff, nil, &label
 	}
-	v.Billing = isBillingHoldChange(e)
 	if len(e.Diff) > 0 {
 		v.Diff = make(map[string]jx.Raw, len(e.Diff))
 		for k, val := range e.Diff {
@@ -114,23 +109,4 @@ func unchanged(v any) bool {
 	from, hasFrom := change["from"]
 	to, hasTo := change["to"]
 	return hasFrom && hasTo && reflect.DeepEqual(from, to)
-}
-
-// isBillingHoldChange reads the reason code a hold change set, renewed or removed from
-// its diff: a create and a delete carry every field and an update always carries the
-// reason code (schema.Audited Always on Hold), changed or not.
-func isBillingHoldChange(e *ent.AuditEntry) bool {
-	if e.TargetType != "hold" {
-		return false
-	}
-	change, ok := e.Diff["reason_code"].(map[string]any)
-	if !ok {
-		return false
-	}
-	for _, side := range []string{"from", "to"} {
-		if code, ok := change[side].(string); ok && holds.IsBilling(code) {
-			return true
-		}
-	}
-	return false
 }

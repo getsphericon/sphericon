@@ -16,6 +16,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ee/abuse"
 	"github.com/getsphericon/sphericon/ee/audit"
+	"github.com/getsphericon/sphericon/ee/export"
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ee/retention"
 	"github.com/getsphericon/sphericon/ee/staff"
@@ -40,6 +41,8 @@ type Edition struct {
 	// Audit is the read side of the Audit log; unlicensed, it reports so and the
 	// /site page answers 402.
 	Audit *audit.Log
+	// Export is the seat of the Export streams (ADR 0045); unlicensed, every stream answers 404.
+	Export *export.Streams
 	// Consumers are the extra bus subscribers (events.RegisterSubscribers).
 	Consumers []events.Consumer
 	// Staff members is the platform Staff member store and its login (ADR 0026); every call
@@ -61,6 +64,7 @@ func New(client *ent.Client, lic *licensekey.License, cipher *secrets.Cipher, si
 		lic:          lic,
 		client:       client,
 		Audit:        auditLog,
+		Export:       export.New(lic),
 		Consumers:    []events.Consumer{audit.Consumer(client, lic)},
 		StaffMembers: staff.NewModule(client, lic, auditLog, cipher, staffCfg),
 	}

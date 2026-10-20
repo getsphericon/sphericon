@@ -1,10 +1,9 @@
-import { Button, Card, EmptyState, Group, Loader, Stack, Table, Title } from '@mantine/core'
+import { Button, Card, EmptyState, Loader, Stack, Table, Title } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ApiErrorAlert } from '../components/ApiErrorAlert.tsx'
-import { BillingBadge } from '../components/BillingBadge.tsx'
 import { staffWorkspaceAuditListOptions } from '../generated/staff/@tanstack/react-query.gen.ts'
 import type { StaffAuditEntryResource } from '../generated/staff/types.gen.ts'
 import { formatDateTime } from '../utils/datetime.ts'
@@ -89,12 +88,7 @@ function AuditPage({
                 <Table.Td>
                   <ActorLabel entry={entry} />
                 </Table.Td>
-                <Table.Td>
-                  <Group gap="xs" wrap="nowrap">
-                    {entry.action}
-                    {entry.billing ? <BillingBadge /> : null}
-                  </Group>
-                </Table.Td>
+                <Table.Td>{entry.action}</Table.Td>
                 <Table.Td>{targetLabel(entry)}</Table.Td>
               </Table.Tr>
             ))}

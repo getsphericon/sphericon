@@ -14239,6 +14239,7 @@ type HoldMutation struct {
 	key              *string
 	reason_code      *string
 	message          *string
+	action_url       *string
 	expires_at       *time.Time
 	set_by           *string
 	clearedFields    map[string]struct{}
@@ -14569,6 +14570,55 @@ func (m *HoldMutation) ResetMessage() {
 	m.message = nil
 }
 
+// SetActionURL sets the "action_url" field.
+func (m *HoldMutation) SetActionURL(s string) {
+	m.action_url = &s
+}
+
+// ActionURL returns the value of the "action_url" field in the mutation.
+func (m *HoldMutation) ActionURL() (r string, exists bool) {
+	v := m.action_url
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldActionURL returns the old "action_url" field's value of the Hold entity.
+// If the Hold object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HoldMutation) OldActionURL(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldActionURL is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldActionURL requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldActionURL: %w", err)
+	}
+	return oldValue.ActionURL, nil
+}
+
+// ClearActionURL clears the value of the "action_url" field.
+func (m *HoldMutation) ClearActionURL() {
+	m.action_url = nil
+	m.clearedFields[hold.FieldActionURL] = struct{}{}
+}
+
+// ActionURLCleared returns if the "action_url" field was cleared in this mutation.
+func (m *HoldMutation) ActionURLCleared() bool {
+	_, ok := m.clearedFields[hold.FieldActionURL]
+	return ok
+}
+
+// ResetActionURL resets all changes to the "action_url" field.
+func (m *HoldMutation) ResetActionURL() {
+	m.action_url = nil
+	delete(m.clearedFields, hold.FieldActionURL)
+}
+
 // SetExpiresAt sets the "expires_at" field.
 func (m *HoldMutation) SetExpiresAt(t time.Time) {
 	m.expires_at = &t
@@ -14702,7 +14752,7 @@ func (m *HoldMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *HoldMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 9)
 	if m.created_at != nil {
 		fields = append(fields, hold.FieldCreatedAt)
 	}
@@ -14720,6 +14770,9 @@ func (m *HoldMutation) Fields() []string {
 	}
 	if m.message != nil {
 		fields = append(fields, hold.FieldMessage)
+	}
+	if m.action_url != nil {
+		fields = append(fields, hold.FieldActionURL)
 	}
 	if m.expires_at != nil {
 		fields = append(fields, hold.FieldExpiresAt)
@@ -14747,6 +14800,8 @@ func (m *HoldMutation) Field(name string) (ent.Value, bool) {
 		return m.ReasonCode()
 	case hold.FieldMessage:
 		return m.Message()
+	case hold.FieldActionURL:
+		return m.ActionURL()
 	case hold.FieldExpiresAt:
 		return m.ExpiresAt()
 	case hold.FieldSetBy:
@@ -14772,6 +14827,8 @@ func (m *HoldMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldReasonCode(ctx)
 	case hold.FieldMessage:
 		return m.OldMessage(ctx)
+	case hold.FieldActionURL:
+		return m.OldActionURL(ctx)
 	case hold.FieldExpiresAt:
 		return m.OldExpiresAt(ctx)
 	case hold.FieldSetBy:
@@ -14827,6 +14884,13 @@ func (m *HoldMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetMessage(v)
 		return nil
+	case hold.FieldActionURL:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetActionURL(v)
+		return nil
 	case hold.FieldExpiresAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -14873,7 +14937,11 @@ func (m *HoldMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *HoldMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(hold.FieldActionURL) {
+		fields = append(fields, hold.FieldActionURL)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -14886,6 +14954,11 @@ func (m *HoldMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *HoldMutation) ClearField(name string) error {
+	switch name {
+	case hold.FieldActionURL:
+		m.ClearActionURL()
+		return nil
+	}
 	return fmt.Errorf("unknown Hold nullable field %s", name)
 }
 
@@ -14910,6 +14983,9 @@ func (m *HoldMutation) ResetField(name string) error {
 		return nil
 	case hold.FieldMessage:
 		m.ResetMessage()
+		return nil
+	case hold.FieldActionURL:
+		m.ResetActionURL()
 		return nil
 	case hold.FieldExpiresAt:
 		m.ResetExpiresAt()

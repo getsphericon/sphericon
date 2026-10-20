@@ -33,6 +33,7 @@ enum ApiTokenScope {
   tokensRead: "tokens:read",
   tokensWrite: "tokens:write",
   auditRead: "audit:read",
+  exportRead: "export:read",
 }
 
 model ApiTokenInfo {

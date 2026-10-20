@@ -49,9 +49,6 @@ model StaffAuditEntryResource {
   /** What was done, as `<entity>.<verb>` */
   action: string;
 
-  /** True when the change set, renewed or lifted a billing hold (reason code `non_payment` or `free_plan_cap`) */
-  billing: boolean;
-
   /** What it was done to */
   target: StaffAuditTarget;
 

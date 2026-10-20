@@ -249,7 +249,7 @@ func TestRegeneratingTheKeyInvalidatesTheOldURL(t *testing.T) {
 	require.NoError(t, err)
 	got, ok := res.(*externalapi.IntegrationResource)
 	require.Truef(t, ok, "got %T", res)
-	require.True(t, strings.Contains(got.HookUrl, "/hooks/omik_"), got.HookUrl)
+	require.Contains(t, got.HookUrl, "/hooks/omik_", got.HookUrl)
 	require.NotContains(t, got.HookUrl, old)
 	newKey := got.HookUrl[strings.LastIndex(got.HookUrl, "/")+1:]
 

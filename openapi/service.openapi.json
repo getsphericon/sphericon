@@ -1000,6 +1000,13 @@
             "maxLength": 1000,
             "description": "The message shown to the Workspace Owner, as given"
           },
+          "actionUrl": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 2048,
+            "pattern": "^https://",
+            "description": "Where the Workspace's Owners and Admins can resolve the hold, shown as a link next to the message:\nan absolute https URL. Omit it to give none; setting the hold again without it removes a stored one."
+          },
           "expiresAt": {
             "allOf": [
               {
@@ -1047,6 +1054,11 @@
           "message": {
             "type": "string",
             "description": "The message shown to the Workspace Owner, as given"
+          },
+          "actionUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "Where the Workspace's Owners and Admins can resolve the hold; absent when none was given"
           },
           "expiresAt": {
             "allOf": [
@@ -1107,6 +1119,16 @@
           }
         },
         "description": "RFC 7807 payment required response: the feature needs an Enterprise license"
+      },
+      "PreconditionRequiredProblem": {
+        "type": "object",
+        "required": ["body"],
+        "properties": {
+          "body": {
+            "$ref": "#/components/schemas/ProblemDetails"
+          }
+        },
+        "description": "RFC 7807 precondition required response: the request needs something it did not carry\n(a verification link opened outside its Registration browser needs a password, ADR 0030)"
       },
       "ProblemCode": {
         "type": "string",
