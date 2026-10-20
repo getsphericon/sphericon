@@ -12,13 +12,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/outbound"
 )
 
-// holdRetryDelay is how long a held send waits before asking Outbound send again.
-// A hold (Workspace suspension, an unverified Sending domain, no Integration) is
-// reversible and not the recipient's fault, so the job is snoozed rather than
-// failed: River's JobSnooze does not count against MaxAttempts, so a long hold
-// never exhausts a recipient's retry budget (ADR 0015).
-const holdRetryDelay = 15 * time.Minute
-
 // inProgressRetryDelay is how soon to look again at a send whose claim another attempt
 // currently holds: it is not a failure and not a hold, just a race to wait out.
 const inProgressRetryDelay = 30 * time.Second
@@ -28,17 +21,6 @@ const inProgressRetryDelay = 30 * time.Second
 type HeldError struct{ Reason string }
 
 func (e *HeldError) Error() string { return "send held: " + e.Reason }
-
-// deferralFloor is the shortest a Deferral waits: a limit that frees capacity in
-// milliseconds must not turn into a hot retry loop.
-const deferralFloor = time.Second
-
-// deferralCeiling bounds a Deferral's snooze so a raised limit is noticed within the hour.
-const deferralCeiling = time.Hour
-
-// deferralJitter is the share of the delay added at random so a wave of deferred
-// jobs does not wake in the same instant.
-const deferralJitter = 0.2
 
 // DeferredError reports that Outbound send found the Integration's Send rate limit
 // spent (outbound.Deferral). Nothing was consumed: the caller retries the same work
@@ -63,22 +45,6 @@ func asDeferred(err error) (*DeferredError, bool) {
 	return d, errors.As(err, &d)
 }
 
-// deferralDelay is how long a Deferral waits before the job asks again: the wait
-// until capacity returns, scaled by the backlog ahead (each recipient ahead needs a
-// token of its own first), so the job wakes about when its turn can come instead of
-// every job waking each second. The result is floored at deferralFloor and capped at
-// deferralCeiling, plus up to deferralJitter of random spread (jitter is in [0, 1)).
-func deferralDelay(wait time.Duration, backlog int, jitter float64) time.Duration {
-	// The product saturates at the ceiling instead of overflowing int64: a long wait behind a
-	// large backlog would otherwise wrap negative and wake the job after the floor.
-	ahead := time.Duration(1 + backlog)
-	base := deferralCeiling
-	if wait <= deferralCeiling/ahead {
-		base = min(max(wait*ahead, deferralFloor), deferralCeiling)
-	}
-	return base + time.Duration(float64(base)*deferralJitter*jitter)
-}
-
 // asHeld returns the HeldError in err's chain, if any.
 func asHeld(err error) (*HeldError, bool) {
 	var h *HeldError
@@ -98,13 +64,13 @@ func isDeferrable(err error) bool {
 // Workers call it on the error from their pure function.
 func snoozeIfDeferrable(err error) error {
 	if _, held := asHeld(err); held {
-		return river.JobSnooze(holdRetryDelay)
+		return river.JobSnooze(outbound.Result{Outcome: outbound.Held}.Retry(0, 0).After)
 	}
 	if d, deferred := asDeferred(err); deferred {
 		if d.Delay > 0 {
 			return river.JobSnooze(d.Delay)
 		}
-		return river.JobSnooze(deferralDelay(d.Wait, d.Backlog, rand.Float64()))
+		return river.JobSnooze(deferralResult(d.Wait).Retry(d.Backlog, rand.Float64()).After)
 	}
 	if errors.Is(err, outbound.ErrInProgress) {
 		return river.JobSnooze(inProgressRetryDelay)
@@ -123,4 +89,10 @@ func setBroadcastHold(ctx context.Context, s *ent.Scoped, broadcastID int64, rea
 		upd.SetHoldReason(reason)
 	}
 	_ = upd.Exec(ctx)
+}
+
+// deferralResult is the Outbound Result of a Deferral that waits for capacity, the input
+// of the retry policy for a caller that holds only the wait.
+func deferralResult(wait time.Duration) outbound.Result {
+	return outbound.Result{Outcome: outbound.Deferral, Wait: wait}
 }

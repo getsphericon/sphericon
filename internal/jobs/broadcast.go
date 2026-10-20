@@ -413,7 +413,7 @@ func SendToRecipient(ctx context.Context, client *ent.Client, mod *outbound.Modu
 		if cerr != nil {
 			ahead = 0 // the estimate only spreads retries; never fail the send over it
 		}
-		delay := deferralDelay(res.Wait, ahead, rand.Float64())
+		delay := res.Retry(ahead, rand.Float64()).After
 		// Best effort, like the count: it only sharpens later jobs' backlog.
 		_ = upd.SetDeferredUntil(now.Add(delay)).Exec(ctx)
 		return &DeferredError{Wait: res.Wait, Backlog: ahead, Delay: delay}
