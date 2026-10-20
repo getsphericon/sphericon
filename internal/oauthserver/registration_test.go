@@ -2,6 +2,7 @@ package oauthserver_test
 
 import (
 	"encoding/json"
+	"maps"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -80,9 +81,7 @@ func authorizeQuery(extra url.Values) url.Values {
 		"code_challenge_method": {"S256"},
 		"state":                 {"xyz"},
 	}
-	for k, v := range extra {
-		q[k] = v
-	}
+	maps.Copy(q, extra)
 	return q
 }
 

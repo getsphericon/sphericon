@@ -109,14 +109,16 @@ func (UnimplementedHandler) SiteAuthLogout(ctx context.Context) (r *SiteAuthLogo
 
 // SiteAuthRegister implements SiteAuth_register operation.
 //
-// Create an Unverified User (ADR 0030): no password, no session, no Workspace. A verification email
-// with the link to the set-password screen is on its way (202), and 202 is the answer for every
-// address, taken or not (ADR 0031): the owner of a taken address gets a notice by mail instead. With
-// `SPHERICON_REQUIRE_EMAIL_VERIFICATION=false` there is no mail to carry that notice: the request must
-// carry a password (422 otherwise), creates a Verified User with its first Workspace at once (202, no
-// session: the User signs in next), and a taken address answers 409. An Instance that closed sign-up
-// (`SPHERICON_SIGNUP_OPEN=false`, ADR 0042) answers 403 with code `signup_closed` before anything is
-// read or created; accepting an Invitation still works.
+// Create an Unverified User (ADR 0030): no session, no Workspace. A verification email with the link
+// is on its way (202), and 202 is the answer for every address, taken or not (ADR 0031): the owner of
+// a taken address gets a notice by mail instead. The answer always sets the registration cookie
+// (httpOnly, SameSite=Strict, scoped to the auth prefix shared by verify and resend), which binds the
+// link to this browser, so the header does not say whether the address is taken either. The password
+// is required (422 otherwise). With `SPHERICON_REQUIRE_EMAIL_VERIFICATION=false` there is no mail to
+// carry that notice and no link: the request creates a Verified User with its first Workspace at once
+// (202, no session and no cookie: the User signs in next), and a taken address answers 409. An
+// Instance that closed sign-up (`SPHERICON_SIGNUP_OPEN=false`, ADR 0042) answers 403 with code
+// `signup_closed` before anything is read or created; accepting an Invitation still works.
 //
 // POST /auth/register
 func (UnimplementedHandler) SiteAuthRegister(ctx context.Context, req *SiteRegisterInput) (r SiteAuthRegisterRes, _ error) {
@@ -130,7 +132,7 @@ func (UnimplementedHandler) SiteAuthRegister(ctx context.Context, req *SiteRegis
 // a mail. Rate limited per IP like registration.
 //
 // POST /auth/resend-verification
-func (UnimplementedHandler) SiteAuthResendVerification(ctx context.Context, req *SiteResendVerificationInput) (r SiteAuthResendVerificationRes, _ error) {
+func (UnimplementedHandler) SiteAuthResendVerification(ctx context.Context, req *SiteResendVerificationInput, params SiteAuthResendVerificationParams) (r SiteAuthResendVerificationRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -158,12 +160,15 @@ func (UnimplementedHandler) SiteAuthSecondFactor(ctx context.Context, req *SiteL
 // SiteAuthVerifyEmail implements SiteAuth_verifyEmail operation.
 //
 // Complete a registration from the verification link (the token is the credential): stamps the
-// Verified email, sets the password, ends every earlier session, creates the User's first Workspace
-// and sends the welcome email. The User then signs in; the link alone starts no session. A link is
-// single use and scoped to the address it was sent to. Rate limited like registration.
+// Verified email, ends every earlier session, creates the User's first Workspace, sends the welcome
+// email and starts the session (the cookie is issued after the epoch bump, as login does, ADR 0020).
+// When the request carries the registration cookie the link was minted for, the password from
+// registration stays; otherwise the request must carry a password, which replaces it, and without one
+// the answer is 428 and nothing changes, the link stays valid (a mail scanner consumes nothing). A
+// link is single use and scoped to the address it was sent to. Rate limited like registration.
 //
 // POST /auth/verify-email
-func (UnimplementedHandler) SiteAuthVerifyEmail(ctx context.Context, req *SiteVerifyEmailInput) (r SiteAuthVerifyEmailRes, _ error) {
+func (UnimplementedHandler) SiteAuthVerifyEmail(ctx context.Context, req *SiteVerifyEmailInput, params SiteAuthVerifyEmailParams) (r SiteAuthVerifyEmailRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

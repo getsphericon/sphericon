@@ -599,9 +599,9 @@ export const zSiteRecoveryCodesInput = z.object({
 });
 
 /**
- * Register with a name and an email: no password is taken before the address is
- * proven (ADR 0030). Only an install with `SPHERICON_REQUIRE_EMAIL_VERIFICATION=false` takes a
- * password here.
+ * Register with a name, an email and a password. The User stays Unverified until the
+ * address is proven (ADR 0030); the password is trusted only when the verification link
+ * is opened in the browser that registered.
  */
 export const zSiteRegisterInput = z.object({
   name: z.string(),
@@ -1014,11 +1014,11 @@ export const zSiteUpdateWorkspaceInput = z.object({
 });
 
 /**
- * Prove an email address with the token sent to it and set the password
+ * Prove an email address with the token sent to it
  */
 export const zSiteVerifyEmailInput = z.object({
   token: z.string(),
-  password: z.string()
+  password: z.exactOptional(z.string())
 });
 
 /**
@@ -1249,7 +1249,6 @@ export const zSiteAuditEntryResource = z.object({
   occurredAt: zTimestamp,
   actor: zSiteAuditActor,
   action: z.string(),
-  billing: z.boolean(),
   target: zSiteAuditTarget,
   diff: z.exactOptional(z.record(z.string(), z.unknown()).nullable()),
   requestId: z.exactOptional(z.string().nullable()),
@@ -1614,7 +1613,7 @@ export const zSiteWorkspaceHold = z.object({
   reasonCode: z.string(),
   message: z.string(),
   since: zTimestamp,
-  billing: z.boolean()
+  actionUrl: z.exactOptional(z.string().nullable())
 });
 
 /**
@@ -1630,7 +1629,6 @@ export const zSiteWorkspaceResource = z.object({
   suspendedAt: z.exactOptional(zTimestamp.nullable()),
   suspensionReason: z.exactOptional(z.string().nullable()),
   supportEmail: z.exactOptional(z.string().nullable()),
-  billingUrl: z.exactOptional(z.string().nullable()),
   mcpUrl: z.string(),
   holds: z.array(zSiteWorkspaceHold),
   secondFactorRequiredAt: z.exactOptional(zTimestamp.nullable()),

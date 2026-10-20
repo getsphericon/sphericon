@@ -196,12 +196,10 @@ func (env *TestEnv) mintSiteToken(ctx context.Context, email string, edit func(*
 		DisableXSRF:  true,
 	})
 	claims := gptoken.Claims{
-		RegisteredClaims: jwt.RegisteredClaims{
-			Issuer:    "sphericon",
-			Audience:  jwt.ClaimStrings{"sphericon"},
-			ExpiresAt: jwt.NewNumericDate(env.now().Add(env.sessionTTL)),
-		},
-		User: &gptoken.User{Name: email, ID: "test"},
+		Issuer:    "sphericon",
+		Audience:  jwt.ClaimStrings{"sphericon"},
+		ExpiresAt: jwt.NewNumericDate(env.now().Add(env.sessionTTL)),
+		User:      &gptoken.User{Name: email, ID: "test"},
 	}
 	// An unknown email leaves the claims unstamped: the site rejects the token.
 	if u, err := env.DB.User.Query().Where(user.Email(email)).Only(ctx); err == nil {

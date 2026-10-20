@@ -1,18 +1,22 @@
-import { Button, Card, Group, PasswordInput, Stack, Text, Title } from '@mantine/core'
+import { Button, Card, Group, Loader, PasswordInput, Stack, Text, Title } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications'
 import { useMutation } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { AnchorLink } from '../../components/RouterLink.tsx'
 import { siteAuthVerifyEmailMutation } from '../../generated/site/@tanstack/react-query.gen.ts'
+import { Route as indexRoute } from '../../routes/index.tsx'
 import { Route as loginRoute } from '../../routes/login.tsx'
 import { Route as verifyEmailRoute } from '../../routes/verify-email.tsx'
-import { getApiErrorMessage } from '../../utils/apiErrors.ts'
+import { getApiErrorMessage, hasErrorStatus } from '../../utils/apiErrors.ts'
 
-// Where the link in the verification email lands (ADR 0030): the token proves the
-// address and the password chosen here is the first one the account ever has.
+// Where the link in the verification email lands (ADR 0030). The page sends the token
+// alone first: in the browser that registered, the password from the registration form
+// stays and the answer starts the session. Anywhere else the answer is "password
+// needed", nothing has changed, and the form here sets the password that goes live.
 export function VerifyEmailPage() {
   const { t } = useTranslation()
   const { token } = verifyEmailRoute.useSearch()
@@ -26,13 +30,24 @@ export function VerifyEmailPage() {
     },
   })
 
+  // The link was not opened in the Registration browser: the form replaces the password.
+  const [needsPassword, setNeedsPassword] = useState(false)
+
   const mutation = useMutation({
     ...siteAuthVerifyEmailMutation(),
-    // The token is single use: drop it from the address so a reload does not offer the
-    // form again with a link that no longer works.
-    onSuccess: () => navigate({ to: verifyEmailRoute.to, search: { token: '' }, replace: true }),
+    // The session cookie is set by the answer: the root route sends the User into
+    // their first Workspace.
+    onSuccess: () => navigate({ to: indexRoute.to, replace: true }),
     onError: (error) => {
       form.setValues({ password: '', confirm: '' })
+      if (hasErrorStatus(error, [428])) {
+        setNeedsPassword(true)
+        return
+      }
+      // A refused link is spent, garbage or expired: the page says so instead of the form.
+      if (hasErrorStatus(error, [400]) || !needsPassword) {
+        return
+      }
       notifications.show({
         color: 'red',
         title: t(($) => $.verifyEmail.errorTitle),
@@ -44,25 +59,19 @@ export function VerifyEmailPage() {
     },
   })
 
-  if (mutation.isSuccess) {
-    return (
-      <Stack maw={460} mx="auto" mt="xl">
-        <Card withBorder padding="xl">
-          <Stack align="center" gap="sm">
-            <Title order={3}>{t(($) => $.verifyEmail.successTitle)}</Title>
-            <Text c="dimmed" ta="center">
-              {t(($) => $.verifyEmail.successBody)}
-            </Text>
-            <AnchorLink to={loginRoute.to} size="sm" mt="md">
-              {t(($) => $.verifyEmail.signIn)}
-            </AnchorLink>
-          </Stack>
-        </Card>
-      </Stack>
-    )
-  }
+  const { mutate } = mutation
 
-  if (token === '') {
+  // Fire once on mount, with no password; the ref guards against StrictMode's double-invoke.
+  const fired = useRef(false)
+  useEffect(() => {
+    if (fired.current || token === '') {
+      return
+    }
+    fired.current = true
+    mutate({ body: { token } })
+  }, [mutate, token])
+
+  if (token === '' || (mutation.isError && hasErrorStatus(mutation.error, [400]))) {
     return (
       <Stack maw={460} mx="auto" mt="xl">
         <Card withBorder padding="xl">
@@ -80,9 +89,40 @@ export function VerifyEmailPage() {
     )
   }
 
+  if (!needsPassword) {
+    return (
+      <Stack maw={460} mx="auto" mt="xl" align="center">
+        <Card withBorder w="100%" padding="xl">
+          <Stack align="center" gap="sm">
+            {mutation.isError ? (
+              <>
+                <Title order={3}>{t(($) => $.verifyEmail.errorTitle)}</Title>
+                <Text c="dimmed" ta="center">
+                  {t(($) => $.verifyEmail.errorMessage)}
+                </Text>
+                <Button onClick={() => mutate({ body: { token } })}>
+                  {t(($) => $.verifyEmail.retry)}
+                </Button>
+                <AnchorLink to={loginRoute.to} size="sm" mt="md">
+                  {t(($) => $.verifyEmail.signIn)}
+                </AnchorLink>
+              </>
+            ) : (
+              <>
+                <Loader />
+                <Text c="dimmed">{t(($) => $.verifyEmail.verifying)}</Text>
+              </>
+            )}
+          </Stack>
+        </Card>
+      </Stack>
+    )
+  }
+
   return (
     <Stack maw={420} mx="auto" mt="xl">
       <Title order={3}>{t(($) => $.verifyEmail.title)}</Title>
+      <Text c="dimmed">{t(($) => $.verifyEmail.otherBrowserBody)}</Text>
 
       <form
         onSubmit={form.onSubmit((values) =>

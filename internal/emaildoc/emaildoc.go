@@ -72,8 +72,8 @@ func DefaultLimits() Limits {
 		MaxBytes:     256 << 10,
 		MaxDepth:     24,
 		MaxNodes:     3000,
-		Timeout:      30 * time.Second,
-		StartTimeout: 2 * time.Minute,
+		Timeout:      30 * time.Second * raceSlowdown,
+		StartTimeout: 2 * time.Minute * raceSlowdown,
 		MemoryGrowth: 384 << 20,
 	}
 }

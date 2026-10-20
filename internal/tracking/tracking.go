@@ -164,10 +164,10 @@ type ConfirmTarget struct {
 // numeric date so DecodeConfirm can reject a stale link.
 func (t *Tracker) confirmToken(target ConfirmTarget) (string, error) {
 	return t.sign(&confirmClaims{
-		RegisteredClaims: jwt.RegisteredClaims{ExpiresAt: jwt.NewNumericDate(time.Now().Add(confirmTTL))},
-		Destination:      target.Destination,
-		WorkspaceID:      target.WorkspaceID,
-		ContactID:        target.ContactID,
+		ExpiresAt:   jwt.NewNumericDate(time.Now().Add(confirmTTL)),
+		Destination: target.Destination,
+		WorkspaceID: target.WorkspaceID,
+		ContactID:   target.ContactID,
 	})
 }
 

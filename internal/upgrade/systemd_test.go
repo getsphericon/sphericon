@@ -97,6 +97,6 @@ func TestRestartFailsWhenTheServiceDoesNotBecomeActive(t *testing.T) {
 
 	_, err := upgrade.Step(t.Context(), s.restartOpts(""))
 
-	assert.ErrorContains(t, err, "sphericon is failed")
+	require.ErrorContains(t, err, "sphericon is failed")
 	assert.FileExists(t, filepath.Join(s.install, "sphericon.old"))
 }

@@ -141,7 +141,7 @@ func TestEventConditions(t *testing.T) {
 	assert.Equal(t, 1, count(segments.Group{Kind: "group", Combinator: "and", Rules: marshal(rule("event:page_view", "notPerformed", ""))}))
 
 	// validation: bad operator + non-numeric window are rejected.
-	assert.Error(t, validate(t, env, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"event:x","operator":"weird","value":""}]}`))
+	require.Error(t, validate(t, env, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"event:x","operator":"weird","value":""}]}`))
 	assert.Error(t, validate(t, env, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"event:x","operator":"performed","value":"soon"}]}`))
 }
 
@@ -202,9 +202,9 @@ func TestParseAndValidate(t *testing.T) {
 	require.NoError(t, validate(t, env, `{"kind":"group","combinator":"and","rules":[{"kind":"group","combinator":"or","rules":[{"kind":"rule","field":"first_name","operator":"eq","value":"Ann"}]}]}`))
 
 	// unknown field
-	assert.Error(t, validate(t, env, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`))
+	require.Error(t, validate(t, env, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`))
 	// unsupported operator
-	assert.Error(t, validate(t, env, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"email","operator":"weird","value":"x"}]}`))
+	require.Error(t, validate(t, env, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"email","operator":"weird","value":"x"}]}`))
 	// malformed JSON
 	assert.Error(t, validate(t, env, `{not json`))
 }

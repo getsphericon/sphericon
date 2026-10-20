@@ -53,8 +53,8 @@ func TestCatalogValidate(t *testing.T) {
 		messaging.ProviderDescriptor{Channel: messaging.ChannelEmail, Provider: messaging.ProviderSES},
 	)
 
-	assert.ErrorIs(t, cat.Validate(messaging.ChannelEmail, messaging.ProviderSMTP, nil), boom)
-	assert.NoError(t, cat.Validate(messaging.ChannelEmail, messaging.ProviderSES, nil), "no Validate hook means nothing to check")
+	require.ErrorIs(t, cat.Validate(messaging.ChannelEmail, messaging.ProviderSMTP, nil), boom)
+	require.NoError(t, cat.Validate(messaging.ChannelEmail, messaging.ProviderSES, nil), "no Validate hook means nothing to check")
 	assert.ErrorContains(t, cat.Validate(messaging.ChannelSMS, messaging.ProviderSES, nil), "unknown provider")
 }
 
@@ -84,10 +84,10 @@ func TestCatalogBuildEmail(t *testing.T) {
 	assert.NotNil(t, sender, "built sender is wrapped by the outcome counter, so assert behaviour in metrics_test.go")
 
 	_, err = cat.BuildEmail(messaging.ProviderSES, nil, nil)
-	assert.ErrorIs(t, err, boom)
+	require.ErrorIs(t, err, boom)
 
 	_, err = cat.BuildEmail(messaging.Provider("wrong"), nil, nil)
-	assert.ErrorContains(t, err, "did not build an EmailSender")
+	require.ErrorContains(t, err, "did not build an EmailSender")
 
 	_, err = cat.BuildEmail(messaging.Provider("missing"), nil, nil)
 	assert.ErrorContains(t, err, "unknown email provider")
@@ -95,7 +95,7 @@ func TestCatalogBuildEmail(t *testing.T) {
 
 func TestBuildMIMEInvalidAddresses(t *testing.T) {
 	_, err := messaging.BuildMIME(messaging.EmailMessage{From: "not-an-address", FromName: "Acme", To: "a@b.com", Text: "x"})
-	assert.ErrorContains(t, err, "invalid from address")
+	require.ErrorContains(t, err, "invalid from address")
 
 	_, err = messaging.BuildMIME(messaging.EmailMessage{From: "a@b.com", To: "not-an-address", Text: "x"})
 	assert.ErrorContains(t, err, "invalid to address")
@@ -110,7 +110,7 @@ func (f failingSigner) DKIMSigner(context.Context, string) (*mail.DKIMSigner, er
 func TestBuildSignedMIMEPropagatesBuildAndSignerErrors(t *testing.T) {
 	_, err := messaging.BuildSignedMIME(context.Background(),
 		messaging.EmailMessage{From: "bad", To: "a@b.com", Text: "x"}, failingSigner{})
-	assert.ErrorContains(t, err, "invalid from address")
+	require.ErrorContains(t, err, "invalid from address")
 
 	boom := errors.New("signer down")
 	_, err = messaging.BuildSignedMIME(context.Background(),
@@ -145,7 +145,7 @@ func TestDKIMSignerBrokenKeyMaterial(t *testing.T) {
 		Save(ctx)
 	require.NoError(t, err)
 	_, err = messaging.NewDKIMSigner(env.DB.Scoped(fixtures.AcmeID), cipher).DKIMSigner(ctx, "hi@garbled.acme.com")
-	assert.ErrorContains(t, err, "decrypt dkim key")
+	require.ErrorContains(t, err, "decrypt dkim key")
 
 	// Decrypts fine but is not a PEM private key.
 	sealed, err := cipher.Encrypt([]byte("definitely not PEM"))
@@ -189,7 +189,7 @@ func TestResolverErrors(t *testing.T) {
 	cancel()
 	_, err := resolver.EmailSender(canceled, env.DB.Scoped(fixtures.AcmeID))
 	require.Error(t, err)
-	assert.NotErrorIs(t, err, messaging.ErrNoProvider)
+	require.NotErrorIs(t, err, messaging.ErrNoProvider)
 
 	_, err = env.DB.Integration.Create().
 		SetWorkspaceID(fixtures.GlobexID).SetName("broken").SetProvider("smtp").

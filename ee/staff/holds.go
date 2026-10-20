@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -21,6 +22,10 @@ const DefaultHoldMaxExpiry = 30 * 24 * time.Hour
 // ErrHoldExpiryInPast refuses a hold that would already have lapsed.
 var ErrHoldExpiryInPast = errors.New("staff: a hold's expiry must be in the future")
 
+// ErrHoldActionURL refuses an action URL that is not an absolute https URL: it is shown
+// to the Workspace's Owners as a link, so no other scheme and no credentials in it.
+var ErrHoldActionURL = errors.New("staff: a hold's action URL must be an absolute https URL")
+
 // HoldTooLongError refuses a hold whose expiry is beyond the configured maximum.
 type HoldTooLongError struct{ Max time.Duration }
 
@@ -32,7 +37,9 @@ func (e *HoldTooLongError) Error() string {
 type HoldInput struct {
 	ReasonCode string
 	Message    string
-	ExpiresAt  time.Time
+	// ActionURL is where the Workspace's Owners and Admins can resolve the hold; nil for none.
+	ActionURL *string
+	ExpiresAt time.Time
 }
 
 // HoldChange is the outcome of setting or clearing a hold: the hold concerned (nil when
@@ -60,6 +67,11 @@ func (m *Module) SetHold(ctx context.Context, bus *events.Bus, cred *ent.Service
 	if in.ExpiresAt.After(now.Add(m.holdMax)) {
 		return HoldChange{}, &HoldTooLongError{Max: m.holdMax}
 	}
+	if in.ActionURL != nil {
+		if u, err := url.Parse(*in.ActionURL); err != nil || u.Scheme != "https" || u.Host == "" || u.User != nil {
+			return HoldChange{}, ErrHoldActionURL
+		}
+	}
 	s, err := m.holdScope(ctx, bus, cred, workspaceID)
 	if err != nil {
 		return HoldChange{}, err
@@ -71,7 +83,7 @@ func (m *Module) SetHold(ctx context.Context, bus *events.Bus, cred *ent.Service
 		switch {
 		case ent.IsNotFound(err):
 			created, err := s.Hold().Create().
-				SetKey(key).SetReasonCode(in.ReasonCode).SetMessage(in.Message).
+				SetKey(key).SetReasonCode(in.ReasonCode).SetMessage(in.Message).SetNillableActionURL(in.ActionURL).
 				SetExpiresAt(in.ExpiresAt).SetSetBy(cred.Name).
 				Save(ctx)
 			if ent.IsConstraintError(err) {
@@ -84,10 +96,15 @@ func (m *Module) SetHold(ctx context.Context, bus *events.Bus, cred *ent.Service
 		if sameHold(existing, in) {
 			return HoldChange{Hold: existing}, nil
 		}
-		updated, err := s.Hold().UpdateOneID(existing.ID).
+		update := s.Hold().UpdateOneID(existing.ID).
 			SetReasonCode(in.ReasonCode).SetMessage(in.Message).
-			SetExpiresAt(in.ExpiresAt).SetSetBy(cred.Name).
-			Save(ctx)
+			SetExpiresAt(in.ExpiresAt).SetSetBy(cred.Name)
+		if in.ActionURL != nil {
+			update.SetActionURL(*in.ActionURL)
+		} else {
+			update.ClearActionURL()
+		}
+		updated, err := update.Save(ctx)
 		return HoldChange{Hold: updated, Changed: err == nil}, err
 	}
 	return HoldChange{}, errors.New("staff: could not set the hold: it kept changing under us")
@@ -96,8 +113,15 @@ func (m *Module) SetHold(ctx context.Context, bus *events.Bus, cred *ent.Service
 // sameHold reports whether the stored hold already says what in says. Timestamps are
 // compared at the database's microsecond precision.
 func sameHold(h *ent.Hold, in HoldInput) bool {
-	return h.ReasonCode == in.ReasonCode && h.Message == in.Message &&
+	return h.ReasonCode == in.ReasonCode && h.Message == in.Message && equalStrings(h.ActionURL, in.ActionURL) &&
 		h.ExpiresAt.Truncate(time.Microsecond).Equal(in.ExpiresAt.Truncate(time.Microsecond))
+}
+
+func equalStrings(a, b *string) bool {
+	if a == nil || b == nil {
+		return a == b
+	}
+	return *a == *b
 }
 
 // ClearHold removes the hold under key. Clearing a missing hold succeeds. It is recorded
@@ -168,14 +192,14 @@ func (h *ServiceHandlers) ServiceHoldsList(ctx context.Context, params serviceap
 func (h *ServiceHandlers) ServiceHoldsSet(ctx context.Context, req *serviceapi.HoldInput, params serviceapi.ServiceHoldsSetParams) (serviceapi.ServiceHoldsSetRes, error) {
 	id := int64(params.WorkspaceId)
 	change, err := h.module.SetHold(ctx, h.bus, CurrentService(ctx), id, params.Key, HoldInput{
-		ReasonCode: req.ReasonCode, Message: req.Message, ExpiresAt: time.Time(req.ExpiresAt),
+		ReasonCode: req.ReasonCode, Message: req.Message, ActionURL: optNilString(req.ActionUrl), ExpiresAt: time.Time(req.ExpiresAt),
 	})
 	var tooLong *HoldTooLongError
 	switch {
 	case ent.IsNotFound(err):
 		p := serviceapi.ServiceHoldsSetNotFound(workspaceNotFoundProblem())
 		return &p, nil
-	case errors.Is(err, ErrHoldExpiryInPast), errors.As(err, &tooLong):
+	case errors.Is(err, ErrHoldExpiryInPast), errors.Is(err, ErrHoldActionURL), errors.As(err, &tooLong):
 		p := serviceapi.ServiceHoldsSetUnprocessableEntity{
 			Status: serviceapi.NewOptInt32(http.StatusUnprocessableEntity),
 			Title:  serviceapi.NewOptString(http.StatusText(http.StatusUnprocessableEntity)),
@@ -205,10 +229,25 @@ func (h *ServiceHandlers) ServiceHoldsClear(ctx context.Context, params servicea
 func holdResource(r *ent.Hold) serviceapi.HoldResource {
 	return serviceapi.HoldResource{
 		Key: r.Key, ReasonCode: r.ReasonCode, Message: r.Message, SetBy: r.SetBy,
+		ActionUrl: serviceNilableString(r.ActionURL),
 		ExpiresAt: serviceapi.Timestamp(r.ExpiresAt),
 		CreatedAt: serviceapi.Timestamp(r.CreatedAt),
 		UpdatedAt: serviceapi.Timestamp(r.UpdatedAt),
 	}
+}
+
+func optNilString(o serviceapi.OptNilString) *string {
+	if v, ok := o.Get(); ok {
+		return &v
+	}
+	return nil
+}
+
+func serviceNilableString(v *string) serviceapi.OptNilString {
+	if v == nil {
+		return serviceapi.OptNilString{}
+	}
+	return serviceapi.NewOptNilString(*v)
 }
 
 func workspaceNotFoundProblem() serviceapi.ProblemDetails {

@@ -45,7 +45,7 @@ func assertOneRefused(t *testing.T, w *Workspace, errs []error) {
 	failed := 0
 	for _, err := range errs {
 		if err != nil {
-			assert.ErrorIs(t, err, accounts.ErrLastOwner)
+			require.ErrorIs(t, err, accounts.ErrLastOwner)
 			failed++
 		}
 	}

@@ -67,7 +67,7 @@ func (Event) Fields() []ent.Field {
 			Nillable(),
 		field.String("action").
 			NotEmpty(),
-		field.JSON("properties", map[string]interface{}{}).
+		field.JSON("properties", map[string]any{}).
 			Optional(),
 		field.Time("occurred_at").
 			Optional().

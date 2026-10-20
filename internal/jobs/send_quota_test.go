@@ -28,8 +28,6 @@ func envCipher(t *testing.T) *secrets.Cipher {
 	return c
 }
 
-func intPtr(n int) *int { return &n }
-
 func TestRefreshSendQuotasWorkerFansOutOneJobPerSESIntegration(t *testing.T) {
 	e := newRiverEnv(t)
 	ses, err := e.DB.Integration.Query().Where(integration.ProviderEQ(integration.ProviderSes)).Count(t.Context())
@@ -67,16 +65,16 @@ func TestRefreshIntegrationQuotaFollowsAccountGrowthAndRecovers(t *testing.T) {
 	assert.True(t, effective().Unlimited())
 
 	// A sandbox account, then the account matures: each hourly run follows it.
-	fake.SetQuota(messaging.Quota{PerSecond: intPtr(1), PerDay: intPtr(200)})
+	fake.SetQuota(messaging.Quota{PerSecond: new(1), PerDay: new(200)})
 	run()
 	eff := effective()
 	assert.False(t, eff.ProviderQuotaUnavailable, "a later success clears the warning")
-	assert.Equal(t, sendlimit.Value{Limit: intPtr(1), Source: sendlimit.SourceProvider}, eff.PerSecond)
+	assert.Equal(t, sendlimit.Value{Limit: new(1), Source: sendlimit.SourceProvider}, eff.PerSecond)
 
-	fake.SetQuota(messaging.Quota{PerSecond: intPtr(14), PerDay: intPtr(50000)})
+	fake.SetQuota(messaging.Quota{PerSecond: new(14), PerDay: new(50000)})
 	run()
-	assert.Equal(t, sendlimit.Value{Limit: intPtr(14), Source: sendlimit.SourceProvider}, effective().PerSecond)
-	assert.Equal(t, sendlimit.Value{Limit: intPtr(50000), Source: sendlimit.SourceProvider}, effective().PerDay)
+	assert.Equal(t, sendlimit.Value{Limit: new(14), Source: sendlimit.SourceProvider}, effective().PerSecond)
+	assert.Equal(t, sendlimit.Value{Limit: new(50000), Source: sendlimit.SourceProvider}, effective().PerDay)
 }
 
 func TestRefreshIntegrationQuotaOfADeletedIntegrationIsNothingToDo(t *testing.T) {

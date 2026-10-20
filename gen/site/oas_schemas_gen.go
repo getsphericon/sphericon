@@ -4096,7 +4096,6 @@ func (*ProblemDetails) siteAnalyticsOverviewRes()              {}
 func (*ProblemDetails) siteAuthConfirmEmailChangeRes()         {}
 func (*ProblemDetails) siteAuthResetPasswordRes()              {}
 func (*ProblemDetails) siteAuthSecondFactorRes()               {}
-func (*ProblemDetails) siteAuthVerifyEmailRes()                {}
 func (*ProblemDetails) siteBrandKitGetRes()                    {}
 func (*ProblemDetails) siteEventsActionsRes()                  {}
 func (*ProblemDetails) siteEventsListRes()                     {}
@@ -4978,9 +4977,6 @@ type SiteAuditEntryResource struct {
 	Actor SiteAuditActor `json:"actor"`
 	// What was done, as `<entity>.<verb>`.
 	Action string `json:"action"`
-	// True when the change set, renewed or lifted a billing hold (reason code `non_payment` or
-	// `free_plan_cap`): shown as billing activity.
-	Billing bool `json:"billing"`
 	// What it was done to.
 	Target SiteAuditTarget `json:"target"`
 	// Before/after of the changed fields; secrets appear as changed only.
@@ -5011,11 +5007,6 @@ func (s *SiteAuditEntryResource) GetActor() SiteAuditActor {
 // GetAction returns the value of Action.
 func (s *SiteAuditEntryResource) GetAction() string {
 	return s.Action
-}
-
-// GetBilling returns the value of Billing.
-func (s *SiteAuditEntryResource) GetBilling() bool {
-	return s.Billing
 }
 
 // GetTarget returns the value of Target.
@@ -5061,11 +5052,6 @@ func (s *SiteAuditEntryResource) SetActor(val SiteAuditActor) {
 // SetAction sets the value of Action.
 func (s *SiteAuditEntryResource) SetAction(val string) {
 	s.Action = val
-}
-
-// SetBilling sets the value of Billing.
-func (s *SiteAuditEntryResource) SetBilling(val bool) {
-	s.Billing = val
 }
 
 // SetTarget sets the value of Target.
@@ -5310,7 +5296,19 @@ func (s *SiteAuthLogoutNoContent) SetSetCookie(val string) {
 }
 
 // SiteAuthRegisterAccepted is response for SiteAuthRegister operation.
-type SiteAuthRegisterAccepted struct{}
+type SiteAuthRegisterAccepted struct {
+	SetCookie OptString
+}
+
+// GetSetCookie returns the value of SetCookie.
+func (s *SiteAuthRegisterAccepted) GetSetCookie() OptString {
+	return s.SetCookie
+}
+
+// SetSetCookie sets the value of SetCookie.
+func (s *SiteAuthRegisterAccepted) SetSetCookie(val OptString) {
+	s.SetCookie = val
+}
 
 func (*SiteAuthRegisterAccepted) siteAuthRegisterRes() {}
 
@@ -5336,10 +5334,30 @@ type SiteAuthResetPasswordOK struct{}
 
 func (*SiteAuthResetPasswordOK) siteAuthResetPasswordRes() {}
 
+type SiteAuthVerifyEmailBadRequest ProblemDetails
+
+func (*SiteAuthVerifyEmailBadRequest) siteAuthVerifyEmailRes() {}
+
 // SiteAuthVerifyEmailOK is response for SiteAuthVerifyEmail operation.
-type SiteAuthVerifyEmailOK struct{}
+type SiteAuthVerifyEmailOK struct {
+	SetCookie string
+}
+
+// GetSetCookie returns the value of SetCookie.
+func (s *SiteAuthVerifyEmailOK) GetSetCookie() string {
+	return s.SetCookie
+}
+
+// SetSetCookie sets the value of SetCookie.
+func (s *SiteAuthVerifyEmailOK) SetSetCookie(val string) {
+	s.SetCookie = val
+}
 
 func (*SiteAuthVerifyEmailOK) siteAuthVerifyEmailRes() {}
+
+type SiteAuthVerifyEmailPreconditionRequired ProblemDetails
+
+func (*SiteAuthVerifyEmailPreconditionRequired) siteAuthVerifyEmailRes() {}
 
 // Closed error kind of an HTTP step's body.
 // Ref: #/components/schemas/SiteAutomationHttpErrorKind
@@ -10663,14 +10681,15 @@ func (s *SiteRecoveryCodesInput) SetCurrentPassword(val string) {
 	s.CurrentPassword = val
 }
 
-// Register with a name and an email: no password is taken before the address is proven (ADR 0030).
-// Only an install with `SPHERICON_REQUIRE_EMAIL_VERIFICATION=false` takes a password here.
+// Register with a name, an email and a password. The User stays Unverified until the address is proven
+// (ADR 0030); the password is trusted only when the verification link is opened in the browser that
+// registered.
 // Ref: #/components/schemas/SiteRegisterInput
 type SiteRegisterInput struct {
 	Name  string       `json:"name"`
 	Email EmailAddress `json:"email"`
-	// Required when the install does not require email verification, where it makes the account usable at
-	// once. Otherwise ignored and never stored: the password is set by the verification link.
+	// Required whenever sign-up is open. Stored hashed on the Unverified User; a repeated registration of
+	// the address replaces it.
 	Password OptString `json:"password"`
 }
 
@@ -14651,11 +14670,13 @@ type SiteUserUpdateMeUnprocessableEntity ProblemDetails
 
 func (*SiteUserUpdateMeUnprocessableEntity) siteUserUpdateMeRes() {}
 
-// Prove an email address with the token sent to it and set the password.
+// Prove an email address with the token sent to it.
 // Ref: #/components/schemas/SiteVerifyEmailInput
 type SiteVerifyEmailInput struct {
-	Token    string `json:"token"`
-	Password string `json:"password"`
+	Token string `json:"token"`
+	// Needed only when the link is not opened in the Registration browser: it replaces the password given
+	// at registration. Ignored in the Registration browser.
+	Password OptString `json:"password"`
 }
 
 // GetToken returns the value of Token.
@@ -14664,7 +14685,7 @@ func (s *SiteVerifyEmailInput) GetToken() string {
 }
 
 // GetPassword returns the value of Password.
-func (s *SiteVerifyEmailInput) GetPassword() string {
+func (s *SiteVerifyEmailInput) GetPassword() OptString {
 	return s.Password
 }
 
@@ -14674,7 +14695,7 @@ func (s *SiteVerifyEmailInput) SetToken(val string) {
 }
 
 // SetPassword sets the value of Password.
-func (s *SiteVerifyEmailInput) SetPassword(val string) {
+func (s *SiteVerifyEmailInput) SetPassword(val OptString) {
 	s.Password = val
 }
 
@@ -15161,9 +15182,8 @@ type SiteWorkspaceHold struct {
 	Message string `json:"message"`
 	// When the hold was set.
 	Since Timestamp `json:"since"`
-	// True for a billing hold (reason code `non_payment` or `free_plan_cap`): sending is paused for a
-	// money reason, not for abuse.
-	Billing bool `json:"billing"`
+	// Where an Owner or Admin can resolve the hold, as the setter gave it; absent when none was given.
+	ActionUrl OptNilString `json:"actionUrl"`
 }
 
 // GetKey returns the value of Key.
@@ -15186,9 +15206,9 @@ func (s *SiteWorkspaceHold) GetSince() Timestamp {
 	return s.Since
 }
 
-// GetBilling returns the value of Billing.
-func (s *SiteWorkspaceHold) GetBilling() bool {
-	return s.Billing
+// GetActionUrl returns the value of ActionUrl.
+func (s *SiteWorkspaceHold) GetActionUrl() OptNilString {
+	return s.ActionUrl
 }
 
 // SetKey sets the value of Key.
@@ -15211,9 +15231,9 @@ func (s *SiteWorkspaceHold) SetSince(val Timestamp) {
 	s.Since = val
 }
 
-// SetBilling sets the value of Billing.
-func (s *SiteWorkspaceHold) SetBilling(val bool) {
-	s.Billing = val
+// SetActionUrl sets the value of ActionUrl.
+func (s *SiteWorkspaceHold) SetActionUrl(val OptNilString) {
+	s.ActionUrl = val
 }
 
 // Workspace the current user belongs to.
@@ -15242,9 +15262,6 @@ type SiteWorkspaceResource struct {
 	// Where to appeal a suspension by email (SPHERICON_SUPPORT_EMAIL); absent when the instance configured
 	// none.
 	SupportEmail OptNilString `json:"supportEmail"`
-	// The billing site a member under a hold is pointed to (SPHERICON_BILLING_URL); absent when the
-	// instance configured none, and then no billing text is shown.
-	BillingUrl OptNilString `json:"billingUrl"`
 	// The public origin an AI agent connects to as `<mcpUrl>/mcp`: SPHERICON_MCP_URL when MCP has its own
 	// host, otherwise the app origin.
 	McpUrl string `json:"mcpUrl"`
@@ -15309,11 +15326,6 @@ func (s *SiteWorkspaceResource) GetSuspensionReason() OptNilString {
 // GetSupportEmail returns the value of SupportEmail.
 func (s *SiteWorkspaceResource) GetSupportEmail() OptNilString {
 	return s.SupportEmail
-}
-
-// GetBillingUrl returns the value of BillingUrl.
-func (s *SiteWorkspaceResource) GetBillingUrl() OptNilString {
-	return s.BillingUrl
 }
 
 // GetMcpUrl returns the value of McpUrl.
@@ -15389,11 +15401,6 @@ func (s *SiteWorkspaceResource) SetSuspensionReason(val OptNilString) {
 // SetSupportEmail sets the value of SupportEmail.
 func (s *SiteWorkspaceResource) SetSupportEmail(val OptNilString) {
 	s.SupportEmail = val
-}
-
-// SetBillingUrl sets the value of BillingUrl.
-func (s *SiteWorkspaceResource) SetBillingUrl(val OptNilString) {
-	s.BillingUrl = val
 }
 
 // SetMcpUrl sets the value of McpUrl.

@@ -56,7 +56,7 @@ func TestInviteOwnsTokenHashAndExpiry(t *testing.T) {
 		_, token, err := acc.Invite(ctx, s, actor, accounts.InviteInput{Email: "invited@acme.test", Role: invitation.RoleMember, InvitedBy: fixtures.OwnerJohnID})
 		require.NoError(t, err)
 		_, err = acc.PendingInvitation(ctx, "inv_fixture_token_acme")
-		assert.Error(t, err, "the fixture token was rotated away")
+		require.Error(t, err, "the fixture token was rotated away")
 		_, err = acc.PendingInvitation(ctx, token)
 		assert.NoError(t, err)
 	})

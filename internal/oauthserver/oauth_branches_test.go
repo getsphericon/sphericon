@@ -163,11 +163,11 @@ func TestServiceDescribeValidatesClientRedirectAndScope(t *testing.T) {
 	s := newService(env.DB)
 
 	_, err := s.Describe(t.Context(), "no-such-client", fixtureRedirectURI, "")
-	assert.ErrorIs(t, err, oauthserver.ErrUnknownClient)
+	require.ErrorIs(t, err, oauthserver.ErrUnknownClient)
 	_, err = s.Describe(t.Context(), fixtureClientID, fixtureRedirectURI+"/", "")
-	assert.ErrorIs(t, err, oauthserver.ErrInvalidRequest, "the redirect_uri must match exactly, not by prefix")
+	require.ErrorIs(t, err, oauthserver.ErrInvalidRequest, "the redirect_uri must match exactly, not by prefix")
 	_, err = s.Describe(t.Context(), fixtureClientID, fixtureRedirectURI, "bogus nonsense")
-	assert.ErrorIs(t, err, oauthserver.ErrInvalidRequest, "a request for only unsupported scopes grants nothing")
+	require.ErrorIs(t, err, oauthserver.ErrInvalidRequest, "a request for only unsupported scopes grants nothing")
 
 	req, err := s.Describe(t.Context(), fixtureClientID, fixtureRedirectURI, "")
 	require.NoError(t, err)
@@ -209,7 +209,7 @@ func TestServiceDecideRecordsOnlyWellFormedApprovals(t *testing.T) {
 	d := good
 	d.ClientID = "no-such-client"
 	_, err := s.Decide(t.Context(), d)
-	assert.ErrorIs(t, err, oauthserver.ErrUnknownClient)
+	require.ErrorIs(t, err, oauthserver.ErrUnknownClient)
 
 	// A denial needs no PKCE or scope, only a registered client and redirect.
 	denied := good

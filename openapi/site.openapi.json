@@ -2,7 +2,8 @@
   "openapi": "3.0.0",
   "info": {
     "title": "Sphericon Site API",
-    "version": "1.0.0"
+    "version": "1.0.0",
+    "description": "The API of the Sphericon web app, authenticated by the session cookie."
   },
   "tags": [
     {
@@ -340,11 +341,20 @@
     "/auth/register": {
       "post": {
         "operationId": "SiteAuth_register",
-        "description": "Create an Unverified User (ADR 0030): no password, no session, no Workspace.\nA verification email with the link to the set-password screen is on its way\n(202), and 202 is the answer for every address, taken or not (ADR 0031): the\nowner of a taken address gets a notice by mail instead. With\n`SPHERICON_REQUIRE_EMAIL_VERIFICATION=false` there is no mail to carry that notice: the\nrequest must carry a password (422 otherwise), creates a Verified User with its\nfirst Workspace at once (202, no session: the User signs in next), and a taken\naddress answers 409. An Instance that closed sign-up\n(`SPHERICON_SIGNUP_OPEN=false`, ADR 0042) answers 403 with code `signup_closed`\nbefore anything is read or created; accepting an Invitation still works.",
+        "description": "Create an Unverified User (ADR 0030): no session, no Workspace. A verification\nemail with the link is on its way (202), and 202 is the answer for every address,\ntaken or not (ADR 0031): the owner of a taken address gets a notice by mail\ninstead. The answer always sets the registration cookie (httpOnly, SameSite=Strict,\nscoped to the auth prefix shared by verify and resend), which binds the link to this browser, so the\nheader does not say whether the address is taken either. The password is required\n(422 otherwise). With `SPHERICON_REQUIRE_EMAIL_VERIFICATION=false` there is no\nmail to carry that notice and no link: the request creates a Verified User with its\nfirst Workspace at once (202, no session and no cookie: the User signs in next), and\na taken address answers 409. An Instance that closed sign-up\n(`SPHERICON_SIGNUP_OPEN=false`, ADR 0042) answers 403 with code `signup_closed`\nbefore anything is read or created; accepting an Invitation still works.",
         "parameters": [],
         "responses": {
           "202": {
-            "description": "The request has been accepted for processing, but processing has not yet completed."
+            "description": "The request has been accepted for processing, but processing has not yet completed.",
+            "headers": {
+              "Set-Cookie": {
+                "required": false,
+                "description": "The registration cookie, absent when the install does not require verification",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "403": {
             "description": "RFC 7807 forbidden response",
@@ -439,7 +449,18 @@
       "post": {
         "operationId": "SiteAuth_resendVerification",
         "description": "Send the verification link again to an Unverified User. Answers 202 the same\nway whether the address is unknown, already verified or unverified, so it adds no\nenumeration; only an Unverified User gets a mail. Rate limited per IP\nlike registration.",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "REG",
+            "in": "cookie",
+            "required": false,
+            "description": "The registration cookie of the browser asking, if any: the new link binds to\nwhatever cookie the caller holds and then signs that browser in without a\npassword",
+            "schema": {
+              "type": "string"
+            },
+            "explode": false
+          }
+        ],
         "responses": {
           "202": {
             "description": "The request has been accepted for processing, but processing has not yet completed."
@@ -634,14 +655,44 @@
     "/auth/verify-email": {
       "post": {
         "operationId": "SiteAuth_verifyEmail",
-        "description": "Complete a registration from the verification link (the token is the\ncredential): stamps the Verified email, sets the password, ends every earlier\nsession, creates the User's first Workspace and sends the welcome email. The\nUser then signs in; the link alone starts no session. A link is single use and\nscoped to the address it was sent to. Rate limited like registration.",
-        "parameters": [],
+        "description": "Complete a registration from the verification link (the token is the\ncredential): stamps the Verified email, ends every earlier session, creates the\nUser's first Workspace, sends the welcome email and starts the session (the cookie\nis issued after the epoch bump, as login does, ADR 0020). When the request carries\nthe registration cookie the link was minted for, the password from registration\nstays; otherwise the request must carry a password, which replaces it, and without\none the answer is 428 and nothing changes, the link stays valid (a mail scanner\nconsumes nothing). A link is single use and scoped to the address it was sent to.\nRate limited like registration.",
+        "parameters": [
+          {
+            "name": "REG",
+            "in": "cookie",
+            "required": false,
+            "description": "The registration cookie of the browser that registered, if any. Its path is the\nauth prefix shared with resend, and it is SameSite=Strict: not sent on the\ncross-site click from the mail, but sent on the page's own later request.",
+            "schema": {
+              "type": "string"
+            },
+            "explode": false
+          }
+        ],
         "responses": {
           "200": {
-            "description": "The request has succeeded."
+            "description": "The request has succeeded.",
+            "headers": {
+              "Set-Cookie": {
+                "required": true,
+                "description": "The session cookie of the verified User",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "400": {
             "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "428": {
+            "description": "RFC 7807 precondition required response: the request needs something it did not carry\n(a verification link opened outside its Registration browser needs a password, ADR 0030)",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -8858,7 +8909,7 @@
       },
       "SiteAuditEntryResource": {
         "type": "object",
-        "required": ["id", "occurredAt", "actor", "action", "billing", "target"],
+        "required": ["id", "occurredAt", "actor", "action", "target"],
         "properties": {
           "id": {
             "allOf": [
@@ -8887,10 +8938,6 @@
           "action": {
             "type": "string",
             "description": "What was done, as `<entity>.<verb>`"
-          },
-          "billing": {
-            "type": "boolean",
-            "description": "True when the change set, renewed or lifted a billing hold (reason code `non_payment` or `free_plan_cap`): shown as billing activity"
           },
           "target": {
             "allOf": [
@@ -10902,10 +10949,10 @@
           },
           "password": {
             "type": "string",
-            "description": "Required when the install does not require email verification, where it makes\nthe account usable at once. Otherwise ignored and never stored: the password is\nset by the verification link."
+            "description": "Required whenever sign-up is open. Stored hashed on the Unverified User; a repeated\nregistration of the address replaces it."
           }
         },
-        "description": "Register with a name and an email: no password is taken before the address is\nproven (ADR 0030). Only an install with `SPHERICON_REQUIRE_EMAIL_VERIFICATION=false` takes a\npassword here."
+        "description": "Register with a name, an email and a password. The User stays Unverified until the\naddress is proven (ADR 0030); the password is trusted only when the verification link\nis opened in the browser that registered."
       },
       "SiteResendVerificationInput": {
         "type": "object",
@@ -12182,16 +12229,17 @@
       },
       "SiteVerifyEmailInput": {
         "type": "object",
-        "required": ["token", "password"],
+        "required": ["token"],
         "properties": {
           "token": {
             "type": "string"
           },
           "password": {
-            "type": "string"
+            "type": "string",
+            "description": "Needed only when the link is not opened in the Registration browser: it replaces\nthe password given at registration. Ignored in the Registration browser."
           }
         },
-        "description": "Prove an email address with the token sent to it and set the password"
+        "description": "Prove an email address with the token sent to it"
       },
       "SiteWebhookDisabledReason": {
         "type": "string",
@@ -12336,7 +12384,7 @@
       },
       "SiteWorkspaceHold": {
         "type": "object",
-        "required": ["key", "reasonCode", "message", "since", "billing"],
+        "required": ["key", "reasonCode", "message", "since"],
         "properties": {
           "key": {
             "type": "string",
@@ -12358,9 +12406,10 @@
             ],
             "description": "When the hold was set"
           },
-          "billing": {
-            "type": "boolean",
-            "description": "True for a billing hold (reason code `non_payment` or `free_plan_cap`): sending is paused for a money reason, not for abuse"
+          "actionUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "Where an Owner or Admin can resolve the hold, as the setter gave it; absent when none was given"
           }
         },
         "description": "A Staff hold on the Workspace's outbound sending (ADR 0009), as the Workspace's\nmembers see it. It is not a suspension: it is set from outside, carries its own\nmessage, and lifts by itself at its expiry."
@@ -12431,11 +12480,6 @@
             "type": "string",
             "nullable": true,
             "description": "Where to appeal a suspension by email (SPHERICON_SUPPORT_EMAIL); absent when the instance\nconfigured none."
-          },
-          "billingUrl": {
-            "type": "string",
-            "nullable": true,
-            "description": "The billing site a member under a hold is pointed to (SPHERICON_BILLING_URL); absent when the\ninstance configured none, and then no billing text is shown."
           },
           "mcpUrl": {
             "type": "string",

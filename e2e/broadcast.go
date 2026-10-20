@@ -69,10 +69,10 @@ func (w *Workspace) createBroadcast(b Broadcast) externalapi.EntityId {
 }
 
 // docObject is a document's JSON as the opaque object the external API takes.
-func docObject[M ~map[string]jx.Raw](t testing.TB, doc json.RawMessage) M {
-	t.Helper()
+func docObject[M ~map[string]jx.Raw](tb testing.TB, doc json.RawMessage) M {
+	tb.Helper()
 	var fields map[string]json.RawMessage
-	require.NoError(t, json.Unmarshal(doc, &fields), "the document is a JSON object")
+	require.NoError(tb, json.Unmarshal(doc, &fields), "the document is a JSON object")
 	out := make(M, len(fields))
 	for k, v := range fields {
 		out[k] = jx.Raw(v)

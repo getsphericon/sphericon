@@ -208,7 +208,7 @@ func TestSendToRecipientOutcomes(t *testing.T) {
 		err = jobs.SendToRecipient(ctx, env.DB, newMod(env, resolvingTo(&fakeSender{})), ids[0])
 		require.Error(t, err)
 		var held *jobs.HeldError
-		assert.ErrorAs(t, err, &held)
+		require.ErrorAs(t, err, &held)
 		assert.Equal(t, broadcastrecipient.StatusPending, status(env, ids[0]))
 	})
 

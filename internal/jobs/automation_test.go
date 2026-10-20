@@ -26,7 +26,7 @@ const emailStep = `{"type":"email","subject":"Hi {{ first_name }}","body":"<p>Hi
 func drive(t *testing.T, env *testhelper.TestEnv, resolver outbound.Senders, runID int64) {
 	t.Helper()
 	ctx := context.Background()
-	for i := 0; i < 20; i++ {
+	for range 20 {
 		res, err := jobs.RunStep(ctx, env.DB, newMod(env, resolver), runID)
 		require.NoError(t, err)
 		if res.Done {

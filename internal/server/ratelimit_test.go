@@ -119,7 +119,7 @@ func TestARejectionCarriesCORSHeaders(t *testing.T) {
 func TestTheGeneratedClientTypesTheRateLimitResponse(t *testing.T) {
 	env := testhelper.Setup(t, withHumanLimit(1))
 	client := env.SiteAnonymous(t)
-	input := &siteapi.SiteRegisterInput{Name: "Eve", Email: "eve@example.test"}
+	input := &siteapi.SiteRegisterInput{Name: "Eve", Email: "eve@example.test", Password: siteapi.NewOptString("eve-password-1")}
 
 	_, err := client.SiteAuthRegister(t.Context(), input)
 	require.NoError(t, err)

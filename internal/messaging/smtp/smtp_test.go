@@ -206,7 +206,7 @@ func TestSendErrors(t *testing.T) {
 		srv := newTestServer(ctx, t, false)
 		sender := build(t, smtp.Config{Host: "127.0.0.1", Port: srv.port, From: "noreply@acme.com"})
 		_, err := sender.Send(ctx, messaging.EmailMessage{To: "not-an-address", Text: "x"})
-		assert.ErrorContains(t, err, "invalid to address")
+		require.ErrorContains(t, err, "invalid to address")
 		assert.Empty(t, srv.captured())
 	})
 
@@ -214,7 +214,7 @@ func TestSendErrors(t *testing.T) {
 		srv := newTestServer(ctx, t, true)
 		sender := build(t, smtp.Config{Host: "127.0.0.1", Port: srv.port, From: "noreply@acme.com"})
 		_, err := sender.Send(ctx, msg)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Empty(t, srv.captured())
 	})
 
@@ -223,7 +223,7 @@ func TestSendErrors(t *testing.T) {
 		srv.dataReply = "454 4.7.0 Throttling failure: Maximum sending rate exceeded."
 		sender := build(t, smtp.Config{Host: "127.0.0.1", Port: srv.port, From: "noreply@acme.com"})
 		_, err := sender.Send(ctx, msg)
-		assert.ErrorIs(t, err, messaging.ErrBusy)
+		require.ErrorIs(t, err, messaging.ErrBusy)
 		assert.NotErrorIs(t, err, messaging.ErrQuotaExceeded)
 	})
 
@@ -305,7 +305,7 @@ func TestBuildRejectsMalformedConfig(t *testing.T) {
 
 func TestDescriptorRefusesNonMailPortsUnlessPrivateAllowed(t *testing.T) {
 	cfg := []byte(`{"host":"smtp.example.com","port":6379,"from":"a@b.com"}`)
-	assert.ErrorContains(t, smtp.Descriptor().Validate(cfg), "port must be one of")
+	require.ErrorContains(t, smtp.Descriptor().Validate(cfg), "port must be one of")
 	assert.NoError(t, smtp.NewDescriptor(true).Validate(cfg))
 }
 
@@ -316,6 +316,6 @@ func TestSendRefusesAPrivateHostUnlessAllowed(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = built.(messaging.EmailSender).Send(context.Background(), messaging.EmailMessage{To: "r@example.com", Subject: "s", Text: "t"})
-	assert.ErrorContains(t, err, "non-public address")
+	require.ErrorContains(t, err, "non-public address")
 	assert.Empty(t, srv.captured())
 }

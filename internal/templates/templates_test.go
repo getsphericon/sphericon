@@ -13,8 +13,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func ptr[T any](v T) *T { return &v }
-
 func TestListIsAscendingByIDAndPaged(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := templates.New()
@@ -50,7 +48,7 @@ func TestCreateStoresTheTemplate(t *testing.T) {
 	m := templates.New()
 	ctx := context.Background()
 
-	tpl, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), templates.CreateInput{Name: "New", Subject: ptr("Hi")})
+	tpl, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), templates.CreateInput{Name: "New", Subject: new("Hi")})
 	require.NoError(t, err)
 	assert.EqualValues(t, fixtures.AcmeID, tpl.WorkspaceID)
 	assert.Equal(t, "Hi", tpl.Subject)
@@ -74,7 +72,7 @@ func TestUpdateRefusesABlankNameAndLeavesTheRow(t *testing.T) {
 	m := templates.New()
 	ctx := context.Background()
 
-	_, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateWelcomeID, templates.UpdateInput{Name: ptr("")})
+	_, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateWelcomeID, templates.UpdateInput{Name: new("")})
 	require.ErrorIs(t, err, templates.ErrBlankName)
 	assert.Equal(t, fixtures.TemplateWelcomeName, env.DB.EmailTemplate.GetX(ctx, fixtures.TemplateWelcomeID).Name)
 }
@@ -84,12 +82,12 @@ func TestUpdateChangesGivenFieldsOnly(t *testing.T) {
 	m := templates.New()
 	ctx := context.Background()
 
-	got, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateWelcomeID, templates.UpdateInput{Subject: ptr("Changed")})
+	got, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateWelcomeID, templates.UpdateInput{Subject: new("Changed")})
 	require.NoError(t, err)
 	assert.Equal(t, "Changed", got.Subject)
 	assert.Equal(t, fixtures.TemplateWelcomeName, got.Name)
 
-	_, err = m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateGlobexID, templates.UpdateInput{Subject: ptr("x")})
+	_, err = m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateGlobexID, templates.UpdateInput{Subject: new("x")})
 	assert.ErrorIs(t, err, templates.ErrNotFound)
 }
 
@@ -99,6 +97,6 @@ func TestDelete(t *testing.T) {
 	ctx := context.Background()
 
 	require.NoError(t, m.Delete(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateWelcomeID))
-	assert.ErrorIs(t, m.Delete(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateWelcomeID), templates.ErrNotFound)
+	require.ErrorIs(t, m.Delete(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateWelcomeID), templates.ErrNotFound)
 	assert.ErrorIs(t, m.Delete(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateGlobexID), templates.ErrNotFound)
 }

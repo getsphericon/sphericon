@@ -149,11 +149,11 @@ func (w *RecheckTrackingDomainsWorker) Work(ctx context.Context, job *river.Job[
 func DevTXTLookup(client *ent.Client) sending.TXTLookup {
 	const marker = "._domainkey."
 	return func(ctx context.Context, name string) ([]string, error) {
-		i := strings.Index(name, marker)
-		if i < 0 {
+		_, after, ok := strings.Cut(name, marker)
+		if !ok {
 			return nil, &net.DNSError{IsNotFound: true, Name: name}
 		}
-		domain := strings.TrimSuffix(name[i+len(marker):], ".")
+		domain := strings.TrimSuffix(after, ".")
 		row, err := client.SendingDomain.Query().
 			Where(sendingdomain.Domain(domain)).
 			First(ctx)

@@ -48,7 +48,6 @@ func auditEntryResource(e *ent.AuditEntry) staffapi.StaffAuditEntryResource {
 		OccurredAt: staffapi.Timestamp(v.OccurredAt),
 		Actor:      staffapi.StaffAuditActor{Kind: staffapi.StaffAuditActorKind(v.ActorKind), ID: nilableString(v.ActorID), Name: nilableString(v.ActorName)},
 		Action:     v.Action,
-		Billing:    v.Billing,
 		Target:     staffapi.StaffAuditTarget{Type: v.TargetType, ID: nilableString(v.TargetID), Name: nilableString(v.TargetName)},
 		RequestId:  nilableString(v.RequestID),
 		IP:         nilableString(v.IP),

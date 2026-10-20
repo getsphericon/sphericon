@@ -136,7 +136,7 @@ func dkimHeaderTag(t *testing.T, raw string) string {
 	t.Helper()
 	var sig strings.Builder
 	inSig := false
-	for _, ln := range strings.Split(raw, "\r\n") {
+	for ln := range strings.SplitSeq(raw, "\r\n") {
 		switch {
 		case strings.HasPrefix(ln, "DKIM-Signature:"):
 			inSig = true
@@ -148,7 +148,7 @@ func dkimHeaderTag(t *testing.T, raw string) string {
 		}
 	}
 	require.NotEmpty(t, sig.String(), "no DKIM-Signature header found")
-	for _, tag := range strings.Split(sig.String(), ";") {
+	for tag := range strings.SplitSeq(sig.String(), ";") {
 		if tag = strings.TrimSpace(tag); strings.HasPrefix(tag, "h=") {
 			return strings.TrimPrefix(tag, "h=")
 		}
@@ -265,6 +265,6 @@ func TestDKIMSignatureCryptoVerifies(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.Len(t, verifs, 1)
-	assert.NoError(t, verifs[0].Err, "DKIM signature must verify against the published key")
+	require.NoError(t, verifs[0].Err, "DKIM signature must verify against the published key")
 	assert.Equal(t, "mail.acme.com", verifs[0].Domain)
 }

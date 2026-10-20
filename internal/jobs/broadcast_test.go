@@ -73,7 +73,7 @@ func TestSendBroadcastDeliversToEligibleContacts(t *testing.T) {
 		All(ctx)
 	require.NoError(t, err)
 	eligibleCount := len(eligible)
-	require.Greater(t, eligibleCount, 0, "the workspace has broadcast-eligible contacts")
+	require.Positive(t, eligibleCount, "the workspace has broadcast-eligible contacts")
 	// Bob is unsubscribed from "broadcasts", so he must not be in the eligible set.
 	for _, e := range eligible {
 		require.NotEqual(t, "bob@example.com", *e.Email, "unsubscribed contact is excluded from the audience")
@@ -357,7 +357,7 @@ func TestSendBroadcastMarksFailedOnSendError(t *testing.T) {
 			eligibility.Predicate(eligibility.ChannelEmail, eligibility.SourceBroadcasts)).
 		Count(ctx)
 	require.NoError(t, err)
-	require.Greater(t, eligible, 0)
+	require.Positive(t, eligible)
 
 	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, newMod(env, resolvingTo(erroringSender{})), fixtures.BroadcastScheduledID))
 
@@ -502,7 +502,7 @@ func TestPlanBroadcastFailsTheWholeBroadcastOnABrokenTemplate(t *testing.T) {
 
 	_, err := jobs.PlanBroadcast(ctx, env.DB, newMod(env, resolvingTo(&fakeSender{})), fixtures.BroadcastDraftID)
 	require.Error(t, err)
-	assert.NotErrorIs(t, err, outbound.ErrInProgress)
+	require.NotErrorIs(t, err, outbound.ErrInProgress)
 
 	assert.Equal(t, broadcast.StatusFailed, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID).Status)
 	n, err := env.DB.BroadcastRecipient.Query().Where(broadcastrecipient.BroadcastID(fixtures.BroadcastDraftID)).Count(ctx)
