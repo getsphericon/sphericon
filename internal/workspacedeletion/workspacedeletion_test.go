@@ -41,7 +41,7 @@ func initech(t *testing.T, env *testhelper.TestEnv) *ent.Workspace {
 func erase(t *testing.T, env *testhelper.TestEnv, m *workspacedeletion.Module) error {
 	t.Helper()
 	return env.Bus.WithinTx(t.Context(), func(tx *ent.Client, _ events.Publisher) error {
-		return m.Erase(t.Context(), tx, fixtures.InitechID, now)
+		return workspacedeletion.Tombstone(t.Context(), tx, fixtures.InitechID, now)
 	})
 }
 

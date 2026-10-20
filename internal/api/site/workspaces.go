@@ -304,7 +304,7 @@ func (h *Handlers) SiteWorkspacesRestore(ctx context.Context, params siteapi.Sit
 		v := siteapi.SiteWorkspacesRestoreNotFound(workspaceNotFoundProblem())
 		return &v, nil
 	}
-	m, err := h.deletion.Restore(ctx, a.UserID, string(params.WorkspaceId), h.actor(ctx), h.now())
+	_, err := h.deletion.Restore(ctx, a.UserID, string(params.WorkspaceId), h.actor(ctx), h.now())
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteWorkspacesRestoreNotFound(workspaceNotFoundProblem())
 		return &v, nil
@@ -316,7 +316,12 @@ func (h *Handlers) SiteWorkspacesRestore(ctx context.Context, params siteapi.Sit
 	if err != nil {
 		return nil, err
 	}
-	r, err := h.workspaceResource(ctx, h.accounts.ScopeOf(m), m)
+	// The Workspace is live again, so the caller's Owner Membership resolves like any other.
+	s, m, err := h.membershipEvenIfWithheld(ctx, params.WorkspaceId)
+	if err != nil {
+		return nil, err
+	}
+	r, err := h.workspaceResource(ctx, s, m)
 	if err != nil {
 		return nil, err
 	}

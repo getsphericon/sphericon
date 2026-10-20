@@ -72,8 +72,8 @@ func New(client *ent.Client, bus *events.Bus) *Module {
 	return &Module{client: client, bus: bus, batch: eraseBatch}
 }
 
-// pending is a Workspace deleted and not yet erased, whatever the window says.
-func pending() predicate.Workspace {
+// pendingDeletion is a Workspace deleted and not yet erased, whatever the window says.
+func pendingDeletion() predicate.Workspace {
 	return workspace.And(workspace.DeletedAtNotNil(), workspace.ErasedAtIsNil())
 }
 
@@ -102,22 +102,22 @@ func stateOf(ws *ent.Workspace) State {
 	}
 }
 
-// from is the condition a row is in the state.
-func from(state State) predicate.Workspace {
+// inState is the condition a row is in the state.
+func inState(state State) predicate.Workspace {
 	switch state {
 	case StateActive:
 		return workspace.DeletedAtIsNil()
 	case StatePendingDeletion:
-		return pending()
+		return pendingDeletion()
 	default:
 		return workspace.ErasedAtNotNil()
 	}
 }
 
-// storage is the cycle's storage over c (the raw client or a transaction's) for Workspace id.
+// cycleStorage is the cycle's storage over c (the raw client or a transaction's) for Workspace id.
 // Each write is the compare-and-swap: one conditional UPDATE whose WHERE is the state read,
 // plus, for a restore, the window.
-func storage(c *ent.Client, id int64, now time.Time) lifecycle.Storage[State] {
+func cycleStorage(c *ent.Client, id int64, now time.Time) lifecycle.Storage[State] {
 	return lifecycle.Storage[State]{
 		Read: func(ctx context.Context) (State, error) {
 			ws, err := c.Workspace.Get(ctx, id)
@@ -127,7 +127,7 @@ func storage(c *ent.Client, id int64, now time.Time) lifecycle.Storage[State] {
 			return stateOf(ws), nil
 		},
 		Write: func(ctx context.Context, was, to State) (bool, error) {
-			u := c.Workspace.Update().Where(workspace.ID(id), from(was))
+			u := c.Workspace.Update().Where(workspace.ID(id), inState(was))
 			switch {
 			case was == StateActive && to == StatePendingDeletion:
 				u.SetDeletedAt(now)
@@ -150,8 +150,8 @@ func storage(c *ent.Client, id int64, now time.Time) lifecycle.Storage[State] {
 	}
 }
 
-// machine is the transition table over a storage.
-func machine(s lifecycle.Storage[State]) *stateless.StateMachine {
+// cycleTable is the table of legal moves over a storage.
+func cycleTable(s lifecycle.Storage[State]) *stateless.StateMachine {
 	sm := lifecycle.New(s)
 	sm.Configure(StateActive).Permit(TriggerDelete, StatePendingDeletion)
 	sm.Configure(StatePendingDeletion).
@@ -162,8 +162,8 @@ func machine(s lifecycle.Storage[State]) *stateless.StateMachine {
 }
 
 // deletedDiff is the audit diff of the Workspace's deleted state changing.
-func deletedDiff(from, to bool) map[string]any {
-	return map[string]any{"deleted": map[string]any{"from": from, "to": to}}
+func deletedDiff(wasDeleted, isDeleted bool) map[string]any {
+	return map[string]any{"deleted": map[string]any{"from": wasDeleted, "to": isDeleted}}
 }
 
 // Delete deletes the scoped Workspace (ADR 0043): it sets deleted_at, which the send path
@@ -185,7 +185,7 @@ func (m *Module) Delete(ctx context.Context, s *ent.Scoped, actor events.Actor, 
 			deleted = ws
 			return nil
 		}
-		if err := machine(storage(tx, ws.ID, now)).FireCtx(ctx, TriggerDelete); err != nil {
+		if err := cycleTable(cycleStorage(tx, ws.ID, now)).FireCtx(ctx, TriggerDelete); err != nil {
 			return err
 		}
 		if deleted, err = tx.Workspace.Get(ctx, ws.ID); err != nil {
@@ -212,40 +212,40 @@ func (m *Module) Deleted(ctx context.Context, userID int64, now time.Time) ([]*e
 // User has no Owner Membership on, or one that is not deleted, is an ent NotFound error: a
 // deleted Workspace is not exposed to anyone but its Owners. A Workspace past its window or
 // already erased is lifecycle.ErrInvalidTransition. Recorded as `workspace.restore` in the
-// same transaction. The returned Membership carries its User and the restored Workspace.
-func (m *Module) Restore(ctx context.Context, userID int64, publicID string, actor events.Actor, now time.Time) (*ent.Membership, error) {
+// same transaction. It returns the restored Workspace.
+func (m *Module) Restore(ctx context.Context, userID int64, publicID string, actor events.Actor, now time.Time) (*ent.Workspace, error) {
 	// An erased Workspace has no Memberships left (the erase removes them), so the lookup
 	// below finds nothing and the API answers 404: no one can be authorized to restore it.
-	// lifecycle.ErrInvalidTransition from an erased row is only reachable through the machine.
-	mem, err := m.client.Membership.Query().
-		Where(membership.UserID(userID), membership.RoleEQ(membership.RoleOwner),
-			membership.HasWorkspaceWith(workspace.PublicID(publicID), workspace.DeletedAtNotNil())).
-		WithUser().
-		Only(ctx)
+	// lifecycle.ErrInvalidTransition from an erased row is only reachable through the table.
+	workspaceID, err := m.client.Workspace.Query().
+		Where(workspace.PublicID(publicID), workspace.DeletedAtNotNil(),
+			workspace.HasMembershipsWith(membership.UserID(userID), membership.RoleEQ(membership.RoleOwner))).
+		OnlyID(ctx)
 	if err != nil {
 		return nil, err
 	}
+	var restored *ent.Workspace
 	err = m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		if err := machine(storage(tx, mem.WorkspaceID, now)).FireCtx(ctx, TriggerRestore); err != nil {
+		if err := cycleTable(cycleStorage(tx, workspaceID, now)).FireCtx(ctx, TriggerRestore); err != nil {
 			return err
 		}
-		ws, err := tx.Workspace.Get(ctx, mem.WorkspaceID)
+		ws, err := tx.Workspace.Get(ctx, workspaceID)
 		if err != nil {
 			return err
 		}
-		mem.Edges.Workspace = ws
+		restored = ws
 		return events.RecordAudit(ctx, pub, events.WorkspaceAudit(ws, actor, events.ActionWorkspaceRestore, deletedDiff(true, false)))
 	})
 	if err != nil {
 		return nil, err
 	}
-	return mem, nil
+	return restored, nil
 }
 
-// Erase moves the Workspace id from pending deletion to erased inside tx: it writes the
+// tombstone moves the Workspace id from pending deletion to erased inside tx: it writes the
 // tombstone and erased_at in one conditional update. A Workspace that is not deleted, or is
 // already erased, is lifecycle.ErrInvalidTransition and nothing changes. The caller has
 // removed what the Workspace owned.
-func (m *Module) Erase(ctx context.Context, tx *ent.Client, id int64, now time.Time) error {
-	return machine(storage(tx, id, now)).FireCtx(ctx, TriggerErase)
+func tombstone(ctx context.Context, tx *ent.Client, id int64, now time.Time) error {
+	return cycleTable(cycleStorage(tx, id, now)).FireCtx(ctx, TriggerErase)
 }

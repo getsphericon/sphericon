@@ -52,7 +52,7 @@ const maxErasePasses = 10
 // many it finished. Each Workspace's rows go in batches, each batch in a transaction of its
 // own through the event bus, so the ent hooks run (the tracking host change log records the
 // released hosts, the workspace feed advances) and a crash resumes on the rows that are
-// left. The last transaction writes the tombstone (Erase). A Workspace that fails does not
+// left. The last transaction writes the tombstone (tombstone). A Workspace that fails does not
 // stop the others; the errors are joined. The scope of each step is built here, after the
 // Workspace's row is listed; it has no actor, so the deletes are not audited.
 func (m *Module) EraseDue(ctx context.Context, now time.Time) (int, error) {
@@ -98,7 +98,7 @@ func (m *Module) eraseWorkspace(ctx context.Context, id int64, now time.Time) er
 		if _, err := tx.OAuthCode.Delete().Where(oauthcode.WorkspaceID(id)).Exec(ctx); err != nil {
 			return err
 		}
-		return m.Erase(ctx, tx, id, now)
+		return tombstone(ctx, tx, id, now)
 	})
 }
 
@@ -136,253 +136,71 @@ type eraseStep struct {
 	remove func(ctx context.Context, s *ent.Scoped, ids []int64) error
 }
 
+// rowQuery is the scoped Query builder of one entity: the part an erase step needs.
+type rowQuery[Q any] interface {
+	Limit(int) Q
+	IDs(context.Context) ([]int64, error)
+}
+
+// rowDelete is the scoped Delete builder of one entity, filtered by its id predicate P.
+type rowDelete[D, P any] interface {
+	Where(...P) D
+	Exec(context.Context) (int, error)
+}
+
+// scopedTable is one entity's scoped wrapper (`s.AuditEntry()`).
+type scopedTable[Q, D any] interface {
+	Query() Q
+	Delete() D
+}
+
+// stepOf is the erase step of one entity: table is its scoped wrapper (a method expression
+// such as (*ent.Scoped).Contact) and idIn its generated id predicate (contact.IDIn).
+func stepOf[W scopedTable[Q, D], Q rowQuery[Q], D rowDelete[D, P], P any](
+	table func(*ent.Scoped) W, idIn func(...int64) P,
+) eraseStep {
+	return eraseStep{
+		ids: func(ctx context.Context, s *ent.Scoped, limit int) ([]int64, error) {
+			return table(s).Query().Limit(limit).IDs(ctx)
+		},
+		remove: func(ctx context.Context, s *ent.Scoped, ids []int64) error {
+			_, err := table(s).Delete().Where(idIn(ids...)).Exec(ctx)
+			return err
+		},
+	}
+}
+
 // eraseSteps is every Workspace-owned entity in dependency order (children before the
 // rows they reference): the foreign keys are not cascading. A test checks it covers every
 // entity of ent.ScopedEntities.
 var eraseSteps = []eraseStep{
-	{
-		func(ctx context.Context, s *ent.Scoped, n int) ([]int64, error) {
-			return s.AuditEntry().Query().Limit(n).IDs(ctx)
-		},
-		func(ctx context.Context, s *ent.Scoped, ids []int64) error {
-			_, err := s.AuditEntry().Delete().Where(auditentry.IDIn(ids...)).Exec(ctx)
-			return err
-		},
-	},
-	{
-		func(ctx context.Context, s *ent.Scoped, n int) ([]int64, error) {
-			return s.Erasure().Query().Limit(n).IDs(ctx)
-		},
-		func(ctx context.Context, s *ent.Scoped, ids []int64) error {
-			_, err := s.Erasure().Delete().Where(erasure.IDIn(ids...)).Exec(ctx)
-			return err
-		},
-	},
-	{
-		func(ctx context.Context, s *ent.Scoped, n int) ([]int64, error) {
-			return s.Event().Query().Limit(n).IDs(ctx)
-		},
-		func(ctx context.Context, s *ent.Scoped, ids []int64) error {
-			_, err := s.Event().Delete().Where(event.IDIn(ids...)).Exec(ctx)
-			return err
-		},
-	},
-	{
-		func(ctx context.Context, s *ent.Scoped, n int) ([]int64, error) {
-			return s.OutboundMessage().Query().Limit(n).IDs(ctx)
-		},
-		func(ctx context.Context, s *ent.Scoped, ids []int64) error {
-			_, err := s.OutboundMessage().Delete().Where(outboundmessage.IDIn(ids...)).Exec(ctx)
-			return err
-		},
-	},
-	{
-		func(ctx context.Context, s *ent.Scoped, n int) ([]int64, error) {
-			return s.BroadcastRecipient().Query().Limit(n).IDs(ctx)
-		},
-		func(ctx context.Context, s *ent.Scoped, ids []int64) error {
-			_, err := s.BroadcastRecipient().Delete().Where(broadcastrecipient.IDIn(ids...)).Exec(ctx)
-			return err
-		},
-	},
-	{
-		func(ctx context.Context, s *ent.Scoped, n int) ([]int64, error) {
-			return s.AutomationRun().Query().Limit(n).IDs(ctx)
-		},
-		func(ctx context.Context, s *ent.Scoped, ids []int64) error {
-			_, err := s.AutomationRun().Delete().Where(automationrun.IDIn(ids...)).Exec(ctx)
-			return err
-		},
-	},
-	{
-		func(ctx context.Context, s *ent.Scoped, n int) ([]int64, error) {
-			return s.Visitor().Query().Limit(n).IDs(ctx)
-		},
-		func(ctx context.Context, s *ent.Scoped, ids []int64) error {
-			_, err := s.Visitor().Delete().Where(visitor.IDIn(ids...)).Exec(ctx)
-			return err
-		},
-	},
-	{
-		func(ctx context.Context, s *ent.Scoped, n int) ([]int64, error) {
-			return s.Confirmation().Query().Limit(n).IDs(ctx)
-		},
-		func(ctx context.Context, s *ent.Scoped, ids []int64) error {
-			_, err := s.Confirmation().Delete().Where(confirmation.IDIn(ids...)).Exec(ctx)
-			return err
-		},
-	},
-	{
-		func(ctx context.Context, s *ent.Scoped, n int) ([]int64, error) {
-			return s.Unsubscribe().Query().Limit(n).IDs(ctx)
-		},
-		func(ctx context.Context, s *ent.Scoped, ids []int64) error {
-			_, err := s.Unsubscribe().Delete().Where(unsubscribe.IDIn(ids...)).Exec(ctx)
-			return err
-		},
-	},
-	{
-		func(ctx context.Context, s *ent.Scoped, n int) ([]int64, error) {
-			return s.Suppression().Query().Limit(n).IDs(ctx)
-		},
-		func(ctx context.Context, s *ent.Scoped, ids []int64) error {
-			_, err := s.Suppression().Delete().Where(suppression.IDIn(ids...)).Exec(ctx)
-			return err
-		},
-	},
-	{
-		func(ctx context.Context, s *ent.Scoped, n int) ([]int64, error) {
-			return s.Usage().Query().Limit(n).IDs(ctx)
-		},
-		func(ctx context.Context, s *ent.Scoped, ids []int64) error {
-			_, err := s.Usage().Delete().Where(usage.IDIn(ids...)).Exec(ctx)
-			return err
-		},
-	},
-	{
-		func(ctx context.Context, s *ent.Scoped, n int) ([]int64, error) {
-			return s.Hold().Query().Limit(n).IDs(ctx)
-		},
-		func(ctx context.Context, s *ent.Scoped, ids []int64) error {
-			_, err := s.Hold().Delete().Where(hold.IDIn(ids...)).Exec(ctx)
-			return err
-		},
-	},
-	{
-		func(ctx context.Context, s *ent.Scoped, n int) ([]int64, error) {
-			return s.SendLimiter().Query().Limit(n).IDs(ctx)
-		},
-		func(ctx context.Context, s *ent.Scoped, ids []int64) error {
-			_, err := s.SendLimiter().Delete().Where(sendlimiter.IDIn(ids...)).Exec(ctx)
-			return err
-		},
-	},
-	{
-		func(ctx context.Context, s *ent.Scoped, n int) ([]int64, error) {
-			return s.WebhookEndpoint().Query().Limit(n).IDs(ctx)
-		},
-		func(ctx context.Context, s *ent.Scoped, ids []int64) error {
-			_, err := s.WebhookEndpoint().Delete().Where(webhookendpoint.IDIn(ids...)).Exec(ctx)
-			return err
-		},
-	},
-	{
-		func(ctx context.Context, s *ent.Scoped, n int) ([]int64, error) {
-			return s.Invitation().Query().Limit(n).IDs(ctx)
-		},
-		func(ctx context.Context, s *ent.Scoped, ids []int64) error {
-			_, err := s.Invitation().Delete().Where(invitation.IDIn(ids...)).Exec(ctx)
-			return err
-		},
-	},
-	{
-		func(ctx context.Context, s *ent.Scoped, n int) ([]int64, error) {
-			return s.ApiToken().Query().Limit(n).IDs(ctx)
-		},
-		func(ctx context.Context, s *ent.Scoped, ids []int64) error {
-			_, err := s.ApiToken().Delete().Where(apitoken.IDIn(ids...)).Exec(ctx)
-			return err
-		},
-	},
-	{
-		func(ctx context.Context, s *ent.Scoped, n int) ([]int64, error) {
-			return s.Broadcast().Query().Limit(n).IDs(ctx)
-		},
-		func(ctx context.Context, s *ent.Scoped, ids []int64) error {
-			_, err := s.Broadcast().Delete().Where(broadcast.IDIn(ids...)).Exec(ctx)
-			return err
-		},
-	},
-	{
-		func(ctx context.Context, s *ent.Scoped, n int) ([]int64, error) {
-			return s.Automation().Query().Limit(n).IDs(ctx)
-		},
-		func(ctx context.Context, s *ent.Scoped, ids []int64) error {
-			_, err := s.Automation().Delete().Where(automation.IDIn(ids...)).Exec(ctx)
-			return err
-		},
-	},
-	{
-		func(ctx context.Context, s *ent.Scoped, n int) ([]int64, error) {
-			return s.Segment().Query().Limit(n).IDs(ctx)
-		},
-		func(ctx context.Context, s *ent.Scoped, ids []int64) error {
-			_, err := s.Segment().Delete().Where(segment.IDIn(ids...)).Exec(ctx)
-			return err
-		},
-	},
-	{
-		func(ctx context.Context, s *ent.Scoped, n int) ([]int64, error) {
-			return s.EmailTemplate().Query().Limit(n).IDs(ctx)
-		},
-		func(ctx context.Context, s *ent.Scoped, ids []int64) error {
-			_, err := s.EmailTemplate().Delete().Where(emailtemplate.IDIn(ids...)).Exec(ctx)
-			return err
-		},
-	},
-	{
-		func(ctx context.Context, s *ent.Scoped, n int) ([]int64, error) {
-			return s.BrandKit().Query().Limit(n).IDs(ctx)
-		},
-		func(ctx context.Context, s *ent.Scoped, ids []int64) error {
-			_, err := s.BrandKit().Delete().Where(brandkit.IDIn(ids...)).Exec(ctx)
-			return err
-		},
-	},
-	{
-		func(ctx context.Context, s *ent.Scoped, n int) ([]int64, error) {
-			return s.Contact().Query().Limit(n).IDs(ctx)
-		},
-		func(ctx context.Context, s *ent.Scoped, ids []int64) error {
-			_, err := s.Contact().Delete().Where(contact.IDIn(ids...)).Exec(ctx)
-			return err
-		},
-	},
-	{
-		func(ctx context.Context, s *ent.Scoped, n int) ([]int64, error) {
-			return s.Tag().Query().Limit(n).IDs(ctx)
-		},
-		func(ctx context.Context, s *ent.Scoped, ids []int64) error {
-			_, err := s.Tag().Delete().Where(tag.IDIn(ids...)).Exec(ctx)
-			return err
-		},
-	},
-	{
-		func(ctx context.Context, s *ent.Scoped, n int) ([]int64, error) {
-			return s.CustomField().Query().Limit(n).IDs(ctx)
-		},
-		func(ctx context.Context, s *ent.Scoped, ids []int64) error {
-			_, err := s.CustomField().Delete().Where(customfield.IDIn(ids...)).Exec(ctx)
-			return err
-		},
-	},
-	{
-		// The tracking host change log hook records each released host here.
-		func(ctx context.Context, s *ent.Scoped, n int) ([]int64, error) {
-			return s.SendingDomain().Query().Limit(n).IDs(ctx)
-		},
-		func(ctx context.Context, s *ent.Scoped, ids []int64) error {
-			_, err := s.SendingDomain().Delete().Where(sendingdomain.IDIn(ids...)).Exec(ctx)
-			return err
-		},
-	},
-	{
-		func(ctx context.Context, s *ent.Scoped, n int) ([]int64, error) {
-			return s.Integration().Query().Limit(n).IDs(ctx)
-		},
-		func(ctx context.Context, s *ent.Scoped, ids []int64) error {
-			_, err := s.Integration().Delete().Where(integration.IDIn(ids...)).Exec(ctx)
-			return err
-		},
-	},
-	{
-		// Owner Memberships last: the owner hook advances the feed as they go.
-		func(ctx context.Context, s *ent.Scoped, n int) ([]int64, error) {
-			return s.Membership().Query().Limit(n).IDs(ctx)
-		},
-		func(ctx context.Context, s *ent.Scoped, ids []int64) error {
-			_, err := s.Membership().Delete().Where(membership.IDIn(ids...)).Exec(ctx)
-			return err
-		},
-	},
+	stepOf((*ent.Scoped).AuditEntry, auditentry.IDIn),
+	stepOf((*ent.Scoped).Erasure, erasure.IDIn),
+	stepOf((*ent.Scoped).Event, event.IDIn),
+	stepOf((*ent.Scoped).OutboundMessage, outboundmessage.IDIn),
+	stepOf((*ent.Scoped).BroadcastRecipient, broadcastrecipient.IDIn),
+	stepOf((*ent.Scoped).AutomationRun, automationrun.IDIn),
+	stepOf((*ent.Scoped).Visitor, visitor.IDIn),
+	stepOf((*ent.Scoped).Confirmation, confirmation.IDIn),
+	stepOf((*ent.Scoped).Unsubscribe, unsubscribe.IDIn),
+	stepOf((*ent.Scoped).Suppression, suppression.IDIn),
+	stepOf((*ent.Scoped).Usage, usage.IDIn),
+	stepOf((*ent.Scoped).Hold, hold.IDIn),
+	stepOf((*ent.Scoped).SendLimiter, sendlimiter.IDIn),
+	stepOf((*ent.Scoped).WebhookEndpoint, webhookendpoint.IDIn),
+	stepOf((*ent.Scoped).Invitation, invitation.IDIn),
+	stepOf((*ent.Scoped).ApiToken, apitoken.IDIn),
+	stepOf((*ent.Scoped).Broadcast, broadcast.IDIn),
+	stepOf((*ent.Scoped).Automation, automation.IDIn),
+	stepOf((*ent.Scoped).Segment, segment.IDIn),
+	stepOf((*ent.Scoped).EmailTemplate, emailtemplate.IDIn),
+	stepOf((*ent.Scoped).BrandKit, brandkit.IDIn),
+	stepOf((*ent.Scoped).Contact, contact.IDIn),
+	stepOf((*ent.Scoped).Tag, tag.IDIn),
+	stepOf((*ent.Scoped).CustomField, customfield.IDIn),
+	// The tracking host change log hook records each released host here.
+	stepOf((*ent.Scoped).SendingDomain, sendingdomain.IDIn),
+	stepOf((*ent.Scoped).Integration, integration.IDIn),
+	// Owner Memberships last: the owner hook advances the feed as they go.
+	stepOf((*ent.Scoped).Membership, membership.IDIn),
 }
