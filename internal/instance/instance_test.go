@@ -48,7 +48,7 @@ func TestIsOwnerPassesToTheNextOldestWorkspaceWhenTheOldestIsDeleted(t *testing.
 	assert.True(t, first)
 	assert.False(t, second)
 
-	require.NoError(t, client.Workspace.UpdateOneID(1).SetDeletedAt(time.Now()).Exec(ctx))
+	require.NoError(t, client.Workspace.UpdateOneID(1).SetDiscardedAt(time.Now()).Exec(ctx))
 
 	first, err = mod.IsOwner(ctx, 1)
 	require.NoError(t, err)

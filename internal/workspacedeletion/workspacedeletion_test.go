@@ -30,7 +30,7 @@ func setup(t *testing.T) (*testhelper.TestEnv, *workspacedeletion.Module) {
 // deletedAgo puts Initech into deletion, deleted ago before now.
 func deletedAgo(t *testing.T, env *testhelper.TestEnv, ago time.Duration) {
 	t.Helper()
-	env.DB.Workspace.UpdateOneID(fixtures.InitechID).SetDeletedAt(now.Add(-ago)).ExecX(t.Context())
+	env.DB.Workspace.UpdateOneID(fixtures.InitechID).SetDiscardedAt(now.Add(-ago)).ExecX(t.Context())
 }
 
 func initech(t *testing.T, env *testhelper.TestEnv) *ent.Workspace {
@@ -57,7 +57,7 @@ func TestRestoreInsideTheWindowBringsTheWorkspaceBack(t *testing.T) {
 
 	require.NoError(t, restore(t, m))
 
-	assert.Nil(t, initech(t, env).DeletedAt)
+	assert.Nil(t, initech(t, env).DiscardedAt)
 }
 
 func TestRestoreAfterTheWindowIsRefused(t *testing.T) {
@@ -66,7 +66,7 @@ func TestRestoreAfterTheWindowIsRefused(t *testing.T) {
 
 	require.ErrorIs(t, restore(t, m), lifecycle.ErrInvalidTransition)
 
-	assert.NotNil(t, initech(t, env).DeletedAt, "a Workspace past its window stays deleted")
+	assert.NotNil(t, initech(t, env).DiscardedAt, "a Workspace past its window stays deleted")
 }
 
 // An erased Workspace has no Memberships left, so the real Restore finds no Owner: the API
@@ -94,7 +94,7 @@ func TestTheMachineRefusesRestoringAnErasedWorkspace(t *testing.T) {
 
 	require.ErrorIs(t, err, lifecycle.ErrInvalidTransition)
 	got := initech(t, env)
-	assert.NotNil(t, got.DeletedAt)
+	assert.NotNil(t, got.DiscardedAt)
 	assert.NotNil(t, got.ErasedAt)
 }
 
@@ -143,9 +143,9 @@ func TestDeletingTwiceKeepsTheFirstDeletionTime(t *testing.T) {
 	second, err := m.Delete(t.Context(), s, actor, name, now.Add(24*time.Hour))
 	require.NoError(t, err)
 
-	require.NotNil(t, first.DeletedAt)
-	require.NotNil(t, second.DeletedAt)
-	assert.True(t, first.DeletedAt.Equal(*second.DeletedAt), "the window does not restart")
+	require.NotNil(t, first.DiscardedAt)
+	require.NotNil(t, second.DiscardedAt)
+	assert.True(t, first.DiscardedAt.Equal(*second.DiscardedAt), "the window does not restart")
 }
 
 func TestDeleteRefusesAWrongName(t *testing.T) {
@@ -154,7 +154,7 @@ func TestDeleteRefusesAWrongName(t *testing.T) {
 	_, err := m.Delete(t.Context(), env.DB.Scoped(fixtures.InitechID), actor, "not the name", now)
 
 	require.ErrorIs(t, err, workspacedeletion.ErrNameMismatch)
-	assert.Nil(t, initech(t, env).DeletedAt)
+	assert.Nil(t, initech(t, env).DiscardedAt)
 }
 
 // stale is a mover that read the Workspace as pending deletion before anyone wrote.

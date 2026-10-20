@@ -78,6 +78,20 @@ func (_c *WorkspaceCreate) SetNillableUpdatedAt(v *time.Time) *WorkspaceCreate {
 	return _c
 }
 
+// SetDiscardedAt sets the "discarded_at" field.
+func (_c *WorkspaceCreate) SetDiscardedAt(v time.Time) *WorkspaceCreate {
+	_c.mutation.SetDiscardedAt(v)
+	return _c
+}
+
+// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
+func (_c *WorkspaceCreate) SetNillableDiscardedAt(v *time.Time) *WorkspaceCreate {
+	if v != nil {
+		_c.SetDiscardedAt(*v)
+	}
+	return _c
+}
+
 // SetName sets the "name" field.
 func (_c *WorkspaceCreate) SetName(v string) *WorkspaceCreate {
 	_c.mutation.SetName(v)
@@ -162,20 +176,6 @@ func (_c *WorkspaceCreate) SetFeedPosition(v int64) *WorkspaceCreate {
 func (_c *WorkspaceCreate) SetNillableFeedPosition(v *int64) *WorkspaceCreate {
 	if v != nil {
 		_c.SetFeedPosition(*v)
-	}
-	return _c
-}
-
-// SetDeletedAt sets the "deleted_at" field.
-func (_c *WorkspaceCreate) SetDeletedAt(v time.Time) *WorkspaceCreate {
-	_c.mutation.SetDeletedAt(v)
-	return _c
-}
-
-// SetNillableDeletedAt sets the "deleted_at" field if the given value is not nil.
-func (_c *WorkspaceCreate) SetNillableDeletedAt(v *time.Time) *WorkspaceCreate {
-	if v != nil {
-		_c.SetDeletedAt(*v)
 	}
 	return _c
 }
@@ -880,6 +880,10 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 		_spec.SetField(workspace.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
+	if value, ok := _c.mutation.DiscardedAt(); ok {
+		_spec.SetField(workspace.FieldDiscardedAt, field.TypeTime, value)
+		_node.DiscardedAt = &value
+	}
 	if value, ok := _c.mutation.Name(); ok {
 		_spec.SetField(workspace.FieldName, field.TypeString, value)
 		_node.Name = value
@@ -911,10 +915,6 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.FeedPosition(); ok {
 		_spec.SetField(workspace.FieldFeedPosition, field.TypeInt64, value)
 		_node.FeedPosition = value
-	}
-	if value, ok := _c.mutation.DeletedAt(); ok {
-		_spec.SetField(workspace.FieldDeletedAt, field.TypeTime, value)
-		_node.DeletedAt = &value
 	}
 	if value, ok := _c.mutation.ErasedAt(); ok {
 		_spec.SetField(workspace.FieldErasedAt, field.TypeTime, value)
@@ -1464,6 +1464,24 @@ func (u *WorkspaceUpsert) UpdateUpdatedAt() *WorkspaceUpsert {
 	return u
 }
 
+// SetDiscardedAt sets the "discarded_at" field.
+func (u *WorkspaceUpsert) SetDiscardedAt(v time.Time) *WorkspaceUpsert {
+	u.Set(workspace.FieldDiscardedAt, v)
+	return u
+}
+
+// UpdateDiscardedAt sets the "discarded_at" field to the value that was provided on create.
+func (u *WorkspaceUpsert) UpdateDiscardedAt() *WorkspaceUpsert {
+	u.SetExcluded(workspace.FieldDiscardedAt)
+	return u
+}
+
+// ClearDiscardedAt clears the value of the "discarded_at" field.
+func (u *WorkspaceUpsert) ClearDiscardedAt() *WorkspaceUpsert {
+	u.SetNull(workspace.FieldDiscardedAt)
+	return u
+}
+
 // SetName sets the "name" field.
 func (u *WorkspaceUpsert) SetName(v string) *WorkspaceUpsert {
 	u.Set(workspace.FieldName, v)
@@ -1575,24 +1593,6 @@ func (u *WorkspaceUpsert) UpdateFeedPosition() *WorkspaceUpsert {
 // AddFeedPosition adds v to the "feed_position" field.
 func (u *WorkspaceUpsert) AddFeedPosition(v int64) *WorkspaceUpsert {
 	u.Add(workspace.FieldFeedPosition, v)
-	return u
-}
-
-// SetDeletedAt sets the "deleted_at" field.
-func (u *WorkspaceUpsert) SetDeletedAt(v time.Time) *WorkspaceUpsert {
-	u.Set(workspace.FieldDeletedAt, v)
-	return u
-}
-
-// UpdateDeletedAt sets the "deleted_at" field to the value that was provided on create.
-func (u *WorkspaceUpsert) UpdateDeletedAt() *WorkspaceUpsert {
-	u.SetExcluded(workspace.FieldDeletedAt)
-	return u
-}
-
-// ClearDeletedAt clears the value of the "deleted_at" field.
-func (u *WorkspaceUpsert) ClearDeletedAt() *WorkspaceUpsert {
-	u.SetNull(workspace.FieldDeletedAt)
 	return u
 }
 
@@ -1820,6 +1820,27 @@ func (u *WorkspaceUpsertOne) UpdateUpdatedAt() *WorkspaceUpsertOne {
 	})
 }
 
+// SetDiscardedAt sets the "discarded_at" field.
+func (u *WorkspaceUpsertOne) SetDiscardedAt(v time.Time) *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetDiscardedAt(v)
+	})
+}
+
+// UpdateDiscardedAt sets the "discarded_at" field to the value that was provided on create.
+func (u *WorkspaceUpsertOne) UpdateDiscardedAt() *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateDiscardedAt()
+	})
+}
+
+// ClearDiscardedAt clears the value of the "discarded_at" field.
+func (u *WorkspaceUpsertOne) ClearDiscardedAt() *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.ClearDiscardedAt()
+	})
+}
+
 // SetName sets the "name" field.
 func (u *WorkspaceUpsertOne) SetName(v string) *WorkspaceUpsertOne {
 	return u.Update(func(s *WorkspaceUpsert) {
@@ -1950,27 +1971,6 @@ func (u *WorkspaceUpsertOne) AddFeedPosition(v int64) *WorkspaceUpsertOne {
 func (u *WorkspaceUpsertOne) UpdateFeedPosition() *WorkspaceUpsertOne {
 	return u.Update(func(s *WorkspaceUpsert) {
 		s.UpdateFeedPosition()
-	})
-}
-
-// SetDeletedAt sets the "deleted_at" field.
-func (u *WorkspaceUpsertOne) SetDeletedAt(v time.Time) *WorkspaceUpsertOne {
-	return u.Update(func(s *WorkspaceUpsert) {
-		s.SetDeletedAt(v)
-	})
-}
-
-// UpdateDeletedAt sets the "deleted_at" field to the value that was provided on create.
-func (u *WorkspaceUpsertOne) UpdateDeletedAt() *WorkspaceUpsertOne {
-	return u.Update(func(s *WorkspaceUpsert) {
-		s.UpdateDeletedAt()
-	})
-}
-
-// ClearDeletedAt clears the value of the "deleted_at" field.
-func (u *WorkspaceUpsertOne) ClearDeletedAt() *WorkspaceUpsertOne {
-	return u.Update(func(s *WorkspaceUpsert) {
-		s.ClearDeletedAt()
 	})
 }
 
@@ -2390,6 +2390,27 @@ func (u *WorkspaceUpsertBulk) UpdateUpdatedAt() *WorkspaceUpsertBulk {
 	})
 }
 
+// SetDiscardedAt sets the "discarded_at" field.
+func (u *WorkspaceUpsertBulk) SetDiscardedAt(v time.Time) *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetDiscardedAt(v)
+	})
+}
+
+// UpdateDiscardedAt sets the "discarded_at" field to the value that was provided on create.
+func (u *WorkspaceUpsertBulk) UpdateDiscardedAt() *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateDiscardedAt()
+	})
+}
+
+// ClearDiscardedAt clears the value of the "discarded_at" field.
+func (u *WorkspaceUpsertBulk) ClearDiscardedAt() *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.ClearDiscardedAt()
+	})
+}
+
 // SetName sets the "name" field.
 func (u *WorkspaceUpsertBulk) SetName(v string) *WorkspaceUpsertBulk {
 	return u.Update(func(s *WorkspaceUpsert) {
@@ -2520,27 +2541,6 @@ func (u *WorkspaceUpsertBulk) AddFeedPosition(v int64) *WorkspaceUpsertBulk {
 func (u *WorkspaceUpsertBulk) UpdateFeedPosition() *WorkspaceUpsertBulk {
 	return u.Update(func(s *WorkspaceUpsert) {
 		s.UpdateFeedPosition()
-	})
-}
-
-// SetDeletedAt sets the "deleted_at" field.
-func (u *WorkspaceUpsertBulk) SetDeletedAt(v time.Time) *WorkspaceUpsertBulk {
-	return u.Update(func(s *WorkspaceUpsert) {
-		s.SetDeletedAt(v)
-	})
-}
-
-// UpdateDeletedAt sets the "deleted_at" field to the value that was provided on create.
-func (u *WorkspaceUpsertBulk) UpdateDeletedAt() *WorkspaceUpsertBulk {
-	return u.Update(func(s *WorkspaceUpsert) {
-		s.UpdateDeletedAt()
-	})
-}
-
-// ClearDeletedAt clears the value of the "deleted_at" field.
-func (u *WorkspaceUpsertBulk) ClearDeletedAt() *WorkspaceUpsertBulk {
-	return u.Update(func(s *WorkspaceUpsert) {
-		s.ClearDeletedAt()
 	})
 }
 

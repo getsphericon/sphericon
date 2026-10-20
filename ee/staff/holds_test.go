@@ -170,7 +170,7 @@ func TestAHoldListReportsThePendingDeletionOfADeletedWorkspace(t *testing.T) {
 	h := newHarness(t)
 	h.setHoldResult(t, "k1", time.Hour)
 	deletedAt := h.clock.now().Add(-time.Hour).UTC().Truncate(time.Second)
-	h.env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetDeletedAt(deletedAt).ExecX(t.Context())
+	h.env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetDiscardedAt(deletedAt).ExecX(t.Context())
 
 	items := h.listHolds(t)
 	require.Len(t, items, 2)
@@ -178,7 +178,7 @@ func TestAHoldListReportsThePendingDeletionOfADeletedWorkspace(t *testing.T) {
 	assert.Equal(t, holds.ReasonPendingDeletion, items[0].ReasonCode)
 	assert.Equal(t, "k1", items[1].Key)
 
-	h.env.DB.Workspace.UpdateOneID(fixtures.AcmeID).ClearDeletedAt().ExecX(t.Context())
+	h.env.DB.Workspace.UpdateOneID(fixtures.AcmeID).ClearDiscardedAt().ExecX(t.Context())
 	items = h.listHolds(t)
 	require.Len(t, items, 1)
 	assert.Equal(t, "k1", items[0].Key)

@@ -34,13 +34,13 @@ func TestCollectKeyAuth(t *testing.T) {
 func TestCollectKeyOfADeletedWorkspaceIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetDeletedAt(time.Now()).ExecX(ctx)
+	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetDiscardedAt(time.Now()).ExecX(ctx)
 
 	res, err := env.CollectAcme(t).CollectEventsCreate(ctx, &collectapi.CollectEventsInput{})
 	require.NoError(t, err)
 	assert.IsType(t, &collectapi.CollectEventsCreateUnauthorized{}, res)
 
-	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).ClearDeletedAt().ExecX(ctx)
+	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).ClearDiscardedAt().ExecX(ctx)
 	res, err = env.CollectAcme(t).CollectEventsCreate(ctx, &collectapi.CollectEventsInput{})
 	require.NoError(t, err)
 	assert.NotEqual(t, &collectapi.CollectEventsCreateUnauthorized{}, res, "restored, the key works again")

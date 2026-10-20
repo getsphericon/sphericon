@@ -238,7 +238,7 @@ func TestOneFailingWorkspaceDoesNotStopTheOthersFromClosing(t *testing.T) {
 
 func TestRefreshSkipsAWorkspaceInItsDeletionWindow(t *testing.T) {
 	env := testhelper.Setup(t)
-	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetDeletedAt(jan).ExecX(t.Context())
+	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetDiscardedAt(jan).ExecX(t.Context())
 
 	require.NoError(t, usage.Refresh(t.Context(), env.DB, licenseFor(t, licensekey.FeatureStaff), feb.Add(time.Hour)))
 

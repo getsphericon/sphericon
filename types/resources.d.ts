@@ -25,6 +25,7 @@ export default interface Resources {
       "security": "Security"
     },
     "actions": {
+      "archive": "Archive",
       "back": "Back",
       "cancel": "Cancel",
       "continue": "Continue",
@@ -32,6 +33,7 @@ export default interface Resources {
       "edit": "Edit",
       "more": "More actions",
       "save": "Save",
+      "unarchive": "Restore",
       "view": "View"
     },
     "activity": {
@@ -55,8 +57,10 @@ export default interface Resources {
       "automationSaveErrorMessage": "We couldn't save your automation. Please try again.",
       "automationSaveErrorTitle": "Failed to save automation",
       "automationStatusErrorTitle": "Failed to change automation status",
+      "broadcastArchiveErrorTitle": "Failed to archive broadcast",
       "broadcastDeleteErrorTitle": "Failed to delete broadcast",
       "broadcastLoadErrorTitle": "Failed to load broadcasts",
+      "broadcastRestoreErrorTitle": "Failed to restore broadcast",
       "broadcastSaveErrorTitle": "Failed to save broadcast",
       "broadcastSendErrorTitle": "Failed to send broadcast",
       "contactLoadErrorTitle": "Failed to load contact",
@@ -253,6 +257,7 @@ export default interface Resources {
       "schedule": "Schedule",
       "scheduleLabel": "Schedule for",
       "sendNow": "Send now",
+      "showArchived": "Show archived",
       "stats": {
         "clickRate": "Click rate",
         "clickToOpenRate": "Click-to-open",
@@ -587,8 +592,10 @@ export default interface Resources {
       "automationDeactivated": "Automation deactivated",
       "automationDeleted": "Automation deleted",
       "automationUpdated": "Automation updated",
+      "broadcastArchived": "Broadcast archived",
       "broadcastCreated": "Broadcast created",
       "broadcastDeleted": "Broadcast deleted",
+      "broadcastRestored": "Broadcast restored",
       "broadcastScheduled": "Broadcast scheduled",
       "broadcastSent": "Broadcast is sending",
       "broadcastUpdated": "Broadcast updated",

@@ -5532,14 +5532,69 @@ type BroadcastScoped struct{ s *Scoped }
 // Broadcast returns the Broadcast entities of the Workspace.
 func (s *Scoped) Broadcast() *BroadcastScoped { return &BroadcastScoped{s: s} }
 
-// Query returns a Broadcast query already confined to the Workspace.
+// Query returns a Broadcast query already confined to the Workspace, hiding discarded rows
+// (a list query; QueryWithDiscarded sees them too).
 func (t *BroadcastScoped) Query() *BroadcastQuery {
+	return t.s.c.Broadcast.Query().Where(broadcast.WorkspaceID(t.s.ws), broadcast.DiscardedAtIsNil())
+}
+
+// QueryWithDiscarded returns a Broadcast query confined to the Workspace that also sees discarded rows.
+func (t *BroadcastScoped) QueryWithDiscarded() *BroadcastQuery {
 	return t.s.c.Broadcast.Query().Where(broadcast.WorkspaceID(t.s.ws))
 }
 
-// Get returns the Broadcast with the id; a row of another Workspace is not found.
+// Get returns the Broadcast with the id, discarded or not; a row of another Workspace is not found.
 func (t *BroadcastScoped) Get(ctx context.Context, id int64) (*Broadcast, error) {
-	return t.Query().Where(broadcast.ID(id)).Only(ctx)
+	return t.QueryWithDiscarded().Where(broadcast.ID(id)).Only(ctx)
+}
+
+// Discard stamps discarded_at on the kept Broadcast with the id (ps fence it further); a row of
+// another Workspace, an already discarded row or one a predicate excludes is not found.
+func (t *BroadcastScoped) Discard(ctx context.Context, id int64, ps ...predicate.Broadcast) error {
+	return t.setDiscarded(ctx, id, true, ps)
+}
+
+// Undiscard clears discarded_at on the discarded Broadcast with the id; a row that is not
+// discarded is not found.
+func (t *BroadcastScoped) Undiscard(ctx context.Context, id int64) error {
+	return t.setDiscarded(ctx, id, false, nil)
+}
+
+func (t *BroadcastScoped) setDiscarded(ctx context.Context, id int64, discard bool, ps []predicate.Broadcast) error {
+	where := append([]predicate.Broadcast{broadcast.ID(id), broadcast.WorkspaceID(t.s.ws)}, ps...)
+	if discard {
+		where = append(where, broadcast.DiscardedAtIsNil())
+	} else {
+		where = append(where, broadcast.DiscardedAtNotNil())
+	}
+	write := func(c *Client) (*Broadcast, error) {
+		u := c.Broadcast.UpdateOneID(id).Where(where...)
+		if discard {
+			u.SetDiscardedAt(time.Now())
+		} else {
+			u.ClearDiscardedAt()
+		}
+		return u.Save(ctx)
+	}
+	if t.s.auditing() {
+		verb := "restore"
+		if discard {
+			verb = "discard"
+		}
+		return t.s.audited(ctx, func(ts *Scoped) error {
+			before, err := ts.c.Broadcast.Query().Where(where...).Only(ctx)
+			if err != nil {
+				return err
+			}
+			after, err := write(ts.c)
+			if err != nil {
+				return err
+			}
+			return ts.record(ctx, auditChangeBroadcast(verb, before, after))
+		})
+	}
+	_, err := write(t.s.c)
+	return err
 }
 
 // BroadcastScopedDeleteOne wraps BroadcastDeleteOne.
@@ -5548,8 +5603,8 @@ type BroadcastScopedDeleteOne struct {
 	b *BroadcastDeleteOne
 }
 
-// DeleteOneID deletes the Broadcast with the id; a row of another Workspace is not found.
-func (t *BroadcastScoped) DeleteOneID(id int64) *BroadcastScopedDeleteOne {
+// PurgeOneID physically removes the Broadcast with the id; a row of another Workspace is not found.
+func (t *BroadcastScoped) PurgeOneID(id int64) *BroadcastScopedDeleteOne {
 	return &BroadcastScopedDeleteOne{s: t.s, b: t.s.c.Broadcast.DeleteOneID(id).Where(broadcast.WorkspaceID(t.s.ws))}
 }
 
@@ -5583,8 +5638,8 @@ type BroadcastScopedDelete struct {
 	b *BroadcastDelete
 }
 
-// Delete deletes the Broadcast entities of the Workspace that match the predicates.
-func (t *BroadcastScoped) Delete() *BroadcastScopedDelete {
+// Purge physically removes the Broadcast entities of the Workspace that match the predicates.
+func (t *BroadcastScoped) Purge() *BroadcastScopedDelete {
 	return &BroadcastScopedDelete{s: t.s, b: t.s.c.Broadcast.Delete().Where(broadcast.WorkspaceID(t.s.ws))}
 }
 
@@ -5653,6 +5708,18 @@ func (x *BroadcastScopedCreate) SetUpdatedAt(v time.Time) *BroadcastScopedCreate
 // SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
 func (x *BroadcastScopedCreate) SetNillableUpdatedAt(v *time.Time) *BroadcastScopedCreate {
 	x.b.SetNillableUpdatedAt(v)
+	return x
+}
+
+// SetDiscardedAt sets the "discarded_at" field.
+func (x *BroadcastScopedCreate) SetDiscardedAt(v time.Time) *BroadcastScopedCreate {
+	x.b.SetDiscardedAt(v)
+	return x
+}
+
+// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
+func (x *BroadcastScopedCreate) SetNillableDiscardedAt(v *time.Time) *BroadcastScopedCreate {
+	x.b.SetNillableDiscardedAt(v)
 	return x
 }
 
@@ -5955,6 +6022,24 @@ func (u *BroadcastScopedUpsert) SetUpdatedAt(v time.Time) *BroadcastScopedUpsert
 // UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
 func (u *BroadcastScopedUpsert) UpdateUpdatedAt() *BroadcastScopedUpsert {
 	u.u.SetExcluded(broadcast.FieldUpdatedAt)
+	return u
+}
+
+// SetDiscardedAt sets the "discarded_at" field.
+func (u *BroadcastScopedUpsert) SetDiscardedAt(v time.Time) *BroadcastScopedUpsert {
+	u.u.Set(broadcast.FieldDiscardedAt, v)
+	return u
+}
+
+// UpdateDiscardedAt sets the "discarded_at" field to the value that was provided on create.
+func (u *BroadcastScopedUpsert) UpdateDiscardedAt() *BroadcastScopedUpsert {
+	u.u.SetExcluded(broadcast.FieldDiscardedAt)
+	return u
+}
+
+// ClearDiscardedAt clears the value of the "discarded_at" field.
+func (u *BroadcastScopedUpsert) ClearDiscardedAt() *BroadcastScopedUpsert {
+	u.u.SetNull(broadcast.FieldDiscardedAt)
 	return u
 }
 
@@ -6359,6 +6444,24 @@ func (x *BroadcastScopedUpdateOne) SetUpdatedAt(v time.Time) *BroadcastScopedUpd
 	return x
 }
 
+// SetDiscardedAt sets the "discarded_at" field.
+func (x *BroadcastScopedUpdateOne) SetDiscardedAt(v time.Time) *BroadcastScopedUpdateOne {
+	x.b.SetDiscardedAt(v)
+	return x
+}
+
+// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
+func (x *BroadcastScopedUpdateOne) SetNillableDiscardedAt(v *time.Time) *BroadcastScopedUpdateOne {
+	x.b.SetNillableDiscardedAt(v)
+	return x
+}
+
+// ClearDiscardedAt clears the value of the "discarded_at" field.
+func (x *BroadcastScopedUpdateOne) ClearDiscardedAt() *BroadcastScopedUpdateOne {
+	x.b.ClearDiscardedAt()
+	return x
+}
+
 // SetName sets the "name" field.
 func (x *BroadcastScopedUpdateOne) SetName(v string) *BroadcastScopedUpdateOne {
 	x.b.SetName(v)
@@ -6729,6 +6832,24 @@ func (x *BroadcastScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *Broa
 // SetUpdatedAt sets the "updated_at" field.
 func (x *BroadcastScopedUpdate) SetUpdatedAt(v time.Time) *BroadcastScopedUpdate {
 	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetDiscardedAt sets the "discarded_at" field.
+func (x *BroadcastScopedUpdate) SetDiscardedAt(v time.Time) *BroadcastScopedUpdate {
+	x.b.SetDiscardedAt(v)
+	return x
+}
+
+// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
+func (x *BroadcastScopedUpdate) SetNillableDiscardedAt(v *time.Time) *BroadcastScopedUpdate {
+	x.b.SetNillableDiscardedAt(v)
+	return x
+}
+
+// ClearDiscardedAt clears the value of the "discarded_at" field.
+func (x *BroadcastScopedUpdate) ClearDiscardedAt() *BroadcastScopedUpdate {
+	x.b.ClearDiscardedAt()
 	return x
 }
 

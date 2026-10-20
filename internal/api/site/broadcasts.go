@@ -65,7 +65,7 @@ func (h *Handlers) SiteBroadcastsList(ctx context.Context, params siteapi.SiteBr
 		return nil, err
 	}
 
-	page, err := h.broadcasts.List(ctx, ws, pagination.ParamsOf(params.Page, params.PageSize))
+	page, err := h.broadcasts.List(ctx, ws, pagination.ParamsOf(params.Page, params.PageSize), params.Archived.Or(false))
 	if err != nil {
 		return nil, err
 	}
@@ -220,15 +220,84 @@ func (h *Handlers) SiteBroadcastsDelete(ctx context.Context, params siteapi.Site
 	}
 
 	id := int64(params.ID)
-	err = h.broadcasts.Delete(ctx, ws, id)
-	if errors.Is(err, broadcasts.ErrNotFound) {
+	err = h.broadcasts.DeleteDraft(ctx, ws, id)
+	switch {
+	case errors.Is(err, broadcasts.ErrNotFound):
 		v := siteapi.SiteBroadcastsDeleteNotFound(problem(http.StatusNotFound, "broadcast not found"))
+		return &v, nil
+	case errors.Is(err, broadcasts.ErrNotDraft):
+		v := siteapi.SiteBroadcastsDeleteUnprocessableEntity(problem(http.StatusUnprocessableEntity, "only a draft broadcast can be deleted; archive a sent one"))
+		return &v, nil
+	case err != nil:
+		return nil, err
+	}
+	return &siteapi.SiteBroadcastsDeleteNoContent{}, nil
+}
+
+// SiteBroadcastsArchive archives a sent or failed broadcast (ADR 0049): it leaves the list but
+// keeps its report, tracking and figures.
+func (h *Handlers) SiteBroadcastsArchive(ctx context.Context, params siteapi.SiteBroadcastsArchiveParams) (siteapi.SiteBroadcastsArchiveRes, error) {
+	ws, err := h.scopedFor(ctx, params.WorkspaceId)
+	if ent.IsNotFound(err) {
+		v := siteapi.SiteBroadcastsArchiveNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	return &siteapi.SiteBroadcastsDeleteNoContent{}, nil
+
+	id := int64(params.ID)
+	err = h.broadcasts.Archive(ctx, ws, id)
+	switch {
+	case errors.Is(err, broadcasts.ErrNotFound):
+		v := siteapi.SiteBroadcastsArchiveNotFound(problem(http.StatusNotFound, "broadcast not found"))
+		return &v, nil
+	case errors.Is(err, broadcasts.ErrNotArchivable):
+		v := siteapi.SiteBroadcastsArchiveUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
+		return &v, nil
+	case err != nil:
+		return nil, err
+	}
+	b, err := h.broadcasts.Get(ctx, ws, id)
+	if err != nil {
+		return nil, err
+	}
+	res, err := withStats(ctx, ws, b)
+	if err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+// SiteBroadcastsUnarchive restores an archived broadcast to the list.
+func (h *Handlers) SiteBroadcastsUnarchive(ctx context.Context, params siteapi.SiteBroadcastsUnarchiveParams) (siteapi.SiteBroadcastsUnarchiveRes, error) {
+	ws, err := h.scopedFor(ctx, params.WorkspaceId)
+	if ent.IsNotFound(err) {
+		v := siteapi.SiteBroadcastsUnarchiveNotFound(problem(http.StatusNotFound, "workspace not found"))
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	id := int64(params.ID)
+	err = h.broadcasts.Unarchive(ctx, ws, id)
+	if errors.Is(err, broadcasts.ErrNotFound) {
+		v := siteapi.SiteBroadcastsUnarchiveNotFound(problem(http.StatusNotFound, "broadcast not found"))
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	b, err := h.broadcasts.Get(ctx, ws, id)
+	if err != nil {
+		return nil, err
+	}
+	res, err := withStats(ctx, ws, b)
+	if err != nil {
+		return nil, err
+	}
+	return &res, nil
 }
 
 // SiteBroadcastsSend sends a draft or scheduled broadcast immediately. The state

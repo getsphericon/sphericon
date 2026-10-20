@@ -21,7 +21,7 @@ import (
 // deleteUmbrella puts Umbrella into its deletion window, deleted ago before now.
 func deleteUmbrella(t *testing.T, env *testhelper.TestEnv, ago time.Duration) {
 	t.Helper()
-	env.DB.Workspace.UpdateOneID(fixtures.UmbrellaID).SetDeletedAt(now.Add(-ago)).ExecX(t.Context())
+	env.DB.Workspace.UpdateOneID(fixtures.UmbrellaID).SetDiscardedAt(now.Add(-ago)).ExecX(t.Context())
 }
 
 // runErase is one erase at now, in batches of two so the batch loop is exercised.
@@ -60,7 +60,7 @@ func rowsOfAll(t *testing.T, env *testhelper.TestEnv) map[string]int {
 // The fixtures hold rows of every scoped entity, which the first check requires.
 func TestEraseCoversEveryWorkspaceOwnedEntity(t *testing.T) {
 	env := testhelper.Setup(t)
-	env.DB.Workspace.Update().SetDeletedAt(now.Add(-workspacedeletion.DeletionWindow - time.Hour)).ExecX(t.Context())
+	env.DB.Workspace.Update().SetDiscardedAt(now.Add(-workspacedeletion.DeletionWindow - time.Hour)).ExecX(t.Context())
 	before := rowsOfAll(t, env)
 	for _, e := range ent.ScopedEntities() {
 		assert.Positivef(t, before[e.Name], "the fixtures hold a %s row", e.Name)
@@ -116,7 +116,7 @@ func TestEraseDueRemovesWhatAWorkspaceOwnedAndKeepsATombstone(t *testing.T) {
 	ws := env.DB.Workspace.GetX(t.Context(), fixtures.UmbrellaID)
 	assert.Equal(t, before.PublicID, ws.PublicID)
 	assert.True(t, before.CreatedAt.Equal(ws.CreatedAt))
-	assert.True(t, before.DeletedAt.Equal(*ws.DeletedAt))
+	assert.True(t, before.DiscardedAt.Equal(*ws.DiscardedAt))
 	assert.True(t, now.Equal(*ws.ErasedAt))
 	assert.Empty(t, ws.Name)
 	assert.NotEqual(t, before.CollectKey, ws.CollectKey, "the collect key no longer opens anything")
@@ -140,7 +140,7 @@ func TestEraseDueReleasesTheTrackingHostsAndAdvancesTheFeed(t *testing.T) {
 	tomb := entries[0]
 	assert.Equal(t, int64(fixtures.UmbrellaID), tomb.Workspace.ID)
 	assert.NotNil(t, tomb.Workspace.ErasedAt)
-	assert.NotNil(t, tomb.Workspace.DeletedAt)
+	assert.NotNil(t, tomb.Workspace.DiscardedAt)
 	assert.Empty(t, tomb.Workspace.Name)
 	assert.Empty(t, tomb.Owners)
 }

@@ -21,6 +21,8 @@ type Workspace struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
+	// DiscardedAt holds the value of the "discarded_at" field.
+	DiscardedAt *time.Time `json:"discarded_at,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
 	// PublicID holds the value of the "public_id" field.
@@ -37,8 +39,6 @@ type Workspace struct {
 	SecondFactorRequiredAt *time.Time `json:"second_factor_required_at,omitempty"`
 	// FeedPosition holds the value of the "feed_position" field.
 	FeedPosition int64 `json:"feed_position,omitempty"`
-	// DeletedAt holds the value of the "deleted_at" field.
-	DeletedAt *time.Time `json:"deleted_at,omitempty"`
 	// ErasedAt holds the value of the "erased_at" field.
 	ErasedAt *time.Time `json:"erased_at,omitempty"`
 	// SuspendedAt holds the value of the "suspended_at" field.
@@ -389,7 +389,7 @@ func (*Workspace) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case workspace.FieldName, workspace.FieldPublicID, workspace.FieldCollectKey, workspace.FieldPostalAddress, workspace.FieldSuspendedByKind, workspace.FieldSuspendedByID, workspace.FieldSuspensionReason:
 			values[i] = new(sql.NullString)
-		case workspace.FieldCreatedAt, workspace.FieldUpdatedAt, workspace.FieldSecondFactorRequiredAt, workspace.FieldDeletedAt, workspace.FieldErasedAt, workspace.FieldSuspendedAt, workspace.FieldClearedAt, workspace.FieldAbuseWarningNotifiedAt, workspace.FieldAbuseFreezeNotifiedAt:
+		case workspace.FieldCreatedAt, workspace.FieldUpdatedAt, workspace.FieldDiscardedAt, workspace.FieldSecondFactorRequiredAt, workspace.FieldErasedAt, workspace.FieldSuspendedAt, workspace.FieldClearedAt, workspace.FieldAbuseWarningNotifiedAt, workspace.FieldAbuseFreezeNotifiedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -423,6 +423,13 @@ func (_m *Workspace) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
 			} else if value.Valid {
 				_m.UpdatedAt = value.Time
+			}
+		case workspace.FieldDiscardedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field discarded_at", values[i])
+			} else if value.Valid {
+				_m.DiscardedAt = new(time.Time)
+				*_m.DiscardedAt = value.Time
 			}
 		case workspace.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -473,13 +480,6 @@ func (_m *Workspace) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field feed_position", values[i])
 			} else if value.Valid {
 				_m.FeedPosition = value.Int64
-			}
-		case workspace.FieldDeletedAt:
-			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field deleted_at", values[i])
-			} else if value.Valid {
-				_m.DeletedAt = new(time.Time)
-				*_m.DeletedAt = value.Time
 			}
 		case workspace.FieldErasedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -725,6 +725,11 @@ func (_m *Workspace) String() string {
 	builder.WriteString("updated_at=")
 	builder.WriteString(_m.UpdatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
+	if v := _m.DiscardedAt; v != nil {
+		builder.WriteString("discarded_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(_m.Name)
 	builder.WriteString(", ")
@@ -751,11 +756,6 @@ func (_m *Workspace) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("feed_position=")
 	builder.WriteString(fmt.Sprintf("%v", _m.FeedPosition))
-	builder.WriteString(", ")
-	if v := _m.DeletedAt; v != nil {
-		builder.WriteString("deleted_at=")
-		builder.WriteString(v.Format(time.ANSIC))
-	}
 	builder.WriteString(", ")
 	if v := _m.ErasedAt; v != nil {
 		builder.WriteString("erased_at=")

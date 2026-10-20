@@ -23,6 +23,7 @@
     "security": "Security"
   },
   "actions": {
+    "archive": "Archive",
     "back": "Back",
     "cancel": "Cancel",
     "continue": "Continue",
@@ -30,6 +31,7 @@
     "edit": "Edit",
     "more": "More actions",
     "save": "Save",
+    "unarchive": "Restore",
     "view": "View"
   },
   "activity": {
@@ -53,8 +55,10 @@
     "automationSaveErrorMessage": "We couldn't save your automation. Please try again.",
     "automationSaveErrorTitle": "Failed to save automation",
     "automationStatusErrorTitle": "Failed to change automation status",
+    "broadcastArchiveErrorTitle": "Failed to archive broadcast",
     "broadcastDeleteErrorTitle": "Failed to delete broadcast",
     "broadcastLoadErrorTitle": "Failed to load broadcasts",
+    "broadcastRestoreErrorTitle": "Failed to restore broadcast",
     "broadcastSaveErrorTitle": "Failed to save broadcast",
     "broadcastSendErrorTitle": "Failed to send broadcast",
     "contactLoadErrorTitle": "Failed to load contact",
@@ -255,6 +259,7 @@
     "schedule": "Schedule",
     "scheduleLabel": "Schedule for",
     "sendNow": "Send now",
+    "showArchived": "Show archived",
     "stats": {
       "clicked": "Clicked",
       "clickRate": "Click rate",
@@ -589,8 +594,10 @@
     "automationDeactivated": "Automation deactivated",
     "automationDeleted": "Automation deleted",
     "automationUpdated": "Automation updated",
+    "broadcastArchived": "Broadcast archived",
     "broadcastCreated": "Broadcast created",
     "broadcastDeleted": "Broadcast deleted",
+    "broadcastRestored": "Broadcast restored",
     "broadcastScheduled": "Broadcast scheduled",
     "broadcastSent": "Broadcast is sending",
     "broadcastUpdated": "Broadcast updated",

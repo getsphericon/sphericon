@@ -75,15 +75,15 @@ func changesFeed(m ent.Mutation) bool {
 	return false
 }
 
-// changesDeletion reports whether m is an update that sets or clears deleted_at or
+// changesDeletion reports whether m is an update that sets or clears discarded_at or
 // erased_at: the deletion state the feed reports (ADR 0043).
 func changesDeletion(m *entclient.WorkspaceMutation) bool {
 	if !m.Op().Is(ent.OpUpdate | ent.OpUpdateOne) {
 		return false
 	}
-	_, deleted := m.DeletedAt()
+	_, deleted := m.DiscardedAt()
 	_, erased := m.ErasedAt()
-	return deleted || erased || m.DeletedAtCleared() || m.ErasedAtCleared()
+	return deleted || erased || m.DiscardedAtCleared() || m.ErasedAtCleared()
 }
 
 // Hook is the ent hook to install on a client bound to a transaction (Client.Use). It

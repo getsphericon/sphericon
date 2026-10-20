@@ -152,6 +152,20 @@
   workspace_id: 1
   created_at: '{{daysAgo 4}}'
   updated_at: '{{daysAgo 4}}'
+# Archived (ADR 0049): a sent broadcast that was discarded. It has no recipients, so it adds
+# nothing to the analytics figures.
+- id: 107 # fixture: BroadcastArchived
+  name: Old product tour
+  subject: A tour of the product
+  from_name: CodeBasics
+  from_email: hello@codebasics.dev
+  body: '<p>Lorem ipsum learning content.</p>'
+  status: sent
+  sent_at: '{{daysAgo 40}}'
+  discarded_at: '{{daysAgo 5}}'
+  workspace_id: 1
+  created_at: '{{daysAgo 41}}'
+  updated_at: '{{daysAgo 5}}'
 
 # --- Globex (workspace 2) foreign row — DO NOT change ---
 - id: 900 # fixture: BroadcastGlobex

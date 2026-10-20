@@ -135,6 +135,9 @@ model SiteBroadcastResource {
   /** Progress and ETA while the broadcast is sending; null otherwise. Returned by get and send only, never by the list */
   progress?: SiteBroadcastProgress | null;
 
+  /** When the broadcast was archived; null while it is kept. Only a sent or failed broadcast is archived. */
+  archivedAt?: Timestamp | null;
+
   /** Creation timestamp */
   createdAt: Timestamp;
 
@@ -219,13 +222,47 @@ model SiteTestSendBroadcastResult {
   from: EmailAddress;
 }
 
+/** Filter of the broadcast list */
+model SiteBroadcastsListFilter {
+  /** true lists the archived broadcasts instead of the kept ones; the default hides them */
+  @query archived?: boolean;
+}
+
+/**
+ * Delete removes a draft for good; a sent or failed broadcast is history and is archived
+ * instead (ADR 0049), so a delete of any other status is a 422.
+ */
 @tag("Site Broadcasts")
 interface SiteBroadcasts
   extends WorkspaceCrud<
       SiteBroadcastResource,
       SiteCreateBroadcastInput,
-      SiteUpdateBroadcastInput
+      SiteUpdateBroadcastInput,
+      never,
+      UnprocessableEntityProblem,
+      SiteBroadcastsListFilter
     > {
+  /**
+   * Archive a sent or failed broadcast: it leaves the list, keeps its report, tracking and
+   * figures, and can be restored. A draft is deleted and a scheduled or sending broadcast
+   * cannot be archived (422).
+   */
+  @action("archive")
+  @autoRoute
+  archive(...ResourceParameters<SiteBroadcastResource>):
+    | SiteBroadcastResource
+    | BadRequestProblem
+    | NotFoundProblem
+    | UnprocessableEntityProblem;
+
+  /** Restore an archived broadcast to the list */
+  @action("unarchive")
+  @autoRoute
+  unarchive(...ResourceParameters<SiteBroadcastResource>):
+    | SiteBroadcastResource
+    | BadRequestProblem
+    | NotFoundProblem;
+
   /** Send a broadcast immediately */
   @action("send")
   @autoRoute

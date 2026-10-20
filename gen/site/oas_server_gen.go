@@ -232,6 +232,13 @@ type Handler interface {
 	//
 	// PUT /workspaces/{workspaceId}/brand-kit
 	SiteBrandKitSave(ctx context.Context, req *SiteSaveBrandKitInput, params SiteBrandKitSaveParams) (SiteBrandKitSaveRes, error)
+	// SiteBroadcastsArchive implements SiteBroadcasts_archive operation.
+	//
+	// Archive a sent or failed broadcast: it leaves the list, keeps its report, tracking and figures, and
+	// can be restored. A draft is deleted and a scheduled or sending broadcast cannot be archived (422).
+	//
+	// POST /workspaces/{workspaceId}/broadcasts/{id}/archive
+	SiteBroadcastsArchive(ctx context.Context, params SiteBroadcastsArchiveParams) (SiteBroadcastsArchiveRes, error)
 	// SiteBroadcastsCreate implements SiteBroadcasts_create operation.
 	//
 	// Create a resource from the site UI.
@@ -276,6 +283,12 @@ type Handler interface {
 	//
 	// POST /workspaces/{workspaceId}/broadcasts/{id}/test-send
 	SiteBroadcastsTestSend(ctx context.Context, req *SiteTestSendBroadcastInput, params SiteBroadcastsTestSendParams) (SiteBroadcastsTestSendRes, error)
+	// SiteBroadcastsUnarchive implements SiteBroadcasts_unarchive operation.
+	//
+	// Restore an archived broadcast to the list.
+	//
+	// POST /workspaces/{workspaceId}/broadcasts/{id}/unarchive
+	SiteBroadcastsUnarchive(ctx context.Context, params SiteBroadcastsUnarchiveParams) (SiteBroadcastsUnarchiveRes, error)
 	// SiteBroadcastsUpdate implements SiteBroadcasts_update operation.
 	//
 	// Update a resource from the site UI.

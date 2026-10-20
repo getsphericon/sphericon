@@ -6651,6 +6651,8 @@ type SiteBroadcastResource struct {
 	// Progress and ETA while the broadcast is sending; null otherwise. Returned by get and send only,
 	// never by the list.
 	Progress OptNilSiteBroadcastProgress `json:"progress"`
+	// When the broadcast was archived; null while it is kept. Only a sent or failed broadcast is archived.
+	ArchivedAt OptNilTimestamp `json:"archivedAt"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -6745,6 +6747,11 @@ func (s *SiteBroadcastResource) GetStats() SiteBroadcastStats {
 // GetProgress returns the value of Progress.
 func (s *SiteBroadcastResource) GetProgress() OptNilSiteBroadcastProgress {
 	return s.Progress
+}
+
+// GetArchivedAt returns the value of ArchivedAt.
+func (s *SiteBroadcastResource) GetArchivedAt() OptNilTimestamp {
+	return s.ArchivedAt
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -6847,6 +6854,11 @@ func (s *SiteBroadcastResource) SetProgress(val OptNilSiteBroadcastProgress) {
 	s.Progress = val
 }
 
+// SetArchivedAt sets the value of ArchivedAt.
+func (s *SiteBroadcastResource) SetArchivedAt(val OptNilTimestamp) {
+	s.ArchivedAt = val
+}
+
 // SetCreatedAt sets the value of CreatedAt.
 func (s *SiteBroadcastResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
@@ -6857,11 +6869,13 @@ func (s *SiteBroadcastResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
 
-func (*SiteBroadcastResource) siteBroadcastsCreateRes()   {}
-func (*SiteBroadcastResource) siteBroadcastsGetRes()      {}
-func (*SiteBroadcastResource) siteBroadcastsScheduleRes() {}
-func (*SiteBroadcastResource) siteBroadcastsSendRes()     {}
-func (*SiteBroadcastResource) siteBroadcastsUpdateRes()   {}
+func (*SiteBroadcastResource) siteBroadcastsArchiveRes()   {}
+func (*SiteBroadcastResource) siteBroadcastsCreateRes()    {}
+func (*SiteBroadcastResource) siteBroadcastsGetRes()       {}
+func (*SiteBroadcastResource) siteBroadcastsScheduleRes()  {}
+func (*SiteBroadcastResource) siteBroadcastsSendRes()      {}
+func (*SiteBroadcastResource) siteBroadcastsUnarchiveRes() {}
+func (*SiteBroadcastResource) siteBroadcastsUpdateRes()    {}
 
 // The editor's JSON document the body was built from; null when the body was written as HTML.
 type SiteBroadcastResourceDoc map[string]jx.Raw
@@ -7088,6 +7102,18 @@ func (s *SiteBroadcastStatus) UnmarshalText(data []byte) error {
 	}
 }
 
+type SiteBroadcastsArchiveBadRequest ProblemDetails
+
+func (*SiteBroadcastsArchiveBadRequest) siteBroadcastsArchiveRes() {}
+
+type SiteBroadcastsArchiveNotFound ProblemDetails
+
+func (*SiteBroadcastsArchiveNotFound) siteBroadcastsArchiveRes() {}
+
+type SiteBroadcastsArchiveUnprocessableEntity ProblemDetails
+
+func (*SiteBroadcastsArchiveUnprocessableEntity) siteBroadcastsArchiveRes() {}
+
 type SiteBroadcastsCreateNotFound ProblemDetails
 
 func (*SiteBroadcastsCreateNotFound) siteBroadcastsCreateRes() {}
@@ -7108,6 +7134,10 @@ func (*SiteBroadcastsDeleteNoContent) siteBroadcastsDeleteRes() {}
 type SiteBroadcastsDeleteNotFound ProblemDetails
 
 func (*SiteBroadcastsDeleteNotFound) siteBroadcastsDeleteRes() {}
+
+type SiteBroadcastsDeleteUnprocessableEntity ProblemDetails
+
+func (*SiteBroadcastsDeleteUnprocessableEntity) siteBroadcastsDeleteRes() {}
 
 type SiteBroadcastsGetBadRequest ProblemDetails
 
@@ -7230,6 +7260,14 @@ func (*SiteBroadcastsTestSendNotFound) siteBroadcastsTestSendRes() {}
 type SiteBroadcastsTestSendUnprocessableEntity ProblemDetails
 
 func (*SiteBroadcastsTestSendUnprocessableEntity) siteBroadcastsTestSendRes() {}
+
+type SiteBroadcastsUnarchiveBadRequest ProblemDetails
+
+func (*SiteBroadcastsUnarchiveBadRequest) siteBroadcastsUnarchiveRes() {}
+
+type SiteBroadcastsUnarchiveNotFound ProblemDetails
+
+func (*SiteBroadcastsUnarchiveNotFound) siteBroadcastsUnarchiveRes() {}
 
 type SiteBroadcastsUpdateBadRequest ProblemDetails
 

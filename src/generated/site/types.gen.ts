@@ -1229,6 +1229,10 @@ export type SiteBroadcastResource = {
    */
   progress?: SiteBroadcastProgress | null;
   /**
+   * When the broadcast was archived; null while it is kept. Only a sent or failed broadcast is archived.
+   */
+  archivedAt?: Timestamp | null;
+  /**
    * Creation timestamp
    */
   createdAt: Timestamp;
@@ -3841,6 +3845,11 @@ export type SiteBroadcastResourceKeyWorkspaceId = WorkspaceId;
 export type SiteBroadcastResourceParentKey = WorkspaceId;
 
 /**
+ * true lists the archived broadcasts instead of the kept ones; the default hides them
+ */
+export type SiteBroadcastsListFilter = boolean;
+
+/**
  * Unique identifier
  */
 export type SiteContactResourceKeyId = EntityId;
@@ -5932,6 +5941,10 @@ export type SiteBroadcastsListData = {
      * Page size
      */
     pageSize?: number;
+    /**
+     * true lists the archived broadcasts instead of the kept ones; the default hides them
+     */
+    archived?: boolean;
   };
   url: '/workspaces/{workspaceId}/broadcasts';
 };
@@ -6044,6 +6057,10 @@ export type SiteBroadcastsDeleteErrors = {
    * RFC 7807 not found response
    */
   404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
 };
 
 export type SiteBroadcastsDeleteError = SiteBroadcastsDeleteErrors[keyof SiteBroadcastsDeleteErrors];
@@ -6138,6 +6155,49 @@ export type SiteBroadcastsUpdateResponses = {
 };
 
 export type SiteBroadcastsUpdateResponse = SiteBroadcastsUpdateResponses[keyof SiteBroadcastsUpdateResponses];
+
+export type SiteBroadcastsArchiveData = {
+  body?: never;
+  path: {
+    /**
+     * The Workspace id: its short opaque public address and the route key for nested
+     * workspace resources (ADR 0043)
+     */
+    workspaceId: WorkspaceId;
+    /**
+     * Unique identifier
+     */
+    id: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/broadcasts/{id}/archive';
+};
+
+export type SiteBroadcastsArchiveErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+};
+
+export type SiteBroadcastsArchiveError = SiteBroadcastsArchiveErrors[keyof SiteBroadcastsArchiveErrors];
+
+export type SiteBroadcastsArchiveResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteBroadcastResource;
+};
+
+export type SiteBroadcastsArchiveResponse = SiteBroadcastsArchiveResponses[keyof SiteBroadcastsArchiveResponses];
 
 export type SiteBroadcastsScheduleData = {
   body: SiteScheduleBroadcastInput;
@@ -6271,6 +6331,45 @@ export type SiteBroadcastsTestSendResponses = {
 };
 
 export type SiteBroadcastsTestSendResponse = SiteBroadcastsTestSendResponses[keyof SiteBroadcastsTestSendResponses];
+
+export type SiteBroadcastsUnarchiveData = {
+  body?: never;
+  path: {
+    /**
+     * The Workspace id: its short opaque public address and the route key for nested
+     * workspace resources (ADR 0043)
+     */
+    workspaceId: WorkspaceId;
+    /**
+     * Unique identifier
+     */
+    id: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/broadcasts/{id}/unarchive';
+};
+
+export type SiteBroadcastsUnarchiveErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteBroadcastsUnarchiveError = SiteBroadcastsUnarchiveErrors[keyof SiteBroadcastsUnarchiveErrors];
+
+export type SiteBroadcastsUnarchiveResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteBroadcastResource;
+};
+
+export type SiteBroadcastsUnarchiveResponse = SiteBroadcastsUnarchiveResponses[keyof SiteBroadcastsUnarchiveResponses];
 
 export type SiteContactsListData = {
   body?: never;

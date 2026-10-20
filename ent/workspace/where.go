@@ -65,6 +65,11 @@ func UpdatedAt(v time.Time) predicate.Workspace {
 	return predicate.Workspace(sql.FieldEQ(FieldUpdatedAt, v))
 }
 
+// DiscardedAt applies equality check predicate on the "discarded_at" field. It's identical to DiscardedAtEQ.
+func DiscardedAt(v time.Time) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEQ(FieldDiscardedAt, v))
+}
+
 // Name applies equality check predicate on the "name" field. It's identical to NameEQ.
 func Name(v string) predicate.Workspace {
 	return predicate.Workspace(sql.FieldEQ(FieldName, v))
@@ -103,11 +108,6 @@ func SecondFactorRequiredAt(v time.Time) predicate.Workspace {
 // FeedPosition applies equality check predicate on the "feed_position" field. It's identical to FeedPositionEQ.
 func FeedPosition(v int64) predicate.Workspace {
 	return predicate.Workspace(sql.FieldEQ(FieldFeedPosition, v))
-}
-
-// DeletedAt applies equality check predicate on the "deleted_at" field. It's identical to DeletedAtEQ.
-func DeletedAt(v time.Time) predicate.Workspace {
-	return predicate.Workspace(sql.FieldEQ(FieldDeletedAt, v))
 }
 
 // ErasedAt applies equality check predicate on the "erased_at" field. It's identical to ErasedAtEQ.
@@ -228,6 +228,56 @@ func UpdatedAtLT(v time.Time) predicate.Workspace {
 // UpdatedAtLTE applies the LTE predicate on the "updated_at" field.
 func UpdatedAtLTE(v time.Time) predicate.Workspace {
 	return predicate.Workspace(sql.FieldLTE(FieldUpdatedAt, v))
+}
+
+// DiscardedAtEQ applies the EQ predicate on the "discarded_at" field.
+func DiscardedAtEQ(v time.Time) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEQ(FieldDiscardedAt, v))
+}
+
+// DiscardedAtNEQ applies the NEQ predicate on the "discarded_at" field.
+func DiscardedAtNEQ(v time.Time) predicate.Workspace {
+	return predicate.Workspace(sql.FieldNEQ(FieldDiscardedAt, v))
+}
+
+// DiscardedAtIn applies the In predicate on the "discarded_at" field.
+func DiscardedAtIn(vs ...time.Time) predicate.Workspace {
+	return predicate.Workspace(sql.FieldIn(FieldDiscardedAt, vs...))
+}
+
+// DiscardedAtNotIn applies the NotIn predicate on the "discarded_at" field.
+func DiscardedAtNotIn(vs ...time.Time) predicate.Workspace {
+	return predicate.Workspace(sql.FieldNotIn(FieldDiscardedAt, vs...))
+}
+
+// DiscardedAtGT applies the GT predicate on the "discarded_at" field.
+func DiscardedAtGT(v time.Time) predicate.Workspace {
+	return predicate.Workspace(sql.FieldGT(FieldDiscardedAt, v))
+}
+
+// DiscardedAtGTE applies the GTE predicate on the "discarded_at" field.
+func DiscardedAtGTE(v time.Time) predicate.Workspace {
+	return predicate.Workspace(sql.FieldGTE(FieldDiscardedAt, v))
+}
+
+// DiscardedAtLT applies the LT predicate on the "discarded_at" field.
+func DiscardedAtLT(v time.Time) predicate.Workspace {
+	return predicate.Workspace(sql.FieldLT(FieldDiscardedAt, v))
+}
+
+// DiscardedAtLTE applies the LTE predicate on the "discarded_at" field.
+func DiscardedAtLTE(v time.Time) predicate.Workspace {
+	return predicate.Workspace(sql.FieldLTE(FieldDiscardedAt, v))
+}
+
+// DiscardedAtIsNil applies the IsNil predicate on the "discarded_at" field.
+func DiscardedAtIsNil() predicate.Workspace {
+	return predicate.Workspace(sql.FieldIsNull(FieldDiscardedAt))
+}
+
+// DiscardedAtNotNil applies the NotNil predicate on the "discarded_at" field.
+func DiscardedAtNotNil() predicate.Workspace {
+	return predicate.Workspace(sql.FieldNotNull(FieldDiscardedAt))
 }
 
 // NameEQ applies the EQ predicate on the "name" field.
@@ -648,56 +698,6 @@ func FeedPositionLT(v int64) predicate.Workspace {
 // FeedPositionLTE applies the LTE predicate on the "feed_position" field.
 func FeedPositionLTE(v int64) predicate.Workspace {
 	return predicate.Workspace(sql.FieldLTE(FieldFeedPosition, v))
-}
-
-// DeletedAtEQ applies the EQ predicate on the "deleted_at" field.
-func DeletedAtEQ(v time.Time) predicate.Workspace {
-	return predicate.Workspace(sql.FieldEQ(FieldDeletedAt, v))
-}
-
-// DeletedAtNEQ applies the NEQ predicate on the "deleted_at" field.
-func DeletedAtNEQ(v time.Time) predicate.Workspace {
-	return predicate.Workspace(sql.FieldNEQ(FieldDeletedAt, v))
-}
-
-// DeletedAtIn applies the In predicate on the "deleted_at" field.
-func DeletedAtIn(vs ...time.Time) predicate.Workspace {
-	return predicate.Workspace(sql.FieldIn(FieldDeletedAt, vs...))
-}
-
-// DeletedAtNotIn applies the NotIn predicate on the "deleted_at" field.
-func DeletedAtNotIn(vs ...time.Time) predicate.Workspace {
-	return predicate.Workspace(sql.FieldNotIn(FieldDeletedAt, vs...))
-}
-
-// DeletedAtGT applies the GT predicate on the "deleted_at" field.
-func DeletedAtGT(v time.Time) predicate.Workspace {
-	return predicate.Workspace(sql.FieldGT(FieldDeletedAt, v))
-}
-
-// DeletedAtGTE applies the GTE predicate on the "deleted_at" field.
-func DeletedAtGTE(v time.Time) predicate.Workspace {
-	return predicate.Workspace(sql.FieldGTE(FieldDeletedAt, v))
-}
-
-// DeletedAtLT applies the LT predicate on the "deleted_at" field.
-func DeletedAtLT(v time.Time) predicate.Workspace {
-	return predicate.Workspace(sql.FieldLT(FieldDeletedAt, v))
-}
-
-// DeletedAtLTE applies the LTE predicate on the "deleted_at" field.
-func DeletedAtLTE(v time.Time) predicate.Workspace {
-	return predicate.Workspace(sql.FieldLTE(FieldDeletedAt, v))
-}
-
-// DeletedAtIsNil applies the IsNil predicate on the "deleted_at" field.
-func DeletedAtIsNil() predicate.Workspace {
-	return predicate.Workspace(sql.FieldIsNull(FieldDeletedAt))
-}
-
-// DeletedAtNotNil applies the NotNil predicate on the "deleted_at" field.
-func DeletedAtNotNil() predicate.Workspace {
-	return predicate.Workspace(sql.FieldNotNull(FieldDeletedAt))
 }
 
 // ErasedAtEQ applies the EQ predicate on the "erased_at" field.

@@ -79,14 +79,18 @@ func TestSiteBroadcastsCRUD(t *testing.T) {
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteBroadcastsUpdateUnprocessableEntity{}, badUpd)
 
-	// Delete removes it; a fetch by id then resolves to 404.
+	// A sent broadcast is history: Delete refuses it, Archive keeps it (it stays addressable).
 	del, err := c.SiteBroadcastsDelete(ctx, siteapi.SiteBroadcastsDeleteParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteBroadcastsDeleteNoContent{}, del)
+	assert.IsType(t, &siteapi.SiteBroadcastsDeleteUnprocessableEntity{}, del)
 
-	gone, err := c.SiteBroadcastsGet(ctx, siteapi.SiteBroadcastsGetParams{WorkspaceId: workspaceID, ID: res.ID})
+	arch, err := c.SiteBroadcastsArchive(ctx, siteapi.SiteBroadcastsArchiveParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteBroadcastsGetNotFound{}, gone)
+	assert.IsType(t, &siteapi.SiteBroadcastResource{}, arch)
+
+	kept, err := c.SiteBroadcastsGet(ctx, siteapi.SiteBroadcastsGetParams{WorkspaceId: workspaceID, ID: res.ID})
+	require.NoError(t, err)
+	assert.IsType(t, &siteapi.SiteBroadcastResource{}, kept)
 }
 
 // Broadcasts are scoped to the workspace: a workspaceID the user does not own is a 404.

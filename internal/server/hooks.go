@@ -55,7 +55,7 @@ type hook struct {
 func (h *hook) handle(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	row, err := h.ent.Integration.Query().
-		Where(integration.IngestKey(r.PathValue("key")), integration.HasWorkspaceWith(workspace.DeletedAtIsNil())).
+		Where(integration.IngestKey(r.PathValue("key")), integration.HasWorkspaceWith(workspace.DiscardedAtIsNil())).
 		Only(ctx)
 	if ent.IsNotFound(err) {
 		http.NotFound(w, r)

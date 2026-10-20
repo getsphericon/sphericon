@@ -141,6 +141,16 @@ func (UnimplementedHandler) BrandKitGet(ctx context.Context) (r BrandKitGetRes, 
 	return r, ht.ErrNotImplemented
 }
 
+// BroadcastsArchive implements Broadcasts_archive operation.
+//
+// Archive a sent or failed broadcast: it leaves the list but keeps its report and figures, and can be
+// restored. A draft is deleted instead; a scheduled or sending broadcast cannot be archived.
+//
+// POST /broadcasts/{id}/archive
+func (UnimplementedHandler) BroadcastsArchive(ctx context.Context, params BroadcastsArchiveParams) (r BroadcastsArchiveRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // BroadcastsCreate implements Broadcasts_create operation.
 //
 // Create a resource.
@@ -211,6 +221,15 @@ func (UnimplementedHandler) BroadcastsSetAudience(ctx context.Context, req *SetB
 //
 // POST /broadcasts/{id}/test-send
 func (UnimplementedHandler) BroadcastsTestSend(ctx context.Context, req *TestSendBroadcastInput, params BroadcastsTestSendParams) (r BroadcastsTestSendRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// BroadcastsUnarchive implements Broadcasts_unarchive operation.
+//
+// Restore an archived broadcast to the list.
+//
+// POST /broadcasts/{id}/unarchive
+func (UnimplementedHandler) BroadcastsUnarchive(ctx context.Context, params BroadcastsUnarchiveParams) (r BroadcastsUnarchiveRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

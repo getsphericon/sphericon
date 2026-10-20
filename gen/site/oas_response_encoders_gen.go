@@ -1701,6 +1701,61 @@ func encodeSiteBrandKitSaveResponse(response SiteBrandKitSaveRes, w http.Respons
 	}
 }
 
+func encodeSiteBroadcastsArchiveResponse(response SiteBroadcastsArchiveRes, w http.ResponseWriter, span trace.Span) error {
+	switch response := response.(type) {
+	case *SiteBroadcastResource:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(200)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteBroadcastsArchiveBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteBroadcastsArchiveNotFound:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(404)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteBroadcastsArchiveUnprocessableEntity:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(422)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
+}
+
 func encodeSiteBroadcastsCreateResponse(response SiteBroadcastsCreateRes, w http.ResponseWriter, span trace.Span) error {
 	switch response := response.(type) {
 	case *SiteBroadcastResource:
@@ -1766,6 +1821,18 @@ func encodeSiteBroadcastsDeleteResponse(response SiteBroadcastsDeleteRes, w http
 	case *SiteBroadcastsDeleteNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteBroadcastsDeleteUnprocessableEntity:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(422)
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -2097,6 +2164,49 @@ func encodeSiteBroadcastsTestSendResponse(response SiteBroadcastsTestSendRes, w 
 
 		e := new(jx.Encoder)
 		response.Response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
+}
+
+func encodeSiteBroadcastsUnarchiveResponse(response SiteBroadcastsUnarchiveRes, w http.ResponseWriter, span trace.Span) error {
+	switch response := response.(type) {
+	case *SiteBroadcastResource:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(200)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteBroadcastsUnarchiveBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteBroadcastsUnarchiveNotFound:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(404)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
 		if _, err := e.WriteTo(w); err != nil {
 			return errors.Wrap(err, "write")
 		}

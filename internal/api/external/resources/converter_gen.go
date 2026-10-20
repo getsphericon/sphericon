@@ -69,6 +69,7 @@ func (c *ConverterImpl) BroadcastToResource(source *ent.Broadcast) external.Broa
 		externalapiBroadcastResource.Status = external.BroadcastStatus((*source).Status)
 		externalapiBroadcastResource.ScheduledAt = optNilTimestamp((*source).ScheduledAt)
 		externalapiBroadcastResource.SentAt = optNilTimestamp((*source).SentAt)
+		externalapiBroadcastResource.ArchivedAt = optNilTimestamp((*source).DiscardedAt)
 		externalapiBroadcastResource.CreatedAt = timestamp((*source).CreatedAt)
 		externalapiBroadcastResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}

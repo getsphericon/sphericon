@@ -53,6 +53,7 @@ func (c *ConverterImpl) BroadcastToResource(source *ent.Broadcast) site.SiteBroa
 		siteapiSiteBroadcastResource.HoldReason = optNilString((*source).HoldReason)
 		siteapiSiteBroadcastResource.ScheduledAt = optNilTimestamp((*source).ScheduledAt)
 		siteapiSiteBroadcastResource.SentAt = optNilTimestamp((*source).SentAt)
+		siteapiSiteBroadcastResource.ArchivedAt = optNilTimestamp((*source).DiscardedAt)
 		siteapiSiteBroadcastResource.CreatedAt = timestamp((*source).CreatedAt)
 		siteapiSiteBroadcastResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}

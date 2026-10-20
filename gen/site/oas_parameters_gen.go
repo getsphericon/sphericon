@@ -3594,6 +3594,149 @@ func decodeSiteBrandKitSaveParams(args [1]string, argsEscaped bool, r *http.Requ
 	return params, nil
 }
 
+// SiteBroadcastsArchiveParams is parameters of SiteBroadcasts_archive operation.
+type SiteBroadcastsArchiveParams struct {
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
+	// Unique identifier.
+	ID EntityId
+}
+
+func unpackSiteBroadcastsArchiveParams(packed middleware.Parameters) (params SiteBroadcastsArchiveParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "workspaceId",
+			In:   "path",
+		}
+		params.WorkspaceId = packed[key].(WorkspaceId)
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "id",
+			In:   "path",
+		}
+		params.ID = packed[key].(EntityId)
+	}
+	return params
+}
+
+func decodeSiteBroadcastsArchiveParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteBroadcastsArchiveParams, _ error) {
+	// Decode path: workspaceId.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "workspaceId",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "workspaceId",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	// Decode path: id.
+	if err := func() error {
+		param := args[1]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[1])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "id",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotIDVal int64
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToStringInt64(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotIDVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.ID = EntityId(paramsDotIDVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "id",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
 // SiteBroadcastsCreateParams is parameters of SiteBroadcasts_create operation.
 type SiteBroadcastsCreateParams struct {
 	// The Workspace id: its short opaque public address and the route key for nested workspace resources
@@ -3971,6 +4114,8 @@ type SiteBroadcastsListParams struct {
 	Page OptInt32 `json:",omitempty,omitzero"`
 	// Page size.
 	PageSize OptInt32 `json:",omitempty,omitzero"`
+	// True lists the archived broadcasts instead of the kept ones; the default hides them.
+	Archived OptBool `json:",omitempty,omitzero"`
 }
 
 func unpackSiteBroadcastsListParams(packed middleware.Parameters) (params SiteBroadcastsListParams) {
@@ -3997,6 +4142,15 @@ func unpackSiteBroadcastsListParams(packed middleware.Parameters) (params SiteBr
 		}
 		if v, ok := packed[key]; ok {
 			params.PageSize = v.(OptInt32)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "archived",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.Archived = v.(OptBool)
 		}
 	}
 	return params
@@ -4152,6 +4306,47 @@ func decodeSiteBroadcastsListParams(args [1]string, argsEscaped bool, r *http.Re
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
 			Name: "pageSize",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: archived.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "archived",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotArchivedVal bool
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToBool(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotArchivedVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.Archived.SetTo(paramsDotArchivedVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "archived",
 			In:   "query",
 			Err:  err,
 		}
@@ -4473,6 +4668,149 @@ func unpackSiteBroadcastsTestSendParams(packed middleware.Parameters) (params Si
 }
 
 func decodeSiteBroadcastsTestSendParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteBroadcastsTestSendParams, _ error) {
+	// Decode path: workspaceId.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "workspaceId",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "workspaceId",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	// Decode path: id.
+	if err := func() error {
+		param := args[1]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[1])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "id",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotIDVal int64
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToStringInt64(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotIDVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.ID = EntityId(paramsDotIDVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "id",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// SiteBroadcastsUnarchiveParams is parameters of SiteBroadcasts_unarchive operation.
+type SiteBroadcastsUnarchiveParams struct {
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
+	// Unique identifier.
+	ID EntityId
+}
+
+func unpackSiteBroadcastsUnarchiveParams(packed middleware.Parameters) (params SiteBroadcastsUnarchiveParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "workspaceId",
+			In:   "path",
+		}
+		params.WorkspaceId = packed[key].(WorkspaceId)
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "id",
+			In:   "path",
+		}
+		params.ID = packed[key].(EntityId)
+	}
+	return params
+}
+
+func decodeSiteBroadcastsUnarchiveParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteBroadcastsUnarchiveParams, _ error) {
 	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]

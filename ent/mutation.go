@@ -6985,6 +6985,7 @@ type BroadcastMutation struct {
 	id                *int64
 	created_at        *time.Time
 	updated_at        *time.Time
+	discarded_at      *time.Time
 	name              *string
 	subject           *string
 	from_name         *string
@@ -7224,6 +7225,55 @@ func (m *BroadcastMutation) OldWorkspaceID(ctx context.Context) (v int64, err er
 // ResetWorkspaceID resets all changes to the "workspace_id" field.
 func (m *BroadcastMutation) ResetWorkspaceID() {
 	m.workspace = nil
+}
+
+// SetDiscardedAt sets the "discarded_at" field.
+func (m *BroadcastMutation) SetDiscardedAt(t time.Time) {
+	m.discarded_at = &t
+}
+
+// DiscardedAt returns the value of the "discarded_at" field in the mutation.
+func (m *BroadcastMutation) DiscardedAt() (r time.Time, exists bool) {
+	v := m.discarded_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDiscardedAt returns the old "discarded_at" field's value of the Broadcast entity.
+// If the Broadcast object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BroadcastMutation) OldDiscardedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDiscardedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDiscardedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDiscardedAt: %w", err)
+	}
+	return oldValue.DiscardedAt, nil
+}
+
+// ClearDiscardedAt clears the value of the "discarded_at" field.
+func (m *BroadcastMutation) ClearDiscardedAt() {
+	m.discarded_at = nil
+	m.clearedFields[broadcast.FieldDiscardedAt] = struct{}{}
+}
+
+// DiscardedAtCleared returns if the "discarded_at" field was cleared in this mutation.
+func (m *BroadcastMutation) DiscardedAtCleared() bool {
+	_, ok := m.clearedFields[broadcast.FieldDiscardedAt]
+	return ok
+}
+
+// ResetDiscardedAt resets all changes to the "discarded_at" field.
+func (m *BroadcastMutation) ResetDiscardedAt() {
+	m.discarded_at = nil
+	delete(m.clearedFields, broadcast.FieldDiscardedAt)
 }
 
 // SetName sets the "name" field.
@@ -8069,7 +8119,7 @@ func (m *BroadcastMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BroadcastMutation) Fields() []string {
-	fields := make([]string, 0, 18)
+	fields := make([]string, 0, 19)
 	if m.created_at != nil {
 		fields = append(fields, broadcast.FieldCreatedAt)
 	}
@@ -8078,6 +8128,9 @@ func (m *BroadcastMutation) Fields() []string {
 	}
 	if m.workspace != nil {
 		fields = append(fields, broadcast.FieldWorkspaceID)
+	}
+	if m.discarded_at != nil {
+		fields = append(fields, broadcast.FieldDiscardedAt)
 	}
 	if m.name != nil {
 		fields = append(fields, broadcast.FieldName)
@@ -8138,6 +8191,8 @@ func (m *BroadcastMutation) Field(name string) (ent.Value, bool) {
 		return m.UpdatedAt()
 	case broadcast.FieldWorkspaceID:
 		return m.WorkspaceID()
+	case broadcast.FieldDiscardedAt:
+		return m.DiscardedAt()
 	case broadcast.FieldName:
 		return m.Name()
 	case broadcast.FieldSubject:
@@ -8183,6 +8238,8 @@ func (m *BroadcastMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldUpdatedAt(ctx)
 	case broadcast.FieldWorkspaceID:
 		return m.OldWorkspaceID(ctx)
+	case broadcast.FieldDiscardedAt:
+		return m.OldDiscardedAt(ctx)
 	case broadcast.FieldName:
 		return m.OldName(ctx)
 	case broadcast.FieldSubject:
@@ -8242,6 +8299,13 @@ func (m *BroadcastMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetWorkspaceID(v)
+		return nil
+	case broadcast.FieldDiscardedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDiscardedAt(v)
 		return nil
 	case broadcast.FieldName:
 		v, ok := value.(string)
@@ -8405,6 +8469,9 @@ func (m *BroadcastMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *BroadcastMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(broadcast.FieldDiscardedAt) {
+		fields = append(fields, broadcast.FieldDiscardedAt)
+	}
 	if m.FieldCleared(broadcast.FieldFromName) {
 		fields = append(fields, broadcast.FieldFromName)
 	}
@@ -8449,6 +8516,9 @@ func (m *BroadcastMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *BroadcastMutation) ClearField(name string) error {
 	switch name {
+	case broadcast.FieldDiscardedAt:
+		m.ClearDiscardedAt()
+		return nil
 	case broadcast.FieldFromName:
 		m.ClearFromName()
 		return nil
@@ -8495,6 +8565,9 @@ func (m *BroadcastMutation) ResetField(name string) error {
 		return nil
 	case broadcast.FieldWorkspaceID:
 		m.ResetWorkspaceID()
+		return nil
+	case broadcast.FieldDiscardedAt:
+		m.ResetDiscardedAt()
 		return nil
 	case broadcast.FieldName:
 		m.ResetName()
@@ -39339,6 +39412,7 @@ type WorkspaceMutation struct {
 	id                          *int64
 	created_at                  *time.Time
 	updated_at                  *time.Time
+	discarded_at                *time.Time
 	name                        *string
 	public_id                   *string
 	collect_key                 *string
@@ -39349,7 +39423,6 @@ type WorkspaceMutation struct {
 	second_factor_required_at   *time.Time
 	feed_position               *int64
 	addfeed_position            *int64
-	deleted_at                  *time.Time
 	erased_at                   *time.Time
 	suspended_at                *time.Time
 	suspended_by_kind           *workspace.SuspendedByKind
@@ -39623,6 +39696,55 @@ func (m *WorkspaceMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err 
 // ResetUpdatedAt resets all changes to the "updated_at" field.
 func (m *WorkspaceMutation) ResetUpdatedAt() {
 	m.updated_at = nil
+}
+
+// SetDiscardedAt sets the "discarded_at" field.
+func (m *WorkspaceMutation) SetDiscardedAt(t time.Time) {
+	m.discarded_at = &t
+}
+
+// DiscardedAt returns the value of the "discarded_at" field in the mutation.
+func (m *WorkspaceMutation) DiscardedAt() (r time.Time, exists bool) {
+	v := m.discarded_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDiscardedAt returns the old "discarded_at" field's value of the Workspace entity.
+// If the Workspace object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WorkspaceMutation) OldDiscardedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDiscardedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDiscardedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDiscardedAt: %w", err)
+	}
+	return oldValue.DiscardedAt, nil
+}
+
+// ClearDiscardedAt clears the value of the "discarded_at" field.
+func (m *WorkspaceMutation) ClearDiscardedAt() {
+	m.discarded_at = nil
+	m.clearedFields[workspace.FieldDiscardedAt] = struct{}{}
+}
+
+// DiscardedAtCleared returns if the "discarded_at" field was cleared in this mutation.
+func (m *WorkspaceMutation) DiscardedAtCleared() bool {
+	_, ok := m.clearedFields[workspace.FieldDiscardedAt]
+	return ok
+}
+
+// ResetDiscardedAt resets all changes to the "discarded_at" field.
+func (m *WorkspaceMutation) ResetDiscardedAt() {
+	m.discarded_at = nil
+	delete(m.clearedFields, workspace.FieldDiscardedAt)
 }
 
 // SetName sets the "name" field.
@@ -39991,55 +40113,6 @@ func (m *WorkspaceMutation) AddedFeedPosition() (r int64, exists bool) {
 func (m *WorkspaceMutation) ResetFeedPosition() {
 	m.feed_position = nil
 	m.addfeed_position = nil
-}
-
-// SetDeletedAt sets the "deleted_at" field.
-func (m *WorkspaceMutation) SetDeletedAt(t time.Time) {
-	m.deleted_at = &t
-}
-
-// DeletedAt returns the value of the "deleted_at" field in the mutation.
-func (m *WorkspaceMutation) DeletedAt() (r time.Time, exists bool) {
-	v := m.deleted_at
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldDeletedAt returns the old "deleted_at" field's value of the Workspace entity.
-// If the Workspace object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *WorkspaceMutation) OldDeletedAt(ctx context.Context) (v *time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldDeletedAt is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldDeletedAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldDeletedAt: %w", err)
-	}
-	return oldValue.DeletedAt, nil
-}
-
-// ClearDeletedAt clears the value of the "deleted_at" field.
-func (m *WorkspaceMutation) ClearDeletedAt() {
-	m.deleted_at = nil
-	m.clearedFields[workspace.FieldDeletedAt] = struct{}{}
-}
-
-// DeletedAtCleared returns if the "deleted_at" field was cleared in this mutation.
-func (m *WorkspaceMutation) DeletedAtCleared() bool {
-	_, ok := m.clearedFields[workspace.FieldDeletedAt]
-	return ok
-}
-
-// ResetDeletedAt resets all changes to the "deleted_at" field.
-func (m *WorkspaceMutation) ResetDeletedAt() {
-	m.deleted_at = nil
-	delete(m.clearedFields, workspace.FieldDeletedAt)
 }
 
 // SetErasedAt sets the "erased_at" field.
@@ -42023,6 +42096,9 @@ func (m *WorkspaceMutation) Fields() []string {
 	if m.updated_at != nil {
 		fields = append(fields, workspace.FieldUpdatedAt)
 	}
+	if m.discarded_at != nil {
+		fields = append(fields, workspace.FieldDiscardedAt)
+	}
 	if m.name != nil {
 		fields = append(fields, workspace.FieldName)
 	}
@@ -42046,9 +42122,6 @@ func (m *WorkspaceMutation) Fields() []string {
 	}
 	if m.feed_position != nil {
 		fields = append(fields, workspace.FieldFeedPosition)
-	}
-	if m.deleted_at != nil {
-		fields = append(fields, workspace.FieldDeletedAt)
 	}
 	if m.erased_at != nil {
 		fields = append(fields, workspace.FieldErasedAt)
@@ -42089,6 +42162,8 @@ func (m *WorkspaceMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedAt()
 	case workspace.FieldUpdatedAt:
 		return m.UpdatedAt()
+	case workspace.FieldDiscardedAt:
+		return m.DiscardedAt()
 	case workspace.FieldName:
 		return m.Name()
 	case workspace.FieldPublicID:
@@ -42105,8 +42180,6 @@ func (m *WorkspaceMutation) Field(name string) (ent.Value, bool) {
 		return m.SecondFactorRequiredAt()
 	case workspace.FieldFeedPosition:
 		return m.FeedPosition()
-	case workspace.FieldDeletedAt:
-		return m.DeletedAt()
 	case workspace.FieldErasedAt:
 		return m.ErasedAt()
 	case workspace.FieldSuspendedAt:
@@ -42138,6 +42211,8 @@ func (m *WorkspaceMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldCreatedAt(ctx)
 	case workspace.FieldUpdatedAt:
 		return m.OldUpdatedAt(ctx)
+	case workspace.FieldDiscardedAt:
+		return m.OldDiscardedAt(ctx)
 	case workspace.FieldName:
 		return m.OldName(ctx)
 	case workspace.FieldPublicID:
@@ -42154,8 +42229,6 @@ func (m *WorkspaceMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldSecondFactorRequiredAt(ctx)
 	case workspace.FieldFeedPosition:
 		return m.OldFeedPosition(ctx)
-	case workspace.FieldDeletedAt:
-		return m.OldDeletedAt(ctx)
 	case workspace.FieldErasedAt:
 		return m.OldErasedAt(ctx)
 	case workspace.FieldSuspendedAt:
@@ -42196,6 +42269,13 @@ func (m *WorkspaceMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetUpdatedAt(v)
+		return nil
+	case workspace.FieldDiscardedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDiscardedAt(v)
 		return nil
 	case workspace.FieldName:
 		v, ok := value.(string)
@@ -42252,13 +42332,6 @@ func (m *WorkspaceMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetFeedPosition(v)
-		return nil
-	case workspace.FieldDeletedAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetDeletedAt(v)
 		return nil
 	case workspace.FieldErasedAt:
 		v, ok := value.(time.Time)
@@ -42380,6 +42453,9 @@ func (m *WorkspaceMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *WorkspaceMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(workspace.FieldDiscardedAt) {
+		fields = append(fields, workspace.FieldDiscardedAt)
+	}
 	if m.FieldCleared(workspace.FieldPostalAddress) {
 		fields = append(fields, workspace.FieldPostalAddress)
 	}
@@ -42388,9 +42464,6 @@ func (m *WorkspaceMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(workspace.FieldSecondFactorRequiredAt) {
 		fields = append(fields, workspace.FieldSecondFactorRequiredAt)
-	}
-	if m.FieldCleared(workspace.FieldDeletedAt) {
-		fields = append(fields, workspace.FieldDeletedAt)
 	}
 	if m.FieldCleared(workspace.FieldErasedAt) {
 		fields = append(fields, workspace.FieldErasedAt)
@@ -42430,6 +42503,9 @@ func (m *WorkspaceMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *WorkspaceMutation) ClearField(name string) error {
 	switch name {
+	case workspace.FieldDiscardedAt:
+		m.ClearDiscardedAt()
+		return nil
 	case workspace.FieldPostalAddress:
 		m.ClearPostalAddress()
 		return nil
@@ -42438,9 +42514,6 @@ func (m *WorkspaceMutation) ClearField(name string) error {
 		return nil
 	case workspace.FieldSecondFactorRequiredAt:
 		m.ClearSecondFactorRequiredAt()
-		return nil
-	case workspace.FieldDeletedAt:
-		m.ClearDeletedAt()
 		return nil
 	case workspace.FieldErasedAt:
 		m.ClearErasedAt()
@@ -42480,6 +42553,9 @@ func (m *WorkspaceMutation) ResetField(name string) error {
 	case workspace.FieldUpdatedAt:
 		m.ResetUpdatedAt()
 		return nil
+	case workspace.FieldDiscardedAt:
+		m.ResetDiscardedAt()
+		return nil
 	case workspace.FieldName:
 		m.ResetName()
 		return nil
@@ -42503,9 +42579,6 @@ func (m *WorkspaceMutation) ResetField(name string) error {
 		return nil
 	case workspace.FieldFeedPosition:
 		m.ResetFeedPosition()
-		return nil
-	case workspace.FieldDeletedAt:
-		m.ResetDeletedAt()
 		return nil
 	case workspace.FieldErasedAt:
 		m.ResetErasedAt()

@@ -111,13 +111,14 @@ interface ExternalCrud<
   CreateInput,
   UpdateInput,
   WriteConflict = never,
-  DeleteDenied = never
+  DeleteDenied = never,
+  ListFilter extends {} = {}
 > {
   /** List resources with pagination */
   @listsResource(Resource)
   @get
   @autoRoute
-  list(...ResourceCollectionParameters<Resource>, ...PageQuery):
+  list(...ResourceCollectionParameters<Resource>, ...PageQuery, ...ListFilter):
     | Page<Resource>
     | BadRequestProblem
     | UnauthorizedProblem

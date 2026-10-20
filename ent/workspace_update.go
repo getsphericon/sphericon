@@ -63,6 +63,26 @@ func (_u *WorkspaceUpdate) SetUpdatedAt(v time.Time) *WorkspaceUpdate {
 	return _u
 }
 
+// SetDiscardedAt sets the "discarded_at" field.
+func (_u *WorkspaceUpdate) SetDiscardedAt(v time.Time) *WorkspaceUpdate {
+	_u.mutation.SetDiscardedAt(v)
+	return _u
+}
+
+// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
+func (_u *WorkspaceUpdate) SetNillableDiscardedAt(v *time.Time) *WorkspaceUpdate {
+	if v != nil {
+		_u.SetDiscardedAt(*v)
+	}
+	return _u
+}
+
+// ClearDiscardedAt clears the value of the "discarded_at" field.
+func (_u *WorkspaceUpdate) ClearDiscardedAt() *WorkspaceUpdate {
+	_u.mutation.ClearDiscardedAt()
+	return _u
+}
+
 // SetName sets the "name" field.
 func (_u *WorkspaceUpdate) SetName(v string) *WorkspaceUpdate {
 	_u.mutation.SetName(v)
@@ -190,26 +210,6 @@ func (_u *WorkspaceUpdate) SetNillableFeedPosition(v *int64) *WorkspaceUpdate {
 // AddFeedPosition adds value to the "feed_position" field.
 func (_u *WorkspaceUpdate) AddFeedPosition(v int64) *WorkspaceUpdate {
 	_u.mutation.AddFeedPosition(v)
-	return _u
-}
-
-// SetDeletedAt sets the "deleted_at" field.
-func (_u *WorkspaceUpdate) SetDeletedAt(v time.Time) *WorkspaceUpdate {
-	_u.mutation.SetDeletedAt(v)
-	return _u
-}
-
-// SetNillableDeletedAt sets the "deleted_at" field if the given value is not nil.
-func (_u *WorkspaceUpdate) SetNillableDeletedAt(v *time.Time) *WorkspaceUpdate {
-	if v != nil {
-		_u.SetDeletedAt(*v)
-	}
-	return _u
-}
-
-// ClearDeletedAt clears the value of the "deleted_at" field.
-func (_u *WorkspaceUpdate) ClearDeletedAt() *WorkspaceUpdate {
-	_u.mutation.ClearDeletedAt()
 	return _u
 }
 
@@ -1477,6 +1477,12 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(workspace.FieldUpdatedAt, field.TypeTime, value)
 	}
+	if value, ok := _u.mutation.DiscardedAt(); ok {
+		_spec.SetField(workspace.FieldDiscardedAt, field.TypeTime, value)
+	}
+	if _u.mutation.DiscardedAtCleared() {
+		_spec.ClearField(workspace.FieldDiscardedAt, field.TypeTime)
+	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(workspace.FieldName, field.TypeString, value)
 	}
@@ -1512,12 +1518,6 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.AddedFeedPosition(); ok {
 		_spec.AddField(workspace.FieldFeedPosition, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.DeletedAt(); ok {
-		_spec.SetField(workspace.FieldDeletedAt, field.TypeTime, value)
-	}
-	if _u.mutation.DeletedAtCleared() {
-		_spec.ClearField(workspace.FieldDeletedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.ErasedAt(); ok {
 		_spec.SetField(workspace.FieldErasedAt, field.TypeTime, value)
@@ -2858,6 +2858,26 @@ func (_u *WorkspaceUpdateOne) SetUpdatedAt(v time.Time) *WorkspaceUpdateOne {
 	return _u
 }
 
+// SetDiscardedAt sets the "discarded_at" field.
+func (_u *WorkspaceUpdateOne) SetDiscardedAt(v time.Time) *WorkspaceUpdateOne {
+	_u.mutation.SetDiscardedAt(v)
+	return _u
+}
+
+// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
+func (_u *WorkspaceUpdateOne) SetNillableDiscardedAt(v *time.Time) *WorkspaceUpdateOne {
+	if v != nil {
+		_u.SetDiscardedAt(*v)
+	}
+	return _u
+}
+
+// ClearDiscardedAt clears the value of the "discarded_at" field.
+func (_u *WorkspaceUpdateOne) ClearDiscardedAt() *WorkspaceUpdateOne {
+	_u.mutation.ClearDiscardedAt()
+	return _u
+}
+
 // SetName sets the "name" field.
 func (_u *WorkspaceUpdateOne) SetName(v string) *WorkspaceUpdateOne {
 	_u.mutation.SetName(v)
@@ -2985,26 +3005,6 @@ func (_u *WorkspaceUpdateOne) SetNillableFeedPosition(v *int64) *WorkspaceUpdate
 // AddFeedPosition adds value to the "feed_position" field.
 func (_u *WorkspaceUpdateOne) AddFeedPosition(v int64) *WorkspaceUpdateOne {
 	_u.mutation.AddFeedPosition(v)
-	return _u
-}
-
-// SetDeletedAt sets the "deleted_at" field.
-func (_u *WorkspaceUpdateOne) SetDeletedAt(v time.Time) *WorkspaceUpdateOne {
-	_u.mutation.SetDeletedAt(v)
-	return _u
-}
-
-// SetNillableDeletedAt sets the "deleted_at" field if the given value is not nil.
-func (_u *WorkspaceUpdateOne) SetNillableDeletedAt(v *time.Time) *WorkspaceUpdateOne {
-	if v != nil {
-		_u.SetDeletedAt(*v)
-	}
-	return _u
-}
-
-// ClearDeletedAt clears the value of the "deleted_at" field.
-func (_u *WorkspaceUpdateOne) ClearDeletedAt() *WorkspaceUpdateOne {
-	_u.mutation.ClearDeletedAt()
 	return _u
 }
 
@@ -4302,6 +4302,12 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(workspace.FieldUpdatedAt, field.TypeTime, value)
 	}
+	if value, ok := _u.mutation.DiscardedAt(); ok {
+		_spec.SetField(workspace.FieldDiscardedAt, field.TypeTime, value)
+	}
+	if _u.mutation.DiscardedAtCleared() {
+		_spec.ClearField(workspace.FieldDiscardedAt, field.TypeTime)
+	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(workspace.FieldName, field.TypeString, value)
 	}
@@ -4337,12 +4343,6 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 	}
 	if value, ok := _u.mutation.AddedFeedPosition(); ok {
 		_spec.AddField(workspace.FieldFeedPosition, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.DeletedAt(); ok {
-		_spec.SetField(workspace.FieldDeletedAt, field.TypeTime, value)
-	}
-	if _u.mutation.DeletedAtCleared() {
-		_spec.ClearField(workspace.FieldDeletedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.ErasedAt(); ok {
 		_spec.SetField(workspace.FieldErasedAt, field.TypeTime, value)

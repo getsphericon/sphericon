@@ -160,12 +160,40 @@ type scopedTable[Q, D any] interface {
 func stepOf[W scopedTable[Q, D], Q rowQuery[Q], D rowDelete[D, P], P any](
 	table func(*ent.Scoped) W, idIn func(...int64) P,
 ) eraseStep {
+	return eraseStepOf(
+		func(s *ent.Scoped) Q { return table(s).Query() },
+		func(s *ent.Scoped) D { return table(s).Delete() },
+		idIn,
+	)
+}
+
+// discardableTable is the scoped wrapper of an entity with the DiscardMixin (ADR 0049).
+type discardableTable[Q, D any] interface {
+	QueryWithDiscarded() Q
+	Purge() D
+}
+
+// purgeStepOf is the erase step of a discardable entity: Workspace erasure sees discarded
+// rows too and removes them with Purge.
+func purgeStepOf[W discardableTable[Q, D], Q rowQuery[Q], D rowDelete[D, P], P any](
+	table func(*ent.Scoped) W, idIn func(...int64) P,
+) eraseStep {
+	return eraseStepOf(
+		func(s *ent.Scoped) Q { return table(s).QueryWithDiscarded() },
+		func(s *ent.Scoped) D { return table(s).Purge() },
+		idIn,
+	)
+}
+
+func eraseStepOf[Q rowQuery[Q], D rowDelete[D, P], P any](
+	query func(*ent.Scoped) Q, del func(*ent.Scoped) D, idIn func(...int64) P,
+) eraseStep {
 	return eraseStep{
 		ids: func(ctx context.Context, s *ent.Scoped, limit int) ([]int64, error) {
-			return table(s).Query().Limit(limit).IDs(ctx)
+			return query(s).Limit(limit).IDs(ctx)
 		},
 		remove: func(ctx context.Context, s *ent.Scoped, ids []int64) error {
-			_, err := table(s).Delete().Where(idIn(ids...)).Exec(ctx)
+			_, err := del(s).Where(idIn(ids...)).Exec(ctx)
 			return err
 		},
 	}
@@ -192,7 +220,7 @@ var eraseSteps = []eraseStep{
 	stepOf((*ent.Scoped).WebhookEndpoint, webhookendpoint.IDIn),
 	stepOf((*ent.Scoped).Invitation, invitation.IDIn),
 	stepOf((*ent.Scoped).ApiToken, apitoken.IDIn),
-	stepOf((*ent.Scoped).Broadcast, broadcast.IDIn),
+	purgeStepOf((*ent.Scoped).Broadcast, broadcast.IDIn),
 	stepOf((*ent.Scoped).Automation, automation.IDIn),
 	stepOf((*ent.Scoped).Segment, segment.IDIn),
 	stepOf((*ent.Scoped).EmailTemplate, emailtemplate.IDIn),

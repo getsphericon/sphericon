@@ -36,7 +36,7 @@ func (h *Handlers) BroadcastsList(ctx context.Context, params externalapi.Broadc
 		return &res, nil
 	}
 	ws := auth.TokenScoped(ctx)
-	page, err := h.broadcasts.List(ctx, ws, pagination.ParamsOf(params.Page, params.PageSize))
+	page, err := h.broadcasts.List(ctx, ws, pagination.ParamsOf(params.Page, params.PageSize), params.Archived.Or(false))
 	if err != nil {
 		return nil, err
 	}
@@ -141,6 +141,57 @@ func (h *Handlers) BroadcastsDelete(ctx context.Context, params externalapi.Broa
 		return nil, err
 	}
 	return &externalapi.BroadcastsDeleteNoContent{}, nil
+}
+
+// BroadcastsArchive archives a sent or failed broadcast (ADR 0049).
+func (h *Handlers) BroadcastsArchive(ctx context.Context, params externalapi.BroadcastsArchiveParams) (externalapi.BroadcastsArchiveRes, error) {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), scopeBroadcastsWrite) {
+		res := externalapi.BroadcastsArchiveUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
+		return &res, nil
+	}
+	ws := auth.TokenScoped(ctx)
+	id := int64(params.ID)
+	err := h.broadcasts.Archive(ctx, ws, id)
+	switch {
+	case errors.Is(err, broadcasts.ErrNotFound):
+		res := externalapi.BroadcastsArchiveNotFound(problem(http.StatusNotFound, "broadcast not found"))
+		return &res, nil
+	case errors.Is(err, broadcasts.ErrNotArchivable):
+		res := externalapi.BroadcastsArchiveUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
+		return &res, nil
+	case err != nil:
+		return nil, err
+	}
+	b, err := h.broadcasts.Get(ctx, ws, id)
+	if err != nil {
+		return nil, err
+	}
+	res := mapper.BroadcastToResource(b)
+	return &res, nil
+}
+
+// BroadcastsUnarchive restores an archived broadcast.
+func (h *Handlers) BroadcastsUnarchive(ctx context.Context, params externalapi.BroadcastsUnarchiveParams) (externalapi.BroadcastsUnarchiveRes, error) {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), scopeBroadcastsWrite) {
+		res := externalapi.BroadcastsUnarchiveUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
+		return &res, nil
+	}
+	ws := auth.TokenScoped(ctx)
+	id := int64(params.ID)
+	err := h.broadcasts.Unarchive(ctx, ws, id)
+	if errors.Is(err, broadcasts.ErrNotFound) {
+		res := externalapi.BroadcastsUnarchiveNotFound(problem(http.StatusNotFound, "broadcast not found"))
+		return &res, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	b, err := h.broadcasts.Get(ctx, ws, id)
+	if err != nil {
+		return nil, err
+	}
+	res := mapper.BroadcastToResource(b)
+	return &res, nil
 }
 
 func (h *Handlers) BroadcastsSetAudience(ctx context.Context, req *externalapi.SetBroadcastAudienceInput, params externalapi.BroadcastsSetAudienceParams) (externalapi.BroadcastsSetAudienceRes, error) {

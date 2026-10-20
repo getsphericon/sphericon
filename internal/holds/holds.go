@@ -57,7 +57,7 @@ const KeyPendingDeletion = "pending_deletion"
 // It is the one statement of "a deleted Workspace is held": the send gate and the owner's
 // list both read it.
 func PendingDeletion(ws *ent.Workspace) []*ent.Hold {
-	if ws.DeletedAt == nil {
+	if ws.DiscardedAt == nil {
 		return nil
 	}
 	return []*ent.Hold{{
@@ -65,8 +65,8 @@ func PendingDeletion(ws *ent.Workspace) []*ent.Hold {
 		ReasonCode: ReasonPendingDeletion,
 		Message:    Message(ReasonPendingDeletion),
 		SetBy:      "system",
-		CreatedAt:  *ws.DeletedAt,
-		ExpiresAt:  workspacedeletion.EraseDate(*ws.DeletedAt),
+		CreatedAt:  *ws.DiscardedAt,
+		ExpiresAt:  workspacedeletion.EraseDate(*ws.DiscardedAt),
 	}}
 }
 

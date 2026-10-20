@@ -19,6 +19,8 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
+	// FieldDiscardedAt holds the string denoting the discarded_at field in the database.
+	FieldDiscardedAt = "discarded_at"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
 	// FieldPublicID holds the string denoting the public_id field in the database.
@@ -35,8 +37,6 @@ const (
 	FieldSecondFactorRequiredAt = "second_factor_required_at"
 	// FieldFeedPosition holds the string denoting the feed_position field in the database.
 	FieldFeedPosition = "feed_position"
-	// FieldDeletedAt holds the string denoting the deleted_at field in the database.
-	FieldDeletedAt = "deleted_at"
 	// FieldErasedAt holds the string denoting the erased_at field in the database.
 	FieldErasedAt = "erased_at"
 	// FieldSuspendedAt holds the string denoting the suspended_at field in the database.
@@ -316,6 +316,7 @@ var Columns = []string{
 	FieldID,
 	FieldCreatedAt,
 	FieldUpdatedAt,
+	FieldDiscardedAt,
 	FieldName,
 	FieldPublicID,
 	FieldCollectKey,
@@ -324,7 +325,6 @@ var Columns = []string{
 	FieldRetentionDays,
 	FieldSecondFactorRequiredAt,
 	FieldFeedPosition,
-	FieldDeletedAt,
 	FieldErasedAt,
 	FieldSuspendedAt,
 	FieldSuspendedByKind,
@@ -411,6 +411,11 @@ func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
 }
 
+// ByDiscardedAt orders the results by the discarded_at field.
+func ByDiscardedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDiscardedAt, opts...).ToFunc()
+}
+
 // ByName orders the results by the name field.
 func ByName(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldName, opts...).ToFunc()
@@ -449,11 +454,6 @@ func BySecondFactorRequiredAt(opts ...sql.OrderTermOption) OrderOption {
 // ByFeedPosition orders the results by the feed_position field.
 func ByFeedPosition(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldFeedPosition, opts...).ToFunc()
-}
-
-// ByDeletedAt orders the results by the deleted_at field.
-func ByDeletedAt(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldDeletedAt, opts...).ToFunc()
 }
 
 // ByErasedAt orders the results by the erased_at field.

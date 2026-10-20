@@ -34,7 +34,7 @@ func (h *ServiceHandlers) ServiceWorkspaceFeedList(ctx context.Context, params s
 			CreatedAt: serviceapi.Timestamp(e.Workspace.CreatedAt),
 			Owners:    make([]serviceapi.ServiceWorkspaceOwner, len(e.Owners)),
 		}
-		if t := e.Workspace.DeletedAt; t != nil {
+		if t := e.Workspace.DiscardedAt; t != nil {
 			item.DeletedAt = serviceapi.NewOptNilTimestamp(serviceapi.Timestamp(*t))
 		}
 		if t := e.Workspace.ErasedAt; t != nil {

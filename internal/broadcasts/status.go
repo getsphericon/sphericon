@@ -38,7 +38,7 @@ type update func(*ent.BroadcastScopedUpdate)
 func machine(s *ent.Scoped, id int64, set update) *stateless.StateMachine {
 	m := lifecycle.New(lifecycle.Storage[broadcast.Status]{
 		Read: func(ctx context.Context) (broadcast.Status, error) {
-			b, err := s.Broadcast().Query().Where(broadcast.ID(id)).Only(ctx)
+			b, err := s.Broadcast().Get(ctx, id)
 			if ent.IsNotFound(err) {
 				return "", ErrNotFound
 			}

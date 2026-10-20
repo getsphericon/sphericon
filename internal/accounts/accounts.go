@@ -797,4 +797,4 @@ func WorkspaceIDByPublicID(ctx context.Context, client *ent.Client, publicID str
 // Live is a Workspace that is not deleted (ADR 0043): every lookup that must not reach a
 // deleted Workspace (its Members' scope, the lists, the Instance-wide readers) uses it, so
 // "live" is stated once.
-func Live() predicate.Workspace { return workspace.DeletedAtIsNil() }
+func Live() predicate.Workspace { return workspace.DiscardedAtIsNil() }

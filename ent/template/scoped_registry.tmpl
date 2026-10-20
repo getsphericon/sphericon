@@ -57,7 +57,7 @@ type ScopedRef struct {
 func ScopedEntities() []ScopedEntity {
 	return []ScopedEntity{
 		{{- range $n := scopedNodes $ }}
-		{{- $N := $n.Name }}{{ $P := $n.Package }}
+		{{- $N := $n.Name }}{{ $P := $n.Package }}{{ $Del := "Delete" }}{{ if discardable $n }}{{ $Del = "Purge" }}{{ end }}
 		{
 			Name: "{{ $N }}",
 			Audited: {{ if auditOf $n }}true{{ else }}false{{ end }},
@@ -75,10 +75,10 @@ func ScopedEntities() []ScopedEntity {
 				return s.{{ $N }}().Update().Where({{ $P }}.ID(id)).Save(ctx)
 			},
 			Delete: func(ctx context.Context, s *Scoped, id int64) error {
-				return s.{{ $N }}().DeleteOneID(id).Exec(ctx)
+				return s.{{ $N }}().{{ $Del }}OneID(id).Exec(ctx)
 			},
 			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
-				return s.{{ $N }}().Delete().Where({{ $P }}.ID(id)).Exec(ctx)
+				return s.{{ $N }}().{{ $Del }}().Where({{ $P }}.ID(id)).Exec(ctx)
 			},
 			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
 				src, err := s.c.{{ $N }}.Get(ctx, id)

@@ -131,7 +131,7 @@ func verifiedTrackingHost(ctx context.Context, client *ent.Client, host string) 
 		return 0, false, nil
 	}
 	row, err := client.SendingDomain.Query().
-		Where(sendingdomain.Domain(domain), sendingdomain.HasWorkspaceWith(workspace.DeletedAtIsNil()), sendingdomain.TrackingStateIn(sendingdomain.TrackingStateDNSVerified, sendingdomain.TrackingStateServing)).
+		Where(sendingdomain.Domain(domain), sendingdomain.HasWorkspaceWith(workspace.DiscardedAtIsNil()), sendingdomain.TrackingStateIn(sendingdomain.TrackingStateDNSVerified, sendingdomain.TrackingStateServing)).
 		Only(ctx)
 	if ent.IsNotFound(err) {
 		return 0, false, nil

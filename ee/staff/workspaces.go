@@ -154,7 +154,7 @@ func (m *Module) ListWorkspaces(ctx context.Context, review Review, search strin
 			q = q.Where(entworkspace.Or(entworkspace.PublicIDContains(search), entworkspace.NameContainsFold(search)))
 		}
 		if review == ReviewDeleted {
-			q = q.Where(entworkspace.DeletedAtNotNil())
+			q = q.Where(entworkspace.DiscardedAtNotNil())
 		} else {
 			q = q.Where(accounts.Live())
 		}

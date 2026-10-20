@@ -109,6 +109,8 @@ func (s *Scoped) verify{{ $n.Name }}(ctx context.Context, ids []int64) error {
 {{ $N := $n.Name }}
 {{ $P := $n.Package }}
 {{ $A := auditOf $n }}
+{{ $D := discardable $n }}
+{{ $Del := "Delete" }}{{ if $D }}{{ $Del = "Purge" }}{{ end }}
 
 // {{ $N }}Scoped reaches {{ $N }} entities of one Workspace.
 type {{ $N }}Scoped struct{ s *Scoped }
@@ -116,15 +118,73 @@ type {{ $N }}Scoped struct{ s *Scoped }
 // {{ $N }} returns the {{ $N }} entities of the Workspace.
 func (s *Scoped) {{ $N }}() *{{ $N }}Scoped { return &{{ $N }}Scoped{s: s} }
 
-// Query returns a {{ $N }} query already confined to the Workspace.
+// Query returns a {{ $N }} query already confined to the Workspace{{ if $D }}, hiding discarded rows
+// (a list query; QueryWithDiscarded sees them too){{ end }}.
 func (t *{{ $N }}Scoped) Query() *{{ $N }}Query {
+	return t.s.c.{{ $N }}.Query().Where({{ $P }}.WorkspaceID(t.s.ws){{ if $D }}, {{ $P }}.DiscardedAtIsNil(){{ end }})
+}
+{{ if $D }}
+// QueryWithDiscarded returns a {{ $N }} query confined to the Workspace that also sees discarded rows.
+func (t *{{ $N }}Scoped) QueryWithDiscarded() *{{ $N }}Query {
 	return t.s.c.{{ $N }}.Query().Where({{ $P }}.WorkspaceID(t.s.ws))
 }
-
-// Get returns the {{ $N }} with the id; a row of another Workspace is not found.
+{{ end }}
+// Get returns the {{ $N }} with the id{{ if $D }}, discarded or not{{ end }}; a row of another Workspace is not found.
 func (t *{{ $N }}Scoped) Get(ctx context.Context, id int64) (*{{ $N }}, error) {
-	return t.Query().Where({{ $P }}.ID(id)).Only(ctx)
+	return t.Query{{ if $D }}WithDiscarded{{ end }}().Where({{ $P }}.ID(id)).Only(ctx)
 }
+{{ if $D }}
+// Discard stamps discarded_at on the kept {{ $N }} with the id (ps fence it further); a row of
+// another Workspace, an already discarded row or one a predicate excludes is not found.
+func (t *{{ $N }}Scoped) Discard(ctx context.Context, id int64, ps ...predicate.{{ $N }}) error {
+	return t.setDiscarded(ctx, id, true, ps)
+}
+
+// Undiscard clears discarded_at on the discarded {{ $N }} with the id; a row that is not
+// discarded is not found.
+func (t *{{ $N }}Scoped) Undiscard(ctx context.Context, id int64) error {
+	return t.setDiscarded(ctx, id, false, nil)
+}
+
+func (t *{{ $N }}Scoped) setDiscarded(ctx context.Context, id int64, discard bool, ps []predicate.{{ $N }}) error {
+	where := append([]predicate.{{ $N }}{ {{ $P }}.ID(id), {{ $P }}.WorkspaceID(t.s.ws)}, ps...)
+	if discard {
+		where = append(where, {{ $P }}.DiscardedAtIsNil())
+	} else {
+		where = append(where, {{ $P }}.DiscardedAtNotNil())
+	}
+	write := func(c *Client) (*{{ $N }}, error) {
+		u := c.{{ $N }}.UpdateOneID(id).Where(where...)
+		if discard {
+			u.SetDiscardedAt(time.Now())
+		} else {
+			u.ClearDiscardedAt()
+		}
+		return u.Save(ctx)
+	}
+	{{- if $A }}
+	if t.s.auditing() {
+		verb := "restore"
+		if discard {
+			verb = "discard"
+		}
+		return t.s.audited(ctx, func(ts *Scoped) error {
+			before, err := ts.c.{{ $N }}.Query().Where(where...).Only(ctx)
+			if err != nil {
+				return err
+			}
+			after, err := write(ts.c)
+			if err != nil {
+				return err
+			}
+			return ts.record(ctx, auditChange{{ $N }}(verb, before, after))
+		})
+	}
+	{{- end }}
+	_, err := write(t.s.c)
+	return err
+}
+{{ end }}
 
 // {{ $N }}ScopedDeleteOne wraps {{ $N }}DeleteOne.
 type {{ $N }}ScopedDeleteOne struct {
@@ -132,8 +192,8 @@ type {{ $N }}ScopedDeleteOne struct {
 	b *{{ $N }}DeleteOne
 }
 
-// DeleteOneID deletes the {{ $N }} with the id; a row of another Workspace is not found.
-func (t *{{ $N }}Scoped) DeleteOneID(id int64) *{{ $N }}ScopedDeleteOne {
+// {{ $Del }}OneID {{ if $D }}physically removes{{ else }}deletes{{ end }} the {{ $N }} with the id; a row of another Workspace is not found.
+func (t *{{ $N }}Scoped) {{ $Del }}OneID(id int64) *{{ $N }}ScopedDeleteOne {
 	return &{{ $N }}ScopedDeleteOne{s: t.s, b: t.s.c.{{ $N }}.DeleteOneID(id).Where({{ $P }}.WorkspaceID(t.s.ws))}
 }
 
@@ -169,8 +229,8 @@ type {{ $N }}ScopedDelete struct {
 	b *{{ $N }}Delete
 }
 
-// Delete deletes the {{ $N }} entities of the Workspace that match the predicates.
-func (t *{{ $N }}Scoped) Delete() *{{ $N }}ScopedDelete {
+// {{ $Del }} {{ if $D }}physically removes{{ else }}deletes{{ end }} the {{ $N }} entities of the Workspace that match the predicates.
+func (t *{{ $N }}Scoped) {{ $Del }}() *{{ $N }}ScopedDelete {
 	return &{{ $N }}ScopedDelete{s: t.s, b: t.s.c.{{ $N }}.Delete().Where({{ $P }}.WorkspaceID(t.s.ws))}
 }
 

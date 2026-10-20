@@ -3,8 +3,8 @@
 // erased. The cycle is a lifecycle table (ADR 0046): active, pending_deletion, erased.
 //
 // The state is derived from two columns, so no column is added: active is a Workspace with no
-// deleted_at, pending_deletion has deleted_at and no erased_at, erased has erased_at. The
-// window is not a state: restoring is legal only while deleted_at is inside it, and that is
+// discarded_at, pending_deletion has discarded_at and no erased_at, erased has erased_at. The
+// window is not a state: restoring is legal only while discarded_at is inside it, and that is
 // part of the update's condition, so the database decides a race with the erase job.
 //
 // The package takes the raw client: it lists Workspaces that have no scope yet (the Owners'
@@ -74,18 +74,18 @@ func New(client *ent.Client, bus *events.Bus) *Module {
 
 // pendingDeletion is a Workspace deleted and not yet erased, whatever the window says.
 func pendingDeletion() predicate.Workspace {
-	return workspace.And(workspace.DeletedAtNotNil(), workspace.ErasedAtIsNil())
+	return workspace.And(workspace.DiscardedAtNotNil(), workspace.ErasedAtIsNil())
 }
 
 // insideWindow is a Workspace in its deletion window at now: pending and not past it.
 func insideWindow(now time.Time) predicate.Workspace {
-	return workspace.And(workspace.DeletedAtGT(now.Add(-DeletionWindow)), workspace.ErasedAtIsNil())
+	return workspace.And(workspace.DiscardedAtGT(now.Add(-DeletionWindow)), workspace.ErasedAtIsNil())
 }
 
 // Due lists the Workspaces whose window has passed at now and that are not erased yet.
 func (m *Module) Due(ctx context.Context, now time.Time) ([]int64, error) {
 	return m.client.Workspace.Query().
-		Where(workspace.DeletedAtLTE(now.Add(-DeletionWindow)), workspace.ErasedAtIsNil()).
+		Where(workspace.DiscardedAtLTE(now.Add(-DeletionWindow)), workspace.ErasedAtIsNil()).
 		Order(workspace.ByID()).
 		IDs(ctx)
 }
@@ -95,7 +95,7 @@ func stateOf(ws *ent.Workspace) State {
 	switch {
 	case ws.ErasedAt != nil:
 		return StateErased
-	case ws.DeletedAt != nil:
+	case ws.DiscardedAt != nil:
 		return StatePendingDeletion
 	default:
 		return StateActive
@@ -106,7 +106,7 @@ func stateOf(ws *ent.Workspace) State {
 func inState(state State) predicate.Workspace {
 	switch state {
 	case StateActive:
-		return workspace.DeletedAtIsNil()
+		return workspace.DiscardedAtIsNil()
 	case StatePendingDeletion:
 		return pendingDeletion()
 	default:
@@ -130,9 +130,9 @@ func cycleStorage(c *ent.Client, id int64, now time.Time) lifecycle.Storage[Stat
 			u := c.Workspace.Update().Where(workspace.ID(id), inState(was))
 			switch {
 			case was == StateActive && to == StatePendingDeletion:
-				u.SetDeletedAt(now)
+				u.SetDiscardedAt(now)
 			case was == StatePendingDeletion && to == StateActive:
-				u.Where(insideWindow(now)).ClearDeletedAt()
+				u.Where(insideWindow(now)).ClearDiscardedAt()
 			case was == StatePendingDeletion && to == StateErased:
 				// The tombstone: the row stays, with nothing that identifies the Workspace
 				// and a fresh collect key.
@@ -166,10 +166,10 @@ func deletedDiff(wasDeleted, isDeleted bool) map[string]any {
 	return map[string]any{"deleted": map[string]any{"from": wasDeleted, "to": isDeleted}}
 }
 
-// Delete deletes the scoped Workspace (ADR 0043): it sets deleted_at, which the send path
+// Delete deletes the scoped Workspace (ADR 0043): it sets discarded_at, which the send path
 // reads as the pending-deletion Hold and the lookups read as "not found". The typed name
 // must equal the stored name (ErrNameMismatch otherwise). Deleting an already deleted
-// Workspace keeps its first deleted_at. The caller has checked the Owner role. Recorded as
+// Workspace keeps its first discarded_at. The caller has checked the Owner role. Recorded as
 // `workspace.delete` in the same transaction.
 func (m *Module) Delete(ctx context.Context, s *ent.Scoped, actor events.Actor, typedName string, now time.Time) (*ent.Workspace, error) {
 	var deleted *ent.Workspace
@@ -181,7 +181,7 @@ func (m *Module) Delete(ctx context.Context, s *ent.Scoped, actor events.Actor, 
 		if typedName != ws.Name {
 			return ErrNameMismatch
 		}
-		if ws.DeletedAt != nil {
+		if ws.DiscardedAt != nil {
 			deleted = ws
 			return nil
 		}
@@ -201,13 +201,13 @@ func (m *Module) Delete(ctx context.Context, s *ent.Scoped, actor events.Actor, 
 func (m *Module) Deleted(ctx context.Context, userID int64, now time.Time) ([]*ent.Membership, error) {
 	return m.client.Membership.Query().
 		Where(membership.UserID(userID), membership.RoleEQ(membership.RoleOwner),
-			membership.HasWorkspaceWith(insideWindow(now), workspace.DeletedAtNotNil())).
+			membership.HasWorkspaceWith(insideWindow(now), workspace.DiscardedAtNotNil())).
 		WithWorkspace().
-		Order(membership.ByWorkspaceField(workspace.FieldDeletedAt, sql.OrderDesc()), ent.Desc(membership.FieldID)).
+		Order(membership.ByWorkspaceField(workspace.FieldDiscardedAt, sql.OrderDesc()), ent.Desc(membership.FieldID)).
 		All(ctx)
 }
 
-// Restore ends the deletion of the Workspace publicID for a User: it clears deleted_at, which
+// Restore ends the deletion of the Workspace publicID for a User: it clears discarded_at, which
 // lifts only the pending-deletion Hold (a suspension or Staff hold stays). A Workspace the
 // User has no Owner Membership on, or one that is not deleted, is an ent NotFound error: a
 // deleted Workspace is not exposed to anyone but its Owners. A Workspace past its window or
@@ -218,7 +218,7 @@ func (m *Module) Restore(ctx context.Context, userID int64, publicID string, act
 	// below finds nothing and the API answers 404: no one can be authorized to restore it.
 	// lifecycle.ErrInvalidTransition from an erased row is only reachable through the table.
 	workspaceID, err := m.client.Workspace.Query().
-		Where(workspace.PublicID(publicID), workspace.DeletedAtNotNil(),
+		Where(workspace.PublicID(publicID), workspace.DiscardedAtNotNil(),
 			workspace.HasMembershipsWith(membership.UserID(userID), membership.RoleEQ(membership.RoleOwner))).
 		OnlyID(ctx)
 	if err != nil {

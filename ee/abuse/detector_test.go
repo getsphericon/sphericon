@@ -378,7 +378,7 @@ func TestAWorkspaceInItsDeletionWindowIsNotJudged(t *testing.T) {
 	env := testhelper.Setup(t)
 	now := time.Now()
 	lay(t, env, fixtures.VandelayID, "mail.vandelay.test", now, 2000, 0, 10)
-	env.DB.Workspace.UpdateOneID(fixtures.VandelayID).SetDeletedAt(now).ExecX(t.Context())
+	env.DB.Workspace.UpdateOneID(fixtures.VandelayID).SetDiscardedAt(now).ExecX(t.Context())
 
 	summary, err := detector(t, env).Run(t.Context(), now)
 

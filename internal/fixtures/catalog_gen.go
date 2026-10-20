@@ -119,6 +119,12 @@ const (
 	BrandKitGlobexID = 900
 	// BrandKitInitechID is from fixtures/brand_kits.
 	BrandKitInitechID = 300
+	// BroadcastArchivedID is from fixtures/broadcasts.
+	BroadcastArchivedID = 107
+	// BroadcastArchivedName is from fixtures/broadcasts.
+	BroadcastArchivedName = "Old product tour"
+	// BroadcastArchivedSubject is from fixtures/broadcasts.
+	BroadcastArchivedSubject = "A tour of the product"
 	// BroadcastAuthoredID is from fixtures/broadcasts.
 	BroadcastAuthoredID = 106
 	// BroadcastAuthoredName is from fixtures/broadcasts.

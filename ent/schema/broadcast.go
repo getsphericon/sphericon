@@ -28,7 +28,7 @@ func (Broadcast) Annotations() []schema.Annotation {
 }
 
 func (Broadcast) Mixin() []ent.Mixin {
-	return []ent.Mixin{TimeMixin{}, WorkspaceMixin{Ref: "broadcasts"}}
+	return []ent.Mixin{TimeMixin{}, WorkspaceMixin{Ref: "broadcasts"}, DiscardMixin{}}
 }
 
 func (Broadcast) Fields() []ent.Field {

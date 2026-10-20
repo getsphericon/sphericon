@@ -66,6 +66,9 @@ func scopedFuncs() template.FuncMap {
 			return out
 		},
 		"scopedIs": isScoped,
+		// discardable reports whether n embeds the DiscardMixin (ADR 0049): its scoped
+		// wrapper gets Discard, Undiscard and Purge instead of Delete.
+		"discardable": func(n *gen.Type) bool { return isScoped(n) && isDiscardable(n) },
 		// scopedEdges lists the edges of n that point at another scoped entity.
 		"scopedEdges": func(n *gen.Type) []*gen.Edge {
 			var out []*gen.Edge
@@ -194,6 +197,15 @@ func auditOf(n *gen.Type) *audit {
 func isScoped(t *gen.Type) bool {
 	for _, f := range t.Fields {
 		if f.Name == "workspace_id" && f.Position != nil && f.Position.MixedIn {
+			return true
+		}
+	}
+	return false
+}
+
+func isDiscardable(t *gen.Type) bool {
+	for _, f := range t.Fields {
+		if f.Name == "discarded_at" && f.Position != nil && f.Position.MixedIn {
 			return true
 		}
 	}

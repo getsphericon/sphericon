@@ -98,6 +98,8 @@ func AutomationSteps(steps []externalapi.AutomationStep) []automations.Step {
 // goverter:extend broadcastDoc
 type Converter interface {
 	ContactToResource(source *ent.Contact) externalapi.ContactResource
+	// The contract names the discarded state "archived" (ADR 0049).
+	// goverter:map DiscardedAt ArchivedAt
 	BroadcastToResource(source *ent.Broadcast) externalapi.BroadcastResource
 	ApiTokenToInfo(source *ent.ApiToken) externalapi.ApiTokenInfo
 	SegmentToResource(source *ent.Segment) externalapi.SegmentResource

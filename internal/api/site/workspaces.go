@@ -247,8 +247,8 @@ func deletedWorkspaceResource(w *ent.Workspace) siteapi.SiteDeletedWorkspaceReso
 	return siteapi.SiteDeletedWorkspaceResource{
 		ID:        siteapi.WorkspaceId(w.PublicID),
 		Name:      w.Name,
-		DeletedAt: siteapi.Timestamp(*w.DeletedAt),
-		EraseAt:   siteapi.Timestamp(workspacedeletion.EraseDate(*w.DeletedAt)),
+		DeletedAt: siteapi.Timestamp(*w.DiscardedAt),
+		EraseAt:   siteapi.Timestamp(workspacedeletion.EraseDate(*w.DiscardedAt)),
 	}
 }
 

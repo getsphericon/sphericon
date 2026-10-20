@@ -154,7 +154,7 @@ func TestOnlyAnOwnerRestoresAndOnlyInsideTheWindow(t *testing.T) {
 
 	// Past the window the Workspace is no longer restorable.
 	env.DB.Workspace.UpdateOneID(fixtures.InitechID).
-		SetDeletedAt(time.Now().Add(-workspacedeletion.DeletionWindow - time.Hour)).ExecX(ctx)
+		SetDiscardedAt(time.Now().Add(-workspacedeletion.DeletionWindow - time.Hour)).ExecX(ctx)
 	res, err = env.SiteActor(t, fixtures.InitechOwnerOlgaEmail).SiteWorkspacesRestore(ctx, params)
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteWorkspacesRestoreConflict{}, res, "a Workspace past its window is a conflict")

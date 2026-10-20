@@ -1716,6 +1716,8 @@ type BroadcastResource struct {
 	ScheduledAt OptNilTimestamp `json:"scheduledAt"`
 	// When the broadcast finished sending.
 	SentAt OptNilTimestamp `json:"sentAt"`
+	// When the broadcast was archived; null while it is kept. Only a sent or failed broadcast is archived.
+	ArchivedAt OptNilTimestamp `json:"archivedAt"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -1780,6 +1782,11 @@ func (s *BroadcastResource) GetScheduledAt() OptNilTimestamp {
 // GetSentAt returns the value of SentAt.
 func (s *BroadcastResource) GetSentAt() OptNilTimestamp {
 	return s.SentAt
+}
+
+// GetArchivedAt returns the value of ArchivedAt.
+func (s *BroadcastResource) GetArchivedAt() OptNilTimestamp {
+	return s.ArchivedAt
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -1852,6 +1859,11 @@ func (s *BroadcastResource) SetSentAt(val OptNilTimestamp) {
 	s.SentAt = val
 }
 
+// SetArchivedAt sets the value of ArchivedAt.
+func (s *BroadcastResource) SetArchivedAt(val OptNilTimestamp) {
+	s.ArchivedAt = val
+}
+
 // SetCreatedAt sets the value of CreatedAt.
 func (s *BroadcastResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
@@ -1862,10 +1874,12 @@ func (s *BroadcastResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
 
+func (*BroadcastResource) broadcastsArchiveRes()     {}
 func (*BroadcastResource) broadcastsCreateRes()      {}
 func (*BroadcastResource) broadcastsGetRes()         {}
 func (*BroadcastResource) broadcastsScheduleRes()    {}
 func (*BroadcastResource) broadcastsSetAudienceRes() {}
+func (*BroadcastResource) broadcastsUnarchiveRes()   {}
 func (*BroadcastResource) broadcastsUnscheduleRes()  {}
 func (*BroadcastResource) broadcastsUpdateRes()      {}
 
@@ -1944,6 +1958,22 @@ func (s *BroadcastStatus) UnmarshalText(data []byte) error {
 		return errors.Errorf("invalid value: %q", data)
 	}
 }
+
+type BroadcastsArchiveBadRequest ProblemDetails
+
+func (*BroadcastsArchiveBadRequest) broadcastsArchiveRes() {}
+
+type BroadcastsArchiveNotFound ProblemDetails
+
+func (*BroadcastsArchiveNotFound) broadcastsArchiveRes() {}
+
+type BroadcastsArchiveUnauthorized ProblemDetails
+
+func (*BroadcastsArchiveUnauthorized) broadcastsArchiveRes() {}
+
+type BroadcastsArchiveUnprocessableEntity ProblemDetails
+
+func (*BroadcastsArchiveUnprocessableEntity) broadcastsArchiveRes() {}
 
 type BroadcastsCreateBadRequest ProblemDetails
 
@@ -2132,6 +2162,18 @@ func (*BroadcastsTestSendUnauthorized) broadcastsTestSendRes() {}
 type BroadcastsTestSendUnprocessableEntity ProblemDetails
 
 func (*BroadcastsTestSendUnprocessableEntity) broadcastsTestSendRes() {}
+
+type BroadcastsUnarchiveBadRequest ProblemDetails
+
+func (*BroadcastsUnarchiveBadRequest) broadcastsUnarchiveRes() {}
+
+type BroadcastsUnarchiveNotFound ProblemDetails
+
+func (*BroadcastsUnarchiveNotFound) broadcastsUnarchiveRes() {}
+
+type BroadcastsUnarchiveUnauthorized ProblemDetails
+
+func (*BroadcastsUnarchiveUnauthorized) broadcastsUnarchiveRes() {}
 
 type BroadcastsUnscheduleBadRequest ProblemDetails
 
@@ -10184,6 +10226,7 @@ func (*ProblemDetailsHeaders) automationsGetRes()            {}
 func (*ProblemDetailsHeaders) automationsListRes()           {}
 func (*ProblemDetailsHeaders) automationsUpdateRes()         {}
 func (*ProblemDetailsHeaders) brandKitGetRes()               {}
+func (*ProblemDetailsHeaders) broadcastsArchiveRes()         {}
 func (*ProblemDetailsHeaders) broadcastsCreateRes()          {}
 func (*ProblemDetailsHeaders) broadcastsDeleteRes()          {}
 func (*ProblemDetailsHeaders) broadcastsGetRes()             {}
@@ -10192,6 +10235,7 @@ func (*ProblemDetailsHeaders) broadcastsReportRes()          {}
 func (*ProblemDetailsHeaders) broadcastsScheduleRes()        {}
 func (*ProblemDetailsHeaders) broadcastsSetAudienceRes()     {}
 func (*ProblemDetailsHeaders) broadcastsTestSendRes()        {}
+func (*ProblemDetailsHeaders) broadcastsUnarchiveRes()       {}
 func (*ProblemDetailsHeaders) broadcastsUnscheduleRes()      {}
 func (*ProblemDetailsHeaders) broadcastsUpdateRes()          {}
 func (*ProblemDetailsHeaders) contactsBatchUpsertRes()       {}

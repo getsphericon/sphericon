@@ -3763,6 +3763,9 @@
           },
           {
             "$ref": "#/components/parameters/PageQuery.pageSize"
+          },
+          {
+            "$ref": "#/components/parameters/SiteBroadcastsListFilter"
           }
         ],
         "responses": {
@@ -4038,6 +4041,73 @@
                 }
               }
             }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Broadcasts"]
+      }
+    },
+    "/workspaces/{workspaceId}/broadcasts/{id}/archive": {
+      "post": {
+        "operationId": "SiteBroadcasts_archive",
+        "description": "Archive a sent or failed broadcast: it leaves the list, keeps its report, tracking and\nfigures, and can be restored. A draft is deleted and a scheduled or sending broadcast\ncannot be archived (422).",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SiteBroadcastResourceKey.workspaceId"
+          },
+          {
+            "$ref": "#/components/parameters/SiteBroadcastResourceKey.id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteBroadcastResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "tags": ["Site Broadcasts"]
@@ -4276,6 +4346,53 @@
             }
           }
         }
+      }
+    },
+    "/workspaces/{workspaceId}/broadcasts/{id}/unarchive": {
+      "post": {
+        "operationId": "SiteBroadcasts_unarchive",
+        "description": "Restore an archived broadcast to the list",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SiteBroadcastResourceKey.workspaceId"
+          },
+          {
+            "$ref": "#/components/parameters/SiteBroadcastResourceKey.id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteBroadcastResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Broadcasts"]
       }
     },
     "/workspaces/{workspaceId}/contacts": {
@@ -8232,6 +8349,16 @@
           "$ref": "#/components/schemas/WorkspaceId"
         }
       },
+      "SiteBroadcastsListFilter": {
+        "name": "archived",
+        "in": "query",
+        "required": false,
+        "description": "true lists the archived broadcasts instead of the kept ones; the default hides them",
+        "schema": {
+          "type": "boolean"
+        },
+        "explode": false
+      },
       "SiteContactResourceKey.id": {
         "name": "id",
         "in": "path",
@@ -10157,6 +10284,16 @@
             ],
             "nullable": true,
             "description": "Progress and ETA while the broadcast is sending; null otherwise. Returned by get and send only, never by the list"
+          },
+          "archivedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the broadcast was archived; null while it is kept. Only a sent or failed broadcast is archived."
           },
           "createdAt": {
             "allOf": [

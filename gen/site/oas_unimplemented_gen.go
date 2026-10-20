@@ -324,6 +324,16 @@ func (UnimplementedHandler) SiteBrandKitSave(ctx context.Context, req *SiteSaveB
 	return r, ht.ErrNotImplemented
 }
 
+// SiteBroadcastsArchive implements SiteBroadcasts_archive operation.
+//
+// Archive a sent or failed broadcast: it leaves the list, keeps its report, tracking and figures, and
+// can be restored. A draft is deleted and a scheduled or sending broadcast cannot be archived (422).
+//
+// POST /workspaces/{workspaceId}/broadcasts/{id}/archive
+func (UnimplementedHandler) SiteBroadcastsArchive(ctx context.Context, params SiteBroadcastsArchiveParams) (r SiteBroadcastsArchiveRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteBroadcastsCreate implements SiteBroadcasts_create operation.
 //
 // Create a resource from the site UI.
@@ -386,6 +396,15 @@ func (UnimplementedHandler) SiteBroadcastsSend(ctx context.Context, params SiteB
 //
 // POST /workspaces/{workspaceId}/broadcasts/{id}/test-send
 func (UnimplementedHandler) SiteBroadcastsTestSend(ctx context.Context, req *SiteTestSendBroadcastInput, params SiteBroadcastsTestSendParams) (r SiteBroadcastsTestSendRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteBroadcastsUnarchive implements SiteBroadcasts_unarchive operation.
+//
+// Restore an archived broadcast to the list.
+//
+// POST /workspaces/{workspaceId}/broadcasts/{id}/unarchive
+func (UnimplementedHandler) SiteBroadcastsUnarchive(ctx context.Context, params SiteBroadcastsUnarchiveParams) (r SiteBroadcastsUnarchiveRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

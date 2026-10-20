@@ -145,7 +145,7 @@ func raise(ctx context.Context, c *ent.Client, now time.Time, workspaceIDs ...in
 	period := PeriodOf(now)
 	for _, id := range workspaceIDs {
 		// A Workspace in its deletion window, or erased, is no longer measured.
-		live, err := c.Workspace.Query().Where(entworkspace.ID(id), entworkspace.DeletedAtIsNil()).Exist(ctx)
+		live, err := c.Workspace.Query().Where(entworkspace.ID(id), entworkspace.DiscardedAtIsNil()).Exist(ctx)
 		if err != nil {
 			return fmt.Errorf("load workspace: %w", err)
 		}

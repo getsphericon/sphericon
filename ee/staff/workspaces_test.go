@@ -349,7 +349,7 @@ func TestTheWorkspaceListHidesADeletedWorkspaceUnlessFilteredToDeleted(t *testin
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
 	deletedAt := time.Now().UTC().Truncate(time.Second)
-	h.env.DB.Workspace.UpdateOneID(fixtures.GlobexID).SetDeletedAt(deletedAt).ExecX(t.Context())
+	h.env.DB.Workspace.UpdateOneID(fixtures.GlobexID).SetDiscardedAt(deletedAt).ExecX(t.Context())
 
 	all := h.listWorkspaces(t, c, staffapi.StaffWorkspacesListParams{})
 	deleted := h.listWorkspaces(t, c, staffapi.StaffWorkspacesListParams{Review: staffapi.NewOptStaffWorkspaceReview(staffapi.StaffWorkspaceReviewDeleted)})

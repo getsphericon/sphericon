@@ -1401,6 +1401,30 @@ func (s SiteBroadcastStatus) Validate() error {
 	}
 }
 
+func (s *SiteBroadcastsArchiveBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteBroadcastsArchiveNotFound) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteBroadcastsArchiveUnprocessableEntity) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *SiteBroadcastsCreateNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -1426,6 +1450,14 @@ func (s *SiteBroadcastsDeleteBadRequest) Validate() error {
 }
 
 func (s *SiteBroadcastsDeleteNotFound) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteBroadcastsDeleteUnprocessableEntity) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -1578,6 +1610,22 @@ func (s *SiteBroadcastsTestSendNotFound) Validate() error {
 }
 
 func (s *SiteBroadcastsTestSendUnprocessableEntity) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteBroadcastsUnarchiveBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteBroadcastsUnarchiveNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err

@@ -61,7 +61,7 @@ func TestBootstrapScopeNeverTargetsADeletedWorkspace(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, fixtures.AcmeID, oldest.WorkspaceID())
 
-	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetDeletedAt(time.Now()).ExecX(t.Context())
+	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetDiscardedAt(time.Now()).ExecX(t.Context())
 
 	next, err := a.BootstrapScope(t.Context())
 	require.NoError(t, err)

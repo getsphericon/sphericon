@@ -307,7 +307,7 @@ func TestADeletedWorkspaceIsLeftOutOfTheWorkspaceChecks(t *testing.T) {
 	// through an unguarded client on the same database.
 	raw := ent.NewClient(ent.Driver(entsql.OpenDB(dialect.Postgres, in.DB)))
 	raw.Workspace.Update().Where(workspace.IDIn(fixtures.AcmeID, fixtures.InitechID)).
-		SetDeletedAt(time.Now()).ExecX(context.Background())
+		SetDiscardedAt(time.Now()).ExecX(context.Background())
 
 	r := doctor.Run(context.Background(), in)
 

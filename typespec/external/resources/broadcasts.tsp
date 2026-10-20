@@ -54,6 +54,9 @@ model BroadcastResource {
   /** When the broadcast finished sending */
   sentAt?: Timestamp | null;
 
+  /** When the broadcast was archived; null while it is kept. Only a sent or failed broadcast is archived. */
+  archivedAt?: Timestamp | null;
+
   /** Creation timestamp */
   createdAt: Timestamp;
 
@@ -162,13 +165,43 @@ model ScheduleBroadcastInput {
   scheduledAt: Timestamp;
 }
 
+/** Filter of the broadcast list */
+model BroadcastsListFilter {
+  /** true lists the archived broadcasts instead of the kept ones; the default hides them */
+  @query archived?: boolean;
+}
+
 @tag("Broadcasts")
 interface Broadcasts
   extends ExternalCrud<
       BroadcastResource,
       CreateBroadcastInput,
-      UpdateBroadcastInput
+      UpdateBroadcastInput,
+      never,
+      never,
+      BroadcastsListFilter
     > {
+  /** Archive a sent or failed broadcast: it leaves the list but keeps its report and figures, and can be restored. A draft is deleted instead; a scheduled or sending broadcast cannot be archived. */
+  @action("archive")
+  @autoRoute
+  archive(...ResourceParameters<BroadcastResource>):
+    | BroadcastResource
+    | BadRequestProblem
+    | UnauthorizedProblem
+    | TooManyRequestsProblem
+    | NotFoundProblem
+    | UnprocessableEntityProblem;
+
+  /** Restore an archived broadcast to the list */
+  @action("unarchive")
+  @autoRoute
+  unarchive(...ResourceParameters<BroadcastResource>):
+    | BroadcastResource
+    | BadRequestProblem
+    | UnauthorizedProblem
+    | TooManyRequestsProblem
+    | NotFoundProblem;
+
   /** Set the audience of a draft broadcast: a Segment, or null for all active contacts. Does not send. */
   @action("audience")
   @put

@@ -1254,6 +1254,79 @@ func decodeAutomationsUpdateParams(args [1]string, argsEscaped bool, r *http.Req
 	return params, nil
 }
 
+// BroadcastsArchiveParams is parameters of Broadcasts_archive operation.
+type BroadcastsArchiveParams struct {
+	// Unique identifier.
+	ID EntityId
+}
+
+func unpackBroadcastsArchiveParams(packed middleware.Parameters) (params BroadcastsArchiveParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "id",
+			In:   "path",
+		}
+		params.ID = packed[key].(EntityId)
+	}
+	return params
+}
+
+func decodeBroadcastsArchiveParams(args [1]string, argsEscaped bool, r *http.Request) (params BroadcastsArchiveParams, _ error) {
+	// Decode path: id.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "id",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotIDVal int64
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToStringInt64(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotIDVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.ID = EntityId(paramsDotIDVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "id",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
 // BroadcastsDeleteParams is parameters of Broadcasts_delete operation.
 type BroadcastsDeleteParams struct {
 	// Unique identifier.
@@ -1406,6 +1479,8 @@ type BroadcastsListParams struct {
 	Page OptInt32 `json:",omitempty,omitzero"`
 	// Page size.
 	PageSize OptInt32 `json:",omitempty,omitzero"`
+	// True lists the archived broadcasts instead of the kept ones; the default hides them.
+	Archived OptBool `json:",omitempty,omitzero"`
 }
 
 func unpackBroadcastsListParams(packed middleware.Parameters) (params BroadcastsListParams) {
@@ -1425,6 +1500,15 @@ func unpackBroadcastsListParams(packed middleware.Parameters) (params Broadcasts
 		}
 		if v, ok := packed[key]; ok {
 			params.PageSize = v.(OptInt32)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "archived",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.Archived = v.(OptBool)
 		}
 	}
 	return params
@@ -1520,6 +1604,47 @@ func decodeBroadcastsListParams(args [0]string, argsEscaped bool, r *http.Reques
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
 			Name: "pageSize",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: archived.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "archived",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotArchivedVal bool
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToBool(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotArchivedVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.Archived.SetTo(paramsDotArchivedVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "archived",
 			In:   "query",
 			Err:  err,
 		}
@@ -1764,6 +1889,79 @@ func unpackBroadcastsTestSendParams(packed middleware.Parameters) (params Broadc
 }
 
 func decodeBroadcastsTestSendParams(args [1]string, argsEscaped bool, r *http.Request) (params BroadcastsTestSendParams, _ error) {
+	// Decode path: id.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "id",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotIDVal int64
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToStringInt64(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotIDVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.ID = EntityId(paramsDotIDVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "id",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// BroadcastsUnarchiveParams is parameters of Broadcasts_unarchive operation.
+type BroadcastsUnarchiveParams struct {
+	// Unique identifier.
+	ID EntityId
+}
+
+func unpackBroadcastsUnarchiveParams(packed middleware.Parameters) (params BroadcastsUnarchiveParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "id",
+			In:   "path",
+		}
+		params.ID = packed[key].(EntityId)
+	}
+	return params
+}
+
+func decodeBroadcastsUnarchiveParams(args [1]string, argsEscaped bool, r *http.Request) (params BroadcastsUnarchiveParams, _ error) {
 	// Decode path: id.
 	if err := func() error {
 		param := args[0]

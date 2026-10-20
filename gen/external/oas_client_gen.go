@@ -112,6 +112,13 @@ type Invoker interface {
 	//
 	// GET /brand-kit
 	BrandKitGet(ctx context.Context) (BrandKitGetRes, error)
+	// BroadcastsArchive invokes Broadcasts_archive operation.
+	//
+	// Archive a sent or failed broadcast: it leaves the list but keeps its report and figures, and can be
+	// restored. A draft is deleted instead; a scheduled or sending broadcast cannot be archived.
+	//
+	// POST /broadcasts/{id}/archive
+	BroadcastsArchive(ctx context.Context, params BroadcastsArchiveParams) (BroadcastsArchiveRes, error)
 	// BroadcastsCreate invokes Broadcasts_create operation.
 	//
 	// Create a resource.
@@ -161,6 +168,12 @@ type Invoker interface {
 	//
 	// POST /broadcasts/{id}/test-send
 	BroadcastsTestSend(ctx context.Context, request *TestSendBroadcastInput, params BroadcastsTestSendParams) (BroadcastsTestSendRes, error)
+	// BroadcastsUnarchive invokes Broadcasts_unarchive operation.
+	//
+	// Restore an archived broadcast to the list.
+	//
+	// POST /broadcasts/{id}/unarchive
+	BroadcastsUnarchive(ctx context.Context, params BroadcastsUnarchiveParams) (BroadcastsUnarchiveRes, error)
 	// BroadcastsUnschedule invokes Broadcasts_unschedule operation.
 	//
 	// Cancel a scheduled broadcast and return it to draft. Send-class: needs the broadcasts:send scope,
@@ -2658,6 +2671,142 @@ func (c *Client) sendBrandKitGet(ctx context.Context) (res BrandKitGetRes, err e
 	return result, nil
 }
 
+// BroadcastsArchive invokes Broadcasts_archive operation.
+//
+// Archive a sent or failed broadcast: it leaves the list but keeps its report and figures, and can be
+// restored. A draft is deleted instead; a scheduled or sending broadcast cannot be archived.
+//
+// POST /broadcasts/{id}/archive
+func (c *Client) BroadcastsArchive(ctx context.Context, params BroadcastsArchiveParams) (BroadcastsArchiveRes, error) {
+	res, err := c.sendBroadcastsArchive(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendBroadcastsArchive(ctx context.Context, params BroadcastsArchiveParams) (res BroadcastsArchiveRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("Broadcasts_archive"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/broadcasts/{id}/archive"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, BroadcastsArchiveOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/broadcasts/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/archive"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:BearerAuth"
+			switch err := c.securityBearerAuth(ctx, BroadcastsArchiveOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"BearerAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeBroadcastsArchiveResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
 // BroadcastsCreate invokes Broadcasts_create operation.
 //
 // Create a resource.
@@ -3123,6 +3272,23 @@ func (c *Client) sendBroadcastsList(ctx context.Context, params BroadcastsListPa
 		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
 			if val, ok := params.PageSize.Get(); ok {
 				return e.EncodeValue(conv.Int32ToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "archived" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "archived",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Archived.Get(); ok {
+				return e.EncodeValue(conv.BoolToString(val))
 			}
 			return nil
 		}); err != nil {
@@ -3736,6 +3902,141 @@ func (c *Client) sendBroadcastsTestSend(ctx context.Context, request *TestSendBr
 
 	stage = "DecodeResponse"
 	result, err := decodeBroadcastsTestSendResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// BroadcastsUnarchive invokes Broadcasts_unarchive operation.
+//
+// Restore an archived broadcast to the list.
+//
+// POST /broadcasts/{id}/unarchive
+func (c *Client) BroadcastsUnarchive(ctx context.Context, params BroadcastsUnarchiveParams) (BroadcastsUnarchiveRes, error) {
+	res, err := c.sendBroadcastsUnarchive(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendBroadcastsUnarchive(ctx context.Context, params BroadcastsUnarchiveParams) (res BroadcastsUnarchiveRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("Broadcasts_unarchive"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/broadcasts/{id}/unarchive"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, BroadcastsUnarchiveOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/broadcasts/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/unarchive"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:BearerAuth"
+			switch err := c.securityBearerAuth(ctx, BroadcastsUnarchiveOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"BearerAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeBroadcastsUnarchiveResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}

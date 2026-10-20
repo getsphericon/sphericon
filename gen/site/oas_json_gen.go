@@ -11054,6 +11054,12 @@ func (s *SiteBroadcastResource) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.ArchivedAt.Set {
+			e.FieldStart("archivedAt")
+			s.ArchivedAt.Encode(e)
+		}
+	}
+	{
 		e.FieldStart("createdAt")
 		s.CreatedAt.Encode(e)
 	}
@@ -11063,7 +11069,7 @@ func (s *SiteBroadcastResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteBroadcastResource = [20]string{
+var jsonFieldsNameOfSiteBroadcastResource = [21]string{
 	0:  "id",
 	1:  "name",
 	2:  "subject",
@@ -11082,8 +11088,9 @@ var jsonFieldsNameOfSiteBroadcastResource = [20]string{
 	15: "sentAt",
 	16: "stats",
 	17: "progress",
-	18: "createdAt",
-	19: "updatedAt",
+	18: "archivedAt",
+	19: "createdAt",
+	20: "updatedAt",
 }
 
 // Decode decodes SiteBroadcastResource from json.
@@ -11290,8 +11297,18 @@ func (s *SiteBroadcastResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"progress\"")
 			}
+		case "archivedAt":
+			if err := func() error {
+				s.ArchivedAt.Reset()
+				if err := s.ArchivedAt.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"archivedAt\"")
+			}
 		case "createdAt":
-			requiredBitSet[2] |= 1 << 2
+			requiredBitSet[2] |= 1 << 3
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -11301,7 +11318,7 @@ func (s *SiteBroadcastResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"createdAt\"")
 			}
 		case "updatedAt":
-			requiredBitSet[2] |= 1 << 3
+			requiredBitSet[2] |= 1 << 4
 			if err := func() error {
 				if err := s.UpdatedAt.Decode(d); err != nil {
 					return err
@@ -11322,7 +11339,7 @@ func (s *SiteBroadcastResource) Decode(d *jx.Decoder) error {
 	for i, mask := range [3]uint8{
 		0b00100111,
 		0b00010010,
-		0b00001101,
+		0b00011001,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -11756,6 +11773,120 @@ func (s *SiteBroadcastStatus) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes SiteBroadcastsArchiveBadRequest as json.
+func (s *SiteBroadcastsArchiveBadRequest) Encode(e *jx.Encoder) {
+	unwrapped := (*ProblemDetails)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes SiteBroadcastsArchiveBadRequest from json.
+func (s *SiteBroadcastsArchiveBadRequest) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteBroadcastsArchiveBadRequest to nil")
+	}
+	var unwrapped ProblemDetails
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = SiteBroadcastsArchiveBadRequest(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteBroadcastsArchiveBadRequest) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteBroadcastsArchiveBadRequest) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SiteBroadcastsArchiveNotFound as json.
+func (s *SiteBroadcastsArchiveNotFound) Encode(e *jx.Encoder) {
+	unwrapped := (*ProblemDetails)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes SiteBroadcastsArchiveNotFound from json.
+func (s *SiteBroadcastsArchiveNotFound) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteBroadcastsArchiveNotFound to nil")
+	}
+	var unwrapped ProblemDetails
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = SiteBroadcastsArchiveNotFound(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteBroadcastsArchiveNotFound) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteBroadcastsArchiveNotFound) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SiteBroadcastsArchiveUnprocessableEntity as json.
+func (s *SiteBroadcastsArchiveUnprocessableEntity) Encode(e *jx.Encoder) {
+	unwrapped := (*ProblemDetails)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes SiteBroadcastsArchiveUnprocessableEntity from json.
+func (s *SiteBroadcastsArchiveUnprocessableEntity) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteBroadcastsArchiveUnprocessableEntity to nil")
+	}
+	var unwrapped ProblemDetails
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = SiteBroadcastsArchiveUnprocessableEntity(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteBroadcastsArchiveUnprocessableEntity) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteBroadcastsArchiveUnprocessableEntity) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes SiteBroadcastsCreateNotFound as json.
 func (s *SiteBroadcastsCreateNotFound) Encode(e *jx.Encoder) {
 	unwrapped := (*ProblemDetails)(s)
@@ -11904,6 +12035,44 @@ func (s *SiteBroadcastsDeleteNotFound) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *SiteBroadcastsDeleteNotFound) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SiteBroadcastsDeleteUnprocessableEntity as json.
+func (s *SiteBroadcastsDeleteUnprocessableEntity) Encode(e *jx.Encoder) {
+	unwrapped := (*ProblemDetails)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes SiteBroadcastsDeleteUnprocessableEntity from json.
+func (s *SiteBroadcastsDeleteUnprocessableEntity) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteBroadcastsDeleteUnprocessableEntity to nil")
+	}
+	var unwrapped ProblemDetails
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = SiteBroadcastsDeleteUnprocessableEntity(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteBroadcastsDeleteUnprocessableEntity) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteBroadcastsDeleteUnprocessableEntity) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -12610,6 +12779,82 @@ func (s *SiteBroadcastsTestSendUnprocessableEntity) MarshalJSON() ([]byte, error
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *SiteBroadcastsTestSendUnprocessableEntity) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SiteBroadcastsUnarchiveBadRequest as json.
+func (s *SiteBroadcastsUnarchiveBadRequest) Encode(e *jx.Encoder) {
+	unwrapped := (*ProblemDetails)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes SiteBroadcastsUnarchiveBadRequest from json.
+func (s *SiteBroadcastsUnarchiveBadRequest) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteBroadcastsUnarchiveBadRequest to nil")
+	}
+	var unwrapped ProblemDetails
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = SiteBroadcastsUnarchiveBadRequest(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteBroadcastsUnarchiveBadRequest) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteBroadcastsUnarchiveBadRequest) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SiteBroadcastsUnarchiveNotFound as json.
+func (s *SiteBroadcastsUnarchiveNotFound) Encode(e *jx.Encoder) {
+	unwrapped := (*ProblemDetails)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes SiteBroadcastsUnarchiveNotFound from json.
+func (s *SiteBroadcastsUnarchiveNotFound) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteBroadcastsUnarchiveNotFound to nil")
+	}
+	var unwrapped ProblemDetails
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = SiteBroadcastsUnarchiveNotFound(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteBroadcastsUnarchiveNotFound) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteBroadcastsUnarchiveNotFound) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

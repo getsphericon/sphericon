@@ -91,6 +91,13 @@ type Handler interface {
 	//
 	// GET /brand-kit
 	BrandKitGet(ctx context.Context) (BrandKitGetRes, error)
+	// BroadcastsArchive implements Broadcasts_archive operation.
+	//
+	// Archive a sent or failed broadcast: it leaves the list but keeps its report and figures, and can be
+	// restored. A draft is deleted instead; a scheduled or sending broadcast cannot be archived.
+	//
+	// POST /broadcasts/{id}/archive
+	BroadcastsArchive(ctx context.Context, params BroadcastsArchiveParams) (BroadcastsArchiveRes, error)
 	// BroadcastsCreate implements Broadcasts_create operation.
 	//
 	// Create a resource.
@@ -140,6 +147,12 @@ type Handler interface {
 	//
 	// POST /broadcasts/{id}/test-send
 	BroadcastsTestSend(ctx context.Context, req *TestSendBroadcastInput, params BroadcastsTestSendParams) (BroadcastsTestSendRes, error)
+	// BroadcastsUnarchive implements Broadcasts_unarchive operation.
+	//
+	// Restore an archived broadcast to the list.
+	//
+	// POST /broadcasts/{id}/unarchive
+	BroadcastsUnarchive(ctx context.Context, params BroadcastsUnarchiveParams) (BroadcastsUnarchiveRes, error)
 	// BroadcastsUnschedule implements Broadcasts_unschedule operation.
 	//
 	// Cancel a scheduled broadcast and return it to draft. Send-class: needs the broadcasts:send scope,

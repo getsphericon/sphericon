@@ -20,7 +20,7 @@ func (Workspace) Annotations() []schema.Annotation {
 }
 
 func (Workspace) Mixin() []ent.Mixin {
-	return []ent.Mixin{TimeMixin{}}
+	return []ent.Mixin{TimeMixin{}, DiscardMixin{}}
 }
 
 func (Workspace) Fields() []ent.Field {
@@ -84,12 +84,9 @@ func (Workspace) Fields() []ent.Field {
 		// only by internal/workspacefeed.
 		field.Int64("feed_position").
 			Default(0),
-		// Workspace deletion (ADR 0043): deleted_at starts the 30-day window, in which the
-		// Workspace is frozen, hidden and restorable; erased_at is set when the erasure job
-		// has removed its data and left the row as a tombstone. Both NULL for a live Workspace.
-		field.Time("deleted_at").
-			Optional().
-			Nillable(),
+		// Workspace deletion (ADR 0043): discarded_at (DiscardMixin) starts the 30-day window, in
+		// which the Workspace is frozen, hidden and restorable; erased_at is set when the erasure
+		// job has removed its data and left the row as a tombstone. Both NULL for a live Workspace.
 		field.Time("erased_at").
 			Optional().
 			Nillable(),

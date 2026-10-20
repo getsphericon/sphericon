@@ -435,10 +435,10 @@ func ScopedEntities() []ScopedEntity {
 				return s.Broadcast().Update().Where(broadcast.ID(id)).Save(ctx)
 			},
 			Delete: func(ctx context.Context, s *Scoped, id int64) error {
-				return s.Broadcast().DeleteOneID(id).Exec(ctx)
+				return s.Broadcast().PurgeOneID(id).Exec(ctx)
 			},
 			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
-				return s.Broadcast().Delete().Where(broadcast.ID(id)).Exec(ctx)
+				return s.Broadcast().Purge().Where(broadcast.ID(id)).Exec(ctx)
 			},
 			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
 				src, err := s.c.Broadcast.Get(ctx, id)
@@ -447,6 +447,9 @@ func ScopedEntities() []ScopedEntity {
 				}
 				_ = remap
 				b := s.Broadcast().Create()
+				if src.DiscardedAt != nil {
+					b.SetDiscardedAt(*src.DiscardedAt)
+				}
 				b.SetName(src.Name)
 				b.SetSubject(src.Subject)
 				if src.FromName != nil {

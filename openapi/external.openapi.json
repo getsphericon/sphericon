@@ -1927,6 +1927,9 @@
           },
           {
             "$ref": "#/components/parameters/PageQuery.pageSize"
+          },
+          {
+            "$ref": "#/components/parameters/BroadcastsListFilter"
           }
         ],
         "responses": {
@@ -2464,6 +2467,114 @@
         "tags": ["Broadcasts"]
       }
     },
+    "/broadcasts/{id}/archive": {
+      "post": {
+        "operationId": "Broadcasts_archive",
+        "description": "Archive a sent or failed broadcast: it leaves the list but keeps its report and figures, and can be restored. A draft is deleted instead; a scheduled or sending broadcast cannot be archived.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/BroadcastResourceKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BroadcastResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Broadcasts"]
+      }
+    },
     "/broadcasts/{id}/audience": {
       "put": {
         "operationId": "Broadcasts_setAudience",
@@ -2910,6 +3021,104 @@
             }
           }
         }
+      }
+    },
+    "/broadcasts/{id}/unarchive": {
+      "post": {
+        "operationId": "Broadcasts_unarchive",
+        "description": "Restore an archived broadcast to the list",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/BroadcastResourceKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BroadcastResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Broadcasts"]
       }
     },
     "/broadcasts/{id}/unschedule": {
@@ -9435,6 +9644,16 @@
           "$ref": "#/components/schemas/EntityId"
         }
       },
+      "BroadcastsListFilter": {
+        "name": "archived",
+        "in": "query",
+        "required": false,
+        "description": "true lists the archived broadcasts instead of the kept ones; the default hides them",
+        "schema": {
+          "type": "boolean"
+        },
+        "explode": false
+      },
       "ContactResourceKey": {
         "name": "id",
         "in": "path",
@@ -10170,6 +10389,16 @@
             ],
             "nullable": true,
             "description": "When the broadcast finished sending"
+          },
+          "archivedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the broadcast was archived; null while it is kept. Only a sent or failed broadcast is archived."
           },
           "createdAt": {
             "allOf": [

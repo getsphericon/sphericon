@@ -20,7 +20,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcast"
-	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/internal/emailrender"
@@ -33,6 +32,9 @@ var (
 	ErrNotFound = errors.New("broadcasts: broadcast not found")
 	// ErrNotSendable: the Broadcast is past draft/scheduled (sending, sent, failed).
 	ErrNotSendable = errors.New("broadcasts: broadcast is not a draft or scheduled")
+	// ErrNotArchivable: only a sent or failed Broadcast is archived; a draft is deleted and a
+	// scheduled or sending one is still work in flight.
+	ErrNotArchivable = errors.New("broadcasts: only a sent or failed broadcast can be archived")
 	// ErrNotScheduled: the Broadcast is not scheduled, so there is no schedule to clear.
 	ErrNotScheduled = errors.New("broadcasts: broadcast is not scheduled")
 )
@@ -177,19 +179,26 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, f Fields) (*ent.Broa
 
 // Get returns one Broadcast of the Workspace.
 func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.Broadcast, error) {
-	b, err := s.Broadcast().Query().Where(broadcast.ID(id)).Only(ctx)
+	b, err := s.Broadcast().Get(ctx, id)
 	if ent.IsNotFound(err) {
 		return nil, ErrNotFound
 	}
 	return b, err
 }
 
-// List returns one page of the Workspace's Broadcasts, newest first.
-func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params) (pagination.Page[*ent.Broadcast], error) {
+// List returns one page of the Workspace's Broadcasts, newest first: the kept ones, or with
+// archived the archived ones.
+func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params, archived bool) (pagination.Page[*ent.Broadcast], error) {
+	rows := func() *ent.BroadcastQuery {
+		if archived {
+			return s.Broadcast().QueryWithDiscarded().Where(broadcast.DiscardedAtNotNil())
+		}
+		return s.Broadcast().Query()
+	}
 	return pagination.List(ctx, p,
-		func(ctx context.Context) (int, error) { return s.Broadcast().Query().Count(ctx) },
+		func(ctx context.Context) (int, error) { return rows().Count(ctx) },
 		func(ctx context.Context, limit, offset int) ([]*ent.Broadcast, error) {
-			return s.Broadcast().Query().Order(ent.Desc(broadcast.FieldID)).Limit(limit).Offset(offset).All(ctx)
+			return rows().Order(ent.Desc(broadcast.FieldID)).Limit(limit).Offset(offset).All(ctx)
 		})
 }
 
@@ -252,10 +261,10 @@ func (m *Module) SetAudience(ctx context.Context, s *ent.Scoped, id int64, segme
 	return m.editDraft(ctx, s, id, u)
 }
 
-// DeleteDraft removes a draft Broadcast. Past draft the Broadcast is history (its
-// recipients and report) and is not removable here.
+// DeleteDraft purges a draft Broadcast (ADR 0049). Past draft the Broadcast is history (its
+// recipients and report) and is archived instead, never removed.
 func (m *Module) DeleteDraft(ctx context.Context, s *ent.Scoped, id int64) error {
-	n, err := s.Broadcast().Delete().Where(draftOf(id)).Exec(ctx)
+	n, err := s.Broadcast().Purge().Where(draftOf(id)).Exec(ctx)
 	if err != nil {
 		return err
 	}
@@ -265,18 +274,33 @@ func (m *Module) DeleteDraft(ctx context.Context, s *ent.Scoped, id int64) error
 	return nil
 }
 
-// Delete removes a Broadcast of any status together with its recipient rows, which
-// FK the Broadcast (the engagement Event log keys on subject_id and is untouched).
-// It is the human's history cleanup in the SPA; the authoring surface (/api, MCP)
-// uses DeleteDraft and cannot reach a sent Broadcast.
-func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
-	if _, err := s.BroadcastRecipient().Delete().Where(broadcastrecipient.BroadcastID(id)).Exec(ctx); err != nil {
+// Archive discards a sent or failed Broadcast (ADR 0049): it leaves the lists but its Recipients,
+// report, tracking and figures stay. A draft is purged (DeleteDraft) and a scheduled or sending
+// Broadcast is work in flight, so both are ErrNotArchivable. Archiving an archived Broadcast
+// changes nothing.
+func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) error {
+	err := s.Broadcast().Discard(ctx, id, broadcast.StatusIn(broadcast.StatusSent, broadcast.StatusFailed))
+	if !ent.IsNotFound(err) {
 		return err
 	}
-	err := s.Broadcast().DeleteOneID(id).Exec(ctx)
-	if ent.IsNotFound(err) {
-		return ErrNotFound
+	b, err := m.Get(ctx, s, id)
+	if err != nil {
+		return err
 	}
+	if b.Status != broadcast.StatusSent && b.Status != broadcast.StatusFailed {
+		return ErrNotArchivable
+	}
+	return nil
+}
+
+// Unarchive brings an archived Broadcast back to the lists. Restoring a Broadcast that is not
+// archived changes nothing.
+func (m *Module) Unarchive(ctx context.Context, s *ent.Scoped, id int64) error {
+	err := s.Broadcast().Undiscard(ctx, id)
+	if !ent.IsNotFound(err) {
+		return err
+	}
+	_, err = m.Get(ctx, s, id)
 	return err
 }
 

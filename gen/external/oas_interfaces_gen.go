@@ -61,6 +61,10 @@ type BrandKitGetRes interface {
 	brandKitGetRes()
 }
 
+type BroadcastsArchiveRes interface {
+	broadcastsArchiveRes()
+}
+
 type BroadcastsCreateRes interface {
 	broadcastsCreateRes()
 }
@@ -91,6 +95,10 @@ type BroadcastsSetAudienceRes interface {
 
 type BroadcastsTestSendRes interface {
 	broadcastsTestSendRes()
+}
+
+type BroadcastsUnarchiveRes interface {
+	broadcastsUnarchiveRes()
 }
 
 type BroadcastsUnscheduleRes interface {

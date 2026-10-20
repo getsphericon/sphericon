@@ -1,16 +1,20 @@
-import { Badge, Button, Group, Stack, Title } from '@mantine/core'
+import { Badge, Button, Group, Stack, Switch, Title } from '@mantine/core'
 import type { TFunction } from 'i18next'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { PagedTable } from '../../components/PagedTable.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
 import {
+  siteBroadcastsArchiveMutation,
   siteBroadcastsDeleteMutation,
   siteBroadcastsListOptions,
   siteBroadcastsListQueryKey,
+  siteBroadcastsUnarchiveMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteBroadcastStatus } from '../../generated/site/types.gen.ts'
 import { useDeleteResource } from '../../hooks/useDeleteResource.ts'
+import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as broadcastsEditRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/edit.tsx'
 import { Route as broadcastsReportRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/report.tsx'
 import { Route as broadcastsRoute } from '../../routes/workspaces/$workspaceId/broadcasts/index.tsx'
@@ -45,6 +49,20 @@ export function BroadcastsListPage() {
     errorTitle: t(($) => $.alerts.broadcastDeleteErrorTitle),
   })
 
+  const archiveBroadcast = useResourceMutation({
+    mutation: siteBroadcastsArchiveMutation(),
+    invalidate: [siteBroadcastsListQueryKey({ path: { workspaceId } })],
+    successMessage: t(($) => $.notifications.broadcastArchived),
+    errorTitle: t(($) => $.alerts.broadcastArchiveErrorTitle),
+  })
+  const restoreBroadcast = useResourceMutation({
+    mutation: siteBroadcastsUnarchiveMutation(),
+    invalidate: [siteBroadcastsListQueryKey({ path: { workspaceId } })],
+    successMessage: t(($) => $.notifications.broadcastRestored),
+    errorTitle: t(($) => $.alerts.broadcastRestoreErrorTitle),
+  })
+  const [archived, setArchived] = useState(false)
+
   return (
     <Stack>
       <Group justify="space-between" align="center">
@@ -54,8 +72,17 @@ export function BroadcastsListPage() {
         </ButtonLink>
       </Group>
 
+      <Switch
+        label={t(($) => $.broadcasts.showArchived)}
+        checked={archived}
+        onChange={(event) => setArchived(event.currentTarget.checked)}
+      />
+
       <PagedTable
-        options={(query) => siteBroadcastsListOptions({ path: { workspaceId }, query })}
+        key={String(archived)}
+        options={(query) =>
+          siteBroadcastsListOptions({ path: { workspaceId }, query: { ...query, archived } })
+        }
         loadErrorTitle={t(($) => $.alerts.broadcastLoadErrorTitle)}
         noRecordsText={t(($) => $.broadcasts.noRecords)}
         emptyState={t(($) => $.broadcasts.emptyState)}
@@ -102,14 +129,39 @@ export function BroadcastsListPage() {
                 >
                   {t(($) => $.actions.edit)}
                 </ButtonLink>
-                <Button
-                  size="compact-sm"
-                  color="red"
-                  variant="light"
-                  onClick={() => deleteBroadcast(record.id)}
-                >
-                  {t(($) => $.actions.delete)}
-                </Button>
+                {record.status === 'draft' && (
+                  <Button
+                    size="compact-sm"
+                    color="red"
+                    variant="light"
+                    onClick={() => deleteBroadcast(record.id)}
+                  >
+                    {t(($) => $.actions.delete)}
+                  </Button>
+                )}
+                {(record.status === 'sent' || record.status === 'failed') &&
+                  (record.archivedAt ? (
+                    <Button
+                      size="compact-sm"
+                      variant="light"
+                      onClick={() =>
+                        restoreBroadcast.mutate({ path: { workspaceId, id: record.id } })
+                      }
+                    >
+                      {t(($) => $.actions.unarchive)}
+                    </Button>
+                  ) : (
+                    <Button
+                      size="compact-sm"
+                      color="red"
+                      variant="light"
+                      onClick={() =>
+                        archiveBroadcast.mutate({ path: { workspaceId, id: record.id } })
+                      }
+                    >
+                      {t(($) => $.actions.archive)}
+                    </Button>
+                  ))}
               </Group>
             ),
           },

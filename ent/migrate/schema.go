@@ -244,6 +244,7 @@ var (
 		{Name: "id", Type: field.TypeInt64, Increment: true},
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "discarded_at", Type: field.TypeTime, Nullable: true},
 		{Name: "name", Type: field.TypeString},
 		{Name: "subject", Type: field.TypeString, Default: ""},
 		{Name: "from_name", Type: field.TypeString, Nullable: true},
@@ -269,7 +270,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "broadcasts_workspaces_broadcasts",
-				Columns:    []*schema.Column{BroadcastsColumns[18]},
+				Columns:    []*schema.Column{BroadcastsColumns[19]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -278,7 +279,7 @@ var (
 			{
 				Name:    "broadcast_workspace_id",
 				Unique:  false,
-				Columns: []*schema.Column{BroadcastsColumns[18]},
+				Columns: []*schema.Column{BroadcastsColumns[19]},
 			},
 		},
 	}
@@ -1492,6 +1493,7 @@ var (
 		{Name: "id", Type: field.TypeInt64, Increment: true},
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "discarded_at", Type: field.TypeTime, Nullable: true},
 		{Name: "name", Type: field.TypeString},
 		{Name: "public_id", Type: field.TypeString, Unique: true, Size: 8},
 		{Name: "collect_key", Type: field.TypeString, Unique: true},
@@ -1500,7 +1502,6 @@ var (
 		{Name: "retention_days", Type: field.TypeInt, Nullable: true},
 		{Name: "second_factor_required_at", Type: field.TypeTime, Nullable: true},
 		{Name: "feed_position", Type: field.TypeInt64, Default: 0},
-		{Name: "deleted_at", Type: field.TypeTime, Nullable: true},
 		{Name: "erased_at", Type: field.TypeTime, Nullable: true},
 		{Name: "suspended_at", Type: field.TypeTime, Nullable: true},
 		{Name: "suspended_by_kind", Type: field.TypeEnum, Nullable: true, Enums: []string{"system", "cli", "staff"}},
@@ -1520,7 +1521,7 @@ var (
 			{
 				Name:    "workspace_feed_position_id",
 				Unique:  false,
-				Columns: []*schema.Column{WorkspacesColumns[10], WorkspacesColumns[0]},
+				Columns: []*schema.Column{WorkspacesColumns[11], WorkspacesColumns[0]},
 			},
 		},
 	}

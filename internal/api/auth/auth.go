@@ -129,7 +129,7 @@ func (h *ExternalSecurityHandler) authenticate(ctx context.Context, _ externalap
 	}
 
 	token, err := h.ent.ApiToken.Query().
-		Where(apitoken.Prefix(parsed.Prefix), apitoken.HasWorkspaceWith(workspace.DeletedAtIsNil())).
+		Where(apitoken.Prefix(parsed.Prefix), apitoken.HasWorkspaceWith(workspace.DiscardedAtIsNil())).
 		First(ctx)
 	if ent.IsNotFound(err) {
 		return ctx, ErrUnauthorized
@@ -223,7 +223,7 @@ func (h *CollectSecurityHandler) workspaceByKey(ctx context.Context, key string)
 	if key == "" {
 		return nil, ErrUnauthorized
 	}
-	ws, err := h.ent.Workspace.Query().Where(workspace.CollectKey(key), workspace.DeletedAtIsNil()).Only(ctx)
+	ws, err := h.ent.Workspace.Query().Where(workspace.CollectKey(key), workspace.DiscardedAtIsNil()).Only(ctx)
 	if ent.IsNotFound(err) {
 		return nil, ErrUnauthorized
 	}

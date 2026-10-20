@@ -220,7 +220,7 @@ func checkDKIM(ctx context.Context, r *Report, in Input) {
 		r.add("dkim", Fail, "not checked: the database is unreachable", "Fix the database check above first.")
 		return
 	}
-	domains, err := in.Ent.SendingDomain.Query().Where(sendingdomain.HasWorkspaceWith(workspace.DeletedAtIsNil())).Order(ent.Asc(sendingdomain.FieldID)).All(ctx)
+	domains, err := in.Ent.SendingDomain.Query().Where(sendingdomain.HasWorkspaceWith(workspace.DiscardedAtIsNil())).Order(ent.Asc(sendingdomain.FieldID)).All(ctx)
 	if err != nil {
 		r.add("dkim", Fail, "cannot list the Sending domains: "+err.Error(), "Fix the database check above first.")
 		return
@@ -260,7 +260,7 @@ func checkMailOrigin(ctx context.Context, r *Report, in Input) {
 	}
 	origins, err := in.Ent.OutboundMessage.Query().
 		Where(outboundmessage.AppOriginNotNil(), outboundmessage.StatusEQ(outboundmessage.StatusSent),
-			outboundmessage.HasWorkspaceWith(workspace.DeletedAtIsNil())).
+			outboundmessage.HasWorkspaceWith(workspace.DiscardedAtIsNil())).
 		Order(ent.Desc(outboundmessage.FieldID)).
 		Limit(recentMail).
 		Select(outboundmessage.FieldAppOrigin).

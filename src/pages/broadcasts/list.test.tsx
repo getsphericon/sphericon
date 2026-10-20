@@ -2,8 +2,10 @@ import { HttpResponse } from 'msw'
 import { expect, test } from 'vitest'
 
 import {
+  handleSiteBroadcastsArchive,
   handleSiteBroadcastsDelete,
   handleSiteBroadcastsList,
+  handleSiteBroadcastsUnarchive,
 } from '../../generated/site/msw.gen.ts'
 import { Route as broadcastsRoute } from '../../routes/workspaces/$workspaceId/broadcasts/index.tsx'
 import { problem } from '../../test/problem.ts'
@@ -147,4 +149,60 @@ test('a failed delete shows the error toast and keeps the broadcast', async () =
 
   await expect.element(screen.getByText('Failed to delete broadcast')).toBeInTheDocument()
   await expect.element(screen.getByText('Spring launch')).toBeInTheDocument()
+})
+
+const SENT = {
+  id: '3',
+  name: 'Winter recap',
+  status: 'sent',
+  stats: STATS,
+}
+
+test('the archived view lists archived broadcasts and restores one', async () => {
+  const flags: (string | null)[] = []
+  const restored: string[] = []
+  worker.use(
+    handleSiteBroadcastsList(({ request }) => {
+      flags.push(new URL(request.url).searchParams.get('archived'))
+      return HttpResponse.json({
+        items: [{ ...SENT, archivedAt: '2026-01-01T00:00:00Z' }],
+        totalItems: 1,
+      })
+    }),
+    handleSiteBroadcastsUnarchive(({ params }) => {
+      restored.push(params.id)
+      return HttpResponse.json(SENT)
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<BroadcastsListPage />, LIST_ROUTE)
+  await screen.getByRole('switch', { name: 'Show archived' }).click()
+  await expect.poll(() => flags).toEqual(['false', 'true'])
+
+  await screen.getByRole('button', { name: 'Restore' }).click()
+
+  await expect.poll(() => restored).toEqual(['3'])
+  await expect.element(screen.getByText('Broadcast restored')).toBeInTheDocument()
+})
+
+test('archiving a sent broadcast calls archive and refreshes the list', async () => {
+  const archived: string[] = []
+  let listFetches = 0
+  worker.use(
+    handleSiteBroadcastsList(() => {
+      listFetches++
+      return HttpResponse.json({ items: [SENT], totalItems: 1 })
+    }),
+    handleSiteBroadcastsArchive(({ params }) => {
+      archived.push(params.id)
+      return HttpResponse.json({ ...SENT, archivedAt: '2026-01-01T00:00:00Z' })
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<BroadcastsListPage />, LIST_ROUTE)
+  await screen.getByRole('button', { name: 'Archive' }).click()
+
+  await expect.poll(() => archived).toEqual(['3'])
+  await expect.element(screen.getByText('Broadcast archived')).toBeInTheDocument()
+  await expect.poll(() => listFetches).toBe(2)
 })

@@ -105,6 +105,10 @@ type SiteBrandKitSaveRes interface {
 	siteBrandKitSaveRes()
 }
 
+type SiteBroadcastsArchiveRes interface {
+	siteBroadcastsArchiveRes()
+}
+
 type SiteBroadcastsCreateRes interface {
 	siteBroadcastsCreateRes()
 }
@@ -131,6 +135,10 @@ type SiteBroadcastsSendRes interface {
 
 type SiteBroadcastsTestSendRes interface {
 	siteBroadcastsTestSendRes()
+}
+
+type SiteBroadcastsUnarchiveRes interface {
+	siteBroadcastsUnarchiveRes()
 }
 
 type SiteBroadcastsUpdateRes interface {

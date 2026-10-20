@@ -37,7 +37,7 @@ func TestListIsNewestFirstAndWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := broadcasts.New(&recorder{})
 
-	page, err := m.List(context.Background(), env.DB.Scoped(fixtures.AcmeID), pagination.Params{Page: 1, PageSize: 100})
+	page, err := m.List(context.Background(), env.DB.Scoped(fixtures.AcmeID), pagination.Params{Page: 1, PageSize: 100}, false)
 	require.NoError(t, err)
 	require.Len(t, page.Items, page.TotalItems)
 	require.Greater(t, page.TotalItems, 2)
@@ -219,18 +219,20 @@ func TestAnotherWorkspacesBroadcastAndSegmentAreRefused(t *testing.T) {
 	assert.ErrorIs(t, err, broadcasts.ErrSegmentNotFound)
 }
 
-func TestDeleteRemovesABroadcastOfAnyStatusAndIsWorkspaceScoped(t *testing.T) {
+func TestArchiveKeepsABroadcastAddressableAndIsWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := broadcasts.New(&recorder{})
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
-	require.NoError(t, m.Delete(ctx, s, fixtures.BroadcastFailedID))
-	_, err := m.Get(ctx, s, fixtures.BroadcastFailedID)
-	require.ErrorIs(t, err, broadcasts.ErrNotFound)
+	require.NoError(t, m.Archive(ctx, s, fixtures.BroadcastFailedID))
+	got, err := m.Get(ctx, s, fixtures.BroadcastFailedID)
+	require.NoError(t, err, "an archived Broadcast is still addressable by id")
+	assert.NotNil(t, got.DiscardedAt)
 
-	require.ErrorIs(t, m.Delete(ctx, env.DB.Scoped(fixtures.GlobexID), fixtures.BroadcastDraftID), broadcasts.ErrNotFound,
+	require.ErrorIs(t, m.Archive(ctx, env.DB.Scoped(fixtures.GlobexID), fixtures.BroadcastFailedID), broadcasts.ErrNotFound,
 		"another Workspace's Broadcast is not found")
+	require.ErrorIs(t, m.Archive(ctx, s, fixtures.BroadcastDraftID), broadcasts.ErrNotArchivable)
 	_, err = m.Get(ctx, s, fixtures.BroadcastDraftID)
 	assert.NoError(t, err)
 }

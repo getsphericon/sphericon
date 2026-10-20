@@ -59,6 +59,20 @@ func (_c *BroadcastCreate) SetWorkspaceID(v int64) *BroadcastCreate {
 	return _c
 }
 
+// SetDiscardedAt sets the "discarded_at" field.
+func (_c *BroadcastCreate) SetDiscardedAt(v time.Time) *BroadcastCreate {
+	_c.mutation.SetDiscardedAt(v)
+	return _c
+}
+
+// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
+func (_c *BroadcastCreate) SetNillableDiscardedAt(v *time.Time) *BroadcastCreate {
+	if v != nil {
+		_c.SetDiscardedAt(*v)
+	}
+	return _c
+}
+
 // SetName sets the "name" field.
 func (_c *BroadcastCreate) SetName(v string) *BroadcastCreate {
 	_c.mutation.SetName(v)
@@ -420,6 +434,10 @@ func (_c *BroadcastCreate) createSpec() (*Broadcast, *sqlgraph.CreateSpec) {
 		_spec.SetField(broadcast.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
+	if value, ok := _c.mutation.DiscardedAt(); ok {
+		_spec.SetField(broadcast.FieldDiscardedAt, field.TypeTime, value)
+		_node.DiscardedAt = &value
+	}
 	if value, ok := _c.mutation.Name(); ok {
 		_spec.SetField(broadcast.FieldName, field.TypeString, value)
 		_node.Name = value
@@ -586,6 +604,24 @@ func (u *BroadcastUpsert) SetWorkspaceID(v int64) *BroadcastUpsert {
 // UpdateWorkspaceID sets the "workspace_id" field to the value that was provided on create.
 func (u *BroadcastUpsert) UpdateWorkspaceID() *BroadcastUpsert {
 	u.SetExcluded(broadcast.FieldWorkspaceID)
+	return u
+}
+
+// SetDiscardedAt sets the "discarded_at" field.
+func (u *BroadcastUpsert) SetDiscardedAt(v time.Time) *BroadcastUpsert {
+	u.Set(broadcast.FieldDiscardedAt, v)
+	return u
+}
+
+// UpdateDiscardedAt sets the "discarded_at" field to the value that was provided on create.
+func (u *BroadcastUpsert) UpdateDiscardedAt() *BroadcastUpsert {
+	u.SetExcluded(broadcast.FieldDiscardedAt)
+	return u
+}
+
+// ClearDiscardedAt clears the value of the "discarded_at" field.
+func (u *BroadcastUpsert) ClearDiscardedAt() *BroadcastUpsert {
+	u.SetNull(broadcast.FieldDiscardedAt)
 	return u
 }
 
@@ -917,6 +953,27 @@ func (u *BroadcastUpsertOne) SetWorkspaceID(v int64) *BroadcastUpsertOne {
 func (u *BroadcastUpsertOne) UpdateWorkspaceID() *BroadcastUpsertOne {
 	return u.Update(func(s *BroadcastUpsert) {
 		s.UpdateWorkspaceID()
+	})
+}
+
+// SetDiscardedAt sets the "discarded_at" field.
+func (u *BroadcastUpsertOne) SetDiscardedAt(v time.Time) *BroadcastUpsertOne {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.SetDiscardedAt(v)
+	})
+}
+
+// UpdateDiscardedAt sets the "discarded_at" field to the value that was provided on create.
+func (u *BroadcastUpsertOne) UpdateDiscardedAt() *BroadcastUpsertOne {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.UpdateDiscardedAt()
+	})
+}
+
+// ClearDiscardedAt clears the value of the "discarded_at" field.
+func (u *BroadcastUpsertOne) ClearDiscardedAt() *BroadcastUpsertOne {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.ClearDiscardedAt()
 	})
 }
 
@@ -1456,6 +1513,27 @@ func (u *BroadcastUpsertBulk) SetWorkspaceID(v int64) *BroadcastUpsertBulk {
 func (u *BroadcastUpsertBulk) UpdateWorkspaceID() *BroadcastUpsertBulk {
 	return u.Update(func(s *BroadcastUpsert) {
 		s.UpdateWorkspaceID()
+	})
+}
+
+// SetDiscardedAt sets the "discarded_at" field.
+func (u *BroadcastUpsertBulk) SetDiscardedAt(v time.Time) *BroadcastUpsertBulk {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.SetDiscardedAt(v)
+	})
+}
+
+// UpdateDiscardedAt sets the "discarded_at" field to the value that was provided on create.
+func (u *BroadcastUpsertBulk) UpdateDiscardedAt() *BroadcastUpsertBulk {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.UpdateDiscardedAt()
+	})
+}
+
+// ClearDiscardedAt clears the value of the "discarded_at" field.
+func (u *BroadcastUpsertBulk) ClearDiscardedAt() *BroadcastUpsertBulk {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.ClearDiscardedAt()
 	})
 }
 
