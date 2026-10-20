@@ -19,16 +19,16 @@ import (
 // the Workspace row the command left behind.
 type workspaceCLI struct{ env *testhelper.TestEnv }
 
-func (c workspaceCLI) SuspendWorkspace(ctx context.Context, slug string, by suspension.Actor, reason string) (bool, error) {
-	id, err := accounts.WorkspaceIDBySlug(ctx, c.env.DB, slug)
+func (c workspaceCLI) SuspendWorkspace(ctx context.Context, publicID string, by suspension.Actor, reason string) (bool, error) {
+	id, err := accounts.WorkspaceIDByPublicID(ctx, c.env.DB, publicID)
 	if err != nil {
 		return false, err
 	}
 	return suspension.SuspendWorkspace(ctx, c.env.Bus, id, by, reason)
 }
 
-func (c workspaceCLI) UnsuspendWorkspace(ctx context.Context, slug string, by suspension.Actor) (bool, error) {
-	id, err := accounts.WorkspaceIDBySlug(ctx, c.env.DB, slug)
+func (c workspaceCLI) UnsuspendWorkspace(ctx context.Context, publicID string, by suspension.Actor) (bool, error) {
+	id, err := accounts.WorkspaceIDByPublicID(ctx, c.env.DB, publicID)
 	if err != nil {
 		return false, err
 	}
@@ -39,7 +39,7 @@ func TestWorkspaceSuspendJoinsTheReasonWords(t *testing.T) {
 	env := testhelper.Setup(t)
 	var out bytes.Buffer
 
-	err := execute(workspaceCLI{env}, &out, "workspace", "suspend", "acme", "complaint", "rate", "too", "high")
+	err := execute(workspaceCLI{env}, &out, "workspace", "suspend", fixtures.AcmePublicID, "complaint", "rate", "too", "high")
 
 	require.NoError(t, err)
 
@@ -51,9 +51,9 @@ func TestWorkspaceSuspendJoinsTheReasonWords(t *testing.T) {
 	assert.Contains(t, out.String(), "suspended")
 }
 
-func TestWorkspaceSuspendNeedsASlugAndAReason(t *testing.T) {
+func TestWorkspaceSuspendNeedsAnIdAndAReason(t *testing.T) {
 	env := testhelper.Setup(t)
-	for _, args := range [][]string{{"suspend"}, {"suspend", "acme"}} {
+	for _, args := range [][]string{{"suspend"}, {"suspend", fixtures.AcmePublicID}} {
 		err := execute(workspaceCLI{env}, &bytes.Buffer{}, append([]string{"workspace"}, args...)...)
 		require.Error(t, err, "args %v", args)
 	}
@@ -63,10 +63,10 @@ func TestWorkspaceSuspendNeedsASlugAndAReason(t *testing.T) {
 
 func TestWorkspaceUnsuspendLiftsTheSuspension(t *testing.T) {
 	env := testhelper.Setup(t)
-	err := execute(workspaceCLI{env}, &bytes.Buffer{}, "workspace", "suspend", "acme", "abuse")
+	err := execute(workspaceCLI{env}, &bytes.Buffer{}, "workspace", "suspend", fixtures.AcmePublicID, "abuse")
 	require.NoError(t, err)
 
-	err = execute(workspaceCLI{env}, &bytes.Buffer{}, "workspace", "unsuspend", "acme")
+	err = execute(workspaceCLI{env}, &bytes.Buffer{}, "workspace", "unsuspend", fixtures.AcmePublicID)
 
 	require.NoError(t, err)
 
@@ -78,7 +78,7 @@ func TestWorkspaceUnsuspendReportsNoChange(t *testing.T) {
 	env := testhelper.Setup(t)
 	var out bytes.Buffer
 
-	err := execute(workspaceCLI{env}, &out, "workspace", "unsuspend", "acme")
+	err := execute(workspaceCLI{env}, &out, "workspace", "unsuspend", fixtures.AcmePublicID)
 
 	require.NoError(t, err)
 
@@ -87,7 +87,7 @@ func TestWorkspaceUnsuspendReportsNoChange(t *testing.T) {
 
 func TestWorkspaceUnknownSubcommand(t *testing.T) {
 	env := testhelper.Setup(t)
-	err := execute(workspaceCLI{env}, &bytes.Buffer{}, "workspace", "delete", "acme")
+	err := execute(workspaceCLI{env}, &bytes.Buffer{}, "workspace", "delete", fixtures.AcmePublicID)
 	require.Error(t, err)
 	err = execute(workspaceCLI{env}, &bytes.Buffer{}, "workspace")
 	require.Error(t, err)

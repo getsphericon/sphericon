@@ -160,7 +160,6 @@ export function ConsoleWorkspacePage() {
               {t(($) => $.console.workspace.detailsTitle)}
             </Title>
             <Stack gap="xs">
-              <Field label={t(($) => $.console.workspaces.slug)}>{workspace.slug}</Field>
               <Field label={t(($) => $.console.workspace.id)}>{workspace.id}</Field>
               <Field label={t(($) => $.console.workspaces.createdAt)}>
                 {formatDateTime(workspace.createdAt)}

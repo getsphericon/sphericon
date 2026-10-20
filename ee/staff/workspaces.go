@@ -27,16 +27,18 @@ var ErrReasonRequired = errors.New("a suspension needs a reason")
 // the system sender. It reports whether anything changed: an already-suspended
 // Workspace is left as it was and its owners are not told twice. A failed notice does
 // not undo the suspension; it is logged. A blank reason is ErrReasonRequired.
-func (m *Module) SuspendWorkspace(ctx context.Context, bus *events.Bus, sender messaging.EmailSender, id int64, by *ent.StaffMember, reason string) (*ent.Workspace, bool, error) {
+func (m *Module) SuspendWorkspace(ctx context.Context, bus *events.Bus, sender messaging.EmailSender, publicID string, by *ent.StaffMember, reason string) (*ent.Workspace, bool, error) {
 	if err := m.licensed(); err != nil {
 		return nil, false, err
 	}
 	if strings.TrimSpace(reason) == "" {
 		return nil, false, ErrReasonRequired
 	}
-	if _, err := m.ent.Workspace.Get(ctx, id); err != nil {
+	w, err := m.workspace(ctx, publicID)
+	if err != nil {
 		return nil, false, err
 	}
+	id := w.ID
 	changed, err := suspension.SuspendWorkspace(ctx, bus, id, suspension.StaffMember(strconv.FormatInt(by.ID, 10)), reason)
 	if err != nil {
 		return nil, false, err
@@ -52,13 +54,15 @@ func (m *Module) SuspendWorkspace(ctx context.Context, bus *events.Bus, sender m
 
 // UnsuspendWorkspace lifts the Workspace's suspension as the Staff member; held sends
 // resume on their own. It reports whether the Workspace was suspended.
-func (m *Module) UnsuspendWorkspace(ctx context.Context, bus *events.Bus, id int64, by *ent.StaffMember) (*ent.Workspace, bool, error) {
+func (m *Module) UnsuspendWorkspace(ctx context.Context, bus *events.Bus, publicID string, by *ent.StaffMember) (*ent.Workspace, bool, error) {
 	if err := m.licensed(); err != nil {
 		return nil, false, err
 	}
-	if _, err := m.ent.Workspace.Get(ctx, id); err != nil {
+	w, err := m.workspace(ctx, publicID)
+	if err != nil {
 		return nil, false, err
 	}
+	id := w.ID
 	changed, err := suspension.UnsuspendWorkspace(ctx, bus, id, suspension.StaffMember(strconv.FormatInt(by.ID, 10)))
 	if err != nil {
 		return nil, false, err
@@ -67,14 +71,35 @@ func (m *Module) UnsuspendWorkspace(ctx context.Context, bus *events.Bus, id int
 	return ws, changed, err
 }
 
+// workspace loads a Workspace row by its id (ADR 0043), the only address the console and the
+// service endpoints take. ent.IsNotFound for an unknown id; the id is case-sensitive.
+func (m *Module) workspace(ctx context.Context, publicID string) (*ent.Workspace, error) {
+	return m.ent.Workspace.Query().Where(entworkspace.PublicID(publicID)).Only(ctx)
+}
+
+// publicIDs maps internal Workspace keys to their ids in one query, for the service
+// responses that name Workspaces in a list.
+func (m *Module) publicIDs(ctx context.Context, ids []int64) (map[int64]string, error) {
+	rows, err := m.ent.Workspace.Query().Where(entworkspace.IDIn(ids...)).Select(entworkspace.FieldID, entworkspace.FieldPublicID).All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[int64]string, len(rows))
+	for _, w := range rows {
+		out[w.ID] = w.PublicID
+	}
+	return out, nil
+}
+
 // scopeOver loads the Workspace row and scopes over it: the one place the console and the
 // service endpoints turn a Workspace id into a scope (AGENTS.md, scope list item 7).
 // ent.IsNotFound for an unknown Workspace.
-func (m *Module) scopeOver(ctx context.Context, workspaceID int64) (*ent.Scoped, error) {
-	if _, err := m.ent.Workspace.Get(ctx, workspaceID); err != nil {
+func (m *Module) scopeOver(ctx context.Context, publicID string) (*ent.Scoped, error) {
+	w, err := m.workspace(ctx, publicID)
+	if err != nil {
 		return nil, err
 	}
-	return m.ent.Scoped(workspaceID), nil
+	return m.ent.Scoped(w.ID), nil
 }
 
 // Rate is a numerator over a denominator; Rate is nil (undefined) below the volume
@@ -112,17 +137,18 @@ const (
 )
 
 // ListWorkspaces is one page of every Workspace, newest first, optionally only those
-// in a review state and those whose slug contains slug (case-insensitive). It reads the Workspace rows themselves
+// in a review state and those whose id or name contains search: the name case-insensitively, the id exactly (base62 is
+// case-sensitive). It reads the Workspace rows themselves
 // through the raw client: the Staff console shows tenant metadata only, never a
 // Workspace's Contacts, content or Events, so no Workspace-scoped query is made.
-func (m *Module) ListWorkspaces(ctx context.Context, review Review, slug string, p pagination.Params) (pagination.Page[*ent.Workspace], error) {
+func (m *Module) ListWorkspaces(ctx context.Context, review Review, search string, p pagination.Params) (pagination.Page[*ent.Workspace], error) {
 	if err := m.licensed(); err != nil {
 		return pagination.Page[*ent.Workspace]{}, err
 	}
 	query := func() *ent.WorkspaceQuery {
 		q := m.ent.Workspace.Query()
-		if slug != "" {
-			q = q.Where(entworkspace.SlugContainsFold(slug))
+		if search != "" {
+			q = q.Where(entworkspace.Or(entworkspace.PublicIDContains(search), entworkspace.NameContainsFold(search)))
 		}
 		switch review {
 		case ReviewWarned:
@@ -141,11 +167,11 @@ func (m *Module) ListWorkspaces(ctx context.Context, review Review, slug string,
 
 // GetWorkspace is one Workspace's metadata row; an ent not-found error when it does
 // not exist.
-func (m *Module) GetWorkspace(ctx context.Context, id int64) (*ent.Workspace, error) {
+func (m *Module) GetWorkspace(ctx context.Context, publicID string) (*ent.Workspace, error) {
 	if err := m.licensed(); err != nil {
 		return nil, err
 	}
-	return m.ent.Workspace.Get(ctx, id)
+	return m.workspace(ctx, publicID)
 }
 
 // WorkspaceDeliverability is the rates of one Workspace, by the existing reputation
@@ -184,13 +210,15 @@ func (m *Module) WorkspaceDeliverability(ctx context.Context, w *ent.Workspace) 
 // the Staff member (ADR 0026), through the same core mechanism, audited. It reports whether
 // the flag changed. The Workspace stays listed with its rates and can still be suspended
 // by hand.
-func (m *Module) SetAbuseExempt(ctx context.Context, bus *events.Bus, id int64, by *ent.StaffMember, exempt bool) (*ent.Workspace, bool, error) {
+func (m *Module) SetAbuseExempt(ctx context.Context, bus *events.Bus, publicID string, by *ent.StaffMember, exempt bool) (*ent.Workspace, bool, error) {
 	if err := m.licensed(); err != nil {
 		return nil, false, err
 	}
-	if _, err := m.ent.Workspace.Get(ctx, id); err != nil {
+	w, err := m.workspace(ctx, publicID)
+	if err != nil {
 		return nil, false, err
 	}
+	id := w.ID
 	changed, err := suspension.SetAbuseExempt(ctx, bus, id, suspension.StaffMember(strconv.FormatInt(by.ID, 10)), exempt)
 	if err != nil {
 		return nil, false, err

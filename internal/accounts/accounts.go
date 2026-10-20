@@ -740,3 +740,13 @@ func (a *Accounts) RevokeInvitation(ctx context.Context, s *ent.Scoped, actor ev
 	})
 	return found, err
 }
+
+// WorkspaceIDByPublicID resolves a Workspace id (ADR 0043) to the internal key; command-line
+// tooling addresses Workspaces by their id.
+func WorkspaceIDByPublicID(ctx context.Context, client *ent.Client, publicID string) (int64, error) {
+	id, err := client.Workspace.Query().Where(workspace.PublicID(publicID)).OnlyID(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("workspace %q: %w", publicID, err)
+	}
+	return id, nil
+}

@@ -98,7 +98,7 @@ export const staffMeGet = <ThrowOnError extends boolean = false>(options?: Optio
 });
 
 /**
- * List all Workspaces, newest first, optionally narrowed by a slug search
+ * List all Workspaces, newest first, optionally narrowed by an id or name search
  */
 export const staffWorkspacesList = <ThrowOnError extends boolean = false>(options?: Options<StaffWorkspacesListData, ThrowOnError>): RequestResult<StaffWorkspacesListResponses, StaffWorkspacesListErrors, ThrowOnError> => (options?.client ?? client).get<StaffWorkspacesListResponses, StaffWorkspacesListErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({

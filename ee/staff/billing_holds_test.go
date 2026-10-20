@@ -19,7 +19,7 @@ import (
 func TestLiftingABillingHoldLeavesTheSuspensionInForce(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
-	h.suspend(t, c, fixtures.AcmeID, "abuse report")
+	h.suspend(t, c, fixtures.AcmePublicID, "abuse report")
 	h.setHoldFor(t, "billing", "non_payment", time.Hour)
 
 	assert.True(t, h.clearHold(t, "billing"))
@@ -67,7 +67,7 @@ func TestABillingHoldInTheAuditLogIsBillingActivityUnderTheCredential(t *testing
 
 	c, _ := h.staffSession(t)
 	var consoleBilling, consoleOther []staffapi.StaffAuditEntryResource
-	for _, e := range h.auditPage(t, c, fixtures.AcmeID, staffapi.StaffWorkspaceAuditListParams{}).Items {
+	for _, e := range h.auditPage(t, c, fixtures.AcmePublicID, staffapi.StaffWorkspaceAuditListParams{}).Items {
 		switch e.Target.Name.Value {
 		case "billing":
 			consoleBilling = append(consoleBilling, e)

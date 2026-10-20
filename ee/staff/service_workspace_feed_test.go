@@ -44,10 +44,10 @@ func feedFrom(t *testing.T, c *serviceapi.Client, cursor string) ([]serviceapi.S
 	}
 }
 
-func feedSlugs(entries []serviceapi.ServiceWorkspaceResource) []string {
+func feedIDs(entries []serviceapi.ServiceWorkspaceResource) []string {
 	out := make([]string, len(entries))
 	for i, e := range entries {
-		out[i] = e.Slug
+		out[i] = string(e.ID)
 	}
 	return out
 }
@@ -60,14 +60,14 @@ func ownerIDs(w serviceapi.ServiceWorkspaceResource) []int64 {
 	return out
 }
 
-func entry(t *testing.T, entries []serviceapi.ServiceWorkspaceResource, slug string) serviceapi.ServiceWorkspaceResource {
+func entry(t *testing.T, entries []serviceapi.ServiceWorkspaceResource, id string) serviceapi.ServiceWorkspaceResource {
 	t.Helper()
 	for _, e := range entries {
-		if e.Slug == slug {
+		if string(e.ID) == id {
 			return e
 		}
 	}
-	require.FailNowf(t, "entry missing", "no %q in %v", slug, feedSlugs(entries))
+	require.FailNowf(t, "entry missing", "no %q in %v", id, feedIDs(entries))
 	return serviceapi.ServiceWorkspaceResource{}
 }
 
@@ -82,10 +82,10 @@ func TestTheFeedFromAnEmptyCursorListsEveryWorkspaceWithAllOfItsOwners(t *testin
 	require.Greater(t, len(all), 3)
 	want := make([]string, len(all))
 	for i, w := range all {
-		want[i] = w.Slug
+		want[i] = w.PublicID
 	}
-	assert.ElementsMatch(t, want, feedSlugs(entries), "every Workspace is in the feed at least once")
-	initech := entry(t, entries, fixtures.InitechSlug)
+	assert.ElementsMatch(t, want, feedIDs(entries), "every Workspace is in the feed at least once")
+	initech := entry(t, entries, fixtures.InitechPublicID)
 	assert.ElementsMatch(t, []int64{5, 6}, ownerIDs(initech), "a co-owned Workspace carries both owners")
 	for _, o := range initech.Owners {
 		switch o.UserId {
@@ -95,7 +95,7 @@ func TestTheFeedFromAnEmptyCursorListsEveryWorkspaceWithAllOfItsOwners(t *testin
 			assert.Equal(t, fixtures.InitechCoOwnerOwenEmail, string(o.Email))
 		}
 	}
-	assert.Equal(t, []int64{1}, ownerIDs(entry(t, entries, fixtures.AcmeSlug)), "only owners, never members")
+	assert.Equal(t, []int64{1}, ownerIDs(entry(t, entries, fixtures.AcmePublicID)), "only owners, never members")
 }
 
 func TestReplayingACursorReturnsTheSameEntriesAndTheCursorOnlyMovesWhenSaved(t *testing.T) {
@@ -128,7 +128,7 @@ func TestANewWorkspaceEntersTheFeedWithItsOwner(t *testing.T) {
 	require.NoError(t, err)
 
 	got, _ := feedFrom(t, c, saved)
-	require.Equal(t, []string{ws.Slug}, feedSlugs(got))
+	require.Equal(t, []string{ws.PublicID}, feedIDs(got))
 	assert.Equal(t, []int64{3}, ownerIDs(got[0]))
 	assert.Equal(t, fixtures.MemberMaryEmail, string(got[0].Owners[0].Email))
 }
@@ -143,20 +143,20 @@ func TestAnOwnerAddedRemovedOrTransferredPutsTheWorkspaceBackInTheFeed(t *testin
 	added, err := initech.Membership().Create().SetUserID(fixtures.MemberMaryID).SetRole(entmembership.RoleOwner).Save(t.Context())
 	require.NoError(t, err)
 	got, saved := feedFrom(t, c, saved)
-	require.Equal(t, []string{fixtures.InitechSlug}, feedSlugs(got))
+	require.Equal(t, []string{fixtures.InitechPublicID}, feedIDs(got))
 	assert.ElementsMatch(t, []int64{3, 5, 6}, ownerIDs(got[0]))
 
 	// Transferred: the co-owner steps down.
 	_, err = initech.Membership().UpdateOneID(fixtures.InitechCoOwnerMembershipID).SetRole(entmembership.RoleAdmin).Save(t.Context())
 	require.NoError(t, err)
 	got, saved = feedFrom(t, c, saved)
-	require.Equal(t, []string{fixtures.InitechSlug}, feedSlugs(got))
+	require.Equal(t, []string{fixtures.InitechPublicID}, feedIDs(got))
 	assert.ElementsMatch(t, []int64{3, 5}, ownerIDs(got[0]))
 
 	// Removed.
 	require.NoError(t, initech.Membership().DeleteOneID(added.ID).Exec(t.Context()))
 	got, _ = feedFrom(t, c, saved)
-	require.Equal(t, []string{fixtures.InitechSlug}, feedSlugs(got))
+	require.Equal(t, []string{fixtures.InitechPublicID}, feedIDs(got))
 	assert.Equal(t, []int64{5}, ownerIDs(got[0]))
 }
 
@@ -186,7 +186,7 @@ func TestAnOwnersEmailOrVerificationChangingPutsEveryTheirWorkspaceBackInTheFeed
 	verifiedAt := time.Now().UTC().Truncate(time.Second)
 	require.NoError(t, h.env.DB.User.UpdateOneID(fixtures.InitechOwnerOlgaID).SetEmailVerifiedAt(verifiedAt).Exec(t.Context()))
 	got, saved := feedFrom(t, c, saved)
-	require.Equal(t, []string{fixtures.InitechSlug}, feedSlugs(got))
+	require.Equal(t, []string{fixtures.InitechPublicID}, feedIDs(got))
 	for _, o := range got[0].Owners {
 		if o.UserId == 5 {
 			at, ok := o.EmailVerifiedAt.Get()
@@ -199,7 +199,7 @@ func TestAnOwnersEmailOrVerificationChangingPutsEveryTheirWorkspaceBackInTheFeed
 
 	require.NoError(t, h.env.DB.User.UpdateOneID(fixtures.OwnerJohnID).SetEmail("john@acme.test").Exec(t.Context()))
 	got, saved = feedFrom(t, c, saved)
-	require.Equal(t, []string{fixtures.AcmeSlug}, feedSlugs(got))
+	require.Equal(t, []string{fixtures.AcmePublicID}, feedIDs(got))
 	assert.Equal(t, "john@acme.test", string(got[0].Owners[0].Email))
 
 	// A User who owns nothing is nobody's change.

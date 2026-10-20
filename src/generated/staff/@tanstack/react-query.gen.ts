@@ -117,7 +117,7 @@ export const staffMeGetOptions = (options?: Options<StaffMeGetData>) => queryOpt
 export const staffWorkspacesListQueryKey = (options?: Options<StaffWorkspacesListData>) => createQueryKey('staffWorkspacesList', options);
 
 /**
- * List all Workspaces, newest first, optionally narrowed by a slug search
+ * List all Workspaces, newest first, optionally narrowed by an id or name search
  */
 export const staffWorkspacesListOptions = (options?: Options<StaffWorkspacesListData>) => queryOptions<StaffWorkspacesListResponse, StaffWorkspacesListError, StaffWorkspacesListResponse, ReturnType<typeof staffWorkspacesListQueryKey>>({
   queryFn: async ({ queryKey, signal }) => {
@@ -164,7 +164,7 @@ const createInfiniteParams = <K extends Pick<QueryKey<Options>[0], 'body' | 'hea
 export const staffWorkspacesListInfiniteQueryKey = (options?: Options<StaffWorkspacesListData>): QueryKey<Options<StaffWorkspacesListData>> => createQueryKey('staffWorkspacesList', options, true);
 
 /**
- * List all Workspaces, newest first, optionally narrowed by a slug search
+ * List all Workspaces, newest first, optionally narrowed by an id or name search
  */
 export const staffWorkspacesListInfiniteOptions = (options?: Options<StaffWorkspacesListData>) => {
   const opts = infiniteQueryOptions<StaffWorkspacesListResponse, StaffWorkspacesListError, InfiniteData<StaffWorkspacesListResponse>, QueryKey<Options<StaffWorkspacesListData>>, number | Pick<QueryKey<Options<StaffWorkspacesListData>>[0], 'body' | 'headers' | 'path' | 'query'>>(

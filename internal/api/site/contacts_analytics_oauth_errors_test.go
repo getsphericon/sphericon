@@ -137,14 +137,14 @@ func TestSiteOAuthConsentErrorBranches(t *testing.T) {
 
 	in := func() *siteapi.SiteOAuthDecisionInput {
 		return &siteapi.SiteOAuthDecisionInput{
-			ClientId: clientID, RedirectUri: redirect, WorkspaceSlug: fixtures.AcmePublicID, Approve: true,
+			ClientId: clientID, RedirectUri: redirect, WorkspaceId: fixtures.AcmePublicID, Approve: true,
 			CodeChallenge: oauth2.S256ChallengeFromVerifier(verifier),
 		}
 	}
 
 	// Decide: foreign workspace, unknown client, bad redirect, bad PKCE, bad scope.
 	foreignIn := in()
-	foreignIn.WorkspaceSlug = fixtures.GlobexPublicID
+	foreignIn.WorkspaceId = fixtures.GlobexPublicID
 	e1, err := owner.SiteOAuthDecide(ctx, foreignIn)
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteOAuthDecideNotFound{}, e1)

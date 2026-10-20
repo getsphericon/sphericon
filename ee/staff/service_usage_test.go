@@ -18,10 +18,10 @@ import (
 )
 
 // usageOf is the figure of a metric of a Workspace in a page of the usage read.
-func usageOf(t *testing.T, page *serviceapi.ServiceUsageListOK, workspaceID int64, metric serviceapi.UsageMetric) serviceapi.UsageFigure {
+func usageOf(t *testing.T, page *serviceapi.ServiceUsageListOK, workspaceID string, metric serviceapi.UsageMetric) serviceapi.UsageFigure {
 	t.Helper()
 	for _, w := range page.Items {
-		if w.WorkspaceId != serviceapi.EntityId(workspaceID) {
+		if w.WorkspaceId != serviceapi.WorkspaceId(workspaceID) {
 			continue
 		}
 		for _, f := range w.Figures {
@@ -53,10 +53,10 @@ func TestAServiceReadsLiveUsageOfTheCurrentPeriodByDefault(t *testing.T) {
 
 	page := readUsage(t, h.env.ServiceClient(t, primary), serviceapi.ServiceUsageListParams{})
 
-	acme := usageOf(t, page, 1, serviceapi.UsageMetricEmailsSent)
+	acme := usageOf(t, page, fixtures.AcmePublicID, serviceapi.UsageMetricEmailsSent)
 	assert.False(t, acme.Final)
 	assert.WithinDuration(t, now, time.Time(acme.ComputedAt), time.Minute)
-	assert.Positive(t, usageOf(t, page, 1, serviceapi.UsageMetricInFlightSends).Value, "the in-flight send is its own figure")
+	assert.Positive(t, usageOf(t, page, fixtures.AcmePublicID, serviceapi.UsageMetricInFlightSends).Value, "the in-flight send is its own figure")
 	assert.Equal(t, usage.PeriodOf(now).Format("2006-01"), page.Items[0].Period)
 }
 
@@ -69,7 +69,7 @@ func TestAServiceReadsAClosedPeriodAsFinalSnapshots(t *testing.T) {
 	})
 
 	require.NotEmpty(t, page.Items)
-	assert.True(t, usageOf(t, page, 1, serviceapi.UsageMetricEmailsSent).Final)
+	assert.True(t, usageOf(t, page, fixtures.AcmePublicID, serviceapi.UsageMetricEmailsSent).Final)
 	assert.Equal(t, "2027-01", page.Items[0].Period)
 }
 

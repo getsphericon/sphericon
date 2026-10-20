@@ -478,7 +478,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/EntityId"
+              "$ref": "#/components/schemas/WorkspaceId"
             }
           }
         ],
@@ -571,7 +571,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/EntityId"
+              "$ref": "#/components/schemas/WorkspaceId"
             }
           },
           {
@@ -690,7 +690,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/EntityId"
+              "$ref": "#/components/schemas/WorkspaceId"
             }
           },
           {
@@ -791,7 +791,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/EntityId"
+              "$ref": "#/components/schemas/WorkspaceId"
             }
           },
           {
@@ -1218,7 +1218,7 @@
           "workspaceId": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/EntityId"
+                "$ref": "#/components/schemas/WorkspaceId"
               }
             ],
             "description": "The Workspace that held the host at this change"
@@ -1326,18 +1326,15 @@
       },
       "ServiceWorkspaceResource": {
         "type": "object",
-        "required": ["id", "slug", "name", "createdAt", "owners"],
+        "required": ["id", "name", "createdAt", "owners"],
         "properties": {
           "id": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/EntityId"
+                "$ref": "#/components/schemas/WorkspaceId"
               }
             ],
-            "description": "Unique identifier"
-          },
-          "slug": {
-            "type": "string"
+            "description": "The Workspace id: its short opaque public address (ADR 0043)"
           },
           "name": {
             "type": "string"
@@ -1411,7 +1408,7 @@
           "workspaceId": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/EntityId"
+                "$ref": "#/components/schemas/WorkspaceId"
               }
             ],
             "description": "The Workspace"

@@ -17,7 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-var acme = serviceapi.EntityId(fixtures.AcmeID)
+var acme = serviceapi.WorkspaceId(fixtures.AcmePublicID)
 
 func (h *harness) holdClient(t *testing.T) *serviceapi.Client {
 	t.Helper()
@@ -167,15 +167,15 @@ func TestHoldsOfAnUnknownWorkspaceAreNotFound(t *testing.T) {
 	h := newHarness(t)
 	c := h.holdClient(t)
 
-	list, err := c.ServiceHoldsList(t.Context(), serviceapi.ServiceHoldsListParams{WorkspaceId: 999999})
+	list, err := c.ServiceHoldsList(t.Context(), serviceapi.ServiceHoldsListParams{WorkspaceId: "NoSuchId"})
 	require.NoError(t, err)
 	assert.IsType(t, &serviceapi.ServiceHoldsListNotFound{}, list)
 	set, err := c.ServiceHoldsSet(t.Context(), &serviceapi.HoldInput{
 		ReasonCode: "r", Message: "m", ExpiresAt: serviceapi.Timestamp(h.clock.now().Add(time.Hour)),
-	}, serviceapi.ServiceHoldsSetParams{WorkspaceId: 999999, Key: "k"})
+	}, serviceapi.ServiceHoldsSetParams{WorkspaceId: "NoSuchId", Key: "k"})
 	require.NoError(t, err)
 	assert.IsType(t, &serviceapi.ServiceHoldsSetNotFound{}, set)
-	clear, err := c.ServiceHoldsClear(t.Context(), serviceapi.ServiceHoldsClearParams{WorkspaceId: 999999, Key: "k"})
+	clear, err := c.ServiceHoldsClear(t.Context(), serviceapi.ServiceHoldsClearParams{WorkspaceId: "NoSuchId", Key: "k"})
 	require.NoError(t, err)
 	assert.IsType(t, &serviceapi.ServiceHoldsClearNotFound{}, clear)
 }

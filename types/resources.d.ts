@@ -436,6 +436,7 @@ export default interface Resources {
         "createdAt": "Created",
         "empty": "No workspaces found",
         "exempt": "Exempt",
+        "id": "Id",
         "loadError": "Could not load workspaces",
         "name": "Name",
         "review": {
@@ -444,9 +445,8 @@ export default interface Resources {
           "systemFrozen": "Frozen by the detector",
           "warned": "Warned"
         },
-        "searchLabel": "Search by slug",
-        "searchPlaceholder": "Search by slug",
-        "slug": "Slug",
+        "searchLabel": "Search by id or name",
+        "searchPlaceholder": "Search by id or name",
         "status": "Status",
         "suspended": "Suspended",
         "title": "Workspaces",

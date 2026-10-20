@@ -29,8 +29,7 @@ func (h *ServiceHandlers) ServiceWorkspaceFeedList(ctx context.Context, params s
 	}
 	for i, e := range page.Entries {
 		item := serviceapi.ServiceWorkspaceResource{
-			ID:        serviceapi.EntityId(e.Workspace.ID),
-			Slug:      e.Workspace.Slug,
+			ID:        serviceapi.WorkspaceId(e.Workspace.PublicID),
 			Name:      e.Workspace.Name,
 			CreatedAt: serviceapi.Timestamp(e.Workspace.CreatedAt),
 			Owners:    make([]serviceapi.ServiceWorkspaceOwner, len(e.Owners)),

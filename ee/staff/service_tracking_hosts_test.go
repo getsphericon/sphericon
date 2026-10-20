@@ -76,7 +76,7 @@ func TestAHostEnteringTheVerifiedStatesIsListedWithItsWorkspace(t *testing.T) {
 	require.Len(t, entries, 1, "a pending claim of another Workspace is not listed")
 	assert.Equal(t, "track."+fixtures.SendingDomainTrackingPendingDomain, entries[0].Host)
 	assert.Equal(t, serviceapi.ServiceTrackingHostStateDNSVerified, entries[0].State)
-	assert.EqualValues(t, fixtures.UmbrellaID, entries[0].WorkspaceId)
+	assert.EqualValues(t, fixtures.UmbrellaPublicID, entries[0].WorkspaceId)
 }
 
 func TestReplayingAHostFeedCursorReturnsTheSameEntries(t *testing.T) {

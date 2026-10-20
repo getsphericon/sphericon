@@ -27,9 +27,17 @@ func (h *ServiceHandlers) ServiceUsageList(ctx context.Context, params serviceap
 	if err != nil {
 		return nil, err
 	}
+	ids := make([]int64, len(page.Items))
+	for i, w := range page.Items {
+		ids[i] = w.WorkspaceID
+	}
+	publicIDs, err := h.module.publicIDs(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
 	items := make([]serviceapi.WorkspaceUsageResource, 0, len(page.Items))
 	for _, w := range page.Items {
-		items = append(items, usageResource(w))
+		items = append(items, usageResource(w, publicIDs[w.WorkspaceID]))
 	}
 	return &serviceapi.ServiceUsageListOK{
 		Items:      items,
@@ -69,7 +77,7 @@ func (h *ServiceHandlers) ServiceWorkspaceUsageGet(ctx context.Context, params s
 		p := serviceapi.ServiceWorkspaceUsageGetBadRequest(badPeriodProblem())
 		return &p, nil
 	}
-	id := int64(params.WorkspaceId)
+	id := string(params.WorkspaceId)
 	got, err := h.module.WorkspaceUsage(ctx, id, period)
 	if ent.IsNotFound(err) {
 		p := serviceapi.ServiceWorkspaceUsageGetNotFound(workspaceNotFoundProblem())
@@ -78,13 +86,13 @@ func (h *ServiceHandlers) ServiceWorkspaceUsageGet(ctx context.Context, params s
 	if err != nil {
 		return nil, err
 	}
-	res := usageResource(got)
+	res := usageResource(got, id)
 	return &res, nil
 }
 
 // WorkspaceUsage reads one Workspace's stored figures for a period, scoped over the one
 // Workspace the call names after its row is loaded. ent.IsNotFound for an unknown Workspace.
-func (m *Module) WorkspaceUsage(ctx context.Context, workspaceID int64, period time.Time) (usage.WorkspaceUsage, error) {
+func (m *Module) WorkspaceUsage(ctx context.Context, workspaceID string, period time.Time) (usage.WorkspaceUsage, error) {
 	s, err := m.scopeOver(ctx, workspaceID)
 	if err != nil {
 		return usage.WorkspaceUsage{}, err
@@ -92,9 +100,9 @@ func (m *Module) WorkspaceUsage(ctx context.Context, workspaceID int64, period t
 	return usage.Get(ctx, s, period)
 }
 
-func usageResource(w usage.WorkspaceUsage) serviceapi.WorkspaceUsageResource {
+func usageResource(w usage.WorkspaceUsage, publicID string) serviceapi.WorkspaceUsageResource {
 	res := serviceapi.WorkspaceUsageResource{
-		WorkspaceId: serviceapi.EntityId(w.WorkspaceID),
+		WorkspaceId: serviceapi.WorkspaceId(publicID),
 		Period:      w.Period.Format(periodLayout),
 		Figures:     make([]serviceapi.UsageFigure, 0, len(w.Figures)),
 	}
