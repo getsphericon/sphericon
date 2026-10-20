@@ -56,3 +56,16 @@ domain's `tracking_state` is written from a row that was read earlier.
 - **`looplab/fsm`.** Its state lives in the machine instance, with string states; its README
   documents no external storage, so the compare-and-swap would sit in callbacks around an
   in-memory copy of the state.
+
+## Broadcast: where the table departs from the plain flow
+
+- **Plan is also legal from `sending`.** The claim (`Send`) moves a Broadcast to `sending` before
+  the plan job runs, and a held plan is retried from `sending`, so the table permits plan as a
+  re-entry there (a re-plan converges on the same recipient rows). Plan is refused from `sent` and
+  `failed`, which is the regression this ADR set out to fix.
+- **Revert** (scheduled or sending back to draft) exists for the case where the job cannot be
+  enqueued after the claim.
+- **Known window.** A queued plan job checks that its Broadcast is due, then plans. An unschedule
+  that lands between the two moves the Broadcast to `draft`, and the plan, legal from `draft` for
+  direct callers, claims it. Closing it needs the job to carry the state it was enqueued for;
+  the window is a few statements wide and left open.

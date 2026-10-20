@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -38,10 +37,15 @@ func (m *mailbox) Send(_ context.Context, msg messaging.EmailMessage) (messaging
 	return messaging.Receipt{}, nil
 }
 
-type provider struct{ sender messaging.EmailSender }
+// provider resolves the Workspace's email provider: the mailbox, or err when set (no usable
+// Integration).
+type provider struct {
+	sender messaging.EmailSender
+	err    error
+}
 
-func (p provider) EmailSender(context.Context, *ent.Scoped) (messaging.EmailSender, error) {
-	return p.sender, nil
+func (p *provider) EmailSender(context.Context, *ent.Scoped) (messaging.EmailSender, error) {
+	return p.sender, p.err
 }
 
 // delivery is a sending Broadcast (the fixture, with no recipients yet) over a mailbox.
@@ -49,6 +53,7 @@ type delivery struct {
 	t   *testing.T
 	env *testhelper.TestEnv
 	box *mailbox
+	res *provider
 	out *outbound.Module
 	del *broadcasts.Delivery
 	s   *ent.Scoped
@@ -59,9 +64,10 @@ func newDelivery(t *testing.T) *delivery {
 	t.Helper()
 	env := testhelper.Setup(t)
 	box := &mailbox{}
-	out := outbound.New(env.Bus, provider{box}, tracking.New("test-secret", "http://local"))
+	res := &provider{sender: box}
+	out := outbound.New(env.Bus, res, tracking.New("test-secret", "http://local"))
 	return &delivery{
-		t: t, env: env, box: box, ctx: context.Background(),
+		t: t, env: env, box: box, res: res, ctx: context.Background(),
 		out: out, del: broadcasts.NewDelivery(out),
 		s: env.DB.Scoped(fixtures.AcmeID),
 	}
@@ -158,7 +164,7 @@ func TestRecipientThatCannotRenderFails(t *testing.T) {
 func TestHeldRecipientStaysPendingAndRecordsTheHold(t *testing.T) {
 	d := newDelivery(t)
 	id := d.recipient(fixtures.ContactAliceID)
-	d.env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSuspendedAt(time.Now()).ExecX(d.ctx)
+	d.env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSuspendedAt(fixedNow).ExecX(d.ctx)
 
 	err := d.del.SendRecipient(d.ctx, d.s, id)
 

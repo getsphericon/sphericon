@@ -12,7 +12,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -148,21 +147,4 @@ func TestUnknownOrForeignBroadcastIsNotFound(t *testing.T) {
 	require.ErrorIs(t, err, broadcasts.ErrNotFound)
 	_, err = m.Schedule(context.Background(), env.DB.Scoped(fixtures.AcmeID), 999999, time.Now().Add(time.Hour))
 	assert.ErrorIs(t, err, broadcasts.ErrNotFound)
-}
-
-func TestBeginIsRefusedFromSentAndFailedAndKeepsTheirStatus(t *testing.T) {
-	env := testhelper.Setup(t)
-	s := env.DB.Scoped(fixtures.AcmeID)
-
-	for id, want := range map[int64]broadcast.Status{
-		fixtures.BroadcastSentID:   broadcast.StatusSent,
-		fixtures.BroadcastFailedID: broadcast.StatusFailed,
-	} {
-		require.ErrorIs(t, broadcasts.Begin(context.Background(), s, id), lifecycle.ErrInvalidTransition)
-		require.ErrorIs(t, broadcasts.CanBegin(context.Background(), s, id), lifecycle.ErrInvalidTransition)
-		assert.Equal(t, want, env.DB.Broadcast.GetX(context.Background(), id).Status)
-	}
-	require.NoError(t, broadcasts.Begin(context.Background(), s, fixtures.BroadcastDraftID))
-	assert.Equal(t, broadcast.StatusSending, env.DB.Broadcast.GetX(context.Background(), fixtures.BroadcastDraftID).Status)
-	require.NoError(t, broadcasts.Begin(context.Background(), s, fixtures.BroadcastSendingID), "a re-plan of a sending Broadcast converges")
 }

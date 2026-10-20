@@ -41,10 +41,12 @@ type Delivery struct {
 func NewDelivery(out *outbound.Module) *Delivery { return &Delivery{out: out} }
 
 // recipient triggers (ADR 0046): only a pending recipient can leave.
+type recipientTrigger string
+
 const (
-	recipientSent    trigger = "sent"
-	recipientSkipped trigger = "skipped"
-	recipientFailed  trigger = "failed"
+	recipientSent    recipientTrigger = "sent"
+	recipientSkipped recipientTrigger = "skipped"
+	recipientFailed  recipientTrigger = "failed"
 )
 
 // recipientMachine is the BroadcastRecipient transition table: pending to sent, skipped or
@@ -134,7 +136,9 @@ func (d *Delivery) deliver(ctx context.Context, s *ent.Scoped, rec *ent.Broadcas
 	switch res.Outcome {
 	case outbound.Sent:
 		// A send went through: the hold, if any, has lifted.
-		SetHold(ctx, s, b.ID, "")
+		if err := setHold(ctx, s, b.ID, ""); err != nil {
+			return err
+		}
 		return moveRecipient(ctx, s, rec.ID, recipientSent, func(u *ent.BroadcastRecipientScopedUpdate) {
 			withMessage(u, res).SetSentAt(time.Now())
 		})
@@ -156,7 +160,7 @@ func withMessage(u *ent.BroadcastRecipientScopedUpdate, res outbound.Result) *en
 	return u
 }
 
-func moveRecipient(ctx context.Context, s *ent.Scoped, id int64, t trigger, set func(*ent.BroadcastRecipientScopedUpdate)) error {
+func moveRecipient(ctx context.Context, s *ent.Scoped, id int64, t recipientTrigger, set func(*ent.BroadcastRecipientScopedUpdate)) error {
 	return recipientMachine(s, id, set).FireCtx(ctx, t)
 }
 
@@ -164,7 +168,9 @@ func moveRecipient(ctx context.Context, s *ent.Scoped, id int64, t trigger, set 
 // Deferral): nothing was consumed, so the recipient stays pending.
 func (d *Delivery) retryLater(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, rec *ent.BroadcastRecipient, res outbound.Result) error {
 	if res.Outcome == outbound.Held {
-		SetHold(ctx, s, b.ID, res.Reason)
+		// Best effort: the hold is enforced by the send path and the caller retries on the
+		// HeldError either way, so a failed write only leaves the reason unrecorded.
+		_ = setHold(ctx, s, b.ID, res.Reason)
 		return &HeldError{Reason: res.Reason}
 	}
 	// The Integration is busy, not blocked: the Broadcast stays sending with no hold
@@ -216,17 +222,16 @@ func (d *Delivery) GiveUp(ctx context.Context, s *ent.Scoped, recipientID int64,
 	return Finalize(ctx, s, rec.BroadcastID)
 }
 
-// SetHold records (or, with reason "", clears) why a Broadcast is held. Best effort: the
-// hold itself is enforced by the send path, this is the visible state, so a failed write
-// must not mask the real outcome.
-func SetHold(ctx context.Context, s *ent.Scoped, broadcastID int64, reason string) {
+// setHold records (or, with reason "", clears) why a Broadcast is held. It is the only
+// writer of the hold reason.
+func setHold(ctx context.Context, s *ent.Scoped, broadcastID int64, reason string) error {
 	upd := s.Broadcast().UpdateOneID(broadcastID)
 	if reason == "" {
 		upd.ClearHoldReason()
 	} else {
 		upd.SetHoldReason(reason)
 	}
-	_ = upd.Exec(ctx)
+	return upd.Exec(ctx)
 }
 
 // IsRetryLater reports whether err asks the adapter to try again rather than record a

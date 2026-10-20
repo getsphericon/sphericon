@@ -36,14 +36,31 @@ type Scheduler interface {
 	Schedule(ctx context.Context, broadcastID int64, sends []Send) error
 }
 
+// ErrPlanFailed marks a plan that failed the Broadcast for good (a template that does not
+// render, a broken segment): the Broadcast is failed, and running it again cannot help.
+var ErrPlanFailed = errors.New("broadcasts: the plan failed the broadcast")
+
+// failPlan moves the Broadcast to failed and reports cause as ErrPlanFailed. If the move
+// itself fails the error carries no ErrPlanFailed, so the caller retries until it is recorded.
+func failPlan(ctx context.Context, s *ent.Scoped, id int64, cause error) error {
+	if err := fail(ctx, s, id); err != nil {
+		return errors.Join(cause, err)
+	}
+	return fmt.Errorf("%w: %w", ErrPlanFailed, cause)
+}
+
 // Run is the whole delivery sequence of a Broadcast: plan the audience, pace the recipients
 // and hand each send to the scheduler. It returns *HeldError when the Broadcast is held (it
 // keeps its status and records why, to be run again), lifecycle.ErrInvalidTransition when it
-// is past its plan (a stale job), and a plain error when it failed. An empty audience
+// is past its plan (a stale job), and a plain error on a fault. A plan that failed the
+// Broadcast (see ErrPlanFailed) is recorded and returns nil. An empty audience
 // settles the Broadcast and schedules nothing. Eligibility is still checked per message at
 // send time, so an unsubscribe or Suppression that lands after planning is honoured.
 func (d *Delivery) Run(ctx context.Context, s *ent.Scoped, id int64, sched Scheduler, now time.Time) error {
 	ids, err := d.Plan(ctx, s, id)
+	if errors.Is(err, ErrPlanFailed) {
+		return nil // the Broadcast failed once, recorded as such: a retry would only fail again
+	}
 	if err != nil || len(ids) == 0 {
 		return err
 	}
@@ -90,7 +107,7 @@ func Due(ctx context.Context, s *ent.Scoped, id int64, jobScheduledAt *time.Time
 func (d *Delivery) Plan(ctx context.Context, s *ent.Scoped, id int64) ([]int64, error) {
 	// A sent or failed Broadcast is past its plan: a late or retried job is refused here,
 	// before a Hold reason is recorded on it.
-	if err := CanBegin(ctx, s, id); err != nil {
+	if err := canBegin(ctx, s, id); err != nil {
 		return nil, err
 	}
 	b, err := s.Broadcast().Get(ctx, id)
@@ -111,19 +128,25 @@ func (d *Delivery) Plan(ctx context.Context, s *ent.Scoped, id int64) ([]int64, 
 		return nil, fmt.Errorf("preflight broadcast %d: %w", b.ID, err)
 	}
 	if hold != "" {
-		SetHold(ctx, s, b.ID, hold)
+		if err := setHold(ctx, s, b.ID, hold); err != nil {
+			return nil, err
+		}
 		return nil, &HeldError{Reason: hold}
 	}
-	SetHold(ctx, s, b.ID, "")
 
-	if err := Begin(ctx, s, b.ID); err != nil {
+	// The move wins the compare-and-swap before the hold is cleared, so a stale plan never
+	// touches a Broadcast it lost.
+	if err := begin(ctx, s, b.ID); err != nil {
+		return nil, err
+	}
+	if err := setHold(ctx, s, b.ID, ""); err != nil {
 		return nil, err
 	}
 
 	// A template that cannot render would fail every recipient: fail the broadcast once,
 	// here, before any recipient row exists (ADR 0015).
 	if verr := emailrender.Lint(b.Subject, b.Body, nil).Error; verr != nil {
-		return nil, errors.Join(fmt.Errorf("broadcast %d: template does not render: %w", b.ID, verr), Fail(ctx, s, b.ID))
+		return nil, failPlan(ctx, s, b.ID, fmt.Errorf("broadcast %d: template does not render: %w", b.ID, verr))
 	}
 
 	// Audience: contacts in the workspace with an email address, narrowed by the
@@ -139,7 +162,7 @@ func (d *Delivery) Plan(ctx context.Context, s *ent.Scoped, id int64) ([]int64, 
 	if b.SegmentID != nil {
 		seg, err := s.Segment().Query().Where(segment.IDEQ(*b.SegmentID)).Only(ctx)
 		if err != nil {
-			return nil, errors.Join(fmt.Errorf("load segment %d: %w", *b.SegmentID, err), Fail(ctx, s, b.ID))
+			return nil, failPlan(ctx, s, b.ID, fmt.Errorf("load segment %d: %w", *b.SegmentID, err))
 		}
 		def := ""
 		if seg.Definition != nil {
@@ -147,7 +170,7 @@ func (d *Delivery) Plan(ctx context.Context, s *ent.Scoped, id int64) ([]int64, 
 		}
 		pred, err := segments.ContactPredicate(ctx, s, def)
 		if err != nil {
-			return nil, errors.Join(fmt.Errorf("segment %d definition: %w", seg.ID, err), Fail(ctx, s, b.ID))
+			return nil, failPlan(ctx, s, b.ID, fmt.Errorf("segment %d definition: %w", seg.ID, err))
 		}
 		audience = audience.Where(pred)
 	}
@@ -210,6 +233,15 @@ func interval(ctx context.Context, s *ent.Scoped) (time.Duration, error) {
 	return sendlimit.EffectiveOf(integ).Limits().Interval(), nil
 }
 
+// spread is the i-th send's time: i steps after start.
+func spread(start time.Time, step time.Duration, n int) []time.Time {
+	times := make([]time.Time, n)
+	for i := range times {
+		times[i] = start.Add(time.Duration(i) * step)
+	}
+	return times
+}
+
 // Pace spreads n recipient sends over time for a Broadcast whose Integration has a Send rate
 // limit (ADR 0023): the i-th send is scheduled i steps after the start, a step being one over
 // the effective rate, so the limiter is a guard and a Deferral the rare case. The start is
@@ -233,9 +265,6 @@ func (d *Delivery) Pace(ctx context.Context, s *ent.Scoped, id int64, n int, now
 	if b.ScheduledAt != nil && b.ScheduledAt.After(start) {
 		start = *b.ScheduledAt
 	}
-	times := make([]time.Time, n)
-	for i := range times {
-		times[i] = start.Add(time.Duration(i) * step)
-	}
+	times := spread(start, step, n)
 	return times, s.Broadcast().UpdateOneID(b.ID).SetLastScheduledAt(times[n-1]).Exec(ctx)
 }

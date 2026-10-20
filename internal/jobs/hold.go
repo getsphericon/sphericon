@@ -26,14 +26,6 @@ func asHeld(err error) (*broadcasts.HeldError, bool) {
 	return h, errors.As(err, &h)
 }
 
-// isDeferrable reports whether err means "try again later" rather than "this attempt
-// failed": a hold on the source, or a live claim held by another attempt.
-func isDeferrable(err error) bool {
-	_, held := asHeld(err)
-	_, deferred := asDeferred(err)
-	return held || deferred || errors.Is(err, outbound.ErrInProgress)
-}
-
 // snoozeIfDeferrable converts a deferrable error into the River snooze for the job
 // (which does not count against MaxAttempts), passing any other error through.
 // Workers call it on the error from their pure function.

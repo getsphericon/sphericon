@@ -36,7 +36,7 @@ func TestDeferrableErrorsBecomeSnoozes(t *testing.T) {
 // A Deferral is deferrable like a hold and snoozes by the delay the Outbound retry policy chose.
 func TestDeferredErrorSnoozesByItsDelay(t *testing.T) {
 	d := &broadcasts.DeferredError{Delay: 3500 * time.Millisecond}
-	assert.True(t, isDeferrable(fmt.Errorf("wrapped: %w", d)))
+	assert.True(t, broadcasts.IsRetryLater(fmt.Errorf("wrapped: %w", d)))
 	snooze := snoozeOf(t, snoozeIfDeferrable(d))
 	assert.Equal(t, 3500*time.Millisecond, snooze.Duration)
 }
@@ -44,7 +44,7 @@ func TestDeferredErrorSnoozesByItsDelay(t *testing.T) {
 func TestOtherErrorsPassThroughUnchanged(t *testing.T) {
 	boom := errors.New("smtp unavailable")
 	assert.Same(t, boom, snoozeIfDeferrable(boom))
-	assert.False(t, isDeferrable(boom))
-	assert.True(t, isDeferrable(&broadcasts.HeldError{Reason: outbound.HoldNoIntegration}))
-	assert.True(t, isDeferrable(outbound.ErrInProgress))
+	assert.False(t, broadcasts.IsRetryLater(boom))
+	assert.True(t, broadcasts.IsRetryLater(&broadcasts.HeldError{Reason: outbound.HoldNoIntegration}))
+	assert.True(t, broadcasts.IsRetryLater(outbound.ErrInProgress))
 }

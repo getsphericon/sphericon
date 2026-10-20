@@ -81,16 +81,16 @@ func fire(ctx context.Context, s *ent.Scoped, id int64, t trigger, set update) e
 	return machine(s, id, set).FireCtx(ctx, t)
 }
 
-// Begin moves a Broadcast to sending for its plan. A draft or scheduled Broadcast is
+// begin moves a Broadcast to sending for its plan. A draft or scheduled Broadcast is
 // claimed; one already sending stays (a re-plan converges on the same recipient rows). A
 // sent or failed one is lifecycle.ErrInvalidTransition and keeps its status.
-func Begin(ctx context.Context, s *ent.Scoped, id int64) error {
+func begin(ctx context.Context, s *ent.Scoped, id int64) error {
 	return fire(ctx, s, id, triggerPlan, nil)
 }
 
-// CanBegin reports Begin's verdict without writing: nil, ErrNotFound, or
+// canBegin reports begin's verdict without writing: nil, ErrNotFound, or
 // lifecycle.ErrInvalidTransition.
-func CanBegin(ctx context.Context, s *ent.Scoped, id int64) error {
+func canBegin(ctx context.Context, s *ent.Scoped, id int64) error {
 	m := machine(s, id, nil)
 	ok, err := m.CanFireCtx(ctx, triggerPlan)
 	if err != nil {
@@ -102,8 +102,8 @@ func CanBegin(ctx context.Context, s *ent.Scoped, id int64) error {
 	return nil
 }
 
-// Fail moves a sending Broadcast to failed.
-func Fail(ctx context.Context, s *ent.Scoped, id int64) error {
+// fail moves a sending Broadcast to failed.
+func fail(ctx context.Context, s *ent.Scoped, id int64) error {
 	return fire(ctx, s, id, triggerFail, nil)
 }
 

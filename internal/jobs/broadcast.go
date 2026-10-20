@@ -120,22 +120,48 @@ func (w *SendRecipientWorker) Work(ctx context.Context, job *river.Job[SendRecip
 		return err // no such recipient: erased with its Contact after the job was queued
 	}
 	err = w.del.SendRecipient(ctx, s, job.Args.RecipientID)
-	switch {
-	case err == nil:
+	switch classify(err) {
+	case outcomeDone:
 		return nil
-	case errors.Is(err, lifecycle.ErrInvalidTransition):
-		return nil // stale: the recipient was decided meanwhile, nothing to retry
-	case isDeferrable(err):
+	case outcomeRetryLater:
 		// A hold or a Deferral is not a failure: wait it out without spending an attempt.
 		return snoozeIfDeferrable(err)
+	case outcomeFailed:
+		// falls through to the retry budget below
 	}
 	// On the final attempt the module records the terminal failure so the Broadcast can
 	// finalize instead of hanging in "sending"; the error still surfaces (river discards
-	// the job and the ErrorHandler logs it).
+	// the job and the ErrorHandler logs it). A give-up that cannot be recorded is returned
+	// with it, so the job is not silently lost.
 	if job.Attempt >= job.MaxAttempts {
-		_ = w.del.GiveUp(ctx, s, job.Args.RecipientID, err)
+		if gerr := w.del.GiveUp(ctx, s, job.Args.RecipientID, err); gerr != nil {
+			return errors.Join(err, gerr)
+		}
 	}
 	return err
+}
+
+// outcome is how an adapter treats the result of delivering one recipient.
+type outcome int
+
+const (
+	outcomeDone       outcome = iota // delivered, or nothing left to do (a stale job included)
+	outcomeRetryLater                // a hold, a Deferral or a live claim: not a failure
+	outcomeFailed                    // the attempt failed
+)
+
+// classify is the one reading of a delivery error shared by both adapters. A recipient that
+// was decided meanwhile (lifecycle.ErrInvalidTransition) is a stale job, finished without a
+// retry.
+func classify(err error) outcome {
+	switch {
+	case err == nil, errors.Is(err, lifecycle.ErrInvalidTransition):
+		return outcomeDone
+	case broadcasts.IsRetryLater(err):
+		return outcomeRetryLater
+	default:
+		return outcomeFailed
+	}
 }
 
 // SendBroadcast runs a Broadcast's delivery sequence synchronously: the module plans and
@@ -163,16 +189,20 @@ type inlineSends struct {
 func (i inlineSends) Schedule(ctx context.Context, _ int64, sends []broadcasts.Send) error {
 	for _, send := range sends {
 		serr := i.del.SendRecipient(ctx, i.s, send.RecipientID)
-		switch {
-		case serr == nil, errors.Is(serr, lifecycle.ErrInvalidTransition):
-		case isDeferrable(serr):
+		switch classify(serr) {
+		case outcomeDone:
+			// delivered, or stale: next recipient
+		case outcomeRetryLater:
 			// The source is on hold (or a claim is live): stop, leaving the remaining
 			// recipients pending for a later run rather than consuming them.
 			return serr
-		default:
-			// Synchronous path has no retry runtime: a failed send is terminal, so
-			// give the recipient up (a bad recipient must not abort the batch).
-			_ = i.del.GiveUp(ctx, i.s, send.RecipientID, serr)
+		case outcomeFailed:
+			// Unlike the river adapter, which retries up to the last attempt, the synchronous
+			// path has no retry runtime: a failed send is terminal, so give the recipient up
+			// at once (a bad recipient must not abort the batch).
+			if gerr := i.del.GiveUp(ctx, i.s, send.RecipientID, serr); gerr != nil {
+				return errors.Join(serr, gerr)
+			}
 		}
 	}
 	return nil
