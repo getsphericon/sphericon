@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -508,4 +509,19 @@ func TestPlanBroadcastFailsTheWholeBroadcastOnABrokenTemplate(t *testing.T) {
 	n, err := env.DB.BroadcastRecipient.Query().Where(broadcastrecipient.BroadcastID(fixtures.BroadcastDraftID)).Count(ctx)
 	require.NoError(t, err)
 	assert.Zero(t, n, "no recipient rows for a broadcast that cannot render")
+}
+
+// A late or retried plan job on a finished Broadcast must not move it back to sending.
+func TestPlanBroadcastIsRefusedFromSentAndFailed(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+
+	for id, want := range map[int64]broadcast.Status{
+		fixtures.BroadcastSentID:   broadcast.StatusSent,
+		fixtures.BroadcastFailedID: broadcast.StatusFailed,
+	} {
+		_, err := jobs.PlanBroadcast(ctx, env.DB, newMod(env, resolvingTo(&fakeSender{})), id)
+		require.ErrorIs(t, err, lifecycle.ErrInvalidTransition, "broadcast %d", id)
+		assert.Equal(t, want, env.DB.Broadcast.GetX(ctx, id).Status, "broadcast %d", id)
+	}
 }

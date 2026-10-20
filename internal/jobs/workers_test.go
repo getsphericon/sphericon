@@ -700,3 +700,20 @@ func TestErrorHandlerLogsAndKeepsRetrying(t *testing.T) {
 func TestHeldErrorMessage(t *testing.T) {
 	assert.Equal(t, "send held: no_integration", (&jobs.HeldError{Reason: "no_integration"}).Error())
 }
+
+// A queued plan job that fires after its Broadcast has finished is stale: it finishes
+// without an error (so river does not retry it) and leaves the status alone.
+func TestSendBroadcastWorkerFinishesAStaleJob(t *testing.T) {
+	e := newRiverEnv(t)
+	ctx := e.workCtx()
+	w := jobs.NewSendBroadcastWorker(e.DB, newMod(e.TestEnv, resolvingTo(e.sender)))
+
+	for id, want := range map[int64]broadcast.Status{
+		fixtures.BroadcastSentID:   broadcast.StatusSent,
+		fixtures.BroadcastFailedID: broadcast.StatusFailed,
+	} {
+		require.NoError(t, w.Work(ctx, job(jobs.SendBroadcastArgs{BroadcastID: id})), "broadcast %d", id)
+		assert.Equal(t, want, e.DB.Broadcast.GetX(ctx, id).Status, "broadcast %d", id)
+	}
+	assert.Empty(t, e.queued(t))
+}

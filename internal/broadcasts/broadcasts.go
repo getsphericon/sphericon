@@ -4,14 +4,17 @@
 // (the /site SPA today, /api and MCP next) calls it; none re-implements a
 // transition. Handlers stay thin adapters: scope check, call, map errors.
 //
-// What happens after "sending" (recipients, delivery, sent/failed) is the job
-// worker's business, via Outbound send (ADR 0015).
+// Every Broadcast status write goes through the transition table in status.go (ADR 0046):
+// a stateless table with a compare-and-swap write, so an illegal move is
+// lifecycle.ErrInvalidTransition. What happens after "sending" (recipients, delivery) is
+// the job worker's business, via Outbound send (ADR 0015).
 package broadcasts
 
 import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -20,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/internal/emailrender"
+	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
@@ -51,9 +55,7 @@ func New(q Enqueuer) *Module { return &Module{q: q} }
 // enqueues it for immediate dispatch. If the enqueue fails the Broadcast reverts to
 // draft, so it is never stranded in sending with no job behind it.
 func (m *Module) Send(ctx context.Context, s *ent.Scoped, id int64) (*ent.Broadcast, error) {
-	b, err := m.claim(ctx, s, id, func(u *ent.BroadcastScopedUpdate) *ent.BroadcastScopedUpdate {
-		return u.SetStatus(broadcast.StatusSending).ClearScheduledAt()
-	})
+	b, err := m.claim(ctx, s, id, triggerSend, func(u *ent.BroadcastScopedUpdate) { u.ClearScheduledAt() })
 	if err != nil {
 		return nil, err
 	}
@@ -70,9 +72,7 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, id int64) (*ent.Broadc
 // Schedule moves a draft or scheduled Broadcast to scheduled at `when` and enqueues
 // a delayed job. If the enqueue fails the Broadcast reverts to draft with no schedule.
 func (m *Module) Schedule(ctx context.Context, s *ent.Scoped, id int64, when time.Time) (*ent.Broadcast, error) {
-	b, err := m.claim(ctx, s, id, func(u *ent.BroadcastScopedUpdate) *ent.BroadcastScopedUpdate {
-		return u.SetStatus(broadcast.StatusScheduled).SetScheduledAt(when)
-	})
+	b, err := m.claim(ctx, s, id, triggerSchedule, func(u *ent.BroadcastScopedUpdate) { u.SetScheduledAt(when) })
 	if err != nil {
 		return nil, err
 	}
@@ -86,51 +86,28 @@ func (m *Module) Schedule(ctx context.Context, s *ent.Scoped, id int64, when tim
 // Unschedule returns a scheduled Broadcast to draft and drops its schedule. The
 // delayed job stays queued; when it fires it finds a draft and does nothing.
 func (m *Module) Unschedule(ctx context.Context, s *ent.Scoped, id int64) (*ent.Broadcast, error) {
-	n, err := s.Broadcast().Update().
-		Where(broadcast.ID(id), broadcast.StatusEQ(broadcast.StatusScheduled)).
-		SetStatus(broadcast.StatusDraft).ClearScheduledAt().Save(ctx)
+	err := fire(ctx, s, id, triggerUnschedule, func(u *ent.BroadcastScopedUpdate) { u.ClearScheduledAt() })
+	if errors.Is(err, lifecycle.ErrInvalidTransition) {
+		return nil, fmt.Errorf("%w: %w", ErrNotScheduled, err)
+	}
 	if err != nil {
 		return nil, err
-	}
-	if n == 0 {
-		exists, err := s.Broadcast().Query().Where(broadcast.ID(id)).Exist(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if !exists {
-			return nil, ErrNotFound
-		}
-		return nil, ErrNotScheduled
 	}
 	return s.Broadcast().Get(ctx, id)
 }
 
-// claim applies a transition atomically: the UPDATE only matches a draft or
-// scheduled row in this Workspace, so two racing requests cannot both win.
-func (m *Module) claim(ctx context.Context, s *ent.Scoped, id int64, set func(*ent.BroadcastScopedUpdate) *ent.BroadcastScopedUpdate) (*ent.Broadcast, error) {
-	n, err := set(s.Broadcast().Update().Where(
-		broadcast.ID(id),
-		broadcast.StatusIn(broadcast.StatusDraft, broadcast.StatusScheduled),
-	)).Save(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if n == 0 {
-		exists, err := s.Broadcast().Query().Where(broadcast.ID(id)).Exist(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if !exists {
-			return nil, ErrNotFound
-		}
-		return nil, ErrNotSendable
+// claim makes a move out of draft or scheduled through the transition table: the write is a
+// compare-and-swap on the status, so two racing requests cannot both win.
+func (m *Module) claim(ctx context.Context, s *ent.Scoped, id int64, t trigger, set update) (*ent.Broadcast, error) {
+	if err := fire(ctx, s, id, t, set); err != nil {
+		return nil, notSendable(err)
 	}
 	return s.Broadcast().Get(ctx, id)
 }
 
 // revert is best effort: the caller is already returning the enqueue error.
 func (m *Module) revert(ctx context.Context, s *ent.Scoped, id int64) {
-	_ = s.Broadcast().UpdateOneID(id).SetStatus(broadcast.StatusDraft).ClearScheduledAt().Exec(ctx)
+	_ = fire(ctx, s, id, triggerRevert, func(u *ent.BroadcastScopedUpdate) { u.ClearScheduledAt() })
 }
 
 // --- Authoring (ADR 0016): drafts, audience, report ---

@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/jobkind"
+	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/segments"
@@ -74,6 +75,9 @@ func (w *SendBroadcastWorker) Work(ctx context.Context, job *river.Job[SendBroad
 		return err // not due: unscheduled (back to draft) after this job was queued
 	}
 	ids, err := PlanBroadcast(ctx, w.ent, w.mod, job.Args.BroadcastID)
+	if errors.Is(err, lifecycle.ErrInvalidTransition) {
+		return nil // stale: the Broadcast is past its plan (sent or failed), nothing to retry
+	}
 	if err != nil {
 		return snoozeIfDeferrable(err)
 	}
@@ -233,6 +237,12 @@ func PlanBroadcast(ctx context.Context, client *ent.Client, mod *outbound.Module
 	// (ADR 0017), then everything below goes through it.
 	s := client.Scoped(b.WorkspaceID)
 
+	// A sent or failed Broadcast is past its plan: a late or retried job is refused here,
+	// before a Hold reason is recorded on it.
+	if err := broadcasts.CanBegin(ctx, s, b.ID); err != nil {
+		return nil, err
+	}
+
 	// Ask Outbound send whether this workspace can send now, before any recipient row
 	// exists: a Workspace freeze, no Integration, or an unverified From domain is a
 	// reversible hold (ADR 0015) — the broadcast keeps its status, records why, and
@@ -251,15 +261,16 @@ func PlanBroadcast(ctx context.Context, client *ent.Client, mod *outbound.Module
 	}
 	setBroadcastHold(ctx, s, b.ID, "")
 
+	if err := broadcasts.Begin(ctx, s, b.ID); err != nil {
+		return nil, err
+	}
+
 	// A template that cannot render would fail every recipient: fail the broadcast once,
 	// here, before any recipient row exists (ADR 0015).
 	if verr := emailrender.Lint(b.Subject, b.Body, nil).Error; verr != nil {
-		_ = s.Broadcast().UpdateOneID(b.ID).SetStatus(broadcast.StatusFailed).Exec(ctx)
-		return nil, fmt.Errorf("broadcast %d: template does not render: %w", b.ID, verr)
-	}
-
-	if b, err = s.Broadcast().UpdateOneID(b.ID).SetStatus(broadcast.StatusSending).Save(ctx); err != nil {
-		return nil, err
+		return nil, errors.Join(
+			fmt.Errorf("broadcast %d: template does not render: %w", b.ID, verr),
+			failBroadcast(ctx, s, b.ID))
 	}
 
 	// Audience: contacts in the workspace with an email address, narrowed by the
@@ -277,8 +288,7 @@ func PlanBroadcast(ctx context.Context, client *ent.Client, mod *outbound.Module
 			Where(segment.IDEQ(*b.SegmentID)).
 			Only(ctx)
 		if err != nil {
-			_ = s.Broadcast().UpdateOneID(b.ID).SetStatus(broadcast.StatusFailed).Exec(ctx)
-			return nil, fmt.Errorf("load segment %d: %w", *b.SegmentID, err)
+			return nil, errors.Join(fmt.Errorf("load segment %d: %w", *b.SegmentID, err), failBroadcast(ctx, s, b.ID))
 		}
 		def := ""
 		if seg.Definition != nil {
@@ -286,8 +296,7 @@ func PlanBroadcast(ctx context.Context, client *ent.Client, mod *outbound.Module
 		}
 		pred, err := segments.ContactPredicate(ctx, s, def)
 		if err != nil {
-			_ = s.Broadcast().UpdateOneID(b.ID).SetStatus(broadcast.StatusFailed).Exec(ctx)
-			return nil, fmt.Errorf("segment %d definition: %w", seg.ID, err)
+			return nil, errors.Join(fmt.Errorf("segment %d definition: %w", seg.ID, err), failBroadcast(ctx, s, b.ID))
 		}
 		audience = audience.Where(pred)
 	}
@@ -334,6 +343,11 @@ func PlanBroadcast(ctx context.Context, client *ent.Client, mod *outbound.Module
 		}
 	}
 	return ids, nil
+}
+
+// failBroadcast moves the Broadcast to failed; its error, if any, rides with the plan error.
+func failBroadcast(ctx context.Context, s *ent.Scoped, id int64) error {
+	return broadcasts.Fail(ctx, s, id)
 }
 
 // SendToRecipient hands one broadcast recipient's email to Outbound send and maps
