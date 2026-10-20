@@ -43,6 +43,7 @@ test('shows the workspace name and contacts count', async () => {
           id: '1',
           name: 'Acme',
           slug: 'test',
+          publicId: 'AcmeWs01',
           collectKey: 'k',
           postalAddress: '',
           accountLinkAvailable: false,

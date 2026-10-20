@@ -18,6 +18,7 @@ const workspace = {
   id: '1',
   name: 'Acme',
   slug: 'test',
+  publicId: 'AcmeWs01',
   collectKey: 'omck_test_key',
   postalAddress: '',
   accountLinkAvailable: false,

@@ -21,6 +21,7 @@ const workspace = (slug: string) => ({
   id: slug,
   name: slug,
   slug,
+  publicId: 'AcmeWs01',
   collectKey: 'omck',
   postalAddress: '',
   accountLinkAvailable: false,

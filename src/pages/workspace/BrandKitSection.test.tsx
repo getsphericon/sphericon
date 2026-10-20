@@ -17,6 +17,7 @@ const workspace = (role: SiteWorkspaceResource['role']): SiteWorkspaceResource =
   id: '1',
   name: 'Acme',
   slug: 'acme',
+  publicId: 'AcmeWs01',
   collectKey: 'ck',
   postalAddress: '',
   accountLinkAvailable: false,
