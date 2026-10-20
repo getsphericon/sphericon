@@ -13,7 +13,7 @@ type Key struct {
 // Purge keys of the queued jobs whose arguments Erasure clears.
 var (
 	// DeliverWebhook is matched by the endpoint it delivers to; the body is matched
-	// through DeliverWebhookBody.
+	// through DeliverWebhookBodyArg.
 	DeliverWebhook  = Key{Kind: "deliver_webhook", Arg: "endpoint_id"}
 	EvaluateTrigger = Key{Kind: "automation_evaluate_trigger", Arg: "contact_id"}
 	RunStep         = Key{Kind: "automation_run_step", Arg: "run_id"}
@@ -21,9 +21,9 @@ var (
 	SendRecipient   = Key{Kind: "send_broadcast_recipient", Arg: "recipient_id"}
 )
 
-// DeliverWebhookBody is the argument of a queued webhook delivery that holds the event
+// DeliverWebhookBodyArg is the argument of a queued webhook delivery that holds the event
 // payload (stored by river as a base64 JSON string).
-const DeliverWebhookBody = "body"
+const DeliverWebhookBodyArg = "body"
 
 // Purged lists every kind Erasure purges.
 var Purged = []Key{DeliverWebhook, EvaluateTrigger, RunStep, HTTPStep, SendRecipient}

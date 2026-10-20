@@ -1,29 +1,22 @@
 package automations_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/automations"
-	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobkind"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// cancelFor runs CancelPending for a Contact the way Erasure does, in a purging transaction.
+// cancelFor runs CancelPending for a Contact the way Erasure does.
 func cancelFor(t *testing.T, env *testhelper.TestEnv, contactID int64) error {
 	t.Helper()
-	ctx := context.Background()
-	s := env.DB.Scoped(fixtures.InitechID)
-	return env.Bus.WithinScopedPurgeTx(ctx, s, func(ts *ent.Scoped, pub events.PurgingPublisher) error {
-		return automations.CancelPending(ctx, ts, contactID, pub)
-	})
+	return env.CancelPendingFor(t, contactID, automations.CancelPending)
 }
 
 func runIDsOf(t *testing.T, env *testhelper.TestEnv, kind string) []any {

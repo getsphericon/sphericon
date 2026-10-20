@@ -1,13 +1,21 @@
 package testhelper
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"testing"
+	"time"
 
 	"github.com/riverqueue/river"
+	"github.com/riverqueue/river/riverdriver"
 	"github.com/riverqueue/river/riverdriver/riverdatabasesql"
+	"github.com/riverqueue/river/rivertype"
 	"github.com/stretchr/testify/require"
+
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/fixtures"
 )
 
 // Tests run jobs inline, so a test that needs a job to be waiting in the queue puts
@@ -32,6 +40,28 @@ func (env *TestEnv) EnqueueJob(t *testing.T, args river.JobArgs) {
 	require.NoError(t, err)
 }
 
+// EnqueueRunningJob puts one job of args into the queue already in the running state, as
+// a worker holds it. river's insert API only creates waiting jobs, so this goes through
+// the driver's full insert, which takes a state.
+func (env *TestEnv) EnqueueRunningJob(t *testing.T, args river.JobArgs) {
+	t.Helper()
+	encoded, err := json.Marshal(args)
+	require.NoError(t, err)
+	now := time.Now()
+	_, err = riverdatabasesql.New(env.SQLDB).GetExecutor().JobInsertFull(t.Context(), &riverdriver.JobInsertFullParams{
+		Attempt:     1,
+		AttemptedAt: &now,
+		AttemptedBy: []string{"test-worker"},
+		EncodedArgs: encoded,
+		Kind:        args.Kind(),
+		MaxAttempts: river.MaxAttemptsDefault,
+		Priority:    river.PriorityDefault,
+		Queue:       river.QueueDefault,
+		State:       rivertype.JobStateRunning,
+	})
+	require.NoError(t, err)
+}
+
 // JobsOf returns the args of the queued jobs of kind, oldest first.
 func (env *TestEnv) JobsOf(t *testing.T, kind string) []map[string]any {
 	t.Helper()
@@ -44,4 +74,15 @@ func (env *TestEnv) JobsOf(t *testing.T, kind string) []map[string]any {
 		out = append(out, args)
 	}
 	return out
+}
+
+// CancelPendingFor runs an owner's CancelPending for a Contact of the Initech Workspace the
+// way Erasure does, inside a purging transaction.
+func (env *TestEnv) CancelPendingFor(t *testing.T, contactID int64, cancel func(context.Context, *ent.Scoped, int64, events.QueuePurger) error) error {
+	t.Helper()
+	ctx := t.Context()
+	s := env.DB.Scoped(fixtures.InitechID)
+	return env.Bus.WithinScopedPurgeTx(ctx, s, func(ts *ent.Scoped, pub events.PurgingPublisher) error {
+		return cancel(ctx, ts, contactID, pub)
+	})
 }

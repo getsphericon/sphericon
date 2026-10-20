@@ -40,6 +40,26 @@ func deliveryBody(t *testing.T, env *testhelper.TestEnv, ev events.DomainEvent) 
 	return calls[0].Body
 }
 
+// withoutPath returns body with the JSON object member at path removed, so a delivery
+// built by the real serialization can be reduced to carry one Contact path only.
+func withoutPath(t *testing.T, body []byte, path ...string) []byte {
+	t.Helper()
+	var doc map[string]any
+	require.NoError(t, json.Unmarshal(body, &doc))
+	parent := doc
+	for _, key := range path[:len(path)-1] {
+		child, ok := parent[key].(map[string]any)
+		require.True(t, ok, "path %v is not in the body", path)
+		parent = child
+	}
+	_, present := parent[path[len(path)-1]]
+	require.True(t, present, "path %v is not in the body", path)
+	delete(parent, path[len(path)-1])
+	out, err := json.Marshal(doc)
+	require.NoError(t, err)
+	return out
+}
+
 // Queued deliveries are matched by the Contact paths of the body dispatch really builds, so
 // a change to the event envelope cannot make an Erasure miss one.
 func TestPurgeWebhookJobsMatchesTheBodyDispatchBuilds(t *testing.T) {
@@ -51,6 +71,11 @@ func TestPurgeWebhookJobsMatchesTheBodyDispatchBuilds(t *testing.T) {
 	bystander := deliveryBody(t, env, &events.ContactCreated{WorkspaceID: fixtures.InitechID, ContactID: fixtures.ContactBystanderID, Email: fixtures.ContactBystanderEmail})
 	nobody := deliveryBody(t, env, &events.CollectedEvent{WorkspaceID: fixtures.InitechID, Action: "page_view", VisitorID: "anon-visitor"})
 	otherTenant := deliveryBody(t, env, &events.ContactCreated{WorkspaceID: fixtures.GlobexID, ContactID: fixtures.ContactErasableID, Email: fixtures.ContactErasableEmail})
+
+	// Each Contact id path alone must be enough to match, so removing either clause of the
+	// purge fails here.
+	onlyTopLevelID := withoutPath(t, byID, "data", "contactId")
+	onlyDataID := withoutPath(t, byID, "contactId")
 
 	// The paths the purge reads are in the body: the Contact id at its top level and under
 	// the data, the address under the data.
@@ -73,6 +98,8 @@ func TestPurgeWebhookJobsMatchesTheBodyDispatchBuilds(t *testing.T) {
 	}{
 		{fixtures.WebhookInitechID, "by-id", byID},
 		{fixtures.WebhookInitechID, "by-address", byAddress},
+		{fixtures.WebhookInitechID, "by-top-level-id-only", onlyTopLevelID},
+		{fixtures.WebhookInitechID, "by-data-id-only", onlyDataID},
 		{fixtures.WebhookInitechID, "bystander", bystander},
 		{fixtures.WebhookInitechID, "nobody", nobody},
 		{fixtures.WebhookGlobexID, "other-tenant", otherTenant},

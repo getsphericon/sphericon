@@ -101,7 +101,7 @@ WHERE kind = $1 AND state <> 'running'
        OR b.body->'data'->>'contactId' = $3
        OR lower(b.body->'data'->>'email') = ANY($4))`,
 		jobkind.DeliverWebhook.Kind, endpointIDs, id, lowerAll(destinations),
-		jobkind.DeliverWebhook.Arg, jobkind.DeliverWebhookBody)
+		jobkind.DeliverWebhook.Arg, jobkind.DeliverWebhookBodyArg)
 	return err
 }
 
