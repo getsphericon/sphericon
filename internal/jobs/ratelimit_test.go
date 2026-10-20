@@ -116,7 +116,7 @@ func TestAutomationStepDefersWhenTransactionalTrafficSpendsTheLimit(t *testing.T
 		require.Len(t, fs.sent, 3)
 
 		before := time.Now()
-		res, err := jobs.RunStep(ctx, env.DB, mod, runIDs[0])
+		res, err := jobs.RunStep(ctx, env.DB, noFence, mod, runIDs[0])
 		require.NoError(t, err, "a Deferral is not a failure, so no attempt is consumed")
 		assert.False(t, res.Done)
 		require.NotNil(t, res.ResumeAt, "the worker reschedules the same step")
@@ -127,7 +127,7 @@ func TestAutomationStepDefersWhenTransactionalTrafficSpendsTheLimit(t *testing.T
 		assert.Len(t, fs.sent, 3, "the step has not sent")
 
 		testhelper.Elapse(3 * time.Second)
-		res, err = jobs.RunStep(ctx, env.DB, mod, runIDs[0])
+		res, err = jobs.RunStep(ctx, env.DB, noFence, mod, runIDs[0])
 		require.NoError(t, err)
 		assert.Nil(t, res.ResumeAt)
 		assert.Len(t, fs.sent, 4, "the step sends once capacity returns")
@@ -145,7 +145,7 @@ func TestAutomationStepAndBroadcastRecipientShareTheLimit(t *testing.T) {
 
 		runIDs, err := jobs.EvaluateTrigger(ctx, e.DB.Scoped(fixtures.AcmeID), fixtures.ContactHoldDemoID, "hold_demo")
 		require.NoError(t, err)
-		res, err := jobs.RunStep(ctx, e.DB, mod, runIDs[0])
+		res, err := jobs.RunStep(ctx, e.DB, noFence, mod, runIDs[0])
 		require.NoError(t, err)
 		require.Nil(t, res.ResumeAt, "the first send takes the only token")
 		require.Len(t, e.sender.sent, 1)

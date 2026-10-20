@@ -30,7 +30,7 @@ func TestAutomationApplyTagIsAuditedUnderSystem(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, runIDs, 1)
 
-	_, err = jobs.RunStep(ctx, env.DB, newMod(env, resolvingTo(&fakeSender{})), runIDs[0])
+	_, err = jobs.RunStep(ctx, env.DB, noFence, newMod(env, resolvingTo(&fakeSender{})), runIDs[0])
 	require.NoError(t, err)
 
 	got := env.OutboxEvents(t, events.NameAuditEntry)

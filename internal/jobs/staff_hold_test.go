@@ -78,7 +78,7 @@ func TestAnStaffHoldMakesAnAutomationStepWaitAndContinue(t *testing.T) {
 	require.Len(t, runIDs, 1)
 	setHold(t, env, "k1", clock.t.Add(time.Hour))
 
-	res, err := jobs.RunStep(ctx, env.DB, heldMod(env, clock, resolvingTo(fs)), runIDs[0])
+	res, err := jobs.RunStep(ctx, env.DB, noFence, heldMod(env, clock, resolvingTo(fs)), runIDs[0])
 	require.NoError(t, err)
 	assert.False(t, res.Done)
 	require.NotNil(t, res.ResumeAt)
@@ -88,7 +88,7 @@ func TestAnStaffHoldMakesAnAutomationStepWaitAndContinue(t *testing.T) {
 	assert.Empty(t, fs.sent)
 
 	clock.t = clock.t.Add(2 * time.Hour)
-	_, err = jobs.RunStep(ctx, env.DB, heldMod(env, clock, resolvingTo(fs)), runIDs[0])
+	_, err = jobs.RunStep(ctx, env.DB, noFence, heldMod(env, clock, resolvingTo(fs)), runIDs[0])
 	require.NoError(t, err)
 	assert.Len(t, fs.sent, 1, "the step sends once the hold has lapsed")
 }

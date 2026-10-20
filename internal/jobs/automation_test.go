@@ -31,7 +31,7 @@ func drive(t *testing.T, env *testhelper.TestEnv, resolver outbound.Senders, run
 	t.Helper()
 	ctx := context.Background()
 	for range 20 {
-		res, err := jobs.RunStep(ctx, env.DB, newMod(env, resolver), runID)
+		res, err := jobs.RunStep(ctx, env.DB, noFence, newMod(env, resolver), runID)
 		require.NoError(t, err)
 		if res.Done {
 			return
@@ -202,7 +202,7 @@ func TestAutomationSendIncludesUnsubscribeFooter(t *testing.T) {
 
 	fs := &fakeSender{}
 	mod := outbound.New(env.Bus, resolvingTo(fs), tracking.New("secret", "https://app.test"))
-	_, err = jobs.RunStep(ctx, env.DB, mod, runIDs[0])
+	_, err = jobs.RunStep(ctx, env.DB, noFence, mod, runIDs[0])
 	require.NoError(t, err)
 
 	require.Len(t, fs.sent, 1)
@@ -244,7 +244,7 @@ func TestAutomationWaitDefersNextStep(t *testing.T) {
 	require.Len(t, runIDs, 1)
 
 	// First step is a wait: it defers (ResumeAt set), no send yet.
-	res, err := jobs.RunStep(ctx, env.DB, newMod(env, resolvingTo(&fakeSender{})), runIDs[0])
+	res, err := jobs.RunStep(ctx, env.DB, noFence, newMod(env, resolvingTo(&fakeSender{})), runIDs[0])
 	require.NoError(t, err)
 	assert.False(t, res.Done)
 	require.NotNil(t, res.ResumeAt)
@@ -266,7 +266,7 @@ func TestAutomationHeldStepWaitsAndResumes(t *testing.T) {
 	mod := newMod(env, resolvingTo(fs))
 	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSuspendedAt(time.Now()).ExecX(ctx)
 
-	res, err := jobs.RunStep(ctx, env.DB, mod, runIDs[0])
+	res, err := jobs.RunStep(ctx, env.DB, noFence, mod, runIDs[0])
 	require.NoError(t, err)
 	assert.False(t, res.Done)
 	require.NotNil(t, res.ResumeAt, "the worker reschedules the same step")
@@ -307,7 +307,7 @@ func TestAutomationExitedMidStepStaysExitedAndTheLateStepFinishesQuietly(t *test
 		return &fakeSender{}, nil
 	}}
 
-	res, err := jobs.RunStep(ctx, env.DB, newMod(env, resolver), runIDs[0])
+	res, err := jobs.RunStep(ctx, env.DB, noFence, newMod(env, resolver), runIDs[0])
 	require.NoError(t, err)
 	assert.True(t, res.Done)
 	assert.Equal(t, automationrun.StatusExited, env.DB.AutomationRun.GetX(ctx, runIDs[0]).Status)
@@ -332,7 +332,7 @@ func TestStepOnAnExitedRunSendsNothingAndStaysPut(t *testing.T) {
 	fs := &fakeSender{}
 	runID := exitedRun(t, env, fixtures.AutomationHoldDemoID, fixtures.ContactAliceID)
 
-	res, err := jobs.RunStep(ctx, env.DB, newMod(env, resolvingTo(fs)), runID)
+	res, err := jobs.RunStep(ctx, env.DB, noFence, newMod(env, resolvingTo(fs)), runID)
 
 	require.NoError(t, err)
 	assert.True(t, res.Done)
@@ -348,7 +348,7 @@ func TestTagStepOnAnExitedRunChangesNoTagAndDoesNotAdvance(t *testing.T) {
 	before := env.DB.Contact.GetX(ctx, fixtures.ContactBobID).QueryTags().CountX(ctx)
 	runID := exitedRun(t, env, fixtures.AutomationTagOnEngagementID, fixtures.ContactBobID)
 
-	res, err := jobs.RunStep(ctx, env.DB, newMod(env, resolvingTo(&fakeSender{})), runID)
+	res, err := jobs.RunStep(ctx, env.DB, noFence, newMod(env, resolvingTo(&fakeSender{})), runID)
 
 	require.NoError(t, err)
 	assert.True(t, res.Done)
@@ -362,11 +362,11 @@ func TestWaitStepOnAnExitedRunDoesNotSetResumeAt(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 	runID, _, err := automations.Enroll(ctx, s, fixtures.AutomationWelcomeSeriesID, fixtures.ContactCarolID)
 	require.NoError(t, err)
-	_, err = jobs.RunStep(ctx, env.DB, newMod(env, resolvingTo(&fakeSender{})), runID) // the email
+	_, err = jobs.RunStep(ctx, env.DB, noFence, newMod(env, resolvingTo(&fakeSender{})), runID) // the email
 	require.NoError(t, err)
 	require.NoError(t, automations.ExitRun(ctx, s, runID))
 
-	res, err := jobs.RunStep(ctx, env.DB, newMod(env, resolvingTo(&fakeSender{})), runID) // the wait
+	res, err := jobs.RunStep(ctx, env.DB, noFence, newMod(env, resolvingTo(&fakeSender{})), runID) // the wait
 
 	require.NoError(t, err)
 	assert.True(t, res.Done)

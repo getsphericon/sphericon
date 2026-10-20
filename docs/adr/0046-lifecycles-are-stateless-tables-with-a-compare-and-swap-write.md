@@ -72,3 +72,26 @@ domain's `tracking_state` is written from a row that was read earlier.
   its compare-and-swap loses and the job ends as stale. `Due` stays as the cheap check of the
   usual case. A reschedule that lands in the same few statements is not closed: the job would
   plan the Broadcast ahead of its new time.
+
+## Enrollment: a side effect is fenced against an exit
+
+A compare-and-swap decides who moves the row, not whether a mail or an HTTP call already left,
+so a step that checked `active` and then sent could still send after an exit. The step now runs
+its side effect (the Outbound send of an email step, the POST of an HTTP step) under
+`jobs.FenceOn`: a `SELECT ... FOR SHARE` of the Enrollment's row, `WHERE status = 'active'`, on a
+transaction of its own that does nothing else, held until the effect returns. Every move out of
+`active` is an UPDATE of that row and waits for a share lock, so an exit that arrives during the
+effect returns after it (the mail is ordered before the exit), and an exit committed before the
+lock is seen under it (the effect never starts, the step ends as stale).
+
+- The step's own compare-and-swap (`Advance`, `Complete`, `Fail`) runs after the lock is released,
+  so it cannot wait on itself. The outbound claim, lease and idempotency key are unchanged: the
+  effect runs on the pool's other connections.
+- The hold is as long as the effect: the job's context and the provider and HTTP client timeouts
+  bound it. An exit waits that long at most.
+- It costs one extra `database/sql` connection per in-flight email or HTTP step. The ordinary
+  tests ride one transaction on one connection, where a held lock would starve the effect's own
+  queries, so they pass a no-op `Fencer`; the ordering tests use a database with real
+  connections (`testhelper.RealDBURL`).
+- Not fenced: tag steps (they send nothing; a tag applied just after an exit is a data change,
+  not a message) and a `wait`.

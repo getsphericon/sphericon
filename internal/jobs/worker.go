@@ -81,12 +81,13 @@ func NewClient(pool *pgxpool.Pool, entClient *ent.Client, mod *outbound.Module, 
 	river.AddWorker(workers, &SendBroadcastWorker{ent: entClient, del: broadcasts.NewDelivery(mod)})
 	river.AddWorker(workers, &SendRecipientWorker{ent: entClient, del: broadcasts.NewDelivery(mod)})
 	river.AddWorker(workers, &EvaluateTriggerWorker{ent: entClient})
-	river.AddWorker(workers, &RunStepWorker{ent: entClient, mod: mod})
+	river.AddWorker(workers, &RunStepWorker{ent: entClient, mod: mod, fence: FenceOn(entClient)})
 	river.AddWorker(workers, &RunHTTPStepWorker{
 		ent:    entClient,
 		mod:    automations.New(cipher),
 		client: webhook.NewClientAllowing(webhookDeliveryTimeout, outboundAllow),
 		now:    time.Now,
+		fence:  FenceOn(entClient),
 	})
 	river.AddWorker(workers, &DeliverWebhookWorker{
 		ent:    entClient,

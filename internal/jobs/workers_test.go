@@ -595,7 +595,7 @@ func TestEvaluateTriggerAndRunStepWorkers(t *testing.T) {
 
 	// Step 1 sends and schedules the next step; the wait step schedules a delayed
 	// one; the last step finishes the run without queueing more.
-	w := jobs.NewRunStepWorker(e.DB, newMod(e.TestEnv, resolvingTo(e.sender)))
+	w := jobs.NewRunStepWorker(e.DB, noFence, newMod(e.TestEnv, resolvingTo(e.sender)))
 	require.NoError(t, w.Work(ctx, job(jobs.RunStepArgs{RunID: run.ID})))
 	assert.Len(t, e.sender.sent, 1)
 	assert.Len(t, e.queued(t), 2)

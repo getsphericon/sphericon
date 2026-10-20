@@ -35,6 +35,9 @@ type hookReceiver struct {
 	retryAfter string
 	answer     string
 	calls      []hookCall
+	// onCall runs when a call arrives, before the receiver answers: a test blocks it to hold
+	// the call in flight.
+	onCall func()
 }
 
 type hookCall struct {
@@ -44,9 +47,10 @@ type hookCall struct {
 
 func newHookReceiver(t *testing.T) *hookReceiver {
 	t.Helper()
-	r := &hookReceiver{status: http.StatusOK}
+	r := &hookReceiver{status: http.StatusOK, onCall: func() {}}
 	r.srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		body, _ := io.ReadAll(req.Body)
+		r.onCall()
 		r.mu.Lock()
 		defer r.mu.Unlock()
 		r.calls = append(r.calls, hookCall{header: req.Header.Clone(), body: string(body)})
@@ -107,7 +111,7 @@ func (h *httpStepHarness) enroll(t *testing.T, contactID int64) (runID int64) {
 	runID, enrolled, err := automations.Enroll(ctx, h.DB.Scoped(fixtures.AcmeID), fixtures.AutomationNotifySlackID, contactID)
 	require.NoError(t, err)
 	require.True(t, enrolled)
-	res, err := jobs.RunStep(ctx, h.DB, newMod(h.TestEnv, resolvingTo(h.sender)), runID)
+	res, err := jobs.RunStep(ctx, h.DB, noFence, newMod(h.TestEnv, resolvingTo(h.sender)), runID)
 	require.NoError(t, err)
 	require.False(t, res.Done)
 	require.Equal(t, jobs.RunHTTPStepArgs{RunID: runID, Step: 0}, res.Enqueue)
@@ -115,7 +119,7 @@ func (h *httpStepHarness) enroll(t *testing.T, contactID int64) (runID int64) {
 }
 
 func (h *httpStepHarness) worker(allow webhook.Allowlist) *jobs.RunHTTPStepWorker {
-	return jobs.NewRunHTTPStepWorker(h.DB, automations.New(h.cipher), webhook.NewClientAllowing(2*time.Second, allow), func() time.Time { return h.clock })
+	return jobs.NewRunHTTPStepWorker(h.DB, noFence, automations.New(h.cipher), webhook.NewClientAllowing(2*time.Second, allow), func() time.Time { return h.clock })
 }
 
 // attempt works the HTTP step as river's attempt-th try; the last one is the job's MaxAttempts.
@@ -272,7 +276,7 @@ func TestHTTPStepRunsOnAQueueOfItsOwn(t *testing.T) {
 
 	// The RunStep job parks the Enrollment on the HTTP job, queued apart from the Webhook
 	// deliveries, so a slow receiver can only hold its own workers.
-	require.NoError(t, jobs.NewRunStepWorker(h.DB, newMod(h.TestEnv, resolvingTo(h.sender))).Work(h.workCtx(), job(jobs.RunStepArgs{RunID: runID})))
+	require.NoError(t, jobs.NewRunStepWorker(h.DB, noFence, newMod(h.TestEnv, resolvingTo(h.sender))).Work(h.workCtx(), job(jobs.RunStepArgs{RunID: runID})))
 
 	listed, err := h.client.River().JobList(context.Background(), river.NewJobListParams().Kinds(jobkind.HTTPStep))
 	require.NoError(t, err)

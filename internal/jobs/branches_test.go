@@ -52,7 +52,7 @@ func TestRunStepOutcomes(t *testing.T) {
 		env := testhelper.Setup(t)
 		id := enroll(ctx, t, env, "[]", true)
 		env.DB.AutomationRun.UpdateOneID(id).SetStatus(automationrun.StatusFailed).ExecX(ctx)
-		res, err := jobs.RunStep(ctx, env.DB, newMod(env, resolvingTo(&fakeSender{})), id)
+		res, err := jobs.RunStep(ctx, env.DB, noFence, newMod(env, resolvingTo(&fakeSender{})), id)
 		require.NoError(t, err)
 		assert.True(t, res.Done)
 		assert.Equal(t, automationrun.StatusFailed, runStatus(ctx, t, env, id))
@@ -61,7 +61,7 @@ func TestRunStepOutcomes(t *testing.T) {
 	t.Run("a run past its last step completes", func(t *testing.T) {
 		env := testhelper.Setup(t)
 		id := enroll(ctx, t, env, "[]", true)
-		res, err := jobs.RunStep(ctx, env.DB, newMod(env, resolvingTo(&fakeSender{})), id)
+		res, err := jobs.RunStep(ctx, env.DB, noFence, newMod(env, resolvingTo(&fakeSender{})), id)
 		require.NoError(t, err)
 		assert.True(t, res.Done)
 		assert.Equal(t, automationrun.StatusCompleted, runStatus(ctx, t, env, id))
@@ -70,7 +70,7 @@ func TestRunStepOutcomes(t *testing.T) {
 	t.Run("an undecodable definition fails the run", func(t *testing.T) {
 		env := testhelper.Setup(t)
 		id := enroll(ctx, t, env, "not json", true)
-		_, err := jobs.RunStep(ctx, env.DB, newMod(env, resolvingTo(&fakeSender{})), id)
+		_, err := jobs.RunStep(ctx, env.DB, noFence, newMod(env, resolvingTo(&fakeSender{})), id)
 		require.Error(t, err)
 		assert.Equal(t, automationrun.StatusFailed, runStatus(ctx, t, env, id))
 	})
@@ -78,7 +78,7 @@ func TestRunStepOutcomes(t *testing.T) {
 	t.Run("an unknown step type fails the run", func(t *testing.T) {
 		env := testhelper.Setup(t)
 		id := enroll(ctx, t, env, `[{"type":"teleport"}]`, true)
-		_, err := jobs.RunStep(ctx, env.DB, newMod(env, resolvingTo(&fakeSender{})), id)
+		_, err := jobs.RunStep(ctx, env.DB, noFence, newMod(env, resolvingTo(&fakeSender{})), id)
 		require.ErrorContains(t, err, "unknown step type")
 		assert.Equal(t, automationrun.StatusFailed, runStatus(ctx, t, env, id))
 	})
@@ -86,7 +86,7 @@ func TestRunStepOutcomes(t *testing.T) {
 	t.Run("a contact without an email completes the run", func(t *testing.T) {
 		env := testhelper.Setup(t)
 		id := enroll(ctx, t, env, "["+emailStep+"]", false)
-		res, err := jobs.RunStep(ctx, env.DB, newMod(env, resolvingTo(&fakeSender{})), id)
+		res, err := jobs.RunStep(ctx, env.DB, noFence, newMod(env, resolvingTo(&fakeSender{})), id)
 		require.NoError(t, err)
 		assert.True(t, res.Done)
 		assert.Equal(t, automationrun.StatusCompleted, runStatus(ctx, t, env, id))
@@ -96,7 +96,7 @@ func TestRunStepOutcomes(t *testing.T) {
 		env := testhelper.Setup(t)
 		broken := `{"type":"email","subject":"{% if %}broken","body":"<p></p>"}`
 		id := enroll(ctx, t, env, "["+broken+"]", true)
-		_, err := jobs.RunStep(ctx, env.DB, newMod(env, resolvingTo(&fakeSender{})), id)
+		_, err := jobs.RunStep(ctx, env.DB, noFence, newMod(env, resolvingTo(&fakeSender{})), id)
 		require.Error(t, err)
 		assert.Equal(t, automationrun.StatusFailed, runStatus(ctx, t, env, id))
 	})
@@ -107,7 +107,7 @@ func TestRunStepOutcomes(t *testing.T) {
 		_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.System, "complaints")
 		require.NoError(t, err)
 		fs := &fakeSender{}
-		res, err := jobs.RunStep(ctx, env.DB, newMod(env, resolvingTo(fs)), id)
+		res, err := jobs.RunStep(ctx, env.DB, noFence, newMod(env, resolvingTo(fs)), id)
 		require.NoError(t, err)
 		assert.False(t, res.Done)
 		require.NotNil(t, res.ResumeAt)
@@ -120,7 +120,7 @@ func TestRunStepOutcomes(t *testing.T) {
 	// queued: the job is finished, not retried.
 	t.Run("an unknown run is finished", func(t *testing.T) {
 		env := testhelper.Setup(t)
-		res, err := jobs.RunStep(ctx, env.DB, newMod(env, resolvingTo(&fakeSender{})), 424242)
+		res, err := jobs.RunStep(ctx, env.DB, noFence, newMod(env, resolvingTo(&fakeSender{})), 424242)
 		require.NoError(t, err)
 		assert.True(t, res.Done)
 	})

@@ -43,6 +43,7 @@ type RunHTTPStepWorker struct {
 	mod    *automations.Module
 	client webhook.Doer
 	now    func() time.Time
+	fence  Fencer
 }
 
 func (w *RunHTTPStepWorker) Work(ctx context.Context, job *river.Job[RunHTTPStepArgs]) error {
@@ -101,10 +102,17 @@ func (w *RunHTTPStepWorker) Work(ctx context.Context, job *river.Job[RunHTTPStep
 		return w.fail(ctx, run, automations.Failure{Kind: automationrun.FailureKindInvalidBody}, river.JobCancel(err))
 	}
 
-	sendErr := webhook.Post(ctx, w.client, webhook.Call{
-		URL: opened.URL, Secret: opened.Secret, Headers: opened.Headers, Body: []byte(body),
-		ID: fmt.Sprintf("automation_%d_%d", run.ID, run.CurrentStep),
+	// The call is fenced against an exit (Fencer): it starts only on an Enrollment that
+	// is still active and an exit waits for it, so nothing is posted after an exit.
+	sendErr := w.fence(ctx, s, run.ID, func(ctx context.Context) error {
+		return webhook.Post(ctx, w.client, webhook.Call{
+			URL: opened.URL, Secret: opened.Secret, Headers: opened.Headers, Body: []byte(body),
+			ID: fmt.Sprintf("automation_%d_%d", run.ID, run.CurrentStep),
+		})
 	})
+	if automations.Stale(sendErr) {
+		return nil // an exit won before the call: nothing was sent
+	}
 	if sendErr == nil {
 		return w.continueRun(ctx, run, true)
 	}
