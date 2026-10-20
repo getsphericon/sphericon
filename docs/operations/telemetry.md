@@ -63,7 +63,7 @@ build that is not a release never asks.
 | `DO_NOT_TRACK`            | `1` switches the report off and locks the in-app switch; it can never switch the report on.                                                         |
 | `SPHERICON_RELEASE_CHECK` | `false` switches the daily Release check off; it is independent of the Telemetry report and `DO_NOT_TRACK`. Default `true`.                         |
 
-These are the same three rows as in the [environment table](../self-hosting). Precedence for the
+These are the same three rows as in the [environment table](../configuration). Precedence for the
 Telemetry report, first match wins:
 
 1. `SPHERICON_TELEMETRY=false` turns it off.

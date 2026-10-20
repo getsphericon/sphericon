@@ -426,7 +426,7 @@ outside `schema/`, `src/generated/`) unless that is the point of the search.
   `refactor:`, `ci:` …) — release-please uses them for versioning/changelog.
   commitlint runs on every commit, merge commits included: write `chore: merge <what>`, never
   `Merge branch …`; the header fits 120 characters and each body line 100.
-- A new environment variable gets one row in the env table of `docs/self-hosting.md`, the only
+- A new environment variable gets one row in the env table of `docs/configuration.md`, the only
   table (`mise run check:env`); the README links to it.
 - **Agent guidance lives in this file, not in personal agent memory.** The repo has several
   developers: a rule an agent should follow goes here (or in `docs/`), never into one person's

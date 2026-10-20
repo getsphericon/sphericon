@@ -19,7 +19,7 @@ Mailgun or one you add a Preset for) does. Setup steps for each built-in Preset 
 ## Add your own Preset
 
 Put one YAML file per Preset in a directory and point `SPHERICON_PRESETS_DIR` at it (see the
-[environment table](/self-hosting#configuration)). Every `*.yaml` and `*.yml` file at the root of the
+[environment table](/configuration)). Every `*.yaml` and `*.yml` file at the root of the
 directory loads at start, beside the built-in ones. A file that does not parse, does not validate
 against the schema, has a transform that does not compile, or reuses a built-in name stops the start
 with its file and line. Then choose the Preset by name on an Integration.
