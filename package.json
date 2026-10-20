@@ -16,9 +16,6 @@
     "build": "vite build",
     "build:emaildoc": "pnpm --filter @sphericon/emaildoc build",
     "build:tracker": "pnpm --filter @sphericon/analytics build",
-    "docs:build": "vitepress build docs",
-    "docs:dev": "vitepress dev docs",
-    "docs:preview": "vitepress preview docs",
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
     "i18n:extract": "i18next-cli extract",
@@ -88,8 +85,6 @@
     "size-limit": "^14.2.0",
     "typescript": "^7.0.2",
     "vite": "^8.3.4",
-    "vitepress": "^2.0.0-alpha.20",
-    "vitepress-openapi": "^0.2.5",
     "vitest": "^5.0.5",
     "vitest-browser-react": "^2.3.0"
   },
