@@ -228,10 +228,6 @@ export type StaffAuditEntryResource = {
    */
   action: string;
   /**
-   * True when the change set, renewed or lifted a billing hold (reason code `non_payment` or `free_plan_cap`)
-   */
-  billing: boolean;
-  /**
    * What it was done to
    */
   target: StaffAuditTarget;
@@ -374,9 +370,9 @@ export type StaffHold = {
    */
   setBy: string;
   /**
-   * True for a billing hold (reason code `non_payment` or `free_plan_cap`)
+   * Where an Owner or Admin can resolve the hold, as the setter gave it; absent when none was given
    */
-  billing: boolean;
+  actionUrl?: string | null;
 };
 
 /**

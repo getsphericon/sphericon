@@ -8785,7 +8785,7 @@
       },
       "SiteAuditEntryResource": {
         "type": "object",
-        "required": ["id", "occurredAt", "actor", "action", "billing", "target"],
+        "required": ["id", "occurredAt", "actor", "action", "target"],
         "properties": {
           "id": {
             "allOf": [
@@ -8814,10 +8814,6 @@
           "action": {
             "type": "string",
             "description": "What was done, as `<entity>.<verb>`"
-          },
-          "billing": {
-            "type": "boolean",
-            "description": "True when the change set, renewed or lifted a billing hold (reason code `non_payment` or `free_plan_cap`): shown as billing activity"
           },
           "target": {
             "allOf": [
@@ -12233,7 +12229,7 @@
       },
       "SiteWorkspaceHold": {
         "type": "object",
-        "required": ["key", "reasonCode", "message", "since", "billing"],
+        "required": ["key", "reasonCode", "message", "since"],
         "properties": {
           "key": {
             "type": "string",
@@ -12255,9 +12251,10 @@
             ],
             "description": "When the hold was set"
           },
-          "billing": {
-            "type": "boolean",
-            "description": "True for a billing hold (reason code `non_payment` or `free_plan_cap`): sending is paused for a money reason, not for abuse"
+          "actionUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "Where an Owner or Admin can resolve the hold, as the setter gave it; absent when none was given"
           }
         },
         "description": "A Staff hold on the Workspace's outbound sending (ADR 0009), as the Workspace's\nmembers see it. It is not a suspension: it is set from outside, carries its own\nmessage, and lifts by itself at its expiry."
@@ -12328,11 +12325,6 @@
             "type": "string",
             "nullable": true,
             "description": "Where to appeal a suspension by email (SPHERICON_SUPPORT_EMAIL); absent when the instance\nconfigured none."
-          },
-          "billingUrl": {
-            "type": "string",
-            "nullable": true,
-            "description": "The billing site a member under a hold is pointed to (SPHERICON_BILLING_URL); absent when the\ninstance configured none, and then no billing text is shown."
           },
           "mcpUrl": {
             "type": "string",

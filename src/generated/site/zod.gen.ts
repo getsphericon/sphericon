@@ -1238,7 +1238,6 @@ export const zSiteAuditEntryResource = z.object({
   occurredAt: zTimestamp,
   actor: zSiteAuditActor,
   action: z.string(),
-  billing: z.boolean(),
   target: zSiteAuditTarget,
   diff: z.exactOptional(z.record(z.string(), z.unknown()).nullable()),
   requestId: z.exactOptional(z.string().nullable()),
@@ -1603,7 +1602,7 @@ export const zSiteWorkspaceHold = z.object({
   reasonCode: z.string(),
   message: z.string(),
   since: zTimestamp,
-  billing: z.boolean()
+  actionUrl: z.exactOptional(z.string().nullable())
 });
 
 /**
@@ -1619,7 +1618,6 @@ export const zSiteWorkspaceResource = z.object({
   suspendedAt: z.exactOptional(zTimestamp.nullable()),
   suspensionReason: z.exactOptional(z.string().nullable()),
   supportEmail: z.exactOptional(z.string().nullable()),
-  billingUrl: z.exactOptional(z.string().nullable()),
   mcpUrl: z.string(),
   holds: z.array(zSiteWorkspaceHold),
   secondFactorRequiredAt: z.exactOptional(zTimestamp.nullable()),

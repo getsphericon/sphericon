@@ -5,7 +5,7 @@ status: accepted
 # Tracking domains are a core feature; the edge that terminates their TLS is not
 
 Customers want the links in their mail on their own hostname (a CNAME). Links are built from the one
-`SPHERICON_APP_URL` today. ADR 0028 left the edge open: its ALB holds 25 certificates by default, a
+`SPHERICON_APP_URL` today. The SaaS deployment (ADR 0002 in the platform repository) left the edge open: its ALB holds 25 certificates by default, a
 quota AWS lists as adjustable with no stated maximum, so the quota is not what decides this. What
 decides it is that an ALB certificate needs a DNS validation record in the customer's zone as well
 as the CNAME, while a CloudFront multi-tenant distribution validates over HTTP and renews on its own.
@@ -17,7 +17,7 @@ as the CNAME, while a CloudFront multi-tenant distribution validates over HTTP a
   its links on it, so the link host aligns with the From domain. There is no separate entity and no
   choice of label. Drip's help center documents custom sending domains and shows no branded link
   domain, so this follows its unit of branding (the Sending domain), not a feature of it. The core
-  has no license gate; a plan limit belongs to the billing plane.
+  has no license gate; a limit on how many a Workspace may add belongs to the platform that hosts the Instance.
 - **Two states, because a certificate takes time.** `dns_verified`: a live DNS check finds the CNAME
   pointing at the Instance's edge host (`SPHERICON_TRACKING_CNAME_TARGET`, which the core only compares
   with the answer); the edge may now provision and the `ask` endpoint answers 200. `serving`: an HTTPS

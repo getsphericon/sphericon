@@ -425,7 +425,7 @@ func init() {
 	// hold.MessageValidator is a validator for the "message" field. It is called by the builders before save.
 	hold.MessageValidator = holdDescMessage.Validators[0].(func(string) error)
 	// holdDescSetBy is the schema descriptor for set_by field.
-	holdDescSetBy := holdFields[5].Descriptor()
+	holdDescSetBy := holdFields[6].Descriptor()
 	// hold.SetByValidator is a validator for the "set_by" field. It is called by the builders before save.
 	hold.SetByValidator = holdDescSetBy.Validators[0].(func(string) error)
 	instancestateMixin := schema.InstanceState{}.Mixin()
