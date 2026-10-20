@@ -26,6 +26,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/instance"
 	"github.com/getsphericon/sphericon/internal/integrations"
+	"github.com/getsphericon/sphericon/internal/login"
 	"github.com/getsphericon/sphericon/internal/oauthserver"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/secondfactor"
@@ -120,6 +121,8 @@ type Handlers struct {
 	signupOpen bool
 	// challenges signs the login challenge on the env clock (ADR 0020).
 	challenges *authtoken.Signer
+	// login is the password step of signing in (ADR 0020).
+	login *login.Module[*ent.User]
 	// signin is the Sign-in providers of the Instance (ADR 0048).
 	signin *signin.Providers
 }
@@ -225,7 +228,7 @@ func NewHandlers(d Deps) *Handlers {
 	if now == nil {
 		now = time.Now
 	}
-	return &Handlers{
+	h := &Handlers{
 		accounts: d.Accounts, deletion: d.Deletion, attempts: d.Attempts, bus: d.Bus, webhooks: d.Webhooks, outbound: d.Outbound,
 		segments: d.Segments, eventlog: d.EventLog, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, templates: d.Templates, brandKit: d.BrandKit,
 		automations: d.Automations, broadcasts: d.Broadcasts, welcome: d.Welcome,
@@ -234,6 +237,8 @@ func NewHandlers(d Deps) *Handlers {
 		signin:     d.Signin,
 		challenges: d.Tokens.WithClock(d.Clock),
 	}
+	h.login = h.newLogin()
+	return h
 }
 
 var _ siteapi.Handler = (*Handlers)(nil)

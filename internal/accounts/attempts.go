@@ -313,3 +313,34 @@ func (a *Attempts) Purge(ctx context.Context) (int, error) {
 	}
 	return total, nil
 }
+
+// Counter is the failure counter of one Kind, as the login module sees it: the Kind is
+// bound, so a caller cannot count a User's failures under the Staff Kind or the reverse.
+type Counter struct {
+	attempts *Attempts
+	kind     Kind
+}
+
+// For binds the Kind of a failure counter.
+func (a *Attempts) For(kind Kind) Counter { return Counter{attempts: a, kind: kind} }
+
+// Delay is Attempts.Delay for the bound Kind.
+func (c Counter) Delay(ctx context.Context, email string) (time.Duration, error) {
+	return c.attempts.Delay(ctx, c.kind, email)
+}
+
+// RecordFailure is Attempts.RecordFailure for the bound Kind.
+func (c Counter) RecordFailure(ctx context.Context, email string) error {
+	return c.attempts.RecordFailure(ctx, c.kind, email)
+}
+
+// RecordSuccess is Attempts.RecordSuccess for the bound Kind.
+func (c Counter) RecordSuccess(ctx context.Context, email string) error {
+	return c.attempts.RecordSuccess(ctx, c.kind, email)
+}
+
+// Limit is Attempts.Limit for the bound Kind.
+func (c Counter) Limit() int { return c.attempts.Limit(c.kind) }
+
+// Now is the clock of the counter's module.
+func (c Counter) Now() time.Time { return c.attempts.Now() }
