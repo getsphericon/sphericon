@@ -10,7 +10,7 @@ package eventlog
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -23,13 +23,22 @@ import (
 
 // Module is the Events ingest and read module.
 type Module struct {
-	bus *events.Bus
+	bus  *events.Bus
+	live LivePolicy
+}
+
+// LivePolicy says how old a live Event may be: an older one is history and arrives as a
+// Backfill, never as a live Event that could enroll an Automation. Now is the clock the
+// age is judged against.
+type LivePolicy struct {
+	Window time.Duration
+	Now    func() time.Time
 }
 
 // New builds the module over the domain-event bus (transactional publish). Reads
 // and identity resolution go through the Workspace-scoped client each call receives.
-func New(bus *events.Bus) *Module {
-	return &Module{bus: bus}
+func New(bus *events.Bus, live LivePolicy) *Module {
+	return &Module{bus: bus, live: live}
 }
 
 // Input is one customer Event to ingest. Action and Properties are the customer's
@@ -42,14 +51,68 @@ type Input struct {
 	Action     string
 	OccurredAt time.Time // zero => publish time
 	Properties map[string]any
+	// ClientEventID is the client's own id for the Event ("" = none). A repeat of an id in
+	// a Workspace is a no-op, so a client can resend a load it never saw answered.
+	ClientEventID string
+	// Backfill records the Event as history: no Automation enrolls on it and no webhook
+	// endpoint receives it.
+	Backfill bool
+}
+
+// validate refuses an Event the module must not publish: one without an identity or an
+// action, one that claims a reserved action, a Backfill without a time that has passed,
+// and a live Event old enough to be history.
+func (m *Module) validate(in Input) error {
+	if strings.TrimSpace(in.SubjectID) == "" {
+		return &events.RejectionError{Reason: "subject id and action are required"}
+	}
+	if err := events.CheckAction(in.Action); err != nil {
+		return err
+	}
+	now := m.live.Now()
+	switch {
+	case in.Backfill && in.OccurredAt.IsZero():
+		return &events.RejectionError{Reason: "a backfilled event needs occurredAt"}
+	case in.Backfill && in.OccurredAt.After(now):
+		return &events.RejectionError{Reason: "occurredAt of a backfilled event must not be in the future"}
+	case !in.Backfill && !in.OccurredAt.IsZero() && in.OccurredAt.Before(now.Add(-m.live.Window)):
+		return &events.RejectionError{Reason: fmt.Sprintf("occurredAt is more than %d hours ago: send history with backfill", int(m.live.Window.Hours()))}
+	}
+	return nil
 }
 
 // Ingest attaches each Event to an existing Contact by stable identity (an unknown
 // identity stays anonymous; a Contact is never created) and publishes the whole batch
-// atomically: either every Event is accepted or none is.
+// atomically: either every Event is accepted or none is. An Event that fails validate
+// refuses the whole batch with an *events.RejectionError.
 func (m *Module) Ingest(ctx context.Context, s *ent.Scoped, inputs []Input) error {
+	for _, in := range inputs {
+		if err := m.validate(in); err != nil {
+			return err
+		}
+	}
 	return m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
+		inBatch := map[string]bool{}
 		for _, in := range inputs {
+			dedupID := ""
+			if in.ClientEventID != "" {
+				dedupID = events.DedupKey(events.SourceAPI, ts.WorkspaceID(), in.ClientEventID)
+				// A repeat inside this batch is the same Event. A stored one is a resend of an
+				// Event that arrived. One still on the outbox from another request is published
+				// again and the persist subscriber's unique source_id keeps one row; a live Event
+				// in that window can still enroll or deliver twice.
+				if inBatch[dedupID] {
+					continue
+				}
+				inBatch[dedupID] = true
+				stored, err := alreadyStored(ctx, ts, dedupID)
+				if err != nil {
+					return err
+				}
+				if stored {
+					continue
+				}
+			}
 			contactID, err := contacts.ResolveID(ctx, ts, in.SubjectID, in.Email, in.Phone)
 			if err != nil {
 				return err
@@ -61,6 +124,8 @@ func (m *Module) Ingest(ctx context.Context, s *ent.Scoped, inputs []Input) erro
 				Action:      in.Action,
 				OccurredAt:  in.OccurredAt,
 				Properties:  in.Properties,
+				DedupID:     dedupID,
+				Backfill:    in.Backfill,
 			}
 			if in.Email != nil {
 				collected.Email = *in.Email
@@ -76,22 +141,20 @@ func (m *Module) Ingest(ctx context.Context, s *ent.Scoped, inputs []Input) erro
 	})
 }
 
-// ErrInvalid means an Event lacks its subject id or its action.
-var ErrInvalid = errors.New("eventlog: subject id and action are required")
-
 // IngestEach ingests each Event in its own transaction, so an invalid or failing item
 // does not affect the others (Ingest, by contrast, is all-or-nothing). The returned
 // errors are parallel to inputs; nil means the Event was accepted.
 func (m *Module) IngestEach(ctx context.Context, s *ent.Scoped, inputs []Input) []error {
 	errs := make([]error, len(inputs))
 	for i, in := range inputs {
-		if strings.TrimSpace(in.SubjectID) == "" || strings.TrimSpace(in.Action) == "" {
-			errs[i] = ErrInvalid
-			continue
-		}
 		errs[i] = m.Ingest(ctx, s, []Input{in})
 	}
 	return errs
+}
+
+// alreadyStored reports whether an Event with this dedup key is already a row.
+func alreadyStored(ctx context.Context, s *ent.Scoped, dedupID string) (bool, error) {
+	return s.Event().Query().Where(event.SourceID(dedupID)).Exist(ctx)
 }
 
 // Actions returns the workspace's distinct Event actions, sorted.

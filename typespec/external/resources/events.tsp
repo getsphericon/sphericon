@@ -25,6 +25,16 @@ model EventInput {
 
   /** Event occurrence timestamp */
   occurredAt?: Timestamp | null;
+
+  /**
+   * A client-chosen id that makes a retry safe. It is unique within the Workspace: sending an
+   * event again with the same id changes nothing, so a load that broke off halfway is resent
+   * whole. Generate it once per event (a UUID) and reuse it on every retry. An event without
+   * one is not deduplicated.
+   */
+  @minLength(1)
+  @maxLength(255)
+  clientEventId?: string | null;
 }
 
 /** Request body for recording events */
@@ -35,6 +45,13 @@ model RecordEventsInput {
 
 /** Request body for recording events one by one with per-item results */
 model RecordEventsBatchInput {
+  /**
+   * Load history: the events are only recorded, so segments see them but no Automation
+   * enrolls on them and no webhook endpoint receives them. Use it to bring the events of
+   * an earlier system into a new setup. Defaults to false.
+   */
+  backfill?: boolean;
+
   /** Events to record, at most 1000 */
   @minItems(1)
   @maxItems(1000)

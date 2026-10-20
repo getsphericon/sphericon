@@ -5380,6 +5380,10 @@ type EventInput struct {
 	Properties OptNilEventInputProperties `json:"properties"`
 	// Event occurrence timestamp.
 	OccurredAt OptNilTimestamp `json:"occurredAt"`
+	// A client-chosen id that makes a retry safe. It is unique within the Workspace: sending an event
+	// again with the same id changes nothing, so a load that broke off halfway is resent whole. Generate
+	// it once per event (a UUID) and reuse it on every retry. An event without one is not deduplicated.
+	ClientEventId OptNilString `json:"clientEventId"`
 }
 
 // GetSubjectId returns the value of SubjectId.
@@ -5412,6 +5416,11 @@ func (s *EventInput) GetOccurredAt() OptNilTimestamp {
 	return s.OccurredAt
 }
 
+// GetClientEventId returns the value of ClientEventId.
+func (s *EventInput) GetClientEventId() OptNilString {
+	return s.ClientEventId
+}
+
 // SetSubjectId sets the value of SubjectId.
 func (s *EventInput) SetSubjectId(val string) {
 	s.SubjectId = val
@@ -5440,6 +5449,11 @@ func (s *EventInput) SetProperties(val OptNilEventInputProperties) {
 // SetOccurredAt sets the value of OccurredAt.
 func (s *EventInput) SetOccurredAt(val OptNilTimestamp) {
 	s.OccurredAt = val
+}
+
+// SetClientEventId sets the value of ClientEventId.
+func (s *EventInput) SetClientEventId(val OptNilString) {
+	s.ClientEventId = val
 }
 
 // Event properties.
@@ -9598,13 +9612,27 @@ func (s *RateTriple) SetRate(val NilFloat64) {
 // Request body for recording events one by one with per-item results.
 // Ref: #/components/schemas/RecordEventsBatchInput
 type RecordEventsBatchInput struct {
+	// Load history: the events are only recorded, so segments see them but no Automation enrolls on them
+	// and no webhook endpoint receives them. Use it to bring the events of an earlier system into a new
+	// setup. Defaults to false.
+	Backfill OptBool `json:"backfill"`
 	// Events to record, at most 1000.
 	Events []EventInput `json:"events"`
+}
+
+// GetBackfill returns the value of Backfill.
+func (s *RecordEventsBatchInput) GetBackfill() OptBool {
+	return s.Backfill
 }
 
 // GetEvents returns the value of Events.
 func (s *RecordEventsBatchInput) GetEvents() []EventInput {
 	return s.Events
+}
+
+// SetBackfill sets the value of Backfill.
+func (s *RecordEventsBatchInput) SetBackfill(val OptBool) {
+	s.Backfill = val
 }
 
 // SetEvents sets the value of Events.

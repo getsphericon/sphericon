@@ -221,6 +221,9 @@ func webhooksConsumer(client *ent.Client, dispatcher WebhookDispatcher) message.
 		if err != nil {
 			return err
 		}
+		if IsBackfill(ev) {
+			return nil // loaded history: recorded, never delivered
+		}
 		p := ev.Project()
 		// Filter/route on the semantic action (e.g. "page_view"), not the bus type. An
 		// unprojected event (an Audit entry) has no Event action: it is forwarded under
@@ -274,6 +277,9 @@ func automationsConsumer(enroller Enroller) message.NoPublishHandlerFunc {
 		}
 		if _, skip := ev.(Unprojected); skip {
 			return nil // an administrative action is never an automation trigger
+		}
+		if IsBackfill(ev) {
+			return nil // loaded history never enrolls a contact
 		}
 		p := ev.Project()
 		if p.ContactID == 0 {

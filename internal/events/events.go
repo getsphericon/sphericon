@@ -16,7 +16,10 @@ package events
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"slices"
+	"strings"
 	"time"
 )
 
@@ -39,6 +42,52 @@ const (
 	NameMarketingConfirmed = "marketing.confirmed"
 	NameCollected          = "event.collected"
 )
+
+// reservedPrefixes are the namespaces of the actions only the system records: delivery
+// (`email.*`), consent (`marketing.*`) and the Contact lifecycle (`contact.*`). They are
+// evidence (ADR 0013, ADR 0019), so a customer's own Event never carries one.
+var reservedPrefixes = []string{"email.", "marketing.", "contact."}
+
+// ReservedAction reports whether action belongs to the system and is refused from a
+// customer's Event.
+func ReservedAction(action string) bool {
+	a := strings.ToLower(strings.TrimSpace(action))
+	return slices.ContainsFunc(reservedPrefixes, func(prefix string) bool { return strings.HasPrefix(a, prefix) })
+}
+
+// The surfaces a customer's client event id arrives on; each has its own id space.
+const (
+	SourceCollect = "collect"
+	SourceAPI     = "api"
+)
+
+// DedupKey is the Event's source_id for a client event id: source_id is unique across
+// Workspaces and sources, the client's id only within one of each.
+func DedupKey(source string, workspaceID int64, clientEventID string) string {
+	return fmt.Sprintf("%s:%d:%s", source, workspaceID, clientEventID)
+}
+
+// RejectionError is why a customer's Event was refused. Its message is worded for the caller.
+type RejectionError struct{ Reason string }
+
+func (r *RejectionError) Error() string { return r.Reason }
+
+// AsRejection reports whether err is a RejectionError, and which.
+func AsRejection(err error) (*RejectionError, bool) {
+	var r *RejectionError
+	return r, errors.As(err, &r)
+}
+
+// CheckAction refuses an action that is empty or reserved for the system.
+func CheckAction(action string) error {
+	switch {
+	case strings.TrimSpace(action) == "":
+		return &RejectionError{"subject id and action are required"}
+	case ReservedAction(action):
+		return &RejectionError{fmt.Sprintf("action %q is reserved for the system", action)}
+	}
+	return nil
+}
 
 // Bounce kinds carried by EmailDeliveryFailure. Only a permanent (hard) bounce
 // suppresses an address; a transient (soft) bounce is temporary.
@@ -96,6 +145,18 @@ type DomainEvent interface {
 // id does NOT become the message id, which stays a short ULID.
 type identifiable interface {
 	EventID() string
+}
+
+// backfilled is an optional DomainEvent capability: an event that is history, recorded but
+// never reacted to, so the webhooks and automations consumers skip it.
+type backfilled interface {
+	Backfilled() bool
+}
+
+// IsBackfill reports whether ev is a Backfill: recorded without triggering automations or webhooks.
+func IsBackfill(ev DomainEvent) bool {
+	b, ok := ev.(backfilled)
+	return ok && b.Backfilled()
 }
 
 // registry maps a bus event name to a constructor for its concrete type, so a
@@ -310,14 +371,18 @@ type CollectedEvent struct {
 	Properties  map[string]any `json:"properties,omitempty"`
 	OccurredAt  time.Time      `json:"occurredAt,omitzero"`
 	// DedupID is the persist idempotency key of an event the client gave a clientEventId
-	// (visitors.CollectDedupKey: the Workspace and that id). Empty for an event without one.
+	// (DedupKey: the source, the Workspace and that id). Empty for an event without one.
 	DedupID string `json:"dedupId,omitempty"`
+	// Backfill marks an event loaded from history: it is recorded, but no Automation enrolls
+	// on it and no webhook endpoint receives it.
+	Backfill bool `json:"backfill,omitempty"`
 }
 
 func (*CollectedEvent) EventName() string  { return NameCollected }
 func (*CollectedEvent) EventVersion() int  { return 1 }
 func (e *CollectedEvent) Workspace() int64 { return e.WorkspaceID }
 func (e *CollectedEvent) EventID() string  { return e.DedupID }
+func (e *CollectedEvent) Backfilled() bool { return e.Backfill }
 func (e *CollectedEvent) Project() Projection {
 	return Projection{
 		Subject:    e.SubjectID,
