@@ -108,6 +108,7 @@ func Refresh(ctx context.Context, client *ent.Client, lic *licensekey.License, n
 		return nil
 	}
 	workspaces, err := client.Workspace.Query().
+		Where(workspace.DeletedAtIsNil()).
 		Select(workspace.FieldID, workspace.FieldCreatedAt).
 		Order(ent.Asc(workspace.FieldID)).
 		All(ctx)

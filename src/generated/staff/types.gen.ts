@@ -530,6 +530,14 @@ export type StaffWorkspaceDetailResource = {
    */
   createdAt: Timestamp;
   /**
+   * When the Workspace was deleted; present from deletion until a restore (ADR 0043)
+   */
+  deletedAt?: Timestamp | null;
+  /**
+   * When the Workspace's data was erased; the row stays as a tombstone
+   */
+  erasedAt?: Timestamp | null;
+  /**
    * Present only while sending is suspended
    */
   suspension?: StaffSuspension | null;
@@ -564,6 +572,14 @@ export type StaffWorkspaceResource = {
    */
   createdAt: Timestamp;
   /**
+   * When the Workspace was deleted; present from deletion until a restore (ADR 0043)
+   */
+  deletedAt?: Timestamp | null;
+  /**
+   * When the Workspace's data was erased; the row stays as a tombstone
+   */
+  erasedAt?: Timestamp | null;
+  /**
    * Present only while sending is suspended
    */
   suspension?: StaffSuspension | null;
@@ -580,7 +596,11 @@ export type StaffWorkspaceResource = {
 /**
  * Which Workspaces the list surfaces for review
  */
-export const StaffWorkspaceReview = { WARNED: 'warned', SYSTEM_FROZEN: 'systemFrozen' } as const;
+export const StaffWorkspaceReview = {
+  WARNED: 'warned',
+  SYSTEM_FROZEN: 'systemFrozen',
+  DELETED: 'deleted'
+} as const;
 
 /**
  * Which Workspaces the list surfaces for review

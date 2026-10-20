@@ -441,6 +441,7 @@ export default interface Resources {
         "name": "Name",
         "review": {
           "all": "All Workspaces",
+          "deleted": "Deleted",
           "label": "Review",
           "systemFrozen": "Frozen by the detector",
           "warned": "Warned"

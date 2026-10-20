@@ -782,6 +782,8 @@ func (s StaffWorkspaceReview) Validate() error {
 		return nil
 	case "systemFrozen":
 		return nil
+	case "deleted":
+		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
 	}

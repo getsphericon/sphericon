@@ -21,6 +21,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/buildinfo"
 	appdb "github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/doctor"
+	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/sending"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -297,4 +298,17 @@ func TestRedactorHidesEverySecretInBothFormats(t *testing.T) {
 	assert.NotContains(t, out.String(), "p@ss")
 	assert.Contains(t, out.String(), "[redacted]")
 	assert.Contains(t, out.String(), "abc", "a value under four characters is left alone")
+}
+
+func TestADeletedWorkspaceIsLeftOutOfTheWorkspaceChecks(t *testing.T) {
+	in := healthy(t)
+	in.Ent.Workspace.UpdateOneID(fixtures.AcmeID).SetDeletedAt(time.Now()).ExecX(context.Background())
+	in.Ent.Workspace.UpdateOneID(fixtures.InitechID).SetDeletedAt(time.Now()).ExecX(context.Background())
+
+	r := doctor.Run(context.Background(), in)
+
+	for _, c := range r.Checks {
+		assert.NotEqual(t, "dkim mail.acme.com", c.Name)
+	}
+	assert.NotEqual(t, doctor.Warn, find(t, r, "app url in sent mail").Status, "mail of a deleted Workspace is not read")
 }

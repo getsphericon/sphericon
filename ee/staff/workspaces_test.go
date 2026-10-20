@@ -21,7 +21,7 @@ import (
 // (never Contacts, content, Events or the Workspace's secret keys).
 func requireMetadataOnly(t *testing.T, w map[string]any) {
 	t.Helper()
-	allowed := []string{"id", "name", "createdAt", "suspension", "deliverability", "holds", "exempt", "warned", "abuse"}
+	allowed := []string{"id", "name", "createdAt", "suspension", "deliverability", "holds", "exempt", "warned", "abuse", "deletedAt", "erasedAt"}
 	for k := range w {
 		assert.Contains(t, allowed, k)
 	}
@@ -343,4 +343,21 @@ func TestAnExpiredHoldIsNotListedAndAnUnaffectedWorkspaceShowsNone(t *testing.T)
 	globex, ok := h.getWorkspace(t, c, fixtures.GlobexPublicID).(*staffapi.StaffWorkspaceDetailResource)
 	require.True(t, ok)
 	assert.Empty(t, globex.Holds)
+}
+
+func TestTheWorkspaceListHidesADeletedWorkspaceUnlessFilteredToDeleted(t *testing.T) {
+	h := newHarness(t)
+	c, _ := h.staffSession(t)
+	deletedAt := time.Now().UTC().Truncate(time.Second)
+	h.env.DB.Workspace.UpdateOneID(fixtures.GlobexID).SetDeletedAt(deletedAt).ExecX(t.Context())
+
+	all := h.listWorkspaces(t, c, staffapi.StaffWorkspacesListParams{})
+	deleted := h.listWorkspaces(t, c, staffapi.StaffWorkspacesListParams{Review: staffapi.NewOptStaffWorkspaceReview(staffapi.StaffWorkspaceReviewDeleted)})
+
+	assert.NotContains(t, names(all.Items), "Globex")
+	assert.EqualValues(t, 8, all.TotalItems)
+	require.Equal(t, []string{"Globex"}, names(deleted.Items))
+	got, ok := deleted.Items[0].DeletedAt.Get()
+	require.True(t, ok)
+	assert.WithinDuration(t, deletedAt, time.Time(got), time.Second)
 }

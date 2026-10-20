@@ -64,7 +64,7 @@ func Prune(ctx context.Context, client *ent.Client, lic *licensekey.License, now
 		return 0, nil
 	}
 	workspaces, err := client.Workspace.Query().
-		Where(workspace.RetentionDaysNotNil()).
+		Where(workspace.RetentionDaysNotNil(), workspace.DeletedAtIsNil()).
 		Select(workspace.FieldID, workspace.FieldRetentionDays).
 		All(ctx)
 	if err != nil {

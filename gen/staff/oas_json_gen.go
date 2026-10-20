@@ -4018,6 +4018,18 @@ func (s *StaffWorkspaceDetailResource) encodeFields(e *jx.Encoder) {
 		s.CreatedAt.Encode(e)
 	}
 	{
+		if s.DeletedAt.Set {
+			e.FieldStart("deletedAt")
+			s.DeletedAt.Encode(e)
+		}
+	}
+	{
+		if s.ErasedAt.Set {
+			e.FieldStart("erasedAt")
+			s.ErasedAt.Encode(e)
+		}
+	}
+	{
 		if s.Suspension.Set {
 			e.FieldStart("suspension")
 			s.Suspension.Encode(e)
@@ -4049,16 +4061,18 @@ func (s *StaffWorkspaceDetailResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfStaffWorkspaceDetailResource = [9]string{
-	0: "id",
-	1: "name",
-	2: "createdAt",
-	3: "suspension",
-	4: "exempt",
-	5: "warned",
-	6: "holds",
-	7: "deliverability",
-	8: "abuse",
+var jsonFieldsNameOfStaffWorkspaceDetailResource = [11]string{
+	0:  "id",
+	1:  "name",
+	2:  "createdAt",
+	3:  "deletedAt",
+	4:  "erasedAt",
+	5:  "suspension",
+	6:  "exempt",
+	7:  "warned",
+	8:  "holds",
+	9:  "deliverability",
+	10: "abuse",
 }
 
 // Decode decodes StaffWorkspaceDetailResource from json.
@@ -4102,6 +4116,26 @@ func (s *StaffWorkspaceDetailResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"createdAt\"")
 			}
+		case "deletedAt":
+			if err := func() error {
+				s.DeletedAt.Reset()
+				if err := s.DeletedAt.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"deletedAt\"")
+			}
+		case "erasedAt":
+			if err := func() error {
+				s.ErasedAt.Reset()
+				if err := s.ErasedAt.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"erasedAt\"")
+			}
 		case "suspension":
 			if err := func() error {
 				s.Suspension.Reset()
@@ -4113,7 +4147,7 @@ func (s *StaffWorkspaceDetailResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"suspension\"")
 			}
 		case "exempt":
-			requiredBitSet[0] |= 1 << 4
+			requiredBitSet[0] |= 1 << 6
 			if err := func() error {
 				v, err := d.Bool()
 				s.Exempt = bool(v)
@@ -4125,7 +4159,7 @@ func (s *StaffWorkspaceDetailResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"exempt\"")
 			}
 		case "warned":
-			requiredBitSet[0] |= 1 << 5
+			requiredBitSet[0] |= 1 << 7
 			if err := func() error {
 				v, err := d.Bool()
 				s.Warned = bool(v)
@@ -4137,7 +4171,7 @@ func (s *StaffWorkspaceDetailResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"warned\"")
 			}
 		case "holds":
-			requiredBitSet[0] |= 1 << 6
+			requiredBitSet[1] |= 1 << 0
 			if err := func() error {
 				s.Holds = make([]StaffHold, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
@@ -4155,7 +4189,7 @@ func (s *StaffWorkspaceDetailResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"holds\"")
 			}
 		case "deliverability":
-			requiredBitSet[0] |= 1 << 7
+			requiredBitSet[1] |= 1 << 1
 			if err := func() error {
 				if err := s.Deliverability.Decode(d); err != nil {
 					return err
@@ -4165,7 +4199,7 @@ func (s *StaffWorkspaceDetailResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"deliverability\"")
 			}
 		case "abuse":
-			requiredBitSet[1] |= 1 << 0
+			requiredBitSet[1] |= 1 << 2
 			if err := func() error {
 				if err := s.Abuse.Decode(d); err != nil {
 					return err
@@ -4184,8 +4218,8 @@ func (s *StaffWorkspaceDetailResource) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [2]uint8{
-		0b11110111,
-		0b00000001,
+		0b11000111,
+		0b00000111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -4253,6 +4287,18 @@ func (s *StaffWorkspaceResource) encodeFields(e *jx.Encoder) {
 		s.CreatedAt.Encode(e)
 	}
 	{
+		if s.DeletedAt.Set {
+			e.FieldStart("deletedAt")
+			s.DeletedAt.Encode(e)
+		}
+	}
+	{
+		if s.ErasedAt.Set {
+			e.FieldStart("erasedAt")
+			s.ErasedAt.Encode(e)
+		}
+	}
+	{
 		if s.Suspension.Set {
 			e.FieldStart("suspension")
 			s.Suspension.Encode(e)
@@ -4268,13 +4314,15 @@ func (s *StaffWorkspaceResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfStaffWorkspaceResource = [6]string{
+var jsonFieldsNameOfStaffWorkspaceResource = [8]string{
 	0: "id",
 	1: "name",
 	2: "createdAt",
-	3: "suspension",
-	4: "exempt",
-	5: "warned",
+	3: "deletedAt",
+	4: "erasedAt",
+	5: "suspension",
+	6: "exempt",
+	7: "warned",
 }
 
 // Decode decodes StaffWorkspaceResource from json.
@@ -4318,6 +4366,26 @@ func (s *StaffWorkspaceResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"createdAt\"")
 			}
+		case "deletedAt":
+			if err := func() error {
+				s.DeletedAt.Reset()
+				if err := s.DeletedAt.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"deletedAt\"")
+			}
+		case "erasedAt":
+			if err := func() error {
+				s.ErasedAt.Reset()
+				if err := s.ErasedAt.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"erasedAt\"")
+			}
 		case "suspension":
 			if err := func() error {
 				s.Suspension.Reset()
@@ -4329,7 +4397,7 @@ func (s *StaffWorkspaceResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"suspension\"")
 			}
 		case "exempt":
-			requiredBitSet[0] |= 1 << 4
+			requiredBitSet[0] |= 1 << 6
 			if err := func() error {
 				v, err := d.Bool()
 				s.Exempt = bool(v)
@@ -4341,7 +4409,7 @@ func (s *StaffWorkspaceResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"exempt\"")
 			}
 		case "warned":
-			requiredBitSet[0] |= 1 << 5
+			requiredBitSet[0] |= 1 << 7
 			if err := func() error {
 				v, err := d.Bool()
 				s.Warned = bool(v)
@@ -4362,7 +4430,7 @@ func (s *StaffWorkspaceResource) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00110111,
+		0b11000111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

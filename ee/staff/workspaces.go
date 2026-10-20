@@ -134,6 +134,8 @@ const (
 	ReviewWarned Review = "warned"
 	// ReviewSystemFrozen: suspended by the detector (actor `system`).
 	ReviewSystemFrozen Review = "system_frozen"
+	// ReviewDeleted: in the deletion window or erased (ADR 0043); every other list hides them.
+	ReviewDeleted Review = "deleted"
 )
 
 // ListWorkspaces is one page of every Workspace, newest first, optionally only those
@@ -149,6 +151,11 @@ func (m *Module) ListWorkspaces(ctx context.Context, review Review, search strin
 		q := m.ent.Workspace.Query()
 		if search != "" {
 			q = q.Where(entworkspace.Or(entworkspace.PublicIDContains(search), entworkspace.NameContainsFold(search)))
+		}
+		if review == ReviewDeleted {
+			q = q.Where(entworkspace.DeletedAtNotNil())
+		} else {
+			q = q.Where(entworkspace.DeletedAtIsNil())
 		}
 		switch review {
 		case ReviewWarned:

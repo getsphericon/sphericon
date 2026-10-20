@@ -40,6 +40,12 @@ model StaffWorkspaceResource {
   /** When the Workspace was created */
   createdAt: Timestamp;
 
+  /** When the Workspace was deleted; present from deletion until a restore (ADR 0043) */
+  deletedAt?: Timestamp | null;
+
+  /** When the Workspace's data was erased; the row stays as a tombstone */
+  erasedAt?: Timestamp | null;
+
   /** Present only while sending is suspended */
   suspension?: StaffSuspension | null;
 
@@ -169,6 +175,9 @@ enum StaffWorkspaceReview {
 
   /** Suspended by the abuse detector (actor `system`) */
   systemFrozen,
+
+  /** In the deletion window or erased (ADR 0043); the default list hides them */
+  deleted,
 }
 
 /** Search filter of the Workspace list */
