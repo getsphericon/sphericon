@@ -71,6 +71,41 @@ mise run generate # regenerate TypeSpec → OpenAPI → Go + TS
 
 CI installs the same toolchain with `jdx/mise-action` and runs the same mise tasks (`mise tasks` lists them all).
 
+### Dev accounts
+
+`mise run setup` seeds the dev database with the same `fixtures/*.yml` the tests use, so a
+fresh checkout already has a populated Workspace, **Acme** (`/w/acme`: contacts, events,
+broadcasts, automations, segments, templates, integrations). The other Workspaces (Globex,
+Initech, Umbrella, …) exist for isolation and edge-case tests and are mostly empty. These
+are development fixtures only; never reuse the credentials anywhere else.
+
+Sign in at `https://sphericon.localhost/login`:
+
+| Role   | Workspace | Email                   | Password             |
+| ------ | --------- | ----------------------- | -------------------- |
+| owner  | Acme      | `info@getsphericon.com` | `password`           |
+| member | Acme      | `mary@acme.test`        | `mary-test-password` |
+| owner  | Globex    | `jane@globex.test`      | `jane-test-password` |
+| admin  | Initech   | `ada@initech.test`      | `ada-test-password`  |
+
+Acme has no admin; Initech is the Workspace with all three roles (owners `olga@initech.test` and
+`owen@initech.test`, member `max@initech.test`, passwords `<name>-test-password`).
+`sam@globex.test` / `sam-test-password` has a TOTP Second factor, secret `JBSWY3DPEHPK3PXP`.
+
+The Staff console is at `https://sphericon.localhost/console` (Enterprise, license feature
+`staff`: without a license key it answers 404). Sign-in needs a password and a TOTP code:
+
+| Staff member                 | Password               | TOTP                            |
+| ---------------------------- | ---------------------- | ------------------------------- |
+| `staff@sphericon.test`       | `staff-test-password`  | secret `KRSXG5CTMVRXEZLU`       |
+| `fresh-staff@sphericon.test` | `staff-fresh-password` | none yet: enrols at first login |
+
+Get the current code with `oathtool --totp -b KRSXG5CTMVRXEZLU`, or add the secret to an
+authenticator app.
+
+The values come from `fixtures/users.yml` and `fixtures/staff_members.yml`; when they change,
+update this section. `mise run db:seed` reloads the fixtures.
+
 ## Deployment (development)
 
 The local stack is a set of [mise daemons](https://mise.jdx.dev) (`[daemons]` in
