@@ -3944,6 +3944,70 @@
         "tags": ["Site Contacts"]
       }
     },
+    "/workspaces/{slug}/contacts/lookup": {
+      "get": {
+        "operationId": "SiteContacts_lookup",
+        "description": "Look up what the Workspace holds for one email address (a Privacy request):\ncounts only. The address is trimmed and lowercased; an invalid one is rejected.\nAn address nothing holds answers with zeros, not 404. Owner or admin only.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SiteContactResourceParentKey"
+          },
+          {
+            "name": "email",
+            "in": "query",
+            "required": true,
+            "description": "The email address",
+            "schema": {
+              "$ref": "#/components/schemas/EmailAddress"
+            },
+            "explode": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteContactLookup"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Contacts"]
+      }
+    },
     "/workspaces/{slug}/contacts/{contactId}/tags": {
       "get": {
         "operationId": "SiteTags_listForContact",
@@ -9342,6 +9406,37 @@
           }
         },
         "description": "Confirm a requested email change using the token sent to the new address"
+      },
+      "SiteContactLookup": {
+        "type": "object",
+        "required": ["contactHeld", "events", "deliveryRecords", "unsubscribes", "suppressions"],
+        "properties": {
+          "contactHeld": {
+            "type": "boolean",
+            "description": "Whether a Contact holds the address"
+          },
+          "events": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Events of the Contact holding the address, or carrying the address"
+          },
+          "deliveryRecords": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Delivery records (outbound messages) to the address"
+          },
+          "unsubscribes": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Unsubscribes on the address"
+          },
+          "suppressions": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Suppressions on the address"
+          }
+        },
+        "description": "What a Workspace holds for one email address, as counts only (a Privacy request lookup). Nothing held is all zeros and `contactHeld: false`."
       },
       "SiteContactResource": {
         "type": "object",

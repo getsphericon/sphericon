@@ -44,6 +44,7 @@ const (
 	SiteContactsExportOperation                       OperationName = "SiteContactsExport"
 	SiteContactsGetOperation                          OperationName = "SiteContactsGet"
 	SiteContactsListOperation                         OperationName = "SiteContactsList"
+	SiteContactsLookupOperation                       OperationName = "SiteContactsLookup"
 	SiteContactsUpdateOperation                       OperationName = "SiteContactsUpdate"
 	SiteCustomFieldsListOperation                     OperationName = "SiteCustomFieldsList"
 	SiteEnrollmentsGetOperation                       OperationName = "SiteEnrollmentsGet"

@@ -391,6 +391,17 @@ func (UnimplementedHandler) SiteContactsList(ctx context.Context, params SiteCon
 	return r, ht.ErrNotImplemented
 }
 
+// SiteContactsLookup implements SiteContacts_lookup operation.
+//
+// Look up what the Workspace holds for one email address (a Privacy request): counts only. The address
+// is trimmed and lowercased; an invalid one is rejected. An address nothing holds answers with zeros,
+// not 404. Owner or admin only.
+//
+// GET /workspaces/{slug}/contacts/lookup
+func (UnimplementedHandler) SiteContactsLookup(ctx context.Context, params SiteContactsLookupParams) (r SiteContactsLookupRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteContactsUpdate implements SiteContacts_update operation.
 //
 // Update a resource from the site UI.

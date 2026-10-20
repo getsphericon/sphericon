@@ -471,11 +471,12 @@ func TestAppServesOnACallerProvidedListener(t *testing.T) {
 	require.True(t, strings.HasPrefix(link, base+"/e/c/"), link)
 
 	ctx, cancel := context.WithCancel(context.Background())
+	eventsDone := make(chan error, 1)
 	served := make(chan error, 1)
-	go func() { served <- a.runEvents(ctx) }()
+	go func() { eventsDone <- a.runEvents(ctx) }()
 	select {
 	case <-a.events.router.Running():
-	case err := <-served:
+	case err := <-eventsDone:
 		t.Fatalf("router stopped before running: %v", err)
 	case <-time.After(10 * time.Second):
 		t.Fatal("router never started")

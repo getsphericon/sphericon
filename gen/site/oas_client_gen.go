@@ -293,6 +293,14 @@ type Invoker interface {
 	//
 	// GET /workspaces/{slug}/contacts
 	SiteContactsList(ctx context.Context, params SiteContactsListParams) (SiteContactsListRes, error)
+	// SiteContactsLookup invokes SiteContacts_lookup operation.
+	//
+	// Look up what the Workspace holds for one email address (a Privacy request): counts only. The address
+	// is trimmed and lowercased; an invalid one is rejected. An address nothing holds answers with zeros,
+	// not 404. Owner or admin only.
+	//
+	// GET /workspaces/{slug}/contacts/lookup
+	SiteContactsLookup(ctx context.Context, params SiteContactsLookupParams) (SiteContactsLookupRes, error)
 	// SiteContactsUpdate invokes SiteContacts_update operation.
 	//
 	// Update a resource from the site UI.
@@ -6299,6 +6307,161 @@ func (c *Client) sendSiteContactsList(ctx context.Context, params SiteContactsLi
 
 	stage = "DecodeResponse"
 	result, err := decodeSiteContactsListResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SiteContactsLookup invokes SiteContacts_lookup operation.
+//
+// Look up what the Workspace holds for one email address (a Privacy request): counts only. The address
+// is trimmed and lowercased; an invalid one is rejected. An address nothing holds answers with zeros,
+// not 404. Owner or admin only.
+//
+// GET /workspaces/{slug}/contacts/lookup
+func (c *Client) SiteContactsLookup(ctx context.Context, params SiteContactsLookupParams) (SiteContactsLookupRes, error) {
+	res, err := c.sendSiteContactsLookup(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendSiteContactsLookup(ctx context.Context, params SiteContactsLookupParams) (res SiteContactsLookupRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteContacts_lookup"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/workspaces/{slug}/contacts/lookup"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteContactsLookupOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/workspaces/"
+	{
+		// Encode "slug" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "slug",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.StringToString(params.Slug))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/contacts/lookup"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "email" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "email",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if unwrapped := string(params.Email); true {
+				return e.EncodeValue(conv.StringToString(unwrapped))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, SiteContactsLookupOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteContactsLookupResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
