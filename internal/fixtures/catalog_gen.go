@@ -97,26 +97,38 @@ const (
 	BroadcastAuthoredID = 106
 	// BroadcastAuthoredName is from fixtures/broadcasts.
 	BroadcastAuthoredName = "Product update announcement"
+	// BroadcastAuthoredSubject is from fixtures/broadcasts.
+	BroadcastAuthoredSubject = "What is new at CodeBasics"
 	// BroadcastDraftID is from fixtures/broadcasts.
 	BroadcastDraftID = 100
 	// BroadcastDraftName is from fixtures/broadcasts.
 	BroadcastDraftName = "Summer sale teaser"
+	// BroadcastDraftSubject is from fixtures/broadcasts.
+	BroadcastDraftSubject = "A summer treat is coming 🌞"
 	// BroadcastEmptyAudienceID is from fixtures/broadcasts.
 	BroadcastEmptyAudienceID = 104
 	// BroadcastEmptyAudienceName is from fixtures/broadcasts.
 	BroadcastEmptyAudienceName = "Empty audience send"
+	// BroadcastEmptyAudienceSubject is from fixtures/broadcasts.
+	BroadcastEmptyAudienceSubject = "Nobody home"
 	// BroadcastFailedID is from fixtures/broadcasts.
 	BroadcastFailedID = 103
 	// BroadcastFailedName is from fixtures/broadcasts.
 	BroadcastFailedName = "Broken send (provider error)"
+	// BroadcastFailedSubject is from fixtures/broadcasts.
+	BroadcastFailedSubject = "Oops"
 	// BroadcastGlobexID is from fixtures/broadcasts.
 	BroadcastGlobexID = 900
 	// BroadcastGlobexName is from fixtures/broadcasts.
 	BroadcastGlobexName = "Globex only"
+	// BroadcastGlobexSubject is from fixtures/broadcasts.
+	BroadcastGlobexSubject = "Globex only"
 	// BroadcastHooliID is from fixtures/broadcasts.
 	BroadcastHooliID = 910
 	// BroadcastHooliName is from fixtures/broadcasts.
 	BroadcastHooliName = "Hooli only"
+	// BroadcastHooliSubject is from fixtures/broadcasts.
+	BroadcastHooliSubject = "Hooli only"
 	// BroadcastInitechID is from fixtures/broadcasts.
 	BroadcastInitechID = 300
 	// BroadcastInitechName is from fixtures/broadcasts.
@@ -129,10 +141,18 @@ const (
 	BroadcastInitechSendingSoloID = 302
 	// BroadcastInitechSendingSoloName is from fixtures/broadcasts.
 	BroadcastInitechSendingSoloName = "Initech reminder"
+	// BroadcastInitechSendingSoloSubject is from fixtures/broadcasts.
+	BroadcastInitechSendingSoloSubject = "Initech reminder"
+	// BroadcastInitechSendingSubject is from fixtures/broadcasts.
+	BroadcastInitechSendingSubject = "Initech launch"
+	// BroadcastInitechSubject is from fixtures/broadcasts.
+	BroadcastInitechSubject = "Initech news"
 	// BroadcastProSegmentID is from fixtures/broadcasts.
 	BroadcastProSegmentID = 105
 	// BroadcastProSegmentName is from fixtures/broadcasts.
 	BroadcastProSegmentName = "Pro plan perks"
+	// BroadcastProSegmentSubject is from fixtures/broadcasts.
+	BroadcastProSegmentSubject = "Your pro perks"
 	// BroadcastRecipientBystanderID is from fixtures/broadcast_recipients.
 	BroadcastRecipientBystanderID = 3001
 	// BroadcastRecipientBystanderPendingID is from fixtures/broadcast_recipients.
@@ -153,14 +173,20 @@ const (
 	BroadcastScheduledID = 101
 	// BroadcastScheduledName is from fixtures/broadcasts.
 	BroadcastScheduledName = "New SQL course launch"
+	// BroadcastScheduledSubject is from fixtures/broadcasts.
+	BroadcastScheduledSubject = "The SQL course is live 🚀"
 	// BroadcastSendingID is from fixtures/broadcasts.
 	BroadcastSendingID = 102
 	// BroadcastSendingName is from fixtures/broadcasts.
 	BroadcastSendingName = "Weekly digest"
+	// BroadcastSendingSubject is from fixtures/broadcasts.
+	BroadcastSendingSubject = "Your weekly learning digest"
 	// BroadcastSentID is from fixtures/broadcasts.
 	BroadcastSentID = 200
 	// BroadcastSentName is from fixtures/broadcasts.
 	BroadcastSentName = "Python crash course is here"
+	// BroadcastSentSubject is from fixtures/broadcasts.
+	BroadcastSentSubject = "Python crash course is here"
 	// ConfirmationErasableDestination is from fixtures/confirmations.
 	ConfirmationErasableDestination = "erin@initech.test"
 	// ConfirmationErasableID is from fixtures/confirmations.
@@ -505,30 +531,40 @@ const (
 	IntegrationAcmeDefaultIngestKey = "omik_test_integrationacmedefault"
 	// IntegrationAcmeDefaultName is from fixtures/integrations.
 	IntegrationAcmeDefaultName = "Mailpit (dev SMTP)"
+	// IntegrationAcmeDefaultProvider is from fixtures/integrations.
+	IntegrationAcmeDefaultProvider = "smtp"
 	// IntegrationAcmeGenericAID is from fixtures/integrations.
 	IntegrationAcmeGenericAID = 3
 	// IntegrationAcmeGenericAIngestKey is from fixtures/integrations.
 	IntegrationAcmeGenericAIngestKey = "omik_test_integrationacmegenerica"
 	// IntegrationAcmeGenericAName is from fixtures/integrations.
 	IntegrationAcmeGenericAName = "Relay A (generic Preset)"
+	// IntegrationAcmeGenericAProvider is from fixtures/integrations.
+	IntegrationAcmeGenericAProvider = "smtp"
 	// IntegrationAcmeGenericBID is from fixtures/integrations.
 	IntegrationAcmeGenericBID = 4
 	// IntegrationAcmeGenericBIngestKey is from fixtures/integrations.
 	IntegrationAcmeGenericBIngestKey = "omik_test_integrationacmegenericb"
 	// IntegrationAcmeGenericBName is from fixtures/integrations.
 	IntegrationAcmeGenericBName = "Relay B (generic Preset)"
+	// IntegrationAcmeGenericBProvider is from fixtures/integrations.
+	IntegrationAcmeGenericBProvider = "smtp"
 	// IntegrationAcmeMailgunID is from fixtures/integrations.
 	IntegrationAcmeMailgunID = 21
 	// IntegrationAcmeMailgunIngestKey is from fixtures/integrations.
 	IntegrationAcmeMailgunIngestKey = "omik_test_integrationacmemailgun"
 	// IntegrationAcmeMailgunName is from fixtures/integrations.
 	IntegrationAcmeMailgunName = "Mailgun relay"
+	// IntegrationAcmeMailgunProvider is from fixtures/integrations.
+	IntegrationAcmeMailgunProvider = "smtp"
 	// IntegrationAcmePostmarkID is from fixtures/integrations.
 	IntegrationAcmePostmarkID = 20
 	// IntegrationAcmePostmarkIngestKey is from fixtures/integrations.
 	IntegrationAcmePostmarkIngestKey = "omik_test_integrationacmepostmark"
 	// IntegrationAcmePostmarkName is from fixtures/integrations.
 	IntegrationAcmePostmarkName = "Postmark relay"
+	// IntegrationAcmePostmarkProvider is from fixtures/integrations.
+	IntegrationAcmePostmarkProvider = "smtp"
 	// IntegrationAcmeSesID is from fixtures/integrations.
 	IntegrationAcmeSesID = 2
 	// IntegrationAcmeSesImpliedID is from fixtures/integrations.
@@ -537,22 +573,30 @@ const (
 	IntegrationAcmeSesImpliedIngestKey = "omik_test_integrationacmesesimplied"
 	// IntegrationAcmeSesImpliedName is from fixtures/integrations.
 	IntegrationAcmeSesImpliedName = "Amazon SES (made before Presets, names none)"
+	// IntegrationAcmeSesImpliedProvider is from fixtures/integrations.
+	IntegrationAcmeSesImpliedProvider = "ses"
 	// IntegrationAcmeSesIngestKey is from fixtures/integrations.
 	IntegrationAcmeSesIngestKey = "omik_test_integrationacmeses"
 	// IntegrationAcmeSesName is from fixtures/integrations.
 	IntegrationAcmeSesName = "Amazon SES (disabled)"
+	// IntegrationAcmeSesProvider is from fixtures/integrations.
+	IntegrationAcmeSesProvider = "ses"
 	// IntegrationGlobexID is from fixtures/integrations.
 	IntegrationGlobexID = 900
 	// IntegrationGlobexIngestKey is from fixtures/integrations.
 	IntegrationGlobexIngestKey = "omik_test_integrationglobex"
 	// IntegrationGlobexName is from fixtures/integrations.
 	IntegrationGlobexName = "Globex SMTP"
+	// IntegrationGlobexProvider is from fixtures/integrations.
+	IntegrationGlobexProvider = "smtp"
 	// IntegrationGlobexSesNoTopicID is from fixtures/integrations.
 	IntegrationGlobexSesNoTopicID = 901
 	// IntegrationGlobexSesNoTopicIngestKey is from fixtures/integrations.
 	IntegrationGlobexSesNoTopicIngestKey = "omik_test_integrationglobexsesnotopic"
 	// IntegrationGlobexSesNoTopicName is from fixtures/integrations.
 	IntegrationGlobexSesNoTopicName = "Globex SES (stored without an SNS topic)"
+	// IntegrationGlobexSesNoTopicProvider is from fixtures/integrations.
+	IntegrationGlobexSesNoTopicProvider = "ses"
 	// InvitationGlobexEmail is from fixtures/invitations.
 	InvitationGlobexEmail = "invited@globex.test"
 	// InvitationGlobexID is from fixtures/invitations.
@@ -579,6 +623,12 @@ const (
 	KramericaOwnerNewmanPassword = "newman-test-password"
 	// KramericaPublicID is from fixtures/workspaces.
 	KramericaPublicID = "KramrWs8"
+	// MaryGoogleIdentityID is from fixtures/user_identities.
+	MaryGoogleIdentityID = 1
+	// MaryGoogleIdentityProvider is from fixtures/user_identities.
+	MaryGoogleIdentityProvider = "google"
+	// MaryGoogleIdentitySubject is from fixtures/user_identities.
+	MaryGoogleIdentitySubject = "google-subject-of-mary"
 	// MemberMaryEmail is from fixtures/users.
 	MemberMaryEmail = "mary@acme.test"
 	// MemberMaryID is from fixtures/users.
@@ -643,6 +693,12 @@ const (
 	OwnerSallyName = "Sally"
 	// OwnerSallyPassword is from fixtures/users.
 	OwnerSallyPassword = "sally-test-password"
+	// SamGoogleIdentityID is from fixtures/user_identities.
+	SamGoogleIdentityID = 2
+	// SamGoogleIdentityProvider is from fixtures/user_identities.
+	SamGoogleIdentityProvider = "google"
+	// SamGoogleIdentitySubject is from fixtures/user_identities.
+	SamGoogleIdentitySubject = "google-subject-of-sam"
 	// SecondFactorSamEmail is from fixtures/users.
 	SecondFactorSamEmail = "sam@globex.test"
 	// SecondFactorSamID is from fixtures/users.
@@ -847,14 +903,20 @@ const (
 	TemplateAuthoredID = 4
 	// TemplateAuthoredName is from fixtures/email_templates.
 	TemplateAuthoredName = "Product update"
+	// TemplateAuthoredSubject is from fixtures/email_templates.
+	TemplateAuthoredSubject = "What is new at CodeBasics"
 	// TemplateGlobexID is from fixtures/email_templates.
 	TemplateGlobexID = 900
 	// TemplateGlobexName is from fixtures/email_templates.
 	TemplateGlobexName = "Globex template"
+	// TemplateGlobexSubject is from fixtures/email_templates.
+	TemplateGlobexSubject = "Globex"
 	// TemplateWelcomeID is from fixtures/email_templates.
 	TemplateWelcomeID = 1
 	// TemplateWelcomeName is from fixtures/email_templates.
 	TemplateWelcomeName = "Welcome"
+	// TemplateWelcomeSubject is from fixtures/email_templates.
+	TemplateWelcomeSubject = "Welcome to CodeBasics 👋"
 	// TokenGlobexID is from fixtures/api_tokens.
 	TokenGlobexID = 900
 	// TokenGlobexName is from fixtures/api_tokens.

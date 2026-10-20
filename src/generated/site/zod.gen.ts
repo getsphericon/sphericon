@@ -607,10 +607,10 @@ export const zSiteRecoveryCodes = z.object({
 });
 
 /**
- * Proof of the User's password, for regenerating Recovery codes
+ * Proof of the User's password (or a fresh provider login), for regenerating Recovery codes
  */
 export const zSiteRecoveryCodesInput = z.object({
-  currentPassword: z.string()
+  currentPassword: z.exactOptional(z.string())
 });
 
 /**
@@ -656,18 +656,18 @@ export const zSiteSaveBrandKitInput = z.object({
 });
 
 /**
- * Proof of the User's password and a code from the authenticator app
+ * Proof of the User's password (or a fresh provider login) and a code from the authenticator app
  */
 export const zSiteSecondFactorConfirmInput = z.object({
-  currentPassword: z.string(),
+  currentPassword: z.exactOptional(z.string()),
   code: z.string()
 });
 
 /**
- * Proof of password and possession, for disabling the Second factor
+ * Proof of password (or a fresh provider login) and possession, for disabling the Second factor
  */
 export const zSiteSecondFactorDisableInput = z.object({
-  currentPassword: z.string(),
+  currentPassword: z.exactOptional(z.string()),
   code: z.string()
 });
 
@@ -688,10 +688,10 @@ export const zSiteSecondFactorRequirementInput = z.object({
 });
 
 /**
- * Proof of the User's password, for starting an enrollment
+ * Proof of the User's password (or a fresh provider login), for starting an enrollment
  */
 export const zSiteSecondFactorStartInput = z.object({
-  currentPassword: z.string()
+  currentPassword: z.exactOptional(z.string())
 });
 
 /**
@@ -701,7 +701,9 @@ export const zSiteSecondFactorStartInput = z.object({
 export const zSiteSecondFactorStatus = z.object({
   enabled: z.boolean(),
   pending: z.boolean(),
-  recoveryCodesRemaining: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+  recoveryCodesRemaining: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  passwordSet: z.boolean(),
+  providerLoginFresh: z.boolean()
 });
 
 /**
@@ -815,6 +817,46 @@ export const zSiteSetupSteps = z.object({
 export const zSiteSetupProgress = z.object({
   steps: zSiteSetupSteps,
   complete: z.boolean()
+});
+
+/**
+ * Why a provider sign-in did not start a session. The callback redirects to `/login` with
+ * one of these as the `error` query parameter, and the SPA renders it through i18n.
+ */
+export const zSiteSigninError = z.enum([
+  'denied',
+  'provider_error',
+  'invalid_state',
+  'provider_unavailable',
+  'email_unverified',
+  'email_not_trusted',
+  'signup_closed',
+  'identity_in_use',
+  'invitation_email_mismatch',
+  'invitation_invalid'
+]);
+
+/**
+ * The "this was not me" link of the notice mailed when a Sign-in provider was linked to an account
+ */
+export const zSiteSigninNotMeInput = z.object({
+  token: z.string()
+});
+
+/**
+ * One Sign-in provider an Instance offers (ADR 0048)
+ */
+export const zSiteSigninProvider = z.object({
+  name: z.string(),
+  displayName: z.string()
+});
+
+/**
+ * The Sign-in providers this Instance has configured. Empty on an Instance that
+ * configured none, which leaves the login and register pages as they are.
+ */
+export const zSiteSigninProviders = z.object({
+  items: z.array(zSiteSigninProvider)
 });
 
 /**
@@ -1493,6 +1535,24 @@ export const zSiteCreateInvitationResponse = z.object({
 });
 
 /**
+ * One Linked identity of the authenticated User (ADR 0048): a Sign-in provider the User
+ * can sign in with. The provider's subject is never returned.
+ */
+export const zSiteLinkedIdentity = z.object({
+  id: zEntityId,
+  provider: z.string(),
+  displayName: z.string(),
+  createdAt: zTimestamp
+});
+
+/**
+ * The Linked identities of the authenticated User
+ */
+export const zSiteLinkedIdentities = z.object({
+  items: z.array(zSiteLinkedIdentity)
+});
+
+/**
  * A Membership — the join granting a User access to the workspace with a Role
  */
 export const zSiteMembershipResource = z.object({
@@ -2045,6 +2105,32 @@ export const zSiteAuthSecondFactorBody = zSiteLoginSecondFactorInput;
  */
 export const zSiteAuthSecondFactorResponse = zSiteLoginResult;
 
+export const zSiteAuthSigninNotMeBody = zSiteSigninNotMeInput;
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteAuthSigninProvidersResponse = zSiteSigninProviders;
+
+export const zSiteAuthSigninCallbackPath = z.object({
+  provider: z.string()
+});
+
+export const zSiteAuthSigninCallbackQuery = z.object({
+  code: z.exactOptional(z.string()),
+  state: z.exactOptional(z.string()),
+  error: z.exactOptional(z.string())
+});
+
+export const zSiteAuthSigninStartPath = z.object({
+  provider: z.string()
+});
+
+export const zSiteAuthSigninStartQuery = z.object({
+  return_to: z.exactOptional(z.string()),
+  invitation: z.exactOptional(z.string())
+});
+
 export const zSiteAuthVerifyEmailBody = zSiteVerifyEmailInput;
 
 export const zSitePublicConfirmationsPerformPath = z.object({
@@ -2106,6 +2192,28 @@ export const zSiteUserUpdateMeBody = zSiteUpdateMeInput;
 export const zSiteUserUpdateMeResponse = zSiteUserResource;
 
 export const zSiteUserEmailChangeBody = zSiteEmailChangeInput;
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteIdentitiesListResponse = zSiteLinkedIdentities;
+
+export const zSiteIdentitiesUnlinkPath = z.object({
+  id: zEntityId
+});
+
+/**
+ * There is no content to send for this request, but the headers may be useful.
+ */
+export const zSiteIdentitiesUnlinkResponse = z.void();
+
+export const zSiteIdentitiesLinkPath = z.object({
+  provider: z.string()
+});
+
+export const zSiteIdentitiesLinkQuery = z.object({
+  return_to: z.exactOptional(z.string())
+});
 
 /**
  * The request has succeeded.

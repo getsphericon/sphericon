@@ -4220,9 +4220,12 @@ func (*ProblemDetails) siteAnalyticsOverviewRes()              {}
 func (*ProblemDetails) siteAuthConfirmEmailChangeRes()         {}
 func (*ProblemDetails) siteAuthResetPasswordRes()              {}
 func (*ProblemDetails) siteAuthSecondFactorRes()               {}
+func (*ProblemDetails) siteAuthSigninNotMeRes()                {}
+func (*ProblemDetails) siteAuthSigninStartRes()                {}
 func (*ProblemDetails) siteBrandKitGetRes()                    {}
 func (*ProblemDetails) siteEventsActionsRes()                  {}
 func (*ProblemDetails) siteEventsListRes()                     {}
+func (*ProblemDetails) siteIdentitiesLinkRes()                 {}
 func (*ProblemDetails) siteInstanceAcknowledgeNoticeRes()      {}
 func (*ProblemDetails) siteInstanceGetStateRes()               {}
 func (*ProblemDetails) siteInstancePreviewTelemetryReportRes() {}
@@ -5458,6 +5461,65 @@ func (*SiteAuthResendVerificationAccepted) siteAuthResendVerificationRes() {}
 type SiteAuthResetPasswordOK struct{}
 
 func (*SiteAuthResetPasswordOK) siteAuthResetPasswordRes() {}
+
+// SiteAuthSigninCallbackFound is response for SiteAuthSigninCallback operation.
+type SiteAuthSigninCallbackFound struct {
+	Location  string
+	SetCookie OptString
+}
+
+// GetLocation returns the value of Location.
+func (s *SiteAuthSigninCallbackFound) GetLocation() string {
+	return s.Location
+}
+
+// GetSetCookie returns the value of SetCookie.
+func (s *SiteAuthSigninCallbackFound) GetSetCookie() OptString {
+	return s.SetCookie
+}
+
+// SetLocation sets the value of Location.
+func (s *SiteAuthSigninCallbackFound) SetLocation(val string) {
+	s.Location = val
+}
+
+// SetSetCookie sets the value of SetCookie.
+func (s *SiteAuthSigninCallbackFound) SetSetCookie(val OptString) {
+	s.SetCookie = val
+}
+
+// SiteAuthSigninNotMeOK is response for SiteAuthSigninNotMe operation.
+type SiteAuthSigninNotMeOK struct{}
+
+func (*SiteAuthSigninNotMeOK) siteAuthSigninNotMeRes() {}
+
+// SiteAuthSigninStartFound is response for SiteAuthSigninStart operation.
+type SiteAuthSigninStartFound struct {
+	Location  string
+	SetCookie string
+}
+
+// GetLocation returns the value of Location.
+func (s *SiteAuthSigninStartFound) GetLocation() string {
+	return s.Location
+}
+
+// GetSetCookie returns the value of SetCookie.
+func (s *SiteAuthSigninStartFound) GetSetCookie() string {
+	return s.SetCookie
+}
+
+// SetLocation sets the value of Location.
+func (s *SiteAuthSigninStartFound) SetLocation(val string) {
+	s.Location = val
+}
+
+// SetSetCookie sets the value of SetCookie.
+func (s *SiteAuthSigninStartFound) SetSetCookie(val string) {
+	s.SetCookie = val
+}
+
+func (*SiteAuthSigninStartFound) siteAuthSigninStartRes() {}
 
 type SiteAuthVerifyEmailBadRequest ProblemDetails
 
@@ -9217,6 +9279,59 @@ func (s *SiteForgotPasswordInput) SetEmail(val EmailAddress) {
 	s.Email = val
 }
 
+// SiteIdentitiesLinkFound is response for SiteIdentitiesLink operation.
+type SiteIdentitiesLinkFound struct {
+	Location  string
+	SetCookie string
+}
+
+// GetLocation returns the value of Location.
+func (s *SiteIdentitiesLinkFound) GetLocation() string {
+	return s.Location
+}
+
+// GetSetCookie returns the value of SetCookie.
+func (s *SiteIdentitiesLinkFound) GetSetCookie() string {
+	return s.SetCookie
+}
+
+// SetLocation sets the value of Location.
+func (s *SiteIdentitiesLinkFound) SetLocation(val string) {
+	s.Location = val
+}
+
+// SetSetCookie sets the value of SetCookie.
+func (s *SiteIdentitiesLinkFound) SetSetCookie(val string) {
+	s.SetCookie = val
+}
+
+func (*SiteIdentitiesLinkFound) siteIdentitiesLinkRes() {}
+
+type SiteIdentitiesUnlinkConflict ProblemDetails
+
+func (*SiteIdentitiesUnlinkConflict) siteIdentitiesUnlinkRes() {}
+
+// SiteIdentitiesUnlinkNoContent is response for SiteIdentitiesUnlink operation.
+type SiteIdentitiesUnlinkNoContent struct {
+	SetCookie string
+}
+
+// GetSetCookie returns the value of SetCookie.
+func (s *SiteIdentitiesUnlinkNoContent) GetSetCookie() string {
+	return s.SetCookie
+}
+
+// SetSetCookie sets the value of SetCookie.
+func (s *SiteIdentitiesUnlinkNoContent) SetSetCookie(val string) {
+	s.SetCookie = val
+}
+
+func (*SiteIdentitiesUnlinkNoContent) siteIdentitiesUnlinkRes() {}
+
+type SiteIdentitiesUnlinkNotFound ProblemDetails
+
+func (*SiteIdentitiesUnlinkNotFound) siteIdentitiesUnlinkRes() {}
+
 type SiteInstancePreviewTelemetryReportOK map[string]jx.Raw
 
 func (s *SiteInstancePreviewTelemetryReportOK) init() SiteInstancePreviewTelemetryReportOK {
@@ -10147,6 +10262,76 @@ type SiteInvitationsListOKApplicationJSON []SiteInvitationResource
 
 func (*SiteInvitationsListOKApplicationJSON) siteInvitationsListRes() {}
 
+// The Linked identities of the authenticated User.
+// Ref: #/components/schemas/SiteLinkedIdentities
+type SiteLinkedIdentities struct {
+	Items []SiteLinkedIdentity `json:"items"`
+}
+
+// GetItems returns the value of Items.
+func (s *SiteLinkedIdentities) GetItems() []SiteLinkedIdentity {
+	return s.Items
+}
+
+// SetItems sets the value of Items.
+func (s *SiteLinkedIdentities) SetItems(val []SiteLinkedIdentity) {
+	s.Items = val
+}
+
+// One Linked identity of the authenticated User (ADR 0048): a Sign-in provider the User can sign in
+// with. The provider's subject is never returned.
+// Ref: #/components/schemas/SiteLinkedIdentity
+type SiteLinkedIdentity struct {
+	// Unique identifier, the key of the unlink operation.
+	ID EntityId `json:"id"`
+	// The provider's registry name.
+	Provider string `json:"provider"`
+	// What the provider is called to a person (the registry name when the Instance no longer offers it).
+	DisplayName string `json:"displayName"`
+	// When the identity was linked.
+	CreatedAt Timestamp `json:"createdAt"`
+}
+
+// GetID returns the value of ID.
+func (s *SiteLinkedIdentity) GetID() EntityId {
+	return s.ID
+}
+
+// GetProvider returns the value of Provider.
+func (s *SiteLinkedIdentity) GetProvider() string {
+	return s.Provider
+}
+
+// GetDisplayName returns the value of DisplayName.
+func (s *SiteLinkedIdentity) GetDisplayName() string {
+	return s.DisplayName
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *SiteLinkedIdentity) GetCreatedAt() Timestamp {
+	return s.CreatedAt
+}
+
+// SetID sets the value of ID.
+func (s *SiteLinkedIdentity) SetID(val EntityId) {
+	s.ID = val
+}
+
+// SetProvider sets the value of Provider.
+func (s *SiteLinkedIdentity) SetProvider(val string) {
+	s.Provider = val
+}
+
+// SetDisplayName sets the value of DisplayName.
+func (s *SiteLinkedIdentity) SetDisplayName(val string) {
+	s.DisplayName = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *SiteLinkedIdentity) SetCreatedAt(val Timestamp) {
+	s.CreatedAt = val
+}
+
 // Sign in with an email and password. The email is a plain string: a malformed address must answer
 // like an unknown one.
 // Ref: #/components/schemas/SiteLoginInput
@@ -10879,20 +11064,21 @@ func (s *SiteRecoveryCodesHeaders) SetResponse(val SiteRecoveryCodes) {
 func (*SiteRecoveryCodesHeaders) siteSecondFactorConfirmEnrollmentRes()       {}
 func (*SiteRecoveryCodesHeaders) siteSecondFactorRegenerateRecoveryCodesRes() {}
 
-// Proof of the User's password, for regenerating Recovery codes.
+// Proof of the User's password (or a fresh provider login), for regenerating Recovery codes.
 // Ref: #/components/schemas/SiteRecoveryCodesInput
 type SiteRecoveryCodesInput struct {
-	// Current password.
-	CurrentPassword string `json:"currentPassword"`
+	// Current password. Left out by a User with no password, who proves a provider sign-in of the last few
+	// minutes instead (ADR 0048).
+	CurrentPassword OptString `json:"currentPassword"`
 }
 
 // GetCurrentPassword returns the value of CurrentPassword.
-func (s *SiteRecoveryCodesInput) GetCurrentPassword() string {
+func (s *SiteRecoveryCodesInput) GetCurrentPassword() OptString {
 	return s.CurrentPassword
 }
 
 // SetCurrentPassword sets the value of CurrentPassword.
-func (s *SiteRecoveryCodesInput) SetCurrentPassword(val string) {
+func (s *SiteRecoveryCodesInput) SetCurrentPassword(val OptString) {
 	s.CurrentPassword = val
 }
 
@@ -11124,17 +11310,18 @@ type SiteSecondFactorConfirmEnrollmentUnprocessableEntity ProblemDetails
 
 func (*SiteSecondFactorConfirmEnrollmentUnprocessableEntity) siteSecondFactorConfirmEnrollmentRes() {}
 
-// Proof of the User's password and a code from the authenticator app.
+// Proof of the User's password (or a fresh provider login) and a code from the authenticator app.
 // Ref: #/components/schemas/SiteSecondFactorConfirmInput
 type SiteSecondFactorConfirmInput struct {
-	// Current password.
-	CurrentPassword string `json:"currentPassword"`
+	// Current password. Left out by a User with no password, who proves a provider sign-in of the last few
+	// minutes instead (ADR 0048).
+	CurrentPassword OptString `json:"currentPassword"`
 	// The current 6-digit TOTP code.
 	Code string `json:"code"`
 }
 
 // GetCurrentPassword returns the value of CurrentPassword.
-func (s *SiteSecondFactorConfirmInput) GetCurrentPassword() string {
+func (s *SiteSecondFactorConfirmInput) GetCurrentPassword() OptString {
 	return s.CurrentPassword
 }
 
@@ -11144,7 +11331,7 @@ func (s *SiteSecondFactorConfirmInput) GetCode() string {
 }
 
 // SetCurrentPassword sets the value of CurrentPassword.
-func (s *SiteSecondFactorConfirmInput) SetCurrentPassword(val string) {
+func (s *SiteSecondFactorConfirmInput) SetCurrentPassword(val OptString) {
 	s.CurrentPassword = val
 }
 
@@ -11161,17 +11348,18 @@ type SiteSecondFactorDisableForbidden ProblemDetails
 
 func (*SiteSecondFactorDisableForbidden) siteSecondFactorDisableRes() {}
 
-// Proof of password and possession, for disabling the Second factor.
+// Proof of password (or a fresh provider login) and possession, for disabling the Second factor.
 // Ref: #/components/schemas/SiteSecondFactorDisableInput
 type SiteSecondFactorDisableInput struct {
-	// Current password.
-	CurrentPassword string `json:"currentPassword"`
+	// Current password. Left out by a User with no password, who proves a provider sign-in of the last few
+	// minutes instead (ADR 0048).
+	CurrentPassword OptString `json:"currentPassword"`
 	// A current TOTP code, or an unused Recovery code.
 	Code string `json:"code"`
 }
 
 // GetCurrentPassword returns the value of CurrentPassword.
-func (s *SiteSecondFactorDisableInput) GetCurrentPassword() string {
+func (s *SiteSecondFactorDisableInput) GetCurrentPassword() OptString {
 	return s.CurrentPassword
 }
 
@@ -11181,7 +11369,7 @@ func (s *SiteSecondFactorDisableInput) GetCode() string {
 }
 
 // SetCurrentPassword sets the value of CurrentPassword.
-func (s *SiteSecondFactorDisableInput) SetCurrentPassword(val string) {
+func (s *SiteSecondFactorDisableInput) SetCurrentPassword(val OptString) {
 	s.CurrentPassword = val
 }
 
@@ -11289,20 +11477,21 @@ type SiteSecondFactorStartEnrollmentForbidden ProblemDetails
 
 func (*SiteSecondFactorStartEnrollmentForbidden) siteSecondFactorStartEnrollmentRes() {}
 
-// Proof of the User's password, for starting an enrollment.
+// Proof of the User's password (or a fresh provider login), for starting an enrollment.
 // Ref: #/components/schemas/SiteSecondFactorStartInput
 type SiteSecondFactorStartInput struct {
-	// Current password.
-	CurrentPassword string `json:"currentPassword"`
+	// Current password. Left out by a User with no password, who proves a provider sign-in of the last few
+	// minutes instead (ADR 0048).
+	CurrentPassword OptString `json:"currentPassword"`
 }
 
 // GetCurrentPassword returns the value of CurrentPassword.
-func (s *SiteSecondFactorStartInput) GetCurrentPassword() string {
+func (s *SiteSecondFactorStartInput) GetCurrentPassword() OptString {
 	return s.CurrentPassword
 }
 
 // SetCurrentPassword sets the value of CurrentPassword.
-func (s *SiteSecondFactorStartInput) SetCurrentPassword(val string) {
+func (s *SiteSecondFactorStartInput) SetCurrentPassword(val OptString) {
 	s.CurrentPassword = val
 }
 
@@ -11316,6 +11505,13 @@ type SiteSecondFactorStatus struct {
 	Pending bool `json:"pending"`
 	// Unused Recovery codes left (0 without a Second factor).
 	RecoveryCodesRemaining int32 `json:"recoveryCodesRemaining"`
+	// Whether the User has a password. Without one, the steps that ask for the password accept a fresh
+	// sign-in with a Sign-in provider instead.
+	PasswordSet bool `json:"passwordSet"`
+	// Whether the session began with a Sign-in provider login recent enough to stand in for the password
+	// (a User with a password always proves the password). When a User with no password sees false, the
+	// next step is to sign in with a provider again.
+	ProviderLoginFresh bool `json:"providerLoginFresh"`
 }
 
 // GetEnabled returns the value of Enabled.
@@ -11333,6 +11529,16 @@ func (s *SiteSecondFactorStatus) GetRecoveryCodesRemaining() int32 {
 	return s.RecoveryCodesRemaining
 }
 
+// GetPasswordSet returns the value of PasswordSet.
+func (s *SiteSecondFactorStatus) GetPasswordSet() bool {
+	return s.PasswordSet
+}
+
+// GetProviderLoginFresh returns the value of ProviderLoginFresh.
+func (s *SiteSecondFactorStatus) GetProviderLoginFresh() bool {
+	return s.ProviderLoginFresh
+}
+
 // SetEnabled sets the value of Enabled.
 func (s *SiteSecondFactorStatus) SetEnabled(val bool) {
 	s.Enabled = val
@@ -11346,6 +11552,16 @@ func (s *SiteSecondFactorStatus) SetPending(val bool) {
 // SetRecoveryCodesRemaining sets the value of RecoveryCodesRemaining.
 func (s *SiteSecondFactorStatus) SetRecoveryCodesRemaining(val int32) {
 	s.RecoveryCodesRemaining = val
+}
+
+// SetPasswordSet sets the value of PasswordSet.
+func (s *SiteSecondFactorStatus) SetPasswordSet(val bool) {
+	s.PasswordSet = val
+}
+
+// SetProviderLoginFresh sets the value of ProviderLoginFresh.
+func (s *SiteSecondFactorStatus) SetProviderLoginFresh(val bool) {
+	s.ProviderLoginFresh = val
 }
 
 // How a segment group combines its rules.
@@ -12753,6 +12969,68 @@ func (s *SiteSetupSteps) SetContact(val SiteSetupStepStatus) {
 // SetSentEmail sets the value of SentEmail.
 func (s *SiteSetupSteps) SetSentEmail(val SiteSetupStepStatus) {
 	s.SentEmail = val
+}
+
+// The "this was not me" link of the notice mailed when a Sign-in provider was linked to an account.
+// Ref: #/components/schemas/SiteSigninNotMeInput
+type SiteSigninNotMeInput struct {
+	Token string `json:"token"`
+}
+
+// GetToken returns the value of Token.
+func (s *SiteSigninNotMeInput) GetToken() string {
+	return s.Token
+}
+
+// SetToken sets the value of Token.
+func (s *SiteSigninNotMeInput) SetToken(val string) {
+	s.Token = val
+}
+
+// One Sign-in provider an Instance offers (ADR 0048).
+// Ref: #/components/schemas/SiteSigninProvider
+type SiteSigninProvider struct {
+	// The registry name, the path segment of its `start` and `callback` operations.
+	Name string `json:"name"`
+	// What the button says: the provider's own name (`Google`).
+	DisplayName string `json:"displayName"`
+}
+
+// GetName returns the value of Name.
+func (s *SiteSigninProvider) GetName() string {
+	return s.Name
+}
+
+// GetDisplayName returns the value of DisplayName.
+func (s *SiteSigninProvider) GetDisplayName() string {
+	return s.DisplayName
+}
+
+// SetName sets the value of Name.
+func (s *SiteSigninProvider) SetName(val string) {
+	s.Name = val
+}
+
+// SetDisplayName sets the value of DisplayName.
+func (s *SiteSigninProvider) SetDisplayName(val string) {
+	s.DisplayName = val
+}
+
+// The Sign-in providers this Instance has configured. Empty on an Instance that configured none, which
+// leaves the login and register pages as they are.
+// Ref: #/components/schemas/SiteSigninProviders
+type SiteSigninProviders struct {
+	Items []SiteSigninProvider `json:"items"`
+}
+
+// GetItems returns the value of Items.
+func (s *SiteSigninProviders) GetItems() []SiteSigninProvider {
+	return s.Items
+}
+
+// SetItems sets the value of Items.
+func (s *SiteSigninProviders) SetItems(val []SiteSigninProvider) {
+	s.Items = val
 }
 
 // SMTP config without the password.

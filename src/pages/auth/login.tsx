@@ -17,12 +17,14 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { AnchorLink } from '../../components/RouterLink.tsx'
+import { SigninProviders } from '../../components/SigninProviders.tsx'
 import {
   siteAuthLoginMutation,
   siteAuthResendVerificationMutation,
   siteAuthSecondFactorMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteLoginInput, SiteLoginResult } from '../../generated/site/types.gen.ts'
+import { zSiteSigninError } from '../../generated/site/zod.gen.ts'
 import { useApiErrorMessage } from '../../hooks/useApiErrorMessage.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as forgotPasswordRoute } from '../../routes/forgot-password.tsx'
@@ -35,7 +37,10 @@ export function LoginPage() {
   const navigate = useNavigate()
   const router = useRouter()
   // Set when a guard (e.g. the OAuth consent screen) sent the user here to sign in.
-  const { redirect } = useSearch({ strict: false })
+  const search = useSearch({ strict: false })
+  const { redirect } = search
+  // Set when the server's provider callback sent the person back here without a session.
+  const signinError = zSiteSigninError.safeParse(search.error).data
 
   const apiErrorMessage = useApiErrorMessage()
 
@@ -46,9 +51,9 @@ export function LoginPage() {
     },
   })
 
-  // Set when the password was right but the User has a Second factor (ADR 0020):
-  // the session starts only after the code step.
-  const [challenge, setChallenge] = useState<string | null>(null)
+  // Set when the password was right (or the provider's callback came back) but the User has
+  // a Second factor (ADR 0020): the session starts only after the code step.
+  const [challenge, setChallenge] = useState<string | null>(search.challenge ?? null)
   const codeForm = useForm({ initialValues: { code: '' } })
 
   // Set when the login was refused because the address is not proven yet (ADR 0030):
@@ -158,6 +163,14 @@ export function LoginPage() {
   return (
     <Stack maw={400} mx="auto" mt="xl">
       <Title order={3}>{t(($) => $.login.title)}</Title>
+
+      {signinError ? (
+        <Alert color="red" title={t(($) => $.signin.errorTitle)}>
+          {t(($) => $.signin.errors[signinError])}
+        </Alert>
+      ) : null}
+
+      <SigninProviders returnTo={redirect} />
 
       {unverifiedEmail ? (
         <Alert color="yellow" title={t(($) => $.login.verifyRequiredTitle)}>

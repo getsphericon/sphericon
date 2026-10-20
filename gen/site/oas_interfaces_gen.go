@@ -49,6 +49,14 @@ type SiteAuthSecondFactorRes interface {
 	siteAuthSecondFactorRes()
 }
 
+type SiteAuthSigninNotMeRes interface {
+	siteAuthSigninNotMeRes()
+}
+
+type SiteAuthSigninStartRes interface {
+	siteAuthSigninStartRes()
+}
+
 type SiteAuthVerifyEmailRes interface {
 	siteAuthVerifyEmailRes()
 }
@@ -179,6 +187,14 @@ type SiteEventsActionsRes interface {
 
 type SiteEventsListRes interface {
 	siteEventsListRes()
+}
+
+type SiteIdentitiesLinkRes interface {
+	siteIdentitiesLinkRes()
+}
+
+type SiteIdentitiesUnlinkRes interface {
+	siteIdentitiesUnlinkRes()
 }
 
 type SiteInstanceAcknowledgeNoticeRes interface {

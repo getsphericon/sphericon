@@ -29,6 +29,8 @@ type User struct {
 	PasswordHash string `json:"-"`
 	// EmailVerifiedAt holds the value of the "email_verified_at" field.
 	EmailVerifiedAt *time.Time `json:"email_verified_at,omitempty"`
+	// EmailProvenAt holds the value of the "email_proven_at" field.
+	EmailProvenAt *time.Time `json:"email_proven_at,omitempty"`
 	// SessionEpoch holds the value of the "session_epoch" field.
 	SessionEpoch int64 `json:"session_epoch,omitempty"`
 	// SecondFactorSecretEncrypted holds the value of the "second_factor_secret_encrypted" field.
@@ -51,9 +53,11 @@ type UserEdges struct {
 	SentInvitations []*Invitation `json:"sent_invitations,omitempty"`
 	// RecoveryCodes holds the value of the recovery_codes edge.
 	RecoveryCodes []*RecoveryCode `json:"recovery_codes,omitempty"`
+	// Identities holds the value of the identities edge.
+	Identities []*UserIdentity `json:"identities,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 }
 
 // MembershipsOrErr returns the Memberships value or an error if the edge
@@ -83,6 +87,15 @@ func (e UserEdges) RecoveryCodesOrErr() ([]*RecoveryCode, error) {
 	return nil, &NotLoadedError{edge: "recovery_codes"}
 }
 
+// IdentitiesOrErr returns the Identities value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) IdentitiesOrErr() ([]*UserIdentity, error) {
+	if e.loadedTypes[3] {
+		return e.Identities, nil
+	}
+	return nil, &NotLoadedError{edge: "identities"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*User) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -92,7 +105,7 @@ func (*User) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case user.FieldName, user.FieldEmail, user.FieldPasswordHash, user.FieldSecondFactorSecretEncrypted:
 			values[i] = new(sql.NullString)
-		case user.FieldCreatedAt, user.FieldUpdatedAt, user.FieldEmailVerifiedAt, user.FieldSecondFactorConfirmedAt:
+		case user.FieldCreatedAt, user.FieldUpdatedAt, user.FieldEmailVerifiedAt, user.FieldEmailProvenAt, user.FieldSecondFactorConfirmedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -152,6 +165,13 @@ func (_m *User) assignValues(columns []string, values []any) error {
 				_m.EmailVerifiedAt = new(time.Time)
 				*_m.EmailVerifiedAt = value.Time
 			}
+		case user.FieldEmailProvenAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field email_proven_at", values[i])
+			} else if value.Valid {
+				_m.EmailProvenAt = new(time.Time)
+				*_m.EmailProvenAt = value.Time
+			}
 		case user.FieldSessionEpoch:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field session_epoch", values[i])
@@ -205,6 +225,11 @@ func (_m *User) QueryRecoveryCodes() *RecoveryCodeQuery {
 	return NewUserClient(_m.config).QueryRecoveryCodes(_m)
 }
 
+// QueryIdentities queries the "identities" edge of the User entity.
+func (_m *User) QueryIdentities() *UserIdentityQuery {
+	return NewUserClient(_m.config).QueryIdentities(_m)
+}
+
 // Update returns a builder for updating this User.
 // Note that you need to call User.Unwrap() before calling this method if this User
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -244,6 +269,11 @@ func (_m *User) String() string {
 	builder.WriteString(", ")
 	if v := _m.EmailVerifiedAt; v != nil {
 		builder.WriteString("email_verified_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.EmailProvenAt; v != nil {
+		builder.WriteString("email_proven_at=")
 		builder.WriteString(v.Format(time.ANSIC))
 	}
 	builder.WriteString(", ")

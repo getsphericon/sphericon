@@ -113,6 +113,43 @@ type Handler interface {
 	//
 	// POST /auth/second-factor
 	SiteAuthSecondFactor(ctx context.Context, req *SiteLoginSecondFactorInput) (SiteAuthSecondFactorRes, error)
+	// SiteAuthSigninCallback implements SiteAuth_signinCallback operation.
+	//
+	// Where the provider sends the browser back (the redirect URI derived from the app URL). Always
+	// answers 302: to `return_to` (or `/`) with the session cookie when the sign-in succeeds, and to
+	// `/login?error=<code>` (see SiteSigninError) when it does not. A known identity signs in; a new,
+	// trusted email creates a Verified User with its first Workspace and no mail. A User with a Second
+	// factor gets no session and no cookie: the redirect is to `/login?challenge=<token>`, the challenge
+	// of `/auth/second-factor` (ADR 0020), which a TOTP or Recovery code finishes under the Login
+	// throttle. Every parameter is optional so that a denied consent (`error` only) or a stray visit
+	// reaches the handler and gets the same redirect as any other refusal.
+	//
+	// GET /auth/signin/{provider}/callback
+	SiteAuthSigninCallback(ctx context.Context, params SiteAuthSigninCallbackParams) (*SiteAuthSigninCallbackFound, error)
+	// SiteAuthSigninNotMe implements SiteAuth_signinNotMe operation.
+	//
+	// Undo a silent link from the notice mailed to the owner (ADR 0048): the token names one Linked
+	// identity of the User, which is unlinked, and every session of the User ends. Public: the link may be
+	// opened from a browser without a session. A link works once; one whose identity is gone answers 400.
+	//
+	// POST /auth/signin-not-me
+	SiteAuthSigninNotMe(ctx context.Context, req *SiteSigninNotMeInput) (SiteAuthSigninNotMeRes, error)
+	// SiteAuthSigninProviders implements SiteAuth_signinProviders operation.
+	//
+	// The Sign-in providers this Instance offers, for the buttons of the login and register pages. Public;
+	// empty when none is configured.
+	//
+	// GET /auth/signin-providers
+	SiteAuthSigninProviders(ctx context.Context) (*SiteSigninProviders, error)
+	// SiteAuthSigninStart implements SiteAuth_signinStart operation.
+	//
+	// Start a sign-in with a Sign-in provider: draws the flow's `state`, PKCE verifier and `nonce`, keeps
+	// them (with the validated `return_to`) in a short-lived signed cookie (httpOnly, SameSite=Lax, scoped
+	// to the signin prefix) and redirects (302) the browser to the provider. `return_to` is honoured only
+	// as a relative in-app path; anything else is dropped. 404 for a provider that is not configured.
+	//
+	// GET /auth/signin/{provider}/start
+	SiteAuthSigninStart(ctx context.Context, params SiteAuthSigninStartParams) (SiteAuthSigninStartRes, error)
 	// SiteAuthVerifyEmail implements SiteAuth_verifyEmail operation.
 	//
 	// Complete a registration from the verification link (the token is the credential): stamps the
@@ -330,6 +367,29 @@ type Handler interface {
 	//
 	// GET /workspaces/{workspaceId}/events
 	SiteEventsList(ctx context.Context, params SiteEventsListParams) (SiteEventsListRes, error)
+	// SiteIdentitiesLink implements SiteIdentities_link operation.
+	//
+	// Start linking another Sign-in provider account to the authenticated User. Works like `start` of a
+	// sign-in, but the flow cookie also names the User, and the shared callback adds the provider's
+	// subject to that User whatever email the provider reports. The callback redirects to `return_to`
+	// (default the account security page); a refusal goes to the account security page with the `error`
+	// code (see SiteSigninError). 404 for a provider that is not configured.
+	//
+	// GET /me/identities/{provider}/link
+	SiteIdentitiesLink(ctx context.Context, params SiteIdentitiesLinkParams) (SiteIdentitiesLinkRes, error)
+	// SiteIdentitiesList implements SiteIdentities_list operation.
+	//
+	// List the authenticated User's Linked identities.
+	//
+	// GET /me/identities
+	SiteIdentitiesList(ctx context.Context) (*SiteLinkedIdentities, error)
+	// SiteIdentitiesUnlink implements SiteIdentities_unlink operation.
+	//
+	// Unlink an identity. 409 when it would leave the User no way to sign in (no password and no other
+	// identity). Every other session ends; the acting one continues under the cookie set here.
+	//
+	// DELETE /me/identities/{id}
+	SiteIdentitiesUnlink(ctx context.Context, params SiteIdentitiesUnlinkParams) (SiteIdentitiesUnlinkRes, error)
 	// SiteInstanceAcknowledgeNotice implements SiteInstance_acknowledgeNotice operation.
 	//
 	// Acknowledge the one-time Telemetry report notice. Idempotent.
@@ -488,8 +548,9 @@ type Handler interface {
 	//
 	// Confirm the pending enrollment with the password and a code from the app. On success the Second
 	// factor is active, every other session ends and the acting one continues under the cookie set here;
-	// the Recovery codes are returned once. 403 on a wrong password (it feeds the Login throttle: 429
-	// while its delay runs), 422 on a wrong code, 409 without a pending enrollment.
+	// the Recovery codes are returned once. 403 on a wrong password (or, for a User with no password, no
+	// provider sign-in in the last few minutes) (it feeds the Login throttle: 429 while its delay runs),
+	// 422 on a wrong code, 409 without a pending enrollment.
 	//
 	// POST /me/second-factor/enrollment/confirm
 	SiteSecondFactorConfirmEnrollment(ctx context.Context, req *SiteSecondFactorConfirmInput) (SiteSecondFactorConfirmEnrollmentRes, error)
@@ -510,17 +571,19 @@ type Handler interface {
 	// SiteSecondFactorRegenerateRecoveryCodes implements SiteSecondFactor_regenerateRecoveryCodes operation.
 	//
 	// Replace the Recovery codes with a fresh set (the previous set stops working). Every other session
-	// ends; the acting one continues under the cookie set here. 403 on a wrong password (it feeds the
-	// Login throttle: 429 while its delay runs), 409 without an active Second factor.
+	// ends; the acting one continues under the cookie set here. 403 on a wrong password (or, for a User
+	// with no password, no provider sign-in in the last few minutes) (it feeds the Login throttle: 429
+	// while its delay runs), 409 without an active Second factor.
 	//
 	// POST /me/second-factor/recovery-codes
 	SiteSecondFactorRegenerateRecoveryCodes(ctx context.Context, req *SiteRecoveryCodesInput) (SiteSecondFactorRegenerateRecoveryCodesRes, error)
 	// SiteSecondFactorStartEnrollment implements SiteSecondFactor_startEnrollment operation.
 	//
 	// Start enrolling a TOTP Second factor, proving the password: creates a pending secret (replacing an
-	// earlier pending one). It counts as a Second factor only once confirmed. 403 on a wrong password, 409
-	// when a Second factor is already active. A wrong password feeds the Login throttle, which answers 429
-	// even for a correct one while its delay runs (ADR 0025).
+	// earlier pending one). It counts as a Second factor only once confirmed. 403 on a wrong password (or,
+	// for a User with no password, no provider sign-in in the last few minutes), 409 when a Second factor
+	// is already active. A wrong password feeds the Login throttle, which answers 429 even for a correct
+	// one while its delay runs (ADR 0025).
 	//
 	// POST /me/second-factor/enrollment
 	SiteSecondFactorStartEnrollment(ctx context.Context, req *SiteSecondFactorStartInput) (SiteSecondFactorStartEnrollmentRes, error)

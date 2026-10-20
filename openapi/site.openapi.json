@@ -34,6 +34,9 @@
       "name": "Site Second Factor"
     },
     {
+      "name": "Site Linked Identities"
+    },
+    {
       "name": "Site Events"
     },
     {
@@ -649,6 +652,219 @@
             }
           }
         },
+        "security": [{}]
+      }
+    },
+    "/auth/signin-not-me": {
+      "post": {
+        "operationId": "SiteAuth_signinNotMe",
+        "description": "Undo a silent link from the notice mailed to the owner (ADR 0048): the token names\none Linked identity of the User, which is unlinked, and every session of the User ends.\nPublic: the link may be opened from a browser without a session. A link works once; one\nwhose identity is gone answers 400.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded."
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Auth"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteSigninNotMeInput"
+              }
+            }
+          }
+        },
+        "security": [{}]
+      }
+    },
+    "/auth/signin-providers": {
+      "get": {
+        "operationId": "SiteAuth_signinProviders",
+        "description": "The Sign-in providers this Instance offers, for the buttons of the login and register\npages. Public; empty when none is configured.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteSigninProviders"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Auth"],
+        "security": [{}]
+      }
+    },
+    "/auth/signin/{provider}/callback": {
+      "get": {
+        "operationId": "SiteAuth_signinCallback",
+        "description": "Where the provider sends the browser back (the redirect URI derived from the app URL).\nAlways answers 302: to `return_to` (or `/`) with the session cookie when the sign-in\nsucceeds, and to `/login?error=<code>` (see SiteSigninError) when it does not. A known\nidentity signs in; a new, trusted email creates a Verified User with its first Workspace\nand no mail. A User with a Second factor gets no session and no cookie: the redirect is\nto `/login?challenge=<token>`, the challenge of `/auth/second-factor` (ADR 0020), which\na TOTP or Recovery code finishes under the Login throttle. Every parameter is optional so that a denied consent (`error` only) or a\nstray visit reaches the handler and gets the same redirect as any other refusal.",
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "code",
+            "in": "query",
+            "required": false,
+            "description": "The authorization code",
+            "schema": {
+              "type": "string"
+            },
+            "explode": false
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "description": "The flow's `state`, echoed by the provider",
+            "schema": {
+              "type": "string"
+            },
+            "explode": false
+          },
+          {
+            "name": "error",
+            "in": "query",
+            "required": false,
+            "description": "The provider's error code, present when consent was denied or the request failed",
+            "schema": {
+              "type": "string"
+            },
+            "explode": false
+          },
+          {
+            "name": "SIGNIN",
+            "in": "cookie",
+            "required": false,
+            "description": "The flow cookie set by `start`",
+            "schema": {
+              "type": "string"
+            },
+            "explode": false
+          },
+          {
+            "name": "JWT",
+            "in": "cookie",
+            "required": false,
+            "description": "The session cookie: read only when the flow is a link (it names a User), which\nmust be completed by the browser that is signed in as that User",
+            "schema": {
+              "type": "string"
+            },
+            "explode": false
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirection",
+            "headers": {
+              "Location": {
+                "required": true,
+                "description": "Where to go next",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Set-Cookie": {
+                "required": false,
+                "description": "The session cookie on success; the expired flow cookie on a refusal",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Auth"],
+        "security": [{}]
+      }
+    },
+    "/auth/signin/{provider}/start": {
+      "get": {
+        "operationId": "SiteAuth_signinStart",
+        "description": "Start a sign-in with a Sign-in provider: draws the flow's `state`, PKCE verifier and\n`nonce`, keeps them (with the validated `return_to`) in a short-lived signed cookie\n(httpOnly, SameSite=Lax, scoped to the signin prefix) and redirects (302) the browser to\nthe provider. `return_to` is honoured only as a relative in-app path; anything else\nis dropped. 404 for a provider that is not configured.",
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "return_to",
+            "in": "query",
+            "required": false,
+            "description": "A relative in-app path to land on after signing in",
+            "schema": {
+              "type": "string"
+            },
+            "explode": false
+          },
+          {
+            "name": "invitation",
+            "in": "query",
+            "required": false,
+            "description": "The token of an Invitation link: the sign-in then accepts that Invitation when the\nprovider's trusted email is the invited address, and an Invitation opens a closed\nregistration for that address (ADR 0042). A mismatch creates nothing.",
+            "schema": {
+              "type": "string"
+            },
+            "explode": false
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirection",
+            "headers": {
+              "Location": {
+                "required": true,
+                "description": "The provider's authorization URL",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Set-Cookie": {
+                "required": true,
+                "description": "The flow cookie",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Auth"],
         "security": [{}]
       }
     },
@@ -1270,6 +1486,135 @@
         }
       }
     },
+    "/me/identities": {
+      "get": {
+        "operationId": "SiteIdentities_list",
+        "description": "List the authenticated User's Linked identities",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteLinkedIdentities"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Linked Identities"]
+      }
+    },
+    "/me/identities/{id}": {
+      "delete": {
+        "operationId": "SiteIdentities_unlink",
+        "description": "Unlink an identity. 409 when it would leave the User no way to sign in (no password\nand no other identity). Every other session ends; the acting one continues under the\ncookie set here.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "There is no content to send for this request, but the headers may be useful. ",
+            "headers": {
+              "Set-Cookie": {
+                "required": true,
+                "description": "The acting session reissued under the new session epoch",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "RFC 7807 conflict response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Linked Identities"]
+      }
+    },
+    "/me/identities/{provider}/link": {
+      "get": {
+        "operationId": "SiteIdentities_link",
+        "description": "Start linking another Sign-in provider account to the authenticated User. Works like\n`start` of a sign-in, but the flow cookie also names the User, and the shared callback\nadds the provider's subject to that User whatever email the provider reports. The\ncallback redirects to `return_to` (default the account security page); a refusal goes\nto the account security page with the `error` code (see SiteSigninError). 404 for a\nprovider that is not configured.",
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "return_to",
+            "in": "query",
+            "required": false,
+            "description": "A relative in-app path to land on afterwards",
+            "schema": {
+              "type": "string"
+            },
+            "explode": false
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirection",
+            "headers": {
+              "Location": {
+                "required": true,
+                "description": "The provider's authorization URL",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Set-Cookie": {
+                "required": true,
+                "description": "The flow cookie",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Linked Identities"]
+      }
+    },
     "/me/second-factor": {
       "get": {
         "operationId": "SiteSecondFactor_getStatus",
@@ -1399,7 +1744,7 @@
     "/me/second-factor/enrollment": {
       "post": {
         "operationId": "SiteSecondFactor_startEnrollment",
-        "description": "Start enrolling a TOTP Second factor, proving the password: creates a pending\nsecret (replacing an earlier pending one). It counts as a Second factor only\nonce confirmed. 403 on a wrong password, 409 when a Second factor is already\nactive. A wrong password feeds the Login throttle, which answers 429 even for a\ncorrect one while its delay runs (ADR 0025).",
+        "description": "Start enrolling a TOTP Second factor, proving the password: creates a pending\nsecret (replacing an earlier pending one). It counts as a Second factor only\nonce confirmed. 403 on a wrong password (or, for a User with no password, no provider sign-in in the last few minutes), 409 when a Second factor is already\nactive. A wrong password feeds the Login throttle, which answers 429 even for a\ncorrect one while its delay runs (ADR 0025).",
         "parameters": [],
         "responses": {
           "200": {
@@ -1493,7 +1838,7 @@
     "/me/second-factor/enrollment/confirm": {
       "post": {
         "operationId": "SiteSecondFactor_confirmEnrollment",
-        "description": "Confirm the pending enrollment with the password and a code from the app. On\nsuccess the Second factor is active, every other session ends and the acting\none continues under the cookie set here; the Recovery codes are returned once.\n403 on a wrong password (it feeds the Login throttle: 429 while its delay\nruns), 422 on a wrong code, 409 without a pending enrollment.",
+        "description": "Confirm the pending enrollment with the password and a code from the app. On\nsuccess the Second factor is active, every other session ends and the acting\none continues under the cookie set here; the Recovery codes are returned once.\n403 on a wrong password (or, for a User with no password, no provider sign-in in the last few minutes) (it feeds the Login throttle: 429 while its delay\nruns), 422 on a wrong code, 409 without a pending enrollment.",
         "parameters": [],
         "responses": {
           "200": {
@@ -1606,7 +1951,7 @@
     "/me/second-factor/recovery-codes": {
       "post": {
         "operationId": "SiteSecondFactor_regenerateRecoveryCodes",
-        "description": "Replace the Recovery codes with a fresh set (the previous set stops working).\nEvery other session ends; the acting one continues under the cookie set here.\n403 on a wrong password (it feeds the Login throttle: 429 while its delay\nruns), 409 without an active Second factor.",
+        "description": "Replace the Recovery codes with a fresh set (the previous set stops working).\nEvery other session ends; the acting one continues under the cookie set here.\n403 on a wrong password (or, for a User with no password, no provider sign-in in the last few minutes) (it feeds the Login throttle: 429 while its delay\nruns), 409 without an active Second factor.",
         "parameters": [],
         "responses": {
           "200": {
@@ -10962,6 +11307,50 @@
         },
         "description": "A pending invitation of an email address to join the workspace"
       },
+      "SiteLinkedIdentities": {
+        "type": "object",
+        "required": ["items"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteLinkedIdentity"
+            }
+          }
+        },
+        "description": "The Linked identities of the authenticated User"
+      },
+      "SiteLinkedIdentity": {
+        "type": "object",
+        "required": ["id", "provider", "displayName", "createdAt"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Unique identifier, the key of the unlink operation"
+          },
+          "provider": {
+            "type": "string",
+            "description": "The provider's registry name"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "What the provider is called to a person (the registry name when the Instance no longer offers it)"
+          },
+          "createdAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the identity was linked"
+          }
+        },
+        "description": "One Linked identity of the authenticated User (ADR 0048): a Sign-in provider the User\ncan sign in with. The provider's subject is never returned."
+      },
       "SiteLoginInput": {
         "type": "object",
         "required": ["email", "password"],
@@ -11227,14 +11616,13 @@
       },
       "SiteRecoveryCodesInput": {
         "type": "object",
-        "required": ["currentPassword"],
         "properties": {
           "currentPassword": {
             "type": "string",
-            "description": "Current password"
+            "description": "Current password. Left out by a User with no password, who proves a provider\nsign-in of the last few minutes instead (ADR 0048)."
           }
         },
-        "description": "Proof of the User's password, for regenerating Recovery codes"
+        "description": "Proof of the User's password (or a fresh provider login), for regenerating Recovery codes"
       },
       "SiteRegisterInput": {
         "type": "object",
@@ -11347,33 +11735,33 @@
       },
       "SiteSecondFactorConfirmInput": {
         "type": "object",
-        "required": ["currentPassword", "code"],
+        "required": ["code"],
         "properties": {
           "currentPassword": {
             "type": "string",
-            "description": "Current password"
+            "description": "Current password. Left out by a User with no password, who proves a provider\nsign-in of the last few minutes instead (ADR 0048)."
           },
           "code": {
             "type": "string",
             "description": "The current 6-digit TOTP code"
           }
         },
-        "description": "Proof of the User's password and a code from the authenticator app"
+        "description": "Proof of the User's password (or a fresh provider login) and a code from the authenticator app"
       },
       "SiteSecondFactorDisableInput": {
         "type": "object",
-        "required": ["currentPassword", "code"],
+        "required": ["code"],
         "properties": {
           "currentPassword": {
             "type": "string",
-            "description": "Current password"
+            "description": "Current password. Left out by a User with no password, who proves a provider\nsign-in of the last few minutes instead (ADR 0048)."
           },
           "code": {
             "type": "string",
             "description": "A current TOTP code, or an unused Recovery code"
           }
         },
-        "description": "Proof of password and possession, for disabling the Second factor"
+        "description": "Proof of password (or a fresh provider login) and possession, for disabling the Second factor"
       },
       "SiteSecondFactorEnrollment": {
         "type": "object",
@@ -11407,18 +11795,23 @@
       },
       "SiteSecondFactorStartInput": {
         "type": "object",
-        "required": ["currentPassword"],
         "properties": {
           "currentPassword": {
             "type": "string",
-            "description": "Current password"
+            "description": "Current password. Left out by a User with no password, who proves a provider\nsign-in of the last few minutes instead (ADR 0048)."
           }
         },
-        "description": "Proof of the User's password, for starting an enrollment"
+        "description": "Proof of the User's password (or a fresh provider login), for starting an enrollment"
       },
       "SiteSecondFactorStatus": {
         "type": "object",
-        "required": ["enabled", "pending", "recoveryCodesRemaining"],
+        "required": [
+          "enabled",
+          "pending",
+          "recoveryCodesRemaining",
+          "passwordSet",
+          "providerLoginFresh"
+        ],
         "properties": {
           "enabled": {
             "type": "boolean",
@@ -11432,6 +11825,14 @@
             "type": "integer",
             "format": "int32",
             "description": "Unused Recovery codes left (0 without a Second factor)"
+          },
+          "passwordSet": {
+            "type": "boolean",
+            "description": "Whether the User has a password. Without one, the steps that ask for the password\naccept a fresh sign-in with a Sign-in provider instead."
+          },
+          "providerLoginFresh": {
+            "type": "boolean",
+            "description": "Whether the session began with a Sign-in provider login recent enough to stand in for\nthe password (a User with a password always proves the password). When a User with no\npassword sees false, the next step is to sign in with a provider again."
           }
         },
         "description": "The authenticated User's Second factor (ADR 0020). Recovery codes are never\nreadable here: only how many are left."
@@ -11868,6 +12269,60 @@
           }
         },
         "description": "The four Setup checklist steps, in the order the checklist shows them; none blocks another"
+      },
+      "SiteSigninError": {
+        "type": "string",
+        "enum": [
+          "denied",
+          "provider_error",
+          "invalid_state",
+          "provider_unavailable",
+          "email_unverified",
+          "email_not_trusted",
+          "signup_closed",
+          "identity_in_use",
+          "invitation_email_mismatch",
+          "invitation_invalid"
+        ],
+        "description": "Why a provider sign-in did not start a session. The callback redirects to `/login` with\none of these as the `error` query parameter, and the SPA renders it through i18n."
+      },
+      "SiteSigninNotMeInput": {
+        "type": "object",
+        "required": ["token"],
+        "properties": {
+          "token": {
+            "type": "string"
+          }
+        },
+        "description": "The \"this was not me\" link of the notice mailed when a Sign-in provider was linked to an account"
+      },
+      "SiteSigninProvider": {
+        "type": "object",
+        "required": ["name", "displayName"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The registry name, the path segment of its `start` and `callback` operations"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "What the button says: the provider's own name (`Google`)"
+          }
+        },
+        "description": "One Sign-in provider an Instance offers (ADR 0048)"
+      },
+      "SiteSigninProviders": {
+        "type": "object",
+        "required": ["items"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteSigninProvider"
+            }
+          }
+        },
+        "description": "The Sign-in providers this Instance has configured. Empty on an Instance that\nconfigured none, which leaves the login and register pages as they are."
       },
       "SiteSmtpConfig": {
         "type": "object",

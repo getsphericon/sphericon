@@ -19,6 +19,7 @@ import "./resources/memberships.tsp";
 import "./resources/invitations.tsp";
 import "./resources/me.tsp";
 import "./resources/second-factor.tsp";
+import "./resources/identities.tsp";
 import "./resources/events.tsp";
 import "./resources/tokens.tsp";
 import "./resources/integrations.tsp";

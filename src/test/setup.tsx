@@ -11,7 +11,11 @@ import { http, HttpResponse } from 'msw'
 import { afterEach, beforeAll, beforeEach } from 'vitest'
 
 import { client } from '../generated/site/client.gen.ts'
-import { handleSiteBrandKitGet } from '../generated/site/msw.gen.ts'
+import {
+  handleSiteAuthSigninProviders,
+  handleSiteBrandKitGet,
+  handleSiteIdentitiesList,
+} from '../generated/site/msw.gen.ts'
 import { client as staffClient } from '../generated/staff/client.gen.ts'
 import { createAppRouter } from '../router.ts'
 import { UNSAVED_BRAND_KIT } from './payloads.ts'
@@ -65,6 +69,10 @@ beforeAll(() =>
 // installs its own handler over this one.
 beforeEach(() => {
   worker.use(handleSiteBrandKitGet({ body: UNSAVED_BRAND_KIT }))
+  // The login and register pages ask which Sign-in providers are enabled; by default none are.
+  worker.use(handleSiteAuthSigninProviders({ body: { items: [] } }))
+  // The account security page lists the User's Linked identities; by default there are none.
+  worker.use(handleSiteIdentitiesList({ body: { items: [] } }))
 })
 // A test may end before its own requests have reached the worker. The worker takes requests in
 // the order the page made them, so a request answered by a handler of its own has passed every

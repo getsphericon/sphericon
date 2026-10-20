@@ -4,8 +4,8 @@
 import { type DefaultError, type InfiniteData, infiniteQueryOptions, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen.ts';
-import { type Options, siteAnalyticsOverview, siteAuditExport, siteAuditGetRetention, siteAuditList, siteAuditSetRetention, siteAuthConfirmEmailChange, siteAuthForgotPassword, siteAuthLogin, siteAuthLogout, siteAuthRegister, siteAuthResendVerification, siteAuthResetPassword, siteAuthSecondFactor, siteAuthVerifyEmail, siteAutomationsActivate, siteAutomationsCreate, siteAutomationsDeactivate, siteAutomationsDelete, siteAutomationsDryRunHttpStep, siteAutomationsGet, siteAutomationsList, siteAutomationsUpdate, siteBrandKitGet, siteBrandKitRecreateStarterTemplates, siteBrandKitSave, siteBroadcastsCreate, siteBroadcastsDelete, siteBroadcastsGet, siteBroadcastsList, siteBroadcastsSchedule, siteBroadcastsSend, siteBroadcastsTestSend, siteBroadcastsUpdate, siteContactsCreate, siteContactsDelete, siteContactsErase, siteContactsExport, siteContactsGet, siteContactsList, siteContactsLookup, siteContactsUpdate, siteCustomFieldsList, siteEnrollmentsGet, siteEnrollmentsList, siteEventsActions, siteEventsList, siteInstanceAcknowledgeNotice, siteInstanceGetState, siteInstancePreviewTelemetryReport, siteInstanceSetTelemetry, siteIntegrationsCreate, siteIntegrationsDelete, siteIntegrationsGet, siteIntegrationsList, siteIntegrationsRegenerateKey, siteIntegrationsUpdate, siteInvitationsCreate, siteInvitationsDelete, siteInvitationsList, siteMembershipsDelete, siteMembershipsList, siteMembershipsResetSecondFactor, siteMembershipsUpdate, siteOAuthDecide, siteOAuthDescribe, sitePresetsList, sitePublicConfirmationsPerform, sitePublicInvitationsAccept, sitePublicInvitationsLookup, sitePublicUnsubscribesPerform, siteSecondFactorConfirmEnrollment, siteSecondFactorDisable, siteSecondFactorGetStatus, siteSecondFactorRegenerateRecoveryCodes, siteSecondFactorStartEnrollment, siteSegmentsCreate, siteSegmentsDelete, siteSegmentsGet, siteSegmentsList, siteSegmentsPreview, siteSegmentsUpdate, siteSendingDomainsCreate, siteSendingDomainsDelete, siteSendingDomainsGet, siteSendingDomainsList, siteSendingDomainsVerify, siteSetupChecklistGet, siteSuppressionsCreate, siteSuppressionsDelete, siteSuppressionsList, siteTagsApply, siteTagsList, siteTagsListForContact, siteTagsRemove, siteTemplatesCreate, siteTemplatesDelete, siteTemplatesGet, siteTemplatesList, siteTemplatesUpdate, siteTokensCreate, siteTokensDelete, siteTokensList, siteTransactionalEmailsList, siteUserEmailChange, siteUserGetMe, siteUserSignOutEverywhere, siteUserUpdateMe, siteWebhooksCreate, siteWebhooksDelete, siteWebhooksGet, siteWebhooksList, siteWebhooksRegenerateSecret, siteWebhooksTest, siteWebhooksUpdate, siteWorkspacesAccountLink, siteWorkspacesCreate, siteWorkspacesDelete, siteWorkspacesList, siteWorkspacesListDeleted, siteWorkspacesRestore, siteWorkspacesSetSecondFactorRequirement, siteWorkspacesUpdate } from '../sdk.gen.ts';
-import type { SiteAnalyticsOverviewData, SiteAnalyticsOverviewError, SiteAnalyticsOverviewResponse, SiteAuditExportData, SiteAuditExportError, SiteAuditExportResponse, SiteAuditGetRetentionData, SiteAuditGetRetentionError, SiteAuditGetRetentionResponse, SiteAuditListData, SiteAuditListError, SiteAuditListResponse, SiteAuditSetRetentionData, SiteAuditSetRetentionError, SiteAuditSetRetentionResponse, SiteAuthConfirmEmailChangeData, SiteAuthConfirmEmailChangeError, SiteAuthForgotPasswordData, SiteAuthForgotPasswordError, SiteAuthLoginData, SiteAuthLoginError, SiteAuthLoginResponse, SiteAuthLogoutData, SiteAuthLogoutResponse, SiteAuthRegisterData, SiteAuthRegisterError, SiteAuthResendVerificationData, SiteAuthResendVerificationError, SiteAuthResetPasswordData, SiteAuthResetPasswordError, SiteAuthSecondFactorData, SiteAuthSecondFactorError, SiteAuthSecondFactorResponse, SiteAuthVerifyEmailData, SiteAuthVerifyEmailError, SiteAutomationsActivateData, SiteAutomationsActivateError, SiteAutomationsActivateResponse, SiteAutomationsCreateData, SiteAutomationsCreateError, SiteAutomationsCreateResponse, SiteAutomationsDeactivateData, SiteAutomationsDeactivateError, SiteAutomationsDeactivateResponse, SiteAutomationsDeleteData, SiteAutomationsDeleteError, SiteAutomationsDeleteResponse, SiteAutomationsDryRunHttpStepData, SiteAutomationsDryRunHttpStepError, SiteAutomationsDryRunHttpStepResponse, SiteAutomationsGetData, SiteAutomationsGetError, SiteAutomationsGetResponse, SiteAutomationsListData, SiteAutomationsListError, SiteAutomationsListResponse, SiteAutomationsUpdateData, SiteAutomationsUpdateError, SiteAutomationsUpdateResponse, SiteBrandKitGetData, SiteBrandKitGetError, SiteBrandKitGetResponse, SiteBrandKitRecreateStarterTemplatesData, SiteBrandKitRecreateStarterTemplatesError, SiteBrandKitRecreateStarterTemplatesResponse, SiteBrandKitSaveData, SiteBrandKitSaveError, SiteBrandKitSaveResponse, SiteBroadcastsCreateData, SiteBroadcastsCreateError, SiteBroadcastsCreateResponse, SiteBroadcastsDeleteData, SiteBroadcastsDeleteError, SiteBroadcastsDeleteResponse, SiteBroadcastsGetData, SiteBroadcastsGetError, SiteBroadcastsGetResponse, SiteBroadcastsListData, SiteBroadcastsListError, SiteBroadcastsListResponse, SiteBroadcastsScheduleData, SiteBroadcastsScheduleError, SiteBroadcastsScheduleResponse, SiteBroadcastsSendData, SiteBroadcastsSendError, SiteBroadcastsSendResponse, SiteBroadcastsTestSendData, SiteBroadcastsTestSendError, SiteBroadcastsTestSendResponse, SiteBroadcastsUpdateData, SiteBroadcastsUpdateError, SiteBroadcastsUpdateResponse, SiteContactsCreateData, SiteContactsCreateError, SiteContactsCreateResponse, SiteContactsDeleteData, SiteContactsDeleteError, SiteContactsDeleteResponse, SiteContactsEraseData, SiteContactsEraseError, SiteContactsEraseResponse, SiteContactsExportData, SiteContactsExportError, SiteContactsExportResponse, SiteContactsGetData, SiteContactsGetError, SiteContactsGetResponse, SiteContactsListData, SiteContactsListError, SiteContactsListResponse, SiteContactsLookupData, SiteContactsLookupError, SiteContactsLookupResponse, SiteContactsUpdateData, SiteContactsUpdateError, SiteContactsUpdateResponse, SiteCustomFieldsListData, SiteCustomFieldsListError, SiteCustomFieldsListResponse, SiteEnrollmentsGetData, SiteEnrollmentsGetError, SiteEnrollmentsGetResponse, SiteEnrollmentsListData, SiteEnrollmentsListError, SiteEnrollmentsListResponse, SiteEventsActionsData, SiteEventsActionsError, SiteEventsActionsResponse, SiteEventsListData, SiteEventsListError, SiteEventsListResponse, SiteInstanceAcknowledgeNoticeData, SiteInstanceAcknowledgeNoticeError, SiteInstanceAcknowledgeNoticeResponse, SiteInstanceGetStateData, SiteInstanceGetStateError, SiteInstanceGetStateResponse, SiteInstancePreviewTelemetryReportData, SiteInstancePreviewTelemetryReportError, SiteInstancePreviewTelemetryReportResponse, SiteInstanceSetTelemetryData, SiteInstanceSetTelemetryError, SiteInstanceSetTelemetryResponse, SiteIntegrationsCreateData, SiteIntegrationsCreateError, SiteIntegrationsCreateResponse, SiteIntegrationsDeleteData, SiteIntegrationsDeleteError, SiteIntegrationsDeleteResponse, SiteIntegrationsGetData, SiteIntegrationsGetError, SiteIntegrationsGetResponse, SiteIntegrationsListData, SiteIntegrationsListError, SiteIntegrationsListResponse, SiteIntegrationsRegenerateKeyData, SiteIntegrationsRegenerateKeyError, SiteIntegrationsRegenerateKeyResponse, SiteIntegrationsUpdateData, SiteIntegrationsUpdateError, SiteIntegrationsUpdateResponse, SiteInvitationsCreateData, SiteInvitationsCreateError, SiteInvitationsCreateResponse, SiteInvitationsDeleteData, SiteInvitationsDeleteError, SiteInvitationsDeleteResponse, SiteInvitationsListData, SiteInvitationsListError, SiteInvitationsListResponse, SiteMembershipsDeleteData, SiteMembershipsDeleteError, SiteMembershipsDeleteResponse, SiteMembershipsListData, SiteMembershipsListError, SiteMembershipsListResponse, SiteMembershipsResetSecondFactorData, SiteMembershipsResetSecondFactorError, SiteMembershipsResetSecondFactorResponse, SiteMembershipsUpdateData, SiteMembershipsUpdateError, SiteMembershipsUpdateResponse, SiteOAuthDecideData, SiteOAuthDecideError, SiteOAuthDecideResponse, SiteOAuthDescribeData, SiteOAuthDescribeError, SiteOAuthDescribeResponse, SitePresetsListData, SitePresetsListResponse, SitePublicConfirmationsPerformData, SitePublicConfirmationsPerformError, SitePublicConfirmationsPerformResponse, SitePublicInvitationsAcceptData, SitePublicInvitationsAcceptError, SitePublicInvitationsLookupData, SitePublicInvitationsLookupError, SitePublicInvitationsLookupResponse, SitePublicUnsubscribesPerformData, SitePublicUnsubscribesPerformError, SitePublicUnsubscribesPerformResponse, SiteSecondFactorConfirmEnrollmentData, SiteSecondFactorConfirmEnrollmentError, SiteSecondFactorConfirmEnrollmentResponse, SiteSecondFactorDisableData, SiteSecondFactorDisableError, SiteSecondFactorDisableResponse, SiteSecondFactorGetStatusData, SiteSecondFactorGetStatusResponse, SiteSecondFactorRegenerateRecoveryCodesData, SiteSecondFactorRegenerateRecoveryCodesError, SiteSecondFactorRegenerateRecoveryCodesResponse, SiteSecondFactorStartEnrollmentData, SiteSecondFactorStartEnrollmentError, SiteSecondFactorStartEnrollmentResponse, SiteSegmentsCreateData, SiteSegmentsCreateError, SiteSegmentsCreateResponse, SiteSegmentsDeleteData, SiteSegmentsDeleteError, SiteSegmentsDeleteResponse, SiteSegmentsGetData, SiteSegmentsGetError, SiteSegmentsGetResponse, SiteSegmentsListData, SiteSegmentsListError, SiteSegmentsListResponse, SiteSegmentsPreviewData, SiteSegmentsPreviewError, SiteSegmentsPreviewResponse, SiteSegmentsUpdateData, SiteSegmentsUpdateError, SiteSegmentsUpdateResponse, SiteSendingDomainsCreateData, SiteSendingDomainsCreateError, SiteSendingDomainsCreateResponse, SiteSendingDomainsDeleteData, SiteSendingDomainsDeleteError, SiteSendingDomainsDeleteResponse, SiteSendingDomainsGetData, SiteSendingDomainsGetError, SiteSendingDomainsGetResponse, SiteSendingDomainsListData, SiteSendingDomainsListError, SiteSendingDomainsListResponse, SiteSendingDomainsVerifyData, SiteSendingDomainsVerifyError, SiteSendingDomainsVerifyResponse, SiteSetupChecklistGetData, SiteSetupChecklistGetError, SiteSetupChecklistGetResponse, SiteSuppressionsCreateData, SiteSuppressionsCreateError, SiteSuppressionsCreateResponse, SiteSuppressionsDeleteData, SiteSuppressionsDeleteError, SiteSuppressionsDeleteResponse, SiteSuppressionsListData, SiteSuppressionsListError, SiteSuppressionsListResponse, SiteTagsApplyData, SiteTagsApplyError, SiteTagsApplyResponse, SiteTagsListData, SiteTagsListError, SiteTagsListForContactData, SiteTagsListForContactError, SiteTagsListForContactResponse, SiteTagsListResponse, SiteTagsRemoveData, SiteTagsRemoveError, SiteTagsRemoveResponse, SiteTemplatesCreateData, SiteTemplatesCreateError, SiteTemplatesCreateResponse, SiteTemplatesDeleteData, SiteTemplatesDeleteError, SiteTemplatesDeleteResponse, SiteTemplatesGetData, SiteTemplatesGetError, SiteTemplatesGetResponse, SiteTemplatesListData, SiteTemplatesListError, SiteTemplatesListResponse, SiteTemplatesUpdateData, SiteTemplatesUpdateError, SiteTemplatesUpdateResponse, SiteTokensCreateData, SiteTokensCreateError, SiteTokensCreateResponse, SiteTokensDeleteData, SiteTokensDeleteError, SiteTokensDeleteResponse, SiteTokensListData, SiteTokensListError, SiteTokensListResponse, SiteTransactionalEmailsListData, SiteTransactionalEmailsListError, SiteTransactionalEmailsListResponse, SiteUserEmailChangeData, SiteUserEmailChangeError, SiteUserGetMeData, SiteUserGetMeResponse, SiteUserSignOutEverywhereData, SiteUserSignOutEverywhereResponse, SiteUserUpdateMeData, SiteUserUpdateMeError, SiteUserUpdateMeResponse, SiteWebhooksCreateData, SiteWebhooksCreateError, SiteWebhooksCreateResponse, SiteWebhooksDeleteData, SiteWebhooksDeleteError, SiteWebhooksDeleteResponse, SiteWebhooksGetData, SiteWebhooksGetError, SiteWebhooksGetResponse, SiteWebhooksListData, SiteWebhooksListError, SiteWebhooksListResponse, SiteWebhooksRegenerateSecretData, SiteWebhooksRegenerateSecretError, SiteWebhooksRegenerateSecretResponse, SiteWebhooksTestData, SiteWebhooksTestError, SiteWebhooksTestResponse, SiteWebhooksUpdateData, SiteWebhooksUpdateError, SiteWebhooksUpdateResponse, SiteWorkspacesAccountLinkData, SiteWorkspacesAccountLinkError, SiteWorkspacesAccountLinkResponse, SiteWorkspacesCreateData, SiteWorkspacesCreateError, SiteWorkspacesCreateResponse, SiteWorkspacesDeleteData, SiteWorkspacesDeleteError, SiteWorkspacesDeleteResponse, SiteWorkspacesListData, SiteWorkspacesListDeletedData, SiteWorkspacesListDeletedResponse, SiteWorkspacesListResponse, SiteWorkspacesRestoreData, SiteWorkspacesRestoreError, SiteWorkspacesRestoreResponse, SiteWorkspacesSetSecondFactorRequirementData, SiteWorkspacesSetSecondFactorRequirementError, SiteWorkspacesSetSecondFactorRequirementResponse, SiteWorkspacesUpdateData, SiteWorkspacesUpdateError, SiteWorkspacesUpdateResponse } from '../types.gen.ts';
+import { type Options, siteAnalyticsOverview, siteAuditExport, siteAuditGetRetention, siteAuditList, siteAuditSetRetention, siteAuthConfirmEmailChange, siteAuthForgotPassword, siteAuthLogin, siteAuthLogout, siteAuthRegister, siteAuthResendVerification, siteAuthResetPassword, siteAuthSecondFactor, siteAuthSigninCallback, siteAuthSigninNotMe, siteAuthSigninProviders, siteAuthSigninStart, siteAuthVerifyEmail, siteAutomationsActivate, siteAutomationsCreate, siteAutomationsDeactivate, siteAutomationsDelete, siteAutomationsDryRunHttpStep, siteAutomationsGet, siteAutomationsList, siteAutomationsUpdate, siteBrandKitGet, siteBrandKitRecreateStarterTemplates, siteBrandKitSave, siteBroadcastsCreate, siteBroadcastsDelete, siteBroadcastsGet, siteBroadcastsList, siteBroadcastsSchedule, siteBroadcastsSend, siteBroadcastsTestSend, siteBroadcastsUpdate, siteContactsCreate, siteContactsDelete, siteContactsErase, siteContactsExport, siteContactsGet, siteContactsList, siteContactsLookup, siteContactsUpdate, siteCustomFieldsList, siteEnrollmentsGet, siteEnrollmentsList, siteEventsActions, siteEventsList, siteIdentitiesLink, siteIdentitiesList, siteIdentitiesUnlink, siteInstanceAcknowledgeNotice, siteInstanceGetState, siteInstancePreviewTelemetryReport, siteInstanceSetTelemetry, siteIntegrationsCreate, siteIntegrationsDelete, siteIntegrationsGet, siteIntegrationsList, siteIntegrationsRegenerateKey, siteIntegrationsUpdate, siteInvitationsCreate, siteInvitationsDelete, siteInvitationsList, siteMembershipsDelete, siteMembershipsList, siteMembershipsResetSecondFactor, siteMembershipsUpdate, siteOAuthDecide, siteOAuthDescribe, sitePresetsList, sitePublicConfirmationsPerform, sitePublicInvitationsAccept, sitePublicInvitationsLookup, sitePublicUnsubscribesPerform, siteSecondFactorConfirmEnrollment, siteSecondFactorDisable, siteSecondFactorGetStatus, siteSecondFactorRegenerateRecoveryCodes, siteSecondFactorStartEnrollment, siteSegmentsCreate, siteSegmentsDelete, siteSegmentsGet, siteSegmentsList, siteSegmentsPreview, siteSegmentsUpdate, siteSendingDomainsCreate, siteSendingDomainsDelete, siteSendingDomainsGet, siteSendingDomainsList, siteSendingDomainsVerify, siteSetupChecklistGet, siteSuppressionsCreate, siteSuppressionsDelete, siteSuppressionsList, siteTagsApply, siteTagsList, siteTagsListForContact, siteTagsRemove, siteTemplatesCreate, siteTemplatesDelete, siteTemplatesGet, siteTemplatesList, siteTemplatesUpdate, siteTokensCreate, siteTokensDelete, siteTokensList, siteTransactionalEmailsList, siteUserEmailChange, siteUserGetMe, siteUserSignOutEverywhere, siteUserUpdateMe, siteWebhooksCreate, siteWebhooksDelete, siteWebhooksGet, siteWebhooksList, siteWebhooksRegenerateSecret, siteWebhooksTest, siteWebhooksUpdate, siteWorkspacesAccountLink, siteWorkspacesCreate, siteWorkspacesDelete, siteWorkspacesList, siteWorkspacesListDeleted, siteWorkspacesRestore, siteWorkspacesSetSecondFactorRequirement, siteWorkspacesUpdate } from '../sdk.gen.ts';
+import type { SiteAnalyticsOverviewData, SiteAnalyticsOverviewError, SiteAnalyticsOverviewResponse, SiteAuditExportData, SiteAuditExportError, SiteAuditExportResponse, SiteAuditGetRetentionData, SiteAuditGetRetentionError, SiteAuditGetRetentionResponse, SiteAuditListData, SiteAuditListError, SiteAuditListResponse, SiteAuditSetRetentionData, SiteAuditSetRetentionError, SiteAuditSetRetentionResponse, SiteAuthConfirmEmailChangeData, SiteAuthConfirmEmailChangeError, SiteAuthForgotPasswordData, SiteAuthForgotPasswordError, SiteAuthLoginData, SiteAuthLoginError, SiteAuthLoginResponse, SiteAuthLogoutData, SiteAuthLogoutResponse, SiteAuthRegisterData, SiteAuthRegisterError, SiteAuthResendVerificationData, SiteAuthResendVerificationError, SiteAuthResetPasswordData, SiteAuthResetPasswordError, SiteAuthSecondFactorData, SiteAuthSecondFactorError, SiteAuthSecondFactorResponse, SiteAuthSigninCallbackData, SiteAuthSigninNotMeData, SiteAuthSigninNotMeError, SiteAuthSigninProvidersData, SiteAuthSigninProvidersResponse, SiteAuthSigninStartData, SiteAuthSigninStartError, SiteAuthVerifyEmailData, SiteAuthVerifyEmailError, SiteAutomationsActivateData, SiteAutomationsActivateError, SiteAutomationsActivateResponse, SiteAutomationsCreateData, SiteAutomationsCreateError, SiteAutomationsCreateResponse, SiteAutomationsDeactivateData, SiteAutomationsDeactivateError, SiteAutomationsDeactivateResponse, SiteAutomationsDeleteData, SiteAutomationsDeleteError, SiteAutomationsDeleteResponse, SiteAutomationsDryRunHttpStepData, SiteAutomationsDryRunHttpStepError, SiteAutomationsDryRunHttpStepResponse, SiteAutomationsGetData, SiteAutomationsGetError, SiteAutomationsGetResponse, SiteAutomationsListData, SiteAutomationsListError, SiteAutomationsListResponse, SiteAutomationsUpdateData, SiteAutomationsUpdateError, SiteAutomationsUpdateResponse, SiteBrandKitGetData, SiteBrandKitGetError, SiteBrandKitGetResponse, SiteBrandKitRecreateStarterTemplatesData, SiteBrandKitRecreateStarterTemplatesError, SiteBrandKitRecreateStarterTemplatesResponse, SiteBrandKitSaveData, SiteBrandKitSaveError, SiteBrandKitSaveResponse, SiteBroadcastsCreateData, SiteBroadcastsCreateError, SiteBroadcastsCreateResponse, SiteBroadcastsDeleteData, SiteBroadcastsDeleteError, SiteBroadcastsDeleteResponse, SiteBroadcastsGetData, SiteBroadcastsGetError, SiteBroadcastsGetResponse, SiteBroadcastsListData, SiteBroadcastsListError, SiteBroadcastsListResponse, SiteBroadcastsScheduleData, SiteBroadcastsScheduleError, SiteBroadcastsScheduleResponse, SiteBroadcastsSendData, SiteBroadcastsSendError, SiteBroadcastsSendResponse, SiteBroadcastsTestSendData, SiteBroadcastsTestSendError, SiteBroadcastsTestSendResponse, SiteBroadcastsUpdateData, SiteBroadcastsUpdateError, SiteBroadcastsUpdateResponse, SiteContactsCreateData, SiteContactsCreateError, SiteContactsCreateResponse, SiteContactsDeleteData, SiteContactsDeleteError, SiteContactsDeleteResponse, SiteContactsEraseData, SiteContactsEraseError, SiteContactsEraseResponse, SiteContactsExportData, SiteContactsExportError, SiteContactsExportResponse, SiteContactsGetData, SiteContactsGetError, SiteContactsGetResponse, SiteContactsListData, SiteContactsListError, SiteContactsListResponse, SiteContactsLookupData, SiteContactsLookupError, SiteContactsLookupResponse, SiteContactsUpdateData, SiteContactsUpdateError, SiteContactsUpdateResponse, SiteCustomFieldsListData, SiteCustomFieldsListError, SiteCustomFieldsListResponse, SiteEnrollmentsGetData, SiteEnrollmentsGetError, SiteEnrollmentsGetResponse, SiteEnrollmentsListData, SiteEnrollmentsListError, SiteEnrollmentsListResponse, SiteEventsActionsData, SiteEventsActionsError, SiteEventsActionsResponse, SiteEventsListData, SiteEventsListError, SiteEventsListResponse, SiteIdentitiesLinkData, SiteIdentitiesLinkError, SiteIdentitiesListData, SiteIdentitiesListResponse, SiteIdentitiesUnlinkData, SiteIdentitiesUnlinkError, SiteIdentitiesUnlinkResponse, SiteInstanceAcknowledgeNoticeData, SiteInstanceAcknowledgeNoticeError, SiteInstanceAcknowledgeNoticeResponse, SiteInstanceGetStateData, SiteInstanceGetStateError, SiteInstanceGetStateResponse, SiteInstancePreviewTelemetryReportData, SiteInstancePreviewTelemetryReportError, SiteInstancePreviewTelemetryReportResponse, SiteInstanceSetTelemetryData, SiteInstanceSetTelemetryError, SiteInstanceSetTelemetryResponse, SiteIntegrationsCreateData, SiteIntegrationsCreateError, SiteIntegrationsCreateResponse, SiteIntegrationsDeleteData, SiteIntegrationsDeleteError, SiteIntegrationsDeleteResponse, SiteIntegrationsGetData, SiteIntegrationsGetError, SiteIntegrationsGetResponse, SiteIntegrationsListData, SiteIntegrationsListError, SiteIntegrationsListResponse, SiteIntegrationsRegenerateKeyData, SiteIntegrationsRegenerateKeyError, SiteIntegrationsRegenerateKeyResponse, SiteIntegrationsUpdateData, SiteIntegrationsUpdateError, SiteIntegrationsUpdateResponse, SiteInvitationsCreateData, SiteInvitationsCreateError, SiteInvitationsCreateResponse, SiteInvitationsDeleteData, SiteInvitationsDeleteError, SiteInvitationsDeleteResponse, SiteInvitationsListData, SiteInvitationsListError, SiteInvitationsListResponse, SiteMembershipsDeleteData, SiteMembershipsDeleteError, SiteMembershipsDeleteResponse, SiteMembershipsListData, SiteMembershipsListError, SiteMembershipsListResponse, SiteMembershipsResetSecondFactorData, SiteMembershipsResetSecondFactorError, SiteMembershipsResetSecondFactorResponse, SiteMembershipsUpdateData, SiteMembershipsUpdateError, SiteMembershipsUpdateResponse, SiteOAuthDecideData, SiteOAuthDecideError, SiteOAuthDecideResponse, SiteOAuthDescribeData, SiteOAuthDescribeError, SiteOAuthDescribeResponse, SitePresetsListData, SitePresetsListResponse, SitePublicConfirmationsPerformData, SitePublicConfirmationsPerformError, SitePublicConfirmationsPerformResponse, SitePublicInvitationsAcceptData, SitePublicInvitationsAcceptError, SitePublicInvitationsLookupData, SitePublicInvitationsLookupError, SitePublicInvitationsLookupResponse, SitePublicUnsubscribesPerformData, SitePublicUnsubscribesPerformError, SitePublicUnsubscribesPerformResponse, SiteSecondFactorConfirmEnrollmentData, SiteSecondFactorConfirmEnrollmentError, SiteSecondFactorConfirmEnrollmentResponse, SiteSecondFactorDisableData, SiteSecondFactorDisableError, SiteSecondFactorDisableResponse, SiteSecondFactorGetStatusData, SiteSecondFactorGetStatusResponse, SiteSecondFactorRegenerateRecoveryCodesData, SiteSecondFactorRegenerateRecoveryCodesError, SiteSecondFactorRegenerateRecoveryCodesResponse, SiteSecondFactorStartEnrollmentData, SiteSecondFactorStartEnrollmentError, SiteSecondFactorStartEnrollmentResponse, SiteSegmentsCreateData, SiteSegmentsCreateError, SiteSegmentsCreateResponse, SiteSegmentsDeleteData, SiteSegmentsDeleteError, SiteSegmentsDeleteResponse, SiteSegmentsGetData, SiteSegmentsGetError, SiteSegmentsGetResponse, SiteSegmentsListData, SiteSegmentsListError, SiteSegmentsListResponse, SiteSegmentsPreviewData, SiteSegmentsPreviewError, SiteSegmentsPreviewResponse, SiteSegmentsUpdateData, SiteSegmentsUpdateError, SiteSegmentsUpdateResponse, SiteSendingDomainsCreateData, SiteSendingDomainsCreateError, SiteSendingDomainsCreateResponse, SiteSendingDomainsDeleteData, SiteSendingDomainsDeleteError, SiteSendingDomainsDeleteResponse, SiteSendingDomainsGetData, SiteSendingDomainsGetError, SiteSendingDomainsGetResponse, SiteSendingDomainsListData, SiteSendingDomainsListError, SiteSendingDomainsListResponse, SiteSendingDomainsVerifyData, SiteSendingDomainsVerifyError, SiteSendingDomainsVerifyResponse, SiteSetupChecklistGetData, SiteSetupChecklistGetError, SiteSetupChecklistGetResponse, SiteSuppressionsCreateData, SiteSuppressionsCreateError, SiteSuppressionsCreateResponse, SiteSuppressionsDeleteData, SiteSuppressionsDeleteError, SiteSuppressionsDeleteResponse, SiteSuppressionsListData, SiteSuppressionsListError, SiteSuppressionsListResponse, SiteTagsApplyData, SiteTagsApplyError, SiteTagsApplyResponse, SiteTagsListData, SiteTagsListError, SiteTagsListForContactData, SiteTagsListForContactError, SiteTagsListForContactResponse, SiteTagsListResponse, SiteTagsRemoveData, SiteTagsRemoveError, SiteTagsRemoveResponse, SiteTemplatesCreateData, SiteTemplatesCreateError, SiteTemplatesCreateResponse, SiteTemplatesDeleteData, SiteTemplatesDeleteError, SiteTemplatesDeleteResponse, SiteTemplatesGetData, SiteTemplatesGetError, SiteTemplatesGetResponse, SiteTemplatesListData, SiteTemplatesListError, SiteTemplatesListResponse, SiteTemplatesUpdateData, SiteTemplatesUpdateError, SiteTemplatesUpdateResponse, SiteTokensCreateData, SiteTokensCreateError, SiteTokensCreateResponse, SiteTokensDeleteData, SiteTokensDeleteError, SiteTokensDeleteResponse, SiteTokensListData, SiteTokensListError, SiteTokensListResponse, SiteTransactionalEmailsListData, SiteTransactionalEmailsListError, SiteTransactionalEmailsListResponse, SiteUserEmailChangeData, SiteUserEmailChangeError, SiteUserGetMeData, SiteUserGetMeResponse, SiteUserSignOutEverywhereData, SiteUserSignOutEverywhereResponse, SiteUserUpdateMeData, SiteUserUpdateMeError, SiteUserUpdateMeResponse, SiteWebhooksCreateData, SiteWebhooksCreateError, SiteWebhooksCreateResponse, SiteWebhooksDeleteData, SiteWebhooksDeleteError, SiteWebhooksDeleteResponse, SiteWebhooksGetData, SiteWebhooksGetError, SiteWebhooksGetResponse, SiteWebhooksListData, SiteWebhooksListError, SiteWebhooksListResponse, SiteWebhooksRegenerateSecretData, SiteWebhooksRegenerateSecretError, SiteWebhooksRegenerateSecretResponse, SiteWebhooksTestData, SiteWebhooksTestError, SiteWebhooksTestResponse, SiteWebhooksUpdateData, SiteWebhooksUpdateError, SiteWebhooksUpdateResponse, SiteWorkspacesAccountLinkData, SiteWorkspacesAccountLinkError, SiteWorkspacesAccountLinkResponse, SiteWorkspacesCreateData, SiteWorkspacesCreateError, SiteWorkspacesCreateResponse, SiteWorkspacesDeleteData, SiteWorkspacesDeleteError, SiteWorkspacesDeleteResponse, SiteWorkspacesListData, SiteWorkspacesListDeletedData, SiteWorkspacesListDeletedResponse, SiteWorkspacesListResponse, SiteWorkspacesRestoreData, SiteWorkspacesRestoreError, SiteWorkspacesRestoreResponse, SiteWorkspacesSetSecondFactorRequirementData, SiteWorkspacesSetSecondFactorRequirementError, SiteWorkspacesSetSecondFactorRequirementResponse, SiteWorkspacesUpdateData, SiteWorkspacesUpdateError, SiteWorkspacesUpdateResponse } from '../types.gen.ts';
 
 /**
  * Confirm an email change from the token sent to the new address. Public:
@@ -176,39 +176,15 @@ export const siteAuthSecondFactorMutation = (options?: Partial<Options<SiteAuthS
 };
 
 /**
- * Complete a registration from the verification link (the token is the
- * credential): stamps the Verified email, ends every earlier session, creates the
- * User's first Workspace, sends the welcome email and starts the session (the cookie
- * is issued after the epoch bump, as login does, ADR 0020). When the request carries
- * the registration cookie the link was minted for, the password from registration
- * stays; otherwise the request must carry a password, which replaces it, and without
- * one the answer is 428 and nothing changes, the link stays valid (a mail scanner
- * consumes nothing). A link is single use and scoped to the address it was sent to.
- * Rate limited like registration.
+ * Undo a silent link from the notice mailed to the owner (ADR 0048): the token names
+ * one Linked identity of the User, which is unlinked, and every session of the User ends.
+ * Public: the link may be opened from a browser without a session. A link works once; one
+ * whose identity is gone answers 400.
  */
-export const siteAuthVerifyEmailMutation = (options?: Partial<Options<SiteAuthVerifyEmailData>>): UseMutationOptions<unknown, SiteAuthVerifyEmailError, Options<SiteAuthVerifyEmailData>> => {
-  const mutationOptions: UseMutationOptions<unknown, SiteAuthVerifyEmailError, Options<SiteAuthVerifyEmailData>> = {
+export const siteAuthSigninNotMeMutation = (options?: Partial<Options<SiteAuthSigninNotMeData>>): UseMutationOptions<unknown, SiteAuthSigninNotMeError, Options<SiteAuthSigninNotMeData>> => {
+  const mutationOptions: UseMutationOptions<unknown, SiteAuthSigninNotMeError, Options<SiteAuthSigninNotMeData>> = {
     mutationFn: async (fnOptions) => {
-      const { data } = await siteAuthVerifyEmail({
-        ...options,
-        ...fnOptions,
-        throwOnError: true
-      });
-      return data;
-    }
-  };
-  return mutationOptions;
-};
-
-/**
- * Perform a double opt-in confirmation (ADR 0013). The deliberate human act
- * behind the confirmation page's button. Repeating it is a no-op. 410 means the
- * link has expired, so the page offers to sign up again; 400 is an invalid token.
- */
-export const sitePublicConfirmationsPerformMutation = (options?: Partial<Options<SitePublicConfirmationsPerformData>>): UseMutationOptions<SitePublicConfirmationsPerformResponse, SitePublicConfirmationsPerformError, Options<SitePublicConfirmationsPerformData>> => {
-  const mutationOptions: UseMutationOptions<SitePublicConfirmationsPerformResponse, SitePublicConfirmationsPerformError, Options<SitePublicConfirmationsPerformData>> = {
-    mutationFn: async (fnOptions) => {
-      const { data } = await sitePublicConfirmationsPerform({
+      const { data } = await siteAuthSigninNotMe({
         ...options,
         ...fnOptions,
         throwOnError: true
@@ -250,6 +226,116 @@ const createQueryKey = <TOptions extends Options>(id: string, options?: TOptions
     params.query = options.query;
   }
   return [params];
+};
+
+export const siteAuthSigninProvidersQueryKey = (options?: Options<SiteAuthSigninProvidersData>) => createQueryKey('siteAuthSigninProviders', options);
+
+/**
+ * The Sign-in providers this Instance offers, for the buttons of the login and register
+ * pages. Public; empty when none is configured.
+ */
+export const siteAuthSigninProvidersOptions = (options?: Options<SiteAuthSigninProvidersData>) => queryOptions<SiteAuthSigninProvidersResponse, DefaultError, SiteAuthSigninProvidersResponse, ReturnType<typeof siteAuthSigninProvidersQueryKey>>({
+  queryFn: async ({ queryKey, signal }) => {
+    const { data } = await siteAuthSigninProviders({
+      ...options,
+      ...queryKey[0],
+      signal,
+      throwOnError: true
+    });
+    return data;
+  },
+  queryKey: siteAuthSigninProvidersQueryKey(options)
+});
+
+export const siteAuthSigninCallbackQueryKey = (options: Options<SiteAuthSigninCallbackData>) => createQueryKey('siteAuthSigninCallback', options);
+
+/**
+ * Where the provider sends the browser back (the redirect URI derived from the app URL).
+ * Always answers 302: to `return_to` (or `/`) with the session cookie when the sign-in
+ * succeeds, and to `/login?error=<code>` (see SiteSigninError) when it does not. A known
+ * identity signs in; a new, trusted email creates a Verified User with its first Workspace
+ * and no mail. A User with a Second factor gets no session and no cookie: the redirect is
+ * to `/login?challenge=<token>`, the challenge of `/auth/second-factor` (ADR 0020), which
+ * a TOTP or Recovery code finishes under the Login throttle. Every parameter is optional so that a denied consent (`error` only) or a
+ * stray visit reaches the handler and gets the same redirect as any other refusal.
+ */
+export const siteAuthSigninCallbackOptions = (options: Options<SiteAuthSigninCallbackData>) => queryOptions<unknown, DefaultError, unknown, ReturnType<typeof siteAuthSigninCallbackQueryKey>>({
+  queryFn: async ({ queryKey, signal }) => {
+    const { data } = await siteAuthSigninCallback({
+      ...options,
+      ...queryKey[0],
+      signal,
+      throwOnError: true
+    });
+    return data;
+  },
+  queryKey: siteAuthSigninCallbackQueryKey(options)
+});
+
+export const siteAuthSigninStartQueryKey = (options: Options<SiteAuthSigninStartData>) => createQueryKey('siteAuthSigninStart', options);
+
+/**
+ * Start a sign-in with a Sign-in provider: draws the flow's `state`, PKCE verifier and
+ * `nonce`, keeps them (with the validated `return_to`) in a short-lived signed cookie
+ * (httpOnly, SameSite=Lax, scoped to the signin prefix) and redirects (302) the browser to
+ * the provider. `return_to` is honoured only as a relative in-app path; anything else
+ * is dropped. 404 for a provider that is not configured.
+ */
+export const siteAuthSigninStartOptions = (options: Options<SiteAuthSigninStartData>) => queryOptions<unknown, SiteAuthSigninStartError, unknown, ReturnType<typeof siteAuthSigninStartQueryKey>>({
+  queryFn: async ({ queryKey, signal }) => {
+    const { data } = await siteAuthSigninStart({
+      ...options,
+      ...queryKey[0],
+      signal,
+      throwOnError: true
+    });
+    return data;
+  },
+  queryKey: siteAuthSigninStartQueryKey(options)
+});
+
+/**
+ * Complete a registration from the verification link (the token is the
+ * credential): stamps the Verified email, ends every earlier session, creates the
+ * User's first Workspace, sends the welcome email and starts the session (the cookie
+ * is issued after the epoch bump, as login does, ADR 0020). When the request carries
+ * the registration cookie the link was minted for, the password from registration
+ * stays; otherwise the request must carry a password, which replaces it, and without
+ * one the answer is 428 and nothing changes, the link stays valid (a mail scanner
+ * consumes nothing). A link is single use and scoped to the address it was sent to.
+ * Rate limited like registration.
+ */
+export const siteAuthVerifyEmailMutation = (options?: Partial<Options<SiteAuthVerifyEmailData>>): UseMutationOptions<unknown, SiteAuthVerifyEmailError, Options<SiteAuthVerifyEmailData>> => {
+  const mutationOptions: UseMutationOptions<unknown, SiteAuthVerifyEmailError, Options<SiteAuthVerifyEmailData>> = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await siteAuthVerifyEmail({
+        ...options,
+        ...fnOptions,
+        throwOnError: true
+      });
+      return data;
+    }
+  };
+  return mutationOptions;
+};
+
+/**
+ * Perform a double opt-in confirmation (ADR 0013). The deliberate human act
+ * behind the confirmation page's button. Repeating it is a no-op. 410 means the
+ * link has expired, so the page offers to sign up again; 400 is an invalid token.
+ */
+export const sitePublicConfirmationsPerformMutation = (options?: Partial<Options<SitePublicConfirmationsPerformData>>): UseMutationOptions<SitePublicConfirmationsPerformResponse, SitePublicConfirmationsPerformError, Options<SitePublicConfirmationsPerformData>> => {
+  const mutationOptions: UseMutationOptions<SitePublicConfirmationsPerformResponse, SitePublicConfirmationsPerformError, Options<SitePublicConfirmationsPerformData>> = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await sitePublicConfirmationsPerform({
+        ...options,
+        ...fnOptions,
+        throwOnError: true
+      });
+      return data;
+    }
+  };
+  return mutationOptions;
 };
 
 export const siteInstanceGetStateQueryKey = (options?: Options<SiteInstanceGetStateData>) => createQueryKey('siteInstanceGetState', options);
@@ -417,6 +503,66 @@ export const siteUserEmailChangeMutation = (options?: Partial<Options<SiteUserEm
   return mutationOptions;
 };
 
+export const siteIdentitiesListQueryKey = (options?: Options<SiteIdentitiesListData>) => createQueryKey('siteIdentitiesList', options);
+
+/**
+ * List the authenticated User's Linked identities
+ */
+export const siteIdentitiesListOptions = (options?: Options<SiteIdentitiesListData>) => queryOptions<SiteIdentitiesListResponse, DefaultError, SiteIdentitiesListResponse, ReturnType<typeof siteIdentitiesListQueryKey>>({
+  queryFn: async ({ queryKey, signal }) => {
+    const { data } = await siteIdentitiesList({
+      ...options,
+      ...queryKey[0],
+      signal,
+      throwOnError: true
+    });
+    return data;
+  },
+  queryKey: siteIdentitiesListQueryKey(options)
+});
+
+/**
+ * Unlink an identity. 409 when it would leave the User no way to sign in (no password
+ * and no other identity). Every other session ends; the acting one continues under the
+ * cookie set here.
+ */
+export const siteIdentitiesUnlinkMutation = (options?: Partial<Options<SiteIdentitiesUnlinkData>>): UseMutationOptions<SiteIdentitiesUnlinkResponse, SiteIdentitiesUnlinkError, Options<SiteIdentitiesUnlinkData>> => {
+  const mutationOptions: UseMutationOptions<SiteIdentitiesUnlinkResponse, SiteIdentitiesUnlinkError, Options<SiteIdentitiesUnlinkData>> = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await siteIdentitiesUnlink({
+        ...options,
+        ...fnOptions,
+        throwOnError: true
+      });
+      return data;
+    }
+  };
+  return mutationOptions;
+};
+
+export const siteIdentitiesLinkQueryKey = (options: Options<SiteIdentitiesLinkData>) => createQueryKey('siteIdentitiesLink', options);
+
+/**
+ * Start linking another Sign-in provider account to the authenticated User. Works like
+ * `start` of a sign-in, but the flow cookie also names the User, and the shared callback
+ * adds the provider's subject to that User whatever email the provider reports. The
+ * callback redirects to `return_to` (default the account security page); a refusal goes
+ * to the account security page with the `error` code (see SiteSigninError). 404 for a
+ * provider that is not configured.
+ */
+export const siteIdentitiesLinkOptions = (options: Options<SiteIdentitiesLinkData>) => queryOptions<unknown, SiteIdentitiesLinkError, unknown, ReturnType<typeof siteIdentitiesLinkQueryKey>>({
+  queryFn: async ({ queryKey, signal }) => {
+    const { data } = await siteIdentitiesLink({
+      ...options,
+      ...queryKey[0],
+      signal,
+      throwOnError: true
+    });
+    return data;
+  },
+  queryKey: siteIdentitiesLinkQueryKey(options)
+});
+
 export const siteSecondFactorGetStatusQueryKey = (options?: Options<SiteSecondFactorGetStatusData>) => createQueryKey('siteSecondFactorGetStatus', options);
 
 /**
@@ -458,7 +604,7 @@ export const siteSecondFactorDisableMutation = (options?: Partial<Options<SiteSe
 /**
  * Start enrolling a TOTP Second factor, proving the password: creates a pending
  * secret (replacing an earlier pending one). It counts as a Second factor only
- * once confirmed. 403 on a wrong password, 409 when a Second factor is already
+ * once confirmed. 403 on a wrong password (or, for a User with no password, no provider sign-in in the last few minutes), 409 when a Second factor is already
  * active. A wrong password feeds the Login throttle, which answers 429 even for a
  * correct one while its delay runs (ADR 0025).
  */
@@ -480,7 +626,7 @@ export const siteSecondFactorStartEnrollmentMutation = (options?: Partial<Option
  * Confirm the pending enrollment with the password and a code from the app. On
  * success the Second factor is active, every other session ends and the acting
  * one continues under the cookie set here; the Recovery codes are returned once.
- * 403 on a wrong password (it feeds the Login throttle: 429 while its delay
+ * 403 on a wrong password (or, for a User with no password, no provider sign-in in the last few minutes) (it feeds the Login throttle: 429 while its delay
  * runs), 422 on a wrong code, 409 without a pending enrollment.
  */
 export const siteSecondFactorConfirmEnrollmentMutation = (options?: Partial<Options<SiteSecondFactorConfirmEnrollmentData>>): UseMutationOptions<SiteSecondFactorConfirmEnrollmentResponse, SiteSecondFactorConfirmEnrollmentError, Options<SiteSecondFactorConfirmEnrollmentData>> => {
@@ -500,7 +646,7 @@ export const siteSecondFactorConfirmEnrollmentMutation = (options?: Partial<Opti
 /**
  * Replace the Recovery codes with a fresh set (the previous set stops working).
  * Every other session ends; the acting one continues under the cookie set here.
- * 403 on a wrong password (it feeds the Login throttle: 429 while its delay
+ * 403 on a wrong password (or, for a User with no password, no provider sign-in in the last few minutes) (it feeds the Login throttle: 429 while its delay
  * runs), 409 without an active Second factor.
  */
 export const siteSecondFactorRegenerateRecoveryCodesMutation = (options?: Partial<Options<SiteSecondFactorRegenerateRecoveryCodesData>>): UseMutationOptions<SiteSecondFactorRegenerateRecoveryCodesResponse, SiteSecondFactorRegenerateRecoveryCodesError, Options<SiteSecondFactorRegenerateRecoveryCodesData>> => {

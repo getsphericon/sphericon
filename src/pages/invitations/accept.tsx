@@ -12,15 +12,17 @@ import {
 import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { useLocation, useNavigate } from '@tanstack/react-router'
+import { useLocation, useNavigate, useSearch } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
 import { ButtonLink } from '../../components/RouterLink.tsx'
+import { SigninProviders } from '../../components/SigninProviders.tsx'
 import {
   sitePublicInvitationsAcceptMutation,
   sitePublicInvitationsLookupOptions,
   siteWorkspacesListOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
+import { zSiteSigninError } from '../../generated/site/zod.gen.ts'
 import { useApiErrorMessage } from '../../hooks/useApiErrorMessage.ts'
 import { Route as indexRoute } from '../../routes/index.tsx'
 import { Route as acceptInvitationRoute } from '../../routes/invitations/$token.tsx'
@@ -32,6 +34,8 @@ export function AcceptInvitationPage() {
   const navigate = useNavigate()
   const { token } = acceptInvitationRoute.useParams()
   const location = useLocation()
+  // Set when the server's provider callback sent the person back here without joining.
+  const signinError = zSiteSigninError.safeParse(useSearch({ strict: false }).error).data
 
   const lookup = useQuery({
     ...sitePublicInvitationsLookupOptions({ path: { token } }),
@@ -110,6 +114,14 @@ export function AcceptInvitationPage() {
       <Text c="dimmed" size="sm">
         {invite.email}
       </Text>
+
+      {signinError ? (
+        <Alert color="red" title={t(($) => $.signin.errorTitle)}>
+          {t(($) => $.signin.errors[signinError])}
+        </Alert>
+      ) : null}
+
+      <SigninProviders invitation={token} />
 
       <form onSubmit={form.onSubmit(handleSubmit)}>
         <Stack>

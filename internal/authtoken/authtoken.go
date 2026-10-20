@@ -31,6 +31,10 @@ const (
 	PurposePasswordReset Purpose = "pwreset"
 	PurposeEmailVerify   Purpose = "email_verify"
 	PurposeEmailChange   Purpose = "email_change"
+	// PurposeIdentityNotMe is the "this was not me" link of the notice mailed when a
+	// Sign-in provider was linked silently (ADR 0048). It carries the Linked identity to
+	// undo and has no binding: once the identity is gone the link has nothing left to do.
+	PurposeIdentityNotMe Purpose = "identity_not_me"
 	// PurposeLoginChallenge is the challenge between the password step and the
 	// Second factor step of a login (ADR 0020).
 	PurposeLoginChallenge Purpose = "login_challenge"

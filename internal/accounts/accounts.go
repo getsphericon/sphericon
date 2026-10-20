@@ -343,6 +343,7 @@ func markVerified(ctx context.Context, tx *ent.Client, id int64, name string, pa
 	upd := tx.User.Update().
 		Where(user.ID(id), user.EmailVerifiedAtIsNil()).
 		SetEmailVerifiedAt(time.Now()).
+		SetEmailProvenAt(time.Now()).
 		AddSessionEpoch(1)
 	if passwordHash != nil {
 		upd = upd.SetPasswordHash(*passwordHash)
@@ -439,9 +440,18 @@ func (a *Accounts) verified(ctx context.Context, write func(tx *ent.Client) (*en
 // epoch, ending every session issued before it (ADR 0020), and is recorded as an
 // Audit entry in every Workspace the User belongs to, in the same transaction.
 func (a *Accounts) UpdateProfile(ctx context.Context, id int64, name, passwordHash *string) (*ent.User, error) {
+	return a.updateProfile(ctx, id, name, passwordHash, false)
+}
+
+// updateProfile is UpdateProfile; proven also stamps the address as proven (a reset link
+// was followed, which was mailed to it).
+func (a *Accounts) updateProfile(ctx context.Context, id int64, name, passwordHash *string, proven bool) (*ent.User, error) {
 	var saved *ent.User
 	err := a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
 		upd := tx.User.UpdateOneID(id)
+		if proven {
+			upd = upd.SetEmailProvenAt(time.Now())
+		}
 		if name != nil {
 			upd = upd.SetName(*name)
 		}
@@ -484,7 +494,7 @@ func (a *Accounts) ResetPassword(ctx context.Context, id int64, passwordHash str
 		}
 		// A concurrent link verified the User first: this is now a plain password change.
 	}
-	u, err = a.UpdateProfile(ctx, id, nil, &passwordHash)
+	u, err = a.updateProfile(ctx, id, nil, &passwordHash, true)
 	return u, false, err
 }
 
@@ -501,12 +511,16 @@ func (a *Accounts) EndSessions(ctx context.Context, id int64) error {
 	})
 }
 
+// LoginPassword is the method of a login by email and password in the `user.login` entry.
+const LoginPassword = "password"
+
 // RecordLogin records a successful sign-in of the User as `user.login` in the log of
 // every Workspace they belong to (ADR 0022: a login belongs to a User, not a
-// Workspace, so there is no account-level log).
-func (a *Accounts) RecordLogin(ctx context.Context, u *ent.User) error {
+// Workspace, so there is no account-level log). The entry names the method: LoginPassword
+// or the registry name of the Sign-in provider (ADR 0048).
+func (a *Accounts) RecordLogin(ctx context.Context, u *ent.User, method string) error {
 	return a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		return RecordUserAction(ctx, tx, pub, u, events.ActionUserLogin, nil)
+		return RecordUserAction(ctx, tx, pub, u, events.ActionUserLogin, map[string]any{"method": method})
 	})
 }
 
@@ -559,7 +573,8 @@ func RecordActionOnUserIn(ctx context.Context, pub events.Publisher, actor event
 // db.IsUniqueViolation).
 func (a *Accounts) ChangeEmail(ctx context.Context, id int64, newEmail string) error {
 	return a.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
-		return tx.User.UpdateOneID(id).SetEmail(newEmail).SetEmailVerifiedAt(time.Now()).AddSessionEpoch(1).Exec(ctx)
+		now := time.Now()
+		return tx.User.UpdateOneID(id).SetEmail(newEmail).SetEmailVerifiedAt(now).SetEmailProvenAt(now).AddSessionEpoch(1).Exec(ctx)
 	})
 }
 
@@ -592,7 +607,7 @@ func (a *Accounts) PendingInvitation(ctx context.Context, token string) (*ent.In
 func (a *Accounts) AcceptInvitation(ctx context.Context, inv *ent.Invitation, name, password, sessionEmail string) error {
 	role := membership.Role(inv.Role)
 	return a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		u, uerr := tx.User.Query().Where(user.Email(inv.Email)).Only(ctx)
+		u, uerr := tx.User.Query().Where(user.EmailEqualFold(inv.Email)).Only(ctx)
 		if uerr != nil && !ent.IsNotFound(uerr) {
 			return uerr
 		}
@@ -604,6 +619,10 @@ func (a *Accounts) AcceptInvitation(ctx context.Context, inv *ent.Invitation, na
 			}
 			if !strings.EqualFold(sessionEmail, inv.Email) {
 				return ErrWrongAccount
+			}
+			// The invitation reached the address, and its owner's session accepted it.
+			if err := tx.User.Update().Where(user.ID(u.ID), user.EmailProvenAtIsNil()).SetEmailProvenAt(time.Now()).Exec(ctx); err != nil {
+				return err
 			}
 		} else {
 			name = strings.TrimSpace(name)
@@ -620,6 +639,7 @@ func (a *Accounts) AcceptInvitation(ctx context.Context, inv *ent.Invitation, na
 					SetEmail(inv.Email).
 					SetPasswordHash(hash).
 					SetEmailVerifiedAt(time.Now()).
+					SetEmailProvenAt(time.Now()).
 					Save(ctx)
 			} else {
 				u, uerr = markVerified(ctx, tx, u.ID, name, &hash)

@@ -3,6 +3,7 @@ package site_test
 import (
 	"context"
 	"encoding/json"
+	"net/http"
 	"os"
 	"path/filepath"
 	"slices"
@@ -217,7 +218,7 @@ func TestAuditSuspensionNoOpRecordsNothing(t *testing.T) {
 // it is added to the list (and driven below) or this test fails. The call-site scan
 // catches a RecordAudit call in a file this list does not know about.
 func TestExplicitAuditPathsAreAllListed(t *testing.T) {
-	env := testhelper.Setup(t)
+	env, fake := signinEnv(t)
 	ctx := context.Background()
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
@@ -238,17 +239,17 @@ func TestExplicitAuditPathsAreAllListed(t *testing.T) {
 	_, err = owner.SiteUserUpdateMe(ctx, &siteapi.SiteUpdateMeInput{                                // user.password_change
 		CurrentPassword: siteapi.NewOptString(fixtures.OwnerJohnPassword), NewPassword: siteapi.NewOptString("another-pass-1")})
 	require.NoError(t, err)
-	started, err := owner.SiteSecondFactorStartEnrollment(ctx, &siteapi.SiteSecondFactorStartInput{CurrentPassword: "another-pass-1"})
+	started, err := owner.SiteSecondFactorStartEnrollment(ctx, &siteapi.SiteSecondFactorStartInput{CurrentPassword: siteapi.NewOptString("another-pass-1")})
 	require.NoError(t, err)
 	code, err := totp.GenerateCode(started.(*siteapi.SiteSecondFactorEnrollment).Secret, time.Now())
 	require.NoError(t, err)
-	_, err = owner.SiteSecondFactorConfirmEnrollment(ctx, &siteapi.SiteSecondFactorConfirmInput{CurrentPassword: "another-pass-1", Code: code}) // user.second_factor_enroll
+	_, err = owner.SiteSecondFactorConfirmEnrollment(ctx, &siteapi.SiteSecondFactorConfirmInput{CurrentPassword: siteapi.NewOptString("another-pass-1"), Code: code}) // user.second_factor_enroll
 	require.NoError(t, err)
 	regenerated, err := owner.SiteSecondFactorRegenerateRecoveryCodes(ctx, // user.recovery_codes_regenerate
-		&siteapi.SiteRecoveryCodesInput{CurrentPassword: "another-pass-1"})
+		&siteapi.SiteRecoveryCodesInput{CurrentPassword: siteapi.NewOptString("another-pass-1")})
 	require.NoError(t, err)
 	disabled, err := owner.SiteSecondFactorDisable(ctx, &siteapi.SiteSecondFactorDisableInput{ // user.recovery_code_use, user.second_factor_disable
-		CurrentPassword: "another-pass-1", Code: regenerated.(*siteapi.SiteRecoveryCodesHeaders).Response.Codes[0]})
+		CurrentPassword: siteapi.NewOptString("another-pass-1"), Code: regenerated.(*siteapi.SiteRecoveryCodesHeaders).Response.Codes[0]})
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SiteSecondFactorDisableNoContent{}, disabled)
 	_, err = env.SiteActor(t, fixtures.OwnerJaneEmail).SiteMembershipsResetSecondFactor(ctx, // user.second_factor_reset
@@ -283,6 +284,10 @@ func TestExplicitAuditPathsAreAllListed(t *testing.T) {
 	_, err = owner.SiteWebhooksTest(ctx, &siteapi.SiteTestWebhookInput{EventType: "contact.created"}, // webhook_endpoint.test
 		siteapi.SiteWebhooksTestParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.WebhookCodebasicsID)})
 	require.NoError(t, err)
+
+	b := signedIn(t, env, fake, mary)                                                                                   // user.login by a provider
+	link(t, fake, b, maryAtWork)                                                                                        // user.identity_link
+	require.Equal(t, http.StatusNoContent, b.Delete(t, identitiesPath+"/"+listIdentities(t, b).Items[0].ID).StatusCode) // user.identity_unlink
 
 	_, err = owner.SiteUserSignOutEverywhere(ctx) // user.sign_out_everywhere
 	require.NoError(t, err)

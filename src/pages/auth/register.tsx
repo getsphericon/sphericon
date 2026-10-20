@@ -6,6 +6,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { AnchorLink } from '../../components/RouterLink.tsx'
+import { SigninProviders } from '../../components/SigninProviders.tsx'
 import { siteAuthRegisterMutation } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteRegisterInput } from '../../generated/site/types.gen.ts'
 import { useApiErrorMessage } from '../../hooks/useApiErrorMessage.ts'
@@ -105,6 +106,8 @@ export function RegisterPage() {
   return (
     <Stack maw={400} mx="auto" mt="xl">
       <Title order={3}>{t(($) => $.registration.title)}</Title>
+
+      <SigninProviders />
 
       <form onSubmit={form.onSubmit(handleSubmit)}>
         <Stack>

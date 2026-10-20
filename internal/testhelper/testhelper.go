@@ -57,6 +57,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/segments"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/server"
+	"github.com/getsphericon/sphericon/internal/signin"
 	"github.com/getsphericon/sphericon/internal/tags"
 	"github.com/getsphericon/sphericon/internal/templates"
 	"github.com/getsphericon/sphericon/internal/tracking"
@@ -201,6 +202,8 @@ type setup struct {
 	noSystemSender bool
 	// noSystemFrom gives the System sender no default From (it is not a DefaultFromer).
 	noSystemFrom bool
+	// signinOpts point the Sign-in registry at a fake provider (WithSignin).
+	signinOpts []signin.Option
 }
 
 // WithOAuthFetcher replaces the client that downloads OAuth Client ID Metadata Documents, so a
@@ -410,6 +413,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		SecondFactor:             secondFactor,
 		Clock:                    st.now,
 		RequireEmailVerification: cfg.RequireEmailVerification, SignupOpen: cfg.SignupOpen,
+		Signin: signin.FromConfig(&cfg, st.now, st.signinOpts...),
 	}, external, mcpHandler, staffHandler)
 	require.NoError(t, err, "build server")
 	internalHandler, err := server.NewInternal(&cfg, client, edition.Service(bus))

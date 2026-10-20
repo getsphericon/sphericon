@@ -1274,6 +1274,7 @@ var (
 		{Name: "email", Type: field.TypeString, Unique: true},
 		{Name: "password_hash", Type: field.TypeString, Nullable: true},
 		{Name: "email_verified_at", Type: field.TypeTime, Nullable: true},
+		{Name: "email_proven_at", Type: field.TypeTime, Nullable: true},
 		{Name: "session_epoch", Type: field.TypeInt64, Default: 0},
 		{Name: "second_factor_secret_encrypted", Type: field.TypeString, Nullable: true},
 		{Name: "second_factor_confirmed_at", Type: field.TypeTime, Nullable: true},
@@ -1284,6 +1285,41 @@ var (
 		Name:       "users",
 		Columns:    UsersColumns,
 		PrimaryKey: []*schema.Column{UsersColumns[0]},
+	}
+	// UserIdentitiesColumns holds the columns for the "user_identities" table.
+	UserIdentitiesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "provider", Type: field.TypeString},
+		{Name: "subject", Type: field.TypeString},
+		{Name: "user_id", Type: field.TypeInt64},
+	}
+	// UserIdentitiesTable holds the schema information for the "user_identities" table.
+	UserIdentitiesTable = &schema.Table{
+		Name:       "user_identities",
+		Columns:    UserIdentitiesColumns,
+		PrimaryKey: []*schema.Column{UserIdentitiesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "user_identities_users_identities",
+				Columns:    []*schema.Column{UserIdentitiesColumns[5]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "useridentity_provider_subject",
+				Unique:  true,
+				Columns: []*schema.Column{UserIdentitiesColumns[3], UserIdentitiesColumns[4]},
+			},
+			{
+				Name:    "useridentity_user_id",
+				Unique:  false,
+				Columns: []*schema.Column{UserIdentitiesColumns[5]},
+			},
+		},
 	}
 	// VisitorsColumns holds the columns for the "visitors" table.
 	VisitorsColumns = []*schema.Column{
@@ -1465,6 +1501,7 @@ var (
 		UnsubscribesTable,
 		UsagesTable,
 		UsersTable,
+		UserIdentitiesTable,
 		VisitorsTable,
 		WebhookEndpointsTable,
 		WorkspacesTable,
@@ -1615,6 +1652,10 @@ func init() {
 	}
 	UsersTable.Annotation = &entsql.Annotation{
 		Table: "users",
+	}
+	UserIdentitiesTable.ForeignKeys[0].RefTable = UsersTable
+	UserIdentitiesTable.Annotation = &entsql.Annotation{
+		Table: "user_identities",
 	}
 	VisitorsTable.ForeignKeys[0].RefTable = ContactsTable
 	VisitorsTable.ForeignKeys[1].RefTable = WorkspacesTable
