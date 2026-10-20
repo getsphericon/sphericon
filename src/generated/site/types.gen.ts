@@ -792,10 +792,6 @@ export type SiteAuditEntryResource = {
    */
   action: string;
   /**
-   * True when the change set, renewed or lifted a billing hold (reason code `non_payment` or `free_plan_cap`): shown as billing activity
-   */
-  billing: boolean;
-  /**
    * What it was done to
    */
   target: SiteAuditTarget;
@@ -3364,9 +3360,9 @@ export type SiteWorkspaceHold = {
    */
   since: Timestamp;
   /**
-   * True for a billing hold (reason code `non_payment` or `free_plan_cap`): sending is paused for a money reason, not for abuse
+   * Where an Owner or Admin can resolve the hold, as the setter gave it; absent when none was given
    */
-  billing: boolean;
+  actionUrl?: string | null;
 };
 
 /**
@@ -3414,11 +3410,6 @@ export type SiteWorkspaceResource = {
    * configured none.
    */
   supportEmail?: string | null;
-  /**
-   * The billing site a member under a hold is pointed to (SPHERICON_BILLING_URL); absent when the
-   * instance configured none, and then no billing text is shown.
-   */
-  billingUrl?: string | null;
   /**
    * The public origin an AI agent connects to as `<mcpUrl>/mcp`: SPHERICON_MCP_URL when MCP has its
    * own host, otherwise the app origin.

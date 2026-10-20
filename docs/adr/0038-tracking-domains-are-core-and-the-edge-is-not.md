@@ -17,7 +17,7 @@ as the CNAME, while a CloudFront multi-tenant distribution validates over HTTP a
   its links on it, so the link host aligns with the From domain. There is no separate entity and no
   choice of label. Drip's help center documents custom sending domains and shows no branded link
   domain, so this follows its unit of branding (the Sending domain), not a feature of it. The core
-  has no license gate; a plan limit belongs to the billing plane.
+  has no license gate; a limit on how many a Workspace may add belongs to the platform that hosts the Instance.
 - **Two states, because a certificate takes time.** `dns_verified`: a live DNS check finds the CNAME
   pointing at the Instance's edge host (`SPHERICON_TRACKING_CNAME_TARGET`, which the core only compares
   with the answer); the edge may now provision and the `ask` endpoint answers 200. `serving`: an HTTPS

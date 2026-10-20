@@ -85,6 +85,11 @@ func Message(v string) predicate.Hold {
 	return predicate.Hold(sql.FieldEQ(FieldMessage, v))
 }
 
+// ActionURL applies equality check predicate on the "action_url" field. It's identical to ActionURLEQ.
+func ActionURL(v string) predicate.Hold {
+	return predicate.Hold(sql.FieldEQ(FieldActionURL, v))
+}
+
 // ExpiresAt applies equality check predicate on the "expires_at" field. It's identical to ExpiresAtEQ.
 func ExpiresAt(v time.Time) predicate.Hold {
 	return predicate.Hold(sql.FieldEQ(FieldExpiresAt, v))
@@ -388,6 +393,81 @@ func MessageEqualFold(v string) predicate.Hold {
 // MessageContainsFold applies the ContainsFold predicate on the "message" field.
 func MessageContainsFold(v string) predicate.Hold {
 	return predicate.Hold(sql.FieldContainsFold(FieldMessage, v))
+}
+
+// ActionURLEQ applies the EQ predicate on the "action_url" field.
+func ActionURLEQ(v string) predicate.Hold {
+	return predicate.Hold(sql.FieldEQ(FieldActionURL, v))
+}
+
+// ActionURLNEQ applies the NEQ predicate on the "action_url" field.
+func ActionURLNEQ(v string) predicate.Hold {
+	return predicate.Hold(sql.FieldNEQ(FieldActionURL, v))
+}
+
+// ActionURLIn applies the In predicate on the "action_url" field.
+func ActionURLIn(vs ...string) predicate.Hold {
+	return predicate.Hold(sql.FieldIn(FieldActionURL, vs...))
+}
+
+// ActionURLNotIn applies the NotIn predicate on the "action_url" field.
+func ActionURLNotIn(vs ...string) predicate.Hold {
+	return predicate.Hold(sql.FieldNotIn(FieldActionURL, vs...))
+}
+
+// ActionURLGT applies the GT predicate on the "action_url" field.
+func ActionURLGT(v string) predicate.Hold {
+	return predicate.Hold(sql.FieldGT(FieldActionURL, v))
+}
+
+// ActionURLGTE applies the GTE predicate on the "action_url" field.
+func ActionURLGTE(v string) predicate.Hold {
+	return predicate.Hold(sql.FieldGTE(FieldActionURL, v))
+}
+
+// ActionURLLT applies the LT predicate on the "action_url" field.
+func ActionURLLT(v string) predicate.Hold {
+	return predicate.Hold(sql.FieldLT(FieldActionURL, v))
+}
+
+// ActionURLLTE applies the LTE predicate on the "action_url" field.
+func ActionURLLTE(v string) predicate.Hold {
+	return predicate.Hold(sql.FieldLTE(FieldActionURL, v))
+}
+
+// ActionURLContains applies the Contains predicate on the "action_url" field.
+func ActionURLContains(v string) predicate.Hold {
+	return predicate.Hold(sql.FieldContains(FieldActionURL, v))
+}
+
+// ActionURLHasPrefix applies the HasPrefix predicate on the "action_url" field.
+func ActionURLHasPrefix(v string) predicate.Hold {
+	return predicate.Hold(sql.FieldHasPrefix(FieldActionURL, v))
+}
+
+// ActionURLHasSuffix applies the HasSuffix predicate on the "action_url" field.
+func ActionURLHasSuffix(v string) predicate.Hold {
+	return predicate.Hold(sql.FieldHasSuffix(FieldActionURL, v))
+}
+
+// ActionURLIsNil applies the IsNil predicate on the "action_url" field.
+func ActionURLIsNil() predicate.Hold {
+	return predicate.Hold(sql.FieldIsNull(FieldActionURL))
+}
+
+// ActionURLNotNil applies the NotNil predicate on the "action_url" field.
+func ActionURLNotNil() predicate.Hold {
+	return predicate.Hold(sql.FieldNotNull(FieldActionURL))
+}
+
+// ActionURLEqualFold applies the EqualFold predicate on the "action_url" field.
+func ActionURLEqualFold(v string) predicate.Hold {
+	return predicate.Hold(sql.FieldEqualFold(FieldActionURL, v))
+}
+
+// ActionURLContainsFold applies the ContainsFold predicate on the "action_url" field.
+func ActionURLContainsFold(v string) predicate.Hold {
+	return predicate.Hold(sql.FieldContainsFold(FieldActionURL, v))
 }
 
 // ExpiresAtEQ applies the EQ predicate on the "expires_at" field.
