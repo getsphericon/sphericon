@@ -534,6 +534,7 @@ func (e *Hold) auditFields() map[string]any {
 		"key":         e.Key,
 		"reason_code": e.ReasonCode,
 		"message":     e.Message,
+		"action_url":  derefAudit(e.ActionURL),
 		"expires_at":  e.ExpiresAt,
 		"set_by":      e.SetBy,
 	}
@@ -557,7 +558,6 @@ func auditChangeHold(verb string, before, after *Hold) AuditChange {
 		TargetID:   auditID(target.ID),
 		Diff:       AuditDiff(b, a, HoldAuditSensitive),
 	}
-	auditKeep(change.Diff, b, a, "reason_code")
 	change.TargetName = fmt.Sprint(derefAudit(target.Key))
 	return change
 }

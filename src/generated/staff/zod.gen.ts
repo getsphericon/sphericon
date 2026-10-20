@@ -238,7 +238,6 @@ export const zStaffAuditEntryResource = z.object({
   occurredAt: zTimestamp,
   actor: zStaffAuditActor,
   action: z.string(),
-  billing: z.boolean(),
   target: zStaffAuditTarget,
   diff: z.exactOptional(z.record(z.string(), z.unknown()).nullable()),
   requestId: z.exactOptional(z.string().nullable()),
@@ -264,7 +263,7 @@ export const zStaffHold = z.object({
   createdAt: zTimestamp,
   expiresAt: zTimestamp,
   setBy: z.string(),
-  billing: z.boolean()
+  actionUrl: z.exactOptional(z.string().nullable())
 });
 
 /**

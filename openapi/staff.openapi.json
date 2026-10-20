@@ -971,7 +971,7 @@
       },
       "StaffAuditEntryResource": {
         "type": "object",
-        "required": ["id", "occurredAt", "actor", "action", "billing", "target"],
+        "required": ["id", "occurredAt", "actor", "action", "target"],
         "properties": {
           "id": {
             "allOf": [
@@ -1000,10 +1000,6 @@
           "action": {
             "type": "string",
             "description": "What was done, as `<entity>.<verb>`"
-          },
-          "billing": {
-            "type": "boolean",
-            "description": "True when the change set, renewed or lifted a billing hold (reason code `non_payment` or `free_plan_cap`)"
           },
           "target": {
             "allOf": [
@@ -1156,7 +1152,7 @@
       },
       "StaffHold": {
         "type": "object",
-        "required": ["key", "reasonCode", "message", "createdAt", "expiresAt", "setBy", "billing"],
+        "required": ["key", "reasonCode", "message", "createdAt", "expiresAt", "setBy"],
         "properties": {
           "key": {
             "type": "string",
@@ -1190,9 +1186,10 @@
             "type": "string",
             "description": "Who set it: the name of its Service credential"
           },
-          "billing": {
-            "type": "boolean",
-            "description": "True for a billing hold (reason code `non_payment` or `free_plan_cap`)"
+          "actionUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "Where an Owner or Admin can resolve the hold, as the setter gave it; absent when none was given"
           }
         },
         "description": "An active Staff hold on a Workspace, as the console shows it (read only)"

@@ -207,15 +207,22 @@ func (s *HoldInput) encodeFields(e *jx.Encoder) {
 		e.Str(s.Message)
 	}
 	{
+		if s.ActionUrl.Set {
+			e.FieldStart("actionUrl")
+			s.ActionUrl.Encode(e)
+		}
+	}
+	{
 		e.FieldStart("expiresAt")
 		s.ExpiresAt.Encode(e)
 	}
 }
 
-var jsonFieldsNameOfHoldInput = [3]string{
+var jsonFieldsNameOfHoldInput = [4]string{
 	0: "reasonCode",
 	1: "message",
-	2: "expiresAt",
+	2: "actionUrl",
+	3: "expiresAt",
 }
 
 // Decode decodes HoldInput from json.
@@ -251,8 +258,18 @@ func (s *HoldInput) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"message\"")
 			}
+		case "actionUrl":
+			if err := func() error {
+				s.ActionUrl.Reset()
+				if err := s.ActionUrl.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"actionUrl\"")
+			}
 		case "expiresAt":
-			requiredBitSet[0] |= 1 << 2
+			requiredBitSet[0] |= 1 << 3
 			if err := func() error {
 				if err := s.ExpiresAt.Decode(d); err != nil {
 					return err
@@ -271,7 +288,7 @@ func (s *HoldInput) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00000111,
+		0b00001011,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -445,6 +462,12 @@ func (s *HoldResource) encodeFields(e *jx.Encoder) {
 		e.Str(s.Message)
 	}
 	{
+		if s.ActionUrl.Set {
+			e.FieldStart("actionUrl")
+			s.ActionUrl.Encode(e)
+		}
+	}
+	{
 		e.FieldStart("expiresAt")
 		s.ExpiresAt.Encode(e)
 	}
@@ -462,14 +485,15 @@ func (s *HoldResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfHoldResource = [7]string{
+var jsonFieldsNameOfHoldResource = [8]string{
 	0: "key",
 	1: "reasonCode",
 	2: "message",
-	3: "expiresAt",
-	4: "setBy",
-	5: "createdAt",
-	6: "updatedAt",
+	3: "actionUrl",
+	4: "expiresAt",
+	5: "setBy",
+	6: "createdAt",
+	7: "updatedAt",
 }
 
 // Decode decodes HoldResource from json.
@@ -517,8 +541,18 @@ func (s *HoldResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"message\"")
 			}
+		case "actionUrl":
+			if err := func() error {
+				s.ActionUrl.Reset()
+				if err := s.ActionUrl.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"actionUrl\"")
+			}
 		case "expiresAt":
-			requiredBitSet[0] |= 1 << 3
+			requiredBitSet[0] |= 1 << 4
 			if err := func() error {
 				if err := s.ExpiresAt.Decode(d); err != nil {
 					return err
@@ -528,7 +562,7 @@ func (s *HoldResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"expiresAt\"")
 			}
 		case "setBy":
-			requiredBitSet[0] |= 1 << 4
+			requiredBitSet[0] |= 1 << 5
 			if err := func() error {
 				v, err := d.Str()
 				s.SetBy = string(v)
@@ -540,7 +574,7 @@ func (s *HoldResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"setBy\"")
 			}
 		case "createdAt":
-			requiredBitSet[0] |= 1 << 5
+			requiredBitSet[0] |= 1 << 6
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -550,7 +584,7 @@ func (s *HoldResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"createdAt\"")
 			}
 		case "updatedAt":
-			requiredBitSet[0] |= 1 << 6
+			requiredBitSet[0] |= 1 << 7
 			if err := func() error {
 				if err := s.UpdatedAt.Decode(d); err != nil {
 					return err
@@ -569,7 +603,7 @@ func (s *HoldResource) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b01111111,
+		0b11110111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -757,6 +791,57 @@ func (s OptInt32) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *OptInt32) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes string as json.
+func (o OptNilString) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	if o.Null {
+		e.Null()
+		return
+	}
+	e.Str(string(o.Value))
+}
+
+// Decode decodes string from json.
+func (o *OptNilString) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptNilString to nil")
+	}
+	if d.Next() == jx.Null {
+		if err := d.Null(); err != nil {
+			return err
+		}
+
+		var v string
+		o.Value = v
+		o.Set = true
+		o.Null = true
+		return nil
+	}
+	o.Set = true
+	o.Null = false
+	v, err := d.Str()
+	if err != nil {
+		return err
+	}
+	o.Value = string(v)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptNilString) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptNilString) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

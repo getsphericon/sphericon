@@ -30,6 +30,8 @@ type Hold struct {
 	ReasonCode string `json:"reason_code,omitempty"`
 	// Message holds the value of the "message" field.
 	Message string `json:"message,omitempty"`
+	// ActionURL holds the value of the "action_url" field.
+	ActionURL *string `json:"action_url,omitempty"`
 	// ExpiresAt holds the value of the "expires_at" field.
 	ExpiresAt time.Time `json:"expires_at,omitempty"`
 	// SetBy holds the value of the "set_by" field.
@@ -67,7 +69,7 @@ func (*Hold) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case hold.FieldID, hold.FieldWorkspaceID:
 			values[i] = new(sql.NullInt64)
-		case hold.FieldKey, hold.FieldReasonCode, hold.FieldMessage, hold.FieldSetBy:
+		case hold.FieldKey, hold.FieldReasonCode, hold.FieldMessage, hold.FieldActionURL, hold.FieldSetBy:
 			values[i] = new(sql.NullString)
 		case hold.FieldCreatedAt, hold.FieldUpdatedAt, hold.FieldExpiresAt:
 			values[i] = new(sql.NullTime)
@@ -127,6 +129,13 @@ func (_m *Hold) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field message", values[i])
 			} else if value.Valid {
 				_m.Message = value.String
+			}
+		case hold.FieldActionURL:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field action_url", values[i])
+			} else if value.Valid {
+				_m.ActionURL = new(string)
+				*_m.ActionURL = value.String
 			}
 		case hold.FieldExpiresAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -198,6 +207,11 @@ func (_m *Hold) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("message=")
 	builder.WriteString(_m.Message)
+	builder.WriteString(", ")
+	if v := _m.ActionURL; v != nil {
+		builder.WriteString("action_url=")
+		builder.WriteString(*v)
+	}
 	builder.WriteString(", ")
 	builder.WriteString("expires_at=")
 	builder.WriteString(_m.ExpiresAt.Format(time.ANSIC))

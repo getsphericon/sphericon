@@ -1306,9 +1306,6 @@ type StaffAuditEntryResource struct {
 	Actor StaffAuditActor `json:"actor"`
 	// What was done, as `<entity>.<verb>`.
 	Action string `json:"action"`
-	// True when the change set, renewed or lifted a billing hold (reason code `non_payment` or
-	// `free_plan_cap`).
-	Billing bool `json:"billing"`
 	// What it was done to.
 	Target StaffAuditTarget `json:"target"`
 	// Before/after of the changed fields.
@@ -1339,11 +1336,6 @@ func (s *StaffAuditEntryResource) GetActor() StaffAuditActor {
 // GetAction returns the value of Action.
 func (s *StaffAuditEntryResource) GetAction() string {
 	return s.Action
-}
-
-// GetBilling returns the value of Billing.
-func (s *StaffAuditEntryResource) GetBilling() bool {
-	return s.Billing
 }
 
 // GetTarget returns the value of Target.
@@ -1389,11 +1381,6 @@ func (s *StaffAuditEntryResource) SetActor(val StaffAuditActor) {
 // SetAction sets the value of Action.
 func (s *StaffAuditEntryResource) SetAction(val string) {
 	s.Action = val
-}
-
-// SetBilling sets the value of Billing.
-func (s *StaffAuditEntryResource) SetBilling(val bool) {
-	s.Billing = val
 }
 
 // SetTarget sets the value of Target.
@@ -1684,8 +1671,8 @@ type StaffHold struct {
 	ExpiresAt Timestamp `json:"expiresAt"`
 	// Who set it: the name of its Service credential.
 	SetBy string `json:"setBy"`
-	// True for a billing hold (reason code `non_payment` or `free_plan_cap`).
-	Billing bool `json:"billing"`
+	// Where an Owner or Admin can resolve the hold, as the setter gave it; absent when none was given.
+	ActionUrl OptNilString `json:"actionUrl"`
 }
 
 // GetKey returns the value of Key.
@@ -1718,9 +1705,9 @@ func (s *StaffHold) GetSetBy() string {
 	return s.SetBy
 }
 
-// GetBilling returns the value of Billing.
-func (s *StaffHold) GetBilling() bool {
-	return s.Billing
+// GetActionUrl returns the value of ActionUrl.
+func (s *StaffHold) GetActionUrl() OptNilString {
+	return s.ActionUrl
 }
 
 // SetKey sets the value of Key.
@@ -1753,9 +1740,9 @@ func (s *StaffHold) SetSetBy(val string) {
 	s.SetBy = val
 }
 
-// SetBilling sets the value of Billing.
-func (s *StaffHold) SetBilling(val bool) {
-	s.Billing = val
+// SetActionUrl sets the value of ActionUrl.
+func (s *StaffHold) SetActionUrl(val OptNilString) {
+	s.ActionUrl = val
 }
 
 // Sign in with an email and password. The email is a plain string: a malformed address must answer

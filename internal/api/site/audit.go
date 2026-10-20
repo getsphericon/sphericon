@@ -124,7 +124,6 @@ func auditEntryResource(e *ent.AuditEntry) siteapi.SiteAuditEntryResource {
 		OccurredAt: siteapi.Timestamp(v.OccurredAt),
 		Actor:      siteapi.SiteAuditActor{Kind: siteapi.SiteAuditActorKind(v.ActorKind), ID: nilableString(v.ActorID), Name: nilableString(v.ActorName)},
 		Action:     v.Action,
-		Billing:    v.Billing,
 		Target:     siteapi.SiteAuditTarget{Type: v.TargetType, ID: nilableString(v.TargetID), Name: nilableString(v.TargetName)},
 		RequestId:  nilableString(v.RequestID),
 		IP:         nilableString(v.IP),

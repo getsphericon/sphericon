@@ -4978,9 +4978,6 @@ type SiteAuditEntryResource struct {
 	Actor SiteAuditActor `json:"actor"`
 	// What was done, as `<entity>.<verb>`.
 	Action string `json:"action"`
-	// True when the change set, renewed or lifted a billing hold (reason code `non_payment` or
-	// `free_plan_cap`): shown as billing activity.
-	Billing bool `json:"billing"`
 	// What it was done to.
 	Target SiteAuditTarget `json:"target"`
 	// Before/after of the changed fields; secrets appear as changed only.
@@ -5011,11 +5008,6 @@ func (s *SiteAuditEntryResource) GetActor() SiteAuditActor {
 // GetAction returns the value of Action.
 func (s *SiteAuditEntryResource) GetAction() string {
 	return s.Action
-}
-
-// GetBilling returns the value of Billing.
-func (s *SiteAuditEntryResource) GetBilling() bool {
-	return s.Billing
 }
 
 // GetTarget returns the value of Target.
@@ -5061,11 +5053,6 @@ func (s *SiteAuditEntryResource) SetActor(val SiteAuditActor) {
 // SetAction sets the value of Action.
 func (s *SiteAuditEntryResource) SetAction(val string) {
 	s.Action = val
-}
-
-// SetBilling sets the value of Billing.
-func (s *SiteAuditEntryResource) SetBilling(val bool) {
-	s.Billing = val
 }
 
 // SetTarget sets the value of Target.
@@ -15064,9 +15051,8 @@ type SiteWorkspaceHold struct {
 	Message string `json:"message"`
 	// When the hold was set.
 	Since Timestamp `json:"since"`
-	// True for a billing hold (reason code `non_payment` or `free_plan_cap`): sending is paused for a
-	// money reason, not for abuse.
-	Billing bool `json:"billing"`
+	// Where an Owner or Admin can resolve the hold, as the setter gave it; absent when none was given.
+	ActionUrl OptNilString `json:"actionUrl"`
 }
 
 // GetKey returns the value of Key.
@@ -15089,9 +15075,9 @@ func (s *SiteWorkspaceHold) GetSince() Timestamp {
 	return s.Since
 }
 
-// GetBilling returns the value of Billing.
-func (s *SiteWorkspaceHold) GetBilling() bool {
-	return s.Billing
+// GetActionUrl returns the value of ActionUrl.
+func (s *SiteWorkspaceHold) GetActionUrl() OptNilString {
+	return s.ActionUrl
 }
 
 // SetKey sets the value of Key.
@@ -15114,9 +15100,9 @@ func (s *SiteWorkspaceHold) SetSince(val Timestamp) {
 	s.Since = val
 }
 
-// SetBilling sets the value of Billing.
-func (s *SiteWorkspaceHold) SetBilling(val bool) {
-	s.Billing = val
+// SetActionUrl sets the value of ActionUrl.
+func (s *SiteWorkspaceHold) SetActionUrl(val OptNilString) {
+	s.ActionUrl = val
 }
 
 // Workspace the current user belongs to.
@@ -15145,9 +15131,6 @@ type SiteWorkspaceResource struct {
 	// Where to appeal a suspension by email (SPHERICON_SUPPORT_EMAIL); absent when the instance configured
 	// none.
 	SupportEmail OptNilString `json:"supportEmail"`
-	// The billing site a member under a hold is pointed to (SPHERICON_BILLING_URL); absent when the
-	// instance configured none, and then no billing text is shown.
-	BillingUrl OptNilString `json:"billingUrl"`
 	// The public origin an AI agent connects to as `<mcpUrl>/mcp`: SPHERICON_MCP_URL when MCP has its own
 	// host, otherwise the app origin.
 	McpUrl string `json:"mcpUrl"`
@@ -15212,11 +15195,6 @@ func (s *SiteWorkspaceResource) GetSuspensionReason() OptNilString {
 // GetSupportEmail returns the value of SupportEmail.
 func (s *SiteWorkspaceResource) GetSupportEmail() OptNilString {
 	return s.SupportEmail
-}
-
-// GetBillingUrl returns the value of BillingUrl.
-func (s *SiteWorkspaceResource) GetBillingUrl() OptNilString {
-	return s.BillingUrl
 }
 
 // GetMcpUrl returns the value of McpUrl.
@@ -15292,11 +15270,6 @@ func (s *SiteWorkspaceResource) SetSuspensionReason(val OptNilString) {
 // SetSupportEmail sets the value of SupportEmail.
 func (s *SiteWorkspaceResource) SetSupportEmail(val OptNilString) {
 	s.SupportEmail = val
-}
-
-// SetBillingUrl sets the value of BillingUrl.
-func (s *SiteWorkspaceResource) SetBillingUrl(val OptNilString) {
-	s.BillingUrl = val
 }
 
 // SetMcpUrl sets the value of McpUrl.

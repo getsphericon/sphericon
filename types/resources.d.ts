@@ -182,7 +182,6 @@ export default interface Resources {
       "waitNodeDescription": "Pause before the next step.",
       "waitSecondsLabel": "Wait (seconds)"
     },
-    "billingBadge": "Billing",
     "brandKit": {
       "accentColorLabel": "Accent color",
       "backgroundColorLabel": "Background color",
@@ -1155,13 +1154,9 @@ export default interface Resources {
       "successTitle": "Email verified",
       "title": "Set your password"
     },
-    "workspaceBillingHold": {
-      "description": "Outbound email is paused for this workspace because of a billing issue, not because of abuse. Scheduled broadcasts and automations wait and continue on their own once it is resolved. You can still sign in and view your data.",
-      "title": "Sending is paused for billing"
-    },
     "workspaceHold": {
-      "billingContact": "To resolve it, contact an Owner or Admin of this workspace.",
-      "billingLink": "Go to billing",
+      "actionContact": "To resolve it, contact an Owner or Admin of this workspace.",
+      "actionLink": "Resolve",
       "description": "Outbound email is on hold for this workspace. Scheduled broadcasts and automations wait and continue on their own when the hold lifts. You can still sign in and view your data.",
       "title": "Sending is on hold"
     },

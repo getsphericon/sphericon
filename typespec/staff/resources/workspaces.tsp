@@ -148,8 +148,8 @@ model StaffHold {
   /** Who set it: the name of its Service credential */
   setBy: string;
 
-  /** True for a billing hold (reason code `non_payment` or `free_plan_cap`) */
-  billing: boolean;
+  /** Where an Owner or Admin can resolve the hold, as the setter gave it; absent when none was given */
+  actionUrl?: string | null;
 }
 
 /** A Workspace with its deliverability and active holds, as the detail page shows it */
