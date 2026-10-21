@@ -106,7 +106,7 @@ func TestCustomFieldKeyIsABoundArgument(t *testing.T) {
 	assert.Equal(t, []string{"quote@ops.test"}, opsEmails(t, env, opsGroup(rule("custom:it's", "eq", "here"))))
 
 	// Even a declared key that looks like SQL is data: the catalogue accepts any key
-	// ingest created, and it only ever reaches the query as a bound argument.
+	// ingest created, and it only ever reaches the query as one quoted literal.
 	payload := "x' IS NOT NULL AND (SELECT count(*) FROM users)>0 AND 'a"
 	declare(t, env, payload)
 	for _, op := range []string{"eq", "neq", "contains", "notNull"} {

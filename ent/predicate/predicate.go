@@ -99,6 +99,9 @@ type PasskeyChallenge func(*sql.Selector)
 // RecoveryCode is the predicate function for recoverycode builders.
 type RecoveryCode func(*sql.Selector)
 
+// RiverJob is the predicate function for riverjob builders.
+type RiverJob func(*sql.Selector)
+
 // SchemaState is the predicate function for schemastate builders.
 type SchemaState func(*sql.Selector)
 

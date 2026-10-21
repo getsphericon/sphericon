@@ -6,9 +6,11 @@ import (
 	"strings"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqljson"
 
 	"github.com/getsphericon/sphericon/ent/outboxmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/ent/riverjob"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/internal/jobkind"
 )
@@ -19,12 +21,8 @@ import (
 // rolls back) with the state change that asks for it. Erasure is its only caller
 // (ADR 0021); it is a separate interface so ordinary producers cannot reach it.
 //
-// The job deletes are SQL on river_job on purpose. river's Tx API would work here
-// (riverdatabasesql v0.49.0 matches river, and JobListTx/JobDeleteManyTx run on this
-// *sql.Tx), but JobDeleteManyParams has no args predicate and JobListParams only an
-// args-capable Where(sql, args) escape hatch, so the match would still be this same
-// SQL, wrapped in a second river client, a new driver dependency and a list-then-delete
-// loop. The tests' own queue access does use river's API (internal/testhelper/jobs.go).
+// The job deletes go through the RiverJob skipped entity (river's table; ent only
+// generates its client): river's Tx API has no args predicate, so ent matches the args.
 type QueuePurger interface {
 	// PurgeOutbox deletes the Workspace's outbox envelopes that name the Contact,
 	// by id or by one of its destinations (matched case-insensitively).
@@ -54,26 +52,48 @@ func (p *txPublisher) PurgeOutbox(ctx context.Context, workspaceID, contactID in
 
 // outboxNamesSubject selects a Workspace's outbox envelopes that name a data subject. The
 // payload is the JSON-encoded Envelope; events name the Contact as data.contactId and the
-// address as data.email. ent has no predicate over a JSON document, so this is one on
-// the generated query.
+// address as data.email. The paths are ent's JSON predicates; only the case-insensitive
+// address match is written by hand (the lower() of a JSON path has no predicate), around
+// ent's own path expression.
 func outboxNamesSubject(workspaceID int64, contactID string, lowered []string) predicate.OutboxMessage {
 	return predicate.OutboxMessage(func(s *sql.Selector) {
 		payload := s.C(outboxmessage.FieldPayload)
-		s.Where(sql.P(func(b *sql.Builder) {
-			b.WriteString("(" + payload + "::jsonb->>'workspaceId')::bigint = ").Arg(workspaceID).
-				WriteString(" AND ((" + payload + "::jsonb->'data'->>'contactId') = ").Arg(contactID).
-				WriteString(" OR lower(" + payload + "::jsonb->'data'->>'email') = ANY(").Arg(lowered).WriteString("))")
-		}))
+		s.Where(sql.And(
+			sqljson.ValueEQ(payload, workspaceID, sqljson.Path("workspaceId"), sqljson.Cast("bigint")),
+			sql.Or(
+				sqljson.ValueEQ(payload, contactID, sqljson.Path("data", "contactId")),
+				sql.P(func(b *sql.Builder) {
+					b.WriteString("lower(").
+						Join(sqljson.ValuePath(payload, sqljson.Path("data", "email"), sqljson.Unquote(true))).
+						WriteString(") = ANY(").Arg(lowered).WriteString(")")
+				}),
+			),
+		))
 	})
 }
+
+// argInts selects river jobs whose args integer field key is one of ids.
+func argInts(key string, ids []int64) predicate.RiverJob {
+	return predicate.RiverJob(func(s *sql.Selector) {
+		vals := make([]any, len(ids))
+		for i, id := range ids {
+			vals[i] = id
+		}
+		s.Where(sqljson.ValueIn(s.C(riverjob.FieldArgs), vals, sqljson.Path(key), sqljson.Cast("bigint")))
+	})
+}
+
+// riverStateRunning is river's river_job_state 'running'. A running job is left to
+// finish: its worker re-checks that what it refers to still exists.
+const riverStateRunning = "running"
 
 func (p *txPublisher) PurgeJobs(ctx context.Context, key jobkind.Key, ids []int64) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	_, err := p.tx.ExecContext(ctx, `DELETE FROM river_job
-WHERE kind = $1 AND state <> 'running' AND (args->>$2)::bigint = ANY($3)`,
-		key.Kind, key.Arg, ids)
+	_, err := p.client.RiverJob.Delete().
+		Where(riverjob.Kind(key.Kind), riverjob.StateNEQ(riverStateRunning), argInts(key.Arg, ids)).
+		Exec(ctx)
 	return err
 }
 
@@ -89,19 +109,24 @@ func (p *txPublisher) PurgeWebhookJobs(ctx context.Context, workspaceID, contact
 	if contactID != 0 {
 		id = fmt.Sprint(contactID)
 	}
+	lowered := lowerAll(destinations)
 	// DeliverWebhookArgs.Body is []byte, so river stores it as a base64 JSON string; it
 	// is the JSON event payload, naming the Contact at contactId / data.contactId and
-	// the address at data.email.
-	_, err = p.tx.ExecContext(ctx, `DELETE FROM river_job
-WHERE kind = $1 AND state <> 'running'
-  AND (args->>$5)::bigint = ANY($2)
-  AND EXISTS (
-    SELECT 1 FROM (SELECT convert_from(decode(args->>$6, 'base64'), 'UTF8')::jsonb AS body) b
-    WHERE b.body->>'contactId' = $3
-       OR b.body->'data'->>'contactId' = $3
-       OR lower(b.body->'data'->>'email') = ANY($4))`,
-		jobkind.DeliverWebhook.Kind, endpointIDs, id, lowerAll(destinations),
-		jobkind.DeliverWebhook.Arg, jobkind.DeliverWebhookBodyArg)
+	// the address at data.email. No ent predicate decodes base64 into a JSON document, so
+	// the body match is written by hand; the rest of the selection is ent's.
+	namesSubject := predicate.RiverJob(func(s *sql.Selector) {
+		s.Where(sql.P(func(b *sql.Builder) {
+			b.WriteString("EXISTS (SELECT 1 FROM (SELECT convert_from(decode(").
+				Join(sqljson.ValuePath(s.C(riverjob.FieldArgs), sqljson.Path(jobkind.DeliverWebhookBodyArg), sqljson.Unquote(true))).
+				WriteString(", 'base64'), 'UTF8')::jsonb AS body) b WHERE b.body->>'contactId' = ").Arg(id).
+				WriteString(" OR b.body->'data'->>'contactId' = ").Arg(id).
+				WriteString(" OR lower(b.body->'data'->>'email') = ANY(").Arg(lowered).WriteString("))")
+		}))
+	})
+	_, err = p.client.RiverJob.Delete().Where(
+		riverjob.Kind(jobkind.DeliverWebhook.Kind), riverjob.StateNEQ(riverStateRunning),
+		argInts(jobkind.DeliverWebhook.Arg, endpointIDs), namesSubject,
+	).Exec(ctx)
 	return err
 }
 

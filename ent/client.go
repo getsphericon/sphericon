@@ -46,6 +46,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/passkey"
 	"github.com/getsphericon/sphericon/ent/passkeychallenge"
 	"github.com/getsphericon/sphericon/ent/recoverycode"
+	"github.com/getsphericon/sphericon/ent/riverjob"
 	"github.com/getsphericon/sphericon/ent/schemastate"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
@@ -133,6 +134,8 @@ type Client struct {
 	PasskeyChallenge *PasskeyChallengeClient
 	// RecoveryCode is the client for interacting with the RecoveryCode builders.
 	RecoveryCode *RecoveryCodeClient
+	// RiverJob is the client for interacting with the RiverJob builders.
+	RiverJob *RiverJobClient
 	// SchemaState is the client for interacting with the SchemaState builders.
 	SchemaState *SchemaStateClient
 	// Segment is the client for interacting with the Segment builders.
@@ -207,6 +210,7 @@ func (c *Client) init() {
 	c.Passkey = NewPasskeyClient(c.config)
 	c.PasskeyChallenge = NewPasskeyChallengeClient(c.config)
 	c.RecoveryCode = NewRecoveryCodeClient(c.config)
+	c.RiverJob = NewRiverJobClient(c.config)
 	c.SchemaState = NewSchemaStateClient(c.config)
 	c.Segment = NewSegmentClient(c.config)
 	c.SendLimiter = NewSendLimiterClient(c.config)
@@ -346,6 +350,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Passkey:            NewPasskeyClient(cfg),
 		PasskeyChallenge:   NewPasskeyChallengeClient(cfg),
 		RecoveryCode:       NewRecoveryCodeClient(cfg),
+		RiverJob:           NewRiverJobClient(cfg),
 		SchemaState:        NewSchemaStateClient(cfg),
 		Segment:            NewSegmentClient(cfg),
 		SendLimiter:        NewSendLimiterClient(cfg),
@@ -412,6 +417,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Passkey:            NewPasskeyClient(cfg),
 		PasskeyChallenge:   NewPasskeyChallengeClient(cfg),
 		RecoveryCode:       NewRecoveryCodeClient(cfg),
+		RiverJob:           NewRiverJobClient(cfg),
 		SchemaState:        NewSchemaStateClient(cfg),
 		Segment:            NewSegmentClient(cfg),
 		SendLimiter:        NewSendLimiterClient(cfg),
@@ -463,10 +469,10 @@ func (c *Client) Use(hooks ...Hook) {
 		c.Erasure, c.Event, c.Hold, c.InstanceState, c.Integration, c.Invitation,
 		c.JoinDomain, c.Membership, c.OAuthClient, c.OAuthCode, c.OAuthRefreshToken,
 		c.OutboundMessage, c.OutboxMessage, c.OutboxOffset, c.Passkey,
-		c.PasskeyChallenge, c.RecoveryCode, c.SchemaState, c.Segment, c.SendLimiter,
-		c.SendingDomain, c.ServiceCredential, c.StaffMember, c.Suppression, c.Tag,
-		c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User, c.UserIdentity,
-		c.Visitor, c.WebhookEndpoint, c.Workspace,
+		c.PasskeyChallenge, c.RecoveryCode, c.RiverJob, c.SchemaState, c.Segment,
+		c.SendLimiter, c.SendingDomain, c.ServiceCredential, c.StaffMember,
+		c.Suppression, c.Tag, c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User,
+		c.UserIdentity, c.Visitor, c.WebhookEndpoint, c.Workspace,
 	} {
 		n.Use(hooks...)
 	}
@@ -482,10 +488,10 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.Erasure, c.Event, c.Hold, c.InstanceState, c.Integration, c.Invitation,
 		c.JoinDomain, c.Membership, c.OAuthClient, c.OAuthCode, c.OAuthRefreshToken,
 		c.OutboundMessage, c.OutboxMessage, c.OutboxOffset, c.Passkey,
-		c.PasskeyChallenge, c.RecoveryCode, c.SchemaState, c.Segment, c.SendLimiter,
-		c.SendingDomain, c.ServiceCredential, c.StaffMember, c.Suppression, c.Tag,
-		c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User, c.UserIdentity,
-		c.Visitor, c.WebhookEndpoint, c.Workspace,
+		c.PasskeyChallenge, c.RecoveryCode, c.RiverJob, c.SchemaState, c.Segment,
+		c.SendLimiter, c.SendingDomain, c.ServiceCredential, c.StaffMember,
+		c.Suppression, c.Tag, c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User,
+		c.UserIdentity, c.Visitor, c.WebhookEndpoint, c.Workspace,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -556,6 +562,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.PasskeyChallenge.mutate(ctx, m)
 	case *RecoveryCodeMutation:
 		return c.RecoveryCode.mutate(ctx, m)
+	case *RiverJobMutation:
+		return c.RiverJob.mutate(ctx, m)
 	case *SchemaStateMutation:
 		return c.SchemaState.mutate(ctx, m)
 	case *SegmentMutation:
@@ -5435,6 +5443,139 @@ func (c *RecoveryCodeClient) mutate(ctx context.Context, m *RecoveryCodeMutation
 	}
 }
 
+// RiverJobClient is a client for the RiverJob schema.
+type RiverJobClient struct {
+	config
+}
+
+// NewRiverJobClient returns a client for the RiverJob from the given config.
+func NewRiverJobClient(c config) *RiverJobClient {
+	return &RiverJobClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `riverjob.Hooks(f(g(h())))`.
+func (c *RiverJobClient) Use(hooks ...Hook) {
+	c.hooks.RiverJob = append(c.hooks.RiverJob, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `riverjob.Intercept(f(g(h())))`.
+func (c *RiverJobClient) Intercept(interceptors ...Interceptor) {
+	c.inters.RiverJob = append(c.inters.RiverJob, interceptors...)
+}
+
+// Create returns a builder for creating a RiverJob entity.
+func (c *RiverJobClient) Create() *RiverJobCreate {
+	mutation := newRiverJobMutation(c.config, OpCreate)
+	return &RiverJobCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of RiverJob entities.
+func (c *RiverJobClient) CreateBulk(builders ...*RiverJobCreate) *RiverJobCreateBulk {
+	return &RiverJobCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *RiverJobClient) MapCreateBulk(slice any, setFunc func(*RiverJobCreate, int)) *RiverJobCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &RiverJobCreateBulk{err: fmt.Errorf("calling to RiverJobClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*RiverJobCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &RiverJobCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for RiverJob.
+func (c *RiverJobClient) Update() *RiverJobUpdate {
+	mutation := newRiverJobMutation(c.config, OpUpdate)
+	return &RiverJobUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *RiverJobClient) UpdateOne(_m *RiverJob) *RiverJobUpdateOne {
+	mutation := newRiverJobMutation(c.config, OpUpdateOne, withRiverJob(_m))
+	return &RiverJobUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *RiverJobClient) UpdateOneID(id int64) *RiverJobUpdateOne {
+	mutation := newRiverJobMutation(c.config, OpUpdateOne, withRiverJobID(id))
+	return &RiverJobUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for RiverJob.
+func (c *RiverJobClient) Delete() *RiverJobDelete {
+	mutation := newRiverJobMutation(c.config, OpDelete)
+	return &RiverJobDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *RiverJobClient) DeleteOne(_m *RiverJob) *RiverJobDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *RiverJobClient) DeleteOneID(id int64) *RiverJobDeleteOne {
+	builder := c.Delete().Where(riverjob.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &RiverJobDeleteOne{builder}
+}
+
+// Query returns a query builder for RiverJob.
+func (c *RiverJobClient) Query() *RiverJobQuery {
+	return &RiverJobQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeRiverJob},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a RiverJob entity by its id.
+func (c *RiverJobClient) Get(ctx context.Context, id int64) (*RiverJob, error) {
+	return c.Query().Where(riverjob.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *RiverJobClient) GetX(ctx context.Context, id int64) *RiverJob {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *RiverJobClient) Hooks() []Hook {
+	return c.hooks.RiverJob
+}
+
+// Interceptors returns the client interceptors.
+func (c *RiverJobClient) Interceptors() []Interceptor {
+	return c.inters.RiverJob
+}
+
+func (c *RiverJobClient) mutate(ctx context.Context, m *RiverJobMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&RiverJobCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&RiverJobUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&RiverJobUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&RiverJobDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown RiverJob mutation op: %q", m.Op())
+	}
+}
+
 // SchemaStateClient is a client for the SchemaState schema.
 type SchemaStateClient struct {
 	config
@@ -8339,7 +8480,7 @@ type (
 		CustomField, EmailTemplate, Erasure, Event, Hold, InstanceState, Integration,
 		Invitation, JoinDomain, Membership, OAuthClient, OAuthCode, OAuthRefreshToken,
 		OutboundMessage, OutboxMessage, OutboxOffset, Passkey, PasskeyChallenge,
-		RecoveryCode, SchemaState, Segment, SendLimiter, SendingDomain,
+		RecoveryCode, RiverJob, SchemaState, Segment, SendLimiter, SendingDomain,
 		ServiceCredential, StaffMember, Suppression, Tag, TrackingHostChange,
 		Unsubscribe, Usage, User, UserIdentity, Visitor, WebhookEndpoint,
 		Workspace []ent.Hook
@@ -8350,7 +8491,7 @@ type (
 		CustomField, EmailTemplate, Erasure, Event, Hold, InstanceState, Integration,
 		Invitation, JoinDomain, Membership, OAuthClient, OAuthCode, OAuthRefreshToken,
 		OutboundMessage, OutboxMessage, OutboxOffset, Passkey, PasskeyChallenge,
-		RecoveryCode, SchemaState, Segment, SendLimiter, SendingDomain,
+		RecoveryCode, RiverJob, SchemaState, Segment, SendLimiter, SendingDomain,
 		ServiceCredential, StaffMember, Suppression, Tag, TrackingHostChange,
 		Unsubscribe, Usage, User, UserIdentity, Visitor, WebhookEndpoint,
 		Workspace []ent.Interceptor
