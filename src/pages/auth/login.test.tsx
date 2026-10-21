@@ -104,7 +104,11 @@ test('the verify-required refusal offers to send the link again to the typed add
   await screen.getByRole('button', { name: 'Sign in' }).click()
   await screen.getByRole('button', { name: 'Resend verification email' }).click()
 
-  await expect.element(screen.getByText('Verification email sent')).toBeInTheDocument()
+  await expect
+    .element(
+      screen.getByText('If this address is waiting for verification, we sent the link again'),
+    )
+    .toBeInTheDocument()
   expect(resendBodies).toEqual([{ email: 'user@example.com' }])
 })
 

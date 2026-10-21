@@ -1,17 +1,25 @@
 import { Button, Card, Group, PasswordInput, Stack, Text, TextInput, Title } from '@mantine/core'
 import { useForm } from '@mantine/form'
+import { useInterval } from '@mantine/hooks'
 import { useMutation } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { AnchorLink } from '../../components/RouterLink.tsx'
 import { SigninProviders } from '../../components/SigninProviders.tsx'
-import { siteAuthRegisterMutation } from '../../generated/site/@tanstack/react-query.gen.ts'
+import {
+  siteAuthRegisterMutation,
+  siteAuthResendVerificationMutation,
+} from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteRegisterInput } from '../../generated/site/types.gen.ts'
 import { useApiErrorMessage } from '../../hooks/useApiErrorMessage.ts'
 import { useNotify } from '../../hooks/useNotify.ts'
+import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { requiresEmailVerification } from '../../instance.ts'
 import { Route as loginRoute } from '../../routes/login.tsx'
+
+// Seconds the resend button waits after a send; the server's per-IP limit stays the real gate.
+const RESEND_COOLDOWN_SECONDS = 60
 
 export function RegisterPage() {
   const { t } = useTranslation()
@@ -23,6 +31,23 @@ export function RegisterPage() {
   // The address the verification link went to; set once registration is accepted.
   const [sentTo, setSentTo] = useState<string | null>(null)
   const [created, setCreated] = useState(false)
+
+  const [cooldown, setCooldown] = useState(0)
+  const ticker = useInterval(() => setCooldown((seconds) => Math.max(0, seconds - 1)), 1000)
+  const resendMutation = useResourceMutation({
+    mutation: siteAuthResendVerificationMutation(),
+    successMessage: t(($) => $.login.resendSuccess),
+    errorTitle: t(($) => $.login.resendErrorTitle),
+    onDone: () => {
+      setCooldown(RESEND_COOLDOWN_SECONDS)
+      ticker.start()
+    },
+  })
+  useEffect(() => {
+    if (cooldown === 0) {
+      ticker.stop()
+    }
+  }, [cooldown, ticker])
 
   const form = useForm<Required<SiteRegisterInput> & { confirm: string }>({
     initialValues: {
@@ -95,6 +120,19 @@ export function RegisterPage() {
             <Text c="dimmed" ta="center">
               {t(($) => $.registration.checkEmailBody, { email: sentTo })}
             </Text>
+            <Text size="sm" mt="md">
+              {t(($) => $.registration.didntReceive)}
+            </Text>
+            <Button
+              variant="default"
+              loading={resendMutation.isPending}
+              disabled={cooldown > 0}
+              onClick={() => resendMutation.mutate({ body: { email: sentTo } })}
+            >
+              {cooldown > 0
+                ? t(($) => $.registration.resendIn, { seconds: cooldown })
+                : t(($) => $.login.resendVerification)}
+            </Button>
             <AnchorLink to={loginRoute.to} size="sm" mt="md">
               {t(($) => $.registration.loginLink)}
             </AnchorLink>

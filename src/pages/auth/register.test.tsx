@@ -1,7 +1,10 @@
 import { HttpResponse } from 'msw'
 import { afterEach, expect, test } from 'vitest'
 
-import { handleSiteAuthRegister } from '../../generated/site/msw.gen.ts'
+import {
+  handleSiteAuthRegister,
+  handleSiteAuthResendVerification,
+} from '../../generated/site/msw.gen.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { worker } from '../../test/worker.ts'
@@ -110,4 +113,27 @@ test('sends nothing when the confirmation differs', async () => {
 
   await expect.element(screen.getByText('Passwords do not match')).toBeInTheDocument()
   expect(bodies).toEqual([])
+})
+
+test('resends the verification link to the registered address from the check-email screen', async () => {
+  const bodies: unknown[] = []
+  worker.use(
+    handleSiteAuthRegister(() => new HttpResponse(null, { status: 202 })),
+    handleSiteAuthResendVerification(async ({ request }) => {
+      bodies.push(await request.json())
+      return new HttpResponse(null, { status: 202 })
+    }),
+  )
+  const { screen } = await renderWithRouter(<RegisterPage />)
+
+  await fillAndSubmit(screen)
+  await screen.getByRole('button', { name: 'Resend verification email' }).click()
+
+  await expect
+    .element(
+      screen.getByText('If this address is waiting for verification, we sent the link again'),
+    )
+    .toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: /^Resend in \d+s$/ })).toBeDisabled()
+  expect(bodies).toEqual([{ email: 'ada@example.com' }])
 })
