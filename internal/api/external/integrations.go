@@ -322,29 +322,13 @@ func (h *Handlers) integrationResource(row *ent.Integration, limit sendlimit.Sta
 	res.Params = externalapi.IntegrationResourceParams(integrations.RawOf(view.Values))
 	res.SecretsRetiring = view.SecretsRetiring
 	res.HookUrl = h.integrations.HookURL(row)
-	// The config is a oneOf per provider, which goverter cannot express.
+	// The config is a oneOf per provider, which goverter cannot express: only the wrapper
+	// is hand-written, the members are mapped by goverter.
 	switch {
 	case cfg.SMTP != nil:
-		c := cfg.SMTP
-		res.Config = externalapi.IntegrationConfig{OneOf: externalapi.NewSmtpConfigIntegrationConfigSum(externalapi.SmtpConfig{
-			Kind: externalapi.SmtpConfigKindSMTP, Host: c.Host, Port: int32(c.Port), From: externalapi.EmailAddress(c.From),
-			Username: omitEmpty(c.Username), FromName: omitEmpty(c.FromName),
-		})}
+		res.Config = externalapi.IntegrationConfig{OneOf: externalapi.NewSmtpConfigIntegrationConfigSum(mapper.SmtpConfigToResource(*cfg.SMTP))}
 	case cfg.SES != nil:
-		c := cfg.SES
-		res.Config = externalapi.IntegrationConfig{OneOf: externalapi.NewSesConfigIntegrationConfigSum(externalapi.SesConfig{
-			Kind: externalapi.SesConfigKindSes, Region: c.Region, From: externalapi.EmailAddress(c.From),
-			FromName: omitEmpty(c.FromName), Endpoint: omitEmpty(c.Endpoint),
-			AccessKeyIdLast4: omitEmpty(c.AccessKeyIDLast4),
-		})}
+		res.Config = externalapi.IntegrationConfig{OneOf: externalapi.NewSesConfigIntegrationConfigSum(mapper.SesConfigToResource(*cfg.SES))}
 	}
 	return res, nil
-}
-
-// omitEmpty is unset for an empty value, so redacted optional fields are omitted.
-func omitEmpty(s string) externalapi.OptNilString {
-	if s == "" {
-		return externalapi.OptNilString{}
-	}
-	return externalapi.NewOptNilString(s)
 }

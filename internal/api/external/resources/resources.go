@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/brandkit"
 	"github.com/getsphericon/sphericon/internal/convert"
+	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/segments"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/sendlimit"
@@ -106,6 +107,7 @@ func AutomationSteps(steps []externalapi.AutomationStep) []automations.Step {
 // goverter:extend nilInt32
 // goverter:extend nilString
 // goverter:extend count
+// goverter:extend omitEmpty
 // goverter:extend sendLimitWarning
 // goverter:extend sendLimitSource
 // goverter:extend optTimestamp
@@ -141,6 +143,12 @@ type Converter interface {
 	// goverter:ignore SendLimit
 	// goverter:map DiscardedAt ArchivedAt
 	IntegrationToResource(source *ent.Integration) externalapi.IntegrationResource
+	// The redacted provider configs: the handler only wraps the one that is set in the
+	// contract's oneOf, which goverter cannot express. Empty optional fields are omitted.
+	// goverter:map . Kind | smtpConfigKind
+	SmtpConfigToResource(source integrations.RedactedSMTP) externalapi.SmtpConfig
+	// goverter:map . Kind | sesConfigKind
+	SesConfigToResource(source integrations.RedactedSES) externalapi.SesConfig
 	// goverter:map Sent24h SentLast24h
 	SendLimitToStatus(source sendlimit.Status) externalapi.SendLimitStatus
 
@@ -455,4 +463,20 @@ func optWebhookDisabledReason(v *webhookendpoint.DisabledReason) externalapi.Opt
 		return externalapi.OptWebhookDisabledReason{}
 	}
 	return externalapi.NewOptWebhookDisabledReason(externalapi.WebhookDisabledReason(*v))
+}
+
+// omitEmpty is unset for an empty value, so redacted optional fields are omitted.
+func omitEmpty(s string) externalapi.OptNilString {
+	if s == "" {
+		return externalapi.OptNilString{}
+	}
+	return externalapi.NewOptNilString(s)
+}
+
+func smtpConfigKind(integrations.RedactedSMTP) externalapi.SmtpConfigKind {
+	return externalapi.SmtpConfigKindSMTP
+}
+
+func sesConfigKind(integrations.RedactedSES) externalapi.SesConfigKind {
+	return externalapi.SesConfigKindSes
 }

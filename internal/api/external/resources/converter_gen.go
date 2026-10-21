@@ -8,6 +8,7 @@ import (
 	external "github.com/getsphericon/sphericon/gen/external"
 	auditapi "github.com/getsphericon/sphericon/internal/auditapi"
 	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
+	integrations "github.com/getsphericon/sphericon/internal/integrations"
 	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
 	sendlimit "github.com/getsphericon/sphericon/internal/sendlimit"
 )
@@ -294,6 +295,26 @@ func (c *ConverterImpl) SendingDomainToResource(source *ent.SendingDomain) exter
 		externalapiSendingDomainResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
 	return externalapiSendingDomainResource
+}
+func (c *ConverterImpl) SesConfigToResource(source integrations.RedactedSES) external.SesConfig {
+	var externalapiSesConfig external.SesConfig
+	externalapiSesConfig.Kind = sesConfigKind(source)
+	externalapiSesConfig.Region = source.Region
+	externalapiSesConfig.From = external.EmailAddress(source.From)
+	externalapiSesConfig.FromName = omitEmpty(source.FromName)
+	externalapiSesConfig.Endpoint = omitEmpty(source.Endpoint)
+	externalapiSesConfig.AccessKeyIdLast4 = omitEmpty(source.AccessKeyIDLast4)
+	return externalapiSesConfig
+}
+func (c *ConverterImpl) SmtpConfigToResource(source integrations.RedactedSMTP) external.SmtpConfig {
+	var externalapiSmtpConfig external.SmtpConfig
+	externalapiSmtpConfig.Kind = smtpConfigKind(source)
+	externalapiSmtpConfig.Host = source.Host
+	externalapiSmtpConfig.Port = count(source.Port)
+	externalapiSmtpConfig.Username = omitEmpty(source.Username)
+	externalapiSmtpConfig.From = external.EmailAddress(source.From)
+	externalapiSmtpConfig.FromName = omitEmpty(source.FromName)
+	return externalapiSmtpConfig
 }
 func (c *ConverterImpl) SuppressionToExport(source *ent.Suppression) external.ContactExportSuppression {
 	var externalapiContactExportSuppression external.ContactExportSuppression
