@@ -6015,12 +6015,12 @@ func (s *InUseProblemDetails) SetUsedBy(val []UsedBy) {
 	s.UsedBy = val
 }
 
-func (*InUseProblemDetails) automationsArchiveRes()   {}
-func (*InUseProblemDetails) automationsDeleteRes()    {}
-func (*InUseProblemDetails) integrationsArchiveRes()  {}
-func (*InUseProblemDetails) segmentsArchiveRes()      {}
-func (*InUseProblemDetails) sendingDomainsDeleteRes() {}
-func (*InUseProblemDetails) tagsDeleteRes()           {}
+func (*InUseProblemDetails) automationsArchiveRes()    {}
+func (*InUseProblemDetails) automationsDeleteRes()     {}
+func (*InUseProblemDetails) integrationsArchiveRes()   {}
+func (*InUseProblemDetails) segmentsArchiveRes()       {}
+func (*InUseProblemDetails) sendingDomainsArchiveRes() {}
+func (*InUseProblemDetails) tagsDeleteRes()            {}
 
 // Validation errors grouped by field.
 type InUseProblemDetailsErrors map[string][]string
@@ -10346,10 +10346,11 @@ func (*ProblemDetailsHeaders) segmentsPreviewRes()           {}
 func (*ProblemDetailsHeaders) segmentsUnarchiveRes()         {}
 func (*ProblemDetailsHeaders) segmentsUpdateRes()            {}
 func (*ProblemDetailsHeaders) sendingDomainRatesListRes()    {}
+func (*ProblemDetailsHeaders) sendingDomainsArchiveRes()     {}
 func (*ProblemDetailsHeaders) sendingDomainsCreateRes()      {}
-func (*ProblemDetailsHeaders) sendingDomainsDeleteRes()      {}
 func (*ProblemDetailsHeaders) sendingDomainsGetRes()         {}
 func (*ProblemDetailsHeaders) sendingDomainsListRes()        {}
+func (*ProblemDetailsHeaders) sendingDomainsUnarchiveRes()   {}
 func (*ProblemDetailsHeaders) sendingDomainsUpdateRes()      {}
 func (*ProblemDetailsHeaders) sendingDomainsVerifyRes()      {}
 func (*ProblemDetailsHeaders) suppressionsCreateRes()        {}
@@ -11566,6 +11567,9 @@ type SendingDomainResource struct {
 	LastCheckedAt OptNilTimestamp `json:"lastCheckedAt"`
 	// When the domain most recently became verified (null = never).
 	VerifiedAt OptNilTimestamp `json:"verifiedAt"`
+	// When the domain was archived; null while it is kept. An archived domain serves no Tracking domain
+	// host.
+	ArchivedAt OptNilTimestamp `json:"archivedAt"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -11620,6 +11624,11 @@ func (s *SendingDomainResource) GetLastCheckedAt() OptNilTimestamp {
 // GetVerifiedAt returns the value of VerifiedAt.
 func (s *SendingDomainResource) GetVerifiedAt() OptNilTimestamp {
 	return s.VerifiedAt
+}
+
+// GetArchivedAt returns the value of ArchivedAt.
+func (s *SendingDomainResource) GetArchivedAt() OptNilTimestamp {
+	return s.ArchivedAt
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -11682,6 +11691,11 @@ func (s *SendingDomainResource) SetVerifiedAt(val OptNilTimestamp) {
 	s.VerifiedAt = val
 }
 
+// SetArchivedAt sets the value of ArchivedAt.
+func (s *SendingDomainResource) SetArchivedAt(val OptNilTimestamp) {
+	s.ArchivedAt = val
+}
+
 // SetCreatedAt sets the value of CreatedAt.
 func (s *SendingDomainResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
@@ -11692,10 +11706,24 @@ func (s *SendingDomainResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
 
-func (*SendingDomainResource) sendingDomainsCreateRes() {}
-func (*SendingDomainResource) sendingDomainsGetRes()    {}
-func (*SendingDomainResource) sendingDomainsUpdateRes() {}
-func (*SendingDomainResource) sendingDomainsVerifyRes() {}
+func (*SendingDomainResource) sendingDomainsArchiveRes()   {}
+func (*SendingDomainResource) sendingDomainsCreateRes()    {}
+func (*SendingDomainResource) sendingDomainsGetRes()       {}
+func (*SendingDomainResource) sendingDomainsUnarchiveRes() {}
+func (*SendingDomainResource) sendingDomainsUpdateRes()    {}
+func (*SendingDomainResource) sendingDomainsVerifyRes()    {}
+
+type SendingDomainsArchiveBadRequest ProblemDetails
+
+func (*SendingDomainsArchiveBadRequest) sendingDomainsArchiveRes() {}
+
+type SendingDomainsArchiveNotFound ProblemDetails
+
+func (*SendingDomainsArchiveNotFound) sendingDomainsArchiveRes() {}
+
+type SendingDomainsArchiveUnauthorized ProblemDetails
+
+func (*SendingDomainsArchiveUnauthorized) sendingDomainsArchiveRes() {}
 
 type SendingDomainsCreateBadRequest ProblemDetails
 
@@ -11712,27 +11740,6 @@ func (*SendingDomainsCreateUnauthorized) sendingDomainsCreateRes() {}
 type SendingDomainsCreateUnprocessableEntity ProblemDetails
 
 func (*SendingDomainsCreateUnprocessableEntity) sendingDomainsCreateRes() {}
-
-type SendingDomainsDeleteBadRequest ProblemDetails
-
-func (*SendingDomainsDeleteBadRequest) sendingDomainsDeleteRes() {}
-
-// SendingDomainsDeleteNoContent is response for SendingDomainsDelete operation.
-type SendingDomainsDeleteNoContent struct{}
-
-func (*SendingDomainsDeleteNoContent) sendingDomainsDeleteRes() {}
-
-type SendingDomainsDeleteNotFound ProblemDetails
-
-func (*SendingDomainsDeleteNotFound) sendingDomainsDeleteRes() {}
-
-type SendingDomainsDeleteUnauthorized ProblemDetails
-
-func (*SendingDomainsDeleteUnauthorized) sendingDomainsDeleteRes() {}
-
-type SendingDomainsDeleteUnprocessableEntity ProblemDetails
-
-func (*SendingDomainsDeleteUnprocessableEntity) sendingDomainsDeleteRes() {}
 
 type SendingDomainsGetBadRequest ProblemDetails
 
@@ -11823,6 +11830,22 @@ func (*SendingDomainsListUnauthorized) sendingDomainsListRes() {}
 type SendingDomainsListUnprocessableEntity ProblemDetails
 
 func (*SendingDomainsListUnprocessableEntity) sendingDomainsListRes() {}
+
+type SendingDomainsUnarchiveBadRequest ProblemDetails
+
+func (*SendingDomainsUnarchiveBadRequest) sendingDomainsUnarchiveRes() {}
+
+type SendingDomainsUnarchiveConflict ProblemDetails
+
+func (*SendingDomainsUnarchiveConflict) sendingDomainsUnarchiveRes() {}
+
+type SendingDomainsUnarchiveNotFound ProblemDetails
+
+func (*SendingDomainsUnarchiveNotFound) sendingDomainsUnarchiveRes() {}
+
+type SendingDomainsUnarchiveUnauthorized ProblemDetails
+
+func (*SendingDomainsUnarchiveUnauthorized) sendingDomainsUnarchiveRes() {}
 
 type SendingDomainsUpdateBadRequest ProblemDetails
 

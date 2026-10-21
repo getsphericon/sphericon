@@ -125,11 +125,12 @@ type RecheckTrackingDomainsWorker struct {
 
 // Work fans the tick out into one VerifyTrackingDomain job for every Sending domain
 // whose Tracking domain is dns_verified or serving, so a host that stops answering is
-// demoted within one tick. There is no batch limit and no DKIM dependency: a pending
+// demoted within one tick. An archived Sending domain is skipped, a named exception to ADR 0049's
+// rule that job entry points include discarded rows: it serves nothing to demote. There is no batch limit and no DKIM dependency: a pending
 // Tracking domain is only checked when its owner clicks Verify.
 func (w *RecheckTrackingDomainsWorker) Work(ctx context.Context, job *river.Job[RecheckTrackingDomainsArgs]) error {
 	ids, err := w.ent.SendingDomain.Query().
-		Where(sendingdomain.TrackingStateIn(sendingdomain.TrackingStateDNSVerified, sendingdomain.TrackingStateServing)).
+		Where(sendingdomain.DiscardedAtIsNil(), sendingdomain.TrackingStateIn(sendingdomain.TrackingStateDNSVerified, sendingdomain.TrackingStateServing)).
 		IDs(ctx)
 	if err != nil {
 		return err
@@ -201,6 +202,7 @@ func devJoinTokens(ctx context.Context, client *ent.Client, name, domain string)
 // is testable without a river runtime.
 func DomainsDueForRecheck(ctx context.Context, client *ent.Client, limit int) ([]int64, error) {
 	return client.SendingDomain.Query().
+		Where(sendingdomain.DiscardedAtIsNil()).
 		Order(sendingdomain.ByLastCheckedAt(sql.OrderAsc(), sql.OrderNullsFirst())).
 		Limit(limit).
 		IDs(ctx)

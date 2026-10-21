@@ -92,6 +92,9 @@ model SendingDomainResource {
   /** When the domain most recently became verified (null = never) */
   verifiedAt?: Timestamp | null;
 
+  /** When the domain was archived; null while it is kept. An archived domain serves no Tracking domain host. */
+  archivedAt?: Timestamp | null;
+
   /** Creation timestamp */
   createdAt: Timestamp;
 
@@ -114,14 +117,96 @@ model UpdateSendingDomainInput {
   dkimSelector?: string;
 }
 
+/** Filter of the Sending domain list */
+model SendingDomainsListFilter {
+  /** true lists the archived Sending domains instead of the kept ones; the default hides them */
+  @query archived?: boolean;
+}
+
 @tag("Sending domains")
-interface SendingDomains
-  extends ExternalCrudUnique<
-      SendingDomainResource,
-      CreateSendingDomainInput,
-      UpdateSendingDomainInput,
-      InUseProblem
-    > {
+interface SendingDomains {
+  /** List resources with pagination */
+  @listsResource(SendingDomainResource)
+  @get
+  @autoRoute
+  list(
+    ...ResourceCollectionParameters<SendingDomainResource>,
+    ...PageQuery,
+    ...SendingDomainsListFilter,
+  ):
+    | Page<SendingDomainResource>
+    | BadRequestProblem
+    | UnauthorizedProblem
+    | TooManyRequestsProblem
+    | UnprocessableEntityProblem;
+
+  /** Create a resource */
+  @createsResource(SendingDomainResource)
+  @post
+  @autoRoute
+  create(
+    ...ResourceCollectionParameters<SendingDomainResource>,
+    @body body: CreateSendingDomainInput,
+  ):
+    | {
+        @statusCode statusCode: 201;
+        @body body: SendingDomainResource;
+      }
+    | BadRequestProblem
+    | UnauthorizedProblem
+    | TooManyRequestsProblem
+    | ConflictProblem
+    | UnprocessableEntityProblem;
+
+  /** Get a resource by ID */
+  @readsResource(SendingDomainResource)
+  @get
+  @autoRoute
+  get(...ResourceParameters<SendingDomainResource>):
+    | SendingDomainResource
+    | BadRequestProblem
+    | UnauthorizedProblem
+    | TooManyRequestsProblem
+    | NotFoundProblem;
+
+  /** Update a resource */
+  @updatesResource(SendingDomainResource)
+  @put
+  @autoRoute
+  update(
+    ...ResourceParameters<SendingDomainResource>,
+    @body body: UpdateSendingDomainInput,
+  ):
+    | SendingDomainResource
+    | BadRequestProblem
+    | UnauthorizedProblem
+    | TooManyRequestsProblem
+    | NotFoundProblem
+    | ConflictProblem
+    | UnprocessableEntityProblem;
+
+  /** Archive a Sending domain: it leaves the list, serves no Tracking domain host and can be restored. Refused with 409 (`usedBy`) while a scheduled or sending Broadcast or an active Automation sends from it. */
+  @action("archive")
+  @autoRoute
+  archive(...ResourceParameters<SendingDomainResource>):
+    | SendingDomainResource
+    | BadRequestProblem
+    | UnauthorizedProblem
+    | TooManyRequestsProblem
+    | NotFoundProblem
+    | InUseProblem;
+
+  /** Restore an archived Sending domain. It starts a new DNS check and serves its Tracking domain host again only once that passes. Refused with 409 when the same domain was added again meanwhile. */
+  @action("unarchive")
+  @autoRoute
+  unarchive(...ResourceParameters<SendingDomainResource>):
+    | SendingDomainResource
+    | BadRequestProblem
+    | UnauthorizedProblem
+    | TooManyRequestsProblem
+    | NotFoundProblem
+    | ConflictProblem;
+
   /** Trigger a live DKIM DNS check. The check runs in the background: the response is the domain as it stands now, 202 Accepted; read it again for the outcome (`verified`, `lastCheckedAt`). Verification is never set by the caller. */
   @action("verify")
   @autoRoute

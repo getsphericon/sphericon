@@ -740,6 +740,7 @@ var SendingDomainAuditSensitive = map[string]bool{
 // auditFields maps every audited field of the SendingDomain to its value.
 func (e *SendingDomain) auditFields() map[string]any {
 	return map[string]any{
+		"discarded_at":               derefAudit(e.DiscardedAt),
 		"domain":                     e.Domain,
 		"dkim_selector":              e.DkimSelector,
 		"dkim_private_key_encrypted": e.DkimPrivateKeyEncrypted,

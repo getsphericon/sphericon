@@ -7518,6 +7518,9 @@
           },
           {
             "$ref": "#/components/parameters/PageQuery.pageSize"
+          },
+          {
+            "$ref": "#/components/parameters/SendingDomainsListFilter"
           }
         ],
         "responses": {
@@ -8108,18 +8111,27 @@
             }
           }
         }
-      },
-      "delete": {
-        "operationId": "SendingDomains_delete",
-        "description": "Delete a resource",
+      }
+    },
+    "/sending-domains/{id}/archive": {
+      "post": {
+        "operationId": "SendingDomains_archive",
+        "description": "Archive a Sending domain: it leaves the list, serves no Tracking domain host and can be restored. Refused with 409 (`usedBy`) while a scheduled or sending Broadcast or an active Automation sends from it.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SendingDomainResourceKey"
           }
         ],
         "responses": {
-          "204": {
-            "description": "There is no content to send for this request, but the headers may be useful."
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendingDomainResource"
+                }
+              }
+            }
           },
           "400": {
             "description": "RFC 7807 bad request response",
@@ -8161,8 +8173,106 @@
               }
             }
           },
-          "422": {
-            "description": "RFC 7807 validation response",
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Sending domains"]
+      }
+    },
+    "/sending-domains/{id}/unarchive": {
+      "post": {
+        "operationId": "SendingDomains_unarchive",
+        "description": "Restore an archived Sending domain. It starts a new DNS check and serves its Tracking domain host again only once that passes. Refused with 409 when the same domain was added again meanwhile.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SendingDomainResourceKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendingDomainResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "RFC 7807 conflict response",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -10312,6 +10422,16 @@
         "schema": {
           "$ref": "#/components/schemas/EntityId"
         }
+      },
+      "SendingDomainsListFilter": {
+        "name": "archived",
+        "in": "query",
+        "required": false,
+        "description": "true lists the archived Sending domains instead of the kept ones; the default hides them",
+        "schema": {
+          "type": "boolean"
+        },
+        "explode": false
       },
       "TemplateResourceKey": {
         "name": "id",
@@ -13986,6 +14106,16 @@
             ],
             "nullable": true,
             "description": "When the domain most recently became verified (null = never)"
+          },
+          "archivedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the domain was archived; null while it is kept. An archived domain serves no Tracking domain host."
           },
           "createdAt": {
             "allOf": [

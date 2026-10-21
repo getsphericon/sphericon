@@ -437,18 +437,20 @@ type Handler interface {
 	//
 	// GET /sending-domains/rates
 	SendingDomainRatesList(ctx context.Context, params SendingDomainRatesListParams) (SendingDomainRatesListRes, error)
+	// SendingDomainsArchive implements SendingDomains_archive operation.
+	//
+	// Archive a Sending domain: it leaves the list, serves no Tracking domain host and can be restored.
+	// Refused with 409 (`usedBy`) while a scheduled or sending Broadcast or an active Automation sends
+	// from it.
+	//
+	// POST /sending-domains/{id}/archive
+	SendingDomainsArchive(ctx context.Context, params SendingDomainsArchiveParams) (SendingDomainsArchiveRes, error)
 	// SendingDomainsCreate implements SendingDomains_create operation.
 	//
 	// Create a resource.
 	//
 	// POST /sending-domains
 	SendingDomainsCreate(ctx context.Context, req *CreateSendingDomainInput) (SendingDomainsCreateRes, error)
-	// SendingDomainsDelete implements SendingDomains_delete operation.
-	//
-	// Delete a resource.
-	//
-	// DELETE /sending-domains/{id}
-	SendingDomainsDelete(ctx context.Context, params SendingDomainsDeleteParams) (SendingDomainsDeleteRes, error)
 	// SendingDomainsGet implements SendingDomains_get operation.
 	//
 	// Get a resource by ID.
@@ -461,6 +463,13 @@ type Handler interface {
 	//
 	// GET /sending-domains
 	SendingDomainsList(ctx context.Context, params SendingDomainsListParams) (SendingDomainsListRes, error)
+	// SendingDomainsUnarchive implements SendingDomains_unarchive operation.
+	//
+	// Restore an archived Sending domain. It starts a new DNS check and serves its Tracking domain host
+	// again only once that passes. Refused with 409 when the same domain was added again meanwhile.
+	//
+	// POST /sending-domains/{id}/unarchive
+	SendingDomainsUnarchive(ctx context.Context, params SendingDomainsUnarchiveParams) (SendingDomainsUnarchiveRes, error)
 	// SendingDomainsUpdate implements SendingDomains_update operation.
 	//
 	// Update a resource.

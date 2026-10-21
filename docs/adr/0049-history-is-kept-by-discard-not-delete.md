@@ -63,6 +63,8 @@ Enrollment holds only an index into the live definition.
   restore it; the default index is partial on `is_default AND discarded_at IS NULL`. An archived
   Sending domain serves no Tracking host (the tracking host gate, `tls/ask` and the change log
   ignore it, and the Instance-wide domain index excludes it); `Undiscard` starts a new DNS check.
+  The periodic DNS re-checks (DKIM and Tracking domain) skip archived rows, the one named exception
+  to the rule that job entry points include discarded rows: an archived domain serves nothing.
   A Segment's definition is not snapshotted into a sent Broadcast: its Recipients are the record
   of who received it. Only Workspace erasure calls `Purge` on them.
 - **Custom fields are never deleted**, only renamed, so a Segment rule can never name a missing key.

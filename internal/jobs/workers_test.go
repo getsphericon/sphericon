@@ -31,6 +31,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
+	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	appdb "github.com/getsphericon/sphericon/internal/db"
@@ -552,7 +553,7 @@ func TestVerifySendingDomainWorker(t *testing.T) {
 
 func TestRecheckSendingDomainsWorkerFansOut(t *testing.T) {
 	e := newRiverEnv(t)
-	total, err := e.DB.SendingDomain.Query().Count(context.Background())
+	total, err := e.DB.SendingDomain.Query().Where(sendingdomain.DiscardedAtIsNil()).Count(context.Background())
 	require.NoError(t, err)
 
 	require.NoError(t, jobs.NewRecheckSendingDomainsWorker(e.DB).Work(e.workCtx(), job(jobs.RecheckSendingDomainsArgs{})))

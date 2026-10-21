@@ -119,15 +119,13 @@ func TestSiteIntegrationArchiveNamedByALiveBroadcast(t *testing.T) {
 
 // A Sending domain is used through the domain of a From address, not an id: a scheduled Broadcast
 // from news.acme.com blocks that domain, and a failed one from mail.acme.com does not block this.
-func TestSiteSendingDomainDeleteRefusedThroughAFromAddress(t *testing.T) {
+func TestSiteSendingDomainArchiveRefusedThroughAFromAddress(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 	acme := env.DB.Scoped(fixtures.AcmeID)
-	del := func(id int64) siteapi.SiteSendingDomainsDeleteRes {
-		got, err := c.SiteSendingDomainsDelete(ctx, siteapi.SiteSendingDomainsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(id)})
-		require.NoError(t, err)
-		return got
+	del := func(id int64) siteapi.SiteSendingDomainsArchiveRes {
+		return archiveSendingDomain(t, c, id)
 	}
 	_, err := acme.Broadcast().UpdateOneID(fixtures.BroadcastScheduledID).SetFromEmail("hello@" + fixtures.SendingDomainUnverifiedDomain).Save(ctx)
 	require.NoError(t, err)
@@ -138,20 +136,18 @@ func TestSiteSendingDomainDeleteRefusedThroughAFromAddress(t *testing.T) {
 	require.True(t, ok)
 	assert.Equal(t, map[siteapi.UsedByKind][]string{siteapi.UsedByKindBroadcast: {fixtures.BroadcastScheduledName}}, usedBy(refused))
 
-	assert.IsType(t, &siteapi.SiteSendingDomainsDeleteNoContent{}, del(fixtures.SendingDomainVerifiedID))
+	assert.IsType(t, &siteapi.SiteSendingDomainResource{}, del(fixtures.SendingDomainVerifiedID))
 }
 
 // A Broadcast with no From and an active Automation send from the default Integration's configured
 // From (hello@codebasics.dev), so that domain is refused until nothing live sends from it.
-func TestSiteSendingDomainDeleteRefusedThroughTheConfiguredFrom(t *testing.T) {
+func TestSiteSendingDomainArchiveRefusedThroughTheConfiguredFrom(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 	acme := env.DB.Scoped(fixtures.AcmeID)
-	del := func() siteapi.SiteSendingDomainsDeleteRes {
-		got, err := c.SiteSendingDomainsDelete(ctx, siteapi.SiteSendingDomainsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(3)})
-		require.NoError(t, err)
-		return got
+	del := func() siteapi.SiteSendingDomainsArchiveRes {
+		return archiveSendingDomain(t, c, fixtures.SendingDomainCodebasicsID)
 	}
 
 	refused, ok := del().(*siteapi.InUseProblemDetails)
@@ -164,5 +160,5 @@ func TestSiteSendingDomainDeleteRefusedThroughTheConfiguredFrom(t *testing.T) {
 	require.NoError(t, err)
 	_, err = acme.Automation().Update().SetStatus(automation.StatusDraft).Save(ctx)
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteSendingDomainsDeleteNoContent{}, del())
+	assert.IsType(t, &siteapi.SiteSendingDomainResource{}, del())
 }

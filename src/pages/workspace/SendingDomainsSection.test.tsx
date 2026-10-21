@@ -3,8 +3,9 @@ import { expect, test } from 'vitest'
 
 import {
   handleSiteSendingDomainsCreate,
-  handleSiteSendingDomainsDelete,
+  handleSiteSendingDomainsArchive,
   handleSiteSendingDomainsList,
+  handleSiteSendingDomainsUnarchive,
   handleSiteSendingDomainsVerify,
 } from '../../generated/site/msw.gen.ts'
 import type { SiteSendingDomainResource } from '../../generated/site/types.gen.ts'
@@ -81,39 +82,63 @@ test('starts verification', async () => {
   await expect.element(screen.getByText('Verification started')).toBeInTheDocument()
 })
 
-test('deletes a domain after confirmation', async () => {
-  let deleted = false
+test('archives a domain', async () => {
+  let archived = false
   worker.use(
     list([domain()]),
-    handleSiteSendingDomainsDelete(() => {
-      deleted = true
-      return new HttpResponse(null, { status: 204 })
+    handleSiteSendingDomainsArchive(() => {
+      archived = true
+      return HttpResponse.json(domain({ archivedAt: '2026-02-01T00:00:00Z' }))
     }),
   )
   const { screen } = await renderWithRouter(<SendingDomainsSection workspaceId={WORKSPACE_ID} />)
 
   await screen.getByRole('button', { name: 'More actions' }).click()
-  await screen.getByRole('menuitem', { name: 'Delete' }).click()
-  await screen.getByRole('dialog').getByRole('button', { name: 'Delete' }).click()
+  await screen.getByRole('menuitem', { name: 'Archive' }).click()
 
-  await expect.poll(() => deleted).toBe(true)
+  await expect.poll(() => archived).toBe(true)
+  await expect.element(screen.getByText('Domain archived')).toBeInTheDocument()
 })
 
-test('a domain that live work sends from is not deleted and the work is named', async () => {
+test('a domain that live work sends from is not archived and the work is named', async () => {
   worker.use(
     list([domain()]),
-    handleSiteSendingDomainsDelete(() =>
+    handleSiteSendingDomainsArchive(() =>
       problem(409, { usedBy: [{ kind: 'automation', id: '3', name: 'Welcome series' }] }),
     ),
   )
   const { screen } = await renderWithRouter(<SendingDomainsSection workspaceId={WORKSPACE_ID} />)
 
   await screen.getByRole('button', { name: 'More actions' }).click()
-  await screen.getByRole('menuitem', { name: 'Delete' }).click()
-  await screen.getByRole('dialog').getByRole('button', { name: 'Delete' }).click()
+  await screen.getByRole('menuitem', { name: 'Archive' }).click()
 
-  await expect.element(screen.getByText('Failed to delete domain')).toBeInTheDocument()
+  await expect.element(screen.getByText('Failed to archive domain')).toBeInTheDocument()
   await expect.element(screen.getByText(/Automation "Welcome series"/)).toBeInTheDocument()
+})
+
+test('lists archived domains with the switch and restores one', async () => {
+  const queries: (string | null)[] = []
+  let restored = false
+  worker.use(
+    handleSiteSendingDomainsList(({ request }) => {
+      queries.push(new URL(request.url).searchParams.get('archived'))
+      const items = [domain({ archivedAt: '2026-02-01T00:00:00Z' })]
+      return HttpResponse.json({ items, page: 1, pageSize: 20, totalItems: 1, totalPages: 1 })
+    }),
+    handleSiteSendingDomainsUnarchive(() => {
+      restored = true
+      return HttpResponse.json(domain())
+    }),
+  )
+  const { screen } = await renderWithRouter(<SendingDomainsSection workspaceId={WORKSPACE_ID} />)
+
+  await screen.getByLabelText('Show archived').click()
+  await expect.poll(() => queries).toContain('true')
+
+  await screen.getByRole('button', { name: 'More actions' }).click()
+  await screen.getByRole('menuitem', { name: 'Restore' }).click()
+
+  await expect.poll(() => restored).toBe(true)
 })
 
 test('shows an error alert when the list fails to load', async () => {

@@ -30,7 +30,7 @@ func TestExternalDeletesRefusedWhileLiveWorkUsesTheRow(t *testing.T) {
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.InUseProblemDetails{}, integration)
 
-	domain, err := c.SendingDomainsDelete(ctx, externalapi.SendingDomainsDeleteParams{ID: externalapi.EntityId(3)})
+	domain, err := c.SendingDomainsArchive(ctx, externalapi.SendingDomainsArchiveParams{ID: externalapi.EntityId(3)})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.InUseProblemDetails{}, domain)
 

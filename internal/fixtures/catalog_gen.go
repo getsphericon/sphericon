@@ -931,6 +931,14 @@ const (
 	SendLimiterAcmeID = 1
 	// SendLimiterGlobexID is from fixtures/send_limiters.
 	SendLimiterGlobexID = 900
+	// SendingDomainArchivedDomain is from fixtures/sending_domains.
+	SendingDomainArchivedDomain = "old.acme.com"
+	// SendingDomainArchivedID is from fixtures/sending_domains.
+	SendingDomainArchivedID = 4
+	// SendingDomainCodebasicsDomain is from fixtures/sending_domains.
+	SendingDomainCodebasicsDomain = "codebasics.dev"
+	// SendingDomainCodebasicsID is from fixtures/sending_domains.
+	SendingDomainCodebasicsID = 3
 	// SendingDomainGlobexDomain is from fixtures/sending_domains.
 	SendingDomainGlobexDomain = "mail.globex.test"
 	// SendingDomainGlobexID is from fixtures/sending_domains.

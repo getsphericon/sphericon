@@ -70,22 +70,25 @@ func TestSiteSendingDomainsErrorBranches(t *testing.T) {
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSendingDomainsVerifyNotFound{}, v4)
 
-	// Delete.
-	d1, err := c.SiteSendingDomainsDelete(ctx, siteapi.SiteSendingDomainsDeleteParams{WorkspaceId: foreign, ID: known})
+	// Archive and unarchive.
+	d1, err := c.SiteSendingDomainsArchive(ctx, siteapi.SiteSendingDomainsArchiveParams{WorkspaceId: foreign, ID: known})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteSendingDomainsDeleteNotFound{}, d1)
-	d3, err := c.SiteSendingDomainsDelete(ctx, siteapi.SiteSendingDomainsDeleteParams{WorkspaceId: acme, ID: foreignID})
+	assert.IsType(t, &siteapi.SiteSendingDomainsArchiveNotFound{}, d1)
+	d3, err := c.SiteSendingDomainsArchive(ctx, siteapi.SiteSendingDomainsArchiveParams{WorkspaceId: acme, ID: foreignID})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteSendingDomainsDeleteNotFound{}, d3)
-	d4, err := c.SiteSendingDomainsDelete(ctx, siteapi.SiteSendingDomainsDeleteParams{WorkspaceId: acme, ID: known})
+	assert.IsType(t, &siteapi.SiteSendingDomainsArchiveNotFound{}, d3)
+	u3, err := c.SiteSendingDomainsUnarchive(ctx, siteapi.SiteSendingDomainsUnarchiveParams{WorkspaceId: acme, ID: foreignID})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteSendingDomainsDeleteNoContent{}, d4)
-	gone, err := env.DB.SendingDomain.Query().Where(sendingdomain.ID(fixtures.SendingDomainUnverifiedID)).Exist(ctx)
+	assert.IsType(t, &siteapi.SiteSendingDomainsUnarchiveNotFound{}, u3)
+	d4, err := c.SiteSendingDomainsArchive(ctx, siteapi.SiteSendingDomainsArchiveParams{WorkspaceId: acme, ID: known})
 	require.NoError(t, err)
-	assert.False(t, gone)
-	kept, err := env.DB.SendingDomain.Query().Where(sendingdomain.ID(fixtures.SendingDomainGlobexID)).Exist(ctx)
+	assert.IsType(t, &siteapi.SiteSendingDomainResource{}, d4)
+	archived, err := env.DB.SendingDomain.Query().Where(sendingdomain.ID(fixtures.SendingDomainUnverifiedID), sendingdomain.DiscardedAtNotNil()).Exist(ctx)
 	require.NoError(t, err)
-	assert.True(t, kept)
+	assert.True(t, archived)
+	untouched, err := env.DB.SendingDomain.Query().Where(sendingdomain.ID(fixtures.SendingDomainGlobexID), sendingdomain.DiscardedAtIsNil()).Exist(ctx)
+	require.NoError(t, err)
+	assert.True(t, untouched)
 }
 
 func TestSiteTagsErrorBranches(t *testing.T) {

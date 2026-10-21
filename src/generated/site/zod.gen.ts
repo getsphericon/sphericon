@@ -1691,6 +1691,7 @@ export const zSiteSendingDomainResource = z.object({
   trackingRecord: z.exactOptional(zSiteTrackingRecord),
   lastCheckedAt: z.exactOptional(zTimestamp.nullable()),
   verifiedAt: z.exactOptional(zTimestamp.nullable()),
+  archivedAt: z.exactOptional(zTimestamp.nullable()),
   createdAt: zTimestamp,
   updatedAt: zTimestamp
 });
@@ -2200,6 +2201,11 @@ export const zSiteSendingDomainResourceKeyWorkspaceId = zWorkspaceId;
  * workspace resources (ADR 0043)
  */
 export const zSiteSendingDomainResourceParentKey = zWorkspaceId;
+
+/**
+ * true lists the archived sending domains instead of the kept ones; the default hides them
+ */
+export const zSiteSendingDomainsListFilter = z.boolean();
 
 /**
  * true lists the lifted suppressions instead of the active ones; the default hides them
@@ -3326,7 +3332,8 @@ export const zSiteSendingDomainsListPath = z.object({
 
 export const zSiteSendingDomainsListQuery = z.object({
   page: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
-  pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(25)
+  pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(25),
+  archived: z.exactOptional(z.boolean())
 });
 
 /**
@@ -3351,16 +3358,6 @@ export const zSiteSendingDomainsCreatePath = z.object({
  */
 export const zSiteSendingDomainsCreateResponse = zSiteSendingDomainResource;
 
-export const zSiteSendingDomainsDeletePath = z.object({
-  workspaceId: zWorkspaceId,
-  id: zEntityId
-});
-
-/**
- * There is no content to send for this request, but the headers may be useful.
- */
-export const zSiteSendingDomainsDeleteResponse = z.void();
-
 export const zSiteSendingDomainsGetPath = z.object({
   workspaceId: zWorkspaceId,
   id: zEntityId
@@ -3370,6 +3367,26 @@ export const zSiteSendingDomainsGetPath = z.object({
  * The request has succeeded.
  */
 export const zSiteSendingDomainsGetResponse = zSiteSendingDomainResource;
+
+export const zSiteSendingDomainsArchivePath = z.object({
+  workspaceId: zWorkspaceId,
+  id: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteSendingDomainsArchiveResponse = zSiteSendingDomainResource;
+
+export const zSiteSendingDomainsUnarchivePath = z.object({
+  workspaceId: zWorkspaceId,
+  id: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteSendingDomainsUnarchiveResponse = zSiteSendingDomainResource;
 
 export const zSiteSendingDomainsVerifyPath = z.object({
   workspaceId: zWorkspaceId,

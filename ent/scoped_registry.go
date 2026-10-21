@@ -1397,10 +1397,10 @@ func ScopedEntities() []ScopedEntity {
 				return s.SendingDomain().Update().Where(sendingdomain.ID(id)).Save(ctx)
 			},
 			Delete: func(ctx context.Context, s *Scoped, id int64) error {
-				return s.SendingDomain().DeleteOneID(id).Exec(ctx)
+				return s.SendingDomain().PurgeOneID(id).Exec(ctx)
 			},
 			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
-				return s.SendingDomain().Delete().Where(sendingdomain.ID(id)).Exec(ctx)
+				return s.SendingDomain().Purge().Where(sendingdomain.ID(id)).Exec(ctx)
 			},
 			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
 				src, err := s.c.SendingDomain.Get(ctx, id)
@@ -1409,6 +1409,9 @@ func ScopedEntities() []ScopedEntity {
 				}
 				_ = remap
 				b := s.SendingDomain().Create()
+				if src.DiscardedAt != nil {
+					b.SetDiscardedAt(*src.DiscardedAt)
+				}
 				b.SetDomain(src.Domain)
 				b.SetDkimSelector(src.DkimSelector)
 				b.SetDkimPrivateKeyEncrypted(src.DkimPrivateKeyEncrypted)

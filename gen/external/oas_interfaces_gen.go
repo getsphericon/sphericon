@@ -269,12 +269,12 @@ type SendingDomainRatesListRes interface {
 	sendingDomainRatesListRes()
 }
 
-type SendingDomainsCreateRes interface {
-	sendingDomainsCreateRes()
+type SendingDomainsArchiveRes interface {
+	sendingDomainsArchiveRes()
 }
 
-type SendingDomainsDeleteRes interface {
-	sendingDomainsDeleteRes()
+type SendingDomainsCreateRes interface {
+	sendingDomainsCreateRes()
 }
 
 type SendingDomainsGetRes interface {
@@ -283,6 +283,10 @@ type SendingDomainsGetRes interface {
 
 type SendingDomainsListRes interface {
 	sendingDomainsListRes()
+}
+
+type SendingDomainsUnarchiveRes interface {
+	sendingDomainsUnarchiveRes()
 }
 
 type SendingDomainsUpdateRes interface {

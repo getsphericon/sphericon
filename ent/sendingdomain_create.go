@@ -57,6 +57,20 @@ func (_c *SendingDomainCreate) SetWorkspaceID(v int64) *SendingDomainCreate {
 	return _c
 }
 
+// SetDiscardedAt sets the "discarded_at" field.
+func (_c *SendingDomainCreate) SetDiscardedAt(v time.Time) *SendingDomainCreate {
+	_c.mutation.SetDiscardedAt(v)
+	return _c
+}
+
+// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
+func (_c *SendingDomainCreate) SetNillableDiscardedAt(v *time.Time) *SendingDomainCreate {
+	if v != nil {
+		_c.SetDiscardedAt(*v)
+	}
+	return _c
+}
+
 // SetDomain sets the "domain" field.
 func (_c *SendingDomainCreate) SetDomain(v string) *SendingDomainCreate {
 	_c.mutation.SetDomain(v)
@@ -341,6 +355,10 @@ func (_c *SendingDomainCreate) createSpec() (*SendingDomain, *sqlgraph.CreateSpe
 		_spec.SetField(sendingdomain.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
+	if value, ok := _c.mutation.DiscardedAt(); ok {
+		_spec.SetField(sendingdomain.FieldDiscardedAt, field.TypeTime, value)
+		_node.DiscardedAt = &value
+	}
 	if value, ok := _c.mutation.Domain(); ok {
 		_spec.SetField(sendingdomain.FieldDomain, field.TypeString, value)
 		_node.Domain = value
@@ -475,6 +493,24 @@ func (u *SendingDomainUpsert) SetWorkspaceID(v int64) *SendingDomainUpsert {
 // UpdateWorkspaceID sets the "workspace_id" field to the value that was provided on create.
 func (u *SendingDomainUpsert) UpdateWorkspaceID() *SendingDomainUpsert {
 	u.SetExcluded(sendingdomain.FieldWorkspaceID)
+	return u
+}
+
+// SetDiscardedAt sets the "discarded_at" field.
+func (u *SendingDomainUpsert) SetDiscardedAt(v time.Time) *SendingDomainUpsert {
+	u.Set(sendingdomain.FieldDiscardedAt, v)
+	return u
+}
+
+// UpdateDiscardedAt sets the "discarded_at" field to the value that was provided on create.
+func (u *SendingDomainUpsert) UpdateDiscardedAt() *SendingDomainUpsert {
+	u.SetExcluded(sendingdomain.FieldDiscardedAt)
+	return u
+}
+
+// ClearDiscardedAt clears the value of the "discarded_at" field.
+func (u *SendingDomainUpsert) ClearDiscardedAt() *SendingDomainUpsert {
+	u.SetNull(sendingdomain.FieldDiscardedAt)
 	return u
 }
 
@@ -716,6 +752,27 @@ func (u *SendingDomainUpsertOne) SetWorkspaceID(v int64) *SendingDomainUpsertOne
 func (u *SendingDomainUpsertOne) UpdateWorkspaceID() *SendingDomainUpsertOne {
 	return u.Update(func(s *SendingDomainUpsert) {
 		s.UpdateWorkspaceID()
+	})
+}
+
+// SetDiscardedAt sets the "discarded_at" field.
+func (u *SendingDomainUpsertOne) SetDiscardedAt(v time.Time) *SendingDomainUpsertOne {
+	return u.Update(func(s *SendingDomainUpsert) {
+		s.SetDiscardedAt(v)
+	})
+}
+
+// UpdateDiscardedAt sets the "discarded_at" field to the value that was provided on create.
+func (u *SendingDomainUpsertOne) UpdateDiscardedAt() *SendingDomainUpsertOne {
+	return u.Update(func(s *SendingDomainUpsert) {
+		s.UpdateDiscardedAt()
+	})
+}
+
+// ClearDiscardedAt clears the value of the "discarded_at" field.
+func (u *SendingDomainUpsertOne) ClearDiscardedAt() *SendingDomainUpsertOne {
+	return u.Update(func(s *SendingDomainUpsert) {
+		s.ClearDiscardedAt()
 	})
 }
 
@@ -1150,6 +1207,27 @@ func (u *SendingDomainUpsertBulk) SetWorkspaceID(v int64) *SendingDomainUpsertBu
 func (u *SendingDomainUpsertBulk) UpdateWorkspaceID() *SendingDomainUpsertBulk {
 	return u.Update(func(s *SendingDomainUpsert) {
 		s.UpdateWorkspaceID()
+	})
+}
+
+// SetDiscardedAt sets the "discarded_at" field.
+func (u *SendingDomainUpsertBulk) SetDiscardedAt(v time.Time) *SendingDomainUpsertBulk {
+	return u.Update(func(s *SendingDomainUpsert) {
+		s.SetDiscardedAt(v)
+	})
+}
+
+// UpdateDiscardedAt sets the "discarded_at" field to the value that was provided on create.
+func (u *SendingDomainUpsertBulk) UpdateDiscardedAt() *SendingDomainUpsertBulk {
+	return u.Update(func(s *SendingDomainUpsert) {
+		s.UpdateDiscardedAt()
+	})
+}
+
+// ClearDiscardedAt clears the value of the "discarded_at" field.
+func (u *SendingDomainUpsertBulk) ClearDiscardedAt() *SendingDomainUpsertBulk {
+	return u.Update(func(s *SendingDomainUpsert) {
+		s.ClearDiscardedAt()
 	})
 }
 

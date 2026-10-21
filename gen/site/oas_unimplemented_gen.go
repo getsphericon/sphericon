@@ -1012,21 +1012,22 @@ func (UnimplementedHandler) SiteSegmentsUpdate(ctx context.Context, req *SiteUpd
 	return r, ht.ErrNotImplemented
 }
 
+// SiteSendingDomainsArchive implements SiteSendingDomains_archive operation.
+//
+// Archive a sending domain: it leaves the list, serves no Tracking domain host and can be restored.
+// Refused with 409 while a scheduled or sending broadcast or an active automation sends from it.
+//
+// POST /workspaces/{workspaceId}/sending-domains/{id}/archive
+func (UnimplementedHandler) SiteSendingDomainsArchive(ctx context.Context, params SiteSendingDomainsArchiveParams) (r SiteSendingDomainsArchiveRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteSendingDomainsCreate implements SiteSendingDomains_create operation.
 //
 // Add a sending domain; mints the DKIM keypair and returns the DNS records.
 //
 // POST /workspaces/{workspaceId}/sending-domains
 func (UnimplementedHandler) SiteSendingDomainsCreate(ctx context.Context, req *SiteCreateSendingDomainInput, params SiteSendingDomainsCreateParams) (r SiteSendingDomainsCreateRes, _ error) {
-	return r, ht.ErrNotImplemented
-}
-
-// SiteSendingDomainsDelete implements SiteSendingDomains_delete operation.
-//
-// Delete a sending domain.
-//
-// DELETE /workspaces/{workspaceId}/sending-domains/{id}
-func (UnimplementedHandler) SiteSendingDomainsDelete(ctx context.Context, params SiteSendingDomainsDeleteParams) (r SiteSendingDomainsDeleteRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1045,6 +1046,16 @@ func (UnimplementedHandler) SiteSendingDomainsGet(ctx context.Context, params Si
 //
 // GET /workspaces/{workspaceId}/sending-domains
 func (UnimplementedHandler) SiteSendingDomainsList(ctx context.Context, params SiteSendingDomainsListParams) (r SiteSendingDomainsListRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteSendingDomainsUnarchive implements SiteSendingDomains_unarchive operation.
+//
+// Restore an archived sending domain. It starts a new DNS check and serves its Tracking domain host
+// again only once that passes. Refused with 409 when the same domain was added again meanwhile.
+//
+// POST /workspaces/{workspaceId}/sending-domains/{id}/unarchive
+func (UnimplementedHandler) SiteSendingDomainsUnarchive(ctx context.Context, params SiteSendingDomainsUnarchiveParams) (r SiteSendingDomainsUnarchiveRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

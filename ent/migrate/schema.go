@@ -1274,6 +1274,7 @@ var (
 		{Name: "id", Type: field.TypeInt64, Increment: true},
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "discarded_at", Type: field.TypeTime, Nullable: true},
 		{Name: "domain", Type: field.TypeString},
 		{Name: "dkim_selector", Type: field.TypeString},
 		{Name: "dkim_private_key_encrypted", Type: field.TypeString},
@@ -1295,7 +1296,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "sending_domains_workspaces_sending_domains",
-				Columns:    []*schema.Column{SendingDomainsColumns[14]},
+				Columns:    []*schema.Column{SendingDomainsColumns[15]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1304,20 +1305,28 @@ var (
 			{
 				Name:    "sendingdomain_workspace_id_domain",
 				Unique:  true,
-				Columns: []*schema.Column{SendingDomainsColumns[14], SendingDomainsColumns[3]},
+				Columns: []*schema.Column{SendingDomainsColumns[15], SendingDomainsColumns[4]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "discarded_at IS NULL",
+				},
+			},
+			{
+				Name:    "sendingdomain_workspace_id",
+				Unique:  false,
+				Columns: []*schema.Column{SendingDomainsColumns[15]},
 			},
 			{
 				Name:    "sendingdomain_domain",
 				Unique:  true,
-				Columns: []*schema.Column{SendingDomainsColumns[3]},
+				Columns: []*schema.Column{SendingDomainsColumns[4]},
 				Annotation: &entsql.IndexAnnotation{
-					Where: "tracking_state IN ('dns_verified', 'serving')",
+					Where: "tracking_state IN ('dns_verified', 'serving') AND discarded_at IS NULL",
 				},
 			},
 			{
 				Name:    "sendingdomain_last_checked_at",
 				Unique:  false,
-				Columns: []*schema.Column{SendingDomainsColumns[8]},
+				Columns: []*schema.Column{SendingDomainsColumns[9]},
 			},
 		},
 	}

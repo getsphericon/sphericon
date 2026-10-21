@@ -27,7 +27,7 @@ func (h *Handlers) SendingDomainsList(ctx context.Context, params externalapi.Se
 		res := externalapi.SendingDomainsListUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
-	page, err := h.sendingDomains.List(ctx, auth.TokenScoped(ctx), pagination.ParamsOf(params.Page, params.PageSize))
+	page, err := h.sendingDomains.List(ctx, auth.TokenScoped(ctx), pagination.ParamsOf(params.Page, params.PageSize), params.Archived.Or(false))
 	if err != nil {
 		return nil, err
 	}
@@ -110,26 +110,60 @@ func (h *Handlers) SendingDomainsUpdate(ctx context.Context, req *externalapi.Up
 	return &res, nil
 }
 
-// SendingDomainsDelete removes a Sending domain.
-func (h *Handlers) SendingDomainsDelete(ctx context.Context, params externalapi.SendingDomainsDeleteParams) (externalapi.SendingDomainsDeleteRes, error) {
+// SendingDomainsArchive archives a Sending domain (ADR 0049): it leaves the list and serves no
+// Tracking domain host. Live sends from it refuse it with 409.
+func (h *Handlers) SendingDomainsArchive(ctx context.Context, params externalapi.SendingDomainsArchiveParams) (externalapi.SendingDomainsArchiveRes, error) {
 	if !auth.HasScope(auth.GetTokenAuth(ctx), "sending_domains:write") {
-		res := externalapi.SendingDomainsDeleteUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
+		res := externalapi.SendingDomainsArchiveUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
 	id := int64(params.ID)
-	err := h.sendingDomains.Delete(ctx, auth.TokenScoped(ctx), id)
+	s := auth.TokenScoped(ctx)
+	err := h.sendingDomains.Archive(ctx, s, id)
 	if refused, ok := inuse.As(err); ok {
 		res := inUseProblem(refused)
 		return &res, nil
 	}
 	if ent.IsNotFound(err) {
-		res := externalapi.SendingDomainsDeleteNotFound(problem(http.StatusNotFound, "sending domain not found"))
+		res := externalapi.SendingDomainsArchiveNotFound(problem(http.StatusNotFound, "sending domain not found"))
 		return &res, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	return &externalapi.SendingDomainsDeleteNoContent{}, nil
+	row, err := s.SendingDomain().Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	res := h.sendingDomainResource(row)
+	return &res, nil
+}
+
+// SendingDomainsUnarchive restores an archived Sending domain and starts a DNS check.
+func (h *Handlers) SendingDomainsUnarchive(ctx context.Context, params externalapi.SendingDomainsUnarchiveParams) (externalapi.SendingDomainsUnarchiveRes, error) {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), "sending_domains:write") {
+		res := externalapi.SendingDomainsUnarchiveUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
+		return &res, nil
+	}
+	id := int64(params.ID)
+	s := auth.TokenScoped(ctx)
+	err := h.sendingDomains.Unarchive(ctx, s, id)
+	switch {
+	case errors.Is(err, sendingdomains.ErrAlreadyExists):
+		res := externalapi.SendingDomainsUnarchiveConflict(problem(http.StatusConflict, "this domain was added again; archive that one first"))
+		return &res, nil
+	case ent.IsNotFound(err):
+		res := externalapi.SendingDomainsUnarchiveNotFound(problem(http.StatusNotFound, "sending domain not found"))
+		return &res, nil
+	case err != nil:
+		return nil, err
+	}
+	row, err := s.SendingDomain().Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	res := h.sendingDomainResource(row)
+	return &res, nil
 }
 
 // SendingDomainsVerify triggers the live DKIM check and returns the domain as it stands;
@@ -184,6 +218,9 @@ func (h *Handlers) sendingDomainResource(d *ent.SendingDomain) externalapi.Sendi
 	}
 	if d.VerifiedAt != nil {
 		res.VerifiedAt = externalapi.NewOptNilTimestamp(externalapi.Timestamp(*d.VerifiedAt))
+	}
+	if d.DiscardedAt != nil {
+		res.ArchivedAt = externalapi.NewOptNilTimestamp(externalapi.Timestamp(*d.DiscardedAt))
 	}
 	return res
 }

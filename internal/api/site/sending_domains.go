@@ -39,6 +39,9 @@ func (h *Handlers) sendingDomainResource(d *ent.SendingDomain) siteapi.SiteSendi
 	if d.VerifiedAt != nil {
 		res.VerifiedAt = siteapi.NewOptNilTimestamp(siteapi.Timestamp(*d.VerifiedAt))
 	}
+	if d.DiscardedAt != nil {
+		res.ArchivedAt = siteapi.NewOptNilTimestamp(siteapi.Timestamp(*d.DiscardedAt))
+	}
 	return res
 }
 
@@ -56,7 +59,7 @@ func (h *Handlers) SiteSendingDomainsList(ctx context.Context, params siteapi.Si
 		return nil, err
 	}
 
-	page, err := h.sendingDomains.List(ctx, s, pagination.ParamsOf(params.Page, params.PageSize))
+	page, err := h.sendingDomains.List(ctx, s, pagination.ParamsOf(params.Page, params.PageSize), params.Archived.Or(false))
 	if err != nil {
 		return nil, err
 	}
@@ -123,10 +126,12 @@ func (h *Handlers) SiteSendingDomainsGet(ctx context.Context, params siteapi.Sit
 	return &res, nil
 }
 
-func (h *Handlers) SiteSendingDomainsDelete(ctx context.Context, params siteapi.SiteSendingDomainsDeleteParams) (siteapi.SiteSendingDomainsDeleteRes, error) {
+// SiteSendingDomainsArchive archives a sending domain (ADR 0049): it leaves the list and serves
+// no Tracking domain host. Live sends from it refuse it with 409.
+func (h *Handlers) SiteSendingDomainsArchive(ctx context.Context, params siteapi.SiteSendingDomainsArchiveParams) (siteapi.SiteSendingDomainsArchiveRes, error) {
 	s, err := h.scopedFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
-		v := siteapi.SiteSendingDomainsDeleteNotFound(problem(http.StatusNotFound, "workspace not found"))
+		v := siteapi.SiteSendingDomainsArchiveNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil
 	}
 	if err != nil {
@@ -134,19 +139,55 @@ func (h *Handlers) SiteSendingDomainsDelete(ctx context.Context, params siteapi.
 	}
 
 	id := int64(params.ID)
-	err = h.sendingDomains.Delete(ctx, s, id)
+	err = h.sendingDomains.Archive(ctx, s, id)
 	if refused, ok := inuse.As(err); ok {
 		v := inUseProblem(refused)
 		return &v, nil
 	}
 	if ent.IsNotFound(err) {
-		v := siteapi.SiteSendingDomainsDeleteNotFound(problem(http.StatusNotFound, "sending domain not found"))
+		v := siteapi.SiteSendingDomainsArchiveNotFound(problem(http.StatusNotFound, "sending domain not found"))
 		return &v, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	return &siteapi.SiteSendingDomainsDeleteNoContent{}, nil
+	d, err := s.SendingDomain().Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	res := h.sendingDomainResource(d)
+	return &res, nil
+}
+
+// SiteSendingDomainsUnarchive restores an archived sending domain and starts a DNS check.
+func (h *Handlers) SiteSendingDomainsUnarchive(ctx context.Context, params siteapi.SiteSendingDomainsUnarchiveParams) (siteapi.SiteSendingDomainsUnarchiveRes, error) {
+	s, err := h.scopedFor(ctx, params.WorkspaceId)
+	if ent.IsNotFound(err) {
+		v := siteapi.SiteSendingDomainsUnarchiveNotFound(problem(http.StatusNotFound, "workspace not found"))
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	id := int64(params.ID)
+	err = h.sendingDomains.Unarchive(ctx, s, id)
+	switch {
+	case errors.Is(err, sendingdomains.ErrAlreadyExists):
+		v := siteapi.SiteSendingDomainsUnarchiveConflict(problem(http.StatusConflict, "this domain was added again; archive that one first"))
+		return &v, nil
+	case ent.IsNotFound(err):
+		v := siteapi.SiteSendingDomainsUnarchiveNotFound(problem(http.StatusNotFound, "sending domain not found"))
+		return &v, nil
+	case err != nil:
+		return nil, err
+	}
+	d, err := s.SendingDomain().Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	res := h.sendingDomainResource(d)
+	return &res, nil
 }
 
 func (h *Handlers) SiteSendingDomainsVerify(ctx context.Context, params siteapi.SiteSendingDomainsVerifyParams) (siteapi.SiteSendingDomainsVerifyRes, error) {

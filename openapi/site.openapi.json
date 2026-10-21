@@ -7431,6 +7431,9 @@
           },
           {
             "$ref": "#/components/parameters/PageQuery.pageSize"
+          },
+          {
+            "$ref": "#/components/parameters/SiteSendingDomainsListFilter"
           }
         ],
         "responses": {
@@ -7616,10 +7619,12 @@
           }
         },
         "tags": ["Site Sending Domains"]
-      },
-      "delete": {
-        "operationId": "SiteSendingDomains_delete",
-        "description": "Delete a sending domain",
+      }
+    },
+    "/workspaces/{workspaceId}/sending-domains/{id}/archive": {
+      "post": {
+        "operationId": "SiteSendingDomains_archive",
+        "description": "Archive a sending domain: it leaves the list, serves no Tracking domain host and can be\nrestored. Refused with 409 while a scheduled or sending broadcast or an active automation\nsends from it.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteSendingDomainResourceKey.workspaceId"
@@ -7629,8 +7634,15 @@
           }
         ],
         "responses": {
-          "204": {
-            "description": "There is no content to send for this request, but the headers may be useful."
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteSendingDomainResource"
+                }
+              }
+            }
           },
           "400": {
             "description": "RFC 7807 bad request response",
@@ -7658,6 +7670,63 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/InUseProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Sending Domains"]
+      }
+    },
+    "/workspaces/{workspaceId}/sending-domains/{id}/unarchive": {
+      "post": {
+        "operationId": "SiteSendingDomains_unarchive",
+        "description": "Restore an archived sending domain. It starts a new DNS check and serves its Tracking\ndomain host again only once that passes. Refused with 409 when the same domain was added\nagain meanwhile.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SiteSendingDomainResourceKey.workspaceId"
+          },
+          {
+            "$ref": "#/components/parameters/SiteSendingDomainResourceKey.id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteSendingDomainResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "RFC 7807 conflict response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -9486,6 +9555,16 @@
         "schema": {
           "$ref": "#/components/schemas/WorkspaceId"
         }
+      },
+      "SiteSendingDomainsListFilter": {
+        "name": "archived",
+        "in": "query",
+        "required": false,
+        "description": "true lists the archived sending domains instead of the kept ones; the default hides them",
+        "schema": {
+          "type": "boolean"
+        },
+        "explode": false
       },
       "SiteSuppressionListQuery": {
         "name": "lifted",
@@ -13628,6 +13707,16 @@
             ],
             "nullable": true,
             "description": "When the domain most recently became verified (null = never)"
+          },
+          "archivedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the domain was archived; null while it is kept. An archived domain serves no Tracking domain host."
           },
           "createdAt": {
             "allOf": [

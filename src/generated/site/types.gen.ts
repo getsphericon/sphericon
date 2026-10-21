@@ -3032,6 +3032,10 @@ export type SiteSendingDomainResource = {
    */
   verifiedAt?: Timestamp | null;
   /**
+   * When the domain was archived; null while it is kept. An archived domain serves no Tracking domain host.
+   */
+  archivedAt?: Timestamp | null;
+  /**
    * Creation timestamp
    */
   createdAt: Timestamp;
@@ -4241,6 +4245,11 @@ export type SiteSendingDomainResourceKeyWorkspaceId = WorkspaceId;
  * workspace resources (ADR 0043)
  */
 export type SiteSendingDomainResourceParentKey = WorkspaceId;
+
+/**
+ * true lists the archived sending domains instead of the kept ones; the default hides them
+ */
+export type SiteSendingDomainsListFilter = boolean;
 
 /**
  * true lists the lifted suppressions instead of the active ones; the default hides them
@@ -8697,6 +8706,10 @@ export type SiteSendingDomainsListData = {
      * Page size
      */
     pageSize?: number;
+    /**
+     * true lists the archived sending domains instead of the kept ones; the default hides them
+     */
+    archived?: boolean;
   };
   url: '/workspaces/{workspaceId}/sending-domains';
 };
@@ -8787,51 +8800,6 @@ export type SiteSendingDomainsCreateResponses = {
 
 export type SiteSendingDomainsCreateResponse = SiteSendingDomainsCreateResponses[keyof SiteSendingDomainsCreateResponses];
 
-export type SiteSendingDomainsDeleteData = {
-  body?: never;
-  path: {
-    /**
-     * The Workspace id: its short opaque public address and the route key for nested
-     * workspace resources (ADR 0043)
-     */
-    workspaceId: WorkspaceId;
-    /**
-     * Unique identifier
-     */
-    id: EntityId;
-  };
-  query?: never;
-  url: '/workspaces/{workspaceId}/sending-domains/{id}';
-};
-
-export type SiteSendingDomainsDeleteErrors = {
-  /**
-   * RFC 7807 bad request response
-   */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 conflict response for a removal refused because live work still uses the row
-   * (ADR 0049): 409 with `usedBy` naming the users. Every refused removal of a Segment, Tag,
-   * Integration, Sending domain or Automation answers it.
-   */
-  409: InUseProblemDetails;
-};
-
-export type SiteSendingDomainsDeleteError = SiteSendingDomainsDeleteErrors[keyof SiteSendingDomainsDeleteErrors];
-
-export type SiteSendingDomainsDeleteResponses = {
-  /**
-   * There is no content to send for this request, but the headers may be useful.
-   */
-  204: void;
-};
-
-export type SiteSendingDomainsDeleteResponse = SiteSendingDomainsDeleteResponses[keyof SiteSendingDomainsDeleteResponses];
-
 export type SiteSendingDomainsGetData = {
   body?: never;
   path: {
@@ -8870,6 +8838,94 @@ export type SiteSendingDomainsGetResponses = {
 };
 
 export type SiteSendingDomainsGetResponse = SiteSendingDomainsGetResponses[keyof SiteSendingDomainsGetResponses];
+
+export type SiteSendingDomainsArchiveData = {
+  body?: never;
+  path: {
+    /**
+     * The Workspace id: its short opaque public address and the route key for nested
+     * workspace resources (ADR 0043)
+     */
+    workspaceId: WorkspaceId;
+    /**
+     * Unique identifier
+     */
+    id: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/sending-domains/{id}/archive';
+};
+
+export type SiteSendingDomainsArchiveErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 conflict response for a removal refused because live work still uses the row
+   * (ADR 0049): 409 with `usedBy` naming the users. Every refused removal of a Segment, Tag,
+   * Integration, Sending domain or Automation answers it.
+   */
+  409: InUseProblemDetails;
+};
+
+export type SiteSendingDomainsArchiveError = SiteSendingDomainsArchiveErrors[keyof SiteSendingDomainsArchiveErrors];
+
+export type SiteSendingDomainsArchiveResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteSendingDomainResource;
+};
+
+export type SiteSendingDomainsArchiveResponse = SiteSendingDomainsArchiveResponses[keyof SiteSendingDomainsArchiveResponses];
+
+export type SiteSendingDomainsUnarchiveData = {
+  body?: never;
+  path: {
+    /**
+     * The Workspace id: its short opaque public address and the route key for nested
+     * workspace resources (ADR 0043)
+     */
+    workspaceId: WorkspaceId;
+    /**
+     * Unique identifier
+     */
+    id: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/sending-domains/{id}/unarchive';
+};
+
+export type SiteSendingDomainsUnarchiveErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 conflict response
+   */
+  409: ProblemDetails;
+};
+
+export type SiteSendingDomainsUnarchiveError = SiteSendingDomainsUnarchiveErrors[keyof SiteSendingDomainsUnarchiveErrors];
+
+export type SiteSendingDomainsUnarchiveResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteSendingDomainResource;
+};
+
+export type SiteSendingDomainsUnarchiveResponse = SiteSendingDomainsUnarchiveResponses[keyof SiteSendingDomainsUnarchiveResponses];
 
 export type SiteSendingDomainsVerifyData = {
   body?: never;

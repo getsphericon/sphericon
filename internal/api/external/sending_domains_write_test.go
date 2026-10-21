@@ -41,9 +41,13 @@ func TestExternalSendingDomainsWritesNeedTheWriteScope(t *testing.T) {
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.SendingDomainsVerifyUnauthorized{}, ver)
 
-	del, err := reader.SendingDomainsDelete(ctx, externalapi.SendingDomainsDeleteParams{ID: id})
+	archive, err := reader.SendingDomainsArchive(ctx, externalapi.SendingDomainsArchiveParams{ID: id})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SendingDomainsDeleteUnauthorized{}, del)
+	assert.IsType(t, &externalapi.SendingDomainsArchiveUnauthorized{}, archive)
+
+	unarchive, err := reader.SendingDomainsUnarchive(ctx, externalapi.SendingDomainsUnarchiveParams{ID: id})
+	require.NoError(t, err)
+	assert.IsType(t, &externalapi.SendingDomainsUnarchiveUnauthorized{}, unarchive)
 
 	writer := env.ExternalScoped(t, "sending_domains:write")
 	get, err := writer.SendingDomainsGet(ctx, externalapi.SendingDomainsGetParams{ID: id})
@@ -166,19 +170,58 @@ func TestExternalSendingDomainsVerifyRunsALiveCheckAndReportsIt(t *testing.T) {
 	assert.True(t, checked, "the live check ran and is reported")
 }
 
-func TestExternalSendingDomainsDelete(t *testing.T) {
+func listedSendingDomainIDs(t *testing.T, c *externalapi.Client, archived bool) []externalapi.EntityId {
+	t.Helper()
+	res, err := c.SendingDomainsList(context.Background(), externalapi.SendingDomainsListParams{
+		PageSize: externalapi.NewOptInt32(100),
+		Archived: externalapi.NewOptBool(archived),
+	})
+	require.NoError(t, err)
+	list, ok := res.(*externalapi.SendingDomainsListOK)
+	require.Truef(t, ok, "got %T", res)
+	ids := make([]externalapi.EntityId, len(list.Items))
+	for i, d := range list.Items {
+		ids[i] = d.ID
+	}
+	return ids
+}
+
+// /api archives, lists and restores a Sending domain; live work that sends from it refuses the
+// archive with 409, and restoring one added again meanwhile is a 409.
+func TestExternalSendingDomainsArchiveAndRestore(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	c := env.ExternalScoped(t, "sending_domains:read", "sending_domains:write")
 	id := entityIDString(fixtures.SendingDomainUnverifiedID)
 
-	del, err := c.SendingDomainsDelete(ctx, externalapi.SendingDomainsDeleteParams{ID: id})
+	out, err := c.SendingDomainsArchive(ctx, externalapi.SendingDomainsArchiveParams{ID: id})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SendingDomainsDeleteNoContent{}, del)
+	archived, ok := out.(*externalapi.SendingDomainResource)
+	require.Truef(t, ok, "got %T", out)
+	assert.True(t, archived.ArchivedAt.IsSet())
+	assert.NotContains(t, listedSendingDomainIDs(t, c, false), id)
+	assert.Contains(t, listedSendingDomainIDs(t, c, true), id)
 
-	gone, err := c.SendingDomainsGet(ctx, externalapi.SendingDomainsGetParams{ID: id})
+	got, err := c.SendingDomainsGet(ctx, externalapi.SendingDomainsGetParams{ID: id})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SendingDomainsGetNotFound{}, gone)
+	assert.IsType(t, &externalapi.SendingDomainResource{}, got, "an archived domain can still be opened")
+
+	again, err := c.SendingDomainsCreate(ctx, &externalapi.CreateSendingDomainInput{Domain: fixtures.SendingDomainUnverifiedDomain})
+	require.NoError(t, err)
+	created, ok := again.(*externalapi.SendingDomainResource)
+	require.Truef(t, ok, "got %T", again)
+	conflict, err := c.SendingDomainsUnarchive(ctx, externalapi.SendingDomainsUnarchiveParams{ID: id})
+	require.NoError(t, err)
+	assert.IsType(t, &externalapi.SendingDomainsUnarchiveConflict{}, conflict)
+
+	_, err = c.SendingDomainsArchive(ctx, externalapi.SendingDomainsArchiveParams{ID: created.ID})
+	require.NoError(t, err)
+	back, err := c.SendingDomainsUnarchive(ctx, externalapi.SendingDomainsUnarchiveParams{ID: id})
+	require.NoError(t, err)
+	restored, ok := back.(*externalapi.SendingDomainResource)
+	require.Truef(t, ok, "got %T", back)
+	assert.False(t, restored.ArchivedAt.IsSet())
+	assert.Contains(t, listedSendingDomainIDs(t, c, false), id)
 }
 
 func TestExternalSendingDomainsStayInTheirWorkspace(t *testing.T) {
@@ -199,9 +242,13 @@ func TestExternalSendingDomainsStayInTheirWorkspace(t *testing.T) {
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.SendingDomainsVerifyNotFound{}, ver)
 
-	del, err := c.SendingDomainsDelete(ctx, externalapi.SendingDomainsDeleteParams{ID: foreign})
+	archive, err := c.SendingDomainsArchive(ctx, externalapi.SendingDomainsArchiveParams{ID: foreign})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SendingDomainsDeleteNotFound{}, del)
+	assert.IsType(t, &externalapi.SendingDomainsArchiveNotFound{}, archive)
+
+	unarchive, err := c.SendingDomainsUnarchive(ctx, externalapi.SendingDomainsUnarchiveParams{ID: foreign})
+	require.NoError(t, err)
+	assert.IsType(t, &externalapi.SendingDomainsUnarchiveNotFound{}, unarchive)
 
 	n, err := env.DB.Scoped(fixtures.GlobexID).SendingDomain().Query().Count(ctx)
 	require.NoError(t, err)

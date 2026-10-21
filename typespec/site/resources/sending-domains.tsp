@@ -93,6 +93,9 @@ model SiteSendingDomainResource {
   /** When the domain most recently became verified (null = never) */
   verifiedAt?: Timestamp | null;
 
+  /** When the domain was archived; null while it is kept. An archived domain serves no Tracking domain host. */
+  archivedAt?: Timestamp | null;
+
   /** Creation timestamp */
   createdAt: Timestamp;
 
@@ -109,6 +112,12 @@ model SiteCreateSendingDomainInput {
   dkimSelector?: string;
 }
 
+/** Filter of the sending domain list */
+model SiteSendingDomainsListFilter {
+  /** true lists the archived sending domains instead of the kept ones; the default hides them */
+  @query archived?: boolean;
+}
+
 @tag("Site Sending Domains")
 interface SiteSendingDomains {
   /** List sending domains for the site UI */
@@ -118,6 +127,7 @@ interface SiteSendingDomains {
   list(
     ...ResourceCollectionParameters<SiteSendingDomainResource>,
     ...PageQuery,
+    ...SiteSendingDomainsListFilter,
   ):
     | Page<SiteSendingDomainResource>
     | BadRequestProblem
@@ -149,15 +159,31 @@ interface SiteSendingDomains {
     | BadRequestProblem
     | NotFoundProblem;
 
-  /** Delete a sending domain */
-  @deletesResource(SiteSendingDomainResource)
-  @delete
+  /**
+   * Archive a sending domain: it leaves the list, serves no Tracking domain host and can be
+   * restored. Refused with 409 while a scheduled or sending broadcast or an active automation
+   * sends from it.
+   */
+  @action("archive")
   @autoRoute
-  delete(...ResourceParameters<SiteSendingDomainResource>):
-    | NoContentResponse
+  archive(...ResourceParameters<SiteSendingDomainResource>):
+    | SiteSendingDomainResource
     | BadRequestProblem
     | NotFoundProblem
     | InUseProblem;
+
+  /**
+   * Restore an archived sending domain. It starts a new DNS check and serves its Tracking
+   * domain host again only once that passes. Refused with 409 when the same domain was added
+   * again meanwhile.
+   */
+  @action("unarchive")
+  @autoRoute
+  unarchive(...ResourceParameters<SiteSendingDomainResource>):
+    | SiteSendingDomainResource
+    | BadRequestProblem
+    | NotFoundProblem
+    | ConflictProblem;
 
   /** Trigger an immediate DKIM re-check (fire-and-forget) */
   @action("verify")

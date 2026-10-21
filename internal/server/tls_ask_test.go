@@ -74,3 +74,21 @@ func TestTLSAskRefusesTheHostsOfADeletedWorkspace(t *testing.T) {
 	env.DB.Workspace.UpdateOneID(fixtures.UmbrellaID).ClearDiscardedAt().ExecX(t.Context())
 	assert.Equal(t, http.StatusOK, ask(t, env.Internal, host))
 }
+
+// An archived Sending domain serves no Tracking host (ADR 0049): the ask refuses the host of a
+// fixture row that was serving when it was archived, and archiving a serving host makes the edge
+// refuse it; restoring the row brings it back.
+func TestTLSAskRefusesTheHostOfAnArchivedSendingDomain(t *testing.T) {
+	env := testhelper.Setup(t)
+	assert.Equal(t, http.StatusNotFound, ask(t, env.Internal, sendingdomains.TrackingHost(fixtures.SendingDomainArchivedDomain)))
+
+	host := sendingdomains.TrackingHost(fixtures.SendingDomainTrackingServingDomain)
+	require.Equal(t, http.StatusOK, ask(t, env.Internal, host))
+	umbrella := env.DB.Scoped(fixtures.UmbrellaID)
+
+	require.NoError(t, umbrella.SendingDomain().Discard(t.Context(), fixtures.SendingDomainTrackingServingID))
+	assert.Equal(t, http.StatusNotFound, ask(t, env.Internal, host))
+
+	require.NoError(t, umbrella.SendingDomain().Undiscard(t.Context(), fixtures.SendingDomainTrackingServingID))
+	assert.Equal(t, http.StatusOK, ask(t, env.Internal, host))
+}

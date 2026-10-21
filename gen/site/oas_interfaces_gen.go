@@ -377,12 +377,12 @@ type SiteSegmentsUpdateRes interface {
 	siteSegmentsUpdateRes()
 }
 
-type SiteSendingDomainsCreateRes interface {
-	siteSendingDomainsCreateRes()
+type SiteSendingDomainsArchiveRes interface {
+	siteSendingDomainsArchiveRes()
 }
 
-type SiteSendingDomainsDeleteRes interface {
-	siteSendingDomainsDeleteRes()
+type SiteSendingDomainsCreateRes interface {
+	siteSendingDomainsCreateRes()
 }
 
 type SiteSendingDomainsGetRes interface {
@@ -391,6 +391,10 @@ type SiteSendingDomainsGetRes interface {
 
 type SiteSendingDomainsListRes interface {
 	siteSendingDomainsListRes()
+}
+
+type SiteSendingDomainsUnarchiveRes interface {
+	siteSendingDomainsUnarchiveRes()
 }
 
 type SiteSendingDomainsVerifyRes interface {

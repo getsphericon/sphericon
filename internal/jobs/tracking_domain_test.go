@@ -100,6 +100,11 @@ func TestRecheckTrackingDomainsWorker_demotesAServingHostThatStopsAnswering(t *t
 	for _, k := range kinds {
 		assert.Equal(t, "tracking_domain_verify", k)
 	}
+	verified, err := e.DB.SendingDomain.Query().
+		Where(sendingdomain.TrackingStateIn(sendingdomain.TrackingStateDNSVerified, sendingdomain.TrackingStateServing), sendingdomain.IDNEQ(fixtures.SendingDomainArchivedID)).
+		Count(ctx)
+	require.NoError(t, err)
+	assert.Len(t, kinds, verified, "the archived Sending domain, serving when it was archived, is not checked")
 
 	zones := map[string]mockdns.Zone{"track.serving.umbrella.test.": {CNAME: testhelper.TrackingCNAMETarget + "."}}
 	down := probeFunc(func(*http.Request) (*http.Response, error) { return nil, errors.New("connection refused") })

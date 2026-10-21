@@ -24,6 +24,8 @@ type SendingDomain struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// WorkspaceID holds the value of the "workspace_id" field.
 	WorkspaceID int64 `json:"workspace_id,omitempty"`
+	// DiscardedAt holds the value of the "discarded_at" field.
+	DiscardedAt *time.Time `json:"discarded_at,omitempty"`
 	// Domain holds the value of the "domain" field.
 	Domain string `json:"domain,omitempty"`
 	// DkimSelector holds the value of the "dkim_selector" field.
@@ -83,7 +85,7 @@ func (*SendingDomain) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case sendingdomain.FieldDomain, sendingdomain.FieldDkimSelector, sendingdomain.FieldDkimPrivateKeyEncrypted, sendingdomain.FieldDkimPublicKey, sendingdomain.FieldTrackingState, sendingdomain.FieldTrackingReason:
 			values[i] = new(sql.NullString)
-		case sendingdomain.FieldCreatedAt, sendingdomain.FieldUpdatedAt, sendingdomain.FieldLastCheckedAt, sendingdomain.FieldVerifiedAt, sendingdomain.FieldTrackingCheckedAt, sendingdomain.FieldTrackingStateChangedAt:
+		case sendingdomain.FieldCreatedAt, sendingdomain.FieldUpdatedAt, sendingdomain.FieldDiscardedAt, sendingdomain.FieldLastCheckedAt, sendingdomain.FieldVerifiedAt, sendingdomain.FieldTrackingCheckedAt, sendingdomain.FieldTrackingStateChangedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -123,6 +125,13 @@ func (_m *SendingDomain) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field workspace_id", values[i])
 			} else if value.Valid {
 				_m.WorkspaceID = value.Int64
+			}
+		case sendingdomain.FieldDiscardedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field discarded_at", values[i])
+			} else if value.Valid {
+				_m.DiscardedAt = new(time.Time)
+				*_m.DiscardedAt = value.Time
 			}
 		case sendingdomain.FieldDomain:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -244,6 +253,11 @@ func (_m *SendingDomain) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("workspace_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.WorkspaceID))
+	builder.WriteString(", ")
+	if v := _m.DiscardedAt; v != nil {
+		builder.WriteString("discarded_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
 	builder.WriteString(", ")
 	builder.WriteString("domain=")
 	builder.WriteString(_m.Domain)

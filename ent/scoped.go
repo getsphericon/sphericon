@@ -20745,14 +20745,69 @@ type SendingDomainScoped struct{ s *Scoped }
 // SendingDomain returns the SendingDomain entities of the Workspace.
 func (s *Scoped) SendingDomain() *SendingDomainScoped { return &SendingDomainScoped{s: s} }
 
-// Query returns a SendingDomain query already confined to the Workspace.
+// Query returns a SendingDomain query already confined to the Workspace, hiding discarded rows
+// (a list query; QueryWithDiscarded sees them too).
 func (t *SendingDomainScoped) Query() *SendingDomainQuery {
+	return t.s.c.SendingDomain.Query().Where(sendingdomain.WorkspaceID(t.s.ws), sendingdomain.DiscardedAtIsNil())
+}
+
+// QueryWithDiscarded returns a SendingDomain query confined to the Workspace that also sees discarded rows.
+func (t *SendingDomainScoped) QueryWithDiscarded() *SendingDomainQuery {
 	return t.s.c.SendingDomain.Query().Where(sendingdomain.WorkspaceID(t.s.ws))
 }
 
-// Get returns the SendingDomain with the id; a row of another Workspace is not found.
+// Get returns the SendingDomain with the id, discarded or not; a row of another Workspace is not found.
 func (t *SendingDomainScoped) Get(ctx context.Context, id int64) (*SendingDomain, error) {
-	return t.Query().Where(sendingdomain.ID(id)).Only(ctx)
+	return t.QueryWithDiscarded().Where(sendingdomain.ID(id)).Only(ctx)
+}
+
+// Discard stamps discarded_at on the kept SendingDomain with the id (ps fence it further); a row of
+// another Workspace, an already discarded row or one a predicate excludes is not found.
+func (t *SendingDomainScoped) Discard(ctx context.Context, id int64, ps ...predicate.SendingDomain) error {
+	return t.setDiscarded(ctx, id, true, ps)
+}
+
+// Undiscard clears discarded_at on the discarded SendingDomain with the id; a row that is not
+// discarded is not found.
+func (t *SendingDomainScoped) Undiscard(ctx context.Context, id int64) error {
+	return t.setDiscarded(ctx, id, false, nil)
+}
+
+func (t *SendingDomainScoped) setDiscarded(ctx context.Context, id int64, discard bool, ps []predicate.SendingDomain) error {
+	where := append([]predicate.SendingDomain{sendingdomain.ID(id), sendingdomain.WorkspaceID(t.s.ws)}, ps...)
+	if discard {
+		where = append(where, sendingdomain.DiscardedAtIsNil())
+	} else {
+		where = append(where, sendingdomain.DiscardedAtNotNil())
+	}
+	write := func(c *Client) (*SendingDomain, error) {
+		u := c.SendingDomain.UpdateOneID(id).Where(where...)
+		if discard {
+			u.SetDiscardedAt(time.Now())
+		} else {
+			u.ClearDiscardedAt()
+		}
+		return u.Save(ctx)
+	}
+	if t.s.auditing() {
+		verb := "restore"
+		if discard {
+			verb = "discard"
+		}
+		return t.s.audited(ctx, func(ts *Scoped) error {
+			before, err := ts.c.SendingDomain.Query().Where(where...).Only(ctx)
+			if err != nil {
+				return err
+			}
+			after, err := write(ts.c)
+			if err != nil {
+				return err
+			}
+			return ts.record(ctx, auditChangeSendingDomain(verb, before, after))
+		})
+	}
+	_, err := write(t.s.c)
+	return err
 }
 
 // SendingDomainScopedDeleteOne wraps SendingDomainDeleteOne.
@@ -20761,8 +20816,8 @@ type SendingDomainScopedDeleteOne struct {
 	b *SendingDomainDeleteOne
 }
 
-// DeleteOneID deletes the SendingDomain with the id; a row of another Workspace is not found.
-func (t *SendingDomainScoped) DeleteOneID(id int64) *SendingDomainScopedDeleteOne {
+// PurgeOneID physically removes the SendingDomain with the id; a row of another Workspace is not found.
+func (t *SendingDomainScoped) PurgeOneID(id int64) *SendingDomainScopedDeleteOne {
 	return &SendingDomainScopedDeleteOne{s: t.s, b: t.s.c.SendingDomain.DeleteOneID(id).Where(sendingdomain.WorkspaceID(t.s.ws))}
 }
 
@@ -20796,8 +20851,8 @@ type SendingDomainScopedDelete struct {
 	b *SendingDomainDelete
 }
 
-// Delete deletes the SendingDomain entities of the Workspace that match the predicates.
-func (t *SendingDomainScoped) Delete() *SendingDomainScopedDelete {
+// Purge physically removes the SendingDomain entities of the Workspace that match the predicates.
+func (t *SendingDomainScoped) Purge() *SendingDomainScopedDelete {
 	return &SendingDomainScopedDelete{s: t.s, b: t.s.c.SendingDomain.Delete().Where(sendingdomain.WorkspaceID(t.s.ws))}
 }
 
@@ -20866,6 +20921,18 @@ func (x *SendingDomainScopedCreate) SetUpdatedAt(v time.Time) *SendingDomainScop
 // SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
 func (x *SendingDomainScopedCreate) SetNillableUpdatedAt(v *time.Time) *SendingDomainScopedCreate {
 	x.b.SetNillableUpdatedAt(v)
+	return x
+}
+
+// SetDiscardedAt sets the "discarded_at" field.
+func (x *SendingDomainScopedCreate) SetDiscardedAt(v time.Time) *SendingDomainScopedCreate {
+	x.b.SetDiscardedAt(v)
+	return x
+}
+
+// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
+func (x *SendingDomainScopedCreate) SetNillableDiscardedAt(v *time.Time) *SendingDomainScopedCreate {
+	x.b.SetNillableDiscardedAt(v)
 	return x
 }
 
@@ -21083,6 +21150,24 @@ func (u *SendingDomainScopedUpsert) SetUpdatedAt(v time.Time) *SendingDomainScop
 // UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
 func (u *SendingDomainScopedUpsert) UpdateUpdatedAt() *SendingDomainScopedUpsert {
 	u.u.SetExcluded(sendingdomain.FieldUpdatedAt)
+	return u
+}
+
+// SetDiscardedAt sets the "discarded_at" field.
+func (u *SendingDomainScopedUpsert) SetDiscardedAt(v time.Time) *SendingDomainScopedUpsert {
+	u.u.Set(sendingdomain.FieldDiscardedAt, v)
+	return u
+}
+
+// UpdateDiscardedAt sets the "discarded_at" field to the value that was provided on create.
+func (u *SendingDomainScopedUpsert) UpdateDiscardedAt() *SendingDomainScopedUpsert {
+	u.u.SetExcluded(sendingdomain.FieldDiscardedAt)
+	return u
+}
+
+// ClearDiscardedAt clears the value of the "discarded_at" field.
+func (u *SendingDomainScopedUpsert) ClearDiscardedAt() *SendingDomainScopedUpsert {
+	u.u.SetNull(sendingdomain.FieldDiscardedAt)
 	return u
 }
 
@@ -21432,6 +21517,24 @@ func (x *SendingDomainScopedUpdateOne) SetUpdatedAt(v time.Time) *SendingDomainS
 	return x
 }
 
+// SetDiscardedAt sets the "discarded_at" field.
+func (x *SendingDomainScopedUpdateOne) SetDiscardedAt(v time.Time) *SendingDomainScopedUpdateOne {
+	x.b.SetDiscardedAt(v)
+	return x
+}
+
+// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
+func (x *SendingDomainScopedUpdateOne) SetNillableDiscardedAt(v *time.Time) *SendingDomainScopedUpdateOne {
+	x.b.SetNillableDiscardedAt(v)
+	return x
+}
+
+// ClearDiscardedAt clears the value of the "discarded_at" field.
+func (x *SendingDomainScopedUpdateOne) ClearDiscardedAt() *SendingDomainScopedUpdateOne {
+	x.b.ClearDiscardedAt()
+	return x
+}
+
 // SetDomain sets the "domain" field.
 func (x *SendingDomainScopedUpdateOne) SetDomain(v string) *SendingDomainScopedUpdateOne {
 	x.b.SetDomain(v)
@@ -21669,6 +21772,24 @@ func (x *SendingDomainScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *
 // SetUpdatedAt sets the "updated_at" field.
 func (x *SendingDomainScopedUpdate) SetUpdatedAt(v time.Time) *SendingDomainScopedUpdate {
 	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetDiscardedAt sets the "discarded_at" field.
+func (x *SendingDomainScopedUpdate) SetDiscardedAt(v time.Time) *SendingDomainScopedUpdate {
+	x.b.SetDiscardedAt(v)
+	return x
+}
+
+// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
+func (x *SendingDomainScopedUpdate) SetNillableDiscardedAt(v *time.Time) *SendingDomainScopedUpdate {
+	x.b.SetNillableDiscardedAt(v)
+	return x
+}
+
+// ClearDiscardedAt clears the value of the "discarded_at" field.
+func (x *SendingDomainScopedUpdate) ClearDiscardedAt() *SendingDomainScopedUpdate {
+	x.b.ClearDiscardedAt()
 	return x
 }
 

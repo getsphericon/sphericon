@@ -643,21 +643,23 @@ func (UnimplementedHandler) SendingDomainRatesList(ctx context.Context, params S
 	return r, ht.ErrNotImplemented
 }
 
+// SendingDomainsArchive implements SendingDomains_archive operation.
+//
+// Archive a Sending domain: it leaves the list, serves no Tracking domain host and can be restored.
+// Refused with 409 (`usedBy`) while a scheduled or sending Broadcast or an active Automation sends
+// from it.
+//
+// POST /sending-domains/{id}/archive
+func (UnimplementedHandler) SendingDomainsArchive(ctx context.Context, params SendingDomainsArchiveParams) (r SendingDomainsArchiveRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SendingDomainsCreate implements SendingDomains_create operation.
 //
 // Create a resource.
 //
 // POST /sending-domains
 func (UnimplementedHandler) SendingDomainsCreate(ctx context.Context, req *CreateSendingDomainInput) (r SendingDomainsCreateRes, _ error) {
-	return r, ht.ErrNotImplemented
-}
-
-// SendingDomainsDelete implements SendingDomains_delete operation.
-//
-// Delete a resource.
-//
-// DELETE /sending-domains/{id}
-func (UnimplementedHandler) SendingDomainsDelete(ctx context.Context, params SendingDomainsDeleteParams) (r SendingDomainsDeleteRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -676,6 +678,16 @@ func (UnimplementedHandler) SendingDomainsGet(ctx context.Context, params Sendin
 //
 // GET /sending-domains
 func (UnimplementedHandler) SendingDomainsList(ctx context.Context, params SendingDomainsListParams) (r SendingDomainsListRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SendingDomainsUnarchive implements SendingDomains_unarchive operation.
+//
+// Restore an archived Sending domain. It starts a new DNS check and serves its Tracking domain host
+// again only once that passes. Refused with 409 when the same domain was added again meanwhile.
+//
+// POST /sending-domains/{id}/unarchive
+func (UnimplementedHandler) SendingDomainsUnarchive(ctx context.Context, params SendingDomainsUnarchiveParams) (r SendingDomainsUnarchiveRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

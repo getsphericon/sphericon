@@ -21,6 +21,8 @@ const (
 	FieldUpdatedAt = "updated_at"
 	// FieldWorkspaceID holds the string denoting the workspace_id field in the database.
 	FieldWorkspaceID = "workspace_id"
+	// FieldDiscardedAt holds the string denoting the discarded_at field in the database.
+	FieldDiscardedAt = "discarded_at"
 	// FieldDomain holds the string denoting the domain field in the database.
 	FieldDomain = "domain"
 	// FieldDkimSelector holds the string denoting the dkim_selector field in the database.
@@ -62,6 +64,7 @@ var Columns = []string{
 	FieldCreatedAt,
 	FieldUpdatedAt,
 	FieldWorkspaceID,
+	FieldDiscardedAt,
 	FieldDomain,
 	FieldDkimSelector,
 	FieldDkimPrivateKeyEncrypted,
@@ -172,6 +175,11 @@ func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByWorkspaceID orders the results by the workspace_id field.
 func ByWorkspaceID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldWorkspaceID, opts...).ToFunc()
+}
+
+// ByDiscardedAt orders the results by the discarded_at field.
+func ByDiscardedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDiscardedAt, opts...).ToFunc()
 }
 
 // ByDomain orders the results by the domain field.

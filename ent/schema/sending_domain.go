@@ -31,7 +31,7 @@ func (SendingDomain) Annotations() []schema.Annotation {
 }
 
 func (SendingDomain) Mixin() []ent.Mixin {
-	return []ent.Mixin{TimeMixin{}, WorkspaceMixin{Ref: "sending_domains"}}
+	return []ent.Mixin{TimeMixin{}, WorkspaceMixin{Ref: "sending_domains"}, DiscardMixin{}}
 }
 
 func (SendingDomain) Fields() []ent.Field {
@@ -90,16 +90,21 @@ func (SendingDomain) Fields() []ent.Field {
 
 func (SendingDomain) Indexes() []ent.Index {
 	return []ent.Index{
-		// One row per (workspace, domain).
+		// One kept row per (workspace, domain): an archived row does not hold the name
+		// (ADR 0049). The migration builds it CONCURRENTLY (ADR 0033).
 		index.Fields("workspace_id", "domain").
-			Unique(),
+			Unique().
+			Annotations(entsql.IndexWhere("discarded_at IS NULL")),
+		// Supports the workspace foreign key, which the partial unique index above cannot.
+		index.Fields("workspace_id"),
 		// A Tracking domain host (track.<domain>) belongs to one Workspace across the
 		// Instance (ADR 0038): the host is derived from the domain, so the domain is unique
-		// among rows whose DNS is verified. Unverified claims never block anyone. The
+		// among kept rows whose DNS is verified: an archived domain serves no host (ADR 0049).
+		// Unverified claims never block anyone. The
 		// migration builds it CONCURRENTLY (ADR 0033); the diff cannot emit that.
 		index.Fields("domain").
 			Unique().
-			Annotations(entsql.IndexWhere("tracking_state IN ('dns_verified', 'serving')")),
+			Annotations(entsql.IndexWhere("tracking_state IN ('dns_verified', 'serving') AND discarded_at IS NULL")),
 		// Lets the periodic re-check job find the least-recently-checked rows.
 		index.Fields("last_checked_at"),
 	}

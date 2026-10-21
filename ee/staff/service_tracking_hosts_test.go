@@ -108,7 +108,7 @@ func TestAHostThatLeavesTheVerifiedStatesIsReportedRemoved(t *testing.T) {
 
 	require.NoError(t, umbrella.SendingDomain().UpdateOneID(fixtures.SendingDomainTrackingDNSVerifiedID).
 		SetTrackingState(sendingdomain.TrackingStatePending).Exec(t.Context()))
-	require.NoError(t, umbrella.SendingDomain().DeleteOneID(fixtures.SendingDomainTrackingServingID).Exec(t.Context()))
+	require.NoError(t, umbrella.SendingDomain().PurgeOneID(fixtures.SendingDomainTrackingServingID).Exec(t.Context()))
 	require.NoError(t, umbrella.SendingDomain().UpdateOneID(fixtures.SendingDomainTrackingPendingID).
 		SetTrackingState(sendingdomain.TrackingStateServing).Exec(t.Context()))
 
@@ -187,4 +187,20 @@ func TestWithoutALicenseTheHostFeedIsNotServed(t *testing.T) {
 	req.Header.Set("Authorization", "Bearer "+primary)
 	env.Server.ServeHTTP(rec, req)
 	assert.Equal(t, http.StatusNotFound, rec.Code)
+}
+
+func TestArchivingAHostIsReportedRemovedAndRestoringItAdded(t *testing.T) {
+	h := newHarness(t)
+	c := domainsReader(t, h)
+	_, saved := hostChangesFrom(t, c, "")
+	umbrella := h.env.DB.Scoped(fixtures.UmbrellaID)
+	servingHost := "track." + fixtures.SendingDomainTrackingServingDomain
+
+	require.NoError(t, umbrella.SendingDomain().Discard(t.Context(), fixtures.SendingDomainTrackingServingID))
+	got, saved := hostChangesFrom(t, c, saved)
+	assert.Equal(t, map[string]serviceapi.ServiceTrackingHostState{servingHost: serviceapi.ServiceTrackingHostStateRemoved}, hostStates(got))
+
+	require.NoError(t, umbrella.SendingDomain().Undiscard(t.Context(), fixtures.SendingDomainTrackingServingID))
+	got, _ = hostChangesFrom(t, c, saved)
+	assert.Equal(t, map[string]serviceapi.ServiceTrackingHostState{servingHost: serviceapi.ServiceTrackingHostStateServing}, hostStates(got))
 }

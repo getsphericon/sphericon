@@ -23,13 +23,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/qmuntal/stateless"
-
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/events"
-	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 )
 
@@ -114,7 +111,7 @@ func (v *Verifier) store(ctx context.Context, s *ent.Scoped, row *ent.SendingDom
 		return s.SendingDomain().UpdateOneID(row.ID).SetTrackingCheckedAt(now).ClearTrackingReason().Exec(ctx)
 	}
 	return v.Events.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
-		if err := trackingMachine(ts, row, now).FireCtx(ctx, next); err != nil {
+		if err := sendingdomains.TrackingMachine(ts, row, now).FireCtx(ctx, next); err != nil {
 			return err
 		}
 		return pub.Publish(ctx, &events.TrackingDomainChanged{
@@ -123,36 +120,6 @@ func (v *Verifier) store(ctx context.Context, s *ent.Scoped, row *ent.SendingDom
 			From: string(row.TrackingState), To: string(next),
 		})
 	})
-}
-
-// trackingMachine is the Tracking domain's lifecycle (ADR 0046): every state can move to
-// each of the others, so six edges, promotions and demotions alike. A trigger is the state it
-// moves to. The machine reads the state the row had when the check loaded it, and the write
-// is a compare-and-swap from that state: a check judged on a state another check already
-// changed fails with lifecycle.ErrInvalidTransition and stores nothing.
-func trackingMachine(ts *ent.Scoped, row *ent.SendingDomain, now time.Time) *stateless.StateMachine {
-	m := lifecycle.New(lifecycle.Storage[sendingdomain.TrackingState]{
-		Read: func(context.Context) (sendingdomain.TrackingState, error) { return row.TrackingState, nil },
-		Write: func(ctx context.Context, from, to sendingdomain.TrackingState) (bool, error) {
-			n, err := ts.SendingDomain().Update().
-				Where(sendingdomain.ID(row.ID), sendingdomain.TrackingStateEQ(from)).
-				SetTrackingCheckedAt(now).ClearTrackingReason().
-				SetTrackingState(to).SetTrackingStateChangedAt(now).Save(ctx)
-			return n == 1, err
-		},
-	})
-	states := []sendingdomain.TrackingState{
-		sendingdomain.TrackingStatePending, sendingdomain.TrackingStateDNSVerified, sendingdomain.TrackingStateServing,
-	}
-	for _, from := range states {
-		cfg := m.Configure(from)
-		for _, to := range states {
-			if to != from {
-				cfg.Permit(to, to)
-			}
-		}
-	}
-	return m
 }
 
 // probe reports whether https://host/ProbePath answers 200 with the host's ProbeValue.

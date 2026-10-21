@@ -11,6 +11,7 @@ import {
   Menu,
   Modal,
   Stack,
+  Switch,
   Table,
   Text,
   TextInput,
@@ -20,15 +21,17 @@ import { useForm } from '@mantine/form'
 import { useDisclosure } from '@mantine/hooks'
 import { useQuery } from '@tanstack/react-query'
 import { DataTable } from 'mantine-datatable'
+import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
 import {
+  siteSendingDomainsArchiveMutation,
   siteSendingDomainsCreateMutation,
-  siteSendingDomainsDeleteMutation,
   siteSendingDomainsListOptions,
   siteSendingDomainsListQueryKey,
+  siteSendingDomainsUnarchiveMutation,
   siteSendingDomainsVerifyMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type {
@@ -36,7 +39,6 @@ import type {
   SiteTrackingReason,
   SiteTrackingState,
 } from '../../generated/site/types.gen.ts'
-import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation.tsx'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 
 interface DomainFormValues {
@@ -192,11 +194,14 @@ function SendingDomainRecords({ record }: { record: SiteSendingDomainResource })
 
 export function SendingDomainsSection({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
-  const confirmDelete = useDeleteConfirmation()
+  const [archived, setArchived] = useState(false)
   const [addOpened, { open: openAdd, close: closeAdd }] = useDisclosure(false)
 
+  const listQuery = { archived }
   const queryKey = siteSendingDomainsListQueryKey({ path: { workspaceId } })
-  const domainsQuery = useQuery(siteSendingDomainsListOptions({ path: { workspaceId } }))
+  const domainsQuery = useQuery(
+    siteSendingDomainsListOptions({ path: { workspaceId }, query: listQuery }),
+  )
 
   const form = useForm<DomainFormValues>({ initialValues: { domain: '' } })
 
@@ -218,19 +223,19 @@ export function SendingDomainsSection({ workspaceId }: { workspaceId: string }) 
     errorTitle: t(($) => $.settings.sendingDomains.verifyError),
   })
 
-  const deleteMutation = useResourceMutation({
-    mutation: siteSendingDomainsDeleteMutation(),
+  const archiveMutation = useResourceMutation({
+    mutation: siteSendingDomainsArchiveMutation(),
     invalidate: [queryKey],
-    errorTitle: t(($) => $.settings.sendingDomains.deleteError),
+    successMessage: t(($) => $.settings.sendingDomains.archived),
+    errorTitle: t(($) => $.settings.sendingDomains.archiveError),
   })
 
-  const onDelete = (id: string) => {
-    confirmDelete({
-      title: t(($) => $.settings.sendingDomains.deleteConfirmTitle),
-      description: t(($) => $.settings.sendingDomains.deleteConfirmDescription),
-      onConfirm: () => deleteMutation.mutate({ path: { workspaceId, id } }),
-    })
-  }
+  const restoreMutation = useResourceMutation({
+    mutation: siteSendingDomainsUnarchiveMutation(),
+    invalidate: [queryKey],
+    successMessage: t(($) => $.settings.sendingDomains.restored),
+    errorTitle: t(($) => $.settings.sendingDomains.restoreError),
+  })
 
   const records = domainsQuery.data?.items ?? []
 
@@ -243,6 +248,13 @@ export function SendingDomainsSection({ workspaceId }: { workspaceId: string }) 
       <Text c="dimmed" size="sm" mb="md">
         {t(($) => $.settings.sendingDomains.description)}
       </Text>
+
+      <Switch
+        mb="md"
+        label={t(($) => $.settings.sendingDomains.showArchived)}
+        checked={archived}
+        onChange={(event) => setArchived(event.currentTarget.checked)}
+      />
 
       {domainsQuery.isError ? (
         <Alert color="red" title={t(($) => $.settings.sendingDomains.loadError)} mb="md">
@@ -282,15 +294,36 @@ export function SendingDomainsSection({ workspaceId }: { workspaceId: string }) 
               // A click in the cell must not toggle the row's expansion.
               <Group justify="flex-end" onClick={(event) => event.stopPropagation()}>
                 <RowActionsMenu>
-                  <Menu.Item
-                    disabled={verifyMutation.isPending}
-                    onClick={() => verifyMutation.mutate({ path: { workspaceId, id: record.id } })}
-                  >
-                    {t(($) => $.settings.sendingDomains.verify)}
-                  </Menu.Item>
-                  <Menu.Item color="red" onClick={() => onDelete(record.id)}>
-                    {t(($) => $.settings.sendingDomains.delete)}
-                  </Menu.Item>
+                  {record.archivedAt ? (
+                    <Menu.Item
+                      disabled={restoreMutation.isPending}
+                      onClick={() =>
+                        restoreMutation.mutate({ path: { workspaceId, id: record.id } })
+                      }
+                    >
+                      {t(($) => $.actions.unarchive)}
+                    </Menu.Item>
+                  ) : (
+                    <>
+                      <Menu.Item
+                        disabled={verifyMutation.isPending}
+                        onClick={() =>
+                          verifyMutation.mutate({ path: { workspaceId, id: record.id } })
+                        }
+                      >
+                        {t(($) => $.settings.sendingDomains.verify)}
+                      </Menu.Item>
+                      <Menu.Item
+                        color="red"
+                        disabled={archiveMutation.isPending}
+                        onClick={() =>
+                          archiveMutation.mutate({ path: { workspaceId, id: record.id } })
+                        }
+                      >
+                        {t(($) => $.actions.archive)}
+                      </Menu.Item>
+                    </>
+                  )}
                 </RowActionsMenu>
               </Group>
             ),

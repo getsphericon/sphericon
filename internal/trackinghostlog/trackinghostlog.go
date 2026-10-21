@@ -1,8 +1,8 @@
 // Package trackinghostlog writes the change log behind the service read of Tracking
 // domain hosts (ADR 0038). A Sending domain is a verified host while its tracking_state
-// is dns_verified or serving; each change of that (a host entering a state, or leaving
-// both because its record stopped resolving, or its Sending domain was deleted or
-// renamed) is one row of tracking_host_changes, so a removal is never silence.
+// is dns_verified or serving and it is not archived; each change of that (a host entering a
+// state, or leaving both because its record stopped resolving, or its Sending domain was
+// archived, deleted or renamed; an unarchive is an addition once the host is verified again) is one row of tracking_host_changes, so a removal is never silence.
 //
 // Two ent hooks keep it so no write path can forget it, the same pair as
 // internal/workspacefeed. Hook runs on every transaction client (the event bus's): the
@@ -60,7 +60,8 @@ func changesHosts(m ent.Mutation) bool {
 	case mu.Op().Is(ent.OpUpdate | ent.OpUpdateOne):
 		_, state := mu.TrackingState()
 		_, domain := mu.Domain()
-		return state || domain
+		_, archived := mu.DiscardedAt()
+		return state || domain || archived || mu.DiscardedAtCleared()
 	}
 	return mu.Op().Is(ent.OpDelete | ent.OpDeleteOne)
 }
@@ -125,14 +126,19 @@ func active(s sendingdomain.TrackingState) bool {
 	return s == sendingdomain.TrackingStateDNSVerified || s == sendingdomain.TrackingStateServing
 }
 
+// serves reports whether the row is a verified host: an archived Sending domain is not (ADR 0049).
+func serves(d *entclient.SendingDomain) bool {
+	return d != nil && d.DiscardedAt == nil && active(d.TrackingState)
+}
+
 // diff is the log entries one row's change produces; now is nil when the row is gone.
 func diff(old, now *entclient.SendingDomain) []change {
 	moved := now == nil || now.Domain != old.Domain || now.WorkspaceID != old.WorkspaceID
 	var out []change
-	if active(old.TrackingState) && (moved || !active(now.TrackingState)) {
+	if serves(old) && (moved || !serves(now)) {
 		out = append(out, change{workspaceID: old.WorkspaceID, domain: old.Domain, state: trackinghostchange.StateRemoved})
 	}
-	if now != nil && active(now.TrackingState) && (!active(old.TrackingState) || moved || now.TrackingState != old.TrackingState) {
+	if serves(now) && (!serves(old) || moved || now.TrackingState != old.TrackingState) {
 		out = append(out, change{workspaceID: now.WorkspaceID, domain: now.Domain, state: trackinghostchange.State(now.TrackingState)})
 	}
 	return out

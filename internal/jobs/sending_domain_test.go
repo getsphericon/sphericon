@@ -128,6 +128,16 @@ func TestDomainsDueForRecheck_neverCheckedFirst(t *testing.T) {
 	assert.Less(t, posNull, posChecked, "never-checked domain must be re-checked before an already-checked one")
 }
 
+// The periodic DKIM re-check skips an archived Sending domain (ADR 0049).
+func TestDomainsDueForRecheck_skipsArchivedDomains(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	ids, err := jobs.DomainsDueForRecheck(context.Background(), env.DB, 100)
+	require.NoError(t, err)
+	assert.NotContains(t, ids, int64(fixtures.SendingDomainArchivedID))
+	assert.Contains(t, ids, int64(fixtures.SendingDomainVerifiedID))
+}
+
 func TestVerifySendingDomainByID_resolverErrorDoesNotChangeState(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()

@@ -70,12 +70,16 @@ func TestSiteSendingDomainsCRUD(t *testing.T) {
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSendingDomainsVerifyNoContent{}, ver)
 
-	// Delete; a fetch by id then resolves to 404.
-	del, err := c.SiteSendingDomainsDelete(ctx, siteapi.SiteSendingDomainsDeleteParams{WorkspaceId: workspaceID, ID: res.ID})
+	// Archive; a fetch by id still opens it, an unknown id is a 404.
+	archived, err := c.SiteSendingDomainsArchive(ctx, siteapi.SiteSendingDomainsArchiveParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteSendingDomainsDeleteNoContent{}, del)
+	assert.IsType(t, &siteapi.SiteSendingDomainResource{}, archived)
 
-	gone, err := c.SiteSendingDomainsGet(ctx, siteapi.SiteSendingDomainsGetParams{WorkspaceId: workspaceID, ID: res.ID})
+	kept, err := c.SiteSendingDomainsGet(ctx, siteapi.SiteSendingDomainsGetParams{WorkspaceId: workspaceID, ID: res.ID})
+	require.NoError(t, err)
+	assert.IsType(t, &siteapi.SiteSendingDomainResource{}, kept)
+
+	gone, err := c.SiteSendingDomainsGet(ctx, siteapi.SiteSendingDomainsGetParams{WorkspaceId: workspaceID, ID: 999999})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSendingDomainsGetNotFound{}, gone)
 }
@@ -91,7 +95,7 @@ func TestSiteSendingDomainsListScopedToWorkspace(t *testing.T) {
 	require.Truef(t, ok, "got %T", list)
 
 	// Count matches the acme fixtures dynamically (don't hardcode dataset size).
-	want, err := env.DB.SendingDomain.Query().Where(sendingdomain.WorkspaceID(fixtures.AcmeID)).Count(ctx)
+	want, err := env.DB.SendingDomain.Query().Where(sendingdomain.WorkspaceID(fixtures.AcmeID), sendingdomain.DiscardedAtIsNil()).Count(ctx)
 	require.NoError(t, err)
 	assert.Len(t, page.Items, want)
 	for _, item := range page.Items {

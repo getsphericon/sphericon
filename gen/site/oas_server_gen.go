@@ -707,18 +707,19 @@ type Handler interface {
 	//
 	// PUT /workspaces/{workspaceId}/segments/{id}
 	SiteSegmentsUpdate(ctx context.Context, req *SiteUpdateSegmentInput, params SiteSegmentsUpdateParams) (SiteSegmentsUpdateRes, error)
+	// SiteSendingDomainsArchive implements SiteSendingDomains_archive operation.
+	//
+	// Archive a sending domain: it leaves the list, serves no Tracking domain host and can be restored.
+	// Refused with 409 while a scheduled or sending broadcast or an active automation sends from it.
+	//
+	// POST /workspaces/{workspaceId}/sending-domains/{id}/archive
+	SiteSendingDomainsArchive(ctx context.Context, params SiteSendingDomainsArchiveParams) (SiteSendingDomainsArchiveRes, error)
 	// SiteSendingDomainsCreate implements SiteSendingDomains_create operation.
 	//
 	// Add a sending domain; mints the DKIM keypair and returns the DNS records.
 	//
 	// POST /workspaces/{workspaceId}/sending-domains
 	SiteSendingDomainsCreate(ctx context.Context, req *SiteCreateSendingDomainInput, params SiteSendingDomainsCreateParams) (SiteSendingDomainsCreateRes, error)
-	// SiteSendingDomainsDelete implements SiteSendingDomains_delete operation.
-	//
-	// Delete a sending domain.
-	//
-	// DELETE /workspaces/{workspaceId}/sending-domains/{id}
-	SiteSendingDomainsDelete(ctx context.Context, params SiteSendingDomainsDeleteParams) (SiteSendingDomainsDeleteRes, error)
 	// SiteSendingDomainsGet implements SiteSendingDomains_get operation.
 	//
 	// Get a sending domain by ID for the site UI.
@@ -731,6 +732,13 @@ type Handler interface {
 	//
 	// GET /workspaces/{workspaceId}/sending-domains
 	SiteSendingDomainsList(ctx context.Context, params SiteSendingDomainsListParams) (SiteSendingDomainsListRes, error)
+	// SiteSendingDomainsUnarchive implements SiteSendingDomains_unarchive operation.
+	//
+	// Restore an archived sending domain. It starts a new DNS check and serves its Tracking domain host
+	// again only once that passes. Refused with 409 when the same domain was added again meanwhile.
+	//
+	// POST /workspaces/{workspaceId}/sending-domains/{id}/unarchive
+	SiteSendingDomainsUnarchive(ctx context.Context, params SiteSendingDomainsUnarchiveParams) (SiteSendingDomainsUnarchiveRes, error)
 	// SiteSendingDomainsVerify implements SiteSendingDomains_verify operation.
 	//
 	// Trigger an immediate DKIM re-check (fire-and-forget).

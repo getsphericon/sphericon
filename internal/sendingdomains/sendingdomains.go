@@ -26,11 +26,13 @@ import (
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/inuse"
+	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/liveuse"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/sending"
+	"github.com/qmuntal/stateless"
 	"github.com/samber/lo"
 )
 
@@ -191,17 +193,22 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 	return row, nil
 }
 
-// Delete removes a Sending domain, unless live work sends from it: then it returns an
-// *inuse.Error naming that work (ADR 0049). A domain is used through the domain of a From
-// address, not an id: a scheduled or sending Broadcast uses the domain of its From address, and
-// when it has none, of the default Integration's configured one; an active Automation that sends
-// email uses the domain of that configured From, as its steps carry no From of their own. A sent
-// or failed Broadcast is history and does not block. An unknown id is ent's not-found error.
-func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
+// Archive discards a Sending domain (ADR 0049): it leaves the lists, serves no Tracking domain
+// host, and keeps the record of mail sent from it. Live work that sends from it refuses it with an
+// *inuse.Error naming that work. A domain is used through the domain of a From address, not an
+// id: a scheduled or sending Broadcast uses the domain of its From address, and when it has none,
+// of the default Integration's configured one; an active Automation that sends email uses the
+// domain of that configured From, as its steps carry no From of their own. A sent or failed
+// Broadcast is history and does not block. Archiving an archived domain changes nothing; an
+// unknown id is ent's not-found error.
+func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) error {
 	return m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		row, err := ts.SendingDomain().Get(ctx, id)
 		if err != nil {
 			return err
+		}
+		if row.DiscardedAt != nil {
+			return nil
 		}
 		users, err := m.liveUsers(ctx, ts, row.Domain)
 		if err != nil {
@@ -210,8 +217,48 @@ func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
 		if len(users) > 0 {
 			return &inuse.Error{What: inuse.SubjectSendingDomain, Users: users}
 		}
-		return ts.SendingDomain().DeleteOneID(id).Exec(ctx)
+		return ts.SendingDomain().Discard(ctx, id)
 	})
+}
+
+// Unarchive brings an archived Sending domain back and starts a new DNS check. The Tracking
+// domain starts over from pending, so the host serves again only once the check proves it:
+// the certificate and the serving state are not restored. It returns ErrAlreadyExists when the
+// Workspace added the same domain again meanwhile. Restoring a domain that is not archived
+// changes nothing; an unknown id is ent's not-found error.
+func (m *Module) Unarchive(ctx context.Context, s *ent.Scoped, id int64) error {
+	restored := false
+	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+		row, err := ts.SendingDomain().Get(ctx, id)
+		if err != nil {
+			return err
+		}
+		if row.DiscardedAt == nil {
+			return nil
+		}
+		taken, err := ts.SendingDomain().Query().Where(sendingdomain.Domain(row.Domain)).Exist(ctx)
+		if err != nil {
+			return err
+		}
+		if taken {
+			return ErrAlreadyExists
+		}
+		if row.TrackingState != sendingdomain.TrackingStatePending {
+			err := TrackingMachine(ts, row, time.Now()).FireCtx(ctx, sendingdomain.TrackingStatePending)
+			if err != nil {
+				return err
+			}
+		}
+		restored = true
+		return ts.SendingDomain().Undiscard(ctx, id)
+	})
+	if db.IsUniqueViolation(err) {
+		return ErrAlreadyExists
+	}
+	if err != nil || !restored {
+		return err
+	}
+	return m.verify.EnqueueSendingDomainVerify(ctx, id)
 }
 
 // liveUsers is the live work whose From address is on the domain.
@@ -334,11 +381,48 @@ func validSelector(raw string) (string, error) {
 	return sel, nil
 }
 
-// List returns one page of the Workspace's Sending domains, ascending by id.
-func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params) (pagination.Page[*ent.SendingDomain], error) {
+// List returns one page of the Workspace's Sending domains, ascending by id: the kept ones, or
+// with archived the archived ones.
+func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params, archived bool) (pagination.Page[*ent.SendingDomain], error) {
+	rows := func() *ent.SendingDomainQuery {
+		if archived {
+			return s.SendingDomain().QueryWithDiscarded().Where(sendingdomain.DiscardedAtNotNil())
+		}
+		return s.SendingDomain().Query()
+	}
 	return pagination.List(ctx, p,
-		func(ctx context.Context) (int, error) { return s.SendingDomain().Query().Count(ctx) },
+		func(ctx context.Context) (int, error) { return rows().Count(ctx) },
 		func(ctx context.Context, limit, offset int) ([]*ent.SendingDomain, error) {
-			return s.SendingDomain().Query().Order(ent.Asc(sendingdomain.FieldID)).Limit(limit).Offset(offset).All(ctx)
+			return rows().Order(ent.Asc(sendingdomain.FieldID)).Limit(limit).Offset(offset).All(ctx)
 		})
+}
+
+// TrackingMachine is the Tracking domain's lifecycle (ADR 0046): every state can move to
+// each of the others, so six edges, promotions and demotions alike. A trigger is the state it
+// moves to. The machine reads the state the row had when the check loaded it, and the write
+// is a compare-and-swap from that state: a check judged on a state another check already
+// changed fails with lifecycle.ErrInvalidTransition and stores nothing.
+func TrackingMachine(ts *ent.Scoped, row *ent.SendingDomain, now time.Time) *stateless.StateMachine {
+	m := lifecycle.New(lifecycle.Storage[sendingdomain.TrackingState]{
+		Read: func(context.Context) (sendingdomain.TrackingState, error) { return row.TrackingState, nil },
+		Write: func(ctx context.Context, from, to sendingdomain.TrackingState) (bool, error) {
+			n, err := ts.SendingDomain().Update().
+				Where(sendingdomain.ID(row.ID), sendingdomain.TrackingStateEQ(from)).
+				SetTrackingCheckedAt(now).ClearTrackingReason().
+				SetTrackingState(to).SetTrackingStateChangedAt(now).Save(ctx)
+			return n == 1, err
+		},
+	})
+	states := []sendingdomain.TrackingState{
+		sendingdomain.TrackingStatePending, sendingdomain.TrackingStateDNSVerified, sendingdomain.TrackingStateServing,
+	}
+	for _, from := range states {
+		cfg := m.Configure(from)
+		for _, to := range states {
+			if to != from {
+				cfg.Permit(to, to)
+			}
+		}
+	}
+	return m
 }

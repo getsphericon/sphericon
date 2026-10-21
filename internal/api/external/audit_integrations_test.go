@@ -109,12 +109,12 @@ func TestExternalSendingDomainWritesAreAuditedUnderTheToken(t *testing.T) {
 	ver, err := c.SendingDomainsVerify(ctx, externalapi.SendingDomainsVerifyParams{ID: created.ID})
 	require.NoError(t, err)
 	require.IsType(t, &externalapi.SendingDomainResource{}, ver)
-	del, err := c.SendingDomainsDelete(ctx, externalapi.SendingDomainsDeleteParams{ID: created.ID})
+	archived, err := c.SendingDomainsArchive(ctx, externalapi.SendingDomainsArchiveParams{ID: created.ID})
 	require.NoError(t, err)
-	require.IsType(t, &externalapi.SendingDomainsDeleteNoContent{}, del)
+	require.IsType(t, &externalapi.SendingDomainResource{}, archived)
 
 	assertTokenAudited(t, env, created.ID, "audited.example.com",
-		[]string{"sending_domain.create", "sending_domain.update", "sending_domain.delete"},
+		[]string{"sending_domain.create", "sending_domain.update", "sending_domain.discard"},
 		[]string{"dkim_private_key_encrypted"},
 		[]string{"PRIVATE KEY", row.DkimPrivateKeyEncrypted, updated.DkimPrivateKeyEncrypted})
 

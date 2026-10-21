@@ -50,6 +50,26 @@ func (_u *SendingDomainUpdate) SetNillableWorkspaceID(v *int64) *SendingDomainUp
 	return _u
 }
 
+// SetDiscardedAt sets the "discarded_at" field.
+func (_u *SendingDomainUpdate) SetDiscardedAt(v time.Time) *SendingDomainUpdate {
+	_u.mutation.SetDiscardedAt(v)
+	return _u
+}
+
+// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
+func (_u *SendingDomainUpdate) SetNillableDiscardedAt(v *time.Time) *SendingDomainUpdate {
+	if v != nil {
+		_u.SetDiscardedAt(*v)
+	}
+	return _u
+}
+
+// ClearDiscardedAt clears the value of the "discarded_at" field.
+func (_u *SendingDomainUpdate) ClearDiscardedAt() *SendingDomainUpdate {
+	_u.mutation.ClearDiscardedAt()
+	return _u
+}
+
 // SetDomain sets the "domain" field.
 func (_u *SendingDomainUpdate) SetDomain(v string) *SendingDomainUpdate {
 	_u.mutation.SetDomain(v)
@@ -340,6 +360,12 @@ func (_u *SendingDomainUpdate) sqlSave(ctx context.Context) (_node int, err erro
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(sendingdomain.FieldUpdatedAt, field.TypeTime, value)
 	}
+	if value, ok := _u.mutation.DiscardedAt(); ok {
+		_spec.SetField(sendingdomain.FieldDiscardedAt, field.TypeTime, value)
+	}
+	if _u.mutation.DiscardedAtCleared() {
+		_spec.ClearField(sendingdomain.FieldDiscardedAt, field.TypeTime)
+	}
 	if value, ok := _u.mutation.Domain(); ok {
 		_spec.SetField(sendingdomain.FieldDomain, field.TypeString, value)
 	}
@@ -456,6 +482,26 @@ func (_u *SendingDomainUpdateOne) SetNillableWorkspaceID(v *int64) *SendingDomai
 	if v != nil {
 		_u.SetWorkspaceID(*v)
 	}
+	return _u
+}
+
+// SetDiscardedAt sets the "discarded_at" field.
+func (_u *SendingDomainUpdateOne) SetDiscardedAt(v time.Time) *SendingDomainUpdateOne {
+	_u.mutation.SetDiscardedAt(v)
+	return _u
+}
+
+// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
+func (_u *SendingDomainUpdateOne) SetNillableDiscardedAt(v *time.Time) *SendingDomainUpdateOne {
+	if v != nil {
+		_u.SetDiscardedAt(*v)
+	}
+	return _u
+}
+
+// ClearDiscardedAt clears the value of the "discarded_at" field.
+func (_u *SendingDomainUpdateOne) ClearDiscardedAt() *SendingDomainUpdateOne {
+	_u.mutation.ClearDiscardedAt()
 	return _u
 }
 
@@ -778,6 +824,12 @@ func (_u *SendingDomainUpdateOne) sqlSave(ctx context.Context) (_node *SendingDo
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(sendingdomain.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.DiscardedAt(); ok {
+		_spec.SetField(sendingdomain.FieldDiscardedAt, field.TypeTime, value)
+	}
+	if _u.mutation.DiscardedAtCleared() {
+		_spec.ClearField(sendingdomain.FieldDiscardedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.Domain(); ok {
 		_spec.SetField(sendingdomain.FieldDomain, field.TypeString, value)

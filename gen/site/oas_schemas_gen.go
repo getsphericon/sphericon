@@ -1168,12 +1168,12 @@ func (s *InUseProblemDetails) SetUsedBy(val []UsedBy) {
 	s.UsedBy = val
 }
 
-func (*InUseProblemDetails) siteAutomationsArchiveRes()   {}
-func (*InUseProblemDetails) siteAutomationsDeleteRes()    {}
-func (*InUseProblemDetails) siteIntegrationsArchiveRes()  {}
-func (*InUseProblemDetails) siteSegmentsArchiveRes()      {}
-func (*InUseProblemDetails) siteSendingDomainsDeleteRes() {}
-func (*InUseProblemDetails) siteTagsDeleteRes()           {}
+func (*InUseProblemDetails) siteAutomationsArchiveRes()    {}
+func (*InUseProblemDetails) siteAutomationsDeleteRes()     {}
+func (*InUseProblemDetails) siteIntegrationsArchiveRes()   {}
+func (*InUseProblemDetails) siteSegmentsArchiveRes()       {}
+func (*InUseProblemDetails) siteSendingDomainsArchiveRes() {}
+func (*InUseProblemDetails) siteTagsDeleteRes()            {}
 
 // Validation errors grouped by field.
 type InUseProblemDetailsErrors map[string][]string
@@ -13392,6 +13392,9 @@ type SiteSendingDomainResource struct {
 	LastCheckedAt OptNilTimestamp `json:"lastCheckedAt"`
 	// When the domain most recently became verified (null = never).
 	VerifiedAt OptNilTimestamp `json:"verifiedAt"`
+	// When the domain was archived; null while it is kept. An archived domain serves no Tracking domain
+	// host.
+	ArchivedAt OptNilTimestamp `json:"archivedAt"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -13446,6 +13449,11 @@ func (s *SiteSendingDomainResource) GetLastCheckedAt() OptNilTimestamp {
 // GetVerifiedAt returns the value of VerifiedAt.
 func (s *SiteSendingDomainResource) GetVerifiedAt() OptNilTimestamp {
 	return s.VerifiedAt
+}
+
+// GetArchivedAt returns the value of ArchivedAt.
+func (s *SiteSendingDomainResource) GetArchivedAt() OptNilTimestamp {
+	return s.ArchivedAt
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -13508,6 +13516,11 @@ func (s *SiteSendingDomainResource) SetVerifiedAt(val OptNilTimestamp) {
 	s.VerifiedAt = val
 }
 
+// SetArchivedAt sets the value of ArchivedAt.
+func (s *SiteSendingDomainResource) SetArchivedAt(val OptNilTimestamp) {
+	s.ArchivedAt = val
+}
+
 // SetCreatedAt sets the value of CreatedAt.
 func (s *SiteSendingDomainResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
@@ -13518,8 +13531,18 @@ func (s *SiteSendingDomainResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
 
-func (*SiteSendingDomainResource) siteSendingDomainsCreateRes() {}
-func (*SiteSendingDomainResource) siteSendingDomainsGetRes()    {}
+func (*SiteSendingDomainResource) siteSendingDomainsArchiveRes()   {}
+func (*SiteSendingDomainResource) siteSendingDomainsCreateRes()    {}
+func (*SiteSendingDomainResource) siteSendingDomainsGetRes()       {}
+func (*SiteSendingDomainResource) siteSendingDomainsUnarchiveRes() {}
+
+type SiteSendingDomainsArchiveBadRequest ProblemDetails
+
+func (*SiteSendingDomainsArchiveBadRequest) siteSendingDomainsArchiveRes() {}
+
+type SiteSendingDomainsArchiveNotFound ProblemDetails
+
+func (*SiteSendingDomainsArchiveNotFound) siteSendingDomainsArchiveRes() {}
 
 type SiteSendingDomainsCreateConflict ProblemDetails
 
@@ -13532,19 +13555,6 @@ func (*SiteSendingDomainsCreateNotFound) siteSendingDomainsCreateRes() {}
 type SiteSendingDomainsCreateUnprocessableEntity ProblemDetails
 
 func (*SiteSendingDomainsCreateUnprocessableEntity) siteSendingDomainsCreateRes() {}
-
-type SiteSendingDomainsDeleteBadRequest ProblemDetails
-
-func (*SiteSendingDomainsDeleteBadRequest) siteSendingDomainsDeleteRes() {}
-
-// SiteSendingDomainsDeleteNoContent is response for SiteSendingDomainsDelete operation.
-type SiteSendingDomainsDeleteNoContent struct{}
-
-func (*SiteSendingDomainsDeleteNoContent) siteSendingDomainsDeleteRes() {}
-
-type SiteSendingDomainsDeleteNotFound ProblemDetails
-
-func (*SiteSendingDomainsDeleteNotFound) siteSendingDomainsDeleteRes() {}
 
 type SiteSendingDomainsGetBadRequest ProblemDetails
 
@@ -13631,6 +13641,18 @@ func (*SiteSendingDomainsListOK) siteSendingDomainsListRes() {}
 type SiteSendingDomainsListUnprocessableEntity ProblemDetails
 
 func (*SiteSendingDomainsListUnprocessableEntity) siteSendingDomainsListRes() {}
+
+type SiteSendingDomainsUnarchiveBadRequest ProblemDetails
+
+func (*SiteSendingDomainsUnarchiveBadRequest) siteSendingDomainsUnarchiveRes() {}
+
+type SiteSendingDomainsUnarchiveConflict ProblemDetails
+
+func (*SiteSendingDomainsUnarchiveConflict) siteSendingDomainsUnarchiveRes() {}
+
+type SiteSendingDomainsUnarchiveNotFound ProblemDetails
+
+func (*SiteSendingDomainsUnarchiveNotFound) siteSendingDomainsUnarchiveRes() {}
 
 type SiteSendingDomainsVerifyBadRequest ProblemDetails
 
