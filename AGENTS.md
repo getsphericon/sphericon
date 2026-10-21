@@ -507,6 +507,8 @@ outside `schema/`, `src/generated/`) unless that is the point of the search.
   `main` with `git push origin HEAD:main` once the checks pass and the work is rebased onto a freshly fetched `origin/main` (a
   detached `HEAD`, never a branch). Then remove that worktree (`git worktree remove <path>`) right
   away, without asking. Only the worktree made for that change.
+  **After the work is on `main`, update the checkout you work from:** `git fetch origin && git rebase
+  origin/main` (never `git merge`), so the next piece of work starts from the merged state.
   **Landing also closes the ticket.** When the user says to land or finish ("заливай", "завершай",
   "land it"), that covers the issue the work was for: put `Closes #<n>` in the footer of the
   commit that reaches `main` (one per ticket), then confirm with `gh issue view <n> --json state`
