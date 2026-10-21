@@ -12293,6 +12293,8 @@ type SiteSuppressionsListParams struct {
 	Page OptInt32 `json:",omitempty,omitzero"`
 	// Page size.
 	PageSize OptInt32 `json:",omitempty,omitzero"`
+	// True lists the lifted suppressions instead of the active ones; the default hides them.
+	Lifted OptBool `json:",omitempty,omitzero"`
 }
 
 func unpackSiteSuppressionsListParams(packed middleware.Parameters) (params SiteSuppressionsListParams) {
@@ -12319,6 +12321,15 @@ func unpackSiteSuppressionsListParams(packed middleware.Parameters) (params Site
 		}
 		if v, ok := packed[key]; ok {
 			params.PageSize = v.(OptInt32)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "lifted",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.Lifted = v.(OptBool)
 		}
 	}
 	return params
@@ -12474,6 +12485,47 @@ func decodeSiteSuppressionsListParams(args [1]string, argsEscaped bool, r *http.
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
 			Name: "pageSize",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: lifted.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "lifted",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotLiftedVal bool
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToBool(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotLiftedVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.Lifted.SetTo(paramsDotLiftedVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "lifted",
 			In:   "query",
 			Err:  err,
 		}

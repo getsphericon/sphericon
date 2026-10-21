@@ -734,7 +734,8 @@ type Handler interface {
 	SiteSuppressionsCreate(ctx context.Context, req *SiteCreateSuppressionInput, params SiteSuppressionsCreateParams) (SiteSuppressionsCreateRes, error)
 	// SiteSuppressionsDelete implements SiteSuppressions_delete operation.
 	//
-	// Remove an address from the suppression list.
+	// Lift a suppression: the row stays with its lift time and the address can receive mail again. Lifting
+	// one that is already lifted is a 404.
 	//
 	// DELETE /workspaces/{workspaceId}/suppressions/{id}
 	SiteSuppressionsDelete(ctx context.Context, params SiteSuppressionsDeleteParams) (SiteSuppressionsDeleteRes, error)

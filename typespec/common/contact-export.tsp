@@ -128,6 +128,9 @@ model ContactExportSuppression {
   /** Why the destination is suppressed */
   reason: string;
 
+  /** When the suppression was lifted; null while it is active */
+  liftedAt?: Timestamp | null;
+
   /** Creation timestamp */
   createdAt: Timestamp;
 }

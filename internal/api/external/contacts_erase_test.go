@@ -129,6 +129,10 @@ func TestExternalContactsEraseRemovesThePersonsData(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, fixtures.ContactErasableEmail, supp.Destination)
 	assert.Nil(t, supp.ContactID)
+	// A lifted Suppression is no refusal to honour any more: Erasure deletes it.
+	lifted, err := env.DB.Suppression.Query().Where(suppression.ID(fixtures.SuppressionErasableLiftedID)).Exist(ctx)
+	require.NoError(t, err)
+	assert.False(t, lifted, "the lifted Suppression of the Contact is deleted")
 
 	// Delivery records stay as rows that no longer name anyone.
 	for _, id := range []int64{fixtures.OutboundMessageErasableBroadcastID, fixtures.OutboundMessageErasableTransactionalID} {
@@ -246,7 +250,7 @@ func TestExternalContactsEraseIsAtomic(t *testing.T) {
 	assert.Equal(t, 1, n)
 	n, err = env.DB.Suppression.Query().Where(suppression.ContactID(fixtures.ContactErasableID)).Count(ctx)
 	require.NoError(t, err)
-	assert.Equal(t, 1, n)
+	assert.Equal(t, 2, n, "the active and the lifted Suppression")
 	n, err = env.DB.Unsubscribe.Query().Where(unsubscribe.ContactID(fixtures.ContactErasableID)).Count(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, 1, n)

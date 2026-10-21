@@ -70,3 +70,24 @@
   workspace_id: 1
   created_at: '2026-02-05 00:00:00'
   updated_at: '2026-02-05 00:00:00'
+# A lifted Suppression (ADR 0049): the destination bounced once and was lifted, so it
+# receives mail again but the row stays as the record.
+- id: 105 # fixture: SuppressionLifted
+  channel: email
+  destination: lifted@codebasics.dev
+  reason: bounce
+  workspace_id: 1
+  lifted_at: '{{daysAgo 2}}'
+  created_at: '{{daysAgo 30}}'
+  updated_at: '{{daysAgo 2}}'
+# Initech: ContactErasable's lifted Suppression, which Erasure deletes (the active one,
+# SuppressionErasable, is only detached).
+- id: 301 # fixture: SuppressionErasableLifted
+  channel: email
+  destination: erin.old@initech.test
+  reason: manual
+  contact_id: 300
+  workspace_id: 3
+  lifted_at: '2026-01-03 00:00:00'
+  created_at: '2026-01-01 12:00:00'
+  updated_at: '2026-01-03 00:00:00'

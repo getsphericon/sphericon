@@ -962,11 +962,16 @@ func (u *ApiTokenScopedUpsert) ClearLastUsedAt() *ApiTokenScopedUpsert {
 }
 
 // conflictOptions confines the DO UPDATE part to rows of the Workspace.
-func (t *ApiTokenScoped) conflictOptions(columns []string) []sql.ConflictOption {
-	return []sql.ConflictOption{
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *ApiTokenScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
 		sql.ConflictColumns(columns...),
 		sql.UpdateWhere(sql.EQ(apitoken.FieldWorkspaceID, t.s.ws)),
 	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
 }
 
 // ApiTokenScopedUpsertOne is the "upsert" of one ApiToken.
@@ -980,7 +985,13 @@ type ApiTokenScopedUpsertOne struct {
 // OnConflictColumns configures the columns as conflict target. A conflicting row of
 // another Workspace is never updated.
 func (x *ApiTokenScopedCreate) OnConflictColumns(columns ...string) *ApiTokenScopedUpsertOne {
-	return &ApiTokenScopedUpsertOne{x: x, u: x.b.OnConflict((&ApiTokenScoped{s: x.s}).conflictOptions(columns)...)}
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *ApiTokenScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *ApiTokenScopedUpsertOne {
+	return &ApiTokenScopedUpsertOne{x: x, u: x.b.OnConflict((&ApiTokenScoped{s: x.s}).conflictOptions(columns, target)...)}
 }
 
 // UpdateNewValues updates the mutable fields using the new values set on create.
@@ -1102,7 +1113,7 @@ func (u *ApiTokenScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	r := raw.OnConflict(u.t.conflictOptions(u.columns)...)
+	r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
 	for _, o := range u.opts {
 		o(r)
 	}
@@ -1748,11 +1759,16 @@ func (u *AuditEntryScopedUpsert) UpdateUpdatedAt() *AuditEntryScopedUpsert {
 }
 
 // conflictOptions confines the DO UPDATE part to rows of the Workspace.
-func (t *AuditEntryScoped) conflictOptions(columns []string) []sql.ConflictOption {
-	return []sql.ConflictOption{
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *AuditEntryScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
 		sql.ConflictColumns(columns...),
 		sql.UpdateWhere(sql.EQ(auditentry.FieldWorkspaceID, t.s.ws)),
 	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
 }
 
 // AuditEntryScopedUpsertOne is the "upsert" of one AuditEntry.
@@ -1766,7 +1782,13 @@ type AuditEntryScopedUpsertOne struct {
 // OnConflictColumns configures the columns as conflict target. A conflicting row of
 // another Workspace is never updated.
 func (x *AuditEntryScopedCreate) OnConflictColumns(columns ...string) *AuditEntryScopedUpsertOne {
-	return &AuditEntryScopedUpsertOne{x: x, u: x.b.OnConflict((&AuditEntryScoped{s: x.s}).conflictOptions(columns)...)}
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *AuditEntryScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *AuditEntryScopedUpsertOne {
+	return &AuditEntryScopedUpsertOne{x: x, u: x.b.OnConflict((&AuditEntryScoped{s: x.s}).conflictOptions(columns, target)...)}
 }
 
 // UpdateNewValues updates the mutable fields using the new values set on create.
@@ -1856,7 +1878,7 @@ func (u *AuditEntryScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	r := raw.OnConflict(u.t.conflictOptions(u.columns)...)
+	r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
 	for _, o := range u.opts {
 		o(r)
 	}
@@ -2389,11 +2411,16 @@ func (u *AutomationScopedUpsert) UpdateTriggerEvent() *AutomationScopedUpsert {
 }
 
 // conflictOptions confines the DO UPDATE part to rows of the Workspace.
-func (t *AutomationScoped) conflictOptions(columns []string) []sql.ConflictOption {
-	return []sql.ConflictOption{
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *AutomationScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
 		sql.ConflictColumns(columns...),
 		sql.UpdateWhere(sql.EQ(automation.FieldWorkspaceID, t.s.ws)),
 	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
 }
 
 // AutomationScopedUpsertOne is the "upsert" of one Automation.
@@ -2407,7 +2434,13 @@ type AutomationScopedUpsertOne struct {
 // OnConflictColumns configures the columns as conflict target. A conflicting row of
 // another Workspace is never updated.
 func (x *AutomationScopedCreate) OnConflictColumns(columns ...string) *AutomationScopedUpsertOne {
-	return &AutomationScopedUpsertOne{x: x, u: x.b.OnConflict((&AutomationScoped{s: x.s}).conflictOptions(columns)...)}
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *AutomationScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *AutomationScopedUpsertOne {
+	return &AutomationScopedUpsertOne{x: x, u: x.b.OnConflict((&AutomationScoped{s: x.s}).conflictOptions(columns, target)...)}
 }
 
 // UpdateNewValues updates the mutable fields using the new values set on create.
@@ -2529,7 +2562,7 @@ func (u *AutomationScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	r := raw.OnConflict(u.t.conflictOptions(u.columns)...)
+	r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
 	for _, o := range u.opts {
 		o(r)
 	}
@@ -3354,11 +3387,16 @@ func (u *AutomationRunScopedUpsert) ClearFailureExcerpt() *AutomationRunScopedUp
 }
 
 // conflictOptions confines the DO UPDATE part to rows of the Workspace.
-func (t *AutomationRunScoped) conflictOptions(columns []string) []sql.ConflictOption {
-	return []sql.ConflictOption{
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *AutomationRunScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
 		sql.ConflictColumns(columns...),
 		sql.UpdateWhere(sql.EQ(automationrun.FieldWorkspaceID, t.s.ws)),
 	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
 }
 
 // AutomationRunScopedUpsertOne is the "upsert" of one AutomationRun.
@@ -3372,7 +3410,13 @@ type AutomationRunScopedUpsertOne struct {
 // OnConflictColumns configures the columns as conflict target. A conflicting row of
 // another Workspace is never updated.
 func (x *AutomationRunScopedCreate) OnConflictColumns(columns ...string) *AutomationRunScopedUpsertOne {
-	return &AutomationRunScopedUpsertOne{x: x, u: x.b.OnConflict((&AutomationRunScoped{s: x.s}).conflictOptions(columns)...)}
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *AutomationRunScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *AutomationRunScopedUpsertOne {
+	return &AutomationRunScopedUpsertOne{x: x, u: x.b.OnConflict((&AutomationRunScoped{s: x.s}).conflictOptions(columns, target)...)}
 }
 
 // UpdateNewValues updates the mutable fields using the new values set on create.
@@ -3462,7 +3506,7 @@ func (u *AutomationRunScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	r := raw.OnConflict(u.t.conflictOptions(u.columns)...)
+	r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
 	for _, o := range u.opts {
 		o(r)
 	}
@@ -4194,11 +4238,16 @@ func (u *AutomationVersionScopedUpsert) UpdateSteps() *AutomationVersionScopedUp
 }
 
 // conflictOptions confines the DO UPDATE part to rows of the Workspace.
-func (t *AutomationVersionScoped) conflictOptions(columns []string) []sql.ConflictOption {
-	return []sql.ConflictOption{
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *AutomationVersionScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
 		sql.ConflictColumns(columns...),
 		sql.UpdateWhere(sql.EQ(automationversion.FieldWorkspaceID, t.s.ws)),
 	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
 }
 
 // AutomationVersionScopedUpsertOne is the "upsert" of one AutomationVersion.
@@ -4212,7 +4261,13 @@ type AutomationVersionScopedUpsertOne struct {
 // OnConflictColumns configures the columns as conflict target. A conflicting row of
 // another Workspace is never updated.
 func (x *AutomationVersionScopedCreate) OnConflictColumns(columns ...string) *AutomationVersionScopedUpsertOne {
-	return &AutomationVersionScopedUpsertOne{x: x, u: x.b.OnConflict((&AutomationVersionScoped{s: x.s}).conflictOptions(columns)...)}
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *AutomationVersionScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *AutomationVersionScopedUpsertOne {
+	return &AutomationVersionScopedUpsertOne{x: x, u: x.b.OnConflict((&AutomationVersionScoped{s: x.s}).conflictOptions(columns, target)...)}
 }
 
 // UpdateNewValues updates the mutable fields using the new values set on create.
@@ -4302,7 +4357,7 @@ func (u *AutomationVersionScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	r := raw.OnConflict(u.t.conflictOptions(u.columns)...)
+	r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
 	for _, o := range u.opts {
 		o(r)
 	}
@@ -4984,11 +5039,16 @@ func (u *BrandKitScopedUpsert) UpdateFooterText() *BrandKitScopedUpsert {
 }
 
 // conflictOptions confines the DO UPDATE part to rows of the Workspace.
-func (t *BrandKitScoped) conflictOptions(columns []string) []sql.ConflictOption {
-	return []sql.ConflictOption{
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *BrandKitScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
 		sql.ConflictColumns(columns...),
 		sql.UpdateWhere(sql.EQ(brandkit.FieldWorkspaceID, t.s.ws)),
 	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
 }
 
 // BrandKitScopedUpsertOne is the "upsert" of one BrandKit.
@@ -5002,7 +5062,13 @@ type BrandKitScopedUpsertOne struct {
 // OnConflictColumns configures the columns as conflict target. A conflicting row of
 // another Workspace is never updated.
 func (x *BrandKitScopedCreate) OnConflictColumns(columns ...string) *BrandKitScopedUpsertOne {
-	return &BrandKitScopedUpsertOne{x: x, u: x.b.OnConflict((&BrandKitScoped{s: x.s}).conflictOptions(columns)...)}
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *BrandKitScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *BrandKitScopedUpsertOne {
+	return &BrandKitScopedUpsertOne{x: x, u: x.b.OnConflict((&BrandKitScoped{s: x.s}).conflictOptions(columns, target)...)}
 }
 
 // UpdateNewValues updates the mutable fields using the new values set on create.
@@ -5124,7 +5190,7 @@ func (u *BrandKitScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	r := raw.OnConflict(u.t.conflictOptions(u.columns)...)
+	r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
 	for _, o := range u.opts {
 		o(r)
 	}
@@ -6266,11 +6332,16 @@ func (u *BroadcastScopedUpsert) ClearLastScheduledAt() *BroadcastScopedUpsert {
 }
 
 // conflictOptions confines the DO UPDATE part to rows of the Workspace.
-func (t *BroadcastScoped) conflictOptions(columns []string) []sql.ConflictOption {
-	return []sql.ConflictOption{
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *BroadcastScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
 		sql.ConflictColumns(columns...),
 		sql.UpdateWhere(sql.EQ(broadcast.FieldWorkspaceID, t.s.ws)),
 	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
 }
 
 // BroadcastScopedUpsertOne is the "upsert" of one Broadcast.
@@ -6284,7 +6355,13 @@ type BroadcastScopedUpsertOne struct {
 // OnConflictColumns configures the columns as conflict target. A conflicting row of
 // another Workspace is never updated.
 func (x *BroadcastScopedCreate) OnConflictColumns(columns ...string) *BroadcastScopedUpsertOne {
-	return &BroadcastScopedUpsertOne{x: x, u: x.b.OnConflict((&BroadcastScoped{s: x.s}).conflictOptions(columns)...)}
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *BroadcastScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *BroadcastScopedUpsertOne {
+	return &BroadcastScopedUpsertOne{x: x, u: x.b.OnConflict((&BroadcastScoped{s: x.s}).conflictOptions(columns, target)...)}
 }
 
 // UpdateNewValues updates the mutable fields using the new values set on create.
@@ -6406,7 +6483,7 @@ func (u *BroadcastScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	r := raw.OnConflict(u.t.conflictOptions(u.columns)...)
+	r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
 	for _, o := range u.opts {
 		o(r)
 	}
@@ -7550,11 +7627,16 @@ func (u *BroadcastRecipientScopedUpsert) ClearUnsubscribedAt() *BroadcastRecipie
 }
 
 // conflictOptions confines the DO UPDATE part to rows of the Workspace.
-func (t *BroadcastRecipientScoped) conflictOptions(columns []string) []sql.ConflictOption {
-	return []sql.ConflictOption{
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *BroadcastRecipientScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
 		sql.ConflictColumns(columns...),
 		sql.UpdateWhere(sql.EQ(broadcastrecipient.FieldWorkspaceID, t.s.ws)),
 	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
 }
 
 // BroadcastRecipientScopedUpsertOne is the "upsert" of one BroadcastRecipient.
@@ -7568,7 +7650,13 @@ type BroadcastRecipientScopedUpsertOne struct {
 // OnConflictColumns configures the columns as conflict target. A conflicting row of
 // another Workspace is never updated.
 func (x *BroadcastRecipientScopedCreate) OnConflictColumns(columns ...string) *BroadcastRecipientScopedUpsertOne {
-	return &BroadcastRecipientScopedUpsertOne{x: x, u: x.b.OnConflict((&BroadcastRecipientScoped{s: x.s}).conflictOptions(columns)...)}
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *BroadcastRecipientScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *BroadcastRecipientScopedUpsertOne {
+	return &BroadcastRecipientScopedUpsertOne{x: x, u: x.b.OnConflict((&BroadcastRecipientScoped{s: x.s}).conflictOptions(columns, target)...)}
 }
 
 // UpdateNewValues updates the mutable fields using the new values set on create.
@@ -7658,7 +7746,7 @@ func (u *BroadcastRecipientScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	r := raw.OnConflict(u.t.conflictOptions(u.columns)...)
+	r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
 	for _, o := range u.opts {
 		o(r)
 	}
@@ -8306,11 +8394,16 @@ func (u *ConfirmationScopedUpsert) ClearContactID() *ConfirmationScopedUpsert {
 }
 
 // conflictOptions confines the DO UPDATE part to rows of the Workspace.
-func (t *ConfirmationScoped) conflictOptions(columns []string) []sql.ConflictOption {
-	return []sql.ConflictOption{
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *ConfirmationScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
 		sql.ConflictColumns(columns...),
 		sql.UpdateWhere(sql.EQ(confirmation.FieldWorkspaceID, t.s.ws)),
 	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
 }
 
 // ConfirmationScopedUpsertOne is the "upsert" of one Confirmation.
@@ -8324,7 +8417,13 @@ type ConfirmationScopedUpsertOne struct {
 // OnConflictColumns configures the columns as conflict target. A conflicting row of
 // another Workspace is never updated.
 func (x *ConfirmationScopedCreate) OnConflictColumns(columns ...string) *ConfirmationScopedUpsertOne {
-	return &ConfirmationScopedUpsertOne{x: x, u: x.b.OnConflict((&ConfirmationScoped{s: x.s}).conflictOptions(columns)...)}
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *ConfirmationScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *ConfirmationScopedUpsertOne {
+	return &ConfirmationScopedUpsertOne{x: x, u: x.b.OnConflict((&ConfirmationScoped{s: x.s}).conflictOptions(columns, target)...)}
 }
 
 // UpdateNewValues updates the mutable fields using the new values set on create.
@@ -8414,7 +8513,7 @@ func (u *ConfirmationScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	r := raw.OnConflict(u.t.conflictOptions(u.columns)...)
+	r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
 	for _, o := range u.opts {
 		o(r)
 	}
@@ -9141,11 +9240,16 @@ func (u *ContactScopedUpsert) ClearCustomFields() *ContactScopedUpsert {
 }
 
 // conflictOptions confines the DO UPDATE part to rows of the Workspace.
-func (t *ContactScoped) conflictOptions(columns []string) []sql.ConflictOption {
-	return []sql.ConflictOption{
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *ContactScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
 		sql.ConflictColumns(columns...),
 		sql.UpdateWhere(sql.EQ(contact.FieldWorkspaceID, t.s.ws)),
 	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
 }
 
 // ContactScopedUpsertOne is the "upsert" of one Contact.
@@ -9159,7 +9263,13 @@ type ContactScopedUpsertOne struct {
 // OnConflictColumns configures the columns as conflict target. A conflicting row of
 // another Workspace is never updated.
 func (x *ContactScopedCreate) OnConflictColumns(columns ...string) *ContactScopedUpsertOne {
-	return &ContactScopedUpsertOne{x: x, u: x.b.OnConflict((&ContactScoped{s: x.s}).conflictOptions(columns)...)}
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *ContactScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *ContactScopedUpsertOne {
+	return &ContactScopedUpsertOne{x: x, u: x.b.OnConflict((&ContactScoped{s: x.s}).conflictOptions(columns, target)...)}
 }
 
 // UpdateNewValues updates the mutable fields using the new values set on create.
@@ -9281,7 +9391,7 @@ func (u *ContactScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	r := raw.OnConflict(u.t.conflictOptions(u.columns)...)
+	r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
 	for _, o := range u.opts {
 		o(r)
 	}
@@ -10187,11 +10297,16 @@ func (u *CustomFieldScopedUpsert) UpdateType() *CustomFieldScopedUpsert {
 }
 
 // conflictOptions confines the DO UPDATE part to rows of the Workspace.
-func (t *CustomFieldScoped) conflictOptions(columns []string) []sql.ConflictOption {
-	return []sql.ConflictOption{
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *CustomFieldScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
 		sql.ConflictColumns(columns...),
 		sql.UpdateWhere(sql.EQ(customfield.FieldWorkspaceID, t.s.ws)),
 	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
 }
 
 // CustomFieldScopedUpsertOne is the "upsert" of one CustomField.
@@ -10205,7 +10320,13 @@ type CustomFieldScopedUpsertOne struct {
 // OnConflictColumns configures the columns as conflict target. A conflicting row of
 // another Workspace is never updated.
 func (x *CustomFieldScopedCreate) OnConflictColumns(columns ...string) *CustomFieldScopedUpsertOne {
-	return &CustomFieldScopedUpsertOne{x: x, u: x.b.OnConflict((&CustomFieldScoped{s: x.s}).conflictOptions(columns)...)}
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *CustomFieldScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *CustomFieldScopedUpsertOne {
+	return &CustomFieldScopedUpsertOne{x: x, u: x.b.OnConflict((&CustomFieldScoped{s: x.s}).conflictOptions(columns, target)...)}
 }
 
 // UpdateNewValues updates the mutable fields using the new values set on create.
@@ -10327,7 +10448,7 @@ func (u *CustomFieldScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	r := raw.OnConflict(u.t.conflictOptions(u.columns)...)
+	r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
 	for _, o := range u.opts {
 		o(r)
 	}
@@ -10927,11 +11048,16 @@ func (u *EmailTemplateScopedUpsert) ClearEditorVersion() *EmailTemplateScopedUps
 }
 
 // conflictOptions confines the DO UPDATE part to rows of the Workspace.
-func (t *EmailTemplateScoped) conflictOptions(columns []string) []sql.ConflictOption {
-	return []sql.ConflictOption{
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *EmailTemplateScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
 		sql.ConflictColumns(columns...),
 		sql.UpdateWhere(sql.EQ(emailtemplate.FieldWorkspaceID, t.s.ws)),
 	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
 }
 
 // EmailTemplateScopedUpsertOne is the "upsert" of one EmailTemplate.
@@ -10945,7 +11071,13 @@ type EmailTemplateScopedUpsertOne struct {
 // OnConflictColumns configures the columns as conflict target. A conflicting row of
 // another Workspace is never updated.
 func (x *EmailTemplateScopedCreate) OnConflictColumns(columns ...string) *EmailTemplateScopedUpsertOne {
-	return &EmailTemplateScopedUpsertOne{x: x, u: x.b.OnConflict((&EmailTemplateScoped{s: x.s}).conflictOptions(columns)...)}
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *EmailTemplateScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *EmailTemplateScopedUpsertOne {
+	return &EmailTemplateScopedUpsertOne{x: x, u: x.b.OnConflict((&EmailTemplateScoped{s: x.s}).conflictOptions(columns, target)...)}
 }
 
 // UpdateNewValues updates the mutable fields using the new values set on create.
@@ -11067,7 +11199,7 @@ func (u *EmailTemplateScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	r := raw.OnConflict(u.t.conflictOptions(u.columns)...)
+	r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
 	for _, o := range u.opts {
 		o(r)
 	}
@@ -11623,11 +11755,16 @@ func (u *ErasureScopedUpsert) UpdateUpdatedAt() *ErasureScopedUpsert {
 }
 
 // conflictOptions confines the DO UPDATE part to rows of the Workspace.
-func (t *ErasureScoped) conflictOptions(columns []string) []sql.ConflictOption {
-	return []sql.ConflictOption{
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *ErasureScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
 		sql.ConflictColumns(columns...),
 		sql.UpdateWhere(sql.EQ(erasure.FieldWorkspaceID, t.s.ws)),
 	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
 }
 
 // ErasureScopedUpsertOne is the "upsert" of one Erasure.
@@ -11641,7 +11778,13 @@ type ErasureScopedUpsertOne struct {
 // OnConflictColumns configures the columns as conflict target. A conflicting row of
 // another Workspace is never updated.
 func (x *ErasureScopedCreate) OnConflictColumns(columns ...string) *ErasureScopedUpsertOne {
-	return &ErasureScopedUpsertOne{x: x, u: x.b.OnConflict((&ErasureScoped{s: x.s}).conflictOptions(columns)...)}
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *ErasureScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *ErasureScopedUpsertOne {
+	return &ErasureScopedUpsertOne{x: x, u: x.b.OnConflict((&ErasureScoped{s: x.s}).conflictOptions(columns, target)...)}
 }
 
 // UpdateNewValues updates the mutable fields using the new values set on create.
@@ -11731,7 +11874,7 @@ func (u *ErasureScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	r := raw.OnConflict(u.t.conflictOptions(u.columns)...)
+	r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
 	for _, o := range u.opts {
 		o(r)
 	}
@@ -12282,11 +12425,16 @@ func (u *EventScopedUpsert) ClearOccurredAt() *EventScopedUpsert {
 }
 
 // conflictOptions confines the DO UPDATE part to rows of the Workspace.
-func (t *EventScoped) conflictOptions(columns []string) []sql.ConflictOption {
-	return []sql.ConflictOption{
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *EventScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
 		sql.ConflictColumns(columns...),
 		sql.UpdateWhere(sql.EQ(event.FieldWorkspaceID, t.s.ws)),
 	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
 }
 
 // EventScopedUpsertOne is the "upsert" of one Event.
@@ -12300,7 +12448,13 @@ type EventScopedUpsertOne struct {
 // OnConflictColumns configures the columns as conflict target. A conflicting row of
 // another Workspace is never updated.
 func (x *EventScopedCreate) OnConflictColumns(columns ...string) *EventScopedUpsertOne {
-	return &EventScopedUpsertOne{x: x, u: x.b.OnConflict((&EventScoped{s: x.s}).conflictOptions(columns)...)}
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *EventScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *EventScopedUpsertOne {
+	return &EventScopedUpsertOne{x: x, u: x.b.OnConflict((&EventScoped{s: x.s}).conflictOptions(columns, target)...)}
 }
 
 // UpdateNewValues updates the mutable fields using the new values set on create.
@@ -12390,7 +12544,7 @@ func (u *EventScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	r := raw.OnConflict(u.t.conflictOptions(u.columns)...)
+	r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
 	for _, o := range u.opts {
 		o(r)
 	}
@@ -13186,11 +13340,16 @@ func (u *HoldScopedUpsert) UpdateSetBy() *HoldScopedUpsert {
 }
 
 // conflictOptions confines the DO UPDATE part to rows of the Workspace.
-func (t *HoldScoped) conflictOptions(columns []string) []sql.ConflictOption {
-	return []sql.ConflictOption{
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *HoldScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
 		sql.ConflictColumns(columns...),
 		sql.UpdateWhere(sql.EQ(hold.FieldWorkspaceID, t.s.ws)),
 	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
 }
 
 // HoldScopedUpsertOne is the "upsert" of one Hold.
@@ -13204,7 +13363,13 @@ type HoldScopedUpsertOne struct {
 // OnConflictColumns configures the columns as conflict target. A conflicting row of
 // another Workspace is never updated.
 func (x *HoldScopedCreate) OnConflictColumns(columns ...string) *HoldScopedUpsertOne {
-	return &HoldScopedUpsertOne{x: x, u: x.b.OnConflict((&HoldScoped{s: x.s}).conflictOptions(columns)...)}
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *HoldScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *HoldScopedUpsertOne {
+	return &HoldScopedUpsertOne{x: x, u: x.b.OnConflict((&HoldScoped{s: x.s}).conflictOptions(columns, target)...)}
 }
 
 // UpdateNewValues updates the mutable fields using the new values set on create.
@@ -13326,7 +13491,7 @@ func (u *HoldScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	r := raw.OnConflict(u.t.conflictOptions(u.columns)...)
+	r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
 	for _, o := range u.opts {
 		o(r)
 	}
@@ -14289,11 +14454,16 @@ func (u *IntegrationScopedUpsert) UpdateProviderQuotaUnavailable() *IntegrationS
 }
 
 // conflictOptions confines the DO UPDATE part to rows of the Workspace.
-func (t *IntegrationScoped) conflictOptions(columns []string) []sql.ConflictOption {
-	return []sql.ConflictOption{
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *IntegrationScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
 		sql.ConflictColumns(columns...),
 		sql.UpdateWhere(sql.EQ(integration.FieldWorkspaceID, t.s.ws)),
 	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
 }
 
 // IntegrationScopedUpsertOne is the "upsert" of one Integration.
@@ -14307,7 +14477,13 @@ type IntegrationScopedUpsertOne struct {
 // OnConflictColumns configures the columns as conflict target. A conflicting row of
 // another Workspace is never updated.
 func (x *IntegrationScopedCreate) OnConflictColumns(columns ...string) *IntegrationScopedUpsertOne {
-	return &IntegrationScopedUpsertOne{x: x, u: x.b.OnConflict((&IntegrationScoped{s: x.s}).conflictOptions(columns)...)}
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *IntegrationScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *IntegrationScopedUpsertOne {
+	return &IntegrationScopedUpsertOne{x: x, u: x.b.OnConflict((&IntegrationScoped{s: x.s}).conflictOptions(columns, target)...)}
 }
 
 // UpdateNewValues updates the mutable fields using the new values set on create.
@@ -14429,7 +14605,7 @@ func (u *IntegrationScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	r := raw.OnConflict(u.t.conflictOptions(u.columns)...)
+	r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
 	for _, o := range u.opts {
 		o(r)
 	}
@@ -15471,11 +15647,16 @@ func (u *InvitationScopedUpsert) ClearAcceptedAt() *InvitationScopedUpsert {
 }
 
 // conflictOptions confines the DO UPDATE part to rows of the Workspace.
-func (t *InvitationScoped) conflictOptions(columns []string) []sql.ConflictOption {
-	return []sql.ConflictOption{
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *InvitationScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
 		sql.ConflictColumns(columns...),
 		sql.UpdateWhere(sql.EQ(invitation.FieldWorkspaceID, t.s.ws)),
 	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
 }
 
 // InvitationScopedUpsertOne is the "upsert" of one Invitation.
@@ -15489,7 +15670,13 @@ type InvitationScopedUpsertOne struct {
 // OnConflictColumns configures the columns as conflict target. A conflicting row of
 // another Workspace is never updated.
 func (x *InvitationScopedCreate) OnConflictColumns(columns ...string) *InvitationScopedUpsertOne {
-	return &InvitationScopedUpsertOne{x: x, u: x.b.OnConflict((&InvitationScoped{s: x.s}).conflictOptions(columns)...)}
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *InvitationScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *InvitationScopedUpsertOne {
+	return &InvitationScopedUpsertOne{x: x, u: x.b.OnConflict((&InvitationScoped{s: x.s}).conflictOptions(columns, target)...)}
 }
 
 // UpdateNewValues updates the mutable fields using the new values set on create.
@@ -15579,7 +15766,7 @@ func (u *InvitationScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	r := raw.OnConflict(u.t.conflictOptions(u.columns)...)
+	r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
 	for _, o := range u.opts {
 		o(r)
 	}
@@ -16249,11 +16436,16 @@ func (u *JoinDomainScopedUpsert) ClearLastCheckedAt() *JoinDomainScopedUpsert {
 }
 
 // conflictOptions confines the DO UPDATE part to rows of the Workspace.
-func (t *JoinDomainScoped) conflictOptions(columns []string) []sql.ConflictOption {
-	return []sql.ConflictOption{
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *JoinDomainScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
 		sql.ConflictColumns(columns...),
 		sql.UpdateWhere(sql.EQ(joindomain.FieldWorkspaceID, t.s.ws)),
 	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
 }
 
 // JoinDomainScopedUpsertOne is the "upsert" of one JoinDomain.
@@ -16267,7 +16459,13 @@ type JoinDomainScopedUpsertOne struct {
 // OnConflictColumns configures the columns as conflict target. A conflicting row of
 // another Workspace is never updated.
 func (x *JoinDomainScopedCreate) OnConflictColumns(columns ...string) *JoinDomainScopedUpsertOne {
-	return &JoinDomainScopedUpsertOne{x: x, u: x.b.OnConflict((&JoinDomainScoped{s: x.s}).conflictOptions(columns)...)}
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *JoinDomainScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *JoinDomainScopedUpsertOne {
+	return &JoinDomainScopedUpsertOne{x: x, u: x.b.OnConflict((&JoinDomainScoped{s: x.s}).conflictOptions(columns, target)...)}
 }
 
 // UpdateNewValues updates the mutable fields using the new values set on create.
@@ -16389,7 +16587,7 @@ func (u *JoinDomainScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	r := raw.OnConflict(u.t.conflictOptions(u.columns)...)
+	r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
 	for _, o := range u.opts {
 		o(r)
 	}
@@ -16957,11 +17155,16 @@ func (u *MembershipScopedUpsert) ClearSecondFactorRemindedAt() *MembershipScoped
 }
 
 // conflictOptions confines the DO UPDATE part to rows of the Workspace.
-func (t *MembershipScoped) conflictOptions(columns []string) []sql.ConflictOption {
-	return []sql.ConflictOption{
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *MembershipScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
 		sql.ConflictColumns(columns...),
 		sql.UpdateWhere(sql.EQ(membership.FieldWorkspaceID, t.s.ws)),
 	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
 }
 
 // MembershipScopedUpsertOne is the "upsert" of one Membership.
@@ -16975,7 +17178,13 @@ type MembershipScopedUpsertOne struct {
 // OnConflictColumns configures the columns as conflict target. A conflicting row of
 // another Workspace is never updated.
 func (x *MembershipScopedCreate) OnConflictColumns(columns ...string) *MembershipScopedUpsertOne {
-	return &MembershipScopedUpsertOne{x: x, u: x.b.OnConflict((&MembershipScoped{s: x.s}).conflictOptions(columns)...)}
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *MembershipScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *MembershipScopedUpsertOne {
+	return &MembershipScopedUpsertOne{x: x, u: x.b.OnConflict((&MembershipScoped{s: x.s}).conflictOptions(columns, target)...)}
 }
 
 // UpdateNewValues updates the mutable fields using the new values set on create.
@@ -17065,7 +17274,7 @@ func (u *MembershipScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	r := raw.OnConflict(u.t.conflictOptions(u.columns)...)
+	r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
 	for _, o := range u.opts {
 		o(r)
 	}
@@ -18020,11 +18229,16 @@ func (u *OutboundMessageScopedUpsert) ClearTemplateID() *OutboundMessageScopedUp
 }
 
 // conflictOptions confines the DO UPDATE part to rows of the Workspace.
-func (t *OutboundMessageScoped) conflictOptions(columns []string) []sql.ConflictOption {
-	return []sql.ConflictOption{
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *OutboundMessageScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
 		sql.ConflictColumns(columns...),
 		sql.UpdateWhere(sql.EQ(outboundmessage.FieldWorkspaceID, t.s.ws)),
 	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
 }
 
 // OutboundMessageScopedUpsertOne is the "upsert" of one OutboundMessage.
@@ -18038,7 +18252,13 @@ type OutboundMessageScopedUpsertOne struct {
 // OnConflictColumns configures the columns as conflict target. A conflicting row of
 // another Workspace is never updated.
 func (x *OutboundMessageScopedCreate) OnConflictColumns(columns ...string) *OutboundMessageScopedUpsertOne {
-	return &OutboundMessageScopedUpsertOne{x: x, u: x.b.OnConflict((&OutboundMessageScoped{s: x.s}).conflictOptions(columns)...)}
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *OutboundMessageScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *OutboundMessageScopedUpsertOne {
+	return &OutboundMessageScopedUpsertOne{x: x, u: x.b.OnConflict((&OutboundMessageScoped{s: x.s}).conflictOptions(columns, target)...)}
 }
 
 // UpdateNewValues updates the mutable fields using the new values set on create.
@@ -18128,7 +18348,7 @@ func (u *OutboundMessageScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	r := raw.OnConflict(u.t.conflictOptions(u.columns)...)
+	r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
 	for _, o := range u.opts {
 		o(r)
 	}
@@ -19276,11 +19496,16 @@ func (u *SegmentScopedUpsert) ClearDefinition() *SegmentScopedUpsert {
 }
 
 // conflictOptions confines the DO UPDATE part to rows of the Workspace.
-func (t *SegmentScoped) conflictOptions(columns []string) []sql.ConflictOption {
-	return []sql.ConflictOption{
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *SegmentScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
 		sql.ConflictColumns(columns...),
 		sql.UpdateWhere(sql.EQ(segment.FieldWorkspaceID, t.s.ws)),
 	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
 }
 
 // SegmentScopedUpsertOne is the "upsert" of one Segment.
@@ -19294,7 +19519,13 @@ type SegmentScopedUpsertOne struct {
 // OnConflictColumns configures the columns as conflict target. A conflicting row of
 // another Workspace is never updated.
 func (x *SegmentScopedCreate) OnConflictColumns(columns ...string) *SegmentScopedUpsertOne {
-	return &SegmentScopedUpsertOne{x: x, u: x.b.OnConflict((&SegmentScoped{s: x.s}).conflictOptions(columns)...)}
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *SegmentScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *SegmentScopedUpsertOne {
+	return &SegmentScopedUpsertOne{x: x, u: x.b.OnConflict((&SegmentScoped{s: x.s}).conflictOptions(columns, target)...)}
 }
 
 // UpdateNewValues updates the mutable fields using the new values set on create.
@@ -19416,7 +19647,7 @@ func (u *SegmentScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	r := raw.OnConflict(u.t.conflictOptions(u.columns)...)
+	r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
 	for _, o := range u.opts {
 		o(r)
 	}
@@ -19903,11 +20134,16 @@ func (u *SendLimiterScopedUpsert) UpdateRefilledAt() *SendLimiterScopedUpsert {
 }
 
 // conflictOptions confines the DO UPDATE part to rows of the Workspace.
-func (t *SendLimiterScoped) conflictOptions(columns []string) []sql.ConflictOption {
-	return []sql.ConflictOption{
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *SendLimiterScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
 		sql.ConflictColumns(columns...),
 		sql.UpdateWhere(sql.EQ(sendlimiter.FieldWorkspaceID, t.s.ws)),
 	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
 }
 
 // SendLimiterScopedUpsertOne is the "upsert" of one SendLimiter.
@@ -19921,7 +20157,13 @@ type SendLimiterScopedUpsertOne struct {
 // OnConflictColumns configures the columns as conflict target. A conflicting row of
 // another Workspace is never updated.
 func (x *SendLimiterScopedCreate) OnConflictColumns(columns ...string) *SendLimiterScopedUpsertOne {
-	return &SendLimiterScopedUpsertOne{x: x, u: x.b.OnConflict((&SendLimiterScoped{s: x.s}).conflictOptions(columns)...)}
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *SendLimiterScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *SendLimiterScopedUpsertOne {
+	return &SendLimiterScopedUpsertOne{x: x, u: x.b.OnConflict((&SendLimiterScoped{s: x.s}).conflictOptions(columns, target)...)}
 }
 
 // UpdateNewValues updates the mutable fields using the new values set on create.
@@ -20011,7 +20253,7 @@ func (u *SendLimiterScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	r := raw.OnConflict(u.t.conflictOptions(u.columns)...)
+	r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
 	for _, o := range u.opts {
 		o(r)
 	}
@@ -20741,11 +20983,16 @@ func (u *SendingDomainScopedUpsert) ClearTrackingStateChangedAt() *SendingDomain
 }
 
 // conflictOptions confines the DO UPDATE part to rows of the Workspace.
-func (t *SendingDomainScoped) conflictOptions(columns []string) []sql.ConflictOption {
-	return []sql.ConflictOption{
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *SendingDomainScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
 		sql.ConflictColumns(columns...),
 		sql.UpdateWhere(sql.EQ(sendingdomain.FieldWorkspaceID, t.s.ws)),
 	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
 }
 
 // SendingDomainScopedUpsertOne is the "upsert" of one SendingDomain.
@@ -20759,7 +21006,13 @@ type SendingDomainScopedUpsertOne struct {
 // OnConflictColumns configures the columns as conflict target. A conflicting row of
 // another Workspace is never updated.
 func (x *SendingDomainScopedCreate) OnConflictColumns(columns ...string) *SendingDomainScopedUpsertOne {
-	return &SendingDomainScopedUpsertOne{x: x, u: x.b.OnConflict((&SendingDomainScoped{s: x.s}).conflictOptions(columns)...)}
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *SendingDomainScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *SendingDomainScopedUpsertOne {
+	return &SendingDomainScopedUpsertOne{x: x, u: x.b.OnConflict((&SendingDomainScoped{s: x.s}).conflictOptions(columns, target)...)}
 }
 
 // UpdateNewValues updates the mutable fields using the new values set on create.
@@ -20881,7 +21134,7 @@ func (u *SendingDomainScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	r := raw.OnConflict(u.t.conflictOptions(u.columns)...)
+	r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
 	for _, o := range u.opts {
 		o(r)
 	}
@@ -21512,6 +21765,18 @@ func (x *SuppressionScopedCreate) SetNillableContactID(v *int64) *SuppressionSco
 	return x
 }
 
+// SetLiftedAt sets the "lifted_at" field.
+func (x *SuppressionScopedCreate) SetLiftedAt(v time.Time) *SuppressionScopedCreate {
+	x.b.SetLiftedAt(v)
+	return x
+}
+
+// SetNillableLiftedAt sets the "lifted_at" field if the given value is not nil.
+func (x *SuppressionScopedCreate) SetNillableLiftedAt(v *time.Time) *SuppressionScopedCreate {
+	x.b.SetNillableLiftedAt(v)
+	return x
+}
+
 func (x *SuppressionScopedCreate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -21652,12 +21917,35 @@ func (u *SuppressionScopedUpsert) ClearContactID() *SuppressionScopedUpsert {
 	return u
 }
 
+// SetLiftedAt sets the "lifted_at" field.
+func (u *SuppressionScopedUpsert) SetLiftedAt(v time.Time) *SuppressionScopedUpsert {
+	u.u.Set(suppression.FieldLiftedAt, v)
+	return u
+}
+
+// UpdateLiftedAt sets the "lifted_at" field to the value that was provided on create.
+func (u *SuppressionScopedUpsert) UpdateLiftedAt() *SuppressionScopedUpsert {
+	u.u.SetExcluded(suppression.FieldLiftedAt)
+	return u
+}
+
+// ClearLiftedAt clears the value of the "lifted_at" field.
+func (u *SuppressionScopedUpsert) ClearLiftedAt() *SuppressionScopedUpsert {
+	u.u.SetNull(suppression.FieldLiftedAt)
+	return u
+}
+
 // conflictOptions confines the DO UPDATE part to rows of the Workspace.
-func (t *SuppressionScoped) conflictOptions(columns []string) []sql.ConflictOption {
-	return []sql.ConflictOption{
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *SuppressionScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
 		sql.ConflictColumns(columns...),
 		sql.UpdateWhere(sql.EQ(suppression.FieldWorkspaceID, t.s.ws)),
 	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
 }
 
 // SuppressionScopedUpsertOne is the "upsert" of one Suppression.
@@ -21671,7 +21959,13 @@ type SuppressionScopedUpsertOne struct {
 // OnConflictColumns configures the columns as conflict target. A conflicting row of
 // another Workspace is never updated.
 func (x *SuppressionScopedCreate) OnConflictColumns(columns ...string) *SuppressionScopedUpsertOne {
-	return &SuppressionScopedUpsertOne{x: x, u: x.b.OnConflict((&SuppressionScoped{s: x.s}).conflictOptions(columns)...)}
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *SuppressionScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *SuppressionScopedUpsertOne {
+	return &SuppressionScopedUpsertOne{x: x, u: x.b.OnConflict((&SuppressionScoped{s: x.s}).conflictOptions(columns, target)...)}
 }
 
 // UpdateNewValues updates the mutable fields using the new values set on create.
@@ -21761,7 +22055,7 @@ func (u *SuppressionScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	r := raw.OnConflict(u.t.conflictOptions(u.columns)...)
+	r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
 	for _, o := range u.opts {
 		o(r)
 	}
@@ -21850,6 +22144,24 @@ func (x *SuppressionScopedUpdateOne) AddContactID(v int64) *SuppressionScopedUpd
 // ClearContactID clears the value of the "contact_id" field.
 func (x *SuppressionScopedUpdateOne) ClearContactID() *SuppressionScopedUpdateOne {
 	x.b.ClearContactID()
+	return x
+}
+
+// SetLiftedAt sets the "lifted_at" field.
+func (x *SuppressionScopedUpdateOne) SetLiftedAt(v time.Time) *SuppressionScopedUpdateOne {
+	x.b.SetLiftedAt(v)
+	return x
+}
+
+// SetNillableLiftedAt sets the "lifted_at" field if the given value is not nil.
+func (x *SuppressionScopedUpdateOne) SetNillableLiftedAt(v *time.Time) *SuppressionScopedUpdateOne {
+	x.b.SetNillableLiftedAt(v)
+	return x
+}
+
+// ClearLiftedAt clears the value of the "lifted_at" field.
+func (x *SuppressionScopedUpdateOne) ClearLiftedAt() *SuppressionScopedUpdateOne {
+	x.b.ClearLiftedAt()
 	return x
 }
 
@@ -21972,6 +22284,24 @@ func (x *SuppressionScopedUpdate) AddContactID(v int64) *SuppressionScopedUpdate
 // ClearContactID clears the value of the "contact_id" field.
 func (x *SuppressionScopedUpdate) ClearContactID() *SuppressionScopedUpdate {
 	x.b.ClearContactID()
+	return x
+}
+
+// SetLiftedAt sets the "lifted_at" field.
+func (x *SuppressionScopedUpdate) SetLiftedAt(v time.Time) *SuppressionScopedUpdate {
+	x.b.SetLiftedAt(v)
+	return x
+}
+
+// SetNillableLiftedAt sets the "lifted_at" field if the given value is not nil.
+func (x *SuppressionScopedUpdate) SetNillableLiftedAt(v *time.Time) *SuppressionScopedUpdate {
+	x.b.SetNillableLiftedAt(v)
+	return x
+}
+
+// ClearLiftedAt clears the value of the "lifted_at" field.
+func (x *SuppressionScopedUpdate) ClearLiftedAt() *SuppressionScopedUpdate {
+	x.b.ClearLiftedAt()
 	return x
 }
 
@@ -22272,11 +22602,16 @@ func (u *TagScopedUpsert) UpdateName() *TagScopedUpsert {
 }
 
 // conflictOptions confines the DO UPDATE part to rows of the Workspace.
-func (t *TagScoped) conflictOptions(columns []string) []sql.ConflictOption {
-	return []sql.ConflictOption{
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *TagScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
 		sql.ConflictColumns(columns...),
 		sql.UpdateWhere(sql.EQ(tag.FieldWorkspaceID, t.s.ws)),
 	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
 }
 
 // TagScopedUpsertOne is the "upsert" of one Tag.
@@ -22290,7 +22625,13 @@ type TagScopedUpsertOne struct {
 // OnConflictColumns configures the columns as conflict target. A conflicting row of
 // another Workspace is never updated.
 func (x *TagScopedCreate) OnConflictColumns(columns ...string) *TagScopedUpsertOne {
-	return &TagScopedUpsertOne{x: x, u: x.b.OnConflict((&TagScoped{s: x.s}).conflictOptions(columns)...)}
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *TagScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *TagScopedUpsertOne {
+	return &TagScopedUpsertOne{x: x, u: x.b.OnConflict((&TagScoped{s: x.s}).conflictOptions(columns, target)...)}
 }
 
 // UpdateNewValues updates the mutable fields using the new values set on create.
@@ -22412,7 +22753,7 @@ func (u *TagScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	r := raw.OnConflict(u.t.conflictOptions(u.columns)...)
+	r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
 	for _, o := range u.opts {
 		o(r)
 	}
@@ -22937,11 +23278,16 @@ func (u *UnsubscribeScopedUpsert) ClearContactID() *UnsubscribeScopedUpsert {
 }
 
 // conflictOptions confines the DO UPDATE part to rows of the Workspace.
-func (t *UnsubscribeScoped) conflictOptions(columns []string) []sql.ConflictOption {
-	return []sql.ConflictOption{
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *UnsubscribeScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
 		sql.ConflictColumns(columns...),
 		sql.UpdateWhere(sql.EQ(unsubscribe.FieldWorkspaceID, t.s.ws)),
 	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
 }
 
 // UnsubscribeScopedUpsertOne is the "upsert" of one Unsubscribe.
@@ -22955,7 +23301,13 @@ type UnsubscribeScopedUpsertOne struct {
 // OnConflictColumns configures the columns as conflict target. A conflicting row of
 // another Workspace is never updated.
 func (x *UnsubscribeScopedCreate) OnConflictColumns(columns ...string) *UnsubscribeScopedUpsertOne {
-	return &UnsubscribeScopedUpsertOne{x: x, u: x.b.OnConflict((&UnsubscribeScoped{s: x.s}).conflictOptions(columns)...)}
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *UnsubscribeScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *UnsubscribeScopedUpsertOne {
+	return &UnsubscribeScopedUpsertOne{x: x, u: x.b.OnConflict((&UnsubscribeScoped{s: x.s}).conflictOptions(columns, target)...)}
 }
 
 // UpdateNewValues updates the mutable fields using the new values set on create.
@@ -23045,7 +23397,7 @@ func (u *UnsubscribeScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	r := raw.OnConflict(u.t.conflictOptions(u.columns)...)
+	r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
 	for _, o := range u.opts {
 		o(r)
 	}
@@ -23555,11 +23907,16 @@ func (u *UsageScopedUpsert) UpdateComputedAt() *UsageScopedUpsert {
 }
 
 // conflictOptions confines the DO UPDATE part to rows of the Workspace.
-func (t *UsageScoped) conflictOptions(columns []string) []sql.ConflictOption {
-	return []sql.ConflictOption{
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *UsageScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
 		sql.ConflictColumns(columns...),
 		sql.UpdateWhere(sql.EQ(usage.FieldWorkspaceID, t.s.ws)),
 	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
 }
 
 // UsageScopedUpsertOne is the "upsert" of one Usage.
@@ -23573,7 +23930,13 @@ type UsageScopedUpsertOne struct {
 // OnConflictColumns configures the columns as conflict target. A conflicting row of
 // another Workspace is never updated.
 func (x *UsageScopedCreate) OnConflictColumns(columns ...string) *UsageScopedUpsertOne {
-	return &UsageScopedUpsertOne{x: x, u: x.b.OnConflict((&UsageScoped{s: x.s}).conflictOptions(columns)...)}
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *UsageScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *UsageScopedUpsertOne {
+	return &UsageScopedUpsertOne{x: x, u: x.b.OnConflict((&UsageScoped{s: x.s}).conflictOptions(columns, target)...)}
 }
 
 // UpdateNewValues updates the mutable fields using the new values set on create.
@@ -23663,7 +24026,7 @@ func (u *UsageScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	r := raw.OnConflict(u.t.conflictOptions(u.columns)...)
+	r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
 	for _, o := range u.opts {
 		o(r)
 	}
@@ -24118,11 +24481,16 @@ func (u *VisitorScopedUpsert) UpdateLastSeenAt() *VisitorScopedUpsert {
 }
 
 // conflictOptions confines the DO UPDATE part to rows of the Workspace.
-func (t *VisitorScoped) conflictOptions(columns []string) []sql.ConflictOption {
-	return []sql.ConflictOption{
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *VisitorScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
 		sql.ConflictColumns(columns...),
 		sql.UpdateWhere(sql.EQ(visitor.FieldWorkspaceID, t.s.ws)),
 	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
 }
 
 // VisitorScopedUpsertOne is the "upsert" of one Visitor.
@@ -24136,7 +24504,13 @@ type VisitorScopedUpsertOne struct {
 // OnConflictColumns configures the columns as conflict target. A conflicting row of
 // another Workspace is never updated.
 func (x *VisitorScopedCreate) OnConflictColumns(columns ...string) *VisitorScopedUpsertOne {
-	return &VisitorScopedUpsertOne{x: x, u: x.b.OnConflict((&VisitorScoped{s: x.s}).conflictOptions(columns)...)}
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *VisitorScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *VisitorScopedUpsertOne {
+	return &VisitorScopedUpsertOne{x: x, u: x.b.OnConflict((&VisitorScoped{s: x.s}).conflictOptions(columns, target)...)}
 }
 
 // UpdateNewValues updates the mutable fields using the new values set on create.
@@ -24226,7 +24600,7 @@ func (u *VisitorScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	r := raw.OnConflict(u.t.conflictOptions(u.columns)...)
+	r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
 	for _, o := range u.opts {
 		o(r)
 	}
@@ -24974,11 +25348,16 @@ func (u *WebhookEndpointScopedUpsert) ClearDisabledReason() *WebhookEndpointScop
 }
 
 // conflictOptions confines the DO UPDATE part to rows of the Workspace.
-func (t *WebhookEndpointScoped) conflictOptions(columns []string) []sql.ConflictOption {
-	return []sql.ConflictOption{
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *WebhookEndpointScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
 		sql.ConflictColumns(columns...),
 		sql.UpdateWhere(sql.EQ(webhookendpoint.FieldWorkspaceID, t.s.ws)),
 	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
 }
 
 // WebhookEndpointScopedUpsertOne is the "upsert" of one WebhookEndpoint.
@@ -24992,7 +25371,13 @@ type WebhookEndpointScopedUpsertOne struct {
 // OnConflictColumns configures the columns as conflict target. A conflicting row of
 // another Workspace is never updated.
 func (x *WebhookEndpointScopedCreate) OnConflictColumns(columns ...string) *WebhookEndpointScopedUpsertOne {
-	return &WebhookEndpointScopedUpsertOne{x: x, u: x.b.OnConflict((&WebhookEndpointScoped{s: x.s}).conflictOptions(columns)...)}
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *WebhookEndpointScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *WebhookEndpointScopedUpsertOne {
+	return &WebhookEndpointScopedUpsertOne{x: x, u: x.b.OnConflict((&WebhookEndpointScoped{s: x.s}).conflictOptions(columns, target)...)}
 }
 
 // UpdateNewValues updates the mutable fields using the new values set on create.
@@ -25114,7 +25499,7 @@ func (u *WebhookEndpointScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	r := raw.OnConflict(u.t.conflictOptions(u.columns)...)
+	r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
 	for _, o := range u.opts {
 		o(r)
 	}

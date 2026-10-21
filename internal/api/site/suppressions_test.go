@@ -6,6 +6,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/suppression"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/stretchr/testify/assert"
@@ -43,16 +44,60 @@ func TestSiteSuppressionsCRUD(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, exists, "created suppression is persisted")
 
-	// Delete removes it.
-	del, err := c.SiteSuppressionsDelete(ctx, siteapi.SiteSuppressionsDeleteParams{WorkspaceId: workspaceID, ID: res.ID})
+	// Lifting keeps the row, stamped, and the destination is no longer refused.
+	lift, err := c.SiteSuppressionsDelete(ctx, siteapi.SiteSuppressionsDeleteParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteSuppressionsDeleteNoContent{}, del)
+	assert.IsType(t, &siteapi.SiteSuppressionsDeleteNoContent{}, lift)
 
-	stillThere, err := env.DB.Suppression.Query().
-		Where(suppression.WorkspaceID(fixtures.AcmeID), suppression.Destination("blocked@example.com")).
-		Exist(ctx)
+	row, err := env.DB.Suppression.Get(ctx, int64(res.ID))
 	require.NoError(t, err)
-	assert.False(t, stillThere, "deleted suppression is gone")
+	assert.NotNil(t, row.LiftedAt, "the lifted row stays with its lift time")
+	verdict, err := eligibility.Check(ctx, env.DB.Scoped(fixtures.AcmeID), eligibility.ChannelEmail,
+		"blocked@example.com", eligibility.SourceBroadcasts)
+	require.NoError(t, err)
+	assert.True(t, verdict.Eligible, "a lifted destination receives mail again")
+
+	// Lifting it a second time is not-found.
+	again2, err := c.SiteSuppressionsDelete(ctx, siteapi.SiteSuppressionsDeleteParams{WorkspaceId: workspaceID, ID: res.ID})
+	require.NoError(t, err)
+	assert.IsType(t, &siteapi.SiteSuppressionsDeleteNotFound{}, again2)
+
+	// Suppressing the destination again makes a new, active row.
+	renewed, err := c.SiteSuppressionsCreate(ctx, &siteapi.SiteCreateSuppressionInput{Destination: "blocked@example.com"},
+		siteapi.SiteSuppressionsCreateParams{WorkspaceId: workspaceID})
+	require.NoError(t, err)
+	renewedRes, ok := renewed.(*siteapi.SiteSuppressionResource)
+	require.Truef(t, ok, "got %T", renewed)
+	assert.NotEqual(t, res.ID, renewedRes.ID, "a lifted row is not reused")
+	assert.False(t, renewedRes.LiftedAt.Set && !renewedRes.LiftedAt.Null, "the new row is active")
+}
+
+// The list shows active Suppressions by default and the lifted ones with lifted=true.
+func TestSiteSuppressionsListHidesLiftedRows(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	ctx := context.Background()
+	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
+
+	active, err := c.SiteSuppressionsList(ctx, siteapi.SiteSuppressionsListParams{WorkspaceId: workspaceID, PageSize: siteapi.NewOptInt32(100)})
+	require.NoError(t, err)
+	activeList, ok := active.(*siteapi.SiteSuppressionsListOK)
+	require.Truef(t, ok, "got %T", active)
+	for _, item := range activeList.Items {
+		assert.NotEqual(t, siteapi.EntityId(int64(fixtures.SuppressionLiftedID)), item.ID, "a lifted row is hidden by default")
+	}
+
+	lifted, err := c.SiteSuppressionsList(ctx, siteapi.SiteSuppressionsListParams{WorkspaceId: workspaceID, Lifted: siteapi.NewOptBool(true)})
+	require.NoError(t, err)
+	liftedList, ok := lifted.(*siteapi.SiteSuppressionsListOK)
+	require.Truef(t, ok, "got %T", lifted)
+	require.Len(t, liftedList.Items, 1)
+	assert.Equal(t, siteapi.EntityId(int64(fixtures.SuppressionLiftedID)), liftedList.Items[0].ID)
+	assert.True(t, liftedList.Items[0].LiftedAt.Set)
+
+	out, err := c.SiteSuppressionsDelete(ctx, siteapi.SiteSuppressionsDeleteParams{WorkspaceId: workspaceID, ID: siteapi.EntityId(int64(fixtures.SuppressionLiftedID))})
+	require.NoError(t, err)
+	assert.IsType(t, &siteapi.SiteSuppressionsDeleteNotFound{}, out, "an already lifted row is not found")
 }
 
 // Suppressions are workspace-scoped: an unowned workspaceID is a 404.

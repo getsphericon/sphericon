@@ -232,6 +232,7 @@ func (c *ConverterImpl) SuppressionToExport(source *ent.Suppression) external.Co
 		externalapiContactExportSuppression.Channel = string((*source).Channel)
 		externalapiContactExportSuppression.Destination = (*source).Destination
 		externalapiContactExportSuppression.Reason = string((*source).Reason)
+		externalapiContactExportSuppression.LiftedAt = optNilTimestamp((*source).LiftedAt)
 		externalapiContactExportSuppression.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return externalapiContactExportSuppression

@@ -7682,6 +7682,9 @@
           },
           {
             "$ref": "#/components/parameters/PageQuery.pageSize"
+          },
+          {
+            "$ref": "#/components/parameters/SiteSuppressionListQuery"
           }
         ],
         "responses": {
@@ -7763,7 +7766,7 @@
     "/workspaces/{workspaceId}/suppressions/{id}": {
       "delete": {
         "operationId": "SiteSuppressions_delete",
-        "description": "Remove an address from the suppression list",
+        "description": "Lift a suppression: the row stays with its lift time and the address can receive mail again.\nLifting one that is already lifted is a 404.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteSuppressionResourceKey.workspaceId"
@@ -9336,6 +9339,16 @@
           "$ref": "#/components/schemas/WorkspaceId"
         }
       },
+      "SiteSuppressionListQuery": {
+        "name": "lifted",
+        "in": "query",
+        "required": false,
+        "description": "true lists the lifted suppressions instead of the active ones; the default hides them",
+        "schema": {
+          "type": "boolean"
+        },
+        "explode": false
+      },
       "SiteSuppressionResourceKey.id": {
         "name": "id",
         "in": "path",
@@ -9861,6 +9874,16 @@
           "reason": {
             "type": "string",
             "description": "Why the destination is suppressed"
+          },
+          "liftedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the suppression was lifted; null while it is active"
           },
           "createdAt": {
             "allOf": [
@@ -13765,6 +13788,16 @@
               }
             ],
             "description": "Why the destination is suppressed"
+          },
+          "liftedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the suppression was lifted; null while it is active. A lifted one no longer blocks sends."
           },
           "createdAt": {
             "allOf": [

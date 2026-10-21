@@ -32,6 +32,8 @@ type Suppression struct {
 	Reason suppression.Reason `json:"reason,omitempty"`
 	// ContactID holds the value of the "contact_id" field.
 	ContactID *int64 `json:"contact_id,omitempty"`
+	// LiftedAt holds the value of the "lifted_at" field.
+	LiftedAt *time.Time `json:"lifted_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the SuppressionQuery when eager-loading is set.
 	Edges        SuppressionEdges `json:"edges"`
@@ -67,7 +69,7 @@ func (*Suppression) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case suppression.FieldChannel, suppression.FieldDestination, suppression.FieldReason:
 			values[i] = new(sql.NullString)
-		case suppression.FieldCreatedAt, suppression.FieldUpdatedAt:
+		case suppression.FieldCreatedAt, suppression.FieldUpdatedAt, suppression.FieldLiftedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -133,6 +135,13 @@ func (_m *Suppression) assignValues(columns []string, values []any) error {
 				_m.ContactID = new(int64)
 				*_m.ContactID = value.Int64
 			}
+		case suppression.FieldLiftedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field lifted_at", values[i])
+			} else if value.Valid {
+				_m.LiftedAt = new(time.Time)
+				*_m.LiftedAt = value.Time
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -195,6 +204,11 @@ func (_m *Suppression) String() string {
 	if v := _m.ContactID; v != nil {
 		builder.WriteString("contact_id=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.LiftedAt; v != nil {
+		builder.WriteString("lifted_at=")
+		builder.WriteString(v.Format(time.ANSIC))
 	}
 	builder.WriteByte(')')
 	return builder.String()

@@ -11287,6 +11287,16 @@
             "type": "string",
             "description": "Why the destination is suppressed"
           },
+          "liftedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the suppression was lifted; null while it is active"
+          },
           "createdAt": {
             "allOf": [
               {

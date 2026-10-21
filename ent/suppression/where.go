@@ -80,6 +80,11 @@ func ContactID(v int64) predicate.Suppression {
 	return predicate.Suppression(sql.FieldEQ(FieldContactID, v))
 }
 
+// LiftedAt applies equality check predicate on the "lifted_at" field. It's identical to LiftedAtEQ.
+func LiftedAt(v time.Time) predicate.Suppression {
+	return predicate.Suppression(sql.FieldEQ(FieldLiftedAt, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Suppression {
 	return predicate.Suppression(sql.FieldEQ(FieldCreatedAt, v))
@@ -333,6 +338,56 @@ func ContactIDIsNil() predicate.Suppression {
 // ContactIDNotNil applies the NotNil predicate on the "contact_id" field.
 func ContactIDNotNil() predicate.Suppression {
 	return predicate.Suppression(sql.FieldNotNull(FieldContactID))
+}
+
+// LiftedAtEQ applies the EQ predicate on the "lifted_at" field.
+func LiftedAtEQ(v time.Time) predicate.Suppression {
+	return predicate.Suppression(sql.FieldEQ(FieldLiftedAt, v))
+}
+
+// LiftedAtNEQ applies the NEQ predicate on the "lifted_at" field.
+func LiftedAtNEQ(v time.Time) predicate.Suppression {
+	return predicate.Suppression(sql.FieldNEQ(FieldLiftedAt, v))
+}
+
+// LiftedAtIn applies the In predicate on the "lifted_at" field.
+func LiftedAtIn(vs ...time.Time) predicate.Suppression {
+	return predicate.Suppression(sql.FieldIn(FieldLiftedAt, vs...))
+}
+
+// LiftedAtNotIn applies the NotIn predicate on the "lifted_at" field.
+func LiftedAtNotIn(vs ...time.Time) predicate.Suppression {
+	return predicate.Suppression(sql.FieldNotIn(FieldLiftedAt, vs...))
+}
+
+// LiftedAtGT applies the GT predicate on the "lifted_at" field.
+func LiftedAtGT(v time.Time) predicate.Suppression {
+	return predicate.Suppression(sql.FieldGT(FieldLiftedAt, v))
+}
+
+// LiftedAtGTE applies the GTE predicate on the "lifted_at" field.
+func LiftedAtGTE(v time.Time) predicate.Suppression {
+	return predicate.Suppression(sql.FieldGTE(FieldLiftedAt, v))
+}
+
+// LiftedAtLT applies the LT predicate on the "lifted_at" field.
+func LiftedAtLT(v time.Time) predicate.Suppression {
+	return predicate.Suppression(sql.FieldLT(FieldLiftedAt, v))
+}
+
+// LiftedAtLTE applies the LTE predicate on the "lifted_at" field.
+func LiftedAtLTE(v time.Time) predicate.Suppression {
+	return predicate.Suppression(sql.FieldLTE(FieldLiftedAt, v))
+}
+
+// LiftedAtIsNil applies the IsNil predicate on the "lifted_at" field.
+func LiftedAtIsNil() predicate.Suppression {
+	return predicate.Suppression(sql.FieldIsNull(FieldLiftedAt))
+}
+
+// LiftedAtNotNil applies the NotNil predicate on the "lifted_at" field.
+func LiftedAtNotNil() predicate.Suppression {
+	return predicate.Suppression(sql.FieldNotNull(FieldLiftedAt))
 }
 
 // HasWorkspace applies the HasEdge predicate on the "workspace" edge.

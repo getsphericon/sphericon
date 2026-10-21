@@ -755,7 +755,8 @@ type Invoker interface {
 	SiteSuppressionsCreate(ctx context.Context, request *SiteCreateSuppressionInput, params SiteSuppressionsCreateParams) (SiteSuppressionsCreateRes, error)
 	// SiteSuppressionsDelete invokes SiteSuppressions_delete operation.
 	//
-	// Remove an address from the suppression list.
+	// Lift a suppression: the row stays with its lift time and the address can receive mail again. Lifting
+	// one that is already lifted is a 404.
 	//
 	// DELETE /workspaces/{workspaceId}/suppressions/{id}
 	SiteSuppressionsDelete(ctx context.Context, params SiteSuppressionsDeleteParams) (SiteSuppressionsDeleteRes, error)
@@ -16256,7 +16257,8 @@ func (c *Client) sendSiteSuppressionsCreate(ctx context.Context, request *SiteCr
 
 // SiteSuppressionsDelete invokes SiteSuppressions_delete operation.
 //
-// Remove an address from the suppression list.
+// Lift a suppression: the row stays with its lift time and the address can receive mail again. Lifting
+// one that is already lifted is a 404.
 //
 // DELETE /workspaces/{workspaceId}/suppressions/{id}
 func (c *Client) SiteSuppressionsDelete(ctx context.Context, params SiteSuppressionsDeleteParams) (SiteSuppressionsDeleteRes, error) {
@@ -16513,6 +16515,23 @@ func (c *Client) sendSiteSuppressionsList(ctx context.Context, params SiteSuppre
 		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
 			if val, ok := params.PageSize.Get(); ok {
 				return e.EncodeValue(conv.Int32ToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "lifted" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "lifted",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Lifted.Get(); ok {
+				return e.EncodeValue(conv.BoolToString(val))
 			}
 			return nil
 		}); err != nil {

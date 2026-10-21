@@ -1054,7 +1054,8 @@ func (UnimplementedHandler) SiteSuppressionsCreate(ctx context.Context, req *Sit
 
 // SiteSuppressionsDelete implements SiteSuppressions_delete operation.
 //
-// Remove an address from the suppression list.
+// Lift a suppression: the row stays with its lift time and the address can receive mail again. Lifting
+// one that is already lifted is a 404.
 //
 // DELETE /workspaces/{workspaceId}/suppressions/{id}
 func (UnimplementedHandler) SiteSuppressionsDelete(ctx context.Context, params SiteSuppressionsDeleteParams) (r SiteSuppressionsDeleteRes, _ error) {

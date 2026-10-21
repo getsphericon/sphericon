@@ -9,6 +9,9 @@ import (
 	"context"
 	"errors"
 	"strings"
+	"time"
+
+	"entgo.io/ent/dialect/sql"
 
 	"github.com/getsphericon/sphericon/ent"
 	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
@@ -68,7 +71,8 @@ type Entry struct {
 }
 
 // Add suppresses an email destination in the scoped Workspace with one insert. It is
-// idempotent per (channel, destination): an existing entry keeps its reason.
+// idempotent per (channel, destination): an existing active entry keeps its reason. A
+// lifted entry does not count (ADR 0049): the destination is suppressed anew in a new row.
 func Add(ctx context.Context, s *ent.Scoped, e Entry) error {
 	dest := NormalizeDestination(e.Destination)
 	if dest == "" {
@@ -82,7 +86,8 @@ func Add(ctx context.Context, s *ent.Scoped, e Entry) error {
 		create.SetContactID(e.ContactID)
 	}
 	return create.
-		OnConflictColumns(entsuppression.FieldWorkspaceID, entsuppression.FieldChannel, entsuppression.FieldDestination).
+		OnConflictColumnsWhere(sql.IsNull(entsuppression.FieldLiftedAt),
+			entsuppression.FieldWorkspaceID, entsuppression.FieldChannel, entsuppression.FieldDestination).
 		Ignore().
 		Exec(ctx)
 }
@@ -94,16 +99,17 @@ func AddManual(ctx context.Context, s *ent.Scoped, destination string) (*ent.Sup
 		return nil, err
 	}
 	return s.Suppression().Query().
-		Where(entsuppression.ChannelEQ(entsuppression.ChannelEmail), entsuppression.DestinationEQ(NormalizeDestination(destination))).
+		Where(entsuppression.ChannelEQ(entsuppression.ChannelEmail), entsuppression.DestinationEQ(NormalizeDestination(destination)), entsuppression.LiftedAtIsNil()).
 		Only(ctx)
 }
 
-// List returns one page of the Workspace's Suppressions, newest first.
-func List(ctx context.Context, s *ent.Scoped, p pagination.Params) (pagination.Page[*ent.Suppression], error) {
+// List returns one page of the Workspace's active Suppressions, newest first, or of its
+// lifted ones when lifted is true.
+func List(ctx context.Context, s *ent.Scoped, p pagination.Params, lifted bool) (pagination.Page[*ent.Suppression], error) {
 	return pagination.List(ctx, p,
-		func(ctx context.Context) (int, error) { return s.Suppression().Query().Count(ctx) },
+		func(ctx context.Context) (int, error) { return query(s, lifted).Count(ctx) },
 		func(ctx context.Context, limit, offset int) ([]*ent.Suppression, error) {
-			return s.Suppression().Query().
+			return query(s, lifted).
 				Order(ent.Desc(entsuppression.FieldID)).
 				Limit(limit).
 				Offset(offset).
@@ -111,18 +117,40 @@ func List(ctx context.Context, s *ent.Scoped, p pagination.Params) (pagination.P
 		})
 }
 
-// Remove deletes a Suppression of the scoped Workspace by id; a missing one is ErrNotFound.
-func Remove(ctx context.Context, s *ent.Scoped, id int64) error {
-	err := s.Suppression().DeleteOneID(id).Exec(ctx)
-	if ent.IsNotFound(err) {
-		return ErrNotFound
+// query is the Workspace's active Suppressions, or its lifted ones.
+func query(s *ent.Scoped, lifted bool) *ent.SuppressionQuery {
+	if lifted {
+		return s.Suppression().Query().Where(entsuppression.LiftedAtNotNil())
 	}
-	return err
+	return s.Suppression().Query().Where(entsuppression.LiftedAtIsNil())
 }
 
-// DetachContact clears the Contact reference of every Suppression naming it, for the
-// Contact's Erasure: the rows are keyed by destination and keep refusing the address.
-func DetachContact(ctx context.Context, s *ent.Scoped, contactID int64) error {
+// Remove lifts an active Suppression of the scoped Workspace by id: the row stays with its
+// lift time and the destination can receive mail again. A missing or already lifted one is
+// ErrNotFound.
+func Remove(ctx context.Context, s *ent.Scoped, id int64) error {
+	n, err := s.Suppression().Update().
+		Where(entsuppression.ID(id), entsuppression.LiftedAtIsNil()).
+		SetLiftedAt(time.Now()).
+		Save(ctx)
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+// EraseContact is the Suppression part of the Contact's Erasure: its lifted rows are
+// deleted, since a lifted one refuses nothing any more, and its active rows only lose the
+// Contact reference, because they are keyed by destination and keep refusing the address.
+func EraseContact(ctx context.Context, s *ent.Scoped, contactID int64) error {
+	if _, err := s.Suppression().Delete().
+		Where(entsuppression.ContactID(contactID), entsuppression.LiftedAtNotNil()).
+		Exec(ctx); err != nil {
+		return err
+	}
 	_, err := s.Suppression().Update().Where(entsuppression.ContactID(contactID)).ClearContactID().Save(ctx)
 	return err
 }

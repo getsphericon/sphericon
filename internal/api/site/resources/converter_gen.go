@@ -229,6 +229,7 @@ func (c *ConverterImpl) SuppressionToExport(source *ent.Suppression) site.Contac
 		siteapiContactExportSuppression.Channel = string((*source).Channel)
 		siteapiContactExportSuppression.Destination = (*source).Destination
 		siteapiContactExportSuppression.Reason = string((*source).Reason)
+		siteapiContactExportSuppression.LiftedAt = optNilTimestamp((*source).LiftedAt)
 		siteapiContactExportSuppression.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return siteapiContactExportSuppression
@@ -240,6 +241,7 @@ func (c *ConverterImpl) SuppressionToResource(source *ent.Suppression) site.Site
 		siteapiSiteSuppressionResource.Channel = site.SiteSuppressionChannel((*source).Channel)
 		siteapiSiteSuppressionResource.Destination = (*source).Destination
 		siteapiSiteSuppressionResource.Reason = site.SiteSuppressionReason((*source).Reason)
+		siteapiSiteSuppressionResource.LiftedAt = optNilTimestamp((*source).LiftedAt)
 		siteapiSiteSuppressionResource.CreatedAt = timestamp((*source).CreatedAt)
 		siteapiSiteSuppressionResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}

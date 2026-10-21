@@ -154,13 +154,14 @@ func eraseRuns(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPu
 	return err
 }
 
-// detachOptOuts keeps the Unsubscribe and Suppression rows, which are keyed by
-// Destination and keep honoring the refusal, and only clears their Contact reference.
+// detachOptOuts keeps the Unsubscribe and active Suppression rows, which are keyed by
+// Destination and keep honoring the refusal, and only clears their Contact reference. A
+// lifted Suppression honors nothing, so it goes with the Contact.
 func detachOptOuts(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
 	if _, err := s.Unsubscribe().Update().Where(unsubscribe.ContactID(t.ContactID)).ClearContactID().Save(ctx); err != nil {
 		return err
 	}
-	return suppression.DetachContact(ctx, s, t.ContactID)
+	return suppression.EraseContact(ctx, s, t.ContactID)
 }
 
 // anonymizeDelivery turns the subject's delivery records into anonymous rows: they keep

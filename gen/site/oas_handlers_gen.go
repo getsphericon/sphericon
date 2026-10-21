@@ -19695,7 +19695,8 @@ func (s *Server) handleSiteSuppressionsCreateRequest(args [1]string, argsEscaped
 
 // handleSiteSuppressionsDeleteRequest handles SiteSuppressions_delete operation.
 //
-// Remove an address from the suppression list.
+// Lift a suppression: the row stays with its lift time and the address can receive mail again. Lifting
+// one that is already lifted is a 404.
 //
 // DELETE /workspaces/{workspaceId}/suppressions/{id}
 func (s *Server) handleSiteSuppressionsDeleteRequest(args [2]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -20039,6 +20040,10 @@ func (s *Server) handleSiteSuppressionsListRequest(args [1]string, argsEscaped b
 					Name: "pageSize",
 					In:   "query",
 				}: params.PageSize,
+				{
+					Name: "lifted",
+					In:   "query",
+				}: params.Lifted,
 			},
 			Raw: r,
 		}

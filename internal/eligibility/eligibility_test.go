@@ -53,6 +53,25 @@ func TestCheckSuppressed(t *testing.T) {
 	assert.Equal(t, eligibility.ReasonSuppressed, d.Reason)
 }
 
+// A lifted Suppression no longer blocks, in a single check or in the contact predicate.
+func TestLiftedSuppressionDoesNotBlock(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	s := env.DB.Scoped(fixtures.AcmeID)
+
+	d, err := eligibility.Check(ctx, s, eligibility.ChannelEmail, "lifted@codebasics.dev", eligibility.SourceBroadcasts)
+	require.NoError(t, err)
+	assert.True(t, d.Eligible, "the fixture's lifted destination is mailable")
+
+	_, err = s.Contact().Create().SetEmail("lifted@codebasics.dev").Save(ctx)
+	require.NoError(t, err)
+	n, err := s.Contact().Query().
+		Where(contact.EmailEQ("lifted@codebasics.dev"), eligibility.Predicate(eligibility.ChannelEmail, eligibility.SourceBroadcasts)).
+		Count(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, 1, n, "an audience keeps the contact of a lifted destination")
+}
+
 // Transactional sends (source "") skip layers 2–3 but still
 // respect Suppression.
 func TestCheckTransactionalSkipsUnsubscribeButNotSuppression(t *testing.T) {

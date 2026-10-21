@@ -170,12 +170,13 @@ type layer struct {
 }
 
 // store names the columns of one destination-keyed table a layer reads.
-type store struct{ table, id, workspace, destination, channel string }
+// A store with an end column (lifted_at) matches only rows where it is NULL.
+type store struct{ table, id, workspace, destination, channel, end string }
 
 var (
-	suppressions  = store{entsuppression.Table, entsuppression.FieldID, entsuppression.FieldWorkspaceID, entsuppression.FieldDestination, entsuppression.FieldChannel}
-	unsubscribes  = store{unsubscribe.Table, unsubscribe.FieldID, unsubscribe.FieldWorkspaceID, unsubscribe.FieldDestination, unsubscribe.FieldChannel}
-	confirmations = store{confirmation.Table, confirmation.FieldID, confirmation.FieldWorkspaceID, confirmation.FieldDestination, confirmation.FieldChannel}
+	suppressions  = store{entsuppression.Table, entsuppression.FieldID, entsuppression.FieldWorkspaceID, entsuppression.FieldDestination, entsuppression.FieldChannel, entsuppression.FieldLiftedAt}
+	unsubscribes  = store{unsubscribe.Table, unsubscribe.FieldID, unsubscribe.FieldWorkspaceID, unsubscribe.FieldDestination, unsubscribe.FieldChannel, ""}
+	confirmations = store{confirmation.Table, confirmation.FieldID, confirmation.FieldWorkspaceID, confirmation.FieldDestination, confirmation.FieldChannel, ""}
 )
 
 // layers is the single definition of the eligibility rule, in precedence order
@@ -217,6 +218,9 @@ func match(r ref, st store, channel string, extra ...string) *sql.Selector {
 		sql.P(func(b *sql.Builder) { b.WriteString(sub.C(st.workspace)).WriteString(" = "); r.workspace(b) }),
 		sql.P(func(b *sql.Builder) { b.WriteString(sub.C(st.destination)).WriteString(" = "); r.destination(b) }),
 		sql.EQ(sub.C(st.channel), channel),
+	}
+	if st.end != "" {
+		conds = append(conds, sql.IsNull(sub.C(st.end)))
 	}
 	if len(extra) == 2 {
 		conds = append(conds, sql.EQ(sub.C(extra[0]), extra[1]))

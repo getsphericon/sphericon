@@ -9,6 +9,7 @@ import {
   Menu,
   Modal,
   Stack,
+  Switch,
   TextInput,
   Title,
 } from '@mantine/core'
@@ -16,6 +17,7 @@ import { useForm } from '@mantine/form'
 import { useCounter, useDisclosure } from '@mantine/hooks'
 import { useQuery } from '@tanstack/react-query'
 import { DataTable } from 'mantine-datatable'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
@@ -41,19 +43,21 @@ const PAGE_SIZE = 20
 
 // SuppressionsSection manages the workspace do-not-send list: hard bounces and
 // complaints land here automatically; destinations can also be added manually.
-// The send path skips every destination listed here. (Unsubscribes are a
+// The send path skips every active destination listed here; a lifted one stays as a record
+// and is shown on request. (Unsubscribes are a
 // separate, per-source opt-out, not a suppression.)
 export function SuppressionsSection({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
-  const confirmDelete = useDeleteConfirmation()
+  const confirmLift = useDeleteConfirmation()
   const [page, pageHandlers] = useCounter(1, { min: 1 })
+  const [lifted, setLifted] = useState(false)
   const [createOpened, { open: openCreate, close: closeCreate }] = useDisclosure(false)
 
   const queryKey = siteSuppressionsListQueryKey({ path: { workspaceId } })
   const suppressionsQuery = useQuery(
     siteSuppressionsListOptions({
       path: { workspaceId },
-      query: { page, pageSize: PAGE_SIZE },
+      query: { page, pageSize: PAGE_SIZE, lifted },
     }),
   )
 
@@ -70,16 +74,18 @@ export function SuppressionsSection({ workspaceId }: { workspaceId: string }) {
     },
   })
 
-  const deleteMutation = useResourceMutation({
+  const liftMutation = useResourceMutation({
     mutation: siteSuppressionsDeleteMutation(),
     invalidate: [queryKey],
-    errorTitle: t(($) => $.settings.suppressions.deleteError),
+    errorTitle: t(($) => $.settings.suppressions.liftError),
   })
 
-  const onDelete = (id: string) =>
-    confirmDelete({
-      title: t(($) => $.settings.suppressions.deleteConfirmTitle),
-      onConfirm: () => deleteMutation.mutate({ path: { workspaceId, id } }),
+  const onLift = (id: string) =>
+    confirmLift({
+      title: t(($) => $.settings.suppressions.liftConfirmTitle),
+      description: t(($) => $.settings.suppressions.liftConfirmDescription),
+      confirmLabel: t(($) => $.settings.suppressions.lift),
+      onConfirm: () => liftMutation.mutate({ path: { workspaceId, id } }),
     })
 
   const records = suppressionsQuery.data?.items ?? []
@@ -91,6 +97,16 @@ export function SuppressionsSection({ workspaceId }: { workspaceId: string }) {
         <Title order={4}>{t(($) => $.settings.suppressions.title)}</Title>
         <Button onClick={openCreate}>{t(($) => $.settings.suppressions.create)}</Button>
       </Group>
+
+      <Switch
+        mb="sm"
+        label={t(($) => $.settings.suppressions.showLifted)}
+        checked={lifted}
+        onChange={(event) => {
+          setLifted(event.currentTarget.checked)
+          pageHandlers.set(1)
+        }}
+      />
 
       {suppressionsQuery.isError ? (
         <Alert color="red" title={t(($) => $.settings.suppressions.loadError)} mb="md">
@@ -119,15 +135,20 @@ export function SuppressionsSection({ workspaceId }: { workspaceId: string }) {
           {
             accessor: 'actions',
             title: '',
-            render: (record) => (
-              <Group justify="flex-end">
-                <RowActionsMenu>
-                  <Menu.Item color="red" onClick={() => onDelete(record.id)}>
-                    {t(($) => $.settings.suppressions.delete)}
-                  </Menu.Item>
-                </RowActionsMenu>
-              </Group>
-            ),
+            render: (record) =>
+              record.liftedAt ? (
+                <Badge variant="light" color="gray">
+                  {t(($) => $.settings.suppressions.liftedBadge)}
+                </Badge>
+              ) : (
+                <Group justify="flex-end">
+                  <RowActionsMenu>
+                    <Menu.Item onClick={() => onLift(record.id)}>
+                      {t(($) => $.settings.suppressions.lift)}
+                    </Menu.Item>
+                  </RowActionsMenu>
+                </Group>
+              ),
           },
         ]}
         emptyState={<EmptyState title={t(($) => $.settings.suppressions.empty)} />}

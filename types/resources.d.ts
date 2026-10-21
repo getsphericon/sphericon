@@ -1086,13 +1086,15 @@ export default interface Resources {
       "suppressions": {
         "create": "Suppress",
         "createError": "Failed to suppress address",
-        "delete": "Remove",
-        "deleteConfirmTitle": "Remove this address from the suppression list?",
-        "deleteError": "Failed to remove suppression",
         "emailColumn": "Email",
         "emailHint": "Sends to this address will be skipped",
         "emailLabel": "Email address",
         "empty": "No suppressed addresses",
+        "lift": "Lift",
+        "liftConfirmDescription": "The address will receive mail again. The suppression stays in the list of lifted ones.",
+        "liftConfirmTitle": "Lift this suppression?",
+        "liftError": "Failed to lift suppression",
+        "liftedBadge": "Lifted",
         "loadError": "Failed to load suppression list",
         "reasonColumn": "Reason",
         "reasons": {
@@ -1101,6 +1103,7 @@ export default interface Resources {
           "manual": "Manual",
           "unsubscribed": "Unsubscribed"
         },
+        "showLifted": "Show lifted",
         "title": "Suppression list"
       },
       "testEventDescription": "Send a test event from your terminal, then watch it appear in the activity feed.",

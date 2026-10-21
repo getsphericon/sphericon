@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
@@ -14,7 +15,7 @@ import (
 // (channel, destination) — not by contact — so it covers destinations with no
 // contact (e.g. a bounce) and survives contact deletion/re-import. The
 // destination is stored normalized (lower-cased) and unique per (workspace,
-// channel), so ingestion can upsert idempotently. Distinct from Unsubscribe:
+// channel) among the unlifted rows, so ingestion can upsert idempotently. Distinct from Unsubscribe:
 // Suppression is global and hard; an unsubscribe is per-sending-source and
 // toggleable (see the Unsubscribe entity).
 type Suppression struct {
@@ -54,14 +55,22 @@ func (Suppression) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			Annotations(ScopedRef{Unchecked: true}),
+		// When the Suppression was lifted (ADR 0049): the row stays as the record of why the
+		// destination once refused mail, and no longer blocks sends. Null while it is active.
+		field.Time("lifted_at").
+			Optional().
+			Nillable(),
 	}
 }
 
 func (Suppression) Indexes() []ent.Index {
 	return []ent.Index{
-		// One suppression per (channel, destination) per workspace; lets ingestion upsert.
+		// One active suppression per (channel, destination) per workspace; lets ingestion
+		// upsert (the conflict target repeats the predicate). A lifted row keeps its place
+		// in the table but not the name, so the destination can be suppressed anew.
 		index.Fields("workspace_id", "channel", "destination").
 			Unique().
+			Annotations(entsql.IndexWhere("lifted_at IS NULL")).
 			StorageKey("suppressions_workspace_id_channel_destination"),
 	}
 }

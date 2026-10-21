@@ -68,9 +68,9 @@ func TestListPagesNewestFirst(t *testing.T) {
 	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
-	all, err := suppression.List(ctx, s, pagination.Params{Page: 1, PageSize: 100})
+	all, err := suppression.List(ctx, s, pagination.Params{Page: 1, PageSize: 100}, false)
 	require.NoError(t, err)
-	first, err := suppression.List(ctx, s, pagination.Params{Page: 1, PageSize: 2})
+	first, err := suppression.List(ctx, s, pagination.Params{Page: 1, PageSize: 2}, false)
 	require.NoError(t, err)
 	assert.Len(t, first.Items, 2)
 	assert.Equal(t, all.TotalItems, first.TotalItems)
@@ -78,7 +78,7 @@ func TestListPagesNewestFirst(t *testing.T) {
 	assert.Greater(t, all.Items[0].ID, all.Items[1].ID)
 }
 
-func TestRemoveDeletesAndReportsAMissingRow(t *testing.T) {
+func TestRemoveLiftsAndReportsAMissingOrLiftedRow(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
@@ -88,7 +88,12 @@ func TestRemoveDeletesAndReportsAMissingRow(t *testing.T) {
 	require.NoError(t, suppression.Remove(ctx, s, added.ID))
 
 	err = suppression.Remove(ctx, s, added.ID)
-	assert.ErrorIs(t, err, suppression.ErrNotFound)
+	require.ErrorIs(t, err, suppression.ErrNotFound, "a lifted row cannot be lifted again")
+	require.ErrorIs(t, suppression.Remove(ctx, s, 987654321), suppression.ErrNotFound)
+
+	kept, err := s.Suppression().Get(ctx, added.ID)
+	require.NoError(t, err)
+	assert.NotNil(t, kept.LiftedAt)
 }
 
 func TestNormalizeDestinationTrimsAndLowerCases(t *testing.T) {
@@ -120,12 +125,12 @@ func TestForEventSuppressesAComplaintAndAPermanentBounceOnly(t *testing.T) {
 	assert.False(t, other)
 }
 
-func TestDetachContactKeepsTheSuppressionRefusingTheAddress(t *testing.T) {
+func TestEraseContactKeepsTheSuppressionRefusingTheAddress(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.InitechID)
 
-	require.NoError(t, suppression.DetachContact(ctx, s, int64(fixtures.ContactErasableID)))
+	require.NoError(t, suppression.EraseContact(ctx, s, int64(fixtures.ContactErasableID)))
 
 	row, err := s.Suppression().Get(ctx, fixtures.SuppressionErasableID)
 	require.NoError(t, err)

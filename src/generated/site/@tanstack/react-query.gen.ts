@@ -2670,7 +2670,8 @@ export const siteSuppressionsCreateMutation = (options?: Partial<Options<SiteSup
 };
 
 /**
- * Remove an address from the suppression list
+ * Lift a suppression: the row stays with its lift time and the address can receive mail again.
+ * Lifting one that is already lifted is a 404.
  */
 export const siteSuppressionsDeleteMutation = (options?: Partial<Options<SiteSuppressionsDeleteData>>): UseMutationOptions<SiteSuppressionsDeleteResponse, SiteSuppressionsDeleteError, Options<SiteSuppressionsDeleteData>> => {
   const mutationOptions: UseMutationOptions<SiteSuppressionsDeleteResponse, SiteSuppressionsDeleteError, Options<SiteSuppressionsDeleteData>> = {

@@ -2511,7 +2511,8 @@ export const siteSuppressionsCreate = <ThrowOnError extends boolean = false>(opt
 });
 
 /**
- * Remove an address from the suppression list
+ * Lift a suppression: the row stays with its lift time and the address can receive mail again.
+ * Lifting one that is already lifted is a 404.
  */
 export const siteSuppressionsDelete = <ThrowOnError extends boolean = false>(options: Options<SiteSuppressionsDeleteData, ThrowOnError>): RequestResult<SiteSuppressionsDeleteResponses, SiteSuppressionsDeleteErrors, ThrowOnError> => (options.client ?? client).delete<SiteSuppressionsDeleteResponses, SiteSuppressionsDeleteErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({

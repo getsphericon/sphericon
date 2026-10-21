@@ -32793,6 +32793,7 @@ type SuppressionMutation struct {
 	reason           *suppression.Reason
 	contact_id       *int64
 	addcontact_id    *int64
+	lifted_at        *time.Time
 	clearedFields    map[string]struct{}
 	workspace        *int64
 	clearedworkspace bool
@@ -33191,6 +33192,55 @@ func (m *SuppressionMutation) ResetContactID() {
 	delete(m.clearedFields, suppression.FieldContactID)
 }
 
+// SetLiftedAt sets the "lifted_at" field.
+func (m *SuppressionMutation) SetLiftedAt(t time.Time) {
+	m.lifted_at = &t
+}
+
+// LiftedAt returns the value of the "lifted_at" field in the mutation.
+func (m *SuppressionMutation) LiftedAt() (r time.Time, exists bool) {
+	v := m.lifted_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLiftedAt returns the old "lifted_at" field's value of the Suppression entity.
+// If the Suppression object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SuppressionMutation) OldLiftedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLiftedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLiftedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLiftedAt: %w", err)
+	}
+	return oldValue.LiftedAt, nil
+}
+
+// ClearLiftedAt clears the value of the "lifted_at" field.
+func (m *SuppressionMutation) ClearLiftedAt() {
+	m.lifted_at = nil
+	m.clearedFields[suppression.FieldLiftedAt] = struct{}{}
+}
+
+// LiftedAtCleared returns if the "lifted_at" field was cleared in this mutation.
+func (m *SuppressionMutation) LiftedAtCleared() bool {
+	_, ok := m.clearedFields[suppression.FieldLiftedAt]
+	return ok
+}
+
+// ResetLiftedAt resets all changes to the "lifted_at" field.
+func (m *SuppressionMutation) ResetLiftedAt() {
+	m.lifted_at = nil
+	delete(m.clearedFields, suppression.FieldLiftedAt)
+}
+
 // ClearWorkspace clears the "workspace" edge to the Workspace entity.
 func (m *SuppressionMutation) ClearWorkspace() {
 	m.clearedworkspace = true
@@ -33252,7 +33302,7 @@ func (m *SuppressionMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *SuppressionMutation) Fields() []string {
-	fields := make([]string, 0, 7)
+	fields := make([]string, 0, 8)
 	if m.created_at != nil {
 		fields = append(fields, suppression.FieldCreatedAt)
 	}
@@ -33273,6 +33323,9 @@ func (m *SuppressionMutation) Fields() []string {
 	}
 	if m.contact_id != nil {
 		fields = append(fields, suppression.FieldContactID)
+	}
+	if m.lifted_at != nil {
+		fields = append(fields, suppression.FieldLiftedAt)
 	}
 	return fields
 }
@@ -33296,6 +33349,8 @@ func (m *SuppressionMutation) Field(name string) (ent.Value, bool) {
 		return m.Reason()
 	case suppression.FieldContactID:
 		return m.ContactID()
+	case suppression.FieldLiftedAt:
+		return m.LiftedAt()
 	}
 	return nil, false
 }
@@ -33319,6 +33374,8 @@ func (m *SuppressionMutation) OldField(ctx context.Context, name string) (ent.Va
 		return m.OldReason(ctx)
 	case suppression.FieldContactID:
 		return m.OldContactID(ctx)
+	case suppression.FieldLiftedAt:
+		return m.OldLiftedAt(ctx)
 	}
 	return nil, fmt.Errorf("unknown Suppression field %s", name)
 }
@@ -33377,6 +33434,13 @@ func (m *SuppressionMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetContactID(v)
 		return nil
+	case suppression.FieldLiftedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLiftedAt(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Suppression field %s", name)
 }
@@ -33425,6 +33489,9 @@ func (m *SuppressionMutation) ClearedFields() []string {
 	if m.FieldCleared(suppression.FieldContactID) {
 		fields = append(fields, suppression.FieldContactID)
 	}
+	if m.FieldCleared(suppression.FieldLiftedAt) {
+		fields = append(fields, suppression.FieldLiftedAt)
+	}
 	return fields
 }
 
@@ -33441,6 +33508,9 @@ func (m *SuppressionMutation) ClearField(name string) error {
 	switch name {
 	case suppression.FieldContactID:
 		m.ClearContactID()
+		return nil
+	case suppression.FieldLiftedAt:
+		m.ClearLiftedAt()
 		return nil
 	}
 	return fmt.Errorf("unknown Suppression nullable field %s", name)
@@ -33470,6 +33540,9 @@ func (m *SuppressionMutation) ResetField(name string) error {
 		return nil
 	case suppression.FieldContactID:
 		m.ResetContactID()
+		return nil
+	case suppression.FieldLiftedAt:
+		m.ResetLiftedAt()
 		return nil
 	}
 	return fmt.Errorf("unknown Suppression field %s", name)

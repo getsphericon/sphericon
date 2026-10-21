@@ -35,6 +35,9 @@ model SiteSuppressionResource {
   /** Why the destination is suppressed */
   reason: SiteSuppressionReason;
 
+  /** When the suppression was lifted; null while it is active. A lifted one no longer blocks sends. */
+  liftedAt?: Timestamp | null;
+
   /** Creation timestamp */
   createdAt: Timestamp;
 
@@ -49,6 +52,12 @@ model SiteCreateSuppressionInput {
 
   /** The destination address to suppress */
   destination: string;
+}
+
+/** Query for the suppression list */
+model SiteSuppressionListQuery {
+  /** true lists the lifted suppressions instead of the active ones; the default hides them */
+  @query lifted?: boolean;
 }
 
 // Bespoke (not WorkspaceCrud): no GET/PUT for a single suppression.
@@ -77,13 +86,15 @@ namespace SiteSuppressions {
   op list(
     ...ResourceCollectionParameters<SiteSuppressionResource>,
     ...PageQuery,
+    ...SiteSuppressionListQuery,
   ):
     | Page<SiteSuppressionResource>
     | BadRequestProblem
     | NotFoundProblem
     | UnprocessableEntityProblem;
 
-  /** Remove an address from the suppression list */
+  /** Lift a suppression: the row stays with its lift time and the address can receive mail again.
+   * Lifting one that is already lifted is a 404. */
   @deletesResource(SiteSuppressionResource)
   @delete
   @autoRoute

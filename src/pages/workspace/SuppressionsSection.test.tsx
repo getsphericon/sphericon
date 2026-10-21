@@ -66,7 +66,7 @@ test('adds a suppression', async () => {
   await expect.poll(() => bodies).toEqual([{ destination: 'blocked@example.com' }])
 })
 
-test('removes a suppression after confirmation', async () => {
+test('lifts a suppression after confirmation', async () => {
   let deleted = false
   worker.use(
     list([suppression()]),
@@ -78,10 +78,33 @@ test('removes a suppression after confirmation', async () => {
   const { screen } = await renderWithRouter(<SuppressionsSection workspaceId={WORKSPACE_ID} />)
 
   await screen.getByRole('button', { name: 'More actions' }).click()
-  await screen.getByRole('menuitem', { name: 'Remove' }).click()
-  await screen.getByRole('dialog').getByRole('button', { name: 'Delete' }).click()
+  await screen.getByRole('menuitem', { name: 'Lift' }).click()
+  await screen.getByRole('dialog').getByRole('button', { name: 'Lift' }).click()
 
   await expect.poll(() => deleted).toBe(true)
+})
+
+test('shows the lifted suppressions on request, without a lift action', async () => {
+  const lifted: (string | null)[] = []
+  worker.use(
+    handleSiteSuppressionsList(({ request }) => {
+      const flag = new URL(request.url).searchParams.get('lifted')
+      lifted.push(flag)
+      const items =
+        flag === 'true'
+          ? [suppression({ destination: 'old@example.com', liftedAt: '2026-02-01T00:00:00Z' })]
+          : [suppression()]
+      return HttpResponse.json({ items, page: 1, pageSize: 20, totalItems: 1, totalPages: 1 })
+    }),
+  )
+  const { screen } = await renderWithRouter(<SuppressionsSection workspaceId={WORKSPACE_ID} />)
+
+  await expect.element(screen.getByText('bounced@example.com')).toBeInTheDocument()
+  await screen.getByLabelText('Show lifted').click()
+
+  await expect.element(screen.getByText('old@example.com')).toBeInTheDocument()
+  expect(lifted).toContain('true')
+  await expect.element(screen.getByRole('button', { name: 'More actions' })).not.toBeInTheDocument()
 })
 
 test('shows an error alert when the list fails to load', async () => {

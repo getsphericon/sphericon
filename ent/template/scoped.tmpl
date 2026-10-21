@@ -419,11 +419,16 @@ func (u *{{ $N }}ScopedUpsert) Clear{{ $f.StructField }}() *{{ $N }}ScopedUpsert
 {{ end }}
 
 // conflictOptions confines the DO UPDATE part to rows of the Workspace.
-func (t *{{ $N }}Scoped) conflictOptions(columns []string) []sql.ConflictOption {
-	return []sql.ConflictOption{
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *{{ $N }}Scoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
 		sql.ConflictColumns(columns...),
 		sql.UpdateWhere(sql.EQ({{ $P }}.FieldWorkspaceID, t.s.ws)),
 	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
 }
 
 // {{ $N }}ScopedUpsertOne is the "upsert" of one {{ $N }}.
@@ -437,7 +442,13 @@ type {{ $N }}ScopedUpsertOne struct {
 // OnConflictColumns configures the columns as conflict target. A conflicting row of
 // another Workspace is never updated.
 func (x *{{ $N }}ScopedCreate) OnConflictColumns(columns ...string) *{{ $N }}ScopedUpsertOne {
-	return &{{ $N }}ScopedUpsertOne{x: x, u: x.b.OnConflict((&{{ $N }}Scoped{s: x.s}).conflictOptions(columns)...)}
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *{{ $N }}ScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *{{ $N }}ScopedUpsertOne {
+	return &{{ $N }}ScopedUpsertOne{x: x, u: x.b.OnConflict((&{{ $N }}Scoped{s: x.s}).conflictOptions(columns, target)...)}
 }
 
 // UpdateNewValues updates the mutable fields using the new values set on create.
@@ -567,7 +578,7 @@ func (u *{{ $N }}ScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	r := raw.OnConflict(u.t.conflictOptions(u.columns)...)
+	r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
 	for _, o := range u.opts {
 		o(r)
 	}

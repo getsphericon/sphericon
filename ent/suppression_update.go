@@ -119,6 +119,26 @@ func (_u *SuppressionUpdate) ClearContactID() *SuppressionUpdate {
 	return _u
 }
 
+// SetLiftedAt sets the "lifted_at" field.
+func (_u *SuppressionUpdate) SetLiftedAt(v time.Time) *SuppressionUpdate {
+	_u.mutation.SetLiftedAt(v)
+	return _u
+}
+
+// SetNillableLiftedAt sets the "lifted_at" field if the given value is not nil.
+func (_u *SuppressionUpdate) SetNillableLiftedAt(v *time.Time) *SuppressionUpdate {
+	if v != nil {
+		_u.SetLiftedAt(*v)
+	}
+	return _u
+}
+
+// ClearLiftedAt clears the value of the "lifted_at" field.
+func (_u *SuppressionUpdate) ClearLiftedAt() *SuppressionUpdate {
+	_u.mutation.ClearLiftedAt()
+	return _u
+}
+
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_u *SuppressionUpdate) SetWorkspace(v *Workspace) *SuppressionUpdate {
 	return _u.SetWorkspaceID(v.ID)
@@ -232,6 +252,12 @@ func (_u *SuppressionUpdate) sqlSave(ctx context.Context) (_node int, err error)
 	}
 	if _u.mutation.ContactIDCleared() {
 		_spec.ClearField(suppression.FieldContactID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.LiftedAt(); ok {
+		_spec.SetField(suppression.FieldLiftedAt, field.TypeTime, value)
+	}
+	if _u.mutation.LiftedAtCleared() {
+		_spec.ClearField(suppression.FieldLiftedAt, field.TypeTime)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -370,6 +396,26 @@ func (_u *SuppressionUpdateOne) AddContactID(v int64) *SuppressionUpdateOne {
 // ClearContactID clears the value of the "contact_id" field.
 func (_u *SuppressionUpdateOne) ClearContactID() *SuppressionUpdateOne {
 	_u.mutation.ClearContactID()
+	return _u
+}
+
+// SetLiftedAt sets the "lifted_at" field.
+func (_u *SuppressionUpdateOne) SetLiftedAt(v time.Time) *SuppressionUpdateOne {
+	_u.mutation.SetLiftedAt(v)
+	return _u
+}
+
+// SetNillableLiftedAt sets the "lifted_at" field if the given value is not nil.
+func (_u *SuppressionUpdateOne) SetNillableLiftedAt(v *time.Time) *SuppressionUpdateOne {
+	if v != nil {
+		_u.SetLiftedAt(*v)
+	}
+	return _u
+}
+
+// ClearLiftedAt clears the value of the "lifted_at" field.
+func (_u *SuppressionUpdateOne) ClearLiftedAt() *SuppressionUpdateOne {
+	_u.mutation.ClearLiftedAt()
 	return _u
 }
 
@@ -516,6 +562,12 @@ func (_u *SuppressionUpdateOne) sqlSave(ctx context.Context) (_node *Suppression
 	}
 	if _u.mutation.ContactIDCleared() {
 		_spec.ClearField(suppression.FieldContactID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.LiftedAt(); ok {
+		_spec.SetField(suppression.FieldLiftedAt, field.TypeTime, value)
+	}
+	if _u.mutation.LiftedAtCleared() {
+		_spec.ClearField(suppression.FieldLiftedAt, field.TypeTime)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{

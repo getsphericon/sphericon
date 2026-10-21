@@ -1063,6 +1063,10 @@ const (
 	SuppressionErasableDestination = "erin@initech.test"
 	// SuppressionErasableID is from fixtures/suppressions.
 	SuppressionErasableID = 300
+	// SuppressionErasableLiftedDestination is from fixtures/suppressions.
+	SuppressionErasableLiftedDestination = "erin.old@initech.test"
+	// SuppressionErasableLiftedID is from fixtures/suppressions.
+	SuppressionErasableLiftedID = 301
 	// SuppressionGhostBounceDestination is from fixtures/suppressions.
 	SuppressionGhostBounceDestination = "ghost@codebasics.dev"
 	// SuppressionGhostBounceID is from fixtures/suppressions.
@@ -1071,6 +1075,10 @@ const (
 	SuppressionGlobexDestination = "bounce@globex.test"
 	// SuppressionGlobexID is from fixtures/suppressions.
 	SuppressionGlobexID = 900
+	// SuppressionLiftedDestination is from fixtures/suppressions.
+	SuppressionLiftedDestination = "lifted@codebasics.dev"
+	// SuppressionLiftedID is from fixtures/suppressions.
+	SuppressionLiftedID = 105
 	// TagGlobexID is from fixtures/tags.
 	TagGlobexID = 900
 	// TagGlobexName is from fixtures/tags.

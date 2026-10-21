@@ -1308,6 +1308,7 @@ var (
 		{Name: "destination", Type: field.TypeString},
 		{Name: "reason", Type: field.TypeEnum, Enums: []string{"bounce", "complaint", "manual"}, Default: "manual"},
 		{Name: "contact_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "lifted_at", Type: field.TypeTime, Nullable: true},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
 	// SuppressionsTable holds the schema information for the "suppressions" table.
@@ -1318,7 +1319,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "suppressions_workspaces_suppressions",
-				Columns:    []*schema.Column{SuppressionsColumns[7]},
+				Columns:    []*schema.Column{SuppressionsColumns[8]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1327,7 +1328,10 @@ var (
 			{
 				Name:    "suppressions_workspace_id_channel_destination",
 				Unique:  true,
-				Columns: []*schema.Column{SuppressionsColumns[7], SuppressionsColumns[3], SuppressionsColumns[4]},
+				Columns: []*schema.Column{SuppressionsColumns[8], SuppressionsColumns[3], SuppressionsColumns[4]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "lifted_at IS NULL",
+				},
 			},
 		},
 	}

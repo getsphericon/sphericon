@@ -29,6 +29,8 @@ const (
 	FieldReason = "reason"
 	// FieldContactID holds the string denoting the contact_id field in the database.
 	FieldContactID = "contact_id"
+	// FieldLiftedAt holds the string denoting the lifted_at field in the database.
+	FieldLiftedAt = "lifted_at"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
 	EdgeWorkspace = "workspace"
 	// Table holds the table name of the suppression in the database.
@@ -52,6 +54,7 @@ var Columns = []string{
 	FieldDestination,
 	FieldReason,
 	FieldContactID,
+	FieldLiftedAt,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -168,6 +171,11 @@ func ByReason(opts ...sql.OrderTermOption) OrderOption {
 // ByContactID orders the results by the contact_id field.
 func ByContactID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldContactID, opts...).ToFunc()
+}
+
+// ByLiftedAt orders the results by the lifted_at field.
+func ByLiftedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLiftedAt, opts...).ToFunc()
 }
 
 // ByWorkspaceField orders the results by workspace field.

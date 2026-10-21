@@ -1579,17 +1579,24 @@ func (s *ContactExportSuppression) encodeFields(e *jx.Encoder) {
 		e.Str(s.Reason)
 	}
 	{
+		if s.LiftedAt.Set {
+			e.FieldStart("liftedAt")
+			s.LiftedAt.Encode(e)
+		}
+	}
+	{
 		e.FieldStart("createdAt")
 		s.CreatedAt.Encode(e)
 	}
 }
 
-var jsonFieldsNameOfContactExportSuppression = [5]string{
+var jsonFieldsNameOfContactExportSuppression = [6]string{
 	0: "id",
 	1: "channel",
 	2: "destination",
 	3: "reason",
-	4: "createdAt",
+	4: "liftedAt",
+	5: "createdAt",
 }
 
 // Decode decodes ContactExportSuppression from json.
@@ -1647,8 +1654,18 @@ func (s *ContactExportSuppression) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"reason\"")
 			}
+		case "liftedAt":
+			if err := func() error {
+				s.LiftedAt.Reset()
+				if err := s.LiftedAt.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"liftedAt\"")
+			}
 		case "createdAt":
-			requiredBitSet[0] |= 1 << 4
+			requiredBitSet[0] |= 1 << 5
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -1667,7 +1684,7 @@ func (s *ContactExportSuppression) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00011111,
+		0b00101111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -33577,6 +33594,12 @@ func (s *SiteSuppressionResource) encodeFields(e *jx.Encoder) {
 		s.Reason.Encode(e)
 	}
 	{
+		if s.LiftedAt.Set {
+			e.FieldStart("liftedAt")
+			s.LiftedAt.Encode(e)
+		}
+	}
+	{
 		e.FieldStart("createdAt")
 		s.CreatedAt.Encode(e)
 	}
@@ -33586,13 +33609,14 @@ func (s *SiteSuppressionResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteSuppressionResource = [6]string{
+var jsonFieldsNameOfSiteSuppressionResource = [7]string{
 	0: "id",
 	1: "channel",
 	2: "destination",
 	3: "reason",
-	4: "createdAt",
-	5: "updatedAt",
+	4: "liftedAt",
+	5: "createdAt",
+	6: "updatedAt",
 }
 
 // Decode decodes SiteSuppressionResource from json.
@@ -33646,8 +33670,18 @@ func (s *SiteSuppressionResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"reason\"")
 			}
+		case "liftedAt":
+			if err := func() error {
+				s.LiftedAt.Reset()
+				if err := s.LiftedAt.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"liftedAt\"")
+			}
 		case "createdAt":
-			requiredBitSet[0] |= 1 << 4
+			requiredBitSet[0] |= 1 << 5
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -33657,7 +33691,7 @@ func (s *SiteSuppressionResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"createdAt\"")
 			}
 		case "updatedAt":
-			requiredBitSet[0] |= 1 << 5
+			requiredBitSet[0] |= 1 << 6
 			if err := func() error {
 				if err := s.UpdatedAt.Decode(d); err != nil {
 					return err
@@ -33676,7 +33710,7 @@ func (s *SiteSuppressionResource) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00111111,
+		0b01101111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

@@ -22,7 +22,7 @@ func (h *Handlers) SiteSuppressionsList(ctx context.Context, params siteapi.Site
 		return nil, err
 	}
 
-	page, err := suppression.List(ctx, s, pagination.ParamsOf(params.Page, params.PageSize))
+	page, err := suppression.List(ctx, s, pagination.ParamsOf(params.Page, params.PageSize), params.Lifted.Or(false))
 	if err != nil {
 		return nil, err
 	}

@@ -790,6 +790,8 @@ type ContactExportSuppression struct {
 	Destination string `json:"destination"`
 	// Why the destination is suppressed.
 	Reason string `json:"reason"`
+	// When the suppression was lifted; null while it is active.
+	LiftedAt OptNilTimestamp `json:"liftedAt"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 }
@@ -812,6 +814,11 @@ func (s *ContactExportSuppression) GetDestination() string {
 // GetReason returns the value of Reason.
 func (s *ContactExportSuppression) GetReason() string {
 	return s.Reason
+}
+
+// GetLiftedAt returns the value of LiftedAt.
+func (s *ContactExportSuppression) GetLiftedAt() OptNilTimestamp {
+	return s.LiftedAt
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -837,6 +844,11 @@ func (s *ContactExportSuppression) SetDestination(val string) {
 // SetReason sets the value of Reason.
 func (s *ContactExportSuppression) SetReason(val string) {
 	s.Reason = val
+}
+
+// SetLiftedAt sets the value of LiftedAt.
+func (s *ContactExportSuppression) SetLiftedAt(val OptNilTimestamp) {
+	s.LiftedAt = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.
@@ -14378,6 +14390,8 @@ type SiteSuppressionResource struct {
 	Destination string `json:"destination"`
 	// Why the destination is suppressed.
 	Reason SiteSuppressionReason `json:"reason"`
+	// When the suppression was lifted; null while it is active. A lifted one no longer blocks sends.
+	LiftedAt OptNilTimestamp `json:"liftedAt"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -14402,6 +14416,11 @@ func (s *SiteSuppressionResource) GetDestination() string {
 // GetReason returns the value of Reason.
 func (s *SiteSuppressionResource) GetReason() SiteSuppressionReason {
 	return s.Reason
+}
+
+// GetLiftedAt returns the value of LiftedAt.
+func (s *SiteSuppressionResource) GetLiftedAt() OptNilTimestamp {
+	return s.LiftedAt
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -14432,6 +14451,11 @@ func (s *SiteSuppressionResource) SetDestination(val string) {
 // SetReason sets the value of Reason.
 func (s *SiteSuppressionResource) SetReason(val SiteSuppressionReason) {
 	s.Reason = val
+}
+
+// SetLiftedAt sets the value of LiftedAt.
+func (s *SiteSuppressionResource) SetLiftedAt(val OptNilTimestamp) {
+	s.LiftedAt = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.

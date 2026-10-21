@@ -105,6 +105,20 @@ func (_c *SuppressionCreate) SetNillableContactID(v *int64) *SuppressionCreate {
 	return _c
 }
 
+// SetLiftedAt sets the "lifted_at" field.
+func (_c *SuppressionCreate) SetLiftedAt(v time.Time) *SuppressionCreate {
+	_c.mutation.SetLiftedAt(v)
+	return _c
+}
+
+// SetNillableLiftedAt sets the "lifted_at" field if the given value is not nil.
+func (_c *SuppressionCreate) SetNillableLiftedAt(v *time.Time) *SuppressionCreate {
+	if v != nil {
+		_c.SetLiftedAt(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *SuppressionCreate) SetID(v int64) *SuppressionCreate {
 	_c.mutation.SetID(v)
@@ -264,6 +278,10 @@ func (_c *SuppressionCreate) createSpec() (*Suppression, *sqlgraph.CreateSpec) {
 		_spec.SetField(suppression.FieldContactID, field.TypeInt64, value)
 		_node.ContactID = &value
 	}
+	if value, ok := _c.mutation.LiftedAt(); ok {
+		_spec.SetField(suppression.FieldLiftedAt, field.TypeTime, value)
+		_node.LiftedAt = &value
+	}
 	if nodes := _c.mutation.WorkspaceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -417,6 +435,24 @@ func (u *SuppressionUpsert) ClearContactID() *SuppressionUpsert {
 	return u
 }
 
+// SetLiftedAt sets the "lifted_at" field.
+func (u *SuppressionUpsert) SetLiftedAt(v time.Time) *SuppressionUpsert {
+	u.Set(suppression.FieldLiftedAt, v)
+	return u
+}
+
+// UpdateLiftedAt sets the "lifted_at" field to the value that was provided on create.
+func (u *SuppressionUpsert) UpdateLiftedAt() *SuppressionUpsert {
+	u.SetExcluded(suppression.FieldLiftedAt)
+	return u
+}
+
+// ClearLiftedAt clears the value of the "lifted_at" field.
+func (u *SuppressionUpsert) ClearLiftedAt() *SuppressionUpsert {
+	u.SetNull(suppression.FieldLiftedAt)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -563,6 +599,27 @@ func (u *SuppressionUpsertOne) UpdateContactID() *SuppressionUpsertOne {
 func (u *SuppressionUpsertOne) ClearContactID() *SuppressionUpsertOne {
 	return u.Update(func(s *SuppressionUpsert) {
 		s.ClearContactID()
+	})
+}
+
+// SetLiftedAt sets the "lifted_at" field.
+func (u *SuppressionUpsertOne) SetLiftedAt(v time.Time) *SuppressionUpsertOne {
+	return u.Update(func(s *SuppressionUpsert) {
+		s.SetLiftedAt(v)
+	})
+}
+
+// UpdateLiftedAt sets the "lifted_at" field to the value that was provided on create.
+func (u *SuppressionUpsertOne) UpdateLiftedAt() *SuppressionUpsertOne {
+	return u.Update(func(s *SuppressionUpsert) {
+		s.UpdateLiftedAt()
+	})
+}
+
+// ClearLiftedAt clears the value of the "lifted_at" field.
+func (u *SuppressionUpsertOne) ClearLiftedAt() *SuppressionUpsertOne {
+	return u.Update(func(s *SuppressionUpsert) {
+		s.ClearLiftedAt()
 	})
 }
 
@@ -878,6 +935,27 @@ func (u *SuppressionUpsertBulk) UpdateContactID() *SuppressionUpsertBulk {
 func (u *SuppressionUpsertBulk) ClearContactID() *SuppressionUpsertBulk {
 	return u.Update(func(s *SuppressionUpsert) {
 		s.ClearContactID()
+	})
+}
+
+// SetLiftedAt sets the "lifted_at" field.
+func (u *SuppressionUpsertBulk) SetLiftedAt(v time.Time) *SuppressionUpsertBulk {
+	return u.Update(func(s *SuppressionUpsert) {
+		s.SetLiftedAt(v)
+	})
+}
+
+// UpdateLiftedAt sets the "lifted_at" field to the value that was provided on create.
+func (u *SuppressionUpsertBulk) UpdateLiftedAt() *SuppressionUpsertBulk {
+	return u.Update(func(s *SuppressionUpsert) {
+		s.UpdateLiftedAt()
+	})
+}
+
+// ClearLiftedAt clears the value of the "lifted_at" field.
+func (u *SuppressionUpsertBulk) ClearLiftedAt() *SuppressionUpsertBulk {
+	return u.Update(func(s *SuppressionUpsert) {
+		s.ClearLiftedAt()
 	})
 }
 

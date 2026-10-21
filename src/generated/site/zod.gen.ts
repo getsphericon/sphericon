@@ -1270,6 +1270,7 @@ export const zContactExportSuppression = z.object({
   channel: z.string(),
   destination: z.string(),
   reason: z.string(),
+  liftedAt: z.exactOptional(zTimestamp.nullable()),
   createdAt: zTimestamp
 });
 
@@ -1645,6 +1646,7 @@ export const zSiteSuppressionResource = z.object({
   channel: zSiteSuppressionChannel,
   destination: z.string(),
   reason: zSiteSuppressionReason,
+  liftedAt: z.exactOptional(zTimestamp.nullable()),
   createdAt: zTimestamp,
   updatedAt: zTimestamp
 });
@@ -2186,6 +2188,11 @@ export const zSiteSendingDomainResourceKeyWorkspaceId = zWorkspaceId;
  * workspace resources (ADR 0043)
  */
 export const zSiteSendingDomainResourceParentKey = zWorkspaceId;
+
+/**
+ * true lists the lifted suppressions instead of the active ones; the default hides them
+ */
+export const zSiteSuppressionListQuery = z.boolean();
 
 /**
  * Unique identifier
@@ -3373,7 +3380,8 @@ export const zSiteSuppressionsListPath = z.object({
 
 export const zSiteSuppressionsListQuery = z.object({
   page: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
-  pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(25)
+  pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(25),
+  lifted: z.exactOptional(z.boolean())
 });
 
 /**

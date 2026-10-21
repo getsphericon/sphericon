@@ -1467,6 +1467,9 @@ func ScopedEntities() []ScopedEntity {
 				if src.ContactID != nil {
 					b.SetContactID(*src.ContactID)
 				}
+				if src.LiftedAt != nil {
+					b.SetLiftedAt(*src.LiftedAt)
+				}
 				created, err := b.Save(ctx)
 				if err != nil {
 					return 0, err

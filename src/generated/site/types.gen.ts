@@ -295,6 +295,10 @@ export type ContactExportSuppression = {
    */
   reason: string;
   /**
+   * When the suppression was lifted; null while it is active
+   */
+  liftedAt?: Timestamp | null;
+  /**
    * Creation timestamp
    */
   createdAt: Timestamp;
@@ -3258,6 +3262,10 @@ export type SiteSuppressionResource = {
    */
   reason: SiteSuppressionReason;
   /**
+   * When the suppression was lifted; null while it is active. A lifted one no longer blocks sends.
+   */
+  liftedAt?: Timestamp | null;
+  /**
    * Creation timestamp
    */
   createdAt: Timestamp;
@@ -4215,6 +4223,11 @@ export type SiteSendingDomainResourceKeyWorkspaceId = WorkspaceId;
  * workspace resources (ADR 0043)
  */
 export type SiteSendingDomainResourceParentKey = WorkspaceId;
+
+/**
+ * true lists the lifted suppressions instead of the active ones; the default hides them
+ */
+export type SiteSuppressionListQuery = boolean;
 
 /**
  * Unique identifier
@@ -8833,6 +8846,10 @@ export type SiteSuppressionsListData = {
      * Page size
      */
     pageSize?: number;
+    /**
+     * true lists the lifted suppressions instead of the active ones; the default hides them
+     */
+    lifted?: boolean;
   };
   url: '/workspaces/{workspaceId}/suppressions';
 };

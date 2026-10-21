@@ -79,7 +79,7 @@ func applySuppression(t *testing.T, env *testhelper.TestEnv) {
 func suppressed(t *testing.T, env *testhelper.TestEnv, email string) bool {
 	t.Helper()
 	ok, err := env.DB.Suppression.Query().
-		Where(suppression.WorkspaceID(fixtures.AcmeID), suppression.Destination(email)).
+		Where(suppression.WorkspaceID(fixtures.AcmeID), suppression.Destination(email), suppression.LiftedAtIsNil()).
 		Exist(t.Context())
 	require.NoError(t, err)
 	return ok
@@ -175,6 +175,21 @@ func TestHookSuppressesAHardBounceAndOnlyRecordsASoftOne(t *testing.T) {
 	applySuppression(t, env)
 	assert.True(t, suppressed(t, env, "hard@example.com"))
 	assert.False(t, suppressed(t, env, "soft@example.com"))
+}
+
+// A hard bounce for a destination whose Suppression was lifted suppresses it anew.
+func TestHookSuppressesALiftedDestinationAgain(t *testing.T) {
+	env := setupHooks(t)
+	key := fixtures.IntegrationAcmeGenericAIngestKey
+
+	require.Equal(t, http.StatusOK, signedPost(t, env, key, secretA, "msg_1", failureBody("evt_again", "lifted@codebasics.dev", true)).Code)
+	applySuppression(t, env)
+
+	active, err := env.DB.Suppression.Query().
+		Where(suppression.WorkspaceID(fixtures.AcmeID), suppression.Destination("lifted@codebasics.dev"), suppression.LiftedAtIsNil()).
+		Count(t.Context())
+	require.NoError(t, err)
+	assert.Equal(t, 1, active, "a new active row beside the lifted one")
 }
 
 // The same callback delivered twice has the effect of once: one persisted event, one
