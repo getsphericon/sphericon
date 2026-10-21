@@ -93,7 +93,8 @@ a Contact _is_ — there is no softer delete that keeps personal data. The Conta
 Custom field values, Tags and Confirmation are removed, as are its customer-tracked Events; the
 reserved `email.*` Events and delivery records stay as anonymous rows, so deliverability and
 metering counts do not change. What survives is the minimum that keeps the refusal honored: the
-Unsubscribe and Suppression rows for its Destinations. It leaves a PII-free `contact.erased`
+Unsubscribe rows and the active Suppression rows for its Destinations (lifted ones refuse
+nothing and go). It leaves a PII-free `contact.erased`
 Event, stored without any Contact reference (its webhook delivery carries the customer's own
 subject_id so downstream copies can be erased). A person who later reappears (Identify, import) is a new Contact and
 is not blocked; surviving opt-outs still apply to them. The Workspace is the controller and sphericon

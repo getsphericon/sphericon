@@ -22,8 +22,12 @@ Enrollment holds only an index into the live definition.
   (Event, Outbound message, Audit entry, Suppression) are never discarded, only removed by
   Retention or Erasure. A Suppression is lifted, not deleted: `lifted_at` is stamped, the row
   stays, the send path reads only rows with `lifted_at IS NULL`, and the unique index on
-  (workspace_id, channel, destination) is partial on it. Contact erasure only detaches the
-  Contact, as today.
+  (workspace_id, channel, destination) is partial on it; the contract's `DELETE` operation lifts.
+  It does not use `DiscardMixin` because a Suppression is a fact, never hidden or restored, and
+  the ingestion upsert needs `lifted_at IS NULL` as the predicate of its partial unique index and
+  conflict target, so a lifted row keeps its place without holding the destination. Contact
+  erasure deletes the Contact's lifted rows, which refuse nothing, and detaches it from the
+  active ones, which keep refusing the address.
 - **Discard is one mechanism**, a `DiscardMixin` (`discarded_at`, nullable; no `discarded_by`, the
   Audit entry names the actor) and a generated part of the scoped client (ADR 0017). An entity that
   embeds the mixin gets `Discard`, `Undiscard` and `Purge` on `*ent.Scoped` and **no `Delete`**.
