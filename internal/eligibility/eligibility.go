@@ -170,13 +170,17 @@ type layer struct {
 }
 
 // store names the columns of one destination-keyed table a layer reads.
-// A store with an end column (lifted_at) matches only rows where it is NULL.
-type store struct{ table, id, workspace, destination, channel, end string }
+// liveWhenNull lists the columns that are NULL while a row still counts (lifted_at on
+// Suppression); a store whose rows never end has none.
+type store struct {
+	table, id, workspace, destination, channel string
+	liveWhenNull                               []string
+}
 
 var (
-	suppressions  = store{entsuppression.Table, entsuppression.FieldID, entsuppression.FieldWorkspaceID, entsuppression.FieldDestination, entsuppression.FieldChannel, entsuppression.FieldLiftedAt}
-	unsubscribes  = store{unsubscribe.Table, unsubscribe.FieldID, unsubscribe.FieldWorkspaceID, unsubscribe.FieldDestination, unsubscribe.FieldChannel, ""}
-	confirmations = store{confirmation.Table, confirmation.FieldID, confirmation.FieldWorkspaceID, confirmation.FieldDestination, confirmation.FieldChannel, ""}
+	suppressions  = store{entsuppression.Table, entsuppression.FieldID, entsuppression.FieldWorkspaceID, entsuppression.FieldDestination, entsuppression.FieldChannel, []string{entsuppression.FieldLiftedAt}}
+	unsubscribes  = store{unsubscribe.Table, unsubscribe.FieldID, unsubscribe.FieldWorkspaceID, unsubscribe.FieldDestination, unsubscribe.FieldChannel, nil}
+	confirmations = store{confirmation.Table, confirmation.FieldID, confirmation.FieldWorkspaceID, confirmation.FieldDestination, confirmation.FieldChannel, nil}
 )
 
 // layers is the single definition of the eligibility rule, in precedence order
@@ -219,8 +223,8 @@ func match(r ref, st store, channel string, extra ...string) *sql.Selector {
 		sql.P(func(b *sql.Builder) { b.WriteString(sub.C(st.destination)).WriteString(" = "); r.destination(b) }),
 		sql.EQ(sub.C(st.channel), channel),
 	}
-	if st.end != "" {
-		conds = append(conds, sql.IsNull(sub.C(st.end)))
+	for _, col := range st.liveWhenNull {
+		conds = append(conds, sql.IsNull(sub.C(col)))
 	}
 	if len(extra) == 2 {
 		conds = append(conds, sql.EQ(sub.C(extra[0]), extra[1]))
