@@ -821,14 +821,17 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		// Dev trusts seeded domains so the local send gate isn't blocked by real
-		// DNS; prod verifies against published DKIM TXT records (ADR 0010).
+		// Prod verifies against published DNS records (ADR 0010). Dev does too, except
+		// for jobs.ShortcutDomain, which verifies at once; the e2e suite's domains all do.
 		if cfg.IsDev || o.e2eDKIMLookup {
 			client, err := do.Invoke[*entClient](i)
 			if err != nil {
 				return nil, err
 			}
-			return &dkimLookup{TXTLookup: jobs.DevTXTLookup(client.Client)}, nil
+			if o.e2eDKIMLookup {
+				return &dkimLookup{TXTLookup: jobs.DevTXTLookup(client.Client)}, nil
+			}
+			return &dkimLookup{TXTLookup: jobs.ShortcutTXTLookup(client.Client, net.DefaultResolver.LookupTXT)}, nil
 		}
 		return &dkimLookup{TXTLookup: net.DefaultResolver.LookupTXT}, nil
 	})

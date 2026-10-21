@@ -112,6 +112,41 @@ func TestDevTXTLookup_aJoinDomainNobodyClaimsIsNotFound(t *testing.T) {
 	assert.True(t, dnsErr.IsNotFound)
 }
 
+// A development Instance resolves every domain through real DNS except ShortcutDomain, whose
+// proof records come from what we stored (here nobody claims it, so the answer is NXDOMAIN
+// and the real resolver is never asked).
+func TestShortcutTXTLookup_answersOnlyTheShortcutDomainItself(t *testing.T) {
+	env := testhelper.Setup(t)
+	pending, err := env.DB.JoinDomain.Get(t.Context(), fixtures.JoinDomainPendingID)
+	require.NoError(t, err)
+	var asked []string
+	real := func(_ context.Context, name string) ([]string, error) {
+		asked = append(asked, name)
+		return []string{"real"}, nil
+	}
+	lookup := jobs.ShortcutTXTLookup(env.DB, real)
+
+	for _, name := range []string{
+		"_sphericon-join." + pending.Domain + ".",
+		"sphericon._domainkey.mail.acme.com.",
+		"_sphericon-join.evil-" + jobs.ShortcutDomain + ".",
+		"_sphericon-join.mail." + jobs.ShortcutDomain + ".",
+	} {
+		records, err := lookup(t.Context(), name)
+		require.NoError(t, err, name)
+		assert.Equal(t, []string{"real"}, records, name)
+	}
+	assert.Len(t, asked, 4)
+
+	_, err = lookup(t.Context(), "_sphericon-join."+jobs.ShortcutDomain+".")
+	var dnsErr *net.DNSError
+	require.ErrorAs(t, err, &dnsErr)
+	assert.True(t, dnsErr.IsNotFound)
+	_, err = lookup(t.Context(), "sphericon._domainkey."+jobs.ShortcutDomain+".")
+	require.ErrorAs(t, err, &dnsErr)
+	assert.Len(t, asked, 4, "the shortcut domain never reaches real DNS")
+}
+
 func TestDomainsDueForRecheck_neverCheckedFirst(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()

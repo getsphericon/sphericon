@@ -146,28 +146,56 @@ func (w *RecheckTrackingDomainsWorker) Work(ctx context.Context, job *river.Job[
 	return nil
 }
 
-// DevTXTLookup is the sending-domain DKIM resolver for local/dev environments:
-// instead of querying real DNS (which no local domain publishes), it echoes back
-// each domain's own stored public key, so any sending domain a developer adds
-// self-verifies and the send gate (ADR 0010) doesn't block the Mailpit loop.
+// ShortcutDomain is the one domain that verifies without DNS in a non-production Instance:
+// a Sending domain or a Join domain on it is trusted at once, so a developer can try the
+// flow without publishing a record. Every other domain is resolved through real DNS.
+const ShortcutDomain = "getsphericon.io"
+
+// ShortcutTXTLookup is the resolver of a development Instance: the proof records of
+// ShortcutDomain are answered from what we stored for it (see DevTXTLookup), every other
+// name goes to real. Production uses real alone: this trust must never be wired outside a
+// dev env.
+func ShortcutTXTLookup(client *ent.Client, real sending.TXTLookup) sending.TXTLookup {
+	dev := DevTXTLookup(client)
+	return func(ctx context.Context, name string) ([]string, error) {
+		if domain, ok := recordDomain(name); ok && domain == ShortcutDomain {
+			return dev(ctx, name)
+		}
+		return real(ctx, name)
+	}
+}
+
+// recordDomain is the domain a proof record's name belongs to: a DKIM record
+// (<selector>._domainkey.<domain>.) or a Join domain's (_sphericon-join.<domain>.).
+func recordDomain(name string) (string, bool) {
+	if joined, ok := strings.CutPrefix(name, joindomains.RecordLabel); ok {
+		return strings.TrimSuffix(joined, "."), true
+	}
+	_, after, ok := strings.Cut(name, dkimMarker)
+	return strings.TrimSuffix(after, "."), ok
+}
+
+const dkimMarker = "._domainkey."
+
+// DevTXTLookup is the sending-domain DKIM resolver of the end-to-end suite: instead of
+// querying real DNS (which no test domain publishes), it echoes back each domain's own
+// stored public key, so any sending domain a scenario adds self-verifies and the send
+// gate (ADR 0010) doesn't block the Mailpit loop.
 // It answers a Join domain's proof record the same way: the name
 // _sphericon-join.<domain> resolves to the tokens every Workspace's claim of the domain
 // stores, so a domain an Owner adds in the members settings verifies without DNS.
 // Because it answers every Workspace's token, two Workspaces claiming one domain both verify, so
-// a hand-over (the loser of a take-over) can never fire in dev or e2e.
-// Production uses net.DefaultResolver.LookupTXT — this trust must never be wired
-// outside a dev env.
+// a hand-over (the loser of a take-over) can never fire here.
+// A development Instance reaches it only for ShortcutDomain, through ShortcutTXTLookup.
 func DevTXTLookup(client *ent.Client) sending.TXTLookup {
-	const marker = "._domainkey."
 	return func(ctx context.Context, name string) ([]string, error) {
-		if joined, ok := strings.CutPrefix(name, joindomains.RecordLabel); ok {
-			return devJoinTokens(ctx, client, name, strings.TrimSuffix(joined, "."))
-		}
-		_, after, ok := strings.Cut(name, marker)
+		domain, ok := recordDomain(name)
 		if !ok {
 			return nil, &net.DNSError{IsNotFound: true, Name: name}
 		}
-		domain := strings.TrimSuffix(after, ".")
+		if strings.HasPrefix(name, joindomains.RecordLabel) {
+			return devJoinTokens(ctx, client, name, domain)
+		}
 		row, err := client.SendingDomain.Query().
 			Where(sendingdomain.Domain(domain)).
 			First(ctx)
