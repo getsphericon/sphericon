@@ -93,24 +93,23 @@ test('lists connected providers', async () => {
   await expect.element(screen.getByText('Primary SMTP')).toBeInTheDocument()
 })
 
-test('connects an SMTP provider', async () => {
+test('connects an SMTP provider and names it after its host', async () => {
   const bodies: unknown[] = []
   worker.use(list([]), create(bodies))
   const { screen } = await renderWithRouter(<IntegrationsSection workspaceId={WORKSPACE_ID} />)
 
   await screen.getByRole('button', { name: 'Connect provider' }).click()
   const dialog = screen.getByRole('dialog')
-  await dialog.getByLabelText(/^Name/).fill(' Mailer ')
+  await dialog.getByRole('button', { name: 'SMTP' }).click()
   await dialog.getByLabelText(/^SMTP host/).fill('smtp.acme.com')
   await dialog.getByLabelText(/^From address/).fill('hi@acme.com')
-  await dialog.getByLabelText('Set as default').click()
   await dialog.getByRole('button', { name: 'Connect provider' }).click()
 
   await expect
     .poll(() => bodies)
     .toEqual([
       {
-        name: 'Mailer',
+        name: 'smtp.acme.com',
         isDefault: true,
         maxPerSecond: null,
         maxPerDay: null,
@@ -127,6 +126,24 @@ test('connects an SMTP provider', async () => {
     ])
 })
 
+test('a second provider is the default only when asked, and may be named', async () => {
+  const bodies: unknown[] = []
+  worker.use(list([smtp]), create(bodies))
+  const { screen } = await renderWithRouter(<IntegrationsSection workspaceId={WORKSPACE_ID} />)
+
+  await screen.getByRole('button', { name: 'Connect provider' }).click()
+  const dialog = screen.getByRole('dialog')
+  await dialog.getByRole('button', { name: 'SMTP' }).click()
+  await dialog.getByLabelText(/^SMTP host/).fill('smtp.acme.com')
+  await dialog.getByLabelText(/^From address/).fill('hi@acme.com')
+  await dialog.getByRole('button', { name: 'Advanced settings' }).click()
+  await dialog.getByLabelText(/^Name/).fill(' Mailer ')
+  await dialog.getByLabelText('Set as default').click()
+  await dialog.getByRole('button', { name: 'Connect provider' }).click()
+
+  await expect.poll(() => bodies).toMatchObject([{ name: 'Mailer', isDefault: true }])
+})
+
 test('connects an Amazon SES provider', async () => {
   const bodies: unknown[] = []
   worker.use(list([]), create(bodies))
@@ -134,13 +151,12 @@ test('connects an Amazon SES provider', async () => {
 
   await screen.getByRole('button', { name: 'Connect provider' }).click()
   const dialog = screen.getByRole('dialog')
-  await dialog.getByRole('combobox', { name: 'Provider' }).click()
-  await screen.getByRole('option', { name: 'Amazon SES' }).click()
-  await dialog.getByLabelText(/^Name/).fill('SES')
+  await dialog.getByRole('button', { name: 'Amazon SES' }).click()
   await dialog.getByLabelText(/^AWS region/).fill('eu-west-1')
   await dialog.getByLabelText(/^Access key ID/).fill('AKIA')
   await dialog.getByLabelText(/^Secret access key/).fill('shh')
   await dialog.getByLabelText(/^From address/).fill('hi@acme.com')
+  await dialog.getByRole('button', { name: 'Advanced settings' }).click()
   await dialog.getByLabelText(/^From name/).fill('Acme')
   await dialog.getByRole('button', { name: 'Connect provider' }).click()
 
@@ -148,8 +164,8 @@ test('connects an Amazon SES provider', async () => {
     .poll(() => bodies)
     .toEqual([
       {
-        name: 'SES',
-        isDefault: false,
+        name: 'Amazon SES (eu-west-1)',
+        isDefault: true,
         maxPerSecond: null,
         maxPerDay: null,
         config: {
@@ -238,7 +254,7 @@ test('reports a create failure', async () => {
 
   await screen.getByRole('button', { name: 'Connect provider' }).click()
   const dialog = screen.getByRole('dialog')
-  await dialog.getByLabelText(/^Name/).fill('X')
+  await dialog.getByRole('button', { name: 'SMTP' }).click()
   await dialog.getByLabelText(/^SMTP host/).fill('h')
   await dialog.getByLabelText(/^From address/).fill('a@b.co')
   await dialog.getByRole('button', { name: 'Connect provider' }).click()
@@ -319,16 +335,17 @@ test('connects a provider with send limits', async () => {
 
   await screen.getByRole('button', { name: 'Connect provider' }).click()
   const dialog = screen.getByRole('dialog')
-  await dialog.getByLabelText(/^Name/).fill('Mailer')
+  await dialog.getByRole('button', { name: 'SMTP' }).click()
   await dialog.getByLabelText(/^SMTP host/).fill('smtp.acme.com')
   await dialog.getByLabelText(/^From address/).fill('hi@acme.com')
+  await dialog.getByRole('button', { name: 'Advanced settings' }).click()
   await dialog.getByLabelText('Max per second').fill('5')
   await dialog.getByLabelText('Max per 24 hours').fill('1000')
   await dialog.getByRole('button', { name: 'Connect provider' }).click()
 
   await expect
     .poll(() => bodies)
-    .toMatchObject([{ name: 'Mailer', maxPerSecond: 5, maxPerDay: 1000 }])
+    .toMatchObject([{ name: 'smtp.acme.com', maxPerSecond: 5, maxPerDay: 1000 }])
 })
 
 test('edits only the limits of an existing provider, and a blank clears one', async () => {

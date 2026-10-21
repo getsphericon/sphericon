@@ -919,7 +919,9 @@
     "installStatusTitle": "Installation status",
     "installStatusWaiting": "Waiting for the first event…",
     "integrations": {
+      "advanced": "Advanced settings",
       "archiveError": "Failed to archive provider",
+      "back": "Back",
       "channel": "Channel",
       "create": "Connect provider",
       "createError": "Failed to save provider",
@@ -993,6 +995,10 @@
       "makeDefault": "Set as default",
       "nameLabel": "Name",
       "providerLabel": "Provider",
+      "providers": {
+        "sesHint": "Needs an AWS region and an access key.",
+        "smtpHint": "Any SMTP server."
+      },
       "restoreError": "Failed to restore provider",
       "saved": "Provider saved",
       "secretKept": "Leave blank to keep the stored secret",

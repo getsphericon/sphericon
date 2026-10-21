@@ -4,17 +4,20 @@ import {
   Alert,
   Button,
   Checkbox,
+  Collapse,
   Group,
   Loader,
   Menu,
   Modal,
   NumberInput,
-  Select,
+  Paper,
+  SimpleGrid,
   Stack,
   Switch,
   Text,
   TextInput,
   Title,
+  UnstyledButton,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { useDisclosure } from '@mantine/hooks'
@@ -46,6 +49,8 @@ import { SendLimitModal } from './SendLimitModal.tsx'
 import { SendLimitStatus } from './SendLimitStatus.tsx'
 
 type ProviderKind = 'smtp' | 'ses'
+
+const PROVIDERS: ProviderKind[] = ['ses', 'smtp']
 
 // Flat form state; the provider-specific config object is assembled on submit
 // from whichever fields the selected provider uses.
@@ -82,6 +87,11 @@ const INITIAL_VALUES: IntegrationFormValues = {
   ...NO_LIMITS,
 }
 
+// A provider left unnamed is called after where it sends from.
+function defaultName(values: IntegrationFormValues): string {
+  return values.provider === 'ses' ? `Amazon SES (${values.region.trim()})` : values.host.trim()
+}
+
 function buildConfig(values: IntegrationFormValues): SiteIntegrationConfigInput {
   if (values.provider === 'ses') {
     return {
@@ -108,6 +118,8 @@ function buildConfig(values: IntegrationFormValues): SiteIntegrationConfigInput 
 export function IntegrationsSection({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
   const [createOpened, { open: openCreate, close: closeCreate }] = useDisclosure(false)
+  const [advanced, { toggle: toggleAdvanced, close: closeAdvanced }] = useDisclosure(false)
+  const [chosen, setChosen] = useState(false)
   const role = useCurrentRole(workspaceId)
   const canManageIntegrations = canManage(role)
 
@@ -115,6 +127,9 @@ export function IntegrationsSection({ workspaceId }: { workspaceId: string }) {
   const queryKey = siteIntegrationsListQueryKey({ path: { workspaceId } })
   const integrationsQuery = useQuery(
     siteIntegrationsListOptions({ path: { workspaceId }, query: { archived } }),
+  )
+  const activeQuery = useQuery(
+    siteIntegrationsListOptions({ path: { workspaceId }, query: { archived: false } }),
   )
 
   const validateLimits = useSendLimitValidators()
@@ -125,15 +140,19 @@ export function IntegrationsSection({ workspaceId }: { workspaceId: string }) {
   const [editing, setEditing] = useState<SiteIntegrationResource | null>(null)
   const [inbound, setInbound] = useState<SiteIntegrationResource | null>(null)
 
+  function dismissCreate() {
+    form.reset()
+    setChosen(false)
+    closeAdvanced()
+    closeCreate()
+  }
+
   const createMutation = useResourceMutation({
     mutation: siteIntegrationsCreateMutation(),
     invalidate: [queryKey],
     successMessage: t(($) => $.settings.integrations.saved),
     errorTitle: t(($) => $.settings.integrations.createError),
-    onDone: () => {
-      form.reset()
-      closeCreate()
-    },
+    onDone: dismissCreate,
   })
 
   const archiveMutation = useResourceMutation({
@@ -148,7 +167,19 @@ export function IntegrationsSection({ workspaceId }: { workspaceId: string }) {
     errorTitle: t(($) => $.settings.integrations.restoreError),
   })
 
+  const providerLabels = {
+    ses: {
+      title: 'Amazon SES',
+      hint: t(($) => $.settings.integrations.providers.sesHint),
+    },
+    smtp: {
+      title: 'SMTP',
+      hint: t(($) => $.settings.integrations.providers.smtpHint),
+    },
+  }
   const isSes = form.values.provider === 'ses'
+  // The first provider of a Workspace is its default; later ones ask.
+  const hasActive = (activeQuery.data ?? []).length > 0
   const records = integrationsQuery.data ?? []
   const unlimited = records.filter((record) => record.sendLimit.warnings.includes('unlimited'))
   const quotaUnavailable = records.filter((record) =>
@@ -273,44 +304,27 @@ export function IntegrationsSection({ workspaceId }: { workspaceId: string }) {
       {canManageIntegrations ? (
         <Modal
           opened={createOpened}
-          onClose={closeCreate}
+          onClose={dismissCreate}
           size="lg"
           title={t(($) => $.settings.integrations.create)}
         >
-          <form
-            onSubmit={form.onSubmit((values) =>
-              createMutation.mutate({
-                path: { workspaceId },
-                body: {
-                  name: values.name.trim(),
-                  isDefault: values.isDefault,
-                  maxPerSecond: toLimit(values.maxPerSecond),
-                  maxPerDay: toLimit(values.maxPerDay),
-                  config: buildConfig(values),
-                },
-              }),
-            )}
-          >
-            <Stack>
-              <Group grow>
-                <TextInput
-                  label={t(($) => $.settings.integrations.nameLabel)}
-                  required
-                  {...form.getInputProps('name')}
-                />
-                <Select
-                  label={t(($) => $.settings.integrations.providerLabel)}
-                  data={[
-                    { value: 'smtp', label: 'SMTP' },
-                    { value: 'ses', label: 'Amazon SES' },
-                  ]}
-                  allowDeselect={false}
-                  {...form.getInputProps('provider')}
-                />
-              </Group>
-
-              {isSes ? (
-                <>
+          {chosen ? (
+            <form
+              onSubmit={form.onSubmit((values) =>
+                createMutation.mutate({
+                  path: { workspaceId },
+                  body: {
+                    name: values.name.trim() || defaultName(values),
+                    isDefault: hasActive ? values.isDefault : true,
+                    maxPerSecond: toLimit(values.maxPerSecond),
+                    maxPerDay: toLimit(values.maxPerDay),
+                    config: buildConfig(values),
+                  },
+                }),
+              )}
+            >
+              <Stack>
+                {isSes ? (
                   <Group grow>
                     <TextInput
                       label={t(($) => $.settings.integrations.fields.region)}
@@ -329,70 +343,110 @@ export function IntegrationsSection({ workspaceId }: { workspaceId: string }) {
                       {...form.getInputProps('secretAccessKey')}
                     />
                   </Group>
-                  <TextInput
-                    label={t(($) => $.settings.integrations.fields.endpoint)}
-                    description={t(($) => $.settings.integrations.fields.endpointHint)}
-                    placeholder="https://postbox.cloud.yandex.net"
-                    {...form.getInputProps('endpoint')}
-                  />
-                </>
-              ) : (
-                <>
-                  <Group grow>
-                    <TextInput
-                      label={t(($) => $.settings.integrations.fields.host)}
-                      required
-                      {...form.getInputProps('host')}
-                    />
-                    <NumberInput
-                      label={t(($) => $.settings.integrations.fields.port)}
-                      required
-                      {...form.getInputProps('port')}
-                    />
-                  </Group>
-                  <Group grow>
-                    <TextInput
-                      label={t(($) => $.settings.integrations.fields.username)}
-                      {...form.getInputProps('username')}
-                    />
-                    <TextInput
-                      label={t(($) => $.settings.integrations.fields.password)}
-                      type="password"
-                      {...form.getInputProps('password')}
-                    />
-                  </Group>
-                </>
-              )}
+                ) : (
+                  <>
+                    <Group grow>
+                      <TextInput
+                        label={t(($) => $.settings.integrations.fields.host)}
+                        required
+                        {...form.getInputProps('host')}
+                      />
+                      <NumberInput
+                        label={t(($) => $.settings.integrations.fields.port)}
+                        required
+                        {...form.getInputProps('port')}
+                      />
+                    </Group>
+                    <Group grow>
+                      <TextInput
+                        label={t(($) => $.settings.integrations.fields.username)}
+                        {...form.getInputProps('username')}
+                      />
+                      <TextInput
+                        label={t(($) => $.settings.integrations.fields.password)}
+                        type="password"
+                        {...form.getInputProps('password')}
+                      />
+                    </Group>
+                  </>
+                )}
 
-              <Group grow>
                 <TextInput
                   label={t(($) => $.settings.integrations.fields.from)}
                   required
                   {...form.getInputProps('from')}
                 />
-                <TextInput
-                  label={t(($) => $.settings.integrations.fields.fromName)}
-                  {...form.getInputProps('fromName')}
-                />
-              </Group>
 
-              <SendLimitFields
-                perSecondProps={form.getInputProps('maxPerSecond')}
-                perDayProps={form.getInputProps('maxPerDay')}
-              />
+                <Group>
+                  <Button variant="subtle" onClick={toggleAdvanced}>
+                    {t(($) => $.settings.integrations.advanced)}
+                  </Button>
+                </Group>
+                <Collapse expanded={advanced}>
+                  <Stack>
+                    <Group grow align="flex-start">
+                      <TextInput
+                        label={t(($) => $.settings.integrations.nameLabel)}
+                        placeholder={defaultName(form.values)}
+                        {...form.getInputProps('name')}
+                      />
+                      <TextInput
+                        label={t(($) => $.settings.integrations.fields.fromName)}
+                        {...form.getInputProps('fromName')}
+                      />
+                    </Group>
+                    {isSes ? (
+                      <TextInput
+                        label={t(($) => $.settings.integrations.fields.endpoint)}
+                        description={t(($) => $.settings.integrations.fields.endpointHint)}
+                        placeholder="https://postbox.cloud.yandex.net"
+                        {...form.getInputProps('endpoint')}
+                      />
+                    ) : null}
+                    <SendLimitFields
+                      perSecondProps={form.getInputProps('maxPerSecond')}
+                      perDayProps={form.getInputProps('maxPerDay')}
+                    />
+                    {hasActive ? (
+                      <Checkbox
+                        label={t(($) => $.settings.integrations.makeDefault)}
+                        {...form.getInputProps('isDefault', { type: 'checkbox' })}
+                      />
+                    ) : null}
+                  </Stack>
+                </Collapse>
 
-              <Checkbox
-                label={t(($) => $.settings.integrations.makeDefault)}
-                {...form.getInputProps('isDefault', { type: 'checkbox' })}
-              />
-
-              <Group justify="flex-end">
-                <Button type="submit" loading={createMutation.isPending}>
-                  {t(($) => $.settings.integrations.create)}
-                </Button>
-              </Group>
-            </Stack>
-          </form>
+                <Group justify="space-between">
+                  <Button variant="default" onClick={() => setChosen(false)}>
+                    {t(($) => $.settings.integrations.back)}
+                  </Button>
+                  <Button type="submit" loading={createMutation.isPending}>
+                    {t(($) => $.settings.integrations.create)}
+                  </Button>
+                </Group>
+              </Stack>
+            </form>
+          ) : (
+            <SimpleGrid cols={{ base: 1, sm: 2 }}>
+              {PROVIDERS.map((kind) => (
+                <UnstyledButton
+                  key={kind}
+                  aria-label={providerLabels[kind].title}
+                  onClick={() => {
+                    form.setFieldValue('provider', kind)
+                    setChosen(true)
+                  }}
+                >
+                  <Paper withBorder p="md" h="100%">
+                    <Text fw={600}>{providerLabels[kind].title}</Text>
+                    <Text size="sm" c="dimmed">
+                      {providerLabels[kind].hint}
+                    </Text>
+                  </Paper>
+                </UnstyledButton>
+              ))}
+            </SimpleGrid>
+          )}
         </Modal>
       ) : null}
       <SendLimitModal
