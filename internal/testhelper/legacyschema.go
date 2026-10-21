@@ -13,6 +13,7 @@ import (
 func InsertLegacyWorkspaces(t *testing.T, sqlDB *sql.DB, names ...string) {
 	t.Helper()
 	for _, name := range names {
+		// raw sql: seeds the schema of a past release, whose columns the ent client no longer has.
 		_, err := sqlDB.ExecContext(t.Context(),
 			`INSERT INTO workspaces (name, slug, collect_key, created_at, updated_at) VALUES ($1, $1, $1, now(), now())`, name)
 		require.NoError(t, err)
@@ -32,6 +33,7 @@ func InsertDecidedRecipientWithoutMessage(t *testing.T, sqlDB *sql.DB) {
 		`INSERT INTO broadcast_recipients (id, broadcast_id, contact_id, status, workspace_id, created_at, updated_at)
 		   VALUES (1, 1, 1, 'sent', 1, now(), now()), (2, 1, 2, 'pending', 1, now(), now())`,
 	} {
+		// raw sql: seeds the schema of a past release, whose columns the ent client no longer has.
 		_, err := sqlDB.ExecContext(t.Context(), q)
 		require.NoError(t, err, q)
 	}
@@ -41,6 +43,7 @@ func InsertDecidedRecipientWithoutMessage(t *testing.T, sqlDB *sql.DB) {
 // Outbound message.
 func InsertSentMessageForRecipient(t *testing.T, sqlDB *sql.DB) {
 	t.Helper()
+	// raw sql: seeds the schema of a past release, whose columns the ent client no longer has.
 	_, err := sqlDB.ExecContext(t.Context(),
 		`INSERT INTO outbound_messages (kind, idempotency_key, status, claimed_at, broadcast_id, broadcast_recipient_id, workspace_id, created_at, updated_at)
 		   VALUES ('broadcast', 'broadcast:1', 'sent', now(), 1, 1, 1, now(), now())`)
@@ -53,6 +56,7 @@ func ColumnsOf(t *testing.T, sqlDB *sql.DB, table string, columns ...string) int
 	n := 0
 	for _, column := range columns {
 		var found int
+		// raw sql: reads information_schema, which is not an ent entity.
 		require.NoError(t, sqlDB.QueryRowContext(t.Context(),
 			`SELECT count(*) FROM information_schema.columns WHERE table_name = $1 AND column_name = $2`, table, column).Scan(&found))
 		n += found
@@ -64,6 +68,7 @@ func ColumnsOf(t *testing.T, sqlDB *sql.DB, table string, columns ...string) int
 func ColumnIsNullable(t *testing.T, sqlDB *sql.DB, table, column string) bool {
 	t.Helper()
 	var nullable string
+	// raw sql: reads information_schema, which is not an ent entity.
 	require.NoError(t, sqlDB.QueryRowContext(t.Context(),
 		`SELECT is_nullable FROM information_schema.columns WHERE table_name = $1 AND column_name = $2`, table, column).Scan(&nullable))
 	return nullable == "YES"
@@ -85,6 +90,7 @@ func InsertLegacyAutomations(t *testing.T, sqlDB *sql.DB) {
 		`INSERT INTO automation_runs (id, automation_id, contact_id, workspace_id, created_at, updated_at)
 		   VALUES (1, 1, 1, 1, now(), now()), (2, 2, 1, 1, now(), now()), (3, 2, 2, 1, now(), now())`,
 	} {
+		// raw sql: seeds the schema of a past release, whose columns the ent client no longer has.
 		_, err := sqlDB.ExecContext(t.Context(), q)
 		require.NoError(t, err, q)
 	}

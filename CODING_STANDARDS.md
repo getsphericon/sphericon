@@ -38,6 +38,11 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
 
 ## Database
 
+- **Raw SQL needs its reason (rule 4, analyzer `rawsql`).** A statement run as text (`ExecContext`,
+  `QueryContext`, `QueryRowContext`, `Exec`, `Query`, `QueryRow` on `database/sql`) or a raw fragment
+  in an ent query (`sql.P`, `ExprFunc`, `Expr`, `ExprP`, `Raw`) carries `// raw sql: <why ent cannot
+  express it>` on the line above it or its statement, or trailing. The advisory lock and the Postgres
+  version are written once, in `internal/postgres` (`LockTx`, `ServerMajor`); call those.
 - **Plain tables only: no database functions, triggers, stored procedures or views.** The schema is
   tables, columns, constraints and indexes. Logic that must run on every write (a change log, a
   counter, a derived row) lives in Go: an ent hook (like `internal/workspacefeed` or

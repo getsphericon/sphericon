@@ -45,6 +45,8 @@ func RegisterQueueMetrics(riverDB *sql.DB) (func() error, error) {
 		return nil, fmt.Errorf("queue age gauge: %w", err)
 	}
 	reg, err := meter.RegisterCallback(func(ctx context.Context, o metric.Observer) error {
+		// raw sql: grouped depth and the age of the oldest job from river's own table, over its
+		// pool; no ent client is at hand and ent has no EXTRACT(EPOCH ...).
 		rows, err := riverDB.QueryContext(ctx, queueStatsQuery)
 		if err != nil {
 			return fmt.Errorf("queue stats: %w", err)

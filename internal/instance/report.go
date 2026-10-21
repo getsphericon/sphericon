@@ -2,7 +2,6 @@ package instance
 
 import (
 	"context"
-	"fmt"
 	"runtime"
 	"slices"
 	"time"
@@ -18,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/visitor"
 	telemetryapi "github.com/getsphericon/sphericon/gen/telemetry"
 	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/postgres"
 	"github.com/getsphericon/sphericon/internal/upgrade"
 )
 
@@ -108,7 +108,7 @@ func BuildReport(ctx context.Context, client *ent.Client, host Host, now time.Ti
 	if q.err != nil {
 		return telemetryapi.TelemetryReport{}, q.err
 	}
-	major, err := postgresMajor(ctx, client)
+	major, err := postgres.ServerMajor(ctx, client)
 	if err != nil {
 		return telemetryapi.TelemetryReport{}, err
 	}
@@ -131,7 +131,7 @@ func BuildReport(ctx context.Context, client *ent.Client, host Host, now time.Ti
 		Os:                 host.OS,
 		Arch:               host.Arch,
 		DeployShape:        host.DeployShape,
-		PostgresMajor:      major,
+		PostgresMajor:      int32(major),
 		Locale:             host.Locale,
 		InstanceAgeDays:    max(0, int32(now.Sub(row.CreatedAt)/(24*time.Hour))),
 		Workspaces:         bucket(workspaces),
@@ -185,22 +185,4 @@ func bucket(n int) telemetryapi.OrderOfMagnitude {
 		return telemetryapi.OrderOfMagnitude100000999999
 	}
 	return telemetryapi.OrderOfMagnitude1000000
-}
-
-// postgresMajor is the major version of the Postgres server (server_version_num is
-// major*10000+minor from version 10 on).
-func postgresMajor(ctx context.Context, client *ent.Client) (int32, error) {
-	rows, err := client.QueryContext(ctx, "SHOW server_version_num")
-	if err != nil {
-		return 0, fmt.Errorf("read the Postgres version: %w", err)
-	}
-	defer func() { _ = rows.Close() }()
-	var num int32
-	if !rows.Next() {
-		return 0, fmt.Errorf("read the Postgres version: no row")
-	}
-	if err := rows.Scan(&num); err != nil {
-		return 0, fmt.Errorf("read the Postgres version: %w", err)
-	}
-	return num / 10000, rows.Err()
 }

@@ -578,6 +578,7 @@ func loadFixtures(ctx context.Context, sqlDB *sql.DB, cfg *config.Config, projec
 	// testing/synctest bubble, where time.Now() starts in the year 2000, and every fixture
 	// of the process would be dated around it.
 	var now time.Time
+	// raw sql: the database's clock as a bare value, read before any fixture exists.
 	if err := sqlDB.QueryRowContext(ctx, `SELECT now()`).Scan(&now); err != nil {
 		return err
 	}

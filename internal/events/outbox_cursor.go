@@ -26,6 +26,8 @@ func outboxBefore(transactionID string, offset int64) predicate.OutboxMessage {
 
 func outboxCompare(op, transactionID string, offset int64) predicate.OutboxMessage {
 	return predicate.OutboxMessage(func(s *sql.Selector) {
+		// raw sql: a row-value comparison (transaction_id, id) against an xid8 cursor; ent has no
+		// tuple comparison or xid8 cast.
 		s.Where(sql.P(func(b *sql.Builder) {
 			b.WriteString("(").
 				WriteString(s.C(outboxmessage.FieldTransactionID)).WriteString(", ").

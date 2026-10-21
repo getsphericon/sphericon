@@ -54,6 +54,8 @@ func (w *BackfillAutomationVersionsWorker) Work(ctx context.Context, _ *river.Jo
 // still plan, finding nothing.
 func BackfillAutomationVersions(ctx context.Context, client *ent.Client, batch int) (made, pointed int, err error) {
 	for {
+		// raw sql: INSERT ... SELECT in batches of the dropped definition column, read by name as
+		// JSON; the ent client no longer has that column.
 		n, err := affected(client.ExecContext(ctx, `
 INSERT INTO automation_versions (workspace_id, automation_id, version, steps)
 SELECT a.workspace_id, a.id, 1, COALESCE(to_jsonb(a) ->> 'definition', '[]')
@@ -70,6 +72,7 @@ LIMIT $1`, batch))
 		}
 	}
 	for {
+		// raw sql: a batched UPDATE ... FROM joining another table; ent updates do not join.
 		n, err := affected(client.ExecContext(ctx, `
 UPDATE automation_runs r SET version_id = v.id
 FROM automation_versions v
@@ -95,6 +98,8 @@ WHERE v.automation_id = r.automation_id AND v.version = 1
 // without a scan, the validated check proving it) and drops the check, ending in the shape the
 // ent schema has. Once the column is NOT NULL there is nothing left, so every tick may call it.
 func finishRunVersions(ctx context.Context, client *ent.Client) error {
+	// raw sql: reads information_schema to see whether the migration's constraints are finished;
+	// the catalog is not an ent entity.
 	rows, err := client.QueryContext(ctx, `
 SELECT NOT EXISTS (SELECT 1 FROM automation_runs WHERE version_id IS NULL),
        EXISTS (SELECT 1 FROM information_schema.columns
@@ -122,6 +127,8 @@ SELECT NOT EXISTS (SELECT 1 FROM automation_runs WHERE version_id IS NULL),
 		`ALTER TABLE automation_runs ALTER COLUMN version_id SET NOT NULL`,
 		`ALTER TABLE automation_runs DROP CONSTRAINT automation_runs_version_id_required`,
 	} {
+		// raw sql: the DDL that completes the migration's NOT VALID constraints once the data has
+		// moved (ADR 0033); ent runs no DDL outside a migration.
 		if _, err := client.ExecContext(ctx, stmt); err != nil {
 			return fmt.Errorf("%s: %w", stmt, err)
 		}

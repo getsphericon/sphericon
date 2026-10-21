@@ -106,6 +106,8 @@ func (m *Module) Rates(ctx context.Context, s *ent.Scoped, w Window) ([]DomainRa
 func inWindow(w Window) predicate.Event {
 	return func(s *sql.Selector) {
 		at := "COALESCE(" + s.C(event.FieldOccurredAt) + ", " + s.C(event.FieldCreatedAt) + ")"
+		// raw sql: a range over COALESCE(occurred_at, created_at); ent has no COALESCE operand in a
+		// predicate.
 		s.Where(sql.P(func(b *sql.Builder) {
 			b.WriteString(at)
 			b.WriteOp(sql.OpGTE).Arg(w.Since)

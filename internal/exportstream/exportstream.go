@@ -105,6 +105,8 @@ func Seek(after Cursor) func(*sql.Selector) {
 		if after.IsZero() {
 			return
 		}
+		// raw sql: a keyset row-value comparison (updated_at, id) >= (...); ent has no tuple
+		// comparison.
 		s.Where(sql.P(func(b *sql.Builder) {
 			b.WriteString("(" + s.C("updated_at") + ", " + s.C("id") + ") >= (")
 			b.Arg(after.At)

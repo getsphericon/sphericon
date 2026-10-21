@@ -24,6 +24,7 @@ import (
 	entclient "github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/postgres"
 )
 
 // lockKey is the advisory lock that makes positions commit in the order they are taken:
@@ -212,7 +213,7 @@ func workspacesOf(ctx context.Context, q *entclient.MembershipQuery) ([]int64, e
 // touch gives each Workspace the next position, all of them the same one. The lock is
 // taken first and held to the end of the surrounding transaction.
 func touch(ctx context.Context, c *entclient.Client, workspaceIDs ...int64) error {
-	if _, err := c.ExecContext(ctx, "SELECT pg_advisory_xact_lock($1)", lockKey); err != nil {
+	if err := postgres.LockTx(ctx, c, lockKey); err != nil {
 		return fmt.Errorf("workspace feed lock: %w", err)
 	}
 	// The lock keeps the position unique: no other transaction can take the maximum

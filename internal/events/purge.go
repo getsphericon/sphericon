@@ -62,6 +62,8 @@ func outboxNamesSubject(workspaceID int64, contactID string, lowered []string) p
 			sqljson.ValueEQ(payload, workspaceID, sqljson.Path("workspaceId"), sqljson.Cast("bigint")),
 			sql.Or(
 				sqljson.ValueEQ(payload, contactID, sqljson.Path("data", "contactId")),
+				// raw sql: lower() of a JSON path compared with ANY(array); ent's JSON predicates
+				// have no function over a path.
 				sql.P(func(b *sql.Builder) {
 					b.WriteString("lower(").
 						Join(sqljson.ValuePath(payload, sqljson.Path("data", "email"), sqljson.Unquote(true))).
@@ -115,6 +117,8 @@ func (p *txPublisher) PurgeWebhookJobs(ctx context.Context, workspaceID, contact
 	// the address at data.email. No ent predicate decodes base64 into a JSON document, so
 	// the body match is written by hand; the rest of the selection is ent's.
 	namesSubject := predicate.RiverJob(func(s *sql.Selector) {
+		// raw sql: decodes a base64 JSON string into a document and matches inside it; ent has no
+		// decode or convert_from.
 		s.Where(sql.P(func(b *sql.Builder) {
 			b.WriteString("EXISTS (SELECT 1 FROM (SELECT convert_from(decode(").
 				Join(sqljson.ValuePath(s.C(riverjob.FieldArgs), sqljson.Path(jobkind.DeliverWebhookBodyArg), sqljson.Unquote(true))).

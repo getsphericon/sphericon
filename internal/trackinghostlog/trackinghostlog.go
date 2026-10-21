@@ -27,6 +27,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/trackinghostchange"
+	"github.com/getsphericon/sphericon/internal/postgres"
 )
 
 // lockKey is the advisory lock that makes log ids commit in the order they are taken:
@@ -173,7 +174,7 @@ func record(ctx context.Context, c *entclient.Client, changes ...change) error {
 	if len(logged) == 0 {
 		return nil
 	}
-	if _, err := c.ExecContext(ctx, "SELECT pg_advisory_xact_lock($1)", lockKey); err != nil {
+	if err := postgres.LockTx(ctx, c, lockKey); err != nil {
 		return fmt.Errorf("tracking host log lock: %w", err)
 	}
 	for _, ch := range logged {

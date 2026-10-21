@@ -78,6 +78,8 @@ func Check(ctx context.Context, s *ent.Scoped, channel, dest, source string) (De
 	var reason []string
 	err := s.Suppression().Query().
 		Modify(func(sel *sql.Selector) {
+			// raw sql: one CASE over correlated EXISTS subqueries, selected as a column; ent has no
+			// conditional expression or subquery select.
 			sel.SelectExpr(sql.ExprFunc(func(b *sql.Builder) {
 				b.WriteString("CASE WHEN NOT EXISTS (SELECT 1 FROM ").Ident(workspace.Table).
 					WriteString(" WHERE ").Ident(workspace.FieldID).WriteString(" = ").Arg(s.WorkspaceID()).
@@ -89,6 +91,7 @@ func Check(ctx context.Context, s *ent.Scoped, channel, dest, source string) (De
 				}
 				b.WriteString(" ELSE '' END")
 			}))
+			// raw sql: a constant HAVING turns the select into one group; ent has no HAVING TRUE.
 			sel.Having(sql.P(func(b *sql.Builder) { b.WriteString("TRUE") }))
 		}).
 		Scan(ctx, &reason)
@@ -219,7 +222,10 @@ func layers(r ref, channel, source string) []layer {
 func match(r ref, st store, channel string, extra ...string) *sql.Selector {
 	sub := sql.Select(st.id).From(sql.Table(st.table))
 	conds := []*sql.Predicate{
+		// raw sql: the right side is a column of the outer query (or a bound value) rendered at build
+		// time, a correlation ent predicates cannot name.
 		sql.P(func(b *sql.Builder) { b.WriteString(sub.C(st.workspace)).WriteString(" = "); r.workspace(b) }),
+		// raw sql: the same correlation, on the destination.
 		sql.P(func(b *sql.Builder) { b.WriteString(sub.C(st.destination)).WriteString(" = "); r.destination(b) }),
 		sql.EQ(sub.C(st.channel), channel),
 	}
@@ -234,8 +240,11 @@ func match(r ref, st store, channel string, extra ...string) *sql.Selector {
 
 // requireConfirmed is true when the referenced workspace has confirmed opt-in on.
 func requireConfirmed(r ref) *sql.Predicate {
+	// raw sql: a scalar subquery inside COALESCE used as a predicate; ent has no subquery predicate
+	// over another table.
 	return sql.P(func(b *sql.Builder) {
 		sub := sql.Select(workspace.FieldRequireConfirmedOptIn).From(sql.Table(workspace.Table))
+		// raw sql: correlates the subquery with the outer query's workspace column.
 		sub.Where(sql.P(func(pb *sql.Builder) {
 			pb.WriteString(sub.C(workspace.FieldID)).WriteString(" = ")
 			r.workspace(pb)

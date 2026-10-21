@@ -52,6 +52,8 @@ func PruneEvents(ctx context.Context, client *ent.Client, retention time.Duratio
 // partial index is declared with, so the delete can always use that index.
 func expirable() predicate.Event {
 	return predicate.Event(func(s *sql.Selector) {
+		// raw sql: the text of the partial index's WHERE, so the planner can use that index; an ent
+		// predicate would render differently and miss it.
 		s.Where(sql.P(func(b *sql.Builder) { b.WriteString(schema.ExpirableEventPredicate) }))
 	})
 }

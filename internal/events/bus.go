@@ -135,6 +135,7 @@ func (d *txDriver) Query(ctx context.Context, query string, args, v any) error {
 // ExecContext lets the client's raw ExecContext (ent's sql/execquery) run on the
 // transaction, as internal/workspacefeed needs.
 func (d *txDriver) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
+	// raw sql: forwards the caller's statement to the transaction unchanged; it adds none of its own.
 	return d.conn.ExecContext(ctx, query, args...)
 }
 func (d *txDriver) Tx(context.Context) (dialect.Tx, error) { return nopTx{d.conn}, nil }
