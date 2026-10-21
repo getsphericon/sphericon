@@ -160,7 +160,7 @@ func TestHTTPStepContinuesAfterA2xxSigned(t *testing.T) {
 	r := h.run(runID)
 	assert.Equal(t, automationrun.StatusActive, r.status)
 	assert.Equal(t, 1, r.step, "the Enrollment moved past the HTTP step")
-	assert.Equal(t, []string{jobkind.RunStep}, h.queued(t), "and its next step is queued")
+	assert.Equal(t, []string{jobkind.RunStep.Kind}, h.queued(t), "and its next step is queued")
 }
 
 func TestHTTPStepWithoutASecretIsUnsigned(t *testing.T) {
@@ -278,7 +278,7 @@ func TestHTTPStepRunsOnAQueueOfItsOwn(t *testing.T) {
 	// deliveries, so a slow receiver can only hold its own workers.
 	require.NoError(t, jobs.NewRunStepWorker(h.DB, noFence, newMod(h.TestEnv, resolvingTo(h.sender))).Work(h.workCtx(), job(jobs.RunStepArgs{RunID: runID})))
 
-	listed, err := h.client.River().JobList(context.Background(), river.NewJobListParams().Kinds(jobkind.HTTPStep))
+	listed, err := h.client.River().JobList(context.Background(), river.NewJobListParams().Kinds(jobkind.HTTPStep.Kind))
 	require.NoError(t, err)
 	require.Len(t, listed.Jobs, 1)
 	queued := listed.Jobs[0]

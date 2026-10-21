@@ -15,6 +15,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/visitor"
+	"github.com/getsphericon/sphericon/internal/automations"
+	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/suppression"
 )
@@ -41,6 +43,31 @@ func anonymized(action string) bool {
 		return true
 	}
 	return false
+}
+
+// cancelBroadcastWork has the Broadcast delivery module cancel the Contact's unsent
+// recipients; a Broadcast left with nothing pending settles.
+func cancelBroadcastWork(ctx context.Context, s *ent.Scoped, t *Target, purger events.PurgingPublisher) error {
+	return broadcasts.CancelPending(ctx, s, t.ContactID, purger)
+}
+
+// cancelAutomationWork has the Automation module cancel the queued step calls and trigger
+// evaluations that name the Contact or its runs (a failure's response excerpt sits on the
+// run, which eraseRuns deletes).
+func cancelAutomationWork(ctx context.Context, s *ent.Scoped, t *Target, purger events.PurgingPublisher) error {
+	return automations.CancelPending(ctx, s, t.ContactID, purger)
+}
+
+// purgeOutbox deletes the domain-event outbox rows that name the subject; the bus is the
+// only owner of that table, and the purge shares Erasure's transaction.
+func purgeOutbox(ctx context.Context, s *ent.Scoped, t *Target, purger events.PurgingPublisher) error {
+	return purger.PurgeOutbox(ctx, s.WorkspaceID(), t.ContactID, t.Destinations)
+}
+
+// purgeWebhookDeliveries deletes the queued webhook deliveries whose payload names the
+// subject; the event envelope's owner knows that payload shape.
+func purgeWebhookDeliveries(ctx context.Context, s *ent.Scoped, t *Target, purger events.PurgingPublisher) error {
+	return purger.PurgeWebhookJobs(ctx, s.WorkspaceID(), t.ContactID, t.Destinations)
 }
 
 func visitorOf(contactID int64) predicate.Visitor { return visitor.ContactID(contactID) }

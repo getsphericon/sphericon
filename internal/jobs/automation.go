@@ -25,7 +25,7 @@ type EvaluateTriggerArgs struct {
 	Action      string `json:"action"`
 }
 
-func (EvaluateTriggerArgs) Kind() string { return jobkind.EvaluateTrigger }
+func (EvaluateTriggerArgs) Kind() string { return jobkind.EvaluateTrigger.Kind }
 
 type EvaluateTriggerWorker struct {
 	river.WorkerDefaults[EvaluateTriggerArgs]
@@ -93,7 +93,7 @@ type RunStepArgs struct {
 	RunID int64 `json:"run_id"`
 }
 
-func (RunStepArgs) Kind() string { return jobkind.RunStep }
+func (RunStepArgs) Kind() string { return jobkind.RunStep.Kind }
 
 type RunStepWorker struct {
 	river.WorkerDefaults[RunStepArgs]

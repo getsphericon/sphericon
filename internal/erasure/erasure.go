@@ -129,11 +129,22 @@ func (m *Module) Erase(ctx context.Context, s *ent.Scoped, id Identifier, by Req
 	})
 }
 
-// steps is the ordered erasure. The Contact row goes last: the other steps find the
+// steps is the ordered erasure: first the cancellation of work still queued for the
+// subject, then Erasure's own deletions, then the signal. Each owner of pending work
+// cancels it itself; Erasure only sequences them. A send a worker already handed to the
+// provider is not recalled; one queued but not started finds its row gone and, at the
+// send chokepoint, its Contact gone (ADR 0021).
+//
+// The cancellations come before every step that deletes the rows their ids are read from
+// (the Contact's runs, recipients and the Contact itself) and before the signal, which
+// names no Contact. The Contact row goes last of the deletions: the other steps find the
 // Contact's rows through ids already resolved into the Target.
 func (m *Module) steps() []step {
 	return []step{
-		cancelInFlight,
+		cancelBroadcastWork,
+		cancelAutomationWork,
+		purgeOutbox,
+		purgeWebhookDeliveries,
 		eraseEvents,
 		eraseVisitors,
 		eraseConfirmations,
