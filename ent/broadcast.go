@@ -12,6 +12,8 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/getsphericon/sphericon/ent/broadcast"
+	"github.com/getsphericon/sphericon/ent/integration"
+	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
@@ -70,9 +72,13 @@ type BroadcastEdges struct {
 	Workspace *Workspace `json:"workspace,omitempty"`
 	// Recipients holds the value of the recipients edge.
 	Recipients []*BroadcastRecipient `json:"recipients,omitempty"`
+	// Segment holds the value of the segment edge.
+	Segment *Segment `json:"segment,omitempty"`
+	// Integration holds the value of the integration edge.
+	Integration *Integration `json:"integration,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [4]bool
 }
 
 // WorkspaceOrErr returns the Workspace value or an error if the edge
@@ -93,6 +99,28 @@ func (e BroadcastEdges) RecipientsOrErr() ([]*BroadcastRecipient, error) {
 		return e.Recipients, nil
 	}
 	return nil, &NotLoadedError{edge: "recipients"}
+}
+
+// SegmentOrErr returns the Segment value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e BroadcastEdges) SegmentOrErr() (*Segment, error) {
+	if e.Segment != nil {
+		return e.Segment, nil
+	} else if e.loadedTypes[2] {
+		return nil, &NotFoundError{label: segment.Label}
+	}
+	return nil, &NotLoadedError{edge: "segment"}
+}
+
+// IntegrationOrErr returns the Integration value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e BroadcastEdges) IntegrationOrErr() (*Integration, error) {
+	if e.Integration != nil {
+		return e.Integration, nil
+	} else if e.loadedTypes[3] {
+		return nil, &NotFoundError{label: integration.Label}
+	}
+	return nil, &NotLoadedError{edge: "integration"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -276,6 +304,16 @@ func (_m *Broadcast) QueryWorkspace() *WorkspaceQuery {
 // QueryRecipients queries the "recipients" edge of the Broadcast entity.
 func (_m *Broadcast) QueryRecipients() *BroadcastRecipientQuery {
 	return NewBroadcastClient(_m.config).QueryRecipients(_m)
+}
+
+// QuerySegment queries the "segment" edge of the Broadcast entity.
+func (_m *Broadcast) QuerySegment() *SegmentQuery {
+	return NewBroadcastClient(_m.config).QuerySegment(_m)
+}
+
+// QueryIntegration queries the "integration" edge of the Broadcast entity.
+func (_m *Broadcast) QueryIntegration() *IntegrationQuery {
+	return NewBroadcastClient(_m.config).QueryIntegration(_m)
 }
 
 // Update returns a builder for updating this Broadcast.

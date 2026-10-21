@@ -503,13 +503,13 @@ func ScopedEntities() []ScopedEntity {
 					},
 				},
 				{
-					Name: "segment_id", Target: "Segment",
+					Name: "segment", Target: "Segment",
 					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
 						return s.Broadcast().UpdateOneID(id).SetSegmentID(target).Exec(ctx)
 					},
 				},
 				{
-					Name: "integration_id", Target: "Integration",
+					Name: "integration", Target: "Integration",
 					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
 						return s.Broadcast().UpdateOneID(id).SetIntegrationID(target).Exec(ctx)
 					},

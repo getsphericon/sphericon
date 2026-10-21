@@ -7058,39 +7058,39 @@ func (m *BrandKitMutation) ResetEdge(name string) error {
 // BroadcastMutation represents an operation that mutates the Broadcast nodes in the graph.
 type BroadcastMutation struct {
 	config
-	op                Op
-	typ               string
-	id                *int64
-	created_at        *time.Time
-	updated_at        *time.Time
-	discarded_at      *time.Time
-	name              *string
-	subject           *string
-	from_name         *string
-	from_email        *string
-	body              *string
-	doc               *jsontext.Value
-	appenddoc         jsontext.Value
-	editor_version    *string
-	body_text         *string
-	segment_id        *int64
-	addsegment_id     *int64
-	integration_id    *int64
-	addintegration_id *int64
-	status            *broadcast.Status
-	scheduled_at      *time.Time
-	sent_at           *time.Time
-	hold_reason       *string
-	last_scheduled_at *time.Time
-	clearedFields     map[string]struct{}
-	workspace         *int64
-	clearedworkspace  bool
-	recipients        map[int64]struct{}
-	removedrecipients map[int64]struct{}
-	clearedrecipients bool
-	done              bool
-	oldValue          func(context.Context) (*Broadcast, error)
-	predicates        []predicate.Broadcast
+	op                 Op
+	typ                string
+	id                 *int64
+	created_at         *time.Time
+	updated_at         *time.Time
+	discarded_at       *time.Time
+	name               *string
+	subject            *string
+	from_name          *string
+	from_email         *string
+	body               *string
+	doc                *jsontext.Value
+	appenddoc          jsontext.Value
+	editor_version     *string
+	body_text          *string
+	status             *broadcast.Status
+	scheduled_at       *time.Time
+	sent_at            *time.Time
+	hold_reason        *string
+	last_scheduled_at  *time.Time
+	clearedFields      map[string]struct{}
+	workspace          *int64
+	clearedworkspace   bool
+	recipients         map[int64]struct{}
+	removedrecipients  map[int64]struct{}
+	clearedrecipients  bool
+	segment            *int64
+	clearedsegment     bool
+	integration        *int64
+	clearedintegration bool
+	done               bool
+	oldValue           func(context.Context) (*Broadcast, error)
+	predicates         []predicate.Broadcast
 }
 
 var _ ent.Mutation = (*BroadcastMutation)(nil)
@@ -7712,13 +7712,12 @@ func (m *BroadcastMutation) ResetBodyText() {
 
 // SetSegmentID sets the "segment_id" field.
 func (m *BroadcastMutation) SetSegmentID(i int64) {
-	m.segment_id = &i
-	m.addsegment_id = nil
+	m.segment = &i
 }
 
 // SegmentID returns the value of the "segment_id" field in the mutation.
 func (m *BroadcastMutation) SegmentID() (r int64, exists bool) {
-	v := m.segment_id
+	v := m.segment
 	if v == nil {
 		return
 	}
@@ -7742,28 +7741,9 @@ func (m *BroadcastMutation) OldSegmentID(ctx context.Context) (v *int64, err err
 	return oldValue.SegmentID, nil
 }
 
-// AddSegmentID adds i to the "segment_id" field.
-func (m *BroadcastMutation) AddSegmentID(i int64) {
-	if m.addsegment_id != nil {
-		*m.addsegment_id += i
-	} else {
-		m.addsegment_id = &i
-	}
-}
-
-// AddedSegmentID returns the value that was added to the "segment_id" field in this mutation.
-func (m *BroadcastMutation) AddedSegmentID() (r int64, exists bool) {
-	v := m.addsegment_id
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
 // ClearSegmentID clears the value of the "segment_id" field.
 func (m *BroadcastMutation) ClearSegmentID() {
-	m.segment_id = nil
-	m.addsegment_id = nil
+	m.segment = nil
 	m.clearedFields[broadcast.FieldSegmentID] = struct{}{}
 }
 
@@ -7775,20 +7755,18 @@ func (m *BroadcastMutation) SegmentIDCleared() bool {
 
 // ResetSegmentID resets all changes to the "segment_id" field.
 func (m *BroadcastMutation) ResetSegmentID() {
-	m.segment_id = nil
-	m.addsegment_id = nil
+	m.segment = nil
 	delete(m.clearedFields, broadcast.FieldSegmentID)
 }
 
 // SetIntegrationID sets the "integration_id" field.
 func (m *BroadcastMutation) SetIntegrationID(i int64) {
-	m.integration_id = &i
-	m.addintegration_id = nil
+	m.integration = &i
 }
 
 // IntegrationID returns the value of the "integration_id" field in the mutation.
 func (m *BroadcastMutation) IntegrationID() (r int64, exists bool) {
-	v := m.integration_id
+	v := m.integration
 	if v == nil {
 		return
 	}
@@ -7812,28 +7790,9 @@ func (m *BroadcastMutation) OldIntegrationID(ctx context.Context) (v *int64, err
 	return oldValue.IntegrationID, nil
 }
 
-// AddIntegrationID adds i to the "integration_id" field.
-func (m *BroadcastMutation) AddIntegrationID(i int64) {
-	if m.addintegration_id != nil {
-		*m.addintegration_id += i
-	} else {
-		m.addintegration_id = &i
-	}
-}
-
-// AddedIntegrationID returns the value that was added to the "integration_id" field in this mutation.
-func (m *BroadcastMutation) AddedIntegrationID() (r int64, exists bool) {
-	v := m.addintegration_id
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
 // ClearIntegrationID clears the value of the "integration_id" field.
 func (m *BroadcastMutation) ClearIntegrationID() {
-	m.integration_id = nil
-	m.addintegration_id = nil
+	m.integration = nil
 	m.clearedFields[broadcast.FieldIntegrationID] = struct{}{}
 }
 
@@ -7845,8 +7804,7 @@ func (m *BroadcastMutation) IntegrationIDCleared() bool {
 
 // ResetIntegrationID resets all changes to the "integration_id" field.
 func (m *BroadcastMutation) ResetIntegrationID() {
-	m.integration_id = nil
-	m.addintegration_id = nil
+	m.integration = nil
 	delete(m.clearedFields, broadcast.FieldIntegrationID)
 }
 
@@ -8163,6 +8121,60 @@ func (m *BroadcastMutation) ResetRecipients() {
 	m.removedrecipients = nil
 }
 
+// ClearSegment clears the "segment" edge to the Segment entity.
+func (m *BroadcastMutation) ClearSegment() {
+	m.clearedsegment = true
+	m.clearedFields[broadcast.FieldSegmentID] = struct{}{}
+}
+
+// SegmentCleared reports if the "segment" edge to the Segment entity was cleared.
+func (m *BroadcastMutation) SegmentCleared() bool {
+	return m.SegmentIDCleared() || m.clearedsegment
+}
+
+// SegmentIDs returns the "segment" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// SegmentID instead. It exists only for internal usage by the builders.
+func (m *BroadcastMutation) SegmentIDs() (ids []int64) {
+	if id := m.segment; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetSegment resets all changes to the "segment" edge.
+func (m *BroadcastMutation) ResetSegment() {
+	m.segment = nil
+	m.clearedsegment = false
+}
+
+// ClearIntegration clears the "integration" edge to the Integration entity.
+func (m *BroadcastMutation) ClearIntegration() {
+	m.clearedintegration = true
+	m.clearedFields[broadcast.FieldIntegrationID] = struct{}{}
+}
+
+// IntegrationCleared reports if the "integration" edge to the Integration entity was cleared.
+func (m *BroadcastMutation) IntegrationCleared() bool {
+	return m.IntegrationIDCleared() || m.clearedintegration
+}
+
+// IntegrationIDs returns the "integration" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// IntegrationID instead. It exists only for internal usage by the builders.
+func (m *BroadcastMutation) IntegrationIDs() (ids []int64) {
+	if id := m.integration; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetIntegration resets all changes to the "integration" edge.
+func (m *BroadcastMutation) ResetIntegration() {
+	m.integration = nil
+	m.clearedintegration = false
+}
+
 // Where appends a list predicates to the BroadcastMutation builder.
 func (m *BroadcastMutation) Where(ps ...predicate.Broadcast) {
 	m.predicates = append(m.predicates, ps...)
@@ -8234,10 +8246,10 @@ func (m *BroadcastMutation) Fields() []string {
 	if m.body_text != nil {
 		fields = append(fields, broadcast.FieldBodyText)
 	}
-	if m.segment_id != nil {
+	if m.segment != nil {
 		fields = append(fields, broadcast.FieldSegmentID)
 	}
-	if m.integration_id != nil {
+	if m.integration != nil {
 		fields = append(fields, broadcast.FieldIntegrationID)
 	}
 	if m.status != nil {
@@ -8498,12 +8510,6 @@ func (m *BroadcastMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *BroadcastMutation) AddedFields() []string {
 	var fields []string
-	if m.addsegment_id != nil {
-		fields = append(fields, broadcast.FieldSegmentID)
-	}
-	if m.addintegration_id != nil {
-		fields = append(fields, broadcast.FieldIntegrationID)
-	}
 	return fields
 }
 
@@ -8512,10 +8518,6 @@ func (m *BroadcastMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *BroadcastMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
-	case broadcast.FieldSegmentID:
-		return m.AddedSegmentID()
-	case broadcast.FieldIntegrationID:
-		return m.AddedIntegrationID()
 	}
 	return nil, false
 }
@@ -8525,20 +8527,6 @@ func (m *BroadcastMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *BroadcastMutation) AddField(name string, value ent.Value) error {
 	switch name {
-	case broadcast.FieldSegmentID:
-		v, ok := value.(int64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddSegmentID(v)
-		return nil
-	case broadcast.FieldIntegrationID:
-		v, ok := value.(int64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddIntegrationID(v)
-		return nil
 	}
 	return fmt.Errorf("unknown Broadcast numeric field %s", name)
 }
@@ -8698,12 +8686,18 @@ func (m *BroadcastMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *BroadcastMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 4)
 	if m.workspace != nil {
 		edges = append(edges, broadcast.EdgeWorkspace)
 	}
 	if m.recipients != nil {
 		edges = append(edges, broadcast.EdgeRecipients)
+	}
+	if m.segment != nil {
+		edges = append(edges, broadcast.EdgeSegment)
+	}
+	if m.integration != nil {
+		edges = append(edges, broadcast.EdgeIntegration)
 	}
 	return edges
 }
@@ -8722,13 +8716,21 @@ func (m *BroadcastMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case broadcast.EdgeSegment:
+		if id := m.segment; id != nil {
+			return []ent.Value{*id}
+		}
+	case broadcast.EdgeIntegration:
+		if id := m.integration; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *BroadcastMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 4)
 	if m.removedrecipients != nil {
 		edges = append(edges, broadcast.EdgeRecipients)
 	}
@@ -8751,12 +8753,18 @@ func (m *BroadcastMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *BroadcastMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 4)
 	if m.clearedworkspace {
 		edges = append(edges, broadcast.EdgeWorkspace)
 	}
 	if m.clearedrecipients {
 		edges = append(edges, broadcast.EdgeRecipients)
+	}
+	if m.clearedsegment {
+		edges = append(edges, broadcast.EdgeSegment)
+	}
+	if m.clearedintegration {
+		edges = append(edges, broadcast.EdgeIntegration)
 	}
 	return edges
 }
@@ -8769,6 +8777,10 @@ func (m *BroadcastMutation) EdgeCleared(name string) bool {
 		return m.clearedworkspace
 	case broadcast.EdgeRecipients:
 		return m.clearedrecipients
+	case broadcast.EdgeSegment:
+		return m.clearedsegment
+	case broadcast.EdgeIntegration:
+		return m.clearedintegration
 	}
 	return false
 }
@@ -8779,6 +8791,12 @@ func (m *BroadcastMutation) ClearEdge(name string) error {
 	switch name {
 	case broadcast.EdgeWorkspace:
 		m.ClearWorkspace()
+		return nil
+	case broadcast.EdgeSegment:
+		m.ClearSegment()
+		return nil
+	case broadcast.EdgeIntegration:
+		m.ClearIntegration()
 		return nil
 	}
 	return fmt.Errorf("unknown Broadcast unique edge %s", name)
@@ -8793,6 +8811,12 @@ func (m *BroadcastMutation) ResetEdge(name string) error {
 		return nil
 	case broadcast.EdgeRecipients:
 		m.ResetRecipients()
+		return nil
+	case broadcast.EdgeSegment:
+		m.ResetSegment()
+		return nil
+	case broadcast.EdgeIntegration:
+		m.ResetIntegration()
 		return nil
 	}
 	return fmt.Errorf("unknown Broadcast edge %s", name)

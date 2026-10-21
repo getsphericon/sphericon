@@ -5963,21 +5963,29 @@ func (x *BroadcastScopedCreate) AddRecipients(v ...*BroadcastRecipient) *Broadca
 	return x
 }
 
+// SetSegment sets the "segment" edge to the Segment entity.
+func (x *BroadcastScopedCreate) SetSegment(v *Segment) *BroadcastScopedCreate {
+	x.b.SetSegment(v)
+	return x
+}
+
+// SetIntegration sets the "integration" edge to the Integration entity.
+func (x *BroadcastScopedCreate) SetIntegration(v *Integration) *BroadcastScopedCreate {
+	x.b.SetIntegration(v)
+	return x
+}
+
 func (x *BroadcastScopedCreate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
 	if err := x.s.verifyBroadcastRecipient(ctx, m.RecipientsIDs()); err != nil {
 		return fmt.Errorf("recipients: %w", err)
 	}
-	if v, ok := m.SegmentID(); ok {
-		if err := x.s.verifySegment(ctx, []int64{v}); err != nil {
-			return fmt.Errorf("segment_id: %w", err)
-		}
+	if err := x.s.verifySegment(ctx, m.SegmentIDs()); err != nil {
+		return fmt.Errorf("segment: %w", err)
 	}
-	if v, ok := m.IntegrationID(); ok {
-		if err := x.s.verifyIntegration(ctx, []int64{v}); err != nil {
-			return fmt.Errorf("integration_id: %w", err)
-		}
+	if err := x.s.verifyIntegration(ctx, m.IntegrationIDs()); err != nil {
+		return fmt.Errorf("integration: %w", err)
 	}
 	return nil
 }
@@ -6665,12 +6673,6 @@ func (x *BroadcastScopedUpdateOne) SetNillableSegmentID(v *int64) *BroadcastScop
 	return x
 }
 
-// AddSegmentID adds value to the "segment_id" field.
-func (x *BroadcastScopedUpdateOne) AddSegmentID(v int64) *BroadcastScopedUpdateOne {
-	x.b.AddSegmentID(v)
-	return x
-}
-
 // ClearSegmentID clears the value of the "segment_id" field.
 func (x *BroadcastScopedUpdateOne) ClearSegmentID() *BroadcastScopedUpdateOne {
 	x.b.ClearSegmentID()
@@ -6686,12 +6688,6 @@ func (x *BroadcastScopedUpdateOne) SetIntegrationID(v int64) *BroadcastScopedUpd
 // SetNillableIntegrationID sets the "integration_id" field if the given value is not nil.
 func (x *BroadcastScopedUpdateOne) SetNillableIntegrationID(v *int64) *BroadcastScopedUpdateOne {
 	x.b.SetNillableIntegrationID(v)
-	return x
-}
-
-// AddIntegrationID adds value to the "integration_id" field.
-func (x *BroadcastScopedUpdateOne) AddIntegrationID(v int64) *BroadcastScopedUpdateOne {
-	x.b.AddIntegrationID(v)
 	return x
 }
 
@@ -6815,21 +6811,41 @@ func (x *BroadcastScopedUpdateOne) RemoveRecipients(v ...*BroadcastRecipient) *B
 	return x
 }
 
+// SetSegment sets the "segment" edge to the Segment entity.
+func (x *BroadcastScopedUpdateOne) SetSegment(v *Segment) *BroadcastScopedUpdateOne {
+	x.b.SetSegment(v)
+	return x
+}
+
+// ClearSegment clears the "segment" edge to the Segment entity.
+func (x *BroadcastScopedUpdateOne) ClearSegment() *BroadcastScopedUpdateOne {
+	x.b.ClearSegment()
+	return x
+}
+
+// SetIntegration sets the "integration" edge to the Integration entity.
+func (x *BroadcastScopedUpdateOne) SetIntegration(v *Integration) *BroadcastScopedUpdateOne {
+	x.b.SetIntegration(v)
+	return x
+}
+
+// ClearIntegration clears the "integration" edge to the Integration entity.
+func (x *BroadcastScopedUpdateOne) ClearIntegration() *BroadcastScopedUpdateOne {
+	x.b.ClearIntegration()
+	return x
+}
+
 func (x *BroadcastScopedUpdateOne) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
 	if err := x.s.verifyBroadcastRecipient(ctx, m.RecipientsIDs()); err != nil {
 		return fmt.Errorf("recipients: %w", err)
 	}
-	if v, ok := m.SegmentID(); ok {
-		if err := x.s.verifySegment(ctx, []int64{v}); err != nil {
-			return fmt.Errorf("segment_id: %w", err)
-		}
+	if err := x.s.verifySegment(ctx, m.SegmentIDs()); err != nil {
+		return fmt.Errorf("segment: %w", err)
 	}
-	if v, ok := m.IntegrationID(); ok {
-		if err := x.s.verifyIntegration(ctx, []int64{v}); err != nil {
-			return fmt.Errorf("integration_id: %w", err)
-		}
+	if err := x.s.verifyIntegration(ctx, m.IntegrationIDs()); err != nil {
+		return fmt.Errorf("integration: %w", err)
 	}
 	return nil
 }
@@ -7056,12 +7072,6 @@ func (x *BroadcastScopedUpdate) SetNillableSegmentID(v *int64) *BroadcastScopedU
 	return x
 }
 
-// AddSegmentID adds value to the "segment_id" field.
-func (x *BroadcastScopedUpdate) AddSegmentID(v int64) *BroadcastScopedUpdate {
-	x.b.AddSegmentID(v)
-	return x
-}
-
 // ClearSegmentID clears the value of the "segment_id" field.
 func (x *BroadcastScopedUpdate) ClearSegmentID() *BroadcastScopedUpdate {
 	x.b.ClearSegmentID()
@@ -7077,12 +7087,6 @@ func (x *BroadcastScopedUpdate) SetIntegrationID(v int64) *BroadcastScopedUpdate
 // SetNillableIntegrationID sets the "integration_id" field if the given value is not nil.
 func (x *BroadcastScopedUpdate) SetNillableIntegrationID(v *int64) *BroadcastScopedUpdate {
 	x.b.SetNillableIntegrationID(v)
-	return x
-}
-
-// AddIntegrationID adds value to the "integration_id" field.
-func (x *BroadcastScopedUpdate) AddIntegrationID(v int64) *BroadcastScopedUpdate {
-	x.b.AddIntegrationID(v)
 	return x
 }
 
@@ -7206,21 +7210,41 @@ func (x *BroadcastScopedUpdate) RemoveRecipients(v ...*BroadcastRecipient) *Broa
 	return x
 }
 
+// SetSegment sets the "segment" edge to the Segment entity.
+func (x *BroadcastScopedUpdate) SetSegment(v *Segment) *BroadcastScopedUpdate {
+	x.b.SetSegment(v)
+	return x
+}
+
+// ClearSegment clears the "segment" edge to the Segment entity.
+func (x *BroadcastScopedUpdate) ClearSegment() *BroadcastScopedUpdate {
+	x.b.ClearSegment()
+	return x
+}
+
+// SetIntegration sets the "integration" edge to the Integration entity.
+func (x *BroadcastScopedUpdate) SetIntegration(v *Integration) *BroadcastScopedUpdate {
+	x.b.SetIntegration(v)
+	return x
+}
+
+// ClearIntegration clears the "integration" edge to the Integration entity.
+func (x *BroadcastScopedUpdate) ClearIntegration() *BroadcastScopedUpdate {
+	x.b.ClearIntegration()
+	return x
+}
+
 func (x *BroadcastScopedUpdate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
 	if err := x.s.verifyBroadcastRecipient(ctx, m.RecipientsIDs()); err != nil {
 		return fmt.Errorf("recipients: %w", err)
 	}
-	if v, ok := m.SegmentID(); ok {
-		if err := x.s.verifySegment(ctx, []int64{v}); err != nil {
-			return fmt.Errorf("segment_id: %w", err)
-		}
+	if err := x.s.verifySegment(ctx, m.SegmentIDs()); err != nil {
+		return fmt.Errorf("segment: %w", err)
 	}
-	if v, ok := m.IntegrationID(); ok {
-		if err := x.s.verifyIntegration(ctx, []int64{v}); err != nil {
-			return fmt.Errorf("integration_id: %w", err)
-		}
+	if err := x.s.verifyIntegration(ctx, m.IntegrationIDs()); err != nil {
+		return fmt.Errorf("integration: %w", err)
 	}
 	return nil
 }

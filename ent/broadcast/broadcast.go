@@ -57,6 +57,10 @@ const (
 	EdgeWorkspace = "workspace"
 	// EdgeRecipients holds the string denoting the recipients edge name in mutations.
 	EdgeRecipients = "recipients"
+	// EdgeSegment holds the string denoting the segment edge name in mutations.
+	EdgeSegment = "segment"
+	// EdgeIntegration holds the string denoting the integration edge name in mutations.
+	EdgeIntegration = "integration"
 	// Table holds the table name of the broadcast in the database.
 	Table = "broadcasts"
 	// WorkspaceTable is the table that holds the workspace relation/edge.
@@ -73,6 +77,20 @@ const (
 	RecipientsInverseTable = "broadcast_recipients"
 	// RecipientsColumn is the table column denoting the recipients relation/edge.
 	RecipientsColumn = "broadcast_id"
+	// SegmentTable is the table that holds the segment relation/edge.
+	SegmentTable = "broadcasts"
+	// SegmentInverseTable is the table name for the Segment entity.
+	// It exists in this package in order to avoid circular dependency with the "segment" package.
+	SegmentInverseTable = "segments"
+	// SegmentColumn is the table column denoting the segment relation/edge.
+	SegmentColumn = "segment_id"
+	// IntegrationTable is the table that holds the integration relation/edge.
+	IntegrationTable = "broadcasts"
+	// IntegrationInverseTable is the table name for the Integration entity.
+	// It exists in this package in order to avoid circular dependency with the "integration" package.
+	IntegrationInverseTable = "integrations"
+	// IntegrationColumn is the table column denoting the integration relation/edge.
+	IntegrationColumn = "integration_id"
 )
 
 // Columns holds all SQL columns for broadcast fields.
@@ -273,6 +291,20 @@ func ByRecipients(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newRecipientsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// BySegmentField orders the results by segment field.
+func BySegmentField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newSegmentStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByIntegrationField orders the results by integration field.
+func ByIntegrationField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newIntegrationStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newWorkspaceStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -285,5 +317,19 @@ func newRecipientsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(RecipientsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, RecipientsTable, RecipientsColumn),
+	)
+}
+func newSegmentStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(SegmentInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, SegmentTable, SegmentColumn),
+	)
+}
+func newIntegrationStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(IntegrationInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, IntegrationTable, IntegrationColumn),
 	)
 }

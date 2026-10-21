@@ -15,7 +15,9 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
+	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
@@ -209,7 +211,6 @@ func (_u *BroadcastUpdate) SetNillableBodyText(v *string) *BroadcastUpdate {
 
 // SetSegmentID sets the "segment_id" field.
 func (_u *BroadcastUpdate) SetSegmentID(v int64) *BroadcastUpdate {
-	_u.mutation.ResetSegmentID()
 	_u.mutation.SetSegmentID(v)
 	return _u
 }
@@ -222,12 +223,6 @@ func (_u *BroadcastUpdate) SetNillableSegmentID(v *int64) *BroadcastUpdate {
 	return _u
 }
 
-// AddSegmentID adds value to the "segment_id" field.
-func (_u *BroadcastUpdate) AddSegmentID(v int64) *BroadcastUpdate {
-	_u.mutation.AddSegmentID(v)
-	return _u
-}
-
 // ClearSegmentID clears the value of the "segment_id" field.
 func (_u *BroadcastUpdate) ClearSegmentID() *BroadcastUpdate {
 	_u.mutation.ClearSegmentID()
@@ -236,7 +231,6 @@ func (_u *BroadcastUpdate) ClearSegmentID() *BroadcastUpdate {
 
 // SetIntegrationID sets the "integration_id" field.
 func (_u *BroadcastUpdate) SetIntegrationID(v int64) *BroadcastUpdate {
-	_u.mutation.ResetIntegrationID()
 	_u.mutation.SetIntegrationID(v)
 	return _u
 }
@@ -246,12 +240,6 @@ func (_u *BroadcastUpdate) SetNillableIntegrationID(v *int64) *BroadcastUpdate {
 	if v != nil {
 		_u.SetIntegrationID(*v)
 	}
-	return _u
-}
-
-// AddIntegrationID adds value to the "integration_id" field.
-func (_u *BroadcastUpdate) AddIntegrationID(v int64) *BroadcastUpdate {
-	_u.mutation.AddIntegrationID(v)
 	return _u
 }
 
@@ -375,6 +363,16 @@ func (_u *BroadcastUpdate) AddRecipients(v ...*BroadcastRecipient) *BroadcastUpd
 	return _u.AddRecipientIDs(ids...)
 }
 
+// SetSegment sets the "segment" edge to the Segment entity.
+func (_u *BroadcastUpdate) SetSegment(v *Segment) *BroadcastUpdate {
+	return _u.SetSegmentID(v.ID)
+}
+
+// SetIntegration sets the "integration" edge to the Integration entity.
+func (_u *BroadcastUpdate) SetIntegration(v *Integration) *BroadcastUpdate {
+	return _u.SetIntegrationID(v.ID)
+}
+
 // Mutation returns the BroadcastMutation object of the builder.
 func (_u *BroadcastUpdate) Mutation() *BroadcastMutation {
 	return _u.mutation
@@ -405,6 +403,18 @@ func (_u *BroadcastUpdate) RemoveRecipients(v ...*BroadcastRecipient) *Broadcast
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveRecipientIDs(ids...)
+}
+
+// ClearSegment clears the "segment" edge to the Segment entity.
+func (_u *BroadcastUpdate) ClearSegment() *BroadcastUpdate {
+	_u.mutation.ClearSegment()
+	return _u
+}
+
+// ClearIntegration clears the "integration" edge to the Integration entity.
+func (_u *BroadcastUpdate) ClearIntegration() *BroadcastUpdate {
+	_u.mutation.ClearIntegration()
+	return _u
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -529,24 +539,6 @@ func (_u *BroadcastUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.BodyText(); ok {
 		_spec.SetField(broadcast.FieldBodyText, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.SegmentID(); ok {
-		_spec.SetField(broadcast.FieldSegmentID, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.AddedSegmentID(); ok {
-		_spec.AddField(broadcast.FieldSegmentID, field.TypeInt64, value)
-	}
-	if _u.mutation.SegmentIDCleared() {
-		_spec.ClearField(broadcast.FieldSegmentID, field.TypeInt64)
-	}
-	if value, ok := _u.mutation.IntegrationID(); ok {
-		_spec.SetField(broadcast.FieldIntegrationID, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.AddedIntegrationID(); ok {
-		_spec.AddField(broadcast.FieldIntegrationID, field.TypeInt64, value)
-	}
-	if _u.mutation.IntegrationIDCleared() {
-		_spec.ClearField(broadcast.FieldIntegrationID, field.TypeInt64)
-	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(broadcast.FieldStatus, field.TypeEnum, value)
 	}
@@ -641,6 +633,64 @@ func (_u *BroadcastUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(broadcastrecipient.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.SegmentCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   broadcast.SegmentTable,
+			Columns: []string{broadcast.SegmentColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(segment.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SegmentIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   broadcast.SegmentTable,
+			Columns: []string{broadcast.SegmentColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(segment.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.IntegrationCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   broadcast.IntegrationTable,
+			Columns: []string{broadcast.IntegrationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(integration.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.IntegrationIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   broadcast.IntegrationTable,
+			Columns: []string{broadcast.IntegrationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(integration.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -846,7 +896,6 @@ func (_u *BroadcastUpdateOne) SetNillableBodyText(v *string) *BroadcastUpdateOne
 
 // SetSegmentID sets the "segment_id" field.
 func (_u *BroadcastUpdateOne) SetSegmentID(v int64) *BroadcastUpdateOne {
-	_u.mutation.ResetSegmentID()
 	_u.mutation.SetSegmentID(v)
 	return _u
 }
@@ -859,12 +908,6 @@ func (_u *BroadcastUpdateOne) SetNillableSegmentID(v *int64) *BroadcastUpdateOne
 	return _u
 }
 
-// AddSegmentID adds value to the "segment_id" field.
-func (_u *BroadcastUpdateOne) AddSegmentID(v int64) *BroadcastUpdateOne {
-	_u.mutation.AddSegmentID(v)
-	return _u
-}
-
 // ClearSegmentID clears the value of the "segment_id" field.
 func (_u *BroadcastUpdateOne) ClearSegmentID() *BroadcastUpdateOne {
 	_u.mutation.ClearSegmentID()
@@ -873,7 +916,6 @@ func (_u *BroadcastUpdateOne) ClearSegmentID() *BroadcastUpdateOne {
 
 // SetIntegrationID sets the "integration_id" field.
 func (_u *BroadcastUpdateOne) SetIntegrationID(v int64) *BroadcastUpdateOne {
-	_u.mutation.ResetIntegrationID()
 	_u.mutation.SetIntegrationID(v)
 	return _u
 }
@@ -883,12 +925,6 @@ func (_u *BroadcastUpdateOne) SetNillableIntegrationID(v *int64) *BroadcastUpdat
 	if v != nil {
 		_u.SetIntegrationID(*v)
 	}
-	return _u
-}
-
-// AddIntegrationID adds value to the "integration_id" field.
-func (_u *BroadcastUpdateOne) AddIntegrationID(v int64) *BroadcastUpdateOne {
-	_u.mutation.AddIntegrationID(v)
 	return _u
 }
 
@@ -1012,6 +1048,16 @@ func (_u *BroadcastUpdateOne) AddRecipients(v ...*BroadcastRecipient) *Broadcast
 	return _u.AddRecipientIDs(ids...)
 }
 
+// SetSegment sets the "segment" edge to the Segment entity.
+func (_u *BroadcastUpdateOne) SetSegment(v *Segment) *BroadcastUpdateOne {
+	return _u.SetSegmentID(v.ID)
+}
+
+// SetIntegration sets the "integration" edge to the Integration entity.
+func (_u *BroadcastUpdateOne) SetIntegration(v *Integration) *BroadcastUpdateOne {
+	return _u.SetIntegrationID(v.ID)
+}
+
 // Mutation returns the BroadcastMutation object of the builder.
 func (_u *BroadcastUpdateOne) Mutation() *BroadcastMutation {
 	return _u.mutation
@@ -1042,6 +1088,18 @@ func (_u *BroadcastUpdateOne) RemoveRecipients(v ...*BroadcastRecipient) *Broadc
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveRecipientIDs(ids...)
+}
+
+// ClearSegment clears the "segment" edge to the Segment entity.
+func (_u *BroadcastUpdateOne) ClearSegment() *BroadcastUpdateOne {
+	_u.mutation.ClearSegment()
+	return _u
+}
+
+// ClearIntegration clears the "integration" edge to the Integration entity.
+func (_u *BroadcastUpdateOne) ClearIntegration() *BroadcastUpdateOne {
+	_u.mutation.ClearIntegration()
+	return _u
 }
 
 // Where appends a list predicates to the BroadcastUpdate builder.
@@ -1196,24 +1254,6 @@ func (_u *BroadcastUpdateOne) sqlSave(ctx context.Context) (_node *Broadcast, er
 	if value, ok := _u.mutation.BodyText(); ok {
 		_spec.SetField(broadcast.FieldBodyText, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.SegmentID(); ok {
-		_spec.SetField(broadcast.FieldSegmentID, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.AddedSegmentID(); ok {
-		_spec.AddField(broadcast.FieldSegmentID, field.TypeInt64, value)
-	}
-	if _u.mutation.SegmentIDCleared() {
-		_spec.ClearField(broadcast.FieldSegmentID, field.TypeInt64)
-	}
-	if value, ok := _u.mutation.IntegrationID(); ok {
-		_spec.SetField(broadcast.FieldIntegrationID, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.AddedIntegrationID(); ok {
-		_spec.AddField(broadcast.FieldIntegrationID, field.TypeInt64, value)
-	}
-	if _u.mutation.IntegrationIDCleared() {
-		_spec.ClearField(broadcast.FieldIntegrationID, field.TypeInt64)
-	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(broadcast.FieldStatus, field.TypeEnum, value)
 	}
@@ -1308,6 +1348,64 @@ func (_u *BroadcastUpdateOne) sqlSave(ctx context.Context) (_node *Broadcast, er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(broadcastrecipient.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.SegmentCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   broadcast.SegmentTable,
+			Columns: []string{broadcast.SegmentColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(segment.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SegmentIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   broadcast.SegmentTable,
+			Columns: []string{broadcast.SegmentColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(segment.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.IntegrationCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   broadcast.IntegrationTable,
+			Columns: []string{broadcast.IntegrationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(integration.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.IntegrationIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   broadcast.IntegrationTable,
+			Columns: []string{broadcast.IntegrationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(integration.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

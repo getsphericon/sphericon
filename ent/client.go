@@ -1838,6 +1838,38 @@ func (c *BroadcastClient) QueryRecipients(_m *Broadcast) *BroadcastRecipientQuer
 	return query
 }
 
+// QuerySegment queries the segment edge of a Broadcast.
+func (c *BroadcastClient) QuerySegment(_m *Broadcast) *SegmentQuery {
+	query := (&SegmentClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(broadcast.Table, broadcast.FieldID, id),
+			sqlgraph.To(segment.Table, segment.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, broadcast.SegmentTable, broadcast.SegmentColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryIntegration queries the integration edge of a Broadcast.
+func (c *BroadcastClient) QueryIntegration(_m *Broadcast) *IntegrationQuery {
+	query := (&IntegrationClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(broadcast.Table, broadcast.FieldID, id),
+			sqlgraph.To(integration.Table, integration.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, broadcast.IntegrationTable, broadcast.IntegrationColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *BroadcastClient) Hooks() []Hook {
 	return c.hooks.Broadcast

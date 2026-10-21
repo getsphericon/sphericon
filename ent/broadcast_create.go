@@ -14,6 +14,8 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
+	"github.com/getsphericon/sphericon/ent/integration"
+	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
@@ -293,6 +295,16 @@ func (_c *BroadcastCreate) AddRecipients(v ...*BroadcastRecipient) *BroadcastCre
 	return _c.AddRecipientIDs(ids...)
 }
 
+// SetSegment sets the "segment" edge to the Segment entity.
+func (_c *BroadcastCreate) SetSegment(v *Segment) *BroadcastCreate {
+	return _c.SetSegmentID(v.ID)
+}
+
+// SetIntegration sets the "integration" edge to the Integration entity.
+func (_c *BroadcastCreate) SetIntegration(v *Integration) *BroadcastCreate {
+	return _c.SetIntegrationID(v.ID)
+}
+
 // Mutation returns the BroadcastMutation object of the builder.
 func (_c *BroadcastCreate) Mutation() *BroadcastMutation {
 	return _c.mutation
@@ -470,14 +482,6 @@ func (_c *BroadcastCreate) createSpec() (*Broadcast, *sqlgraph.CreateSpec) {
 		_spec.SetField(broadcast.FieldBodyText, field.TypeString, value)
 		_node.BodyText = value
 	}
-	if value, ok := _c.mutation.SegmentID(); ok {
-		_spec.SetField(broadcast.FieldSegmentID, field.TypeInt64, value)
-		_node.SegmentID = &value
-	}
-	if value, ok := _c.mutation.IntegrationID(); ok {
-		_spec.SetField(broadcast.FieldIntegrationID, field.TypeInt64, value)
-		_node.IntegrationID = &value
-	}
 	if value, ok := _c.mutation.Status(); ok {
 		_spec.SetField(broadcast.FieldStatus, field.TypeEnum, value)
 		_node.Status = value
@@ -529,6 +533,40 @@ func (_c *BroadcastCreate) createSpec() (*Broadcast, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.SegmentIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   broadcast.SegmentTable,
+			Columns: []string{broadcast.SegmentColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(segment.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.SegmentID = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.IntegrationIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   broadcast.IntegrationTable,
+			Columns: []string{broadcast.IntegrationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(integration.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.IntegrationID = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -757,12 +795,6 @@ func (u *BroadcastUpsert) UpdateSegmentID() *BroadcastUpsert {
 	return u
 }
 
-// AddSegmentID adds v to the "segment_id" field.
-func (u *BroadcastUpsert) AddSegmentID(v int64) *BroadcastUpsert {
-	u.Add(broadcast.FieldSegmentID, v)
-	return u
-}
-
 // ClearSegmentID clears the value of the "segment_id" field.
 func (u *BroadcastUpsert) ClearSegmentID() *BroadcastUpsert {
 	u.SetNull(broadcast.FieldSegmentID)
@@ -778,12 +810,6 @@ func (u *BroadcastUpsert) SetIntegrationID(v int64) *BroadcastUpsert {
 // UpdateIntegrationID sets the "integration_id" field to the value that was provided on create.
 func (u *BroadcastUpsert) UpdateIntegrationID() *BroadcastUpsert {
 	u.SetExcluded(broadcast.FieldIntegrationID)
-	return u
-}
-
-// AddIntegrationID adds v to the "integration_id" field.
-func (u *BroadcastUpsert) AddIntegrationID(v int64) *BroadcastUpsert {
-	u.Add(broadcast.FieldIntegrationID, v)
 	return u
 }
 
@@ -1124,13 +1150,6 @@ func (u *BroadcastUpsertOne) SetSegmentID(v int64) *BroadcastUpsertOne {
 	})
 }
 
-// AddSegmentID adds v to the "segment_id" field.
-func (u *BroadcastUpsertOne) AddSegmentID(v int64) *BroadcastUpsertOne {
-	return u.Update(func(s *BroadcastUpsert) {
-		s.AddSegmentID(v)
-	})
-}
-
 // UpdateSegmentID sets the "segment_id" field to the value that was provided on create.
 func (u *BroadcastUpsertOne) UpdateSegmentID() *BroadcastUpsertOne {
 	return u.Update(func(s *BroadcastUpsert) {
@@ -1149,13 +1168,6 @@ func (u *BroadcastUpsertOne) ClearSegmentID() *BroadcastUpsertOne {
 func (u *BroadcastUpsertOne) SetIntegrationID(v int64) *BroadcastUpsertOne {
 	return u.Update(func(s *BroadcastUpsert) {
 		s.SetIntegrationID(v)
-	})
-}
-
-// AddIntegrationID adds v to the "integration_id" field.
-func (u *BroadcastUpsertOne) AddIntegrationID(v int64) *BroadcastUpsertOne {
-	return u.Update(func(s *BroadcastUpsert) {
-		s.AddIntegrationID(v)
 	})
 }
 
@@ -1684,13 +1696,6 @@ func (u *BroadcastUpsertBulk) SetSegmentID(v int64) *BroadcastUpsertBulk {
 	})
 }
 
-// AddSegmentID adds v to the "segment_id" field.
-func (u *BroadcastUpsertBulk) AddSegmentID(v int64) *BroadcastUpsertBulk {
-	return u.Update(func(s *BroadcastUpsert) {
-		s.AddSegmentID(v)
-	})
-}
-
 // UpdateSegmentID sets the "segment_id" field to the value that was provided on create.
 func (u *BroadcastUpsertBulk) UpdateSegmentID() *BroadcastUpsertBulk {
 	return u.Update(func(s *BroadcastUpsert) {
@@ -1709,13 +1714,6 @@ func (u *BroadcastUpsertBulk) ClearSegmentID() *BroadcastUpsertBulk {
 func (u *BroadcastUpsertBulk) SetIntegrationID(v int64) *BroadcastUpsertBulk {
 	return u.Update(func(s *BroadcastUpsert) {
 		s.SetIntegrationID(v)
-	})
-}
-
-// AddIntegrationID adds v to the "integration_id" field.
-func (u *BroadcastUpsertBulk) AddIntegrationID(v int64) *BroadcastUpsertBulk {
-	return u.Update(func(s *BroadcastUpsert) {
-		s.AddIntegrationID(v)
 	})
 }
 

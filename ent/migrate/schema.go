@@ -307,13 +307,13 @@ var (
 		{Name: "doc", Type: field.TypeJSON, Nullable: true},
 		{Name: "editor_version", Type: field.TypeString, Nullable: true},
 		{Name: "body_text", Type: field.TypeString, Default: ""},
-		{Name: "segment_id", Type: field.TypeInt64, Nullable: true},
-		{Name: "integration_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"draft", "scheduled", "sending", "sent", "failed"}, Default: "draft"},
 		{Name: "scheduled_at", Type: field.TypeTime, Nullable: true},
 		{Name: "sent_at", Type: field.TypeTime, Nullable: true},
 		{Name: "hold_reason", Type: field.TypeString, Nullable: true},
 		{Name: "last_scheduled_at", Type: field.TypeTime, Nullable: true},
+		{Name: "segment_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "integration_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
 	// BroadcastsTable holds the schema information for the "broadcasts" table.
@@ -322,6 +322,18 @@ var (
 		Columns:    BroadcastsColumns,
 		PrimaryKey: []*schema.Column{BroadcastsColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "broadcasts_segments_segment",
+				Columns:    []*schema.Column{BroadcastsColumns[17]},
+				RefColumns: []*schema.Column{SegmentsColumns[0]},
+				OnDelete:   schema.Restrict,
+			},
+			{
+				Symbol:     "broadcasts_integrations_integration",
+				Columns:    []*schema.Column{BroadcastsColumns[18]},
+				RefColumns: []*schema.Column{IntegrationsColumns[0]},
+				OnDelete:   schema.Restrict,
+			},
 			{
 				Symbol:     "broadcasts_workspaces_broadcasts",
 				Columns:    []*schema.Column{BroadcastsColumns[19]},
@@ -334,6 +346,16 @@ var (
 				Name:    "broadcast_workspace_id",
 				Unique:  false,
 				Columns: []*schema.Column{BroadcastsColumns[19]},
+			},
+			{
+				Name:    "broadcast_segment_id",
+				Unique:  false,
+				Columns: []*schema.Column{BroadcastsColumns[17]},
+			},
+			{
+				Name:    "broadcast_integration_id",
+				Unique:  false,
+				Columns: []*schema.Column{BroadcastsColumns[18]},
 			},
 		},
 	}
@@ -1769,7 +1791,9 @@ func init() {
 	BrandKitsTable.Annotation = &entsql.Annotation{
 		Table: "brand_kits",
 	}
-	BroadcastsTable.ForeignKeys[0].RefTable = WorkspacesTable
+	BroadcastsTable.ForeignKeys[0].RefTable = SegmentsTable
+	BroadcastsTable.ForeignKeys[1].RefTable = IntegrationsTable
+	BroadcastsTable.ForeignKeys[2].RefTable = WorkspacesTable
 	BroadcastsTable.Annotation = &entsql.Annotation{
 		Table: "broadcasts",
 	}

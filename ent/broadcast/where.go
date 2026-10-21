@@ -805,26 +805,6 @@ func SegmentIDNotIn(vs ...int64) predicate.Broadcast {
 	return predicate.Broadcast(sql.FieldNotIn(FieldSegmentID, vs...))
 }
 
-// SegmentIDGT applies the GT predicate on the "segment_id" field.
-func SegmentIDGT(v int64) predicate.Broadcast {
-	return predicate.Broadcast(sql.FieldGT(FieldSegmentID, v))
-}
-
-// SegmentIDGTE applies the GTE predicate on the "segment_id" field.
-func SegmentIDGTE(v int64) predicate.Broadcast {
-	return predicate.Broadcast(sql.FieldGTE(FieldSegmentID, v))
-}
-
-// SegmentIDLT applies the LT predicate on the "segment_id" field.
-func SegmentIDLT(v int64) predicate.Broadcast {
-	return predicate.Broadcast(sql.FieldLT(FieldSegmentID, v))
-}
-
-// SegmentIDLTE applies the LTE predicate on the "segment_id" field.
-func SegmentIDLTE(v int64) predicate.Broadcast {
-	return predicate.Broadcast(sql.FieldLTE(FieldSegmentID, v))
-}
-
 // SegmentIDIsNil applies the IsNil predicate on the "segment_id" field.
 func SegmentIDIsNil() predicate.Broadcast {
 	return predicate.Broadcast(sql.FieldIsNull(FieldSegmentID))
@@ -853,26 +833,6 @@ func IntegrationIDIn(vs ...int64) predicate.Broadcast {
 // IntegrationIDNotIn applies the NotIn predicate on the "integration_id" field.
 func IntegrationIDNotIn(vs ...int64) predicate.Broadcast {
 	return predicate.Broadcast(sql.FieldNotIn(FieldIntegrationID, vs...))
-}
-
-// IntegrationIDGT applies the GT predicate on the "integration_id" field.
-func IntegrationIDGT(v int64) predicate.Broadcast {
-	return predicate.Broadcast(sql.FieldGT(FieldIntegrationID, v))
-}
-
-// IntegrationIDGTE applies the GTE predicate on the "integration_id" field.
-func IntegrationIDGTE(v int64) predicate.Broadcast {
-	return predicate.Broadcast(sql.FieldGTE(FieldIntegrationID, v))
-}
-
-// IntegrationIDLT applies the LT predicate on the "integration_id" field.
-func IntegrationIDLT(v int64) predicate.Broadcast {
-	return predicate.Broadcast(sql.FieldLT(FieldIntegrationID, v))
-}
-
-// IntegrationIDLTE applies the LTE predicate on the "integration_id" field.
-func IntegrationIDLTE(v int64) predicate.Broadcast {
-	return predicate.Broadcast(sql.FieldLTE(FieldIntegrationID, v))
 }
 
 // IntegrationIDIsNil applies the IsNil predicate on the "integration_id" field.
@@ -1168,6 +1128,52 @@ func HasRecipients() predicate.Broadcast {
 func HasRecipientsWith(preds ...predicate.BroadcastRecipient) predicate.Broadcast {
 	return predicate.Broadcast(func(s *sql.Selector) {
 		step := newRecipientsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasSegment applies the HasEdge predicate on the "segment" edge.
+func HasSegment() predicate.Broadcast {
+	return predicate.Broadcast(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, SegmentTable, SegmentColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasSegmentWith applies the HasEdge predicate on the "segment" edge with a given conditions (other predicates).
+func HasSegmentWith(preds ...predicate.Segment) predicate.Broadcast {
+	return predicate.Broadcast(func(s *sql.Selector) {
+		step := newSegmentStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasIntegration applies the HasEdge predicate on the "integration" edge.
+func HasIntegration() predicate.Broadcast {
+	return predicate.Broadcast(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, IntegrationTable, IntegrationColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasIntegrationWith applies the HasEdge predicate on the "integration" edge with a given conditions (other predicates).
+func HasIntegrationWith(preds ...predicate.Integration) predicate.Broadcast {
+	return predicate.Broadcast(func(s *sql.Selector) {
+		step := newIntegrationStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

@@ -15,20 +15,24 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
+	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
 // BroadcastQuery is the builder for querying Broadcast entities.
 type BroadcastQuery struct {
 	config
-	ctx            *QueryContext
-	order          []broadcast.OrderOption
-	inters         []Interceptor
-	predicates     []predicate.Broadcast
-	withWorkspace  *WorkspaceQuery
-	withRecipients *BroadcastRecipientQuery
-	modifiers      []func(*sql.Selector)
+	ctx             *QueryContext
+	order           []broadcast.OrderOption
+	inters          []Interceptor
+	predicates      []predicate.Broadcast
+	withWorkspace   *WorkspaceQuery
+	withRecipients  *BroadcastRecipientQuery
+	withSegment     *SegmentQuery
+	withIntegration *IntegrationQuery
+	modifiers       []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -102,6 +106,50 @@ func (_q *BroadcastQuery) QueryRecipients() *BroadcastRecipientQuery {
 			sqlgraph.From(broadcast.Table, broadcast.FieldID, selector),
 			sqlgraph.To(broadcastrecipient.Table, broadcastrecipient.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, broadcast.RecipientsTable, broadcast.RecipientsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QuerySegment chains the current query on the "segment" edge.
+func (_q *BroadcastQuery) QuerySegment() *SegmentQuery {
+	query := (&SegmentClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(broadcast.Table, broadcast.FieldID, selector),
+			sqlgraph.To(segment.Table, segment.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, broadcast.SegmentTable, broadcast.SegmentColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryIntegration chains the current query on the "integration" edge.
+func (_q *BroadcastQuery) QueryIntegration() *IntegrationQuery {
+	query := (&IntegrationClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(broadcast.Table, broadcast.FieldID, selector),
+			sqlgraph.To(integration.Table, integration.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, broadcast.IntegrationTable, broadcast.IntegrationColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -296,13 +344,15 @@ func (_q *BroadcastQuery) Clone() *BroadcastQuery {
 		return nil
 	}
 	return &BroadcastQuery{
-		config:         _q.config,
-		ctx:            _q.ctx.Clone(),
-		order:          append([]broadcast.OrderOption{}, _q.order...),
-		inters:         append([]Interceptor{}, _q.inters...),
-		predicates:     append([]predicate.Broadcast{}, _q.predicates...),
-		withWorkspace:  _q.withWorkspace.Clone(),
-		withRecipients: _q.withRecipients.Clone(),
+		config:          _q.config,
+		ctx:             _q.ctx.Clone(),
+		order:           append([]broadcast.OrderOption{}, _q.order...),
+		inters:          append([]Interceptor{}, _q.inters...),
+		predicates:      append([]predicate.Broadcast{}, _q.predicates...),
+		withWorkspace:   _q.withWorkspace.Clone(),
+		withRecipients:  _q.withRecipients.Clone(),
+		withSegment:     _q.withSegment.Clone(),
+		withIntegration: _q.withIntegration.Clone(),
 		// clone intermediate query.
 		sql:       _q.sql.Clone(),
 		path:      _q.path,
@@ -329,6 +379,28 @@ func (_q *BroadcastQuery) WithRecipients(opts ...func(*BroadcastRecipientQuery))
 		opt(query)
 	}
 	_q.withRecipients = query
+	return _q
+}
+
+// WithSegment tells the query-builder to eager-load the nodes that are connected to
+// the "segment" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *BroadcastQuery) WithSegment(opts ...func(*SegmentQuery)) *BroadcastQuery {
+	query := (&SegmentClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withSegment = query
+	return _q
+}
+
+// WithIntegration tells the query-builder to eager-load the nodes that are connected to
+// the "integration" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *BroadcastQuery) WithIntegration(opts ...func(*IntegrationQuery)) *BroadcastQuery {
+	query := (&IntegrationClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withIntegration = query
 	return _q
 }
 
@@ -410,9 +482,11 @@ func (_q *BroadcastQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Br
 	var (
 		nodes       = []*Broadcast{}
 		_spec       = _q.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [4]bool{
 			_q.withWorkspace != nil,
 			_q.withRecipients != nil,
+			_q.withSegment != nil,
+			_q.withIntegration != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -446,6 +520,18 @@ func (_q *BroadcastQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Br
 		if err := _q.loadRecipients(ctx, query, nodes,
 			func(n *Broadcast) { n.Edges.Recipients = []*BroadcastRecipient{} },
 			func(n *Broadcast, e *BroadcastRecipient) { n.Edges.Recipients = append(n.Edges.Recipients, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withSegment; query != nil {
+		if err := _q.loadSegment(ctx, query, nodes, nil,
+			func(n *Broadcast, e *Segment) { n.Edges.Segment = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withIntegration; query != nil {
+		if err := _q.loadIntegration(ctx, query, nodes, nil,
+			func(n *Broadcast, e *Integration) { n.Edges.Integration = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -511,6 +597,70 @@ func (_q *BroadcastQuery) loadRecipients(ctx context.Context, query *BroadcastRe
 	}
 	return nil
 }
+func (_q *BroadcastQuery) loadSegment(ctx context.Context, query *SegmentQuery, nodes []*Broadcast, init func(*Broadcast), assign func(*Broadcast, *Segment)) error {
+	ids := make([]int64, 0, len(nodes))
+	nodeids := make(map[int64][]*Broadcast)
+	for i := range nodes {
+		if nodes[i].SegmentID == nil {
+			continue
+		}
+		fk := *nodes[i].SegmentID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(segment.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "segment_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (_q *BroadcastQuery) loadIntegration(ctx context.Context, query *IntegrationQuery, nodes []*Broadcast, init func(*Broadcast), assign func(*Broadcast, *Integration)) error {
+	ids := make([]int64, 0, len(nodes))
+	nodeids := make(map[int64][]*Broadcast)
+	for i := range nodes {
+		if nodes[i].IntegrationID == nil {
+			continue
+		}
+		fk := *nodes[i].IntegrationID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(integration.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "integration_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
 
 func (_q *BroadcastQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := _q.querySpec()
@@ -542,6 +692,12 @@ func (_q *BroadcastQuery) querySpec() *sqlgraph.QuerySpec {
 		}
 		if _q.withWorkspace != nil {
 			_spec.Node.AddColumnOnce(broadcast.FieldWorkspaceID)
+		}
+		if _q.withSegment != nil {
+			_spec.Node.AddColumnOnce(broadcast.FieldSegmentID)
+		}
+		if _q.withIntegration != nil {
+			_spec.Node.AddColumnOnce(broadcast.FieldIntegrationID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

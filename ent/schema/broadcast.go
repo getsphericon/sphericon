@@ -63,13 +63,11 @@ func (Broadcast) Fields() []ent.Field {
 		// Nil segment_id means "all active contacts in the workspace".
 		field.Int64("segment_id").
 			Optional().
-			Nillable().
-			Annotations(ScopedRef{Entity: "Segment"}),
+			Nillable(),
 		// Nil integration_id means "the workspace default email integration".
 		field.Int64("integration_id").
 			Optional().
-			Nillable().
-			Annotations(ScopedRef{Entity: "Integration"}),
+			Nillable(),
 		field.Enum("status").
 			Values("draft", "scheduled", "sending", "sent", "failed").
 			Default("draft"),
@@ -101,12 +99,25 @@ func (Broadcast) Fields() []ent.Field {
 func (Broadcast) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("recipients", BroadcastRecipient.Type),
+		// A Segment and an Integration are discarded, never deleted (ADR 0049), so a Broadcast's
+		// reference to one always resolves, as history too. Only Workspace erasure purges them,
+		// after the Broadcasts.
+		edge.To("segment", Segment.Type).
+			Field("segment_id").
+			Unique().
+			Annotations(entsql.OnDelete(entsql.Restrict)),
+		edge.To("integration", Integration.Type).
+			Field("integration_id").
+			Unique().
+			Annotations(entsql.OnDelete(entsql.Restrict)),
 	}
 }
 
 func (Broadcast) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("workspace_id"),
+		index.Fields("segment_id"),
+		index.Fields("integration_id"),
 	}
 }
 
