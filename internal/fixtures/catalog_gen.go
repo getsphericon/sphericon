@@ -713,6 +713,14 @@ const (
 	IntegrationGlobexSesNoTopicName = "Globex SES (stored without an SNS topic)"
 	// IntegrationGlobexSesNoTopicProvider is from fixtures/integrations.
 	IntegrationGlobexSesNoTopicProvider = "ses"
+	// IntegrationUmbrellaDefaultID is from fixtures/integrations.
+	IntegrationUmbrellaDefaultID = 910
+	// IntegrationUmbrellaDefaultIngestKey is from fixtures/integrations.
+	IntegrationUmbrellaDefaultIngestKey = "omik_test_integrationumbrelladefault"
+	// IntegrationUmbrellaDefaultName is from fixtures/integrations.
+	IntegrationUmbrellaDefaultName = "Umbrella SMTP"
+	// IntegrationUmbrellaDefaultProvider is from fixtures/integrations.
+	IntegrationUmbrellaDefaultProvider = "smtp"
 	// InvitationAcmeAliceMemberEmail is from fixtures/invitations.
 	InvitationAcmeAliceMemberEmail = "alice@acme.test"
 	// InvitationAcmeAliceMemberID is from fixtures/invitations.

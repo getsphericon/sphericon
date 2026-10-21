@@ -3,14 +3,11 @@ package site_test
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/ent/automation"
-	"github.com/getsphericon/sphericon/ent/broadcast"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -83,35 +80,39 @@ func TestSiteIntegrationsArchiveAndRestore(t *testing.T) {
 }
 
 // Archiving the default Integration clears its default flag, and restoring it does not give the
-// flag back: the channel is left with no default until someone picks one.
+// flag back: the channel is left with no default until someone picks one. Umbrella has no live
+// Broadcast or Automation, so nothing refuses the archive. Sam is the Umbrella admin whose
+// Second factor satisfies its Two-factor requirement.
 func TestSiteIntegrationsArchivingTheDefaultClearsItAndRestoreDoesNotReturnIt(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	c := env.SiteActor(t, fixtures.SecondFactorSamEmail)
 	ctx := context.Background()
-	acme := env.DB.Scoped(fixtures.AcmeID)
-	id := int64(fixtures.IntegrationAcmeDefaultID)
+	id := idStr(fixtures.IntegrationUmbrellaDefaultID)
+	const workspace = fixtures.UmbrellaPublicID
 
-	// Only history uses the default now: finished Broadcasts, and no active Automation.
-	_, err := acme.Broadcast().Update().Where(broadcast.StatusIn(broadcast.StatusScheduled, broadcast.StatusSending)).SetStatus(broadcast.StatusSent).SetSentAt(time.Now()).Save(ctx)
+	out, err := c.SiteIntegrationsArchive(ctx, siteapi.SiteIntegrationsArchiveParams{WorkspaceId: workspace, ID: id})
 	require.NoError(t, err)
-	_, err = acme.Automation().Update().SetStatus(automation.StatusDraft).Save(ctx)
-	require.NoError(t, err)
-
-	archived, ok := archiveIntegration(t, c, id).(*siteapi.SiteIntegrationResource)
-	require.True(t, ok)
+	archived, ok := out.(*siteapi.SiteIntegrationResource)
+	require.Truef(t, ok, "got %T", out)
 	assert.False(t, archived.IsDefault)
 	assert.True(t, archived.ArchivedAt.IsSet())
 
-	restored, ok := unarchiveIntegration(t, c, id).(*siteapi.SiteIntegrationResource)
-	require.True(t, ok)
+	back, err := c.SiteIntegrationsUnarchive(ctx, siteapi.SiteIntegrationsUnarchiveParams{WorkspaceId: workspace, ID: id})
+	require.NoError(t, err)
+	restored, ok := back.(*siteapi.SiteIntegrationResource)
+	require.Truef(t, ok, "got %T", back)
 	assert.False(t, restored.IsDefault, "restoring never makes an Integration the default again")
-	for _, i := range listIntegrations(t, c, false) {
-		assert.Falsef(t, i.IsDefault, "integration %d", i.ID)
-	}
+
+	listed, err := c.SiteIntegrationsList(ctx, siteapi.SiteIntegrationsListParams{WorkspaceId: workspace})
+	require.NoError(t, err)
+	list, ok := listed.(*siteapi.SiteIntegrationsListOKApplicationJSON)
+	require.Truef(t, ok, "got %T", listed)
+	defaults := lo.Filter(*list, func(i siteapi.SiteIntegrationResource, _ int) bool { return i.IsDefault })
+	assert.Empty(t, defaults)
 
 	// The restored Integration can be promoted by hand.
 	promoted, err := c.SiteIntegrationsUpdate(ctx, &siteapi.SiteUpdateIntegrationInput{IsDefault: siteapi.NewOptBool(true)},
-		siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(id)})
+		siteapi.SiteIntegrationsUpdateParams{WorkspaceId: workspace, ID: id})
 	require.NoError(t, err)
 	assert.True(t, promoted.(*siteapi.SiteIntegrationResource).IsDefault)
 }
