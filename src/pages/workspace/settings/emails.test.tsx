@@ -8,11 +8,11 @@ import {
   handleSiteSuppressionsList,
   handleSiteWorkspacesList,
 } from '../../../generated/site/msw.gen.ts'
-import { Route as sendingRoute } from '../../../routes/workspaces/$workspaceId/settings/sending.tsx'
+import { Route as emailsRoute } from '../../../routes/workspaces/$workspaceId/settings/emails.tsx'
 import { renderWithRouter } from '../../../test/renderWithRouter.tsx'
 import { routeMount } from '../../../test/routeMount.ts'
 import { worker } from '../../../test/worker.ts'
-import { SendingPage } from './sending.tsx'
+import { EmailsPage } from './emails.tsx'
 
 const workspace = {
   id: 'TestWs01',
@@ -61,8 +61,8 @@ test('shows the providers, the sending domains and the suppression list', async 
   )
 
   const { screen } = await renderWithRouter(
-    <SendingPage />,
-    routeMount(sendingRoute, { workspaceId: 'TestWs01' }),
+    <EmailsPage />,
+    routeMount(emailsRoute, { workspaceId: 'TestWs01' }),
   )
 
   await expect.element(screen.getByRole('heading', { name: 'Providers' })).toBeInTheDocument()

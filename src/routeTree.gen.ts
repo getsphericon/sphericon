@@ -35,6 +35,7 @@ import { Route as WorkspacesNewRouteImport } from './routes/workspaces/new'
 import { Route as ConsoleAuthedIndexRouteImport } from './routes/console/_authed/index'
 import { Route as WorkspacesWorkspaceIdIndexRouteImport } from './routes/workspaces/$workspaceId/index'
 import { Route as WorkspacesWorkspaceIdActivityRouteImport } from './routes/workspaces/$workspaceId/activity'
+import { Route as WorkspacesWorkspaceIdAnalyticsRouteImport } from './routes/workspaces/$workspaceId/analytics'
 import { Route as WorkspacesWorkspaceIdSettingsRouteRouteImport } from './routes/workspaces/$workspaceId/settings/route'
 import { Route as ConsoleAuthedWorkspacesWorkspaceIdRouteImport } from './routes/console/_authed/workspaces.$workspaceId'
 import { Route as WorkspacesWorkspaceIdAutomationsIndexRouteImport } from './routes/workspaces/$workspaceId/automations/index'
@@ -45,10 +46,11 @@ import { Route as WorkspacesWorkspaceIdContactsIndexRouteImport } from './routes
 import { Route as WorkspacesWorkspaceIdSegmentsIndexRouteImport } from './routes/workspaces/$workspaceId/segments/index'
 import { Route as WorkspacesWorkspaceIdSegmentsNewRouteImport } from './routes/workspaces/$workspaceId/segments/new'
 import { Route as WorkspacesWorkspaceIdSettingsIndexRouteImport } from './routes/workspaces/$workspaceId/settings/index'
+import { Route as WorkspacesWorkspaceIdSettingsAuditLogRouteImport } from './routes/workspaces/$workspaceId/settings/audit-log'
 import { Route as WorkspacesWorkspaceIdSettingsDevelopersRouteImport } from './routes/workspaces/$workspaceId/settings/developers'
+import { Route as WorkspacesWorkspaceIdSettingsEmailsRouteImport } from './routes/workspaces/$workspaceId/settings/emails'
 import { Route as WorkspacesWorkspaceIdSettingsMcpRouteImport } from './routes/workspaces/$workspaceId/settings/mcp'
 import { Route as WorkspacesWorkspaceIdSettingsPrivacyRouteImport } from './routes/workspaces/$workspaceId/settings/privacy'
-import { Route as WorkspacesWorkspaceIdSettingsSendingRouteImport } from './routes/workspaces/$workspaceId/settings/sending'
 import { Route as WorkspacesWorkspaceIdSettingsTeamRouteImport } from './routes/workspaces/$workspaceId/settings/team'
 import { Route as WorkspacesWorkspaceIdSettingsTrackingRouteImport } from './routes/workspaces/$workspaceId/settings/tracking'
 import { Route as WorkspacesWorkspaceIdTemplatesIndexRouteImport } from './routes/workspaces/$workspaceId/templates/index'
@@ -194,6 +196,12 @@ const WorkspacesWorkspaceIdActivityRoute =
     path: '/activity',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
   } as any)
+const WorkspacesWorkspaceIdAnalyticsRoute =
+  WorkspacesWorkspaceIdAnalyticsRouteImport.update({
+    id: '/analytics',
+    path: '/analytics',
+    getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
+  } as any)
 const WorkspacesWorkspaceIdSettingsRouteRoute =
   WorkspacesWorkspaceIdSettingsRouteRouteImport.update({
     id: '/settings',
@@ -254,10 +262,22 @@ const WorkspacesWorkspaceIdSettingsIndexRoute =
     path: '/',
     getParentRoute: () => WorkspacesWorkspaceIdSettingsRouteRoute,
   } as any)
+const WorkspacesWorkspaceIdSettingsAuditLogRoute =
+  WorkspacesWorkspaceIdSettingsAuditLogRouteImport.update({
+    id: '/audit-log',
+    path: '/audit-log',
+    getParentRoute: () => WorkspacesWorkspaceIdSettingsRouteRoute,
+  } as any)
 const WorkspacesWorkspaceIdSettingsDevelopersRoute =
   WorkspacesWorkspaceIdSettingsDevelopersRouteImport.update({
     id: '/developers',
     path: '/developers',
+    getParentRoute: () => WorkspacesWorkspaceIdSettingsRouteRoute,
+  } as any)
+const WorkspacesWorkspaceIdSettingsEmailsRoute =
+  WorkspacesWorkspaceIdSettingsEmailsRouteImport.update({
+    id: '/emails',
+    path: '/emails',
     getParentRoute: () => WorkspacesWorkspaceIdSettingsRouteRoute,
   } as any)
 const WorkspacesWorkspaceIdSettingsMcpRoute =
@@ -270,12 +290,6 @@ const WorkspacesWorkspaceIdSettingsPrivacyRoute =
   WorkspacesWorkspaceIdSettingsPrivacyRouteImport.update({
     id: '/privacy',
     path: '/privacy',
-    getParentRoute: () => WorkspacesWorkspaceIdSettingsRouteRoute,
-  } as any)
-const WorkspacesWorkspaceIdSettingsSendingRoute =
-  WorkspacesWorkspaceIdSettingsSendingRouteImport.update({
-    id: '/sending',
-    path: '/sending',
     getParentRoute: () => WorkspacesWorkspaceIdSettingsRouteRoute,
   } as any)
 const WorkspacesWorkspaceIdSettingsTeamRoute =
@@ -376,16 +390,18 @@ export interface FileRoutesByFullPath {
   '/account/': typeof AccountIndexRoute
   '/workspaces/$workspaceId/settings': typeof WorkspacesWorkspaceIdSettingsRouteRouteWithChildren
   '/workspaces/$workspaceId/activity': typeof WorkspacesWorkspaceIdActivityRoute
+  '/workspaces/$workspaceId/analytics': typeof WorkspacesWorkspaceIdAnalyticsRoute
   '/console/': typeof ConsoleAuthedIndexRoute
   '/workspaces/$workspaceId/': typeof WorkspacesWorkspaceIdIndexRoute
   '/console/workspaces/$workspaceId': typeof ConsoleAuthedWorkspacesWorkspaceIdRoute
   '/workspaces/$workspaceId/automations/new': typeof WorkspacesWorkspaceIdAutomationsNewRoute
   '/workspaces/$workspaceId/broadcasts/new': typeof WorkspacesWorkspaceIdBroadcastsNewRoute
   '/workspaces/$workspaceId/segments/new': typeof WorkspacesWorkspaceIdSegmentsNewRoute
+  '/workspaces/$workspaceId/settings/audit-log': typeof WorkspacesWorkspaceIdSettingsAuditLogRoute
   '/workspaces/$workspaceId/settings/developers': typeof WorkspacesWorkspaceIdSettingsDevelopersRoute
+  '/workspaces/$workspaceId/settings/emails': typeof WorkspacesWorkspaceIdSettingsEmailsRoute
   '/workspaces/$workspaceId/settings/mcp': typeof WorkspacesWorkspaceIdSettingsMcpRoute
   '/workspaces/$workspaceId/settings/privacy': typeof WorkspacesWorkspaceIdSettingsPrivacyRoute
-  '/workspaces/$workspaceId/settings/sending': typeof WorkspacesWorkspaceIdSettingsSendingRoute
   '/workspaces/$workspaceId/settings/team': typeof WorkspacesWorkspaceIdSettingsTeamRoute
   '/workspaces/$workspaceId/settings/tracking': typeof WorkspacesWorkspaceIdSettingsTrackingRoute
   '/workspaces/$workspaceId/templates/new': typeof WorkspacesWorkspaceIdTemplatesNewRoute
@@ -426,15 +442,17 @@ export interface FileRoutesByTo {
   '/workspaces/new': typeof WorkspacesNewRoute
   '/account': typeof AccountIndexRoute
   '/workspaces/$workspaceId/activity': typeof WorkspacesWorkspaceIdActivityRoute
+  '/workspaces/$workspaceId/analytics': typeof WorkspacesWorkspaceIdAnalyticsRoute
   '/workspaces/$workspaceId': typeof WorkspacesWorkspaceIdIndexRoute
   '/console/workspaces/$workspaceId': typeof ConsoleAuthedWorkspacesWorkspaceIdRoute
   '/workspaces/$workspaceId/automations/new': typeof WorkspacesWorkspaceIdAutomationsNewRoute
   '/workspaces/$workspaceId/broadcasts/new': typeof WorkspacesWorkspaceIdBroadcastsNewRoute
   '/workspaces/$workspaceId/segments/new': typeof WorkspacesWorkspaceIdSegmentsNewRoute
+  '/workspaces/$workspaceId/settings/audit-log': typeof WorkspacesWorkspaceIdSettingsAuditLogRoute
   '/workspaces/$workspaceId/settings/developers': typeof WorkspacesWorkspaceIdSettingsDevelopersRoute
+  '/workspaces/$workspaceId/settings/emails': typeof WorkspacesWorkspaceIdSettingsEmailsRoute
   '/workspaces/$workspaceId/settings/mcp': typeof WorkspacesWorkspaceIdSettingsMcpRoute
   '/workspaces/$workspaceId/settings/privacy': typeof WorkspacesWorkspaceIdSettingsPrivacyRoute
-  '/workspaces/$workspaceId/settings/sending': typeof WorkspacesWorkspaceIdSettingsSendingRoute
   '/workspaces/$workspaceId/settings/team': typeof WorkspacesWorkspaceIdSettingsTeamRoute
   '/workspaces/$workspaceId/settings/tracking': typeof WorkspacesWorkspaceIdSettingsTrackingRoute
   '/workspaces/$workspaceId/templates/new': typeof WorkspacesWorkspaceIdTemplatesNewRoute
@@ -480,16 +498,18 @@ export interface FileRoutesById {
   '/account/': typeof AccountIndexRoute
   '/workspaces/$workspaceId/settings': typeof WorkspacesWorkspaceIdSettingsRouteRouteWithChildren
   '/workspaces/$workspaceId/activity': typeof WorkspacesWorkspaceIdActivityRoute
+  '/workspaces/$workspaceId/analytics': typeof WorkspacesWorkspaceIdAnalyticsRoute
   '/console/_authed/': typeof ConsoleAuthedIndexRoute
   '/workspaces/$workspaceId/': typeof WorkspacesWorkspaceIdIndexRoute
   '/console/_authed/workspaces/$workspaceId': typeof ConsoleAuthedWorkspacesWorkspaceIdRoute
   '/workspaces/$workspaceId/automations/new': typeof WorkspacesWorkspaceIdAutomationsNewRoute
   '/workspaces/$workspaceId/broadcasts/new': typeof WorkspacesWorkspaceIdBroadcastsNewRoute
   '/workspaces/$workspaceId/segments/new': typeof WorkspacesWorkspaceIdSegmentsNewRoute
+  '/workspaces/$workspaceId/settings/audit-log': typeof WorkspacesWorkspaceIdSettingsAuditLogRoute
   '/workspaces/$workspaceId/settings/developers': typeof WorkspacesWorkspaceIdSettingsDevelopersRoute
+  '/workspaces/$workspaceId/settings/emails': typeof WorkspacesWorkspaceIdSettingsEmailsRoute
   '/workspaces/$workspaceId/settings/mcp': typeof WorkspacesWorkspaceIdSettingsMcpRoute
   '/workspaces/$workspaceId/settings/privacy': typeof WorkspacesWorkspaceIdSettingsPrivacyRoute
-  '/workspaces/$workspaceId/settings/sending': typeof WorkspacesWorkspaceIdSettingsSendingRoute
   '/workspaces/$workspaceId/settings/team': typeof WorkspacesWorkspaceIdSettingsTeamRoute
   '/workspaces/$workspaceId/settings/tracking': typeof WorkspacesWorkspaceIdSettingsTrackingRoute
   '/workspaces/$workspaceId/templates/new': typeof WorkspacesWorkspaceIdTemplatesNewRoute
@@ -535,16 +555,18 @@ export interface FileRouteTypes {
     | '/account/'
     | '/workspaces/$workspaceId/settings'
     | '/workspaces/$workspaceId/activity'
+    | '/workspaces/$workspaceId/analytics'
     | '/console/'
     | '/workspaces/$workspaceId/'
     | '/console/workspaces/$workspaceId'
     | '/workspaces/$workspaceId/automations/new'
     | '/workspaces/$workspaceId/broadcasts/new'
     | '/workspaces/$workspaceId/segments/new'
+    | '/workspaces/$workspaceId/settings/audit-log'
     | '/workspaces/$workspaceId/settings/developers'
+    | '/workspaces/$workspaceId/settings/emails'
     | '/workspaces/$workspaceId/settings/mcp'
     | '/workspaces/$workspaceId/settings/privacy'
-    | '/workspaces/$workspaceId/settings/sending'
     | '/workspaces/$workspaceId/settings/team'
     | '/workspaces/$workspaceId/settings/tracking'
     | '/workspaces/$workspaceId/templates/new'
@@ -585,15 +607,17 @@ export interface FileRouteTypes {
     | '/workspaces/new'
     | '/account'
     | '/workspaces/$workspaceId/activity'
+    | '/workspaces/$workspaceId/analytics'
     | '/workspaces/$workspaceId'
     | '/console/workspaces/$workspaceId'
     | '/workspaces/$workspaceId/automations/new'
     | '/workspaces/$workspaceId/broadcasts/new'
     | '/workspaces/$workspaceId/segments/new'
+    | '/workspaces/$workspaceId/settings/audit-log'
     | '/workspaces/$workspaceId/settings/developers'
+    | '/workspaces/$workspaceId/settings/emails'
     | '/workspaces/$workspaceId/settings/mcp'
     | '/workspaces/$workspaceId/settings/privacy'
-    | '/workspaces/$workspaceId/settings/sending'
     | '/workspaces/$workspaceId/settings/team'
     | '/workspaces/$workspaceId/settings/tracking'
     | '/workspaces/$workspaceId/templates/new'
@@ -638,16 +662,18 @@ export interface FileRouteTypes {
     | '/account/'
     | '/workspaces/$workspaceId/settings'
     | '/workspaces/$workspaceId/activity'
+    | '/workspaces/$workspaceId/analytics'
     | '/console/_authed/'
     | '/workspaces/$workspaceId/'
     | '/console/_authed/workspaces/$workspaceId'
     | '/workspaces/$workspaceId/automations/new'
     | '/workspaces/$workspaceId/broadcasts/new'
     | '/workspaces/$workspaceId/segments/new'
+    | '/workspaces/$workspaceId/settings/audit-log'
     | '/workspaces/$workspaceId/settings/developers'
+    | '/workspaces/$workspaceId/settings/emails'
     | '/workspaces/$workspaceId/settings/mcp'
     | '/workspaces/$workspaceId/settings/privacy'
-    | '/workspaces/$workspaceId/settings/sending'
     | '/workspaces/$workspaceId/settings/team'
     | '/workspaces/$workspaceId/settings/tracking'
     | '/workspaces/$workspaceId/templates/new'
@@ -871,6 +897,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspacesWorkspaceIdActivityRouteImport
       parentRoute: typeof WorkspacesWorkspaceIdRouteRoute
     }
+    '/workspaces/$workspaceId/analytics': {
+      id: '/workspaces/$workspaceId/analytics'
+      path: '/analytics'
+      fullPath: '/workspaces/$workspaceId/analytics'
+      preLoaderRoute: typeof WorkspacesWorkspaceIdAnalyticsRouteImport
+      parentRoute: typeof WorkspacesWorkspaceIdRouteRoute
+    }
     '/workspaces/$workspaceId/settings': {
       id: '/workspaces/$workspaceId/settings'
       path: '/settings'
@@ -941,11 +974,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspacesWorkspaceIdSettingsIndexRouteImport
       parentRoute: typeof WorkspacesWorkspaceIdSettingsRouteRoute
     }
+    '/workspaces/$workspaceId/settings/audit-log': {
+      id: '/workspaces/$workspaceId/settings/audit-log'
+      path: '/audit-log'
+      fullPath: '/workspaces/$workspaceId/settings/audit-log'
+      preLoaderRoute: typeof WorkspacesWorkspaceIdSettingsAuditLogRouteImport
+      parentRoute: typeof WorkspacesWorkspaceIdSettingsRouteRoute
+    }
     '/workspaces/$workspaceId/settings/developers': {
       id: '/workspaces/$workspaceId/settings/developers'
       path: '/developers'
       fullPath: '/workspaces/$workspaceId/settings/developers'
       preLoaderRoute: typeof WorkspacesWorkspaceIdSettingsDevelopersRouteImport
+      parentRoute: typeof WorkspacesWorkspaceIdSettingsRouteRoute
+    }
+    '/workspaces/$workspaceId/settings/emails': {
+      id: '/workspaces/$workspaceId/settings/emails'
+      path: '/emails'
+      fullPath: '/workspaces/$workspaceId/settings/emails'
+      preLoaderRoute: typeof WorkspacesWorkspaceIdSettingsEmailsRouteImport
       parentRoute: typeof WorkspacesWorkspaceIdSettingsRouteRoute
     }
     '/workspaces/$workspaceId/settings/mcp': {
@@ -960,13 +1007,6 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/workspaces/$workspaceId/settings/privacy'
       preLoaderRoute: typeof WorkspacesWorkspaceIdSettingsPrivacyRouteImport
-      parentRoute: typeof WorkspacesWorkspaceIdSettingsRouteRoute
-    }
-    '/workspaces/$workspaceId/settings/sending': {
-      id: '/workspaces/$workspaceId/settings/sending'
-      path: '/sending'
-      fullPath: '/workspaces/$workspaceId/settings/sending'
-      preLoaderRoute: typeof WorkspacesWorkspaceIdSettingsSendingRouteImport
       parentRoute: typeof WorkspacesWorkspaceIdSettingsRouteRoute
     }
     '/workspaces/$workspaceId/settings/team': {
@@ -1103,10 +1143,11 @@ const ConsoleRouteRouteWithChildren = ConsoleRouteRoute._addFileChildren(
 )
 
 interface WorkspacesWorkspaceIdSettingsRouteRouteChildren {
+  WorkspacesWorkspaceIdSettingsAuditLogRoute: typeof WorkspacesWorkspaceIdSettingsAuditLogRoute
   WorkspacesWorkspaceIdSettingsDevelopersRoute: typeof WorkspacesWorkspaceIdSettingsDevelopersRoute
+  WorkspacesWorkspaceIdSettingsEmailsRoute: typeof WorkspacesWorkspaceIdSettingsEmailsRoute
   WorkspacesWorkspaceIdSettingsMcpRoute: typeof WorkspacesWorkspaceIdSettingsMcpRoute
   WorkspacesWorkspaceIdSettingsPrivacyRoute: typeof WorkspacesWorkspaceIdSettingsPrivacyRoute
-  WorkspacesWorkspaceIdSettingsSendingRoute: typeof WorkspacesWorkspaceIdSettingsSendingRoute
   WorkspacesWorkspaceIdSettingsTeamRoute: typeof WorkspacesWorkspaceIdSettingsTeamRoute
   WorkspacesWorkspaceIdSettingsTrackingRoute: typeof WorkspacesWorkspaceIdSettingsTrackingRoute
   WorkspacesWorkspaceIdSettingsIndexRoute: typeof WorkspacesWorkspaceIdSettingsIndexRoute
@@ -1114,14 +1155,16 @@ interface WorkspacesWorkspaceIdSettingsRouteRouteChildren {
 
 const WorkspacesWorkspaceIdSettingsRouteRouteChildren: WorkspacesWorkspaceIdSettingsRouteRouteChildren =
   {
+    WorkspacesWorkspaceIdSettingsAuditLogRoute:
+      WorkspacesWorkspaceIdSettingsAuditLogRoute,
     WorkspacesWorkspaceIdSettingsDevelopersRoute:
       WorkspacesWorkspaceIdSettingsDevelopersRoute,
+    WorkspacesWorkspaceIdSettingsEmailsRoute:
+      WorkspacesWorkspaceIdSettingsEmailsRoute,
     WorkspacesWorkspaceIdSettingsMcpRoute:
       WorkspacesWorkspaceIdSettingsMcpRoute,
     WorkspacesWorkspaceIdSettingsPrivacyRoute:
       WorkspacesWorkspaceIdSettingsPrivacyRoute,
-    WorkspacesWorkspaceIdSettingsSendingRoute:
-      WorkspacesWorkspaceIdSettingsSendingRoute,
     WorkspacesWorkspaceIdSettingsTeamRoute:
       WorkspacesWorkspaceIdSettingsTeamRoute,
     WorkspacesWorkspaceIdSettingsTrackingRoute:
@@ -1138,6 +1181,7 @@ const WorkspacesWorkspaceIdSettingsRouteRouteWithChildren =
 interface WorkspacesWorkspaceIdRouteRouteChildren {
   WorkspacesWorkspaceIdSettingsRouteRoute: typeof WorkspacesWorkspaceIdSettingsRouteRouteWithChildren
   WorkspacesWorkspaceIdActivityRoute: typeof WorkspacesWorkspaceIdActivityRoute
+  WorkspacesWorkspaceIdAnalyticsRoute: typeof WorkspacesWorkspaceIdAnalyticsRoute
   WorkspacesWorkspaceIdIndexRoute: typeof WorkspacesWorkspaceIdIndexRoute
   WorkspacesWorkspaceIdAutomationsNewRoute: typeof WorkspacesWorkspaceIdAutomationsNewRoute
   WorkspacesWorkspaceIdBroadcastsNewRoute: typeof WorkspacesWorkspaceIdBroadcastsNewRoute
@@ -1163,6 +1207,7 @@ const WorkspacesWorkspaceIdRouteRouteChildren: WorkspacesWorkspaceIdRouteRouteCh
     WorkspacesWorkspaceIdSettingsRouteRoute:
       WorkspacesWorkspaceIdSettingsRouteRouteWithChildren,
     WorkspacesWorkspaceIdActivityRoute: WorkspacesWorkspaceIdActivityRoute,
+    WorkspacesWorkspaceIdAnalyticsRoute: WorkspacesWorkspaceIdAnalyticsRoute,
     WorkspacesWorkspaceIdIndexRoute: WorkspacesWorkspaceIdIndexRoute,
     WorkspacesWorkspaceIdAutomationsNewRoute:
       WorkspacesWorkspaceIdAutomationsNewRoute,

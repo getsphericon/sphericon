@@ -2,11 +2,12 @@ import { beforeEach, expect, test } from 'vitest'
 
 import { handleSiteWorkspacesList } from '../generated/site/msw.gen.ts'
 import { Route as overviewRoute } from '../routes/workspaces/$workspaceId/index.tsx'
+import { Route as auditLogRoute } from '../routes/workspaces/$workspaceId/settings/audit-log.tsx'
 import { Route as developersRoute } from '../routes/workspaces/$workspaceId/settings/developers.tsx'
+import { Route as emailsRoute } from '../routes/workspaces/$workspaceId/settings/emails.tsx'
 import { Route as generalRoute } from '../routes/workspaces/$workspaceId/settings/index.tsx'
 import { Route as mcpRoute } from '../routes/workspaces/$workspaceId/settings/mcp.tsx'
 import { Route as privacyRoute } from '../routes/workspaces/$workspaceId/settings/privacy.tsx'
-import { Route as sendingRoute } from '../routes/workspaces/$workspaceId/settings/sending.tsx'
 import { Route as teamRoute } from '../routes/workspaces/$workspaceId/settings/team.tsx'
 import { Route as trackingRoute } from '../routes/workspaces/$workspaceId/settings/tracking.tsx'
 import { renderWithRouter } from '../test/renderWithRouter.tsx'
@@ -19,7 +20,8 @@ const LINKS = [
   ['General', generalRoute],
   ['Team and security', teamRoute],
   ['Tracking', trackingRoute],
-  ['Sending', sendingRoute],
+  ['Emails', emailsRoute],
+  ['Audit log', auditLogRoute],
   ['Developers', developersRoute],
   ['AI agents (MCP)', mcpRoute],
   ['Privacy requests', privacyRoute],

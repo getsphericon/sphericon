@@ -1,6 +1,7 @@
 import { NavLink, Stack } from '@mantine/core'
 import {
   IconActivity,
+  IconChartBar,
   IconLayoutDashboard,
   IconMail,
   IconMailbox,
@@ -15,6 +16,7 @@ import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Route as activityRoute } from '../routes/workspaces/$workspaceId/activity.tsx'
+import { Route as analyticsRoute } from '../routes/workspaces/$workspaceId/analytics.tsx'
 import { Route as automationsRoute } from '../routes/workspaces/$workspaceId/automations/index.tsx'
 import { Route as broadcastsRoute } from '../routes/workspaces/$workspaceId/broadcasts/index.tsx'
 import { Route as contactsRoute } from '../routes/workspaces/$workspaceId/contacts/index.tsx'
@@ -90,6 +92,11 @@ export function AppNavbar({ workspaceId }: { workspaceId: string }) {
         route: automationsRoute,
         label: t(($) => $.nav.automations),
         icon: <IconRobot size={18} />,
+      })}
+      {link({
+        route: analyticsRoute,
+        label: t(($) => $.nav.analytics),
+        icon: <IconChartBar size={18} />,
       })}
       {link({
         route: activityRoute,

@@ -34,7 +34,7 @@ import {
 import type { SiteAuditEntryResource } from '../../generated/site/types.gen.ts'
 import { useNotify } from '../../hooks/useNotify.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
-import { Route as teamRoute } from '../../routes/workspaces/$workspaceId/settings/team.tsx'
+import { Route as auditLogRoute } from '../../routes/workspaces/$workspaceId/settings/audit-log.tsx'
 import { hasErrorStatus } from '../../utils/apiErrors.ts'
 import { formatDateTime } from '../../utils/datetime.ts'
 import { auditQuery } from './auditFilter.ts'
@@ -491,7 +491,7 @@ export function ChangeHistoryLink({
     <ButtonLink
       size="compact-sm"
       variant="subtle"
-      to={teamRoute.to}
+      to={auditLogRoute.to}
       params={{ workspaceId }}
       search={{ targetType, targetId }}
     >

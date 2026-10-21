@@ -606,6 +606,7 @@ export default interface Resources {
     },
     "nav": {
       "activity": "Activity",
+      "analytics": "Analytics",
       "automations": "Automations",
       "broadcasts": "Broadcasts",
       "contacts": "Contacts",
@@ -1047,11 +1048,12 @@ export default interface Resources {
       },
       "nameLabel": "Workspace name",
       "nav": {
+        "auditLog": "Audit log",
         "developers": "Developers",
+        "emails": "Emails",
         "general": "General",
         "mcp": "AI agents (MCP)",
         "privacy": "Privacy requests",
-        "sending": "Sending",
         "team": "Team and security",
         "tracking": "Tracking"
       },

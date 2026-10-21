@@ -8,6 +8,7 @@ import {
   CopyButton,
   Group,
   Loader,
+  Modal,
   Stack,
   Switch,
   Text,
@@ -15,6 +16,7 @@ import {
   Title,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
+import { useDisclosure } from '@mantine/hooks'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
@@ -80,27 +82,27 @@ function JoinDomainRow({
         {domain.verified ? null : (
           <Stack gap={4}>
             <Text size="sm">{t(($) => $.joinDomains.recordHint)}</Text>
-            <Group gap="xs">
+            <div>
               <Text size="xs" c="dimmed">
                 {t(($) => $.joinDomains.recordHost)}
               </Text>
               <Code>{domain.record.host}</Code>
-            </Group>
-            <Group gap="xs" wrap="nowrap" align="flex-start">
+            </div>
+            <div>
               <Text size="xs" c="dimmed">
                 {t(($) => $.joinDomains.recordValue)}
               </Text>
-              <Code block maw={420}>
-                {domain.record.value}
-              </Code>
-              <CopyButton value={domain.record.value}>
-                {({ copied, copy }) => (
-                  <Button size="compact-xs" variant="light" onClick={copy}>
-                    {copied ? '✓' : '⧉'}
-                  </Button>
-                )}
-              </CopyButton>
-            </Group>
+              <Group gap="xs" wrap="nowrap" align="center">
+                <Code>{domain.record.value}</Code>
+                <CopyButton value={domain.record.value}>
+                  {({ copied, copy }) => (
+                    <Button size="compact-xs" variant="light" onClick={copy}>
+                      {copied ? '✓' : '⧉'}
+                    </Button>
+                  )}
+                </CopyButton>
+              </Group>
+            </div>
           </Stack>
         )}
       </Stack>
@@ -119,6 +121,7 @@ export function JoinDomainsSection({ workspaceId }: { workspaceId: string }) {
   const domainsQuery = useQuery(siteJoinDomainsListOptions({ path: { workspaceId } }))
   const joinKey = siteDomainJoinGetQueryKey({ path: { workspaceId } })
   const joinQuery = useQuery(siteDomainJoinGetOptions({ path: { workspaceId } }))
+  const [addOpened, { open: openAdd, close: closeAdd }] = useDisclosure(false)
   const form = useForm<DomainFormValues>({ initialValues: { domain: '' } })
 
   const joinMutation = useResourceMutation({
@@ -134,7 +137,10 @@ export function JoinDomainsSection({ workspaceId }: { workspaceId: string }) {
     successMessage: t(($) => $.joinDomains.added),
     errorTitle: t(($) => $.joinDomains.addError),
     forbiddenMessage: t(($) => $.joinDomains.forbidden),
-    onDone: () => form.reset(),
+    onDone: () => {
+      form.reset()
+      closeAdd()
+    },
   })
   const verifyMutation = useResourceMutation({
     mutation: siteJoinDomainsVerifyMutation(),
@@ -202,24 +208,31 @@ export function JoinDomainsSection({ workspaceId }: { workspaceId: string }) {
           />
         ))}
 
+        <Group>
+          <Button onClick={openAdd}>{t(($) => $.joinDomains.add)}</Button>
+        </Group>
+      </Stack>
+
+      <Modal opened={addOpened} onClose={closeAdd} title={t(($) => $.joinDomains.add)}>
         <form
           onSubmit={form.onSubmit((values) =>
             addMutation.mutate({ path: { workspaceId }, body: { domain: values.domain.trim() } }),
           )}
         >
-          <Group align="flex-end">
+          <Stack>
             <TextInput
               label={t(($) => $.joinDomains.domainLabel)}
               placeholder="acme.com"
               required
+              data-autofocus
               {...form.getInputProps('domain')}
             />
             <Button type="submit" loading={addMutation.isPending}>
               {t(($) => $.joinDomains.add)}
             </Button>
-          </Group>
+          </Stack>
         </form>
-      </Stack>
+      </Modal>
     </Box>
   )
 }

@@ -1,6 +1,7 @@
 import { Stack } from '@mantine/core'
 import {
   IconArrowLeft,
+  IconHistory,
   IconCode,
   IconLock,
   IconMailForward,
@@ -15,11 +16,12 @@ import { useTranslation } from 'react-i18next'
 import { siteWorkspacesListOptions } from '../generated/site/@tanstack/react-query.gen.ts'
 import { canManage } from '../hooks/useCurrentRole.ts'
 import { Route as overviewRoute } from '../routes/workspaces/$workspaceId/index.tsx'
+import { Route as auditLogRoute } from '../routes/workspaces/$workspaceId/settings/audit-log.tsx'
 import { Route as developersRoute } from '../routes/workspaces/$workspaceId/settings/developers.tsx'
+import { Route as emailsRoute } from '../routes/workspaces/$workspaceId/settings/emails.tsx'
 import { Route as generalRoute } from '../routes/workspaces/$workspaceId/settings/index.tsx'
 import { Route as mcpRoute } from '../routes/workspaces/$workspaceId/settings/mcp.tsx'
 import { Route as privacyRoute } from '../routes/workspaces/$workspaceId/settings/privacy.tsx'
-import { Route as sendingRoute } from '../routes/workspaces/$workspaceId/settings/sending.tsx'
 import { Route as teamRoute } from '../routes/workspaces/$workspaceId/settings/team.tsx'
 import { Route as trackingRoute } from '../routes/workspaces/$workspaceId/settings/tracking.tsx'
 import { NavLinkLink } from './RouterLink.tsx'
@@ -46,14 +48,20 @@ export function SettingsNavbar({ workspaceId }: { workspaceId: string }) {
       exact: false,
     },
     {
+      route: auditLogRoute,
+      label: t(($) => $.settings.nav.auditLog),
+      icon: <IconHistory size={18} />,
+      exact: false,
+    },
+    {
       route: trackingRoute,
       label: t(($) => $.settings.nav.tracking),
       icon: <IconRadar size={18} />,
       exact: false,
     },
     {
-      route: sendingRoute,
-      label: t(($) => $.settings.nav.sending),
+      route: emailsRoute,
+      label: t(($) => $.settings.nav.emails),
       icon: <IconMailForward size={18} />,
       exact: false,
     },

@@ -58,8 +58,9 @@ test('adds a domain', async () => {
   )
   const { screen } = await renderWithRouter(<JoinDomainsSection workspaceId={WORKSPACE_ID} />)
 
-  await screen.getByLabelText(/^Domain/).fill(' acme.com ')
   await screen.getByRole('button', { name: 'Add domain' }).click()
+  await screen.getByLabelText(/^Domain/).fill(' acme.com ')
+  await screen.getByRole('dialog').getByRole('button', { name: 'Add domain' }).click()
 
   await expect.poll(() => bodies).toEqual([{ domain: 'acme.com' }])
 })

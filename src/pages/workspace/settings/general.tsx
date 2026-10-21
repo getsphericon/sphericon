@@ -9,7 +9,6 @@ import {
 import type { SiteWorkspaceResource } from '../../../generated/site/types.gen.ts'
 import { useResourceMutation } from '../../../hooks/useResourceMutation.ts'
 import { Route as generalRoute } from '../../../routes/workspaces/$workspaceId/settings/index.tsx'
-import { BrandKitSection } from '../BrandKitSection.tsx'
 import { DeleteWorkspaceSection } from './DeleteWorkspaceSection.tsx'
 import { SettingsFrame } from './SettingsFrame.tsx'
 
@@ -79,7 +78,6 @@ export function GeneralPage() {
       {(workspace) => (
         <Stack>
           <GeneralSection workspace={workspace} />
-          <BrandKitSection workspace={workspace} />
           <DeleteWorkspaceSection workspace={workspace} />
         </Stack>
       )}
