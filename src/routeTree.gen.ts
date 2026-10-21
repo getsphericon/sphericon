@@ -36,6 +36,7 @@ import { Route as ConsoleAuthedIndexRouteImport } from './routes/console/_authed
 import { Route as WorkspacesWorkspaceIdIndexRouteImport } from './routes/workspaces/$workspaceId/index'
 import { Route as WorkspacesWorkspaceIdActivityRouteImport } from './routes/workspaces/$workspaceId/activity'
 import { Route as WorkspacesWorkspaceIdAnalyticsRouteImport } from './routes/workspaces/$workspaceId/analytics'
+import { Route as WorkspacesWorkspaceIdBrandKitRouteImport } from './routes/workspaces/$workspaceId/brand-kit'
 import { Route as WorkspacesWorkspaceIdSettingsRouteRouteImport } from './routes/workspaces/$workspaceId/settings/route'
 import { Route as ConsoleAuthedWorkspacesWorkspaceIdRouteImport } from './routes/console/_authed/workspaces.$workspaceId'
 import { Route as WorkspacesWorkspaceIdAutomationsIndexRouteImport } from './routes/workspaces/$workspaceId/automations/index'
@@ -200,6 +201,12 @@ const WorkspacesWorkspaceIdAnalyticsRoute =
   WorkspacesWorkspaceIdAnalyticsRouteImport.update({
     id: '/analytics',
     path: '/analytics',
+    getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
+  } as any)
+const WorkspacesWorkspaceIdBrandKitRoute =
+  WorkspacesWorkspaceIdBrandKitRouteImport.update({
+    id: '/brand-kit',
+    path: '/brand-kit',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
   } as any)
 const WorkspacesWorkspaceIdSettingsRouteRoute =
@@ -391,6 +398,7 @@ export interface FileRoutesByFullPath {
   '/workspaces/$workspaceId/settings': typeof WorkspacesWorkspaceIdSettingsRouteRouteWithChildren
   '/workspaces/$workspaceId/activity': typeof WorkspacesWorkspaceIdActivityRoute
   '/workspaces/$workspaceId/analytics': typeof WorkspacesWorkspaceIdAnalyticsRoute
+  '/workspaces/$workspaceId/brand-kit': typeof WorkspacesWorkspaceIdBrandKitRoute
   '/console/': typeof ConsoleAuthedIndexRoute
   '/workspaces/$workspaceId/': typeof WorkspacesWorkspaceIdIndexRoute
   '/console/workspaces/$workspaceId': typeof ConsoleAuthedWorkspacesWorkspaceIdRoute
@@ -443,6 +451,7 @@ export interface FileRoutesByTo {
   '/account': typeof AccountIndexRoute
   '/workspaces/$workspaceId/activity': typeof WorkspacesWorkspaceIdActivityRoute
   '/workspaces/$workspaceId/analytics': typeof WorkspacesWorkspaceIdAnalyticsRoute
+  '/workspaces/$workspaceId/brand-kit': typeof WorkspacesWorkspaceIdBrandKitRoute
   '/workspaces/$workspaceId': typeof WorkspacesWorkspaceIdIndexRoute
   '/console/workspaces/$workspaceId': typeof ConsoleAuthedWorkspacesWorkspaceIdRoute
   '/workspaces/$workspaceId/automations/new': typeof WorkspacesWorkspaceIdAutomationsNewRoute
@@ -499,6 +508,7 @@ export interface FileRoutesById {
   '/workspaces/$workspaceId/settings': typeof WorkspacesWorkspaceIdSettingsRouteRouteWithChildren
   '/workspaces/$workspaceId/activity': typeof WorkspacesWorkspaceIdActivityRoute
   '/workspaces/$workspaceId/analytics': typeof WorkspacesWorkspaceIdAnalyticsRoute
+  '/workspaces/$workspaceId/brand-kit': typeof WorkspacesWorkspaceIdBrandKitRoute
   '/console/_authed/': typeof ConsoleAuthedIndexRoute
   '/workspaces/$workspaceId/': typeof WorkspacesWorkspaceIdIndexRoute
   '/console/_authed/workspaces/$workspaceId': typeof ConsoleAuthedWorkspacesWorkspaceIdRoute
@@ -556,6 +566,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/settings'
     | '/workspaces/$workspaceId/activity'
     | '/workspaces/$workspaceId/analytics'
+    | '/workspaces/$workspaceId/brand-kit'
     | '/console/'
     | '/workspaces/$workspaceId/'
     | '/console/workspaces/$workspaceId'
@@ -608,6 +619,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/workspaces/$workspaceId/activity'
     | '/workspaces/$workspaceId/analytics'
+    | '/workspaces/$workspaceId/brand-kit'
     | '/workspaces/$workspaceId'
     | '/console/workspaces/$workspaceId'
     | '/workspaces/$workspaceId/automations/new'
@@ -663,6 +675,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/settings'
     | '/workspaces/$workspaceId/activity'
     | '/workspaces/$workspaceId/analytics'
+    | '/workspaces/$workspaceId/brand-kit'
     | '/console/_authed/'
     | '/workspaces/$workspaceId/'
     | '/console/_authed/workspaces/$workspaceId'
@@ -902,6 +915,13 @@ declare module '@tanstack/react-router' {
       path: '/analytics'
       fullPath: '/workspaces/$workspaceId/analytics'
       preLoaderRoute: typeof WorkspacesWorkspaceIdAnalyticsRouteImport
+      parentRoute: typeof WorkspacesWorkspaceIdRouteRoute
+    }
+    '/workspaces/$workspaceId/brand-kit': {
+      id: '/workspaces/$workspaceId/brand-kit'
+      path: '/brand-kit'
+      fullPath: '/workspaces/$workspaceId/brand-kit'
+      preLoaderRoute: typeof WorkspacesWorkspaceIdBrandKitRouteImport
       parentRoute: typeof WorkspacesWorkspaceIdRouteRoute
     }
     '/workspaces/$workspaceId/settings': {
@@ -1182,6 +1202,7 @@ interface WorkspacesWorkspaceIdRouteRouteChildren {
   WorkspacesWorkspaceIdSettingsRouteRoute: typeof WorkspacesWorkspaceIdSettingsRouteRouteWithChildren
   WorkspacesWorkspaceIdActivityRoute: typeof WorkspacesWorkspaceIdActivityRoute
   WorkspacesWorkspaceIdAnalyticsRoute: typeof WorkspacesWorkspaceIdAnalyticsRoute
+  WorkspacesWorkspaceIdBrandKitRoute: typeof WorkspacesWorkspaceIdBrandKitRoute
   WorkspacesWorkspaceIdIndexRoute: typeof WorkspacesWorkspaceIdIndexRoute
   WorkspacesWorkspaceIdAutomationsNewRoute: typeof WorkspacesWorkspaceIdAutomationsNewRoute
   WorkspacesWorkspaceIdBroadcastsNewRoute: typeof WorkspacesWorkspaceIdBroadcastsNewRoute
@@ -1208,6 +1229,7 @@ const WorkspacesWorkspaceIdRouteRouteChildren: WorkspacesWorkspaceIdRouteRouteCh
       WorkspacesWorkspaceIdSettingsRouteRouteWithChildren,
     WorkspacesWorkspaceIdActivityRoute: WorkspacesWorkspaceIdActivityRoute,
     WorkspacesWorkspaceIdAnalyticsRoute: WorkspacesWorkspaceIdAnalyticsRoute,
+    WorkspacesWorkspaceIdBrandKitRoute: WorkspacesWorkspaceIdBrandKitRoute,
     WorkspacesWorkspaceIdIndexRoute: WorkspacesWorkspaceIdIndexRoute,
     WorkspacesWorkspaceIdAutomationsNewRoute:
       WorkspacesWorkspaceIdAutomationsNewRoute,

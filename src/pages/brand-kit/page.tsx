@@ -1,7 +1,6 @@
 import {
   Alert,
   Button,
-  Card,
   ColorInput,
   Group,
   Loader,
@@ -24,14 +23,12 @@ import {
   siteBrandKitRecreateStarterTemplatesMutation,
   siteBrandKitSaveMutation,
   siteTemplatesListQueryKey,
+  siteWorkspacesListOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import type {
-  SiteBrandKitResource,
-  SiteSaveBrandKitInput,
-  SiteWorkspaceResource,
-} from '../../generated/site/types.gen.ts'
+import type { SiteBrandKitResource, SiteSaveBrandKitInput } from '../../generated/site/types.gen.ts'
 import { canManageBrandKit } from '../../hooks/useCurrentRole.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
+import { Route as brandKitRoute } from '../../routes/workspaces/$workspaceId/brand-kit.tsx'
 
 const MAX_RADIUS = 32
 const MAX_FOOTER = 500
@@ -51,7 +48,7 @@ function valuesOf(kit: SiteBrandKitResource): SiteSaveBrandKitInput {
 }
 
 // BrandKitForm is split out so the form seeds its values from the loaded Brand kit without an
-// effect; the section re-keys it when a save changes the kit.
+// effect; the page re-keys it when a save changes the kit.
 function BrandKitForm({
   workspaceId,
   kit,
@@ -203,29 +200,29 @@ function BrandKitForm({
   )
 }
 
-// BrandKitSection edits the Workspace's Brand kit (ADR 0040): the colors, fonts, logo, button
+// BrandKitPage edits the Workspace's Brand kit (ADR 0040): the colors, fonts, logo, button
 // style and footer the editor offers. Owners save it; every member sees it. Saving it
 // changes no message already written.
-export function BrandKitSection({ workspace }: { workspace: SiteWorkspaceResource }) {
+export function BrandKitPage() {
   const { t } = useTranslation()
-  const workspaceId = workspace.id
+  const { workspaceId } = brandKitRoute.useParams()
+  const workspacesQuery = useQuery(siteWorkspacesListOptions())
   const kitQuery = useQuery(siteBrandKitGetOptions({ path: { workspaceId } }))
+  const workspace = workspacesQuery.data?.find((w) => w.id === workspaceId)
 
   return (
-    <Card withBorder>
-      <Title order={4} mb="xs">
-        {t(($) => $.brandKit.title)}
-      </Title>
-      <Text c="dimmed" size="sm" mb="sm">
+    <Stack>
+      <Title order={2}>{t(($) => $.brandKit.title)}</Title>
+      <Text c="dimmed" size="sm">
         {t(($) => $.brandKit.description)}
       </Text>
-      {kitQuery.isError ? (
+      {kitQuery.isError || workspacesQuery.isError ? (
         <Alert color="red" title={t(($) => $.brandKit.loadErrorTitle)}>
           {t(($) => $.brandKit.loadErrorTitle)}
         </Alert>
       ) : null}
-      {kitQuery.isLoading ? <Loader size="sm" /> : null}
-      {kitQuery.data ? (
+      {kitQuery.isLoading || workspacesQuery.isLoading ? <Loader size="sm" /> : null}
+      {kitQuery.data && workspace ? (
         <BrandKitForm
           key={kitQuery.data.updatedAt ?? 'unsaved'}
           workspaceId={workspaceId}
@@ -233,6 +230,6 @@ export function BrandKitSection({ workspace }: { workspace: SiteWorkspaceResourc
           canChange={canManageBrandKit(workspace.role)}
         />
       ) : null}
-    </Card>
+    </Stack>
   )
 }

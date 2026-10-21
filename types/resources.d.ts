@@ -608,6 +608,7 @@ export default interface Resources {
       "activity": "Activity",
       "analytics": "Analytics",
       "automations": "Automations",
+      "brandKit": "Brand kit",
       "broadcasts": "Broadcasts",
       "contacts": "Contacts",
       "docs": "Docs",

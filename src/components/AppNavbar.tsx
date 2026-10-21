@@ -6,6 +6,7 @@ import {
   IconMail,
   IconMailbox,
   IconMailFast,
+  IconPalette,
   IconRobot,
   IconSettings,
   IconTemplate,
@@ -18,6 +19,7 @@ import { useTranslation } from 'react-i18next'
 import { Route as activityRoute } from '../routes/workspaces/$workspaceId/activity.tsx'
 import { Route as analyticsRoute } from '../routes/workspaces/$workspaceId/analytics.tsx'
 import { Route as automationsRoute } from '../routes/workspaces/$workspaceId/automations/index.tsx'
+import { Route as brandKitRoute } from '../routes/workspaces/$workspaceId/brand-kit.tsx'
 import { Route as broadcastsRoute } from '../routes/workspaces/$workspaceId/broadcasts/index.tsx'
 import { Route as contactsRoute } from '../routes/workspaces/$workspaceId/contacts/index.tsx'
 import { Route as overviewRoute } from '../routes/workspaces/$workspaceId/index.tsx'
@@ -65,6 +67,7 @@ export function AppNavbar({ workspaceId }: { workspaceId: string }) {
       label: t(($) => $.nav.transactionalEmails),
       icon: <IconMailFast size={18} />,
     },
+    { route: brandKitRoute, label: t(($) => $.nav.brandKit), icon: <IconPalette size={18} /> },
   ]
 
   return (
