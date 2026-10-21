@@ -78,6 +78,9 @@ model SegmentResource {
   /** Segment definition: the rule group; an empty group matches all contacts */
   definition?: SegmentRuleGroup;
 
+  /** When the segment was archived; null while it is kept */
+  archivedAt?: Timestamp | null;
+
   /** Creation timestamp */
   createdAt: Timestamp;
 
@@ -117,12 +120,10 @@ model PreviewSegmentResult {
 
 @tag("Segments")
 interface Segments
-  extends ExternalCrud<
+  extends ExternalCrudArchivable<
       SegmentResource,
       CreateSegmentInput,
-      UpdateSegmentInput,
-      never,
-      InUseProblem
+      UpdateSegmentInput
     > {
   /** Count the contacts matching an unsaved rule definition */
   @collectionAction(SegmentResource, "preview")

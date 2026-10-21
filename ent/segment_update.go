@@ -50,6 +50,26 @@ func (_u *SegmentUpdate) SetNillableWorkspaceID(v *int64) *SegmentUpdate {
 	return _u
 }
 
+// SetDiscardedAt sets the "discarded_at" field.
+func (_u *SegmentUpdate) SetDiscardedAt(v time.Time) *SegmentUpdate {
+	_u.mutation.SetDiscardedAt(v)
+	return _u
+}
+
+// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
+func (_u *SegmentUpdate) SetNillableDiscardedAt(v *time.Time) *SegmentUpdate {
+	if v != nil {
+		_u.SetDiscardedAt(*v)
+	}
+	return _u
+}
+
+// ClearDiscardedAt clears the value of the "discarded_at" field.
+func (_u *SegmentUpdate) ClearDiscardedAt() *SegmentUpdate {
+	_u.mutation.ClearDiscardedAt()
+	return _u
+}
+
 // SetName sets the "name" field.
 func (_u *SegmentUpdate) SetName(v string) *SegmentUpdate {
 	_u.mutation.SetName(v)
@@ -170,6 +190,12 @@ func (_u *SegmentUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(segment.FieldUpdatedAt, field.TypeTime, value)
 	}
+	if value, ok := _u.mutation.DiscardedAt(); ok {
+		_spec.SetField(segment.FieldDiscardedAt, field.TypeTime, value)
+	}
+	if _u.mutation.DiscardedAtCleared() {
+		_spec.ClearField(segment.FieldDiscardedAt, field.TypeTime)
+	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(segment.FieldName, field.TypeString, value)
 	}
@@ -247,6 +273,26 @@ func (_u *SegmentUpdateOne) SetNillableWorkspaceID(v *int64) *SegmentUpdateOne {
 	if v != nil {
 		_u.SetWorkspaceID(*v)
 	}
+	return _u
+}
+
+// SetDiscardedAt sets the "discarded_at" field.
+func (_u *SegmentUpdateOne) SetDiscardedAt(v time.Time) *SegmentUpdateOne {
+	_u.mutation.SetDiscardedAt(v)
+	return _u
+}
+
+// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
+func (_u *SegmentUpdateOne) SetNillableDiscardedAt(v *time.Time) *SegmentUpdateOne {
+	if v != nil {
+		_u.SetDiscardedAt(*v)
+	}
+	return _u
+}
+
+// ClearDiscardedAt clears the value of the "discarded_at" field.
+func (_u *SegmentUpdateOne) ClearDiscardedAt() *SegmentUpdateOne {
+	_u.mutation.ClearDiscardedAt()
 	return _u
 }
 
@@ -399,6 +445,12 @@ func (_u *SegmentUpdateOne) sqlSave(ctx context.Context) (_node *Segment, err er
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(segment.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.DiscardedAt(); ok {
+		_spec.SetField(segment.FieldDiscardedAt, field.TypeTime, value)
+	}
+	if _u.mutation.DiscardedAtCleared() {
+		_spec.ClearField(segment.FieldDiscardedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(segment.FieldName, field.TypeString, value)

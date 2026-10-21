@@ -111,25 +111,36 @@ func (s *Module) Count(ctx context.Context, ws *ent.Scoped, id int64) (int, erro
 	return s.Preview(ctx, ws, def)
 }
 
-// List returns one page of the Workspace's Segments, ascending by id.
-func (s *Module) List(ctx context.Context, ws *ent.Scoped, p pagination.Params) (pagination.Page[*ent.Segment], error) {
+// List returns one page of the Workspace's Segments, ascending by id: the kept ones, or with
+// archived the archived ones.
+func (s *Module) List(ctx context.Context, ws *ent.Scoped, p pagination.Params, archived bool) (pagination.Page[*ent.Segment], error) {
+	rows := func() *ent.SegmentQuery {
+		if archived {
+			return ws.Segment().QueryWithDiscarded().Where(segment.DiscardedAtNotNil())
+		}
+		return ws.Segment().Query()
+	}
 	return pagination.List(ctx, p,
-		func(ctx context.Context) (int, error) { return ws.Segment().Query().Count(ctx) },
+		func(ctx context.Context) (int, error) { return rows().Count(ctx) },
 		func(ctx context.Context, limit, offset int) ([]*ent.Segment, error) {
-			return ws.Segment().Query().Order(ent.Asc(segment.FieldID)).Limit(limit).Offset(offset).All(ctx)
+			return rows().Order(ent.Asc(segment.FieldID)).Limit(limit).Offset(offset).All(ctx)
 		})
 }
 
-// Delete removes a Segment, unless a draft or scheduled Broadcast uses it: then it returns an
-// *inuse.Error naming those Broadcasts (ADR 0049). A sent or failed Broadcast keeps its stored
-// reference as history and does not block. A missing Segment is ErrNotFound.
-func (s *Module) Delete(ctx context.Context, ws *ent.Scoped, id int64) error {
-	exists, err := ws.Segment().Query().Where(segment.ID(id)).Exist(ctx)
+// Archive discards a Segment (ADR 0049), unless a draft or scheduled Broadcast uses it: then it
+// returns an *inuse.Error naming those Broadcasts. A sent or failed Broadcast keeps its stored
+// reference as history and does not block. A missing Segment is ErrNotFound; archiving an
+// archived one changes nothing.
+func (s *Module) Archive(ctx context.Context, ws *ent.Scoped, id int64) error {
+	seg, err := ws.Segment().Get(ctx, id)
+	if ent.IsNotFound(err) {
+		return ErrNotFound
+	}
 	if err != nil {
 		return err
 	}
-	if !exists {
-		return ErrNotFound
+	if seg.DiscardedAt != nil {
+		return nil
 	}
 	live, err := ws.Broadcast().Query().
 		Where(broadcast.SegmentID(id), broadcast.StatusIn(broadcast.StatusDraft, broadcast.StatusScheduled)).
@@ -141,5 +152,19 @@ func (s *Module) Delete(ctx context.Context, ws *ent.Scoped, id int64) error {
 	if len(live) > 0 {
 		return &inuse.Error{What: inuse.SubjectSegment, Users: inuse.Broadcasts(live)}
 	}
-	return ws.Segment().DeleteOneID(id).Exec(ctx)
+	return ws.Segment().Discard(ctx, id)
+}
+
+// Unarchive brings an archived Segment back to the lists. Restoring one that is not archived
+// changes nothing; a missing Segment is ErrNotFound.
+func (s *Module) Unarchive(ctx context.Context, ws *ent.Scoped, id int64) error {
+	err := ws.Segment().Undiscard(ctx, id)
+	if !ent.IsNotFound(err) {
+		return err
+	}
+	_, err = ws.Segment().Get(ctx, id)
+	if ent.IsNotFound(err) {
+		return ErrNotFound
+	}
+	return err
 }

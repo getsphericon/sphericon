@@ -108,6 +108,8 @@ type Converter interface {
 	// goverter:map DiscardedAt ArchivedAt
 	BroadcastToResource(source *ent.Broadcast) externalapi.BroadcastResource
 	ApiTokenToInfo(source *ent.ApiToken) externalapi.ApiTokenInfo
+	// The contract names the discarded state \"archived\" (ADR 0049).
+	// goverter:map DiscardedAt ArchivedAt
 	SegmentToResource(source *ent.Segment) externalapi.SegmentResource
 	EmailTemplateToResource(source *ent.EmailTemplate) externalapi.TemplateResource
 	CustomFieldToResource(source *ent.CustomField) externalapi.CustomFieldResource

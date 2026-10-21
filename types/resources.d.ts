@@ -71,8 +71,10 @@ export default interface Resources {
       "exportErrorTitle": "Failed to export contact data",
       "loadErrorTitle": "Failed to load contacts",
       "saveErrorTitle": "Failed to save contact",
-      "segmentDeleteErrorTitle": "Failed to delete segment",
+      "segmentArchiveErrorTitle": "Failed to archive segment",
+      "segmentDeleteErrorTitle": "alerts.segmentDeleteErrorTitle",
       "segmentLoadErrorTitle": "Failed to load segments",
+      "segmentRestoreErrorTitle": "Failed to restore segment",
       "segmentSaveErrorTitle": "Failed to save segment",
       "tagDeleteErrorTitle": "Failed to delete tag",
       "tagLoadErrorTitle": "Failed to load tags",
@@ -642,8 +644,10 @@ export default interface Resources {
       "rateLimited": "Too many requests. Please wait a minute and try again.",
       "rateLimitedMinutes": "Too many attempts. Try again in {{count}} minutes." | "Too many attempts. Try again in {{count}} minute." | "Too many attempts. Try again in {{count}} minutes.",
       "rateLimitedSeconds": "Too many attempts. Try again in {{count}} seconds." | "Too many attempts. Try again in {{count}} second." | "Too many attempts. Try again in {{count}} seconds.",
+      "segmentArchived": "Segment archived",
       "segmentCreated": "Segment created",
-      "segmentDeleted": "Segment deleted",
+      "segmentDeleted": "notifications.segmentDeleted",
+      "segmentRestored": "Segment restored",
       "segmentUpdated": "Segment updated",
       "soleOwner": "You are the only owner of: {{workspaces}}. Make another member an owner or delete each workspace first.",
       "successTitle": "Success",
@@ -809,7 +813,8 @@ export default interface Resources {
       "noRecords": "No segments yet",
       "previewButton": "Preview audience",
       "previewCount": "{{count}} matching contacts" | "{{count}} matching contact" | "{{count}} matching contacts",
-      "rulesLabel": "Rules"
+      "rulesLabel": "Rules",
+      "showArchived": "Show archived"
     },
     "settings": {
       "apiKeysTitle": "API keys",

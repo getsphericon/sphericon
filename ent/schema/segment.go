@@ -20,7 +20,7 @@ func (Segment) Annotations() []schema.Annotation {
 }
 
 func (Segment) Mixin() []ent.Mixin {
-	return []ent.Mixin{TimeMixin{}, WorkspaceMixin{Ref: "segments"}}
+	return []ent.Mixin{TimeMixin{}, WorkspaceMixin{Ref: "segments"}, DiscardMixin{}}
 }
 
 func (Segment) Fields() []ent.Field {

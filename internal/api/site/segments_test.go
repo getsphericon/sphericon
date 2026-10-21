@@ -2,7 +2,6 @@ package site_test
 
 import (
 	"context"
-	"github.com/samber/lo"
 	"io"
 	"net/http"
 	"strings"
@@ -66,11 +65,6 @@ func TestSiteSegmentsScopedToWorkspace(t *testing.T) {
 	require.Truef(t, ok, "got %T", updated)
 	assert.Equal(t, "VIP renamed", updRes.Name)
 
-	// Delete removes it.
-	del, err := c.SiteSegmentsDelete(ctx, siteapi.SiteSegmentsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: res.ID})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteSegmentsDeleteNoContent{}, del)
-
 	// An unknown / non-owned workspace workspaceID resolves to 404, not a data leak.
 	missing, err := c.SiteSegmentsList(ctx, siteapi.SiteSegmentsListParams{WorkspaceId: "NoSuchWs"})
 	require.NoError(t, err)
@@ -120,48 +114,4 @@ func TestSiteSegmentResponsesHaveNoType(t *testing.T) {
 		assert.Contains(t, body, `"name"`)
 		assert.NotContains(t, body, `"type"`)
 	}
-}
-
-// A Segment that a draft or scheduled Broadcast uses cannot be deleted: the 409 names those
-// Broadcasts (ADR 0049), and the Segment stays.
-func TestSiteSegmentDeleteRefusedWhileLiveBroadcastUsesIt(t *testing.T) {
-	env := testhelper.Setup(t)
-	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
-	acme := env.DB.Scoped(fixtures.AcmeID)
-	_, err := acme.Broadcast().UpdateOneID(fixtures.BroadcastScheduledID).SetSegmentID(fixtures.SegmentProPlanID).Save(ctx)
-	require.NoError(t, err)
-
-	got, err := c.SiteSegmentsDelete(ctx, siteapi.SiteSegmentsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.SegmentProPlanID)})
-	require.NoError(t, err)
-	refused, ok := got.(*siteapi.InUseProblemDetails)
-	require.Truef(t, ok, "got %T", got)
-
-	names := lo.Map(refused.UsedBy, func(u siteapi.UsedBy, _ int) string { return u.Name })
-	assert.ElementsMatch(t, []string{fixtures.BroadcastProSegmentName, fixtures.BroadcastScheduledName}, names)
-	kinds := lo.Map(refused.UsedBy, func(u siteapi.UsedBy, _ int) siteapi.UsedByKind { return u.Kind })
-	assert.Equal(t, []siteapi.UsedByKind{siteapi.UsedByKindBroadcast, siteapi.UsedByKindBroadcast}, kinds)
-	status := refused.Status.Or(0)
-	assert.EqualValues(t, http.StatusConflict, status)
-
-	stillThere, err := acme.Segment().Get(ctx, fixtures.SegmentProPlanID)
-	require.NoError(t, err)
-	assert.Equal(t, fixtures.SegmentProPlanName, stillThere.Name)
-}
-
-// A Segment that only a failed or sent Broadcast used is deleted as before; the Broadcast
-// keeps its stored reference as history (ADR 0049).
-func TestSiteSegmentDeleteIgnoresFinishedBroadcasts(t *testing.T) {
-	env := testhelper.Setup(t)
-	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
-
-	got, err := c.SiteSegmentsDelete(ctx, siteapi.SiteSegmentsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.SegmentRetiredID)})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteSegmentsDeleteNoContent{}, got)
-
-	failed, err := env.DB.Scoped(fixtures.AcmeID).Broadcast().Get(ctx, fixtures.BroadcastFailedID)
-	require.NoError(t, err)
-	kept := lo.FromPtr(failed.SegmentID)
-	assert.EqualValues(t, fixtures.SegmentRetiredID, kept)
 }

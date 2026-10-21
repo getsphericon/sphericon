@@ -559,21 +559,22 @@ func (UnimplementedHandler) PresetsList(ctx context.Context) (r PresetsListRes, 
 	return r, ht.ErrNotImplemented
 }
 
+// SegmentsArchive implements Segments_archive operation.
+//
+// Archive a resource: it leaves the list and new work, keeps its history, and can be restored. Refused
+// with 409 while live work uses it.
+//
+// POST /segments/{id}/archive
+func (UnimplementedHandler) SegmentsArchive(ctx context.Context, params SegmentsArchiveParams) (r SegmentsArchiveRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SegmentsCreate implements Segments_create operation.
 //
 // Create a resource.
 //
 // POST /segments
 func (UnimplementedHandler) SegmentsCreate(ctx context.Context, req *CreateSegmentInput) (r SegmentsCreateRes, _ error) {
-	return r, ht.ErrNotImplemented
-}
-
-// SegmentsDelete implements Segments_delete operation.
-//
-// Delete a resource.
-//
-// DELETE /segments/{id}
-func (UnimplementedHandler) SegmentsDelete(ctx context.Context, params SegmentsDeleteParams) (r SegmentsDeleteRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -601,6 +602,15 @@ func (UnimplementedHandler) SegmentsList(ctx context.Context, params SegmentsLis
 //
 // POST /segments/preview
 func (UnimplementedHandler) SegmentsPreview(ctx context.Context, req *PreviewSegmentInput) (r SegmentsPreviewRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SegmentsUnarchive implements Segments_unarchive operation.
+//
+// Restore an archived resource.
+//
+// POST /segments/{id}/unarchive
+func (UnimplementedHandler) SegmentsUnarchive(ctx context.Context, params SegmentsUnarchiveParams) (r SegmentsUnarchiveRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

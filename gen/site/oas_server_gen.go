@@ -654,18 +654,19 @@ type Handler interface {
 	//
 	// POST /me/second-factor/enrollment
 	SiteSecondFactorStartEnrollment(ctx context.Context, req *SiteSecondFactorStartInput) (SiteSecondFactorStartEnrollmentRes, error)
+	// SiteSegmentsArchive implements SiteSegments_archive operation.
+	//
+	// Archive a resource: it leaves the list and new work, keeps its history, and can be restored. Refused
+	// with 409 while live work uses it.
+	//
+	// POST /workspaces/{workspaceId}/segments/{id}/archive
+	SiteSegmentsArchive(ctx context.Context, params SiteSegmentsArchiveParams) (SiteSegmentsArchiveRes, error)
 	// SiteSegmentsCreate implements SiteSegments_create operation.
 	//
 	// Create a resource from the site UI.
 	//
 	// POST /workspaces/{workspaceId}/segments
 	SiteSegmentsCreate(ctx context.Context, req *SiteCreateSegmentInput, params SiteSegmentsCreateParams) (SiteSegmentsCreateRes, error)
-	// SiteSegmentsDelete implements SiteSegments_delete operation.
-	//
-	// Delete a resource from the site UI.
-	//
-	// DELETE /workspaces/{workspaceId}/segments/{id}
-	SiteSegmentsDelete(ctx context.Context, params SiteSegmentsDeleteParams) (SiteSegmentsDeleteRes, error)
 	// SiteSegmentsGet implements SiteSegments_get operation.
 	//
 	// Get a resource by ID for the site UI.
@@ -684,6 +685,12 @@ type Handler interface {
 	//
 	// POST /workspaces/{workspaceId}/segments/preview
 	SiteSegmentsPreview(ctx context.Context, req *SitePreviewSegmentInput, params SiteSegmentsPreviewParams) (SiteSegmentsPreviewRes, error)
+	// SiteSegmentsUnarchive implements SiteSegments_unarchive operation.
+	//
+	// Restore an archived resource.
+	//
+	// POST /workspaces/{workspaceId}/segments/{id}/unarchive
+	SiteSegmentsUnarchive(ctx context.Context, params SiteSegmentsUnarchiveParams) (SiteSegmentsUnarchiveRes, error)
 	// SiteSegmentsUpdate implements SiteSegments_update operation.
 	//
 	// Update a resource from the site UI.

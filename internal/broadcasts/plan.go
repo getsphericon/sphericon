@@ -175,7 +175,7 @@ func (d *Delivery) plan(ctx context.Context, s *ent.Scoped, id int64, t trigger)
 		eligibility.Predicate(eligibility.ChannelEmail, eligibility.SourceBroadcasts),
 	)
 	if b.SegmentID != nil {
-		seg, err := s.Segment().Query().Where(segment.IDEQ(*b.SegmentID)).Only(ctx)
+		seg, err := s.Segment().QueryWithDiscarded().Where(segment.IDEQ(*b.SegmentID)).Only(ctx)
 		if err != nil {
 			return nil, failPlan(ctx, s, b.ID, fmt.Errorf("load segment %d: %w", *b.SegmentID, err))
 		}

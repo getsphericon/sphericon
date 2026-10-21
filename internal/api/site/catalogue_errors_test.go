@@ -9,7 +9,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
-	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -174,18 +173,18 @@ func TestSiteSegmentsErrorBranches(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "Renamed", stored.Name)
 
-	d1, err := c.SiteSegmentsDelete(ctx, siteapi.SiteSegmentsDeleteParams{WorkspaceId: foreign, ID: known})
+	d1, err := c.SiteSegmentsArchive(ctx, siteapi.SiteSegmentsArchiveParams{WorkspaceId: foreign, ID: known})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteSegmentsDeleteNotFound{}, d1)
-	d3, err := c.SiteSegmentsDelete(ctx, siteapi.SiteSegmentsDeleteParams{WorkspaceId: acme, ID: missing})
+	assert.IsType(t, &siteapi.SiteSegmentsArchiveNotFound{}, d1)
+	d3, err := c.SiteSegmentsArchive(ctx, siteapi.SiteSegmentsArchiveParams{WorkspaceId: acme, ID: missing})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteSegmentsDeleteNotFound{}, d3)
-	d4, err := c.SiteSegmentsDelete(ctx, siteapi.SiteSegmentsDeleteParams{WorkspaceId: acme, ID: idStr(fixtures.SegmentBlackFridayID)})
+	assert.IsType(t, &siteapi.SiteSegmentsArchiveNotFound{}, d3)
+	d4, err := c.SiteSegmentsArchive(ctx, siteapi.SiteSegmentsArchiveParams{WorkspaceId: acme, ID: idStr(fixtures.SegmentBlackFridayID)})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteSegmentsDeleteNoContent{}, d4)
-	exists, err := env.DB.Segment.Query().Where(segment.ID(fixtures.SegmentBlackFridayID)).Exist(ctx)
+	assert.IsType(t, &siteapi.SiteSegmentResource{}, d4)
+	archived, err := env.DB.Segment.Get(ctx, fixtures.SegmentBlackFridayID)
 	require.NoError(t, err)
-	assert.False(t, exists)
+	assert.NotNil(t, archived.DiscardedAt)
 }
 
 func TestSiteTemplatesErrorBranches(t *testing.T) {

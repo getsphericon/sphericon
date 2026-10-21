@@ -79,6 +79,9 @@ model SiteSegmentResource {
   /** Segment definition: the rule group; an empty group matches all contacts */
   definition?: SiteSegmentRuleGroup;
 
+  /** When the segment was archived; null while it is kept */
+  archivedAt?: Timestamp | null;
+
   /** Creation timestamp */
   createdAt: Timestamp;
 
@@ -118,12 +121,10 @@ model SitePreviewSegmentResult {
 
 @tag("Site Segments")
 interface SiteSegments
-  extends WorkspaceCrud<
+  extends WorkspaceCrudArchivable<
       SiteSegmentResource,
       SiteCreateSegmentInput,
-      SiteUpdateSegmentInput,
-      never,
-      InUseProblem
+      SiteUpdateSegmentInput
     > {
   /** Preview how many active contacts match a rule definition */
   @collectionAction(SiteSegmentResource, "preview")

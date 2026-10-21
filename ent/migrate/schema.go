@@ -1147,6 +1147,7 @@ var (
 		{Name: "id", Type: field.TypeInt64, Increment: true},
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "discarded_at", Type: field.TypeTime, Nullable: true},
 		{Name: "name", Type: field.TypeString},
 		{Name: "definition", Type: field.TypeString, Nullable: true},
 		{Name: "workspace_id", Type: field.TypeInt64},
@@ -1159,7 +1160,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "segments_workspaces_segments",
-				Columns:    []*schema.Column{SegmentsColumns[5]},
+				Columns:    []*schema.Column{SegmentsColumns[6]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1168,7 +1169,7 @@ var (
 			{
 				Name:    "segment_workspace_id",
 				Unique:  false,
-				Columns: []*schema.Column{SegmentsColumns[5]},
+				Columns: []*schema.Column{SegmentsColumns[6]},
 			},
 		},
 	}

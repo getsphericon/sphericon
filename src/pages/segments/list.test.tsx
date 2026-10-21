@@ -1,7 +1,11 @@
 import { HttpResponse } from 'msw'
 import { expect, test } from 'vitest'
 
-import { handleSiteSegmentsDelete, handleSiteSegmentsList } from '../../generated/site/msw.gen.ts'
+import {
+  handleSiteSegmentsArchive,
+  handleSiteSegmentsList,
+  handleSiteSegmentsUnarchive,
+} from '../../generated/site/msw.gen.ts'
 import { Route as segmentsRoute } from '../../routes/workspaces/$workspaceId/segments/index.tsx'
 import { page, TIMESTAMPS } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
@@ -62,40 +66,38 @@ test('Edit links to the segment edit page', async () => {
     .toHaveAttribute('href', '/workspaces/TestWs01/segments/1/edit')
 })
 
-test('deleting a segment asks for confirmation, deletes it and refreshes the list', async () => {
-  const deleted: string[] = []
+test('archiving a segment calls archive and refreshes the list', async () => {
+  const archived: string[] = []
   let listFetches = 0
   worker.use(
     handleSiteSegmentsList(() => {
       listFetches++
       return HttpResponse.json({
-        items: deleted.length > 0 ? [TRIAL] : [VIPS, TRIAL],
+        items: archived.length > 0 ? [TRIAL] : [VIPS, TRIAL],
         totalItems: 2,
       })
     }),
-    handleSiteSegmentsDelete(({ params }) => {
-      deleted.push(params.id)
-      return new HttpResponse(null, { status: 204 })
+    handleSiteSegmentsArchive(({ params }) => {
+      archived.push(params.id)
+      return HttpResponse.json({ ...VIPS, archivedAt: '2026-01-01T00:00:00Z' })
     }),
   )
 
   const { screen } = await renderWithRouter(<SegmentsListPage />, LIST_ROUTE)
   await expect.element(screen.getByText('VIP customers')).toBeInTheDocument()
 
-  await screen.getByRole('button', { name: 'Delete' }).first().click()
-  expect(deleted).toEqual([])
-  await screen.getByRole('dialog').getByRole('button', { name: 'Delete' }).click()
+  await screen.getByRole('button', { name: 'Archive' }).first().click()
 
-  await expect.poll(() => deleted).toEqual(['1'])
-  await expect.element(screen.getByText('Segment deleted')).toBeInTheDocument()
+  await expect.poll(() => archived).toEqual(['1'])
+  await expect.element(screen.getByText('Segment archived')).toBeInTheDocument()
   await expect.poll(() => listFetches).toBe(2)
   await expect.element(screen.getByText('VIP customers')).not.toBeInTheDocument()
 })
 
-test('a segment a live broadcast uses is not deleted and the broadcast is named', async () => {
+test('a segment a live broadcast uses is not archived and the broadcast is named', async () => {
   worker.use(
     handleSiteSegmentsList({ body: page([VIPS], 1) }),
-    handleSiteSegmentsDelete(() =>
+    handleSiteSegmentsArchive(() =>
       problem(409, {
         usedBy: [{ kind: 'broadcast', id: '7', name: 'Summer sale teaser' }],
       }),
@@ -105,10 +107,36 @@ test('a segment a live broadcast uses is not deleted and the broadcast is named'
   const { screen } = await renderWithRouter(<SegmentsListPage />, LIST_ROUTE)
   await expect.element(screen.getByText('VIP customers')).toBeInTheDocument()
 
-  await screen.getByRole('button', { name: 'Delete' }).first().click()
-  await screen.getByRole('dialog').getByRole('button', { name: 'Delete' }).click()
+  await screen.getByRole('button', { name: 'Archive' }).first().click()
 
-  await expect.element(screen.getByText('Failed to delete segment')).toBeInTheDocument()
+  await expect.element(screen.getByText('Failed to archive segment')).toBeInTheDocument()
   await expect.element(screen.getByText(/Broadcast "Summer sale teaser"/)).toBeInTheDocument()
   await expect.element(screen.getByText('VIP customers')).toBeInTheDocument()
+})
+
+test('the archived view lists archived segments and restores one', async () => {
+  const flags: (string | null)[] = []
+  const restored: string[] = []
+  worker.use(
+    handleSiteSegmentsList(({ request }) => {
+      flags.push(new URL(request.url).searchParams.get('archived'))
+      return HttpResponse.json({
+        items: [{ ...VIPS, archivedAt: '2026-01-01T00:00:00Z' }],
+        totalItems: 1,
+      })
+    }),
+    handleSiteSegmentsUnarchive(({ params }) => {
+      restored.push(params.id)
+      return HttpResponse.json(VIPS)
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<SegmentsListPage />, LIST_ROUTE)
+  await screen.getByRole('switch', { name: 'Show archived' }).click()
+  await expect.poll(() => flags).toEqual(['false', 'true'])
+
+  await screen.getByRole('button', { name: 'Restore' }).click()
+
+  await expect.poll(() => restored).toEqual(['1'])
+  await expect.element(screen.getByText('Segment restored')).toBeInTheDocument()
 })

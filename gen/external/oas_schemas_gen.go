@@ -6018,7 +6018,7 @@ func (s *InUseProblemDetails) SetUsedBy(val []UsedBy) {
 func (*InUseProblemDetails) automationsArchiveRes()   {}
 func (*InUseProblemDetails) automationsDeleteRes()    {}
 func (*InUseProblemDetails) integrationsDeleteRes()   {}
-func (*InUseProblemDetails) segmentsDeleteRes()       {}
+func (*InUseProblemDetails) segmentsArchiveRes()      {}
 func (*InUseProblemDetails) sendingDomainsDeleteRes() {}
 func (*InUseProblemDetails) tagsDeleteRes()           {}
 
@@ -10319,11 +10319,12 @@ func (*ProblemDetailsHeaders) integrationsListRes()          {}
 func (*ProblemDetailsHeaders) integrationsRegenerateKeyRes() {}
 func (*ProblemDetailsHeaders) integrationsUpdateRes()        {}
 func (*ProblemDetailsHeaders) presetsListRes()               {}
+func (*ProblemDetailsHeaders) segmentsArchiveRes()           {}
 func (*ProblemDetailsHeaders) segmentsCreateRes()            {}
-func (*ProblemDetailsHeaders) segmentsDeleteRes()            {}
 func (*ProblemDetailsHeaders) segmentsGetRes()               {}
 func (*ProblemDetailsHeaders) segmentsListRes()              {}
 func (*ProblemDetailsHeaders) segmentsPreviewRes()           {}
+func (*ProblemDetailsHeaders) segmentsUnarchiveRes()         {}
 func (*ProblemDetailsHeaders) segmentsUpdateRes()            {}
 func (*ProblemDetailsHeaders) sendingDomainRatesListRes()    {}
 func (*ProblemDetailsHeaders) sendingDomainsCreateRes()      {}
@@ -10631,6 +10632,8 @@ type SegmentResource struct {
 	Name string `json:"name"`
 	// Segment definition: the rule group; an empty group matches all contacts.
 	Definition OptSegmentRuleGroup `json:"definition"`
+	// When the segment was archived; null while it is kept.
+	ArchivedAt OptNilTimestamp `json:"archivedAt"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -10650,6 +10653,11 @@ func (s *SegmentResource) GetName() string {
 // GetDefinition returns the value of Definition.
 func (s *SegmentResource) GetDefinition() OptSegmentRuleGroup {
 	return s.Definition
+}
+
+// GetArchivedAt returns the value of ArchivedAt.
+func (s *SegmentResource) GetArchivedAt() OptNilTimestamp {
+	return s.ArchivedAt
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -10677,6 +10685,11 @@ func (s *SegmentResource) SetDefinition(val OptSegmentRuleGroup) {
 	s.Definition = val
 }
 
+// SetArchivedAt sets the value of ArchivedAt.
+func (s *SegmentResource) SetArchivedAt(val OptNilTimestamp) {
+	s.ArchivedAt = val
+}
+
 // SetCreatedAt sets the value of CreatedAt.
 func (s *SegmentResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
@@ -10687,9 +10700,11 @@ func (s *SegmentResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
 
-func (*SegmentResource) segmentsCreateRes() {}
-func (*SegmentResource) segmentsGetRes()    {}
-func (*SegmentResource) segmentsUpdateRes() {}
+func (*SegmentResource) segmentsArchiveRes()   {}
+func (*SegmentResource) segmentsCreateRes()    {}
+func (*SegmentResource) segmentsGetRes()       {}
+func (*SegmentResource) segmentsUnarchiveRes() {}
+func (*SegmentResource) segmentsUpdateRes()    {}
 
 // One condition of a segment: a field, an operator and a value.
 // Ref: #/components/schemas/SegmentRule
@@ -10949,6 +10964,18 @@ func NewSegmentRuleGroupSegmentRuleNodeSum(v SegmentRuleGroup) SegmentRuleNodeSu
 	return s
 }
 
+type SegmentsArchiveBadRequest ProblemDetails
+
+func (*SegmentsArchiveBadRequest) segmentsArchiveRes() {}
+
+type SegmentsArchiveNotFound ProblemDetails
+
+func (*SegmentsArchiveNotFound) segmentsArchiveRes() {}
+
+type SegmentsArchiveUnauthorized ProblemDetails
+
+func (*SegmentsArchiveUnauthorized) segmentsArchiveRes() {}
+
 type SegmentsCreateBadRequest ProblemDetails
 
 func (*SegmentsCreateBadRequest) segmentsCreateRes() {}
@@ -10960,27 +10987,6 @@ func (*SegmentsCreateUnauthorized) segmentsCreateRes() {}
 type SegmentsCreateUnprocessableEntity ProblemDetails
 
 func (*SegmentsCreateUnprocessableEntity) segmentsCreateRes() {}
-
-type SegmentsDeleteBadRequest ProblemDetails
-
-func (*SegmentsDeleteBadRequest) segmentsDeleteRes() {}
-
-// SegmentsDeleteNoContent is response for SegmentsDelete operation.
-type SegmentsDeleteNoContent struct{}
-
-func (*SegmentsDeleteNoContent) segmentsDeleteRes() {}
-
-type SegmentsDeleteNotFound ProblemDetails
-
-func (*SegmentsDeleteNotFound) segmentsDeleteRes() {}
-
-type SegmentsDeleteUnauthorized ProblemDetails
-
-func (*SegmentsDeleteUnauthorized) segmentsDeleteRes() {}
-
-type SegmentsDeleteUnprocessableEntity ProblemDetails
-
-func (*SegmentsDeleteUnprocessableEntity) segmentsDeleteRes() {}
 
 type SegmentsGetBadRequest ProblemDetails
 
@@ -11083,6 +11089,18 @@ func (*SegmentsPreviewUnauthorized) segmentsPreviewRes() {}
 type SegmentsPreviewUnprocessableEntity ProblemDetails
 
 func (*SegmentsPreviewUnprocessableEntity) segmentsPreviewRes() {}
+
+type SegmentsUnarchiveBadRequest ProblemDetails
+
+func (*SegmentsUnarchiveBadRequest) segmentsUnarchiveRes() {}
+
+type SegmentsUnarchiveNotFound ProblemDetails
+
+func (*SegmentsUnarchiveNotFound) segmentsUnarchiveRes() {}
+
+type SegmentsUnarchiveUnauthorized ProblemDetails
+
+func (*SegmentsUnarchiveUnauthorized) segmentsUnarchiveRes() {}
 
 type SegmentsUpdateBadRequest ProblemDetails
 

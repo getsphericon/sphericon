@@ -380,18 +380,19 @@ type Handler interface {
 	//
 	// GET /presets
 	PresetsList(ctx context.Context) (PresetsListRes, error)
+	// SegmentsArchive implements Segments_archive operation.
+	//
+	// Archive a resource: it leaves the list and new work, keeps its history, and can be restored. Refused
+	// with 409 while live work uses it.
+	//
+	// POST /segments/{id}/archive
+	SegmentsArchive(ctx context.Context, params SegmentsArchiveParams) (SegmentsArchiveRes, error)
 	// SegmentsCreate implements Segments_create operation.
 	//
 	// Create a resource.
 	//
 	// POST /segments
 	SegmentsCreate(ctx context.Context, req *CreateSegmentInput) (SegmentsCreateRes, error)
-	// SegmentsDelete implements Segments_delete operation.
-	//
-	// Delete a resource.
-	//
-	// DELETE /segments/{id}
-	SegmentsDelete(ctx context.Context, params SegmentsDeleteParams) (SegmentsDeleteRes, error)
 	// SegmentsGet implements Segments_get operation.
 	//
 	// Get a resource by ID.
@@ -410,6 +411,12 @@ type Handler interface {
 	//
 	// POST /segments/preview
 	SegmentsPreview(ctx context.Context, req *PreviewSegmentInput) (SegmentsPreviewRes, error)
+	// SegmentsUnarchive implements Segments_unarchive operation.
+	//
+	// Restore an archived resource.
+	//
+	// POST /segments/{id}/unarchive
+	SegmentsUnarchive(ctx context.Context, params SegmentsUnarchiveParams) (SegmentsUnarchiveRes, error)
 	// SegmentsUpdate implements Segments_update operation.
 	//
 	// Update a resource.

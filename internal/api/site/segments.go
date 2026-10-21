@@ -25,7 +25,7 @@ func (h *Handlers) SiteSegmentsList(ctx context.Context, params siteapi.SiteSegm
 		return nil, err
 	}
 
-	page, err := h.segments.List(ctx, ws, pagination.ParamsOf(params.Page, params.PageSize))
+	page, err := h.segments.List(ctx, ws, pagination.ParamsOf(params.Page, params.PageSize), params.Archived.Or(false))
 	if err != nil {
 		return nil, err
 	}
@@ -128,29 +128,65 @@ func (h *Handlers) SiteSegmentsUpdate(ctx context.Context, req *siteapi.SiteUpda
 	return &res, nil
 }
 
-func (h *Handlers) SiteSegmentsDelete(ctx context.Context, params siteapi.SiteSegmentsDeleteParams) (siteapi.SiteSegmentsDeleteRes, error) {
+// SiteSegmentsArchive archives a segment (ADR 0049): it leaves the list and new work, and a
+// sent Broadcast's report still names it. A draft or scheduled Broadcast refuses it with 409.
+func (h *Handlers) SiteSegmentsArchive(ctx context.Context, params siteapi.SiteSegmentsArchiveParams) (siteapi.SiteSegmentsArchiveRes, error) {
 	ws, err := h.scopedFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
-		v := siteapi.SiteSegmentsDeleteNotFound(problem(http.StatusNotFound, "workspace not found"))
+		v := siteapi.SiteSegmentsArchiveNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil
 	}
 	if err != nil {
 		return nil, err
 	}
 
-	err = h.segments.Delete(ctx, ws, int64(params.ID))
+	id := int64(params.ID)
+	err = h.segments.Archive(ctx, ws, id)
 	if refused, ok := inuse.As(err); ok {
 		v := inUseProblem(refused)
 		return &v, nil
 	}
 	if errors.Is(err, segments.ErrNotFound) {
-		v := siteapi.SiteSegmentsDeleteNotFound(problem(http.StatusNotFound, "segment not found"))
+		v := siteapi.SiteSegmentsArchiveNotFound(problem(http.StatusNotFound, "segment not found"))
 		return &v, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	return &siteapi.SiteSegmentsDeleteNoContent{}, nil
+	s, err := ws.Segment().Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	res := mapper.SegmentToResource(s)
+	return &res, nil
+}
+
+// SiteSegmentsUnarchive restores an archived segment to the list.
+func (h *Handlers) SiteSegmentsUnarchive(ctx context.Context, params siteapi.SiteSegmentsUnarchiveParams) (siteapi.SiteSegmentsUnarchiveRes, error) {
+	ws, err := h.scopedFor(ctx, params.WorkspaceId)
+	if ent.IsNotFound(err) {
+		v := siteapi.SiteSegmentsUnarchiveNotFound(problem(http.StatusNotFound, "workspace not found"))
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	id := int64(params.ID)
+	err = h.segments.Unarchive(ctx, ws, id)
+	if errors.Is(err, segments.ErrNotFound) {
+		v := siteapi.SiteSegmentsUnarchiveNotFound(problem(http.StatusNotFound, "segment not found"))
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	s, err := ws.Segment().Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	res := mapper.SegmentToResource(s)
+	return &res, nil
 }
 
 // SiteSegmentsPreview reports how many *deliverable* (active) contacts match a

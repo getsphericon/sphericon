@@ -345,12 +345,12 @@ type SiteSecondFactorStartEnrollmentRes interface {
 	siteSecondFactorStartEnrollmentRes()
 }
 
-type SiteSegmentsCreateRes interface {
-	siteSegmentsCreateRes()
+type SiteSegmentsArchiveRes interface {
+	siteSegmentsArchiveRes()
 }
 
-type SiteSegmentsDeleteRes interface {
-	siteSegmentsDeleteRes()
+type SiteSegmentsCreateRes interface {
+	siteSegmentsCreateRes()
 }
 
 type SiteSegmentsGetRes interface {
@@ -363,6 +363,10 @@ type SiteSegmentsListRes interface {
 
 type SiteSegmentsPreviewRes interface {
 	siteSegmentsPreviewRes()
+}
+
+type SiteSegmentsUnarchiveRes interface {
+	siteSegmentsUnarchiveRes()
 }
 
 type SiteSegmentsUpdateRes interface {

@@ -2861,6 +2861,10 @@ export type SiteSegmentResource = {
    */
   definition?: SiteSegmentRuleGroup;
   /**
+   * When the segment was archived; null while it is kept
+   */
+  archivedAt?: Timestamp | null;
+  /**
    * Creation timestamp
    */
   createdAt: Timestamp;
@@ -3971,6 +3975,11 @@ export type UsedByKind = typeof UsedByKind[keyof typeof UsedByKind];
  * Workspace's one public address.
  */
 export type WorkspaceId = string;
+
+/**
+ * true lists the archived resources instead of the kept ones; the default hides them
+ */
+export type ArchivedFilter = boolean;
 
 /**
  * Page number (1-based)
@@ -8318,6 +8327,10 @@ export type SiteSegmentsListData = {
      * Page size
      */
     pageSize?: number;
+    /**
+     * true lists the archived resources instead of the kept ones; the default hides them
+     */
+    archived?: boolean;
   };
   url: '/workspaces/{workspaceId}/segments';
 };
@@ -8443,51 +8456,6 @@ export type SiteSegmentsPreviewResponses = {
 
 export type SiteSegmentsPreviewResponse = SiteSegmentsPreviewResponses[keyof SiteSegmentsPreviewResponses];
 
-export type SiteSegmentsDeleteData = {
-  body?: never;
-  path: {
-    /**
-     * The Workspace id: its short opaque public address and the route key for nested
-     * workspace resources (ADR 0043)
-     */
-    workspaceId: WorkspaceId;
-    /**
-     * Unique identifier
-     */
-    id: EntityId;
-  };
-  query?: never;
-  url: '/workspaces/{workspaceId}/segments/{id}';
-};
-
-export type SiteSegmentsDeleteErrors = {
-  /**
-   * RFC 7807 bad request response
-   */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 conflict response for a removal refused because live work still uses the row
-   * (ADR 0049): 409 with `usedBy` naming the users. Every refused removal of a Segment, Tag,
-   * Integration, Sending domain or Automation answers it.
-   */
-  409: InUseProblemDetails;
-};
-
-export type SiteSegmentsDeleteError = SiteSegmentsDeleteErrors[keyof SiteSegmentsDeleteErrors];
-
-export type SiteSegmentsDeleteResponses = {
-  /**
-   * There is no content to send for this request, but the headers may be useful.
-   */
-  204: void;
-};
-
-export type SiteSegmentsDeleteResponse = SiteSegmentsDeleteResponses[keyof SiteSegmentsDeleteResponses];
-
 export type SiteSegmentsGetData = {
   body?: never;
   path: {
@@ -8569,6 +8537,90 @@ export type SiteSegmentsUpdateResponses = {
 };
 
 export type SiteSegmentsUpdateResponse = SiteSegmentsUpdateResponses[keyof SiteSegmentsUpdateResponses];
+
+export type SiteSegmentsArchiveData = {
+  body?: never;
+  path: {
+    /**
+     * The Workspace id: its short opaque public address and the route key for nested
+     * workspace resources (ADR 0043)
+     */
+    workspaceId: WorkspaceId;
+    /**
+     * Unique identifier
+     */
+    id: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/segments/{id}/archive';
+};
+
+export type SiteSegmentsArchiveErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 conflict response for a removal refused because live work still uses the row
+   * (ADR 0049): 409 with `usedBy` naming the users. Every refused removal of a Segment, Tag,
+   * Integration, Sending domain or Automation answers it.
+   */
+  409: InUseProblemDetails;
+};
+
+export type SiteSegmentsArchiveError = SiteSegmentsArchiveErrors[keyof SiteSegmentsArchiveErrors];
+
+export type SiteSegmentsArchiveResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteSegmentResource;
+};
+
+export type SiteSegmentsArchiveResponse = SiteSegmentsArchiveResponses[keyof SiteSegmentsArchiveResponses];
+
+export type SiteSegmentsUnarchiveData = {
+  body?: never;
+  path: {
+    /**
+     * The Workspace id: its short opaque public address and the route key for nested
+     * workspace resources (ADR 0043)
+     */
+    workspaceId: WorkspaceId;
+    /**
+     * Unique identifier
+     */
+    id: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/segments/{id}/unarchive';
+};
+
+export type SiteSegmentsUnarchiveErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteSegmentsUnarchiveError = SiteSegmentsUnarchiveErrors[keyof SiteSegmentsUnarchiveErrors];
+
+export type SiteSegmentsUnarchiveResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteSegmentResource;
+};
+
+export type SiteSegmentsUnarchiveResponse = SiteSegmentsUnarchiveResponses[keyof SiteSegmentsUnarchiveResponses];
 
 export type SiteSendingDomainsListData = {
   body?: never;

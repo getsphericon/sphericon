@@ -163,6 +163,7 @@
   status: sent
   sent_at: '{{daysAgo 40}}'
   discarded_at: '{{daysAgo 5}}'
+  segment_id: 106
   workspace_id: 1
   created_at: '{{daysAgo 41}}'
   updated_at: '{{daysAgo 5}}'

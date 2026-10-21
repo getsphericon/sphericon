@@ -69,8 +69,10 @@
     "exportErrorTitle": "Failed to export contact data",
     "loadErrorTitle": "Failed to load contacts",
     "saveErrorTitle": "Failed to save contact",
-    "segmentDeleteErrorTitle": "Failed to delete segment",
+    "segmentArchiveErrorTitle": "Failed to archive segment",
+    "segmentDeleteErrorTitle": "alerts.segmentDeleteErrorTitle",
     "segmentLoadErrorTitle": "Failed to load segments",
+    "segmentRestoreErrorTitle": "Failed to restore segment",
     "segmentSaveErrorTitle": "Failed to save segment",
     "tagDeleteErrorTitle": "Failed to delete tag",
     "tagLoadErrorTitle": "Failed to load tags",
@@ -648,8 +650,10 @@
     "rateLimitedSeconds": "Too many attempts. Try again in {{count}} seconds.",
     "rateLimitedSeconds_one": "Too many attempts. Try again in {{count}} second.",
     "rateLimitedSeconds_other": "Too many attempts. Try again in {{count}} seconds.",
+    "segmentArchived": "Segment archived",
     "segmentCreated": "Segment created",
-    "segmentDeleted": "Segment deleted",
+    "segmentDeleted": "notifications.segmentDeleted",
+    "segmentRestored": "Segment restored",
     "segmentUpdated": "Segment updated",
     "soleOwner": "You are the only owner of: {{workspaces}}. Make another member an owner or delete each workspace first.",
     "successTitle": "Success",
@@ -821,7 +825,8 @@
     "previewCount": "{{count}} matching contacts",
     "previewCount_one": "{{count}} matching contact",
     "previewCount_other": "{{count}} matching contacts",
-    "rulesLabel": "Rules"
+    "rulesLabel": "Rules",
+    "showArchived": "Show archived"
   },
   "settings": {
     "apiKeysTitle": "API keys",

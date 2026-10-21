@@ -1171,7 +1171,7 @@ func (s *InUseProblemDetails) SetUsedBy(val []UsedBy) {
 func (*InUseProblemDetails) siteAutomationsArchiveRes()   {}
 func (*InUseProblemDetails) siteAutomationsDeleteRes()    {}
 func (*InUseProblemDetails) siteIntegrationsDeleteRes()   {}
-func (*InUseProblemDetails) siteSegmentsDeleteRes()       {}
+func (*InUseProblemDetails) siteSegmentsArchiveRes()      {}
 func (*InUseProblemDetails) siteSendingDomainsDeleteRes() {}
 func (*InUseProblemDetails) siteTagsDeleteRes()           {}
 
@@ -12709,6 +12709,8 @@ type SiteSegmentResource struct {
 	Name string `json:"name"`
 	// Segment definition: the rule group; an empty group matches all contacts.
 	Definition OptSiteSegmentRuleGroup `json:"definition"`
+	// When the segment was archived; null while it is kept.
+	ArchivedAt OptNilTimestamp `json:"archivedAt"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -12728,6 +12730,11 @@ func (s *SiteSegmentResource) GetName() string {
 // GetDefinition returns the value of Definition.
 func (s *SiteSegmentResource) GetDefinition() OptSiteSegmentRuleGroup {
 	return s.Definition
+}
+
+// GetArchivedAt returns the value of ArchivedAt.
+func (s *SiteSegmentResource) GetArchivedAt() OptNilTimestamp {
+	return s.ArchivedAt
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -12755,6 +12762,11 @@ func (s *SiteSegmentResource) SetDefinition(val OptSiteSegmentRuleGroup) {
 	s.Definition = val
 }
 
+// SetArchivedAt sets the value of ArchivedAt.
+func (s *SiteSegmentResource) SetArchivedAt(val OptNilTimestamp) {
+	s.ArchivedAt = val
+}
+
 // SetCreatedAt sets the value of CreatedAt.
 func (s *SiteSegmentResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
@@ -12765,9 +12777,11 @@ func (s *SiteSegmentResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
 
-func (*SiteSegmentResource) siteSegmentsCreateRes() {}
-func (*SiteSegmentResource) siteSegmentsGetRes()    {}
-func (*SiteSegmentResource) siteSegmentsUpdateRes() {}
+func (*SiteSegmentResource) siteSegmentsArchiveRes()   {}
+func (*SiteSegmentResource) siteSegmentsCreateRes()    {}
+func (*SiteSegmentResource) siteSegmentsGetRes()       {}
+func (*SiteSegmentResource) siteSegmentsUnarchiveRes() {}
+func (*SiteSegmentResource) siteSegmentsUpdateRes()    {}
 
 // One condition of a segment: a field, an operator and a value.
 // Ref: #/components/schemas/SiteSegmentRule
@@ -13029,6 +13043,14 @@ func NewSiteSegmentRuleGroupSiteSegmentRuleNodeSum(v SiteSegmentRuleGroup) SiteS
 	return s
 }
 
+type SiteSegmentsArchiveBadRequest ProblemDetails
+
+func (*SiteSegmentsArchiveBadRequest) siteSegmentsArchiveRes() {}
+
+type SiteSegmentsArchiveNotFound ProblemDetails
+
+func (*SiteSegmentsArchiveNotFound) siteSegmentsArchiveRes() {}
+
 type SiteSegmentsCreateNotFound ProblemDetails
 
 func (*SiteSegmentsCreateNotFound) siteSegmentsCreateRes() {}
@@ -13036,19 +13058,6 @@ func (*SiteSegmentsCreateNotFound) siteSegmentsCreateRes() {}
 type SiteSegmentsCreateUnprocessableEntity ProblemDetails
 
 func (*SiteSegmentsCreateUnprocessableEntity) siteSegmentsCreateRes() {}
-
-type SiteSegmentsDeleteBadRequest ProblemDetails
-
-func (*SiteSegmentsDeleteBadRequest) siteSegmentsDeleteRes() {}
-
-// SiteSegmentsDeleteNoContent is response for SiteSegmentsDelete operation.
-type SiteSegmentsDeleteNoContent struct{}
-
-func (*SiteSegmentsDeleteNoContent) siteSegmentsDeleteRes() {}
-
-type SiteSegmentsDeleteNotFound ProblemDetails
-
-func (*SiteSegmentsDeleteNotFound) siteSegmentsDeleteRes() {}
 
 type SiteSegmentsGetBadRequest ProblemDetails
 
@@ -13147,6 +13156,14 @@ func (*SiteSegmentsPreviewNotFound) siteSegmentsPreviewRes() {}
 type SiteSegmentsPreviewUnprocessableEntity ProblemDetails
 
 func (*SiteSegmentsPreviewUnprocessableEntity) siteSegmentsPreviewRes() {}
+
+type SiteSegmentsUnarchiveBadRequest ProblemDetails
+
+func (*SiteSegmentsUnarchiveBadRequest) siteSegmentsUnarchiveRes() {}
+
+type SiteSegmentsUnarchiveNotFound ProblemDetails
+
+func (*SiteSegmentsUnarchiveNotFound) siteSegmentsUnarchiveRes() {}
 
 type SiteSegmentsUpdateBadRequest ProblemDetails
 

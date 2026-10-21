@@ -885,6 +885,10 @@ const (
 	SegmentActiveID = 1
 	// SegmentActiveName is from fixtures/segments.
 	SegmentActiveName = "Active subscribers"
+	// SegmentArchivedID is from fixtures/segments.
+	SegmentArchivedID = 106
+	// SegmentArchivedName is from fixtures/segments.
+	SegmentArchivedName = "Archived audience"
 	// SegmentBlackFridayID is from fixtures/segments.
 	SegmentBlackFridayID = 102
 	// SegmentBlackFridayName is from fixtures/segments.

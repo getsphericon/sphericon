@@ -1309,10 +1309,10 @@ func ScopedEntities() []ScopedEntity {
 				return s.Segment().Update().Where(segment.ID(id)).Save(ctx)
 			},
 			Delete: func(ctx context.Context, s *Scoped, id int64) error {
-				return s.Segment().DeleteOneID(id).Exec(ctx)
+				return s.Segment().PurgeOneID(id).Exec(ctx)
 			},
 			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
-				return s.Segment().Delete().Where(segment.ID(id)).Exec(ctx)
+				return s.Segment().Purge().Where(segment.ID(id)).Exec(ctx)
 			},
 			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
 				src, err := s.c.Segment.Get(ctx, id)
@@ -1321,6 +1321,9 @@ func ScopedEntities() []ScopedEntity {
 				}
 				_ = remap
 				b := s.Segment().Create()
+				if src.DiscardedAt != nil {
+					b.SetDiscardedAt(*src.DiscardedAt)
+				}
 				b.SetName(src.Name)
 				if src.Definition != nil {
 					b.SetDefinition(*src.Definition)

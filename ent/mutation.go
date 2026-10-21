@@ -28487,6 +28487,7 @@ type SegmentMutation struct {
 	id               *int64
 	created_at       *time.Time
 	updated_at       *time.Time
+	discarded_at     *time.Time
 	name             *string
 	definition       *string
 	clearedFields    map[string]struct{}
@@ -28709,6 +28710,55 @@ func (m *SegmentMutation) ResetWorkspaceID() {
 	m.workspace = nil
 }
 
+// SetDiscardedAt sets the "discarded_at" field.
+func (m *SegmentMutation) SetDiscardedAt(t time.Time) {
+	m.discarded_at = &t
+}
+
+// DiscardedAt returns the value of the "discarded_at" field in the mutation.
+func (m *SegmentMutation) DiscardedAt() (r time.Time, exists bool) {
+	v := m.discarded_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDiscardedAt returns the old "discarded_at" field's value of the Segment entity.
+// If the Segment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SegmentMutation) OldDiscardedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDiscardedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDiscardedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDiscardedAt: %w", err)
+	}
+	return oldValue.DiscardedAt, nil
+}
+
+// ClearDiscardedAt clears the value of the "discarded_at" field.
+func (m *SegmentMutation) ClearDiscardedAt() {
+	m.discarded_at = nil
+	m.clearedFields[segment.FieldDiscardedAt] = struct{}{}
+}
+
+// DiscardedAtCleared returns if the "discarded_at" field was cleared in this mutation.
+func (m *SegmentMutation) DiscardedAtCleared() bool {
+	_, ok := m.clearedFields[segment.FieldDiscardedAt]
+	return ok
+}
+
+// ResetDiscardedAt resets all changes to the "discarded_at" field.
+func (m *SegmentMutation) ResetDiscardedAt() {
+	m.discarded_at = nil
+	delete(m.clearedFields, segment.FieldDiscardedAt)
+}
+
 // SetName sets the "name" field.
 func (m *SegmentMutation) SetName(s string) {
 	m.name = &s
@@ -28855,7 +28905,7 @@ func (m *SegmentMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *SegmentMutation) Fields() []string {
-	fields := make([]string, 0, 5)
+	fields := make([]string, 0, 6)
 	if m.created_at != nil {
 		fields = append(fields, segment.FieldCreatedAt)
 	}
@@ -28864,6 +28914,9 @@ func (m *SegmentMutation) Fields() []string {
 	}
 	if m.workspace != nil {
 		fields = append(fields, segment.FieldWorkspaceID)
+	}
+	if m.discarded_at != nil {
+		fields = append(fields, segment.FieldDiscardedAt)
 	}
 	if m.name != nil {
 		fields = append(fields, segment.FieldName)
@@ -28885,6 +28938,8 @@ func (m *SegmentMutation) Field(name string) (ent.Value, bool) {
 		return m.UpdatedAt()
 	case segment.FieldWorkspaceID:
 		return m.WorkspaceID()
+	case segment.FieldDiscardedAt:
+		return m.DiscardedAt()
 	case segment.FieldName:
 		return m.Name()
 	case segment.FieldDefinition:
@@ -28904,6 +28959,8 @@ func (m *SegmentMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldUpdatedAt(ctx)
 	case segment.FieldWorkspaceID:
 		return m.OldWorkspaceID(ctx)
+	case segment.FieldDiscardedAt:
+		return m.OldDiscardedAt(ctx)
 	case segment.FieldName:
 		return m.OldName(ctx)
 	case segment.FieldDefinition:
@@ -28937,6 +28994,13 @@ func (m *SegmentMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetWorkspaceID(v)
+		return nil
+	case segment.FieldDiscardedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDiscardedAt(v)
 		return nil
 	case segment.FieldName:
 		v, ok := value.(string)
@@ -28985,6 +29049,9 @@ func (m *SegmentMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *SegmentMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(segment.FieldDiscardedAt) {
+		fields = append(fields, segment.FieldDiscardedAt)
+	}
 	if m.FieldCleared(segment.FieldDefinition) {
 		fields = append(fields, segment.FieldDefinition)
 	}
@@ -29002,6 +29069,9 @@ func (m *SegmentMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *SegmentMutation) ClearField(name string) error {
 	switch name {
+	case segment.FieldDiscardedAt:
+		m.ClearDiscardedAt()
+		return nil
 	case segment.FieldDefinition:
 		m.ClearDefinition()
 		return nil
@@ -29021,6 +29091,9 @@ func (m *SegmentMutation) ResetField(name string) error {
 		return nil
 	case segment.FieldWorkspaceID:
 		m.ResetWorkspaceID()
+		return nil
+	case segment.FieldDiscardedAt:
+		m.ResetDiscardedAt()
 		return nil
 	case segment.FieldName:
 		m.ResetName()

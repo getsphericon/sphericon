@@ -233,12 +233,12 @@ type PresetsListRes interface {
 	presetsListRes()
 }
 
-type SegmentsCreateRes interface {
-	segmentsCreateRes()
+type SegmentsArchiveRes interface {
+	segmentsArchiveRes()
 }
 
-type SegmentsDeleteRes interface {
-	segmentsDeleteRes()
+type SegmentsCreateRes interface {
+	segmentsCreateRes()
 }
 
 type SegmentsGetRes interface {
@@ -251,6 +251,10 @@ type SegmentsListRes interface {
 
 type SegmentsPreviewRes interface {
 	segmentsPreviewRes()
+}
+
+type SegmentsUnarchiveRes interface {
+	segmentsUnarchiveRes()
 }
 
 type SegmentsUpdateRes interface {

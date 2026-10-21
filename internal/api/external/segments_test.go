@@ -2,7 +2,6 @@ package external_test
 
 import (
 	"context"
-	"github.com/samber/lo"
 	"testing"
 
 	"github.com/getsphericon/sphericon/ent/segment"
@@ -25,7 +24,7 @@ func TestExternalSegmentsRead(t *testing.T) {
 	require.NoError(t, err)
 	ok, isOK := list.(*externalapi.SegmentsListOK)
 	require.Truef(t, isOK, "got %T", list)
-	total, err := env.DB.Segment.Query().Where(segment.WorkspaceID(fixtures.AcmeID)).Count(ctx)
+	total, err := env.DB.Segment.Query().Where(segment.WorkspaceID(fixtures.AcmeID), segment.DiscardedAtIsNil()).Count(ctx)
 	require.NoError(t, err)
 	assert.EqualValues(t, total, ok.TotalItems)
 
@@ -72,13 +71,6 @@ func TestExternalSegmentsWrite(t *testing.T) {
 		externalapi.SegmentsUpdateParams{ID: seg.ID})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.SegmentsUpdateUnprocessableEntity{}, badUpd)
-
-	del, err := c.SegmentsDelete(ctx, externalapi.SegmentsDeleteParams{ID: seg.ID})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SegmentsDeleteNoContent{}, del)
-	again, err := c.SegmentsDelete(ctx, externalapi.SegmentsDeleteParams{ID: seg.ID})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SegmentsDeleteNotFound{}, again)
 }
 
 // Preview matches the segments module's count for the same definition.
@@ -124,9 +116,9 @@ func TestExternalSegmentsScopes(t *testing.T) {
 	up, err := ro.SegmentsUpdate(ctx, &externalapi.UpdateSegmentInput{}, externalapi.SegmentsUpdateParams{ID: entityIDString(fixtures.SegmentActiveID)})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.SegmentsUpdateUnauthorized{}, up)
-	del, err := ro.SegmentsDelete(ctx, externalapi.SegmentsDeleteParams{ID: entityIDString(fixtures.SegmentActiveID)})
+	del, err := ro.SegmentsArchive(ctx, externalapi.SegmentsArchiveParams{ID: entityIDString(fixtures.SegmentActiveID)})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SegmentsDeleteUnauthorized{}, del)
+	assert.IsType(t, &externalapi.SegmentsArchiveUnauthorized{}, del)
 
 	// Write scope cannot read.
 	wo := env.ExternalScoped(t, "segments:write")
@@ -156,26 +148,7 @@ func TestExternalSegmentsWorkspaceIsolation(t *testing.T) {
 		externalapi.SegmentsUpdateParams{ID: id})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.SegmentsUpdateNotFound{}, upd)
-	del, err := c.SegmentsDelete(ctx, externalapi.SegmentsDeleteParams{ID: id})
+	del, err := c.SegmentsArchive(ctx, externalapi.SegmentsArchiveParams{ID: id})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SegmentsDeleteNotFound{}, del)
-}
-
-// A Segment that a draft or scheduled Broadcast uses cannot be deleted: the 409 names the
-// Broadcasts (ADR 0049); one only a failed Broadcast used is deleted.
-func TestExternalSegmentDeleteRefusedWhileLiveBroadcastUsesIt(t *testing.T) {
-	env := testhelper.Setup(t)
-	ctx := context.Background()
-	c := env.ExternalScoped(t, "segments:write")
-
-	got, err := c.SegmentsDelete(ctx, externalapi.SegmentsDeleteParams{ID: entityIDString(fixtures.SegmentProPlanID)})
-	require.NoError(t, err)
-	refused, ok := got.(*externalapi.InUseProblemDetails)
-	require.Truef(t, ok, "got %T", got)
-	names := lo.Map(refused.UsedBy, func(u externalapi.UsedBy, _ int) string { return u.Name })
-	assert.Equal(t, []string{fixtures.BroadcastProSegmentName}, names)
-
-	done, err := c.SegmentsDelete(ctx, externalapi.SegmentsDeleteParams{ID: entityIDString(fixtures.SegmentRetiredID)})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SegmentsDeleteNoContent{}, done)
+	assert.IsType(t, &externalapi.SegmentsArchiveNotFound{}, del)
 }

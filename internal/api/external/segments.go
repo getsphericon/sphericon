@@ -22,7 +22,7 @@ func (h *Handlers) SegmentsList(ctx context.Context, params externalapi.Segments
 		return &res, nil
 	}
 
-	page, err := h.segments.List(ctx, auth.TokenScoped(ctx), pagination.ParamsOf(params.Page, params.PageSize))
+	page, err := h.segments.List(ctx, auth.TokenScoped(ctx), pagination.ParamsOf(params.Page, params.PageSize), params.Archived.Or(false))
 	if err != nil {
 		return nil, err
 	}
@@ -115,26 +115,58 @@ func (h *Handlers) SegmentsUpdate(ctx context.Context, req *externalapi.UpdateSe
 	return &res, nil
 }
 
-func (h *Handlers) SegmentsDelete(ctx context.Context, params externalapi.SegmentsDeleteParams) (externalapi.SegmentsDeleteRes, error) {
+// SegmentsArchive archives a segment (ADR 0049); a draft or scheduled Broadcast refuses it with 409.
+func (h *Handlers) SegmentsArchive(ctx context.Context, params externalapi.SegmentsArchiveParams) (externalapi.SegmentsArchiveRes, error) {
 	if !auth.HasScope(auth.GetTokenAuth(ctx), "segments:write") {
-		res := externalapi.SegmentsDeleteUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
+		res := externalapi.SegmentsArchiveUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
 
 	ws := auth.TokenScoped(ctx)
-	err := h.segments.Delete(ctx, ws, int64(params.ID))
+	id := int64(params.ID)
+	err := h.segments.Archive(ctx, ws, id)
 	if refused, ok := inuse.As(err); ok {
 		res := inUseProblem(refused)
 		return &res, nil
 	}
 	if errors.Is(err, segments.ErrNotFound) {
-		res := externalapi.SegmentsDeleteNotFound(problem(http.StatusNotFound, "segment not found"))
+		res := externalapi.SegmentsArchiveNotFound(problem(http.StatusNotFound, "segment not found"))
 		return &res, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	return &externalapi.SegmentsDeleteNoContent{}, nil
+	s, err := ws.Segment().Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	res := mapper.SegmentToResource(s)
+	return &res, nil
+}
+
+// SegmentsUnarchive restores an archived segment to the list.
+func (h *Handlers) SegmentsUnarchive(ctx context.Context, params externalapi.SegmentsUnarchiveParams) (externalapi.SegmentsUnarchiveRes, error) {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), "segments:write") {
+		res := externalapi.SegmentsUnarchiveUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
+		return &res, nil
+	}
+
+	ws := auth.TokenScoped(ctx)
+	id := int64(params.ID)
+	err := h.segments.Unarchive(ctx, ws, id)
+	if errors.Is(err, segments.ErrNotFound) {
+		res := externalapi.SegmentsUnarchiveNotFound(problem(http.StatusNotFound, "segment not found"))
+		return &res, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	s, err := ws.Segment().Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	res := mapper.SegmentToResource(s)
+	return &res, nil
 }
 
 func (h *Handlers) SegmentsPreview(ctx context.Context, req *externalapi.PreviewSegmentInput) (externalapi.SegmentsPreviewRes, error) {

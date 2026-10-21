@@ -204,6 +204,7 @@ func (c *ConverterImpl) SegmentToResource(source *ent.Segment) site.SiteSegmentR
 		siteapiSiteSegmentResource.ID = site.EntityId((*source).ID)
 		siteapiSiteSegmentResource.Name = (*source).Name
 		siteapiSiteSegmentResource.Definition = segmentDefinition((*source).Definition)
+		siteapiSiteSegmentResource.ArchivedAt = optNilTimestamp((*source).DiscardedAt)
 		siteapiSiteSegmentResource.CreatedAt = timestamp((*source).CreatedAt)
 		siteapiSiteSegmentResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}

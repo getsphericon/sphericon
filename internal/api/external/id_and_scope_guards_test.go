@@ -77,9 +77,12 @@ func idGuardCases() []guardCase {
 		{"SegmentsUpdate", func(c *externalapi.Client, id externalapi.EntityId) (any, error) {
 			return c.SegmentsUpdate(ctx, &externalapi.UpdateSegmentInput{}, externalapi.SegmentsUpdateParams{ID: id})
 		}, &externalapi.SegmentsUpdateUnauthorized{}, &externalapi.SegmentsUpdateBadRequest{}},
-		{"SegmentsDelete", func(c *externalapi.Client, id externalapi.EntityId) (any, error) {
-			return c.SegmentsDelete(ctx, externalapi.SegmentsDeleteParams{ID: id})
-		}, &externalapi.SegmentsDeleteUnauthorized{}, &externalapi.SegmentsDeleteBadRequest{}},
+		{"SegmentsArchive", func(c *externalapi.Client, id externalapi.EntityId) (any, error) {
+			return c.SegmentsArchive(ctx, externalapi.SegmentsArchiveParams{ID: id})
+		}, &externalapi.SegmentsArchiveUnauthorized{}, &externalapi.SegmentsArchiveBadRequest{}},
+		{"SegmentsUnarchive", func(c *externalapi.Client, id externalapi.EntityId) (any, error) {
+			return c.SegmentsUnarchive(ctx, externalapi.SegmentsUnarchiveParams{ID: id})
+		}, &externalapi.SegmentsUnarchiveUnauthorized{}, &externalapi.SegmentsUnarchiveBadRequest{}},
 		{"TagsListForContact", func(c *externalapi.Client, id externalapi.EntityId) (any, error) {
 			return c.TagsListForContact(ctx, externalapi.TagsListForContactParams{ContactId: id})
 		}, &externalapi.TagsListForContactUnauthorized{}, &externalapi.TagsListForContactBadRequest{}},

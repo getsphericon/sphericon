@@ -935,21 +935,22 @@ func (UnimplementedHandler) SiteSecondFactorStartEnrollment(ctx context.Context,
 	return r, ht.ErrNotImplemented
 }
 
+// SiteSegmentsArchive implements SiteSegments_archive operation.
+//
+// Archive a resource: it leaves the list and new work, keeps its history, and can be restored. Refused
+// with 409 while live work uses it.
+//
+// POST /workspaces/{workspaceId}/segments/{id}/archive
+func (UnimplementedHandler) SiteSegmentsArchive(ctx context.Context, params SiteSegmentsArchiveParams) (r SiteSegmentsArchiveRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteSegmentsCreate implements SiteSegments_create operation.
 //
 // Create a resource from the site UI.
 //
 // POST /workspaces/{workspaceId}/segments
 func (UnimplementedHandler) SiteSegmentsCreate(ctx context.Context, req *SiteCreateSegmentInput, params SiteSegmentsCreateParams) (r SiteSegmentsCreateRes, _ error) {
-	return r, ht.ErrNotImplemented
-}
-
-// SiteSegmentsDelete implements SiteSegments_delete operation.
-//
-// Delete a resource from the site UI.
-//
-// DELETE /workspaces/{workspaceId}/segments/{id}
-func (UnimplementedHandler) SiteSegmentsDelete(ctx context.Context, params SiteSegmentsDeleteParams) (r SiteSegmentsDeleteRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -977,6 +978,15 @@ func (UnimplementedHandler) SiteSegmentsList(ctx context.Context, params SiteSeg
 //
 // POST /workspaces/{workspaceId}/segments/preview
 func (UnimplementedHandler) SiteSegmentsPreview(ctx context.Context, req *SitePreviewSegmentInput, params SiteSegmentsPreviewParams) (r SiteSegmentsPreviewRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteSegmentsUnarchive implements SiteSegments_unarchive operation.
+//
+// Restore an archived resource.
+//
+// POST /workspaces/{workspaceId}/segments/{id}/unarchive
+func (UnimplementedHandler) SiteSegmentsUnarchive(ctx context.Context, params SiteSegmentsUnarchiveParams) (r SiteSegmentsUnarchiveRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

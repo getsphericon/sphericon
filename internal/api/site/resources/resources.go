@@ -52,6 +52,8 @@ import (
 // goverter:extend sendLimitSource
 type Converter interface {
 	ContactToResource(source *ent.Contact) siteapi.SiteContactResource
+	// The contract names the discarded state \"archived\" (ADR 0049).
+	// goverter:map DiscardedAt ArchivedAt
 	SegmentToResource(source *ent.Segment) siteapi.SiteSegmentResource
 	TokenToResource(source *ent.ApiToken) siteapi.SiteApiTokenResource
 

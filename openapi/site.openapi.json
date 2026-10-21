@@ -6936,6 +6936,9 @@
           },
           {
             "$ref": "#/components/parameters/PageQuery.pageSize"
+          },
+          {
+            "$ref": "#/components/parameters/ArchivedFilter"
           }
         ],
         "responses": {
@@ -7240,10 +7243,12 @@
             }
           }
         }
-      },
-      "delete": {
-        "operationId": "SiteSegments_delete",
-        "description": "Delete a resource from the site UI",
+      }
+    },
+    "/workspaces/{workspaceId}/segments/{id}/archive": {
+      "post": {
+        "operationId": "SiteSegments_archive",
+        "description": "Archive a resource: it leaves the list and new work, keeps its history, and can be restored. Refused with 409 while live work uses it.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteSegmentResourceKey.workspaceId"
@@ -7253,8 +7258,15 @@
           }
         ],
         "responses": {
-          "204": {
-            "description": "There is no content to send for this request, but the headers may be useful."
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteSegmentResource"
+                }
+              }
+            }
           },
           "400": {
             "description": "RFC 7807 bad request response",
@@ -7282,6 +7294,53 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/InUseProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Segments"]
+      }
+    },
+    "/workspaces/{workspaceId}/segments/{id}/unarchive": {
+      "post": {
+        "operationId": "SiteSegments_unarchive",
+        "description": "Restore an archived resource",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SiteSegmentResourceKey.workspaceId"
+          },
+          {
+            "$ref": "#/components/parameters/SiteSegmentResourceKey.id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteSegmentResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -8907,6 +8966,16 @@
   ],
   "components": {
     "parameters": {
+      "ArchivedFilter": {
+        "name": "archived",
+        "in": "query",
+        "required": false,
+        "description": "true lists the archived resources instead of the kept ones; the default hides them",
+        "schema": {
+          "type": "boolean"
+        },
+        "explode": false
+      },
       "PageQuery.page": {
         "name": "page",
         "in": "query",
@@ -13212,6 +13281,16 @@
               }
             ],
             "description": "Segment definition: the rule group; an empty group matches all contacts"
+          },
+          "archivedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the segment was archived; null while it is kept"
           },
           "createdAt": {
             "allOf": [

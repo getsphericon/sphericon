@@ -6657,6 +6657,9 @@
           },
           {
             "$ref": "#/components/parameters/PageQuery.pageSize"
+          },
+          {
+            "$ref": "#/components/parameters/ArchivedFilter"
           }
         ],
         "responses": {
@@ -7197,18 +7200,27 @@
             }
           }
         }
-      },
-      "delete": {
-        "operationId": "Segments_delete",
-        "description": "Delete a resource",
+      }
+    },
+    "/segments/{id}/archive": {
+      "post": {
+        "operationId": "Segments_archive",
+        "description": "Archive a resource: it leaves the list and new work, keeps its history, and can be restored. Refused with 409 while live work uses it.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SegmentResourceKey"
           }
         ],
         "responses": {
-          "204": {
-            "description": "There is no content to send for this request, but the headers may be useful."
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SegmentResource"
+                }
+              }
+            }
           },
           "400": {
             "description": "RFC 7807 bad request response",
@@ -7250,8 +7262,96 @@
               }
             }
           },
-          "422": {
-            "description": "RFC 7807 validation response",
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Segments"]
+      }
+    },
+    "/segments/{id}/unarchive": {
+      "post": {
+        "operationId": "Segments_unarchive",
+        "description": "Restore an archived resource",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SegmentResourceKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SegmentResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -9881,6 +9981,16 @@
   ],
   "components": {
     "parameters": {
+      "ArchivedFilter": {
+        "name": "archived",
+        "in": "query",
+        "required": false,
+        "description": "true lists the archived resources instead of the kept ones; the default hides them",
+        "schema": {
+          "type": "boolean"
+        },
+        "explode": false
+      },
       "AuditFilter.action": {
         "name": "action",
         "in": "query",
@@ -13403,6 +13513,16 @@
               }
             ],
             "description": "Segment definition: the rule group; an empty group matches all contacts"
+          },
+          "archivedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the segment was archived; null while it is kept"
           },
           "createdAt": {
             "allOf": [

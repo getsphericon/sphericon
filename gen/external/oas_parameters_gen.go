@@ -4722,13 +4722,13 @@ func decodeIntegrationsUpdateParams(args [1]string, argsEscaped bool, r *http.Re
 	return params, nil
 }
 
-// SegmentsDeleteParams is parameters of Segments_delete operation.
-type SegmentsDeleteParams struct {
+// SegmentsArchiveParams is parameters of Segments_archive operation.
+type SegmentsArchiveParams struct {
 	// Unique identifier.
 	ID EntityId
 }
 
-func unpackSegmentsDeleteParams(packed middleware.Parameters) (params SegmentsDeleteParams) {
+func unpackSegmentsArchiveParams(packed middleware.Parameters) (params SegmentsArchiveParams) {
 	{
 		key := middleware.ParameterKey{
 			Name: "id",
@@ -4739,7 +4739,7 @@ func unpackSegmentsDeleteParams(packed middleware.Parameters) (params SegmentsDe
 	return params
 }
 
-func decodeSegmentsDeleteParams(args [1]string, argsEscaped bool, r *http.Request) (params SegmentsDeleteParams, _ error) {
+func decodeSegmentsArchiveParams(args [1]string, argsEscaped bool, r *http.Request) (params SegmentsArchiveParams, _ error) {
 	// Decode path: id.
 	if err := func() error {
 		param := args[0]
@@ -4874,6 +4874,8 @@ type SegmentsListParams struct {
 	Page OptInt32 `json:",omitempty,omitzero"`
 	// Page size.
 	PageSize OptInt32 `json:",omitempty,omitzero"`
+	// True lists the archived resources instead of the kept ones; the default hides them.
+	Archived OptBool `json:",omitempty,omitzero"`
 }
 
 func unpackSegmentsListParams(packed middleware.Parameters) (params SegmentsListParams) {
@@ -4893,6 +4895,15 @@ func unpackSegmentsListParams(packed middleware.Parameters) (params SegmentsList
 		}
 		if v, ok := packed[key]; ok {
 			params.PageSize = v.(OptInt32)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "archived",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.Archived = v.(OptBool)
 		}
 	}
 	return params
@@ -4989,6 +5000,120 @@ func decodeSegmentsListParams(args [0]string, argsEscaped bool, r *http.Request)
 		return params, &ogenerrors.DecodeParamError{
 			Name: "pageSize",
 			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: archived.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "archived",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotArchivedVal bool
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToBool(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotArchivedVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.Archived.SetTo(paramsDotArchivedVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "archived",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// SegmentsUnarchiveParams is parameters of Segments_unarchive operation.
+type SegmentsUnarchiveParams struct {
+	// Unique identifier.
+	ID EntityId
+}
+
+func unpackSegmentsUnarchiveParams(packed middleware.Parameters) (params SegmentsUnarchiveParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "id",
+			In:   "path",
+		}
+		params.ID = packed[key].(EntityId)
+	}
+	return params
+}
+
+func decodeSegmentsUnarchiveParams(args [1]string, argsEscaped bool, r *http.Request) (params SegmentsUnarchiveParams, _ error) {
+	// Decode path: id.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "id",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotIDVal int64
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToStringInt64(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotIDVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.ID = EntityId(paramsDotIDVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "id",
+			In:   "path",
 			Err:  err,
 		}
 	}

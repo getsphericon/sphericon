@@ -1906,6 +1906,7 @@ export const zSiteSegmentResource = z.object({
   id: zEntityId,
   name: z.string(),
   definition: z.exactOptional(z.lazy((): any => zSiteSegmentRuleGroup)),
+  archivedAt: z.exactOptional(zTimestamp.nullable()),
   createdAt: zTimestamp,
   updatedAt: zTimestamp
 });
@@ -1936,6 +1937,11 @@ export const zSiteUpdateSegmentInput = z.object({
   name: z.exactOptional(z.string()),
   definition: z.exactOptional(zSiteSegmentRuleGroup)
 });
+
+/**
+ * true lists the archived resources instead of the kept ones; the default hides them
+ */
+export const zArchivedFilter = z.boolean();
 
 /**
  * Page number (1-based)
@@ -3294,16 +3300,6 @@ export const zSiteWorkspacesSetSecondFactorRequirementPath = z.object({
  */
 export const zSiteWorkspacesSetSecondFactorRequirementResponse = zSiteWorkspaceResource;
 
-export const zSiteSegmentsDeletePath = z.object({
-  workspaceId: zWorkspaceId,
-  id: zEntityId
-});
-
-/**
- * There is no content to send for this request, but the headers may be useful.
- */
-export const zSiteSegmentsDeleteResponse = z.void();
-
 export const zSiteSendingDomainsListPath = z.object({
   workspaceId: zWorkspaceId
 });
@@ -3650,7 +3646,8 @@ export const zSiteSegmentsListPath = z.object({
 
 export const zSiteSegmentsListQuery = z.object({
   page: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
-  pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(25)
+  pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(25),
+  archived: z.exactOptional(z.boolean())
 });
 
 /**
@@ -3707,3 +3704,23 @@ export const zSiteSegmentsUpdatePath = z.object({
  * The request has succeeded.
  */
 export const zSiteSegmentsUpdateResponse = zSiteSegmentResource;
+
+export const zSiteSegmentsArchivePath = z.object({
+  workspaceId: zWorkspaceId,
+  id: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteSegmentsArchiveResponse = zSiteSegmentResource;
+
+export const zSiteSegmentsUnarchivePath = z.object({
+  workspaceId: zWorkspaceId,
+  id: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteSegmentsUnarchiveResponse = zSiteSegmentResource;
