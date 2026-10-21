@@ -1,6 +1,6 @@
 // Package domainverify is the module behind the Sending domain verification jobs (ADR 0010,
-// ADR 0038): the live DKIM check and what it decides (the verified flag, the flip to
-// unverified, the Owners' notice of it), and the Tracking domain check and what it decides
+// ADR 0038): the live DKIM check and what it decides (the verified moments, the loss of
+// verification, the Owners' notice of it), and the Tracking domain check and what it decides
 // (a host another Workspace holds, a stale answer, a state that went back a step and its
 // notice). The jobs only pick which domains are due and call it.
 //
@@ -23,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/joindomain"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/dkimstate"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/joindomains"
 	"github.com/getsphericon/sphericon/internal/lifecycle"
@@ -56,10 +57,10 @@ func (m *Module) Verify(ctx context.Context, id int64) error {
 	return errors.Join(dkimErr, trackErr)
 }
 
-// VerifyDKIM re-checks a domain's DKIM DNS and persists the result: verified,
-// last_checked_at, and (when it becomes verified) verified_at. It returns the resulting
-// verified state. A check that flips a live domain to unverified mails the Owners, best-effort:
-// a failed notice never fails the check. The flip is a compare-and-swap on the state the check
+// VerifyDKIM re-checks a domain's DKIM DNS and persists the result: last_checked_at,
+// verified_at when it becomes verified (clearing the loss) and verification_lost_at when it
+// stops being. It returns the resulting verified state. A check that loses a live domain's verification mails the Owners, best-effort:
+// a failed notice never fails the check. The write is a compare-and-swap on the state the check
 // read, so a check that lost to another one stores nothing and reports no flip: the Owners are
 // told once per loss (ADR 0046).
 func (m *Module) VerifyDKIM(ctx context.Context, id int64) (verified bool, err error) {
@@ -73,14 +74,18 @@ func (m *Module) VerifyDKIM(ctx context.Context, id int64) (verified bool, err e
 	}
 
 	now := time.Now()
+	was := dkimstate.Is(dom)
 	upd := m.client.Scoped(dom.WorkspaceID).SendingDomain().UpdateOneID(id).SetLastCheckedAt(now)
 	flipped := false
-	if verified != dom.Verified {
-		upd.Where(sendingdomain.Verified(dom.Verified)).SetVerified(verified)
-		if verified {
-			upd.SetVerifiedAt(now)
+	if verified != was {
+		// Compare-and-swap on the state the check read: the write lands only while the row
+		// still is in it, so the Owners are told once per loss.
+		if was {
+			upd.Where(dkimstate.Verified()).SetVerificationLostAt(now)
+		} else {
+			upd.Where(sendingdomain.Not(dkimstate.Verified())).SetVerifiedAt(now).ClearVerificationLostAt()
 		}
-		flipped = dom.Verified && !verified
+		flipped = was
 	}
 	if err := upd.Exec(ctx); err != nil {
 		if ent.IsNotFound(err) {
@@ -89,7 +94,7 @@ func (m *Module) VerifyDKIM(ctx context.Context, id int64) (verified bool, err e
 			if gerr != nil {
 				return false, gerr
 			}
-			return current.Verified, nil
+			return dkimstate.Is(current), nil
 		}
 		return false, err
 	}

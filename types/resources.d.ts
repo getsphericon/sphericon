@@ -1131,6 +1131,7 @@ export default interface Resources {
         "domainLabel": "Domain",
         "empty": "No sending domains yet",
         "loadError": "Failed to load sending domains",
+        "lost": "Verification lost",
         "pending": "Pending",
         "recordHost": "Host",
         "recordName": "Record",

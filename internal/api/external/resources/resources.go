@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/brandkit"
 	"github.com/getsphericon/sphericon/internal/convert"
+	"github.com/getsphericon/sphericon/internal/dkimstate"
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/segments"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
@@ -169,6 +170,7 @@ type Converter interface {
 	// goverter:ignore TrackingRecord
 	// The contract names the discarded state "archived" (ADR 0049).
 	// goverter:map DiscardedAt ArchivedAt
+	// goverter:map . Verified | sendingDomainVerified
 	SendingDomainToResource(source *ent.SendingDomain) externalapi.SendingDomainResource
 	// goverter:map . Type | dnsRecordType
 	DnsRecordToResource(source sendingdomains.Record) externalapi.DnsRecord
@@ -480,3 +482,6 @@ func smtpConfigKind(integrations.RedactedSMTP) externalapi.SmtpConfigKind {
 func sesConfigKind(integrations.RedactedSES) externalapi.SesConfigKind {
 	return externalapi.SesConfigKindSes
 }
+
+// sendingDomainVerified derives the verified flag from the verified and lost moments.
+func sendingDomainVerified(d ent.SendingDomain) bool { return dkimstate.Is(&d) }

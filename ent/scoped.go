@@ -21040,18 +21040,6 @@ func (x *SendingDomainScopedCreate) SetDkimPublicKey(v string) *SendingDomainSco
 	return x
 }
 
-// SetVerified sets the "verified" field.
-func (x *SendingDomainScopedCreate) SetVerified(v bool) *SendingDomainScopedCreate {
-	x.b.SetVerified(v)
-	return x
-}
-
-// SetNillableVerified sets the "verified" field if the given value is not nil.
-func (x *SendingDomainScopedCreate) SetNillableVerified(v *bool) *SendingDomainScopedCreate {
-	x.b.SetNillableVerified(v)
-	return x
-}
-
 // SetLastCheckedAt sets the "last_checked_at" field.
 func (x *SendingDomainScopedCreate) SetLastCheckedAt(v time.Time) *SendingDomainScopedCreate {
 	x.b.SetLastCheckedAt(v)
@@ -21073,6 +21061,18 @@ func (x *SendingDomainScopedCreate) SetVerifiedAt(v time.Time) *SendingDomainSco
 // SetNillableVerifiedAt sets the "verified_at" field if the given value is not nil.
 func (x *SendingDomainScopedCreate) SetNillableVerifiedAt(v *time.Time) *SendingDomainScopedCreate {
 	x.b.SetNillableVerifiedAt(v)
+	return x
+}
+
+// SetVerificationLostAt sets the "verification_lost_at" field.
+func (x *SendingDomainScopedCreate) SetVerificationLostAt(v time.Time) *SendingDomainScopedCreate {
+	x.b.SetVerificationLostAt(v)
+	return x
+}
+
+// SetNillableVerificationLostAt sets the "verification_lost_at" field if the given value is not nil.
+func (x *SendingDomainScopedCreate) SetNillableVerificationLostAt(v *time.Time) *SendingDomainScopedCreate {
+	x.b.SetNillableVerificationLostAt(v)
 	return x
 }
 
@@ -21299,18 +21299,6 @@ func (u *SendingDomainScopedUpsert) UpdateDkimPublicKey() *SendingDomainScopedUp
 	return u
 }
 
-// SetVerified sets the "verified" field.
-func (u *SendingDomainScopedUpsert) SetVerified(v bool) *SendingDomainScopedUpsert {
-	u.u.Set(sendingdomain.FieldVerified, v)
-	return u
-}
-
-// UpdateVerified sets the "verified" field to the value that was provided on create.
-func (u *SendingDomainScopedUpsert) UpdateVerified() *SendingDomainScopedUpsert {
-	u.u.SetExcluded(sendingdomain.FieldVerified)
-	return u
-}
-
 // SetLastCheckedAt sets the "last_checked_at" field.
 func (u *SendingDomainScopedUpsert) SetLastCheckedAt(v time.Time) *SendingDomainScopedUpsert {
 	u.u.Set(sendingdomain.FieldLastCheckedAt, v)
@@ -21344,6 +21332,24 @@ func (u *SendingDomainScopedUpsert) UpdateVerifiedAt() *SendingDomainScopedUpser
 // ClearVerifiedAt clears the value of the "verified_at" field.
 func (u *SendingDomainScopedUpsert) ClearVerifiedAt() *SendingDomainScopedUpsert {
 	u.u.SetNull(sendingdomain.FieldVerifiedAt)
+	return u
+}
+
+// SetVerificationLostAt sets the "verification_lost_at" field.
+func (u *SendingDomainScopedUpsert) SetVerificationLostAt(v time.Time) *SendingDomainScopedUpsert {
+	u.u.Set(sendingdomain.FieldVerificationLostAt, v)
+	return u
+}
+
+// UpdateVerificationLostAt sets the "verification_lost_at" field to the value that was provided on create.
+func (u *SendingDomainScopedUpsert) UpdateVerificationLostAt() *SendingDomainScopedUpsert {
+	u.u.SetExcluded(sendingdomain.FieldVerificationLostAt)
+	return u
+}
+
+// ClearVerificationLostAt clears the value of the "verification_lost_at" field.
+func (u *SendingDomainScopedUpsert) ClearVerificationLostAt() *SendingDomainScopedUpsert {
+	u.u.SetNull(sendingdomain.FieldVerificationLostAt)
 	return u
 }
 
@@ -21663,18 +21669,6 @@ func (x *SendingDomainScopedUpdateOne) SetNillableDkimPublicKey(v *string) *Send
 	return x
 }
 
-// SetVerified sets the "verified" field.
-func (x *SendingDomainScopedUpdateOne) SetVerified(v bool) *SendingDomainScopedUpdateOne {
-	x.b.SetVerified(v)
-	return x
-}
-
-// SetNillableVerified sets the "verified" field if the given value is not nil.
-func (x *SendingDomainScopedUpdateOne) SetNillableVerified(v *bool) *SendingDomainScopedUpdateOne {
-	x.b.SetNillableVerified(v)
-	return x
-}
-
 // SetLastCheckedAt sets the "last_checked_at" field.
 func (x *SendingDomainScopedUpdateOne) SetLastCheckedAt(v time.Time) *SendingDomainScopedUpdateOne {
 	x.b.SetLastCheckedAt(v)
@@ -21708,6 +21702,24 @@ func (x *SendingDomainScopedUpdateOne) SetNillableVerifiedAt(v *time.Time) *Send
 // ClearVerifiedAt clears the value of the "verified_at" field.
 func (x *SendingDomainScopedUpdateOne) ClearVerifiedAt() *SendingDomainScopedUpdateOne {
 	x.b.ClearVerifiedAt()
+	return x
+}
+
+// SetVerificationLostAt sets the "verification_lost_at" field.
+func (x *SendingDomainScopedUpdateOne) SetVerificationLostAt(v time.Time) *SendingDomainScopedUpdateOne {
+	x.b.SetVerificationLostAt(v)
+	return x
+}
+
+// SetNillableVerificationLostAt sets the "verification_lost_at" field if the given value is not nil.
+func (x *SendingDomainScopedUpdateOne) SetNillableVerificationLostAt(v *time.Time) *SendingDomainScopedUpdateOne {
+	x.b.SetNillableVerificationLostAt(v)
+	return x
+}
+
+// ClearVerificationLostAt clears the value of the "verification_lost_at" field.
+func (x *SendingDomainScopedUpdateOne) ClearVerificationLostAt() *SendingDomainScopedUpdateOne {
+	x.b.ClearVerificationLostAt()
 	return x
 }
 
@@ -21921,18 +21933,6 @@ func (x *SendingDomainScopedUpdate) SetNillableDkimPublicKey(v *string) *Sending
 	return x
 }
 
-// SetVerified sets the "verified" field.
-func (x *SendingDomainScopedUpdate) SetVerified(v bool) *SendingDomainScopedUpdate {
-	x.b.SetVerified(v)
-	return x
-}
-
-// SetNillableVerified sets the "verified" field if the given value is not nil.
-func (x *SendingDomainScopedUpdate) SetNillableVerified(v *bool) *SendingDomainScopedUpdate {
-	x.b.SetNillableVerified(v)
-	return x
-}
-
 // SetLastCheckedAt sets the "last_checked_at" field.
 func (x *SendingDomainScopedUpdate) SetLastCheckedAt(v time.Time) *SendingDomainScopedUpdate {
 	x.b.SetLastCheckedAt(v)
@@ -21966,6 +21966,24 @@ func (x *SendingDomainScopedUpdate) SetNillableVerifiedAt(v *time.Time) *Sending
 // ClearVerifiedAt clears the value of the "verified_at" field.
 func (x *SendingDomainScopedUpdate) ClearVerifiedAt() *SendingDomainScopedUpdate {
 	x.b.ClearVerifiedAt()
+	return x
+}
+
+// SetVerificationLostAt sets the "verification_lost_at" field.
+func (x *SendingDomainScopedUpdate) SetVerificationLostAt(v time.Time) *SendingDomainScopedUpdate {
+	x.b.SetVerificationLostAt(v)
+	return x
+}
+
+// SetNillableVerificationLostAt sets the "verification_lost_at" field if the given value is not nil.
+func (x *SendingDomainScopedUpdate) SetNillableVerificationLostAt(v *time.Time) *SendingDomainScopedUpdate {
+	x.b.SetNillableVerificationLostAt(v)
+	return x
+}
+
+// ClearVerificationLostAt clears the value of the "verification_lost_at" field.
+func (x *SendingDomainScopedUpdate) ClearVerificationLostAt() *SendingDomainScopedUpdate {
+	x.b.ClearVerificationLostAt()
 	return x
 }
 

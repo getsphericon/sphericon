@@ -1416,12 +1416,14 @@ func ScopedEntities() []ScopedEntity {
 				b.SetDkimSelector(src.DkimSelector)
 				b.SetDkimPrivateKeyEncrypted(src.DkimPrivateKeyEncrypted)
 				b.SetDkimPublicKey(src.DkimPublicKey)
-				b.SetVerified(src.Verified)
 				if src.LastCheckedAt != nil {
 					b.SetLastCheckedAt(*src.LastCheckedAt)
 				}
 				if src.VerifiedAt != nil {
 					b.SetVerifiedAt(*src.VerifiedAt)
+				}
+				if src.VerificationLostAt != nil {
+					b.SetVerificationLostAt(*src.VerificationLostAt)
 				}
 				b.SetTrackingState(src.TrackingState)
 				if src.TrackingCheckedAt != nil {

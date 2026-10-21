@@ -287,9 +287,10 @@ func (c *ConverterImpl) SendingDomainToResource(source *ent.SendingDomain) exter
 		externalapiSendingDomainResource.ID = external.EntityId((*source).ID)
 		externalapiSendingDomainResource.Domain = (*source).Domain
 		externalapiSendingDomainResource.DkimSelector = (*source).DkimSelector
-		externalapiSendingDomainResource.Verified = (*source).Verified
+		externalapiSendingDomainResource.Verified = sendingDomainVerified((*source))
 		externalapiSendingDomainResource.LastCheckedAt = optNilTimestamp((*source).LastCheckedAt)
 		externalapiSendingDomainResource.VerifiedAt = optNilTimestamp((*source).VerifiedAt)
+		externalapiSendingDomainResource.VerificationLostAt = optNilTimestamp((*source).VerificationLostAt)
 		externalapiSendingDomainResource.ArchivedAt = optNilTimestamp((*source).DiscardedAt)
 		externalapiSendingDomainResource.CreatedAt = timestamp((*source).CreatedAt)
 		externalapiSendingDomainResource.UpdatedAt = timestamp((*source).UpdatedAt)

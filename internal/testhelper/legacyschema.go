@@ -95,3 +95,40 @@ func InsertLegacyAutomations(t *testing.T, sqlDB *sql.DB) {
 		require.NoError(t, err, q)
 	}
 }
+
+// InsertLegacySendingDomains seeds a Workspace with the Sending domains the boolean `verified`
+// could describe, for the migration that replaced it by moments: verified now, lost (verified
+// once, not now) and never verified. It writes the column the old schema had and the new one
+// lacks, so only a database before that migration takes it.
+func InsertLegacySendingDomains(t *testing.T, sqlDB *sql.DB) {
+	t.Helper()
+	const cols = `(id, domain, dkim_selector, dkim_private_key_encrypted, dkim_public_key, workspace_id, verified, verified_at, last_checked_at, created_at, updated_at)`
+	for _, q := range []string{
+		`INSERT INTO workspaces (id, name, public_id, collect_key, created_at, updated_at) VALUES (1, 'w', 'aaaaaaaa', 'k', now(), now())`,
+		`INSERT INTO sending_domains ` + cols + ` VALUES
+		   (1, 'live.test', 's', 'x', 'p', 1, true, now() - interval '30 days', now() - interval '1 day', now(), now()),
+		   (2, 'lost.test', 's', 'x', 'p', 1, false, now() - interval '30 days', now() - interval '2 days', now(), now()),
+		   (3, 'never.test', 's', 'x', 'p', 1, false, NULL, NULL, now(), now())`,
+	} {
+		_, err := sqlDB.ExecContext(t.Context(), q)
+		require.NoError(t, err, q)
+	}
+}
+
+// SendingDomainMoments reads, per domain, whether it has a verified_at and whether it has a
+// verification_lost_at, for the migration test that follows the flag into moments.
+func SendingDomainMoments(t *testing.T, sqlDB *sql.DB) map[string][2]bool {
+	t.Helper()
+	rows, err := sqlDB.QueryContext(t.Context(), `SELECT domain, verified_at IS NOT NULL, verification_lost_at IS NOT NULL FROM sending_domains`)
+	require.NoError(t, err)
+	defer func() { require.NoError(t, rows.Close()) }()
+	moments := map[string][2]bool{}
+	for rows.Next() {
+		var domain string
+		var verified, lost bool
+		require.NoError(t, rows.Scan(&domain, &verified, &lost))
+		moments[domain] = [2]bool{verified, lost}
+	}
+	require.NoError(t, rows.Err())
+	return moments
+}

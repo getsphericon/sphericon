@@ -34775,6 +34775,12 @@ func (s *SiteSendingDomainResource) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.VerificationLostAt.Set {
+			e.FieldStart("verificationLostAt")
+			s.VerificationLostAt.Encode(e)
+		}
+	}
+	{
 		if s.ArchivedAt.Set {
 			e.FieldStart("archivedAt")
 			s.ArchivedAt.Encode(e)
@@ -34790,7 +34796,7 @@ func (s *SiteSendingDomainResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteSendingDomainResource = [13]string{
+var jsonFieldsNameOfSiteSendingDomainResource = [14]string{
 	0:  "id",
 	1:  "domain",
 	2:  "dkimSelector",
@@ -34801,9 +34807,10 @@ var jsonFieldsNameOfSiteSendingDomainResource = [13]string{
 	7:  "trackingRecord",
 	8:  "lastCheckedAt",
 	9:  "verifiedAt",
-	10: "archivedAt",
-	11: "createdAt",
-	12: "updatedAt",
+	10: "verificationLostAt",
+	11: "archivedAt",
+	12: "createdAt",
+	13: "updatedAt",
 }
 
 // Decode decodes SiteSendingDomainResource from json.
@@ -34921,6 +34928,16 @@ func (s *SiteSendingDomainResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"verifiedAt\"")
 			}
+		case "verificationLostAt":
+			if err := func() error {
+				s.VerificationLostAt.Reset()
+				if err := s.VerificationLostAt.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"verificationLostAt\"")
+			}
 		case "archivedAt":
 			if err := func() error {
 				s.ArchivedAt.Reset()
@@ -34932,7 +34949,7 @@ func (s *SiteSendingDomainResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"archivedAt\"")
 			}
 		case "createdAt":
-			requiredBitSet[1] |= 1 << 3
+			requiredBitSet[1] |= 1 << 4
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -34942,7 +34959,7 @@ func (s *SiteSendingDomainResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"createdAt\"")
 			}
 		case "updatedAt":
-			requiredBitSet[1] |= 1 << 4
+			requiredBitSet[1] |= 1 << 5
 			if err := func() error {
 				if err := s.UpdatedAt.Decode(d); err != nil {
 					return err
@@ -34962,7 +34979,7 @@ func (s *SiteSendingDomainResource) Decode(d *jx.Decoder) error {
 	var failures []validate.FieldError
 	for i, mask := range [2]uint8{
 		0b01111111,
-		0b00011000,
+		0b00110000,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

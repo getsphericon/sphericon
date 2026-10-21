@@ -1946,8 +1946,8 @@ export const zSiteTrackingRecord = z.object({
 /**
  * Sending domain resource used by the site UI (ADR 0010). sphericon generates the
  * DKIM keypair; the user publishes the DKIM TXT to authenticate the domain. The
- * private key is never exposed. `verified` is a live property re-checked in the
- * background — it can flip back if the DNS record disappears.
+ * private key is never exposed. `verified` is re-checked in the background:
+ * the domain loses it (`verificationLostAt`) if the DNS record disappears.
  */
 export const zSiteSendingDomainResource = z.object({
   id: zEntityId,
@@ -1960,6 +1960,7 @@ export const zSiteSendingDomainResource = z.object({
   trackingRecord: z.exactOptional(zSiteTrackingRecord),
   lastCheckedAt: z.exactOptional(zTimestamp.nullable()),
   verifiedAt: z.exactOptional(zTimestamp.nullable()),
+  verificationLostAt: z.exactOptional(zTimestamp.nullable()),
   archivedAt: z.exactOptional(zTimestamp.nullable()),
   createdAt: zTimestamp,
   updatedAt: zTimestamp

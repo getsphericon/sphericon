@@ -17,6 +17,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/dkimstate"
 	"github.com/getsphericon/sphericon/internal/dnstest"
 	"github.com/getsphericon/sphericon/internal/domainverify"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -51,7 +52,7 @@ func TestVerifyDKIM_becomesVerified(t *testing.T) {
 	ctx := context.Background()
 	dom, err := env.DB.SendingDomain.Get(ctx, fixtures.SendingDomainUnverifiedID)
 	require.NoError(t, err)
-	require.False(t, dom.Verified)
+	require.False(t, dkimstate.Is(dom))
 
 	lookup := dnstest.Resolver(t, map[string]mockdns.Zone{"sphericon._domainkey.news.acme.com.": {TXT: []string{dom.DkimPublicKey}}}).LookupTXT
 	ok, err := module(env, lookup, nil).VerifyDKIM(ctx, fixtures.SendingDomainUnverifiedID)
@@ -60,8 +61,9 @@ func TestVerifyDKIM_becomesVerified(t *testing.T) {
 
 	reloaded, err := env.DB.SendingDomain.Get(ctx, fixtures.SendingDomainUnverifiedID)
 	require.NoError(t, err)
-	assert.True(t, reloaded.Verified)
+	assert.True(t, dkimstate.Is(reloaded))
 	require.NotNil(t, reloaded.VerifiedAt)
+	assert.Nil(t, reloaded.VerificationLostAt)
 	require.NotNil(t, reloaded.LastCheckedAt)
 	assert.Empty(t, env.SystemMail.Messages(), "becoming verified notifies nobody")
 }
@@ -77,7 +79,10 @@ func TestVerifyDKIM_flipsToUnverifiedWhenRecordGoneAndEmailsOwner(t *testing.T) 
 
 	reloaded, err := env.DB.SendingDomain.Get(ctx, fixtures.SendingDomainVerifiedID)
 	require.NoError(t, err)
-	assert.False(t, reloaded.Verified, "a verified domain must flip back when its DKIM DNS is gone")
+	assert.False(t, dkimstate.Is(reloaded), "a verified domain loses verification when its DKIM DNS is gone")
+	require.NotNil(t, reloaded.VerificationLostAt, "the loss is visible in the data")
+	require.NotNil(t, reloaded.VerifiedAt, "when it was verified is kept")
+	lostAt := *reloaded.VerificationLostAt
 
 	msgs := env.SystemMail.Messages()
 	require.Len(t, msgs, 1)
@@ -90,6 +95,29 @@ func TestVerifyDKIM_flipsToUnverifiedWhenRecordGoneAndEmailsOwner(t *testing.T) 
 	_, err = module(env, gone, nil).VerifyDKIM(ctx, fixtures.SendingDomainVerifiedID)
 	require.NoError(t, err)
 	assert.Len(t, env.SystemMail.Messages(), 1)
+	again, err := env.DB.SendingDomain.Get(ctx, fixtures.SendingDomainVerifiedID)
+	require.NoError(t, err)
+	assert.True(t, lostAt.Equal(*again.VerificationLostAt), "a repeated check keeps the first loss moment")
+}
+
+func TestVerifyDKIM_verifiedAgainClearsTheLoss(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	dom, err := env.DB.SendingDomain.Get(ctx, fixtures.SendingDomainVerifiedID)
+	require.NoError(t, err)
+	_, err = module(env, dnstest.Resolver(t, nil).LookupTXT, nil).VerifyDKIM(ctx, dom.ID)
+	require.NoError(t, err)
+
+	back := dnstest.Resolver(t, map[string]mockdns.Zone{"sphericon._domainkey.mail.acme.com.": {TXT: []string{dom.DkimPublicKey}}}).LookupTXT
+	ok, err := module(env, back, nil).VerifyDKIM(ctx, dom.ID)
+
+	require.NoError(t, err)
+	assert.True(t, ok)
+	row, err := env.DB.SendingDomain.Get(ctx, dom.ID)
+	require.NoError(t, err)
+	assert.True(t, dkimstate.Is(row))
+	assert.Nil(t, row.VerificationLostAt)
+	assert.True(t, row.VerifiedAt.After(*dom.VerifiedAt), "verified_at moves to the new verification")
 }
 
 func TestVerifyDKIM_aFailingNoticeNeverFailsTheCheck(t *testing.T) {
@@ -103,7 +131,8 @@ func TestVerifyDKIM_aFailingNoticeNeverFailsTheCheck(t *testing.T) {
 	assert.False(t, ok)
 	row, err := env.DB.SendingDomain.Get(ctx, fixtures.SendingDomainVerifiedID)
 	require.NoError(t, err)
-	assert.False(t, row.Verified)
+	assert.False(t, dkimstate.Is(row))
+	assert.NotNil(t, row.VerificationLostAt)
 }
 
 func TestVerifyDKIM_withoutANotifierStillFlips(t *testing.T) {
@@ -116,7 +145,8 @@ func TestVerifyDKIM_withoutANotifierStillFlips(t *testing.T) {
 	require.NoError(t, err)
 	row, err := env.DB.SendingDomain.Get(ctx, fixtures.SendingDomainVerifiedID)
 	require.NoError(t, err)
-	assert.False(t, row.Verified)
+	assert.False(t, dkimstate.Is(row))
+	assert.NotNil(t, row.VerificationLostAt)
 }
 
 func TestVerifyDKIM_unknownDomainIsAnError(t *testing.T) {
@@ -137,7 +167,7 @@ func TestVerifyDKIM_resolverErrorDoesNotChangeState(t *testing.T) {
 
 	reloaded, err := env.DB.SendingDomain.Get(ctx, fixtures.SendingDomainVerifiedID)
 	require.NoError(t, err)
-	assert.True(t, reloaded.Verified, "a transient resolver failure must not flip verified")
+	assert.True(t, dkimstate.Is(reloaded), "a transient resolver failure must not flip verified")
 }
 
 // A check judged on a row another check already changed is stale: the lookup runs between the

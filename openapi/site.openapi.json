@@ -14882,7 +14882,7 @@
           },
           "verified": {
             "type": "boolean",
-            "description": "Whether the DKIM DNS is currently published and matches our key"
+            "description": "Whether the domain is verified now: it has a `verifiedAt` and no `verificationLostAt` since"
           },
           "dkimRecord": {
             "allOf": [
@@ -14934,7 +14934,17 @@
               }
             ],
             "nullable": true,
-            "description": "When the domain most recently became verified (null = never)"
+            "description": "When the domain most recently became verified (null = never); kept after a loss"
+          },
+          "verificationLostAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When a re-check most recently found the verified DKIM DNS gone (null = not lost: never verified, or verified again since)"
           },
           "archivedAt": {
             "type": "string",
@@ -14963,7 +14973,7 @@
             "description": "Last update timestamp"
           }
         },
-        "description": "Sending domain resource used by the site UI (ADR 0010). sphericon generates the\nDKIM keypair; the user publishes the DKIM TXT to authenticate the domain. The\nprivate key is never exposed. `verified` is a live property re-checked in the\nbackground — it can flip back if the DNS record disappears."
+        "description": "Sending domain resource used by the site UI (ADR 0010). sphericon generates the\nDKIM keypair; the user publishes the DKIM TXT to authenticate the domain. The\nprivate key is never exposed. `verified` is re-checked in the background:\nthe domain loses it (`verificationLostAt`) if the DNS record disappears."
       },
       "SiteSesConfig": {
         "type": "object",

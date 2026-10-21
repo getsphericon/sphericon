@@ -95,20 +95,6 @@ func (_c *SendingDomainCreate) SetDkimPublicKey(v string) *SendingDomainCreate {
 	return _c
 }
 
-// SetVerified sets the "verified" field.
-func (_c *SendingDomainCreate) SetVerified(v bool) *SendingDomainCreate {
-	_c.mutation.SetVerified(v)
-	return _c
-}
-
-// SetNillableVerified sets the "verified" field if the given value is not nil.
-func (_c *SendingDomainCreate) SetNillableVerified(v *bool) *SendingDomainCreate {
-	if v != nil {
-		_c.SetVerified(*v)
-	}
-	return _c
-}
-
 // SetLastCheckedAt sets the "last_checked_at" field.
 func (_c *SendingDomainCreate) SetLastCheckedAt(v time.Time) *SendingDomainCreate {
 	_c.mutation.SetLastCheckedAt(v)
@@ -133,6 +119,20 @@ func (_c *SendingDomainCreate) SetVerifiedAt(v time.Time) *SendingDomainCreate {
 func (_c *SendingDomainCreate) SetNillableVerifiedAt(v *time.Time) *SendingDomainCreate {
 	if v != nil {
 		_c.SetVerifiedAt(*v)
+	}
+	return _c
+}
+
+// SetVerificationLostAt sets the "verification_lost_at" field.
+func (_c *SendingDomainCreate) SetVerificationLostAt(v time.Time) *SendingDomainCreate {
+	_c.mutation.SetVerificationLostAt(v)
+	return _c
+}
+
+// SetNillableVerificationLostAt sets the "verification_lost_at" field if the given value is not nil.
+func (_c *SendingDomainCreate) SetNillableVerificationLostAt(v *time.Time) *SendingDomainCreate {
+	if v != nil {
+		_c.SetVerificationLostAt(*v)
 	}
 	return _c
 }
@@ -247,10 +247,6 @@ func (_c *SendingDomainCreate) defaults() {
 		v := sendingdomain.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
-	if _, ok := _c.mutation.Verified(); !ok {
-		v := sendingdomain.DefaultVerified
-		_c.mutation.SetVerified(v)
-	}
 	if _, ok := _c.mutation.TrackingState(); !ok {
 		v := sendingdomain.DefaultTrackingState
 		_c.mutation.SetTrackingState(v)
@@ -294,9 +290,6 @@ func (_c *SendingDomainCreate) check() error {
 		if err := sendingdomain.DkimPublicKeyValidator(v); err != nil {
 			return &ValidationError{Name: "dkim_public_key", err: fmt.Errorf(`ent: validator failed for field "SendingDomain.dkim_public_key": %w`, err)}
 		}
-	}
-	if _, ok := _c.mutation.Verified(); !ok {
-		return &ValidationError{Name: "verified", err: errors.New(`ent: missing required field "SendingDomain.verified"`)}
 	}
 	if _, ok := _c.mutation.TrackingState(); !ok {
 		return &ValidationError{Name: "tracking_state", err: errors.New(`ent: missing required field "SendingDomain.tracking_state"`)}
@@ -375,10 +368,6 @@ func (_c *SendingDomainCreate) createSpec() (*SendingDomain, *sqlgraph.CreateSpe
 		_spec.SetField(sendingdomain.FieldDkimPublicKey, field.TypeString, value)
 		_node.DkimPublicKey = value
 	}
-	if value, ok := _c.mutation.Verified(); ok {
-		_spec.SetField(sendingdomain.FieldVerified, field.TypeBool, value)
-		_node.Verified = value
-	}
 	if value, ok := _c.mutation.LastCheckedAt(); ok {
 		_spec.SetField(sendingdomain.FieldLastCheckedAt, field.TypeTime, value)
 		_node.LastCheckedAt = &value
@@ -386,6 +375,10 @@ func (_c *SendingDomainCreate) createSpec() (*SendingDomain, *sqlgraph.CreateSpe
 	if value, ok := _c.mutation.VerifiedAt(); ok {
 		_spec.SetField(sendingdomain.FieldVerifiedAt, field.TypeTime, value)
 		_node.VerifiedAt = &value
+	}
+	if value, ok := _c.mutation.VerificationLostAt(); ok {
+		_spec.SetField(sendingdomain.FieldVerificationLostAt, field.TypeTime, value)
+		_node.VerificationLostAt = &value
 	}
 	if value, ok := _c.mutation.TrackingState(); ok {
 		_spec.SetField(sendingdomain.FieldTrackingState, field.TypeEnum, value)
@@ -562,18 +555,6 @@ func (u *SendingDomainUpsert) UpdateDkimPublicKey() *SendingDomainUpsert {
 	return u
 }
 
-// SetVerified sets the "verified" field.
-func (u *SendingDomainUpsert) SetVerified(v bool) *SendingDomainUpsert {
-	u.Set(sendingdomain.FieldVerified, v)
-	return u
-}
-
-// UpdateVerified sets the "verified" field to the value that was provided on create.
-func (u *SendingDomainUpsert) UpdateVerified() *SendingDomainUpsert {
-	u.SetExcluded(sendingdomain.FieldVerified)
-	return u
-}
-
 // SetLastCheckedAt sets the "last_checked_at" field.
 func (u *SendingDomainUpsert) SetLastCheckedAt(v time.Time) *SendingDomainUpsert {
 	u.Set(sendingdomain.FieldLastCheckedAt, v)
@@ -607,6 +588,24 @@ func (u *SendingDomainUpsert) UpdateVerifiedAt() *SendingDomainUpsert {
 // ClearVerifiedAt clears the value of the "verified_at" field.
 func (u *SendingDomainUpsert) ClearVerifiedAt() *SendingDomainUpsert {
 	u.SetNull(sendingdomain.FieldVerifiedAt)
+	return u
+}
+
+// SetVerificationLostAt sets the "verification_lost_at" field.
+func (u *SendingDomainUpsert) SetVerificationLostAt(v time.Time) *SendingDomainUpsert {
+	u.Set(sendingdomain.FieldVerificationLostAt, v)
+	return u
+}
+
+// UpdateVerificationLostAt sets the "verification_lost_at" field to the value that was provided on create.
+func (u *SendingDomainUpsert) UpdateVerificationLostAt() *SendingDomainUpsert {
+	u.SetExcluded(sendingdomain.FieldVerificationLostAt)
+	return u
+}
+
+// ClearVerificationLostAt clears the value of the "verification_lost_at" field.
+func (u *SendingDomainUpsert) ClearVerificationLostAt() *SendingDomainUpsert {
+	u.SetNull(sendingdomain.FieldVerificationLostAt)
 	return u
 }
 
@@ -832,20 +831,6 @@ func (u *SendingDomainUpsertOne) UpdateDkimPublicKey() *SendingDomainUpsertOne {
 	})
 }
 
-// SetVerified sets the "verified" field.
-func (u *SendingDomainUpsertOne) SetVerified(v bool) *SendingDomainUpsertOne {
-	return u.Update(func(s *SendingDomainUpsert) {
-		s.SetVerified(v)
-	})
-}
-
-// UpdateVerified sets the "verified" field to the value that was provided on create.
-func (u *SendingDomainUpsertOne) UpdateVerified() *SendingDomainUpsertOne {
-	return u.Update(func(s *SendingDomainUpsert) {
-		s.UpdateVerified()
-	})
-}
-
 // SetLastCheckedAt sets the "last_checked_at" field.
 func (u *SendingDomainUpsertOne) SetLastCheckedAt(v time.Time) *SendingDomainUpsertOne {
 	return u.Update(func(s *SendingDomainUpsert) {
@@ -885,6 +870,27 @@ func (u *SendingDomainUpsertOne) UpdateVerifiedAt() *SendingDomainUpsertOne {
 func (u *SendingDomainUpsertOne) ClearVerifiedAt() *SendingDomainUpsertOne {
 	return u.Update(func(s *SendingDomainUpsert) {
 		s.ClearVerifiedAt()
+	})
+}
+
+// SetVerificationLostAt sets the "verification_lost_at" field.
+func (u *SendingDomainUpsertOne) SetVerificationLostAt(v time.Time) *SendingDomainUpsertOne {
+	return u.Update(func(s *SendingDomainUpsert) {
+		s.SetVerificationLostAt(v)
+	})
+}
+
+// UpdateVerificationLostAt sets the "verification_lost_at" field to the value that was provided on create.
+func (u *SendingDomainUpsertOne) UpdateVerificationLostAt() *SendingDomainUpsertOne {
+	return u.Update(func(s *SendingDomainUpsert) {
+		s.UpdateVerificationLostAt()
+	})
+}
+
+// ClearVerificationLostAt clears the value of the "verification_lost_at" field.
+func (u *SendingDomainUpsertOne) ClearVerificationLostAt() *SendingDomainUpsertOne {
+	return u.Update(func(s *SendingDomainUpsert) {
+		s.ClearVerificationLostAt()
 	})
 }
 
@@ -1287,20 +1293,6 @@ func (u *SendingDomainUpsertBulk) UpdateDkimPublicKey() *SendingDomainUpsertBulk
 	})
 }
 
-// SetVerified sets the "verified" field.
-func (u *SendingDomainUpsertBulk) SetVerified(v bool) *SendingDomainUpsertBulk {
-	return u.Update(func(s *SendingDomainUpsert) {
-		s.SetVerified(v)
-	})
-}
-
-// UpdateVerified sets the "verified" field to the value that was provided on create.
-func (u *SendingDomainUpsertBulk) UpdateVerified() *SendingDomainUpsertBulk {
-	return u.Update(func(s *SendingDomainUpsert) {
-		s.UpdateVerified()
-	})
-}
-
 // SetLastCheckedAt sets the "last_checked_at" field.
 func (u *SendingDomainUpsertBulk) SetLastCheckedAt(v time.Time) *SendingDomainUpsertBulk {
 	return u.Update(func(s *SendingDomainUpsert) {
@@ -1340,6 +1332,27 @@ func (u *SendingDomainUpsertBulk) UpdateVerifiedAt() *SendingDomainUpsertBulk {
 func (u *SendingDomainUpsertBulk) ClearVerifiedAt() *SendingDomainUpsertBulk {
 	return u.Update(func(s *SendingDomainUpsert) {
 		s.ClearVerifiedAt()
+	})
+}
+
+// SetVerificationLostAt sets the "verification_lost_at" field.
+func (u *SendingDomainUpsertBulk) SetVerificationLostAt(v time.Time) *SendingDomainUpsertBulk {
+	return u.Update(func(s *SendingDomainUpsert) {
+		s.SetVerificationLostAt(v)
+	})
+}
+
+// UpdateVerificationLostAt sets the "verification_lost_at" field to the value that was provided on create.
+func (u *SendingDomainUpsertBulk) UpdateVerificationLostAt() *SendingDomainUpsertBulk {
+	return u.Update(func(s *SendingDomainUpsert) {
+		s.UpdateVerificationLostAt()
+	})
+}
+
+// ClearVerificationLostAt clears the value of the "verification_lost_at" field.
+func (u *SendingDomainUpsertBulk) ClearVerificationLostAt() *SendingDomainUpsertBulk {
+	return u.Update(func(s *SendingDomainUpsert) {
+		s.ClearVerificationLostAt()
 	})
 }
 

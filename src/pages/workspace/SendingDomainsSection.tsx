@@ -289,6 +289,10 @@ export function SendingDomainsSection({
                 <Badge color="teal" variant="light">
                   {t(($) => $.settings.sendingDomains.verified)}
                 </Badge>
+              ) : record.verificationLostAt ? (
+                <Badge color="red" variant="light">
+                  {t(($) => $.settings.sendingDomains.lost)}
+                </Badge>
               ) : (
                 <Badge color="gray" variant="light">
                   {t(($) => $.settings.sendingDomains.pending)}

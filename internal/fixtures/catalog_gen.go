@@ -1029,6 +1029,10 @@ const (
 	SendingDomainLaunchDomain = "launch.acme.com"
 	// SendingDomainLaunchID is from fixtures/sending_domains.
 	SendingDomainLaunchID = 5
+	// SendingDomainLostDomain is from fixtures/sending_domains.
+	SendingDomainLostDomain = "lost.acme.com"
+	// SendingDomainLostID is from fixtures/sending_domains.
+	SendingDomainLostID = 6
 	// SendingDomainSoylentDomain is from fixtures/sending_domains.
 	SendingDomainSoylentDomain = "mail.soylent.test"
 	// SendingDomainSoylentID is from fixtures/sending_domains.

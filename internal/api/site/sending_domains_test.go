@@ -84,6 +84,22 @@ func TestSiteSendingDomainsCRUD(t *testing.T) {
 	assert.IsType(t, &siteapi.SiteSendingDomainsGetNotFound{}, gone)
 }
 
+func TestSiteSendingDomainsShowALostVerification(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+
+	got, err := c.SiteSendingDomainsGet(t.Context(), siteapi.SiteSendingDomainsGetParams{
+		WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(fixtures.SendingDomainLostID),
+	})
+
+	require.NoError(t, err)
+	res, ok := got.(*siteapi.SiteSendingDomainResource)
+	require.Truef(t, ok, "got %T", got)
+	assert.False(t, res.Verified, "a lost verification is not verified")
+	assert.False(t, res.VerifiedAt.Null || !res.VerifiedAt.Set, "when it was verified is shown")
+	assert.False(t, res.VerificationLostAt.Null || !res.VerificationLostAt.Set, "when it was lost is shown")
+}
+
 func TestSiteSendingDomainsListScopedToWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)

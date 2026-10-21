@@ -174,6 +174,29 @@ func TestMigrateRefusesToDropARecipientOutcomeThatHasNoOutboundMessage(t *testin
 	assert.Zero(t, columns, "the recipient's own outcome is gone")
 }
 
+// Replacing the Sending domain flag by moments keeps what the flag said: a domain verified now stays
+// verified, one that was verified once and is not stays unverified with a loss moment (the drop
+// alone would turn it verified), and one never verified has no moment at all.
+func TestMigrateCarriesTheSendingDomainFlagIntoMoments(t *testing.T) {
+	const replacing = "20261021193611_sending_domain_verification_moments.sql"
+	sqlDB := openEmpty(t)
+	before := migrationsWhere(t, func(name string) bool { return name < replacing })
+	all := migrationsWhere(t, func(string) bool { return true })
+	_, err := db.MigrateFS(t.Context(), sqlDB, before)
+	require.NoError(t, err)
+	testhelper.InsertLegacySendingDomains(t, sqlDB)
+
+	_, err = db.MigrateFS(t.Context(), sqlDB, all)
+	require.NoError(t, err)
+
+	assert.Equal(t, map[string][2]bool{
+		"live.test":  {true, false},
+		"lost.test":  {true, true},
+		"never.test": {false, false},
+	}, testhelper.SendingDomainMoments(t, sqlDB))
+	assert.Zero(t, testhelper.ColumnsOf(t, sqlDB, "sending_domains", "verified"), "the flag is gone")
+}
+
 // Dropping automations.definition refuses an Instance whose Automations have not all been given a
 // version yet (the river job backfill_automation_versions): the steps would be lost (ADR 0049).
 func TestMigrateRefusesToDropTheDefinitionBeforeTheBackfill(t *testing.T) {

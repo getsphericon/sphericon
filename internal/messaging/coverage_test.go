@@ -142,7 +142,7 @@ func TestDKIMSignerBrokenKeyMaterial(t *testing.T) {
 	// Ciphertext that does not decrypt under the workspace cipher.
 	_, err := env.DB.SendingDomain.Create().
 		SetWorkspaceID(1).SetDomain("garbled.acme.com").SetDkimSelector("sphericon").
-		SetDkimPrivateKeyEncrypted("not-a-ciphertext").SetDkimPublicKey("v=DKIM1").SetVerified(true).SetVerifiedAt(time.Now()).
+		SetDkimPrivateKeyEncrypted("not-a-ciphertext").SetDkimPublicKey("v=DKIM1").SetVerifiedAt(time.Now()).
 		Save(ctx)
 	require.NoError(t, err)
 	_, err = messaging.NewDKIMSigner(env.DB.Scoped(fixtures.AcmeID), cipher).DKIMSigner(ctx, "hi@garbled.acme.com")
@@ -153,7 +153,7 @@ func TestDKIMSignerBrokenKeyMaterial(t *testing.T) {
 	require.NoError(t, err)
 	_, err = env.DB.SendingDomain.Create().
 		SetWorkspaceID(1).SetDomain("nopem.acme.com").SetDkimSelector("sphericon").
-		SetDkimPrivateKeyEncrypted(sealed).SetDkimPublicKey("v=DKIM1").SetVerified(true).SetVerifiedAt(time.Now()).
+		SetDkimPrivateKeyEncrypted(sealed).SetDkimPublicKey("v=DKIM1").SetVerifiedAt(time.Now()).
 		Save(ctx)
 	require.NoError(t, err)
 	_, err = messaging.NewDKIMSigner(env.DB.Scoped(fixtures.AcmeID), cipher).DKIMSigner(ctx, "hi@nopem.acme.com")

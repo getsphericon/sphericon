@@ -32179,9 +32179,9 @@ type SendingDomainMutation struct {
 	dkim_selector              *string
 	dkim_private_key_encrypted *string
 	dkim_public_key            *string
-	verified                   *bool
 	last_checked_at            *time.Time
 	verified_at                *time.Time
+	verification_lost_at       *time.Time
 	tracking_state             *sendingdomain.TrackingState
 	tracking_checked_at        *time.Time
 	tracking_reason            *sendingdomain.TrackingReason
@@ -32599,42 +32599,6 @@ func (m *SendingDomainMutation) ResetDkimPublicKey() {
 	m.dkim_public_key = nil
 }
 
-// SetVerified sets the "verified" field.
-func (m *SendingDomainMutation) SetVerified(b bool) {
-	m.verified = &b
-}
-
-// Verified returns the value of the "verified" field in the mutation.
-func (m *SendingDomainMutation) Verified() (r bool, exists bool) {
-	v := m.verified
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldVerified returns the old "verified" field's value of the SendingDomain entity.
-// If the SendingDomain object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *SendingDomainMutation) OldVerified(ctx context.Context) (v bool, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldVerified is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldVerified requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldVerified: %w", err)
-	}
-	return oldValue.Verified, nil
-}
-
-// ResetVerified resets all changes to the "verified" field.
-func (m *SendingDomainMutation) ResetVerified() {
-	m.verified = nil
-}
-
 // SetLastCheckedAt sets the "last_checked_at" field.
 func (m *SendingDomainMutation) SetLastCheckedAt(t time.Time) {
 	m.last_checked_at = &t
@@ -32731,6 +32695,55 @@ func (m *SendingDomainMutation) VerifiedAtCleared() bool {
 func (m *SendingDomainMutation) ResetVerifiedAt() {
 	m.verified_at = nil
 	delete(m.clearedFields, sendingdomain.FieldVerifiedAt)
+}
+
+// SetVerificationLostAt sets the "verification_lost_at" field.
+func (m *SendingDomainMutation) SetVerificationLostAt(t time.Time) {
+	m.verification_lost_at = &t
+}
+
+// VerificationLostAt returns the value of the "verification_lost_at" field in the mutation.
+func (m *SendingDomainMutation) VerificationLostAt() (r time.Time, exists bool) {
+	v := m.verification_lost_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVerificationLostAt returns the old "verification_lost_at" field's value of the SendingDomain entity.
+// If the SendingDomain object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SendingDomainMutation) OldVerificationLostAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVerificationLostAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVerificationLostAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVerificationLostAt: %w", err)
+	}
+	return oldValue.VerificationLostAt, nil
+}
+
+// ClearVerificationLostAt clears the value of the "verification_lost_at" field.
+func (m *SendingDomainMutation) ClearVerificationLostAt() {
+	m.verification_lost_at = nil
+	m.clearedFields[sendingdomain.FieldVerificationLostAt] = struct{}{}
+}
+
+// VerificationLostAtCleared returns if the "verification_lost_at" field was cleared in this mutation.
+func (m *SendingDomainMutation) VerificationLostAtCleared() bool {
+	_, ok := m.clearedFields[sendingdomain.FieldVerificationLostAt]
+	return ok
+}
+
+// ResetVerificationLostAt resets all changes to the "verification_lost_at" field.
+func (m *SendingDomainMutation) ResetVerificationLostAt() {
+	m.verification_lost_at = nil
+	delete(m.clearedFields, sendingdomain.FieldVerificationLostAt)
 }
 
 // SetTrackingState sets the "tracking_state" field.
@@ -33002,14 +33015,14 @@ func (m *SendingDomainMutation) Fields() []string {
 	if m.dkim_public_key != nil {
 		fields = append(fields, sendingdomain.FieldDkimPublicKey)
 	}
-	if m.verified != nil {
-		fields = append(fields, sendingdomain.FieldVerified)
-	}
 	if m.last_checked_at != nil {
 		fields = append(fields, sendingdomain.FieldLastCheckedAt)
 	}
 	if m.verified_at != nil {
 		fields = append(fields, sendingdomain.FieldVerifiedAt)
+	}
+	if m.verification_lost_at != nil {
+		fields = append(fields, sendingdomain.FieldVerificationLostAt)
 	}
 	if m.tracking_state != nil {
 		fields = append(fields, sendingdomain.FieldTrackingState)
@@ -33047,12 +33060,12 @@ func (m *SendingDomainMutation) Field(name string) (ent.Value, bool) {
 		return m.DkimPrivateKeyEncrypted()
 	case sendingdomain.FieldDkimPublicKey:
 		return m.DkimPublicKey()
-	case sendingdomain.FieldVerified:
-		return m.Verified()
 	case sendingdomain.FieldLastCheckedAt:
 		return m.LastCheckedAt()
 	case sendingdomain.FieldVerifiedAt:
 		return m.VerifiedAt()
+	case sendingdomain.FieldVerificationLostAt:
+		return m.VerificationLostAt()
 	case sendingdomain.FieldTrackingState:
 		return m.TrackingState()
 	case sendingdomain.FieldTrackingCheckedAt:
@@ -33086,12 +33099,12 @@ func (m *SendingDomainMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldDkimPrivateKeyEncrypted(ctx)
 	case sendingdomain.FieldDkimPublicKey:
 		return m.OldDkimPublicKey(ctx)
-	case sendingdomain.FieldVerified:
-		return m.OldVerified(ctx)
 	case sendingdomain.FieldLastCheckedAt:
 		return m.OldLastCheckedAt(ctx)
 	case sendingdomain.FieldVerifiedAt:
 		return m.OldVerifiedAt(ctx)
+	case sendingdomain.FieldVerificationLostAt:
+		return m.OldVerificationLostAt(ctx)
 	case sendingdomain.FieldTrackingState:
 		return m.OldTrackingState(ctx)
 	case sendingdomain.FieldTrackingCheckedAt:
@@ -33165,13 +33178,6 @@ func (m *SendingDomainMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetDkimPublicKey(v)
 		return nil
-	case sendingdomain.FieldVerified:
-		v, ok := value.(bool)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetVerified(v)
-		return nil
 	case sendingdomain.FieldLastCheckedAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -33185,6 +33191,13 @@ func (m *SendingDomainMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetVerifiedAt(v)
+		return nil
+	case sendingdomain.FieldVerificationLostAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVerificationLostAt(v)
 		return nil
 	case sendingdomain.FieldTrackingState:
 		v, ok := value.(sendingdomain.TrackingState)
@@ -33256,6 +33269,9 @@ func (m *SendingDomainMutation) ClearedFields() []string {
 	if m.FieldCleared(sendingdomain.FieldVerifiedAt) {
 		fields = append(fields, sendingdomain.FieldVerifiedAt)
 	}
+	if m.FieldCleared(sendingdomain.FieldVerificationLostAt) {
+		fields = append(fields, sendingdomain.FieldVerificationLostAt)
+	}
 	if m.FieldCleared(sendingdomain.FieldTrackingCheckedAt) {
 		fields = append(fields, sendingdomain.FieldTrackingCheckedAt)
 	}
@@ -33287,6 +33303,9 @@ func (m *SendingDomainMutation) ClearField(name string) error {
 		return nil
 	case sendingdomain.FieldVerifiedAt:
 		m.ClearVerifiedAt()
+		return nil
+	case sendingdomain.FieldVerificationLostAt:
+		m.ClearVerificationLostAt()
 		return nil
 	case sendingdomain.FieldTrackingCheckedAt:
 		m.ClearTrackingCheckedAt()
@@ -33329,14 +33348,14 @@ func (m *SendingDomainMutation) ResetField(name string) error {
 	case sendingdomain.FieldDkimPublicKey:
 		m.ResetDkimPublicKey()
 		return nil
-	case sendingdomain.FieldVerified:
-		m.ResetVerified()
-		return nil
 	case sendingdomain.FieldLastCheckedAt:
 		m.ResetLastCheckedAt()
 		return nil
 	case sendingdomain.FieldVerifiedAt:
 		m.ResetVerifiedAt()
+		return nil
+	case sendingdomain.FieldVerificationLostAt:
+		m.ResetVerificationLostAt()
 		return nil
 	case sendingdomain.FieldTrackingState:
 		m.ResetTrackingState()

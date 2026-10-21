@@ -1330,9 +1330,9 @@ var (
 		{Name: "dkim_selector", Type: field.TypeString},
 		{Name: "dkim_private_key_encrypted", Type: field.TypeString},
 		{Name: "dkim_public_key", Type: field.TypeString},
-		{Name: "verified", Type: field.TypeBool, Default: false},
 		{Name: "last_checked_at", Type: field.TypeTime, Nullable: true},
 		{Name: "verified_at", Type: field.TypeTime, Nullable: true},
+		{Name: "verification_lost_at", Type: field.TypeTime, Nullable: true},
 		{Name: "tracking_state", Type: field.TypeEnum, Enums: []string{"pending", "dns_verified", "serving"}, Default: "pending"},
 		{Name: "tracking_checked_at", Type: field.TypeTime, Nullable: true},
 		{Name: "tracking_reason", Type: field.TypeEnum, Nullable: true, Enums: []string{"host_taken"}},
@@ -1377,7 +1377,7 @@ var (
 			{
 				Name:    "sendingdomain_last_checked_at",
 				Unique:  false,
-				Columns: []*schema.Column{SendingDomainsColumns[9]},
+				Columns: []*schema.Column{SendingDomainsColumns[8]},
 			},
 		},
 	}
@@ -1992,9 +1992,9 @@ func init() {
 		Table: "sending_domains",
 	}
 	SendingDomainsTable.Annotation.Checks = map[string]string{
-		"sending_domains_tracking_reason_check": "tracking_reason IN ('host_taken')",
-		"sending_domains_tracking_state_check":  "tracking_state IN ('pending', 'dns_verified', 'serving')",
-		"sending_domains_verified_check":        "NOT verified OR verified_at IS NOT NULL",
+		"sending_domains_tracking_reason_check":   "tracking_reason IN ('host_taken')",
+		"sending_domains_tracking_state_check":    "tracking_state IN ('pending', 'dns_verified', 'serving')",
+		"sending_domains_verification_lost_check": "verification_lost_at IS NULL OR verified_at IS NOT NULL",
 	}
 	ServiceCredentialsTable.Annotation = &entsql.Annotation{
 		Table: "service_credentials",

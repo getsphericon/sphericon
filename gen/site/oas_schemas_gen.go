@@ -15436,7 +15436,8 @@ func (s *SiteSendLimitWarning) UnmarshalText(data []byte) error {
 
 // Sending domain resource used by the site UI (ADR 0010). sphericon generates the DKIM keypair; the
 // user publishes the DKIM TXT to authenticate the domain. The private key is never exposed. `verified`
-// is a live property re-checked in the background — it can flip back if the DNS record disappears.
+// is re-checked in the background: the domain loses it (`verificationLostAt`) if the DNS record
+// disappears.
 // Ref: #/components/schemas/SiteSendingDomainResource
 type SiteSendingDomainResource struct {
 	// Unique identifier.
@@ -15445,7 +15446,7 @@ type SiteSendingDomainResource struct {
 	Domain string `json:"domain"`
 	// DKIM selector; the record host is "._domainkey.".
 	DkimSelector string `json:"dkimSelector"`
-	// Whether the DKIM DNS is currently published and matches our key.
+	// Whether the domain is verified now: it has a `verifiedAt` and no `verificationLostAt` since.
 	Verified bool `json:"verified"`
 	// The required DKIM TXT record (gates sending in a later slice).
 	DkimRecord SiteDnsRecord `json:"dkimRecord"`
@@ -15457,8 +15458,11 @@ type SiteSendingDomainResource struct {
 	TrackingRecord OptSiteTrackingRecord `json:"trackingRecord"`
 	// When the DKIM DNS was most recently checked (null = never).
 	LastCheckedAt OptNilTimestamp `json:"lastCheckedAt"`
-	// When the domain most recently became verified (null = never).
+	// When the domain most recently became verified (null = never); kept after a loss.
 	VerifiedAt OptNilTimestamp `json:"verifiedAt"`
+	// When a re-check most recently found the verified DKIM DNS gone (null = not lost: never verified, or
+	// verified again since).
+	VerificationLostAt OptNilTimestamp `json:"verificationLostAt"`
 	// When the domain was archived; null while it is kept. An archived domain serves no Tracking domain
 	// host.
 	ArchivedAt OptNilTimestamp `json:"archivedAt"`
@@ -15516,6 +15520,11 @@ func (s *SiteSendingDomainResource) GetLastCheckedAt() OptNilTimestamp {
 // GetVerifiedAt returns the value of VerifiedAt.
 func (s *SiteSendingDomainResource) GetVerifiedAt() OptNilTimestamp {
 	return s.VerifiedAt
+}
+
+// GetVerificationLostAt returns the value of VerificationLostAt.
+func (s *SiteSendingDomainResource) GetVerificationLostAt() OptNilTimestamp {
+	return s.VerificationLostAt
 }
 
 // GetArchivedAt returns the value of ArchivedAt.
@@ -15581,6 +15590,11 @@ func (s *SiteSendingDomainResource) SetLastCheckedAt(val OptNilTimestamp) {
 // SetVerifiedAt sets the value of VerifiedAt.
 func (s *SiteSendingDomainResource) SetVerifiedAt(val OptNilTimestamp) {
 	s.VerifiedAt = val
+}
+
+// SetVerificationLostAt sets the value of VerificationLostAt.
+func (s *SiteSendingDomainResource) SetVerificationLostAt(val OptNilTimestamp) {
+	s.VerificationLostAt = val
 }
 
 // SetArchivedAt sets the value of ArchivedAt.

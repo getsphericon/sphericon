@@ -31,7 +31,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
-	"github.com/getsphericon/sphericon/ent/sendingdomain"
+	"github.com/getsphericon/sphericon/internal/dkimstate"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/events"
@@ -776,7 +776,7 @@ func (m *Module) SendTest(ctx context.Context, s *ent.Scoped, req TestRequest) (
 		return Result{}, err
 	}
 	if req.Asker != nil {
-		anyVerified, err := s.SendingDomain().Query().Where(sendingdomain.Verified(true)).Exist(ctx)
+		anyVerified, err := s.SendingDomain().Query().Where(dkimstate.Verified()).Exist(ctx)
 		if err != nil {
 			return Result{}, fmt.Errorf("outbound: check sending domains: %w", err)
 		}

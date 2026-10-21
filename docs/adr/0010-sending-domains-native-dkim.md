@@ -31,9 +31,9 @@ from the free-string `from_email` and needs a migration + an onboarding step.
   DMARC are generated, shown, and status-checked but do **not** block: SPF depends on the
   transport's sending IPs (which native signing deliberately abstracts), and aligned DKIM already
   yields a DMARC pass. Gate on the one thing we control end-to-end.
-- **`verified` is a live property, not a one-time flag.** A background re-check re-validates the
-  DKIM DNS; if the record disappears the domain reverts to unverified and its sends block, with the
-  owner notified the instant it flips (mirrors the Workspace-suspension notify pattern). This
+- **Verified is a live property, kept as moments, not a flag.** A background re-check re-validates
+  the DKIM DNS; if the record disappears the domain records `verification_lost_at` (its
+  `verified_at` stays) and its sends block, with the owner notified the instant it is lost (mirrors the Workspace-suspension notify pattern). This
   prevents signing+sending for a domain whose DKIM receivers can no longer validate — silent
   deliverability rot — at the cost that a DNS edit can halt a live workspace (mitigated by
   immediate notification and trivial re-verification).

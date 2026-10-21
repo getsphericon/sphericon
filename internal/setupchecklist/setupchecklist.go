@@ -8,7 +8,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
-	"github.com/getsphericon/sphericon/ent/sendingdomain"
+	"github.com/getsphericon/sphericon/internal/dkimstate"
 )
 
 // Status is where one step stands. Only the Sending domain step is ever Pending.
@@ -69,7 +69,7 @@ func exists(found bool, err error) (Status, error) {
 }
 
 func sendingDomain(ctx context.Context, s *ent.Scoped) (Status, error) {
-	verified, err := s.SendingDomain().Query().Where(sendingdomain.Verified(true)).Exist(ctx)
+	verified, err := s.SendingDomain().Query().Where(dkimstate.Verified()).Exist(ctx)
 	if err != nil {
 		return "", err
 	}

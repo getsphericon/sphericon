@@ -79,7 +79,7 @@ func TestExternalSendingDomainsList(t *testing.T) {
 	for _, d := range ok.Items {
 		verified[d.Domain] = d.Verified
 	}
-	assert.Equal(t, map[string]bool{"mail.acme.com": true, "news.acme.com": false, "codebasics.dev": true, "launch.acme.com": false}, verified)
+	assert.Equal(t, map[string]bool{"mail.acme.com": true, "news.acme.com": false, "codebasics.dev": true, "launch.acme.com": false, "lost.acme.com": false}, verified)
 }
 
 func ratesByDomain(t *testing.T, res externalapi.SendingDomainRatesListRes) map[string]externalapi.SendingDomainRatesResource {

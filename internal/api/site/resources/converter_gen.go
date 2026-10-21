@@ -367,9 +367,10 @@ func (c *ConverterImpl) SendingDomainToResource(source *ent.SendingDomain) site.
 		siteapiSiteSendingDomainResource.ID = site.EntityId((*source).ID)
 		siteapiSiteSendingDomainResource.Domain = (*source).Domain
 		siteapiSiteSendingDomainResource.DkimSelector = (*source).DkimSelector
-		siteapiSiteSendingDomainResource.Verified = (*source).Verified
+		siteapiSiteSendingDomainResource.Verified = sendingDomainVerified((*source))
 		siteapiSiteSendingDomainResource.LastCheckedAt = optNilTimestamp((*source).LastCheckedAt)
 		siteapiSiteSendingDomainResource.VerifiedAt = optNilTimestamp((*source).VerifiedAt)
+		siteapiSiteSendingDomainResource.VerificationLostAt = optNilTimestamp((*source).VerificationLostAt)
 		siteapiSiteSendingDomainResource.ArchivedAt = optNilTimestamp((*source).DiscardedAt)
 		siteapiSiteSendingDomainResource.CreatedAt = timestamp((*source).CreatedAt)
 		siteapiSiteSendingDomainResource.UpdatedAt = timestamp((*source).UpdatedAt)

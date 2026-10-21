@@ -58,6 +58,26 @@ test('offers a member the domains to read, without adding or managing them', asy
   await expect.element(screen.getByRole('button', { name: 'More actions' })).not.toBeInTheDocument()
 })
 
+test('shows a domain whose verification was lost apart from one never verified', async () => {
+  worker.use(
+    list([
+      domain(),
+      domain({
+        id: '2',
+        domain: 'lost.acme.com',
+        verifiedAt: '2026-01-02T00:00:00Z',
+        verificationLostAt: '2026-02-01T00:00:00Z',
+      }),
+    ]),
+  )
+  const { screen } = await renderWithRouter(
+    <SendingDomainsSection workspaceId={WORKSPACE_ID} canEdit />,
+  )
+
+  await expect.element(screen.getByText('Pending', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('Verification lost', { exact: true })).toBeInTheDocument()
+})
+
 test('adds a domain', async () => {
   const bodies: unknown[] = []
   worker.use(

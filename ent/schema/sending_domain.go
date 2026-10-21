@@ -15,9 +15,10 @@ import (
 // re-verification when the Integration changes. Distinct from a Sending source
 // (the unsubscribe consent scope) despite the similar name.
 //
-// verified is a *live* property, not a one-time flag: a periodic re-check
-// re-validates the DKIM DNS and flips it if the record disappears (see
-// internal/jobs). The private key is stored Tink-encrypted; the public key is
+// Verification is kept as moments, not a flag a job flips: verified_at is when the domain
+// most recently became verified, verification_lost_at when a re-check found the DKIM DNS gone
+// (nil again once it is verified anew). A domain is verified while verified_at is set and
+// verification_lost_at is not (internal/dkimstate). The private key is stored Tink-encrypted; the public key is
 // the TXT value and is safe to expose.
 type SendingDomain struct {
 	ent.Schema
@@ -52,15 +53,18 @@ func (SendingDomain) Fields() []ent.Field {
 		// The DKIM TXT value ("v=DKIM1; k=rsa; p=<base64 DER>"); safe to expose.
 		field.String("dkim_public_key").
 			NotEmpty(),
-		// Live DKIM-verified state, re-checked by the periodic job.
-		field.Bool("verified").
-			Default(false),
 		// When the DKIM DNS was most recently checked (nil = never checked yet).
 		field.Time("last_checked_at").
 			Optional().
 			Nillable(),
-		// When the domain most recently became verified (nil = never verified).
+		// When the domain most recently became verified (nil = never verified). Kept after a
+		// loss, so it is the history of verified.
 		field.Time("verified_at").
+			Optional().
+			Nillable(),
+		// When a re-check most recently found the verified DKIM DNS gone (nil = not lost: never
+		// verified, or verified again since).
+		field.Time("verification_lost_at").
 			Optional().
 			Nillable(),
 		// The state of the Tracking domain record track.<domain> (ADR 0038): pending until
@@ -110,10 +114,10 @@ func (SendingDomain) Indexes() []ent.Index {
 	}
 }
 
-// sendingDomainTable adds to the enum checks that a domain verified now has been verified at
-// some time: verified_at keeps the last time after a loss, so it is the history of verified.
+// sendingDomainTable adds to the enum checks that a lost verification was a verification:
+// verified_at keeps the last time after a loss, so it is the history of verified.
 func sendingDomainTable() entsql.Annotation {
 	a := TableWithEnumChecks("sending_domains", SendingDomain{}.Fields())
-	a.Checks["sending_domains_verified_check"] = "NOT verified OR verified_at IS NOT NULL"
+	a.Checks["sending_domains_verification_lost_check"] = "verification_lost_at IS NULL OR verified_at IS NOT NULL"
 	return a
 }
