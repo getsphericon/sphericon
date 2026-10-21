@@ -81,11 +81,11 @@ func NewEvaluateTriggerWorker(client *ent.Client) *EvaluateTriggerWorker {
 	return &EvaluateTriggerWorker{ent: client}
 }
 
-func NewRunStepWorker(client *ent.Client, fence Fencer, mod *outbound.Module) *RunStepWorker {
+func NewRunStepWorker(client *ent.Client, fence automations.Fencer, mod *outbound.Module) *RunStepWorker {
 	return &RunStepWorker{ent: client, mod: mod, fence: fence}
 }
 
-func NewRunHTTPStepWorker(client *ent.Client, fence Fencer, mod *automations.Module, doer webhook.Doer, now func() time.Time) *RunHTTPStepWorker {
+func NewRunHTTPStepWorker(client *ent.Client, fence automations.Fencer, mod *automations.Module, doer webhook.Doer, now func() time.Time) *RunHTTPStepWorker {
 	return &RunHTTPStepWorker{ent: client, mod: mod, client: doer, now: now, fence: fence}
 }
 

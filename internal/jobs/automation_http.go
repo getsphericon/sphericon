@@ -43,7 +43,7 @@ type RunHTTPStepWorker struct {
 	mod    *automations.Module
 	client webhook.Doer
 	now    func() time.Time
-	fence  Fencer
+	fence  automations.Fencer
 }
 
 func (w *RunHTTPStepWorker) Work(ctx context.Context, job *river.Job[RunHTTPStepArgs]) error {
