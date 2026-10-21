@@ -2,6 +2,7 @@ package external
 
 import (
 	"context"
+	"crypto/subtle"
 	"errors"
 	"net/http"
 	"time"
@@ -75,7 +76,7 @@ func (h *Handlers) AuthTokensCreate(ctx context.Context, req *externalapi.Create
 }
 
 func (h *Handlers) AuthTokensBootstrap(ctx context.Context, req *externalapi.CreateApiTokenInput, params externalapi.AuthTokensBootstrapParams) (externalapi.AuthTokensBootstrapRes, error) {
-	if h.bootstrapToken == "" || params.XBootstrapToken != h.bootstrapToken {
+	if h.bootstrapToken == "" || subtle.ConstantTimeCompare([]byte(params.XBootstrapToken), []byte(h.bootstrapToken)) != 1 {
 		res := externalapi.AuthTokensBootstrapUnauthorized(problem(http.StatusUnauthorized, "invalid bootstrap token"))
 		return &res, nil
 	}
