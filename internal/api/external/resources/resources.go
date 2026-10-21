@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/segments"
+	"github.com/getsphericon/sphericon/internal/sendlimit"
 	"github.com/go-faster/jx"
 	"github.com/samber/lo"
 )
@@ -96,6 +97,11 @@ func AutomationSteps(steps []externalapi.AutomationStep) []automations.Step {
 // goverter:extend segmentDefinition
 // goverter:extend templateDoc
 // goverter:extend broadcastDoc
+// goverter:extend nilInt32
+// goverter:extend nilString
+// goverter:extend count
+// goverter:extend sendLimitWarning
+// goverter:extend sendLimitSource
 type Converter interface {
 	ContactToResource(source *ent.Contact) externalapi.ContactResource
 	// The contract names the discarded state "archived" (ADR 0049).
@@ -110,6 +116,18 @@ type Converter interface {
 	// goverter:map DiscardedAt ArchivedAt
 	// goverter:map . Steps | automationSteps
 	AutomationToResource(source *ent.Automation) externalapi.AutomationResource
+
+	// The config is a oneOf the generator cannot express, and the params, hook URL and
+	// retiring secrets come from the integrations module (decryption, instance URL), and
+	// the Send rate limit from sendlimit.Statuses: the handler attaches them.
+	// goverter:ignore Config
+	// goverter:ignore Params
+	// goverter:ignore SecretsRetiring
+	// goverter:ignore HookUrl
+	// goverter:ignore SendLimit
+	IntegrationToResource(source *ent.Integration) externalapi.IntegrationResource
+	// goverter:map Sent24h SentLast24h
+	SendLimitToStatus(source sendlimit.Status) externalapi.SendLimitStatus
 
 	// The Data export members (ADR 0021): the contract's typed projection of the
 	// stored rows, so the ent JSON tags are never the public format.
@@ -145,6 +163,38 @@ func (m ExportMapper) OutboundMessage(r *ent.OutboundMessage) json.Marshaler {
 }
 func (m ExportMapper) BroadcastRecipient(r *ent.BroadcastRecipient) json.Marshaler {
 	return new(m.BroadcastRecipientToExport(r))
+}
+
+// sendLimitWarning casts: sendlimit's warnings are the contract's enum values.
+func sendLimitWarning(w sendlimit.Warning) externalapi.SendLimitWarning {
+	return externalapi.SendLimitWarning(w)
+}
+
+// count narrows a message count to the contract's int32.
+func count(n int) int32 { return int32(n) }
+
+// nilString renders an optional value: null when there is none.
+func nilString(v *string) externalapi.NilString {
+	if v == nil {
+		return externalapi.NilString{Null: true}
+	}
+	return externalapi.NewNilString(*v)
+}
+
+// nilInt32 renders a limit: null when there is none.
+func nilInt32(v *int) externalapi.NilInt32 {
+	if v == nil {
+		return externalapi.NilInt32{Null: true}
+	}
+	return externalapi.NewNilInt32(int32(*v))
+}
+
+// sendLimitSource is null exactly when the window has no limit (its source is empty).
+func sendLimitSource(v sendlimit.Source) externalapi.NilSendLimitSource {
+	if v == "" {
+		return externalapi.NilSendLimitSource{Null: true}
+	}
+	return externalapi.NewNilSendLimitSource(externalapi.SendLimitSource(v))
 }
 
 func optNilInt32(v *int) externalapi.OptNilInt32 {

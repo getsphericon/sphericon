@@ -6,6 +6,7 @@ package resources
 import (
 	ent "github.com/getsphericon/sphericon/ent"
 	external "github.com/getsphericon/sphericon/gen/external"
+	sendlimit "github.com/getsphericon/sphericon/internal/sendlimit"
 )
 
 type ConverterImpl struct{}
@@ -161,6 +162,23 @@ func (c *ConverterImpl) EventToExport(source *ent.Event) external.ContactExportE
 	}
 	return externalapiContactExportEvent
 }
+func (c *ConverterImpl) IntegrationToResource(source *ent.Integration) external.IntegrationResource {
+	var externalapiIntegrationResource external.IntegrationResource
+	if source != nil {
+		externalapiIntegrationResource.ID = external.EntityId((*source).ID)
+		externalapiIntegrationResource.Name = (*source).Name
+		externalapiIntegrationResource.Channel = external.IntegrationChannel((*source).Channel)
+		externalapiIntegrationResource.Provider = external.IntegrationProvider((*source).Provider)
+		externalapiIntegrationResource.Enabled = (*source).Enabled
+		externalapiIntegrationResource.IsDefault = (*source).IsDefault
+		externalapiIntegrationResource.MaxPerSecond = nilInt32((*source).MaxPerSecond)
+		externalapiIntegrationResource.MaxPerDay = nilInt32((*source).MaxPerDay)
+		externalapiIntegrationResource.Preset = nilString((*source).Preset)
+		externalapiIntegrationResource.CreatedAt = timestamp((*source).CreatedAt)
+		externalapiIntegrationResource.UpdatedAt = timestamp((*source).UpdatedAt)
+	}
+	return externalapiIntegrationResource
+}
 func (c *ConverterImpl) OutboundMessageToExport(source *ent.OutboundMessage) external.ContactExportOutboundMessage {
 	var externalapiContactExportOutboundMessage external.ContactExportOutboundMessage
 	if source != nil {
@@ -193,6 +211,19 @@ func (c *ConverterImpl) SegmentToResource(source *ent.Segment) external.SegmentR
 		externalapiSegmentResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
 	return externalapiSegmentResource
+}
+func (c *ConverterImpl) SendLimitToStatus(source sendlimit.Status) external.SendLimitStatus {
+	var externalapiSendLimitStatus external.SendLimitStatus
+	externalapiSendLimitStatus.PerSecond = c.sendlimitValueToExternalapiSendLimitValue(source.PerSecond)
+	externalapiSendLimitStatus.PerDay = c.sendlimitValueToExternalapiSendLimitValue(source.PerDay)
+	externalapiSendLimitStatus.SentLast24h = count(source.Sent24h)
+	if source.Warnings != nil {
+		externalapiSendLimitStatus.Warnings = make([]external.SendLimitWarning, len(source.Warnings))
+		for i := 0; i < len(source.Warnings); i++ {
+			externalapiSendLimitStatus.Warnings[i] = sendLimitWarning(source.Warnings[i])
+		}
+	}
+	return externalapiSendLimitStatus
 }
 func (c *ConverterImpl) SuppressionToExport(source *ent.Suppression) external.ContactExportSuppression {
 	var externalapiContactExportSuppression external.ContactExportSuppression
@@ -243,4 +274,10 @@ func (c *ConverterImpl) VisitorToExport(source *ent.Visitor) external.ContactExp
 		externalapiContactExportVisitor.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return externalapiContactExportVisitor
+}
+func (c *ConverterImpl) sendlimitValueToExternalapiSendLimitValue(source sendlimit.Value) external.SendLimitValue {
+	var externalapiSendLimitValue external.SendLimitValue
+	externalapiSendLimitValue.Limit = nilInt32(source.Limit)
+	externalapiSendLimitValue.Source = sendLimitSource(source.Source)
+	return externalapiSendLimitValue
 }

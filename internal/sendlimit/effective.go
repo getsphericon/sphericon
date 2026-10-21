@@ -120,3 +120,35 @@ func Usage(ctx context.Context, s *ent.Scoped, now time.Time) (map[int64]int, er
 	}
 	return out, nil
 }
+
+// Status is an Integration's Send rate limit as shown to a user: the ceilings as
+// enforced, the messages sent over the last 24 hours and what is worth flagging. Each
+// surface maps it to its own DTO.
+//
+// A Value with a nil Limit has an empty Source (see Value), so no surface restates it.
+type Status struct {
+	PerSecond Value
+	PerDay    Value
+	Sent24h   int
+	Warnings  []Warning
+}
+
+// Statuses pairs the 24-hour usage with the effective ceilings of each Integration,
+// keyed by Integration id. Usage is read once for all rows.
+func Statuses(ctx context.Context, s *ent.Scoped, rows []*ent.Integration, now time.Time) (map[int64]Status, error) {
+	usage, err := Usage(ctx, s, now)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[int64]Status, len(rows))
+	for _, row := range rows {
+		eff := EffectiveOf(row)
+		out[row.ID] = Status{
+			PerSecond: eff.PerSecond,
+			PerDay:    eff.PerDay,
+			Sent24h:   usage[row.ID],
+			Warnings:  eff.Warnings(),
+		}
+	}
+	return out, nil
+}

@@ -6,8 +6,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/samber/lo"
-
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/integration"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
@@ -39,13 +37,13 @@ func (h *Handlers) SiteIntegrationsList(ctx context.Context, params siteapi.Site
 		return nil, err
 	}
 
-	usage, err := sendlimit.Usage(ctx, s, time.Now())
+	limits, err := sendlimit.Statuses(ctx, s, rows, time.Now())
 	if err != nil {
 		return nil, err
 	}
 	items := make(siteapi.SiteIntegrationsListOKApplicationJSON, len(rows))
 	for i, row := range rows {
-		res, err := h.integrationToResource(row, usage)
+		res, err := h.integrationToResource(row, limits[row.ID])
 		if err != nil {
 			return nil, err
 		}
@@ -299,28 +297,12 @@ func configInput(in siteapi.SiteIntegrationConfigInput) (integrations.ConfigInpu
 
 var errUnknownProvider = errors.New("unsupported provider")
 
-// integrationToResource decrypts the stored config and builds the API resource
-// with all secrets redacted.
-func (h *Handlers) integrationToResource(row *ent.Integration, usage map[int64]int) (siteapi.SiteIntegrationResource, error) {
-	res := siteapi.SiteIntegrationResource{
-		ID:           siteapi.EntityId(row.ID),
-		Name:         row.Name,
-		Channel:      siteapi.SiteIntegrationChannel(row.Channel.String()),
-		Provider:     siteapi.SiteIntegrationProvider(row.Provider.String()),
-		Enabled:      row.Enabled,
-		IsDefault:    row.IsDefault,
-		MaxPerSecond: limitOpt(row.MaxPerSecond),
-		MaxPerDay:    limitOpt(row.MaxPerDay),
-		SendLimit:    sendLimitStatus(row, usage),
-		CreatedAt:    siteapi.Timestamp(row.CreatedAt),
-		UpdatedAt:    siteapi.Timestamp(row.UpdatedAt),
-	}
-
+// integrationToResource maps the row with goverter, then attaches what the mapper cannot
+// see: the decrypted config and params (redacted), the hook URL and the Send rate limit.
+func (h *Handlers) integrationToResource(row *ent.Integration, limit sendlimit.Status) (siteapi.SiteIntegrationResource, error) {
+	res := mapper.IntegrationToResource(row)
+	res.SendLimit = mapper.SendLimitToStatus(limit)
 	res.HookUrl = h.integrations.HookURL(row)
-	res.Preset = siteapi.NilString{Null: true}
-	if row.Preset != nil {
-		res.Preset = siteapi.NewNilString(*row.Preset)
-	}
 	view, err := h.integrations.View(row)
 	if err != nil {
 		return res, err
@@ -332,6 +314,7 @@ func (h *Handlers) integrationToResource(row *ent.Integration, usage map[int64]i
 	if err != nil {
 		return res, err
 	}
+	// The config is a oneOf per provider, which goverter cannot express.
 	switch {
 	case cfg.SMTP != nil:
 		c := cfg.SMTP
@@ -350,14 +333,6 @@ func (h *Handlers) integrationToResource(row *ent.Integration, usage map[int64]i
 	return res, nil
 }
 
-// limitOpt renders a stored limit: null when there is none.
-func limitOpt(v *int) siteapi.NilInt32 {
-	if v == nil {
-		return siteapi.NilInt32{Null: true}
-	}
-	return siteapi.NewNilInt32(int32(*v))
-}
-
 // optNilString returns a set OptNilString for non-empty input, else the zero
 // (unset) value — so redacted optional fields are omitted rather than blank.
 func optNilString(s string) siteapi.OptNilString {
@@ -370,32 +345,9 @@ func optNilString(s string) siteapi.OptNilString {
 // integrationResource renders one Integration with its 24-hour usage, for the
 // single-row responses (get, create, update).
 func (h *Handlers) integrationResource(ctx context.Context, s *ent.Scoped, row *ent.Integration) (siteapi.SiteIntegrationResource, error) {
-	usage, err := sendlimit.Usage(ctx, s, time.Now())
+	limits, err := sendlimit.Statuses(ctx, s, []*ent.Integration{row}, time.Now())
 	if err != nil {
 		return siteapi.SiteIntegrationResource{}, err
 	}
-	return h.integrationToResource(row, usage)
-}
-
-// sendLimitStatus renders an Integration's enforced Send rate limit with its sent
-// count over the last 24 hours (from the per-Integration usage map).
-func sendLimitStatus(row *ent.Integration, usage map[int64]int) siteapi.SiteSendLimitStatus {
-	eff := sendlimit.EffectiveOf(row)
-	out := siteapi.SiteSendLimitStatus{
-		PerSecond:   sendLimitValue(eff.PerSecond),
-		PerDay:      sendLimitValue(eff.PerDay),
-		SentLast24h: int32(usage[row.ID]),
-		Warnings:    lo.Map(eff.Warnings(), func(w sendlimit.Warning, _ int) siteapi.SiteSendLimitWarning { return siteapi.SiteSendLimitWarning(w) }),
-	}
-	return out
-}
-
-func sendLimitValue(v sendlimit.Value) siteapi.SiteSendLimitValue {
-	out := siteapi.SiteSendLimitValue{Limit: limitOpt(v.Limit)}
-	if v.Source == "" {
-		out.Source = siteapi.NilSiteSendLimitSource{Null: true}
-	} else {
-		out.Source = siteapi.NewNilSiteSendLimitSource(siteapi.SiteSendLimitSource(v.Source))
-	}
-	return out
+	return h.integrationToResource(row, limits[row.ID])
 }

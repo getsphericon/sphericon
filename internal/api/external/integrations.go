@@ -6,8 +6,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/samber/lo"
-
 	"github.com/getsphericon/sphericon/ent"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
@@ -35,13 +33,13 @@ func (h *Handlers) IntegrationsList(ctx context.Context, params externalapi.Inte
 	if err != nil {
 		return nil, err
 	}
-	usage, err := sendlimit.Usage(ctx, s, time.Now())
+	limits, err := sendlimit.Statuses(ctx, s, page.Items, time.Now())
 	if err != nil {
 		return nil, err
 	}
 	items := make([]externalapi.IntegrationResource, len(page.Items))
 	for i, row := range page.Items {
-		if items[i], err = h.integrationResource(row, usage); err != nil {
+		if items[i], err = h.integrationResource(row, limits[row.ID]); err != nil {
 			return nil, err
 		}
 	}
@@ -266,17 +264,17 @@ func validationProblem(v *integrations.ValidationError) externalapi.ProblemDetai
 
 // integrationOne renders a single row with its 24-hour usage.
 func (h *Handlers) integrationOne(ctx context.Context, s *ent.Scoped, row *ent.Integration) (externalapi.IntegrationResource, error) {
-	usage, err := sendlimit.Usage(ctx, s, time.Now())
+	limits, err := sendlimit.Statuses(ctx, s, []*ent.Integration{row}, time.Now())
 	if err != nil {
 		return externalapi.IntegrationResource{}, err
 	}
-	return h.integrationResource(row, usage)
+	return h.integrationResource(row, limits[row.ID])
 }
 
-// integrationResource is hand-built (not goverter): the Send rate limit is computed
-// from the Integration and its usage, and the config is the redacted view of the
-// sealed one. Secrets never leave the module.
-func (h *Handlers) integrationResource(row *ent.Integration, usage map[int64]int) (externalapi.IntegrationResource, error) {
+// integrationResource maps the row with goverter, then attaches what the mapper cannot
+// see: the redacted config and params (secrets never leave the module), the hook URL and
+// the Send rate limit.
+func (h *Handlers) integrationResource(row *ent.Integration, limit sendlimit.Status) (externalapi.IntegrationResource, error) {
 	cfg, err := h.integrations.Redact(row)
 	if err != nil {
 		return externalapi.IntegrationResource{}, err
@@ -285,26 +283,12 @@ func (h *Handlers) integrationResource(row *ent.Integration, usage map[int64]int
 	if err != nil {
 		return externalapi.IntegrationResource{}, err
 	}
-	res := externalapi.IntegrationResource{
-		Preset:          externalapi.NilString{Null: true},
-		Params:          externalapi.IntegrationResourceParams(integrations.RawOf(view.Values)),
-		SecretsRetiring: view.SecretsRetiring,
-		HookUrl:         h.integrations.HookURL(row),
-		ID:              externalapi.EntityId(row.ID),
-		Name:            row.Name,
-		Channel:         externalapi.IntegrationChannel(row.Channel.String()),
-		Provider:        externalapi.IntegrationProvider(row.Provider.String()),
-		Enabled:         row.Enabled,
-		IsDefault:       row.IsDefault,
-		MaxPerSecond:    limitOpt(row.MaxPerSecond),
-		MaxPerDay:       limitOpt(row.MaxPerDay),
-		SendLimit:       sendLimitStatus(row, usage),
-		CreatedAt:       externalapi.Timestamp(row.CreatedAt),
-		UpdatedAt:       externalapi.Timestamp(row.UpdatedAt),
-	}
-	if row.Preset != nil {
-		res.Preset = externalapi.NewNilString(*row.Preset)
-	}
+	res := mapper.IntegrationToResource(row)
+	res.SendLimit = mapper.SendLimitToStatus(limit)
+	res.Params = externalapi.IntegrationResourceParams(integrations.RawOf(view.Values))
+	res.SecretsRetiring = view.SecretsRetiring
+	res.HookUrl = h.integrations.HookURL(row)
+	// The config is a oneOf per provider, which goverter cannot express.
 	switch {
 	case cfg.SMTP != nil:
 		c := cfg.SMTP
@@ -323,41 +307,10 @@ func (h *Handlers) integrationResource(row *ent.Integration, usage map[int64]int
 	return res, nil
 }
 
-// limitOpt renders a stored limit: null when there is none.
-func limitOpt(v *int) externalapi.NilInt32 {
-	if v == nil {
-		return externalapi.NilInt32{Null: true}
-	}
-	return externalapi.NewNilInt32(int32(*v))
-}
-
 // omitEmpty is unset for an empty value, so redacted optional fields are omitted.
 func omitEmpty(s string) externalapi.OptNilString {
 	if s == "" {
 		return externalapi.OptNilString{}
 	}
 	return externalapi.NewOptNilString(s)
-}
-
-func sendLimitStatus(row *ent.Integration, usage map[int64]int) externalapi.SendLimitStatus {
-	eff := sendlimit.EffectiveOf(row)
-	out := externalapi.SendLimitStatus{
-		PerSecond:   sendLimitValue(eff.PerSecond),
-		PerDay:      sendLimitValue(eff.PerDay),
-		SentLast24h: int32(usage[row.ID]),
-		Warnings:    lo.Map(eff.Warnings(), func(w sendlimit.Warning, _ int) externalapi.SendLimitWarning { return externalapi.SendLimitWarning(w) }),
-	}
-	return out
-}
-
-func sendLimitValue(v sendlimit.Value) externalapi.SendLimitValue {
-	out := externalapi.SendLimitValue{}
-	if v.Limit == nil {
-		out.Limit = externalapi.NilInt32{Null: true}
-		out.Source = externalapi.NilSendLimitSource{Null: true}
-		return out
-	}
-	out.Limit = externalapi.NewNilInt32(int32(*v.Limit))
-	out.Source = externalapi.NewNilSendLimitSource(externalapi.SendLimitSource(v.Source))
-	return out
 }

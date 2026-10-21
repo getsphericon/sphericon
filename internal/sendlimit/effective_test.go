@@ -93,3 +93,26 @@ func TestWarningsListsWhatIsWorthFlaggedInAStableOrder(t *testing.T) {
 		})
 	}
 }
+
+func TestStatusesPairUsageWithTheEffectiveLimits(t *testing.T) {
+	env := testhelper.Setup(t)
+	s := env.DB.Scoped(fixtures.AcmeID)
+	ctx := t.Context()
+
+	rows, err := s.Integration().Query().All(ctx)
+	require.NoError(t, err)
+	usage, err := sendlimit.Usage(ctx, s, time.Now())
+	require.NoError(t, err)
+
+	got, err := sendlimit.Statuses(ctx, s, rows, time.Now())
+	require.NoError(t, err)
+
+	require.Len(t, got, len(rows))
+	for _, row := range rows {
+		eff := sendlimit.EffectiveOf(row)
+		assert.Equal(t, sendlimit.Status{PerSecond: eff.PerSecond, PerDay: eff.PerDay, Sent24h: usage[row.ID], Warnings: eff.Warnings()}, got[row.ID])
+		for _, v := range []sendlimit.Value{got[row.ID].PerSecond, got[row.ID].PerDay} {
+			assert.Equal(t, v.Limit == nil, v.Source == "", "a limit has a source exactly when it is set")
+		}
+	}
+}

@@ -6,6 +6,7 @@ package resources
 import (
 	ent "github.com/getsphericon/sphericon/ent"
 	site "github.com/getsphericon/sphericon/gen/site"
+	sendlimit "github.com/getsphericon/sphericon/internal/sendlimit"
 )
 
 type ConverterImpl struct{}
@@ -158,6 +159,23 @@ func (c *ConverterImpl) EventToResource(source *ent.Event) site.SiteEventResourc
 	}
 	return siteapiSiteEventResource
 }
+func (c *ConverterImpl) IntegrationToResource(source *ent.Integration) site.SiteIntegrationResource {
+	var siteapiSiteIntegrationResource site.SiteIntegrationResource
+	if source != nil {
+		siteapiSiteIntegrationResource.ID = site.EntityId((*source).ID)
+		siteapiSiteIntegrationResource.Name = (*source).Name
+		siteapiSiteIntegrationResource.Channel = site.SiteIntegrationChannel((*source).Channel)
+		siteapiSiteIntegrationResource.Provider = site.SiteIntegrationProvider((*source).Provider)
+		siteapiSiteIntegrationResource.Enabled = (*source).Enabled
+		siteapiSiteIntegrationResource.IsDefault = (*source).IsDefault
+		siteapiSiteIntegrationResource.MaxPerSecond = nilInt32((*source).MaxPerSecond)
+		siteapiSiteIntegrationResource.MaxPerDay = nilInt32((*source).MaxPerDay)
+		siteapiSiteIntegrationResource.Preset = nilString((*source).Preset)
+		siteapiSiteIntegrationResource.CreatedAt = timestamp((*source).CreatedAt)
+		siteapiSiteIntegrationResource.UpdatedAt = timestamp((*source).UpdatedAt)
+	}
+	return siteapiSiteIntegrationResource
+}
 func (c *ConverterImpl) OutboundMessageToExport(source *ent.OutboundMessage) site.ContactExportOutboundMessage {
 	var siteapiContactExportOutboundMessage site.ContactExportOutboundMessage
 	if source != nil {
@@ -190,6 +208,19 @@ func (c *ConverterImpl) SegmentToResource(source *ent.Segment) site.SiteSegmentR
 		siteapiSiteSegmentResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
 	return siteapiSiteSegmentResource
+}
+func (c *ConverterImpl) SendLimitToStatus(source sendlimit.Status) site.SiteSendLimitStatus {
+	var siteapiSiteSendLimitStatus site.SiteSendLimitStatus
+	siteapiSiteSendLimitStatus.PerSecond = c.sendlimitValueToSiteapiSiteSendLimitValue(source.PerSecond)
+	siteapiSiteSendLimitStatus.PerDay = c.sendlimitValueToSiteapiSiteSendLimitValue(source.PerDay)
+	siteapiSiteSendLimitStatus.SentLast24h = count(source.Sent24h)
+	if source.Warnings != nil {
+		siteapiSiteSendLimitStatus.Warnings = make([]site.SiteSendLimitWarning, len(source.Warnings))
+		for i := 0; i < len(source.Warnings); i++ {
+			siteapiSiteSendLimitStatus.Warnings[i] = sendLimitWarning(source.Warnings[i])
+		}
+	}
+	return siteapiSiteSendLimitStatus
 }
 func (c *ConverterImpl) SuppressionToExport(source *ent.Suppression) site.ContactExportSuppression {
 	var siteapiContactExportSuppression site.ContactExportSuppression
@@ -314,4 +345,10 @@ func (c *ConverterImpl) WorkspaceToResource(source *ent.Workspace) site.SiteWork
 		siteapiSiteWorkspaceResource.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return siteapiSiteWorkspaceResource
+}
+func (c *ConverterImpl) sendlimitValueToSiteapiSiteSendLimitValue(source sendlimit.Value) site.SiteSendLimitValue {
+	var siteapiSiteSendLimitValue site.SiteSendLimitValue
+	siteapiSiteSendLimitValue.Limit = nilInt32(source.Limit)
+	siteapiSiteSendLimitValue.Source = sendLimitSource(source.Source)
+	return siteapiSiteSendLimitValue
 }
