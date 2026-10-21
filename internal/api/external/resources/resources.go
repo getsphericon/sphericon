@@ -89,6 +89,7 @@ func AutomationSteps(steps []externalapi.AutomationStep) []automations.Step {
 // goverter:converter
 // goverter:output:file ./converter_gen.go
 // goverter:matchIgnoreCase
+// goverter:enum no
 // goverter:useZeroValueOnPointerInconsistency
 // goverter:extend timestamp
 // goverter:extend optNilString
