@@ -249,8 +249,20 @@ description = "Frontend tests in watch mode"
 run = "pnpm exec vitest"
 
 ["test:frontend"]
-description = "One-shot frontend run with v8 coverage and thresholds (Vitest Browser Mode, headless Chromium), used by CI; html report in coverage/"
+description = "One-shot frontend run with v8 coverage and thresholds (Vitest Browser Mode, headless Chromium); html report in coverage/. CI runs it as test:frontend:shard + test:frontend:merge"
 run = "mise/scripts/heavy.sh pnpm exec vitest run --coverage"
+
+# CI splits the frontend suite over runners: each shard writes a blob report that carries its coverage
+# (.vitest/blob), and test:frontend:merge joins them and checks the thresholds. A shard sees a third of
+# the suite, so its own thresholds are zeroed; the merged run enforces the ones in vite.config.ts.
+["test:frontend:shard"]
+description = "One shard of the frontend suite (CI): blob report with coverage in .vitest/blob, no thresholds"
+usage = 'arg "<shard>" help="shard as index/count, e.g. 1/3"'
+run = '''mise/scripts/heavy.sh pnpm exec vitest run --coverage --reporter=blob --shard="${usage_shard}" --coverage.thresholds.statements=0 --coverage.thresholds.branches=0 --coverage.thresholds.functions=0 --coverage.thresholds.lines=0'''
+
+["test:frontend:merge"]
+description = "Join the shards' blob reports from .vitest/blob and enforce the coverage thresholds (CI)"
+run = "pnpm exec vitest --merge-reports=.vitest/blob --coverage"
 
 # --- dependency updates ----------------------------------------------------------
 
