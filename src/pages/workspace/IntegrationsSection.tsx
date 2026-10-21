@@ -50,7 +50,10 @@ import { SendLimitStatus } from './SendLimitStatus.tsx'
 
 type ProviderKind = 'smtp' | 'ses'
 
-const PROVIDERS: ProviderKind[] = ['ses', 'smtp']
+// What the first step offers: SES-compatible services speak the SES API at an endpoint of their own.
+type Tile = 'ses' | 'sesCompatible' | 'smtp'
+
+const TILES: Tile[] = ['ses', 'sesCompatible', 'smtp']
 
 // Flat form state; the provider-specific config object is assembled on submit
 // from whichever fields the selected provider uses.
@@ -89,7 +92,11 @@ const INITIAL_VALUES: IntegrationFormValues = {
 
 // A provider left unnamed is called after where it sends from.
 function defaultName(values: IntegrationFormValues): string {
-  return values.provider === 'ses' ? `Amazon SES (${values.region.trim()})` : values.host.trim()
+  if (values.provider === 'smtp') {
+    return values.host.trim()
+  }
+  const endpoint = values.endpoint.trim()
+  return URL.canParse(endpoint) ? new URL(endpoint).host : `Amazon SES (${values.region.trim()})`
 }
 
 function buildConfig(values: IntegrationFormValues): SiteIntegrationConfigInput {
@@ -119,7 +126,7 @@ export function IntegrationsSection({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
   const [createOpened, { open: openCreate, close: closeCreate }] = useDisclosure(false)
   const [advanced, { toggle: toggleAdvanced, close: closeAdvanced }] = useDisclosure(false)
-  const [chosen, setChosen] = useState(false)
+  const [tile, setTile] = useState<Tile | null>(null)
   const role = useCurrentRole(workspaceId)
   const canManageIntegrations = canManage(role)
 
@@ -142,7 +149,7 @@ export function IntegrationsSection({ workspaceId }: { workspaceId: string }) {
 
   function dismissCreate() {
     form.reset()
-    setChosen(false)
+    setTile(null)
     closeAdvanced()
     closeCreate()
   }
@@ -172,12 +179,17 @@ export function IntegrationsSection({ workspaceId }: { workspaceId: string }) {
       title: 'Amazon SES',
       hint: t(($) => $.settings.integrations.providers.sesHint),
     },
+    sesCompatible: {
+      title: t(($) => $.settings.integrations.providers.sesCompatible),
+      hint: t(($) => $.settings.integrations.providers.sesCompatibleHint),
+    },
     smtp: {
       title: 'SMTP',
       hint: t(($) => $.settings.integrations.providers.smtpHint),
     },
   }
   const isSes = form.values.provider === 'ses'
+  const compatible = tile === 'sesCompatible'
   // The first provider of a Workspace is its default; later ones ask.
   const hasActive = (activeQuery.data ?? []).length > 0
   const records = integrationsQuery.data ?? []
@@ -308,7 +320,7 @@ export function IntegrationsSection({ workspaceId }: { workspaceId: string }) {
           size="lg"
           title={t(($) => $.settings.integrations.create)}
         >
-          {chosen ? (
+          {tile !== null ? (
             <form
               onSubmit={form.onSubmit((values) =>
                 createMutation.mutate({
@@ -324,6 +336,15 @@ export function IntegrationsSection({ workspaceId }: { workspaceId: string }) {
               )}
             >
               <Stack>
+                {compatible ? (
+                  <TextInput
+                    label={t(($) => $.settings.integrations.fields.endpoint)}
+                    description={t(($) => $.settings.integrations.fields.endpointHint)}
+                    placeholder="https://postbox.cloud.yandex.net"
+                    required
+                    {...form.getInputProps('endpoint')}
+                  />
+                ) : null}
                 {isSes ? (
                   <Group grow>
                     <TextInput
@@ -395,14 +416,6 @@ export function IntegrationsSection({ workspaceId }: { workspaceId: string }) {
                         {...form.getInputProps('fromName')}
                       />
                     </Group>
-                    {isSes ? (
-                      <TextInput
-                        label={t(($) => $.settings.integrations.fields.endpoint)}
-                        description={t(($) => $.settings.integrations.fields.endpointHint)}
-                        placeholder="https://postbox.cloud.yandex.net"
-                        {...form.getInputProps('endpoint')}
-                      />
-                    ) : null}
                     <SendLimitFields
                       perSecondProps={form.getInputProps('maxPerSecond')}
                       perDayProps={form.getInputProps('maxPerDay')}
@@ -417,7 +430,7 @@ export function IntegrationsSection({ workspaceId }: { workspaceId: string }) {
                 </Collapse>
 
                 <Group justify="space-between">
-                  <Button variant="default" onClick={() => setChosen(false)}>
+                  <Button variant="default" onClick={() => setTile(null)}>
                     {t(($) => $.settings.integrations.back)}
                   </Button>
                   <Button type="submit" loading={createMutation.isPending}>
@@ -427,14 +440,15 @@ export function IntegrationsSection({ workspaceId }: { workspaceId: string }) {
               </Stack>
             </form>
           ) : (
-            <SimpleGrid cols={{ base: 1, sm: 2 }}>
-              {PROVIDERS.map((kind) => (
+            <SimpleGrid cols={{ base: 1, sm: 3 }}>
+              {TILES.map((kind) => (
                 <UnstyledButton
                   key={kind}
                   aria-label={providerLabels[kind].title}
                   onClick={() => {
-                    form.setFieldValue('provider', kind)
-                    setChosen(true)
+                    form.setFieldValue('provider', kind === 'smtp' ? 'smtp' : 'ses')
+                    form.setFieldValue('endpoint', '')
+                    setTile(kind)
                   }}
                 >
                   <Paper withBorder p="md" h="100%">

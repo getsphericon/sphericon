@@ -921,7 +921,7 @@ export default interface Resources {
         "fields": {
           "accessKeyId": "Access key ID",
           "endpoint": "Custom endpoint",
-          "endpointHint": "Optional. For an SES-compatible service (e.g. Yandex Cloud Postbox); leave blank for AWS.",
+          "endpointHint": "The provider’s SES API address.",
           "from": "From address",
           "fromName": "From name",
           "host": "SMTP host",
@@ -985,7 +985,9 @@ export default interface Resources {
         "nameLabel": "Name",
         "providerLabel": "Provider",
         "providers": {
-          "sesHint": "Needs an AWS region and an access key.",
+          "sesCompatible": "SES-compatible service",
+          "sesCompatibleHint": "Any provider with the SES API, such as Yandex Cloud Postbox. Needs its endpoint URL.",
+          "sesHint": "AWS SES. Needs a region and an access key.",
           "smtpHint": "Any SMTP server."
         },
         "restoreError": "Failed to restore provider",

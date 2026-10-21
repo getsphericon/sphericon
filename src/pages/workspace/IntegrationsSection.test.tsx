@@ -181,6 +181,46 @@ test('connects an Amazon SES provider', async () => {
     ])
 })
 
+test('connects an SES-compatible service at its own endpoint', async () => {
+  const bodies: unknown[] = []
+  worker.use(list([]), create(bodies))
+  const { screen } = await renderWithRouter(<IntegrationsSection workspaceId={WORKSPACE_ID} />)
+
+  await screen.getByRole('button', { name: 'Connect provider' }).click()
+  const dialog = screen.getByRole('dialog')
+  await dialog.getByRole('button', { name: 'SES-compatible service' }).click()
+  await dialog.getByLabelText(/^Custom endpoint/).fill('https://postbox.cloud.yandex.net')
+  await dialog.getByLabelText(/^AWS region/).fill('ru-central1')
+  await dialog.getByLabelText(/^Access key ID/).fill('YC')
+  await dialog.getByLabelText(/^Secret access key/).fill('shh')
+  await dialog.getByLabelText(/^From address/).fill('hi@acme.com')
+  await dialog.getByRole('button', { name: 'Connect provider' }).click()
+
+  await expect
+    .poll(() => bodies)
+    .toMatchObject([
+      {
+        name: 'postbox.cloud.yandex.net',
+        config: {
+          kind: 'ses',
+          endpoint: 'https://postbox.cloud.yandex.net',
+          region: 'ru-central1',
+        },
+      },
+    ])
+})
+
+test('Amazon SES asks for no endpoint', async () => {
+  worker.use(list([]))
+  const { screen } = await renderWithRouter(<IntegrationsSection workspaceId={WORKSPACE_ID} />)
+
+  await screen.getByRole('button', { name: 'Connect provider' }).click()
+  const dialog = screen.getByRole('dialog')
+  await dialog.getByRole('button', { name: 'Amazon SES' }).click()
+
+  await expect.element(dialog.getByLabelText(/^Custom endpoint/)).not.toBeInTheDocument()
+})
+
 test('archives a provider', async () => {
   let archived = false
   worker.use(
