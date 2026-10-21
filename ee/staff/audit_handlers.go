@@ -13,7 +13,8 @@ import (
 // Staff member's entry shows as "Sphericon staff" with no id, as it does to the customer.
 func (h *Handlers) StaffWorkspaceAuditList(ctx context.Context, params staffapi.StaffWorkspaceAuditListParams) (staffapi.StaffWorkspaceAuditListRes, error) {
 	id := string(params.WorkspaceId)
-	cursor, limit, err := auditapi.Page(params.Cursor.Or(""), params.Limit.Or(0), params.Limit.IsSet())
+	cursor, err := auditapi.Page(params.Cursor.Or(""))
+	limit := int(params.Limit.Value)
 	if err != nil {
 		v := staffapi.StaffWorkspaceAuditListBadRequest{
 			Status: staffapi.NewOptInt32(http.StatusBadRequest),

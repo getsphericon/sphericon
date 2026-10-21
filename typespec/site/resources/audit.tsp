@@ -102,10 +102,15 @@ model SiteAuditFilter {
   @query requestId?: string;
 }
 
+/** A number of days an Audit log is kept: 1 to 3650 */
+@minValue(1)
+@maxValue(3650)
+scalar RetentionDays extends int32;
+
 /** How long the Audit log is kept; the Enterprise advanced-retention control */
 model SiteAuditRetention {
   /** Entries older than this many days are pruned; null keeps them forever */
-  retentionDays: int32 | null;
+  retentionDays: RetentionDays | null;
 }
 
 @route("/workspaces/{workspaceId}/audit-entries")
@@ -121,7 +126,10 @@ namespace SiteAudit {
     @query cursor?: string,
 
     /** Page size */
-    @query limit?: int32 = 25,
+    @query
+    @minValue(1)
+    @maxValue(100)
+    limit?: int32 = 25,
   ):
     | SiteAuditEntryList
     | BadRequestProblem

@@ -1786,6 +1786,51 @@ func (o NilInt32) Or(d int32) int32 {
 	return d
 }
 
+// NewNilRetentionDays returns new NilRetentionDays with value set to v.
+func NewNilRetentionDays(v RetentionDays) NilRetentionDays {
+	return NilRetentionDays{
+		Value: v,
+	}
+}
+
+// NilRetentionDays is nullable RetentionDays.
+type NilRetentionDays struct {
+	Value RetentionDays
+	Null  bool
+}
+
+// SetTo sets value to v.
+func (o *NilRetentionDays) SetTo(v RetentionDays) {
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o NilRetentionDays) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *NilRetentionDays) SetToNull() {
+	o.Null = true
+	var v RetentionDays
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o NilRetentionDays) Get() (v RetentionDays, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o NilRetentionDays) Or(d RetentionDays) RetentionDays {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewNilSiteSendLimitSource returns new NilSiteSendLimitSource with value set to v.
 func NewNilSiteSendLimitSource(v SiteSendLimitSource) NilSiteSendLimitSource {
 	return NilSiteSendLimitSource{
@@ -5054,6 +5099,8 @@ func (o OptTimestamp) Or(d Timestamp) Timestamp {
 	return d
 }
 
+type PasskeyName string
+
 // A machine-readable reason a client branches on, beyond the HTTP status.
 // Ref: #/components/schemas/ProblemCode
 type ProblemCode string
@@ -5434,6 +5481,8 @@ func (*ProblemDetailsHeaders) siteSecondFactorStartEnrollmentRes()         {}
 func (*ProblemDetailsHeaders) siteUserDeleteUserRes()                      {}
 func (*ProblemDetailsHeaders) siteUserEmailChangeRes()                     {}
 func (*ProblemDetailsHeaders) siteUserUpdateMeRes()                        {}
+
+type RetentionDays int32
 
 // Send-class scopes (ADR 0016, "Send is a second lock"). An OAuth client gets them only when the user
 // explicitly opts in. mcp:send is the MCP-specific key: send-class tools are not listed over /mcp
@@ -6481,16 +6530,16 @@ func (*SiteAuditListPaymentRequired) siteAuditListRes() {}
 // Ref: #/components/schemas/SiteAuditRetention
 type SiteAuditRetention struct {
 	// Entries older than this many days are pruned; null keeps them forever.
-	RetentionDays NilInt32 `json:"retentionDays"`
+	RetentionDays NilRetentionDays `json:"retentionDays"`
 }
 
 // GetRetentionDays returns the value of RetentionDays.
-func (s *SiteAuditRetention) GetRetentionDays() NilInt32 {
+func (s *SiteAuditRetention) GetRetentionDays() NilRetentionDays {
 	return s.RetentionDays
 }
 
 // SetRetentionDays sets the value of RetentionDays.
-func (s *SiteAuditRetention) SetRetentionDays(val NilInt32) {
+func (s *SiteAuditRetention) SetRetentionDays(val NilRetentionDays) {
 	s.RetentionDays = val
 }
 
@@ -12695,7 +12744,7 @@ type SitePasskey struct {
 	// Unique identifier, the key of the rename and remove operations.
 	ID EntityId `json:"id"`
 	// What the User calls it, to tell their Passkeys apart.
-	Name string `json:"name"`
+	Name PasskeyName `json:"name"`
 	// When the Passkey was registered.
 	CreatedAt Timestamp `json:"createdAt"`
 	// When a login last used it; absent while it has never been used.
@@ -12708,7 +12757,7 @@ func (s *SitePasskey) GetID() EntityId {
 }
 
 // GetName returns the value of Name.
-func (s *SitePasskey) GetName() string {
+func (s *SitePasskey) GetName() PasskeyName {
 	return s.Name
 }
 
@@ -12728,7 +12777,7 @@ func (s *SitePasskey) SetID(val EntityId) {
 }
 
 // SetName sets the value of Name.
-func (s *SitePasskey) SetName(val string) {
+func (s *SitePasskey) SetName(val PasskeyName) {
 	s.Name = val
 }
 
@@ -13551,7 +13600,7 @@ type SitePasskeyRegistrationInput struct {
 	// the last few minutes instead (ADR 0048).
 	CurrentPassword OptString `json:"currentPassword"`
 	// What to call the Passkey, to tell it from the User's others.
-	Name string `json:"name"`
+	Name PasskeyName `json:"name"`
 	// The authenticator's response to the creation options.
 	Credential SitePasskeyRegistrationResponse `json:"credential"`
 }
@@ -13562,7 +13611,7 @@ func (s *SitePasskeyRegistrationInput) GetCurrentPassword() OptString {
 }
 
 // GetName returns the value of Name.
-func (s *SitePasskeyRegistrationInput) GetName() string {
+func (s *SitePasskeyRegistrationInput) GetName() PasskeyName {
 	return s.Name
 }
 
@@ -13577,7 +13626,7 @@ func (s *SitePasskeyRegistrationInput) SetCurrentPassword(val OptString) {
 }
 
 // SetName sets the value of Name.
-func (s *SitePasskeyRegistrationInput) SetName(val string) {
+func (s *SitePasskeyRegistrationInput) SetName(val PasskeyName) {
 	s.Name = val
 }
 
@@ -13650,16 +13699,16 @@ func (s *SitePasskeyRemoveInput) SetCurrentPassword(val OptString) {
 // Ref: #/components/schemas/SitePasskeyRenameInput
 type SitePasskeyRenameInput struct {
 	// What to call the Passkey, to tell it from the User's others.
-	Name string `json:"name"`
+	Name PasskeyName `json:"name"`
 }
 
 // GetName returns the value of Name.
-func (s *SitePasskeyRenameInput) GetName() string {
+func (s *SitePasskeyRenameInput) GetName() PasskeyName {
 	return s.Name
 }
 
 // SetName sets the value of Name.
-func (s *SitePasskeyRenameInput) SetName(val string) {
+func (s *SitePasskeyRenameInput) SetName(val PasskeyName) {
 	s.Name = val
 }
 

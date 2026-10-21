@@ -69,7 +69,7 @@ namespace ServiceWorkspaceFeed {
     @query
     @minValue(1)
     @maxValue(200)
-    limit?: int32,
+    limit?: int32 = 100,
   ):
     | ServiceWorkspaceFeedPage
     | BadRequestProblem

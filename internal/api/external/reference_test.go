@@ -143,16 +143,3 @@ func TestExternalSendingDomainRates(t *testing.T) {
 	assert.EqualValues(t, 2, wide.ComplaintRate.Numerator)
 	assert.EqualValues(t, 8, wide.ComplaintRate.Denominator)
 }
-
-func TestExternalSendingDomainRatesRejectsBadWindow(t *testing.T) {
-	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "sending_domains:read")
-
-	for _, days := range []int32{0, 91} {
-		res, err := c.SendingDomainRatesList(context.Background(), externalapi.SendingDomainRatesListParams{
-			WindowDays: externalapi.NewOptInt32(days),
-		})
-		require.NoError(t, err)
-		assert.IsType(t, &externalapi.SendingDomainRatesListBadRequest{}, res, "window %d", days)
-	}
-}

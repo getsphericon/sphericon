@@ -11,7 +11,6 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/auditapi"
 	"github.com/getsphericon/sphericon/internal/events"
-	"github.com/getsphericon/sphericon/internal/i18n"
 )
 
 // SiteAuditList shows the Workspace's Audit log, newest first. Owner and admin only;
@@ -45,7 +44,8 @@ func (h *Handlers) SiteAuditList(ctx context.Context, params siteapi.SiteAuditLi
 		IP:         params.IP.Or(""),
 		RequestID:  params.RequestId.Or(""),
 	}
-	cursor, limit, err := auditapi.Page(params.Cursor.Or(""), params.Limit.Or(0), params.Limit.IsSet())
+	cursor, err := auditapi.Page(params.Cursor.Or(""))
+	limit := int(params.Limit.Value)
 	if err != nil {
 		v := siteapi.SiteAuditListBadRequest(problem(http.StatusBadRequest, "invalid cursor"))
 		return &v, nil
@@ -197,12 +197,6 @@ func (h *Handlers) SiteAuditSetRetention(ctx context.Context, req *siteapi.SiteA
 	var days *int
 	if !req.RetentionDays.Null {
 		d := int(req.RetentionDays.Value)
-		if d < minRetentionDays || d > maxRetentionDays {
-			msg := i18n.T("errors.retention_days_range", nil)
-			v := siteapi.SiteAuditSetRetentionUnprocessableEntity(problemWithErrors(
-				http.StatusUnprocessableEntity, msg, map[string][]string{"retentionDays": {msg}}))
-			return &v, nil
-		}
 		days = &d
 	}
 	if err := h.accounts.SetAuditRetention(ctx, s, h.actor(ctx), days); err != nil {
@@ -211,17 +205,12 @@ func (h *Handlers) SiteAuditSetRetention(ctx context.Context, req *siteapi.SiteA
 	return retentionResource(days), nil
 }
 
-const (
-	minRetentionDays = 1
-	maxRetentionDays = 3650
-)
-
 func retentionResource(days *int) *siteapi.SiteAuditRetention {
 	res := &siteapi.SiteAuditRetention{}
 	if days == nil {
 		res.RetentionDays.Null = true
 	} else {
-		res.RetentionDays.SetTo(int32(*days))
+		res.RetentionDays.SetTo(siteapi.RetentionDays(*days))
 	}
 	return res
 }

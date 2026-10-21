@@ -557,6 +557,12 @@ export type LintFinding = {
 };
 
 /**
+ * What a User calls a Passkey, to tell it from their others: 1 to 100 characters. Surrounding
+ * spaces are trimmed before the name is stored, so a name of spaces only is refused too.
+ */
+export type PasskeyName = string;
+
+/**
  * A machine-readable reason a client branches on, beyond the HTTP status
  */
 export const ProblemCode = {
@@ -650,6 +656,11 @@ export type ProblemDetails = {
    */
   debug?: ProblemDebug;
 };
+
+/**
+ * A number of days an Audit log is kept: 1 to 3650
+ */
+export type RetentionDays = number;
 
 /**
  * Send-class scopes (ADR 0016, "Send is a second lock"). An OAuth client gets them
@@ -1015,7 +1026,7 @@ export type SiteAuditRetention = {
   /**
    * Entries older than this many days are pruned; null keeps them forever
    */
-  retentionDays: number | null;
+  retentionDays: RetentionDays | null;
 };
 
 /**
@@ -2686,7 +2697,7 @@ export type SitePasskey = {
   /**
    * What the User calls it, to tell their Passkeys apart
    */
-  name: string;
+  name: PasskeyName;
   /**
    * When the Passkey was registered
    */
@@ -2840,7 +2851,7 @@ export type SitePasskeyRegistrationInput = {
   /**
    * What to call the Passkey, to tell it from the User's others
    */
-  name: string;
+  name: PasskeyName;
   /**
    * The authenticator's response to the creation options
    */
@@ -2884,7 +2895,7 @@ export type SitePasskeyRenameInput = {
   /**
    * What to call the Passkey, to tell it from the User's others
    */
-  name: string;
+  name: PasskeyName;
 };
 
 /**

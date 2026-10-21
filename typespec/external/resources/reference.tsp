@@ -143,7 +143,10 @@ namespace SendingDomainRates {
   @get
   op list(
     /** Trailing window in days (1 to 90) */
-    @query windowDays?: int32 = 7,
+    @query
+    @minValue(1)
+    @maxValue(90)
+    windowDays?: int32 = 7,
   ):
     | Page<SendingDomainRatesResource>
     | BadRequestProblem

@@ -22,7 +22,7 @@ func (h *Handlers) ExportErasures(ctx context.Context, params externalapi.Export
 		return &res, nil
 	}
 
-	limit := exportstream.Limit(params.Limit.Get())
+	limit := int(params.Limit.Value)
 	page, err := exportstream.Erasures(ctx, auth.TokenScoped(ctx), params.Cursor.Or(""), limit)
 	if errors.Is(err, exportstream.ErrBadCursor) {
 		res := externalapi.ExportErasuresBadRequest(problem(http.StatusBadRequest, "invalid cursor"))

@@ -7,7 +7,6 @@ import (
 	"regexp"
 	"strings"
 	"unicode"
-	"unicode/utf8"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/emailrender"
@@ -258,12 +257,6 @@ var (
 	fontFamily = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9 ,-]{0,199}$`)
 )
 
-const (
-	maxRadius    = 32
-	maxFooter    = 500
-	maxLogoChars = 2048
-)
-
 // validate checks every value and returns the input with its colors in lower case. The values go
 // into style attributes and attribute values of a document, so each is held to a tight charset
 // rather than escaped.
@@ -290,9 +283,6 @@ func validate(in Input) (Input, error) {
 			return in, &ValidationError{Field: f.field, Message: i18n.T("errors.brandkit_font", map[string]any{"Field": f.field})}
 		}
 	}
-	if in.ButtonRadius < 0 || in.ButtonRadius > maxRadius {
-		return in, &ValidationError{Field: "buttonRadius", Message: i18n.T("errors.brandkit_radius", nil)}
-	}
 	if !validLogo(in.LogoURL) {
 		return in, &ValidationError{Field: "logoUrl", Message: i18n.T("errors.brandkit_logo", nil)}
 	}
@@ -308,7 +298,7 @@ func validLogo(raw string) bool {
 	if raw == "" {
 		return true
 	}
-	if len(raw) > maxLogoChars || strings.ContainsAny(raw, "{}\"'<>\\` \t\r\n") {
+	if strings.ContainsAny(raw, "{}\"'<>\\` \t\r\n") {
 		return false
 	}
 	u, err := url.Parse(raw)
@@ -319,7 +309,7 @@ func validLogo(raw string) bool {
 // written into a document as a text node, which the renderer escapes, but Liquid runs over the
 // whole body), within the cap.
 func validFooter(text string) bool {
-	if utf8.RuneCountInString(text) > maxFooter || strings.Contains(text, "{{") || strings.Contains(text, "{%") {
+	if strings.Contains(text, "{{") || strings.Contains(text, "{%") {
 		return false
 	}
 	return !strings.ContainsFunc(text, unicode.IsControl)

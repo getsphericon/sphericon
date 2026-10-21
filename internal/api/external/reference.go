@@ -12,11 +12,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/reputation"
 )
 
-const (
-	defaultRateWindowDays = 7
-	maxRateWindowDays     = 90
-)
-
 // CustomFieldsList returns the whole (small, unpaginated) Custom field catalogue.
 func (h *Handlers) CustomFieldsList(ctx context.Context) (externalapi.CustomFieldsListRes, error) {
 	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeCustomFieldsRead) {
@@ -49,11 +44,7 @@ func (h *Handlers) SendingDomainRatesList(ctx context.Context, params externalap
 		res := externalapi.SendingDomainRatesListUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
-	days := params.WindowDays.Or(defaultRateWindowDays)
-	if days < 1 || days > maxRateWindowDays {
-		res := externalapi.SendingDomainRatesListBadRequest(problem(http.StatusBadRequest, "windowDays must be between 1 and 90"))
-		return &res, nil
-	}
+	days := params.WindowDays.Value
 
 	rates, err := h.reputation.Rates(ctx, auth.TokenScoped(ctx), reputation.Trailing(time.Duration(days)*24*time.Hour))
 	if err != nil {

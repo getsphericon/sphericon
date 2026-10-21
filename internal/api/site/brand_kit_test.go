@@ -2,7 +2,6 @@ package site_test
 
 import (
 	"context"
-	"strings"
 	"testing"
 
 	"github.com/samber/lo"
@@ -235,17 +234,15 @@ func TestSiteBrandKitRefusesAValueThatCannotBeWrittenIntoAMessage(t *testing.T) 
 	c := env.SiteActor(t, fixtures.VandelayOwnerArtEmail)
 
 	for name, mutate := range map[string]func(*siteapi.SiteSaveBrandKitInput){
-		"color is a name":       func(in *siteapi.SiteSaveBrandKitInput) { in.AccentColor = "red" },
-		"color breaks out":      func(in *siteapi.SiteSaveBrandKitInput) { in.TextColor = "#fff;background:url(x)" },
-		"font has a semicolon":  func(in *siteapi.SiteSaveBrandKitInput) { in.HeadingFont = "Arial; color: red" },
-		"font imports":          func(in *siteapi.SiteSaveBrandKitInput) { in.BodyFont = "Arial, url(//evil)" },
-		"logo is javascript":    func(in *siteapi.SiteSaveBrandKitInput) { in.LogoUrl = "javascript:alert(1)" },
-		"logo has a quote":      func(in *siteapi.SiteSaveBrandKitInput) { in.LogoUrl = `https://x.test/a" onerror="b` },
-		"logo is liquid":        func(in *siteapi.SiteSaveBrandKitInput) { in.LogoUrl = "https://x.test/{{ a }}" },
-		"radius is huge":        func(in *siteapi.SiteSaveBrandKitInput) { in.ButtonRadius = 99 },
-		"footer is liquid":      func(in *siteapi.SiteSaveBrandKitInput) { in.FooterText = "{% if %}" },
-		"footer has a newline":  func(in *siteapi.SiteSaveBrandKitInput) { in.FooterText = "a\nb" },
-		"footer is far too big": func(in *siteapi.SiteSaveBrandKitInput) { in.FooterText = strings.Repeat("a", 501) },
+		"color is a name":      func(in *siteapi.SiteSaveBrandKitInput) { in.AccentColor = "red" },
+		"color breaks out":     func(in *siteapi.SiteSaveBrandKitInput) { in.TextColor = "#fff;background:url(x)" },
+		"font has a semicolon": func(in *siteapi.SiteSaveBrandKitInput) { in.HeadingFont = "Arial; color: red" },
+		"font imports":         func(in *siteapi.SiteSaveBrandKitInput) { in.BodyFont = "Arial, url(//evil)" },
+		"logo is javascript":   func(in *siteapi.SiteSaveBrandKitInput) { in.LogoUrl = "javascript:alert(1)" },
+		"logo has a quote":     func(in *siteapi.SiteSaveBrandKitInput) { in.LogoUrl = `https://x.test/a" onerror="b` },
+		"logo is liquid":       func(in *siteapi.SiteSaveBrandKitInput) { in.LogoUrl = "https://x.test/{{ a }}" },
+		"footer is liquid":     func(in *siteapi.SiteSaveBrandKitInput) { in.FooterText = "{% if %}" },
+		"footer has a newline": func(in *siteapi.SiteSaveBrandKitInput) { in.FooterText = "a\nb" },
 	} {
 		t.Run(name, func(t *testing.T) {
 			in := brandKitInput()

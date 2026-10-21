@@ -37,7 +37,7 @@ func TestEveryWorkspaceIsClosedWithinAnHourOfMidnightUTC(t *testing.T) {
 	require.Less(t, usage.Interval, time.Hour, "the job runs several times inside the bound")
 	require.NoError(t, usage.Refresh(t.Context(), env.DB, lic, feb.Add(usage.Interval)))
 
-	page, err := usage.List(t.Context(), env.DB, jan, pagination.Params{Page: 1, PageSize: pagination.MaxPageSize})
+	page, err := usage.List(t.Context(), env.DB, jan, pagination.Params{Page: 1, PageSize: 100})
 	require.NoError(t, err)
 	require.GreaterOrEqual(t, page.TotalItems, 4, "every fixture Workspace has January figures")
 	for _, w := range page.Items {

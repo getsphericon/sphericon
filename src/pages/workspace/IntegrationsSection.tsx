@@ -37,6 +37,7 @@ import {
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type {
   SiteIntegrationConfigInput,
+  SiteIntegrationProvider,
   SiteIntegrationResource,
 } from '../../generated/site/types.gen.ts'
 import { canManage, useCurrentRole } from '../../hooks/useCurrentRole.ts'
@@ -49,7 +50,7 @@ import type { SendLimitValues } from './SendLimitFields.tsx'
 import { SendLimitModal } from './SendLimitModal.tsx'
 import { SendLimitStatus } from './SendLimitStatus.tsx'
 
-type ProviderKind = 'smtp' | 'ses'
+type ProviderKind = SiteIntegrationProvider
 
 // What the first step offers: SES-compatible services speak the SES API at an endpoint of their own.
 type Tile = 'ses' | 'sesCompatible' | 'smtp'

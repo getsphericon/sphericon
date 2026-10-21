@@ -17,13 +17,6 @@ import (
 // ErrInvalidFeedCursor refuses a cursor the feed never handed out.
 var ErrInvalidFeedCursor = errors.New("staff: the cursor is not one the workspace feed returned")
 
-const (
-	// DefaultFeedLimit is the page size of a feed read that names none.
-	DefaultFeedLimit = 100
-	// MaxFeedLimit is the most entries one feed page carries.
-	MaxFeedLimit = 200
-)
-
 // FeedEntry is a Workspace as the feed reports it: its identity and all of its owners.
 type FeedEntry struct {
 	Workspace *ent.Workspace
@@ -55,11 +48,6 @@ func (m *Module) WorkspaceFeed(ctx context.Context, cursor string, limit int) (F
 	if err != nil {
 		return FeedPage{}, err
 	}
-	if limit <= 0 {
-		limit = DefaultFeedLimit
-	}
-	limit = min(limit, MaxFeedLimit)
-
 	rows, err := m.ent.Workspace.Query().
 		Where(entworkspace.Or(
 			entworkspace.FeedPositionGT(position),

@@ -85,7 +85,10 @@ namespace StaffWorkspaceAudit {
     @query cursor?: string,
 
     /** Page size */
-    @query limit?: int32 = 25,
+    @query
+    @minValue(1)
+    @maxValue(100)
+    limit?: int32 = 25,
   ):
     | StaffAuditEntryList
     | BadRequestProblem

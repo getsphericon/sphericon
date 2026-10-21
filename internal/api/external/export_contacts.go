@@ -21,7 +21,7 @@ func (h *Handlers) ExportContacts(ctx context.Context, params externalapi.Export
 		return &res, nil
 	}
 
-	limit := exportstream.Limit(params.Limit.Get())
+	limit := int(params.Limit.Value)
 	page, err := exportstream.Contacts(ctx, auth.TokenScoped(ctx), params.Cursor.Or(""), limit)
 	if errors.Is(err, exportstream.ErrBadCursor) {
 		res := externalapi.ExportContactsBadRequest(problem(http.StatusBadRequest, "invalid cursor"))

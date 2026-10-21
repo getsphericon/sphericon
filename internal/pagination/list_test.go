@@ -37,11 +37,6 @@ func TestParamsNormalizesOptionalPageParams(t *testing.T) {
 	assert.Equal(t, pagination.Params{Page: 1, PageSize: 25}, pagination.ParamsOf(opt{-2, true}, opt{0, true}))
 }
 
-func TestParamsCapsThePageSize(t *testing.T) {
-	assert.Equal(t, pagination.Params{Page: 1, PageSize: pagination.MaxPageSize}, pagination.ParamsOf(opt{}, opt{100000, true}))
-	assert.Equal(t, pagination.MaxPageSize, pagination.ParamsOf(opt{}, opt{int32(pagination.MaxPageSize), true}).PageSize)
-}
-
 func TestListReturnsTheRequestedPageWithItsEnvelope(t *testing.T) {
 	count, fetch := catalogue(5)
 	p, err := pagination.List(context.Background(), pagination.Params{Page: 2, PageSize: 2}, count, fetch)

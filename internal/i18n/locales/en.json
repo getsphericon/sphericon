@@ -82,7 +82,6 @@
   "errors.join_domain_record_missing": "the TXT record was not found; publish it and verify again",
   "errors.join_domain_held": "another workspace has verified this domain and still publishes its record",
   "errors.join_domain_forbidden": "only owners can manage join domains",
-  "errors.retention_days_range": "retention must be between 1 and 3650 days",
   "errors.current_password_required": "current password is required",
   "errors.current_password_incorrect": "current password is incorrect",
   "errors.identity_proof_required": "this account has no password, so this step needs a fresh proof: check a Passkey or sign in again with your provider to continue",
@@ -98,7 +97,7 @@
   "errors.passkeys_unavailable": "passkeys need this instance to be served on a host name, not an IP address",
   "errors.passkey_last_sign_in": "this passkey is the last way you can sign in: add a password or another passkey first",
   "errors.passkey_not_found": "passkey not found",
-  "errors.passkey_name_invalid": "name the passkey in 1 to 100 characters",
+  "errors.passkey_name_invalid": "name the passkey with at least one character that is not a space",
   "errors.second_factor_reset_self": "reset your own second factor by disabling it in your account",
   "errors.second_factor_required": "this workspace requires a second factor",
   "errors.new_email_required": "new email is required",
@@ -151,7 +150,6 @@
   "errors.brandkit_color": "{{.Field}} must be a color like #1a2b3c",
   "errors.brandkit_font": "{{.Field}} must be a list of font families, letters, digits, spaces, commas and hyphens only",
   "errors.brandkit_logo": "the logo must be an http or https address",
-  "errors.brandkit_radius": "the button radius must be a whole number of pixels from 0 to 32",
-  "errors.brandkit_footer": "the footer must be plain text of at most 500 characters",
+  "errors.brandkit_footer": "the footer must be plain text without control characters or template markup",
   "errors.brandkit_not_saved": "save the Brand kit first: the starter Templates are made from it"
 }

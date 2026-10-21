@@ -27,8 +27,7 @@ func (h *Handlers) ExportAudit(ctx context.Context, params externalapi.ExportAud
 		return &res, nil
 	}
 
-	requested, set := params.Limit.Get()
-	limit := exportstream.Limit(requested, set)
+	limit := int(params.Limit.Value)
 	page, err := exportstream.Audit(ctx, auth.TokenScoped(ctx), params.Cursor.Or(""), limit)
 	if errors.Is(err, exportstream.ErrBadCursor) {
 		res := externalapi.ExportAuditBadRequest(problem(http.StatusBadRequest, "invalid cursor"))

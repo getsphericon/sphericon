@@ -26,6 +26,7 @@ import {
   sitePasskeysRename,
 } from '../generated/site/sdk.gen.ts'
 import type { SitePasskey } from '../generated/site/types.gen.ts'
+import { zPasskeyName } from '../generated/site/zod.gen.ts'
 import { useResourceMutation } from '../hooks/useResourceMutation.ts'
 import { IdentityProof } from './IdentityProof.tsx'
 
@@ -110,7 +111,7 @@ export function Passkeys({ returnTo }: { returnTo: string }) {
             <TextInput
               label={t(($) => $.security.passkeys.nameLabel)}
               required
-              maxLength={100}
+              maxLength={zPasskeyName.maxLength ?? undefined}
               {...form.getInputProps('name')}
             />
             {passwordless ? null : (
@@ -182,7 +183,7 @@ function PasskeyRow({ passkey, passwordless, needsProvider, returnTo }: PasskeyR
           <TextInput
             label={t(($) => $.security.passkeys.renameLabel)}
             required
-            maxLength={100}
+            maxLength={zPasskeyName.maxLength ?? undefined}
             {...renameForm.getInputProps('name')}
           />
           <Button variant="subtle" onClick={() => setMode('view')}>

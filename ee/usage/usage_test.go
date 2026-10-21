@@ -61,7 +61,7 @@ func figure(t *testing.T, env *testhelper.TestEnv, period time.Time) usage.Figur
 // figureOf is Acme's figure of the metric for the period, failing when there is none.
 func figureOf(t *testing.T, env *testhelper.TestEnv, period time.Time, metric usage.Metric) usage.Figure {
 	t.Helper()
-	page, err := usage.List(t.Context(), env.DB, period, pagination.Params{Page: 1, PageSize: pagination.MaxPageSize})
+	page, err := usage.List(t.Context(), env.DB, period, pagination.Params{Page: 1, PageSize: 100})
 	require.NoError(t, err)
 	for _, w := range page.Items {
 		if w.WorkspaceID != fixtures.AcmeID {
@@ -228,7 +228,7 @@ func TestOneFailingWorkspaceDoesNotStopTheOthersFromClosing(t *testing.T) {
 	err := usage.Refresh(t.Context(), env.DB, licenseFor(t, licensekey.FeatureStaff), feb.Add(time.Hour))
 
 	require.ErrorIs(t, err, boom, "the failure is still reported")
-	page, listErr := usage.List(t.Context(), env.DB, feb, pagination.Params{Page: 1, PageSize: pagination.MaxPageSize})
+	page, listErr := usage.List(t.Context(), env.DB, feb, pagination.Params{Page: 1, PageSize: 100})
 	require.NoError(t, listErr)
 	assert.NotEmpty(t, page.Items, "Workspaces after the failing one are still refreshed")
 	for _, w := range page.Items {

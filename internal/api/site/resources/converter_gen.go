@@ -330,7 +330,7 @@ func (c *ConverterImpl) PasskeyToResource(source *ent.Passkey) site.SitePasskey 
 	var siteapiSitePasskey site.SitePasskey
 	if source != nil {
 		siteapiSitePasskey.ID = site.EntityId((*source).ID)
-		siteapiSitePasskey.Name = (*source).Name
+		siteapiSitePasskey.Name = site.PasskeyName((*source).Name)
 		siteapiSitePasskey.CreatedAt = timestamp((*source).CreatedAt)
 		siteapiSitePasskey.LastUsedAt = optTimestamp((*source).LastUsedAt)
 	}

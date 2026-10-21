@@ -112,6 +112,8 @@
             "schema": {
               "type": "integer",
               "format": "int32",
+              "minimum": 1,
+              "maximum": 100,
               "default": 25
             },
             "explode": false
@@ -7771,6 +7773,8 @@
             "schema": {
               "type": "integer",
               "format": "int32",
+              "minimum": 1,
+              "maximum": 90,
               "default": 7
             },
             "explode": false
@@ -10389,6 +10393,7 @@
         "schema": {
           "type": "integer",
           "format": "int32",
+          "minimum": 1,
           "default": 1
         },
         "explode": false
@@ -10401,6 +10406,8 @@
         "schema": {
           "type": "integer",
           "format": "int32",
+          "minimum": 1,
+          "maximum": 100,
           "default": 25
         },
         "explode": false

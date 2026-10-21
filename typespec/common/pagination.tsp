@@ -5,10 +5,13 @@ namespace Sphericon;
 /** Reusable pagination query parameters */
 model PageQuery {
   /** Page number (1-based) */
-  @query page?: int32 = 1;
+  @query @minValue(1) page?: int32 = 1;
 
   /** Page size */
-  @query pageSize?: int32 = 25;
+  @query
+  @minValue(1)
+  @maxValue(100)
+  pageSize?: int32 = 25;
 }
 
 /** Paginated response */

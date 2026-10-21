@@ -22,13 +22,6 @@ import (
 	"entgo.io/ent/dialect/sql"
 )
 
-const (
-	// DefaultLimit is the page size when the request names none.
-	DefaultLimit = 1000
-	// MaxLimit is the largest page a request may ask for (the contract's maximum).
-	MaxLimit = 10000
-)
-
 // ErrBadCursor means a cursor token is not one this package issued: a malformed or foreign
 // value is refused (400) instead of silently restarting a consumer from zero.
 var ErrBadCursor = errors.New("exportstream: invalid cursor")
@@ -84,16 +77,6 @@ func ParseCursor(token string) (Cursor, error) {
 		return Cursor{}, ErrBadCursor
 	}
 	return Cursor{At: time.UnixMicro(at), ID: n}, nil
-}
-
-// Limit is the page size of a request: DefaultLimit when none was given, and never more
-// than MaxLimit. The contract refuses a limit outside 1..MaxLimit with a 400 before a handler
-// runs (ogen validates it); this only keeps the query bounded on its own.
-func Limit(requested int32, set bool) int {
-	if !set || requested < 1 {
-		return DefaultLimit
-	}
-	return min(int(requested), MaxLimit)
 }
 
 // Seek is the keyset predicate of a stream's query: rows at or after the cursor. Pass it

@@ -39,7 +39,7 @@ func (h *Handlers) ExportEvents(ctx context.Context, params externalapi.ExportEv
 		return &res, nil
 	}
 
-	limit := exportstream.Limit(params.Limit.Get())
+	limit := int(params.Limit.Value)
 	page, err := exportstream.Events(ctx, auth.TokenScoped(ctx), params.Cursor.Or(""), limit)
 	if errors.Is(err, exportstream.ErrBadCursor) {
 		res := externalapi.ExportEventsBadRequest(problem(http.StatusBadRequest, "invalid cursor"))

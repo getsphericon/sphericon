@@ -24,7 +24,8 @@ func (h *Handlers) AuditEntriesList(ctx context.Context, params externalapi.Audi
 		return &res, nil
 	}
 
-	cursor, limit, err := auditapi.Page(params.Cursor.Or(""), params.Limit.Or(0), params.Limit.IsSet())
+	cursor, err := auditapi.Page(params.Cursor.Or(""))
+	limit := int(params.Limit.Value)
 	if err != nil {
 		res := externalapi.AuditEntriesListBadRequest(problem(http.StatusBadRequest, "invalid cursor"))
 		return &res, nil

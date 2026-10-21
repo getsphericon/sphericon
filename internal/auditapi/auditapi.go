@@ -16,32 +16,19 @@ import (
 	"github.com/getsphericon/sphericon/internal/events"
 )
 
-const (
-	defaultLimit = 25
-	maxLimit     = 100
-)
-
 // ErrBadCursor is returned for a cursor that is not a positive entry id.
 var ErrBadCursor = errors.New("invalid cursor")
 
-// Page parses the optional cursor (empty starts from the newest entry) and clamps
-// the page size: an absent or out-of-range limit becomes the default.
-func Page(cursor string, limit int32, limitSet bool) (int64, int, error) {
-	var after int64
-	if cursor != "" {
-		var err error
-		if after, err = strconv.ParseInt(cursor, 10, 64); err != nil || after < 1 {
-			return 0, 0, ErrBadCursor
-		}
+// Page parses the optional cursor (empty starts from the newest entry).
+func Page(cursor string) (int64, error) {
+	if cursor == "" {
+		return 0, nil
 	}
-	n := defaultLimit
-	if limitSet {
-		n = int(limit)
+	after, err := strconv.ParseInt(cursor, 10, 64)
+	if err != nil || after < 1 {
+		return 0, ErrBadCursor
 	}
-	if n < 1 || n > maxLimit {
-		n = defaultLimit
-	}
-	return after, n, nil
+	return after, nil
 }
 
 // NextCursor renders the cursor of the next page.
