@@ -1,15 +1,51 @@
+import type { AuthenticationResponseJSON } from '@simplewebauthn/browser'
 import { HttpResponse } from 'msw'
-import { expect, test } from 'vitest'
+import { beforeEach, expect, test, vi } from 'vitest'
 
 import {
   handleSiteAuthLogin,
   handleSiteAuthResendVerification,
   handleSiteAuthSecondFactor,
+  handleSitePasskeyLoginBegin,
+  handleSitePasskeyLoginFinish,
 } from '../../generated/site/msw.gen.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { worker } from '../../test/worker.ts'
 import { LoginPage } from './login.tsx'
+
+// The authenticator is the browser's: tests stand in for it, with the ceremony options and the
+// answer it would give.
+const webauthn = vi.hoisted(() => ({
+  supported: vi.fn<() => boolean>(),
+  autofill: vi.fn<() => Promise<boolean>>(),
+  authenticate: vi.fn<(args: unknown) => Promise<AuthenticationResponseJSON>>(),
+  cancel: vi.fn<() => void>(),
+}))
+vi.mock('@simplewebauthn/browser', () => ({
+  browserSupportsWebAuthn: webauthn.supported,
+  browserSupportsWebAuthnAutofill: webauthn.autofill,
+  startAuthentication: webauthn.authenticate,
+  WebAuthnAbortService: { cancelCeremony: webauthn.cancel },
+}))
+
+const OPTIONS = {
+  challenge: 'Y2hhbGxlbmdl',
+  rpId: 'sphericon.test',
+  userVerification: 'required' as const,
+}
+const ASSERTION: AuthenticationResponseJSON = {
+  id: 'abc',
+  rawId: 'abc',
+  type: 'public-key',
+  clientExtensionResults: {},
+  response: { clientDataJSON: 'e30', authenticatorData: 'e30', signature: 'c2ln' },
+}
+
+beforeEach(() => {
+  webauthn.supported.mockReturnValue(true)
+  webauthn.autofill.mockResolvedValue(false)
+})
 
 test('navigates home after a successful login', async () => {
   worker.use(handleSiteAuthLogin({ body: { outcome: 'session' } }))
@@ -145,4 +181,67 @@ test('shows an error and stays on the second step when the code is wrong', async
   await expect.element(screen.getByText('the code is not valid')).toBeInTheDocument()
   await expect.element(screen.getByLabelText(/^Authentication code/)).toBeInTheDocument()
   expect(navigate).not.toHaveBeenCalled()
+})
+
+test('the Passkey button logs in without an email or a password', async () => {
+  webauthn.authenticate.mockResolvedValue(ASSERTION)
+  const finished: unknown[] = []
+  worker.use(
+    handleSitePasskeyLoginBegin({ body: { options: OPTIONS } }),
+    handleSitePasskeyLoginFinish(async ({ request }) => {
+      finished.push(await request.json())
+      return HttpResponse.json({ outcome: 'session' })
+    }),
+  )
+  const { screen, navigate } = await renderWithRouter(<LoginPage />)
+
+  await screen.getByRole('button', { name: 'Use a passkey' }).click()
+
+  await expect.poll(() => navigate.mock.calls).toContainEqual([{ to: '/' }])
+  expect(webauthn.authenticate).toHaveBeenCalledWith({
+    optionsJSON: OPTIONS,
+    useBrowserAutofill: false,
+  })
+  expect(finished).toEqual([{ credential: ASSERTION }])
+})
+
+test('the browser offers the Passkeys in the email field and the login finishes on a choice', async () => {
+  webauthn.autofill.mockResolvedValue(true)
+  webauthn.authenticate.mockResolvedValue(ASSERTION)
+  worker.use(
+    handleSitePasskeyLoginBegin({ body: { options: OPTIONS } }),
+    handleSitePasskeyLoginFinish({ body: { outcome: 'session' } }),
+  )
+  const { screen, navigate } = await renderWithRouter(<LoginPage />)
+
+  await expect.poll(() => navigate.mock.calls).toContainEqual([{ to: '/' }])
+  expect(webauthn.authenticate).toHaveBeenCalledWith({
+    optionsJSON: OPTIONS,
+    useBrowserAutofill: true,
+  })
+  await expect
+    .element(screen.getByLabelText(/^Email/))
+    .toHaveAttribute('autocomplete', 'username webauthn')
+})
+
+test('a refused Passkey login says so and stays on the page', async () => {
+  webauthn.authenticate.mockResolvedValue(ASSERTION)
+  worker.use(
+    handleSitePasskeyLoginBegin({ body: { options: OPTIONS } }),
+    handleSitePasskeyLoginFinish(() => problem(401, { detail: 'the passkey sign-in failed' })),
+  )
+  const { screen, navigate } = await renderWithRouter(<LoginPage />)
+
+  await screen.getByRole('button', { name: 'Use a passkey' }).click()
+
+  await expect.element(screen.getByText('the passkey sign-in failed')).toBeInTheDocument()
+  expect(navigate).not.toHaveBeenCalled()
+})
+
+test('a browser without WebAuthn offers no Passkey button', async () => {
+  webauthn.supported.mockReturnValue(false)
+  const { screen } = await renderWithRouter(<LoginPage />)
+
+  await expect.element(screen.getByLabelText(/^Email/)).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Use a passkey' }).query()).toBeNull()
 })

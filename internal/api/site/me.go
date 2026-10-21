@@ -92,7 +92,7 @@ func (h *Handlers) SiteUserUpdateMe(ctx context.Context, req *siteapi.SiteUpdate
 	// The password change ended every session; the acting one continues under a
 	// fresh token stamped with the new epoch.
 	if newHash != nil {
-		cookie, err := h.sessions.Issue(u)
+		cookie, err := h.sessions.Issue(u, currentSession(ctx))
 		if err != nil {
 			return nil, err
 		}

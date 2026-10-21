@@ -89,6 +89,7 @@ type clock struct{ t time.Time }
 func (c *clock) now() time.Time { return c.t }
 
 type rig struct {
+	db     *ent.Client
 	clock  *clock
 	factor *factor
 	module *login.Module[*ent.User]
@@ -105,7 +106,7 @@ func newRig(t *testing.T, opts ...func(*login.Config[*ent.User])) rig {
 		accounts.WithClock(clk.now),
 		accounts.WithRule(accounts.KindLogin, accounts.LoginRule(2)),
 		accounts.WithRule(accounts.KindStaffLogin, accounts.LoginRule(2)))
-	r := rig{clock: clk, login: counters.For(accounts.KindLogin), staff: counters.For(accounts.KindStaffLogin)}
+	r := rig{db: env.DB, clock: clk, login: counters.For(accounts.KindLogin), staff: counters.For(accounts.KindStaffLogin)}
 	cfg := login.Config[*ent.User]{
 		Throttle: r.login,
 		Store:    store{env.DB},

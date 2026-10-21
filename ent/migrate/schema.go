@@ -1156,6 +1156,57 @@ var (
 			},
 		},
 	}
+	// PasskeysColumns holds the columns for the "passkeys" table.
+	PasskeysColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "credential_id", Type: field.TypeBytes, Unique: true},
+		{Name: "public_key", Type: field.TypeBytes},
+		{Name: "sign_count", Type: field.TypeInt64, Default: 0},
+		{Name: "transports", Type: field.TypeJSON, Nullable: true},
+		{Name: "backup_eligible", Type: field.TypeBool},
+		{Name: "backup_state", Type: field.TypeBool},
+		{Name: "aaguid", Type: field.TypeBytes, Nullable: true},
+		{Name: "attestation_type", Type: field.TypeString, Nullable: true},
+		{Name: "name", Type: field.TypeString},
+		{Name: "last_used_at", Type: field.TypeTime, Nullable: true},
+		{Name: "user_id", Type: field.TypeInt64},
+	}
+	// PasskeysTable holds the schema information for the "passkeys" table.
+	PasskeysTable = &schema.Table{
+		Name:       "passkeys",
+		Columns:    PasskeysColumns,
+		PrimaryKey: []*schema.Column{PasskeysColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "passkeys_users_passkeys",
+				Columns:    []*schema.Column{PasskeysColumns[13]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "passkey_user_id",
+				Unique:  false,
+				Columns: []*schema.Column{PasskeysColumns[13]},
+			},
+		},
+	}
+	// PasskeyChallengesColumns holds the columns for the "passkey_challenges" table.
+	PasskeyChallengesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "challenge", Type: field.TypeString, Unique: true},
+	}
+	// PasskeyChallengesTable holds the schema information for the "passkey_challenges" table.
+	PasskeyChallengesTable = &schema.Table{
+		Name:       "passkey_challenges",
+		Columns:    PasskeyChallengesColumns,
+		PrimaryKey: []*schema.Column{PasskeyChallengesColumns[0]},
+	}
 	// RecoveryCodesColumns holds the columns for the "recovery_codes" table.
 	RecoveryCodesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -1739,6 +1790,8 @@ var (
 		OauthCodesTable,
 		OauthRefreshTokensTable,
 		OutboundMessagesTable,
+		PasskeysTable,
+		PasskeyChallengesTable,
 		RecoveryCodesTable,
 		SchemaStateTable,
 		SegmentsTable,
@@ -1910,6 +1963,13 @@ func init() {
 		"outbound_messages_channel_check": "channel IN ('email')",
 		"outbound_messages_kind_check":    "kind IN ('broadcast', 'automation', 'transactional')",
 		"outbound_messages_status_check":  "status IN ('pending', 'sent', 'skipped', 'failed')",
+	}
+	PasskeysTable.ForeignKeys[0].RefTable = UsersTable
+	PasskeysTable.Annotation = &entsql.Annotation{
+		Table: "passkeys",
+	}
+	PasskeyChallengesTable.Annotation = &entsql.Annotation{
+		Table: "passkey_challenges",
 	}
 	RecoveryCodesTable.ForeignKeys[0].RefTable = UsersTable
 	RecoveryCodesTable.Annotation = &entsql.Annotation{

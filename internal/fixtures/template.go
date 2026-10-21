@@ -64,6 +64,10 @@ func TemplateFuncs(cipher *secrets.Cipher, now time.Time) template.FuncMap {
 		// A Service credential's secret is stored as the SHA-256 the Staff member module
 		// computes when it issues one (credentials.HashServiceSecret).
 		"serviceSecretHash": func(secret string) string { return credentials.HashServiceSecret(secret) },
+		// A fixture Passkey states its credential id (base64url) and its private key (base64
+		// PKCS8); the columns hold the raw id and the derived COSE public key.
+		"passkeyCredentialID": passkeyCredentialID,
+		"passkeyPublicKey":    passkeyPublicKey,
 	}
 }
 

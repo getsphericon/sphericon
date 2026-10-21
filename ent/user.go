@@ -53,11 +53,13 @@ type UserEdges struct {
 	SentInvitations []*Invitation `json:"sent_invitations,omitempty"`
 	// RecoveryCodes holds the value of the recovery_codes edge.
 	RecoveryCodes []*RecoveryCode `json:"recovery_codes,omitempty"`
+	// Passkeys holds the value of the passkeys edge.
+	Passkeys []*Passkey `json:"passkeys,omitempty"`
 	// Identities holds the value of the identities edge.
 	Identities []*UserIdentity `json:"identities,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [4]bool
+	loadedTypes [5]bool
 }
 
 // MembershipsOrErr returns the Memberships value or an error if the edge
@@ -87,10 +89,19 @@ func (e UserEdges) RecoveryCodesOrErr() ([]*RecoveryCode, error) {
 	return nil, &NotLoadedError{edge: "recovery_codes"}
 }
 
+// PasskeysOrErr returns the Passkeys value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) PasskeysOrErr() ([]*Passkey, error) {
+	if e.loadedTypes[3] {
+		return e.Passkeys, nil
+	}
+	return nil, &NotLoadedError{edge: "passkeys"}
+}
+
 // IdentitiesOrErr returns the Identities value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) IdentitiesOrErr() ([]*UserIdentity, error) {
-	if e.loadedTypes[3] {
+	if e.loadedTypes[4] {
 		return e.Identities, nil
 	}
 	return nil, &NotLoadedError{edge: "identities"}
@@ -223,6 +234,11 @@ func (_m *User) QuerySentInvitations() *InvitationQuery {
 // QueryRecoveryCodes queries the "recovery_codes" edge of the User entity.
 func (_m *User) QueryRecoveryCodes() *RecoveryCodeQuery {
 	return NewUserClient(_m.config).QueryRecoveryCodes(_m)
+}
+
+// QueryPasskeys queries the "passkeys" edge of the User entity.
+func (_m *User) QueryPasskeys() *PasskeyQuery {
+	return NewUserClient(_m.config).QueryPasskeys(_m)
 }
 
 // QueryIdentities queries the "identities" edge of the User entity.

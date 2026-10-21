@@ -1,0 +1,10 @@
+# Spent Passkey ceremony challenges (ADR 0052). The daily cleanup prunes the old one, spent days
+# ago, and keeps the young one, which a ceremony cookie could still carry.
+- id: 1 # fixture: SpentPasskeyChallengeOld
+  challenge: spent-long-ago
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 3}}'
+- id: 2 # fixture: SpentPasskeyChallengeYoung
+  challenge: spent-just-now
+  created_at: '{{hoursAgo 1}}'
+  updated_at: '{{hoursAgo 1}}'

@@ -345,6 +345,30 @@ func (f OutboxOffsetFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OutboxOffsetMutation", m)
 }
 
+// The PasskeyFunc type is an adapter to allow the use of ordinary
+// function as Passkey mutator.
+type PasskeyFunc func(context.Context, *ent.PasskeyMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f PasskeyFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.PasskeyMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.PasskeyMutation", m)
+}
+
+// The PasskeyChallengeFunc type is an adapter to allow the use of ordinary
+// function as PasskeyChallenge mutator.
+type PasskeyChallengeFunc func(context.Context, *ent.PasskeyChallengeMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f PasskeyChallengeFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.PasskeyChallengeMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.PasskeyChallengeMutation", m)
+}
+
 // The RecoveryCodeFunc type is an adapter to allow the use of ordinary
 // function as RecoveryCode mutator.
 type RecoveryCodeFunc func(context.Context, *ent.RecoveryCodeMutation) (ent.Value, error)

@@ -2571,6 +2571,257 @@ export type SiteOAuthDecisionResult = {
 };
 
 /**
+ * One Passkey of the authenticated User (ADR 0051). Its public key and credential id are
+ * never returned.
+ */
+export type SitePasskey = {
+  /**
+   * Unique identifier, the key of the rename and remove operations
+   */
+  id: EntityId;
+  /**
+   * What the User calls it, to tell their Passkeys apart
+   */
+  name: string;
+  /**
+   * When the Passkey was registered
+   */
+  createdAt: Timestamp;
+  /**
+   * When a login last used it; absent while it has never been used
+   */
+  lastUsedAt?: Timestamp;
+};
+
+/**
+ * The browser's answer to the request options: the W3C `AuthenticationResponseJSON`
+ * dictionary (`PublicKeyCredential.toJSON()`), checked by the WebAuthn library.
+ */
+export type SitePasskeyAssertion = {
+  [key: string]: unknown;
+};
+
+/**
+ * What the authenticator must be able to do. Credentials are discoverable and user
+ * verification is required (ADR 0051).
+ */
+export type SitePasskeyAuthenticatorSelection = {
+  authenticatorAttachment?: 'platform' | 'cross-platform';
+  requireResidentKey?: boolean;
+  residentKey?: 'discouraged' | 'preferred' | 'required';
+  userVerification?: 'required' | 'preferred' | 'discouraged';
+};
+
+/**
+ * The options to check a Passkey with, and the ceremony cookie they are bound to
+ */
+export type SitePasskeyCheckBegun = {
+  options: SitePasskeyRequestOptions;
+};
+
+/**
+ * The browser's response to a Passkey check ceremony
+ */
+export type SitePasskeyCheckInput = {
+  /**
+   * The authenticator's response to the request options
+   */
+  credential: SitePasskeyAssertion;
+};
+
+/**
+ * The options a browser passes to `navigator.credentials.create` to register a Passkey: the
+ * W3C `PublicKeyCredentialCreationOptionsJSON` dictionary, as the WebAuthn library produced it.
+ * Attestation is not requested.
+ */
+export type SitePasskeyCreationOptions = {
+  rp: SitePasskeyRelyingParty;
+  user: SitePasskeyUserEntity;
+  /**
+   * The challenge, base64url
+   */
+  challenge: string;
+  pubKeyCredParams: Array<SitePasskeyParameter>;
+  /**
+   * Milliseconds the ceremony may take
+   */
+  timeout?: number;
+  /**
+   * The Passkeys the User already holds, so one authenticator is not registered twice
+   */
+  excludeCredentials?: Array<SitePasskeyDescriptor>;
+  authenticatorSelection?: SitePasskeyAuthenticatorSelection;
+  attestation?: 'none' | 'indirect' | 'direct' | 'enterprise';
+};
+
+/**
+ * A credential, as the exclusion list names it
+ */
+export type SitePasskeyDescriptor = {
+  type: 'public-key';
+  /**
+   * The credential id, base64url
+   */
+  id: string;
+  transports?: Array<'ble' | 'hybrid' | 'internal' | 'nfc' | 'usb'>;
+};
+
+/**
+ * The Passkeys of the authenticated User, oldest first, and what proves the User for a change
+ */
+export type SitePasskeyList = {
+  items: Array<SitePasskey>;
+  /**
+   * Whether Passkeys work on this Instance. They need a host name: an Instance served on an
+   * IP address has none, and the registration operations answer 404.
+   */
+  available: boolean;
+  /**
+   * Whether the User has a password. Without one, adding a Passkey asks for a fresh
+   * sign-in with a Sign-in provider instead.
+   */
+  passwordSet: boolean;
+  /**
+   * Whether the session holds a fresh proof that stands in for the password: a Sign-in
+   * provider login or a Passkey check of the last few minutes (a User with a password always
+   * proves the password).
+   */
+  identityProofFresh: boolean;
+};
+
+/**
+ * The options to log in with, and the ceremony cookie they are bound to
+ */
+export type SitePasskeyLoginBegun = {
+  options: SitePasskeyRequestOptions;
+};
+
+/**
+ * The browser's response to a login ceremony
+ */
+export type SitePasskeyLoginInput = {
+  /**
+   * The authenticator's response to the request options
+   */
+  credential: SitePasskeyAssertion;
+};
+
+/**
+ * A public-key algorithm the authenticator may use
+ */
+export type SitePasskeyParameter = {
+  type: 'public-key';
+  /**
+   * The COSE algorithm identifier
+   */
+  alg: number;
+};
+
+/**
+ * The options to create a Passkey with, and the ceremony cookie they are bound to
+ */
+export type SitePasskeyRegistrationBegun = {
+  options: SitePasskeyCreationOptions;
+};
+
+/**
+ * The browser's response to a registration ceremony, with the proof of identity and a name
+ */
+export type SitePasskeyRegistrationInput = {
+  /**
+   * Current password. Left out by a User with no password, who proves a provider or Passkey
+   * sign-in of the last few minutes instead (ADR 0048).
+   */
+  currentPassword?: string;
+  /**
+   * What to call the Passkey, to tell it from the User's others
+   */
+  name: string;
+  /**
+   * The authenticator's response to the creation options
+   */
+  credential: SitePasskeyRegistrationResponse;
+};
+
+/**
+ * The browser's answer to the creation options: the W3C `RegistrationResponseJSON`
+ * dictionary (`PublicKeyCredential.toJSON()`), checked by the WebAuthn library.
+ */
+export type SitePasskeyRegistrationResponse = {
+  [key: string]: unknown;
+};
+
+/**
+ * The relying party of a Passkey ceremony: this Instance
+ */
+export type SitePasskeyRelyingParty = {
+  /**
+   * The relying party id: the host of the Instance's public URL
+   */
+  id?: string;
+  name: string;
+};
+
+/**
+ * The proof of identity a removal asks for
+ */
+export type SitePasskeyRemoveInput = {
+  /**
+   * Current password. Left out by a User with no password, who proves a provider or Passkey
+   * sign-in of the last few minutes instead (ADR 0048).
+   */
+  currentPassword?: string;
+};
+
+/**
+ * The new name of a Passkey
+ */
+export type SitePasskeyRenameInput = {
+  /**
+   * What to call the Passkey, to tell it from the User's others
+   */
+  name: string;
+};
+
+/**
+ * The options a browser passes to `navigator.credentials.get` to log in with a Passkey: the
+ * W3C `PublicKeyCredentialRequestOptionsJSON` dictionary, as the WebAuthn library produced it.
+ * `allowCredentials` is empty: the User is found by the credential the browser offers, never by
+ * an email (ADR 0052).
+ */
+export type SitePasskeyRequestOptions = {
+  /**
+   * The challenge, base64url
+   */
+  challenge: string;
+  /**
+   * Milliseconds the ceremony may take
+   */
+  timeout?: number;
+  /**
+   * The relying party id: the host of the Instance's public URL
+   */
+  rpId?: string;
+  allowCredentials?: Array<SitePasskeyDescriptor>;
+  /**
+   * Always `required`: an authenticator that cannot verify the person is refused
+   */
+  userVerification?: 'required' | 'preferred' | 'discouraged';
+};
+
+/**
+ * The account a Passkey is created for
+ */
+export type SitePasskeyUserEntity = {
+  /**
+   * The user handle, base64url
+   */
+  id: string;
+  name: string;
+  displayName: string;
+};
+
+/**
  * A Preset the Instance offers
  */
 export type SitePresetResource = {
@@ -2621,11 +2872,11 @@ export type SiteRecoveryCodes = {
 };
 
 /**
- * Proof of the User's password (or a fresh provider login), for regenerating Recovery codes
+ * Proof of the User's password (or a fresh provider login or Passkey check), for regenerating Recovery codes
  */
 export type SiteRecoveryCodesInput = {
   /**
-   * Current password. Left out by a User with no password, who proves a provider
+   * Current password. Left out by a User with no password, who proves a provider or Passkey
    * sign-in of the last few minutes instead (ADR 0048).
    */
   currentPassword?: string;
@@ -2715,11 +2966,11 @@ export type SiteScheduleBroadcastInput = {
 };
 
 /**
- * Proof of the User's password (or a fresh provider login) and a code from the authenticator app
+ * Proof of the User's password (or a fresh provider login or Passkey check) and a code from the authenticator app
  */
 export type SiteSecondFactorConfirmInput = {
   /**
-   * Current password. Left out by a User with no password, who proves a provider
+   * Current password. Left out by a User with no password, who proves a provider or Passkey
    * sign-in of the last few minutes instead (ADR 0048).
    */
   currentPassword?: string;
@@ -2730,11 +2981,11 @@ export type SiteSecondFactorConfirmInput = {
 };
 
 /**
- * Proof of password (or a fresh provider login) and possession, for disabling the Second factor
+ * Proof of password (or a fresh provider login or Passkey check) and possession, for disabling the Second factor
  */
 export type SiteSecondFactorDisableInput = {
   /**
-   * Current password. Left out by a User with no password, who proves a provider
+   * Current password. Left out by a User with no password, who proves a provider or Passkey
    * sign-in of the last few minutes instead (ADR 0048).
    */
   currentPassword?: string;
@@ -2773,11 +3024,11 @@ export type SiteSecondFactorRequirementInput = {
 };
 
 /**
- * Proof of the User's password (or a fresh provider login), for starting an enrollment
+ * Proof of the User's password (or a fresh provider login or Passkey check), for starting an enrollment
  */
 export type SiteSecondFactorStartInput = {
   /**
-   * Current password. Left out by a User with no password, who proves a provider
+   * Current password. Left out by a User with no password, who proves a provider or Passkey
    * sign-in of the last few minutes instead (ADR 0048).
    */
   currentPassword?: string;
@@ -2806,11 +3057,12 @@ export type SiteSecondFactorStatus = {
    */
   passwordSet: boolean;
   /**
-   * Whether the session began with a Sign-in provider login recent enough to stand in for
-   * the password (a User with a password always proves the password). When a User with no
-   * password sees false, the next step is to sign in with a provider again.
+   * Whether the session holds a fresh proof that stands in for the password: a Sign-in
+   * provider login or a Passkey check of the last few minutes (a User with a password always
+   * proves the password). When a User with no password sees false, the next step is to sign
+   * in with a provider again or to check a Passkey.
    */
-  providerLoginFresh: boolean;
+  identityProofFresh: boolean;
 };
 
 /**
@@ -4391,6 +4643,60 @@ export type SiteAuthLogoutResponses = {
 
 export type SiteAuthLogoutResponse = SiteAuthLogoutResponses[keyof SiteAuthLogoutResponses];
 
+export type SitePasskeyLoginBeginData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/auth/passkey';
+};
+
+export type SitePasskeyLoginBeginErrors = {
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SitePasskeyLoginBeginError = SitePasskeyLoginBeginErrors[keyof SitePasskeyLoginBeginErrors];
+
+export type SitePasskeyLoginBeginResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SitePasskeyLoginBegun;
+};
+
+export type SitePasskeyLoginBeginResponse = SitePasskeyLoginBeginResponses[keyof SitePasskeyLoginBeginResponses];
+
+export type SitePasskeyLoginFinishData = {
+  body: SitePasskeyLoginInput;
+  path?: never;
+  query?: never;
+  url: '/auth/passkey/finish';
+};
+
+export type SitePasskeyLoginFinishErrors = {
+  /**
+   * RFC 7807 unauthorized response
+   */
+  401: ProblemDetails;
+  /**
+   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
+   */
+  429: ProblemDetails;
+};
+
+export type SitePasskeyLoginFinishError = SitePasskeyLoginFinishErrors[keyof SitePasskeyLoginFinishErrors];
+
+export type SitePasskeyLoginFinishResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteLoginResult;
+};
+
+export type SitePasskeyLoginFinishResponse = SitePasskeyLoginFinishResponses[keyof SitePasskeyLoginFinishResponses];
+
 export type SiteAuthRegisterData = {
   body: SiteRegisterInput;
   path?: never;
@@ -5043,6 +5349,208 @@ export type SiteIdentitiesLinkErrors = {
 };
 
 export type SiteIdentitiesLinkError = SiteIdentitiesLinkErrors[keyof SiteIdentitiesLinkErrors];
+
+export type SitePasskeysListData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/me/passkeys';
+};
+
+export type SitePasskeysListResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SitePasskeyList;
+};
+
+export type SitePasskeysListResponse = SitePasskeysListResponses[keyof SitePasskeysListResponses];
+
+export type SitePasskeysBeginCheckData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/me/passkeys/check';
+};
+
+export type SitePasskeysBeginCheckErrors = {
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SitePasskeysBeginCheckError = SitePasskeysBeginCheckErrors[keyof SitePasskeysBeginCheckErrors];
+
+export type SitePasskeysBeginCheckResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SitePasskeyCheckBegun;
+};
+
+export type SitePasskeysBeginCheckResponse = SitePasskeysBeginCheckResponses[keyof SitePasskeysBeginCheckResponses];
+
+export type SitePasskeysFinishCheckData = {
+  body: SitePasskeyCheckInput;
+  path?: never;
+  query?: never;
+  url: '/me/passkeys/check/finish';
+};
+
+export type SitePasskeysFinishCheckErrors = {
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SitePasskeysFinishCheckError = SitePasskeysFinishCheckErrors[keyof SitePasskeysFinishCheckErrors];
+
+export type SitePasskeysFinishCheckResponses = {
+  /**
+   * There is no content to send for this request, but the headers may be useful.
+   */
+  204: void;
+};
+
+export type SitePasskeysFinishCheckResponse = SitePasskeysFinishCheckResponses[keyof SitePasskeysFinishCheckResponses];
+
+export type SitePasskeysBeginRegistrationData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/me/passkeys/registration';
+};
+
+export type SitePasskeysBeginRegistrationErrors = {
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SitePasskeysBeginRegistrationError = SitePasskeysBeginRegistrationErrors[keyof SitePasskeysBeginRegistrationErrors];
+
+export type SitePasskeysBeginRegistrationResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SitePasskeyRegistrationBegun;
+};
+
+export type SitePasskeysBeginRegistrationResponse = SitePasskeysBeginRegistrationResponses[keyof SitePasskeysBeginRegistrationResponses];
+
+export type SitePasskeysFinishRegistrationData = {
+  body: SitePasskeyRegistrationInput;
+  path?: never;
+  query?: never;
+  url: '/me/passkeys/registration/finish';
+};
+
+export type SitePasskeysFinishRegistrationErrors = {
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+  /**
+   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
+   */
+  429: ProblemDetails;
+};
+
+export type SitePasskeysFinishRegistrationError = SitePasskeysFinishRegistrationErrors[keyof SitePasskeysFinishRegistrationErrors];
+
+export type SitePasskeysFinishRegistrationResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SitePasskey;
+};
+
+export type SitePasskeysFinishRegistrationResponse = SitePasskeysFinishRegistrationResponses[keyof SitePasskeysFinishRegistrationResponses];
+
+export type SitePasskeysRemoveData = {
+  body: SitePasskeyRemoveInput;
+  path: {
+    id: EntityId;
+  };
+  query?: never;
+  url: '/me/passkeys/{id}';
+};
+
+export type SitePasskeysRemoveErrors = {
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 conflict response
+   */
+  409: ProblemDetails;
+  /**
+   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
+   */
+  429: ProblemDetails;
+};
+
+export type SitePasskeysRemoveError = SitePasskeysRemoveErrors[keyof SitePasskeysRemoveErrors];
+
+export type SitePasskeysRemoveResponses = {
+  /**
+   * There is no content to send for this request, but the headers may be useful.
+   */
+  204: void;
+};
+
+export type SitePasskeysRemoveResponse = SitePasskeysRemoveResponses[keyof SitePasskeysRemoveResponses];
+
+export type SitePasskeysRenameData = {
+  body: SitePasskeyRenameInput;
+  path: {
+    id: EntityId;
+  };
+  query?: never;
+  url: '/me/passkeys/{id}';
+};
+
+export type SitePasskeysRenameErrors = {
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+};
+
+export type SitePasskeysRenameError = SitePasskeysRenameErrors[keyof SitePasskeysRenameErrors];
+
+export type SitePasskeysRenameResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SitePasskey;
+};
+
+export type SitePasskeysRenameResponse = SitePasskeysRenameResponses[keyof SitePasskeysRenameResponses];
 
 export type SiteSecondFactorGetStatusData = {
   body?: never;

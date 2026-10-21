@@ -27,7 +27,7 @@ function serve(identities: typeof LINKED | { items: [] }) {
         pending: false,
         recoveryCodesRemaining: 0,
         passwordSet: true,
-        providerLoginFresh: false,
+        identityProofFresh: false,
       },
     }),
     handleSiteAuthSigninProviders({ body: GOOGLE }),

@@ -152,6 +152,10 @@ type TestEnv struct {
 	// Integrations is the module the server serves Integrations and their hooks with.
 	Integrations *integrations.Module
 
+	// AppURL is SPHERICON_APP_URL of the env: the origin and relying party id of a Passkey
+	// ceremony (ADR 0051).
+	AppURL string
+
 	// Holds is the module the sender's freeze check reads, for a test that builds its own
 	// Outbound module.
 	Holds *holds.Holds
@@ -420,6 +424,8 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		oauthFetcher = oauthserver.NewFetcher(cfg.OutboundAllow)
 	}
 	secondFactor := secondfactor.New(client, bus, cipher, st.now)
+	passkeys, err := secondfactor.NewPasskeys(client, bus, cfg.AppURL, cfg.JWTSecret, st.now)
+	require.NoError(t, err, "build passkeys")
 	staffHandler, err := server.NewStaffAPI(edition.Staff(bus, systemMail))
 	require.NoError(t, err, "build staff API")
 	accountLink, _, err := accountlink.FromConfig(&cfg)
@@ -438,6 +444,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		Welcome: inline, SysMail: inline, SendingDomains: sendingDomainsModule, JoinDomains: joinDomainsModule, Integrations: integrationsModule,
 		Tokens: authtoken.New(baseCfg.JWTSecret).WithClock(st.now), Tracker: tracker, AppURL: baseCfg.AppURL, Audit: edition.Audit, Analytics: analytics.New(),
 		SecondFactor:             secondFactor,
+		Passkeys:                 passkeys,
 		Clock:                    st.now,
 		RequireEmailVerification: cfg.RequireEmailVerification, SignupOpen: cfg.SignupOpen,
 		Signin: signin.FromConfig(&cfg, st.now, st.signinOpts...),
@@ -448,7 +455,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 
 	return &TestEnv{
 		sender:   sender,
-		Instance: inst, DB: client, SQLDB: txDB, Bus: bus, Server: handler, Internal: internalHandler, Tracker: tracker, Cipher: cipher, Integrations: integrationsModule, jwtSecret: baseCfg.JWTSecret, edition: edition, Holds: edition.Holds(), now: st.now, sessionTTL: cfg.SessionTTL,
+		Instance: inst, AppURL: cfg.AppURL, DB: client, SQLDB: txDB, Bus: bus, Server: handler, Internal: internalHandler, Tracker: tracker, Cipher: cipher, Integrations: integrationsModule, jwtSecret: baseCfg.JWTSecret, edition: edition, Holds: edition.Holds(), now: st.now, sessionTTL: cfg.SessionTTL,
 		SystemMail: systemMail, CustomerMail: customerMail, SES: fakeSES, Confirmations: confirmations, SecondFactor: secondFactor, StaffMembers: edition.StaffMembers,
 	}
 }

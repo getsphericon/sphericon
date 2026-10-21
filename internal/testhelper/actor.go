@@ -204,6 +204,7 @@ func (env *TestEnv) mintSiteToken(ctx context.Context, email string, edit func(*
 	// An unknown email leaves the claims unstamped: the site rejects the token.
 	if u, err := env.DB.User.Query().Where(user.Email(email)).Only(ctx); err == nil {
 		apiauth.StampUser(&claims, u)
+		claims.User.SetStrAttr(apiauth.ClaimMethod, string(apiauth.MethodPassword))
 	} else if !ent.IsNotFound(err) {
 		return "", err
 	}

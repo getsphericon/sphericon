@@ -1124,6 +1124,22 @@ func register(injector do.Injector, env string, o options) {
 		return secondfactor.New(client.Client, bus.Bus, cipher, nil), nil
 	})
 
+	do.Provide(injector, func(i do.Injector) (*secondfactor.Passkeys, error) {
+		cfg, err := do.Invoke[*config.Config](i)
+		if err != nil {
+			return nil, err
+		}
+		client, err := do.Invoke[*entClient](i)
+		if err != nil {
+			return nil, err
+		}
+		bus, err := do.Invoke[*eventsBus](i)
+		if err != nil {
+			return nil, err
+		}
+		return secondfactor.NewPasskeys(client.Client, bus.Bus, cfg.AppURL, cfg.JWTSecret, nil)
+	})
+
 	// Domain modules: each built once and shared by /site, /api and /mcp, so the
 	// surfaces cannot diverge on how a module is constructed.
 	do.Provide(injector, func(i do.Injector) (*segments.Module, error) {
@@ -1601,6 +1617,10 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 	if err != nil {
 		return apisite.Deps{}, err
 	}
+	pk, err := do.Invoke[*secondfactor.Passkeys](i)
+	if err != nil {
+		return apisite.Deps{}, err
+	}
 	an, err := do.Invoke[*analytics.Module](i)
 	if err != nil {
 		return apisite.Deps{}, err
@@ -1624,7 +1644,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		Accounts: acc, Attempts: attempts, OAuth: oauthserver.NewService(client.Client, oauthserver.NewFetcher(cfg.OutboundAllow)), Bus: bus.Bus, Webhooks: wh, Outbound: sender.Module,
 		Segments: seg, EventLog: evlog, Contacts: con, Erasure: er, Tags: tg, Templates: tpl, BrandKit: bk, Automations: auto,
 		Broadcasts: bc, Welcome: jc.Client, SysMail: jc.Client, SendingDomains: sd, JoinDomains: jd, Integrations: integ,
-		Tokens: tokens, Tracker: tracker, AppURL: cfg.AppURL, Audit: edition.Audit, SecondFactor: sf, Analytics: an,
+		Tokens: tokens, Tracker: tracker, AppURL: cfg.AppURL, Audit: edition.Audit, SecondFactor: sf, Passkeys: pk, Analytics: an,
 		RequireEmailVerification: cfg.RequireEmailVerification, SignupOpen: cfg.SignupOpen,
 		Signin: signin.FromConfig(cfg, nil),
 	}, nil

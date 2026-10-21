@@ -769,6 +769,29 @@ func HasRecoveryCodesWith(preds ...predicate.RecoveryCode) predicate.User {
 	})
 }
 
+// HasPasskeys applies the HasEdge predicate on the "passkeys" edge.
+func HasPasskeys() predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, PasskeysTable, PasskeysColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasPasskeysWith applies the HasEdge predicate on the "passkeys" edge with a given conditions (other predicates).
+func HasPasskeysWith(preds ...predicate.Passkey) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := newPasskeysStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasIdentities applies the HasEdge predicate on the "identities" edge.
 func HasIdentities() predicate.User {
 	return predicate.User(func(s *sql.Selector) {

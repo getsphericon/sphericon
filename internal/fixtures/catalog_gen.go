@@ -537,6 +537,8 @@ const (
 	GlobexName = "Globex"
 	// GlobexOwnerMembershipID is from fixtures/memberships.
 	GlobexOwnerMembershipID = 2
+	// GlobexPatMembershipID is from fixtures/memberships.
+	GlobexPatMembershipID = 23
 	// GlobexPublicID is from fixtures/workspaces.
 	GlobexPublicID = "GlobxWs2"
 	// GlobexSamMembershipID is from fixtures/memberships.
@@ -827,6 +829,50 @@ const (
 	OwnerSallyName = "Sally"
 	// OwnerSallyPassword is from fixtures/users.
 	OwnerSallyPassword = "password"
+	// PasskeyOnlyPegEmail is from fixtures/users.
+	PasskeyOnlyPegEmail = "peg@passkey.test"
+	// PasskeyOnlyPegID is from fixtures/users.
+	PasskeyOnlyPegID = 26
+	// PasskeyOnlyPegName is from fixtures/users.
+	PasskeyOnlyPegName = "Peg"
+	// PasskeyPatEmail is from fixtures/users.
+	PasskeyPatEmail = "pat@passkey.test"
+	// PasskeyPatID is from fixtures/users.
+	PasskeyPatID = 25
+	// PasskeyPatLaptopCredentialID is from fixtures/passkeys.
+	PasskeyPatLaptopCredentialID = "YQQASVkC9B44x8h_XFk5Q1PiLXF1UQH4XfQ1IDOgn2A"
+	// PasskeyPatLaptopID is from fixtures/passkeys.
+	PasskeyPatLaptopID = 1
+	// PasskeyPatLaptopName is from fixtures/passkeys.
+	PasskeyPatLaptopName = "Pat's laptop"
+	// PasskeyPatLaptopPrivateKey is from fixtures/passkeys.
+	PasskeyPatLaptopPrivateKey = "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQguowMP4wuJ9ofK0aijK+GXVmDX4/derRRvLf8WgO1wrOhRANCAATfabl10uHErPKsk8Ao9GEtTJNeofsEXz2DLGpS58oqCc1WMieN2JR+ji0ukpyQSHewMb0/b5Bbv7rSeQeA7keK"
+	// PasskeyPatName is from fixtures/users.
+	PasskeyPatName = "Pat"
+	// PasskeyPatPassword is from fixtures/users.
+	PasskeyPatPassword = "password"
+	// PasskeyPegKeyCredentialID is from fixtures/passkeys.
+	PasskeyPegKeyCredentialID = "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8"
+	// PasskeyPegKeyID is from fixtures/passkeys.
+	PasskeyPegKeyID = 2
+	// PasskeyPegKeyName is from fixtures/passkeys.
+	PasskeyPegKeyName = "Peg's key"
+	// PasskeyPegKeyPrivateKey is from fixtures/passkeys.
+	PasskeyPegKeyPrivateKey = "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQguowMP4wuJ9ofK0aijK+GXVmDX4/derRRvLf8WgO1wrOhRANCAATfabl10uHErPKsk8Ao9GEtTJNeofsEXz2DLGpS58oqCc1WMieN2JR+ji0ukpyQSHewMb0/b5Bbv7rSeQeA7keK"
+	// PasskeyUnverifiedUnaEmail is from fixtures/users.
+	PasskeyUnverifiedUnaEmail = "una@passkey.test"
+	// PasskeyUnverifiedUnaID is from fixtures/users.
+	PasskeyUnverifiedUnaID = 27
+	// PasskeyUnverifiedUnaKeyCredentialID is from fixtures/passkeys.
+	PasskeyUnverifiedUnaKeyCredentialID = "AQECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8"
+	// PasskeyUnverifiedUnaKeyID is from fixtures/passkeys.
+	PasskeyUnverifiedUnaKeyID = 3
+	// PasskeyUnverifiedUnaKeyName is from fixtures/passkeys.
+	PasskeyUnverifiedUnaKeyName = "Una's key"
+	// PasskeyUnverifiedUnaKeyPrivateKey is from fixtures/passkeys.
+	PasskeyUnverifiedUnaKeyPrivateKey = "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQguowMP4wuJ9ofK0aijK+GXVmDX4/derRRvLf8WgO1wrOhRANCAATfabl10uHErPKsk8Ao9GEtTJNeofsEXz2DLGpS58oqCc1WMieN2JR+ji0ukpyQSHewMb0/b5Bbv7rSeQeA7keK"
+	// PasskeyUnverifiedUnaName is from fixtures/users.
+	PasskeyUnverifiedUnaName = "Una"
 	// PaxGoogleIdentityID is from fixtures/user_identities.
 	PaxGoogleIdentityID = 4
 	// PaxGoogleIdentityProvider is from fixtures/user_identities.
@@ -1051,6 +1097,10 @@ const (
 	SoylentName = "Soylent"
 	// SoylentPublicID is from fixtures/workspaces.
 	SoylentPublicID = "SoylnWs6"
+	// SpentPasskeyChallengeOldID is from fixtures/passkey_challenges.
+	SpentPasskeyChallengeOldID = 1
+	// SpentPasskeyChallengeYoungID is from fixtures/passkey_challenges.
+	SpentPasskeyChallengeYoungID = 2
 	// StaffAlsoCustomerEmail is from fixtures/staff_members.
 	StaffAlsoCustomerEmail = "info@getsphericon.com"
 	// StaffAlsoCustomerID is from fixtures/staff_members.

@@ -24,6 +24,14 @@ refused.
   There is no Audit entry: a Passkey belongs to the User and an Audit entry to a Workspace (ADR 0022), as
   for the self-service Second factor. A User with no password and no Linked identity cannot remove the
   last Passkey.
+- **A fresh Passkey check is the proof of a User with no password.** `Prove` accepts it beside the
+  provider login of ADR 0048, and the same way: the session token carries the time of the check
+  (a Passkey login sets it, and so does a step-up ceremony of its own, `POST /me/passkeys/check`),
+  it holds for five minutes and a reissue keeps the original time. The step-up is a Passkey
+  assertion of the session's own User, with user verification, under a signed ceremony bound to
+  that User and their session epoch, and it spends its challenge like a login. It is not a login:
+  it takes no part in the Login throttle and issues no new session method. A User with a password
+  still proves the password.
 - **Recovery is the password reset.** There are no Recovery codes for Passkeys. The Second factor reset
   (an Owner or Admin) also removes the User's Passkeys.
 - **Ceremony state.** The challenge travels in a signed cookie and `begin` writes nothing (it is anonymous

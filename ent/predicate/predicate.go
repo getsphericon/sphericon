@@ -90,6 +90,12 @@ type OutboxMessage func(*sql.Selector)
 // OutboxOffset is the predicate function for outboxoffset builders.
 type OutboxOffset func(*sql.Selector)
 
+// Passkey is the predicate function for passkey builders.
+type Passkey func(*sql.Selector)
+
+// PasskeyChallenge is the predicate function for passkeychallenge builders.
+type PasskeyChallenge func(*sql.Selector)
+
 // RecoveryCode is the predicate function for recoverycode builders.
 type RecoveryCode func(*sql.Selector)
 

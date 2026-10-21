@@ -317,6 +317,38 @@ type SiteOAuthDescribeRes interface {
 	siteOAuthDescribeRes()
 }
 
+type SitePasskeyLoginBeginRes interface {
+	sitePasskeyLoginBeginRes()
+}
+
+type SitePasskeyLoginFinishRes interface {
+	sitePasskeyLoginFinishRes()
+}
+
+type SitePasskeysBeginCheckRes interface {
+	sitePasskeysBeginCheckRes()
+}
+
+type SitePasskeysBeginRegistrationRes interface {
+	sitePasskeysBeginRegistrationRes()
+}
+
+type SitePasskeysFinishCheckRes interface {
+	sitePasskeysFinishCheckRes()
+}
+
+type SitePasskeysFinishRegistrationRes interface {
+	sitePasskeysFinishRegistrationRes()
+}
+
+type SitePasskeysRemoveRes interface {
+	sitePasskeysRemoveRes()
+}
+
+type SitePasskeysRenameRes interface {
+	sitePasskeysRenameRes()
+}
+
 type SitePublicConfirmationsPerformRes interface {
 	sitePublicConfirmationsPerformRes()
 }

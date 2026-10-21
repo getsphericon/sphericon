@@ -54,7 +54,9 @@ func (h *Handlers) workspaceResource(ctx context.Context, s *ent.Scoped, m *ent.
 	}
 	r.McpUrl = h.mcpURL
 	r.AccountLinkAvailable = h.accountLink != nil && m.Role == membership.RoleOwner
-	if end, ok := secondfactor.Deadline(m); ok {
+	// A strong session (a Passkey login or a Second factor step) meets the requirement, so it has
+	// no grace to count down: this is the decision secondfactor.Withheld makes.
+	if end, ok := secondfactor.Deadline(m); ok && !currentSession(ctx).Method.Strong() {
 		r.SecondFactorGraceEndsAt = siteapi.NewOptNilTimestamp(siteapi.Timestamp(end))
 	}
 	standing, err := h.holds.Standing(ctx, s)

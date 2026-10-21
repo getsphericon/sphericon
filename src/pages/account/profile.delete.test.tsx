@@ -32,7 +32,7 @@ const status = (over: Partial<SiteSecondFactorStatus> = {}): SiteSecondFactorSta
   pending: false,
   recoveryCodesRemaining: 0,
   passwordSet: true,
-  providerLoginFresh: false,
+  identityProofFresh: false,
   ...over,
 })
 

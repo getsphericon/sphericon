@@ -30,6 +30,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/oauthcode"
 	"github.com/getsphericon/sphericon/ent/oauthrefreshtoken"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
+	"github.com/getsphericon/sphericon/ent/passkey"
+	"github.com/getsphericon/sphericon/ent/passkeychallenge"
 	"github.com/getsphericon/sphericon/ent/recoverycode"
 	"github.com/getsphericon/sphericon/ent/schema"
 	"github.com/getsphericon/sphericon/ent/schemastate"
@@ -659,6 +661,56 @@ func init() {
 	outboundmessageDescClaimedAt := outboundmessageFields[11].Descriptor()
 	// outboundmessage.DefaultClaimedAt holds the default value on creation for the claimed_at field.
 	outboundmessage.DefaultClaimedAt = outboundmessageDescClaimedAt.Default.(func() time.Time)
+	passkeyMixin := schema.Passkey{}.Mixin()
+	passkeyMixinFields0 := passkeyMixin[0].Fields()
+	_ = passkeyMixinFields0
+	passkeyFields := schema.Passkey{}.Fields()
+	_ = passkeyFields
+	// passkeyDescCreatedAt is the schema descriptor for created_at field.
+	passkeyDescCreatedAt := passkeyMixinFields0[0].Descriptor()
+	// passkey.DefaultCreatedAt holds the default value on creation for the created_at field.
+	passkey.DefaultCreatedAt = passkeyDescCreatedAt.Default.(func() time.Time)
+	// passkeyDescUpdatedAt is the schema descriptor for updated_at field.
+	passkeyDescUpdatedAt := passkeyMixinFields0[1].Descriptor()
+	// passkey.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	passkey.DefaultUpdatedAt = passkeyDescUpdatedAt.Default.(func() time.Time)
+	// passkey.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	passkey.UpdateDefaultUpdatedAt = passkeyDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// passkeyDescCredentialID is the schema descriptor for credential_id field.
+	passkeyDescCredentialID := passkeyFields[2].Descriptor()
+	// passkey.CredentialIDValidator is a validator for the "credential_id" field. It is called by the builders before save.
+	passkey.CredentialIDValidator = passkeyDescCredentialID.Validators[0].(func([]byte) error)
+	// passkeyDescPublicKey is the schema descriptor for public_key field.
+	passkeyDescPublicKey := passkeyFields[3].Descriptor()
+	// passkey.PublicKeyValidator is a validator for the "public_key" field. It is called by the builders before save.
+	passkey.PublicKeyValidator = passkeyDescPublicKey.Validators[0].(func([]byte) error)
+	// passkeyDescSignCount is the schema descriptor for sign_count field.
+	passkeyDescSignCount := passkeyFields[4].Descriptor()
+	// passkey.DefaultSignCount holds the default value on creation for the sign_count field.
+	passkey.DefaultSignCount = passkeyDescSignCount.Default.(int64)
+	// passkeyDescName is the schema descriptor for name field.
+	passkeyDescName := passkeyFields[10].Descriptor()
+	// passkey.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	passkey.NameValidator = passkeyDescName.Validators[0].(func(string) error)
+	passkeychallengeMixin := schema.PasskeyChallenge{}.Mixin()
+	passkeychallengeMixinFields0 := passkeychallengeMixin[0].Fields()
+	_ = passkeychallengeMixinFields0
+	passkeychallengeFields := schema.PasskeyChallenge{}.Fields()
+	_ = passkeychallengeFields
+	// passkeychallengeDescCreatedAt is the schema descriptor for created_at field.
+	passkeychallengeDescCreatedAt := passkeychallengeMixinFields0[0].Descriptor()
+	// passkeychallenge.DefaultCreatedAt holds the default value on creation for the created_at field.
+	passkeychallenge.DefaultCreatedAt = passkeychallengeDescCreatedAt.Default.(func() time.Time)
+	// passkeychallengeDescUpdatedAt is the schema descriptor for updated_at field.
+	passkeychallengeDescUpdatedAt := passkeychallengeMixinFields0[1].Descriptor()
+	// passkeychallenge.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	passkeychallenge.DefaultUpdatedAt = passkeychallengeDescUpdatedAt.Default.(func() time.Time)
+	// passkeychallenge.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	passkeychallenge.UpdateDefaultUpdatedAt = passkeychallengeDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// passkeychallengeDescChallenge is the schema descriptor for challenge field.
+	passkeychallengeDescChallenge := passkeychallengeFields[1].Descriptor()
+	// passkeychallenge.ChallengeValidator is a validator for the "challenge" field. It is called by the builders before save.
+	passkeychallenge.ChallengeValidator = passkeychallengeDescChallenge.Validators[0].(func(string) error)
 	recoverycodeMixin := schema.RecoveryCode{}.Mixin()
 	recoverycodeMixinFields0 := recoverycodeMixin[0].Fields()
 	_ = recoverycodeMixinFields0

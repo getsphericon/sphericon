@@ -157,7 +157,7 @@ func TestReauthTheStatusTellsWhetherAProviderLoginIsNeeded(t *testing.T) {
 	session := r.signIn(t, newcomer)
 	type status struct {
 		PasswordSet        bool `json:"passwordSet"`
-		ProviderLoginFresh bool `json:"providerLoginFresh"`
+		IdentityProofFresh bool `json:"identityProofFresh"`
 	}
 	read := func(session string) status {
 		code, _, raw := r.call(t, http.MethodGet, statusPath, session, "")
@@ -167,12 +167,12 @@ func TestReauthTheStatusTellsWhetherAProviderLoginIsNeeded(t *testing.T) {
 		return s
 	}
 
-	assert.Equal(t, status{PasswordSet: false, ProviderLoginFresh: true}, read(session))
+	assert.Equal(t, status{PasswordSet: false, IdentityProofFresh: true}, read(session))
 	r.clock.t = r.clock.t.Add(time.Hour)
-	assert.Equal(t, status{PasswordSet: false, ProviderLoginFresh: false}, read(session))
+	assert.Equal(t, status{PasswordSet: false, IdentityProofFresh: false}, read(session))
 
 	john := r.env.SiteToken(t, fixtures.OwnerJohnEmail, nil)
-	assert.Equal(t, status{PasswordSet: true, ProviderLoginFresh: false}, read(john))
+	assert.Equal(t, status{PasswordSet: true, IdentityProofFresh: false}, read(john))
 }
 
 func TestReauthLinkingANewProviderAccountDoesNotRefreshTheProof(t *testing.T) {

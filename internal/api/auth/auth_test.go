@@ -240,7 +240,7 @@ func TestSiteAuthAcceptsASessionSignedWithTheSecondarySecretOnlyWhileItIsConfigu
 	require.ErrorIs(t, err, auth.ErrUnauthorized)
 
 	// New sessions are signed with the primary secret and verify without the secondary one.
-	cookie, err := auth.NewSessions(rotated, time.Hour, false, nil, cfg.JWTSecret).Issue(&ent.User{ID: fixtures.OwnerJohnID})
+	cookie, err := auth.NewSessions(rotated, time.Hour, false, nil, cfg.JWTSecret).Issue(&ent.User{ID: fixtures.OwnerJohnID}, auth.Session{Method: auth.MethodPassword})
 	require.NoError(t, err)
 	_, err = after.Verify(context.Background(), cookie.Value)
 	require.NoError(t, err)
@@ -248,7 +248,7 @@ func TestSiteAuthAcceptsASessionSignedWithTheSecondarySecretOnlyWhileItIsConfigu
 
 func TestSessionsHolderAcceptsTheSecondarySecret(t *testing.T) {
 	user := &ent.User{ID: 7, SessionEpoch: 3}
-	cookie, err := auth.NewSessions("old-secret-old-secret-old-secret-0", time.Hour, false, nil).Issue(user)
+	cookie, err := auth.NewSessions("old-secret-old-secret-old-secret-0", time.Hour, false, nil).Issue(user, auth.Session{Method: auth.MethodPassword})
 	require.NoError(t, err)
 
 	id, epoch, ok := auth.NewSessions("new-secret-new-secret-new-secret-0", time.Hour, false, nil, "old-secret-old-secret-old-secret-0").Holder(cookie.Value)

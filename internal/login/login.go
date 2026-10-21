@@ -17,7 +17,9 @@
 //     guessing through);
 //  5. the password step resets the counter only when no second factor follows: the
 //     second step resets it, else knowing the password would buy a fresh round of code
-//     guesses on every sign-in.
+//     guesses on every sign-in;
+//  6. a Passkey login (ADR 0052) finds the account by the credential, consults that
+//     account's throttle before verifying, and counts no failure: it replaces both steps.
 package login
 
 import (
@@ -76,6 +78,45 @@ var (
 	// ErrInvalidCode is what an adapter's Verify returns for a wrong code.
 	ErrInvalidCode = errors.New("login: invalid code")
 )
+
+// PasskeyOutcome is what the Passkey step decided (ADR 0052).
+type PasskeyOutcome int
+
+const (
+	// PasskeyThrottled: the delay of the User the credential names is running.
+	PasskeyThrottled PasskeyOutcome = iota + 1
+	// PasskeyFailed is every other refusal, indistinguishably: an unknown credential, a
+	// response that does not verify (no user verification included), a spent or expired
+	// challenge, an account the verification gate refuses. Nothing is counted.
+	PasskeyFailed
+	// PasskeyAuthenticated: the credential is proven and the person verified. The counter
+	// is reset; the adapter issues the session. No Second factor follows.
+	PasskeyAuthenticated
+)
+
+// ErrPasskeyUnknown is what an adapter's PasskeyFind returns for a response that names no
+// credential (malformed, or a credential nobody registered).
+var ErrPasskeyUnknown = errors.New("login: passkey unknown")
+
+// ErrPasskeyInvalid is what an adapter's PasskeyVerify returns for a response that does not
+// verify: a bad signature, no user verification, a spent or expired challenge.
+var ErrPasskeyInvalid = errors.New("login: passkey response invalid")
+
+// PasskeyAssertion is what the browser sent to finish a Passkey login: the ceremony cookie
+// that carries the challenge and the authenticator's response.
+type PasskeyAssertion struct {
+	Ceremony string
+	Response []byte
+}
+
+// PasskeyResult is the one answer of the Passkey step. Principal is set for
+// PasskeyAuthenticated.
+type PasskeyResult[P any] struct {
+	Outcome   PasskeyOutcome
+	Principal P
+	// Delay is set for a PasskeyThrottled result.
+	Delay
+}
 
 // Pending is a challenge the adapter parsed: the account it was minted for, the address
 // that counts the second step's failures and what the session needs to know.
@@ -162,6 +203,14 @@ type Config[P any] struct {
 	// ErrChallengeInvalid when the challenge stopped standing (the factor is gone, or a
 	// racing second step moved it first).
 	Verify func(ctx context.Context, p Pending[P], code string) error
+	// PasskeyFind names the account (Pending.Principal and the throttle key Pending.Address)
+	// a Passkey response belongs to, by its credential id, or returns ErrPasskeyUnknown. It
+	// verifies nothing. Left nil, the surface has no Passkey login.
+	PasskeyFind func(ctx context.Context, a PasskeyAssertion) (Pending[P], error)
+	// PasskeyVerify checks the response for the account PasskeyFind named: signature,
+	// challenge, user verification, single use. It returns ErrPasskeyInvalid when it does not
+	// hold.
+	PasskeyVerify func(ctx context.Context, p Pending[P], a PasskeyAssertion) error
 }
 
 // Module is the password step.
@@ -261,6 +310,49 @@ func (m *Module[P]) SecondFactor(ctx context.Context, challenge, code string) (S
 		slog.ErrorContext(ctx, "login: counter not reset", "error", err)
 	}
 	return SecondResult[P]{Outcome: SecondAuthenticated, Principal: p.Principal, Method: p.Method, ProviderLoginAt: p.ProviderLoginAt}, nil
+}
+
+// Passkey runs the Passkey login for a response as the browser sent it (ADR 0052). The
+// account is found by the credential, never by an address. Order: an unknown credential is
+// refused without counting; the throttle of the account found is consulted before the
+// response is verified, so a correct response is refused while the delay runs; the
+// verification gate refuses an account that may not sign in yet, with the same answer and no
+// count; a response that does not verify is the same refusal and counts nothing (without the
+// private key a guess cannot succeed); a verified response resets the counter, and a reset
+// that fails is logged, not fatal. A Passkey replaces the password and the Second factor, so
+// no second step follows.
+func (m *Module[P]) Passkey(ctx context.Context, a PasskeyAssertion) (PasskeyResult[P], error) {
+	p, err := m.cfg.PasskeyFind(ctx, a)
+	if errors.Is(err, ErrPasskeyUnknown) {
+		return PasskeyResult[P]{Outcome: PasskeyFailed}, nil
+	}
+	if err != nil {
+		return PasskeyResult[P]{}, err
+	}
+	address := accounts.NormalizeEmail(p.Address)
+
+	delay, wait, err := m.throttle(ctx, address)
+	if err != nil {
+		return PasskeyResult[P]{}, err
+	}
+	if wait {
+		return PasskeyResult[P]{Outcome: PasskeyThrottled, Delay: delay}, nil
+	}
+	if m.cfg.Gate != nil && m.cfg.Gate(p.Principal) {
+		return PasskeyResult[P]{Outcome: PasskeyFailed}, nil
+	}
+
+	err = m.cfg.PasskeyVerify(ctx, p, a)
+	if errors.Is(err, ErrPasskeyInvalid) {
+		return PasskeyResult[P]{Outcome: PasskeyFailed}, nil
+	}
+	if err != nil {
+		return PasskeyResult[P]{}, err
+	}
+	if err := m.cfg.Throttle.RecordSuccess(ctx, address); err != nil {
+		slog.ErrorContext(ctx, "login: counter not reset", "error", err)
+	}
+	return PasskeyResult[P]{Outcome: PasskeyAuthenticated, Principal: p.Principal}, nil
 }
 
 // verify checks the password; an empty hash (no account, or no password) is checked

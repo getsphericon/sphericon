@@ -353,10 +353,11 @@ func (l *Limiter) Middleware(next http.Handler) http.Handler {
 	})
 }
 
-// loginPath is the two steps of a login on either surface, /site and /staff.
+// loginPath is the steps of a login on either surface, /site and /staff (a Passkey login finishes
+// in one request, on /site only).
 func loginPath(path string) bool {
 	switch path {
-	case "/site/auth/login", "/site/auth/second-factor", paths.Staff + "/auth/login", paths.Staff + "/auth/second-factor":
+	case "/site/auth/login", "/site/auth/second-factor", "/site/auth/passkey/finish", paths.Staff + "/auth/login", paths.Staff + "/auth/second-factor":
 		return true
 	}
 	return false

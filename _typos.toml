@@ -38,3 +38,5 @@ Optin = "Optin"
 Maily = "Maily"
 maily = "maily"
 RTO = "RTO"
+# COSE (CBOR Object Signing and Encryption), the key format of a Passkey's public key.
+COSE = "COSE"

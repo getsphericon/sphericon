@@ -29,7 +29,7 @@ test('loads the profile and submits a name change', async () => {
         pending: false,
         recoveryCodesRemaining: 0,
         passwordSet: true,
-        providerLoginFresh: false,
+        identityProofFresh: false,
       },
     }),
     handleSiteWorkspacesListDeleted({ body: [] }),

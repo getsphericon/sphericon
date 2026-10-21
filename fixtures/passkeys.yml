@@ -1,0 +1,37 @@
+# Pat's Passkey (ADR 0052). The credential id and the private key are stated here; the stored
+# credential id is the raw bytes and the public key is derived from the private key at load time.
+# fixtures.PasskeyPatLaptopCredentialID and fixtures.PasskeyPatLaptopPrivateKey are lifted into the
+# catalog for the test authenticator (testhelper.FixturePasskey), which signs with that key.
+- id: 1 # fixture: PasskeyPatLaptop
+  user_id: 25
+  name: Pat's laptop
+  credential_id: '{{passkeyCredentialID "YQQASVkC9B44x8h_XFk5Q1PiLXF1UQH4XfQ1IDOgn2A"}}'
+  public_key: '{{passkeyPublicKey "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQguowMP4wuJ9ofK0aijK+GXVmDX4/derRRvLf8WgO1wrOhRANCAATfabl10uHErPKsk8Ao9GEtTJNeofsEXz2DLGpS58oqCc1WMieN2JR+ji0ukpyQSHewMb0/b5Bbv7rSeQeA7keK"}}'
+  sign_count: 0
+  backup_eligible: false
+  backup_state: false
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+# Peg's only Passkey (ADR 0052): the last way she can sign in. It shares Pat's key pair, which
+# no test asserts with.
+- id: 2 # fixture: PasskeyPegKey
+  user_id: 26
+  name: Peg's key
+  credential_id: '{{passkeyCredentialID "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8"}}'
+  public_key: '{{passkeyPublicKey "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQguowMP4wuJ9ofK0aijK+GXVmDX4/derRRvLf8WgO1wrOhRANCAATfabl10uHErPKsk8Ao9GEtTJNeofsEXz2DLGpS58oqCc1WMieN2JR+ji0ukpyQSHewMb0/b5Bbv7rSeQeA7keK"}}'
+  sign_count: 0
+  backup_eligible: false
+  backup_state: false
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+# Una's Passkey (ADR 0052). It shares Pat's key pair: the verification gate stops her first.
+- id: 3 # fixture: PasskeyUnverifiedUnaKey
+  user_id: 27
+  name: Una's key
+  credential_id: '{{passkeyCredentialID "AQECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8"}}'
+  public_key: '{{passkeyPublicKey "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQguowMP4wuJ9ofK0aijK+GXVmDX4/derRRvLf8WgO1wrOhRANCAATfabl10uHErPKsk8Ao9GEtTJNeofsEXz2DLGpS58oqCc1WMieN2JR+ji0ukpyQSHewMb0/b5Bbv7rSeQeA7keK"}}'
+  sign_count: 0
+  backup_eligible: false
+  backup_state: false
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

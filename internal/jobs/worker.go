@@ -114,6 +114,7 @@ func NewClient(riverDB *sql.DB, entClient *ent.Client, mod *outbound.Module, cip
 	river.AddWorker(workers, &PruneOutboxWorker{ent: entClient, floor: retention.OutboxFloor})
 	river.AddWorker(workers, &PruneEventsWorker{ent: entClient, retention: retention.Events})
 	river.AddWorker(workers, &PruneUnverifiedUsersWorker{ent: entClient, retention: retention.UnverifiedUsers})
+	river.AddWorker(workers, &PrunePasskeyChallengesWorker{ent: entClient, now: time.Now})
 	river.AddWorker(workers, &BackfillAutomationVersionsWorker{ent: entClient})
 	river.AddWorker(workers, &EraseWorkspacesWorker{deletion: workspacedeletion.New(entClient, bus), now: time.Now})
 
@@ -247,6 +248,14 @@ func newRiverConfig(workers *river.Workers, logger *slog.Logger, extra ...*river
 				dailyAtUTC{hour: unverifiedUsersHourUTC},
 				func() (river.JobArgs, *river.InsertOpts) {
 					return PruneUnverifiedUsersArgs{}, nil
+				},
+				nil,
+			),
+			// Delete spent Passkey challenges daily at 05:00 UTC (ADR 0051).
+			river.NewPeriodicJob(
+				dailyAtUTC{hour: passkeyChallengesHourUTC},
+				func() (river.JobArgs, *river.InsertOpts) {
+					return PrunePasskeyChallengesArgs{}, nil
 				},
 				nil,
 			),
