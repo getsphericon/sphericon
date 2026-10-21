@@ -1,7 +1,8 @@
-import { Checkbox, Input, Stack } from '@mantine/core'
+import { Checkbox, Input, ScrollArea, Stack } from '@mantine/core'
 
 // ScopePicker offers api token scopes ("resource:action") grouped by resource: a checkbox per
-// resource that selects or clears all its actions, with the actions nested under it.
+// resource that selects or clears all its actions, with the actions nested under it. The list
+// scrolls on its own, so the form's button stays in view.
 export function ScopePicker({
   label,
   options,
@@ -31,33 +32,35 @@ export function ScopePicker({
 
   return (
     <Input.Wrapper label={label}>
-      <Stack gap="xs" mt="xs">
-        {groups.map(([resource, scopes = []]) => {
-          const count = scopes.filter((scope) => selected.has(scope)).length
-          return (
-            <Stack key={resource} gap={4}>
-              <Checkbox
-                label={resource}
-                fw={500}
-                checked={count === scopes.length}
-                indeterminate={count > 0 && count < scopes.length}
-                onChange={(event) => toggle(scopes, event.currentTarget.checked)}
-              />
-              <Stack gap={4} ml="xl">
-                {scopes.map((scope) => (
-                  <Checkbox
-                    key={scope}
-                    label={scope.slice(resource.length + 1)}
-                    size="xs"
-                    checked={selected.has(scope)}
-                    onChange={(event) => toggle([scope], event.currentTarget.checked)}
-                  />
-                ))}
+      <ScrollArea.Autosize mah={320} mt="xs" type="auto">
+        <Stack gap="xs">
+          {groups.map(([resource, scopes = []]) => {
+            const count = scopes.filter((scope) => selected.has(scope)).length
+            return (
+              <Stack key={resource} gap={4}>
+                <Checkbox
+                  label={resource}
+                  fw={500}
+                  checked={count === scopes.length}
+                  indeterminate={count > 0 && count < scopes.length}
+                  onChange={(event) => toggle(scopes, event.currentTarget.checked)}
+                />
+                <Stack gap={4} ml="xl">
+                  {scopes.map((scope) => (
+                    <Checkbox
+                      key={scope}
+                      label={scope.slice(resource.length + 1)}
+                      size="xs"
+                      checked={selected.has(scope)}
+                      onChange={(event) => toggle([scope], event.currentTarget.checked)}
+                    />
+                  ))}
+                </Stack>
               </Stack>
-            </Stack>
-          )
-        })}
-      </Stack>
+            )
+          })}
+        </Stack>
+      </ScrollArea.Autosize>
     </Input.Wrapper>
   )
 }
