@@ -4333,6 +4333,22 @@ func (c *OAuthCodeClient) QueryClient(_m *OAuthCode) *OAuthClientQuery {
 	return query
 }
 
+// QueryWorkspace queries the workspace edge of a OAuthCode.
+func (c *OAuthCodeClient) QueryWorkspace(_m *OAuthCode) *WorkspaceQuery {
+	query := (&WorkspaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(oauthcode.Table, oauthcode.FieldID, id),
+			sqlgraph.To(workspace.Table, workspace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, oauthcode.WorkspaceTable, oauthcode.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *OAuthCodeClient) Hooks() []Hook {
 	return c.hooks.OAuthCode

@@ -203,9 +203,9 @@ var (
 				Columns: []*schema.Column{AutomationRunsColumns[10], AutomationRunsColumns[3]},
 			},
 			{
-				Name:    "automationrun_workspace_id",
+				Name:    "automationrun_workspace_id_contact_id",
 				Unique:  false,
-				Columns: []*schema.Column{AutomationRunsColumns[12]},
+				Columns: []*schema.Column{AutomationRunsColumns[12], AutomationRunsColumns[3]},
 			},
 			{
 				Name:    "automationrun_version_id",
@@ -380,6 +380,14 @@ var (
 				Unique:  false,
 				Columns: []*schema.Column{BroadcastRecipientsColumns[9]},
 			},
+			{
+				Name:    "broadcast_recipients_workspace_id_contact_id",
+				Unique:  false,
+				Columns: []*schema.Column{BroadcastRecipientsColumns[9], BroadcastRecipientsColumns[3]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "contact_id IS NOT NULL",
+				},
+			},
 		},
 	}
 	// ConfirmationsColumns holds the columns for the "confirmations" table.
@@ -411,6 +419,14 @@ var (
 				Name:    "confirmations_ws_channel_dest",
 				Unique:  true,
 				Columns: []*schema.Column{ConfirmationsColumns[7], ConfirmationsColumns[3], ConfirmationsColumns[4]},
+			},
+			{
+				Name:    "confirmations_workspace_id_contact_id",
+				Unique:  false,
+				Columns: []*schema.Column{ConfirmationsColumns[7], ConfirmationsColumns[6]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "contact_id IS NOT NULL",
+				},
 			},
 		},
 	}
@@ -942,8 +958,8 @@ var (
 		{Name: "scopes", Type: field.TypeJSON},
 		{Name: "expires_at", Type: field.TypeTime},
 		{Name: "used_at", Type: field.TypeTime, Nullable: true},
-		{Name: "workspace_id", Type: field.TypeInt64},
 		{Name: "client_id", Type: field.TypeInt64},
+		{Name: "workspace_id", Type: field.TypeInt64},
 	}
 	// OauthCodesTable holds the schema information for the "oauth_codes" table.
 	OauthCodesTable = &schema.Table{
@@ -953,14 +969,25 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "oauth_codes_oauth_clients_codes",
-				Columns:    []*schema.Column{OauthCodesColumns[10]},
+				Columns:    []*schema.Column{OauthCodesColumns[9]},
 				RefColumns: []*schema.Column{OauthClientsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "oauth_codes_workspaces_workspace",
+				Columns:    []*schema.Column{OauthCodesColumns[10]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 		},
 		Indexes: []*schema.Index{
 			{
 				Name:    "oauthcode_client_id",
+				Unique:  false,
+				Columns: []*schema.Column{OauthCodesColumns[9]},
+			},
+			{
+				Name:    "oauthcode_workspace_id",
 				Unique:  false,
 				Columns: []*schema.Column{OauthCodesColumns[10]},
 			},
@@ -1074,6 +1101,14 @@ var (
 				Name:    "outboundmessage_workspace_id_updated_at_id",
 				Unique:  false,
 				Columns: []*schema.Column{OutboundMessagesColumns[23], OutboundMessagesColumns[2], OutboundMessagesColumns[0]},
+			},
+			{
+				Name:    "outbound_messages_workspace_id_contact_id",
+				Unique:  false,
+				Columns: []*schema.Column{OutboundMessagesColumns[23], OutboundMessagesColumns[7]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "contact_id IS NOT NULL",
+				},
 			},
 			{
 				Name:    "outboundmessage_workspace_id_broadcast_id_status",
@@ -1334,6 +1369,14 @@ var (
 					Where: "lifted_at IS NULL",
 				},
 			},
+			{
+				Name:    "suppressions_workspace_id_contact_id",
+				Unique:  false,
+				Columns: []*schema.Column{SuppressionsColumns[8], SuppressionsColumns[6]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "contact_id IS NOT NULL",
+				},
+			},
 		},
 	}
 	// TagsColumns holds the columns for the "tags" table.
@@ -1416,6 +1459,14 @@ var (
 				Name:    "unsubscribes_ws_channel_dest_source",
 				Unique:  true,
 				Columns: []*schema.Column{UnsubscribesColumns[7], UnsubscribesColumns[3], UnsubscribesColumns[4], UnsubscribesColumns[5]},
+			},
+			{
+				Name:    "unsubscribes_workspace_id_contact_id",
+				Unique:  false,
+				Columns: []*schema.Column{UnsubscribesColumns[7], UnsubscribesColumns[6]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "contact_id IS NOT NULL",
+				},
 			},
 		},
 	}
@@ -1809,6 +1860,7 @@ func init() {
 		Table: "oauth_clients",
 	}
 	OauthCodesTable.ForeignKeys[0].RefTable = OauthClientsTable
+	OauthCodesTable.ForeignKeys[1].RefTable = WorkspacesTable
 	OauthCodesTable.Annotation = &entsql.Annotation{
 		Table: "oauth_codes",
 	}

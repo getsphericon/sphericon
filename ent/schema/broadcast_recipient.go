@@ -77,5 +77,9 @@ func (BroadcastRecipient) Indexes() []ent.Index {
 			Unique().
 			StorageKey("broadcast_recipients_broadcast_id_contact_id"),
 		index.Fields("workspace_id"),
+		// Erasure and contact lookups reach this table by contact.
+		index.Fields("workspace_id", "contact_id").
+			StorageKey("broadcast_recipients_workspace_id_contact_id").
+			Annotations(entsql.IndexWhere("contact_id IS NOT NULL")),
 	}
 }

@@ -132,6 +132,10 @@ func (OutboundMessage) Indexes() []ent.Index {
 		index.Fields("workspace_id", "sending_domain", "created_at"),
 		// The Outbound messages Export stream's cursor (ADR 0045).
 		index.Fields("workspace_id", "updated_at", "id"),
+		// Erasure and contact lookups reach this table by contact.
+		index.Fields("workspace_id", "contact_id").
+			StorageKey("outbound_messages_workspace_id_contact_id").
+			Annotations(entsql.IndexWhere("contact_id IS NOT NULL")),
 		// A Broadcast's delivery figures: its messages grouped by status (ADR 0015).
 		index.Fields("workspace_id", "broadcast_id", "status"),
 		// A Broadcast recipient's message: one per recipient, so "is this recipient still

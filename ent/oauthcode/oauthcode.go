@@ -36,6 +36,8 @@ const (
 	FieldWorkspaceID = "workspace_id"
 	// EdgeClient holds the string denoting the client edge name in mutations.
 	EdgeClient = "client"
+	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
+	EdgeWorkspace = "workspace"
 	// Table holds the table name of the oauthcode in the database.
 	Table = "oauth_codes"
 	// ClientTable is the table that holds the client relation/edge.
@@ -45,6 +47,13 @@ const (
 	ClientInverseTable = "oauth_clients"
 	// ClientColumn is the table column denoting the client relation/edge.
 	ClientColumn = "client_id"
+	// WorkspaceTable is the table that holds the workspace relation/edge.
+	WorkspaceTable = "oauth_codes"
+	// WorkspaceInverseTable is the table name for the Workspace entity.
+	// It exists in this package in order to avoid circular dependency with the "workspace" package.
+	WorkspaceInverseTable = "workspaces"
+	// WorkspaceColumn is the table column denoting the workspace relation/edge.
+	WorkspaceColumn = "workspace_id"
 )
 
 // Columns holds all SQL columns for oauthcode fields.
@@ -148,10 +157,24 @@ func ByClientField(field string, opts ...sql.OrderTermOption) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newClientStep(), sql.OrderByField(field, opts...))
 	}
 }
+
+// ByWorkspaceField orders the results by workspace field.
+func ByWorkspaceField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newWorkspaceStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newClientStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ClientInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, ClientTable, ClientColumn),
+	)
+}
+func newWorkspaceStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(WorkspaceInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, WorkspaceTable, WorkspaceColumn),
 	)
 }

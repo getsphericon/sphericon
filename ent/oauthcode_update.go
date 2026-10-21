@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/oauthclient"
 	"github.com/getsphericon/sphericon/ent/oauthcode"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
 // OAuthCodeUpdate is the builder for updating OAuthCode entities.
@@ -99,7 +100,6 @@ func (_u *OAuthCodeUpdate) SetNillableClientID(v *int64) *OAuthCodeUpdate {
 
 // SetWorkspaceID sets the "workspace_id" field.
 func (_u *OAuthCodeUpdate) SetWorkspaceID(v int64) *OAuthCodeUpdate {
-	_u.mutation.ResetWorkspaceID()
 	_u.mutation.SetWorkspaceID(v)
 	return _u
 }
@@ -112,15 +112,14 @@ func (_u *OAuthCodeUpdate) SetNillableWorkspaceID(v *int64) *OAuthCodeUpdate {
 	return _u
 }
 
-// AddWorkspaceID adds value to the "workspace_id" field.
-func (_u *OAuthCodeUpdate) AddWorkspaceID(v int64) *OAuthCodeUpdate {
-	_u.mutation.AddWorkspaceID(v)
-	return _u
-}
-
 // SetClient sets the "client" edge to the OAuthClient entity.
 func (_u *OAuthCodeUpdate) SetClient(v *OAuthClient) *OAuthCodeUpdate {
 	return _u.SetClientID(v.ID)
+}
+
+// SetWorkspace sets the "workspace" edge to the Workspace entity.
+func (_u *OAuthCodeUpdate) SetWorkspace(v *Workspace) *OAuthCodeUpdate {
+	return _u.SetWorkspaceID(v.ID)
 }
 
 // Mutation returns the OAuthCodeMutation object of the builder.
@@ -131,6 +130,12 @@ func (_u *OAuthCodeUpdate) Mutation() *OAuthCodeMutation {
 // ClearClient clears the "client" edge to the OAuthClient entity.
 func (_u *OAuthCodeUpdate) ClearClient() *OAuthCodeUpdate {
 	_u.mutation.ClearClient()
+	return _u
+}
+
+// ClearWorkspace clears the "workspace" edge to the Workspace entity.
+func (_u *OAuthCodeUpdate) ClearWorkspace() *OAuthCodeUpdate {
+	_u.mutation.ClearWorkspace()
 	return _u
 }
 
@@ -175,6 +180,9 @@ func (_u *OAuthCodeUpdate) check() error {
 	if _u.mutation.ClientCleared() && len(_u.mutation.ClientIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "OAuthCode.client"`)
 	}
+	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "OAuthCode.workspace"`)
+	}
 	return nil
 }
 
@@ -216,12 +224,6 @@ func (_u *OAuthCodeUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.UsedAtCleared() {
 		_spec.ClearField(oauthcode.FieldUsedAt, field.TypeTime)
 	}
-	if value, ok := _u.mutation.WorkspaceID(); ok {
-		_spec.SetField(oauthcode.FieldWorkspaceID, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.AddedWorkspaceID(); ok {
-		_spec.AddField(oauthcode.FieldWorkspaceID, field.TypeInt64, value)
-	}
 	if _u.mutation.ClientCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -244,6 +246,35 @@ func (_u *OAuthCodeUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(oauthclient.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.WorkspaceCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   oauthcode.WorkspaceTable,
+			Columns: []string{oauthcode.WorkspaceColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(workspace.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.WorkspaceIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   oauthcode.WorkspaceTable,
+			Columns: []string{oauthcode.WorkspaceColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(workspace.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -341,7 +372,6 @@ func (_u *OAuthCodeUpdateOne) SetNillableClientID(v *int64) *OAuthCodeUpdateOne 
 
 // SetWorkspaceID sets the "workspace_id" field.
 func (_u *OAuthCodeUpdateOne) SetWorkspaceID(v int64) *OAuthCodeUpdateOne {
-	_u.mutation.ResetWorkspaceID()
 	_u.mutation.SetWorkspaceID(v)
 	return _u
 }
@@ -354,15 +384,14 @@ func (_u *OAuthCodeUpdateOne) SetNillableWorkspaceID(v *int64) *OAuthCodeUpdateO
 	return _u
 }
 
-// AddWorkspaceID adds value to the "workspace_id" field.
-func (_u *OAuthCodeUpdateOne) AddWorkspaceID(v int64) *OAuthCodeUpdateOne {
-	_u.mutation.AddWorkspaceID(v)
-	return _u
-}
-
 // SetClient sets the "client" edge to the OAuthClient entity.
 func (_u *OAuthCodeUpdateOne) SetClient(v *OAuthClient) *OAuthCodeUpdateOne {
 	return _u.SetClientID(v.ID)
+}
+
+// SetWorkspace sets the "workspace" edge to the Workspace entity.
+func (_u *OAuthCodeUpdateOne) SetWorkspace(v *Workspace) *OAuthCodeUpdateOne {
+	return _u.SetWorkspaceID(v.ID)
 }
 
 // Mutation returns the OAuthCodeMutation object of the builder.
@@ -373,6 +402,12 @@ func (_u *OAuthCodeUpdateOne) Mutation() *OAuthCodeMutation {
 // ClearClient clears the "client" edge to the OAuthClient entity.
 func (_u *OAuthCodeUpdateOne) ClearClient() *OAuthCodeUpdateOne {
 	_u.mutation.ClearClient()
+	return _u
+}
+
+// ClearWorkspace clears the "workspace" edge to the Workspace entity.
+func (_u *OAuthCodeUpdateOne) ClearWorkspace() *OAuthCodeUpdateOne {
+	_u.mutation.ClearWorkspace()
 	return _u
 }
 
@@ -429,6 +464,9 @@ func (_u *OAuthCodeUpdateOne) defaults() {
 func (_u *OAuthCodeUpdateOne) check() error {
 	if _u.mutation.ClientCleared() && len(_u.mutation.ClientIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "OAuthCode.client"`)
+	}
+	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "OAuthCode.workspace"`)
 	}
 	return nil
 }
@@ -488,12 +526,6 @@ func (_u *OAuthCodeUpdateOne) sqlSave(ctx context.Context) (_node *OAuthCode, er
 	if _u.mutation.UsedAtCleared() {
 		_spec.ClearField(oauthcode.FieldUsedAt, field.TypeTime)
 	}
-	if value, ok := _u.mutation.WorkspaceID(); ok {
-		_spec.SetField(oauthcode.FieldWorkspaceID, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.AddedWorkspaceID(); ok {
-		_spec.AddField(oauthcode.FieldWorkspaceID, field.TypeInt64, value)
-	}
 	if _u.mutation.ClientCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -516,6 +548,35 @@ func (_u *OAuthCodeUpdateOne) sqlSave(ctx context.Context) (_node *OAuthCode, er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(oauthclient.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.WorkspaceCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   oauthcode.WorkspaceTable,
+			Columns: []string{oauthcode.WorkspaceColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(workspace.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.WorkspaceIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   oauthcode.WorkspaceTable,
+			Columns: []string{oauthcode.WorkspaceColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(workspace.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

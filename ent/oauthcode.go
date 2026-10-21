@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/getsphericon/sphericon/ent/oauthclient"
 	"github.com/getsphericon/sphericon/ent/oauthcode"
+	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
 // OAuthCode is the model entity for the OAuthCode schema.
@@ -49,9 +50,11 @@ type OAuthCode struct {
 type OAuthCodeEdges struct {
 	// Client holds the value of the client edge.
 	Client *OAuthClient `json:"client,omitempty"`
+	// Workspace holds the value of the workspace edge.
+	Workspace *Workspace `json:"workspace,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 }
 
 // ClientOrErr returns the Client value or an error if the edge
@@ -63,6 +66,17 @@ func (e OAuthCodeEdges) ClientOrErr() (*OAuthClient, error) {
 		return nil, &NotFoundError{label: oauthclient.Label}
 	}
 	return nil, &NotLoadedError{edge: "client"}
+}
+
+// WorkspaceOrErr returns the Workspace value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e OAuthCodeEdges) WorkspaceOrErr() (*Workspace, error) {
+	if e.Workspace != nil {
+		return e.Workspace, nil
+	} else if e.loadedTypes[1] {
+		return nil, &NotFoundError{label: workspace.Label}
+	}
+	return nil, &NotLoadedError{edge: "workspace"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -178,6 +192,11 @@ func (_m *OAuthCode) Value(name string) (ent.Value, error) {
 // QueryClient queries the "client" edge of the OAuthCode entity.
 func (_m *OAuthCode) QueryClient() *OAuthClientQuery {
 	return NewOAuthCodeClient(_m.config).QueryClient(_m)
+}
+
+// QueryWorkspace queries the "workspace" edge of the OAuthCode entity.
+func (_m *OAuthCode) QueryWorkspace() *WorkspaceQuery {
+	return NewOAuthCodeClient(_m.config).QueryWorkspace(_m)
 }
 
 // Update returns a builder for updating this OAuthCode.

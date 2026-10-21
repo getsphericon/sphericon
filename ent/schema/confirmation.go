@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
@@ -68,5 +69,9 @@ func (Confirmation) Indexes() []ent.Index {
 		index.Fields("workspace_id", "channel", "destination").
 			Unique().
 			StorageKey("confirmations_ws_channel_dest"),
+		// Erasure and contact lookups reach this table by contact.
+		index.Fields("workspace_id", "contact_id").
+			StorageKey("confirmations_workspace_id_contact_id").
+			Annotations(entsql.IndexWhere("contact_id IS NOT NULL")),
 	}
 }

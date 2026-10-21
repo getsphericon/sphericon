@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/oauthclient"
 	"github.com/getsphericon/sphericon/ent/oauthcode"
+	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
 // OAuthCodeCreate is the builder for creating a OAuthCode entity.
@@ -118,6 +119,11 @@ func (_c *OAuthCodeCreate) SetClient(v *OAuthClient) *OAuthCodeCreate {
 	return _c.SetClientID(v.ID)
 }
 
+// SetWorkspace sets the "workspace" edge to the Workspace entity.
+func (_c *OAuthCodeCreate) SetWorkspace(v *Workspace) *OAuthCodeCreate {
+	return _c.SetWorkspaceID(v.ID)
+}
+
 // Mutation returns the OAuthCodeMutation object of the builder.
 func (_c *OAuthCodeCreate) Mutation() *OAuthCodeMutation {
 	return _c.mutation
@@ -214,6 +220,9 @@ func (_c *OAuthCodeCreate) check() error {
 	if len(_c.mutation.ClientIDs()) == 0 {
 		return &ValidationError{Name: "client", err: errors.New(`ent: missing required edge "OAuthCode.client"`)}
 	}
+	if len(_c.mutation.WorkspaceIDs()) == 0 {
+		return &ValidationError{Name: "workspace", err: errors.New(`ent: missing required edge "OAuthCode.workspace"`)}
+	}
 	return nil
 }
 
@@ -279,10 +288,6 @@ func (_c *OAuthCodeCreate) createSpec() (*OAuthCode, *sqlgraph.CreateSpec) {
 		_spec.SetField(oauthcode.FieldUsedAt, field.TypeTime, value)
 		_node.UsedAt = &value
 	}
-	if value, ok := _c.mutation.WorkspaceID(); ok {
-		_spec.SetField(oauthcode.FieldWorkspaceID, field.TypeInt64, value)
-		_node.WorkspaceID = value
-	}
 	if nodes := _c.mutation.ClientIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -298,6 +303,23 @@ func (_c *OAuthCodeCreate) createSpec() (*OAuthCode, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.ClientID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.WorkspaceIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   oauthcode.WorkspaceTable,
+			Columns: []string{oauthcode.WorkspaceColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(workspace.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.WorkspaceID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -427,12 +449,6 @@ func (u *OAuthCodeUpsert) SetWorkspaceID(v int64) *OAuthCodeUpsert {
 // UpdateWorkspaceID sets the "workspace_id" field to the value that was provided on create.
 func (u *OAuthCodeUpsert) UpdateWorkspaceID() *OAuthCodeUpsert {
 	u.SetExcluded(oauthcode.FieldWorkspaceID)
-	return u
-}
-
-// AddWorkspaceID adds v to the "workspace_id" field.
-func (u *OAuthCodeUpsert) AddWorkspaceID(v int64) *OAuthCodeUpsert {
-	u.Add(oauthcode.FieldWorkspaceID, v)
 	return u
 }
 
@@ -577,13 +593,6 @@ func (u *OAuthCodeUpsertOne) UpdateClientID() *OAuthCodeUpsertOne {
 func (u *OAuthCodeUpsertOne) SetWorkspaceID(v int64) *OAuthCodeUpsertOne {
 	return u.Update(func(s *OAuthCodeUpsert) {
 		s.SetWorkspaceID(v)
-	})
-}
-
-// AddWorkspaceID adds v to the "workspace_id" field.
-func (u *OAuthCodeUpsertOne) AddWorkspaceID(v int64) *OAuthCodeUpsertOne {
-	return u.Update(func(s *OAuthCodeUpsert) {
-		s.AddWorkspaceID(v)
 	})
 }
 
@@ -901,13 +910,6 @@ func (u *OAuthCodeUpsertBulk) UpdateClientID() *OAuthCodeUpsertBulk {
 func (u *OAuthCodeUpsertBulk) SetWorkspaceID(v int64) *OAuthCodeUpsertBulk {
 	return u.Update(func(s *OAuthCodeUpsert) {
 		s.SetWorkspaceID(v)
-	})
-}
-
-// AddWorkspaceID adds v to the "workspace_id" field.
-func (u *OAuthCodeUpsertBulk) AddWorkspaceID(v int64) *OAuthCodeUpsertBulk {
-	return u.Update(func(s *OAuthCodeUpsert) {
-		s.AddWorkspaceID(v)
 	})
 }
 

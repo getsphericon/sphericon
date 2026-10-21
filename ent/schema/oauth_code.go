@@ -62,11 +62,17 @@ func (OAuthCode) Edges() []ent.Edge {
 			Field("client_id").
 			Required().
 			Unique(),
+		edge.To("workspace", Workspace.Type).
+			Field("workspace_id").
+			Required().
+			Unique().
+			Annotations(entsql.OnDelete(entsql.Cascade)),
 	}
 }
 
 func (OAuthCode) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("client_id"),
+		index.Fields("workspace_id"),
 	}
 }

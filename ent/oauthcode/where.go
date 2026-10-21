@@ -505,26 +505,6 @@ func WorkspaceIDNotIn(vs ...int64) predicate.OAuthCode {
 	return predicate.OAuthCode(sql.FieldNotIn(FieldWorkspaceID, vs...))
 }
 
-// WorkspaceIDGT applies the GT predicate on the "workspace_id" field.
-func WorkspaceIDGT(v int64) predicate.OAuthCode {
-	return predicate.OAuthCode(sql.FieldGT(FieldWorkspaceID, v))
-}
-
-// WorkspaceIDGTE applies the GTE predicate on the "workspace_id" field.
-func WorkspaceIDGTE(v int64) predicate.OAuthCode {
-	return predicate.OAuthCode(sql.FieldGTE(FieldWorkspaceID, v))
-}
-
-// WorkspaceIDLT applies the LT predicate on the "workspace_id" field.
-func WorkspaceIDLT(v int64) predicate.OAuthCode {
-	return predicate.OAuthCode(sql.FieldLT(FieldWorkspaceID, v))
-}
-
-// WorkspaceIDLTE applies the LTE predicate on the "workspace_id" field.
-func WorkspaceIDLTE(v int64) predicate.OAuthCode {
-	return predicate.OAuthCode(sql.FieldLTE(FieldWorkspaceID, v))
-}
-
 // HasClient applies the HasEdge predicate on the "client" edge.
 func HasClient() predicate.OAuthCode {
 	return predicate.OAuthCode(func(s *sql.Selector) {
@@ -540,6 +520,29 @@ func HasClient() predicate.OAuthCode {
 func HasClientWith(preds ...predicate.OAuthClient) predicate.OAuthCode {
 	return predicate.OAuthCode(func(s *sql.Selector) {
 		step := newClientStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasWorkspace applies the HasEdge predicate on the "workspace" edge.
+func HasWorkspace() predicate.OAuthCode {
+	return predicate.OAuthCode(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, WorkspaceTable, WorkspaceColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasWorkspaceWith applies the HasEdge predicate on the "workspace" edge with a given conditions (other predicates).
+func HasWorkspaceWith(preds ...predicate.Workspace) predicate.OAuthCode {
+	return predicate.OAuthCode(func(s *sql.Selector) {
+		step := newWorkspaceStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

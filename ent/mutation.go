@@ -22427,26 +22427,26 @@ func (m *OAuthClientMutation) ResetEdge(name string) error {
 // OAuthCodeMutation represents an operation that mutates the OAuthCode nodes in the graph.
 type OAuthCodeMutation struct {
 	config
-	op              Op
-	typ             string
-	id              *int64
-	created_at      *time.Time
-	updated_at      *time.Time
-	code_hash       *string
-	redirect_uri    *string
-	code_challenge  *string
-	scopes          *[]string
-	appendscopes    []string
-	expires_at      *time.Time
-	used_at         *time.Time
-	workspace_id    *int64
-	addworkspace_id *int64
-	clearedFields   map[string]struct{}
-	client          *int64
-	clearedclient   bool
-	done            bool
-	oldValue        func(context.Context) (*OAuthCode, error)
-	predicates      []predicate.OAuthCode
+	op               Op
+	typ              string
+	id               *int64
+	created_at       *time.Time
+	updated_at       *time.Time
+	code_hash        *string
+	redirect_uri     *string
+	code_challenge   *string
+	scopes           *[]string
+	appendscopes     []string
+	expires_at       *time.Time
+	used_at          *time.Time
+	clearedFields    map[string]struct{}
+	client           *int64
+	clearedclient    bool
+	workspace        *int64
+	clearedworkspace bool
+	done             bool
+	oldValue         func(context.Context) (*OAuthCode, error)
+	predicates       []predicate.OAuthCode
 }
 
 var _ ent.Mutation = (*OAuthCodeMutation)(nil)
@@ -22907,13 +22907,12 @@ func (m *OAuthCodeMutation) ResetClientID() {
 
 // SetWorkspaceID sets the "workspace_id" field.
 func (m *OAuthCodeMutation) SetWorkspaceID(i int64) {
-	m.workspace_id = &i
-	m.addworkspace_id = nil
+	m.workspace = &i
 }
 
 // WorkspaceID returns the value of the "workspace_id" field in the mutation.
 func (m *OAuthCodeMutation) WorkspaceID() (r int64, exists bool) {
-	v := m.workspace_id
+	v := m.workspace
 	if v == nil {
 		return
 	}
@@ -22937,28 +22936,9 @@ func (m *OAuthCodeMutation) OldWorkspaceID(ctx context.Context) (v int64, err er
 	return oldValue.WorkspaceID, nil
 }
 
-// AddWorkspaceID adds i to the "workspace_id" field.
-func (m *OAuthCodeMutation) AddWorkspaceID(i int64) {
-	if m.addworkspace_id != nil {
-		*m.addworkspace_id += i
-	} else {
-		m.addworkspace_id = &i
-	}
-}
-
-// AddedWorkspaceID returns the value that was added to the "workspace_id" field in this mutation.
-func (m *OAuthCodeMutation) AddedWorkspaceID() (r int64, exists bool) {
-	v := m.addworkspace_id
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
 // ResetWorkspaceID resets all changes to the "workspace_id" field.
 func (m *OAuthCodeMutation) ResetWorkspaceID() {
-	m.workspace_id = nil
-	m.addworkspace_id = nil
+	m.workspace = nil
 }
 
 // ClearClient clears the "client" edge to the OAuthClient entity.
@@ -22986,6 +22966,33 @@ func (m *OAuthCodeMutation) ClientIDs() (ids []int64) {
 func (m *OAuthCodeMutation) ResetClient() {
 	m.client = nil
 	m.clearedclient = false
+}
+
+// ClearWorkspace clears the "workspace" edge to the Workspace entity.
+func (m *OAuthCodeMutation) ClearWorkspace() {
+	m.clearedworkspace = true
+	m.clearedFields[oauthcode.FieldWorkspaceID] = struct{}{}
+}
+
+// WorkspaceCleared reports if the "workspace" edge to the Workspace entity was cleared.
+func (m *OAuthCodeMutation) WorkspaceCleared() bool {
+	return m.clearedworkspace
+}
+
+// WorkspaceIDs returns the "workspace" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// WorkspaceID instead. It exists only for internal usage by the builders.
+func (m *OAuthCodeMutation) WorkspaceIDs() (ids []int64) {
+	if id := m.workspace; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetWorkspace resets all changes to the "workspace" edge.
+func (m *OAuthCodeMutation) ResetWorkspace() {
+	m.workspace = nil
+	m.clearedworkspace = false
 }
 
 // Where appends a list predicates to the OAuthCodeMutation builder.
@@ -23050,7 +23057,7 @@ func (m *OAuthCodeMutation) Fields() []string {
 	if m.client != nil {
 		fields = append(fields, oauthcode.FieldClientID)
 	}
-	if m.workspace_id != nil {
+	if m.workspace != nil {
 		fields = append(fields, oauthcode.FieldWorkspaceID)
 	}
 	return fields
@@ -23197,9 +23204,6 @@ func (m *OAuthCodeMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *OAuthCodeMutation) AddedFields() []string {
 	var fields []string
-	if m.addworkspace_id != nil {
-		fields = append(fields, oauthcode.FieldWorkspaceID)
-	}
 	return fields
 }
 
@@ -23208,8 +23212,6 @@ func (m *OAuthCodeMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *OAuthCodeMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
-	case oauthcode.FieldWorkspaceID:
-		return m.AddedWorkspaceID()
 	}
 	return nil, false
 }
@@ -23219,13 +23221,6 @@ func (m *OAuthCodeMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *OAuthCodeMutation) AddField(name string, value ent.Value) error {
 	switch name {
-	case oauthcode.FieldWorkspaceID:
-		v, ok := value.(int64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddWorkspaceID(v)
-		return nil
 	}
 	return fmt.Errorf("unknown OAuthCode numeric field %s", name)
 }
@@ -23298,9 +23293,12 @@ func (m *OAuthCodeMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *OAuthCodeMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.client != nil {
 		edges = append(edges, oauthcode.EdgeClient)
+	}
+	if m.workspace != nil {
+		edges = append(edges, oauthcode.EdgeWorkspace)
 	}
 	return edges
 }
@@ -23313,13 +23311,17 @@ func (m *OAuthCodeMutation) AddedIDs(name string) []ent.Value {
 		if id := m.client; id != nil {
 			return []ent.Value{*id}
 		}
+	case oauthcode.EdgeWorkspace:
+		if id := m.workspace; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *OAuthCodeMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	return edges
 }
 
@@ -23331,9 +23333,12 @@ func (m *OAuthCodeMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *OAuthCodeMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.clearedclient {
 		edges = append(edges, oauthcode.EdgeClient)
+	}
+	if m.clearedworkspace {
+		edges = append(edges, oauthcode.EdgeWorkspace)
 	}
 	return edges
 }
@@ -23344,6 +23349,8 @@ func (m *OAuthCodeMutation) EdgeCleared(name string) bool {
 	switch name {
 	case oauthcode.EdgeClient:
 		return m.clearedclient
+	case oauthcode.EdgeWorkspace:
+		return m.clearedworkspace
 	}
 	return false
 }
@@ -23355,6 +23362,9 @@ func (m *OAuthCodeMutation) ClearEdge(name string) error {
 	case oauthcode.EdgeClient:
 		m.ClearClient()
 		return nil
+	case oauthcode.EdgeWorkspace:
+		m.ClearWorkspace()
+		return nil
 	}
 	return fmt.Errorf("unknown OAuthCode unique edge %s", name)
 }
@@ -23365,6 +23375,9 @@ func (m *OAuthCodeMutation) ResetEdge(name string) error {
 	switch name {
 	case oauthcode.EdgeClient:
 		m.ResetClient()
+		return nil
+	case oauthcode.EdgeWorkspace:
+		m.ResetWorkspace()
 		return nil
 	}
 	return fmt.Errorf("unknown OAuthCode edge %s", name)

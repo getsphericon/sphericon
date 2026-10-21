@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
@@ -67,5 +68,9 @@ func (Unsubscribe) Indexes() []ent.Index {
 		index.Fields("workspace_id", "channel", "destination", "sending_source").
 			Unique().
 			StorageKey("unsubscribes_ws_channel_dest_source"),
+		// Erasure and contact lookups reach this table by contact.
+		index.Fields("workspace_id", "contact_id").
+			StorageKey("unsubscribes_workspace_id_contact_id").
+			Annotations(entsql.IndexWhere("contact_id IS NOT NULL")),
 	}
 }

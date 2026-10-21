@@ -362,8 +362,8 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
   `s.WorkspaceID()` as a bound SQL argument inside one raw expression (the correlated
   contact check reads the outer row's `workspace_id` column), not as a hand-written
   `WorkspaceID(ws)` predicate.
-- **Outside the mixin:** `OAuthCode` keeps a hand-written `workspace_id` with no `workspace`
-  edge (no FK; adding one changes the DB schema), so it has no scoped wrapper.
+- **Outside the mixin:** `OAuthCode` keeps a hand-written `workspace_id` and a one-way `workspace`
+  edge (an FK that cascades when the Workspace is erased), so it has no scoped wrapper.
 - **Lint:** `forbidigo` (`.golangci.yml`) bans entity-level `entity.Update()` repo-wide,
   because a loaded entity still carries the raw client. Update by id instead:
   `s.Tag().UpdateOneID(id)`. There are no exclusions.

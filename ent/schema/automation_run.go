@@ -85,7 +85,8 @@ func (AutomationRun) Indexes() []ent.Index {
 		index.Fields("automation_id", "contact_id").
 			Unique().
 			StorageKey("automation_runs_automation_id_contact_id"),
-		index.Fields("workspace_id"),
+		// Erasure reaches runs by contact; the leading workspace_id also serves workspace scans.
+		index.Fields("workspace_id", "contact_id"),
 		// "Does an Enrollment stand on this version" decides rewrite or supersede.
 		index.Fields("version_id"),
 	}
