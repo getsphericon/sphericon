@@ -150,7 +150,7 @@ func New(cfg *config.Config, db *sql.DB, client *ent.Client, site apisite.Deps, 
 		// a check of its own; the start guard is its whole protection.
 		outer = append(outer, SchemaGuard(dbpkg.NewSchemaWatch(db)))
 	}
-	inner := chi.Middlewares{clientip.Middleware, limiter.Middleware, middleware.Timeout(30 * time.Second), bodyLimit(cfg.BodyLimits), noNUL, collectEventLimit(cfg.BodyLimits.CollectEvent), guard}
+	inner := chi.Middlewares{clientip.Middleware, limiter.Middleware, middleware.Timeout(requestTimeout), bodyLimit(cfg.BodyLimits), noNUL, collectEventLimit(cfg.BodyLimits.CollectEvent), guard}
 	return chi.Chain(append(outer, inner...)...).Handler(trackingHostGate(cfg, client, mux, trackingH)), nil
 }
 
@@ -206,7 +206,7 @@ func NewInternal(cfg *config.Config, client *ent.Client, surface ServiceSurface)
 		mux.Handle(paths.Service+"/", srv)
 	}
 	limiter := ratelimit.New(cfg.RateLimits)
-	return chi.Chain(recoverer, requestID, clientip.Middleware, limiter.Middleware, middleware.Timeout(30*time.Second), bodyLimit(cfg.BodyLimits), noNUL).Handler(mux), nil
+	return chi.Chain(recoverer, requestID, clientip.Middleware, limiter.Middleware, middleware.Timeout(requestTimeout), bodyLimit(cfg.BodyLimits), noNUL).Handler(mux), nil
 }
 
 // collectRetryAfter is the Retry-After (seconds) of a /collect 503: long enough for a
@@ -517,3 +517,6 @@ func crossOriginGuard(appURL string, allowed []string) (func(http.Handler) http.
 		})
 	}, nil
 }
+
+// requestTimeout is how long a request may run before it is answered 504.
+const requestTimeout = 30 * time.Second * raceSlowdown
