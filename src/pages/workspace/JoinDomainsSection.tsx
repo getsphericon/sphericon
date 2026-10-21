@@ -8,6 +8,7 @@ import {
   CopyButton,
   Group,
   Loader,
+  Menu,
   Modal,
   Stack,
   Switch,
@@ -20,6 +21,7 @@ import { useDisclosure } from '@mantine/hooks'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
+import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
 import {
   siteDomainJoinGetOptions,
   siteDomainJoinGetQueryKey,
@@ -39,7 +41,7 @@ interface DomainFormValues {
 }
 
 // JoinDomainRow shows one Join domain with its state, the TXT record still to publish while it
-// is pending, and the Verify and Remove actions.
+// is pending, a Verify button and Remove in the row's menu.
 function JoinDomainRow({
   domain,
   verifying,
@@ -74,9 +76,11 @@ function JoinDomainRow({
                 {t(($) => $.joinDomains.verify)}
               </Button>
             )}
-            <Button size="xs" color="red" variant="light" onClick={onRemove}>
-              {t(($) => $.joinDomains.remove)}
-            </Button>
+            <RowActionsMenu>
+              <Menu.Item color="red" onClick={onRemove}>
+                {t(($) => $.joinDomains.remove)}
+              </Menu.Item>
+            </RowActionsMenu>
           </Group>
         </Group>
         {domain.verified ? null : (

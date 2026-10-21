@@ -92,7 +92,8 @@ test('removes a domain after confirmation', async () => {
   )
   const { screen } = await renderWithRouter(<JoinDomainsSection workspaceId={WORKSPACE_ID} />)
 
-  await screen.getByRole('button', { name: 'Remove' }).click()
+  await screen.getByRole('button', { name: 'More actions' }).click()
+  await screen.getByRole('menuitem', { name: 'Remove' }).click()
   await screen.getByRole('dialog').getByRole('button', { name: 'Remove' }).click()
 
   await expect.poll(() => removed).toBe(true)
