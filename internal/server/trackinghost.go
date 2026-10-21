@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/trackingdomain"
+	"github.com/getsphericon/sphericon/internal/trackinghostlog"
 )
 
 type trackingHostKey struct{}
@@ -123,7 +124,7 @@ func appHostname(appURL string) string {
 }
 
 // verifiedTrackingHost resolves host to its Workspace when it is the Tracking domain of
-// a kept (not archived) Sending domain in dns_verified or serving. The partial unique index makes it one row.
+// a Sending domain that serves it (trackinghostlog.Serving). The partial unique index makes it one row.
 // ok is false, with a nil error, for a host that is not one; err is a failed lookup.
 func verifiedTrackingHost(ctx context.Context, client *ent.Client, host string) (workspaceID int64, ok bool, err error) {
 	domain, isHost := sendingdomains.DomainOfTrackingHost(host)
@@ -131,7 +132,7 @@ func verifiedTrackingHost(ctx context.Context, client *ent.Client, host string) 
 		return 0, false, nil
 	}
 	row, err := client.SendingDomain.Query().
-		Where(sendingdomain.Domain(domain), sendingdomain.DiscardedAtIsNil(), sendingdomain.HasWorkspaceWith(accounts.Live()), sendingdomain.TrackingStateIn(sendingdomain.TrackingStateDNSVerified, sendingdomain.TrackingStateServing)).
+		Where(sendingdomain.Domain(domain), trackinghostlog.Serving(), sendingdomain.HasWorkspaceWith(accounts.Live())).
 		Only(ctx)
 	if ent.IsNotFound(err) {
 		return 0, false, nil

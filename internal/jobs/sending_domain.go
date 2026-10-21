@@ -23,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/sending"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/trackingdomain"
+	"github.com/getsphericon/sphericon/internal/trackinghostlog"
 )
 
 // recheckBatchSize bounds how many domains one periodic tick re-checks, so a
@@ -125,12 +126,13 @@ type RecheckTrackingDomainsWorker struct {
 
 // Work fans the tick out into one VerifyTrackingDomain job for every Sending domain
 // whose Tracking domain is dns_verified or serving, so a host that stops answering is
-// demoted within one tick. An archived Sending domain is skipped, a named exception to ADR 0049's
-// rule that job entry points include discarded rows: it serves nothing to demote. There is no batch limit and no DKIM dependency: a pending
-// Tracking domain is only checked when its owner clicks Verify.
+// demoted within one tick. An archived Sending domain is skipped, a named exception to
+// ADR 0049's rule that job entry points include discarded rows: it serves nothing to
+// demote. There is no batch limit and no DKIM dependency: a pending Tracking domain is
+// only checked when its owner clicks Verify.
 func (w *RecheckTrackingDomainsWorker) Work(ctx context.Context, job *river.Job[RecheckTrackingDomainsArgs]) error {
 	ids, err := w.ent.SendingDomain.Query().
-		Where(sendingdomain.DiscardedAtIsNil(), sendingdomain.TrackingStateIn(sendingdomain.TrackingStateDNSVerified, sendingdomain.TrackingStateServing)).
+		Where(trackinghostlog.Serving()).
 		IDs(ctx)
 	if err != nil {
 		return err
@@ -212,8 +214,8 @@ func DomainsDueForRecheck(ctx context.Context, client *ent.Client, limit int) ([
 // verified, last_checked_at, and (when it becomes verified) verified_at. It is
 // pure of the queue so it can be tested directly, and returns the resulting
 // verified state plus whether this check flipped a live domain to unverified —
-// the transition the owner is notified about (ADR 0010 slice 3). A check whose flip lost
-// the compare-and-swap to another check stores nothing and reports no flip.
+// the transition the owner is notified about (ADR 0010 slice 3). A check whose flip
+// lost the compare-and-swap to another check stores nothing and reports no flip.
 //
 // The flip self-clears (the same write persists verified=false), so the next tick
 // computes flipped=false and the owner is alerted exactly once per loss.
@@ -297,9 +299,9 @@ func NotifySendingDomainUnverified(ctx context.Context, client *ent.Client, send
 // the HTTPS probe) and stores the state (ADR 0038). A nil verifier (the feature is off)
 // does nothing. A host another Workspace already holds leaves this claim pending and is
 // not an error: retrying cannot change it. Neither is a state another check changed first
-// (lifecycle.ErrInvalidTransition): the stale answer is dropped. A host that was dns_verified or serving and
-// went back a step notifies the Workspace's Owners, best-effort; every change publishes
-// its domain event inside the Check.
+// (lifecycle.ErrInvalidTransition): the stale answer is dropped. A host that was
+// dns_verified or serving and went back a step notifies the Workspace's Owners,
+// best-effort; every change publishes its domain event inside the Check.
 func VerifyTrackingDomainByID(ctx context.Context, client *ent.Client, v *trackingdomain.Verifier, sender messaging.EmailSender, id int64) error {
 	if v == nil {
 		return nil

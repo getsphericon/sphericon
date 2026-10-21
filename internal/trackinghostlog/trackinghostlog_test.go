@@ -109,3 +109,28 @@ func TestPlainClientRefusesAChangeToAVerifiedHost(t *testing.T) {
 		SetDkimSelector("rotated").Exec(t.Context())
 	require.NoError(t, err, "a column the log does not depend on goes through")
 }
+
+// Serving is the query the host gate and the recheck job use: a verified state serves,
+// a pending one does not, and archiving a verified one takes it out, which is the same
+// answer the change log gives for the row (an archive logs the host as removed).
+func TestServingSelectsVerifiedHostsThatAreNotArchived(t *testing.T) {
+	env := testhelper.Setup(t)
+	umbrella := env.DB.Scoped(fixtures.UmbrellaID)
+	ids := func() []int64 {
+		got, err := env.DB.SendingDomain.Query().Where(trackinghostlog.Serving()).IDs(t.Context())
+		require.NoError(t, err)
+		return got
+	}
+
+	before := ids()
+	assert.Contains(t, before, int64(fixtures.SendingDomainTrackingDNSVerifiedID))
+	assert.Contains(t, before, int64(fixtures.SendingDomainTrackingServingID))
+	assert.NotContains(t, before, int64(fixtures.SendingDomainTrackingPendingID))
+
+	require.NoError(t, umbrella.SendingDomain().Discard(t.Context(), fixtures.SendingDomainTrackingServingID))
+
+	after := ids()
+	assert.NotContains(t, after, int64(fixtures.SendingDomainTrackingServingID))
+	assert.Equal(t, []trackinghostchange.State{trackinghostchange.StateRemoved},
+		logged(t, env, fixtures.SendingDomainTrackingServingDomain))
+}

@@ -1,8 +1,10 @@
 // Package trackinghostlog writes the change log behind the service read of Tracking
 // domain hosts (ADR 0038). A Sending domain is a verified host while its tracking_state
-// is dns_verified or serving and it is not archived; each change of that (a host entering a
-// state, or leaving both because its record stopped resolving, or its Sending domain was
-// archived, deleted or renamed; an unarchive is an addition once the host is verified again) is one row of tracking_host_changes, so a removal is never silence.
+// is dns_verified or serving and it is not archived (Serving, the one definition the host
+// gate shares); each change of that (a host entering a state, or leaving both because its
+// record stopped resolving, or its Sending domain was archived, deleted or renamed; an
+// unarchive is an addition once the host is verified again) is one row of
+// tracking_host_changes, so a removal is never silence.
 //
 // Two ent hooks keep it so no write path can forget it, the same pair as
 // internal/workspacefeed. Hook runs on every transaction client (the event bus's): the
@@ -17,10 +19,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 
 	"entgo.io/ent"
 
 	entclient "github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/trackinghostchange"
 )
@@ -122,11 +126,24 @@ type change struct {
 	state       trackinghostchange.State
 }
 
-func active(s sendingdomain.TrackingState) bool {
-	return s == sendingdomain.TrackingStateDNSVerified || s == sendingdomain.TrackingStateServing
+// servingStates are the tracking states in which a Sending domain's host is verified.
+var servingStates = []sendingdomain.TrackingState{
+	sendingdomain.TrackingStateDNSVerified,
+	sendingdomain.TrackingStateServing,
 }
 
-// serves reports whether the row is a verified host: an archived Sending domain is not (ADR 0049).
+func active(s sendingdomain.TrackingState) bool {
+	return slices.Contains(servingStates, s)
+}
+
+// Serving selects the Sending domains that serve their Tracking host: a verified tracking
+// state and not archived (ADR 0049). It is the query form of serves; the host gate and the
+// recheck job use it, so there is one definition.
+func Serving() predicate.SendingDomain {
+	return sendingdomain.And(sendingdomain.DiscardedAtIsNil(), sendingdomain.TrackingStateIn(servingStates...))
+}
+
+// serves reports whether the row is a verified host: the row form of Serving.
 func serves(d *entclient.SendingDomain) bool {
 	return d != nil && d.DiscardedAt == nil && active(d.TrackingState)
 }
