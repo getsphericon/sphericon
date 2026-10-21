@@ -6,7 +6,6 @@ import (
 	"log/slog"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/getsphericon/sphericon/ee/abuse"
 	"github.com/getsphericon/sphericon/ent"
@@ -103,29 +102,6 @@ func (m *Module) scopeOver(ctx context.Context, publicID string) (*ent.Scoped, e
 	return m.ent.Scoped(w.ID), nil
 }
 
-// Rate is a numerator over a denominator; Rate is nil (undefined) below the volume
-// floor.
-type Rate = reputation.Rate
-
-// DomainRates are the Complaint and Bounce rates of one Sending domain.
-type DomainRates struct {
-	SendingDomainID int64
-	Domain          string
-	Complaint       Rate
-	Bounce          Rate
-}
-
-// Deliverability is a Workspace's rates per Sending domain and its send volume over
-// abuse.Window.
-type Deliverability struct {
-	Window      time.Duration
-	VolumeFloor int
-	// SendVolume is the messages sent in the window across all Sending domains
-	// (email.sent Events, by their own timestamp).
-	SendVolume int
-	Domains    []DomainRates
-}
-
 // Review narrows the Workspace list to the ones the abuse detector surfaces (ADR 0026).
 type Review string
 
@@ -193,20 +169,20 @@ func (m *Module) GetWorkspace(ctx context.Context, publicID string) (*ent.Worksp
 // the reputation module defines as the count of the domain's email.sent Events in the
 // window: it is exactly the messages sent in the window from the Workspace's Sending
 // domains (a send naming no Sending domain of the Workspace belongs to no rate).
-func (m *Module) WorkspaceDeliverability(ctx context.Context, w *ent.Workspace) (Deliverability, error) {
+func (m *Module) WorkspaceDeliverability(ctx context.Context, w *ent.Workspace) (abuse.Deliverability, error) {
 	if err := m.licensed(); err != nil {
-		return Deliverability{}, err
+		return abuse.Deliverability{}, err
 	}
 	floor := m.watch.Limits().VolumeFloor
 	rates, err := reputation.New().Rates(ctx, m.ent.Scoped(w.ID), abuse.WindowFor(w, m.now()))
 	if err != nil {
-		return Deliverability{}, err
+		return abuse.Deliverability{}, err
 	}
-	out := Deliverability{Window: abuse.Window, VolumeFloor: floor, Domains: make([]DomainRates, 0, len(rates))}
+	out := abuse.Deliverability{Window: abuse.Window, VolumeFloor: floor, Domains: make([]abuse.DomainRates, 0, len(rates))}
 	for _, r := range rates {
 		sent := r.Bounce.Denominator
 		out.SendVolume += sent
-		d := DomainRates{SendingDomainID: r.Domain.ID, Domain: r.Domain.Domain, Complaint: r.Complaint, Bounce: r.Bounce}
+		d := abuse.DomainRates{SendingDomainID: r.Domain.ID, Domain: r.Domain.Domain, Complaint: r.Complaint, Bounce: r.Bounce}
 		if sent < floor {
 			d.Complaint.Rate, d.Bounce.Rate = nil, nil
 		}

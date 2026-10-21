@@ -8,6 +8,7 @@ import (
 	ent "github.com/getsphericon/sphericon/ent"
 	staff "github.com/getsphericon/sphericon/gen/staff"
 	auditapi "github.com/getsphericon/sphericon/internal/auditapi"
+	reputation "github.com/getsphericon/sphericon/internal/reputation"
 )
 
 type StaffConverterImpl struct{}
@@ -42,6 +43,27 @@ func (c *StaffConverterImpl) BreachToWarning(source abuse.Breach) staff.StaffAbu
 	staffapiStaffAbuseWarning.Rate = breachRate(source)
 	return staffapiStaffAbuseWarning
 }
+func (c *StaffConverterImpl) DeliverabilityToResource(source abuse.Deliverability) staff.StaffDeliverability {
+	var staffapiStaffDeliverability staff.StaffDeliverability
+	staffapiStaffDeliverability.WindowHours = windowHours(source.Window)
+	staffapiStaffDeliverability.VolumeFloor = count(source.VolumeFloor)
+	staffapiStaffDeliverability.SendVolume = count(source.SendVolume)
+	if source.Domains != nil {
+		staffapiStaffDeliverability.Domains = make([]staff.StaffDomainRates, len(source.Domains))
+		for i := 0; i < len(source.Domains); i++ {
+			staffapiStaffDeliverability.Domains[i] = c.DomainRatesToResource(source.Domains[i])
+		}
+	}
+	return staffapiStaffDeliverability
+}
+func (c *StaffConverterImpl) DomainRatesToResource(source abuse.DomainRates) staff.StaffDomainRates {
+	var staffapiStaffDomainRates staff.StaffDomainRates
+	staffapiStaffDomainRates.SendingDomainId = staff.EntityId(source.SendingDomainID)
+	staffapiStaffDomainRates.Domain = source.Domain
+	staffapiStaffDomainRates.ComplaintRate = c.RateToResource(source.Complaint)
+	staffapiStaffDomainRates.BounceRate = c.RateToResource(source.Bounce)
+	return staffapiStaffDomainRates
+}
 func (c *StaffConverterImpl) HoldToResource(source *ent.Hold) staff.StaffHold {
 	var staffapiStaffHold staff.StaffHold
 	if source != nil {
@@ -54,6 +76,13 @@ func (c *StaffConverterImpl) HoldToResource(source *ent.Hold) staff.StaffHold {
 		staffapiStaffHold.ActionUrl = nilableString((*source).ActionURL)
 	}
 	return staffapiStaffHold
+}
+func (c *StaffConverterImpl) RateToResource(source reputation.Rate) staff.StaffRate {
+	var staffapiStaffRate staff.StaffRate
+	staffapiStaffRate.Numerator = count(source.Numerator)
+	staffapiStaffRate.Denominator = count(source.Denominator)
+	staffapiStaffRate.Rate = nilFloat64(source.Rate)
+	return staffapiStaffRate
 }
 func (c *StaffConverterImpl) StaffMemberToResource(source *ent.StaffMember) staff.StaffResource {
 	var staffapiStaffResource staff.StaffResource

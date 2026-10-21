@@ -203,13 +203,13 @@ func (h *Handlers) StaffWorkspacesGet(ctx context.Context, params staffapi.Staff
 
 // workspaceDetail is the detail page's view: the metadata of workspaceResource plus
 // the deliverability counts and the active holds.
-func workspaceDetail(w *ent.Workspace, d Deliverability, active []*ent.Hold, warning abuse.Breach) staffapi.StaffWorkspaceDetailResource {
+func workspaceDetail(w *ent.Workspace, d abuse.Deliverability, active []*ent.Hold, warning abuse.Breach) staffapi.StaffWorkspaceDetailResource {
 	base := workspaceResource(w)
 	return staffapi.StaffWorkspaceDetailResource{
 		ID: base.ID, Name: base.Name, CreatedAt: base.CreatedAt, Suspension: base.Suspension, Exempt: base.Exempt, Warned: base.Warned,
 		Holds:          lo.Map(active, func(h *ent.Hold, _ int) staffapi.StaffHold { return staffMapper.HoldToResource(h) }),
 		Abuse:          abuseResource(w, warning),
-		Deliverability: deliverabilityResource(d),
+		Deliverability: staffMapper.DeliverabilityToResource(d),
 	}
 }
 

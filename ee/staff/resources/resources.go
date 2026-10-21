@@ -16,6 +16,7 @@ import (
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
 	"github.com/getsphericon/sphericon/internal/auditapi"
+	"github.com/getsphericon/sphericon/internal/reputation"
 )
 
 // PeriodLayout is how a Usage period is written on the wire: the calendar month, YYYY-MM.
@@ -33,6 +34,8 @@ const PeriodLayout = "2006-01"
 // goverter:extend nilableString
 // goverter:extend optNilTimestamp
 // goverter:extend staffAuditDiff
+// goverter:extend nilFloat64
+// goverter:extend count
 type StaffConverter interface {
 	StaffMemberToResource(source *ent.StaffMember) staffapi.StaffResource
 
@@ -54,6 +57,13 @@ type StaffConverter interface {
 	AbuseToResource(source *ent.Workspace) staffapi.StaffAbuse
 	// goverter:map . Rate | breachRate
 	BreachToWarning(source abuse.Breach) staffapi.StaffAbuseWarning
+
+	// goverter:map Complaint ComplaintRate
+	// goverter:map Bounce BounceRate
+	DomainRatesToResource(source abuse.DomainRates) staffapi.StaffDomainRates
+	RateToResource(source reputation.Rate) staffapi.StaffRate
+	// goverter:map Window WindowHours | windowHours
+	DeliverabilityToResource(source abuse.Deliverability) staffapi.StaffDeliverability
 
 	// goverter:map . Actor | staffAuditActor
 	// goverter:map . Target | staffAuditTarget
@@ -160,3 +170,15 @@ func staffAuditDiff(d map[string]jx.Raw) staffapi.OptNilStaffAuditEntryResourceD
 	}
 	return staffapi.NewOptNilStaffAuditEntryResourceDiff(d)
 }
+
+func nilFloat64(v *float64) staffapi.NilFloat64 {
+	if v == nil {
+		return staffapi.NilFloat64{Null: true}
+	}
+	return staffapi.NewNilFloat64(*v)
+}
+
+// count narrows a count to the contract's int32.
+func count(n int) int32 { return int32(n) }
+
+func windowHours(d time.Duration) int32 { return int32(d / time.Hour) }
