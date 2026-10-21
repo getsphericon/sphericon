@@ -72,9 +72,9 @@ func (Suppression) Indexes() []ent.Index {
 			Unique().
 			Annotations(entsql.IndexWhere("lifted_at IS NULL")).
 			StorageKey("suppressions_workspace_id_channel_destination"),
-		// Erasure and contact lookups reach this table by contact.
+		// Erasure and contact lookups reach this table by contact. Not partial: the unique index
+		// above is, so this one is also the workspace_id foreign key's index.
 		index.Fields("workspace_id", "contact_id").
-			StorageKey("suppressions_workspace_id_contact_id").
-			Annotations(entsql.IndexWhere("contact_id IS NOT NULL")),
+			StorageKey("suppressions_workspace_id_contact_id"),
 	}
 }

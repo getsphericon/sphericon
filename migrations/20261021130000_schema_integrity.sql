@@ -11,7 +11,7 @@ CREATE INDEX CONCURRENTLY "confirmations_workspace_id_contact_id" ON "confirmati
 -- create index "outbound_messages_workspace_id_contact_id" to table: "outbound_messages"
 CREATE INDEX CONCURRENTLY "outbound_messages_workspace_id_contact_id" ON "outbound_messages" ("workspace_id", "contact_id") WHERE (contact_id IS NOT NULL);
 -- create index "suppressions_workspace_id_contact_id" to table: "suppressions"
-CREATE INDEX CONCURRENTLY "suppressions_workspace_id_contact_id" ON "suppressions" ("workspace_id", "contact_id") WHERE (contact_id IS NOT NULL);
+CREATE INDEX CONCURRENTLY "suppressions_workspace_id_contact_id" ON "suppressions" ("workspace_id", "contact_id");
 -- create index "unsubscribes_workspace_id_contact_id" to table: "unsubscribes"
 CREATE INDEX CONCURRENTLY "unsubscribes_workspace_id_contact_id" ON "unsubscribes" ("workspace_id", "contact_id") WHERE (contact_id IS NOT NULL);
 -- create index "oauthcode_workspace_id" to table: "oauth_codes"

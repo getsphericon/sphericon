@@ -1373,9 +1373,6 @@ var (
 				Name:    "suppressions_workspace_id_contact_id",
 				Unique:  false,
 				Columns: []*schema.Column{SuppressionsColumns[8], SuppressionsColumns[6]},
-				Annotation: &entsql.IndexAnnotation{
-					Where: "contact_id IS NOT NULL",
-				},
 			},
 		},
 	}
