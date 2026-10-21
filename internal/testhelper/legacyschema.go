@@ -34,6 +34,7 @@ func InsertDecidedRecipientWithoutMessage(t *testing.T, sqlDB *sql.DB) {
 		   VALUES (1, 1, 1, 'sent', 1, now(), now()), (2, 1, 2, 'pending', 1, now(), now())`,
 	} {
 		// raw sql: seeds the schema of a past release, whose columns the ent client no longer has.
+		// raw sql: seeds the column the pre-migration schema had, which ent no longer models
 		_, err := sqlDB.ExecContext(t.Context(), q)
 		require.NoError(t, err, q)
 	}
@@ -91,6 +92,7 @@ func InsertLegacyAutomations(t *testing.T, sqlDB *sql.DB) {
 		   VALUES (1, 1, 1, 1, now(), now()), (2, 2, 1, 1, now(), now()), (3, 2, 2, 1, now(), now())`,
 	} {
 		// raw sql: seeds the schema of a past release, whose columns the ent client no longer has.
+		// raw sql: seeds the column the pre-migration schema had, which ent no longer models
 		_, err := sqlDB.ExecContext(t.Context(), q)
 		require.NoError(t, err, q)
 	}
@@ -110,6 +112,7 @@ func InsertLegacySendingDomains(t *testing.T, sqlDB *sql.DB) {
 		   (2, 'lost.test', 's', 'x', 'p', 1, false, now() - interval '30 days', now() - interval '2 days', now(), now()),
 		   (3, 'never.test', 's', 'x', 'p', 1, false, NULL, NULL, now(), now())`,
 	} {
+		// raw sql: seeds the column the pre-migration schema had, which ent no longer models
 		_, err := sqlDB.ExecContext(t.Context(), q)
 		require.NoError(t, err, q)
 	}
@@ -119,6 +122,7 @@ func InsertLegacySendingDomains(t *testing.T, sqlDB *sql.DB) {
 // verification_lost_at, for the migration test that follows the flag into moments.
 func SendingDomainMoments(t *testing.T, sqlDB *sql.DB) map[string][2]bool {
 	t.Helper()
+	// raw sql: reads the migrated columns by name without an ent client, for the migration test
 	rows, err := sqlDB.QueryContext(t.Context(), `SELECT domain, verified_at IS NOT NULL, verification_lost_at IS NOT NULL FROM sending_domains`)
 	require.NoError(t, err)
 	defer func() { require.NoError(t, rows.Close()) }()
