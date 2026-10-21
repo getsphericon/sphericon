@@ -42,9 +42,13 @@ func Deadline(m *ent.Membership) (time.Time, bool) {
 }
 
 // Withheld reports whether the Workspace of the Membership is withheld from its User
-// at now: a deadline applies and has passed. The Membership's User and Workspace
-// edges must be loaded.
-func Withheld(m *ent.Membership, now time.Time) bool {
+// at now: a deadline applies and has passed, and the session does not meet the requirement
+// by itself. strongSession is true for a session that passed a Second factor step or began
+// with a Passkey (ADR 0052). The Membership's User and Workspace edges must be loaded.
+func Withheld(m *ent.Membership, now time.Time, strongSession bool) bool {
+	if strongSession {
+		return false
+	}
 	end, ok := Deadline(m)
 	return ok && !now.Before(end)
 }

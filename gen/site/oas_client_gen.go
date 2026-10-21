@@ -607,6 +607,85 @@ type Invoker interface {
 	//
 	// GET /oauth/authorization
 	SiteOAuthDescribe(ctx context.Context, params SiteOAuthDescribeParams) (SiteOAuthDescribeRes, error)
+	// SitePasskeyLoginBegin invokes SitePasskeyLogin_begin operation.
+	//
+	// Begin a Passkey login: the request options for the browser, with the challenge in a signed, httpOnly
+	// cookie. Anonymous and stateless: nothing is written until the login finishes, so the call cannot be
+	// used to fill a table (ADR 0052). 404 when the Instance has no host name a Passkey can be bound to.
+	//
+	// POST /auth/passkey
+	SitePasskeyLoginBegin(ctx context.Context) (SitePasskeyLoginBeginRes, error)
+	// SitePasskeyLoginFinish invokes SitePasskeyLogin_finish operation.
+	//
+	// Finish a Passkey login: the authenticator's response, with no email and no password. The User is
+	// found by the credential id; the authenticator must have verified the person and the challenge must
+	// not have been used before. A Passkey replaces the password and the Second factor, so the session
+	// cookie is set at once (ADR 0052). Every failure (an unknown credential, a response that does not
+	// verify, a spent or expired challenge, an Unverified User) answers the same 401 and counts against no
+	// one; while a known User's Login throttle delay runs the answer is 429 (ADR 0025).
+	//
+	// POST /auth/passkey/finish
+	SitePasskeyLoginFinish(ctx context.Context, request *SitePasskeyLoginInput, params SitePasskeyLoginFinishParams) (SitePasskeyLoginFinishRes, error)
+	// SitePasskeysBeginCheck invokes SitePasskeys_beginCheck operation.
+	//
+	// Begin a fresh Passkey check: the request options for the browser, naming the User's own Passkeys,
+	// with the challenge in a signed, httpOnly cookie. Nothing is written. The check stands in for the
+	// password of a User who has none (ADR 0052). 404 when Passkeys are unavailable or the User holds
+	// none.
+	//
+	// POST /me/passkeys/check
+	SitePasskeysBeginCheck(ctx context.Context) (SitePasskeysBeginCheckRes, error)
+	// SitePasskeysBeginRegistration invokes SitePasskeys_beginRegistration operation.
+	//
+	// Begin registering a Passkey: the creation options for the browser, with the challenge in a signed,
+	// httpOnly cookie. Nothing is written: the ceremony is stateless until it finishes (ADR 0051). The
+	// options exclude the Passkeys the User already holds.
+	//
+	// POST /me/passkeys/registration
+	SitePasskeysBeginRegistration(ctx context.Context) (SitePasskeysBeginRegistrationRes, error)
+	// SitePasskeysFinishCheck invokes SitePasskeys_finishCheck operation.
+	//
+	// Finish a Passkey check. The authenticator must have verified the person, by a Passkey of the
+	// session's own User, against a challenge not used before. The acting session is reissued carrying the
+	// time of the check, which counts as the proof of identity for the next few minutes; no session ends.
+	// 403 for any response that does not verify.
+	//
+	// POST /me/passkeys/check/finish
+	SitePasskeysFinishCheck(ctx context.Context, request *SitePasskeyCheckInput, params SitePasskeysFinishCheckParams) (SitePasskeysFinishCheckRes, error)
+	// SitePasskeysFinishRegistration invokes SitePasskeys_finishRegistration operation.
+	//
+	// Finish registering a Passkey, proving the password (or a fresh provider login or Passkey check). The
+	// authenticator must have verified the user and the challenge must not have been used before. On
+	// success every other session ends, the acting one continues under the cookie set here and the owner
+	// is mailed. 403 on a wrong password (it feeds the Login throttle: 429 while its delay runs), 422 when
+	// the ceremony fails: no ceremony cookie, an expired or spent challenge, a response the library
+	// refuses, an authenticator that did not verify the user, or a credential already registered.
+	//
+	// POST /me/passkeys/registration/finish
+	SitePasskeysFinishRegistration(ctx context.Context, request *SitePasskeyRegistrationInput, params SitePasskeysFinishRegistrationParams) (SitePasskeysFinishRegistrationRes, error)
+	// SitePasskeysList invokes SitePasskeys_list operation.
+	//
+	// List the authenticated User's Passkeys.
+	//
+	// GET /me/passkeys
+	SitePasskeysList(ctx context.Context) (*SitePasskeyList, error)
+	// SitePasskeysRemove invokes SitePasskeys_remove operation.
+	//
+	// Remove a Passkey of the authenticated User, proving the password (or a fresh provider login). It no
+	// longer signs anyone in, every other session ends, the acting one continues under the cookie set here
+	// and the owner is mailed. 403 on a wrong password (it feeds the Login throttle: 429 while its delay
+	// runs), 404 for an unknown Passkey or another User's, 409 when it is the last way the User can sign
+	// in: no password, no Linked identity and no other Passkey.
+	//
+	// DELETE /me/passkeys/{id}
+	SitePasskeysRemove(ctx context.Context, request *SitePasskeyRemoveInput, params SitePasskeysRemoveParams) (SitePasskeysRemoveRes, error)
+	// SitePasskeysRename invokes SitePasskeys_rename operation.
+	//
+	// Rename a Passkey of the authenticated User. 404 for an unknown Passkey or another User's, 422 for a
+	// name that is empty or longer than 100 characters.
+	//
+	// PATCH /me/passkeys/{id}
+	SitePasskeysRename(ctx context.Context, request *SitePasskeyRenameInput, params SitePasskeysRenameParams) (SitePasskeysRenameRes, error)
 	// SitePresetsList invokes SitePresets_list operation.
 	//
 	// List the Presets the Instance offers, with the params schema of each.
@@ -647,8 +726,8 @@ type Invoker interface {
 	// Confirm the pending enrollment with the password and a code from the app. On success the Second
 	// factor is active, every other session ends and the acting one continues under the cookie set here;
 	// the Recovery codes are returned once. 403 on a wrong password (or, for a User with no password, no
-	// provider sign-in in the last few minutes) (it feeds the Login throttle: 429 while its delay runs),
-	// 422 on a wrong code, 409 without a pending enrollment.
+	// provider sign-in or Passkey check in the last few minutes) (it feeds the Login throttle: 429 while
+	// its delay runs), 422 on a wrong code, 409 without a pending enrollment.
 	//
 	// POST /me/second-factor/enrollment/confirm
 	SiteSecondFactorConfirmEnrollment(ctx context.Context, request *SiteSecondFactorConfirmInput) (SiteSecondFactorConfirmEnrollmentRes, error)
@@ -670,8 +749,8 @@ type Invoker interface {
 	//
 	// Replace the Recovery codes with a fresh set (the previous set stops working). Every other session
 	// ends; the acting one continues under the cookie set here. 403 on a wrong password (or, for a User
-	// with no password, no provider sign-in in the last few minutes) (it feeds the Login throttle: 429
-	// while its delay runs), 409 without an active Second factor.
+	// with no password, no provider sign-in or Passkey check in the last few minutes) (it feeds the Login
+	// throttle: 429 while its delay runs), 409 without an active Second factor.
 	//
 	// POST /me/second-factor/recovery-codes
 	SiteSecondFactorRegenerateRecoveryCodes(ctx context.Context, request *SiteRecoveryCodesInput) (SiteSecondFactorRegenerateRecoveryCodesRes, error)
@@ -679,9 +758,9 @@ type Invoker interface {
 	//
 	// Start enrolling a TOTP Second factor, proving the password: creates a pending secret (replacing an
 	// earlier pending one). It counts as a Second factor only once confirmed. 403 on a wrong password (or,
-	// for a User with no password, no provider sign-in in the last few minutes), 409 when a Second factor
-	// is already active. A wrong password feeds the Login throttle, which answers 429 even for a correct
-	// one while its delay runs (ADR 0025).
+	// for a User with no password, no provider sign-in or Passkey check in the last few minutes), 409 when
+	// a Second factor is already active. A wrong password feeds the Login throttle, which answers 429 even
+	// for a correct one while its delay runs (ADR 0025).
 	//
 	// POST /me/second-factor/enrollment
 	SiteSecondFactorStartEnrollment(ctx context.Context, request *SiteSecondFactorStartInput) (SiteSecondFactorStartEnrollmentRes, error)
@@ -13352,6 +13431,1096 @@ func (c *Client) sendSiteOAuthDescribe(ctx context.Context, params SiteOAuthDesc
 	return result, nil
 }
 
+// SitePasskeyLoginBegin invokes SitePasskeyLogin_begin operation.
+//
+// Begin a Passkey login: the request options for the browser, with the challenge in a signed, httpOnly
+// cookie. Anonymous and stateless: nothing is written until the login finishes, so the call cannot be
+// used to fill a table (ADR 0052). 404 when the Instance has no host name a Passkey can be bound to.
+//
+// POST /auth/passkey
+func (c *Client) SitePasskeyLoginBegin(ctx context.Context) (SitePasskeyLoginBeginRes, error) {
+	res, err := c.sendSitePasskeyLoginBegin(ctx)
+	return res, err
+}
+
+func (c *Client) sendSitePasskeyLoginBegin(ctx context.Context) (res SitePasskeyLoginBeginRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SitePasskeyLogin_begin"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/auth/passkey"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SitePasskeyLoginBeginOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/auth/passkey"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSitePasskeyLoginBeginResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SitePasskeyLoginFinish invokes SitePasskeyLogin_finish operation.
+//
+// Finish a Passkey login: the authenticator's response, with no email and no password. The User is
+// found by the credential id; the authenticator must have verified the person and the challenge must
+// not have been used before. A Passkey replaces the password and the Second factor, so the session
+// cookie is set at once (ADR 0052). Every failure (an unknown credential, a response that does not
+// verify, a spent or expired challenge, an Unverified User) answers the same 401 and counts against no
+// one; while a known User's Login throttle delay runs the answer is 429 (ADR 0025).
+//
+// POST /auth/passkey/finish
+func (c *Client) SitePasskeyLoginFinish(ctx context.Context, request *SitePasskeyLoginInput, params SitePasskeyLoginFinishParams) (SitePasskeyLoginFinishRes, error) {
+	res, err := c.sendSitePasskeyLoginFinish(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendSitePasskeyLoginFinish(ctx context.Context, request *SitePasskeyLoginInput, params SitePasskeyLoginFinishParams) (res SitePasskeyLoginFinishRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SitePasskeyLogin_finish"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/auth/passkey/finish"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SitePasskeyLoginFinishOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/auth/passkey/finish"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSitePasskeyLoginFinishRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "EncodeCookieParams"
+	cookie := uri.NewCookieEncoder(r)
+	{
+		// Encode "PASSKEY" parameter.
+		cfg := uri.CookieParameterEncodingConfig{
+			Name:    "PASSKEY",
+			Explode: false,
+		}
+
+		if err := cookie.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.PASSKEY.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode cookie")
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSitePasskeyLoginFinishResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SitePasskeysBeginCheck invokes SitePasskeys_beginCheck operation.
+//
+// Begin a fresh Passkey check: the request options for the browser, naming the User's own Passkeys,
+// with the challenge in a signed, httpOnly cookie. Nothing is written. The check stands in for the
+// password of a User who has none (ADR 0052). 404 when Passkeys are unavailable or the User holds
+// none.
+//
+// POST /me/passkeys/check
+func (c *Client) SitePasskeysBeginCheck(ctx context.Context) (SitePasskeysBeginCheckRes, error) {
+	res, err := c.sendSitePasskeysBeginCheck(ctx)
+	return res, err
+}
+
+func (c *Client) sendSitePasskeysBeginCheck(ctx context.Context) (res SitePasskeysBeginCheckRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SitePasskeys_beginCheck"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/me/passkeys/check"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SitePasskeysBeginCheckOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/me/passkeys/check"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, SitePasskeysBeginCheckOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSitePasskeysBeginCheckResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SitePasskeysBeginRegistration invokes SitePasskeys_beginRegistration operation.
+//
+// Begin registering a Passkey: the creation options for the browser, with the challenge in a signed,
+// httpOnly cookie. Nothing is written: the ceremony is stateless until it finishes (ADR 0051). The
+// options exclude the Passkeys the User already holds.
+//
+// POST /me/passkeys/registration
+func (c *Client) SitePasskeysBeginRegistration(ctx context.Context) (SitePasskeysBeginRegistrationRes, error) {
+	res, err := c.sendSitePasskeysBeginRegistration(ctx)
+	return res, err
+}
+
+func (c *Client) sendSitePasskeysBeginRegistration(ctx context.Context) (res SitePasskeysBeginRegistrationRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SitePasskeys_beginRegistration"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/me/passkeys/registration"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SitePasskeysBeginRegistrationOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/me/passkeys/registration"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, SitePasskeysBeginRegistrationOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSitePasskeysBeginRegistrationResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SitePasskeysFinishCheck invokes SitePasskeys_finishCheck operation.
+//
+// Finish a Passkey check. The authenticator must have verified the person, by a Passkey of the
+// session's own User, against a challenge not used before. The acting session is reissued carrying the
+// time of the check, which counts as the proof of identity for the next few minutes; no session ends.
+// 403 for any response that does not verify.
+//
+// POST /me/passkeys/check/finish
+func (c *Client) SitePasskeysFinishCheck(ctx context.Context, request *SitePasskeyCheckInput, params SitePasskeysFinishCheckParams) (SitePasskeysFinishCheckRes, error) {
+	res, err := c.sendSitePasskeysFinishCheck(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendSitePasskeysFinishCheck(ctx context.Context, request *SitePasskeyCheckInput, params SitePasskeysFinishCheckParams) (res SitePasskeysFinishCheckRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SitePasskeys_finishCheck"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/me/passkeys/check/finish"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SitePasskeysFinishCheckOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/me/passkeys/check/finish"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSitePasskeysFinishCheckRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "EncodeCookieParams"
+	cookie := uri.NewCookieEncoder(r)
+	{
+		// Encode "PASSKEY" parameter.
+		cfg := uri.CookieParameterEncodingConfig{
+			Name:    "PASSKEY",
+			Explode: false,
+		}
+
+		if err := cookie.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.PASSKEY.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode cookie")
+		}
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, SitePasskeysFinishCheckOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSitePasskeysFinishCheckResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SitePasskeysFinishRegistration invokes SitePasskeys_finishRegistration operation.
+//
+// Finish registering a Passkey, proving the password (or a fresh provider login or Passkey check). The
+// authenticator must have verified the user and the challenge must not have been used before. On
+// success every other session ends, the acting one continues under the cookie set here and the owner
+// is mailed. 403 on a wrong password (it feeds the Login throttle: 429 while its delay runs), 422 when
+// the ceremony fails: no ceremony cookie, an expired or spent challenge, a response the library
+// refuses, an authenticator that did not verify the user, or a credential already registered.
+//
+// POST /me/passkeys/registration/finish
+func (c *Client) SitePasskeysFinishRegistration(ctx context.Context, request *SitePasskeyRegistrationInput, params SitePasskeysFinishRegistrationParams) (SitePasskeysFinishRegistrationRes, error) {
+	res, err := c.sendSitePasskeysFinishRegistration(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendSitePasskeysFinishRegistration(ctx context.Context, request *SitePasskeyRegistrationInput, params SitePasskeysFinishRegistrationParams) (res SitePasskeysFinishRegistrationRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SitePasskeys_finishRegistration"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/me/passkeys/registration/finish"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SitePasskeysFinishRegistrationOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/me/passkeys/registration/finish"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSitePasskeysFinishRegistrationRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "EncodeCookieParams"
+	cookie := uri.NewCookieEncoder(r)
+	{
+		// Encode "PASSKEY" parameter.
+		cfg := uri.CookieParameterEncodingConfig{
+			Name:    "PASSKEY",
+			Explode: false,
+		}
+
+		if err := cookie.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.PASSKEY.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode cookie")
+		}
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, SitePasskeysFinishRegistrationOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSitePasskeysFinishRegistrationResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SitePasskeysList invokes SitePasskeys_list operation.
+//
+// List the authenticated User's Passkeys.
+//
+// GET /me/passkeys
+func (c *Client) SitePasskeysList(ctx context.Context) (*SitePasskeyList, error) {
+	res, err := c.sendSitePasskeysList(ctx)
+	return res, err
+}
+
+func (c *Client) sendSitePasskeysList(ctx context.Context) (res *SitePasskeyList, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SitePasskeys_list"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/me/passkeys"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SitePasskeysListOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/me/passkeys"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, SitePasskeysListOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSitePasskeysListResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SitePasskeysRemove invokes SitePasskeys_remove operation.
+//
+// Remove a Passkey of the authenticated User, proving the password (or a fresh provider login). It no
+// longer signs anyone in, every other session ends, the acting one continues under the cookie set here
+// and the owner is mailed. 403 on a wrong password (it feeds the Login throttle: 429 while its delay
+// runs), 404 for an unknown Passkey or another User's, 409 when it is the last way the User can sign
+// in: no password, no Linked identity and no other Passkey.
+//
+// DELETE /me/passkeys/{id}
+func (c *Client) SitePasskeysRemove(ctx context.Context, request *SitePasskeyRemoveInput, params SitePasskeysRemoveParams) (SitePasskeysRemoveRes, error) {
+	res, err := c.sendSitePasskeysRemove(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendSitePasskeysRemove(ctx context.Context, request *SitePasskeyRemoveInput, params SitePasskeysRemoveParams) (res SitePasskeysRemoveRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SitePasskeys_remove"),
+		semconv.HTTPRequestMethodKey.String("DELETE"),
+		semconv.URLTemplateKey.String("/me/passkeys/{id}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SitePasskeysRemoveOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/me/passkeys/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "DELETE", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSitePasskeysRemoveRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, SitePasskeysRemoveOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSitePasskeysRemoveResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SitePasskeysRename invokes SitePasskeys_rename operation.
+//
+// Rename a Passkey of the authenticated User. 404 for an unknown Passkey or another User's, 422 for a
+// name that is empty or longer than 100 characters.
+//
+// PATCH /me/passkeys/{id}
+func (c *Client) SitePasskeysRename(ctx context.Context, request *SitePasskeyRenameInput, params SitePasskeysRenameParams) (SitePasskeysRenameRes, error) {
+	res, err := c.sendSitePasskeysRename(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendSitePasskeysRename(ctx context.Context, request *SitePasskeyRenameInput, params SitePasskeysRenameParams) (res SitePasskeysRenameRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SitePasskeys_rename"),
+		semconv.HTTPRequestMethodKey.String("PATCH"),
+		semconv.URLTemplateKey.String("/me/passkeys/{id}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SitePasskeysRenameOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/me/passkeys/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "PATCH", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSitePasskeysRenameRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, SitePasskeysRenameOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSitePasskeysRenameResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
 // SitePresetsList invokes SitePresets_list operation.
 //
 // List the Presets the Instance offers, with the params schema of each.
@@ -13905,8 +15074,8 @@ func (c *Client) sendSitePublicUnsubscribesPerform(ctx context.Context, params S
 // Confirm the pending enrollment with the password and a code from the app. On success the Second
 // factor is active, every other session ends and the acting one continues under the cookie set here;
 // the Recovery codes are returned once. 403 on a wrong password (or, for a User with no password, no
-// provider sign-in in the last few minutes) (it feeds the Login throttle: 429 while its delay runs),
-// 422 on a wrong code, 409 without a pending enrollment.
+// provider sign-in or Passkey check in the last few minutes) (it feeds the Login throttle: 429 while
+// its delay runs), 422 on a wrong code, 409 without a pending enrollment.
 //
 // POST /me/second-factor/enrollment/confirm
 func (c *Client) SiteSecondFactorConfirmEnrollment(ctx context.Context, request *SiteSecondFactorConfirmInput) (SiteSecondFactorConfirmEnrollmentRes, error) {
@@ -14255,8 +15424,8 @@ func (c *Client) sendSiteSecondFactorGetStatus(ctx context.Context) (res *SiteSe
 //
 // Replace the Recovery codes with a fresh set (the previous set stops working). Every other session
 // ends; the acting one continues under the cookie set here. 403 on a wrong password (or, for a User
-// with no password, no provider sign-in in the last few minutes) (it feeds the Login throttle: 429
-// while its delay runs), 409 without an active Second factor.
+// with no password, no provider sign-in or Passkey check in the last few minutes) (it feeds the Login
+// throttle: 429 while its delay runs), 409 without an active Second factor.
 //
 // POST /me/second-factor/recovery-codes
 func (c *Client) SiteSecondFactorRegenerateRecoveryCodes(ctx context.Context, request *SiteRecoveryCodesInput) (SiteSecondFactorRegenerateRecoveryCodesRes, error) {
@@ -14374,9 +15543,9 @@ func (c *Client) sendSiteSecondFactorRegenerateRecoveryCodes(ctx context.Context
 //
 // Start enrolling a TOTP Second factor, proving the password: creates a pending secret (replacing an
 // earlier pending one). It counts as a Second factor only once confirmed. 403 on a wrong password (or,
-// for a User with no password, no provider sign-in in the last few minutes), 409 when a Second factor
-// is already active. A wrong password feeds the Login throttle, which answers 429 even for a correct
-// one while its delay runs (ADR 0025).
+// for a User with no password, no provider sign-in or Passkey check in the last few minutes), 409 when
+// a Second factor is already active. A wrong password feeds the Login throttle, which answers 429 even
+// for a correct one while its delay runs (ADR 0025).
 //
 // POST /me/second-factor/enrollment
 func (c *Client) SiteSecondFactorStartEnrollment(ctx context.Context, request *SiteSecondFactorStartInput) (SiteSecondFactorStartEnrollmentRes, error) {

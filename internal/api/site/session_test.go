@@ -80,3 +80,13 @@ func TestSiteBumpedEpochEndsTheUsersExistingSessions(t *testing.T) {
 	assert.Equal(t, http.StatusUnauthorized, workspacesStatus(t, env, old), "minted under the previous epoch")
 	assert.Equal(t, http.StatusOK, workspacesStatus(t, env, env.SiteToken(t, fixtures.OwnerJohnEmail, nil)), "minted under the current epoch")
 }
+
+func TestSiteRejectsASessionTokenWithoutAMethod(t *testing.T) {
+	env := testhelper.Setup(t)
+	for name, edit := range map[string]func(*gptoken.Claims){
+		"no method":      func(c *gptoken.Claims) { delete(c.User.Attributes, apiauth.ClaimMethod) },
+		"unknown method": func(c *gptoken.Claims) { c.User.SetStrAttr(apiauth.ClaimMethod, "telepathy") },
+	} {
+		assert.Equal(t, http.StatusUnauthorized, workspacesStatus(t, env, env.SiteToken(t, fixtures.OwnerJohnEmail, edit)), name)
+	}
+}

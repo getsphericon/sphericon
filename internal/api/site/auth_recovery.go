@@ -140,7 +140,7 @@ func (h *Handlers) SiteAuthVerifyEmail(ctx context.Context, req *siteapi.SiteVer
 	// address that is now proven. Best-effort: never fail the verification.
 	_ = h.welcome.EnqueueWelcome(ctx, u.Email, u.Name)
 	// The session starts after the epoch bump VerifyEmail made, so it is the only one.
-	cookie, err := h.sessions.Issue(verified)
+	cookie, err := h.sessions.Issue(verified, auth.Session{Method: auth.MethodEmail})
 	if err != nil {
 		return nil, err
 	}
@@ -172,6 +172,9 @@ func (h *Handlers) SiteAuthConfirmEmailChange(ctx context.Context, req *siteapi.
 	if err != nil {
 		return nil, err
 	}
+	// A token that records no known method is an invalid session: it is not continued.
+	sess, valid := h.sessions.SessionOf(params.JWT.Or(""))
+	acting = acting && valid
 	// The new address was proven by clicking this link, so it is verified. The
 	// unique index guards the race if the address was taken meanwhile.
 	err = h.accounts.ChangeEmail(ctx, uid, newEmail)
@@ -189,7 +192,7 @@ func (h *Handlers) SiteAuthConfirmEmailChange(ctx context.Context, req *siteapi.
 		if err != nil {
 			return nil, err
 		}
-		cookie, err := h.sessions.Issue(u)
+		cookie, err := h.sessions.Issue(u, sess)
 		if err != nil {
 			return nil, err
 		}

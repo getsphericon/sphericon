@@ -626,6 +626,174 @@ export const zSiteOAuthDecisionResult = z.object({
 });
 
 /**
+ * The browser's answer to the request options: the W3C `AuthenticationResponseJSON`
+ * dictionary (`PublicKeyCredential.toJSON()`), checked by the WebAuthn library.
+ */
+export const zSitePasskeyAssertion = z.record(z.string(), z.unknown());
+
+/**
+ * What the authenticator must be able to do. Credentials are discoverable and user
+ * verification is required (ADR 0051).
+ */
+export const zSitePasskeyAuthenticatorSelection = z.object({
+  authenticatorAttachment: z.exactOptional(z.enum(['platform', 'cross-platform'])),
+  requireResidentKey: z.exactOptional(z.boolean()),
+  residentKey: z.exactOptional(z.enum([
+    'discouraged',
+    'preferred',
+    'required'
+  ])),
+  userVerification: z.exactOptional(z.enum([
+    'required',
+    'preferred',
+    'discouraged'
+  ]))
+});
+
+/**
+ * The browser's response to a Passkey check ceremony
+ */
+export const zSitePasskeyCheckInput = z.object({
+  credential: zSitePasskeyAssertion
+});
+
+/**
+ * A credential, as the exclusion list names it
+ */
+export const zSitePasskeyDescriptor = z.object({
+  type: z.enum(['public-key']),
+  id: z.string(),
+  transports: z.exactOptional(z.array(z.enum([
+    'ble',
+    'hybrid',
+    'internal',
+    'nfc',
+    'usb'
+  ])))
+});
+
+/**
+ * The browser's response to a login ceremony
+ */
+export const zSitePasskeyLoginInput = z.object({
+  credential: zSitePasskeyAssertion
+});
+
+/**
+ * A public-key algorithm the authenticator may use
+ */
+export const zSitePasskeyParameter = z.object({
+  type: z.enum(['public-key']),
+  alg: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
+ * The browser's answer to the creation options: the W3C `RegistrationResponseJSON`
+ * dictionary (`PublicKeyCredential.toJSON()`), checked by the WebAuthn library.
+ */
+export const zSitePasskeyRegistrationResponse = z.record(z.string(), z.unknown());
+
+/**
+ * The browser's response to a registration ceremony, with the proof of identity and a name
+ */
+export const zSitePasskeyRegistrationInput = z.object({
+  currentPassword: z.exactOptional(z.string()),
+  name: z.string(),
+  credential: zSitePasskeyRegistrationResponse
+});
+
+/**
+ * The relying party of a Passkey ceremony: this Instance
+ */
+export const zSitePasskeyRelyingParty = z.object({
+  id: z.exactOptional(z.string()),
+  name: z.string()
+});
+
+/**
+ * The proof of identity a removal asks for
+ */
+export const zSitePasskeyRemoveInput = z.object({
+  currentPassword: z.exactOptional(z.string())
+});
+
+/**
+ * The new name of a Passkey
+ */
+export const zSitePasskeyRenameInput = z.object({
+  name: z.string()
+});
+
+/**
+ * The options a browser passes to `navigator.credentials.get` to log in with a Passkey: the
+ * W3C `PublicKeyCredentialRequestOptionsJSON` dictionary, as the WebAuthn library produced it.
+ * `allowCredentials` is empty: the User is found by the credential the browser offers, never by
+ * an email (ADR 0052).
+ */
+export const zSitePasskeyRequestOptions = z.object({
+  challenge: z.string(),
+  timeout: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
+  rpId: z.exactOptional(z.string()),
+  allowCredentials: z.exactOptional(z.array(zSitePasskeyDescriptor)),
+  userVerification: z.exactOptional(z.enum([
+    'required',
+    'preferred',
+    'discouraged'
+  ]))
+});
+
+/**
+ * The options to check a Passkey with, and the ceremony cookie they are bound to
+ */
+export const zSitePasskeyCheckBegun = z.object({
+  options: zSitePasskeyRequestOptions
+});
+
+/**
+ * The options to log in with, and the ceremony cookie they are bound to
+ */
+export const zSitePasskeyLoginBegun = z.object({
+  options: zSitePasskeyRequestOptions
+});
+
+/**
+ * The account a Passkey is created for
+ */
+export const zSitePasskeyUserEntity = z.object({
+  id: z.string(),
+  name: z.string(),
+  displayName: z.string()
+});
+
+/**
+ * The options a browser passes to `navigator.credentials.create` to register a Passkey: the
+ * W3C `PublicKeyCredentialCreationOptionsJSON` dictionary, as the WebAuthn library produced it.
+ * Attestation is not requested.
+ */
+export const zSitePasskeyCreationOptions = z.object({
+  rp: zSitePasskeyRelyingParty,
+  user: zSitePasskeyUserEntity,
+  challenge: z.string(),
+  pubKeyCredParams: z.array(zSitePasskeyParameter),
+  timeout: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
+  excludeCredentials: z.exactOptional(z.array(zSitePasskeyDescriptor)),
+  authenticatorSelection: z.exactOptional(zSitePasskeyAuthenticatorSelection),
+  attestation: z.exactOptional(z.enum([
+    'none',
+    'indirect',
+    'direct',
+    'enterprise'
+  ]))
+});
+
+/**
+ * The options to create a Passkey with, and the ceremony cookie they are bound to
+ */
+export const zSitePasskeyRegistrationBegun = z.object({
+  options: zSitePasskeyCreationOptions
+});
+
+/**
  * A Preset the Instance offers
  */
 export const zSitePresetResource = z.object({
@@ -649,7 +817,7 @@ export const zSiteRecoveryCodes = z.object({
 });
 
 /**
- * Proof of the User's password (or a fresh provider login), for regenerating Recovery codes
+ * Proof of the User's password (or a fresh provider login or Passkey check), for regenerating Recovery codes
  */
 export const zSiteRecoveryCodesInput = z.object({
   currentPassword: z.exactOptional(z.string())
@@ -698,7 +866,7 @@ export const zSiteSaveBrandKitInput = z.object({
 });
 
 /**
- * Proof of the User's password (or a fresh provider login) and a code from the authenticator app
+ * Proof of the User's password (or a fresh provider login or Passkey check) and a code from the authenticator app
  */
 export const zSiteSecondFactorConfirmInput = z.object({
   currentPassword: z.exactOptional(z.string()),
@@ -706,7 +874,7 @@ export const zSiteSecondFactorConfirmInput = z.object({
 });
 
 /**
- * Proof of password (or a fresh provider login) and possession, for disabling the Second factor
+ * Proof of password (or a fresh provider login or Passkey check) and possession, for disabling the Second factor
  */
 export const zSiteSecondFactorDisableInput = z.object({
   currentPassword: z.exactOptional(z.string()),
@@ -730,7 +898,7 @@ export const zSiteSecondFactorRequirementInput = z.object({
 });
 
 /**
- * Proof of the User's password (or a fresh provider login), for starting an enrollment
+ * Proof of the User's password (or a fresh provider login or Passkey check), for starting an enrollment
  */
 export const zSiteSecondFactorStartInput = z.object({
   currentPassword: z.exactOptional(z.string())
@@ -745,7 +913,7 @@ export const zSiteSecondFactorStatus = z.object({
   pending: z.boolean(),
   recoveryCodesRemaining: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   passwordSet: z.boolean(),
-  providerLoginFresh: z.boolean()
+  identityProofFresh: z.boolean()
 });
 
 /**
@@ -1633,6 +1801,27 @@ export const zSiteMembershipResource = z.object({
 });
 
 /**
+ * One Passkey of the authenticated User (ADR 0051). Its public key and credential id are
+ * never returned.
+ */
+export const zSitePasskey = z.object({
+  id: zEntityId,
+  name: z.string(),
+  createdAt: zTimestamp,
+  lastUsedAt: z.exactOptional(zTimestamp)
+});
+
+/**
+ * The Passkeys of the authenticated User, oldest first, and what proves the User for a change
+ */
+export const zSitePasskeyList = z.object({
+  items: z.array(zSitePasskey),
+  available: z.boolean(),
+  passwordSet: z.boolean(),
+  identityProofFresh: z.boolean()
+});
+
+/**
  * Site request body for scheduling a broadcast
  */
 export const zSiteScheduleBroadcastInput = z.object({
@@ -2268,6 +2457,18 @@ export const zSiteAuthLoginResponse = zSiteLoginResult;
  */
 export const zSiteAuthLogoutResponse = z.void();
 
+/**
+ * The request has succeeded.
+ */
+export const zSitePasskeyLoginBeginResponse = zSitePasskeyLoginBegun;
+
+export const zSitePasskeyLoginFinishBody = zSitePasskeyLoginInput;
+
+/**
+ * The request has succeeded.
+ */
+export const zSitePasskeyLoginFinishResponse = zSiteLoginResult;
+
 export const zSiteAuthRegisterBody = zSiteRegisterInput;
 
 export const zSiteAuthResendVerificationBody = zSiteResendVerificationInput;
@@ -2404,6 +2605,57 @@ export const zSiteIdentitiesLinkPath = z.object({
 export const zSiteIdentitiesLinkQuery = z.object({
   return_to: z.exactOptional(z.string())
 });
+
+/**
+ * The request has succeeded.
+ */
+export const zSitePasskeysListResponse = zSitePasskeyList;
+
+/**
+ * The request has succeeded.
+ */
+export const zSitePasskeysBeginCheckResponse = zSitePasskeyCheckBegun;
+
+export const zSitePasskeysFinishCheckBody = zSitePasskeyCheckInput;
+
+/**
+ * There is no content to send for this request, but the headers may be useful.
+ */
+export const zSitePasskeysFinishCheckResponse = z.void();
+
+/**
+ * The request has succeeded.
+ */
+export const zSitePasskeysBeginRegistrationResponse = zSitePasskeyRegistrationBegun;
+
+export const zSitePasskeysFinishRegistrationBody = zSitePasskeyRegistrationInput;
+
+/**
+ * The request has succeeded.
+ */
+export const zSitePasskeysFinishRegistrationResponse = zSitePasskey;
+
+export const zSitePasskeysRemoveBody = zSitePasskeyRemoveInput;
+
+export const zSitePasskeysRemovePath = z.object({
+  id: zEntityId
+});
+
+/**
+ * There is no content to send for this request, but the headers may be useful.
+ */
+export const zSitePasskeysRemoveResponse = z.void();
+
+export const zSitePasskeysRenameBody = zSitePasskeyRenameInput;
+
+export const zSitePasskeysRenamePath = z.object({
+  id: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSitePasskeysRenameResponse = zSitePasskey;
 
 /**
  * The request has succeeded.

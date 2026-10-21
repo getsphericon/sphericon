@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/secondfactor"
 	"github.com/getsphericon/sphericon/internal/signin"
@@ -133,7 +134,7 @@ func (h *Handlers) SiteAuthSigninCallback(ctx context.Context, params siteapi.Si
 			SetCookie: siteapi.NewOptString(h.sessions.ClearedSigninFlow().String()),
 		}, nil
 	}
-	cookie, err := h.issueSession(ctx, signedIn.User, params.Provider, h.now())
+	cookie, err := h.issueSession(ctx, signedIn.User, params.Provider, auth.Session{Method: auth.MethodProvider, ProviderLoginAt: h.now()})
 	if err != nil {
 		return nil, err
 	}

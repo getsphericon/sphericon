@@ -15,10 +15,13 @@ import {
   handleSiteAuthSigninProviders,
   handleSiteBrandKitGet,
   handleSiteIdentitiesList,
+  handleSitePasskeyLoginBegin,
+  handleSitePasskeysList,
 } from '../generated/site/msw.gen.ts'
 import { client as staffClient } from '../generated/staff/client.gen.ts'
 import { createAppRouter } from '../router.ts'
 import { UNSAVED_BRAND_KIT } from './payloads.ts'
+import { problem } from './problem.ts'
 import { settled } from './queryClients.ts'
 import { worker } from './worker.ts'
 
@@ -73,6 +76,15 @@ beforeEach(() => {
   worker.use(handleSiteAuthSigninProviders({ body: { items: [] } }))
   // The account security page lists the User's Linked identities; by default there are none.
   worker.use(handleSiteIdentitiesList({ body: { items: [] } }))
+  // ...and their Passkeys; by default none, and a password to prove with.
+  worker.use(
+    handleSitePasskeysList({
+      body: { items: [], available: true, passwordSet: true, identityProofFresh: false },
+    }),
+  )
+  // The login page starts a Passkey ceremony in the background when the browser can autofill
+  // one; by default the Instance offers none, so that begin is refused and the page stays quiet.
+  worker.use(handleSitePasskeyLoginBegin(() => problem(404)))
 })
 // A test may end before its own requests have reached the worker. The worker takes requests in
 // the order the page made them, so a request answered by a handler of its own has passed every

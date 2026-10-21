@@ -81,6 +81,11 @@ func (i *Inline) EnqueueUserDeletedNotice(ctx context.Context, email string) err
 	return SendAuthMail(ctx, i.systemSender, i.appURL, SendAuthMailArgs{Flow: flowUserDeleted, Email: email})
 }
 
+// EnqueuePasskeyNotice sends the Passkey change notice now.
+func (i *Inline) EnqueuePasskeyNotice(ctx context.Context, email string, change PasskeyChange, name string) error {
+	return SendAuthMail(ctx, i.systemSender, i.appURL, SendAuthMailArgs{Flow: flowPasskeyChanged, Email: email, Change: change, Name: name})
+}
+
 // EnqueueSendingDomainVerify re-checks the domain's DKIM DNS now, notifying the
 // workspace owner if this check flips the domain to unverified (ADR 0010 slice 3).
 func (i *Inline) EnqueueSendingDomainVerify(ctx context.Context, sendingDomainID int64) error {

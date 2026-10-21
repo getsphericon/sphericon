@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent/membership"
+	"github.com/getsphericon/sphericon/ent/passkey"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -91,4 +92,39 @@ func TestSecondFactorResetRefusesOneselfAndAMemberWithoutAFactor(t *testing.T) {
 
 	require.IsType(t, &siteapi.SiteMembershipsResetSecondFactorUnprocessableEntity{}, self)
 	require.IsType(t, &siteapi.SiteMembershipsResetSecondFactorUnprocessableEntity{}, none)
+}
+
+func passkeysOf(t *testing.T, env *testhelper.TestEnv, userID int64) int {
+	t.Helper()
+	n, err := env.DB.Passkey.Query().Where(passkey.UserID(userID)).Count(t.Context())
+	require.NoError(t, err)
+	return n
+}
+
+func TestResetRemovesAMembersPasskeysAndKeepsItsAuditEntry(t *testing.T) {
+	env := testhelper.Setup(t)
+	pat := patSession(t, env)
+	require.Equal(t, 1, passkeysOf(t, env, fixtures.PasskeyPatID))
+
+	res := resetSecondFactor(t, env, fixtures.OwnerJaneEmail, fixtures.GlobexPublicID, fixtures.GlobexPatMembershipID)
+
+	require.IsType(t, &siteapi.SiteMembershipsResetSecondFactorNoContent{}, res)
+	assert.Zero(t, passkeysOf(t, env, fixtures.PasskeyPatID))
+	assert.Equal(t, http.StatusUnauthorized, workspacesStatus(t, env, pat), "the member's sessions end")
+	got := entriesNamed(t, env, fixtures.OwnerJaneEmail, fixtures.GlobexPublicID, events.ActionUserSecondFactorReset)
+	require.Len(t, got, 1)
+	assert.Equal(t, "user", got[0].Target.Type)
+}
+
+func TestAMemberWhoseSecondFactorWasResetCannotLogInWithTheirOldPasskey(t *testing.T) {
+	env := testhelper.Setup(t)
+	options, ceremony := beginLogin(t, env)
+	assertion := env.FixturePasskey(t).Assert(options)
+
+	res := resetSecondFactor(t, env, fixtures.OwnerJaneEmail, fixtures.GlobexPublicID, fixtures.GlobexPatMembershipID)
+	require.IsType(t, &siteapi.SiteMembershipsResetSecondFactorNoContent{}, res)
+
+	rec := finishLogin(t, env, ceremony, assertion)
+	assert.Equal(t, http.StatusUnauthorized, rec.Code)
+	assert.Nil(t, sessionCookie(rec.Result()))
 }

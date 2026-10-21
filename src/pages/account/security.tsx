@@ -21,8 +21,9 @@ import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { IdentityProof } from '../../components/IdentityProof.tsx'
 import { LinkedIdentities } from '../../components/LinkedIdentities.tsx'
-import { SigninProviders } from '../../components/SigninProviders.tsx'
+import { Passkeys } from '../../components/Passkeys.tsx'
 import {
   siteSecondFactorConfirmEnrollmentMutation,
   siteSecondFactorDisableMutation,
@@ -278,7 +279,7 @@ function Enabled({
 }
 
 // SecurityBody is the state of the Second factor, or, for a User with no password whose provider
-// login is too old to count, the way to a fresh one (ADR 0048): the steps need that proof.
+// proof is too old to count, the way to a fresh one: a Passkey check or a provider login (ADR 0048, ADR 0052): the steps need that proof.
 function SecurityBody({
   status,
   onCodes,
@@ -288,14 +289,9 @@ function SecurityBody({
 }) {
   const { t } = useTranslation()
   const passwordless = !status.passwordSet
-  if (passwordless && !status.providerLoginFresh) {
+  if (passwordless && !status.identityProofFresh) {
     return (
-      <Stack>
-        <Alert color="blue" title={t(($) => $.security.providerLoginTitle)}>
-          {t(($) => $.security.providerLoginHint)}
-        </Alert>
-        <SigninProviders returnTo={securityRoute.to} separated={false} />
-      </Stack>
+      <IdentityProof hint={t(($) => $.security.providerLoginHint)} returnTo={securityRoute.to} />
     )
   }
   return status.enabled ? (
@@ -334,6 +330,8 @@ export function SecurityPage() {
       {statusQuery.data && !codes ? (
         <SecurityBody status={statusQuery.data} onCodes={setCodes} />
       ) : null}
+
+      <Passkeys returnTo={securityRoute.to} />
 
       <LinkedIdentities />
     </Stack>

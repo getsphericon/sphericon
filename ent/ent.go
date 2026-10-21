@@ -40,6 +40,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/outboxmessage"
 	"github.com/getsphericon/sphericon/ent/outboxoffset"
+	"github.com/getsphericon/sphericon/ent/passkey"
+	"github.com/getsphericon/sphericon/ent/passkeychallenge"
 	"github.com/getsphericon/sphericon/ent/recoverycode"
 	"github.com/getsphericon/sphericon/ent/schemastate"
 	"github.com/getsphericon/sphericon/ent/segment"
@@ -145,6 +147,8 @@ func checkColumn(t, c string) error {
 			outboundmessage.Table:    outboundmessage.ValidColumn,
 			outboxmessage.Table:      outboxmessage.ValidColumn,
 			outboxoffset.Table:       outboxoffset.ValidColumn,
+			passkey.Table:            passkey.ValidColumn,
+			passkeychallenge.Table:   passkeychallenge.ValidColumn,
 			recoverycode.Table:       recoverycode.ValidColumn,
 			schemastate.Table:        schemastate.ValidColumn,
 			segment.Table:            segment.ValidColumn,

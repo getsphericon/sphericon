@@ -33,7 +33,7 @@ function serve(bodies: unknown[], enabled: boolean, deleted: SiteDeletedWorkspac
         pending: false,
         recoveryCodesRemaining: 0,
         passwordSet: false,
-        providerLoginFresh: false,
+        identityProofFresh: false,
       }),
     ),
     handleSiteWorkspacesListDeleted(() => HttpResponse.json(deleted)),

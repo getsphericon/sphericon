@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/membership"
+	"github.com/getsphericon/sphericon/ent/passkey"
 	"github.com/getsphericon/sphericon/ent/recoverycode"
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/ent/useridentity"
@@ -213,6 +214,21 @@ func (_c *UserCreate) AddRecoveryCodes(v ...*RecoveryCode) *UserCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddRecoveryCodeIDs(ids...)
+}
+
+// AddPasskeyIDs adds the "passkeys" edge to the Passkey entity by IDs.
+func (_c *UserCreate) AddPasskeyIDs(ids ...int64) *UserCreate {
+	_c.mutation.AddPasskeyIDs(ids...)
+	return _c
+}
+
+// AddPasskeys adds the "passkeys" edges to the Passkey entity.
+func (_c *UserCreate) AddPasskeys(v ...*Passkey) *UserCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddPasskeyIDs(ids...)
 }
 
 // AddIdentityIDs adds the "identities" edge to the UserIdentity entity by IDs.
@@ -431,6 +447,22 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(recoverycode.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.PasskeysIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.PasskeysTable,
+			Columns: []string{user.PasskeysColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(passkey.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

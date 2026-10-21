@@ -10,9 +10,15 @@ import {
   Title,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
+import {
+  WebAuthnAbortService,
+  browserSupportsWebAuthn,
+  browserSupportsWebAuthnAutofill,
+  startAuthentication,
+} from '@simplewebauthn/browser'
 import { useMutation } from '@tanstack/react-query'
 import { useNavigate, useRouter, useSearch } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { AnchorLink } from '../../components/RouterLink.tsx'
@@ -22,6 +28,7 @@ import {
   siteAuthResendVerificationMutation,
   siteAuthSecondFactorMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
+import { sitePasskeyLoginBegin, sitePasskeyLoginFinish } from '../../generated/site/sdk.gen.ts'
 import type { SiteLoginInput, SiteLoginResult } from '../../generated/site/types.gen.ts'
 import { zSiteSigninError } from '../../generated/site/zod.gen.ts'
 import { useApiErrorMessage } from '../../hooks/useApiErrorMessage.ts'
@@ -31,6 +38,33 @@ import { Route as forgotPasswordRoute } from '../../routes/forgot-password.tsx'
 import { Route as indexRoute } from '../../routes/index.tsx'
 import { Route as registerRoute } from '../../routes/register.tsx'
 import { isEmailVerificationRequiredError } from '../../utils/apiErrors.ts'
+
+// The browser's side of a Passkey login (ADR 0052): the server's request options go to the
+// authenticator, which offers the Passkeys it holds for this host, and its answer goes back. No
+// email is typed: the server finds the User by the credential. With `useBrowserAutofill` the
+// browser offers them in the email field's autofill list and waits for the person to choose.
+async function loginWithPasskey(useBrowserAutofill: boolean) {
+  const begun = await sitePasskeyLoginBegin({ throwOnError: true })
+  const credential = await startAuthentication({
+    optionsJSON: begun.data.options,
+    useBrowserAutofill,
+  })
+  const finished = await sitePasskeyLoginFinish({
+    body: { credential: { ...credential } },
+    throwOnError: true,
+  })
+  return finished.data
+}
+
+// The person dismissed the browser's prompt, or a newer ceremony replaced this one: not a failure
+// worth a notification.
+function isDeclined(error: unknown) {
+  const names = new Set(['NotAllowedError', 'AbortError'])
+  return (
+    error instanceof Error &&
+    (names.has(error.name) || (error.cause instanceof Error && names.has(error.cause.name)))
+  )
+}
 
 export function LoginPage() {
   const { t } = useTranslation()
@@ -109,6 +143,34 @@ export function LoginPage() {
       showError(error)
     },
   })
+
+  // The Passkey button, and the conditional UI that runs without a click: the browser offers the
+  // person's Passkeys in the email field and the login finishes when one is chosen. Only the button
+  // reports a failure; the conditional ceremony is silent, and ends when the person leaves the page.
+  const passkeyMutation = useMutation({
+    mutationFn: loginWithPasskey,
+    onSuccess: signedIn,
+    onError: (error, useBrowserAutofill) => {
+      if (!useBrowserAutofill && !isDeclined(error)) {
+        showError(error)
+      }
+    },
+  })
+  const { mutate: passkeyLogin } = passkeyMutation
+  useEffect(() => {
+    let active = true
+    const offer = async () => {
+      const supported = await browserSupportsWebAuthnAutofill()
+      if (supported && active) {
+        passkeyLogin(true)
+      }
+    }
+    void offer()
+    return () => {
+      active = false
+      WebAuthnAbortService.cancelCeremony()
+    }
+  }, [passkeyLogin])
 
   const startOver = () => {
     setChallenge(null)
@@ -189,11 +251,22 @@ export function LoginPage() {
         </Alert>
       ) : null}
 
+      {browserSupportsWebAuthn() ? (
+        <Button
+          variant="default"
+          loading={passkeyMutation.isPending && !passkeyMutation.variables}
+          onClick={() => passkeyLogin(false)}
+        >
+          {t(($) => $.login.passkeyButton)}
+        </Button>
+      ) : null}
+
       <form onSubmit={form.onSubmit(handleSubmit)}>
         <Stack>
           <TextInput
             label={t(($) => $.login.emailLabel)}
             type="email"
+            autoComplete="username webauthn"
             required
             {...form.getInputProps('email')}
           />

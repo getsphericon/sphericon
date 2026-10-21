@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/authtoken"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/login"
@@ -72,7 +73,7 @@ func (h *Handlers) SiteAuthSecondFactor(ctx context.Context, req *siteapi.SiteLo
 		v := problem(http.StatusUnauthorized, i18n.T("errors.second_factor_code_invalid", nil))
 		return &v, nil
 	case login.SecondAuthenticated:
-		cookie, err := h.issueSession(ctx, res.Principal, res.Method, res.ProviderLoginAt)
+		cookie, err := h.issueSession(ctx, res.Principal, res.Method, auth.Session{Method: auth.MethodSecondFactor, ProviderLoginAt: res.ProviderLoginAt})
 		if err != nil {
 			return nil, err
 		}

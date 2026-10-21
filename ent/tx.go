@@ -70,6 +70,10 @@ type Tx struct {
 	OutboxMessage *OutboxMessageClient
 	// OutboxOffset is the client for interacting with the OutboxOffset builders.
 	OutboxOffset *OutboxOffsetClient
+	// Passkey is the client for interacting with the Passkey builders.
+	Passkey *PasskeyClient
+	// PasskeyChallenge is the client for interacting with the PasskeyChallenge builders.
+	PasskeyChallenge *PasskeyChallengeClient
 	// RecoveryCode is the client for interacting with the RecoveryCode builders.
 	RecoveryCode *RecoveryCodeClient
 	// SchemaState is the client for interacting with the SchemaState builders.
@@ -263,6 +267,8 @@ func (tx *Tx) init() {
 	tx.OutboundMessage = NewOutboundMessageClient(tx.config)
 	tx.OutboxMessage = NewOutboxMessageClient(tx.config)
 	tx.OutboxOffset = NewOutboxOffsetClient(tx.config)
+	tx.Passkey = NewPasskeyClient(tx.config)
+	tx.PasskeyChallenge = NewPasskeyChallengeClient(tx.config)
 	tx.RecoveryCode = NewRecoveryCodeClient(tx.config)
 	tx.SchemaState = NewSchemaStateClient(tx.config)
 	tx.Segment = NewSegmentClient(tx.config)

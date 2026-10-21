@@ -840,6 +840,112 @@ func (UnimplementedHandler) SiteOAuthDescribe(ctx context.Context, params SiteOA
 	return r, ht.ErrNotImplemented
 }
 
+// SitePasskeyLoginBegin implements SitePasskeyLogin_begin operation.
+//
+// Begin a Passkey login: the request options for the browser, with the challenge in a signed, httpOnly
+// cookie. Anonymous and stateless: nothing is written until the login finishes, so the call cannot be
+// used to fill a table (ADR 0052). 404 when the Instance has no host name a Passkey can be bound to.
+//
+// POST /auth/passkey
+func (UnimplementedHandler) SitePasskeyLoginBegin(ctx context.Context) (r SitePasskeyLoginBeginRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SitePasskeyLoginFinish implements SitePasskeyLogin_finish operation.
+//
+// Finish a Passkey login: the authenticator's response, with no email and no password. The User is
+// found by the credential id; the authenticator must have verified the person and the challenge must
+// not have been used before. A Passkey replaces the password and the Second factor, so the session
+// cookie is set at once (ADR 0052). Every failure (an unknown credential, a response that does not
+// verify, a spent or expired challenge, an Unverified User) answers the same 401 and counts against no
+// one; while a known User's Login throttle delay runs the answer is 429 (ADR 0025).
+//
+// POST /auth/passkey/finish
+func (UnimplementedHandler) SitePasskeyLoginFinish(ctx context.Context, req *SitePasskeyLoginInput, params SitePasskeyLoginFinishParams) (r SitePasskeyLoginFinishRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SitePasskeysBeginCheck implements SitePasskeys_beginCheck operation.
+//
+// Begin a fresh Passkey check: the request options for the browser, naming the User's own Passkeys,
+// with the challenge in a signed, httpOnly cookie. Nothing is written. The check stands in for the
+// password of a User who has none (ADR 0052). 404 when Passkeys are unavailable or the User holds
+// none.
+//
+// POST /me/passkeys/check
+func (UnimplementedHandler) SitePasskeysBeginCheck(ctx context.Context) (r SitePasskeysBeginCheckRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SitePasskeysBeginRegistration implements SitePasskeys_beginRegistration operation.
+//
+// Begin registering a Passkey: the creation options for the browser, with the challenge in a signed,
+// httpOnly cookie. Nothing is written: the ceremony is stateless until it finishes (ADR 0051). The
+// options exclude the Passkeys the User already holds.
+//
+// POST /me/passkeys/registration
+func (UnimplementedHandler) SitePasskeysBeginRegistration(ctx context.Context) (r SitePasskeysBeginRegistrationRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SitePasskeysFinishCheck implements SitePasskeys_finishCheck operation.
+//
+// Finish a Passkey check. The authenticator must have verified the person, by a Passkey of the
+// session's own User, against a challenge not used before. The acting session is reissued carrying the
+// time of the check, which counts as the proof of identity for the next few minutes; no session ends.
+// 403 for any response that does not verify.
+//
+// POST /me/passkeys/check/finish
+func (UnimplementedHandler) SitePasskeysFinishCheck(ctx context.Context, req *SitePasskeyCheckInput, params SitePasskeysFinishCheckParams) (r SitePasskeysFinishCheckRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SitePasskeysFinishRegistration implements SitePasskeys_finishRegistration operation.
+//
+// Finish registering a Passkey, proving the password (or a fresh provider login or Passkey check). The
+// authenticator must have verified the user and the challenge must not have been used before. On
+// success every other session ends, the acting one continues under the cookie set here and the owner
+// is mailed. 403 on a wrong password (it feeds the Login throttle: 429 while its delay runs), 422 when
+// the ceremony fails: no ceremony cookie, an expired or spent challenge, a response the library
+// refuses, an authenticator that did not verify the user, or a credential already registered.
+//
+// POST /me/passkeys/registration/finish
+func (UnimplementedHandler) SitePasskeysFinishRegistration(ctx context.Context, req *SitePasskeyRegistrationInput, params SitePasskeysFinishRegistrationParams) (r SitePasskeysFinishRegistrationRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SitePasskeysList implements SitePasskeys_list operation.
+//
+// List the authenticated User's Passkeys.
+//
+// GET /me/passkeys
+func (UnimplementedHandler) SitePasskeysList(ctx context.Context) (r *SitePasskeyList, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SitePasskeysRemove implements SitePasskeys_remove operation.
+//
+// Remove a Passkey of the authenticated User, proving the password (or a fresh provider login). It no
+// longer signs anyone in, every other session ends, the acting one continues under the cookie set here
+// and the owner is mailed. 403 on a wrong password (it feeds the Login throttle: 429 while its delay
+// runs), 404 for an unknown Passkey or another User's, 409 when it is the last way the User can sign
+// in: no password, no Linked identity and no other Passkey.
+//
+// DELETE /me/passkeys/{id}
+func (UnimplementedHandler) SitePasskeysRemove(ctx context.Context, req *SitePasskeyRemoveInput, params SitePasskeysRemoveParams) (r SitePasskeysRemoveRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SitePasskeysRename implements SitePasskeys_rename operation.
+//
+// Rename a Passkey of the authenticated User. 404 for an unknown Passkey or another User's, 422 for a
+// name that is empty or longer than 100 characters.
+//
+// PATCH /me/passkeys/{id}
+func (UnimplementedHandler) SitePasskeysRename(ctx context.Context, req *SitePasskeyRenameInput, params SitePasskeysRenameParams) (r SitePasskeysRenameRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SitePresetsList implements SitePresets_list operation.
 //
 // List the Presets the Instance offers, with the params schema of each.
@@ -895,8 +1001,8 @@ func (UnimplementedHandler) SitePublicUnsubscribesPerform(ctx context.Context, p
 // Confirm the pending enrollment with the password and a code from the app. On success the Second
 // factor is active, every other session ends and the acting one continues under the cookie set here;
 // the Recovery codes are returned once. 403 on a wrong password (or, for a User with no password, no
-// provider sign-in in the last few minutes) (it feeds the Login throttle: 429 while its delay runs),
-// 422 on a wrong code, 409 without a pending enrollment.
+// provider sign-in or Passkey check in the last few minutes) (it feeds the Login throttle: 429 while
+// its delay runs), 422 on a wrong code, 409 without a pending enrollment.
 //
 // POST /me/second-factor/enrollment/confirm
 func (UnimplementedHandler) SiteSecondFactorConfirmEnrollment(ctx context.Context, req *SiteSecondFactorConfirmInput) (r SiteSecondFactorConfirmEnrollmentRes, _ error) {
@@ -927,8 +1033,8 @@ func (UnimplementedHandler) SiteSecondFactorGetStatus(ctx context.Context) (r *S
 //
 // Replace the Recovery codes with a fresh set (the previous set stops working). Every other session
 // ends; the acting one continues under the cookie set here. 403 on a wrong password (or, for a User
-// with no password, no provider sign-in in the last few minutes) (it feeds the Login throttle: 429
-// while its delay runs), 409 without an active Second factor.
+// with no password, no provider sign-in or Passkey check in the last few minutes) (it feeds the Login
+// throttle: 429 while its delay runs), 409 without an active Second factor.
 //
 // POST /me/second-factor/recovery-codes
 func (UnimplementedHandler) SiteSecondFactorRegenerateRecoveryCodes(ctx context.Context, req *SiteRecoveryCodesInput) (r SiteSecondFactorRegenerateRecoveryCodesRes, _ error) {
@@ -939,9 +1045,9 @@ func (UnimplementedHandler) SiteSecondFactorRegenerateRecoveryCodes(ctx context.
 //
 // Start enrolling a TOTP Second factor, proving the password: creates a pending secret (replacing an
 // earlier pending one). It counts as a Second factor only once confirmed. 403 on a wrong password (or,
-// for a User with no password, no provider sign-in in the last few minutes), 409 when a Second factor
-// is already active. A wrong password feeds the Login throttle, which answers 429 even for a correct
-// one while its delay runs (ADR 0025).
+// for a User with no password, no provider sign-in or Passkey check in the last few minutes), 409 when
+// a Second factor is already active. A wrong password feeds the Login throttle, which answers 429 even
+// for a correct one while its delay runs (ADR 0025).
 //
 // POST /me/second-factor/enrollment
 func (UnimplementedHandler) SiteSecondFactorStartEnrollment(ctx context.Context, req *SiteSecondFactorStartInput) (r SiteSecondFactorStartEnrollmentRes, _ error) {

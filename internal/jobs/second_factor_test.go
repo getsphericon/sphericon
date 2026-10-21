@@ -6,11 +6,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -97,4 +99,20 @@ func TestAFailedSecondFactorReminderIsRetriedOnTheNextTick(t *testing.T) {
 	env.SystemMail.SetErr(nil)
 	remind(t, env, ritaDeadline.Add(-11*time.Hour))
 	assert.Equal(t, []string{fixtures.UmbrellaOwnerRitaEmail}, recipients(env))
+}
+
+// A User who holds a Passkey but no Second factor is withheld after a password login once
+// the grace ends (ADR 0051), so the reminder counts her grace like any other User's and
+// names the Passkey as a way out.
+func TestAPasskeyHolderWithoutASecondFactorIsRemindedAndToldBothWaysOut(t *testing.T) {
+	env := testhelper.Setup(t)
+	started := time.Date(2026, 4, 1, 12, 0, 0, 0, time.UTC)
+	require.NoError(t, env.DB.Workspace.UpdateOneID(fixtures.GlobexID).SetSecondFactorRequiredAt(started).Exec(t.Context()))
+
+	remind(t, env, started.Add(6*24*time.Hour+time.Hour))
+
+	pat := lo.Filter(env.SystemMail.Messages(), func(m messaging.EmailMessage, _ int) bool { return m.To == fixtures.PasskeyPatEmail })
+	require.Len(t, pat, 1, "Pat holds a Passkey and no Second factor: her password sessions are withheld")
+	assert.Contains(t, pat[0].Text, "Passkey")
+	assert.Contains(t, pat[0].Text, "https://app.example/account/security")
 }

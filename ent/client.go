@@ -43,6 +43,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/outboxmessage"
 	"github.com/getsphericon/sphericon/ent/outboxoffset"
+	"github.com/getsphericon/sphericon/ent/passkey"
+	"github.com/getsphericon/sphericon/ent/passkeychallenge"
 	"github.com/getsphericon/sphericon/ent/recoverycode"
 	"github.com/getsphericon/sphericon/ent/schemastate"
 	"github.com/getsphericon/sphericon/ent/segment"
@@ -125,6 +127,10 @@ type Client struct {
 	OutboxMessage *OutboxMessageClient
 	// OutboxOffset is the client for interacting with the OutboxOffset builders.
 	OutboxOffset *OutboxOffsetClient
+	// Passkey is the client for interacting with the Passkey builders.
+	Passkey *PasskeyClient
+	// PasskeyChallenge is the client for interacting with the PasskeyChallenge builders.
+	PasskeyChallenge *PasskeyChallengeClient
 	// RecoveryCode is the client for interacting with the RecoveryCode builders.
 	RecoveryCode *RecoveryCodeClient
 	// SchemaState is the client for interacting with the SchemaState builders.
@@ -198,6 +204,8 @@ func (c *Client) init() {
 	c.OutboundMessage = NewOutboundMessageClient(c.config)
 	c.OutboxMessage = NewOutboxMessageClient(c.config)
 	c.OutboxOffset = NewOutboxOffsetClient(c.config)
+	c.Passkey = NewPasskeyClient(c.config)
+	c.PasskeyChallenge = NewPasskeyChallengeClient(c.config)
 	c.RecoveryCode = NewRecoveryCodeClient(c.config)
 	c.SchemaState = NewSchemaStateClient(c.config)
 	c.Segment = NewSegmentClient(c.config)
@@ -335,6 +343,8 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		OutboundMessage:    NewOutboundMessageClient(cfg),
 		OutboxMessage:      NewOutboxMessageClient(cfg),
 		OutboxOffset:       NewOutboxOffsetClient(cfg),
+		Passkey:            NewPasskeyClient(cfg),
+		PasskeyChallenge:   NewPasskeyChallengeClient(cfg),
 		RecoveryCode:       NewRecoveryCodeClient(cfg),
 		SchemaState:        NewSchemaStateClient(cfg),
 		Segment:            NewSegmentClient(cfg),
@@ -399,6 +409,8 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		OutboundMessage:    NewOutboundMessageClient(cfg),
 		OutboxMessage:      NewOutboxMessageClient(cfg),
 		OutboxOffset:       NewOutboxOffsetClient(cfg),
+		Passkey:            NewPasskeyClient(cfg),
+		PasskeyChallenge:   NewPasskeyChallengeClient(cfg),
 		RecoveryCode:       NewRecoveryCodeClient(cfg),
 		SchemaState:        NewSchemaStateClient(cfg),
 		Segment:            NewSegmentClient(cfg),
@@ -450,10 +462,11 @@ func (c *Client) Use(hooks ...Hook) {
 		c.Confirmation, c.Contact, c.ContactTag, c.CustomField, c.EmailTemplate,
 		c.Erasure, c.Event, c.Hold, c.InstanceState, c.Integration, c.Invitation,
 		c.JoinDomain, c.Membership, c.OAuthClient, c.OAuthCode, c.OAuthRefreshToken,
-		c.OutboundMessage, c.OutboxMessage, c.OutboxOffset, c.RecoveryCode,
-		c.SchemaState, c.Segment, c.SendLimiter, c.SendingDomain, c.ServiceCredential,
-		c.StaffMember, c.Suppression, c.Tag, c.TrackingHostChange, c.Unsubscribe,
-		c.Usage, c.User, c.UserIdentity, c.Visitor, c.WebhookEndpoint, c.Workspace,
+		c.OutboundMessage, c.OutboxMessage, c.OutboxOffset, c.Passkey,
+		c.PasskeyChallenge, c.RecoveryCode, c.SchemaState, c.Segment, c.SendLimiter,
+		c.SendingDomain, c.ServiceCredential, c.StaffMember, c.Suppression, c.Tag,
+		c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User, c.UserIdentity,
+		c.Visitor, c.WebhookEndpoint, c.Workspace,
 	} {
 		n.Use(hooks...)
 	}
@@ -468,10 +481,11 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.Confirmation, c.Contact, c.ContactTag, c.CustomField, c.EmailTemplate,
 		c.Erasure, c.Event, c.Hold, c.InstanceState, c.Integration, c.Invitation,
 		c.JoinDomain, c.Membership, c.OAuthClient, c.OAuthCode, c.OAuthRefreshToken,
-		c.OutboundMessage, c.OutboxMessage, c.OutboxOffset, c.RecoveryCode,
-		c.SchemaState, c.Segment, c.SendLimiter, c.SendingDomain, c.ServiceCredential,
-		c.StaffMember, c.Suppression, c.Tag, c.TrackingHostChange, c.Unsubscribe,
-		c.Usage, c.User, c.UserIdentity, c.Visitor, c.WebhookEndpoint, c.Workspace,
+		c.OutboundMessage, c.OutboxMessage, c.OutboxOffset, c.Passkey,
+		c.PasskeyChallenge, c.RecoveryCode, c.SchemaState, c.Segment, c.SendLimiter,
+		c.SendingDomain, c.ServiceCredential, c.StaffMember, c.Suppression, c.Tag,
+		c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User, c.UserIdentity,
+		c.Visitor, c.WebhookEndpoint, c.Workspace,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -536,6 +550,10 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.OutboxMessage.mutate(ctx, m)
 	case *OutboxOffsetMutation:
 		return c.OutboxOffset.mutate(ctx, m)
+	case *PasskeyMutation:
+		return c.Passkey.mutate(ctx, m)
+	case *PasskeyChallengeMutation:
+		return c.PasskeyChallenge.mutate(ctx, m)
 	case *RecoveryCodeMutation:
 		return c.RecoveryCode.mutate(ctx, m)
 	case *SchemaStateMutation:
@@ -4986,6 +5004,288 @@ func (c *OutboxOffsetClient) mutate(ctx context.Context, m *OutboxOffsetMutation
 	}
 }
 
+// PasskeyClient is a client for the Passkey schema.
+type PasskeyClient struct {
+	config
+}
+
+// NewPasskeyClient returns a client for the Passkey from the given config.
+func NewPasskeyClient(c config) *PasskeyClient {
+	return &PasskeyClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `passkey.Hooks(f(g(h())))`.
+func (c *PasskeyClient) Use(hooks ...Hook) {
+	c.hooks.Passkey = append(c.hooks.Passkey, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `passkey.Intercept(f(g(h())))`.
+func (c *PasskeyClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Passkey = append(c.inters.Passkey, interceptors...)
+}
+
+// Create returns a builder for creating a Passkey entity.
+func (c *PasskeyClient) Create() *PasskeyCreate {
+	mutation := newPasskeyMutation(c.config, OpCreate)
+	return &PasskeyCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Passkey entities.
+func (c *PasskeyClient) CreateBulk(builders ...*PasskeyCreate) *PasskeyCreateBulk {
+	return &PasskeyCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *PasskeyClient) MapCreateBulk(slice any, setFunc func(*PasskeyCreate, int)) *PasskeyCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &PasskeyCreateBulk{err: fmt.Errorf("calling to PasskeyClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*PasskeyCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &PasskeyCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Passkey.
+func (c *PasskeyClient) Update() *PasskeyUpdate {
+	mutation := newPasskeyMutation(c.config, OpUpdate)
+	return &PasskeyUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *PasskeyClient) UpdateOne(_m *Passkey) *PasskeyUpdateOne {
+	mutation := newPasskeyMutation(c.config, OpUpdateOne, withPasskey(_m))
+	return &PasskeyUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *PasskeyClient) UpdateOneID(id int64) *PasskeyUpdateOne {
+	mutation := newPasskeyMutation(c.config, OpUpdateOne, withPasskeyID(id))
+	return &PasskeyUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Passkey.
+func (c *PasskeyClient) Delete() *PasskeyDelete {
+	mutation := newPasskeyMutation(c.config, OpDelete)
+	return &PasskeyDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *PasskeyClient) DeleteOne(_m *Passkey) *PasskeyDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *PasskeyClient) DeleteOneID(id int64) *PasskeyDeleteOne {
+	builder := c.Delete().Where(passkey.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &PasskeyDeleteOne{builder}
+}
+
+// Query returns a query builder for Passkey.
+func (c *PasskeyClient) Query() *PasskeyQuery {
+	return &PasskeyQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypePasskey},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Passkey entity by its id.
+func (c *PasskeyClient) Get(ctx context.Context, id int64) (*Passkey, error) {
+	return c.Query().Where(passkey.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *PasskeyClient) GetX(ctx context.Context, id int64) *Passkey {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryUser queries the user edge of a Passkey.
+func (c *PasskeyClient) QueryUser(_m *Passkey) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(passkey.Table, passkey.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, passkey.UserTable, passkey.UserColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *PasskeyClient) Hooks() []Hook {
+	return c.hooks.Passkey
+}
+
+// Interceptors returns the client interceptors.
+func (c *PasskeyClient) Interceptors() []Interceptor {
+	return c.inters.Passkey
+}
+
+func (c *PasskeyClient) mutate(ctx context.Context, m *PasskeyMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&PasskeyCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&PasskeyUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&PasskeyUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&PasskeyDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Passkey mutation op: %q", m.Op())
+	}
+}
+
+// PasskeyChallengeClient is a client for the PasskeyChallenge schema.
+type PasskeyChallengeClient struct {
+	config
+}
+
+// NewPasskeyChallengeClient returns a client for the PasskeyChallenge from the given config.
+func NewPasskeyChallengeClient(c config) *PasskeyChallengeClient {
+	return &PasskeyChallengeClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `passkeychallenge.Hooks(f(g(h())))`.
+func (c *PasskeyChallengeClient) Use(hooks ...Hook) {
+	c.hooks.PasskeyChallenge = append(c.hooks.PasskeyChallenge, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `passkeychallenge.Intercept(f(g(h())))`.
+func (c *PasskeyChallengeClient) Intercept(interceptors ...Interceptor) {
+	c.inters.PasskeyChallenge = append(c.inters.PasskeyChallenge, interceptors...)
+}
+
+// Create returns a builder for creating a PasskeyChallenge entity.
+func (c *PasskeyChallengeClient) Create() *PasskeyChallengeCreate {
+	mutation := newPasskeyChallengeMutation(c.config, OpCreate)
+	return &PasskeyChallengeCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of PasskeyChallenge entities.
+func (c *PasskeyChallengeClient) CreateBulk(builders ...*PasskeyChallengeCreate) *PasskeyChallengeCreateBulk {
+	return &PasskeyChallengeCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *PasskeyChallengeClient) MapCreateBulk(slice any, setFunc func(*PasskeyChallengeCreate, int)) *PasskeyChallengeCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &PasskeyChallengeCreateBulk{err: fmt.Errorf("calling to PasskeyChallengeClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*PasskeyChallengeCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &PasskeyChallengeCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for PasskeyChallenge.
+func (c *PasskeyChallengeClient) Update() *PasskeyChallengeUpdate {
+	mutation := newPasskeyChallengeMutation(c.config, OpUpdate)
+	return &PasskeyChallengeUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *PasskeyChallengeClient) UpdateOne(_m *PasskeyChallenge) *PasskeyChallengeUpdateOne {
+	mutation := newPasskeyChallengeMutation(c.config, OpUpdateOne, withPasskeyChallenge(_m))
+	return &PasskeyChallengeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *PasskeyChallengeClient) UpdateOneID(id int64) *PasskeyChallengeUpdateOne {
+	mutation := newPasskeyChallengeMutation(c.config, OpUpdateOne, withPasskeyChallengeID(id))
+	return &PasskeyChallengeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for PasskeyChallenge.
+func (c *PasskeyChallengeClient) Delete() *PasskeyChallengeDelete {
+	mutation := newPasskeyChallengeMutation(c.config, OpDelete)
+	return &PasskeyChallengeDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *PasskeyChallengeClient) DeleteOne(_m *PasskeyChallenge) *PasskeyChallengeDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *PasskeyChallengeClient) DeleteOneID(id int64) *PasskeyChallengeDeleteOne {
+	builder := c.Delete().Where(passkeychallenge.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &PasskeyChallengeDeleteOne{builder}
+}
+
+// Query returns a query builder for PasskeyChallenge.
+func (c *PasskeyChallengeClient) Query() *PasskeyChallengeQuery {
+	return &PasskeyChallengeQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypePasskeyChallenge},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a PasskeyChallenge entity by its id.
+func (c *PasskeyChallengeClient) Get(ctx context.Context, id int64) (*PasskeyChallenge, error) {
+	return c.Query().Where(passkeychallenge.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *PasskeyChallengeClient) GetX(ctx context.Context, id int64) *PasskeyChallenge {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *PasskeyChallengeClient) Hooks() []Hook {
+	return c.hooks.PasskeyChallenge
+}
+
+// Interceptors returns the client interceptors.
+func (c *PasskeyChallengeClient) Interceptors() []Interceptor {
+	return c.inters.PasskeyChallenge
+}
+
+func (c *PasskeyChallengeClient) mutate(ctx context.Context, m *PasskeyChallengeMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&PasskeyChallengeCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&PasskeyChallengeUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&PasskeyChallengeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&PasskeyChallengeDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown PasskeyChallenge mutation op: %q", m.Op())
+	}
+}
+
 // RecoveryCodeClient is a client for the RecoveryCode schema.
 type RecoveryCodeClient struct {
 	config
@@ -6914,6 +7214,22 @@ func (c *UserClient) QueryRecoveryCodes(_m *User) *RecoveryCodeQuery {
 	return query
 }
 
+// QueryPasskeys queries the passkeys edge of a User.
+func (c *UserClient) QueryPasskeys(_m *User) *PasskeyQuery {
+	query := (&PasskeyClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(passkey.Table, passkey.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.PasskeysTable, user.PasskeysColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryIdentities queries the identities edge of a User.
 func (c *UserClient) QueryIdentities(_m *User) *UserIdentityQuery {
 	query := (&UserIdentityClient{config: c.config}).Query()
@@ -8022,20 +8338,22 @@ type (
 		BrandKit, Broadcast, BroadcastRecipient, Confirmation, Contact, ContactTag,
 		CustomField, EmailTemplate, Erasure, Event, Hold, InstanceState, Integration,
 		Invitation, JoinDomain, Membership, OAuthClient, OAuthCode, OAuthRefreshToken,
-		OutboundMessage, OutboxMessage, OutboxOffset, RecoveryCode, SchemaState,
-		Segment, SendLimiter, SendingDomain, ServiceCredential, StaffMember,
-		Suppression, Tag, TrackingHostChange, Unsubscribe, Usage, User, UserIdentity,
-		Visitor, WebhookEndpoint, Workspace []ent.Hook
+		OutboundMessage, OutboxMessage, OutboxOffset, Passkey, PasskeyChallenge,
+		RecoveryCode, SchemaState, Segment, SendLimiter, SendingDomain,
+		ServiceCredential, StaffMember, Suppression, Tag, TrackingHostChange,
+		Unsubscribe, Usage, User, UserIdentity, Visitor, WebhookEndpoint,
+		Workspace []ent.Hook
 	}
 	inters struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, AutomationVersion,
 		BrandKit, Broadcast, BroadcastRecipient, Confirmation, Contact, ContactTag,
 		CustomField, EmailTemplate, Erasure, Event, Hold, InstanceState, Integration,
 		Invitation, JoinDomain, Membership, OAuthClient, OAuthCode, OAuthRefreshToken,
-		OutboundMessage, OutboxMessage, OutboxOffset, RecoveryCode, SchemaState,
-		Segment, SendLimiter, SendingDomain, ServiceCredential, StaffMember,
-		Suppression, Tag, TrackingHostChange, Unsubscribe, Usage, User, UserIdentity,
-		Visitor, WebhookEndpoint, Workspace []ent.Interceptor
+		OutboundMessage, OutboxMessage, OutboxOffset, Passkey, PasskeyChallenge,
+		RecoveryCode, SchemaState, Segment, SendLimiter, SendingDomain,
+		ServiceCredential, StaffMember, Suppression, Tag, TrackingHostChange,
+		Unsubscribe, Usage, User, UserIdentity, Visitor, WebhookEndpoint,
+		Workspace []ent.Interceptor
 	}
 )
 

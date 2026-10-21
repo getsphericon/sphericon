@@ -10417,6 +10417,339 @@ func decodeSiteOAuthDescribeParams(args [0]string, argsEscaped bool, r *http.Req
 	return params, nil
 }
 
+// SitePasskeyLoginFinishParams is parameters of SitePasskeyLogin_finish operation.
+type SitePasskeyLoginFinishParams struct {
+	// The ceremony cookie set by `begin`.
+	PASSKEY OptString `json:",omitempty,omitzero"`
+}
+
+func unpackSitePasskeyLoginFinishParams(packed middleware.Parameters) (params SitePasskeyLoginFinishParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "PASSKEY",
+			In:   "cookie",
+		}
+		if v, ok := packed[key]; ok {
+			params.PASSKEY = v.(OptString)
+		}
+	}
+	return params
+}
+
+func decodeSitePasskeyLoginFinishParams(args [0]string, argsEscaped bool, r *http.Request) (params SitePasskeyLoginFinishParams, _ error) {
+	c := uri.NewCookieDecoder(r)
+	// Decode cookie: PASSKEY.
+	if err := func() error {
+		cfg := uri.CookieParameterDecodingConfig{
+			Name:    "PASSKEY",
+			Explode: false,
+		}
+		if err := c.HasParam(cfg); err == nil {
+			if err := c.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotPASSKEYVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotPASSKEYVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.PASSKEY.SetTo(paramsDotPASSKEYVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "PASSKEY",
+			In:   "cookie",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// SitePasskeysFinishCheckParams is parameters of SitePasskeys_finishCheck operation.
+type SitePasskeysFinishCheckParams struct {
+	// The ceremony cookie set by `beginCheck`.
+	PASSKEY OptString `json:",omitempty,omitzero"`
+}
+
+func unpackSitePasskeysFinishCheckParams(packed middleware.Parameters) (params SitePasskeysFinishCheckParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "PASSKEY",
+			In:   "cookie",
+		}
+		if v, ok := packed[key]; ok {
+			params.PASSKEY = v.(OptString)
+		}
+	}
+	return params
+}
+
+func decodeSitePasskeysFinishCheckParams(args [0]string, argsEscaped bool, r *http.Request) (params SitePasskeysFinishCheckParams, _ error) {
+	c := uri.NewCookieDecoder(r)
+	// Decode cookie: PASSKEY.
+	if err := func() error {
+		cfg := uri.CookieParameterDecodingConfig{
+			Name:    "PASSKEY",
+			Explode: false,
+		}
+		if err := c.HasParam(cfg); err == nil {
+			if err := c.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotPASSKEYVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotPASSKEYVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.PASSKEY.SetTo(paramsDotPASSKEYVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "PASSKEY",
+			In:   "cookie",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// SitePasskeysFinishRegistrationParams is parameters of SitePasskeys_finishRegistration operation.
+type SitePasskeysFinishRegistrationParams struct {
+	// The ceremony cookie set by `beginRegistration`.
+	PASSKEY OptString `json:",omitempty,omitzero"`
+}
+
+func unpackSitePasskeysFinishRegistrationParams(packed middleware.Parameters) (params SitePasskeysFinishRegistrationParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "PASSKEY",
+			In:   "cookie",
+		}
+		if v, ok := packed[key]; ok {
+			params.PASSKEY = v.(OptString)
+		}
+	}
+	return params
+}
+
+func decodeSitePasskeysFinishRegistrationParams(args [0]string, argsEscaped bool, r *http.Request) (params SitePasskeysFinishRegistrationParams, _ error) {
+	c := uri.NewCookieDecoder(r)
+	// Decode cookie: PASSKEY.
+	if err := func() error {
+		cfg := uri.CookieParameterDecodingConfig{
+			Name:    "PASSKEY",
+			Explode: false,
+		}
+		if err := c.HasParam(cfg); err == nil {
+			if err := c.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotPASSKEYVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotPASSKEYVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.PASSKEY.SetTo(paramsDotPASSKEYVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "PASSKEY",
+			In:   "cookie",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// SitePasskeysRemoveParams is parameters of SitePasskeys_remove operation.
+type SitePasskeysRemoveParams struct {
+	ID EntityId
+}
+
+func unpackSitePasskeysRemoveParams(packed middleware.Parameters) (params SitePasskeysRemoveParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "id",
+			In:   "path",
+		}
+		params.ID = packed[key].(EntityId)
+	}
+	return params
+}
+
+func decodeSitePasskeysRemoveParams(args [1]string, argsEscaped bool, r *http.Request) (params SitePasskeysRemoveParams, _ error) {
+	// Decode path: id.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "id",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotIDVal int64
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToStringInt64(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotIDVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.ID = EntityId(paramsDotIDVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "id",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// SitePasskeysRenameParams is parameters of SitePasskeys_rename operation.
+type SitePasskeysRenameParams struct {
+	ID EntityId
+}
+
+func unpackSitePasskeysRenameParams(packed middleware.Parameters) (params SitePasskeysRenameParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "id",
+			In:   "path",
+		}
+		params.ID = packed[key].(EntityId)
+	}
+	return params
+}
+
+func decodeSitePasskeysRenameParams(args [1]string, argsEscaped bool, r *http.Request) (params SitePasskeysRenameParams, _ error) {
+	// Decode path: id.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "id",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotIDVal int64
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToStringInt64(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotIDVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.ID = EntityId(paramsDotIDVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "id",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
 // SitePublicConfirmationsPerformParams is parameters of SitePublicConfirmations_perform operation.
 type SitePublicConfirmationsPerformParams struct {
 	Token string

@@ -30,6 +30,18 @@ const (
 	// flowUserDeleted is the notice, to the address, that its User was deleted (ADR 0050): no
 	// token and no link, so it can never be a way in.
 	flowUserDeleted = "user_deleted"
+	// flowPasskeyChanged is the notice that a Passkey was added or removed (ADR 0052): Change
+	// says which and Provider carries the Passkey's name. No token and no link.
+	flowPasskeyChanged = "passkey_changed"
+)
+
+// PasskeyChange is what a Passkey notice reports.
+type PasskeyChange string
+
+// PasskeyAdded and PasskeyRemoved are the changes a Passkey notice reports.
+const (
+	PasskeyAdded   PasskeyChange = "added"
+	PasskeyRemoved PasskeyChange = "removed"
 )
 
 // SendAuthMailArgs is the river payload for a self-service account email. Flow
@@ -40,6 +52,9 @@ type SendAuthMailArgs struct {
 	Token string `json:"token"`
 	// Provider is the display name of the Sign-in provider (identity_linked only).
 	Provider string `json:"provider,omitempty"`
+	// Change is PasskeyAdded or PasskeyRemoved, and Name the Passkey's name (passkey_changed only).
+	Change PasskeyChange `json:"change,omitempty"`
+	Name   string        `json:"name,omitempty"`
 	// Discard builds the mail and drops it. Forgot-password enqueues a Discard job
 	// for an address that gets no mail (unknown, or over its budget), so every
 	// request does the same work and the response time says nothing about the
@@ -84,6 +99,9 @@ func buildAuthMail(appURL string, args SendAuthMailArgs) (messaging.EmailMessage
 	if args.Flow == flowIdentityLinked {
 		return buildIdentityLinkedMail(appURL, args), nil
 	}
+	if args.Flow == flowPasskeyChanged {
+		return buildPasskeyChangedMail(args)
+	}
 	if args.Flow == flowUserDeleted {
 		return buildUserDeletedMail(args.Email), nil
 	}
@@ -113,6 +131,21 @@ func buildAddressTakenMail(appURL, to string) messaging.EmailMessage {
 func buildUserDeletedMail(to string) messaging.EmailMessage {
 	body := fmt.Sprintf("%s\n\n%s\n", i18n.T("email.user_deleted.intro", nil), i18n.T("email.user_deleted.not_me", nil))
 	return messaging.EmailMessage{To: to, Subject: i18n.T("email.user_deleted.subject", nil), Text: body}
+}
+
+// buildPasskeyChangedMail renders the notice a Passkey change sends the owner of the account.
+func buildPasskeyChangedMail(args SendAuthMailArgs) (messaging.EmailMessage, error) {
+	var subjectID, introID string
+	switch args.Change {
+	case PasskeyAdded:
+		subjectID, introID = "email.passkey_added.subject", "email.passkey_added.intro"
+	case PasskeyRemoved:
+		subjectID, introID = "email.passkey_removed.subject", "email.passkey_removed.intro"
+	default:
+		return messaging.EmailMessage{}, fmt.Errorf("send auth mail: unknown passkey change %q", args.Change)
+	}
+	body := fmt.Sprintf("%s\n\n%s\n", i18n.T(introID, map[string]any{"Name": args.Name}), i18n.T("email.passkey_changed.not_me", nil))
+	return messaging.EmailMessage{To: args.Email, Subject: i18n.T(subjectID, nil), Text: body}, nil
 }
 
 // buildIdentityLinkedMail renders the notice a silent link of a Sign-in provider sends the
@@ -186,6 +219,11 @@ func (c *Client) EnqueueIdentityLinkedNotice(ctx context.Context, email, provide
 // EnqueueUserDeletedNotice schedules the notice that the User with this address was deleted.
 func (c *Client) EnqueueUserDeletedNotice(ctx context.Context, email string) error {
 	return c.enqueue(ctx, SendAuthMailArgs{Flow: flowUserDeleted, Email: email})
+}
+
+// EnqueuePasskeyNotice schedules the notice that a Passkey was added or removed.
+func (c *Client) EnqueuePasskeyNotice(ctx context.Context, email string, change PasskeyChange, name string) error {
+	return c.enqueue(ctx, SendAuthMailArgs{Flow: flowPasskeyChanged, Email: email, Change: change, Name: name})
 }
 
 func (c *Client) enqueue(ctx context.Context, args SendAuthMailArgs) error {

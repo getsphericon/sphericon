@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/membership"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/apitokens"
 	"github.com/getsphericon/sphericon/internal/events"
 )
@@ -92,7 +93,7 @@ func (e *Env) NewWorkspace(tb testing.TB) *Workspace {
 	api, err := externalapi.NewClient(e.BaseURL+"/api", bearer(minted.Value))
 	require.NoError(tb, err)
 
-	cookie, err := e.sessions.Issue(user)
+	cookie, err := e.sessions.Issue(user, auth.Session{Method: auth.MethodPassword})
 	require.NoError(tb, err)
 	site, err := siteapi.NewClient(e.BaseURL+"/site", cookieSource(cookie.Value))
 	require.NoError(tb, err)

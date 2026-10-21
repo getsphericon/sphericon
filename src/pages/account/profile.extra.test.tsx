@@ -57,7 +57,7 @@ function serveProfile(
         pending: false,
         recoveryCodesRemaining: 0,
         passwordSet: true,
-        providerLoginFresh: false,
+        identityProofFresh: false,
       },
     }),
     handleSiteWorkspacesListDeleted({ body: [] }),

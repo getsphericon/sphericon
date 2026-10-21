@@ -78,7 +78,7 @@ func (h *Handlers) SiteIdentitiesUnlink(ctx context.Context, params siteapi.Site
 	case err != nil:
 		return nil, err
 	}
-	cookie, err := h.sessions.IssueAfterProviderLogin(u, providerLoginAt(ctx))
+	cookie, err := h.sessions.Issue(u, currentSession(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -107,11 +107,11 @@ func (h *Handlers) linkProvider(ctx context.Context, flow signin.Flow, session s
 	// Signing in again with a provider account the User already had is a fresh provider
 	// login. A provider account added now proves nothing about the person (a stolen session
 	// could add its own), so the session keeps the login time it had.
-	loginAt := h.sessions.ProviderLoginOf(session)
+	sess, _ := h.sessions.SessionOf(session)
 	if !added {
-		loginAt = h.now()
+		sess.ProviderLoginAt = h.now()
 	}
-	cookie, err := h.sessions.IssueAfterProviderLogin(u, loginAt)
+	cookie, err := h.sessions.Issue(u, sess)
 	if err != nil {
 		return nil, err
 	}

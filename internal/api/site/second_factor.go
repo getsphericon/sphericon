@@ -29,7 +29,7 @@ func (h *Handlers) SiteSecondFactorGetStatus(ctx context.Context) (*siteapi.Site
 	}
 	return &siteapi.SiteSecondFactorStatus{
 		Enabled: st.Enabled, Pending: st.Pending, RecoveryCodesRemaining: int32(st.RecoveryCodesRemaining),
-		PasswordSet: u.PasswordHash != "", ProviderLoginFresh: u.PasswordHash == "" && h.providerLoginFresh(ctx),
+		PasswordSet: u.PasswordHash != "", IdentityProofFresh: u.PasswordHash == "" && h.identityProofFresh(ctx),
 	}, nil
 }
 
@@ -81,7 +81,7 @@ func (h *Handlers) SiteSecondFactorConfirmEnrollment(ctx context.Context, req *s
 	case err != nil:
 		return nil, err
 	}
-	cookie, err := h.sessions.IssueAfterProviderLogin(u, providerLoginAt(ctx))
+	cookie, err := h.sessions.Issue(u, currentSession(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +107,7 @@ func (h *Handlers) SiteSecondFactorRegenerateRecoveryCodes(ctx context.Context, 
 	if err != nil {
 		return nil, err
 	}
-	cookie, err := h.sessions.IssueAfterProviderLogin(u, providerLoginAt(ctx))
+	cookie, err := h.sessions.Issue(u, currentSession(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +136,7 @@ func (h *Handlers) SiteSecondFactorDisable(ctx context.Context, req *siteapi.Sit
 	case err != nil:
 		return nil, err
 	}
-	cookie, err := h.sessions.IssueAfterProviderLogin(u, providerLoginAt(ctx))
+	cookie, err := h.sessions.Issue(u, currentSession(ctx).WithoutSecondFactor())
 	if err != nil {
 		return nil, err
 	}
@@ -152,18 +152,19 @@ func sessionUserID(ctx context.Context) (int64, error) {
 	return a.UserID, nil
 }
 
-// providerLoginProofTTL is how long a Sign-in provider login stands in for the password of a
-// User who has none (ADR 0048): the proof is the time carried by the session, so it needs no
-// store and ends by itself.
-const providerLoginProofTTL = 5 * time.Minute
+// identityProofTTL is how long a Sign-in provider login (ADR 0048) or a Passkey check (ADR 0052)
+// stands in for the password of a User who has none: the proof is the time carried by the
+// session, so it needs no store and ends by itself.
+const identityProofTTL = 5 * time.Minute
 
 // proveIdentity is the proof the steps that ask for the password need (ADR 0020, ADR 0048).
 // A User with a password proves it the way a login does (ADR 0025): while the account's Login
 // throttle delay runs it fails with the 429 rejection even for the right password, and a wrong
 // password counts as a failure of the account. A right one does not reset the counter: only a
 // completed login does, else a session holder could clear a run of second-step guesses. A User
-// with no password proves a Sign-in provider login of the last providerLoginProofTTL instead,
-// carried by the session; there is nothing to guess, so nothing is counted. denied is the
+// with no password proves a Sign-in provider login or a Passkey check of the last
+// identityProofTTL instead, carried by the session; there is nothing to guess, so nothing is
+// counted. denied is the
 // problem to answer with when the proof fails, nil when it holds.
 func (h *Handlers) proveIdentity(ctx context.Context, password siteapi.OptString) (userID int64, denied *siteapi.ProblemDetails, err error) {
 	if userID, err = sessionUserID(ctx); err != nil {
@@ -174,10 +175,10 @@ func (h *Handlers) proveIdentity(ctx context.Context, password siteapi.OptString
 		return 0, nil, err
 	}
 	if u.PasswordHash == "" {
-		if h.providerLoginFresh(ctx) {
+		if h.identityProofFresh(ctx) {
 			return userID, nil, nil
 		}
-		v := problem(http.StatusForbidden, i18n.T("errors.provider_login_required", nil))
+		v := problem(http.StatusForbidden, i18n.T("errors.identity_proof_required", nil))
 		return userID, &v, nil
 	}
 	proved, err := h.proveCurrentPassword(ctx, u, password.Value)
@@ -191,24 +192,30 @@ func (h *Handlers) proveIdentity(ctx context.Context, password siteapi.OptString
 	return userID, &v, nil
 }
 
-// providerLoginFresh is whether the request's session began with a Sign-in provider login
-// recent enough to count as a proof.
-func (h *Handlers) providerLoginFresh(ctx context.Context) bool {
+// identityProofFresh is whether the request's session holds a Sign-in provider login or a
+// Passkey check recent enough to count as a proof.
+func (h *Handlers) identityProofFresh(ctx context.Context) bool {
 	a := auth.GetSiteAuth(ctx)
-	if a == nil || a.ProviderLoginAt.IsZero() {
+	if a == nil {
 		return false
 	}
-	age := h.now().Sub(a.ProviderLoginAt)
-	return age >= 0 && age <= providerLoginProofTTL
+	return h.fresh(a.ProviderLoginAt) || h.fresh(a.PasskeyCheckAt)
 }
 
-// providerLoginAt is the provider login time the request's session carries, to hand to the
-// session that replaces it.
-func providerLoginAt(ctx context.Context) time.Time {
-	if a := auth.GetSiteAuth(ctx); a != nil {
-		return a.ProviderLoginAt
+func (h *Handlers) fresh(at time.Time) bool {
+	if at.IsZero() {
+		return false
 	}
-	return time.Time{}
+	age := h.now().Sub(at)
+	return age >= 0 && age <= identityProofTTL
+}
+
+// currentSession is how the request's session began, to hand to the session that replaces it.
+func currentSession(ctx context.Context) auth.Session {
+	if a := auth.GetSiteAuth(ctx); a != nil {
+		return a.Session
+	}
+	return auth.Session{}
 }
 
 func passwordIncorrectProblem() siteapi.ProblemDetails {

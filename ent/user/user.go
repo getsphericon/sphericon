@@ -42,6 +42,8 @@ const (
 	EdgeSentInvitations = "sent_invitations"
 	// EdgeRecoveryCodes holds the string denoting the recovery_codes edge name in mutations.
 	EdgeRecoveryCodes = "recovery_codes"
+	// EdgePasskeys holds the string denoting the passkeys edge name in mutations.
+	EdgePasskeys = "passkeys"
 	// EdgeIdentities holds the string denoting the identities edge name in mutations.
 	EdgeIdentities = "identities"
 	// Table holds the table name of the user in the database.
@@ -67,6 +69,13 @@ const (
 	RecoveryCodesInverseTable = "recovery_codes"
 	// RecoveryCodesColumn is the table column denoting the recovery_codes relation/edge.
 	RecoveryCodesColumn = "user_id"
+	// PasskeysTable is the table that holds the passkeys relation/edge.
+	PasskeysTable = "passkeys"
+	// PasskeysInverseTable is the table name for the Passkey entity.
+	// It exists in this package in order to avoid circular dependency with the "passkey" package.
+	PasskeysInverseTable = "passkeys"
+	// PasskeysColumn is the table column denoting the passkeys relation/edge.
+	PasskeysColumn = "user_id"
 	// IdentitiesTable is the table that holds the identities relation/edge.
 	IdentitiesTable = "user_identities"
 	// IdentitiesInverseTable is the table name for the UserIdentity entity.
@@ -224,6 +233,20 @@ func ByRecoveryCodes(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// ByPasskeysCount orders the results by passkeys count.
+func ByPasskeysCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newPasskeysStep(), opts...)
+	}
+}
+
+// ByPasskeys orders the results by passkeys terms.
+func ByPasskeys(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newPasskeysStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByIdentitiesCount orders the results by identities count.
 func ByIdentitiesCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -256,6 +279,13 @@ func newRecoveryCodesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(RecoveryCodesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, RecoveryCodesTable, RecoveryCodesColumn),
+	)
+}
+func newPasskeysStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(PasskeysInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, PasskeysTable, PasskeysColumn),
 	)
 }
 func newIdentitiesStep() *sqlgraph.Step {

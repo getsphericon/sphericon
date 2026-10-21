@@ -182,7 +182,7 @@ func (h *Handlers) SiteMembershipsResetSecondFactor(ctx context.Context, params 
 	if errors.Is(err, secondfactor.ErrNotActive) {
 		v := siteapi.SiteMembershipsResetSecondFactorUnprocessableEntity(problemWithErrors(
 			http.StatusUnprocessableEntity,
-			"the member has no second factor",
+			"the member has no second factor or passkey",
 			map[string][]string{"member": {i18n.T("errors.second_factor_not_active", nil)}},
 		))
 		return &v, nil

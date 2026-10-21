@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/login"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
@@ -54,7 +55,7 @@ func (h *Handlers) SiteAuthLogin(ctx context.Context, req *siteapi.SiteLoginInpu
 			Challenge: siteapi.NewOptString(res.Challenge),
 		}}, nil
 	case login.Authenticated:
-		cookie, err := h.issueSession(ctx, res.Principal, accounts.LoginPassword, time.Time{})
+		cookie, err := h.issueSession(ctx, res.Principal, accounts.LoginPassword, auth.Session{Method: auth.MethodPassword})
 		if err != nil {
 			return nil, err
 		}
@@ -88,8 +89,10 @@ func (h *Handlers) newLogin() *login.Module[*ent.User] {
 		Challenge: func(ctx context.Context, u *ent.User) (string, error) {
 			return h.mintLoginChallenge(ctx, u, accounts.LoginPassword, time.Time{})
 		},
-		Parse:  h.parseLoginChallenge,
-		Verify: h.verifyLoginCode,
+		Parse:         h.parseLoginChallenge,
+		Verify:        h.verifyLoginCode,
+		PasskeyFind:   h.findPasskeyLogin,
+		PasskeyVerify: h.verifyPasskeyLogin,
 	}
 	if h.requireVerification {
 		cfg.Gate = func(u *ent.User) bool { return u.EmailVerifiedAt == nil }
@@ -100,8 +103,8 @@ func (h *Handlers) newLogin() *login.Module[*ent.User] {
 // issueSession is the one place a successful sign-in, by password or by a Sign-in provider,
 // is granted: it mints the session cookie and records `user.login`. The session is already
 // granted when the entry is written, so a failed entry cannot veto it.
-func (h *Handlers) issueSession(ctx context.Context, u *ent.User, method string, providerLoginAt time.Time) (*http.Cookie, error) {
-	cookie, err := h.sessions.IssueAfterProviderLogin(u, providerLoginAt)
+func (h *Handlers) issueSession(ctx context.Context, u *ent.User, method string, sess auth.Session) (*http.Cookie, error) {
+	cookie, err := h.sessions.Issue(u, sess)
 	if err != nil {
 		return nil, err
 	}

@@ -10,7 +10,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	gptoken "github.com/go-pkgz/auth/v2/token"
+
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	apiauth "github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -224,4 +227,50 @@ func TestOneSecondFactorSatisfiesEveryRequiringWorkspace(t *testing.T) {
 	}
 	code, _ := siteGet(t, env, fixtures.OwnerJaneEmail, "/site/workspaces/"+fixtures.GlobexPublicID+"/tags")
 	assert.Equal(t, http.StatusForbidden, code, "Jane has no Second factor: Globex is withheld from her")
+}
+
+func TestAStrongSessionMeetsTheRequirementWithoutASecondFactor(t *testing.T) {
+	env := requirementEnv(t, ritaGraceEnds.Add(time.Hour))
+	path := "/site/workspaces/" + fixtures.UmbrellaPublicID + "/tags"
+	get := func(method apiauth.Method) int {
+		rec := httptest.NewRecorder()
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, path, nil)
+		req.AddCookie(&http.Cookie{Name: "JWT", Value: env.SiteToken(t, fixtures.UmbrellaOwnerRitaEmail, func(c *gptoken.Claims) {
+			c.User.SetStrAttr(apiauth.ClaimMethod, string(method))
+		})})
+		env.Server.ServeHTTP(rec, req)
+		return rec.Code
+	}
+
+	assert.Equal(t, http.StatusForbidden, get(apiauth.MethodPassword))
+	assert.Equal(t, http.StatusForbidden, get(apiauth.MethodProvider))
+	assert.Equal(t, http.StatusOK, get(apiauth.MethodSecondFactor))
+	assert.Equal(t, http.StatusOK, get(apiauth.MethodPasskey))
+}
+
+// The grace end the Workspace list shows follows the withhold decision: a Passkey session
+// of a User with no Second factor meets the requirement, a password or provider one does not.
+func TestTheGraceEndFollowsTheStrengthOfTheSession(t *testing.T) {
+	c := &requirementClock{t: time.Date(2026, 4, 1, 12, 0, 0, 0, time.UTC)}
+	env := testhelper.Setup(t, testhelper.WithClock(c.now))
+	require.IsType(t, &siteapi.SiteWorkspaceResource{},
+		setRequirement(t, env.SiteActor(t, fixtures.OwnerJaneEmail), fixtures.GlobexPublicID, true))
+	graceEnds := func(method apiauth.Method) any {
+		rec := httptest.NewRecorder()
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/site/workspaces", nil)
+		req.AddCookie(&http.Cookie{Name: "JWT", Value: env.SiteToken(t, fixtures.PasskeyPatEmail, func(c *gptoken.Claims) {
+			c.User.SetStrAttr(apiauth.ClaimMethod, string(method))
+		})})
+		env.Server.ServeHTTP(rec, req)
+		require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
+		var list []map[string]any
+		require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &list))
+		require.Len(t, list, 1)
+		return list[0]["secondFactorGraceEndsAt"]
+	}
+
+	assert.NotNil(t, graceEnds(apiauth.MethodPassword))
+	assert.NotNil(t, graceEnds(apiauth.MethodProvider))
+	assert.Nil(t, graceEnds(apiauth.MethodPasskey), "a Passkey session has no grace to count down")
+	assert.Nil(t, graceEnds(apiauth.MethodSecondFactor))
 }

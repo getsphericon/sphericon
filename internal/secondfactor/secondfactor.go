@@ -22,6 +22,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/passkey"
 	"github.com/getsphericon/sphericon/ent/recoverycode"
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/internal/accounts"
@@ -317,10 +318,10 @@ func unusedRecoveryCodes(ctx context.Context, client *ent.Client, userID int64) 
 		Count(ctx)
 }
 
-// Reset clears the User's Second factor and Recovery codes and bumps the session
+// Reset clears the User's Second factor, Recovery codes and Passkeys and bumps the session
 // epoch, ending every session of theirs: an Owner or Admin resetting a member of
 // workspaceID. It records `user.second_factor_reset` by actor in that Workspace
-// only. ErrNotActive without a Second factor (nothing changes).
+// only. ErrNotActive without a Second factor or a Passkey (nothing changes).
 func (m *Module) Reset(ctx context.Context, userID int64, actor events.Actor, workspaceID int64) error {
 	return m.reset(ctx, userID, func(pub events.Publisher, _ *ent.Client, u *ent.User) error {
 		return accounts.RecordActionOnUserIn(ctx, pub, actor, u, events.ActionUserSecondFactorReset, nil, workspaceID)
@@ -343,8 +344,15 @@ func (m *Module) reset(ctx context.Context, userID int64, record func(events.Pub
 		if err != nil {
 			return err
 		}
-		if !Active(u) {
+		held, err := tx.Passkey.Query().Where(passkey.UserID(userID)).Exist(ctx)
+		if err != nil {
+			return err
+		}
+		if !Active(u) && !held {
 			return ErrNotActive
+		}
+		if _, err := tx.Passkey.Delete().Where(passkey.UserID(userID)).Exec(ctx); err != nil {
+			return err
 		}
 		if u, err = remove(ctx, tx, userID); err != nil {
 			return err

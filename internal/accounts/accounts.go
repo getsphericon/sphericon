@@ -553,6 +553,9 @@ func (a *Accounts) EndSessions(ctx context.Context, id int64) error {
 // LoginPassword is the method of a login by email and password in the `user.login` entry.
 const LoginPassword = "password"
 
+// LoginPasskey is the method of a login with a Passkey in the `user.login` entry (ADR 0052).
+const LoginPasskey = "passkey"
+
 // RecordLogin records a successful sign-in of the User as `user.login` in the log of
 // every Workspace they belong to (ADR 0022: a login belongs to a User, not a
 // Workspace, so there is no account-level log). The entry names the method: LoginPassword

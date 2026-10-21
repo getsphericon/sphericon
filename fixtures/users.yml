@@ -200,3 +200,28 @@
   created_at: '{{daysAgo 120}}'
   updated_at: '{{daysAgo 120}}'
   email_verified_at: '{{daysAgo 120}}'
+
+# Pat has a password and one Passkey (passkeys.yml), no Second factor and no Membership: the User
+# the Passkey tests sign in as (ADR 0052).
+- id: 25 # fixture: PasskeyPat
+  name: Pat
+  email: pat@passkey.test
+  password_hash: '{{argonHash "password"}}'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+  email_verified_at: '2026-01-01 00:00:00'
+# Peg has no password and no Linked identity: her only way to sign in is her Passkey
+# (passkeys.yml), which she cannot remove (ADR 0052).
+- id: 26 # fixture: PasskeyOnlyPeg
+  name: Peg
+  email: peg@passkey.test
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+  email_verified_at: '2026-01-01 00:00:00'
+# Una holds a Passkey but never used her verify link: no password, no Verified email, so the
+# verification gate (ADR 0030) stops her Passkey login (ADR 0052).
+- id: 27 # fixture: PasskeyUnverifiedUna
+  name: Una
+  email: una@passkey.test
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

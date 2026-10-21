@@ -3,6 +3,7 @@ import { expect, test } from 'vitest'
 
 import {
   handleSiteAuthSigninProviders,
+  handleSitePasskeysList,
   handleSiteSecondFactorConfirmEnrollment,
   handleSiteSecondFactorDisable,
   handleSiteSecondFactorGetStatus,
@@ -77,7 +78,7 @@ function serveSecurity(
   )
 }
 
-const withPassword = { passwordSet: true, providerLoginFresh: false }
+const withPassword = { passwordSet: true, identityProofFresh: false }
 const off: SiteSecondFactorStatus = {
   enabled: false,
   pending: false,
@@ -178,7 +179,7 @@ test('disables the second factor with the password and a code', async () => {
     .toBeInTheDocument()
 })
 
-const passwordless = { passwordSet: false, providerLoginFresh: true }
+const passwordless = { passwordSet: false, identityProofFresh: true }
 
 test('a User with no password enrolls with a fresh provider login and no password field', async () => {
   const calls: Call[] = []
@@ -200,14 +201,36 @@ test('a User with no password enrolls with a fresh provider login and no passwor
   ])
 })
 
+test('a User with no password and a Passkey is offered a Passkey check for the Second factor', async () => {
+  serveSecurity([], { ...off, passwordSet: false, identityProofFresh: false })
+  worker.use(
+    handleSitePasskeysList({
+      body: {
+        items: [{ id: '1', name: 'My laptop', createdAt: '2026-01-01T00:00:00Z' }],
+        available: true,
+        passwordSet: false,
+        identityProofFresh: false,
+      },
+    }),
+  )
+  const { screen } = await renderPage()
+
+  await expect
+    .element(screen.getByRole('button', { name: 'Verify with a passkey' }).first())
+    .toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Set up authenticator app' }).elements()).toHaveLength(
+    0,
+  )
+})
+
 test('a User with no password and an old provider login is sent to sign in with a provider again', async () => {
-  serveSecurity([], { ...off, passwordSet: false, providerLoginFresh: false })
+  serveSecurity([], { ...off, passwordSet: false, identityProofFresh: false })
   worker.use(
     handleSiteAuthSigninProviders({ body: { items: [{ name: 'google', displayName: 'Google' }] } }),
   )
   const { screen } = await renderPage()
 
-  await expect.element(screen.getByText('Sign in again with your provider')).toBeInTheDocument()
+  await expect.element(screen.getByText('Confirm it is you')).toBeInTheDocument()
   await expect
     .element(screen.getByRole('link', { name: 'Continue with Google' }))
     .toHaveAttribute('href', '/site/auth/signin/google/start?return_to=%2Faccount%2Fsecurity')

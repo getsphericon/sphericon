@@ -267,3 +267,18 @@ func TestAuditEntriesOfTheDeletedUserKeepTheirIdAndName(t *testing.T) {
 	globex := entriesNamed(t, env, fixtures.OwnerJaneEmail, fixtures.GlobexPublicID, events.ActionMembershipDelete)
 	assert.Len(t, globex, 1, "every Workspace the User belonged to records its own removal")
 }
+
+func TestDeletingAUserRemovesTheirPasskeys(t *testing.T) {
+	env := testhelper.Setup(t)
+	pat := env.SiteActor(t, fixtures.PasskeyPatEmail)
+	require.Equal(t, 1, passkeysOf(t, env, fixtures.PasskeyPatID))
+
+	res := deleteUser(t, pat, &siteapi.SiteDeleteUserInput{
+		Email:           fixtures.PasskeyPatEmail,
+		CurrentPassword: siteapi.NewOptString(fixtures.PasskeyPatPassword),
+	})
+
+	assert.IsType(t, &siteapi.SiteUserDeleteUserNoContent{}, res)
+	assert.False(t, userExists(t, env, fixtures.PasskeyPatEmail))
+	assert.Zero(t, passkeysOf(t, env, fixtures.PasskeyPatID))
+}

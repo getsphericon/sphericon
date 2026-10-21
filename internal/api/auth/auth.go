@@ -235,9 +235,9 @@ func (h *CollectSecurityHandler) workspaceByKey(ctx context.Context, key string)
 type SiteAuth struct {
 	UserID int64
 	Email  string
-	// ProviderLoginAt is when the session's Sign-in provider login happened (ADR 0048); zero
-	// for a session that began with a password.
-	ProviderLoginAt time.Time
+	// Session is how the session began: its Method and, for a Sign-in provider login (ADR 0048),
+	// the time of that login.
+	Session
 }
 
 var siteAuthKey = struct{ name string }{"siteAuth"}
@@ -286,7 +286,8 @@ func (h *SiteSecurityHandler) HandleApiKeyAuth(ctx context.Context, op siteapi.O
 	if err != nil {
 		return ctx, err
 	}
-	return WithSiteAuth(ctx, &SiteAuth{UserID: u.ID, Email: u.Email, ProviderLoginAt: providerLogin(claims)}), nil
+	sess, _ := sessionOf(claims)
+	return WithSiteAuth(ctx, &SiteAuth{UserID: u.ID, Email: u.Email, Session: sess}), nil
 }
 
 // Verify checks a raw session token (signature, expiry, User id and epoch) and
@@ -307,6 +308,9 @@ func (h *SiteSecurityHandler) verify(ctx context.Context, raw string) (*ent.User
 	}
 	id, epoch, ok := sessionUser(claims)
 	if !ok {
+		return nil, claims, ErrUnauthorized
+	}
+	if _, ok := sessionOf(claims); !ok {
 		return nil, claims, ErrUnauthorized
 	}
 

@@ -78,6 +78,8 @@ func (User) Edges() []ent.Edge {
 		edge.To("sent_invitations", Invitation.Type),
 		edge.To("recovery_codes", RecoveryCode.Type).
 			Annotations(entsql.OnDelete(entsql.Cascade)),
+		edge.To("passkeys", Passkey.Type).
+			Annotations(entsql.OnDelete(entsql.Cascade)),
 		edge.To("identities", UserIdentity.Type).
 			Annotations(entsql.OnDelete(entsql.Cascade)),
 	}

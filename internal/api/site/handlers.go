@@ -27,6 +27,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/instance"
 	"github.com/getsphericon/sphericon/internal/integrations"
+	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/joindomains"
 	"github.com/getsphericon/sphericon/internal/login"
 	"github.com/getsphericon/sphericon/internal/oauthserver"
@@ -81,6 +82,9 @@ type SystemMailEnqueuer interface {
 	// EnqueueSecondFactorRequired emails the Workspace's Users without a Second
 	// factor that its Two-factor requirement is now on, with their deadline (ADR 0020).
 	EnqueueSecondFactorRequired(ctx context.Context, workspaceID int64) error
+	// EnqueuePasskeyNotice queues the notice to the owner of an account that a Passkey was
+	// added or removed (ADR 0052), so a change they did not make is noticed.
+	EnqueuePasskeyNotice(ctx context.Context, email string, change jobs.PasskeyChange, name string) error
 }
 
 type Handlers struct {
@@ -114,6 +118,7 @@ type Handlers struct {
 	analytics      *analytics.Module
 	sessions       *auth.Sessions
 	secondFactor   *secondfactor.Module
+	passkeys       *secondfactor.Passkeys
 	now            func() time.Time
 	accountLink    *accountlink.Link
 	instance       *instance.Module
@@ -208,6 +213,8 @@ type Deps struct {
 	Sessions *auth.Sessions
 	// SecondFactor enrolls and verifies a User's TOTP Second factor (ADR 0020).
 	SecondFactor *secondfactor.Module
+	// Passkeys registers a User's Passkeys (ADR 0052).
+	Passkeys *secondfactor.Passkeys
 	// Clock is the time the site session's expiry and a Two-factor requirement's
 	// grace are checked against (ADR 0020); nil means time.Now. Tests inject one to
 	// move past a session's lifetime or a grace period.
@@ -239,7 +246,7 @@ func NewHandlers(d Deps) *Handlers {
 		segments: d.Segments, eventlog: d.EventLog, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, templates: d.Templates, brandKit: d.BrandKit,
 		automations: d.Automations, broadcasts: d.Broadcasts, welcome: d.Welcome,
 		sysmail: d.SysMail, sendingDomains: d.SendingDomains, joinDomains: d.JoinDomains, integrations: d.Integrations, tokens: d.Tokens, tracker: d.Tracker, appURL: d.AppURL,
-		oauth: d.OAuth, audit: d.Audit, abuseWatch: d.AbuseWatch, supportEmail: d.SupportEmail, mcpURL: d.MCPURL, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, now: now, instance: d.Instance, accountLink: d.AccountLink, holds: d.Holds, requireVerification: d.RequireEmailVerification, signupOpen: d.SignupOpen,
+		oauth: d.OAuth, audit: d.Audit, abuseWatch: d.AbuseWatch, supportEmail: d.SupportEmail, mcpURL: d.MCPURL, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, passkeys: d.Passkeys, now: now, instance: d.Instance, accountLink: d.AccountLink, holds: d.Holds, requireVerification: d.RequireEmailVerification, signupOpen: d.SignupOpen,
 		signin:     d.Signin,
 		challenges: d.Tokens.WithClock(d.Clock),
 	}
@@ -295,7 +302,7 @@ func (h *Handlers) membershipFor(ctx context.Context, publicID siteapi.Workspace
 	if err != nil {
 		return nil, nil, err
 	}
-	if secondfactor.Withheld(m, h.now()) {
+	if secondfactor.Withheld(m, h.now(), currentSession(ctx).Method.Strong()) {
 		return nil, nil, secondFactorRequiredError{}
 	}
 	return s, m, nil

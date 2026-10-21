@@ -3809,6 +3809,282 @@ func (o OptSiteMembershipSource) Or(d SiteMembershipSource) SiteMembershipSource
 	return d
 }
 
+// NewOptSitePasskeyAuthenticatorSelection returns new OptSitePasskeyAuthenticatorSelection with value set to v.
+func NewOptSitePasskeyAuthenticatorSelection(v SitePasskeyAuthenticatorSelection) OptSitePasskeyAuthenticatorSelection {
+	return OptSitePasskeyAuthenticatorSelection{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSitePasskeyAuthenticatorSelection is optional SitePasskeyAuthenticatorSelection.
+type OptSitePasskeyAuthenticatorSelection struct {
+	Value SitePasskeyAuthenticatorSelection
+	Set   bool
+}
+
+// IsSet returns true if OptSitePasskeyAuthenticatorSelection was set.
+func (o OptSitePasskeyAuthenticatorSelection) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSitePasskeyAuthenticatorSelection) Reset() {
+	var v SitePasskeyAuthenticatorSelection
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSitePasskeyAuthenticatorSelection) SetTo(v SitePasskeyAuthenticatorSelection) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSitePasskeyAuthenticatorSelection) Get() (v SitePasskeyAuthenticatorSelection, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSitePasskeyAuthenticatorSelection) Or(d SitePasskeyAuthenticatorSelection) SitePasskeyAuthenticatorSelection {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptSitePasskeyAuthenticatorSelectionAuthenticatorAttachment returns new OptSitePasskeyAuthenticatorSelectionAuthenticatorAttachment with value set to v.
+func NewOptSitePasskeyAuthenticatorSelectionAuthenticatorAttachment(v SitePasskeyAuthenticatorSelectionAuthenticatorAttachment) OptSitePasskeyAuthenticatorSelectionAuthenticatorAttachment {
+	return OptSitePasskeyAuthenticatorSelectionAuthenticatorAttachment{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSitePasskeyAuthenticatorSelectionAuthenticatorAttachment is optional SitePasskeyAuthenticatorSelectionAuthenticatorAttachment.
+type OptSitePasskeyAuthenticatorSelectionAuthenticatorAttachment struct {
+	Value SitePasskeyAuthenticatorSelectionAuthenticatorAttachment
+	Set   bool
+}
+
+// IsSet returns true if OptSitePasskeyAuthenticatorSelectionAuthenticatorAttachment was set.
+func (o OptSitePasskeyAuthenticatorSelectionAuthenticatorAttachment) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSitePasskeyAuthenticatorSelectionAuthenticatorAttachment) Reset() {
+	var v SitePasskeyAuthenticatorSelectionAuthenticatorAttachment
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSitePasskeyAuthenticatorSelectionAuthenticatorAttachment) SetTo(v SitePasskeyAuthenticatorSelectionAuthenticatorAttachment) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSitePasskeyAuthenticatorSelectionAuthenticatorAttachment) Get() (v SitePasskeyAuthenticatorSelectionAuthenticatorAttachment, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSitePasskeyAuthenticatorSelectionAuthenticatorAttachment) Or(d SitePasskeyAuthenticatorSelectionAuthenticatorAttachment) SitePasskeyAuthenticatorSelectionAuthenticatorAttachment {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptSitePasskeyAuthenticatorSelectionResidentKey returns new OptSitePasskeyAuthenticatorSelectionResidentKey with value set to v.
+func NewOptSitePasskeyAuthenticatorSelectionResidentKey(v SitePasskeyAuthenticatorSelectionResidentKey) OptSitePasskeyAuthenticatorSelectionResidentKey {
+	return OptSitePasskeyAuthenticatorSelectionResidentKey{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSitePasskeyAuthenticatorSelectionResidentKey is optional SitePasskeyAuthenticatorSelectionResidentKey.
+type OptSitePasskeyAuthenticatorSelectionResidentKey struct {
+	Value SitePasskeyAuthenticatorSelectionResidentKey
+	Set   bool
+}
+
+// IsSet returns true if OptSitePasskeyAuthenticatorSelectionResidentKey was set.
+func (o OptSitePasskeyAuthenticatorSelectionResidentKey) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSitePasskeyAuthenticatorSelectionResidentKey) Reset() {
+	var v SitePasskeyAuthenticatorSelectionResidentKey
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSitePasskeyAuthenticatorSelectionResidentKey) SetTo(v SitePasskeyAuthenticatorSelectionResidentKey) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSitePasskeyAuthenticatorSelectionResidentKey) Get() (v SitePasskeyAuthenticatorSelectionResidentKey, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSitePasskeyAuthenticatorSelectionResidentKey) Or(d SitePasskeyAuthenticatorSelectionResidentKey) SitePasskeyAuthenticatorSelectionResidentKey {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptSitePasskeyAuthenticatorSelectionUserVerification returns new OptSitePasskeyAuthenticatorSelectionUserVerification with value set to v.
+func NewOptSitePasskeyAuthenticatorSelectionUserVerification(v SitePasskeyAuthenticatorSelectionUserVerification) OptSitePasskeyAuthenticatorSelectionUserVerification {
+	return OptSitePasskeyAuthenticatorSelectionUserVerification{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSitePasskeyAuthenticatorSelectionUserVerification is optional SitePasskeyAuthenticatorSelectionUserVerification.
+type OptSitePasskeyAuthenticatorSelectionUserVerification struct {
+	Value SitePasskeyAuthenticatorSelectionUserVerification
+	Set   bool
+}
+
+// IsSet returns true if OptSitePasskeyAuthenticatorSelectionUserVerification was set.
+func (o OptSitePasskeyAuthenticatorSelectionUserVerification) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSitePasskeyAuthenticatorSelectionUserVerification) Reset() {
+	var v SitePasskeyAuthenticatorSelectionUserVerification
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSitePasskeyAuthenticatorSelectionUserVerification) SetTo(v SitePasskeyAuthenticatorSelectionUserVerification) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSitePasskeyAuthenticatorSelectionUserVerification) Get() (v SitePasskeyAuthenticatorSelectionUserVerification, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSitePasskeyAuthenticatorSelectionUserVerification) Or(d SitePasskeyAuthenticatorSelectionUserVerification) SitePasskeyAuthenticatorSelectionUserVerification {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptSitePasskeyCreationOptionsAttestation returns new OptSitePasskeyCreationOptionsAttestation with value set to v.
+func NewOptSitePasskeyCreationOptionsAttestation(v SitePasskeyCreationOptionsAttestation) OptSitePasskeyCreationOptionsAttestation {
+	return OptSitePasskeyCreationOptionsAttestation{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSitePasskeyCreationOptionsAttestation is optional SitePasskeyCreationOptionsAttestation.
+type OptSitePasskeyCreationOptionsAttestation struct {
+	Value SitePasskeyCreationOptionsAttestation
+	Set   bool
+}
+
+// IsSet returns true if OptSitePasskeyCreationOptionsAttestation was set.
+func (o OptSitePasskeyCreationOptionsAttestation) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSitePasskeyCreationOptionsAttestation) Reset() {
+	var v SitePasskeyCreationOptionsAttestation
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSitePasskeyCreationOptionsAttestation) SetTo(v SitePasskeyCreationOptionsAttestation) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSitePasskeyCreationOptionsAttestation) Get() (v SitePasskeyCreationOptionsAttestation, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSitePasskeyCreationOptionsAttestation) Or(d SitePasskeyCreationOptionsAttestation) SitePasskeyCreationOptionsAttestation {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptSitePasskeyRequestOptionsUserVerification returns new OptSitePasskeyRequestOptionsUserVerification with value set to v.
+func NewOptSitePasskeyRequestOptionsUserVerification(v SitePasskeyRequestOptionsUserVerification) OptSitePasskeyRequestOptionsUserVerification {
+	return OptSitePasskeyRequestOptionsUserVerification{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSitePasskeyRequestOptionsUserVerification is optional SitePasskeyRequestOptionsUserVerification.
+type OptSitePasskeyRequestOptionsUserVerification struct {
+	Value SitePasskeyRequestOptionsUserVerification
+	Set   bool
+}
+
+// IsSet returns true if OptSitePasskeyRequestOptionsUserVerification was set.
+func (o OptSitePasskeyRequestOptionsUserVerification) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSitePasskeyRequestOptionsUserVerification) Reset() {
+	var v SitePasskeyRequestOptionsUserVerification
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSitePasskeyRequestOptionsUserVerification) SetTo(v SitePasskeyRequestOptionsUserVerification) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSitePasskeyRequestOptionsUserVerification) Get() (v SitePasskeyRequestOptionsUserVerification, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSitePasskeyRequestOptionsUserVerification) Or(d SitePasskeyRequestOptionsUserVerification) SitePasskeyRequestOptionsUserVerification {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptSiteSegmentRuleGroup returns new OptSiteSegmentRuleGroup with value set to v.
 func NewOptSiteSegmentRuleGroup(v SiteSegmentRuleGroup) OptSiteSegmentRuleGroup {
 	return OptSiteSegmentRuleGroup{
@@ -4630,6 +4906,10 @@ func (*ProblemDetails) siteInstancePreviewTelemetryReportRes() {}
 func (*ProblemDetails) siteIntegrationsListRes()               {}
 func (*ProblemDetails) siteInvitationsListRes()                {}
 func (*ProblemDetails) siteMembershipsListRes()                {}
+func (*ProblemDetails) sitePasskeyLoginBeginRes()              {}
+func (*ProblemDetails) sitePasskeyLoginFinishRes()             {}
+func (*ProblemDetails) sitePasskeysBeginCheckRes()             {}
+func (*ProblemDetails) sitePasskeysBeginRegistrationRes()      {}
 func (*ProblemDetails) sitePublicInvitationsLookupRes()        {}
 func (*ProblemDetails) sitePublicUnsubscribesPerformRes()      {}
 func (*ProblemDetails) siteSetupChecklistGetRes()              {}
@@ -4725,6 +5005,9 @@ func (*ProblemDetailsHeaders) siteAuthResendVerificationRes()              {}
 func (*ProblemDetailsHeaders) siteAuthSecondFactorRes()                    {}
 func (*ProblemDetailsHeaders) siteAuthVerifyEmailRes()                     {}
 func (*ProblemDetailsHeaders) siteBroadcastsTestSendRes()                  {}
+func (*ProblemDetailsHeaders) sitePasskeyLoginFinishRes()                  {}
+func (*ProblemDetailsHeaders) sitePasskeysFinishRegistrationRes()          {}
+func (*ProblemDetailsHeaders) sitePasskeysRemoveRes()                      {}
 func (*ProblemDetailsHeaders) sitePublicConfirmationsPerformRes()          {}
 func (*ProblemDetailsHeaders) sitePublicInvitationsAcceptRes()             {}
 func (*ProblemDetailsHeaders) siteSecondFactorConfirmEnrollmentRes()       {}
@@ -11411,8 +11694,9 @@ func (s *SiteLoginResultHeaders) SetResponse(val SiteLoginResult) {
 	s.Response = val
 }
 
-func (*SiteLoginResultHeaders) siteAuthLoginRes()        {}
-func (*SiteLoginResultHeaders) siteAuthSecondFactorRes() {}
+func (*SiteLoginResultHeaders) siteAuthLoginRes()          {}
+func (*SiteLoginResultHeaders) siteAuthSecondFactorRes()   {}
+func (*SiteLoginResultHeaders) sitePasskeyLoginFinishRes() {}
 
 // The second login step: the challenge from the password step and a code.
 // Ref: #/components/schemas/SiteLoginSecondFactorInput
@@ -11904,6 +12188,1210 @@ type SiteOAuthDescribeNotFound ProblemDetails
 
 func (*SiteOAuthDescribeNotFound) siteOAuthDescribeRes() {}
 
+// One Passkey of the authenticated User (ADR 0051). Its public key and credential id are never
+// returned.
+// Ref: #/components/schemas/SitePasskey
+type SitePasskey struct {
+	// Unique identifier, the key of the rename and remove operations.
+	ID EntityId `json:"id"`
+	// What the User calls it, to tell their Passkeys apart.
+	Name string `json:"name"`
+	// When the Passkey was registered.
+	CreatedAt Timestamp `json:"createdAt"`
+	// When a login last used it; absent while it has never been used.
+	LastUsedAt OptTimestamp `json:"lastUsedAt"`
+}
+
+// GetID returns the value of ID.
+func (s *SitePasskey) GetID() EntityId {
+	return s.ID
+}
+
+// GetName returns the value of Name.
+func (s *SitePasskey) GetName() string {
+	return s.Name
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *SitePasskey) GetCreatedAt() Timestamp {
+	return s.CreatedAt
+}
+
+// GetLastUsedAt returns the value of LastUsedAt.
+func (s *SitePasskey) GetLastUsedAt() OptTimestamp {
+	return s.LastUsedAt
+}
+
+// SetID sets the value of ID.
+func (s *SitePasskey) SetID(val EntityId) {
+	s.ID = val
+}
+
+// SetName sets the value of Name.
+func (s *SitePasskey) SetName(val string) {
+	s.Name = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *SitePasskey) SetCreatedAt(val Timestamp) {
+	s.CreatedAt = val
+}
+
+// SetLastUsedAt sets the value of LastUsedAt.
+func (s *SitePasskey) SetLastUsedAt(val OptTimestamp) {
+	s.LastUsedAt = val
+}
+
+func (*SitePasskey) sitePasskeysRenameRes() {}
+
+// The browser's answer to the request options: the W3C `AuthenticationResponseJSON` dictionary
+// (`PublicKeyCredential.toJSON()`), checked by the WebAuthn library.
+// Ref: #/components/schemas/SitePasskeyAssertion
+type SitePasskeyAssertion map[string]jx.Raw
+
+func (s *SitePasskeyAssertion) init() SitePasskeyAssertion {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
+
+// What the authenticator must be able to do. Credentials are discoverable and user verification is
+// required (ADR 0051).
+// Ref: #/components/schemas/SitePasskeyAuthenticatorSelection
+type SitePasskeyAuthenticatorSelection struct {
+	AuthenticatorAttachment OptSitePasskeyAuthenticatorSelectionAuthenticatorAttachment `json:"authenticatorAttachment"`
+	RequireResidentKey      OptBool                                                     `json:"requireResidentKey"`
+	ResidentKey             OptSitePasskeyAuthenticatorSelectionResidentKey             `json:"residentKey"`
+	UserVerification        OptSitePasskeyAuthenticatorSelectionUserVerification        `json:"userVerification"`
+}
+
+// GetAuthenticatorAttachment returns the value of AuthenticatorAttachment.
+func (s *SitePasskeyAuthenticatorSelection) GetAuthenticatorAttachment() OptSitePasskeyAuthenticatorSelectionAuthenticatorAttachment {
+	return s.AuthenticatorAttachment
+}
+
+// GetRequireResidentKey returns the value of RequireResidentKey.
+func (s *SitePasskeyAuthenticatorSelection) GetRequireResidentKey() OptBool {
+	return s.RequireResidentKey
+}
+
+// GetResidentKey returns the value of ResidentKey.
+func (s *SitePasskeyAuthenticatorSelection) GetResidentKey() OptSitePasskeyAuthenticatorSelectionResidentKey {
+	return s.ResidentKey
+}
+
+// GetUserVerification returns the value of UserVerification.
+func (s *SitePasskeyAuthenticatorSelection) GetUserVerification() OptSitePasskeyAuthenticatorSelectionUserVerification {
+	return s.UserVerification
+}
+
+// SetAuthenticatorAttachment sets the value of AuthenticatorAttachment.
+func (s *SitePasskeyAuthenticatorSelection) SetAuthenticatorAttachment(val OptSitePasskeyAuthenticatorSelectionAuthenticatorAttachment) {
+	s.AuthenticatorAttachment = val
+}
+
+// SetRequireResidentKey sets the value of RequireResidentKey.
+func (s *SitePasskeyAuthenticatorSelection) SetRequireResidentKey(val OptBool) {
+	s.RequireResidentKey = val
+}
+
+// SetResidentKey sets the value of ResidentKey.
+func (s *SitePasskeyAuthenticatorSelection) SetResidentKey(val OptSitePasskeyAuthenticatorSelectionResidentKey) {
+	s.ResidentKey = val
+}
+
+// SetUserVerification sets the value of UserVerification.
+func (s *SitePasskeyAuthenticatorSelection) SetUserVerification(val OptSitePasskeyAuthenticatorSelectionUserVerification) {
+	s.UserVerification = val
+}
+
+type SitePasskeyAuthenticatorSelectionAuthenticatorAttachment string
+
+const (
+	SitePasskeyAuthenticatorSelectionAuthenticatorAttachmentPlatform      SitePasskeyAuthenticatorSelectionAuthenticatorAttachment = "platform"
+	SitePasskeyAuthenticatorSelectionAuthenticatorAttachmentCrossPlatform SitePasskeyAuthenticatorSelectionAuthenticatorAttachment = "cross-platform"
+)
+
+// AllValues returns all SitePasskeyAuthenticatorSelectionAuthenticatorAttachment values.
+func (SitePasskeyAuthenticatorSelectionAuthenticatorAttachment) AllValues() []SitePasskeyAuthenticatorSelectionAuthenticatorAttachment {
+	return []SitePasskeyAuthenticatorSelectionAuthenticatorAttachment{
+		SitePasskeyAuthenticatorSelectionAuthenticatorAttachmentPlatform,
+		SitePasskeyAuthenticatorSelectionAuthenticatorAttachmentCrossPlatform,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SitePasskeyAuthenticatorSelectionAuthenticatorAttachment) MarshalText() ([]byte, error) {
+	switch s {
+	case SitePasskeyAuthenticatorSelectionAuthenticatorAttachmentPlatform:
+		return []byte(s), nil
+	case SitePasskeyAuthenticatorSelectionAuthenticatorAttachmentCrossPlatform:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SitePasskeyAuthenticatorSelectionAuthenticatorAttachment) UnmarshalText(data []byte) error {
+	switch SitePasskeyAuthenticatorSelectionAuthenticatorAttachment(data) {
+	case SitePasskeyAuthenticatorSelectionAuthenticatorAttachmentPlatform:
+		*s = SitePasskeyAuthenticatorSelectionAuthenticatorAttachmentPlatform
+		return nil
+	case SitePasskeyAuthenticatorSelectionAuthenticatorAttachmentCrossPlatform:
+		*s = SitePasskeyAuthenticatorSelectionAuthenticatorAttachmentCrossPlatform
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type SitePasskeyAuthenticatorSelectionResidentKey string
+
+const (
+	SitePasskeyAuthenticatorSelectionResidentKeyDiscouraged SitePasskeyAuthenticatorSelectionResidentKey = "discouraged"
+	SitePasskeyAuthenticatorSelectionResidentKeyPreferred   SitePasskeyAuthenticatorSelectionResidentKey = "preferred"
+	SitePasskeyAuthenticatorSelectionResidentKeyRequired    SitePasskeyAuthenticatorSelectionResidentKey = "required"
+)
+
+// AllValues returns all SitePasskeyAuthenticatorSelectionResidentKey values.
+func (SitePasskeyAuthenticatorSelectionResidentKey) AllValues() []SitePasskeyAuthenticatorSelectionResidentKey {
+	return []SitePasskeyAuthenticatorSelectionResidentKey{
+		SitePasskeyAuthenticatorSelectionResidentKeyDiscouraged,
+		SitePasskeyAuthenticatorSelectionResidentKeyPreferred,
+		SitePasskeyAuthenticatorSelectionResidentKeyRequired,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SitePasskeyAuthenticatorSelectionResidentKey) MarshalText() ([]byte, error) {
+	switch s {
+	case SitePasskeyAuthenticatorSelectionResidentKeyDiscouraged:
+		return []byte(s), nil
+	case SitePasskeyAuthenticatorSelectionResidentKeyPreferred:
+		return []byte(s), nil
+	case SitePasskeyAuthenticatorSelectionResidentKeyRequired:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SitePasskeyAuthenticatorSelectionResidentKey) UnmarshalText(data []byte) error {
+	switch SitePasskeyAuthenticatorSelectionResidentKey(data) {
+	case SitePasskeyAuthenticatorSelectionResidentKeyDiscouraged:
+		*s = SitePasskeyAuthenticatorSelectionResidentKeyDiscouraged
+		return nil
+	case SitePasskeyAuthenticatorSelectionResidentKeyPreferred:
+		*s = SitePasskeyAuthenticatorSelectionResidentKeyPreferred
+		return nil
+	case SitePasskeyAuthenticatorSelectionResidentKeyRequired:
+		*s = SitePasskeyAuthenticatorSelectionResidentKeyRequired
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type SitePasskeyAuthenticatorSelectionUserVerification string
+
+const (
+	SitePasskeyAuthenticatorSelectionUserVerificationRequired    SitePasskeyAuthenticatorSelectionUserVerification = "required"
+	SitePasskeyAuthenticatorSelectionUserVerificationPreferred   SitePasskeyAuthenticatorSelectionUserVerification = "preferred"
+	SitePasskeyAuthenticatorSelectionUserVerificationDiscouraged SitePasskeyAuthenticatorSelectionUserVerification = "discouraged"
+)
+
+// AllValues returns all SitePasskeyAuthenticatorSelectionUserVerification values.
+func (SitePasskeyAuthenticatorSelectionUserVerification) AllValues() []SitePasskeyAuthenticatorSelectionUserVerification {
+	return []SitePasskeyAuthenticatorSelectionUserVerification{
+		SitePasskeyAuthenticatorSelectionUserVerificationRequired,
+		SitePasskeyAuthenticatorSelectionUserVerificationPreferred,
+		SitePasskeyAuthenticatorSelectionUserVerificationDiscouraged,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SitePasskeyAuthenticatorSelectionUserVerification) MarshalText() ([]byte, error) {
+	switch s {
+	case SitePasskeyAuthenticatorSelectionUserVerificationRequired:
+		return []byte(s), nil
+	case SitePasskeyAuthenticatorSelectionUserVerificationPreferred:
+		return []byte(s), nil
+	case SitePasskeyAuthenticatorSelectionUserVerificationDiscouraged:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SitePasskeyAuthenticatorSelectionUserVerification) UnmarshalText(data []byte) error {
+	switch SitePasskeyAuthenticatorSelectionUserVerification(data) {
+	case SitePasskeyAuthenticatorSelectionUserVerificationRequired:
+		*s = SitePasskeyAuthenticatorSelectionUserVerificationRequired
+		return nil
+	case SitePasskeyAuthenticatorSelectionUserVerificationPreferred:
+		*s = SitePasskeyAuthenticatorSelectionUserVerificationPreferred
+		return nil
+	case SitePasskeyAuthenticatorSelectionUserVerificationDiscouraged:
+		*s = SitePasskeyAuthenticatorSelectionUserVerificationDiscouraged
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// The options to check a Passkey with, and the ceremony cookie they are bound to.
+// Ref: #/components/schemas/SitePasskeyCheckBegun
+type SitePasskeyCheckBegun struct {
+	Options SitePasskeyRequestOptions `json:"options"`
+}
+
+// GetOptions returns the value of Options.
+func (s *SitePasskeyCheckBegun) GetOptions() SitePasskeyRequestOptions {
+	return s.Options
+}
+
+// SetOptions sets the value of Options.
+func (s *SitePasskeyCheckBegun) SetOptions(val SitePasskeyRequestOptions) {
+	s.Options = val
+}
+
+// SitePasskeyCheckBegunHeaders wraps SitePasskeyCheckBegun with response headers.
+type SitePasskeyCheckBegunHeaders struct {
+	SetCookie string
+	Response  SitePasskeyCheckBegun
+}
+
+// GetSetCookie returns the value of SetCookie.
+func (s *SitePasskeyCheckBegunHeaders) GetSetCookie() string {
+	return s.SetCookie
+}
+
+// GetResponse returns the value of Response.
+func (s *SitePasskeyCheckBegunHeaders) GetResponse() SitePasskeyCheckBegun {
+	return s.Response
+}
+
+// SetSetCookie sets the value of SetCookie.
+func (s *SitePasskeyCheckBegunHeaders) SetSetCookie(val string) {
+	s.SetCookie = val
+}
+
+// SetResponse sets the value of Response.
+func (s *SitePasskeyCheckBegunHeaders) SetResponse(val SitePasskeyCheckBegun) {
+	s.Response = val
+}
+
+func (*SitePasskeyCheckBegunHeaders) sitePasskeysBeginCheckRes() {}
+
+// The browser's response to a Passkey check ceremony.
+// Ref: #/components/schemas/SitePasskeyCheckInput
+type SitePasskeyCheckInput struct {
+	// The authenticator's response to the request options.
+	Credential SitePasskeyAssertion `json:"credential"`
+}
+
+// GetCredential returns the value of Credential.
+func (s *SitePasskeyCheckInput) GetCredential() SitePasskeyAssertion {
+	return s.Credential
+}
+
+// SetCredential sets the value of Credential.
+func (s *SitePasskeyCheckInput) SetCredential(val SitePasskeyAssertion) {
+	s.Credential = val
+}
+
+// The options a browser passes to `navigator.credentials.create` to register a Passkey: the W3C
+// `PublicKeyCredentialCreationOptionsJSON` dictionary, as the WebAuthn library produced it.
+// Attestation is not requested.
+// Ref: #/components/schemas/SitePasskeyCreationOptions
+type SitePasskeyCreationOptions struct {
+	Rp   SitePasskeyRelyingParty `json:"rp"`
+	User SitePasskeyUserEntity   `json:"user"`
+	// The challenge, base64url.
+	Challenge        string                 `json:"challenge"`
+	PubKeyCredParams []SitePasskeyParameter `json:"pubKeyCredParams"`
+	// Milliseconds the ceremony may take.
+	Timeout OptInt32 `json:"timeout"`
+	// The Passkeys the User already holds, so one authenticator is not registered twice.
+	ExcludeCredentials     []SitePasskeyDescriptor                  `json:"excludeCredentials"`
+	AuthenticatorSelection OptSitePasskeyAuthenticatorSelection     `json:"authenticatorSelection"`
+	Attestation            OptSitePasskeyCreationOptionsAttestation `json:"attestation"`
+}
+
+// GetRp returns the value of Rp.
+func (s *SitePasskeyCreationOptions) GetRp() SitePasskeyRelyingParty {
+	return s.Rp
+}
+
+// GetUser returns the value of User.
+func (s *SitePasskeyCreationOptions) GetUser() SitePasskeyUserEntity {
+	return s.User
+}
+
+// GetChallenge returns the value of Challenge.
+func (s *SitePasskeyCreationOptions) GetChallenge() string {
+	return s.Challenge
+}
+
+// GetPubKeyCredParams returns the value of PubKeyCredParams.
+func (s *SitePasskeyCreationOptions) GetPubKeyCredParams() []SitePasskeyParameter {
+	return s.PubKeyCredParams
+}
+
+// GetTimeout returns the value of Timeout.
+func (s *SitePasskeyCreationOptions) GetTimeout() OptInt32 {
+	return s.Timeout
+}
+
+// GetExcludeCredentials returns the value of ExcludeCredentials.
+func (s *SitePasskeyCreationOptions) GetExcludeCredentials() []SitePasskeyDescriptor {
+	return s.ExcludeCredentials
+}
+
+// GetAuthenticatorSelection returns the value of AuthenticatorSelection.
+func (s *SitePasskeyCreationOptions) GetAuthenticatorSelection() OptSitePasskeyAuthenticatorSelection {
+	return s.AuthenticatorSelection
+}
+
+// GetAttestation returns the value of Attestation.
+func (s *SitePasskeyCreationOptions) GetAttestation() OptSitePasskeyCreationOptionsAttestation {
+	return s.Attestation
+}
+
+// SetRp sets the value of Rp.
+func (s *SitePasskeyCreationOptions) SetRp(val SitePasskeyRelyingParty) {
+	s.Rp = val
+}
+
+// SetUser sets the value of User.
+func (s *SitePasskeyCreationOptions) SetUser(val SitePasskeyUserEntity) {
+	s.User = val
+}
+
+// SetChallenge sets the value of Challenge.
+func (s *SitePasskeyCreationOptions) SetChallenge(val string) {
+	s.Challenge = val
+}
+
+// SetPubKeyCredParams sets the value of PubKeyCredParams.
+func (s *SitePasskeyCreationOptions) SetPubKeyCredParams(val []SitePasskeyParameter) {
+	s.PubKeyCredParams = val
+}
+
+// SetTimeout sets the value of Timeout.
+func (s *SitePasskeyCreationOptions) SetTimeout(val OptInt32) {
+	s.Timeout = val
+}
+
+// SetExcludeCredentials sets the value of ExcludeCredentials.
+func (s *SitePasskeyCreationOptions) SetExcludeCredentials(val []SitePasskeyDescriptor) {
+	s.ExcludeCredentials = val
+}
+
+// SetAuthenticatorSelection sets the value of AuthenticatorSelection.
+func (s *SitePasskeyCreationOptions) SetAuthenticatorSelection(val OptSitePasskeyAuthenticatorSelection) {
+	s.AuthenticatorSelection = val
+}
+
+// SetAttestation sets the value of Attestation.
+func (s *SitePasskeyCreationOptions) SetAttestation(val OptSitePasskeyCreationOptionsAttestation) {
+	s.Attestation = val
+}
+
+type SitePasskeyCreationOptionsAttestation string
+
+const (
+	SitePasskeyCreationOptionsAttestationNone       SitePasskeyCreationOptionsAttestation = "none"
+	SitePasskeyCreationOptionsAttestationIndirect   SitePasskeyCreationOptionsAttestation = "indirect"
+	SitePasskeyCreationOptionsAttestationDirect     SitePasskeyCreationOptionsAttestation = "direct"
+	SitePasskeyCreationOptionsAttestationEnterprise SitePasskeyCreationOptionsAttestation = "enterprise"
+)
+
+// AllValues returns all SitePasskeyCreationOptionsAttestation values.
+func (SitePasskeyCreationOptionsAttestation) AllValues() []SitePasskeyCreationOptionsAttestation {
+	return []SitePasskeyCreationOptionsAttestation{
+		SitePasskeyCreationOptionsAttestationNone,
+		SitePasskeyCreationOptionsAttestationIndirect,
+		SitePasskeyCreationOptionsAttestationDirect,
+		SitePasskeyCreationOptionsAttestationEnterprise,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SitePasskeyCreationOptionsAttestation) MarshalText() ([]byte, error) {
+	switch s {
+	case SitePasskeyCreationOptionsAttestationNone:
+		return []byte(s), nil
+	case SitePasskeyCreationOptionsAttestationIndirect:
+		return []byte(s), nil
+	case SitePasskeyCreationOptionsAttestationDirect:
+		return []byte(s), nil
+	case SitePasskeyCreationOptionsAttestationEnterprise:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SitePasskeyCreationOptionsAttestation) UnmarshalText(data []byte) error {
+	switch SitePasskeyCreationOptionsAttestation(data) {
+	case SitePasskeyCreationOptionsAttestationNone:
+		*s = SitePasskeyCreationOptionsAttestationNone
+		return nil
+	case SitePasskeyCreationOptionsAttestationIndirect:
+		*s = SitePasskeyCreationOptionsAttestationIndirect
+		return nil
+	case SitePasskeyCreationOptionsAttestationDirect:
+		*s = SitePasskeyCreationOptionsAttestationDirect
+		return nil
+	case SitePasskeyCreationOptionsAttestationEnterprise:
+		*s = SitePasskeyCreationOptionsAttestationEnterprise
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A credential, as the exclusion list names it.
+// Ref: #/components/schemas/SitePasskeyDescriptor
+type SitePasskeyDescriptor struct {
+	Type SitePasskeyDescriptorType `json:"type"`
+	// The credential id, base64url.
+	ID         string                                `json:"id"`
+	Transports []SitePasskeyDescriptorTransportsItem `json:"transports"`
+}
+
+// GetType returns the value of Type.
+func (s *SitePasskeyDescriptor) GetType() SitePasskeyDescriptorType {
+	return s.Type
+}
+
+// GetID returns the value of ID.
+func (s *SitePasskeyDescriptor) GetID() string {
+	return s.ID
+}
+
+// GetTransports returns the value of Transports.
+func (s *SitePasskeyDescriptor) GetTransports() []SitePasskeyDescriptorTransportsItem {
+	return s.Transports
+}
+
+// SetType sets the value of Type.
+func (s *SitePasskeyDescriptor) SetType(val SitePasskeyDescriptorType) {
+	s.Type = val
+}
+
+// SetID sets the value of ID.
+func (s *SitePasskeyDescriptor) SetID(val string) {
+	s.ID = val
+}
+
+// SetTransports sets the value of Transports.
+func (s *SitePasskeyDescriptor) SetTransports(val []SitePasskeyDescriptorTransportsItem) {
+	s.Transports = val
+}
+
+type SitePasskeyDescriptorTransportsItem string
+
+const (
+	SitePasskeyDescriptorTransportsItemBle      SitePasskeyDescriptorTransportsItem = "ble"
+	SitePasskeyDescriptorTransportsItemHybrid   SitePasskeyDescriptorTransportsItem = "hybrid"
+	SitePasskeyDescriptorTransportsItemInternal SitePasskeyDescriptorTransportsItem = "internal"
+	SitePasskeyDescriptorTransportsItemNfc      SitePasskeyDescriptorTransportsItem = "nfc"
+	SitePasskeyDescriptorTransportsItemUsb      SitePasskeyDescriptorTransportsItem = "usb"
+)
+
+// AllValues returns all SitePasskeyDescriptorTransportsItem values.
+func (SitePasskeyDescriptorTransportsItem) AllValues() []SitePasskeyDescriptorTransportsItem {
+	return []SitePasskeyDescriptorTransportsItem{
+		SitePasskeyDescriptorTransportsItemBle,
+		SitePasskeyDescriptorTransportsItemHybrid,
+		SitePasskeyDescriptorTransportsItemInternal,
+		SitePasskeyDescriptorTransportsItemNfc,
+		SitePasskeyDescriptorTransportsItemUsb,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SitePasskeyDescriptorTransportsItem) MarshalText() ([]byte, error) {
+	switch s {
+	case SitePasskeyDescriptorTransportsItemBle:
+		return []byte(s), nil
+	case SitePasskeyDescriptorTransportsItemHybrid:
+		return []byte(s), nil
+	case SitePasskeyDescriptorTransportsItemInternal:
+		return []byte(s), nil
+	case SitePasskeyDescriptorTransportsItemNfc:
+		return []byte(s), nil
+	case SitePasskeyDescriptorTransportsItemUsb:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SitePasskeyDescriptorTransportsItem) UnmarshalText(data []byte) error {
+	switch SitePasskeyDescriptorTransportsItem(data) {
+	case SitePasskeyDescriptorTransportsItemBle:
+		*s = SitePasskeyDescriptorTransportsItemBle
+		return nil
+	case SitePasskeyDescriptorTransportsItemHybrid:
+		*s = SitePasskeyDescriptorTransportsItemHybrid
+		return nil
+	case SitePasskeyDescriptorTransportsItemInternal:
+		*s = SitePasskeyDescriptorTransportsItemInternal
+		return nil
+	case SitePasskeyDescriptorTransportsItemNfc:
+		*s = SitePasskeyDescriptorTransportsItemNfc
+		return nil
+	case SitePasskeyDescriptorTransportsItemUsb:
+		*s = SitePasskeyDescriptorTransportsItemUsb
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type SitePasskeyDescriptorType string
+
+const (
+	SitePasskeyDescriptorTypePublicKey SitePasskeyDescriptorType = "public-key"
+)
+
+// AllValues returns all SitePasskeyDescriptorType values.
+func (SitePasskeyDescriptorType) AllValues() []SitePasskeyDescriptorType {
+	return []SitePasskeyDescriptorType{
+		SitePasskeyDescriptorTypePublicKey,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SitePasskeyDescriptorType) MarshalText() ([]byte, error) {
+	switch s {
+	case SitePasskeyDescriptorTypePublicKey:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SitePasskeyDescriptorType) UnmarshalText(data []byte) error {
+	switch SitePasskeyDescriptorType(data) {
+	case SitePasskeyDescriptorTypePublicKey:
+		*s = SitePasskeyDescriptorTypePublicKey
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// SitePasskeyHeaders wraps SitePasskey with response headers.
+type SitePasskeyHeaders struct {
+	SetCookie string
+	Response  SitePasskey
+}
+
+// GetSetCookie returns the value of SetCookie.
+func (s *SitePasskeyHeaders) GetSetCookie() string {
+	return s.SetCookie
+}
+
+// GetResponse returns the value of Response.
+func (s *SitePasskeyHeaders) GetResponse() SitePasskey {
+	return s.Response
+}
+
+// SetSetCookie sets the value of SetCookie.
+func (s *SitePasskeyHeaders) SetSetCookie(val string) {
+	s.SetCookie = val
+}
+
+// SetResponse sets the value of Response.
+func (s *SitePasskeyHeaders) SetResponse(val SitePasskey) {
+	s.Response = val
+}
+
+func (*SitePasskeyHeaders) sitePasskeysFinishRegistrationRes() {}
+
+// The Passkeys of the authenticated User, oldest first, and what proves the User for a change.
+// Ref: #/components/schemas/SitePasskeyList
+type SitePasskeyList struct {
+	Items []SitePasskey `json:"items"`
+	// Whether Passkeys work on this Instance. They need a host name: an Instance served on an IP address
+	// has none, and the registration operations answer 404.
+	Available bool `json:"available"`
+	// Whether the User has a password. Without one, adding a Passkey asks for a fresh sign-in with a
+	// Sign-in provider instead.
+	PasswordSet bool `json:"passwordSet"`
+	// Whether the session holds a fresh proof that stands in for the password: a Sign-in provider login or
+	// a Passkey check of the last few minutes (a User with a password always proves the password).
+	IdentityProofFresh bool `json:"identityProofFresh"`
+}
+
+// GetItems returns the value of Items.
+func (s *SitePasskeyList) GetItems() []SitePasskey {
+	return s.Items
+}
+
+// GetAvailable returns the value of Available.
+func (s *SitePasskeyList) GetAvailable() bool {
+	return s.Available
+}
+
+// GetPasswordSet returns the value of PasswordSet.
+func (s *SitePasskeyList) GetPasswordSet() bool {
+	return s.PasswordSet
+}
+
+// GetIdentityProofFresh returns the value of IdentityProofFresh.
+func (s *SitePasskeyList) GetIdentityProofFresh() bool {
+	return s.IdentityProofFresh
+}
+
+// SetItems sets the value of Items.
+func (s *SitePasskeyList) SetItems(val []SitePasskey) {
+	s.Items = val
+}
+
+// SetAvailable sets the value of Available.
+func (s *SitePasskeyList) SetAvailable(val bool) {
+	s.Available = val
+}
+
+// SetPasswordSet sets the value of PasswordSet.
+func (s *SitePasskeyList) SetPasswordSet(val bool) {
+	s.PasswordSet = val
+}
+
+// SetIdentityProofFresh sets the value of IdentityProofFresh.
+func (s *SitePasskeyList) SetIdentityProofFresh(val bool) {
+	s.IdentityProofFresh = val
+}
+
+// The options to log in with, and the ceremony cookie they are bound to.
+// Ref: #/components/schemas/SitePasskeyLoginBegun
+type SitePasskeyLoginBegun struct {
+	Options SitePasskeyRequestOptions `json:"options"`
+}
+
+// GetOptions returns the value of Options.
+func (s *SitePasskeyLoginBegun) GetOptions() SitePasskeyRequestOptions {
+	return s.Options
+}
+
+// SetOptions sets the value of Options.
+func (s *SitePasskeyLoginBegun) SetOptions(val SitePasskeyRequestOptions) {
+	s.Options = val
+}
+
+// SitePasskeyLoginBegunHeaders wraps SitePasskeyLoginBegun with response headers.
+type SitePasskeyLoginBegunHeaders struct {
+	SetCookie string
+	Response  SitePasskeyLoginBegun
+}
+
+// GetSetCookie returns the value of SetCookie.
+func (s *SitePasskeyLoginBegunHeaders) GetSetCookie() string {
+	return s.SetCookie
+}
+
+// GetResponse returns the value of Response.
+func (s *SitePasskeyLoginBegunHeaders) GetResponse() SitePasskeyLoginBegun {
+	return s.Response
+}
+
+// SetSetCookie sets the value of SetCookie.
+func (s *SitePasskeyLoginBegunHeaders) SetSetCookie(val string) {
+	s.SetCookie = val
+}
+
+// SetResponse sets the value of Response.
+func (s *SitePasskeyLoginBegunHeaders) SetResponse(val SitePasskeyLoginBegun) {
+	s.Response = val
+}
+
+func (*SitePasskeyLoginBegunHeaders) sitePasskeyLoginBeginRes() {}
+
+// The browser's response to a login ceremony.
+// Ref: #/components/schemas/SitePasskeyLoginInput
+type SitePasskeyLoginInput struct {
+	// The authenticator's response to the request options.
+	Credential SitePasskeyAssertion `json:"credential"`
+}
+
+// GetCredential returns the value of Credential.
+func (s *SitePasskeyLoginInput) GetCredential() SitePasskeyAssertion {
+	return s.Credential
+}
+
+// SetCredential sets the value of Credential.
+func (s *SitePasskeyLoginInput) SetCredential(val SitePasskeyAssertion) {
+	s.Credential = val
+}
+
+// A public-key algorithm the authenticator may use.
+// Ref: #/components/schemas/SitePasskeyParameter
+type SitePasskeyParameter struct {
+	Type SitePasskeyParameterType `json:"type"`
+	// The COSE algorithm identifier.
+	Alg int32 `json:"alg"`
+}
+
+// GetType returns the value of Type.
+func (s *SitePasskeyParameter) GetType() SitePasskeyParameterType {
+	return s.Type
+}
+
+// GetAlg returns the value of Alg.
+func (s *SitePasskeyParameter) GetAlg() int32 {
+	return s.Alg
+}
+
+// SetType sets the value of Type.
+func (s *SitePasskeyParameter) SetType(val SitePasskeyParameterType) {
+	s.Type = val
+}
+
+// SetAlg sets the value of Alg.
+func (s *SitePasskeyParameter) SetAlg(val int32) {
+	s.Alg = val
+}
+
+type SitePasskeyParameterType string
+
+const (
+	SitePasskeyParameterTypePublicKey SitePasskeyParameterType = "public-key"
+)
+
+// AllValues returns all SitePasskeyParameterType values.
+func (SitePasskeyParameterType) AllValues() []SitePasskeyParameterType {
+	return []SitePasskeyParameterType{
+		SitePasskeyParameterTypePublicKey,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SitePasskeyParameterType) MarshalText() ([]byte, error) {
+	switch s {
+	case SitePasskeyParameterTypePublicKey:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SitePasskeyParameterType) UnmarshalText(data []byte) error {
+	switch SitePasskeyParameterType(data) {
+	case SitePasskeyParameterTypePublicKey:
+		*s = SitePasskeyParameterTypePublicKey
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// The options to create a Passkey with, and the ceremony cookie they are bound to.
+// Ref: #/components/schemas/SitePasskeyRegistrationBegun
+type SitePasskeyRegistrationBegun struct {
+	Options SitePasskeyCreationOptions `json:"options"`
+}
+
+// GetOptions returns the value of Options.
+func (s *SitePasskeyRegistrationBegun) GetOptions() SitePasskeyCreationOptions {
+	return s.Options
+}
+
+// SetOptions sets the value of Options.
+func (s *SitePasskeyRegistrationBegun) SetOptions(val SitePasskeyCreationOptions) {
+	s.Options = val
+}
+
+// SitePasskeyRegistrationBegunHeaders wraps SitePasskeyRegistrationBegun with response headers.
+type SitePasskeyRegistrationBegunHeaders struct {
+	SetCookie string
+	Response  SitePasskeyRegistrationBegun
+}
+
+// GetSetCookie returns the value of SetCookie.
+func (s *SitePasskeyRegistrationBegunHeaders) GetSetCookie() string {
+	return s.SetCookie
+}
+
+// GetResponse returns the value of Response.
+func (s *SitePasskeyRegistrationBegunHeaders) GetResponse() SitePasskeyRegistrationBegun {
+	return s.Response
+}
+
+// SetSetCookie sets the value of SetCookie.
+func (s *SitePasskeyRegistrationBegunHeaders) SetSetCookie(val string) {
+	s.SetCookie = val
+}
+
+// SetResponse sets the value of Response.
+func (s *SitePasskeyRegistrationBegunHeaders) SetResponse(val SitePasskeyRegistrationBegun) {
+	s.Response = val
+}
+
+func (*SitePasskeyRegistrationBegunHeaders) sitePasskeysBeginRegistrationRes() {}
+
+// The browser's response to a registration ceremony, with the proof of identity and a name.
+// Ref: #/components/schemas/SitePasskeyRegistrationInput
+type SitePasskeyRegistrationInput struct {
+	// Current password. Left out by a User with no password, who proves a provider or Passkey sign-in of
+	// the last few minutes instead (ADR 0048).
+	CurrentPassword OptString `json:"currentPassword"`
+	// What to call the Passkey, to tell it from the User's others.
+	Name string `json:"name"`
+	// The authenticator's response to the creation options.
+	Credential SitePasskeyRegistrationResponse `json:"credential"`
+}
+
+// GetCurrentPassword returns the value of CurrentPassword.
+func (s *SitePasskeyRegistrationInput) GetCurrentPassword() OptString {
+	return s.CurrentPassword
+}
+
+// GetName returns the value of Name.
+func (s *SitePasskeyRegistrationInput) GetName() string {
+	return s.Name
+}
+
+// GetCredential returns the value of Credential.
+func (s *SitePasskeyRegistrationInput) GetCredential() SitePasskeyRegistrationResponse {
+	return s.Credential
+}
+
+// SetCurrentPassword sets the value of CurrentPassword.
+func (s *SitePasskeyRegistrationInput) SetCurrentPassword(val OptString) {
+	s.CurrentPassword = val
+}
+
+// SetName sets the value of Name.
+func (s *SitePasskeyRegistrationInput) SetName(val string) {
+	s.Name = val
+}
+
+// SetCredential sets the value of Credential.
+func (s *SitePasskeyRegistrationInput) SetCredential(val SitePasskeyRegistrationResponse) {
+	s.Credential = val
+}
+
+// The browser's answer to the creation options: the W3C `RegistrationResponseJSON` dictionary
+// (`PublicKeyCredential.toJSON()`), checked by the WebAuthn library.
+// Ref: #/components/schemas/SitePasskeyRegistrationResponse
+type SitePasskeyRegistrationResponse map[string]jx.Raw
+
+func (s *SitePasskeyRegistrationResponse) init() SitePasskeyRegistrationResponse {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
+
+// The relying party of a Passkey ceremony: this Instance.
+// Ref: #/components/schemas/SitePasskeyRelyingParty
+type SitePasskeyRelyingParty struct {
+	// The relying party id: the host of the Instance's public URL.
+	ID   OptString `json:"id"`
+	Name string    `json:"name"`
+}
+
+// GetID returns the value of ID.
+func (s *SitePasskeyRelyingParty) GetID() OptString {
+	return s.ID
+}
+
+// GetName returns the value of Name.
+func (s *SitePasskeyRelyingParty) GetName() string {
+	return s.Name
+}
+
+// SetID sets the value of ID.
+func (s *SitePasskeyRelyingParty) SetID(val OptString) {
+	s.ID = val
+}
+
+// SetName sets the value of Name.
+func (s *SitePasskeyRelyingParty) SetName(val string) {
+	s.Name = val
+}
+
+// The proof of identity a removal asks for.
+// Ref: #/components/schemas/SitePasskeyRemoveInput
+type SitePasskeyRemoveInput struct {
+	// Current password. Left out by a User with no password, who proves a provider or Passkey sign-in of
+	// the last few minutes instead (ADR 0048).
+	CurrentPassword OptString `json:"currentPassword"`
+}
+
+// GetCurrentPassword returns the value of CurrentPassword.
+func (s *SitePasskeyRemoveInput) GetCurrentPassword() OptString {
+	return s.CurrentPassword
+}
+
+// SetCurrentPassword sets the value of CurrentPassword.
+func (s *SitePasskeyRemoveInput) SetCurrentPassword(val OptString) {
+	s.CurrentPassword = val
+}
+
+// The new name of a Passkey.
+// Ref: #/components/schemas/SitePasskeyRenameInput
+type SitePasskeyRenameInput struct {
+	// What to call the Passkey, to tell it from the User's others.
+	Name string `json:"name"`
+}
+
+// GetName returns the value of Name.
+func (s *SitePasskeyRenameInput) GetName() string {
+	return s.Name
+}
+
+// SetName sets the value of Name.
+func (s *SitePasskeyRenameInput) SetName(val string) {
+	s.Name = val
+}
+
+// The options a browser passes to `navigator.credentials.get` to log in with a Passkey: the W3C
+// `PublicKeyCredentialRequestOptionsJSON` dictionary, as the WebAuthn library produced it.
+// `allowCredentials` is empty: the User is found by the credential the browser offers, never by an
+// email (ADR 0052).
+// Ref: #/components/schemas/SitePasskeyRequestOptions
+type SitePasskeyRequestOptions struct {
+	// The challenge, base64url.
+	Challenge string `json:"challenge"`
+	// Milliseconds the ceremony may take.
+	Timeout OptInt32 `json:"timeout"`
+	// The relying party id: the host of the Instance's public URL.
+	RpId             OptString               `json:"rpId"`
+	AllowCredentials []SitePasskeyDescriptor `json:"allowCredentials"`
+	// Always `required`: an authenticator that cannot verify the person is refused.
+	UserVerification OptSitePasskeyRequestOptionsUserVerification `json:"userVerification"`
+}
+
+// GetChallenge returns the value of Challenge.
+func (s *SitePasskeyRequestOptions) GetChallenge() string {
+	return s.Challenge
+}
+
+// GetTimeout returns the value of Timeout.
+func (s *SitePasskeyRequestOptions) GetTimeout() OptInt32 {
+	return s.Timeout
+}
+
+// GetRpId returns the value of RpId.
+func (s *SitePasskeyRequestOptions) GetRpId() OptString {
+	return s.RpId
+}
+
+// GetAllowCredentials returns the value of AllowCredentials.
+func (s *SitePasskeyRequestOptions) GetAllowCredentials() []SitePasskeyDescriptor {
+	return s.AllowCredentials
+}
+
+// GetUserVerification returns the value of UserVerification.
+func (s *SitePasskeyRequestOptions) GetUserVerification() OptSitePasskeyRequestOptionsUserVerification {
+	return s.UserVerification
+}
+
+// SetChallenge sets the value of Challenge.
+func (s *SitePasskeyRequestOptions) SetChallenge(val string) {
+	s.Challenge = val
+}
+
+// SetTimeout sets the value of Timeout.
+func (s *SitePasskeyRequestOptions) SetTimeout(val OptInt32) {
+	s.Timeout = val
+}
+
+// SetRpId sets the value of RpId.
+func (s *SitePasskeyRequestOptions) SetRpId(val OptString) {
+	s.RpId = val
+}
+
+// SetAllowCredentials sets the value of AllowCredentials.
+func (s *SitePasskeyRequestOptions) SetAllowCredentials(val []SitePasskeyDescriptor) {
+	s.AllowCredentials = val
+}
+
+// SetUserVerification sets the value of UserVerification.
+func (s *SitePasskeyRequestOptions) SetUserVerification(val OptSitePasskeyRequestOptionsUserVerification) {
+	s.UserVerification = val
+}
+
+// Always `required`: an authenticator that cannot verify the person is refused.
+type SitePasskeyRequestOptionsUserVerification string
+
+const (
+	SitePasskeyRequestOptionsUserVerificationRequired    SitePasskeyRequestOptionsUserVerification = "required"
+	SitePasskeyRequestOptionsUserVerificationPreferred   SitePasskeyRequestOptionsUserVerification = "preferred"
+	SitePasskeyRequestOptionsUserVerificationDiscouraged SitePasskeyRequestOptionsUserVerification = "discouraged"
+)
+
+// AllValues returns all SitePasskeyRequestOptionsUserVerification values.
+func (SitePasskeyRequestOptionsUserVerification) AllValues() []SitePasskeyRequestOptionsUserVerification {
+	return []SitePasskeyRequestOptionsUserVerification{
+		SitePasskeyRequestOptionsUserVerificationRequired,
+		SitePasskeyRequestOptionsUserVerificationPreferred,
+		SitePasskeyRequestOptionsUserVerificationDiscouraged,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SitePasskeyRequestOptionsUserVerification) MarshalText() ([]byte, error) {
+	switch s {
+	case SitePasskeyRequestOptionsUserVerificationRequired:
+		return []byte(s), nil
+	case SitePasskeyRequestOptionsUserVerificationPreferred:
+		return []byte(s), nil
+	case SitePasskeyRequestOptionsUserVerificationDiscouraged:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SitePasskeyRequestOptionsUserVerification) UnmarshalText(data []byte) error {
+	switch SitePasskeyRequestOptionsUserVerification(data) {
+	case SitePasskeyRequestOptionsUserVerificationRequired:
+		*s = SitePasskeyRequestOptionsUserVerificationRequired
+		return nil
+	case SitePasskeyRequestOptionsUserVerificationPreferred:
+		*s = SitePasskeyRequestOptionsUserVerificationPreferred
+		return nil
+	case SitePasskeyRequestOptionsUserVerificationDiscouraged:
+		*s = SitePasskeyRequestOptionsUserVerificationDiscouraged
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// The account a Passkey is created for.
+// Ref: #/components/schemas/SitePasskeyUserEntity
+type SitePasskeyUserEntity struct {
+	// The user handle, base64url.
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	DisplayName string `json:"displayName"`
+}
+
+// GetID returns the value of ID.
+func (s *SitePasskeyUserEntity) GetID() string {
+	return s.ID
+}
+
+// GetName returns the value of Name.
+func (s *SitePasskeyUserEntity) GetName() string {
+	return s.Name
+}
+
+// GetDisplayName returns the value of DisplayName.
+func (s *SitePasskeyUserEntity) GetDisplayName() string {
+	return s.DisplayName
+}
+
+// SetID sets the value of ID.
+func (s *SitePasskeyUserEntity) SetID(val string) {
+	s.ID = val
+}
+
+// SetName sets the value of Name.
+func (s *SitePasskeyUserEntity) SetName(val string) {
+	s.Name = val
+}
+
+// SetDisplayName sets the value of DisplayName.
+func (s *SitePasskeyUserEntity) SetDisplayName(val string) {
+	s.DisplayName = val
+}
+
+type SitePasskeysFinishCheckForbidden ProblemDetails
+
+func (*SitePasskeysFinishCheckForbidden) sitePasskeysFinishCheckRes() {}
+
+// SitePasskeysFinishCheckNoContent is response for SitePasskeysFinishCheck operation.
+type SitePasskeysFinishCheckNoContent struct {
+	SetCookie string
+}
+
+// GetSetCookie returns the value of SetCookie.
+func (s *SitePasskeysFinishCheckNoContent) GetSetCookie() string {
+	return s.SetCookie
+}
+
+// SetSetCookie sets the value of SetCookie.
+func (s *SitePasskeysFinishCheckNoContent) SetSetCookie(val string) {
+	s.SetCookie = val
+}
+
+func (*SitePasskeysFinishCheckNoContent) sitePasskeysFinishCheckRes() {}
+
+type SitePasskeysFinishCheckNotFound ProblemDetails
+
+func (*SitePasskeysFinishCheckNotFound) sitePasskeysFinishCheckRes() {}
+
+type SitePasskeysFinishRegistrationForbidden ProblemDetails
+
+func (*SitePasskeysFinishRegistrationForbidden) sitePasskeysFinishRegistrationRes() {}
+
+type SitePasskeysFinishRegistrationNotFound ProblemDetails
+
+func (*SitePasskeysFinishRegistrationNotFound) sitePasskeysFinishRegistrationRes() {}
+
+type SitePasskeysFinishRegistrationUnprocessableEntity ProblemDetails
+
+func (*SitePasskeysFinishRegistrationUnprocessableEntity) sitePasskeysFinishRegistrationRes() {}
+
+type SitePasskeysRemoveConflict ProblemDetails
+
+func (*SitePasskeysRemoveConflict) sitePasskeysRemoveRes() {}
+
+type SitePasskeysRemoveForbidden ProblemDetails
+
+func (*SitePasskeysRemoveForbidden) sitePasskeysRemoveRes() {}
+
+// SitePasskeysRemoveNoContent is response for SitePasskeysRemove operation.
+type SitePasskeysRemoveNoContent struct {
+	SetCookie string
+}
+
+// GetSetCookie returns the value of SetCookie.
+func (s *SitePasskeysRemoveNoContent) GetSetCookie() string {
+	return s.SetCookie
+}
+
+// SetSetCookie sets the value of SetCookie.
+func (s *SitePasskeysRemoveNoContent) SetSetCookie(val string) {
+	s.SetCookie = val
+}
+
+func (*SitePasskeysRemoveNoContent) sitePasskeysRemoveRes() {}
+
+type SitePasskeysRemoveNotFound ProblemDetails
+
+func (*SitePasskeysRemoveNotFound) sitePasskeysRemoveRes() {}
+
+type SitePasskeysRenameNotFound ProblemDetails
+
+func (*SitePasskeysRenameNotFound) sitePasskeysRenameRes() {}
+
+type SitePasskeysRenameUnprocessableEntity ProblemDetails
+
+func (*SitePasskeysRenameUnprocessableEntity) sitePasskeysRenameRes() {}
+
 // A Preset the Instance offers.
 // Ref: #/components/schemas/SitePresetResource
 type SitePresetResource struct {
@@ -12078,11 +13566,12 @@ func (s *SiteRecoveryCodesHeaders) SetResponse(val SiteRecoveryCodes) {
 func (*SiteRecoveryCodesHeaders) siteSecondFactorConfirmEnrollmentRes()       {}
 func (*SiteRecoveryCodesHeaders) siteSecondFactorRegenerateRecoveryCodesRes() {}
 
-// Proof of the User's password (or a fresh provider login), for regenerating Recovery codes.
+// Proof of the User's password (or a fresh provider login or Passkey check), for regenerating Recovery
+// codes.
 // Ref: #/components/schemas/SiteRecoveryCodesInput
 type SiteRecoveryCodesInput struct {
-	// Current password. Left out by a User with no password, who proves a provider sign-in of the last few
-	// minutes instead (ADR 0048).
+	// Current password. Left out by a User with no password, who proves a provider or Passkey sign-in of
+	// the last few minutes instead (ADR 0048).
 	CurrentPassword OptString `json:"currentPassword"`
 }
 
@@ -12324,11 +13813,12 @@ type SiteSecondFactorConfirmEnrollmentUnprocessableEntity ProblemDetails
 
 func (*SiteSecondFactorConfirmEnrollmentUnprocessableEntity) siteSecondFactorConfirmEnrollmentRes() {}
 
-// Proof of the User's password (or a fresh provider login) and a code from the authenticator app.
+// Proof of the User's password (or a fresh provider login or Passkey check) and a code from the
+// authenticator app.
 // Ref: #/components/schemas/SiteSecondFactorConfirmInput
 type SiteSecondFactorConfirmInput struct {
-	// Current password. Left out by a User with no password, who proves a provider sign-in of the last few
-	// minutes instead (ADR 0048).
+	// Current password. Left out by a User with no password, who proves a provider or Passkey sign-in of
+	// the last few minutes instead (ADR 0048).
 	CurrentPassword OptString `json:"currentPassword"`
 	// The current 6-digit TOTP code.
 	Code string `json:"code"`
@@ -12362,11 +13852,12 @@ type SiteSecondFactorDisableForbidden ProblemDetails
 
 func (*SiteSecondFactorDisableForbidden) siteSecondFactorDisableRes() {}
 
-// Proof of password (or a fresh provider login) and possession, for disabling the Second factor.
+// Proof of password (or a fresh provider login or Passkey check) and possession, for disabling the
+// Second factor.
 // Ref: #/components/schemas/SiteSecondFactorDisableInput
 type SiteSecondFactorDisableInput struct {
-	// Current password. Left out by a User with no password, who proves a provider sign-in of the last few
-	// minutes instead (ADR 0048).
+	// Current password. Left out by a User with no password, who proves a provider or Passkey sign-in of
+	// the last few minutes instead (ADR 0048).
 	CurrentPassword OptString `json:"currentPassword"`
 	// A current TOTP code, or an unused Recovery code.
 	Code string `json:"code"`
@@ -12491,11 +13982,12 @@ type SiteSecondFactorStartEnrollmentForbidden ProblemDetails
 
 func (*SiteSecondFactorStartEnrollmentForbidden) siteSecondFactorStartEnrollmentRes() {}
 
-// Proof of the User's password (or a fresh provider login), for starting an enrollment.
+// Proof of the User's password (or a fresh provider login or Passkey check), for starting an
+// enrollment.
 // Ref: #/components/schemas/SiteSecondFactorStartInput
 type SiteSecondFactorStartInput struct {
-	// Current password. Left out by a User with no password, who proves a provider sign-in of the last few
-	// minutes instead (ADR 0048).
+	// Current password. Left out by a User with no password, who proves a provider or Passkey sign-in of
+	// the last few minutes instead (ADR 0048).
 	CurrentPassword OptString `json:"currentPassword"`
 }
 
@@ -12522,10 +14014,11 @@ type SiteSecondFactorStatus struct {
 	// Whether the User has a password. Without one, the steps that ask for the password accept a fresh
 	// sign-in with a Sign-in provider instead.
 	PasswordSet bool `json:"passwordSet"`
-	// Whether the session began with a Sign-in provider login recent enough to stand in for the password
-	// (a User with a password always proves the password). When a User with no password sees false, the
-	// next step is to sign in with a provider again.
-	ProviderLoginFresh bool `json:"providerLoginFresh"`
+	// Whether the session holds a fresh proof that stands in for the password: a Sign-in provider login or
+	// a Passkey check of the last few minutes (a User with a password always proves the password). When a
+	// User with no password sees false, the next step is to sign in with a provider again or to check a
+	// Passkey.
+	IdentityProofFresh bool `json:"identityProofFresh"`
 }
 
 // GetEnabled returns the value of Enabled.
@@ -12548,9 +14041,9 @@ func (s *SiteSecondFactorStatus) GetPasswordSet() bool {
 	return s.PasswordSet
 }
 
-// GetProviderLoginFresh returns the value of ProviderLoginFresh.
-func (s *SiteSecondFactorStatus) GetProviderLoginFresh() bool {
-	return s.ProviderLoginFresh
+// GetIdentityProofFresh returns the value of IdentityProofFresh.
+func (s *SiteSecondFactorStatus) GetIdentityProofFresh() bool {
+	return s.IdentityProofFresh
 }
 
 // SetEnabled sets the value of Enabled.
@@ -12573,9 +14066,9 @@ func (s *SiteSecondFactorStatus) SetPasswordSet(val bool) {
 	s.PasswordSet = val
 }
 
-// SetProviderLoginFresh sets the value of ProviderLoginFresh.
-func (s *SiteSecondFactorStatus) SetProviderLoginFresh(val bool) {
-	s.ProviderLoginFresh = val
+// SetIdentityProofFresh sets the value of IdentityProofFresh.
+func (s *SiteSecondFactorStatus) SetIdentityProofFresh(val bool) {
+	s.IdentityProofFresh = val
 }
 
 // How a segment group combines its rules.

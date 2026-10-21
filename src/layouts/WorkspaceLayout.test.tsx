@@ -230,7 +230,7 @@ test('during the grace of a Two-factor requirement a banner leads to enrollment'
     .element(screen.getByText('This workspace requires two-factor authentication'))
     .toBeInTheDocument()
   await expect
-    .element(screen.getByRole('link', { name: 'Set up two-factor authentication' }))
+    .element(screen.getByRole('link', { name: 'Set up two-factor authentication or a Passkey' }))
     .toHaveAttribute('href', securityRoute.to)
   await expect
     .element(screen.getByText('Two-factor authentication required'))
@@ -244,7 +244,10 @@ test('after the grace the workspace is replaced by the screen that leads to enro
 
   await expect.element(screen.getByText('Two-factor authentication required')).toBeInTheDocument()
   await expect
-    .element(screen.getByRole('link', { name: 'Set up two-factor authentication' }))
+    .element(screen.getByText(/Sign in with a Passkey, or set up two-factor authentication/))
+    .toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('link', { name: 'Set up two-factor authentication or a Passkey' }))
     .toHaveAttribute('href', securityRoute.to)
 })
 

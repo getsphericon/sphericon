@@ -121,3 +121,8 @@ func NewVerifyTrackingDomainWorker(client *ent.Client, sender messaging.EmailSen
 func NewEraseWorkspacesWorker(deletion *workspacedeletion.Module, now func() time.Time) *EraseWorkspacesWorker {
 	return &EraseWorkspacesWorker{deletion: deletion, now: now}
 }
+
+// NewPrunePasskeyChallengesWorker builds the worker on the clock the test moves.
+func NewPrunePasskeyChallengesWorker(client *ent.Client, now func() time.Time) *PrunePasskeyChallengesWorker {
+	return &PrunePasskeyChallengesWorker{ent: client, now: now}
+}
