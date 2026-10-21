@@ -640,3 +640,1229 @@
     created_at: '{{daysAgo 7}}',
     updated_at: '{{daysAgo 7}}',
   }
+
+# --- Brightpath (workspace 20): demo workspace behind the screenshots on getsphericon.com ---
+- id: 20001
+  broadcast_id: 20001
+  contact_id: 20020
+  workspace_id: 20
+  created_at: '{{hoursAgo 1884}}'
+  updated_at: '{{hoursAgo 1872}}'
+- id: 20002
+  broadcast_id: 20001
+  contact_id: 20021
+  workspace_id: 20
+  created_at: '{{hoursAgo 1884}}'
+  updated_at: '{{hoursAgo 1872}}'
+- id: 20003
+  broadcast_id: 20001
+  contact_id: 20022
+  workspace_id: 20
+  created_at: '{{hoursAgo 1884}}'
+  updated_at: '{{hoursAgo 1872}}'
+- id: 20004
+  broadcast_id: 20001
+  contact_id: 20023
+  workspace_id: 20
+  created_at: '{{hoursAgo 1884}}'
+  updated_at: '{{hoursAgo 1872}}'
+- id: 20005
+  broadcast_id: 20001
+  contact_id: 20024
+  workspace_id: 20
+  opened_at: '{{hoursAgo 1869}}'
+  clicked_at: '{{hoursAgo 1868}}'
+  created_at: '{{hoursAgo 1884}}'
+  updated_at: '{{hoursAgo 1872}}'
+- id: 20006
+  broadcast_id: 20001
+  contact_id: 20025
+  workspace_id: 20
+  opened_at: '{{hoursAgo 1868}}'
+  clicked_at: '{{hoursAgo 1867}}'
+  created_at: '{{hoursAgo 1884}}'
+  updated_at: '{{hoursAgo 1872}}'
+- id: 20007
+  broadcast_id: 20001
+  contact_id: 20026
+  workspace_id: 20
+  created_at: '{{hoursAgo 1884}}'
+  updated_at: '{{hoursAgo 1872}}'
+- id: 20008
+  broadcast_id: 20001
+  contact_id: 20027
+  workspace_id: 20
+  opened_at: '{{hoursAgo 1872}}'
+  created_at: '{{hoursAgo 1884}}'
+  updated_at: '{{hoursAgo 1872}}'
+- id: 20009
+  broadcast_id: 20001
+  contact_id: 20028
+  workspace_id: 20
+  created_at: '{{hoursAgo 1884}}'
+  updated_at: '{{hoursAgo 1872}}'
+- id: 20010
+  broadcast_id: 20001
+  contact_id: 20029
+  workspace_id: 20
+  opened_at: '{{hoursAgo 1873}}'
+  created_at: '{{hoursAgo 1884}}'
+  updated_at: '{{hoursAgo 1872}}'
+- id: 20011
+  broadcast_id: 20001
+  contact_id: 20030
+  workspace_id: 20
+  opened_at: '{{hoursAgo 1868}}'
+  created_at: '{{hoursAgo 1884}}'
+  updated_at: '{{hoursAgo 1872}}'
+- id: 20012
+  broadcast_id: 20001
+  contact_id: 20031
+  workspace_id: 20
+  created_at: '{{hoursAgo 1884}}'
+  updated_at: '{{hoursAgo 1872}}'
+- id: 20013
+  broadcast_id: 20001
+  contact_id: 20040
+  workspace_id: 20
+  created_at: '{{hoursAgo 1884}}'
+  updated_at: '{{hoursAgo 1872}}'
+- id: 20014
+  broadcast_id: 20001
+  contact_id: 20041
+  workspace_id: 20
+  created_at: '{{hoursAgo 1884}}'
+  updated_at: '{{hoursAgo 1872}}'
+- id: 20015
+  broadcast_id: 20001
+  contact_id: 20042
+  workspace_id: 20
+  created_at: '{{hoursAgo 1884}}'
+  updated_at: '{{hoursAgo 1872}}'
+- id: 20016
+  broadcast_id: 20001
+  contact_id: 20043
+  workspace_id: 20
+  created_at: '{{hoursAgo 1884}}'
+  updated_at: '{{hoursAgo 1872}}'
+- id: 20017
+  broadcast_id: 20001
+  contact_id: 20044
+  workspace_id: 20
+  created_at: '{{hoursAgo 1884}}'
+  updated_at: '{{hoursAgo 1872}}'
+- id: 20018
+  broadcast_id: 20002
+  contact_id: 20015
+  workspace_id: 20
+  opened_at: '{{hoursAgo 1244}}'
+  created_at: '{{hoursAgo 1260}}'
+  updated_at: '{{hoursAgo 1248}}'
+- id: 20019
+  broadcast_id: 20002
+  contact_id: 20016
+  workspace_id: 20
+  opened_at: '{{hoursAgo 1244}}'
+  created_at: '{{hoursAgo 1260}}'
+  updated_at: '{{hoursAgo 1248}}'
+- id: 20020
+  broadcast_id: 20002
+  contact_id: 20017
+  workspace_id: 20
+  created_at: '{{hoursAgo 1260}}'
+  updated_at: '{{hoursAgo 1248}}'
+- id: 20021
+  broadcast_id: 20002
+  contact_id: 20018
+  workspace_id: 20
+  created_at: '{{hoursAgo 1260}}'
+  updated_at: '{{hoursAgo 1248}}'
+- id: 20022
+  broadcast_id: 20002
+  contact_id: 20019
+  workspace_id: 20
+  created_at: '{{hoursAgo 1260}}'
+  updated_at: '{{hoursAgo 1248}}'
+- id: 20023
+  broadcast_id: 20002
+  contact_id: 20020
+  workspace_id: 20
+  opened_at: '{{hoursAgo 1245}}'
+  created_at: '{{hoursAgo 1260}}'
+  updated_at: '{{hoursAgo 1248}}'
+- id: 20024
+  broadcast_id: 20002
+  contact_id: 20021
+  workspace_id: 20
+  opened_at: '{{hoursAgo 1244}}'
+  created_at: '{{hoursAgo 1260}}'
+  updated_at: '{{hoursAgo 1248}}'
+- id: 20025
+  broadcast_id: 20002
+  contact_id: 20022
+  workspace_id: 20
+  created_at: '{{hoursAgo 1260}}'
+  updated_at: '{{hoursAgo 1248}}'
+- id: 20026
+  broadcast_id: 20002
+  contact_id: 20023
+  workspace_id: 20
+  opened_at: '{{hoursAgo 1242}}'
+  created_at: '{{hoursAgo 1260}}'
+  updated_at: '{{hoursAgo 1248}}'
+- id: 20027
+  broadcast_id: 20002
+  contact_id: 20024
+  workspace_id: 20
+  created_at: '{{hoursAgo 1260}}'
+  updated_at: '{{hoursAgo 1248}}'
+- id: 20028
+  broadcast_id: 20002
+  contact_id: 20025
+  workspace_id: 20
+  created_at: '{{hoursAgo 1260}}'
+  updated_at: '{{hoursAgo 1248}}'
+- id: 20029
+  broadcast_id: 20002
+  contact_id: 20026
+  workspace_id: 20
+  created_at: '{{hoursAgo 1260}}'
+  updated_at: '{{hoursAgo 1248}}'
+- id: 20030
+  broadcast_id: 20002
+  contact_id: 20027
+  workspace_id: 20
+  opened_at: '{{hoursAgo 1244}}'
+  created_at: '{{hoursAgo 1260}}'
+  updated_at: '{{hoursAgo 1248}}'
+- id: 20031
+  broadcast_id: 20002
+  contact_id: 20028
+  workspace_id: 20
+  opened_at: '{{hoursAgo 1242}}'
+  created_at: '{{hoursAgo 1260}}'
+  updated_at: '{{hoursAgo 1248}}'
+- id: 20032
+  broadcast_id: 20002
+  contact_id: 20029
+  workspace_id: 20
+  opened_at: '{{hoursAgo 1247}}'
+  created_at: '{{hoursAgo 1260}}'
+  updated_at: '{{hoursAgo 1248}}'
+- id: 20033
+  broadcast_id: 20002
+  contact_id: 20030
+  workspace_id: 20
+  opened_at: '{{hoursAgo 1251}}'
+  clicked_at: '{{hoursAgo 1250}}'
+  created_at: '{{hoursAgo 1260}}'
+  updated_at: '{{hoursAgo 1248}}'
+- id: 20034
+  broadcast_id: 20002
+  contact_id: 20031
+  workspace_id: 20
+  opened_at: '{{hoursAgo 1240}}'
+  created_at: '{{hoursAgo 1260}}'
+  updated_at: '{{hoursAgo 1248}}'
+- id: 20035
+  broadcast_id: 20002
+  contact_id: 20032
+  workspace_id: 20
+  created_at: '{{hoursAgo 1260}}'
+  updated_at: '{{hoursAgo 1248}}'
+- id: 20036
+  broadcast_id: 20002
+  contact_id: 20033
+  workspace_id: 20
+  created_at: '{{hoursAgo 1260}}'
+  updated_at: '{{hoursAgo 1248}}'
+- id: 20037
+  broadcast_id: 20002
+  contact_id: 20034
+  workspace_id: 20
+  opened_at: '{{hoursAgo 1243}}'
+  clicked_at: '{{hoursAgo 1241}}'
+  created_at: '{{hoursAgo 1260}}'
+  updated_at: '{{hoursAgo 1248}}'
+- id: 20038
+  broadcast_id: 20002
+  contact_id: 20035
+  workspace_id: 20
+  created_at: '{{hoursAgo 1260}}'
+  updated_at: '{{hoursAgo 1248}}'
+- id: 20039
+  broadcast_id: 20002
+  contact_id: 20036
+  workspace_id: 20
+  created_at: '{{hoursAgo 1260}}'
+  updated_at: '{{hoursAgo 1248}}'
+- id: 20040
+  broadcast_id: 20002
+  contact_id: 20037
+  workspace_id: 20
+  created_at: '{{hoursAgo 1260}}'
+  updated_at: '{{hoursAgo 1248}}'
+- id: 20041
+  broadcast_id: 20002
+  contact_id: 20038
+  workspace_id: 20
+  created_at: '{{hoursAgo 1260}}'
+  updated_at: '{{hoursAgo 1248}}'
+- id: 20042
+  broadcast_id: 20002
+  contact_id: 20039
+  workspace_id: 20
+  created_at: '{{hoursAgo 1260}}'
+  updated_at: '{{hoursAgo 1248}}'
+- id: 20043
+  broadcast_id: 20002
+  contact_id: 20040
+  workspace_id: 20
+  created_at: '{{hoursAgo 1260}}'
+  updated_at: '{{hoursAgo 1248}}'
+- id: 20044
+  broadcast_id: 20002
+  contact_id: 20041
+  workspace_id: 20
+  opened_at: '{{hoursAgo 1246}}'
+  created_at: '{{hoursAgo 1260}}'
+  updated_at: '{{hoursAgo 1248}}'
+- id: 20045
+  broadcast_id: 20002
+  contact_id: 20042
+  workspace_id: 20
+  created_at: '{{hoursAgo 1260}}'
+  updated_at: '{{hoursAgo 1248}}'
+- id: 20046
+  broadcast_id: 20002
+  contact_id: 20043
+  workspace_id: 20
+  created_at: '{{hoursAgo 1260}}'
+  updated_at: '{{hoursAgo 1248}}'
+- id: 20047
+  broadcast_id: 20002
+  contact_id: 20044
+  workspace_id: 20
+  created_at: '{{hoursAgo 1260}}'
+  updated_at: '{{hoursAgo 1248}}'
+- id: 20048
+  broadcast_id: 20003
+  contact_id: 20015
+  workspace_id: 20
+  opened_at: '{{hoursAgo 793}}'
+  created_at: '{{hoursAgo 804}}'
+  updated_at: '{{hoursAgo 792}}'
+- id: 20049
+  broadcast_id: 20003
+  contact_id: 20016
+  workspace_id: 20
+  created_at: '{{hoursAgo 804}}'
+  updated_at: '{{hoursAgo 792}}'
+- id: 20050
+  broadcast_id: 20003
+  contact_id: 20017
+  workspace_id: 20
+  created_at: '{{hoursAgo 804}}'
+  updated_at: '{{hoursAgo 792}}'
+- id: 20051
+  broadcast_id: 20003
+  contact_id: 20018
+  workspace_id: 20
+  opened_at: '{{hoursAgo 789}}'
+  clicked_at: '{{hoursAgo 787}}'
+  created_at: '{{hoursAgo 804}}'
+  updated_at: '{{hoursAgo 792}}'
+- id: 20052
+  broadcast_id: 20003
+  contact_id: 20019
+  workspace_id: 20
+  opened_at: '{{hoursAgo 788}}'
+  clicked_at: '{{hoursAgo 787}}'
+  created_at: '{{hoursAgo 804}}'
+  updated_at: '{{hoursAgo 792}}'
+- id: 20053
+  broadcast_id: 20003
+  contact_id: 20020
+  workspace_id: 20
+  opened_at: '{{hoursAgo 795}}'
+  clicked_at: '{{hoursAgo 793}}'
+  created_at: '{{hoursAgo 804}}'
+  updated_at: '{{hoursAgo 792}}'
+- id: 20054
+  broadcast_id: 20003
+  contact_id: 20021
+  workspace_id: 20
+  opened_at: '{{hoursAgo 790}}'
+  created_at: '{{hoursAgo 804}}'
+  updated_at: '{{hoursAgo 792}}'
+- id: 20055
+  broadcast_id: 20003
+  contact_id: 20022
+  workspace_id: 20
+  opened_at: '{{hoursAgo 791}}'
+  clicked_at: '{{hoursAgo 788}}'
+  created_at: '{{hoursAgo 804}}'
+  updated_at: '{{hoursAgo 792}}'
+- id: 20056
+  broadcast_id: 20003
+  contact_id: 20023
+  workspace_id: 20
+  opened_at: '{{hoursAgo 789}}'
+  created_at: '{{hoursAgo 804}}'
+  updated_at: '{{hoursAgo 792}}'
+- id: 20057
+  broadcast_id: 20003
+  contact_id: 20024
+  workspace_id: 20
+  created_at: '{{hoursAgo 804}}'
+  updated_at: '{{hoursAgo 792}}'
+- id: 20058
+  broadcast_id: 20003
+  contact_id: 20025
+  workspace_id: 20
+  opened_at: '{{hoursAgo 790}}'
+  clicked_at: '{{hoursAgo 787}}'
+  created_at: '{{hoursAgo 804}}'
+  updated_at: '{{hoursAgo 792}}'
+- id: 20059
+  broadcast_id: 20003
+  contact_id: 20026
+  workspace_id: 20
+  opened_at: '{{hoursAgo 784}}'
+  created_at: '{{hoursAgo 804}}'
+  updated_at: '{{hoursAgo 792}}'
+- id: 20060
+  broadcast_id: 20003
+  contact_id: 20027
+  workspace_id: 20
+  opened_at: '{{hoursAgo 784}}'
+  created_at: '{{hoursAgo 804}}'
+  updated_at: '{{hoursAgo 792}}'
+- id: 20061
+  broadcast_id: 20003
+  contact_id: 20028
+  workspace_id: 20
+  opened_at: '{{hoursAgo 785}}'
+  created_at: '{{hoursAgo 804}}'
+  updated_at: '{{hoursAgo 792}}'
+- id: 20062
+  broadcast_id: 20003
+  contact_id: 20029
+  workspace_id: 20
+  opened_at: '{{hoursAgo 792}}'
+  created_at: '{{hoursAgo 804}}'
+  updated_at: '{{hoursAgo 792}}'
+- id: 20063
+  broadcast_id: 20003
+  contact_id: 20030
+  workspace_id: 20
+  created_at: '{{hoursAgo 804}}'
+  updated_at: '{{hoursAgo 792}}'
+- id: 20064
+  broadcast_id: 20003
+  contact_id: 20031
+  workspace_id: 20
+  opened_at: '{{hoursAgo 787}}'
+  created_at: '{{hoursAgo 804}}'
+  updated_at: '{{hoursAgo 792}}'
+- id: 20065
+  broadcast_id: 20003
+  contact_id: 20032
+  workspace_id: 20
+  created_at: '{{hoursAgo 804}}'
+  updated_at: '{{hoursAgo 792}}'
+- id: 20066
+  broadcast_id: 20003
+  contact_id: 20033
+  workspace_id: 20
+  created_at: '{{hoursAgo 804}}'
+  updated_at: '{{hoursAgo 792}}'
+- id: 20067
+  broadcast_id: 20003
+  contact_id: 20034
+  workspace_id: 20
+  opened_at: '{{hoursAgo 788}}'
+  created_at: '{{hoursAgo 804}}'
+  updated_at: '{{hoursAgo 792}}'
+- id: 20068
+  broadcast_id: 20003
+  contact_id: 20035
+  workspace_id: 20
+  opened_at: '{{hoursAgo 794}}'
+  clicked_at: '{{hoursAgo 793}}'
+  created_at: '{{hoursAgo 804}}'
+  updated_at: '{{hoursAgo 792}}'
+- id: 20069
+  broadcast_id: 20003
+  contact_id: 20036
+  workspace_id: 20
+  created_at: '{{hoursAgo 804}}'
+  updated_at: '{{hoursAgo 792}}'
+- id: 20070
+  broadcast_id: 20003
+  contact_id: 20037
+  workspace_id: 20
+  created_at: '{{hoursAgo 804}}'
+  updated_at: '{{hoursAgo 792}}'
+- id: 20071
+  broadcast_id: 20003
+  contact_id: 20038
+  workspace_id: 20
+  created_at: '{{hoursAgo 804}}'
+  updated_at: '{{hoursAgo 792}}'
+- id: 20072
+  broadcast_id: 20003
+  contact_id: 20039
+  workspace_id: 20
+  created_at: '{{hoursAgo 804}}'
+  updated_at: '{{hoursAgo 792}}'
+- id: 20073
+  broadcast_id: 20003
+  contact_id: 20040
+  workspace_id: 20
+  opened_at: '{{hoursAgo 791}}'
+  created_at: '{{hoursAgo 804}}'
+  updated_at: '{{hoursAgo 792}}'
+- id: 20074
+  broadcast_id: 20003
+  contact_id: 20041
+  workspace_id: 20
+  created_at: '{{hoursAgo 804}}'
+  updated_at: '{{hoursAgo 792}}'
+- id: 20075
+  broadcast_id: 20003
+  contact_id: 20042
+  workspace_id: 20
+  created_at: '{{hoursAgo 804}}'
+  updated_at: '{{hoursAgo 792}}'
+- id: 20076
+  broadcast_id: 20003
+  contact_id: 20043
+  workspace_id: 20
+  created_at: '{{hoursAgo 804}}'
+  updated_at: '{{hoursAgo 792}}'
+- id: 20077
+  broadcast_id: 20003
+  contact_id: 20044
+  workspace_id: 20
+  created_at: '{{hoursAgo 804}}'
+  updated_at: '{{hoursAgo 792}}'
+- id: 20078
+  broadcast_id: 20004
+  contact_id: 20015
+  workspace_id: 20
+  opened_at: '{{hoursAgo 451}}'
+  clicked_at: '{{hoursAgo 450}}'
+  created_at: '{{hoursAgo 468}}'
+  updated_at: '{{hoursAgo 456}}'
+- id: 20079
+  broadcast_id: 20004
+  contact_id: 20016
+  workspace_id: 20
+  opened_at: '{{hoursAgo 452}}'
+  clicked_at: '{{hoursAgo 449}}'
+  created_at: '{{hoursAgo 468}}'
+  updated_at: '{{hoursAgo 456}}'
+- id: 20080
+  broadcast_id: 20004
+  contact_id: 20017
+  workspace_id: 20
+  created_at: '{{hoursAgo 468}}'
+  updated_at: '{{hoursAgo 456}}'
+- id: 20081
+  broadcast_id: 20004
+  contact_id: 20018
+  workspace_id: 20
+  opened_at: '{{hoursAgo 455}}'
+  clicked_at: '{{hoursAgo 454}}'
+  created_at: '{{hoursAgo 468}}'
+  updated_at: '{{hoursAgo 456}}'
+- id: 20082
+  broadcast_id: 20004
+  contact_id: 20019
+  workspace_id: 20
+  opened_at: '{{hoursAgo 458}}'
+  created_at: '{{hoursAgo 468}}'
+  updated_at: '{{hoursAgo 456}}'
+- id: 20083
+  broadcast_id: 20004
+  contact_id: 20020
+  workspace_id: 20
+  opened_at: '{{hoursAgo 456}}'
+  created_at: '{{hoursAgo 468}}'
+  updated_at: '{{hoursAgo 456}}'
+- id: 20084
+  broadcast_id: 20004
+  contact_id: 20021
+  workspace_id: 20
+  opened_at: '{{hoursAgo 455}}'
+  created_at: '{{hoursAgo 468}}'
+  updated_at: '{{hoursAgo 456}}'
+- id: 20085
+  broadcast_id: 20004
+  contact_id: 20022
+  workspace_id: 20
+  opened_at: '{{hoursAgo 448}}'
+  created_at: '{{hoursAgo 468}}'
+  updated_at: '{{hoursAgo 456}}'
+- id: 20086
+  broadcast_id: 20004
+  contact_id: 20023
+  workspace_id: 20
+  created_at: '{{hoursAgo 468}}'
+  updated_at: '{{hoursAgo 456}}'
+- id: 20087
+  broadcast_id: 20004
+  contact_id: 20024
+  workspace_id: 20
+  opened_at: '{{hoursAgo 456}}'
+  created_at: '{{hoursAgo 468}}'
+  updated_at: '{{hoursAgo 456}}'
+- id: 20088
+  broadcast_id: 20004
+  contact_id: 20025
+  workspace_id: 20
+  opened_at: '{{hoursAgo 453}}'
+  created_at: '{{hoursAgo 468}}'
+  updated_at: '{{hoursAgo 456}}'
+- id: 20089
+  broadcast_id: 20004
+  contact_id: 20026
+  workspace_id: 20
+  created_at: '{{hoursAgo 468}}'
+  updated_at: '{{hoursAgo 456}}'
+- id: 20090
+  broadcast_id: 20004
+  contact_id: 20027
+  workspace_id: 20
+  opened_at: '{{hoursAgo 454}}'
+  clicked_at: '{{hoursAgo 452}}'
+  created_at: '{{hoursAgo 468}}'
+  updated_at: '{{hoursAgo 456}}'
+- id: 20091
+  broadcast_id: 20004
+  contact_id: 20028
+  workspace_id: 20
+  opened_at: '{{hoursAgo 451}}'
+  created_at: '{{hoursAgo 468}}'
+  updated_at: '{{hoursAgo 456}}'
+- id: 20092
+  broadcast_id: 20004
+  contact_id: 20029
+  workspace_id: 20
+  opened_at: '{{hoursAgo 450}}'
+  clicked_at: '{{hoursAgo 448}}'
+  created_at: '{{hoursAgo 468}}'
+  updated_at: '{{hoursAgo 456}}'
+- id: 20093
+  broadcast_id: 20004
+  contact_id: 20030
+  workspace_id: 20
+  opened_at: '{{hoursAgo 451}}'
+  created_at: '{{hoursAgo 468}}'
+  updated_at: '{{hoursAgo 456}}'
+- id: 20094
+  broadcast_id: 20004
+  contact_id: 20031
+  workspace_id: 20
+  opened_at: '{{hoursAgo 452}}'
+  created_at: '{{hoursAgo 468}}'
+  updated_at: '{{hoursAgo 456}}'
+- id: 20095
+  broadcast_id: 20004
+  contact_id: 20032
+  workspace_id: 20
+  opened_at: '{{hoursAgo 449}}'
+  created_at: '{{hoursAgo 468}}'
+  updated_at: '{{hoursAgo 456}}'
+- id: 20096
+  broadcast_id: 20004
+  contact_id: 20033
+  workspace_id: 20
+  created_at: '{{hoursAgo 468}}'
+  updated_at: '{{hoursAgo 456}}'
+- id: 20097
+  broadcast_id: 20004
+  contact_id: 20034
+  workspace_id: 20
+  created_at: '{{hoursAgo 468}}'
+  updated_at: '{{hoursAgo 456}}'
+- id: 20098
+  broadcast_id: 20004
+  contact_id: 20035
+  workspace_id: 20
+  created_at: '{{hoursAgo 468}}'
+  updated_at: '{{hoursAgo 456}}'
+- id: 20099
+  broadcast_id: 20004
+  contact_id: 20036
+  workspace_id: 20
+  created_at: '{{hoursAgo 468}}'
+  updated_at: '{{hoursAgo 456}}'
+- id: 20100
+  broadcast_id: 20004
+  contact_id: 20037
+  workspace_id: 20
+  created_at: '{{hoursAgo 468}}'
+  updated_at: '{{hoursAgo 456}}'
+- id: 20101
+  broadcast_id: 20004
+  contact_id: 20038
+  workspace_id: 20
+  created_at: '{{hoursAgo 468}}'
+  updated_at: '{{hoursAgo 456}}'
+- id: 20102
+  broadcast_id: 20004
+  contact_id: 20039
+  workspace_id: 20
+  opened_at: '{{hoursAgo 450}}'
+  clicked_at: '{{hoursAgo 447}}'
+  created_at: '{{hoursAgo 468}}'
+  updated_at: '{{hoursAgo 456}}'
+- id: 20103
+  broadcast_id: 20004
+  contact_id: 20040
+  workspace_id: 20
+  created_at: '{{hoursAgo 468}}'
+  updated_at: '{{hoursAgo 456}}'
+- id: 20104
+  broadcast_id: 20004
+  contact_id: 20041
+  workspace_id: 20
+  created_at: '{{hoursAgo 468}}'
+  updated_at: '{{hoursAgo 456}}'
+- id: 20105
+  broadcast_id: 20004
+  contact_id: 20042
+  workspace_id: 20
+  opened_at: '{{hoursAgo 448}}'
+  created_at: '{{hoursAgo 468}}'
+  updated_at: '{{hoursAgo 456}}'
+- id: 20106
+  broadcast_id: 20004
+  contact_id: 20043
+  workspace_id: 20
+  created_at: '{{hoursAgo 468}}'
+  updated_at: '{{hoursAgo 456}}'
+- id: 20107
+  broadcast_id: 20004
+  contact_id: 20044
+  workspace_id: 20
+  created_at: '{{hoursAgo 468}}'
+  updated_at: '{{hoursAgo 456}}'
+- id: 20108
+  broadcast_id: 20005
+  contact_id: 20009
+  workspace_id: 20
+  created_at: '{{hoursAgo 228}}'
+  updated_at: '{{hoursAgo 216}}'
+- id: 20109
+  broadcast_id: 20005
+  contact_id: 20010
+  workspace_id: 20
+  created_at: '{{hoursAgo 228}}'
+  updated_at: '{{hoursAgo 216}}'
+- id: 20110
+  broadcast_id: 20005
+  contact_id: 20011
+  workspace_id: 20
+  created_at: '{{hoursAgo 228}}'
+  updated_at: '{{hoursAgo 216}}'
+- id: 20111
+  broadcast_id: 20005
+  contact_id: 20012
+  workspace_id: 20
+  opened_at: '{{hoursAgo 215}}'
+  created_at: '{{hoursAgo 228}}'
+  updated_at: '{{hoursAgo 216}}'
+- id: 20112
+  broadcast_id: 20005
+  contact_id: 20013
+  workspace_id: 20
+  created_at: '{{hoursAgo 228}}'
+  updated_at: '{{hoursAgo 216}}'
+- id: 20113
+  broadcast_id: 20005
+  contact_id: 20014
+  workspace_id: 20
+  opened_at: '{{hoursAgo 213}}'
+  created_at: '{{hoursAgo 228}}'
+  updated_at: '{{hoursAgo 216}}'
+- id: 20114
+  broadcast_id: 20005
+  contact_id: 20015
+  workspace_id: 20
+  created_at: '{{hoursAgo 228}}'
+  updated_at: '{{hoursAgo 216}}'
+- id: 20115
+  broadcast_id: 20005
+  contact_id: 20016
+  workspace_id: 20
+  opened_at: '{{hoursAgo 207}}'
+  created_at: '{{hoursAgo 228}}'
+  updated_at: '{{hoursAgo 216}}'
+- id: 20116
+  broadcast_id: 20005
+  contact_id: 20017
+  workspace_id: 20
+  opened_at: '{{hoursAgo 215}}'
+  created_at: '{{hoursAgo 228}}'
+  updated_at: '{{hoursAgo 216}}'
+- id: 20117
+  broadcast_id: 20005
+  contact_id: 20018
+  workspace_id: 20
+  opened_at: '{{hoursAgo 213}}'
+  clicked_at: '{{hoursAgo 211}}'
+  created_at: '{{hoursAgo 228}}'
+  updated_at: '{{hoursAgo 216}}'
+- id: 20118
+  broadcast_id: 20005
+  contact_id: 20019
+  workspace_id: 20
+  opened_at: '{{hoursAgo 214}}'
+  created_at: '{{hoursAgo 228}}'
+  updated_at: '{{hoursAgo 216}}'
+- id: 20119
+  broadcast_id: 20005
+  contact_id: 20020
+  workspace_id: 20
+  opened_at: '{{hoursAgo 218}}'
+  clicked_at: '{{hoursAgo 217}}'
+  created_at: '{{hoursAgo 228}}'
+  updated_at: '{{hoursAgo 216}}'
+- id: 20120
+  broadcast_id: 20005
+  contact_id: 20021
+  workspace_id: 20
+  opened_at: '{{hoursAgo 207}}'
+  clicked_at: '{{hoursAgo 204}}'
+  created_at: '{{hoursAgo 228}}'
+  updated_at: '{{hoursAgo 216}}'
+- id: 20121
+  broadcast_id: 20005
+  contact_id: 20022
+  workspace_id: 20
+  created_at: '{{hoursAgo 228}}'
+  updated_at: '{{hoursAgo 216}}'
+- id: 20122
+  broadcast_id: 20005
+  contact_id: 20023
+  workspace_id: 20
+  created_at: '{{hoursAgo 228}}'
+  updated_at: '{{hoursAgo 216}}'
+- id: 20123
+  broadcast_id: 20005
+  contact_id: 20024
+  workspace_id: 20
+  opened_at: '{{hoursAgo 218}}'
+  created_at: '{{hoursAgo 228}}'
+  updated_at: '{{hoursAgo 216}}'
+- id: 20124
+  broadcast_id: 20005
+  contact_id: 20025
+  workspace_id: 20
+  created_at: '{{hoursAgo 228}}'
+  updated_at: '{{hoursAgo 216}}'
+- id: 20125
+  broadcast_id: 20005
+  contact_id: 20026
+  workspace_id: 20
+  opened_at: '{{hoursAgo 208}}'
+  clicked_at: '{{hoursAgo 206}}'
+  created_at: '{{hoursAgo 228}}'
+  updated_at: '{{hoursAgo 216}}'
+- id: 20126
+  broadcast_id: 20005
+  contact_id: 20027
+  workspace_id: 20
+  created_at: '{{hoursAgo 228}}'
+  updated_at: '{{hoursAgo 216}}'
+- id: 20127
+  broadcast_id: 20005
+  contact_id: 20028
+  workspace_id: 20
+  created_at: '{{hoursAgo 228}}'
+  updated_at: '{{hoursAgo 216}}'
+- id: 20128
+  broadcast_id: 20005
+  contact_id: 20029
+  workspace_id: 20
+  opened_at: '{{hoursAgo 214}}'
+  created_at: '{{hoursAgo 228}}'
+  updated_at: '{{hoursAgo 216}}'
+- id: 20129
+  broadcast_id: 20005
+  contact_id: 20030
+  workspace_id: 20
+  opened_at: '{{hoursAgo 214}}'
+  created_at: '{{hoursAgo 228}}'
+  updated_at: '{{hoursAgo 216}}'
+- id: 20130
+  broadcast_id: 20005
+  contact_id: 20031
+  workspace_id: 20
+  opened_at: '{{hoursAgo 215}}'
+  created_at: '{{hoursAgo 228}}'
+  updated_at: '{{hoursAgo 216}}'
+- id: 20131
+  broadcast_id: 20005
+  contact_id: 20032
+  workspace_id: 20
+  opened_at: '{{hoursAgo 215}}'
+  clicked_at: '{{hoursAgo 213}}'
+  created_at: '{{hoursAgo 228}}'
+  updated_at: '{{hoursAgo 216}}'
+- id: 20132
+  broadcast_id: 20005
+  contact_id: 20033
+  workspace_id: 20
+  created_at: '{{hoursAgo 228}}'
+  updated_at: '{{hoursAgo 216}}'
+- id: 20133
+  broadcast_id: 20005
+  contact_id: 20034
+  workspace_id: 20
+  opened_at: '{{hoursAgo 210}}'
+  created_at: '{{hoursAgo 228}}'
+  updated_at: '{{hoursAgo 216}}'
+- id: 20134
+  broadcast_id: 20005
+  contact_id: 20035
+  workspace_id: 20
+  created_at: '{{hoursAgo 228}}'
+  updated_at: '{{hoursAgo 216}}'
+- id: 20135
+  broadcast_id: 20005
+  contact_id: 20036
+  workspace_id: 20
+  opened_at: '{{hoursAgo 214}}'
+  clicked_at: '{{hoursAgo 213}}'
+  created_at: '{{hoursAgo 228}}'
+  updated_at: '{{hoursAgo 216}}'
+- id: 20136
+  broadcast_id: 20005
+  contact_id: 20037
+  workspace_id: 20
+  created_at: '{{hoursAgo 228}}'
+  updated_at: '{{hoursAgo 216}}'
+- id: 20137
+  broadcast_id: 20005
+  contact_id: 20038
+  workspace_id: 20
+  opened_at: '{{hoursAgo 212}}'
+  clicked_at: '{{hoursAgo 209}}'
+  created_at: '{{hoursAgo 228}}'
+  updated_at: '{{hoursAgo 216}}'
+- id: 20138
+  broadcast_id: 20005
+  contact_id: 20039
+  workspace_id: 20
+  created_at: '{{hoursAgo 228}}'
+  updated_at: '{{hoursAgo 216}}'
+- id: 20139
+  broadcast_id: 20005
+  contact_id: 20040
+  workspace_id: 20
+  created_at: '{{hoursAgo 228}}'
+  updated_at: '{{hoursAgo 216}}'
+- id: 20140
+  broadcast_id: 20005
+  contact_id: 20041
+  workspace_id: 20
+  opened_at: '{{hoursAgo 210}}'
+  created_at: '{{hoursAgo 228}}'
+  updated_at: '{{hoursAgo 216}}'
+- id: 20141
+  broadcast_id: 20005
+  contact_id: 20042
+  workspace_id: 20
+  created_at: '{{hoursAgo 228}}'
+  updated_at: '{{hoursAgo 216}}'
+- id: 20142
+  broadcast_id: 20005
+  contact_id: 20043
+  workspace_id: 20
+  opened_at: '{{hoursAgo 214}}'
+  created_at: '{{hoursAgo 228}}'
+  updated_at: '{{hoursAgo 216}}'
+- id: 20143
+  broadcast_id: 20005
+  contact_id: 20044
+  workspace_id: 20
+  created_at: '{{hoursAgo 228}}'
+  updated_at: '{{hoursAgo 216}}'
+- id: 20144
+  broadcast_id: 20006
+  contact_id: 20003
+  workspace_id: 20
+  created_at: '{{hoursAgo 84}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 20145
+  broadcast_id: 20006
+  contact_id: 20004
+  workspace_id: 20
+  created_at: '{{hoursAgo 84}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 20146
+  broadcast_id: 20006
+  contact_id: 20005
+  workspace_id: 20
+  created_at: '{{hoursAgo 84}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 20147
+  broadcast_id: 20006
+  contact_id: 20006
+  workspace_id: 20
+  created_at: '{{hoursAgo 84}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 20148
+  broadcast_id: 20006
+  contact_id: 20007
+  workspace_id: 20
+  created_at: '{{hoursAgo 84}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 20149
+  broadcast_id: 20006
+  contact_id: 20008
+  workspace_id: 20
+  created_at: '{{hoursAgo 84}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 20150
+  broadcast_id: 20006
+  contact_id: 20009
+  workspace_id: 20
+  created_at: '{{hoursAgo 84}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 20151
+  broadcast_id: 20006
+  contact_id: 20010
+  workspace_id: 20
+  created_at: '{{hoursAgo 84}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 20152
+  broadcast_id: 20006
+  contact_id: 20011
+  workspace_id: 20
+  created_at: '{{hoursAgo 84}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 20153
+  broadcast_id: 20006
+  contact_id: 20012
+  workspace_id: 20
+  created_at: '{{hoursAgo 84}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 20154
+  broadcast_id: 20006
+  contact_id: 20013
+  workspace_id: 20
+  created_at: '{{hoursAgo 84}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 20155
+  broadcast_id: 20006
+  contact_id: 20014
+  workspace_id: 20
+  created_at: '{{hoursAgo 84}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 20156
+  broadcast_id: 20006
+  contact_id: 20015
+  workspace_id: 20
+  opened_at: '{{hoursAgo 74}}'
+  created_at: '{{hoursAgo 84}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 20157
+  broadcast_id: 20006
+  contact_id: 20016
+  workspace_id: 20
+  created_at: '{{hoursAgo 84}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 20158
+  broadcast_id: 20006
+  contact_id: 20017
+  workspace_id: 20
+  opened_at: '{{hoursAgo 64}}'
+  created_at: '{{hoursAgo 84}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 20159
+  broadcast_id: 20006
+  contact_id: 20018
+  workspace_id: 20
+  created_at: '{{hoursAgo 84}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 20160
+  broadcast_id: 20006
+  contact_id: 20019
+  workspace_id: 20
+  opened_at: '{{hoursAgo 69}}'
+  created_at: '{{hoursAgo 84}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 20161
+  broadcast_id: 20006
+  contact_id: 20020
+  workspace_id: 20
+  opened_at: '{{hoursAgo 72}}'
+  created_at: '{{hoursAgo 84}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 20162
+  broadcast_id: 20006
+  contact_id: 20021
+  workspace_id: 20
+  opened_at: '{{hoursAgo 63}}'
+  created_at: '{{hoursAgo 84}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 20163
+  broadcast_id: 20006
+  contact_id: 20022
+  workspace_id: 20
+  created_at: '{{hoursAgo 84}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 20164
+  broadcast_id: 20006
+  contact_id: 20023
+  workspace_id: 20
+  created_at: '{{hoursAgo 84}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 20165
+  broadcast_id: 20006
+  contact_id: 20024
+  workspace_id: 20
+  created_at: '{{hoursAgo 84}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 20166
+  broadcast_id: 20006
+  contact_id: 20025
+  workspace_id: 20
+  opened_at: '{{hoursAgo 72}}'
+  created_at: '{{hoursAgo 84}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 20167
+  broadcast_id: 20006
+  contact_id: 20026
+  workspace_id: 20
+  opened_at: '{{hoursAgo 68}}'
+  clicked_at: '{{hoursAgo 66}}'
+  created_at: '{{hoursAgo 84}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 20168
+  broadcast_id: 20006
+  contact_id: 20027
+  workspace_id: 20
+  opened_at: '{{hoursAgo 64}}'
+  created_at: '{{hoursAgo 84}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 20169
+  broadcast_id: 20006
+  contact_id: 20028
+  workspace_id: 20
+  opened_at: '{{hoursAgo 69}}'
+  created_at: '{{hoursAgo 84}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 20170
+  broadcast_id: 20006
+  contact_id: 20029
+  workspace_id: 20
+  opened_at: '{{hoursAgo 72}}'
+  created_at: '{{hoursAgo 84}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 20171
+  broadcast_id: 20006
+  contact_id: 20030
+  workspace_id: 20
+  opened_at: '{{hoursAgo 70}}'
+  clicked_at: '{{hoursAgo 67}}'
+  created_at: '{{hoursAgo 84}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 20172
+  broadcast_id: 20006
+  contact_id: 20031
+  workspace_id: 20
+  opened_at: '{{hoursAgo 69}}'
+  created_at: '{{hoursAgo 84}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 20173
+  broadcast_id: 20006
+  contact_id: 20032
+  workspace_id: 20
+  opened_at: '{{hoursAgo 68}}'
+  clicked_at: '{{hoursAgo 67}}'
+  created_at: '{{hoursAgo 84}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 20174
+  broadcast_id: 20006
+  contact_id: 20033
+  workspace_id: 20
+  created_at: '{{hoursAgo 84}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 20175
+  broadcast_id: 20006
+  contact_id: 20034
+  workspace_id: 20
+  opened_at: '{{hoursAgo 66}}'
+  created_at: '{{hoursAgo 84}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 20176
+  broadcast_id: 20006
+  contact_id: 20035
+  workspace_id: 20
+  opened_at: '{{hoursAgo 71}}'
+  created_at: '{{hoursAgo 84}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 20177
+  broadcast_id: 20006
+  contact_id: 20036
+  workspace_id: 20
+  created_at: '{{hoursAgo 84}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 20178
+  broadcast_id: 20006
+  contact_id: 20037
+  workspace_id: 20
+  created_at: '{{hoursAgo 84}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 20179
+  broadcast_id: 20006
+  contact_id: 20038
+  workspace_id: 20
+  created_at: '{{hoursAgo 84}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 20180
+  broadcast_id: 20006
+  contact_id: 20039
+  workspace_id: 20
+  created_at: '{{hoursAgo 84}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 20181
+  broadcast_id: 20006
+  contact_id: 20040
+  workspace_id: 20
+  created_at: '{{hoursAgo 84}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 20182
+  broadcast_id: 20006
+  contact_id: 20041
+  workspace_id: 20
+  created_at: '{{hoursAgo 84}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 20183
+  broadcast_id: 20006
+  contact_id: 20042
+  workspace_id: 20
+  opened_at: '{{hoursAgo 71}}'
+  created_at: '{{hoursAgo 84}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 20184
+  broadcast_id: 20006
+  contact_id: 20043
+  workspace_id: 20
+  opened_at: '{{hoursAgo 65}}'
+  created_at: '{{hoursAgo 84}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 20185
+  broadcast_id: 20006
+  contact_id: 20044
+  workspace_id: 20
+  opened_at: '{{hoursAgo 71}}'
+  clicked_at: '{{hoursAgo 70}}'
+  created_at: '{{hoursAgo 84}}'
+  updated_at: '{{hoursAgo 72}}'

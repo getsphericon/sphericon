@@ -44,7 +44,7 @@ func TestReportFromFixturesIsValidAndBucketed(t *testing.T) {
 	assert.Equal(t, telemetryapi.TelemetryLocaleEn, report.Locale)
 	assert.Equal(t, telemetryapi.OrderOfMagnitude1099, report.Workspaces)
 	assert.Equal(t, telemetryapi.OrderOfMagnitude1099, report.Contacts)
-	assert.Equal(t, telemetryapi.OrderOfMagnitude1099, report.EmailsSent30d)
+	assert.Equal(t, telemetryapi.OrderOfMagnitude100999, report.EmailsSent30d)
 	assert.True(t, report.UsedBroadcasts30d)
 	assert.True(t, report.AutomationsActive)
 	assert.True(t, report.UsedTracker30d)

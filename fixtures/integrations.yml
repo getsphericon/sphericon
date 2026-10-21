@@ -143,3 +143,31 @@
   workspace_id: 1
   created_at: '{{daysAgo 20}}'
   updated_at: '{{daysAgo 20}}'
+
+# --- Brightpath (workspace 20): demo workspace behind the screenshots on getsphericon.com ---
+- id: 20001
+  ingest_key: omik_test_brightpath_20001
+  name: 'Amazon SES · eu-west-1'
+  channel: email
+  provider: smtp
+  config_encrypted: '{{ encrypt "{\"host\":\"email-smtp.eu-west-1.amazonaws.com\",\"port\":587,\"from\":\"hello@mail.brightpath.example\",\"fromName\":\"Brightpath\"}" }}'
+  enabled: true
+  is_default: true
+  max_per_second: 14
+  max_per_day: 50000
+  workspace_id: 20
+  created_at: '{{daysAgo 110}}'
+  updated_at: '{{daysAgo 110}}'
+- id: 20002
+  ingest_key: omik_test_brightpath_20002
+  name: 'Postmark · transactional'
+  channel: email
+  provider: smtp
+  config_encrypted: '{{ encrypt "{\"host\":\"smtp.postmarkapp.com\",\"port\":587,\"from\":\"hello@mail.brightpath.example\",\"fromName\":\"Brightpath\"}" }}'
+  enabled: true
+  is_default: false
+  max_per_second: 10
+  max_per_day: 25000
+  workspace_id: 20
+  created_at: '{{daysAgo 110}}'
+  updated_at: '{{daysAgo 110}}'

@@ -69,8 +69,8 @@ func TestTheWorkspaceListShowsEveryWorkspaceNewestFirst(t *testing.T) {
 
 	page := h.listWorkspaces(t, c, staffapi.StaffWorkspacesListParams{})
 
-	assert.Equal(t, []string{"Cyberdyne", "Aviato", "Pied Piper", "Wayne", "Kramerica", "Vandelay", "Soylent", "Hooli", "Umbrella", "Initech", "Globex", "Acme"}, names(page.Items))
-	assert.EqualValues(t, 12, page.TotalItems)
+	assert.Equal(t, []string{"Brightpath", "Cyberdyne", "Aviato", "Pied Piper", "Wayne", "Kramerica", "Vandelay", "Soylent", "Hooli", "Umbrella", "Initech", "Globex", "Acme"}, names(page.Items))
+	assert.EqualValues(t, 13, page.TotalItems)
 	assert.EqualValues(t, 1, page.TotalPages)
 	assert.EqualValues(t, 1, page.Page)
 }
@@ -83,9 +83,9 @@ func TestTheWorkspaceListIsPaginated(t *testing.T) {
 		Page: staffapi.NewOptInt32(2), PageSize: staffapi.NewOptInt32(2),
 	})
 
-	assert.Equal(t, []string{"Pied Piper", "Wayne"}, names(second.Items))
-	assert.EqualValues(t, 12, second.TotalItems)
-	assert.EqualValues(t, 6, second.TotalPages)
+	assert.Equal(t, []string{"Aviato", "Pied Piper"}, names(second.Items))
+	assert.EqualValues(t, 13, second.TotalItems)
+	assert.EqualValues(t, 7, second.TotalPages)
 	assert.EqualValues(t, 2, second.PageSize)
 }
 
@@ -356,7 +356,7 @@ func TestTheWorkspaceListHidesADeletedWorkspaceUnlessFilteredToDeleted(t *testin
 	deleted := h.listWorkspaces(t, c, staffapi.StaffWorkspacesListParams{Review: staffapi.NewOptStaffWorkspaceReview(staffapi.StaffWorkspaceReviewDeleted)})
 
 	assert.NotContains(t, names(all.Items), "Globex")
-	assert.EqualValues(t, 11, all.TotalItems)
+	assert.EqualValues(t, 12, all.TotalItems)
 	require.Equal(t, []string{"Bluth", "Globex"}, names(deleted.Items))
 	globex, found := lo.Find(deleted.Items, func(w staffapi.StaffWorkspaceResource) bool { return w.Name == "Globex" })
 	require.True(t, found)

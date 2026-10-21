@@ -167,3 +167,27 @@
   workspace_id: 9
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+
+# --- Brightpath (workspace 20): demo workspace behind the screenshots on getsphericon.com ---
+- id: 20001
+  domain: mail.brightpath.example
+  dkim_selector: 'sphericon'
+  dkim_private_key_encrypted: '{{ encrypt "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQC6OeP7UhVMJVIH\njetvNSbLLobYp79zy1XfnvszKi9o0FJ8VmlRllvOsGSmSypz9rZGYVkHh+474Vbh\ntxebDeM38S8cq4+i27JJX1OxJZ0TMyOV6DgYbFUfcZ2cd+m/pLuUtDxYdlADSk3M\nqKov/oJQHwze8+C8itiCcbPxqto5L+OqLhSKICPUvNWlc1iuExmKCWY+udpi6YDR\nRwb2P/aPX00MLQ3W4Ja0SZ9SWx7nlURZIVX85o81KE+F1649H0CgigrRdeIe13Di\nTIOBzeWUdRvQoXO5G7tlmCFqkHpK+eU3Y4a7MkrKS1zcQiPr7oMRlkv3bL/MFLCL\nCImbAvxJAgMBAAECggEAEx3ofAcK+eY+X5lnZOL+TJ8F93Vv60OBORudQp024PH6\nt7oYpWgTnFoB+QqwDNezkjHB1Yq0D2hUVocouJFyRO7AtPcdH30hVhQft6iKcXs/\nUM8V/BbZ3aiYgwSRxasz2OHwLG4XzGCrMCJT1ymvp6kqVXRQWpZ/v5NLwzgUXwiR\nQucDr7tp4Gy2qkacqpyM/s2XllxR4cnyWfp5/lZsvmrre78mIfAOQwqfB8Wl5buS\nBaZhAE98mLm1vOFchl0o98s/oLAxvNsvCfHiS8HCYDboP2goeK8DpHy0RaejbQKn\ntnDeN2TyJHWdh/aVJ90HZEsxMH4JpYH7fsSOCbDq0QKBgQDhbJ4X/1iyBG40W8Vz\nID2zrsUp73ISwZ00qC/rM7SdNKeOI+ALRqI7t3nintHMvIMPCPGmOk4Jk8UyibIq\nh4QtpSyA9bk9AecYjHxTXP6qxnxpyiUALs88GUzVNgUpXvkann+2XlcOqi16krYc\nqlOGO0U0F0u6e7gwvM50pxkrsQKBgQDTfDMty76Rzq++t3tzjRLkBNg4Ls516fSY\nr6E/fQa9QHSimsii4NSnSal8v9bnFbOMfxMvQEl2fezc8wxe1UglZWYTHVJW/+/I\ndJmskFyOBUsL2EQXYlg+MN6C4I1sx6QqCGwTvjEwNZF7UL+vKvUZd/VvndVqYOKh\n9REOCq84GQKBgFUQ4vvVTQgoadnyQ6l1IjObISX5CMgRLhy/1w1fvqmQRCZ8XUCE\nEBaO3zzoh+1FugNDccUzvV0Z2VF/6q7n4rZC3W9wys092ZJG+WeP8T5KloppUNsn\nzuYz+e1/bCU3hLNJ2pHcOef7yhu2H2jj0Y8W8L9+hwJBS7mAljwpDnORAoGAMD42\n1o2RzWUexhzI9pUJ6CYKxNY4lsFl4Ka/2+HDdcyMTsOMXUt4dyjgluqUNWbH7JbY\nY4EAwRz8uXJgMgnpSU6WOGoJ7Hq50jp3C9xqoKMoeW0+Ky9t/dHcEHL1EAmCs2v0\na5SJV/wAUecbsvPTsZmhzXJtyrSLPnLPDyr0yZECgYBtcJCJ5OrK9JwYhplxCJ12\nmow/B8wRLKtg2qr0AxHg2Uv/DqmVIXST1P32JpiaPyQ9QQItpGbbTsa6baILa9CM\n5oJrdG8u2AiuDbg6wFfu4iIStS04ILAdmdFfZEkyCkx4VEPDYhdkP1s4i1j0NHJz\nzJHIZVw3u5GM7jUurm2osA==\n-----END PRIVATE KEY-----\n" }}'
+  dkim_public_key: 'v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAujnj+1IVTCVSB43rbzUmyy6G2Ke/c8tV3577MyovaNBSfFZpUZZbzrBkpksqc/a2RmFZB4fuO+FW4bcXmw3jN/EvHKuPotuySV9TsSWdEzMjleg4GGxVH3GdnHfpv6S7lLQ8WHZQA0pNzKiqL/6CUB8M3vPgvIrYgnGz8araOS/jqi4UiiAj1LzVpXNYrhMZiglmPrnaYumA0UcG9j/2j19NDC0N1uCWtEmfUlse55VEWSFV/OaPNShPhdeuPR9AoIoK0XXiHtdw4kyDgc3llHUb0KFzuRu7ZZghapB6SvnlN2OGuzJKyktc3EIj6+6DEZZL92y/zBSwiwiJmwL8SQIDAQAB'
+  verified: true
+  last_checked_at: '{{daysAgo 1}}'
+  verified_at: '{{daysAgo 100}}'
+  workspace_id: 20
+  created_at: '{{daysAgo 101}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 20002
+  domain: news.brightpath.example
+  dkim_selector: 'sphericon'
+  dkim_private_key_encrypted: '{{ encrypt "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQC6OeP7UhVMJVIH\njetvNSbLLobYp79zy1XfnvszKi9o0FJ8VmlRllvOsGSmSypz9rZGYVkHh+474Vbh\ntxebDeM38S8cq4+i27JJX1OxJZ0TMyOV6DgYbFUfcZ2cd+m/pLuUtDxYdlADSk3M\nqKov/oJQHwze8+C8itiCcbPxqto5L+OqLhSKICPUvNWlc1iuExmKCWY+udpi6YDR\nRwb2P/aPX00MLQ3W4Ja0SZ9SWx7nlURZIVX85o81KE+F1649H0CgigrRdeIe13Di\nTIOBzeWUdRvQoXO5G7tlmCFqkHpK+eU3Y4a7MkrKS1zcQiPr7oMRlkv3bL/MFLCL\nCImbAvxJAgMBAAECggEAEx3ofAcK+eY+X5lnZOL+TJ8F93Vv60OBORudQp024PH6\nt7oYpWgTnFoB+QqwDNezkjHB1Yq0D2hUVocouJFyRO7AtPcdH30hVhQft6iKcXs/\nUM8V/BbZ3aiYgwSRxasz2OHwLG4XzGCrMCJT1ymvp6kqVXRQWpZ/v5NLwzgUXwiR\nQucDr7tp4Gy2qkacqpyM/s2XllxR4cnyWfp5/lZsvmrre78mIfAOQwqfB8Wl5buS\nBaZhAE98mLm1vOFchl0o98s/oLAxvNsvCfHiS8HCYDboP2goeK8DpHy0RaejbQKn\ntnDeN2TyJHWdh/aVJ90HZEsxMH4JpYH7fsSOCbDq0QKBgQDhbJ4X/1iyBG40W8Vz\nID2zrsUp73ISwZ00qC/rM7SdNKeOI+ALRqI7t3nintHMvIMPCPGmOk4Jk8UyibIq\nh4QtpSyA9bk9AecYjHxTXP6qxnxpyiUALs88GUzVNgUpXvkann+2XlcOqi16krYc\nqlOGO0U0F0u6e7gwvM50pxkrsQKBgQDTfDMty76Rzq++t3tzjRLkBNg4Ls516fSY\nr6E/fQa9QHSimsii4NSnSal8v9bnFbOMfxMvQEl2fezc8wxe1UglZWYTHVJW/+/I\ndJmskFyOBUsL2EQXYlg+MN6C4I1sx6QqCGwTvjEwNZF7UL+vKvUZd/VvndVqYOKh\n9REOCq84GQKBgFUQ4vvVTQgoadnyQ6l1IjObISX5CMgRLhy/1w1fvqmQRCZ8XUCE\nEBaO3zzoh+1FugNDccUzvV0Z2VF/6q7n4rZC3W9wys092ZJG+WeP8T5KloppUNsn\nzuYz+e1/bCU3hLNJ2pHcOef7yhu2H2jj0Y8W8L9+hwJBS7mAljwpDnORAoGAMD42\n1o2RzWUexhzI9pUJ6CYKxNY4lsFl4Ka/2+HDdcyMTsOMXUt4dyjgluqUNWbH7JbY\nY4EAwRz8uXJgMgnpSU6WOGoJ7Hq50jp3C9xqoKMoeW0+Ky9t/dHcEHL1EAmCs2v0\na5SJV/wAUecbsvPTsZmhzXJtyrSLPnLPDyr0yZECgYBtcJCJ5OrK9JwYhplxCJ12\nmow/B8wRLKtg2qr0AxHg2Uv/DqmVIXST1P32JpiaPyQ9QQItpGbbTsa6baILa9CM\n5oJrdG8u2AiuDbg6wFfu4iIStS04ILAdmdFfZEkyCkx4VEPDYhdkP1s4i1j0NHJz\nzJHIZVw3u5GM7jUurm2osA==\n-----END PRIVATE KEY-----\n" }}'
+  dkim_public_key: 'v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAujnj+1IVTCVSB43rbzUmyy6G2Ke/c8tV3577MyovaNBSfFZpUZZbzrBkpksqc/a2RmFZB4fuO+FW4bcXmw3jN/EvHKuPotuySV9TsSWdEzMjleg4GGxVH3GdnHfpv6S7lLQ8WHZQA0pNzKiqL/6CUB8M3vPgvIrYgnGz8araOS/jqi4UiiAj1LzVpXNYrhMZiglmPrnaYumA0UcG9j/2j19NDC0N1uCWtEmfUlse55VEWSFV/OaPNShPhdeuPR9AoIoK0XXiHtdw4kyDgc3llHUb0KFzuRu7ZZghapB6SvnlN2OGuzJKyktc3EIj6+6DEZZL92y/zBSwiwiJmwL8SQIDAQAB'
+  verified: true
+  last_checked_at: '{{daysAgo 1}}'
+  verified_at: '{{daysAgo 45}}'
+  workspace_id: 20
+  created_at: '{{daysAgo 46}}'
+  updated_at: '{{daysAgo 1}}'

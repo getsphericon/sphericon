@@ -91,3 +91,21 @@
   lifted_at: '2026-01-03 00:00:00'
   created_at: '2026-01-01 12:00:00'
   updated_at: '2026-01-03 00:00:00'
+
+# --- Brightpath (workspace 20): demo workspace behind the screenshots on getsphericon.com ---
+- id: 20001
+  channel: 'email'
+  destination: 'pavel.novak@adatum.example'
+  reason: 'bounce'
+  contact_id: 20046
+  workspace_id: 20
+  created_at: '{{hoursAgo 480}}'
+  updated_at: '{{hoursAgo 480}}'
+- id: 20002
+  channel: 'email'
+  destination: 'emma.dubois@proseware.example'
+  reason: 'complaint'
+  contact_id: 20047
+  workspace_id: 20
+  created_at: '{{hoursAgo 624}}'
+  updated_at: '{{hoursAgo 624}}'

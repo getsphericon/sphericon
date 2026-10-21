@@ -582,3 +582,3584 @@
   workspace_id: 6
   occurred_at: '{{hoursAgo 48}}'
   created_at: '{{hoursAgo 48}}'
+
+# --- Brightpath (workspace 20): demo workspace behind the screenshots on getsphericon.com ---
+- id: 20001
+  contact_id: 20031
+  subject_id: 'user:aiko.sato@proseware.example'
+  email: 'aiko.sato@proseware.example'
+  action: 'signup'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 2448}}'
+  created_at: '{{hoursAgo 2448}}'
+- id: 20002
+  contact_id: 20030
+  subject_id: 'user:felix.weber@adatum.example'
+  email: 'felix.weber@adatum.example'
+  action: 'signup'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 2400}}'
+  created_at: '{{hoursAgo 2400}}'
+- id: 20003
+  contact_id: 20029
+  subject_id: 'user:grace.taylor@litware.example'
+  email: 'grace.taylor@litware.example'
+  action: 'signup'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 2352}}'
+  created_at: '{{hoursAgo 2352}}'
+- id: 20004
+  contact_id: 20031
+  subject_id: 'user:aiko.sato@proseware.example'
+  email: 'aiko.sato@proseware.example'
+  action: 'purchase'
+  properties: '{"amount":99,"currency":"USD"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 2352}}'
+  created_at: '{{hoursAgo 2352}}'
+- id: 20005
+  contact_id: 20028
+  subject_id: 'user:omar.salem@tailspin.example'
+  email: 'omar.salem@tailspin.example'
+  action: 'signup'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 2304}}'
+  created_at: '{{hoursAgo 2304}}'
+- id: 20006
+  contact_id: 20030
+  subject_id: 'user:felix.weber@adatum.example'
+  email: 'felix.weber@adatum.example'
+  action: 'purchase'
+  properties: '{"amount":99,"currency":"USD"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 2304}}'
+  created_at: '{{hoursAgo 2304}}'
+- id: 20007
+  contact_id: 20048
+  subject_id: 'user:kenji.watanabe@wingtip.example'
+  email: 'kenji.watanabe@wingtip.example'
+  action: 'signup'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 2304}}'
+  created_at: '{{hoursAgo 2304}}'
+- id: 20008
+  contact_id: 20031
+  subject_id: 'user:aiko.sato@proseware.example'
+  email: 'aiko.sato@proseware.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 7"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 2300}}'
+  created_at: '{{hoursAgo 2300}}'
+- id: 20009
+  contact_id: 20029
+  subject_id: 'user:grace.taylor@litware.example'
+  email: 'grace.taylor@litware.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Git in a day","lesson":"Lesson 5"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 2295}}'
+  created_at: '{{hoursAgo 2295}}'
+- id: 20010
+  contact_id: 20027
+  subject_id: 'user:nina.kowalski@contoso.example'
+  email: 'nina.kowalski@contoso.example'
+  action: 'signup'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 2256}}'
+  created_at: '{{hoursAgo 2256}}'
+- id: 20011
+  contact_id: 20029
+  subject_id: 'user:grace.taylor@litware.example'
+  email: 'grace.taylor@litware.example'
+  action: 'purchase'
+  properties: '{"amount":99,"currency":"USD"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 2256}}'
+  created_at: '{{hoursAgo 2256}}'
+- id: 20012
+  contact_id: 20047
+  subject_id: 'user:emma.dubois@proseware.example'
+  email: 'emma.dubois@proseware.example'
+  action: 'signup'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 2256}}'
+  created_at: '{{hoursAgo 2256}}'
+- id: 20013
+  contact_id: 20030
+  subject_id: 'user:felix.weber@adatum.example'
+  email: 'felix.weber@adatum.example'
+  action: 'lesson_completed'
+  properties: '{"course":"SQL for analysts","lesson":"Lesson 5"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 2246}}'
+  created_at: '{{hoursAgo 2246}}'
+- id: 20014
+  contact_id: 20027
+  subject_id: 'user:nina.kowalski@contoso.example'
+  email: 'nina.kowalski@contoso.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Python basics","lesson":"Lesson 3"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 2229}}'
+  created_at: '{{hoursAgo 2229}}'
+- id: 20015
+  contact_id: 20026
+  subject_id: 'user:leo.martin@fabrikam.example'
+  email: 'leo.martin@fabrikam.example'
+  action: 'signup'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 2208}}'
+  created_at: '{{hoursAgo 2208}}'
+- id: 20016
+  contact_id: 20028
+  subject_id: 'user:omar.salem@tailspin.example'
+  email: 'omar.salem@tailspin.example'
+  action: 'purchase'
+  properties: '{"amount":99,"currency":"USD"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 2208}}'
+  created_at: '{{hoursAgo 2208}}'
+- id: 20017
+  contact_id: 20046
+  subject_id: 'user:pavel.novak@adatum.example'
+  email: 'pavel.novak@adatum.example'
+  action: 'signup'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 2208}}'
+  created_at: '{{hoursAgo 2208}}'
+- id: 20018
+  contact_id: 20029
+  subject_id: 'user:grace.taylor@litware.example'
+  email: 'grace.taylor@litware.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Git in a day","lesson":"Lesson 1"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 2200}}'
+  created_at: '{{hoursAgo 2200}}'
+- id: 20019
+  contact_id: 20025
+  subject_id: 'user:zara.khan@northwind.example'
+  email: 'zara.khan@northwind.example'
+  action: 'signup'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 2160}}'
+  created_at: '{{hoursAgo 2160}}'
+- id: 20020
+  contact_id: 20027
+  subject_id: 'user:nina.kowalski@contoso.example'
+  email: 'nina.kowalski@contoso.example'
+  action: 'purchase'
+  properties: '{"amount":99,"currency":"USD"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 2160}}'
+  created_at: '{{hoursAgo 2160}}'
+- id: 20021
+  contact_id: 20045
+  subject_id: 'user:yara.nasser@litware.example'
+  email: 'yara.nasser@litware.example'
+  action: 'signup'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 2160}}'
+  created_at: '{{hoursAgo 2160}}'
+- id: 20022
+  contact_id: 20024
+  subject_id: 'user:henrik.larsen@wingtip.example'
+  email: 'henrik.larsen@wingtip.example'
+  action: 'signup'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 2112}}'
+  created_at: '{{hoursAgo 2112}}'
+- id: 20023
+  contact_id: 20026
+  subject_id: 'user:leo.martin@fabrikam.example'
+  email: 'leo.martin@fabrikam.example'
+  action: 'purchase'
+  properties: '{"amount":29,"currency":"USD"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 2112}}'
+  created_at: '{{hoursAgo 2112}}'
+- id: 20024
+  contact_id: 20044
+  subject_id: 'user:tyler.brooks@tailspin.example'
+  email: 'tyler.brooks@tailspin.example'
+  action: 'signup'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 2112}}'
+  created_at: '{{hoursAgo 2112}}'
+- id: 20025
+  contact_id: 20028
+  subject_id: 'user:omar.salem@tailspin.example'
+  email: 'omar.salem@tailspin.example'
+  action: 'lesson_completed'
+  properties: '{"course":"SQL for analysts","lesson":"Lesson 3"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 2067}}'
+  created_at: '{{hoursAgo 2067}}'
+- id: 20026
+  contact_id: 20023
+  subject_id: 'user:isabela.costa@proseware.example'
+  email: 'isabela.costa@proseware.example'
+  action: 'signup'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 2064}}'
+  created_at: '{{hoursAgo 2064}}'
+- id: 20027
+  contact_id: 20025
+  subject_id: 'user:zara.khan@northwind.example'
+  email: 'zara.khan@northwind.example'
+  action: 'purchase'
+  properties: '{"amount":29,"currency":"USD"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 2064}}'
+  created_at: '{{hoursAgo 2064}}'
+- id: 20028
+  contact_id: 20043
+  subject_id: 'user:sara.lindqvist@contoso.example'
+  email: 'sara.lindqvist@contoso.example'
+  action: 'signup'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 2064}}'
+  created_at: '{{hoursAgo 2064}}'
+- id: 20029
+  contact_id: 20022
+  subject_id: 'user:kofi.mensah@adatum.example'
+  email: 'kofi.mensah@adatum.example'
+  action: 'signup'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 2016}}'
+  created_at: '{{hoursAgo 2016}}'
+- id: 20030
+  contact_id: 20024
+  subject_id: 'user:henrik.larsen@wingtip.example'
+  email: 'henrik.larsen@wingtip.example'
+  action: 'purchase'
+  properties: '{"amount":29,"currency":"USD"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 2016}}'
+  created_at: '{{hoursAgo 2016}}'
+- id: 20031
+  contact_id: 20042
+  subject_id: 'user:ahmed.rahman@fabrikam.example'
+  email: 'ahmed.rahman@fabrikam.example'
+  action: 'signup'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 2016}}'
+  created_at: '{{hoursAgo 2016}}'
+- id: 20032
+  contact_id: 20024
+  subject_id: 'user:henrik.larsen@wingtip.example'
+  email: 'henrik.larsen@wingtip.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 4"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 2009}}'
+  created_at: '{{hoursAgo 2009}}'
+- id: 20033
+  contact_id: 20044
+  subject_id: 'user:tyler.brooks@tailspin.example'
+  email: 'tyler.brooks@tailspin.example'
+  action: 'lesson_completed'
+  properties: '{"course":"SQL for analysts","lesson":"Lesson 1"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 2008}}'
+  created_at: '{{hoursAgo 2008}}'
+- id: 20034
+  contact_id: 20021
+  subject_id: 'user:valentina.rossi@litware.example'
+  email: 'valentina.rossi@litware.example'
+  action: 'signup'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1968}}'
+  created_at: '{{hoursAgo 1968}}'
+- id: 20035
+  contact_id: 20023
+  subject_id: 'user:isabela.costa@proseware.example'
+  email: 'isabela.costa@proseware.example'
+  action: 'purchase'
+  properties: '{"amount":29,"currency":"USD"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1968}}'
+  created_at: '{{hoursAgo 1968}}'
+- id: 20036
+  contact_id: 20041
+  subject_id: 'user:elena.popescu@northwind.example'
+  email: 'elena.popescu@northwind.example'
+  action: 'signup'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1968}}'
+  created_at: '{{hoursAgo 1968}}'
+- id: 20037
+  contact_id: 20022
+  subject_id: 'user:kofi.mensah@adatum.example'
+  email: 'kofi.mensah@adatum.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Git in a day","lesson":"Lesson 6"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1938}}'
+  created_at: '{{hoursAgo 1938}}'
+- id: 20038
+  contact_id: 20021
+  subject_id: 'user:valentina.rossi@litware.example'
+  email: 'valentina.rossi@litware.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Git in a day","lesson":"Lesson 5"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1937}}'
+  created_at: '{{hoursAgo 1937}}'
+- id: 20039
+  contact_id: 20027
+  subject_id: 'user:nina.kowalski@contoso.example'
+  email: 'nina.kowalski@contoso.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Python basics","lesson":"Lesson 7"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1934}}'
+  created_at: '{{hoursAgo 1934}}'
+- id: 20040
+  contact_id: 20020
+  subject_id: 'user:jack.murphy@tailspin.example'
+  email: 'jack.murphy@tailspin.example'
+  action: 'signup'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1920}}'
+  created_at: '{{hoursAgo 1920}}'
+- id: 20041
+  contact_id: 20022
+  subject_id: 'user:kofi.mensah@adatum.example'
+  email: 'kofi.mensah@adatum.example'
+  action: 'purchase'
+  properties: '{"amount":29,"currency":"USD"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1920}}'
+  created_at: '{{hoursAgo 1920}}'
+- id: 20042
+  contact_id: 20040
+  subject_id: 'user:jonas.becker@wingtip.example'
+  email: 'jonas.becker@wingtip.example'
+  action: 'signup'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1920}}'
+  created_at: '{{hoursAgo 1920}}'
+- id: 20043
+  contact_id: 20027
+  subject_id: 'user:nina.kowalski@contoso.example'
+  email: 'nina.kowalski@contoso.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Git in a day","lesson":"Lesson 4"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1913}}'
+  created_at: '{{hoursAgo 1913}}'
+- id: 20044
+  contact_id: 20031
+  subject_id: 'user:aiko.sato@proseware.example'
+  email: 'aiko.sato@proseware.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 1"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1890}}'
+  created_at: '{{hoursAgo 1890}}'
+- id: 20045
+  contact_id: 20026
+  subject_id: 'user:leo.martin@fabrikam.example'
+  email: 'leo.martin@fabrikam.example'
+  action: 'lesson_completed'
+  properties: '{"course":"SQL for analysts","lesson":"Lesson 5"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1879}}'
+  created_at: '{{hoursAgo 1879}}'
+- id: 20046
+  contact_id: 20029
+  subject_id: 'user:grace.taylor@litware.example'
+  email: 'grace.taylor@litware.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20001}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1873}}'
+  created_at: '{{hoursAgo 1873}}'
+- id: 20047
+  contact_id: 20027
+  subject_id: 'user:nina.kowalski@contoso.example'
+  email: 'nina.kowalski@contoso.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20001}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1872}}'
+  created_at: '{{hoursAgo 1872}}'
+- id: 20048
+  contact_id: 20019
+  subject_id: 'user:anya.petrova@contoso.example'
+  email: 'anya.petrova@contoso.example'
+  action: 'signup'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1872}}'
+  created_at: '{{hoursAgo 1872}}'
+- id: 20049
+  contact_id: 20021
+  subject_id: 'user:valentina.rossi@litware.example'
+  email: 'valentina.rossi@litware.example'
+  action: 'purchase'
+  properties: '{"amount":29,"currency":"USD"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1872}}'
+  created_at: '{{hoursAgo 1872}}'
+- id: 20050
+  contact_id: 20039
+  subject_id: 'user:camila.torres@proseware.example'
+  email: 'camila.torres@proseware.example'
+  action: 'signup'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1872}}'
+  created_at: '{{hoursAgo 1872}}'
+- id: 20051
+  contact_id: 20024
+  subject_id: 'user:henrik.larsen@wingtip.example'
+  email: 'henrik.larsen@wingtip.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20001}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1869}}'
+  created_at: '{{hoursAgo 1869}}'
+- id: 20052
+  contact_id: 20024
+  subject_id: 'user:henrik.larsen@wingtip.example'
+  email: 'henrik.larsen@wingtip.example'
+  action: 'email.clicked'
+  properties: '{"broadcastId":20001}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1868}}'
+  created_at: '{{hoursAgo 1868}}'
+- id: 20053
+  contact_id: 20025
+  subject_id: 'user:zara.khan@northwind.example'
+  email: 'zara.khan@northwind.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20001}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1868}}'
+  created_at: '{{hoursAgo 1868}}'
+- id: 20054
+  contact_id: 20030
+  subject_id: 'user:felix.weber@adatum.example'
+  email: 'felix.weber@adatum.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20001}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1868}}'
+  created_at: '{{hoursAgo 1868}}'
+- id: 20055
+  contact_id: 20025
+  subject_id: 'user:zara.khan@northwind.example'
+  email: 'zara.khan@northwind.example'
+  action: 'email.clicked'
+  properties: '{"broadcastId":20001}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1867}}'
+  created_at: '{{hoursAgo 1867}}'
+- id: 20056
+  contact_id: 20018
+  subject_id: 'user:yusuf.demir@fabrikam.example'
+  email: 'yusuf.demir@fabrikam.example'
+  action: 'signup'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1824}}'
+  created_at: '{{hoursAgo 1824}}'
+- id: 20057
+  contact_id: 20020
+  subject_id: 'user:jack.murphy@tailspin.example'
+  email: 'jack.murphy@tailspin.example'
+  action: 'purchase'
+  properties: '{"amount":29,"currency":"USD"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1824}}'
+  created_at: '{{hoursAgo 1824}}'
+- id: 20058
+  contact_id: 20038
+  subject_id: 'user:ravi.patel@adatum.example'
+  email: 'ravi.patel@adatum.example'
+  action: 'signup'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1824}}'
+  created_at: '{{hoursAgo 1824}}'
+- id: 20059
+  contact_id: 20030
+  subject_id: 'user:felix.weber@adatum.example'
+  email: 'felix.weber@adatum.example'
+  action: 'lesson_completed'
+  properties: '{"course":"SQL for analysts","lesson":"Lesson 3"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1781}}'
+  created_at: '{{hoursAgo 1781}}'
+- id: 20060
+  contact_id: 20028
+  subject_id: 'user:omar.salem@tailspin.example'
+  email: 'omar.salem@tailspin.example'
+  action: 'lesson_completed'
+  properties: '{"course":"SQL for analysts","lesson":"Lesson 5"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1780}}'
+  created_at: '{{hoursAgo 1780}}'
+- id: 20061
+  contact_id: 20017
+  subject_id: 'user:emily.carter@northwind.example'
+  email: 'emily.carter@northwind.example'
+  action: 'signup'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1776}}'
+  created_at: '{{hoursAgo 1776}}'
+- id: 20062
+  contact_id: 20019
+  subject_id: 'user:anya.petrova@contoso.example'
+  email: 'anya.petrova@contoso.example'
+  action: 'purchase'
+  properties: '{"amount":29,"currency":"USD"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1776}}'
+  created_at: '{{hoursAgo 1776}}'
+- id: 20063
+  contact_id: 20037
+  subject_id: 'user:lena.hoffmann@litware.example'
+  email: 'lena.hoffmann@litware.example'
+  action: 'signup'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1776}}'
+  created_at: '{{hoursAgo 1776}}'
+- id: 20064
+  contact_id: 20030
+  subject_id: 'user:felix.weber@adatum.example'
+  email: 'felix.weber@adatum.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Python basics","lesson":"Lesson 4"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1758}}'
+  created_at: '{{hoursAgo 1758}}'
+- id: 20065
+  contact_id: 20029
+  subject_id: 'user:grace.taylor@litware.example'
+  email: 'grace.taylor@litware.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Git in a day","lesson":"Lesson 2"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1739}}'
+  created_at: '{{hoursAgo 1739}}'
+- id: 20066
+  contact_id: 20016
+  subject_id: 'user:santiago.ibarra@wingtip.example'
+  email: 'santiago.ibarra@wingtip.example'
+  action: 'signup'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1728}}'
+  created_at: '{{hoursAgo 1728}}'
+- id: 20067
+  contact_id: 20018
+  subject_id: 'user:yusuf.demir@fabrikam.example'
+  email: 'yusuf.demir@fabrikam.example'
+  action: 'purchase'
+  properties: '{"amount":29,"currency":"USD"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1728}}'
+  created_at: '{{hoursAgo 1728}}'
+- id: 20068
+  contact_id: 20036
+  subject_id: 'user:samuel.adeyemi@tailspin.example'
+  email: 'samuel.adeyemi@tailspin.example'
+  action: 'signup'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1728}}'
+  created_at: '{{hoursAgo 1728}}'
+- id: 20069
+  contact_id: 20019
+  subject_id: 'user:anya.petrova@contoso.example'
+  email: 'anya.petrova@contoso.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Git in a day","lesson":"Lesson 8"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1711}}'
+  created_at: '{{hoursAgo 1711}}'
+- id: 20070
+  contact_id: 20026
+  subject_id: 'user:leo.martin@fabrikam.example'
+  email: 'leo.martin@fabrikam.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Git in a day","lesson":"Lesson 8"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1701}}'
+  created_at: '{{hoursAgo 1701}}'
+- id: 20071
+  contact_id: 20024
+  subject_id: 'user:henrik.larsen@wingtip.example'
+  email: 'henrik.larsen@wingtip.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Python basics","lesson":"Lesson 1"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1688}}'
+  created_at: '{{hoursAgo 1688}}'
+- id: 20072
+  contact_id: 20015
+  subject_id: 'user:mei.lin@proseware.example'
+  email: 'mei.lin@proseware.example'
+  action: 'signup'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1680}}'
+  created_at: '{{hoursAgo 1680}}'
+- id: 20073
+  contact_id: 20017
+  subject_id: 'user:emily.carter@northwind.example'
+  email: 'emily.carter@northwind.example'
+  action: 'purchase'
+  properties: '{"amount":29,"currency":"USD"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1680}}'
+  created_at: '{{hoursAgo 1680}}'
+- id: 20074
+  contact_id: 20035
+  subject_id: 'user:freya.johansson@contoso.example'
+  email: 'freya.johansson@contoso.example'
+  action: 'signup'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1680}}'
+  created_at: '{{hoursAgo 1680}}'
+- id: 20075
+  contact_id: 20016
+  subject_id: 'user:santiago.ibarra@wingtip.example'
+  email: 'santiago.ibarra@wingtip.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Git in a day","lesson":"Lesson 4"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1657}}'
+  created_at: '{{hoursAgo 1657}}'
+- id: 20076
+  contact_id: 20016
+  subject_id: 'user:santiago.ibarra@wingtip.example'
+  email: 'santiago.ibarra@wingtip.example'
+  action: 'purchase'
+  properties: '{"amount":29,"currency":"USD"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1632}}'
+  created_at: '{{hoursAgo 1632}}'
+- id: 20077
+  contact_id: 20034
+  subject_id: 'user:arjun.mehta@fabrikam.example'
+  email: 'arjun.mehta@fabrikam.example'
+  action: 'signup'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1632}}'
+  created_at: '{{hoursAgo 1632}}'
+- id: 20078
+  contact_id: 20015
+  subject_id: 'user:mei.lin@proseware.example'
+  email: 'mei.lin@proseware.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Python basics","lesson":"Lesson 2"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1601}}'
+  created_at: '{{hoursAgo 1601}}'
+- id: 20079
+  contact_id: 20015
+  subject_id: 'user:mei.lin@proseware.example'
+  email: 'mei.lin@proseware.example'
+  action: 'purchase'
+  properties: '{"amount":29,"currency":"USD"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1584}}'
+  created_at: '{{hoursAgo 1584}}'
+- id: 20080
+  contact_id: 20033
+  subject_id: 'user:maria.lopez@northwind.example'
+  email: 'maria.lopez@northwind.example'
+  action: 'signup'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1584}}'
+  created_at: '{{hoursAgo 1584}}'
+- id: 20081
+  contact_id: 20024
+  subject_id: 'user:henrik.larsen@wingtip.example'
+  email: 'henrik.larsen@wingtip.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Python basics","lesson":"Lesson 8"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1574}}'
+  created_at: '{{hoursAgo 1574}}'
+- id: 20082
+  contact_id: 20016
+  subject_id: 'user:santiago.ibarra@wingtip.example'
+  email: 'santiago.ibarra@wingtip.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 6"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1560}}'
+  created_at: '{{hoursAgo 1560}}'
+- id: 20083
+  contact_id: 20031
+  subject_id: 'user:aiko.sato@proseware.example'
+  email: 'aiko.sato@proseware.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Python basics","lesson":"Lesson 6"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1551}}'
+  created_at: '{{hoursAgo 1551}}'
+- id: 20084
+  contact_id: 20041
+  subject_id: 'user:elena.popescu@northwind.example'
+  email: 'elena.popescu@northwind.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Python basics","lesson":"Lesson 6"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1547}}'
+  created_at: '{{hoursAgo 1547}}'
+- id: 20085
+  contact_id: 20041
+  subject_id: 'user:elena.popescu@northwind.example'
+  email: 'elena.popescu@northwind.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Python basics","lesson":"Lesson 5"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1539}}'
+  created_at: '{{hoursAgo 1539}}'
+- id: 20086
+  contact_id: 20032
+  subject_id: 'user:diego.vargas@wingtip.example'
+  email: 'diego.vargas@wingtip.example'
+  action: 'signup'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1536}}'
+  created_at: '{{hoursAgo 1536}}'
+- id: 20087
+  contact_id: 20042
+  subject_id: 'user:ahmed.rahman@fabrikam.example'
+  email: 'ahmed.rahman@fabrikam.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 1"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1506}}'
+  created_at: '{{hoursAgo 1506}}'
+- id: 20088
+  contact_id: 20030
+  subject_id: 'user:felix.weber@adatum.example'
+  email: 'felix.weber@adatum.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Git in a day","lesson":"Lesson 7"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1501}}'
+  created_at: '{{hoursAgo 1501}}'
+- id: 20089
+  contact_id: 20029
+  subject_id: 'user:grace.taylor@litware.example'
+  email: 'grace.taylor@litware.example'
+  action: 'lesson_completed'
+  properties: '{"course":"SQL for analysts","lesson":"Lesson 3"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1493}}'
+  created_at: '{{hoursAgo 1493}}'
+- id: 20090
+  contact_id: 20019
+  subject_id: 'user:anya.petrova@contoso.example'
+  email: 'anya.petrova@contoso.example'
+  action: 'lesson_completed'
+  properties: '{"course":"SQL for analysts","lesson":"Lesson 3"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1489}}'
+  created_at: '{{hoursAgo 1489}}'
+- id: 20091
+  contact_id: 20016
+  subject_id: 'user:santiago.ibarra@wingtip.example'
+  email: 'santiago.ibarra@wingtip.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Git in a day","lesson":"Lesson 1"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1488}}'
+  created_at: '{{hoursAgo 1488}}'
+- id: 20092
+  contact_id: 20031
+  subject_id: 'user:aiko.sato@proseware.example'
+  email: 'aiko.sato@proseware.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Git in a day","lesson":"Lesson 5"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1476}}'
+  created_at: '{{hoursAgo 1476}}'
+- id: 20093
+  contact_id: 20042
+  subject_id: 'user:ahmed.rahman@fabrikam.example'
+  email: 'ahmed.rahman@fabrikam.example'
+  action: 'lesson_completed'
+  properties: '{"course":"SQL for analysts","lesson":"Lesson 2"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1474}}'
+  created_at: '{{hoursAgo 1474}}'
+- id: 20094
+  contact_id: 20043
+  subject_id: 'user:sara.lindqvist@contoso.example'
+  email: 'sara.lindqvist@contoso.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Git in a day","lesson":"Lesson 2"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1474}}'
+  created_at: '{{hoursAgo 1474}}'
+- id: 20095
+  contact_id: 20026
+  subject_id: 'user:leo.martin@fabrikam.example'
+  email: 'leo.martin@fabrikam.example'
+  action: 'lesson_completed'
+  properties: '{"course":"SQL for analysts","lesson":"Lesson 4"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1466}}'
+  created_at: '{{hoursAgo 1466}}'
+- id: 20096
+  contact_id: 20022
+  subject_id: 'user:kofi.mensah@adatum.example'
+  email: 'kofi.mensah@adatum.example'
+  action: 'lesson_completed'
+  properties: '{"course":"SQL for analysts","lesson":"Lesson 1"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1463}}'
+  created_at: '{{hoursAgo 1463}}'
+- id: 20097
+  contact_id: 20031
+  subject_id: 'user:aiko.sato@proseware.example'
+  email: 'aiko.sato@proseware.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Git in a day","lesson":"Lesson 2"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1456}}'
+  created_at: '{{hoursAgo 1456}}'
+- id: 20098
+  contact_id: 20021
+  subject_id: 'user:valentina.rossi@litware.example'
+  email: 'valentina.rossi@litware.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 7"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1450}}'
+  created_at: '{{hoursAgo 1450}}'
+- id: 20099
+  contact_id: 20023
+  subject_id: 'user:isabela.costa@proseware.example'
+  email: 'isabela.costa@proseware.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Git in a day","lesson":"Lesson 1"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1437}}'
+  created_at: '{{hoursAgo 1437}}'
+- id: 20100
+  contact_id: 20025
+  subject_id: 'user:zara.khan@northwind.example'
+  email: 'zara.khan@northwind.example'
+  action: 'lesson_completed'
+  properties: '{"course":"SQL for analysts","lesson":"Lesson 7"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1437}}'
+  created_at: '{{hoursAgo 1437}}'
+- id: 20101
+  contact_id: 20043
+  subject_id: 'user:sara.lindqvist@contoso.example'
+  email: 'sara.lindqvist@contoso.example'
+  action: 'lesson_completed'
+  properties: '{"course":"SQL for analysts","lesson":"Lesson 3"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1420}}'
+  created_at: '{{hoursAgo 1420}}'
+- id: 20102
+  contact_id: 20017
+  subject_id: 'user:emily.carter@northwind.example'
+  email: 'emily.carter@northwind.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Git in a day","lesson":"Lesson 8"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1404}}'
+  created_at: '{{hoursAgo 1404}}'
+- id: 20103
+  contact_id: 20024
+  subject_id: 'user:henrik.larsen@wingtip.example'
+  email: 'henrik.larsen@wingtip.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 5"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1397}}'
+  created_at: '{{hoursAgo 1397}}'
+- id: 20104
+  contact_id: 20017
+  subject_id: 'user:emily.carter@northwind.example'
+  email: 'emily.carter@northwind.example'
+  action: 'lesson_completed'
+  properties: '{"course":"SQL for analysts","lesson":"Lesson 1"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1396}}'
+  created_at: '{{hoursAgo 1396}}'
+- id: 20105
+  contact_id: 20018
+  subject_id: 'user:yusuf.demir@fabrikam.example'
+  email: 'yusuf.demir@fabrikam.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Git in a day","lesson":"Lesson 6"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1396}}'
+  created_at: '{{hoursAgo 1396}}'
+- id: 20106
+  contact_id: 20018
+  subject_id: 'user:yusuf.demir@fabrikam.example'
+  email: 'yusuf.demir@fabrikam.example'
+  action: 'lesson_completed'
+  properties: '{"course":"SQL for analysts","lesson":"Lesson 7"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1394}}'
+  created_at: '{{hoursAgo 1394}}'
+- id: 20107
+  contact_id: 20018
+  subject_id: 'user:yusuf.demir@fabrikam.example'
+  email: 'yusuf.demir@fabrikam.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Git in a day","lesson":"Lesson 4"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1386}}'
+  created_at: '{{hoursAgo 1386}}'
+- id: 20108
+  contact_id: 20017
+  subject_id: 'user:emily.carter@northwind.example'
+  email: 'emily.carter@northwind.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 5"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1374}}'
+  created_at: '{{hoursAgo 1374}}'
+- id: 20109
+  contact_id: 20025
+  subject_id: 'user:zara.khan@northwind.example'
+  email: 'zara.khan@northwind.example'
+  action: 'lesson_completed'
+  properties: '{"course":"SQL for analysts","lesson":"Lesson 3"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1355}}'
+  created_at: '{{hoursAgo 1355}}'
+- id: 20110
+  contact_id: 20022
+  subject_id: 'user:kofi.mensah@adatum.example'
+  email: 'kofi.mensah@adatum.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 7"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1353}}'
+  created_at: '{{hoursAgo 1353}}'
+- id: 20111
+  contact_id: 20019
+  subject_id: 'user:anya.petrova@contoso.example'
+  email: 'anya.petrova@contoso.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 1"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1333}}'
+  created_at: '{{hoursAgo 1333}}'
+- id: 20112
+  contact_id: 20023
+  subject_id: 'user:isabela.costa@proseware.example'
+  email: 'isabela.costa@proseware.example'
+  action: 'lesson_completed'
+  properties: '{"course":"SQL for analysts","lesson":"Lesson 4"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1317}}'
+  created_at: '{{hoursAgo 1317}}'
+- id: 20113
+  contact_id: 20023
+  subject_id: 'user:isabela.costa@proseware.example'
+  email: 'isabela.costa@proseware.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 2"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1316}}'
+  created_at: '{{hoursAgo 1316}}'
+- id: 20114
+  contact_id: 20020
+  subject_id: 'user:jack.murphy@tailspin.example'
+  email: 'jack.murphy@tailspin.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 1"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1310}}'
+  created_at: '{{hoursAgo 1310}}'
+- id: 20115
+  contact_id: 20023
+  subject_id: 'user:isabela.costa@proseware.example'
+  email: 'isabela.costa@proseware.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 5"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1308}}'
+  created_at: '{{hoursAgo 1308}}'
+- id: 20116
+  contact_id: 20018
+  subject_id: 'user:yusuf.demir@fabrikam.example'
+  email: 'yusuf.demir@fabrikam.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Git in a day","lesson":"Lesson 1"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1302}}'
+  created_at: '{{hoursAgo 1302}}'
+- id: 20117
+  contact_id: 20023
+  subject_id: 'user:isabela.costa@proseware.example'
+  email: 'isabela.costa@proseware.example'
+  action: 'lesson_completed'
+  properties: '{"course":"SQL for analysts","lesson":"Lesson 6"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1293}}'
+  created_at: '{{hoursAgo 1293}}'
+- id: 20118
+  contact_id: 20020
+  subject_id: 'user:jack.murphy@tailspin.example'
+  email: 'jack.murphy@tailspin.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 5"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1284}}'
+  created_at: '{{hoursAgo 1284}}'
+- id: 20119
+  contact_id: 20017
+  subject_id: 'user:emily.carter@northwind.example'
+  email: 'emily.carter@northwind.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 4"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1271}}'
+  created_at: '{{hoursAgo 1271}}'
+- id: 20120
+  contact_id: 20029
+  subject_id: 'user:grace.taylor@litware.example'
+  email: 'grace.taylor@litware.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Git in a day","lesson":"Lesson 4"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1270}}'
+  created_at: '{{hoursAgo 1270}}'
+- id: 20121
+  contact_id: 20037
+  subject_id: 'user:lena.hoffmann@litware.example'
+  email: 'lena.hoffmann@litware.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Git in a day","lesson":"Lesson 3"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1262}}'
+  created_at: '{{hoursAgo 1262}}'
+- id: 20122
+  contact_id: 20030
+  subject_id: 'user:felix.weber@adatum.example'
+  email: 'felix.weber@adatum.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20002}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1251}}'
+  created_at: '{{hoursAgo 1251}}'
+- id: 20123
+  contact_id: 20030
+  subject_id: 'user:felix.weber@adatum.example'
+  email: 'felix.weber@adatum.example'
+  action: 'email.clicked'
+  properties: '{"broadcastId":20002}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1250}}'
+  created_at: '{{hoursAgo 1250}}'
+- id: 20124
+  contact_id: 20029
+  subject_id: 'user:grace.taylor@litware.example'
+  email: 'grace.taylor@litware.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20002}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1247}}'
+  created_at: '{{hoursAgo 1247}}'
+- id: 20125
+  contact_id: 20041
+  subject_id: 'user:elena.popescu@northwind.example'
+  email: 'elena.popescu@northwind.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20002}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1246}}'
+  created_at: '{{hoursAgo 1246}}'
+- id: 20126
+  contact_id: 20020
+  subject_id: 'user:jack.murphy@tailspin.example'
+  email: 'jack.murphy@tailspin.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20002}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1245}}'
+  created_at: '{{hoursAgo 1245}}'
+- id: 20127
+  contact_id: 20015
+  subject_id: 'user:mei.lin@proseware.example'
+  email: 'mei.lin@proseware.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20002}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1244}}'
+  created_at: '{{hoursAgo 1244}}'
+- id: 20128
+  contact_id: 20016
+  subject_id: 'user:santiago.ibarra@wingtip.example'
+  email: 'santiago.ibarra@wingtip.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20002}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1244}}'
+  created_at: '{{hoursAgo 1244}}'
+- id: 20129
+  contact_id: 20021
+  subject_id: 'user:valentina.rossi@litware.example'
+  email: 'valentina.rossi@litware.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20002}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1244}}'
+  created_at: '{{hoursAgo 1244}}'
+- id: 20130
+  contact_id: 20027
+  subject_id: 'user:nina.kowalski@contoso.example'
+  email: 'nina.kowalski@contoso.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20002}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1244}}'
+  created_at: '{{hoursAgo 1244}}'
+- id: 20131
+  contact_id: 20034
+  subject_id: 'user:arjun.mehta@fabrikam.example'
+  email: 'arjun.mehta@fabrikam.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20002}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1243}}'
+  created_at: '{{hoursAgo 1243}}'
+- id: 20132
+  contact_id: 20023
+  subject_id: 'user:isabela.costa@proseware.example'
+  email: 'isabela.costa@proseware.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20002}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1242}}'
+  created_at: '{{hoursAgo 1242}}'
+- id: 20133
+  contact_id: 20028
+  subject_id: 'user:omar.salem@tailspin.example'
+  email: 'omar.salem@tailspin.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20002}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1242}}'
+  created_at: '{{hoursAgo 1242}}'
+- id: 20134
+  contact_id: 20034
+  subject_id: 'user:arjun.mehta@fabrikam.example'
+  email: 'arjun.mehta@fabrikam.example'
+  action: 'email.clicked'
+  properties: '{"broadcastId":20002}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1241}}'
+  created_at: '{{hoursAgo 1241}}'
+- id: 20135
+  contact_id: 20031
+  subject_id: 'user:aiko.sato@proseware.example'
+  email: 'aiko.sato@proseware.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20002}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1240}}'
+  created_at: '{{hoursAgo 1240}}'
+- id: 20136
+  contact_id: 20026
+  subject_id: 'user:leo.martin@fabrikam.example'
+  email: 'leo.martin@fabrikam.example'
+  action: 'lesson_completed'
+  properties: '{"course":"SQL for analysts","lesson":"Lesson 2"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1232}}'
+  created_at: '{{hoursAgo 1232}}'
+- id: 20137
+  contact_id: 20024
+  subject_id: 'user:henrik.larsen@wingtip.example'
+  email: 'henrik.larsen@wingtip.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Git in a day","lesson":"Lesson 2"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1229}}'
+  created_at: '{{hoursAgo 1229}}'
+- id: 20138
+  contact_id: 20031
+  subject_id: 'user:aiko.sato@proseware.example'
+  email: 'aiko.sato@proseware.example'
+  action: 'course_started'
+  properties: '{"course":"Python basics"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1224}}'
+  created_at: '{{hoursAgo 1224}}'
+- id: 20139
+  contact_id: 20025
+  subject_id: 'user:zara.khan@northwind.example'
+  email: 'zara.khan@northwind.example'
+  action: 'lesson_completed'
+  properties: '{"course":"SQL for analysts","lesson":"Lesson 6"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1217}}'
+  created_at: '{{hoursAgo 1217}}'
+- id: 20140
+  contact_id: 20034
+  subject_id: 'user:arjun.mehta@fabrikam.example'
+  email: 'arjun.mehta@fabrikam.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Python basics","lesson":"Lesson 5"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1214}}'
+  created_at: '{{hoursAgo 1214}}'
+- id: 20141
+  contact_id: 20030
+  subject_id: 'user:felix.weber@adatum.example'
+  email: 'felix.weber@adatum.example'
+  action: 'course_started'
+  properties: '{"course":"Python basics"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1200}}'
+  created_at: '{{hoursAgo 1200}}'
+- id: 20142
+  contact_id: 20020
+  subject_id: 'user:jack.murphy@tailspin.example'
+  email: 'jack.murphy@tailspin.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Python basics","lesson":"Lesson 6"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1194}}'
+  created_at: '{{hoursAgo 1194}}'
+- id: 20143
+  contact_id: 20019
+  subject_id: 'user:anya.petrova@contoso.example'
+  email: 'anya.petrova@contoso.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Git in a day","lesson":"Lesson 7"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1191}}'
+  created_at: '{{hoursAgo 1191}}'
+- id: 20144
+  contact_id: 20029
+  subject_id: 'user:grace.taylor@litware.example'
+  email: 'grace.taylor@litware.example'
+  action: 'course_started'
+  properties: '{"course":"Python basics"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1176}}'
+  created_at: '{{hoursAgo 1176}}'
+- id: 20145
+  contact_id: 20037
+  subject_id: 'user:lena.hoffmann@litware.example'
+  email: 'lena.hoffmann@litware.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Python basics","lesson":"Lesson 1"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1161}}'
+  created_at: '{{hoursAgo 1161}}'
+- id: 20146
+  contact_id: 20017
+  subject_id: 'user:emily.carter@northwind.example'
+  email: 'emily.carter@northwind.example'
+  action: 'lesson_completed'
+  properties: '{"course":"SQL for analysts","lesson":"Lesson 6"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1155}}'
+  created_at: '{{hoursAgo 1155}}'
+- id: 20147
+  contact_id: 20028
+  subject_id: 'user:omar.salem@tailspin.example'
+  email: 'omar.salem@tailspin.example'
+  action: 'course_started'
+  properties: '{"course":"Python basics"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1152}}'
+  created_at: '{{hoursAgo 1152}}'
+- id: 20148
+  contact_id: 20019
+  subject_id: 'user:anya.petrova@contoso.example'
+  email: 'anya.petrova@contoso.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 5"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1150}}'
+  created_at: '{{hoursAgo 1150}}'
+- id: 20149
+  contact_id: 20021
+  subject_id: 'user:valentina.rossi@litware.example'
+  email: 'valentina.rossi@litware.example'
+  action: 'lesson_completed'
+  properties: '{"course":"SQL for analysts","lesson":"Lesson 1"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1144}}'
+  created_at: '{{hoursAgo 1144}}'
+- id: 20150
+  contact_id: 20022
+  subject_id: 'user:kofi.mensah@adatum.example'
+  email: 'kofi.mensah@adatum.example'
+  action: 'lesson_completed'
+  properties: '{"course":"SQL for analysts","lesson":"Lesson 5"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1132}}'
+  created_at: '{{hoursAgo 1132}}'
+- id: 20151
+  contact_id: 20018
+  subject_id: 'user:yusuf.demir@fabrikam.example'
+  email: 'yusuf.demir@fabrikam.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 3"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1131}}'
+  created_at: '{{hoursAgo 1131}}'
+- id: 20152
+  contact_id: 20027
+  subject_id: 'user:nina.kowalski@contoso.example'
+  email: 'nina.kowalski@contoso.example'
+  action: 'course_started'
+  properties: '{"course":"Python basics"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1128}}'
+  created_at: '{{hoursAgo 1128}}'
+- id: 20153
+  contact_id: 20034
+  subject_id: 'user:arjun.mehta@fabrikam.example'
+  email: 'arjun.mehta@fabrikam.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Python basics","lesson":"Lesson 2"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1124}}'
+  created_at: '{{hoursAgo 1124}}'
+- id: 20154
+  contact_id: 20039
+  subject_id: 'user:camila.torres@proseware.example'
+  email: 'camila.torres@proseware.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Python basics","lesson":"Lesson 1"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1113}}'
+  created_at: '{{hoursAgo 1113}}'
+- id: 20155
+  contact_id: 20021
+  subject_id: 'user:valentina.rossi@litware.example'
+  email: 'valentina.rossi@litware.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Python basics","lesson":"Lesson 2"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1109}}'
+  created_at: '{{hoursAgo 1109}}'
+- id: 20156
+  contact_id: 20030
+  subject_id: 'user:felix.weber@adatum.example'
+  email: 'felix.weber@adatum.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 6"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1106}}'
+  created_at: '{{hoursAgo 1106}}'
+- id: 20157
+  contact_id: 20026
+  subject_id: 'user:leo.martin@fabrikam.example'
+  email: 'leo.martin@fabrikam.example'
+  action: 'course_started'
+  properties: '{"course":"Python basics"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1104}}'
+  created_at: '{{hoursAgo 1104}}'
+- id: 20158
+  contact_id: 20041
+  subject_id: 'user:elena.popescu@northwind.example'
+  email: 'elena.popescu@northwind.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 3"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1101}}'
+  created_at: '{{hoursAgo 1101}}'
+- id: 20159
+  contact_id: 20023
+  subject_id: 'user:isabela.costa@proseware.example'
+  email: 'isabela.costa@proseware.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Git in a day","lesson":"Lesson 7"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1096}}'
+  created_at: '{{hoursAgo 1096}}'
+- id: 20160
+  contact_id: 20017
+  subject_id: 'user:emily.carter@northwind.example'
+  email: 'emily.carter@northwind.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 2"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1090}}'
+  created_at: '{{hoursAgo 1090}}'
+- id: 20161
+  contact_id: 20025
+  subject_id: 'user:zara.khan@northwind.example'
+  email: 'zara.khan@northwind.example'
+  action: 'course_started'
+  properties: '{"course":"Python basics"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1080}}'
+  created_at: '{{hoursAgo 1080}}'
+- id: 20162
+  contact_id: 20023
+  subject_id: 'user:isabela.costa@proseware.example'
+  email: 'isabela.costa@proseware.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Python basics","lesson":"Lesson 3"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1072}}'
+  created_at: '{{hoursAgo 1072}}'
+- id: 20163
+  contact_id: 20028
+  subject_id: 'user:omar.salem@tailspin.example'
+  email: 'omar.salem@tailspin.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 1"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1059}}'
+  created_at: '{{hoursAgo 1059}}'
+- id: 20164
+  contact_id: 20043
+  subject_id: 'user:sara.lindqvist@contoso.example'
+  email: 'sara.lindqvist@contoso.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 5"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1058}}'
+  created_at: '{{hoursAgo 1058}}'
+- id: 20165
+  contact_id: 20024
+  subject_id: 'user:henrik.larsen@wingtip.example'
+  email: 'henrik.larsen@wingtip.example'
+  action: 'course_started'
+  properties: '{"course":"Python basics"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1056}}'
+  created_at: '{{hoursAgo 1056}}'
+- id: 20166
+  contact_id: 20044
+  subject_id: 'user:tyler.brooks@tailspin.example'
+  email: 'tyler.brooks@tailspin.example'
+  action: 'course_started'
+  properties: '{"course":"Python basics"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1056}}'
+  created_at: '{{hoursAgo 1056}}'
+- id: 20167
+  contact_id: 20031
+  subject_id: 'user:aiko.sato@proseware.example'
+  email: 'aiko.sato@proseware.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Python basics","lesson":"Lesson 8"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1049}}'
+  created_at: '{{hoursAgo 1049}}'
+- id: 20168
+  contact_id: 20023
+  subject_id: 'user:isabela.costa@proseware.example'
+  email: 'isabela.costa@proseware.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Python basics","lesson":"Lesson 8"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1039}}'
+  created_at: '{{hoursAgo 1039}}'
+- id: 20169
+  contact_id: 20023
+  subject_id: 'user:isabela.costa@proseware.example'
+  email: 'isabela.costa@proseware.example'
+  action: 'course_started'
+  properties: '{"course":"Python basics"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1032}}'
+  created_at: '{{hoursAgo 1032}}'
+- id: 20170
+  contact_id: 20025
+  subject_id: 'user:zara.khan@northwind.example'
+  email: 'zara.khan@northwind.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 4"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1032}}'
+  created_at: '{{hoursAgo 1032}}'
+- id: 20171
+  contact_id: 20043
+  subject_id: 'user:sara.lindqvist@contoso.example'
+  email: 'sara.lindqvist@contoso.example'
+  action: 'course_started'
+  properties: '{"course":"Python basics"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1032}}'
+  created_at: '{{hoursAgo 1032}}'
+- id: 20172
+  contact_id: 20025
+  subject_id: 'user:zara.khan@northwind.example'
+  email: 'zara.khan@northwind.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Git in a day","lesson":"Lesson 2"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1030}}'
+  created_at: '{{hoursAgo 1030}}'
+- id: 20173
+  contact_id: 20015
+  subject_id: 'user:mei.lin@proseware.example'
+  email: 'mei.lin@proseware.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 3"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1019}}'
+  created_at: '{{hoursAgo 1019}}'
+- id: 20174
+  contact_id: 20022
+  subject_id: 'user:kofi.mensah@adatum.example'
+  email: 'kofi.mensah@adatum.example'
+  action: 'course_started'
+  properties: '{"course":"Python basics"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1008}}'
+  created_at: '{{hoursAgo 1008}}'
+- id: 20175
+  contact_id: 20042
+  subject_id: 'user:ahmed.rahman@fabrikam.example'
+  email: 'ahmed.rahman@fabrikam.example'
+  action: 'course_started'
+  properties: '{"course":"Python basics"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 1008}}'
+  created_at: '{{hoursAgo 1008}}'
+- id: 20176
+  contact_id: 20021
+  subject_id: 'user:valentina.rossi@litware.example'
+  email: 'valentina.rossi@litware.example'
+  action: 'course_started'
+  properties: '{"course":"Python basics"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 984}}'
+  created_at: '{{hoursAgo 984}}'
+- id: 20177
+  contact_id: 20041
+  subject_id: 'user:elena.popescu@northwind.example'
+  email: 'elena.popescu@northwind.example'
+  action: 'course_started'
+  properties: '{"course":"Python basics"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 984}}'
+  created_at: '{{hoursAgo 984}}'
+- id: 20178
+  contact_id: 20034
+  subject_id: 'user:arjun.mehta@fabrikam.example'
+  email: 'arjun.mehta@fabrikam.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 1"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 965}}'
+  created_at: '{{hoursAgo 965}}'
+- id: 20179
+  contact_id: 20020
+  subject_id: 'user:jack.murphy@tailspin.example'
+  email: 'jack.murphy@tailspin.example'
+  action: 'course_started'
+  properties: '{"course":"Python basics"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 960}}'
+  created_at: '{{hoursAgo 960}}'
+- id: 20180
+  contact_id: 20025
+  subject_id: 'user:zara.khan@northwind.example'
+  email: 'zara.khan@northwind.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 5"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 955}}'
+  created_at: '{{hoursAgo 955}}'
+- id: 20181
+  contact_id: 20025
+  subject_id: 'user:zara.khan@northwind.example'
+  email: 'zara.khan@northwind.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Python basics","lesson":"Lesson 8"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 950}}'
+  created_at: '{{hoursAgo 950}}'
+- id: 20182
+  contact_id: 20017
+  subject_id: 'user:emily.carter@northwind.example'
+  email: 'emily.carter@northwind.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 7"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 942}}'
+  created_at: '{{hoursAgo 942}}'
+- id: 20183
+  contact_id: 20020
+  subject_id: 'user:jack.murphy@tailspin.example'
+  email: 'jack.murphy@tailspin.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 3"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 939}}'
+  created_at: '{{hoursAgo 939}}'
+- id: 20184
+  contact_id: 20017
+  subject_id: 'user:emily.carter@northwind.example'
+  email: 'emily.carter@northwind.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 3"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 936}}'
+  created_at: '{{hoursAgo 936}}'
+- id: 20185
+  contact_id: 20019
+  subject_id: 'user:anya.petrova@contoso.example'
+  email: 'anya.petrova@contoso.example'
+  action: 'course_started'
+  properties: '{"course":"Python basics"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 936}}'
+  created_at: '{{hoursAgo 936}}'
+- id: 20186
+  contact_id: 20039
+  subject_id: 'user:camila.torres@proseware.example'
+  email: 'camila.torres@proseware.example'
+  action: 'course_started'
+  properties: '{"course":"Python basics"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 936}}'
+  created_at: '{{hoursAgo 936}}'
+- id: 20187
+  contact_id: 20028
+  subject_id: 'user:omar.salem@tailspin.example'
+  email: 'omar.salem@tailspin.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Git in a day","lesson":"Lesson 7"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 926}}'
+  created_at: '{{hoursAgo 926}}'
+- id: 20188
+  contact_id: 20018
+  subject_id: 'user:yusuf.demir@fabrikam.example'
+  email: 'yusuf.demir@fabrikam.example'
+  action: 'course_started'
+  properties: '{"course":"Python basics"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 912}}'
+  created_at: '{{hoursAgo 912}}'
+- id: 20189
+  contact_id: 20027
+  subject_id: 'user:nina.kowalski@contoso.example'
+  email: 'nina.kowalski@contoso.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 2"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 910}}'
+  created_at: '{{hoursAgo 910}}'
+- id: 20190
+  contact_id: 20015
+  subject_id: 'user:mei.lin@proseware.example'
+  email: 'mei.lin@proseware.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 6"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 891}}'
+  created_at: '{{hoursAgo 891}}'
+- id: 20191
+  contact_id: 20017
+  subject_id: 'user:emily.carter@northwind.example'
+  email: 'emily.carter@northwind.example'
+  action: 'course_started'
+  properties: '{"course":"Python basics"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 888}}'
+  created_at: '{{hoursAgo 888}}'
+- id: 20192
+  contact_id: 20037
+  subject_id: 'user:lena.hoffmann@litware.example'
+  email: 'lena.hoffmann@litware.example'
+  action: 'course_started'
+  properties: '{"course":"Python basics"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 888}}'
+  created_at: '{{hoursAgo 888}}'
+- id: 20193
+  contact_id: 20028
+  subject_id: 'user:omar.salem@tailspin.example'
+  email: 'omar.salem@tailspin.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 8"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 877}}'
+  created_at: '{{hoursAgo 877}}'
+- id: 20194
+  contact_id: 20018
+  subject_id: 'user:yusuf.demir@fabrikam.example'
+  email: 'yusuf.demir@fabrikam.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 8"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 875}}'
+  created_at: '{{hoursAgo 875}}'
+- id: 20195
+  contact_id: 20016
+  subject_id: 'user:santiago.ibarra@wingtip.example'
+  email: 'santiago.ibarra@wingtip.example'
+  action: 'course_started'
+  properties: '{"course":"Python basics"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 864}}'
+  created_at: '{{hoursAgo 864}}'
+- id: 20196
+  contact_id: 20043
+  subject_id: 'user:sara.lindqvist@contoso.example'
+  email: 'sara.lindqvist@contoso.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Python basics","lesson":"Lesson 6"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 863}}'
+  created_at: '{{hoursAgo 863}}'
+- id: 20197
+  contact_id: 20020
+  subject_id: 'user:jack.murphy@tailspin.example'
+  email: 'jack.murphy@tailspin.example'
+  action: 'lesson_completed'
+  properties: '{"course":"SQL for analysts","lesson":"Lesson 2"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 854}}'
+  created_at: '{{hoursAgo 854}}'
+- id: 20198
+  contact_id: 20016
+  subject_id: 'user:santiago.ibarra@wingtip.example'
+  email: 'santiago.ibarra@wingtip.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Git in a day","lesson":"Lesson 7"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 845}}'
+  created_at: '{{hoursAgo 845}}'
+- id: 20199
+  contact_id: 20025
+  subject_id: 'user:zara.khan@northwind.example'
+  email: 'zara.khan@northwind.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Git in a day","lesson":"Lesson 1"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 845}}'
+  created_at: '{{hoursAgo 845}}'
+- id: 20200
+  contact_id: 20015
+  subject_id: 'user:mei.lin@proseware.example'
+  email: 'mei.lin@proseware.example'
+  action: 'course_started'
+  properties: '{"course":"Python basics"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 840}}'
+  created_at: '{{hoursAgo 840}}'
+- id: 20201
+  contact_id: 20020
+  subject_id: 'user:jack.murphy@tailspin.example'
+  email: 'jack.murphy@tailspin.example'
+  action: 'lesson_completed'
+  properties: '{"course":"SQL for analysts","lesson":"Lesson 4"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 834}}'
+  created_at: '{{hoursAgo 834}}'
+- id: 20202
+  contact_id: 20016
+  subject_id: 'user:santiago.ibarra@wingtip.example'
+  email: 'santiago.ibarra@wingtip.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 2"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 831}}'
+  created_at: '{{hoursAgo 831}}'
+- id: 20203
+  contact_id: 20043
+  subject_id: 'user:sara.lindqvist@contoso.example'
+  email: 'sara.lindqvist@contoso.example'
+  action: 'lesson_completed'
+  properties: '{"course":"SQL for analysts","lesson":"Lesson 4"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 825}}'
+  created_at: '{{hoursAgo 825}}'
+- id: 20204
+  contact_id: 20018
+  subject_id: 'user:yusuf.demir@fabrikam.example'
+  email: 'yusuf.demir@fabrikam.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Python basics","lesson":"Lesson 2"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 824}}'
+  created_at: '{{hoursAgo 824}}'
+- id: 20205
+  contact_id: 20034
+  subject_id: 'user:arjun.mehta@fabrikam.example'
+  email: 'arjun.mehta@fabrikam.example'
+  action: 'course_started'
+  properties: '{"course":"Python basics"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 816}}'
+  created_at: '{{hoursAgo 816}}'
+- id: 20206
+  contact_id: 20029
+  subject_id: 'user:grace.taylor@litware.example'
+  email: 'grace.taylor@litware.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Python basics","lesson":"Lesson 7"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 806}}'
+  created_at: '{{hoursAgo 806}}'
+- id: 20207
+  contact_id: 20037
+  subject_id: 'user:lena.hoffmann@litware.example'
+  email: 'lena.hoffmann@litware.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Git in a day","lesson":"Lesson 2"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 797}}'
+  created_at: '{{hoursAgo 797}}'
+- id: 20208
+  contact_id: 20020
+  subject_id: 'user:jack.murphy@tailspin.example'
+  email: 'jack.murphy@tailspin.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20003}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 795}}'
+  created_at: '{{hoursAgo 795}}'
+- id: 20209
+  contact_id: 20035
+  subject_id: 'user:freya.johansson@contoso.example'
+  email: 'freya.johansson@contoso.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20003}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 794}}'
+  created_at: '{{hoursAgo 794}}'
+- id: 20210
+  contact_id: 20015
+  subject_id: 'user:mei.lin@proseware.example'
+  email: 'mei.lin@proseware.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20003}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 793}}'
+  created_at: '{{hoursAgo 793}}'
+- id: 20211
+  contact_id: 20020
+  subject_id: 'user:jack.murphy@tailspin.example'
+  email: 'jack.murphy@tailspin.example'
+  action: 'email.clicked'
+  properties: '{"broadcastId":20003}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 793}}'
+  created_at: '{{hoursAgo 793}}'
+- id: 20212
+  contact_id: 20035
+  subject_id: 'user:freya.johansson@contoso.example'
+  email: 'freya.johansson@contoso.example'
+  action: 'email.clicked'
+  properties: '{"broadcastId":20003}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 793}}'
+  created_at: '{{hoursAgo 793}}'
+- id: 20213
+  contact_id: 20029
+  subject_id: 'user:grace.taylor@litware.example'
+  email: 'grace.taylor@litware.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20003}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 792}}'
+  created_at: '{{hoursAgo 792}}'
+- id: 20214
+  contact_id: 20022
+  subject_id: 'user:kofi.mensah@adatum.example'
+  email: 'kofi.mensah@adatum.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20003}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 791}}'
+  created_at: '{{hoursAgo 791}}'
+- id: 20215
+  contact_id: 20040
+  subject_id: 'user:jonas.becker@wingtip.example'
+  email: 'jonas.becker@wingtip.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20003}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 791}}'
+  created_at: '{{hoursAgo 791}}'
+- id: 20216
+  contact_id: 20021
+  subject_id: 'user:valentina.rossi@litware.example'
+  email: 'valentina.rossi@litware.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20003}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 790}}'
+  created_at: '{{hoursAgo 790}}'
+- id: 20217
+  contact_id: 20025
+  subject_id: 'user:zara.khan@northwind.example'
+  email: 'zara.khan@northwind.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20003}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 790}}'
+  created_at: '{{hoursAgo 790}}'
+- id: 20218
+  contact_id: 20018
+  subject_id: 'user:yusuf.demir@fabrikam.example'
+  email: 'yusuf.demir@fabrikam.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20003}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 789}}'
+  created_at: '{{hoursAgo 789}}'
+- id: 20219
+  contact_id: 20023
+  subject_id: 'user:isabela.costa@proseware.example'
+  email: 'isabela.costa@proseware.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20003}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 789}}'
+  created_at: '{{hoursAgo 789}}'
+- id: 20220
+  contact_id: 20019
+  subject_id: 'user:anya.petrova@contoso.example'
+  email: 'anya.petrova@contoso.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20003}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 788}}'
+  created_at: '{{hoursAgo 788}}'
+- id: 20221
+  contact_id: 20022
+  subject_id: 'user:kofi.mensah@adatum.example'
+  email: 'kofi.mensah@adatum.example'
+  action: 'email.clicked'
+  properties: '{"broadcastId":20003}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 788}}'
+  created_at: '{{hoursAgo 788}}'
+- id: 20222
+  contact_id: 20034
+  subject_id: 'user:arjun.mehta@fabrikam.example'
+  email: 'arjun.mehta@fabrikam.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20003}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 788}}'
+  created_at: '{{hoursAgo 788}}'
+- id: 20223
+  contact_id: 20018
+  subject_id: 'user:yusuf.demir@fabrikam.example'
+  email: 'yusuf.demir@fabrikam.example'
+  action: 'email.clicked'
+  properties: '{"broadcastId":20003}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 787}}'
+  created_at: '{{hoursAgo 787}}'
+- id: 20224
+  contact_id: 20019
+  subject_id: 'user:anya.petrova@contoso.example'
+  email: 'anya.petrova@contoso.example'
+  action: 'email.clicked'
+  properties: '{"broadcastId":20003}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 787}}'
+  created_at: '{{hoursAgo 787}}'
+- id: 20225
+  contact_id: 20025
+  subject_id: 'user:zara.khan@northwind.example'
+  email: 'zara.khan@northwind.example'
+  action: 'email.clicked'
+  properties: '{"broadcastId":20003}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 787}}'
+  created_at: '{{hoursAgo 787}}'
+- id: 20226
+  contact_id: 20031
+  subject_id: 'user:aiko.sato@proseware.example'
+  email: 'aiko.sato@proseware.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20003}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 787}}'
+  created_at: '{{hoursAgo 787}}'
+- id: 20227
+  contact_id: 20028
+  subject_id: 'user:omar.salem@tailspin.example'
+  email: 'omar.salem@tailspin.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20003}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 785}}'
+  created_at: '{{hoursAgo 785}}'
+- id: 20228
+  contact_id: 20026
+  subject_id: 'user:leo.martin@fabrikam.example'
+  email: 'leo.martin@fabrikam.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20003}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 784}}'
+  created_at: '{{hoursAgo 784}}'
+- id: 20229
+  contact_id: 20027
+  subject_id: 'user:nina.kowalski@contoso.example'
+  email: 'nina.kowalski@contoso.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20003}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 784}}'
+  created_at: '{{hoursAgo 784}}'
+- id: 20230
+  contact_id: 20044
+  subject_id: 'user:tyler.brooks@tailspin.example'
+  email: 'tyler.brooks@tailspin.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Python basics","lesson":"Lesson 3"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 778}}'
+  created_at: '{{hoursAgo 778}}'
+- id: 20231
+  contact_id: 20026
+  subject_id: 'user:leo.martin@fabrikam.example'
+  email: 'leo.martin@fabrikam.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Python basics","lesson":"Lesson 6"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 770}}'
+  created_at: '{{hoursAgo 770}}'
+- id: 20232
+  contact_id: 20026
+  subject_id: 'user:leo.martin@fabrikam.example'
+  email: 'leo.martin@fabrikam.example'
+  action: 'lesson_completed'
+  properties: '{"course":"SQL for analysts","lesson":"Lesson 7"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 766}}'
+  created_at: '{{hoursAgo 766}}'
+- id: 20233
+  contact_id: 20044
+  subject_id: 'user:tyler.brooks@tailspin.example'
+  email: 'tyler.brooks@tailspin.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Git in a day","lesson":"Lesson 2"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 760}}'
+  created_at: '{{hoursAgo 760}}'
+- id: 20234
+  contact_id: 20024
+  subject_id: 'user:henrik.larsen@wingtip.example'
+  email: 'henrik.larsen@wingtip.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Python basics","lesson":"Lesson 6"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 748}}'
+  created_at: '{{hoursAgo 748}}'
+- id: 20235
+  contact_id: 20024
+  subject_id: 'user:henrik.larsen@wingtip.example'
+  email: 'henrik.larsen@wingtip.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 7"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 720}}'
+  created_at: '{{hoursAgo 720}}'
+- id: 20236
+  contact_id: 20030
+  subject_id: 'user:felix.weber@adatum.example'
+  email: 'felix.weber@adatum.example'
+  action: 'lesson_completed'
+  properties: '{"course":"SQL for analysts","lesson":"Lesson 2"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 711}}'
+  created_at: '{{hoursAgo 711}}'
+- id: 20237
+  contact_id: 20022
+  subject_id: 'user:kofi.mensah@adatum.example'
+  email: 'kofi.mensah@adatum.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 8"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 709}}'
+  created_at: '{{hoursAgo 709}}'
+- id: 20238
+  contact_id: 20028
+  subject_id: 'user:omar.salem@tailspin.example'
+  email: 'omar.salem@tailspin.example'
+  action: 'lesson_completed'
+  properties: '{"course":"SQL for analysts","lesson":"Lesson 6"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 705}}'
+  created_at: '{{hoursAgo 705}}'
+- id: 20239
+  contact_id: 20018
+  subject_id: 'user:yusuf.demir@fabrikam.example'
+  email: 'yusuf.demir@fabrikam.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Python basics","lesson":"Lesson 5"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 695}}'
+  created_at: '{{hoursAgo 695}}'
+- id: 20240
+  contact_id: 20021
+  subject_id: 'user:valentina.rossi@litware.example'
+  email: 'valentina.rossi@litware.example'
+  action: 'lesson_completed'
+  properties: '{"course":"SQL for analysts","lesson":"Lesson 4"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 681}}'
+  created_at: '{{hoursAgo 681}}'
+- id: 20241
+  contact_id: 20030
+  subject_id: 'user:felix.weber@adatum.example'
+  email: 'felix.weber@adatum.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Python basics","lesson":"Lesson 1"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 653}}'
+  created_at: '{{hoursAgo 653}}'
+- id: 20242
+  contact_id: 20027
+  subject_id: 'user:nina.kowalski@contoso.example'
+  email: 'nina.kowalski@contoso.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 5"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 640}}'
+  created_at: '{{hoursAgo 640}}'
+- id: 20243
+  contact_id: 20042
+  subject_id: 'user:ahmed.rahman@fabrikam.example'
+  email: 'ahmed.rahman@fabrikam.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Git in a day","lesson":"Lesson 3"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 634}}'
+  created_at: '{{hoursAgo 634}}'
+- id: 20244
+  contact_id: 20027
+  subject_id: 'user:nina.kowalski@contoso.example'
+  email: 'nina.kowalski@contoso.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Python basics","lesson":"Lesson 6"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 602}}'
+  created_at: '{{hoursAgo 602}}'
+- id: 20245
+  contact_id: 20031
+  subject_id: 'user:aiko.sato@proseware.example'
+  email: 'aiko.sato@proseware.example'
+  action: 'lesson_completed'
+  properties: '{"course":"SQL for analysts","lesson":"Lesson 4"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 595}}'
+  created_at: '{{hoursAgo 595}}'
+- id: 20246
+  contact_id: 20026
+  subject_id: 'user:leo.martin@fabrikam.example'
+  email: 'leo.martin@fabrikam.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 3"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 576}}'
+  created_at: '{{hoursAgo 576}}'
+- id: 20247
+  contact_id: 20031
+  subject_id: 'user:aiko.sato@proseware.example'
+  email: 'aiko.sato@proseware.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Python basics","lesson":"Lesson 3"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 571}}'
+  created_at: '{{hoursAgo 571}}'
+- id: 20248
+  contact_id: 20034
+  subject_id: 'user:arjun.mehta@fabrikam.example'
+  email: 'arjun.mehta@fabrikam.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 3"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 571}}'
+  created_at: '{{hoursAgo 571}}'
+- id: 20249
+  contact_id: 20022
+  subject_id: 'user:kofi.mensah@adatum.example'
+  email: 'kofi.mensah@adatum.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Git in a day","lesson":"Lesson 3"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 560}}'
+  created_at: '{{hoursAgo 560}}'
+- id: 20250
+  contact_id: 20015
+  subject_id: 'user:mei.lin@proseware.example'
+  email: 'mei.lin@proseware.example'
+  action: 'lesson_completed'
+  properties: '{"course":"SQL for analysts","lesson":"Lesson 4"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 549}}'
+  created_at: '{{hoursAgo 549}}'
+- id: 20251
+  contact_id: 20043
+  subject_id: 'user:sara.lindqvist@contoso.example'
+  email: 'sara.lindqvist@contoso.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 1"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 501}}'
+  created_at: '{{hoursAgo 501}}'
+- id: 20252
+  contact_id: 20019
+  subject_id: 'user:anya.petrova@contoso.example'
+  email: 'anya.petrova@contoso.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20004}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 458}}'
+  created_at: '{{hoursAgo 458}}'
+- id: 20253
+  contact_id: 20020
+  subject_id: 'user:jack.murphy@tailspin.example'
+  email: 'jack.murphy@tailspin.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20004}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 456}}'
+  created_at: '{{hoursAgo 456}}'
+- id: 20254
+  contact_id: 20024
+  subject_id: 'user:henrik.larsen@wingtip.example'
+  email: 'henrik.larsen@wingtip.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20004}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 456}}'
+  created_at: '{{hoursAgo 456}}'
+- id: 20255
+  contact_id: 20016
+  subject_id: 'user:santiago.ibarra@wingtip.example'
+  email: 'santiago.ibarra@wingtip.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 5"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 456}}'
+  created_at: '{{hoursAgo 456}}'
+- id: 20256
+  contact_id: 20018
+  subject_id: 'user:yusuf.demir@fabrikam.example'
+  email: 'yusuf.demir@fabrikam.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20004}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 455}}'
+  created_at: '{{hoursAgo 455}}'
+- id: 20257
+  contact_id: 20021
+  subject_id: 'user:valentina.rossi@litware.example'
+  email: 'valentina.rossi@litware.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20004}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 455}}'
+  created_at: '{{hoursAgo 455}}'
+- id: 20258
+  contact_id: 20018
+  subject_id: 'user:yusuf.demir@fabrikam.example'
+  email: 'yusuf.demir@fabrikam.example'
+  action: 'email.clicked'
+  properties: '{"broadcastId":20004}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 454}}'
+  created_at: '{{hoursAgo 454}}'
+- id: 20259
+  contact_id: 20027
+  subject_id: 'user:nina.kowalski@contoso.example'
+  email: 'nina.kowalski@contoso.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20004}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 454}}'
+  created_at: '{{hoursAgo 454}}'
+- id: 20260
+  contact_id: 20025
+  subject_id: 'user:zara.khan@northwind.example'
+  email: 'zara.khan@northwind.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20004}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 453}}'
+  created_at: '{{hoursAgo 453}}'
+- id: 20261
+  contact_id: 20016
+  subject_id: 'user:santiago.ibarra@wingtip.example'
+  email: 'santiago.ibarra@wingtip.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20004}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 452}}'
+  created_at: '{{hoursAgo 452}}'
+- id: 20262
+  contact_id: 20027
+  subject_id: 'user:nina.kowalski@contoso.example'
+  email: 'nina.kowalski@contoso.example'
+  action: 'email.clicked'
+  properties: '{"broadcastId":20004}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 452}}'
+  created_at: '{{hoursAgo 452}}'
+- id: 20263
+  contact_id: 20031
+  subject_id: 'user:aiko.sato@proseware.example'
+  email: 'aiko.sato@proseware.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20004}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 452}}'
+  created_at: '{{hoursAgo 452}}'
+- id: 20264
+  contact_id: 20015
+  subject_id: 'user:mei.lin@proseware.example'
+  email: 'mei.lin@proseware.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20004}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 451}}'
+  created_at: '{{hoursAgo 451}}'
+- id: 20265
+  contact_id: 20028
+  subject_id: 'user:omar.salem@tailspin.example'
+  email: 'omar.salem@tailspin.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20004}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 451}}'
+  created_at: '{{hoursAgo 451}}'
+- id: 20266
+  contact_id: 20030
+  subject_id: 'user:felix.weber@adatum.example'
+  email: 'felix.weber@adatum.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20004}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 451}}'
+  created_at: '{{hoursAgo 451}}'
+- id: 20267
+  contact_id: 20015
+  subject_id: 'user:mei.lin@proseware.example'
+  email: 'mei.lin@proseware.example'
+  action: 'email.clicked'
+  properties: '{"broadcastId":20004}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 450}}'
+  created_at: '{{hoursAgo 450}}'
+- id: 20268
+  contact_id: 20029
+  subject_id: 'user:grace.taylor@litware.example'
+  email: 'grace.taylor@litware.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20004}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 450}}'
+  created_at: '{{hoursAgo 450}}'
+- id: 20269
+  contact_id: 20039
+  subject_id: 'user:camila.torres@proseware.example'
+  email: 'camila.torres@proseware.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20004}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 450}}'
+  created_at: '{{hoursAgo 450}}'
+- id: 20270
+  contact_id: 20016
+  subject_id: 'user:santiago.ibarra@wingtip.example'
+  email: 'santiago.ibarra@wingtip.example'
+  action: 'email.clicked'
+  properties: '{"broadcastId":20004}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 449}}'
+  created_at: '{{hoursAgo 449}}'
+- id: 20271
+  contact_id: 20032
+  subject_id: 'user:diego.vargas@wingtip.example'
+  email: 'diego.vargas@wingtip.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20004}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 449}}'
+  created_at: '{{hoursAgo 449}}'
+- id: 20272
+  contact_id: 20022
+  subject_id: 'user:kofi.mensah@adatum.example'
+  email: 'kofi.mensah@adatum.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20004}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 448}}'
+  created_at: '{{hoursAgo 448}}'
+- id: 20273
+  contact_id: 20029
+  subject_id: 'user:grace.taylor@litware.example'
+  email: 'grace.taylor@litware.example'
+  action: 'email.clicked'
+  properties: '{"broadcastId":20004}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 448}}'
+  created_at: '{{hoursAgo 448}}'
+- id: 20274
+  contact_id: 20042
+  subject_id: 'user:ahmed.rahman@fabrikam.example'
+  email: 'ahmed.rahman@fabrikam.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20004}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 448}}'
+  created_at: '{{hoursAgo 448}}'
+- id: 20275
+  contact_id: 20039
+  subject_id: 'user:camila.torres@proseware.example'
+  email: 'camila.torres@proseware.example'
+  action: 'email.clicked'
+  properties: '{"broadcastId":20004}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 447}}'
+  created_at: '{{hoursAgo 447}}'
+- id: 20276
+  contact_id: 20016
+  subject_id: 'user:santiago.ibarra@wingtip.example'
+  email: 'santiago.ibarra@wingtip.example'
+  action: 'lesson_completed'
+  properties: '{"course":"SQL for analysts","lesson":"Lesson 8"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 441}}'
+  created_at: '{{hoursAgo 441}}'
+- id: 20277
+  contact_id: 20021
+  subject_id: 'user:valentina.rossi@litware.example'
+  email: 'valentina.rossi@litware.example'
+  action: 'lesson_completed'
+  properties: '{"course":"SQL for analysts","lesson":"Lesson 6"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 428}}'
+  created_at: '{{hoursAgo 428}}'
+- id: 20278
+  contact_id: 20029
+  subject_id: 'user:grace.taylor@litware.example'
+  email: 'grace.taylor@litware.example'
+  action: 'course_completed'
+  properties: '{"course":"SQL for analysts"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 389}}'
+  created_at: '{{hoursAgo 389}}'
+- id: 20279
+  contact_id: 20014
+  subject_id: 'user:noah.fischer@adatum.example'
+  email: 'noah.fischer@adatum.example'
+  action: 'signup'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 384}}'
+  created_at: '{{hoursAgo 384}}'
+- id: 20280
+  contact_id: 20029
+  subject_id: 'user:grace.taylor@litware.example'
+  email: 'grace.taylor@litware.example'
+  action: 'lesson_completed'
+  properties: '{"course":"SQL for analysts","lesson":"Lesson 6"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 381}}'
+  created_at: '{{hoursAgo 381}}'
+- id: 20281
+  contact_id: 20024
+  subject_id: 'user:henrik.larsen@wingtip.example'
+  email: 'henrik.larsen@wingtip.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 3"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 377}}'
+  created_at: '{{hoursAgo 377}}'
+- id: 20282
+  contact_id: 20028
+  subject_id: 'user:omar.salem@tailspin.example'
+  email: 'omar.salem@tailspin.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Git in a day","lesson":"Lesson 4"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 374}}'
+  created_at: '{{hoursAgo 374}}'
+- id: 20283
+  contact_id: 20016
+  subject_id: 'user:santiago.ibarra@wingtip.example'
+  email: 'santiago.ibarra@wingtip.example'
+  action: 'lesson_completed'
+  properties: '{"course":"SQL for analysts","lesson":"Lesson 3"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 367}}'
+  created_at: '{{hoursAgo 367}}'
+- id: 20284
+  contact_id: 20013
+  subject_id: 'user:layla.haddad@litware.example'
+  email: 'layla.haddad@litware.example'
+  action: 'signup'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 360}}'
+  created_at: '{{hoursAgo 360}}'
+- id: 20285
+  contact_id: 20015
+  subject_id: 'user:mei.lin@proseware.example'
+  email: 'mei.lin@proseware.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 5"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 350}}'
+  created_at: '{{hoursAgo 350}}'
+- id: 20286
+  contact_id: 20012
+  subject_id: 'user:ethan.walker@tailspin.example'
+  email: 'ethan.walker@tailspin.example'
+  action: 'signup'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 336}}'
+  created_at: '{{hoursAgo 336}}'
+- id: 20287
+  contact_id: 20029
+  subject_id: 'user:grace.taylor@litware.example'
+  email: 'grace.taylor@litware.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 8"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 328}}'
+  created_at: '{{hoursAgo 328}}'
+- id: 20288
+  contact_id: 20039
+  subject_id: 'user:camila.torres@proseware.example'
+  email: 'camila.torres@proseware.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 2"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 319}}'
+  created_at: '{{hoursAgo 319}}'
+- id: 20289
+  contact_id: 20011
+  subject_id: 'user:chloe.nguyen@contoso.example'
+  email: 'chloe.nguyen@contoso.example'
+  action: 'signup'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 312}}'
+  created_at: '{{hoursAgo 312}}'
+- id: 20290
+  contact_id: 20014
+  subject_id: 'user:noah.fischer@adatum.example'
+  email: 'noah.fischer@adatum.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 1"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 305}}'
+  created_at: '{{hoursAgo 305}}'
+- id: 20291
+  contact_id: 20030
+  subject_id: 'user:felix.weber@adatum.example'
+  email: 'felix.weber@adatum.example'
+  action: 'course_completed'
+  properties: '{"course":"SQL for analysts"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 290}}'
+  created_at: '{{hoursAgo 290}}'
+- id: 20292
+  contact_id: 20010
+  subject_id: 'user:tomasz.wrobel@fabrikam.example'
+  email: 'tomasz.wrobel@fabrikam.example'
+  action: 'signup'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 288}}'
+  created_at: '{{hoursAgo 288}}'
+- id: 20293
+  contact_id: 20039
+  subject_id: 'user:camila.torres@proseware.example'
+  email: 'camila.torres@proseware.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Python basics","lesson":"Lesson 3"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 281}}'
+  created_at: '{{hoursAgo 281}}'
+- id: 20294
+  contact_id: 20019
+  subject_id: 'user:anya.petrova@contoso.example'
+  email: 'anya.petrova@contoso.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 6"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 273}}'
+  created_at: '{{hoursAgo 273}}'
+- id: 20295
+  contact_id: 20009
+  subject_id: 'user:ingrid.solberg@northwind.example'
+  email: 'ingrid.solberg@northwind.example'
+  action: 'signup'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 264}}'
+  created_at: '{{hoursAgo 264}}'
+- id: 20296
+  contact_id: 20031
+  subject_id: 'user:aiko.sato@proseware.example'
+  email: 'aiko.sato@proseware.example'
+  action: 'course_completed'
+  properties: '{"course":"SQL for analysts"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 260}}'
+  created_at: '{{hoursAgo 260}}'
+- id: 20297
+  contact_id: 20009
+  subject_id: 'user:ingrid.solberg@northwind.example'
+  email: 'ingrid.solberg@northwind.example'
+  action: 'viewed_pricing'
+  properties: '{"plan":"pro"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 258}}'
+  created_at: '{{hoursAgo 258}}'
+- id: 20298
+  contact_id: 20016
+  subject_id: 'user:santiago.ibarra@wingtip.example'
+  email: 'santiago.ibarra@wingtip.example'
+  action: 'course_completed'
+  properties: '{"course":"SQL for analysts"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 250}}'
+  created_at: '{{hoursAgo 250}}'
+- id: 20299
+  contact_id: 20011
+  subject_id: 'user:chloe.nguyen@contoso.example'
+  email: 'chloe.nguyen@contoso.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Git in a day","lesson":"Lesson 1"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 248}}'
+  created_at: '{{hoursAgo 248}}'
+- id: 20300
+  contact_id: 20027
+  subject_id: 'user:nina.kowalski@contoso.example'
+  email: 'nina.kowalski@contoso.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Python basics","lesson":"Lesson 8"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 244}}'
+  created_at: '{{hoursAgo 244}}'
+- id: 20301
+  contact_id: 20008
+  subject_id: 'user:mateo.rojas@wingtip.example'
+  email: 'mateo.rojas@wingtip.example'
+  action: 'signup'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 240}}'
+  created_at: '{{hoursAgo 240}}'
+- id: 20302
+  contact_id: 20022
+  subject_id: 'user:kofi.mensah@adatum.example'
+  email: 'kofi.mensah@adatum.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Python basics","lesson":"Lesson 2"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 227}}'
+  created_at: '{{hoursAgo 227}}'
+- id: 20303
+  contact_id: 20041
+  subject_id: 'user:elena.popescu@northwind.example'
+  email: 'elena.popescu@northwind.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Git in a day","lesson":"Lesson 1"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 221}}'
+  created_at: '{{hoursAgo 221}}'
+- id: 20304
+  contact_id: 20020
+  subject_id: 'user:jack.murphy@tailspin.example'
+  email: 'jack.murphy@tailspin.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20005}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 218}}'
+  created_at: '{{hoursAgo 218}}'
+- id: 20305
+  contact_id: 20024
+  subject_id: 'user:henrik.larsen@wingtip.example'
+  email: 'henrik.larsen@wingtip.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20005}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 218}}'
+  created_at: '{{hoursAgo 218}}'
+- id: 20306
+  contact_id: 20020
+  subject_id: 'user:jack.murphy@tailspin.example'
+  email: 'jack.murphy@tailspin.example'
+  action: 'email.clicked'
+  properties: '{"broadcastId":20005}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 217}}'
+  created_at: '{{hoursAgo 217}}'
+- id: 20307
+  contact_id: 20007
+  subject_id: 'user:amara.diallo@proseware.example'
+  email: 'amara.diallo@proseware.example'
+  action: 'signup'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 216}}'
+  created_at: '{{hoursAgo 216}}'
+- id: 20308
+  contact_id: 20012
+  subject_id: 'user:ethan.walker@tailspin.example'
+  email: 'ethan.walker@tailspin.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20005}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 215}}'
+  created_at: '{{hoursAgo 215}}'
+- id: 20309
+  contact_id: 20017
+  subject_id: 'user:emily.carter@northwind.example'
+  email: 'emily.carter@northwind.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20005}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 215}}'
+  created_at: '{{hoursAgo 215}}'
+- id: 20310
+  contact_id: 20031
+  subject_id: 'user:aiko.sato@proseware.example'
+  email: 'aiko.sato@proseware.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20005}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 215}}'
+  created_at: '{{hoursAgo 215}}'
+- id: 20311
+  contact_id: 20032
+  subject_id: 'user:diego.vargas@wingtip.example'
+  email: 'diego.vargas@wingtip.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20005}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 215}}'
+  created_at: '{{hoursAgo 215}}'
+- id: 20312
+  contact_id: 20019
+  subject_id: 'user:anya.petrova@contoso.example'
+  email: 'anya.petrova@contoso.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20005}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 214}}'
+  created_at: '{{hoursAgo 214}}'
+- id: 20313
+  contact_id: 20029
+  subject_id: 'user:grace.taylor@litware.example'
+  email: 'grace.taylor@litware.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20005}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 214}}'
+  created_at: '{{hoursAgo 214}}'
+- id: 20314
+  contact_id: 20030
+  subject_id: 'user:felix.weber@adatum.example'
+  email: 'felix.weber@adatum.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20005}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 214}}'
+  created_at: '{{hoursAgo 214}}'
+- id: 20315
+  contact_id: 20036
+  subject_id: 'user:samuel.adeyemi@tailspin.example'
+  email: 'samuel.adeyemi@tailspin.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20005}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 214}}'
+  created_at: '{{hoursAgo 214}}'
+- id: 20316
+  contact_id: 20043
+  subject_id: 'user:sara.lindqvist@contoso.example'
+  email: 'sara.lindqvist@contoso.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20005}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 214}}'
+  created_at: '{{hoursAgo 214}}'
+- id: 20317
+  contact_id: 20014
+  subject_id: 'user:noah.fischer@adatum.example'
+  email: 'noah.fischer@adatum.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20005}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 213}}'
+  created_at: '{{hoursAgo 213}}'
+- id: 20318
+  contact_id: 20018
+  subject_id: 'user:yusuf.demir@fabrikam.example'
+  email: 'yusuf.demir@fabrikam.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20005}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 213}}'
+  created_at: '{{hoursAgo 213}}'
+- id: 20319
+  contact_id: 20032
+  subject_id: 'user:diego.vargas@wingtip.example'
+  email: 'diego.vargas@wingtip.example'
+  action: 'email.clicked'
+  properties: '{"broadcastId":20005}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 213}}'
+  created_at: '{{hoursAgo 213}}'
+- id: 20320
+  contact_id: 20036
+  subject_id: 'user:samuel.adeyemi@tailspin.example'
+  email: 'samuel.adeyemi@tailspin.example'
+  action: 'email.clicked'
+  properties: '{"broadcastId":20005}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 213}}'
+  created_at: '{{hoursAgo 213}}'
+- id: 20321
+  contact_id: 20038
+  subject_id: 'user:ravi.patel@adatum.example'
+  email: 'ravi.patel@adatum.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20005}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 212}}'
+  created_at: '{{hoursAgo 212}}'
+- id: 20322
+  contact_id: 20018
+  subject_id: 'user:yusuf.demir@fabrikam.example'
+  email: 'yusuf.demir@fabrikam.example'
+  action: 'email.clicked'
+  properties: '{"broadcastId":20005}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 211}}'
+  created_at: '{{hoursAgo 211}}'
+- id: 20323
+  contact_id: 20034
+  subject_id: 'user:arjun.mehta@fabrikam.example'
+  email: 'arjun.mehta@fabrikam.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20005}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 210}}'
+  created_at: '{{hoursAgo 210}}'
+- id: 20324
+  contact_id: 20041
+  subject_id: 'user:elena.popescu@northwind.example'
+  email: 'elena.popescu@northwind.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20005}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 210}}'
+  created_at: '{{hoursAgo 210}}'
+- id: 20325
+  contact_id: 20038
+  subject_id: 'user:ravi.patel@adatum.example'
+  email: 'ravi.patel@adatum.example'
+  action: 'email.clicked'
+  properties: '{"broadcastId":20005}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 209}}'
+  created_at: '{{hoursAgo 209}}'
+- id: 20326
+  contact_id: 20026
+  subject_id: 'user:leo.martin@fabrikam.example'
+  email: 'leo.martin@fabrikam.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20005}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 208}}'
+  created_at: '{{hoursAgo 208}}'
+- id: 20327
+  contact_id: 20016
+  subject_id: 'user:santiago.ibarra@wingtip.example'
+  email: 'santiago.ibarra@wingtip.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20005}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 207}}'
+  created_at: '{{hoursAgo 207}}'
+- id: 20328
+  contact_id: 20021
+  subject_id: 'user:valentina.rossi@litware.example'
+  email: 'valentina.rossi@litware.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20005}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 207}}'
+  created_at: '{{hoursAgo 207}}'
+- id: 20329
+  contact_id: 20026
+  subject_id: 'user:leo.martin@fabrikam.example'
+  email: 'leo.martin@fabrikam.example'
+  action: 'email.clicked'
+  properties: '{"broadcastId":20005}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 206}}'
+  created_at: '{{hoursAgo 206}}'
+- id: 20330
+  contact_id: 20021
+  subject_id: 'user:valentina.rossi@litware.example'
+  email: 'valentina.rossi@litware.example'
+  action: 'email.clicked'
+  properties: '{"broadcastId":20005}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 204}}'
+  created_at: '{{hoursAgo 204}}'
+- id: 20331
+  contact_id: 20027
+  subject_id: 'user:nina.kowalski@contoso.example'
+  email: 'nina.kowalski@contoso.example'
+  action: 'course_completed'
+  properties: '{"course":"SQL for analysts"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 204}}'
+  created_at: '{{hoursAgo 204}}'
+- id: 20332
+  contact_id: 20010
+  subject_id: 'user:tomasz.wrobel@fabrikam.example'
+  email: 'tomasz.wrobel@fabrikam.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 1"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 201}}'
+  created_at: '{{hoursAgo 201}}'
+- id: 20333
+  contact_id: 20021
+  subject_id: 'user:valentina.rossi@litware.example'
+  email: 'valentina.rossi@litware.example'
+  action: 'lesson_completed'
+  properties: '{"course":"SQL for analysts","lesson":"Lesson 3"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 201}}'
+  created_at: '{{hoursAgo 201}}'
+- id: 20334
+  contact_id: 20041
+  subject_id: 'user:elena.popescu@northwind.example'
+  email: 'elena.popescu@northwind.example'
+  action: 'lesson_completed'
+  properties: '{"course":"SQL for analysts","lesson":"Lesson 2"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 194}}'
+  created_at: '{{hoursAgo 194}}'
+- id: 20335
+  contact_id: 20006
+  subject_id: 'user:oliver.bennett@adatum.example'
+  email: 'oliver.bennett@adatum.example'
+  action: 'signup'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 192}}'
+  created_at: '{{hoursAgo 192}}'
+- id: 20336
+  contact_id: 20013
+  subject_id: 'user:layla.haddad@litware.example'
+  email: 'layla.haddad@litware.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Git in a day","lesson":"Lesson 1"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 189}}'
+  created_at: '{{hoursAgo 189}}'
+- id: 20337
+  contact_id: 20015
+  subject_id: 'user:mei.lin@proseware.example'
+  email: 'mei.lin@proseware.example'
+  action: 'course_completed'
+  properties: '{"course":"SQL for analysts"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 189}}'
+  created_at: '{{hoursAgo 189}}'
+- id: 20338
+  contact_id: 20011
+  subject_id: 'user:chloe.nguyen@contoso.example'
+  email: 'chloe.nguyen@contoso.example'
+  action: 'viewed_pricing'
+  properties: '{"plan":"pro"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 184}}'
+  created_at: '{{hoursAgo 184}}'
+- id: 20339
+  contact_id: 20021
+  subject_id: 'user:valentina.rossi@litware.example'
+  email: 'valentina.rossi@litware.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Git in a day","lesson":"Lesson 8"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 178}}'
+  created_at: '{{hoursAgo 178}}'
+- id: 20340
+  contact_id: 20015
+  subject_id: 'user:mei.lin@proseware.example'
+  email: 'mei.lin@proseware.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Python basics","lesson":"Lesson 1"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 175}}'
+  created_at: '{{hoursAgo 175}}'
+- id: 20341
+  contact_id: 20005
+  subject_id: 'user:priya.raman@litware.example'
+  email: 'priya.raman@litware.example'
+  action: 'signup'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 168}}'
+  created_at: '{{hoursAgo 168}}'
+- id: 20342
+  contact_id: 20011
+  subject_id: 'user:chloe.nguyen@contoso.example'
+  email: 'chloe.nguyen@contoso.example'
+  action: 'viewed_pricing'
+  properties: '{"plan":"pro"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 160}}'
+  created_at: '{{hoursAgo 160}}'
+- id: 20343
+  contact_id: 20008
+  subject_id: 'user:mateo.rojas@wingtip.example'
+  email: 'mateo.rojas@wingtip.example'
+  action: 'lesson_completed'
+  properties: '{"course":"SQL for analysts","lesson":"Lesson 1"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 159}}'
+  created_at: '{{hoursAgo 159}}'
+- id: 20344
+  contact_id: 20034
+  subject_id: 'user:arjun.mehta@fabrikam.example'
+  email: 'arjun.mehta@fabrikam.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Git in a day","lesson":"Lesson 6"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 149}}'
+  created_at: '{{hoursAgo 149}}'
+- id: 20345
+  contact_id: 20026
+  subject_id: 'user:leo.martin@fabrikam.example'
+  email: 'leo.martin@fabrikam.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 1"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 147}}'
+  created_at: '{{hoursAgo 147}}'
+- id: 20346
+  contact_id: 20004
+  subject_id: 'user:lucas.ferreira@tailspin.example'
+  email: 'lucas.ferreira@tailspin.example'
+  action: 'signup'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 144}}'
+  created_at: '{{hoursAgo 144}}'
+- id: 20347
+  contact_id: 20008
+  subject_id: 'user:mateo.rojas@wingtip.example'
+  email: 'mateo.rojas@wingtip.example'
+  action: 'viewed_pricing'
+  properties: '{"plan":"pro"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 142}}'
+  created_at: '{{hoursAgo 142}}'
+- id: 20348
+  contact_id: 20005
+  subject_id: 'user:priya.raman@litware.example'
+  email: 'priya.raman@litware.example'
+  action: 'viewed_pricing'
+  properties: '{"plan":"pro"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 138}}'
+  created_at: '{{hoursAgo 138}}'
+- id: 20349
+  contact_id: 20019
+  subject_id: 'user:anya.petrova@contoso.example'
+  email: 'anya.petrova@contoso.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Git in a day","lesson":"Lesson 2"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 128}}'
+  created_at: '{{hoursAgo 128}}'
+- id: 20350
+  contact_id: 20027
+  subject_id: 'user:nina.kowalski@contoso.example'
+  email: 'nina.kowalski@contoso.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 1"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 124}}'
+  created_at: '{{hoursAgo 124}}'
+- id: 20351
+  contact_id: 20028
+  subject_id: 'user:omar.salem@tailspin.example'
+  email: 'omar.salem@tailspin.example'
+  action: 'lesson_completed'
+  properties: '{"course":"SQL for analysts","lesson":"Lesson 2"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 121}}'
+  created_at: '{{hoursAgo 121}}'
+- id: 20352
+  contact_id: 20003
+  subject_id: 'user:hana.kobayashi@contoso.example'
+  email: 'hana.kobayashi@contoso.example'
+  action: 'signup'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 120}}'
+  created_at: '{{hoursAgo 120}}'
+- id: 20353
+  contact_id: 20003
+  subject_id: 'user:hana.kobayashi@contoso.example'
+  email: 'hana.kobayashi@contoso.example'
+  action: 'viewed_pricing'
+  properties: '{"plan":"pro"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 114}}'
+  created_at: '{{hoursAgo 114}}'
+- id: 20354
+  contact_id: 20004
+  subject_id: 'user:lucas.ferreira@tailspin.example'
+  email: 'lucas.ferreira@tailspin.example'
+  action: 'viewed_pricing'
+  properties: '{"plan":"team"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 114}}'
+  created_at: '{{hoursAgo 114}}'
+- id: 20355
+  contact_id: 20004
+  subject_id: 'user:lucas.ferreira@tailspin.example'
+  email: 'lucas.ferreira@tailspin.example'
+  action: 'lesson_completed'
+  properties: '{"course":"SQL for analysts","lesson":"Lesson 1"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 109}}'
+  created_at: '{{hoursAgo 109}}'
+- id: 20356
+  contact_id: 20028
+  subject_id: 'user:omar.salem@tailspin.example'
+  email: 'omar.salem@tailspin.example'
+  action: 'course_completed'
+  properties: '{"course":"SQL for analysts"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 105}}'
+  created_at: '{{hoursAgo 105}}'
+- id: 20357
+  contact_id: 20003
+  subject_id: 'user:hana.kobayashi@contoso.example'
+  email: 'hana.kobayashi@contoso.example'
+  action: 'viewed_pricing'
+  properties: '{"plan":"pro"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 101}}'
+  created_at: '{{hoursAgo 101}}'
+- id: 20358
+  contact_id: 20007
+  subject_id: 'user:amara.diallo@proseware.example'
+  email: 'amara.diallo@proseware.example'
+  action: 'viewed_pricing'
+  properties: '{"plan":"pro"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 101}}'
+  created_at: '{{hoursAgo 101}}'
+- id: 20359
+  contact_id: 20007
+  subject_id: 'user:amara.diallo@proseware.example'
+  email: 'amara.diallo@proseware.example'
+  action: 'viewed_pricing'
+  properties: '{"plan":"pro"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 100}}'
+  created_at: '{{hoursAgo 100}}'
+- id: 20360
+  contact_id: 20022
+  subject_id: 'user:kofi.mensah@adatum.example'
+  email: 'kofi.mensah@adatum.example'
+  action: 'lesson_completed'
+  properties: '{"course":"SQL for analysts","lesson":"Lesson 4"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 97}}'
+  created_at: '{{hoursAgo 97}}'
+- id: 20361
+  contact_id: 20002
+  subject_id: 'user:daniel.okafor@fabrikam.example'
+  email: 'daniel.okafor@fabrikam.example'
+  action: 'signup'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 96}}'
+  created_at: '{{hoursAgo 96}}'
+- id: 20362
+  contact_id: 20009
+  subject_id: 'user:ingrid.solberg@northwind.example'
+  email: 'ingrid.solberg@northwind.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Git in a day","lesson":"Lesson 1"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 89}}'
+  created_at: '{{hoursAgo 89}}'
+- id: 20363
+  contact_id: 20005
+  subject_id: 'user:priya.raman@litware.example'
+  email: 'priya.raman@litware.example'
+  action: 'lesson_completed'
+  properties: '{"course":"SQL for analysts","lesson":"Lesson 1"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 86}}'
+  created_at: '{{hoursAgo 86}}'
+- id: 20364
+  contact_id: 20003
+  subject_id: 'user:hana.kobayashi@contoso.example'
+  email: 'hana.kobayashi@contoso.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Git in a day","lesson":"Lesson 1"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 83}}'
+  created_at: '{{hoursAgo 83}}'
+- id: 20365
+  contact_id: 20007
+  subject_id: 'user:amara.diallo@proseware.example'
+  email: 'amara.diallo@proseware.example'
+  action: 'lesson_completed'
+  properties: '{"course":"SQL for analysts","lesson":"Lesson 1"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 83}}'
+  created_at: '{{hoursAgo 83}}'
+- id: 20366
+  contact_id: 20034
+  subject_id: 'user:arjun.mehta@fabrikam.example'
+  email: 'arjun.mehta@fabrikam.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Python basics","lesson":"Lesson 4"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 82}}'
+  created_at: '{{hoursAgo 82}}'
+- id: 20367
+  contact_id: 20015
+  subject_id: 'user:mei.lin@proseware.example'
+  email: 'mei.lin@proseware.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20006}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 74}}'
+  created_at: '{{hoursAgo 74}}'
+- id: 20368
+  contact_id: 20020
+  subject_id: 'user:jack.murphy@tailspin.example'
+  email: 'jack.murphy@tailspin.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20006}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 72}}'
+  created_at: '{{hoursAgo 72}}'
+- id: 20369
+  contact_id: 20025
+  subject_id: 'user:zara.khan@northwind.example'
+  email: 'zara.khan@northwind.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20006}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 72}}'
+  created_at: '{{hoursAgo 72}}'
+- id: 20370
+  contact_id: 20029
+  subject_id: 'user:grace.taylor@litware.example'
+  email: 'grace.taylor@litware.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20006}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 72}}'
+  created_at: '{{hoursAgo 72}}'
+- id: 20371
+  contact_id: 20001
+  subject_id: 'user:sofia.marino@northwind.example'
+  email: 'sofia.marino@northwind.example'
+  action: 'signup'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 72}}'
+  created_at: '{{hoursAgo 72}}'
+- id: 20372
+  contact_id: 20035
+  subject_id: 'user:freya.johansson@contoso.example'
+  email: 'freya.johansson@contoso.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20006}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 71}}'
+  created_at: '{{hoursAgo 71}}'
+- id: 20373
+  contact_id: 20042
+  subject_id: 'user:ahmed.rahman@fabrikam.example'
+  email: 'ahmed.rahman@fabrikam.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20006}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 71}}'
+  created_at: '{{hoursAgo 71}}'
+- id: 20374
+  contact_id: 20044
+  subject_id: 'user:tyler.brooks@tailspin.example'
+  email: 'tyler.brooks@tailspin.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20006}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 71}}'
+  created_at: '{{hoursAgo 71}}'
+- id: 20375
+  contact_id: 20030
+  subject_id: 'user:felix.weber@adatum.example'
+  email: 'felix.weber@adatum.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20006}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 70}}'
+  created_at: '{{hoursAgo 70}}'
+- id: 20376
+  contact_id: 20044
+  subject_id: 'user:tyler.brooks@tailspin.example'
+  email: 'tyler.brooks@tailspin.example'
+  action: 'email.clicked'
+  properties: '{"broadcastId":20006}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 70}}'
+  created_at: '{{hoursAgo 70}}'
+- id: 20377
+  contact_id: 20019
+  subject_id: 'user:anya.petrova@contoso.example'
+  email: 'anya.petrova@contoso.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20006}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 69}}'
+  created_at: '{{hoursAgo 69}}'
+- id: 20378
+  contact_id: 20028
+  subject_id: 'user:omar.salem@tailspin.example'
+  email: 'omar.salem@tailspin.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20006}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 69}}'
+  created_at: '{{hoursAgo 69}}'
+- id: 20379
+  contact_id: 20031
+  subject_id: 'user:aiko.sato@proseware.example'
+  email: 'aiko.sato@proseware.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20006}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 69}}'
+  created_at: '{{hoursAgo 69}}'
+- id: 20380
+  contact_id: 20026
+  subject_id: 'user:leo.martin@fabrikam.example'
+  email: 'leo.martin@fabrikam.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20006}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 68}}'
+  created_at: '{{hoursAgo 68}}'
+- id: 20381
+  contact_id: 20032
+  subject_id: 'user:diego.vargas@wingtip.example'
+  email: 'diego.vargas@wingtip.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20006}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 68}}'
+  created_at: '{{hoursAgo 68}}'
+- id: 20382
+  contact_id: 20030
+  subject_id: 'user:felix.weber@adatum.example'
+  email: 'felix.weber@adatum.example'
+  action: 'email.clicked'
+  properties: '{"broadcastId":20006}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 67}}'
+  created_at: '{{hoursAgo 67}}'
+- id: 20383
+  contact_id: 20032
+  subject_id: 'user:diego.vargas@wingtip.example'
+  email: 'diego.vargas@wingtip.example'
+  action: 'email.clicked'
+  properties: '{"broadcastId":20006}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 67}}'
+  created_at: '{{hoursAgo 67}}'
+- id: 20384
+  contact_id: 20012
+  subject_id: 'user:ethan.walker@tailspin.example'
+  email: 'ethan.walker@tailspin.example'
+  action: 'lesson_completed'
+  properties: '{"course":"SQL for analysts","lesson":"Lesson 1"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 67}}'
+  created_at: '{{hoursAgo 67}}'
+- id: 20385
+  contact_id: 20026
+  subject_id: 'user:leo.martin@fabrikam.example'
+  email: 'leo.martin@fabrikam.example'
+  action: 'email.clicked'
+  properties: '{"broadcastId":20006}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 66}}'
+  created_at: '{{hoursAgo 66}}'
+- id: 20386
+  contact_id: 20034
+  subject_id: 'user:arjun.mehta@fabrikam.example'
+  email: 'arjun.mehta@fabrikam.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20006}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 66}}'
+  created_at: '{{hoursAgo 66}}'
+- id: 20387
+  contact_id: 20043
+  subject_id: 'user:sara.lindqvist@contoso.example'
+  email: 'sara.lindqvist@contoso.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20006}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 65}}'
+  created_at: '{{hoursAgo 65}}'
+- id: 20388
+  contact_id: 20017
+  subject_id: 'user:emily.carter@northwind.example'
+  email: 'emily.carter@northwind.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20006}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 64}}'
+  created_at: '{{hoursAgo 64}}'
+- id: 20389
+  contact_id: 20027
+  subject_id: 'user:nina.kowalski@contoso.example'
+  email: 'nina.kowalski@contoso.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20006}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 64}}'
+  created_at: '{{hoursAgo 64}}'
+- id: 20390
+  contact_id: 20021
+  subject_id: 'user:valentina.rossi@litware.example'
+  email: 'valentina.rossi@litware.example'
+  action: 'email.opened'
+  properties: '{"broadcastId":20006}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 63}}'
+  created_at: '{{hoursAgo 63}}'
+- id: 20391
+  contact_id: 20001
+  subject_id: 'user:sofia.marino@northwind.example'
+  email: 'sofia.marino@northwind.example'
+  action: 'viewed_pricing'
+  properties: '{"plan":"team"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 63}}'
+  created_at: '{{hoursAgo 63}}'
+- id: 20392
+  contact_id: 20010
+  subject_id: 'user:tomasz.wrobel@fabrikam.example'
+  email: 'tomasz.wrobel@fabrikam.example'
+  action: 'viewed_pricing'
+  properties: '{"plan":"pro"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 60}}'
+  created_at: '{{hoursAgo 60}}'
+- id: 20393
+  contact_id: 20002
+  subject_id: 'user:daniel.okafor@fabrikam.example'
+  email: 'daniel.okafor@fabrikam.example'
+  action: 'lesson_completed'
+  properties: '{"course":"SQL for analysts","lesson":"Lesson 1"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 55}}'
+  created_at: '{{hoursAgo 55}}'
+- id: 20394
+  contact_id: 20002
+  subject_id: 'user:daniel.okafor@fabrikam.example'
+  email: 'daniel.okafor@fabrikam.example'
+  action: 'viewed_pricing'
+  properties: '{"plan":"pro"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 51}}'
+  created_at: '{{hoursAgo 51}}'
+- id: 20395
+  contact_id: 20005
+  subject_id: 'user:priya.raman@litware.example'
+  email: 'priya.raman@litware.example'
+  action: 'viewed_pricing'
+  properties: '{"plan":"pro"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 51}}'
+  created_at: '{{hoursAgo 51}}'
+- id: 20396
+  contact_id: 20006
+  subject_id: 'user:oliver.bennett@adatum.example'
+  email: 'oliver.bennett@adatum.example'
+  action: 'viewed_pricing'
+  properties: '{"plan":"pro"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 47}}'
+  created_at: '{{hoursAgo 47}}'
+- id: 20397
+  contact_id: 20030
+  subject_id: 'user:felix.weber@adatum.example'
+  email: 'felix.weber@adatum.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Git in a day","lesson":"Lesson 8"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 45}}'
+  created_at: '{{hoursAgo 45}}'
+- id: 20398
+  contact_id: 20041
+  subject_id: 'user:elena.popescu@northwind.example'
+  email: 'elena.popescu@northwind.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Python basics","lesson":"Lesson 4"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 43}}'
+  created_at: '{{hoursAgo 43}}'
+- id: 20399
+  contact_id: 20001
+  subject_id: 'user:sofia.marino@northwind.example'
+  email: 'sofia.marino@northwind.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 1"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 40}}'
+  created_at: '{{hoursAgo 40}}'
+- id: 20400
+  contact_id: 20009
+  subject_id: 'user:ingrid.solberg@northwind.example'
+  email: 'ingrid.solberg@northwind.example'
+  action: 'viewed_pricing'
+  properties: '{"plan":"pro"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 38}}'
+  created_at: '{{hoursAgo 38}}'
+- id: 20401
+  contact_id: 20006
+  subject_id: 'user:oliver.bennett@adatum.example'
+  email: 'oliver.bennett@adatum.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Python basics","lesson":"Lesson 1"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 35}}'
+  created_at: '{{hoursAgo 35}}'
+- id: 20402
+  contact_id: 20019
+  subject_id: 'user:anya.petrova@contoso.example'
+  email: 'anya.petrova@contoso.example'
+  action: 'lesson_completed'
+  properties: '{"course":"Intro to Data Science","lesson":"Lesson 4"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 27}}'
+  created_at: '{{hoursAgo 27}}'
+- id: 20403
+  contact_id: 20001
+  subject_id: 'user:sofia.marino@northwind.example'
+  email: 'sofia.marino@northwind.example'
+  action: 'viewed_pricing'
+  properties: '{"plan":"pro"}'
+  workspace_id: 20
+  occurred_at: '{{hoursAgo 24}}'
+  created_at: '{{hoursAgo 24}}'

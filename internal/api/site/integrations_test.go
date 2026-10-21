@@ -191,7 +191,7 @@ func TestSiteIntegrationsSingleDefaultPerChannel(t *testing.T) {
 	assert.False(t, gotFirst.(*siteapi.SiteIntegrationResource).IsDefault, "only one default per channel")
 
 	// Exactly one row is default for the email channel.
-	n, err := env.DB.Integration.Query().
+	n, err := env.DB.Scoped(fixtures.AcmeID).Integration().Query().
 		Where(integration.ChannelEQ(integration.ChannelEmail), integration.IsDefault(true)).
 		Count(ctx)
 	require.NoError(t, err)
@@ -232,7 +232,7 @@ func TestSiteIntegrationsPromoteViaUpdate(t *testing.T) {
 	require.NoError(t, err)
 	assert.False(t, gotFirst.(*siteapi.SiteIntegrationResource).IsDefault, "promoting the second demotes the first")
 
-	n, err := env.DB.Integration.Query().
+	n, err := env.DB.Scoped(fixtures.AcmeID).Integration().Query().
 		Where(integration.ChannelEQ(integration.ChannelEmail), integration.IsDefault(true)).
 		Count(ctx)
 	require.NoError(t, err)

@@ -42,3 +42,40 @@
   workspace_id: 2
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+
+# --- Brightpath (workspace 20): demo workspace behind the screenshots on getsphericon.com ---
+- id: 20001
+  name: 'Welcome'
+  subject: 'Welcome to Brightpath'
+  body: '<h1>Welcome!</h1><p>Pick your first course and start today.</p>'
+  workspace_id: 20
+  created_at: '{{hoursAgo 2400}}'
+  updated_at: '{{hoursAgo 480}}'
+- id: 20002
+  name: 'Receipt'
+  subject: 'Your Brightpath receipt'
+  body: '<h1>Thanks for your purchase</h1><p>Your plan is now active.</p>'
+  workspace_id: 20
+  created_at: '{{hoursAgo 2400}}'
+  updated_at: '{{hoursAgo 480}}'
+- id: 20003
+  name: 'Password reset'
+  subject: 'Reset your Brightpath password'
+  body: '<p>Use the link below to choose a new password.</p>'
+  workspace_id: 20
+  created_at: '{{hoursAgo 2400}}'
+  updated_at: '{{hoursAgo 480}}'
+- id: 20004
+  name: 'Certificate ready'
+  subject: 'Your certificate is ready'
+  body: '<h1>Congratulations!</h1><p>Your certificate is waiting.</p>'
+  workspace_id: 20
+  created_at: '{{hoursAgo 2400}}'
+  updated_at: '{{hoursAgo 480}}'
+- id: 20005
+  name: 'Payment failed'
+  subject: 'We could not renew your plan'
+  body: '<p>Update your card to keep access to your courses.</p>'
+  workspace_id: 20
+  created_at: '{{hoursAgo 2400}}'
+  updated_at: '{{hoursAgo 480}}'

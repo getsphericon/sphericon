@@ -64,3 +64,41 @@
   workspace_id: 2
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+
+# --- Brightpath (workspace 20): demo workspace behind the screenshots on getsphericon.com ---
+- id: 20001
+  name: 'Almost customers'
+  definition: '{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:plan","operator":"eq","value":"free"},{"kind":"rule","field":"event:viewed_pricing","operator":"performed","value":"14"},{"kind":"rule","field":"event:email.opened","operator":"notPerformed","value":"30"}]}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 1080}}'
+  updated_at: '{{hoursAgo 360}}'
+- id: 20002
+  name: 'Pro & team members'
+  definition: '{"kind":"group","combinator":"and","rules":[{"kind":"group","combinator":"or","rules":[{"kind":"rule","field":"custom:plan","operator":"eq","value":"pro"},{"kind":"rule","field":"custom:plan","operator":"eq","value":"team"}]}]}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 1680}}'
+  updated_at: '{{hoursAgo 552}}'
+- id: 20003
+  name: 'Completed a course'
+  definition: '{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:courses_completed","operator":"neq","value":"0"}]}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 1440}}'
+  updated_at: '{{hoursAgo 480}}'
+- id: 20004
+  name: 'Black Friday audience'
+  definition: '{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"tag","operator":"has","value":"newsletter"},{"kind":"rule","field":"custom:plan","operator":"neq","value":"team"}]}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 144}}'
+  updated_at: '{{hoursAgo 48}}'
+- id: 20005
+  name: 'Webinar attendees, not yet paying'
+  definition: '{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"tag","operator":"has","value":"webinar-attendee"},{"kind":"rule","field":"custom:plan","operator":"eq","value":"free"}]}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 600}}'
+  updated_at: '{{hoursAgo 192}}'
+- id: 20006
+  name: 'At risk of churning'
+  definition: '{"kind":"group","combinator":"or","rules":[{"kind":"rule","field":"tag","operator":"has","value":"churn-risk"},{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:plan","operator":"neq","value":"free"},{"kind":"rule","field":"event:lesson_completed","operator":"notPerformed","value":"30"}]}]}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 288}}'
+  updated_at: '{{hoursAgo 96}}'

@@ -112,3 +112,11 @@
   collect_key: omck_test_cyberdyne_collect_key
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+
+# --- Brightpath (workspace 20): demo workspace behind the screenshots on getsphericon.com ---
+- id: 20
+  name: 'Brightpath'
+  public_id: 'BrghtW20'
+  collect_key: 'omck_test_brightpath_collect_key'
+  created_at: '{{daysAgo 120}}'
+  updated_at: '{{daysAgo 120}}'

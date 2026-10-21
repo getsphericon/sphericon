@@ -43,3 +43,33 @@
   workspace_id: 2
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+
+# --- Brightpath (workspace 20): demo workspace behind the screenshots on getsphericon.com ---
+- id: 20001
+  key: 'plan'
+  name: 'Plan'
+  type: 'string'
+  workspace_id: 20
+  created_at: '{{daysAgo 118}}'
+  updated_at: '{{daysAgo 118}}'
+- id: 20002
+  key: 'country'
+  name: 'Country'
+  type: 'string'
+  workspace_id: 20
+  created_at: '{{daysAgo 118}}'
+  updated_at: '{{daysAgo 118}}'
+- id: 20003
+  key: 'signup_source'
+  name: 'Signup source'
+  type: 'string'
+  workspace_id: 20
+  created_at: '{{daysAgo 118}}'
+  updated_at: '{{daysAgo 118}}'
+- id: 20004
+  key: 'courses_completed'
+  name: 'Courses completed'
+  type: 'number'
+  workspace_id: 20
+  created_at: '{{daysAgo 118}}'
+  updated_at: '{{daysAgo 118}}'

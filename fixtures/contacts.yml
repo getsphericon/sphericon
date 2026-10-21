@@ -314,3 +314,437 @@
   workspace_id: 1
   created_at: '2026-02-01 00:00:00'
   updated_at: '2026-02-01 00:00:00'
+
+# --- Brightpath (workspace 20): demo workspace behind the screenshots on getsphericon.com ---
+- id: 20001
+  email: 'sofia.marino@northwind.example'
+  first_name: 'Sofia'
+  last_name: 'Marino'
+  time_zone: 'Europe/Rome'
+  custom_fields: '{"plan":"free","country":"IT","signup_source":"youtube","courses_completed":0}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 72}}'
+  updated_at: '{{hoursAgo 0}}'
+- id: 20002
+  email: 'daniel.okafor@fabrikam.example'
+  first_name: 'Daniel'
+  last_name: 'Okafor'
+  time_zone: 'Africa/Lagos'
+  custom_fields: '{"plan":"free","country":"NG","signup_source":"webinar","courses_completed":0}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 96}}'
+  updated_at: '{{hoursAgo 0}}'
+- id: 20003
+  email: 'hana.kobayashi@contoso.example'
+  first_name: 'Hana'
+  last_name: 'Kobayashi'
+  time_zone: 'Asia/Tokyo'
+  custom_fields: '{"plan":"free","country":"JP","signup_source":"referral","courses_completed":0}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 120}}'
+  updated_at: '{{hoursAgo 0}}'
+- id: 20004
+  email: 'lucas.ferreira@tailspin.example'
+  first_name: 'Lucas'
+  last_name: 'Ferreira'
+  time_zone: 'America/Sao_Paulo'
+  custom_fields: '{"plan":"free","country":"BR","signup_source":"organic","courses_completed":0}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 144}}'
+  updated_at: '{{hoursAgo 24}}'
+- id: 20005
+  email: 'priya.raman@litware.example'
+  first_name: 'Priya'
+  last_name: 'Raman'
+  time_zone: 'Asia/Kolkata'
+  custom_fields: '{"plan":"free","country":"IN","signup_source":"ads","courses_completed":0}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 168}}'
+  updated_at: '{{hoursAgo 48}}'
+- id: 20006
+  email: 'oliver.bennett@adatum.example'
+  first_name: 'Oliver'
+  last_name: 'Bennett'
+  time_zone: 'Europe/London'
+  custom_fields: '{"plan":"free","country":"GB","signup_source":"youtube","courses_completed":0}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 192}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 20007
+  email: 'amara.diallo@proseware.example'
+  first_name: 'Amara'
+  last_name: 'Diallo'
+  time_zone: 'Europe/Paris'
+  custom_fields: '{"plan":"free","country":"FR","signup_source":"webinar","courses_completed":0}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 216}}'
+  updated_at: '{{hoursAgo 96}}'
+- id: 20008
+  email: 'mateo.rojas@wingtip.example'
+  first_name: 'Mateo'
+  last_name: 'Rojas'
+  time_zone: 'America/Bogota'
+  custom_fields: '{"plan":"free","country":"CO","signup_source":"referral","courses_completed":0}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 240}}'
+  updated_at: '{{hoursAgo 120}}'
+- id: 20009
+  email: 'ingrid.solberg@northwind.example'
+  first_name: 'Ingrid'
+  last_name: 'Solberg'
+  time_zone: 'Europe/Oslo'
+  custom_fields: '{"plan":"free","country":"NO","signup_source":"organic","courses_completed":0}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 264}}'
+  updated_at: '{{hoursAgo 144}}'
+- id: 20010
+  email: 'tomasz.wrobel@fabrikam.example'
+  first_name: 'Tomasz'
+  last_name: 'Wrobel'
+  time_zone: 'Europe/Warsaw'
+  custom_fields: '{"plan":"free","country":"PL","signup_source":"ads","courses_completed":0}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 288}}'
+  updated_at: '{{hoursAgo 168}}'
+- id: 20011
+  email: 'chloe.nguyen@contoso.example'
+  first_name: 'Chloe'
+  last_name: 'Nguyen'
+  time_zone: 'Australia/Sydney'
+  custom_fields: '{"plan":"free","country":"AU","signup_source":"youtube","courses_completed":0}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 312}}'
+  updated_at: '{{hoursAgo 192}}'
+- id: 20012
+  email: 'ethan.walker@tailspin.example'
+  first_name: 'Ethan'
+  last_name: 'Walker'
+  time_zone: 'America/New_York'
+  custom_fields: '{"plan":"free","country":"US","signup_source":"webinar","courses_completed":0}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 336}}'
+  updated_at: '{{hoursAgo 216}}'
+- id: 20013
+  email: 'layla.haddad@litware.example'
+  first_name: 'Layla'
+  last_name: 'Haddad'
+  time_zone: 'Asia/Dubai'
+  custom_fields: '{"plan":"free","country":"AE","signup_source":"referral","courses_completed":0}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 360}}'
+  updated_at: '{{hoursAgo 240}}'
+- id: 20014
+  email: 'noah.fischer@adatum.example'
+  first_name: 'Noah'
+  last_name: 'Fischer'
+  time_zone: 'Europe/Berlin'
+  custom_fields: '{"plan":"free","country":"DE","signup_source":"organic","courses_completed":0}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 384}}'
+  updated_at: '{{hoursAgo 264}}'
+- id: 20015
+  email: 'mei.lin@proseware.example'
+  first_name: 'Mei'
+  last_name: 'Lin'
+  time_zone: 'Asia/Singapore'
+  custom_fields: '{"plan":"pro","country":"SG","signup_source":"ads","courses_completed":2}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 1680}}'
+  updated_at: '{{hoursAgo 1560}}'
+- id: 20016
+  email: 'santiago.ibarra@wingtip.example'
+  first_name: 'Santiago'
+  last_name: 'Ibarra'
+  time_zone: 'America/Mexico_City'
+  custom_fields: '{"plan":"pro","country":"MX","signup_source":"youtube","courses_completed":4}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 1728}}'
+  updated_at: '{{hoursAgo 1608}}'
+- id: 20017
+  email: 'emily.carter@northwind.example'
+  first_name: 'Emily'
+  last_name: 'Carter'
+  time_zone: 'America/Chicago'
+  custom_fields: '{"plan":"pro","country":"US","signup_source":"webinar","courses_completed":6}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 1776}}'
+  updated_at: '{{hoursAgo 1656}}'
+- id: 20018
+  email: 'yusuf.demir@fabrikam.example'
+  first_name: 'Yusuf'
+  last_name: 'Demir'
+  time_zone: 'Europe/Istanbul'
+  custom_fields: '{"plan":"pro","country":"TR","signup_source":"referral","courses_completed":6}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 1824}}'
+  updated_at: '{{hoursAgo 1704}}'
+- id: 20019
+  email: 'anya.petrova@contoso.example'
+  first_name: 'Anya'
+  last_name: 'Petrova'
+  time_zone: 'Europe/Berlin'
+  custom_fields: '{"plan":"pro","country":"DE","signup_source":"organic","courses_completed":7}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 1872}}'
+  updated_at: '{{hoursAgo 1752}}'
+- id: 20020
+  email: 'jack.murphy@tailspin.example'
+  first_name: 'Jack'
+  last_name: 'Murphy'
+  time_zone: 'Europe/Dublin'
+  custom_fields: '{"plan":"pro","country":"IE","signup_source":"ads","courses_completed":2}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 1920}}'
+  updated_at: '{{hoursAgo 1800}}'
+- id: 20021
+  email: 'valentina.rossi@litware.example'
+  first_name: 'Valentina'
+  last_name: 'Rossi'
+  time_zone: 'Europe/Rome'
+  custom_fields: '{"plan":"pro","country":"IT","signup_source":"youtube","courses_completed":3}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 1968}}'
+  updated_at: '{{hoursAgo 1848}}'
+- id: 20022
+  email: 'kofi.mensah@adatum.example'
+  first_name: 'Kofi'
+  last_name: 'Mensah'
+  time_zone: 'Africa/Accra'
+  custom_fields: '{"plan":"pro","country":"GH","signup_source":"webinar","courses_completed":6}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 2016}}'
+  updated_at: '{{hoursAgo 1896}}'
+- id: 20023
+  email: 'isabela.costa@proseware.example'
+  first_name: 'Isabela'
+  last_name: 'Costa'
+  time_zone: 'America/Sao_Paulo'
+  custom_fields: '{"plan":"pro","country":"BR","signup_source":"referral","courses_completed":6}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 2064}}'
+  updated_at: '{{hoursAgo 1944}}'
+- id: 20024
+  email: 'henrik.larsen@wingtip.example'
+  first_name: 'Henrik'
+  last_name: 'Larsen'
+  time_zone: 'Europe/Copenhagen'
+  custom_fields: '{"plan":"pro","country":"DK","signup_source":"organic","courses_completed":6}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 2112}}'
+  updated_at: '{{hoursAgo 1992}}'
+- id: 20025
+  email: 'zara.khan@northwind.example'
+  first_name: 'Zara'
+  last_name: 'Khan'
+  time_zone: 'Asia/Karachi'
+  custom_fields: '{"plan":"pro","country":"PK","signup_source":"ads","courses_completed":5}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 2160}}'
+  updated_at: '{{hoursAgo 2040}}'
+- id: 20026
+  email: 'leo.martin@fabrikam.example'
+  first_name: 'Leo'
+  last_name: 'Martin'
+  time_zone: 'Europe/Paris'
+  custom_fields: '{"plan":"pro","country":"FR","signup_source":"youtube","courses_completed":6}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 2208}}'
+  updated_at: '{{hoursAgo 2088}}'
+- id: 20027
+  email: 'nina.kowalski@contoso.example'
+  first_name: 'Nina'
+  last_name: 'Kowalski'
+  time_zone: 'America/Toronto'
+  custom_fields: '{"plan":"team","country":"CA","signup_source":"webinar","courses_completed":6}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 2256}}'
+  updated_at: '{{hoursAgo 2136}}'
+- id: 20028
+  email: 'omar.salem@tailspin.example'
+  first_name: 'Omar'
+  last_name: 'Salem'
+  time_zone: 'Africa/Cairo'
+  custom_fields: '{"plan":"team","country":"EG","signup_source":"referral","courses_completed":7}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 2304}}'
+  updated_at: '{{hoursAgo 2184}}'
+- id: 20029
+  email: 'grace.taylor@litware.example'
+  first_name: 'Grace'
+  last_name: 'Taylor'
+  time_zone: 'America/Los_Angeles'
+  custom_fields: '{"plan":"team","country":"US","signup_source":"organic","courses_completed":5}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 2352}}'
+  updated_at: '{{hoursAgo 2232}}'
+- id: 20030
+  email: 'felix.weber@adatum.example'
+  first_name: 'Felix'
+  last_name: 'Weber'
+  time_zone: 'Europe/Zurich'
+  custom_fields: '{"plan":"team","country":"CH","signup_source":"ads","courses_completed":6}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 2400}}'
+  updated_at: '{{hoursAgo 2280}}'
+- id: 20031
+  email: 'aiko.sato@proseware.example'
+  first_name: 'Aiko'
+  last_name: 'Sato'
+  time_zone: 'Asia/Tokyo'
+  custom_fields: '{"plan":"team","country":"JP","signup_source":"youtube","courses_completed":5}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 2448}}'
+  updated_at: '{{hoursAgo 2328}}'
+- id: 20032
+  email: 'diego.vargas@wingtip.example'
+  first_name: 'Diego'
+  last_name: 'Vargas'
+  time_zone: 'America/Santiago'
+  custom_fields: '{"plan":"free","country":"CL","signup_source":"webinar","courses_completed":0}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 1536}}'
+  updated_at: '{{hoursAgo 1416}}'
+- id: 20033
+  email: 'maria.lopez@northwind.example'
+  first_name: 'Maria'
+  last_name: 'Lopez'
+  time_zone: 'Europe/Madrid'
+  custom_fields: '{"plan":"free","country":"ES","signup_source":"referral","courses_completed":0}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 1584}}'
+  updated_at: '{{hoursAgo 1464}}'
+- id: 20034
+  email: 'arjun.mehta@fabrikam.example'
+  first_name: 'Arjun'
+  last_name: 'Mehta'
+  time_zone: 'Asia/Kolkata'
+  custom_fields: '{"plan":"free","country":"IN","signup_source":"organic","courses_completed":2}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 1632}}'
+  updated_at: '{{hoursAgo 1512}}'
+- id: 20035
+  email: 'freya.johansson@contoso.example'
+  first_name: 'Freya'
+  last_name: 'Johansson'
+  time_zone: 'Europe/Stockholm'
+  custom_fields: '{"plan":"free","country":"SE","signup_source":"ads","courses_completed":0}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 1680}}'
+  updated_at: '{{hoursAgo 1560}}'
+- id: 20036
+  email: 'samuel.adeyemi@tailspin.example'
+  first_name: 'Samuel'
+  last_name: 'Adeyemi'
+  time_zone: 'Africa/Lagos'
+  custom_fields: '{"plan":"free","country":"NG","signup_source":"youtube","courses_completed":0}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 1728}}'
+  updated_at: '{{hoursAgo 1608}}'
+- id: 20037
+  email: 'lena.hoffmann@litware.example'
+  first_name: 'Lena'
+  last_name: 'Hoffmann'
+  time_zone: 'Europe/Vienna'
+  custom_fields: '{"plan":"free","country":"AT","signup_source":"webinar","courses_completed":1}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 1776}}'
+  updated_at: '{{hoursAgo 1656}}'
+- id: 20038
+  email: 'ravi.patel@adatum.example'
+  first_name: 'Ravi'
+  last_name: 'Patel'
+  time_zone: 'Europe/London'
+  custom_fields: '{"plan":"free","country":"GB","signup_source":"referral","courses_completed":0}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 1824}}'
+  updated_at: '{{hoursAgo 1704}}'
+- id: 20039
+  email: 'camila.torres@proseware.example'
+  first_name: 'Camila'
+  last_name: 'Torres'
+  time_zone: 'America/Argentina/Buenos_Aires'
+  custom_fields: '{"plan":"free","country":"AR","signup_source":"organic","courses_completed":1}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 1872}}'
+  updated_at: '{{hoursAgo 1752}}'
+- id: 20040
+  email: 'jonas.becker@wingtip.example'
+  first_name: 'Jonas'
+  last_name: 'Becker'
+  time_zone: 'Europe/Berlin'
+  custom_fields: '{"plan":"free","country":"DE","signup_source":"ads","courses_completed":0}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 1920}}'
+  updated_at: '{{hoursAgo 1800}}'
+- id: 20041
+  email: 'elena.popescu@northwind.example'
+  first_name: 'Elena'
+  last_name: 'Popescu'
+  time_zone: 'Europe/Bucharest'
+  custom_fields: '{"plan":"free","country":"RO","signup_source":"youtube","courses_completed":2}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 1968}}'
+  updated_at: '{{hoursAgo 1848}}'
+- id: 20042
+  email: 'ahmed.rahman@fabrikam.example'
+  first_name: 'Ahmed'
+  last_name: 'Rahman'
+  time_zone: 'Asia/Dhaka'
+  custom_fields: '{"plan":"free","country":"BD","signup_source":"webinar","courses_completed":1}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 2016}}'
+  updated_at: '{{hoursAgo 1896}}'
+- id: 20043
+  email: 'sara.lindqvist@contoso.example'
+  first_name: 'Sara'
+  last_name: 'Lindqvist'
+  time_zone: 'Europe/Stockholm'
+  custom_fields: '{"plan":"free","country":"SE","signup_source":"referral","courses_completed":2}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 2064}}'
+  updated_at: '{{hoursAgo 1944}}'
+- id: 20044
+  email: 'tyler.brooks@tailspin.example'
+  first_name: 'Tyler'
+  last_name: 'Brooks'
+  time_zone: 'America/Denver'
+  custom_fields: '{"plan":"free","country":"US","signup_source":"organic","courses_completed":1}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 2112}}'
+  updated_at: '{{hoursAgo 1992}}'
+- id: 20045
+  email: 'yara.nasser@litware.example'
+  first_name: 'Yara'
+  last_name: 'Nasser'
+  time_zone: 'Asia/Riyadh'
+  custom_fields: '{"plan":"free","country":"SA","signup_source":"ads","courses_completed":0}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 2160}}'
+  updated_at: '{{hoursAgo 2040}}'
+- id: 20046
+  email: 'pavel.novak@adatum.example'
+  first_name: 'Pavel'
+  last_name: 'Novak'
+  time_zone: 'Europe/Prague'
+  custom_fields: '{"plan":"free","country":"CZ","signup_source":"youtube","courses_completed":1}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 2208}}'
+  updated_at: '{{hoursAgo 2088}}'
+- id: 20047
+  email: 'emma.dubois@proseware.example'
+  first_name: 'Emma'
+  last_name: 'Dubois'
+  time_zone: 'Europe/Brussels'
+  custom_fields: '{"plan":"free","country":"BE","signup_source":"webinar","courses_completed":1}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 2256}}'
+  updated_at: '{{hoursAgo 2136}}'
+- id: 20048
+  email: 'kenji.watanabe@wingtip.example'
+  first_name: 'Kenji'
+  last_name: 'Watanabe'
+  time_zone: 'Asia/Tokyo'
+  custom_fields: '{"plan":"free","country":"JP","signup_source":"referral","courses_completed":1}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 2304}}'
+  updated_at: '{{hoursAgo 2184}}'

@@ -1238,3 +1238,2801 @@
   workspace_id: 1
   created_at: '{{daysAgo 7}}'
   updated_at: '{{daysAgo 7}}'
+
+# --- Brightpath (workspace 20): demo workspace behind the screenshots on getsphericon.com ---
+- id: 30001
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20001'
+  channel: 'email'
+  contact_id: 20020
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 1876}}'
+  claimed_at: '{{hoursAgo 1876}}'
+  broadcast_id: 20001
+  broadcast_recipient_id: 20001
+  workspace_id: 20
+  created_at: '{{hoursAgo 1876}}'
+  updated_at: '{{hoursAgo 1876}}'
+- id: 30002
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20002'
+  channel: 'email'
+  contact_id: 20021
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 1872}}'
+  claimed_at: '{{hoursAgo 1872}}'
+  broadcast_id: 20001
+  broadcast_recipient_id: 20002
+  workspace_id: 20
+  created_at: '{{hoursAgo 1872}}'
+  updated_at: '{{hoursAgo 1872}}'
+- id: 30003
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20003'
+  channel: 'email'
+  contact_id: 20022
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 1873}}'
+  claimed_at: '{{hoursAgo 1873}}'
+  broadcast_id: 20001
+  broadcast_recipient_id: 20003
+  workspace_id: 20
+  created_at: '{{hoursAgo 1873}}'
+  updated_at: '{{hoursAgo 1873}}'
+- id: 30004
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20004'
+  channel: 'email'
+  contact_id: 20023
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 1874}}'
+  claimed_at: '{{hoursAgo 1874}}'
+  broadcast_id: 20001
+  broadcast_recipient_id: 20004
+  workspace_id: 20
+  created_at: '{{hoursAgo 1874}}'
+  updated_at: '{{hoursAgo 1874}}'
+- id: 30005
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20005'
+  channel: 'email'
+  contact_id: 20024
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 1875}}'
+  claimed_at: '{{hoursAgo 1875}}'
+  broadcast_id: 20001
+  broadcast_recipient_id: 20005
+  workspace_id: 20
+  created_at: '{{hoursAgo 1875}}'
+  updated_at: '{{hoursAgo 1875}}'
+- id: 30006
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20006'
+  channel: 'email'
+  contact_id: 20025
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 1876}}'
+  claimed_at: '{{hoursAgo 1876}}'
+  broadcast_id: 20001
+  broadcast_recipient_id: 20006
+  workspace_id: 20
+  created_at: '{{hoursAgo 1876}}'
+  updated_at: '{{hoursAgo 1876}}'
+- id: 30007
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20007'
+  channel: 'email'
+  contact_id: 20026
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 1872}}'
+  claimed_at: '{{hoursAgo 1872}}'
+  broadcast_id: 20001
+  broadcast_recipient_id: 20007
+  workspace_id: 20
+  created_at: '{{hoursAgo 1872}}'
+  updated_at: '{{hoursAgo 1872}}'
+- id: 30008
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20008'
+  channel: 'email'
+  contact_id: 20027
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 1873}}'
+  claimed_at: '{{hoursAgo 1873}}'
+  broadcast_id: 20001
+  broadcast_recipient_id: 20008
+  workspace_id: 20
+  created_at: '{{hoursAgo 1873}}'
+  updated_at: '{{hoursAgo 1873}}'
+- id: 30009
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20009'
+  channel: 'email'
+  contact_id: 20028
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 1874}}'
+  claimed_at: '{{hoursAgo 1874}}'
+  broadcast_id: 20001
+  broadcast_recipient_id: 20009
+  workspace_id: 20
+  created_at: '{{hoursAgo 1874}}'
+  updated_at: '{{hoursAgo 1874}}'
+- id: 30010
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20010'
+  channel: 'email'
+  contact_id: 20029
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 1875}}'
+  claimed_at: '{{hoursAgo 1875}}'
+  broadcast_id: 20001
+  broadcast_recipient_id: 20010
+  workspace_id: 20
+  created_at: '{{hoursAgo 1875}}'
+  updated_at: '{{hoursAgo 1875}}'
+- id: 30011
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20011'
+  channel: 'email'
+  contact_id: 20030
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 1876}}'
+  claimed_at: '{{hoursAgo 1876}}'
+  broadcast_id: 20001
+  broadcast_recipient_id: 20011
+  workspace_id: 20
+  created_at: '{{hoursAgo 1876}}'
+  updated_at: '{{hoursAgo 1876}}'
+- id: 30012
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20012'
+  channel: 'email'
+  contact_id: 20031
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 1872}}'
+  claimed_at: '{{hoursAgo 1872}}'
+  broadcast_id: 20001
+  broadcast_recipient_id: 20012
+  workspace_id: 20
+  created_at: '{{hoursAgo 1872}}'
+  updated_at: '{{hoursAgo 1872}}'
+- id: 30013
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20013'
+  channel: 'email'
+  contact_id: 20040
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 1876}}'
+  claimed_at: '{{hoursAgo 1876}}'
+  broadcast_id: 20001
+  broadcast_recipient_id: 20013
+  workspace_id: 20
+  created_at: '{{hoursAgo 1876}}'
+  updated_at: '{{hoursAgo 1876}}'
+- id: 30014
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20014'
+  channel: 'email'
+  contact_id: 20041
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 1872}}'
+  claimed_at: '{{hoursAgo 1872}}'
+  broadcast_id: 20001
+  broadcast_recipient_id: 20014
+  workspace_id: 20
+  created_at: '{{hoursAgo 1872}}'
+  updated_at: '{{hoursAgo 1872}}'
+- id: 30015
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20015'
+  channel: 'email'
+  contact_id: 20042
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 1873}}'
+  claimed_at: '{{hoursAgo 1873}}'
+  broadcast_id: 20001
+  broadcast_recipient_id: 20015
+  workspace_id: 20
+  created_at: '{{hoursAgo 1873}}'
+  updated_at: '{{hoursAgo 1873}}'
+- id: 30016
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20016'
+  channel: 'email'
+  contact_id: 20043
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 1874}}'
+  claimed_at: '{{hoursAgo 1874}}'
+  broadcast_id: 20001
+  broadcast_recipient_id: 20016
+  workspace_id: 20
+  created_at: '{{hoursAgo 1874}}'
+  updated_at: '{{hoursAgo 1874}}'
+- id: 30017
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20017'
+  channel: 'email'
+  contact_id: 20044
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 1875}}'
+  claimed_at: '{{hoursAgo 1875}}'
+  broadcast_id: 20001
+  broadcast_recipient_id: 20017
+  workspace_id: 20
+  created_at: '{{hoursAgo 1875}}'
+  updated_at: '{{hoursAgo 1875}}'
+- id: 30018
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20018'
+  channel: 'email'
+  contact_id: 20015
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 1252}}'
+  claimed_at: '{{hoursAgo 1252}}'
+  broadcast_id: 20002
+  broadcast_recipient_id: 20018
+  workspace_id: 20
+  created_at: '{{hoursAgo 1252}}'
+  updated_at: '{{hoursAgo 1252}}'
+- id: 30019
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20019'
+  channel: 'email'
+  contact_id: 20016
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 1248}}'
+  claimed_at: '{{hoursAgo 1248}}'
+  broadcast_id: 20002
+  broadcast_recipient_id: 20019
+  workspace_id: 20
+  created_at: '{{hoursAgo 1248}}'
+  updated_at: '{{hoursAgo 1248}}'
+- id: 30020
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20020'
+  channel: 'email'
+  contact_id: 20017
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 1249}}'
+  claimed_at: '{{hoursAgo 1249}}'
+  broadcast_id: 20002
+  broadcast_recipient_id: 20020
+  workspace_id: 20
+  created_at: '{{hoursAgo 1249}}'
+  updated_at: '{{hoursAgo 1249}}'
+- id: 30021
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20021'
+  channel: 'email'
+  contact_id: 20018
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 1250}}'
+  claimed_at: '{{hoursAgo 1250}}'
+  broadcast_id: 20002
+  broadcast_recipient_id: 20021
+  workspace_id: 20
+  created_at: '{{hoursAgo 1250}}'
+  updated_at: '{{hoursAgo 1250}}'
+- id: 30022
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20022'
+  channel: 'email'
+  contact_id: 20019
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 1251}}'
+  claimed_at: '{{hoursAgo 1251}}'
+  broadcast_id: 20002
+  broadcast_recipient_id: 20022
+  workspace_id: 20
+  created_at: '{{hoursAgo 1251}}'
+  updated_at: '{{hoursAgo 1251}}'
+- id: 30023
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20023'
+  channel: 'email'
+  contact_id: 20020
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 1252}}'
+  claimed_at: '{{hoursAgo 1252}}'
+  broadcast_id: 20002
+  broadcast_recipient_id: 20023
+  workspace_id: 20
+  created_at: '{{hoursAgo 1252}}'
+  updated_at: '{{hoursAgo 1252}}'
+- id: 30024
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20024'
+  channel: 'email'
+  contact_id: 20021
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 1248}}'
+  claimed_at: '{{hoursAgo 1248}}'
+  broadcast_id: 20002
+  broadcast_recipient_id: 20024
+  workspace_id: 20
+  created_at: '{{hoursAgo 1248}}'
+  updated_at: '{{hoursAgo 1248}}'
+- id: 30025
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20025'
+  channel: 'email'
+  contact_id: 20022
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 1249}}'
+  claimed_at: '{{hoursAgo 1249}}'
+  broadcast_id: 20002
+  broadcast_recipient_id: 20025
+  workspace_id: 20
+  created_at: '{{hoursAgo 1249}}'
+  updated_at: '{{hoursAgo 1249}}'
+- id: 30026
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20026'
+  channel: 'email'
+  contact_id: 20023
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 1250}}'
+  claimed_at: '{{hoursAgo 1250}}'
+  broadcast_id: 20002
+  broadcast_recipient_id: 20026
+  workspace_id: 20
+  created_at: '{{hoursAgo 1250}}'
+  updated_at: '{{hoursAgo 1250}}'
+- id: 30027
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20027'
+  channel: 'email'
+  contact_id: 20024
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 1251}}'
+  claimed_at: '{{hoursAgo 1251}}'
+  broadcast_id: 20002
+  broadcast_recipient_id: 20027
+  workspace_id: 20
+  created_at: '{{hoursAgo 1251}}'
+  updated_at: '{{hoursAgo 1251}}'
+- id: 30028
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20028'
+  channel: 'email'
+  contact_id: 20025
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 1252}}'
+  claimed_at: '{{hoursAgo 1252}}'
+  broadcast_id: 20002
+  broadcast_recipient_id: 20028
+  workspace_id: 20
+  created_at: '{{hoursAgo 1252}}'
+  updated_at: '{{hoursAgo 1252}}'
+- id: 30029
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20029'
+  channel: 'email'
+  contact_id: 20026
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 1248}}'
+  claimed_at: '{{hoursAgo 1248}}'
+  broadcast_id: 20002
+  broadcast_recipient_id: 20029
+  workspace_id: 20
+  created_at: '{{hoursAgo 1248}}'
+  updated_at: '{{hoursAgo 1248}}'
+- id: 30030
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20030'
+  channel: 'email'
+  contact_id: 20027
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 1249}}'
+  claimed_at: '{{hoursAgo 1249}}'
+  broadcast_id: 20002
+  broadcast_recipient_id: 20030
+  workspace_id: 20
+  created_at: '{{hoursAgo 1249}}'
+  updated_at: '{{hoursAgo 1249}}'
+- id: 30031
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20031'
+  channel: 'email'
+  contact_id: 20028
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 1250}}'
+  claimed_at: '{{hoursAgo 1250}}'
+  broadcast_id: 20002
+  broadcast_recipient_id: 20031
+  workspace_id: 20
+  created_at: '{{hoursAgo 1250}}'
+  updated_at: '{{hoursAgo 1250}}'
+- id: 30032
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20032'
+  channel: 'email'
+  contact_id: 20029
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 1251}}'
+  claimed_at: '{{hoursAgo 1251}}'
+  broadcast_id: 20002
+  broadcast_recipient_id: 20032
+  workspace_id: 20
+  created_at: '{{hoursAgo 1251}}'
+  updated_at: '{{hoursAgo 1251}}'
+- id: 30033
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20033'
+  channel: 'email'
+  contact_id: 20030
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 1252}}'
+  claimed_at: '{{hoursAgo 1252}}'
+  broadcast_id: 20002
+  broadcast_recipient_id: 20033
+  workspace_id: 20
+  created_at: '{{hoursAgo 1252}}'
+  updated_at: '{{hoursAgo 1252}}'
+- id: 30034
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20034'
+  channel: 'email'
+  contact_id: 20031
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 1248}}'
+  claimed_at: '{{hoursAgo 1248}}'
+  broadcast_id: 20002
+  broadcast_recipient_id: 20034
+  workspace_id: 20
+  created_at: '{{hoursAgo 1248}}'
+  updated_at: '{{hoursAgo 1248}}'
+- id: 30035
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20035'
+  channel: 'email'
+  contact_id: 20032
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 1249}}'
+  claimed_at: '{{hoursAgo 1249}}'
+  broadcast_id: 20002
+  broadcast_recipient_id: 20035
+  workspace_id: 20
+  created_at: '{{hoursAgo 1249}}'
+  updated_at: '{{hoursAgo 1249}}'
+- id: 30036
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20036'
+  channel: 'email'
+  contact_id: 20033
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 1250}}'
+  claimed_at: '{{hoursAgo 1250}}'
+  broadcast_id: 20002
+  broadcast_recipient_id: 20036
+  workspace_id: 20
+  created_at: '{{hoursAgo 1250}}'
+  updated_at: '{{hoursAgo 1250}}'
+- id: 30037
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20037'
+  channel: 'email'
+  contact_id: 20034
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 1251}}'
+  claimed_at: '{{hoursAgo 1251}}'
+  broadcast_id: 20002
+  broadcast_recipient_id: 20037
+  workspace_id: 20
+  created_at: '{{hoursAgo 1251}}'
+  updated_at: '{{hoursAgo 1251}}'
+- id: 30038
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20038'
+  channel: 'email'
+  contact_id: 20035
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 1252}}'
+  claimed_at: '{{hoursAgo 1252}}'
+  broadcast_id: 20002
+  broadcast_recipient_id: 20038
+  workspace_id: 20
+  created_at: '{{hoursAgo 1252}}'
+  updated_at: '{{hoursAgo 1252}}'
+- id: 30039
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20039'
+  channel: 'email'
+  contact_id: 20036
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 1248}}'
+  claimed_at: '{{hoursAgo 1248}}'
+  broadcast_id: 20002
+  broadcast_recipient_id: 20039
+  workspace_id: 20
+  created_at: '{{hoursAgo 1248}}'
+  updated_at: '{{hoursAgo 1248}}'
+- id: 30040
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20040'
+  channel: 'email'
+  contact_id: 20037
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 1249}}'
+  claimed_at: '{{hoursAgo 1249}}'
+  broadcast_id: 20002
+  broadcast_recipient_id: 20040
+  workspace_id: 20
+  created_at: '{{hoursAgo 1249}}'
+  updated_at: '{{hoursAgo 1249}}'
+- id: 30041
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20041'
+  channel: 'email'
+  contact_id: 20038
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 1250}}'
+  claimed_at: '{{hoursAgo 1250}}'
+  broadcast_id: 20002
+  broadcast_recipient_id: 20041
+  workspace_id: 20
+  created_at: '{{hoursAgo 1250}}'
+  updated_at: '{{hoursAgo 1250}}'
+- id: 30042
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20042'
+  channel: 'email'
+  contact_id: 20039
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 1251}}'
+  claimed_at: '{{hoursAgo 1251}}'
+  broadcast_id: 20002
+  broadcast_recipient_id: 20042
+  workspace_id: 20
+  created_at: '{{hoursAgo 1251}}'
+  updated_at: '{{hoursAgo 1251}}'
+- id: 30043
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20043'
+  channel: 'email'
+  contact_id: 20040
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 1252}}'
+  claimed_at: '{{hoursAgo 1252}}'
+  broadcast_id: 20002
+  broadcast_recipient_id: 20043
+  workspace_id: 20
+  created_at: '{{hoursAgo 1252}}'
+  updated_at: '{{hoursAgo 1252}}'
+- id: 30044
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20044'
+  channel: 'email'
+  contact_id: 20041
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 1248}}'
+  claimed_at: '{{hoursAgo 1248}}'
+  broadcast_id: 20002
+  broadcast_recipient_id: 20044
+  workspace_id: 20
+  created_at: '{{hoursAgo 1248}}'
+  updated_at: '{{hoursAgo 1248}}'
+- id: 30045
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20045'
+  channel: 'email'
+  contact_id: 20042
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 1249}}'
+  claimed_at: '{{hoursAgo 1249}}'
+  broadcast_id: 20002
+  broadcast_recipient_id: 20045
+  workspace_id: 20
+  created_at: '{{hoursAgo 1249}}'
+  updated_at: '{{hoursAgo 1249}}'
+- id: 30046
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20046'
+  channel: 'email'
+  contact_id: 20043
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 1250}}'
+  claimed_at: '{{hoursAgo 1250}}'
+  broadcast_id: 20002
+  broadcast_recipient_id: 20046
+  workspace_id: 20
+  created_at: '{{hoursAgo 1250}}'
+  updated_at: '{{hoursAgo 1250}}'
+- id: 30047
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20047'
+  channel: 'email'
+  contact_id: 20044
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 1251}}'
+  claimed_at: '{{hoursAgo 1251}}'
+  broadcast_id: 20002
+  broadcast_recipient_id: 20047
+  workspace_id: 20
+  created_at: '{{hoursAgo 1251}}'
+  updated_at: '{{hoursAgo 1251}}'
+- id: 30048
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20048'
+  channel: 'email'
+  contact_id: 20015
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 796}}'
+  claimed_at: '{{hoursAgo 796}}'
+  broadcast_id: 20003
+  broadcast_recipient_id: 20048
+  workspace_id: 20
+  created_at: '{{hoursAgo 796}}'
+  updated_at: '{{hoursAgo 796}}'
+- id: 30049
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20049'
+  channel: 'email'
+  contact_id: 20016
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 792}}'
+  claimed_at: '{{hoursAgo 792}}'
+  broadcast_id: 20003
+  broadcast_recipient_id: 20049
+  workspace_id: 20
+  created_at: '{{hoursAgo 792}}'
+  updated_at: '{{hoursAgo 792}}'
+- id: 30050
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20050'
+  channel: 'email'
+  contact_id: 20017
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 793}}'
+  claimed_at: '{{hoursAgo 793}}'
+  broadcast_id: 20003
+  broadcast_recipient_id: 20050
+  workspace_id: 20
+  created_at: '{{hoursAgo 793}}'
+  updated_at: '{{hoursAgo 793}}'
+- id: 30051
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20051'
+  channel: 'email'
+  contact_id: 20018
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 794}}'
+  claimed_at: '{{hoursAgo 794}}'
+  broadcast_id: 20003
+  broadcast_recipient_id: 20051
+  workspace_id: 20
+  created_at: '{{hoursAgo 794}}'
+  updated_at: '{{hoursAgo 794}}'
+- id: 30052
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20052'
+  channel: 'email'
+  contact_id: 20019
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 795}}'
+  claimed_at: '{{hoursAgo 795}}'
+  broadcast_id: 20003
+  broadcast_recipient_id: 20052
+  workspace_id: 20
+  created_at: '{{hoursAgo 795}}'
+  updated_at: '{{hoursAgo 795}}'
+- id: 30053
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20053'
+  channel: 'email'
+  contact_id: 20020
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 796}}'
+  claimed_at: '{{hoursAgo 796}}'
+  broadcast_id: 20003
+  broadcast_recipient_id: 20053
+  workspace_id: 20
+  created_at: '{{hoursAgo 796}}'
+  updated_at: '{{hoursAgo 796}}'
+- id: 30054
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20054'
+  channel: 'email'
+  contact_id: 20021
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 792}}'
+  claimed_at: '{{hoursAgo 792}}'
+  broadcast_id: 20003
+  broadcast_recipient_id: 20054
+  workspace_id: 20
+  created_at: '{{hoursAgo 792}}'
+  updated_at: '{{hoursAgo 792}}'
+- id: 30055
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20055'
+  channel: 'email'
+  contact_id: 20022
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 793}}'
+  claimed_at: '{{hoursAgo 793}}'
+  broadcast_id: 20003
+  broadcast_recipient_id: 20055
+  workspace_id: 20
+  created_at: '{{hoursAgo 793}}'
+  updated_at: '{{hoursAgo 793}}'
+- id: 30056
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20056'
+  channel: 'email'
+  contact_id: 20023
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 794}}'
+  claimed_at: '{{hoursAgo 794}}'
+  broadcast_id: 20003
+  broadcast_recipient_id: 20056
+  workspace_id: 20
+  created_at: '{{hoursAgo 794}}'
+  updated_at: '{{hoursAgo 794}}'
+- id: 30057
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20057'
+  channel: 'email'
+  contact_id: 20024
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 795}}'
+  claimed_at: '{{hoursAgo 795}}'
+  broadcast_id: 20003
+  broadcast_recipient_id: 20057
+  workspace_id: 20
+  created_at: '{{hoursAgo 795}}'
+  updated_at: '{{hoursAgo 795}}'
+- id: 30058
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20058'
+  channel: 'email'
+  contact_id: 20025
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 796}}'
+  claimed_at: '{{hoursAgo 796}}'
+  broadcast_id: 20003
+  broadcast_recipient_id: 20058
+  workspace_id: 20
+  created_at: '{{hoursAgo 796}}'
+  updated_at: '{{hoursAgo 796}}'
+- id: 30059
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20059'
+  channel: 'email'
+  contact_id: 20026
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 792}}'
+  claimed_at: '{{hoursAgo 792}}'
+  broadcast_id: 20003
+  broadcast_recipient_id: 20059
+  workspace_id: 20
+  created_at: '{{hoursAgo 792}}'
+  updated_at: '{{hoursAgo 792}}'
+- id: 30060
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20060'
+  channel: 'email'
+  contact_id: 20027
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 793}}'
+  claimed_at: '{{hoursAgo 793}}'
+  broadcast_id: 20003
+  broadcast_recipient_id: 20060
+  workspace_id: 20
+  created_at: '{{hoursAgo 793}}'
+  updated_at: '{{hoursAgo 793}}'
+- id: 30061
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20061'
+  channel: 'email'
+  contact_id: 20028
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 794}}'
+  claimed_at: '{{hoursAgo 794}}'
+  broadcast_id: 20003
+  broadcast_recipient_id: 20061
+  workspace_id: 20
+  created_at: '{{hoursAgo 794}}'
+  updated_at: '{{hoursAgo 794}}'
+- id: 30062
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20062'
+  channel: 'email'
+  contact_id: 20029
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 795}}'
+  claimed_at: '{{hoursAgo 795}}'
+  broadcast_id: 20003
+  broadcast_recipient_id: 20062
+  workspace_id: 20
+  created_at: '{{hoursAgo 795}}'
+  updated_at: '{{hoursAgo 795}}'
+- id: 30063
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20063'
+  channel: 'email'
+  contact_id: 20030
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 796}}'
+  claimed_at: '{{hoursAgo 796}}'
+  broadcast_id: 20003
+  broadcast_recipient_id: 20063
+  workspace_id: 20
+  created_at: '{{hoursAgo 796}}'
+  updated_at: '{{hoursAgo 796}}'
+- id: 30064
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20064'
+  channel: 'email'
+  contact_id: 20031
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 792}}'
+  claimed_at: '{{hoursAgo 792}}'
+  broadcast_id: 20003
+  broadcast_recipient_id: 20064
+  workspace_id: 20
+  created_at: '{{hoursAgo 792}}'
+  updated_at: '{{hoursAgo 792}}'
+- id: 30065
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20065'
+  channel: 'email'
+  contact_id: 20032
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 793}}'
+  claimed_at: '{{hoursAgo 793}}'
+  broadcast_id: 20003
+  broadcast_recipient_id: 20065
+  workspace_id: 20
+  created_at: '{{hoursAgo 793}}'
+  updated_at: '{{hoursAgo 793}}'
+- id: 30066
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20066'
+  channel: 'email'
+  contact_id: 20033
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 794}}'
+  claimed_at: '{{hoursAgo 794}}'
+  broadcast_id: 20003
+  broadcast_recipient_id: 20066
+  workspace_id: 20
+  created_at: '{{hoursAgo 794}}'
+  updated_at: '{{hoursAgo 794}}'
+- id: 30067
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20067'
+  channel: 'email'
+  contact_id: 20034
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 795}}'
+  claimed_at: '{{hoursAgo 795}}'
+  broadcast_id: 20003
+  broadcast_recipient_id: 20067
+  workspace_id: 20
+  created_at: '{{hoursAgo 795}}'
+  updated_at: '{{hoursAgo 795}}'
+- id: 30068
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20068'
+  channel: 'email'
+  contact_id: 20035
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 796}}'
+  claimed_at: '{{hoursAgo 796}}'
+  broadcast_id: 20003
+  broadcast_recipient_id: 20068
+  workspace_id: 20
+  created_at: '{{hoursAgo 796}}'
+  updated_at: '{{hoursAgo 796}}'
+- id: 30069
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20069'
+  channel: 'email'
+  contact_id: 20036
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 792}}'
+  claimed_at: '{{hoursAgo 792}}'
+  broadcast_id: 20003
+  broadcast_recipient_id: 20069
+  workspace_id: 20
+  created_at: '{{hoursAgo 792}}'
+  updated_at: '{{hoursAgo 792}}'
+- id: 30070
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20070'
+  channel: 'email'
+  contact_id: 20037
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 793}}'
+  claimed_at: '{{hoursAgo 793}}'
+  broadcast_id: 20003
+  broadcast_recipient_id: 20070
+  workspace_id: 20
+  created_at: '{{hoursAgo 793}}'
+  updated_at: '{{hoursAgo 793}}'
+- id: 30071
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20071'
+  channel: 'email'
+  contact_id: 20038
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 794}}'
+  claimed_at: '{{hoursAgo 794}}'
+  broadcast_id: 20003
+  broadcast_recipient_id: 20071
+  workspace_id: 20
+  created_at: '{{hoursAgo 794}}'
+  updated_at: '{{hoursAgo 794}}'
+- id: 30072
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20072'
+  channel: 'email'
+  contact_id: 20039
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 795}}'
+  claimed_at: '{{hoursAgo 795}}'
+  broadcast_id: 20003
+  broadcast_recipient_id: 20072
+  workspace_id: 20
+  created_at: '{{hoursAgo 795}}'
+  updated_at: '{{hoursAgo 795}}'
+- id: 30073
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20073'
+  channel: 'email'
+  contact_id: 20040
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 796}}'
+  claimed_at: '{{hoursAgo 796}}'
+  broadcast_id: 20003
+  broadcast_recipient_id: 20073
+  workspace_id: 20
+  created_at: '{{hoursAgo 796}}'
+  updated_at: '{{hoursAgo 796}}'
+- id: 30074
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20074'
+  channel: 'email'
+  contact_id: 20041
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 792}}'
+  claimed_at: '{{hoursAgo 792}}'
+  broadcast_id: 20003
+  broadcast_recipient_id: 20074
+  workspace_id: 20
+  created_at: '{{hoursAgo 792}}'
+  updated_at: '{{hoursAgo 792}}'
+- id: 30075
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20075'
+  channel: 'email'
+  contact_id: 20042
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 793}}'
+  claimed_at: '{{hoursAgo 793}}'
+  broadcast_id: 20003
+  broadcast_recipient_id: 20075
+  workspace_id: 20
+  created_at: '{{hoursAgo 793}}'
+  updated_at: '{{hoursAgo 793}}'
+- id: 30076
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20076'
+  channel: 'email'
+  contact_id: 20043
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 794}}'
+  claimed_at: '{{hoursAgo 794}}'
+  broadcast_id: 20003
+  broadcast_recipient_id: 20076
+  workspace_id: 20
+  created_at: '{{hoursAgo 794}}'
+  updated_at: '{{hoursAgo 794}}'
+- id: 30077
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20077'
+  channel: 'email'
+  contact_id: 20044
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 795}}'
+  claimed_at: '{{hoursAgo 795}}'
+  broadcast_id: 20003
+  broadcast_recipient_id: 20077
+  workspace_id: 20
+  created_at: '{{hoursAgo 795}}'
+  updated_at: '{{hoursAgo 795}}'
+- id: 30078
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20078'
+  channel: 'email'
+  contact_id: 20015
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 460}}'
+  claimed_at: '{{hoursAgo 460}}'
+  broadcast_id: 20004
+  broadcast_recipient_id: 20078
+  workspace_id: 20
+  created_at: '{{hoursAgo 460}}'
+  updated_at: '{{hoursAgo 460}}'
+- id: 30079
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20079'
+  channel: 'email'
+  contact_id: 20016
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 456}}'
+  claimed_at: '{{hoursAgo 456}}'
+  broadcast_id: 20004
+  broadcast_recipient_id: 20079
+  workspace_id: 20
+  created_at: '{{hoursAgo 456}}'
+  updated_at: '{{hoursAgo 456}}'
+- id: 30080
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20080'
+  channel: 'email'
+  contact_id: 20017
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 457}}'
+  claimed_at: '{{hoursAgo 457}}'
+  broadcast_id: 20004
+  broadcast_recipient_id: 20080
+  workspace_id: 20
+  created_at: '{{hoursAgo 457}}'
+  updated_at: '{{hoursAgo 457}}'
+- id: 30081
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20081'
+  channel: 'email'
+  contact_id: 20018
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 458}}'
+  claimed_at: '{{hoursAgo 458}}'
+  broadcast_id: 20004
+  broadcast_recipient_id: 20081
+  workspace_id: 20
+  created_at: '{{hoursAgo 458}}'
+  updated_at: '{{hoursAgo 458}}'
+- id: 30082
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20082'
+  channel: 'email'
+  contact_id: 20019
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 459}}'
+  claimed_at: '{{hoursAgo 459}}'
+  broadcast_id: 20004
+  broadcast_recipient_id: 20082
+  workspace_id: 20
+  created_at: '{{hoursAgo 459}}'
+  updated_at: '{{hoursAgo 459}}'
+- id: 30083
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20083'
+  channel: 'email'
+  contact_id: 20020
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 460}}'
+  claimed_at: '{{hoursAgo 460}}'
+  broadcast_id: 20004
+  broadcast_recipient_id: 20083
+  workspace_id: 20
+  created_at: '{{hoursAgo 460}}'
+  updated_at: '{{hoursAgo 460}}'
+- id: 30084
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20084'
+  channel: 'email'
+  contact_id: 20021
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 456}}'
+  claimed_at: '{{hoursAgo 456}}'
+  broadcast_id: 20004
+  broadcast_recipient_id: 20084
+  workspace_id: 20
+  created_at: '{{hoursAgo 456}}'
+  updated_at: '{{hoursAgo 456}}'
+- id: 30085
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20085'
+  channel: 'email'
+  contact_id: 20022
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 457}}'
+  claimed_at: '{{hoursAgo 457}}'
+  broadcast_id: 20004
+  broadcast_recipient_id: 20085
+  workspace_id: 20
+  created_at: '{{hoursAgo 457}}'
+  updated_at: '{{hoursAgo 457}}'
+- id: 30086
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20086'
+  channel: 'email'
+  contact_id: 20023
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 458}}'
+  claimed_at: '{{hoursAgo 458}}'
+  broadcast_id: 20004
+  broadcast_recipient_id: 20086
+  workspace_id: 20
+  created_at: '{{hoursAgo 458}}'
+  updated_at: '{{hoursAgo 458}}'
+- id: 30087
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20087'
+  channel: 'email'
+  contact_id: 20024
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 459}}'
+  claimed_at: '{{hoursAgo 459}}'
+  broadcast_id: 20004
+  broadcast_recipient_id: 20087
+  workspace_id: 20
+  created_at: '{{hoursAgo 459}}'
+  updated_at: '{{hoursAgo 459}}'
+- id: 30088
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20088'
+  channel: 'email'
+  contact_id: 20025
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 460}}'
+  claimed_at: '{{hoursAgo 460}}'
+  broadcast_id: 20004
+  broadcast_recipient_id: 20088
+  workspace_id: 20
+  created_at: '{{hoursAgo 460}}'
+  updated_at: '{{hoursAgo 460}}'
+- id: 30089
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20089'
+  channel: 'email'
+  contact_id: 20026
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 456}}'
+  claimed_at: '{{hoursAgo 456}}'
+  broadcast_id: 20004
+  broadcast_recipient_id: 20089
+  workspace_id: 20
+  created_at: '{{hoursAgo 456}}'
+  updated_at: '{{hoursAgo 456}}'
+- id: 30090
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20090'
+  channel: 'email'
+  contact_id: 20027
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 457}}'
+  claimed_at: '{{hoursAgo 457}}'
+  broadcast_id: 20004
+  broadcast_recipient_id: 20090
+  workspace_id: 20
+  created_at: '{{hoursAgo 457}}'
+  updated_at: '{{hoursAgo 457}}'
+- id: 30091
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20091'
+  channel: 'email'
+  contact_id: 20028
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 458}}'
+  claimed_at: '{{hoursAgo 458}}'
+  broadcast_id: 20004
+  broadcast_recipient_id: 20091
+  workspace_id: 20
+  created_at: '{{hoursAgo 458}}'
+  updated_at: '{{hoursAgo 458}}'
+- id: 30092
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20092'
+  channel: 'email'
+  contact_id: 20029
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 459}}'
+  claimed_at: '{{hoursAgo 459}}'
+  broadcast_id: 20004
+  broadcast_recipient_id: 20092
+  workspace_id: 20
+  created_at: '{{hoursAgo 459}}'
+  updated_at: '{{hoursAgo 459}}'
+- id: 30093
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20093'
+  channel: 'email'
+  contact_id: 20030
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 460}}'
+  claimed_at: '{{hoursAgo 460}}'
+  broadcast_id: 20004
+  broadcast_recipient_id: 20093
+  workspace_id: 20
+  created_at: '{{hoursAgo 460}}'
+  updated_at: '{{hoursAgo 460}}'
+- id: 30094
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20094'
+  channel: 'email'
+  contact_id: 20031
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 456}}'
+  claimed_at: '{{hoursAgo 456}}'
+  broadcast_id: 20004
+  broadcast_recipient_id: 20094
+  workspace_id: 20
+  created_at: '{{hoursAgo 456}}'
+  updated_at: '{{hoursAgo 456}}'
+- id: 30095
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20095'
+  channel: 'email'
+  contact_id: 20032
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 457}}'
+  claimed_at: '{{hoursAgo 457}}'
+  broadcast_id: 20004
+  broadcast_recipient_id: 20095
+  workspace_id: 20
+  created_at: '{{hoursAgo 457}}'
+  updated_at: '{{hoursAgo 457}}'
+- id: 30096
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20096'
+  channel: 'email'
+  contact_id: 20033
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 458}}'
+  claimed_at: '{{hoursAgo 458}}'
+  broadcast_id: 20004
+  broadcast_recipient_id: 20096
+  workspace_id: 20
+  created_at: '{{hoursAgo 458}}'
+  updated_at: '{{hoursAgo 458}}'
+- id: 30097
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20097'
+  channel: 'email'
+  contact_id: 20034
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 459}}'
+  claimed_at: '{{hoursAgo 459}}'
+  broadcast_id: 20004
+  broadcast_recipient_id: 20097
+  workspace_id: 20
+  created_at: '{{hoursAgo 459}}'
+  updated_at: '{{hoursAgo 459}}'
+- id: 30098
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20098'
+  channel: 'email'
+  contact_id: 20035
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 460}}'
+  claimed_at: '{{hoursAgo 460}}'
+  broadcast_id: 20004
+  broadcast_recipient_id: 20098
+  workspace_id: 20
+  created_at: '{{hoursAgo 460}}'
+  updated_at: '{{hoursAgo 460}}'
+- id: 30099
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20099'
+  channel: 'email'
+  contact_id: 20036
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 456}}'
+  claimed_at: '{{hoursAgo 456}}'
+  broadcast_id: 20004
+  broadcast_recipient_id: 20099
+  workspace_id: 20
+  created_at: '{{hoursAgo 456}}'
+  updated_at: '{{hoursAgo 456}}'
+- id: 30100
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20100'
+  channel: 'email'
+  contact_id: 20037
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 457}}'
+  claimed_at: '{{hoursAgo 457}}'
+  broadcast_id: 20004
+  broadcast_recipient_id: 20100
+  workspace_id: 20
+  created_at: '{{hoursAgo 457}}'
+  updated_at: '{{hoursAgo 457}}'
+- id: 30101
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20101'
+  channel: 'email'
+  contact_id: 20038
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 458}}'
+  claimed_at: '{{hoursAgo 458}}'
+  broadcast_id: 20004
+  broadcast_recipient_id: 20101
+  workspace_id: 20
+  created_at: '{{hoursAgo 458}}'
+  updated_at: '{{hoursAgo 458}}'
+- id: 30102
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20102'
+  channel: 'email'
+  contact_id: 20039
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 459}}'
+  claimed_at: '{{hoursAgo 459}}'
+  broadcast_id: 20004
+  broadcast_recipient_id: 20102
+  workspace_id: 20
+  created_at: '{{hoursAgo 459}}'
+  updated_at: '{{hoursAgo 459}}'
+- id: 30103
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20103'
+  channel: 'email'
+  contact_id: 20040
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 460}}'
+  claimed_at: '{{hoursAgo 460}}'
+  broadcast_id: 20004
+  broadcast_recipient_id: 20103
+  workspace_id: 20
+  created_at: '{{hoursAgo 460}}'
+  updated_at: '{{hoursAgo 460}}'
+- id: 30104
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20104'
+  channel: 'email'
+  contact_id: 20041
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 456}}'
+  claimed_at: '{{hoursAgo 456}}'
+  broadcast_id: 20004
+  broadcast_recipient_id: 20104
+  workspace_id: 20
+  created_at: '{{hoursAgo 456}}'
+  updated_at: '{{hoursAgo 456}}'
+- id: 30105
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20105'
+  channel: 'email'
+  contact_id: 20042
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 457}}'
+  claimed_at: '{{hoursAgo 457}}'
+  broadcast_id: 20004
+  broadcast_recipient_id: 20105
+  workspace_id: 20
+  created_at: '{{hoursAgo 457}}'
+  updated_at: '{{hoursAgo 457}}'
+- id: 30106
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20106'
+  channel: 'email'
+  contact_id: 20043
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 458}}'
+  claimed_at: '{{hoursAgo 458}}'
+  broadcast_id: 20004
+  broadcast_recipient_id: 20106
+  workspace_id: 20
+  created_at: '{{hoursAgo 458}}'
+  updated_at: '{{hoursAgo 458}}'
+- id: 30107
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20107'
+  channel: 'email'
+  contact_id: 20044
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 459}}'
+  claimed_at: '{{hoursAgo 459}}'
+  broadcast_id: 20004
+  broadcast_recipient_id: 20107
+  workspace_id: 20
+  created_at: '{{hoursAgo 459}}'
+  updated_at: '{{hoursAgo 459}}'
+- id: 30108
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20108'
+  channel: 'email'
+  contact_id: 20009
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 219}}'
+  claimed_at: '{{hoursAgo 219}}'
+  broadcast_id: 20005
+  broadcast_recipient_id: 20108
+  workspace_id: 20
+  created_at: '{{hoursAgo 219}}'
+  updated_at: '{{hoursAgo 219}}'
+- id: 30109
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20109'
+  channel: 'email'
+  contact_id: 20010
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 220}}'
+  claimed_at: '{{hoursAgo 220}}'
+  broadcast_id: 20005
+  broadcast_recipient_id: 20109
+  workspace_id: 20
+  created_at: '{{hoursAgo 220}}'
+  updated_at: '{{hoursAgo 220}}'
+- id: 30110
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20110'
+  channel: 'email'
+  contact_id: 20011
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 216}}'
+  claimed_at: '{{hoursAgo 216}}'
+  broadcast_id: 20005
+  broadcast_recipient_id: 20110
+  workspace_id: 20
+  created_at: '{{hoursAgo 216}}'
+  updated_at: '{{hoursAgo 216}}'
+- id: 30111
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20111'
+  channel: 'email'
+  contact_id: 20012
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 217}}'
+  claimed_at: '{{hoursAgo 217}}'
+  broadcast_id: 20005
+  broadcast_recipient_id: 20111
+  workspace_id: 20
+  created_at: '{{hoursAgo 217}}'
+  updated_at: '{{hoursAgo 217}}'
+- id: 30112
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20112'
+  channel: 'email'
+  contact_id: 20013
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 218}}'
+  claimed_at: '{{hoursAgo 218}}'
+  broadcast_id: 20005
+  broadcast_recipient_id: 20112
+  workspace_id: 20
+  created_at: '{{hoursAgo 218}}'
+  updated_at: '{{hoursAgo 218}}'
+- id: 30113
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20113'
+  channel: 'email'
+  contact_id: 20014
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 219}}'
+  claimed_at: '{{hoursAgo 219}}'
+  broadcast_id: 20005
+  broadcast_recipient_id: 20113
+  workspace_id: 20
+  created_at: '{{hoursAgo 219}}'
+  updated_at: '{{hoursAgo 219}}'
+- id: 30114
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20114'
+  channel: 'email'
+  contact_id: 20015
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 220}}'
+  claimed_at: '{{hoursAgo 220}}'
+  broadcast_id: 20005
+  broadcast_recipient_id: 20114
+  workspace_id: 20
+  created_at: '{{hoursAgo 220}}'
+  updated_at: '{{hoursAgo 220}}'
+- id: 30115
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20115'
+  channel: 'email'
+  contact_id: 20016
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 216}}'
+  claimed_at: '{{hoursAgo 216}}'
+  broadcast_id: 20005
+  broadcast_recipient_id: 20115
+  workspace_id: 20
+  created_at: '{{hoursAgo 216}}'
+  updated_at: '{{hoursAgo 216}}'
+- id: 30116
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20116'
+  channel: 'email'
+  contact_id: 20017
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 217}}'
+  claimed_at: '{{hoursAgo 217}}'
+  broadcast_id: 20005
+  broadcast_recipient_id: 20116
+  workspace_id: 20
+  created_at: '{{hoursAgo 217}}'
+  updated_at: '{{hoursAgo 217}}'
+- id: 30117
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20117'
+  channel: 'email'
+  contact_id: 20018
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 218}}'
+  claimed_at: '{{hoursAgo 218}}'
+  broadcast_id: 20005
+  broadcast_recipient_id: 20117
+  workspace_id: 20
+  created_at: '{{hoursAgo 218}}'
+  updated_at: '{{hoursAgo 218}}'
+- id: 30118
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20118'
+  channel: 'email'
+  contact_id: 20019
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 219}}'
+  claimed_at: '{{hoursAgo 219}}'
+  broadcast_id: 20005
+  broadcast_recipient_id: 20118
+  workspace_id: 20
+  created_at: '{{hoursAgo 219}}'
+  updated_at: '{{hoursAgo 219}}'
+- id: 30119
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20119'
+  channel: 'email'
+  contact_id: 20020
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 220}}'
+  claimed_at: '{{hoursAgo 220}}'
+  broadcast_id: 20005
+  broadcast_recipient_id: 20119
+  workspace_id: 20
+  created_at: '{{hoursAgo 220}}'
+  updated_at: '{{hoursAgo 220}}'
+- id: 30120
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20120'
+  channel: 'email'
+  contact_id: 20021
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 216}}'
+  claimed_at: '{{hoursAgo 216}}'
+  broadcast_id: 20005
+  broadcast_recipient_id: 20120
+  workspace_id: 20
+  created_at: '{{hoursAgo 216}}'
+  updated_at: '{{hoursAgo 216}}'
+- id: 30121
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20121'
+  channel: 'email'
+  contact_id: 20022
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 217}}'
+  claimed_at: '{{hoursAgo 217}}'
+  broadcast_id: 20005
+  broadcast_recipient_id: 20121
+  workspace_id: 20
+  created_at: '{{hoursAgo 217}}'
+  updated_at: '{{hoursAgo 217}}'
+- id: 30122
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20122'
+  channel: 'email'
+  contact_id: 20023
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 218}}'
+  claimed_at: '{{hoursAgo 218}}'
+  broadcast_id: 20005
+  broadcast_recipient_id: 20122
+  workspace_id: 20
+  created_at: '{{hoursAgo 218}}'
+  updated_at: '{{hoursAgo 218}}'
+- id: 30123
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20123'
+  channel: 'email'
+  contact_id: 20024
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 219}}'
+  claimed_at: '{{hoursAgo 219}}'
+  broadcast_id: 20005
+  broadcast_recipient_id: 20123
+  workspace_id: 20
+  created_at: '{{hoursAgo 219}}'
+  updated_at: '{{hoursAgo 219}}'
+- id: 30124
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20124'
+  channel: 'email'
+  contact_id: 20025
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 220}}'
+  claimed_at: '{{hoursAgo 220}}'
+  broadcast_id: 20005
+  broadcast_recipient_id: 20124
+  workspace_id: 20
+  created_at: '{{hoursAgo 220}}'
+  updated_at: '{{hoursAgo 220}}'
+- id: 30125
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20125'
+  channel: 'email'
+  contact_id: 20026
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 216}}'
+  claimed_at: '{{hoursAgo 216}}'
+  broadcast_id: 20005
+  broadcast_recipient_id: 20125
+  workspace_id: 20
+  created_at: '{{hoursAgo 216}}'
+  updated_at: '{{hoursAgo 216}}'
+- id: 30126
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20126'
+  channel: 'email'
+  contact_id: 20027
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 217}}'
+  claimed_at: '{{hoursAgo 217}}'
+  broadcast_id: 20005
+  broadcast_recipient_id: 20126
+  workspace_id: 20
+  created_at: '{{hoursAgo 217}}'
+  updated_at: '{{hoursAgo 217}}'
+- id: 30127
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20127'
+  channel: 'email'
+  contact_id: 20028
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 218}}'
+  claimed_at: '{{hoursAgo 218}}'
+  broadcast_id: 20005
+  broadcast_recipient_id: 20127
+  workspace_id: 20
+  created_at: '{{hoursAgo 218}}'
+  updated_at: '{{hoursAgo 218}}'
+- id: 30128
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20128'
+  channel: 'email'
+  contact_id: 20029
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 219}}'
+  claimed_at: '{{hoursAgo 219}}'
+  broadcast_id: 20005
+  broadcast_recipient_id: 20128
+  workspace_id: 20
+  created_at: '{{hoursAgo 219}}'
+  updated_at: '{{hoursAgo 219}}'
+- id: 30129
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20129'
+  channel: 'email'
+  contact_id: 20030
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 220}}'
+  claimed_at: '{{hoursAgo 220}}'
+  broadcast_id: 20005
+  broadcast_recipient_id: 20129
+  workspace_id: 20
+  created_at: '{{hoursAgo 220}}'
+  updated_at: '{{hoursAgo 220}}'
+- id: 30130
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20130'
+  channel: 'email'
+  contact_id: 20031
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 216}}'
+  claimed_at: '{{hoursAgo 216}}'
+  broadcast_id: 20005
+  broadcast_recipient_id: 20130
+  workspace_id: 20
+  created_at: '{{hoursAgo 216}}'
+  updated_at: '{{hoursAgo 216}}'
+- id: 30131
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20131'
+  channel: 'email'
+  contact_id: 20032
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 217}}'
+  claimed_at: '{{hoursAgo 217}}'
+  broadcast_id: 20005
+  broadcast_recipient_id: 20131
+  workspace_id: 20
+  created_at: '{{hoursAgo 217}}'
+  updated_at: '{{hoursAgo 217}}'
+- id: 30132
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20132'
+  channel: 'email'
+  contact_id: 20033
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 218}}'
+  claimed_at: '{{hoursAgo 218}}'
+  broadcast_id: 20005
+  broadcast_recipient_id: 20132
+  workspace_id: 20
+  created_at: '{{hoursAgo 218}}'
+  updated_at: '{{hoursAgo 218}}'
+- id: 30133
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20133'
+  channel: 'email'
+  contact_id: 20034
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 219}}'
+  claimed_at: '{{hoursAgo 219}}'
+  broadcast_id: 20005
+  broadcast_recipient_id: 20133
+  workspace_id: 20
+  created_at: '{{hoursAgo 219}}'
+  updated_at: '{{hoursAgo 219}}'
+- id: 30134
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20134'
+  channel: 'email'
+  contact_id: 20035
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 220}}'
+  claimed_at: '{{hoursAgo 220}}'
+  broadcast_id: 20005
+  broadcast_recipient_id: 20134
+  workspace_id: 20
+  created_at: '{{hoursAgo 220}}'
+  updated_at: '{{hoursAgo 220}}'
+- id: 30135
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20135'
+  channel: 'email'
+  contact_id: 20036
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 216}}'
+  claimed_at: '{{hoursAgo 216}}'
+  broadcast_id: 20005
+  broadcast_recipient_id: 20135
+  workspace_id: 20
+  created_at: '{{hoursAgo 216}}'
+  updated_at: '{{hoursAgo 216}}'
+- id: 30136
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20136'
+  channel: 'email'
+  contact_id: 20037
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 217}}'
+  claimed_at: '{{hoursAgo 217}}'
+  broadcast_id: 20005
+  broadcast_recipient_id: 20136
+  workspace_id: 20
+  created_at: '{{hoursAgo 217}}'
+  updated_at: '{{hoursAgo 217}}'
+- id: 30137
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20137'
+  channel: 'email'
+  contact_id: 20038
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 218}}'
+  claimed_at: '{{hoursAgo 218}}'
+  broadcast_id: 20005
+  broadcast_recipient_id: 20137
+  workspace_id: 20
+  created_at: '{{hoursAgo 218}}'
+  updated_at: '{{hoursAgo 218}}'
+- id: 30138
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20138'
+  channel: 'email'
+  contact_id: 20039
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 219}}'
+  claimed_at: '{{hoursAgo 219}}'
+  broadcast_id: 20005
+  broadcast_recipient_id: 20138
+  workspace_id: 20
+  created_at: '{{hoursAgo 219}}'
+  updated_at: '{{hoursAgo 219}}'
+- id: 30139
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20139'
+  channel: 'email'
+  contact_id: 20040
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 220}}'
+  claimed_at: '{{hoursAgo 220}}'
+  broadcast_id: 20005
+  broadcast_recipient_id: 20139
+  workspace_id: 20
+  created_at: '{{hoursAgo 220}}'
+  updated_at: '{{hoursAgo 220}}'
+- id: 30140
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20140'
+  channel: 'email'
+  contact_id: 20041
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 216}}'
+  claimed_at: '{{hoursAgo 216}}'
+  broadcast_id: 20005
+  broadcast_recipient_id: 20140
+  workspace_id: 20
+  created_at: '{{hoursAgo 216}}'
+  updated_at: '{{hoursAgo 216}}'
+- id: 30141
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20141'
+  channel: 'email'
+  contact_id: 20042
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 217}}'
+  claimed_at: '{{hoursAgo 217}}'
+  broadcast_id: 20005
+  broadcast_recipient_id: 20141
+  workspace_id: 20
+  created_at: '{{hoursAgo 217}}'
+  updated_at: '{{hoursAgo 217}}'
+- id: 30142
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20142'
+  channel: 'email'
+  contact_id: 20043
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 218}}'
+  claimed_at: '{{hoursAgo 218}}'
+  broadcast_id: 20005
+  broadcast_recipient_id: 20142
+  workspace_id: 20
+  created_at: '{{hoursAgo 218}}'
+  updated_at: '{{hoursAgo 218}}'
+- id: 30143
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20143'
+  channel: 'email'
+  contact_id: 20044
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 219}}'
+  claimed_at: '{{hoursAgo 219}}'
+  broadcast_id: 20005
+  broadcast_recipient_id: 20143
+  workspace_id: 20
+  created_at: '{{hoursAgo 219}}'
+  updated_at: '{{hoursAgo 219}}'
+- id: 30144
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20144'
+  channel: 'email'
+  contact_id: 20003
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 74}}'
+  claimed_at: '{{hoursAgo 74}}'
+  broadcast_id: 20006
+  broadcast_recipient_id: 20144
+  workspace_id: 20
+  created_at: '{{hoursAgo 74}}'
+  updated_at: '{{hoursAgo 74}}'
+- id: 30145
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20145'
+  channel: 'email'
+  contact_id: 20004
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 75}}'
+  claimed_at: '{{hoursAgo 75}}'
+  broadcast_id: 20006
+  broadcast_recipient_id: 20145
+  workspace_id: 20
+  created_at: '{{hoursAgo 75}}'
+  updated_at: '{{hoursAgo 75}}'
+- id: 30146
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20146'
+  channel: 'email'
+  contact_id: 20005
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 76}}'
+  claimed_at: '{{hoursAgo 76}}'
+  broadcast_id: 20006
+  broadcast_recipient_id: 20146
+  workspace_id: 20
+  created_at: '{{hoursAgo 76}}'
+  updated_at: '{{hoursAgo 76}}'
+- id: 30147
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20147'
+  channel: 'email'
+  contact_id: 20006
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 72}}'
+  claimed_at: '{{hoursAgo 72}}'
+  broadcast_id: 20006
+  broadcast_recipient_id: 20147
+  workspace_id: 20
+  created_at: '{{hoursAgo 72}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 30148
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20148'
+  channel: 'email'
+  contact_id: 20007
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 73}}'
+  claimed_at: '{{hoursAgo 73}}'
+  broadcast_id: 20006
+  broadcast_recipient_id: 20148
+  workspace_id: 20
+  created_at: '{{hoursAgo 73}}'
+  updated_at: '{{hoursAgo 73}}'
+- id: 30149
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20149'
+  channel: 'email'
+  contact_id: 20008
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 74}}'
+  claimed_at: '{{hoursAgo 74}}'
+  broadcast_id: 20006
+  broadcast_recipient_id: 20149
+  workspace_id: 20
+  created_at: '{{hoursAgo 74}}'
+  updated_at: '{{hoursAgo 74}}'
+- id: 30150
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20150'
+  channel: 'email'
+  contact_id: 20009
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 75}}'
+  claimed_at: '{{hoursAgo 75}}'
+  broadcast_id: 20006
+  broadcast_recipient_id: 20150
+  workspace_id: 20
+  created_at: '{{hoursAgo 75}}'
+  updated_at: '{{hoursAgo 75}}'
+- id: 30151
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20151'
+  channel: 'email'
+  contact_id: 20010
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 76}}'
+  claimed_at: '{{hoursAgo 76}}'
+  broadcast_id: 20006
+  broadcast_recipient_id: 20151
+  workspace_id: 20
+  created_at: '{{hoursAgo 76}}'
+  updated_at: '{{hoursAgo 76}}'
+- id: 30152
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20152'
+  channel: 'email'
+  contact_id: 20011
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 72}}'
+  claimed_at: '{{hoursAgo 72}}'
+  broadcast_id: 20006
+  broadcast_recipient_id: 20152
+  workspace_id: 20
+  created_at: '{{hoursAgo 72}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 30153
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20153'
+  channel: 'email'
+  contact_id: 20012
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 73}}'
+  claimed_at: '{{hoursAgo 73}}'
+  broadcast_id: 20006
+  broadcast_recipient_id: 20153
+  workspace_id: 20
+  created_at: '{{hoursAgo 73}}'
+  updated_at: '{{hoursAgo 73}}'
+- id: 30154
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20154'
+  channel: 'email'
+  contact_id: 20013
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 74}}'
+  claimed_at: '{{hoursAgo 74}}'
+  broadcast_id: 20006
+  broadcast_recipient_id: 20154
+  workspace_id: 20
+  created_at: '{{hoursAgo 74}}'
+  updated_at: '{{hoursAgo 74}}'
+- id: 30155
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20155'
+  channel: 'email'
+  contact_id: 20014
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 75}}'
+  claimed_at: '{{hoursAgo 75}}'
+  broadcast_id: 20006
+  broadcast_recipient_id: 20155
+  workspace_id: 20
+  created_at: '{{hoursAgo 75}}'
+  updated_at: '{{hoursAgo 75}}'
+- id: 30156
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20156'
+  channel: 'email'
+  contact_id: 20015
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 76}}'
+  claimed_at: '{{hoursAgo 76}}'
+  broadcast_id: 20006
+  broadcast_recipient_id: 20156
+  workspace_id: 20
+  created_at: '{{hoursAgo 76}}'
+  updated_at: '{{hoursAgo 76}}'
+- id: 30157
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20157'
+  channel: 'email'
+  contact_id: 20016
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 72}}'
+  claimed_at: '{{hoursAgo 72}}'
+  broadcast_id: 20006
+  broadcast_recipient_id: 20157
+  workspace_id: 20
+  created_at: '{{hoursAgo 72}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 30158
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20158'
+  channel: 'email'
+  contact_id: 20017
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 73}}'
+  claimed_at: '{{hoursAgo 73}}'
+  broadcast_id: 20006
+  broadcast_recipient_id: 20158
+  workspace_id: 20
+  created_at: '{{hoursAgo 73}}'
+  updated_at: '{{hoursAgo 73}}'
+- id: 30159
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20159'
+  channel: 'email'
+  contact_id: 20018
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 74}}'
+  claimed_at: '{{hoursAgo 74}}'
+  broadcast_id: 20006
+  broadcast_recipient_id: 20159
+  workspace_id: 20
+  created_at: '{{hoursAgo 74}}'
+  updated_at: '{{hoursAgo 74}}'
+- id: 30160
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20160'
+  channel: 'email'
+  contact_id: 20019
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 75}}'
+  claimed_at: '{{hoursAgo 75}}'
+  broadcast_id: 20006
+  broadcast_recipient_id: 20160
+  workspace_id: 20
+  created_at: '{{hoursAgo 75}}'
+  updated_at: '{{hoursAgo 75}}'
+- id: 30161
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20161'
+  channel: 'email'
+  contact_id: 20020
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 76}}'
+  claimed_at: '{{hoursAgo 76}}'
+  broadcast_id: 20006
+  broadcast_recipient_id: 20161
+  workspace_id: 20
+  created_at: '{{hoursAgo 76}}'
+  updated_at: '{{hoursAgo 76}}'
+- id: 30162
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20162'
+  channel: 'email'
+  contact_id: 20021
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 72}}'
+  claimed_at: '{{hoursAgo 72}}'
+  broadcast_id: 20006
+  broadcast_recipient_id: 20162
+  workspace_id: 20
+  created_at: '{{hoursAgo 72}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 30163
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20163'
+  channel: 'email'
+  contact_id: 20022
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 73}}'
+  claimed_at: '{{hoursAgo 73}}'
+  broadcast_id: 20006
+  broadcast_recipient_id: 20163
+  workspace_id: 20
+  created_at: '{{hoursAgo 73}}'
+  updated_at: '{{hoursAgo 73}}'
+- id: 30164
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20164'
+  channel: 'email'
+  contact_id: 20023
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 74}}'
+  claimed_at: '{{hoursAgo 74}}'
+  broadcast_id: 20006
+  broadcast_recipient_id: 20164
+  workspace_id: 20
+  created_at: '{{hoursAgo 74}}'
+  updated_at: '{{hoursAgo 74}}'
+- id: 30165
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20165'
+  channel: 'email'
+  contact_id: 20024
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 75}}'
+  claimed_at: '{{hoursAgo 75}}'
+  broadcast_id: 20006
+  broadcast_recipient_id: 20165
+  workspace_id: 20
+  created_at: '{{hoursAgo 75}}'
+  updated_at: '{{hoursAgo 75}}'
+- id: 30166
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20166'
+  channel: 'email'
+  contact_id: 20025
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 76}}'
+  claimed_at: '{{hoursAgo 76}}'
+  broadcast_id: 20006
+  broadcast_recipient_id: 20166
+  workspace_id: 20
+  created_at: '{{hoursAgo 76}}'
+  updated_at: '{{hoursAgo 76}}'
+- id: 30167
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20167'
+  channel: 'email'
+  contact_id: 20026
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 72}}'
+  claimed_at: '{{hoursAgo 72}}'
+  broadcast_id: 20006
+  broadcast_recipient_id: 20167
+  workspace_id: 20
+  created_at: '{{hoursAgo 72}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 30168
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20168'
+  channel: 'email'
+  contact_id: 20027
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 73}}'
+  claimed_at: '{{hoursAgo 73}}'
+  broadcast_id: 20006
+  broadcast_recipient_id: 20168
+  workspace_id: 20
+  created_at: '{{hoursAgo 73}}'
+  updated_at: '{{hoursAgo 73}}'
+- id: 30169
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20169'
+  channel: 'email'
+  contact_id: 20028
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 74}}'
+  claimed_at: '{{hoursAgo 74}}'
+  broadcast_id: 20006
+  broadcast_recipient_id: 20169
+  workspace_id: 20
+  created_at: '{{hoursAgo 74}}'
+  updated_at: '{{hoursAgo 74}}'
+- id: 30170
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20170'
+  channel: 'email'
+  contact_id: 20029
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 75}}'
+  claimed_at: '{{hoursAgo 75}}'
+  broadcast_id: 20006
+  broadcast_recipient_id: 20170
+  workspace_id: 20
+  created_at: '{{hoursAgo 75}}'
+  updated_at: '{{hoursAgo 75}}'
+- id: 30171
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20171'
+  channel: 'email'
+  contact_id: 20030
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 76}}'
+  claimed_at: '{{hoursAgo 76}}'
+  broadcast_id: 20006
+  broadcast_recipient_id: 20171
+  workspace_id: 20
+  created_at: '{{hoursAgo 76}}'
+  updated_at: '{{hoursAgo 76}}'
+- id: 30172
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20172'
+  channel: 'email'
+  contact_id: 20031
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 72}}'
+  claimed_at: '{{hoursAgo 72}}'
+  broadcast_id: 20006
+  broadcast_recipient_id: 20172
+  workspace_id: 20
+  created_at: '{{hoursAgo 72}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 30173
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20173'
+  channel: 'email'
+  contact_id: 20032
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 73}}'
+  claimed_at: '{{hoursAgo 73}}'
+  broadcast_id: 20006
+  broadcast_recipient_id: 20173
+  workspace_id: 20
+  created_at: '{{hoursAgo 73}}'
+  updated_at: '{{hoursAgo 73}}'
+- id: 30174
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20174'
+  channel: 'email'
+  contact_id: 20033
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 74}}'
+  claimed_at: '{{hoursAgo 74}}'
+  broadcast_id: 20006
+  broadcast_recipient_id: 20174
+  workspace_id: 20
+  created_at: '{{hoursAgo 74}}'
+  updated_at: '{{hoursAgo 74}}'
+- id: 30175
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20175'
+  channel: 'email'
+  contact_id: 20034
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 75}}'
+  claimed_at: '{{hoursAgo 75}}'
+  broadcast_id: 20006
+  broadcast_recipient_id: 20175
+  workspace_id: 20
+  created_at: '{{hoursAgo 75}}'
+  updated_at: '{{hoursAgo 75}}'
+- id: 30176
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20176'
+  channel: 'email'
+  contact_id: 20035
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 76}}'
+  claimed_at: '{{hoursAgo 76}}'
+  broadcast_id: 20006
+  broadcast_recipient_id: 20176
+  workspace_id: 20
+  created_at: '{{hoursAgo 76}}'
+  updated_at: '{{hoursAgo 76}}'
+- id: 30177
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20177'
+  channel: 'email'
+  contact_id: 20036
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 72}}'
+  claimed_at: '{{hoursAgo 72}}'
+  broadcast_id: 20006
+  broadcast_recipient_id: 20177
+  workspace_id: 20
+  created_at: '{{hoursAgo 72}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 30178
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20178'
+  channel: 'email'
+  contact_id: 20037
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 73}}'
+  claimed_at: '{{hoursAgo 73}}'
+  broadcast_id: 20006
+  broadcast_recipient_id: 20178
+  workspace_id: 20
+  created_at: '{{hoursAgo 73}}'
+  updated_at: '{{hoursAgo 73}}'
+- id: 30179
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20179'
+  channel: 'email'
+  contact_id: 20038
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 74}}'
+  claimed_at: '{{hoursAgo 74}}'
+  broadcast_id: 20006
+  broadcast_recipient_id: 20179
+  workspace_id: 20
+  created_at: '{{hoursAgo 74}}'
+  updated_at: '{{hoursAgo 74}}'
+- id: 30180
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20180'
+  channel: 'email'
+  contact_id: 20039
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 75}}'
+  claimed_at: '{{hoursAgo 75}}'
+  broadcast_id: 20006
+  broadcast_recipient_id: 20180
+  workspace_id: 20
+  created_at: '{{hoursAgo 75}}'
+  updated_at: '{{hoursAgo 75}}'
+- id: 30181
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20181'
+  channel: 'email'
+  contact_id: 20040
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 76}}'
+  claimed_at: '{{hoursAgo 76}}'
+  broadcast_id: 20006
+  broadcast_recipient_id: 20181
+  workspace_id: 20
+  created_at: '{{hoursAgo 76}}'
+  updated_at: '{{hoursAgo 76}}'
+- id: 30182
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20182'
+  channel: 'email'
+  contact_id: 20041
+  sending_source: 'broadcasts'
+  status: 'failed'
+  reason: 'mailbox full'
+  claimed_at: '{{hoursAgo 72}}'
+  broadcast_id: 20006
+  broadcast_recipient_id: 20182
+  workspace_id: 20
+  created_at: '{{hoursAgo 72}}'
+  updated_at: '{{hoursAgo 72}}'
+- id: 30183
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20183'
+  channel: 'email'
+  contact_id: 20042
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 73}}'
+  claimed_at: '{{hoursAgo 73}}'
+  broadcast_id: 20006
+  broadcast_recipient_id: 20183
+  workspace_id: 20
+  created_at: '{{hoursAgo 73}}'
+  updated_at: '{{hoursAgo 73}}'
+- id: 30184
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20184'
+  channel: 'email'
+  contact_id: 20043
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 74}}'
+  claimed_at: '{{hoursAgo 74}}'
+  broadcast_id: 20006
+  broadcast_recipient_id: 20184
+  workspace_id: 20
+  created_at: '{{hoursAgo 74}}'
+  updated_at: '{{hoursAgo 74}}'
+- id: 30185
+  kind: 'broadcast'
+  idempotency_key: 'broadcast:20185'
+  channel: 'email'
+  contact_id: 20044
+  sending_source: 'broadcasts'
+  status: 'sent'
+  sent_at: '{{hoursAgo 75}}'
+  claimed_at: '{{hoursAgo 75}}'
+  broadcast_id: 20006
+  broadcast_recipient_id: 20185
+  workspace_id: 20
+  created_at: '{{hoursAgo 75}}'
+  updated_at: '{{hoursAgo 75}}'
+- id: 31000
+  kind: 'transactional'
+  idempotency_key: 'transactional:bp-0'
+  channel: 'email'
+  destination: 'kofi.mensah@adatum.example'
+  contact_id: 20022
+  template_id: 20001
+  status: 'sent'
+  sending_domain: 'mail.brightpath.example'
+  provider_message_id: '<bp-0@mail.brightpath.example>'
+  sent_at: '{{hoursAgo 3}}'
+  claimed_at: '{{hoursAgo 3}}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 3}}'
+  updated_at: '{{hoursAgo 3}}'
+- id: 31001
+  kind: 'transactional'
+  idempotency_key: 'transactional:bp-1'
+  channel: 'email'
+  destination: 'aiko.sato@proseware.example'
+  contact_id: 20031
+  template_id: 20002
+  status: 'sent'
+  sending_domain: 'mail.brightpath.example'
+  provider_message_id: '<bp-1@mail.brightpath.example>'
+  sent_at: '{{hoursAgo 5}}'
+  claimed_at: '{{hoursAgo 5}}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 5}}'
+  updated_at: '{{hoursAgo 5}}'
+- id: 31002
+  kind: 'transactional'
+  idempotency_key: 'transactional:bp-2'
+  channel: 'email'
+  destination: 'mei.lin@proseware.example'
+  contact_id: 20015
+  template_id: 20004
+  status: 'sent'
+  sending_domain: 'mail.brightpath.example'
+  provider_message_id: '<bp-2@mail.brightpath.example>'
+  sent_at: '{{hoursAgo 9}}'
+  claimed_at: '{{hoursAgo 9}}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 9}}'
+  updated_at: '{{hoursAgo 9}}'
+- id: 31003
+  kind: 'transactional'
+  idempotency_key: 'transactional:bp-3'
+  channel: 'email'
+  destination: 'oliver.bennett@adatum.example'
+  contact_id: 20006
+  template_id: 20003
+  status: 'sent'
+  sending_domain: 'mail.brightpath.example'
+  provider_message_id: '<bp-3@mail.brightpath.example>'
+  sent_at: '{{hoursAgo 14}}'
+  claimed_at: '{{hoursAgo 14}}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 14}}'
+  updated_at: '{{hoursAgo 14}}'
+- id: 31004
+  kind: 'transactional'
+  idempotency_key: 'transactional:bp-4'
+  channel: 'email'
+  destination: 'hana.kobayashi@contoso.example'
+  contact_id: 20003
+  template_id: 20001
+  status: 'sent'
+  sending_domain: 'mail.brightpath.example'
+  provider_message_id: '<bp-4@mail.brightpath.example>'
+  sent_at: '{{hoursAgo 20}}'
+  claimed_at: '{{hoursAgo 20}}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 20}}'
+  updated_at: '{{hoursAgo 20}}'
+- id: 31005
+  kind: 'transactional'
+  idempotency_key: 'transactional:bp-5'
+  channel: 'email'
+  destination: 'felix.weber@adatum.example'
+  contact_id: 20030
+  template_id: 20002
+  status: 'sent'
+  sending_domain: 'mail.brightpath.example'
+  provider_message_id: '<bp-5@mail.brightpath.example>'
+  sent_at: '{{hoursAgo 27}}'
+  claimed_at: '{{hoursAgo 27}}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 27}}'
+  updated_at: '{{hoursAgo 27}}'
+- id: 31006
+  kind: 'transactional'
+  idempotency_key: 'transactional:bp-6'
+  channel: 'email'
+  destination: 'emily.carter@northwind.example'
+  contact_id: 20017
+  template_id: 20005
+  status: 'failed'
+  reason: 'provider timeout'
+  claimed_at: '{{hoursAgo 33}}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 33}}'
+  updated_at: '{{hoursAgo 33}}'
+- id: 31007
+  kind: 'transactional'
+  idempotency_key: 'transactional:bp-7'
+  channel: 'email'
+  destination: 'ingrid.solberg@northwind.example'
+  contact_id: 20009
+  template_id: 20001
+  status: 'sent'
+  sending_domain: 'mail.brightpath.example'
+  provider_message_id: '<bp-7@mail.brightpath.example>'
+  sent_at: '{{hoursAgo 41}}'
+  claimed_at: '{{hoursAgo 41}}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 41}}'
+  updated_at: '{{hoursAgo 41}}'
+- id: 31008
+  kind: 'transactional'
+  idempotency_key: 'transactional:bp-8'
+  channel: 'email'
+  destination: 'pavel.novak@adatum.example'
+  contact_id: 20046
+  template_id: 20003
+  status: 'skipped'
+  reason: 'suppressed'
+  claimed_at: '{{hoursAgo 50}}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 50}}'
+  updated_at: '{{hoursAgo 50}}'
+- id: 31009
+  kind: 'transactional'
+  idempotency_key: 'transactional:bp-9'
+  channel: 'email'
+  destination: 'yusuf.demir@fabrikam.example'
+  contact_id: 20018
+  template_id: 20003
+  status: 'sent'
+  sending_domain: 'mail.brightpath.example'
+  provider_message_id: '<bp-9@mail.brightpath.example>'
+  sent_at: '{{hoursAgo 58}}'
+  claimed_at: '{{hoursAgo 58}}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 58}}'
+  updated_at: '{{hoursAgo 58}}'
+- id: 31010
+  kind: 'transactional'
+  idempotency_key: 'transactional:bp-10'
+  channel: 'email'
+  destination: 'nina.kowalski@contoso.example'
+  contact_id: 20027
+  template_id: 20004
+  status: 'sent'
+  sending_domain: 'mail.brightpath.example'
+  provider_message_id: '<bp-10@mail.brightpath.example>'
+  sent_at: '{{hoursAgo 71}}'
+  claimed_at: '{{hoursAgo 71}}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 71}}'
+  updated_at: '{{hoursAgo 71}}'
+- id: 31011
+  kind: 'transactional'
+  idempotency_key: 'transactional:bp-11'
+  channel: 'email'
+  destination: 'henrik.larsen@wingtip.example'
+  contact_id: 20024
+  template_id: 20002
+  status: 'sent'
+  sending_domain: 'mail.brightpath.example'
+  provider_message_id: '<bp-11@mail.brightpath.example>'
+  sent_at: '{{hoursAgo 80}}'
+  claimed_at: '{{hoursAgo 80}}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 80}}'
+  updated_at: '{{hoursAgo 80}}'
+- id: 31012
+  kind: 'transactional'
+  idempotency_key: 'transactional:bp-12'
+  channel: 'email'
+  destination: 'freya.johansson@contoso.example'
+  contact_id: 20035
+  template_id: 20001
+  status: 'sent'
+  sending_domain: 'mail.brightpath.example'
+  provider_message_id: '<bp-12@mail.brightpath.example>'
+  sent_at: '{{hoursAgo 95}}'
+  claimed_at: '{{hoursAgo 95}}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 95}}'
+  updated_at: '{{hoursAgo 95}}'
+- id: 31013
+  kind: 'transactional'
+  idempotency_key: 'transactional:bp-13'
+  channel: 'email'
+  destination: 'omar.salem@tailspin.example'
+  contact_id: 20028
+  template_id: 20002
+  status: 'sent'
+  sending_domain: 'mail.brightpath.example'
+  provider_message_id: '<bp-13@mail.brightpath.example>'
+  sent_at: '{{hoursAgo 120}}'
+  claimed_at: '{{hoursAgo 120}}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 120}}'
+  updated_at: '{{hoursAgo 120}}'

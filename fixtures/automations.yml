@@ -103,3 +103,47 @@
   workspace_id: 3
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-03 00:00:00'
+
+# --- Brightpath (workspace 20): demo workspace behind the screenshots on getsphericon.com ---
+- id: 20001
+  name: 'Welcome series'
+  status: 'active'
+  trigger_event: 'signup'
+  workspace_id: 20
+  created_at: '{{hoursAgo 2400}}'
+  updated_at: '{{hoursAgo 600}}'
+- id: 20002
+  name: 'Trial nudge: pricing questions'
+  status: 'active'
+  trigger_event: 'viewed_pricing'
+  workspace_id: 20
+  created_at: '{{hoursAgo 1440}}'
+  updated_at: '{{hoursAgo 360}}'
+- id: 20003
+  name: 'Course completion congrats'
+  status: 'active'
+  trigger_event: 'course_completed'
+  workspace_id: 20
+  created_at: '{{hoursAgo 1800}}'
+  updated_at: '{{hoursAgo 432}}'
+- id: 20004
+  name: 'Win-back lapsed learners'
+  status: 'active'
+  trigger_event: 'subscription_cancelled'
+  workspace_id: 20
+  created_at: '{{hoursAgo 960}}'
+  updated_at: '{{hoursAgo 240}}'
+- id: 20005
+  name: 'Tag engaged learners'
+  status: 'active'
+  trigger_event: 'lesson_completed'
+  workspace_id: 20
+  created_at: '{{hoursAgo 720}}'
+  updated_at: '{{hoursAgo 168}}'
+- id: 20006
+  name: 'Black Friday countdown'
+  status: 'draft'
+  trigger_event: 'black_friday_optin'
+  workspace_id: 20
+  created_at: '{{hoursAgo 120}}'
+  updated_at: '{{hoursAgo 24}}'

@@ -25,3 +25,25 @@
   name: initech-shared
   workspace_id: 3
   created_at: '2026-01-01 00:00:00'
+
+# --- Brightpath (workspace 20): demo workspace behind the screenshots on getsphericon.com ---
+- id: 20001
+  name: 'trial'
+  workspace_id: 20
+  created_at: '{{daysAgo 118}}'
+- id: 20002
+  name: 'vip'
+  workspace_id: 20
+  created_at: '{{daysAgo 118}}'
+- id: 20003
+  name: 'webinar-attendee'
+  workspace_id: 20
+  created_at: '{{daysAgo 118}}'
+- id: 20004
+  name: 'churn-risk'
+  workspace_id: 20
+  created_at: '{{daysAgo 118}}'
+- id: 20005
+  name: 'newsletter'
+  workspace_id: 20
+  created_at: '{{daysAgo 118}}'
