@@ -46,8 +46,8 @@ export function AutomationCreatePage() {
           }),
         )}
       >
-        <Stack>
-          <AutomationDetailsFields form={form} />
+        <Stack maw={480}>
+          <AutomationDetailsFields form={form} stacked />
           <Group justify="flex-end">
             <ButtonLink variant="default" to={automationsRoute.to} params={{ workspaceId }}>
               {t(($) => $.actions.cancel)}

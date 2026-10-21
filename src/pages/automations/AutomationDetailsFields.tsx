@@ -1,4 +1,4 @@
-import { Group, Select, TextInput } from '@mantine/core'
+import { Group, Select, Stack, TextInput } from '@mantine/core'
 import type { useForm } from '@mantine/form'
 import { useTranslation } from 'react-i18next'
 
@@ -11,7 +11,15 @@ export interface AutomationDetailsValues {
 
 type AutomationDetailsForm = ReturnType<typeof useForm<AutomationDetailsValues>>
 
-export function AutomationDetailsFields({ form }: { form: AutomationDetailsForm }) {
+// `stacked` puts the fields in one column (the create form); otherwise they sit side by side
+// above the builder canvas.
+export function AutomationDetailsFields({
+  form,
+  stacked = false,
+}: {
+  form: AutomationDetailsForm
+  stacked?: boolean
+}) {
   const { t } = useTranslation()
 
   const triggerOptions = [
@@ -21,8 +29,8 @@ export function AutomationDetailsFields({ form }: { form: AutomationDetailsForm 
     { value: 'email.unsubscribed', label: t(($) => $.automations.triggerEmailUnsubscribed) },
   ]
 
-  return (
-    <Group align="flex-start" grow>
+  const fields = (
+    <>
       <TextInput
         label={t(($) => $.automations.nameLabel)}
         required
@@ -36,6 +44,14 @@ export function AutomationDetailsFields({ form }: { form: AutomationDetailsForm 
         allowDeselect={false}
         {...form.getInputProps('triggerEvent')}
       />
+    </>
+  )
+
+  return stacked ? (
+    <Stack>{fields}</Stack>
+  ) : (
+    <Group align="flex-start" grow>
+      {fields}
     </Group>
   )
 }
