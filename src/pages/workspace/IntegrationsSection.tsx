@@ -15,11 +15,13 @@ import {
   Switch,
   Text,
   TextInput,
+  ThemeIcon,
   Title,
   UnstyledButton,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { useDisclosure } from '@mantine/hooks'
+import { IconBrandAws, IconPlugConnected, IconServer } from '@tabler/icons-react'
 import { useQuery } from '@tanstack/react-query'
 import { DataTable } from 'mantine-datatable'
 import { useState } from 'react'
@@ -177,14 +179,17 @@ export function IntegrationsSection({ workspaceId }: { workspaceId: string }) {
     ses: {
       title: 'Amazon SES',
       hint: t(($) => $.settings.integrations.providers.sesHint),
+      icon: <IconBrandAws size={22} />,
     },
     sesCompatible: {
       title: t(($) => $.settings.integrations.providers.sesCompatible),
       hint: t(($) => $.settings.integrations.providers.sesCompatibleHint),
+      icon: <IconPlugConnected size={22} />,
     },
     smtp: {
       title: 'SMTP',
       hint: t(($) => $.settings.integrations.providers.smtpHint),
+      icon: <IconServer size={22} />,
     },
   }
   const isSes = form.values.provider === 'ses'
@@ -451,10 +456,17 @@ export function IntegrationsSection({ workspaceId }: { workspaceId: string }) {
                   }}
                 >
                   <Paper withBorder p="md">
-                    <Text fw={600}>{providerLabels[kind].title}</Text>
-                    <Text size="sm" c="dimmed">
-                      {providerLabels[kind].hint}
-                    </Text>
+                    <Group wrap="nowrap">
+                      <ThemeIcon variant="light" size="xl" radius="md">
+                        {providerLabels[kind].icon}
+                      </ThemeIcon>
+                      <Stack gap={2}>
+                        <Text fw={600}>{providerLabels[kind].title}</Text>
+                        <Text size="sm" c="dimmed">
+                          {providerLabels[kind].hint}
+                        </Text>
+                      </Stack>
+                    </Group>
                   </Paper>
                 </UnstyledButton>
               ))}
