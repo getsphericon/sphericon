@@ -235,10 +235,22 @@ const (
 	BroadcastRecipientUnengagedFirstID = 1005
 	// BroadcastRecipientUnengagedSecondID is from fixtures/broadcast_recipients.
 	BroadcastRecipientUnengagedSecondID = 1006
+	// BroadcastScheduledFromLaunchDomainID is from fixtures/broadcasts.
+	BroadcastScheduledFromLaunchDomainID = 110
+	// BroadcastScheduledFromLaunchDomainName is from fixtures/broadcasts.
+	BroadcastScheduledFromLaunchDomainName = "Launch announcement"
+	// BroadcastScheduledFromLaunchDomainSubject is from fixtures/broadcasts.
+	BroadcastScheduledFromLaunchDomainSubject = "We are launching"
 	// BroadcastScheduledID is from fixtures/broadcasts.
 	BroadcastScheduledID = 101
 	// BroadcastScheduledName is from fixtures/broadcasts.
 	BroadcastScheduledName = "New SQL course launch"
+	// BroadcastScheduledRenewalID is from fixtures/broadcasts.
+	BroadcastScheduledRenewalID = 109
+	// BroadcastScheduledRenewalName is from fixtures/broadcasts.
+	BroadcastScheduledRenewalName = "Renewal reminder"
+	// BroadcastScheduledRenewalSubject is from fixtures/broadcasts.
+	BroadcastScheduledRenewalSubject = "Your renewal is coming up"
 	// BroadcastScheduledSubject is from fixtures/broadcasts.
 	BroadcastScheduledSubject = "The SQL course is live 🚀"
 	// BroadcastSendingID is from fixtures/broadcasts.
@@ -973,6 +985,10 @@ const (
 	SegmentProPlanID = 100
 	// SegmentProPlanName is from fixtures/segments.
 	SegmentProPlanName = "Pro & team members"
+	// SegmentRenewalAudienceID is from fixtures/segments.
+	SegmentRenewalAudienceID = 107
+	// SegmentRenewalAudienceName is from fixtures/segments.
+	SegmentRenewalAudienceName = "Renewal audience"
 	// SegmentRetiredID is from fixtures/segments.
 	SegmentRetiredID = 104
 	// SegmentRetiredName is from fixtures/segments.
@@ -1001,6 +1017,10 @@ const (
 	SendingDomainKramericaDomain = "mail.kramerica.test"
 	// SendingDomainKramericaID is from fixtures/sending_domains.
 	SendingDomainKramericaID = 420
+	// SendingDomainLaunchDomain is from fixtures/sending_domains.
+	SendingDomainLaunchDomain = "launch.acme.com"
+	// SendingDomainLaunchID is from fixtures/sending_domains.
+	SendingDomainLaunchID = 5
 	// SendingDomainSoylentDomain is from fixtures/sending_domains.
 	SendingDomainSoylentDomain = "mail.soylent.test"
 	// SendingDomainSoylentID is from fixtures/sending_domains.

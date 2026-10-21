@@ -182,6 +182,35 @@
   created_at: '{{daysAgo 61}}'
   updated_at: '{{daysAgo 60}}'
 
+# Scheduled to its own Segment, so archiving that Segment is refused while this Broadcast is live.
+- id: 109 # fixture: BroadcastScheduledRenewal
+  name: Renewal reminder
+  subject: Your renewal is coming up
+  from_name: CodeBasics
+  from_email: hello@renewal.acme.com
+  body: '<p>Lorem ipsum learning content.</p>'
+  status: scheduled
+  scheduled_at: '{{daysAhead 4}}'
+  segment_id: 107
+  integration_id: 20
+  workspace_id: 1
+  created_at: '{{daysAgo 2}}'
+  updated_at: '{{daysAgo 1}}'
+# Scheduled from an address on its own Sending domain, so archiving that domain is refused while
+# this Broadcast is live.
+- id: 110 # fixture: BroadcastScheduledFromLaunchDomain
+  name: Launch announcement
+  subject: We are launching
+  from_name: CodeBasics
+  from_email: hello@launch.acme.com
+  body: '<p>Lorem ipsum learning content.</p>'
+  status: scheduled
+  scheduled_at: '{{daysAhead 5}}'
+  integration_id: 20
+  workspace_id: 1
+  created_at: '{{daysAgo 2}}'
+  updated_at: '{{daysAgo 1}}'
+
 # --- Globex (workspace 2) foreign row — DO NOT change ---
 - id: 900 # fixture: BroadcastGlobex
   name: Globex only

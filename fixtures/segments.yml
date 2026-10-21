@@ -57,6 +57,12 @@
   discarded_at: '{{daysAgo 5}}'
   created_at: '{{daysAgo 50}}'
   updated_at: '{{daysAgo 5}}'
+# Only the scheduled Broadcast 109 uses it.
+- id: 107 # fixture: SegmentRenewalAudience
+  name: Renewal audience
+  workspace_id: 1
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 3}}'
 
 # --- Globex (workspace 2) foreign row — DO NOT change ---
 - id: 900 # fixture: SegmentGlobex

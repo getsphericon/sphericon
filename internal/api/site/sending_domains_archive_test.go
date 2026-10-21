@@ -117,13 +117,9 @@ func TestSiteSendingDomainsUnarchiveStartsOverFromPending(t *testing.T) {
 func TestSiteSendingDomainsArchiveRefusedWhileLiveWorkSendsFromIt(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
-	acme := env.DB.Scoped(fixtures.AcmeID)
-	_, err := acme.Broadcast().UpdateOneID(fixtures.BroadcastScheduledID).SetFromEmail("hello@" + fixtures.SendingDomainUnverifiedDomain).Save(ctx)
-	require.NoError(t, err)
 
-	refused, ok := archiveSendingDomain(t, c, fixtures.SendingDomainUnverifiedID).(*siteapi.InUseProblemDetails)
+	refused, ok := archiveSendingDomain(t, c, fixtures.SendingDomainLaunchID).(*siteapi.InUseProblemDetails)
 	require.True(t, ok)
-	assert.Equal(t, map[siteapi.UsedByKind][]string{siteapi.UsedByKindBroadcast: {fixtures.BroadcastScheduledName}}, usedBy(refused))
-	assert.Contains(t, listSendingDomains(t, c, false), int64(fixtures.SendingDomainUnverifiedID))
+	assert.Equal(t, map[siteapi.UsedByKind][]string{siteapi.UsedByKindBroadcast: {fixtures.BroadcastScheduledFromLaunchDomainName}}, usedBy(refused))
+	assert.Contains(t, listSendingDomains(t, c, false), int64(fixtures.SendingDomainLaunchID))
 }
