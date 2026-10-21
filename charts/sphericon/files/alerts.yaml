@@ -127,13 +127,13 @@ groups:
           runbook_url: https://getsphericon.com/docs/operations/runbook#sphericondbpoolsaturated
 
       - alert: SphericonDBPoolWaits
-        expr: sum by (pool) (increase(db_pool_wait_count[15m]) or increase(db_pool_empty_acquire_count[15m])) > 100
+        expr: sum by (pool) (increase(db_pool_wait_count[15m])) > 100
         for: 15m
         labels:
           severity: warning
         annotations:
           summary: Requests are waiting for a connection from pool {{ $labels.pool }}
-          description: More than 100 connection waits in 15 minutes on pool {{ $labels.pool }} (database/sql waits for pool sql, pgx empty-pool acquires for pool pgx).
+          description: More than 100 connection waits in 15 minutes on pool {{ $labels.pool }} (the app pool is sql, the job queue pool is river).
           runbook_url: https://getsphericon.com/docs/operations/runbook#sphericondbpoolwaits
 
   - name: sphericon.deliverability

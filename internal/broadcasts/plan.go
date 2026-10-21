@@ -90,7 +90,7 @@ func (d *Delivery) run(ctx context.Context, s *ent.Scoped, id int64, sched Sched
 }
 
 // Due reports whether a queued send job should still run. A Broadcast that is back in draft
-// was unscheduled (or its enqueue was reverted) after the job was queued. A delayed job
+// was unscheduled after the job was queued. A delayed job
 // (jobScheduledAt set) is also bound to the schedule it was enqueued for: unscheduling leaves
 // it queued, so after a reschedule the Broadcast carries a different scheduled_at (or none,
 // once sent now) and the superseded job must not send it early.
