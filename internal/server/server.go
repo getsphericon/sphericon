@@ -274,7 +274,7 @@ func problemErrorHandler(ctx context.Context, w http.ResponseWriter, r *http.Req
 	}
 	// The client is told nothing about a server fault, so the log is the only place it shows.
 	if code >= http.StatusInternalServerError {
-		slog.ErrorContext(ctx, "request failed", "method", r.Method, "path", r.URL.Path, "error", err)
+		slog.ErrorContext(ctx, "request failed", "method", r.Method, "path", loggedPath(r.URL.Path), "error", err)
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(code)
@@ -377,7 +377,7 @@ func recoverer(next http.Handler) http.Handler {
 				logger.Error("panic recovered",
 					"err", rec,
 					"method", r.Method,
-					"path", r.URL.Path,
+					"path", loggedPath(r.URL.Path),
 					"stack", stack,
 				)
 				dbg := debugProblem(r, w, fmt.Sprint(rec), stack)
