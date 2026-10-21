@@ -226,7 +226,7 @@ func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.Broadca
 func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params, archived bool) (pagination.Page[*ent.Broadcast], error) {
 	rows := func() *ent.BroadcastQuery {
 		if archived {
-			return s.Broadcast().QueryWithDiscarded().Where(broadcast.DiscardedAtNotNil())
+			return s.Broadcast().QueryDiscarded()
 		}
 		return s.Broadcast().Query()
 	}
@@ -334,11 +334,10 @@ func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) error {
 // Unarchive brings an archived Broadcast back to the lists. Restoring a Broadcast that is not
 // archived changes nothing.
 func (m *Module) Unarchive(ctx context.Context, s *ent.Scoped, id int64) error {
-	err := s.Broadcast().Undiscard(ctx, id)
-	if !ent.IsNotFound(err) {
-		return err
+	err := s.Broadcast().Restore(ctx, id)
+	if ent.IsNotFound(err) {
+		return ErrNotFound
 	}
-	_, err = m.Get(ctx, s, id)
 	return err
 }
 

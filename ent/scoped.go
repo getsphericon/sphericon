@@ -2013,6 +2013,11 @@ func (t *AutomationScoped) QueryWithDiscarded() *AutomationQuery {
 	return t.s.c.Automation.Query().Where(automation.WorkspaceID(t.s.ws))
 }
 
+// QueryDiscarded returns a Automation query confined to the Workspace that sees only discarded rows.
+func (t *AutomationScoped) QueryDiscarded() *AutomationQuery {
+	return t.QueryWithDiscarded().Where(automation.DiscardedAtNotNil())
+}
+
 // Get returns the Automation with the id, discarded or not; a row of another Workspace is not found.
 func (t *AutomationScoped) Get(ctx context.Context, id int64) (*Automation, error) {
 	return t.QueryWithDiscarded().Where(automation.ID(id)).Only(ctx)
@@ -2028,6 +2033,17 @@ func (t *AutomationScoped) Discard(ctx context.Context, id int64, ps ...predicat
 // discarded is not found.
 func (t *AutomationScoped) Undiscard(ctx context.Context, id int64) error {
 	return t.setDiscarded(ctx, id, false, nil)
+}
+
+// Restore is Undiscard that leaves a kept Automation as it is: only a row that does not exist in the
+// Workspace is not found.
+func (t *AutomationScoped) Restore(ctx context.Context, id int64) error {
+	err := t.Undiscard(ctx, id)
+	if !IsNotFound(err) {
+		return err
+	}
+	_, err = t.Get(ctx, id)
+	return err
 }
 
 func (t *AutomationScoped) setDiscarded(ctx context.Context, id int64, discard bool, ps []predicate.Automation) error {
@@ -5603,6 +5619,11 @@ func (t *BroadcastScoped) QueryWithDiscarded() *BroadcastQuery {
 	return t.s.c.Broadcast.Query().Where(broadcast.WorkspaceID(t.s.ws))
 }
 
+// QueryDiscarded returns a Broadcast query confined to the Workspace that sees only discarded rows.
+func (t *BroadcastScoped) QueryDiscarded() *BroadcastQuery {
+	return t.QueryWithDiscarded().Where(broadcast.DiscardedAtNotNil())
+}
+
 // Get returns the Broadcast with the id, discarded or not; a row of another Workspace is not found.
 func (t *BroadcastScoped) Get(ctx context.Context, id int64) (*Broadcast, error) {
 	return t.QueryWithDiscarded().Where(broadcast.ID(id)).Only(ctx)
@@ -5618,6 +5639,17 @@ func (t *BroadcastScoped) Discard(ctx context.Context, id int64, ps ...predicate
 // discarded is not found.
 func (t *BroadcastScoped) Undiscard(ctx context.Context, id int64) error {
 	return t.setDiscarded(ctx, id, false, nil)
+}
+
+// Restore is Undiscard that leaves a kept Broadcast as it is: only a row that does not exist in the
+// Workspace is not found.
+func (t *BroadcastScoped) Restore(ctx context.Context, id int64) error {
+	err := t.Undiscard(ctx, id)
+	if !IsNotFound(err) {
+		return err
+	}
+	_, err = t.Get(ctx, id)
+	return err
 }
 
 func (t *BroadcastScoped) setDiscarded(ctx context.Context, id int64, discard bool, ps []predicate.Broadcast) error {
@@ -13832,6 +13864,11 @@ func (t *IntegrationScoped) QueryWithDiscarded() *IntegrationQuery {
 	return t.s.c.Integration.Query().Where(integration.WorkspaceID(t.s.ws))
 }
 
+// QueryDiscarded returns a Integration query confined to the Workspace that sees only discarded rows.
+func (t *IntegrationScoped) QueryDiscarded() *IntegrationQuery {
+	return t.QueryWithDiscarded().Where(integration.DiscardedAtNotNil())
+}
+
 // Get returns the Integration with the id, discarded or not; a row of another Workspace is not found.
 func (t *IntegrationScoped) Get(ctx context.Context, id int64) (*Integration, error) {
 	return t.QueryWithDiscarded().Where(integration.ID(id)).Only(ctx)
@@ -13847,6 +13884,17 @@ func (t *IntegrationScoped) Discard(ctx context.Context, id int64, ps ...predica
 // discarded is not found.
 func (t *IntegrationScoped) Undiscard(ctx context.Context, id int64) error {
 	return t.setDiscarded(ctx, id, false, nil)
+}
+
+// Restore is Undiscard that leaves a kept Integration as it is: only a row that does not exist in the
+// Workspace is not found.
+func (t *IntegrationScoped) Restore(ctx context.Context, id int64) error {
+	err := t.Undiscard(ctx, id)
+	if !IsNotFound(err) {
+		return err
+	}
+	_, err = t.Get(ctx, id)
+	return err
 }
 
 func (t *IntegrationScoped) setDiscarded(ctx context.Context, id int64, discard bool, ps []predicate.Integration) error {
@@ -19370,6 +19418,11 @@ func (t *SegmentScoped) QueryWithDiscarded() *SegmentQuery {
 	return t.s.c.Segment.Query().Where(segment.WorkspaceID(t.s.ws))
 }
 
+// QueryDiscarded returns a Segment query confined to the Workspace that sees only discarded rows.
+func (t *SegmentScoped) QueryDiscarded() *SegmentQuery {
+	return t.QueryWithDiscarded().Where(segment.DiscardedAtNotNil())
+}
+
 // Get returns the Segment with the id, discarded or not; a row of another Workspace is not found.
 func (t *SegmentScoped) Get(ctx context.Context, id int64) (*Segment, error) {
 	return t.QueryWithDiscarded().Where(segment.ID(id)).Only(ctx)
@@ -19385,6 +19438,17 @@ func (t *SegmentScoped) Discard(ctx context.Context, id int64, ps ...predicate.S
 // discarded is not found.
 func (t *SegmentScoped) Undiscard(ctx context.Context, id int64) error {
 	return t.setDiscarded(ctx, id, false, nil)
+}
+
+// Restore is Undiscard that leaves a kept Segment as it is: only a row that does not exist in the
+// Workspace is not found.
+func (t *SegmentScoped) Restore(ctx context.Context, id int64) error {
+	err := t.Undiscard(ctx, id)
+	if !IsNotFound(err) {
+		return err
+	}
+	_, err = t.Get(ctx, id)
+	return err
 }
 
 func (t *SegmentScoped) setDiscarded(ctx context.Context, id int64, discard bool, ps []predicate.Segment) error {
@@ -20756,6 +20820,11 @@ func (t *SendingDomainScoped) QueryWithDiscarded() *SendingDomainQuery {
 	return t.s.c.SendingDomain.Query().Where(sendingdomain.WorkspaceID(t.s.ws))
 }
 
+// QueryDiscarded returns a SendingDomain query confined to the Workspace that sees only discarded rows.
+func (t *SendingDomainScoped) QueryDiscarded() *SendingDomainQuery {
+	return t.QueryWithDiscarded().Where(sendingdomain.DiscardedAtNotNil())
+}
+
 // Get returns the SendingDomain with the id, discarded or not; a row of another Workspace is not found.
 func (t *SendingDomainScoped) Get(ctx context.Context, id int64) (*SendingDomain, error) {
 	return t.QueryWithDiscarded().Where(sendingdomain.ID(id)).Only(ctx)
@@ -20771,6 +20840,17 @@ func (t *SendingDomainScoped) Discard(ctx context.Context, id int64, ps ...predi
 // discarded is not found.
 func (t *SendingDomainScoped) Undiscard(ctx context.Context, id int64) error {
 	return t.setDiscarded(ctx, id, false, nil)
+}
+
+// Restore is Undiscard that leaves a kept SendingDomain as it is: only a row that does not exist in the
+// Workspace is not found.
+func (t *SendingDomainScoped) Restore(ctx context.Context, id int64) error {
+	err := t.Undiscard(ctx, id)
+	if !IsNotFound(err) {
+		return err
+	}
+	_, err = t.Get(ctx, id)
+	return err
 }
 
 func (t *SendingDomainScoped) setDiscarded(ctx context.Context, id int64, discard bool, ps []predicate.SendingDomain) error {

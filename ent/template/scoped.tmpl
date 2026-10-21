@@ -128,6 +128,11 @@ func (t *{{ $N }}Scoped) Query() *{{ $N }}Query {
 func (t *{{ $N }}Scoped) QueryWithDiscarded() *{{ $N }}Query {
 	return t.s.c.{{ $N }}.Query().Where({{ $P }}.WorkspaceID(t.s.ws))
 }
+
+// QueryDiscarded returns a {{ $N }} query confined to the Workspace that sees only discarded rows.
+func (t *{{ $N }}Scoped) QueryDiscarded() *{{ $N }}Query {
+	return t.QueryWithDiscarded().Where({{ $P }}.DiscardedAtNotNil())
+}
 {{ end }}
 // Get returns the {{ $N }} with the id{{ if $D }}, discarded or not{{ end }}; a row of another Workspace is not found.
 func (t *{{ $N }}Scoped) Get(ctx context.Context, id int64) (*{{ $N }}, error) {
@@ -144,6 +149,17 @@ func (t *{{ $N }}Scoped) Discard(ctx context.Context, id int64, ps ...predicate.
 // discarded is not found.
 func (t *{{ $N }}Scoped) Undiscard(ctx context.Context, id int64) error {
 	return t.setDiscarded(ctx, id, false, nil)
+}
+
+// Restore is Undiscard that leaves a kept {{ $N }} as it is: only a row that does not exist in the
+// Workspace is not found.
+func (t *{{ $N }}Scoped) Restore(ctx context.Context, id int64) error {
+	err := t.Undiscard(ctx, id)
+	if !IsNotFound(err) {
+		return err
+	}
+	_, err = t.Get(ctx, id)
+	return err
 }
 
 func (t *{{ $N }}Scoped) setDiscarded(ctx context.Context, id int64, discard bool, ps []predicate.{{ $N }}) error {

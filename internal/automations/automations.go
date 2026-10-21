@@ -246,7 +246,7 @@ func UsingTag(ctx context.Context, s *ent.Scoped, name string) ([]*ent.Automatio
 func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params, archived bool) (pagination.Page[*ent.Automation], error) {
 	rows := func() *ent.AutomationQuery {
 		if archived {
-			return s.Automation().QueryWithDiscarded().Where(automation.DiscardedAtNotNil())
+			return s.Automation().QueryDiscarded()
 		}
 		return s.Automation().Query()
 	}
@@ -433,12 +433,7 @@ func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) error {
 // Unarchive brings an archived Automation back to the lists. Restoring one that is not
 // archived changes nothing.
 func (m *Module) Unarchive(ctx context.Context, s *ent.Scoped, id int64) error {
-	err := s.Automation().Undiscard(ctx, id)
-	if !ent.IsNotFound(err) {
-		return err
-	}
-	_, err = m.Get(ctx, s, id)
-	return err
+	return notFound(s.Automation().Restore(ctx, id))
 }
 
 // Activate starts enrolling Contacts into the Automation.

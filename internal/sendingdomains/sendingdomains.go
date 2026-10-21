@@ -386,7 +386,7 @@ func validSelector(raw string) (string, error) {
 func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params, archived bool) (pagination.Page[*ent.SendingDomain], error) {
 	rows := func() *ent.SendingDomainQuery {
 		if archived {
-			return s.SendingDomain().QueryWithDiscarded().Where(sendingdomain.DiscardedAtNotNil())
+			return s.SendingDomain().QueryDiscarded()
 		}
 		return s.SendingDomain().Query()
 	}

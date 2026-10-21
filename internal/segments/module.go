@@ -119,7 +119,7 @@ func (s *Module) Count(ctx context.Context, ws *ent.Scoped, id int64) (int, erro
 func (s *Module) List(ctx context.Context, ws *ent.Scoped, p pagination.Params, archived bool) (pagination.Page[*ent.Segment], error) {
 	rows := func() *ent.SegmentQuery {
 		if archived {
-			return ws.Segment().QueryWithDiscarded().Where(segment.DiscardedAtNotNil())
+			return ws.Segment().QueryDiscarded()
 		}
 		return ws.Segment().Query()
 	}
@@ -163,11 +163,7 @@ func (s *Module) Archive(ctx context.Context, ws *ent.Scoped, id int64) error {
 // Unarchive brings an archived Segment back to the lists. Restoring one that is not archived
 // changes nothing; a missing Segment is ErrNotFound.
 func (s *Module) Unarchive(ctx context.Context, ws *ent.Scoped, id int64) error {
-	err := ws.Segment().Undiscard(ctx, id)
-	if !ent.IsNotFound(err) {
-		return err
-	}
-	_, err = ws.Segment().Get(ctx, id)
+	err := ws.Segment().Restore(ctx, id)
 	if ent.IsNotFound(err) {
 		return ErrNotFound
 	}

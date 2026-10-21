@@ -362,12 +362,7 @@ func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) error {
 // again. Restoring an Integration that is not archived changes nothing. An unknown id is ent's
 // not-found error.
 func (m *Module) Unarchive(ctx context.Context, s *ent.Scoped, id int64) error {
-	err := s.Integration().Undiscard(ctx, id)
-	if !ent.IsNotFound(err) {
-		return err
-	}
-	_, err = s.Integration().Get(ctx, id)
-	return err
+	return s.Integration().Restore(ctx, id)
 }
 
 // liveUsers is the live work that uses the Integration.
@@ -581,7 +576,7 @@ func (m *Module) Redact(row *ent.Integration) (RedactedConfig, error) {
 // rows is the Workspace's Integrations: the kept ones, or with archived the archived ones.
 func rows(s *ent.Scoped, archived bool) *ent.IntegrationQuery {
 	if archived {
-		return s.Integration().QueryWithDiscarded().Where(integration.DiscardedAtNotNil())
+		return s.Integration().QueryDiscarded()
 	}
 	return s.Integration().Query()
 }
