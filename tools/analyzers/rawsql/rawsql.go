@@ -1,4 +1,4 @@
-// Package rawsql enforces rule 4 of docs/agents/review-lenses.md for raw SQL: a statement run as text
+// Package rawsql enforces rule 4 of docs/agents/review-rules.md for raw SQL: a statement run as text
 // (ExecContext, QueryContext, QueryRowContext and database/sql's Exec, Query, QueryRow) or a raw
 // fragment spliced into an ent query (entgo.io/ent/dialect/sql's P, ExprFunc, Expr, ExprP, Raw) must
 // carry a comment `// raw sql: <why ent cannot express it>` on the line above the statement or call, or
