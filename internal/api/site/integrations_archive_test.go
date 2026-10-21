@@ -3,6 +3,7 @@ package site_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -91,7 +92,7 @@ func TestSiteIntegrationsArchivingTheDefaultClearsItAndRestoreDoesNotReturnIt(t 
 	id := int64(fixtures.IntegrationAcmeDefaultID)
 
 	// Only history uses the default now: finished Broadcasts, and no active Automation.
-	_, err := acme.Broadcast().Update().Where(broadcast.StatusIn(broadcast.StatusScheduled, broadcast.StatusSending)).SetStatus(broadcast.StatusSent).Save(ctx)
+	_, err := acme.Broadcast().Update().Where(broadcast.StatusIn(broadcast.StatusScheduled, broadcast.StatusSending)).SetStatus(broadcast.StatusSent).SetSentAt(time.Now()).Save(ctx)
 	require.NoError(t, err)
 	_, err = acme.Automation().Update().SetStatus(automation.StatusDraft).Save(ctx)
 	require.NoError(t, err)
