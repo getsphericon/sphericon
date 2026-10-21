@@ -104,3 +104,6 @@ mise.local.toml
 
 # Schemathesis (mise run check:contract) caches what it learns about the API here.
 .schemathesis/
+
+# The golangci-lint build with our analyzers (mise run build:lint)
+/.bin/

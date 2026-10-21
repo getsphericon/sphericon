@@ -25,7 +25,13 @@ local linters = new Mapping {
         check = "pnpm exec knip"
         exclusive = true
     }
-    ["golangci_lint"] = Builtins.golangci_lint
+    // The build with our analyzers (tools/analyzers), never a stock golangci-lint: the config
+    // enables the linter "sphericon", which only that binary has.
+    ["golangci_lint"] {
+        glob = List("**/*.go")
+        check = "mise run build:lint && .bin/custom-gcl run ./..."
+        fix = "mise run build:lint && .bin/custom-gcl run --fix ./..."
+    }
     // Check only: the builtin runs `zizmor --fix` in fix mode and rewrites workflows.
     ["zizmor"] {
         glob = List(".github/workflows/*.yml", ".github/workflows/*.yaml", ".github/dependabot.yml")

@@ -25,7 +25,13 @@ linters:
     - testifylint
     - thelper
     - usetesting
+    # Our own go/analysis checks (tools/analyzers), built into .bin/custom-gcl by `mise run build:lint`.
+    - sphericon
   settings:
+    custom:
+      sphericon:
+        type: module
+        description: the project's review rules that need Go types (docs/agents/review-lenses.md)
     exhaustive:
       # A switch with a default says what happens to every other member; it is checked only for
       # the enums this repository defines, not for html.TokenType, reflect.Kind or yaml.Kind.

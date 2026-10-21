@@ -71,7 +71,7 @@ mise run dev            # db:up, then mise daemons start caddy — full dev stac
 mise run dev:down       # stop this checkout's dev stack (never the shared Postgres)
 mise run dev:restart    # dev:down, then dev
 mise run test           # creates the test DB, then `go test ./...` (packages in parallel)
-mise run check          # tsc + oxlint + oxfmt --check + knip + golangci-lint (incl. gofmt) + gitleaks + jactionlint + zizmor
+mise run check          # tsc + oxlint + oxfmt --check + knip + golangci-lint with our analyzers (tools/analyzers, see CODING_STANDARDS.md; incl. gofmt) + gitleaks + jactionlint + zizmor
 mise run test:cover     # Go suite with coverage, fails under the total in .testcoverage.yml (nightly in CI)
 mise run check:vulns    # govulncheck (nightly in CI, not part of `check`)
 mise run fix            # i18n extract + oxlint --fix + tsp format + oxfmt + go fmt

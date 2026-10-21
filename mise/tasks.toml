@@ -439,8 +439,30 @@ run = [
 ]
 
 ["check:be"]
-description = "golangci-lint (incl. the gofmt formatter) and go.mod tidiness"
-run = ["mise/scripts/heavy.sh golangci-lint run --allow-serial-runners ./...", "go mod tidy -diff"]
+description = "golangci-lint with our analyzers (incl. the gofmt formatter), the analyzers' own tests, and go.mod tidiness"
+depends = ["build:lint", "check:lint-pins"]
+run = [
+  "mise/scripts/heavy.sh .bin/custom-gcl run --allow-serial-runners ./...",
+  "cd tools/analyzers && ../../mise/scripts/heavy.sh ../../.bin/custom-gcl run --allow-serial-runners --config ../../.golangci.yml ./... && go test ./...",
+  "go mod tidy -diff",
+  "cd tools/analyzers && go mod tidy -diff",
+]
+
+["build:lint"]
+description = "Build .bin/custom-gcl: golangci-lint with our analyzers (.custom-gcl.yml, tools/analyzers); rebuilt only when they change"
+sources = [
+  ".custom-gcl.yml",
+  "tools/analyzers/**/*.go",
+  "tools/analyzers/go.mod",
+  "tools/analyzers/go.sum",
+  "mise.lock",
+]
+outputs = [".bin/custom-gcl"]
+run = "mise/scripts/heavy.sh golangci-lint custom"
+
+["check:lint-pins"]
+description = "The golangci-lint version of .custom-gcl.yml is the pinned one, and the analyzers' x/tools and plugin-register versions are the ones that golangci-lint itself uses"
+run = "mise/scripts/check-lint-pins.sh"
 
 ["check:schema"]
 description = "schemalens: the ent schema and the migrated database agree, and the database passes its rules"

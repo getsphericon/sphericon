@@ -11,6 +11,31 @@ The rules a change is reviewed against. How the repo is built, run and generated
   The same goes for production code: `rows, err := ...` first, then the `if` or the `return` that
   uses them. A test that fails then shows which step produced the wrong value.
 
+## Project checks
+
+Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs/agents/review-lenses.md`).
+
+- **Syntax only: an ast-grep rule** (`ast-grep/rules`, tests in `ast-grep/tests`, run by `mise run check:ast`).
+- **Needs Go types: an analyzer of our own** (`tools/analyzers`, its own Go module). It is a
+  `go/analysis` analyzer compiled into golangci-lint by `golangci-lint custom` (`.custom-gcl.yml`,
+  `mise run build:lint` -> `.bin/custom-gcl`) and enabled as the linter `sphericon` in `.golangci.yml`.
+  `check:be`, CI and the heavy-command wrapper all run that build, never a stock `golangci-lint`.
+  The `golang.org/x/tools` and `plugin-module-register` versions in `tools/analyzers/go.mod` must be
+  the ones the pinned golangci-lint uses, and `.custom-gcl.yml`'s `version` must be the one in
+  `mise.lock`; `mise run check:lint-pins` fails otherwise and prints the command that fixes it.
+- **Message contract.** A finding begins with the rule number and ends with how to fix it:
+  `rule <n>: <what is wrong>; fix: <what to do instead>`. Build it with `rule.Message(n, what, fix)`
+  (`tools/analyzers/rule`), never by hand.
+- **A check is on at once.** Run it over the repository and fix every finding in the same change; there
+  is no baseline of known violations and no ignore list.
+- **Adding an analyzer.** (1) Create `tools/analyzers/<name>/` with `Analyzer` (see `noprint`) and report
+  through `rule.Message`. (2) Write `<name>_test.go` with `analysistest.Run` and a test data package per
+  case under `testdata/src/` (a `bad` package whose violating lines carry `// want` with the message
+  regexp, and a `clean` one that must report nothing); watch it fail, then make it pass. (3) Add the
+  analyzer to `BuildAnalyzers` in `tools/analyzers/plugin.go`. (4) `mise run check:be` rebuilds the linter,
+  runs it over the repository and the analyzers' tests; fix everything it finds. `noprint` (rule 0) is the
+  sample that proves the pipeline.
+
 ## Database
 
 - **Plain tables only: no database functions, triggers, stored procedures or views.** The schema is
