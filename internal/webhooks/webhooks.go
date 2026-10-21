@@ -69,12 +69,14 @@ type Module struct {
 	cipher *secrets.Cipher
 	lic    Licensing
 	client webhook.Doer
+	notify Notify
 }
 
 // New builds the module. lic may be nil (unlicensed). client is the one hardened
-// outbound client, used by TestSend.
-func New(bus *events.Bus, cipher *secrets.Cipher, lic Licensing, client webhook.Doer) *Module {
-	return &Module{bus: bus, cipher: cipher, lic: lic, client: client}
+// outbound client, used by TestSend. notify mails the Owners when an endpoint disables
+// itself; nil sends nothing.
+func New(bus *events.Bus, cipher *secrets.Cipher, lic Licensing, client webhook.Doer, notify Notify) *Module {
+	return &Module{bus: bus, cipher: cipher, lic: lic, client: client, notify: notify}
 }
 
 // TestSendTimeout bounds a test delivery, the same budget as a real one.

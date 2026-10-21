@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/webhook"
+	"github.com/getsphericon/sphericon/internal/webhooks"
 	"github.com/getsphericon/sphericon/internal/workspacedeletion"
 )
 
@@ -36,7 +37,7 @@ func NewMemberInviteWorker(sender messaging.EmailSender) *SendMemberInviteWorker
 }
 
 func NewDeliverWebhookWorker(client *ent.Client, cipher *secrets.Cipher, doer webhook.Doer, now func() time.Time, bus *events.Bus, sender messaging.EmailSender) *DeliverWebhookWorker {
-	return &DeliverWebhookWorker{ent: client, cipher: cipher, client: doer, now: now, bus: bus, sender: sender}
+	return &DeliverWebhookWorker{ent: client, cipher: cipher, client: doer, now: now, mod: webhooks.New(bus, cipher, nil, nil, webhooks.Notify(OwnerNotifier(client, sender)))}
 }
 
 func NewVerifySendingDomainWorker(mod *domainverify.Module) *VerifySendingDomainWorker {

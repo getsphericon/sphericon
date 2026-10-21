@@ -26,6 +26,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/sending"
 	"github.com/getsphericon/sphericon/internal/trackingdomain"
 	"github.com/getsphericon/sphericon/internal/webhook"
+	"github.com/getsphericon/sphericon/internal/webhooks"
 	"github.com/getsphericon/sphericon/internal/workspacedeletion"
 )
 
@@ -89,8 +90,7 @@ func NewClient(riverDB *sql.DB, entClient *ent.Client, mod *outbound.Module, cip
 		cipher: cipher,
 		client: webhook.NewClientAllowing(webhookDeliveryTimeout, outboundAllow),
 		now:    time.Now,
-		bus:    bus,
-		sender: systemSender,
+		mod:    webhooks.New(bus, cipher, nil, nil, webhooks.Notify(OwnerNotifier(entClient, systemSender))),
 	})
 	river.AddWorker(workers, &SendWelcomeWorker{sender: systemSender})
 	river.AddWorker(workers, &SendAuthMailWorker{sender: systemSender, appURL: appURL})

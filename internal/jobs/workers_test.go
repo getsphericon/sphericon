@@ -446,14 +446,6 @@ func newDisableHarness(t *testing.T) *disableHarness {
 	return h
 }
 
-// run puts the endpoint mid-run: failures already in a row, the first of them failingFor ago.
-func (h *disableHarness) run(failures int, failingFor time.Duration) {
-	h.t.Helper()
-	_, err := h.env.DB.Scoped(fixtures.AcmeID).WebhookEndpoint().UpdateOneID(fixtures.WebhookCodebasicsID).
-		SetConsecutiveFailures(failures).SetFailingSince(h.clock.Add(-failingFor)).Save(context.Background())
-	require.NoError(h.t, err)
-}
-
 func (h *disableHarness) deliver() error {
 	return h.w.Work(context.Background(), job(jobs.DeliverWebhookArgs{
 		EndpointID: fixtures.WebhookCodebasicsID, EventName: "email.opened", DeliveryID: "msg_1", Body: []byte(`{}`),
@@ -503,34 +495,6 @@ func TestDeliverWebhookWorkerDisablesOnGone(t *testing.T) {
 	require.NoError(t, h.deliver())
 	assert.Len(t, h.rcv.received(), before)
 	assert.Len(t, h.env.SystemMail.Messages(), len(owners))
-}
-
-// A run of failures disables only when it has both reached the count and lasted the window.
-func TestDeliverWebhookWorkerDisablesOnPersistentFailure(t *testing.T) {
-	h := newDisableHarness(t)
-	h.rcv.setStatus(http.StatusServiceUnavailable)
-
-	// The count is reached inside the window (a restart in the middle of a burst): still enabled.
-	h.run(jobs.WebhookDisableFailures-1, jobs.WebhookDisableWindow-time.Minute)
-	require.Error(t, h.deliver())
-	e := h.endpoint()
-	assert.Equal(t, jobs.WebhookDisableFailures, *e.ConsecutiveFailures)
-	assert.True(t, e.Enabled)
-
-	// The window has passed but the count is not there: still enabled.
-	h.run(jobs.WebhookDisableFailures-2, 2*jobs.WebhookDisableWindow)
-	require.Error(t, h.deliver())
-	assert.True(t, h.endpoint().Enabled)
-	assert.Empty(t, h.env.SystemMail.Messages())
-
-	// Both: disabled, with the reason, and the owners told.
-	h.run(jobs.WebhookDisableFailures-1, jobs.WebhookDisableWindow)
-	require.Error(t, h.deliver())
-	e = h.endpoint()
-	assert.False(t, e.Enabled)
-	require.NotNil(t, e.DisabledReason)
-	assert.Equal(t, webhookendpoint.DisabledReasonPersistentFailure, *e.DisabledReason)
-	assert.NotEmpty(t, h.env.SystemMail.Messages())
 }
 
 func TestVerifySendingDomainWorker(t *testing.T) {

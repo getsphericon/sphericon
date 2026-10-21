@@ -393,7 +393,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	templatesModule := templates.New()
 	brandKitModule := brandkit.New(bus, templatesModule)
 	tagsModule := tags.New()
-	webhooksModule := webhooks.New(bus, cipher, edition.Audit, webhook.NewClientAllowing(webhooks.TestSendTimeout, cfg.OutboundAllow))
+	webhooksModule := webhooks.New(bus, cipher, edition.Audit, webhook.NewClientAllowing(webhooks.TestSendTimeout, cfg.OutboundAllow), nil)
 	// An `sns` Preset checks signatures against the test certificate, so a test posts a
 	// notification signed offline; confirmations are recorded, never fetched.
 	certs := st.certs

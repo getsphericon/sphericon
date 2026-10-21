@@ -3,6 +3,7 @@ package webhooks_test
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -14,10 +15,12 @@ import (
 
 	standardwebhooks "github.com/standard-webhooks/standard-webhooks/libraries/go"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/pagination"
@@ -31,7 +34,7 @@ type license bool
 func (l license) Licensed() bool { return bool(l) }
 
 func module(env *testhelper.TestEnv, lic webhooks.Licensing) *webhooks.Module {
-	return webhooks.New(env.Bus, env.Cipher, lic, webhook.NewClient(2*time.Second))
+	return webhooks.New(env.Bus, env.Cipher, lic, webhook.NewClient(2*time.Second), nil)
 }
 
 // moduleAllowing is the module with a client the Instance's allowlist lets reach rcv.
@@ -41,7 +44,7 @@ func moduleAllowing(t *testing.T, env *testhelper.TestEnv, rcv *receiver) *webho
 	require.NoError(t, err)
 	allow, err := webhook.ParseAllowlist(u.Host)
 	require.NoError(t, err)
-	return webhooks.New(env.Bus, env.Cipher, nil, webhook.NewClientAllowing(2*time.Second, allow))
+	return webhooks.New(env.Bus, env.Cipher, nil, webhook.NewClientAllowing(2*time.Second, allow), nil)
 }
 
 // Fixtures (workspace 1): endpoint 100 (codebasics, filtered, secret whsec_Mf...)
@@ -369,4 +372,204 @@ func TestEnablingClearsTheFailureStateAndTheDisabledReason(t *testing.T) {
 	assert.Nil(t, got.LastErrorKind)
 	assert.Nil(t, got.LastErrorStatus)
 	assert.Nil(t, got.LastFailureAt)
+}
+
+// owners records the Owners' notices the module asks for.
+type owners struct {
+	mu   sync.Mutex
+	sent []notice
+}
+
+type notice struct {
+	workspaceID   int64
+	subject, body string
+}
+
+func (o *owners) notify(_ context.Context, workspaceID int64, subject, body string) error {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	o.sent = append(o.sent, notice{workspaceID, subject, body})
+	return nil
+}
+
+func (o *owners) notices() []notice {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	return append([]notice(nil), o.sent...)
+}
+
+// recording is the module over a stub Owners' notifier, with the clock the test injects.
+type recording struct {
+	t      *testing.T
+	env    *testhelper.TestEnv
+	mod    *webhooks.Module
+	owners *owners
+	now    time.Time
+}
+
+func newRecording(t *testing.T) *recording {
+	t.Helper()
+	env := testhelper.Setup(t)
+	o := &owners{}
+	return &recording{
+		t: t, env: env, owners: o,
+		mod: webhooks.New(env.Bus, env.Cipher, nil, webhook.NewClient(2*time.Second), o.notify),
+		now: time.Date(2026, 10, 18, 9, 0, 0, 0, time.UTC),
+	}
+}
+
+func (r *recording) scope() *ent.Scoped { return r.env.DB.Scoped(fixtures.AcmeID) }
+
+func (r *recording) endpoint() *ent.WebhookEndpoint {
+	r.t.Helper()
+	e, err := r.scope().WebhookEndpoint().Get(context.Background(), fixtures.WebhookCodebasicsID)
+	require.NoError(r.t, err)
+	return e
+}
+
+// midRun puts the endpoint mid-run: failures already in a row, the first of them failingFor ago.
+func (r *recording) midRun(failures int, failingFor time.Duration) {
+	r.t.Helper()
+	_, err := r.scope().WebhookEndpoint().UpdateOneID(fixtures.WebhookCodebasicsID).
+		SetConsecutiveFailures(failures).SetFailingSince(r.now.Add(-failingFor)).Save(context.Background())
+	require.NoError(r.t, err)
+}
+
+// record reports one delivery outcome for the endpoint as it is stored now.
+func (r *recording) record(sendErr error) {
+	r.t.Helper()
+	require.NoError(r.t, r.mod.RecordDelivery(context.Background(), r.scope(), r.endpoint(), sendErr, r.now))
+}
+
+func status(code int) error {
+	return &webhook.DeliveryError{Kind: webhook.KindHTTPStatus, Status: code}
+}
+
+// A failed delivery is remembered with a closed error kind, the run keeps its start, and a
+// success clears it all. A failure alone never disables.
+func TestRecordDeliveryRemembersFailuresAndASuccessClearsThem(t *testing.T) {
+	r := newRecording(t)
+
+	r.record(nil)
+	healthy := r.endpoint()
+	assert.Nil(t, healthy.ConsecutiveFailures)
+
+	r.record(status(http.StatusServiceUnavailable))
+	e := r.endpoint()
+	require.NotNil(t, e.ConsecutiveFailures)
+	assert.Equal(t, 1, *e.ConsecutiveFailures)
+	assert.True(t, r.now.Equal(*e.FailingSince))
+	assert.True(t, r.now.Equal(*e.LastFailureAt))
+	assert.Equal(t, webhookendpoint.LastErrorKindHTTPStatus, *e.LastErrorKind)
+	assert.Equal(t, http.StatusServiceUnavailable, *e.LastErrorStatus)
+	assert.True(t, e.Enabled)
+
+	began := r.now
+	r.now = r.now.Add(90 * time.Minute)
+	r.record(&webhook.DeliveryError{Kind: webhook.KindBlockedAddress})
+	e = r.endpoint()
+	assert.Equal(t, 2, *e.ConsecutiveFailures)
+	assert.True(t, began.Equal(*e.FailingSince))
+	assert.True(t, r.now.Equal(*e.LastFailureAt))
+	assert.Equal(t, webhookendpoint.LastErrorKindBlockedAddress, *e.LastErrorKind)
+	assert.Nil(t, e.LastErrorStatus)
+
+	r.record(nil)
+	e = r.endpoint()
+	assert.Nil(t, e.ConsecutiveFailures)
+	assert.Nil(t, e.FailingSince)
+	assert.Nil(t, e.LastErrorKind)
+	assert.Nil(t, e.LastErrorStatus)
+	assert.Nil(t, e.LastFailureAt)
+}
+
+// A 429 is the receiver asking us to slow down: the counters stay as they are. So does an
+// error that is not a delivery outcome (an unusable secret).
+func TestRecordDeliveryLeavesTheCountersAloneOnA429OrANonDeliveryError(t *testing.T) {
+	r := newRecording(t)
+	r.midRun(3, time.Hour)
+
+	r.record(status(http.StatusTooManyRequests))
+	r.record(errors.New("unusable secret"))
+
+	e := r.endpoint()
+	assert.Equal(t, 3, *e.ConsecutiveFailures)
+	assert.True(t, e.Enabled)
+}
+
+// A 410 retires the endpoint on that delivery, whatever the run so far: with the reason, an
+// Audit entry by the system actor (the counter writes are not audited), and one notice to the
+// owners that names the endpoint's origin only.
+func TestRecordDeliveryDisablesOnGoneAndTellsTheOwnersOnce(t *testing.T) {
+	r := newRecording(t)
+	_, err := r.scope().WebhookEndpoint().UpdateOneID(fixtures.WebhookCodebasicsID).
+		SetURL("https://hooks.example.com/path/hidden?token=abc").Save(context.Background())
+	require.NoError(t, err)
+
+	r.record(status(http.StatusGone))
+
+	e := r.endpoint()
+	assert.False(t, e.Enabled)
+	require.NotNil(t, e.DisabledReason)
+	assert.Equal(t, webhookendpoint.DisabledReasonGone, *e.DisabledReason)
+
+	sent := r.owners.notices()
+	require.Len(t, sent, 1)
+	assert.EqualValues(t, fixtures.AcmeID, sent[0].workspaceID)
+	assert.Contains(t, sent[0].subject, "webhook")
+	assert.Contains(t, sent[0].body, "410")
+	assert.Contains(t, sent[0].body, "https://hooks.example.com")
+	assert.NotContains(t, sent[0].body, "hidden")
+
+	entries := lo.FilterMap(r.env.OutboxEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) (*events.AuditEntry, bool) {
+		a := ev.(*events.AuditEntry)
+		return a, a.Action == "webhook_endpoint.update"
+	})
+	require.Len(t, entries, 1)
+	assert.Equal(t, events.ActorSystem, entries[0].Actor.Kind)
+	assert.Contains(t, entries[0].Diff, "enabled")
+
+	// A second failure that lost the race finds it off and tells nobody.
+	r.record(status(http.StatusGone))
+	assert.Len(t, r.owners.notices(), 1)
+}
+
+// A run of failures disables only when it has both reached the count and lasted the window.
+func TestRecordDeliveryDisablesOnlyWhenTheRunReachedTheCountAndTheWindow(t *testing.T) {
+	r := newRecording(t)
+
+	r.midRun(webhooks.DisableFailures-1, webhooks.DisableWindow-time.Minute)
+	r.record(status(http.StatusServiceUnavailable))
+	e := r.endpoint()
+	assert.Equal(t, webhooks.DisableFailures, *e.ConsecutiveFailures)
+	assert.True(t, e.Enabled, "the count inside the window (a restart mid-burst)")
+
+	r.midRun(webhooks.DisableFailures-2, 2*webhooks.DisableWindow)
+	r.record(status(http.StatusServiceUnavailable))
+	assert.True(t, r.endpoint().Enabled, "the window without the count")
+	assert.Empty(t, r.owners.notices())
+
+	r.midRun(webhooks.DisableFailures-1, webhooks.DisableWindow)
+	r.record(status(http.StatusServiceUnavailable))
+	e = r.endpoint()
+	assert.False(t, e.Enabled)
+	require.NotNil(t, e.DisabledReason)
+	assert.Equal(t, webhookendpoint.DisabledReasonPersistentFailure, *e.DisabledReason)
+	assert.Len(t, r.owners.notices(), 1)
+}
+
+// Without a notifier the endpoint still disables.
+func TestRecordDeliveryDisablesWithoutANotifier(t *testing.T) {
+	env := testhelper.Setup(t)
+	mod := webhooks.New(env.Bus, env.Cipher, nil, webhook.NewClient(2*time.Second), nil)
+	acme := env.DB.Scoped(fixtures.AcmeID)
+	e, err := acme.WebhookEndpoint().Get(context.Background(), fixtures.WebhookCodebasicsID)
+	require.NoError(t, err)
+
+	err = mod.RecordDelivery(context.Background(), acme, e, status(http.StatusGone), time.Now())
+	require.NoError(t, err)
+
+	after, err := acme.WebhookEndpoint().Get(context.Background(), fixtures.WebhookCodebasicsID)
+	require.NoError(t, err)
+	assert.False(t, after.Enabled)
 }

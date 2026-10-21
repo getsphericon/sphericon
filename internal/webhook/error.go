@@ -91,3 +91,14 @@ func transportError(err error) *DeliveryError {
 	}
 	return &DeliveryError{Kind: KindNetwork, cause: err}
 }
+
+// RateLimited returns the receiver's 429 answer, or nil for any other outcome. A 429 is
+// neither a success nor a failure: the receiver is alive and asking us to slow down.
+func RateLimited(sendErr error) *DeliveryError {
+	var deliveryErr *DeliveryError
+	if errors.As(sendErr, &deliveryErr) && deliveryErr.Kind == KindHTTPStatus &&
+		deliveryErr.Status == http.StatusTooManyRequests {
+		return deliveryErr
+	}
+	return nil
+}

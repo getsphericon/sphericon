@@ -1274,7 +1274,7 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		return webhooks.New(bus.Bus, cipher, edition.Audit, webhook.NewClientAllowing(webhooks.TestSendTimeout, cfg.OutboundAllow)), nil
+		return webhooks.New(bus.Bus, cipher, edition.Audit, webhook.NewClientAllowing(webhooks.TestSendTimeout, cfg.OutboundAllow), nil), nil
 	})
 
 	do.Provide(injector, func(i do.Injector) (*automations.Module, error) {
