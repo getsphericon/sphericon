@@ -8,6 +8,7 @@ import (
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domainverify"
@@ -68,8 +69,8 @@ func NewPruneOutboxWorker(client *ent.Client, floor time.Duration) *PruneOutboxW
 	return &PruneOutboxWorker{ent: client, floor: floor}
 }
 
-func NewPruneUnverifiedUsersWorker(client *ent.Client, retention time.Duration) *PruneUnverifiedUsersWorker {
-	return &PruneUnverifiedUsersWorker{ent: client, retention: retention}
+func NewPruneUnverifiedUsersWorker(acc *accounts.Accounts, retention time.Duration) *PruneUnverifiedUsersWorker {
+	return &PruneUnverifiedUsersWorker{accounts: acc, retention: retention}
 }
 
 func NewPruneEventsWorker(client *ent.Client, retention time.Duration) *PruneEventsWorker {

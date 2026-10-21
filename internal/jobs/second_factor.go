@@ -10,16 +10,10 @@ import (
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/membership"
-	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/secondfactor"
 )
-
-// SecondFactorReminderLead is how long before a User's grace ends they are reminded to
-// set up a Second factor (ADR 0020).
-const SecondFactorReminderLead = 24 * time.Hour
 
 // secondFactorReminderInterval is how often the reminder sweep runs: a User is
 // reminded within this long of their reminder becoming due.
@@ -103,7 +97,7 @@ func (c *Client) EnqueueSecondFactorRequired(ctx context.Context, workspaceID in
 }
 
 // RemindSecondFactorArgs is the periodic tick that reminds Users whose grace under a
-// Two-factor requirement ends within SecondFactorReminderLead (ADR 0020).
+// Two-factor requirement ends within secondfactor.ReminderLead (ADR 0020).
 type RemindSecondFactorArgs struct{}
 
 func (RemindSecondFactorArgs) Kind() string { return "second_factor_remind" }
@@ -120,60 +114,13 @@ func (w *RemindSecondFactorWorker) Work(ctx context.Context, _ *river.Job[Remind
 	return RemindSecondFactorDeadlines(ctx, w.ent, w.sender, w.appURL, time.Now())
 }
 
-// RemindSecondFactorDeadlines emails, once per grace, every User without a Second
-// factor whose grace in a Workspace with a Two-factor requirement ends within
-// SecondFactorReminderLead of now. The Membership records the reminder: it is claimed
-// before the send and released if the send fails, so a later tick retries it and a
-// concurrent or repeated tick never sends it twice. A reminder from an earlier grace
-// (the requirement switched off and on again) does not count.
+// RemindSecondFactorDeadlines mails the reminder of every Membership the second-factor
+// module claims for this tick (secondfactor.RemindDeadlines).
 func RemindSecondFactorDeadlines(ctx context.Context, client *ent.Client, sender messaging.EmailSender, appURL string, now time.Time) error {
 	if sender == nil {
 		return fmt.Errorf("remind second factor: no system email sender configured")
 	}
-	members, err := client.Membership.Query().
-		Where(membership.HasWorkspaceWith(workspace.SecondFactorRequiredAtNotNil())).
-		WithUser().
-		WithWorkspace().
-		All(ctx)
-	if err != nil {
-		return err
-	}
-	var errs []error
-	for _, m := range members {
-		deadline, ok := secondfactor.Deadline(m)
-		if !ok || now.Before(deadline.Add(-SecondFactorReminderLead)) || !now.Before(deadline) {
-			continue
-		}
-		if err := remindOnce(ctx, client.Scoped(m.WorkspaceID), sender, appURL, m, deadline, now); err != nil {
-			errs = append(errs, err)
-		}
-	}
-	return errors.Join(errs...)
-}
-
-// remindOnce claims the Membership's reminder for the grace that ends at deadline,
-// sends it, and releases the claim if the send fails.
-func remindOnce(ctx context.Context, s *ent.Scoped, sender messaging.EmailSender, appURL string, m *ent.Membership, deadline, now time.Time) error {
-	graceStart := deadline.Add(-secondfactor.GracePeriod)
-	claimed, err := s.Membership().Update().
-		Where(membership.ID(m.ID), membership.Or(
-			membership.SecondFactorRemindedAtIsNil(),
-			membership.SecondFactorRemindedAtLT(graceStart),
-		)).
-		SetSecondFactorRemindedAt(now).
-		Save(ctx)
-	if err != nil || claimed == 0 {
-		return err
-	}
-	serr := sendSecondFactorMail(ctx, sender, appURL, "email.second_factor_reminder", m, deadline)
-	if serr == nil {
-		return nil
-	}
-	release := s.Membership().UpdateOneID(m.ID)
-	if m.SecondFactorRemindedAt == nil {
-		release = release.ClearSecondFactorRemindedAt()
-	} else {
-		release = release.SetSecondFactorRemindedAt(*m.SecondFactorRemindedAt)
-	}
-	return errors.Join(serr, release.Exec(ctx))
+	return secondfactor.RemindDeadlines(ctx, client, now, func(ctx context.Context, m *ent.Membership, deadline time.Time) error {
+		return sendSecondFactorMail(ctx, sender, appURL, "email.second_factor_reminder", m, deadline)
+	})
 }

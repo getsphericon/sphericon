@@ -15,6 +15,7 @@ import (
 	"github.com/riverqueue/rivercontrib/otelriver"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domainverify"
@@ -115,7 +116,7 @@ func NewClient(riverDB *sql.DB, entClient *ent.Client, mod *outbound.Module, cip
 	river.AddWorker(workers, &PurgeAuthAttemptsWorker{ent: entClient})
 	river.AddWorker(workers, &PruneOutboxWorker{ent: entClient, floor: retention.OutboxFloor})
 	river.AddWorker(workers, &PruneEventsWorker{ent: entClient, retention: retention.Events})
-	river.AddWorker(workers, &PruneUnverifiedUsersWorker{ent: entClient, retention: retention.UnverifiedUsers})
+	river.AddWorker(workers, &PruneUnverifiedUsersWorker{accounts: accounts.New(entClient, bus), retention: retention.UnverifiedUsers})
 	river.AddWorker(workers, &PrunePasskeyChallengesWorker{ent: entClient, now: time.Now})
 	river.AddWorker(workers, &BackfillAutomationVersionsWorker{ent: entClient})
 	river.AddWorker(workers, &EraseWorkspacesWorker{deletion: workspacedeletion.New(entClient, bus), now: time.Now})
