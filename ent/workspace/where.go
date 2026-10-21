@@ -100,6 +100,11 @@ func RetentionDays(v int) predicate.Workspace {
 	return predicate.Workspace(sql.FieldEQ(FieldRetentionDays, v))
 }
 
+// DomainJoinEnabled applies equality check predicate on the "domain_join_enabled" field. It's identical to DomainJoinEnabledEQ.
+func DomainJoinEnabled(v bool) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEQ(FieldDomainJoinEnabled, v))
+}
+
 // SecondFactorRequiredAt applies equality check predicate on the "second_factor_required_at" field. It's identical to SecondFactorRequiredAtEQ.
 func SecondFactorRequiredAt(v time.Time) predicate.Workspace {
 	return predicate.Workspace(sql.FieldEQ(FieldSecondFactorRequiredAt, v))
@@ -608,6 +613,16 @@ func RetentionDaysIsNil() predicate.Workspace {
 // RetentionDaysNotNil applies the NotNil predicate on the "retention_days" field.
 func RetentionDaysNotNil() predicate.Workspace {
 	return predicate.Workspace(sql.FieldNotNull(FieldRetentionDays))
+}
+
+// DomainJoinEnabledEQ applies the EQ predicate on the "domain_join_enabled" field.
+func DomainJoinEnabledEQ(v bool) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEQ(FieldDomainJoinEnabled, v))
+}
+
+// DomainJoinEnabledNEQ applies the NEQ predicate on the "domain_join_enabled" field.
+func DomainJoinEnabledNEQ(v bool) predicate.Workspace {
+	return predicate.Workspace(sql.FieldNEQ(FieldDomainJoinEnabled, v))
 }
 
 // SecondFactorRequiredAtEQ applies the EQ predicate on the "second_factor_required_at" field.
@@ -1339,6 +1354,29 @@ func HasSendingDomains() predicate.Workspace {
 func HasSendingDomainsWith(preds ...predicate.SendingDomain) predicate.Workspace {
 	return predicate.Workspace(func(s *sql.Selector) {
 		step := newSendingDomainsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasJoinDomains applies the HasEdge predicate on the "join_domains" edge.
+func HasJoinDomains() predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, JoinDomainsTable, JoinDomainsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasJoinDomainsWith applies the HasEdge predicate on the "join_domains" edge with a given conditions (other predicates).
+func HasJoinDomainsWith(preds ...predicate.JoinDomain) predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := newJoinDomainsStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

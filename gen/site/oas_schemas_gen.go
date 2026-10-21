@@ -3751,6 +3751,52 @@ func (o OptSiteInstanceTelemetryLock) Or(d SiteInstanceTelemetryLock) SiteInstan
 	return d
 }
 
+// NewOptSiteMembershipSource returns new OptSiteMembershipSource with value set to v.
+func NewOptSiteMembershipSource(v SiteMembershipSource) OptSiteMembershipSource {
+	return OptSiteMembershipSource{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSiteMembershipSource is optional SiteMembershipSource.
+type OptSiteMembershipSource struct {
+	Value SiteMembershipSource
+	Set   bool
+}
+
+// IsSet returns true if OptSiteMembershipSource was set.
+func (o OptSiteMembershipSource) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSiteMembershipSource) Reset() {
+	var v SiteMembershipSource
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSiteMembershipSource) SetTo(v SiteMembershipSource) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSiteMembershipSource) Get() (v SiteMembershipSource, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSiteMembershipSource) Or(d SiteMembershipSource) SiteMembershipSource {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptSiteSegmentRuleGroup returns new OptSiteSegmentRuleGroup with value set to v.
 func NewOptSiteSegmentRuleGroup(v SiteSegmentRuleGroup) OptSiteSegmentRuleGroup {
 	return OptSiteSegmentRuleGroup{
@@ -4837,6 +4883,23 @@ func (s *SiteAccountLinkResource) SetExpiresAt(val Timestamp) {
 
 func (*SiteAccountLinkResource) siteWorkspacesAccountLinkRes() {}
 
+// Request body for adding a Join domain.
+// Ref: #/components/schemas/SiteAddJoinDomainInput
+type SiteAddJoinDomainInput struct {
+	// The domain, e.g. "acme.com"; any case or Unicode, stored canonical.
+	Domain string `json:"domain"`
+}
+
+// GetDomain returns the value of Domain.
+func (s *SiteAddJoinDomainInput) GetDomain() string {
+	return s.Domain
+}
+
+// SetDomain sets the value of Domain.
+func (s *SiteAddJoinDomainInput) SetDomain(val string) {
+	s.Domain = val
+}
+
 // Automation counts (point-in-time snapshot).
 // Ref: #/components/schemas/SiteAnalyticsAutomations
 type SiteAnalyticsAutomations struct {
@@ -5866,23 +5929,6 @@ func (*SiteAuthSigninStartFound) siteAuthSigninStartRes() {}
 type SiteAuthVerifyEmailBadRequest ProblemDetails
 
 func (*SiteAuthVerifyEmailBadRequest) siteAuthVerifyEmailRes() {}
-
-// SiteAuthVerifyEmailOK is response for SiteAuthVerifyEmail operation.
-type SiteAuthVerifyEmailOK struct {
-	SetCookie string
-}
-
-// GetSetCookie returns the value of SetCookie.
-func (s *SiteAuthVerifyEmailOK) GetSetCookie() string {
-	return s.SetCookie
-}
-
-// SetSetCookie sets the value of SetCookie.
-func (s *SiteAuthVerifyEmailOK) SetSetCookie(val string) {
-	s.SetCookie = val
-}
-
-func (*SiteAuthVerifyEmailOK) siteAuthVerifyEmailRes() {}
 
 type SiteAuthVerifyEmailPreconditionRequired ProblemDetails
 
@@ -9158,6 +9204,43 @@ func (s *SiteDnsRecordType) UnmarshalText(data []byte) error {
 	}
 }
 
+type SiteDomainJoinGetForbidden ProblemDetails
+
+func (*SiteDomainJoinGetForbidden) siteDomainJoinGetRes() {}
+
+type SiteDomainJoinGetNotFound ProblemDetails
+
+func (*SiteDomainJoinGetNotFound) siteDomainJoinGetRes() {}
+
+// Whether the Workspace admits Users by Join domain.
+// Ref: #/components/schemas/SiteDomainJoinResource
+type SiteDomainJoinResource struct {
+	// On: a User who proves an address on one of the Workspace's verified Join domains becomes a member.
+	// Off by default.
+	Enabled bool `json:"enabled"`
+}
+
+// GetEnabled returns the value of Enabled.
+func (s *SiteDomainJoinResource) GetEnabled() bool {
+	return s.Enabled
+}
+
+// SetEnabled sets the value of Enabled.
+func (s *SiteDomainJoinResource) SetEnabled(val bool) {
+	s.Enabled = val
+}
+
+func (*SiteDomainJoinResource) siteDomainJoinGetRes() {}
+func (*SiteDomainJoinResource) siteDomainJoinSetRes() {}
+
+type SiteDomainJoinSetForbidden ProblemDetails
+
+func (*SiteDomainJoinSetForbidden) siteDomainJoinSetRes() {}
+
+type SiteDomainJoinSetNotFound ProblemDetails
+
+func (*SiteDomainJoinSetNotFound) siteDomainJoinSetRes() {}
+
 // Request body for rendering an HTTP step's body for a Contact.
 // Ref: #/components/schemas/SiteDryRunHttpStepInput
 type SiteDryRunHttpStepInput struct {
@@ -10934,6 +11017,169 @@ type SiteInvitationsListOKApplicationJSON []SiteInvitationResource
 
 func (*SiteInvitationsListOKApplicationJSON) siteInvitationsListRes() {}
 
+// A Join domain: a domain whose Users may join the Workspace once domain join is on, proven by a TXT
+// record. `verified` is a live property: it holds while the record is published. Any Workspace may
+// claim a domain, and only one holds it verified.
+// Ref: #/components/schemas/SiteJoinDomainResource
+type SiteJoinDomainResource struct {
+	// Unique identifier.
+	ID EntityId `json:"id"`
+	// The canonical domain: lower case, Unicode as punycode.
+	Domain string `json:"domain"`
+	// Whether the TXT record was found and the Workspace holds the domain.
+	Verified bool `json:"verified"`
+	// The TXT record to publish to prove the domain.
+	Record SiteDnsRecord `json:"record"`
+	// When the TXT record was most recently checked (null = never).
+	LastCheckedAt OptNilTimestamp `json:"lastCheckedAt"`
+	// When the domain most recently became verified (null = pending).
+	VerifiedAt OptNilTimestamp `json:"verifiedAt"`
+	// Creation timestamp.
+	CreatedAt Timestamp `json:"createdAt"`
+	// Last update timestamp.
+	UpdatedAt Timestamp `json:"updatedAt"`
+}
+
+// GetID returns the value of ID.
+func (s *SiteJoinDomainResource) GetID() EntityId {
+	return s.ID
+}
+
+// GetDomain returns the value of Domain.
+func (s *SiteJoinDomainResource) GetDomain() string {
+	return s.Domain
+}
+
+// GetVerified returns the value of Verified.
+func (s *SiteJoinDomainResource) GetVerified() bool {
+	return s.Verified
+}
+
+// GetRecord returns the value of Record.
+func (s *SiteJoinDomainResource) GetRecord() SiteDnsRecord {
+	return s.Record
+}
+
+// GetLastCheckedAt returns the value of LastCheckedAt.
+func (s *SiteJoinDomainResource) GetLastCheckedAt() OptNilTimestamp {
+	return s.LastCheckedAt
+}
+
+// GetVerifiedAt returns the value of VerifiedAt.
+func (s *SiteJoinDomainResource) GetVerifiedAt() OptNilTimestamp {
+	return s.VerifiedAt
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *SiteJoinDomainResource) GetCreatedAt() Timestamp {
+	return s.CreatedAt
+}
+
+// GetUpdatedAt returns the value of UpdatedAt.
+func (s *SiteJoinDomainResource) GetUpdatedAt() Timestamp {
+	return s.UpdatedAt
+}
+
+// SetID sets the value of ID.
+func (s *SiteJoinDomainResource) SetID(val EntityId) {
+	s.ID = val
+}
+
+// SetDomain sets the value of Domain.
+func (s *SiteJoinDomainResource) SetDomain(val string) {
+	s.Domain = val
+}
+
+// SetVerified sets the value of Verified.
+func (s *SiteJoinDomainResource) SetVerified(val bool) {
+	s.Verified = val
+}
+
+// SetRecord sets the value of Record.
+func (s *SiteJoinDomainResource) SetRecord(val SiteDnsRecord) {
+	s.Record = val
+}
+
+// SetLastCheckedAt sets the value of LastCheckedAt.
+func (s *SiteJoinDomainResource) SetLastCheckedAt(val OptNilTimestamp) {
+	s.LastCheckedAt = val
+}
+
+// SetVerifiedAt sets the value of VerifiedAt.
+func (s *SiteJoinDomainResource) SetVerifiedAt(val OptNilTimestamp) {
+	s.VerifiedAt = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *SiteJoinDomainResource) SetCreatedAt(val Timestamp) {
+	s.CreatedAt = val
+}
+
+// SetUpdatedAt sets the value of UpdatedAt.
+func (s *SiteJoinDomainResource) SetUpdatedAt(val Timestamp) {
+	s.UpdatedAt = val
+}
+
+func (*SiteJoinDomainResource) siteJoinDomainsAddRes()    {}
+func (*SiteJoinDomainResource) siteJoinDomainsVerifyRes() {}
+
+type SiteJoinDomainsAddConflict ProblemDetails
+
+func (*SiteJoinDomainsAddConflict) siteJoinDomainsAddRes() {}
+
+type SiteJoinDomainsAddForbidden ProblemDetails
+
+func (*SiteJoinDomainsAddForbidden) siteJoinDomainsAddRes() {}
+
+type SiteJoinDomainsAddNotFound ProblemDetails
+
+func (*SiteJoinDomainsAddNotFound) siteJoinDomainsAddRes() {}
+
+type SiteJoinDomainsAddUnprocessableEntity ProblemDetails
+
+func (*SiteJoinDomainsAddUnprocessableEntity) siteJoinDomainsAddRes() {}
+
+type SiteJoinDomainsListForbidden ProblemDetails
+
+func (*SiteJoinDomainsListForbidden) siteJoinDomainsListRes() {}
+
+type SiteJoinDomainsListNotFound ProblemDetails
+
+func (*SiteJoinDomainsListNotFound) siteJoinDomainsListRes() {}
+
+type SiteJoinDomainsListOKApplicationJSON []SiteJoinDomainResource
+
+func (*SiteJoinDomainsListOKApplicationJSON) siteJoinDomainsListRes() {}
+
+type SiteJoinDomainsRemoveForbidden ProblemDetails
+
+func (*SiteJoinDomainsRemoveForbidden) siteJoinDomainsRemoveRes() {}
+
+// SiteJoinDomainsRemoveNoContent is response for SiteJoinDomainsRemove operation.
+type SiteJoinDomainsRemoveNoContent struct{}
+
+func (*SiteJoinDomainsRemoveNoContent) siteJoinDomainsRemoveRes() {}
+
+type SiteJoinDomainsRemoveNotFound ProblemDetails
+
+func (*SiteJoinDomainsRemoveNotFound) siteJoinDomainsRemoveRes() {}
+
+type SiteJoinDomainsVerifyConflict ProblemDetails
+
+func (*SiteJoinDomainsVerifyConflict) siteJoinDomainsVerifyRes() {}
+
+type SiteJoinDomainsVerifyForbidden ProblemDetails
+
+func (*SiteJoinDomainsVerifyForbidden) siteJoinDomainsVerifyRes() {}
+
+type SiteJoinDomainsVerifyNotFound ProblemDetails
+
+func (*SiteJoinDomainsVerifyNotFound) siteJoinDomainsVerifyRes() {}
+
+type SiteJoinDomainsVerifyUnprocessableEntity ProblemDetails
+
+func (*SiteJoinDomainsVerifyUnprocessableEntity) siteJoinDomainsVerifyRes() {}
+
 // The Linked identities of the authenticated User.
 // Ref: #/components/schemas/SiteLinkedIdentities
 type SiteLinkedIdentities struct {
@@ -11179,6 +11425,8 @@ type SiteMembershipResource struct {
 	Name string `json:"name"`
 	// The member's role in this workspace.
 	Role SiteMembershipRole `json:"role"`
+	// How the member got in; absent for a member from before it was recorded.
+	Source OptSiteMembershipSource `json:"source"`
 	// When the member joined.
 	CreatedAt Timestamp `json:"createdAt"`
 }
@@ -11206,6 +11454,11 @@ func (s *SiteMembershipResource) GetName() string {
 // GetRole returns the value of Role.
 func (s *SiteMembershipResource) GetRole() SiteMembershipRole {
 	return s.Role
+}
+
+// GetSource returns the value of Source.
+func (s *SiteMembershipResource) GetSource() OptSiteMembershipSource {
+	return s.Source
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -11236,6 +11489,11 @@ func (s *SiteMembershipResource) SetName(val string) {
 // SetRole sets the value of Role.
 func (s *SiteMembershipResource) SetRole(val SiteMembershipRole) {
 	s.Role = val
+}
+
+// SetSource sets the value of Source.
+func (s *SiteMembershipResource) SetSource(val OptSiteMembershipSource) {
+	s.Source = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.
@@ -11289,6 +11547,56 @@ func (s *SiteMembershipRole) UnmarshalText(data []byte) error {
 		return nil
 	case SiteMembershipRoleMember:
 		*s = SiteMembershipRoleMember
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// How a member got in.
+// Ref: #/components/schemas/SiteMembershipSource
+type SiteMembershipSource string
+
+const (
+	SiteMembershipSourceCreator    SiteMembershipSource = "creator"
+	SiteMembershipSourceInvitation SiteMembershipSource = "invitation"
+	SiteMembershipSourceDomain     SiteMembershipSource = "domain"
+)
+
+// AllValues returns all SiteMembershipSource values.
+func (SiteMembershipSource) AllValues() []SiteMembershipSource {
+	return []SiteMembershipSource{
+		SiteMembershipSourceCreator,
+		SiteMembershipSourceInvitation,
+		SiteMembershipSourceDomain,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteMembershipSource) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteMembershipSourceCreator:
+		return []byte(s), nil
+	case SiteMembershipSourceInvitation:
+		return []byte(s), nil
+	case SiteMembershipSourceDomain:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteMembershipSource) UnmarshalText(data []byte) error {
+	switch SiteMembershipSource(data) {
+	case SiteMembershipSourceCreator:
+		*s = SiteMembershipSourceCreator
+		return nil
+	case SiteMembershipSourceInvitation:
+		*s = SiteMembershipSourceInvitation
+		return nil
+	case SiteMembershipSourceDomain:
+		*s = SiteMembershipSourceDomain
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -13508,6 +13816,23 @@ func (s *SiteSesConfigKind) UnmarshalText(data []byte) error {
 	default:
 		return errors.Errorf("invalid value: %q", data)
 	}
+}
+
+// Switch domain join on or off.
+// Ref: #/components/schemas/SiteSetDomainJoinInput
+type SiteSetDomainJoinInput struct {
+	// Whether to admit Users by Join domain from now on.
+	Enabled bool `json:"enabled"`
+}
+
+// GetEnabled returns the value of Enabled.
+func (s *SiteSetDomainJoinInput) GetEnabled() bool {
+	return s.Enabled
+}
+
+// SetEnabled sets the value of Enabled.
+func (s *SiteSetDomainJoinInput) SetEnabled(val bool) {
+	s.Enabled = val
 }
 
 // The Workspace's Setup checklist: a point-in-time read model, never ticked by hand.
@@ -15935,6 +16260,52 @@ func (s *SiteVerifyEmailInput) SetToken(val string) {
 func (s *SiteVerifyEmailInput) SetPassword(val OptString) {
 	s.Password = val
 }
+
+// Where a User who proved their address goes next.
+// Ref: #/components/schemas/SiteVerifyEmailResult
+type SiteVerifyEmailResult struct {
+	// The Workspace to open: the one the User joined by its Join domain (ADR 0051), else the first
+	// Workspace made for them.
+	LandingWorkspaceId WorkspaceId `json:"landingWorkspaceId"`
+}
+
+// GetLandingWorkspaceId returns the value of LandingWorkspaceId.
+func (s *SiteVerifyEmailResult) GetLandingWorkspaceId() WorkspaceId {
+	return s.LandingWorkspaceId
+}
+
+// SetLandingWorkspaceId sets the value of LandingWorkspaceId.
+func (s *SiteVerifyEmailResult) SetLandingWorkspaceId(val WorkspaceId) {
+	s.LandingWorkspaceId = val
+}
+
+// SiteVerifyEmailResultHeaders wraps SiteVerifyEmailResult with response headers.
+type SiteVerifyEmailResultHeaders struct {
+	SetCookie string
+	Response  SiteVerifyEmailResult
+}
+
+// GetSetCookie returns the value of SetCookie.
+func (s *SiteVerifyEmailResultHeaders) GetSetCookie() string {
+	return s.SetCookie
+}
+
+// GetResponse returns the value of Response.
+func (s *SiteVerifyEmailResultHeaders) GetResponse() SiteVerifyEmailResult {
+	return s.Response
+}
+
+// SetSetCookie sets the value of SetCookie.
+func (s *SiteVerifyEmailResultHeaders) SetSetCookie(val string) {
+	s.SetCookie = val
+}
+
+// SetResponse sets the value of Response.
+func (s *SiteVerifyEmailResultHeaders) SetResponse(val SiteVerifyEmailResult) {
+	s.Response = val
+}
+
+func (*SiteVerifyEmailResultHeaders) siteAuthVerifyEmailRes() {}
 
 // Why an endpoint turned itself off. A closed set: `gone` (the receiver answered 410 Gone) and
 // `persistent_failure` (deliveries failed for longer than the window). Absent for an endpoint an owner

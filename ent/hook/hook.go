@@ -249,6 +249,18 @@ func (f InvitationFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, 
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.InvitationMutation", m)
 }
 
+// The JoinDomainFunc type is an adapter to allow the use of ordinary
+// function as JoinDomain mutator.
+type JoinDomainFunc func(context.Context, *ent.JoinDomainMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f JoinDomainFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.JoinDomainMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.JoinDomainMutation", m)
+}
+
 // The MembershipFunc type is an adapter to allow the use of ordinary
 // function as Membership mutator.
 type MembershipFunc func(context.Context, *ent.MembershipMutation) (ent.Value, error)

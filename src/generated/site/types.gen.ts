@@ -632,6 +632,16 @@ export type SiteAccountLinkResource = {
 };
 
 /**
+ * Request body for adding a Join domain
+ */
+export type SiteAddJoinDomainInput = {
+  /**
+   * The domain, e.g. "acme.com"; any case or Unicode, stored canonical
+   */
+  domain: string;
+};
+
+/**
  * Automation counts (point-in-time snapshot)
  */
 export type SiteAnalyticsAutomations = {
@@ -1821,6 +1831,17 @@ export type SiteDnsRecord = {
 };
 
 /**
+ * Whether the Workspace admits Users by Join domain
+ */
+export type SiteDomainJoinResource = {
+  /**
+   * On: a User who proves an address on one of the Workspace's verified Join domains
+   * becomes a member. Off by default.
+   */
+  enabled: boolean;
+};
+
+/**
  * Request body for rendering an HTTP step's body for a Contact
  */
 export type SiteDryRunHttpStepInput = {
@@ -2287,6 +2308,46 @@ export type SiteInvitationResource = {
 };
 
 /**
+ * A Join domain: a domain whose Users may join the Workspace once domain join
+ * is on, proven by a TXT record. `verified` is a live property: it holds while the record
+ * is published. Any Workspace may claim a domain, and only one holds it verified.
+ */
+export type SiteJoinDomainResource = {
+  /**
+   * Unique identifier
+   */
+  id: EntityId;
+  /**
+   * The canonical domain: lower case, Unicode as punycode
+   */
+  domain: string;
+  /**
+   * Whether the TXT record was found and the Workspace holds the domain
+   */
+  verified: boolean;
+  /**
+   * The TXT record to publish to prove the domain
+   */
+  record: SiteDnsRecord;
+  /**
+   * When the TXT record was most recently checked (null = never)
+   */
+  lastCheckedAt?: Timestamp | null;
+  /**
+   * When the domain most recently became verified (null = pending)
+   */
+  verifiedAt?: Timestamp | null;
+  /**
+   * Creation timestamp
+   */
+  createdAt: Timestamp;
+  /**
+   * Last update timestamp
+   */
+  updatedAt: Timestamp;
+};
+
+/**
  * The Linked identities of the authenticated User
  */
 export type SiteLinkedIdentities = {
@@ -2394,6 +2455,10 @@ export type SiteMembershipResource = {
    */
   role: SiteMembershipRole;
   /**
+   * How the member got in; absent for a member from before it was recorded
+   */
+  source?: SiteMembershipSource;
+  /**
    * When the member joined
    */
   createdAt: Timestamp;
@@ -2412,6 +2477,20 @@ export const SiteMembershipRole = {
  * A User's permission level in a Workspace
  */
 export type SiteMembershipRole = typeof SiteMembershipRole[keyof typeof SiteMembershipRole];
+
+/**
+ * How a member got in
+ */
+export const SiteMembershipSource = {
+  CREATOR: 'creator',
+  INVITATION: 'invitation',
+  DOMAIN: 'domain'
+} as const;
+
+/**
+ * How a member got in
+ */
+export type SiteMembershipSource = typeof SiteMembershipSource[keyof typeof SiteMembershipSource];
 
 /**
  * What an MCP client (dynamically registered) is asking permission for, as
@@ -2982,6 +3061,16 @@ export type SiteSesConfigInput = {
    * Custom SES-compatible API endpoint (e.g. Yandex Cloud Postbox); empty for AWS
    */
   endpoint?: string | null;
+};
+
+/**
+ * Switch domain join on or off
+ */
+export type SiteSetDomainJoinInput = {
+  /**
+   * Whether to admit Users by Join domain from now on
+   */
+  enabled: boolean;
 };
 
 /**
@@ -3585,6 +3674,17 @@ export type SiteVerifyEmailInput = {
    * the password given at registration. Ignored in the Registration browser.
    */
   password?: string;
+};
+
+/**
+ * Where a User who proved their address goes next
+ */
+export type SiteVerifyEmailResult = {
+  /**
+   * The Workspace to open: the one the User joined by its Join domain (ADR 0051), else
+   * the first Workspace made for them
+   */
+  landingWorkspaceId: WorkspaceId;
 };
 
 /**
@@ -4480,8 +4580,10 @@ export type SiteAuthVerifyEmailResponses = {
   /**
    * The request has succeeded.
    */
-  200: unknown;
+  200: SiteVerifyEmailResult;
 };
+
+export type SiteAuthVerifyEmailResponse = SiteAuthVerifyEmailResponses[keyof SiteAuthVerifyEmailResponses];
 
 export type SitePublicConfirmationsPerformData = {
   body?: never;
@@ -7255,6 +7357,68 @@ export type SiteWorkspacesDeleteResponses = {
 
 export type SiteWorkspacesDeleteResponse = SiteWorkspacesDeleteResponses[keyof SiteWorkspacesDeleteResponses];
 
+export type SiteDomainJoinGetData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/domain-join';
+};
+
+export type SiteDomainJoinGetErrors = {
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteDomainJoinGetError = SiteDomainJoinGetErrors[keyof SiteDomainJoinGetErrors];
+
+export type SiteDomainJoinGetResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteDomainJoinResource;
+};
+
+export type SiteDomainJoinGetResponse = SiteDomainJoinGetResponses[keyof SiteDomainJoinGetResponses];
+
+export type SiteDomainJoinSetData = {
+  body: SiteSetDomainJoinInput;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/domain-join';
+};
+
+export type SiteDomainJoinSetErrors = {
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteDomainJoinSetError = SiteDomainJoinSetErrors[keyof SiteDomainJoinSetErrors];
+
+export type SiteDomainJoinSetResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteDomainJoinResource;
+};
+
+export type SiteDomainJoinSetResponse = SiteDomainJoinSetResponses[keyof SiteDomainJoinSetResponses];
+
 export type SiteEventsListData = {
   body?: never;
   path: {
@@ -7727,6 +7891,148 @@ export type SiteInvitationsDeleteResponses = {
 };
 
 export type SiteInvitationsDeleteResponse = SiteInvitationsDeleteResponses[keyof SiteInvitationsDeleteResponses];
+
+export type SiteJoinDomainsListData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/join-domains';
+};
+
+export type SiteJoinDomainsListErrors = {
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteJoinDomainsListError = SiteJoinDomainsListErrors[keyof SiteJoinDomainsListErrors];
+
+export type SiteJoinDomainsListResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: Array<SiteJoinDomainResource>;
+};
+
+export type SiteJoinDomainsListResponse = SiteJoinDomainsListResponses[keyof SiteJoinDomainsListResponses];
+
+export type SiteJoinDomainsAddData = {
+  body: SiteAddJoinDomainInput;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/join-domains';
+};
+
+export type SiteJoinDomainsAddErrors = {
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 conflict response
+   */
+  409: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+};
+
+export type SiteJoinDomainsAddError = SiteJoinDomainsAddErrors[keyof SiteJoinDomainsAddErrors];
+
+export type SiteJoinDomainsAddResponses = {
+  /**
+   * The request has succeeded and a new resource has been created as a result.
+   */
+  201: SiteJoinDomainResource;
+};
+
+export type SiteJoinDomainsAddResponse = SiteJoinDomainsAddResponses[keyof SiteJoinDomainsAddResponses];
+
+export type SiteJoinDomainsRemoveData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+    id: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/join-domains/{id}';
+};
+
+export type SiteJoinDomainsRemoveErrors = {
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteJoinDomainsRemoveError = SiteJoinDomainsRemoveErrors[keyof SiteJoinDomainsRemoveErrors];
+
+export type SiteJoinDomainsRemoveResponses = {
+  /**
+   * There is no content to send for this request, but the headers may be useful.
+   */
+  204: void;
+};
+
+export type SiteJoinDomainsRemoveResponse = SiteJoinDomainsRemoveResponses[keyof SiteJoinDomainsRemoveResponses];
+
+export type SiteJoinDomainsVerifyData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+    id: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/join-domains/{id}/verify';
+};
+
+export type SiteJoinDomainsVerifyErrors = {
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 conflict response
+   */
+  409: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+};
+
+export type SiteJoinDomainsVerifyError = SiteJoinDomainsVerifyErrors[keyof SiteJoinDomainsVerifyErrors];
+
+export type SiteJoinDomainsVerifyResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteJoinDomainResource;
+};
+
+export type SiteJoinDomainsVerifyResponse = SiteJoinDomainsVerifyResponses[keyof SiteJoinDomainsVerifyResponses];
 
 export type SiteWorkspacesLeaveData = {
   body?: never;

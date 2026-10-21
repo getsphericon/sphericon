@@ -827,12 +827,58 @@ var (
 			},
 		},
 	}
+	// JoinDomainsColumns holds the columns for the "join_domains" table.
+	JoinDomainsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "domain", Type: field.TypeString},
+		{Name: "token", Type: field.TypeString},
+		{Name: "verified_at", Type: field.TypeTime, Nullable: true},
+		{Name: "last_checked_at", Type: field.TypeTime, Nullable: true},
+		{Name: "workspace_id", Type: field.TypeInt64},
+	}
+	// JoinDomainsTable holds the schema information for the "join_domains" table.
+	JoinDomainsTable = &schema.Table{
+		Name:       "join_domains",
+		Columns:    JoinDomainsColumns,
+		PrimaryKey: []*schema.Column{JoinDomainsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "join_domains_workspaces_join_domains",
+				Columns:    []*schema.Column{JoinDomainsColumns[7]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "joindomain_workspace_id_domain",
+				Unique:  true,
+				Columns: []*schema.Column{JoinDomainsColumns[7], JoinDomainsColumns[3]},
+			},
+			{
+				Name:    "joindomain_domain",
+				Unique:  true,
+				Columns: []*schema.Column{JoinDomainsColumns[3]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "verified_at IS NOT NULL",
+				},
+			},
+			{
+				Name:    "joindomain_last_checked_at",
+				Unique:  false,
+				Columns: []*schema.Column{JoinDomainsColumns[6]},
+			},
+		},
+	}
 	// MembershipsColumns holds the columns for the "memberships" table.
 	MembershipsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "role", Type: field.TypeEnum, Enums: []string{"owner", "admin", "member"}},
+		{Name: "source", Type: field.TypeEnum, Nullable: true, Enums: []string{"creator", "invitation", "domain"}},
 		{Name: "second_factor_reminded_at", Type: field.TypeTime, Nullable: true},
 		{Name: "user_id", Type: field.TypeInt64},
 		{Name: "workspace_id", Type: field.TypeInt64},
@@ -845,13 +891,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "memberships_users_memberships",
-				Columns:    []*schema.Column{MembershipsColumns[5]},
+				Columns:    []*schema.Column{MembershipsColumns[6]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "memberships_workspaces_memberships",
-				Columns:    []*schema.Column{MembershipsColumns[6]},
+				Columns:    []*schema.Column{MembershipsColumns[7]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -860,12 +906,12 @@ var (
 			{
 				Name:    "membership_user_id_workspace_id",
 				Unique:  true,
-				Columns: []*schema.Column{MembershipsColumns[5], MembershipsColumns[6]},
+				Columns: []*schema.Column{MembershipsColumns[6], MembershipsColumns[7]},
 			},
 			{
 				Name:    "membership_workspace_id",
 				Unique:  false,
-				Columns: []*schema.Column{MembershipsColumns[6]},
+				Columns: []*schema.Column{MembershipsColumns[7]},
 			},
 		},
 	}
@@ -1554,6 +1600,7 @@ var (
 		{Name: "require_confirmed_opt_in", Type: field.TypeBool, Default: false},
 		{Name: "postal_address", Type: field.TypeString, Nullable: true, Default: ""},
 		{Name: "retention_days", Type: field.TypeInt, Nullable: true},
+		{Name: "domain_join_enabled", Type: field.TypeBool, Default: false},
 		{Name: "second_factor_required_at", Type: field.TypeTime, Nullable: true},
 		{Name: "feed_position", Type: field.TypeInt64, Default: 0},
 		{Name: "erased_at", Type: field.TypeTime, Nullable: true},
@@ -1575,7 +1622,7 @@ var (
 			{
 				Name:    "workspace_feed_position_id",
 				Unique:  false,
-				Columns: []*schema.Column{WorkspacesColumns[11], WorkspacesColumns[0]},
+				Columns: []*schema.Column{WorkspacesColumns[12], WorkspacesColumns[0]},
 			},
 		},
 	}
@@ -1601,6 +1648,7 @@ var (
 		InstanceStateTable,
 		IntegrationsTable,
 		InvitationsTable,
+		JoinDomainsTable,
 		MembershipsTable,
 		OauthClientsTable,
 		OauthCodesTable,
@@ -1739,13 +1787,18 @@ func init() {
 	InvitationsTable.Annotation.Checks = map[string]string{
 		"invitations_role_check": "role IN ('admin', 'member')",
 	}
+	JoinDomainsTable.ForeignKeys[0].RefTable = WorkspacesTable
+	JoinDomainsTable.Annotation = &entsql.Annotation{
+		Table: "join_domains",
+	}
 	MembershipsTable.ForeignKeys[0].RefTable = UsersTable
 	MembershipsTable.ForeignKeys[1].RefTable = WorkspacesTable
 	MembershipsTable.Annotation = &entsql.Annotation{
 		Table: "memberships",
 	}
 	MembershipsTable.Annotation.Checks = map[string]string{
-		"memberships_role_check": "role IN ('owner', 'admin', 'member')",
+		"memberships_role_check":   "role IN ('owner', 'admin', 'member')",
+		"memberships_source_check": "source IN ('creator', 'invitation', 'domain')",
 	}
 	OauthClientsTable.Annotation = &entsql.Annotation{
 		Table: "oauth_clients",

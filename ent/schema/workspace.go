@@ -72,6 +72,10 @@ func (Workspace) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			Positive(),
+		// Domain join (ADR 0051): whether Users who prove an address on one of the Workspace's
+		// verified Join domains become its members. Off until an Owner switches it on.
+		field.Bool("domain_join_enabled").
+			Default(false),
 		// Two-factor requirement (ADR 0020): when an Owner or Admin switched it on;
 		// NULL while off. Each member's grace ends secondfactor.GracePeriod after the
 		// later of this and their Membership's creation.
@@ -145,6 +149,7 @@ func (Workspace) Edges() []ent.Edge {
 		edge.To("api_tokens", ApiToken.Type),
 		edge.To("integrations", Integration.Type),
 		edge.To("sending_domains", SendingDomain.Type),
+		edge.To("join_domains", JoinDomain.Type),
 		edge.To("send_limiters", SendLimiter.Type),
 		edge.To("holds", Hold.Type),
 		edge.To("broadcasts", Broadcast.Type),

@@ -35,6 +35,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/instancestate"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/invitation"
+	"github.com/getsphericon/sphericon/ent/joindomain"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/oauthclient"
 	"github.com/getsphericon/sphericon/ent/oauthcode"
@@ -108,6 +109,8 @@ type Client struct {
 	Integration *IntegrationClient
 	// Invitation is the client for interacting with the Invitation builders.
 	Invitation *InvitationClient
+	// JoinDomain is the client for interacting with the JoinDomain builders.
+	JoinDomain *JoinDomainClient
 	// Membership is the client for interacting with the Membership builders.
 	Membership *MembershipClient
 	// OAuthClient is the client for interacting with the OAuthClient builders.
@@ -187,6 +190,7 @@ func (c *Client) init() {
 	c.InstanceState = NewInstanceStateClient(c.config)
 	c.Integration = NewIntegrationClient(c.config)
 	c.Invitation = NewInvitationClient(c.config)
+	c.JoinDomain = NewJoinDomainClient(c.config)
 	c.Membership = NewMembershipClient(c.config)
 	c.OAuthClient = NewOAuthClientClient(c.config)
 	c.OAuthCode = NewOAuthCodeClient(c.config)
@@ -323,6 +327,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		InstanceState:      NewInstanceStateClient(cfg),
 		Integration:        NewIntegrationClient(cfg),
 		Invitation:         NewInvitationClient(cfg),
+		JoinDomain:         NewJoinDomainClient(cfg),
 		Membership:         NewMembershipClient(cfg),
 		OAuthClient:        NewOAuthClientClient(cfg),
 		OAuthCode:          NewOAuthCodeClient(cfg),
@@ -386,6 +391,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		InstanceState:      NewInstanceStateClient(cfg),
 		Integration:        NewIntegrationClient(cfg),
 		Invitation:         NewInvitationClient(cfg),
+		JoinDomain:         NewJoinDomainClient(cfg),
 		Membership:         NewMembershipClient(cfg),
 		OAuthClient:        NewOAuthClientClient(cfg),
 		OAuthCode:          NewOAuthCodeClient(cfg),
@@ -443,7 +449,7 @@ func (c *Client) Use(hooks ...Hook) {
 		c.AutomationVersion, c.BrandKit, c.Broadcast, c.BroadcastRecipient,
 		c.Confirmation, c.Contact, c.ContactTag, c.CustomField, c.EmailTemplate,
 		c.Erasure, c.Event, c.Hold, c.InstanceState, c.Integration, c.Invitation,
-		c.Membership, c.OAuthClient, c.OAuthCode, c.OAuthRefreshToken,
+		c.JoinDomain, c.Membership, c.OAuthClient, c.OAuthCode, c.OAuthRefreshToken,
 		c.OutboundMessage, c.OutboxMessage, c.OutboxOffset, c.RecoveryCode,
 		c.SchemaState, c.Segment, c.SendLimiter, c.SendingDomain, c.ServiceCredential,
 		c.StaffMember, c.Suppression, c.Tag, c.TrackingHostChange, c.Unsubscribe,
@@ -461,7 +467,7 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.AutomationVersion, c.BrandKit, c.Broadcast, c.BroadcastRecipient,
 		c.Confirmation, c.Contact, c.ContactTag, c.CustomField, c.EmailTemplate,
 		c.Erasure, c.Event, c.Hold, c.InstanceState, c.Integration, c.Invitation,
-		c.Membership, c.OAuthClient, c.OAuthCode, c.OAuthRefreshToken,
+		c.JoinDomain, c.Membership, c.OAuthClient, c.OAuthCode, c.OAuthRefreshToken,
 		c.OutboundMessage, c.OutboxMessage, c.OutboxOffset, c.RecoveryCode,
 		c.SchemaState, c.Segment, c.SendLimiter, c.SendingDomain, c.ServiceCredential,
 		c.StaffMember, c.Suppression, c.Tag, c.TrackingHostChange, c.Unsubscribe,
@@ -514,6 +520,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Integration.mutate(ctx, m)
 	case *InvitationMutation:
 		return c.Invitation.mutate(ctx, m)
+	case *JoinDomainMutation:
+		return c.JoinDomain.mutate(ctx, m)
 	case *MembershipMutation:
 		return c.Membership.mutate(ctx, m)
 	case *OAuthClientMutation:
@@ -3719,6 +3727,155 @@ func (c *InvitationClient) mutate(ctx context.Context, m *InvitationMutation) (V
 		return (&InvitationDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Invitation mutation op: %q", m.Op())
+	}
+}
+
+// JoinDomainClient is a client for the JoinDomain schema.
+type JoinDomainClient struct {
+	config
+}
+
+// NewJoinDomainClient returns a client for the JoinDomain from the given config.
+func NewJoinDomainClient(c config) *JoinDomainClient {
+	return &JoinDomainClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `joindomain.Hooks(f(g(h())))`.
+func (c *JoinDomainClient) Use(hooks ...Hook) {
+	c.hooks.JoinDomain = append(c.hooks.JoinDomain, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `joindomain.Intercept(f(g(h())))`.
+func (c *JoinDomainClient) Intercept(interceptors ...Interceptor) {
+	c.inters.JoinDomain = append(c.inters.JoinDomain, interceptors...)
+}
+
+// Create returns a builder for creating a JoinDomain entity.
+func (c *JoinDomainClient) Create() *JoinDomainCreate {
+	mutation := newJoinDomainMutation(c.config, OpCreate)
+	return &JoinDomainCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of JoinDomain entities.
+func (c *JoinDomainClient) CreateBulk(builders ...*JoinDomainCreate) *JoinDomainCreateBulk {
+	return &JoinDomainCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *JoinDomainClient) MapCreateBulk(slice any, setFunc func(*JoinDomainCreate, int)) *JoinDomainCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &JoinDomainCreateBulk{err: fmt.Errorf("calling to JoinDomainClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*JoinDomainCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &JoinDomainCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for JoinDomain.
+func (c *JoinDomainClient) Update() *JoinDomainUpdate {
+	mutation := newJoinDomainMutation(c.config, OpUpdate)
+	return &JoinDomainUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *JoinDomainClient) UpdateOne(_m *JoinDomain) *JoinDomainUpdateOne {
+	mutation := newJoinDomainMutation(c.config, OpUpdateOne, withJoinDomain(_m))
+	return &JoinDomainUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *JoinDomainClient) UpdateOneID(id int64) *JoinDomainUpdateOne {
+	mutation := newJoinDomainMutation(c.config, OpUpdateOne, withJoinDomainID(id))
+	return &JoinDomainUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for JoinDomain.
+func (c *JoinDomainClient) Delete() *JoinDomainDelete {
+	mutation := newJoinDomainMutation(c.config, OpDelete)
+	return &JoinDomainDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *JoinDomainClient) DeleteOne(_m *JoinDomain) *JoinDomainDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *JoinDomainClient) DeleteOneID(id int64) *JoinDomainDeleteOne {
+	builder := c.Delete().Where(joindomain.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &JoinDomainDeleteOne{builder}
+}
+
+// Query returns a query builder for JoinDomain.
+func (c *JoinDomainClient) Query() *JoinDomainQuery {
+	return &JoinDomainQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeJoinDomain},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a JoinDomain entity by its id.
+func (c *JoinDomainClient) Get(ctx context.Context, id int64) (*JoinDomain, error) {
+	return c.Query().Where(joindomain.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *JoinDomainClient) GetX(ctx context.Context, id int64) *JoinDomain {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryWorkspace queries the workspace edge of a JoinDomain.
+func (c *JoinDomainClient) QueryWorkspace(_m *JoinDomain) *WorkspaceQuery {
+	query := (&WorkspaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(joindomain.Table, joindomain.FieldID, id),
+			sqlgraph.To(workspace.Table, workspace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, joindomain.WorkspaceTable, joindomain.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *JoinDomainClient) Hooks() []Hook {
+	return c.hooks.JoinDomain
+}
+
+// Interceptors returns the client interceptors.
+func (c *JoinDomainClient) Interceptors() []Interceptor {
+	return c.inters.JoinDomain
+}
+
+func (c *JoinDomainClient) mutate(ctx context.Context, m *JoinDomainMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&JoinDomainCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&JoinDomainUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&JoinDomainUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&JoinDomainDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown JoinDomain mutation op: %q", m.Op())
 	}
 }
 
@@ -7465,6 +7622,22 @@ func (c *WorkspaceClient) QuerySendingDomains(_m *Workspace) *SendingDomainQuery
 	return query
 }
 
+// QueryJoinDomains queries the join_domains edge of a Workspace.
+func (c *WorkspaceClient) QueryJoinDomains(_m *Workspace) *JoinDomainQuery {
+	query := (&JoinDomainClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, id),
+			sqlgraph.To(joindomain.Table, joindomain.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.JoinDomainsTable, workspace.JoinDomainsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QuerySendLimiters queries the send_limiters edge of a Workspace.
 func (c *WorkspaceClient) QuerySendLimiters(_m *Workspace) *SendLimiterQuery {
 	query := (&SendLimiterClient{config: c.config}).Query()
@@ -7800,7 +7973,7 @@ type (
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, AutomationVersion,
 		BrandKit, Broadcast, BroadcastRecipient, Confirmation, Contact, ContactTag,
 		CustomField, EmailTemplate, Erasure, Event, Hold, InstanceState, Integration,
-		Invitation, Membership, OAuthClient, OAuthCode, OAuthRefreshToken,
+		Invitation, JoinDomain, Membership, OAuthClient, OAuthCode, OAuthRefreshToken,
 		OutboundMessage, OutboxMessage, OutboxOffset, RecoveryCode, SchemaState,
 		Segment, SendLimiter, SendingDomain, ServiceCredential, StaffMember,
 		Suppression, Tag, TrackingHostChange, Unsubscribe, Usage, User, UserIdentity,
@@ -7810,7 +7983,7 @@ type (
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, AutomationVersion,
 		BrandKit, Broadcast, BroadcastRecipient, Confirmation, Contact, ContactTag,
 		CustomField, EmailTemplate, Erasure, Event, Hold, InstanceState, Integration,
-		Invitation, Membership, OAuthClient, OAuthCode, OAuthRefreshToken,
+		Invitation, JoinDomain, Membership, OAuthClient, OAuthCode, OAuthRefreshToken,
 		OutboundMessage, OutboxMessage, OutboxOffset, RecoveryCode, SchemaState,
 		Segment, SendLimiter, SendingDomain, ServiceCredential, StaffMember,
 		Suppression, Tag, TrackingHostChange, Unsubscribe, Usage, User, UserIdentity,

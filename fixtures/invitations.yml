@@ -55,3 +55,35 @@
   expires_at: '{{daysAhead 7}}'
   created_at: '{{daysAgo 1}}'
   updated_at: '{{daysAgo 1}}'
+
+# Invitations to Acme addressed to people who already hold a Membership there (the Role
+# rule on accept). The raw tokens are "inv_fixture_token_acme_mary_admin" (Mary, a member,
+# invited as admin), "inv_fixture_token_acme_alice_member" (Alice, an admin, invited as
+# member) and "inv_fixture_token_acme_john_admin" (John, the owner, invited as admin).
+- id: 903 # fixture: InvitationAcmeMaryAdmin
+  workspace_id: 1
+  email: mary@acme.test
+  role: admin
+  token_hash: '{{ inviteHash "inv_fixture_token_acme_mary_admin" }}'
+  invited_by: 1
+  expires_at: '{{daysAhead 7}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 904 # fixture: InvitationAcmeAliceMember
+  workspace_id: 1
+  email: alice@acme.test
+  role: member
+  token_hash: '{{ inviteHash "inv_fixture_token_acme_alice_member" }}'
+  invited_by: 1
+  expires_at: '{{daysAhead 7}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 905 # fixture: InvitationAcmeJohnAdmin
+  workspace_id: 1
+  email: info@getsphericon.com
+  role: admin
+  token_hash: '{{ inviteHash "inv_fixture_token_acme_john_admin" }}'
+  invited_by: 1
+  expires_at: '{{daysAhead 7}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'

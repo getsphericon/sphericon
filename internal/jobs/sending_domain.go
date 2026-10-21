@@ -13,9 +13,11 @@ import (
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/joindomain"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/joindomains"
 	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/sending"
@@ -145,11 +147,19 @@ func (w *RecheckTrackingDomainsWorker) Work(ctx context.Context, job *river.Job[
 // instead of querying real DNS (which no local domain publishes), it echoes back
 // each domain's own stored public key, so any sending domain a developer adds
 // self-verifies and the send gate (ADR 0010) doesn't block the Mailpit loop.
+// It answers a Join domain's proof record the same way: the name
+// _sphericon-join.<domain> resolves to the tokens every Workspace's claim of the domain
+// stores, so a domain an Owner adds in the members settings verifies without DNS.
+// Because it answers every Workspace's token, two Workspaces claiming one domain both verify, so
+// a hand-over (the loser of a take-over) can never fire in dev or e2e.
 // Production uses net.DefaultResolver.LookupTXT — this trust must never be wired
 // outside a dev env.
 func DevTXTLookup(client *ent.Client) sending.TXTLookup {
 	const marker = "._domainkey."
 	return func(ctx context.Context, name string) ([]string, error) {
+		if joined, ok := strings.CutPrefix(name, joindomains.RecordLabel); ok {
+			return devJoinTokens(ctx, client, name, strings.TrimSuffix(joined, "."))
+		}
 		_, after, ok := strings.Cut(name, marker)
 		if !ok {
 			return nil, &net.DNSError{IsNotFound: true, Name: name}
@@ -166,6 +176,23 @@ func DevTXTLookup(client *ent.Client) sending.TXTLookup {
 		}
 		return []string{row.DkimPublicKey}, nil
 	}
+}
+
+// devJoinTokens answers the proof record of a Join domain from the tokens stored for it, or
+// NXDOMAIN when no Workspace claims the domain.
+func devJoinTokens(ctx context.Context, client *ent.Client, name, domain string) ([]string, error) {
+	rows, err := client.JoinDomain.Query().Where(joindomain.Domain(domain)).All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if len(rows) == 0 {
+		return nil, &net.DNSError{IsNotFound: true, Name: name}
+	}
+	tokens := make([]string, len(rows))
+	for i, row := range rows {
+		tokens[i] = row.Token
+	}
+	return tokens, nil
 }
 
 // DomainsDueForRecheck returns up to limit sending-domain ids to re-verify,
@@ -306,4 +333,59 @@ func trackingRank(s sendingdomain.TrackingState) int {
 	default:
 		return 0
 	}
+}
+
+// OwnerNotifier is the joindomains.Notify that mails a Workspace's Owners through the
+// system sender (a nil sender sends nothing).
+func OwnerNotifier(client *ent.Client, sender messaging.EmailSender) joindomains.Notify {
+	if sender == nil {
+		return nil
+	}
+	return func(ctx context.Context, workspaceID int64, subject, body string) error {
+		return NotifyWorkspaceOwners(ctx, client, sender, workspaceID, subject, body)
+	}
+}
+
+// --- periodic re-check of verified Join domains (the same shape as the Sending domain one) ---
+
+type VerifyJoinDomainArgs struct {
+	JoinDomainID int64 `json:"join_domain_id"`
+}
+
+func (VerifyJoinDomainArgs) Kind() string { return "join_domain_verify" }
+
+type VerifyJoinDomainWorker struct {
+	river.WorkerDefaults[VerifyJoinDomainArgs]
+	mod *joindomains.Module
+}
+
+// Work re-checks one domain. The Owners' mail is sent by the module, best-effort.
+func (w *VerifyJoinDomainWorker) Work(ctx context.Context, job *river.Job[VerifyJoinDomainArgs]) error {
+	_, err := w.mod.Recheck(ctx, job.Args.JoinDomainID)
+	return err
+}
+
+type RecheckJoinDomainsArgs struct{}
+
+func (RecheckJoinDomainsArgs) Kind() string { return "join_domain_recheck" }
+
+type RecheckJoinDomainsWorker struct {
+	river.WorkerDefaults[RecheckJoinDomainsArgs]
+	mod *joindomains.Module
+}
+
+// Work fans the tick out into one VerifyJoinDomain job per due domain, up to
+// recheckBatchSize, least-recently-checked first.
+func (w *RecheckJoinDomainsWorker) Work(ctx context.Context, job *river.Job[RecheckJoinDomainsArgs]) error {
+	ids, err := w.mod.Due(ctx, recheckBatchSize)
+	if err != nil {
+		return err
+	}
+	rc := river.ClientFromContext[pgx.Tx](ctx)
+	for _, id := range ids {
+		if _, err := rc.Insert(ctx, VerifyJoinDomainArgs{JoinDomainID: id}, nil); err != nil {
+			return err
+		}
+	}
+	return nil
 }

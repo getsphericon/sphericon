@@ -28,6 +28,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/invitation"
+	"github.com/getsphericon/sphericon/ent/joindomain"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
@@ -169,6 +170,20 @@ func (_u *WorkspaceUpdate) AddRetentionDays(v int) *WorkspaceUpdate {
 // ClearRetentionDays clears the value of the "retention_days" field.
 func (_u *WorkspaceUpdate) ClearRetentionDays() *WorkspaceUpdate {
 	_u.mutation.ClearRetentionDays()
+	return _u
+}
+
+// SetDomainJoinEnabled sets the "domain_join_enabled" field.
+func (_u *WorkspaceUpdate) SetDomainJoinEnabled(v bool) *WorkspaceUpdate {
+	_u.mutation.SetDomainJoinEnabled(v)
+	return _u
+}
+
+// SetNillableDomainJoinEnabled sets the "domain_join_enabled" field if the given value is not nil.
+func (_u *WorkspaceUpdate) SetNillableDomainJoinEnabled(v *bool) *WorkspaceUpdate {
+	if v != nil {
+		_u.SetDomainJoinEnabled(*v)
+	}
 	return _u
 }
 
@@ -520,6 +535,21 @@ func (_u *WorkspaceUpdate) AddSendingDomains(v ...*SendingDomain) *WorkspaceUpda
 		ids[i] = v[i].ID
 	}
 	return _u.AddSendingDomainIDs(ids...)
+}
+
+// AddJoinDomainIDs adds the "join_domains" edge to the JoinDomain entity by IDs.
+func (_u *WorkspaceUpdate) AddJoinDomainIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.AddJoinDomainIDs(ids...)
+	return _u
+}
+
+// AddJoinDomains adds the "join_domains" edges to the JoinDomain entity.
+func (_u *WorkspaceUpdate) AddJoinDomains(v ...*JoinDomain) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddJoinDomainIDs(ids...)
 }
 
 // AddSendLimiterIDs adds the "send_limiters" edge to the SendLimiter entity by IDs.
@@ -999,6 +1029,27 @@ func (_u *WorkspaceUpdate) RemoveSendingDomains(v ...*SendingDomain) *WorkspaceU
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveSendingDomainIDs(ids...)
+}
+
+// ClearJoinDomains clears all "join_domains" edges to the JoinDomain entity.
+func (_u *WorkspaceUpdate) ClearJoinDomains() *WorkspaceUpdate {
+	_u.mutation.ClearJoinDomains()
+	return _u
+}
+
+// RemoveJoinDomainIDs removes the "join_domains" edge to JoinDomain entities by IDs.
+func (_u *WorkspaceUpdate) RemoveJoinDomainIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.RemoveJoinDomainIDs(ids...)
+	return _u
+}
+
+// RemoveJoinDomains removes "join_domains" edges to JoinDomain entities.
+func (_u *WorkspaceUpdate) RemoveJoinDomains(v ...*JoinDomain) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveJoinDomainIDs(ids...)
 }
 
 // ClearSendLimiters clears all "send_limiters" edges to the SendLimiter entity.
@@ -1507,6 +1558,9 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.RetentionDaysCleared() {
 		_spec.ClearField(workspace.FieldRetentionDays, field.TypeInt)
 	}
+	if value, ok := _u.mutation.DomainJoinEnabled(); ok {
+		_spec.SetField(workspace.FieldDomainJoinEnabled, field.TypeBool, value)
+	}
 	if value, ok := _u.mutation.SecondFactorRequiredAt(); ok {
 		_spec.SetField(workspace.FieldSecondFactorRequiredAt, field.TypeTime, value)
 	}
@@ -1968,6 +2022,51 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(sendingdomain.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.JoinDomainsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.JoinDomainsTable,
+			Columns: []string{workspace.JoinDomainsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(joindomain.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedJoinDomainsIDs(); len(nodes) > 0 && !_u.mutation.JoinDomainsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.JoinDomainsTable,
+			Columns: []string{workspace.JoinDomainsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(joindomain.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.JoinDomainsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.JoinDomainsTable,
+			Columns: []string{workspace.JoinDomainsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(joindomain.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -2967,6 +3066,20 @@ func (_u *WorkspaceUpdateOne) ClearRetentionDays() *WorkspaceUpdateOne {
 	return _u
 }
 
+// SetDomainJoinEnabled sets the "domain_join_enabled" field.
+func (_u *WorkspaceUpdateOne) SetDomainJoinEnabled(v bool) *WorkspaceUpdateOne {
+	_u.mutation.SetDomainJoinEnabled(v)
+	return _u
+}
+
+// SetNillableDomainJoinEnabled sets the "domain_join_enabled" field if the given value is not nil.
+func (_u *WorkspaceUpdateOne) SetNillableDomainJoinEnabled(v *bool) *WorkspaceUpdateOne {
+	if v != nil {
+		_u.SetDomainJoinEnabled(*v)
+	}
+	return _u
+}
+
 // SetSecondFactorRequiredAt sets the "second_factor_required_at" field.
 func (_u *WorkspaceUpdateOne) SetSecondFactorRequiredAt(v time.Time) *WorkspaceUpdateOne {
 	_u.mutation.SetSecondFactorRequiredAt(v)
@@ -3315,6 +3428,21 @@ func (_u *WorkspaceUpdateOne) AddSendingDomains(v ...*SendingDomain) *WorkspaceU
 		ids[i] = v[i].ID
 	}
 	return _u.AddSendingDomainIDs(ids...)
+}
+
+// AddJoinDomainIDs adds the "join_domains" edge to the JoinDomain entity by IDs.
+func (_u *WorkspaceUpdateOne) AddJoinDomainIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.AddJoinDomainIDs(ids...)
+	return _u
+}
+
+// AddJoinDomains adds the "join_domains" edges to the JoinDomain entity.
+func (_u *WorkspaceUpdateOne) AddJoinDomains(v ...*JoinDomain) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddJoinDomainIDs(ids...)
 }
 
 // AddSendLimiterIDs adds the "send_limiters" edge to the SendLimiter entity by IDs.
@@ -3794,6 +3922,27 @@ func (_u *WorkspaceUpdateOne) RemoveSendingDomains(v ...*SendingDomain) *Workspa
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveSendingDomainIDs(ids...)
+}
+
+// ClearJoinDomains clears all "join_domains" edges to the JoinDomain entity.
+func (_u *WorkspaceUpdateOne) ClearJoinDomains() *WorkspaceUpdateOne {
+	_u.mutation.ClearJoinDomains()
+	return _u
+}
+
+// RemoveJoinDomainIDs removes the "join_domains" edge to JoinDomain entities by IDs.
+func (_u *WorkspaceUpdateOne) RemoveJoinDomainIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.RemoveJoinDomainIDs(ids...)
+	return _u
+}
+
+// RemoveJoinDomains removes "join_domains" edges to JoinDomain entities.
+func (_u *WorkspaceUpdateOne) RemoveJoinDomains(v ...*JoinDomain) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveJoinDomainIDs(ids...)
 }
 
 // ClearSendLimiters clears all "send_limiters" edges to the SendLimiter entity.
@@ -4332,6 +4481,9 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 	if _u.mutation.RetentionDaysCleared() {
 		_spec.ClearField(workspace.FieldRetentionDays, field.TypeInt)
 	}
+	if value, ok := _u.mutation.DomainJoinEnabled(); ok {
+		_spec.SetField(workspace.FieldDomainJoinEnabled, field.TypeBool, value)
+	}
 	if value, ok := _u.mutation.SecondFactorRequiredAt(); ok {
 		_spec.SetField(workspace.FieldSecondFactorRequiredAt, field.TypeTime, value)
 	}
@@ -4793,6 +4945,51 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(sendingdomain.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.JoinDomainsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.JoinDomainsTable,
+			Columns: []string{workspace.JoinDomainsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(joindomain.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedJoinDomainsIDs(); len(nodes) > 0 && !_u.mutation.JoinDomainsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.JoinDomainsTable,
+			Columns: []string{workspace.JoinDomainsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(joindomain.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.JoinDomainsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.JoinDomainsTable,
+			Columns: []string{workspace.JoinDomainsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(joindomain.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

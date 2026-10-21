@@ -70,6 +70,13 @@ model SiteVerifyEmailInput {
   password?: string;
 }
 
+/** Where a User who proved their address goes next */
+model SiteVerifyEmailResult {
+  /** The Workspace to open: the one the User joined by its Join domain (ADR 0051), else
+   * the first Workspace made for them */
+  landingWorkspaceId: WorkspaceId;
+}
+
 /** Confirm a requested email change using the token sent to the new address */
 model SiteConfirmEmailChangeInput {
   token: string;
@@ -338,6 +345,8 @@ namespace SiteAuth {
 
         /** The session cookie of the verified User */
         @header("Set-Cookie") setCookie: string;
+
+        @body body: SiteVerifyEmailResult;
       }
     | BadRequestProblem
     | PreconditionRequiredProblem

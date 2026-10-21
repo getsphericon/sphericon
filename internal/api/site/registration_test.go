@@ -69,7 +69,7 @@ func userByEmail(t *testing.T, env *testhelper.TestEnv, email string) *ent.User 
 // registerAndVerify takes a new person through the whole sign-up.
 func registerAndVerify(t *testing.T, env *testhelper.TestEnv, name, email, password string) {
 	t.Helper()
-	require.IsType(t, &siteapi.SiteAuthVerifyEmailOK{}, verify(t, env, register(t, env, name, email), password))
+	require.IsType(t, &siteapi.SiteVerifyEmailResultHeaders{}, verify(t, env, register(t, env, name, email), password))
 }
 
 func TestRegisteringCreatesAnUnverifiedUserWithNothingElse(t *testing.T) {
@@ -140,7 +140,7 @@ func TestTheVerifyLinkSetsThePasswordCreatesTheWorkspaceAndAllowsLogin(t *testin
 	token := register(t, env, "Grace Hopper", "grace@example.com")
 
 	res := verify(t, env, token, "grace-password-1")
-	require.IsType(t, &siteapi.SiteAuthVerifyEmailOK{}, res)
+	require.IsType(t, &siteapi.SiteVerifyEmailResultHeaders{}, res)
 
 	msgs := env.SystemMail.Messages()
 	require.Len(t, msgs, 2, "the welcome email follows the proof")
@@ -166,7 +166,7 @@ func TestTheVerifyLinkStartsASessionIntoTheFirstWorkspace(t *testing.T) {
 	token := register(t, env, "Grace Hopper", "grace@example.com")
 
 	res := verify(t, env, token, "grace-password-1")
-	ok, isOK := res.(*siteapi.SiteAuthVerifyEmailOK)
+	ok, isOK := res.(*siteapi.SiteVerifyEmailResultHeaders)
 	require.True(t, isOK, "got %T", res)
 	cookie, err := http.ParseSetCookie(ok.SetCookie)
 	require.NoError(t, err)
@@ -182,7 +182,7 @@ func TestTheVerifyLinkStartsASessionIntoTheFirstWorkspace(t *testing.T) {
 func TestTheVerifyLinkWorksOnce(t *testing.T) {
 	env := testhelper.Setup(t)
 	token := register(t, env, "Grace Hopper", "grace@example.com")
-	require.IsType(t, &siteapi.SiteAuthVerifyEmailOK{}, verify(t, env, token, "grace-password-1"))
+	require.IsType(t, &siteapi.SiteVerifyEmailResultHeaders{}, verify(t, env, token, "grace-password-1"))
 
 	assert.IsType(t, &siteapi.SiteAuthVerifyEmailBadRequest{}, verify(t, env, token, "attacker-password-1"), "a replayed link sets nothing")
 
@@ -365,7 +365,7 @@ func TestResendSendsAFreshLinkThatCompletesTheRegistration(t *testing.T) {
 	assert.Contains(t, msgs[1].Subject, "Verify")
 	fresh := tokenFromEmail(t, msgs[1].Text)
 
-	require.IsType(t, &siteapi.SiteAuthVerifyEmailOK{}, verify(t, env, fresh, "grace-password-1"))
+	require.IsType(t, &siteapi.SiteVerifyEmailResultHeaders{}, verify(t, env, fresh, "grace-password-1"))
 	assert.Equal(t, http.StatusOK, loginStatus(t, env, "grace@example.com", "grace-password-1"))
 }
 
@@ -390,7 +390,7 @@ func TestSettingThePasswordEndsEveryEarlierVerifyLinkAfterAResend(t *testing.T) 
 	_, body := lastSystemEmail(t, env)
 	fresh := tokenFromEmail(t, body)
 
-	require.IsType(t, &siteapi.SiteAuthVerifyEmailOK{}, verify(t, env, fresh, "grace-password-1"))
+	require.IsType(t, &siteapi.SiteVerifyEmailResultHeaders{}, verify(t, env, fresh, "grace-password-1"))
 	assert.IsType(t, &siteapi.SiteAuthVerifyEmailBadRequest{}, verify(t, env, first, "attacker-password-1"))
 }
 
@@ -403,7 +403,7 @@ func TestVerifyingBumpsTheSessionEpoch(t *testing.T) {
 	before, err := env.DB.User.Query().Where(entuser.Email("grace@example.com")).Only(t.Context())
 	require.NoError(t, err)
 
-	require.IsType(t, &siteapi.SiteAuthVerifyEmailOK{}, verify(t, env, token, "grace-password-1"))
+	require.IsType(t, &siteapi.SiteVerifyEmailResultHeaders{}, verify(t, env, token, "grace-password-1"))
 
 	after, err := env.DB.User.Get(t.Context(), before.ID)
 	require.NoError(t, err)
@@ -523,7 +523,7 @@ func firstWorkspaceID(t *testing.T, env *testhelper.TestEnv, email string) sitea
 
 func sessionOf(t *testing.T, res siteapi.SiteAuthVerifyEmailRes) *http.Cookie {
 	t.Helper()
-	ok, isOK := res.(*siteapi.SiteAuthVerifyEmailOK)
+	ok, isOK := res.(*siteapi.SiteVerifyEmailResultHeaders)
 	require.Truef(t, isOK, "got %T", res)
 	cookie, err := http.ParseSetCookie(ok.SetCookie)
 	require.NoError(t, err)
@@ -603,7 +603,7 @@ func TestTheLinkInAnotherBrowserWithoutAPasswordNeedsOneAndChangesNothing(t *tes
 	assert.Zero(t, memberships)
 
 	again := verifyIn(t, env.SiteBrowser(t), token, "grace-password-2")
-	assert.IsType(t, &siteapi.SiteAuthVerifyEmailOK{}, again, "the scanner-style request consumed nothing")
+	assert.IsType(t, &siteapi.SiteVerifyEmailResultHeaders{}, again, "the scanner-style request consumed nothing")
 }
 
 func TestTheLinkInAnotherBrowserWithAPasswordMakesThatPasswordLiveAndDiscardsTheFormOne(t *testing.T) {
@@ -627,7 +627,7 @@ func TestAnAttackersPasswordNeverGoesLiveWhenTheVictimFollowsTheLink(t *testing.
 	victim := env.SiteBrowser(t)
 
 	assert.IsType(t, &siteapi.SiteAuthVerifyEmailPreconditionRequired{}, verifyIn(t, victim, token, ""))
-	require.IsType(t, &siteapi.SiteAuthVerifyEmailOK{}, verifyIn(t, victim, token, "victim-password-1"))
+	require.IsType(t, &siteapi.SiteVerifyEmailResultHeaders{}, verifyIn(t, victim, token, "victim-password-1"))
 
 	assert.Equal(t, http.StatusOK, loginStatus(t, env, "victim@example.com", "victim-password-1"))
 	assert.Equal(t, http.StatusUnauthorized, loginStatus(t, env, "victim@example.com", "attacker-password-1"))
@@ -641,7 +641,7 @@ func TestRegisteringTheSameUnverifiedAddressTwiceLeavesOnlyTheLatestMailAndPassw
 
 	assert.IsType(t, &siteapi.SiteAuthVerifyEmailBadRequest{}, verifyIn(t, browser, first, ""), "the earlier mail is dead")
 	assert.IsType(t, &siteapi.SiteAuthVerifyEmailBadRequest{}, verifyIn(t, browser, first, "attacker-password-1"))
-	require.IsType(t, &siteapi.SiteAuthVerifyEmailOK{}, verifyIn(t, browser, latest, ""))
+	require.IsType(t, &siteapi.SiteVerifyEmailResultHeaders{}, verifyIn(t, browser, latest, ""))
 
 	assert.Equal(t, http.StatusOK, loginStatus(t, env, "grace@example.com", "latest-password-1"))
 	assert.Equal(t, http.StatusUnauthorized, loginStatus(t, env, "grace@example.com", "first-password-1"))
@@ -711,7 +711,7 @@ func TestResendFromABrowserWithoutTheCookieGivesALinkThatAsksForAPassword(t *tes
 	browser := env.SiteBrowser(t)
 
 	assert.IsType(t, &siteapi.SiteAuthVerifyEmailPreconditionRequired{}, verifyIn(t, browser, resent, ""))
-	assert.IsType(t, &siteapi.SiteAuthVerifyEmailOK{}, verifyIn(t, browser, resent, "grace-password-2"))
+	assert.IsType(t, &siteapi.SiteVerifyEmailResultHeaders{}, verifyIn(t, browser, resent, "grace-password-2"))
 	assert.Equal(t, http.StatusUnauthorized, loginStatus(t, env, "grace@example.com", formPassword))
 }
 
@@ -721,7 +721,7 @@ func TestVerifyingEndsASessionIssuedBeforeIt(t *testing.T) {
 	token := register(t, env, "Grace Hopper", "grace@example.com")
 	earlier := env.SiteToken(t, "grace@example.com", nil)
 
-	require.IsType(t, &siteapi.SiteAuthVerifyEmailOK{}, verify(t, env, token, "grace-password-1"))
+	require.IsType(t, &siteapi.SiteVerifyEmailResultHeaders{}, verify(t, env, token, "grace-password-1"))
 
 	assert.Equal(t, http.StatusUnauthorized, workspacesStatus(t, env, earlier))
 }
@@ -734,5 +734,5 @@ func TestABrowsersCookieDoesNotVouchForAnotherRegistrationsLink(t *testing.T) {
 	// The link of a registration made in another browser still needs a password.
 	other := register(t, env, "Alan Turing", "alan@example.com")
 	assert.IsType(t, &siteapi.SiteAuthVerifyEmailPreconditionRequired{}, verifyIn(t, browser, other, ""))
-	assert.IsType(t, &siteapi.SiteAuthVerifyEmailOK{}, verifyIn(t, browser, token, ""))
+	assert.IsType(t, &siteapi.SiteVerifyEmailResultHeaders{}, verifyIn(t, browser, token, ""))
 }

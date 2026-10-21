@@ -35,6 +35,8 @@ type Workspace struct {
 	PostalAddress string `json:"postal_address,omitempty"`
 	// RetentionDays holds the value of the "retention_days" field.
 	RetentionDays *int `json:"retention_days,omitempty"`
+	// DomainJoinEnabled holds the value of the "domain_join_enabled" field.
+	DomainJoinEnabled bool `json:"domain_join_enabled,omitempty"`
 	// SecondFactorRequiredAt holds the value of the "second_factor_required_at" field.
 	SecondFactorRequiredAt *time.Time `json:"second_factor_required_at,omitempty"`
 	// FeedPosition holds the value of the "feed_position" field.
@@ -83,6 +85,8 @@ type WorkspaceEdges struct {
 	Integrations []*Integration `json:"integrations,omitempty"`
 	// SendingDomains holds the value of the sending_domains edge.
 	SendingDomains []*SendingDomain `json:"sending_domains,omitempty"`
+	// JoinDomains holds the value of the join_domains edge.
+	JoinDomains []*JoinDomain `json:"join_domains,omitempty"`
 	// SendLimiters holds the value of the send_limiters edge.
 	SendLimiters []*SendLimiter `json:"send_limiters,omitempty"`
 	// Holds holds the value of the holds edge.
@@ -123,7 +127,7 @@ type WorkspaceEdges struct {
 	Usages []*Usage `json:"usages,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [28]bool
+	loadedTypes [29]bool
 }
 
 // ContactsOrErr returns the Contacts value or an error if the edge
@@ -207,10 +211,19 @@ func (e WorkspaceEdges) SendingDomainsOrErr() ([]*SendingDomain, error) {
 	return nil, &NotLoadedError{edge: "sending_domains"}
 }
 
+// JoinDomainsOrErr returns the JoinDomains value or an error if the edge
+// was not loaded in eager-loading.
+func (e WorkspaceEdges) JoinDomainsOrErr() ([]*JoinDomain, error) {
+	if e.loadedTypes[9] {
+		return e.JoinDomains, nil
+	}
+	return nil, &NotLoadedError{edge: "join_domains"}
+}
+
 // SendLimitersOrErr returns the SendLimiters value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) SendLimitersOrErr() ([]*SendLimiter, error) {
-	if e.loadedTypes[9] {
+	if e.loadedTypes[10] {
 		return e.SendLimiters, nil
 	}
 	return nil, &NotLoadedError{edge: "send_limiters"}
@@ -219,7 +232,7 @@ func (e WorkspaceEdges) SendLimitersOrErr() ([]*SendLimiter, error) {
 // HoldsOrErr returns the Holds value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) HoldsOrErr() ([]*Hold, error) {
-	if e.loadedTypes[10] {
+	if e.loadedTypes[11] {
 		return e.Holds, nil
 	}
 	return nil, &NotLoadedError{edge: "holds"}
@@ -228,7 +241,7 @@ func (e WorkspaceEdges) HoldsOrErr() ([]*Hold, error) {
 // BroadcastsOrErr returns the Broadcasts value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) BroadcastsOrErr() ([]*Broadcast, error) {
-	if e.loadedTypes[11] {
+	if e.loadedTypes[12] {
 		return e.Broadcasts, nil
 	}
 	return nil, &NotLoadedError{edge: "broadcasts"}
@@ -237,7 +250,7 @@ func (e WorkspaceEdges) BroadcastsOrErr() ([]*Broadcast, error) {
 // BroadcastRecipientsOrErr returns the BroadcastRecipients value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) BroadcastRecipientsOrErr() ([]*BroadcastRecipient, error) {
-	if e.loadedTypes[12] {
+	if e.loadedTypes[13] {
 		return e.BroadcastRecipients, nil
 	}
 	return nil, &NotLoadedError{edge: "broadcast_recipients"}
@@ -246,7 +259,7 @@ func (e WorkspaceEdges) BroadcastRecipientsOrErr() ([]*BroadcastRecipient, error
 // EmailTemplatesOrErr returns the EmailTemplates value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) EmailTemplatesOrErr() ([]*EmailTemplate, error) {
-	if e.loadedTypes[13] {
+	if e.loadedTypes[14] {
 		return e.EmailTemplates, nil
 	}
 	return nil, &NotLoadedError{edge: "email_templates"}
@@ -255,7 +268,7 @@ func (e WorkspaceEdges) EmailTemplatesOrErr() ([]*EmailTemplate, error) {
 // BrandKitsOrErr returns the BrandKits value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) BrandKitsOrErr() ([]*BrandKit, error) {
-	if e.loadedTypes[14] {
+	if e.loadedTypes[15] {
 		return e.BrandKits, nil
 	}
 	return nil, &NotLoadedError{edge: "brand_kits"}
@@ -264,7 +277,7 @@ func (e WorkspaceEdges) BrandKitsOrErr() ([]*BrandKit, error) {
 // AutomationsOrErr returns the Automations value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) AutomationsOrErr() ([]*Automation, error) {
-	if e.loadedTypes[15] {
+	if e.loadedTypes[16] {
 		return e.Automations, nil
 	}
 	return nil, &NotLoadedError{edge: "automations"}
@@ -273,7 +286,7 @@ func (e WorkspaceEdges) AutomationsOrErr() ([]*Automation, error) {
 // AutomationVersionsOrErr returns the AutomationVersions value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) AutomationVersionsOrErr() ([]*AutomationVersion, error) {
-	if e.loadedTypes[16] {
+	if e.loadedTypes[17] {
 		return e.AutomationVersions, nil
 	}
 	return nil, &NotLoadedError{edge: "automation_versions"}
@@ -282,7 +295,7 @@ func (e WorkspaceEdges) AutomationVersionsOrErr() ([]*AutomationVersion, error) 
 // AutomationRunsOrErr returns the AutomationRuns value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) AutomationRunsOrErr() ([]*AutomationRun, error) {
-	if e.loadedTypes[17] {
+	if e.loadedTypes[18] {
 		return e.AutomationRuns, nil
 	}
 	return nil, &NotLoadedError{edge: "automation_runs"}
@@ -291,7 +304,7 @@ func (e WorkspaceEdges) AutomationRunsOrErr() ([]*AutomationRun, error) {
 // WebhookEndpointsOrErr returns the WebhookEndpoints value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) WebhookEndpointsOrErr() ([]*WebhookEndpoint, error) {
-	if e.loadedTypes[18] {
+	if e.loadedTypes[19] {
 		return e.WebhookEndpoints, nil
 	}
 	return nil, &NotLoadedError{edge: "webhook_endpoints"}
@@ -300,7 +313,7 @@ func (e WorkspaceEdges) WebhookEndpointsOrErr() ([]*WebhookEndpoint, error) {
 // SuppressionsOrErr returns the Suppressions value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) SuppressionsOrErr() ([]*Suppression, error) {
-	if e.loadedTypes[19] {
+	if e.loadedTypes[20] {
 		return e.Suppressions, nil
 	}
 	return nil, &NotLoadedError{edge: "suppressions"}
@@ -309,7 +322,7 @@ func (e WorkspaceEdges) SuppressionsOrErr() ([]*Suppression, error) {
 // UnsubscribesOrErr returns the Unsubscribes value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) UnsubscribesOrErr() ([]*Unsubscribe, error) {
-	if e.loadedTypes[20] {
+	if e.loadedTypes[21] {
 		return e.Unsubscribes, nil
 	}
 	return nil, &NotLoadedError{edge: "unsubscribes"}
@@ -318,7 +331,7 @@ func (e WorkspaceEdges) UnsubscribesOrErr() ([]*Unsubscribe, error) {
 // ConfirmationsOrErr returns the Confirmations value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) ConfirmationsOrErr() ([]*Confirmation, error) {
-	if e.loadedTypes[21] {
+	if e.loadedTypes[22] {
 		return e.Confirmations, nil
 	}
 	return nil, &NotLoadedError{edge: "confirmations"}
@@ -327,7 +340,7 @@ func (e WorkspaceEdges) ConfirmationsOrErr() ([]*Confirmation, error) {
 // OutboundMessagesOrErr returns the OutboundMessages value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) OutboundMessagesOrErr() ([]*OutboundMessage, error) {
-	if e.loadedTypes[22] {
+	if e.loadedTypes[23] {
 		return e.OutboundMessages, nil
 	}
 	return nil, &NotLoadedError{edge: "outbound_messages"}
@@ -336,7 +349,7 @@ func (e WorkspaceEdges) OutboundMessagesOrErr() ([]*OutboundMessage, error) {
 // MembershipsOrErr returns the Memberships value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) MembershipsOrErr() ([]*Membership, error) {
-	if e.loadedTypes[23] {
+	if e.loadedTypes[24] {
 		return e.Memberships, nil
 	}
 	return nil, &NotLoadedError{edge: "memberships"}
@@ -345,7 +358,7 @@ func (e WorkspaceEdges) MembershipsOrErr() ([]*Membership, error) {
 // InvitationsOrErr returns the Invitations value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) InvitationsOrErr() ([]*Invitation, error) {
-	if e.loadedTypes[24] {
+	if e.loadedTypes[25] {
 		return e.Invitations, nil
 	}
 	return nil, &NotLoadedError{edge: "invitations"}
@@ -354,7 +367,7 @@ func (e WorkspaceEdges) InvitationsOrErr() ([]*Invitation, error) {
 // AuditEntriesOrErr returns the AuditEntries value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) AuditEntriesOrErr() ([]*AuditEntry, error) {
-	if e.loadedTypes[25] {
+	if e.loadedTypes[26] {
 		return e.AuditEntries, nil
 	}
 	return nil, &NotLoadedError{edge: "audit_entries"}
@@ -363,7 +376,7 @@ func (e WorkspaceEdges) AuditEntriesOrErr() ([]*AuditEntry, error) {
 // ErasuresOrErr returns the Erasures value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) ErasuresOrErr() ([]*Erasure, error) {
-	if e.loadedTypes[26] {
+	if e.loadedTypes[27] {
 		return e.Erasures, nil
 	}
 	return nil, &NotLoadedError{edge: "erasures"}
@@ -372,7 +385,7 @@ func (e WorkspaceEdges) ErasuresOrErr() ([]*Erasure, error) {
 // UsagesOrErr returns the Usages value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) UsagesOrErr() ([]*Usage, error) {
-	if e.loadedTypes[27] {
+	if e.loadedTypes[28] {
 		return e.Usages, nil
 	}
 	return nil, &NotLoadedError{edge: "usages"}
@@ -383,7 +396,7 @@ func (*Workspace) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case workspace.FieldRequireConfirmedOptIn, workspace.FieldAbuseExempt:
+		case workspace.FieldRequireConfirmedOptIn, workspace.FieldDomainJoinEnabled, workspace.FieldAbuseExempt:
 			values[i] = new(sql.NullBool)
 		case workspace.FieldID, workspace.FieldRetentionDays, workspace.FieldFeedPosition:
 			values[i] = new(sql.NullInt64)
@@ -467,6 +480,12 @@ func (_m *Workspace) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.RetentionDays = new(int)
 				*_m.RetentionDays = int(value.Int64)
+			}
+		case workspace.FieldDomainJoinEnabled:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field domain_join_enabled", values[i])
+			} else if value.Valid {
+				_m.DomainJoinEnabled = value.Bool
 			}
 		case workspace.FieldSecondFactorRequiredAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -599,6 +618,11 @@ func (_m *Workspace) QueryIntegrations() *IntegrationQuery {
 // QuerySendingDomains queries the "sending_domains" edge of the Workspace entity.
 func (_m *Workspace) QuerySendingDomains() *SendingDomainQuery {
 	return NewWorkspaceClient(_m.config).QuerySendingDomains(_m)
+}
+
+// QueryJoinDomains queries the "join_domains" edge of the Workspace entity.
+func (_m *Workspace) QueryJoinDomains() *JoinDomainQuery {
+	return NewWorkspaceClient(_m.config).QueryJoinDomains(_m)
 }
 
 // QuerySendLimiters queries the "send_limiters" edge of the Workspace entity.
@@ -748,6 +772,9 @@ func (_m *Workspace) String() string {
 		builder.WriteString("retention_days=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
+	builder.WriteString(", ")
+	builder.WriteString("domain_join_enabled=")
+	builder.WriteString(fmt.Sprintf("%v", _m.DomainJoinEnabled))
 	builder.WriteString(", ")
 	if v := _m.SecondFactorRequiredAt; v != nil {
 		builder.WriteString("second_factor_required_at=")

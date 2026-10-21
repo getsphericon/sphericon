@@ -524,6 +524,25 @@ func (UnimplementedHandler) SiteCustomFieldsList(ctx context.Context, params Sit
 	return r, ht.ErrNotImplemented
 }
 
+// SiteDomainJoinGet implements SiteDomainJoin_get operation.
+//
+// Read the domain join switch (owner only).
+//
+// GET /workspaces/{workspaceId}/domain-join
+func (UnimplementedHandler) SiteDomainJoinGet(ctx context.Context, params SiteDomainJoinGetParams) (r SiteDomainJoinGetRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteDomainJoinSet implements SiteDomainJoin_set operation.
+//
+// Switch domain join on or off (owner only). Switching it on adds nobody who is already a User: only
+// an address proven afterwards joins. Recorded as an Audit entry.
+//
+// PUT /workspaces/{workspaceId}/domain-join
+func (UnimplementedHandler) SiteDomainJoinSet(ctx context.Context, req *SiteSetDomainJoinInput, params SiteDomainJoinSetParams) (r SiteDomainJoinSetRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteEnrollmentsGet implements SiteEnrollments_get operation.
 //
 // Get one Enrollment of an Automation.
@@ -708,6 +727,46 @@ func (UnimplementedHandler) SiteInvitationsDelete(ctx context.Context, params Si
 //
 // GET /workspaces/{workspaceId}/invitations
 func (UnimplementedHandler) SiteInvitationsList(ctx context.Context, params SiteInvitationsListParams) (r SiteInvitationsListRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteJoinDomainsAdd implements SiteJoinDomains_add operation.
+//
+// Add a Join domain (owner only). It starts pending, with the TXT record to publish at
+// `_sphericon-join.<domain>`. Another Workspace's claim never blocks it. An invalid hostname is 422, a
+// domain the Workspace already has is 409.
+//
+// POST /workspaces/{workspaceId}/join-domains
+func (UnimplementedHandler) SiteJoinDomainsAdd(ctx context.Context, req *SiteAddJoinDomainInput, params SiteJoinDomainsAddParams) (r SiteJoinDomainsAddRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteJoinDomainsList implements SiteJoinDomains_list operation.
+//
+// List the Workspace's Join domains (owner only), pending and verified.
+//
+// GET /workspaces/{workspaceId}/join-domains
+func (UnimplementedHandler) SiteJoinDomainsList(ctx context.Context, params SiteJoinDomainsListParams) (r SiteJoinDomainsListRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteJoinDomainsRemove implements SiteJoinDomains_remove operation.
+//
+// Remove a Join domain (owner only): only the claim goes, no Membership is touched.
+//
+// DELETE /workspaces/{workspaceId}/join-domains/{id}
+func (UnimplementedHandler) SiteJoinDomainsRemove(ctx context.Context, params SiteJoinDomainsRemoveParams) (r SiteJoinDomainsRemoveRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteJoinDomainsVerify implements SiteJoinDomains_verify operation.
+//
+// Check the TXT record now (owner only) and verify the domain when it is published. A domain another
+// Workspace has verified is re-checked at that Workspace first: 409 while its record is still
+// published, otherwise the domain moves here. 422 when the record is not found.
+//
+// POST /workspaces/{workspaceId}/join-domains/{id}/verify
+func (UnimplementedHandler) SiteJoinDomainsVerify(ctx context.Context, params SiteJoinDomainsVerifyParams) (r SiteJoinDomainsVerifyRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

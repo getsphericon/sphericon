@@ -10,6 +10,7 @@ package accounts
 import (
 	"context"
 	"crypto/rand"
+	"database/sql"
 	"errors"
 	"fmt"
 	"strconv"
@@ -280,6 +281,7 @@ func createWorkspaceIn(ctx context.Context, tx *ent.Client, userID int64, name, 
 		SetUserID(userID).
 		SetWorkspaceID(ws.ID).
 		SetRole(membership.RoleOwner).
+		SetSource(membership.SourceCreator).
 		Save(ctx); err != nil {
 		return nil, err
 	}
@@ -372,10 +374,14 @@ const FirstWorkspaceName = "Personal"
 // stored at registration), bumps the session epoch (ending every session issued before, as
 // a password change does) and creates the User's first Workspace, named FirstWorkspaceName,
 // with the User as owner. It records `user.email_verify` in that Workspace's Audit log and
-// returns the User.
+// returns the User. The address was just proven, so it is a domain-join step (ADR 0051): a
+// verified Join domain equal to its domain, with the switch on, makes the User a `member`
+// of that Workspace before the first Workspace is created. landing is where the User goes
+// next: the joined Workspace, else the first one.
 // ErrAlreadyVerified when the User is no longer Unverified (a used link).
-func (a *Accounts) VerifyEmail(ctx context.Context, id int64, passwordHash *string) (*ent.User, error) {
-	return a.verified(ctx, func(tx *ent.Client) (*ent.User, error) {
+func (a *Accounts) VerifyEmail(ctx context.Context, id int64, passwordHash *string) (u *ent.User, landing *ent.Workspace, err error) {
+	// The link follows a registration, so the User exists: the sign-up gate permits.
+	return a.verified(ctx, &proof{SignupPermits: true}, func(tx *ent.Client) (*ent.User, error) {
 		return markVerified(ctx, tx, id, "", passwordHash)
 	})
 }
@@ -385,7 +391,7 @@ func (a *Accounts) VerifyEmail(ctx context.Context, id int64, passwordHash *stri
 // once with its password, and the first Workspace (FirstWorkspaceName), exactly as VerifyEmail does. The
 // unique index on the email refuses a taken address (see db.IsUniqueViolation).
 func (a *Accounts) RegisterVerified(ctx context.Context, name, email, passwordHash string) (*ent.User, error) {
-	return a.verified(ctx, func(tx *ent.Client) (*ent.User, error) {
+	u, _, err := a.verified(ctx, noJoin, func(tx *ent.Client) (*ent.User, error) {
 		return tx.User.Create().
 			SetName(name).
 			SetEmail(email).
@@ -393,6 +399,7 @@ func (a *Accounts) RegisterVerified(ctx context.Context, name, email, passwordHa
 			SetEmailVerifiedAt(time.Now()).
 			Save(ctx)
 	})
+	return u, err
 }
 
 // CreateOwner is the Instance operator's way to make a first Owner on an Instance that
@@ -412,12 +419,19 @@ func (a *Accounts) CreateOwner(ctx context.Context, email, name string) (passwor
 	return password, nil
 }
 
-// verified is what makes a User Verified, shared by VerifyEmail and RegisterVerified:
-// write stores the User's verified state, then the User's first Workspace is created
-// and `user.email_verify` recorded in its Audit log, all in one transaction.
-func (a *Accounts) verified(ctx context.Context, write func(tx *ent.Client) (*ent.User, error)) (*ent.User, error) {
+// noJoin is the proof of a step that proves nothing (an Instance with verification off
+// stamps only verified_at), so it takes no part in domain join (ADR 0051).
+var noJoin *proof
+
+// verified is what makes a User Verified, shared by VerifyEmail, RegisterVerified and the
+// provider sign-in: write stores the User's verified state; then, when p is not nil (the
+// step stamped email_proven_at from empty), the domain-join step runs with it; then the User's first Workspace is created and
+// `user.email_verify` recorded in its Audit log, all in one transaction. landing is the
+// Workspace the User goes to next: the one joined by domain, else the first.
+func (a *Accounts) verified(ctx context.Context, p *proof, write func(tx *ent.Client) (*ent.User, error)) (*ent.User, *ent.Workspace, error) {
 	for {
 		var verified *ent.User
+		var landing *ent.Workspace
 		written := false
 		err := a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
 			u, err := write(tx)
@@ -425,16 +439,26 @@ func (a *Accounts) verified(ctx context.Context, write func(tx *ent.Client) (*en
 				return err
 			}
 			written = true
-			if _, err := createWorkspaceIn(ctx, tx, u.ID, FirstWorkspaceName, a.newPublicID()); err != nil {
+			var joined *ent.Workspace
+			if p != nil {
+				if joined, err = applyDomainJoin(ctx, tx, pub, u, *p); err != nil {
+					return err
+				}
+			}
+			first, err := createWorkspaceIn(ctx, tx, u.ID, FirstWorkspaceName, a.newPublicID())
+			if err != nil {
 				return err
 			}
-			verified = u
+			verified, landing = u, first
+			if joined != nil {
+				landing = joined
+			}
 			return RecordUserAction(ctx, tx, pub, u, events.ActionUserEmailVerify, nil)
 		})
 		if written && db.IsUniqueViolation(err) {
 			continue // drew a taken id; the next attempt retries
 		}
-		return verified, err
+		return verified, landing, err
 	}
 }
 
@@ -451,10 +475,17 @@ func (a *Accounts) UpdateProfile(ctx context.Context, id int64, name, passwordHa
 func (a *Accounts) updateProfile(ctx context.Context, id int64, name, passwordHash *string, proven bool) (*ent.User, error) {
 	var saved *ent.User
 	err := a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		upd := tx.User.UpdateOneID(id)
+		// The mailed link proves the address; only a stamp from empty is a domain-join step,
+		// so the write is guarded and its rows-changed count says whether it stamped (ADR 0051).
+		stamped := false
 		if proven {
-			upd = upd.SetEmailProvenAt(time.Now())
+			n, err := tx.User.Update().Where(user.ID(id), user.EmailProvenAtIsNil()).SetEmailProvenAt(time.Now()).Save(ctx)
+			if err != nil {
+				return err
+			}
+			stamped = n > 0
 		}
+		upd := tx.User.UpdateOneID(id)
 		if name != nil {
 			upd = upd.SetName(*name)
 		}
@@ -467,6 +498,11 @@ func (a *Accounts) updateProfile(ctx context.Context, id int64, name, passwordHa
 			return err
 		}
 		saved = u
+		if stamped {
+			if _, err := applyDomainJoin(ctx, tx, pub, u, proof{SignupPermits: true}); err != nil {
+				return err
+			}
+		}
 		if passwordHash == nil {
 			return nil
 		}
@@ -488,7 +524,7 @@ func (a *Accounts) ResetPassword(ctx context.Context, id int64, passwordHash str
 		return nil, false, err
 	}
 	if u.EmailVerifiedAt == nil {
-		u, err = a.VerifyEmail(ctx, id, &passwordHash)
+		u, _, err = a.VerifyEmail(ctx, id, &passwordHash)
 		if err == nil {
 			return u, true, nil
 		}
@@ -572,12 +608,18 @@ func RecordActionOnUserIn(ctx context.Context, pub events.Publisher, actor event
 
 // ChangeEmail swaps the login email for one proven by a confirmation link, so it is
 // stored verified, and bumps the session epoch: every session issued before the
-// change ends (ADR 0020). The unique index guards a race on the address (see
+// change ends (ADR 0020). The new address is proven now, so it is a domain-join step
+// (ADR 0051) in the same transaction. The unique index guards a race on the address (see
 // db.IsUniqueViolation).
 func (a *Accounts) ChangeEmail(ctx context.Context, id int64, newEmail string) error {
-	return a.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
+	return a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
 		now := time.Now()
-		return tx.User.UpdateOneID(id).SetEmail(newEmail).SetEmailVerifiedAt(now).SetEmailProvenAt(now).AddSessionEpoch(1).Exec(ctx)
+		u, err := tx.User.UpdateOneID(id).SetEmail(newEmail).SetEmailVerifiedAt(now).SetEmailProvenAt(now).AddSessionEpoch(1).Save(ctx)
+		if err != nil {
+			return err
+		}
+		_, err = applyDomainJoin(ctx, tx, pub, u, proof{SignupPermits: true})
+		return err
 	})
 }
 
@@ -615,6 +657,7 @@ func (a *Accounts) AcceptInvitation(ctx context.Context, inv *ent.Invitation, na
 			return uerr
 		}
 		provedByInvitation := false
+		provenNow := false
 		if uerr == nil && u.EmailVerifiedAt != nil {
 			// A Verified User's own session is the proof of the address (ADR 0030).
 			if sessionEmail == "" {
@@ -624,9 +667,13 @@ func (a *Accounts) AcceptInvitation(ctx context.Context, inv *ent.Invitation, na
 				return ErrWrongAccount
 			}
 			// The invitation reached the address, and its owner's session accepted it.
-			if err := tx.User.Update().Where(user.ID(u.ID), user.EmailProvenAtIsNil()).SetEmailProvenAt(time.Now()).Exec(ctx); err != nil {
+			// Only a stamp from empty is a proof (rows changed): an already proven address
+			// triggers nothing about domain join.
+			n, err := tx.User.Update().Where(user.ID(u.ID), user.EmailProvenAtIsNil()).SetEmailProvenAt(time.Now()).Save(ctx)
+			if err != nil {
 				return err
 			}
+			provenNow = n > 0
 		} else {
 			name = strings.TrimSpace(name)
 			if name == "" || password == "" {
@@ -651,17 +698,62 @@ func (a *Accounts) AcceptInvitation(ctx context.Context, inv *ent.Invitation, na
 				return uerr
 			}
 			provedByInvitation = true
+			provenNow = true
 		}
 
 		ts := tx.Scoped(inv.WorkspaceID)
-		if _, merr := ts.Membership().Create().
-			SetUserID(u.ID).
-			SetRole(role).
-			Save(ctx); merr != nil && !db.IsUniqueViolation(merr) {
+		actor := events.Actor{Kind: events.ActorUser, ID: strconv.FormatInt(u.ID, 10), Name: u.Name}
+		existing, merr := ts.Membership().Query().Where(membership.UserID(u.ID)).Only(ctx)
+		if merr != nil && !ent.IsNotFound(merr) {
 			return merr
 		}
+		if ent.IsNotFound(merr) {
+			// DO NOTHING rather than catching a unique violation, which would abort the
+			// transaction. A concurrent accept that inserted first leaves nothing to write
+			// (sql.ErrNoRows); its Membership is read back, so the rules below still apply.
+			cerr := ts.Membership().Create().
+				SetUserID(u.ID).
+				SetRole(role).
+				SetSource(membership.SourceInvitation).
+				OnConflictColumns(membership.FieldUserID, membership.FieldWorkspaceID).
+				DoNothing().
+				Exec(ctx)
+			if cerr != nil && !errors.Is(cerr, sql.ErrNoRows) {
+				return cerr
+			}
+			if errors.Is(cerr, sql.ErrNoRows) {
+				if existing, merr = ts.Membership().Query().Where(membership.UserID(u.ID)).Only(ctx); merr != nil {
+					return merr
+				}
+			}
+		}
+		if existing != nil && existing.Role == membership.RoleMember && role == membership.RoleAdmin {
+			// An explicit Invitation raises a member to admin; it never lowers a Role.
+			if err := ts.Membership().UpdateOneID(existing.ID).SetRole(membership.RoleAdmin).Exec(ctx); err != nil {
+				return err
+			}
+			if err := events.RecordAudit(ctx, pub, &events.AuditEntry{
+				WorkspaceID: inv.WorkspaceID,
+				Actor:       actor,
+				Action:      events.ActionMembershipUpdate,
+				TargetType:  membership.Label,
+				TargetID:    strconv.FormatInt(existing.ID, 10),
+				TargetName:  u.Email,
+				Diff:        map[string]any{"role": map[string]any{"from": string(existing.Role), "to": string(role)}},
+			}); err != nil {
+				return err
+			}
+		}
 
-		actor := events.Actor{Kind: events.ActorUser, ID: strconv.FormatInt(u.ID, 10), Name: u.Name}
+		if provenNow {
+			// The address was proven now, so the domain-join step runs after the explicit
+			// Invitation's Membership (which then wins: a Workspace the Invitation names is
+			// not joined twice). Accepting an Invitation is untouched by the sign-up gate.
+			if _, err := applyDomainJoin(ctx, tx, pub, u, proof{SignupPermits: true}); err != nil {
+				return err
+			}
+		}
+
 		if err := ts.Invitation().UpdateOneID(inv.ID).SetAcceptedAt(time.Now()).Exec(ctx); err != nil {
 			return err
 		}

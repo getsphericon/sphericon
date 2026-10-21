@@ -29,6 +29,8 @@ type Membership struct {
 	UserID int64 `json:"user_id,omitempty"`
 	// Role holds the value of the "role" field.
 	Role membership.Role `json:"role,omitempty"`
+	// Source holds the value of the "source" field.
+	Source *membership.Source `json:"source,omitempty"`
 	// SecondFactorRemindedAt holds the value of the "second_factor_reminded_at" field.
 	SecondFactorRemindedAt *time.Time `json:"second_factor_reminded_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -77,7 +79,7 @@ func (*Membership) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case membership.FieldID, membership.FieldWorkspaceID, membership.FieldUserID:
 			values[i] = new(sql.NullInt64)
-		case membership.FieldRole:
+		case membership.FieldRole, membership.FieldSource:
 			values[i] = new(sql.NullString)
 		case membership.FieldCreatedAt, membership.FieldUpdatedAt, membership.FieldSecondFactorRemindedAt:
 			values[i] = new(sql.NullTime)
@@ -131,6 +133,13 @@ func (_m *Membership) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field role", values[i])
 			} else if value.Valid {
 				_m.Role = membership.Role(value.String)
+			}
+		case membership.FieldSource:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field source", values[i])
+			} else if value.Valid {
+				_m.Source = new(membership.Source)
+				*_m.Source = membership.Source(value.String)
 			}
 		case membership.FieldSecondFactorRemindedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -199,6 +208,11 @@ func (_m *Membership) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("role=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Role))
+	builder.WriteString(", ")
+	if v := _m.Source; v != nil {
+		builder.WriteString("source=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
 	if v := _m.SecondFactorRemindedAt; v != nil {
 		builder.WriteString("second_factor_reminded_at=")

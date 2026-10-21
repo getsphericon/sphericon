@@ -54,6 +54,12 @@ func CanManageBrandKit(role membership.Role) bool {
 	return role == membership.RoleOwner
 }
 
+// CanManageJoinDomains reports whether role may list, add, verify and remove the Workspace's
+// Join domains. Letting a whole domain into the Workspace is an owner-only decision.
+func CanManageJoinDomains(role membership.Role) bool {
+	return role == membership.RoleOwner
+}
+
 // CanErase reports whether role may erase a Contact (ADR 0021), an irreversible action
 // for the accountable roles.
 func CanErase(role membership.Role) bool {

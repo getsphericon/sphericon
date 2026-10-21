@@ -38,6 +38,12 @@ func (Membership) Fields() []ent.Field {
 		// Workspace's Two-factor requirement ends, to set up a Second factor (ADR 0020).
 		// A reminder counts for the grace it falls in, so a requirement switched off and
 		// on again reminds anew.
+		// How the person got in: the Workspace's creator, an accepted Invitation, or a
+		// proven address on a Join domain. Null for a Membership from before it was recorded.
+		field.Enum("source").
+			Values("creator", "invitation", "domain").
+			Optional().
+			Nillable(),
 		field.Time("second_factor_reminded_at").
 			Optional().
 			Nillable(),

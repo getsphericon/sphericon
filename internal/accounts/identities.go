@@ -178,7 +178,7 @@ func (a *Accounts) createFromProvider(ctx context.Context, in ProviderLogin) (*e
 	if name == "" {
 		name, _, _ = strings.Cut(email, "@")
 	}
-	return a.verified(ctx, func(tx *ent.Client) (*ent.User, error) {
+	u, _, err := a.verified(ctx, &proof{SignupPermits: in.SignupOpen}, func(tx *ent.Client) (*ent.User, error) {
 		now := time.Now()
 		u, err := tx.User.Create().
 			SetName(name).
@@ -194,6 +194,7 @@ func (a *Accounts) createFromProvider(ctx context.Context, in ProviderLogin) (*e
 		}
 		return u, nil
 	})
+	return u, err
 }
 
 var (
@@ -297,18 +298,22 @@ func (a *Accounts) linkToHolder(ctx context.Context, holderID int64, in Provider
 	var linked *ent.User
 	var identityID int64
 	err := a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		holder, err := tx.User.Get(ctx, holderID)
+		// Every link ends the other sessions (ADR 0048); the caller starts the new one from
+		// the User returned here, so it holds the new epoch.
+		// The provider's proof stamps the address only from empty, and the rows-changed count
+		// says whether it did: that, and only that, is a domain-join step (ADR 0051).
+		stamped, err := tx.User.Update().Where(user.ID(holderID), user.EmailProvenAtIsNil()).
+			SetEmailProvenAt(time.Now()).ClearPasswordHash().Save(ctx)
 		if err != nil {
 			return err
 		}
-		// Every link ends the other sessions (ADR 0048); the caller starts the new one from
-		// the User returned here, so it holds the new epoch.
-		upd := tx.User.UpdateOneID(holderID).AddSessionEpoch(1)
-		if holder.EmailProvenAt == nil {
-			upd = upd.SetEmailProvenAt(time.Now()).ClearPasswordHash()
-		}
-		if linked, err = upd.Save(ctx); err != nil {
+		if linked, err = tx.User.UpdateOneID(holderID).AddSessionEpoch(1).Save(ctx); err != nil {
 			return err
+		}
+		if stamped > 0 {
+			if _, err := applyDomainJoin(ctx, tx, pub, linked, proof{SignupPermits: true}); err != nil {
+				return err
+			}
 		}
 		identity, err := tx.UserIdentity.Create().SetUserID(holderID).SetProvider(in.Provider).SetSubject(in.Subject).Save(ctx)
 		if err != nil {
@@ -327,7 +332,7 @@ func (a *Accounts) linkToHolder(ctx context.Context, holderID int64, in Provider
 // User is no longer Unverified.
 func (a *Accounts) takeOver(ctx context.Context, holderID int64, in ProviderLogin) (*ent.User, error) {
 	name := strings.TrimSpace(in.Name)
-	return a.verified(ctx, func(tx *ent.Client) (*ent.User, error) {
+	u, _, err := a.verified(ctx, &proof{SignupPermits: true}, func(tx *ent.Client) (*ent.User, error) {
 		now := time.Now()
 		upd := tx.User.Update().
 			Where(user.ID(holderID), user.EmailVerifiedAtIsNil()).
@@ -350,6 +355,7 @@ func (a *Accounts) takeOver(ctx context.Context, holderID int64, in ProviderLogi
 		}
 		return tx.User.Get(ctx, holderID)
 	})
+	return u, err
 }
 
 // UndoLink removes one Linked identity of a User and ends every session of the User: the

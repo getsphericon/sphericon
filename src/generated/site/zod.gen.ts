@@ -107,6 +107,13 @@ export const zSiteAcceptInvitationInput = z.object({
 });
 
 /**
+ * Request body for adding a Join domain
+ */
+export const zSiteAddJoinDomainInput = z.object({
+  domain: z.string()
+});
+
+/**
  * Automation counts (point-in-time snapshot)
  */
 export const zSiteAnalyticsAutomations = z.object({
@@ -412,6 +419,13 @@ export const zSiteDnsRecord = z.object({
 });
 
 /**
+ * Whether the Workspace admits Users by Join domain
+ */
+export const zSiteDomainJoinResource = z.object({
+  enabled: z.boolean()
+});
+
+/**
  * Request body for rendering an HTTP step's body for a Contact
  */
 export const zSiteDryRunHttpStepInput = z.object({
@@ -580,6 +594,15 @@ export const zSiteMembershipRole = z.enum([
   'owner',
   'admin',
   'member'
+]);
+
+/**
+ * How a member got in
+ */
+export const zSiteMembershipSource = z.enum([
+  'creator',
+  'invitation',
+  'domain'
 ]);
 
 /**
@@ -809,6 +832,13 @@ export const zSiteSesConfigInput = z.object({
   from: zEmailAddress,
   fromName: z.exactOptional(z.string().nullable()),
   endpoint: z.exactOptional(z.string().nullable())
+});
+
+/**
+ * Switch domain join on or off
+ */
+export const zSiteSetDomainJoinInput = z.object({
+  enabled: z.boolean()
 });
 
 /**
@@ -1554,6 +1584,22 @@ export const zSiteCreateInvitationResponse = z.object({
 });
 
 /**
+ * A Join domain: a domain whose Users may join the Workspace once domain join
+ * is on, proven by a TXT record. `verified` is a live property: it holds while the record
+ * is published. Any Workspace may claim a domain, and only one holds it verified.
+ */
+export const zSiteJoinDomainResource = z.object({
+  id: zEntityId,
+  domain: z.string(),
+  verified: z.boolean(),
+  record: zSiteDnsRecord,
+  lastCheckedAt: z.exactOptional(zTimestamp.nullable()),
+  verifiedAt: z.exactOptional(zTimestamp.nullable()),
+  createdAt: zTimestamp,
+  updatedAt: zTimestamp
+});
+
+/**
  * One Linked identity of the authenticated User (ADR 0048): a Sign-in provider the User
  * can sign in with. The provider's subject is never returned.
  */
@@ -1580,6 +1626,7 @@ export const zSiteMembershipResource = z.object({
   email: zEmailAddress,
   name: z.string(),
   role: zSiteMembershipRole,
+  source: z.exactOptional(zSiteMembershipSource),
   createdAt: zTimestamp
 });
 
@@ -1806,6 +1853,13 @@ export const zSiteDeleteUserProblemDetails = z.object({
   retryAfter: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
   debug: z.exactOptional(zProblemDebug),
   workspaces: z.array(zSiteSoleOwnedWorkspace)
+});
+
+/**
+ * Where a User who proved their address goes next
+ */
+export const zSiteVerifyEmailResult = z.object({
+  landingWorkspaceId: zWorkspaceId
 });
 
 /**
@@ -2229,6 +2283,11 @@ export const zSiteAuthSigninStartQuery = z.object({
 });
 
 export const zSiteAuthVerifyEmailBody = zSiteVerifyEmailInput;
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteAuthVerifyEmailResponse = zSiteVerifyEmailResult;
 
 export const zSitePublicConfirmationsPerformPath = z.object({
   token: z.string()
@@ -2974,6 +3033,26 @@ export const zSiteWorkspacesDeletePath = z.object({
  */
 export const zSiteWorkspacesDeleteResponse = zSiteDeletedWorkspaceResource;
 
+export const zSiteDomainJoinGetPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteDomainJoinGetResponse = zSiteDomainJoinResource;
+
+export const zSiteDomainJoinSetBody = zSiteSetDomainJoinInput;
+
+export const zSiteDomainJoinSetPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteDomainJoinSetResponse = zSiteDomainJoinResource;
+
 export const zSiteEventsListPath = z.object({
   workspaceId: zWorkspaceId
 });
@@ -3097,6 +3176,46 @@ export const zSiteInvitationsDeletePath = z.object({
  * There is no content to send for this request, but the headers may be useful.
  */
 export const zSiteInvitationsDeleteResponse = z.void();
+
+export const zSiteJoinDomainsListPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteJoinDomainsListResponse = z.array(zSiteJoinDomainResource);
+
+export const zSiteJoinDomainsAddBody = zSiteAddJoinDomainInput;
+
+export const zSiteJoinDomainsAddPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded and a new resource has been created as a result.
+ */
+export const zSiteJoinDomainsAddResponse = zSiteJoinDomainResource;
+
+export const zSiteJoinDomainsRemovePath = z.object({
+  workspaceId: zWorkspaceId,
+  id: zEntityId
+});
+
+/**
+ * There is no content to send for this request, but the headers may be useful.
+ */
+export const zSiteJoinDomainsRemoveResponse = z.void();
+
+export const zSiteJoinDomainsVerifyPath = z.object({
+  workspaceId: zWorkspaceId,
+  id: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteJoinDomainsVerifyResponse = zSiteJoinDomainResource;
 
 export const zSiteWorkspacesLeavePath = z.object({
   workspaceId: zWorkspaceId

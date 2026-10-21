@@ -28,6 +28,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/invitation"
+	"github.com/getsphericon/sphericon/ent/joindomain"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/segment"
@@ -148,6 +149,20 @@ func (_c *WorkspaceCreate) SetRetentionDays(v int) *WorkspaceCreate {
 func (_c *WorkspaceCreate) SetNillableRetentionDays(v *int) *WorkspaceCreate {
 	if v != nil {
 		_c.SetRetentionDays(*v)
+	}
+	return _c
+}
+
+// SetDomainJoinEnabled sets the "domain_join_enabled" field.
+func (_c *WorkspaceCreate) SetDomainJoinEnabled(v bool) *WorkspaceCreate {
+	_c.mutation.SetDomainJoinEnabled(v)
+	return _c
+}
+
+// SetNillableDomainJoinEnabled sets the "domain_join_enabled" field if the given value is not nil.
+func (_c *WorkspaceCreate) SetNillableDomainJoinEnabled(v *bool) *WorkspaceCreate {
+	if v != nil {
+		_c.SetDomainJoinEnabled(*v)
 	}
 	return _c
 }
@@ -445,6 +460,21 @@ func (_c *WorkspaceCreate) AddSendingDomains(v ...*SendingDomain) *WorkspaceCrea
 		ids[i] = v[i].ID
 	}
 	return _c.AddSendingDomainIDs(ids...)
+}
+
+// AddJoinDomainIDs adds the "join_domains" edge to the JoinDomain entity by IDs.
+func (_c *WorkspaceCreate) AddJoinDomainIDs(ids ...int64) *WorkspaceCreate {
+	_c.mutation.AddJoinDomainIDs(ids...)
+	return _c
+}
+
+// AddJoinDomains adds the "join_domains" edges to the JoinDomain entity.
+func (_c *WorkspaceCreate) AddJoinDomains(v ...*JoinDomain) *WorkspaceCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddJoinDomainIDs(ids...)
 }
 
 // AddSendLimiterIDs adds the "send_limiters" edge to the SendLimiter entity by IDs.
@@ -783,6 +813,10 @@ func (_c *WorkspaceCreate) defaults() {
 		v := workspace.DefaultPostalAddress
 		_c.mutation.SetPostalAddress(v)
 	}
+	if _, ok := _c.mutation.DomainJoinEnabled(); !ok {
+		v := workspace.DefaultDomainJoinEnabled
+		_c.mutation.SetDomainJoinEnabled(v)
+	}
 	if _, ok := _c.mutation.FeedPosition(); !ok {
 		v := workspace.DefaultFeedPosition
 		_c.mutation.SetFeedPosition(v)
@@ -827,6 +861,9 @@ func (_c *WorkspaceCreate) check() error {
 		if err := workspace.RetentionDaysValidator(v); err != nil {
 			return &ValidationError{Name: "retention_days", err: fmt.Errorf(`ent: validator failed for field "Workspace.retention_days": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.DomainJoinEnabled(); !ok {
+		return &ValidationError{Name: "domain_join_enabled", err: errors.New(`ent: missing required field "Workspace.domain_join_enabled"`)}
 	}
 	if _, ok := _c.mutation.FeedPosition(); !ok {
 		return &ValidationError{Name: "feed_position", err: errors.New(`ent: missing required field "Workspace.feed_position"`)}
@@ -907,6 +944,10 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.RetentionDays(); ok {
 		_spec.SetField(workspace.FieldRetentionDays, field.TypeInt, value)
 		_node.RetentionDays = &value
+	}
+	if value, ok := _c.mutation.DomainJoinEnabled(); ok {
+		_spec.SetField(workspace.FieldDomainJoinEnabled, field.TypeBool, value)
+		_node.DomainJoinEnabled = value
 	}
 	if value, ok := _c.mutation.SecondFactorRequiredAt(); ok {
 		_spec.SetField(workspace.FieldSecondFactorRequiredAt, field.TypeTime, value)
@@ -1089,6 +1130,22 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(sendingdomain.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.JoinDomainsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.JoinDomainsTable,
+			Columns: []string{workspace.JoinDomainsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(joindomain.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -1560,6 +1617,18 @@ func (u *WorkspaceUpsert) ClearRetentionDays() *WorkspaceUpsert {
 	return u
 }
 
+// SetDomainJoinEnabled sets the "domain_join_enabled" field.
+func (u *WorkspaceUpsert) SetDomainJoinEnabled(v bool) *WorkspaceUpsert {
+	u.Set(workspace.FieldDomainJoinEnabled, v)
+	return u
+}
+
+// UpdateDomainJoinEnabled sets the "domain_join_enabled" field to the value that was provided on create.
+func (u *WorkspaceUpsert) UpdateDomainJoinEnabled() *WorkspaceUpsert {
+	u.SetExcluded(workspace.FieldDomainJoinEnabled)
+	return u
+}
+
 // SetSecondFactorRequiredAt sets the "second_factor_required_at" field.
 func (u *WorkspaceUpsert) SetSecondFactorRequiredAt(v time.Time) *WorkspaceUpsert {
 	u.Set(workspace.FieldSecondFactorRequiredAt, v)
@@ -1929,6 +1998,20 @@ func (u *WorkspaceUpsertOne) UpdateRetentionDays() *WorkspaceUpsertOne {
 func (u *WorkspaceUpsertOne) ClearRetentionDays() *WorkspaceUpsertOne {
 	return u.Update(func(s *WorkspaceUpsert) {
 		s.ClearRetentionDays()
+	})
+}
+
+// SetDomainJoinEnabled sets the "domain_join_enabled" field.
+func (u *WorkspaceUpsertOne) SetDomainJoinEnabled(v bool) *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetDomainJoinEnabled(v)
+	})
+}
+
+// UpdateDomainJoinEnabled sets the "domain_join_enabled" field to the value that was provided on create.
+func (u *WorkspaceUpsertOne) UpdateDomainJoinEnabled() *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateDomainJoinEnabled()
 	})
 }
 
@@ -2499,6 +2582,20 @@ func (u *WorkspaceUpsertBulk) UpdateRetentionDays() *WorkspaceUpsertBulk {
 func (u *WorkspaceUpsertBulk) ClearRetentionDays() *WorkspaceUpsertBulk {
 	return u.Update(func(s *WorkspaceUpsert) {
 		s.ClearRetentionDays()
+	})
+}
+
+// SetDomainJoinEnabled sets the "domain_join_enabled" field.
+func (u *WorkspaceUpsertBulk) SetDomainJoinEnabled(v bool) *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetDomainJoinEnabled(v)
+	})
+}
+
+// UpdateDomainJoinEnabled sets the "domain_join_enabled" field to the value that was provided on create.
+func (u *WorkspaceUpsertBulk) UpdateDomainJoinEnabled() *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateDomainJoinEnabled()
 	})
 }
 

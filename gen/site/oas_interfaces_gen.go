@@ -189,6 +189,14 @@ type SiteCustomFieldsListRes interface {
 	siteCustomFieldsListRes()
 }
 
+type SiteDomainJoinGetRes interface {
+	siteDomainJoinGetRes()
+}
+
+type SiteDomainJoinSetRes interface {
+	siteDomainJoinSetRes()
+}
+
 type SiteEnrollmentsGetRes interface {
 	siteEnrollmentsGetRes()
 }
@@ -263,6 +271,22 @@ type SiteInvitationsDeleteRes interface {
 
 type SiteInvitationsListRes interface {
 	siteInvitationsListRes()
+}
+
+type SiteJoinDomainsAddRes interface {
+	siteJoinDomainsAddRes()
+}
+
+type SiteJoinDomainsListRes interface {
+	siteJoinDomainsListRes()
+}
+
+type SiteJoinDomainsRemoveRes interface {
+	siteJoinDomainsRemoveRes()
+}
+
+type SiteJoinDomainsVerifyRes interface {
+	siteJoinDomainsVerifyRes()
 }
 
 type SiteMembershipsDeleteRes interface {

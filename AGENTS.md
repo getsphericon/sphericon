@@ -291,7 +291,13 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
      `workspacedeletion.Module.EraseDue`, which lists the due Workspaces with the raw client and
      scopes each erase step's transaction (`tx.Scoped(id)`) to the Workspace it is erasing;
   5. transactions: `events.Bus.WithinScopedTx`, and `tx.Scoped(...)` inside
-     `accounts.AcceptInvitation`, re-scope a transaction's client to the same Workspace; and
+     `accounts.AcceptInvitation`, re-scope a transaction's client to the same Workspace;
+     `events.Bus.WithinHandOverTx` also scopes it to the Workspace a Join domain moves away from
+     (acting as the system), after `joindomains` has read that Workspace off the holder's row;
+     the domain-join step of the verification transaction (`applyDomainJoin` in
+     `internal/accounts/join.go`, ADR 0051), which builds `tx.Scoped(...)` for the Workspace a
+     verified Join domain names, right after `joindomains.HolderIn` has loaded that row, to add
+     the joining User's Membership (every step that proves an address calls it explicitly); and
      `accounts.DeleteUser` (User deletion, ADR 0050) scopes its one transaction in turn to each
      Workspace the User belongs to (`tx.Scoped(m.WorkspaceID)`, from the User's own Memberships),
      to lock the Owner rows and remove the Membership;
@@ -321,7 +327,13 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
   so it works on the bus's raw transaction client and scopes from the token's Workspace),
   `internal/oauthserver`, `internal/secondfactor` (a User's TOTP Second factor and Recovery
   codes, ADR 0020: they belong to the User, not a Workspace), `internal/rekey` (`sphericon encryption-key reencrypt`: it rewrites the stored ciphertext of every Workspace, User and Staff member row under the primary key, by id and compare-and-swap), `internal/doctor` (`sphericon doctor`, read-only: it lists every Workspace's Sending domains and the origin of the newest sent mail, and reads the Postgres version), `internal/instance` (the Instance state row
-  that no Workspace owns, and who decides about it: the Owners of the oldest Workspace, ADR 0032), `internal/suspension` (Workspace
+  that no Workspace owns, and who decides about it: the Owners of the oldest Workspace, ADR 0032), `internal/joindomains` (Join
+  domains: a domain is verified by one Workspace across the Instance, so the lookup of the verified row
+  by domain runs before any scope exists, and handing a domain over to the Workspace that now proves it
+  scopes one transaction to both Workspaces through `events.Bus.WithinHandOverTx`; the periodic
+  re-check of verified domains, a river job in `internal/jobs`, lists the due domains of every Workspace with
+  `Module.Due` and scopes each `Module.Recheck` to the Workspace of the row it loaded; the Owners of a Workspace that
+  loses a domain, by that re-check or by a hand-over, are mailed through the `Notify` seam after the write commits), `internal/suspension` (Workspace
   suspension), `internal/workspacedeletion` (the Workspace deletion cycle, ADR 0043: it lists the Workspaces whose window has passed and
   the Owners' deleted ones, which have no scope yet, opens a transaction per erase step, scopes to the
   one Workspace being erased inside it, and writes the row the cycle moves), `internal/events`

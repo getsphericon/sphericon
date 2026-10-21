@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/joindomains"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/secrets"
@@ -45,6 +46,14 @@ func NewVerifySendingDomainWorker(client *ent.Client, lookup sending.TXTLookup, 
 
 func NewRecheckSendingDomainsWorker(client *ent.Client) *RecheckSendingDomainsWorker {
 	return &RecheckSendingDomainsWorker{ent: client}
+}
+
+func NewVerifyJoinDomainWorker(mod *joindomains.Module) *VerifyJoinDomainWorker {
+	return &VerifyJoinDomainWorker{mod: mod}
+}
+
+func NewRecheckJoinDomainsWorker(mod *joindomains.Module) *RecheckJoinDomainsWorker {
+	return &RecheckJoinDomainsWorker{mod: mod}
 }
 
 func NewRefreshSendQuotasWorker(client *ent.Client) *RefreshSendQuotasWorker {

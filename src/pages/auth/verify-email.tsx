@@ -8,9 +8,9 @@ import { useTranslation } from 'react-i18next'
 import { AnchorLink } from '../../components/RouterLink.tsx'
 import { siteAuthVerifyEmailMutation } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { useNotify } from '../../hooks/useNotify.ts'
-import { Route as indexRoute } from '../../routes/index.tsx'
 import { Route as loginRoute } from '../../routes/login.tsx'
 import { Route as verifyEmailRoute } from '../../routes/verify-email.tsx'
+import { Route as overviewRoute } from '../../routes/workspaces/$workspaceId/index.tsx'
 import { getApiErrorMessage, hasErrorStatus } from '../../utils/apiErrors.ts'
 
 // Where the link in the verification email lands (ADR 0030). The page sends the token
@@ -36,9 +36,14 @@ export function VerifyEmailPage() {
 
   const mutation = useMutation({
     ...siteAuthVerifyEmailMutation(),
-    // The session cookie is set by the answer: the root route sends the User into
-    // their first Workspace.
-    onSuccess: () => navigate({ to: indexRoute.to, replace: true }),
+    // The session cookie is set by the answer, which also names the Workspace to open: the
+    // one the User joined by its domain, else their first.
+    onSuccess: (result) =>
+      navigate({
+        to: overviewRoute.to,
+        params: { workspaceId: result.landingWorkspaceId },
+        replace: true,
+      }),
     onError: (error) => {
       form.setValues({ password: '', confirm: '' })
       if (hasErrorStatus(error, [428])) {

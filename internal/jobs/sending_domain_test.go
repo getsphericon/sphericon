@@ -3,6 +3,7 @@ package jobs_test
 import (
 	"context"
 	"errors"
+	"net"
 	"slices"
 	"testing"
 
@@ -86,6 +87,29 @@ func TestDevTXTLookup_trustsSeededDomains(t *testing.T) {
 	ok, _, err := jobs.VerifySendingDomainByID(ctx, env.DB, jobs.DevTXTLookup(env.DB), fixtures.SendingDomainUnverifiedID)
 	require.NoError(t, err)
 	assert.True(t, ok, "dev lookup makes a seeded domain verify")
+}
+
+// The same lookup answers a Join domain's proof record from the stored token, so a domain an
+// Owner adds verifies in dev and e2e without DNS; a domain nobody claims is NXDOMAIN.
+func TestDevTXTLookup_answersAJoinDomainsRecordFromItsToken(t *testing.T) {
+	env := testhelper.Setup(t)
+	pending, err := env.DB.JoinDomain.Get(t.Context(), fixtures.JoinDomainPendingID)
+	require.NoError(t, err)
+
+	records, err := jobs.DevTXTLookup(env.DB)(t.Context(), "_sphericon-join."+pending.Domain+".")
+
+	require.NoError(t, err)
+	assert.Equal(t, []string{pending.Token}, records)
+}
+
+func TestDevTXTLookup_aJoinDomainNobodyClaimsIsNotFound(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	_, err := jobs.DevTXTLookup(env.DB)(t.Context(), "_sphericon-join.unclaimed.test.")
+
+	var dnsErr *net.DNSError
+	require.ErrorAs(t, err, &dnsErr)
+	assert.True(t, dnsErr.IsNotFound)
 }
 
 func TestDomainsDueForRecheck_neverCheckedFirst(t *testing.T) {

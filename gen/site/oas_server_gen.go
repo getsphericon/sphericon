@@ -369,6 +369,19 @@ type Handler interface {
 	//
 	// GET /workspaces/{workspaceId}/custom-fields
 	SiteCustomFieldsList(ctx context.Context, params SiteCustomFieldsListParams) (SiteCustomFieldsListRes, error)
+	// SiteDomainJoinGet implements SiteDomainJoin_get operation.
+	//
+	// Read the domain join switch (owner only).
+	//
+	// GET /workspaces/{workspaceId}/domain-join
+	SiteDomainJoinGet(ctx context.Context, params SiteDomainJoinGetParams) (SiteDomainJoinGetRes, error)
+	// SiteDomainJoinSet implements SiteDomainJoin_set operation.
+	//
+	// Switch domain join on or off (owner only). Switching it on adds nobody who is already a User: only
+	// an address proven afterwards joins. Recorded as an Audit entry.
+	//
+	// PUT /workspaces/{workspaceId}/domain-join
+	SiteDomainJoinSet(ctx context.Context, req *SiteSetDomainJoinInput, params SiteDomainJoinSetParams) (SiteDomainJoinSetRes, error)
 	// SiteEnrollmentsGet implements SiteEnrollments_get operation.
 	//
 	// Get one Enrollment of an Automation.
@@ -496,6 +509,34 @@ type Handler interface {
 	//
 	// GET /workspaces/{workspaceId}/invitations
 	SiteInvitationsList(ctx context.Context, params SiteInvitationsListParams) (SiteInvitationsListRes, error)
+	// SiteJoinDomainsAdd implements SiteJoinDomains_add operation.
+	//
+	// Add a Join domain (owner only). It starts pending, with the TXT record to publish at
+	// `_sphericon-join.<domain>`. Another Workspace's claim never blocks it. An invalid hostname is 422, a
+	// domain the Workspace already has is 409.
+	//
+	// POST /workspaces/{workspaceId}/join-domains
+	SiteJoinDomainsAdd(ctx context.Context, req *SiteAddJoinDomainInput, params SiteJoinDomainsAddParams) (SiteJoinDomainsAddRes, error)
+	// SiteJoinDomainsList implements SiteJoinDomains_list operation.
+	//
+	// List the Workspace's Join domains (owner only), pending and verified.
+	//
+	// GET /workspaces/{workspaceId}/join-domains
+	SiteJoinDomainsList(ctx context.Context, params SiteJoinDomainsListParams) (SiteJoinDomainsListRes, error)
+	// SiteJoinDomainsRemove implements SiteJoinDomains_remove operation.
+	//
+	// Remove a Join domain (owner only): only the claim goes, no Membership is touched.
+	//
+	// DELETE /workspaces/{workspaceId}/join-domains/{id}
+	SiteJoinDomainsRemove(ctx context.Context, params SiteJoinDomainsRemoveParams) (SiteJoinDomainsRemoveRes, error)
+	// SiteJoinDomainsVerify implements SiteJoinDomains_verify operation.
+	//
+	// Check the TXT record now (owner only) and verify the domain when it is published. A domain another
+	// Workspace has verified is re-checked at that Workspace first: 409 while its record is still
+	// published, otherwise the domain moves here. 422 when the record is not found.
+	//
+	// POST /workspaces/{workspaceId}/join-domains/{id}/verify
+	SiteJoinDomainsVerify(ctx context.Context, params SiteJoinDomainsVerifyParams) (SiteJoinDomainsVerifyRes, error)
 	// SiteMembershipsDelete implements SiteMemberships_delete operation.
 	//
 	// Remove a member (owner/admin only; the last owner cannot be removed).

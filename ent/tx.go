@@ -54,6 +54,8 @@ type Tx struct {
 	Integration *IntegrationClient
 	// Invitation is the client for interacting with the Invitation builders.
 	Invitation *InvitationClient
+	// JoinDomain is the client for interacting with the JoinDomain builders.
+	JoinDomain *JoinDomainClient
 	// Membership is the client for interacting with the Membership builders.
 	Membership *MembershipClient
 	// OAuthClient is the client for interacting with the OAuthClient builders.
@@ -253,6 +255,7 @@ func (tx *Tx) init() {
 	tx.InstanceState = NewInstanceStateClient(tx.config)
 	tx.Integration = NewIntegrationClient(tx.config)
 	tx.Invitation = NewInvitationClient(tx.config)
+	tx.JoinDomain = NewJoinDomainClient(tx.config)
 	tx.Membership = NewMembershipClient(tx.config)
 	tx.OAuthClient = NewOAuthClientClient(tx.config)
 	tx.OAuthCode = NewOAuthCodeClient(tx.config)

@@ -24,6 +24,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/instancestate"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/invitation"
+	"github.com/getsphericon/sphericon/ent/joindomain"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/oauthclient"
 	"github.com/getsphericon/sphericon/ent/oauthcode"
@@ -524,6 +525,29 @@ func init() {
 	invitationDescTokenHash := invitationFields[3].Descriptor()
 	// invitation.TokenHashValidator is a validator for the "token_hash" field. It is called by the builders before save.
 	invitation.TokenHashValidator = invitationDescTokenHash.Validators[0].(func(string) error)
+	joindomainMixin := schema.JoinDomain{}.Mixin()
+	joindomainMixinFields0 := joindomainMixin[0].Fields()
+	_ = joindomainMixinFields0
+	joindomainFields := schema.JoinDomain{}.Fields()
+	_ = joindomainFields
+	// joindomainDescCreatedAt is the schema descriptor for created_at field.
+	joindomainDescCreatedAt := joindomainMixinFields0[0].Descriptor()
+	// joindomain.DefaultCreatedAt holds the default value on creation for the created_at field.
+	joindomain.DefaultCreatedAt = joindomainDescCreatedAt.Default.(func() time.Time)
+	// joindomainDescUpdatedAt is the schema descriptor for updated_at field.
+	joindomainDescUpdatedAt := joindomainMixinFields0[1].Descriptor()
+	// joindomain.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	joindomain.DefaultUpdatedAt = joindomainDescUpdatedAt.Default.(func() time.Time)
+	// joindomain.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	joindomain.UpdateDefaultUpdatedAt = joindomainDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// joindomainDescDomain is the schema descriptor for domain field.
+	joindomainDescDomain := joindomainFields[1].Descriptor()
+	// joindomain.DomainValidator is a validator for the "domain" field. It is called by the builders before save.
+	joindomain.DomainValidator = joindomainDescDomain.Validators[0].(func(string) error)
+	// joindomainDescToken is the schema descriptor for token field.
+	joindomainDescToken := joindomainFields[2].Descriptor()
+	// joindomain.TokenValidator is a validator for the "token" field. It is called by the builders before save.
+	joindomain.TokenValidator = joindomainDescToken.Validators[0].(func(string) error)
 	membershipMixin := schema.Membership{}.Mixin()
 	membershipMixinFields0 := membershipMixin[0].Fields()
 	_ = membershipMixinFields0
@@ -1054,12 +1078,16 @@ func init() {
 	workspaceDescRetentionDays := workspaceFields[6].Descriptor()
 	// workspace.RetentionDaysValidator is a validator for the "retention_days" field. It is called by the builders before save.
 	workspace.RetentionDaysValidator = workspaceDescRetentionDays.Validators[0].(func(int) error)
+	// workspaceDescDomainJoinEnabled is the schema descriptor for domain_join_enabled field.
+	workspaceDescDomainJoinEnabled := workspaceFields[7].Descriptor()
+	// workspace.DefaultDomainJoinEnabled holds the default value on creation for the domain_join_enabled field.
+	workspace.DefaultDomainJoinEnabled = workspaceDescDomainJoinEnabled.Default.(bool)
 	// workspaceDescFeedPosition is the schema descriptor for feed_position field.
-	workspaceDescFeedPosition := workspaceFields[8].Descriptor()
+	workspaceDescFeedPosition := workspaceFields[9].Descriptor()
 	// workspace.DefaultFeedPosition holds the default value on creation for the feed_position field.
 	workspace.DefaultFeedPosition = workspaceDescFeedPosition.Default.(int64)
 	// workspaceDescAbuseExempt is the schema descriptor for abuse_exempt field.
-	workspaceDescAbuseExempt := workspaceFields[15].Descriptor()
+	workspaceDescAbuseExempt := workspaceFields[16].Descriptor()
 	// workspace.DefaultAbuseExempt holds the default value on creation for the abuse_exempt field.
 	workspace.DefaultAbuseExempt = workspaceDescAbuseExempt.Default.(bool)
 }

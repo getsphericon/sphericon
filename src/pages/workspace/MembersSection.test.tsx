@@ -63,6 +63,22 @@ test('lists members and pending invitations', async () => {
   await expect.element(screen.getByText('new@example.com')).toBeInTheDocument()
 })
 
+test('labels how each member got in and leaves a member from before it unlabelled', async () => {
+  const joined: SiteMembershipResource = {
+    ...member,
+    id: '2',
+    userId: '11',
+    email: 'dan@example.com',
+    name: 'Dan',
+    source: 'domain',
+  }
+  worker.use(me(), handleSiteMembershipsList({ body: [member, joined] }), invites([]))
+  const { screen } = await renderWithRouter(<MembersSection workspaceId={WORKSPACE_ID} />)
+
+  await expect.element(screen.getByText('Joined by domain')).toBeInTheDocument()
+  await expect.element(screen.getByText('Invited')).not.toBeInTheDocument()
+})
+
 test('invites a member and reveals the invite link', async () => {
   const bodies: unknown[] = []
   worker.use(

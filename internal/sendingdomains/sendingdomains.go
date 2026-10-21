@@ -15,12 +15,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"net"
 	"regexp"
 	"strings"
 	"time"
-
-	"golang.org/x/net/idna"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcast"
@@ -118,7 +115,7 @@ type UpdateInput struct {
 // Create validates the domain, mints its DKIM keypair and stores the row with the
 // private key sealed.
 func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*ent.SendingDomain, error) {
-	domain, ok := normalize(in.Domain)
+	domain, ok := sending.NormalizeDomain(in.Domain)
 	if !ok {
 		return nil, &ValidationError{Field: "domain", Message: i18n.T("errors.sending_domain_invalid", nil)}
 	}
@@ -335,21 +332,6 @@ func validSelector(raw string) (string, error) {
 		return "", &ValidationError{Field: "dkimSelector", Message: i18n.T("errors.dkim_selector_invalid", nil)}
 	}
 	return sel, nil
-}
-
-// normalize validates raw as a registrable domain name (IDNA registration rules: label
-// syntax, length limits, punycode) with at least one dot and not an IP address, and
-// returns its ASCII (punycode) form, the form DNS and DKIM use.
-func normalize(raw string) (string, bool) {
-	d := strings.TrimSuffix(strings.ToLower(strings.TrimSpace(raw)), ".")
-	if !strings.Contains(d, ".") || net.ParseIP(d) != nil {
-		return "", false
-	}
-	ascii, err := idna.Registration.ToASCII(d)
-	if err != nil {
-		return "", false
-	}
-	return ascii, true
 }
 
 // List returns one page of the Workspace's Sending domains, ascending by id.

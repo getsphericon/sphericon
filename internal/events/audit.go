@@ -48,9 +48,12 @@ const (
 	ActionMembershipUpdate = "membership.update"
 	// A Membership was removed: by an Owner or Admin, or by the User leaving (ADR 0050).
 	ActionMembershipDelete = "membership.delete"
-	ActionInvitationCreate = "invitation.create"
-	ActionInvitationAccept = "invitation.accept"
-	ActionInvitationRevoke = "invitation.revoke"
+	// A User became a member because they proved an address on a Join domain (ADR 0051); the
+	// actor is the system and the diff names the domain.
+	ActionMembershipDomainJoin = "membership.domain_join"
+	ActionInvitationCreate     = "invitation.create"
+	ActionInvitationAccept     = "invitation.accept"
+	ActionInvitationRevoke     = "invitation.revoke"
 	// A successful sign-in; its diff names the method: "password" or a Sign-in provider (ADR 0048).
 	ActionUserLogin = "user.login"
 	// A Sign-in provider account was linked to, or unlinked from, the User (ADR 0048); the
@@ -86,6 +89,7 @@ const (
 var ExplicitAuditActions = []string{
 	ActionMembershipUpdate,
 	ActionMembershipDelete,
+	ActionMembershipDomainJoin,
 	ActionInvitationCreate,
 	ActionInvitationAccept,
 	ActionInvitationRevoke,

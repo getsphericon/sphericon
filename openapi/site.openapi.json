@@ -49,6 +49,9 @@
       "name": "Site Brand Kit"
     },
     {
+      "name": "Site Join Domains"
+    },
+    {
       "name": "Site Automations"
     },
     {
@@ -893,6 +896,13 @@
                 "description": "The session cookie of the verified User",
                 "schema": {
                   "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteVerifyEmailResult"
                 }
               }
             }
@@ -5559,6 +5569,112 @@
         }
       }
     },
+    "/workspaces/{workspaceId}/domain-join": {
+      "get": {
+        "operationId": "SiteDomainJoin_get",
+        "description": "Read the domain join switch (owner only).",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteDomainJoinResource"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Join Domains"]
+      },
+      "put": {
+        "operationId": "SiteDomainJoin_set",
+        "description": "Switch domain join on or off (owner only). Switching it on adds nobody who is already\na User: only an address proven afterwards joins. Recorded as an Audit entry.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteDomainJoinResource"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Join Domains"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteSetDomainJoinInput"
+              }
+            }
+          }
+        }
+      }
+    },
     "/workspaces/{workspaceId}/events": {
       "get": {
         "operationId": "SiteEvents_list",
@@ -6197,6 +6313,262 @@
           }
         },
         "tags": ["Site Invitations"]
+      }
+    },
+    "/workspaces/{workspaceId}/join-domains": {
+      "get": {
+        "operationId": "SiteJoinDomains_list",
+        "description": "List the Workspace's Join domains (owner only), pending and verified.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SiteJoinDomainResource"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Join Domains"]
+      },
+      "post": {
+        "operationId": "SiteJoinDomains_add",
+        "description": "Add a Join domain (owner only). It starts pending, with the TXT record to publish at\n`_sphericon-join.<domain>`. Another Workspace's claim never blocks it. An invalid\nhostname is 422, a domain the Workspace already has is 409.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "The request has succeeded and a new resource has been created as a result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteJoinDomainResource"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "RFC 7807 conflict response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Join Domains"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteAddJoinDomainInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workspaces/{workspaceId}/join-domains/{id}": {
+      "delete": {
+        "operationId": "SiteJoinDomains_remove",
+        "description": "Remove a Join domain (owner only): only the claim goes, no Membership is touched.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "There is no content to send for this request, but the headers may be useful."
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Join Domains"]
+      }
+    },
+    "/workspaces/{workspaceId}/join-domains/{id}/verify": {
+      "post": {
+        "operationId": "SiteJoinDomains_verify",
+        "description": "Check the TXT record now (owner only) and verify the domain when it is published. A\ndomain another Workspace has verified is re-checked at that Workspace first: 409 while\nits record is still published, otherwise the domain moves here. 422 when the record is\nnot found.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteJoinDomainResource"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "RFC 7807 conflict response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Join Domains"]
       }
     },
     "/workspaces/{workspaceId}/leave": {
@@ -9892,6 +10264,17 @@
         },
         "description": "A short-lived signed token that proves who the Owner is to the external account\npage, with the address of that page."
       },
+      "SiteAddJoinDomainInput": {
+        "type": "object",
+        "required": ["domain"],
+        "properties": {
+          "domain": {
+            "type": "string",
+            "description": "The domain, e.g. \"acme.com\"; any case or Unicode, stored canonical"
+          }
+        },
+        "description": "Request body for adding a Join domain"
+      },
       "SiteAnalyticsAutomations": {
         "type": "object",
         "required": ["total", "active", "runsActive", "runsCompleted"],
@@ -11504,6 +11887,17 @@
         },
         "description": "A DNS record the user publishes to authenticate a sending domain"
       },
+      "SiteDomainJoinResource": {
+        "type": "object",
+        "required": ["enabled"],
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "On: a User who proves an address on one of the Workspace's verified Join domains\nbecomes a member. Off by default."
+          }
+        },
+        "description": "Whether the Workspace admits Users by Join domain"
+      },
       "SiteDryRunHttpStepInput": {
         "type": "object",
         "required": ["body", "contactId"],
@@ -12141,6 +12535,73 @@
         },
         "description": "A pending invitation of an email address to join the workspace"
       },
+      "SiteJoinDomainResource": {
+        "type": "object",
+        "required": ["id", "domain", "verified", "record", "createdAt", "updatedAt"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Unique identifier"
+          },
+          "domain": {
+            "type": "string",
+            "description": "The canonical domain: lower case, Unicode as punycode"
+          },
+          "verified": {
+            "type": "boolean",
+            "description": "Whether the TXT record was found and the Workspace holds the domain"
+          },
+          "record": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteDnsRecord"
+              }
+            ],
+            "description": "The TXT record to publish to prove the domain"
+          },
+          "lastCheckedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the TXT record was most recently checked (null = never)"
+          },
+          "verifiedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the domain most recently became verified (null = pending)"
+          },
+          "createdAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "Creation timestamp"
+          },
+          "updatedAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "Last update timestamp"
+          }
+        },
+        "description": "A Join domain: a domain whose Users may join the Workspace once domain join\nis on, proven by a TXT record. `verified` is a live property: it holds while the record\nis published. Any Workspace may claim a domain, and only one holds it verified."
+      },
       "SiteLinkedIdentities": {
         "type": "object",
         "required": ["items"],
@@ -12284,6 +12745,14 @@
             ],
             "description": "The member's role in this workspace"
           },
+          "source": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteMembershipSource"
+              }
+            ],
+            "description": "How the member got in; absent for a member from before it was recorded"
+          },
           "createdAt": {
             "allOf": [
               {
@@ -12299,6 +12768,11 @@
         "type": "string",
         "enum": ["owner", "admin", "member"],
         "description": "A User's permission level in a Workspace"
+      },
+      "SiteMembershipSource": {
+        "type": "string",
+        "enum": ["creator", "invitation", "domain"],
+        "description": "How a member got in"
       },
       "SiteOAuthAuthorizationRequest": {
         "type": "object",
@@ -13045,6 +13519,17 @@
           }
         },
         "description": "SES credentials"
+      },
+      "SiteSetDomainJoinInput": {
+        "type": "object",
+        "required": ["enabled"],
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "Whether to admit Users by Join domain from now on"
+          }
+        },
+        "description": "Switch domain join on or off"
       },
       "SiteSetupProgress": {
         "type": "object",
@@ -13847,6 +14332,21 @@
           }
         },
         "description": "Prove an email address with the token sent to it"
+      },
+      "SiteVerifyEmailResult": {
+        "type": "object",
+        "required": ["landingWorkspaceId"],
+        "properties": {
+          "landingWorkspaceId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WorkspaceId"
+              }
+            ],
+            "description": "The Workspace to open: the one the User joined by its Join domain (ADR 0051), else\nthe first Workspace made for them"
+          }
+        },
+        "description": "Where a User who proved their address goes next"
       },
       "SiteWebhookDisabledReason": {
         "type": "string",

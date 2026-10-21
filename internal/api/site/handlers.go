@@ -27,6 +27,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/instance"
 	"github.com/getsphericon/sphericon/internal/integrations"
+	"github.com/getsphericon/sphericon/internal/joindomains"
 	"github.com/getsphericon/sphericon/internal/login"
 	"github.com/getsphericon/sphericon/internal/oauthserver"
 	"github.com/getsphericon/sphericon/internal/outbound"
@@ -96,6 +97,7 @@ type Handlers struct {
 	welcome        WelcomeEnqueuer
 	sysmail        SystemMailEnqueuer
 	sendingDomains *sendingdomains.Module
+	joinDomains    *joindomains.Module
 	integrations   *integrations.Module
 	tokens         *authtoken.Signer
 	tracker        *tracking.Tracker
@@ -193,6 +195,7 @@ type Deps struct {
 	Welcome        WelcomeEnqueuer
 	SysMail        SystemMailEnqueuer
 	SendingDomains *sendingdomains.Module
+	JoinDomains    *joindomains.Module
 	Integrations   *integrations.Module
 	Tokens         *authtoken.Signer
 	Tracker        *tracking.Tracker
@@ -239,7 +242,7 @@ func NewHandlers(d Deps) *Handlers {
 		accounts: d.Accounts, deletion: d.Deletion, attempts: d.Attempts, bus: d.Bus, webhooks: d.Webhooks, outbound: d.Outbound,
 		segments: d.Segments, eventlog: d.EventLog, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, templates: d.Templates, brandKit: d.BrandKit,
 		automations: d.Automations, broadcasts: d.Broadcasts, welcome: d.Welcome,
-		sysmail: d.SysMail, sendingDomains: d.SendingDomains, integrations: d.Integrations, tokens: d.Tokens, tracker: d.Tracker, appURL: d.AppURL,
+		sysmail: d.SysMail, sendingDomains: d.SendingDomains, joinDomains: d.JoinDomains, integrations: d.Integrations, tokens: d.Tokens, tracker: d.Tracker, appURL: d.AppURL,
 		oauth: d.OAuth, audit: d.Audit, abuseWatch: d.AbuseWatch, supportEmail: d.SupportEmail, mcpURL: d.MCPURL, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, now: now, instance: d.Instance, accountLink: d.AccountLink, holds: d.Holds, requireVerification: d.RequireEmailVerification, signupOpen: d.SignupOpen,
 		signin:     d.Signin,
 		challenges: d.Tokens.WithClock(d.Clock),

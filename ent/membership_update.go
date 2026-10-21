@@ -79,6 +79,26 @@ func (_u *MembershipUpdate) SetNillableRole(v *membership.Role) *MembershipUpdat
 	return _u
 }
 
+// SetSource sets the "source" field.
+func (_u *MembershipUpdate) SetSource(v membership.Source) *MembershipUpdate {
+	_u.mutation.SetSource(v)
+	return _u
+}
+
+// SetNillableSource sets the "source" field if the given value is not nil.
+func (_u *MembershipUpdate) SetNillableSource(v *membership.Source) *MembershipUpdate {
+	if v != nil {
+		_u.SetSource(*v)
+	}
+	return _u
+}
+
+// ClearSource clears the value of the "source" field.
+func (_u *MembershipUpdate) ClearSource() *MembershipUpdate {
+	_u.mutation.ClearSource()
+	return _u
+}
+
 // SetSecondFactorRemindedAt sets the "second_factor_reminded_at" field.
 func (_u *MembershipUpdate) SetSecondFactorRemindedAt(v time.Time) *MembershipUpdate {
 	_u.mutation.SetSecondFactorRemindedAt(v)
@@ -169,6 +189,11 @@ func (_u *MembershipUpdate) check() error {
 			return &ValidationError{Name: "role", err: fmt.Errorf(`ent: validator failed for field "Membership.role": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Source(); ok {
+		if err := membership.SourceValidator(v); err != nil {
+			return &ValidationError{Name: "source", err: fmt.Errorf(`ent: validator failed for field "Membership.source": %w`, err)}
+		}
+	}
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Membership.workspace"`)
 	}
@@ -201,6 +226,12 @@ func (_u *MembershipUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 	}
 	if value, ok := _u.mutation.Role(); ok {
 		_spec.SetField(membership.FieldRole, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.Source(); ok {
+		_spec.SetField(membership.FieldSource, field.TypeEnum, value)
+	}
+	if _u.mutation.SourceCleared() {
+		_spec.ClearField(membership.FieldSource, field.TypeEnum)
 	}
 	if value, ok := _u.mutation.SecondFactorRemindedAt(); ok {
 		_spec.SetField(membership.FieldSecondFactorRemindedAt, field.TypeTime, value)
@@ -336,6 +367,26 @@ func (_u *MembershipUpdateOne) SetNillableRole(v *membership.Role) *MembershipUp
 	return _u
 }
 
+// SetSource sets the "source" field.
+func (_u *MembershipUpdateOne) SetSource(v membership.Source) *MembershipUpdateOne {
+	_u.mutation.SetSource(v)
+	return _u
+}
+
+// SetNillableSource sets the "source" field if the given value is not nil.
+func (_u *MembershipUpdateOne) SetNillableSource(v *membership.Source) *MembershipUpdateOne {
+	if v != nil {
+		_u.SetSource(*v)
+	}
+	return _u
+}
+
+// ClearSource clears the value of the "source" field.
+func (_u *MembershipUpdateOne) ClearSource() *MembershipUpdateOne {
+	_u.mutation.ClearSource()
+	return _u
+}
+
 // SetSecondFactorRemindedAt sets the "second_factor_reminded_at" field.
 func (_u *MembershipUpdateOne) SetSecondFactorRemindedAt(v time.Time) *MembershipUpdateOne {
 	_u.mutation.SetSecondFactorRemindedAt(v)
@@ -439,6 +490,11 @@ func (_u *MembershipUpdateOne) check() error {
 			return &ValidationError{Name: "role", err: fmt.Errorf(`ent: validator failed for field "Membership.role": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Source(); ok {
+		if err := membership.SourceValidator(v); err != nil {
+			return &ValidationError{Name: "source", err: fmt.Errorf(`ent: validator failed for field "Membership.source": %w`, err)}
+		}
+	}
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Membership.workspace"`)
 	}
@@ -488,6 +544,12 @@ func (_u *MembershipUpdateOne) sqlSave(ctx context.Context) (_node *Membership, 
 	}
 	if value, ok := _u.mutation.Role(); ok {
 		_spec.SetField(membership.FieldRole, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.Source(); ok {
+		_spec.SetField(membership.FieldSource, field.TypeEnum, value)
+	}
+	if _u.mutation.SourceCleared() {
+		_spec.ClearField(membership.FieldSource, field.TypeEnum)
 	}
 	if value, ok := _u.mutation.SecondFactorRemindedAt(); ok {
 		_spec.SetField(membership.FieldSecondFactorRemindedAt, field.TypeTime, value)
