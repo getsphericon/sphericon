@@ -79,10 +79,10 @@ type DBPool struct {
 	MaxOpenConns    int
 	MaxIdleConns    int
 	ConnMaxLifetime time.Duration
-	// PGXMaxConns bounds river's own queries (fetch, completion, leader election). River polls
+	// RiverMaxConns bounds river's own queries (fetch, completion, leader election). River polls
 	// and holds no LISTEN connection; job workers use the database/sql pool, so it need not
 	// match river's MaxWorkers sum.
-	PGXMaxConns int32
+	RiverMaxConns int32
 }
 
 // telemetryReceiverURL is the address of the Telemetry report receiver, fixed in the binary.
@@ -339,7 +339,7 @@ type environment struct {
 	DBMaxOpenConns    int           `env:"SPHERICON_DB_MAX_OPEN_CONNS" envDefault:"15"`
 	DBMaxIdleConns    *int          `env:"SPHERICON_DB_MAX_IDLE_CONNS"`
 	DBConnMaxLifetime time.Duration `env:"SPHERICON_DB_CONN_MAX_LIFETIME" envDefault:"30m"`
-	PGXMaxConns       int32         `env:"SPHERICON_PGX_MAX_CONNS" envDefault:"25"`
+	RiverMaxConns     int32         `env:"SPHERICON_RIVER_DB_MAX_CONNS" envDefault:"25"`
 
 	SMTPAllowPrivateHosts    bool   `env:"SPHERICON_SMTP_ALLOW_PRIVATE_HOSTS"`
 	OutboundAllow            string `env:"SPHERICON_OUTBOUND_ALLOW"`
@@ -500,7 +500,7 @@ func Load(envName string) (*Config, error) {
 			MaxOpenConns:    e.DBMaxOpenConns,
 			MaxIdleConns:    maxIdle,
 			ConnMaxLifetime: e.DBConnMaxLifetime,
-			PGXMaxConns:     e.PGXMaxConns,
+			RiverMaxConns:   e.RiverMaxConns,
 		},
 		OutboxFloor:             time.Duration(e.OutboxFloorDays) * 24 * time.Hour,
 		EventsRetention:         time.Duration(e.EventsRetentionDays) * 24 * time.Hour,
@@ -781,8 +781,8 @@ func (c *Config) validate(envName string) error {
 	if c.DBPool.ConnMaxLifetime <= 0 {
 		return fmt.Errorf("SPHERICON_DB_CONN_MAX_LIFETIME must be positive")
 	}
-	if c.DBPool.PGXMaxConns <= 0 {
-		return fmt.Errorf("SPHERICON_PGX_MAX_CONNS must be positive")
+	if c.DBPool.RiverMaxConns <= 0 {
+		return fmt.Errorf("SPHERICON_RIVER_DB_MAX_CONNS must be positive")
 	}
 	if err := c.validateMetricsAddr(); err != nil {
 		return err

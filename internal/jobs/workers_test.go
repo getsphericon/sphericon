@@ -89,7 +89,7 @@ func (e *riverEnv) workCtx() context.Context {
 // clearQueue removes every job from the real queue.
 func (e *riverEnv) clearQueue(t *testing.T) {
 	t.Helper()
-	_, err := e.client.River().JobDeleteMany(context.Background(), river.NewJobDeleteManyParams().Queues(river.QueueDefault, jobs.QueueBroadcasts, jobs.QueueWebhooks, jobs.QueueHTTPSteps))
+	_, err := e.client.River().JobDeleteMany(context.Background(), river.NewJobDeleteManyParams().Queues(river.QueueDefault, broadcasts.Queue, jobs.QueueWebhooks, jobs.QueueHTTPSteps))
 	require.NoError(t, err)
 }
 

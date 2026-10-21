@@ -42,7 +42,9 @@ var (
 	ErrNotScheduled = errors.New("broadcasts: broadcast is not scheduled")
 )
 
-// Queue is the river queue the send jobs run on; it isolates a blast from the default queue.
+// Queue is the river queue of the send jobs. A single blast fans out into one job per recipient;
+// keeping them off the default queue stops a large broadcast from starving automation steps and
+// welcome emails (the same isolation jobs.QueueWebhooks gives outbound webhooks).
 const Queue = "broadcasts"
 
 // SendArgs is the fan-out (plan) job payload: which Broadcast to dispatch. The worker plans

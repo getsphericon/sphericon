@@ -36,12 +36,6 @@ const webhookDeliveryTimeout = 15 * time.Second
 // so a burst of them must not starve broadcast sends and automation steps.
 const QueueWebhooks = "webhooks"
 
-// QueueBroadcasts isolates broadcast sends. A single blast fans out into one job
-// per recipient; keeping them off the default queue stops a large broadcast from
-// starving automation steps and welcome emails (the same isolation QueueWebhooks
-// gives outbound webhooks).
-const QueueBroadcasts = broadcasts.Queue
-
 // Client wraps the river client and exposes the typed enqueue methods the API
 // handlers use, so callers don't depend on river directly.
 type Client struct {
@@ -156,7 +150,7 @@ func newRiverConfig(workers *river.Workers, logger *slog.Logger, extra ...*river
 		DiscardedJobRetentionPeriod: discardedJobRetention,
 		Queues: map[string]river.QueueConfig{
 			river.QueueDefault: {MaxWorkers: 5},
-			QueueBroadcasts:    {MaxWorkers: 10},
+			broadcasts.Queue:   {MaxWorkers: 10},
 			QueueWebhooks:      {MaxWorkers: 5},
 			QueueHTTPSteps:     {MaxWorkers: 5},
 		},

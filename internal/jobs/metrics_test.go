@@ -28,12 +28,12 @@ func TestQueueMetricsReportDepthAndOldestAge(t *testing.T) {
 	require.NoError(t, e.client.EnqueueWelcome(ctx, "b@example.com", "B"))
 	later := time.Now().Add(time.Hour)
 	_, err = e.client.River().Insert(ctx, broadcasts.SendArgs{BroadcastID: fixtures.BroadcastDraftID, ScheduledAt: &later},
-		&river.InsertOpts{Queue: jobs.QueueBroadcasts, ScheduledAt: later})
+		&river.InsertOpts{Queue: broadcasts.Queue, ScheduledAt: later})
 	require.NoError(t, err)
 
 	scrape := metricstest.ScrapeMetrics(t)
 	queue := map[string]string{"queue": river.QueueDefault}
 	assert.InDelta(t, 2, scrape.Value(t, "river_queue_depth", queue), 0)
 	assert.GreaterOrEqual(t, scrape.Value(t, "river_queue_oldest_available_age_seconds", queue), 0.0)
-	assert.False(t, scrape.Has("river_queue_depth", map[string]string{"queue": jobs.QueueBroadcasts}), "a job scheduled for later is not ready")
+	assert.False(t, scrape.Has("river_queue_depth", map[string]string{"queue": broadcasts.Queue}), "a job scheduled for later is not ready")
 }

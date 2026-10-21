@@ -29,14 +29,14 @@ func ConfigurePool(sqlDB *sql.DB, p config.DBPool) {
 }
 
 // OpenRiverDB opens the river pool: a database/sql pool of its own, capped at
-// SPHERICON_PGX_MAX_CONNS, so job workers can never starve the API's pool.
+// SPHERICON_RIVER_DB_MAX_CONNS, so job workers can never starve the API's pool.
 func OpenRiverDB(url string, p config.DBPool) (*sql.DB, error) {
 	riverDB, err := sql.Open("pgx", url)
 	if err != nil {
 		return nil, err
 	}
-	riverDB.SetMaxOpenConns(int(p.PGXMaxConns))
-	riverDB.SetMaxIdleConns(int(p.PGXMaxConns))
+	riverDB.SetMaxOpenConns(int(p.RiverMaxConns))
+	riverDB.SetMaxIdleConns(int(p.RiverMaxConns))
 	riverDB.SetConnMaxLifetime(p.ConnMaxLifetime)
 	return riverDB, nil
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"testing"
 	"time"
 
@@ -19,7 +18,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
-	"github.com/getsphericon/sphericon/internal/lifecycle"
 )
 
 // Tests run jobs inline, so a test that needs a job to be waiting in the queue puts
@@ -86,14 +84,14 @@ func (env *TestEnv) JobsOf(t *testing.T, kind string) []map[string]any {
 // sends a Broadcast and then needs it delivered calls this.
 func (env *TestEnv) DeliverQueuedBroadcasts(t *testing.T) {
 	t.Helper()
+	ids := map[int64]bool{}
 	for _, args := range env.JobsOf(t, broadcasts.SendArgs{}.Kind()) {
 		id, ok := args["broadcast_id"].(float64)
 		require.True(t, ok, "a send job names its Broadcast")
-		// A second job for a Broadcast the first already finished is stale, as for a worker.
-		err := jobs.SendBroadcast(t.Context(), env.DB, env.sender, int64(id))
-		if !errors.Is(err, lifecycle.ErrInvalidTransition) {
-			require.NoError(t, err)
-		}
+		ids[int64(id)] = true // a schedule and a later send queue two jobs for one Broadcast
+	}
+	for id := range ids {
+		require.NoError(t, jobs.SendBroadcast(t.Context(), env.DB, env.sender, id))
 	}
 }
 

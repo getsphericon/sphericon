@@ -95,7 +95,7 @@ func TestConfigLoadDBPoolDefaults(t *testing.T) {
 	t.Setenv("DATABASE_URL", "postgres://x")
 	cfg, err := Load("test")
 	require.NoError(t, err)
-	want := DBPool{MaxOpenConns: 15, MaxIdleConns: 15, ConnMaxLifetime: 30 * time.Minute, PGXMaxConns: 25}
+	want := DBPool{MaxOpenConns: 15, MaxIdleConns: 15, ConnMaxLifetime: 30 * time.Minute, RiverMaxConns: 25}
 	require.Equalf(t, want, cfg.DBPool, "defaults = %+v, want %+v", cfg.DBPool, want)
 }
 
@@ -104,10 +104,10 @@ func TestConfigLoadDBPoolFromEnv(t *testing.T) {
 	t.Setenv("SPHERICON_DB_MAX_OPEN_CONNS", "7")
 	t.Setenv("SPHERICON_DB_MAX_IDLE_CONNS", "3")
 	t.Setenv("SPHERICON_DB_CONN_MAX_LIFETIME", "5m")
-	t.Setenv("SPHERICON_PGX_MAX_CONNS", "11")
+	t.Setenv("SPHERICON_RIVER_DB_MAX_CONNS", "11")
 	cfg, err := Load("test")
 	require.NoError(t, err)
-	want := DBPool{MaxOpenConns: 7, MaxIdleConns: 3, ConnMaxLifetime: 5 * time.Minute, PGXMaxConns: 11}
+	want := DBPool{MaxOpenConns: 7, MaxIdleConns: 3, ConnMaxLifetime: 5 * time.Minute, RiverMaxConns: 11}
 	require.Equalf(t, want, cfg.DBPool, "pool = %+v, want %+v", cfg.DBPool, want)
 }
 
@@ -124,7 +124,7 @@ func TestConfigLoadDBPoolRejectsInvalid(t *testing.T) {
 		"zero open":     {"SPHERICON_DB_MAX_OPEN_CONNS": "0"},
 		"idle > open":   {"SPHERICON_DB_MAX_OPEN_CONNS": "2", "SPHERICON_DB_MAX_IDLE_CONNS": "3"},
 		"zero lifetime": {"SPHERICON_DB_CONN_MAX_LIFETIME": "0s"},
-		"zero pgx":      {"SPHERICON_PGX_MAX_CONNS": "0"},
+		"zero river":    {"SPHERICON_RIVER_DB_MAX_CONNS": "0"},
 	} {
 		t.Run(name, func(t *testing.T) {
 			t.Setenv("DATABASE_URL", "postgres://x")

@@ -78,7 +78,7 @@ func (r riverSends) Schedule(ctx context.Context, broadcastID int64, sends []bro
 		chunk := sends[i:min(i+recipientInsertChunk, len(sends))]
 		params := make([]river.InsertManyParams, 0, len(chunk))
 		for _, send := range chunk {
-			opts := &river.InsertOpts{Queue: QueueBroadcasts, MaxAttempts: recipientMaxAttempts}
+			opts := &river.InsertOpts{Queue: broadcasts.Queue, MaxAttempts: recipientMaxAttempts}
 			if !send.At.IsZero() {
 				opts.ScheduledAt = send.At
 			}

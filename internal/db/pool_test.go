@@ -35,14 +35,14 @@ func TestConfigurePoolAppliesLimits(t *testing.T) {
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = sqlDB.Close() })
 
-	db.ConfigurePool(sqlDB, config.DBPool{MaxOpenConns: 7, MaxIdleConns: 3, ConnMaxLifetime: time.Minute, PGXMaxConns: 11})
+	db.ConfigurePool(sqlDB, config.DBPool{MaxOpenConns: 7, MaxIdleConns: 3, ConnMaxLifetime: time.Minute, RiverMaxConns: 11})
 
 	assert.Equal(t, 7, sqlDB.Stats().MaxOpenConnections)
 }
 
 func TestOpenRiverDBAppliesMaxConns(t *testing.T) {
 	cfg := testConfig(t)
-	riverDB, err := db.OpenRiverDB(cfg.DatabaseURL, config.DBPool{PGXMaxConns: 11, ConnMaxLifetime: time.Minute})
+	riverDB, err := db.OpenRiverDB(cfg.DatabaseURL, config.DBPool{RiverMaxConns: 11, ConnMaxLifetime: time.Minute})
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = riverDB.Close() })
 
@@ -53,7 +53,7 @@ func TestOpenRiverDBAppliesMaxConns(t *testing.T) {
 // by pool name.
 func TestPoolMetricsAppearInScrape(t *testing.T) {
 	cfg := testConfig(t)
-	pool := config.DBPool{MaxOpenConns: 7, MaxIdleConns: 7, ConnMaxLifetime: time.Minute, PGXMaxConns: 11}
+	pool := config.DBPool{MaxOpenConns: 7, MaxIdleConns: 7, ConnMaxLifetime: time.Minute, RiverMaxConns: 11}
 
 	sqlDB, err := sql.Open("pgx", cfg.DatabaseURL)
 	require.NoError(t, err)

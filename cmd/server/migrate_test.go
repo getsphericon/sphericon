@@ -23,7 +23,7 @@ import (
 func TestApplyMigrationsCreatesRiverAndOutboxSchemaOnEmptyDatabase(t *testing.T) {
 	cfg := &config.Config{
 		DatabaseURL: testhelper.EmptyDBURL(t),
-		DBPool:      config.DBPool{MaxOpenConns: 2, MaxIdleConns: 2, ConnMaxLifetime: time.Minute, PGXMaxConns: 2},
+		DBPool:      config.DBPool{MaxOpenConns: 2, MaxIdleConns: 2, ConnMaxLifetime: time.Minute, RiverMaxConns: 2},
 	}
 
 	_, err := applyMigrations(t.Context(), cfg)
@@ -58,7 +58,7 @@ func emptyConfig(t *testing.T, timeout time.Duration) *config.Config {
 	return &config.Config{
 		DatabaseURL:    testhelper.EmptyDBURL(t),
 		MigrateTimeout: timeout,
-		DBPool:         config.DBPool{MaxOpenConns: 2, MaxIdleConns: 2, ConnMaxLifetime: time.Minute, PGXMaxConns: 2},
+		DBPool:         config.DBPool{MaxOpenConns: 2, MaxIdleConns: 2, ConnMaxLifetime: time.Minute, RiverMaxConns: 2},
 	}
 }
 
