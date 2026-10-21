@@ -147,6 +147,7 @@ _Avoid_: Address (unqualified), recipient, endpoint
 The workspace's authoritative, (channel, destination)-keyed do-not-send registry for hard,
 global facts: hard bounce, spam complaint, and manual bans. Destination-centric (covers
 destinations with no contact) and a compliance ratchet (bounce/complaint do not auto-clear).
+Removing one is **lifting** it: the row stays with `lifted_at` and no longer blocks sends.
 The send path's global hard floor, checked on every send.
 _Avoid_: Blacklist, denylist, do-not-mail
 
@@ -385,11 +386,12 @@ _Avoid_: Theme, style guide
 **Discard**:
 Taking a row out of working lists while keeping it, by stamping `discarded_at`; **Undiscard**
 clears the stamp. It is the one mechanism behind what the UI calls Archive (a Broadcast, an
-Automation) or Delete (a Workspace, restorable for its window). A discarded row is hidden from
+Automation, a Segment, an Integration, a Sending domain) or Delete (a Workspace, restorable for its window). A discarded row is hidden from
 lists and from new work, but not from history: reports still count it. A row that other live
 work depends on cannot be discarded. **Purge** is the physical removal, allowed only for what
 has no history (a draft Broadcast, an Automation with no Enrollments) and for erasure. The
-raw, undiscardable fact rows (Events, Outbound messages, Audit entries) are never discarded.
+raw, undiscardable fact rows (Events, Outbound messages, Audit entries, Suppressions) are never
+discarded.
 _Avoid_: Soft delete, archive (as the mechanism), trash, tombstone (a tombstone is the row an
 erased Workspace leaves)
 

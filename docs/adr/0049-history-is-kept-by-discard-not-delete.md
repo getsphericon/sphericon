@@ -15,10 +15,15 @@ Enrollment holds only an index into the live definition.
 ## Decisions
 
 - **Three classes of row.** _Configuration without a history trail_ (Tag, Template, Brand kit,
-  Webhook endpoint, Custom field) is deleted physically; the Audit log is its trace. _Configuration
+  Webhook endpoint, Membership, Invitation) is deleted physically; the Audit log is its trace
+  (Membership and Invitation removals already record their own Audit entries by hand). _Configuration
   that history or live work depends on_ (Segment, Integration, Sending domain, Automation,
   Broadcast) is never removed while something live uses it, and is otherwise discarded. _Facts_
-  (Event, Outbound message, Audit entry) are never discarded, only removed by Retention or Erasure.
+  (Event, Outbound message, Audit entry, Suppression) are never discarded, only removed by
+  Retention or Erasure. A Suppression is lifted, not deleted: `lifted_at` is stamped, the row
+  stays, the send path reads only rows with `lifted_at IS NULL`, and the unique index on
+  (workspace_id, channel, destination) is partial on it. Contact erasure only detaches the
+  Contact, as today.
 - **Discard is one mechanism**, a `DiscardMixin` (`discarded_at`, nullable; no `discarded_by`, the
   Audit entry names the actor) and a generated part of the scoped client (ADR 0017). An entity that
   embeds the mixin gets `Discard`, `Undiscard` and `Purge` on `*ent.Scoped` and **no `Delete`**.
@@ -53,6 +58,13 @@ Enrollment holds only an index into the live definition.
   it. Saving steps creates a new version unless the latest one has no Enrollment, in which case it
   is rewritten in place. Name and trigger stay on the Automation. Versions hold sealed HTTP secrets,
   so `internal/rekey` and Workspace erasure cover them.
+- **Segment, Integration and Sending domain take the mixin too**, with the same blocking rules and
+  `archived` in the contract. An archived Integration loses `is_default` and `Undiscard` does not
+  restore it; the default index is partial on `is_default AND discarded_at IS NULL`. An archived
+  Sending domain serves no Tracking host (the tracking host gate, `tls/ask` and the change log
+  ignore it, and the Instance-wide domain index excludes it); `Undiscard` starts a new DNS check.
+  A Segment's definition is not snapshotted into a sent Broadcast: its Recipients are the record
+  of who received it. Only Workspace erasure calls `Purge` on them.
 - **Custom fields are never deleted**, only renamed, so a Segment rule can never name a missing key.
 - **A unique index on a discardable entity is partial** (`WHERE discarded_at IS NULL`), or a
   discarded row holds the name for ever.
