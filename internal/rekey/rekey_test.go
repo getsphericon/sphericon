@@ -89,6 +89,8 @@ func TestRotateReencryptAndRetireLeaveEveryStoredSecretReadable(t *testing.T) {
 		_, err := retired.Decrypt(row.ConfigEncrypted)
 		require.NoError(t, err, "integration %d under the retired keyset", row.ID)
 	}
+	archivedIntegration := lo.ContainsBy(integrations, func(row *ent.Integration) bool { return row.ID == fixtures.IntegrationAcmeArchivedID })
+	assert.True(t, archivedIntegration, "the archived Integration is re-encrypted too")
 	withParams := lo.Filter(integrations, func(row *ent.Integration, _ int) bool { return row.ParamsEncrypted != "" })
 	for _, row := range withParams {
 		_, err := retired.Decrypt(row.ParamsEncrypted)
@@ -106,6 +108,8 @@ func TestRotateReencryptAndRetireLeaveEveryStoredSecretReadable(t *testing.T) {
 		_, err := retired.Decrypt(row.DkimPrivateKeyEncrypted)
 		require.NoError(t, err, "sending domain %d", row.ID)
 	}
+	archivedDomain := lo.ContainsBy(domains, func(row *ent.SendingDomain) bool { return row.ID == fixtures.SendingDomainArchivedID })
+	assert.True(t, archivedDomain, "the archived Sending domain is re-encrypted too")
 	staff, err := env.DB.StaffMember.Query().All(ctx)
 	require.NoError(t, err)
 	enrolled := lo.Filter(staff, func(row *ent.StaffMember, _ int) bool { return row.TotpSecretEncrypted != "" })

@@ -318,6 +318,39 @@ func TestExternalBroadcastsAreIsolatedToTheTokensWorkspace(t *testing.T) {
 	assert.Equal(t, fixtures.BroadcastGlobexName, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastGlobexID).Name, "the foreign broadcast is untouched")
 }
 
+// An archived Segment leaves new work: a draft cannot be pointed at it, and a refused call
+// changes nothing.
+func TestExternalBroadcastAudienceRefusesAnArchivedSegment(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.ExternalScoped(t, authorScopes...)
+	ctx := context.Background()
+	before := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID)
+
+	refused, err := c.BroadcastsSetAudience(ctx,
+		&externalapi.SetBroadcastAudienceInput{SegmentId: externalapi.NewNilEntityId(entityIDString(fixtures.SegmentArchivedID))},
+		externalapi.BroadcastsSetAudienceParams{ID: draftBroadcast})
+	require.NoError(t, err)
+	assert.IsType(t, &externalapi.BroadcastsSetAudienceUnprocessableEntity{}, refused)
+
+	after := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID)
+	assert.Equal(t, before.SegmentID, after.SegmentID)
+}
+
+// A Broadcast that already points at an archived Segment keeps showing it.
+func TestExternalBroadcastKeepsShowingItsArchivedSegment(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.ExternalScoped(t, "broadcasts:read")
+	ctx := context.Background()
+
+	got, err := c.BroadcastsGet(ctx, externalapi.BroadcastsGetParams{ID: entityIDString(fixtures.BroadcastArchivedID)})
+	require.NoError(t, err)
+	b, ok := got.(*externalapi.BroadcastResource)
+	require.Truef(t, ok, "got %T", got)
+	segmentID, ok := b.SegmentId.Get()
+	require.True(t, ok)
+	assert.Equal(t, entityIDString(fixtures.SegmentArchivedID), segmentID)
+}
+
 func TestExternalBroadcastAudienceRefusesAForeignSegment(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, authorScopes...)
