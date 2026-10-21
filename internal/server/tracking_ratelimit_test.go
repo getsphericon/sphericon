@@ -63,7 +63,8 @@ func TestAClickRedirectsOnlyToTheDestinationItsTokenSigns(t *testing.T) {
 	assert.Empty(t, rec.Header().Get("Location"))
 
 	// A parameter next to a click token does not replace the signed destination.
-	rec = trackingGet(t, env, clickPath(t, env, fixtures.BroadcastRecipientUnengagedFirstID)+"?u="+url.QueryEscape("https://evil.test/"))
+	signed := clickPath(t, env, fixtures.BroadcastRecipientUnengagedFirstID)
+	rec = trackingGet(t, env, signed+"?u="+url.QueryEscape("https://evil.test/"))
 	assert.Equal(t, http.StatusFound, rec.Code)
 	assert.Equal(t, clickDest, rec.Header().Get("Location"))
 }
@@ -71,7 +72,8 @@ func TestAClickRedirectsOnlyToTheDestinationItsTokenSigns(t *testing.T) {
 func TestOverTheTrackingGuardAClickStillRedirectsButIsNotRecorded(t *testing.T) {
 	env := testhelper.Setup(t, withTrackingLimit(1))
 
-	require.Equal(t, http.StatusFound, trackingGet(t, env, clickPath(t, env, fixtures.BroadcastRecipientUnengagedFirstID)).Code)
+	first := trackingGet(t, env, clickPath(t, env, fixtures.BroadcastRecipientUnengagedFirstID))
+	require.Equal(t, http.StatusFound, first.Code)
 	rec := trackingGet(t, env, clickPath(t, env, fixtures.BroadcastRecipientUnengagedSecondID))
 
 	assert.Equal(t, http.StatusFound, rec.Code)
@@ -99,8 +101,10 @@ func TestBelowTheTrackingGuardEngagementsAreRecorded(t *testing.T) {
 	env := testhelper.Setup(t, withTrackingLimit(5))
 	first := trackingToken(t, env, fixtures.BroadcastRecipientUnengagedFirstID)
 
-	require.Equal(t, http.StatusOK, trackingGet(t, env, "/e/o/"+first).Code)
-	require.Equal(t, http.StatusFound, trackingGet(t, env, clickPath(t, env, fixtures.BroadcastRecipientUnengagedSecondID)).Code)
+	opened := trackingGet(t, env, "/e/o/"+first)
+	require.Equal(t, http.StatusOK, opened.Code)
+	clicked := trackingGet(t, env, clickPath(t, env, fixtures.BroadcastRecipientUnengagedSecondID))
+	require.Equal(t, http.StatusFound, clicked.Code)
 
 	assert.NotNil(t, env.DB.BroadcastRecipient.GetX(t.Context(), fixtures.BroadcastRecipientUnengagedFirstID).OpenedAt)
 	assert.NotNil(t, env.DB.BroadcastRecipient.GetX(t.Context(), fixtures.BroadcastRecipientUnengagedSecondID).ClickedAt)

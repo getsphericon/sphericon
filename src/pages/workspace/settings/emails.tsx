@@ -17,7 +17,7 @@ export function EmailsPage() {
       {(workspace) => (
         <Stack>
           <IntegrationsSection workspaceId={workspace.id} />
-          <SendingDomainsSection workspaceId={workspace.id} canManage={canManage(workspace.role)} />
+          <SendingDomainsSection workspaceId={workspace.id} canEdit={canManage(workspace.role)} />
           <SuppressionsSection workspaceId={workspace.id} />
         </Stack>
       )}

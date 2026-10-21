@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/getsphericon/sphericon/ent/membership"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -62,11 +61,12 @@ func TestSiteWebhooksNeedAnOwnerOrAdmin(t *testing.T) {
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	read, err := owner.SiteWebhooksGet(ctx, siteapi.SiteWebhooksGetParams{WorkspaceId: workspaceID, ID: id})
 	require.NoError(t, err)
-	assert.Equal(t, "https://example.com/hook", read.(*siteapi.SiteWebhookEndpointResource).URL)
+	endpoint, ok := read.(*siteapi.SiteWebhookEndpointResource)
+	require.True(t, ok, "got %T", read)
+	assert.Equal(t, "https://example.com/hook", endpoint.URL)
 
 	// An admin manages them.
-	addMember(t, env, "admin@acme.test", membership.RoleAdmin)
-	adminList, err := env.SiteActor(t, "admin@acme.test").SiteWebhooksList(ctx, siteapi.SiteWebhooksListParams{WorkspaceId: workspaceID})
+	adminList, err := env.SiteActor(t, fixtures.AdminAliceEmail).SiteWebhooksList(ctx, siteapi.SiteWebhooksListParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	assert.IsType(t, new(siteapi.SiteWebhooksListOK), adminList)
 }

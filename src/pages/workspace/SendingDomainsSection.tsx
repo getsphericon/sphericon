@@ -194,10 +194,10 @@ function SendingDomainRecords({ record }: { record: SiteSendingDomainResource })
 
 export function SendingDomainsSection({
   workspaceId,
-  canManage,
+  canEdit,
 }: {
   workspaceId: string
-  canManage: boolean
+  canEdit: boolean
 }) {
   const { t } = useTranslation()
   const [archived, setArchived] = useState(false)
@@ -249,7 +249,7 @@ export function SendingDomainsSection({
     <Box>
       <Group justify="space-between" mb="xs">
         <Title order={4}>{t(($) => $.settings.sendingDomains.title)}</Title>
-        {canManage ? (
+        {canEdit ? (
           <Button onClick={openAdd}>{t(($) => $.settings.sendingDomains.create)}</Button>
         ) : null}
       </Group>
@@ -299,7 +299,7 @@ export function SendingDomainsSection({
             title: '',
             textAlign: 'right',
             render: (record) =>
-              canManage ? (
+              canEdit ? (
                 // A click in the cell must not toggle the row's expansion.
                 <Group justify="flex-end" onClick={(event) => event.stopPropagation()}>
                   <RowActionsMenu>

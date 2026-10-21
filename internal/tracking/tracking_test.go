@@ -146,6 +146,9 @@ func TestDecodeClickRefusesTokensWithoutASignedDestination(t *testing.T) {
 	_, good, _ := strings.Cut(link, "/e/c/")
 	_, _, err = tracking.New("other", "https://app.test").DecodeClick(good)
 	require.Error(t, err, "a token signed with another secret is refused")
+
+	_, err = tr.Decode(good)
+	require.Error(t, err, "a click token does not record an open")
 }
 
 func TestUnsubscribeFooterPostalAddress(t *testing.T) {

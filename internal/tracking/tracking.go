@@ -113,19 +113,23 @@ func (t *Tracker) parse(token string, claims jwt.Claims, opts ...jwt.ParserOptio
 	return err
 }
 
-// Token mints a signed token identifying a broadcast recipient (open/click).
+// Token mints a signed token identifying a broadcast recipient (open pixel).
 func (t *Tracker) Token(recipientID int64) (string, error) {
 	return t.sign(&recipientClaims{RecipientID: recipientID})
 }
 
-// Decode validates a token and returns the recipient id it carries.
+// Decode validates an open token and returns the recipient id it carries. A click token
+// carries a destination and is refused: each link kind has its own token.
 func (t *Tracker) Decode(token string) (int64, error) {
-	var c recipientClaims
+	var c clickClaims
 	if err := t.parse(token, &c); err != nil {
 		return 0, err
 	}
 	if c.RecipientID == 0 {
 		return 0, errors.New("tracking: missing rid claim")
+	}
+	if c.Destination != "" {
+		return 0, errors.New("tracking: a click token is not an open token")
 	}
 	return c.RecipientID, nil
 }

@@ -26,7 +26,7 @@ var pixelGIF, _ = base64.StdEncoding.DecodeString(
 // trackingHandler serves the public email engagement endpoints:
 //
 //	GET  /e/o/{token}       — open pixel:       record open, return a 1x1 gif
-//	GET  /e/c/{token} — click:            record click, 302 to the URL the token signs
+//	GET  /e/c/{token}       — click:            record click, 302 to the URL the token signs
 //	GET  /e/u/{token}       — unsubscribe confirm: render the SPA page, record nothing
 //	POST /e/u/{token}       — unsubscribe perform: opt the destination out of the scope
 //	GET  /e/confirm/{token} — double opt-in confirm: render the SPA page, record nothing

@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/getsphericon/sphericon/ent/membership"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -50,8 +49,7 @@ func TestSiteSendingDomainsWritesNeedAnOwnerOrAdmin(t *testing.T) {
 	assert.IsType(t, new(siteapi.SiteSendingDomainResource), got)
 
 	// An admin manages them.
-	addMember(t, env, "admin@acme.test", membership.RoleAdmin)
-	ok, err := env.SiteActor(t, "admin@acme.test").SiteSendingDomainsVerify(ctx,
+	ok, err := env.SiteActor(t, fixtures.AdminAliceEmail).SiteSendingDomainsVerify(ctx,
 		siteapi.SiteSendingDomainsVerifyParams{WorkspaceId: workspaceID, ID: id})
 	require.NoError(t, err)
 	assert.IsType(t, new(siteapi.SiteSendingDomainsVerifyNoContent), ok)
