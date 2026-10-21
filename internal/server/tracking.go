@@ -26,7 +26,7 @@ var pixelGIF, _ = base64.StdEncoding.DecodeString(
 // trackingHandler serves the public email engagement endpoints:
 //
 //	GET  /e/o/{token}       — open pixel:       record open, return a 1x1 gif
-//	GET  /e/c/{token}?u=URL — click:            record click, 302 to URL
+//	GET  /e/c/{token} — click:            record click, 302 to the URL the token signs
 //	GET  /e/u/{token}       — unsubscribe confirm: render the SPA page, record nothing
 //	POST /e/u/{token}       — unsubscribe perform: opt the destination out of the scope
 //	GET  /e/confirm/{token} — double opt-in confirm: render the SPA page, record nothing
@@ -65,12 +65,7 @@ func trackingHandler(client *ent.Client, bus *events.Bus, tracker *tracking.Trac
 	})
 
 	mux.HandleFunc("GET /e/c/{token}", func(w http.ResponseWriter, r *http.Request) {
-		dest := r.URL.Query().Get("u")
-		if !strings.HasPrefix(dest, "http://") && !strings.HasPrefix(dest, "https://") {
-			http.Error(w, "invalid destination", http.StatusBadRequest)
-			return
-		}
-		rid, err := tracker.Decode(r.PathValue("token"))
+		rid, dest, err := tracker.DecodeClick(r.PathValue("token"))
 		if err != nil {
 			http.Error(w, "invalid token", http.StatusBadRequest)
 			return

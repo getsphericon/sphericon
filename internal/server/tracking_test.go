@@ -212,7 +212,10 @@ func TestTrackingEndpoints(t *testing.T) {
 	assert.Equal(t, 1, figures(t, env, b.ID).Opened)
 
 	// Click: records the click and 302-redirects to the destination.
-	resp = get("/e/c/" + token + "?u=https%3A%2F%2Fdest.test%2Fx")
+	clickLink, err := tr.ClickURL(rec.ID, "https://dest.test/x")
+	require.NoError(t, err)
+	_, clickToken, _ := strings.Cut(clickLink, "/e/c/")
+	resp = get("/e/c/" + clickToken)
 	assert.Equal(t, http.StatusFound, resp.Code)
 	assert.Equal(t, "https://dest.test/x", resp.Header().Get("Location"))
 	assert.NotNil(t, env.DB.BroadcastRecipient.GetX(ctx, rec.ID).ClickedAt)

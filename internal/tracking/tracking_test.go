@@ -1,7 +1,6 @@
 package tracking_test
 
 import (
-	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -103,9 +102,15 @@ func TestRewriteWrapsLinksAndAddsPixelAndFooter(t *testing.T) {
 	}, "Acme Inc, 123 Main St, Springfield")
 	require.NoError(t, err)
 
-	// http link routed through the click tracker, with the destination preserved.
-	assert.Contains(t, out, "https://app.test/e/c/")
-	assert.Contains(t, out, url.QueryEscape("https://dest.test/path?x=1"))
+	// http link routed through the click tracker, with the destination signed into the token.
+	_, rest, found := strings.Cut(out, "https://app.test/e/c/")
+	require.True(t, found, out)
+	clickToken, _, _ := strings.Cut(rest, `"`)
+	assert.NotContains(t, clickToken, "?", "the destination is not a bare parameter")
+	rid, dest, err := tr.DecodeClick(clickToken)
+	require.NoError(t, err)
+	assert.Equal(t, int64(7), rid)
+	assert.Equal(t, "https://dest.test/path?x=1", dest)
 	// mailto links are left untouched.
 	assert.Contains(t, out, `href="mailto:a@b.test"`)
 	// open pixel + unsubscribe footer appended.
@@ -114,6 +119,33 @@ func TestRewriteWrapsLinksAndAddsPixelAndFooter(t *testing.T) {
 	assert.Contains(t, strings.ToLower(out), "unsubscribe")
 	// CAN-SPAM: the workspace's physical postal address rides in the footer.
 	assert.Contains(t, out, "Acme Inc, 123 Main St, Springfield")
+}
+
+func TestDecodeClickRefusesTokensWithoutASignedDestination(t *testing.T) {
+	tr := tracking.New("secret", "https://app.test")
+
+	recipient, err := tr.Token(7)
+	require.NoError(t, err)
+	_, _, err = tr.DecodeClick(recipient)
+	require.Error(t, err, "the open-pixel token carries no destination")
+
+	confirmURL, err := tr.ConfirmURL(tracking.ConfirmTarget{Destination: "https://x.test", WorkspaceID: fixtures.AcmeID, ContactID: 2})
+	require.NoError(t, err)
+	_, confirm, _ := strings.Cut(confirmURL, "/e/confirm/")
+	_, _, err = tr.DecodeClick(confirm)
+	require.Error(t, err, "a confirm token has a dest claim but no recipient")
+
+	link, err := tr.ClickURL(7, "javascript:alert(1)")
+	require.NoError(t, err)
+	_, js, _ := strings.Cut(link, "/e/c/")
+	_, _, err = tr.DecodeClick(js)
+	require.Error(t, err, "only http(s) destinations redirect")
+
+	link, err = tr.ClickURL(7, "https://dest.test/")
+	require.NoError(t, err)
+	_, good, _ := strings.Cut(link, "/e/c/")
+	_, _, err = tracking.New("other", "https://app.test").DecodeClick(good)
+	require.Error(t, err, "a token signed with another secret is refused")
 }
 
 func TestUnsubscribeFooterPostalAddress(t *testing.T) {

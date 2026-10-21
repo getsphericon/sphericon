@@ -457,8 +457,8 @@ func TestAppServesOnACallerProvidedListener(t *testing.T) {
 	// A link the tracker builds points at the listener...
 	tracker, err := do.Invoke[*tracking.Tracker](a.injector)
 	require.NoError(t, err)
-	link := tracker.ClickURL("tok", "https://example.com")
-	require.True(t, strings.HasPrefix(link, base+"/e/c/"), link)
+	link := tracker.OpenURL("tok")
+	require.True(t, strings.HasPrefix(link, base+"/e/o/"), link)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	eventsDone := make(chan error, 1)

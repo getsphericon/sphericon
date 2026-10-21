@@ -90,9 +90,12 @@ func TestTrackingHostServesOnlyLinkPaths(t *testing.T) {
 	rtoken, err := tr.Token(rec.ID)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusNotFound, hostReq(env, http.MethodGet, host, "/e/o/"+rtoken).Code)
-	assert.Equal(t, http.StatusNotFound, hostReq(env, http.MethodGet, host, "/e/c/"+rtoken+"?u=https://example.com").Code)
+	clickLink, err := tr.ClickURL(rec.ID, "https://example.com")
+	require.NoError(t, err)
+	_, ctok, _ := strings.Cut(clickLink, "/e/c/")
+	assert.Equal(t, http.StatusNotFound, hostReq(env, http.MethodGet, host, "/e/c/"+ctok).Code)
 	// On the Instance's own host the same recipient still works.
-	assert.Equal(t, http.StatusFound, hostReq(env, http.MethodGet, "", "/e/c/"+rtoken+"?u=https://example.com").Code)
+	assert.Equal(t, http.StatusFound, hostReq(env, http.MethodGet, "", "/e/c/"+ctok).Code)
 
 	// Everything else is a 404: the SPA, the API prefixes, sign-in, probes.
 	for _, p := range []string{"/", "/login", "/site/workspaces", "/api/contacts", "/mcp", "/collect/v1/batch", "/healthz", "/t.js", "/staff/me"} {

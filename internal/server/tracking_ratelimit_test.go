@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"testing"
 
 	"github.com/getsphericon/sphericon/config"
@@ -43,15 +44,35 @@ func trackingToken(t *testing.T, env *testhelper.TestEnv, recipientID int64) str
 	return token
 }
 
-func clickPath(token string) string { return "/e/c/" + token + "?u=" + url.QueryEscape(clickDest) }
+func clickPath(t *testing.T, env *testhelper.TestEnv, recipientID int64) string {
+	t.Helper()
+	link, err := env.Tracker.ClickURL(recipientID, clickDest)
+	require.NoError(t, err)
+	_, token, _ := strings.Cut(link, "/e/c/")
+	return "/e/c/" + token
+}
+
+func TestAClickRedirectsOnlyToTheDestinationItsTokenSigns(t *testing.T) {
+	env := testhelper.Setup(t)
+	recipient := trackingToken(t, env, fixtures.BroadcastRecipientUnengagedFirstID)
+
+	// The recipient token also rides the open pixel: with a destination of the caller's
+	// choosing it is no click link.
+	rec := trackingGet(t, env, "/e/c/"+recipient+"?u="+url.QueryEscape("https://evil.test/"))
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+	assert.Empty(t, rec.Header().Get("Location"))
+
+	// A parameter next to a click token does not replace the signed destination.
+	rec = trackingGet(t, env, clickPath(t, env, fixtures.BroadcastRecipientUnengagedFirstID)+"?u="+url.QueryEscape("https://evil.test/"))
+	assert.Equal(t, http.StatusFound, rec.Code)
+	assert.Equal(t, clickDest, rec.Header().Get("Location"))
+}
 
 func TestOverTheTrackingGuardAClickStillRedirectsButIsNotRecorded(t *testing.T) {
 	env := testhelper.Setup(t, withTrackingLimit(1))
-	first := trackingToken(t, env, fixtures.BroadcastRecipientUnengagedFirstID)
-	second := trackingToken(t, env, fixtures.BroadcastRecipientUnengagedSecondID)
 
-	require.Equal(t, http.StatusFound, trackingGet(t, env, clickPath(first)).Code)
-	rec := trackingGet(t, env, clickPath(second))
+	require.Equal(t, http.StatusFound, trackingGet(t, env, clickPath(t, env, fixtures.BroadcastRecipientUnengagedFirstID)).Code)
+	rec := trackingGet(t, env, clickPath(t, env, fixtures.BroadcastRecipientUnengagedSecondID))
 
 	assert.Equal(t, http.StatusFound, rec.Code)
 	assert.Equal(t, clickDest, rec.Header().Get("Location"))
@@ -77,10 +98,9 @@ func TestOverTheTrackingGuardAnOpenStillReturnsThePixelButIsNotRecorded(t *testi
 func TestBelowTheTrackingGuardEngagementsAreRecorded(t *testing.T) {
 	env := testhelper.Setup(t, withTrackingLimit(5))
 	first := trackingToken(t, env, fixtures.BroadcastRecipientUnengagedFirstID)
-	second := trackingToken(t, env, fixtures.BroadcastRecipientUnengagedSecondID)
 
 	require.Equal(t, http.StatusOK, trackingGet(t, env, "/e/o/"+first).Code)
-	require.Equal(t, http.StatusFound, trackingGet(t, env, clickPath(second)).Code)
+	require.Equal(t, http.StatusFound, trackingGet(t, env, clickPath(t, env, fixtures.BroadcastRecipientUnengagedSecondID)).Code)
 
 	assert.NotNil(t, env.DB.BroadcastRecipient.GetX(t.Context(), fixtures.BroadcastRecipientUnengagedFirstID).OpenedAt)
 	assert.NotNil(t, env.DB.BroadcastRecipient.GetX(t.Context(), fixtures.BroadcastRecipientUnengagedSecondID).ClickedAt)

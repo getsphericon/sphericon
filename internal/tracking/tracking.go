@@ -12,7 +12,6 @@ import (
 	"fmt"
 	stdhtml "html"
 	"io"
-	"net/url"
 	"strings"
 	"time"
 
@@ -75,6 +74,14 @@ type recipientClaims struct {
 	RecipientID int64 `json:"rid,string"`
 }
 
+// clickClaims bind one link of one recipient: the destination is signed, so a click URL
+// cannot be pointed anywhere the sender did not put it.
+type clickClaims struct {
+	jwt.RegisteredClaims
+	RecipientID int64  `json:"rid,string"`
+	Destination string `json:"dest"`
+}
+
 type unsubClaims struct {
 	jwt.RegisteredClaims
 	Source      string `json:"src"`
@@ -121,6 +128,28 @@ func (t *Tracker) Decode(token string) (int64, error) {
 		return 0, errors.New("tracking: missing rid claim")
 	}
 	return c.RecipientID, nil
+}
+
+// clickToken mints a signed token for one link of a recipient's email.
+func (t *Tracker) clickToken(recipientID int64, dest string) (string, error) {
+	return t.sign(&clickClaims{RecipientID: recipientID, Destination: dest})
+}
+
+// DecodeClick validates a click token and returns the recipient id and the destination it
+// carries. A recipient token (open pixel) has no destination and is refused, as is any
+// destination that is not an absolute http(s) URL.
+func (t *Tracker) DecodeClick(token string) (int64, string, error) {
+	var c clickClaims
+	if err := t.parse(token, &c); err != nil {
+		return 0, "", err
+	}
+	if c.RecipientID == 0 {
+		return 0, "", errors.New("tracking: missing rid claim")
+	}
+	if !trackable(c.Destination) {
+		return 0, "", errors.New("tracking: missing or invalid dest claim")
+	}
+	return c.RecipientID, c.Destination, nil
 }
 
 // unsubToken mints a signed scoped-unsubscribe token.
@@ -200,9 +229,14 @@ func (t *Tracker) OpenURL(token string) string {
 	return t.baseURL + "/e/o/" + token
 }
 
-// ClickURL wraps a destination link so a click is recorded before redirecting.
-func (t *Tracker) ClickURL(token, dest string) string {
-	return t.baseURL + "/e/c/" + token + "?u=" + url.QueryEscape(dest)
+// ClickURL wraps a destination link so a click is recorded before redirecting. The
+// destination travels inside the signed token, never as a bare parameter.
+func (t *Tracker) ClickURL(recipientID int64, dest string) (string, error) {
+	token, err := t.clickToken(recipientID, dest)
+	if err != nil {
+		return "", err
+	}
+	return t.baseURL + "/e/c/" + token, nil
 }
 
 // UnsubscribeURL is the public link that records the scoped opt-out in target.
@@ -259,7 +293,7 @@ func (t *Tracker) Rewrite(body string, recipientID int64, unsub UnsubTarget, pos
 		return body, err
 	}
 
-	rewritten, err := t.rewriteLinks(body, token)
+	rewritten, err := t.rewriteLinks(body, recipientID)
 	if err != nil {
 		rewritten = body
 	}
@@ -272,7 +306,7 @@ func (t *Tracker) Rewrite(body string, recipientID int64, unsub UnsubTarget, pos
 	return rewritten + pixel + footer, nil
 }
 
-func (t *Tracker) rewriteLinks(body, token string) (string, error) {
+func (t *Tracker) rewriteLinks(body string, recipientID int64) (string, error) {
 	z := html.NewTokenizer(strings.NewReader(body))
 	var sb strings.Builder
 	for {
@@ -287,7 +321,11 @@ func (t *Tracker) rewriteLinks(body, token string) (string, error) {
 		if tt == html.StartTagToken && tok.Data == "a" {
 			for i, a := range tok.Attr {
 				if a.Key == "href" && trackable(a.Val) {
-					tok.Attr[i].Val = t.ClickURL(token, a.Val)
+					link, err := t.ClickURL(recipientID, a.Val)
+					if err != nil {
+						return "", err
+					}
+					tok.Attr[i].Val = link
 				}
 			}
 		}
