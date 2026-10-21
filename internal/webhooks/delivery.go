@@ -10,6 +10,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
+	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/webhook"
@@ -25,7 +26,7 @@ const (
 )
 
 // Notify mails the Owners of a Workspace through the system sender. A nil Notify sends nothing.
-type Notify func(ctx context.Context, workspaceID int64, subject, body string) error
+type Notify = accounts.Notify
 
 // RecordDelivery keeps the endpoint's failure state after one delivery attempt (ADR 0039): a
 // failed delivery extends the run of failures with its closed error kind, a 2xx clears it, and

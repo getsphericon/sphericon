@@ -397,6 +397,11 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
   per handler.
   Note `ee/licensekey`, not `ee/license`: the path is case-insensitive on macOS and would
   collide with `ee/LICENSE`.
+- **Owners and suspension are defined once.** `internal/accounts/owners.go` owns "Owner of a
+  Workspace": `Owners`, `OwnersOf`, `LockOwners`, `OwnerMembership`, `IsOwner`, and the one notice to
+  them (`NotifyOwners`, the `Notify` seam, `OwnerNotifier`); `internal/suspension` owns "suspended"
+  (`Is`, `Suspended`, `NotSuspended`, `BySystem`) and the suspension notice (`NotifyOwners`). Call
+  them; do not test `suspended_at` or the owner Role, or mail Owners, anywhere else.
 - **Refused removals (ADR 0049)**: a row that live work still uses is not removed. `internal/inuse`
   is the one shape of that refusal (`*inuse.Error`: the removed `Subject` and the `Users` that hold it,
   with helpers like `inuse.Broadcasts` and `inuse.Enrollments`); each domain module returns it from

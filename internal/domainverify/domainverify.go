@@ -22,6 +22,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/joindomain"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
+	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/joindomains"
 	"github.com/getsphericon/sphericon/internal/lifecycle"
@@ -33,7 +34,7 @@ import (
 
 // Notify mails the Owners of a Workspace through the system sender. A nil Notify sends
 // nothing (no platform sender is configured).
-type Notify = joindomains.Notify
+type Notify = accounts.Notify
 
 // Module checks Sending domains. tracking is nil while the Tracking domain feature is off.
 type Module struct {

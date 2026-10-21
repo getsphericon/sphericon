@@ -6,10 +6,8 @@ import (
 
 	"github.com/riverqueue/river"
 
-	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domainverify"
 	"github.com/getsphericon/sphericon/internal/joindomains"
-	"github.com/getsphericon/sphericon/internal/messaging"
 )
 
 // recheckBatchSize bounds how many domains one periodic tick re-checks, so a
@@ -100,17 +98,6 @@ func (w *RecheckTrackingDomainsWorker) Work(ctx context.Context, job *river.Job[
 		}
 	}
 	return nil
-}
-
-// OwnerNotifier is the joindomains.Notify that mails a Workspace's Owners through the
-// system sender (a nil sender sends nothing).
-func OwnerNotifier(client *ent.Client, sender messaging.EmailSender) joindomains.Notify {
-	if sender == nil {
-		return nil
-	}
-	return func(ctx context.Context, workspaceID int64, subject, body string) error {
-		return NotifyWorkspaceOwners(ctx, client, sender, workspaceID, subject, body)
-	}
 }
 
 // --- periodic re-check of verified Join domains (the same shape as the Sending domain one) ---

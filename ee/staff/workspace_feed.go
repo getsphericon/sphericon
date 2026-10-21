@@ -10,8 +10,8 @@ import (
 	"strings"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/membership"
 	entworkspace "github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/accounts"
 )
 
 // ErrInvalidFeedCursor refuses a cursor the feed never handed out.
@@ -78,11 +78,7 @@ func (m *Module) WorkspaceFeed(ctx context.Context, cursor string, limit int) (F
 	for i, w := range rows {
 		ids[i] = w.ID
 	}
-	owners, err := m.ent.Membership.Query().
-		Where(membership.WorkspaceIDIn(ids...), membership.RoleEQ(membership.RoleOwner)).
-		WithUser().
-		Order(ent.Asc(membership.FieldID)).
-		All(ctx)
+	owners, err := accounts.OwnersOf(ctx, m.ent, ids...)
 	if err != nil {
 		return FeedPage{}, err
 	}

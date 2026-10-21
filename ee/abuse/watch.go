@@ -7,6 +7,7 @@ import (
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/reputation"
+	"github.com/getsphericon/sphericon/internal/suspension"
 )
 
 // Watch reads a Workspace's standing with the detector, without acting on it: the
@@ -51,7 +52,7 @@ func (w *Watch) Standing(ctx context.Context, s *ent.Scoped, ws *ent.Workspace, 
 // unlicensed instance, an exempt Workspace (never warned or frozen automatically) or one
 // that is already suspended.
 func (w *Watch) Warning(ctx context.Context, s *ent.Scoped, ws *ent.Workspace, now time.Time) (Breach, error) {
-	if !w.Licensed() || ws.AbuseExempt || ws.SuspendedAt != nil {
+	if !w.Licensed() || ws.AbuseExempt || suspension.Is(ws) {
 		return Breach{}, nil
 	}
 	return w.Standing(ctx, s, ws, now)

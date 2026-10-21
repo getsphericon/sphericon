@@ -11,10 +11,10 @@ import (
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
+	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/i18n"
-	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/suspension"
 )
 
@@ -92,7 +92,7 @@ func TestTheOwnerNoticeNamesSystemOrSphericonStaffAsTheActor(t *testing.T) {
 			h := newHarness(t)
 			h.suspendAs(t, tc.by)
 
-			require.NoError(t, jobs.NotifyWorkspaceSuspended(t.Context(), h.env.DB, h.env.SystemMail, "", fixtures.AcmeID))
+			require.NoError(t, suspension.NotifyOwners(t.Context(), h.env.DB, accounts.OwnerNotifier(h.env.DB, h.env.SystemMail), "", fixtures.AcmeID))
 
 			msgs := h.env.SystemMail.Messages()
 			require.Len(t, msgs, 1)

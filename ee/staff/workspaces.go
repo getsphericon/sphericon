@@ -12,7 +12,6 @@ import (
 	entworkspace "github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/events"
-	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/reputation"
@@ -44,7 +43,7 @@ func (m *Module) SuspendWorkspace(ctx context.Context, bus *events.Bus, sender m
 		return nil, false, err
 	}
 	if changed {
-		if err := jobs.NotifyWorkspaceSuspended(ctx, m.ent, sender, m.support, id); err != nil {
+		if err := suspension.NotifyOwners(ctx, m.ent, accounts.OwnerNotifier(m.ent, sender), m.support, id); err != nil {
 			slog.ErrorContext(ctx, "workspace suspended, but the owner notice could not be sent", "workspace_id", id, "error", err)
 		}
 	}
@@ -137,9 +136,9 @@ func (m *Module) ListWorkspaces(ctx context.Context, review Review, search strin
 		switch review {
 		case ReviewNone, ReviewDeleted:
 		case ReviewWarned:
-			q = q.Where(entworkspace.AbuseWarningNotifiedAtNotNil(), entworkspace.SuspendedAtIsNil(), entworkspace.AbuseExempt(false))
+			q = q.Where(entworkspace.AbuseWarningNotifiedAtNotNil(), suspension.NotSuspended(), entworkspace.AbuseExempt(false))
 		case ReviewSystemFrozen:
-			q = q.Where(entworkspace.SuspendedByKindEQ(entworkspace.SuspendedByKindSystem))
+			q = q.Where(suspension.BySystem())
 		}
 		return q
 	}

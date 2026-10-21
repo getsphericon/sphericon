@@ -33,6 +33,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
+	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	appdb "github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/dnstest"
@@ -503,13 +504,13 @@ func TestVerifySendingDomainWorker(t *testing.T) {
 	gone := dnstest.Resolver(t, nil).LookupTXT
 
 	// Verified domain whose DNS vanished: flips, owner is emailed.
-	w := jobs.NewVerifySendingDomainWorker(domainverify.New(env.DB, gone, nil, jobs.OwnerNotifier(env.DB, env.SystemMail)))
+	w := jobs.NewVerifySendingDomainWorker(domainverify.New(env.DB, gone, nil, accounts.OwnerNotifier(env.DB, env.SystemMail)))
 	require.NoError(t, w.Work(ctx, job(jobs.VerifySendingDomainArgs{SendingDomainID: fixtures.SendingDomainVerifiedID})))
 	assert.Len(t, env.SystemMail.Messages(), 1)
 
 	// A failing alert never fails the verification.
 	env.SystemMail.SetErr(errors.New("smtp down"))
-	require.NoError(t, jobs.NewVerifySendingDomainWorker(domainverify.New(env.DB, gone, nil, jobs.OwnerNotifier(env.DB, env.SystemMail))).
+	require.NoError(t, jobs.NewVerifySendingDomainWorker(domainverify.New(env.DB, gone, nil, accounts.OwnerNotifier(env.DB, env.SystemMail))).
 		Work(ctx, job(jobs.VerifySendingDomainArgs{SendingDomainID: fixtures.SendingDomainVerifiedID})))
 
 	// Unknown domain id is an error.

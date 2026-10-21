@@ -15,7 +15,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
-	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/suspension"
 )
@@ -68,13 +67,13 @@ func (d *Detector) Run(ctx context.Context, now time.Time) (Summary, error) {
 	// mutes the warning it earns after being cleared.
 	var errs []error
 	if err := d.client.Workspace.Update().
-		Where(workspace.AbuseWarningNotifiedAtNotNil(), workspace.Or(workspace.SuspendedAtNotNil(), workspace.AbuseExempt(true))).
+		Where(workspace.AbuseWarningNotifiedAtNotNil(), workspace.Or(suspension.Suspended(), workspace.AbuseExempt(true))).
 		ClearAbuseWarningNotifiedAt().
 		Exec(ctx); err != nil {
 		errs = append(errs, fmt.Errorf("end the warning episodes of suspended and exempt workspaces: %w", err))
 	}
 	candidates, err := d.client.Workspace.Query().
-		Where(workspace.SuspendedAtIsNil(), workspace.AbuseExempt(false), accounts.Live()).
+		Where(suspension.NotSuspended(), workspace.AbuseExempt(false), accounts.Live()).
 		All(ctx)
 	if err != nil {
 		return sum, errors.Join(append(errs, fmt.Errorf("list workspaces for the abuse detector: %w", err))...)
@@ -125,7 +124,7 @@ func (d *Detector) freeze(ctx context.Context, ws *ent.Workspace, b Breach) (boo
 	if err := d.client.Workspace.UpdateOneID(ws.ID).ClearAbuseWarningNotifiedAt().Exec(ctx); err != nil {
 		slog.ErrorContext(ctx, "workspace frozen, but its warning episode could not be ended", "workspace_id", ws.ID, "error", err)
 	}
-	if err := jobs.NotifyWorkspaceSuspended(ctx, d.client, d.sender, d.support, ws.ID); err != nil {
+	if err := suspension.NotifyOwners(ctx, d.client, accounts.OwnerNotifier(d.client, d.sender), d.support, ws.ID); err != nil {
 		slog.ErrorContext(ctx, "workspace frozen by the abuse detector, but the owner notice could not be sent", "workspace_id", ws.ID, "error", err)
 	}
 	return true, nil
@@ -142,7 +141,7 @@ func (d *Detector) warn(ctx context.Context, ws *ent.Workspace, b Breach, now ti
 		"Rate": Percent(b.Rate()), "Count": b.Numerator, "Total": b.Denominator,
 		"Limit": Percent(float64(b.LimitBP) / 10000), "Support": d.support,
 	}
-	if err := jobs.NotifyWorkspaceOwners(ctx, d.client, d.sender, ws.ID,
+	if err := accounts.NotifyOwners(ctx, d.client, d.sender, ws.ID,
 		i18n.T("email.abuse_warning.subject", data), i18n.T("email.abuse_warning.body", data)); err != nil {
 		return false, fmt.Errorf("warn workspace %d: %w", ws.ID, err)
 	}

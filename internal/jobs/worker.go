@@ -91,7 +91,7 @@ func NewClient(riverDB *sql.DB, entClient *ent.Client, mod *outbound.Module, cip
 		cipher: cipher,
 		client: webhook.NewClientAllowing(webhookDeliveryTimeout, outboundAllow),
 		now:    time.Now,
-		mod:    webhooks.New(bus, cipher, nil, nil, webhooks.Notify(OwnerNotifier(entClient, systemSender))),
+		mod:    webhooks.New(bus, cipher, nil, nil, accounts.OwnerNotifier(entClient, systemSender)),
 	})
 	river.AddWorker(workers, &SendWelcomeWorker{sender: systemSender})
 	river.AddWorker(workers, &SendAuthMailWorker{sender: systemSender, appURL: appURL})
@@ -100,11 +100,11 @@ func NewClient(riverDB *sql.DB, entClient *ent.Client, mod *outbound.Module, cip
 	river.AddWorker(workers, &RemindSecondFactorWorker{ent: entClient, sender: systemSender, appURL: appURL})
 	// Sending-domain DKIM verification (ADR 0010). LookupTXT re-checks published
 	// DNS; verified is a live property re-validated by the periodic job below.
-	domains := domainverify.New(entClient, lookup, tracking, OwnerNotifier(entClient, systemSender))
+	domains := domainverify.New(entClient, lookup, tracking, accounts.OwnerNotifier(entClient, systemSender))
 	river.AddWorker(workers, &VerifySendingDomainWorker{mod: domains})
 	river.AddWorker(workers, &RecheckSendingDomainsWorker{mod: domains})
 	// Join domains stay verified only while their TXT record is published.
-	joinDomains := joindomains.New(entClient, bus, lookup, time.Now, OwnerNotifier(entClient, systemSender))
+	joinDomains := joindomains.New(entClient, bus, lookup, time.Now, accounts.OwnerNotifier(entClient, systemSender))
 	river.AddWorker(workers, &VerifyJoinDomainWorker{mod: joinDomains})
 	river.AddWorker(workers, &RecheckJoinDomainsWorker{mod: joinDomains})
 	river.AddWorker(workers, &VerifyTrackingDomainWorker{mod: domains})

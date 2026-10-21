@@ -158,7 +158,7 @@ func (m *Module) IsOwner(ctx context.Context, userID int64) (bool, error) {
 		return false, err
 	}
 	return m.ent.Membership.Query().
-		Where(membership.UserID(userID), membership.WorkspaceID(oldest), membership.RoleEQ(membership.RoleOwner)).
+		Where(membership.UserID(userID), membership.WorkspaceID(oldest), accounts.OwnerMembership()).
 		Exist(ctx)
 }
 

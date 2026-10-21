@@ -38,7 +38,7 @@ func NewMemberInviteWorker(sender messaging.EmailSender) *SendMemberInviteWorker
 }
 
 func NewDeliverWebhookWorker(client *ent.Client, cipher *secrets.Cipher, doer webhook.Doer, now func() time.Time, bus *events.Bus, sender messaging.EmailSender) *DeliverWebhookWorker {
-	return &DeliverWebhookWorker{ent: client, cipher: cipher, client: doer, now: now, mod: webhooks.New(bus, cipher, nil, nil, webhooks.Notify(OwnerNotifier(client, sender)))}
+	return &DeliverWebhookWorker{ent: client, cipher: cipher, client: doer, now: now, mod: webhooks.New(bus, cipher, nil, nil, accounts.OwnerNotifier(client, sender))}
 }
 
 func NewVerifySendingDomainWorker(mod *domainverify.Module) *VerifySendingDomainWorker {

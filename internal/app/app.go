@@ -577,7 +577,7 @@ func (a *App) SuspendWorkspace(ctx context.Context, publicID string, by suspensi
 	if err != nil {
 		return true, fmt.Errorf("workspace suspended, but the owner notice could not be sent: %w", err)
 	}
-	if err := jobs.NotifyWorkspaceSuspended(ctx, client.Client, sys.EmailSender, cfg.SupportEmail, id); err != nil {
+	if err := suspension.NotifyOwners(ctx, client.Client, accounts.OwnerNotifier(client.Client, sys.EmailSender), cfg.SupportEmail, id); err != nil {
 		return true, fmt.Errorf("workspace suspended, but the owner notice could not be sent: %w", err)
 	}
 	return true, nil
@@ -1235,7 +1235,7 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		return joindomains.New(client.Client, bus.Bus, lookup.TXTLookup, time.Now, jobs.OwnerNotifier(client.Client, sys.EmailSender)), nil
+		return joindomains.New(client.Client, bus.Bus, lookup.TXTLookup, time.Now, accounts.OwnerNotifier(client.Client, sys.EmailSender)), nil
 	})
 
 	do.Provide(injector, func(do.Injector) (*templates.Module, error) {

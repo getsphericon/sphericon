@@ -16,10 +16,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
+	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/dnstest"
 	"github.com/getsphericon/sphericon/internal/domainverify"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/sending"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/trackingdomain"
@@ -43,7 +43,7 @@ func trackingVerifier(t *testing.T, env *testhelper.TestEnv, zones map[string]mo
 
 // module builds the module over the system mailbox, the way the composition roots do.
 func module(env *testhelper.TestEnv, lookup sending.TXTLookup, tracking *trackingdomain.Verifier) *domainverify.Module {
-	return domainverify.New(env.DB, lookup, tracking, jobs.OwnerNotifier(env.DB, env.SystemMail))
+	return domainverify.New(env.DB, lookup, tracking, accounts.OwnerNotifier(env.DB, env.SystemMail))
 }
 
 func TestVerifyDKIM_becomesVerified(t *testing.T) {

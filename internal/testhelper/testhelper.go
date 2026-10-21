@@ -379,7 +379,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	sender := outbound.New(bus, edition.Holds(), resolver, tracker, outboundOpts...)
 	fakeSES := &FakeSES{}
 	catalog := catalogWith(fakeSES)
-	inline := jobs.NewInline(client, sender, systemMail, domainverify.New(client, stubTXT, nil, jobs.OwnerNotifier(client, systemMail)), cipher, catalog, cfg.AppURL)
+	inline := jobs.NewInline(client, sender, systemMail, domainverify.New(client, stubTXT, nil, accounts.OwnerNotifier(client, systemMail)), cipher, catalog, cfg.AppURL)
 	// The transactional send surface resolves a workspace sender directly (not via
 	// river), so it gets the same capturing resolver — its sends land in CustomerMail.
 	// inline implements every enqueue seam (broadcast, welcome, account mail,
@@ -407,7 +407,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	confirmations := &Confirmations{}
 	integrationsModule := integrations.New(bus, cipher, catalog, inline, presets, cfg.AppURL, integrations.WithSubscriptionConfirmer(confirmations.confirm))
 	sendingDomainsModule := sendingdomains.New(bus, cipher, inline, cfg.TrackingCNAMETarget)
-	joinDomainsModule := joindomains.New(client, bus, stubTXT, st.now, jobs.OwnerNotifier(client, systemMail))
+	joinDomainsModule := joindomains.New(client, bus, stubTXT, st.now, accounts.OwnerNotifier(client, systemMail))
 	automationsModule := automations.New(cipher, bus)
 	broadcastsModule := broadcasts.New(bus)
 	acc := accounts.New(client, bus)
