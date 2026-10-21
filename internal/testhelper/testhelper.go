@@ -382,7 +382,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	// Domain modules, built once here and shared by /site and /api exactly like the
 	// app's DI singletons.
 	eventLog := eventlog.New(bus, eventlog.LivePolicy{Window: cfg.EventLiveWindow, Now: st.now})
-	segmentsModule := segments.New()
+	segmentsModule := segments.New(bus)
 	contactsModule := contacts.New(bus)
 	erasureModule := erasure.New(bus)
 	templatesModule := templates.New()

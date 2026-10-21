@@ -8,6 +8,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/segment"
+	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
@@ -25,11 +26,13 @@ var (
 // (ADR 0016). Create and update share one validation rule set; handlers stay thin
 // adapters (scope check, call, map). Membership is the rule alone — Send-eligibility
 // is subtracted only at send, never folded into a count (ADR 0001).
-type Module struct{}
+type Module struct {
+	bus *events.Bus
+}
 
 // New builds the Segments module. It holds no client: every call takes the
-// Workspace's scoped client (ADR 0017).
-func New() *Module { return &Module{} }
+// Workspace's scoped client (ADR 0017); the bus runs the archive in one transaction.
+func New(bus *events.Bus) *Module { return &Module{bus: bus} }
 
 // CreateInput is a new Segment. A nil or empty Definition means "no rules yet".
 type CreateInput struct {
@@ -132,27 +135,29 @@ func (s *Module) List(ctx context.Context, ws *ent.Scoped, p pagination.Params, 
 // reference as history and does not block. A missing Segment is ErrNotFound; archiving an
 // archived one changes nothing.
 func (s *Module) Archive(ctx context.Context, ws *ent.Scoped, id int64) error {
-	seg, err := ws.Segment().Get(ctx, id)
-	if ent.IsNotFound(err) {
-		return ErrNotFound
-	}
-	if err != nil {
-		return err
-	}
-	if seg.DiscardedAt != nil {
-		return nil
-	}
-	live, err := ws.Broadcast().Query().
-		Where(broadcast.SegmentID(id), broadcast.StatusIn(broadcast.StatusDraft, broadcast.StatusScheduled)).
-		Order(ent.Asc(broadcast.FieldID)).
-		All(ctx)
-	if err != nil {
-		return err
-	}
-	if len(live) > 0 {
-		return &inuse.Error{What: inuse.SubjectSegment, Users: inuse.Broadcasts(live)}
-	}
-	return ws.Segment().Discard(ctx, id)
+	return s.bus.WithinScopedTx(ctx, ws, func(ts *ent.Scoped, _ events.Publisher) error {
+		seg, err := ts.Segment().Get(ctx, id)
+		if ent.IsNotFound(err) {
+			return ErrNotFound
+		}
+		if err != nil {
+			return err
+		}
+		if seg.DiscardedAt != nil {
+			return nil
+		}
+		live, err := ts.Broadcast().Query().
+			Where(broadcast.SegmentID(id), broadcast.StatusIn(broadcast.StatusDraft, broadcast.StatusScheduled)).
+			Order(ent.Asc(broadcast.FieldID)).
+			All(ctx)
+		if err != nil {
+			return err
+		}
+		if len(live) > 0 {
+			return &inuse.Error{What: inuse.SubjectSegment, Users: inuse.Broadcasts(live)}
+		}
+		return ts.Segment().Discard(ctx, id)
+	})
 }
 
 // Unarchive brings an archived Segment back to the lists. Restoring one that is not archived

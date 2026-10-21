@@ -63,10 +63,8 @@ func TestLiftedSuppressionDoesNotBlock(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, d.Eligible, "the fixture's lifted destination is mailable")
 
-	_, err = s.Contact().Create().SetEmail("lifted@codebasics.dev").Save(ctx)
-	require.NoError(t, err)
 	n, err := s.Contact().Query().
-		Where(contact.EmailEQ("lifted@codebasics.dev"), eligibility.Predicate(eligibility.ChannelEmail, eligibility.SourceBroadcasts)).
+		Where(contact.ID(fixtures.ContactLiftedID), eligibility.Predicate(eligibility.ChannelEmail, eligibility.SourceBroadcasts)).
 		Count(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, 1, n, "an audience keeps the contact of a lifted destination")

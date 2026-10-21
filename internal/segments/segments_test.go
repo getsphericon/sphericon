@@ -19,7 +19,7 @@ import (
 // validate runs the Module's rule set for the Acme Workspace.
 func validate(t *testing.T, env *testhelper.TestEnv, def string) error {
 	t.Helper()
-	return segments.New().Validate(context.Background(), env.DB.Scoped(fixtures.AcmeID), def)
+	return segments.New(env.Bus).Validate(context.Background(), env.DB.Scoped(fixtures.AcmeID), def)
 }
 
 func rule(field, op, value string) segments.Rule {

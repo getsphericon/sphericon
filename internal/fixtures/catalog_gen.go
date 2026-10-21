@@ -307,6 +307,10 @@ const (
 	ContactLiamEmail = "liam.python@codebasics.dev"
 	// ContactLiamID is from fixtures/contacts.
 	ContactLiamID = 100
+	// ContactLiftedEmail is from fixtures/contacts.
+	ContactLiftedEmail = "lifted@codebasics.dev"
+	// ContactLiftedID is from fixtures/contacts.
+	ContactLiftedID = 131
 	// ContactNoahEmail is from fixtures/contacts.
 	ContactNoahEmail = "noah.js@codebasics.dev"
 	// ContactNoahID is from fixtures/contacts.

@@ -116,7 +116,7 @@ func TestCustomFieldKeyIsABoundArgument(t *testing.T) {
 
 func TestCustomFieldMustBeInTheWorkspaceCatalogue(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := segments.New()
+	m := segments.New(env.Bus)
 	ws := env.DB.Scoped(fixtures.AcmeID)
 
 	for name, key := range map[string]string{

@@ -63,9 +63,9 @@ func New() *Module {
 	return &Module{}
 }
 
-// Rates returns the rates of every Sending domain of the workspace over the window. A domain with no traffic is still listed, with undefined rates.
+// Rates returns the rates of every Sending domain of the workspace, archived ones too (ADR 0049: archiving never changes past figures) over the window. A domain with no traffic is still listed, with undefined rates.
 func (m *Module) Rates(ctx context.Context, s *ent.Scoped, w Window) ([]DomainRates, error) {
-	domains, err := s.SendingDomain().Query().
+	domains, err := s.SendingDomain().QueryWithDiscarded().
 		Order(ent.Asc(sendingdomain.FieldID)).
 		All(ctx)
 	if err != nil {

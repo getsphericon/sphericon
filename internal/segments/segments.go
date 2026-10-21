@@ -375,9 +375,9 @@ func (g Group) namesTag(name string) bool {
 }
 
 // UsingTag returns the Workspace's Segments whose rule names the Tag by its name, in id order.
-// A Segment rule keeps the name, not an id, so deleting the Tag would leave it matching nothing.
+// Archived ones count: restoring one must not leave it naming a missing Tag. A Segment rule keeps the name, not an id, so deleting the Tag would leave it matching nothing.
 func UsingTag(ctx context.Context, s *ent.Scoped, name string) ([]*ent.Segment, error) {
-	all, err := s.Segment().Query().Order(ent.Asc(segment.FieldID)).All(ctx)
+	all, err := s.Segment().QueryWithDiscarded().Order(ent.Asc(segment.FieldID)).All(ctx)
 	if err != nil {
 		return nil, err
 	}

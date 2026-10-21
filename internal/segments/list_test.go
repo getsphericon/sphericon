@@ -17,7 +17,7 @@ import (
 
 func TestListPagesTheWorkspaceSegmentsAscendingByID(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := segments.New()
+	m := segments.New(env.Bus)
 
 	all, err := m.List(context.Background(), env.DB.Scoped(fixtures.AcmeID), pagination.Params{Page: 1, PageSize: 100}, false)
 	require.NoError(t, err)

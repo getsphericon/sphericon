@@ -273,6 +273,12 @@
   workspace_id: 1
   created_at: '{{daysAgo 10}}'
   updated_at: '{{daysAgo 10}}'
+# The Contact of SuppressionLifted's destination: it is mailable again (eligibility test).
+- id: 131 # fixture: ContactLifted
+  email: lifted@codebasics.dev
+  workspace_id: 1
+  created_at: '{{daysAgo 30}}'
+  updated_at: '{{daysAgo 2}}'
 
 # Globex (workspace 2): the foreign contact the isolation tests reference and replant.
 - id: 900 # fixture: ContactGlobex

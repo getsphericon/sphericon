@@ -1126,8 +1126,12 @@ func register(injector do.Injector, env string, o options) {
 
 	// Domain modules: each built once and shared by /site, /api and /mcp, so the
 	// surfaces cannot diverge on how a module is constructed.
-	do.Provide(injector, func(do.Injector) (*segments.Module, error) {
-		return segments.New(), nil
+	do.Provide(injector, func(i do.Injector) (*segments.Module, error) {
+		bus, err := do.Invoke[*eventsBus](i)
+		if err != nil {
+			return nil, err
+		}
+		return segments.New(bus.Bus), nil
 	})
 
 	do.Provide(injector, func(i do.Injector) (*contacts.Module, error) {

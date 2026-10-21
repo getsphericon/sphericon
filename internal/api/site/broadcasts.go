@@ -112,7 +112,8 @@ func (h *Handlers) SiteBroadcastsCreate(ctx context.Context, req *siteapi.SiteCr
 		SegmentID:     segmentID,
 		IntegrationID: integrationID,
 	})
-	if errors.Is(err, broadcasts.ErrBodyAndDoc) || errors.Is(err, emailrender.ErrInvalidContent) {
+	if errors.Is(err, broadcasts.ErrBodyAndDoc) || errors.Is(err, emailrender.ErrInvalidContent) ||
+		errors.Is(err, broadcasts.ErrSegmentNotFound) || errors.Is(err, broadcasts.ErrIntegrationNotFound) {
 		v := siteapi.SiteBroadcastsCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
 		return &v, nil
 	}
@@ -193,7 +194,8 @@ func (h *Handlers) SiteBroadcastsUpdate(ctx context.Context, req *siteapi.SiteUp
 	case errors.Is(err, broadcasts.ErrNotDraft):
 		v := siteapi.SiteBroadcastsUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, "only draft broadcasts can be edited"))
 		return &v, nil
-	case errors.Is(err, broadcasts.ErrBodyAndDoc), errors.Is(err, emailrender.ErrInvalidContent):
+	case errors.Is(err, broadcasts.ErrBodyAndDoc), errors.Is(err, emailrender.ErrInvalidContent),
+		errors.Is(err, broadcasts.ErrSegmentNotFound), errors.Is(err, broadcasts.ErrIntegrationNotFound):
 		v := siteapi.SiteBroadcastsUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
 		return &v, nil
 	case err != nil:

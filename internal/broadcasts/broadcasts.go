@@ -22,6 +22,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcast"
+	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/internal/emailrender"
@@ -126,6 +127,8 @@ var (
 	ErrNotDraft = errors.New("broadcasts: broadcast is not a draft")
 	// ErrSegmentNotFound: the audience Segment does not exist in this Workspace.
 	ErrSegmentNotFound = errors.New("broadcasts: segment not found")
+	// ErrIntegrationNotFound: the Integration does not exist in this Workspace or is archived.
+	ErrIntegrationNotFound = errors.New("broadcasts: integration not found")
 	// ErrBodyAndDoc: a write carries both a body and a document. A client writes one of them: the
 	// document (the server builds the body from it) or the body (which clears the document).
 	ErrBodyAndDoc = errors.New("broadcasts: write a body or a doc, not both")
@@ -161,6 +164,9 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, f Fields) (*ent.Broa
 	if err != nil {
 		return nil, err
 	}
+	if err := m.checkRefs(ctx, s, f); err != nil {
+		return nil, err
+	}
 	body := c.Body
 	q := s.Broadcast().Create().
 		SetNillableFromName(f.FromName).
@@ -180,6 +186,30 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, f Fields) (*ent.Broa
 		q.SetDoc(f.Doc).SetEditorVersion(c.Authored.EditorVersion)
 	}
 	return q.Save(ctx)
+}
+
+// checkRefs refuses a Segment or Integration that is missing or archived: an archived row leaves
+// new work (ADR 0049). A Broadcast already pointing at one keeps it as history.
+func (m *Module) checkRefs(ctx context.Context, s *ent.Scoped, f Fields) error {
+	if f.SegmentID != nil {
+		ok, err := s.Segment().Query().Where(segment.ID(*f.SegmentID)).Exist(ctx)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			return ErrSegmentNotFound
+		}
+	}
+	if f.IntegrationID != nil {
+		ok, err := s.Integration().Query().Where(integration.ID(*f.IntegrationID)).Exist(ctx)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			return ErrIntegrationNotFound
+		}
+	}
+	return nil
 }
 
 // Get returns one Broadcast of the Workspace.
@@ -212,6 +242,9 @@ func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params, a
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, f Fields) (*ent.Broadcast, error) {
 	c, err := emailrender.ResolveContent(ctx, f.Subject, f.Body, f.Doc, ErrBodyAndDoc)
 	if err != nil {
+		return nil, err
+	}
+	if err := m.checkRefs(ctx, s, f); err != nil {
 		return nil, err
 	}
 	u := s.Broadcast().Update().Where(draftOf(id)).
