@@ -139,3 +139,23 @@ func TestVerifySendingDomainByID_resolverErrorDoesNotChangeState(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, reloaded.Verified, "a transient resolver failure must not flip verified")
 }
+
+// A check judged on a row another check already changed is stale: the lookup runs between the
+// check's read and its write, so a second check that flips the domain meanwhile is a concurrent
+// one. The late check neither rewrites the row nor reports a flip (the owner is told once).
+func TestVerifySendingDomainByID_staleCheckDoesNotReportASecondFlip(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+
+	gone := dnstest.Resolver(t, nil).LookupTXT
+	concurrent := func(ctx context.Context, name string) ([]string, error) {
+		_, flipped, err := jobs.VerifySendingDomainByID(ctx, env.DB, gone, fixtures.SendingDomainVerifiedID)
+		require.NoError(t, err)
+		require.True(t, flipped, "the concurrent check is the one that flips the domain")
+		return gone(ctx, name)
+	}
+
+	_, flipped, err := jobs.VerifySendingDomainByID(ctx, env.DB, concurrent, fixtures.SendingDomainVerifiedID)
+	require.NoError(t, err)
+	assert.False(t, flipped, "the check that lost the race must not flip the domain a second time")
+}

@@ -210,7 +210,8 @@ func DomainsDueForRecheck(ctx context.Context, client *ent.Client, limit int) ([
 // verified, last_checked_at, and (when it becomes verified) verified_at. It is
 // pure of the queue so it can be tested directly, and returns the resulting
 // verified state plus whether this check flipped a live domain to unverified —
-// the transition the owner is notified about (ADR 0010 slice 3).
+// the transition the owner is notified about (ADR 0010 slice 3). A check whose flip lost
+// the compare-and-swap to another check stores nothing and reports no flip.
 //
 // The flip self-clears (the same write persists verified=false), so the next tick
 // computes flipped=false and the owner is alerted exactly once per loss.
@@ -228,18 +229,28 @@ func VerifySendingDomainByID(ctx context.Context, client *ent.Client, lookup sen
 	now := time.Now()
 	upd := client.Scoped(dom.WorkspaceID).SendingDomain().UpdateOneID(id).SetLastCheckedAt(now)
 	if verified != dom.Verified {
-		upd.SetVerified(verified)
+		// The flip is a compare-and-swap on the state this check read: a check that lost to
+		// another one stores nothing and reports no flip, so the owner is told once (ADR 0046).
+		upd.Where(sendingdomain.Verified(dom.Verified)).SetVerified(verified)
 		if verified {
 			upd.SetVerifiedAt(now)
 		}
-		if dom.Verified && !verified {
-			flippedToUnverified = true
-			slog.WarnContext(ctx, "sending domain DKIM verification lost",
-				"sending_domain_id", id, "workspace_id", dom.WorkspaceID, "domain", dom.Domain)
-		}
+		flippedToUnverified = dom.Verified && !verified
 	}
 	if err := upd.Exec(ctx); err != nil {
+		if ent.IsNotFound(err) {
+			// Lost the swap (or the domain is gone): the stored state is the answer.
+			current, gerr := client.SendingDomain.Get(ctx, id)
+			if gerr != nil {
+				return false, false, gerr
+			}
+			return current.Verified, false, nil
+		}
 		return false, false, err
+	}
+	if flippedToUnverified {
+		slog.WarnContext(ctx, "sending domain DKIM verification lost",
+			"sending_domain_id", id, "workspace_id", dom.WorkspaceID, "domain", dom.Domain)
 	}
 	return verified, flippedToUnverified, nil
 }
