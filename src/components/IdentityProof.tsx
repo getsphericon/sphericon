@@ -44,7 +44,7 @@ export function IdentityProof({ hint, returnTo }: { hint: string; returnTo: stri
           {t(($) => $.security.passkeyCheck.button)}
         </Button>
       ) : null}
-      <SigninProviders returnTo={returnTo} separated={false} />
+      <SigninProviders returnTo={returnTo} separator={false} />
     </Stack>
   )
 }
