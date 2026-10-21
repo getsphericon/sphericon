@@ -13,6 +13,7 @@ export function ContactForm({
   form,
   isPending,
   onSubmit,
+  onCancel,
 }: ResourceFormProps<SiteCreateContactInput>) {
   const { t } = useTranslation()
   const { workspaceId } = workspaceRoute.useParams()
@@ -28,9 +29,15 @@ export function ContactForm({
         <TextInput label={t(($) => $.table.timeZone)} {...form.getInputProps('timeZone')} />
 
         <Group justify="flex-end">
-          <ButtonLink variant="default" to={contactsRoute.to} params={{ workspaceId }}>
-            {t(($) => $.actions.cancel)}
-          </ButtonLink>
+          {onCancel ? (
+            <Button variant="default" onClick={onCancel}>
+              {t(($) => $.actions.cancel)}
+            </Button>
+          ) : (
+            <ButtonLink variant="default" to={contactsRoute.to} params={{ workspaceId }}>
+              {t(($) => $.actions.cancel)}
+            </ButtonLink>
+          )}
           <Button type="submit" loading={isPending}>
             {t(($) => $.actions.save)}
           </Button>

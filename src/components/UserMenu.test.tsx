@@ -40,16 +40,16 @@ test('shows workspace settings only when a workspace is active', async () => {
   const { screen } = await renderWithRouter(<UserMenu />)
   await screen.getByRole('button').click()
 
-  await expect.element(screen.getByText('Profile')).toBeInTheDocument()
+  await expect.element(screen.getByText('Sign out')).toBeInTheDocument()
   expect(screen.container.textContent).not.toContain('Workspace settings')
 })
 
-test('profile item links to the profile page', async () => {
+test('the user block links to the profile page', async () => {
   const { screen } = await renderWithRouter(<UserMenu workspaceId="AcmeWs01" />)
   await screen.getByRole('button').click()
 
   await expect
-    .element(screen.getByRole('menuitem', { name: 'Profile' }))
+    .element(screen.getByRole('menuitem', { name: /Test User/ }))
     .toHaveAttribute('href', routeMount(profileRoute).initialPath)
 })
 
@@ -83,7 +83,7 @@ test('the account link item is absent unless the workspace offers it', async () 
   const { screen } = await renderWithRouter(<UserMenu workspaceId="AcmeWs01" />)
   await screen.getByRole('button', { expanded: false }).click()
 
-  await expect.element(screen.getByText('Profile')).toBeInTheDocument()
+  await expect.element(screen.getByText('Sign out')).toBeInTheDocument()
   expect(screen.container.textContent).not.toContain('Account')
 })
 
@@ -168,6 +168,6 @@ test('shows no deleted-workspaces section when none is pending', async () => {
   const { screen } = await renderWithRouter(<UserMenu workspaceId="AcmeWs01" />)
   await screen.getByRole('button', { expanded: false }).click()
 
-  await expect.element(screen.getByText('Profile')).toBeInTheDocument()
+  await expect.element(screen.getByText('Sign out')).toBeInTheDocument()
   expect(screen.container.textContent).not.toContain('Deleted workspaces')
 })

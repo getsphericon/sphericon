@@ -48,8 +48,8 @@ const contactResource = defineResource({
 })
 
 // Function declarations (hoisted) because the route files and this module import each other.
-export function ContactCreatePage() {
-  return <contactResource.CreatePage />
+export function ContactCreateModal(props: { opened: boolean; onClose: () => void }) {
+  return <contactResource.CreateModal {...props} />
 }
 
 export function ContactEditPage() {

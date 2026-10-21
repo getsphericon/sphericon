@@ -610,6 +610,7 @@ export default interface Resources {
       "broadcasts": "Broadcasts",
       "contacts": "Contacts",
       "docs": "Docs",
+      "emails": "Emails",
       "overview": "Overview",
       "segments": "Segments",
       "settings": "Settings",
@@ -679,7 +680,6 @@ export default interface Resources {
     },
     "overview": {
       "contactsCount": "Contacts",
-      "title": "Overview",
       "viewActivity": "View activity",
       "viewContacts": "View contacts",
       "viewSettings": "Settings"

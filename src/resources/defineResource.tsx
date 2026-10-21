@@ -1,4 +1,4 @@
-import { Loader, Stack, Title } from '@mantine/core'
+import { Loader, Modal, Stack, Title } from '@mantine/core'
 import { schemaResolver, useForm } from '@mantine/form'
 import { useQuery } from '@tanstack/react-query'
 import type { QueryKey, UseMutationOptions, UseQueryOptions } from '@tanstack/react-query'
@@ -42,6 +42,8 @@ export interface ResourceFormProps<TPayload> {
   form: ResourceForm<TPayload>
   isPending: boolean
   onSubmit: (payload: TPayload) => void
+  // Set when the form is shown in a modal: Cancel closes it instead of leaving the page.
+  onCancel?: () => void
 }
 
 export interface ResourceTexts {
@@ -139,6 +141,42 @@ export function defineResource<
     )
   }
 
+  // The create form in a modal over the list: a success closes it and refreshes the list, the
+  // person stays where they were. The body mounts with the modal, so every opening starts blank.
+  function CreateModalBody({ onClose }: { onClose: () => void }) {
+    const { t } = useTranslation()
+    const { workspaceId } = workspaceRoute.useParams()
+    const texts = resource.texts(t)
+
+    const form = useResourceForm(resource.schema.blank, resource.schema.create)
+
+    const mutation = useResourceMutation({
+      mutation: resource.createMutation(),
+      invalidate: [resource.listQueryKey({ path: { workspaceId } })],
+      successMessage: texts.created,
+      errorTitle: texts.saveErrorTitle,
+      onDone: onClose,
+    })
+
+    return (
+      <resource.Form
+        form={form}
+        isPending={mutation.isPending}
+        onSubmit={(body) => mutation.mutate({ path: { workspaceId }, body })}
+        onCancel={onClose}
+      />
+    )
+  }
+
+  function CreateModal({ opened, onClose }: { opened: boolean; onClose: () => void }) {
+    const { t } = useTranslation()
+    return (
+      <Modal opened={opened} onClose={onClose} title={resource.texts(t).createTitle}>
+        <CreateModalBody onClose={onClose} />
+      </Modal>
+    )
+  }
+
   // Mounted only once the resource is loaded, so the form is created with the hydrated values
   // (the schema's encode direction) and never renders blank. It is keyed by resource id by the
   // caller and not by the fetched data: a background refetch (invalidation, window focus) must
@@ -215,5 +253,5 @@ export function defineResource<
     )
   }
 
-  return { CreatePage, EditPage }
+  return { CreatePage, CreateModal, EditPage }
 }

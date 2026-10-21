@@ -18,7 +18,6 @@ import { StatCard } from '../../components/StatCard.tsx'
 import {
   siteAnalyticsOverviewOptions,
   siteSetupChecklistGetOptions,
-  siteWorkspacesListOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteAnalyticsRange } from '../../generated/site/types.gen.ts'
 import { Route as overviewRoute } from '../../routes/workspaces/$workspaceId/index.tsx'
@@ -34,8 +33,6 @@ export function OverviewPage() {
   const { t } = useTranslation()
   const { workspaceId } = overviewRoute.useParams()
 
-  const workspacesQuery = useQuery(siteWorkspacesListOptions())
-  const workspace = workspacesQuery.data?.find((w) => w.id === workspaceId)
   const checklistQuery = useQuery(siteSetupChecklistGetOptions({ path: { workspaceId } }))
   const checklist = checklistQuery.data
   const showChecklist = checklist !== undefined && !checklist.complete
@@ -44,8 +41,6 @@ export function OverviewPage() {
 
   return (
     <Stack>
-      <Title order={2}>{workspace?.name ?? t(($) => $.overview.title)}</Title>
-
       {checklistQuery.isLoading && <Loader />}
 
       {checklistQuery.isError && (

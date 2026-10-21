@@ -47,14 +47,14 @@ test('shows an error alert when the list fails to load', async () => {
   await expect.element(screen.getByText('Failed to load contacts')).toBeInTheDocument()
 })
 
-test('Add contact links to the create page', async () => {
+test('Add contact opens the create form in a modal', async () => {
   worker.use(handleSiteContactsList({ body: page([], 0) }))
 
   const { screen } = await renderWithRouter(<ContactsListPage />, LIST_ROUTE)
+  await screen.getByRole('button', { name: 'Add contact' }).click()
 
-  await expect
-    .element(screen.getByRole('link', { name: 'Add contact' }))
-    .toHaveAttribute('href', '/workspaces/TestWs01/contacts/new')
+  await expect.element(screen.getByRole('dialog')).toBeVisible()
+  await expect.element(screen.getByLabelText('Email')).toBeVisible()
 })
 
 test('offers view and edit per contact, and no delete', async () => {

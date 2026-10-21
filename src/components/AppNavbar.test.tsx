@@ -7,7 +7,6 @@ import { Route as contactsRoute } from '../routes/workspaces/$workspaceId/contac
 import { Route as overviewRoute } from '../routes/workspaces/$workspaceId/index.tsx'
 import { Route as segmentsRoute } from '../routes/workspaces/$workspaceId/segments/index.tsx'
 import { Route as settingsRoute } from '../routes/workspaces/$workspaceId/settings/index.tsx'
-import { Route as tagsRoute } from '../routes/workspaces/$workspaceId/tags/index.tsx'
 import { Route as templatesRoute } from '../routes/workspaces/$workspaceId/templates/index.tsx'
 import { Route as transactionalEmailsRoute } from '../routes/workspaces/$workspaceId/transactional-emails/index.tsx'
 import { renderWithRouter } from '../test/renderWithRouter.tsx'
@@ -18,7 +17,6 @@ const SECTIONS = [
   ['Overview', overviewRoute],
   ['Contacts', contactsRoute],
   ['Segments', segmentsRoute],
-  ['Tags', tagsRoute],
   ['Broadcasts', broadcastsRoute],
   ['Templates', templatesRoute],
   ['Automations', automationsRoute],
@@ -47,4 +45,11 @@ test('only the section being viewed is current, the overview not on a page under
   await expect
     .element(screen.getByRole('link', { name: 'Overview', exact: true }))
     .not.toHaveAttribute('aria-current')
+})
+
+test('the email sections sit under one open group', async () => {
+  const { screen } = await renderWithRouter(<AppNavbar workspaceId="AcmeWs01" />)
+
+  await expect.element(screen.getByText('Emails', { exact: true })).toBeVisible()
+  await expect.element(screen.getByRole('link', { name: 'Broadcasts', exact: true })).toBeVisible()
 })

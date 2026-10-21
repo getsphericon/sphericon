@@ -53,13 +53,14 @@ test('renders the workspace sidebar and no suspension banner for an active works
   await expect.element(screen.getByText('Sending is suspended')).not.toBeInTheDocument()
 })
 
-test('the switcher links to the create screen', async () => {
+test('the last switcher option opens the create screen', async () => {
   worker.use(list([workspace({})]))
-  const { screen } = await renderWithRouter(<WorkspaceLayout />, MOUNT)
+  const { screen, navigate } = await renderWithRouter(<WorkspaceLayout />, MOUNT)
 
-  await expect
-    .element(screen.getByRole('link', { name: 'Create workspace' }))
-    .toHaveAttribute('href', newWorkspaceRoute.to)
+  await screen.getByRole('combobox').click()
+  await screen.getByRole('option', { name: 'Create workspace' }).click()
+
+  expect(navigate).toHaveBeenCalledWith({ to: newWorkspaceRoute.to })
 })
 
 test('the settings pages replace the workspace sidebar with the settings one', async () => {
@@ -205,7 +206,7 @@ test('the switcher navigates to the chosen workspace overview', async () => {
   const { screen, navigate } = await renderWithRouter(<WorkspaceLayout />, MOUNT)
 
   await screen.getByRole('combobox').click()
-  await screen.getByRole('option', { name: 'Beta' }).click()
+  await screen.getByRole('option', { name: 'Beta BetaWs02' }).click()
 
   expect(navigate).toHaveBeenCalledWith({
     to: overviewRoute.to,

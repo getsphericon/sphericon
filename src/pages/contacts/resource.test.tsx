@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { HttpResponse } from 'msw'
-import { expect, test } from 'vitest'
+import { expect, test, vi } from 'vitest'
 
 import {
   siteContactsGetOptions,
@@ -13,14 +13,14 @@ import {
   handleSiteContactsUpdate,
 } from '../../generated/site/msw.gen.ts'
 import { Route as contactsEditRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/edit.tsx'
-import { Route as contactsCreateRoute } from '../../routes/workspaces/$workspaceId/contacts/new.tsx'
+import { Route as contactsRoute } from '../../routes/workspaces/$workspaceId/contacts/index.tsx'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
-import { ContactCreatePage, ContactEditPage } from './resource.tsx'
+import { ContactCreateModal, ContactEditPage } from './resource.tsx'
 
-const CREATE_ROUTE = routeMount(contactsCreateRoute, { workspaceId: 'TestWs01' })
+const CREATE_ROUTE = routeMount(contactsRoute, { workspaceId: 'TestWs01' })
 
 // Stands in for the contacts list screen: an active list query, so invalidation after a save
 // is observable as a refetch.
@@ -29,7 +29,7 @@ function ListProbe() {
   return null
 }
 
-test('creating a contact sends only the filled keys, refreshes the list and opens the edit page', async () => {
+test('creating a contact sends only the filled keys, refreshes the list and closes the modal', async () => {
   const bodies: unknown[] = []
   let listFetches = 0
   worker.use(
@@ -46,10 +46,11 @@ test('creating a contact sends only the filled keys, refreshes the list and open
     }),
   )
 
-  const { screen, navigate } = await renderWithRouter(
+  const onClose = vi.fn<() => void>()
+  const { screen } = await renderWithRouter(
     <>
       <ListProbe />
-      <ContactCreatePage />
+      <ContactCreateModal opened onClose={onClose} />
     </>,
     CREATE_ROUTE,
   )
@@ -62,10 +63,7 @@ test('creating a contact sends only the filled keys, refreshes the list and open
   await expect.poll(() => bodies).toEqual([{ email: 'ada@example.com', firstName: 'Ada' }])
   await expect.element(screen.getByText('Contact created')).toBeInTheDocument()
   await expect.poll(() => listFetches).toBe(2)
-  await expect.poll(() => navigate.mock.calls.length).toBe(1)
-  expect(navigate.mock.calls[0]?.[0]).toMatchObject({
-    params: { workspaceId: 'TestWs01', contactId: '42' },
-  })
+  await expect.poll(() => onClose.mock.calls.length).toBe(1)
 })
 
 test('a malformed email is rejected before anything is sent', async () => {
@@ -77,7 +75,10 @@ test('a malformed email is rejected before anything is sent', async () => {
     }),
   )
 
-  const { screen } = await renderWithRouter(<ContactCreatePage />, CREATE_ROUTE)
+  const { screen } = await renderWithRouter(
+    <ContactCreateModal opened onClose={vi.fn<() => void>()} />,
+    CREATE_ROUTE,
+  )
 
   await screen.getByLabelText('Email').fill('not-an-email')
   await screen.getByRole('button', { name: 'Save' }).click()

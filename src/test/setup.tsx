@@ -17,6 +17,7 @@ import {
   handleSiteIdentitiesList,
   handleSitePasskeyLoginBegin,
   handleSitePasskeysList,
+  handleSiteUserGetMe,
 } from '../generated/site/msw.gen.ts'
 import { client as staffClient } from '../generated/staff/client.gen.ts'
 import { createAppRouter } from '../router.ts'
@@ -80,6 +81,18 @@ beforeEach(() => {
   worker.use(
     handleSitePasskeysList({
       body: { items: [], available: true, passwordSet: true, identityProofFresh: false },
+    }),
+  )
+  // The header's user menu shows the signed-in User; a test about the User installs its own.
+  worker.use(
+    handleSiteUserGetMe({
+      body: {
+        id: 'UserDefault01',
+        name: 'Test User',
+        email: 'user@example.test',
+        emailVerified: true,
+        createdAt: '2026-01-01T00:00:00Z',
+      },
     }),
   )
   // The login page starts a Passkey ceremony in the background when the browser can autofill

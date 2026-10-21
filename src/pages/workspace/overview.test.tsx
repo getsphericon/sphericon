@@ -5,7 +5,6 @@ import {
   handleSiteAnalyticsOverview,
   handleSiteSendingDomainsList,
   handleSiteSetupChecklistGet,
-  handleSiteWorkspacesList,
 } from '../../generated/site/msw.gen.ts'
 import { Route as overviewRoute } from '../../routes/workspaces/$workspaceId/index.tsx'
 import { problem } from '../../test/problem.ts'
@@ -33,26 +32,10 @@ const overview = {
   timeseries: [],
 }
 
-test('shows the workspace name and contacts count', async () => {
+test('shows the contacts count', async () => {
   worker.use(
     handleSiteSetupChecklistGet({ body: finished }),
     handleSiteAnalyticsOverview({ body: overview }),
-    handleSiteWorkspacesList({
-      body: [
-        {
-          id: 'TestWs01',
-          name: 'Acme',
-
-          collectKey: 'k',
-          postalAddress: '',
-          accountLinkAvailable: false,
-          mcpUrl: 'https://sphericon.test',
-          holds: [],
-          role: 'owner' as const,
-          createdAt: '2026-01-01T00:00:00Z',
-        },
-      ],
-    }),
   )
 
   const { screen } = await renderWithRouter(<OverviewPage />, {
@@ -60,7 +43,6 @@ test('shows the workspace name and contacts count', async () => {
     initialPath: '/workspaces/TestWs01/',
   })
 
-  await expect.element(screen.getByText('Acme')).toBeInTheDocument()
   await expect.element(screen.getByText('42', { exact: true })).toBeInTheDocument()
 })
 
@@ -70,7 +52,6 @@ test('switching the range refetches the analytics for that window', async () => 
   const ranges: (string | null)[] = []
   worker.use(
     handleSiteSetupChecklistGet({ body: finished }),
-    handleSiteWorkspacesList({ body: [] }),
     handleSiteAnalyticsOverview(({ request }) => {
       ranges.push(new URL(request.url).searchParams.get('range'))
       return HttpResponse.json(overview)
@@ -87,7 +68,6 @@ test('switching the range refetches the analytics for that window', async () => 
 test('shows an error alert when analytics fail to load', async () => {
   worker.use(
     handleSiteSetupChecklistGet({ body: finished }),
-    handleSiteWorkspacesList({ body: [] }),
     handleSiteAnalyticsOverview(() => problem(500, { detail: 'boom' })),
   )
   const { screen } = await renderWithRouter(<OverviewPage />, mount)
@@ -99,7 +79,6 @@ test('shows an error alert when analytics fail to load', async () => {
 test('a workspace without contacts shows the empty hint instead of the chart', async () => {
   worker.use(
     handleSiteSetupChecklistGet({ body: finished }),
-    handleSiteWorkspacesList({ body: [] }),
     handleSiteAnalyticsOverview({
       body: {
         ...overview,
@@ -121,7 +100,6 @@ test('a workspace in the warning tier sees which rate is over the limit', async 
         abuseWarning: { domain: 'mail.acme.test', metric: 'complaint', rate: 0.0015 },
       },
     }),
-    handleSiteWorkspacesList({ body: [] }),
   )
 
   const { screen } = await renderWithRouter(<OverviewPage />, mount)
@@ -138,7 +116,6 @@ test('no warning shows no alert', async () => {
   worker.use(
     handleSiteSetupChecklistGet({ body: finished }),
     handleSiteAnalyticsOverview({ body: overview }),
-    handleSiteWorkspacesList({ body: [] }),
   )
 
   const { screen } = await renderWithRouter(<OverviewPage />, mount)
@@ -152,7 +129,6 @@ test('no warning shows no alert', async () => {
 test('before the first sent email only the checklist shows and no analytics are requested', async () => {
   let analyticsRequests = 0
   worker.use(
-    handleSiteWorkspacesList({ body: [] }),
     handleSiteSendingDomainsList({
       body: { items: [], page: 1, pageSize: 20, totalItems: 0, totalPages: 1 },
     }),
@@ -183,7 +159,6 @@ test('before the first sent email only the checklist shows and no analytics are 
 
 test('after the first sent email the usual Overview shows with the checklist on top', async () => {
   worker.use(
-    handleSiteWorkspacesList({ body: [] }),
     handleSiteSetupChecklistGet({
       body: {
         steps: { integration: 'done', sendingDomain: 'done', contact: 'todo', sentEmail: 'done' },
@@ -201,7 +176,6 @@ test('after the first sent email the usual Overview shows with the checklist on 
 
 test('a finished checklist is not shown', async () => {
   worker.use(
-    handleSiteWorkspacesList({ body: [] }),
     handleSiteSetupChecklistGet({ body: finished }),
     handleSiteAnalyticsOverview({ body: overview }),
   )

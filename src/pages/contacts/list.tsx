@@ -1,23 +1,24 @@
-import { Group, Stack, TextInput, Title, Tooltip } from '@mantine/core'
-import { useDebouncedCallback } from '@mantine/hooks'
+import { Button, Group, Stack, TextInput, Title, Tooltip } from '@mantine/core'
+import { useDebouncedCallback, useDisclosure } from '@mantine/hooks'
 import { IconEye, IconPencil, IconSearch } from '@tabler/icons-react'
 import { useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { PagedTable } from '../../components/PagedTable.tsx'
-import { ActionIconLink, ButtonLink } from '../../components/RouterLink.tsx'
+import { ActionIconLink } from '../../components/RouterLink.tsx'
 import { siteContactsListOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { Route as contactsEditRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/edit.tsx'
 import { Route as contactsDetailRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/index.tsx'
 import { Route as contactsRoute } from '../../routes/workspaces/$workspaceId/contacts/index.tsx'
-import { Route as contactsCreateRoute } from '../../routes/workspaces/$workspaceId/contacts/new.tsx'
+import { ContactCreateModal } from './resource.tsx'
 
 export function ContactsListPage() {
   const { t } = useTranslation()
   const { workspaceId } = contactsRoute.useParams()
   const { email } = contactsRoute.useSearch()
   const navigate = useNavigate({ from: contactsRoute.fullPath })
+  const [createOpened, { open: openCreate, close: closeCreate }] = useDisclosure(false)
   const [search, setSearch] = useState(email ?? '')
   // Back/forward or a link changes the URL search: the field follows it, unless it already
   // shows that search (typing trims before it navigates).
@@ -34,11 +35,10 @@ export function ContactsListPage() {
 
   return (
     <Stack>
+      <ContactCreateModal opened={createOpened} onClose={closeCreate} />
       <Group justify="space-between" align="center">
         <Title order={2}>{t(($) => $.nav.contacts)}</Title>
-        <ButtonLink to={contactsCreateRoute.to} params={{ workspaceId }}>
-          {t(($) => $.contacts.addContact)}
-        </ButtonLink>
+        <Button onClick={openCreate}>{t(($) => $.contacts.addContact)}</Button>
       </Group>
 
       <TextInput

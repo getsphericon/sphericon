@@ -6,12 +6,13 @@ import {
   IconSettings,
   IconUser,
 } from '@tabler/icons-react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
 import {
   siteAuthLogoutMutation,
+  siteUserGetMeOptions,
   siteWorkspacesAccountLinkMutation,
 } from '../generated/site/@tanstack/react-query.gen.ts'
 import { useNotify } from '../hooks/useNotify.ts'
@@ -21,7 +22,8 @@ import { Route as settingsRoute } from '../routes/workspaces/$workspaceId/settin
 import { DeletedWorkspacesMenuSection } from './DeletedWorkspacesMenuSection.tsx'
 import { MenuItemLink } from './RouterLink.tsx'
 
-// UserMenu is the header account dropdown: profile, workspace settings, logout.
+// UserMenu is the header account dropdown: the signed-in User's block (it opens the profile),
+// workspace settings, logout.
 // `workspaceId` is the active workspace (absent in the account layout); the workspace
 // settings item only renders when one is set. Logout calls the site logout
 // operation, which clears the session cookie; we then drop cached queries and
@@ -39,6 +41,7 @@ export function UserMenu({
   const notify = useNotify()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const me = useQuery(siteUserGetMeOptions()).data
 
   // The Account link: the server mints a short-lived token and names the page; the
   // app only opens it.
@@ -84,9 +87,26 @@ export function UserMenu({
       </Menu.Target>
 
       <Menu.Dropdown>
-        <MenuItemLink to={profileRoute.to} leftSection={<IconUser size={16} />}>
-          {t(($) => $.userMenu.profile)}
+        <MenuItemLink to={profileRoute.to} py="xs">
+          <Group gap="sm" wrap="nowrap">
+            <Avatar radius="xl" size={36} color="blue">
+              {me ? me.name.charAt(0).toUpperCase() : <IconUser size={18} />}
+            </Avatar>
+            {me ? (
+              <div>
+                <Text size="sm" fw={500}>
+                  {me.name}
+                </Text>
+                <Text size="xs" c="dimmed">
+                  {me.email}
+                </Text>
+              </div>
+            ) : (
+              <Text size="sm">{t(($) => $.userMenu.profile)}</Text>
+            )}
+          </Group>
         </MenuItemLink>
+        <Menu.Divider />
         {workspaceId ? (
           <MenuItemLink
             to={settingsRoute.to}

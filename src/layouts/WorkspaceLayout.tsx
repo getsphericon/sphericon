@@ -1,4 +1,4 @@
-import { Alert, Anchor, Group, Select, Text, Tooltip } from '@mantine/core'
+import { Alert, Anchor, Group, Select, Text } from '@mantine/core'
 import { IconPlayerPause, IconPlus } from '@tabler/icons-react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMatchRoute, useNavigate } from '@tanstack/react-router'
@@ -8,7 +8,6 @@ import { useTranslation } from 'react-i18next'
 import { AppNavbar } from '../components/AppNavbar.tsx'
 import { InstanceNotice } from '../components/InstanceNotice.tsx'
 import { LicenseBanner } from '../components/LicenseBanner.tsx'
-import { ActionIconLink } from '../components/RouterLink.tsx'
 import {
   SecondFactorBlocked,
   SecondFactorGraceBanner,
@@ -26,8 +25,12 @@ import { Route as newWorkspaceRoute } from '../routes/workspaces/new.tsx'
 import { isSecondFactorRequiredError } from '../utils/apiErrors.ts'
 import { DashboardShell } from './DashboardShell.tsx'
 
+// The last option of the switcher is not a Workspace: choosing it opens the create screen.
+const CREATE_OPTION = '+new'
+
 // WorkspaceSwitcher changes the active workspace by navigating to its
-// /w/{workspaceId} route.
+// /w/{workspaceId} route. Each option shows the Workspace's id under its name, to tell
+// same-named ones apart and to match the id in the URL; the last option creates a Workspace.
 function WorkspaceSwitcher({
   workspaceId,
   workspaces,
@@ -36,34 +39,42 @@ function WorkspaceSwitcher({
   workspaces: SiteWorkspaceResource[]
 }) {
   const navigate = useNavigate()
-  const data = workspaces.map((w) => ({ value: w.id, label: w.name }))
-
   const { t } = useTranslation()
+  const createLabel = t(($) => $.createWorkspace.switcherLabel)
+  const data = [
+    ...workspaces.map((w) => ({ value: w.id, label: w.name })),
+    { value: CREATE_OPTION, label: createLabel },
+  ]
 
   return (
-    <Group gap="xs" wrap="nowrap">
-      <Select
-        data={data}
-        value={workspaceId}
-        allowDeselect={false}
-        onChange={(value) => {
-          if (value && value !== workspaceId) {
-            void navigate({ to: overviewRoute.to, params: { workspaceId: value } })
-          }
-        }}
-        w={{ base: 140, sm: 220 }}
-      />
-      <Tooltip label={t(($) => $.createWorkspace.switcherLabel)}>
-        <ActionIconLink
-          to={newWorkspaceRoute.to}
-          variant="default"
-          size="lg"
-          aria-label={t(($) => $.createWorkspace.switcherLabel)}
-        >
-          <IconPlus size={18} />
-        </ActionIconLink>
-      </Tooltip>
-    </Group>
+    <Select
+      data={data}
+      value={workspaceId}
+      allowDeselect={false}
+      renderOption={({ option }) =>
+        option.value === CREATE_OPTION ? (
+          <Group gap="xs" wrap="nowrap">
+            <IconPlus size={16} />
+            <Text size="sm">{option.label}</Text>
+          </Group>
+        ) : (
+          <div>
+            <Text size="sm">{option.label}</Text>
+            <Text size="xs" c="dimmed">
+              {option.value}
+            </Text>
+          </div>
+        )
+      }
+      onChange={(value) => {
+        if (value === CREATE_OPTION) {
+          void navigate({ to: newWorkspaceRoute.to })
+        } else if (value && value !== workspaceId) {
+          void navigate({ to: overviewRoute.to, params: { workspaceId: value } })
+        }
+      }}
+      w={{ base: 140, sm: 220 }}
+    />
   )
 }
 
