@@ -7,6 +7,7 @@ import (
 	"github.com/golangci/plugin-module-register/register"
 	"golang.org/x/tools/go/analysis"
 
+	"github.com/getsphericon/sphericon/tools/analyzers/handmapper"
 	"github.com/getsphericon/sphericon/tools/analyzers/noprint"
 	"github.com/getsphericon/sphericon/tools/analyzers/rawsql"
 )
@@ -25,7 +26,7 @@ func New(any) (register.LinterPlugin, error) {
 
 // BuildAnalyzers lists the analyzers; add a new one here.
 func (Plugin) BuildAnalyzers() ([]*analysis.Analyzer, error) {
-	return []*analysis.Analyzer{noprint.Analyzer, rawsql.Analyzer}, nil
+	return []*analysis.Analyzer{noprint.Analyzer, rawsql.Analyzer, handmapper.Analyzer}, nil
 }
 
 // GetLoadMode asks for types, which every analyzer here needs.

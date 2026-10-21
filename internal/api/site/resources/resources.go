@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/brandkit"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
+	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/joindomains"
 	"github.com/getsphericon/sphericon/internal/segments"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
@@ -38,6 +39,7 @@ import (
 // goverter:useZeroValueOnPointerInconsistency
 // goverter:extend timestamp
 // goverter:extend optNilString
+// goverter:extend omitEmpty
 // goverter:extend optNilEmailAddress
 // goverter:extend optNilEntityID
 // goverter:extend optNilTimeZone
@@ -130,8 +132,15 @@ type Converter interface {
 	// goverter:ignore SendLimit
 	// goverter:map DiscardedAt ArchivedAt
 	IntegrationToResource(source *ent.Integration) siteapi.SiteIntegrationResource
+	// The redacted provider configs: the handler only wraps the one that is set in the
+	// contract's oneOf, which goverter cannot express. Empty optional fields are omitted.
+	// goverter:map . Kind | smtpConfigKind
+	SmtpConfigToResource(source integrations.RedactedSMTP) siteapi.SiteSmtpConfig
+	// goverter:map . Kind | sesConfigKind
+	SesConfigToResource(source integrations.RedactedSES) siteapi.SiteSesConfig
 	// goverter:map Sent24h SentLast24h
 	SendLimitToStatus(source sendlimit.Status) siteapi.SiteSendLimitStatus
+	PasskeyToResource(source *ent.Passkey) siteapi.SitePasskey
 	SuppressionToResource(source *ent.Suppression) siteapi.SiteSuppressionResource
 	CustomFieldToResource(source *ent.CustomField) siteapi.SiteCustomFieldResource
 	TagToResource(source *ent.Tag) siteapi.SiteTagResource
@@ -700,4 +709,20 @@ func optWebhookDisabledReason(v *webhookendpoint.DisabledReason) siteapi.OptSite
 		return siteapi.OptSiteWebhookDisabledReason{}
 	}
 	return siteapi.NewOptSiteWebhookDisabledReason(siteapi.SiteWebhookDisabledReason(*v))
+}
+
+// omitEmpty is unset for an empty value, so redacted optional fields are omitted.
+func omitEmpty(s string) siteapi.OptNilString {
+	if s == "" {
+		return siteapi.OptNilString{}
+	}
+	return siteapi.NewOptNilString(s)
+}
+
+func smtpConfigKind(integrations.RedactedSMTP) siteapi.SiteSmtpConfigKind {
+	return siteapi.SiteSmtpConfigKindSMTP
+}
+
+func sesConfigKind(integrations.RedactedSES) siteapi.SiteSesConfigKind {
+	return siteapi.SiteSesConfigKindSes
 }

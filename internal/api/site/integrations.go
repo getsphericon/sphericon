@@ -359,29 +359,11 @@ func (h *Handlers) integrationToResource(row *ent.Integration, limit sendlimit.S
 	// The config is a oneOf per provider, which goverter cannot express.
 	switch {
 	case cfg.SMTP != nil:
-		c := cfg.SMTP
-		res.Config = siteapi.SiteIntegrationConfig{OneOf: siteapi.NewSiteSmtpConfigSiteIntegrationConfigSum(siteapi.SiteSmtpConfig{
-			Kind: siteapi.SiteSmtpConfigKindSMTP, Host: c.Host, Port: int32(c.Port), From: siteapi.EmailAddress(c.From),
-			Username: optNilString(c.Username), FromName: optNilString(c.FromName),
-		})}
+		res.Config = siteapi.SiteIntegrationConfig{OneOf: siteapi.NewSiteSmtpConfigSiteIntegrationConfigSum(mapper.SmtpConfigToResource(*cfg.SMTP))}
 	case cfg.SES != nil:
-		c := cfg.SES
-		res.Config = siteapi.SiteIntegrationConfig{OneOf: siteapi.NewSiteSesConfigSiteIntegrationConfigSum(siteapi.SiteSesConfig{
-			Kind: siteapi.SiteSesConfigKindSes, Region: c.Region, From: siteapi.EmailAddress(c.From),
-			FromName: optNilString(c.FromName), Endpoint: optNilString(c.Endpoint),
-			AccessKeyIdLast4: optNilString(c.AccessKeyIDLast4),
-		})}
+		res.Config = siteapi.SiteIntegrationConfig{OneOf: siteapi.NewSiteSesConfigSiteIntegrationConfigSum(mapper.SesConfigToResource(*cfg.SES))}
 	}
 	return res, nil
-}
-
-// optNilString returns a set OptNilString for non-empty input, else the zero
-// (unset) value — so redacted optional fields are omitted rather than blank.
-func optNilString(s string) siteapi.OptNilString {
-	if s == "" {
-		return siteapi.OptNilString{}
-	}
-	return siteapi.NewOptNilString(s)
 }
 
 // integrationResource renders one Integration with its 24-hour usage, for the

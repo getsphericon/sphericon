@@ -7,7 +7,6 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
 	"github.com/getsphericon/sphericon/internal/auditapi"
-	"github.com/getsphericon/sphericon/internal/events"
 )
 
 // StaffWorkspaceAuditList is a page of one Workspace's Audit log, newest first. An
@@ -33,27 +32,10 @@ func (h *Handlers) StaffWorkspaceAuditList(ctx context.Context, params staffapi.
 	}
 	out := &staffapi.StaffAuditEntryList{Items: make([]staffapi.StaffAuditEntryResource, len(rows))}
 	for i, e := range rows {
-		out.Items[i] = auditEntryResource(e)
+		out.Items[i] = staffMapper.AuditEntryToResource(auditapi.StaffViewOf(e))
 	}
 	if next > 0 {
 		out.NextCursor = staffapi.NewOptNilString(auditapi.NextCursor(next))
 	}
 	return out, nil
-}
-
-func auditEntryResource(e *ent.AuditEntry) staffapi.StaffAuditEntryResource {
-	res := staffMapper.AuditEntryToResource(auditapi.ViewOf(e))
-	// The console is the platform's own view: a Service credential is named here, as a
-	// customer's read of the same entry shows "Sphericon staff".
-	if e.ActorKind == events.ActorService {
-		res.Actor = staffapi.StaffAuditActor{Kind: staffapi.StaffAuditActorKindService, ID: nilableString(e.ActorID), Name: nilableString(e.ActorName)}
-	}
-	return res
-}
-
-func nilableString(v *string) staffapi.OptNilString {
-	if v == nil {
-		return staffapi.OptNilString{}
-	}
-	return staffapi.NewOptNilString(*v)
 }

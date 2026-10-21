@@ -120,7 +120,7 @@ func (h *ServiceHandlers) ServiceHoldsList(ctx context.Context, params serviceap
 	}
 	items := make([]serviceapi.HoldResource, len(rows))
 	for i, r := range rows {
-		items[i] = holdResource(r)
+		items[i] = serviceMapper.HoldToResource(r)
 	}
 	return &serviceapi.HoldList{Items: items}, nil
 }
@@ -146,7 +146,7 @@ func (h *ServiceHandlers) ServiceHoldsSet(ctx context.Context, req *serviceapi.H
 	case err != nil:
 		return nil, err
 	}
-	return &serviceapi.HoldSetResult{Changed: change.Changed, Hold: holdResource(change.Hold)}, nil
+	return &serviceapi.HoldSetResult{Changed: change.Changed, Hold: serviceMapper.HoldToResource(change.Hold)}, nil
 }
 
 // ServiceHoldsClear clears a hold; a missing one is cleared already.
@@ -162,8 +162,6 @@ func (h *ServiceHandlers) ServiceHoldsClear(ctx context.Context, params servicea
 	}
 	return &serviceapi.HoldClearResult{Changed: change.Changed}, nil
 }
-
-func holdResource(r *ent.Hold) serviceapi.HoldResource { return serviceMapper.HoldToResource(r) }
 
 func optNilString(o serviceapi.OptNilString) *string {
 	if v, ok := o.Get(); ok {

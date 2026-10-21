@@ -66,7 +66,15 @@ type View struct {
 }
 
 // ViewOf builds the customer-facing view of a stored entry.
-func ViewOf(e *ent.AuditEntry) View {
+func ViewOf(e *ent.AuditEntry) View { return viewOf(e, events.IsStaff(e.ActorKind)) }
+
+// StaffViewOf builds the platform console's view: like ViewOf, except that a Service credential
+// is named (the customer sees it as "Sphericon staff").
+func StaffViewOf(e *ent.AuditEntry) View {
+	return viewOf(e, events.IsStaff(e.ActorKind) && e.ActorKind != events.ActorService)
+}
+
+func viewOf(e *ent.AuditEntry, maskActor bool) View {
 	v := View{
 		ID:         e.ID,
 		OccurredAt: e.OccurredAt,
@@ -81,7 +89,7 @@ func ViewOf(e *ent.AuditEntry) View {
 		IP:         e.IP,
 		UserAgent:  e.UserAgent,
 	}
-	if events.IsStaff(e.ActorKind) {
+	if maskActor {
 		label := events.StaffLabel
 		v.ActorKind, v.ActorID, v.ActorName = events.ActorStaff, nil, &label
 	}

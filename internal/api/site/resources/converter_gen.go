@@ -8,6 +8,7 @@ import (
 	site "github.com/getsphericon/sphericon/gen/site"
 	auditapi "github.com/getsphericon/sphericon/internal/auditapi"
 	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
+	integrations "github.com/getsphericon/sphericon/internal/integrations"
 	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
 	sendlimit "github.com/getsphericon/sphericon/internal/sendlimit"
 )
@@ -325,6 +326,16 @@ func (c *ConverterImpl) OutboundMessageToExport(source *ent.OutboundMessage) sit
 	}
 	return siteapiContactExportOutboundMessage
 }
+func (c *ConverterImpl) PasskeyToResource(source *ent.Passkey) site.SitePasskey {
+	var siteapiSitePasskey site.SitePasskey
+	if source != nil {
+		siteapiSitePasskey.ID = site.EntityId((*source).ID)
+		siteapiSitePasskey.Name = (*source).Name
+		siteapiSitePasskey.CreatedAt = timestamp((*source).CreatedAt)
+		siteapiSitePasskey.LastUsedAt = optTimestamp((*source).LastUsedAt)
+	}
+	return siteapiSitePasskey
+}
 func (c *ConverterImpl) SegmentToResource(source *ent.Segment) site.SiteSegmentResource {
 	var siteapiSiteSegmentResource site.SiteSegmentResource
 	if source != nil {
@@ -364,6 +375,26 @@ func (c *ConverterImpl) SendingDomainToResource(source *ent.SendingDomain) site.
 		siteapiSiteSendingDomainResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
 	return siteapiSiteSendingDomainResource
+}
+func (c *ConverterImpl) SesConfigToResource(source integrations.RedactedSES) site.SiteSesConfig {
+	var siteapiSiteSesConfig site.SiteSesConfig
+	siteapiSiteSesConfig.Kind = sesConfigKind(source)
+	siteapiSiteSesConfig.Region = source.Region
+	siteapiSiteSesConfig.From = site.EmailAddress(source.From)
+	siteapiSiteSesConfig.FromName = omitEmpty(source.FromName)
+	siteapiSiteSesConfig.Endpoint = omitEmpty(source.Endpoint)
+	siteapiSiteSesConfig.AccessKeyIdLast4 = omitEmpty(source.AccessKeyIDLast4)
+	return siteapiSiteSesConfig
+}
+func (c *ConverterImpl) SmtpConfigToResource(source integrations.RedactedSMTP) site.SiteSmtpConfig {
+	var siteapiSiteSmtpConfig site.SiteSmtpConfig
+	siteapiSiteSmtpConfig.Kind = smtpConfigKind(source)
+	siteapiSiteSmtpConfig.Host = source.Host
+	siteapiSiteSmtpConfig.Port = count(source.Port)
+	siteapiSiteSmtpConfig.Username = omitEmpty(source.Username)
+	siteapiSiteSmtpConfig.From = site.EmailAddress(source.From)
+	siteapiSiteSmtpConfig.FromName = omitEmpty(source.FromName)
+	return siteapiSiteSmtpConfig
 }
 func (c *ConverterImpl) SuppressionToExport(source *ent.Suppression) site.ContactExportSuppression {
 	var siteapiContactExportSuppression site.ContactExportSuppression

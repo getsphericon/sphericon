@@ -29,6 +29,10 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   (`tools/analyzers/rule`), never by hand.
 - **A check is on at once.** Run it over the repository and fix every finding in the same change; there
   is no baseline of known violations and no ignore list.
+- **Rule 1, `handmapper`.** A function that takes an ent entity and returns a type of a `gen/*` package
+  must map through a goverter converter (it calls a `...Converter`/`...ConverterImpl` method, directly or
+  through a package function that does) or be registered in the converter (`goverter:extend`, or named in
+  a `goverter:map ... | helper` line). Add the mapping to the surface's `Converter` instead; test files are not checked.
 - **Adding an analyzer.** (1) Create `tools/analyzers/<name>/` with `Analyzer` (see `noprint`) and report
   through `rule.Message`. (2) Write `<name>_test.go` with `analysistest.Run` and a test data package per
   case under `testdata/src/` (a `bad` package whose violating lines carry `// want` with the message

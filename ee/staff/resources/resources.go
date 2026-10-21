@@ -47,6 +47,18 @@ type StaffConverter interface {
 	// goverter:map . Suspension | workspaceSuspension
 	WorkspaceToResource(source *ent.Workspace) staffapi.StaffWorkspaceResource
 
+	// The detail page is the metadata of WorkspaceToResource plus figures read through other
+	// modules (the active holds, the abuse state, the deliverability counts): the handler
+	// attaches them, each through its own converter method.
+	// goverter:map PublicID ID
+	// goverter:map AbuseExempt Exempt
+	// goverter:map AbuseWarningNotifiedAt Warned | isSet
+	// goverter:map . Suspension | workspaceSuspension
+	// goverter:ignore Holds
+	// goverter:ignore Abuse
+	// goverter:ignore Deliverability
+	WorkspaceDetailToResource(source *ent.Workspace) staffapi.StaffWorkspaceDetailResource
+
 	HoldToResource(source *ent.Hold) staffapi.StaffHold
 
 	// The detected breach, if any, is attached by the handler.
