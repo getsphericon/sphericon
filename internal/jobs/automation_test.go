@@ -257,7 +257,7 @@ func TestAutomationHeldStepWaitsAndResumes(t *testing.T) {
 
 	fs := &fakeSender{}
 	mod := newMod(env, resolvingTo(fs))
-	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSuspendedAt(time.Now()).ExecX(ctx)
+	env.SuspendWorkspace(ctx, fixtures.AcmeID, time.Now())
 
 	res, err := jobs.RunStep(ctx, env.DB, noFence, mod, runIDs[0])
 	require.NoError(t, err)
@@ -268,7 +268,7 @@ func TestAutomationHeldStepWaitsAndResumes(t *testing.T) {
 	assert.Zero(t, run.CurrentStep, "a hold does not advance the enrollment")
 	assert.Empty(t, fs.sent)
 
-	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).ClearSuspendedAt().ExecX(ctx)
+	env.UnsuspendWorkspace(ctx, fixtures.AcmeID)
 	drive(t, env, resolvingTo(fs), runIDs[0])
 	assert.Len(t, fs.sent, 1, "after the unfreeze the step sends")
 }

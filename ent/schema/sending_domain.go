@@ -25,7 +25,7 @@ type SendingDomain struct {
 
 func (SendingDomain) Annotations() []schema.Annotation {
 	return []schema.Annotation{
-		TableWithEnumChecks("sending_domains", SendingDomain{}.Fields()),
+		sendingDomainTable(),
 		Audited{Action: "sending_domain", NameField: "domain"},
 	}
 }
@@ -103,4 +103,12 @@ func (SendingDomain) Indexes() []ent.Index {
 		// Lets the periodic re-check job find the least-recently-checked rows.
 		index.Fields("last_checked_at"),
 	}
+}
+
+// sendingDomainTable adds to the enum checks that a domain verified now has been verified at
+// some time: verified_at keeps the last time after a loss, so it is the history of verified.
+func sendingDomainTable() entsql.Annotation {
+	a := TableWithEnumChecks("sending_domains", SendingDomain{}.Fields())
+	a.Checks["sending_domains_verified_check"] = "NOT verified OR verified_at IS NOT NULL"
+	return a
 }

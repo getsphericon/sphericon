@@ -173,9 +173,14 @@ func (Workspace) Edges() []ent.Edge {
 }
 
 // workspaceTable adds the length of the public id to the enum checks: ent stores it as an
-// unbounded varchar.
+// unbounded varchar, and the suspension columns that are written and cleared together
+// (internal/suspension): who and why exist exactly while suspended_at does, and an id names
+// only a Staff member.
 func workspaceTable() entsql.Annotation {
 	a := TableWithEnumChecks("workspaces", Workspace{}.Fields())
+	a.Checks["workspaces_suspension_check"] = "(suspended_at IS NULL) = (suspended_by_kind IS NULL)" +
+		" AND (suspended_at IS NULL) = (suspension_reason IS NULL)" +
+		" AND COALESCE(suspended_by_kind = 'staff', false) = (suspended_by_id IS NOT NULL)"
 	a.Checks["workspaces_public_id_max_length_check"] = "char_length(public_id) <= 8"
 	a.Checks["workspaces_public_id_min_length_check"] = "char_length(public_id) >= 8"
 	return a

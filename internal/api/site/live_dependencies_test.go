@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -85,7 +86,7 @@ func TestSiteDefaultIntegrationDeleteRefusedWhileLiveWorkUsesIt(t *testing.T) {
 	assert.EqualValues(t, http.StatusConflict, refused.Status.Or(0))
 
 	// Only history uses it now: finished Broadcasts, and no active Automation.
-	_, err := acme.Broadcast().Update().Where(broadcast.StatusIn(broadcast.StatusScheduled, broadcast.StatusSending)).SetStatus(broadcast.StatusSent).Save(ctx)
+	_, err := acme.Broadcast().Update().Where(broadcast.StatusIn(broadcast.StatusScheduled, broadcast.StatusSending)).SetStatus(broadcast.StatusSent).SetSentAt(time.Now()).Save(ctx)
 	require.NoError(t, err)
 	_, err = acme.Automation().Update().SetStatus(automation.StatusDraft).Save(ctx)
 	require.NoError(t, err)
@@ -109,7 +110,7 @@ func TestSiteIntegrationDeleteNamedByALiveBroadcast(t *testing.T) {
 	require.True(t, ok)
 	assert.Equal(t, map[siteapi.UsedByKind][]string{siteapi.UsedByKindBroadcast: {fixtures.BroadcastScheduledName}}, usedBy(refused))
 
-	_, err = acme.Broadcast().UpdateOneID(fixtures.BroadcastScheduledID).SetStatus(broadcast.StatusSent).Save(ctx)
+	_, err = acme.Broadcast().UpdateOneID(fixtures.BroadcastScheduledID).SetStatus(broadcast.StatusSent).SetSentAt(time.Now()).Save(ctx)
 	require.NoError(t, err)
 	got, err = c.SiteIntegrationsDelete(ctx, params)
 	require.NoError(t, err)
@@ -159,7 +160,7 @@ func TestSiteSendingDomainDeleteRefusedThroughTheConfiguredFrom(t *testing.T) {
 	assert.ElementsMatch(t, []string{fixtures.BroadcastScheduledName, fixtures.BroadcastSendingName}, users[siteapi.UsedByKindBroadcast])
 	assert.Contains(t, users[siteapi.UsedByKindAutomation], fixtures.AutomationWelcomeSeriesName)
 
-	_, err := acme.Broadcast().Update().Where(broadcast.StatusIn(broadcast.StatusScheduled, broadcast.StatusSending)).SetStatus(broadcast.StatusSent).Save(ctx)
+	_, err := acme.Broadcast().Update().Where(broadcast.StatusIn(broadcast.StatusScheduled, broadcast.StatusSending)).SetStatus(broadcast.StatusSent).SetSentAt(time.Now()).Save(ctx)
 	require.NoError(t, err)
 	_, err = acme.Automation().Update().SetStatus(automation.StatusDraft).Save(ctx)
 	require.NoError(t, err)

@@ -96,7 +96,7 @@ func TestASecondActiveHoldKeepsSendingFrozenAfterTheFirstIsCleared(t *testing.T)
 
 func TestSuspensionIsItsOwnSourceBesideStaffHolds(t *testing.T) {
 	w := newWorld(t)
-	w.env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSuspendedAt(w.now).ExecX(w.ctx)
+	w.env.SuspendWorkspace(w.ctx, fixtures.AcmeID, w.now)
 	w.hold(t, "review", w.now.Add(time.Hour))
 
 	st := w.standing(t, true)
@@ -110,7 +110,8 @@ func TestSuspensionIsItsOwnSourceBesideStaffHolds(t *testing.T) {
 
 func TestDeletionOutranksSuspensionAndStaffHolds(t *testing.T) {
 	w := newWorld(t)
-	w.env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSuspendedAt(w.now).SetDiscardedAt(w.now).ExecX(w.ctx)
+	w.env.SuspendWorkspace(w.ctx, fixtures.AcmeID, w.now)
+	w.env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetDiscardedAt(w.now).ExecX(w.ctx)
 	w.hold(t, "review", w.now.Add(time.Hour))
 
 	st := w.standing(t, true)
@@ -134,7 +135,7 @@ func TestWithoutTheStaffLicenseHoldsAreIgnoredButDeletionAndSuspensionCount(t *t
 	assert.Empty(t, unlicensedReason)
 	assert.Empty(t, unlicensed.Staff)
 
-	w.env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSuspendedAt(w.now).ExecX(w.ctx)
+	w.env.SuspendWorkspace(w.ctx, fixtures.AcmeID, w.now)
 	suspended := w.standing(t, false)
 	suspendedReason := suspended.Reason()
 	assert.Equal(t, holds.ReasonSuspended, suspendedReason)
@@ -165,7 +166,7 @@ func TestReasonHonoursTheLicenseFunctionAndReportsDeletionFirst(t *testing.T) {
 	assert.Equal(t, holds.ReasonStaff, onReason)
 	assert.Empty(t, offReason)
 
-	w.env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSuspendedAt(w.now).ExecX(w.ctx)
+	w.env.SuspendWorkspace(w.ctx, fixtures.AcmeID, w.now)
 	suspendedOff := reason(off)
 	assert.Equal(t, holds.ReasonSuspended, suspendedOff)
 

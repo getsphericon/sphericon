@@ -3,6 +3,7 @@ package site_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -170,7 +171,7 @@ func TestArchivedAutomationDoesNotUseTheDefaultIntegration(t *testing.T) {
 		require.NoError(t, err)
 		return got
 	}
-	_, err := acme.Broadcast().Update().Where(broadcast.StatusIn(broadcast.StatusScheduled, broadcast.StatusSending)).SetStatus(broadcast.StatusSent).Save(ctx)
+	_, err := acme.Broadcast().Update().Where(broadcast.StatusIn(broadcast.StatusScheduled, broadcast.StatusSending)).SetStatus(broadcast.StatusSent).SetSentAt(time.Now()).Save(ctx)
 	require.NoError(t, err)
 	refused, ok := del().(*siteapi.InUseProblemDetails)
 	require.True(t, ok)

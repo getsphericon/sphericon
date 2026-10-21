@@ -1776,7 +1776,9 @@ func init() {
 		Table: "broadcasts",
 	}
 	BroadcastsTable.Annotation.Checks = map[string]string{
-		"broadcasts_status_check": "status IN ('draft', 'scheduled', 'sending', 'sent', 'failed')",
+		"broadcasts_scheduled_at_check": "status <> 'scheduled' OR scheduled_at IS NOT NULL",
+		"broadcasts_sent_at_check":      "status <> 'sent' OR sent_at IS NOT NULL",
+		"broadcasts_status_check":       "status IN ('draft', 'scheduled', 'sending', 'sent', 'failed')",
 	}
 	BroadcastRecipientsTable.ForeignKeys[0].RefTable = BroadcastsTable
 	BroadcastRecipientsTable.ForeignKeys[1].RefTable = WorkspacesTable
@@ -1901,6 +1903,7 @@ func init() {
 	SendingDomainsTable.Annotation.Checks = map[string]string{
 		"sending_domains_tracking_reason_check": "tracking_reason IN ('host_taken')",
 		"sending_domains_tracking_state_check":  "tracking_state IN ('pending', 'dns_verified', 'serving')",
+		"sending_domains_verified_check":        "NOT verified OR verified_at IS NOT NULL",
 	}
 	ServiceCredentialsTable.Annotation = &entsql.Annotation{
 		Table: "service_credentials",
@@ -1964,5 +1967,6 @@ func init() {
 		"workspaces_public_id_max_length_check": "char_length(public_id) <= 8",
 		"workspaces_public_id_min_length_check": "char_length(public_id) >= 8",
 		"workspaces_suspended_by_kind_check":    "suspended_by_kind IN ('system', 'cli', 'staff')",
+		"workspaces_suspension_check":           "(suspended_at IS NULL) = (suspended_by_kind IS NULL) AND (suspended_at IS NULL) = (suspension_reason IS NULL) AND COALESCE(suspended_by_kind = 'staff', false) = (suspended_by_id IS NOT NULL)",
 	}
 }

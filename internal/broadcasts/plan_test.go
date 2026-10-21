@@ -341,7 +341,7 @@ func TestDueForADelayedJobAcrossSendAndRetry(t *testing.T) {
 // recipient row exists; it resumes once the freeze lifts (story 6).
 func TestPlanHoldsOnAWorkspaceFreezeAndResumes(t *testing.T) {
 	d := newDelivery(t)
-	d.env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSuspendedAt(fixedNow).ExecX(d.ctx)
+	d.env.SuspendWorkspace(d.ctx, fixtures.AcmeID, fixedNow)
 
 	_, err := d.del.Plan(d.ctx, d.s, fixtures.BroadcastDraftID)
 
@@ -354,7 +354,7 @@ func TestPlanHoldsOnAWorkspaceFreezeAndResumes(t *testing.T) {
 	assert.Equal(t, holds.ReasonSuspended, *b.HoldReason)
 	assert.Zero(t, d.recipientCount(fixtures.BroadcastDraftID))
 
-	d.env.DB.Workspace.UpdateOneID(fixtures.AcmeID).ClearSuspendedAt().ExecX(d.ctx)
+	d.env.UnsuspendWorkspace(d.ctx, fixtures.AcmeID)
 	ids, err := d.del.Plan(d.ctx, d.s, fixtures.BroadcastDraftID)
 	require.NoError(t, err)
 	assert.NotEmpty(t, ids)
@@ -401,7 +401,7 @@ func TestRunFinishesCleanlyWhenThePlanFailsTheBroadcast(t *testing.T) {
 func TestStalePlanLeavesTheHoldReasonAlone(t *testing.T) {
 	d := newDelivery(t)
 	d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastSentID).SetHoldReason("kept").ExecX(d.ctx)
-	d.env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSuspendedAt(fixedNow).ExecX(d.ctx)
+	d.env.SuspendWorkspace(d.ctx, fixtures.AcmeID, fixedNow)
 
 	_, err := d.del.Plan(d.ctx, d.s, fixtures.BroadcastSentID)
 

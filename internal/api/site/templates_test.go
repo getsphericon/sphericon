@@ -62,7 +62,7 @@ func TestSiteBroadcastsTestSendHeldIs422(t *testing.T) {
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	b := created.(*siteapi.SiteBroadcastResource)
-	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSuspendedAt(time.Now()).ExecX(ctx)
+	env.SuspendWorkspace(ctx, fixtures.AcmeID, time.Now())
 
 	out, err := c.SiteBroadcastsTestSend(ctx, &siteapi.SiteTestSendBroadcastInput{
 		Email: "qa@test.dev",

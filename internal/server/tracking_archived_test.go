@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -28,7 +29,7 @@ func TestTrackingKeepsRecordingForAnArchivedBroadcast(t *testing.T) {
 	c := env.DB.Contact.GetX(ctx, fixtures.ContactAliceID)
 	b, err := env.DB.Broadcast.Create().
 		SetWorkspaceID(fixtures.AcmeID).SetName("Track").SetSubject("Hi").
-		SetStatus(broadcast.StatusSent).Save(ctx)
+		SetStatus(broadcast.StatusSent).SetSentAt(time.Now()).Save(ctx)
 	require.NoError(t, err)
 	rec, err := env.DB.BroadcastRecipient.Create().
 		SetBroadcastID(b.ID).SetWorkspaceID(fixtures.AcmeID).SetContactID(c.ID).Save(ctx)

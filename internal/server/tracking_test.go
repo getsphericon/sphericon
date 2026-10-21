@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent/automation"
@@ -178,7 +179,7 @@ func TestTrackingEndpoints(t *testing.T) {
 
 	b, err := env.DB.Broadcast.Create().
 		SetWorkspaceID(fixtures.AcmeID).SetName("Track").SetSubject("Hi").
-		SetStatus(broadcast.StatusSent).Save(ctx)
+		SetStatus(broadcast.StatusSent).SetSentAt(time.Now()).Save(ctx)
 	require.NoError(t, err)
 
 	rec, err := env.DB.BroadcastRecipient.Create().
@@ -337,7 +338,7 @@ func TestUnsubscribeEverythingEscalation(t *testing.T) {
 
 	c := env.DB.Contact.GetX(ctx, fixtures.ContactAliceID)
 	b, err := env.DB.Broadcast.Create().SetWorkspaceID(fixtures.AcmeID).SetName("B").SetSubject("Hi").
-		SetStatus(broadcast.StatusSent).Save(ctx)
+		SetStatus(broadcast.StatusSent).SetSentAt(time.Now()).Save(ctx)
 	require.NoError(t, err)
 
 	// GET the source unsubscribe → confirm-page redirect carrying the escalation

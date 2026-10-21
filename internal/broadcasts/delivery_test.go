@@ -195,7 +195,7 @@ func TestRecipientThatCannotRenderFails(t *testing.T) {
 func TestHeldRecipientStaysPendingAndRecordsTheHold(t *testing.T) {
 	d := newDelivery(t)
 	id := d.recipient(fixtures.ContactAliceID)
-	d.env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSuspendedAt(fixedNow).ExecX(d.ctx)
+	d.env.SuspendWorkspace(d.ctx, fixtures.AcmeID, fixedNow)
 
 	err := d.del.SendRecipient(d.ctx, d.s, id)
 

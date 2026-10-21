@@ -13,7 +13,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
-	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -140,7 +139,7 @@ func TestSuspensionMidBroadcastPausesRecipientsAndResumes(t *testing.T) {
 	require.GreaterOrEqual(t, len(ids), 2)
 	require.NoError(t, deliverRecipient(ctx, env.DB, mod, ids[0]))
 
-	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSuspendedAt(time.Now()).SetSuspendedByKind(workspace.SuspendedByKindSystem).ExecX(ctx)
+	env.SuspendWorkspace(ctx, fixtures.AcmeID, time.Now())
 	err = deliverRecipient(ctx, env.DB, mod, ids[1])
 	var held *broadcasts.HeldError
 	require.ErrorAs(t, err, &held)
@@ -149,7 +148,7 @@ func TestSuspensionMidBroadcastPausesRecipientsAndResumes(t *testing.T) {
 	require.NotNil(t, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID).HoldReason)
 	assert.Len(t, fs.sent, 1)
 
-	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).ClearSuspendedAt().ExecX(ctx)
+	env.UnsuspendWorkspace(ctx, fixtures.AcmeID)
 	require.NoError(t, deliverRecipient(ctx, env.DB, mod, ids[1]))
 	assert.False(t, env.DB.BroadcastRecipient.Query().Where(broadcastrecipient.ID(ids[1]), broadcasts.Pending()).ExistX(ctx))
 	assert.Nil(t, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID).HoldReason, "the hold clears when a send goes through")

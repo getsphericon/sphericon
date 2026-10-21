@@ -176,7 +176,7 @@ func TestInlineSendingDomainVerifyNotifiesOnFlip(t *testing.T) {
 	assert.Len(t, env.SystemMail.Messages(), 1)
 
 	// A failing alert on a fresh flip is only logged.
-	env.DB.SendingDomain.UpdateOneID(fixtures.SendingDomainVerifiedID).SetVerified(true).ExecX(ctx)
+	env.DB.SendingDomain.UpdateOneID(fixtures.SendingDomainVerifiedID).SetVerified(true).SetVerifiedAt(time.Now()).ExecX(ctx)
 	env.SystemMail.SetErr(errors.New("smtp down"))
 	require.NoError(t, inline.EnqueueSendingDomainVerify(ctx, fixtures.SendingDomainVerifiedID))
 

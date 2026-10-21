@@ -224,7 +224,7 @@ func TestSuspendedWorkspaceIsHeldNotConsumed(t *testing.T) {
 	assert.Empty(t, env.CustomerMail.Messages())
 
 	// Reversible: after the unfreeze the same Request goes out.
-	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).ClearSuspendedAt().ExecX(ctx)
+	env.UnsuspendWorkspace(ctx, fixtures.AcmeID)
 	res, err = m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), marketing(t, env, "bc:held", fixtures.ContactAliceID))
 	require.NoError(t, err)
 	assert.Equal(t, outbound.Sent, res.Outcome)
@@ -402,7 +402,7 @@ func TestSendTestSkipsEligibilityAndRecordsNothingButHonorsTheFreeze(t *testing.
 	assert.Zero(t, sentEvents(t, env, 0))
 
 	// But a suspended Workspace sends nothing, test or not.
-	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSuspendedAt(time.Now()).ExecX(ctx)
+	env.SuspendWorkspace(ctx, fixtures.AcmeID, time.Now())
 	res, err = m.SendTest(ctx, env.DB.Scoped(fixtures.AcmeID), outbound.TestRequest{To: "a@example.com", Subject: "s", Body: htmlBody})
 	require.NoError(t, err)
 	assert.Equal(t, outbound.Held, res.Outcome)

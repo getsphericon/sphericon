@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
@@ -22,7 +23,7 @@ type Broadcast struct {
 
 func (Broadcast) Annotations() []schema.Annotation {
 	return []schema.Annotation{
-		TableWithEnumChecks("broadcasts", Broadcast{}.Fields()),
+		broadcastTable(),
 		Audited{Action: "broadcast", NameField: "name"},
 	}
 }
@@ -107,4 +108,13 @@ func (Broadcast) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("workspace_id"),
 	}
+}
+
+// broadcastTable adds the timestamps a status promises to the enum checks: a scheduled
+// Broadcast has its time, a sent one its sent_at (each set in the write that moves the status).
+func broadcastTable() entsql.Annotation {
+	a := TableWithEnumChecks("broadcasts", Broadcast{}.Fields())
+	a.Checks["broadcasts_scheduled_at_check"] = "status <> 'scheduled' OR scheduled_at IS NOT NULL"
+	a.Checks["broadcasts_sent_at_check"] = "status <> 'sent' OR sent_at IS NOT NULL"
+	return a
 }

@@ -167,7 +167,7 @@ func TestDeletionIsReportedBeforeSuspensionAndStaffHolds(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := newModule(env)
 
-	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSuspendedAt(time.Now()).ExecX(ctx)
+	env.SuspendWorkspace(ctx, fixtures.AcmeID, time.Now())
 	res, err := m.Send(ctx, s, transactional("tx:susp", "a@example.com"))
 	require.NoError(t, err)
 	assert.Equal(t, holds.ReasonSuspended, res.Reason)
@@ -194,7 +194,7 @@ func TestACoreOnlyInstanceIgnoresStaffHoldsButHonorsDeletionAndSuspension(t *tes
 	require.NoError(t, err)
 	assert.Equal(t, outbound.Sent, res.Outcome, "the Staff hold is ignored")
 
-	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSuspendedAt(time.Now()).ExecX(ctx)
+	env.SuspendWorkspace(ctx, fixtures.AcmeID, time.Now())
 	res, err = m.Send(ctx, s, transactional("tx:core-susp", "a@example.com"))
 	require.NoError(t, err)
 	assert.Equal(t, holds.ReasonSuspended, res.Reason)
@@ -666,7 +666,7 @@ func TestSendBroadcastTestWordsEveryOutcome(t *testing.T) {
 
 	t.Run("held", func(t *testing.T) {
 		env := testhelper.Setup(t)
-		env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSuspendedAt(time.Now()).ExecX(ctx)
+		env.SuspendWorkspace(ctx, fixtures.AcmeID, time.Now())
 		got := newModule(env).SendBroadcastTest(ctx, env.DB.Scoped(fixtures.AcmeID), broadcast("s", htmlBody), "me@example.com", nil).Detail
 		assert.Equal(t, outbound.Detail(holds.ReasonSuspended), got)
 	})
