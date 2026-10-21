@@ -11,7 +11,6 @@ import {
   Modal,
   NumberInput,
   Paper,
-  SimpleGrid,
   Stack,
   Switch,
   Text,
@@ -440,7 +439,7 @@ export function IntegrationsSection({ workspaceId }: { workspaceId: string }) {
               </Stack>
             </form>
           ) : (
-            <SimpleGrid cols={{ base: 1, sm: 3 }}>
+            <Stack>
               {TILES.map((kind) => (
                 <UnstyledButton
                   key={kind}
@@ -451,7 +450,7 @@ export function IntegrationsSection({ workspaceId }: { workspaceId: string }) {
                     setTile(kind)
                   }}
                 >
-                  <Paper withBorder p="md" h="100%">
+                  <Paper withBorder p="md">
                     <Text fw={600}>{providerLabels[kind].title}</Text>
                     <Text size="sm" c="dimmed">
                       {providerLabels[kind].hint}
@@ -459,7 +458,7 @@ export function IntegrationsSection({ workspaceId }: { workspaceId: string }) {
                   </Paper>
                 </UnstyledButton>
               ))}
-            </SimpleGrid>
+            </Stack>
           )}
         </Modal>
       ) : null}
