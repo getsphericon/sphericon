@@ -1,5 +1,5 @@
 // Package analyzers is the golangci-lint module plugin that carries the project's own
-// go/analysis checks (docs/agents/review-lenses.md). `golangci-lint custom` builds it into
+// go/analysis checks (docs/agents/review-rules.md). `golangci-lint custom` builds it into
 // .bin/custom-gcl through .custom-gcl.yml; .golangci.yml enables it as the linter "sphericon".
 package analyzers
 

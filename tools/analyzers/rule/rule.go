@@ -1,5 +1,5 @@
 // Package rule is the one place that words an analyzer's finding, so every message keeps the
-// contract of docs/agents/review-lenses.md: it begins with the rule number and ends with how to
+// contract of docs/agents/review-rules.md: it begins with the rule number and ends with how to
 // fix the violation.
 package rule
 

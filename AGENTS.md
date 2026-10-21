@@ -526,7 +526,8 @@ outside `schema/`, `src/generated/`) unless that is the point of the search.
   and re-check after merging `main`: parallel branches pick the same one.
 - After changing TypeSpec or `ent/schema`, run `mise run generate` and commit the generated output.
 - Coding standards (tests, plain-table schema, no custom CSS, theming, lint) are in
-  `CODING_STANDARDS.md`: read it before writing code.
+  `CODING_STANDARDS.md`: read it before writing code. The numbered review rules every change is
+  checked against are in `docs/agents/review-rules.md`.
 
 ## Agent skills
 

@@ -31,7 +31,7 @@ linters:
     custom:
       sphericon:
         type: module
-        description: the project's review rules that need Go types (docs/agents/review-lenses.md)
+        description: the project's review rules that need Go types (docs/agents/review-rules.md)
     exhaustive:
       # A switch with a default says what happens to every other member; it is checked only for
       # the enums this repository defines, not for html.TokenType, reflect.Kind or yaml.Kind.

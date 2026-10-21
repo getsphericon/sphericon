@@ -1,7 +1,8 @@
 # Coding standards
 
-The rules a change is reviewed against. How the repo is built, run and generated is in
-`AGENTS.md`; the vocabulary is in `GLOSSARY.md`.
+How the repo does things: mechanics, tools and conventions. The rules a change is reviewed against
+are in `docs/agents/review-rules.md`: read it too, and do not restate a rule here. How the repo is
+built, run and generated is in `AGENTS.md`; the vocabulary is in `GLOSSARY.md`.
 
 ## Code shape
 
@@ -13,7 +14,7 @@ The rules a change is reviewed against. How the repo is built, run and generated
 
 ## Project checks
 
-Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs/agents/review-lenses.md`).
+Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs/agents/review-rules.md`).
 
 - **Syntax only: an ast-grep rule** (`ast-grep/rules`, tests in `ast-grep/tests`, run by `mise run check:ast`).
 - **Needs Go types: an analyzer of our own** (`tools/analyzers`, its own Go module). It is a
@@ -50,12 +51,7 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
 
 ## Go tests
 
-- **A test asserts what an operation left behind** (rows, outbox events, enqueued jobs, the response),
-  never what was called, how often or with which arguments: no call-verification tests. Do not assert
-  how many rows a table holds (a new fixture breaks that) or a raw id: count the rows you start from
-  and assert business facts (name, order, label). A test that depends on today's date does not read
-  the wall clock; it injects the clock.
-- **No direct SQL in tests.** Tests read and write through ent (`env.DB`) or river's own API. The
+- **Tests use the ent client or river's own API for data (rule 4)**: `env.DB`. The
   domain-event outbox is modelled in ent too (`OutboxMessage`, `OutboxOffset`: watermill owns the
   tables, `entsql.Skip` keeps them out of migrations, only the client is generated), so
   `env.Outbox*`, `env.OutboxCount` and the cursor helpers sit on the generated client.
@@ -67,14 +63,6 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   other test rides the transaction `dbcleaner` hands out, which rolls back. A `t.Cleanup` that
   deletes rows, a purge or a reset at the top of a test means a test is committing outside its
   transaction: fix that test.
-- **A test body does not branch.** No `if`, `switch` or `select` in a `Test…` function or its subtest
-  closures (`ast-grep/rules/no-branching-in-go-tests.yml`, run by `mise run check:ast`): a branch
-  chooses what to check, so a wrong run can take the path that checks nothing. State the expectation
-  with `assert`/`require` on a value read beforehand; keep a table's rows as data (split a table
-  whose rows need different assertions into two tests, give a row its expected value rather than a
-  flag that picks one); filter and find with `lo.Filter`/`lo.Find`; wait on a channel with
-  `testhelper.Receive`. Logic that has to branch (a simulated clock, a pager, a conditional skip by
-  build tag) goes into a helper function or a file with a build constraint, named for what it does.
 - **No `time.Sleep`, anywhere.** A sleep is a guess about how long something takes: it makes a test
   slow where it guesses high and flaky where it guesses low, and in code it hides a missing signal.
   Wait on the condition (a channel, `assert.Eventually`, a returned handle), and write the logic so
@@ -82,12 +70,6 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   needs a run of events is a small pure type fed those events. A test that must move time inside a
   `testing/synctest` bubble calls `testhelper.Elapse(d)`, which advances the bubble's fake clock
   and returns at once. `forbidigo` rejects `time.Sleep` everywhere.
-- **Tests cover logic only.** A test exercises a decision the code makes and checks what came out.
-  There are no tests of how long something takes, how much memory it uses, a timeout firing on the
-  wall clock, a runtime limit or a resource guard, or of the machine and the process around the
-  code: they pass or fail with the load of the host and prove nothing about the code. A guard whose
-  decision is real logic (when does a run of polls count as growth) is a small pure type tested on
-  its inputs; the clock, the heap and the timer feeding it are not tested.
 - **Pure logic gets property tests.** A function or small type that decides something from its
   inputs alone (a delay, a normalization, a counter of polls) is tested with `pgregory.net/rapid`:
   state the property that must hold for every input (bounds, idempotence, monotonicity, agreement
@@ -102,9 +84,13 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
 - **A package that starts goroutines checks that its tests stop them.** It has a `main_test.go`
   with `goleak.VerifyTestMain`: a test that leaves a server, worker or subscriber running fails the
   package. A new package that starts goroutines gets the same file.
-- **No tests of built-in behaviour.** A test exercises sphericon's own code. One whose only subject is a
-  Mantine component, the standard library or another dependency (a copy button showing "Copied", a
-  library's defaults or retries) is deleted, and none is added.
+- **Tools for tests without branching (rule 14).** Filter and find with `lo.Filter`/`lo.Find`; wait
+  on a channel with `testhelper.Receive`; logic that has to branch (a simulated clock, a pager, a
+  conditional skip by build tag) goes into a helper function or a file with a build constraint,
+  named for what it does. Split a table whose rows need different assertions into two tests.
+- **A guard with real logic is tested as a pure type (rule 12).** When does a run of polls count as
+  growth is a decision, tested on its inputs; the clock, the heap and the timer feeding it are not
+  tested.
 
 ## Frontend
 

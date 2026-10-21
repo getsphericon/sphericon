@@ -1,19 +1,21 @@
 # Review rules
 
-Draft. The concepts a change is reviewed against, the ones asked for again and again in review.
-Only conceptual, permanent rules are listed here. A rule about a concrete type, package or tool
-(`*ent.Scoped`, `goleak`, how a name is spelled) belongs in `CODING_STANDARDS.md` or `AGENTS.md`.
-How a rule is enforced is decided after the list is agreed.
+The concepts a change is reviewed against, the ones asked for again and again in review. This file
+is the one home of every rule it lists: `CODING_STANDARDS.md` holds how the repo does things
+(mechanics, tools, conventions) and does not restate a rule from here. A rule about a concrete type,
+package or tool (`*ent.Scoped`, `goleak`, how a name is spelled) belongs in `CODING_STANDARDS.md`
+or `AGENTS.md`.
 
-## Enforcement (decided)
+## Enforcement
 
 - A check is turned on at once and the violations it finds are fixed, with no baseline of known
   violations.
-- A check that needs Go types (a hand-written mapper, a reference without a foreign key, logic in a
-  job) is an analyzer of our own, built as a `go/analysis` module and run by `golangci-lint custom`.
-  A check that needs only syntax is an ast-grep rule (`ast-grep/rules`, run by `mise run check:ast`).
-- A rule that code cannot check (2, 3, 5, 12, 13) is the third axis of the `code-review` skill: it
-  reads this file and checks the diff against it.
+- A rule that needs Go types is checked by an analyzer of our own; one that needs only syntax, by an
+  ast-grep rule. Which rules have a check, and how to add one, is in "Project checks" of
+  `CODING_STANDARDS.md`: this file does not list them.
+- A rule that code cannot check is the third axis of the `code-review` skill, which reads this file
+  and checks the diff against it. A rule with a check is still reviewed: a check finds the form, a
+  reviewer finds the intent.
 - Every check's message names the rule number and says how to fix the violation.
 
 ## AUTO: automation over hand-rolling
@@ -27,8 +29,8 @@ How a rule is enforced is decided after the list is agreed.
 3. **Ready-made over our own.** A concern a mature library or component covers uses it, adopted in the
    same change. If a library lacks a feature or has a bug, consider a PR to it before a wrapper or
    workaround; a workaround is temporary.
-4. **No raw SQL.** Queries are built by ent or a query builder. Raw SQL is allowed only where ent
-   cannot express it, with the reason written next to it.
+4. **No raw SQL.** Queries are built by ent or a query builder, in code and in tests alike. Raw SQL
+   is allowed only where ent cannot express it, with the reason written next to it.
 
 ## Layers and boundaries
 
@@ -74,10 +76,19 @@ How a rule is enforced is decided after the list is agreed.
     operation under test (a write through the client, the scoped wrapper or the bus). A shape the
     shared set cannot hold (an old schema for a migration, a generated volume) is solved by tooling
     for fixtures, not by an exception.
-11. **A test asserts the result on a real database.** Calls to mocks are not asserted. An outside
-    boundary (mail, a provider's HTTP) may be replaced by a stub, as long as the test looks at what
-    was left behind and not at the calls.
-12. **Tests cover our logic only**, not the behavior of a library.
+11. **A test asserts the result on a real database.** Calls to mocks are not asserted: no test checks
+    what was called, how often or with which arguments. An outside boundary (mail, a provider's HTTP)
+    may be replaced by a stub, as long as the test looks at what was left behind and not at the calls.
+    The facts asserted are business facts, not accidents: no row counts of a whole table or raw ids.
+12. **Tests cover our logic only.** A test exercises a decision the code makes and checks what came
+    out, not the behavior of a library, how long something takes, how much memory it uses, a timeout
+    firing on the wall clock, a runtime limit, or the machine and the process around the code. A
+    test with only a library or component as its subject is deleted and none is added.
+13. **A test has no branching.** No `if`, `switch`, `select` or loop over cases that chooses what to
+    check, in a test body or its subtest closures: a branch lets a wrong run take the path that
+    checks nothing. State the expectation on a value read beforehand; keep a table's rows as data
+    (split a table whose rows need different assertions, give a row its expected value rather than a
+    flag); logic that must branch goes into a named helper.
 
 ## Process
 
