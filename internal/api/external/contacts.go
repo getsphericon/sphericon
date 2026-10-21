@@ -18,7 +18,7 @@ import (
 )
 
 func (h *Handlers) ContactsList(ctx context.Context, params externalapi.ContactsListParams) (externalapi.ContactsListRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), "contacts:read") {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeContactsRead) {
 		res := externalapi.ContactsListUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
@@ -40,7 +40,7 @@ func (h *Handlers) ContactsList(ctx context.Context, params externalapi.Contacts
 }
 
 func (h *Handlers) ContactsCreate(ctx context.Context, req *externalapi.CreateContactInput) (externalapi.ContactsCreateRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), "contacts:write") {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeContactsWrite) {
 		res := externalapi.ContactsCreateUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
@@ -59,7 +59,7 @@ func (h *Handlers) ContactsCreate(ctx context.Context, req *externalapi.CreateCo
 }
 
 func (h *Handlers) ContactsGet(ctx context.Context, params externalapi.ContactsGetParams) (externalapi.ContactsGetRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), "contacts:read") {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeContactsRead) {
 		res := externalapi.ContactsGetUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
@@ -80,7 +80,7 @@ func (h *Handlers) ContactsGet(ctx context.Context, params externalapi.ContactsG
 }
 
 func (h *Handlers) ContactsUpdate(ctx context.Context, req *externalapi.UpdateContactInput, params externalapi.ContactsUpdateParams) (externalapi.ContactsUpdateRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), "contacts:write") {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeContactsWrite) {
 		res := externalapi.ContactsUpdateUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
@@ -112,7 +112,7 @@ func tokenRequester(ctx context.Context) erasure.Requester {
 // ContactsDelete is Erasure (ADR 0021): deleting a Contact removes its personal data.
 // It has its own scope, separate from contacts:write, because it is irreversible.
 func (h *Handlers) ContactsDelete(ctx context.Context, params externalapi.ContactsDeleteParams) (externalapi.ContactsDeleteRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), "contacts:erase") {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeContactsErase) {
 		res := externalapi.ContactsDeleteUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
@@ -134,7 +134,7 @@ func (h *Handlers) ContactsDelete(ctx context.Context, params externalapi.Contac
 // ContactsEraseBy is Erasure by an email address or a visitor id (ADR 0021), under the
 // same scope and rules as deleting by id. Exactly one identifier is required.
 func (h *Handlers) ContactsEraseBy(ctx context.Context, params externalapi.ContactsEraseByParams) (externalapi.ContactsEraseByRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), "contacts:erase") {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeContactsErase) {
 		res := externalapi.ContactsEraseByUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
@@ -164,7 +164,7 @@ func (h *Handlers) ContactsEraseBy(ctx context.Context, params externalapi.Conta
 
 // ContactsBatchUpsert upserts each Contact independently and reports a per-item result.
 func (h *Handlers) ContactsBatchUpsert(ctx context.Context, req *externalapi.UpsertContactsInput) (externalapi.ContactsBatchUpsertRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), "contacts:write") {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeContactsWrite) {
 		res := externalapi.ContactsBatchUpsertUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}

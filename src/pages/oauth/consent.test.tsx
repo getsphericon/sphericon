@@ -6,6 +6,7 @@ import {
   handleSiteOAuthDescribe,
   handleSiteWorkspacesList,
 } from '../../generated/site/msw.gen.ts'
+import type { SendScope } from '../../generated/site/types.gen.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { worker } from '../../test/worker.ts'
@@ -32,7 +33,7 @@ const workspace = {
 }
 
 const describeHandler = (
-  sendScopes: string[],
+  sendScopes: SendScope[],
   extra: { clientHost?: string; localRedirect?: boolean } = {},
 ) =>
   handleSiteOAuthDescribe({

@@ -121,17 +121,17 @@ func (s *ApiTokenListResponse) SetItems(val []ApiTokenInfo) {
 
 func (*ApiTokenListResponse) authTokensListRes() {}
 
+// Every API token scope: the one vocabulary of the external API.
 // Ref: #/components/schemas/ApiTokenScope
 type ApiTokenScope string
 
 const (
 	ApiTokenScopeContactsRead        ApiTokenScope = "contacts:read"
 	ApiTokenScopeContactsWrite       ApiTokenScope = "contacts:write"
-	ApiTokenScopeContactsErase       ApiTokenScope = "contacts:erase"
-	ApiTokenScopeSegmentsRead        ApiTokenScope = "segments:read"
-	ApiTokenScopeSegmentsWrite       ApiTokenScope = "segments:write"
 	ApiTokenScopeEventsRead          ApiTokenScope = "events:read"
 	ApiTokenScopeEventsWrite         ApiTokenScope = "events:write"
+	ApiTokenScopeSegmentsRead        ApiTokenScope = "segments:read"
+	ApiTokenScopeSegmentsWrite       ApiTokenScope = "segments:write"
 	ApiTokenScopeBroadcastsRead      ApiTokenScope = "broadcasts:read"
 	ApiTokenScopeBroadcastsWrite     ApiTokenScope = "broadcasts:write"
 	ApiTokenScopeAutomationsRead     ApiTokenScope = "automations:read"
@@ -145,13 +145,14 @@ const (
 	ApiTokenScopeWebhooksTest        ApiTokenScope = "webhooks:test"
 	ApiTokenScopeCustomFieldsRead    ApiTokenScope = "custom_fields:read"
 	ApiTokenScopeSendingDomainsRead  ApiTokenScope = "sending_domains:read"
-	ApiTokenScopeSendingDomainsWrite ApiTokenScope = "sending_domains:write"
 	ApiTokenScopeIntegrationsRead    ApiTokenScope = "integrations:read"
-	ApiTokenScopeIntegrationsWrite   ApiTokenScope = "integrations:write"
 	ApiTokenScopeEmailsSend          ApiTokenScope = "emails:send"
 	ApiTokenScopeBroadcastsSend      ApiTokenScope = "broadcasts:send"
 	ApiTokenScopeAutomationsActivate ApiTokenScope = "automations:activate"
 	ApiTokenScopeMcpSend             ApiTokenScope = "mcp:send"
+	ApiTokenScopeContactsErase       ApiTokenScope = "contacts:erase"
+	ApiTokenScopeSendingDomainsWrite ApiTokenScope = "sending_domains:write"
+	ApiTokenScopeIntegrationsWrite   ApiTokenScope = "integrations:write"
 	ApiTokenScopeTokensRead          ApiTokenScope = "tokens:read"
 	ApiTokenScopeTokensWrite         ApiTokenScope = "tokens:write"
 	ApiTokenScopeAuditRead           ApiTokenScope = "audit:read"
@@ -163,11 +164,10 @@ func (ApiTokenScope) AllValues() []ApiTokenScope {
 	return []ApiTokenScope{
 		ApiTokenScopeContactsRead,
 		ApiTokenScopeContactsWrite,
-		ApiTokenScopeContactsErase,
-		ApiTokenScopeSegmentsRead,
-		ApiTokenScopeSegmentsWrite,
 		ApiTokenScopeEventsRead,
 		ApiTokenScopeEventsWrite,
+		ApiTokenScopeSegmentsRead,
+		ApiTokenScopeSegmentsWrite,
 		ApiTokenScopeBroadcastsRead,
 		ApiTokenScopeBroadcastsWrite,
 		ApiTokenScopeAutomationsRead,
@@ -181,13 +181,14 @@ func (ApiTokenScope) AllValues() []ApiTokenScope {
 		ApiTokenScopeWebhooksTest,
 		ApiTokenScopeCustomFieldsRead,
 		ApiTokenScopeSendingDomainsRead,
-		ApiTokenScopeSendingDomainsWrite,
 		ApiTokenScopeIntegrationsRead,
-		ApiTokenScopeIntegrationsWrite,
 		ApiTokenScopeEmailsSend,
 		ApiTokenScopeBroadcastsSend,
 		ApiTokenScopeAutomationsActivate,
 		ApiTokenScopeMcpSend,
+		ApiTokenScopeContactsErase,
+		ApiTokenScopeSendingDomainsWrite,
+		ApiTokenScopeIntegrationsWrite,
 		ApiTokenScopeTokensRead,
 		ApiTokenScopeTokensWrite,
 		ApiTokenScopeAuditRead,
@@ -202,15 +203,13 @@ func (s ApiTokenScope) MarshalText() ([]byte, error) {
 		return []byte(s), nil
 	case ApiTokenScopeContactsWrite:
 		return []byte(s), nil
-	case ApiTokenScopeContactsErase:
+	case ApiTokenScopeEventsRead:
+		return []byte(s), nil
+	case ApiTokenScopeEventsWrite:
 		return []byte(s), nil
 	case ApiTokenScopeSegmentsRead:
 		return []byte(s), nil
 	case ApiTokenScopeSegmentsWrite:
-		return []byte(s), nil
-	case ApiTokenScopeEventsRead:
-		return []byte(s), nil
-	case ApiTokenScopeEventsWrite:
 		return []byte(s), nil
 	case ApiTokenScopeBroadcastsRead:
 		return []byte(s), nil
@@ -238,11 +237,7 @@ func (s ApiTokenScope) MarshalText() ([]byte, error) {
 		return []byte(s), nil
 	case ApiTokenScopeSendingDomainsRead:
 		return []byte(s), nil
-	case ApiTokenScopeSendingDomainsWrite:
-		return []byte(s), nil
 	case ApiTokenScopeIntegrationsRead:
-		return []byte(s), nil
-	case ApiTokenScopeIntegrationsWrite:
 		return []byte(s), nil
 	case ApiTokenScopeEmailsSend:
 		return []byte(s), nil
@@ -251,6 +246,12 @@ func (s ApiTokenScope) MarshalText() ([]byte, error) {
 	case ApiTokenScopeAutomationsActivate:
 		return []byte(s), nil
 	case ApiTokenScopeMcpSend:
+		return []byte(s), nil
+	case ApiTokenScopeContactsErase:
+		return []byte(s), nil
+	case ApiTokenScopeSendingDomainsWrite:
+		return []byte(s), nil
+	case ApiTokenScopeIntegrationsWrite:
 		return []byte(s), nil
 	case ApiTokenScopeTokensRead:
 		return []byte(s), nil
@@ -274,20 +275,17 @@ func (s *ApiTokenScope) UnmarshalText(data []byte) error {
 	case ApiTokenScopeContactsWrite:
 		*s = ApiTokenScopeContactsWrite
 		return nil
-	case ApiTokenScopeContactsErase:
-		*s = ApiTokenScopeContactsErase
+	case ApiTokenScopeEventsRead:
+		*s = ApiTokenScopeEventsRead
+		return nil
+	case ApiTokenScopeEventsWrite:
+		*s = ApiTokenScopeEventsWrite
 		return nil
 	case ApiTokenScopeSegmentsRead:
 		*s = ApiTokenScopeSegmentsRead
 		return nil
 	case ApiTokenScopeSegmentsWrite:
 		*s = ApiTokenScopeSegmentsWrite
-		return nil
-	case ApiTokenScopeEventsRead:
-		*s = ApiTokenScopeEventsRead
-		return nil
-	case ApiTokenScopeEventsWrite:
-		*s = ApiTokenScopeEventsWrite
 		return nil
 	case ApiTokenScopeBroadcastsRead:
 		*s = ApiTokenScopeBroadcastsRead
@@ -328,14 +326,8 @@ func (s *ApiTokenScope) UnmarshalText(data []byte) error {
 	case ApiTokenScopeSendingDomainsRead:
 		*s = ApiTokenScopeSendingDomainsRead
 		return nil
-	case ApiTokenScopeSendingDomainsWrite:
-		*s = ApiTokenScopeSendingDomainsWrite
-		return nil
 	case ApiTokenScopeIntegrationsRead:
 		*s = ApiTokenScopeIntegrationsRead
-		return nil
-	case ApiTokenScopeIntegrationsWrite:
-		*s = ApiTokenScopeIntegrationsWrite
 		return nil
 	case ApiTokenScopeEmailsSend:
 		*s = ApiTokenScopeEmailsSend
@@ -348,6 +340,15 @@ func (s *ApiTokenScope) UnmarshalText(data []byte) error {
 		return nil
 	case ApiTokenScopeMcpSend:
 		*s = ApiTokenScopeMcpSend
+		return nil
+	case ApiTokenScopeContactsErase:
+		*s = ApiTokenScopeContactsErase
+		return nil
+	case ApiTokenScopeSendingDomainsWrite:
+		*s = ApiTokenScopeSendingDomainsWrite
+		return nil
+	case ApiTokenScopeIntegrationsWrite:
+		*s = ApiTokenScopeIntegrationsWrite
 		return nil
 	case ApiTokenScopeTokensRead:
 		*s = ApiTokenScopeTokensRead

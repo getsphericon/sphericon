@@ -78,8 +78,8 @@ func TestConsentScreenDescribesTheRequest(t *testing.T) {
 	got, ok := res.(*siteapi.SiteOAuthAuthorizationRequest)
 	require.Truef(t, ok, "got %T", res)
 	assert.Equal(t, "Fixture Connector", got.ClientName)
-	assert.Equal(t, []string{"contacts:read"}, got.Scopes)
-	assert.Equal(t, []string{"emails:send", "mcp:send"}, got.SendScopes, "send-class scopes await an explicit opt-in, and bring the MCP send lock's key")
+	assert.Equal(t, []siteapi.GrantableScope{"contacts:read"}, got.Scopes)
+	assert.Equal(t, []siteapi.SendScope{"emails:send", "mcp:send"}, got.SendScopes, "send-class scopes await an explicit opt-in, and bring the MCP send lock's key")
 }
 
 func TestConsentScreenRejectsMismatchedRedirect(t *testing.T) {
@@ -391,12 +391,12 @@ func TestDefaultGrantCoversTheAuthoringScopes(t *testing.T) {
 	require.NoError(t, err)
 	got, ok := res.(*siteapi.SiteOAuthAuthorizationRequest)
 	require.Truef(t, ok, "got %T", res)
-	assert.Subset(t, got.Scopes, []string{
+	assert.Subset(t, got.Scopes, []siteapi.GrantableScope{
 		"contacts:read", "contacts:write", "events:read", "events:write",
 		"segments:read", "segments:write", "broadcasts:read", "broadcasts:write",
 		"automations:read", "automations:write", "enrollments:read", "templates:read", "templates:write",
 		"webhooks:read", "webhooks:write", "webhooks:regenerate", "webhooks:test", "custom_fields:read", "sending_domains:read", "integrations:read",
 	})
 	assert.Empty(t, got.SendScopes)
-	assert.NotContains(t, got.Scopes, "tokens:write", "a connector never mints credentials")
+	assert.NotContains(t, got.Scopes, siteapi.GrantableScope("tokens:write"), "a connector never mints credentials")
 }

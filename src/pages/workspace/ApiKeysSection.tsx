@@ -28,46 +28,15 @@ import {
   siteTokensListOptions,
   siteTokensListQueryKey,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
+import type { ApiTokenScope } from '../../generated/site/types.gen.ts'
+import { zApiTokenScope } from '../../generated/site/zod.gen.ts'
 import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation.tsx'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { formatDate } from '../../utils/datetime.ts'
 import { ScopePicker } from './ScopePicker.tsx'
 
-// Scopes offered in the UI. The backend stores whatever strings it receives;
-// these mirror the external API's scope vocabulary.
-const SCOPE_OPTIONS = [
-  'contacts:read',
-  'contacts:write',
-  'contacts:erase',
-  'events:read',
-  'events:write',
-  'segments:read',
-  'segments:write',
-  'broadcasts:read',
-  'broadcasts:write',
-  'automations:read',
-  'automations:write',
-  'enrollments:read',
-  'templates:read',
-  'templates:write',
-  'webhooks:read',
-  'webhooks:write',
-  'webhooks:regenerate',
-  'webhooks:test',
-  'custom_fields:read',
-  'sending_domains:read',
-  'sending_domains:write',
-  'integrations:read',
-  'integrations:write',
-  'emails:send',
-  'broadcasts:send',
-  'automations:activate',
-  'mcp:send',
-  'tokens:read',
-  'tokens:write',
-  'audit:read',
-  'export:read',
-]
+// Scopes offered in the UI: the contract's ApiTokenScope vocabulary.
+const SCOPE_OPTIONS = zApiTokenScope.options
 
 export function ApiKeysSection({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
@@ -82,7 +51,7 @@ export function ApiKeysSection({ workspaceId }: { workspaceId: string }) {
   const queryKey = siteTokensListQueryKey({ path: { workspaceId } })
   const tokensQuery = useQuery(siteTokensListOptions({ path: { workspaceId } }))
 
-  const form = useForm<{ name: string; scopes: string[] }>({
+  const form = useForm<{ name: string; scopes: ApiTokenScope[] }>({
     initialValues: { name: '', scopes: [] },
   })
 

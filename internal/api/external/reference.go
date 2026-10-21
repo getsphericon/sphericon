@@ -19,7 +19,7 @@ const (
 
 // CustomFieldsList returns the whole (small, unpaginated) Custom field catalogue.
 func (h *Handlers) CustomFieldsList(ctx context.Context) (externalapi.CustomFieldsListRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), "custom_fields:read") {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeCustomFieldsRead) {
 		res := problem(http.StatusUnauthorized, "insufficient scope")
 		return &res, nil
 	}
@@ -45,7 +45,7 @@ func (h *Handlers) CustomFieldsList(ctx context.Context) (externalapi.CustomFiel
 // SendingDomainRatesList returns the (numerator, denominator, rate) triples of ADR 0011
 // for every Sending domain, over the trailing window.
 func (h *Handlers) SendingDomainRatesList(ctx context.Context, params externalapi.SendingDomainRatesListParams) (externalapi.SendingDomainRatesListRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), "sending_domains:read") {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeSendingDomainsRead) {
 		res := externalapi.SendingDomainRatesListUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}

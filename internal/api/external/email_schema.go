@@ -16,7 +16,7 @@ import (
 // derives, with the attribute rules the server checks. It holds no Workspace data and needs only the
 // right to read Templates.
 func (h *Handlers) EmailSchemaGet(ctx context.Context) (externalapi.EmailSchemaGetRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), "templates:read") {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeTemplatesRead) {
 		res := externalapi.ProblemDetails(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}

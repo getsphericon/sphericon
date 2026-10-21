@@ -14,7 +14,7 @@ import (
 // ContactsExport streams the subject-access Data export of one contact (ADR 0021),
 // needing only the contact read scope.
 func (h *Handlers) ContactsExport(ctx context.Context, params externalapi.ContactsExportParams) (externalapi.ContactsExportRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), "contacts:read") {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeContactsRead) {
 		res := externalapi.ContactsExportUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}

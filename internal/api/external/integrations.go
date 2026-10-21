@@ -24,7 +24,7 @@ import (
 // IntegrationsList returns the Workspace's sending-provider Integrations with the Send
 // rate limit as enforced and the last 24 hours of usage.
 func (h *Handlers) IntegrationsList(ctx context.Context, params externalapi.IntegrationsListParams) (externalapi.IntegrationsListRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), "integrations:read") {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeIntegrationsRead) {
 		res := externalapi.IntegrationsListUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
@@ -54,7 +54,7 @@ func (h *Handlers) IntegrationsList(ctx context.Context, params externalapi.Inte
 
 // IntegrationsCreate stores a new Integration; credentials are sealed and never returned.
 func (h *Handlers) IntegrationsCreate(ctx context.Context, req *externalapi.CreateIntegrationInput) (externalapi.IntegrationsCreateRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), "integrations:write") {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeIntegrationsWrite) {
 		res := externalapi.IntegrationsCreateUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
@@ -97,7 +97,7 @@ func (h *Handlers) IntegrationsCreate(ctx context.Context, req *externalapi.Crea
 
 // IntegrationsGet returns one Integration with secrets redacted.
 func (h *Handlers) IntegrationsGet(ctx context.Context, params externalapi.IntegrationsGetParams) (externalapi.IntegrationsGetRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), "integrations:read") {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeIntegrationsRead) {
 		res := externalapi.IntegrationsGetUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
@@ -121,7 +121,7 @@ func (h *Handlers) IntegrationsGet(ctx context.Context, params externalapi.Integ
 // IntegrationsUpdate edits an Integration. Omitting config keeps the stored credentials;
 // blank secret fields inside a supplied config keep the stored secret.
 func (h *Handlers) IntegrationsUpdate(ctx context.Context, req *externalapi.UpdateIntegrationInput, params externalapi.IntegrationsUpdateParams) (externalapi.IntegrationsUpdateRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), "integrations:write") {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeIntegrationsWrite) {
 		res := externalapi.IntegrationsUpdateUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
@@ -173,7 +173,7 @@ func (h *Handlers) IntegrationsUpdate(ctx context.Context, req *externalapi.Upda
 // IntegrationsRegenerateKey gives the Integration a new hook key: the old hook URL stops
 // working at once. Hidden from MCP, because it breaks a working URL and needs a person.
 func (h *Handlers) IntegrationsRegenerateKey(ctx context.Context, params externalapi.IntegrationsRegenerateKeyParams) (externalapi.IntegrationsRegenerateKeyRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), "integrations:write") {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeIntegrationsWrite) {
 		res := externalapi.IntegrationsRegenerateKeyUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
@@ -196,7 +196,7 @@ func (h *Handlers) IntegrationsRegenerateKey(ctx context.Context, params externa
 // PresetsList returns the Presets the Instance offers with the params schema of each:
 // how an agent learns what an Integration's `params` takes.
 func (h *Handlers) PresetsList(ctx context.Context) (externalapi.PresetsListRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), "integrations:read") {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeIntegrationsRead) {
 		res := problem(http.StatusUnauthorized, "insufficient scope")
 		return &res, nil
 	}
@@ -218,7 +218,7 @@ func (h *Handlers) PresetsList(ctx context.Context) (externalapi.PresetsListRes,
 // IntegrationsArchive archives an Integration (ADR 0049): it leaves the list and gives up the
 // default, unless live work uses it (409).
 func (h *Handlers) IntegrationsArchive(ctx context.Context, params externalapi.IntegrationsArchiveParams) (externalapi.IntegrationsArchiveRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), "integrations:write") {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeIntegrationsWrite) {
 		res := externalapi.IntegrationsArchiveUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
@@ -241,7 +241,7 @@ func (h *Handlers) IntegrationsArchive(ctx context.Context, params externalapi.I
 
 // IntegrationsUnarchive restores an archived Integration to the list. It is not the default.
 func (h *Handlers) IntegrationsUnarchive(ctx context.Context, params externalapi.IntegrationsUnarchiveParams) (externalapi.IntegrationsUnarchiveRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), "integrations:write") {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeIntegrationsWrite) {
 		res := externalapi.IntegrationsUnarchiveUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}

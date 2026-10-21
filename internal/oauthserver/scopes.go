@@ -3,71 +3,50 @@ package oauthserver
 import (
 	"slices"
 	"strings"
+
+	"github.com/samber/lo"
+
+	siteapi "github.com/getsphericon/sphericon/gen/site"
 )
 
-// grantableScopes are the API token scopes an OAuth client may be granted
-// without any extra opt-in: the external API's read/write vocabulary. Token
-// management scopes are deliberately absent, so a connector can never mint
-// further credentials.
-var grantableScopes = []string{
-	"contacts:read",
-	"contacts:write",
-	"events:read",
-	"events:write",
-	"segments:read",
-	"segments:write",
-	"broadcasts:read",
-	"broadcasts:write",
-	"automations:read",
-	"automations:write",
-	"enrollments:read",
-	"templates:read",
-	"templates:write",
-	"webhooks:read",
-	"webhooks:write",
-	"webhooks:regenerate",
-	"webhooks:test",
-	"custom_fields:read",
-	"sending_domains:read",
-	"integrations:read",
+// The scope vocabulary is declared once, in the contract (typespec/common/scopes.tsp):
+// GrantableScope is what an OAuth client is granted by default, SendScope what needs
+// the user's explicit opt-in (ADR 0016, "Send is a second lock"). Adding a scope means
+// editing TypeSpec and regenerating.
+
+func grantableScopes() []string {
+	return lo.Map(siteapi.GrantableScope("").AllValues(), func(s siteapi.GrantableScope, _ int) string { return string(s) })
 }
 
-// sendScopes are the send-class scopes (ADR 0016, "Send is a second lock"). The
-// agent authors by default: these are granted only when the user explicitly opts
-// in on the consent screen. mcp:send is the MCP-specific key: send-class tools are
-// not even listed over /mcp without it, so any send-class grant brings it along.
-var sendScopes = []string{
-	"emails:send",
-	"broadcasts:send",
-	"automations:activate",
-	scopeMCPSend,
+func sendScopes() []string {
+	return lo.Map(siteapi.SendScope("").AllValues(), func(s siteapi.SendScope, _ int) string { return string(s) })
 }
-
-const scopeMCPSend = "mcp:send"
 
 // SupportedScopes lists every scope the authorization server can issue.
 func SupportedScopes() []string {
-	return slices.Concat(grantableScopes, sendScopes)
+	return slices.Concat(grantableScopes(), sendScopes())
 }
 
 // requestedScopes splits an OAuth scope parameter into the scopes granted by
 // default and the send-class scopes awaiting the user's opt-in. Unknown scopes
 // are dropped; an empty request means the default (non-send) set.
 func requestedScopes(scope string) (granted, send []string) {
+	grantable, sendClass := grantableScopes(), sendScopes()
 	fields := strings.Fields(scope)
 	if len(fields) == 0 {
-		return slices.Clone(grantableScopes), nil
+		return grantable, nil
 	}
 	for _, s := range fields {
 		switch {
-		case slices.Contains(grantableScopes, s) && !slices.Contains(granted, s):
+		case slices.Contains(grantable, s) && !slices.Contains(granted, s):
 			granted = append(granted, s)
-		case slices.Contains(sendScopes, s) && !slices.Contains(send, s):
+		case slices.Contains(sendClass, s) && !slices.Contains(send, s):
 			send = append(send, s)
 		}
 	}
-	if len(send) > 0 && !slices.Contains(send, scopeMCPSend) {
-		send = append(send, scopeMCPSend)
+	mcpSend := string(siteapi.SendScopeMcpSend)
+	if len(send) > 0 && !slices.Contains(send, mcpSend) {
+		send = append(send, mcpSend)
 	}
 	return granted, send
 }

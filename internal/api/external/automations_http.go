@@ -14,7 +14,7 @@ import (
 // it; nothing is called. It reads a Contact, so it needs both scopes.
 func (h *Handlers) AutomationsDryRunHttpStep(ctx context.Context, req *externalapi.DryRunHttpStepInput) (externalapi.AutomationsDryRunHttpStepRes, error) {
 	tok := auth.GetTokenAuth(ctx)
-	if !auth.HasScope(tok, scopeAutomationsWrite) || !auth.HasScope(tok, "contacts:read") {
+	if !auth.HasScope(tok, externalapi.ApiTokenScopeAutomationsWrite) || !auth.HasScope(tok, externalapi.ApiTokenScopeContactsRead) {
 		res := externalapi.AutomationsDryRunHttpStepUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}

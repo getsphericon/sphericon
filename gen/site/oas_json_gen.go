@@ -13,6 +13,104 @@ import (
 	"github.com/ogen-go/ogen/validate"
 )
 
+// Encode encodes ApiTokenScope as json.
+func (s ApiTokenScope) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes ApiTokenScope from json.
+func (s *ApiTokenScope) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ApiTokenScope to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch ApiTokenScope(v) {
+	case ApiTokenScopeContactsRead:
+		*s = ApiTokenScopeContactsRead
+	case ApiTokenScopeContactsWrite:
+		*s = ApiTokenScopeContactsWrite
+	case ApiTokenScopeEventsRead:
+		*s = ApiTokenScopeEventsRead
+	case ApiTokenScopeEventsWrite:
+		*s = ApiTokenScopeEventsWrite
+	case ApiTokenScopeSegmentsRead:
+		*s = ApiTokenScopeSegmentsRead
+	case ApiTokenScopeSegmentsWrite:
+		*s = ApiTokenScopeSegmentsWrite
+	case ApiTokenScopeBroadcastsRead:
+		*s = ApiTokenScopeBroadcastsRead
+	case ApiTokenScopeBroadcastsWrite:
+		*s = ApiTokenScopeBroadcastsWrite
+	case ApiTokenScopeAutomationsRead:
+		*s = ApiTokenScopeAutomationsRead
+	case ApiTokenScopeAutomationsWrite:
+		*s = ApiTokenScopeAutomationsWrite
+	case ApiTokenScopeEnrollmentsRead:
+		*s = ApiTokenScopeEnrollmentsRead
+	case ApiTokenScopeTemplatesRead:
+		*s = ApiTokenScopeTemplatesRead
+	case ApiTokenScopeTemplatesWrite:
+		*s = ApiTokenScopeTemplatesWrite
+	case ApiTokenScopeWebhooksRead:
+		*s = ApiTokenScopeWebhooksRead
+	case ApiTokenScopeWebhooksWrite:
+		*s = ApiTokenScopeWebhooksWrite
+	case ApiTokenScopeWebhooksRegenerate:
+		*s = ApiTokenScopeWebhooksRegenerate
+	case ApiTokenScopeWebhooksTest:
+		*s = ApiTokenScopeWebhooksTest
+	case ApiTokenScopeCustomFieldsRead:
+		*s = ApiTokenScopeCustomFieldsRead
+	case ApiTokenScopeSendingDomainsRead:
+		*s = ApiTokenScopeSendingDomainsRead
+	case ApiTokenScopeIntegrationsRead:
+		*s = ApiTokenScopeIntegrationsRead
+	case ApiTokenScopeEmailsSend:
+		*s = ApiTokenScopeEmailsSend
+	case ApiTokenScopeBroadcastsSend:
+		*s = ApiTokenScopeBroadcastsSend
+	case ApiTokenScopeAutomationsActivate:
+		*s = ApiTokenScopeAutomationsActivate
+	case ApiTokenScopeMcpSend:
+		*s = ApiTokenScopeMcpSend
+	case ApiTokenScopeContactsErase:
+		*s = ApiTokenScopeContactsErase
+	case ApiTokenScopeSendingDomainsWrite:
+		*s = ApiTokenScopeSendingDomainsWrite
+	case ApiTokenScopeIntegrationsWrite:
+		*s = ApiTokenScopeIntegrationsWrite
+	case ApiTokenScopeTokensRead:
+		*s = ApiTokenScopeTokensRead
+	case ApiTokenScopeTokensWrite:
+		*s = ApiTokenScopeTokensWrite
+	case ApiTokenScopeAuditRead:
+		*s = ApiTokenScopeAuditRead
+	case ApiTokenScopeExportRead:
+		*s = ApiTokenScopeExportRead
+	default:
+		*s = ApiTokenScope(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s ApiTokenScope) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ApiTokenScope) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode implements json.Marshaler.
 func (s *ContactExportBroadcastRecipient) Encode(e *jx.Encoder) {
 	e.ObjStart()
@@ -2233,6 +2331,82 @@ func (s EntityId) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *EntityId) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes GrantableScope as json.
+func (s GrantableScope) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes GrantableScope from json.
+func (s *GrantableScope) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode GrantableScope to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch GrantableScope(v) {
+	case GrantableScopeContactsRead:
+		*s = GrantableScopeContactsRead
+	case GrantableScopeContactsWrite:
+		*s = GrantableScopeContactsWrite
+	case GrantableScopeEventsRead:
+		*s = GrantableScopeEventsRead
+	case GrantableScopeEventsWrite:
+		*s = GrantableScopeEventsWrite
+	case GrantableScopeSegmentsRead:
+		*s = GrantableScopeSegmentsRead
+	case GrantableScopeSegmentsWrite:
+		*s = GrantableScopeSegmentsWrite
+	case GrantableScopeBroadcastsRead:
+		*s = GrantableScopeBroadcastsRead
+	case GrantableScopeBroadcastsWrite:
+		*s = GrantableScopeBroadcastsWrite
+	case GrantableScopeAutomationsRead:
+		*s = GrantableScopeAutomationsRead
+	case GrantableScopeAutomationsWrite:
+		*s = GrantableScopeAutomationsWrite
+	case GrantableScopeEnrollmentsRead:
+		*s = GrantableScopeEnrollmentsRead
+	case GrantableScopeTemplatesRead:
+		*s = GrantableScopeTemplatesRead
+	case GrantableScopeTemplatesWrite:
+		*s = GrantableScopeTemplatesWrite
+	case GrantableScopeWebhooksRead:
+		*s = GrantableScopeWebhooksRead
+	case GrantableScopeWebhooksWrite:
+		*s = GrantableScopeWebhooksWrite
+	case GrantableScopeWebhooksRegenerate:
+		*s = GrantableScopeWebhooksRegenerate
+	case GrantableScopeWebhooksTest:
+		*s = GrantableScopeWebhooksTest
+	case GrantableScopeCustomFieldsRead:
+		*s = GrantableScopeCustomFieldsRead
+	case GrantableScopeSendingDomainsRead:
+		*s = GrantableScopeSendingDomainsRead
+	case GrantableScopeIntegrationsRead:
+		*s = GrantableScopeIntegrationsRead
+	default:
+		*s = GrantableScope(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s GrantableScope) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *GrantableScope) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -5763,6 +5937,50 @@ func (s *ProblemDetailsFields) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes SendScope as json.
+func (s SendScope) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes SendScope from json.
+func (s *SendScope) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SendScope to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch SendScope(v) {
+	case SendScopeEmailsSend:
+		*s = SendScopeEmailsSend
+	case SendScopeBroadcastsSend:
+		*s = SendScopeBroadcastsSend
+	case SendScopeAutomationsActivate:
+		*s = SendScopeAutomationsActivate
+	case SendScopeMcpSend:
+		*s = SendScopeMcpSend
+	default:
+		*s = SendScope(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s SendScope) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SendScope) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes SiteAbuseMetric as json.
 func (s SiteAbuseMetric) Encode(e *jx.Encoder) {
 	e.Str(string(s))
@@ -7050,7 +7268,7 @@ func (s *SiteApiTokenResource) encodeFields(e *jx.Encoder) {
 		e.FieldStart("scopes")
 		e.ArrStart()
 		for _, elem := range s.Scopes {
-			e.Str(elem)
+			elem.Encode(e)
 		}
 		e.ArrEnd()
 	}
@@ -7135,12 +7353,10 @@ func (s *SiteApiTokenResource) Decode(d *jx.Decoder) error {
 		case "scopes":
 			requiredBitSet[0] |= 1 << 3
 			if err := func() error {
-				s.Scopes = make([]string, 0)
+				s.Scopes = make([]ApiTokenScope, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
-					var elem string
-					v, err := d.Str()
-					elem = string(v)
-					if err != nil {
+					var elem ApiTokenScope
+					if err := elem.Decode(d); err != nil {
 						return err
 					}
 					s.Scopes = append(s.Scopes, elem)
@@ -16910,7 +17126,7 @@ func (s *SiteCreateTokenInput) encodeFields(e *jx.Encoder) {
 		e.FieldStart("scopes")
 		e.ArrStart()
 		for _, elem := range s.Scopes {
-			e.Str(elem)
+			elem.Encode(e)
 		}
 		e.ArrEnd()
 	}
@@ -16952,12 +17168,10 @@ func (s *SiteCreateTokenInput) Decode(d *jx.Decoder) error {
 		case "scopes":
 			requiredBitSet[0] |= 1 << 1
 			if err := func() error {
-				s.Scopes = make([]string, 0)
+				s.Scopes = make([]ApiTokenScope, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
-					var elem string
-					v, err := d.Str()
-					elem = string(v)
-					if err != nil {
+					var elem ApiTokenScope
+					if err := elem.Decode(d); err != nil {
 						return err
 					}
 					s.Scopes = append(s.Scopes, elem)
@@ -26241,7 +26455,7 @@ func (s *SiteOAuthAuthorizationRequest) encodeFields(e *jx.Encoder) {
 		e.FieldStart("scopes")
 		e.ArrStart()
 		for _, elem := range s.Scopes {
-			e.Str(elem)
+			elem.Encode(e)
 		}
 		e.ArrEnd()
 	}
@@ -26249,7 +26463,7 @@ func (s *SiteOAuthAuthorizationRequest) encodeFields(e *jx.Encoder) {
 		e.FieldStart("sendScopes")
 		e.ArrStart()
 		for _, elem := range s.SendScopes {
-			e.Str(elem)
+			elem.Encode(e)
 		}
 		e.ArrEnd()
 	}
@@ -26322,12 +26536,10 @@ func (s *SiteOAuthAuthorizationRequest) Decode(d *jx.Decoder) error {
 		case "scopes":
 			requiredBitSet[0] |= 1 << 4
 			if err := func() error {
-				s.Scopes = make([]string, 0)
+				s.Scopes = make([]GrantableScope, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
-					var elem string
-					v, err := d.Str()
-					elem = string(v)
-					if err != nil {
+					var elem GrantableScope
+					if err := elem.Decode(d); err != nil {
 						return err
 					}
 					s.Scopes = append(s.Scopes, elem)
@@ -26342,12 +26554,10 @@ func (s *SiteOAuthAuthorizationRequest) Decode(d *jx.Decoder) error {
 		case "sendScopes":
 			requiredBitSet[0] |= 1 << 5
 			if err := func() error {
-				s.SendScopes = make([]string, 0)
+				s.SendScopes = make([]SendScope, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
-					var elem string
-					v, err := d.Str()
-					elem = string(v)
-					if err != nil {
+					var elem SendScope
+					if err := elem.Decode(d); err != nil {
 						return err
 					}
 					s.SendScopes = append(s.SendScopes, elem)

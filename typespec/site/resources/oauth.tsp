@@ -18,10 +18,10 @@ model SiteOAuthAuthorizationRequest {
   localRedirect: boolean;
 
   /** Scopes the client asked for that sphericon will grant by default */
-  scopes: string[];
+  scopes: GrantableScope[];
 
   /** Requested send-class scopes: granted only when the user opts in explicitly */
-  sendScopes: string[];
+  sendScopes: SendScope[];
 }
 
 /** The user's decision on an authorization request */

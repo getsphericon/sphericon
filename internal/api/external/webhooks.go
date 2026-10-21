@@ -38,7 +38,7 @@ func webhookRuleProblem(err error) (externalapi.ProblemDetails, bool) {
 }
 
 func (h *Handlers) WebhooksList(ctx context.Context, params externalapi.WebhooksListParams) (externalapi.WebhooksListRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), "webhooks:read") {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeWebhooksRead) {
 		res := externalapi.WebhooksListUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
@@ -57,7 +57,7 @@ func (h *Handlers) WebhooksList(ctx context.Context, params externalapi.Webhooks
 }
 
 func (h *Handlers) WebhooksCreate(ctx context.Context, req *externalapi.CreateWebhookInput) (externalapi.WebhooksCreateRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), "webhooks:write") {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeWebhooksWrite) {
 		res := externalapi.WebhooksCreateUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
@@ -81,7 +81,7 @@ func (h *Handlers) WebhooksCreate(ctx context.Context, req *externalapi.CreateWe
 }
 
 func (h *Handlers) WebhooksGet(ctx context.Context, params externalapi.WebhooksGetParams) (externalapi.WebhooksGetRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), "webhooks:read") {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeWebhooksRead) {
 		res := externalapi.WebhooksGetUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
@@ -101,7 +101,7 @@ func (h *Handlers) WebhooksGet(ctx context.Context, params externalapi.WebhooksG
 }
 
 func (h *Handlers) WebhooksUpdate(ctx context.Context, req *externalapi.UpdateWebhookInput, params externalapi.WebhooksUpdateParams) (externalapi.WebhooksUpdateRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), "webhooks:write") {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeWebhooksWrite) {
 		res := externalapi.WebhooksUpdateUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
@@ -129,7 +129,7 @@ func (h *Handlers) WebhooksUpdate(ctx context.Context, req *externalapi.UpdateWe
 }
 
 func (h *Handlers) WebhooksDelete(ctx context.Context, params externalapi.WebhooksDeleteParams) (externalapi.WebhooksDeleteRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), "webhooks:write") {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeWebhooksWrite) {
 		res := externalapi.WebhooksDeleteUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}

@@ -94,7 +94,7 @@ func TestSiteTokensListCreateAndRevoke(t *testing.T) {
 
 	// Create with an expiry, then revoke it.
 	created, err := c.SiteTokensCreate(ctx, &siteapi.SiteCreateTokenInput{
-		Name: " CI ", Scopes: []string{"contacts:read"},
+		Name: " CI ", Scopes: []siteapi.ApiTokenScope{"contacts:read"},
 		ExpiresAt: siteapi.NewOptNilTimestamp(siteapi.Timestamp(time.Now().Add(24 * time.Hour))),
 	}, siteapi.SiteTokensCreateParams{WorkspaceId: acme})
 	require.NoError(t, err)
@@ -133,12 +133,12 @@ func TestSiteTokensErrorBranches(t *testing.T) {
 	member := env.SiteActor(t, fixtures.MemberMaryEmail)
 	ctx := context.Background()
 	acme, foreign := siteapi.WorkspaceId(fixtures.AcmePublicID), siteapi.WorkspaceId(fixtures.GlobexPublicID)
-	in := &siteapi.SiteCreateTokenInput{Name: "x", Scopes: []string{"contacts:read"}}
+	in := &siteapi.SiteCreateTokenInput{Name: "x", Scopes: []siteapi.ApiTokenScope{"contacts:read"}}
 
 	r1, err := owner.SiteTokensCreate(ctx, in, siteapi.SiteTokensCreateParams{WorkspaceId: foreign})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteTokensCreateNotFound{}, r1)
-	r2, err := owner.SiteTokensCreate(ctx, &siteapi.SiteCreateTokenInput{Name: " ", Scopes: []string{}}, siteapi.SiteTokensCreateParams{WorkspaceId: acme})
+	r2, err := owner.SiteTokensCreate(ctx, &siteapi.SiteCreateTokenInput{Name: " ", Scopes: []siteapi.ApiTokenScope{}}, siteapi.SiteTokensCreateParams{WorkspaceId: acme})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteTokensCreateUnprocessableEntity{}, r2)
 	r3, err := member.SiteTokensCreate(ctx, in, siteapi.SiteTokensCreateParams{WorkspaceId: acme})

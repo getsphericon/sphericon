@@ -36,7 +36,7 @@ func (h *Handlers) AuthMeGet(ctx context.Context) (externalapi.AuthMeGetRes, err
 }
 
 func (h *Handlers) AuthTokensList(ctx context.Context) (externalapi.AuthTokensListRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), "tokens:read") {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeTokensRead) {
 		res := externalapi.AuthTokensListForbidden(problem(http.StatusForbidden, "insufficient scope"))
 		return &res, nil
 	}
@@ -54,7 +54,7 @@ func (h *Handlers) AuthTokensList(ctx context.Context) (externalapi.AuthTokensLi
 }
 
 func (h *Handlers) AuthTokensCreate(ctx context.Context, req *externalapi.CreateApiTokenInput) (externalapi.AuthTokensCreateRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), "tokens:write") {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeTokensWrite) {
 		res := externalapi.AuthTokensCreateForbidden(problem(http.StatusForbidden, "insufficient scope"))
 		return &res, nil
 	}
@@ -98,7 +98,7 @@ func (h *Handlers) AuthTokensBootstrap(ctx context.Context, req *externalapi.Cre
 }
 
 func (h *Handlers) AuthTokensDelete(ctx context.Context, params externalapi.AuthTokensDeleteParams) (externalapi.AuthTokensDeleteRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), "tokens:write") {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeTokensWrite) {
 		res := externalapi.AuthTokensDeleteForbidden(problem(http.StatusForbidden, "insufficient scope"))
 		return &res, nil
 	}

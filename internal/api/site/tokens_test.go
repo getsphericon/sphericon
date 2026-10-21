@@ -21,7 +21,7 @@ func TestSiteTokensCreateListRevoke(t *testing.T) {
 
 	// Create returns the full secret once.
 	created, err := c.SiteTokensCreate(ctx,
-		&siteapi.SiteCreateTokenInput{Name: "CI", Scopes: []string{"contacts:read"}},
+		&siteapi.SiteCreateTokenInput{Name: "CI", Scopes: []siteapi.ApiTokenScope{"contacts:read"}},
 		siteapi.SiteTokensCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	resp, ok := created.(*siteapi.SiteCreateTokenResponse)
@@ -76,7 +76,7 @@ func TestSiteTokensNeedAnOwnerOrAdmin(t *testing.T) {
 	ctx := context.Background()
 
 	created, err := c.SiteTokensCreate(ctx,
-		&siteapi.SiteCreateTokenInput{Name: "sneaky", Scopes: []string{"contacts:write"}},
+		&siteapi.SiteCreateTokenInput{Name: "sneaky", Scopes: []siteapi.ApiTokenScope{"contacts:write"}},
 		siteapi.SiteTokensCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteTokensCreateForbidden{}, created)
@@ -87,18 +87,8 @@ func TestSiteTokensNeedAnOwnerOrAdmin(t *testing.T) {
 	assert.IsType(t, &siteapi.SiteTokensDeleteForbidden{}, deleted)
 
 	ok, err := env.SiteActor(t, "admin@acme.test").SiteTokensCreate(ctx,
-		&siteapi.SiteCreateTokenInput{Name: "ci", Scopes: []string{"contacts:read"}},
+		&siteapi.SiteCreateTokenInput{Name: "ci", Scopes: []siteapi.ApiTokenScope{"contacts:read"}},
 		siteapi.SiteTokensCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteCreateTokenResponse{}, ok)
-}
-
-func TestSiteTokensCreateRefusesAnUnknownScope(t *testing.T) {
-	env := testhelper.Setup(t)
-	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	res, err := c.SiteTokensCreate(context.Background(),
-		&siteapi.SiteCreateTokenInput{Name: "x", Scopes: []string{"contacts:read", "root:all"}},
-		siteapi.SiteTokensCreateParams{WorkspaceId: fixtures.AcmePublicID})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteTokensCreateUnprocessableEntity{}, res)
 }

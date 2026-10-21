@@ -9,6 +9,75 @@ import (
 	"github.com/ogen-go/ogen/validate"
 )
 
+func (s ApiTokenScope) Validate() error {
+	switch s {
+	case "contacts:read":
+		return nil
+	case "contacts:write":
+		return nil
+	case "events:read":
+		return nil
+	case "events:write":
+		return nil
+	case "segments:read":
+		return nil
+	case "segments:write":
+		return nil
+	case "broadcasts:read":
+		return nil
+	case "broadcasts:write":
+		return nil
+	case "automations:read":
+		return nil
+	case "automations:write":
+		return nil
+	case "enrollments:read":
+		return nil
+	case "templates:read":
+		return nil
+	case "templates:write":
+		return nil
+	case "webhooks:read":
+		return nil
+	case "webhooks:write":
+		return nil
+	case "webhooks:regenerate":
+		return nil
+	case "webhooks:test":
+		return nil
+	case "custom_fields:read":
+		return nil
+	case "sending_domains:read":
+		return nil
+	case "integrations:read":
+		return nil
+	case "emails:send":
+		return nil
+	case "broadcasts:send":
+		return nil
+	case "automations:activate":
+		return nil
+	case "mcp:send":
+		return nil
+	case "contacts:erase":
+		return nil
+	case "sending_domains:write":
+		return nil
+	case "integrations:write":
+		return nil
+	case "tokens:read":
+		return nil
+	case "tokens:write":
+		return nil
+	case "audit:read":
+		return nil
+	case "export:read":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s *ContactExportDocument) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -150,6 +219,53 @@ func (s EmailAddress) Validate() error {
 		return errors.Wrap(err, "string")
 	}
 	return nil
+}
+
+func (s GrantableScope) Validate() error {
+	switch s {
+	case "contacts:read":
+		return nil
+	case "contacts:write":
+		return nil
+	case "events:read":
+		return nil
+	case "events:write":
+		return nil
+	case "segments:read":
+		return nil
+	case "segments:write":
+		return nil
+	case "broadcasts:read":
+		return nil
+	case "broadcasts:write":
+		return nil
+	case "automations:read":
+		return nil
+	case "automations:write":
+		return nil
+	case "enrollments:read":
+		return nil
+	case "templates:read":
+		return nil
+	case "templates:write":
+		return nil
+	case "webhooks:read":
+		return nil
+	case "webhooks:write":
+		return nil
+	case "webhooks:regenerate":
+		return nil
+	case "webhooks:test":
+		return nil
+	case "custom_fields:read":
+		return nil
+	case "sending_domains:read":
+		return nil
+	case "integrations:read":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
 }
 
 func (s *InUseProblemDetails) Validate() error {
@@ -398,6 +514,21 @@ func (s *ProblemDetailsHeaders) Validate() error {
 	return nil
 }
 
+func (s SendScope) Validate() error {
+	switch s {
+	case "emails:send":
+		return nil
+	case "broadcasts:send":
+		return nil
+	case "automations:activate":
+		return nil
+	case "mcp:send":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s SiteAbuseMetric) Validate() error {
 	switch s {
 	case "complaint":
@@ -562,6 +693,23 @@ func (s *SiteApiTokenResource) Validate() error {
 	if err := func() error {
 		if s.Scopes == nil {
 			return errors.New("nil is invalid value")
+		}
+		var failures []validate.FieldError
+		for i, elem := range s.Scopes {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
 		}
 		return nil
 	}(); err != nil {
@@ -2229,6 +2377,23 @@ func (s *SiteCreateTokenInput) Validate() error {
 	if err := func() error {
 		if s.Scopes == nil {
 			return errors.New("nil is invalid value")
+		}
+		var failures []validate.FieldError
+		for i, elem := range s.Scopes {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
 		}
 		return nil
 	}(); err != nil {
@@ -3954,6 +4119,23 @@ func (s *SiteOAuthAuthorizationRequest) Validate() error {
 		if s.Scopes == nil {
 			return errors.New("nil is invalid value")
 		}
+		var failures []validate.FieldError
+		for i, elem := range s.Scopes {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
+		}
 		return nil
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
@@ -3964,6 +4146,23 @@ func (s *SiteOAuthAuthorizationRequest) Validate() error {
 	if err := func() error {
 		if s.SendScopes == nil {
 			return errors.New("nil is invalid value")
+		}
+		var failures []validate.FieldError
+		for i, elem := range s.SendScopes {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
 		}
 		return nil
 	}(); err != nil {

@@ -10,10 +10,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/exportstream"
 )
 
-// exportReadScope gates every Export stream (ADR 0045). It is deliberately absent from the
+// externalapi.ApiTokenScopeExportRead gates every Export stream (ADR 0045). It is deliberately absent from the
 // OAuth grantable scopes, and the operations are hidden from MCP (ADR 0016).
-const exportReadScope = "export:read"
-
 // exportDenied is the gate every Export stream shares: the `export` license first, so an
 // unlicensed instance answers 404 whatever the token is (the feature is absent, like
 // /staff), then the export:read scope (401, like the other scopes). It returns the status
@@ -22,7 +20,7 @@ func (h *Handlers) exportDenied(ctx context.Context) (int, string) {
 	if h.export == nil || !h.export.Licensed() {
 		return http.StatusNotFound, "not found"
 	}
-	if !auth.HasScope(auth.GetTokenAuth(ctx), exportReadScope) {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeExportRead) {
 		return http.StatusUnauthorized, "insufficient scope"
 	}
 	return 0, ""

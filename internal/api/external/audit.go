@@ -11,17 +11,11 @@ import (
 	"github.com/getsphericon/sphericon/internal/events"
 )
 
-const (
-	// auditReadScope gates the Audit log read. It is deliberately absent from the
-	// OAuth grantable scopes, and the operation is hidden from MCP (ADR 0016, 0022).
-	auditReadScope = "audit:read"
-)
-
 // AuditEntriesList reads the Workspace's Audit log, newest first, for a token with
 // the audit:read scope (a SIEM feed). An instance without an Enterprise license
 // answers 402 (ADR 0014, ADR 0022).
 func (h *Handlers) AuditEntriesList(ctx context.Context, params externalapi.AuditEntriesListParams) (externalapi.AuditEntriesListRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), auditReadScope) {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeAuditRead) {
 		res := externalapi.AuditEntriesListUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}

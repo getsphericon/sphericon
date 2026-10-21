@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/samber/lo"
 	"net/http"
 	"time"
 
@@ -56,7 +57,7 @@ func (h *Handlers) SiteTokensCreate(ctx context.Context, req *siteapi.SiteCreate
 		return &v, nil
 	}
 
-	in := apitokens.Input{Name: req.Name, Scopes: req.Scopes}
+	in := apitokens.Input{Name: req.Name, Scopes: lo.Map(req.Scopes, func(s siteapi.ApiTokenScope, _ int) string { return string(s) })}
 	if v, ok := req.ExpiresAt.Get(); ok {
 		in.ExpiresAt = new(time.Time(v))
 	}
@@ -68,13 +69,6 @@ func (h *Handlers) SiteTokensCreate(ctx context.Context, req *siteapi.SiteCreate
 			http.StatusUnprocessableEntity,
 			i18n.T("errors.name_empty", nil),
 			map[string][]string{"name": {i18n.T("errors.name_empty", nil)}},
-		))
-		return &v, nil
-	case errors.Is(err, apitokens.ErrUnknownScope):
-		v := siteapi.SiteTokensCreateUnprocessableEntity(problemWithErrors(
-			http.StatusUnprocessableEntity,
-			"unknown scope",
-			map[string][]string{"scopes": {"unknown scope"}},
 		))
 		return &v, nil
 	case err != nil:

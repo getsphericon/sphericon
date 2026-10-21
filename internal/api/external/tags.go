@@ -17,7 +17,7 @@ import (
 )
 
 func (h *Handlers) TagsList(ctx context.Context, params externalapi.TagsListParams) (externalapi.TagsListRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), "contacts:read") {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeContactsRead) {
 		res := externalapi.TagsListUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
@@ -38,7 +38,7 @@ func (h *Handlers) TagsList(ctx context.Context, params externalapi.TagsListPara
 }
 
 func (h *Handlers) TagsListForContact(ctx context.Context, params externalapi.TagsListForContactParams) (externalapi.TagsListForContactRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), "contacts:read") {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeContactsRead) {
 		res := externalapi.TagsListForContactUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
@@ -64,7 +64,7 @@ func (h *Handlers) TagsListForContact(ctx context.Context, params externalapi.Ta
 }
 
 func (h *Handlers) TagsApply(ctx context.Context, req *externalapi.ApplyTagInput, params externalapi.TagsApplyParams) (externalapi.TagsApplyRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), "contacts:write") {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeContactsWrite) {
 		res := externalapi.TagsApplyUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
@@ -88,7 +88,7 @@ func (h *Handlers) TagsApply(ctx context.Context, req *externalapi.ApplyTagInput
 }
 
 func (h *Handlers) TagsRemove(ctx context.Context, params externalapi.TagsRemoveParams) (externalapi.TagsRemoveRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), "contacts:write") {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeContactsWrite) {
 		res := externalapi.TagsRemoveUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
@@ -109,7 +109,7 @@ func (h *Handlers) TagsRemove(ctx context.Context, params externalapi.TagsRemove
 // TagsDelete deletes a Tag from the catalogue unless a Segment rule or an Automation step names
 // it (ADR 0049).
 func (h *Handlers) TagsDelete(ctx context.Context, params externalapi.TagsDeleteParams) (externalapi.TagsDeleteRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), "contacts:write") {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeContactsWrite) {
 		res := externalapi.TagsDeleteUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}

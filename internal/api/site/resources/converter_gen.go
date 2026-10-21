@@ -415,9 +415,9 @@ func (c *ConverterImpl) TokenToResource(source *ent.ApiToken) site.SiteApiTokenR
 		siteapiSiteApiTokenResource.Name = (*source).Name
 		siteapiSiteApiTokenResource.Prefix = (*source).Prefix
 		if (*source).Scopes != nil {
-			siteapiSiteApiTokenResource.Scopes = make([]string, len((*source).Scopes))
+			siteapiSiteApiTokenResource.Scopes = make([]site.ApiTokenScope, len((*source).Scopes))
 			for i := 0; i < len((*source).Scopes); i++ {
-				siteapiSiteApiTokenResource.Scopes[i] = (*source).Scopes[i]
+				siteapiSiteApiTokenResource.Scopes[i] = site.ApiTokenScope((*source).Scopes[i])
 			}
 		}
 		siteapiSiteApiTokenResource.LastUsedAt = optNilTimestamp((*source).LastUsedAt)

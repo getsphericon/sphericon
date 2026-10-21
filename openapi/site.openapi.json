@@ -10450,6 +10450,43 @@
       }
     },
     "schemas": {
+      "ApiTokenScope": {
+        "type": "string",
+        "enum": [
+          "contacts:read",
+          "contacts:write",
+          "events:read",
+          "events:write",
+          "segments:read",
+          "segments:write",
+          "broadcasts:read",
+          "broadcasts:write",
+          "automations:read",
+          "automations:write",
+          "enrollments:read",
+          "templates:read",
+          "templates:write",
+          "webhooks:read",
+          "webhooks:write",
+          "webhooks:regenerate",
+          "webhooks:test",
+          "custom_fields:read",
+          "sending_domains:read",
+          "integrations:read",
+          "emails:send",
+          "broadcasts:send",
+          "automations:activate",
+          "mcp:send",
+          "contacts:erase",
+          "sending_domains:write",
+          "integrations:write",
+          "tokens:read",
+          "tokens:write",
+          "audit:read",
+          "export:read"
+        ],
+        "description": "Every API token scope: the one vocabulary of the external API"
+      },
       "ContactExportBroadcastRecipient": {
         "type": "object",
         "required": ["id", "broadcastId", "createdAt"],
@@ -11040,6 +11077,32 @@
         "format": "int64",
         "description": "A primary key, written as a decimal string so JavaScript never rounds it. The format\nmakes the Go servers parse it into an int64: a malformed id is refused as a 400 before\na handler runs. The pattern says the same in the contract, so a client (or a fuzzer) can\ntell a malformed id from a valid one without trying it. Eighteen digits is the most a key\nreaches, so every id the schema admits fits an int64."
       },
+      "GrantableScope": {
+        "type": "string",
+        "enum": [
+          "contacts:read",
+          "contacts:write",
+          "events:read",
+          "events:write",
+          "segments:read",
+          "segments:write",
+          "broadcasts:read",
+          "broadcasts:write",
+          "automations:read",
+          "automations:write",
+          "enrollments:read",
+          "templates:read",
+          "templates:write",
+          "webhooks:read",
+          "webhooks:write",
+          "webhooks:regenerate",
+          "webhooks:test",
+          "custom_fields:read",
+          "sending_domains:read",
+          "integrations:read"
+        ],
+        "description": "Scopes an OAuth client may be granted without any extra opt-in: the external\nAPI's read/write vocabulary. Token management scopes are deliberately absent,\nso a connector can never mint further credentials."
+      },
       "InUseProblemDetails": {
         "type": "object",
         "required": ["usedBy"],
@@ -11258,6 +11321,11 @@
           }
         },
         "description": "RFC 7807 Problem Details"
+      },
+      "SendScope": {
+        "type": "string",
+        "enum": ["emails:send", "broadcasts:send", "automations:activate", "mcp:send"],
+        "description": "Send-class scopes (ADR 0016, \"Send is a second lock\"). An OAuth client gets them\nonly when the user explicitly opts in. mcp:send is the MCP-specific key: send-class\ntools are not listed over /mcp without it, so any send-class grant brings it along."
       },
       "SiteAbuseMetric": {
         "type": "string",
@@ -11519,7 +11587,7 @@
           "scopes": {
             "type": "array",
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/ApiTokenScope"
             },
             "description": "Granted scopes"
           },
@@ -12661,7 +12729,7 @@
           "scopes": {
             "type": "array",
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/ApiTokenScope"
             }
           },
           "expiresAt": {
@@ -13880,14 +13948,14 @@
           "scopes": {
             "type": "array",
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/GrantableScope"
             },
             "description": "Scopes the client asked for that sphericon will grant by default"
           },
           "sendScopes": {
             "type": "array",
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/SendScope"
             },
             "description": "Requested send-class scopes: granted only when the user opts in explicitly"
           }
@@ -16092,6 +16160,19 @@
       "Timestamp": {
         "type": "string",
         "format": "date-time"
+      },
+      "TokenOnlyScope": {
+        "type": "string",
+        "enum": [
+          "contacts:erase",
+          "sending_domains:write",
+          "integrations:write",
+          "tokens:read",
+          "tokens:write",
+          "audit:read",
+          "export:read"
+        ],
+        "description": "Scopes only an API token can hold, never an OAuth grant"
       },
       "UsedBy": {
         "type": "object",
