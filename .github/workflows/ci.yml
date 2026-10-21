@@ -30,6 +30,22 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # golangci-lint type-checks the whole module and its dependencies: ~4 minutes cold, a fraction
+      # of that with the Go build cache and its own analysis cache restored.
+      - name: Cache Go
+        uses: $/.github/actions/go-cache
+        with:
+          scope: lint
+
+      - name: Cache golangci-lint
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/golangci-lint
+          key: golangci-lint-${{ runner.os }}-${{ hashFiles('go.mod', 'go.sum', 'mise.lock', '.golangci.yml') }}-${{ github.sha }}
+          restore-keys: |
+            golangci-lint-${{ runner.os }}-${{ hashFiles('go.mod', 'go.sum', 'mise.lock', '.golangci.yml') }}-
+            golangci-lint-${{ runner.os }}-
+
       - name: Run checks
         run: mise run check
 
