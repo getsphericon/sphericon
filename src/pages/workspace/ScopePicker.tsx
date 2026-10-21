@@ -40,6 +40,7 @@ export function ScopePicker({
               <Stack key={resource} gap={4}>
                 <Checkbox
                   label={resource}
+                  size="sm"
                   fw={500}
                   checked={count === scopes.length}
                   indeterminate={count > 0 && count < scopes.length}
@@ -50,7 +51,7 @@ export function ScopePicker({
                     <Checkbox
                       key={scope}
                       label={scope.slice(resource.length + 1)}
-                      size="xs"
+                      size="sm"
                       checked={selected.has(scope)}
                       onChange={(event) => toggle([scope], event.currentTarget.checked)}
                     />
