@@ -64,7 +64,7 @@ func (h *Handlers) workspaceResource(ctx context.Context, s *ent.Scoped, m *ent.
 		return r, err
 	}
 	r.Holds = lo.Map(standing.Holds(), func(hold *ent.Hold, _ int) siteapi.SiteWorkspaceHold {
-		return siteapi.SiteWorkspaceHold{Key: hold.Key, ReasonCode: hold.ReasonCode, Message: hold.Message, Since: siteapi.Timestamp(hold.CreatedAt), ActionUrl: nilableString(hold.ActionURL)}
+		return mapper.HoldToResource(hold)
 	})
 	return r, nil
 }
@@ -232,13 +232,9 @@ func workspaceNotFoundProblem() siteapi.ProblemDetails {
 // deletedWorkspaceResource is a Workspace in its deletion window with the date its data
 // will be erased.
 func deletedWorkspaceResource(w *ent.Workspace, onlyOwner bool) siteapi.SiteDeletedWorkspaceResource {
-	return siteapi.SiteDeletedWorkspaceResource{
-		OnlyOwner:   onlyOwner,
-		ID:          siteapi.WorkspaceId(w.PublicID),
-		Name:        w.Name,
-		DiscardedAt: siteapi.Timestamp(*w.DiscardedAt),
-		EraseAt:     siteapi.Timestamp(workspacedeletion.EraseDate(*w.DiscardedAt)),
-	}
+	res := mapper.DeletedWorkspaceToResource(w)
+	res.OnlyOwner = onlyOwner
+	return res
 }
 
 // SiteWorkspacesListDeleted lists the caller's Owner Workspaces in their deletion window.

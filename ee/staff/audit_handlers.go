@@ -42,24 +42,11 @@ func (h *Handlers) StaffWorkspaceAuditList(ctx context.Context, params staffapi.
 }
 
 func auditEntryResource(e *ent.AuditEntry) staffapi.StaffAuditEntryResource {
-	v := auditapi.ViewOf(e)
-	res := staffapi.StaffAuditEntryResource{
-		ID:         staffapi.EntityId(v.ID),
-		OccurredAt: staffapi.Timestamp(v.OccurredAt),
-		Actor:      staffapi.StaffAuditActor{Kind: staffapi.StaffAuditActorKind(v.ActorKind), ID: nilableString(v.ActorID), Name: nilableString(v.ActorName)},
-		Action:     v.Action,
-		Target:     staffapi.StaffAuditTarget{Type: v.TargetType, ID: nilableString(v.TargetID), Name: nilableString(v.TargetName)},
-		RequestId:  nilableString(v.RequestID),
-		IP:         nilableString(v.IP),
-		UserAgent:  nilableString(v.UserAgent),
-	}
+	res := staffMapper.AuditEntryToResource(auditapi.ViewOf(e))
 	// The console is the platform's own view: a Service credential is named here, as a
 	// customer's read of the same entry shows "Sphericon staff".
 	if e.ActorKind == events.ActorService {
 		res.Actor = staffapi.StaffAuditActor{Kind: staffapi.StaffAuditActorKindService, ID: nilableString(e.ActorID), Name: nilableString(e.ActorName)}
-	}
-	if v.Diff != nil {
-		res.Diff = staffapi.NewOptNilStaffAuditEntryResourceDiff(v.Diff)
 	}
 	return res
 }

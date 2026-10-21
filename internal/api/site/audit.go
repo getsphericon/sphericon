@@ -57,7 +57,7 @@ func (h *Handlers) SiteAuditList(ctx context.Context, params siteapi.SiteAuditLi
 	}
 	out := &siteapi.SiteAuditEntryList{Items: make([]siteapi.SiteAuditEntryResource, len(rows))}
 	for i, e := range rows {
-		out.Items[i] = auditEntryResource(e)
+		out.Items[i] = mapper.AuditEntryToResource(auditapi.ViewOf(e))
 	}
 	if next > 0 {
 		out.NextCursor = siteapi.NewOptNilString(auditapi.NextCursor(next))
@@ -115,31 +115,6 @@ func (h *Handlers) SiteAuditExport(ctx context.Context, params siteapi.SiteAudit
 		ContentDisposition: `attachment; filename="audit-log-` + string(params.WorkspaceId) + `.csv"`,
 		Response:           siteapi.SiteAuditExportOK{Data: pr},
 	}, nil
-}
-
-func auditEntryResource(e *ent.AuditEntry) siteapi.SiteAuditEntryResource {
-	v := auditapi.ViewOf(e)
-	res := siteapi.SiteAuditEntryResource{
-		ID:         siteapi.EntityId(v.ID),
-		OccurredAt: siteapi.Timestamp(v.OccurredAt),
-		Actor:      siteapi.SiteAuditActor{Kind: siteapi.SiteAuditActorKind(v.ActorKind), ID: nilableString(v.ActorID), Name: nilableString(v.ActorName)},
-		Action:     v.Action,
-		Target:     siteapi.SiteAuditTarget{Type: v.TargetType, ID: nilableString(v.TargetID), Name: nilableString(v.TargetName)},
-		RequestId:  nilableString(v.RequestID),
-		IP:         nilableString(v.IP),
-		UserAgent:  nilableString(v.UserAgent),
-	}
-	if v.Diff != nil {
-		res.Diff = siteapi.NewOptNilSiteAuditEntryResourceDiff(v.Diff)
-	}
-	return res
-}
-
-func nilableString(v *string) siteapi.OptNilString {
-	if v == nil {
-		return siteapi.OptNilString{}
-	}
-	return siteapi.NewOptNilString(*v)
 }
 
 // recordAuditExport records the export as an `audit_log.export` Audit entry whose diff

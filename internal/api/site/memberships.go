@@ -14,24 +14,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/secondfactor"
 )
 
-// membershipResource projects a Membership (with its User edge loaded) into the
-// site DTO — a join view of the member's identity and role.
-func membershipResource(m *ent.Membership) siteapi.SiteMembershipResource {
-	u := m.Edges.User
-	res := siteapi.SiteMembershipResource{
-		ID:        siteapi.EntityId(m.ID),
-		UserId:    siteapi.EntityId(m.UserID),
-		Email:     siteapi.EmailAddress(u.Email),
-		Name:      u.Name,
-		Role:      siteapi.SiteMembershipRole(m.Role),
-		CreatedAt: siteapi.Timestamp(m.CreatedAt),
-	}
-	if m.Source != nil {
-		res.Source = siteapi.NewOptSiteMembershipSource(siteapi.SiteMembershipSource(*m.Source))
-	}
-	return res
-}
-
 // SiteMembershipsList returns the workspace's members. Any member may view them.
 func (h *Handlers) SiteMembershipsList(ctx context.Context, params siteapi.SiteMembershipsListParams) (siteapi.SiteMembershipsListRes, error) {
 	s, _, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
@@ -53,7 +35,7 @@ func (h *Handlers) SiteMembershipsList(ctx context.Context, params siteapi.SiteM
 
 	items := make(siteapi.SiteMembershipsListOKApplicationJSON, len(members))
 	for i, m := range members {
-		items[i] = membershipResource(m)
+		items[i] = mapper.MembershipToResource(m)
 	}
 	return &items, nil
 }
@@ -94,7 +76,7 @@ func (h *Handlers) SiteMembershipsUpdate(ctx context.Context, req *siteapi.SiteU
 	case err != nil:
 		return nil, err
 	}
-	resource := membershipResource(updated)
+	resource := mapper.MembershipToResource(updated)
 	return &resource, nil
 }
 

@@ -230,28 +230,13 @@ func (h *ServiceHandlers) ServiceHoldsClear(ctx context.Context, params servicea
 	return &serviceapi.HoldClearResult{Changed: change.Changed}, nil
 }
 
-func holdResource(r *ent.Hold) serviceapi.HoldResource {
-	return serviceapi.HoldResource{
-		Key: r.Key, ReasonCode: r.ReasonCode, Message: r.Message, SetBy: r.SetBy,
-		ActionUrl: serviceNilableString(r.ActionURL),
-		ExpiresAt: serviceapi.Timestamp(r.ExpiresAt),
-		CreatedAt: serviceapi.Timestamp(r.CreatedAt),
-		UpdatedAt: serviceapi.Timestamp(r.UpdatedAt),
-	}
-}
+func holdResource(r *ent.Hold) serviceapi.HoldResource { return serviceMapper.HoldToResource(r) }
 
 func optNilString(o serviceapi.OptNilString) *string {
 	if v, ok := o.Get(); ok {
 		return &v
 	}
 	return nil
-}
-
-func serviceNilableString(v *string) serviceapi.OptNilString {
-	if v == nil {
-		return serviceapi.OptNilString{}
-	}
-	return serviceapi.NewOptNilString(*v)
 }
 
 func workspaceNotFoundProblem() serviceapi.ProblemDetails {

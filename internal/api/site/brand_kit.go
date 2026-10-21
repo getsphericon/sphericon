@@ -17,27 +17,6 @@ import (
 
 const errBrandKitForbidden = "only owners can change the Brand kit"
 
-// brandKitResource maps the module's Kit to the API resource, by hand: a Workspace with no saved
-// Brand kit has no row to convert.
-func brandKitResource(k brandkit.Kit) siteapi.SiteBrandKitResource {
-	res := siteapi.SiteBrandKitResource{
-		Saved:           k.Saved,
-		AccentColor:     k.AccentColor,
-		TextColor:       k.TextColor,
-		BackgroundColor: k.BackgroundColor,
-		HeadingFont:     k.HeadingFont,
-		BodyFont:        k.BodyFont,
-		LogoUrl:         k.LogoURL,
-		ButtonTextColor: k.ButtonTextColor,
-		ButtonRadius:    int32(k.ButtonRadius),
-		FooterText:      k.FooterText,
-	}
-	if k.Saved {
-		res.UpdatedAt = siteapi.NewOptNilTimestamp(siteapi.Timestamp(k.UpdatedAt))
-	}
-	return res
-}
-
 // SiteBrandKitGet returns the Workspace's Brand kit; every member may read it.
 func (h *Handlers) SiteBrandKitGet(ctx context.Context, params siteapi.SiteBrandKitGetParams) (siteapi.SiteBrandKitGetRes, error) {
 	s, err := h.scopedFor(ctx, params.WorkspaceId)
@@ -52,7 +31,7 @@ func (h *Handlers) SiteBrandKitGet(ctx context.Context, params siteapi.SiteBrand
 	if err != nil {
 		return nil, err
 	}
-	res := brandKitResource(kit)
+	res := mapper.BrandKitToResource(kit)
 	return &res, nil
 }
 
@@ -96,7 +75,7 @@ func (h *Handlers) SiteBrandKitSave(ctx context.Context, req *siteapi.SiteSaveBr
 	case err != nil:
 		return nil, err
 	}
-	res := brandKitResource(kit)
+	res := mapper.BrandKitToResource(kit)
 	return &res, nil
 }
 

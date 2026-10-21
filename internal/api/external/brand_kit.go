@@ -19,20 +19,6 @@ func (h *Handlers) BrandKitGet(ctx context.Context) (externalapi.BrandKitGetRes,
 	if err != nil {
 		return nil, err
 	}
-	res := externalapi.BrandKitResource{
-		Saved:           kit.Saved,
-		AccentColor:     kit.AccentColor,
-		TextColor:       kit.TextColor,
-		BackgroundColor: kit.BackgroundColor,
-		HeadingFont:     kit.HeadingFont,
-		BodyFont:        kit.BodyFont,
-		LogoUrl:         kit.LogoURL,
-		ButtonTextColor: kit.ButtonTextColor,
-		ButtonRadius:    int32(kit.ButtonRadius),
-		FooterText:      kit.FooterText,
-	}
-	if kit.Saved {
-		res.UpdatedAt = externalapi.NewOptNilTimestamp(externalapi.Timestamp(kit.UpdatedAt))
-	}
+	res := mapper.BrandKitToResource(kit)
 	return &res, nil
 }

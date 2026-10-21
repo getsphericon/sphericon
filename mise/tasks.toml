@@ -332,7 +332,7 @@ run = [
   "mise/scripts/heavy.sh go tool ogen --target gen/staff --package staffapi --clean openapi/staff.openapi.json",
   "mise/scripts/heavy.sh go tool ogen --target gen/service --package serviceapi --clean openapi/service.openapi.json",
   "mise/scripts/heavy.sh go tool ogen --config ogen.telemetry.yml --target gen/telemetry --package telemetryapi --clean openapi/telemetry.openapi.json",
-  "mise/scripts/heavy.sh go tool goverter gen ./internal/api/site/resources ./internal/api/external/resources",
+  "mise/scripts/heavy.sh go tool goverter gen ./internal/api/site/resources ./internal/api/external/resources ./ee/staff/resources",
 ]
 
 ["generate:mocks"]

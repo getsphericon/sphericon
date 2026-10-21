@@ -5,7 +5,9 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/getsphericon/sphericon/ent"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
+	"github.com/samber/lo"
 )
 
 // ServiceWorkspaceFeedList is the Workspaces created or changed since a cursor, each
@@ -28,28 +30,8 @@ func (h *ServiceHandlers) ServiceWorkspaceFeedList(ctx context.Context, params s
 		HasMore:    page.HasMore,
 	}
 	for i, e := range page.Entries {
-		item := serviceapi.ServiceWorkspaceResource{
-			ID:        serviceapi.WorkspaceId(e.Workspace.PublicID),
-			Name:      e.Workspace.Name,
-			CreatedAt: serviceapi.Timestamp(e.Workspace.CreatedAt),
-			Owners:    make([]serviceapi.ServiceWorkspaceOwner, len(e.Owners)),
-		}
-		if t := e.Workspace.DiscardedAt; t != nil {
-			item.DiscardedAt = serviceapi.NewOptNilTimestamp(serviceapi.Timestamp(*t))
-		}
-		if t := e.Workspace.ErasedAt; t != nil {
-			item.ErasedAt = serviceapi.NewOptNilTimestamp(serviceapi.Timestamp(*t))
-		}
-		for j, u := range e.Owners {
-			owner := serviceapi.ServiceWorkspaceOwner{
-				UserId: serviceapi.EntityId(u.ID),
-				Email:  serviceapi.EmailAddress(u.Email),
-			}
-			if u.EmailVerifiedAt != nil {
-				owner.EmailVerifiedAt = serviceapi.NewOptNilTimestamp(serviceapi.Timestamp(*u.EmailVerifiedAt))
-			}
-			item.Owners[j] = owner
-		}
+		item := serviceMapper.WorkspaceToResource(e.Workspace)
+		item.Owners = lo.Map(e.Owners, func(u *ent.User, _ int) serviceapi.ServiceWorkspaceOwner { return serviceMapper.OwnerToResource(u) })
 		out.Items[i] = item
 	}
 	return out, nil

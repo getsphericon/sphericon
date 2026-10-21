@@ -35,7 +35,9 @@ func (h *Handlers) SiteEnrollmentsList(ctx context.Context, params siteapi.SiteE
 		return nil, err
 	}
 	return &siteapi.SiteEnrollmentsListOK{
-		Items:      lo.Map(page.Items, func(r *ent.AutomationRun, _ int) siteapi.SiteEnrollmentResource { return enrollmentResource(r) }),
+		Items: lo.Map(page.Items, func(r *ent.AutomationRun, _ int) siteapi.SiteEnrollmentResource {
+			return mapper.EnrollmentToResource(r)
+		}),
 		Page:       int32(page.Page),
 		PageSize:   int32(page.PageSize),
 		TotalItems: int32(page.TotalItems),
@@ -60,32 +62,6 @@ func (h *Handlers) SiteEnrollmentsGet(ctx context.Context, params siteapi.SiteEn
 	if err != nil {
 		return nil, err
 	}
-	res := enrollmentResource(r)
+	res := mapper.EnrollmentToResource(r)
 	return &res, nil
-}
-
-func enrollmentResource(r *ent.AutomationRun) siteapi.SiteEnrollmentResource {
-	out := siteapi.SiteEnrollmentResource{
-		ID:           siteapi.EntityId(r.ID),
-		AutomationId: siteapi.EntityId(r.AutomationID),
-		ContactId:    siteapi.EntityId(r.ContactID),
-		Status:       siteapi.SiteEnrollmentStatus(r.Status),
-		CurrentStep:  int32(r.CurrentStep),
-		CreatedAt:    siteapi.Timestamp(r.CreatedAt),
-		UpdatedAt:    siteapi.Timestamp(r.UpdatedAt),
-	}
-	if r.ResumeAt != nil {
-		out.ResumeAt = siteapi.NewOptTimestamp(siteapi.Timestamp(*r.ResumeAt))
-	}
-	if r.FailureKind != nil {
-		f := siteapi.SiteEnrollmentFailure{Kind: siteapi.SiteEnrollmentFailureKind(*r.FailureKind)}
-		if r.FailureStatus != nil {
-			f.Status = siteapi.NewOptInt32(int32(*r.FailureStatus))
-		}
-		if r.FailureExcerpt != nil {
-			f.Excerpt = siteapi.NewOptString(*r.FailureExcerpt)
-		}
-		out.Failure = siteapi.NewOptSiteEnrollmentFailure(f)
-	}
-	return out
 }

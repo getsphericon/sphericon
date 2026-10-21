@@ -34,7 +34,9 @@ func (h *Handlers) EnrollmentsList(ctx context.Context, params externalapi.Enrol
 		return nil, err
 	}
 	return &externalapi.EnrollmentsListOK{
-		Items:      lo.Map(page.Items, func(r *ent.AutomationRun, _ int) externalapi.EnrollmentResource { return enrollmentResource(r) }),
+		Items: lo.Map(page.Items, func(r *ent.AutomationRun, _ int) externalapi.EnrollmentResource {
+			return mapper.EnrollmentToResource(r)
+		}),
 		Page:       int32(page.Page),
 		PageSize:   int32(page.PageSize),
 		TotalItems: int32(page.TotalItems),
@@ -55,32 +57,6 @@ func (h *Handlers) EnrollmentsGet(ctx context.Context, params externalapi.Enroll
 	if err != nil {
 		return nil, err
 	}
-	res := enrollmentResource(r)
+	res := mapper.EnrollmentToResource(r)
 	return &res, nil
-}
-
-func enrollmentResource(r *ent.AutomationRun) externalapi.EnrollmentResource {
-	out := externalapi.EnrollmentResource{
-		ID:           externalapi.EntityId(r.ID),
-		AutomationId: externalapi.EntityId(r.AutomationID),
-		ContactId:    externalapi.EntityId(r.ContactID),
-		Status:       externalapi.EnrollmentStatus(r.Status),
-		CurrentStep:  int32(r.CurrentStep),
-		CreatedAt:    externalapi.Timestamp(r.CreatedAt),
-		UpdatedAt:    externalapi.Timestamp(r.UpdatedAt),
-	}
-	if r.ResumeAt != nil {
-		out.ResumeAt = externalapi.NewOptTimestamp(externalapi.Timestamp(*r.ResumeAt))
-	}
-	if r.FailureKind != nil {
-		f := externalapi.EnrollmentFailure{Kind: externalapi.EnrollmentFailureKind(*r.FailureKind)}
-		if r.FailureStatus != nil {
-			f.Status = externalapi.NewOptInt32(int32(*r.FailureStatus))
-		}
-		if r.FailureExcerpt != nil {
-			f.Excerpt = externalapi.NewOptString(*r.FailureExcerpt)
-		}
-		out.Failure = externalapi.NewOptEnrollmentFailure(f)
-	}
-	return out
 }

@@ -19,7 +19,7 @@ every caller (regenerate afterwards), rather than layering the new design over t
 API contracts are **one-directional**: TypeSpec → OpenAPI → generated Go + TS. Never
 hand-edit anything under `openapi/`, `gen/`, `ent/` (except `ent/schema/`),
 `src/generated/` / `packages/analytics/src/generated/`, `src/routeTree.gen.ts`, or the `*_gen.go` files in the
-`internal/api/{site,external}/resources` packages and `internal/fixtures/catalog_gen.go`, or any `*_gen_test.go` mock, or `internal/emaildoc/assets/` (the document renderer bundle and schema listing) — regenerate instead.
+`internal/api/{site,external}/resources` packages, `ee/staff/resources` and `internal/fixtures/catalog_gen.go`, or any `*_gen_test.go` mock, or `internal/emaildoc/assets/` (the document renderer bundle and schema listing) — regenerate instead.
 
 ```
 typespec/{site,external,collect,staff,service,telemetry}   ──tsp compile──▶  openapi/*.openapi.json
@@ -32,7 +32,7 @@ typespec/{site,external,collect,staff,service,telemetry}   ──tsp compile─�
 src/routes/**       ──tsr generate──▶ src/routeTree.gen.ts   (TanStack Router file-based route tree)
 ent/schema/*.go     ──entc──▶ ent/*           (Go ORM)
 ent/schema/*.go + ent/template/scoped*.tmpl  ──entc──▶ ent/scoped.go, ent/scoped_registry.go  (scoped client: `client.Scoped(ws)`)
-ent + gen/{site,external}  ──goverter──▶ internal/api/{site,external}/resources/converter_gen.go
+ent + gen/{site,external,staff,service}  ──goverter──▶ internal/api/{site,external}/resources/converter_gen.go, ee/staff/resources/{staff,service}_converter_gen.go
 packages/emaildoc (pinned @react-email/editor) ──esbuild──▶ internal/emaildoc/assets/{emaildoc.js,schema.json}  (`mise run build:emaildoc`; not part of `generate`)
 fixtures/*.yml (`# fixture: Name` rows)  ──cmd/fixturegen──▶ internal/fixtures/catalog_gen.go (named test constants)
 Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mocks_gen_test.go (test mocks; add an interface to the task list)
@@ -53,7 +53,7 @@ Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mo
 Generated files carry a header (`Code generated … DO NOT EDIT`, or `// @ts-nocheck` on the
 frontend) and are flagged `linguist-generated` in `.gitattributes` (GitHub collapses them in
 diffs). Generated code lives in dedicated dirs — `internal/` is otherwise hand-written, its
-only generated files being the two `converter_gen.go`, `internal/fixtures/catalog_gen.go`, the moq `*_gen_test.go` mocks and `internal/emaildoc/assets/`.
+only generated files being the two `converter_gen.go`, `ee/staff/resources/{staff,service}_converter_gen.go`, `internal/fixtures/catalog_gen.go`, the moq `*_gen_test.go` mocks and `internal/emaildoc/assets/`.
 
 ## Common commands
 
@@ -259,6 +259,13 @@ Rules for writing tests (what to assert, no direct SQL, no manual cleanup) are i
   `accounts.Attempts.For(kind)`, a `Counter` bound to one `Kind` (`KindLogin`, `KindStaffLogin`),
   which satisfies `login.Throttle`. Handlers switch on the per-step outcomes (`login.Outcome`,
   `login.SecondOutcome`).
+- **Resource DTOs come from goverter, not from struct literals.** A handler never builds a
+  `*Resource` by hand from an ent row or a module's read model: add a method to the surface's
+  `Converter` (`internal/api/{site,external}/resources`, `ee/staff/resources`) with
+  `goverter:map` / `extend` helpers, and attach in the handler only what the mapper cannot see
+  (marked `goverter:ignore` with the reason). Hand-built values are limited to response wrappers
+  (`*ListOK`, `*Headers`) and aggregates with no single source (setup checklist, lint findings,
+  the integration config `oneOf`).
 - Auth security handlers live in `internal/api/auth/auth.go`. External requests carry a
   `*TokenAuth` (scopes + the Workspace's `*ent.Scoped`) in context — query through
   `auth.TokenScoped(ctx)` (see "Workspace scoping" below).

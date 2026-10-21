@@ -32,12 +32,8 @@ func (h *Handlers) SuppressionsCreate(ctx context.Context, req *externalapi.Crea
 	if err != nil {
 		return nil, err
 	}
-	return &externalapi.SuppressionResource{
-		ID:          entityID(created.ID),
-		Destination: created.Destination,
-		Reason:      externalapi.SuppressionReason(created.Reason),
-		CreatedAt:   externalapi.Timestamp(created.CreatedAt),
-	}, nil
+	res := mapper.SuppressionToResource(created)
+	return &res, nil
 }
 
 func (h *Handlers) UnsubscribesCreate(ctx context.Context, req *externalapi.CreateUnsubscribeInput) (externalapi.UnsubscribesCreateRes, error) {
@@ -56,10 +52,6 @@ func (h *Handlers) UnsubscribesCreate(ctx context.Context, req *externalapi.Crea
 	case err != nil:
 		return nil, err
 	}
-	return &externalapi.UnsubscribeResource{
-		ID:            entityID(u.ID),
-		Destination:   u.Destination,
-		SendingSource: u.SendingSource,
-		CreatedAt:     externalapi.Timestamp(u.CreatedAt),
-	}, nil
+	res := mapper.UnsubscribeToResource(u)
+	return &res, nil
 }

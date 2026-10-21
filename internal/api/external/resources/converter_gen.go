@@ -6,6 +6,9 @@ package resources
 import (
 	ent "github.com/getsphericon/sphericon/ent"
 	external "github.com/getsphericon/sphericon/gen/external"
+	auditapi "github.com/getsphericon/sphericon/internal/auditapi"
+	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
+	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
 	sendlimit "github.com/getsphericon/sphericon/internal/sendlimit"
 )
 
@@ -30,6 +33,19 @@ func (c *ConverterImpl) ApiTokenToInfo(source *ent.ApiToken) external.ApiTokenIn
 	}
 	return externalapiApiTokenInfo
 }
+func (c *ConverterImpl) AuditEntryToResource(source auditapi.View) external.AuditEntryResource {
+	var externalapiAuditEntryResource external.AuditEntryResource
+	externalapiAuditEntryResource.ID = external.EntityId(source.ID)
+	externalapiAuditEntryResource.OccurredAt = timestamp(source.OccurredAt)
+	externalapiAuditEntryResource.Actor = auditActor(source)
+	externalapiAuditEntryResource.Action = source.Action
+	externalapiAuditEntryResource.Target = auditTarget(source)
+	externalapiAuditEntryResource.Diff = auditDiff(source.Diff)
+	externalapiAuditEntryResource.RequestId = optNilString(source.RequestID)
+	externalapiAuditEntryResource.IP = optNilString(source.IP)
+	externalapiAuditEntryResource.UserAgent = optNilString(source.UserAgent)
+	return externalapiAuditEntryResource
+}
 func (c *ConverterImpl) AutomationToResource(source *ent.Automation) external.AutomationResource {
 	var externalapiAutomationResource external.AutomationResource
 	if source != nil {
@@ -43,6 +59,21 @@ func (c *ConverterImpl) AutomationToResource(source *ent.Automation) external.Au
 		externalapiAutomationResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
 	return externalapiAutomationResource
+}
+func (c *ConverterImpl) BrandKitToResource(source brandkit.Kit) external.BrandKitResource {
+	var externalapiBrandKitResource external.BrandKitResource
+	externalapiBrandKitResource.Saved = source.Saved
+	externalapiBrandKitResource.AccentColor = source.AccentColor
+	externalapiBrandKitResource.TextColor = source.TextColor
+	externalapiBrandKitResource.BackgroundColor = source.BackgroundColor
+	externalapiBrandKitResource.HeadingFont = source.HeadingFont
+	externalapiBrandKitResource.BodyFont = source.BodyFont
+	externalapiBrandKitResource.LogoUrl = source.LogoURL
+	externalapiBrandKitResource.ButtonTextColor = source.ButtonTextColor
+	externalapiBrandKitResource.ButtonRadius = count(source.ButtonRadius)
+	externalapiBrandKitResource.FooterText = source.FooterText
+	externalapiBrandKitResource.UpdatedAt = brandKitUpdatedAt(source)
+	return externalapiBrandKitResource
 }
 func (c *ConverterImpl) BroadcastRecipientToExport(source *ent.BroadcastRecipient) external.ContactExportBroadcastRecipient {
 	var externalapiContactExportBroadcastRecipient external.ContactExportBroadcastRecipient
@@ -132,6 +163,13 @@ func (c *ConverterImpl) CustomFieldToResource(source *ent.CustomField) external.
 	}
 	return externalapiCustomFieldResource
 }
+func (c *ConverterImpl) DnsRecordToResource(source sendingdomains.Record) external.DnsRecord {
+	var externalapiDnsRecord external.DnsRecord
+	externalapiDnsRecord.Type = dnsRecordType(source)
+	externalapiDnsRecord.Host = source.Host
+	externalapiDnsRecord.Value = source.Value
+	return externalapiDnsRecord
+}
 func (c *ConverterImpl) EmailTemplateToResource(source *ent.EmailTemplate) external.TemplateResource {
 	var externalapiTemplateResource external.TemplateResource
 	if source != nil {
@@ -145,6 +183,21 @@ func (c *ConverterImpl) EmailTemplateToResource(source *ent.EmailTemplate) exter
 		externalapiTemplateResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
 	return externalapiTemplateResource
+}
+func (c *ConverterImpl) EnrollmentToResource(source *ent.AutomationRun) external.EnrollmentResource {
+	var externalapiEnrollmentResource external.EnrollmentResource
+	if source != nil {
+		externalapiEnrollmentResource.ID = external.EntityId((*source).ID)
+		externalapiEnrollmentResource.AutomationId = external.EntityId((*source).AutomationID)
+		externalapiEnrollmentResource.ContactId = external.EntityId((*source).ContactID)
+		externalapiEnrollmentResource.Status = external.EnrollmentStatus((*source).Status)
+		externalapiEnrollmentResource.CurrentStep = count((*source).CurrentStep)
+		externalapiEnrollmentResource.ResumeAt = optTimestamp((*source).ResumeAt)
+		externalapiEnrollmentResource.Failure = enrollmentFailure((*source))
+		externalapiEnrollmentResource.CreatedAt = timestamp((*source).CreatedAt)
+		externalapiEnrollmentResource.UpdatedAt = timestamp((*source).UpdatedAt)
+	}
+	return externalapiEnrollmentResource
 }
 func (c *ConverterImpl) EventToExport(source *ent.Event) external.ContactExportEvent {
 	var externalapiContactExportEvent external.ContactExportEvent
@@ -227,6 +280,21 @@ func (c *ConverterImpl) SendLimitToStatus(source sendlimit.Status) external.Send
 	}
 	return externalapiSendLimitStatus
 }
+func (c *ConverterImpl) SendingDomainToResource(source *ent.SendingDomain) external.SendingDomainResource {
+	var externalapiSendingDomainResource external.SendingDomainResource
+	if source != nil {
+		externalapiSendingDomainResource.ID = external.EntityId((*source).ID)
+		externalapiSendingDomainResource.Domain = (*source).Domain
+		externalapiSendingDomainResource.DkimSelector = (*source).DkimSelector
+		externalapiSendingDomainResource.Verified = (*source).Verified
+		externalapiSendingDomainResource.LastCheckedAt = optNilTimestamp((*source).LastCheckedAt)
+		externalapiSendingDomainResource.VerifiedAt = optNilTimestamp((*source).VerifiedAt)
+		externalapiSendingDomainResource.ArchivedAt = optNilTimestamp((*source).DiscardedAt)
+		externalapiSendingDomainResource.CreatedAt = timestamp((*source).CreatedAt)
+		externalapiSendingDomainResource.UpdatedAt = timestamp((*source).UpdatedAt)
+	}
+	return externalapiSendingDomainResource
+}
 func (c *ConverterImpl) SuppressionToExport(source *ent.Suppression) external.ContactExportSuppression {
 	var externalapiContactExportSuppression external.ContactExportSuppression
 	if source != nil {
@@ -238,6 +306,16 @@ func (c *ConverterImpl) SuppressionToExport(source *ent.Suppression) external.Co
 		externalapiContactExportSuppression.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return externalapiContactExportSuppression
+}
+func (c *ConverterImpl) SuppressionToResource(source *ent.Suppression) external.SuppressionResource {
+	var externalapiSuppressionResource external.SuppressionResource
+	if source != nil {
+		externalapiSuppressionResource.ID = external.EntityId((*source).ID)
+		externalapiSuppressionResource.Destination = (*source).Destination
+		externalapiSuppressionResource.Reason = external.SuppressionReason((*source).Reason)
+		externalapiSuppressionResource.CreatedAt = timestamp((*source).CreatedAt)
+	}
+	return externalapiSuppressionResource
 }
 func (c *ConverterImpl) TagToExport(source *ent.Tag) external.ContactExportTag {
 	var externalapiContactExportTag external.ContactExportTag
@@ -257,6 +335,17 @@ func (c *ConverterImpl) TagToResource(source *ent.Tag) external.TagResource {
 	}
 	return externalapiTagResource
 }
+func (c *ConverterImpl) TrackingRecordToResource(source sendingdomains.TrackingRecord) external.TrackingRecord {
+	var externalapiTrackingRecord external.TrackingRecord
+	externalapiTrackingRecord.Type = trackingRecordType(source)
+	externalapiTrackingRecord.Host = source.Host
+	externalapiTrackingRecord.Target = source.Target
+	externalapiTrackingRecord.State = external.TrackingState(source.State)
+	externalapiTrackingRecord.Reason = optTrackingReason(source.Reason)
+	externalapiTrackingRecord.LastCheckedAt = optNilTimestamp(source.CheckedAt)
+	externalapiTrackingRecord.StateChangedAt = optNilTimestamp(source.StateChangedAt)
+	return externalapiTrackingRecord
+}
 func (c *ConverterImpl) UnsubscribeToExport(source *ent.Unsubscribe) external.ContactExportUnsubscribe {
 	var externalapiContactExportUnsubscribe external.ContactExportUnsubscribe
 	if source != nil {
@@ -268,6 +357,16 @@ func (c *ConverterImpl) UnsubscribeToExport(source *ent.Unsubscribe) external.Co
 	}
 	return externalapiContactExportUnsubscribe
 }
+func (c *ConverterImpl) UnsubscribeToResource(source *ent.Unsubscribe) external.UnsubscribeResource {
+	var externalapiUnsubscribeResource external.UnsubscribeResource
+	if source != nil {
+		externalapiUnsubscribeResource.ID = external.EntityId((*source).ID)
+		externalapiUnsubscribeResource.Destination = (*source).Destination
+		externalapiUnsubscribeResource.SendingSource = (*source).SendingSource
+		externalapiUnsubscribeResource.CreatedAt = timestamp((*source).CreatedAt)
+	}
+	return externalapiUnsubscribeResource
+}
 func (c *ConverterImpl) VisitorToExport(source *ent.Visitor) external.ContactExportVisitor {
 	var externalapiContactExportVisitor external.ContactExportVisitor
 	if source != nil {
@@ -277,6 +376,20 @@ func (c *ConverterImpl) VisitorToExport(source *ent.Visitor) external.ContactExp
 		externalapiContactExportVisitor.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return externalapiContactExportVisitor
+}
+func (c *ConverterImpl) WebhookToResource(source *ent.WebhookEndpoint) external.WebhookResource {
+	var externalapiWebhookResource external.WebhookResource
+	if source != nil {
+		externalapiWebhookResource.ID = external.EntityId((*source).ID)
+		externalapiWebhookResource.URL = (*source).URL
+		externalapiWebhookResource.EventTypes = eventTypes((*source).EventTypes)
+		externalapiWebhookResource.Enabled = (*source).Enabled
+		externalapiWebhookResource.DisabledReason = optWebhookDisabledReason((*source).DisabledReason)
+		externalapiWebhookResource.Failure = webhookFailure((*source))
+		externalapiWebhookResource.CreatedAt = timestamp((*source).CreatedAt)
+		externalapiWebhookResource.UpdatedAt = timestamp((*source).UpdatedAt)
+	}
+	return externalapiWebhookResource
 }
 func (c *ConverterImpl) sendlimitValueToExternalapiSendLimitValue(source sendlimit.Value) external.SendLimitValue {
 	var externalapiSendLimitValue external.SendLimitValue

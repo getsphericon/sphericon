@@ -15,38 +15,18 @@ import (
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 )
 
-// sendingDomainResource builds the API resource, computing the DNS records the
-// user publishes. Built by hand (not goverter) because the records are derived,
-// and the private key is never exposed.
+// sendingDomainResource maps the row, then attaches the DNS records the user publishes, which
+// the sendingdomains module derives and the mapper cannot see.
 func (h *Handlers) sendingDomainResource(d *ent.SendingDomain) siteapi.SiteSendingDomainResource {
 	rec := h.sendingDomains.Records(d)
-
-	res := siteapi.SiteSendingDomainResource{
-		ID:             siteapi.EntityId(d.ID),
-		Domain:         d.Domain,
-		DkimSelector:   d.DkimSelector,
-		Verified:       d.Verified,
-		DkimRecord:     dnsRecord(rec.DKIM),
-		SpfRecord:      dnsRecord(rec.SPF),
-		DmarcRecord:    dnsRecord(rec.DMARC),
-		TrackingRecord: trackingRecord(rec.Tracking),
-		CreatedAt:      siteapi.Timestamp(d.CreatedAt),
-		UpdatedAt:      siteapi.Timestamp(d.UpdatedAt),
-	}
-	if d.LastCheckedAt != nil {
-		res.LastCheckedAt = siteapi.NewOptNilTimestamp(siteapi.Timestamp(*d.LastCheckedAt))
-	}
-	if d.VerifiedAt != nil {
-		res.VerifiedAt = siteapi.NewOptNilTimestamp(siteapi.Timestamp(*d.VerifiedAt))
-	}
-	if d.DiscardedAt != nil {
-		res.ArchivedAt = siteapi.NewOptNilTimestamp(siteapi.Timestamp(*d.DiscardedAt))
+	res := mapper.SendingDomainToResource(d)
+	res.DkimRecord = mapper.DnsRecordToResource(rec.DKIM)
+	res.SpfRecord = mapper.DnsRecordToResource(rec.SPF)
+	res.DmarcRecord = mapper.DnsRecordToResource(rec.DMARC)
+	if rec.Tracking != nil {
+		res.TrackingRecord = siteapi.NewOptSiteTrackingRecord(mapper.TrackingRecordToResource(*rec.Tracking))
 	}
 	return res
-}
-
-func dnsRecord(r sendingdomains.Record) siteapi.SiteDnsRecord {
-	return siteapi.SiteDnsRecord{Type: siteapi.SiteDnsRecordTypeTXT, Host: r.Host, Value: r.Value}
 }
 
 func (h *Handlers) SiteSendingDomainsList(ctx context.Context, params siteapi.SiteSendingDomainsListParams) (siteapi.SiteSendingDomainsListRes, error) {
@@ -210,26 +190,4 @@ func (h *Handlers) SiteSendingDomainsVerify(ctx context.Context, params siteapi.
 		return nil, err
 	}
 	return &siteapi.SiteSendingDomainsVerifyNoContent{}, nil
-}
-
-func trackingRecord(t *sendingdomains.TrackingRecord) siteapi.OptSiteTrackingRecord {
-	if t == nil {
-		return siteapi.OptSiteTrackingRecord{}
-	}
-	rec := siteapi.SiteTrackingRecord{
-		Type:   siteapi.SiteTrackingRecordTypeCNAME,
-		Host:   t.Host,
-		Target: t.Target,
-		State:  siteapi.SiteTrackingState(t.State),
-	}
-	if t.Reason != nil {
-		rec.Reason = siteapi.NewOptSiteTrackingReason(siteapi.SiteTrackingReason(*t.Reason))
-	}
-	if t.CheckedAt != nil {
-		rec.LastCheckedAt = siteapi.NewOptNilTimestamp(siteapi.Timestamp(*t.CheckedAt))
-	}
-	if t.StateChangedAt != nil {
-		rec.StateChangedAt = siteapi.NewOptNilTimestamp(siteapi.Timestamp(*t.StateChangedAt))
-	}
-	return siteapi.NewOptSiteTrackingRecord(rec)
 }

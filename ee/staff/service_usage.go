@@ -11,9 +11,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
-// periodLayout is how a Usage period is written on the wire: the calendar month, YYYY-MM.
-const periodLayout = "2006-01"
-
 // ServiceUsageList is the stored figures of every Workspace for a Usage period: Live
 // usage for the open one (the default), Usage snapshots for a closed one. It reads what
 // the usage job stored and never recounts.
@@ -101,18 +98,7 @@ func (m *Module) WorkspaceUsage(ctx context.Context, workspaceID string, period 
 }
 
 func usageResource(w usage.WorkspaceUsage, publicID string) serviceapi.WorkspaceUsageResource {
-	res := serviceapi.WorkspaceUsageResource{
-		WorkspaceId: serviceapi.WorkspaceId(publicID),
-		Period:      w.Period.Format(periodLayout),
-		Figures:     make([]serviceapi.UsageFigure, 0, len(w.Figures)),
-	}
-	for _, f := range w.Figures {
-		res.Figures = append(res.Figures, serviceapi.UsageFigure{
-			Metric:     serviceapi.UsageMetric(f.Metric),
-			Value:      f.Value,
-			Final:      f.Final,
-			ComputedAt: serviceapi.Timestamp(f.ComputedAt),
-		})
-	}
+	res := serviceMapper.UsageToResource(w)
+	res.WorkspaceId = serviceapi.WorkspaceId(publicID)
 	return res
 }

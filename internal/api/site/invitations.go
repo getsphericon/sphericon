@@ -15,23 +15,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/i18n"
 )
 
-// invitationResource projects an Invitation (optionally with its inviter edge)
-// into the site DTO.
-func invitationResource(inv *ent.Invitation) siteapi.SiteInvitationResource {
-	invitedBy := siteapi.OptNilString{}
-	if inv.Edges.Inviter != nil {
-		invitedBy = siteapi.NewOptNilString(inv.Edges.Inviter.Email)
-	}
-	return siteapi.SiteInvitationResource{
-		ID:             siteapi.EntityId(inv.ID),
-		Email:          siteapi.EmailAddress(inv.Email),
-		Role:           siteapi.SiteInvitableRole(inv.Role),
-		ExpiresAt:      siteapi.Timestamp(inv.ExpiresAt),
-		InvitedByEmail: invitedBy,
-		CreatedAt:      siteapi.Timestamp(inv.CreatedAt),
-	}
-}
-
 // SiteInvitationsList returns the workspace's pending (unaccepted) invitations.
 func (h *Handlers) SiteInvitationsList(ctx context.Context, params siteapi.SiteInvitationsListParams) (siteapi.SiteInvitationsListRes, error) {
 	s, _, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
@@ -54,7 +37,7 @@ func (h *Handlers) SiteInvitationsList(ctx context.Context, params siteapi.SiteI
 
 	items := make(siteapi.SiteInvitationsListOKApplicationJSON, len(invites))
 	for i, inv := range invites {
-		items[i] = invitationResource(inv)
+		items[i] = mapper.InvitationToResource(inv)
 	}
 	return &items, nil
 }
@@ -114,7 +97,7 @@ func (h *Handlers) SiteInvitationsCreate(ctx context.Context, req *siteapi.SiteC
 	inv.Edges.Inviter, _ = h.accounts.User(ctx, a.UserID)
 	return &siteapi.SiteCreateInvitationResponse{
 		InviteUrl: inviteURL,
-		Resource:  invitationResource(inv),
+		Resource:  mapper.InvitationToResource(inv),
 	}, nil
 }
 

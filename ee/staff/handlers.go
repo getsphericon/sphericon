@@ -6,11 +6,9 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/getsphericon/sphericon/ee/abuse"
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/workspace"
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
@@ -19,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/paths"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
+	"github.com/samber/lo"
 )
 
 // Surface is the /staff API: the handlers and the security handler over one
@@ -128,7 +127,7 @@ func throttled(ctx context.Context, res login.Delay) error {
 }
 
 func resource(op *ent.StaffMember) staffapi.StaffResource {
-	return staffapi.StaffResource{ID: staffapi.EntityId(op.ID), Email: staffapi.EmailAddress(op.Email)}
+	return staffMapper.StaffMemberToResource(op)
 }
 
 // problem is the RFC 7807 body of a refusal.
@@ -205,65 +204,21 @@ func (h *Handlers) StaffWorkspacesGet(ctx context.Context, params staffapi.Staff
 // workspaceDetail is the detail page's view: the metadata of workspaceResource plus
 // the deliverability counts and the active holds.
 func workspaceDetail(w *ent.Workspace, d Deliverability, active []*ent.Hold, warning abuse.Breach) staffapi.StaffWorkspaceDetailResource {
-	shown := make([]staffapi.StaffHold, len(active))
-	for i, r := range active {
-		shown[i] = staffapi.StaffHold{
-			Key: r.Key, ReasonCode: r.ReasonCode, Message: r.Message, SetBy: r.SetBy,
-			CreatedAt: staffapi.Timestamp(r.CreatedAt), ExpiresAt: staffapi.Timestamp(r.ExpiresAt), ActionUrl: nilableString(r.ActionURL),
-		}
-	}
 	base := workspaceResource(w)
-	domains := make([]staffapi.StaffDomainRates, 0, len(d.Domains))
-	for _, r := range d.Domains {
-		domains = append(domains, staffapi.StaffDomainRates{
-			SendingDomainId: staffapi.EntityId(r.SendingDomainID),
-			Domain:          r.Domain,
-			ComplaintRate:   rateResource(r.Complaint),
-			BounceRate:      rateResource(r.Bounce),
-		})
-	}
 	return staffapi.StaffWorkspaceDetailResource{
-		ID: base.ID, Name: base.Name, CreatedAt: base.CreatedAt, Suspension: base.Suspension, Exempt: base.Exempt, Warned: base.Warned, Holds: shown,
-		Abuse: abuseResource(w, warning),
-		Deliverability: staffapi.StaffDeliverability{
-			WindowHours: int32(d.Window / time.Hour),
-			VolumeFloor: int32(d.VolumeFloor),
-			SendVolume:  int32(d.SendVolume),
-			Domains:     domains,
-		},
+		ID: base.ID, Name: base.Name, CreatedAt: base.CreatedAt, Suspension: base.Suspension, Exempt: base.Exempt, Warned: base.Warned,
+		Holds:          lo.Map(active, func(h *ent.Hold, _ int) staffapi.StaffHold { return staffMapper.HoldToResource(h) }),
+		Abuse:          abuseResource(w, warning),
+		Deliverability: deliverabilityResource(d),
 	}
 }
 
 func abuseResource(w *ent.Workspace, warning abuse.Breach) staffapi.StaffAbuse {
-	res := staffapi.StaffAbuse{
-		Exempt:            w.AbuseExempt,
-		ClearedAt:         optNilTimestamp(w.ClearedAt),
-		WarningNotifiedAt: optNilTimestamp(w.AbuseWarningNotifiedAt),
-		FreezeNotifiedAt:  optNilTimestamp(w.AbuseFreezeNotifiedAt),
-	}
+	res := staffMapper.AbuseToResource(w)
 	if warning.Tier != abuse.TierNone {
-		res.Warning = staffapi.NewOptNilStaffAbuseWarning(staffapi.StaffAbuseWarning{
-			Domain: warning.Domain, Metric: staffapi.StaffAbuseMetric(warning.Metric), Rate: warning.Rate(),
-		})
+		res.Warning = staffapi.NewOptNilStaffAbuseWarning(staffMapper.BreachToWarning(warning))
 	}
 	return res
-}
-
-func optNilTimestamp(t *time.Time) staffapi.OptNilTimestamp {
-	if t == nil {
-		return staffapi.OptNilTimestamp{}
-	}
-	return staffapi.NewOptNilTimestamp(staffapi.Timestamp(*t))
-}
-
-func rateResource(r Rate) staffapi.StaffRate {
-	out := staffapi.StaffRate{Numerator: int32(r.Numerator), Denominator: int32(r.Denominator)}
-	if r.Rate == nil {
-		out.Rate = staffapi.NilFloat64{Null: true}
-	} else {
-		out.Rate = staffapi.NewNilFloat64(*r.Rate)
-	}
-	return out
 }
 
 func workspaceNotFound() *staffapi.StaffWorkspacesGetNotFound {
@@ -363,33 +318,5 @@ func exemptionChange(w *ent.Workspace, changed bool) *staffapi.StaffExemptionCha
 // workspaceResource is the console's view of a Workspace: metadata and suspension
 // state only. The Staff member sees the real actor id, which a customer never does.
 func workspaceResource(w *ent.Workspace) staffapi.StaffWorkspaceResource {
-	res := staffapi.StaffWorkspaceResource{
-		ID:        staffapi.WorkspaceId(w.PublicID),
-		Name:      w.Name,
-		CreatedAt: staffapi.Timestamp(w.CreatedAt),
-		Exempt:    w.AbuseExempt,
-		Warned:    w.AbuseWarningNotifiedAt != nil,
-	}
-	if w.DiscardedAt != nil {
-		res.DiscardedAt = staffapi.NewOptNilTimestamp(staffapi.Timestamp(*w.DiscardedAt))
-	}
-	if w.ErasedAt != nil {
-		res.ErasedAt = staffapi.NewOptNilTimestamp(staffapi.Timestamp(*w.ErasedAt))
-	}
-	if w.SuspendedAt == nil {
-		return res
-	}
-	actor := staffapi.StaffSuspensionActor{}
-	if w.SuspendedByKind != nil {
-		actor.Kind = staffapi.StaffSuspensionActorKind(*w.SuspendedByKind)
-	}
-	if w.SuspendedByKind != nil && *w.SuspendedByKind == workspace.SuspendedByKindStaff && w.SuspendedByID != nil {
-		actor.ID = staffapi.NewOptNilString(*w.SuspendedByID)
-	}
-	s := staffapi.StaffSuspension{At: staffapi.Timestamp(*w.SuspendedAt), Actor: actor}
-	if w.SuspensionReason != nil {
-		s.Reason = staffapi.NewOptNilString(*w.SuspensionReason)
-	}
-	res.Suspension = staffapi.NewOptNilStaffSuspension(s)
-	return res
+	return staffMapper.WorkspaceToResource(w)
 }

@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/getsphericon/sphericon/ent"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/auditapi"
@@ -54,35 +53,10 @@ func (h *Handlers) AuditEntriesList(ctx context.Context, params externalapi.Audi
 	}
 	out := &externalapi.AuditEntryList{Items: make([]externalapi.AuditEntryResource, len(rows))}
 	for i, e := range rows {
-		out.Items[i] = auditEntryResource(e)
+		out.Items[i] = mapper.AuditEntryToResource(auditapi.ViewOf(e))
 	}
 	if next > 0 {
 		out.NextCursor = externalapi.NewOptNilString(auditapi.NextCursor(next))
 	}
 	return out, nil
-}
-
-func auditEntryResource(e *ent.AuditEntry) externalapi.AuditEntryResource {
-	v := auditapi.ViewOf(e)
-	res := externalapi.AuditEntryResource{
-		ID:         externalapi.EntityId(v.ID),
-		OccurredAt: externalapi.Timestamp(v.OccurredAt),
-		Actor:      externalapi.AuditActor{Kind: externalapi.AuditActorKind(v.ActorKind), ID: nilableString(v.ActorID), Name: nilableString(v.ActorName)},
-		Action:     v.Action,
-		Target:     externalapi.AuditTarget{Type: v.TargetType, ID: nilableString(v.TargetID), Name: nilableString(v.TargetName)},
-		RequestId:  nilableString(v.RequestID),
-		IP:         nilableString(v.IP),
-		UserAgent:  nilableString(v.UserAgent),
-	}
-	if v.Diff != nil {
-		res.Diff = externalapi.NewOptNilAuditEntryResourceDiff(v.Diff)
-	}
-	return res
-}
-
-func nilableString(v *string) externalapi.OptNilString {
-	if v == nil {
-		return externalapi.OptNilString{}
-	}
-	return externalapi.NewOptNilString(*v)
 }

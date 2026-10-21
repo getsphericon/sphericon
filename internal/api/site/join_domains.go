@@ -14,26 +14,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/joindomains"
 )
 
-// joinDomainResource builds the API resource, computing the TXT record the Owner publishes.
-func joinDomainResource(d *ent.JoinDomain) siteapi.SiteJoinDomainResource {
-	rec := joindomains.RecordOf(d)
-	res := siteapi.SiteJoinDomainResource{
-		ID:        siteapi.EntityId(d.ID),
-		Domain:    d.Domain,
-		Verified:  joindomains.Verified(d),
-		Record:    siteapi.SiteDnsRecord{Type: siteapi.SiteDnsRecordTypeTXT, Host: rec.Host, Value: rec.Value},
-		CreatedAt: siteapi.Timestamp(d.CreatedAt),
-		UpdatedAt: siteapi.Timestamp(d.UpdatedAt),
-	}
-	if d.LastCheckedAt != nil {
-		res.LastCheckedAt = siteapi.NewOptNilTimestamp(siteapi.Timestamp(*d.LastCheckedAt))
-	}
-	if d.VerifiedAt != nil {
-		res.VerifiedAt = siteapi.NewOptNilTimestamp(siteapi.Timestamp(*d.VerifiedAt))
-	}
-	return res
-}
-
 // SiteJoinDomainsList lists the Workspace's Join domains. Owners only.
 func (h *Handlers) SiteJoinDomainsList(ctx context.Context, params siteapi.SiteJoinDomainsListParams) (siteapi.SiteJoinDomainsListRes, error) {
 	s, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
@@ -53,7 +33,7 @@ func (h *Handlers) SiteJoinDomainsList(ctx context.Context, params siteapi.SiteJ
 	if err != nil {
 		return nil, err
 	}
-	items := lo.Map(rows, func(d *ent.JoinDomain, _ int) siteapi.SiteJoinDomainResource { return joinDomainResource(d) })
+	items := lo.Map(rows, func(d *ent.JoinDomain, _ int) siteapi.SiteJoinDomainResource { return mapper.JoinDomainToResource(d) })
 	res := siteapi.SiteJoinDomainsListOKApplicationJSON(items)
 	return &res, nil
 }
@@ -87,7 +67,7 @@ func (h *Handlers) SiteJoinDomainsAdd(ctx context.Context, req *siteapi.SiteAddJ
 	case err != nil:
 		return nil, err
 	}
-	res := joinDomainResource(d)
+	res := mapper.JoinDomainToResource(d)
 	return &res, nil
 }
 
@@ -120,7 +100,7 @@ func (h *Handlers) SiteJoinDomainsVerify(ctx context.Context, params siteapi.Sit
 	case err != nil:
 		return nil, err
 	}
-	res := joinDomainResource(d)
+	res := mapper.JoinDomainToResource(d)
 	return &res, nil
 }
 

@@ -6,11 +6,27 @@ package resources
 import (
 	ent "github.com/getsphericon/sphericon/ent"
 	site "github.com/getsphericon/sphericon/gen/site"
+	auditapi "github.com/getsphericon/sphericon/internal/auditapi"
+	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
+	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
 	sendlimit "github.com/getsphericon/sphericon/internal/sendlimit"
 )
 
 type ConverterImpl struct{}
 
+func (c *ConverterImpl) AuditEntryToResource(source auditapi.View) site.SiteAuditEntryResource {
+	var siteapiSiteAuditEntryResource site.SiteAuditEntryResource
+	siteapiSiteAuditEntryResource.ID = site.EntityId(source.ID)
+	siteapiSiteAuditEntryResource.OccurredAt = timestamp(source.OccurredAt)
+	siteapiSiteAuditEntryResource.Actor = auditActor(source)
+	siteapiSiteAuditEntryResource.Action = source.Action
+	siteapiSiteAuditEntryResource.Target = auditTarget(source)
+	siteapiSiteAuditEntryResource.Diff = auditDiff(source.Diff)
+	siteapiSiteAuditEntryResource.RequestId = optNilString(source.RequestID)
+	siteapiSiteAuditEntryResource.IP = optNilString(source.IP)
+	siteapiSiteAuditEntryResource.UserAgent = optNilString(source.UserAgent)
+	return siteapiSiteAuditEntryResource
+}
 func (c *ConverterImpl) AutomationToResource(source *ent.Automation) site.SiteAutomationResource {
 	var siteapiSiteAutomationResource site.SiteAutomationResource
 	if source != nil {
@@ -24,6 +40,21 @@ func (c *ConverterImpl) AutomationToResource(source *ent.Automation) site.SiteAu
 		siteapiSiteAutomationResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
 	return siteapiSiteAutomationResource
+}
+func (c *ConverterImpl) BrandKitToResource(source brandkit.Kit) site.SiteBrandKitResource {
+	var siteapiSiteBrandKitResource site.SiteBrandKitResource
+	siteapiSiteBrandKitResource.Saved = source.Saved
+	siteapiSiteBrandKitResource.AccentColor = source.AccentColor
+	siteapiSiteBrandKitResource.TextColor = source.TextColor
+	siteapiSiteBrandKitResource.BackgroundColor = source.BackgroundColor
+	siteapiSiteBrandKitResource.HeadingFont = source.HeadingFont
+	siteapiSiteBrandKitResource.BodyFont = source.BodyFont
+	siteapiSiteBrandKitResource.LogoUrl = source.LogoURL
+	siteapiSiteBrandKitResource.ButtonTextColor = source.ButtonTextColor
+	siteapiSiteBrandKitResource.ButtonRadius = count(source.ButtonRadius)
+	siteapiSiteBrandKitResource.FooterText = source.FooterText
+	siteapiSiteBrandKitResource.UpdatedAt = brandKitUpdatedAt(source)
+	return siteapiSiteBrandKitResource
 }
 func (c *ConverterImpl) BroadcastRecipientToExport(source *ent.BroadcastRecipient) site.ContactExportBroadcastRecipient {
 	var siteapiContactExportBroadcastRecipient site.ContactExportBroadcastRecipient
@@ -116,6 +147,23 @@ func (c *ConverterImpl) CustomFieldToResource(source *ent.CustomField) site.Site
 	}
 	return siteapiSiteCustomFieldResource
 }
+func (c *ConverterImpl) DeletedWorkspaceToResource(source *ent.Workspace) site.SiteDeletedWorkspaceResource {
+	var siteapiSiteDeletedWorkspaceResource site.SiteDeletedWorkspaceResource
+	if source != nil {
+		siteapiSiteDeletedWorkspaceResource.ID = site.WorkspaceId((*source).PublicID)
+		siteapiSiteDeletedWorkspaceResource.Name = (*source).Name
+		siteapiSiteDeletedWorkspaceResource.DiscardedAt = timestampOf((*source).DiscardedAt)
+		siteapiSiteDeletedWorkspaceResource.EraseAt = eraseAt((*source).DiscardedAt)
+	}
+	return siteapiSiteDeletedWorkspaceResource
+}
+func (c *ConverterImpl) DnsRecordToResource(source sendingdomains.Record) site.SiteDnsRecord {
+	var siteapiSiteDnsRecord site.SiteDnsRecord
+	siteapiSiteDnsRecord.Type = dnsRecordType(source)
+	siteapiSiteDnsRecord.Host = source.Host
+	siteapiSiteDnsRecord.Value = source.Value
+	return siteapiSiteDnsRecord
+}
 func (c *ConverterImpl) EmailTemplateToResource(source *ent.EmailTemplate) site.SiteEmailTemplateResource {
 	var siteapiSiteEmailTemplateResource site.SiteEmailTemplateResource
 	if source != nil {
@@ -129,6 +177,21 @@ func (c *ConverterImpl) EmailTemplateToResource(source *ent.EmailTemplate) site.
 		siteapiSiteEmailTemplateResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
 	return siteapiSiteEmailTemplateResource
+}
+func (c *ConverterImpl) EnrollmentToResource(source *ent.AutomationRun) site.SiteEnrollmentResource {
+	var siteapiSiteEnrollmentResource site.SiteEnrollmentResource
+	if source != nil {
+		siteapiSiteEnrollmentResource.ID = site.EntityId((*source).ID)
+		siteapiSiteEnrollmentResource.AutomationId = site.EntityId((*source).AutomationID)
+		siteapiSiteEnrollmentResource.ContactId = site.EntityId((*source).ContactID)
+		siteapiSiteEnrollmentResource.Status = site.SiteEnrollmentStatus((*source).Status)
+		siteapiSiteEnrollmentResource.CurrentStep = count((*source).CurrentStep)
+		siteapiSiteEnrollmentResource.ResumeAt = optTimestamp((*source).ResumeAt)
+		siteapiSiteEnrollmentResource.Failure = enrollmentFailure((*source))
+		siteapiSiteEnrollmentResource.CreatedAt = timestamp((*source).CreatedAt)
+		siteapiSiteEnrollmentResource.UpdatedAt = timestamp((*source).UpdatedAt)
+	}
+	return siteapiSiteEnrollmentResource
 }
 func (c *ConverterImpl) EventToExport(source *ent.Event) site.ContactExportEvent {
 	var siteapiContactExportEvent site.ContactExportEvent
@@ -159,6 +222,17 @@ func (c *ConverterImpl) EventToResource(source *ent.Event) site.SiteEventResourc
 	}
 	return siteapiSiteEventResource
 }
+func (c *ConverterImpl) HoldToResource(source *ent.Hold) site.SiteWorkspaceHold {
+	var siteapiSiteWorkspaceHold site.SiteWorkspaceHold
+	if source != nil {
+		siteapiSiteWorkspaceHold.Key = (*source).Key
+		siteapiSiteWorkspaceHold.ReasonCode = (*source).ReasonCode
+		siteapiSiteWorkspaceHold.Message = (*source).Message
+		siteapiSiteWorkspaceHold.Since = timestamp((*source).CreatedAt)
+		siteapiSiteWorkspaceHold.ActionUrl = optNilString((*source).ActionURL)
+	}
+	return siteapiSiteWorkspaceHold
+}
 func (c *ConverterImpl) IntegrationToResource(source *ent.Integration) site.SiteIntegrationResource {
 	var siteapiSiteIntegrationResource site.SiteIntegrationResource
 	if source != nil {
@@ -176,6 +250,57 @@ func (c *ConverterImpl) IntegrationToResource(source *ent.Integration) site.Site
 		siteapiSiteIntegrationResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
 	return siteapiSiteIntegrationResource
+}
+func (c *ConverterImpl) InvitationToResource(source *ent.Invitation) site.SiteInvitationResource {
+	var siteapiSiteInvitationResource site.SiteInvitationResource
+	if source != nil {
+		siteapiSiteInvitationResource.ID = site.EntityId((*source).ID)
+		siteapiSiteInvitationResource.Email = site.EmailAddress((*source).Email)
+		siteapiSiteInvitationResource.Role = site.SiteInvitableRole((*source).Role)
+		siteapiSiteInvitationResource.ExpiresAt = timestamp((*source).ExpiresAt)
+		siteapiSiteInvitationResource.InvitedByEmail = inviterEmail((*source))
+		siteapiSiteInvitationResource.CreatedAt = timestamp((*source).CreatedAt)
+	}
+	return siteapiSiteInvitationResource
+}
+func (c *ConverterImpl) JoinDomainToResource(source *ent.JoinDomain) site.SiteJoinDomainResource {
+	var siteapiSiteJoinDomainResource site.SiteJoinDomainResource
+	if source != nil {
+		siteapiSiteJoinDomainResource.ID = site.EntityId((*source).ID)
+		siteapiSiteJoinDomainResource.Domain = (*source).Domain
+		siteapiSiteJoinDomainResource.Verified = joinDomainVerified((*source))
+		siteapiSiteJoinDomainResource.Record = joinDomainRecord((*source))
+		siteapiSiteJoinDomainResource.LastCheckedAt = optNilTimestamp((*source).LastCheckedAt)
+		siteapiSiteJoinDomainResource.VerifiedAt = optNilTimestamp((*source).VerifiedAt)
+		siteapiSiteJoinDomainResource.CreatedAt = timestamp((*source).CreatedAt)
+		siteapiSiteJoinDomainResource.UpdatedAt = timestamp((*source).UpdatedAt)
+	}
+	return siteapiSiteJoinDomainResource
+}
+func (c *ConverterImpl) MembershipToResource(source *ent.Membership) site.SiteMembershipResource {
+	var siteapiSiteMembershipResource site.SiteMembershipResource
+	if source != nil {
+		siteapiSiteMembershipResource.ID = site.EntityId((*source).ID)
+		siteapiSiteMembershipResource.UserId = site.EntityId((*source).UserID)
+		var pString *string
+		if (*source).Edges.User != nil {
+			pString = &(*source).Edges.User.Email
+		}
+		if pString != nil {
+			siteapiSiteMembershipResource.Email = site.EmailAddress(*pString)
+		}
+		var pString2 *string
+		if (*source).Edges.User != nil {
+			pString2 = &(*source).Edges.User.Name
+		}
+		if pString2 != nil {
+			siteapiSiteMembershipResource.Name = *pString2
+		}
+		siteapiSiteMembershipResource.Role = site.SiteMembershipRole((*source).Role)
+		siteapiSiteMembershipResource.Source = optMembershipSource((*source).Source)
+		siteapiSiteMembershipResource.CreatedAt = timestamp((*source).CreatedAt)
+	}
+	return siteapiSiteMembershipResource
 }
 func (c *ConverterImpl) OutboundMessageToExport(source *ent.OutboundMessage) site.ContactExportOutboundMessage {
 	var siteapiContactExportOutboundMessage site.ContactExportOutboundMessage
@@ -223,6 +348,21 @@ func (c *ConverterImpl) SendLimitToStatus(source sendlimit.Status) site.SiteSend
 		}
 	}
 	return siteapiSiteSendLimitStatus
+}
+func (c *ConverterImpl) SendingDomainToResource(source *ent.SendingDomain) site.SiteSendingDomainResource {
+	var siteapiSiteSendingDomainResource site.SiteSendingDomainResource
+	if source != nil {
+		siteapiSiteSendingDomainResource.ID = site.EntityId((*source).ID)
+		siteapiSiteSendingDomainResource.Domain = (*source).Domain
+		siteapiSiteSendingDomainResource.DkimSelector = (*source).DkimSelector
+		siteapiSiteSendingDomainResource.Verified = (*source).Verified
+		siteapiSiteSendingDomainResource.LastCheckedAt = optNilTimestamp((*source).LastCheckedAt)
+		siteapiSiteSendingDomainResource.VerifiedAt = optNilTimestamp((*source).VerifiedAt)
+		siteapiSiteSendingDomainResource.ArchivedAt = optNilTimestamp((*source).DiscardedAt)
+		siteapiSiteSendingDomainResource.CreatedAt = timestamp((*source).CreatedAt)
+		siteapiSiteSendingDomainResource.UpdatedAt = timestamp((*source).UpdatedAt)
+	}
+	return siteapiSiteSendingDomainResource
 }
 func (c *ConverterImpl) SuppressionToExport(source *ent.Suppression) site.ContactExportSuppression {
 	var siteapiContactExportSuppression site.ContactExportSuppression
@@ -286,6 +426,17 @@ func (c *ConverterImpl) TokenToResource(source *ent.ApiToken) site.SiteApiTokenR
 	}
 	return siteapiSiteApiTokenResource
 }
+func (c *ConverterImpl) TrackingRecordToResource(source sendingdomains.TrackingRecord) site.SiteTrackingRecord {
+	var siteapiSiteTrackingRecord site.SiteTrackingRecord
+	siteapiSiteTrackingRecord.Type = trackingRecordType(source)
+	siteapiSiteTrackingRecord.Host = source.Host
+	siteapiSiteTrackingRecord.Target = source.Target
+	siteapiSiteTrackingRecord.State = site.SiteTrackingState(source.State)
+	siteapiSiteTrackingRecord.Reason = optTrackingReason(source.Reason)
+	siteapiSiteTrackingRecord.LastCheckedAt = optNilTimestamp(source.CheckedAt)
+	siteapiSiteTrackingRecord.StateChangedAt = optNilTimestamp(source.StateChangedAt)
+	return siteapiSiteTrackingRecord
+}
 func (c *ConverterImpl) TransactionalMessageToResource(source *ent.OutboundMessage) site.SiteTransactionalEmailResource {
 	var siteapiSiteTransactionalEmailResource site.SiteTransactionalEmailResource
 	if source != nil {
@@ -335,6 +486,20 @@ func (c *ConverterImpl) VisitorToExport(source *ent.Visitor) site.ContactExportV
 		siteapiContactExportVisitor.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return siteapiContactExportVisitor
+}
+func (c *ConverterImpl) WebhookEndpointToResource(source *ent.WebhookEndpoint) site.SiteWebhookEndpointResource {
+	var siteapiSiteWebhookEndpointResource site.SiteWebhookEndpointResource
+	if source != nil {
+		siteapiSiteWebhookEndpointResource.ID = site.EntityId((*source).ID)
+		siteapiSiteWebhookEndpointResource.URL = (*source).URL
+		siteapiSiteWebhookEndpointResource.EventTypes = eventTypes((*source).EventTypes)
+		siteapiSiteWebhookEndpointResource.Enabled = (*source).Enabled
+		siteapiSiteWebhookEndpointResource.DisabledReason = optWebhookDisabledReason((*source).DisabledReason)
+		siteapiSiteWebhookEndpointResource.Failure = webhookFailure((*source))
+		siteapiSiteWebhookEndpointResource.CreatedAt = timestamp((*source).CreatedAt)
+		siteapiSiteWebhookEndpointResource.UpdatedAt = timestamp((*source).UpdatedAt)
+	}
+	return siteapiSiteWebhookEndpointResource
 }
 func (c *ConverterImpl) WorkspaceToResource(source *ent.Workspace) site.SiteWorkspaceResource {
 	var siteapiSiteWorkspaceResource site.SiteWorkspaceResource

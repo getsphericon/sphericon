@@ -9,12 +9,20 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
+	"github.com/getsphericon/sphericon/ent/sendingdomain"
+	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/auditapi"
 	"github.com/getsphericon/sphericon/internal/automations"
+	"github.com/getsphericon/sphericon/internal/brandkit"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
+	"github.com/getsphericon/sphericon/internal/joindomains"
 	"github.com/getsphericon/sphericon/internal/segments"
+	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/sendlimit"
+	"github.com/getsphericon/sphericon/internal/workspacedeletion"
 	"github.com/go-faster/jx"
 	"github.com/samber/lo"
 )
@@ -50,6 +58,14 @@ import (
 // goverter:extend count
 // goverter:extend sendLimitWarning
 // goverter:extend sendLimitSource
+// goverter:extend optTimestamp
+// goverter:extend optInt32
+// goverter:extend optString
+// goverter:extend optMembershipSource
+// goverter:extend optTrackingReason
+// goverter:extend timestampOf
+// goverter:extend auditDiff
+// goverter:extend optWebhookDisabledReason
 type Converter interface {
 	ContactToResource(source *ent.Contact) siteapi.SiteContactResource
 	// The contract names the discarded state \"archived\" (ADR 0049).
@@ -124,6 +140,64 @@ type Converter interface {
 	// goverter:map . Error | transactionalError
 	// goverter:map TemplateID TemplateId
 	TransactionalMessageToResource(source *ent.OutboundMessage) siteapi.SiteTransactionalEmailResource
+
+	// The member's identity comes from the loaded User edge.
+	// goverter:map Edges.User.Email Email
+	// goverter:map Edges.User.Name Name
+	MembershipToResource(source *ent.Membership) siteapi.SiteMembershipResource
+
+	// goverter:map . InvitedByEmail | inviterEmail
+	InvitationToResource(source *ent.Invitation) siteapi.SiteInvitationResource
+
+	// goverter:map . Failure | enrollmentFailure
+	EnrollmentToResource(source *ent.AutomationRun) siteapi.SiteEnrollmentResource
+
+	// The deletion window: the date the Workspace's data will be erased.
+	// goverter:map PublicID ID
+	// goverter:map DiscardedAt EraseAt | eraseAt
+	// Whether the caller is its only Owner comes from the Memberships, which the mapper
+	// cannot see: the handler attaches it.
+	// goverter:ignore OnlyOwner
+	DeletedWorkspaceToResource(source *ent.Workspace) siteapi.SiteDeletedWorkspaceResource
+
+	// goverter:map CreatedAt Since
+	HoldToResource(source *ent.Hold) siteapi.SiteWorkspaceHold
+
+	// goverter:map . Record | joinDomainRecord
+	// goverter:map . Verified | joinDomainVerified
+	JoinDomainToResource(source *ent.JoinDomain) siteapi.SiteJoinDomainResource
+
+	// The DNS records are derived by the sendingdomains module, which the mapper cannot
+	// see: the handler attaches them. The private key is never exposed.
+	// goverter:ignore DkimRecord
+	// goverter:ignore SpfRecord
+	// goverter:ignore DmarcRecord
+	// goverter:ignore TrackingRecord
+	// The contract names the discarded state "archived" (ADR 0049).
+	// goverter:map DiscardedAt ArchivedAt
+	SendingDomainToResource(source *ent.SendingDomain) siteapi.SiteSendingDomainResource
+	// goverter:map . Type | dnsRecordType
+	DnsRecordToResource(source sendingdomains.Record) siteapi.SiteDnsRecord
+	// goverter:map . Type | trackingRecordType
+	// goverter:map CheckedAt LastCheckedAt
+	TrackingRecordToResource(source sendingdomains.TrackingRecord) siteapi.SiteTrackingRecord
+
+	// A Workspace that has not saved a Brand kit has no row to convert, so the mapper
+	// takes the module's Kit.
+	// goverter:map . UpdatedAt | brandKitUpdatedAt
+	BrandKitToResource(source brandkit.Kit) siteapi.SiteBrandKitResource
+
+	// goverter:map . Actor | auditActor
+	// goverter:map . Target | auditTarget
+	// goverter:map Diff Diff | auditDiff
+	AuditEntryToResource(source auditapi.View) siteapi.SiteAuditEntryResource
+
+	// The signing secret is decrypted by the webhooks module, which the mapper cannot see:
+	// the handler attaches it. The failure state is derived from the failure columns.
+	// goverter:ignore Secret
+	// goverter:map EventTypes EventTypes | eventTypes
+	// goverter:map . Failure | webhookFailure
+	WebhookEndpointToResource(source *ent.WebhookEndpoint) siteapi.SiteWebhookEndpointResource
 
 	// The Data export members (ADR 0021): the contract's typed projection of the
 	// stored rows, so the ent JSON tags are never the public format.
@@ -477,4 +551,144 @@ func segmentDefinition(def *string) siteapi.OptSiteSegmentRuleGroup {
 		return siteapi.OptSiteSegmentRuleGroup{}
 	}
 	return siteapi.NewOptSiteSegmentRuleGroup(group)
+}
+
+func optTimestamp(v *time.Time) siteapi.OptTimestamp {
+	if v == nil {
+		return siteapi.OptTimestamp{}
+	}
+	return siteapi.NewOptTimestamp(siteapi.Timestamp(*v))
+}
+
+func optInt32(v *int) siteapi.OptInt32 {
+	if v == nil {
+		return siteapi.OptInt32{}
+	}
+	return siteapi.NewOptInt32(int32(*v))
+}
+
+func optString(v *string) siteapi.OptString {
+	if v == nil {
+		return siteapi.OptString{}
+	}
+	return siteapi.NewOptString(*v)
+}
+
+func optMembershipSource(v *membership.Source) siteapi.OptSiteMembershipSource {
+	if v == nil {
+		return siteapi.OptSiteMembershipSource{}
+	}
+	return siteapi.NewOptSiteMembershipSource(siteapi.SiteMembershipSource(*v))
+}
+
+func optTrackingReason(v *sendingdomain.TrackingReason) siteapi.OptSiteTrackingReason {
+	if v == nil {
+		return siteapi.OptSiteTrackingReason{}
+	}
+	return siteapi.NewOptSiteTrackingReason(siteapi.SiteTrackingReason(*v))
+}
+
+// timestampOf renders a time the schema keeps nullable but the contract always shows.
+func timestampOf(t *time.Time) siteapi.Timestamp {
+	if t == nil {
+		return siteapi.Timestamp{}
+	}
+	return siteapi.Timestamp(*t)
+}
+
+// eraseAt is the date a discarded Workspace's data will be erased.
+func eraseAt(discardedAt *time.Time) siteapi.Timestamp {
+	if discardedAt == nil {
+		return siteapi.Timestamp{}
+	}
+	return siteapi.Timestamp(workspacedeletion.EraseDate(*discardedAt))
+}
+
+// inviterEmail is the inviting User's address when the inviter edge is loaded.
+func inviterEmail(inv ent.Invitation) siteapi.OptNilString {
+	if inv.Edges.Inviter == nil {
+		return siteapi.OptNilString{}
+	}
+	return siteapi.NewOptNilString(inv.Edges.Inviter.Email)
+}
+
+// enrollmentFailure is the enrollment's failure detail; absent unless it failed.
+func enrollmentFailure(r ent.AutomationRun) siteapi.OptSiteEnrollmentFailure {
+	if r.FailureKind == nil {
+		return siteapi.OptSiteEnrollmentFailure{}
+	}
+	return siteapi.NewOptSiteEnrollmentFailure(siteapi.SiteEnrollmentFailure{
+		Kind:    siteapi.SiteEnrollmentFailureKind(*r.FailureKind),
+		Status:  optInt32(r.FailureStatus),
+		Excerpt: optString(r.FailureExcerpt),
+	})
+}
+
+// joinDomainRecord is the TXT record the Owner publishes to prove the domain.
+func joinDomainRecord(d ent.JoinDomain) siteapi.SiteDnsRecord {
+	rec := joindomains.RecordOf(&d)
+	return siteapi.SiteDnsRecord{Type: siteapi.SiteDnsRecordTypeTXT, Host: rec.Host, Value: rec.Value}
+}
+
+func joinDomainVerified(d ent.JoinDomain) bool { return joindomains.Verified(&d) }
+
+func dnsRecordType(sendingdomains.Record) siteapi.SiteDnsRecordType {
+	return siteapi.SiteDnsRecordTypeTXT
+}
+
+func trackingRecordType(sendingdomains.TrackingRecord) siteapi.SiteTrackingRecordType {
+	return siteapi.SiteTrackingRecordTypeCNAME
+}
+
+// brandKitUpdatedAt is set only once the Brand kit has been saved.
+func brandKitUpdatedAt(k brandkit.Kit) siteapi.OptNilTimestamp {
+	if !k.Saved {
+		return siteapi.OptNilTimestamp{}
+	}
+	return siteapi.NewOptNilTimestamp(siteapi.Timestamp(k.UpdatedAt))
+}
+
+func auditActor(v auditapi.View) siteapi.SiteAuditActor {
+	return siteapi.SiteAuditActor{Kind: siteapi.SiteAuditActorKind(v.ActorKind), ID: optNilString(v.ActorID), Name: optNilString(v.ActorName)}
+}
+
+func auditTarget(v auditapi.View) siteapi.SiteAuditTarget {
+	return siteapi.SiteAuditTarget{Type: v.TargetType, ID: optNilString(v.TargetID), Name: optNilString(v.TargetName)}
+}
+
+func auditDiff(d map[string]jx.Raw) siteapi.OptNilSiteAuditEntryResourceDiff {
+	if d == nil {
+		return siteapi.OptNilSiteAuditEntryResourceDiff{}
+	}
+	return siteapi.NewOptNilSiteAuditEntryResourceDiff(d)
+}
+
+// eventTypes shows an endpoint with no event filter as an empty list, never null.
+func eventTypes(v []string) []string {
+	if v == nil {
+		return []string{}
+	}
+	return v
+}
+
+// webhookFailure is the endpoint's failure state; it is absent while the endpoint is healthy.
+func webhookFailure(e ent.WebhookEndpoint) siteapi.OptSiteWebhookFailure {
+	if e.ConsecutiveFailures == nil || e.FailingSince == nil || e.LastFailureAt == nil || e.LastErrorKind == nil {
+		return siteapi.OptSiteWebhookFailure{}
+	}
+	return siteapi.NewOptSiteWebhookFailure(siteapi.SiteWebhookFailure{
+		ConsecutiveFailures: int32(*e.ConsecutiveFailures),
+		Since:               siteapi.Timestamp(*e.FailingSince),
+		LastFailureAt:       siteapi.Timestamp(*e.LastFailureAt),
+		Kind:                siteapi.SiteWebhookErrorKind(*e.LastErrorKind),
+		Status:              optInt32(e.LastErrorStatus),
+	})
+}
+
+// optWebhookDisabledReason is why the endpoint turned itself off; absent otherwise.
+func optWebhookDisabledReason(v *webhookendpoint.DisabledReason) siteapi.OptSiteWebhookDisabledReason {
+	if v == nil {
+		return siteapi.OptSiteWebhookDisabledReason{}
+	}
+	return siteapi.NewOptSiteWebhookDisabledReason(siteapi.SiteWebhookDisabledReason(*v))
 }

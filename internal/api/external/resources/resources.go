@@ -9,10 +9,15 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/sendingdomain"
+	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/auditapi"
 	"github.com/getsphericon/sphericon/internal/automations"
+	"github.com/getsphericon/sphericon/internal/brandkit"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/segments"
+	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/sendlimit"
 	"github.com/go-faster/jx"
 	"github.com/samber/lo"
@@ -102,6 +107,12 @@ func AutomationSteps(steps []externalapi.AutomationStep) []automations.Step {
 // goverter:extend count
 // goverter:extend sendLimitWarning
 // goverter:extend sendLimitSource
+// goverter:extend optTimestamp
+// goverter:extend optInt32
+// goverter:extend optString
+// goverter:extend optTrackingReason
+// goverter:extend auditDiff
+// goverter:extend optWebhookDisabledReason
 type Converter interface {
 	ContactToResource(source *ent.Contact) externalapi.ContactResource
 	// The contract names the discarded state "archived" (ADR 0049).
@@ -131,6 +142,42 @@ type Converter interface {
 	IntegrationToResource(source *ent.Integration) externalapi.IntegrationResource
 	// goverter:map Sent24h SentLast24h
 	SendLimitToStatus(source sendlimit.Status) externalapi.SendLimitStatus
+
+	// goverter:map . Failure | enrollmentFailure
+	EnrollmentToResource(source *ent.AutomationRun) externalapi.EnrollmentResource
+
+	// The signing secret is deliberately never part of an /api response; the failure state
+	// is derived from the failure columns and a nil event filter renders as an empty list.
+	// goverter:map EventTypes EventTypes | eventTypes
+	// goverter:map . Failure | webhookFailure
+	WebhookToResource(source *ent.WebhookEndpoint) externalapi.WebhookResource
+
+	// The DNS records are derived by the sendingdomains module, which the mapper cannot
+	// see: the handler attaches them. The private key is never exposed.
+	// goverter:ignore DkimRecord
+	// goverter:ignore SpfRecord
+	// goverter:ignore DmarcRecord
+	// goverter:ignore TrackingRecord
+	// The contract names the discarded state "archived" (ADR 0049).
+	// goverter:map DiscardedAt ArchivedAt
+	SendingDomainToResource(source *ent.SendingDomain) externalapi.SendingDomainResource
+	// goverter:map . Type | dnsRecordType
+	DnsRecordToResource(source sendingdomains.Record) externalapi.DnsRecord
+	// goverter:map . Type | trackingRecordType
+	// goverter:map CheckedAt LastCheckedAt
+	TrackingRecordToResource(source sendingdomains.TrackingRecord) externalapi.TrackingRecord
+
+	// A Workspace that has not saved a Brand kit has no row to convert, so the mapper
+	// takes the module's Kit.
+	// goverter:map . UpdatedAt | brandKitUpdatedAt
+	BrandKitToResource(source brandkit.Kit) externalapi.BrandKitResource
+
+	// goverter:map . Actor | auditActor
+	// goverter:map . Target | auditTarget
+	AuditEntryToResource(source auditapi.View) externalapi.AuditEntryResource
+
+	SuppressionToResource(source *ent.Suppression) externalapi.SuppressionResource
+	UnsubscribeToResource(source *ent.Unsubscribe) externalapi.UnsubscribeResource
 
 	// The Data export members (ADR 0021): the contract's typed projection of the
 	// stored rows, so the ent JSON tags are never the public format.
@@ -306,4 +353,105 @@ func broadcastDoc(doc json.RawMessage) externalapi.OptNilBroadcastResourceDoc {
 		return externalapi.NewOptNilBroadcastResourceDoc(fields)
 	}
 	return externalapi.OptNilBroadcastResourceDoc{}
+}
+
+func optTimestamp(v *time.Time) externalapi.OptTimestamp {
+	if v == nil {
+		return externalapi.OptTimestamp{}
+	}
+	return externalapi.NewOptTimestamp(externalapi.Timestamp(*v))
+}
+
+func optInt32(v *int) externalapi.OptInt32 {
+	if v == nil {
+		return externalapi.OptInt32{}
+	}
+	return externalapi.NewOptInt32(int32(*v))
+}
+
+func optString(v *string) externalapi.OptString {
+	if v == nil {
+		return externalapi.OptString{}
+	}
+	return externalapi.NewOptString(*v)
+}
+
+func optTrackingReason(v *sendingdomain.TrackingReason) externalapi.OptTrackingReason {
+	if v == nil {
+		return externalapi.OptTrackingReason{}
+	}
+	return externalapi.NewOptTrackingReason(externalapi.TrackingReason(*v))
+}
+
+// enrollmentFailure is the enrollment's failure detail; absent unless it failed.
+func enrollmentFailure(r ent.AutomationRun) externalapi.OptEnrollmentFailure {
+	if r.FailureKind == nil {
+		return externalapi.OptEnrollmentFailure{}
+	}
+	return externalapi.NewOptEnrollmentFailure(externalapi.EnrollmentFailure{
+		Kind:    externalapi.EnrollmentFailureKind(*r.FailureKind),
+		Status:  optInt32(r.FailureStatus),
+		Excerpt: optString(r.FailureExcerpt),
+	})
+}
+
+func dnsRecordType(sendingdomains.Record) externalapi.DnsRecordType {
+	return externalapi.DnsRecordTypeTXT
+}
+
+func trackingRecordType(sendingdomains.TrackingRecord) externalapi.TrackingRecordType {
+	return externalapi.TrackingRecordTypeCNAME
+}
+
+// brandKitUpdatedAt is set only once the Brand kit has been saved.
+func brandKitUpdatedAt(k brandkit.Kit) externalapi.OptNilTimestamp {
+	if !k.Saved {
+		return externalapi.OptNilTimestamp{}
+	}
+	return externalapi.NewOptNilTimestamp(externalapi.Timestamp(k.UpdatedAt))
+}
+
+func auditActor(v auditapi.View) externalapi.AuditActor {
+	return externalapi.AuditActor{Kind: externalapi.AuditActorKind(v.ActorKind), ID: optNilString(v.ActorID), Name: optNilString(v.ActorName)}
+}
+
+func auditTarget(v auditapi.View) externalapi.AuditTarget {
+	return externalapi.AuditTarget{Type: v.TargetType, ID: optNilString(v.TargetID), Name: optNilString(v.TargetName)}
+}
+
+func auditDiff(d map[string]jx.Raw) externalapi.OptNilAuditEntryResourceDiff {
+	if d == nil {
+		return externalapi.OptNilAuditEntryResourceDiff{}
+	}
+	return externalapi.NewOptNilAuditEntryResourceDiff(d)
+}
+
+// eventTypes shows an endpoint with no event filter as an empty list, never null.
+func eventTypes(v []string) []string {
+	if v == nil {
+		return []string{}
+	}
+	return v
+}
+
+// webhookFailure is the endpoint's failure state; it is absent while the endpoint is healthy.
+func webhookFailure(e ent.WebhookEndpoint) externalapi.OptWebhookFailure {
+	if e.ConsecutiveFailures == nil || e.FailingSince == nil || e.LastFailureAt == nil || e.LastErrorKind == nil {
+		return externalapi.OptWebhookFailure{}
+	}
+	return externalapi.NewOptWebhookFailure(externalapi.WebhookFailure{
+		ConsecutiveFailures: int32(*e.ConsecutiveFailures),
+		Since:               externalapi.Timestamp(*e.FailingSince),
+		LastFailureAt:       externalapi.Timestamp(*e.LastFailureAt),
+		Kind:                externalapi.WebhookErrorKind(*e.LastErrorKind),
+		Status:              optInt32(e.LastErrorStatus),
+	})
+}
+
+// optWebhookDisabledReason is why the endpoint turned itself off; absent otherwise.
+func optWebhookDisabledReason(v *webhookendpoint.DisabledReason) externalapi.OptWebhookDisabledReason {
+	if v == nil {
+		return externalapi.OptWebhookDisabledReason{}
+	}
+	return externalapi.NewOptWebhookDisabledReason(externalapi.WebhookDisabledReason(*v))
 }

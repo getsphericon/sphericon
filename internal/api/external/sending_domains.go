@@ -197,56 +197,16 @@ func sendingDomainValidationProblem(v *sendingdomains.ValidationError) externala
 	return p
 }
 
-// sendingDomainResource is hand-built (not goverter): the DNS records are derived from
-// the row, and the private key is not read at all.
+// sendingDomainResource maps the row, then attaches the DNS records the user publishes, which
+// the sendingdomains module derives and the mapper cannot see.
 func (h *Handlers) sendingDomainResource(d *ent.SendingDomain) externalapi.SendingDomainResource {
 	rec := h.sendingDomains.Records(d)
-	res := externalapi.SendingDomainResource{
-		ID:             externalapi.EntityId(d.ID),
-		Domain:         d.Domain,
-		DkimSelector:   d.DkimSelector,
-		Verified:       d.Verified,
-		DkimRecord:     dnsRecord(rec.DKIM),
-		SpfRecord:      dnsRecord(rec.SPF),
-		DmarcRecord:    dnsRecord(rec.DMARC),
-		TrackingRecord: trackingRecord(rec.Tracking),
-		CreatedAt:      externalapi.Timestamp(d.CreatedAt),
-		UpdatedAt:      externalapi.Timestamp(d.UpdatedAt),
-	}
-	if d.LastCheckedAt != nil {
-		res.LastCheckedAt = externalapi.NewOptNilTimestamp(externalapi.Timestamp(*d.LastCheckedAt))
-	}
-	if d.VerifiedAt != nil {
-		res.VerifiedAt = externalapi.NewOptNilTimestamp(externalapi.Timestamp(*d.VerifiedAt))
-	}
-	if d.DiscardedAt != nil {
-		res.ArchivedAt = externalapi.NewOptNilTimestamp(externalapi.Timestamp(*d.DiscardedAt))
+	res := mapper.SendingDomainToResource(d)
+	res.DkimRecord = mapper.DnsRecordToResource(rec.DKIM)
+	res.SpfRecord = mapper.DnsRecordToResource(rec.SPF)
+	res.DmarcRecord = mapper.DnsRecordToResource(rec.DMARC)
+	if rec.Tracking != nil {
+		res.TrackingRecord = externalapi.NewOptTrackingRecord(mapper.TrackingRecordToResource(*rec.Tracking))
 	}
 	return res
-}
-
-func dnsRecord(r sendingdomains.Record) externalapi.DnsRecord {
-	return externalapi.DnsRecord{Type: externalapi.DnsRecordTypeTXT, Host: r.Host, Value: r.Value}
-}
-
-func trackingRecord(t *sendingdomains.TrackingRecord) externalapi.OptTrackingRecord {
-	if t == nil {
-		return externalapi.OptTrackingRecord{}
-	}
-	rec := externalapi.TrackingRecord{
-		Type:   externalapi.TrackingRecordTypeCNAME,
-		Host:   t.Host,
-		Target: t.Target,
-		State:  externalapi.TrackingState(t.State),
-	}
-	if t.Reason != nil {
-		rec.Reason = externalapi.NewOptTrackingReason(externalapi.TrackingReason(*t.Reason))
-	}
-	if t.CheckedAt != nil {
-		rec.LastCheckedAt = externalapi.NewOptNilTimestamp(externalapi.Timestamp(*t.CheckedAt))
-	}
-	if t.StateChangedAt != nil {
-		rec.StateChangedAt = externalapi.NewOptNilTimestamp(externalapi.Timestamp(*t.StateChangedAt))
-	}
-	return externalapi.NewOptTrackingRecord(rec)
 }
