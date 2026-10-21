@@ -9,10 +9,13 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/webhooks"
 )
+
+const errWebhooksForbidden = "only owners and admins can manage webhooks"
 
 // webhookResource maps the endpoint with its decrypted signing secret, which the
 // UI displays for signature verification.
@@ -38,13 +41,17 @@ func webhookRuleProblem(err error) (siteapi.ProblemDetails, bool) {
 }
 
 func (h *Handlers) SiteWebhooksList(ctx context.Context, params siteapi.SiteWebhooksListParams) (siteapi.SiteWebhooksListRes, error) {
-	scoped, err := h.scopedFor(ctx, params.WorkspaceId)
+	scoped, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteWebhooksListNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil
 	}
 	if err != nil {
 		return nil, err
+	}
+	if !accounts.CanManageWebhooks(role) {
+		v := siteapi.SiteWebhooksListForbidden(problem(http.StatusForbidden, errWebhooksForbidden))
+		return &v, nil
 	}
 
 	page, err := h.webhooks.List(ctx, scoped, pagination.ParamsOf(params.Page, params.PageSize))
@@ -61,13 +68,17 @@ func (h *Handlers) SiteWebhooksList(ctx context.Context, params siteapi.SiteWebh
 }
 
 func (h *Handlers) SiteWebhooksCreate(ctx context.Context, req *siteapi.SiteCreateWebhookEndpointInput, params siteapi.SiteWebhooksCreateParams) (siteapi.SiteWebhooksCreateRes, error) {
-	scoped, err := h.scopedFor(ctx, params.WorkspaceId)
+	scoped, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteWebhooksCreateNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil
 	}
 	if err != nil {
 		return nil, err
+	}
+	if !accounts.CanManageWebhooks(role) {
+		v := siteapi.SiteWebhooksCreateForbidden(problem(http.StatusForbidden, errWebhooksForbidden))
+		return &v, nil
 	}
 
 	enabled, hasEnabled := req.Enabled.Get()
@@ -88,13 +99,17 @@ func (h *Handlers) SiteWebhooksCreate(ctx context.Context, req *siteapi.SiteCrea
 }
 
 func (h *Handlers) SiteWebhooksGet(ctx context.Context, params siteapi.SiteWebhooksGetParams) (siteapi.SiteWebhooksGetRes, error) {
-	scoped, err := h.scopedFor(ctx, params.WorkspaceId)
+	scoped, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteWebhooksGetNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil
 	}
 	if err != nil {
 		return nil, err
+	}
+	if !accounts.CanManageWebhooks(role) {
+		v := siteapi.SiteWebhooksGetForbidden(problem(http.StatusForbidden, errWebhooksForbidden))
+		return &v, nil
 	}
 
 	id := int64(params.ID)
@@ -111,13 +126,17 @@ func (h *Handlers) SiteWebhooksGet(ctx context.Context, params siteapi.SiteWebho
 }
 
 func (h *Handlers) SiteWebhooksUpdate(ctx context.Context, req *siteapi.SiteUpdateWebhookEndpointInput, params siteapi.SiteWebhooksUpdateParams) (siteapi.SiteWebhooksUpdateRes, error) {
-	scoped, err := h.scopedFor(ctx, params.WorkspaceId)
+	scoped, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteWebhooksUpdateNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil
 	}
 	if err != nil {
 		return nil, err
+	}
+	if !accounts.CanManageWebhooks(role) {
+		v := siteapi.SiteWebhooksUpdateForbidden(problem(http.StatusForbidden, errWebhooksForbidden))
+		return &v, nil
 	}
 
 	id := int64(params.ID)
@@ -145,13 +164,17 @@ func (h *Handlers) SiteWebhooksUpdate(ctx context.Context, req *siteapi.SiteUpda
 }
 
 func (h *Handlers) SiteWebhooksDelete(ctx context.Context, params siteapi.SiteWebhooksDeleteParams) (siteapi.SiteWebhooksDeleteRes, error) {
-	scoped, err := h.scopedFor(ctx, params.WorkspaceId)
+	scoped, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteWebhooksDeleteNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil
 	}
 	if err != nil {
 		return nil, err
+	}
+	if !accounts.CanManageWebhooks(role) {
+		v := siteapi.SiteWebhooksDeleteForbidden(problem(http.StatusForbidden, errWebhooksForbidden))
+		return &v, nil
 	}
 
 	id := int64(params.ID)

@@ -38,11 +38,24 @@ const list = (items: SiteSendingDomainResource[]) =>
 
 test('shows pending and verified domains', async () => {
   worker.use(list([domain(), domain({ id: '2', domain: 'ok.acme.com', verified: true })]))
-  const { screen } = await renderWithRouter(<SendingDomainsSection workspaceId={WORKSPACE_ID} />)
+  const { screen } = await renderWithRouter(
+    <SendingDomainsSection workspaceId={WORKSPACE_ID} canManage />,
+  )
 
   await expect.element(screen.getByText('mail.acme.com')).toBeInTheDocument()
   await expect.element(screen.getByText('Pending', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByText('Verified', { exact: true })).toBeInTheDocument()
+})
+
+test('offers a member the domains to read, without adding or managing them', async () => {
+  worker.use(list([domain()]))
+  const { screen } = await renderWithRouter(
+    <SendingDomainsSection workspaceId={WORKSPACE_ID} canManage={false} />,
+  )
+
+  await expect.element(screen.getByText('mail.acme.com')).toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Add domain' })).not.toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'More actions' })).not.toBeInTheDocument()
 })
 
 test('adds a domain', async () => {
@@ -54,7 +67,9 @@ test('adds a domain', async () => {
       return HttpResponse.json(domain(), { status: 201 })
     }),
   )
-  const { screen } = await renderWithRouter(<SendingDomainsSection workspaceId={WORKSPACE_ID} />)
+  const { screen } = await renderWithRouter(
+    <SendingDomainsSection workspaceId={WORKSPACE_ID} canManage />,
+  )
 
   await screen.getByRole('button', { name: 'Add domain' }).click()
   const dialog = screen.getByRole('dialog')
@@ -73,7 +88,9 @@ test('starts verification', async () => {
       return new HttpResponse(null, { status: 204 })
     }),
   )
-  const { screen } = await renderWithRouter(<SendingDomainsSection workspaceId={WORKSPACE_ID} />)
+  const { screen } = await renderWithRouter(
+    <SendingDomainsSection workspaceId={WORKSPACE_ID} canManage />,
+  )
 
   await screen.getByRole('button', { name: 'More actions' }).click()
   await screen.getByRole('menuitem', { name: 'Verify' }).click()
@@ -91,7 +108,9 @@ test('archives a domain', async () => {
       return HttpResponse.json(domain({ archivedAt: '2026-02-01T00:00:00Z' }))
     }),
   )
-  const { screen } = await renderWithRouter(<SendingDomainsSection workspaceId={WORKSPACE_ID} />)
+  const { screen } = await renderWithRouter(
+    <SendingDomainsSection workspaceId={WORKSPACE_ID} canManage />,
+  )
 
   await screen.getByRole('button', { name: 'More actions' }).click()
   await screen.getByRole('menuitem', { name: 'Archive' }).click()
@@ -107,7 +126,9 @@ test('a domain that live work sends from is not archived and the work is named',
       problem(409, { usedBy: [{ kind: 'automation', id: '3', name: 'Welcome series' }] }),
     ),
   )
-  const { screen } = await renderWithRouter(<SendingDomainsSection workspaceId={WORKSPACE_ID} />)
+  const { screen } = await renderWithRouter(
+    <SendingDomainsSection workspaceId={WORKSPACE_ID} canManage />,
+  )
 
   await screen.getByRole('button', { name: 'More actions' }).click()
   await screen.getByRole('menuitem', { name: 'Archive' }).click()
@@ -130,7 +151,9 @@ test('lists archived domains with the switch and restores one', async () => {
       return HttpResponse.json(domain())
     }),
   )
-  const { screen } = await renderWithRouter(<SendingDomainsSection workspaceId={WORKSPACE_ID} />)
+  const { screen } = await renderWithRouter(
+    <SendingDomainsSection workspaceId={WORKSPACE_ID} canManage />,
+  )
 
   await screen.getByLabelText('Show archived').click()
   await expect.poll(() => queries).toContain('true')
@@ -143,7 +166,9 @@ test('lists archived domains with the switch and restores one', async () => {
 
 test('shows an error alert when the list fails to load', async () => {
   worker.use(handleSiteSendingDomainsList(() => problem(500, { detail: 'boom' })))
-  const { screen } = await renderWithRouter(<SendingDomainsSection workspaceId={WORKSPACE_ID} />)
+  const { screen } = await renderWithRouter(
+    <SendingDomainsSection workspaceId={WORKSPACE_ID} canManage />,
+  )
 
   await expect
     .element(screen.getByText('Failed to load sending domains').first())
@@ -152,7 +177,9 @@ test('shows an error alert when the list fails to load', async () => {
 
 test('expanding a domain row shows its DNS records', async () => {
   worker.use(list([domain()]))
-  const { screen } = await renderWithRouter(<SendingDomainsSection workspaceId={WORKSPACE_ID} />)
+  const { screen } = await renderWithRouter(
+    <SendingDomainsSection workspaceId={WORKSPACE_ID} canManage />,
+  )
 
   await screen.getByText('mail.acme.com').click()
 
@@ -173,7 +200,9 @@ test('lists the tracking CNAME with its state when the instance has a target', a
       }),
     ]),
   )
-  const { screen } = await renderWithRouter(<SendingDomainsSection workspaceId={WORKSPACE_ID} />)
+  const { screen } = await renderWithRouter(
+    <SendingDomainsSection workspaceId={WORKSPACE_ID} canManage />,
+  )
 
   await screen.getByText('mail.acme.com').click()
 
@@ -184,7 +213,9 @@ test('lists the tracking CNAME with its state when the instance has a target', a
 
 test('lists no tracking record when the instance has no target', async () => {
   worker.use(list([domain()]))
-  const { screen } = await renderWithRouter(<SendingDomainsSection workspaceId={WORKSPACE_ID} />)
+  const { screen } = await renderWithRouter(
+    <SendingDomainsSection workspaceId={WORKSPACE_ID} canManage />,
+  )
 
   await screen.getByText('mail.acme.com').click()
 

@@ -5497,6 +5497,14 @@ func (s *SiteSendingDomainsArchiveBadRequest) Validate() error {
 	return nil
 }
 
+func (s *SiteSendingDomainsArchiveForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *SiteSendingDomainsArchiveNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -5506,6 +5514,14 @@ func (s *SiteSendingDomainsArchiveNotFound) Validate() error {
 }
 
 func (s *SiteSendingDomainsCreateConflict) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteSendingDomainsCreateForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -5625,6 +5641,14 @@ func (s *SiteSendingDomainsUnarchiveConflict) Validate() error {
 	return nil
 }
 
+func (s *SiteSendingDomainsUnarchiveForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *SiteSendingDomainsUnarchiveNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -5634,6 +5658,14 @@ func (s *SiteSendingDomainsUnarchiveNotFound) Validate() error {
 }
 
 func (s *SiteSendingDomainsVerifyBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteSendingDomainsVerifyForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -7215,6 +7247,14 @@ func (s *SiteWebhookTestResult) Validate() error {
 	return nil
 }
 
+func (s *SiteWebhooksCreateForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *SiteWebhooksCreateNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -7239,6 +7279,14 @@ func (s *SiteWebhooksDeleteBadRequest) Validate() error {
 	return nil
 }
 
+func (s *SiteWebhooksDeleteForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *SiteWebhooksDeleteNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -7255,6 +7303,14 @@ func (s *SiteWebhooksGetBadRequest) Validate() error {
 	return nil
 }
 
+func (s *SiteWebhooksGetForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *SiteWebhooksGetNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -7264,6 +7320,14 @@ func (s *SiteWebhooksGetNotFound) Validate() error {
 }
 
 func (s *SiteWebhooksListBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteWebhooksListForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -7335,6 +7399,14 @@ func (s *SiteWebhooksRegenerateSecretBadRequest) Validate() error {
 	return nil
 }
 
+func (s *SiteWebhooksRegenerateSecretForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *SiteWebhooksRegenerateSecretNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -7344,6 +7416,14 @@ func (s *SiteWebhooksRegenerateSecretNotFound) Validate() error {
 }
 
 func (s *SiteWebhooksTestBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteWebhooksTestForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -7368,6 +7448,14 @@ func (s *SiteWebhooksTestUnprocessableEntity) Validate() error {
 }
 
 func (s *SiteWebhooksUpdateBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteWebhooksUpdateForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err

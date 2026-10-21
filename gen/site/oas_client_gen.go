@@ -811,12 +811,13 @@ type Invoker interface {
 	//
 	// Archive a sending domain: it leaves the list, serves no Tracking domain host and can be restored.
 	// Refused with 409 while a scheduled or sending broadcast or an active automation sends from it.
+	// Owners and admins only.
 	//
 	// POST /workspaces/{workspaceId}/sending-domains/{id}/archive
 	SiteSendingDomainsArchive(ctx context.Context, params SiteSendingDomainsArchiveParams) (SiteSendingDomainsArchiveRes, error)
 	// SiteSendingDomainsCreate invokes SiteSendingDomains_create operation.
 	//
-	// Add a sending domain; mints the DKIM keypair and returns the DNS records.
+	// Add a sending domain; mints the DKIM keypair and returns the DNS records. Owners and admins only.
 	//
 	// POST /workspaces/{workspaceId}/sending-domains
 	SiteSendingDomainsCreate(ctx context.Context, request *SiteCreateSendingDomainInput, params SiteSendingDomainsCreateParams) (SiteSendingDomainsCreateRes, error)
@@ -835,13 +836,14 @@ type Invoker interface {
 	// SiteSendingDomainsUnarchive invokes SiteSendingDomains_unarchive operation.
 	//
 	// Restore an archived sending domain. It starts a new DNS check and serves its Tracking domain host
-	// again only once that passes. Refused with 409 when the same domain was added again meanwhile.
+	// again only once that passes. Refused with 409 when the same domain was added again meanwhile. Owners
+	// and admins only.
 	//
 	// POST /workspaces/{workspaceId}/sending-domains/{id}/unarchive
 	SiteSendingDomainsUnarchive(ctx context.Context, params SiteSendingDomainsUnarchiveParams) (SiteSendingDomainsUnarchiveRes, error)
 	// SiteSendingDomainsVerify invokes SiteSendingDomains_verify operation.
 	//
-	// Trigger an immediate DKIM re-check (fire-and-forget).
+	// Trigger an immediate DKIM re-check (fire-and-forget). Owners and admins only.
 	//
 	// POST /workspaces/{workspaceId}/sending-domains/{id}/verify
 	SiteSendingDomainsVerify(ctx context.Context, params SiteSendingDomainsVerifyParams) (SiteSendingDomainsVerifyRes, error)
@@ -1009,43 +1011,45 @@ type Invoker interface {
 	SiteUserUpdateMe(ctx context.Context, request *SiteUpdateMeInput) (SiteUserUpdateMeRes, error)
 	// SiteWebhooksCreate invokes SiteWebhooks_create operation.
 	//
-	// Create a resource from the site UI.
+	// Create a webhook endpoint. Owners and admins only.
 	//
 	// POST /workspaces/{workspaceId}/webhooks
 	SiteWebhooksCreate(ctx context.Context, request *SiteCreateWebhookEndpointInput, params SiteWebhooksCreateParams) (SiteWebhooksCreateRes, error)
 	// SiteWebhooksDelete invokes SiteWebhooks_delete operation.
 	//
-	// Delete a resource from the site UI.
+	// Delete a webhook endpoint. Owners and admins only.
 	//
 	// DELETE /workspaces/{workspaceId}/webhooks/{id}
 	SiteWebhooksDelete(ctx context.Context, params SiteWebhooksDeleteParams) (SiteWebhooksDeleteRes, error)
 	// SiteWebhooksGet invokes SiteWebhooks_get operation.
 	//
-	// Get a resource by ID for the site UI.
+	// Get a webhook endpoint by ID. Owners and admins only.
 	//
 	// GET /workspaces/{workspaceId}/webhooks/{id}
 	SiteWebhooksGet(ctx context.Context, params SiteWebhooksGetParams) (SiteWebhooksGetRes, error)
 	// SiteWebhooksList invokes SiteWebhooks_list operation.
 	//
-	// List resources for the site UI.
+	// List webhook endpoints. Owners and admins only.
 	//
 	// GET /workspaces/{workspaceId}/webhooks
 	SiteWebhooksList(ctx context.Context, params SiteWebhooksListParams) (SiteWebhooksListRes, error)
 	// SiteWebhooksRegenerateSecret invokes SiteWebhooks_regenerateSecret operation.
 	//
 	// Replace the signing secret. The old one stops verifying at once; the new one is in the response.
+	// Owners and admins only.
 	//
 	// POST /workspaces/{workspaceId}/webhooks/{id}/regenerate-secret
 	SiteWebhooksRegenerateSecret(ctx context.Context, params SiteWebhooksRegenerateSecretParams) (SiteWebhooksRegenerateSecretRes, error)
 	// SiteWebhooksTest invokes SiteWebhooks_test operation.
 	//
 	// Send a sample event of the chosen type, signed as a real delivery, and return the receiver's answer.
+	// Owners and admins only.
 	//
 	// POST /workspaces/{workspaceId}/webhooks/{id}/test
 	SiteWebhooksTest(ctx context.Context, request *SiteTestWebhookInput, params SiteWebhooksTestParams) (SiteWebhooksTestRes, error)
 	// SiteWebhooksUpdate invokes SiteWebhooks_update operation.
 	//
-	// Update a resource from the site UI.
+	// Update a webhook endpoint. Owners and admins only.
 	//
 	// PUT /workspaces/{workspaceId}/webhooks/{id}
 	SiteWebhooksUpdate(ctx context.Context, request *SiteUpdateWebhookEndpointInput, params SiteWebhooksUpdateParams) (SiteWebhooksUpdateRes, error)
@@ -16759,6 +16763,7 @@ func (c *Client) sendSiteSegmentsUpdate(ctx context.Context, request *SiteUpdate
 //
 // Archive a sending domain: it leaves the list, serves no Tracking domain host and can be restored.
 // Refused with 409 while a scheduled or sending broadcast or an active automation sends from it.
+// Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/sending-domains/{id}/archive
 func (c *Client) SiteSendingDomainsArchive(ctx context.Context, params SiteSendingDomainsArchiveParams) (SiteSendingDomainsArchiveRes, error) {
@@ -16915,7 +16920,7 @@ func (c *Client) sendSiteSendingDomainsArchive(ctx context.Context, params SiteS
 
 // SiteSendingDomainsCreate invokes SiteSendingDomains_create operation.
 //
-// Add a sending domain; mints the DKIM keypair and returns the DNS records.
+// Add a sending domain; mints the DKIM keypair and returns the DNS records. Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/sending-domains
 func (c *Client) SiteSendingDomainsCreate(ctx context.Context, request *SiteCreateSendingDomainInput, params SiteSendingDomainsCreateParams) (SiteSendingDomainsCreateRes, error) {
@@ -17400,7 +17405,8 @@ func (c *Client) sendSiteSendingDomainsList(ctx context.Context, params SiteSend
 // SiteSendingDomainsUnarchive invokes SiteSendingDomains_unarchive operation.
 //
 // Restore an archived sending domain. It starts a new DNS check and serves its Tracking domain host
-// again only once that passes. Refused with 409 when the same domain was added again meanwhile.
+// again only once that passes. Refused with 409 when the same domain was added again meanwhile. Owners
+// and admins only.
 //
 // POST /workspaces/{workspaceId}/sending-domains/{id}/unarchive
 func (c *Client) SiteSendingDomainsUnarchive(ctx context.Context, params SiteSendingDomainsUnarchiveParams) (SiteSendingDomainsUnarchiveRes, error) {
@@ -17557,7 +17563,7 @@ func (c *Client) sendSiteSendingDomainsUnarchive(ctx context.Context, params Sit
 
 // SiteSendingDomainsVerify invokes SiteSendingDomains_verify operation.
 //
-// Trigger an immediate DKIM re-check (fire-and-forget).
+// Trigger an immediate DKIM re-check (fire-and-forget). Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/sending-domains/{id}/verify
 func (c *Client) SiteSendingDomainsVerify(ctx context.Context, params SiteSendingDomainsVerifyParams) (SiteSendingDomainsVerifyRes, error) {
@@ -21284,7 +21290,7 @@ func (c *Client) sendSiteUserUpdateMe(ctx context.Context, request *SiteUpdateMe
 
 // SiteWebhooksCreate invokes SiteWebhooks_create operation.
 //
-// Create a resource from the site UI.
+// Create a webhook endpoint. Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/webhooks
 func (c *Client) SiteWebhooksCreate(ctx context.Context, request *SiteCreateWebhookEndpointInput, params SiteWebhooksCreateParams) (SiteWebhooksCreateRes, error) {
@@ -21422,7 +21428,7 @@ func (c *Client) sendSiteWebhooksCreate(ctx context.Context, request *SiteCreate
 
 // SiteWebhooksDelete invokes SiteWebhooks_delete operation.
 //
-// Delete a resource from the site UI.
+// Delete a webhook endpoint. Owners and admins only.
 //
 // DELETE /workspaces/{workspaceId}/webhooks/{id}
 func (c *Client) SiteWebhooksDelete(ctx context.Context, params SiteWebhooksDeleteParams) (SiteWebhooksDeleteRes, error) {
@@ -21578,7 +21584,7 @@ func (c *Client) sendSiteWebhooksDelete(ctx context.Context, params SiteWebhooks
 
 // SiteWebhooksGet invokes SiteWebhooks_get operation.
 //
-// Get a resource by ID for the site UI.
+// Get a webhook endpoint by ID. Owners and admins only.
 //
 // GET /workspaces/{workspaceId}/webhooks/{id}
 func (c *Client) SiteWebhooksGet(ctx context.Context, params SiteWebhooksGetParams) (SiteWebhooksGetRes, error) {
@@ -21734,7 +21740,7 @@ func (c *Client) sendSiteWebhooksGet(ctx context.Context, params SiteWebhooksGet
 
 // SiteWebhooksList invokes SiteWebhooks_list operation.
 //
-// List resources for the site UI.
+// List webhook endpoints. Owners and admins only.
 //
 // GET /workspaces/{workspaceId}/webhooks
 func (c *Client) SiteWebhooksList(ctx context.Context, params SiteWebhooksListParams) (SiteWebhooksListRes, error) {
@@ -21908,6 +21914,7 @@ func (c *Client) sendSiteWebhooksList(ctx context.Context, params SiteWebhooksLi
 // SiteWebhooksRegenerateSecret invokes SiteWebhooks_regenerateSecret operation.
 //
 // Replace the signing secret. The old one stops verifying at once; the new one is in the response.
+// Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/webhooks/{id}/regenerate-secret
 func (c *Client) SiteWebhooksRegenerateSecret(ctx context.Context, params SiteWebhooksRegenerateSecretParams) (SiteWebhooksRegenerateSecretRes, error) {
@@ -22065,6 +22072,7 @@ func (c *Client) sendSiteWebhooksRegenerateSecret(ctx context.Context, params Si
 // SiteWebhooksTest invokes SiteWebhooks_test operation.
 //
 // Send a sample event of the chosen type, signed as a real delivery, and return the receiver's answer.
+// Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/webhooks/{id}/test
 func (c *Client) SiteWebhooksTest(ctx context.Context, request *SiteTestWebhookInput, params SiteWebhooksTestParams) (SiteWebhooksTestRes, error) {
@@ -22224,7 +22232,7 @@ func (c *Client) sendSiteWebhooksTest(ctx context.Context, request *SiteTestWebh
 
 // SiteWebhooksUpdate invokes SiteWebhooks_update operation.
 //
-// Update a resource from the site UI.
+// Update a webhook endpoint. Owners and admins only.
 //
 // PUT /workspaces/{workspaceId}/webhooks/{id}
 func (c *Client) SiteWebhooksUpdate(ctx context.Context, request *SiteUpdateWebhookEndpointInput, params SiteWebhooksUpdateParams) (SiteWebhooksUpdateRes, error) {

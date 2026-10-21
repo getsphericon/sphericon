@@ -790,12 +790,13 @@ type Handler interface {
 	//
 	// Archive a sending domain: it leaves the list, serves no Tracking domain host and can be restored.
 	// Refused with 409 while a scheduled or sending broadcast or an active automation sends from it.
+	// Owners and admins only.
 	//
 	// POST /workspaces/{workspaceId}/sending-domains/{id}/archive
 	SiteSendingDomainsArchive(ctx context.Context, params SiteSendingDomainsArchiveParams) (SiteSendingDomainsArchiveRes, error)
 	// SiteSendingDomainsCreate implements SiteSendingDomains_create operation.
 	//
-	// Add a sending domain; mints the DKIM keypair and returns the DNS records.
+	// Add a sending domain; mints the DKIM keypair and returns the DNS records. Owners and admins only.
 	//
 	// POST /workspaces/{workspaceId}/sending-domains
 	SiteSendingDomainsCreate(ctx context.Context, req *SiteCreateSendingDomainInput, params SiteSendingDomainsCreateParams) (SiteSendingDomainsCreateRes, error)
@@ -814,13 +815,14 @@ type Handler interface {
 	// SiteSendingDomainsUnarchive implements SiteSendingDomains_unarchive operation.
 	//
 	// Restore an archived sending domain. It starts a new DNS check and serves its Tracking domain host
-	// again only once that passes. Refused with 409 when the same domain was added again meanwhile.
+	// again only once that passes. Refused with 409 when the same domain was added again meanwhile. Owners
+	// and admins only.
 	//
 	// POST /workspaces/{workspaceId}/sending-domains/{id}/unarchive
 	SiteSendingDomainsUnarchive(ctx context.Context, params SiteSendingDomainsUnarchiveParams) (SiteSendingDomainsUnarchiveRes, error)
 	// SiteSendingDomainsVerify implements SiteSendingDomains_verify operation.
 	//
-	// Trigger an immediate DKIM re-check (fire-and-forget).
+	// Trigger an immediate DKIM re-check (fire-and-forget). Owners and admins only.
 	//
 	// POST /workspaces/{workspaceId}/sending-domains/{id}/verify
 	SiteSendingDomainsVerify(ctx context.Context, params SiteSendingDomainsVerifyParams) (SiteSendingDomainsVerifyRes, error)
@@ -988,43 +990,45 @@ type Handler interface {
 	SiteUserUpdateMe(ctx context.Context, req *SiteUpdateMeInput) (SiteUserUpdateMeRes, error)
 	// SiteWebhooksCreate implements SiteWebhooks_create operation.
 	//
-	// Create a resource from the site UI.
+	// Create a webhook endpoint. Owners and admins only.
 	//
 	// POST /workspaces/{workspaceId}/webhooks
 	SiteWebhooksCreate(ctx context.Context, req *SiteCreateWebhookEndpointInput, params SiteWebhooksCreateParams) (SiteWebhooksCreateRes, error)
 	// SiteWebhooksDelete implements SiteWebhooks_delete operation.
 	//
-	// Delete a resource from the site UI.
+	// Delete a webhook endpoint. Owners and admins only.
 	//
 	// DELETE /workspaces/{workspaceId}/webhooks/{id}
 	SiteWebhooksDelete(ctx context.Context, params SiteWebhooksDeleteParams) (SiteWebhooksDeleteRes, error)
 	// SiteWebhooksGet implements SiteWebhooks_get operation.
 	//
-	// Get a resource by ID for the site UI.
+	// Get a webhook endpoint by ID. Owners and admins only.
 	//
 	// GET /workspaces/{workspaceId}/webhooks/{id}
 	SiteWebhooksGet(ctx context.Context, params SiteWebhooksGetParams) (SiteWebhooksGetRes, error)
 	// SiteWebhooksList implements SiteWebhooks_list operation.
 	//
-	// List resources for the site UI.
+	// List webhook endpoints. Owners and admins only.
 	//
 	// GET /workspaces/{workspaceId}/webhooks
 	SiteWebhooksList(ctx context.Context, params SiteWebhooksListParams) (SiteWebhooksListRes, error)
 	// SiteWebhooksRegenerateSecret implements SiteWebhooks_regenerateSecret operation.
 	//
 	// Replace the signing secret. The old one stops verifying at once; the new one is in the response.
+	// Owners and admins only.
 	//
 	// POST /workspaces/{workspaceId}/webhooks/{id}/regenerate-secret
 	SiteWebhooksRegenerateSecret(ctx context.Context, params SiteWebhooksRegenerateSecretParams) (SiteWebhooksRegenerateSecretRes, error)
 	// SiteWebhooksTest implements SiteWebhooks_test operation.
 	//
 	// Send a sample event of the chosen type, signed as a real delivery, and return the receiver's answer.
+	// Owners and admins only.
 	//
 	// POST /workspaces/{workspaceId}/webhooks/{id}/test
 	SiteWebhooksTest(ctx context.Context, req *SiteTestWebhookInput, params SiteWebhooksTestParams) (SiteWebhooksTestRes, error)
 	// SiteWebhooksUpdate implements SiteWebhooks_update operation.
 	//
-	// Update a resource from the site UI.
+	// Update a webhook endpoint. Owners and admins only.
 	//
 	// PUT /workspaces/{workspaceId}/webhooks/{id}
 	SiteWebhooksUpdate(ctx context.Context, req *SiteUpdateWebhookEndpointInput, params SiteWebhooksUpdateParams) (SiteWebhooksUpdateRes, error)

@@ -2735,7 +2735,7 @@ export const siteSendingDomainsListInfiniteOptions = (options: Options<SiteSendi
 };
 
 /**
- * Add a sending domain; mints the DKIM keypair and returns the DNS records
+ * Add a sending domain; mints the DKIM keypair and returns the DNS records. Owners and admins only.
  */
 export const siteSendingDomainsCreateMutation = (options?: Partial<Options<SiteSendingDomainsCreateData>>): UseMutationOptions<SiteSendingDomainsCreateResponse, SiteSendingDomainsCreateError, Options<SiteSendingDomainsCreateData>> => {
   const mutationOptions: UseMutationOptions<SiteSendingDomainsCreateResponse, SiteSendingDomainsCreateError, Options<SiteSendingDomainsCreateData>> = {
@@ -2772,7 +2772,7 @@ export const siteSendingDomainsGetOptions = (options: Options<SiteSendingDomains
 /**
  * Archive a sending domain: it leaves the list, serves no Tracking domain host and can be
  * restored. Refused with 409 while a scheduled or sending broadcast or an active automation
- * sends from it.
+ * sends from it. Owners and admins only.
  */
 export const siteSendingDomainsArchiveMutation = (options?: Partial<Options<SiteSendingDomainsArchiveData>>): UseMutationOptions<SiteSendingDomainsArchiveResponse, SiteSendingDomainsArchiveError, Options<SiteSendingDomainsArchiveData>> => {
   const mutationOptions: UseMutationOptions<SiteSendingDomainsArchiveResponse, SiteSendingDomainsArchiveError, Options<SiteSendingDomainsArchiveData>> = {
@@ -2791,7 +2791,7 @@ export const siteSendingDomainsArchiveMutation = (options?: Partial<Options<Site
 /**
  * Restore an archived sending domain. It starts a new DNS check and serves its Tracking
  * domain host again only once that passes. Refused with 409 when the same domain was added
- * again meanwhile.
+ * again meanwhile. Owners and admins only.
  */
 export const siteSendingDomainsUnarchiveMutation = (options?: Partial<Options<SiteSendingDomainsUnarchiveData>>): UseMutationOptions<SiteSendingDomainsUnarchiveResponse, SiteSendingDomainsUnarchiveError, Options<SiteSendingDomainsUnarchiveData>> => {
   const mutationOptions: UseMutationOptions<SiteSendingDomainsUnarchiveResponse, SiteSendingDomainsUnarchiveError, Options<SiteSendingDomainsUnarchiveData>> = {
@@ -2808,7 +2808,7 @@ export const siteSendingDomainsUnarchiveMutation = (options?: Partial<Options<Si
 };
 
 /**
- * Trigger an immediate DKIM re-check (fire-and-forget)
+ * Trigger an immediate DKIM re-check (fire-and-forget). Owners and admins only.
  */
 export const siteSendingDomainsVerifyMutation = (options?: Partial<Options<SiteSendingDomainsVerifyData>>): UseMutationOptions<SiteSendingDomainsVerifyResponse, SiteSendingDomainsVerifyError, Options<SiteSendingDomainsVerifyData>> => {
   const mutationOptions: UseMutationOptions<SiteSendingDomainsVerifyResponse, SiteSendingDomainsVerifyError, Options<SiteSendingDomainsVerifyData>> = {
@@ -3210,7 +3210,7 @@ export const siteTransactionalEmailsListInfiniteOptions = (options: Options<Site
 export const siteWebhooksListQueryKey = (options: Options<SiteWebhooksListData>) => createQueryKey('siteWebhooksList', options);
 
 /**
- * List resources for the site UI
+ * List webhook endpoints. Owners and admins only.
  */
 export const siteWebhooksListOptions = (options: Options<SiteWebhooksListData>) => queryOptions<SiteWebhooksListResponse, SiteWebhooksListError, SiteWebhooksListResponse, ReturnType<typeof siteWebhooksListQueryKey>>({
   queryFn: async ({ queryKey, signal }) => {
@@ -3228,7 +3228,7 @@ export const siteWebhooksListOptions = (options: Options<SiteWebhooksListData>) 
 export const siteWebhooksListInfiniteQueryKey = (options: Options<SiteWebhooksListData>): QueryKey<Options<SiteWebhooksListData>> => createQueryKey('siteWebhooksList', options, true);
 
 /**
- * List resources for the site UI
+ * List webhook endpoints. Owners and admins only.
  */
 export const siteWebhooksListInfiniteOptions = (options: Options<SiteWebhooksListData>) => {
   const opts = infiniteQueryOptions<SiteWebhooksListResponse, SiteWebhooksListError, InfiniteData<SiteWebhooksListResponse>, QueryKey<Options<SiteWebhooksListData>>, number | Pick<QueryKey<Options<SiteWebhooksListData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
@@ -3256,7 +3256,7 @@ export const siteWebhooksListInfiniteOptions = (options: Options<SiteWebhooksLis
 };
 
 /**
- * Create a resource from the site UI
+ * Create a webhook endpoint. Owners and admins only.
  */
 export const siteWebhooksCreateMutation = (options?: Partial<Options<SiteWebhooksCreateData>>): UseMutationOptions<SiteWebhooksCreateResponse, SiteWebhooksCreateError, Options<SiteWebhooksCreateData>> => {
   const mutationOptions: UseMutationOptions<SiteWebhooksCreateResponse, SiteWebhooksCreateError, Options<SiteWebhooksCreateData>> = {
@@ -3273,7 +3273,7 @@ export const siteWebhooksCreateMutation = (options?: Partial<Options<SiteWebhook
 };
 
 /**
- * Delete a resource from the site UI
+ * Delete a webhook endpoint. Owners and admins only.
  */
 export const siteWebhooksDeleteMutation = (options?: Partial<Options<SiteWebhooksDeleteData>>): UseMutationOptions<SiteWebhooksDeleteResponse, SiteWebhooksDeleteError, Options<SiteWebhooksDeleteData>> => {
   const mutationOptions: UseMutationOptions<SiteWebhooksDeleteResponse, SiteWebhooksDeleteError, Options<SiteWebhooksDeleteData>> = {
@@ -3292,7 +3292,7 @@ export const siteWebhooksDeleteMutation = (options?: Partial<Options<SiteWebhook
 export const siteWebhooksGetQueryKey = (options: Options<SiteWebhooksGetData>) => createQueryKey('siteWebhooksGet', options);
 
 /**
- * Get a resource by ID for the site UI
+ * Get a webhook endpoint by ID. Owners and admins only.
  */
 export const siteWebhooksGetOptions = (options: Options<SiteWebhooksGetData>) => queryOptions<SiteWebhooksGetResponse, SiteWebhooksGetError, SiteWebhooksGetResponse, ReturnType<typeof siteWebhooksGetQueryKey>>({
   queryFn: async ({ queryKey, signal }) => {
@@ -3308,7 +3308,7 @@ export const siteWebhooksGetOptions = (options: Options<SiteWebhooksGetData>) =>
 });
 
 /**
- * Update a resource from the site UI
+ * Update a webhook endpoint. Owners and admins only.
  */
 export const siteWebhooksUpdateMutation = (options?: Partial<Options<SiteWebhooksUpdateData>>): UseMutationOptions<SiteWebhooksUpdateResponse, SiteWebhooksUpdateError, Options<SiteWebhooksUpdateData>> => {
   const mutationOptions: UseMutationOptions<SiteWebhooksUpdateResponse, SiteWebhooksUpdateError, Options<SiteWebhooksUpdateData>> = {
@@ -3325,7 +3325,7 @@ export const siteWebhooksUpdateMutation = (options?: Partial<Options<SiteWebhook
 };
 
 /**
- * Replace the signing secret. The old one stops verifying at once; the new one is in the response.
+ * Replace the signing secret. The old one stops verifying at once; the new one is in the response. Owners and admins only.
  */
 export const siteWebhooksRegenerateSecretMutation = (options?: Partial<Options<SiteWebhooksRegenerateSecretData>>): UseMutationOptions<SiteWebhooksRegenerateSecretResponse, SiteWebhooksRegenerateSecretError, Options<SiteWebhooksRegenerateSecretData>> => {
   const mutationOptions: UseMutationOptions<SiteWebhooksRegenerateSecretResponse, SiteWebhooksRegenerateSecretError, Options<SiteWebhooksRegenerateSecretData>> = {
@@ -3342,7 +3342,7 @@ export const siteWebhooksRegenerateSecretMutation = (options?: Partial<Options<S
 };
 
 /**
- * Send a sample event of the chosen type, signed as a real delivery, and return the receiver's answer
+ * Send a sample event of the chosen type, signed as a real delivery, and return the receiver's answer. Owners and admins only.
  */
 export const siteWebhooksTestMutation = (options?: Partial<Options<SiteWebhooksTestData>>): UseMutationOptions<SiteWebhooksTestResponse, SiteWebhooksTestError, Options<SiteWebhooksTestData>> => {
   const mutationOptions: UseMutationOptions<SiteWebhooksTestResponse, SiteWebhooksTestError, Options<SiteWebhooksTestData>> = {

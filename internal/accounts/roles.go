@@ -47,6 +47,20 @@ func CanManageIntegrations(role membership.Role) bool {
 	return role == membership.RoleOwner || role == membership.RoleAdmin
 }
 
+// CanManageWebhooks reports whether role may read and manage the Workspace's webhook
+// endpoints. An endpoint carries its signing secret and decides where customer events are
+// delivered, so every operation on one, reads included, is an owner/admin action.
+func CanManageWebhooks(role membership.Role) bool {
+	return role == membership.RoleOwner || role == membership.RoleAdmin
+}
+
+// CanManageSendingDomains reports whether role may add, archive, restore and re-check a
+// Sending domain. It decides which domain mail is signed and sent as and which host serves
+// tracking links, so it is an owner/admin action. Reading one is open to every member.
+func CanManageSendingDomains(role membership.Role) bool {
+	return role == membership.RoleOwner || role == membership.RoleAdmin
+}
+
 // CanManageBrandKit reports whether role may save the Workspace's Brand kit and recreate its
 // starter Templates (ADR 0040). It is the Workspace's visual identity, so it is an owner-only
 // action; every member may read it, because every member edits messages.

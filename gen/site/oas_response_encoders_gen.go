@@ -6230,6 +6230,18 @@ func encodeSiteSendingDomainsArchiveResponse(response SiteSendingDomainsArchiveR
 
 		return nil
 
+	case *SiteSendingDomainsArchiveForbidden:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(403)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
 	case *SiteSendingDomainsArchiveNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
@@ -6264,6 +6276,18 @@ func encodeSiteSendingDomainsCreateResponse(response SiteSendingDomainsCreateRes
 	case *SiteSendingDomainResource:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(201)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteSendingDomainsCreateForbidden:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(403)
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -6438,6 +6462,18 @@ func encodeSiteSendingDomainsUnarchiveResponse(response SiteSendingDomainsUnarch
 
 		return nil
 
+	case *SiteSendingDomainsUnarchiveForbidden:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(403)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
 	case *SiteSendingDomainsUnarchiveNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
@@ -6477,6 +6513,18 @@ func encodeSiteSendingDomainsVerifyResponse(response SiteSendingDomainsVerifyRes
 	case *SiteSendingDomainsVerifyBadRequest:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteSendingDomainsVerifyForbidden:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(403)
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -7771,6 +7819,18 @@ func encodeSiteWebhooksCreateResponse(response SiteWebhooksCreateRes, w http.Res
 
 		return nil
 
+	case *SiteWebhooksCreateForbidden:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(403)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
 	case *SiteWebhooksCreateNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
@@ -7810,6 +7870,18 @@ func encodeSiteWebhooksDeleteResponse(response SiteWebhooksDeleteRes, w http.Res
 	case *SiteWebhooksDeleteBadRequest:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteWebhooksDeleteForbidden:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(403)
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -7862,6 +7934,18 @@ func encodeSiteWebhooksGetResponse(response SiteWebhooksGetRes, w http.ResponseW
 
 		return nil
 
+	case *SiteWebhooksGetForbidden:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(403)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
 	case *SiteWebhooksGetNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
@@ -7896,6 +7980,18 @@ func encodeSiteWebhooksListResponse(response SiteWebhooksListRes, w http.Respons
 	case *SiteWebhooksListBadRequest:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteWebhooksListForbidden:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(403)
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -7960,6 +8056,18 @@ func encodeSiteWebhooksRegenerateSecretResponse(response SiteWebhooksRegenerateS
 
 		return nil
 
+	case *SiteWebhooksRegenerateSecretForbidden:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(403)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
 	case *SiteWebhooksRegenerateSecretNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
@@ -7994,6 +8102,18 @@ func encodeSiteWebhooksTestResponse(response SiteWebhooksTestRes, w http.Respons
 	case *SiteWebhooksTestBadRequest:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteWebhooksTestForbidden:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(403)
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -8049,6 +8169,18 @@ func encodeSiteWebhooksUpdateResponse(response SiteWebhooksUpdateRes, w http.Res
 	case *SiteWebhooksUpdateBadRequest:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteWebhooksUpdateForbidden:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(403)
 
 		e := new(jx.Encoder)
 		response.Encode(e)

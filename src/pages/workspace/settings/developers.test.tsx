@@ -64,3 +64,39 @@ test('shows the API keys and the webhooks of the workspace', async () => {
   await expect.element(screen.getByRole('heading', { name: 'API keys' })).toBeInTheDocument()
   await expect.element(screen.getByRole('heading', { name: 'Webhooks' })).toBeInTheDocument()
 })
+
+test('does not offer a member the webhooks, whose secrets only owners and admins read', async () => {
+  worker.use(
+    handleSiteWorkspacesList({ body: [{ ...workspace, role: 'member' as const }] }),
+    handleSiteTokensList({ body: [] }),
+    handleSiteUserGetMe({
+      body: {
+        id: '10',
+        name: 'Ann',
+        email: 'ann@acme.com',
+        emailVerified: true,
+        createdAt: '2026-01-01T00:00:00Z',
+      },
+    }),
+    handleSiteMembershipsList({
+      body: [
+        {
+          id: '1',
+          userId: '10',
+          email: 'ann@acme.com',
+          name: 'Ann',
+          role: 'member',
+          createdAt: '2026-01-01T00:00:00Z',
+        },
+      ],
+    }),
+  )
+
+  const { screen } = await renderWithRouter(
+    <DevelopersPage />,
+    routeMount(developersRoute, { workspaceId: 'TestWs01' }),
+  )
+
+  await expect.element(screen.getByRole('heading', { name: 'API keys' })).toBeInTheDocument()
+  await expect.element(screen.getByRole('heading', { name: 'Webhooks' })).not.toBeInTheDocument()
+})

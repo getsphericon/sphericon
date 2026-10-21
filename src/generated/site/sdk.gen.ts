@@ -2614,7 +2614,7 @@ export const siteSendingDomainsList = <ThrowOnError extends boolean = false>(opt
 });
 
 /**
- * Add a sending domain; mints the DKIM keypair and returns the DNS records
+ * Add a sending domain; mints the DKIM keypair and returns the DNS records. Owners and admins only.
  */
 export const siteSendingDomainsCreate = <ThrowOnError extends boolean = false>(options: Options<SiteSendingDomainsCreateData, ThrowOnError>): RequestResult<SiteSendingDomainsCreateResponses, SiteSendingDomainsCreateErrors, ThrowOnError> => (options.client ?? client).post<SiteSendingDomainsCreateResponses, SiteSendingDomainsCreateErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({
@@ -2656,7 +2656,7 @@ export const siteSendingDomainsGet = <ThrowOnError extends boolean = false>(opti
 /**
  * Archive a sending domain: it leaves the list, serves no Tracking domain host and can be
  * restored. Refused with 409 while a scheduled or sending broadcast or an active automation
- * sends from it.
+ * sends from it. Owners and admins only.
  */
 export const siteSendingDomainsArchive = <ThrowOnError extends boolean = false>(options: Options<SiteSendingDomainsArchiveData, ThrowOnError>): RequestResult<SiteSendingDomainsArchiveResponses, SiteSendingDomainsArchiveErrors, ThrowOnError> => (options.client ?? client).post<SiteSendingDomainsArchiveResponses, SiteSendingDomainsArchiveErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({
@@ -2676,7 +2676,7 @@ export const siteSendingDomainsArchive = <ThrowOnError extends boolean = false>(
 /**
  * Restore an archived sending domain. It starts a new DNS check and serves its Tracking
  * domain host again only once that passes. Refused with 409 when the same domain was added
- * again meanwhile.
+ * again meanwhile. Owners and admins only.
  */
 export const siteSendingDomainsUnarchive = <ThrowOnError extends boolean = false>(options: Options<SiteSendingDomainsUnarchiveData, ThrowOnError>): RequestResult<SiteSendingDomainsUnarchiveResponses, SiteSendingDomainsUnarchiveErrors, ThrowOnError> => (options.client ?? client).post<SiteSendingDomainsUnarchiveResponses, SiteSendingDomainsUnarchiveErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({
@@ -2694,7 +2694,7 @@ export const siteSendingDomainsUnarchive = <ThrowOnError extends boolean = false
 });
 
 /**
- * Trigger an immediate DKIM re-check (fire-and-forget)
+ * Trigger an immediate DKIM re-check (fire-and-forget). Owners and admins only.
  */
 export const siteSendingDomainsVerify = <ThrowOnError extends boolean = false>(options: Options<SiteSendingDomainsVerifyData, ThrowOnError>): RequestResult<SiteSendingDomainsVerifyResponses, SiteSendingDomainsVerifyErrors, ThrowOnError> => (options.client ?? client).post<SiteSendingDomainsVerifyResponses, SiteSendingDomainsVerifyErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({
@@ -2999,7 +2999,7 @@ export const siteTransactionalEmailsList = <ThrowOnError extends boolean = false
 });
 
 /**
- * List resources for the site UI
+ * List webhook endpoints. Owners and admins only.
  */
 export const siteWebhooksList = <ThrowOnError extends boolean = false>(options: Options<SiteWebhooksListData, ThrowOnError>): RequestResult<SiteWebhooksListResponses, SiteWebhooksListErrors, ThrowOnError> => (options.client ?? client).get<SiteWebhooksListResponses, SiteWebhooksListErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({
@@ -3017,7 +3017,7 @@ export const siteWebhooksList = <ThrowOnError extends boolean = false>(options: 
 });
 
 /**
- * Create a resource from the site UI
+ * Create a webhook endpoint. Owners and admins only.
  */
 export const siteWebhooksCreate = <ThrowOnError extends boolean = false>(options: Options<SiteWebhooksCreateData, ThrowOnError>): RequestResult<SiteWebhooksCreateResponses, SiteWebhooksCreateErrors, ThrowOnError> => (options.client ?? client).post<SiteWebhooksCreateResponses, SiteWebhooksCreateErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({
@@ -3039,7 +3039,7 @@ export const siteWebhooksCreate = <ThrowOnError extends boolean = false>(options
 });
 
 /**
- * Delete a resource from the site UI
+ * Delete a webhook endpoint. Owners and admins only.
  */
 export const siteWebhooksDelete = <ThrowOnError extends boolean = false>(options: Options<SiteWebhooksDeleteData, ThrowOnError>): RequestResult<SiteWebhooksDeleteResponses, SiteWebhooksDeleteErrors, ThrowOnError> => (options.client ?? client).delete<SiteWebhooksDeleteResponses, SiteWebhooksDeleteErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({
@@ -3057,7 +3057,7 @@ export const siteWebhooksDelete = <ThrowOnError extends boolean = false>(options
 });
 
 /**
- * Get a resource by ID for the site UI
+ * Get a webhook endpoint by ID. Owners and admins only.
  */
 export const siteWebhooksGet = <ThrowOnError extends boolean = false>(options: Options<SiteWebhooksGetData, ThrowOnError>): RequestResult<SiteWebhooksGetResponses, SiteWebhooksGetErrors, ThrowOnError> => (options.client ?? client).get<SiteWebhooksGetResponses, SiteWebhooksGetErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({
@@ -3075,7 +3075,7 @@ export const siteWebhooksGet = <ThrowOnError extends boolean = false>(options: O
 });
 
 /**
- * Update a resource from the site UI
+ * Update a webhook endpoint. Owners and admins only.
  */
 export const siteWebhooksUpdate = <ThrowOnError extends boolean = false>(options: Options<SiteWebhooksUpdateData, ThrowOnError>): RequestResult<SiteWebhooksUpdateResponses, SiteWebhooksUpdateErrors, ThrowOnError> => (options.client ?? client).put<SiteWebhooksUpdateResponses, SiteWebhooksUpdateErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({
@@ -3097,7 +3097,7 @@ export const siteWebhooksUpdate = <ThrowOnError extends boolean = false>(options
 });
 
 /**
- * Replace the signing secret. The old one stops verifying at once; the new one is in the response.
+ * Replace the signing secret. The old one stops verifying at once; the new one is in the response. Owners and admins only.
  */
 export const siteWebhooksRegenerateSecret = <ThrowOnError extends boolean = false>(options: Options<SiteWebhooksRegenerateSecretData, ThrowOnError>): RequestResult<SiteWebhooksRegenerateSecretResponses, SiteWebhooksRegenerateSecretErrors, ThrowOnError> => (options.client ?? client).post<SiteWebhooksRegenerateSecretResponses, SiteWebhooksRegenerateSecretErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({
@@ -3115,7 +3115,7 @@ export const siteWebhooksRegenerateSecret = <ThrowOnError extends boolean = fals
 });
 
 /**
- * Send a sample event of the chosen type, signed as a real delivery, and return the receiver's answer
+ * Send a sample event of the chosen type, signed as a real delivery, and return the receiver's answer. Owners and admins only.
  */
 export const siteWebhooksTest = <ThrowOnError extends boolean = false>(options: Options<SiteWebhooksTestData, ThrowOnError>): RequestResult<SiteWebhooksTestResponses, SiteWebhooksTestErrors, ThrowOnError> => (options.client ?? client).post<SiteWebhooksTestResponses, SiteWebhooksTestErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({

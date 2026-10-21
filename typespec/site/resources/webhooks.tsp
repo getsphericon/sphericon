@@ -111,22 +111,86 @@ model SiteWebhookTestResult {
   kind?: SiteWebhookErrorKind;
 }
 
+/**
+ * Webhook endpoints are managed by owners and admins only: the resource carries the
+ * signing secret, so every operation, reads included, is refused to a member with 403.
+ */
 @tag("Site Webhooks")
-interface SiteWebhooks
-  extends WorkspaceCrud<
-      SiteWebhookEndpointResource,
-      SiteCreateWebhookEndpointInput,
-      SiteUpdateWebhookEndpointInput
-    > {
-  /** Replace the signing secret. The old one stops verifying at once; the new one is in the response. */
+interface SiteWebhooks {
+  /** List webhook endpoints. Owners and admins only. */
+  @listsResource(SiteWebhookEndpointResource)
+  @get
+  @autoRoute
+  list(
+    ...ResourceCollectionParameters<SiteWebhookEndpointResource>,
+    ...PageQuery,
+  ):
+    | Page<SiteWebhookEndpointResource>
+    | BadRequestProblem
+    | ForbiddenProblem
+    | NotFoundProblem
+    | UnprocessableEntityProblem;
+
+  /** Create a webhook endpoint. Owners and admins only. */
+  @createsResource(SiteWebhookEndpointResource)
+  @post
+  @autoRoute
+  create(
+    ...ResourceCollectionParameters<SiteWebhookEndpointResource>,
+    @body body: SiteCreateWebhookEndpointInput,
+  ):
+    | {
+        @statusCode statusCode: 201;
+        @body body: SiteWebhookEndpointResource;
+      }
+    | ForbiddenProblem
+    | NotFoundProblem
+    | UnprocessableEntityProblem;
+
+  /** Get a webhook endpoint by ID. Owners and admins only. */
+  @readsResource(SiteWebhookEndpointResource)
+  @get
+  @autoRoute
+  get(...ResourceParameters<SiteWebhookEndpointResource>):
+    | SiteWebhookEndpointResource
+    | BadRequestProblem
+    | ForbiddenProblem
+    | NotFoundProblem;
+
+  /** Update a webhook endpoint. Owners and admins only. */
+  @updatesResource(SiteWebhookEndpointResource)
+  @put
+  @autoRoute
+  update(
+    ...ResourceParameters<SiteWebhookEndpointResource>,
+    @body body: SiteUpdateWebhookEndpointInput,
+  ):
+    | SiteWebhookEndpointResource
+    | BadRequestProblem
+    | ForbiddenProblem
+    | NotFoundProblem
+    | UnprocessableEntityProblem;
+
+  /** Delete a webhook endpoint. Owners and admins only. */
+  @deletesResource(SiteWebhookEndpointResource)
+  @delete
+  @autoRoute
+  delete(...ResourceParameters<SiteWebhookEndpointResource>):
+    | NoContentResponse
+    | BadRequestProblem
+    | ForbiddenProblem
+    | NotFoundProblem;
+
+  /** Replace the signing secret. The old one stops verifying at once; the new one is in the response. Owners and admins only. */
   @action("regenerate-secret")
   @autoRoute
   regenerateSecret(...ResourceParameters<SiteWebhookEndpointResource>):
     | SiteWebhookEndpointResource
     | BadRequestProblem
+    | ForbiddenProblem
     | NotFoundProblem;
 
-  /** Send a sample event of the chosen type, signed as a real delivery, and return the receiver's answer */
+  /** Send a sample event of the chosen type, signed as a real delivery, and return the receiver's answer. Owners and admins only. */
   @action("test")
   @autoRoute
   test(
@@ -135,6 +199,7 @@ interface SiteWebhooks
   ):
     | SiteWebhookTestResult
     | BadRequestProblem
+    | ForbiddenProblem
     | NotFoundProblem
     | UnprocessableEntityProblem;
 }

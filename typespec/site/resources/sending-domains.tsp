@@ -134,7 +134,7 @@ interface SiteSendingDomains {
     | NotFoundProblem
     | UnprocessableEntityProblem;
 
-  /** Add a sending domain; mints the DKIM keypair and returns the DNS records */
+  /** Add a sending domain; mints the DKIM keypair and returns the DNS records. Owners and admins only. */
   @createsResource(SiteSendingDomainResource)
   @post
   @autoRoute
@@ -146,6 +146,7 @@ interface SiteSendingDomains {
         @statusCode statusCode: 201;
         @body body: SiteSendingDomainResource;
       }
+    | ForbiddenProblem
     | NotFoundProblem
     | ConflictProblem
     | UnprocessableEntityProblem;
@@ -162,34 +163,37 @@ interface SiteSendingDomains {
   /**
    * Archive a sending domain: it leaves the list, serves no Tracking domain host and can be
    * restored. Refused with 409 while a scheduled or sending broadcast or an active automation
-   * sends from it.
+   * sends from it. Owners and admins only.
    */
   @action("archive")
   @autoRoute
   archive(...ResourceParameters<SiteSendingDomainResource>):
     | SiteSendingDomainResource
     | BadRequestProblem
+    | ForbiddenProblem
     | NotFoundProblem
     | InUseProblem;
 
   /**
    * Restore an archived sending domain. It starts a new DNS check and serves its Tracking
    * domain host again only once that passes. Refused with 409 when the same domain was added
-   * again meanwhile.
+   * again meanwhile. Owners and admins only.
    */
   @action("unarchive")
   @autoRoute
   unarchive(...ResourceParameters<SiteSendingDomainResource>):
     | SiteSendingDomainResource
     | BadRequestProblem
+    | ForbiddenProblem
     | NotFoundProblem
     | ConflictProblem;
 
-  /** Trigger an immediate DKIM re-check (fire-and-forget) */
+  /** Trigger an immediate DKIM re-check (fire-and-forget). Owners and admins only. */
   @action("verify")
   @autoRoute
   verify(...ResourceParameters<SiteSendingDomainResource>):
     | NoContentResponse
     | BadRequestProblem
+    | ForbiddenProblem
     | NotFoundProblem;
 }

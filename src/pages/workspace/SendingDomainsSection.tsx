@@ -192,7 +192,13 @@ function SendingDomainRecords({ record }: { record: SiteSendingDomainResource })
   )
 }
 
-export function SendingDomainsSection({ workspaceId }: { workspaceId: string }) {
+export function SendingDomainsSection({
+  workspaceId,
+  canManage,
+}: {
+  workspaceId: string
+  canManage: boolean
+}) {
   const { t } = useTranslation()
   const [archived, setArchived] = useState(false)
   const [addOpened, { open: openAdd, close: closeAdd }] = useDisclosure(false)
@@ -243,7 +249,9 @@ export function SendingDomainsSection({ workspaceId }: { workspaceId: string }) 
     <Box>
       <Group justify="space-between" mb="xs">
         <Title order={4}>{t(($) => $.settings.sendingDomains.title)}</Title>
-        <Button onClick={openAdd}>{t(($) => $.settings.sendingDomains.create)}</Button>
+        {canManage ? (
+          <Button onClick={openAdd}>{t(($) => $.settings.sendingDomains.create)}</Button>
+        ) : null}
       </Group>
       <Text c="dimmed" size="sm" mb="md">
         {t(($) => $.settings.sendingDomains.description)}
@@ -290,43 +298,44 @@ export function SendingDomainsSection({ workspaceId }: { workspaceId: string }) 
             accessor: 'actions',
             title: '',
             textAlign: 'right',
-            render: (record) => (
-              // A click in the cell must not toggle the row's expansion.
-              <Group justify="flex-end" onClick={(event) => event.stopPropagation()}>
-                <RowActionsMenu>
-                  {record.archivedAt ? (
-                    <Menu.Item
-                      disabled={restoreMutation.isPending}
-                      onClick={() =>
-                        restoreMutation.mutate({ path: { workspaceId, id: record.id } })
-                      }
-                    >
-                      {t(($) => $.actions.unarchive)}
-                    </Menu.Item>
-                  ) : (
-                    <>
+            render: (record) =>
+              canManage ? (
+                // A click in the cell must not toggle the row's expansion.
+                <Group justify="flex-end" onClick={(event) => event.stopPropagation()}>
+                  <RowActionsMenu>
+                    {record.archivedAt ? (
                       <Menu.Item
-                        disabled={verifyMutation.isPending}
+                        disabled={restoreMutation.isPending}
                         onClick={() =>
-                          verifyMutation.mutate({ path: { workspaceId, id: record.id } })
+                          restoreMutation.mutate({ path: { workspaceId, id: record.id } })
                         }
                       >
-                        {t(($) => $.settings.sendingDomains.verify)}
+                        {t(($) => $.actions.unarchive)}
                       </Menu.Item>
-                      <Menu.Item
-                        color="red"
-                        disabled={archiveMutation.isPending}
-                        onClick={() =>
-                          archiveMutation.mutate({ path: { workspaceId, id: record.id } })
-                        }
-                      >
-                        {t(($) => $.actions.archive)}
-                      </Menu.Item>
-                    </>
-                  )}
-                </RowActionsMenu>
-              </Group>
-            ),
+                    ) : (
+                      <>
+                        <Menu.Item
+                          disabled={verifyMutation.isPending}
+                          onClick={() =>
+                            verifyMutation.mutate({ path: { workspaceId, id: record.id } })
+                          }
+                        >
+                          {t(($) => $.settings.sendingDomains.verify)}
+                        </Menu.Item>
+                        <Menu.Item
+                          color="red"
+                          disabled={archiveMutation.isPending}
+                          onClick={() =>
+                            archiveMutation.mutate({ path: { workspaceId, id: record.id } })
+                          }
+                        >
+                          {t(($) => $.actions.archive)}
+                        </Menu.Item>
+                      </>
+                    )}
+                  </RowActionsMenu>
+                </Group>
+              ) : null,
           },
         ]}
         rowExpansion={{ content: SendingDomainRowExpansion }}

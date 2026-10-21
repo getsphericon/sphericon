@@ -20364,6 +20364,7 @@ func (s *Server) handleSiteSegmentsUpdateRequest(args [2]string, argsEscaped boo
 //
 // Archive a sending domain: it leaves the list, serves no Tracking domain host and can be restored.
 // Refused with 409 while a scheduled or sending broadcast or an active automation sends from it.
+// Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/sending-domains/{id}/archive
 func (s *Server) handleSiteSendingDomainsArchiveRequest(args [2]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -20554,7 +20555,7 @@ func (s *Server) handleSiteSendingDomainsArchiveRequest(args [2]string, argsEsca
 
 // handleSiteSendingDomainsCreateRequest handles SiteSendingDomains_create operation.
 //
-// Add a sending domain; mints the DKIM keypair and returns the DNS records.
+// Add a sending domain; mints the DKIM keypair and returns the DNS records. Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/sending-domains
 func (s *Server) handleSiteSendingDomainsCreateRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -21147,7 +21148,8 @@ func (s *Server) handleSiteSendingDomainsListRequest(args [1]string, argsEscaped
 // handleSiteSendingDomainsUnarchiveRequest handles SiteSendingDomains_unarchive operation.
 //
 // Restore an archived sending domain. It starts a new DNS check and serves its Tracking domain host
-// again only once that passes. Refused with 409 when the same domain was added again meanwhile.
+// again only once that passes. Refused with 409 when the same domain was added again meanwhile. Owners
+// and admins only.
 //
 // POST /workspaces/{workspaceId}/sending-domains/{id}/unarchive
 func (s *Server) handleSiteSendingDomainsUnarchiveRequest(args [2]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -21338,7 +21340,7 @@ func (s *Server) handleSiteSendingDomainsUnarchiveRequest(args [2]string, argsEs
 
 // handleSiteSendingDomainsVerifyRequest handles SiteSendingDomains_verify operation.
 //
-// Trigger an immediate DKIM re-check (fire-and-forget).
+// Trigger an immediate DKIM re-check (fire-and-forget). Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/sending-domains/{id}/verify
 func (s *Server) handleSiteSendingDomainsVerifyRequest(args [2]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -26164,7 +26166,7 @@ func (s *Server) handleSiteUserUpdateMeRequest(args [0]string, argsEscaped bool,
 
 // handleSiteWebhooksCreateRequest handles SiteWebhooks_create operation.
 //
-// Create a resource from the site UI.
+// Create a webhook endpoint. Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/webhooks
 func (s *Server) handleSiteWebhooksCreateRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -26366,7 +26368,7 @@ func (s *Server) handleSiteWebhooksCreateRequest(args [1]string, argsEscaped boo
 
 // handleSiteWebhooksDeleteRequest handles SiteWebhooks_delete operation.
 //
-// Delete a resource from the site UI.
+// Delete a webhook endpoint. Owners and admins only.
 //
 // DELETE /workspaces/{workspaceId}/webhooks/{id}
 func (s *Server) handleSiteWebhooksDeleteRequest(args [2]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -26557,7 +26559,7 @@ func (s *Server) handleSiteWebhooksDeleteRequest(args [2]string, argsEscaped boo
 
 // handleSiteWebhooksGetRequest handles SiteWebhooks_get operation.
 //
-// Get a resource by ID for the site UI.
+// Get a webhook endpoint by ID. Owners and admins only.
 //
 // GET /workspaces/{workspaceId}/webhooks/{id}
 func (s *Server) handleSiteWebhooksGetRequest(args [2]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -26748,7 +26750,7 @@ func (s *Server) handleSiteWebhooksGetRequest(args [2]string, argsEscaped bool, 
 
 // handleSiteWebhooksListRequest handles SiteWebhooks_list operation.
 //
-// List resources for the site UI.
+// List webhook endpoints. Owners and admins only.
 //
 // GET /workspaces/{workspaceId}/webhooks
 func (s *Server) handleSiteWebhooksListRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -26944,6 +26946,7 @@ func (s *Server) handleSiteWebhooksListRequest(args [1]string, argsEscaped bool,
 // handleSiteWebhooksRegenerateSecretRequest handles SiteWebhooks_regenerateSecret operation.
 //
 // Replace the signing secret. The old one stops verifying at once; the new one is in the response.
+// Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/webhooks/{id}/regenerate-secret
 func (s *Server) handleSiteWebhooksRegenerateSecretRequest(args [2]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -27135,6 +27138,7 @@ func (s *Server) handleSiteWebhooksRegenerateSecretRequest(args [2]string, argsE
 // handleSiteWebhooksTestRequest handles SiteWebhooks_test operation.
 //
 // Send a sample event of the chosen type, signed as a real delivery, and return the receiver's answer.
+// Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/webhooks/{id}/test
 func (s *Server) handleSiteWebhooksTestRequest(args [2]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -27340,7 +27344,7 @@ func (s *Server) handleSiteWebhooksTestRequest(args [2]string, argsEscaped bool,
 
 // handleSiteWebhooksUpdateRequest handles SiteWebhooks_update operation.
 //
-// Update a resource from the site UI.
+// Update a webhook endpoint. Owners and admins only.
 //
 // PUT /workspaces/{workspaceId}/webhooks/{id}
 func (s *Server) handleSiteWebhooksUpdateRequest(args [2]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {

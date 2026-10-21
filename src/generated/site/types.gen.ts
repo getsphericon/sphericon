@@ -9284,6 +9284,10 @@ export type SiteSendingDomainsCreateData = {
 
 export type SiteSendingDomainsCreateErrors = {
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -9370,6 +9374,10 @@ export type SiteSendingDomainsArchiveErrors = {
    */
   400: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -9415,6 +9423,10 @@ export type SiteSendingDomainsUnarchiveErrors = {
    */
   400: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -9457,6 +9469,10 @@ export type SiteSendingDomainsVerifyErrors = {
    * RFC 7807 bad request response
    */
   400: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 not found response
    */
@@ -10186,6 +10202,10 @@ export type SiteWebhooksListErrors = {
    */
   400: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -10242,6 +10262,10 @@ export type SiteWebhooksCreateData = {
 
 export type SiteWebhooksCreateErrors = {
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -10285,6 +10309,10 @@ export type SiteWebhooksDeleteErrors = {
    */
   400: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -10324,6 +10352,10 @@ export type SiteWebhooksGetErrors = {
    */
   400: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -10362,6 +10394,10 @@ export type SiteWebhooksUpdateErrors = {
    * RFC 7807 bad request response
    */
   400: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 not found response
    */
@@ -10406,6 +10442,10 @@ export type SiteWebhooksRegenerateSecretErrors = {
    */
   400: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -10444,6 +10484,10 @@ export type SiteWebhooksTestErrors = {
    * RFC 7807 bad request response
    */
   400: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 not found response
    */

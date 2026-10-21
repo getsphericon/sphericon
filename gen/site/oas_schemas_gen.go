@@ -15033,6 +15033,10 @@ type SiteSendingDomainsArchiveBadRequest ProblemDetails
 
 func (*SiteSendingDomainsArchiveBadRequest) siteSendingDomainsArchiveRes() {}
 
+type SiteSendingDomainsArchiveForbidden ProblemDetails
+
+func (*SiteSendingDomainsArchiveForbidden) siteSendingDomainsArchiveRes() {}
+
 type SiteSendingDomainsArchiveNotFound ProblemDetails
 
 func (*SiteSendingDomainsArchiveNotFound) siteSendingDomainsArchiveRes() {}
@@ -15040,6 +15044,10 @@ func (*SiteSendingDomainsArchiveNotFound) siteSendingDomainsArchiveRes() {}
 type SiteSendingDomainsCreateConflict ProblemDetails
 
 func (*SiteSendingDomainsCreateConflict) siteSendingDomainsCreateRes() {}
+
+type SiteSendingDomainsCreateForbidden ProblemDetails
+
+func (*SiteSendingDomainsCreateForbidden) siteSendingDomainsCreateRes() {}
 
 type SiteSendingDomainsCreateNotFound ProblemDetails
 
@@ -15143,6 +15151,10 @@ type SiteSendingDomainsUnarchiveConflict ProblemDetails
 
 func (*SiteSendingDomainsUnarchiveConflict) siteSendingDomainsUnarchiveRes() {}
 
+type SiteSendingDomainsUnarchiveForbidden ProblemDetails
+
+func (*SiteSendingDomainsUnarchiveForbidden) siteSendingDomainsUnarchiveRes() {}
+
 type SiteSendingDomainsUnarchiveNotFound ProblemDetails
 
 func (*SiteSendingDomainsUnarchiveNotFound) siteSendingDomainsUnarchiveRes() {}
@@ -15150,6 +15162,10 @@ func (*SiteSendingDomainsUnarchiveNotFound) siteSendingDomainsUnarchiveRes() {}
 type SiteSendingDomainsVerifyBadRequest ProblemDetails
 
 func (*SiteSendingDomainsVerifyBadRequest) siteSendingDomainsVerifyRes() {}
+
+type SiteSendingDomainsVerifyForbidden ProblemDetails
+
+func (*SiteSendingDomainsVerifyForbidden) siteSendingDomainsVerifyRes() {}
 
 // SiteSendingDomainsVerifyNoContent is response for SiteSendingDomainsVerify operation.
 type SiteSendingDomainsVerifyNoContent struct{}
@@ -18216,6 +18232,10 @@ func (s *SiteWebhookTestResult) SetKind(val OptSiteWebhookErrorKind) {
 
 func (*SiteWebhookTestResult) siteWebhooksTestRes() {}
 
+type SiteWebhooksCreateForbidden ProblemDetails
+
+func (*SiteWebhooksCreateForbidden) siteWebhooksCreateRes() {}
+
 type SiteWebhooksCreateNotFound ProblemDetails
 
 func (*SiteWebhooksCreateNotFound) siteWebhooksCreateRes() {}
@@ -18227,6 +18247,10 @@ func (*SiteWebhooksCreateUnprocessableEntity) siteWebhooksCreateRes() {}
 type SiteWebhooksDeleteBadRequest ProblemDetails
 
 func (*SiteWebhooksDeleteBadRequest) siteWebhooksDeleteRes() {}
+
+type SiteWebhooksDeleteForbidden ProblemDetails
+
+func (*SiteWebhooksDeleteForbidden) siteWebhooksDeleteRes() {}
 
 // SiteWebhooksDeleteNoContent is response for SiteWebhooksDelete operation.
 type SiteWebhooksDeleteNoContent struct{}
@@ -18241,6 +18265,10 @@ type SiteWebhooksGetBadRequest ProblemDetails
 
 func (*SiteWebhooksGetBadRequest) siteWebhooksGetRes() {}
 
+type SiteWebhooksGetForbidden ProblemDetails
+
+func (*SiteWebhooksGetForbidden) siteWebhooksGetRes() {}
+
 type SiteWebhooksGetNotFound ProblemDetails
 
 func (*SiteWebhooksGetNotFound) siteWebhooksGetRes() {}
@@ -18248,6 +18276,10 @@ func (*SiteWebhooksGetNotFound) siteWebhooksGetRes() {}
 type SiteWebhooksListBadRequest ProblemDetails
 
 func (*SiteWebhooksListBadRequest) siteWebhooksListRes() {}
+
+type SiteWebhooksListForbidden ProblemDetails
+
+func (*SiteWebhooksListForbidden) siteWebhooksListRes() {}
 
 type SiteWebhooksListNotFound ProblemDetails
 
@@ -18327,6 +18359,10 @@ type SiteWebhooksRegenerateSecretBadRequest ProblemDetails
 
 func (*SiteWebhooksRegenerateSecretBadRequest) siteWebhooksRegenerateSecretRes() {}
 
+type SiteWebhooksRegenerateSecretForbidden ProblemDetails
+
+func (*SiteWebhooksRegenerateSecretForbidden) siteWebhooksRegenerateSecretRes() {}
+
 type SiteWebhooksRegenerateSecretNotFound ProblemDetails
 
 func (*SiteWebhooksRegenerateSecretNotFound) siteWebhooksRegenerateSecretRes() {}
@@ -18334,6 +18370,10 @@ func (*SiteWebhooksRegenerateSecretNotFound) siteWebhooksRegenerateSecretRes() {
 type SiteWebhooksTestBadRequest ProblemDetails
 
 func (*SiteWebhooksTestBadRequest) siteWebhooksTestRes() {}
+
+type SiteWebhooksTestForbidden ProblemDetails
+
+func (*SiteWebhooksTestForbidden) siteWebhooksTestRes() {}
 
 type SiteWebhooksTestNotFound ProblemDetails
 
@@ -18346,6 +18386,10 @@ func (*SiteWebhooksTestUnprocessableEntity) siteWebhooksTestRes() {}
 type SiteWebhooksUpdateBadRequest ProblemDetails
 
 func (*SiteWebhooksUpdateBadRequest) siteWebhooksUpdateRes() {}
+
+type SiteWebhooksUpdateForbidden ProblemDetails
+
+func (*SiteWebhooksUpdateForbidden) siteWebhooksUpdateRes() {}
 
 type SiteWebhooksUpdateNotFound ProblemDetails
 
