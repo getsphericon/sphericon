@@ -1331,6 +1331,10 @@ const (
 	WebhookGlobexID = 900
 	// WebhookGlobexURL is from fixtures/webhook_endpoints.
 	WebhookGlobexURL = "https://globex.example/hook"
+	// WebhookInitechAuditID is from fixtures/webhook_endpoints.
+	WebhookInitechAuditID = 301
+	// WebhookInitechAuditURL is from fixtures/webhook_endpoints.
+	WebhookInitechAuditURL = "https://initech.example/audit"
 	// WebhookInitechID is from fixtures/webhook_endpoints.
 	WebhookInitechID = 300
 	// WebhookInitechURL is from fixtures/webhook_endpoints.

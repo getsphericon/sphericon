@@ -340,8 +340,6 @@ description = "Go interfaces -> test mocks (moq, *_gen_test.go next to the tests
 run = [
   "go tool moq -out internal/jobs/mocks_gen_test.go -pkg jobs_test ./internal/outbound Senders",
   "go tool moq -out internal/messaging/mocks_gen_test.go -pkg messaging_test ./internal/messaging EmailSender",
-  "go tool moq -out internal/events/mocks_gen_test.go -pkg events ./internal/events Enroller WebhookDispatcher",
-  "go tool moq -out internal/events/mocks_ext_gen_test.go -pkg events_test ./internal/events Enroller WebhookDispatcher",
 ]
 
 ["generate:fixtures"]

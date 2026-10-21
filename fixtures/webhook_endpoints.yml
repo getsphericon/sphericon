@@ -61,3 +61,12 @@
   workspace_id: 3
   created_at: '{{daysAgo 30}}'
   updated_at: '{{daysAgo 30}}'
+# Selects only Audit entries, which an endpoint with no filter never receives (ADR 0022).
+- id: 301 # fixture: WebhookInitechAudit
+  url: https://initech.example/audit
+  secret_encrypted: '{{ encrypt "whsec_initech_audit" }}'
+  event_types: '["audit.entry"]'
+  enabled: true
+  workspace_id: 3
+  created_at: '{{daysAgo 30}}'
+  updated_at: '{{daysAgo 30}}'

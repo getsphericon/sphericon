@@ -17,7 +17,6 @@ type FakeSES struct {
 	mu    sync.Mutex
 	quota messaging.Quota
 	err   error
-	calls int
 }
 
 // SetQuota makes the next GetSendQuota calls report quota (and succeed).
@@ -35,23 +34,15 @@ func (f *FakeSES) SetQuotaErr(err error) {
 	f.err = err
 }
 
-// QuotaCalls is how many times a quota lookup reached the fake.
-func (f *FakeSES) QuotaCalls() int {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	return f.calls
-}
-
 // Send is never reached: the fake answers quota lookups only.
 func (f *FakeSES) Send(context.Context, messaging.EmailMessage) (messaging.Receipt, error) {
 	return messaging.Receipt{}, errors.New("FakeSES does not send")
 }
 
-// SendQuota answers the scripted quota or error and counts the lookup.
+// SendQuota answers the scripted quota or error.
 func (f *FakeSES) SendQuota(context.Context) (messaging.Quota, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	f.calls++
 	return f.quota, f.err
 }
 

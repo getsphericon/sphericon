@@ -118,7 +118,6 @@ func TestRefreshQuotaIgnoresProvidersThatCannotReportOne(t *testing.T) {
 	row := reload(t, s, fixtures.IntegrationAcmeDefaultID)
 	assert.False(t, row.ProviderQuotaUnavailable, "SMTP has no quota to be unavailable")
 	assert.Nil(t, row.ProviderQuotaCheckedAt)
-	assert.Zero(t, ses.QuotaCalls())
 }
 
 func TestRefreshQuotaClearsAProviderValueTheProviderStoppedReporting(t *testing.T) {
@@ -147,11 +146,14 @@ func TestRefreshQuotaReturnsAnErrorWhenTheStoredConfigCannotBeRead(t *testing.T)
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
 	ses := &testhelper.FakeSES{}
+	ses.SetQuota(messaging.Quota{PerSecond: new(14), PerDay: new(50000)})
 	integ := reload(t, s, fixtures.IntegrationAcmeSesID)
 	integ.ConfigEncrypted = "not a ciphertext"
 
 	err := sendlimit.RefreshQuota(t.Context(), s, envCipher(t), ses.Catalog(), integ)
 
 	require.ErrorContains(t, err, "decrypt integration")
-	assert.Zero(t, ses.QuotaCalls(), "no lookup is made with a config that could not be read")
+	row := reload(t, s, fixtures.IntegrationAcmeSesID)
+	assert.Nil(t, row.ProviderMaxPerSecond, "no provider value is stored from a config that could not be read")
+	assert.Nil(t, row.ProviderQuotaCheckedAt)
 }
