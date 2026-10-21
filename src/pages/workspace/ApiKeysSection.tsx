@@ -10,7 +10,6 @@ import {
   Loader,
   Menu,
   Modal,
-  MultiSelect,
   Stack,
   TextInput,
   Title,
@@ -32,6 +31,7 @@ import {
 import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation.tsx'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { formatDate } from '../../utils/datetime.ts'
+import { ScopePicker } from './ScopePicker.tsx'
 
 // Scopes offered in the UI. The backend stores whatever strings it receives;
 // these mirror the external API's scope vocabulary.
@@ -198,10 +198,11 @@ export function ApiKeysSection({ workspaceId }: { workspaceId: string }) {
                 data-autofocus
                 {...form.getInputProps('name')}
               />
-              <MultiSelect
+              <ScopePicker
                 label={t(($) => $.settings.tokens.scopesLabel)}
-                data={SCOPE_OPTIONS}
-                {...form.getInputProps('scopes')}
+                options={SCOPE_OPTIONS}
+                value={form.values.scopes}
+                onChange={(scopes) => form.setFieldValue('scopes', scopes)}
               />
               <Button type="submit" loading={createMutation.isPending}>
                 {t(($) => $.settings.tokens.create)}
