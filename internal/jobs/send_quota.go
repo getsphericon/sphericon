@@ -2,9 +2,9 @@ package jobs
 
 import (
 	"context"
+	stdsql "database/sql"
 
 	"entgo.io/ent/dialect/sql"
-	"github.com/jackc/pgx/v5"
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -36,7 +36,7 @@ func (w *RefreshSendQuotasWorker) Work(ctx context.Context, _ *river.Job[Refresh
 	if err != nil {
 		return err
 	}
-	rc := river.ClientFromContext[pgx.Tx](ctx)
+	rc := river.ClientFromContext[*stdsql.Tx](ctx)
 	for _, id := range ids {
 		if _, err := rc.Insert(ctx, RefreshIntegrationQuotaArgs{IntegrationID: id}, nil); err != nil {
 			return err

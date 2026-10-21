@@ -69,7 +69,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/webhook"
 	"github.com/getsphericon/sphericon/internal/webhooks"
 	"github.com/getsphericon/sphericon/internal/workspacedeletion"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/samber/do/v2"
 	"go.opentelemetry.io/otel/metric"
 
@@ -173,16 +172,16 @@ type dkimLookup struct {
 	sending.TXTLookup
 }
 
-// pgxPool is the pgx connection pool river runs on (separate from the
-// database/sql pool the ent client and pubsub use).
-type pgxPool struct {
-	*pgxpool.Pool
+// riverPool is the database/sql pool river runs on (separate from the one the ent
+// client and pubsub use, so job workers cannot starve the API).
+type riverPool struct {
+	*sql.DB
 	metrics metric.Registration
 }
 
-func (p *pgxPool) Shutdown() {
+func (p *riverPool) Shutdown() {
 	_ = p.metrics.Unregister()
-	p.Close()
+	_ = p.Close()
 }
 
 // jobsClient is the river-backed async job queue (workers + enqueue API).
@@ -289,7 +288,7 @@ func New(env string, opts ...Option) (*App, error) {
 		_ = injector.Shutdown()
 		return nil, err
 	}
-	pool, err := do.Invoke[*pgxPool](injector)
+	pool, err := do.Invoke[*riverPool](injector)
 	if err != nil {
 		_ = injector.Shutdown()
 		return nil, err
@@ -298,7 +297,7 @@ func New(env string, opts ...Option) (*App, error) {
 		_ = injector.Shutdown()
 		return nil, err
 	}
-	if _, err := jobs.RegisterQueueMetrics(pool.Pool); err != nil {
+	if _, err := jobs.RegisterQueueMetrics(pool.DB); err != nil {
 		_ = injector.Shutdown()
 		return nil, err
 	}
@@ -914,7 +913,7 @@ func register(injector do.Injector, env string, o options) {
 		return &eventsBus{Bus: bus}, nil
 	})
 
-	do.Provide(injector, func(i do.Injector) (*pgxPool, error) {
+	do.Provide(injector, func(i do.Injector) (*riverPool, error) {
 		cfg, err := do.Invoke[*config.Config](i)
 		if err != nil {
 			return nil, err
@@ -923,16 +922,16 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		pool, err := db.NewPGXPool(context.Background(), cfg.DatabaseURL, cfg.DBPool)
+		pool, err := db.OpenRiverDB(cfg.DatabaseURL, cfg.DBPool)
 		if err != nil {
 			return nil, err
 		}
 		reg, err := db.RegisterPoolMetrics(database.DB, pool)
 		if err != nil {
-			pool.Close()
+			_ = pool.Close()
 			return nil, err
 		}
-		return &pgxPool{Pool: pool, metrics: reg}, nil
+		return &riverPool{DB: pool, metrics: reg}, nil
 	})
 
 	do.Provide(injector, func(i do.Injector) (*jobsClient, error) {
@@ -944,7 +943,7 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		pool, err := do.Invoke[*pgxPool](i)
+		pool, err := do.Invoke[*riverPool](i)
 		if err != nil {
 			return nil, err
 		}
@@ -985,7 +984,7 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		jc, err := jobs.NewClient(pool.Pool, client.Client, sender.Module, cipher, bus.Bus, sys.EmailSender, lookup.TXTLookup, trackingVerifier(cfg, bus.Bus), catalog, cfg.AppURL, cfg.OutboundAllow,
+		jc, err := jobs.NewClient(pool.DB, client.Client, sender.Module, cipher, bus.Bus, sys.EmailSender, lookup.TXTLookup, trackingVerifier(cfg, bus.Bus), catalog, cfg.AppURL, cfg.OutboundAllow,
 			jobs.Retention{OutboxFloor: cfg.OutboxFloor, Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention},
 			edition.Jobs(bus.Bus, sys.EmailSender), edition.ExportJobs(cfg.EventsRetention), inst.Jobs(), reporter.Jobs())
 		if err != nil {

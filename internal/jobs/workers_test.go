@@ -3,6 +3,7 @@ package jobs_test
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"errors"
 	"io"
 	"log/slog"
@@ -14,7 +15,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/rivertest"
 	"github.com/riverqueue/river/rivertype"
@@ -32,6 +32,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
+	appdb "github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/dnstest"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -50,7 +51,7 @@ import (
 // clears river_job before and after.
 type riverEnv struct {
 	*testhelper.TestEnv
-	pool   *pgxpool.Pool
+	pool   *sql.DB
 	client *jobs.Client
 	cipher *secrets.Cipher
 	cfg    *config.Config
@@ -60,13 +61,12 @@ type riverEnv struct {
 func newRiverEnv(t *testing.T) *riverEnv {
 	t.Helper()
 	env := testhelper.Setup(t)
-	ctx := context.Background()
 
 	cfg, err := config.Load("test")
 	require.NoError(t, err)
-	pool, err := pgxpool.New(ctx, cfg.DatabaseURL)
+	pool, err := appdb.OpenRiverDB(cfg.DatabaseURL, cfg.DBPool)
 	require.NoError(t, err)
-	t.Cleanup(pool.Close)
+	t.Cleanup(func() { _ = pool.Close() })
 	cipher, err := secrets.NewCipher(cfg.EncryptionKey)
 	require.NoError(t, err)
 	fs := &fakeSender{}

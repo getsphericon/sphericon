@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/riverqueue/river/riverdriver/riverpgxv5"
+	"github.com/riverqueue/river/riverdriver/riverdatabasesql"
 	"github.com/riverqueue/river/rivermigrate"
 	"github.com/stretchr/testify/require"
 
@@ -31,10 +31,10 @@ func TestApplyMigrationsCreatesRiverAndOutboxSchemaOnEmptyDatabase(t *testing.T)
 	_, err = applyMigrations(t.Context(), cfg)
 	require.NoError(t, err)
 
-	pool, err := appdb.NewPGXPool(t.Context(), cfg.DatabaseURL, cfg.DBPool)
+	pool, err := appdb.OpenRiverDB(cfg.DatabaseURL, cfg.DBPool)
 	require.NoError(t, err)
-	t.Cleanup(pool.Close)
-	migrator, err := rivermigrate.New(riverpgxv5.New(pool), nil)
+	t.Cleanup(func() { _ = pool.Close() })
+	migrator, err := rivermigrate.New(riverdatabasesql.New(pool), nil)
 	require.NoError(t, err)
 	res, err := migrator.Validate(t.Context(), nil)
 	require.NoError(t, err)

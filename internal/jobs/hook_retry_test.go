@@ -2,15 +2,15 @@ package jobs_test
 
 import (
 	"context"
+	"database/sql"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"testing"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/riverqueue/river"
-	"github.com/riverqueue/river/riverdriver/riverpgxv5"
+	"github.com/riverqueue/river/riverdriver/riverdatabasesql"
 	"github.com/riverqueue/river/rivershared/riversharedtest"
 	"github.com/riverqueue/river/rivertest"
 	"github.com/riverqueue/river/rivertype"
@@ -72,8 +72,8 @@ type hookRetryHarness struct {
 	t      *testing.T
 	env    *riverEnv
 	clock  *riversharedtest.TimeStub
-	worker *rivertest.Worker[jobs.DeliverWebhookArgs, pgx.Tx]
-	tx     pgx.Tx
+	worker *rivertest.Worker[jobs.DeliverWebhookArgs, *sql.Tx]
+	tx     *sql.Tx
 	now    time.Time
 }
 
@@ -88,10 +88,10 @@ func newHookRetryHarness(t *testing.T, status int, retryAfter string) *hookRetry
 	h := &hookRetryHarness{t: t, env: env, clock: &riversharedtest.TimeStub{}, now: time.Now().UTC().Truncate(time.Second)}
 	h.clock.StubNow(h.now)
 	w := jobs.NewDeliverWebhookWorker(env.DB, env.cipher, webhook.NewClientAllowing(2*time.Second, allow), h.clock.Now, env.Bus, env.SystemMail)
-	h.worker = rivertest.NewWorker(t, riverpgxv5.New(env.pool), &river.Config{Test: river.TestConfig{Time: h.clock}}, river.Worker[jobs.DeliverWebhookArgs](w))
-	h.tx, err = env.pool.Begin(ctx)
+	h.worker = rivertest.NewWorker(t, riverdatabasesql.New(env.pool), &river.Config{Test: river.TestConfig{Time: h.clock}}, river.Worker[jobs.DeliverWebhookArgs](w))
+	h.tx, err = env.pool.BeginTx(ctx, nil)
 	require.NoError(t, err)
-	t.Cleanup(func() { _ = h.tx.Rollback(context.Background()) })
+	t.Cleanup(func() { _ = h.tx.Rollback() })
 	return h
 }
 

@@ -10,12 +10,12 @@ import (
 	"time"
 
 	"github.com/ThreeDotsLabs/watermill/message"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/getsphericon/sphericon/internal/db"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/prometheus/common/expfmt"
 	"github.com/prometheus/common/model"
 	"github.com/riverqueue/river"
-	"github.com/riverqueue/river/riverdriver/riverpgxv5"
+	"github.com/riverqueue/river/riverdriver/riverdatabasesql"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -132,15 +132,15 @@ func runHandledDomainEvent(t *testing.T, srvAddr, contactEmail string) {
 func runJob(t *testing.T, env *testhelper.TestEnv, cfg *config.Config, srvAddr, contactEmail string) {
 	t.Helper()
 	ctx := context.Background()
-	pool, err := pgxpool.New(ctx, cfg.DatabaseURL)
+	pool, err := db.OpenRiverDB(cfg.DatabaseURL, cfg.DBPool)
 	require.NoError(t, err)
-	t.Cleanup(pool.Close)
+	t.Cleanup(func() { _ = pool.Close() })
 	cipher, err := secrets.NewCipher(cfg.EncryptionKey)
 	require.NoError(t, err)
 	mod := outbound.New(env.Bus, env.Holds, nil, tracking.New("test-secret", "http://local"))
 	client, err := jobs.NewClient(pool, env.DB, mod, cipher, env.Bus, env.SystemMail, nil, nil, registry.Default(), cfg.AppURL, cfg.OutboundAllow, jobs.Retention{OutboxFloor: cfg.OutboxFloor, Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention})
 	require.NoError(t, err)
-	admin, err := river.NewClient(riverpgxv5.New(pool), &river.Config{})
+	admin, err := river.NewClient(riverdatabasesql.New(pool), &river.Config{})
 	require.NoError(t, err)
 	purge := func() {
 		_, _ = admin.JobDeleteMany(context.Background(), river.NewJobDeleteManyParams().Queues(river.QueueDefault, jobs.QueueBroadcasts, jobs.QueueWebhooks))

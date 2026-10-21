@@ -2,9 +2,9 @@ package jobs
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
@@ -27,7 +27,7 @@ GROUP BY queue`
 // provider. The only label is the queue name, a bounded technical dimension.
 // A queue with no ready jobs reports no sample. The query runs once per scrape.
 // The returned function unregisters the callback.
-func RegisterQueueMetrics(pool *pgxpool.Pool) (func() error, error) {
+func RegisterQueueMetrics(riverDB *sql.DB) (func() error, error) {
 	meter := otel.Meter(otelScope)
 	depth, err := meter.Int64ObservableGauge(
 		"river.queue.depth",
@@ -45,11 +45,11 @@ func RegisterQueueMetrics(pool *pgxpool.Pool) (func() error, error) {
 		return nil, fmt.Errorf("queue age gauge: %w", err)
 	}
 	reg, err := meter.RegisterCallback(func(ctx context.Context, o metric.Observer) error {
-		rows, err := pool.Query(ctx, queueStatsQuery)
+		rows, err := riverDB.QueryContext(ctx, queueStatsQuery)
 		if err != nil {
 			return fmt.Errorf("queue stats: %w", err)
 		}
-		defer rows.Close()
+		defer func() { _ = rows.Close() }()
 		for rows.Next() {
 			var queue string
 			var n int64

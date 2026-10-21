@@ -40,14 +40,13 @@ func TestConfigurePoolAppliesLimits(t *testing.T) {
 	assert.Equal(t, 7, sqlDB.Stats().MaxOpenConnections)
 }
 
-func TestNewPGXPoolAppliesMaxConns(t *testing.T) {
+func TestOpenRiverDBAppliesMaxConns(t *testing.T) {
 	cfg := testConfig(t)
-	pool, err := db.NewPGXPool(context.Background(), cfg.DatabaseURL, config.DBPool{PGXMaxConns: 11})
+	riverDB, err := db.OpenRiverDB(cfg.DatabaseURL, config.DBPool{PGXMaxConns: 11, ConnMaxLifetime: time.Minute})
 	require.NoError(t, err)
-	t.Cleanup(pool.Close)
+	t.Cleanup(func() { _ = riverDB.Close() })
 
-	assert.Equal(t, int32(11), pool.Config().MaxConns)
-	assert.Equal(t, int32(11), pool.Stat().MaxConns())
+	assert.Equal(t, 11, riverDB.Stats().MaxOpenConnections)
 }
 
 // Pool stats surface in a scrape of the global meter provider, labelled only
@@ -60,9 +59,9 @@ func TestPoolMetricsAppearInScrape(t *testing.T) {
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = sqlDB.Close() })
 	db.ConfigurePool(sqlDB, pool)
-	pgxPool, err := db.NewPGXPool(context.Background(), cfg.DatabaseURL, pool)
+	riverDB, err := db.OpenRiverDB(cfg.DatabaseURL, pool)
 	require.NoError(t, err)
-	t.Cleanup(pgxPool.Close)
+	t.Cleanup(func() { _ = riverDB.Close() })
 
 	reg := prometheus.NewRegistry()
 	reader, err := otelprom.New(otelprom.WithRegisterer(reg))
@@ -72,7 +71,7 @@ func TestPoolMetricsAppearInScrape(t *testing.T) {
 	otel.SetMeterProvider(mp)
 	t.Cleanup(func() { otel.SetMeterProvider(prev); _ = mp.Shutdown(context.Background()) })
 
-	registration, err := db.RegisterPoolMetrics(sqlDB, pgxPool)
+	registration, err := db.RegisterPoolMetrics(sqlDB, riverDB)
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = registration.Unregister() })
 
@@ -82,12 +81,9 @@ func TestPoolMetricsAppearInScrape(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Regexp(t, `db_pool_max\{[^}]*pool="sql"\} 7`, string(body))
-	assert.Regexp(t, `db_pool_max\{[^}]*pool="pgx"\} 11`, string(body))
+	assert.Regexp(t, `db_pool_max\{[^}]*pool="river"\} 11`, string(body))
 	assert.Contains(t, string(body), "db_pool_in_use")
 	assert.Contains(t, string(body), "db_pool_idle")
-	// Each wait counter is reported for its own pool only.
 	assert.Regexp(t, `db_pool_wait_count\{[^}]*pool="sql"\}`, string(body))
-	assert.NotRegexp(t, `db_pool_wait_count\{[^}]*pool="pgx"\}`, string(body))
-	assert.Regexp(t, `db_pool_empty_acquire_count\{[^}]*pool="pgx"\}`, string(body))
-	assert.NotRegexp(t, `db_pool_empty_acquire_count\{[^}]*pool="sql"\}`, string(body))
+	assert.Regexp(t, `db_pool_wait_count\{[^}]*pool="river"\}`, string(body))
 }

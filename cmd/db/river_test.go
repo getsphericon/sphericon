@@ -4,14 +4,12 @@ import (
 	"database/sql"
 	"os"
 	"testing"
-	"time"
 
-	"github.com/riverqueue/river/riverdriver/riverpgxv5"
+	"github.com/riverqueue/river/riverdriver/riverdatabasesql"
 	"github.com/riverqueue/river/rivermigrate"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/config"
 	appdb "github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -30,10 +28,7 @@ func TestGeneratedRiverMigrationsApplyAndRiverRecognisesThem(t *testing.T) {
 	require.NoError(t, err)
 	require.NotZero(t, applied)
 
-	pool, err := appdb.NewPGXPool(t.Context(), url, config.DBPool{MaxOpenConns: 2, MaxIdleConns: 2, ConnMaxLifetime: time.Minute, PGXMaxConns: 2})
-	require.NoError(t, err)
-	t.Cleanup(pool.Close)
-	migrator, err := rivermigrate.New(riverpgxv5.New(pool), nil)
+	migrator, err := rivermigrate.New(riverdatabasesql.New(sqlDB), nil)
 	require.NoError(t, err)
 	res, err := migrator.Validate(t.Context(), nil)
 	require.NoError(t, err)

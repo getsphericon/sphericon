@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/riverqueue/river/riverdriver"
-	"github.com/riverqueue/river/riverdriver/riverpgxv5"
+	"github.com/riverqueue/river/riverdriver/riverdatabasesql"
 )
 
 // riverMarker starts each river migration version inside a migration file, so the
@@ -47,7 +47,7 @@ func generateRiverMigration(dir string) error {
 	}
 
 	// The driver's FS holds the line's files under migration/<line>.
-	fsys, err := fs.Sub(riverpgxv5.New(nil).GetMigrationFS(riverdriver.MigrationLineMain), "migration/"+riverdriver.MigrationLineMain)
+	fsys, err := fs.Sub(riverdatabasesql.New(nil).GetMigrationFS(riverdriver.MigrationLineMain), "migration/"+riverdriver.MigrationLineMain)
 	if err != nil {
 		return err
 	}
@@ -107,7 +107,7 @@ func riverVersion() string {
 		return ""
 	}
 	for _, dep := range info.Deps {
-		if dep.Path == "github.com/riverqueue/river/riverdriver/riverpgxv5" {
+		if dep.Path == "github.com/riverqueue/river/riverdriver/riverdatabasesql" {
 			return " @ " + dep.Version
 		}
 	}

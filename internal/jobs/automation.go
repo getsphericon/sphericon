@@ -2,11 +2,11 @@ package jobs
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -49,7 +49,7 @@ func (w *EvaluateTriggerWorker) Work(ctx context.Context, job *river.Job[Evaluat
 	if err != nil {
 		return err
 	}
-	rc := river.ClientFromContext[pgx.Tx](ctx)
+	rc := river.ClientFromContext[*sql.Tx](ctx)
 	for _, id := range runIDs {
 		if _, err := rc.Insert(ctx, RunStepArgs{RunID: id}, nil); err != nil {
 			return err
@@ -110,7 +110,7 @@ func (w *RunStepWorker) Work(ctx context.Context, job *river.Job[RunStepArgs]) e
 	if res.Done {
 		return nil
 	}
-	rc := river.ClientFromContext[pgx.Tx](ctx)
+	rc := river.ClientFromContext[*sql.Tx](ctx)
 	if res.Enqueue != nil {
 		// The Enrollment is parked: the job inserted here moves it on (or fails it).
 		_, err = rc.Insert(ctx, res.Enqueue, nil)

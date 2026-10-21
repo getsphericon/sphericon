@@ -2,6 +2,7 @@ package jobs
 
 import (
 	"context"
+	stdsql "database/sql"
 	"errors"
 	"log/slog"
 	"net"
@@ -9,7 +10,6 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
-	"github.com/jackc/pgx/v5"
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -86,7 +86,7 @@ func (w *RecheckSendingDomainsWorker) Work(ctx context.Context, job *river.Job[R
 	if err != nil {
 		return err
 	}
-	rc := river.ClientFromContext[pgx.Tx](ctx)
+	rc := river.ClientFromContext[*stdsql.Tx](ctx)
 	for _, id := range ids {
 		if _, err := rc.Insert(ctx, VerifySendingDomainArgs{SendingDomainID: id}, nil); err != nil {
 			return err
@@ -134,7 +134,7 @@ func (w *RecheckTrackingDomainsWorker) Work(ctx context.Context, job *river.Job[
 	if err != nil {
 		return err
 	}
-	rc := river.ClientFromContext[pgx.Tx](ctx)
+	rc := river.ClientFromContext[*stdsql.Tx](ctx)
 	for _, id := range ids {
 		if _, err := rc.Insert(ctx, VerifyTrackingDomainArgs{SendingDomainID: id}, nil); err != nil {
 			return err
@@ -392,7 +392,7 @@ func (w *RecheckJoinDomainsWorker) Work(ctx context.Context, job *river.Job[Rech
 	if err != nil {
 		return err
 	}
-	rc := river.ClientFromContext[pgx.Tx](ctx)
+	rc := river.ClientFromContext[*stdsql.Tx](ctx)
 	for _, id := range ids {
 		if _, err := rc.Insert(ctx, VerifyJoinDomainArgs{JoinDomainID: id}, nil); err != nil {
 			return err

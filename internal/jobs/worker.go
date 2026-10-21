@@ -5,13 +5,12 @@ package jobs
 
 import (
 	"context"
+	"database/sql"
 	"log/slog"
 	"time"
 
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/riverqueue/river"
-	"github.com/riverqueue/river/riverdriver/riverpgxv5"
+	"github.com/riverqueue/river/riverdriver/riverdatabasesql"
 	"github.com/riverqueue/river/rivertype"
 	"github.com/riverqueue/rivercontrib/otelriver"
 
@@ -46,7 +45,7 @@ const QueueBroadcasts = "broadcasts"
 // Client wraps the river client and exposes the typed enqueue methods the API
 // handlers use, so callers don't depend on river directly.
 type Client struct {
-	river *river.Client[pgx.Tx]
+	river *river.Client[*sql.Tx]
 	ent   *ent.Client
 	// appURL builds the links of account emails (rehearsed resets render one).
 	appURL string
@@ -77,7 +76,7 @@ type Retention struct {
 // webhook deliveries (ADR 0039). The instance-wide outbox and Event prunes
 // run on entClient, the raw client; retention carries the prune settings. ext plugs in the
 // Enterprise Edition's workers and periodic jobs.
-func NewClient(pool *pgxpool.Pool, entClient *ent.Client, mod *outbound.Module, cipher *secrets.Cipher, bus *events.Bus, systemSender messaging.EmailSender, lookup sending.TXTLookup, tracking *trackingdomain.Verifier, catalog *messaging.Catalog, appURL string, outboundAllow webhook.Allowlist, retention Retention, ext ...Extension) (*Client, error) {
+func NewClient(riverDB *sql.DB, entClient *ent.Client, mod *outbound.Module, cipher *secrets.Cipher, bus *events.Bus, systemSender messaging.EmailSender, lookup sending.TXTLookup, tracking *trackingdomain.Verifier, catalog *messaging.Catalog, appURL string, outboundAllow webhook.Allowlist, retention Retention, ext ...Extension) (*Client, error) {
 	workers := river.NewWorkers()
 	river.AddWorker(workers, &SendBroadcastWorker{ent: entClient, del: broadcasts.NewDelivery(mod)})
 	river.AddWorker(workers, &SendRecipientWorker{ent: entClient, del: broadcasts.NewDelivery(mod)})
@@ -133,7 +132,7 @@ func NewClient(pool *pgxpool.Pool, entClient *ent.Client, mod *outbound.Module, 
 	}
 
 	logger := slog.Default()
-	rc, err := river.NewClient(riverpgxv5.New(pool), newRiverConfig(workers, logger, extraPeriodic...))
+	rc, err := river.NewClient(riverdatabasesql.New(riverDB), newRiverConfig(workers, logger, extraPeriodic...))
 	if err != nil {
 		return nil, err
 	}
@@ -161,6 +160,8 @@ func newRiverConfig(workers *river.Workers, logger *slog.Logger, extra ...*river
 			QueueWebhooks:      {MaxWorkers: 5},
 			QueueHTTPSteps:     {MaxWorkers: 5},
 		},
+		// The database/sql driver has no LISTEN connection: the client polls for new jobs.
+		PollOnly:     true,
 		Workers:      workers,
 		Logger:       logger,
 		ErrorHandler: &errorHandler{logger: logger},

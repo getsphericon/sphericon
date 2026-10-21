@@ -8,9 +8,8 @@ import (
 	"time"
 
 	entsql "entgo.io/ent/dialect/sql"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/riverqueue/river"
-	"github.com/riverqueue/river/riverdriver/riverpgxv5"
+	"github.com/riverqueue/river/riverdriver/riverdatabasesql"
 	"github.com/riverqueue/river/rivertest"
 	"github.com/riverqueue/river/rivertype"
 	"github.com/stretchr/testify/assert"
@@ -170,10 +169,10 @@ func TestExitDuringAnHTTPStepWaitsForTheCall(t *testing.T) {
 	require.NoError(t, err)
 	cipher, err := secrets.NewCipher(cfg.EncryptionKey)
 	require.NoError(t, err)
-	pool, err := pgxpool.New(ctx, e.url)
+	pool, err := sql.Open("pgx", e.url)
 	require.NoError(t, err)
-	t.Cleanup(pool.Close)
-	queue, err := river.NewClient(riverpgxv5.New(pool), &river.Config{})
+	t.Cleanup(func() { _ = pool.Close() })
+	queue, err := river.NewClient(riverdatabasesql.New(pool), &river.Config{})
 	require.NoError(t, err)
 	workCtx := rivertest.WorkContext(ctx, queue)
 

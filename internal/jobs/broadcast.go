@@ -2,11 +2,11 @@ package jobs
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -73,7 +73,7 @@ func (w *SendBroadcastWorker) Work(ctx context.Context, job *river.Job[SendBroad
 	}
 	// RunClaimed refuses a Broadcast unscheduled after the check above: Due is the shortcut
 	// of the usual case, the claim inside the plan decides the race.
-	err = w.del.RunClaimed(ctx, s, job.Args.BroadcastID, riverSends{river.ClientFromContext[pgx.Tx](ctx)}, time.Now())
+	err = w.del.RunClaimed(ctx, s, job.Args.BroadcastID, riverSends{river.ClientFromContext[*sql.Tx](ctx)}, time.Now())
 	if errors.Is(err, lifecycle.ErrInvalidTransition) {
 		return nil // stale: the Broadcast is past its plan (sent or failed), nothing to retry
 	}
@@ -82,7 +82,7 @@ func (w *SendBroadcastWorker) Work(ctx context.Context, job *river.Job[SendBroad
 
 // riverSends is the river adapter of the module's scheduling seam: one recipient job per send,
 // scheduled at its time.
-type riverSends struct{ rc *river.Client[pgx.Tx] }
+type riverSends struct{ rc *river.Client[*sql.Tx] }
 
 func (r riverSends) Schedule(ctx context.Context, broadcastID int64, sends []broadcasts.Send) error {
 	for i := 0; i < len(sends); i += recipientInsertChunk {

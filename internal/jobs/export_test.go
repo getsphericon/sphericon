@@ -1,10 +1,10 @@
 package jobs
 
 import (
+	"database/sql"
 	"log/slog"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -97,7 +97,7 @@ func NewSendRecipientWorker(client *ent.Client, mod *outbound.Module) *SendRecip
 }
 
 // River exposes the wrapped client so tests can build a worker context.
-func (c *Client) River() *river.Client[pgx.Tx] { return c.river }
+func (c *Client) River() *river.Client[*sql.Tx] { return c.river }
 
 // NewErrorHandler builds river's error sink over logger.
 func NewErrorHandler(logger *slog.Logger) river.ErrorHandler { return &errorHandler{logger: logger} }

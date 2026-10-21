@@ -105,9 +105,9 @@ func TestStartUnwindsWhenTheJobQueueCannotStart(t *testing.T) {
 	require.NoError(t, err)
 	// river pings the database on start; a closed pool makes that fail after the
 	// event router is already running.
-	pool, err := do.Invoke[*pgxPool](a.injector)
+	pool, err := do.Invoke[*riverPool](a.injector)
 	require.NoError(t, err)
-	pool.Close()
+	require.NoError(t, pool.Close())
 
 	require.Error(t, a.Start(context.Background()))
 

@@ -2,11 +2,11 @@ package jobs
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -161,7 +161,7 @@ func (w *RunHTTPStepWorker) continueRun(ctx context.Context, run *ent.Automation
 			return err
 		}
 	}
-	_, err := river.ClientFromContext[pgx.Tx](ctx).Insert(ctx, RunStepArgs{RunID: run.ID}, nil)
+	_, err := river.ClientFromContext[*sql.Tx](ctx).Insert(ctx, RunStepArgs{RunID: run.ID}, nil)
 	return err
 }
 
