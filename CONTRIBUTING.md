@@ -173,6 +173,15 @@ Daemons:
 > `SPHERICON_METRICS_ADDR`; see [ADR 0018](docs/adr/0018-metrics-opt-in-internal-listener.md)) or point it
 > at your own collector.
 
+### Domain verification
+
+The dev stack verifies Sending domains and Join domains against real DNS, as production does: a
+domain stays unverified until its DKIM or `_sphericon-join` TXT record is published. The one
+exception is **`getsphericon.io`**, which verifies at once in every development Instance, so you
+can try the flow without touching DNS. Only that exact domain: `mail.getsphericon.io` goes
+through real DNS. A production Instance has no shortcut. The end-to-end suite verifies every
+domain it adds.
+
 ### Building
 
 The server ships as a self-contained static binary: the React SPA, the `t.js` tracker and the
