@@ -19,7 +19,7 @@ every caller (regenerate afterwards), rather than layering the new design over t
 API contracts are **one-directional**: TypeSpec → OpenAPI → generated Go + TS. Never
 hand-edit anything under `openapi/`, `gen/`, `ent/` (except `ent/schema/`),
 `src/generated/` / `packages/analytics/src/generated/`, `src/routeTree.gen.ts`, or the `*_gen.go` files in the
-`internal/api/{site,external}/resources` packages, `ee/staff/resources` and `internal/fixtures/catalog_gen.go`, or any `*_gen_test.go` mock, or `internal/emaildoc/assets/` (the document renderer bundle and schema listing) — regenerate instead.
+`internal/api/{site,external}/resources` packages, `ee/staff/resources`, `ee/staff/service_scopes_gen.go` and `internal/fixtures/catalog_gen.go`, or any `*_gen_test.go` mock, or `internal/emaildoc/assets/` (the document renderer bundle and schema listing) — regenerate instead.
 
 ```
 typespec/{site,external,collect,staff,service,telemetry}   ──tsp compile──▶  openapi/*.openapi.json
@@ -34,6 +34,7 @@ ent/schema/*.go     ──entc──▶ ent/*           (Go ORM)
 ent/schema/*.go + ent/template/scoped*.tmpl  ──entc──▶ ent/scoped.go, ent/scoped_registry.go  (scoped client: `client.Scoped(ws)`)
 ent + gen/{site,external,staff,service}  ──goverter──▶ internal/api/{site,external}/resources/converter_gen.go, ee/staff/resources/{staff,service}_converter_gen.go
 packages/emaildoc (pinned @react-email/editor) ──esbuild──▶ internal/emaildoc/assets/{emaildoc.js,schema.json}  (`mise run build:emaildoc`; not part of `generate`)
+openapi/service (`x-required-scopes` per operation, declared in TypeSpec) ──cmd/scopegen──▶ ee/staff/service_scopes_gen.go (`ServiceOperationScopes`)
 fixtures/*.yml (`# fixture: Name` rows)  ──cmd/fixturegen──▶ internal/fixtures/catalog_gen.go (named test constants)
 Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mocks_gen_test.go (test mocks; add an interface to the task list)
 ```
@@ -53,7 +54,7 @@ Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mo
 Generated files carry a header (`Code generated … DO NOT EDIT`, or `// @ts-nocheck` on the
 frontend) and are flagged `linguist-generated` in `.gitattributes` (GitHub collapses them in
 diffs). Generated code lives in dedicated dirs — `internal/` is otherwise hand-written, its
-only generated files being the two `converter_gen.go`, `ee/staff/resources/{staff,service}_converter_gen.go`, `internal/fixtures/catalog_gen.go`, the moq `*_gen_test.go` mocks and `internal/emaildoc/assets/`.
+only generated files being the two `converter_gen.go`, `ee/staff/resources/{staff,service}_converter_gen.go`, `ee/staff/service_scopes_gen.go`, `internal/fixtures/catalog_gen.go`, the moq `*_gen_test.go` mocks and `internal/emaildoc/assets/`.
 
 ## Common commands
 
@@ -247,7 +248,7 @@ Rules for writing tests (what to assert, no direct SQL, no manual cleanup) are i
     the internal listener** (`SPHERICON_INTERNAL_ADDR`, opt-in, ADR 0018 style; `NewInternal` mounts `/service` only with
     the `staff` license and always serves the core `GET /tls/ask`): the public mux answers 404 for it.
     Handlers and security handler in `ee/staff` (`service.go`); every operation names its scopes in
-    `ServiceOperationScopes` (no entry = refused to all). Tests: `env.Internal`, `env.ServiceClient`,
+    `ServiceOperationScopes`, generated from the `@extension("x-required-scopes", #[ServiceScope.…])` on each TypeSpec operation (an empty list = any valid credential; a missing declaration fails generation; no entry = refused to all). Tests: `env.Internal`, `env.ServiceClient`,
     `env.IssueServiceCredential`.
 - **Sign-in sequence**: `internal/login` (ADR 0020) is the one core module for the password and
   second steps and for `Prove` (the password check behind second-factor and profile actions):

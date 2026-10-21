@@ -39,21 +39,6 @@ func (s *ServiceSurface) Server(opts ...serviceapi.ServerOption) (http.Handler, 
 		append([]serviceapi.ServerOption{serviceapi.WithPathPrefix(paths.Service)}, opts...)...)
 }
 
-// ServiceOperationScopes names the scopes each operation of the service endpoints
-// needs: a credential must carry all of them. An operation with no entry is refused to
-// every credential, so a new endpoint cannot ship unguarded; an entry with no scopes is
-// open to any valid credential. Add an endpoint's row with the endpoint.
-var ServiceOperationScopes = map[serviceapi.OperationName][]Scope{
-	serviceapi.ServiceIdentityGetOperation:          nil,
-	serviceapi.ServiceUsageListOperation:            {ScopeUsageRead},
-	serviceapi.ServiceWorkspaceUsageGetOperation:    {ScopeUsageRead},
-	serviceapi.ServiceWorkspaceFeedListOperation:    {ScopeWorkspacesRead},
-	serviceapi.ServiceTrackingHostFeedListOperation: {ScopeDomainsRead},
-	serviceapi.ServiceHoldsListOperation:            {ScopeHoldsWrite},
-	serviceapi.ServiceHoldsSetOperation:             {ScopeHoldsWrite},
-	serviceapi.ServiceHoldsClearOperation:           {ScopeHoldsWrite},
-}
-
 // ServiceOperations lists every operation the service endpoints serve, from the
 // generated handler contract.
 func ServiceOperations() []serviceapi.OperationName {
@@ -77,13 +62,13 @@ func CurrentService(ctx context.Context) *ent.ServiceCredential {
 // its scopes and its rate limit.
 type ServiceSecurityHandler struct {
 	module   *Module
-	requires map[serviceapi.OperationName][]Scope
+	requires map[serviceapi.OperationName][]serviceapi.ServiceScope
 }
 
 var _ serviceapi.SecurityHandler = (*ServiceSecurityHandler)(nil)
 
 // NewServiceSecurity builds the handler over a map of the scopes each operation needs.
-func NewServiceSecurity(m *Module, requires map[serviceapi.OperationName][]Scope) *ServiceSecurityHandler {
+func NewServiceSecurity(m *Module, requires map[serviceapi.OperationName][]serviceapi.ServiceScope) *ServiceSecurityHandler {
 	return &ServiceSecurityHandler{module: m, requires: requires}
 }
 
@@ -117,8 +102,8 @@ func (h *ServiceSecurityHandler) HandleBearerAuth(ctx context.Context, op servic
 	return context.WithValue(ctx, serviceContextKey{}, cred), nil
 }
 
-func covers(have []string, need []Scope) bool {
-	return !slices.ContainsFunc(need, func(s Scope) bool { return !slices.Contains(have, string(s)) })
+func covers(have []string, need []serviceapi.ServiceScope) bool {
+	return !slices.ContainsFunc(need, func(s serviceapi.ServiceScope) bool { return !slices.Contains(have, string(s)) })
 }
 
 // ServiceHandlers implements serviceapi.Handler.

@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/ee/staff"
 	"github.com/getsphericon/sphericon/ee/usage"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
@@ -87,7 +86,7 @@ func TestTheUsageReadIsPageable(t *testing.T) {
 
 func TestTheUsageReadNeedsTheReadUsageScope(t *testing.T) {
 	h := newHarness(t)
-	noUsage := h.env.IssueServiceCredential(t, "service-c", staff.ScopeHoldsWrite)
+	noUsage := h.env.IssueServiceCredential(t, "service-c", serviceapi.ServiceScopeHoldsWrite)
 
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/service/usage", nil)

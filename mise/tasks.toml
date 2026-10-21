@@ -346,6 +346,10 @@ run = [
 description = "fixtures/*.yml -> Go (fixture catalog constants for `# fixture: Name` rows)"
 run = "go run ./cmd/fixturegen"
 
+["generate:scopes"]
+description = "openapi/service (x-required-scopes) -> Go (ee/staff service operation-to-scopes map)"
+run = "go run ./cmd/scopegen"
+
 [generate]
 description = "Full cycle: typespec -> openapi -> backend -> test mocks -> fixture catalog -> frontend (clients, route tree) -> i18n types -> format"
 run = [
@@ -353,6 +357,7 @@ run = [
   { task = "generate:openapi" },
   { task = "generate:routes" },
   { task = "generate:backend" },
+  { task = "generate:scopes" },
   { task = "generate:mocks" },
   { task = "generate:fixtures" },
   { task = "fix" },

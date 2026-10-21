@@ -30,7 +30,7 @@ type Handler interface {
 	ServiceHoldsSet(ctx context.Context, req *HoldInput, params ServiceHoldsSetParams) (ServiceHoldsSetRes, error)
 	// ServiceIdentityGet implements ServiceIdentity_get operation.
 	//
-	// The calling credential's own name, scopes and expiry. Any valid credential may read it.
+	// The calling credential's own name, scopes and expiry.
 	//
 	// GET /identity
 	ServiceIdentityGet(ctx context.Context) (ServiceIdentityGetRes, error)
@@ -41,8 +41,7 @@ type Handler interface {
 	// `removed` and never as silence. A caller that applies each entry in order (provision on
 	// `dns_verified` and `serving`, tear down on `removed`) mirrors the Instance's verified hosts, and a
 	// caller that starts from an empty cursor rebuilds the whole set. Delivery is at-least-once: replaying
-	// a cursor returns the same entries, so applying one twice must change nothing. Needs the
-	// `domains:read` scope.
+	// a cursor returns the same entries, so applying one twice must change nothing.
 	//
 	// GET /domains/changes
 	ServiceTrackingHostFeedList(ctx context.Context, params ServiceTrackingHostFeedListParams) (ServiceTrackingHostFeedListRes, error)
@@ -58,7 +57,7 @@ type Handler interface {
 	// The Workspaces created or changed since an opaque cursor, each with all of its owners, in a stable
 	// order by change position. A change is a new Workspace, an owner added, removed or transferred, or an
 	// owner's email or verification changing. Delivery is at-least-once: replaying a cursor returns the
-	// same entries, and an empty cursor starts from the beginning. Needs the `workspaces:read` scope.
+	// same entries, and an empty cursor starts from the beginning.
 	//
 	// GET /workspaces/changes
 	ServiceWorkspaceFeedList(ctx context.Context, params ServiceWorkspaceFeedListParams) (ServiceWorkspaceFeedListRes, error)

@@ -621,7 +621,7 @@ func (s *Server) handleServiceHoldsSetRequest(args [2]string, argsEscaped bool, 
 
 // handleServiceIdentityGetRequest handles ServiceIdentity_get operation.
 //
-// The calling credential's own name, scopes and expiry. Any valid credential may read it.
+// The calling credential's own name, scopes and expiry.
 //
 // GET /identity
 func (s *Server) handleServiceIdentityGetRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -798,8 +798,7 @@ func (s *Server) handleServiceIdentityGetRequest(args [0]string, argsEscaped boo
 // `removed` and never as silence. A caller that applies each entry in order (provision on
 // `dns_verified` and `serving`, tear down on `removed`) mirrors the Instance's verified hosts, and a
 // caller that starts from an empty cursor rebuilds the whole set. Delivery is at-least-once: replaying
-// a cursor returns the same entries, so applying one twice must change nothing. Needs the
-// `domains:read` scope.
+// a cursor returns the same entries, so applying one twice must change nothing.
 //
 // GET /domains/changes
 func (s *Server) handleServiceTrackingHostFeedListRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -1189,7 +1188,7 @@ func (s *Server) handleServiceUsageListRequest(args [0]string, argsEscaped bool,
 // The Workspaces created or changed since an opaque cursor, each with all of its owners, in a stable
 // order by change position. A change is a new Workspace, an owner added, removed or transferred, or an
 // owner's email or verification changing. Delivery is at-least-once: replaying a cursor returns the
-// same entries, and an empty cursor starts from the beginning. Needs the `workspaces:read` scope.
+// same entries, and an empty cursor starts from the beginning.
 //
 // GET /workspaces/changes
 func (s *Server) handleServiceWorkspaceFeedListRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {

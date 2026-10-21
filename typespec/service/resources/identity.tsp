@@ -1,4 +1,5 @@
 using TypeSpec.Http;
+using TypeSpec.OpenAPI;
 
 namespace Sphericon;
 
@@ -32,8 +33,9 @@ model ServiceIdentityResource {
 @tag("Service Identity")
 @route("/identity")
 namespace ServiceIdentity {
-  /** The calling credential's own name, scopes and expiry. Any valid credential may read it. */
+  /** The calling credential's own name, scopes and expiry */
   @get
+  @extension("x-required-scopes", #[])
   op get():
     | ServiceIdentityResource
     | UnauthorizedProblem

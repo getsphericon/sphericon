@@ -44,7 +44,7 @@ func (UnimplementedHandler) ServiceHoldsSet(ctx context.Context, req *HoldInput,
 
 // ServiceIdentityGet implements ServiceIdentity_get operation.
 //
-// The calling credential's own name, scopes and expiry. Any valid credential may read it.
+// The calling credential's own name, scopes and expiry.
 //
 // GET /identity
 func (UnimplementedHandler) ServiceIdentityGet(ctx context.Context) (r ServiceIdentityGetRes, _ error) {
@@ -58,8 +58,7 @@ func (UnimplementedHandler) ServiceIdentityGet(ctx context.Context) (r ServiceId
 // `removed` and never as silence. A caller that applies each entry in order (provision on
 // `dns_verified` and `serving`, tear down on `removed`) mirrors the Instance's verified hosts, and a
 // caller that starts from an empty cursor rebuilds the whole set. Delivery is at-least-once: replaying
-// a cursor returns the same entries, so applying one twice must change nothing. Needs the
-// `domains:read` scope.
+// a cursor returns the same entries, so applying one twice must change nothing.
 //
 // GET /domains/changes
 func (UnimplementedHandler) ServiceTrackingHostFeedList(ctx context.Context, params ServiceTrackingHostFeedListParams) (r ServiceTrackingHostFeedListRes, _ error) {
@@ -81,7 +80,7 @@ func (UnimplementedHandler) ServiceUsageList(ctx context.Context, params Service
 // The Workspaces created or changed since an opaque cursor, each with all of its owners, in a stable
 // order by change position. A change is a new Workspace, an owner added, removed or transferred, or an
 // owner's email or verification changing. Delivery is at-least-once: replaying a cursor returns the
-// same entries, and an empty cursor starts from the beginning. Needs the `workspaces:read` scope.
+// same entries, and an empty cursor starts from the beginning.
 //
 // GET /workspaces/changes
 func (UnimplementedHandler) ServiceWorkspaceFeedList(ctx context.Context, params ServiceWorkspaceFeedListParams) (r ServiceWorkspaceFeedListRes, _ error) {

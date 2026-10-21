@@ -1,4 +1,5 @@
 using TypeSpec.Http;
+using TypeSpec.OpenAPI;
 
 namespace Sphericon;
 
@@ -55,8 +56,9 @@ namespace ServiceTrackingHostFeed {
    * entry in order (provision on `dns_verified` and `serving`, tear down on `removed`)
    * mirrors the Instance's verified hosts, and a caller that starts from an empty cursor
    * rebuilds the whole set. Delivery is at-least-once: replaying a cursor returns the same
-   * entries, so applying one twice must change nothing. Needs the `domains:read` scope. */
+   * entries, so applying one twice must change nothing. */
   @get
+  @extension("x-required-scopes", #[ServiceScope.domainsRead])
   op list(
     /** The `nextCursor` of a page the caller has saved; empty starts from the beginning */
     @query cursor?: string,
