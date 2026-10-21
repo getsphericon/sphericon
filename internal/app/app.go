@@ -910,6 +910,11 @@ func register(injector do.Injector, env string, o options) {
 		}
 		bus := events.New(database.DB)
 		bus.Use(edition.Hooks()...)
+		inserter, err := jobs.NewInserter(database.DB)
+		if err != nil {
+			return nil, err
+		}
+		bus.UseJobs(inserter)
 		return &eventsBus{Bus: bus}, nil
 	})
 
@@ -1280,13 +1285,13 @@ func register(injector do.Injector, env string, o options) {
 		return reputation.New(), nil
 	})
 
-	// The river jobs client is the broadcasts module's enqueue seam.
+	// The broadcasts module claims a Broadcast and queues its send job on the bus's transaction.
 	do.Provide(injector, func(i do.Injector) (*broadcasts.Module, error) {
-		jc, err := do.Invoke[*jobsClient](i)
+		bus, err := do.Invoke[*eventsBus](i)
 		if err != nil {
 			return nil, err
 		}
-		return broadcasts.New(jc.Client), nil
+		return broadcasts.New(bus.Bus), nil
 	})
 
 	do.Provide(injector, func(i do.Injector) (*authtoken.Signer, error) {

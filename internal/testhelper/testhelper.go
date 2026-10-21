@@ -158,7 +158,8 @@ type TestEnv struct {
 
 	edition *ee.Edition // the EE parts, built like the composition root builds them
 
-	jwtSecret string // for tokens a test needs in a state the Tracker never mints
+	sender    *outbound.Module // the Outbound module the queued Broadcast sends run through
+	jwtSecret string           // for tokens a test needs in a state the Tracker never mints
 
 	now        func() time.Time // the clock the server checks site session expiry against
 	sessionTTL time.Duration    // SPHERICON_SESSION_TTL, the lifetime of the site tokens tests mint
@@ -311,6 +312,11 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	// Bus over the same txdb connection: WithinTx opens a nested (savepoint)
 	// transaction, so producer writes + outbox inserts roll back with the test.
 	bus := events.New(txDB)
+	// Jobs queued in a bus transaction land in river_job on the same txdb connection, and
+	// roll back with the test; no worker runs them.
+	inserter, err := jobs.NewInserter(txDB)
+	require.NoError(t, err, "build job inserter")
+	bus.UseJobs(inserter)
 
 	// Inline jobs adapter (Rails :inline equivalent): enqueued jobs run
 	// synchronously against capturing senders, so tests assert the real effect.
@@ -398,7 +404,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	sendingDomainsModule := sendingdomains.New(bus, cipher, inline, cfg.TrackingCNAMETarget)
 	joinDomainsModule := joindomains.New(client, bus, stubTXT, st.now, jobs.OwnerNotifier(client, systemMail))
 	automationsModule := automations.New(cipher, bus)
-	broadcastsModule := broadcasts.New(inline)
+	broadcastsModule := broadcasts.New(bus)
 	acc := accounts.New(client, bus)
 	external, err := server.NewExternalAPI(client, apiexternal.Deps{
 		Accounts: acc, Bus: bus, Webhooks: webhooksModule, Outbound: sender,
@@ -441,6 +447,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	require.NoError(t, err, "build internal handler")
 
 	return &TestEnv{
+		sender:   sender,
 		Instance: inst, DB: client, SQLDB: txDB, Bus: bus, Server: handler, Internal: internalHandler, Tracker: tracker, Cipher: cipher, Integrations: integrationsModule, jwtSecret: baseCfg.JWTSecret, edition: edition, Holds: edition.Holds(), now: st.now, sessionTTL: cfg.SessionTTL,
 		SystemMail: systemMail, CustomerMail: customerMail, SES: fakeSES, Confirmations: confirmations, SecondFactor: secondFactor, StaffMembers: edition.StaffMembers,
 	}

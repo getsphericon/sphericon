@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"testing"
 	"time"
 
@@ -14,8 +15,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/lifecycle"
 )
 
 // Tests run jobs inline, so a test that needs a job to be waiting in the queue puts
@@ -74,6 +78,23 @@ func (env *TestEnv) JobsOf(t *testing.T, kind string) []map[string]any {
 		out = append(out, args)
 	}
 	return out
+}
+
+// DeliverQueuedBroadcasts runs the send of every Broadcast that has a send job waiting in the
+// queue, the way a worker would (synchronously, ignoring the schedule), and returns once each
+// has been planned and its recipients sent. Nothing works the queue under txdb, so a test that
+// sends a Broadcast and then needs it delivered calls this.
+func (env *TestEnv) DeliverQueuedBroadcasts(t *testing.T) {
+	t.Helper()
+	for _, args := range env.JobsOf(t, broadcasts.SendArgs{}.Kind()) {
+		id, ok := args["broadcast_id"].(float64)
+		require.True(t, ok, "a send job names its Broadcast")
+		// A second job for a Broadcast the first already finished is stale, as for a worker.
+		err := jobs.SendBroadcast(t.Context(), env.DB, env.sender, int64(id))
+		if !errors.Is(err, lifecycle.ErrInvalidTransition) {
+			require.NoError(t, err)
+		}
+	}
 }
 
 // CancelPendingFor runs an owner's CancelPending for a Contact of the Initech Workspace the

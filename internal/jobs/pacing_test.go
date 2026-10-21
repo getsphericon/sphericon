@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent/broadcast"
+	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
 )
@@ -32,7 +33,7 @@ func (e *riverEnv) planBroadcast(t *testing.T, id int64) {
 	t.Helper()
 	e.DB.Broadcast.UpdateOneID(id).SetStatus(broadcast.StatusSending).ExecX(e.workCtx())
 	w := jobs.NewSendBroadcastWorker(e.DB, newMod(e.TestEnv, resolvingTo(e.sender)))
-	require.NoError(t, w.Work(e.workCtx(), job(jobs.SendBroadcastArgs{BroadcastID: id})))
+	require.NoError(t, w.Work(e.workCtx(), job(broadcasts.SendArgs{BroadcastID: id})))
 }
 
 // The river adapter inserts each recipient job at the time the module computed for it.

@@ -40,7 +40,7 @@ const QueueWebhooks = "webhooks"
 // per recipient; keeping them off the default queue stops a large broadcast from
 // starving automation steps and welcome emails (the same isolation QueueWebhooks
 // gives outbound webhooks).
-const QueueBroadcasts = "broadcasts"
+const QueueBroadcasts = broadcasts.Queue
 
 // Client wraps the river client and exposes the typed enqueue methods the API
 // handlers use, so callers don't depend on river directly.
@@ -260,6 +260,13 @@ func newRiverConfig(workers *river.Workers, logger *slog.Logger, extra ...*river
 	}
 }
 
+// NewInserter is the insert-only river client over db, for the transactional enqueues of
+// events.Bus.WithinScopedEnqueueTx: a job is inserted on the caller's *sql.Tx, so it exists
+// iff that transaction commits. It runs no workers; the Client's own river client works the jobs.
+func NewInserter(db *sql.DB) (*river.Client[*sql.Tx], error) {
+	return river.NewClient(riverdatabasesql.New(db), &river.Config{Middleware: []rivertype.Middleware{otelriver.NewMiddleware(nil)}})
+}
+
 // Start begins processing jobs (run in a goroutine; returns once started).
 func (c *Client) Start(ctx context.Context) error { return c.river.Start(ctx) }
 
@@ -269,17 +276,6 @@ func (c *Client) Stopped() <-chan struct{} { return c.river.Stopped() }
 
 // Stop drains and stops the workers.
 func (c *Client) Stop(ctx context.Context) error { return c.river.Stop(ctx) }
-
-// EnqueueBroadcast schedules a broadcast send. A nil scheduledAt sends ASAP;
-// otherwise the job runs at scheduledAt.
-func (c *Client) EnqueueBroadcast(ctx context.Context, broadcastID int64, scheduledAt *time.Time) error {
-	opts := &river.InsertOpts{Queue: QueueBroadcasts}
-	if scheduledAt != nil {
-		opts.ScheduledAt = *scheduledAt
-	}
-	_, err := c.river.Insert(ctx, SendBroadcastArgs{BroadcastID: broadcastID, ScheduledAt: scheduledAt}, opts)
-	return err
-}
 
 // EnqueueIntegrationQuotaRefresh schedules a read of one Integration's provider send
 // quota (on save; the hourly tick covers the rest). Fire-and-forget: the result, or

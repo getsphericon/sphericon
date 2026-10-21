@@ -397,7 +397,10 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
   takes a `*ent.Scoped`, `inuse` only maps rows to users.
 - **Async**: `internal/pubsub` (watermill over Postgres) — handlers registered in
   `pubsub.RegisterHandlers`, router run in a goroutine from `cmd/server/main.go`.
-  `internal/jobs` uses river (Postgres-backed queue). Email via `internal/messaging`
+  `internal/jobs` uses river (Postgres-backed queue, `database/sql` driver, polling). A job that must
+  exist iff a state change commits is queued in that transaction with
+  `events.Bus.WithinScopedEnqueueTx` (a Broadcast's claim and its send job); never claim first and
+  enqueue after, with a best-effort undo. Email via `internal/messaging`
   (per-workspace providers: smtp/ses). Both providers share `messaging.BuildMIME`
   (wneessen/go-mail) — smtp sends the `*mail.Msg` directly, ses serializes it to raw
   bytes for SES v2 `SendEmail` (raw content).

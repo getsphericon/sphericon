@@ -3,7 +3,6 @@ package jobs
 import (
 	"context"
 	"log/slog"
-	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/messaging"
@@ -16,7 +15,7 @@ import (
 // Inline is the synchronous adapter of the enqueue seam (the Rails `:inline`
 // equivalent): instead of inserting into river, it runs each job's pure function
 // immediately. It satisfies the same narrow enqueue interfaces the river Client
-// does (BroadcastEnqueuer, WelcomeEnqueuer), so the test harness (and a future
+// does (WelcomeEnqueuer, SystemMailEnqueuer), so the test harness (and a future
 // single-process mode) exercise the enqueue→execute path for real rather than
 // asserting "a job was enqueued".
 type Inline struct {
@@ -36,16 +35,6 @@ type Inline struct {
 // email links.
 func NewInline(entClient *ent.Client, mod *outbound.Module, systemSender messaging.EmailSender, lookup sending.TXTLookup, tracking *trackingdomain.Verifier, cipher *secrets.Cipher, catalog *messaging.Catalog, appURL string) *Inline {
 	return &Inline{ent: entClient, mod: mod, systemSender: systemSender, lookup: lookup, tracking: tracking, cipher: cipher, catalog: catalog, appURL: appURL}
-}
-
-// EnqueueBroadcast runs the broadcast send now. A future scheduledAt is skipped:
-// the inline adapter has no scheduler, and running a future job now would be
-// wrong (e.g. it must not fire a broadcast scheduled for tomorrow).
-func (i *Inline) EnqueueBroadcast(ctx context.Context, broadcastID int64, scheduledAt *time.Time) error {
-	if scheduledAt != nil && scheduledAt.After(time.Now()) {
-		return nil
-	}
-	return SendBroadcast(ctx, i.ent, i.mod, broadcastID)
 }
 
 // EnqueueWelcome sends the welcome email now via the system sender.

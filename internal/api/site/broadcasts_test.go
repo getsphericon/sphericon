@@ -80,6 +80,7 @@ func TestSiteBroadcastsCRUD(t *testing.T) {
 	assert.IsType(t, &siteapi.SiteBroadcastsUpdateUnprocessableEntity{}, badUpd)
 
 	// A sent broadcast is history: Delete refuses it, Archive keeps it (it stays addressable).
+	env.DeliverQueuedBroadcasts(t)
 	del, err := c.SiteBroadcastsDelete(ctx, siteapi.SiteBroadcastsDeleteParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteBroadcastsDeleteUnprocessableEntity{}, del)

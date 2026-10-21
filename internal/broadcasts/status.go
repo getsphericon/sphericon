@@ -21,7 +21,6 @@ const (
 	triggerSend       trigger = "send"       // draft or scheduled -> sending (the claim)
 	triggerPlan       trigger = "plan"       // draft or scheduled -> sending; a re-plan of sending converges
 	triggerResume     trigger = "resume"     // scheduled -> sending; a re-run of sending converges (a queued job)
-	triggerRevert     trigger = "revert"     // scheduled or sending -> draft (the enqueue failed)
 	triggerFinalize   trigger = "finalize"   // sending -> sent
 	triggerFail       trigger = "fail"       // sending -> failed
 )
@@ -67,12 +66,10 @@ func machine(s *ent.Scoped, id int64, set update) *stateless.StateMachine {
 		Permit(triggerUnschedule, broadcast.StatusDraft).
 		Permit(triggerSend, broadcast.StatusSending).
 		Permit(triggerPlan, broadcast.StatusSending).
-		Permit(triggerResume, broadcast.StatusSending).
-		Permit(triggerRevert, broadcast.StatusDraft)
+		Permit(triggerResume, broadcast.StatusSending)
 	m.Configure(broadcast.StatusSending).
 		PermitReentry(triggerPlan).
 		PermitReentry(triggerResume).
-		Permit(triggerRevert, broadcast.StatusDraft).
 		Permit(triggerFinalize, broadcast.StatusSent).
 		Permit(triggerFail, broadcast.StatusFailed)
 	m.Configure(broadcast.StatusSent)

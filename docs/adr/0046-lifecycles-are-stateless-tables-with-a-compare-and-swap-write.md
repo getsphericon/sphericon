@@ -64,10 +64,13 @@ domain's `tracking_state` is written from a row that was read earlier.
   the plan job runs, and a held plan is retried from `sending`, so the table permits plan as a
   re-entry there (a re-plan converges on the same recipient rows). Plan is refused from `sent` and
   `failed`, which is the regression this ADR set out to fix.
-- **Revert** (scheduled or sending back to draft) exists for the case where the job cannot be
-  enqueued after the claim.
-- **Queued jobs resume, they do not plan.** A job is enqueued after the claim (`Send` moves to
-  `sending`, `Schedule` to `scheduled`), so the worker runs the sequence with the `resume`
+- **No revert: the claim and its job are one transaction.** `Send` and `Schedule` queue the send
+  job on the same `*sql.Tx` as the claim (`events.Bus.WithinScopedEnqueueTx`, an insert-only river
+  client over `database/sql`), so a job that cannot be queued rolls the claim back and a Broadcast
+  is never left in `sending` with no job behind it. The table has no move back to `draft` except
+  `unschedule`.
+- **Queued jobs resume, they do not plan.** A job is queued with the claim (`Send` moves to
+  `sending`, `Schedule` to `scheduled`) and becomes visible to a worker only once it commits, so the worker runs the sequence with the `resume`
   trigger, legal from `scheduled` and, as a convergent re-run, from `sending`, never from `draft`.
   An unschedule that lands after the job's `Due` check therefore cannot be undone by the plan:
   its compare-and-swap loses and the job ends as stale. `Due` stays as the cheap check of the

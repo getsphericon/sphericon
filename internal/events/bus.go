@@ -43,6 +43,7 @@ type Bus struct {
 	db     *sql.DB
 	logger watermill.LoggerAdapter
 	hooks  []ent.Hook
+	jobs   JobInserter
 }
 
 // New builds a Bus over the application's database pool.

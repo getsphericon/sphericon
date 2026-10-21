@@ -32,6 +32,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
+	"github.com/getsphericon/sphericon/internal/broadcasts"
 	appdb "github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/dnstest"
 	"github.com/getsphericon/sphericon/internal/events"
@@ -113,9 +114,6 @@ func TestClientEnqueuesEveryJobKind(t *testing.T) {
 	e := newRiverEnv(t)
 	ctx := context.Background()
 
-	require.NoError(t, e.client.EnqueueBroadcast(ctx, fixtures.BroadcastDraftID, nil))
-	later := time.Now().Add(time.Hour)
-	require.NoError(t, e.client.EnqueueBroadcast(ctx, fixtures.BroadcastDraftID, &later))
 	require.NoError(t, e.client.EnqueueWelcome(ctx, "new@example.com", "New"))
 	require.NoError(t, e.client.EnqueuePasswordReset(ctx, "a@example.com", "tok", true))
 	require.NoError(t, e.client.EnqueueEmailVerification(ctx, "a@example.com", "tok", true))
@@ -126,7 +124,7 @@ func TestClientEnqueuesEveryJobKind(t *testing.T) {
 	require.NoError(t, e.client.OnEvent(ctx, fixtures.AcmeID, fixtures.ContactAliceID, "contact.created"))
 
 	assert.Equal(t, []string{
-		"send_broadcast", "send_broadcast", "send_welcome",
+		"send_welcome",
 		"send_auth_mail", "send_auth_mail", "send_auth_mail",
 		"send_member_invite", "sending_domain_verify", "second_factor_required_notify",
 		"automation_evaluate_trigger",
@@ -620,12 +618,12 @@ func TestBroadcastWorkers(t *testing.T) {
 	assert.Equal(t, 10*time.Minute, w.Timeout(nil))
 
 	// A draft (unscheduled after queueing) is not sent.
-	require.NoError(t, w.Work(ctx, job(jobs.SendBroadcastArgs{BroadcastID: fixtures.BroadcastDraftID})))
+	require.NoError(t, w.Work(ctx, job(broadcasts.SendArgs{BroadcastID: fixtures.BroadcastDraftID})))
 	require.Empty(t, e.queued(t))
 
 	// Fan-out: one recipient job per eligible contact.
 	e.DB.Broadcast.UpdateOneID(fixtures.BroadcastDraftID).SetStatus(broadcast.StatusSending).ExecX(ctx)
-	require.NoError(t, w.Work(ctx, job(jobs.SendBroadcastArgs{BroadcastID: fixtures.BroadcastDraftID})))
+	require.NoError(t, w.Work(ctx, job(broadcasts.SendArgs{BroadcastID: fixtures.BroadcastDraftID})))
 	kinds := e.queued(t)
 	require.NotEmpty(t, kinds)
 	for _, k := range kinds {
@@ -644,7 +642,7 @@ func TestBroadcastWorkers(t *testing.T) {
 
 	// An empty audience finalizes in the plan phase and queues nothing more.
 	before := len(e.queued(t))
-	require.NoError(t, w.Work(ctx, job(jobs.SendBroadcastArgs{BroadcastID: fixtures.BroadcastEmptyAudienceID})))
+	require.NoError(t, w.Work(ctx, job(broadcasts.SendArgs{BroadcastID: fixtures.BroadcastEmptyAudienceID})))
 	assert.Len(t, e.queued(t), before)
 
 	// A suspended workspace holds: the job snoozes rather than fails.
@@ -652,11 +650,11 @@ func TestBroadcastWorkers(t *testing.T) {
 	require.NoError(t, err)
 	e.DB.Broadcast.UpdateOneID(fixtures.BroadcastProSegmentID).SetStatus(broadcast.StatusSending).ExecX(ctx)
 	var snooze *river.JobSnoozeError
-	require.ErrorAs(t, w.Work(ctx, job(jobs.SendBroadcastArgs{BroadcastID: fixtures.BroadcastProSegmentID})), &snooze)
+	require.ErrorAs(t, w.Work(ctx, job(broadcasts.SendArgs{BroadcastID: fixtures.BroadcastProSegmentID})), &snooze)
 
 	// A resolver failure is a plain error: river retries it.
 	hold := jobs.NewSendBroadcastWorker(e.DB, newMod(e.TestEnv, failingResolver(errors.New("no integration"))))
-	require.Error(t, hold.Work(ctx, job(jobs.SendBroadcastArgs{BroadcastID: fixtures.BroadcastProSegmentID})))
+	require.Error(t, hold.Work(ctx, job(broadcasts.SendArgs{BroadcastID: fixtures.BroadcastProSegmentID})))
 }
 
 func TestSendRecipientWorkerRecordsTerminalFailure(t *testing.T) {
@@ -744,7 +742,7 @@ func TestSendBroadcastWorkerFinishesAStaleJob(t *testing.T) {
 		fixtures.BroadcastSentID:   broadcast.StatusSent,
 		fixtures.BroadcastFailedID: broadcast.StatusFailed,
 	} {
-		require.NoError(t, w.Work(ctx, job(jobs.SendBroadcastArgs{BroadcastID: id})), "broadcast %d", id)
+		require.NoError(t, w.Work(ctx, job(broadcasts.SendArgs{BroadcastID: id})), "broadcast %d", id)
 		assert.Equal(t, want, e.DB.Broadcast.GetX(ctx, id).Status, "broadcast %d", id)
 	}
 	assert.Empty(t, e.queued(t))

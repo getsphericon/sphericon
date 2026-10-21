@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/testhelper/metricstest"
@@ -26,7 +27,9 @@ func TestQueueMetricsReportDepthAndOldestAge(t *testing.T) {
 	require.NoError(t, e.client.EnqueueWelcome(ctx, "a@example.com", "A"))
 	require.NoError(t, e.client.EnqueueWelcome(ctx, "b@example.com", "B"))
 	later := time.Now().Add(time.Hour)
-	require.NoError(t, e.client.EnqueueBroadcast(ctx, fixtures.BroadcastDraftID, &later))
+	_, err = e.client.River().Insert(ctx, broadcasts.SendArgs{BroadcastID: fixtures.BroadcastDraftID, ScheduledAt: &later},
+		&river.InsertOpts{Queue: jobs.QueueBroadcasts, ScheduledAt: later})
+	require.NoError(t, err)
 
 	scrape := metricstest.ScrapeMetrics(t)
 	queue := map[string]string{"queue": river.QueueDefault}

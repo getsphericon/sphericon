@@ -1,14 +1,14 @@
 // Package broadcasts owns the Broadcast send/schedule state machine (ADR 0016):
-// draft -> scheduled -> sending, clearing a schedule, and reverting to draft when
-// the job cannot be enqueued. Every surface that sends or schedules a Broadcast
+// draft -> scheduled -> sending and clearing a schedule; the claim and the send job it
+// needs are one transaction. Every surface that sends or schedules a Broadcast
 // (the /site SPA today, /api and MCP next) calls it; none re-implements a
 // transition. Handlers stay thin adapters: scope check, call, map errors.
 //
 // Every Broadcast status write goes through the transition table in status.go (ADR 0046):
 // a stateless table with a compare-and-swap write, so an illegal move is
 // lifecycle.ErrInvalidTransition. Delivery owns the rest of the lifecycle: plan, pace, send
-// one recipient through Outbound send (ADR 0015), give up, finalize. Queue adapters (river,
-// inline) only implement its Scheduler seam and decide how to retry.
+// one recipient through Outbound send (ADR 0015), give up, finalize. The queue adapter (river)
+// only implements its Scheduler seam and decides how to retry.
 package broadcasts
 
 import (
@@ -18,11 +18,14 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/riverqueue/river"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/internal/emailrender"
+	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
@@ -39,51 +42,38 @@ var (
 	ErrNotScheduled = errors.New("broadcasts: broadcast is not scheduled")
 )
 
-// Enqueuer hands a Broadcast to the job queue (river in prod, inline in tests). A nil
-// scheduledAt means "as soon as possible".
-type Enqueuer interface {
-	EnqueueBroadcast(ctx context.Context, broadcastID int64, scheduledAt *time.Time) error
+// Queue is the river queue the send jobs run on; it isolates a blast from the default queue.
+const Queue = "broadcasts"
+
+// SendArgs is the fan-out (plan) job payload: which Broadcast to dispatch. The worker plans
+// the audience and queues one job per recipient, so no single job carries the whole send.
+type SendArgs struct {
+	BroadcastID int64 `json:"broadcast_id"`
+	// ScheduledAt is the time a delayed job was queued for; nil for an immediate send.
+	ScheduledAt *time.Time `json:"scheduled_at,omitempty"`
 }
+
+func (SendArgs) Kind() string { return "send_broadcast" }
 
 // Module is the Broadcast send/schedule state machine. It holds no client: every
 // call receives the Workspace-scoped client (ADR 0017) built by the entry point, so
 // the module writes no Workspace predicate and cannot name another Workspace.
 type Module struct {
-	q Enqueuer
+	bus *events.Bus
 }
 
-func New(q Enqueuer) *Module { return &Module{q: q} }
+func New(bus *events.Bus) *Module { return &Module{bus: bus} }
 
-// Send moves a draft or scheduled Broadcast to sending (dropping any schedule) and
-// enqueues it for immediate dispatch. If the enqueue fails the Broadcast reverts to
-// draft, so it is never stranded in sending with no job behind it.
+// Send moves a draft or scheduled Broadcast to sending (dropping any schedule) and queues
+// its send job in the same transaction: either both happen or neither does.
 func (m *Module) Send(ctx context.Context, s *ent.Scoped, id int64) (*ent.Broadcast, error) {
-	b, err := m.claim(ctx, s, id, triggerSend, func(u *ent.BroadcastScopedUpdate) { u.ClearScheduledAt() })
-	if err != nil {
-		return nil, err
-	}
-	// Status is written BEFORE the enqueue and never after: the inline adapter runs
-	// the send synchronously and advances the row to "sent"; a later write would
-	// clobber it.
-	if err := m.q.EnqueueBroadcast(ctx, b.ID, nil); err != nil {
-		m.revert(ctx, s, b.ID)
-		return nil, err
-	}
-	return b, nil
+	return m.claim(ctx, s, id, triggerSend, func(u *ent.BroadcastScopedUpdate) { u.ClearScheduledAt() }, nil)
 }
 
-// Schedule moves a draft or scheduled Broadcast to scheduled at `when` and enqueues
-// a delayed job. If the enqueue fails the Broadcast reverts to draft with no schedule.
+// Schedule moves a draft or scheduled Broadcast to scheduled at `when` and queues a delayed
+// job in the same transaction.
 func (m *Module) Schedule(ctx context.Context, s *ent.Scoped, id int64, when time.Time) (*ent.Broadcast, error) {
-	b, err := m.claim(ctx, s, id, triggerSchedule, func(u *ent.BroadcastScopedUpdate) { u.SetScheduledAt(when) })
-	if err != nil {
-		return nil, err
-	}
-	if err := m.q.EnqueueBroadcast(ctx, b.ID, &when); err != nil {
-		m.revert(ctx, s, b.ID)
-		return nil, err
-	}
-	return b, nil
+	return m.claim(ctx, s, id, triggerSchedule, func(u *ent.BroadcastScopedUpdate) { u.SetScheduledAt(when) }, &when)
 }
 
 // Unschedule returns a scheduled Broadcast to draft and drops its schedule. The
@@ -99,18 +89,31 @@ func (m *Module) Unschedule(ctx context.Context, s *ent.Scoped, id int64) (*ent.
 	return s.Broadcast().Get(ctx, id)
 }
 
-// claim makes a move out of draft or scheduled through the transition table: the write is a
-// compare-and-swap on the status, so two racing requests cannot both win.
-func (m *Module) claim(ctx context.Context, s *ent.Scoped, id int64, t trigger, set update) (*ent.Broadcast, error) {
-	if err := fire(ctx, s, id, t, set); err != nil {
-		return nil, notSendable(err)
+// claim makes a move out of draft or scheduled through the transition table and queues the
+// send job (at `at`, nil for as soon as possible) in the same transaction. The write is a
+// compare-and-swap on the status, so two racing requests cannot both win, and a job that
+// cannot be queued rolls the claim back with it.
+func (m *Module) claim(ctx context.Context, s *ent.Scoped, id int64, t trigger, set update, at *time.Time) (*ent.Broadcast, error) {
+	var claimed *ent.Broadcast
+	err := m.bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, q events.Enqueuer) error {
+		if err := fire(ctx, ts, id, t, set); err != nil {
+			return notSendable(err)
+		}
+		opts := &river.InsertOpts{Queue: Queue}
+		if at != nil {
+			opts.ScheduledAt = *at
+		}
+		if err := q.Enqueue(ctx, SendArgs{BroadcastID: id, ScheduledAt: at}, opts); err != nil {
+			return err
+		}
+		var err error
+		claimed, err = ts.Broadcast().Get(ctx, id)
+		return err
+	})
+	if err != nil {
+		return nil, err
 	}
-	return s.Broadcast().Get(ctx, id)
-}
-
-// revert is best effort: the caller is already returning the enqueue error.
-func (m *Module) revert(ctx context.Context, s *ent.Scoped, id int64) {
-	_ = fire(ctx, s, id, triggerRevert, func(u *ent.BroadcastScopedUpdate) { u.ClearScheduledAt() })
+	return claimed, nil
 }
 
 // --- Authoring (ADR 0016): drafts, audience, report ---

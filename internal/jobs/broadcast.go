@@ -25,17 +25,6 @@ const recipientInsertChunk = 1000
 // the last error.
 const recipientMaxAttempts = 3
 
-// SendBroadcastArgs is the fan-out (plan) job payload: which broadcast to
-// dispatch. The worker plans the audience and enqueues one per-recipient job
-// each, so no single job carries the whole send.
-type SendBroadcastArgs struct {
-	BroadcastID int64 `json:"broadcast_id"`
-	// ScheduledAt is the time a delayed job was enqueued for; nil for an immediate send.
-	ScheduledAt *time.Time `json:"scheduled_at,omitempty"`
-}
-
-func (SendBroadcastArgs) Kind() string { return "send_broadcast" }
-
 // SendRecipientArgs is one per-recipient send. BroadcastID rides along so the
 // worker can finalize without an extra lookup.
 type SendRecipientArgs struct {
@@ -49,7 +38,7 @@ func (SendRecipientArgs) Kind() string { return jobkind.SendRecipient.Kind }
 // river scheduler, so the send scales across workers instead of running the whole audience
 // in one job under the default 1-minute JobTimeout.
 type SendBroadcastWorker struct {
-	river.WorkerDefaults[SendBroadcastArgs]
+	river.WorkerDefaults[broadcasts.SendArgs]
 	ent *ent.Client
 	del *broadcasts.Delivery
 }
@@ -57,13 +46,13 @@ type SendBroadcastWorker struct {
 // Timeout gives the plan phase room to resolve a large audience and enqueue the
 // per-recipient jobs; the actual sending happens in those jobs, each bounded by
 // the default per-job timeout.
-func (w *SendBroadcastWorker) Timeout(*river.Job[SendBroadcastArgs]) time.Duration {
+func (w *SendBroadcastWorker) Timeout(*river.Job[broadcasts.SendArgs]) time.Duration {
 	return 10 * time.Minute
 }
 
 // Work is the river adapter over the module's delivery sequence: it keeps only the queue
 // concerns, the schedule of the recipient jobs and the retry decision of a hold.
-func (w *SendBroadcastWorker) Work(ctx context.Context, job *river.Job[SendBroadcastArgs]) error {
+func (w *SendBroadcastWorker) Work(ctx context.Context, job *river.Job[broadcasts.SendArgs]) error {
 	s, err := broadcastScope(ctx, w.ent, job.Args.BroadcastID)
 	if err != nil {
 		return err
