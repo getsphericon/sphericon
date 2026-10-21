@@ -35,6 +35,11 @@ domain's `tracking_state` is written from a row that was read earlier.
   `OnUnhandledTrigger` and maps a compare-and-swap miss to the same `ErrInvalidTransition`. The
   error is never swallowed. A worker treats it as a stale event and finishes the job without a
   retry; an API handler answers 409. The tables stay in their modules.
+- **A rule keeps the table the only writer.** `ast-grep/rules/no-status-write-outside-lifecycle.yml`
+  (run by `mise run check:ast`) refuses an `Update`/`UpdateOneID` chain that sets `status` or
+  `tracking_state` anywhere but inside a `lifecycle.Storage{...}` literal, where the compare-and-swap
+  `Write` lives. Creating a row in its first state, `Automation.status` and tests are not matched.
+  A new machine needs no change to the rule; a new lifecycle column does.
 - **Gaps are fixed upstream.** The library returns an untyped `fmt.Errorf` for an unpermitted
   trigger; a typed error goes to `stateless` as a pull request, not blocking, since
   `OnUnhandledTrigger` already replaces the behavior here. A pull request to another

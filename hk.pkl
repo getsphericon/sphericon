@@ -40,7 +40,7 @@ local linters = new Mapping {
     }
     // Project-specific syntax rules (sgconfig.yml, ast-grep/rules).
     ["ast_grep"] {
-        glob = List("src/**/*.ts", "src/**/*.tsx")
+        glob = List("src/**/*.ts", "src/**/*.tsx", "**/*.go")
         check = "ast-grep scan {{files}}"
     }
     // Maintained actionlint fork (replaces the rhysd/actionlint builtin).

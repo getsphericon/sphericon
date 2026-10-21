@@ -1,0 +1,58 @@
+id: no-status-write-outside-lifecycle
+valid:
+  - |
+    func machine(s *ent.Scoped, id int64) *stateless.StateMachine {
+    	return lifecycle.New(lifecycle.Storage[broadcast.Status]{
+    		Write: func(ctx context.Context, from, to broadcast.Status) (bool, error) {
+    			n, err := s.Broadcast().Update().Where(broadcast.ID(id), broadcast.StatusEQ(from)).SetStatus(to).Save(ctx)
+    			return n > 0, err
+    		},
+    	})
+    }
+  - |
+    func machine(ts *ent.Scoped, row *ent.SendingDomain) *stateless.StateMachine {
+    	return lifecycle.New(lifecycle.Storage[sendingdomain.TrackingState]{
+    		Write: func(ctx context.Context, from, to sendingdomain.TrackingState) (bool, error) {
+    			n, err := ts.SendingDomain().Update().Where(sendingdomain.ID(row.ID)).SetTrackingState(to).Save(ctx)
+    			return n == 1, err
+    		},
+    	})
+    }
+  - |
+    func create(ctx context.Context, s *ent.Scoped) error {
+    	_, err := s.OutboundMessage().Create().SetStatus(outboundmessage.StatusFailed).Save(ctx)
+    	return err
+    }
+  - |
+    func flag(ctx context.Context, s *ent.Scoped, id int64, status automation.Status) error {
+    	_, err := s.Automation().Update().Where(automation.ID(id)).SetStatus(status).Save(ctx)
+    	return err
+    }
+  - |
+    func span(s trace.Span, err error) {
+    	s.SetStatus(codes.Error, err.Error())
+    }
+invalid:
+  - |
+    func bypass(ctx context.Context, s *ent.Scoped, id int64) error {
+    	return s.Broadcast().UpdateOneID(id).SetStatus(broadcast.StatusSent).Exec(ctx)
+    }
+  - |
+    func bypass(ctx context.Context, s *ent.Scoped, id int64, to broadcast.Status) error {
+    	_, err := s.Broadcast().Update().Where(broadcast.ID(id)).SetStatus(to).Save(ctx)
+    	return err
+    }
+  - |
+    func bypass(ctx context.Context, s *ent.Scoped, id int64) error {
+    	return s.AutomationRun().UpdateOneID(id).ClearResumeAt().SetStatus(automationrun.StatusExited).Exec(ctx)
+    }
+  - |
+    func bypass(ctx context.Context, s *ent.Scoped, id int64) error {
+    	return s.SendingDomain().UpdateOneID(id).SetTrackingState(sendingdomain.TrackingStateServing).Exec(ctx)
+    }
+  - |
+    func bypass(ctx context.Context, s *ent.Scoped, id int64) error {
+    	other := lifecycle.Storage[broadcast.Status]{}
+    	_ = other
+    	return s.Broadcast().UpdateOneID(id).SetStatus(broadcast.StatusFailed).Exec(ctx)
+    }

@@ -1,0 +1,52 @@
+id: no-status-write-outside-lifecycle
+snapshots:
+  "func bypass(ctx context.Context, s *ent.Scoped, id int64) error {\n\tother := lifecycle.Storage[broadcast.Status]{}\n\t_ = other\n\treturn s.Broadcast().UpdateOneID(id).SetStatus(broadcast.StatusFailed).Exec(ctx)\n}\n":
+    labels:
+      - source: s.Broadcast().UpdateOneID(id).SetStatus(broadcast.StatusFailed)
+        style: primary
+        start: 133
+        end: 196
+      - source: s.Broadcast().UpdateOneID(id)
+        style: secondary
+        start: 133
+        end: 162
+  "func bypass(ctx context.Context, s *ent.Scoped, id int64) error {\n\treturn s.AutomationRun().UpdateOneID(id).ClearResumeAt().SetStatus(automationrun.StatusExited).Exec(ctx)\n}\n":
+    labels:
+      - source: s.AutomationRun().UpdateOneID(id).ClearResumeAt().SetStatus(automationrun.StatusExited)
+        style: primary
+        start: 74
+        end: 161
+      - source: s.AutomationRun().UpdateOneID(id)
+        style: secondary
+        start: 74
+        end: 107
+  "func bypass(ctx context.Context, s *ent.Scoped, id int64) error {\n\treturn s.Broadcast().UpdateOneID(id).SetStatus(broadcast.StatusSent).Exec(ctx)\n}\n":
+    labels:
+      - source: s.Broadcast().UpdateOneID(id).SetStatus(broadcast.StatusSent)
+        style: primary
+        start: 74
+        end: 135
+      - source: s.Broadcast().UpdateOneID(id)
+        style: secondary
+        start: 74
+        end: 103
+  "func bypass(ctx context.Context, s *ent.Scoped, id int64) error {\n\treturn s.SendingDomain().UpdateOneID(id).SetTrackingState(sendingdomain.TrackingStateServing).Exec(ctx)\n}\n":
+    labels:
+      - source: s.SendingDomain().UpdateOneID(id).SetTrackingState(sendingdomain.TrackingStateServing)
+        style: primary
+        start: 74
+        end: 160
+      - source: s.SendingDomain().UpdateOneID(id)
+        style: secondary
+        start: 74
+        end: 107
+  "func bypass(ctx context.Context, s *ent.Scoped, id int64, to broadcast.Status) error {\n\t_, err := s.Broadcast().Update().Where(broadcast.ID(id)).SetStatus(to).Save(ctx)\n\treturn err\n}\n":
+    labels:
+      - source: s.Broadcast().Update().Where(broadcast.ID(id)).SetStatus(to)
+        style: primary
+        start: 98
+        end: 158
+      - source: s.Broadcast().Update()
+        style: secondary
+        start: 98
+        end: 120
