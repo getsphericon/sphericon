@@ -891,3 +891,6 @@ func WorkspaceIDByPublicID(ctx context.Context, client *ent.Client, publicID str
 // deleted Workspace (its Members' scope, the lists, the Instance-wide readers) uses it, so
 // "live" is stated once.
 func Live() predicate.Workspace { return workspace.DiscardedAtIsNil() }
+
+// Deleted is a Workspace in its deletion window or erased (ADR 0043): the complement of Live.
+func Deleted() predicate.Workspace { return workspace.DiscardedAtNotNil() }

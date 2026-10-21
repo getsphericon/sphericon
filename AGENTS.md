@@ -342,7 +342,7 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
   re-check of verified domains, a river job in `internal/jobs`, lists the due domains of every Workspace with
   `Module.Due` and scopes each `Module.Recheck` to the Workspace of the row it loaded; the Owners of a Workspace that
   loses a domain, by that re-check or by a hand-over, are mailed through the `Notify` seam after the write commits), `internal/domainverify` (the Sending domain verification jobs' module, ADR 0010/0038: it reads a
-  Sending domain by id to learn its Workspace before any scope exists, then writes through that scope), `internal/suspension` (Workspace
+  Sending domain by id to learn its Workspace before any scope exists, then writes through that scope), `internal/automations` (only `FenceOn`, the Automation run fence, ADR 0046: it opens the transaction that holds the share lock on the Enrollment's row; every other function takes a `*ent.Scoped`), `internal/suspension` (Workspace
   suspension), `internal/workspacedeletion` (the Workspace deletion cycle, ADR 0043: it lists the Workspaces whose window has passed and
   the Owners' deleted ones, which have no scope yet, opens a transaction per erase step, scopes to the
   one Workspace being erased inside it, and writes the row the cycle moves), `internal/events`

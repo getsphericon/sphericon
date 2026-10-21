@@ -101,25 +101,12 @@ func (m *Module) scopeOver(ctx context.Context, publicID string) (*ent.Scoped, e
 	return m.ent.Scoped(w.ID), nil
 }
 
-// Review narrows the Workspace list to the ones the abuse detector surfaces (ADR 0026).
-type Review string
-
-const (
-	ReviewNone Review = ""
-	// ReviewWarned: the owners were warned and the Workspace is still in the warning tier.
-	ReviewWarned Review = "warned"
-	// ReviewSystemFrozen: suspended by the detector (actor `system`).
-	ReviewSystemFrozen Review = "system_frozen"
-	// ReviewDeleted: in the deletion window or erased (ADR 0043); every other list hides them.
-	ReviewDeleted Review = "deleted"
-)
-
 // ListWorkspaces is one page of every Workspace, newest first, optionally only those
 // in a review state and those whose id or name contains search: the name matches
 // case-insensitively, the id as a case-sensitive substring (base62 is case-sensitive). It reads the Workspace rows themselves
 // through the raw client: the Staff console shows tenant metadata only, never a
 // Workspace's Contacts, content or Events, so no Workspace-scoped query is made.
-func (m *Module) ListWorkspaces(ctx context.Context, review Review, search string, p pagination.Params) (pagination.Page[*ent.Workspace], error) {
+func (m *Module) ListWorkspaces(ctx context.Context, review abuse.Review, search string, p pagination.Params) (pagination.Page[*ent.Workspace], error) {
 	if err := m.licensed(); err != nil {
 		return pagination.Page[*ent.Workspace]{}, err
 	}
@@ -128,19 +115,7 @@ func (m *Module) ListWorkspaces(ctx context.Context, review Review, search strin
 		if search != "" {
 			q = q.Where(entworkspace.Or(entworkspace.PublicIDContains(search), entworkspace.NameContainsFold(search)))
 		}
-		if review == ReviewDeleted {
-			q = q.Where(entworkspace.DiscardedAtNotNil())
-		} else {
-			q = q.Where(accounts.Live())
-		}
-		switch review {
-		case ReviewNone, ReviewDeleted:
-		case ReviewWarned:
-			q = q.Where(entworkspace.AbuseWarningNotifiedAtNotNil(), suspension.NotSuspended(), entworkspace.AbuseExempt(false))
-		case ReviewSystemFrozen:
-			q = q.Where(suspension.BySystem())
-		}
-		return q
+		return q.Where(review.Predicate())
 	}
 	return pagination.List(ctx, p,
 		func(ctx context.Context) (int, error) { return query().Count(ctx) },

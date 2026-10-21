@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
-	enthold "github.com/getsphericon/sphericon/ent/hold"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/holds"
@@ -34,20 +33,10 @@ func (e *HoldTooLongError) Error() string {
 }
 
 // HoldInput is what a setter states about a hold.
-type HoldInput struct {
-	ReasonCode string
-	Message    string
-	// ActionURL is where the Workspace's Owners and Admins can resolve the hold; nil for none.
-	ActionURL *string
-	ExpiresAt time.Time
-}
+type HoldInput = holds.Input
 
-// HoldChange is the outcome of setting or clearing a hold: the hold concerned (nil when
-// a clear found none) and whether the call changed anything.
-type HoldChange struct {
-	Hold    *ent.Hold
-	Changed bool
-}
+// HoldChange is the outcome of setting or clearing a hold.
+type HoldChange = holds.Change
 
 // SetHold sets the hold under key on a Workspace, or renews it when it exists: one call
 // does both and repeating it is harmless. It is recorded in the Audit log under the
@@ -76,52 +65,7 @@ func (m *Module) SetHold(ctx context.Context, bus *events.Bus, cred *ent.Service
 	if err != nil {
 		return HoldChange{}, err
 	}
-	// A concurrent first set of the same key loses the unique index once; the retry
-	// then finds the row and renews it.
-	for range 2 {
-		existing, err := s.Hold().Query().Where(enthold.Key(key)).Only(ctx)
-		switch {
-		case ent.IsNotFound(err):
-			created, err := s.Hold().Create().
-				SetKey(key).SetReasonCode(in.ReasonCode).SetMessage(in.Message).SetNillableActionURL(in.ActionURL).
-				SetExpiresAt(in.ExpiresAt).SetSetBy(cred.Name).
-				Save(ctx)
-			if ent.IsConstraintError(err) {
-				continue
-			}
-			return HoldChange{Hold: created, Changed: err == nil}, err
-		case err != nil:
-			return HoldChange{}, err
-		}
-		if sameHold(existing, in) {
-			return HoldChange{Hold: existing}, nil
-		}
-		update := s.Hold().UpdateOneID(existing.ID).
-			SetReasonCode(in.ReasonCode).SetMessage(in.Message).
-			SetExpiresAt(in.ExpiresAt).SetSetBy(cred.Name)
-		if in.ActionURL != nil {
-			update.SetActionURL(*in.ActionURL)
-		} else {
-			update.ClearActionURL()
-		}
-		updated, err := update.Save(ctx)
-		return HoldChange{Hold: updated, Changed: err == nil}, err
-	}
-	return HoldChange{}, errors.New("staff: could not set the hold: it kept changing under us")
-}
-
-// sameHold reports whether the stored hold already says what in says. Timestamps are
-// compared at the database's microsecond precision.
-func sameHold(h *ent.Hold, in HoldInput) bool {
-	return h.ReasonCode == in.ReasonCode && h.Message == in.Message && equalStrings(h.ActionURL, in.ActionURL) &&
-		h.ExpiresAt.Truncate(time.Microsecond).Equal(in.ExpiresAt.Truncate(time.Microsecond))
-}
-
-func equalStrings(a, b *string) bool {
-	if a == nil || b == nil {
-		return a == b
-	}
-	return *a == *b
+	return holds.Set(ctx, s, key, cred.Name, in)
 }
 
 // ClearHold removes the hold under key. Clearing a missing hold succeeds. It is recorded
@@ -134,18 +78,7 @@ func (m *Module) ClearHold(ctx context.Context, bus *events.Bus, cred *ent.Servi
 	if err != nil {
 		return HoldChange{}, err
 	}
-	existing, err := s.Hold().Query().Where(enthold.Key(key)).Only(ctx)
-	if ent.IsNotFound(err) {
-		return HoldChange{}, nil
-	}
-	if err != nil {
-		return HoldChange{}, err
-	}
-	err = s.Hold().DeleteOneID(existing.ID).Exec(ctx)
-	if ent.IsNotFound(err) {
-		return HoldChange{}, nil
-	}
-	return HoldChange{Hold: existing, Changed: err == nil}, err
+	return holds.Clear(ctx, s, key)
 }
 
 // ActiveHolds lists the holds of a Workspace that are active now, by key. ent.IsNotFound

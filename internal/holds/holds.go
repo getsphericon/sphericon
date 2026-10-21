@@ -3,8 +3,8 @@
 // so the send path, the site API and the console agree: a hold is active while its
 // expiry is after the clock, and a lapsed one is ignored at once, with no cleanup job.
 //
-// Setting and clearing live in ee/staff (the service endpoints); this package only
-// reads, through the scoped client, and holds no raw client.
+// It also sets (idempotently) and clears a hold for the service endpoints in ee/staff, which
+// only authorize and validate. It works through the scoped client and holds no raw client.
 package holds
 
 import (

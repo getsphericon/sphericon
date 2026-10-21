@@ -162,16 +162,16 @@ func (h *Handlers) StaffWorkspacesList(ctx context.Context, params staffapi.Staf
 	}, nil
 }
 
-func review(p staffapi.OptStaffWorkspaceReview) Review {
+func review(p staffapi.OptStaffWorkspaceReview) abuse.Review {
 	switch p.Value {
 	case staffapi.StaffWorkspaceReviewWarned:
-		return ReviewWarned
+		return abuse.ReviewWarned
 	case staffapi.StaffWorkspaceReviewSystemFrozen:
-		return ReviewSystemFrozen
+		return abuse.ReviewSystemFrozen
 	case staffapi.StaffWorkspaceReviewDeleted:
-		return ReviewDeleted
+		return abuse.ReviewDeleted
 	default:
-		return ReviewNone
+		return abuse.ReviewNone
 	}
 }
 
