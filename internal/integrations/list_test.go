@@ -17,7 +17,7 @@ func TestListPagesTheWorkspaceIntegrationsAscendingByID(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := new(integrations.Module)
 
-	first, err := m.List(context.Background(), env.DB.Scoped(fixtures.AcmeID), pagination.Params{Page: 1, PageSize: 1})
+	first, err := m.List(context.Background(), env.DB.Scoped(fixtures.AcmeID), pagination.Params{Page: 1, PageSize: 1}, false)
 	require.NoError(t, err)
 	require.Len(t, first.Items, 1)
 	assert.Equal(t, int64(fixtures.IntegrationAcmeDefaultID), first.Items[0].ID)
@@ -26,7 +26,7 @@ func TestListPagesTheWorkspaceIntegrationsAscendingByID(t *testing.T) {
 	assert.Equal(t, total, first.TotalItems)
 	assert.Equal(t, total, first.TotalPages, "one Integration a page")
 
-	second, err := m.List(context.Background(), env.DB.Scoped(fixtures.AcmeID), pagination.Params{Page: 2, PageSize: 1})
+	second, err := m.List(context.Background(), env.DB.Scoped(fixtures.AcmeID), pagination.Params{Page: 2, PageSize: 1}, false)
 	require.NoError(t, err)
 	require.Len(t, second.Items, 1)
 	assert.Equal(t, int64(fixtures.IntegrationAcmeSesID), second.Items[0].ID)

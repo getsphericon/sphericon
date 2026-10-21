@@ -231,7 +231,7 @@ var eraseSteps = []eraseStep{
 	stepOf((*ent.Scoped).CustomField, customfield.IDIn),
 	// The tracking host change log hook records each released host here.
 	stepOf((*ent.Scoped).SendingDomain, sendingdomain.IDIn),
-	stepOf((*ent.Scoped).Integration, integration.IDIn),
+	purgeStepOf((*ent.Scoped).Integration, integration.IDIn),
 	stepOf((*ent.Scoped).JoinDomain, joindomain.IDIn),
 	// Owner Memberships last: the owner hook advances the feed as they go.
 	stepOf((*ent.Scoped).Membership, membership.IDIn),

@@ -253,6 +253,12 @@ const (
 	BroadcastSentName = "Python crash course is here"
 	// BroadcastSentSubject is from fixtures/broadcasts.
 	BroadcastSentSubject = "Python crash course is here"
+	// BroadcastSentViaArchivedIntegrationID is from fixtures/broadcasts.
+	BroadcastSentViaArchivedIntegrationID = 108
+	// BroadcastSentViaArchivedIntegrationName is from fixtures/broadcasts.
+	BroadcastSentViaArchivedIntegrationName = "Spring digest"
+	// BroadcastSentViaArchivedIntegrationSubject is from fixtures/broadcasts.
+	BroadcastSentViaArchivedIntegrationSubject = "Your spring digest"
 	// ConfirmationErasableDestination is from fixtures/confirmations.
 	ConfirmationErasableDestination = "erin@initech.test"
 	// ConfirmationErasableID is from fixtures/confirmations.
@@ -609,6 +615,14 @@ const (
 	InitechPublicID = "InitcWs3"
 	// InitechRitaMembershipID is from fixtures/memberships.
 	InitechRitaMembershipID = 13
+	// IntegrationAcmeArchivedID is from fixtures/integrations.
+	IntegrationAcmeArchivedID = 6
+	// IntegrationAcmeArchivedIngestKey is from fixtures/integrations.
+	IntegrationAcmeArchivedIngestKey = "omik_test_integrationacmearchived"
+	// IntegrationAcmeArchivedName is from fixtures/integrations.
+	IntegrationAcmeArchivedName = "Old relay (archived)"
+	// IntegrationAcmeArchivedProvider is from fixtures/integrations.
+	IntegrationAcmeArchivedProvider = "smtp"
 	// IntegrationAcmeDefaultID is from fixtures/integrations.
 	IntegrationAcmeDefaultID = 1
 	// IntegrationAcmeDefaultIngestKey is from fixtures/integrations.

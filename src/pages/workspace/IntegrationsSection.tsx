@@ -11,6 +11,7 @@ import {
   NumberInput,
   Select,
   Stack,
+  Switch,
   Text,
   TextInput,
   Title,
@@ -25,16 +26,16 @@ import { useTranslation } from 'react-i18next'
 import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
 import {
   siteIntegrationsCreateMutation,
-  siteIntegrationsDeleteMutation,
+  siteIntegrationsArchiveMutation,
   siteIntegrationsListOptions,
   siteIntegrationsListQueryKey,
+  siteIntegrationsUnarchiveMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type {
   SiteIntegrationConfigInput,
   SiteIntegrationResource,
 } from '../../generated/site/types.gen.ts'
 import { canManage, useCurrentRole } from '../../hooks/useCurrentRole.ts'
-import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation.tsx'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { AUDIT_TARGET_INTEGRATION } from './auditFilter.ts'
 import { ChangeHistoryLink } from './AuditLogSection.tsx'
@@ -106,13 +107,15 @@ function buildConfig(values: IntegrationFormValues): SiteIntegrationConfigInput 
 
 export function IntegrationsSection({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
-  const confirmDelete = useDeleteConfirmation()
   const [createOpened, { open: openCreate, close: closeCreate }] = useDisclosure(false)
   const role = useCurrentRole(workspaceId)
   const canManageIntegrations = canManage(role)
 
+  const [archived, setArchived] = useState(false)
   const queryKey = siteIntegrationsListQueryKey({ path: { workspaceId } })
-  const integrationsQuery = useQuery(siteIntegrationsListOptions({ path: { workspaceId } }))
+  const integrationsQuery = useQuery(
+    siteIntegrationsListOptions({ path: { workspaceId }, query: { archived } }),
+  )
 
   const validateLimits = useSendLimitValidators()
   const form = useForm<IntegrationFormValues>({
@@ -133,19 +136,17 @@ export function IntegrationsSection({ workspaceId }: { workspaceId: string }) {
     },
   })
 
-  const deleteMutation = useResourceMutation({
-    mutation: siteIntegrationsDeleteMutation(),
+  const archiveMutation = useResourceMutation({
+    mutation: siteIntegrationsArchiveMutation(),
     invalidate: [queryKey],
-    errorTitle: t(($) => $.settings.integrations.deleteError),
+    errorTitle: t(($) => $.settings.integrations.archiveError),
   })
 
-  const onDelete = (id: string) => {
-    confirmDelete({
-      title: t(($) => $.settings.integrations.deleteConfirmTitle),
-      description: t(($) => $.settings.integrations.deleteConfirmDescription),
-      onConfirm: () => deleteMutation.mutate({ path: { workspaceId, id } }),
-    })
-  }
+  const restoreMutation = useResourceMutation({
+    mutation: siteIntegrationsUnarchiveMutation(),
+    invalidate: [queryKey],
+    errorTitle: t(($) => $.settings.integrations.restoreError),
+  })
 
   const isSes = form.values.provider === 'ses'
   const records = integrationsQuery.data ?? []
@@ -165,6 +166,13 @@ export function IntegrationsSection({ workspaceId }: { workspaceId: string }) {
       <Text c="dimmed" size="sm" mb="md">
         {t(($) => $.settings.integrations.description)}
       </Text>
+
+      <Switch
+        mb="md"
+        label={t(($) => $.settings.integrations.showArchived)}
+        checked={archived}
+        onChange={(event) => setArchived(event.currentTarget.checked)}
+      />
 
       {integrationsQuery.isError ? (
         <Alert color="red" title={t(($) => $.settings.integrations.loadError)} mb="md">
@@ -236,9 +244,24 @@ export function IntegrationsSection({ workspaceId }: { workspaceId: string }) {
                     <Menu.Item onClick={() => setInbound(record)}>
                       {t(($) => $.settings.integrations.inbound.open)}
                     </Menu.Item>
-                    <Menu.Item color="red" onClick={() => onDelete(record.id)}>
-                      {t(($) => $.settings.integrations.delete)}
-                    </Menu.Item>
+                    {record.archivedAt ? (
+                      <Menu.Item
+                        onClick={() =>
+                          restoreMutation.mutate({ path: { workspaceId, id: record.id } })
+                        }
+                      >
+                        {t(($) => $.actions.unarchive)}
+                      </Menu.Item>
+                    ) : (
+                      <Menu.Item
+                        color="red"
+                        onClick={() =>
+                          archiveMutation.mutate({ path: { workspaceId, id: record.id } })
+                        }
+                      >
+                        {t(($) => $.actions.archive)}
+                      </Menu.Item>
+                    )}
                   </RowActionsMenu>
                 ) : null}
               </Group>

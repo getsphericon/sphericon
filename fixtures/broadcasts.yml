@@ -167,6 +167,20 @@
   workspace_id: 1
   created_at: '{{daysAgo 41}}'
   updated_at: '{{daysAgo 5}}'
+# Sent through an archived Integration (ADR 0049): its report keeps naming that Integration. It has
+# no recipients, so it adds nothing to the analytics figures.
+- id: 108 # fixture: BroadcastSentViaArchivedIntegration
+  name: Spring digest
+  subject: Your spring digest
+  from_name: CodeBasics
+  from_email: hello@codebasics.dev
+  body: '<p>Lorem ipsum learning content.</p>'
+  status: sent
+  sent_at: '{{daysAgo 60}}'
+  integration_id: 6
+  workspace_id: 1
+  created_at: '{{daysAgo 61}}'
+  updated_at: '{{daysAgo 60}}'
 
 # --- Globex (workspace 2) foreign row — DO NOT change ---
 - id: 900 # fixture: BroadcastGlobex

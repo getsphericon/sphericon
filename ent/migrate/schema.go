@@ -752,6 +752,7 @@ var (
 		{Name: "id", Type: field.TypeInt64, Increment: true},
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "discarded_at", Type: field.TypeTime, Nullable: true},
 		{Name: "name", Type: field.TypeString},
 		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email", "sms"}, Default: "email"},
 		{Name: "provider", Type: field.TypeEnum, Enums: []string{"smtp", "ses"}},
@@ -777,7 +778,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "integrations_workspaces_integrations",
-				Columns:    []*schema.Column{IntegrationsColumns[18]},
+				Columns:    []*schema.Column{IntegrationsColumns[19]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -786,15 +787,15 @@ var (
 			{
 				Name:    "integration_workspace_id_channel",
 				Unique:  true,
-				Columns: []*schema.Column{IntegrationsColumns[18], IntegrationsColumns[4]},
+				Columns: []*schema.Column{IntegrationsColumns[19], IntegrationsColumns[5]},
 				Annotation: &entsql.IndexAnnotation{
-					Where: "is_default",
+					Where: "is_default AND discarded_at IS NULL",
 				},
 			},
 			{
 				Name:    "integration_workspace_id",
 				Unique:  false,
-				Columns: []*schema.Column{IntegrationsColumns[18]},
+				Columns: []*schema.Column{IntegrationsColumns[19]},
 			},
 		},
 	}

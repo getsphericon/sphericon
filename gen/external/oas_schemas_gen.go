@@ -6017,7 +6017,7 @@ func (s *InUseProblemDetails) SetUsedBy(val []UsedBy) {
 
 func (*InUseProblemDetails) automationsArchiveRes()   {}
 func (*InUseProblemDetails) automationsDeleteRes()    {}
-func (*InUseProblemDetails) integrationsDeleteRes()   {}
+func (*InUseProblemDetails) integrationsArchiveRes()  {}
 func (*InUseProblemDetails) segmentsArchiveRes()      {}
 func (*InUseProblemDetails) sendingDomainsDeleteRes() {}
 func (*InUseProblemDetails) tagsDeleteRes()           {}
@@ -6333,6 +6333,9 @@ type IntegrationResource struct {
 	// Where the provider posts this Integration's callbacks: paste it into the provider. The key in it is
 	// an address, not the authentication (the Preset's signature or secret is).
 	HookUrl string `json:"hookUrl"`
+	// When the integration was archived; null while it is kept. An archived integration is never the
+	// default and takes no new work, but its hook still reads the provider's callbacks.
+	ArchivedAt OptNilTimestamp `json:"archivedAt"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -6407,6 +6410,11 @@ func (s *IntegrationResource) GetSecretsRetiring() []string {
 // GetHookUrl returns the value of HookUrl.
 func (s *IntegrationResource) GetHookUrl() string {
 	return s.HookUrl
+}
+
+// GetArchivedAt returns the value of ArchivedAt.
+func (s *IntegrationResource) GetArchivedAt() OptNilTimestamp {
+	return s.ArchivedAt
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -6489,6 +6497,11 @@ func (s *IntegrationResource) SetHookUrl(val string) {
 	s.HookUrl = val
 }
 
+// SetArchivedAt sets the value of ArchivedAt.
+func (s *IntegrationResource) SetArchivedAt(val OptNilTimestamp) {
+	s.ArchivedAt = val
+}
+
 // SetCreatedAt sets the value of CreatedAt.
 func (s *IntegrationResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
@@ -6499,9 +6512,11 @@ func (s *IntegrationResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
 
+func (*IntegrationResource) integrationsArchiveRes()       {}
 func (*IntegrationResource) integrationsCreateRes()        {}
 func (*IntegrationResource) integrationsGetRes()           {}
 func (*IntegrationResource) integrationsRegenerateKeyRes() {}
+func (*IntegrationResource) integrationsUnarchiveRes()     {}
 func (*IntegrationResource) integrationsUpdateRes()        {}
 
 // The Preset's params as saved. A secret param (`writeOnly` in the Preset's schema) is shown as
@@ -6516,6 +6531,18 @@ func (s *IntegrationResourceParams) init() IntegrationResourceParams {
 	}
 	return m
 }
+
+type IntegrationsArchiveBadRequest ProblemDetails
+
+func (*IntegrationsArchiveBadRequest) integrationsArchiveRes() {}
+
+type IntegrationsArchiveNotFound ProblemDetails
+
+func (*IntegrationsArchiveNotFound) integrationsArchiveRes() {}
+
+type IntegrationsArchiveUnauthorized ProblemDetails
+
+func (*IntegrationsArchiveUnauthorized) integrationsArchiveRes() {}
 
 type IntegrationsCreateBadRequest ProblemDetails
 
@@ -6532,27 +6559,6 @@ func (*IntegrationsCreateUnauthorized) integrationsCreateRes() {}
 type IntegrationsCreateUnprocessableEntity ProblemDetails
 
 func (*IntegrationsCreateUnprocessableEntity) integrationsCreateRes() {}
-
-type IntegrationsDeleteBadRequest ProblemDetails
-
-func (*IntegrationsDeleteBadRequest) integrationsDeleteRes() {}
-
-// IntegrationsDeleteNoContent is response for IntegrationsDelete operation.
-type IntegrationsDeleteNoContent struct{}
-
-func (*IntegrationsDeleteNoContent) integrationsDeleteRes() {}
-
-type IntegrationsDeleteNotFound ProblemDetails
-
-func (*IntegrationsDeleteNotFound) integrationsDeleteRes() {}
-
-type IntegrationsDeleteUnauthorized ProblemDetails
-
-func (*IntegrationsDeleteUnauthorized) integrationsDeleteRes() {}
-
-type IntegrationsDeleteUnprocessableEntity ProblemDetails
-
-func (*IntegrationsDeleteUnprocessableEntity) integrationsDeleteRes() {}
 
 type IntegrationsGetBadRequest ProblemDetails
 
@@ -6655,6 +6661,18 @@ func (*IntegrationsRegenerateKeyNotFound) integrationsRegenerateKeyRes() {}
 type IntegrationsRegenerateKeyUnauthorized ProblemDetails
 
 func (*IntegrationsRegenerateKeyUnauthorized) integrationsRegenerateKeyRes() {}
+
+type IntegrationsUnarchiveBadRequest ProblemDetails
+
+func (*IntegrationsUnarchiveBadRequest) integrationsUnarchiveRes() {}
+
+type IntegrationsUnarchiveNotFound ProblemDetails
+
+func (*IntegrationsUnarchiveNotFound) integrationsUnarchiveRes() {}
+
+type IntegrationsUnarchiveUnauthorized ProblemDetails
+
+func (*IntegrationsUnarchiveUnauthorized) integrationsUnarchiveRes() {}
 
 type IntegrationsUpdateBadRequest ProblemDetails
 
@@ -10312,11 +10330,12 @@ func (*ProblemDetailsHeaders) enrollmentsListRes()           {}
 func (*ProblemDetailsHeaders) eventActionsListRes()          {}
 func (*ProblemDetailsHeaders) eventsBatchSubmitRes()         {}
 func (*ProblemDetailsHeaders) eventsCreateRes()              {}
+func (*ProblemDetailsHeaders) integrationsArchiveRes()       {}
 func (*ProblemDetailsHeaders) integrationsCreateRes()        {}
-func (*ProblemDetailsHeaders) integrationsDeleteRes()        {}
 func (*ProblemDetailsHeaders) integrationsGetRes()           {}
 func (*ProblemDetailsHeaders) integrationsListRes()          {}
 func (*ProblemDetailsHeaders) integrationsRegenerateKeyRes() {}
+func (*ProblemDetailsHeaders) integrationsUnarchiveRes()     {}
 func (*ProblemDetailsHeaders) integrationsUpdateRes()        {}
 func (*ProblemDetailsHeaders) presetsListRes()               {}
 func (*ProblemDetailsHeaders) segmentsArchiveRes()           {}

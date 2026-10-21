@@ -99,19 +99,19 @@ func TestSiteIntegrationsErrorBranches(t *testing.T) {
 		assert.False(t, r6.(*siteapi.SiteIntegrationResource).Enabled)
 	})
 
-	t.Run("delete", func(t *testing.T) {
-		r1, err := c.SiteIntegrationsDelete(ctx, siteapi.SiteIntegrationsDeleteParams{WorkspaceId: foreign, ID: row.ID})
+	t.Run("archive", func(t *testing.T) {
+		r1, err := c.SiteIntegrationsArchive(ctx, siteapi.SiteIntegrationsArchiveParams{WorkspaceId: foreign, ID: row.ID})
 		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteIntegrationsDeleteNotFound{}, r1)
-		r3, err := c.SiteIntegrationsDelete(ctx, siteapi.SiteIntegrationsDeleteParams{WorkspaceId: acme, ID: idStr(99999)})
+		assert.IsType(t, &siteapi.SiteIntegrationsArchiveNotFound{}, r1)
+		r3, err := c.SiteIntegrationsArchive(ctx, siteapi.SiteIntegrationsArchiveParams{WorkspaceId: acme, ID: idStr(99999)})
 		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteIntegrationsDeleteNotFound{}, r3)
+		assert.IsType(t, &siteapi.SiteIntegrationsArchiveNotFound{}, r3)
 
-		r4, err := c.SiteIntegrationsDelete(ctx, siteapi.SiteIntegrationsDeleteParams{WorkspaceId: acme, ID: row.ID})
+		r4, err := c.SiteIntegrationsArchive(ctx, siteapi.SiteIntegrationsArchiveParams{WorkspaceId: acme, ID: row.ID})
 		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteIntegrationsDeleteNoContent{}, r4)
-		exists, err := env.DB.Integration.Query().Where(integration.ID(int64(row.ID))).Exist(ctx)
+		assert.IsType(t, &siteapi.SiteIntegrationResource{}, r4)
+		archived, err := env.DB.Integration.Query().Where(integration.ID(int64(row.ID)), integration.DiscardedAtNotNil()).Exist(ctx)
 		require.NoError(t, err)
-		assert.False(t, exists)
+		assert.True(t, archived, "archived, not removed")
 	})
 }

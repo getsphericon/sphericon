@@ -70,6 +70,11 @@ func WorkspaceID(v int64) predicate.Integration {
 	return predicate.Integration(sql.FieldEQ(FieldWorkspaceID, v))
 }
 
+// DiscardedAt applies equality check predicate on the "discarded_at" field. It's identical to DiscardedAtEQ.
+func DiscardedAt(v time.Time) predicate.Integration {
+	return predicate.Integration(sql.FieldEQ(FieldDiscardedAt, v))
+}
+
 // Name applies equality check predicate on the "name" field. It's identical to NameEQ.
 func Name(v string) predicate.Integration {
 	return predicate.Integration(sql.FieldEQ(FieldName, v))
@@ -233,6 +238,56 @@ func WorkspaceIDIn(vs ...int64) predicate.Integration {
 // WorkspaceIDNotIn applies the NotIn predicate on the "workspace_id" field.
 func WorkspaceIDNotIn(vs ...int64) predicate.Integration {
 	return predicate.Integration(sql.FieldNotIn(FieldWorkspaceID, vs...))
+}
+
+// DiscardedAtEQ applies the EQ predicate on the "discarded_at" field.
+func DiscardedAtEQ(v time.Time) predicate.Integration {
+	return predicate.Integration(sql.FieldEQ(FieldDiscardedAt, v))
+}
+
+// DiscardedAtNEQ applies the NEQ predicate on the "discarded_at" field.
+func DiscardedAtNEQ(v time.Time) predicate.Integration {
+	return predicate.Integration(sql.FieldNEQ(FieldDiscardedAt, v))
+}
+
+// DiscardedAtIn applies the In predicate on the "discarded_at" field.
+func DiscardedAtIn(vs ...time.Time) predicate.Integration {
+	return predicate.Integration(sql.FieldIn(FieldDiscardedAt, vs...))
+}
+
+// DiscardedAtNotIn applies the NotIn predicate on the "discarded_at" field.
+func DiscardedAtNotIn(vs ...time.Time) predicate.Integration {
+	return predicate.Integration(sql.FieldNotIn(FieldDiscardedAt, vs...))
+}
+
+// DiscardedAtGT applies the GT predicate on the "discarded_at" field.
+func DiscardedAtGT(v time.Time) predicate.Integration {
+	return predicate.Integration(sql.FieldGT(FieldDiscardedAt, v))
+}
+
+// DiscardedAtGTE applies the GTE predicate on the "discarded_at" field.
+func DiscardedAtGTE(v time.Time) predicate.Integration {
+	return predicate.Integration(sql.FieldGTE(FieldDiscardedAt, v))
+}
+
+// DiscardedAtLT applies the LT predicate on the "discarded_at" field.
+func DiscardedAtLT(v time.Time) predicate.Integration {
+	return predicate.Integration(sql.FieldLT(FieldDiscardedAt, v))
+}
+
+// DiscardedAtLTE applies the LTE predicate on the "discarded_at" field.
+func DiscardedAtLTE(v time.Time) predicate.Integration {
+	return predicate.Integration(sql.FieldLTE(FieldDiscardedAt, v))
+}
+
+// DiscardedAtIsNil applies the IsNil predicate on the "discarded_at" field.
+func DiscardedAtIsNil() predicate.Integration {
+	return predicate.Integration(sql.FieldIsNull(FieldDiscardedAt))
+}
+
+// DiscardedAtNotNil applies the NotNil predicate on the "discarded_at" field.
+func DiscardedAtNotNil() predicate.Integration {
+	return predicate.Integration(sql.FieldNotNull(FieldDiscardedAt))
 }
 
 // NameEQ applies the EQ predicate on the "name" field.

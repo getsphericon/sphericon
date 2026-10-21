@@ -78,12 +78,12 @@ func TestExternalIntegrationWritesAreAuditedUnderTheToken(t *testing.T) {
 	updated, err := scoped.Integration().Get(ctx, row.ID)
 	require.NoError(t, err)
 	require.NotEqual(t, row.ConfigEncrypted, updated.ConfigEncrypted, "the update sealed a new config")
-	del, err := c.IntegrationsDelete(ctx, externalapi.IntegrationsDeleteParams{ID: created.ID})
+	del, err := c.IntegrationsArchive(ctx, externalapi.IntegrationsArchiveParams{ID: created.ID})
 	require.NoError(t, err)
-	require.IsType(t, &externalapi.IntegrationsDeleteNoContent{}, del)
+	require.IsType(t, &externalapi.IntegrationResource{}, del)
 
 	assertTokenAudited(t, env, created.ID, "Audited mailer",
-		[]string{"integration.create", "integration.update", "integration.delete"},
+		[]string{"integration.create", "integration.update", "integration.discard"},
 		[]string{"config_encrypted"},
 		[]string{smtpSecret, row.ConfigEncrypted, updated.ConfigEncrypted})
 }

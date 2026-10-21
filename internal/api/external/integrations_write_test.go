@@ -54,9 +54,9 @@ func TestExternalIntegrationsWritesNeedTheWriteScope(t *testing.T) {
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.IntegrationsUpdateUnauthorized{}, upd)
 
-	del, err := reader.IntegrationsDelete(ctx, externalapi.IntegrationsDeleteParams{ID: id})
+	del, err := reader.IntegrationsArchive(ctx, externalapi.IntegrationsArchiveParams{ID: id})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.IntegrationsDeleteUnauthorized{}, del)
+	assert.IsType(t, &externalapi.IntegrationsArchiveUnauthorized{}, del)
 
 	writer := env.ExternalScoped(t, "integrations:write")
 	get, err := writer.IntegrationsGet(ctx, externalapi.IntegrationsGetParams{ID: id})
@@ -190,25 +190,6 @@ func TestExternalIntegrationsUpdateKeepsCredentialsAndRedacts(t *testing.T) {
 	assert.IsType(t, &externalapi.IntegrationsUpdateUnprocessableEntity{}, mismatch)
 }
 
-func TestExternalIntegrationsDelete(t *testing.T) {
-	env := testhelper.Setup(t)
-	ctx := context.Background()
-	c := env.ExternalScoped(t, "integrations:read", "integrations:write")
-	created := createSMTP(t, c, "Short lived", false)
-
-	del, err := c.IntegrationsDelete(ctx, externalapi.IntegrationsDeleteParams{ID: created.ID})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.IntegrationsDeleteNoContent{}, del)
-
-	get, err := c.IntegrationsGet(ctx, externalapi.IntegrationsGetParams{ID: created.ID})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.IntegrationsGetNotFound{}, get)
-
-	again, err := c.IntegrationsDelete(ctx, externalapi.IntegrationsDeleteParams{ID: created.ID})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.IntegrationsDeleteNotFound{}, again)
-}
-
 // Another Workspace's Integration is invisible and untouchable through this token.
 func TestExternalIntegrationsAreWorkspaceIsolated(t *testing.T) {
 	env := testhelper.Setup(t)
@@ -224,9 +205,9 @@ func TestExternalIntegrationsAreWorkspaceIsolated(t *testing.T) {
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.IntegrationsUpdateNotFound{}, upd)
 
-	del, err := c.IntegrationsDelete(ctx, externalapi.IntegrationsDeleteParams{ID: globex})
+	del, err := c.IntegrationsArchive(ctx, externalapi.IntegrationsArchiveParams{ID: globex})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.IntegrationsDeleteNotFound{}, del)
+	assert.IsType(t, &externalapi.IntegrationsArchiveNotFound{}, del)
 
 	row, err := env.DB.Integration.Get(ctx, fixtures.IntegrationGlobexID)
 	require.NoError(t, err)

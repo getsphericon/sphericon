@@ -5861,13 +5861,16 @@
     "/integrations": {
       "get": {
         "operationId": "Integrations_list",
-        "description": "List resources with pagination",
+        "description": "List integrations with pagination",
         "parameters": [
           {
             "$ref": "#/components/parameters/PageQuery.page"
           },
           {
             "$ref": "#/components/parameters/PageQuery.pageSize"
+          },
+          {
+            "$ref": "#/components/parameters/IntegrationsListFilter"
           }
         ],
         "responses": {
@@ -5994,7 +5997,7 @@
       },
       "post": {
         "operationId": "Integrations_create",
-        "description": "Create a resource",
+        "description": "Create an integration",
         "parameters": [],
         "responses": {
           "201": {
@@ -6108,7 +6111,7 @@
     "/integrations/{id}": {
       "get": {
         "operationId": "Integrations_get",
-        "description": "Get a resource by ID",
+        "description": "Get an integration by ID, archived or not",
         "parameters": [
           {
             "$ref": "#/components/parameters/IntegrationResourceKey"
@@ -6204,7 +6207,7 @@
       },
       "put": {
         "operationId": "Integrations_update",
-        "description": "Update a resource",
+        "description": "Update an integration",
         "parameters": [
           {
             "$ref": "#/components/parameters/IntegrationResourceKey"
@@ -6327,18 +6330,27 @@
             }
           }
         }
-      },
-      "delete": {
-        "operationId": "Integrations_delete",
-        "description": "Delete a resource",
+      }
+    },
+    "/integrations/{id}/archive": {
+      "post": {
+        "operationId": "Integrations_archive",
+        "description": "Archive an integration: it leaves the list and gives up the default, and can be restored (it does not become the default again). Refused with 409 while a scheduled or sending broadcast, or an active email automation through the default, uses it (`usedBy` names them).",
         "parameters": [
           {
             "$ref": "#/components/parameters/IntegrationResourceKey"
           }
         ],
         "responses": {
-          "204": {
-            "description": "There is no content to send for this request, but the headers may be useful."
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationResource"
+                }
+              }
+            }
           },
           "400": {
             "description": "RFC 7807 bad request response",
@@ -6376,16 +6388,6 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/InUseProblemDetails"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "RFC 7807 validation response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -6537,6 +6539,104 @@
         "x-mcp": {
           "hidden": true
         }
+      }
+    },
+    "/integrations/{id}/unarchive": {
+      "post": {
+        "operationId": "Integrations_unarchive",
+        "description": "Restore an archived integration to the list. It is not the default; promote it with an update",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IntegrationResourceKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Integrations"]
       }
     },
     "/presets": {
@@ -10161,6 +10261,16 @@
           "$ref": "#/components/schemas/EntityId"
         }
       },
+      "IntegrationsListFilter": {
+        "name": "archived",
+        "in": "query",
+        "required": false,
+        "description": "true lists the archived integrations instead of the kept ones; the default hides them",
+        "schema": {
+          "type": "boolean"
+        },
+        "explode": false
+      },
       "PageQuery.page": {
         "name": "page",
         "in": "query",
@@ -13111,6 +13221,16 @@
           "hookUrl": {
             "type": "string",
             "description": "Where the provider posts this Integration's callbacks: paste it into the provider. The key in it is an address, not the authentication (the Preset's signature or secret is)"
+          },
+          "archivedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the integration was archived; null while it is kept. An archived integration is never the default and takes no new work, but its hook still reads the provider's callbacks."
           },
           "createdAt": {
             "allOf": [

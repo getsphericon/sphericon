@@ -107,6 +107,7 @@
   "errors.delete_user_email_mismatch": "type your own email address to confirm",
   "errors.leave_only_owner": "you are the only owner: make another member an owner or delete the workspace first",
   "errors.integration_kind_mismatch": "kind must match the integration provider",
+  "errors.integration_archived_default": "an archived integration cannot be the default: restore it first",
   "errors.integration_secret_required": "enter the secret again: it is only kept while the host, port, username, region, endpoint and key id stay the same",
   "errors.preset_unknown": "unknown preset {{.Name}}: list the presets to see the available ones",
   "errors.preset_params_invalid": "the params do not match the preset's schema: {{.Detail}}",

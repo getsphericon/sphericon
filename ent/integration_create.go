@@ -58,6 +58,20 @@ func (_c *IntegrationCreate) SetWorkspaceID(v int64) *IntegrationCreate {
 	return _c
 }
 
+// SetDiscardedAt sets the "discarded_at" field.
+func (_c *IntegrationCreate) SetDiscardedAt(v time.Time) *IntegrationCreate {
+	_c.mutation.SetDiscardedAt(v)
+	return _c
+}
+
+// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
+func (_c *IntegrationCreate) SetNillableDiscardedAt(v *time.Time) *IntegrationCreate {
+	if v != nil {
+		_c.SetDiscardedAt(*v)
+	}
+	return _c
+}
+
 // SetName sets the "name" field.
 func (_c *IntegrationCreate) SetName(v string) *IntegrationCreate {
 	_c.mutation.SetName(v)
@@ -441,6 +455,10 @@ func (_c *IntegrationCreate) createSpec() (*Integration, *sqlgraph.CreateSpec) {
 		_spec.SetField(integration.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
+	if value, ok := _c.mutation.DiscardedAt(); ok {
+		_spec.SetField(integration.FieldDiscardedAt, field.TypeTime, value)
+		_node.DiscardedAt = &value
+	}
 	if value, ok := _c.mutation.Name(); ok {
 		_spec.SetField(integration.FieldName, field.TypeString, value)
 		_node.Name = value
@@ -607,6 +625,24 @@ func (u *IntegrationUpsert) SetWorkspaceID(v int64) *IntegrationUpsert {
 // UpdateWorkspaceID sets the "workspace_id" field to the value that was provided on create.
 func (u *IntegrationUpsert) UpdateWorkspaceID() *IntegrationUpsert {
 	u.SetExcluded(integration.FieldWorkspaceID)
+	return u
+}
+
+// SetDiscardedAt sets the "discarded_at" field.
+func (u *IntegrationUpsert) SetDiscardedAt(v time.Time) *IntegrationUpsert {
+	u.Set(integration.FieldDiscardedAt, v)
+	return u
+}
+
+// UpdateDiscardedAt sets the "discarded_at" field to the value that was provided on create.
+func (u *IntegrationUpsert) UpdateDiscardedAt() *IntegrationUpsert {
+	u.SetExcluded(integration.FieldDiscardedAt)
+	return u
+}
+
+// ClearDiscardedAt clears the value of the "discarded_at" field.
+func (u *IntegrationUpsert) ClearDiscardedAt() *IntegrationUpsert {
+	u.SetNull(integration.FieldDiscardedAt)
 	return u
 }
 
@@ -932,6 +968,27 @@ func (u *IntegrationUpsertOne) SetWorkspaceID(v int64) *IntegrationUpsertOne {
 func (u *IntegrationUpsertOne) UpdateWorkspaceID() *IntegrationUpsertOne {
 	return u.Update(func(s *IntegrationUpsert) {
 		s.UpdateWorkspaceID()
+	})
+}
+
+// SetDiscardedAt sets the "discarded_at" field.
+func (u *IntegrationUpsertOne) SetDiscardedAt(v time.Time) *IntegrationUpsertOne {
+	return u.Update(func(s *IntegrationUpsert) {
+		s.SetDiscardedAt(v)
+	})
+}
+
+// UpdateDiscardedAt sets the "discarded_at" field to the value that was provided on create.
+func (u *IntegrationUpsertOne) UpdateDiscardedAt() *IntegrationUpsertOne {
+	return u.Update(func(s *IntegrationUpsert) {
+		s.UpdateDiscardedAt()
+	})
+}
+
+// ClearDiscardedAt clears the value of the "discarded_at" field.
+func (u *IntegrationUpsertOne) ClearDiscardedAt() *IntegrationUpsertOne {
+	return u.Update(func(s *IntegrationUpsert) {
+		s.ClearDiscardedAt()
 	})
 }
 
@@ -1464,6 +1521,27 @@ func (u *IntegrationUpsertBulk) SetWorkspaceID(v int64) *IntegrationUpsertBulk {
 func (u *IntegrationUpsertBulk) UpdateWorkspaceID() *IntegrationUpsertBulk {
 	return u.Update(func(s *IntegrationUpsert) {
 		s.UpdateWorkspaceID()
+	})
+}
+
+// SetDiscardedAt sets the "discarded_at" field.
+func (u *IntegrationUpsertBulk) SetDiscardedAt(v time.Time) *IntegrationUpsertBulk {
+	return u.Update(func(s *IntegrationUpsert) {
+		s.SetDiscardedAt(v)
+	})
+}
+
+// UpdateDiscardedAt sets the "discarded_at" field to the value that was provided on create.
+func (u *IntegrationUpsertBulk) UpdateDiscardedAt() *IntegrationUpsertBulk {
+	return u.Update(func(s *IntegrationUpsert) {
+		s.UpdateDiscardedAt()
+	})
+}
+
+// ClearDiscardedAt clears the value of the "discarded_at" field.
+func (u *IntegrationUpsertBulk) ClearDiscardedAt() *IntegrationUpsertBulk {
+	return u.Update(func(s *IntegrationUpsert) {
+		s.ClearDiscardedAt()
 	})
 }
 

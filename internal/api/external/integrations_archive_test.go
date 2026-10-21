@@ -1,0 +1,78 @@
+package external_test
+
+import (
+	"context"
+	"testing"
+
+	"github.com/samber/lo"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/testhelper"
+)
+
+func listedIntegrationIDs(t *testing.T, c *externalapi.Client, archived bool) []externalapi.EntityId {
+	t.Helper()
+	res, err := c.IntegrationsList(context.Background(), externalapi.IntegrationsListParams{
+		PageSize: externalapi.NewOptInt32(100),
+		Archived: externalapi.NewOptBool(archived),
+	})
+	require.NoError(t, err)
+	list, ok := res.(*externalapi.IntegrationsListOK)
+	require.Truef(t, ok, "got %T", res)
+	return lo.Map(list.Items, func(i externalapi.IntegrationResource, _ int) externalapi.EntityId { return i.ID })
+}
+
+// /api archives, lists and restores an Integration (ADR 0049). The default one is refused with a
+// 409 while live work uses it; archiving clears the default flag and restoring does not return it.
+func TestExternalIntegrationsArchiveAndRestore(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.ExternalScoped(t, "integrations:read", "integrations:write")
+	ctx := context.Background()
+
+	busy, err := c.IntegrationsArchive(ctx, externalapi.IntegrationsArchiveParams{ID: entityIDString(fixtures.IntegrationAcmeDefaultID)})
+	require.NoError(t, err)
+	assert.IsType(t, &externalapi.InUseProblemDetails{}, busy)
+
+	id := entityIDString(fixtures.IntegrationAcmeSesID)
+	out, err := c.IntegrationsArchive(ctx, externalapi.IntegrationsArchiveParams{ID: id})
+	require.NoError(t, err)
+	archived, ok := out.(*externalapi.IntegrationResource)
+	require.Truef(t, ok, "got %T", out)
+	assert.True(t, archived.ArchivedAt.IsSet())
+	assert.False(t, archived.IsDefault)
+	assert.NotContains(t, listedIntegrationIDs(t, c, false), id)
+	shown := listedIntegrationIDs(t, c, true)
+	assert.Contains(t, shown, id)
+	assert.Contains(t, shown, entityIDString(fixtures.IntegrationAcmeArchivedID))
+
+	got, err := c.IntegrationsGet(ctx, externalapi.IntegrationsGetParams{ID: id})
+	require.NoError(t, err)
+	assert.IsType(t, &externalapi.IntegrationResource{}, got, "an archived Integration is still readable by id")
+
+	back, err := c.IntegrationsUnarchive(ctx, externalapi.IntegrationsUnarchiveParams{ID: id})
+	require.NoError(t, err)
+	restored, ok := back.(*externalapi.IntegrationResource)
+	require.Truef(t, ok, "got %T", back)
+	assert.False(t, restored.ArchivedAt.IsSet())
+	assert.Contains(t, listedIntegrationIDs(t, c, false), id)
+
+	missing, err := c.IntegrationsArchive(ctx, externalapi.IntegrationsArchiveParams{ID: entityIDString(fixtures.IntegrationGlobexID)})
+	require.NoError(t, err)
+	assert.IsType(t, &externalapi.IntegrationsArchiveNotFound{}, missing)
+}
+
+func TestExternalIntegrationsArchiveNeedsTheWriteScope(t *testing.T) {
+	env := testhelper.Setup(t)
+	reader := env.ExternalScoped(t, "integrations:read")
+	id := entityIDString(fixtures.IntegrationAcmeSesID)
+
+	archive, err := reader.IntegrationsArchive(context.Background(), externalapi.IntegrationsArchiveParams{ID: id})
+	require.NoError(t, err)
+	assert.IsType(t, &externalapi.IntegrationsArchiveUnauthorized{}, archive)
+	unarchive, err := reader.IntegrationsUnarchive(context.Background(), externalapi.IntegrationsUnarchiveParams{ID: id})
+	require.NoError(t, err)
+	assert.IsType(t, &externalapi.IntegrationsUnarchiveUnauthorized{}, unarchive)
+}

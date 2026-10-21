@@ -131,6 +131,9 @@ model IntegrationResource {
   /** Where the provider posts this Integration's callbacks: paste it into the provider. The key in it is an address, not the authentication (the Preset's signature or secret is) */
   hookUrl: string;
 
+  /** When the integration was archived; null while it is kept. An archived integration is never the default and takes no new work, but its hook still reads the provider's callbacks. */
+  archivedAt?: Timestamp | null;
+
   /** Creation timestamp */
   createdAt: Timestamp;
 
@@ -183,14 +186,99 @@ model UpdateIntegrationInput {
   retireSecrets?: boolean;
 }
 
+/** Filter of the integration list */
+model IntegrationsListFilter {
+  /** true lists the archived integrations instead of the kept ones; the default hides them */
+  @query archived?: boolean;
+}
+
+/**
+ * An integration is archived, never deleted (ADR 0049): its sent mail keeps the channel it went
+ * through. Not built on ExternalCrud, which carries a delete.
+ */
 @tag("Integrations")
-interface Integrations
-  extends ExternalCrudUnique<
-      IntegrationResource,
-      CreateIntegrationInput,
-      UpdateIntegrationInput,
-      InUseProblem
-    > {
+interface Integrations {
+  /** List integrations with pagination */
+  @listsResource(IntegrationResource)
+  @get
+  @autoRoute
+  list(
+    ...ResourceCollectionParameters<IntegrationResource>,
+    ...PageQuery,
+    ...IntegrationsListFilter,
+  ):
+    | Page<IntegrationResource>
+    | BadRequestProblem
+    | UnauthorizedProblem
+    | TooManyRequestsProblem
+    | UnprocessableEntityProblem;
+
+  /** Create an integration */
+  @createsResource(IntegrationResource)
+  @post
+  @autoRoute
+  create(
+    ...ResourceCollectionParameters<IntegrationResource>,
+    @body body: CreateIntegrationInput,
+  ):
+    | {
+        @statusCode statusCode: 201;
+        @body body: IntegrationResource;
+      }
+    | BadRequestProblem
+    | UnauthorizedProblem
+    | TooManyRequestsProblem
+    | ConflictProblem
+    | UnprocessableEntityProblem;
+
+  /** Get an integration by ID, archived or not */
+  @readsResource(IntegrationResource)
+  @get
+  @autoRoute
+  get(...ResourceParameters<IntegrationResource>):
+    | IntegrationResource
+    | BadRequestProblem
+    | UnauthorizedProblem
+    | TooManyRequestsProblem
+    | NotFoundProblem;
+
+  /** Update an integration */
+  @updatesResource(IntegrationResource)
+  @put
+  @autoRoute
+  update(
+    ...ResourceParameters<IntegrationResource>,
+    @body body: UpdateIntegrationInput,
+  ):
+    | IntegrationResource
+    | BadRequestProblem
+    | UnauthorizedProblem
+    | TooManyRequestsProblem
+    | NotFoundProblem
+    | ConflictProblem
+    | UnprocessableEntityProblem;
+
+  /** Archive an integration: it leaves the list and gives up the default, and can be restored (it does not become the default again). Refused with 409 while a scheduled or sending broadcast, or an active email automation through the default, uses it (`usedBy` names them). */
+  @action("archive")
+  @autoRoute
+  archive(...ResourceParameters<IntegrationResource>):
+    | IntegrationResource
+    | BadRequestProblem
+    | UnauthorizedProblem
+    | TooManyRequestsProblem
+    | NotFoundProblem
+    | InUseProblem;
+
+  /** Restore an archived integration to the list. It is not the default; promote it with an update */
+  @action("unarchive")
+  @autoRoute
+  unarchive(...ResourceParameters<IntegrationResource>):
+    | IntegrationResource
+    | BadRequestProblem
+    | UnauthorizedProblem
+    | TooManyRequestsProblem
+    | NotFoundProblem;
+
   /** Replace the Integration's hook key: the old hook URL stops working at once and the new one must be pasted into the provider. Needs a person: hidden from MCP. */
   @action("regenerate-key")
   @autoRoute

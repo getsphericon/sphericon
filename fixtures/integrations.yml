@@ -41,6 +41,23 @@
   created_at: '{{daysAgo 60}}'
   updated_at: '{{daysAgo 60}}'
 
+# Archived (ADR 0049): a retired relay. It gave up is_default when it was archived and keeps its
+# ingest key: its provider may still report bounces for mail already sent through it.
+- id: 6 # fixture: IntegrationAcmeArchived
+  ingest_key: omik_test_integrationacmearchived
+  name: Old relay (archived)
+  channel: email
+  provider: smtp
+  config_encrypted: '{{ encrypt "{\"host\":\"old-relay.example.com\",\"port\":587,\"from\":\"hello@codebasics.dev\"}" }}'
+  preset: generic
+  params_encrypted: '{{ encrypt "{\"secret\":\"whsec_c3BoZXJpY29uLXRlc3Qtc2VjcmV0LUMwMTIzNDU2Nzg5\"}" }}'
+  enabled: true
+  is_default: false
+  discarded_at: '{{daysAgo 10}}'
+  workspace_id: 1
+  created_at: '{{daysAgo 200}}'
+  updated_at: '{{daysAgo 10}}'
+
 # Globex (workspace 2).
 - id: 900 # fixture: IntegrationGlobex
   ingest_key: omik_test_integrationglobex

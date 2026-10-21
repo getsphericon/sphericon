@@ -65,14 +65,14 @@ func TestSiteTagDeleteUnusedTag(t *testing.T) {
 
 // The default Integration is used by a scheduled or sending Broadcast that names none, and by an
 // active Automation that sends email; once only sent or failed Broadcasts and no such Automation
-// remain, it is deleted.
-func TestSiteDefaultIntegrationDeleteRefusedWhileLiveWorkUsesIt(t *testing.T) {
+// remain, it is archived.
+func TestSiteDefaultIntegrationArchiveRefusedWhileLiveWorkUsesIt(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 	acme := env.DB.Scoped(fixtures.AcmeID)
-	del := func() siteapi.SiteIntegrationsDeleteRes {
-		got, err := c.SiteIntegrationsDelete(ctx, siteapi.SiteIntegrationsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.IntegrationAcmeDefaultID)})
+	del := func() siteapi.SiteIntegrationsArchiveRes {
+		got, err := c.SiteIntegrationsArchive(ctx, siteapi.SiteIntegrationsArchiveParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.IntegrationAcmeDefaultID)})
 		require.NoError(t, err)
 		return got
 	}
@@ -91,20 +91,20 @@ func TestSiteDefaultIntegrationDeleteRefusedWhileLiveWorkUsesIt(t *testing.T) {
 	_, err = acme.Automation().Update().SetStatus(automation.StatusDraft).Save(ctx)
 	require.NoError(t, err)
 
-	assert.IsType(t, &siteapi.SiteIntegrationsDeleteNoContent{}, del())
+	assert.IsType(t, &siteapi.SiteIntegrationResource{}, del())
 }
 
 // An Integration that is not the default is used only by a Broadcast that names it.
-func TestSiteIntegrationDeleteNamedByALiveBroadcast(t *testing.T) {
+func TestSiteIntegrationArchiveNamedByALiveBroadcast(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 	acme := env.DB.Scoped(fixtures.AcmeID)
-	params := siteapi.SiteIntegrationsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.IntegrationAcmeSesID)}
+	params := siteapi.SiteIntegrationsArchiveParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.IntegrationAcmeSesID)}
 
 	_, err := acme.Broadcast().UpdateOneID(fixtures.BroadcastScheduledID).SetIntegrationID(fixtures.IntegrationAcmeSesID).Save(ctx)
 	require.NoError(t, err)
-	got, err := c.SiteIntegrationsDelete(ctx, params)
+	got, err := c.SiteIntegrationsArchive(ctx, params)
 	require.NoError(t, err)
 	refused, ok := got.(*siteapi.InUseProblemDetails)
 	require.True(t, ok)
@@ -112,9 +112,9 @@ func TestSiteIntegrationDeleteNamedByALiveBroadcast(t *testing.T) {
 
 	_, err = acme.Broadcast().UpdateOneID(fixtures.BroadcastScheduledID).SetStatus(broadcast.StatusSent).SetSentAt(time.Now()).Save(ctx)
 	require.NoError(t, err)
-	got, err = c.SiteIntegrationsDelete(ctx, params)
+	got, err = c.SiteIntegrationsArchive(ctx, params)
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteIntegrationsDeleteNoContent{}, got)
+	assert.IsType(t, &siteapi.SiteIntegrationResource{}, got)
 }
 
 // A Sending domain is used through the domain of a From address, not an id: a scheduled Broadcast

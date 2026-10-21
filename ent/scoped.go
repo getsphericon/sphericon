@@ -13797,14 +13797,69 @@ type IntegrationScoped struct{ s *Scoped }
 // Integration returns the Integration entities of the Workspace.
 func (s *Scoped) Integration() *IntegrationScoped { return &IntegrationScoped{s: s} }
 
-// Query returns a Integration query already confined to the Workspace.
+// Query returns a Integration query already confined to the Workspace, hiding discarded rows
+// (a list query; QueryWithDiscarded sees them too).
 func (t *IntegrationScoped) Query() *IntegrationQuery {
+	return t.s.c.Integration.Query().Where(integration.WorkspaceID(t.s.ws), integration.DiscardedAtIsNil())
+}
+
+// QueryWithDiscarded returns a Integration query confined to the Workspace that also sees discarded rows.
+func (t *IntegrationScoped) QueryWithDiscarded() *IntegrationQuery {
 	return t.s.c.Integration.Query().Where(integration.WorkspaceID(t.s.ws))
 }
 
-// Get returns the Integration with the id; a row of another Workspace is not found.
+// Get returns the Integration with the id, discarded or not; a row of another Workspace is not found.
 func (t *IntegrationScoped) Get(ctx context.Context, id int64) (*Integration, error) {
-	return t.Query().Where(integration.ID(id)).Only(ctx)
+	return t.QueryWithDiscarded().Where(integration.ID(id)).Only(ctx)
+}
+
+// Discard stamps discarded_at on the kept Integration with the id (ps fence it further); a row of
+// another Workspace, an already discarded row or one a predicate excludes is not found.
+func (t *IntegrationScoped) Discard(ctx context.Context, id int64, ps ...predicate.Integration) error {
+	return t.setDiscarded(ctx, id, true, ps)
+}
+
+// Undiscard clears discarded_at on the discarded Integration with the id; a row that is not
+// discarded is not found.
+func (t *IntegrationScoped) Undiscard(ctx context.Context, id int64) error {
+	return t.setDiscarded(ctx, id, false, nil)
+}
+
+func (t *IntegrationScoped) setDiscarded(ctx context.Context, id int64, discard bool, ps []predicate.Integration) error {
+	where := append([]predicate.Integration{integration.ID(id), integration.WorkspaceID(t.s.ws)}, ps...)
+	if discard {
+		where = append(where, integration.DiscardedAtIsNil())
+	} else {
+		where = append(where, integration.DiscardedAtNotNil())
+	}
+	write := func(c *Client) (*Integration, error) {
+		u := c.Integration.UpdateOneID(id).Where(where...)
+		if discard {
+			u.SetDiscardedAt(time.Now())
+		} else {
+			u.ClearDiscardedAt()
+		}
+		return u.Save(ctx)
+	}
+	if t.s.auditing() {
+		verb := "restore"
+		if discard {
+			verb = "discard"
+		}
+		return t.s.audited(ctx, func(ts *Scoped) error {
+			before, err := ts.c.Integration.Query().Where(where...).Only(ctx)
+			if err != nil {
+				return err
+			}
+			after, err := write(ts.c)
+			if err != nil {
+				return err
+			}
+			return ts.record(ctx, auditChangeIntegration(verb, before, after))
+		})
+	}
+	_, err := write(t.s.c)
+	return err
 }
 
 // IntegrationScopedDeleteOne wraps IntegrationDeleteOne.
@@ -13813,8 +13868,8 @@ type IntegrationScopedDeleteOne struct {
 	b *IntegrationDeleteOne
 }
 
-// DeleteOneID deletes the Integration with the id; a row of another Workspace is not found.
-func (t *IntegrationScoped) DeleteOneID(id int64) *IntegrationScopedDeleteOne {
+// PurgeOneID physically removes the Integration with the id; a row of another Workspace is not found.
+func (t *IntegrationScoped) PurgeOneID(id int64) *IntegrationScopedDeleteOne {
 	return &IntegrationScopedDeleteOne{s: t.s, b: t.s.c.Integration.DeleteOneID(id).Where(integration.WorkspaceID(t.s.ws))}
 }
 
@@ -13848,8 +13903,8 @@ type IntegrationScopedDelete struct {
 	b *IntegrationDelete
 }
 
-// Delete deletes the Integration entities of the Workspace that match the predicates.
-func (t *IntegrationScoped) Delete() *IntegrationScopedDelete {
+// Purge physically removes the Integration entities of the Workspace that match the predicates.
+func (t *IntegrationScoped) Purge() *IntegrationScopedDelete {
 	return &IntegrationScopedDelete{s: t.s, b: t.s.c.Integration.Delete().Where(integration.WorkspaceID(t.s.ws))}
 }
 
@@ -13918,6 +13973,18 @@ func (x *IntegrationScopedCreate) SetUpdatedAt(v time.Time) *IntegrationScopedCr
 // SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
 func (x *IntegrationScopedCreate) SetNillableUpdatedAt(v *time.Time) *IntegrationScopedCreate {
 	x.b.SetNillableUpdatedAt(v)
+	return x
+}
+
+// SetDiscardedAt sets the "discarded_at" field.
+func (x *IntegrationScopedCreate) SetDiscardedAt(v time.Time) *IntegrationScopedCreate {
+	x.b.SetDiscardedAt(v)
+	return x
+}
+
+// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
+func (x *IntegrationScopedCreate) SetNillableDiscardedAt(v *time.Time) *IntegrationScopedCreate {
+	x.b.SetNillableDiscardedAt(v)
 	return x
 }
 
@@ -14204,6 +14271,24 @@ func (u *IntegrationScopedUpsert) SetUpdatedAt(v time.Time) *IntegrationScopedUp
 // UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
 func (u *IntegrationScopedUpsert) UpdateUpdatedAt() *IntegrationScopedUpsert {
 	u.u.SetExcluded(integration.FieldUpdatedAt)
+	return u
+}
+
+// SetDiscardedAt sets the "discarded_at" field.
+func (u *IntegrationScopedUpsert) SetDiscardedAt(v time.Time) *IntegrationScopedUpsert {
+	u.u.Set(integration.FieldDiscardedAt, v)
+	return u
+}
+
+// UpdateDiscardedAt sets the "discarded_at" field to the value that was provided on create.
+func (u *IntegrationScopedUpsert) UpdateDiscardedAt() *IntegrationScopedUpsert {
+	u.u.SetExcluded(integration.FieldDiscardedAt)
+	return u
+}
+
+// ClearDiscardedAt clears the value of the "discarded_at" field.
+func (u *IntegrationScopedUpsert) ClearDiscardedAt() *IntegrationScopedUpsert {
+	u.u.SetNull(integration.FieldDiscardedAt)
 	return u
 }
 
@@ -14637,6 +14722,24 @@ func (x *IntegrationScopedUpdateOne) SetUpdatedAt(v time.Time) *IntegrationScope
 	return x
 }
 
+// SetDiscardedAt sets the "discarded_at" field.
+func (x *IntegrationScopedUpdateOne) SetDiscardedAt(v time.Time) *IntegrationScopedUpdateOne {
+	x.b.SetDiscardedAt(v)
+	return x
+}
+
+// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
+func (x *IntegrationScopedUpdateOne) SetNillableDiscardedAt(v *time.Time) *IntegrationScopedUpdateOne {
+	x.b.SetNillableDiscardedAt(v)
+	return x
+}
+
+// ClearDiscardedAt clears the value of the "discarded_at" field.
+func (x *IntegrationScopedUpdateOne) ClearDiscardedAt() *IntegrationScopedUpdateOne {
+	x.b.ClearDiscardedAt()
+	return x
+}
+
 // SetName sets the "name" field.
 func (x *IntegrationScopedUpdateOne) SetName(v string) *IntegrationScopedUpdateOne {
 	x.b.SetName(v)
@@ -14985,6 +15088,24 @@ func (x *IntegrationScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *In
 // SetUpdatedAt sets the "updated_at" field.
 func (x *IntegrationScopedUpdate) SetUpdatedAt(v time.Time) *IntegrationScopedUpdate {
 	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetDiscardedAt sets the "discarded_at" field.
+func (x *IntegrationScopedUpdate) SetDiscardedAt(v time.Time) *IntegrationScopedUpdate {
+	x.b.SetDiscardedAt(v)
+	return x
+}
+
+// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
+func (x *IntegrationScopedUpdate) SetNillableDiscardedAt(v *time.Time) *IntegrationScopedUpdate {
+	x.b.SetNillableDiscardedAt(v)
+	return x
+}
+
+// ClearDiscardedAt clears the value of the "discarded_at" field.
+func (x *IntegrationScopedUpdate) ClearDiscardedAt() *IntegrationScopedUpdate {
+	x.b.ClearDiscardedAt()
 	return x
 }
 

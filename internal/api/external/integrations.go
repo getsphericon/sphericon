@@ -29,7 +29,7 @@ func (h *Handlers) IntegrationsList(ctx context.Context, params externalapi.Inte
 		return &res, nil
 	}
 	s := auth.TokenScoped(ctx)
-	page, err := h.integrations.List(ctx, s, pagination.ParamsOf(params.Page, params.PageSize))
+	page, err := h.integrations.List(ctx, s, pagination.ParamsOf(params.Page, params.PageSize), params.Archived.Or(false))
 	if err != nil {
 		return nil, err
 	}
@@ -215,26 +215,60 @@ func (h *Handlers) PresetsList(ctx context.Context) (externalapi.PresetsListRes,
 	}, nil
 }
 
-// IntegrationsDelete removes an Integration.
-func (h *Handlers) IntegrationsDelete(ctx context.Context, params externalapi.IntegrationsDeleteParams) (externalapi.IntegrationsDeleteRes, error) {
+// IntegrationsArchive archives an Integration (ADR 0049): it leaves the list and gives up the
+// default, unless live work uses it (409).
+func (h *Handlers) IntegrationsArchive(ctx context.Context, params externalapi.IntegrationsArchiveParams) (externalapi.IntegrationsArchiveRes, error) {
 	if !auth.HasScope(auth.GetTokenAuth(ctx), "integrations:write") {
-		res := externalapi.IntegrationsDeleteUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
+		res := externalapi.IntegrationsArchiveUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
+	s := auth.TokenScoped(ctx)
 	id := int64(params.ID)
-	err := h.integrations.Delete(ctx, auth.TokenScoped(ctx), id)
+	err := h.integrations.Archive(ctx, s, id)
 	if refused, ok := inuse.As(err); ok {
 		res := inUseProblem(refused)
 		return &res, nil
 	}
 	if ent.IsNotFound(err) {
-		res := externalapi.IntegrationsDeleteNotFound(problem(http.StatusNotFound, "integration not found"))
+		res := externalapi.IntegrationsArchiveNotFound(problem(http.StatusNotFound, "integration not found"))
 		return &res, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	return &externalapi.IntegrationsDeleteNoContent{}, nil
+	return h.archivedOrRestored(ctx, s, id)
+}
+
+// IntegrationsUnarchive restores an archived Integration to the list. It is not the default.
+func (h *Handlers) IntegrationsUnarchive(ctx context.Context, params externalapi.IntegrationsUnarchiveParams) (externalapi.IntegrationsUnarchiveRes, error) {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), "integrations:write") {
+		res := externalapi.IntegrationsUnarchiveUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
+		return &res, nil
+	}
+	s := auth.TokenScoped(ctx)
+	id := int64(params.ID)
+	err := h.integrations.Unarchive(ctx, s, id)
+	if ent.IsNotFound(err) {
+		res := externalapi.IntegrationsUnarchiveNotFound(problem(http.StatusNotFound, "integration not found"))
+		return &res, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return h.archivedOrRestored(ctx, s, id)
+}
+
+// archivedOrRestored reads the Integration back after an archive or an unarchive.
+func (h *Handlers) archivedOrRestored(ctx context.Context, s *ent.Scoped, id int64) (*externalapi.IntegrationResource, error) {
+	row, err := s.Integration().Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	res, err := h.integrationOne(ctx, s, row)
+	if err != nil {
+		return nil, err
+	}
+	return &res, nil
 }
 
 // configInput maps the typed config union onto the module's provider-neutral input.

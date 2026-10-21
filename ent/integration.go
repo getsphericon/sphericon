@@ -25,6 +25,8 @@ type Integration struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// WorkspaceID holds the value of the "workspace_id" field.
 	WorkspaceID int64 `json:"workspace_id,omitempty"`
+	// DiscardedAt holds the value of the "discarded_at" field.
+	DiscardedAt *time.Time `json:"discarded_at,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
 	// Channel holds the value of the "channel" field.
@@ -105,7 +107,7 @@ func (*Integration) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case integration.FieldName, integration.FieldChannel, integration.FieldProvider, integration.FieldConfigEncrypted, integration.FieldPreset, integration.FieldParamsEncrypted, integration.FieldIngestKey:
 			values[i] = new(sql.NullString)
-		case integration.FieldCreatedAt, integration.FieldUpdatedAt, integration.FieldProviderQuotaCheckedAt:
+		case integration.FieldCreatedAt, integration.FieldUpdatedAt, integration.FieldDiscardedAt, integration.FieldProviderQuotaCheckedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -145,6 +147,13 @@ func (_m *Integration) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field workspace_id", values[i])
 			} else if value.Valid {
 				_m.WorkspaceID = value.Int64
+			}
+		case integration.FieldDiscardedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field discarded_at", values[i])
+			} else if value.Valid {
+				_m.DiscardedAt = new(time.Time)
+				*_m.DiscardedAt = value.Time
 			}
 		case integration.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -296,6 +305,11 @@ func (_m *Integration) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("workspace_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.WorkspaceID))
+	builder.WriteString(", ")
+	if v := _m.DiscardedAt; v != nil {
+		builder.WriteString("discarded_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
 	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(_m.Name)

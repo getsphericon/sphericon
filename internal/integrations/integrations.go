@@ -276,6 +276,9 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 	// Promoting to default touches sibling rows, so it clears the channel's current
 	// default first, in the same transaction as the update.
 	promote := in.IsDefault != nil && *in.IsDefault && !row.IsDefault
+	if promote && row.DiscardedAt != nil {
+		return nil, &ValidationError{Field: "isDefault", Message: i18n.T("errors.integration_archived_default", nil)}
+	}
 
 	var updated *ent.Integration
 	err = m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
@@ -323,16 +326,21 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 	return updated, nil
 }
 
-// Delete removes an Integration, unless live work uses it: then it returns an *inuse.Error
-// naming that work (ADR 0049). A scheduled or sending Broadcast uses the Integration it names,
+// Archive discards an Integration (ADR 0049), unless live work uses it: then it returns an
+// *inuse.Error naming that work. A scheduled or sending Broadcast uses the Integration it names,
 // and the default one when it names none; an active Automation that sends email uses the default
 // one, which is where its email steps go. A sent or failed Broadcast is history and does not
-// block. An unknown id is ent's not-found error.
-func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
+// block. An archived Integration gives up the default: its channel has none until another is
+// picked. Archiving an archived Integration changes nothing. An unknown id is ent's not-found
+// error.
+func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) error {
 	return m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		row, err := ts.Integration().Get(ctx, id)
 		if err != nil {
 			return err
+		}
+		if row.DiscardedAt != nil {
+			return nil
 		}
 		users, err := liveUsers(ctx, ts, row)
 		if err != nil {
@@ -341,8 +349,25 @@ func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
 		if len(users) > 0 {
 			return &inuse.Error{What: inuse.SubjectIntegration, Users: users}
 		}
-		return ts.Integration().DeleteOneID(id).Exec(ctx)
+		if row.IsDefault {
+			if err := ts.Integration().UpdateOneID(id).SetIsDefault(false).Exec(ctx); err != nil {
+				return err
+			}
+		}
+		return ts.Integration().Discard(ctx, id)
 	})
+}
+
+// Unarchive brings an archived Integration back to the lists. It does not become the default
+// again. Restoring an Integration that is not archived changes nothing. An unknown id is ent's
+// not-found error.
+func (m *Module) Unarchive(ctx context.Context, s *ent.Scoped, id int64) error {
+	err := s.Integration().Undiscard(ctx, id)
+	if !ent.IsNotFound(err) {
+		return err
+	}
+	_, err = s.Integration().Get(ctx, id)
+	return err
 }
 
 // liveUsers is the live work that uses the Integration.
@@ -553,11 +578,26 @@ func (m *Module) Redact(row *ent.Integration) (RedactedConfig, error) {
 	return RedactedConfig{}, errUnknownProvider
 }
 
-// List returns one page of the Workspace's Integrations, ascending by id.
-func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params) (pagination.Page[*ent.Integration], error) {
+// rows is the Workspace's Integrations: the kept ones, or with archived the archived ones.
+func rows(s *ent.Scoped, archived bool) *ent.IntegrationQuery {
+	if archived {
+		return s.Integration().QueryWithDiscarded().Where(integration.DiscardedAtNotNil())
+	}
+	return s.Integration().Query()
+}
+
+// All returns every kept Integration of the Workspace, or with archived every archived one,
+// ascending by id.
+func (m *Module) All(ctx context.Context, s *ent.Scoped, archived bool) ([]*ent.Integration, error) {
+	return rows(s, archived).Order(ent.Asc(integration.FieldID)).All(ctx)
+}
+
+// List returns one page of the Workspace's Integrations, ascending by id: the kept ones, or with
+// archived the archived ones.
+func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params, archived bool) (pagination.Page[*ent.Integration], error) {
 	return pagination.List(ctx, p,
-		func(ctx context.Context) (int, error) { return s.Integration().Query().Count(ctx) },
+		func(ctx context.Context) (int, error) { return rows(s, archived).Count(ctx) },
 		func(ctx context.Context, limit, offset int) ([]*ent.Integration, error) {
-			return s.Integration().Query().Order(ent.Asc(integration.FieldID)).Limit(limit).Offset(offset).All(ctx)
+			return rows(s, archived).Order(ent.Asc(integration.FieldID)).Limit(limit).Offset(offset).All(ctx)
 		})
 }

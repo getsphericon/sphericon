@@ -51,6 +51,26 @@ func (_u *IntegrationUpdate) SetNillableWorkspaceID(v *int64) *IntegrationUpdate
 	return _u
 }
 
+// SetDiscardedAt sets the "discarded_at" field.
+func (_u *IntegrationUpdate) SetDiscardedAt(v time.Time) *IntegrationUpdate {
+	_u.mutation.SetDiscardedAt(v)
+	return _u
+}
+
+// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
+func (_u *IntegrationUpdate) SetNillableDiscardedAt(v *time.Time) *IntegrationUpdate {
+	if v != nil {
+		_u.SetDiscardedAt(*v)
+	}
+	return _u
+}
+
+// ClearDiscardedAt clears the value of the "discarded_at" field.
+func (_u *IntegrationUpdate) ClearDiscardedAt() *IntegrationUpdate {
+	_u.mutation.ClearDiscardedAt()
+	return _u
+}
+
 // SetName sets the "name" field.
 func (_u *IntegrationUpdate) SetName(v string) *IntegrationUpdate {
 	_u.mutation.SetName(v)
@@ -472,6 +492,12 @@ func (_u *IntegrationUpdate) sqlSave(ctx context.Context) (_node int, err error)
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(integration.FieldUpdatedAt, field.TypeTime, value)
 	}
+	if value, ok := _u.mutation.DiscardedAt(); ok {
+		_spec.SetField(integration.FieldDiscardedAt, field.TypeTime, value)
+	}
+	if _u.mutation.DiscardedAtCleared() {
+		_spec.ClearField(integration.FieldDiscardedAt, field.TypeTime)
+	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(integration.FieldName, field.TypeString, value)
 	}
@@ -647,6 +673,26 @@ func (_u *IntegrationUpdateOne) SetNillableWorkspaceID(v *int64) *IntegrationUpd
 	if v != nil {
 		_u.SetWorkspaceID(*v)
 	}
+	return _u
+}
+
+// SetDiscardedAt sets the "discarded_at" field.
+func (_u *IntegrationUpdateOne) SetDiscardedAt(v time.Time) *IntegrationUpdateOne {
+	_u.mutation.SetDiscardedAt(v)
+	return _u
+}
+
+// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
+func (_u *IntegrationUpdateOne) SetNillableDiscardedAt(v *time.Time) *IntegrationUpdateOne {
+	if v != nil {
+		_u.SetDiscardedAt(*v)
+	}
+	return _u
+}
+
+// ClearDiscardedAt clears the value of the "discarded_at" field.
+func (_u *IntegrationUpdateOne) ClearDiscardedAt() *IntegrationUpdateOne {
+	_u.mutation.ClearDiscardedAt()
 	return _u
 }
 
@@ -1100,6 +1146,12 @@ func (_u *IntegrationUpdateOne) sqlSave(ctx context.Context) (_node *Integration
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(integration.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.DiscardedAt(); ok {
+		_spec.SetField(integration.FieldDiscardedAt, field.TypeTime, value)
+	}
+	if _u.mutation.DiscardedAtCleared() {
+		_spec.ClearField(integration.FieldDiscardedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(integration.FieldName, field.TypeString, value)

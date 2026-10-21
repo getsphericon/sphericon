@@ -2248,6 +2248,10 @@ export type SiteIntegrationResource = {
    */
   hookUrl: string;
   /**
+   * When the integration was archived; null while it is kept. An archived integration is never the default and takes no new work, but its hook still reads the provider's callbacks.
+   */
+  archivedAt?: Timestamp | null;
+  /**
    * Creation timestamp
    */
   createdAt: Timestamp;
@@ -4164,6 +4168,11 @@ export type SiteIntegrationResourceKeyWorkspaceId = WorkspaceId;
  * workspace resources (ADR 0043)
  */
 export type SiteIntegrationResourceParentKey = WorkspaceId;
+
+/**
+ * true lists the archived integrations instead of the kept ones; the default hides them
+ */
+export type SiteIntegrationsListFilter = boolean;
 
 /**
  * Unique identifier
@@ -7554,7 +7563,12 @@ export type SiteIntegrationsListData = {
      */
     workspaceId: WorkspaceId;
   };
-  query?: never;
+  query?: {
+    /**
+     * true lists the archived integrations instead of the kept ones; the default hides them
+     */
+    archived?: boolean;
+  };
   url: '/workspaces/{workspaceId}/integrations';
 };
 
@@ -7618,55 +7632,6 @@ export type SiteIntegrationsCreateResponses = {
 };
 
 export type SiteIntegrationsCreateResponse = SiteIntegrationsCreateResponses[keyof SiteIntegrationsCreateResponses];
-
-export type SiteIntegrationsDeleteData = {
-  body?: never;
-  path: {
-    /**
-     * The Workspace id: its short opaque public address and the route key for nested
-     * workspace resources (ADR 0043)
-     */
-    workspaceId: WorkspaceId;
-    /**
-     * Unique identifier
-     */
-    id: EntityId;
-  };
-  query?: never;
-  url: '/workspaces/{workspaceId}/integrations/{id}';
-};
-
-export type SiteIntegrationsDeleteErrors = {
-  /**
-   * RFC 7807 bad request response
-   */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 conflict response for a removal refused because live work still uses the row
-   * (ADR 0049): 409 with `usedBy` naming the users. Every refused removal of a Segment, Tag,
-   * Integration, Sending domain or Automation answers it.
-   */
-  409: InUseProblemDetails;
-};
-
-export type SiteIntegrationsDeleteError = SiteIntegrationsDeleteErrors[keyof SiteIntegrationsDeleteErrors];
-
-export type SiteIntegrationsDeleteResponses = {
-  /**
-   * There is no content to send for this request, but the headers may be useful.
-   */
-  204: void;
-};
-
-export type SiteIntegrationsDeleteResponse = SiteIntegrationsDeleteResponses[keyof SiteIntegrationsDeleteResponses];
 
 export type SiteIntegrationsGetData = {
   body?: never;
@@ -7758,6 +7723,55 @@ export type SiteIntegrationsUpdateResponses = {
 
 export type SiteIntegrationsUpdateResponse = SiteIntegrationsUpdateResponses[keyof SiteIntegrationsUpdateResponses];
 
+export type SiteIntegrationsArchiveData = {
+  body?: never;
+  path: {
+    /**
+     * The Workspace id: its short opaque public address and the route key for nested
+     * workspace resources (ADR 0043)
+     */
+    workspaceId: WorkspaceId;
+    /**
+     * Unique identifier
+     */
+    id: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/integrations/{id}/archive';
+};
+
+export type SiteIntegrationsArchiveErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 conflict response for a removal refused because live work still uses the row
+   * (ADR 0049): 409 with `usedBy` naming the users. Every refused removal of a Segment, Tag,
+   * Integration, Sending domain or Automation answers it.
+   */
+  409: InUseProblemDetails;
+};
+
+export type SiteIntegrationsArchiveError = SiteIntegrationsArchiveErrors[keyof SiteIntegrationsArchiveErrors];
+
+export type SiteIntegrationsArchiveResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteIntegrationResource;
+};
+
+export type SiteIntegrationsArchiveResponse = SiteIntegrationsArchiveResponses[keyof SiteIntegrationsArchiveResponses];
+
 export type SiteIntegrationsRegenerateKeyData = {
   body?: never;
   path: {
@@ -7800,6 +7814,49 @@ export type SiteIntegrationsRegenerateKeyResponses = {
 };
 
 export type SiteIntegrationsRegenerateKeyResponse = SiteIntegrationsRegenerateKeyResponses[keyof SiteIntegrationsRegenerateKeyResponses];
+
+export type SiteIntegrationsUnarchiveData = {
+  body?: never;
+  path: {
+    /**
+     * The Workspace id: its short opaque public address and the route key for nested
+     * workspace resources (ADR 0043)
+     */
+    workspaceId: WorkspaceId;
+    /**
+     * Unique identifier
+     */
+    id: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/integrations/{id}/unarchive';
+};
+
+export type SiteIntegrationsUnarchiveErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteIntegrationsUnarchiveError = SiteIntegrationsUnarchiveErrors[keyof SiteIntegrationsUnarchiveErrors];
+
+export type SiteIntegrationsUnarchiveResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteIntegrationResource;
+};
+
+export type SiteIntegrationsUnarchiveResponse = SiteIntegrationsUnarchiveResponses[keyof SiteIntegrationsUnarchiveResponses];
 
 export type SiteInvitationsListData = {
   body?: never;

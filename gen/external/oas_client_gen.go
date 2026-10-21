@@ -358,27 +358,29 @@ type Invoker interface {
 	//
 	// GET /export/messages
 	ExportMessages(ctx context.Context, params ExportMessagesParams) (ExportMessagesRes, error)
+	// IntegrationsArchive invokes Integrations_archive operation.
+	//
+	// Archive an integration: it leaves the list and gives up the default, and can be restored (it does
+	// not become the default again). Refused with 409 while a scheduled or sending broadcast, or an active
+	// email automation through the default, uses it (`usedBy` names them).
+	//
+	// POST /integrations/{id}/archive
+	IntegrationsArchive(ctx context.Context, params IntegrationsArchiveParams) (IntegrationsArchiveRes, error)
 	// IntegrationsCreate invokes Integrations_create operation.
 	//
-	// Create a resource.
+	// Create an integration.
 	//
 	// POST /integrations
 	IntegrationsCreate(ctx context.Context, request *CreateIntegrationInput) (IntegrationsCreateRes, error)
-	// IntegrationsDelete invokes Integrations_delete operation.
-	//
-	// Delete a resource.
-	//
-	// DELETE /integrations/{id}
-	IntegrationsDelete(ctx context.Context, params IntegrationsDeleteParams) (IntegrationsDeleteRes, error)
 	// IntegrationsGet invokes Integrations_get operation.
 	//
-	// Get a resource by ID.
+	// Get an integration by ID, archived or not.
 	//
 	// GET /integrations/{id}
 	IntegrationsGet(ctx context.Context, params IntegrationsGetParams) (IntegrationsGetRes, error)
 	// IntegrationsList invokes Integrations_list operation.
 	//
-	// List resources with pagination.
+	// List integrations with pagination.
 	//
 	// GET /integrations
 	IntegrationsList(ctx context.Context, params IntegrationsListParams) (IntegrationsListRes, error)
@@ -389,9 +391,15 @@ type Invoker interface {
 	//
 	// POST /integrations/{id}/regenerate-key
 	IntegrationsRegenerateKey(ctx context.Context, params IntegrationsRegenerateKeyParams) (IntegrationsRegenerateKeyRes, error)
+	// IntegrationsUnarchive invokes Integrations_unarchive operation.
+	//
+	// Restore an archived integration to the list. It is not the default; promote it with an update.
+	//
+	// POST /integrations/{id}/unarchive
+	IntegrationsUnarchive(ctx context.Context, params IntegrationsUnarchiveParams) (IntegrationsUnarchiveRes, error)
 	// IntegrationsUpdate invokes Integrations_update operation.
 	//
-	// Update a resource.
+	// Update an integration.
 	//
 	// PUT /integrations/{id}
 	IntegrationsUpdate(ctx context.Context, request *UpdateIntegrationInput, params IntegrationsUpdateParams) (IntegrationsUpdateRes, error)
@@ -7716,9 +7724,146 @@ func (c *Client) sendExportMessages(ctx context.Context, params ExportMessagesPa
 	return result, nil
 }
 
+// IntegrationsArchive invokes Integrations_archive operation.
+//
+// Archive an integration: it leaves the list and gives up the default, and can be restored (it does
+// not become the default again). Refused with 409 while a scheduled or sending broadcast, or an active
+// email automation through the default, uses it (`usedBy` names them).
+//
+// POST /integrations/{id}/archive
+func (c *Client) IntegrationsArchive(ctx context.Context, params IntegrationsArchiveParams) (IntegrationsArchiveRes, error) {
+	res, err := c.sendIntegrationsArchive(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendIntegrationsArchive(ctx context.Context, params IntegrationsArchiveParams) (res IntegrationsArchiveRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("Integrations_archive"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/integrations/{id}/archive"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, IntegrationsArchiveOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/integrations/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/archive"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:BearerAuth"
+			switch err := c.securityBearerAuth(ctx, IntegrationsArchiveOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"BearerAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeIntegrationsArchiveResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
 // IntegrationsCreate invokes Integrations_create operation.
 //
-// Create a resource.
+// Create an integration.
 //
 // POST /integrations
 func (c *Client) IntegrationsCreate(ctx context.Context, request *CreateIntegrationInput) (IntegrationsCreateRes, error) {
@@ -7832,143 +7977,9 @@ func (c *Client) sendIntegrationsCreate(ctx context.Context, request *CreateInte
 	return result, nil
 }
 
-// IntegrationsDelete invokes Integrations_delete operation.
-//
-// Delete a resource.
-//
-// DELETE /integrations/{id}
-func (c *Client) IntegrationsDelete(ctx context.Context, params IntegrationsDeleteParams) (IntegrationsDeleteRes, error) {
-	res, err := c.sendIntegrationsDelete(ctx, params)
-	return res, err
-}
-
-func (c *Client) sendIntegrationsDelete(ctx context.Context, params IntegrationsDeleteParams) (res IntegrationsDeleteRes, err error) {
-	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("Integrations_delete"),
-		semconv.HTTPRequestMethodKey.String("DELETE"),
-		semconv.URLTemplateKey.String("/integrations/{id}"),
-	}
-	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
-
-	// Run stopwatch.
-	startTime := time.Now()
-	defer func() {
-		// Use floating point division here for higher precision (instead of Millisecond method).
-		elapsedDuration := time.Since(startTime)
-		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
-	}()
-
-	// Increment request counter.
-	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-
-	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, IntegrationsDeleteOperation,
-		trace.WithAttributes(otelAttrs...),
-		clientSpanKind,
-	)
-	// Track stage for error reporting.
-	var stage string
-	defer func() {
-		if err != nil {
-			span.RecordError(err)
-			span.SetStatus(codes.Error, stage)
-			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-		}
-		span.End()
-	}()
-
-	stage = "BuildURL"
-	u := uri.Clone(c.requestURL(ctx))
-	var pathParts [2]string
-	pathParts[0] = "/integrations/"
-	{
-		// Encode "id" parameter.
-		e := uri.NewPathEncoder(uri.PathEncoderConfig{
-			Param:   "id",
-			Style:   uri.PathStyleSimple,
-			Explode: false,
-		})
-		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
-			}
-			return nil
-		}(); err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		encoded, err := e.Result()
-		if err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		pathParts[1] = encoded
-	}
-	uri.AddPathParts(u, pathParts[:]...)
-
-	stage = "EncodeRequest"
-	r, err := ht.NewRequest(ctx, "DELETE", u)
-	if err != nil {
-		return res, errors.Wrap(err, "create request")
-	}
-
-	{
-		type bitset = [1]uint8
-		var satisfied bitset
-		{
-			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, IntegrationsDeleteOperation, r); {
-			case err == nil: // if NO error
-				satisfied[0] |= 1 << 0
-			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
-				// Skip this security.
-			default:
-				return res, errors.Wrap(err, "security \"BearerAuth\"")
-			}
-		}
-
-		if ok := func() bool {
-		nextRequirement:
-			for _, requirement := range []bitset{
-				{0b00000001},
-			} {
-				for i, mask := range requirement {
-					if satisfied[i]&mask != mask {
-						continue nextRequirement
-					}
-				}
-				return true
-			}
-			return false
-		}(); !ok {
-			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
-		}
-	}
-
-	stage = "SendRequest"
-	resp, err := c.cfg.Client.Do(r)
-	if err != nil {
-		return res, errors.Wrap(err, "do request")
-	}
-	body := resp.Body
-	defer func() {
-		// Drain the body to EOF before closing, so the underlying
-		// connection can be reused by the Transport regardless of the
-		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
-		_, _ = io.Copy(io.Discard, body)
-		_ = body.Close()
-	}()
-
-	stage = "DecodeResponse"
-	result, err := decodeIntegrationsDeleteResponse(resp)
-	if err != nil {
-		return res, errors.Wrap(err, "decode response")
-	}
-
-	return result, nil
-}
-
 // IntegrationsGet invokes Integrations_get operation.
 //
-// Get a resource by ID.
+// Get an integration by ID, archived or not.
 //
 // GET /integrations/{id}
 func (c *Client) IntegrationsGet(ctx context.Context, params IntegrationsGetParams) (IntegrationsGetRes, error) {
@@ -8102,7 +8113,7 @@ func (c *Client) sendIntegrationsGet(ctx context.Context, params IntegrationsGet
 
 // IntegrationsList invokes Integrations_list operation.
 //
-// List resources with pagination.
+// List integrations with pagination.
 //
 // GET /integrations
 func (c *Client) IntegrationsList(ctx context.Context, params IntegrationsListParams) (IntegrationsListRes, error) {
@@ -8181,6 +8192,23 @@ func (c *Client) sendIntegrationsList(ctx context.Context, params IntegrationsLi
 		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
 			if val, ok := params.PageSize.Get(); ok {
 				return e.EncodeValue(conv.Int32ToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "archived" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "archived",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Archived.Get(); ok {
+				return e.EncodeValue(conv.BoolToString(val))
 			}
 			return nil
 		}); err != nil {
@@ -8387,9 +8415,144 @@ func (c *Client) sendIntegrationsRegenerateKey(ctx context.Context, params Integ
 	return result, nil
 }
 
+// IntegrationsUnarchive invokes Integrations_unarchive operation.
+//
+// Restore an archived integration to the list. It is not the default; promote it with an update.
+//
+// POST /integrations/{id}/unarchive
+func (c *Client) IntegrationsUnarchive(ctx context.Context, params IntegrationsUnarchiveParams) (IntegrationsUnarchiveRes, error) {
+	res, err := c.sendIntegrationsUnarchive(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendIntegrationsUnarchive(ctx context.Context, params IntegrationsUnarchiveParams) (res IntegrationsUnarchiveRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("Integrations_unarchive"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/integrations/{id}/unarchive"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, IntegrationsUnarchiveOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/integrations/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/unarchive"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:BearerAuth"
+			switch err := c.securityBearerAuth(ctx, IntegrationsUnarchiveOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"BearerAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeIntegrationsUnarchiveResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
 // IntegrationsUpdate invokes Integrations_update operation.
 //
-// Update a resource.
+// Update an integration.
 //
 // PUT /integrations/{id}
 func (c *Client) IntegrationsUpdate(ctx context.Context, request *UpdateIntegrationInput, params IntegrationsUpdateParams) (IntegrationsUpdateRes, error) {

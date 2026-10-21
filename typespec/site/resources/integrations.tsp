@@ -184,6 +184,9 @@ model SiteIntegrationResource {
   /** Where the provider posts this Integration's callbacks: paste it into the provider. The key in it is an address, not the authentication (the Preset's signature or secret is) */
   hookUrl: string;
 
+  /** When the integration was archived; null while it is kept. An archived integration is never the default and takes no new work, but its hook still reads the provider's callbacks. */
+  archivedAt?: Timestamp | null;
+
   /** Creation timestamp */
   createdAt: Timestamp;
 
@@ -236,15 +239,24 @@ model SiteUpdateIntegrationInput {
   retireSecrets?: boolean;
 }
 
+/** Filter of the integration list */
+model SiteIntegrationsListFilter {
+  /** true lists the archived integrations instead of the kept ones; the default hides them */
+  @query archived?: boolean;
+}
+
 // Bespoke (not WorkspaceCrud): `list` returns a bare array, not a paginated
 // envelope. Nesting under /workspaces/{workspaceId} comes from @parentResource + @autoRoute.
 @tag("Site Integrations")
 namespace SiteIntegrations {
-  /** List the workspace's sending-provider integrations */
+  /** List the workspace's sending-provider integrations: the kept ones, or with `archived` the archived ones */
   @listsResource(SiteIntegrationResource)
   @get
   @autoRoute
-  op list(...ResourceCollectionParameters<SiteIntegrationResource>):
+  op list(
+    ...ResourceCollectionParameters<SiteIntegrationResource>,
+    ...SiteIntegrationsListFilter,
+  ):
     | {
         @statusCode statusCode: 200;
         @body body: SiteIntegrationResource[];
@@ -302,16 +314,26 @@ namespace SiteIntegrations {
     | ForbiddenProblem
     | NotFoundProblem;
 
-  /** Delete an integration. Owners and admins only. */
-  @deletesResource(SiteIntegrationResource)
-  @delete
+  /** Archive an integration: it leaves the list and gives up the default, and can be restored (it does not become the default again). Refused with 409 while a scheduled or sending broadcast, or an active email automation through the default, uses it. Owners and admins only. */
+  @action("archive")
+  @post
   @autoRoute
-  op delete(...ResourceParameters<SiteIntegrationResource>):
-    | NoContentResponse
+  op archive(...ResourceParameters<SiteIntegrationResource>):
+    | SiteIntegrationResource
     | BadRequestProblem
     | ForbiddenProblem
     | NotFoundProblem
     | InUseProblem;
+
+  /** Restore an archived integration to the list. It is not the default; promote it with an update. Owners and admins only. */
+  @action("unarchive")
+  @post
+  @autoRoute
+  op unarchive(...ResourceParameters<SiteIntegrationResource>):
+    | SiteIntegrationResource
+    | BadRequestProblem
+    | ForbiddenProblem
+    | NotFoundProblem;
 }
 
 // A Preset's params are dynamic by nature, so the contract carries the Preset's JSON Schema

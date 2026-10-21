@@ -237,12 +237,12 @@ type SiteInstanceSetTelemetryRes interface {
 	siteInstanceSetTelemetryRes()
 }
 
-type SiteIntegrationsCreateRes interface {
-	siteIntegrationsCreateRes()
+type SiteIntegrationsArchiveRes interface {
+	siteIntegrationsArchiveRes()
 }
 
-type SiteIntegrationsDeleteRes interface {
-	siteIntegrationsDeleteRes()
+type SiteIntegrationsCreateRes interface {
+	siteIntegrationsCreateRes()
 }
 
 type SiteIntegrationsGetRes interface {
@@ -255,6 +255,10 @@ type SiteIntegrationsListRes interface {
 
 type SiteIntegrationsRegenerateKeyRes interface {
 	siteIntegrationsRegenerateKeyRes()
+}
+
+type SiteIntegrationsUnarchiveRes interface {
+	siteIntegrationsUnarchiveRes()
 }
 
 type SiteIntegrationsUpdateRes interface {

@@ -337,27 +337,29 @@ type Handler interface {
 	//
 	// GET /export/messages
 	ExportMessages(ctx context.Context, params ExportMessagesParams) (ExportMessagesRes, error)
+	// IntegrationsArchive implements Integrations_archive operation.
+	//
+	// Archive an integration: it leaves the list and gives up the default, and can be restored (it does
+	// not become the default again). Refused with 409 while a scheduled or sending broadcast, or an active
+	// email automation through the default, uses it (`usedBy` names them).
+	//
+	// POST /integrations/{id}/archive
+	IntegrationsArchive(ctx context.Context, params IntegrationsArchiveParams) (IntegrationsArchiveRes, error)
 	// IntegrationsCreate implements Integrations_create operation.
 	//
-	// Create a resource.
+	// Create an integration.
 	//
 	// POST /integrations
 	IntegrationsCreate(ctx context.Context, req *CreateIntegrationInput) (IntegrationsCreateRes, error)
-	// IntegrationsDelete implements Integrations_delete operation.
-	//
-	// Delete a resource.
-	//
-	// DELETE /integrations/{id}
-	IntegrationsDelete(ctx context.Context, params IntegrationsDeleteParams) (IntegrationsDeleteRes, error)
 	// IntegrationsGet implements Integrations_get operation.
 	//
-	// Get a resource by ID.
+	// Get an integration by ID, archived or not.
 	//
 	// GET /integrations/{id}
 	IntegrationsGet(ctx context.Context, params IntegrationsGetParams) (IntegrationsGetRes, error)
 	// IntegrationsList implements Integrations_list operation.
 	//
-	// List resources with pagination.
+	// List integrations with pagination.
 	//
 	// GET /integrations
 	IntegrationsList(ctx context.Context, params IntegrationsListParams) (IntegrationsListRes, error)
@@ -368,9 +370,15 @@ type Handler interface {
 	//
 	// POST /integrations/{id}/regenerate-key
 	IntegrationsRegenerateKey(ctx context.Context, params IntegrationsRegenerateKeyParams) (IntegrationsRegenerateKeyRes, error)
+	// IntegrationsUnarchive implements Integrations_unarchive operation.
+	//
+	// Restore an archived integration to the list. It is not the default; promote it with an update.
+	//
+	// POST /integrations/{id}/unarchive
+	IntegrationsUnarchive(ctx context.Context, params IntegrationsUnarchiveParams) (IntegrationsUnarchiveRes, error)
 	// IntegrationsUpdate implements Integrations_update operation.
 	//
-	// Update a resource.
+	// Update an integration.
 	//
 	// PUT /integrations/{id}
 	IntegrationsUpdate(ctx context.Context, req *UpdateIntegrationInput, params IntegrationsUpdateParams) (IntegrationsUpdateRes, error)

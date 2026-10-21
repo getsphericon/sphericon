@@ -174,6 +174,7 @@ func (c *ConverterImpl) IntegrationToResource(source *ent.Integration) external.
 		externalapiIntegrationResource.MaxPerSecond = nilInt32((*source).MaxPerSecond)
 		externalapiIntegrationResource.MaxPerDay = nilInt32((*source).MaxPerDay)
 		externalapiIntegrationResource.Preset = nilString((*source).Preset)
+		externalapiIntegrationResource.ArchivedAt = optNilTimestamp((*source).DiscardedAt)
 		externalapiIntegrationResource.CreatedAt = timestamp((*source).CreatedAt)
 		externalapiIntegrationResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}

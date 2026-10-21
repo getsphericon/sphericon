@@ -969,10 +969,10 @@ func ScopedEntities() []ScopedEntity {
 				return s.Integration().Update().Where(integration.ID(id)).Save(ctx)
 			},
 			Delete: func(ctx context.Context, s *Scoped, id int64) error {
-				return s.Integration().DeleteOneID(id).Exec(ctx)
+				return s.Integration().PurgeOneID(id).Exec(ctx)
 			},
 			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
-				return s.Integration().Delete().Where(integration.ID(id)).Exec(ctx)
+				return s.Integration().Purge().Where(integration.ID(id)).Exec(ctx)
 			},
 			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
 				src, err := s.c.Integration.Get(ctx, id)
@@ -981,6 +981,9 @@ func ScopedEntities() []ScopedEntity {
 				}
 				_ = remap
 				b := s.Integration().Create()
+				if src.DiscardedAt != nil {
+					b.SetDiscardedAt(*src.DiscardedAt)
+				}
 				b.SetName(src.Name)
 				b.SetChannel(src.Channel)
 				b.SetProvider(src.Provider)

@@ -127,6 +127,7 @@ type Converter interface {
 	// goverter:ignore SecretsRetiring
 	// goverter:ignore HookUrl
 	// goverter:ignore SendLimit
+	// goverter:map DiscardedAt ArchivedAt
 	IntegrationToResource(source *ent.Integration) externalapi.IntegrationResource
 	// goverter:map Sent24h SentLast24h
 	SendLimitToStatus(source sendlimit.Status) externalapi.SendLimitStatus

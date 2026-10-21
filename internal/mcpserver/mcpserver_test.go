@@ -67,7 +67,7 @@ var (
 		"broadcasts_set_audience", "broadcasts_test_send", "broadcasts_report", "broadcasts_archive", "broadcasts_unarchive",
 		"events_record", "events_actions_list", "whoami",
 		"custom_fields_list", "sending_domains_list", "sending_domains_create", "sending_domains_get", "sending_domains_update", "sending_domains_delete", "sending_domains_verify", "sending_domains_rates",
-		"integrations_list", "integrations_create", "integrations_get", "integrations_update", "integrations_delete", "presets_list",
+		"integrations_list", "integrations_create", "integrations_get", "integrations_update", "integrations_archive", "integrations_unarchive", "presets_list",
 		"suppressions_create", "unsubscribes_create",
 		"email_lint", "email_schema", "brand_get", "templates_list", "templates_create", "templates_get", "templates_update", "templates_delete",
 		"webhooks_list", "webhooks_create", "webhooks_get", "webhooks_update", "webhooks_delete",
@@ -412,7 +412,7 @@ func TestMCPIntegrationsAreManagedWithoutLeakingSecrets(t *testing.T) {
 	require.False(t, res.IsError, text(t, res))
 	assert.NotContains(t, text(t, res), "mcp-secret-pw")
 
-	res = call(t, s, "integrations_delete", map[string]any{"id": created.ID})
+	res = call(t, s, "integrations_archive", map[string]any{"id": created.ID})
 	require.False(t, res.IsError, text(t, res))
 }
 

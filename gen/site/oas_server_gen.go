@@ -455,18 +455,20 @@ type Handler interface {
 	//
 	// PUT /instance/telemetry
 	SiteInstanceSetTelemetry(ctx context.Context, req *SiteInstanceTelemetryInput) (SiteInstanceSetTelemetryRes, error)
+	// SiteIntegrationsArchive implements SiteIntegrations_archive operation.
+	//
+	// Archive an integration: it leaves the list and gives up the default, and can be restored (it does
+	// not become the default again). Refused with 409 while a scheduled or sending broadcast, or an active
+	// email automation through the default, uses it. Owners and admins only.
+	//
+	// POST /workspaces/{workspaceId}/integrations/{id}/archive
+	SiteIntegrationsArchive(ctx context.Context, params SiteIntegrationsArchiveParams) (SiteIntegrationsArchiveRes, error)
 	// SiteIntegrationsCreate implements SiteIntegrations_create operation.
 	//
 	// Create an integration. Owners and admins only.
 	//
 	// POST /workspaces/{workspaceId}/integrations
 	SiteIntegrationsCreate(ctx context.Context, req *SiteCreateIntegrationInput, params SiteIntegrationsCreateParams) (SiteIntegrationsCreateRes, error)
-	// SiteIntegrationsDelete implements SiteIntegrations_delete operation.
-	//
-	// Delete an integration. Owners and admins only.
-	//
-	// DELETE /workspaces/{workspaceId}/integrations/{id}
-	SiteIntegrationsDelete(ctx context.Context, params SiteIntegrationsDeleteParams) (SiteIntegrationsDeleteRes, error)
 	// SiteIntegrationsGet implements SiteIntegrations_get operation.
 	//
 	// Get an integration by id.
@@ -475,7 +477,8 @@ type Handler interface {
 	SiteIntegrationsGet(ctx context.Context, params SiteIntegrationsGetParams) (SiteIntegrationsGetRes, error)
 	// SiteIntegrationsList implements SiteIntegrations_list operation.
 	//
-	// List the workspace's sending-provider integrations.
+	// List the workspace's sending-provider integrations: the kept ones, or with `archived` the archived
+	// ones.
 	//
 	// GET /workspaces/{workspaceId}/integrations
 	SiteIntegrationsList(ctx context.Context, params SiteIntegrationsListParams) (SiteIntegrationsListRes, error)
@@ -485,6 +488,13 @@ type Handler interface {
 	//
 	// POST /workspaces/{workspaceId}/integrations/{id}/regenerate-key
 	SiteIntegrationsRegenerateKey(ctx context.Context, params SiteIntegrationsRegenerateKeyParams) (SiteIntegrationsRegenerateKeyRes, error)
+	// SiteIntegrationsUnarchive implements SiteIntegrations_unarchive operation.
+	//
+	// Restore an archived integration to the list. It is not the default; promote it with an update.
+	// Owners and admins only.
+	//
+	// POST /workspaces/{workspaceId}/integrations/{id}/unarchive
+	SiteIntegrationsUnarchive(ctx context.Context, params SiteIntegrationsUnarchiveParams) (SiteIntegrationsUnarchiveRes, error)
 	// SiteIntegrationsUpdate implements SiteIntegrations_update operation.
 	//
 	// Update an integration. Owners and admins only.

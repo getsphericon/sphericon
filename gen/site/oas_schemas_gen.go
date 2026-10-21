@@ -1170,7 +1170,7 @@ func (s *InUseProblemDetails) SetUsedBy(val []UsedBy) {
 
 func (*InUseProblemDetails) siteAutomationsArchiveRes()   {}
 func (*InUseProblemDetails) siteAutomationsDeleteRes()    {}
-func (*InUseProblemDetails) siteIntegrationsDeleteRes()   {}
+func (*InUseProblemDetails) siteIntegrationsArchiveRes()  {}
 func (*InUseProblemDetails) siteSegmentsArchiveRes()      {}
 func (*InUseProblemDetails) siteSendingDomainsDeleteRes() {}
 func (*InUseProblemDetails) siteTagsDeleteRes()           {}
@@ -10584,6 +10584,9 @@ type SiteIntegrationResource struct {
 	// Where the provider posts this Integration's callbacks: paste it into the provider. The key in it is
 	// an address, not the authentication (the Preset's signature or secret is).
 	HookUrl string `json:"hookUrl"`
+	// When the integration was archived; null while it is kept. An archived integration is never the
+	// default and takes no new work, but its hook still reads the provider's callbacks.
+	ArchivedAt OptNilTimestamp `json:"archivedAt"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -10658,6 +10661,11 @@ func (s *SiteIntegrationResource) GetSecretsRetiring() []string {
 // GetHookUrl returns the value of HookUrl.
 func (s *SiteIntegrationResource) GetHookUrl() string {
 	return s.HookUrl
+}
+
+// GetArchivedAt returns the value of ArchivedAt.
+func (s *SiteIntegrationResource) GetArchivedAt() OptNilTimestamp {
+	return s.ArchivedAt
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -10740,6 +10748,11 @@ func (s *SiteIntegrationResource) SetHookUrl(val string) {
 	s.HookUrl = val
 }
 
+// SetArchivedAt sets the value of ArchivedAt.
+func (s *SiteIntegrationResource) SetArchivedAt(val OptNilTimestamp) {
+	s.ArchivedAt = val
+}
+
 // SetCreatedAt sets the value of CreatedAt.
 func (s *SiteIntegrationResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
@@ -10750,9 +10763,11 @@ func (s *SiteIntegrationResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
 
+func (*SiteIntegrationResource) siteIntegrationsArchiveRes()       {}
 func (*SiteIntegrationResource) siteIntegrationsCreateRes()        {}
 func (*SiteIntegrationResource) siteIntegrationsGetRes()           {}
 func (*SiteIntegrationResource) siteIntegrationsRegenerateKeyRes() {}
+func (*SiteIntegrationResource) siteIntegrationsUnarchiveRes()     {}
 func (*SiteIntegrationResource) siteIntegrationsUpdateRes()        {}
 
 // The Preset's params as saved. A secret param (`writeOnly` in the Preset's schema) is shown as
@@ -10767,6 +10782,18 @@ func (s *SiteIntegrationResourceParams) init() SiteIntegrationResourceParams {
 	}
 	return m
 }
+
+type SiteIntegrationsArchiveBadRequest ProblemDetails
+
+func (*SiteIntegrationsArchiveBadRequest) siteIntegrationsArchiveRes() {}
+
+type SiteIntegrationsArchiveForbidden ProblemDetails
+
+func (*SiteIntegrationsArchiveForbidden) siteIntegrationsArchiveRes() {}
+
+type SiteIntegrationsArchiveNotFound ProblemDetails
+
+func (*SiteIntegrationsArchiveNotFound) siteIntegrationsArchiveRes() {}
 
 type SiteIntegrationsCreateConflict ProblemDetails
 
@@ -10783,23 +10810,6 @@ func (*SiteIntegrationsCreateNotFound) siteIntegrationsCreateRes() {}
 type SiteIntegrationsCreateUnprocessableEntity ProblemDetails
 
 func (*SiteIntegrationsCreateUnprocessableEntity) siteIntegrationsCreateRes() {}
-
-type SiteIntegrationsDeleteBadRequest ProblemDetails
-
-func (*SiteIntegrationsDeleteBadRequest) siteIntegrationsDeleteRes() {}
-
-type SiteIntegrationsDeleteForbidden ProblemDetails
-
-func (*SiteIntegrationsDeleteForbidden) siteIntegrationsDeleteRes() {}
-
-// SiteIntegrationsDeleteNoContent is response for SiteIntegrationsDelete operation.
-type SiteIntegrationsDeleteNoContent struct{}
-
-func (*SiteIntegrationsDeleteNoContent) siteIntegrationsDeleteRes() {}
-
-type SiteIntegrationsDeleteNotFound ProblemDetails
-
-func (*SiteIntegrationsDeleteNotFound) siteIntegrationsDeleteRes() {}
 
 type SiteIntegrationsGetBadRequest ProblemDetails
 
@@ -10824,6 +10834,18 @@ func (*SiteIntegrationsRegenerateKeyForbidden) siteIntegrationsRegenerateKeyRes(
 type SiteIntegrationsRegenerateKeyNotFound ProblemDetails
 
 func (*SiteIntegrationsRegenerateKeyNotFound) siteIntegrationsRegenerateKeyRes() {}
+
+type SiteIntegrationsUnarchiveBadRequest ProblemDetails
+
+func (*SiteIntegrationsUnarchiveBadRequest) siteIntegrationsUnarchiveRes() {}
+
+type SiteIntegrationsUnarchiveForbidden ProblemDetails
+
+func (*SiteIntegrationsUnarchiveForbidden) siteIntegrationsUnarchiveRes() {}
+
+type SiteIntegrationsUnarchiveNotFound ProblemDetails
+
+func (*SiteIntegrationsUnarchiveNotFound) siteIntegrationsUnarchiveRes() {}
 
 type SiteIntegrationsUpdateBadRequest ProblemDetails
 

@@ -1559,6 +1559,7 @@ export const zSiteIntegrationResource = z.object({
   params: z.record(z.string(), z.unknown()),
   secretsRetiring: z.array(z.string()),
   hookUrl: z.string(),
+  archivedAt: z.exactOptional(zTimestamp.nullable()),
   createdAt: zTimestamp,
   updatedAt: zTimestamp
 });
@@ -2126,6 +2127,11 @@ export const zSiteIntegrationResourceKeyWorkspaceId = zWorkspaceId;
  * workspace resources (ADR 0043)
  */
 export const zSiteIntegrationResourceParentKey = zWorkspaceId;
+
+/**
+ * true lists the archived integrations instead of the kept ones; the default hides them
+ */
+export const zSiteIntegrationsListFilter = z.boolean();
 
 /**
  * Unique identifier
@@ -3102,6 +3108,10 @@ export const zSiteIntegrationsListPath = z.object({
   workspaceId: zWorkspaceId
 });
 
+export const zSiteIntegrationsListQuery = z.object({
+  archived: z.exactOptional(z.boolean())
+});
+
 /**
  * The request has succeeded.
  */
@@ -3117,16 +3127,6 @@ export const zSiteIntegrationsCreatePath = z.object({
  * The request has succeeded and a new resource has been created as a result.
  */
 export const zSiteIntegrationsCreateResponse = zSiteIntegrationResource;
-
-export const zSiteIntegrationsDeletePath = z.object({
-  workspaceId: zWorkspaceId,
-  id: zEntityId
-});
-
-/**
- * There is no content to send for this request, but the headers may be useful.
- */
-export const zSiteIntegrationsDeleteResponse = z.void();
 
 export const zSiteIntegrationsGetPath = z.object({
   workspaceId: zWorkspaceId,
@@ -3150,6 +3150,16 @@ export const zSiteIntegrationsUpdatePath = z.object({
  */
 export const zSiteIntegrationsUpdateResponse = zSiteIntegrationResource;
 
+export const zSiteIntegrationsArchivePath = z.object({
+  workspaceId: zWorkspaceId,
+  id: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteIntegrationsArchiveResponse = zSiteIntegrationResource;
+
 export const zSiteIntegrationsRegenerateKeyPath = z.object({
   workspaceId: zWorkspaceId,
   id: zEntityId
@@ -3159,6 +3169,16 @@ export const zSiteIntegrationsRegenerateKeyPath = z.object({
  * The request has succeeded.
  */
 export const zSiteIntegrationsRegenerateKeyResponse = zSiteIntegrationResource;
+
+export const zSiteIntegrationsUnarchivePath = z.object({
+  workspaceId: zWorkspaceId,
+  id: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteIntegrationsUnarchiveResponse = zSiteIntegrationResource;
 
 export const zSiteInvitationsListPath = z.object({
   workspaceId: zWorkspaceId

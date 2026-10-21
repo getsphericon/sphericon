@@ -26,7 +26,7 @@ func (Integration) Annotations() []schema.Annotation {
 }
 
 func (Integration) Mixin() []ent.Mixin {
-	return []ent.Mixin{TimeMixin{}, WorkspaceMixin{Ref: "integrations"}}
+	return []ent.Mixin{TimeMixin{}, WorkspaceMixin{Ref: "integrations"}, DiscardMixin{}}
 }
 
 func (Integration) Fields() []ent.Field {
@@ -102,7 +102,7 @@ func (Integration) Fields() []ent.Field {
 
 func (Integration) Edges() []ent.Edge {
 	return []ent.Edge{
-		// Deleting an Integration deletes its Send rate limiter state with it.
+		// Purging an Integration (Workspace erasure) deletes its Send rate limiter state with it.
 		edge.To("send_limiter", SendLimiter.Type).
 			Unique().
 			Annotations(entsql.OnDelete(entsql.Cascade)),
@@ -112,9 +112,9 @@ func (Integration) Edges() []ent.Edge {
 func (Integration) Indexes() []ent.Index {
 	return []ent.Index{
 		// At most one default provider per (workspace, channel). Partial index so
-		// only is_default rows are constrained.
+		// only kept is_default rows are constrained (an archived Integration holds no default).
 		index.Fields("workspace_id", "channel").
-			Annotations(entsql.IndexWhere("is_default")).
+			Annotations(entsql.IndexWhere("is_default AND discarded_at IS NULL")).
 			Unique(),
 		index.Fields("workspace_id"),
 	}

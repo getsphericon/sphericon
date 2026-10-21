@@ -17503,6 +17503,7 @@ type IntegrationMutation struct {
 	id                         *int64
 	created_at                 *time.Time
 	updated_at                 *time.Time
+	discarded_at               *time.Time
 	name                       *string
 	channel                    *integration.Channel
 	provider                   *integration.Provider
@@ -17742,6 +17743,55 @@ func (m *IntegrationMutation) OldWorkspaceID(ctx context.Context) (v int64, err 
 // ResetWorkspaceID resets all changes to the "workspace_id" field.
 func (m *IntegrationMutation) ResetWorkspaceID() {
 	m.workspace = nil
+}
+
+// SetDiscardedAt sets the "discarded_at" field.
+func (m *IntegrationMutation) SetDiscardedAt(t time.Time) {
+	m.discarded_at = &t
+}
+
+// DiscardedAt returns the value of the "discarded_at" field in the mutation.
+func (m *IntegrationMutation) DiscardedAt() (r time.Time, exists bool) {
+	v := m.discarded_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDiscardedAt returns the old "discarded_at" field's value of the Integration entity.
+// If the Integration object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *IntegrationMutation) OldDiscardedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDiscardedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDiscardedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDiscardedAt: %w", err)
+	}
+	return oldValue.DiscardedAt, nil
+}
+
+// ClearDiscardedAt clears the value of the "discarded_at" field.
+func (m *IntegrationMutation) ClearDiscardedAt() {
+	m.discarded_at = nil
+	m.clearedFields[integration.FieldDiscardedAt] = struct{}{}
+}
+
+// DiscardedAtCleared returns if the "discarded_at" field was cleared in this mutation.
+func (m *IntegrationMutation) DiscardedAtCleared() bool {
+	_, ok := m.clearedFields[integration.FieldDiscardedAt]
+	return ok
+}
+
+// ResetDiscardedAt resets all changes to the "discarded_at" field.
+func (m *IntegrationMutation) ResetDiscardedAt() {
+	m.discarded_at = nil
+	delete(m.clearedFields, integration.FieldDiscardedAt)
 }
 
 // SetName sets the "name" field.
@@ -18559,7 +18609,7 @@ func (m *IntegrationMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *IntegrationMutation) Fields() []string {
-	fields := make([]string, 0, 18)
+	fields := make([]string, 0, 19)
 	if m.created_at != nil {
 		fields = append(fields, integration.FieldCreatedAt)
 	}
@@ -18568,6 +18618,9 @@ func (m *IntegrationMutation) Fields() []string {
 	}
 	if m.workspace != nil {
 		fields = append(fields, integration.FieldWorkspaceID)
+	}
+	if m.discarded_at != nil {
+		fields = append(fields, integration.FieldDiscardedAt)
 	}
 	if m.name != nil {
 		fields = append(fields, integration.FieldName)
@@ -18628,6 +18681,8 @@ func (m *IntegrationMutation) Field(name string) (ent.Value, bool) {
 		return m.UpdatedAt()
 	case integration.FieldWorkspaceID:
 		return m.WorkspaceID()
+	case integration.FieldDiscardedAt:
+		return m.DiscardedAt()
 	case integration.FieldName:
 		return m.Name()
 	case integration.FieldChannel:
@@ -18673,6 +18728,8 @@ func (m *IntegrationMutation) OldField(ctx context.Context, name string) (ent.Va
 		return m.OldUpdatedAt(ctx)
 	case integration.FieldWorkspaceID:
 		return m.OldWorkspaceID(ctx)
+	case integration.FieldDiscardedAt:
+		return m.OldDiscardedAt(ctx)
 	case integration.FieldName:
 		return m.OldName(ctx)
 	case integration.FieldChannel:
@@ -18732,6 +18789,13 @@ func (m *IntegrationMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetWorkspaceID(v)
+		return nil
+	case integration.FieldDiscardedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDiscardedAt(v)
 		return nil
 	case integration.FieldName:
 		v, ok := value.(string)
@@ -18919,6 +18983,9 @@ func (m *IntegrationMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *IntegrationMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(integration.FieldDiscardedAt) {
+		fields = append(fields, integration.FieldDiscardedAt)
+	}
 	if m.FieldCleared(integration.FieldPreset) {
 		fields = append(fields, integration.FieldPreset)
 	}
@@ -18954,6 +19021,9 @@ func (m *IntegrationMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *IntegrationMutation) ClearField(name string) error {
 	switch name {
+	case integration.FieldDiscardedAt:
+		m.ClearDiscardedAt()
+		return nil
 	case integration.FieldPreset:
 		m.ClearPreset()
 		return nil
@@ -18991,6 +19061,9 @@ func (m *IntegrationMutation) ResetField(name string) error {
 		return nil
 	case integration.FieldWorkspaceID:
 		m.ResetWorkspaceID()
+		return nil
+	case integration.FieldDiscardedAt:
+		m.ResetDiscardedAt()
 		return nil
 	case integration.FieldName:
 		m.ResetName()

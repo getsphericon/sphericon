@@ -577,6 +577,7 @@ var IntegrationAuditSensitive = map[string]bool{
 // auditFields maps every audited field of the Integration to its value.
 func (e *Integration) auditFields() map[string]any {
 	return map[string]any{
+		"discarded_at":               derefAudit(e.DiscardedAt),
 		"name":                       e.Name,
 		"channel":                    e.Channel,
 		"provider":                   e.Provider,

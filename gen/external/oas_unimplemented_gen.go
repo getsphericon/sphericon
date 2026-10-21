@@ -495,27 +495,29 @@ func (UnimplementedHandler) ExportMessages(ctx context.Context, params ExportMes
 	return r, ht.ErrNotImplemented
 }
 
+// IntegrationsArchive implements Integrations_archive operation.
+//
+// Archive an integration: it leaves the list and gives up the default, and can be restored (it does
+// not become the default again). Refused with 409 while a scheduled or sending broadcast, or an active
+// email automation through the default, uses it (`usedBy` names them).
+//
+// POST /integrations/{id}/archive
+func (UnimplementedHandler) IntegrationsArchive(ctx context.Context, params IntegrationsArchiveParams) (r IntegrationsArchiveRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // IntegrationsCreate implements Integrations_create operation.
 //
-// Create a resource.
+// Create an integration.
 //
 // POST /integrations
 func (UnimplementedHandler) IntegrationsCreate(ctx context.Context, req *CreateIntegrationInput) (r IntegrationsCreateRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
-// IntegrationsDelete implements Integrations_delete operation.
-//
-// Delete a resource.
-//
-// DELETE /integrations/{id}
-func (UnimplementedHandler) IntegrationsDelete(ctx context.Context, params IntegrationsDeleteParams) (r IntegrationsDeleteRes, _ error) {
-	return r, ht.ErrNotImplemented
-}
-
 // IntegrationsGet implements Integrations_get operation.
 //
-// Get a resource by ID.
+// Get an integration by ID, archived or not.
 //
 // GET /integrations/{id}
 func (UnimplementedHandler) IntegrationsGet(ctx context.Context, params IntegrationsGetParams) (r IntegrationsGetRes, _ error) {
@@ -524,7 +526,7 @@ func (UnimplementedHandler) IntegrationsGet(ctx context.Context, params Integrat
 
 // IntegrationsList implements Integrations_list operation.
 //
-// List resources with pagination.
+// List integrations with pagination.
 //
 // GET /integrations
 func (UnimplementedHandler) IntegrationsList(ctx context.Context, params IntegrationsListParams) (r IntegrationsListRes, _ error) {
@@ -541,9 +543,18 @@ func (UnimplementedHandler) IntegrationsRegenerateKey(ctx context.Context, param
 	return r, ht.ErrNotImplemented
 }
 
+// IntegrationsUnarchive implements Integrations_unarchive operation.
+//
+// Restore an archived integration to the list. It is not the default; promote it with an update.
+//
+// POST /integrations/{id}/unarchive
+func (UnimplementedHandler) IntegrationsUnarchive(ctx context.Context, params IntegrationsUnarchiveParams) (r IntegrationsUnarchiveRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // IntegrationsUpdate implements Integrations_update operation.
 //
-// Update a resource.
+// Update an integration.
 //
 // PUT /integrations/{id}
 func (UnimplementedHandler) IntegrationsUpdate(ctx context.Context, req *UpdateIntegrationInput, params IntegrationsUpdateParams) (r IntegrationsUpdateRes, _ error) {

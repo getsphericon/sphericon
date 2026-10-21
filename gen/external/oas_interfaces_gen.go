@@ -205,12 +205,12 @@ type ExportMessagesRes interface {
 	exportMessagesRes()
 }
 
-type IntegrationsCreateRes interface {
-	integrationsCreateRes()
+type IntegrationsArchiveRes interface {
+	integrationsArchiveRes()
 }
 
-type IntegrationsDeleteRes interface {
-	integrationsDeleteRes()
+type IntegrationsCreateRes interface {
+	integrationsCreateRes()
 }
 
 type IntegrationsGetRes interface {
@@ -223,6 +223,10 @@ type IntegrationsListRes interface {
 
 type IntegrationsRegenerateKeyRes interface {
 	integrationsRegenerateKeyRes()
+}
+
+type IntegrationsUnarchiveRes interface {
+	integrationsUnarchiveRes()
 }
 
 type IntegrationsUpdateRes interface {

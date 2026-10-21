@@ -649,21 +649,23 @@ func (UnimplementedHandler) SiteInstanceSetTelemetry(ctx context.Context, req *S
 	return r, ht.ErrNotImplemented
 }
 
+// SiteIntegrationsArchive implements SiteIntegrations_archive operation.
+//
+// Archive an integration: it leaves the list and gives up the default, and can be restored (it does
+// not become the default again). Refused with 409 while a scheduled or sending broadcast, or an active
+// email automation through the default, uses it. Owners and admins only.
+//
+// POST /workspaces/{workspaceId}/integrations/{id}/archive
+func (UnimplementedHandler) SiteIntegrationsArchive(ctx context.Context, params SiteIntegrationsArchiveParams) (r SiteIntegrationsArchiveRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteIntegrationsCreate implements SiteIntegrations_create operation.
 //
 // Create an integration. Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/integrations
 func (UnimplementedHandler) SiteIntegrationsCreate(ctx context.Context, req *SiteCreateIntegrationInput, params SiteIntegrationsCreateParams) (r SiteIntegrationsCreateRes, _ error) {
-	return r, ht.ErrNotImplemented
-}
-
-// SiteIntegrationsDelete implements SiteIntegrations_delete operation.
-//
-// Delete an integration. Owners and admins only.
-//
-// DELETE /workspaces/{workspaceId}/integrations/{id}
-func (UnimplementedHandler) SiteIntegrationsDelete(ctx context.Context, params SiteIntegrationsDeleteParams) (r SiteIntegrationsDeleteRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -678,7 +680,8 @@ func (UnimplementedHandler) SiteIntegrationsGet(ctx context.Context, params Site
 
 // SiteIntegrationsList implements SiteIntegrations_list operation.
 //
-// List the workspace's sending-provider integrations.
+// List the workspace's sending-provider integrations: the kept ones, or with `archived` the archived
+// ones.
 //
 // GET /workspaces/{workspaceId}/integrations
 func (UnimplementedHandler) SiteIntegrationsList(ctx context.Context, params SiteIntegrationsListParams) (r SiteIntegrationsListRes, _ error) {
@@ -691,6 +694,16 @@ func (UnimplementedHandler) SiteIntegrationsList(ctx context.Context, params Sit
 //
 // POST /workspaces/{workspaceId}/integrations/{id}/regenerate-key
 func (UnimplementedHandler) SiteIntegrationsRegenerateKey(ctx context.Context, params SiteIntegrationsRegenerateKeyParams) (r SiteIntegrationsRegenerateKeyRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteIntegrationsUnarchive implements SiteIntegrations_unarchive operation.
+//
+// Restore an archived integration to the list. It is not the default; promote it with an update.
+// Owners and admins only.
+//
+// POST /workspaces/{workspaceId}/integrations/{id}/unarchive
+func (UnimplementedHandler) SiteIntegrationsUnarchive(ctx context.Context, params SiteIntegrationsUnarchiveParams) (r SiteIntegrationsUnarchiveRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

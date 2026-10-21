@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/integration"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/convert"
@@ -30,9 +29,7 @@ func (h *Handlers) SiteIntegrationsList(ctx context.Context, params siteapi.Site
 		return nil, err
 	}
 
-	rows, err := s.Integration().Query().
-		Order(ent.Asc(integration.FieldID)).
-		All(ctx)
+	rows, err := h.integrations.All(ctx, s, params.Archived.Or(false))
 	if err != nil {
 		return nil, err
 	}
@@ -243,35 +240,80 @@ func (h *Handlers) SitePresetsList(_ context.Context) ([]siteapi.SitePresetResou
 	return out, nil
 }
 
-// SiteIntegrationsDelete removes an integration.
-func (h *Handlers) SiteIntegrationsDelete(ctx context.Context, params siteapi.SiteIntegrationsDeleteParams) (siteapi.SiteIntegrationsDeleteRes, error) {
+// SiteIntegrationsArchive archives an integration (ADR 0049): it leaves the list and gives up the
+// default, unless live work uses it (409). Owners and admins only.
+func (h *Handlers) SiteIntegrationsArchive(ctx context.Context, params siteapi.SiteIntegrationsArchiveParams) (siteapi.SiteIntegrationsArchiveRes, error) {
 	s, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
-		v := siteapi.SiteIntegrationsDeleteNotFound(problem(http.StatusNotFound, "workspace not found"))
+		v := siteapi.SiteIntegrationsArchiveNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil
 	}
 	if err != nil {
 		return nil, err
 	}
 	if !accounts.CanManageIntegrations(role) {
-		v := siteapi.SiteIntegrationsDeleteForbidden(problem(http.StatusForbidden, errIntegrationsForbidden))
+		v := siteapi.SiteIntegrationsArchiveForbidden(problem(http.StatusForbidden, errIntegrationsForbidden))
 		return &v, nil
 	}
 
 	id := int64(params.ID)
-	err = h.integrations.Delete(ctx, s, id)
+	err = h.integrations.Archive(ctx, s, id)
 	if refused, ok := inuse.As(err); ok {
 		v := inUseProblem(refused)
 		return &v, nil
 	}
 	if ent.IsNotFound(err) {
-		v := siteapi.SiteIntegrationsDeleteNotFound(problem(http.StatusNotFound, "integration not found"))
+		v := siteapi.SiteIntegrationsArchiveNotFound(problem(http.StatusNotFound, "integration not found"))
 		return &v, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	return &siteapi.SiteIntegrationsDeleteNoContent{}, nil
+	row, err := s.Integration().Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	res, err := h.integrationResource(ctx, s, row)
+	if err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+// SiteIntegrationsUnarchive restores an archived integration to the list. It is not the default.
+// Owners and admins only.
+func (h *Handlers) SiteIntegrationsUnarchive(ctx context.Context, params siteapi.SiteIntegrationsUnarchiveParams) (siteapi.SiteIntegrationsUnarchiveRes, error) {
+	s, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
+	if ent.IsNotFound(err) {
+		v := siteapi.SiteIntegrationsUnarchiveNotFound(problem(http.StatusNotFound, "workspace not found"))
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	if !accounts.CanManageIntegrations(role) {
+		v := siteapi.SiteIntegrationsUnarchiveForbidden(problem(http.StatusForbidden, errIntegrationsForbidden))
+		return &v, nil
+	}
+
+	id := int64(params.ID)
+	err = h.integrations.Unarchive(ctx, s, id)
+	if ent.IsNotFound(err) {
+		v := siteapi.SiteIntegrationsUnarchiveNotFound(problem(http.StatusNotFound, "integration not found"))
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	row, err := s.Integration().Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	res, err := h.integrationResource(ctx, s, row)
+	if err != nil {
+		return nil, err
+	}
+	return &res, nil
 }
 
 // --- helpers ---

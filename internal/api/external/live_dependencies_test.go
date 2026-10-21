@@ -26,7 +26,7 @@ func TestExternalDeletesRefusedWhileLiveWorkUsesTheRow(t *testing.T) {
 	assert.Equal(t, externalapi.UsedByKindAutomation, refused.UsedBy[0].Kind)
 	assert.Equal(t, fixtures.AutomationTagOnEngagementName, refused.UsedBy[0].Name)
 
-	integration, err := c.IntegrationsDelete(ctx, externalapi.IntegrationsDeleteParams{ID: externalapi.EntityId(1)})
+	integration, err := c.IntegrationsArchive(ctx, externalapi.IntegrationsArchiveParams{ID: externalapi.EntityId(1)})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.InUseProblemDetails{}, integration)
 
