@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/internal/dnstest"
+	"github.com/getsphericon/sphericon/internal/domainverify"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/messaging/registry"
@@ -155,9 +156,7 @@ func TestOwnerNotificationsSurfaceSenderErrors(t *testing.T) {
 	require.NoError(t, err)
 	env.SystemMail.SetErr(errors.New("smtp down"))
 
-	require.Error(t, jobs.NotifySendingDomainUnverified(ctx, env.DB, env.SystemMail, fixtures.SendingDomainVerifiedID))
 	require.Error(t, jobs.NotifyWorkspaceSuspended(ctx, env.DB, env.SystemMail, "", fixtures.AcmeID))
-	require.Error(t, jobs.NotifySendingDomainUnverified(ctx, env.DB, env.SystemMail, 424242), "unknown domain")
 }
 
 // The inline adapter notifies the owner when a re-check flips a domain to
@@ -166,7 +165,7 @@ func TestInlineSendingDomainVerifyNotifiesOnFlip(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	gone := dnstest.Resolver(t, nil).LookupTXT
-	inline := jobs.NewInline(env.DB, newMod(env, resolvingTo(&fakeSender{})), env.SystemMail, gone, nil, envCipher(t), registry.Default(), "http://local")
+	inline := jobs.NewInline(env.DB, newMod(env, resolvingTo(&fakeSender{})), env.SystemMail, domainverify.New(env.DB, gone, nil, jobs.OwnerNotifier(env.DB, env.SystemMail)), envCipher(t), registry.Default(), "http://local")
 
 	require.NoError(t, inline.EnqueueSendingDomainVerify(ctx, fixtures.SendingDomainVerifiedID))
 	require.Len(t, env.SystemMail.Messages(), 1)

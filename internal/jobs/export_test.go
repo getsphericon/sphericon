@@ -10,13 +10,12 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
+	"github.com/getsphericon/sphericon/internal/domainverify"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/joindomains"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/secrets"
-	"github.com/getsphericon/sphericon/internal/sending"
-	"github.com/getsphericon/sphericon/internal/trackingdomain"
 	"github.com/getsphericon/sphericon/internal/webhook"
 	"github.com/getsphericon/sphericon/internal/workspacedeletion"
 )
@@ -40,12 +39,12 @@ func NewDeliverWebhookWorker(client *ent.Client, cipher *secrets.Cipher, doer we
 	return &DeliverWebhookWorker{ent: client, cipher: cipher, client: doer, now: now, bus: bus, sender: sender}
 }
 
-func NewVerifySendingDomainWorker(client *ent.Client, lookup sending.TXTLookup, sender messaging.EmailSender) *VerifySendingDomainWorker {
-	return &VerifySendingDomainWorker{ent: client, lookup: lookup, sender: sender}
+func NewVerifySendingDomainWorker(mod *domainverify.Module) *VerifySendingDomainWorker {
+	return &VerifySendingDomainWorker{mod: mod}
 }
 
-func NewRecheckSendingDomainsWorker(client *ent.Client) *RecheckSendingDomainsWorker {
-	return &RecheckSendingDomainsWorker{ent: client}
+func NewRecheckSendingDomainsWorker(mod *domainverify.Module) *RecheckSendingDomainsWorker {
+	return &RecheckSendingDomainsWorker{mod: mod}
 }
 
 func NewVerifyJoinDomainWorker(mod *joindomains.Module) *VerifyJoinDomainWorker {
@@ -106,16 +105,12 @@ func NewPurgeAuthAttemptsWorker(client *ent.Client) *PurgeAuthAttemptsWorker {
 	return &PurgeAuthAttemptsWorker{ent: client}
 }
 
-func NewVerifySendingDomainWorkerWithTracking(client *ent.Client, lookup sending.TXTLookup, sender messaging.EmailSender, tracking *trackingdomain.Verifier) *VerifySendingDomainWorker {
-	return &VerifySendingDomainWorker{ent: client, lookup: lookup, sender: sender, tracking: tracking}
+func NewRecheckTrackingDomainsWorker(mod *domainverify.Module) *RecheckTrackingDomainsWorker {
+	return &RecheckTrackingDomainsWorker{mod: mod}
 }
 
-func NewRecheckTrackingDomainsWorker(client *ent.Client) *RecheckTrackingDomainsWorker {
-	return &RecheckTrackingDomainsWorker{ent: client}
-}
-
-func NewVerifyTrackingDomainWorker(client *ent.Client, sender messaging.EmailSender, tracking *trackingdomain.Verifier) *VerifyTrackingDomainWorker {
-	return &VerifyTrackingDomainWorker{ent: client, sender: sender, tracking: tracking}
+func NewVerifyTrackingDomainWorker(mod *domainverify.Module) *VerifyTrackingDomainWorker {
+	return &VerifyTrackingDomainWorker{mod: mod}
 }
 
 func NewEraseWorkspacesWorker(deletion *workspacedeletion.Module, now func() time.Time) *EraseWorkspacesWorker {

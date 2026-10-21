@@ -2,14 +2,12 @@ package jobs
 
 import (
 	"context"
-	"log/slog"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/domainverify"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/secrets"
-	"github.com/getsphericon/sphericon/internal/sending"
-	"github.com/getsphericon/sphericon/internal/trackingdomain"
 )
 
 // Inline is the synchronous adapter of the enqueue seam (the Rails `:inline`
@@ -22,19 +20,17 @@ type Inline struct {
 	ent          *ent.Client
 	mod          *outbound.Module
 	systemSender messaging.EmailSender
-	lookup       sending.TXTLookup
-	tracking     *trackingdomain.Verifier
+	domains      *domainverify.Module
 	cipher       *secrets.Cipher
 	catalog      *messaging.Catalog
 	appURL       string
 }
 
 // NewInline builds the inline adapter. systemSender sends platform mail; mod is the
-// Outbound send module every workspace email goes through. lookup resolves DKIM TXT for sending-
-// domain verification (a stub in tests avoids real DNS). appURL builds account-
-// email links.
-func NewInline(entClient *ent.Client, mod *outbound.Module, systemSender messaging.EmailSender, lookup sending.TXTLookup, tracking *trackingdomain.Verifier, cipher *secrets.Cipher, catalog *messaging.Catalog, appURL string) *Inline {
-	return &Inline{ent: entClient, mod: mod, systemSender: systemSender, lookup: lookup, tracking: tracking, cipher: cipher, catalog: catalog, appURL: appURL}
+// Outbound send module every workspace email goes through. domains verifies Sending
+// domains (a stub lookup in tests avoids real DNS). appURL builds account-email links.
+func NewInline(entClient *ent.Client, mod *outbound.Module, systemSender messaging.EmailSender, domains *domainverify.Module, cipher *secrets.Cipher, catalog *messaging.Catalog, appURL string) *Inline {
+	return &Inline{ent: entClient, mod: mod, systemSender: systemSender, domains: domains, cipher: cipher, catalog: catalog, appURL: appURL}
 }
 
 // EnqueueWelcome sends the welcome email now via the system sender.
@@ -89,17 +85,8 @@ func (i *Inline) EnqueuePasskeyNotice(ctx context.Context, email string, change 
 // EnqueueSendingDomainVerify re-checks the domain's DKIM DNS now, notifying the
 // workspace owner if this check flips the domain to unverified (ADR 0010 slice 3).
 func (i *Inline) EnqueueSendingDomainVerify(ctx context.Context, sendingDomainID int64) error {
-	_, flipped, err := VerifySendingDomainByID(ctx, i.ent, i.lookup, sendingDomainID)
-	if err != nil {
-		return err
-	}
-	if flipped {
-		if nerr := NotifySendingDomainUnverified(ctx, i.ent, i.systemSender, sendingDomainID); nerr != nil {
-			slog.WarnContext(ctx, "notify sending domain unverified failed",
-				"sending_domain_id", sendingDomainID, "err", nerr)
-		}
-	}
-	return nil
+	_, err := i.domains.VerifyDKIM(ctx, sendingDomainID)
+	return err
 }
 
 // EnqueueIntegrationQuotaRefresh reads the Integration's provider send quota now.

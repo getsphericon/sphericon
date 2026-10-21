@@ -36,6 +36,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	appdb "github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/dnstest"
+	"github.com/getsphericon/sphericon/internal/domainverify"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
@@ -538,13 +539,13 @@ func TestVerifySendingDomainWorker(t *testing.T) {
 	gone := dnstest.Resolver(t, nil).LookupTXT
 
 	// Verified domain whose DNS vanished: flips, owner is emailed.
-	w := jobs.NewVerifySendingDomainWorker(env.DB, gone, env.SystemMail)
+	w := jobs.NewVerifySendingDomainWorker(domainverify.New(env.DB, gone, nil, jobs.OwnerNotifier(env.DB, env.SystemMail)))
 	require.NoError(t, w.Work(ctx, job(jobs.VerifySendingDomainArgs{SendingDomainID: fixtures.SendingDomainVerifiedID})))
 	assert.Len(t, env.SystemMail.Messages(), 1)
 
 	// A failing alert never fails the verification.
 	env.SystemMail.SetErr(errors.New("smtp down"))
-	require.NoError(t, jobs.NewVerifySendingDomainWorker(env.DB, gone, env.SystemMail).
+	require.NoError(t, jobs.NewVerifySendingDomainWorker(domainverify.New(env.DB, gone, nil, jobs.OwnerNotifier(env.DB, env.SystemMail))).
 		Work(ctx, job(jobs.VerifySendingDomainArgs{SendingDomainID: fixtures.SendingDomainVerifiedID})))
 
 	// Unknown domain id is an error.
@@ -556,7 +557,7 @@ func TestRecheckSendingDomainsWorkerFansOut(t *testing.T) {
 	total, err := e.DB.SendingDomain.Query().Where(sendingdomain.DiscardedAtIsNil()).Count(context.Background())
 	require.NoError(t, err)
 
-	require.NoError(t, jobs.NewRecheckSendingDomainsWorker(e.DB).Work(e.workCtx(), job(jobs.RecheckSendingDomainsArgs{})))
+	require.NoError(t, jobs.NewRecheckSendingDomainsWorker(domainverify.New(e.DB, nil, nil, nil)).Work(e.workCtx(), job(jobs.RecheckSendingDomainsArgs{})))
 
 	kinds := e.queued(t)
 	assert.Len(t, kinds, total)
@@ -747,4 +748,21 @@ func TestSendBroadcastWorkerFinishesAStaleJob(t *testing.T) {
 		assert.Equal(t, want, e.DB.Broadcast.GetX(ctx, id).Status, "broadcast %d", id)
 	}
 	assert.Empty(t, e.queued(t))
+}
+
+func TestRecheckTrackingDomainsWorkerFansOutOneJobPerServingOrDNSVerifiedHost(t *testing.T) {
+	e := newRiverEnv(t)
+	ctx := e.workCtx()
+	due, err := e.DB.SendingDomain.Query().
+		Where(sendingdomain.TrackingStateIn(sendingdomain.TrackingStateDNSVerified, sendingdomain.TrackingStateServing), sendingdomain.IDNEQ(fixtures.SendingDomainArchivedID)).
+		Count(ctx)
+	require.NoError(t, err)
+
+	require.NoError(t, jobs.NewRecheckTrackingDomainsWorker(domainverify.New(e.DB, nil, nil, nil)).Work(ctx, job(jobs.RecheckTrackingDomainsArgs{})))
+
+	kinds := e.queued(t)
+	assert.Len(t, kinds, due)
+	for _, k := range kinds {
+		assert.Equal(t, "tracking_domain_verify", k)
+	}
 }

@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
+	"github.com/getsphericon/sphericon/internal/domainverify"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/joindomains"
 	"github.com/getsphericon/sphericon/internal/messaging"
@@ -98,14 +99,15 @@ func NewClient(riverDB *sql.DB, entClient *ent.Client, mod *outbound.Module, cip
 	river.AddWorker(workers, &RemindSecondFactorWorker{ent: entClient, sender: systemSender, appURL: appURL})
 	// Sending-domain DKIM verification (ADR 0010). LookupTXT re-checks published
 	// DNS; verified is a live property re-validated by the periodic job below.
-	river.AddWorker(workers, &VerifySendingDomainWorker{ent: entClient, lookup: lookup, sender: systemSender, tracking: tracking})
-	river.AddWorker(workers, &RecheckSendingDomainsWorker{ent: entClient})
+	domains := domainverify.New(entClient, lookup, tracking, OwnerNotifier(entClient, systemSender))
+	river.AddWorker(workers, &VerifySendingDomainWorker{mod: domains})
+	river.AddWorker(workers, &RecheckSendingDomainsWorker{mod: domains})
 	// Join domains stay verified only while their TXT record is published.
 	joinDomains := joindomains.New(entClient, bus, lookup, time.Now, OwnerNotifier(entClient, systemSender))
 	river.AddWorker(workers, &VerifyJoinDomainWorker{mod: joinDomains})
 	river.AddWorker(workers, &RecheckJoinDomainsWorker{mod: joinDomains})
-	river.AddWorker(workers, &VerifyTrackingDomainWorker{ent: entClient, sender: systemSender, tracking: tracking})
-	river.AddWorker(workers, &RecheckTrackingDomainsWorker{ent: entClient})
+	river.AddWorker(workers, &VerifyTrackingDomainWorker{mod: domains})
+	river.AddWorker(workers, &RecheckTrackingDomainsWorker{mod: domains})
 	// SES send quota discovery (ADR 0023): refreshed hourly because quotas grow as an
 	// account matures, and on Integration save by the API handlers.
 	river.AddWorker(workers, &RefreshSendQuotasWorker{ent: entClient})

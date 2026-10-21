@@ -39,6 +39,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/db"
+	"github.com/getsphericon/sphericon/internal/domainverify"
 	"github.com/getsphericon/sphericon/internal/erasure"
 	"github.com/getsphericon/sphericon/internal/eventlog"
 	"github.com/getsphericon/sphericon/internal/events"
@@ -378,7 +379,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	sender := outbound.New(bus, edition.Holds(), resolver, tracker, outboundOpts...)
 	fakeSES := &FakeSES{}
 	catalog := catalogWith(fakeSES)
-	inline := jobs.NewInline(client, sender, systemMail, stubTXT, nil, cipher, catalog, cfg.AppURL)
+	inline := jobs.NewInline(client, sender, systemMail, domainverify.New(client, stubTXT, nil, jobs.OwnerNotifier(client, systemMail)), cipher, catalog, cfg.AppURL)
 	// The transactional send surface resolves a workspace sender directly (not via
 	// river), so it gets the same capturing resolver — its sends land in CustomerMail.
 	// inline implements every enqueue seam (broadcast, welcome, account mail,

@@ -35,6 +35,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/buildinfo"
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/db"
+	"github.com/getsphericon/sphericon/internal/domainverify"
 	"github.com/getsphericon/sphericon/internal/erasure"
 	"github.com/getsphericon/sphericon/internal/eventlog"
 	"github.com/getsphericon/sphericon/internal/events"
@@ -822,16 +823,16 @@ func register(injector do.Injector, env string, o options) {
 			return nil, err
 		}
 		// Prod verifies against published DNS records (ADR 0010). Dev does too, except
-		// for jobs.ShortcutDomain, which verifies at once; the e2e suite's domains all do.
+		// for domainverify.ShortcutDomain, which verifies at once; the e2e suite's domains all do.
 		if cfg.IsDev || o.e2eDKIMLookup {
 			client, err := do.Invoke[*entClient](i)
 			if err != nil {
 				return nil, err
 			}
 			if o.e2eDKIMLookup {
-				return &dkimLookup{TXTLookup: jobs.DevTXTLookup(client.Client)}, nil
+				return &dkimLookup{TXTLookup: domainverify.DevTXTLookup(client.Client)}, nil
 			}
-			return &dkimLookup{TXTLookup: jobs.ShortcutTXTLookup(client.Client, net.DefaultResolver.LookupTXT)}, nil
+			return &dkimLookup{TXTLookup: domainverify.ShortcutTXTLookup(client.Client, net.DefaultResolver.LookupTXT)}, nil
 		}
 		return &dkimLookup{TXTLookup: net.DefaultResolver.LookupTXT}, nil
 	})
