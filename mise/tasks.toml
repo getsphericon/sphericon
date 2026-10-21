@@ -361,10 +361,14 @@ run = [
 ]
 
 ["generate:check"]
-description = "Fail when committed generated output differs from what `generate` produces (CI gate, needs a clean tree)"
+description = "Review rule 1: fail when committed generated output differs from what `generate` produces (CI gate, needs a clean tree)"
+# `git status --porcelain` lists a modified, deleted or new file. A generated path that is not
+# checked in is excluded by .gitignore and nowhere else, each for its reason: internal/server/assets/t.js
+# and packages/*/dist (the tracker bundle, built by `build:tracker`), internal/server/assets/spa/ and
+# internal/changelog/CHANGELOG.md (release-only copies); none is produced by `generate`.
 run = [
   { task = "generate" },
-  '''test -z "$(git status --porcelain)" || { echo 'generated code is out of date; run `mise run generate` and commit:'; git status --short; git diff | head -80; exit 1; }''',
+  '''test -z "$(git status --porcelain)" || { echo 'Review rule 1 (docs/agents/review-lenses.md): generated files must come from the generator, never from a hand edit or a stale run. Run `mise run generate` and commit the result. Differing files:'; git status --short; git diff | head -80; exit 1; }''',
 ]
 
 # --- checks ----------------------------------------------------------------------
