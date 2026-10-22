@@ -3,6 +3,7 @@ package staff_test
 import (
 	"encoding/json"
 	"net/http"
+	"slices"
 	"testing"
 	"time"
 
@@ -67,10 +68,12 @@ func TestTheWorkspaceListShowsEveryWorkspaceNewestFirst(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
 
-	page := h.listWorkspaces(t, c, staffapi.StaffWorkspacesListParams{})
+	page := h.listWorkspaces(t, c, staffapi.StaffWorkspacesListParams{PageSize: staffapi.NewOptInt32(100)})
 
-	assert.Equal(t, []string{"Brightpath", "Cyberdyne", "Aviato", "Pied Piper", "Wayne", "Kramerica", "Vandelay", "Soylent", "Hooli", "Umbrella", "Initech", "Globex", "Acme"}, names(page.Items))
-	assert.EqualValues(t, 13, page.TotalItems)
+	anchors := []string{"Brightpath", "Cyberdyne", "Aviato", "Pied Piper", "Wayne", "Kramerica", "Vandelay", "Soylent", "Hooli", "Umbrella", "Initech", "Globex", "Acme"}
+	listed := lo.Filter(names(page.Items), func(name string, _ int) bool { return slices.Contains(anchors, name) })
+	assert.Equal(t, anchors, listed, "the anchor Workspaces, newest first")
+	assert.EqualValues(t, len(page.Items), page.TotalItems, "one page holds every Workspace")
 	assert.EqualValues(t, 1, page.TotalPages)
 	assert.EqualValues(t, 1, page.Page)
 }
@@ -79,13 +82,14 @@ func TestTheWorkspaceListIsPaginated(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
 
+	everyone := h.listWorkspaces(t, c, staffapi.StaffWorkspacesListParams{PageSize: staffapi.NewOptInt32(100)})
 	second := h.listWorkspaces(t, c, staffapi.StaffWorkspacesListParams{
 		Page: staffapi.NewOptInt32(2), PageSize: staffapi.NewOptInt32(2),
 	})
 
-	assert.Equal(t, []string{"Aviato", "Pied Piper"}, names(second.Items))
-	assert.EqualValues(t, 13, second.TotalItems)
-	assert.EqualValues(t, 7, second.TotalPages)
+	assert.Equal(t, names(everyone.Items[2:4]), names(second.Items), "the second page is the third and fourth Workspace")
+	assert.Equal(t, everyone.TotalItems, second.TotalItems)
+	assert.Equal(t, (everyone.TotalItems+1)/2, second.TotalPages)
 	assert.EqualValues(t, 2, second.PageSize)
 }
 
@@ -350,13 +354,14 @@ func TestTheWorkspaceListHidesADeletedWorkspaceUnlessFilteredToDeleted(t *testin
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
 	discardedAt := time.Now().UTC().Truncate(time.Second)
+	before := h.listWorkspaces(t, c, staffapi.StaffWorkspacesListParams{})
 	h.env.DB.Workspace.UpdateOneID(fixtures.GlobexID).SetDiscardedAt(discardedAt).ExecX(t.Context())
 
 	all := h.listWorkspaces(t, c, staffapi.StaffWorkspacesListParams{})
 	deleted := h.listWorkspaces(t, c, staffapi.StaffWorkspacesListParams{Review: staffapi.NewOptStaffWorkspaceReview(staffapi.StaffWorkspaceReviewDeleted)})
 
 	assert.NotContains(t, names(all.Items), "Globex")
-	assert.EqualValues(t, 12, all.TotalItems)
+	assert.Equal(t, before.TotalItems-1, all.TotalItems)
 	require.Equal(t, []string{"Bluth", "Globex"}, names(deleted.Items))
 	globex, found := lo.Find(deleted.Items, func(w staffapi.StaffWorkspaceResource) bool { return w.Name == "Globex" })
 	require.True(t, found)

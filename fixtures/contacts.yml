@@ -754,3 +754,161 @@
   workspace_id: 20
   created_at: '{{hoursAgo 2304}}'
   updated_at: '{{hoursAgo 2184}}'
+# Eligibility matrix (#555): one Contact per opt-out state, in a Workspace with the confirmation gate on (Lumon) and one with it off (Tyrell).
+- id: 5510 # fixture: TyrellMatrixClean
+  email: clean@tyrell.test
+  workspace_id: 56
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 5511 # fixture: TyrellMatrixSuppressed
+  email: suppressed@tyrell.test
+  workspace_id: 56
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 5512 # fixture: TyrellMatrixUnsubEverything
+  email: unsub-everything@tyrell.test
+  workspace_id: 56
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 5513 # fixture: TyrellMatrixUnsubBroadcasts
+  email: unsub-broadcasts@tyrell.test
+  workspace_id: 56
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 5514 # fixture: TyrellMatrixUnsubAutomation
+  email: unsub-automation@tyrell.test
+  workspace_id: 56
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 5515 # fixture: TyrellMatrixConfirmed
+  email: confirmed@tyrell.test
+  workspace_id: 56
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 5516 # fixture: TyrellMatrixConfirmedSuppressed
+  email: confirmed-suppressed@tyrell.test
+  workspace_id: 56
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 5517 # fixture: TyrellMatrixMixedCase
+  email: Mixed.Case@tyrell.test
+  workspace_id: 56
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 5520 # fixture: LumonMatrixClean
+  email: clean@lumon.test
+  workspace_id: 55
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 5521 # fixture: LumonMatrixSuppressed
+  email: suppressed@lumon.test
+  workspace_id: 55
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 5522 # fixture: LumonMatrixUnsubEverything
+  email: unsub-everything@lumon.test
+  workspace_id: 55
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 5523 # fixture: LumonMatrixUnsubBroadcasts
+  email: unsub-broadcasts@lumon.test
+  workspace_id: 55
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 5524 # fixture: LumonMatrixUnsubAutomation
+  email: unsub-automation@lumon.test
+  workspace_id: 55
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 5525 # fixture: LumonMatrixConfirmed
+  email: confirmed@lumon.test
+  workspace_id: 55
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 5526 # fixture: LumonMatrixConfirmedSuppressed
+  email: confirmed-suppressed@lumon.test
+  workspace_id: 55
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 5527 # fixture: LumonMatrixMixedCase
+  email: Mixed.Case@lumon.test
+  workspace_id: 55
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+# Segment scenarios (#555).
+- id: 5540 # fixture: OscorpAnna
+  email: anna@oscorp.test
+  first_name: Anna
+  phone: '+1555'
+  workspace_id: 57
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 5541 # fixture: OscorpAndy
+  email: andy@oscorp.test
+  first_name: Andy
+  workspace_id: 57
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 5542 # fixture: OscorpBella
+  email: bella@oscorp.test
+  first_name: Bella
+  phone: '+1666'
+  workspace_id: 57
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 5543 # fixture: MassiveAnn
+  email: ann@massive.test
+  first_name: Ann
+  custom_fields: '{"plan":"pro"}'
+  workspace_id: 58
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 5544 # fixture: MassiveBob
+  email: bob@massive.test
+  first_name: Bob
+  custom_fields: '{"plan":"free"}'
+  workspace_id: 58
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 5545 # fixture: MassiveCara
+  email: cara@massive.test
+  first_name: Cara
+  custom_fields: '{"plan":"pro"}'
+  workspace_id: 58
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 5546 # fixture: InitrodeOne
+  email: one@initrode.test
+  custom_fields: '{"plan":"pro","tags":["alpha","beta"]}'
+  workspace_id: 59
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 5547 # fixture: InitrodeTwo
+  email: two@initrode.test
+  custom_fields: '{"plan":"free"}'
+  workspace_id: 59
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 5548 # fixture: InitrodeThree
+  email: three@initrode.test
+  custom_fields: '{"other":1}'
+  workspace_id: 59
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 5549 # fixture: InitrodeQuote
+  email: quote@initrode.test
+  custom_fields: '{"it''s":"here"}'
+  workspace_id: 59
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 5550 # fixture: DunderPreviewTarget
+  email: preview-target@dunder.test
+  custom_fields: '{"plan":"preview-pro"}'
+  workspace_id: 60
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 5551 # fixture: DunderEventPreview
+  email: ev-prev@dunder.test
+  workspace_id: 60
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

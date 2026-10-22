@@ -4,51 +4,48 @@ import (
 	"context"
 	"testing"
 
-	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/contact"
-	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
-	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/suppression"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-// enableConfirmedOptIn turns the workspace's require-confirmed-opt-in policy on
-// (ADR 0013). txdb rolls it back at test end.
-func enableConfirmedOptIn(t *testing.T, db *ent.Client, ctx context.Context) {
+// The scenarios live in two fixture Workspaces: Tyrell keeps the default policy (confirmed
+// opt-in off), Lumon requires it (ADR 0013). Both hold the same matrix of Contacts, one per
+// opt-out state (fixtures/contacts.yml, "Eligibility matrix").
+
+// inAudience reports whether the batch predicate keeps the Contact.
+func inAudience(t *testing.T, env *testhelper.TestEnv, ws, contactID int64, source string) bool {
 	t.Helper()
-	_, err := db.Workspace.UpdateOneID(fixtures.AcmeID).SetRequireConfirmedOptIn(true).Save(ctx)
+	ok, err := env.DB.Scoped(ws).Contact().Query().
+		Where(contact.ID(contactID), eligibility.Predicate(eligibility.ChannelEmail, source)).
+		Exist(context.Background())
 	require.NoError(t, err)
+	return ok
+}
+
+// decide runs the point check for a destination in a Workspace.
+func decide(t *testing.T, env *testhelper.TestEnv, ws int64, destination, source string) eligibility.Decision {
+	t.Helper()
+	d, err := eligibility.Check(context.Background(), env.DB.Scoped(ws), eligibility.ChannelEmail, destination, source)
+	require.NoError(t, err)
+	return d
 }
 
 func TestCheckEligibleByDefault(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
 
-	d, err := eligibility.Check(ctx, env.DB.Scoped(fixtures.AcmeID), eligibility.ChannelEmail,
-		"fresh@example.com", eligibility.SourceBroadcasts)
-	require.NoError(t, err)
+	d := decide(t, env, fixtures.AcmeID, "fresh@example.com", eligibility.SourceBroadcasts)
 	assert.True(t, d.Eligible)
 	assert.Empty(t, d.Reason)
 }
 
 func TestCheckSuppressed(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
 
-	_, err := env.DB.Suppression.Create().SetWorkspaceID(fixtures.AcmeID).
-		SetChannel(entsuppression.ChannelEmail).SetDestination("blocked@example.com").
-		SetReason(entsuppression.ReasonComplaint).Save(ctx)
-	require.NoError(t, err)
-
-	d, err := eligibility.Check(ctx, env.DB.Scoped(fixtures.AcmeID), eligibility.ChannelEmail,
-		"blocked@example.com", eligibility.SourceBroadcasts)
-	require.NoError(t, err)
+	d := decide(t, env, fixtures.TyrellID, fixtures.SuppressionTyrellSuppressedDestination, eligibility.SourceBroadcasts)
 	assert.False(t, d.Eligible)
 	assert.Equal(t, eligibility.ReasonSuppressed, d.Reason)
 }
@@ -56,76 +53,45 @@ func TestCheckSuppressed(t *testing.T) {
 // A lifted Suppression no longer blocks, in a single check or in the contact predicate.
 func TestLiftedSuppressionDoesNotBlock(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
-	s := env.DB.Scoped(fixtures.AcmeID)
 
-	d, err := eligibility.Check(ctx, s, eligibility.ChannelEmail, "lifted@codebasics.dev", eligibility.SourceBroadcasts)
-	require.NoError(t, err)
+	d := decide(t, env, fixtures.AcmeID, "lifted@codebasics.dev", eligibility.SourceBroadcasts)
 	assert.True(t, d.Eligible, "the fixture's lifted destination is mailable")
-
-	n, err := s.Contact().Query().
-		Where(contact.ID(fixtures.ContactLiftedID), eligibility.Predicate(eligibility.ChannelEmail, eligibility.SourceBroadcasts)).
-		Count(ctx)
-	require.NoError(t, err)
-	assert.Equal(t, 1, n, "an audience keeps the contact of a lifted destination")
+	assert.True(t, inAudience(t, env, fixtures.AcmeID, fixtures.ContactLiftedID, eligibility.SourceBroadcasts),
+		"an audience keeps the contact of a lifted destination")
 }
 
-// Transactional sends (source "") skip layers 2–3 but still
-// respect Suppression.
-func TestCheckTransactionalSkipsUnsubscribeButNotSuppression(t *testing.T) {
+// Transactional sends (source "") skip the unsubscribe and confirmation layers.
+func TestCheckTransactionalSkipsUnsubscribe(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
 
-	// Unsubscribed from everything — yet a transactional send must still go.
-	_, err := env.DB.Unsubscribe.Create().SetWorkspaceID(fixtures.AcmeID).
-		SetChannel(unsubscribe.ChannelEmail).SetDestination("txn@example.com").
-		SetSendingSource(eligibility.SourceEverything).Save(ctx)
-	require.NoError(t, err)
-
-	d, err := eligibility.Check(ctx, env.DB.Scoped(fixtures.AcmeID), eligibility.ChannelEmail,
-		"txn@example.com", "")
-	require.NoError(t, err)
+	d := decide(t, env, fixtures.TyrellID, fixtures.TyrellMatrixUnsubEverythingEmail, "")
 	assert.True(t, d.Eligible, "transactional skips unsubscribe layers")
+}
 
-	// But a suppressed destination is never sent to, transactional or not.
-	_, err = env.DB.Suppression.Create().SetWorkspaceID(fixtures.AcmeID).
-		SetChannel(entsuppression.ChannelEmail).SetDestination("txn@example.com").
-		SetReason(entsuppression.ReasonBounce).Save(ctx)
-	require.NoError(t, err)
-	d, err = eligibility.Check(ctx, env.DB.Scoped(fixtures.AcmeID), eligibility.ChannelEmail,
-		"txn@example.com", "")
-	require.NoError(t, err)
+// A suppressed destination is never sent to, transactional or not, even when it also opted out.
+func TestCheckTransactionalRespectsSuppression(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	d := decide(t, env, fixtures.TyrellID, fixtures.SuppressionTyrellTransactionalDestination, "")
 	assert.False(t, d.Eligible)
 	assert.Equal(t, eligibility.ReasonSuppressed, d.Reason)
 }
 
-func TestCheckUnsubscribedEverythingVsSource(t *testing.T) {
+func TestCheckUnsubscribedEverything(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
 
-	_, err := env.DB.Unsubscribe.Create().SetWorkspaceID(fixtures.AcmeID).
-		SetChannel(unsubscribe.ChannelEmail).SetDestination("evt@example.com").
-		SetSendingSource(eligibility.SourceEverything).Save(ctx)
-	require.NoError(t, err)
-	d, err := eligibility.Check(ctx, env.DB.Scoped(fixtures.AcmeID), eligibility.ChannelEmail,
-		"evt@example.com", eligibility.SourceBroadcasts)
-	require.NoError(t, err)
+	d := decide(t, env, fixtures.TyrellID, fixtures.TyrellMatrixUnsubEverythingEmail, eligibility.SourceBroadcasts)
 	assert.Equal(t, eligibility.ReasonUnsubscribedEverything, d.Reason)
+}
 
-	src := eligibility.AutomationSource(42)
-	_, err = env.DB.Unsubscribe.Create().SetWorkspaceID(fixtures.AcmeID).
-		SetChannel(unsubscribe.ChannelEmail).SetDestination("src@example.com").
-		SetSendingSource(src).Save(ctx)
-	require.NoError(t, err)
-	// Ineligible for that source...
-	d, err = eligibility.Check(ctx, env.DB.Scoped(fixtures.AcmeID), eligibility.ChannelEmail, "src@example.com", src)
-	require.NoError(t, err)
-	assert.Equal(t, eligibility.ReasonUnsubscribedSource, d.Reason)
-	// ...but eligible for a different source.
-	d, err = eligibility.Check(ctx, env.DB.Scoped(fixtures.AcmeID), eligibility.ChannelEmail,
-		"src@example.com", eligibility.SourceBroadcasts)
-	require.NoError(t, err)
-	assert.True(t, d.Eligible)
+func TestCheckUnsubscribedFromOneSourceOnly(t *testing.T) {
+	env := testhelper.Setup(t)
+	src := eligibility.AutomationSource(7)
+
+	assert.Equal(t, eligibility.ReasonUnsubscribedSource,
+		decide(t, env, fixtures.TyrellID, fixtures.TyrellMatrixUnsubAutomationEmail, src).Reason)
+	assert.True(t, decide(t, env, fixtures.TyrellID, fixtures.TyrellMatrixUnsubAutomationEmail, eligibility.SourceBroadcasts).Eligible,
+		"eligible for a different source")
 }
 
 // The confirmation gate (ADR 0013) is a no-op when the workspace does not require it: an
@@ -133,82 +99,41 @@ func TestCheckUnsubscribedEverythingVsSource(t *testing.T) {
 // matches it. This is the "confirmed-opt-in off ⇒ behavior unchanged" invariant.
 func TestConfirmationGateNoopWhenOff(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
 
-	d, err := eligibility.Check(ctx, env.DB.Scoped(fixtures.AcmeID), eligibility.ChannelEmail,
-		"unconfirmed@example.com", eligibility.SourceBroadcasts)
-	require.NoError(t, err)
+	d := decide(t, env, fixtures.TyrellID, fixtures.TyrellMatrixCleanEmail, eligibility.SourceBroadcasts)
 	assert.True(t, d.Eligible, "no confirmation required when the gate is off")
-
-	c, err := env.DB.Contact.Create().SetWorkspaceID(fixtures.AcmeID).SetEmail("unconf@example.com").Save(ctx)
-	require.NoError(t, err)
-	matched, err := env.DB.Contact.Query().
-		Where(contact.ID(c.ID),
-			eligibility.Predicate(eligibility.ChannelEmail, eligibility.SourceBroadcasts)).
-		Exist(ctx)
-	require.NoError(t, err)
-	assert.True(t, matched, "unconfirmed contact still in the audience when the gate is off")
+	assert.True(t, inAudience(t, env, fixtures.TyrellID, fixtures.TyrellMatrixCleanID, eligibility.SourceBroadcasts),
+		"unconfirmed contact still in the audience when the gate is off")
 }
 
-// When the workspace requires confirmed opt-in, an unconfirmed address is blocked and confirming
-// it makes it mailable — via both the point Check and the batch Predicate.
-func TestConfirmationGateWhenOn(t *testing.T) {
+// When the workspace requires confirmed opt-in, an unconfirmed address is blocked, via both
+// the point Check and the batch Predicate.
+func TestConfirmationGateBlocksUnconfirmed(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
-	enableConfirmedOptIn(t, env.DB, ctx)
 
-	c, err := env.DB.Contact.Create().SetWorkspaceID(fixtures.AcmeID).SetEmail("gate@example.com").Save(ctx)
-	require.NoError(t, err)
-
-	inAudience := func() bool {
-		ok, err := env.DB.Contact.Query().
-			Where(contact.ID(c.ID),
-				eligibility.Predicate(eligibility.ChannelEmail, eligibility.SourceBroadcasts)).
-			Exist(ctx)
-		require.NoError(t, err)
-		return ok
-	}
-
-	// Unconfirmed: blocked.
-	d, err := eligibility.Check(ctx, env.DB.Scoped(fixtures.AcmeID), eligibility.ChannelEmail,
-		"gate@example.com", eligibility.SourceBroadcasts)
-	require.NoError(t, err)
+	d := decide(t, env, fixtures.LumonID, fixtures.LumonMatrixCleanEmail, eligibility.SourceBroadcasts)
 	assert.False(t, d.Eligible)
 	assert.Equal(t, eligibility.ReasonUnconfirmed, d.Reason)
-	assert.False(t, inAudience(), "unconfirmed contact excluded from the audience")
+	assert.False(t, inAudience(t, env, fixtures.LumonID, fixtures.LumonMatrixCleanID, eligibility.SourceBroadcasts),
+		"unconfirmed contact excluded from the audience")
+}
 
-	// Confirm it: now mailable.
-	_, err = env.DB.Confirmation.Create().SetWorkspaceID(fixtures.AcmeID).
-		SetChannel(confirmation.ChannelEmail).SetDestination("gate@example.com").
-		SetProvenance(confirmation.ProvenanceDoubleOptIn).Save(ctx)
-	require.NoError(t, err)
+// A confirmed address is mailable under the gate, via both the point Check and the Predicate.
+func TestConfirmationGateAdmitsConfirmed(t *testing.T) {
+	env := testhelper.Setup(t)
 
-	d, err = eligibility.Check(ctx, env.DB.Scoped(fixtures.AcmeID), eligibility.ChannelEmail,
-		"gate@example.com", eligibility.SourceBroadcasts)
-	require.NoError(t, err)
+	d := decide(t, env, fixtures.LumonID, fixtures.LumonMatrixConfirmedEmail, eligibility.SourceBroadcasts)
 	assert.True(t, d.Eligible)
-	assert.True(t, inAudience(), "confirmed contact included in the audience")
+	assert.True(t, inAudience(t, env, fixtures.LumonID, fixtures.LumonMatrixConfirmedID, eligibility.SourceBroadcasts),
+		"confirmed contact included in the audience")
 }
 
 // Confirmation is the lowest-priority layer: a negative always dominates. A
 // confirmed-but-suppressed address is still ineligible (and reports the negative).
 func TestConfirmationDoesNotOverrideNegatives(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
-	enableConfirmedOptIn(t, env.DB, ctx)
 
-	_, err := env.DB.Confirmation.Create().SetWorkspaceID(fixtures.AcmeID).
-		SetChannel(confirmation.ChannelEmail).SetDestination("both@example.com").
-		SetProvenance(confirmation.ProvenanceDoubleOptIn).Save(ctx)
-	require.NoError(t, err)
-	_, err = env.DB.Suppression.Create().SetWorkspaceID(fixtures.AcmeID).
-		SetChannel(entsuppression.ChannelEmail).SetDestination("both@example.com").
-		SetReason(entsuppression.ReasonComplaint).Save(ctx)
-	require.NoError(t, err)
-
-	d, err := eligibility.Check(ctx, env.DB.Scoped(fixtures.AcmeID), eligibility.ChannelEmail,
-		"both@example.com", eligibility.SourceBroadcasts)
-	require.NoError(t, err)
+	d := decide(t, env, fixtures.LumonID, fixtures.LumonMatrixConfirmedSuppressedEmail, eligibility.SourceBroadcasts)
 	assert.False(t, d.Eligible)
 	assert.Equal(t, eligibility.ReasonSuppressed, d.Reason, "negatives dominate the confirmation")
 }
@@ -217,117 +142,81 @@ func TestConfirmationDoesNotOverrideNegatives(t *testing.T) {
 // lower-cased suppression destination and is excluded from the query.
 func TestPredicateFoldsCaseAndExcludes(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
 
-	c, err := env.DB.Contact.Create().SetWorkspaceID(fixtures.AcmeID).SetEmail("Caps@Example.com").Save(ctx)
-	require.NoError(t, err)
-	_, err = env.DB.Suppression.Create().SetWorkspaceID(fixtures.AcmeID).
-		SetChannel(entsuppression.ChannelEmail).SetDestination("caps@example.com").
-		SetReason(entsuppression.ReasonBounce).Save(ctx)
-	require.NoError(t, err)
-
-	matched, err := env.DB.Contact.Query().
-		Where(contact.ID(c.ID),
-			eligibility.Predicate(eligibility.ChannelEmail, eligibility.SourceBroadcasts)).
-		Exist(ctx)
-	require.NoError(t, err)
-	assert.False(t, matched, "suppressed contact excluded despite case difference")
+	assert.False(t, inAudience(t, env, fixtures.TyrellID, fixtures.TyrellMatrixMixedCaseID, eligibility.SourceBroadcasts),
+		"suppressed contact excluded despite case difference")
 }
 
-// Stored destinations are lower-cased; a mixed-case contact email must still match.
+// Stored destinations are lower-cased; a mixed-case address must still match.
 func TestCheckFoldsCase(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
 
-	_, err := env.DB.Suppression.Create().SetWorkspaceID(fixtures.AcmeID).
-		SetChannel(entsuppression.ChannelEmail).SetDestination("mixed@example.com").
-		SetReason(entsuppression.ReasonBounce).Save(ctx)
-	require.NoError(t, err)
-
-	d, err := eligibility.Check(ctx, env.DB.Scoped(fixtures.AcmeID), eligibility.ChannelEmail,
-		"  Mixed@Example.com  ", eligibility.SourceBroadcasts)
-	require.NoError(t, err)
+	d := decide(t, env, fixtures.TyrellID, "  "+fixtures.TyrellMatrixMixedCaseEmail+"  ", eligibility.SourceBroadcasts)
 	assert.False(t, d.Eligible, "input is normalized before lookup")
 }
 
-// The batch Predicate and the point Check are two shapes of one rule. For every
-// combination of opt-out state, source and policy they must agree — this is the
-// parity guarantee that replaced two hand-written copies of the layers.
-func TestPredicateAndCheckAgree(t *testing.T) {
-	env := testhelper.Setup(t)
-	ctx := context.Background()
-
-	auto := eligibility.AutomationSource(7)
-	type fixture struct {
-		name      string
-		email     string
-		suppress  bool
-		unsub     string // sending source, "" = none
-		confirmed bool
-	}
-	cases := []fixture{
-		{name: "clean", email: "p-clean@example.com"},
-		{name: "suppressed", email: "p-sup@example.com", suppress: true},
-		{name: "unsub everything", email: "p-every@example.com", unsub: eligibility.SourceEverything},
-		{name: "unsub broadcasts", email: "p-bcast@example.com", unsub: eligibility.SourceBroadcasts},
-		{name: "unsub automation", email: "p-auto@example.com", unsub: auto},
-		{name: "confirmed", email: "p-conf@example.com", confirmed: true},
-		{name: "confirmed and suppressed", email: "p-both@example.com", suppress: true, confirmed: true},
-		{name: "mixed case", email: "P-Case@Example.com", suppress: true},
-	}
-	ids := map[string]int64{}
-	for _, f := range cases {
-		c, err := env.DB.Contact.Create().SetWorkspaceID(fixtures.AcmeID).SetEmail(f.email).Save(ctx)
-		require.NoError(t, err)
-		ids[f.name] = c.ID
-	}
-	for _, f := range lo.Filter(cases, func(f fixture, _ int) bool { return f.suppress }) {
-		_, err := env.DB.Suppression.Create().SetWorkspaceID(fixtures.AcmeID).
-			SetChannel(entsuppression.ChannelEmail).SetDestination(suppression.NormalizeDestination(f.email)).
-			SetReason(entsuppression.ReasonBounce).Save(ctx)
-		require.NoError(t, err)
-	}
-	for _, f := range lo.Filter(cases, func(f fixture, _ int) bool { return f.unsub != "" }) {
-		_, err := env.DB.Unsubscribe.Create().SetWorkspaceID(fixtures.AcmeID).
-			SetChannel(unsubscribe.ChannelEmail).SetDestination(suppression.NormalizeDestination(f.email)).
-			SetSendingSource(f.unsub).Save(ctx)
-		require.NoError(t, err)
-	}
-	for _, f := range lo.Filter(cases, func(f fixture, _ int) bool { return f.confirmed }) {
-		_, err := env.DB.Confirmation.Create().SetWorkspaceID(fixtures.AcmeID).
-			SetChannel(confirmation.ChannelEmail).SetDestination(suppression.NormalizeDestination(f.email)).
-			SetProvenance(confirmation.ProvenanceDoubleOptIn).Save(ctx)
-		require.NoError(t, err)
-	}
-
-	for _, requireConfirmed := range []bool{false, true} {
-		_, err := env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetRequireConfirmedOptIn(requireConfirmed).Save(ctx)
-		require.NoError(t, err)
-		for _, source := range []string{"", eligibility.SourceBroadcasts, auto} {
-			for _, f := range cases {
-				d, err := eligibility.Check(ctx, env.DB.Scoped(fixtures.AcmeID), eligibility.ChannelEmail, f.email, source)
-				require.NoError(t, err)
-				inAudience, err := env.DB.Contact.Query().
-					Where(contact.ID(ids[f.name]), eligibility.Predicate(eligibility.ChannelEmail, source)).
-					Exist(ctx)
-				require.NoError(t, err)
-				assert.Equal(t, d.Eligible, inAudience,
-					"%s (source %q, requireConfirmed %v): Check and Predicate disagree", f.name, source, requireConfirmed)
-			}
-		}
-	}
-}
-
-// A Transactional destination may have no Contact at all; Suppression still binds.
+// A destination may have no Contact at all; Suppression still binds.
 func TestCheckWorksWithoutAContact(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
 
-	_, err := env.DB.Suppression.Create().SetWorkspaceID(fixtures.AcmeID).
-		SetChannel(entsuppression.ChannelEmail).SetDestination("nocontact@example.com").
-		SetReason(entsuppression.ReasonComplaint).Save(ctx)
-	require.NoError(t, err)
-	d, err := eligibility.Check(ctx, env.DB.Scoped(fixtures.AcmeID), eligibility.ChannelEmail, "nocontact@example.com", "")
-	require.NoError(t, err)
+	d := decide(t, env, fixtures.TyrellID, fixtures.SuppressionTyrellNoContactDestination, "")
 	assert.Equal(t, eligibility.ReasonSuppressed, d.Reason)
+}
+
+// matrixEligibility returns the emails of a Workspace's matrix Contacts that the point Check
+// admits and that the batch Predicate keeps, for one source.
+func matrixEligibility(t *testing.T, env *testhelper.TestEnv, ws int64, source string) (byCheck, byPredicate []string) {
+	t.Helper()
+	ctx := context.Background()
+	s := env.DB.Scoped(ws)
+	contacts, err := s.Contact().Query().All(ctx)
+	require.NoError(t, err)
+	for _, c := range contacts {
+		d, err := eligibility.Check(ctx, s, eligibility.ChannelEmail, *c.Email, source)
+		require.NoError(t, err)
+		if d.Eligible {
+			byCheck = append(byCheck, *c.Email)
+		}
+	}
+	kept, err := s.Contact().Query().Where(eligibility.Predicate(eligibility.ChannelEmail, source)).All(ctx)
+	require.NoError(t, err)
+	for _, c := range kept {
+		byPredicate = append(byPredicate, *c.Email)
+	}
+	return byCheck, byPredicate
+}
+
+// The batch Predicate and the point Check are two shapes of one rule. For every opt-out state
+// and source they must agree, under both policies: this is the parity guarantee that replaced
+// two hand-written copies of the layers. The expected audiences are stated, so a rule that
+// drifts in both shapes at once fails too.
+func TestPredicateAndCheckAgree(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	for name, tc := range map[string]struct {
+		ws     int64
+		source string
+		want   []string
+	}{
+		"gate off, transactional": {fixtures.TyrellID, "", []string{
+			fixtures.TyrellMatrixCleanEmail, fixtures.TyrellMatrixUnsubEverythingEmail, fixtures.TyrellMatrixUnsubBroadcastsEmail,
+			fixtures.TyrellMatrixUnsubAutomationEmail, fixtures.TyrellMatrixConfirmedEmail,
+		}},
+		"gate off, broadcasts": {fixtures.TyrellID, eligibility.SourceBroadcasts, []string{
+			fixtures.TyrellMatrixCleanEmail, fixtures.TyrellMatrixUnsubAutomationEmail, fixtures.TyrellMatrixConfirmedEmail,
+		}},
+		"gate off, automation": {fixtures.TyrellID, eligibility.AutomationSource(7), []string{
+			fixtures.TyrellMatrixCleanEmail, fixtures.TyrellMatrixUnsubBroadcastsEmail, fixtures.TyrellMatrixConfirmedEmail,
+		}},
+		"gate on, transactional": {fixtures.LumonID, "", []string{
+			fixtures.LumonMatrixCleanEmail, fixtures.LumonMatrixUnsubEverythingEmail, fixtures.LumonMatrixUnsubBroadcastsEmail,
+			fixtures.LumonMatrixUnsubAutomationEmail, fixtures.LumonMatrixConfirmedEmail,
+		}},
+		"gate on, broadcasts": {fixtures.LumonID, eligibility.SourceBroadcasts, []string{fixtures.LumonMatrixConfirmedEmail}},
+		"gate on, automation": {fixtures.LumonID, eligibility.AutomationSource(7), []string{fixtures.LumonMatrixConfirmedEmail}},
+	} {
+		byCheck, byPredicate := matrixEligibility(t, env, tc.ws, tc.source)
+		assert.ElementsMatch(t, tc.want, byCheck, "%s: point Check", name)
+		assert.ElementsMatch(t, tc.want, byPredicate, "%s: batch Predicate", name)
+	}
 }

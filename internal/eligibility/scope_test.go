@@ -27,9 +27,7 @@ func TestCheckIsConfinedToTheScopedWorkspace(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, d.Eligible, "a Globex suppression does not reach Acme")
 
-	_, err = env.DB.Scoped(fixtures.AcmeID).Suppression().Delete().Exec(ctx)
-	require.NoError(t, err)
-	d, err = eligibility.Check(ctx, env.DB.Scoped(fixtures.AcmeID), eligibility.ChannelEmail,
+	d, err = eligibility.Check(ctx, env.DB.Scoped(fixtures.HooliID), eligibility.ChannelEmail,
 		"anyone@example.com", eligibility.SourceBroadcasts)
 	require.NoError(t, err)
 	assert.True(t, d.Eligible, "a Workspace without Suppression rows is still decided")

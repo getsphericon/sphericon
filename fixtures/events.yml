@@ -4501,3 +4501,30 @@
   occurred_at: '{{hoursAhead 2}}'
   created_at: '{{hoursAhead 2}}'
 # {{end}}
+
+# Events of the segment scenarios (#555). Events attach by contact_id (ADR 0002).
+- id: 5500
+  contact_id: 5543
+  action: page_view
+  workspace_id: 58
+  occurred_at: '{{daysAgo 2}}'
+  created_at: '{{daysAgo 2}}'
+- id: 5501
+  contact_id: 5543
+  action: purchase
+  workspace_id: 58
+  occurred_at: '{{daysAgo 40}}'
+  created_at: '{{daysAgo 40}}'
+# An anonymous page_view (no Contact yet) must not hide Bob from notPerformed.
+- id: 5502
+  visitor_id: anon-massive
+  action: page_view
+  workspace_id: 58
+  occurred_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+- id: 5503
+  contact_id: 5551
+  action: signed_up
+  workspace_id: 60
+  occurred_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'

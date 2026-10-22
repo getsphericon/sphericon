@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"strings"
 	"testing"
-	"time"
 
 	ht "github.com/ogen-go/ogen/http"
 
@@ -19,21 +18,15 @@ import (
 
 func TestSiteSegmentsPreviewCountsMatchingActiveContacts(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	c := env.SiteActor(t, fixtures.DunderOwnerDwightEmail)
 	ctx := context.Background()
 
-	// An active contact with a distinctive custom field in workspace acme (id 1).
-	_, err := env.DB.Contact.Create().
-		SetWorkspaceID(fixtures.AcmeID).
-		SetEmail("preview-target@test.dev").
-		SetCustomFields(map[string]any{"plan": "preview-pro"}).
-		Save(ctx)
-	require.NoError(t, err)
+	// Dunder holds one contact (DunderPreviewTarget) with the distinctive custom field.
 
 	def := `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:plan","operator":"eq","value":"preview-pro"}]}`
 	out, err := c.SiteSegmentsPreview(ctx, &siteapi.SitePreviewSegmentInput{
 		Definition: siteapi.NewOptSiteSegmentRuleGroup(testhelper.SiteRuleGroup(t, def)),
-	}, siteapi.SiteSegmentsPreviewParams{WorkspaceId: fixtures.AcmePublicID})
+	}, siteapi.SiteSegmentsPreviewParams{WorkspaceId: fixtures.DunderPublicID})
 	require.NoError(t, err)
 	res, ok := out.(*siteapi.SitePreviewSegmentResult)
 	require.Truef(t, ok, "got %T", out)
@@ -42,21 +35,15 @@ func TestSiteSegmentsPreviewCountsMatchingActiveContacts(t *testing.T) {
 
 func TestSiteSegmentsPreviewEventCondition(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	c := env.SiteActor(t, fixtures.DunderOwnerDwightEmail)
 	ctx := context.Background()
 
-	ct, err := env.DB.Contact.Create().SetWorkspaceID(fixtures.AcmeID).SetEmail("ev-prev@test.dev").Save(ctx)
-	require.NoError(t, err)
-	// Events attach by the stable contact_id (ADR 0002), not the email string.
-	_, err = env.DB.Event.Create().
-		SetWorkspaceID(fixtures.AcmeID).SetContactID(ct.ID).
-		SetAction("signed_up").SetOccurredAt(time.Now()).Save(ctx)
-	require.NoError(t, err)
+	// DunderEventPreview signed up a day ago; no other Dunder contact did.
 
 	def := `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"event:signed_up","operator":"performed","value":"30"}]}`
 	out, err := c.SiteSegmentsPreview(ctx, &siteapi.SitePreviewSegmentInput{
 		Definition: siteapi.NewOptSiteSegmentRuleGroup(testhelper.SiteRuleGroup(t, def)),
-	}, siteapi.SiteSegmentsPreviewParams{WorkspaceId: fixtures.AcmePublicID})
+	}, siteapi.SiteSegmentsPreviewParams{WorkspaceId: fixtures.DunderPublicID})
 	require.NoError(t, err)
 	res, ok := out.(*siteapi.SitePreviewSegmentResult)
 	require.Truef(t, ok, "got %T", out)

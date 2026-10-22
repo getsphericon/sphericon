@@ -120,3 +120,47 @@
   collect_key: 'omck_test_brightpath_collect_key'
   created_at: '{{daysAgo 120}}'
   updated_at: '{{daysAgo 120}}'
+# --- Eligibility and segment scenarios (#555). Each scenario owns a Workspace, so its rows never move another suite's counts. ---
+# Requires confirmed opt-in (ADR 0013): the eligibility matrix with the confirmation gate on.
+- id: 55 # fixture: Lumon
+  name: Lumon
+  public_id: LumonW55
+  collect_key: omck_test_lumon_collect_key
+  require_confirmed_opt_in: true
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+# Eligibility matrix with the confirmation gate off (the default policy).
+- id: 56 # fixture: Tyrell
+  name: Tyrell
+  public_id: TyrelW56
+  collect_key: omck_test_tyrell_collect_key
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+# Segment operator matrix over plain Contact columns.
+- id: 57 # fixture: Oscorp
+  name: Oscorp
+  public_id: OscorW57
+  collect_key: omck_test_oscorp_collect_key
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+# Segment rule groups and Event conditions over a small audience.
+- id: 58 # fixture: Massive
+  name: Massive
+  public_id: MassvW58
+  collect_key: omck_test_massive_collect_key
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+# Segment operators over Custom fields and the Custom field catalogue.
+- id: 59 # fixture: Initrode
+  name: Initrode
+  public_id: InitrW59
+  collect_key: omck_test_initrode_collect_key
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+# Segment preview through the site API; Dwight (DunderOwnerDwight) owns it.
+- id: 60 # fixture: Dunder
+  name: Dunder
+  public_id: DundrW60
+  collect_key: omck_test_dunder_collect_key
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

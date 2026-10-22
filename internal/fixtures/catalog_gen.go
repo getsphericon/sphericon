@@ -341,6 +341,12 @@ const (
 	CustomFieldGlobexKey = "globex_only"
 	// CustomFieldGlobexName is from fixtures/custom_fields.
 	CustomFieldGlobexName = "Globex only"
+	// CustomFieldInitrodeInjectionID is from fixtures/custom_fields.
+	CustomFieldInitrodeInjectionID = 5504
+	// CustomFieldInitrodeInjectionKey is from fixtures/custom_fields.
+	CustomFieldInitrodeInjectionKey = "x' IS NOT NULL AND (SELECT count(*) FROM users)>0 AND 'a"
+	// CustomFieldInitrodeInjectionName is from fixtures/custom_fields.
+	CustomFieldInitrodeInjectionName = "Injection-looking key"
 	// CyberdyneCollectKey is from fixtures/workspaces.
 	CyberdyneCollectKey = "omck_test_cyberdyne_collect_key"
 	// CyberdyneID is from fixtures/workspaces.
@@ -359,6 +365,32 @@ const (
 	DeletedWorkspaceOwnerDanName = "Dan"
 	// DeletedWorkspaceOwnerDanPassword is from fixtures/users.
 	DeletedWorkspaceOwnerDanPassword = "password"
+	// DunderCollectKey is from fixtures/workspaces.
+	DunderCollectKey = "omck_test_dunder_collect_key"
+	// DunderEventPreviewEmail is from fixtures/contacts.
+	DunderEventPreviewEmail = "ev-prev@dunder.test"
+	// DunderEventPreviewID is from fixtures/contacts.
+	DunderEventPreviewID = 5551
+	// DunderID is from fixtures/workspaces.
+	DunderID = 60
+	// DunderName is from fixtures/workspaces.
+	DunderName = "Dunder"
+	// DunderOwnerDwightEmail is from fixtures/users.
+	DunderOwnerDwightEmail = "dwight@dunder.test"
+	// DunderOwnerDwightID is from fixtures/users.
+	DunderOwnerDwightID = 5500
+	// DunderOwnerDwightName is from fixtures/users.
+	DunderOwnerDwightName = "Dwight"
+	// DunderOwnerDwightPassword is from fixtures/users.
+	DunderOwnerDwightPassword = "password"
+	// DunderOwnerMembershipID is from fixtures/memberships.
+	DunderOwnerMembershipID = 5500
+	// DunderPreviewTargetEmail is from fixtures/contacts.
+	DunderPreviewTargetEmail = "preview-target@dunder.test"
+	// DunderPreviewTargetID is from fixtures/contacts.
+	DunderPreviewTargetID = 5550
+	// DunderPublicID is from fixtures/workspaces.
+	DunderPublicID = "DundrW60"
 	// EventAnonymousVisitorAction is from fixtures/events.
 	EventAnonymousVisitorAction = "pricing_viewed"
 	// EventAnonymousVisitorID is from fixtures/events.
@@ -633,6 +665,30 @@ const (
 	InitechPublicID = "InitcWs3"
 	// InitechRitaMembershipID is from fixtures/memberships.
 	InitechRitaMembershipID = 13
+	// InitrodeCollectKey is from fixtures/workspaces.
+	InitrodeCollectKey = "omck_test_initrode_collect_key"
+	// InitrodeID is from fixtures/workspaces.
+	InitrodeID = 59
+	// InitrodeName is from fixtures/workspaces.
+	InitrodeName = "Initrode"
+	// InitrodeOneEmail is from fixtures/contacts.
+	InitrodeOneEmail = "one@initrode.test"
+	// InitrodeOneID is from fixtures/contacts.
+	InitrodeOneID = 5546
+	// InitrodePublicID is from fixtures/workspaces.
+	InitrodePublicID = "InitrW59"
+	// InitrodeQuoteEmail is from fixtures/contacts.
+	InitrodeQuoteEmail = "quote@initrode.test"
+	// InitrodeQuoteID is from fixtures/contacts.
+	InitrodeQuoteID = 5549
+	// InitrodeThreeEmail is from fixtures/contacts.
+	InitrodeThreeEmail = "three@initrode.test"
+	// InitrodeThreeID is from fixtures/contacts.
+	InitrodeThreeID = 5548
+	// InitrodeTwoEmail is from fixtures/contacts.
+	InitrodeTwoEmail = "two@initrode.test"
+	// InitrodeTwoID is from fixtures/contacts.
+	InitrodeTwoID = 5547
 	// IntegrationAcmeArchivedID is from fixtures/integrations.
 	IntegrationAcmeArchivedID = 6
 	// IntegrationAcmeArchivedIngestKey is from fixtures/integrations.
@@ -779,12 +835,72 @@ const (
 	KramericaOwnerNewmanPassword = "password"
 	// KramericaPublicID is from fixtures/workspaces.
 	KramericaPublicID = "KramrWs8"
+	// LumonCollectKey is from fixtures/workspaces.
+	LumonCollectKey = "omck_test_lumon_collect_key"
+	// LumonID is from fixtures/workspaces.
+	LumonID = 55
+	// LumonMatrixCleanEmail is from fixtures/contacts.
+	LumonMatrixCleanEmail = "clean@lumon.test"
+	// LumonMatrixCleanID is from fixtures/contacts.
+	LumonMatrixCleanID = 5520
+	// LumonMatrixConfirmedEmail is from fixtures/contacts.
+	LumonMatrixConfirmedEmail = "confirmed@lumon.test"
+	// LumonMatrixConfirmedID is from fixtures/contacts.
+	LumonMatrixConfirmedID = 5525
+	// LumonMatrixConfirmedSuppressedEmail is from fixtures/contacts.
+	LumonMatrixConfirmedSuppressedEmail = "confirmed-suppressed@lumon.test"
+	// LumonMatrixConfirmedSuppressedID is from fixtures/contacts.
+	LumonMatrixConfirmedSuppressedID = 5526
+	// LumonMatrixMixedCaseEmail is from fixtures/contacts.
+	LumonMatrixMixedCaseEmail = "Mixed.Case@lumon.test"
+	// LumonMatrixMixedCaseID is from fixtures/contacts.
+	LumonMatrixMixedCaseID = 5527
+	// LumonMatrixSuppressedEmail is from fixtures/contacts.
+	LumonMatrixSuppressedEmail = "suppressed@lumon.test"
+	// LumonMatrixSuppressedID is from fixtures/contacts.
+	LumonMatrixSuppressedID = 5521
+	// LumonMatrixUnsubAutomationEmail is from fixtures/contacts.
+	LumonMatrixUnsubAutomationEmail = "unsub-automation@lumon.test"
+	// LumonMatrixUnsubAutomationID is from fixtures/contacts.
+	LumonMatrixUnsubAutomationID = 5524
+	// LumonMatrixUnsubBroadcastsEmail is from fixtures/contacts.
+	LumonMatrixUnsubBroadcastsEmail = "unsub-broadcasts@lumon.test"
+	// LumonMatrixUnsubBroadcastsID is from fixtures/contacts.
+	LumonMatrixUnsubBroadcastsID = 5523
+	// LumonMatrixUnsubEverythingEmail is from fixtures/contacts.
+	LumonMatrixUnsubEverythingEmail = "unsub-everything@lumon.test"
+	// LumonMatrixUnsubEverythingID is from fixtures/contacts.
+	LumonMatrixUnsubEverythingID = 5522
+	// LumonName is from fixtures/workspaces.
+	LumonName = "Lumon"
+	// LumonPublicID is from fixtures/workspaces.
+	LumonPublicID = "LumonW55"
 	// MaryGoogleIdentityID is from fixtures/user_identities.
 	MaryGoogleIdentityID = 1
 	// MaryGoogleIdentityProvider is from fixtures/user_identities.
 	MaryGoogleIdentityProvider = "google"
 	// MaryGoogleIdentitySubject is from fixtures/user_identities.
 	MaryGoogleIdentitySubject = "google-subject-of-mary"
+	// MassiveAnnEmail is from fixtures/contacts.
+	MassiveAnnEmail = "ann@massive.test"
+	// MassiveAnnID is from fixtures/contacts.
+	MassiveAnnID = 5543
+	// MassiveBobEmail is from fixtures/contacts.
+	MassiveBobEmail = "bob@massive.test"
+	// MassiveBobID is from fixtures/contacts.
+	MassiveBobID = 5544
+	// MassiveCaraEmail is from fixtures/contacts.
+	MassiveCaraEmail = "cara@massive.test"
+	// MassiveCaraID is from fixtures/contacts.
+	MassiveCaraID = 5545
+	// MassiveCollectKey is from fixtures/workspaces.
+	MassiveCollectKey = "omck_test_massive_collect_key"
+	// MassiveID is from fixtures/workspaces.
+	MassiveID = 58
+	// MassiveName is from fixtures/workspaces.
+	MassiveName = "Massive"
+	// MassivePublicID is from fixtures/workspaces.
+	MassivePublicID = "MassvW58"
 	// MemberMaryEmail is from fixtures/users.
 	MemberMaryEmail = "mary@acme.test"
 	// MemberMaryID is from fixtures/users.
@@ -793,6 +909,26 @@ const (
 	MemberMaryName = "Mary"
 	// MemberMaryPassword is from fixtures/users.
 	MemberMaryPassword = "password"
+	// OscorpAndyEmail is from fixtures/contacts.
+	OscorpAndyEmail = "andy@oscorp.test"
+	// OscorpAndyID is from fixtures/contacts.
+	OscorpAndyID = 5541
+	// OscorpAnnaEmail is from fixtures/contacts.
+	OscorpAnnaEmail = "anna@oscorp.test"
+	// OscorpAnnaID is from fixtures/contacts.
+	OscorpAnnaID = 5540
+	// OscorpBellaEmail is from fixtures/contacts.
+	OscorpBellaEmail = "bella@oscorp.test"
+	// OscorpBellaID is from fixtures/contacts.
+	OscorpBellaID = 5542
+	// OscorpCollectKey is from fixtures/workspaces.
+	OscorpCollectKey = "omck_test_oscorp_collect_key"
+	// OscorpID is from fixtures/workspaces.
+	OscorpID = 57
+	// OscorpName is from fixtures/workspaces.
+	OscorpName = "Oscorp"
+	// OscorpPublicID is from fixtures/workspaces.
+	OscorpPublicID = "OscorW57"
 	// OutboundMessageBystanderDestination is from fixtures/outbound_messages.
 	OutboundMessageBystanderDestination = "ben@initech.test"
 	// OutboundMessageBystanderID is from fixtures/outbound_messages.
@@ -1191,6 +1327,38 @@ const (
 	SuppressionLiftedDestination = "lifted@codebasics.dev"
 	// SuppressionLiftedID is from fixtures/suppressions.
 	SuppressionLiftedID = 105
+	// SuppressionLumonConfirmedSuppressedDestination is from fixtures/suppressions.
+	SuppressionLumonConfirmedSuppressedDestination = "confirmed-suppressed@lumon.test"
+	// SuppressionLumonConfirmedSuppressedID is from fixtures/suppressions.
+	SuppressionLumonConfirmedSuppressedID = 5504
+	// SuppressionLumonMixedCaseDestination is from fixtures/suppressions.
+	SuppressionLumonMixedCaseDestination = "mixed.case@lumon.test"
+	// SuppressionLumonMixedCaseID is from fixtures/suppressions.
+	SuppressionLumonMixedCaseID = 5505
+	// SuppressionLumonSuppressedDestination is from fixtures/suppressions.
+	SuppressionLumonSuppressedDestination = "suppressed@lumon.test"
+	// SuppressionLumonSuppressedID is from fixtures/suppressions.
+	SuppressionLumonSuppressedID = 5503
+	// SuppressionTyrellConfirmedSuppressedDestination is from fixtures/suppressions.
+	SuppressionTyrellConfirmedSuppressedDestination = "confirmed-suppressed@tyrell.test"
+	// SuppressionTyrellConfirmedSuppressedID is from fixtures/suppressions.
+	SuppressionTyrellConfirmedSuppressedID = 5501
+	// SuppressionTyrellMixedCaseDestination is from fixtures/suppressions.
+	SuppressionTyrellMixedCaseDestination = "mixed.case@tyrell.test"
+	// SuppressionTyrellMixedCaseID is from fixtures/suppressions.
+	SuppressionTyrellMixedCaseID = 5502
+	// SuppressionTyrellNoContactDestination is from fixtures/suppressions.
+	SuppressionTyrellNoContactDestination = "nocontact@tyrell.test"
+	// SuppressionTyrellNoContactID is from fixtures/suppressions.
+	SuppressionTyrellNoContactID = 5506
+	// SuppressionTyrellSuppressedDestination is from fixtures/suppressions.
+	SuppressionTyrellSuppressedDestination = "suppressed@tyrell.test"
+	// SuppressionTyrellSuppressedID is from fixtures/suppressions.
+	SuppressionTyrellSuppressedID = 5500
+	// SuppressionTyrellTransactionalDestination is from fixtures/suppressions.
+	SuppressionTyrellTransactionalDestination = "txn-both@tyrell.test"
+	// SuppressionTyrellTransactionalID is from fixtures/suppressions.
+	SuppressionTyrellTransactionalID = 5507
 	// TagGlobexID is from fixtures/tags.
 	TagGlobexID = 900
 	// TagGlobexName is from fixtures/tags.
@@ -1235,6 +1403,46 @@ const (
 	TokenGlobexName = "Globex token"
 	// TokenGlobexPrefix is from fixtures/api_tokens.
 	TokenGlobexPrefix = "globextok001"
+	// TyrellCollectKey is from fixtures/workspaces.
+	TyrellCollectKey = "omck_test_tyrell_collect_key"
+	// TyrellID is from fixtures/workspaces.
+	TyrellID = 56
+	// TyrellMatrixCleanEmail is from fixtures/contacts.
+	TyrellMatrixCleanEmail = "clean@tyrell.test"
+	// TyrellMatrixCleanID is from fixtures/contacts.
+	TyrellMatrixCleanID = 5510
+	// TyrellMatrixConfirmedEmail is from fixtures/contacts.
+	TyrellMatrixConfirmedEmail = "confirmed@tyrell.test"
+	// TyrellMatrixConfirmedID is from fixtures/contacts.
+	TyrellMatrixConfirmedID = 5515
+	// TyrellMatrixConfirmedSuppressedEmail is from fixtures/contacts.
+	TyrellMatrixConfirmedSuppressedEmail = "confirmed-suppressed@tyrell.test"
+	// TyrellMatrixConfirmedSuppressedID is from fixtures/contacts.
+	TyrellMatrixConfirmedSuppressedID = 5516
+	// TyrellMatrixMixedCaseEmail is from fixtures/contacts.
+	TyrellMatrixMixedCaseEmail = "Mixed.Case@tyrell.test"
+	// TyrellMatrixMixedCaseID is from fixtures/contacts.
+	TyrellMatrixMixedCaseID = 5517
+	// TyrellMatrixSuppressedEmail is from fixtures/contacts.
+	TyrellMatrixSuppressedEmail = "suppressed@tyrell.test"
+	// TyrellMatrixSuppressedID is from fixtures/contacts.
+	TyrellMatrixSuppressedID = 5511
+	// TyrellMatrixUnsubAutomationEmail is from fixtures/contacts.
+	TyrellMatrixUnsubAutomationEmail = "unsub-automation@tyrell.test"
+	// TyrellMatrixUnsubAutomationID is from fixtures/contacts.
+	TyrellMatrixUnsubAutomationID = 5514
+	// TyrellMatrixUnsubBroadcastsEmail is from fixtures/contacts.
+	TyrellMatrixUnsubBroadcastsEmail = "unsub-broadcasts@tyrell.test"
+	// TyrellMatrixUnsubBroadcastsID is from fixtures/contacts.
+	TyrellMatrixUnsubBroadcastsID = 5513
+	// TyrellMatrixUnsubEverythingEmail is from fixtures/contacts.
+	TyrellMatrixUnsubEverythingEmail = "unsub-everything@tyrell.test"
+	// TyrellMatrixUnsubEverythingID is from fixtures/contacts.
+	TyrellMatrixUnsubEverythingID = 5512
+	// TyrellName is from fixtures/workspaces.
+	TyrellName = "Tyrell"
+	// TyrellPublicID is from fixtures/workspaces.
+	TyrellPublicID = "TyrelW56"
 	// UmbrellaCollectKey is from fixtures/workspaces.
 	UmbrellaCollectKey = "omck_test_umbrella_collect_key"
 	// UmbrellaID is from fixtures/workspaces.
@@ -1273,6 +1481,10 @@ const (
 	UnsubscribeGlobexDestination = "pat@globex.test"
 	// UnsubscribeGlobexID is from fixtures/unsubscribes.
 	UnsubscribeGlobexID = 900
+	// UnsubscribeTyrellTransactionalDestination is from fixtures/unsubscribes.
+	UnsubscribeTyrellTransactionalDestination = "txn-both@tyrell.test"
+	// UnsubscribeTyrellTransactionalID is from fixtures/unsubscribes.
+	UnsubscribeTyrellTransactionalID = 5506
 	// VandelayArtMembershipID is from fixtures/memberships.
 	VandelayArtMembershipID = 14
 	// VandelayCollectKey is from fixtures/workspaces.
