@@ -79,6 +79,7 @@ func newRoot(d deps) *cli.Command {
 			staffCommand(d),
 			serviceCredentialCommand(d),
 			presetCommand(),
+			healthcheckCommand(d),
 		},
 	}
 }
