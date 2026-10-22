@@ -1,4 +1,4 @@
-import { Button, Group, Menu, Stack } from '@mantine/core'
+import { Button, Group, Menu, Paper, Stack } from '@mantine/core'
 import { EmailEditor } from '@react-email/editor'
 import type { EmailEditorRef } from '@react-email/editor'
 import { useRef, useState } from 'react'
@@ -26,8 +26,18 @@ export default function VisualEditor({ initial, onChange, variables, theme }: Vi
   const editor = useRef<EmailEditorRef>(null)
   const [ready, setReady] = useState(false)
 
+  // Opening the menu moves the editor's selection to the start of the message, so the caret is
+  // remembered while the editor has focus and the tag goes there.
+  const caret = useRef<number | null>(null)
+
   const insertVariable = (name: string) => {
-    editor.current?.editor?.chain().focus().insertContent(`{{ ${name} }}`).run()
+    const current = editor.current?.editor
+    const tag = `{{ ${name} }}`
+    if (caret.current === null) {
+      current?.chain().focus().insertContent(tag).run()
+    } else {
+      current?.chain().insertContentAt(caret.current, tag).focus().run()
+    }
   }
 
   return (
@@ -48,16 +58,37 @@ export default function VisualEditor({ initial, onChange, variables, theme }: Vi
           </Menu.Dropdown>
         </Menu>
       </Group>
-      <EmailEditor
-        ref={editor}
-        theme={theme}
-        {...(initial && { content: initial })}
-        placeholder={t(($) => $.messageEditor.placeholder)}
-        onReady={() => setReady(true)}
-        // Through its JSON text: the editor's theme leaves `undefined` values in the document, which
-        // are not JSON and which the API's document object cannot carry.
-        onUpdate={(current) => onChange(z.decode(docCodec, JSON.stringify(current.getJSON())))}
-      />
+      {/* The editor draws only the message, which is white in the basic theme, so the page gives it a
+          frame: a white sheet with a minimum height, dark default text (the editor inherits the app's
+          light text in the dark scheme), and a click anywhere on it puts the caret at the end. */}
+      <Paper
+        withBorder
+        p="md"
+        mih={320}
+        bg="white"
+        c="black"
+        onClick={() => {
+          editor.current?.editor?.commands.focus('end')
+        }}
+      >
+        <EmailEditor
+          ref={editor}
+          theme={theme}
+          {...(initial && { content: initial })}
+          placeholder={t(($) => $.messageEditor.placeholder)}
+          onReady={(current) => {
+            current.editor?.on('selectionUpdate', ({ editor: tiptap }) => {
+              if (tiptap.isFocused) {
+                caret.current = tiptap.state.selection.to
+              }
+            })
+            setReady(true)
+          }}
+          // Through its JSON text: the editor's theme leaves `undefined` values in the document, which
+          // are not JSON and which the API's document object cannot carry.
+          onUpdate={(current) => onChange(z.decode(docCodec, JSON.stringify(current.getJSON())))}
+        />
+      </Paper>
     </Stack>
   )
 }

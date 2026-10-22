@@ -600,7 +600,7 @@ export default interface Resources {
     "messageEditor": {
       "insertVariable": "Insert variable",
       "label": "Message",
-      "placeholder": "Write your message",
+      "placeholder": "Write your message, or type / to add a heading, list, button or image",
       "sourceHint": "This message was written as HTML, so it opens as source. Saving keeps it as HTML.",
       "sourceLabel": "Body"
     },
