@@ -4890,6 +4890,14 @@
   workspace_id: 1
   occurred_at: '{{daysAgo 1}}'
   created_at: '{{daysAgo 1}}'
+# Carries the pricing url too, but weighs more than a Rule is shown (events.RuleProperties).
+- id: 9105 # fixture: EventRuleUrlOversized
+  contact_id: 100
+  action: rule_url
+  properties: '{"url":"https://x.test/pricing","pad":"{{repeat "x" 33000}}"}'
+  workspace_id: 1
+  occurred_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
 
 # The export of ContactExportHeavy (5703) streams 1200 Events across the keyset pages.
 # {{range $i := seq 58000 59199}}
