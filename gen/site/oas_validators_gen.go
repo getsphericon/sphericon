@@ -7633,6 +7633,8 @@ func (s *SiteVerifyEmailResultHeaders) Validate() error {
 
 func (s SiteWebhookDisabledReason) Validate() error {
 	switch s {
+	case "owner":
+		return nil
 	case "gone":
 		return nil
 	case "persistent_failure":

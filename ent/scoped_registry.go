@@ -1709,7 +1709,9 @@ func ScopedEntities() []ScopedEntity {
 				if !reflect.ValueOf(src.EventTypes).IsZero() {
 					b.SetEventTypes(src.EventTypes)
 				}
-				b.SetEnabled(src.Enabled)
+				if src.DisabledAt != nil {
+					b.SetDisabledAt(*src.DisabledAt)
+				}
 				if src.ConsecutiveFailures != nil {
 					b.SetConsecutiveFailures(*src.ConsecutiveFailures)
 				}

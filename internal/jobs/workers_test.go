@@ -378,7 +378,7 @@ func TestDeliverWebhookWorkerRemembersFailures(t *testing.T) {
 	assert.True(t, clock.Equal(*e.LastFailureAt))
 	assert.Equal(t, webhookendpoint.LastErrorKindHTTPStatus, *e.LastErrorKind)
 	assert.Equal(t, http.StatusServiceUnavailable, *e.LastErrorStatus)
-	assert.True(t, e.Enabled, "a failure alone does not disable (that is the disable rule's job)")
+	assert.Nil(t, e.DisabledAt, "a failure alone does not disable (that is the disable rule's job)")
 
 	// A later failure of another kind extends the run, which keeps its start.
 	began := clock
@@ -469,7 +469,7 @@ func TestDeliverWebhookWorkerDisablesOnGone(t *testing.T) {
 	require.Error(t, h.deliver(), "river still sees the failed delivery")
 
 	e := h.endpoint()
-	assert.False(t, e.Enabled)
+	assert.NotNil(t, e.DisabledAt)
 	require.NotNil(t, e.DisabledReason)
 	assert.Equal(t, webhookendpoint.DisabledReasonGone, *e.DisabledReason)
 
@@ -489,7 +489,7 @@ func TestDeliverWebhookWorkerDisablesOnGone(t *testing.T) {
 	})
 	require.Len(t, entries, 1)
 	assert.Equal(t, events.ActorSystem, entries[0].Actor.Kind)
-	assert.Contains(t, entries[0].Diff, "enabled")
+	assert.Contains(t, entries[0].Diff, "disabled_at")
 
 	// A delivery that was already enqueued finds the endpoint off: no request, no second mail.
 	before := len(h.rcv.received())

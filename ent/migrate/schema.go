@@ -1694,13 +1694,13 @@ var (
 		{Name: "url", Type: field.TypeString},
 		{Name: "secret_encrypted", Type: field.TypeString},
 		{Name: "event_types", Type: field.TypeJSON, Nullable: true},
-		{Name: "enabled", Type: field.TypeBool, Default: true},
+		{Name: "disabled_at", Type: field.TypeTime, Nullable: true},
 		{Name: "consecutive_failures", Type: field.TypeInt, Nullable: true},
 		{Name: "failing_since", Type: field.TypeTime, Nullable: true},
 		{Name: "last_error_kind", Type: field.TypeEnum, Nullable: true, Enums: []string{"timeout", "blocked_address", "http_status", "network"}},
 		{Name: "last_error_status", Type: field.TypeInt, Nullable: true},
 		{Name: "last_failure_at", Type: field.TypeTime, Nullable: true},
-		{Name: "disabled_reason", Type: field.TypeEnum, Nullable: true, Enums: []string{"gone", "persistent_failure"}},
+		{Name: "disabled_reason", Type: field.TypeEnum, Nullable: true, Enums: []string{"owner", "gone", "persistent_failure"}},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
 	// WebhookEndpointsTable holds the schema information for the "webhook_endpoints" table.
@@ -1718,7 +1718,7 @@ var (
 		},
 		Indexes: []*schema.Index{
 			{
-				Name:    "webhookendpoint_workspace_id_enabled",
+				Name:    "webhookendpoint_workspace_id_disabled_at",
 				Unique:  false,
 				Columns: []*schema.Column{WebhookEndpointsColumns[13], WebhookEndpointsColumns[6]},
 			},
@@ -2048,7 +2048,8 @@ func init() {
 		Table: "webhook_endpoints",
 	}
 	WebhookEndpointsTable.Annotation.Checks = map[string]string{
-		"webhook_endpoints_disabled_reason_check": "disabled_reason IN ('gone', 'persistent_failure')",
+		"webhook_endpoints_disabled_check":        "(disabled_at IS NULL) = (disabled_reason IS NULL)",
+		"webhook_endpoints_disabled_reason_check": "disabled_reason IN ('owner', 'gone', 'persistent_failure')",
 		"webhook_endpoints_last_error_kind_check": "last_error_kind IN ('timeout', 'blocked_address', 'http_status', 'network')",
 	}
 	WorkspacesTable.Annotation = &entsql.Annotation{

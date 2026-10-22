@@ -25465,15 +25465,15 @@ func (x *WebhookEndpointScopedCreate) SetEventTypes(v []string) *WebhookEndpoint
 	return x
 }
 
-// SetEnabled sets the "enabled" field.
-func (x *WebhookEndpointScopedCreate) SetEnabled(v bool) *WebhookEndpointScopedCreate {
-	x.b.SetEnabled(v)
+// SetDisabledAt sets the "disabled_at" field.
+func (x *WebhookEndpointScopedCreate) SetDisabledAt(v time.Time) *WebhookEndpointScopedCreate {
+	x.b.SetDisabledAt(v)
 	return x
 }
 
-// SetNillableEnabled sets the "enabled" field if the given value is not nil.
-func (x *WebhookEndpointScopedCreate) SetNillableEnabled(v *bool) *WebhookEndpointScopedCreate {
-	x.b.SetNillableEnabled(v)
+// SetNillableDisabledAt sets the "disabled_at" field if the given value is not nil.
+func (x *WebhookEndpointScopedCreate) SetNillableDisabledAt(v *time.Time) *WebhookEndpointScopedCreate {
+	x.b.SetNillableDisabledAt(v)
 	return x
 }
 
@@ -25700,15 +25700,21 @@ func (u *WebhookEndpointScopedUpsert) ClearEventTypes() *WebhookEndpointScopedUp
 	return u
 }
 
-// SetEnabled sets the "enabled" field.
-func (u *WebhookEndpointScopedUpsert) SetEnabled(v bool) *WebhookEndpointScopedUpsert {
-	u.u.Set(webhookendpoint.FieldEnabled, v)
+// SetDisabledAt sets the "disabled_at" field.
+func (u *WebhookEndpointScopedUpsert) SetDisabledAt(v time.Time) *WebhookEndpointScopedUpsert {
+	u.u.Set(webhookendpoint.FieldDisabledAt, v)
 	return u
 }
 
-// UpdateEnabled sets the "enabled" field to the value that was provided on create.
-func (u *WebhookEndpointScopedUpsert) UpdateEnabled() *WebhookEndpointScopedUpsert {
-	u.u.SetExcluded(webhookendpoint.FieldEnabled)
+// UpdateDisabledAt sets the "disabled_at" field to the value that was provided on create.
+func (u *WebhookEndpointScopedUpsert) UpdateDisabledAt() *WebhookEndpointScopedUpsert {
+	u.u.SetExcluded(webhookendpoint.FieldDisabledAt)
+	return u
+}
+
+// ClearDisabledAt clears the value of the "disabled_at" field.
+func (u *WebhookEndpointScopedUpsert) ClearDisabledAt() *WebhookEndpointScopedUpsert {
+	u.u.SetNull(webhookendpoint.FieldDisabledAt)
 	return u
 }
 
@@ -26058,15 +26064,21 @@ func (x *WebhookEndpointScopedUpdateOne) ClearEventTypes() *WebhookEndpointScope
 	return x
 }
 
-// SetEnabled sets the "enabled" field.
-func (x *WebhookEndpointScopedUpdateOne) SetEnabled(v bool) *WebhookEndpointScopedUpdateOne {
-	x.b.SetEnabled(v)
+// SetDisabledAt sets the "disabled_at" field.
+func (x *WebhookEndpointScopedUpdateOne) SetDisabledAt(v time.Time) *WebhookEndpointScopedUpdateOne {
+	x.b.SetDisabledAt(v)
 	return x
 }
 
-// SetNillableEnabled sets the "enabled" field if the given value is not nil.
-func (x *WebhookEndpointScopedUpdateOne) SetNillableEnabled(v *bool) *WebhookEndpointScopedUpdateOne {
-	x.b.SetNillableEnabled(v)
+// SetNillableDisabledAt sets the "disabled_at" field if the given value is not nil.
+func (x *WebhookEndpointScopedUpdateOne) SetNillableDisabledAt(v *time.Time) *WebhookEndpointScopedUpdateOne {
+	x.b.SetNillableDisabledAt(v)
+	return x
+}
+
+// ClearDisabledAt clears the value of the "disabled_at" field.
+func (x *WebhookEndpointScopedUpdateOne) ClearDisabledAt() *WebhookEndpointScopedUpdateOne {
+	x.b.ClearDisabledAt()
 	return x
 }
 
@@ -26310,15 +26322,21 @@ func (x *WebhookEndpointScopedUpdate) ClearEventTypes() *WebhookEndpointScopedUp
 	return x
 }
 
-// SetEnabled sets the "enabled" field.
-func (x *WebhookEndpointScopedUpdate) SetEnabled(v bool) *WebhookEndpointScopedUpdate {
-	x.b.SetEnabled(v)
+// SetDisabledAt sets the "disabled_at" field.
+func (x *WebhookEndpointScopedUpdate) SetDisabledAt(v time.Time) *WebhookEndpointScopedUpdate {
+	x.b.SetDisabledAt(v)
 	return x
 }
 
-// SetNillableEnabled sets the "enabled" field if the given value is not nil.
-func (x *WebhookEndpointScopedUpdate) SetNillableEnabled(v *bool) *WebhookEndpointScopedUpdate {
-	x.b.SetNillableEnabled(v)
+// SetNillableDisabledAt sets the "disabled_at" field if the given value is not nil.
+func (x *WebhookEndpointScopedUpdate) SetNillableDisabledAt(v *time.Time) *WebhookEndpointScopedUpdate {
+	x.b.SetNillableDisabledAt(v)
+	return x
+}
+
+// ClearDisabledAt clears the value of the "disabled_at" field.
+func (x *WebhookEndpointScopedUpdate) ClearDisabledAt() *WebhookEndpointScopedUpdate {
+	x.b.ClearDisabledAt()
 	return x
 }
 

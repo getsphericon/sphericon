@@ -4083,16 +4083,20 @@ export type SiteVerifyEmailResult = {
 };
 
 /**
- * Why an endpoint turned itself off. A closed set: `gone` (the receiver answered 410
- * Gone) and `persistent_failure` (deliveries failed for longer than the window).
- * Absent for an endpoint an owner disabled, and while the endpoint is enabled.
+ * Why an endpoint is off. A closed set: `owner` (a member turned it off), `gone` (the
+ * receiver answered 410 Gone) and `persistent_failure` (deliveries failed for longer
+ * than the window). Absent while the endpoint is enabled.
  */
-export const SiteWebhookDisabledReason = { GONE: 'gone', PERSISTENT_FAILURE: 'persistent_failure' } as const;
+export const SiteWebhookDisabledReason = {
+  OWNER: 'owner',
+  GONE: 'gone',
+  PERSISTENT_FAILURE: 'persistent_failure'
+} as const;
 
 /**
- * Why an endpoint turned itself off. A closed set: `gone` (the receiver answered 410
- * Gone) and `persistent_failure` (deliveries failed for longer than the window).
- * Absent for an endpoint an owner disabled, and while the endpoint is enabled.
+ * Why an endpoint is off. A closed set: `owner` (a member turned it off), `gone` (the
+ * receiver answered 410 Gone) and `persistent_failure` (deliveries failed for longer
+ * than the window). Absent while the endpoint is enabled.
  */
 export type SiteWebhookDisabledReason = typeof SiteWebhookDisabledReason[keyof typeof SiteWebhookDisabledReason];
 
@@ -4117,11 +4121,15 @@ export type SiteWebhookEndpointResource = {
    */
   eventTypes: Array<string>;
   /**
-   * Whether the endpoint receives deliveries
+   * Whether the endpoint receives deliveries: true while it has no `disabledAt`
    */
   enabled: boolean;
   /**
-   * Why the endpoint turned itself off; absent when an owner disabled it or it is enabled
+   * When the endpoint was turned off; absent while it is enabled
+   */
+  disabledAt?: Timestamp;
+  /**
+   * Why the endpoint is off; present exactly when `disabledAt` is
    */
   disabledReason?: SiteWebhookDisabledReason;
   /**

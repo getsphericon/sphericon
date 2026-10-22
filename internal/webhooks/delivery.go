@@ -68,7 +68,7 @@ func (m *Module) RecordDelivery(ctx context.Context, s *ent.Scoped, e *ent.Webho
 		return err
 	}
 	if reason, ok := disableReason(updated, failure, now); ok {
-		return m.disable(ctx, s, updated, reason)
+		return m.disable(ctx, s, updated, reason, now)
 	}
 	return nil
 }
@@ -87,11 +87,11 @@ func disableReason(e *ent.WebhookEndpoint, failure *webhook.DeliveryError, now t
 
 // disable turns the endpoint off as the system actor, so the Audit log shows it, and mails
 // the Workspace's owners once: the update only matches while the endpoint is still
-// enabled, so a concurrent worker or a retry that lost the race sends nothing.
-func (m *Module) disable(ctx context.Context, s *ent.Scoped, e *ent.WebhookEndpoint, reason webhookendpoint.DisabledReason) error {
+// enabled (disabled_at unset), so a concurrent worker or a retry that lost the race sends nothing.
+func (m *Module) disable(ctx context.Context, s *ent.Scoped, e *ent.WebhookEndpoint, reason webhookendpoint.DisabledReason, now time.Time) error {
 	sys := m.bus.Act(s, events.Actor{Kind: events.ActorSystem})
-	err := sys.WebhookEndpoint().UpdateOneID(e.ID).Where(webhookendpoint.Enabled(true)).
-		SetEnabled(false).SetDisabledReason(reason).Exec(ctx)
+	err := sys.WebhookEndpoint().UpdateOneID(e.ID).Where(webhookendpoint.DisabledAtIsNil()).
+		SetDisabledAt(now).SetDisabledReason(reason).Exec(ctx)
 	if ent.IsNotFound(err) {
 		return nil // already disabled
 	}

@@ -526,7 +526,8 @@ func (c *ConverterImpl) WebhookEndpointToResource(source *ent.WebhookEndpoint) s
 		siteapiSiteWebhookEndpointResource.ID = site.EntityId((*source).ID)
 		siteapiSiteWebhookEndpointResource.URL = (*source).URL
 		siteapiSiteWebhookEndpointResource.EventTypes = eventTypes((*source).EventTypes)
-		siteapiSiteWebhookEndpointResource.Enabled = (*source).Enabled
+		siteapiSiteWebhookEndpointResource.Enabled = webhookEnabled((*source))
+		siteapiSiteWebhookEndpointResource.DisabledAt = optTimestamp((*source).DisabledAt)
 		siteapiSiteWebhookEndpointResource.DisabledReason = optWebhookDisabledReason((*source).DisabledReason)
 		siteapiSiteWebhookEndpointResource.Failure = webhookFailure((*source))
 		siteapiSiteWebhookEndpointResource.CreatedAt = timestamp((*source).CreatedAt)

@@ -1229,6 +1229,7 @@
       "disable": "Disable",
       "disabled": "Disabled",
       "disabledGone": "Receiver answered 410 Gone",
+      "disabledOwner": "Turned off by a member",
       "disabledPersistentFailure": "Turned off after failing for too long",
       "empty": "No webhook endpoints yet",
       "enable": "Enable",

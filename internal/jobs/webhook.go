@@ -49,7 +49,7 @@ func (w *DeliverWebhookWorker) Work(ctx context.Context, job *river.Job[DeliverW
 	if err != nil {
 		return err
 	}
-	if !e.Enabled {
+	if e.DisabledAt != nil {
 		return nil // disabled since enqueue
 	}
 
@@ -86,7 +86,7 @@ func (w *DeliverWebhookWorker) NextRetry(job *river.Job[DeliverWebhookArgs]) tim
 // subscriber, a raw-client allowlist entry).
 func (c *Client) Dispatch(ctx context.Context, s *ent.Scoped, eventName, deliveryID string, body []byte) error {
 	endpoints, err := s.WebhookEndpoint().Query().
-		Where(webhookendpoint.Enabled(true)).
+		Where(webhookendpoint.DisabledAtIsNil()).
 		All(ctx)
 	if err != nil {
 		return err

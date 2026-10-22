@@ -18551,13 +18551,14 @@ func (s *SiteVerifyEmailResultHeaders) SetResponse(val SiteVerifyEmailResult) {
 
 func (*SiteVerifyEmailResultHeaders) siteAuthVerifyEmailRes() {}
 
-// Why an endpoint turned itself off. A closed set: `gone` (the receiver answered 410 Gone) and
-// `persistent_failure` (deliveries failed for longer than the window). Absent for an endpoint an owner
-// disabled, and while the endpoint is enabled.
+// Why an endpoint is off. A closed set: `owner` (a member turned it off), `gone` (the receiver
+// answered 410 Gone) and `persistent_failure` (deliveries failed for longer than the window). Absent
+// while the endpoint is enabled.
 // Ref: #/components/schemas/SiteWebhookDisabledReason
 type SiteWebhookDisabledReason string
 
 const (
+	SiteWebhookDisabledReasonOwner             SiteWebhookDisabledReason = "owner"
 	SiteWebhookDisabledReasonGone              SiteWebhookDisabledReason = "gone"
 	SiteWebhookDisabledReasonPersistentFailure SiteWebhookDisabledReason = "persistent_failure"
 )
@@ -18565,6 +18566,7 @@ const (
 // AllValues returns all SiteWebhookDisabledReason values.
 func (SiteWebhookDisabledReason) AllValues() []SiteWebhookDisabledReason {
 	return []SiteWebhookDisabledReason{
+		SiteWebhookDisabledReasonOwner,
 		SiteWebhookDisabledReasonGone,
 		SiteWebhookDisabledReasonPersistentFailure,
 	}
@@ -18573,6 +18575,8 @@ func (SiteWebhookDisabledReason) AllValues() []SiteWebhookDisabledReason {
 // MarshalText implements encoding.TextMarshaler.
 func (s SiteWebhookDisabledReason) MarshalText() ([]byte, error) {
 	switch s {
+	case SiteWebhookDisabledReasonOwner:
+		return []byte(s), nil
 	case SiteWebhookDisabledReasonGone:
 		return []byte(s), nil
 	case SiteWebhookDisabledReasonPersistentFailure:
@@ -18585,6 +18589,9 @@ func (s SiteWebhookDisabledReason) MarshalText() ([]byte, error) {
 // UnmarshalText implements encoding.TextUnmarshaler.
 func (s *SiteWebhookDisabledReason) UnmarshalText(data []byte) error {
 	switch SiteWebhookDisabledReason(data) {
+	case SiteWebhookDisabledReasonOwner:
+		*s = SiteWebhookDisabledReasonOwner
+		return nil
 	case SiteWebhookDisabledReasonGone:
 		*s = SiteWebhookDisabledReasonGone
 		return nil
@@ -18608,9 +18615,11 @@ type SiteWebhookEndpointResource struct {
 	Secret string `json:"secret"`
 	// Event names this endpoint receives; empty means all events.
 	EventTypes []string `json:"eventTypes"`
-	// Whether the endpoint receives deliveries.
+	// Whether the endpoint receives deliveries: true while it has no `disabledAt`.
 	Enabled bool `json:"enabled"`
-	// Why the endpoint turned itself off; absent when an owner disabled it or it is enabled.
+	// When the endpoint was turned off; absent while it is enabled.
+	DisabledAt OptTimestamp `json:"disabledAt"`
+	// Why the endpoint is off; present exactly when `disabledAt` is.
 	DisabledReason OptSiteWebhookDisabledReason `json:"disabledReason"`
 	// Present while deliveries are failing; cleared by the next 2xx.
 	Failure OptSiteWebhookFailure `json:"failure"`
@@ -18643,6 +18652,11 @@ func (s *SiteWebhookEndpointResource) GetEventTypes() []string {
 // GetEnabled returns the value of Enabled.
 func (s *SiteWebhookEndpointResource) GetEnabled() bool {
 	return s.Enabled
+}
+
+// GetDisabledAt returns the value of DisabledAt.
+func (s *SiteWebhookEndpointResource) GetDisabledAt() OptTimestamp {
+	return s.DisabledAt
 }
 
 // GetDisabledReason returns the value of DisabledReason.
@@ -18688,6 +18702,11 @@ func (s *SiteWebhookEndpointResource) SetEventTypes(val []string) {
 // SetEnabled sets the value of Enabled.
 func (s *SiteWebhookEndpointResource) SetEnabled(val bool) {
 	s.Enabled = val
+}
+
+// SetDisabledAt sets the value of DisabledAt.
+func (s *SiteWebhookEndpointResource) SetDisabledAt(val OptTimestamp) {
+	s.DisabledAt = val
 }
 
 // SetDisabledReason sets the value of DisabledReason.

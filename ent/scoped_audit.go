@@ -855,7 +855,7 @@ func (e *WebhookEndpoint) auditFields() map[string]any {
 		"url":                  e.URL,
 		"secret_encrypted":     e.SecretEncrypted,
 		"event_types":          e.EventTypes,
-		"enabled":              e.Enabled,
+		"disabled_at":          derefAudit(e.DisabledAt),
 		"consecutive_failures": derefAudit(e.ConsecutiveFailures),
 		"failing_since":        derefAudit(e.FailingSince),
 		"last_error_kind":      derefAudit(e.LastErrorKind),

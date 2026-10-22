@@ -41546,7 +41546,7 @@ type WebhookEndpointMutation struct {
 	secret_encrypted        *string
 	event_types             *[]string
 	appendevent_types       []string
-	enabled                 *bool
+	disabled_at             *time.Time
 	consecutive_failures    *int
 	addconsecutive_failures *int
 	failing_since           *time.Time
@@ -41912,40 +41912,53 @@ func (m *WebhookEndpointMutation) ResetEventTypes() {
 	delete(m.clearedFields, webhookendpoint.FieldEventTypes)
 }
 
-// SetEnabled sets the "enabled" field.
-func (m *WebhookEndpointMutation) SetEnabled(b bool) {
-	m.enabled = &b
+// SetDisabledAt sets the "disabled_at" field.
+func (m *WebhookEndpointMutation) SetDisabledAt(t time.Time) {
+	m.disabled_at = &t
 }
 
-// Enabled returns the value of the "enabled" field in the mutation.
-func (m *WebhookEndpointMutation) Enabled() (r bool, exists bool) {
-	v := m.enabled
+// DisabledAt returns the value of the "disabled_at" field in the mutation.
+func (m *WebhookEndpointMutation) DisabledAt() (r time.Time, exists bool) {
+	v := m.disabled_at
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldEnabled returns the old "enabled" field's value of the WebhookEndpoint entity.
+// OldDisabledAt returns the old "disabled_at" field's value of the WebhookEndpoint entity.
 // If the WebhookEndpoint object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *WebhookEndpointMutation) OldEnabled(ctx context.Context) (v bool, err error) {
+func (m *WebhookEndpointMutation) OldDisabledAt(ctx context.Context) (v *time.Time, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldEnabled is only allowed on UpdateOne operations")
+		return v, errors.New("OldDisabledAt is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldEnabled requires an ID field in the mutation")
+		return v, errors.New("OldDisabledAt requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldEnabled: %w", err)
+		return v, fmt.Errorf("querying old value for OldDisabledAt: %w", err)
 	}
-	return oldValue.Enabled, nil
+	return oldValue.DisabledAt, nil
 }
 
-// ResetEnabled resets all changes to the "enabled" field.
-func (m *WebhookEndpointMutation) ResetEnabled() {
-	m.enabled = nil
+// ClearDisabledAt clears the value of the "disabled_at" field.
+func (m *WebhookEndpointMutation) ClearDisabledAt() {
+	m.disabled_at = nil
+	m.clearedFields[webhookendpoint.FieldDisabledAt] = struct{}{}
+}
+
+// DisabledAtCleared returns if the "disabled_at" field was cleared in this mutation.
+func (m *WebhookEndpointMutation) DisabledAtCleared() bool {
+	_, ok := m.clearedFields[webhookendpoint.FieldDisabledAt]
+	return ok
+}
+
+// ResetDisabledAt resets all changes to the "disabled_at" field.
+func (m *WebhookEndpointMutation) ResetDisabledAt() {
+	m.disabled_at = nil
+	delete(m.clearedFields, webhookendpoint.FieldDisabledAt)
 }
 
 // SetConsecutiveFailures sets the "consecutive_failures" field.
@@ -42364,8 +42377,8 @@ func (m *WebhookEndpointMutation) Fields() []string {
 	if m.event_types != nil {
 		fields = append(fields, webhookendpoint.FieldEventTypes)
 	}
-	if m.enabled != nil {
-		fields = append(fields, webhookendpoint.FieldEnabled)
+	if m.disabled_at != nil {
+		fields = append(fields, webhookendpoint.FieldDisabledAt)
 	}
 	if m.consecutive_failures != nil {
 		fields = append(fields, webhookendpoint.FieldConsecutiveFailures)
@@ -42405,8 +42418,8 @@ func (m *WebhookEndpointMutation) Field(name string) (ent.Value, bool) {
 		return m.SecretEncrypted()
 	case webhookendpoint.FieldEventTypes:
 		return m.EventTypes()
-	case webhookendpoint.FieldEnabled:
-		return m.Enabled()
+	case webhookendpoint.FieldDisabledAt:
+		return m.DisabledAt()
 	case webhookendpoint.FieldConsecutiveFailures:
 		return m.ConsecutiveFailures()
 	case webhookendpoint.FieldFailingSince:
@@ -42440,8 +42453,8 @@ func (m *WebhookEndpointMutation) OldField(ctx context.Context, name string) (en
 		return m.OldSecretEncrypted(ctx)
 	case webhookendpoint.FieldEventTypes:
 		return m.OldEventTypes(ctx)
-	case webhookendpoint.FieldEnabled:
-		return m.OldEnabled(ctx)
+	case webhookendpoint.FieldDisabledAt:
+		return m.OldDisabledAt(ctx)
 	case webhookendpoint.FieldConsecutiveFailures:
 		return m.OldConsecutiveFailures(ctx)
 	case webhookendpoint.FieldFailingSince:
@@ -42505,12 +42518,12 @@ func (m *WebhookEndpointMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetEventTypes(v)
 		return nil
-	case webhookendpoint.FieldEnabled:
-		v, ok := value.(bool)
+	case webhookendpoint.FieldDisabledAt:
+		v, ok := value.(time.Time)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetEnabled(v)
+		m.SetDisabledAt(v)
 		return nil
 	case webhookendpoint.FieldConsecutiveFailures:
 		v, ok := value.(int)
@@ -42614,6 +42627,9 @@ func (m *WebhookEndpointMutation) ClearedFields() []string {
 	if m.FieldCleared(webhookendpoint.FieldEventTypes) {
 		fields = append(fields, webhookendpoint.FieldEventTypes)
 	}
+	if m.FieldCleared(webhookendpoint.FieldDisabledAt) {
+		fields = append(fields, webhookendpoint.FieldDisabledAt)
+	}
 	if m.FieldCleared(webhookendpoint.FieldConsecutiveFailures) {
 		fields = append(fields, webhookendpoint.FieldConsecutiveFailures)
 	}
@@ -42648,6 +42664,9 @@ func (m *WebhookEndpointMutation) ClearField(name string) error {
 	switch name {
 	case webhookendpoint.FieldEventTypes:
 		m.ClearEventTypes()
+		return nil
+	case webhookendpoint.FieldDisabledAt:
+		m.ClearDisabledAt()
 		return nil
 	case webhookendpoint.FieldConsecutiveFailures:
 		m.ClearConsecutiveFailures()
@@ -42693,8 +42712,8 @@ func (m *WebhookEndpointMutation) ResetField(name string) error {
 	case webhookendpoint.FieldEventTypes:
 		m.ResetEventTypes()
 		return nil
-	case webhookendpoint.FieldEnabled:
-		m.ResetEnabled()
+	case webhookendpoint.FieldDisabledAt:
+		m.ResetDisabledAt()
 		return nil
 	case webhookendpoint.FieldConsecutiveFailures:
 		m.ResetConsecutiveFailures()

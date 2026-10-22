@@ -213,6 +213,7 @@ type Converter interface {
 	// goverter:ignore Secret
 	// goverter:map EventTypes EventTypes | eventTypes
 	// goverter:map . Failure | webhookFailure
+	// goverter:map . Enabled | webhookEnabled
 	WebhookEndpointToResource(source *ent.WebhookEndpoint) siteapi.SiteWebhookEndpointResource
 
 	// The Data export members (ADR 0021): the contract's typed projection of the
@@ -732,3 +733,6 @@ func sesConfigKind(integrations.RedactedSES) siteapi.SiteSesConfigKind {
 
 // sendingDomainVerified derives the verified flag from the verified and lost moments.
 func sendingDomainVerified(d ent.SendingDomain) bool { return dkimstate.Is(&d) }
+
+// webhookEnabled derives the enabled flag: an endpoint is enabled until it has a disabled moment.
+func webhookEnabled(e ent.WebhookEndpoint) bool { return e.DisabledAt == nil }

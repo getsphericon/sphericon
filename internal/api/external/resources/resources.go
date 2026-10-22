@@ -160,6 +160,7 @@ type Converter interface {
 	// is derived from the failure columns and a nil event filter renders as an empty list.
 	// goverter:map EventTypes EventTypes | eventTypes
 	// goverter:map . Failure | webhookFailure
+	// goverter:map . Enabled | webhookEnabled
 	WebhookToResource(source *ent.WebhookEndpoint) externalapi.WebhookResource
 
 	// The DNS records are derived by the sendingdomains module, which the mapper cannot
@@ -485,3 +486,6 @@ func sesConfigKind(integrations.RedactedSES) externalapi.SesConfigKind {
 
 // sendingDomainVerified derives the verified flag from the verified and lost moments.
 func sendingDomainVerified(d ent.SendingDomain) bool { return dkimstate.Is(&d) }
+
+// webhookEnabled derives the enabled flag: an endpoint is enabled until it has a disabled moment.
+func webhookEnabled(e ent.WebhookEndpoint) bool { return e.DisabledAt == nil }

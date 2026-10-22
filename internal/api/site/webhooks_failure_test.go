@@ -44,8 +44,17 @@ func TestSiteWebhooksShowWhyAnEndpointTurnedItselfOff(t *testing.T) {
 	require.Truef(t, ok, "got %T", gone)
 	assert.False(t, res.Enabled)
 	assert.Equal(t, siteapi.SiteWebhookDisabledReasonGone, res.DisabledReason.Value)
+	assert.True(t, res.DisabledAt.IsSet(), "when it turned off is shown")
+
+	byOwner, err := c.SiteWebhooksGet(ctx, siteapi.SiteWebhooksGetParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(fixtures.WebhookCodebasicsDisabledID)})
+	require.NoError(t, err)
+	ownerRes, ok := byOwner.(*siteapi.SiteWebhookEndpointResource)
+	require.Truef(t, ok, "got %T", byOwner)
+	assert.Equal(t, siteapi.SiteWebhookDisabledReasonOwner, ownerRes.DisabledReason.Value)
+	assert.True(t, ownerRes.DisabledAt.IsSet())
 
 	healthy, err := c.SiteWebhooksGet(ctx, siteapi.SiteWebhooksGetParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(fixtures.WebhookCodebasicsID)})
 	require.NoError(t, err)
 	assert.False(t, healthy.(*siteapi.SiteWebhookEndpointResource).DisabledReason.IsSet())
+	assert.False(t, healthy.(*siteapi.SiteWebhookEndpointResource).DisabledAt.IsSet())
 }

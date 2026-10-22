@@ -43635,6 +43635,8 @@ func (s *SiteWebhookDisabledReason) Decode(d *jx.Decoder) error {
 	}
 	// Try to use constant string.
 	switch SiteWebhookDisabledReason(v) {
+	case SiteWebhookDisabledReasonOwner:
+		*s = SiteWebhookDisabledReasonOwner
 	case SiteWebhookDisabledReasonGone:
 		*s = SiteWebhookDisabledReasonGone
 	case SiteWebhookDisabledReasonPersistentFailure:
@@ -43693,6 +43695,12 @@ func (s *SiteWebhookEndpointResource) encodeFields(e *jx.Encoder) {
 		e.Bool(s.Enabled)
 	}
 	{
+		if s.DisabledAt.Set {
+			e.FieldStart("disabledAt")
+			s.DisabledAt.Encode(e)
+		}
+	}
+	{
 		if s.DisabledReason.Set {
 			e.FieldStart("disabledReason")
 			s.DisabledReason.Encode(e)
@@ -43714,16 +43722,17 @@ func (s *SiteWebhookEndpointResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteWebhookEndpointResource = [9]string{
+var jsonFieldsNameOfSiteWebhookEndpointResource = [10]string{
 	0: "id",
 	1: "url",
 	2: "secret",
 	3: "eventTypes",
 	4: "enabled",
-	5: "disabledReason",
-	6: "failure",
-	7: "createdAt",
-	8: "updatedAt",
+	5: "disabledAt",
+	6: "disabledReason",
+	7: "failure",
+	8: "createdAt",
+	9: "updatedAt",
 }
 
 // Decode decodes SiteWebhookEndpointResource from json.
@@ -43801,6 +43810,16 @@ func (s *SiteWebhookEndpointResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"enabled\"")
 			}
+		case "disabledAt":
+			if err := func() error {
+				s.DisabledAt.Reset()
+				if err := s.DisabledAt.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"disabledAt\"")
+			}
 		case "disabledReason":
 			if err := func() error {
 				s.DisabledReason.Reset()
@@ -43822,7 +43841,7 @@ func (s *SiteWebhookEndpointResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"failure\"")
 			}
 		case "createdAt":
-			requiredBitSet[0] |= 1 << 7
+			requiredBitSet[1] |= 1 << 0
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -43832,7 +43851,7 @@ func (s *SiteWebhookEndpointResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"createdAt\"")
 			}
 		case "updatedAt":
-			requiredBitSet[1] |= 1 << 0
+			requiredBitSet[1] |= 1 << 1
 			if err := func() error {
 				if err := s.UpdatedAt.Decode(d); err != nil {
 					return err
@@ -43851,8 +43870,8 @@ func (s *SiteWebhookEndpointResource) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [2]uint8{
-		0b10011111,
-		0b00000001,
+		0b00011111,
+		0b00000011,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

@@ -27,8 +27,8 @@ const (
 	FieldSecretEncrypted = "secret_encrypted"
 	// FieldEventTypes holds the string denoting the event_types field in the database.
 	FieldEventTypes = "event_types"
-	// FieldEnabled holds the string denoting the enabled field in the database.
-	FieldEnabled = "enabled"
+	// FieldDisabledAt holds the string denoting the disabled_at field in the database.
+	FieldDisabledAt = "disabled_at"
 	// FieldConsecutiveFailures holds the string denoting the consecutive_failures field in the database.
 	FieldConsecutiveFailures = "consecutive_failures"
 	// FieldFailingSince holds the string denoting the failing_since field in the database.
@@ -63,7 +63,7 @@ var Columns = []string{
 	FieldURL,
 	FieldSecretEncrypted,
 	FieldEventTypes,
-	FieldEnabled,
+	FieldDisabledAt,
 	FieldConsecutiveFailures,
 	FieldFailingSince,
 	FieldLastErrorKind,
@@ -91,8 +91,6 @@ var (
 	UpdateDefaultUpdatedAt func() time.Time
 	// URLValidator is a validator for the "url" field. It is called by the builders before save.
 	URLValidator func(string) error
-	// DefaultEnabled holds the default value on creation for the "enabled" field.
-	DefaultEnabled bool
 )
 
 // LastErrorKind defines the type for the "last_error_kind" enum field.
@@ -125,6 +123,7 @@ type DisabledReason string
 
 // DisabledReason values.
 const (
+	DisabledReasonOwner             DisabledReason = "owner"
 	DisabledReasonGone              DisabledReason = "gone"
 	DisabledReasonPersistentFailure DisabledReason = "persistent_failure"
 )
@@ -136,7 +135,7 @@ func (dr DisabledReason) String() string {
 // DisabledReasonValidator is a validator for the "disabled_reason" field enum values. It is called by the builders before save.
 func DisabledReasonValidator(dr DisabledReason) error {
 	switch dr {
-	case DisabledReasonGone, DisabledReasonPersistentFailure:
+	case DisabledReasonOwner, DisabledReasonGone, DisabledReasonPersistentFailure:
 		return nil
 	default:
 		return fmt.Errorf("webhookendpoint: invalid enum value for disabled_reason field: %q", dr)
@@ -176,9 +175,9 @@ func BySecretEncrypted(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSecretEncrypted, opts...).ToFunc()
 }
 
-// ByEnabled orders the results by the enabled field.
-func ByEnabled(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldEnabled, opts...).ToFunc()
+// ByDisabledAt orders the results by the disabled_at field.
+func ByDisabledAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDisabledAt, opts...).ToFunc()
 }
 
 // ByConsecutiveFailures orders the results by the consecutive_failures field.

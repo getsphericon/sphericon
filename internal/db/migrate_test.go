@@ -12,11 +12,13 @@ import (
 	"testing/fstest"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	sphericon "github.com/getsphericon/sphericon"
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -211,6 +213,40 @@ func TestMigrateCarriesTheSendingDomainFlagIntoMoments(t *testing.T) {
 		"never.test": {false, false},
 	}, moments)
 	assert.Zero(t, testhelper.ColumnsOf(t, sqlDB, "sending_domains", "verified"), "the flag is gone")
+}
+
+// Replacing the Webhook endpoint flag by disabled_at keeps what the flag said: an enabled endpoint
+// stays enabled, one an owner turned off stays off with the reason "owner", and one the worker
+// turned off keeps its reason.
+func TestMigrateCarriesTheWebhookEndpointFlagIntoDisabledAt(t *testing.T) {
+	const replacing = "20261022000001_webhook_endpoint_disabled_at.sql"
+	sqlDB := openEmpty(t)
+	before := migrationsWhere(t, func(name string) bool { return name < replacing })
+	all := migrationsWhere(t, func(string) bool { return true })
+	_, err := db.MigrateFS(t.Context(), sqlDB, before)
+	require.NoError(t, err)
+	testhelper.LoadLegacyFixtures(t, sqlDB, legacyFixtures(replacing))
+
+	_, err = db.MigrateFS(t.Context(), sqlDB, all)
+	require.NoError(t, err)
+
+	client := db.NewEntClient(sqlDB)
+	t.Cleanup(func() { _ = client.Close() })
+	endpoints, err := client.WebhookEndpoint.Query().All(t.Context())
+	require.NoError(t, err)
+	off := map[string]bool{}
+	reasons := map[string]*webhookendpoint.DisabledReason{}
+	for _, e := range endpoints {
+		off[e.URL] = e.DisabledAt != nil
+		reasons[e.URL] = e.DisabledReason
+	}
+	assert.Equal(t, map[string]bool{"https://on.test": false, "https://owner.test": true, "https://gone.test": true}, off)
+	assert.Equal(t, map[string]*webhookendpoint.DisabledReason{
+		"https://on.test":    nil,
+		"https://owner.test": lo.ToPtr(webhookendpoint.DisabledReasonOwner),
+		"https://gone.test":  lo.ToPtr(webhookendpoint.DisabledReasonGone),
+	}, reasons)
+	assert.Zero(t, testhelper.ColumnsOf(t, sqlDB, "webhook_endpoints", "enabled"), "the flag is gone")
 }
 
 // Dropping automations.definition refuses an Instance whose Automations have not all been given a

@@ -14107,13 +14107,14 @@ func (s *UsedByKind) UnmarshalText(data []byte) error {
 	}
 }
 
-// Why an endpoint turned itself off. A closed set: `gone` (the receiver answered 410 Gone) and
-// `persistent_failure` (deliveries failed for longer than the window). Absent for an endpoint an owner
-// disabled, and while the endpoint is enabled.
+// Why an endpoint is off. A closed set: `owner` (a member turned it off), `gone` (the receiver
+// answered 410 Gone) and `persistent_failure` (deliveries failed for longer than the window). Absent
+// while the endpoint is enabled.
 // Ref: #/components/schemas/WebhookDisabledReason
 type WebhookDisabledReason string
 
 const (
+	WebhookDisabledReasonOwner             WebhookDisabledReason = "owner"
 	WebhookDisabledReasonGone              WebhookDisabledReason = "gone"
 	WebhookDisabledReasonPersistentFailure WebhookDisabledReason = "persistent_failure"
 )
@@ -14121,6 +14122,7 @@ const (
 // AllValues returns all WebhookDisabledReason values.
 func (WebhookDisabledReason) AllValues() []WebhookDisabledReason {
 	return []WebhookDisabledReason{
+		WebhookDisabledReasonOwner,
 		WebhookDisabledReasonGone,
 		WebhookDisabledReasonPersistentFailure,
 	}
@@ -14129,6 +14131,8 @@ func (WebhookDisabledReason) AllValues() []WebhookDisabledReason {
 // MarshalText implements encoding.TextMarshaler.
 func (s WebhookDisabledReason) MarshalText() ([]byte, error) {
 	switch s {
+	case WebhookDisabledReasonOwner:
+		return []byte(s), nil
 	case WebhookDisabledReasonGone:
 		return []byte(s), nil
 	case WebhookDisabledReasonPersistentFailure:
@@ -14141,6 +14145,9 @@ func (s WebhookDisabledReason) MarshalText() ([]byte, error) {
 // UnmarshalText implements encoding.TextUnmarshaler.
 func (s *WebhookDisabledReason) UnmarshalText(data []byte) error {
 	switch WebhookDisabledReason(data) {
+	case WebhookDisabledReasonOwner:
+		*s = WebhookDisabledReasonOwner
+		return nil
 	case WebhookDisabledReasonGone:
 		*s = WebhookDisabledReasonGone
 		return nil
@@ -14286,9 +14293,11 @@ type WebhookResource struct {
 	URL string `json:"url"`
 	// Event names this endpoint receives; empty means all events.
 	EventTypes []string `json:"eventTypes"`
-	// Whether the endpoint receives deliveries.
+	// Whether the endpoint receives deliveries: true while it has no `disabledAt`.
 	Enabled bool `json:"enabled"`
-	// Why the endpoint turned itself off; absent when an owner disabled it or it is enabled.
+	// When the endpoint was turned off; absent while it is enabled.
+	DisabledAt OptTimestamp `json:"disabledAt"`
+	// Why the endpoint is off; present exactly when `disabledAt` is.
 	DisabledReason OptWebhookDisabledReason `json:"disabledReason"`
 	// Present while deliveries are failing; cleared by the next 2xx.
 	Failure OptWebhookFailure `json:"failure"`
@@ -14316,6 +14325,11 @@ func (s *WebhookResource) GetEventTypes() []string {
 // GetEnabled returns the value of Enabled.
 func (s *WebhookResource) GetEnabled() bool {
 	return s.Enabled
+}
+
+// GetDisabledAt returns the value of DisabledAt.
+func (s *WebhookResource) GetDisabledAt() OptTimestamp {
+	return s.DisabledAt
 }
 
 // GetDisabledReason returns the value of DisabledReason.
@@ -14356,6 +14370,11 @@ func (s *WebhookResource) SetEventTypes(val []string) {
 // SetEnabled sets the value of Enabled.
 func (s *WebhookResource) SetEnabled(val bool) {
 	s.Enabled = val
+}
+
+// SetDisabledAt sets the value of DisabledAt.
+func (s *WebhookResource) SetDisabledAt(val OptTimestamp) {
+	s.DisabledAt = val
 }
 
 // SetDisabledReason sets the value of DisabledReason.

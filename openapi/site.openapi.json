@@ -15923,8 +15923,8 @@
       },
       "SiteWebhookDisabledReason": {
         "type": "string",
-        "enum": ["gone", "persistent_failure"],
-        "description": "Why an endpoint turned itself off. A closed set: `gone` (the receiver answered 410\nGone) and `persistent_failure` (deliveries failed for longer than the window).\nAbsent for an endpoint an owner disabled, and while the endpoint is enabled."
+        "enum": ["owner", "gone", "persistent_failure"],
+        "description": "Why an endpoint is off. A closed set: `owner` (a member turned it off), `gone` (the\nreceiver answered 410 Gone) and `persistent_failure` (deliveries failed for longer\nthan the window). Absent while the endpoint is enabled."
       },
       "SiteWebhookEndpointResource": {
         "type": "object",
@@ -15955,7 +15955,15 @@
           },
           "enabled": {
             "type": "boolean",
-            "description": "Whether the endpoint receives deliveries"
+            "description": "Whether the endpoint receives deliveries: true while it has no `disabledAt`"
+          },
+          "disabledAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the endpoint was turned off; absent while it is enabled"
           },
           "disabledReason": {
             "allOf": [
@@ -15963,7 +15971,7 @@
                 "$ref": "#/components/schemas/SiteWebhookDisabledReason"
               }
             ],
-            "description": "Why the endpoint turned itself off; absent when an owner disabled it or it is enabled"
+            "description": "Why the endpoint is off; present exactly when `disabledAt` is"
           },
           "failure": {
             "allOf": [

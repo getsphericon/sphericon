@@ -405,7 +405,8 @@ func (c *ConverterImpl) WebhookToResource(source *ent.WebhookEndpoint) external.
 		externalapiWebhookResource.ID = external.EntityId((*source).ID)
 		externalapiWebhookResource.URL = (*source).URL
 		externalapiWebhookResource.EventTypes = eventTypes((*source).EventTypes)
-		externalapiWebhookResource.Enabled = (*source).Enabled
+		externalapiWebhookResource.Enabled = webhookEnabled((*source))
+		externalapiWebhookResource.DisabledAt = optTimestamp((*source).DisabledAt)
 		externalapiWebhookResource.DisabledReason = optWebhookDisabledReason((*source).DisabledReason)
 		externalapiWebhookResource.Failure = webhookFailure((*source))
 		externalapiWebhookResource.CreatedAt = timestamp((*source).CreatedAt)

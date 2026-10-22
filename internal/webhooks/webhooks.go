@@ -234,12 +234,14 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (End
 	if err != nil {
 		return Endpoint{}, err
 	}
-	e, err := s.WebhookEndpoint().Create().
+	create := s.WebhookEndpoint().Create().
 		SetURL(in.URL).
 		SetSecretEncrypted(sealed).
-		SetEventTypes(in.EventTypes).
-		SetNillableEnabled(in.Enabled).
-		Save(ctx)
+		SetEventTypes(in.EventTypes)
+	if in.Enabled != nil && !*in.Enabled {
+		create = create.SetDisabledAt(time.Now()).SetDisabledReason(webhookendpoint.DisabledReasonOwner)
+	}
+	e, err := create.Save(ctx)
 	if err != nil {
 		return Endpoint{}, err
 	}
@@ -255,18 +257,26 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		return Endpoint{}, err
 	}
 	upd := s.WebhookEndpoint().UpdateOneID(id).
-		SetNillableURL(in.URL).
-		SetNillableEnabled(in.Enabled)
+		SetNillableURL(in.URL)
 	if in.EventTypes != nil {
 		upd = upd.SetEventTypes(in.EventTypes)
 	}
 	if in.Enabled != nil {
 		// Whoever flips the switch decides now: the reason it last turned itself off no
-		// longer applies, and enabling starts the failure run over (ADR 0039).
-		upd = upd.ClearDisabledReason()
+		// longer applies, and enabling starts the failure run over (ADR 0039). Disabling an
+		// endpoint that is already off keeps the moment and the reason it has.
 		if *in.Enabled {
-			upd = upd.ClearConsecutiveFailures().ClearFailingSince().ClearLastErrorKind().
+			upd = upd.ClearDisabledAt().ClearDisabledReason().
+				ClearConsecutiveFailures().ClearFailingSince().ClearLastErrorKind().
 				ClearLastErrorStatus().ClearLastFailureAt()
+		} else {
+			current, err := s.WebhookEndpoint().Get(ctx, id)
+			if err != nil {
+				return Endpoint{}, err
+			}
+			if current.DisabledAt == nil {
+				upd = upd.SetDisabledAt(time.Now()).SetDisabledReason(webhookendpoint.DisabledReasonOwner)
+			}
 		}
 	}
 	e, err := upd.Save(ctx)

@@ -5804,6 +5804,8 @@ func (s UsedByKind) Validate() error {
 
 func (s WebhookDisabledReason) Validate() error {
 	switch s {
+	case "owner":
+		return nil
 	case "gone":
 		return nil
 	case "persistent_failure":
