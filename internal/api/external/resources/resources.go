@@ -168,6 +168,8 @@ type Converter interface {
 	// goverter:map SourceID EventSourceId
 	RuleFiringToResource(source *ent.RuleFiring) externalapi.RuleFiringResource
 
+	RuleDryRunToResource(source rules.DryRun) externalapi.RuleDryRunResource
+
 	// goverter:map . Failure | enrollmentFailure
 	EnrollmentToResource(source *ent.AutomationRun) externalapi.EnrollmentResource
 

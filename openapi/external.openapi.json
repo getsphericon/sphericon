@@ -7619,6 +7619,114 @@
         "tags": ["Rules"]
       }
     },
+    "/rules/{id}/dry-run": {
+      "post": {
+        "operationId": "Rules_dryRun",
+        "description": "Dry-run a Rule on a stored Event: whether it would fire and which Actions would run. Writes and runs nothing. Needs the automations:read scope.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RuleResourceKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RuleDryRunResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Rules"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DryRunRuleInput"
+              }
+            }
+          }
+        }
+      }
+    },
     "/rules/{id}/unarchive": {
       "post": {
         "operationId": "Rules_unarchive",
@@ -13544,6 +13652,21 @@
         },
         "description": "The body rendered for a Contact, or the kind of error that stopped it. Nothing is called."
       },
+      "DryRunRuleInput": {
+        "type": "object",
+        "required": ["eventId"],
+        "properties": {
+          "eventId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "The stored Event to try the Rule on"
+          }
+        },
+        "description": "Request body for dry-running a Rule on a stored Event"
+      },
       "EmailAddress": {
         "type": "string",
         "maxLength": 320,
@@ -15137,6 +15260,48 @@
         "type": "string",
         "enum": ["apply_tag", "remove_tag", "http"],
         "description": "Kind of Rule action"
+      },
+      "RuleDryRunAction": {
+        "type": "object",
+        "required": ["type", "summary"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "The Action's kind"
+          },
+          "summary": {
+            "type": "string",
+            "description": "One line saying what the Action would do"
+          }
+        },
+        "description": "One Action a Rule would run, described without running it"
+      },
+      "RuleDryRunOutcome": {
+        "type": "string",
+        "enum": ["would_fire", "not_triggered", "no_contact", "condition_not_met"],
+        "description": "Whether a stored Event would fire a Rule, and if not, why"
+      },
+      "RuleDryRunResource": {
+        "type": "object",
+        "required": ["outcome", "actions"],
+        "properties": {
+          "outcome": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RuleDryRunOutcome"
+              }
+            ],
+            "description": "Whether the Rule would fire and, if not, why"
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RuleDryRunAction"
+            },
+            "description": "The Actions that would run, in order; empty unless the Rule would fire"
+          }
+        },
+        "description": "What a stored Event would do to a Rule. Nothing was written or run."
       },
       "RuleFiringResource": {
         "type": "object",

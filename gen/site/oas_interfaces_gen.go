@@ -397,6 +397,10 @@ type SiteRulesDeleteRes interface {
 	siteRulesDeleteRes()
 }
 
+type SiteRulesDryRunRes interface {
+	siteRulesDryRunRes()
+}
+
 type SiteRulesGetRes interface {
 	siteRulesGetRes()
 }

@@ -10804,6 +10804,23 @@ func (s *SiteDryRunHttpStepResult) SetDetail(val OptString) {
 
 func (*SiteDryRunHttpStepResult) siteAutomationsDryRunHttpStepRes() {}
 
+// Site request body for dry-running a Rule on a stored Event.
+// Ref: #/components/schemas/SiteDryRunRuleInput
+type SiteDryRunRuleInput struct {
+	// The stored Event to try the Rule on.
+	EventId EntityId `json:"eventId"`
+}
+
+// GetEventId returns the value of EventId.
+func (s *SiteDryRunRuleInput) GetEventId() EntityId {
+	return s.EventId
+}
+
+// SetEventId sets the value of EventId.
+func (s *SiteDryRunRuleInput) SetEventId(val EntityId) {
+	s.EventId = val
+}
+
 // Request a change of the login email. The new address must be confirmed via a link sent to it before
 // the change takes effect.
 // Ref: #/components/schemas/SiteEmailChangeInput
@@ -15172,6 +15189,123 @@ func (s *SiteRuleActionType) UnmarshalText(data []byte) error {
 	}
 }
 
+// One Action a Rule would run, described without running it.
+// Ref: #/components/schemas/SiteRuleDryRunAction
+type SiteRuleDryRunAction struct {
+	// The Action's kind.
+	Type string `json:"type"`
+	// One line saying what the Action would do.
+	Summary string `json:"summary"`
+}
+
+// GetType returns the value of Type.
+func (s *SiteRuleDryRunAction) GetType() string {
+	return s.Type
+}
+
+// GetSummary returns the value of Summary.
+func (s *SiteRuleDryRunAction) GetSummary() string {
+	return s.Summary
+}
+
+// SetType sets the value of Type.
+func (s *SiteRuleDryRunAction) SetType(val string) {
+	s.Type = val
+}
+
+// SetSummary sets the value of Summary.
+func (s *SiteRuleDryRunAction) SetSummary(val string) {
+	s.Summary = val
+}
+
+// Whether a stored Event would fire a Rule, and if not, why.
+// Ref: #/components/schemas/SiteRuleDryRunOutcome
+type SiteRuleDryRunOutcome string
+
+const (
+	SiteRuleDryRunOutcomeWouldFire       SiteRuleDryRunOutcome = "would_fire"
+	SiteRuleDryRunOutcomeNotTriggered    SiteRuleDryRunOutcome = "not_triggered"
+	SiteRuleDryRunOutcomeNoContact       SiteRuleDryRunOutcome = "no_contact"
+	SiteRuleDryRunOutcomeConditionNotMet SiteRuleDryRunOutcome = "condition_not_met"
+)
+
+// AllValues returns all SiteRuleDryRunOutcome values.
+func (SiteRuleDryRunOutcome) AllValues() []SiteRuleDryRunOutcome {
+	return []SiteRuleDryRunOutcome{
+		SiteRuleDryRunOutcomeWouldFire,
+		SiteRuleDryRunOutcomeNotTriggered,
+		SiteRuleDryRunOutcomeNoContact,
+		SiteRuleDryRunOutcomeConditionNotMet,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteRuleDryRunOutcome) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteRuleDryRunOutcomeWouldFire:
+		return []byte(s), nil
+	case SiteRuleDryRunOutcomeNotTriggered:
+		return []byte(s), nil
+	case SiteRuleDryRunOutcomeNoContact:
+		return []byte(s), nil
+	case SiteRuleDryRunOutcomeConditionNotMet:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteRuleDryRunOutcome) UnmarshalText(data []byte) error {
+	switch SiteRuleDryRunOutcome(data) {
+	case SiteRuleDryRunOutcomeWouldFire:
+		*s = SiteRuleDryRunOutcomeWouldFire
+		return nil
+	case SiteRuleDryRunOutcomeNotTriggered:
+		*s = SiteRuleDryRunOutcomeNotTriggered
+		return nil
+	case SiteRuleDryRunOutcomeNoContact:
+		*s = SiteRuleDryRunOutcomeNoContact
+		return nil
+	case SiteRuleDryRunOutcomeConditionNotMet:
+		*s = SiteRuleDryRunOutcomeConditionNotMet
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// What a stored Event would do to a Rule. Nothing was written or run.
+// Ref: #/components/schemas/SiteRuleDryRunResource
+type SiteRuleDryRunResource struct {
+	// Whether the Rule would fire and, if not, why.
+	Outcome SiteRuleDryRunOutcome `json:"outcome"`
+	// The Actions that would run, in order; empty unless the Rule would fire.
+	Actions []SiteRuleDryRunAction `json:"actions"`
+}
+
+// GetOutcome returns the value of Outcome.
+func (s *SiteRuleDryRunResource) GetOutcome() SiteRuleDryRunOutcome {
+	return s.Outcome
+}
+
+// GetActions returns the value of Actions.
+func (s *SiteRuleDryRunResource) GetActions() []SiteRuleDryRunAction {
+	return s.Actions
+}
+
+// SetOutcome sets the value of Outcome.
+func (s *SiteRuleDryRunResource) SetOutcome(val SiteRuleDryRunOutcome) {
+	s.Outcome = val
+}
+
+// SetActions sets the value of Actions.
+func (s *SiteRuleDryRunResource) SetActions(val []SiteRuleDryRunAction) {
+	s.Actions = val
+}
+
+func (*SiteRuleDryRunResource) siteRulesDryRunRes() {}
+
 // One execution of a Rule for one Event, with what each Action did. Erased with the Contact.
 // Ref: #/components/schemas/SiteRuleFiringResource
 type SiteRuleFiringResource struct {
@@ -15571,6 +15705,14 @@ func (*SiteRulesDeleteNoContent) siteRulesDeleteRes() {}
 type SiteRulesDeleteNotFound ProblemDetails
 
 func (*SiteRulesDeleteNotFound) siteRulesDeleteRes() {}
+
+type SiteRulesDryRunBadRequest ProblemDetails
+
+func (*SiteRulesDryRunBadRequest) siteRulesDryRunRes() {}
+
+type SiteRulesDryRunNotFound ProblemDetails
+
+func (*SiteRulesDryRunNotFound) siteRulesDryRunRes() {}
 
 type SiteRulesGetBadRequest ProblemDetails
 

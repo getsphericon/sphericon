@@ -267,6 +267,32 @@ func (h *Handlers) SiteRulesDeactivate(ctx context.Context, params siteapi.SiteR
 	return &res, nil
 }
 
+// SiteRulesDryRun reports what a stored Event would do to the Rule, writing and running nothing.
+func (h *Handlers) SiteRulesDryRun(ctx context.Context, req *siteapi.SiteDryRunRuleInput, params siteapi.SiteRulesDryRunParams) (siteapi.SiteRulesDryRunRes, error) {
+	ws, err := h.scopedFor(ctx, params.WorkspaceId)
+	if ent.IsNotFound(err) {
+		v := siteapi.SiteRulesDryRunNotFound(problem(http.StatusNotFound, "workspace not found"))
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	dry, err := h.rules.DryRun(ctx, ws, int64(params.ID), int64(req.EventId))
+	switch {
+	case errors.Is(err, rules.ErrNotFound):
+		v := siteapi.SiteRulesDryRunNotFound(problem(http.StatusNotFound, "rule not found"))
+		return &v, nil
+	case errors.Is(err, rules.ErrEventNotFound):
+		v := siteapi.SiteRulesDryRunNotFound(problem(http.StatusNotFound, "event not found"))
+		return &v, nil
+	case err != nil:
+		return nil, err
+	}
+	res := mapper.RuleDryRunToResource(dry)
+	return &res, nil
+}
+
 // SiteRuleFiringsList lists a Rule's Firings, newest first.
 func (h *Handlers) SiteRuleFiringsList(ctx context.Context, params siteapi.SiteRuleFiringsListParams) (siteapi.SiteRuleFiringsListRes, error) {
 	ws, err := h.scopedFor(ctx, params.WorkspaceId)

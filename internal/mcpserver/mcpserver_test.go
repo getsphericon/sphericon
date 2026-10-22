@@ -74,7 +74,7 @@ var (
 		"webhooks_regenerate_secret", "webhooks_test",
 		"tags_list", "tags_list_for_contact", "tags_apply", "tags_remove", "tags_delete",
 		"automations_list", "automations_create", "automations_get", "automations_update", "automations_delete",
-		"rules_list", "rules_create", "rules_get", "rules_update", "rules_deactivate", "rules_archive", "rules_unarchive", "rules_delete", "rule_firings_list",
+		"rules_list", "rules_create", "rules_get", "rules_update", "rules_dry_run", "rules_deactivate", "rules_archive", "rules_unarchive", "rules_delete", "rule_firings_list",
 		"automations_deactivate", "automations_archive", "automations_unarchive", "automations_dry_run_http_step", "enrollments_list", "enrollments_get",
 	}
 	sendTools = []string{"emails_send", "broadcasts_schedule", "broadcasts_unschedule", "automations_activate", "rules_activate"}

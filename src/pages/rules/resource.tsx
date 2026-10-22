@@ -13,6 +13,7 @@ import { resourceFormSchema } from '../../resources/resourceFormSchema.ts'
 import { Route as rulesEditRoute } from '../../routes/workspaces/$workspaceId/rules/$ruleId/edit.tsx'
 import { conditionCodec, emptyGroup } from '../segments/condition.ts'
 import { actionsCodec, triggerEventsCodec } from './actions.ts'
+import { RuleDryRun } from './RuleDryRun.tsx'
 import { RuleForm } from './RuleForm.tsx'
 
 // A Rule's Condition is optional on the wire; the editor always holds one, and the empty group
@@ -56,5 +57,10 @@ export function RuleCreatePage() {
 }
 
 export function RuleEditPage() {
-  return <ruleResource.EditPage />
+  const { workspaceId, ruleId } = rulesEditRoute.useParams()
+  return (
+    <ruleResource.EditPage>
+      {() => <RuleDryRun workspaceId={workspaceId} ruleId={ruleId} />}
+    </ruleResource.EditPage>
+  )
 }

@@ -626,6 +626,16 @@ func (UnimplementedHandler) RulesDelete(ctx context.Context, params RulesDeleteP
 	return r, ht.ErrNotImplemented
 }
 
+// RulesDryRun implements Rules_dryRun operation.
+//
+// Dry-run a Rule on a stored Event: whether it would fire and which Actions would run. Writes and runs
+// nothing. Needs the automations:read scope.
+//
+// POST /rules/{id}/dry-run
+func (UnimplementedHandler) RulesDryRun(ctx context.Context, req *DryRunRuleInput, params RulesDryRunParams) (r RulesDryRunRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // RulesGet implements Rules_get operation.
 //
 // Get a resource by ID.

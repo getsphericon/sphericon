@@ -111,6 +111,7 @@ const (
 	SiteRulesCreateOperation                          OperationName = "SiteRulesCreate"
 	SiteRulesDeactivateOperation                      OperationName = "SiteRulesDeactivate"
 	SiteRulesDeleteOperation                          OperationName = "SiteRulesDelete"
+	SiteRulesDryRunOperation                          OperationName = "SiteRulesDryRun"
 	SiteRulesGetOperation                             OperationName = "SiteRulesGet"
 	SiteRulesListOperation                            OperationName = "SiteRulesList"
 	SiteRulesUnarchiveOperation                       OperationName = "SiteRulesUnarchive"

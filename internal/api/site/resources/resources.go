@@ -24,11 +24,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/dkimstate"
 	"github.com/getsphericon/sphericon/internal/httpcall"
 	"github.com/getsphericon/sphericon/internal/joindomains"
-<<<<<<< HEAD
 	"github.com/getsphericon/sphericon/internal/linkclicks"
-=======
 	"github.com/getsphericon/sphericon/internal/rules"
->>>>>>> caa1823 (feat: a Rule applies and removes Tags on an Event (tracer bullet, ADR 0054))
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/sendlimit"
 	"github.com/getsphericon/sphericon/internal/workspacedeletion"
@@ -183,6 +180,8 @@ type Converter interface {
 	// The store names the Event's source id; the contract says whose it is.
 	// goverter:map SourceID EventSourceId
 	RuleFiringToResource(source *ent.RuleFiring) siteapi.SiteRuleFiringResource
+
+	RuleDryRunToResource(source rules.DryRun) siteapi.SiteRuleDryRunResource
 
 	// goverter:map . Failure | enrollmentFailure
 	EnrollmentToResource(source *ent.AutomationRun) siteapi.SiteEnrollmentResource

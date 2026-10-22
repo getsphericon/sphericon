@@ -5650,6 +5650,55 @@ func (s SiteRuleActionType) Validate() error {
 	}
 }
 
+func (s SiteRuleDryRunOutcome) Validate() error {
+	switch s {
+	case "would_fire":
+		return nil
+	case "not_triggered":
+		return nil
+	case "no_contact":
+		return nil
+	case "condition_not_met":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *SiteRuleDryRunResource) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Outcome.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "outcome",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if s.Actions == nil {
+			return errors.New("nil is invalid value")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "actions",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
 func (s *SiteRuleFiringResource) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -5918,6 +5967,22 @@ func (s *SiteRulesDeleteBadRequest) Validate() error {
 }
 
 func (s *SiteRulesDeleteNotFound) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteRulesDryRunBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteRulesDryRunNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err

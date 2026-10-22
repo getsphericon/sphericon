@@ -8124,6 +8124,63 @@
         "tags": ["Site Rules"]
       }
     },
+    "/workspaces/{workspaceId}/rules/{id}/dry-run": {
+      "post": {
+        "operationId": "SiteRules_dryRun",
+        "description": "Dry-run a Rule on a stored Event: whether it would fire and which Actions would run. Writes and runs nothing.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SiteRuleResourceKey.workspaceId"
+          },
+          {
+            "$ref": "#/components/parameters/SiteRuleResourceKey.id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteRuleDryRunResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Rules"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteDryRunRuleInput"
+              }
+            }
+          }
+        }
+      }
+    },
     "/workspaces/{workspaceId}/rules/{id}/unarchive": {
       "post": {
         "operationId": "SiteRules_unarchive",
@@ -14080,6 +14137,21 @@
         },
         "description": "The body rendered for a Contact, or the kind of error that stopped it. Nothing is called."
       },
+      "SiteDryRunRuleInput": {
+        "type": "object",
+        "required": ["eventId"],
+        "properties": {
+          "eventId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "The stored Event to try the Rule on"
+          }
+        },
+        "description": "Site request body for dry-running a Rule on a stored Event"
+      },
       "SiteEmailChangeInput": {
         "type": "object",
         "required": ["newEmail", "currentPassword"],
@@ -15582,6 +15654,48 @@
         "type": "string",
         "enum": ["apply_tag", "remove_tag", "enroll_automation", "http"],
         "description": "Kind of Rule action"
+      },
+      "SiteRuleDryRunAction": {
+        "type": "object",
+        "required": ["type", "summary"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "The Action's kind"
+          },
+          "summary": {
+            "type": "string",
+            "description": "One line saying what the Action would do"
+          }
+        },
+        "description": "One Action a Rule would run, described without running it"
+      },
+      "SiteRuleDryRunOutcome": {
+        "type": "string",
+        "enum": ["would_fire", "not_triggered", "no_contact", "condition_not_met"],
+        "description": "Whether a stored Event would fire a Rule, and if not, why"
+      },
+      "SiteRuleDryRunResource": {
+        "type": "object",
+        "required": ["outcome", "actions"],
+        "properties": {
+          "outcome": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteRuleDryRunOutcome"
+              }
+            ],
+            "description": "Whether the Rule would fire and, if not, why"
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteRuleDryRunAction"
+            },
+            "description": "The Actions that would run, in order; empty unless the Rule would fire"
+          }
+        },
+        "description": "What a stored Event would do to a Rule. Nothing was written or run."
       },
       "SiteRuleFiringResource": {
         "type": "object",

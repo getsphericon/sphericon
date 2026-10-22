@@ -567,6 +567,13 @@ export const zSiteDryRunHttpStepResult = z.object({
 });
 
 /**
+ * Site request body for dry-running a Rule on a stored Event
+ */
+export const zSiteDryRunRuleInput = z.object({
+  eventId: zEntityId
+});
+
+/**
  * Request a change of the login email. The new address must be confirmed via a
  * link sent to it before the change takes effect.
  */
@@ -1042,6 +1049,32 @@ export const zSiteRuleActionResult = z.object({
   type: zSiteRuleActionType,
   status: zSiteRuleActionStatus,
   detail: z.exactOptional(z.string())
+});
+
+/**
+ * One Action a Rule would run, described without running it
+ */
+export const zSiteRuleDryRunAction = z.object({
+  type: z.string(),
+  summary: z.string()
+});
+
+/**
+ * Whether a stored Event would fire a Rule, and if not, why
+ */
+export const zSiteRuleDryRunOutcome = z.enum([
+  'would_fire',
+  'not_triggered',
+  'no_contact',
+  'condition_not_met'
+]);
+
+/**
+ * What a stored Event would do to a Rule. Nothing was written or run.
+ */
+export const zSiteRuleDryRunResource = z.object({
+  outcome: zSiteRuleDryRunOutcome,
+  actions: z.array(zSiteRuleDryRunAction)
 });
 
 /**
@@ -3858,6 +3891,18 @@ export const zSiteRulesDeletePath = z.object({
  * There is no content to send for this request, but the headers may be useful.
  */
 export const zSiteRulesDeleteResponse = z.void();
+
+export const zSiteRulesDryRunBody = zSiteDryRunRuleInput;
+
+export const zSiteRulesDryRunPath = z.object({
+  workspaceId: zWorkspaceId,
+  id: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteRulesDryRunResponse = zSiteRuleDryRunResource;
 
 export const zSiteRuleFiringsListPath = z.object({
   workspaceId: zWorkspaceId,

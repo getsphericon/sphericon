@@ -54,6 +54,16 @@
   workspace_id: 1
   created_at: '{{daysAgo 1}}'
   updated_at: '{{daysAgo 1}}'
+# Tests a property of the triggering Event: fires only for a rule_url Event whose url has "pricing".
+- id: 110 # fixture: RuleUrlPricing
+  name: Tag a pricing visit
+  status: active
+  activated_at: '{{daysAgo 30}}'
+  condition: '{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"trigger:url","operator":"contains","value":"pricing"}]}'
+  actions: '[{"type":"apply_tag","tag":"rule-pricing"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 30}}'
 
 # The enroll Action: into an active Automation (Contact 3 is already enrolled in it), a draft one, one the test archives.
 - id: 106 # fixture: RuleEnrollGreeting

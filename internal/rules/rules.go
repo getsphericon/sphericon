@@ -25,6 +25,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/ent/rulefiring"
 	"github.com/getsphericon/sphericon/ent/ruletrigger"
@@ -70,6 +71,8 @@ var (
 	ErrInvalid = errors.New("rules: invalid rule")
 	// ErrNotFound: no such Rule in this Workspace.
 	ErrNotFound = errors.New("rules: rule not found")
+	// ErrEventNotFound: no such Event in this Workspace (a dry run reads a stored Event).
+	ErrEventNotFound = errors.New("rules: event not found")
 )
 
 // Action is one Action of a Rule as stored: its type and the parameters of that type.
@@ -587,7 +590,7 @@ func (m *Module) Evaluate(ctx context.Context, s *ent.Scoped, ev Event) ([]*ent.
 		Where(
 			rule.StatusEQ(rule.StatusActive),
 			rule.ActivatedAtLTE(ev.RecordedAt),
-			rule.HasTriggersWith(ruletrigger.Action(ev.Action)),
+			triggeredBy(ev.Action),
 		).
 		Order(ent.Asc(rule.FieldID)).
 		All(ctx)
@@ -615,6 +618,12 @@ func (m *Module) Evaluate(ctx context.Context, s *ent.Scoped, ev Event) ([]*ent.
 		}
 	}
 	return fired, errors.Join(failures...)
+}
+
+// triggeredBy selects the Rules that have the action as a Trigger event: the matching step a real
+// firing (Evaluate) and a dry run (DryRun) share.
+func triggeredBy(action string) predicate.Rule {
+	return rule.HasTriggersWith(ruletrigger.Action(action))
 }
 
 // holds evaluates the Rule's Condition for the Contact against its current data. A Condition
