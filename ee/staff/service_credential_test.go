@@ -143,7 +143,7 @@ func TestACredentialExpiresWhenTheClockPassesItsExpiry(t *testing.T) {
 	h := newHarness(t)
 	in := time.Hour
 	issued, err := h.env.StaffMembers.IssueServiceCredential(t.Context(), staff.IssueInput{
-		Name: "service-c", Scopes: []staff.Scope{staff.ScopeUsageRead}, ExpiresAt: new(h.clock.now().Add(in)),
+		Name: "service-c", Scopes: []serviceapi.ServiceScope{serviceapi.ServiceScopeUsageRead}, ExpiresAt: new(h.clock.now().Add(in)),
 	})
 	require.NoError(t, err)
 
@@ -166,12 +166,12 @@ func TestIssuingShowsTheValueOnceAndStoresOnlyAHash(t *testing.T) {
 	h := newHarness(t)
 
 	issued, err := h.env.StaffMembers.IssueServiceCredential(t.Context(), staff.IssueInput{
-		Name: " service-c ", Scopes: []staff.Scope{staff.ScopeHoldsWrite, staff.ScopeUsageRead, staff.ScopeUsageRead},
+		Name: " service-c ", Scopes: []serviceapi.ServiceScope{serviceapi.ServiceScopeHoldsWrite, serviceapi.ServiceScopeUsageRead, serviceapi.ServiceScopeUsageRead},
 	})
 	require.NoError(t, err)
 
 	assert.Equal(t, "service-c", issued.Name)
-	assert.Equal(t, []staff.Scope{staff.ScopeHoldsWrite, staff.ScopeUsageRead}, issued.Scopes, "sorted, without duplicates")
+	assert.Equal(t, []serviceapi.ServiceScope{serviceapi.ServiceScopeHoldsWrite, serviceapi.ServiceScopeUsageRead}, issued.Scopes, "sorted, without duplicates")
 	assert.True(t, strings.HasPrefix(issued.Value, "smsc_"))
 	row := h.env.DB.ServiceCredential.GetX(t.Context(), issued.ID)
 	assert.NotContains(t, issued.Value, row.SecretHash)
@@ -189,10 +189,10 @@ func TestIssuingRefusesABadInput(t *testing.T) {
 		in   staff.IssueInput
 		want error
 	}{
-		"no name":       {staff.IssueInput{Name: " ", Scopes: []staff.Scope{staff.ScopeUsageRead}}, staff.ErrInvalidCredential},
+		"no name":       {staff.IssueInput{Name: " ", Scopes: []serviceapi.ServiceScope{serviceapi.ServiceScopeUsageRead}}, staff.ErrInvalidCredential},
 		"no scopes":     {staff.IssueInput{Name: "s"}, staff.ErrInvalidScope},
-		"unknown scope": {staff.IssueInput{Name: "s", Scopes: []staff.Scope{"contacts:read"}}, staff.ErrInvalidScope},
-		"past expiry":   {staff.IssueInput{Name: "s", Scopes: []staff.Scope{staff.ScopeUsageRead}, ExpiresAt: &past}, staff.ErrInvalidCredential},
+		"unknown scope": {staff.IssueInput{Name: "s", Scopes: []serviceapi.ServiceScope{"contacts:read"}}, staff.ErrInvalidScope},
+		"past expiry":   {staff.IssueInput{Name: "s", Scopes: []serviceapi.ServiceScope{serviceapi.ServiceScopeUsageRead}, ExpiresAt: &past}, staff.ErrInvalidCredential},
 	} {
 		t.Run(name, func(t *testing.T) {
 			_, err := h.env.StaffMembers.IssueServiceCredential(t.Context(), tc.in)
@@ -267,7 +267,7 @@ func TestTheListShowsEachCredentialsStateAndWhenItWasLastUsed(t *testing.T) {
 
 func TestACredentialCannotActOutsideItsScopes(t *testing.T) {
 	h := newHarness(t)
-	needsHolds := map[string][]staff.Scope{"NeedsHolds": {staff.ScopeHoldsWrite}, "NeedsNothing": nil}
+	needsHolds := map[string][]serviceapi.ServiceScope{"NeedsHolds": {serviceapi.ServiceScopeHoldsWrite}, "NeedsNothing": nil}
 	security := staff.NewServiceSecurity(h.env.StaffMembers, needsHolds)
 
 	_, err := security.HandleBearerAuth(t.Context(), "NeedsHolds", serviceapi.BearerAuth{Token: readOnly})
@@ -341,6 +341,7 @@ func TestAWriteUnderACredentialIsAttributedToItsNameInTheAuditLog(t *testing.T) 
 	h := newHarness(t)
 	cred := h.env.DB.ServiceCredential.GetX(t.Context(), fixtures.ServiceCredentialPrimaryID)
 	scoped := h.env.Bus.Act(h.env.DB.Scoped(fixtures.AcmeID), staff.ServiceActor(cred))
+	// test writes: audit attribution of a scoped write is the subject
 	_, err := scoped.Tag().Create().SetName("attributed-tag").Save(t.Context())
 	require.NoError(t, err)
 	h.env.DeliverToEE(t)
@@ -373,7 +374,7 @@ func TestWithoutALicenseNothingIsServedAndTheModuleRefuses(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithoutLicense())
 
 	assert.Equal(t, http.StatusNotFound, getIdentity(t, env.Internal, primary).Code, "the service endpoints are not routed without the license")
-	_, err := env.StaffMembers.IssueServiceCredential(t.Context(), staff.IssueInput{Name: "s", Scopes: []staff.Scope{staff.ScopeUsageRead}})
+	_, err := env.StaffMembers.IssueServiceCredential(t.Context(), staff.IssueInput{Name: "s", Scopes: []serviceapi.ServiceScope{serviceapi.ServiceScopeUsageRead}})
 	require.ErrorIs(t, err, staff.ErrNotLicensed)
 	_, err = env.StaffMembers.RotateServiceCredential(t.Context(), fixtures.ServiceCredentialPrimaryID, nil)
 	require.ErrorIs(t, err, staff.ErrNotLicensed)

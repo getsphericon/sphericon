@@ -14,7 +14,7 @@ import (
 // WebhooksRegenerateSecret replaces the endpoint's signing secret. The new secret is
 // not part of the response: the external API never returns it.
 func (h *Handlers) WebhooksRegenerateSecret(ctx context.Context, params externalapi.WebhooksRegenerateSecretParams) (externalapi.WebhooksRegenerateSecretRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), "webhooks:regenerate") {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeWebhooksRegenerate) {
 		res := externalapi.WebhooksRegenerateSecretUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
@@ -33,7 +33,7 @@ func (h *Handlers) WebhooksRegenerateSecret(ctx context.Context, params external
 // WebhooksTest sends a sample event to the endpoint and returns what the receiver
 // answered; the endpoint's failure state is not touched.
 func (h *Handlers) WebhooksTest(ctx context.Context, req *externalapi.TestWebhookInput, params externalapi.WebhooksTestParams) (externalapi.WebhooksTestRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), "webhooks:test") {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeWebhooksTest) {
 		res := externalapi.WebhooksTestUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}

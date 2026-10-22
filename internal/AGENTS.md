@@ -15,16 +15,24 @@ template built once per schema or fixture change and drops it when the test ends
 cleans up by hand or resets state at its start. The test role is a superuser (the fixture
 loader disables foreign-key triggers), as on the shared test database.
 
-**Build test scenarios on the committed fixtures — don't fabricate the primary
-entities inline.** Reference fixture rows through the catalog constants below
+**Migration tests take their old-schema data from fixtures too.** The rows of the schema just
+before one migration (columns the ent client no longer has) are YAML files in
+`internal/db/testdata/legacy/<migration file name without .sql>/` (a subdirectory per extra
+state of the same test), loaded with `testhelper.LoadLegacyFixtures(t, sqlDB, dir)`: the same
+loader and templating as `fixtures/`, but no sequence reset, no catalog (they are not in
+`fixtures/`, so `fixturegen` ignores them) and no raw `INSERT`.
+
+**Build test scenarios on the committed fixtures (review rules 10 and 11).** Reference fixture rows through the catalog constants below
 (`fixtures.BroadcastDraftID`, `fixtures.ContactAliceID`, `fixtures.SegmentActiveID`, …),
 never bare id literals (a deliberately missing id such as `999999` is fine). Query counts
 that vary with the dataset dynamically instead of hardcoding them. If a
 scenario isn't covered, **add a fixture row** rather than a `client.X.Create()` in the
 test. Anchor rows flagged "DO NOT change" in the YAML are referenced across the suite —
-leave them. txdb rolls back each test, so mutating a fixture row inside a test is fine.
-Exception: incidental one-off records (e.g. a suppression to trip a specific edge) may be
-created inline when no fixture expresses them.
+leave them. txdb rolls back each test, so mutating a fixture row inside a test is fine, and
+it is how a test puts a row into the state it needs at a chosen moment: the fixture Staff holds
+and the pending Outbound message are lapsed and stale, and `env.ExtendHold`, `env.ClaimOutbound`,
+`env.ClaimRecipient`, `env.PlaceRecipient` (parked recipients), `env.SuppressDestination` and
+`env.UnsubscribeFromBroadcasts` (the lifted Suppression and a per-Automation opt-out) move them.
 
 ## Fixture catalog
 
@@ -45,6 +53,25 @@ files, so every template expression in fixtures must stay quoted (`'{{daysAgo 1}
 It emits `<Name>ID` plus one constant per catalogued column the row carries (the
 list is `catalogColumns` in `internal/fixtures/fixturegen/fixturegen.go`); unannotated
 rows get nothing. It fails on a duplicate name or an annotation that matches no row.
+
+### Generated volume
+
+A shape that needs many rows (traffic for a rate, a long list) is a template loop inside the
+table's one file, written as comments so the file stays valid YAML for the formatter:
+
+```yaml
+# {{range $i := seq 30000 30039}}
+- id: '{{$i}}'
+  email: 'sent-{{$i}}@example.com'
+# {{end}}
+```
+
+`seq from to` includes both ends. The loop renders before the file is parsed, so it loads in the
+same `Load` as the other rows; loading a table a second time would wipe the first (the loader
+deletes every table of its files first), so volume never comes from a second loader. The generator
+reads a loop body once and refuses a `# fixture:` name inside one. Every row is one INSERT at the
+start of every test process, so keep the volume small and scale the code under test's thresholds
+down in the test (see `ee/abuse/detector_test.go`, whose scenarios are day offsets in `events.yml`).
 
 ### Credentials and anchor identities
 
@@ -90,6 +117,5 @@ through the production hash/generate functions.
 `env.MCPClient(t, bearer)` connects an MCP session.
 
 Tenant-isolation tests use the committed Globex rows by name (`fixtures.SegmentGlobexID`,
-`fixtures.TemplateGlobexName`, …). The admin role has no fixture user (a committed admin
-would change the exact Acme member list), so a role test that needs one creates it inline;
-owner and member are `OwnerJohn` and `MemberMary`.
+`fixtures.TemplateGlobexName`, …). Acme's three roles are `OwnerJohn`, `AdminAlice` and
+`MemberMary`.

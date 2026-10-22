@@ -16,14 +16,8 @@ import (
 	"github.com/samber/lo"
 )
 
-const (
-	scopeAutomationsRead     = "automations:read"
-	scopeAutomationsWrite    = "automations:write"
-	scopeAutomationsActivate = "automations:activate"
-)
-
 func (h *Handlers) AutomationsList(ctx context.Context, params externalapi.AutomationsListParams) (externalapi.AutomationsListRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), scopeAutomationsRead) {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeAutomationsRead) {
 		res := externalapi.AutomationsListUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
@@ -43,7 +37,7 @@ func (h *Handlers) AutomationsList(ctx context.Context, params externalapi.Autom
 
 // AutomationsCreate always stores a draft: activating is the send-class operation.
 func (h *Handlers) AutomationsCreate(ctx context.Context, req *externalapi.CreateAutomationInput) (externalapi.AutomationsCreateRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), scopeAutomationsWrite) {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeAutomationsWrite) {
 		res := externalapi.AutomationsCreateUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
@@ -65,7 +59,7 @@ func (h *Handlers) AutomationsCreate(ctx context.Context, req *externalapi.Creat
 }
 
 func (h *Handlers) AutomationsGet(ctx context.Context, params externalapi.AutomationsGetParams) (externalapi.AutomationsGetRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), scopeAutomationsRead) {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeAutomationsRead) {
 		res := externalapi.AutomationsGetUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
@@ -83,7 +77,7 @@ func (h *Handlers) AutomationsGet(ctx context.Context, params externalapi.Automa
 }
 
 func (h *Handlers) AutomationsUpdate(ctx context.Context, req *externalapi.UpdateAutomationInput, params externalapi.AutomationsUpdateParams) (externalapi.AutomationsUpdateRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), scopeAutomationsWrite) {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeAutomationsWrite) {
 		res := externalapi.AutomationsUpdateUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
@@ -113,7 +107,7 @@ func (h *Handlers) AutomationsUpdate(ctx context.Context, req *externalapi.Updat
 }
 
 func (h *Handlers) AutomationsDelete(ctx context.Context, params externalapi.AutomationsDeleteParams) (externalapi.AutomationsDeleteRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), scopeAutomationsWrite) {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeAutomationsWrite) {
 		res := externalapi.AutomationsDeleteUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
@@ -135,7 +129,7 @@ func (h *Handlers) AutomationsDelete(ctx context.Context, params externalapi.Aut
 
 // AutomationsArchive archives an automation (ADR 0049); active enrollments refuse it with 409.
 func (h *Handlers) AutomationsArchive(ctx context.Context, params externalapi.AutomationsArchiveParams) (externalapi.AutomationsArchiveRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), scopeAutomationsWrite) {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeAutomationsWrite) {
 		res := externalapi.AutomationsArchiveUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
@@ -163,7 +157,7 @@ func (h *Handlers) AutomationsArchive(ctx context.Context, params externalapi.Au
 
 // AutomationsUnarchive restores an archived automation.
 func (h *Handlers) AutomationsUnarchive(ctx context.Context, params externalapi.AutomationsUnarchiveParams) (externalapi.AutomationsUnarchiveRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), scopeAutomationsWrite) {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeAutomationsWrite) {
 		res := externalapi.AutomationsUnarchiveUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
@@ -189,7 +183,7 @@ func (h *Handlers) AutomationsUnarchive(ctx context.Context, params externalapi.
 // authoring scopes never imply (ADR 0016). Over MCP, activate additionally needs
 // mcp:send (the x-mcp send flag).
 func (h *Handlers) AutomationsActivate(ctx context.Context, params externalapi.AutomationsActivateParams) (externalapi.AutomationsActivateRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), scopeAutomationsActivate) {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeAutomationsActivate) {
 		res := externalapi.AutomationsActivateUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
@@ -207,7 +201,7 @@ func (h *Handlers) AutomationsActivate(ctx context.Context, params externalapi.A
 }
 
 func (h *Handlers) AutomationsDeactivate(ctx context.Context, params externalapi.AutomationsDeactivateParams) (externalapi.AutomationsDeactivateRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), scopeAutomationsActivate) {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeAutomationsActivate) {
 		res := externalapi.AutomationsDeactivateUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}

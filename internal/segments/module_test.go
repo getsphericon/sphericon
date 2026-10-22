@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/segments"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -21,17 +22,12 @@ func TestCreateRejectsInvalidDefinition(t *testing.T) {
 	m := segments.New(env.Bus)
 	ctx := context.Background()
 
-	{
-		before, err := env.DB.Segment.Query().Count(ctx)
-		require.NoError(t, err)
+	_, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), segments.CreateInput{Name: "Bad", Definition: new(badDefinition)})
+	require.ErrorIs(t, err, segments.ErrInvalidDefinition)
 
-		_, err = m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), segments.CreateInput{Name: "Bad", Definition: new(badDefinition)})
-		require.ErrorIs(t, err, segments.ErrInvalidDefinition)
-
-		after, err := env.DB.Segment.Query().Count(ctx)
-		require.NoError(t, err)
-		assert.Equal(t, before, after, "nothing persisted")
-	}
+	persisted, err := env.DB.Scoped(fixtures.AcmeID).Segment().Query().Where(segment.Name("Bad")).Exist(ctx)
+	require.NoError(t, err)
+	assert.False(t, persisted, "nothing persisted")
 }
 
 func TestCreateAcceptsValidAndEmptyDefinition(t *testing.T) {

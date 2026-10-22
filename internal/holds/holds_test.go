@@ -38,11 +38,9 @@ func newWorld(t *testing.T) world {
 	}
 }
 
-func (w world) hold(t *testing.T, key string, expires time.Time) {
-	t.Helper()
-	_, err := w.s.Hold().Create().SetKey(key).SetReasonCode("review").SetMessage("held").
-		SetSetBy("service-a").SetExpiresAt(expires).Save(w.ctx)
-	require.NoError(t, err)
+// until moves the expiry of a fixture hold of Acme: the fixture holds are all lapsed.
+func (w world) until(id int64, expires time.Time) {
+	w.env.ExtendHold(w.ctx, fixtures.AcmeID, id, expires)
 }
 
 func (w world) standing(t *testing.T, staffHonoured bool) holds.Standing {
@@ -63,41 +61,41 @@ func TestLiveWorkspaceWithOnlyLapsedHoldsIsNotFrozen(t *testing.T) {
 
 func TestAHoldIsActiveOnlyWhileItsExpiryIsAfterNow(t *testing.T) {
 	w := newWorld(t)
-	w.hold(t, "future", w.now.Add(time.Hour))
-	w.hold(t, "boundary", w.now)
-	w.hold(t, "past", w.now.Add(-time.Hour))
+	w.until(fixtures.HoldAcmeLapsedID, w.now.Add(time.Hour))
+	w.until(fixtures.HoldAcmeSecondLapsedID, w.now)
+	w.until(fixtures.HoldAcmeThirdLapsedID, w.now.Add(-time.Hour))
 
 	st := w.standing(t, true)
 	staffKeys := keys(st.Staff)
 	reason := st.Reason()
 
-	assert.Equal(t, []string{"future"}, staffKeys)
+	assert.Equal(t, []string{fixtures.HoldAcmeLapsedKey}, staffKeys)
 	assert.Equal(t, holds.ReasonStaff, reason)
 }
 
 func TestASecondActiveHoldKeepsSendingFrozenAfterTheFirstIsCleared(t *testing.T) {
 	w := newWorld(t)
-	w.hold(t, "b", w.now.Add(time.Hour))
-	w.hold(t, "a", w.now.Add(time.Hour))
+	w.until(fixtures.HoldAcmeSecondLapsedID, w.now.Add(time.Hour))
+	w.until(fixtures.HoldAcmeLapsedID, w.now.Add(time.Hour))
 
 	both := w.standing(t, true)
 	bothKeys := keys(both.Staff)
-	assert.Equal(t, []string{"a", "b"}, bothKeys, "ordered by key")
+	assert.Equal(t, []string{fixtures.HoldAcmeLapsedKey, "lapsed-second"}, bothKeys, "ordered by key")
 
-	_, err := w.s.Hold().Delete().Where(enthold.Key("a")).Exec(w.ctx)
+	_, err := w.s.Hold().Delete().Where(enthold.Key(fixtures.HoldAcmeLapsedKey)).Exec(w.ctx)
 	require.NoError(t, err)
 
 	cleared := w.standing(t, true)
 	clearedKeys := keys(cleared.Staff)
 	clearedReason := cleared.Reason()
-	assert.Equal(t, []string{"b"}, clearedKeys)
+	assert.Equal(t, []string{"lapsed-second"}, clearedKeys)
 	assert.Equal(t, holds.ReasonStaff, clearedReason)
 }
 
 func TestSuspensionIsItsOwnSourceBesideStaffHolds(t *testing.T) {
 	w := newWorld(t)
 	w.env.SuspendWorkspace(w.ctx, fixtures.AcmeID, w.now)
-	w.hold(t, "review", w.now.Add(time.Hour))
+	w.until(fixtures.HoldAcmeLapsedID, w.now.Add(time.Hour))
 
 	st := w.standing(t, true)
 	reason := st.Reason()
@@ -105,14 +103,14 @@ func TestSuspensionIsItsOwnSourceBesideStaffHolds(t *testing.T) {
 
 	assert.Equal(t, holds.ReasonSuspended, reason, "suspension outranks Staff holds")
 	require.NotNil(t, st.SuspendedAt)
-	assert.Equal(t, []string{"review"}, staffKeys, "never merged: the hold stays in its own list")
+	assert.Equal(t, []string{fixtures.HoldAcmeLapsedKey}, staffKeys, "never merged: the hold stays in its own list")
 }
 
 func TestDeletionOutranksSuspensionAndStaffHolds(t *testing.T) {
 	w := newWorld(t)
 	w.env.SuspendWorkspace(w.ctx, fixtures.AcmeID, w.now)
 	w.env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetDiscardedAt(w.now).ExecX(w.ctx)
-	w.hold(t, "review", w.now.Add(time.Hour))
+	w.until(fixtures.HoldAcmeLapsedID, w.now.Add(time.Hour))
 
 	st := w.standing(t, true)
 	reason := st.Reason()
@@ -123,12 +121,12 @@ func TestDeletionOutranksSuspensionAndStaffHolds(t *testing.T) {
 	assert.Equal(t, holds.KeyPendingDeletion, st.Deletion.Key)
 	assert.Equal(t, holds.Message(holds.ReasonPendingDeletion), st.Deletion.Message)
 	assert.NotNil(t, st.SuspendedAt)
-	assert.Equal(t, []string{holds.KeyPendingDeletion, "review"}, listed)
+	assert.Equal(t, []string{holds.KeyPendingDeletion, fixtures.HoldAcmeLapsedKey}, listed)
 }
 
 func TestWithoutTheStaffLicenseHoldsAreIgnoredButDeletionAndSuspensionCount(t *testing.T) {
 	w := newWorld(t)
-	w.hold(t, "review", w.now.Add(time.Hour))
+	w.until(fixtures.HoldAcmeLapsedID, w.now.Add(time.Hour))
 
 	unlicensed := w.standing(t, false)
 	unlicensedReason := unlicensed.Reason()
@@ -150,7 +148,7 @@ func TestWithoutTheStaffLicenseHoldsAreIgnoredButDeletionAndSuspensionCount(t *t
 // while deletion and suspension still count; deletion is reported first.
 func TestReasonHonoursTheLicenseFunctionAndReportsDeletionFirst(t *testing.T) {
 	w := newWorld(t)
-	w.hold(t, "review", w.now.Add(time.Hour))
+	w.until(fixtures.HoldAcmeLapsedID, w.now.Add(time.Hour))
 	clock := func() time.Time { return w.now }
 	on := holds.New(func() bool { return true }, clock)
 	off := holds.New(func() bool { return false }, clock)

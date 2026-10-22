@@ -43,7 +43,7 @@ func TestAccessAndConfigEntitiesAreAuditedWithoutSecrets(t *testing.T) {
 	hookResp, ok := hook.(*siteapi.SiteWebhookEndpointResource)
 	require.True(t, ok)
 
-	token, err := c.SiteTokensCreate(ctx, &siteapi.SiteCreateTokenInput{Name: "audited", Scopes: []string{"contacts:read"}},
+	token, err := c.SiteTokensCreate(ctx, &siteapi.SiteCreateTokenInput{Name: "audited", Scopes: []siteapi.ApiTokenScope{"contacts:read"}},
 		siteapi.SiteTokensCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	tokenResp, tok := token.(*siteapi.SiteCreateTokenResponse)
@@ -106,7 +106,7 @@ func TestApiTokenRevocationIsAudited(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 
-	created, err := c.SiteTokensCreate(ctx, &siteapi.SiteCreateTokenInput{Name: "to-revoke", Scopes: []string{"contacts:read"}},
+	created, err := c.SiteTokensCreate(ctx, &siteapi.SiteCreateTokenInput{Name: "to-revoke", Scopes: []siteapi.ApiTokenScope{"contacts:read"}},
 		siteapi.SiteTokensCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	resp, ok := created.(*siteapi.SiteCreateTokenResponse)

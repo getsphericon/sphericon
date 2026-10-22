@@ -16,32 +16,19 @@ import (
 	"github.com/getsphericon/sphericon/internal/events"
 )
 
-const (
-	defaultLimit = 25
-	maxLimit     = 100
-)
-
 // ErrBadCursor is returned for a cursor that is not a positive entry id.
 var ErrBadCursor = errors.New("invalid cursor")
 
-// Page parses the optional cursor (empty starts from the newest entry) and clamps
-// the page size: an absent or out-of-range limit becomes the default.
-func Page(cursor string, limit int32, limitSet bool) (int64, int, error) {
-	var after int64
-	if cursor != "" {
-		var err error
-		if after, err = strconv.ParseInt(cursor, 10, 64); err != nil || after < 1 {
-			return 0, 0, ErrBadCursor
-		}
+// Page parses the optional cursor (empty starts from the newest entry).
+func Page(cursor string) (int64, error) {
+	if cursor == "" {
+		return 0, nil
 	}
-	n := defaultLimit
-	if limitSet {
-		n = int(limit)
+	after, err := strconv.ParseInt(cursor, 10, 64)
+	if err != nil || after < 1 {
+		return 0, ErrBadCursor
 	}
-	if n < 1 || n > maxLimit {
-		n = defaultLimit
-	}
-	return after, n, nil
+	return after, nil
 }
 
 // NextCursor renders the cursor of the next page.
@@ -66,7 +53,15 @@ type View struct {
 }
 
 // ViewOf builds the customer-facing view of a stored entry.
-func ViewOf(e *ent.AuditEntry) View {
+func ViewOf(e *ent.AuditEntry) View { return viewOf(e, events.IsStaff(e.ActorKind)) }
+
+// StaffViewOf builds the platform console's view: like ViewOf, except that a Service credential
+// is named (the customer sees it as "Sphericon staff").
+func StaffViewOf(e *ent.AuditEntry) View {
+	return viewOf(e, events.IsStaff(e.ActorKind) && e.ActorKind != events.ActorService)
+}
+
+func viewOf(e *ent.AuditEntry, maskActor bool) View {
 	v := View{
 		ID:         e.ID,
 		OccurredAt: e.OccurredAt,
@@ -81,7 +76,7 @@ func ViewOf(e *ent.AuditEntry) View {
 		IP:         e.IP,
 		UserAgent:  e.UserAgent,
 	}
-	if events.IsStaff(e.ActorKind) {
+	if maskActor {
 		label := events.StaffLabel
 		v.ActorKind, v.ActorID, v.ActorName = events.ActorStaff, nil, &label
 	}

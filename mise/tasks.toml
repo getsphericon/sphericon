@@ -340,13 +340,15 @@ description = "Go interfaces -> test mocks (moq, *_gen_test.go next to the tests
 run = [
   "go tool moq -out internal/jobs/mocks_gen_test.go -pkg jobs_test ./internal/outbound Senders",
   "go tool moq -out internal/messaging/mocks_gen_test.go -pkg messaging_test ./internal/messaging EmailSender",
-  "go tool moq -out internal/events/mocks_gen_test.go -pkg events ./internal/events Enroller WebhookDispatcher",
-  "go tool moq -out internal/events/mocks_ext_gen_test.go -pkg events_test ./internal/events Enroller WebhookDispatcher",
 ]
 
 ["generate:fixtures"]
 description = "fixtures/*.yml -> Go (fixture catalog constants for `# fixture: Name` rows)"
 run = "go run ./cmd/fixturegen"
+
+["generate:scopes"]
+description = "openapi/service (x-required-scopes) -> Go (ee/staff service operation-to-scopes map)"
+run = "go run ./cmd/scopegen"
 
 [generate]
 description = "Full cycle: typespec -> openapi -> backend -> test mocks -> fixture catalog -> frontend (clients, route tree) -> i18n types -> format"
@@ -355,16 +357,21 @@ run = [
   { task = "generate:openapi" },
   { task = "generate:routes" },
   { task = "generate:backend" },
+  { task = "generate:scopes" },
   { task = "generate:mocks" },
   { task = "generate:fixtures" },
   { task = "fix" },
 ]
 
 ["generate:check"]
-description = "Fail when committed generated output differs from what `generate` produces (CI gate, needs a clean tree)"
+description = "Review rule 1: fail when committed generated output differs from what `generate` produces (CI gate, needs a clean tree)"
+# `git status --porcelain` lists a modified, deleted or new file. A generated path that is not
+# checked in is excluded by .gitignore and nowhere else, each for its reason: internal/server/assets/t.js
+# and packages/*/dist (the tracker bundle, built by `build:tracker`), internal/server/assets/spa/ and
+# internal/changelog/CHANGELOG.md (release-only copies); none is produced by `generate`.
 run = [
   { task = "generate" },
-  '''test -z "$(git status --porcelain)" || { echo 'generated code is out of date; run `mise run generate` and commit:'; git status --short; git diff | head -80; exit 1; }''',
+  '''test -z "$(git status --porcelain)" || { echo 'Review rule 1 (docs/agents/review-rules.md): generated files must come from the generator, never from a hand edit or a stale run. Run `mise run generate` and commit the result. Differing files:'; git status --short; git diff | head -80; exit 1; }''',
 ]
 
 # --- checks ----------------------------------------------------------------------
@@ -379,6 +386,7 @@ depends = [
   "check:security",
   "check:ast",
   "check:openapi",
+  "check:copies",
   "check:typos",
   "check:adr",
   "check:helm",
@@ -439,8 +447,30 @@ run = [
 ]
 
 ["check:be"]
-description = "golangci-lint (incl. the gofmt formatter) and go.mod tidiness"
-run = ["mise/scripts/heavy.sh golangci-lint run --allow-serial-runners ./...", "go mod tidy -diff"]
+description = "golangci-lint with our analyzers (incl. the gofmt formatter), the analyzers' own tests, and go.mod tidiness"
+depends = ["build:lint", "check:lint-pins"]
+run = [
+  "mise/scripts/heavy.sh .bin/custom-gcl run --allow-serial-runners ./...",
+  "cd tools/analyzers && ../../mise/scripts/heavy.sh ../../.bin/custom-gcl run --allow-serial-runners --config ../../.golangci.yml ./... && go test ./...",
+  "go mod tidy -diff",
+  "cd tools/analyzers && go mod tidy -diff",
+]
+
+["build:lint"]
+description = "Build .bin/custom-gcl: golangci-lint with our analyzers (.custom-gcl.yml, tools/analyzers); rebuilt only when they change"
+sources = [
+  ".custom-gcl.yml",
+  "tools/analyzers/**/*.go",
+  "tools/analyzers/go.mod",
+  "tools/analyzers/go.sum",
+  "mise.lock",
+]
+outputs = [".bin/custom-gcl"]
+run = "mise/scripts/heavy.sh golangci-lint custom"
+
+["check:lint-pins"]
+description = "The golangci-lint version of .custom-gcl.yml is the pinned one, and the analyzers' x/tools and plugin-register versions are the ones that golangci-lint itself uses"
+run = "mise/scripts/check-lint-pins.sh"
 
 ["check:schema"]
 description = "schemalens: the ent schema and the migrated database agree, and the database passes its rules"
@@ -455,6 +485,10 @@ run = "go tool govulncheck ./..."
 ["check:ast"]
 description = "Project-specific syntax rules (sgconfig.yml, ast-grep/): tests, then scan"
 run = ["ast-grep test", "ast-grep scan"]
+
+["check:copies"]
+description = "Rule 6: no hand-written copy of a TypeSpec enum, limit or scope in Go, TypeScript or fixtures (cmd/contractcopy reads openapi/*.openapi.json; a value that only looks like a contract value carries `// contract-copy: <reason>`)"
+run = "go run ./cmd/contractcopy"
 
 ["check:typos"]
 description = "Spelling in code, docs and comments (_typos.toml)"

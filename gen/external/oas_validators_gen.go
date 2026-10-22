@@ -95,15 +95,13 @@ func (s ApiTokenScope) Validate() error {
 		return nil
 	case "contacts:write":
 		return nil
-	case "contacts:erase":
+	case "events:read":
+		return nil
+	case "events:write":
 		return nil
 	case "segments:read":
 		return nil
 	case "segments:write":
-		return nil
-	case "events:read":
-		return nil
-	case "events:write":
 		return nil
 	case "broadcasts:read":
 		return nil
@@ -131,11 +129,7 @@ func (s ApiTokenScope) Validate() error {
 		return nil
 	case "sending_domains:read":
 		return nil
-	case "sending_domains:write":
-		return nil
 	case "integrations:read":
-		return nil
-	case "integrations:write":
 		return nil
 	case "emails:send":
 		return nil
@@ -144,6 +138,12 @@ func (s ApiTokenScope) Validate() error {
 	case "automations:activate":
 		return nil
 	case "mcp:send":
+		return nil
+	case "contacts:erase":
+		return nil
+	case "sending_domains:write":
+		return nil
+	case "integrations:write":
 		return nil
 	case "tokens:read":
 		return nil
@@ -5804,6 +5804,8 @@ func (s UsedByKind) Validate() error {
 
 func (s WebhookDisabledReason) Validate() error {
 	switch s {
+	case "owner":
+		return nil
 	case "gone":
 		return nil
 	case "persistent_failure":

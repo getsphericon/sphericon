@@ -55,8 +55,8 @@ model TrackingRecord {
 
 /**
  * Sending domain (ADR 0010). sphericon generates the DKIM keypair; the caller publishes the
- * DKIM TXT record. The private key is never returned. `verified` is a live property
- * re-checked in the background: it can flip back if the DNS record disappears.
+ * DKIM TXT record. The private key is never returned. `verified` is re-checked in the
+ * background: the domain loses it (`verificationLostAt`) if the DNS record disappears.
  */
 @resource("sending-domains")
 @segment("sending-domains")
@@ -71,7 +71,7 @@ model SendingDomainResource {
   /** DKIM selector; the record host is "<selector>._domainkey.<domain>" */
   dkimSelector: string;
 
-  /** Whether the DKIM DNS is currently published and matches our key */
+  /** Whether the domain is verified now: it has a `verifiedAt` and no `verificationLostAt` since */
   verified: boolean;
 
   /** The required DKIM TXT record */
@@ -89,8 +89,11 @@ model SendingDomainResource {
   /** When the DKIM DNS was most recently checked (null = never) */
   lastCheckedAt?: Timestamp | null;
 
-  /** When the domain most recently became verified (null = never) */
+  /** When the domain most recently became verified (null = never); kept after a loss */
   verifiedAt?: Timestamp | null;
+
+  /** When a re-check most recently found the verified DKIM DNS gone (null = not lost: never verified, or verified again since) */
+  verificationLostAt?: Timestamp | null;
 
   /** When the domain was archived; null while it is kept. An archived domain serves no Tracking domain host. */
   archivedAt?: Timestamp | null;

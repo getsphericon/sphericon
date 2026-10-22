@@ -126,15 +126,13 @@ func TestCollectIdentifyStitchesAnonymousEvents(t *testing.T) {
 	c := env.CollectAcme(t)
 	ctx := context.Background()
 
-	// A pre-identify anonymous event from device "vX" (as the persist subscriber
-	// would have written it: visitor_id set, contact_id null).
-	_, err := env.DB.Event.Create().
-		SetWorkspaceID(fixtures.AcmeID).SetVisitorID("vX").SetAction("page_view").Save(ctx)
-	require.NoError(t, err)
+	// A pre-identify anonymous event from a device (as the persist subscriber would have
+	// written it: visitor_id set, contact_id null) is in the fixtures.
+	const device = fixtures.EventAnonymousFirstVisitorID
 
 	// Identify the device → binds it to a Contact and backfills its anonymous events.
-	_, err = c.CollectIdentifyCreate(ctx, &collectapi.CollectIdentifyInput{
-		VisitorId: "vX",
+	_, err := c.CollectIdentifyCreate(ctx, &collectapi.CollectIdentifyInput{
+		VisitorId: device,
 		Email:     collectapi.NewOptNilEmailAddress("stitch@example.com"),
 	})
 	require.NoError(t, err)
@@ -144,7 +142,7 @@ func TestCollectIdentifyStitchesAnonymousEvents(t *testing.T) {
 
 	// The previously anonymous event is now attached to the Contact (the stitch UPDATE
 	// actually ran — not a no-op).
-	ev, err := env.DB.Event.Query().Where(event.VisitorID("vX")).Only(ctx)
+	ev, err := env.DB.Event.Query().Where(event.VisitorID(device)).Only(ctx)
 	require.NoError(t, err)
 	require.NotNil(t, ev.ContactID)
 	assert.Equal(t, ct.ID, *ev.ContactID)

@@ -1,0 +1,10 @@
+# The Outbound message that recipient 1 of ../decided lacked.
+- kind: broadcast
+  idempotency_key: 'broadcast:1'
+  status: sent
+  claimed_at: '{{now}}'
+  broadcast_id: 1
+  broadcast_recipient_id: 1
+  workspace_id: 1
+  created_at: '{{now}}'
+  updated_at: '{{now}}'

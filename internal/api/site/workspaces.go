@@ -10,7 +10,6 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/membership"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accountlink"
 	"github.com/getsphericon/sphericon/internal/accounts"
@@ -18,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/secondfactor"
+	"github.com/getsphericon/sphericon/internal/suspension"
 	"github.com/getsphericon/sphericon/internal/workspacedeletion"
 )
 
@@ -49,11 +49,11 @@ func (h *Handlers) SiteWorkspacesList(ctx context.Context) ([]siteapi.SiteWorksp
 func (h *Handlers) workspaceResource(ctx context.Context, s *ent.Scoped, m *ent.Membership) (siteapi.SiteWorkspaceResource, error) {
 	r := mapper.WorkspaceToResource(m.Edges.Workspace)
 	r.Role = siteapi.SiteMembershipRole(m.Role)
-	if m.Edges.Workspace.SuspendedAt != nil && h.supportEmail != "" {
+	if suspension.Is(m.Edges.Workspace) && h.supportEmail != "" {
 		r.SupportEmail = siteapi.NewOptNilString(h.supportEmail)
 	}
 	r.McpUrl = h.mcpURL
-	r.AccountLinkAvailable = h.accountLink != nil && m.Role == membership.RoleOwner
+	r.AccountLinkAvailable = h.accountLink != nil && accounts.IsOwner(m.Role)
 	// A strong session (a Passkey login or a Second factor step) meets the requirement, so it has
 	// no grace to count down: this is the decision secondfactor.Withheld makes.
 	if end, ok := secondfactor.Deadline(m); ok && !currentSession(ctx).Method.Strong() {
@@ -129,7 +129,7 @@ func (h *Handlers) SiteWorkspacesAccountLink(ctx context.Context, params siteapi
 	if err != nil {
 		return nil, err
 	}
-	if m.Role != membership.RoleOwner {
+	if !accounts.IsOwner(m.Role) {
 		v := siteapi.SiteWorkspacesAccountLinkForbidden(problem(http.StatusForbidden, "only the owner can open the account link"))
 		return &v, nil
 	}

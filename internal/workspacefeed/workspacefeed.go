@@ -18,13 +18,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strconv"
-	"strings"
 
 	"entgo.io/ent"
 
 	entclient "github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/membership"
+	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/postgres"
 )
 
 // lockKey is the advisory lock that makes positions commit in the order they are taken:
@@ -213,18 +213,16 @@ func workspacesOf(ctx context.Context, q *entclient.MembershipQuery) ([]int64, e
 // touch gives each Workspace the next position, all of them the same one. The lock is
 // taken first and held to the end of the surrounding transaction.
 func touch(ctx context.Context, c *entclient.Client, workspaceIDs ...int64) error {
-	if _, err := c.ExecContext(ctx, "SELECT pg_advisory_xact_lock($1)", lockKey); err != nil {
+	if err := postgres.LockTx(ctx, c, lockKey); err != nil {
 		return fmt.Errorf("workspace feed lock: %w", err)
 	}
-	args := make([]any, len(workspaceIDs))
-	marks := make([]string, len(workspaceIDs))
-	for i, id := range workspaceIDs {
-		args[i] = id
-		marks[i] = "$" + strconv.Itoa(i+1)
+	// The lock keeps the position unique: no other transaction can take the maximum
+	// between this read and the update.
+	top, err := c.Workspace.Query().Aggregate(entclient.Max(workspace.FieldFeedPosition)).Int(ctx)
+	if err != nil {
+		return fmt.Errorf("workspace feed position: %w", err)
 	}
-	query := "UPDATE workspaces SET feed_position = (SELECT COALESCE(MAX(feed_position), 0) + 1 FROM workspaces)" +
-		" WHERE id IN (" + strings.Join(marks, ", ") + ")"
-	if _, err := c.ExecContext(ctx, query, args...); err != nil {
+	if err := c.Workspace.Update().Where(workspace.IDIn(workspaceIDs...)).SetFeedPosition(int64(top) + 1).Exec(ctx); err != nil {
 		return fmt.Errorf("workspace feed position: %w", err)
 	}
 	return nil

@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
@@ -16,7 +17,7 @@ type WebhookEndpoint struct {
 
 func (WebhookEndpoint) Annotations() []schema.Annotation {
 	return []schema.Annotation{
-		TableWithEnumChecks("webhook_endpoints", WebhookEndpoint{}.Fields()),
+		webhookEndpointTable(),
 		Audited{Action: "webhook_endpoint", NameField: "url", NameIsURL: true},
 	}
 }
@@ -42,8 +43,12 @@ func (WebhookEndpoint) Fields() []ent.Field {
 		// Event names this endpoint subscribes to; empty/nil means all events.
 		field.Strings("event_types").
 			Optional(),
-		field.Bool("enabled").
-			Default(true),
+		// When the endpoint was turned off (nil = enabled), with disabled_reason saying why.
+		// Written by an owner or by the delivery worker, so a write is a compare-and-swap
+		// on nil.
+		field.Time("disabled_at").
+			Optional().
+			Nillable(),
 		// Failure state (ADR 0039), written by the delivery worker with no actor so it
 		// is not audited. All nil while the endpoint is healthy; a 2xx clears them.
 		// Failed deliveries in a row.
@@ -65,10 +70,10 @@ func (WebhookEndpoint) Fields() []ent.Field {
 		field.Time("last_failure_at").
 			Optional().
 			Nillable(),
-		// Why the endpoint turned itself off (ADR 0039): the receiver answered 410, or
-		// failed for longer than the window. Nil for an endpoint an owner disabled.
+		// Why the endpoint is off (ADR 0039): an owner turned it off, the receiver answered 410,
+		// or deliveries failed for longer than the window. Set exactly when disabled_at is.
 		field.Enum("disabled_reason").
-			Values("gone", "persistent_failure").
+			Values("owner", "gone", "persistent_failure").
 			Optional().
 			Nillable(),
 	}
@@ -76,6 +81,14 @@ func (WebhookEndpoint) Fields() []ent.Field {
 
 func (WebhookEndpoint) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("workspace_id", "enabled"),
+		index.Fields("workspace_id", "disabled_at"),
 	}
+}
+
+// webhookEndpointTable adds to the enum checks that an endpoint is disabled with a reason and
+// enabled without one.
+func webhookEndpointTable() entsql.Annotation {
+	a := TableWithEnumChecks("webhook_endpoints", WebhookEndpoint{}.Fields())
+	a.Checks["webhook_endpoints_disabled_check"] = "(disabled_at IS NULL) = (disabled_reason IS NULL)"
+	return a
 }

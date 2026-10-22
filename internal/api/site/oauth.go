@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/samber/lo"
 	"net/http"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -29,8 +30,8 @@ func (h *Handlers) SiteOAuthDescribe(ctx context.Context, params siteapi.SiteOAu
 		ClientName:    req.ClientName,
 		RedirectUri:   req.RedirectURI,
 		LocalRedirect: req.LocalRedirect,
-		Scopes:        orEmpty(req.Scopes),
-		SendScopes:    orEmpty(req.SendScopes),
+		Scopes:        lo.Map(req.Scopes, func(s string, _ int) siteapi.GrantableScope { return siteapi.GrantableScope(s) }),
+		SendScopes:    lo.Map(req.SendScopes, func(s string, _ int) siteapi.SendScope { return siteapi.SendScope(s) }),
 	}
 	if req.ClientHost != "" {
 		out.ClientHost = siteapi.NewOptString(req.ClientHost)
@@ -76,11 +77,4 @@ func (h *Handlers) SiteOAuthDecide(ctx context.Context, req *siteapi.SiteOAuthDe
 		return nil, err
 	}
 	return &siteapi.SiteOAuthDecisionResult{RedirectUrl: target}, nil
-}
-
-func orEmpty(s []string) []string {
-	if s == nil {
-		return []string{}
-	}
-	return s
 }

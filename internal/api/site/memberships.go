@@ -147,7 +147,7 @@ func (h *Handlers) SiteMembershipsResetSecondFactor(ctx context.Context, params 
 	if err != nil {
 		return nil, err
 	}
-	if target.Role == membership.RoleOwner && callerRole != membership.RoleOwner {
+	if accounts.IsOwner(target.Role) && !accounts.IsOwner(callerRole) {
 		v := siteapi.SiteMembershipsResetSecondFactorForbidden(problem(http.StatusForbidden, "only an owner may reset an owner's second factor"))
 		return &v, nil
 	}

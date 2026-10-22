@@ -1,0 +1,30 @@
+id: no-mock-calls-in-go-tests
+snapshots:
+  "func TestCalls(t *testing.T) {\n\tassert.Zero(t, ses.QuotaCalls())\n}\n":
+    labels:
+      - source: ses.QuotaCalls()
+        style: primary
+        start: 47
+        end: 63
+      - source: QuotaCalls
+        style: secondary
+        start: 51
+        end: 61
+      - source: ses.QuotaCalls
+        style: secondary
+        start: 47
+        end: 61
+  "func TestCallsIndexed(t *testing.T) {\n\trequire.Len(t, d.DispatchCalls(), 1)\n\tbody := d.DispatchCalls()[0].Body\n}\n":
+    labels:
+      - source: d.DispatchCalls()
+        style: primary
+        start: 54
+        end: 71
+      - source: DispatchCalls
+        style: secondary
+        start: 56
+        end: 69
+      - source: d.DispatchCalls
+        style: secondary
+        start: 54
+        end: 69

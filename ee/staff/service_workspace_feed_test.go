@@ -139,6 +139,7 @@ func TestAnOwnerAddedRemovedOrTransferredPutsTheWorkspaceBackInTheFeed(t *testin
 	_, saved := feedFrom(t, c, "")
 
 	// Added.
+	// test writes: the Workspace feed hook fires on this write
 	added, err := initech.Membership().Create().SetUserID(fixtures.MemberMaryID).SetRole(entmembership.RoleOwner).Save(t.Context())
 	require.NoError(t, err)
 	got, saved := feedFrom(t, c, saved)
@@ -178,6 +179,7 @@ func TestAMemberJoiningOrLeavingIsNotAChangeOfOwners(t *testing.T) {
 	initech := h.env.DB.Scoped(fixtures.InitechID)
 	_, saved := feedFrom(t, c, "")
 
+	// test writes: the Workspace feed hook fires on this write
 	m, err := initech.Membership().Create().SetUserID(fixtures.MemberMaryID).SetRole(entmembership.RoleMember).Save(t.Context())
 	require.NoError(t, err)
 	require.NoError(t, initech.Membership().DeleteOneID(m.ID).Exec(t.Context()))

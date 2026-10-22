@@ -833,6 +833,7 @@ func (c *Config) listenPort(name, addr string) (int, error) {
 
 // minJWTSecretLength is the shortest SPHERICON_JWT_SECRET accepted outside development
 // (32 characters = 256 bits when the secret is hex/random, the HS256 key size).
+// contract-copy: a secret-strength floor for SPHERICON_JWT_SECRET; no client sees it
 const minJWTSecretLength = 32
 
 // placeholderSecretMarkers are lowercase fragments of documented example and

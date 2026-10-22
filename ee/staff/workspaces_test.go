@@ -3,6 +3,7 @@ package staff_test
 import (
 	"encoding/json"
 	"net/http"
+	"slices"
 	"testing"
 	"time"
 
@@ -67,10 +68,12 @@ func TestTheWorkspaceListShowsEveryWorkspaceNewestFirst(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
 
-	page := h.listWorkspaces(t, c, staffapi.StaffWorkspacesListParams{})
+	page := h.listWorkspaces(t, c, staffapi.StaffWorkspacesListParams{PageSize: staffapi.NewOptInt32(100)})
 
-	assert.Equal(t, []string{"Brightpath", "Cyberdyne", "Aviato", "Pied Piper", "Wayne", "Kramerica", "Vandelay", "Soylent", "Hooli", "Umbrella", "Initech", "Globex", "Acme"}, names(page.Items))
-	assert.EqualValues(t, 13, page.TotalItems)
+	anchors := []string{"Brightpath", "Cyberdyne", "Aviato", "Pied Piper", "Wayne", "Kramerica", "Vandelay", "Soylent", "Hooli", "Umbrella", "Initech", "Globex", "Acme"}
+	listed := lo.Filter(names(page.Items), func(name string, _ int) bool { return slices.Contains(anchors, name) })
+	assert.Equal(t, anchors, listed, "the anchor Workspaces, newest first")
+	assert.EqualValues(t, len(page.Items), page.TotalItems, "one page holds every Workspace")
 	assert.EqualValues(t, 1, page.TotalPages)
 	assert.EqualValues(t, 1, page.Page)
 }
@@ -79,13 +82,14 @@ func TestTheWorkspaceListIsPaginated(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
 
+	everyone := h.listWorkspaces(t, c, staffapi.StaffWorkspacesListParams{PageSize: staffapi.NewOptInt32(100)})
 	second := h.listWorkspaces(t, c, staffapi.StaffWorkspacesListParams{
 		Page: staffapi.NewOptInt32(2), PageSize: staffapi.NewOptInt32(2),
 	})
 
-	assert.Equal(t, []string{"Aviato", "Pied Piper"}, names(second.Items))
-	assert.EqualValues(t, 13, second.TotalItems)
-	assert.EqualValues(t, 7, second.TotalPages)
+	assert.Equal(t, names(everyone.Items[2:4]), names(second.Items), "the second page is the third and fourth Workspace")
+	assert.Equal(t, everyone.TotalItems, second.TotalItems)
+	assert.Equal(t, (everyone.TotalItems+1)/2, second.TotalPages)
 	assert.EqualValues(t, 2, second.PageSize)
 }
 
@@ -267,24 +271,11 @@ func TestTheSendVolumeIsTheCountOfSentEventsInTheWindow(t *testing.T) {
 	c, _ := h.staffSession(t)
 	ctx := t.Context()
 	s := h.env.DB.Scoped(fixtures.SoylentID)
-	inWindow := func() int {
-		return s.Event().Query().Where(
-			event.Action(events.NameEmailSent),
-			event.OccurredAtGTE(time.Now().Add(-abuse.Window)),
-		).CountX(ctx)
-	}
-	require.Equal(t, 8, inWindow(), "the fixtures hold 8 sends in the window")
-	assert.EqualValues(t, inWindow(), soylentDeliverabilityAs(t, h, c).SendVolume)
+	sent := s.Event().Query().Where(event.Action(events.NameEmailSent))
+	inWindow := sent.Clone().Where(event.OccurredAtGTE(time.Now().Add(-abuse.Window))).CountX(ctx)
+	require.Greater(t, sent.CountX(ctx), inWindow, "the fixtures hold a send older than the window")
 
-	require.NoError(t, s.Event().Create().SetAction(events.NameEmailSent).SetEmail("extra@example.com").
-		SetProperties(map[string]any{"sendingDomain": fixtures.SendingDomainSoylentDomain}).
-		SetOccurredAt(time.Now().Add(-time.Hour)).Exec(ctx))
-	require.NoError(t, s.Event().Create().SetAction(events.NameEmailSent).SetEmail("old@example.com").
-		SetProperties(map[string]any{"sendingDomain": fixtures.SendingDomainSoylentDomain}).
-		SetOccurredAt(time.Now().Add(-abuse.Window-time.Hour)).Exec(ctx))
-
-	assert.Equal(t, 9, inWindow())
-	assert.EqualValues(t, 9, soylentDeliverabilityAs(t, h, c).SendVolume, "a new send counts, one past the window does not")
+	assert.EqualValues(t, inWindow, soylentDeliverabilityAs(t, h, c).SendVolume, "a send past the window does not count")
 }
 
 func TestAtOrAboveTheVolumeFloorTheRatesAreDefined(t *testing.T) {
@@ -350,13 +341,14 @@ func TestTheWorkspaceListHidesADeletedWorkspaceUnlessFilteredToDeleted(t *testin
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
 	discardedAt := time.Now().UTC().Truncate(time.Second)
+	before := h.listWorkspaces(t, c, staffapi.StaffWorkspacesListParams{})
 	h.env.DB.Workspace.UpdateOneID(fixtures.GlobexID).SetDiscardedAt(discardedAt).ExecX(t.Context())
 
 	all := h.listWorkspaces(t, c, staffapi.StaffWorkspacesListParams{})
 	deleted := h.listWorkspaces(t, c, staffapi.StaffWorkspacesListParams{Review: staffapi.NewOptStaffWorkspaceReview(staffapi.StaffWorkspaceReviewDeleted)})
 
 	assert.NotContains(t, names(all.Items), "Globex")
-	assert.EqualValues(t, 12, all.TotalItems)
+	assert.Equal(t, before.TotalItems-1, all.TotalItems)
 	require.Equal(t, []string{"Bluth", "Globex"}, names(deleted.Items))
 	globex, found := lo.Find(deleted.Items, func(w staffapi.StaffWorkspaceResource) bool { return w.Name == "Globex" })
 	require.True(t, found)

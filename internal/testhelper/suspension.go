@@ -10,7 +10,7 @@ import (
 // SuspendWorkspace leaves a Workspace suspended at `at` the way internal/suspension does: the
 // actor and the reason are written with suspended_at, as the table's check requires.
 func (env *TestEnv) SuspendWorkspace(ctx context.Context, id int64, at time.Time) {
-	env.DB.Workspace.UpdateOneID(id).
+	env.DB.Workspace.Update().Where(workspace.ID(id)).
 		SetSuspendedAt(at).
 		SetSuspendedByKind(workspace.SuspendedByKindSystem).
 		SetSuspensionReason("test").

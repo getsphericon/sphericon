@@ -13,7 +13,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/contact"
@@ -167,24 +166,21 @@ func TestExternalContactsExportEmptyMembersAreArrays(t *testing.T) {
 func TestExternalContactsExportStreamsLargeContacts(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	const extra = 1200 // more than two pages of the keyset reader
-	s := env.DB.Scoped(fixtures.AcmeID)
-	bulk := make([]*ent.EventScopedCreate, 0, extra)
-	for range extra {
-		bulk = append(bulk, s.Event().Create().SetContactID(fixtures.ContactExportSubjectID).SetAction("bulk_event"))
-	}
-	require.NoError(t, s.Event().CreateBulk(bulk...).Exec(ctx))
+	// The fixtures give the Contact more Events than two pages of the keyset reader.
+	stored, err := env.DB.Scoped(fixtures.AcmeID).Event().Query().Where(event.ContactID(fixtures.ContactExportHeavyID)).Count(ctx)
+	require.NoError(t, err)
+	require.Greater(t, stored, 1000)
 
 	c := env.ExternalScoped(t, "contacts:read")
 	res, err := c.ContactsExport(ctx, externalapi.ContactsExportParams{
-		ID: externalapi.NewOptEntityId(entityIDString(fixtures.ContactExportSubjectID)),
+		ID: externalapi.NewOptEntityId(entityIDString(fixtures.ContactExportHeavyID)),
 	})
 	require.NoError(t, err)
 
 	// The document stays one valid JSON value across the keyset pages and holds
 	// every Event of the Contact.
 	doc, _, _ := readExport(t, res)
-	assert.Len(t, doc.Events, extra+3)
+	assert.Len(t, doc.Events, stored)
 }
 
 func TestExternalContactsExportNeedsTheReadScope(t *testing.T) {

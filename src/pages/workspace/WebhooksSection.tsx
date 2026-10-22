@@ -268,10 +268,12 @@ export function WebhooksSection({ workspaceId }: { workspaceId: string }) {
                   <Text size="xs" c="dimmed">
                     {
                       {
+                        owner: t(($) => $.settings.webhooks.disabledOwner),
                         gone: t(($) => $.settings.webhooks.disabledGone),
                         persistent_failure: t(($) => $.settings.webhooks.disabledPersistentFailure),
                       }[record.disabledReason]
                     }
+                    {record.disabledAt ? ` (${new Date(record.disabledAt).toLocaleString()})` : ''}
                   </Text>
                 ) : null}
                 {record.failure ? (

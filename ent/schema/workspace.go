@@ -106,7 +106,11 @@ func (Workspace) Fields() []ent.Field {
 			Nillable(),
 		field.String("suspended_by_id").
 			Optional().
-			Nillable(),
+			Nillable().
+			Annotations(ScopedRef{
+				Unchecked: true,
+				Reason:    "snapshot of the Staff member who suspended: the Staff member table is not part of the Workspace's data, and the id must survive the member's removal",
+			}),
 		field.String("suspension_reason").
 			Optional().
 			Nillable(),

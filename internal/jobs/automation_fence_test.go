@@ -78,7 +78,7 @@ func (b *blockingSender) Send(ctx context.Context, msg messaging.EmailMessage) (
 type realEnv struct {
 	client *ent.Client
 	scoped *ent.Scoped
-	fence  jobs.Fencer
+	fence  automations.Fencer
 	url    string
 }
 
@@ -89,7 +89,7 @@ func newRealEnv(t *testing.T) *realEnv {
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = sqlDB.Close() })
 	client := db.NewEntClient(sqlDB)
-	return &realEnv{client: client, scoped: client.Scoped(fixtures.AcmeID), fence: jobs.FenceOn(client), url: url}
+	return &realEnv{client: client, scoped: client.Scoped(fixtures.AcmeID), fence: automations.FenceOn(client), url: url}
 }
 
 func (e *realEnv) mod(t *testing.T, sender messaging.EmailSender) *outbound.Module {
@@ -217,20 +217,4 @@ func TestExitDuringAnHTTPStepWaitsForTheCall(t *testing.T) {
 	require.NoError(t, <-exited)
 	assert.Equal(t, automationrun.StatusExited, e.client.AutomationRun.GetX(ctx, runID).Status)
 	assert.Len(t, rcv.received(), 1, "exactly one call for the step")
-}
-
-// An exit committed before a step takes the lock sends nothing: the lock is taken on the
-// active row, so the step finds the Enrollment gone from `active`.
-func TestFenceOnAnExitedEnrollmentRunsNothing(t *testing.T) {
-	env := testhelper.Setup(t)
-	runID := exitedRun(t, env, fixtures.AutomationHoldDemoID, fixtures.ContactAliceID)
-	ran := make(chan struct{})
-
-	err := jobs.FenceOn(env.DB)(context.Background(), env.DB.Scoped(fixtures.AcmeID), runID, func(context.Context) error {
-		close(ran)
-		return nil
-	})
-
-	require.True(t, automations.Stale(err))
-	assert.False(t, settled(ran))
 }

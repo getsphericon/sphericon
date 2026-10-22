@@ -43,6 +43,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/passkey"
 	"github.com/getsphericon/sphericon/ent/passkeychallenge"
 	"github.com/getsphericon/sphericon/ent/recoverycode"
+	"github.com/getsphericon/sphericon/ent/riverjob"
 	"github.com/getsphericon/sphericon/ent/schemastate"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
@@ -150,6 +151,7 @@ func checkColumn(t, c string) error {
 			passkey.Table:            passkey.ValidColumn,
 			passkeychallenge.Table:   passkeychallenge.ValidColumn,
 			recoverycode.Table:       recoverycode.ValidColumn,
+			riverjob.Table:           riverjob.ValidColumn,
 			schemastate.Table:        schemastate.ValidColumn,
 			segment.Table:            segment.ValidColumn,
 			sendlimiter.Table:        sendlimiter.ValidColumn,

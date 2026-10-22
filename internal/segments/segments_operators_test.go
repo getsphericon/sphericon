@@ -5,40 +5,12 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/segments"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-// opsEmails returns the emails of this test's contacts (suffix @ops.test) matching g.
-func opsEmails(t *testing.T, env *testhelper.TestEnv, g segments.Group) []string {
-	t.Helper()
-	ctx := context.Background()
-	p, err := segments.Compile(ctx, env.DB.Scoped(fixtures.AcmeID), g)
-	require.NoError(t, err)
-	got, err := env.DB.Contact.Query().
-		Where(contact.WorkspaceID(fixtures.AcmeID), contact.EmailContainsFold("@ops.test"), p).
-		Order(contact.ByEmail()).
-		All(ctx)
-	require.NoError(t, err)
-	out := make([]string, len(got))
-	for i, c := range got {
-		out[i] = *c.Email
-	}
-	return out
-}
-
-// declare adds keys to the Acme Custom field catalogue (a rule may only name a declared key).
-func declare(t *testing.T, env *testhelper.TestEnv, keys ...string) {
-	t.Helper()
-	for _, key := range keys {
-		require.NoError(t, env.DB.Scoped(fixtures.AcmeID).CustomField().Create().SetKey(key).SetName(key).Exec(context.Background()))
-	}
-}
 
 func opsGroup(entries ...any) segments.Group {
 	return segments.Group{Kind: "group", Combinator: "and", Rules: marshal(entries...)}
@@ -46,71 +18,49 @@ func opsGroup(entries ...any) segments.Group {
 
 func TestPlainColumnOperators(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
-	for _, c := range []struct{ email, first, phone string }{
-		{"anna@ops.test", "Anna", "+1555"},
-		{"andy@ops.test", "Andy", ""},
-		{"bella@ops.test", "Bella", "+1666"},
-	} {
-		_, err := env.DB.Contact.Create().SetWorkspaceID(fixtures.AcmeID).SetEmail(c.email).SetFirstName(c.first).
-			SetNillablePhone(lo.EmptyableToPtr(c.phone)).Save(ctx)
-		require.NoError(t, err)
-	}
+	const anna, andy, bella = fixtures.OscorpAnnaEmail, fixtures.OscorpAndyEmail, fixtures.OscorpBellaEmail
 
 	for name, tc := range map[string]struct {
 		rule segments.Rule
 		want []string
 	}{
-		"equals":      {rule("first_name", "eq", "Anna"), []string{"anna@ops.test"}},
-		"not equals":  {rule("first_name", "neq", "Anna"), []string{"andy@ops.test", "bella@ops.test"}},
-		"contains":    {rule("first_name", "contains", "ELL"), []string{"bella@ops.test"}},
-		"begins with": {rule("email", "beginsWith", "an"), []string{"andy@ops.test", "anna@ops.test"}},
-		"null":        {rule("phone", "null", ""), []string{"andy@ops.test"}},
-		"not null":    {rule("phone", "notNull", ""), []string{"anna@ops.test", "bella@ops.test"}},
+		"equals":      {rule("first_name", "eq", "Anna"), []string{anna}},
+		"not equals":  {rule("first_name", "neq", "Anna"), []string{andy, bella}},
+		"contains":    {rule("first_name", "contains", "ELL"), []string{bella}},
+		"begins with": {rule("email", "beginsWith", "an"), []string{andy, anna}},
+		"null":        {rule("phone", "null", ""), []string{andy}},
+		"not null":    {rule("phone", "notNull", ""), []string{anna, bella}},
 	} {
-		assert.Equal(t, tc.want, opsEmails(t, env, opsGroup(tc.rule)), name)
+		assert.Equal(t, tc.want, emailsIn(t, env, fixtures.OscorpID, opsGroup(tc.rule)), name)
 	}
 }
 
 func TestCustomFieldOperators(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
-	declare(t, env, "tags")
-	for email, custom := range map[string]map[string]any{
-		"one@ops.test":   {"plan": "pro", "tags": []any{"alpha", "beta"}},
-		"two@ops.test":   {"plan": "free"},
-		"three@ops.test": {"other": 1},
-	} {
-		_, err := env.DB.Contact.Create().SetWorkspaceID(fixtures.AcmeID).SetEmail(email).SetCustomFields(custom).Save(ctx)
-		require.NoError(t, err)
-	}
+	match := func(r segments.Rule) []string { return emailsIn(t, env, fixtures.InitrodeID, opsGroup(r)) }
 
-	assert.Equal(t, []string{"one@ops.test"}, opsEmails(t, env, opsGroup(rule("custom:plan", "eq", "pro"))))
-	assert.Equal(t, []string{"two@ops.test"}, opsEmails(t, env, opsGroup(rule("custom:plan", "neq", "pro"))))
-	assert.Equal(t, []string{"one@ops.test", "two@ops.test"}, opsEmails(t, env, opsGroup(rule("custom:plan", "notNull", ""))))
+	assert.Equal(t, []string{fixtures.InitrodeOneEmail}, match(rule("custom:plan", "eq", "pro")))
+	assert.Equal(t, []string{fixtures.InitrodeTwoEmail}, match(rule("custom:plan", "neq", "pro")))
+	assert.Equal(t, []string{fixtures.InitrodeOneEmail, fixtures.InitrodeTwoEmail}, match(rule("custom:plan", "notNull", "")))
 	// "contains" on a JSON column is membership of a JSON array, not substring.
-	assert.Equal(t, []string{"one@ops.test"}, opsEmails(t, env, opsGroup(rule("custom:tags", "contains", "beta"))))
-	assert.Empty(t, opsEmails(t, env, opsGroup(rule("custom:tags", "contains", "gamma"))))
+	assert.Equal(t, []string{fixtures.InitrodeOneEmail}, match(rule("custom:tags", "contains", "beta")))
+	assert.Empty(t, match(rule("custom:tags", "contains", "gamma")))
 }
 
 // The key of a custom-field rule is data, never SQL: quotes in it are matched literally
 // and an injection payload is just a key nobody has.
 func TestCustomFieldKeyIsABoundArgument(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
-	declare(t, env, "it's")
-	_, err := env.DB.Contact.Create().SetWorkspaceID(fixtures.AcmeID).SetEmail("quote@ops.test").
-		SetCustomFields(map[string]any{"it's": "here"}).Save(ctx)
-	require.NoError(t, err)
+	match := func(r segments.Rule) []string { return emailsIn(t, env, fixtures.InitrodeID, opsGroup(r)) }
 
-	assert.Equal(t, []string{"quote@ops.test"}, opsEmails(t, env, opsGroup(rule("custom:it's", "eq", "here"))))
+	assert.Equal(t, []string{fixtures.InitrodeQuoteEmail}, match(rule("custom:it's", "eq", "here")))
 
 	// Even a declared key that looks like SQL is data: the catalogue accepts any key
-	// ingest created, and it only ever reaches the query as a bound argument.
-	payload := "x' IS NOT NULL AND (SELECT count(*) FROM users)>0 AND 'a"
-	declare(t, env, payload)
+	// ingest created, and it only ever reaches the query as one quoted literal.
+	payload := fixtures.CustomFieldInitrodeInjectionKey
+	// contract-copy: four representative operators for the injection probe, not the operator list
 	for _, op := range []string{"eq", "neq", "contains", "notNull"} {
-		assert.Empty(t, opsEmails(t, env, opsGroup(rule("custom:"+payload, op, "a"))), op)
+		assert.Empty(t, match(rule("custom:"+payload, op, "a")), op)
 	}
 }
 
@@ -134,12 +84,12 @@ func TestCustomFieldMustBeInTheWorkspaceCatalogue(t *testing.T) {
 
 func TestEmptyGroupsMatchEveryoneUnlessNegated(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
-	_, err := env.DB.Contact.Create().SetWorkspaceID(fixtures.AcmeID).SetEmail("only@ops.test").Save(ctx)
-	require.NoError(t, err)
 
-	assert.Equal(t, []string{"only@ops.test"}, opsEmails(t, env, segments.Group{Kind: "group", Combinator: "and"}))
-	assert.Empty(t, opsEmails(t, env, segments.Group{Kind: "group", Combinator: "and", Not: true}), "an empty negated group matches no one")
+	assert.Equal(t, []string{
+		fixtures.InitrodeOneEmail, fixtures.InitrodeQuoteEmail, fixtures.InitrodeThreeEmail, fixtures.InitrodeTwoEmail,
+	}, emailsIn(t, env, fixtures.InitrodeID, segments.Group{Kind: "group", Combinator: "and"}))
+	assert.Empty(t, emailsIn(t, env, fixtures.InitrodeID, segments.Group{Kind: "group", Combinator: "and", Not: true}),
+		"an empty negated group matches no one")
 }
 
 func TestCompileRefusesWhatTheRuleSetDoesNotAllow(t *testing.T) {

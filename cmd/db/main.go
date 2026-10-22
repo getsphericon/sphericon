@@ -101,6 +101,7 @@ func admin(ctx context.Context, fn func(ctx context.Context, adminDB *sql.DB, db
 }
 
 func createDatabase(ctx context.Context, adminDB *sql.DB, dbName string) error {
+	// raw sql: CREATE DATABASE is a server command with an identifier, not a table operation.
 	if _, err := adminDB.ExecContext(ctx, `CREATE DATABASE "`+dbName+`"`); err != nil {
 		if pgErr := new(pgconn.PgError); errors.As(err, &pgErr) && pgErr.Code == "42P04" {
 			log.Printf("database %q already exists, skipping", dbName)
@@ -113,6 +114,7 @@ func createDatabase(ctx context.Context, adminDB *sql.DB, dbName string) error {
 }
 
 func dropDatabase(ctx context.Context, adminDB *sql.DB, dbName string) error {
+	// raw sql: DROP DATABASE is a server command with an identifier, not a table operation.
 	if _, err := adminDB.ExecContext(ctx, `DROP DATABASE IF EXISTS "`+dbName+`"`); err != nil {
 		return fmt.Errorf("drop database: %w", err)
 	}

@@ -26,7 +26,7 @@
     "/domains/changes": {
       "get": {
         "operationId": "ServiceTrackingHostFeed_list",
-        "description": "The changes of Tracking domain hosts since an opaque cursor, in the order they were\nmade: a host entering `dns_verified` or `serving`, moving between them, or leaving\nthem, which is reported as `removed` and never as silence. A caller that applies each\nentry in order (provision on `dns_verified` and `serving`, tear down on `removed`)\nmirrors the Instance's verified hosts, and a caller that starts from an empty cursor\nrebuilds the whole set. Delivery is at-least-once: replaying a cursor returns the same\nentries, so applying one twice must change nothing. Needs the `domains:read` scope.",
+        "description": "The changes of Tracking domain hosts since an opaque cursor, in the order they were\nmade: a host entering `dns_verified` or `serving`, moving between them, or leaving\nthem, which is reported as `removed` and never as silence. A caller that applies each\nentry in order (provision on `dns_verified` and `serving`, tear down on `removed`)\nmirrors the Instance's verified hosts, and a caller that starts from an empty cursor\nrebuilds the whole set. Delivery is at-least-once: replaying a cursor returns the same\nentries, so applying one twice must change nothing.",
         "parameters": [
           {
             "name": "cursor",
@@ -47,7 +47,8 @@
               "type": "integer",
               "format": "int32",
               "minimum": 1,
-              "maximum": 200
+              "maximum": 200,
+              "default": 100
             },
             "explode": false
           }
@@ -138,13 +139,14 @@
             }
           }
         },
-        "tags": ["Service Domains"]
+        "tags": ["Service Domains"],
+        "x-required-scopes": ["domains:read"]
       }
     },
     "/identity": {
       "get": {
         "operationId": "ServiceIdentity_get",
-        "description": "The calling credential's own name, scopes and expiry. Any valid credential may read it.",
+        "description": "The calling credential's own name, scopes and expiry",
         "parameters": [],
         "responses": {
           "200": {
@@ -212,7 +214,8 @@
             }
           }
         },
-        "tags": ["Service Identity"]
+        "tags": ["Service Identity"],
+        "x-required-scopes": []
       }
     },
     "/usage": {
@@ -347,13 +350,14 @@
             }
           }
         },
-        "tags": ["Service Usage"]
+        "tags": ["Service Usage"],
+        "x-required-scopes": ["usage:read"]
       }
     },
     "/workspaces/changes": {
       "get": {
         "operationId": "ServiceWorkspaceFeed_list",
-        "description": "The Workspaces created or changed since an opaque cursor, each with all of its\nowners, in a stable order by change position. A change is a new Workspace, an owner\nadded, removed or transferred, or an owner's email or verification changing.\nDelivery is at-least-once: replaying a cursor returns the same entries, and an\nempty cursor starts from the beginning. Needs the `workspaces:read` scope.",
+        "description": "The Workspaces created or changed since an opaque cursor, each with all of its\nowners, in a stable order by change position. A change is a new Workspace, an owner\nadded, removed or transferred, or an owner's email or verification changing.\nDelivery is at-least-once: replaying a cursor returns the same entries, and an\nempty cursor starts from the beginning.",
         "parameters": [
           {
             "name": "cursor",
@@ -374,7 +378,8 @@
               "type": "integer",
               "format": "int32",
               "minimum": 1,
-              "maximum": 200
+              "maximum": 200,
+              "default": 100
             },
             "explode": false
           }
@@ -465,7 +470,8 @@
             }
           }
         },
-        "tags": ["Service Workspaces"]
+        "tags": ["Service Workspaces"],
+        "x-required-scopes": ["workspaces:read"]
       }
     },
     "/workspaces/{workspaceId}/holds": {
@@ -558,7 +564,8 @@
             }
           }
         },
-        "tags": ["Service Holds"]
+        "tags": ["Service Holds"],
+        "x-required-scopes": ["holds:write"]
       }
     },
     "/workspaces/{workspaceId}/holds/{key}": {
@@ -679,7 +686,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-scopes": ["holds:write"]
       },
       "delete": {
         "operationId": "ServiceHolds_clear",
@@ -778,7 +786,8 @@
             }
           }
         },
-        "tags": ["Service Holds"]
+        "tags": ["Service Holds"],
+        "x-required-scopes": ["holds:write"]
       }
     },
     "/workspaces/{workspaceId}/usage": {
@@ -894,7 +903,8 @@
             }
           }
         },
-        "tags": ["Service Usage"]
+        "tags": ["Service Usage"],
+        "x-required-scopes": ["usage:read"]
       }
     }
   },
@@ -913,6 +923,7 @@
         "schema": {
           "type": "integer",
           "format": "int32",
+          "minimum": 1,
           "default": 1
         },
         "explode": false
@@ -925,6 +936,8 @@
         "schema": {
           "type": "integer",
           "format": "int32",
+          "minimum": 1,
+          "maximum": 100,
           "default": 25
         },
         "explode": false

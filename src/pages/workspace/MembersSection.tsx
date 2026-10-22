@@ -39,15 +39,16 @@ import {
   siteWorkspacesLeaveMutation,
   siteWorkspacesListQueryKey,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import type { SiteInvitableRole, SiteMembershipRole } from '../../generated/site/types.gen.ts'
+import type { SiteInvitableRole } from '../../generated/site/types.gen.ts'
+import { zSiteInvitableRole, zSiteMembershipRole } from '../../generated/site/zod.gen.ts'
 import { canManage, useCurrentRole } from '../../hooks/useCurrentRole.ts'
 import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation.tsx'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as indexRoute } from '../../routes/index.tsx'
 import { formatDate } from '../../utils/datetime.ts'
 
-const MEMBER_ROLES: SiteMembershipRole[] = ['owner', 'admin', 'member']
-const INVITABLE_ROLES: SiteInvitableRole[] = ['admin', 'member']
+const MEMBER_ROLES = zSiteMembershipRole.options
+const INVITABLE_ROLES = zSiteInvitableRole.options
 
 export function MembersSection({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()

@@ -44,6 +44,7 @@ var catalogColumns = []struct {
 	{"url", "URL", false},
 	{"action", "Action", false},
 	{"key", "Key", false},
+	{"visitor_id", "VisitorID", false},
 	{"destination", "Destination", false},
 	{"provider", "Provider", false},
 	{"subject", "Subject", false},
@@ -69,6 +70,10 @@ func Generate(dir string) ([]byte, error) {
 			return nil, err
 		}
 		base := filepath.Base(file)
+		raw, err = unrollLoops(raw)
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", base, err)
+		}
 		rows, err := annotatedRows(raw)
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", base, err)
@@ -98,6 +103,33 @@ func Generate(dir string) ([]byte, error) {
 	}
 	buf.WriteString(")\n")
 	return format.Source(buf.Bytes())
+}
+
+// loopLine matches a line that holds only a template loop's opening or closing action, bare or as
+// a YAML comment (`# {{range ...}}`: the file stays valid YAML, so the formatter reads it).
+var loopLine = regexp.MustCompile(`^\s*(?:#\s*)?\{\{-?\s*(range\b[^}]*|end)\s*-?\}\}\s*$`)
+
+// unrollLoops drops the `{{range ...}}` and `{{end}}` lines of a fixture file, so a loop body
+// reads as one plain row (the loader repeats it; the catalog names rows, not repetitions). An
+// annotation inside a loop would name many rows with one constant, so it is refused.
+func unrollLoops(raw []byte) ([]byte, error) {
+	var out []string
+	depth := 0
+	for line := range strings.SplitSeq(string(raw), "\n") {
+		if m := loopLine.FindStringSubmatch(line); m != nil {
+			if strings.HasPrefix(m[1], "range") {
+				depth++
+			} else {
+				depth--
+			}
+			continue
+		}
+		if name, ok := annotationName(line); ok && depth > 0 {
+			return nil, fmt.Errorf("fixture %q is inside a template loop: a loop body repeats, so it cannot be named", name)
+		}
+		out = append(out, line)
+	}
+	return []byte(strings.Join(out, "\n")), nil
 }
 
 // orphanNames lists annotations in raw that no row claimed.

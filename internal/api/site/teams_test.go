@@ -14,20 +14,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// addMember creates a real User with the given email and joins them to Acme with
-// the given role, returning the new membership id. Only for the admin role, which
-// has no fixture row (adding one would change the Acme member list that other
-// tests assert on); members and owners come from the fixture catalog.
-func addMember(t *testing.T, env *testhelper.TestEnv, email string, role membership.Role) int64 {
-	t.Helper()
-	ctx := context.Background()
-	u, err := env.DB.User.Create().SetName(email).SetEmail(email).Save(ctx)
-	require.NoError(t, err)
-	m, err := env.DB.Membership.Create().SetUserID(u.ID).SetWorkspaceID(fixtures.AcmeID).SetRole(role).Save(ctx)
-	require.NoError(t, err)
-	return m.ID
-}
-
 func TestSiteInvitationsCreateAndList(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail) // owner
@@ -204,10 +190,9 @@ func TestSiteMembershipsRoleManagement(t *testing.T) {
 func TestSiteMembershipsAdminCannotTouchOwner(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	addMember(t, env, "boss@acme.test", membership.RoleAdmin)
 	targetID := int64(fixtures.AcmeMemberMembershipID)
 
-	admin := env.SiteActor(t, "boss@acme.test")
+	admin := env.SiteActor(t, fixtures.AdminAliceEmail)
 
 	// Admin can promote an ordinary member.
 	upd, err := admin.SiteMembershipsUpdate(ctx,

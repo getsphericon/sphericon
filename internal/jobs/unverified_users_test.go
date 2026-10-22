@@ -22,7 +22,7 @@ const unverifiedRetention = 7 * 24 * time.Hour
 
 func pruneUnverified(t *testing.T, env *testhelper.TestEnv, retention time.Duration) {
 	t.Helper()
-	w := jobs.NewPruneUnverifiedUsersWorker(env.DB, retention)
+	w := jobs.NewPruneUnverifiedUsersWorker(accounts.New(env.DB, env.Bus), retention)
 	require.NoError(t, w.Work(context.Background(), &river.Job[jobs.PruneUnverifiedUsersArgs]{JobRow: &rivertype.JobRow{}}))
 }
 
@@ -52,10 +52,6 @@ func TestPruneUnverifiedUsersKeepsYoungAndVerifiedUsers(t *testing.T) {
 
 func TestPruneUnverifiedUsersKeepsOneWithAMembership(t *testing.T) {
 	env := testhelper.Setup(t)
-	_, err := env.DB.Scoped(fixtures.AcmeID).Membership().Create().
-		SetUserID(fixtures.StaleUnverifiedMemberID).SetRole(membership.RoleMember).Save(context.Background())
-	require.NoError(t, err)
-
 	pruneUnverified(t, env, unverifiedRetention)
 
 	assert.True(t, userExists(t, env, fixtures.StaleUnverifiedMemberID))
@@ -67,23 +63,6 @@ func TestPruneUnverifiedUsersDisabledByZeroRetention(t *testing.T) {
 	pruneUnverified(t, env, 0)
 
 	assert.True(t, userExists(t, env, fixtures.StaleUnverifiedUserID))
-}
-
-func TestPruneUnverifiedUsersDeletesInBoundedBatches(t *testing.T) {
-	env := testhelper.Setup(t)
-	bulk := []string{"a@bulk.test", "b@bulk.test", "c@bulk.test"}
-	for _, email := range bulk {
-		_, err := env.DB.User.Create().SetName("Bulk").SetEmail(email).
-			SetCreatedAt(time.Now().Add(-30 * 24 * time.Hour)).Save(t.Context())
-		require.NoError(t, err)
-	}
-
-	// A batch of one forces several rounds; every stale row still goes.
-	deleted, err := jobs.PruneUnverifiedUsers(t.Context(), env.DB, unverifiedRetention, 1)
-
-	require.NoError(t, err)
-	assert.GreaterOrEqual(t, int(deleted), len(bulk), "at least the bulk Users go, one batch at a time")
-	assert.Zero(t, env.DB.User.Query().Where(user.EmailIn(bulk...)).CountX(t.Context()))
 }
 
 func TestPrunedAddressKeepsItsInvitationAndTheInviteeCanAcceptIt(t *testing.T) {

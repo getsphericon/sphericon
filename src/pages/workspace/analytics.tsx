@@ -17,10 +17,11 @@ import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
 import { StatCard } from '../../components/StatCard.tsx'
 import { siteAnalyticsOverviewOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteAnalyticsRange } from '../../generated/site/types.gen.ts'
+import { zSiteAnalyticsRange } from '../../generated/site/zod.gen.ts'
 import { Route as analyticsRoute } from '../../routes/workspaces/$workspaceId/analytics.tsx'
 import { formatPercent } from '../../utils/percent.ts'
 
-const RANGES: SiteAnalyticsRange[] = ['7d', '30d', '90d']
+const RANGES = zSiteAnalyticsRange.options
 
 // AnalyticsPage is the workspace's analytics section: KPI cards and charts for a chosen range.
 export function AnalyticsPage() {

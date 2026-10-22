@@ -1,0 +1,8 @@
+- id: 1
+  workspace_id: 1
+  created_at: '{{now}}'
+  updated_at: '{{now}}'
+- id: 2
+  workspace_id: 1
+  created_at: '{{now}}'
+  updated_at: '{{now}}'

@@ -275,7 +275,7 @@ func TestSiteWebhooksErrorBranches(t *testing.T) {
 	require.Truef(t, ok, "got %T", r3)
 	stored, err := env.DB.WebhookEndpoint.Get(ctx, int64(created.ID))
 	require.NoError(t, err)
-	assert.False(t, stored.Enabled)
+	assert.NotNil(t, stored.DisabledAt)
 	assert.NotEmpty(t, stored.SecretEncrypted)
 
 	g1, err := c.SiteWebhooksGet(ctx, siteapi.SiteWebhooksGetParams{WorkspaceId: foreign, ID: known})
@@ -308,7 +308,7 @@ func TestSiteWebhooksErrorBranches(t *testing.T) {
 	hook, err := env.DB.WebhookEndpoint.Get(ctx, fixtures.WebhookCodebasicsID)
 	require.NoError(t, err)
 	assert.Equal(t, "https://new.test/h", hook.URL)
-	assert.False(t, hook.Enabled)
+	assert.NotNil(t, hook.DisabledAt)
 	assert.Equal(t, events, hook.EventTypes)
 
 	d1, err := c.SiteWebhooksDelete(ctx, siteapi.SiteWebhooksDeleteParams{WorkspaceId: foreign, ID: known})

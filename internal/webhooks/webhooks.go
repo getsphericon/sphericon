@@ -25,6 +25,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/ownernotice"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/webhook"
@@ -69,12 +70,14 @@ type Module struct {
 	cipher *secrets.Cipher
 	lic    Licensing
 	client webhook.Doer
+	notify ownernotice.Notify
 }
 
 // New builds the module. lic may be nil (unlicensed). client is the one hardened
-// outbound client, used by TestSend.
-func New(bus *events.Bus, cipher *secrets.Cipher, lic Licensing, client webhook.Doer) *Module {
-	return &Module{bus: bus, cipher: cipher, lic: lic, client: client}
+// outbound client, used by TestSend. notify mails the Owners when an endpoint disables
+// itself; nil sends nothing.
+func New(bus *events.Bus, cipher *secrets.Cipher, lic Licensing, client webhook.Doer, notify ownernotice.Notify) *Module {
+	return &Module{bus: bus, cipher: cipher, lic: lic, client: client, notify: notify}
 }
 
 // TestSendTimeout bounds a test delivery, the same budget as a real one.
@@ -232,12 +235,14 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (End
 	if err != nil {
 		return Endpoint{}, err
 	}
-	e, err := s.WebhookEndpoint().Create().
+	create := s.WebhookEndpoint().Create().
 		SetURL(in.URL).
 		SetSecretEncrypted(sealed).
-		SetEventTypes(in.EventTypes).
-		SetNillableEnabled(in.Enabled).
-		Save(ctx)
+		SetEventTypes(in.EventTypes)
+	if in.Enabled != nil && !*in.Enabled {
+		create = create.SetDisabledAt(time.Now()).SetDisabledReason(webhookendpoint.DisabledReasonOwner)
+	}
+	e, err := create.Save(ctx)
 	if err != nil {
 		return Endpoint{}, err
 	}
@@ -252,22 +257,39 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 	if err := m.checkTypes(in.EventTypes); err != nil {
 		return Endpoint{}, err
 	}
-	upd := s.WebhookEndpoint().UpdateOneID(id).
-		SetNillableURL(in.URL).
-		SetNillableEnabled(in.Enabled)
-	if in.EventTypes != nil {
-		upd = upd.SetEventTypes(in.EventTypes)
-	}
-	if in.Enabled != nil {
-		// Whoever flips the switch decides now: the reason it last turned itself off no
-		// longer applies, and enabling starts the failure run over (ADR 0039).
-		upd = upd.ClearDisabledReason()
-		if *in.Enabled {
-			upd = upd.ClearConsecutiveFailures().ClearFailingSince().ClearLastErrorKind().
-				ClearLastErrorStatus().ClearLastFailureAt()
+	build := func() *ent.WebhookEndpointScopedUpdateOne {
+		upd := s.WebhookEndpoint().UpdateOneID(id).SetNillableURL(in.URL)
+		if in.EventTypes != nil {
+			upd = upd.SetEventTypes(in.EventTypes)
 		}
+		return upd
 	}
-	e, err := upd.Save(ctx)
+	if in.Enabled == nil {
+		e, err := build().Save(ctx)
+		if err != nil {
+			return Endpoint{}, err
+		}
+		return m.open(e)
+	}
+	// Whoever flips the switch decides now: the reason it last turned itself off no longer
+	// applies, and enabling starts the failure run over (ADR 0039).
+	if *in.Enabled {
+		e, err := build().ClearDisabledAt().ClearDisabledReason().
+			ClearConsecutiveFailures().ClearFailingSince().ClearLastErrorKind().
+			ClearLastErrorStatus().ClearLastFailureAt().Save(ctx)
+		if err != nil {
+			return Endpoint{}, err
+		}
+		return m.open(e)
+	}
+	// Disabling is the move out of enabled, so it lands only while the endpoint is still
+	// enabled. An endpoint that is already off keeps the moment and the reason it has: the
+	// miss falls back to the plain edit, whose own miss means the endpoint is gone.
+	e, err := build().Where(webhookendpoint.DisabledAtIsNil()).
+		SetDisabledAt(time.Now()).SetDisabledReason(webhookendpoint.DisabledReasonOwner).Save(ctx)
+	if ent.IsNotFound(err) {
+		e, err = build().Save(ctx)
+	}
 	if err != nil {
 		return Endpoint{}, err
 	}

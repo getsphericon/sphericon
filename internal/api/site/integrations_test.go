@@ -7,7 +7,6 @@ import (
 	"github.com/go-faster/jx"
 
 	"github.com/getsphericon/sphericon/ent/integration"
-	"github.com/getsphericon/sphericon/ent/membership"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -286,8 +285,7 @@ func TestSiteIntegrationsWritesNeedAnOwnerOrAdmin(t *testing.T) {
 	assert.IsType(t, new(siteapi.SiteIntegrationResource), got)
 
 	// An admin manages them.
-	addMember(t, env, "admin@acme.test", membership.RoleAdmin)
-	ok, err := env.SiteActor(t, "admin@acme.test").SiteIntegrationsUpdate(ctx, &siteapi.SiteUpdateIntegrationInput{
+	ok, err := env.SiteActor(t, fixtures.AdminAliceEmail).SiteIntegrationsUpdate(ctx, &siteapi.SiteUpdateIntegrationInput{
 		Name: siteapi.NewOptString("Renamed"),
 	}, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
 	require.NoError(t, err)

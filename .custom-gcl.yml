@@ -1,0 +1,10 @@
+# `golangci-lint custom` builds .bin/custom-gcl: golangci-lint plus our own analyzers
+# (tools/analyzers, docs/agents/review-rules.md). `mise run build:lint` runs it, and check:be,
+# CI and the heavy-command wrapper use that binary. The version is the golangci-lint of
+# .mise.toml / mise.lock; `mise run check:lint-pins` fails when it or the analyzers' x/tools drift.
+version: v2.14.0
+name: custom-gcl
+destination: .bin
+plugins:
+  - module: github.com/getsphericon/sphericon/tools/analyzers
+    path: ./tools/analyzers

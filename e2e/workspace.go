@@ -10,6 +10,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -22,13 +23,18 @@ import (
 )
 
 // tokenScopes are everything the scenario steps need; a test's token carries them all.
-var tokenScopes = []string{
-	"integrations:read", "integrations:write",
-	"sending_domains:read", "sending_domains:write",
-	"contacts:read", "contacts:write",
-	"broadcasts:read", "broadcasts:write", "broadcasts:send",
-	"automations:read", "automations:write", "automations:activate",
-	"events:write",
+var tokenScopes = scopeStrings(
+	externalapi.ApiTokenScopeIntegrationsRead, externalapi.ApiTokenScopeIntegrationsWrite,
+	externalapi.ApiTokenScopeSendingDomainsRead, externalapi.ApiTokenScopeSendingDomainsWrite,
+	externalapi.ApiTokenScopeContactsRead, externalapi.ApiTokenScopeContactsWrite,
+	externalapi.ApiTokenScopeBroadcastsRead, externalapi.ApiTokenScopeBroadcastsWrite, externalapi.ApiTokenScopeBroadcastsSend,
+	externalapi.ApiTokenScopeAutomationsRead, externalapi.ApiTokenScopeAutomationsWrite, externalapi.ApiTokenScopeAutomationsActivate,
+	externalapi.ApiTokenScopeEventsWrite,
+)
+
+// scopeStrings names scopes by the contract's generated constants; the token store takes strings.
+func scopeStrings(scopes ...externalapi.ApiTokenScope) []string {
+	return lo.Map(scopes, func(s externalapi.ApiTokenScope, _ int) string { return string(s) })
 }
 
 // Workspace is one test's own tenant: a fresh User, Workspace and API token made with

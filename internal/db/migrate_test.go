@@ -5,18 +5,26 @@ import (
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
 	"io/fs"
+	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 	"testing/fstest"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	sphericon "github.com/getsphericon/sphericon"
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/confirmation"
+	"github.com/getsphericon/sphericon/ent/outboundmessage"
+	"github.com/getsphericon/sphericon/ent/unsubscribe"
+	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/refsettle"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/workspaceid"
 )
@@ -96,7 +104,7 @@ func TestMigrateGivesExistingWorkspacesAnIdAndEndsRequired(t *testing.T) {
 	before := migrationsWhere(t, func(name string) bool { return name < "20261020030001" })
 	_, err := db.MigrateFS(t.Context(), sqlDB, before)
 	require.NoError(t, err)
-	testhelper.InsertLegacyWorkspaces(t, sqlDB, "one", "two", "three")
+	testhelper.LoadLegacyFixtures(t, sqlDB, legacyFixtures("20261020030001_workspace_public_id.sql"))
 
 	_, err = db.Migrate(t.Context(), sqlDB)
 	require.NoError(t, err)
@@ -114,6 +122,7 @@ func TestMigrateGivesExistingWorkspacesAnIdAndEndsRequired(t *testing.T) {
 	assert.Len(t, seen, 3, "every id is its own")
 
 	// The ids are unique now: a fourth Workspace cannot take one of them.
+	// test writes: the unique violation is the outcome under test
 	err = client.Workspace.Create().SetName("y").SetCollectKey("y").SetPublicID(workspaces[0].PublicID).Exec(t.Context())
 	assert.True(t, db.IsUniqueViolation(err))
 }
@@ -127,10 +136,16 @@ func TestMigrateRefusesToDropTheSlugBeforeEveryWorkspaceHasAnId(t *testing.T) {
 	before := migrationsWhere(t, func(name string) bool { return name < "20261020030002" })
 	_, err := db.MigrateFS(t.Context(), sqlDB, before)
 	require.NoError(t, err)
-	testhelper.InsertLegacyWorkspaces(t, sqlDB, "one")
+	testhelper.LoadLegacyFixtures(t, sqlDB, legacyFixtures("20261020030001_workspace_public_id.sql"))
 
 	_, err = db.MigrateFS(t.Context(), sqlDB, skipping)
 	require.ErrorContains(t, err, "workspaces.slug cannot be dropped")
+}
+
+// legacyFixtures is the directory of the fixtures that belong to one migration: the rows of the schema
+// just before it, which the ent client cannot write (see testhelper.LoadLegacyFixtures).
+func legacyFixtures(migration string, parts ...string) string {
+	return filepath.Join(append([]string{"testdata", "legacy", strings.TrimSuffix(migration, ".sql")}, parts...)...)
 }
 
 // migrationsWhere is the embedded migrations whose file name satisfies keep.
@@ -161,17 +176,82 @@ func TestMigrateRefusesToDropARecipientOutcomeThatHasNoOutboundMessage(t *testin
 	all := migrationsWhere(t, func(name string) bool { return name <= dropping })
 	_, err := db.MigrateFS(t.Context(), sqlDB, before)
 	require.NoError(t, err)
-	testhelper.InsertDecidedRecipientWithoutMessage(t, sqlDB)
+	testhelper.LoadLegacyFixtures(t, sqlDB, legacyFixtures(dropping, "decided"))
 
 	_, err = db.MigrateFS(t.Context(), sqlDB, all)
 	require.ErrorContains(t, err, "would lose their outcome")
 
-	testhelper.InsertSentMessageForRecipient(t, sqlDB)
+	testhelper.LoadLegacyFixtures(t, sqlDB, legacyFixtures(dropping, "sent_message"))
 	_, err = db.MigrateFS(t.Context(), sqlDB, all)
 	require.NoError(t, err)
 
 	columns := testhelper.ColumnsOf(t, sqlDB, "broadcast_recipients", "status", "error", "sent_at", "outbound_message_id")
 	assert.Zero(t, columns, "the recipient's own outcome is gone")
+}
+
+// Replacing the Sending domain flag by moments keeps what the flag said: a domain verified now stays
+// verified, one that was verified once and is not stays unverified with a loss moment (the drop
+// alone would turn it verified), and one never verified has no moment at all.
+func TestMigrateCarriesTheSendingDomainFlagIntoMoments(t *testing.T) {
+	const replacing = "20261021193611_sending_domain_verification_moments.sql"
+	sqlDB := openEmpty(t)
+	before := migrationsWhere(t, func(name string) bool { return name < replacing })
+	all := migrationsWhere(t, func(string) bool { return true })
+	_, err := db.MigrateFS(t.Context(), sqlDB, before)
+	require.NoError(t, err)
+	testhelper.LoadLegacyFixtures(t, sqlDB, legacyFixtures(replacing))
+
+	_, err = db.MigrateFS(t.Context(), sqlDB, all)
+	require.NoError(t, err)
+
+	client := db.NewEntClient(sqlDB)
+	t.Cleanup(func() { _ = client.Close() })
+	domains, err := client.SendingDomain.Query().All(t.Context())
+	require.NoError(t, err)
+	moments := map[string][2]bool{}
+	for _, d := range domains {
+		moments[d.Domain] = [2]bool{d.VerifiedAt != nil, d.VerificationLostAt != nil}
+	}
+	assert.Equal(t, map[string][2]bool{
+		"live.test":  {true, false},
+		"lost.test":  {true, true},
+		"never.test": {false, false},
+	}, moments)
+	assert.Zero(t, testhelper.ColumnsOf(t, sqlDB, "sending_domains", "verified"), "the flag is gone")
+}
+
+// Replacing the Webhook endpoint flag by disabled_at keeps what the flag said: an enabled endpoint
+// stays enabled, one an owner turned off stays off with the reason "owner", and one the worker
+// turned off keeps its reason.
+func TestMigrateCarriesTheWebhookEndpointFlagIntoDisabledAt(t *testing.T) {
+	const replacing = "20261022000001_webhook_endpoint_disabled_at.sql"
+	sqlDB := openEmpty(t)
+	before := migrationsWhere(t, func(name string) bool { return name < replacing })
+	all := migrationsWhere(t, func(string) bool { return true })
+	_, err := db.MigrateFS(t.Context(), sqlDB, before)
+	require.NoError(t, err)
+	testhelper.LoadLegacyFixtures(t, sqlDB, legacyFixtures(replacing))
+
+	_, err = db.MigrateFS(t.Context(), sqlDB, all)
+	require.NoError(t, err)
+
+	client := db.NewEntClient(sqlDB)
+	t.Cleanup(func() { _ = client.Close() })
+	endpoints, err := client.WebhookEndpoint.Query().All(t.Context())
+	require.NoError(t, err)
+	off := map[string]bool{}
+	reasons := map[string]*webhookendpoint.DisabledReason{}
+	for _, e := range endpoints {
+		off[e.URL] = e.DisabledAt != nil
+		reasons[e.URL] = e.DisabledReason
+	}
+	assert.Equal(t, map[string]bool{"https://on.test": false, "https://owner.test": true, "https://gone.test": true}, off)
+	assert.Equal(t, map[string]*webhookendpoint.DisabledReason{
+		"https://on.test":    nil,
+		"https://owner.test": lo.ToPtr(webhookendpoint.DisabledReasonOwner),
+		"https://gone.test":  lo.ToPtr(webhookendpoint.DisabledReasonGone),
+	}, reasons)
+	assert.Zero(t, testhelper.ColumnsOf(t, sqlDB, "webhook_endpoints", "enabled"), "the flag is gone")
 }
 
 // Dropping automations.definition refuses an Instance whose Automations have not all been given a
@@ -181,7 +261,7 @@ func TestMigrateRefusesToDropTheDefinitionBeforeTheBackfill(t *testing.T) {
 	legacy := migrationsWhere(t, func(name string) bool { return name < "20261020210001" })
 	_, err := db.MigrateFS(t.Context(), sqlDB, legacy)
 	require.NoError(t, err)
-	testhelper.InsertLegacyAutomations(t, sqlDB)
+	testhelper.LoadLegacyFixtures(t, sqlDB, legacyFixtures("20261020210003_drop_automation_definition.sql"))
 	all := migrationsWhere(t, func(string) bool { return true })
 	beforeDrop := migrationsWhere(t, func(name string) bool { return name < "20261020210003" })
 	_, err = db.MigrateFS(t.Context(), sqlDB, beforeDrop)
@@ -190,6 +270,135 @@ func TestMigrateRefusesToDropTheDefinitionBeforeTheBackfill(t *testing.T) {
 	_, err = db.MigrateFS(t.Context(), sqlDB, all)
 	require.ErrorContains(t, err, "automations.definition cannot be dropped")
 	assert.Equal(t, 1, testhelper.ColumnsOf(t, sqlDB, "automations", "definition"), "the column is still there")
+}
+
+// An Instance whose Outbound messages hold ids of rows that are gone (an Automation run or a Template
+// erased before the references were foreign keys) migrates: the keys are added NOT VALID, so the
+// old rows are left alone and the next write to one still works.
+func TestMigrateAddsTheOutboundMessageKeysNotValidOverDanglingIds(t *testing.T) {
+	sqlDB := openEmpty(t)
+	client := migrateWithDanglingOutboundRefs(t, sqlDB)
+
+	assert.Len(t, testhelper.UnvalidatedConstraints(t, sqlDB, "outbound_messages"), 6)
+	err := client.OutboundMessage.UpdateOneID(2).SetStatus(outboundmessage.StatusFailed).Exec(t.Context())
+	require.NoError(t, err, "a message with a dangling id can still change")
+}
+
+// The job clears exactly the ids that point at nothing, keeps every other column and every id that
+// resolves, then validates the keys; once it has run it finds nothing.
+func TestClearOutboundMessageRefsClearsDanglingIdsThenValidatesTheKeys(t *testing.T) {
+	sqlDB := openEmpty(t)
+	client := migrateWithDanglingOutboundRefs(t, sqlDB)
+
+	// A batch of one makes the job loop.
+	cleared, err := refsettle.New(client).ClearOutboundMessageRefs(t.Context(), 1)
+	require.NoError(t, err)
+	assert.Equal(t, 3, cleared)
+
+	type refs struct {
+		Template, Run, Integration *int64
+		Destination                string
+	}
+	messages, err := client.OutboundMessage.Query().Order(ent.Asc(outboundmessage.FieldID)).All(t.Context())
+	require.NoError(t, err)
+	got := lo.Map(messages, func(m *ent.OutboundMessage, _ int) refs {
+		return refs{m.TemplateID, m.AutomationRunID, m.IntegrationID, m.Destination}
+	})
+	assert.Equal(t, []refs{
+		{new(int64(1)), nil, nil, "a@x.test"},
+		{nil, nil, nil, "b@x.test"},
+		{nil, nil, nil, "c@x.test"},
+	}, got)
+	assert.Empty(t, testhelper.UnvalidatedConstraints(t, sqlDB, "outbound_messages"))
+
+	cleared, err = refsettle.New(client).ClearOutboundMessageRefs(t.Context(), 1)
+	require.NoError(t, err)
+	assert.Zero(t, cleared)
+}
+
+func migrateWithDanglingOutboundRefs(t *testing.T, sqlDB *sql.DB) *ent.Client {
+	t.Helper()
+	before := migrationsWhere(t, func(name string) bool { return name < "20261022003116" })
+	_, err := db.MigrateFS(t.Context(), sqlDB, before)
+	require.NoError(t, err)
+	testhelper.LoadLegacyFixtures(t, sqlDB, legacyFixtures("20261022003116_outbound_message_refs.sql"))
+	upTo := migrationsWhere(t, func(name string) bool { return name < "20261022014358" })
+	_, err = db.MigrateFS(t.Context(), sqlDB, upTo)
+	require.NoError(t, err)
+	client := db.NewEntClient(sqlDB)
+	t.Cleanup(func() { _ = client.Close() })
+	return client
+}
+
+// An Instance whose rows name Contacts that are erased (before the references were foreign keys)
+// migrates: the keys are added NOT VALID, so the old rows are left alone.
+func TestMigrateAddsTheContactKeysNotValidOverDanglingIds(t *testing.T) {
+	sqlDB := openEmpty(t)
+	client := migrateWithDanglingContactRefs(t, sqlDB)
+
+	assert.Equal(t, []string{
+		"automation_runs_contacts_contact", "broadcast_recipients_contacts_contact", "confirmations_contacts_contact",
+		"outbound_messages_contacts_contact", "suppressions_contacts_contact", "unsubscribes_contacts_contact",
+	}, unvalidatedContactKeys(t, sqlDB))
+	err := client.OutboundMessage.UpdateOneID(2).SetStatus(outboundmessage.StatusFailed).Exec(t.Context())
+	require.NoError(t, err, "a message naming an erased Contact can still change")
+}
+
+// The job settles exactly the rows that name a Contact that is gone, the way the key would have
+// (a Confirmation dies with it, an opt-out and a message only lose the id), keeps the rows that
+// resolve, then validates the keys; once it has run it finds nothing.
+func TestClearContactRefsSettlesDanglingRowsThenValidatesTheKeys(t *testing.T) {
+	sqlDB := openEmpty(t)
+	client := migrateWithDanglingContactRefs(t, sqlDB)
+
+	// A batch of one makes the job loop.
+	settled, err := refsettle.New(client).ClearContactRefs(t.Context(), 1)
+	require.NoError(t, err)
+	assert.Equal(t, 3, settled)
+
+	confirmed, err := client.Confirmation.Query().Order(ent.Asc(confirmation.FieldID)).All(t.Context())
+	require.NoError(t, err)
+	assert.Equal(t, []string{"here@x.test"}, lo.Map(confirmed, func(c *ent.Confirmation, _ int) string { return c.Destination }))
+
+	optOuts, err := client.Unsubscribe.Query().Order(ent.Asc(unsubscribe.FieldID)).All(t.Context())
+	require.NoError(t, err)
+	assert.Equal(t, []*int64{new(int64(1)), nil}, lo.Map(optOuts, func(u *ent.Unsubscribe, _ int) *int64 { return u.ContactID }))
+	assert.Equal(t, "gone@x.test", optOuts[1].Destination, "the refusal stays")
+
+	messages, err := client.OutboundMessage.Query().Order(ent.Asc(outboundmessage.FieldID)).All(t.Context())
+	require.NoError(t, err)
+	assert.Equal(t, []*int64{new(int64(1)), nil}, lo.Map(messages, func(m *ent.OutboundMessage, _ int) *int64 { return m.ContactID }))
+
+	assert.Empty(t, unvalidatedContactKeys(t, sqlDB))
+
+	settled, err = refsettle.New(client).ClearContactRefs(t.Context(), 1)
+	require.NoError(t, err)
+	assert.Zero(t, settled)
+}
+
+func migrateWithDanglingContactRefs(t *testing.T, sqlDB *sql.DB) *ent.Client {
+	t.Helper()
+	before := migrationsWhere(t, func(name string) bool { return name < "20261022014358" })
+	_, err := db.MigrateFS(t.Context(), sqlDB, before)
+	require.NoError(t, err)
+	testhelper.LoadLegacyFixtures(t, sqlDB, legacyFixtures("20261022014358_contact_refs.sql"))
+	all := migrationsWhere(t, func(string) bool { return true })
+	_, err = db.MigrateFS(t.Context(), sqlDB, all)
+	require.NoError(t, err)
+	client := db.NewEntClient(sqlDB)
+	t.Cleanup(func() { _ = client.Close() })
+	return client
+}
+
+// unvalidatedContactKeys is the Contact keys still NOT VALID, over every table that references one.
+func unvalidatedContactKeys(t *testing.T, sqlDB *sql.DB) []string {
+	t.Helper()
+	tables := []string{"automation_runs", "broadcast_recipients", "confirmations", "outbound_messages", "suppressions", "unsubscribes"}
+	return lo.FlatMap(tables, func(table string, _ int) []string {
+		return lo.Filter(testhelper.UnvalidatedConstraints(t, sqlDB, table), func(name string, _ int) bool {
+			return strings.HasSuffix(name, "_contacts_contact")
+		})
+	})
 }
 
 // An Instance with no Enrollment to move ends with the column the ent schema declares: NOT NULL.
@@ -209,7 +418,7 @@ func TestBackfillGivesEveryAutomationVersionOneAndMovesItsEnrollments(t *testing
 	legacy := migrationsWhere(t, func(name string) bool { return name < "20261020210001" })
 	_, err := db.MigrateFS(t.Context(), sqlDB, legacy)
 	require.NoError(t, err)
-	testhelper.InsertLegacyAutomations(t, sqlDB)
+	testhelper.LoadLegacyFixtures(t, sqlDB, legacyFixtures("20261020210003_drop_automation_definition.sql"))
 	all := migrationsWhere(t, func(string) bool { return true })
 	beforeDrop := migrationsWhere(t, func(name string) bool { return name < "20261020210003" })
 	_, err = db.MigrateFS(t.Context(), sqlDB, beforeDrop)

@@ -95,11 +95,6 @@ func DkimPublicKey(v string) predicate.SendingDomain {
 	return predicate.SendingDomain(sql.FieldEQ(FieldDkimPublicKey, v))
 }
 
-// Verified applies equality check predicate on the "verified" field. It's identical to VerifiedEQ.
-func Verified(v bool) predicate.SendingDomain {
-	return predicate.SendingDomain(sql.FieldEQ(FieldVerified, v))
-}
-
 // LastCheckedAt applies equality check predicate on the "last_checked_at" field. It's identical to LastCheckedAtEQ.
 func LastCheckedAt(v time.Time) predicate.SendingDomain {
 	return predicate.SendingDomain(sql.FieldEQ(FieldLastCheckedAt, v))
@@ -108,6 +103,11 @@ func LastCheckedAt(v time.Time) predicate.SendingDomain {
 // VerifiedAt applies equality check predicate on the "verified_at" field. It's identical to VerifiedAtEQ.
 func VerifiedAt(v time.Time) predicate.SendingDomain {
 	return predicate.SendingDomain(sql.FieldEQ(FieldVerifiedAt, v))
+}
+
+// VerificationLostAt applies equality check predicate on the "verification_lost_at" field. It's identical to VerificationLostAtEQ.
+func VerificationLostAt(v time.Time) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldEQ(FieldVerificationLostAt, v))
 }
 
 // TrackingCheckedAt applies equality check predicate on the "tracking_checked_at" field. It's identical to TrackingCheckedAtEQ.
@@ -530,16 +530,6 @@ func DkimPublicKeyContainsFold(v string) predicate.SendingDomain {
 	return predicate.SendingDomain(sql.FieldContainsFold(FieldDkimPublicKey, v))
 }
 
-// VerifiedEQ applies the EQ predicate on the "verified" field.
-func VerifiedEQ(v bool) predicate.SendingDomain {
-	return predicate.SendingDomain(sql.FieldEQ(FieldVerified, v))
-}
-
-// VerifiedNEQ applies the NEQ predicate on the "verified" field.
-func VerifiedNEQ(v bool) predicate.SendingDomain {
-	return predicate.SendingDomain(sql.FieldNEQ(FieldVerified, v))
-}
-
 // LastCheckedAtEQ applies the EQ predicate on the "last_checked_at" field.
 func LastCheckedAtEQ(v time.Time) predicate.SendingDomain {
 	return predicate.SendingDomain(sql.FieldEQ(FieldLastCheckedAt, v))
@@ -638,6 +628,56 @@ func VerifiedAtIsNil() predicate.SendingDomain {
 // VerifiedAtNotNil applies the NotNil predicate on the "verified_at" field.
 func VerifiedAtNotNil() predicate.SendingDomain {
 	return predicate.SendingDomain(sql.FieldNotNull(FieldVerifiedAt))
+}
+
+// VerificationLostAtEQ applies the EQ predicate on the "verification_lost_at" field.
+func VerificationLostAtEQ(v time.Time) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldEQ(FieldVerificationLostAt, v))
+}
+
+// VerificationLostAtNEQ applies the NEQ predicate on the "verification_lost_at" field.
+func VerificationLostAtNEQ(v time.Time) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldNEQ(FieldVerificationLostAt, v))
+}
+
+// VerificationLostAtIn applies the In predicate on the "verification_lost_at" field.
+func VerificationLostAtIn(vs ...time.Time) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldIn(FieldVerificationLostAt, vs...))
+}
+
+// VerificationLostAtNotIn applies the NotIn predicate on the "verification_lost_at" field.
+func VerificationLostAtNotIn(vs ...time.Time) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldNotIn(FieldVerificationLostAt, vs...))
+}
+
+// VerificationLostAtGT applies the GT predicate on the "verification_lost_at" field.
+func VerificationLostAtGT(v time.Time) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldGT(FieldVerificationLostAt, v))
+}
+
+// VerificationLostAtGTE applies the GTE predicate on the "verification_lost_at" field.
+func VerificationLostAtGTE(v time.Time) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldGTE(FieldVerificationLostAt, v))
+}
+
+// VerificationLostAtLT applies the LT predicate on the "verification_lost_at" field.
+func VerificationLostAtLT(v time.Time) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldLT(FieldVerificationLostAt, v))
+}
+
+// VerificationLostAtLTE applies the LTE predicate on the "verification_lost_at" field.
+func VerificationLostAtLTE(v time.Time) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldLTE(FieldVerificationLostAt, v))
+}
+
+// VerificationLostAtIsNil applies the IsNil predicate on the "verification_lost_at" field.
+func VerificationLostAtIsNil() predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldIsNull(FieldVerificationLostAt))
+}
+
+// VerificationLostAtNotNil applies the NotNil predicate on the "verification_lost_at" field.
+func VerificationLostAtNotNil() predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldNotNull(FieldVerificationLostAt))
 }
 
 // TrackingStateEQ applies the EQ predicate on the "tracking_state" field.

@@ -19,7 +19,7 @@ every caller (regenerate afterwards), rather than layering the new design over t
 API contracts are **one-directional**: TypeSpec → OpenAPI → generated Go + TS. Never
 hand-edit anything under `openapi/`, `gen/`, `ent/` (except `ent/schema/`),
 `src/generated/` / `packages/analytics/src/generated/`, `src/routeTree.gen.ts`, or the `*_gen.go` files in the
-`internal/api/{site,external}/resources` packages, `ee/staff/resources` and `internal/fixtures/catalog_gen.go`, or any `*_gen_test.go` mock, or `internal/emaildoc/assets/` (the document renderer bundle and schema listing) — regenerate instead.
+`internal/api/{site,external}/resources` packages, `ee/staff/resources`, `ee/staff/service_scopes_gen.go` and `internal/fixtures/catalog_gen.go`, or any `*_gen_test.go` mock, or `internal/emaildoc/assets/` (the document renderer bundle and schema listing) — regenerate instead.
 
 ```
 typespec/{site,external,collect,staff,service,telemetry}   ──tsp compile──▶  openapi/*.openapi.json
@@ -34,6 +34,7 @@ ent/schema/*.go     ──entc──▶ ent/*           (Go ORM)
 ent/schema/*.go + ent/template/scoped*.tmpl  ──entc──▶ ent/scoped.go, ent/scoped_registry.go  (scoped client: `client.Scoped(ws)`)
 ent + gen/{site,external,staff,service}  ──goverter──▶ internal/api/{site,external}/resources/converter_gen.go, ee/staff/resources/{staff,service}_converter_gen.go
 packages/emaildoc (pinned @react-email/editor) ──esbuild──▶ internal/emaildoc/assets/{emaildoc.js,schema.json}  (`mise run build:emaildoc`; not part of `generate`)
+openapi/service (`x-required-scopes` per operation, declared in TypeSpec) ──cmd/scopegen──▶ ee/staff/service_scopes_gen.go (`ServiceOperationScopes`)
 fixtures/*.yml (`# fixture: Name` rows)  ──cmd/fixturegen──▶ internal/fixtures/catalog_gen.go (named test constants)
 Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mocks_gen_test.go (test mocks; add an interface to the task list)
 ```
@@ -53,7 +54,7 @@ Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mo
 Generated files carry a header (`Code generated … DO NOT EDIT`, or `// @ts-nocheck` on the
 frontend) and are flagged `linguist-generated` in `.gitattributes` (GitHub collapses them in
 diffs). Generated code lives in dedicated dirs — `internal/` is otherwise hand-written, its
-only generated files being the two `converter_gen.go`, `ee/staff/resources/{staff,service}_converter_gen.go`, `internal/fixtures/catalog_gen.go`, the moq `*_gen_test.go` mocks and `internal/emaildoc/assets/`.
+only generated files being the two `converter_gen.go`, `ee/staff/resources/{staff,service}_converter_gen.go`, `ee/staff/service_scopes_gen.go`, `internal/fixtures/catalog_gen.go`, the moq `*_gen_test.go` mocks and `internal/emaildoc/assets/`.
 
 ## Common commands
 
@@ -71,7 +72,7 @@ mise run dev            # db:up, then mise daemons start caddy — full dev stac
 mise run dev:down       # stop this checkout's dev stack (never the shared Postgres)
 mise run dev:restart    # dev:down, then dev
 mise run test           # creates the test DB, then `go test ./...` (packages in parallel)
-mise run check          # tsc + oxlint + oxfmt --check + knip + golangci-lint (incl. gofmt) + gitleaks + jactionlint + zizmor
+mise run check          # tsc + oxlint + oxfmt --check + knip + golangci-lint with our analyzers (tools/analyzers, see CODING_STANDARDS.md; incl. gofmt) + gitleaks + jactionlint + zizmor
 mise run test:cover     # Go suite with coverage, fails under the total in .testcoverage.yml (nightly in CI)
 mise run check:vulns    # govulncheck (nightly in CI, not part of `check`)
 mise run fix            # i18n extract + oxlint --fix + tsp format + oxfmt + go fmt
@@ -247,7 +248,7 @@ Rules for writing tests (what to assert, no direct SQL, no manual cleanup) are i
     the internal listener** (`SPHERICON_INTERNAL_ADDR`, opt-in, ADR 0018 style; `NewInternal` mounts `/service` only with
     the `staff` license and always serves the core `GET /tls/ask`): the public mux answers 404 for it.
     Handlers and security handler in `ee/staff` (`service.go`); every operation names its scopes in
-    `ServiceOperationScopes` (no entry = refused to all). Tests: `env.Internal`, `env.ServiceClient`,
+    `ServiceOperationScopes`, generated from the `@extension("x-required-scopes", #[ServiceScope.…])` on each TypeSpec operation (an empty list = any valid credential; a missing declaration fails generation; no entry = refused to all). Tests: `env.Internal`, `env.ServiceClient`,
     `env.IssueServiceCredential`.
 - **Sign-in sequence**: `internal/login` (ADR 0020) is the one core module for the password and
   second steps and for `Prove` (the password check behind second-factor and profile actions):
@@ -259,8 +260,7 @@ Rules for writing tests (what to assert, no direct SQL, no manual cleanup) are i
   `accounts.Attempts.For(kind)`, a `Counter` bound to one `Kind` (`KindLogin`, `KindStaffLogin`),
   which satisfies `login.Throttle`. Handlers switch on the per-step outcomes (`login.Outcome`,
   `login.SecondOutcome`).
-- **Resource DTOs come from goverter, not from struct literals.** A handler never builds a
-  `*Resource` by hand from an ent row or a module's read model: add a method to the surface's
+- **Resource DTOs come from goverter, not from struct literals (review rule 1, analyzer `handmapper`).** Add a method to the surface's
   `Converter` (`internal/api/{site,external}/resources`, `ee/staff/resources`) with
   `goverter:map` / `extend` helpers, and attach in the handler only what the mapper cannot see
   (marked `goverter:ignore` with the reason). Hand-built values are limited to response wrappers
@@ -333,14 +333,15 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
   `internal/consent` (signed unsubscribe/confirm tokens: the Workspace comes from the token,
   so it works on the bus's raw transaction client and scopes from the token's Workspace),
   `internal/oauthserver`, `internal/secondfactor` (a User's TOTP Second factor and Recovery
-  codes, ADR 0020: they belong to the User, not a Workspace), `internal/rekey` (`sphericon encryption-key reencrypt`: it rewrites the stored ciphertext of every Workspace, User and Staff member row under the primary key, by id and compare-and-swap), `internal/doctor` (`sphericon doctor`, read-only: it lists every Workspace's Sending domains and the origin of the newest sent mail, and reads the Postgres version), `internal/instance` (the Instance state row
+  codes, ADR 0020: they belong to the User, not a Workspace), `internal/refsettle` (settles the rows whose reference points at a row that is gone and validates the foreign keys a migration added `NOT VALID`, ADR 0033: the heavy data work runs as a river job, in `internal/jobs/ref_settle.go`, which only calls it), `internal/rekey` (`sphericon encryption-key reencrypt`: it rewrites the stored ciphertext of every Workspace, User and Staff member row under the primary key, by id and compare-and-swap), `internal/doctor` (`sphericon doctor`, read-only: it lists every Workspace's Sending domains and the origin of the newest sent mail, and reads the Postgres version), `internal/instance` (the Instance state row
   that no Workspace owns, and who decides about it: the Owners of the oldest Workspace, ADR 0032), `internal/joindomains` (Join
   domains: a domain is verified by one Workspace across the Instance, so the lookup of the verified row
   by domain runs before any scope exists, and handing a domain over to the Workspace that now proves it
   scopes one transaction to both Workspaces through `events.Bus.WithinHandOverTx`; the periodic
   re-check of verified domains, a river job in `internal/jobs`, lists the due domains of every Workspace with
   `Module.Due` and scopes each `Module.Recheck` to the Workspace of the row it loaded; the Owners of a Workspace that
-  loses a domain, by that re-check or by a hand-over, are mailed through the `Notify` seam after the write commits), `internal/suspension` (Workspace
+  loses a domain, by that re-check or by a hand-over, are mailed through the `Notify` seam after the write commits), `internal/domainverify` (the Sending domain verification jobs' module, ADR 0010/0038: it reads a
+  Sending domain by id to learn its Workspace before any scope exists, then writes through that scope), `internal/automations` (only `FenceOn`, the Automation run fence, ADR 0046: it opens the transaction that holds the share lock on the Enrollment's row; every other function takes a `*ent.Scoped`), `internal/suspension` (Workspace
   suspension), `internal/workspacedeletion` (the Workspace deletion cycle, ADR 0043: it lists the Workspaces whose window has passed and
   the Owners' deleted ones, which have no scope yet, opens a transaction per erase step, scopes to the
   one Workspace being erased inside it, and writes the row the cycle moves), `internal/events`
@@ -395,6 +396,11 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
   per handler.
   Note `ee/licensekey`, not `ee/license`: the path is case-insensitive on macOS and would
   collide with `ee/LICENSE`.
+- **Owners and suspension are defined once.** `internal/accounts/owners.go` owns "Owner of a
+  Workspace": `Owners`, `OwnersOf`, `LockOwners`, `OwnerMembership`, `IsOwner`, and the one notice to
+  them (`NotifyOwners`, the `Notify` seam, `OwnerNotifier`); `internal/suspension` owns "suspended"
+  (`Is`, `Suspended`, `NotSuspended`, `BySystem`) and the suspension notice (`NotifyOwners`). Call
+  them; do not test `suspended_at` or the owner Role, or mail Owners, anywhere else.
 - **Refused removals (ADR 0049)**: a row that live work still uses is not removed. `internal/inuse`
   is the one shape of that refusal (`*inuse.Error`: the removed `Subject` and the `Users` that hold it,
   with helpers like `inuse.Broadcasts` and `inuse.Enrollments`); each domain module returns it from
@@ -402,6 +408,10 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
   `internal/liveuse` finds the live work (today the active email Automations) for the modules that
   cannot import `internal/automations`. Both are leaves that hold no raw `*ent.Client`: `liveuse`
   takes a `*ent.Scoped`, `inuse` only maps rows to users.
+- **Owner notices**: a module that tells the Owners of a Workspace something (Join domains, Sending domains,
+  webhooks, suspension, the abuse detector) takes an `ownernotice.Notify` (`internal/ownernotice`, a leaf, so
+  that modules `accounts` imports can share it) and calls `Tell` or `TellBestEffort`; `accounts.OwnerNotifier`
+  builds the one that mails the Owners through the system sender.
 - **Async**: `internal/pubsub` (watermill over Postgres) — handlers registered in
   `pubsub.RegisterHandlers`, router run in a goroutine from `cmd/server/main.go`.
   `internal/jobs` uses river (Postgres-backed queue, `database/sql` driver, polling). A job that must
@@ -525,7 +535,8 @@ outside `schema/`, `src/generated/`) unless that is the point of the search.
   and re-check after merging `main`: parallel branches pick the same one.
 - After changing TypeSpec or `ent/schema`, run `mise run generate` and commit the generated output.
 - Coding standards (tests, plain-table schema, no custom CSS, theming, lint) are in
-  `CODING_STANDARDS.md`: read it before writing code.
+  `CODING_STANDARDS.md`: read it before writing code. The numbered review rules every change is
+  checked against are in `docs/agents/review-rules.md`.
 
 ## Agent skills
 

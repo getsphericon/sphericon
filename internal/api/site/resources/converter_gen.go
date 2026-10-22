@@ -8,6 +8,7 @@ import (
 	site "github.com/getsphericon/sphericon/gen/site"
 	auditapi "github.com/getsphericon/sphericon/internal/auditapi"
 	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
+	integrations "github.com/getsphericon/sphericon/internal/integrations"
 	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
 	sendlimit "github.com/getsphericon/sphericon/internal/sendlimit"
 )
@@ -325,6 +326,16 @@ func (c *ConverterImpl) OutboundMessageToExport(source *ent.OutboundMessage) sit
 	}
 	return siteapiContactExportOutboundMessage
 }
+func (c *ConverterImpl) PasskeyToResource(source *ent.Passkey) site.SitePasskey {
+	var siteapiSitePasskey site.SitePasskey
+	if source != nil {
+		siteapiSitePasskey.ID = site.EntityId((*source).ID)
+		siteapiSitePasskey.Name = site.PasskeyName((*source).Name)
+		siteapiSitePasskey.CreatedAt = timestamp((*source).CreatedAt)
+		siteapiSitePasskey.LastUsedAt = optTimestamp((*source).LastUsedAt)
+	}
+	return siteapiSitePasskey
+}
 func (c *ConverterImpl) SegmentToResource(source *ent.Segment) site.SiteSegmentResource {
 	var siteapiSiteSegmentResource site.SiteSegmentResource
 	if source != nil {
@@ -356,14 +367,35 @@ func (c *ConverterImpl) SendingDomainToResource(source *ent.SendingDomain) site.
 		siteapiSiteSendingDomainResource.ID = site.EntityId((*source).ID)
 		siteapiSiteSendingDomainResource.Domain = (*source).Domain
 		siteapiSiteSendingDomainResource.DkimSelector = (*source).DkimSelector
-		siteapiSiteSendingDomainResource.Verified = (*source).Verified
+		siteapiSiteSendingDomainResource.Verified = sendingDomainVerified((*source))
 		siteapiSiteSendingDomainResource.LastCheckedAt = optNilTimestamp((*source).LastCheckedAt)
 		siteapiSiteSendingDomainResource.VerifiedAt = optNilTimestamp((*source).VerifiedAt)
+		siteapiSiteSendingDomainResource.VerificationLostAt = optNilTimestamp((*source).VerificationLostAt)
 		siteapiSiteSendingDomainResource.ArchivedAt = optNilTimestamp((*source).DiscardedAt)
 		siteapiSiteSendingDomainResource.CreatedAt = timestamp((*source).CreatedAt)
 		siteapiSiteSendingDomainResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
 	return siteapiSiteSendingDomainResource
+}
+func (c *ConverterImpl) SesConfigToResource(source integrations.RedactedSES) site.SiteSesConfig {
+	var siteapiSiteSesConfig site.SiteSesConfig
+	siteapiSiteSesConfig.Kind = sesConfigKind(source)
+	siteapiSiteSesConfig.Region = source.Region
+	siteapiSiteSesConfig.From = site.EmailAddress(source.From)
+	siteapiSiteSesConfig.FromName = omitEmpty(source.FromName)
+	siteapiSiteSesConfig.Endpoint = omitEmpty(source.Endpoint)
+	siteapiSiteSesConfig.AccessKeyIdLast4 = omitEmpty(source.AccessKeyIDLast4)
+	return siteapiSiteSesConfig
+}
+func (c *ConverterImpl) SmtpConfigToResource(source integrations.RedactedSMTP) site.SiteSmtpConfig {
+	var siteapiSiteSmtpConfig site.SiteSmtpConfig
+	siteapiSiteSmtpConfig.Kind = smtpConfigKind(source)
+	siteapiSiteSmtpConfig.Host = source.Host
+	siteapiSiteSmtpConfig.Port = count(source.Port)
+	siteapiSiteSmtpConfig.Username = omitEmpty(source.Username)
+	siteapiSiteSmtpConfig.From = site.EmailAddress(source.From)
+	siteapiSiteSmtpConfig.FromName = omitEmpty(source.FromName)
+	return siteapiSiteSmtpConfig
 }
 func (c *ConverterImpl) SuppressionToExport(source *ent.Suppression) site.ContactExportSuppression {
 	var siteapiContactExportSuppression site.ContactExportSuppression
@@ -415,9 +447,9 @@ func (c *ConverterImpl) TokenToResource(source *ent.ApiToken) site.SiteApiTokenR
 		siteapiSiteApiTokenResource.Name = (*source).Name
 		siteapiSiteApiTokenResource.Prefix = (*source).Prefix
 		if (*source).Scopes != nil {
-			siteapiSiteApiTokenResource.Scopes = make([]string, len((*source).Scopes))
+			siteapiSiteApiTokenResource.Scopes = make([]site.ApiTokenScope, len((*source).Scopes))
 			for i := 0; i < len((*source).Scopes); i++ {
-				siteapiSiteApiTokenResource.Scopes[i] = (*source).Scopes[i]
+				siteapiSiteApiTokenResource.Scopes[i] = site.ApiTokenScope((*source).Scopes[i])
 			}
 		}
 		siteapiSiteApiTokenResource.LastUsedAt = optNilTimestamp((*source).LastUsedAt)
@@ -494,7 +526,8 @@ func (c *ConverterImpl) WebhookEndpointToResource(source *ent.WebhookEndpoint) s
 		siteapiSiteWebhookEndpointResource.ID = site.EntityId((*source).ID)
 		siteapiSiteWebhookEndpointResource.URL = (*source).URL
 		siteapiSiteWebhookEndpointResource.EventTypes = eventTypes((*source).EventTypes)
-		siteapiSiteWebhookEndpointResource.Enabled = (*source).Enabled
+		siteapiSiteWebhookEndpointResource.Enabled = webhookEnabled((*source))
+		siteapiSiteWebhookEndpointResource.DisabledAt = optTimestamp((*source).DisabledAt)
 		siteapiSiteWebhookEndpointResource.DisabledReason = optWebhookDisabledReason((*source).DisabledReason)
 		siteapiSiteWebhookEndpointResource.Failure = webhookFailure((*source))
 		siteapiSiteWebhookEndpointResource.CreatedAt = timestamp((*source).CreatedAt)

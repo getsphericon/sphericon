@@ -28,8 +28,9 @@ const (
 	mcpPath = "/mcp"
 
 	maxRedirectURIs = 10
-	maxClientName   = 100
-	defaultClient   = "MCP client"
+	// contract-copy: the OAuth dynamic client registration protocol is not in the contract
+	maxClientName = 100
+	defaultClient = "MCP client"
 )
 
 // ResourceURL is the canonical URI of the protected MCP resource, served from

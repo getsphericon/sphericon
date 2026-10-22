@@ -121,17 +121,17 @@ func (s *ApiTokenListResponse) SetItems(val []ApiTokenInfo) {
 
 func (*ApiTokenListResponse) authTokensListRes() {}
 
+// Every API token scope: the one vocabulary of the external API.
 // Ref: #/components/schemas/ApiTokenScope
 type ApiTokenScope string
 
 const (
 	ApiTokenScopeContactsRead        ApiTokenScope = "contacts:read"
 	ApiTokenScopeContactsWrite       ApiTokenScope = "contacts:write"
-	ApiTokenScopeContactsErase       ApiTokenScope = "contacts:erase"
-	ApiTokenScopeSegmentsRead        ApiTokenScope = "segments:read"
-	ApiTokenScopeSegmentsWrite       ApiTokenScope = "segments:write"
 	ApiTokenScopeEventsRead          ApiTokenScope = "events:read"
 	ApiTokenScopeEventsWrite         ApiTokenScope = "events:write"
+	ApiTokenScopeSegmentsRead        ApiTokenScope = "segments:read"
+	ApiTokenScopeSegmentsWrite       ApiTokenScope = "segments:write"
 	ApiTokenScopeBroadcastsRead      ApiTokenScope = "broadcasts:read"
 	ApiTokenScopeBroadcastsWrite     ApiTokenScope = "broadcasts:write"
 	ApiTokenScopeAutomationsRead     ApiTokenScope = "automations:read"
@@ -145,13 +145,14 @@ const (
 	ApiTokenScopeWebhooksTest        ApiTokenScope = "webhooks:test"
 	ApiTokenScopeCustomFieldsRead    ApiTokenScope = "custom_fields:read"
 	ApiTokenScopeSendingDomainsRead  ApiTokenScope = "sending_domains:read"
-	ApiTokenScopeSendingDomainsWrite ApiTokenScope = "sending_domains:write"
 	ApiTokenScopeIntegrationsRead    ApiTokenScope = "integrations:read"
-	ApiTokenScopeIntegrationsWrite   ApiTokenScope = "integrations:write"
 	ApiTokenScopeEmailsSend          ApiTokenScope = "emails:send"
 	ApiTokenScopeBroadcastsSend      ApiTokenScope = "broadcasts:send"
 	ApiTokenScopeAutomationsActivate ApiTokenScope = "automations:activate"
 	ApiTokenScopeMcpSend             ApiTokenScope = "mcp:send"
+	ApiTokenScopeContactsErase       ApiTokenScope = "contacts:erase"
+	ApiTokenScopeSendingDomainsWrite ApiTokenScope = "sending_domains:write"
+	ApiTokenScopeIntegrationsWrite   ApiTokenScope = "integrations:write"
 	ApiTokenScopeTokensRead          ApiTokenScope = "tokens:read"
 	ApiTokenScopeTokensWrite         ApiTokenScope = "tokens:write"
 	ApiTokenScopeAuditRead           ApiTokenScope = "audit:read"
@@ -163,11 +164,10 @@ func (ApiTokenScope) AllValues() []ApiTokenScope {
 	return []ApiTokenScope{
 		ApiTokenScopeContactsRead,
 		ApiTokenScopeContactsWrite,
-		ApiTokenScopeContactsErase,
-		ApiTokenScopeSegmentsRead,
-		ApiTokenScopeSegmentsWrite,
 		ApiTokenScopeEventsRead,
 		ApiTokenScopeEventsWrite,
+		ApiTokenScopeSegmentsRead,
+		ApiTokenScopeSegmentsWrite,
 		ApiTokenScopeBroadcastsRead,
 		ApiTokenScopeBroadcastsWrite,
 		ApiTokenScopeAutomationsRead,
@@ -181,13 +181,14 @@ func (ApiTokenScope) AllValues() []ApiTokenScope {
 		ApiTokenScopeWebhooksTest,
 		ApiTokenScopeCustomFieldsRead,
 		ApiTokenScopeSendingDomainsRead,
-		ApiTokenScopeSendingDomainsWrite,
 		ApiTokenScopeIntegrationsRead,
-		ApiTokenScopeIntegrationsWrite,
 		ApiTokenScopeEmailsSend,
 		ApiTokenScopeBroadcastsSend,
 		ApiTokenScopeAutomationsActivate,
 		ApiTokenScopeMcpSend,
+		ApiTokenScopeContactsErase,
+		ApiTokenScopeSendingDomainsWrite,
+		ApiTokenScopeIntegrationsWrite,
 		ApiTokenScopeTokensRead,
 		ApiTokenScopeTokensWrite,
 		ApiTokenScopeAuditRead,
@@ -202,15 +203,13 @@ func (s ApiTokenScope) MarshalText() ([]byte, error) {
 		return []byte(s), nil
 	case ApiTokenScopeContactsWrite:
 		return []byte(s), nil
-	case ApiTokenScopeContactsErase:
+	case ApiTokenScopeEventsRead:
+		return []byte(s), nil
+	case ApiTokenScopeEventsWrite:
 		return []byte(s), nil
 	case ApiTokenScopeSegmentsRead:
 		return []byte(s), nil
 	case ApiTokenScopeSegmentsWrite:
-		return []byte(s), nil
-	case ApiTokenScopeEventsRead:
-		return []byte(s), nil
-	case ApiTokenScopeEventsWrite:
 		return []byte(s), nil
 	case ApiTokenScopeBroadcastsRead:
 		return []byte(s), nil
@@ -238,11 +237,7 @@ func (s ApiTokenScope) MarshalText() ([]byte, error) {
 		return []byte(s), nil
 	case ApiTokenScopeSendingDomainsRead:
 		return []byte(s), nil
-	case ApiTokenScopeSendingDomainsWrite:
-		return []byte(s), nil
 	case ApiTokenScopeIntegrationsRead:
-		return []byte(s), nil
-	case ApiTokenScopeIntegrationsWrite:
 		return []byte(s), nil
 	case ApiTokenScopeEmailsSend:
 		return []byte(s), nil
@@ -251,6 +246,12 @@ func (s ApiTokenScope) MarshalText() ([]byte, error) {
 	case ApiTokenScopeAutomationsActivate:
 		return []byte(s), nil
 	case ApiTokenScopeMcpSend:
+		return []byte(s), nil
+	case ApiTokenScopeContactsErase:
+		return []byte(s), nil
+	case ApiTokenScopeSendingDomainsWrite:
+		return []byte(s), nil
+	case ApiTokenScopeIntegrationsWrite:
 		return []byte(s), nil
 	case ApiTokenScopeTokensRead:
 		return []byte(s), nil
@@ -274,20 +275,17 @@ func (s *ApiTokenScope) UnmarshalText(data []byte) error {
 	case ApiTokenScopeContactsWrite:
 		*s = ApiTokenScopeContactsWrite
 		return nil
-	case ApiTokenScopeContactsErase:
-		*s = ApiTokenScopeContactsErase
+	case ApiTokenScopeEventsRead:
+		*s = ApiTokenScopeEventsRead
+		return nil
+	case ApiTokenScopeEventsWrite:
+		*s = ApiTokenScopeEventsWrite
 		return nil
 	case ApiTokenScopeSegmentsRead:
 		*s = ApiTokenScopeSegmentsRead
 		return nil
 	case ApiTokenScopeSegmentsWrite:
 		*s = ApiTokenScopeSegmentsWrite
-		return nil
-	case ApiTokenScopeEventsRead:
-		*s = ApiTokenScopeEventsRead
-		return nil
-	case ApiTokenScopeEventsWrite:
-		*s = ApiTokenScopeEventsWrite
 		return nil
 	case ApiTokenScopeBroadcastsRead:
 		*s = ApiTokenScopeBroadcastsRead
@@ -328,14 +326,8 @@ func (s *ApiTokenScope) UnmarshalText(data []byte) error {
 	case ApiTokenScopeSendingDomainsRead:
 		*s = ApiTokenScopeSendingDomainsRead
 		return nil
-	case ApiTokenScopeSendingDomainsWrite:
-		*s = ApiTokenScopeSendingDomainsWrite
-		return nil
 	case ApiTokenScopeIntegrationsRead:
 		*s = ApiTokenScopeIntegrationsRead
-		return nil
-	case ApiTokenScopeIntegrationsWrite:
-		*s = ApiTokenScopeIntegrationsWrite
 		return nil
 	case ApiTokenScopeEmailsSend:
 		*s = ApiTokenScopeEmailsSend
@@ -348,6 +340,15 @@ func (s *ApiTokenScope) UnmarshalText(data []byte) error {
 		return nil
 	case ApiTokenScopeMcpSend:
 		*s = ApiTokenScopeMcpSend
+		return nil
+	case ApiTokenScopeContactsErase:
+		*s = ApiTokenScopeContactsErase
+		return nil
+	case ApiTokenScopeSendingDomainsWrite:
+		*s = ApiTokenScopeSendingDomainsWrite
+		return nil
+	case ApiTokenScopeIntegrationsWrite:
+		*s = ApiTokenScopeIntegrationsWrite
 		return nil
 	case ApiTokenScopeTokensRead:
 		*s = ApiTokenScopeTokensRead
@@ -11543,8 +11544,8 @@ func (s *SendingDomainRatesResource) SetBounceRate(val RateTriple) {
 }
 
 // Sending domain (ADR 0010). sphericon generates the DKIM keypair; the caller publishes the DKIM TXT
-// record. The private key is never returned. `verified` is a live property re-checked in the
-// background: it can flip back if the DNS record disappears.
+// record. The private key is never returned. `verified` is re-checked in the background: the domain
+// loses it (`verificationLostAt`) if the DNS record disappears.
 // Ref: #/components/schemas/SendingDomainResource
 type SendingDomainResource struct {
 	// Unique identifier.
@@ -11553,7 +11554,7 @@ type SendingDomainResource struct {
 	Domain string `json:"domain"`
 	// DKIM selector; the record host is "._domainkey.".
 	DkimSelector string `json:"dkimSelector"`
-	// Whether the DKIM DNS is currently published and matches our key.
+	// Whether the domain is verified now: it has a `verifiedAt` and no `verificationLostAt` since.
 	Verified bool `json:"verified"`
 	// The required DKIM TXT record.
 	DkimRecord DnsRecord `json:"dkimRecord"`
@@ -11565,8 +11566,11 @@ type SendingDomainResource struct {
 	TrackingRecord OptTrackingRecord `json:"trackingRecord"`
 	// When the DKIM DNS was most recently checked (null = never).
 	LastCheckedAt OptNilTimestamp `json:"lastCheckedAt"`
-	// When the domain most recently became verified (null = never).
+	// When the domain most recently became verified (null = never); kept after a loss.
 	VerifiedAt OptNilTimestamp `json:"verifiedAt"`
+	// When a re-check most recently found the verified DKIM DNS gone (null = not lost: never verified, or
+	// verified again since).
+	VerificationLostAt OptNilTimestamp `json:"verificationLostAt"`
 	// When the domain was archived; null while it is kept. An archived domain serves no Tracking domain
 	// host.
 	ArchivedAt OptNilTimestamp `json:"archivedAt"`
@@ -11624,6 +11628,11 @@ func (s *SendingDomainResource) GetLastCheckedAt() OptNilTimestamp {
 // GetVerifiedAt returns the value of VerifiedAt.
 func (s *SendingDomainResource) GetVerifiedAt() OptNilTimestamp {
 	return s.VerifiedAt
+}
+
+// GetVerificationLostAt returns the value of VerificationLostAt.
+func (s *SendingDomainResource) GetVerificationLostAt() OptNilTimestamp {
+	return s.VerificationLostAt
 }
 
 // GetArchivedAt returns the value of ArchivedAt.
@@ -11689,6 +11698,11 @@ func (s *SendingDomainResource) SetLastCheckedAt(val OptNilTimestamp) {
 // SetVerifiedAt sets the value of VerifiedAt.
 func (s *SendingDomainResource) SetVerifiedAt(val OptNilTimestamp) {
 	s.VerifiedAt = val
+}
+
+// SetVerificationLostAt sets the value of VerificationLostAt.
+func (s *SendingDomainResource) SetVerificationLostAt(val OptNilTimestamp) {
+	s.VerificationLostAt = val
 }
 
 // SetArchivedAt sets the value of ArchivedAt.
@@ -14093,13 +14107,14 @@ func (s *UsedByKind) UnmarshalText(data []byte) error {
 	}
 }
 
-// Why an endpoint turned itself off. A closed set: `gone` (the receiver answered 410 Gone) and
-// `persistent_failure` (deliveries failed for longer than the window). Absent for an endpoint an owner
-// disabled, and while the endpoint is enabled.
+// Why an endpoint is off. A closed set: `owner` (a member turned it off), `gone` (the receiver
+// answered 410 Gone) and `persistent_failure` (deliveries failed for longer than the window). Absent
+// while the endpoint is enabled.
 // Ref: #/components/schemas/WebhookDisabledReason
 type WebhookDisabledReason string
 
 const (
+	WebhookDisabledReasonOwner             WebhookDisabledReason = "owner"
 	WebhookDisabledReasonGone              WebhookDisabledReason = "gone"
 	WebhookDisabledReasonPersistentFailure WebhookDisabledReason = "persistent_failure"
 )
@@ -14107,6 +14122,7 @@ const (
 // AllValues returns all WebhookDisabledReason values.
 func (WebhookDisabledReason) AllValues() []WebhookDisabledReason {
 	return []WebhookDisabledReason{
+		WebhookDisabledReasonOwner,
 		WebhookDisabledReasonGone,
 		WebhookDisabledReasonPersistentFailure,
 	}
@@ -14115,6 +14131,8 @@ func (WebhookDisabledReason) AllValues() []WebhookDisabledReason {
 // MarshalText implements encoding.TextMarshaler.
 func (s WebhookDisabledReason) MarshalText() ([]byte, error) {
 	switch s {
+	case WebhookDisabledReasonOwner:
+		return []byte(s), nil
 	case WebhookDisabledReasonGone:
 		return []byte(s), nil
 	case WebhookDisabledReasonPersistentFailure:
@@ -14127,6 +14145,9 @@ func (s WebhookDisabledReason) MarshalText() ([]byte, error) {
 // UnmarshalText implements encoding.TextUnmarshaler.
 func (s *WebhookDisabledReason) UnmarshalText(data []byte) error {
 	switch WebhookDisabledReason(data) {
+	case WebhookDisabledReasonOwner:
+		*s = WebhookDisabledReasonOwner
+		return nil
 	case WebhookDisabledReasonGone:
 		*s = WebhookDisabledReasonGone
 		return nil
@@ -14272,9 +14293,11 @@ type WebhookResource struct {
 	URL string `json:"url"`
 	// Event names this endpoint receives; empty means all events.
 	EventTypes []string `json:"eventTypes"`
-	// Whether the endpoint receives deliveries.
+	// Whether the endpoint receives deliveries: true while it has no `disabledAt`.
 	Enabled bool `json:"enabled"`
-	// Why the endpoint turned itself off; absent when an owner disabled it or it is enabled.
+	// When the endpoint was turned off; absent while it is enabled.
+	DisabledAt OptTimestamp `json:"disabledAt"`
+	// Why the endpoint is off; present exactly when `disabledAt` is.
 	DisabledReason OptWebhookDisabledReason `json:"disabledReason"`
 	// Present while deliveries are failing; cleared by the next 2xx.
 	Failure OptWebhookFailure `json:"failure"`
@@ -14302,6 +14325,11 @@ func (s *WebhookResource) GetEventTypes() []string {
 // GetEnabled returns the value of Enabled.
 func (s *WebhookResource) GetEnabled() bool {
 	return s.Enabled
+}
+
+// GetDisabledAt returns the value of DisabledAt.
+func (s *WebhookResource) GetDisabledAt() OptTimestamp {
+	return s.DisabledAt
 }
 
 // GetDisabledReason returns the value of DisabledReason.
@@ -14342,6 +14370,11 @@ func (s *WebhookResource) SetEventTypes(val []string) {
 // SetEnabled sets the value of Enabled.
 func (s *WebhookResource) SetEnabled(val bool) {
 	s.Enabled = val
+}
+
+// SetDisabledAt sets the value of DisabledAt.
+func (s *WebhookResource) SetDisabledAt(val OptTimestamp) {
+	s.DisabledAt = val
 }
 
 // SetDisabledReason sets the value of DisabledReason.

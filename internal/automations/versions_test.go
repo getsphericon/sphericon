@@ -32,9 +32,8 @@ func TestEditingTheStepsOfAnUnenrolledAutomationRewritesItsVersion(t *testing.T)
 	m := automations.New(env.Cipher, env.Bus)
 	ctx := context.Background()
 	acme := env.DB.Scoped(fixtures.AcmeID)
-	a, err := m.Create(ctx, acme, automations.CreateInput{Name: "Draft", TriggerEvent: "draft.edit",
-		Steps: []automations.Step{{Type: automations.StepWait, Seconds: 1}}})
-	require.NoError(t, err)
+	a, err := m.Get(ctx, acme, fixtures.AutomationWinBackID)
+	require.NoError(t, err, "the fixture draft has no Enrollment")
 
 	for _, seconds := range []int{2, 3, 4} {
 		updated, err := m.Update(ctx, acme, a.ID, automations.UpdateInput{Steps: &[]automations.Step{{Type: automations.StepWait, Seconds: seconds}}})
@@ -53,8 +52,9 @@ func TestEditingTheStepsUnderAnEnrollmentCreatesANewVersion(t *testing.T) {
 	m := automations.New(env.Cipher, env.Bus)
 	ctx := context.Background()
 	acme := env.DB.Scoped(fixtures.AcmeID)
-	a, err := m.Create(ctx, acme, automations.CreateInput{Name: "Live", TriggerEvent: "live.edit",
-		Steps: []automations.Step{{Type: automations.StepWait, Seconds: 1}}})
+	a, err := m.Get(ctx, acme, fixtures.AutomationWinBackID)
+	require.NoError(t, err)
+	original, err := automations.CurrentSteps(a)
 	require.NoError(t, err)
 	first, enrolled, err := automations.Enroll(ctx, acme, a.ID, fixtures.ContactAliceID)
 	require.NoError(t, err)
@@ -83,7 +83,7 @@ func TestEditingTheStepsUnderAnEnrollmentCreatesANewVersion(t *testing.T) {
 	assert.Equal(t, 2, env.DB.AutomationVersion.GetX(ctx, v2).Version)
 	old, err := automations.Decode(env.DB.AutomationVersion.GetX(ctx, v1).Steps)
 	require.NoError(t, err)
-	assert.Equal(t, []automations.Step{{Type: automations.StepWait, Seconds: 1}}, old, "the version an Enrollment stands on is never rewritten")
+	assert.Equal(t, original, old, "the version an Enrollment stands on is never rewritten")
 }
 
 // The fixture Automation whose steps were edited with Enrollments on the first version.

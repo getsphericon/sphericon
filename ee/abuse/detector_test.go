@@ -2,7 +2,7 @@ package abuse_test
 
 import (
 	"crypto/ed25519"
-	"fmt"
+	"slices"
 	"testing"
 	"time"
 
@@ -11,7 +11,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ee/abuse"
 	"github.com/getsphericon/sphericon/ee/licensekey"
-	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/events"
@@ -36,36 +35,28 @@ const support = "support@sphericon.test"
 func detector(t *testing.T, env *testhelper.TestEnv) *abuse.Detector {
 	t.Helper()
 	return abuse.New(env.DB, licenseFor(t, licensekey.FeatureStaff), env.Bus, env.SystemMail,
-		abuse.Config{Limits: abuse.DefaultLimits(), SupportEmail: support})
+		abuse.Config{Limits: limits, SupportEmail: support})
 }
 
-// lay puts a Sending domain's traffic into the Workspace, one hour before `now`.
-func lay(t *testing.T, env *testhelper.TestEnv, ws int64, domain string, now time.Time, sent, hardBounces, complaints int) {
-	t.Helper()
-	s := env.DB.Scoped(ws)
-	at := now.Add(-time.Hour)
-	var creates = make([]*ent.EventScopedCreate, 0, sent+complaints)
-	add := func(action string, props map[string]any, n int) {
-		for i := range n {
-			creates = append(creates, s.Event().Create().
-				SetEmail(fmt.Sprintf("%s-%d@example.com", action, i)).
-				SetAction(action).
-				SetProperties(props).
-				SetOccurredAt(at))
-		}
-	}
-	add(events.NameEmailSent, map[string]any{"sendingDomain": domain}, sent)
-	add(events.NameEmailBounced, map[string]any{"sendingDomain": domain, "bounceKind": events.BounceKindPermanent}, hardBounces)
-	add(events.NameEmailComplained, map[string]any{"sendingDomain": domain}, complaints)
-	require.NoError(t, s.Event().CreateBulk(creates...).Exec(t.Context()))
-}
+// The traffic the tests judge is in fixtures/events.yml, one scenario per day offset: a test runs
+// the detector at `at(days)` and sees only that scenario in the trailing 24 hours. The volumes are
+// small, so the detector judges with a volume floor of 20 sent instead of the default 1000.
+const (
+	overDay      = 3  // Vandelay: 15% complaints, over the freeze limit; Kramerica, exempt: 50%
+	floorDay     = 6  // Vandelay: 19 sent, all bounced hard, under the floor
+	multiDay     = 33 // Vandelay: a clean mail domain and a news domain over the freeze limit
+	warnDay      = 36 // Vandelay: 7.5% complaints, in the warning tier
+	warnAgainDay = 34 // the same traffic once more, 48 hours later
+)
+
+var limits = abuse.Limits{VolumeFloor: 20, WarnComplaintBP: 500, WarnBounceBP: 1000, FreezeComplaintBP: 1000, FreezeBounceBP: 2000}
+
+func at(days int) time.Time { return time.Now().Add(-time.Duration(days) * 24 * time.Hour) }
 
 func TestAWorkspaceOverTheFreezeLimitIsFrozenAndItsOwnersTold(t *testing.T) {
 	env := testhelper.Setup(t)
-	now := time.Now()
-	lay(t, env, fixtures.VandelayID, "mail.vandelay.test", now, 2000, 0, 10) // 0.5% complaints
 
-	summary, err := detector(t, env).Run(t.Context(), now)
+	summary, err := detector(t, env).Run(t.Context(), at(overDay))
 
 	require.NoError(t, err)
 	assert.Equal(t, []int64{fixtures.VandelayID}, summary.Frozen)
@@ -74,7 +65,7 @@ func TestAWorkspaceOverTheFreezeLimitIsFrozenAndItsOwnersTold(t *testing.T) {
 	assert.Equal(t, workspace.SuspendedByKindSystem, *ws.SuspendedByKind)
 	assert.Contains(t, *ws.SuspensionReason, "complaint")
 	assert.Contains(t, *ws.SuspensionReason, "mail.vandelay.test")
-	assert.Len(t, env.SystemMail.Messages(), 2, "both owners are told")
+	assert.ElementsMatch(t, []string{fixtures.VandelayOwnerArtEmail, fixtures.VandelayOwnerCosmoEmail}, recipients(env), "both owners are told")
 	for _, m := range env.SystemMail.Messages() {
 		assert.Contains(t, m.Text, support)
 	}
@@ -95,12 +86,10 @@ func recipients(env *testhelper.TestEnv) []string {
 
 func TestNothingRunsWithoutTheStaffLicense(t *testing.T) {
 	env := testhelper.Setup(t)
-	now := time.Now()
-	lay(t, env, fixtures.VandelayID, "mail.vandelay.test", now, 2000, 0, 100)
 
 	for _, lic := range []*licensekey.License{nil, licenseFor(t), licenseFor(t, licensekey.FeatureRetention)} {
-		d := abuse.New(env.DB, lic, env.Bus, env.SystemMail, abuse.Config{})
-		summary, err := d.Run(t.Context(), now)
+		d := abuse.New(env.DB, lic, env.Bus, env.SystemMail, abuse.Config{Limits: limits})
+		summary, err := d.Run(t.Context(), at(overDay))
 		require.NoError(t, err)
 		assert.Equal(t, abuse.Summary{}, summary)
 	}
@@ -110,10 +99,8 @@ func TestNothingRunsWithoutTheStaffLicense(t *testing.T) {
 
 func TestBelowTheVolumeFloorNothingHappensEvenAtAHundredPercent(t *testing.T) {
 	env := testhelper.Setup(t)
-	now := time.Now()
-	lay(t, env, fixtures.VandelayID, "mail.vandelay.test", now, 999, 999, 0) // every send bounced hard
 
-	summary, err := detector(t, env).Run(t.Context(), now)
+	summary, err := detector(t, env).Run(t.Context(), at(floorDay)) // every send bounced hard
 
 	require.NoError(t, err)
 	assert.Equal(t, abuse.Summary{}, summary)
@@ -122,53 +109,45 @@ func TestBelowTheVolumeFloorNothingHappensEvenAtAHundredPercent(t *testing.T) {
 }
 
 // Each limit at and just under its boundary, with the floor's worth of sends: a rate
-// exactly at the limit reaches the tier, one event fewer does not.
+// exactly at the limit reaches the tier, one event fewer does not. The scenarios are in
+// fixtures/events.yml, one per day.
 func TestEachLimitAtAndJustUnderItsBoundary(t *testing.T) {
-	type outcome int
-	const (
-		quiet outcome = iota
-		warned
-		frozen
-	)
 	cases := []struct {
-		name                          string
-		sent, hardBounces, complaints int
-		want                          outcome
+		name       string
+		day        int
+		wantFrozen bool
+		wantWarned bool
 	}{
-		{"complaints at the freeze limit (0.3%)", 2000, 0, 6, frozen},
-		{"complaints just under the freeze limit", 2000, 0, 5, warned},
-		{"complaints at the warning limit (0.1%)", 2000, 0, 2, warned},
-		{"complaints just under the warning limit", 2000, 0, 1, quiet},
-		{"bounces at the freeze limit (10%)", 1000, 100, 0, frozen},
-		{"bounces just under the freeze limit", 1000, 99, 0, warned},
-		{"bounces at the warning limit (5%)", 1000, 50, 0, warned},
-		{"bounces just under the warning limit", 1000, 49, 0, quiet},
+		{"complaints at the freeze limit (10%)", 9, true, false},
+		{"complaints just under the freeze limit", 12, false, true},
+		{"complaints at the warning limit (5%)", 15, false, true},
+		{"complaints just under the warning limit", 18, false, false},
+		{"bounces at the freeze limit (20%)", 21, true, false},
+		{"bounces just under the freeze limit", 24, false, true},
+		{"bounces at the warning limit (10%)", 27, false, true},
+		{"bounces just under the warning limit", 30, false, false},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			env := testhelper.Setup(t)
-			now := time.Now()
-			lay(t, env, fixtures.VandelayID, "mail.vandelay.test", now, c.sent, c.hardBounces, c.complaints)
 
-			summary, err := detector(t, env).Run(t.Context(), now)
+			summary, err := detector(t, env).Run(t.Context(), at(c.day))
 
 			require.NoError(t, err)
-			assert.Equal(t, c.want == frozen, suspended(t, env, fixtures.VandelayID))
-			assert.Equal(t, c.want == warned, len(summary.Warned) == 1)
-			assert.Equal(t, c.want == frozen, len(summary.Frozen) == 1)
+			assert.Equal(t, c.wantFrozen, suspended(t, env, fixtures.VandelayID))
+			assert.Equal(t, c.wantWarned, slices.Contains(summary.Warned, fixtures.VandelayID))
+			assert.Equal(t, c.wantFrozen, slices.Contains(summary.Frozen, fixtures.VandelayID))
 		})
 	}
 }
 
 func TestAWarningMailsEveryOwnerOnceAndFreezesNothing(t *testing.T) {
 	env := testhelper.Setup(t)
-	now := time.Now()
-	lay(t, env, fixtures.VandelayID, "mail.vandelay.test", now, 2000, 0, 3) // 0.15%
 	d := detector(t, env)
 
-	first, err := d.Run(t.Context(), now)
+	first, err := d.Run(t.Context(), at(warnDay))
 	require.NoError(t, err)
-	second, err := d.Run(t.Context(), now.Add(time.Minute))
+	second, err := d.Run(t.Context(), at(warnDay).Add(time.Minute))
 	require.NoError(t, err)
 
 	assert.Equal(t, []int64{fixtures.VandelayID}, first.Warned)
@@ -181,20 +160,16 @@ func TestAWarningMailsEveryOwnerOnceAndFreezesNothing(t *testing.T) {
 
 func TestARecoveredWorkspaceStartsANewEpisodeWhenItReEntersTheTier(t *testing.T) {
 	env := testhelper.Setup(t)
-	now := time.Now()
-	lay(t, env, fixtures.VandelayID, "mail.vandelay.test", now, 2000, 0, 3)
 	d := detector(t, env)
-	_, err := d.Run(t.Context(), now)
+	_, err := d.Run(t.Context(), at(warnDay))
 	require.NoError(t, err)
 	require.Len(t, env.SystemMail.Messages(), 2)
 
-	later := now.Add(48 * time.Hour) // the old traffic has left the 24-hour window
-	recovered, err := d.Run(t.Context(), later)
+	recovered, err := d.Run(t.Context(), at(warnDay-1)) // the old traffic has left the 24-hour window
 	require.NoError(t, err)
 	assert.Empty(t, recovered.Warned)
 
-	lay(t, env, fixtures.VandelayID, "mail.vandelay.test", later, 2000, 0, 3)
-	again, err := d.Run(t.Context(), later)
+	again, err := d.Run(t.Context(), at(warnAgainDay)) // the same traffic, once more
 	require.NoError(t, err)
 	assert.Equal(t, []int64{fixtures.VandelayID}, again.Warned)
 	assert.Len(t, env.SystemMail.Messages(), 4)
@@ -202,15 +177,13 @@ func TestARecoveredWorkspaceStartsANewEpisodeWhenItReEntersTheTier(t *testing.T)
 
 func TestAWarningWhoseMailFailedIsRetriedNextPass(t *testing.T) {
 	env := testhelper.Setup(t)
-	now := time.Now()
-	lay(t, env, fixtures.VandelayID, "mail.vandelay.test", now, 2000, 0, 3)
 	d := detector(t, env)
 	env.SystemMail.SetErr(assert.AnError)
 
-	_, err := d.Run(t.Context(), now)
+	_, err := d.Run(t.Context(), at(warnDay))
 	require.Error(t, err)
 	env.SystemMail.SetErr(nil)
-	retried, err := d.Run(t.Context(), now)
+	retried, err := d.Run(t.Context(), at(warnDay))
 
 	require.NoError(t, err)
 	assert.Equal(t, []int64{fixtures.VandelayID}, retried.Warned)
@@ -218,11 +191,8 @@ func TestAWarningWhoseMailFailedIsRetriedNextPass(t *testing.T) {
 
 func TestAnyOneOfSeveralDomainsFreezesTheWholeWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
-	now := time.Now()
-	lay(t, env, fixtures.VandelayID, "mail.vandelay.test", now, 5000, 0, 0)
-	lay(t, env, fixtures.VandelayID, "news.vandelay.test", now, 2000, 0, 10)
 
-	summary, err := detector(t, env).Run(t.Context(), now)
+	summary, err := detector(t, env).Run(t.Context(), at(multiDay))
 
 	require.NoError(t, err)
 	assert.Equal(t, []int64{fixtures.VandelayID}, summary.Frozen)
@@ -231,10 +201,8 @@ func TestAnyOneOfSeveralDomainsFreezesTheWholeWorkspace(t *testing.T) {
 
 func TestAFreezeIsAuditedAsTheSystemAndSendsNoWarning(t *testing.T) {
 	env := testhelper.Setup(t)
-	now := time.Now()
-	lay(t, env, fixtures.VandelayID, "mail.vandelay.test", now, 2000, 0, 10)
 
-	_, err := detector(t, env).Run(t.Context(), now)
+	_, err := detector(t, env).Run(t.Context(), at(overDay))
 	require.NoError(t, err)
 	env.DeliverToEE(t)
 
@@ -249,11 +217,9 @@ func TestAFreezeIsAuditedAsTheSystemAndSendsNoWarning(t *testing.T) {
 
 func TestAFailedFreezeNoticeLeavesTheFreezeInPlace(t *testing.T) {
 	env := testhelper.Setup(t)
-	now := time.Now()
-	lay(t, env, fixtures.VandelayID, "mail.vandelay.test", now, 2000, 0, 10)
 	env.SystemMail.SetErr(assert.AnError)
 
-	summary, err := detector(t, env).Run(t.Context(), now)
+	summary, err := detector(t, env).Run(t.Context(), at(overDay))
 
 	require.NoError(t, err, "logged, not retried: a suspended Workspace is skipped from now on")
 	assert.Equal(t, []int64{fixtures.VandelayID}, summary.Frozen)
@@ -262,12 +228,10 @@ func TestAFailedFreezeNoticeLeavesTheFreezeInPlace(t *testing.T) {
 
 func TestASuspendedWorkspaceIsSkippedAndKeepsItsFirstActorAndReason(t *testing.T) {
 	env := testhelper.Setup(t)
-	now := time.Now()
 	_, err := suspension.SuspendWorkspace(t.Context(), env.Bus, fixtures.VandelayID, suspension.StaffMember("op-7"), "chargeback")
 	require.NoError(t, err)
-	lay(t, env, fixtures.VandelayID, "mail.vandelay.test", now, 2000, 0, 10)
 
-	summary, err := detector(t, env).Run(t.Context(), now)
+	summary, err := detector(t, env).Run(t.Context(), at(overDay))
 
 	require.NoError(t, err)
 	assert.Equal(t, abuse.Summary{}, summary)
@@ -279,13 +243,11 @@ func TestASuspendedWorkspaceIsSkippedAndKeepsItsFirstActorAndReason(t *testing.T
 
 func TestTheDetectorNeverLiftsASuspension(t *testing.T) {
 	env := testhelper.Setup(t)
-	now := time.Now()
-	lay(t, env, fixtures.VandelayID, "mail.vandelay.test", now, 2000, 0, 10)
 	d := detector(t, env)
-	_, err := d.Run(t.Context(), now)
+	_, err := d.Run(t.Context(), at(overDay))
 	require.NoError(t, err)
 
-	_, err = d.Run(t.Context(), now.Add(72*time.Hour)) // clean by then
+	_, err = d.Run(t.Context(), at(overDay-2)) // clean by then
 
 	require.NoError(t, err)
 	assert.True(t, suspended(t, env, fixtures.VandelayID))
@@ -294,44 +256,44 @@ func TestTheDetectorNeverLiftsASuspension(t *testing.T) {
 
 func TestAnExemptWorkspaceIsNeitherWarnedNorFrozenButCanBeSuspendedByHand(t *testing.T) {
 	env := testhelper.Setup(t)
-	now := time.Now()
-	lay(t, env, fixtures.KramericaID, "mail.kramerica.test", now, 2000, 0, 100)
 
-	summary, err := detector(t, env).Run(t.Context(), now)
+	summary, err := detector(t, env).Run(t.Context(), at(overDay)) // Kramerica is at 50% complaints
 
 	require.NoError(t, err)
-	assert.Equal(t, abuse.Summary{}, summary)
+	assert.NotContains(t, summary.Frozen, fixtures.KramericaID)
+	assert.NotContains(t, summary.Warned, fixtures.KramericaID)
 	assert.False(t, suspended(t, env, fixtures.KramericaID))
-	assert.Empty(t, env.SystemMail.Messages())
+	assert.NotContains(t, recipients(env), fixtures.KramericaOwnerNewmanEmail)
 	changed, err := suspension.SuspendWorkspace(t.Context(), env.Bus, fixtures.KramericaID, suspension.CLI, "verified abuse")
 	require.NoError(t, err)
 	assert.True(t, changed, "an exemption is not a loophole for real abuse")
 }
 
+// The clearance scenario is Kramerica's traffic at day 0 in fixtures/events.yml: over the freeze
+// limit an hour ago, 19 sent with 3 complaints an hour ahead and the 20th send two hours ahead.
+// The test lifts Kramerica's exemption, which the detector would otherwise honour.
 func TestAfterAnUnsuspendOnlyNewerEventsCountUntilTheFloorIsMetAgain(t *testing.T) {
 	env := testhelper.Setup(t)
 	now := time.Now()
-	lay(t, env, fixtures.VandelayID, "mail.vandelay.test", now, 2000, 0, 10)
+	env.DB.Workspace.UpdateOneID(fixtures.KramericaID).SetAbuseExempt(false).ExecX(t.Context())
 	d := detector(t, env)
 	_, err := d.Run(t.Context(), now)
 	require.NoError(t, err)
-	_, err = suspension.UnsuspendWorkspace(t.Context(), env.Bus, fixtures.VandelayID, suspension.StaffMember("1"))
+	require.True(t, suspended(t, env, fixtures.KramericaID))
+	_, err = suspension.UnsuspendWorkspace(t.Context(), env.Bus, fixtures.KramericaID, suspension.StaffMember("1"))
 	require.NoError(t, err)
 
 	immediately, err := d.Run(t.Context(), now.Add(time.Minute))
 	require.NoError(t, err)
 	assert.Empty(t, immediately.Frozen, "the same old complaints do not freeze a cleared sender again")
 
-	later := now.Add(2 * time.Hour)
-	lay(t, env, fixtures.VandelayID, "mail.vandelay.test", later, 999, 0, 99) // under the floor since the clearance
-	underFloor, err := d.Run(t.Context(), later)
+	underFloor, err := d.Run(t.Context(), now.Add(90*time.Minute))
 	require.NoError(t, err)
-	assert.Empty(t, underFloor.Frozen)
+	assert.Empty(t, underFloor.Frozen, "under the floor since the clearance")
 
-	lay(t, env, fixtures.VandelayID, "mail.vandelay.test", later, 1, 0, 0) // the 1000th send
-	refrozen, err := d.Run(t.Context(), later)
+	refrozen, err := d.Run(t.Context(), now.Add(3*time.Hour)) // the 20th send is in
 	require.NoError(t, err)
-	assert.Equal(t, []int64{fixtures.VandelayID}, refrozen.Frozen)
+	assert.Equal(t, []int64{fixtures.KramericaID}, refrozen.Frozen)
 }
 
 func TestUnsuspendingRecordsTheClearance(t *testing.T) {
@@ -344,12 +306,10 @@ func TestUnsuspendingRecordsTheClearance(t *testing.T) {
 
 func TestTheDashboardWarningIsTheDetectorsOwnComputation(t *testing.T) {
 	env := testhelper.Setup(t)
-	now := time.Now()
-	lay(t, env, fixtures.VandelayID, "mail.vandelay.test", now, 2000, 0, 3)
 	d := detector(t, env)
 	ws := env.DB.Workspace.GetX(t.Context(), fixtures.VandelayID)
 
-	breach, err := d.Warning(t.Context(), env.DB.Scoped(fixtures.VandelayID), ws, now)
+	breach, err := d.Warning(t.Context(), env.DB.Scoped(fixtures.VandelayID), ws, at(warnDay))
 
 	require.NoError(t, err)
 	assert.Equal(t, abuse.TierWarn, breach.Tier)
@@ -359,16 +319,14 @@ func TestTheDashboardWarningIsTheDetectorsOwnComputation(t *testing.T) {
 
 func TestAWarnedWorkspaceThatIsThenSuspendedByHandEndsItsEpisode(t *testing.T) {
 	env := testhelper.Setup(t)
-	now := time.Now()
-	lay(t, env, fixtures.VandelayID, "mail.vandelay.test", now, 2000, 0, 3)
 	d := detector(t, env)
-	_, err := d.Run(t.Context(), now)
+	_, err := d.Run(t.Context(), at(warnDay))
 	require.NoError(t, err)
 	require.NotNil(t, env.DB.Workspace.GetX(t.Context(), fixtures.VandelayID).AbuseWarningNotifiedAt)
 
 	_, err = suspension.SuspendWorkspace(t.Context(), env.Bus, fixtures.VandelayID, suspension.CLI, "manual")
 	require.NoError(t, err)
-	_, err = d.Run(t.Context(), now.Add(time.Minute))
+	_, err = d.Run(t.Context(), at(warnDay).Add(time.Minute))
 
 	require.NoError(t, err)
 	assert.Nil(t, env.DB.Workspace.GetX(t.Context(), fixtures.VandelayID).AbuseWarningNotifiedAt)
@@ -376,11 +334,9 @@ func TestAWarnedWorkspaceThatIsThenSuspendedByHandEndsItsEpisode(t *testing.T) {
 
 func TestAWorkspaceInItsDeletionWindowIsNotJudged(t *testing.T) {
 	env := testhelper.Setup(t)
-	now := time.Now()
-	lay(t, env, fixtures.VandelayID, "mail.vandelay.test", now, 2000, 0, 10)
-	env.DB.Workspace.UpdateOneID(fixtures.VandelayID).SetDiscardedAt(now).ExecX(t.Context())
+	env.DB.Workspace.UpdateOneID(fixtures.VandelayID).SetDiscardedAt(at(overDay)).ExecX(t.Context())
 
-	summary, err := detector(t, env).Run(t.Context(), now)
+	summary, err := detector(t, env).Run(t.Context(), at(overDay))
 
 	require.NoError(t, err)
 	assert.Equal(t, abuse.Summary{}, summary)

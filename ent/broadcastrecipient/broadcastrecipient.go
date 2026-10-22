@@ -36,6 +36,8 @@ const (
 	EdgeWorkspace = "workspace"
 	// EdgeBroadcast holds the string denoting the broadcast edge name in mutations.
 	EdgeBroadcast = "broadcast"
+	// EdgeContact holds the string denoting the contact edge name in mutations.
+	EdgeContact = "contact"
 	// Table holds the table name of the broadcastrecipient in the database.
 	Table = "broadcast_recipients"
 	// WorkspaceTable is the table that holds the workspace relation/edge.
@@ -52,6 +54,13 @@ const (
 	BroadcastInverseTable = "broadcasts"
 	// BroadcastColumn is the table column denoting the broadcast relation/edge.
 	BroadcastColumn = "broadcast_id"
+	// ContactTable is the table that holds the contact relation/edge.
+	ContactTable = "broadcast_recipients"
+	// ContactInverseTable is the table name for the Contact entity.
+	// It exists in this package in order to avoid circular dependency with the "contact" package.
+	ContactInverseTable = "contacts"
+	// ContactColumn is the table column denoting the contact relation/edge.
+	ContactColumn = "contact_id"
 )
 
 // Columns holds all SQL columns for broadcastrecipient fields.
@@ -153,6 +162,13 @@ func ByBroadcastField(field string, opts ...sql.OrderTermOption) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newBroadcastStep(), sql.OrderByField(field, opts...))
 	}
 }
+
+// ByContactField orders the results by contact field.
+func ByContactField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newContactStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newWorkspaceStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -165,5 +181,12 @@ func newBroadcastStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(BroadcastInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, BroadcastTable, BroadcastColumn),
+	)
+}
+func newContactStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ContactInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, ContactTable, ContactColumn),
 	)
 }

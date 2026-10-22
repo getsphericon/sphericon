@@ -1,0 +1,15 @@
+# Confirmation 1 belongs to a standing Contact; 2 to a Contact erased before the keys existed.
+- id: 1
+  destination: here@x.test
+  provenance: double_opt_in
+  contact_id: 1
+  workspace_id: 1
+  created_at: '{{now}}'
+  updated_at: '{{now}}'
+- id: 2
+  destination: gone@x.test
+  provenance: double_opt_in
+  contact_id: 77
+  workspace_id: 1
+  created_at: '{{now}}'
+  updated_at: '{{now}}'

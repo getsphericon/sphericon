@@ -381,6 +381,18 @@ func (f RecoveryCodeFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RecoveryCodeMutation", m)
 }
 
+// The RiverJobFunc type is an adapter to allow the use of ordinary
+// function as RiverJob mutator.
+type RiverJobFunc func(context.Context, *ent.RiverJobMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f RiverJobFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.RiverJobMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RiverJobMutation", m)
+}
+
 // The SchemaStateFunc type is an adapter to allow the use of ordinary
 // function as SchemaState mutator.
 type SchemaStateFunc func(context.Context, *ent.SchemaStateMutation) (ent.Value, error)

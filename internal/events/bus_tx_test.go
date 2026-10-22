@@ -33,6 +33,7 @@ func TestWithinTxRollsBackOnError(t *testing.T) {
 	boom := errors.New("producer failed")
 
 	err := env.Bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+		// test writes: transaction commit and rollback through the bus is the subject
 		tx.Event.Create().SetWorkspaceID(fixtures.AcmeID).SetSubjectID("rolled-back@example.com").SetAction("x").ExecX(ctx)
 		require.NoError(t, pub.Publish(ctx, &events.ContactCreated{WorkspaceID: fixtures.AcmeID, ContactID: 7, Email: "rolled-back@example.com"}))
 		return boom

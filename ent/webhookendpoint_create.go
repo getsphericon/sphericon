@@ -75,16 +75,16 @@ func (_c *WebhookEndpointCreate) SetEventTypes(v []string) *WebhookEndpointCreat
 	return _c
 }
 
-// SetEnabled sets the "enabled" field.
-func (_c *WebhookEndpointCreate) SetEnabled(v bool) *WebhookEndpointCreate {
-	_c.mutation.SetEnabled(v)
+// SetDisabledAt sets the "disabled_at" field.
+func (_c *WebhookEndpointCreate) SetDisabledAt(v time.Time) *WebhookEndpointCreate {
+	_c.mutation.SetDisabledAt(v)
 	return _c
 }
 
-// SetNillableEnabled sets the "enabled" field if the given value is not nil.
-func (_c *WebhookEndpointCreate) SetNillableEnabled(v *bool) *WebhookEndpointCreate {
+// SetNillableDisabledAt sets the "disabled_at" field if the given value is not nil.
+func (_c *WebhookEndpointCreate) SetNillableDisabledAt(v *time.Time) *WebhookEndpointCreate {
 	if v != nil {
-		_c.SetEnabled(*v)
+		_c.SetDisabledAt(*v)
 	}
 	return _c
 }
@@ -227,10 +227,6 @@ func (_c *WebhookEndpointCreate) defaults() {
 		v := webhookendpoint.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
-	if _, ok := _c.mutation.Enabled(); !ok {
-		v := webhookendpoint.DefaultEnabled
-		_c.mutation.SetEnabled(v)
-	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -254,9 +250,6 @@ func (_c *WebhookEndpointCreate) check() error {
 	}
 	if _, ok := _c.mutation.SecretEncrypted(); !ok {
 		return &ValidationError{Name: "secret_encrypted", err: errors.New(`ent: missing required field "WebhookEndpoint.secret_encrypted"`)}
-	}
-	if _, ok := _c.mutation.Enabled(); !ok {
-		return &ValidationError{Name: "enabled", err: errors.New(`ent: missing required field "WebhookEndpoint.enabled"`)}
 	}
 	if v, ok := _c.mutation.LastErrorKind(); ok {
 		if err := webhookendpoint.LastErrorKindValidator(v); err != nil {
@@ -324,9 +317,9 @@ func (_c *WebhookEndpointCreate) createSpec() (*WebhookEndpoint, *sqlgraph.Creat
 		_spec.SetField(webhookendpoint.FieldEventTypes, field.TypeJSON, value)
 		_node.EventTypes = value
 	}
-	if value, ok := _c.mutation.Enabled(); ok {
-		_spec.SetField(webhookendpoint.FieldEnabled, field.TypeBool, value)
-		_node.Enabled = value
+	if value, ok := _c.mutation.DisabledAt(); ok {
+		_spec.SetField(webhookendpoint.FieldDisabledAt, field.TypeTime, value)
+		_node.DisabledAt = &value
 	}
 	if value, ok := _c.mutation.ConsecutiveFailures(); ok {
 		_spec.SetField(webhookendpoint.FieldConsecutiveFailures, field.TypeInt, value)
@@ -487,15 +480,21 @@ func (u *WebhookEndpointUpsert) ClearEventTypes() *WebhookEndpointUpsert {
 	return u
 }
 
-// SetEnabled sets the "enabled" field.
-func (u *WebhookEndpointUpsert) SetEnabled(v bool) *WebhookEndpointUpsert {
-	u.Set(webhookendpoint.FieldEnabled, v)
+// SetDisabledAt sets the "disabled_at" field.
+func (u *WebhookEndpointUpsert) SetDisabledAt(v time.Time) *WebhookEndpointUpsert {
+	u.Set(webhookendpoint.FieldDisabledAt, v)
 	return u
 }
 
-// UpdateEnabled sets the "enabled" field to the value that was provided on create.
-func (u *WebhookEndpointUpsert) UpdateEnabled() *WebhookEndpointUpsert {
-	u.SetExcluded(webhookendpoint.FieldEnabled)
+// UpdateDisabledAt sets the "disabled_at" field to the value that was provided on create.
+func (u *WebhookEndpointUpsert) UpdateDisabledAt() *WebhookEndpointUpsert {
+	u.SetExcluded(webhookendpoint.FieldDisabledAt)
+	return u
+}
+
+// ClearDisabledAt clears the value of the "disabled_at" field.
+func (u *WebhookEndpointUpsert) ClearDisabledAt() *WebhookEndpointUpsert {
+	u.SetNull(webhookendpoint.FieldDisabledAt)
 	return u
 }
 
@@ -747,17 +746,24 @@ func (u *WebhookEndpointUpsertOne) ClearEventTypes() *WebhookEndpointUpsertOne {
 	})
 }
 
-// SetEnabled sets the "enabled" field.
-func (u *WebhookEndpointUpsertOne) SetEnabled(v bool) *WebhookEndpointUpsertOne {
+// SetDisabledAt sets the "disabled_at" field.
+func (u *WebhookEndpointUpsertOne) SetDisabledAt(v time.Time) *WebhookEndpointUpsertOne {
 	return u.Update(func(s *WebhookEndpointUpsert) {
-		s.SetEnabled(v)
+		s.SetDisabledAt(v)
 	})
 }
 
-// UpdateEnabled sets the "enabled" field to the value that was provided on create.
-func (u *WebhookEndpointUpsertOne) UpdateEnabled() *WebhookEndpointUpsertOne {
+// UpdateDisabledAt sets the "disabled_at" field to the value that was provided on create.
+func (u *WebhookEndpointUpsertOne) UpdateDisabledAt() *WebhookEndpointUpsertOne {
 	return u.Update(func(s *WebhookEndpointUpsert) {
-		s.UpdateEnabled()
+		s.UpdateDisabledAt()
+	})
+}
+
+// ClearDisabledAt clears the value of the "disabled_at" field.
+func (u *WebhookEndpointUpsertOne) ClearDisabledAt() *WebhookEndpointUpsertOne {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.ClearDisabledAt()
 	})
 }
 
@@ -1195,17 +1201,24 @@ func (u *WebhookEndpointUpsertBulk) ClearEventTypes() *WebhookEndpointUpsertBulk
 	})
 }
 
-// SetEnabled sets the "enabled" field.
-func (u *WebhookEndpointUpsertBulk) SetEnabled(v bool) *WebhookEndpointUpsertBulk {
+// SetDisabledAt sets the "disabled_at" field.
+func (u *WebhookEndpointUpsertBulk) SetDisabledAt(v time.Time) *WebhookEndpointUpsertBulk {
 	return u.Update(func(s *WebhookEndpointUpsert) {
-		s.SetEnabled(v)
+		s.SetDisabledAt(v)
 	})
 }
 
-// UpdateEnabled sets the "enabled" field to the value that was provided on create.
-func (u *WebhookEndpointUpsertBulk) UpdateEnabled() *WebhookEndpointUpsertBulk {
+// UpdateDisabledAt sets the "disabled_at" field to the value that was provided on create.
+func (u *WebhookEndpointUpsertBulk) UpdateDisabledAt() *WebhookEndpointUpsertBulk {
 	return u.Update(func(s *WebhookEndpointUpsert) {
-		s.UpdateEnabled()
+		s.UpdateDisabledAt()
+	})
+}
+
+// ClearDisabledAt clears the value of the "disabled_at" field.
+func (u *WebhookEndpointUpsertBulk) ClearDisabledAt() *WebhookEndpointUpsertBulk {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.ClearDisabledAt()
 	})
 }
 

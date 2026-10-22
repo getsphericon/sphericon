@@ -9,9 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/ee/staff"
 	"github.com/getsphericon/sphericon/ee/usage"
-	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -42,14 +40,15 @@ func figureOf(t *testing.T, u *serviceapi.WorkspaceUsageResource, m serviceapi.U
 func TestAServiceReadsOneWorkspacesLiveUsageWithItsInFlightSends(t *testing.T) {
 	h := newHarness(t)
 	now := time.Now().UTC()
+	// The fixture's pending message holds a claim from a day ago: before the send is in flight, its
+	// claim is moved out of the period.
+	h.env.ClaimOutbound(t.Context(), fixtures.AcmeID, fixtures.OutboundMessageStaleClaimID, now.AddDate(0, -2, 0))
 	h.env.RefreshUsage(t, now)
 	first := readWorkspaceUsage(t, h.env.ServiceClient(t, primary), fixtures.AcmePublicID, serviceapi.OptString{})
 	before := figureOf(t, first, serviceapi.UsageMetricEmailsSent)
 	inFlightBefore := figureOf(t, first, serviceapi.UsageMetricInFlightSends)
 
-	require.NoError(t, h.env.DB.Scoped(fixtures.AcmeID).OutboundMessage().Create().
-		SetKind(outboundmessage.KindBroadcast).SetIdempotencyKey("usage-one:inflight").
-		SetStatus(outboundmessage.StatusPending).SetClaimedAt(now).Exec(t.Context()))
+	h.env.ClaimOutbound(t.Context(), fixtures.AcmeID, fixtures.OutboundMessageStaleClaimID, now)
 	h.env.RefreshUsage(t, now)
 
 	got := readWorkspaceUsage(t, h.env.ServiceClient(t, primary), fixtures.AcmePublicID, serviceapi.OptString{})
@@ -86,7 +85,7 @@ func TestReadingTheUsageOfAnUnknownWorkspaceIsNotFound(t *testing.T) {
 
 func TestReadingOneWorkspacesUsageNeedsTheReadUsageScope(t *testing.T) {
 	h := newHarness(t)
-	noUsage := h.env.IssueServiceCredential(t, "service-d", staff.ScopeHoldsWrite)
+	noUsage := h.env.IssueServiceCredential(t, "service-d", serviceapi.ServiceScopeHoldsWrite)
 
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/service/workspaces/1/usage", nil)

@@ -67,7 +67,7 @@ func TestSiteWebhookTestSendReportsTheAnswerAndIsAudited(t *testing.T) {
 
 	row, err := env.DB.WebhookEndpoint.Get(ctx, fixtures.WebhookCodebasicsID)
 	require.NoError(t, err)
-	assert.True(t, row.Enabled, "a 410 on a test does not disable the endpoint")
+	assert.Nil(t, row.DisabledAt, "a 410 on a test does not disable the endpoint")
 	assert.Nil(t, row.ConsecutiveFailures)
 
 	entries := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, events.ActionWebhookEndpointTest)

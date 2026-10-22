@@ -1,7 +1,7 @@
 id: no-branching-in-go-tests
 language: Go
 severity: error
-message: A test body does not branch; state what must hold with an assertion.
+message: 'rule 14: a test body branches; fix: state what must hold with an assertion on a value read beforehand'
 note: An `if` or `switch` in a test chooses what to check, so a wrong run can take the branch that checks nothing. Use `require`/`assert` on a value read beforehand, a table of cases, or move the logic into a helper that returns the value to assert on.
 rule:
   any:

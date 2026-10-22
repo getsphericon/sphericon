@@ -9,6 +9,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
@@ -44,9 +45,11 @@ type Suppression struct {
 type SuppressionEdges struct {
 	// Workspace holds the value of the workspace edge.
 	Workspace *Workspace `json:"workspace,omitempty"`
+	// Contact holds the value of the contact edge.
+	Contact *Contact `json:"contact,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 }
 
 // WorkspaceOrErr returns the Workspace value or an error if the edge
@@ -58,6 +61,17 @@ func (e SuppressionEdges) WorkspaceOrErr() (*Workspace, error) {
 		return nil, &NotFoundError{label: workspace.Label}
 	}
 	return nil, &NotLoadedError{edge: "workspace"}
+}
+
+// ContactOrErr returns the Contact value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e SuppressionEdges) ContactOrErr() (*Contact, error) {
+	if e.Contact != nil {
+		return e.Contact, nil
+	} else if e.loadedTypes[1] {
+		return nil, &NotFoundError{label: contact.Label}
+	}
+	return nil, &NotLoadedError{edge: "contact"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -158,6 +172,11 @@ func (_m *Suppression) Value(name string) (ent.Value, error) {
 // QueryWorkspace queries the "workspace" edge of the Suppression entity.
 func (_m *Suppression) QueryWorkspace() *WorkspaceQuery {
 	return NewSuppressionClient(_m.config).QueryWorkspace(_m)
+}
+
+// QueryContact queries the "contact" edge of the Suppression entity.
+func (_m *Suppression) QueryContact() *ContactQuery {
+	return NewSuppressionClient(_m.config).QueryContact(_m)
 }
 
 // Update returns a builder for updating this Suppression.

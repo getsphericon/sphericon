@@ -6,6 +6,8 @@ const config: KnipConfig = {
     'packages/analytics/src/generated/**',
     'internal/server/assets/**',
     'internal/emaildoc/assets/**',
+    // Violating and clean examples for cmd/contractcopy's own tests.
+    'internal/contractcopy/testdata/**',
   ],
   ignoreDependencies: [
     '@sphericon/analytics',

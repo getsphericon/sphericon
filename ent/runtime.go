@@ -806,10 +806,6 @@ func init() {
 	sendingdomainDescDkimPublicKey := sendingdomainFields[4].Descriptor()
 	// sendingdomain.DkimPublicKeyValidator is a validator for the "dkim_public_key" field. It is called by the builders before save.
 	sendingdomain.DkimPublicKeyValidator = sendingdomainDescDkimPublicKey.Validators[0].(func(string) error)
-	// sendingdomainDescVerified is the schema descriptor for verified field.
-	sendingdomainDescVerified := sendingdomainFields[5].Descriptor()
-	// sendingdomain.DefaultVerified holds the default value on creation for the verified field.
-	sendingdomain.DefaultVerified = sendingdomainDescVerified.Default.(bool)
 	servicecredentialMixin := schema.ServiceCredential{}.Mixin()
 	servicecredentialMixinFields0 := servicecredentialMixin[0].Fields()
 	_ = servicecredentialMixinFields0
@@ -1077,10 +1073,6 @@ func init() {
 	webhookendpointDescURL := webhookendpointFields[1].Descriptor()
 	// webhookendpoint.URLValidator is a validator for the "url" field. It is called by the builders before save.
 	webhookendpoint.URLValidator = webhookendpointDescURL.Validators[0].(func(string) error)
-	// webhookendpointDescEnabled is the schema descriptor for enabled field.
-	webhookendpointDescEnabled := webhookendpointFields[4].Descriptor()
-	// webhookendpoint.DefaultEnabled holds the default value on creation for the enabled field.
-	webhookendpoint.DefaultEnabled = webhookendpointDescEnabled.Default.(bool)
 	workspaceMixin := schema.Workspace{}.Mixin()
 	workspaceMixinFields0 := workspaceMixin[0].Fields()
 	_ = workspaceMixinFields0

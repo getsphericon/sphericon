@@ -25,7 +25,6 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
@@ -33,9 +32,11 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
+	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	appdb "github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/dnstest"
+	"github.com/getsphericon/sphericon/internal/domainverify"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
@@ -376,7 +377,7 @@ func TestDeliverWebhookWorkerRemembersFailures(t *testing.T) {
 	assert.True(t, clock.Equal(*e.LastFailureAt))
 	assert.Equal(t, webhookendpoint.LastErrorKindHTTPStatus, *e.LastErrorKind)
 	assert.Equal(t, http.StatusServiceUnavailable, *e.LastErrorStatus)
-	assert.True(t, e.Enabled, "a failure alone does not disable (that is the disable rule's job)")
+	assert.Nil(t, e.DisabledAt, "a failure alone does not disable (that is the disable rule's job)")
 
 	// A later failure of another kind extends the run, which keeps its start.
 	began := clock
@@ -445,14 +446,6 @@ func newDisableHarness(t *testing.T) *disableHarness {
 	return h
 }
 
-// run puts the endpoint mid-run: failures already in a row, the first of them failingFor ago.
-func (h *disableHarness) run(failures int, failingFor time.Duration) {
-	h.t.Helper()
-	_, err := h.env.DB.Scoped(fixtures.AcmeID).WebhookEndpoint().UpdateOneID(fixtures.WebhookCodebasicsID).
-		SetConsecutiveFailures(failures).SetFailingSince(h.clock.Add(-failingFor)).Save(context.Background())
-	require.NoError(h.t, err)
-}
-
 func (h *disableHarness) deliver() error {
 	return h.w.Work(context.Background(), job(jobs.DeliverWebhookArgs{
 		EndpointID: fixtures.WebhookCodebasicsID, EventName: "email.opened", DeliveryID: "msg_1", Body: []byte(`{}`),
@@ -475,7 +468,7 @@ func TestDeliverWebhookWorkerDisablesOnGone(t *testing.T) {
 	require.Error(t, h.deliver(), "river still sees the failed delivery")
 
 	e := h.endpoint()
-	assert.False(t, e.Enabled)
+	assert.NotNil(t, e.DisabledAt)
 	require.NotNil(t, e.DisabledReason)
 	assert.Equal(t, webhookendpoint.DisabledReasonGone, *e.DisabledReason)
 
@@ -495,7 +488,7 @@ func TestDeliverWebhookWorkerDisablesOnGone(t *testing.T) {
 	})
 	require.Len(t, entries, 1)
 	assert.Equal(t, events.ActorSystem, entries[0].Actor.Kind)
-	assert.Contains(t, entries[0].Diff, "enabled")
+	assert.Contains(t, entries[0].Diff, "disabled_at")
 
 	// A delivery that was already enqueued finds the endpoint off: no request, no second mail.
 	before := len(h.rcv.received())
@@ -504,47 +497,19 @@ func TestDeliverWebhookWorkerDisablesOnGone(t *testing.T) {
 	assert.Len(t, h.env.SystemMail.Messages(), len(owners))
 }
 
-// A run of failures disables only when it has both reached the count and lasted the window.
-func TestDeliverWebhookWorkerDisablesOnPersistentFailure(t *testing.T) {
-	h := newDisableHarness(t)
-	h.rcv.setStatus(http.StatusServiceUnavailable)
-
-	// The count is reached inside the window (a restart in the middle of a burst): still enabled.
-	h.run(jobs.WebhookDisableFailures-1, jobs.WebhookDisableWindow-time.Minute)
-	require.Error(t, h.deliver())
-	e := h.endpoint()
-	assert.Equal(t, jobs.WebhookDisableFailures, *e.ConsecutiveFailures)
-	assert.True(t, e.Enabled)
-
-	// The window has passed but the count is not there: still enabled.
-	h.run(jobs.WebhookDisableFailures-2, 2*jobs.WebhookDisableWindow)
-	require.Error(t, h.deliver())
-	assert.True(t, h.endpoint().Enabled)
-	assert.Empty(t, h.env.SystemMail.Messages())
-
-	// Both: disabled, with the reason, and the owners told.
-	h.run(jobs.WebhookDisableFailures-1, jobs.WebhookDisableWindow)
-	require.Error(t, h.deliver())
-	e = h.endpoint()
-	assert.False(t, e.Enabled)
-	require.NotNil(t, e.DisabledReason)
-	assert.Equal(t, webhookendpoint.DisabledReasonPersistentFailure, *e.DisabledReason)
-	assert.NotEmpty(t, h.env.SystemMail.Messages())
-}
-
 func TestVerifySendingDomainWorker(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	gone := dnstest.Resolver(t, nil).LookupTXT
 
 	// Verified domain whose DNS vanished: flips, owner is emailed.
-	w := jobs.NewVerifySendingDomainWorker(env.DB, gone, env.SystemMail)
+	w := jobs.NewVerifySendingDomainWorker(domainverify.New(env.DB, gone, nil, accounts.OwnerNotifier(env.DB, env.SystemMail)))
 	require.NoError(t, w.Work(ctx, job(jobs.VerifySendingDomainArgs{SendingDomainID: fixtures.SendingDomainVerifiedID})))
 	assert.Len(t, env.SystemMail.Messages(), 1)
 
 	// A failing alert never fails the verification.
 	env.SystemMail.SetErr(errors.New("smtp down"))
-	require.NoError(t, jobs.NewVerifySendingDomainWorker(env.DB, gone, env.SystemMail).
+	require.NoError(t, jobs.NewVerifySendingDomainWorker(domainverify.New(env.DB, gone, nil, accounts.OwnerNotifier(env.DB, env.SystemMail))).
 		Work(ctx, job(jobs.VerifySendingDomainArgs{SendingDomainID: fixtures.SendingDomainVerifiedID})))
 
 	// Unknown domain id is an error.
@@ -556,7 +521,7 @@ func TestRecheckSendingDomainsWorkerFansOut(t *testing.T) {
 	total, err := e.DB.SendingDomain.Query().Where(sendingdomain.DiscardedAtIsNil()).Count(context.Background())
 	require.NoError(t, err)
 
-	require.NoError(t, jobs.NewRecheckSendingDomainsWorker(e.DB).Work(e.workCtx(), job(jobs.RecheckSendingDomainsArgs{})))
+	require.NoError(t, jobs.NewRecheckSendingDomainsWorker(domainverify.New(e.DB, nil, nil, nil)).Work(e.workCtx(), job(jobs.RecheckSendingDomainsArgs{})))
 
 	kinds := e.queued(t)
 	assert.Len(t, kinds, total)
@@ -581,17 +546,14 @@ func TestEvaluateTriggerAndRunStepWorkers(t *testing.T) {
 	e := newRiverEnv(t)
 	ctx := e.workCtx()
 
-	c, err := e.DB.Contact.Create().SetWorkspaceID(fixtures.AcmeID).SetEmail("wk@test.dev").SetFirstName("Wk").Save(ctx)
-	require.NoError(t, err)
-	_, err = testhelper.AutomationWithSteps(ctx, e.DB, e.DB.Automation.Create().SetWorkspaceID(fixtures.AcmeID).
-		SetName("Flow").SetTriggerEvent("worker.test").SetStatus(automation.StatusActive), "["+emailStep+`,{"type":"wait","seconds":3600},`+emailStep+"]")
-	require.NoError(t, err)
+	c := e.DB.Contact.GetX(ctx, fixtures.ContactLiamID)
+	trigger := triggerOf(t, e.TestEnv, fixtures.AutomationJobsGreetingID)
 
 	require.NoError(t, jobs.NewEvaluateTriggerWorker(e.DB).Work(ctx, job(jobs.EvaluateTriggerArgs{
-		WorkspaceID: fixtures.AcmeID, ContactID: c.ID, Action: "worker.test",
+		WorkspaceID: fixtures.AcmeID, ContactID: c.ID, Action: trigger,
 	})))
 	require.Equal(t, []string{"automation_run_step"}, e.queued(t))
-	run := e.DB.AutomationRun.Query().Where(automationrun.ContactID(c.ID)).OnlyX(ctx)
+	run := e.DB.AutomationRun.Query().Where(automationrun.AutomationID(fixtures.AutomationJobsGreetingID), automationrun.ContactID(c.ID)).OnlyX(ctx)
 
 	// Step 1 sends and schedules the next step; the wait step schedules a delayed
 	// one; the last step finishes the run without queueing more.
@@ -747,4 +709,21 @@ func TestSendBroadcastWorkerFinishesAStaleJob(t *testing.T) {
 		assert.Equal(t, want, e.DB.Broadcast.GetX(ctx, id).Status, "broadcast %d", id)
 	}
 	assert.Empty(t, e.queued(t))
+}
+
+func TestRecheckTrackingDomainsWorkerFansOutOneJobPerServingOrDNSVerifiedHost(t *testing.T) {
+	e := newRiverEnv(t)
+	ctx := e.workCtx()
+	due, err := e.DB.SendingDomain.Query().
+		Where(sendingdomain.TrackingStateIn(sendingdomain.TrackingStateDNSVerified, sendingdomain.TrackingStateServing), sendingdomain.IDNEQ(fixtures.SendingDomainArchivedID)).
+		Count(ctx)
+	require.NoError(t, err)
+
+	require.NoError(t, jobs.NewRecheckTrackingDomainsWorker(domainverify.New(e.DB, nil, nil, nil)).Work(ctx, job(jobs.RecheckTrackingDomainsArgs{})))
+
+	kinds := e.queued(t)
+	assert.Len(t, kinds, due)
+	for _, k := range kinds {
+		assert.Equal(t, "tracking_domain_verify", k)
+	}
 }

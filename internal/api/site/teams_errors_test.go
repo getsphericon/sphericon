@@ -47,8 +47,7 @@ func TestSiteMembershipsErrorBranches(t *testing.T) {
 	assert.IsType(t, &siteapi.SiteMembershipsUpdateNotFound{}, u4)
 
 	// An admin may not grant the owner role.
-	addMember(t, env, "boss@acme.test", membership.RoleAdmin)
-	admin := env.SiteActor(t, "boss@acme.test")
+	admin := env.SiteActor(t, fixtures.AdminAliceEmail)
 	u5, err := admin.SiteMembershipsUpdate(ctx, &siteapi.SiteUpdateMembershipInput{Role: siteapi.SiteMembershipRoleOwner},
 		siteapi.SiteMembershipsUpdateParams{WorkspaceId: acme, ID: memberID})
 	require.NoError(t, err)

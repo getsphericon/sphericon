@@ -34,12 +34,12 @@ type SendingDomain struct {
 	DkimPrivateKeyEncrypted string `json:"-"`
 	// DkimPublicKey holds the value of the "dkim_public_key" field.
 	DkimPublicKey string `json:"dkim_public_key,omitempty"`
-	// Verified holds the value of the "verified" field.
-	Verified bool `json:"verified,omitempty"`
 	// LastCheckedAt holds the value of the "last_checked_at" field.
 	LastCheckedAt *time.Time `json:"last_checked_at,omitempty"`
 	// VerifiedAt holds the value of the "verified_at" field.
 	VerifiedAt *time.Time `json:"verified_at,omitempty"`
+	// VerificationLostAt holds the value of the "verification_lost_at" field.
+	VerificationLostAt *time.Time `json:"verification_lost_at,omitempty"`
 	// TrackingState holds the value of the "tracking_state" field.
 	TrackingState sendingdomain.TrackingState `json:"tracking_state,omitempty"`
 	// TrackingCheckedAt holds the value of the "tracking_checked_at" field.
@@ -79,13 +79,11 @@ func (*SendingDomain) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case sendingdomain.FieldVerified:
-			values[i] = new(sql.NullBool)
 		case sendingdomain.FieldID, sendingdomain.FieldWorkspaceID:
 			values[i] = new(sql.NullInt64)
 		case sendingdomain.FieldDomain, sendingdomain.FieldDkimSelector, sendingdomain.FieldDkimPrivateKeyEncrypted, sendingdomain.FieldDkimPublicKey, sendingdomain.FieldTrackingState, sendingdomain.FieldTrackingReason:
 			values[i] = new(sql.NullString)
-		case sendingdomain.FieldCreatedAt, sendingdomain.FieldUpdatedAt, sendingdomain.FieldDiscardedAt, sendingdomain.FieldLastCheckedAt, sendingdomain.FieldVerifiedAt, sendingdomain.FieldTrackingCheckedAt, sendingdomain.FieldTrackingStateChangedAt:
+		case sendingdomain.FieldCreatedAt, sendingdomain.FieldUpdatedAt, sendingdomain.FieldDiscardedAt, sendingdomain.FieldLastCheckedAt, sendingdomain.FieldVerifiedAt, sendingdomain.FieldVerificationLostAt, sendingdomain.FieldTrackingCheckedAt, sendingdomain.FieldTrackingStateChangedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -157,12 +155,6 @@ func (_m *SendingDomain) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.DkimPublicKey = value.String
 			}
-		case sendingdomain.FieldVerified:
-			if value, ok := values[i].(*sql.NullBool); !ok {
-				return fmt.Errorf("unexpected type %T for field verified", values[i])
-			} else if value.Valid {
-				_m.Verified = value.Bool
-			}
 		case sendingdomain.FieldLastCheckedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field last_checked_at", values[i])
@@ -176,6 +168,13 @@ func (_m *SendingDomain) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.VerifiedAt = new(time.Time)
 				*_m.VerifiedAt = value.Time
+			}
+		case sendingdomain.FieldVerificationLostAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field verification_lost_at", values[i])
+			} else if value.Valid {
+				_m.VerificationLostAt = new(time.Time)
+				*_m.VerificationLostAt = value.Time
 			}
 		case sendingdomain.FieldTrackingState:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -270,9 +269,6 @@ func (_m *SendingDomain) String() string {
 	builder.WriteString("dkim_public_key=")
 	builder.WriteString(_m.DkimPublicKey)
 	builder.WriteString(", ")
-	builder.WriteString("verified=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Verified))
-	builder.WriteString(", ")
 	if v := _m.LastCheckedAt; v != nil {
 		builder.WriteString("last_checked_at=")
 		builder.WriteString(v.Format(time.ANSIC))
@@ -280,6 +276,11 @@ func (_m *SendingDomain) String() string {
 	builder.WriteString(", ")
 	if v := _m.VerifiedAt; v != nil {
 		builder.WriteString("verified_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.VerificationLostAt; v != nil {
+		builder.WriteString("verification_lost_at=")
 		builder.WriteString(v.Format(time.ANSIC))
 	}
 	builder.WriteString(", ")

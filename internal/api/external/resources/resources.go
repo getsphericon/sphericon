@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/brandkit"
 	"github.com/getsphericon/sphericon/internal/convert"
+	"github.com/getsphericon/sphericon/internal/dkimstate"
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/segments"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
@@ -159,6 +160,7 @@ type Converter interface {
 	// is derived from the failure columns and a nil event filter renders as an empty list.
 	// goverter:map EventTypes EventTypes | eventTypes
 	// goverter:map . Failure | webhookFailure
+	// goverter:map . Enabled | webhookEnabled
 	WebhookToResource(source *ent.WebhookEndpoint) externalapi.WebhookResource
 
 	// The DNS records are derived by the sendingdomains module, which the mapper cannot
@@ -169,6 +171,7 @@ type Converter interface {
 	// goverter:ignore TrackingRecord
 	// The contract names the discarded state "archived" (ADR 0049).
 	// goverter:map DiscardedAt ArchivedAt
+	// goverter:map . Verified | sendingDomainVerified
 	SendingDomainToResource(source *ent.SendingDomain) externalapi.SendingDomainResource
 	// goverter:map . Type | dnsRecordType
 	DnsRecordToResource(source sendingdomains.Record) externalapi.DnsRecord
@@ -480,3 +483,9 @@ func smtpConfigKind(integrations.RedactedSMTP) externalapi.SmtpConfigKind {
 func sesConfigKind(integrations.RedactedSES) externalapi.SesConfigKind {
 	return externalapi.SesConfigKindSes
 }
+
+// sendingDomainVerified derives the verified flag from the verified and lost moments.
+func sendingDomainVerified(d ent.SendingDomain) bool { return dkimstate.Is(&d) }
+
+// webhookEnabled derives the enabled flag: an endpoint is enabled until it has a disabled moment.
+func webhookEnabled(e ent.WebhookEndpoint) bool { return e.DisabledAt == nil }

@@ -28,6 +28,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/ownernotice"
 	"github.com/getsphericon/sphericon/internal/sending"
 )
 
@@ -59,23 +60,19 @@ type Record struct {
 	Value string
 }
 
-// Notify mails the Owners of a Workspace through the system sender. A nil Notify sends
-// nothing.
-type Notify func(ctx context.Context, workspaceID int64, subject, body string) error
-
 // Module holds the shared collaborators; it is stateless otherwise.
 type Module struct {
 	client *ent.Client
 	bus    *events.Bus
 	lookup sending.TXTLookup
 	now    func() time.Time
-	notify Notify
+	notify ownernotice.Notify
 }
 
 // New builds the module. lookup is the injectable TXT resolver Sending domain
 // verification uses; now is the clock the check times are stamped with; notify mails a
 // Workspace's Owners when it loses a verified domain.
-func New(client *ent.Client, bus *events.Bus, lookup sending.TXTLookup, now func() time.Time, notify Notify) *Module {
+func New(client *ent.Client, bus *events.Bus, lookup sending.TXTLookup, now func() time.Time, notify ownernotice.Notify) *Module {
 	return &Module{client: client, bus: bus, lookup: lookup, now: now, notify: notify}
 }
 
@@ -166,7 +163,7 @@ func (m *Module) Verify(ctx context.Context, s *ent.Scoped, id int64) (*ent.Join
 	var verified *ent.JoinDomain
 	markVerified := func(to *ent.Scoped) error {
 		var uerr error
-		verified, uerr = to.JoinDomain().UpdateOneID(row.ID).SetVerifiedAt(now).SetLastCheckedAt(now).Save(ctx)
+		verified, uerr = to.JoinDomain().UpdateOneID(row.ID).Where(joindomain.VerifiedAtIsNil()).SetVerifiedAt(now).SetLastCheckedAt(now).Save(ctx)
 		return uerr
 	}
 	if holder == nil {
@@ -174,7 +171,9 @@ func (m *Module) Verify(ctx context.Context, s *ent.Scoped, id int64) (*ent.Join
 	} else {
 		// The holder's row goes first: the verified-only unique index admits one at a time.
 		err = m.bus.WithinHandOverTx(ctx, s, holder.WorkspaceID, func(to, from *ent.Scoped) error {
-			if err := from.JoinDomain().UpdateOneID(holder.ID).ClearVerifiedAt().Exec(ctx); err != nil {
+			// A miss means a re-check already reverted the holder.
+			err := from.JoinDomain().UpdateOneID(holder.ID).Where(joindomain.VerifiedAtNotNil()).ClearVerifiedAt().Exec(ctx)
+			if err != nil && !ent.IsNotFound(err) {
 				return err
 			}
 			return markVerified(to)
@@ -183,6 +182,10 @@ func (m *Module) Verify(ctx context.Context, s *ent.Scoped, id int64) (*ent.Join
 	if db.IsUniqueViolation(err) {
 		// Another Workspace verified it between the lookup and the write.
 		return nil, ErrHeldElsewhere
+	}
+	if ent.IsNotFound(err) {
+		// A concurrent Verify got there first: the stored row is the answer.
+		return s.JoinDomain().Get(ctx, id)
 	}
 	if err != nil {
 		return nil, err
@@ -229,7 +232,11 @@ func (m *Module) Recheck(ctx context.Context, id int64) (flipped bool, err error
 	slog.WarnContext(ctx, "join domain verification lost",
 		"join_domain_id", id, "workspace_id", row.WorkspaceID, "domain", row.Domain)
 	system := m.bus.Act(s, events.Actor{Kind: events.ActorSystem})
-	err = system.JoinDomain().UpdateOneID(id).ClearVerifiedAt().SetLastCheckedAt(m.now()).Exec(ctx)
+	err = system.JoinDomain().UpdateOneID(id).Where(joindomain.VerifiedAtNotNil()).ClearVerifiedAt().SetLastCheckedAt(m.now()).Exec(ctx)
+	if ent.IsNotFound(err) {
+		// Lost the swap: another re-check or a hand-over already reverted it and told the Owners.
+		return false, nil
+	}
 	if err != nil {
 		return false, err
 	}
@@ -240,16 +247,8 @@ func (m *Module) Recheck(ctx context.Context, id int64) (flipped bool, err error
 // notifyLost mails the Owners of the Workspace that held the domain, best-effort: a mail
 // failure is logged, never returned.
 func (m *Module) notifyLost(ctx context.Context, row *ent.JoinDomain) {
-	if m.notify == nil {
-		return
-	}
 	data := map[string]any{"Domain": row.Domain, "Record": RecordOf(row).Host}
-	subject := i18n.T("email.join_domain_unverified.subject", data)
-	body := i18n.T("email.join_domain_unverified.body", data)
-	if err := m.notify(ctx, row.WorkspaceID, subject, body); err != nil {
-		slog.WarnContext(ctx, "notify join domain unverified failed",
-			"join_domain_id", row.ID, "workspace_id", row.WorkspaceID, "err", err)
-	}
+	m.notify.TellBestEffort(ctx, row.WorkspaceID, "email.join_domain_unverified", data, "join_domain_id", row.ID)
 }
 
 // Holder returns the Join domain row that has the domain verified, across every

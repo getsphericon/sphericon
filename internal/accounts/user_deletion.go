@@ -115,10 +115,7 @@ func membershipsUnderOwnerLocks(ctx context.Context, tx *ent.Client, userID int6
 			if _, locked := owners[m.WorkspaceID]; locked {
 				continue
 			}
-			ids, err := tx.Scoped(m.WorkspaceID).Membership().Query().
-				Where(membership.RoleEQ(membership.RoleOwner)).
-				ForUpdate().
-				IDs(ctx)
+			ids, err := LockOwners(ctx, tx.Scoped(m.WorkspaceID))
 			if err != nil {
 				return err
 			}
@@ -149,7 +146,7 @@ func membershipsUnderOwnerLocks(ctx context.Context, tx *ent.Client, userID int6
 func soleOwnedWorkspaces(memberships []*ent.Membership, owners map[int64][]int64) []int64 {
 	var sole []int64
 	for _, m := range memberships {
-		if m.Role == membership.RoleOwner && len(owners[m.WorkspaceID]) == 1 {
+		if IsOwner(m.Role) && len(owners[m.WorkspaceID]) == 1 {
 			sole = append(sole, m.WorkspaceID)
 		}
 	}

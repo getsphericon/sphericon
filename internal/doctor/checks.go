@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	appdb "github.com/getsphericon/sphericon/internal/db"
+	"github.com/getsphericon/sphericon/internal/postgres"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/sending"
 )
@@ -46,12 +47,11 @@ func checkDatabase(ctx context.Context, r *Report, in Input) {
 		checkSchema(ctx, r, in, st)
 	}
 
-	var num int
-	if err := in.DB.QueryRowContext(ctx, "SHOW server_version_num").Scan(&num); err != nil {
+	major, err := postgres.ServerMajor(ctx, in.DB)
+	if err != nil {
 		r.add("postgres version", Fail, "cannot read the server version: "+err.Error(), "Check DATABASE_URL.")
 		return
 	}
-	major := num / 10000
 	switch {
 	case major < MinPostgresMajor:
 		r.add("postgres version", Fail, fmt.Sprintf("PostgreSQL %d is older than the oldest supported, %d", major, MinPostgresMajor),

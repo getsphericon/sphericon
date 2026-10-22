@@ -21,8 +21,7 @@ func TestRequestConstructorsDeduplicateTheSameLogicalSend(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 
 	// A recipient still to be sent (the fixture recipients already have their message).
-	rec := env.DB.BroadcastRecipient.Create().SetWorkspaceID(fixtures.AcmeID).
-		SetBroadcastID(fixtures.BroadcastDraftID).SetContactID(fixtures.ContactAliceID).SaveX(ctx)
+	rec := env.DB.BroadcastRecipient.GetX(ctx, fixtures.BroadcastRecipientParkedAliceID)
 	bc := env.DB.Broadcast.GetX(ctx, rec.BroadcastID)
 	contact := env.DB.Contact.GetX(ctx, rec.ContactID)
 	automation := env.DB.Automation.GetX(ctx, fixtures.AutomationWelcomeSeriesID)
@@ -79,8 +78,7 @@ func TestConstructorsKeepTheStoredKeyFormats(t *testing.T) {
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	// A recipient still to be sent (the fixture recipients already have their message).
-	rec := env.DB.BroadcastRecipient.Create().SetWorkspaceID(fixtures.AcmeID).
-		SetBroadcastID(fixtures.BroadcastDraftID).SetContactID(fixtures.ContactAliceID).SaveX(ctx)
+	rec := env.DB.BroadcastRecipient.GetX(ctx, fixtures.BroadcastRecipientParkedAliceID)
 	bc := env.DB.Broadcast.GetX(ctx, rec.BroadcastID)
 	contact := env.DB.Contact.GetX(ctx, rec.ContactID)
 	automation := env.DB.Automation.GetX(ctx, fixtures.AutomationWelcomeSeriesID)

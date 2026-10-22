@@ -358,16 +358,14 @@ func (s *ApiTokenScope) Decode(d *jx.Decoder) error {
 		*s = ApiTokenScopeContactsRead
 	case ApiTokenScopeContactsWrite:
 		*s = ApiTokenScopeContactsWrite
-	case ApiTokenScopeContactsErase:
-		*s = ApiTokenScopeContactsErase
-	case ApiTokenScopeSegmentsRead:
-		*s = ApiTokenScopeSegmentsRead
-	case ApiTokenScopeSegmentsWrite:
-		*s = ApiTokenScopeSegmentsWrite
 	case ApiTokenScopeEventsRead:
 		*s = ApiTokenScopeEventsRead
 	case ApiTokenScopeEventsWrite:
 		*s = ApiTokenScopeEventsWrite
+	case ApiTokenScopeSegmentsRead:
+		*s = ApiTokenScopeSegmentsRead
+	case ApiTokenScopeSegmentsWrite:
+		*s = ApiTokenScopeSegmentsWrite
 	case ApiTokenScopeBroadcastsRead:
 		*s = ApiTokenScopeBroadcastsRead
 	case ApiTokenScopeBroadcastsWrite:
@@ -394,12 +392,8 @@ func (s *ApiTokenScope) Decode(d *jx.Decoder) error {
 		*s = ApiTokenScopeCustomFieldsRead
 	case ApiTokenScopeSendingDomainsRead:
 		*s = ApiTokenScopeSendingDomainsRead
-	case ApiTokenScopeSendingDomainsWrite:
-		*s = ApiTokenScopeSendingDomainsWrite
 	case ApiTokenScopeIntegrationsRead:
 		*s = ApiTokenScopeIntegrationsRead
-	case ApiTokenScopeIntegrationsWrite:
-		*s = ApiTokenScopeIntegrationsWrite
 	case ApiTokenScopeEmailsSend:
 		*s = ApiTokenScopeEmailsSend
 	case ApiTokenScopeBroadcastsSend:
@@ -408,6 +402,12 @@ func (s *ApiTokenScope) Decode(d *jx.Decoder) error {
 		*s = ApiTokenScopeAutomationsActivate
 	case ApiTokenScopeMcpSend:
 		*s = ApiTokenScopeMcpSend
+	case ApiTokenScopeContactsErase:
+		*s = ApiTokenScopeContactsErase
+	case ApiTokenScopeSendingDomainsWrite:
+		*s = ApiTokenScopeSendingDomainsWrite
+	case ApiTokenScopeIntegrationsWrite:
+		*s = ApiTokenScopeIntegrationsWrite
 	case ApiTokenScopeTokensRead:
 		*s = ApiTokenScopeTokensRead
 	case ApiTokenScopeTokensWrite:
@@ -26633,6 +26633,12 @@ func (s *SendingDomainResource) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.VerificationLostAt.Set {
+			e.FieldStart("verificationLostAt")
+			s.VerificationLostAt.Encode(e)
+		}
+	}
+	{
 		if s.ArchivedAt.Set {
 			e.FieldStart("archivedAt")
 			s.ArchivedAt.Encode(e)
@@ -26648,7 +26654,7 @@ func (s *SendingDomainResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSendingDomainResource = [13]string{
+var jsonFieldsNameOfSendingDomainResource = [14]string{
 	0:  "id",
 	1:  "domain",
 	2:  "dkimSelector",
@@ -26659,9 +26665,10 @@ var jsonFieldsNameOfSendingDomainResource = [13]string{
 	7:  "trackingRecord",
 	8:  "lastCheckedAt",
 	9:  "verifiedAt",
-	10: "archivedAt",
-	11: "createdAt",
-	12: "updatedAt",
+	10: "verificationLostAt",
+	11: "archivedAt",
+	12: "createdAt",
+	13: "updatedAt",
 }
 
 // Decode decodes SendingDomainResource from json.
@@ -26779,6 +26786,16 @@ func (s *SendingDomainResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"verifiedAt\"")
 			}
+		case "verificationLostAt":
+			if err := func() error {
+				s.VerificationLostAt.Reset()
+				if err := s.VerificationLostAt.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"verificationLostAt\"")
+			}
 		case "archivedAt":
 			if err := func() error {
 				s.ArchivedAt.Reset()
@@ -26790,7 +26807,7 @@ func (s *SendingDomainResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"archivedAt\"")
 			}
 		case "createdAt":
-			requiredBitSet[1] |= 1 << 3
+			requiredBitSet[1] |= 1 << 4
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -26800,7 +26817,7 @@ func (s *SendingDomainResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"createdAt\"")
 			}
 		case "updatedAt":
-			requiredBitSet[1] |= 1 << 4
+			requiredBitSet[1] |= 1 << 5
 			if err := func() error {
 				if err := s.UpdatedAt.Decode(d); err != nil {
 					return err
@@ -26820,7 +26837,7 @@ func (s *SendingDomainResource) Decode(d *jx.Decoder) error {
 	var failures []validate.FieldError
 	for i, mask := range [2]uint8{
 		0b01111111,
-		0b00011000,
+		0b00110000,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -34218,6 +34235,8 @@ func (s *WebhookDisabledReason) Decode(d *jx.Decoder) error {
 	}
 	// Try to use constant string.
 	switch WebhookDisabledReason(v) {
+	case WebhookDisabledReasonOwner:
+		*s = WebhookDisabledReasonOwner
 	case WebhookDisabledReasonGone:
 		*s = WebhookDisabledReasonGone
 	case WebhookDisabledReasonPersistentFailure:
@@ -34474,6 +34493,12 @@ func (s *WebhookResource) encodeFields(e *jx.Encoder) {
 		e.Bool(s.Enabled)
 	}
 	{
+		if s.DisabledAt.Set {
+			e.FieldStart("disabledAt")
+			s.DisabledAt.Encode(e)
+		}
+	}
+	{
 		if s.DisabledReason.Set {
 			e.FieldStart("disabledReason")
 			s.DisabledReason.Encode(e)
@@ -34495,15 +34520,16 @@ func (s *WebhookResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfWebhookResource = [8]string{
+var jsonFieldsNameOfWebhookResource = [9]string{
 	0: "id",
 	1: "url",
 	2: "eventTypes",
 	3: "enabled",
-	4: "disabledReason",
-	5: "failure",
-	6: "createdAt",
-	7: "updatedAt",
+	4: "disabledAt",
+	5: "disabledReason",
+	6: "failure",
+	7: "createdAt",
+	8: "updatedAt",
 }
 
 // Decode decodes WebhookResource from json.
@@ -34511,7 +34537,7 @@ func (s *WebhookResource) Decode(d *jx.Decoder) error {
 	if s == nil {
 		return errors.New("invalid: unable to decode WebhookResource to nil")
 	}
-	var requiredBitSet [1]uint8
+	var requiredBitSet [2]uint8
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
@@ -34569,6 +34595,16 @@ func (s *WebhookResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"enabled\"")
 			}
+		case "disabledAt":
+			if err := func() error {
+				s.DisabledAt.Reset()
+				if err := s.DisabledAt.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"disabledAt\"")
+			}
 		case "disabledReason":
 			if err := func() error {
 				s.DisabledReason.Reset()
@@ -34590,7 +34626,7 @@ func (s *WebhookResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"failure\"")
 			}
 		case "createdAt":
-			requiredBitSet[0] |= 1 << 6
+			requiredBitSet[0] |= 1 << 7
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -34600,7 +34636,7 @@ func (s *WebhookResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"createdAt\"")
 			}
 		case "updatedAt":
-			requiredBitSet[0] |= 1 << 7
+			requiredBitSet[1] |= 1 << 0
 			if err := func() error {
 				if err := s.UpdatedAt.Decode(d); err != nil {
 					return err
@@ -34618,8 +34654,9 @@ func (s *WebhookResource) Decode(d *jx.Decoder) error {
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
-	for i, mask := range [1]uint8{
-		0b11001111,
+	for i, mask := range [2]uint8{
+		0b10001111,
+		0b00000001,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

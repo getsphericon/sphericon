@@ -29,12 +29,9 @@ func heldMod(env *testhelper.TestEnv, clock *holdClock, resolver outbound.Sender
 	return outbound.New(env.Bus, holds.New(func() bool { return true }, clock.now), resolver, tracking.New("test-secret", "http://local"))
 }
 
-func setHold(t *testing.T, env *testhelper.TestEnv, key string, expires time.Time) {
+func setHold(t *testing.T, env *testhelper.TestEnv, expires time.Time) {
 	t.Helper()
-	_, err := env.DB.Scoped(fixtures.AcmeID).Hold().Create().
-		SetKey(key).SetReasonCode("review").SetMessage("Sending is paused for now.").SetSetBy("service-a").SetExpiresAt(expires).
-		Save(t.Context())
-	require.NoError(t, err)
+	env.ExtendHold(t.Context(), fixtures.AcmeID, fixtures.HoldAcmeLapsedID, expires)
 }
 
 // A hold mid-Broadcast pauses it with its remaining recipients still pending, nobody is
@@ -51,7 +48,7 @@ func TestAnStaffHoldMidBroadcastPausesRecipientsAndResumesOnItsOwn(t *testing.T)
 	require.GreaterOrEqual(t, len(ids), 2)
 	require.NoError(t, deliverRecipient(ctx, env.DB, mod, ids[0]))
 
-	setHold(t, env, "k1", clock.t.Add(time.Hour))
+	setHold(t, env, clock.t.Add(time.Hour))
 	err = deliverRecipient(ctx, env.DB, mod, ids[1])
 	var held *broadcasts.HeldError
 	require.ErrorAs(t, err, &held)
@@ -74,7 +71,7 @@ func TestAnStaffHoldMakesAnAutomationStepWaitAndContinue(t *testing.T) {
 	runIDs, err := jobs.EvaluateTrigger(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactHoldDemoID, "hold_demo")
 	require.NoError(t, err)
 	require.Len(t, runIDs, 1)
-	setHold(t, env, "k1", clock.t.Add(time.Hour))
+	setHold(t, env, clock.t.Add(time.Hour))
 
 	res, err := jobs.RunStep(ctx, env.DB, noFence, heldMod(env, clock, resolvingTo(fs)), runIDs[0])
 	require.NoError(t, err)

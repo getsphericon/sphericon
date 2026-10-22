@@ -76,6 +76,8 @@ type Tx struct {
 	PasskeyChallenge *PasskeyChallengeClient
 	// RecoveryCode is the client for interacting with the RecoveryCode builders.
 	RecoveryCode *RecoveryCodeClient
+	// RiverJob is the client for interacting with the RiverJob builders.
+	RiverJob *RiverJobClient
 	// SchemaState is the client for interacting with the SchemaState builders.
 	SchemaState *SchemaStateClient
 	// Segment is the client for interacting with the Segment builders.
@@ -270,6 +272,7 @@ func (tx *Tx) init() {
 	tx.Passkey = NewPasskeyClient(tx.config)
 	tx.PasskeyChallenge = NewPasskeyChallengeClient(tx.config)
 	tx.RecoveryCode = NewRecoveryCodeClient(tx.config)
+	tx.RiverJob = NewRiverJobClient(tx.config)
 	tx.SchemaState = NewSchemaStateClient(tx.config)
 	tx.Segment = NewSegmentClient(tx.config)
 	tx.SendLimiter = NewSendLimiterClient(tx.config)

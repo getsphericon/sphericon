@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/joindomains"
 	"github.com/getsphericon/sphericon/internal/sending"
+	"github.com/getsphericon/sphericon/internal/suspension"
 )
 
 // proof is what an address's proof tells the domain-join step about the person.
@@ -63,7 +64,7 @@ func applyDomainJoin(ctx context.Context, tx *ent.Client, pub events.Publisher, 
 		ProvenNow:     true,
 		DomainHeld:    true,
 		SwitchOn:      ws.DomainJoinEnabled,
-		Suspended:     ws.SuspendedAt != nil,
+		Suspended:     suspension.Is(ws),
 		InDeletion:    ws.DiscardedAt != nil,
 		HasMembership: member,
 		SignupPermits: p.SignupPermits,

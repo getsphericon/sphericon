@@ -118,3 +118,22 @@ func TestUnsuspendFixtureWorkspaceClearsTheStructuredActor(t *testing.T) {
 	assert.Nil(t, ws.SuspendedByKind)
 	assert.Nil(t, ws.SuspendedByID)
 }
+
+func TestSuspendedPredicatesFollowTheSuspension(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.System, "complaint rate 0.9%")
+	require.NoError(t, err)
+
+	suspended, err := env.DB.Workspace.Query().Where(suspension.Suspended(), workspace.ID(fixtures.AcmeID)).IDs(ctx)
+	require.NoError(t, err)
+	bySystem, err := env.DB.Workspace.Query().Where(suspension.BySystem(), workspace.ID(fixtures.AcmeID)).IDs(ctx)
+	require.NoError(t, err)
+	notSuspended, err := env.DB.Workspace.Query().Where(suspension.NotSuspended(), workspace.ID(fixtures.AcmeID)).Count(ctx)
+	require.NoError(t, err)
+
+	assert.Equal(t, []int64{fixtures.AcmeID}, suspended)
+	assert.Equal(t, []int64{fixtures.AcmeID}, bySystem)
+	assert.True(t, suspension.Is(env.DB.Workspace.GetX(ctx, fixtures.AcmeID)))
+	assert.Zero(t, notSuspended)
+}

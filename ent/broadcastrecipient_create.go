@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
+	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
@@ -150,6 +151,11 @@ func (_c *BroadcastRecipientCreate) SetBroadcast(v *Broadcast) *BroadcastRecipie
 	return _c.SetBroadcastID(v.ID)
 }
 
+// SetContact sets the "contact" edge to the Contact entity.
+func (_c *BroadcastRecipientCreate) SetContact(v *Contact) *BroadcastRecipientCreate {
+	return _c.SetContactID(v.ID)
+}
+
 // Mutation returns the BroadcastRecipientMutation object of the builder.
 func (_c *BroadcastRecipientCreate) Mutation() *BroadcastRecipientMutation {
 	return _c.mutation
@@ -256,10 +262,6 @@ func (_c *BroadcastRecipientCreate) createSpec() (*BroadcastRecipient, *sqlgraph
 		_spec.SetField(broadcastrecipient.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
-	if value, ok := _c.mutation.ContactID(); ok {
-		_spec.SetField(broadcastrecipient.FieldContactID, field.TypeInt64, value)
-		_node.ContactID = value
-	}
 	if value, ok := _c.mutation.DeferredUntil(); ok {
 		_spec.SetField(broadcastrecipient.FieldDeferredUntil, field.TypeTime, value)
 		_node.DeferredUntil = &value
@@ -308,6 +310,23 @@ func (_c *BroadcastRecipientCreate) createSpec() (*BroadcastRecipient, *sqlgraph
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.BroadcastID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ContactIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   broadcastrecipient.ContactTable,
+			Columns: []string{broadcastrecipient.ContactColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contact.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.ContactID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -407,12 +426,6 @@ func (u *BroadcastRecipientUpsert) SetContactID(v int64) *BroadcastRecipientUpse
 // UpdateContactID sets the "contact_id" field to the value that was provided on create.
 func (u *BroadcastRecipientUpsert) UpdateContactID() *BroadcastRecipientUpsert {
 	u.SetExcluded(broadcastrecipient.FieldContactID)
-	return u
-}
-
-// AddContactID adds v to the "contact_id" field.
-func (u *BroadcastRecipientUpsert) AddContactID(v int64) *BroadcastRecipientUpsert {
-	u.Add(broadcastrecipient.FieldContactID, v)
 	return u
 }
 
@@ -591,13 +604,6 @@ func (u *BroadcastRecipientUpsertOne) UpdateBroadcastID() *BroadcastRecipientUps
 func (u *BroadcastRecipientUpsertOne) SetContactID(v int64) *BroadcastRecipientUpsertOne {
 	return u.Update(func(s *BroadcastRecipientUpsert) {
 		s.SetContactID(v)
-	})
-}
-
-// AddContactID adds v to the "contact_id" field.
-func (u *BroadcastRecipientUpsertOne) AddContactID(v int64) *BroadcastRecipientUpsertOne {
-	return u.Update(func(s *BroadcastRecipientUpsert) {
-		s.AddContactID(v)
 	})
 }
 
@@ -962,13 +968,6 @@ func (u *BroadcastRecipientUpsertBulk) UpdateBroadcastID() *BroadcastRecipientUp
 func (u *BroadcastRecipientUpsertBulk) SetContactID(v int64) *BroadcastRecipientUpsertBulk {
 	return u.Update(func(s *BroadcastRecipientUpsert) {
 		s.SetContactID(v)
-	})
-}
-
-// AddContactID adds v to the "contact_id" field.
-func (u *BroadcastRecipientUpsertBulk) AddContactID(v int64) *BroadcastRecipientUpsertBulk {
-	return u.Update(func(s *BroadcastRecipientUpsert) {
-		s.AddContactID(v)
 	})
 }
 

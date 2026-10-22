@@ -1,0 +1,25 @@
+id: no-mock-calls-in-go-tests
+language: Go
+severity: error
+message: "rule 11: a test reads a mock's recorded calls; fix: assert the result the operation left on the real database (a stub of an outside boundary may stay)"
+note: A moq mock records every call, and `<Method>Calls()` reads them back. That asserts how the code reached its result, not the result. Read the rows, the outbox or the mailbox the operation wrote, through the same client the code under test used.
+rule:
+  kind: call_expression
+  has:
+    field: function
+    kind: selector_expression
+    has:
+      field: field
+      kind: field_identifier
+      regex: Calls$
+  not:
+    has:
+      field: arguments
+      has:
+        kind: expression_list
+files:
+  - '**/*_test.go'
+ignores:
+  - ent/**
+  - gen/**
+  - '**/*_gen_test.go'

@@ -17,7 +17,7 @@ import (
 )
 
 func (h *Handlers) EventsCreate(ctx context.Context, req *externalapi.RecordEventsInput) (externalapi.EventsCreateRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), "events:write") {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeEventsWrite) {
 		res := externalapi.EventsCreateUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
@@ -71,7 +71,7 @@ func eventInputs(events []externalapi.EventInput, backfill bool) ([]eventlog.Inp
 
 // EventsBatchSubmit records each Event independently and reports a per-item result.
 func (h *Handlers) EventsBatchSubmit(ctx context.Context, req *externalapi.RecordEventsBatchInput) (externalapi.EventsBatchSubmitRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), "events:write") {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeEventsWrite) {
 		res := externalapi.EventsBatchSubmitUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
@@ -94,7 +94,7 @@ func (h *Handlers) EventsBatchSubmit(ctx context.Context, req *externalapi.Recor
 }
 
 func (h *Handlers) EventActionsList(ctx context.Context, params externalapi.EventActionsListParams) (externalapi.EventActionsListRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), "events:read") {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeEventsRead) {
 		res := externalapi.EventActionsListUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}

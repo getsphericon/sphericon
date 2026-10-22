@@ -4,6 +4,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
+	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
 )
@@ -50,16 +51,24 @@ func (Suppression) Fields() []ent.Field {
 			Values("bounce", "complaint", "manual").
 			Default("manual"),
 		// The contact this destination belongs to, when known (a bounce/complaint
-		// may arrive for a destination with no contact). Display only. Nullable.
+		// may arrive for a destination with no contact). Display only. Nullable. An active
+		// Suppression outlives the Contact and keeps refusing the destination (ON DELETE SET
+		// NULL; Erasure clears it, a lifted one goes with the Contact).
 		field.Int64("contact_id").
 			Optional().
-			Nillable().
-			Annotations(ScopedRef{Unchecked: true}),
+			Nillable(),
 		// When the Suppression was lifted (ADR 0049): the row stays as the record of why the
 		// destination once refused mail, and no longer blocks sends. Null while it is active.
 		field.Time("lifted_at").
 			Optional().
 			Nillable(),
+	}
+}
+
+func (Suppression) Edges() []ent.Edge {
+	return []ent.Edge{
+		edge.To("contact", Contact.Type).Field("contact_id").Unique().
+			Annotations(entsql.OnDelete(entsql.SetNull)),
 	}
 }
 
@@ -76,5 +85,8 @@ func (Suppression) Indexes() []ent.Index {
 		// above is, so this one is also the workspace_id foreign key's index.
 		index.Fields("workspace_id", "contact_id").
 			StorageKey("suppressions_workspace_id_contact_id"),
+		// The contact foreign key's index: deleting a Contact finds its rows by it.
+		index.Fields("contact_id").
+			StorageKey("suppressions_contact_id"),
 	}
 }

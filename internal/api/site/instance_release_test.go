@@ -145,7 +145,9 @@ func TestReleaseCheckIgnoresTheTelemetrySwitches(t *testing.T) {
 
 func TestAReleaseThatIsNoLongerNewerIsNotShownAfterAnUpgrade(t *testing.T) {
 	env, _ := releaseEnv(t, "0.2.0", "")
-	require.NoError(t, env.DB.InstanceState.Create().SetID(1).SetLatestRelease("0.2.0").Exec(t.Context()))
+	row, err := env.Instance.Ensure(t.Context())
+	require.NoError(t, err)
+	require.NoError(t, env.DB.InstanceState.UpdateOneID(row.ID).SetLatestRelease("0.2.0").Exec(t.Context()))
 
 	assert.False(t, instanceState(t, env.SiteActor(t, fixtures.OwnerJohnEmail)).LatestRelease.Set)
 }

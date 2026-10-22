@@ -63,6 +63,7 @@ func TestACreatedHostIsLoggedOnlyWhenItIsAlreadyVerified(t *testing.T) {
 	env := testhelper.Setup(t)
 	umbrella := env.DB.Scoped(fixtures.UmbrellaID)
 	create := func(domain string) *ent.SendingDomainScopedCreate {
+		// test writes: the hook fires on this write
 		return umbrella.SendingDomain().Create().
 			SetDomain(domain).
 			SetDkimSelector("sel").

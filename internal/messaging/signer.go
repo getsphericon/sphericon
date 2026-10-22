@@ -10,6 +10,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
+	"github.com/getsphericon/sphericon/internal/dkimstate"
 	"github.com/getsphericon/sphericon/internal/secrets"
 )
 
@@ -48,7 +49,7 @@ func (s *dkimSigner) DKIMSigner(ctx context.Context, fromEmail string) (*mail.DK
 	row, err := s.scope.SendingDomain().Query().
 		Where(
 			sendingdomain.Domain(domain),
-			sendingdomain.Verified(true),
+			dkimstate.Verified(),
 		).
 		Only(ctx)
 	if ent.IsNotFound(err) {
@@ -85,7 +86,7 @@ func HasVerifiedSendingDomain(ctx context.Context, s *ent.Scoped, fromEmail stri
 	return s.SendingDomain().Query().
 		Where(
 			sendingdomain.Domain(domain),
-			sendingdomain.Verified(true),
+			dkimstate.Verified(),
 		).
 		Exist(ctx)
 }

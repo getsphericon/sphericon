@@ -245,6 +245,8 @@ func (a *Attempts) take(ctx context.Context, kind Kind, key string) (ratelimit.R
 				sql.LT(row.C(authattempt.FieldFailures), rule.Threshold),
 			)),
 			sql.ResolveWith(func(u *sql.UpdateSet) {
+				// raw sql: a CASE that restarts or increments the count in ON CONFLICT DO UPDATE; ent
+				// upserts only set a value or the excluded one.
 				u.Set(authattempt.FieldFailures, sql.ExprFunc(func(b *sql.Builder) {
 					b.WriteString("CASE WHEN ").Ident(authattempt.Table).WriteByte('.').Ident(authattempt.FieldLastAttemptAt).
 						WriteString(" < ").Arg(cutoff).

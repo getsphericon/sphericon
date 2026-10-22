@@ -32,11 +32,10 @@ func (BroadcastRecipient) Fields() []ent.Field {
 			StorageKey("id").
 			Immutable(),
 		field.Int64("broadcast_id"),
-		// Cleared (NULL) when the Contact is erased (ADR 0021): the row stays as an
-		// anonymous delivery record.
+		// Cleared (NULL) when the Contact is erased (ADR 0021, ON DELETE SET NULL): the row
+		// stays as an anonymous delivery record.
 		field.Int64("contact_id").
-			Optional().
-			Annotations(ScopedRef{Entity: "Contact"}),
+			Optional(),
 		// No delivery state here (ADR 0015): this row is the frozen audience snapshot plus
 		// the engagement rollup. How its send ended is its Outbound message's (the message
 		// carries this row's id), and it is pending until that message leaves pending.
@@ -68,6 +67,8 @@ func (BroadcastRecipient) Edges() []ent.Edge {
 			Field("broadcast_id").
 			Required().
 			Unique(),
+		edge.To("contact", Contact.Type).Field("contact_id").Unique().
+			Annotations(entsql.OnDelete(entsql.SetNull)),
 	}
 }
 
@@ -77,9 +78,9 @@ func (BroadcastRecipient) Indexes() []ent.Index {
 			Unique().
 			StorageKey("broadcast_recipients_broadcast_id_contact_id"),
 		index.Fields("workspace_id"),
-		// Erasure and contact lookups reach this table by contact.
-		index.Fields("workspace_id", "contact_id").
-			StorageKey("broadcast_recipients_workspace_id_contact_id").
-			Annotations(entsql.IndexWhere("contact_id IS NOT NULL")),
+		// Erasure and contact lookups reach this table by contact; the contact foreign key's
+		// index (whole: a key's index cannot be partial).
+		index.Fields("contact_id").
+			StorageKey("broadcast_recipients_contact_id"),
 	}
 }

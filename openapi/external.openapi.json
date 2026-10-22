@@ -112,6 +112,8 @@
             "schema": {
               "type": "integer",
               "format": "int32",
+              "minimum": 1,
+              "maximum": 100,
               "default": 25
             },
             "explode": false
@@ -7771,6 +7773,8 @@
             "schema": {
               "type": "integer",
               "format": "int32",
+              "minimum": 1,
+              "maximum": 90,
               "default": 7
             },
             "explode": false
@@ -10389,6 +10393,7 @@
         "schema": {
           "type": "integer",
           "format": "int32",
+          "minimum": 1,
           "default": 1
         },
         "explode": false
@@ -10401,6 +10406,8 @@
         "schema": {
           "type": "integer",
           "format": "int32",
+          "minimum": 1,
+          "maximum": 100,
           "default": 25
         },
         "explode": false
@@ -10521,11 +10528,10 @@
         "enum": [
           "contacts:read",
           "contacts:write",
-          "contacts:erase",
-          "segments:read",
-          "segments:write",
           "events:read",
           "events:write",
+          "segments:read",
+          "segments:write",
           "broadcasts:read",
           "broadcasts:write",
           "automations:read",
@@ -10539,18 +10545,20 @@
           "webhooks:test",
           "custom_fields:read",
           "sending_domains:read",
-          "sending_domains:write",
           "integrations:read",
-          "integrations:write",
           "emails:send",
           "broadcasts:send",
           "automations:activate",
           "mcp:send",
+          "contacts:erase",
+          "sending_domains:write",
+          "integrations:write",
           "tokens:read",
           "tokens:write",
           "audit:read",
           "export:read"
-        ]
+        ],
+        "description": "Every API token scope: the one vocabulary of the external API"
       },
       "ApplyTagInput": {
         "type": "object",
@@ -13110,6 +13118,32 @@
         },
         "description": "RFC 7807 gone response: the resource existed but is no longer available (an expired link)"
       },
+      "GrantableScope": {
+        "type": "string",
+        "enum": [
+          "contacts:read",
+          "contacts:write",
+          "events:read",
+          "events:write",
+          "segments:read",
+          "segments:write",
+          "broadcasts:read",
+          "broadcasts:write",
+          "automations:read",
+          "automations:write",
+          "enrollments:read",
+          "templates:read",
+          "templates:write",
+          "webhooks:read",
+          "webhooks:write",
+          "webhooks:regenerate",
+          "webhooks:test",
+          "custom_fields:read",
+          "sending_domains:read",
+          "integrations:read"
+        ],
+        "description": "Scopes an OAuth client may be granted without any extra opt-in: the external\nAPI's read/write vocabulary. Token management scopes are deliberately absent,\nso a connector can never mint further credentials."
+      },
       "InUseProblemDetails": {
         "type": "object",
         "required": ["usedBy"],
@@ -13926,6 +13960,11 @@
         "enum": ["unlimited", "providerQuotaUnavailable"],
         "description": "A reason to look at an Integration's Send rate limit"
       },
+      "SendScope": {
+        "type": "string",
+        "enum": ["emails:send", "broadcasts:send", "automations:activate", "mcp:send"],
+        "description": "Send-class scopes (ADR 0016, \"Send is a second lock\"). An OAuth client gets them\nonly when the user explicitly opts in. mcp:send is the MCP-specific key: send-class\ntools are not listed over /mcp without it, so any send-class grant brings it along."
+      },
       "SendTransactionalEmailInput": {
         "type": "object",
         "required": ["templateId", "destination"],
@@ -14053,7 +14092,7 @@
           },
           "verified": {
             "type": "boolean",
-            "description": "Whether the DKIM DNS is currently published and matches our key"
+            "description": "Whether the domain is verified now: it has a `verifiedAt` and no `verificationLostAt` since"
           },
           "dkimRecord": {
             "allOf": [
@@ -14105,7 +14144,17 @@
               }
             ],
             "nullable": true,
-            "description": "When the domain most recently became verified (null = never)"
+            "description": "When the domain most recently became verified (null = never); kept after a loss"
+          },
+          "verificationLostAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When a re-check most recently found the verified DKIM DNS gone (null = not lost: never verified, or verified again since)"
           },
           "archivedAt": {
             "type": "string",
@@ -14134,7 +14183,7 @@
             "description": "Last update timestamp"
           }
         },
-        "description": "Sending domain (ADR 0010). sphericon generates the DKIM keypair; the caller publishes the\nDKIM TXT record. The private key is never returned. `verified` is a live property\nre-checked in the background: it can flip back if the DNS record disappears."
+        "description": "Sending domain (ADR 0010). sphericon generates the DKIM keypair; the caller publishes the\nDKIM TXT record. The private key is never returned. `verified` is re-checked in the\nbackground: the domain loses it (`verificationLostAt`) if the DNS record disappears."
       },
       "SesConfig": {
         "type": "object",
@@ -14432,6 +14481,19 @@
       "Timestamp": {
         "type": "string",
         "format": "date-time"
+      },
+      "TokenOnlyScope": {
+        "type": "string",
+        "enum": [
+          "contacts:erase",
+          "sending_domains:write",
+          "integrations:write",
+          "tokens:read",
+          "tokens:write",
+          "audit:read",
+          "export:read"
+        ],
+        "description": "Scopes only an API token can hold, never an OAuth grant"
       },
       "TrackingReason": {
         "type": "string",
@@ -14894,8 +14956,8 @@
       },
       "WebhookDisabledReason": {
         "type": "string",
-        "enum": ["gone", "persistent_failure"],
-        "description": "Why an endpoint turned itself off. A closed set: `gone` (the receiver answered 410\nGone) and `persistent_failure` (deliveries failed for longer than the window).\nAbsent for an endpoint an owner disabled, and while the endpoint is enabled."
+        "enum": ["owner", "gone", "persistent_failure"],
+        "description": "Why an endpoint is off. A closed set: `owner` (a member turned it off), `gone` (the\nreceiver answered 410 Gone) and `persistent_failure` (deliveries failed for longer\nthan the window). Absent while the endpoint is enabled."
       },
       "WebhookErrorKind": {
         "type": "string",
@@ -14968,7 +15030,15 @@
           },
           "enabled": {
             "type": "boolean",
-            "description": "Whether the endpoint receives deliveries"
+            "description": "Whether the endpoint receives deliveries: true while it has no `disabledAt`"
+          },
+          "disabledAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the endpoint was turned off; absent while it is enabled"
           },
           "disabledReason": {
             "allOf": [
@@ -14976,7 +15046,7 @@
                 "$ref": "#/components/schemas/WebhookDisabledReason"
               }
             ],
-            "description": "Why the endpoint turned itself off; absent when an owner disabled it or it is enabled"
+            "description": "Why the endpoint is off; present exactly when `disabledAt` is"
           },
           "failure": {
             "allOf": [

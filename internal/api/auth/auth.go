@@ -48,11 +48,11 @@ func GetTokenAuth(ctx context.Context) *TokenAuth {
 	return v
 }
 
-func HasScope(auth *TokenAuth, scope string) bool {
+func HasScope(auth *TokenAuth, scope externalapi.ApiTokenScope) bool {
 	if auth == nil {
 		return false
 	}
-	return lo.Contains(auth.Scopes, scope)
+	return lo.Contains(auth.Scopes, string(scope))
 }
 
 // TokenScoped returns the Workspace-scoped client of the authenticated api token.

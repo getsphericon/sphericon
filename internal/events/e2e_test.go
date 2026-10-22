@@ -72,6 +72,7 @@ func TestDeliveryIgnoresTransactionsOfOtherDatabases(t *testing.T) {
 	tx, err := other.Tx(ctx)
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = tx.Rollback() })
+	// test writes: transaction commit and rollback through the bus is the subject
 	_, err = tx.Client().Scoped(fixtures.AcmeID).Tag().Create().SetName("held-open").Save(ctx)
 	require.NoError(t, err)
 

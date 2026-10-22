@@ -1,0 +1,1 @@
+{"components":{"schemas":{"Scope":{"type":"string","enum":["contacts:read","contacts:write","events:read"]},"Name":{"type":"string","maxLength":137},"Page":{"type":"integer","maximum":250,"default":25}}}}

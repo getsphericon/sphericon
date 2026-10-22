@@ -11,28 +11,10 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	entcredential "github.com/getsphericon/sphericon/ent/servicecredential"
+	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/events"
 )
-
-// Scope is one thing a Service credential may do on the service endpoints of the
-// Staff surface (ADR 0026). A credential carries a set of them and can act on no
-// other.
-type Scope string
-
-const (
-	// ScopeUsageRead reads the Usage of Workspaces.
-	ScopeUsageRead Scope = "usage:read"
-	// ScopeWorkspacesRead reads the Workspaces and their owners.
-	ScopeWorkspacesRead Scope = "workspaces:read"
-	// ScopeDomainsRead reads the verified Tracking domain hosts.
-	ScopeDomainsRead Scope = "domains:read"
-	// ScopeHoldsWrite sets and clears Staff holds.
-	ScopeHoldsWrite Scope = "holds:write"
-)
-
-// Scopes are every scope a Service credential may carry.
-var Scopes = []Scope{ScopeUsageRead, ScopeWorkspacesRead, ScopeDomainsRead, ScopeHoldsWrite}
 
 var (
 	// ErrInvalidScope: a scope that no Service credential may carry, or none at all.
@@ -65,7 +47,7 @@ const lastUsedGranularity = time.Minute
 // IssueInput is a new Service credential's name, scopes and optional expiry.
 type IssueInput struct {
 	Name      string
-	Scopes    []Scope
+	Scopes    []serviceapi.ServiceScope
 	ExpiresAt *time.Time
 }
 
@@ -74,7 +56,7 @@ type IssueInput struct {
 type Issued struct {
 	ID        int64
 	Name      string
-	Scopes    []Scope
+	Scopes    []serviceapi.ServiceScope
 	ExpiresAt *time.Time
 	// Value is what the service presents as its bearer credential. It is shown once.
 	Value string
@@ -219,7 +201,7 @@ func ServiceActor(c *ent.ServiceCredential) events.Actor {
 	return events.Actor{Kind: events.ActorService, ID: fmt.Sprint(c.ID), Name: c.Name}
 }
 
-func normalizeScopes(in []Scope) ([]Scope, error) {
+func normalizeScopes(in []serviceapi.ServiceScope) ([]serviceapi.ServiceScope, error) {
 	if len(in) == 0 {
 		return nil, ErrInvalidScope
 	}
@@ -227,14 +209,14 @@ func normalizeScopes(in []Scope) ([]Scope, error) {
 	slices.Sort(out)
 	out = slices.Compact(out)
 	for _, s := range out {
-		if !slices.Contains(Scopes, s) {
+		if !slices.Contains(serviceapi.ServiceScope("").AllValues(), s) {
 			return nil, ErrInvalidScope
 		}
 	}
 	return out, nil
 }
 
-func scopeStrings(in []Scope) []string {
+func scopeStrings(in []serviceapi.ServiceScope) []string {
 	out := make([]string, len(in))
 	for i, s := range in {
 		out[i] = string(s)
@@ -242,10 +224,10 @@ func scopeStrings(in []Scope) []string {
 	return out
 }
 
-func toScopes(in []string) []Scope {
-	out := make([]Scope, len(in))
+func toScopes(in []string) []serviceapi.ServiceScope {
+	out := make([]serviceapi.ServiceScope, len(in))
 	for i, s := range in {
-		out[i] = Scope(s)
+		out[i] = serviceapi.ServiceScope(s)
 	}
 	return out
 }

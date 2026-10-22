@@ -124,6 +124,7 @@ export default defineConfig({
     'dist',
     'src/generated',
     'src/routeTree.gen.ts',
+    'internal/contractcopy/testdata',
     'types/resources.d.ts',
     'packages/*/src/generated',
     'packages/*/dist',

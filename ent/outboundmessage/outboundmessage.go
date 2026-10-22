@@ -63,6 +63,20 @@ const (
 	FieldAppOrigin = "app_origin"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
 	EdgeWorkspace = "workspace"
+	// EdgeBroadcast holds the string denoting the broadcast edge name in mutations.
+	EdgeBroadcast = "broadcast"
+	// EdgeAutomation holds the string denoting the automation edge name in mutations.
+	EdgeAutomation = "automation"
+	// EdgeIntegration holds the string denoting the integration edge name in mutations.
+	EdgeIntegration = "integration"
+	// EdgeBroadcastRecipient holds the string denoting the broadcast_recipient edge name in mutations.
+	EdgeBroadcastRecipient = "broadcast_recipient"
+	// EdgeAutomationRun holds the string denoting the automation_run edge name in mutations.
+	EdgeAutomationRun = "automation_run"
+	// EdgeContact holds the string denoting the contact edge name in mutations.
+	EdgeContact = "contact"
+	// EdgeTemplate holds the string denoting the template edge name in mutations.
+	EdgeTemplate = "template"
 	// Table holds the table name of the outboundmessage in the database.
 	Table = "outbound_messages"
 	// WorkspaceTable is the table that holds the workspace relation/edge.
@@ -72,6 +86,55 @@ const (
 	WorkspaceInverseTable = "workspaces"
 	// WorkspaceColumn is the table column denoting the workspace relation/edge.
 	WorkspaceColumn = "workspace_id"
+	// BroadcastTable is the table that holds the broadcast relation/edge.
+	BroadcastTable = "outbound_messages"
+	// BroadcastInverseTable is the table name for the Broadcast entity.
+	// It exists in this package in order to avoid circular dependency with the "broadcast" package.
+	BroadcastInverseTable = "broadcasts"
+	// BroadcastColumn is the table column denoting the broadcast relation/edge.
+	BroadcastColumn = "broadcast_id"
+	// AutomationTable is the table that holds the automation relation/edge.
+	AutomationTable = "outbound_messages"
+	// AutomationInverseTable is the table name for the Automation entity.
+	// It exists in this package in order to avoid circular dependency with the "automation" package.
+	AutomationInverseTable = "automations"
+	// AutomationColumn is the table column denoting the automation relation/edge.
+	AutomationColumn = "automation_id"
+	// IntegrationTable is the table that holds the integration relation/edge.
+	IntegrationTable = "outbound_messages"
+	// IntegrationInverseTable is the table name for the Integration entity.
+	// It exists in this package in order to avoid circular dependency with the "integration" package.
+	IntegrationInverseTable = "integrations"
+	// IntegrationColumn is the table column denoting the integration relation/edge.
+	IntegrationColumn = "integration_id"
+	// BroadcastRecipientTable is the table that holds the broadcast_recipient relation/edge.
+	BroadcastRecipientTable = "outbound_messages"
+	// BroadcastRecipientInverseTable is the table name for the BroadcastRecipient entity.
+	// It exists in this package in order to avoid circular dependency with the "broadcastrecipient" package.
+	BroadcastRecipientInverseTable = "broadcast_recipients"
+	// BroadcastRecipientColumn is the table column denoting the broadcast_recipient relation/edge.
+	BroadcastRecipientColumn = "broadcast_recipient_id"
+	// AutomationRunTable is the table that holds the automation_run relation/edge.
+	AutomationRunTable = "outbound_messages"
+	// AutomationRunInverseTable is the table name for the AutomationRun entity.
+	// It exists in this package in order to avoid circular dependency with the "automationrun" package.
+	AutomationRunInverseTable = "automation_runs"
+	// AutomationRunColumn is the table column denoting the automation_run relation/edge.
+	AutomationRunColumn = "automation_run_id"
+	// ContactTable is the table that holds the contact relation/edge.
+	ContactTable = "outbound_messages"
+	// ContactInverseTable is the table name for the Contact entity.
+	// It exists in this package in order to avoid circular dependency with the "contact" package.
+	ContactInverseTable = "contacts"
+	// ContactColumn is the table column denoting the contact relation/edge.
+	ContactColumn = "contact_id"
+	// TemplateTable is the table that holds the template relation/edge.
+	TemplateTable = "outbound_messages"
+	// TemplateInverseTable is the table name for the EmailTemplate entity.
+	// It exists in this package in order to avoid circular dependency with the "emailtemplate" package.
+	TemplateInverseTable = "email_templates"
+	// TemplateColumn is the table column denoting the template relation/edge.
+	TemplateColumn = "template_id"
 )
 
 // Columns holds all SQL columns for outboundmessage fields.
@@ -331,10 +394,108 @@ func ByWorkspaceField(field string, opts ...sql.OrderTermOption) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newWorkspaceStep(), sql.OrderByField(field, opts...))
 	}
 }
+
+// ByBroadcastField orders the results by broadcast field.
+func ByBroadcastField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newBroadcastStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByAutomationField orders the results by automation field.
+func ByAutomationField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newAutomationStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByIntegrationField orders the results by integration field.
+func ByIntegrationField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newIntegrationStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByBroadcastRecipientField orders the results by broadcast_recipient field.
+func ByBroadcastRecipientField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newBroadcastRecipientStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByAutomationRunField orders the results by automation_run field.
+func ByAutomationRunField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newAutomationRunStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByContactField orders the results by contact field.
+func ByContactField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newContactStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByTemplateField orders the results by template field.
+func ByTemplateField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newTemplateStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newWorkspaceStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(WorkspaceInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, WorkspaceTable, WorkspaceColumn),
+	)
+}
+func newBroadcastStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(BroadcastInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, BroadcastTable, BroadcastColumn),
+	)
+}
+func newAutomationStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(AutomationInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, AutomationTable, AutomationColumn),
+	)
+}
+func newIntegrationStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(IntegrationInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, IntegrationTable, IntegrationColumn),
+	)
+}
+func newBroadcastRecipientStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(BroadcastRecipientInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, BroadcastRecipientTable, BroadcastRecipientColumn),
+	)
+}
+func newAutomationRunStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(AutomationRunInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, AutomationRunTable, AutomationRunColumn),
+	)
+}
+func newContactStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ContactInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, ContactTable, ContactColumn),
+	)
+}
+func newTemplateStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(TemplateInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, TemplateTable, TemplateColumn),
 	)
 }

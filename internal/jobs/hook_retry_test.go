@@ -145,7 +145,7 @@ func TestDeliverWebhookRateLimitSnoozesWithoutSpendingAnAttempt(t *testing.T) {
 	e := h.endpoint()
 	assert.Nil(t, e.ConsecutiveFailures, "a 429 is not a failure")
 	assert.Nil(t, e.LastErrorKind)
-	assert.True(t, e.Enabled)
+	assert.Nil(t, e.DisabledAt)
 }
 
 func TestDeliverWebhookRateLimitLeavesAFailingRunAsItWas(t *testing.T) {
@@ -188,7 +188,7 @@ func TestDeliverWebhookGoneDisablesTheEndpointAndTheJobEnds(t *testing.T) {
 	res, err := h.work(jobs.HookMaxAttempts())
 	require.Error(t, err)
 	require.Equal(t, rivertype.JobStateRetryable, res.Job.State)
-	assert.False(t, h.endpoint().Enabled)
+	assert.NotNil(t, h.endpoint().DisabledAt)
 
 	// The retry finds the endpoint disabled and drops the delivery.
 	again, err := h.worker.WorkJob(context.Background(), h.t, h.tx, res.Job)

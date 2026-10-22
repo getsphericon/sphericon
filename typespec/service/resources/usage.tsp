@@ -1,6 +1,7 @@
 import "../../common/pagination.tsp";
 
 using TypeSpec.Http;
+using TypeSpec.OpenAPI;
 
 namespace Sphericon;
 
@@ -59,6 +60,7 @@ namespace ServiceUsage {
   /** The figures of every Workspace for a Usage period, by Workspace id: Live usage for
    * the open period, Usage snapshots for a closed one. Never a recount on read. */
   @get
+  @extension("x-required-scopes", #[ServiceScope.usageRead])
   op list(...UsagePeriodQuery, ...PageQuery):
     | Page<WorkspaceUsageResource>
     | BadRequestProblem
@@ -74,6 +76,7 @@ namespace ServiceWorkspaceUsage {
    * in-flight sends as their own figure) for the open period, Usage snapshots (final) for a closed one.
    * Never a recount on read. */
   @get
+  @extension("x-required-scopes", #[ServiceScope.usageRead])
   op get(@path workspaceId: WorkspaceId, ...UsagePeriodQuery):
     | WorkspaceUsageResource
     | BadRequestProblem

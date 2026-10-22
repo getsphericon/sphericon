@@ -48,22 +48,6 @@ func TestFollowingIsTheNextPositionOfTheSameInstant(t *testing.T) {
 	})
 }
 
-func TestLimitIsBounded(t *testing.T) {
-	rapid.Check(t, func(t *rapid.T) {
-		requested := rapid.Int32().Draw(t, "requested")
-		set := rapid.Bool().Draw(t, "set")
-
-		got := exportstream.Limit(requested, set)
-
-		if got < 1 || got > exportstream.MaxLimit {
-			t.Fatalf("Limit(%d, %v) = %d", requested, set, got)
-		}
-		if !set && got != exportstream.DefaultLimit {
-			t.Fatalf("an absent limit is %d, not the default", got)
-		}
-	})
-}
-
 // Whatever arrives as a cursor is either a position or the one refusal, never a panic.
 func FuzzParseCursor(f *testing.F) {
 	f.Add("")

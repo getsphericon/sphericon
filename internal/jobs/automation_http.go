@@ -43,7 +43,7 @@ type RunHTTPStepWorker struct {
 	mod    *automations.Module
 	client webhook.Doer
 	now    func() time.Time
-	fence  Fencer
+	fence  automations.Fencer
 }
 
 func (w *RunHTTPStepWorker) Work(ctx context.Context, job *river.Job[RunHTTPStepArgs]) error {
@@ -126,7 +126,7 @@ func (w *RunHTTPStepWorker) Work(ctx context.Context, job *river.Job[RunHTTPStep
 	if delivery.Kind == webhook.KindHTTPStatus {
 		f.Status = delivery.Status
 	}
-	if limited := rateLimit(sendErr); limited != nil {
+	if limited := webhook.RateLimited(sendErr); limited != nil {
 		if now.Sub(job.CreatedAt) >= HookRetryHorizon {
 			return w.fail(ctx, run, f, river.JobCancel(sendErr)) // a receiver that never lets up
 		}

@@ -209,7 +209,7 @@
 
 # Tag on engagement (104): contact 1 (has "vip" and "newsletter") enrolled, not yet stepped.
 - {
-    id: 1100,
+    id: 1100, # fixture: AutomationRunTagOnEngagementAlice
     automation_id: 104,
     version_id: 104,
     contact_id: 1,
@@ -306,6 +306,107 @@
     current_step: 1,
     created_at: '2026-01-02 00:00:00',
     updated_at: '2026-01-02 00:00:00',
+  }
+
+# Enrollments the job tests (internal/jobs) start from.
+- {
+    id: 5560, # fixture: AutomationRunJobsNoEmail
+    automation_id: 5561,
+    version_id: 5561,
+    contact_id: 5560,
+    workspace_id: 1,
+    status: active,
+    current_step: 0,
+    created_at: '{{daysAgo 3}}',
+    updated_at: '{{daysAgo 3}}',
+  }
+- {
+    id: 5561, # fixture: AutomationRunJobsPending
+    automation_id: 5561,
+    version_id: 5561,
+    contact_id: 3,
+    workspace_id: 1,
+    status: active,
+    current_step: 0,
+    created_at: '{{daysAgo 3}}',
+    updated_at: '{{daysAgo 3}}',
+  }
+- {
+    id: 5562, # fixture: AutomationRunJobsExitedOnEmail
+    automation_id: 5561,
+    version_id: 5561,
+    contact_id: 1,
+    workspace_id: 1,
+    status: exited,
+    current_step: 0,
+    created_at: '{{daysAgo 3}}',
+    updated_at: '{{daysAgo 3}}',
+  }
+- {
+    id: 5563, # fixture: AutomationRunJobsExitedOnTag
+    automation_id: 5565,
+    version_id: 5565,
+    contact_id: 2,
+    workspace_id: 1,
+    status: exited,
+    current_step: 0,
+    created_at: '{{daysAgo 3}}',
+    updated_at: '{{daysAgo 3}}',
+  }
+- {
+    id: 5564, # fixture: AutomationRunJobsExitedOnWait
+    automation_id: 5560,
+    version_id: 5560,
+    contact_id: 3,
+    workspace_id: 1,
+    status: exited,
+    current_step: 1,
+    created_at: '{{daysAgo 3}}',
+    updated_at: '{{daysAgo 3}}',
+  }
+- {
+    id: 5565, # fixture: AutomationRunJobsUndecodable
+    automation_id: 5563,
+    version_id: 5563,
+    contact_id: 1,
+    workspace_id: 1,
+    status: active,
+    current_step: 0,
+    created_at: '{{daysAgo 3}}',
+    updated_at: '{{daysAgo 3}}',
+  }
+- {
+    id: 5566, # fixture: AutomationRunJobsUnknownStep
+    automation_id: 5563,
+    version_id: 55632,
+    contact_id: 2,
+    workspace_id: 1,
+    status: active,
+    current_step: 0,
+    created_at: '{{daysAgo 3}}',
+    updated_at: '{{daysAgo 3}}',
+  }
+- {
+    id: 5567, # fixture: AutomationRunJobsEmptySteps
+    automation_id: 5563,
+    version_id: 55633,
+    contact_id: 3,
+    workspace_id: 1,
+    status: active,
+    current_step: 0,
+    created_at: '{{daysAgo 3}}',
+    updated_at: '{{daysAgo 3}}',
+  }
+- {
+    id: 5568, # fixture: AutomationRunJobsBrokenTemplate
+    automation_id: 5563,
+    version_id: 55634,
+    contact_id: 100,
+    workspace_id: 1,
+    status: active,
+    current_step: 0,
+    created_at: '{{daysAgo 3}}',
+    updated_at: '{{daysAgo 3}}',
   }
 
 # --- Brightpath (workspace 20): demo workspace behind the screenshots on getsphericon.com ---

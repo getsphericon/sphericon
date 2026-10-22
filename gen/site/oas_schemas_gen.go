@@ -35,6 +35,252 @@ func (s *ApiKeyAuth) SetRoles(val []string) {
 	s.Roles = val
 }
 
+// Every API token scope: the one vocabulary of the external API.
+// Ref: #/components/schemas/ApiTokenScope
+type ApiTokenScope string
+
+const (
+	ApiTokenScopeContactsRead        ApiTokenScope = "contacts:read"
+	ApiTokenScopeContactsWrite       ApiTokenScope = "contacts:write"
+	ApiTokenScopeEventsRead          ApiTokenScope = "events:read"
+	ApiTokenScopeEventsWrite         ApiTokenScope = "events:write"
+	ApiTokenScopeSegmentsRead        ApiTokenScope = "segments:read"
+	ApiTokenScopeSegmentsWrite       ApiTokenScope = "segments:write"
+	ApiTokenScopeBroadcastsRead      ApiTokenScope = "broadcasts:read"
+	ApiTokenScopeBroadcastsWrite     ApiTokenScope = "broadcasts:write"
+	ApiTokenScopeAutomationsRead     ApiTokenScope = "automations:read"
+	ApiTokenScopeAutomationsWrite    ApiTokenScope = "automations:write"
+	ApiTokenScopeEnrollmentsRead     ApiTokenScope = "enrollments:read"
+	ApiTokenScopeTemplatesRead       ApiTokenScope = "templates:read"
+	ApiTokenScopeTemplatesWrite      ApiTokenScope = "templates:write"
+	ApiTokenScopeWebhooksRead        ApiTokenScope = "webhooks:read"
+	ApiTokenScopeWebhooksWrite       ApiTokenScope = "webhooks:write"
+	ApiTokenScopeWebhooksRegenerate  ApiTokenScope = "webhooks:regenerate"
+	ApiTokenScopeWebhooksTest        ApiTokenScope = "webhooks:test"
+	ApiTokenScopeCustomFieldsRead    ApiTokenScope = "custom_fields:read"
+	ApiTokenScopeSendingDomainsRead  ApiTokenScope = "sending_domains:read"
+	ApiTokenScopeIntegrationsRead    ApiTokenScope = "integrations:read"
+	ApiTokenScopeEmailsSend          ApiTokenScope = "emails:send"
+	ApiTokenScopeBroadcastsSend      ApiTokenScope = "broadcasts:send"
+	ApiTokenScopeAutomationsActivate ApiTokenScope = "automations:activate"
+	ApiTokenScopeMcpSend             ApiTokenScope = "mcp:send"
+	ApiTokenScopeContactsErase       ApiTokenScope = "contacts:erase"
+	ApiTokenScopeSendingDomainsWrite ApiTokenScope = "sending_domains:write"
+	ApiTokenScopeIntegrationsWrite   ApiTokenScope = "integrations:write"
+	ApiTokenScopeTokensRead          ApiTokenScope = "tokens:read"
+	ApiTokenScopeTokensWrite         ApiTokenScope = "tokens:write"
+	ApiTokenScopeAuditRead           ApiTokenScope = "audit:read"
+	ApiTokenScopeExportRead          ApiTokenScope = "export:read"
+)
+
+// AllValues returns all ApiTokenScope values.
+func (ApiTokenScope) AllValues() []ApiTokenScope {
+	return []ApiTokenScope{
+		ApiTokenScopeContactsRead,
+		ApiTokenScopeContactsWrite,
+		ApiTokenScopeEventsRead,
+		ApiTokenScopeEventsWrite,
+		ApiTokenScopeSegmentsRead,
+		ApiTokenScopeSegmentsWrite,
+		ApiTokenScopeBroadcastsRead,
+		ApiTokenScopeBroadcastsWrite,
+		ApiTokenScopeAutomationsRead,
+		ApiTokenScopeAutomationsWrite,
+		ApiTokenScopeEnrollmentsRead,
+		ApiTokenScopeTemplatesRead,
+		ApiTokenScopeTemplatesWrite,
+		ApiTokenScopeWebhooksRead,
+		ApiTokenScopeWebhooksWrite,
+		ApiTokenScopeWebhooksRegenerate,
+		ApiTokenScopeWebhooksTest,
+		ApiTokenScopeCustomFieldsRead,
+		ApiTokenScopeSendingDomainsRead,
+		ApiTokenScopeIntegrationsRead,
+		ApiTokenScopeEmailsSend,
+		ApiTokenScopeBroadcastsSend,
+		ApiTokenScopeAutomationsActivate,
+		ApiTokenScopeMcpSend,
+		ApiTokenScopeContactsErase,
+		ApiTokenScopeSendingDomainsWrite,
+		ApiTokenScopeIntegrationsWrite,
+		ApiTokenScopeTokensRead,
+		ApiTokenScopeTokensWrite,
+		ApiTokenScopeAuditRead,
+		ApiTokenScopeExportRead,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ApiTokenScope) MarshalText() ([]byte, error) {
+	switch s {
+	case ApiTokenScopeContactsRead:
+		return []byte(s), nil
+	case ApiTokenScopeContactsWrite:
+		return []byte(s), nil
+	case ApiTokenScopeEventsRead:
+		return []byte(s), nil
+	case ApiTokenScopeEventsWrite:
+		return []byte(s), nil
+	case ApiTokenScopeSegmentsRead:
+		return []byte(s), nil
+	case ApiTokenScopeSegmentsWrite:
+		return []byte(s), nil
+	case ApiTokenScopeBroadcastsRead:
+		return []byte(s), nil
+	case ApiTokenScopeBroadcastsWrite:
+		return []byte(s), nil
+	case ApiTokenScopeAutomationsRead:
+		return []byte(s), nil
+	case ApiTokenScopeAutomationsWrite:
+		return []byte(s), nil
+	case ApiTokenScopeEnrollmentsRead:
+		return []byte(s), nil
+	case ApiTokenScopeTemplatesRead:
+		return []byte(s), nil
+	case ApiTokenScopeTemplatesWrite:
+		return []byte(s), nil
+	case ApiTokenScopeWebhooksRead:
+		return []byte(s), nil
+	case ApiTokenScopeWebhooksWrite:
+		return []byte(s), nil
+	case ApiTokenScopeWebhooksRegenerate:
+		return []byte(s), nil
+	case ApiTokenScopeWebhooksTest:
+		return []byte(s), nil
+	case ApiTokenScopeCustomFieldsRead:
+		return []byte(s), nil
+	case ApiTokenScopeSendingDomainsRead:
+		return []byte(s), nil
+	case ApiTokenScopeIntegrationsRead:
+		return []byte(s), nil
+	case ApiTokenScopeEmailsSend:
+		return []byte(s), nil
+	case ApiTokenScopeBroadcastsSend:
+		return []byte(s), nil
+	case ApiTokenScopeAutomationsActivate:
+		return []byte(s), nil
+	case ApiTokenScopeMcpSend:
+		return []byte(s), nil
+	case ApiTokenScopeContactsErase:
+		return []byte(s), nil
+	case ApiTokenScopeSendingDomainsWrite:
+		return []byte(s), nil
+	case ApiTokenScopeIntegrationsWrite:
+		return []byte(s), nil
+	case ApiTokenScopeTokensRead:
+		return []byte(s), nil
+	case ApiTokenScopeTokensWrite:
+		return []byte(s), nil
+	case ApiTokenScopeAuditRead:
+		return []byte(s), nil
+	case ApiTokenScopeExportRead:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ApiTokenScope) UnmarshalText(data []byte) error {
+	switch ApiTokenScope(data) {
+	case ApiTokenScopeContactsRead:
+		*s = ApiTokenScopeContactsRead
+		return nil
+	case ApiTokenScopeContactsWrite:
+		*s = ApiTokenScopeContactsWrite
+		return nil
+	case ApiTokenScopeEventsRead:
+		*s = ApiTokenScopeEventsRead
+		return nil
+	case ApiTokenScopeEventsWrite:
+		*s = ApiTokenScopeEventsWrite
+		return nil
+	case ApiTokenScopeSegmentsRead:
+		*s = ApiTokenScopeSegmentsRead
+		return nil
+	case ApiTokenScopeSegmentsWrite:
+		*s = ApiTokenScopeSegmentsWrite
+		return nil
+	case ApiTokenScopeBroadcastsRead:
+		*s = ApiTokenScopeBroadcastsRead
+		return nil
+	case ApiTokenScopeBroadcastsWrite:
+		*s = ApiTokenScopeBroadcastsWrite
+		return nil
+	case ApiTokenScopeAutomationsRead:
+		*s = ApiTokenScopeAutomationsRead
+		return nil
+	case ApiTokenScopeAutomationsWrite:
+		*s = ApiTokenScopeAutomationsWrite
+		return nil
+	case ApiTokenScopeEnrollmentsRead:
+		*s = ApiTokenScopeEnrollmentsRead
+		return nil
+	case ApiTokenScopeTemplatesRead:
+		*s = ApiTokenScopeTemplatesRead
+		return nil
+	case ApiTokenScopeTemplatesWrite:
+		*s = ApiTokenScopeTemplatesWrite
+		return nil
+	case ApiTokenScopeWebhooksRead:
+		*s = ApiTokenScopeWebhooksRead
+		return nil
+	case ApiTokenScopeWebhooksWrite:
+		*s = ApiTokenScopeWebhooksWrite
+		return nil
+	case ApiTokenScopeWebhooksRegenerate:
+		*s = ApiTokenScopeWebhooksRegenerate
+		return nil
+	case ApiTokenScopeWebhooksTest:
+		*s = ApiTokenScopeWebhooksTest
+		return nil
+	case ApiTokenScopeCustomFieldsRead:
+		*s = ApiTokenScopeCustomFieldsRead
+		return nil
+	case ApiTokenScopeSendingDomainsRead:
+		*s = ApiTokenScopeSendingDomainsRead
+		return nil
+	case ApiTokenScopeIntegrationsRead:
+		*s = ApiTokenScopeIntegrationsRead
+		return nil
+	case ApiTokenScopeEmailsSend:
+		*s = ApiTokenScopeEmailsSend
+		return nil
+	case ApiTokenScopeBroadcastsSend:
+		*s = ApiTokenScopeBroadcastsSend
+		return nil
+	case ApiTokenScopeAutomationsActivate:
+		*s = ApiTokenScopeAutomationsActivate
+		return nil
+	case ApiTokenScopeMcpSend:
+		*s = ApiTokenScopeMcpSend
+		return nil
+	case ApiTokenScopeContactsErase:
+		*s = ApiTokenScopeContactsErase
+		return nil
+	case ApiTokenScopeSendingDomainsWrite:
+		*s = ApiTokenScopeSendingDomainsWrite
+		return nil
+	case ApiTokenScopeIntegrationsWrite:
+		*s = ApiTokenScopeIntegrationsWrite
+		return nil
+	case ApiTokenScopeTokensRead:
+		*s = ApiTokenScopeTokensRead
+		return nil
+	case ApiTokenScopeTokensWrite:
+		*s = ApiTokenScopeTokensWrite
+		return nil
+	case ApiTokenScopeAuditRead:
+		*s = ApiTokenScopeAuditRead
+		return nil
+	case ApiTokenScopeExportRead:
+		*s = ApiTokenScopeExportRead
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // The contact's engagement with one broadcast (how its send ended is in `outboundMessages`).
 // Ref: #/components/schemas/ContactExportBroadcastRecipient
 type ContactExportBroadcastRecipient struct {
@@ -1019,6 +1265,177 @@ type EmailAddress string
 
 type EntityId int64
 
+// Scopes an OAuth client may be granted without any extra opt-in: the external API's read/write
+// vocabulary. Token management scopes are deliberately absent, so a connector can never mint further
+// credentials.
+// Ref: #/components/schemas/GrantableScope
+type GrantableScope string
+
+const (
+	GrantableScopeContactsRead       GrantableScope = "contacts:read"
+	GrantableScopeContactsWrite      GrantableScope = "contacts:write"
+	GrantableScopeEventsRead         GrantableScope = "events:read"
+	GrantableScopeEventsWrite        GrantableScope = "events:write"
+	GrantableScopeSegmentsRead       GrantableScope = "segments:read"
+	GrantableScopeSegmentsWrite      GrantableScope = "segments:write"
+	GrantableScopeBroadcastsRead     GrantableScope = "broadcasts:read"
+	GrantableScopeBroadcastsWrite    GrantableScope = "broadcasts:write"
+	GrantableScopeAutomationsRead    GrantableScope = "automations:read"
+	GrantableScopeAutomationsWrite   GrantableScope = "automations:write"
+	GrantableScopeEnrollmentsRead    GrantableScope = "enrollments:read"
+	GrantableScopeTemplatesRead      GrantableScope = "templates:read"
+	GrantableScopeTemplatesWrite     GrantableScope = "templates:write"
+	GrantableScopeWebhooksRead       GrantableScope = "webhooks:read"
+	GrantableScopeWebhooksWrite      GrantableScope = "webhooks:write"
+	GrantableScopeWebhooksRegenerate GrantableScope = "webhooks:regenerate"
+	GrantableScopeWebhooksTest       GrantableScope = "webhooks:test"
+	GrantableScopeCustomFieldsRead   GrantableScope = "custom_fields:read"
+	GrantableScopeSendingDomainsRead GrantableScope = "sending_domains:read"
+	GrantableScopeIntegrationsRead   GrantableScope = "integrations:read"
+)
+
+// AllValues returns all GrantableScope values.
+func (GrantableScope) AllValues() []GrantableScope {
+	return []GrantableScope{
+		GrantableScopeContactsRead,
+		GrantableScopeContactsWrite,
+		GrantableScopeEventsRead,
+		GrantableScopeEventsWrite,
+		GrantableScopeSegmentsRead,
+		GrantableScopeSegmentsWrite,
+		GrantableScopeBroadcastsRead,
+		GrantableScopeBroadcastsWrite,
+		GrantableScopeAutomationsRead,
+		GrantableScopeAutomationsWrite,
+		GrantableScopeEnrollmentsRead,
+		GrantableScopeTemplatesRead,
+		GrantableScopeTemplatesWrite,
+		GrantableScopeWebhooksRead,
+		GrantableScopeWebhooksWrite,
+		GrantableScopeWebhooksRegenerate,
+		GrantableScopeWebhooksTest,
+		GrantableScopeCustomFieldsRead,
+		GrantableScopeSendingDomainsRead,
+		GrantableScopeIntegrationsRead,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s GrantableScope) MarshalText() ([]byte, error) {
+	switch s {
+	case GrantableScopeContactsRead:
+		return []byte(s), nil
+	case GrantableScopeContactsWrite:
+		return []byte(s), nil
+	case GrantableScopeEventsRead:
+		return []byte(s), nil
+	case GrantableScopeEventsWrite:
+		return []byte(s), nil
+	case GrantableScopeSegmentsRead:
+		return []byte(s), nil
+	case GrantableScopeSegmentsWrite:
+		return []byte(s), nil
+	case GrantableScopeBroadcastsRead:
+		return []byte(s), nil
+	case GrantableScopeBroadcastsWrite:
+		return []byte(s), nil
+	case GrantableScopeAutomationsRead:
+		return []byte(s), nil
+	case GrantableScopeAutomationsWrite:
+		return []byte(s), nil
+	case GrantableScopeEnrollmentsRead:
+		return []byte(s), nil
+	case GrantableScopeTemplatesRead:
+		return []byte(s), nil
+	case GrantableScopeTemplatesWrite:
+		return []byte(s), nil
+	case GrantableScopeWebhooksRead:
+		return []byte(s), nil
+	case GrantableScopeWebhooksWrite:
+		return []byte(s), nil
+	case GrantableScopeWebhooksRegenerate:
+		return []byte(s), nil
+	case GrantableScopeWebhooksTest:
+		return []byte(s), nil
+	case GrantableScopeCustomFieldsRead:
+		return []byte(s), nil
+	case GrantableScopeSendingDomainsRead:
+		return []byte(s), nil
+	case GrantableScopeIntegrationsRead:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *GrantableScope) UnmarshalText(data []byte) error {
+	switch GrantableScope(data) {
+	case GrantableScopeContactsRead:
+		*s = GrantableScopeContactsRead
+		return nil
+	case GrantableScopeContactsWrite:
+		*s = GrantableScopeContactsWrite
+		return nil
+	case GrantableScopeEventsRead:
+		*s = GrantableScopeEventsRead
+		return nil
+	case GrantableScopeEventsWrite:
+		*s = GrantableScopeEventsWrite
+		return nil
+	case GrantableScopeSegmentsRead:
+		*s = GrantableScopeSegmentsRead
+		return nil
+	case GrantableScopeSegmentsWrite:
+		*s = GrantableScopeSegmentsWrite
+		return nil
+	case GrantableScopeBroadcastsRead:
+		*s = GrantableScopeBroadcastsRead
+		return nil
+	case GrantableScopeBroadcastsWrite:
+		*s = GrantableScopeBroadcastsWrite
+		return nil
+	case GrantableScopeAutomationsRead:
+		*s = GrantableScopeAutomationsRead
+		return nil
+	case GrantableScopeAutomationsWrite:
+		*s = GrantableScopeAutomationsWrite
+		return nil
+	case GrantableScopeEnrollmentsRead:
+		*s = GrantableScopeEnrollmentsRead
+		return nil
+	case GrantableScopeTemplatesRead:
+		*s = GrantableScopeTemplatesRead
+		return nil
+	case GrantableScopeTemplatesWrite:
+		*s = GrantableScopeTemplatesWrite
+		return nil
+	case GrantableScopeWebhooksRead:
+		*s = GrantableScopeWebhooksRead
+		return nil
+	case GrantableScopeWebhooksWrite:
+		*s = GrantableScopeWebhooksWrite
+		return nil
+	case GrantableScopeWebhooksRegenerate:
+		*s = GrantableScopeWebhooksRegenerate
+		return nil
+	case GrantableScopeWebhooksTest:
+		*s = GrantableScopeWebhooksTest
+		return nil
+	case GrantableScopeCustomFieldsRead:
+		*s = GrantableScopeCustomFieldsRead
+		return nil
+	case GrantableScopeSendingDomainsRead:
+		*s = GrantableScopeSendingDomainsRead
+		return nil
+	case GrantableScopeIntegrationsRead:
+		*s = GrantableScopeIntegrationsRead
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // The body of a refused removal (ADR 0049): ProblemDetails plus the rows that use it.
 // Ref: #/components/schemas/InUseProblemDetails
 type InUseProblemDetails struct {
@@ -1363,6 +1780,51 @@ func (o NilInt32) Get() (v int32, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o NilInt32) Or(d int32) int32 {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewNilRetentionDays returns new NilRetentionDays with value set to v.
+func NewNilRetentionDays(v RetentionDays) NilRetentionDays {
+	return NilRetentionDays{
+		Value: v,
+	}
+}
+
+// NilRetentionDays is nullable RetentionDays.
+type NilRetentionDays struct {
+	Value RetentionDays
+	Null  bool
+}
+
+// SetTo sets value to v.
+func (o *NilRetentionDays) SetTo(v RetentionDays) {
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o NilRetentionDays) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *NilRetentionDays) SetToNull() {
+	o.Null = true
+	var v RetentionDays
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o NilRetentionDays) Get() (v RetentionDays, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o NilRetentionDays) Or(d RetentionDays) RetentionDays {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -4637,6 +5099,8 @@ func (o OptTimestamp) Or(d Timestamp) Timestamp {
 	return d
 }
 
+type PasskeyName string
+
 // A machine-readable reason a client branches on, beyond the HTTP status.
 // Ref: #/components/schemas/ProblemCode
 type ProblemCode string
@@ -5017,6 +5481,67 @@ func (*ProblemDetailsHeaders) siteSecondFactorStartEnrollmentRes()         {}
 func (*ProblemDetailsHeaders) siteUserDeleteUserRes()                      {}
 func (*ProblemDetailsHeaders) siteUserEmailChangeRes()                     {}
 func (*ProblemDetailsHeaders) siteUserUpdateMeRes()                        {}
+
+type RetentionDays int32
+
+// Send-class scopes (ADR 0016, "Send is a second lock"). An OAuth client gets them only when the user
+// explicitly opts in. mcp:send is the MCP-specific key: send-class tools are not listed over /mcp
+// without it, so any send-class grant brings it along.
+// Ref: #/components/schemas/SendScope
+type SendScope string
+
+const (
+	SendScopeEmailsSend          SendScope = "emails:send"
+	SendScopeBroadcastsSend      SendScope = "broadcasts:send"
+	SendScopeAutomationsActivate SendScope = "automations:activate"
+	SendScopeMcpSend             SendScope = "mcp:send"
+)
+
+// AllValues returns all SendScope values.
+func (SendScope) AllValues() []SendScope {
+	return []SendScope{
+		SendScopeEmailsSend,
+		SendScopeBroadcastsSend,
+		SendScopeAutomationsActivate,
+		SendScopeMcpSend,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SendScope) MarshalText() ([]byte, error) {
+	switch s {
+	case SendScopeEmailsSend:
+		return []byte(s), nil
+	case SendScopeBroadcastsSend:
+		return []byte(s), nil
+	case SendScopeAutomationsActivate:
+		return []byte(s), nil
+	case SendScopeMcpSend:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SendScope) UnmarshalText(data []byte) error {
+	switch SendScope(data) {
+	case SendScopeEmailsSend:
+		*s = SendScopeEmailsSend
+		return nil
+	case SendScopeBroadcastsSend:
+		*s = SendScopeBroadcastsSend
+		return nil
+	case SendScopeAutomationsActivate:
+		*s = SendScopeAutomationsActivate
+		return nil
+	case SendScopeMcpSend:
+		*s = SendScopeMcpSend
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
 
 // The metric of a Sending domain that is over a warning limit of the abuse detector.
 // Ref: #/components/schemas/SiteAbuseMetric
@@ -5558,7 +6083,7 @@ type SiteApiTokenResource struct {
 	// Public prefix (the secret is never returned after creation).
 	Prefix string `json:"prefix"`
 	// Granted scopes.
-	Scopes []string `json:"scopes"`
+	Scopes []ApiTokenScope `json:"scopes"`
 	// Last time the token authenticated, if ever.
 	LastUsedAt OptNilTimestamp `json:"lastUsedAt"`
 	// Expiry, if set.
@@ -5585,7 +6110,7 @@ func (s *SiteApiTokenResource) GetPrefix() string {
 }
 
 // GetScopes returns the value of Scopes.
-func (s *SiteApiTokenResource) GetScopes() []string {
+func (s *SiteApiTokenResource) GetScopes() []ApiTokenScope {
 	return s.Scopes
 }
 
@@ -5625,7 +6150,7 @@ func (s *SiteApiTokenResource) SetPrefix(val string) {
 }
 
 // SetScopes sets the value of Scopes.
-func (s *SiteApiTokenResource) SetScopes(val []string) {
+func (s *SiteApiTokenResource) SetScopes(val []ApiTokenScope) {
 	s.Scopes = val
 }
 
@@ -6005,16 +6530,16 @@ func (*SiteAuditListPaymentRequired) siteAuditListRes() {}
 // Ref: #/components/schemas/SiteAuditRetention
 type SiteAuditRetention struct {
 	// Entries older than this many days are pruned; null keeps them forever.
-	RetentionDays NilInt32 `json:"retentionDays"`
+	RetentionDays NilRetentionDays `json:"retentionDays"`
 }
 
 // GetRetentionDays returns the value of RetentionDays.
-func (s *SiteAuditRetention) GetRetentionDays() NilInt32 {
+func (s *SiteAuditRetention) GetRetentionDays() NilRetentionDays {
 	return s.RetentionDays
 }
 
 // SetRetentionDays sets the value of RetentionDays.
-func (s *SiteAuditRetention) SetRetentionDays(val NilInt32) {
+func (s *SiteAuditRetention) SetRetentionDays(val NilRetentionDays) {
 	s.RetentionDays = val
 }
 
@@ -8785,7 +9310,7 @@ func (s *SiteCreateSuppressionInput) SetDestination(val string) {
 // Ref: #/components/schemas/SiteCreateTokenInput
 type SiteCreateTokenInput struct {
 	Name      string          `json:"name"`
-	Scopes    []string        `json:"scopes"`
+	Scopes    []ApiTokenScope `json:"scopes"`
 	ExpiresAt OptNilTimestamp `json:"expiresAt"`
 }
 
@@ -8795,7 +9320,7 @@ func (s *SiteCreateTokenInput) GetName() string {
 }
 
 // GetScopes returns the value of Scopes.
-func (s *SiteCreateTokenInput) GetScopes() []string {
+func (s *SiteCreateTokenInput) GetScopes() []ApiTokenScope {
 	return s.Scopes
 }
 
@@ -8810,7 +9335,7 @@ func (s *SiteCreateTokenInput) SetName(val string) {
 }
 
 // SetScopes sets the value of Scopes.
-func (s *SiteCreateTokenInput) SetScopes(val []string) {
+func (s *SiteCreateTokenInput) SetScopes(val []ApiTokenScope) {
 	s.Scopes = val
 }
 
@@ -12008,9 +12533,9 @@ type SiteOAuthAuthorizationRequest struct {
 	// The redirect URI is on a loopback host: any program on the user's machine can be listening there.
 	LocalRedirect bool `json:"localRedirect"`
 	// Scopes the client asked for that sphericon will grant by default.
-	Scopes []string `json:"scopes"`
+	Scopes []GrantableScope `json:"scopes"`
 	// Requested send-class scopes: granted only when the user opts in explicitly.
-	SendScopes []string `json:"sendScopes"`
+	SendScopes []SendScope `json:"sendScopes"`
 }
 
 // GetClientName returns the value of ClientName.
@@ -12034,12 +12559,12 @@ func (s *SiteOAuthAuthorizationRequest) GetLocalRedirect() bool {
 }
 
 // GetScopes returns the value of Scopes.
-func (s *SiteOAuthAuthorizationRequest) GetScopes() []string {
+func (s *SiteOAuthAuthorizationRequest) GetScopes() []GrantableScope {
 	return s.Scopes
 }
 
 // GetSendScopes returns the value of SendScopes.
-func (s *SiteOAuthAuthorizationRequest) GetSendScopes() []string {
+func (s *SiteOAuthAuthorizationRequest) GetSendScopes() []SendScope {
 	return s.SendScopes
 }
 
@@ -12064,12 +12589,12 @@ func (s *SiteOAuthAuthorizationRequest) SetLocalRedirect(val bool) {
 }
 
 // SetScopes sets the value of Scopes.
-func (s *SiteOAuthAuthorizationRequest) SetScopes(val []string) {
+func (s *SiteOAuthAuthorizationRequest) SetScopes(val []GrantableScope) {
 	s.Scopes = val
 }
 
 // SetSendScopes sets the value of SendScopes.
-func (s *SiteOAuthAuthorizationRequest) SetSendScopes(val []string) {
+func (s *SiteOAuthAuthorizationRequest) SetSendScopes(val []SendScope) {
 	s.SendScopes = val
 }
 
@@ -12219,7 +12744,7 @@ type SitePasskey struct {
 	// Unique identifier, the key of the rename and remove operations.
 	ID EntityId `json:"id"`
 	// What the User calls it, to tell their Passkeys apart.
-	Name string `json:"name"`
+	Name PasskeyName `json:"name"`
 	// When the Passkey was registered.
 	CreatedAt Timestamp `json:"createdAt"`
 	// When a login last used it; absent while it has never been used.
@@ -12232,7 +12757,7 @@ func (s *SitePasskey) GetID() EntityId {
 }
 
 // GetName returns the value of Name.
-func (s *SitePasskey) GetName() string {
+func (s *SitePasskey) GetName() PasskeyName {
 	return s.Name
 }
 
@@ -12252,7 +12777,7 @@ func (s *SitePasskey) SetID(val EntityId) {
 }
 
 // SetName sets the value of Name.
-func (s *SitePasskey) SetName(val string) {
+func (s *SitePasskey) SetName(val PasskeyName) {
 	s.Name = val
 }
 
@@ -13075,7 +13600,7 @@ type SitePasskeyRegistrationInput struct {
 	// the last few minutes instead (ADR 0048).
 	CurrentPassword OptString `json:"currentPassword"`
 	// What to call the Passkey, to tell it from the User's others.
-	Name string `json:"name"`
+	Name PasskeyName `json:"name"`
 	// The authenticator's response to the creation options.
 	Credential SitePasskeyRegistrationResponse `json:"credential"`
 }
@@ -13086,7 +13611,7 @@ func (s *SitePasskeyRegistrationInput) GetCurrentPassword() OptString {
 }
 
 // GetName returns the value of Name.
-func (s *SitePasskeyRegistrationInput) GetName() string {
+func (s *SitePasskeyRegistrationInput) GetName() PasskeyName {
 	return s.Name
 }
 
@@ -13101,7 +13626,7 @@ func (s *SitePasskeyRegistrationInput) SetCurrentPassword(val OptString) {
 }
 
 // SetName sets the value of Name.
-func (s *SitePasskeyRegistrationInput) SetName(val string) {
+func (s *SitePasskeyRegistrationInput) SetName(val PasskeyName) {
 	s.Name = val
 }
 
@@ -13174,16 +13699,16 @@ func (s *SitePasskeyRemoveInput) SetCurrentPassword(val OptString) {
 // Ref: #/components/schemas/SitePasskeyRenameInput
 type SitePasskeyRenameInput struct {
 	// What to call the Passkey, to tell it from the User's others.
-	Name string `json:"name"`
+	Name PasskeyName `json:"name"`
 }
 
 // GetName returns the value of Name.
-func (s *SitePasskeyRenameInput) GetName() string {
+func (s *SitePasskeyRenameInput) GetName() PasskeyName {
 	return s.Name
 }
 
 // SetName sets the value of Name.
-func (s *SitePasskeyRenameInput) SetName(val string) {
+func (s *SitePasskeyRenameInput) SetName(val PasskeyName) {
 	s.Name = val
 }
 
@@ -14960,7 +15485,8 @@ func (s *SiteSendLimitWarning) UnmarshalText(data []byte) error {
 
 // Sending domain resource used by the site UI (ADR 0010). sphericon generates the DKIM keypair; the
 // user publishes the DKIM TXT to authenticate the domain. The private key is never exposed. `verified`
-// is a live property re-checked in the background — it can flip back if the DNS record disappears.
+// is re-checked in the background: the domain loses it (`verificationLostAt`) if the DNS record
+// disappears.
 // Ref: #/components/schemas/SiteSendingDomainResource
 type SiteSendingDomainResource struct {
 	// Unique identifier.
@@ -14969,7 +15495,7 @@ type SiteSendingDomainResource struct {
 	Domain string `json:"domain"`
 	// DKIM selector; the record host is "._domainkey.".
 	DkimSelector string `json:"dkimSelector"`
-	// Whether the DKIM DNS is currently published and matches our key.
+	// Whether the domain is verified now: it has a `verifiedAt` and no `verificationLostAt` since.
 	Verified bool `json:"verified"`
 	// The required DKIM TXT record (gates sending in a later slice).
 	DkimRecord SiteDnsRecord `json:"dkimRecord"`
@@ -14981,8 +15507,11 @@ type SiteSendingDomainResource struct {
 	TrackingRecord OptSiteTrackingRecord `json:"trackingRecord"`
 	// When the DKIM DNS was most recently checked (null = never).
 	LastCheckedAt OptNilTimestamp `json:"lastCheckedAt"`
-	// When the domain most recently became verified (null = never).
+	// When the domain most recently became verified (null = never); kept after a loss.
 	VerifiedAt OptNilTimestamp `json:"verifiedAt"`
+	// When a re-check most recently found the verified DKIM DNS gone (null = not lost: never verified, or
+	// verified again since).
+	VerificationLostAt OptNilTimestamp `json:"verificationLostAt"`
 	// When the domain was archived; null while it is kept. An archived domain serves no Tracking domain
 	// host.
 	ArchivedAt OptNilTimestamp `json:"archivedAt"`
@@ -15040,6 +15569,11 @@ func (s *SiteSendingDomainResource) GetLastCheckedAt() OptNilTimestamp {
 // GetVerifiedAt returns the value of VerifiedAt.
 func (s *SiteSendingDomainResource) GetVerifiedAt() OptNilTimestamp {
 	return s.VerifiedAt
+}
+
+// GetVerificationLostAt returns the value of VerificationLostAt.
+func (s *SiteSendingDomainResource) GetVerificationLostAt() OptNilTimestamp {
+	return s.VerificationLostAt
 }
 
 // GetArchivedAt returns the value of ArchivedAt.
@@ -15105,6 +15639,11 @@ func (s *SiteSendingDomainResource) SetLastCheckedAt(val OptNilTimestamp) {
 // SetVerifiedAt sets the value of VerifiedAt.
 func (s *SiteSendingDomainResource) SetVerifiedAt(val OptNilTimestamp) {
 	s.VerifiedAt = val
+}
+
+// SetVerificationLostAt sets the value of VerificationLostAt.
+func (s *SiteSendingDomainResource) SetVerificationLostAt(val OptNilTimestamp) {
+	s.VerificationLostAt = val
 }
 
 // SetArchivedAt sets the value of ArchivedAt.
@@ -18012,13 +18551,14 @@ func (s *SiteVerifyEmailResultHeaders) SetResponse(val SiteVerifyEmailResult) {
 
 func (*SiteVerifyEmailResultHeaders) siteAuthVerifyEmailRes() {}
 
-// Why an endpoint turned itself off. A closed set: `gone` (the receiver answered 410 Gone) and
-// `persistent_failure` (deliveries failed for longer than the window). Absent for an endpoint an owner
-// disabled, and while the endpoint is enabled.
+// Why an endpoint is off. A closed set: `owner` (a member turned it off), `gone` (the receiver
+// answered 410 Gone) and `persistent_failure` (deliveries failed for longer than the window). Absent
+// while the endpoint is enabled.
 // Ref: #/components/schemas/SiteWebhookDisabledReason
 type SiteWebhookDisabledReason string
 
 const (
+	SiteWebhookDisabledReasonOwner             SiteWebhookDisabledReason = "owner"
 	SiteWebhookDisabledReasonGone              SiteWebhookDisabledReason = "gone"
 	SiteWebhookDisabledReasonPersistentFailure SiteWebhookDisabledReason = "persistent_failure"
 )
@@ -18026,6 +18566,7 @@ const (
 // AllValues returns all SiteWebhookDisabledReason values.
 func (SiteWebhookDisabledReason) AllValues() []SiteWebhookDisabledReason {
 	return []SiteWebhookDisabledReason{
+		SiteWebhookDisabledReasonOwner,
 		SiteWebhookDisabledReasonGone,
 		SiteWebhookDisabledReasonPersistentFailure,
 	}
@@ -18034,6 +18575,8 @@ func (SiteWebhookDisabledReason) AllValues() []SiteWebhookDisabledReason {
 // MarshalText implements encoding.TextMarshaler.
 func (s SiteWebhookDisabledReason) MarshalText() ([]byte, error) {
 	switch s {
+	case SiteWebhookDisabledReasonOwner:
+		return []byte(s), nil
 	case SiteWebhookDisabledReasonGone:
 		return []byte(s), nil
 	case SiteWebhookDisabledReasonPersistentFailure:
@@ -18046,6 +18589,9 @@ func (s SiteWebhookDisabledReason) MarshalText() ([]byte, error) {
 // UnmarshalText implements encoding.TextUnmarshaler.
 func (s *SiteWebhookDisabledReason) UnmarshalText(data []byte) error {
 	switch SiteWebhookDisabledReason(data) {
+	case SiteWebhookDisabledReasonOwner:
+		*s = SiteWebhookDisabledReasonOwner
+		return nil
 	case SiteWebhookDisabledReasonGone:
 		*s = SiteWebhookDisabledReasonGone
 		return nil
@@ -18069,9 +18615,11 @@ type SiteWebhookEndpointResource struct {
 	Secret string `json:"secret"`
 	// Event names this endpoint receives; empty means all events.
 	EventTypes []string `json:"eventTypes"`
-	// Whether the endpoint receives deliveries.
+	// Whether the endpoint receives deliveries: true while it has no `disabledAt`.
 	Enabled bool `json:"enabled"`
-	// Why the endpoint turned itself off; absent when an owner disabled it or it is enabled.
+	// When the endpoint was turned off; absent while it is enabled.
+	DisabledAt OptTimestamp `json:"disabledAt"`
+	// Why the endpoint is off; present exactly when `disabledAt` is.
 	DisabledReason OptSiteWebhookDisabledReason `json:"disabledReason"`
 	// Present while deliveries are failing; cleared by the next 2xx.
 	Failure OptSiteWebhookFailure `json:"failure"`
@@ -18104,6 +18652,11 @@ func (s *SiteWebhookEndpointResource) GetEventTypes() []string {
 // GetEnabled returns the value of Enabled.
 func (s *SiteWebhookEndpointResource) GetEnabled() bool {
 	return s.Enabled
+}
+
+// GetDisabledAt returns the value of DisabledAt.
+func (s *SiteWebhookEndpointResource) GetDisabledAt() OptTimestamp {
+	return s.DisabledAt
 }
 
 // GetDisabledReason returns the value of DisabledReason.
@@ -18149,6 +18702,11 @@ func (s *SiteWebhookEndpointResource) SetEventTypes(val []string) {
 // SetEnabled sets the value of Enabled.
 func (s *SiteWebhookEndpointResource) SetEnabled(val bool) {
 	s.Enabled = val
+}
+
+// SetDisabledAt sets the value of DisabledAt.
+func (s *SiteWebhookEndpointResource) SetDisabledAt(val OptTimestamp) {
+	s.DisabledAt = val
 }
 
 // SetDisabledReason sets the value of DisabledReason.

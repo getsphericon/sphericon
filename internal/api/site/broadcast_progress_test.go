@@ -2,7 +2,6 @@ package site_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -38,17 +37,12 @@ func TestSiteBroadcastProgressAndETA(t *testing.T) {
 
 	eta := time.Now().Add(90 * time.Minute).Truncate(time.Microsecond)
 	require.NoError(t, s.Broadcast().UpdateOneID(id).SetStatus(broadcast.StatusSending).SetLastScheduledAt(eta).Exec(ctx))
-	var recipients []int64
-	for _, contactID := range []int64{fixtures.ContactAliceID, fixtures.ContactBobID, fixtures.ContactCarolID} {
-		rec, err := s.BroadcastRecipient().Create().SetBroadcastID(id).SetContactID(contactID).Save(ctx)
-		require.NoError(t, err)
-		recipients = append(recipients, rec.ID)
-	}
-	// The first recipient is decided by its Outbound message (ADR 0015); the other two are pending.
-	require.NoError(t, s.OutboundMessage().Create().
-		SetKind(outboundmessage.KindBroadcast).SetIdempotencyKey(fmt.Sprintf("broadcast:%d", recipients[0])).
-		SetBroadcastID(id).SetBroadcastRecipientID(recipients[0]).SetStatus(outboundmessage.StatusSent).
-		Exec(ctx))
+	// Bob's recipient is decided by its Outbound message (ADR 0015); the other two are pending.
+	decided := env.PlaceRecipient(ctx, id, fixtures.ContactBobID)
+	env.PlaceRecipient(ctx, id, fixtures.ContactAliceID)
+	env.PlaceRecipient(ctx, id, fixtures.ContactCarolID)
+	require.NoError(t, s.OutboundMessage().Update().
+		Where(outboundmessage.BroadcastRecipientID(decided)).SetStatus(outboundmessage.StatusSent).Exec(ctx))
 
 	progress, ok := get().Progress.Get()
 	require.True(t, ok)

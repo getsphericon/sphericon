@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
+	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
@@ -67,7 +68,6 @@ func (_u *BroadcastRecipientUpdate) SetNillableBroadcastID(v *int64) *BroadcastR
 
 // SetContactID sets the "contact_id" field.
 func (_u *BroadcastRecipientUpdate) SetContactID(v int64) *BroadcastRecipientUpdate {
-	_u.mutation.ResetContactID()
 	_u.mutation.SetContactID(v)
 	return _u
 }
@@ -77,12 +77,6 @@ func (_u *BroadcastRecipientUpdate) SetNillableContactID(v *int64) *BroadcastRec
 	if v != nil {
 		_u.SetContactID(*v)
 	}
-	return _u
-}
-
-// AddContactID adds value to the "contact_id" field.
-func (_u *BroadcastRecipientUpdate) AddContactID(v int64) *BroadcastRecipientUpdate {
-	_u.mutation.AddContactID(v)
 	return _u
 }
 
@@ -182,6 +176,11 @@ func (_u *BroadcastRecipientUpdate) SetBroadcast(v *Broadcast) *BroadcastRecipie
 	return _u.SetBroadcastID(v.ID)
 }
 
+// SetContact sets the "contact" edge to the Contact entity.
+func (_u *BroadcastRecipientUpdate) SetContact(v *Contact) *BroadcastRecipientUpdate {
+	return _u.SetContactID(v.ID)
+}
+
 // Mutation returns the BroadcastRecipientMutation object of the builder.
 func (_u *BroadcastRecipientUpdate) Mutation() *BroadcastRecipientMutation {
 	return _u.mutation
@@ -196,6 +195,12 @@ func (_u *BroadcastRecipientUpdate) ClearWorkspace() *BroadcastRecipientUpdate {
 // ClearBroadcast clears the "broadcast" edge to the Broadcast entity.
 func (_u *BroadcastRecipientUpdate) ClearBroadcast() *BroadcastRecipientUpdate {
 	_u.mutation.ClearBroadcast()
+	return _u
+}
+
+// ClearContact clears the "contact" edge to the Contact entity.
+func (_u *BroadcastRecipientUpdate) ClearContact() *BroadcastRecipientUpdate {
+	_u.mutation.ClearContact()
 	return _u
 }
 
@@ -266,15 +271,6 @@ func (_u *BroadcastRecipientUpdate) sqlSave(ctx context.Context) (_node int, err
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(broadcastrecipient.FieldUpdatedAt, field.TypeTime, value)
-	}
-	if value, ok := _u.mutation.ContactID(); ok {
-		_spec.SetField(broadcastrecipient.FieldContactID, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.AddedContactID(); ok {
-		_spec.AddField(broadcastrecipient.FieldContactID, field.TypeInt64, value)
-	}
-	if _u.mutation.ContactIDCleared() {
-		_spec.ClearField(broadcastrecipient.FieldContactID, field.TypeInt64)
 	}
 	if value, ok := _u.mutation.DeferredUntil(); ok {
 		_spec.SetField(broadcastrecipient.FieldDeferredUntil, field.TypeTime, value)
@@ -358,6 +354,35 @@ func (_u *BroadcastRecipientUpdate) sqlSave(ctx context.Context) (_node int, err
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.ContactCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   broadcastrecipient.ContactTable,
+			Columns: []string{broadcastrecipient.ContactColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contact.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ContactIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   broadcastrecipient.ContactTable,
+			Columns: []string{broadcastrecipient.ContactColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contact.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -416,7 +441,6 @@ func (_u *BroadcastRecipientUpdateOne) SetNillableBroadcastID(v *int64) *Broadca
 
 // SetContactID sets the "contact_id" field.
 func (_u *BroadcastRecipientUpdateOne) SetContactID(v int64) *BroadcastRecipientUpdateOne {
-	_u.mutation.ResetContactID()
 	_u.mutation.SetContactID(v)
 	return _u
 }
@@ -426,12 +450,6 @@ func (_u *BroadcastRecipientUpdateOne) SetNillableContactID(v *int64) *Broadcast
 	if v != nil {
 		_u.SetContactID(*v)
 	}
-	return _u
-}
-
-// AddContactID adds value to the "contact_id" field.
-func (_u *BroadcastRecipientUpdateOne) AddContactID(v int64) *BroadcastRecipientUpdateOne {
-	_u.mutation.AddContactID(v)
 	return _u
 }
 
@@ -531,6 +549,11 @@ func (_u *BroadcastRecipientUpdateOne) SetBroadcast(v *Broadcast) *BroadcastReci
 	return _u.SetBroadcastID(v.ID)
 }
 
+// SetContact sets the "contact" edge to the Contact entity.
+func (_u *BroadcastRecipientUpdateOne) SetContact(v *Contact) *BroadcastRecipientUpdateOne {
+	return _u.SetContactID(v.ID)
+}
+
 // Mutation returns the BroadcastRecipientMutation object of the builder.
 func (_u *BroadcastRecipientUpdateOne) Mutation() *BroadcastRecipientMutation {
 	return _u.mutation
@@ -545,6 +568,12 @@ func (_u *BroadcastRecipientUpdateOne) ClearWorkspace() *BroadcastRecipientUpdat
 // ClearBroadcast clears the "broadcast" edge to the Broadcast entity.
 func (_u *BroadcastRecipientUpdateOne) ClearBroadcast() *BroadcastRecipientUpdateOne {
 	_u.mutation.ClearBroadcast()
+	return _u
+}
+
+// ClearContact clears the "contact" edge to the Contact entity.
+func (_u *BroadcastRecipientUpdateOne) ClearContact() *BroadcastRecipientUpdateOne {
+	_u.mutation.ClearContact()
 	return _u
 }
 
@@ -646,15 +675,6 @@ func (_u *BroadcastRecipientUpdateOne) sqlSave(ctx context.Context) (_node *Broa
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(broadcastrecipient.FieldUpdatedAt, field.TypeTime, value)
 	}
-	if value, ok := _u.mutation.ContactID(); ok {
-		_spec.SetField(broadcastrecipient.FieldContactID, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.AddedContactID(); ok {
-		_spec.AddField(broadcastrecipient.FieldContactID, field.TypeInt64, value)
-	}
-	if _u.mutation.ContactIDCleared() {
-		_spec.ClearField(broadcastrecipient.FieldContactID, field.TypeInt64)
-	}
 	if value, ok := _u.mutation.DeferredUntil(); ok {
 		_spec.SetField(broadcastrecipient.FieldDeferredUntil, field.TypeTime, value)
 	}
@@ -730,6 +750,35 @@ func (_u *BroadcastRecipientUpdateOne) sqlSave(ctx context.Context) (_node *Broa
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(broadcast.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ContactCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   broadcastrecipient.ContactTable,
+			Columns: []string{broadcastrecipient.ContactColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contact.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ContactIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   broadcastrecipient.ContactTable,
+			Columns: []string{broadcastrecipient.ContactColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contact.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

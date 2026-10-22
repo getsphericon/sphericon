@@ -92,6 +92,20 @@ func (c *StaffConverterImpl) StaffMemberToResource(source *ent.StaffMember) staf
 	}
 	return staffapiStaffResource
 }
+func (c *StaffConverterImpl) WorkspaceDetailToResource(source *ent.Workspace) staff.StaffWorkspaceDetailResource {
+	var staffapiStaffWorkspaceDetailResource staff.StaffWorkspaceDetailResource
+	if source != nil {
+		staffapiStaffWorkspaceDetailResource.ID = staff.WorkspaceId((*source).PublicID)
+		staffapiStaffWorkspaceDetailResource.Name = (*source).Name
+		staffapiStaffWorkspaceDetailResource.CreatedAt = staffTimestamp((*source).CreatedAt)
+		staffapiStaffWorkspaceDetailResource.DiscardedAt = optNilTimestamp((*source).DiscardedAt)
+		staffapiStaffWorkspaceDetailResource.ErasedAt = optNilTimestamp((*source).ErasedAt)
+		staffapiStaffWorkspaceDetailResource.Suspension = workspaceSuspension((*source))
+		staffapiStaffWorkspaceDetailResource.Exempt = (*source).AbuseExempt
+		staffapiStaffWorkspaceDetailResource.Warned = isSet((*source).AbuseWarningNotifiedAt)
+	}
+	return staffapiStaffWorkspaceDetailResource
+}
 func (c *StaffConverterImpl) WorkspaceToResource(source *ent.Workspace) staff.StaffWorkspaceResource {
 	var staffapiStaffWorkspaceResource staff.StaffWorkspaceResource
 	if source != nil {

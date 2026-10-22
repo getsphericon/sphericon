@@ -146,14 +146,14 @@
   occurred_at: '{{daysAgo 30}}'
   created_at: '{{daysAgo 30}}'
 # Anonymous, pre-Identify page views (visitor-only, no contact).
-- id: 150
+- id: 150 # fixture: EventAnonymousFirst
   visitor_id: anon-codebasics-1
   action: page_view
   properties: '{"path":"/courses"}'
   workspace_id: 1
   occurred_at: '{{daysAgo 1}}'
   created_at: '{{daysAgo 1}}'
-- id: 151
+- id: 151 # fixture: EventAnonymousSecond
   visitor_id: anon-codebasics-2
   action: page_view
   properties: '{"path":"/pricing"}'
@@ -4163,3 +4163,378 @@
   workspace_id: 20
   occurred_at: '{{hoursAgo 24}}'
   created_at: '{{hoursAgo 24}}'
+
+# Abuse detector traffic (ADR 0026, ee/abuse tests): one scenario per day offset, so a test runs the
+# detector at `now - days` and sees only its own scenario in the trailing 24 hours. Rows are one
+# hour before the scenario's day. Volumes are small: the tests judge with a volume floor of 20
+# sent. Ids 30000 and up. ee/abuse/detector_test.go names the day of each scenario.
+
+# day 3, over the freeze limit (Vandelay 15% complaints; Kramerica, exempt, 50%)
+# {{range $i := seq 30000 30039}}
+- id: '{{$i}}'
+  email: 'sent-{{$i}}@example.com'
+  action: email.sent
+  properties: '{"sendingDomain":"mail.vandelay.test"}'
+  workspace_id: 7
+  occurred_at: '{{hoursAgo 73}}'
+  created_at: '{{hoursAgo 73}}'
+# {{end}}
+# {{range $i := seq 30040 30045}}
+- id: '{{$i}}'
+  email: 'complained-{{$i}}@example.com'
+  action: email.complained
+  properties: '{"sendingDomain":"mail.vandelay.test"}'
+  workspace_id: 7
+  occurred_at: '{{hoursAgo 73}}'
+  created_at: '{{hoursAgo 73}}'
+# {{end}}
+# {{range $i := seq 30046 30085}}
+- id: '{{$i}}'
+  email: 'sent-{{$i}}@example.com'
+  action: email.sent
+  properties: '{"sendingDomain":"mail.kramerica.test"}'
+  workspace_id: 8
+  occurred_at: '{{hoursAgo 73}}'
+  created_at: '{{hoursAgo 73}}'
+# {{end}}
+# {{range $i := seq 30086 30105}}
+- id: '{{$i}}'
+  email: 'complained-{{$i}}@example.com'
+  action: email.complained
+  properties: '{"sendingDomain":"mail.kramerica.test"}'
+  workspace_id: 8
+  occurred_at: '{{hoursAgo 73}}'
+  created_at: '{{hoursAgo 73}}'
+# {{end}}
+
+# day 6, under the volume floor: 19 sent, every one bounced hard
+# {{range $i := seq 30106 30124}}
+- id: '{{$i}}'
+  email: 'sent-{{$i}}@example.com'
+  action: email.sent
+  properties: '{"sendingDomain":"mail.vandelay.test"}'
+  workspace_id: 7
+  occurred_at: '{{hoursAgo 145}}'
+  created_at: '{{hoursAgo 145}}'
+# {{end}}
+# {{range $i := seq 30125 30143}}
+- id: '{{$i}}'
+  email: 'bounced-{{$i}}@example.com'
+  action: email.bounced
+  properties: '{"sendingDomain":"mail.vandelay.test","bounceKind":"permanent"}'
+  workspace_id: 7
+  occurred_at: '{{hoursAgo 145}}'
+  created_at: '{{hoursAgo 145}}'
+# {{end}}
+
+# day 9, complaints at the freeze limit (10%)
+# {{range $i := seq 30144 30183}}
+- id: '{{$i}}'
+  email: 'sent-{{$i}}@example.com'
+  action: email.sent
+  properties: '{"sendingDomain":"mail.vandelay.test"}'
+  workspace_id: 7
+  occurred_at: '{{hoursAgo 217}}'
+  created_at: '{{hoursAgo 217}}'
+# {{end}}
+# {{range $i := seq 30184 30187}}
+- id: '{{$i}}'
+  email: 'complained-{{$i}}@example.com'
+  action: email.complained
+  properties: '{"sendingDomain":"mail.vandelay.test"}'
+  workspace_id: 7
+  occurred_at: '{{hoursAgo 217}}'
+  created_at: '{{hoursAgo 217}}'
+# {{end}}
+
+# day 12, complaints just under the freeze limit
+# {{range $i := seq 30188 30227}}
+- id: '{{$i}}'
+  email: 'sent-{{$i}}@example.com'
+  action: email.sent
+  properties: '{"sendingDomain":"mail.vandelay.test"}'
+  workspace_id: 7
+  occurred_at: '{{hoursAgo 289}}'
+  created_at: '{{hoursAgo 289}}'
+# {{end}}
+# {{range $i := seq 30228 30230}}
+- id: '{{$i}}'
+  email: 'complained-{{$i}}@example.com'
+  action: email.complained
+  properties: '{"sendingDomain":"mail.vandelay.test"}'
+  workspace_id: 7
+  occurred_at: '{{hoursAgo 289}}'
+  created_at: '{{hoursAgo 289}}'
+# {{end}}
+
+# day 15, complaints at the warning limit (5%)
+# {{range $i := seq 30231 30270}}
+- id: '{{$i}}'
+  email: 'sent-{{$i}}@example.com'
+  action: email.sent
+  properties: '{"sendingDomain":"mail.vandelay.test"}'
+  workspace_id: 7
+  occurred_at: '{{hoursAgo 361}}'
+  created_at: '{{hoursAgo 361}}'
+# {{end}}
+# {{range $i := seq 30271 30272}}
+- id: '{{$i}}'
+  email: 'complained-{{$i}}@example.com'
+  action: email.complained
+  properties: '{"sendingDomain":"mail.vandelay.test"}'
+  workspace_id: 7
+  occurred_at: '{{hoursAgo 361}}'
+  created_at: '{{hoursAgo 361}}'
+# {{end}}
+
+# day 18, complaints just under the warning limit
+# {{range $i := seq 30273 30312}}
+- id: '{{$i}}'
+  email: 'sent-{{$i}}@example.com'
+  action: email.sent
+  properties: '{"sendingDomain":"mail.vandelay.test"}'
+  workspace_id: 7
+  occurred_at: '{{hoursAgo 433}}'
+  created_at: '{{hoursAgo 433}}'
+# {{end}}
+# {{range $i := seq 30313 30313}}
+- id: '{{$i}}'
+  email: 'complained-{{$i}}@example.com'
+  action: email.complained
+  properties: '{"sendingDomain":"mail.vandelay.test"}'
+  workspace_id: 7
+  occurred_at: '{{hoursAgo 433}}'
+  created_at: '{{hoursAgo 433}}'
+# {{end}}
+
+# day 21, bounces at the freeze limit (20%)
+# {{range $i := seq 30314 30353}}
+- id: '{{$i}}'
+  email: 'sent-{{$i}}@example.com'
+  action: email.sent
+  properties: '{"sendingDomain":"mail.vandelay.test"}'
+  workspace_id: 7
+  occurred_at: '{{hoursAgo 505}}'
+  created_at: '{{hoursAgo 505}}'
+# {{end}}
+# {{range $i := seq 30354 30361}}
+- id: '{{$i}}'
+  email: 'bounced-{{$i}}@example.com'
+  action: email.bounced
+  properties: '{"sendingDomain":"mail.vandelay.test","bounceKind":"permanent"}'
+  workspace_id: 7
+  occurred_at: '{{hoursAgo 505}}'
+  created_at: '{{hoursAgo 505}}'
+# {{end}}
+
+# day 24, bounces just under the freeze limit
+# {{range $i := seq 30362 30401}}
+- id: '{{$i}}'
+  email: 'sent-{{$i}}@example.com'
+  action: email.sent
+  properties: '{"sendingDomain":"mail.vandelay.test"}'
+  workspace_id: 7
+  occurred_at: '{{hoursAgo 577}}'
+  created_at: '{{hoursAgo 577}}'
+# {{end}}
+# {{range $i := seq 30402 30408}}
+- id: '{{$i}}'
+  email: 'bounced-{{$i}}@example.com'
+  action: email.bounced
+  properties: '{"sendingDomain":"mail.vandelay.test","bounceKind":"permanent"}'
+  workspace_id: 7
+  occurred_at: '{{hoursAgo 577}}'
+  created_at: '{{hoursAgo 577}}'
+# {{end}}
+
+# day 27, bounces at the warning limit (10%)
+# {{range $i := seq 30409 30448}}
+- id: '{{$i}}'
+  email: 'sent-{{$i}}@example.com'
+  action: email.sent
+  properties: '{"sendingDomain":"mail.vandelay.test"}'
+  workspace_id: 7
+  occurred_at: '{{hoursAgo 649}}'
+  created_at: '{{hoursAgo 649}}'
+# {{end}}
+# {{range $i := seq 30449 30452}}
+- id: '{{$i}}'
+  email: 'bounced-{{$i}}@example.com'
+  action: email.bounced
+  properties: '{"sendingDomain":"mail.vandelay.test","bounceKind":"permanent"}'
+  workspace_id: 7
+  occurred_at: '{{hoursAgo 649}}'
+  created_at: '{{hoursAgo 649}}'
+# {{end}}
+
+# day 30, bounces just under the warning limit
+# {{range $i := seq 30453 30492}}
+- id: '{{$i}}'
+  email: 'sent-{{$i}}@example.com'
+  action: email.sent
+  properties: '{"sendingDomain":"mail.vandelay.test"}'
+  workspace_id: 7
+  occurred_at: '{{hoursAgo 721}}'
+  created_at: '{{hoursAgo 721}}'
+# {{end}}
+# {{range $i := seq 30493 30495}}
+- id: '{{$i}}'
+  email: 'bounced-{{$i}}@example.com'
+  action: email.bounced
+  properties: '{"sendingDomain":"mail.vandelay.test","bounceKind":"permanent"}'
+  workspace_id: 7
+  occurred_at: '{{hoursAgo 721}}'
+  created_at: '{{hoursAgo 721}}'
+# {{end}}
+
+# day 33, two domains: a clean mail domain and a news domain over the freeze limit
+# {{range $i := seq 30496 30595}}
+- id: '{{$i}}'
+  email: 'sent-{{$i}}@example.com'
+  action: email.sent
+  properties: '{"sendingDomain":"mail.vandelay.test"}'
+  workspace_id: 7
+  occurred_at: '{{hoursAgo 793}}'
+  created_at: '{{hoursAgo 793}}'
+# {{end}}
+# {{range $i := seq 30596 30635}}
+- id: '{{$i}}'
+  email: 'sent-{{$i}}@example.com'
+  action: email.sent
+  properties: '{"sendingDomain":"news.vandelay.test"}'
+  workspace_id: 7
+  occurred_at: '{{hoursAgo 793}}'
+  created_at: '{{hoursAgo 793}}'
+# {{end}}
+# {{range $i := seq 30636 30641}}
+- id: '{{$i}}'
+  email: 'complained-{{$i}}@example.com'
+  action: email.complained
+  properties: '{"sendingDomain":"news.vandelay.test"}'
+  workspace_id: 7
+  occurred_at: '{{hoursAgo 793}}'
+  created_at: '{{hoursAgo 793}}'
+# {{end}}
+
+# day 36 and again at day 34, in the warning tier (7.5% complaints), 48 hours apart
+# {{range $i := seq 30642 30681}}
+- id: '{{$i}}'
+  email: 'sent-{{$i}}@example.com'
+  action: email.sent
+  properties: '{"sendingDomain":"mail.vandelay.test"}'
+  workspace_id: 7
+  occurred_at: '{{hoursAgo 865}}'
+  created_at: '{{hoursAgo 865}}'
+# {{end}}
+# {{range $i := seq 30682 30684}}
+- id: '{{$i}}'
+  email: 'complained-{{$i}}@example.com'
+  action: email.complained
+  properties: '{"sendingDomain":"mail.vandelay.test"}'
+  workspace_id: 7
+  occurred_at: '{{hoursAgo 865}}'
+  created_at: '{{hoursAgo 865}}'
+# {{end}}
+# {{range $i := seq 30685 30724}}
+- id: '{{$i}}'
+  email: 'sent-{{$i}}@example.com'
+  action: email.sent
+  properties: '{"sendingDomain":"mail.vandelay.test"}'
+  workspace_id: 7
+  occurred_at: '{{hoursAgo 817}}'
+  created_at: '{{hoursAgo 817}}'
+# {{end}}
+# {{range $i := seq 30725 30727}}
+- id: '{{$i}}'
+  email: 'complained-{{$i}}@example.com'
+  action: email.complained
+  properties: '{"sendingDomain":"mail.vandelay.test"}'
+  workspace_id: 7
+  occurred_at: '{{hoursAgo 817}}'
+  created_at: '{{hoursAgo 817}}'
+# {{end}}
+
+# day 0 (Kramerica, whose exemption the test lifts), a clearance: over the freeze limit an hour ago; then, after the Staff member clears the
+# suspension, 19 sent with 3 complaints an hour ahead (under the floor) and the 20th send two hours ahead
+# {{range $i := seq 30728 30767}}
+- id: '{{$i}}'
+  email: 'sent-{{$i}}@example.com'
+  action: email.sent
+  properties: '{"sendingDomain":"mail.kramerica.test"}'
+  workspace_id: 8
+  occurred_at: '{{hoursAgo 1}}'
+  created_at: '{{hoursAgo 1}}'
+# {{end}}
+# {{range $i := seq 30768 30773}}
+- id: '{{$i}}'
+  email: 'complained-{{$i}}@example.com'
+  action: email.complained
+  properties: '{"sendingDomain":"mail.kramerica.test"}'
+  workspace_id: 8
+  occurred_at: '{{hoursAgo 1}}'
+  created_at: '{{hoursAgo 1}}'
+# {{end}}
+# {{range $i := seq 30774 30792}}
+- id: '{{$i}}'
+  email: 'sent-{{$i}}@example.com'
+  action: email.sent
+  properties: '{"sendingDomain":"mail.kramerica.test"}'
+  workspace_id: 8
+  occurred_at: '{{hoursAhead 1}}'
+  created_at: '{{hoursAhead 1}}'
+# {{end}}
+# {{range $i := seq 30793 30795}}
+- id: '{{$i}}'
+  email: 'complained-{{$i}}@example.com'
+  action: email.complained
+  properties: '{"sendingDomain":"mail.kramerica.test"}'
+  workspace_id: 8
+  occurred_at: '{{hoursAhead 1}}'
+  created_at: '{{hoursAhead 1}}'
+# {{end}}
+# {{range $i := seq 30796 30796}}
+- id: '{{$i}}'
+  email: 'sent-{{$i}}@example.com'
+  action: email.sent
+  properties: '{"sendingDomain":"mail.kramerica.test"}'
+  workspace_id: 8
+  occurred_at: '{{hoursAhead 2}}'
+  created_at: '{{hoursAhead 2}}'
+# {{end}}
+
+# Events of the segment scenarios (#555). Events attach by contact_id (ADR 0002).
+- id: 5500
+  contact_id: 5543
+  action: page_view
+  workspace_id: 58
+  occurred_at: '{{daysAgo 2}}'
+  created_at: '{{daysAgo 2}}'
+- id: 5501
+  contact_id: 5543
+  action: purchase
+  workspace_id: 58
+  occurred_at: '{{daysAgo 40}}'
+  created_at: '{{daysAgo 40}}'
+# An anonymous page_view (no Contact yet) must not hide Bob from notPerformed.
+- id: 5502
+  visitor_id: anon-massive
+  action: page_view
+  workspace_id: 58
+  occurred_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+- id: 5503
+  contact_id: 5551
+  action: signed_up
+  workspace_id: 60
+  occurred_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+
+# The export of ContactExportHeavy (5703) streams 1200 Events across the keyset pages.
+# {{range $i := seq 58000 59199}}
+- id: '{{$i}}'
+  contact_id: 5703
+  action: bulk_event
+  workspace_id: 1
+  occurred_at: '{{daysAgo 10}}'
+  created_at: '{{daysAgo 10}}'
+# {{end}}

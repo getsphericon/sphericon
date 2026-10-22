@@ -26,12 +26,14 @@ import {
   siteWorkspacesListOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteBrandKitResource, SiteSaveBrandKitInput } from '../../generated/site/types.gen.ts'
+import { zSiteSaveBrandKitInput } from '../../generated/site/zod.gen.ts'
 import { canManageBrandKit } from '../../hooks/useCurrentRole.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as brandKitRoute } from '../../routes/workspaces/$workspaceId/brand-kit.tsx'
 
-const MAX_RADIUS = 32
-const MAX_FOOTER = 500
+// The contract's bounds (TypeSpec -> zod) are the single source for the inputs' range.
+const RADIUS = zSiteSaveBrandKitInput.shape.buttonRadius
+const FOOTER = zSiteSaveBrandKitInput.shape.footerText
 
 function valuesOf(kit: SiteBrandKitResource): SiteSaveBrandKitInput {
   return {
@@ -146,8 +148,8 @@ function BrandKitForm({
           />
           <NumberInput
             label={t(($) => $.brandKit.buttonRadiusLabel)}
-            min={0}
-            max={MAX_RADIUS}
+            min={RADIUS.minValue ?? 0}
+            max={RADIUS.maxValue ?? 0}
             allowDecimal={false}
             disabled={!canChange}
             {...form.getInputProps('buttonRadius')}
@@ -164,7 +166,7 @@ function BrandKitForm({
           description={t(($) => $.brandKit.footerTextDescription)}
           autosize
           minRows={2}
-          maxLength={MAX_FOOTER}
+          maxLength={FOOTER.maxLength ?? undefined}
           disabled={!canChange}
           {...form.getInputProps('footerText')}
         />

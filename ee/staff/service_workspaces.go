@@ -13,7 +13,7 @@ import (
 // ServiceWorkspaceFeedList is the Workspaces created or changed since a cursor, each
 // with all of its owners (needs workspaces:read).
 func (h *ServiceHandlers) ServiceWorkspaceFeedList(ctx context.Context, params serviceapi.ServiceWorkspaceFeedListParams) (serviceapi.ServiceWorkspaceFeedListRes, error) {
-	page, err := h.module.WorkspaceFeed(ctx, params.Cursor.Or(""), int(params.Limit.Or(0)))
+	page, err := h.module.WorkspaceFeed(ctx, params.Cursor.Or(""), int(params.Limit.Value))
 	if errors.Is(err, ErrInvalidFeedCursor) {
 		return &serviceapi.ServiceWorkspaceFeedListBadRequest{
 			Status: serviceapi.NewOptInt32(http.StatusBadRequest),

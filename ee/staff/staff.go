@@ -42,6 +42,7 @@ const Issuer = "Sphericon staff"
 const challengeTTL = 5 * time.Minute
 
 // minSecretLength is the shortest SPHERICON_STAFF_JWT_SECRET accepted.
+// contract-copy: a secret-strength floor for SPHERICON_STAFF_JWT_SECRET; no client sees it
 const minSecretLength = 32
 
 var (

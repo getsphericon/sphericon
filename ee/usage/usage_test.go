@@ -35,36 +35,43 @@ func at(y int, m time.Month, d, h int) time.Time { return time.Date(y, m, d, h, 
 var (
 	jan = at(2027, time.January, 1, 0)
 	feb = at(2027, time.February, 1, 0)
-	mar = at(2027, time.March, 1, 0)
 )
 
-// message records one Outbound message of Acme, as the send path would leave it.
-func message(t *testing.T, env *testhelper.TestEnv, key string, kind outboundmessage.Kind, status outboundmessage.Status, when time.Time) {
-	t.Helper()
-	c := env.DB.Scoped(fixtures.AcmeID).OutboundMessage().Create().
-		SetKind(kind).
-		SetIdempotencyKey("usage-test:" + key).
-		SetStatus(status).
-		SetClaimedAt(when)
-	if status == outboundmessage.StatusSent {
-		c.SetSentAt(when)
-	}
-	require.NoError(t, c.Exec(t.Context()))
+// month is the first instant of the calendar month n months back from now, the way the Meter
+// fixtures' monthAgo places their rows; moment is a day and hour inside it.
+func month(n int) time.Time { return usage.PeriodOf(time.Now()).AddDate(0, -n, 0) }
+
+func moment(n, day, hour int) time.Time {
+	return month(n).AddDate(0, 0, day-1).Add(time.Duration(hour) * time.Hour)
 }
 
-// figure is Acme's emails_sent figure of the period, failing when there is none.
+// settle moves a pending fixture message of Meter to sent at `when`: the send arrives after the
+// moment a test first measured.
+func settle(t *testing.T, env *testhelper.TestEnv, key string, when time.Time) {
+	t.Helper()
+	require.NoError(t, env.DB.Scoped(fixtures.MeterID).OutboundMessage().Update().
+		Where(outboundmessage.IdempotencyKey("meter:"+key)).
+		SetStatus(outboundmessage.StatusSent).SetSentAt(when).Exec(t.Context()))
+}
+
+// figure is Meter's emails_sent figure of the period, failing when there is none.
 func figure(t *testing.T, env *testhelper.TestEnv, period time.Time) usage.Figure {
 	t.Helper()
-	return figureOf(t, env, period, usage.EmailsSent)
+	return figureFor(t, env, fixtures.MeterID, period, usage.EmailsSent)
 }
 
 // figureOf is Acme's figure of the metric for the period, failing when there is none.
 func figureOf(t *testing.T, env *testhelper.TestEnv, period time.Time, metric usage.Metric) usage.Figure {
 	t.Helper()
-	page, err := usage.List(t.Context(), env.DB, period, pagination.Params{Page: 1, PageSize: pagination.MaxPageSize})
+	return figureFor(t, env, fixtures.AcmeID, period, metric)
+}
+
+func figureFor(t *testing.T, env *testhelper.TestEnv, workspaceID int64, period time.Time, metric usage.Metric) usage.Figure {
+	t.Helper()
+	page, err := usage.List(t.Context(), env.DB, period, pagination.Params{Page: 1, PageSize: 100})
 	require.NoError(t, err)
 	for _, w := range page.Items {
-		if w.WorkspaceID != fixtures.AcmeID {
+		if w.WorkspaceID != workspaceID {
 			continue
 		}
 		for _, f := range w.Figures {
@@ -73,7 +80,7 @@ func figureOf(t *testing.T, env *testhelper.TestEnv, period time.Time, metric us
 			}
 		}
 	}
-	require.Failf(t, "no figure", "Acme has no %s figure for %s", metric, period.Format("2006-01"))
+	require.Failf(t, "no figure", "workspace %d has no %s figure for %s", workspaceID, metric, period.Format("2006-01"))
 	return usage.Figure{}
 }
 
@@ -87,33 +94,26 @@ func TestThePeriodIsTheCalendarMonthInUTC(t *testing.T) {
 
 func TestEmailsSentCountsOnePerRecipientOverAllSurfacesAndNeverASkippedOrFailedOne(t *testing.T) {
 	env := testhelper.Setup(t)
-	message(t, env, "b", outboundmessage.KindBroadcast, outboundmessage.StatusSent, at(2027, time.January, 3, 10))
-	message(t, env, "a", outboundmessage.KindAutomation, outboundmessage.StatusSent, at(2027, time.January, 4, 10))
-	message(t, env, "t", outboundmessage.KindTransactional, outboundmessage.StatusSent, at(2027, time.January, 31, 23))
-	message(t, env, "skipped", outboundmessage.KindBroadcast, outboundmessage.StatusSkipped, at(2027, time.January, 5, 10))
-	message(t, env, "failed", outboundmessage.KindBroadcast, outboundmessage.StatusFailed, at(2027, time.January, 6, 10))
-	message(t, env, "feb", outboundmessage.KindBroadcast, outboundmessage.StatusSent, at(2027, time.February, 1, 0))
+	// Meter's month 17 holds three sends (a Broadcast, an Automation, a Transactional), one skipped
+	// and one failed; the first instant of the next month holds a fourth.
+	require.NoError(t, usage.Refresh(t.Context(), env.DB, licenseFor(t, licensekey.FeatureStaff), month(16).Add(time.Hour)))
 
-	require.NoError(t, usage.Refresh(t.Context(), env.DB, licenseFor(t, licensekey.FeatureStaff), feb.Add(time.Hour)))
-
-	f := figure(t, env, jan)
+	f := figure(t, env, month(17))
 	assert.EqualValues(t, 3, f.Value)
 	assert.True(t, f.Final)
 }
 
 func TestLiveUsageReportsSendsStillInFlightApartFromEmailsSent(t *testing.T) {
 	env := testhelper.Setup(t)
-	now := at(2027, time.February, 10, 12)
-	message(t, env, "sent", outboundmessage.KindBroadcast, outboundmessage.StatusSent, at(2027, time.February, 2, 9))
-	message(t, env, "in-flight", outboundmessage.KindBroadcast, outboundmessage.StatusPending, at(2027, time.February, 10, 11))
+	now := moment(14, 10, 12)
 
 	require.NoError(t, usage.Refresh(t.Context(), env.DB, licenseFor(t, licensekey.FeatureStaff), now))
 
-	f := figure(t, env, feb)
+	f := figure(t, env, month(14))
 	assert.EqualValues(t, 1, f.Value, "an in-flight send is not yet sent")
 	assert.False(t, f.Final)
 	assert.True(t, f.ComputedAt.Equal(now), "computed_at is the time of the refresh")
-	inFlight := figureOf(t, env, feb, usage.InFlightSends)
+	inFlight := figureFor(t, env, fixtures.MeterID, month(14), usage.InFlightSends)
 	assert.EqualValues(t, 1, inFlight.Value)
 	assert.False(t, inFlight.Final)
 }
@@ -121,44 +121,39 @@ func TestLiveUsageReportsSendsStillInFlightApartFromEmailsSent(t *testing.T) {
 func TestLiveUsageIsRefreshedAndNeverRecountedOnRead(t *testing.T) {
 	env := testhelper.Setup(t)
 	lic := licenseFor(t, licensekey.FeatureStaff)
-	require.NoError(t, usage.Refresh(t.Context(), env.DB, lic, at(2027, time.February, 10, 12)))
-	message(t, env, "late", outboundmessage.KindTransactional, outboundmessage.StatusSent, at(2027, time.February, 10, 13))
+	require.NoError(t, usage.Refresh(t.Context(), env.DB, lic, moment(12, 10, 12)))
+	settle(t, env, "late", moment(12, 10, 13))
 
-	assert.EqualValues(t, 0, figure(t, env, feb).Value, "a read does not recount")
+	assert.EqualValues(t, 0, figure(t, env, month(12)).Value, "a read does not recount")
 
-	require.NoError(t, usage.Refresh(t.Context(), env.DB, lic, at(2027, time.February, 10, 14)))
-	assert.EqualValues(t, 1, figure(t, env, feb).Value)
+	require.NoError(t, usage.Refresh(t.Context(), env.DB, lic, moment(12, 10, 14)))
+	assert.EqualValues(t, 1, figure(t, env, month(12)).Value)
 }
 
 func TestAClosedSnapshotNeverChangesAndARerunIsTheSame(t *testing.T) {
 	env := testhelper.Setup(t)
 	lic := licenseFor(t, licensekey.FeatureStaff)
-	message(t, env, "one", outboundmessage.KindBroadcast, outboundmessage.StatusSent, at(2027, time.January, 3, 10))
-	require.NoError(t, usage.Refresh(t.Context(), env.DB, lic, feb.Add(time.Minute)))
-	closed := figure(t, env, jan)
+	require.NoError(t, usage.Refresh(t.Context(), env.DB, lic, month(9).Add(time.Minute)))
+	closed := figure(t, env, month(10))
 
-	// A message dated inside January shows up after the close, and the job runs again.
-	message(t, env, "straggler", outboundmessage.KindBroadcast, outboundmessage.StatusSent, at(2027, time.January, 20, 10))
-	require.NoError(t, usage.Refresh(t.Context(), env.DB, lic, feb.Add(time.Hour)))
-	require.NoError(t, usage.Refresh(t.Context(), env.DB, lic, feb.Add(2*time.Hour)))
+	// A message dated inside the closed month is accepted after the close, and the job runs again.
+	settle(t, env, "closed-straggler", moment(10, 20, 10))
+	require.NoError(t, usage.Refresh(t.Context(), env.DB, lic, month(9).Add(time.Hour)))
+	require.NoError(t, usage.Refresh(t.Context(), env.DB, lic, month(9).Add(2*time.Hour)))
 
-	assert.Equal(t, closed.Value, figure(t, env, jan).Value)
-	assert.EqualValues(t, 1, figure(t, env, jan).Value)
-	assert.True(t, closed.ComputedAt.Equal(figure(t, env, jan).ComputedAt))
+	assert.Equal(t, closed.Value, figure(t, env, month(10)).Value)
+	assert.EqualValues(t, 1, figure(t, env, month(10)).Value)
+	assert.True(t, closed.ComputedAt.Equal(figure(t, env, month(10)).ComputedAt))
 }
 
 func TestALateRunClosesEveryElapsedPeriodWithTheSameFiguresAsAnOnTimeRun(t *testing.T) {
 	env := testhelper.Setup(t)
 	lic := licenseFor(t, licensekey.FeatureStaff)
-	message(t, env, "jan", outboundmessage.KindBroadcast, outboundmessage.StatusSent, at(2027, time.January, 3, 10))
-	message(t, env, "feb1", outboundmessage.KindAutomation, outboundmessage.StatusSent, at(2027, time.February, 3, 10))
-	message(t, env, "feb2", outboundmessage.KindAutomation, outboundmessage.StatusSent, at(2027, time.February, 4, 10))
-	message(t, env, "mar", outboundmessage.KindTransactional, outboundmessage.StatusSent, at(2027, time.March, 4, 10))
-	require.NoError(t, usage.Refresh(t.Context(), env.DB, lic, jan.Add(24*time.Hour)), "an early run leaves January open")
+	require.NoError(t, usage.Refresh(t.Context(), env.DB, lic, month(7).Add(24*time.Hour)), "an early run leaves the first month open")
 
-	require.NoError(t, usage.Refresh(t.Context(), env.DB, lic, at(2027, time.April, 9, 0)))
+	require.NoError(t, usage.Refresh(t.Context(), env.DB, lic, moment(4, 9, 0)))
 
-	for period, want := range map[time.Time]int64{jan: 1, feb: 2, mar: 1} {
+	for period, want := range map[time.Time]int64{month(7): 1, month(6): 2, month(5): 1} {
 		f := figure(t, env, period)
 		assert.Equal(t, want, f.Value, period.Format("2006-01"))
 		assert.True(t, f.Final, period.Format("2006-01"))
@@ -168,47 +163,41 @@ func TestALateRunClosesEveryElapsedPeriodWithTheSameFiguresAsAnOnTimeRun(t *test
 func TestAMessageInFlightAtTheCloseIsCountedInThePeriodItWasSentIn(t *testing.T) {
 	env := testhelper.Setup(t)
 	lic := licenseFor(t, licensekey.FeatureStaff)
-	claimed := at(2027, time.January, 31, 23)
-	message(t, env, "in-flight", outboundmessage.KindBroadcast, outboundmessage.StatusPending, claimed)
-	require.NoError(t, usage.Refresh(t.Context(), env.DB, lic, feb.Add(time.Minute)))
-	assert.EqualValues(t, 0, figure(t, env, jan).Value, "a send not yet accepted is not in a snapshot")
+	require.NoError(t, usage.Refresh(t.Context(), env.DB, lic, month(2).Add(time.Minute)))
+	assert.EqualValues(t, 0, figure(t, env, month(3)).Value, "a send not yet accepted is not in a snapshot")
 
-	require.NoError(t, env.DB.Scoped(fixtures.AcmeID).OutboundMessage().Update().
-		Where(outboundmessage.IdempotencyKey("usage-test:in-flight")).
-		SetStatus(outboundmessage.StatusSent).SetSentAt(feb.Add(2*time.Minute)).Exec(t.Context()))
-	require.NoError(t, usage.Refresh(t.Context(), env.DB, lic, feb.Add(time.Hour)))
+	settle(t, env, "close-inflight", month(2).Add(2*time.Minute))
+	require.NoError(t, usage.Refresh(t.Context(), env.DB, lic, month(2).Add(time.Hour)))
 
-	assert.EqualValues(t, 0, figure(t, env, jan).Value)
-	assert.EqualValues(t, 1, figure(t, env, feb).Value)
+	assert.EqualValues(t, 0, figure(t, env, month(3)).Value)
+	assert.EqualValues(t, 1, figure(t, env, month(2)).Value)
 }
 
 func TestNothingIsMaterializedWithoutTheStaffLicense(t *testing.T) {
 	env := testhelper.Setup(t)
-	message(t, env, "one", outboundmessage.KindBroadcast, outboundmessage.StatusSent, at(2027, time.January, 3, 10))
-
 	for _, lic := range []*licensekey.License{nil, licenseFor(t), licenseFor(t, licensekey.FeatureAudit)} {
-		require.NoError(t, usage.Refresh(t.Context(), env.DB, lic, mar))
+		require.NoError(t, usage.Refresh(t.Context(), env.DB, lic, month(5)))
 	}
 
-	page, err := usage.List(t.Context(), env.DB, jan, pagination.Params{Page: 1, PageSize: 25})
+	page, err := usage.List(t.Context(), env.DB, month(7), pagination.Params{Page: 1, PageSize: 25})
 	require.NoError(t, err)
 	assert.Empty(t, page.Items)
 }
 
 func TestListPagesEveryWorkspaceByIdAndDefaultsNothingItselfToARowlessPeriod(t *testing.T) {
 	env := testhelper.Setup(t)
-	require.NoError(t, usage.Refresh(t.Context(), env.DB, licenseFor(t, licensekey.FeatureStaff), feb.Add(time.Hour)))
+	require.NoError(t, usage.Refresh(t.Context(), env.DB, licenseFor(t, licensekey.FeatureStaff), month(6).Add(time.Hour)))
 
-	first, err := usage.List(t.Context(), env.DB, feb, pagination.Params{Page: 1, PageSize: 1})
+	first, err := usage.List(t.Context(), env.DB, month(6), pagination.Params{Page: 1, PageSize: 1})
 	require.NoError(t, err)
-	second, err := usage.List(t.Context(), env.DB, feb, pagination.Params{Page: 2, PageSize: 1})
+	second, err := usage.List(t.Context(), env.DB, month(6), pagination.Params{Page: 2, PageSize: 1})
 	require.NoError(t, err)
 
 	require.Len(t, first.Items, 1)
 	require.Len(t, second.Items, 1)
 	assert.Less(t, first.Items[0].WorkspaceID, second.Items[0].WorkspaceID)
 	assert.GreaterOrEqual(t, first.TotalItems, 4, "every Workspace has a figure")
-	assert.Equal(t, feb, first.Items[0].Period)
+	assert.Equal(t, month(6), first.Items[0].Period)
 }
 
 func TestOneFailingWorkspaceDoesNotStopTheOthersFromClosing(t *testing.T) {
@@ -225,10 +214,10 @@ func TestOneFailingWorkspaceDoesNotStopTheOthersFromClosing(t *testing.T) {
 		})
 	})
 
-	err := usage.Refresh(t.Context(), env.DB, licenseFor(t, licensekey.FeatureStaff), feb.Add(time.Hour))
+	err := usage.Refresh(t.Context(), env.DB, licenseFor(t, licensekey.FeatureStaff), month(6).Add(time.Hour))
 
 	require.ErrorIs(t, err, boom, "the failure is still reported")
-	page, listErr := usage.List(t.Context(), env.DB, feb, pagination.Params{Page: 1, PageSize: pagination.MaxPageSize})
+	page, listErr := usage.List(t.Context(), env.DB, month(6), pagination.Params{Page: 1, PageSize: 100})
 	require.NoError(t, listErr)
 	assert.NotEmpty(t, page.Items, "Workspaces after the failing one are still refreshed")
 	for _, w := range page.Items {
@@ -238,11 +227,11 @@ func TestOneFailingWorkspaceDoesNotStopTheOthersFromClosing(t *testing.T) {
 
 func TestRefreshSkipsAWorkspaceInItsDeletionWindow(t *testing.T) {
 	env := testhelper.Setup(t)
-	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetDiscardedAt(jan).ExecX(t.Context())
+	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetDiscardedAt(month(7)).ExecX(t.Context())
 
-	require.NoError(t, usage.Refresh(t.Context(), env.DB, licenseFor(t, licensekey.FeatureStaff), feb.Add(time.Hour)))
+	require.NoError(t, usage.Refresh(t.Context(), env.DB, licenseFor(t, licensekey.FeatureStaff), month(6).Add(time.Hour)))
 
-	page, err := usage.List(t.Context(), env.DB, jan, pagination.Params{Page: 1, PageSize: 25})
+	page, err := usage.List(t.Context(), env.DB, month(7), pagination.Params{Page: 1, PageSize: 25})
 	require.NoError(t, err)
 	var ids []int64
 	for _, w := range page.Items {

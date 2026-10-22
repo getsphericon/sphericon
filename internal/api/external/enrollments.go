@@ -14,10 +14,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
-const scopeEnrollmentsRead = "enrollments:read"
-
 func (h *Handlers) EnrollmentsList(ctx context.Context, params externalapi.EnrollmentsListParams) (externalapi.EnrollmentsListRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), scopeEnrollmentsRead) {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeEnrollmentsRead) {
 		res := externalapi.EnrollmentsListUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
@@ -45,7 +43,7 @@ func (h *Handlers) EnrollmentsList(ctx context.Context, params externalapi.Enrol
 }
 
 func (h *Handlers) EnrollmentsGet(ctx context.Context, params externalapi.EnrollmentsGetParams) (externalapi.EnrollmentsGetRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), scopeEnrollmentsRead) {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeEnrollmentsRead) {
 		res := externalapi.EnrollmentsGetUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}

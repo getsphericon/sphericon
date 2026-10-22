@@ -11,7 +11,6 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent/apitoken"
-	"github.com/getsphericon/sphericon/ent/membership"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/oauthserver"
@@ -78,8 +77,8 @@ func TestConsentScreenDescribesTheRequest(t *testing.T) {
 	got, ok := res.(*siteapi.SiteOAuthAuthorizationRequest)
 	require.Truef(t, ok, "got %T", res)
 	assert.Equal(t, "Fixture Connector", got.ClientName)
-	assert.Equal(t, []string{"contacts:read"}, got.Scopes)
-	assert.Equal(t, []string{"emails:send", "mcp:send"}, got.SendScopes, "send-class scopes await an explicit opt-in, and bring the MCP send lock's key")
+	assert.Equal(t, []siteapi.GrantableScope{"contacts:read"}, got.Scopes)
+	assert.Equal(t, []siteapi.SendScope{"emails:send", "mcp:send"}, got.SendScopes, "send-class scopes await an explicit opt-in, and bring the MCP send lock's key")
 }
 
 func TestConsentScreenRejectsMismatchedRedirect(t *testing.T) {
@@ -121,22 +120,9 @@ func TestConsentToAWorkspaceTheUserDoesNotBelongToIsRefused(t *testing.T) {
 	assert.IsType(t, &siteapi.SiteOAuthDecideNotFound{}, res)
 }
 
-// Approving mints a non-expiring API token, so it takes the role that may create one.
-func newAdmin(t *testing.T, env *testhelper.TestEnv) string {
-	t.Helper()
-	// Admin has no fixture user (a committed admin would change the exact member
-	// list of the Acme roster), so it is created inline; the member is MemberMary.
-	admin := "admin@acme.test"
-	u, err := env.DB.User.Create().SetName(admin).SetEmail(admin).Save(t.Context())
-	require.NoError(t, err)
-	_, err = env.DB.Membership.Create().SetUserID(u.ID).SetWorkspaceID(fixtures.AcmeID).SetRole(membership.RoleAdmin).Save(t.Context())
-	require.NoError(t, err)
-	return admin
-}
-
 func TestConsentAnAdminMayApprove(t *testing.T) {
 	env := testhelper.Setup(t)
-	admin := newAdmin(t, env)
+	admin := fixtures.AdminAliceEmail
 	in := approval("contacts:write", false)
 
 	res, err := env.SiteActor(t, admin).SiteOAuthDecide(t.Context(), &in)
@@ -192,7 +178,8 @@ func TestSendClassScopesNeedAnExplicitOptIn(t *testing.T) {
 
 	for allowSend, want := range map[bool][]string{
 		false: {"contacts:read"},
-		true:  {"contacts:read", "emails:send", "broadcasts:send", "automations:activate", "mcp:send"},
+		// contract-copy: the expected wire scopes of the issued token, an independent source of truth
+		true: {"contacts:read", "emails:send", "broadcasts:send", "automations:activate", "mcp:send"},
 	} {
 		back := consent(t, env, approval(scope, allowSend))
 		rec := exchange(t, env, tokenForm(back.Query().Get("code")))
@@ -391,12 +378,13 @@ func TestDefaultGrantCoversTheAuthoringScopes(t *testing.T) {
 	require.NoError(t, err)
 	got, ok := res.(*siteapi.SiteOAuthAuthorizationRequest)
 	require.Truef(t, ok, "got %T", res)
-	assert.Subset(t, got.Scopes, []string{
+	// contract-copy: the authoring scopes the shipped playbooks use, a chosen subset of the contract's list
+	assert.Subset(t, got.Scopes, []siteapi.GrantableScope{
 		"contacts:read", "contacts:write", "events:read", "events:write",
 		"segments:read", "segments:write", "broadcasts:read", "broadcasts:write",
 		"automations:read", "automations:write", "enrollments:read", "templates:read", "templates:write",
 		"webhooks:read", "webhooks:write", "webhooks:regenerate", "webhooks:test", "custom_fields:read", "sending_domains:read", "integrations:read",
 	})
 	assert.Empty(t, got.SendScopes)
-	assert.NotContains(t, got.Scopes, "tokens:write", "a connector never mints credentials")
+	assert.NotContains(t, got.Scopes, siteapi.GrantableScope("tokens:write"), "a connector never mints credentials")
 }

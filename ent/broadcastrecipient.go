@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
+	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
@@ -49,9 +50,11 @@ type BroadcastRecipientEdges struct {
 	Workspace *Workspace `json:"workspace,omitempty"`
 	// Broadcast holds the value of the broadcast edge.
 	Broadcast *Broadcast `json:"broadcast,omitempty"`
+	// Contact holds the value of the contact edge.
+	Contact *Contact `json:"contact,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 }
 
 // WorkspaceOrErr returns the Workspace value or an error if the edge
@@ -74,6 +77,17 @@ func (e BroadcastRecipientEdges) BroadcastOrErr() (*Broadcast, error) {
 		return nil, &NotFoundError{label: broadcast.Label}
 	}
 	return nil, &NotLoadedError{edge: "broadcast"}
+}
+
+// ContactOrErr returns the Contact value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e BroadcastRecipientEdges) ContactOrErr() (*Contact, error) {
+	if e.Contact != nil {
+		return e.Contact, nil
+	} else if e.loadedTypes[2] {
+		return nil, &NotFoundError{label: contact.Label}
+	}
+	return nil, &NotLoadedError{edge: "contact"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -185,6 +199,11 @@ func (_m *BroadcastRecipient) QueryWorkspace() *WorkspaceQuery {
 // QueryBroadcast queries the "broadcast" edge of the BroadcastRecipient entity.
 func (_m *BroadcastRecipient) QueryBroadcast() *BroadcastQuery {
 	return NewBroadcastRecipientClient(_m.config).QueryBroadcast(_m)
+}
+
+// QueryContact queries the "contact" edge of the BroadcastRecipient entity.
+func (_m *BroadcastRecipient) QueryContact() *ContactQuery {
+	return NewBroadcastRecipientClient(_m.config).QueryContact(_m)
 }
 
 // Update returns a builder for updating this BroadcastRecipient.

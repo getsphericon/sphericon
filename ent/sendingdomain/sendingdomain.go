@@ -31,12 +31,12 @@ const (
 	FieldDkimPrivateKeyEncrypted = "dkim_private_key_encrypted"
 	// FieldDkimPublicKey holds the string denoting the dkim_public_key field in the database.
 	FieldDkimPublicKey = "dkim_public_key"
-	// FieldVerified holds the string denoting the verified field in the database.
-	FieldVerified = "verified"
 	// FieldLastCheckedAt holds the string denoting the last_checked_at field in the database.
 	FieldLastCheckedAt = "last_checked_at"
 	// FieldVerifiedAt holds the string denoting the verified_at field in the database.
 	FieldVerifiedAt = "verified_at"
+	// FieldVerificationLostAt holds the string denoting the verification_lost_at field in the database.
+	FieldVerificationLostAt = "verification_lost_at"
 	// FieldTrackingState holds the string denoting the tracking_state field in the database.
 	FieldTrackingState = "tracking_state"
 	// FieldTrackingCheckedAt holds the string denoting the tracking_checked_at field in the database.
@@ -69,9 +69,9 @@ var Columns = []string{
 	FieldDkimSelector,
 	FieldDkimPrivateKeyEncrypted,
 	FieldDkimPublicKey,
-	FieldVerified,
 	FieldLastCheckedAt,
 	FieldVerifiedAt,
+	FieldVerificationLostAt,
 	FieldTrackingState,
 	FieldTrackingCheckedAt,
 	FieldTrackingReason,
@@ -101,8 +101,6 @@ var (
 	DkimSelectorValidator func(string) error
 	// DkimPublicKeyValidator is a validator for the "dkim_public_key" field. It is called by the builders before save.
 	DkimPublicKeyValidator func(string) error
-	// DefaultVerified holds the default value on creation for the "verified" field.
-	DefaultVerified bool
 )
 
 // TrackingState defines the type for the "tracking_state" enum field.
@@ -202,11 +200,6 @@ func ByDkimPublicKey(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDkimPublicKey, opts...).ToFunc()
 }
 
-// ByVerified orders the results by the verified field.
-func ByVerified(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldVerified, opts...).ToFunc()
-}
-
 // ByLastCheckedAt orders the results by the last_checked_at field.
 func ByLastCheckedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldLastCheckedAt, opts...).ToFunc()
@@ -215,6 +208,11 @@ func ByLastCheckedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByVerifiedAt orders the results by the verified_at field.
 func ByVerifiedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldVerifiedAt, opts...).ToFunc()
+}
+
+// ByVerificationLostAt orders the results by the verification_lost_at field.
+func ByVerificationLostAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldVerificationLostAt, opts...).ToFunc()
 }
 
 // ByTrackingState orders the results by the tracking_state field.

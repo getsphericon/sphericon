@@ -25,6 +25,7 @@ func TestPlainClientRefusesAChangeToTheFeed(t *testing.T) {
 	t.Cleanup(func() { _ = pool.Close() })
 	client := db.NewEntClient(pool)
 
+	// test writes: the hook fires on this write
 	_, err = client.Workspace.Create().SetName("Plain").SetPublicID(workspaceid.New()).Save(t.Context())
 	require.ErrorIs(t, err, workspacefeed.ErrNeedsTransaction)
 

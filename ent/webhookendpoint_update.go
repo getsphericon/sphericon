@@ -97,17 +97,23 @@ func (_u *WebhookEndpointUpdate) ClearEventTypes() *WebhookEndpointUpdate {
 	return _u
 }
 
-// SetEnabled sets the "enabled" field.
-func (_u *WebhookEndpointUpdate) SetEnabled(v bool) *WebhookEndpointUpdate {
-	_u.mutation.SetEnabled(v)
+// SetDisabledAt sets the "disabled_at" field.
+func (_u *WebhookEndpointUpdate) SetDisabledAt(v time.Time) *WebhookEndpointUpdate {
+	_u.mutation.SetDisabledAt(v)
 	return _u
 }
 
-// SetNillableEnabled sets the "enabled" field if the given value is not nil.
-func (_u *WebhookEndpointUpdate) SetNillableEnabled(v *bool) *WebhookEndpointUpdate {
+// SetNillableDisabledAt sets the "disabled_at" field if the given value is not nil.
+func (_u *WebhookEndpointUpdate) SetNillableDisabledAt(v *time.Time) *WebhookEndpointUpdate {
 	if v != nil {
-		_u.SetEnabled(*v)
+		_u.SetDisabledAt(*v)
 	}
+	return _u
+}
+
+// ClearDisabledAt clears the value of the "disabled_at" field.
+func (_u *WebhookEndpointUpdate) ClearDisabledAt() *WebhookEndpointUpdate {
+	_u.mutation.ClearDisabledAt()
 	return _u
 }
 
@@ -358,8 +364,11 @@ func (_u *WebhookEndpointUpdate) sqlSave(ctx context.Context) (_node int, err er
 	if _u.mutation.EventTypesCleared() {
 		_spec.ClearField(webhookendpoint.FieldEventTypes, field.TypeJSON)
 	}
-	if value, ok := _u.mutation.Enabled(); ok {
-		_spec.SetField(webhookendpoint.FieldEnabled, field.TypeBool, value)
+	if value, ok := _u.mutation.DisabledAt(); ok {
+		_spec.SetField(webhookendpoint.FieldDisabledAt, field.TypeTime, value)
+	}
+	if _u.mutation.DisabledAtCleared() {
+		_spec.ClearField(webhookendpoint.FieldDisabledAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.ConsecutiveFailures(); ok {
 		_spec.SetField(webhookendpoint.FieldConsecutiveFailures, field.TypeInt, value)
@@ -520,17 +529,23 @@ func (_u *WebhookEndpointUpdateOne) ClearEventTypes() *WebhookEndpointUpdateOne 
 	return _u
 }
 
-// SetEnabled sets the "enabled" field.
-func (_u *WebhookEndpointUpdateOne) SetEnabled(v bool) *WebhookEndpointUpdateOne {
-	_u.mutation.SetEnabled(v)
+// SetDisabledAt sets the "disabled_at" field.
+func (_u *WebhookEndpointUpdateOne) SetDisabledAt(v time.Time) *WebhookEndpointUpdateOne {
+	_u.mutation.SetDisabledAt(v)
 	return _u
 }
 
-// SetNillableEnabled sets the "enabled" field if the given value is not nil.
-func (_u *WebhookEndpointUpdateOne) SetNillableEnabled(v *bool) *WebhookEndpointUpdateOne {
+// SetNillableDisabledAt sets the "disabled_at" field if the given value is not nil.
+func (_u *WebhookEndpointUpdateOne) SetNillableDisabledAt(v *time.Time) *WebhookEndpointUpdateOne {
 	if v != nil {
-		_u.SetEnabled(*v)
+		_u.SetDisabledAt(*v)
 	}
+	return _u
+}
+
+// ClearDisabledAt clears the value of the "disabled_at" field.
+func (_u *WebhookEndpointUpdateOne) ClearDisabledAt() *WebhookEndpointUpdateOne {
+	_u.mutation.ClearDisabledAt()
 	return _u
 }
 
@@ -811,8 +826,11 @@ func (_u *WebhookEndpointUpdateOne) sqlSave(ctx context.Context) (_node *Webhook
 	if _u.mutation.EventTypesCleared() {
 		_spec.ClearField(webhookendpoint.FieldEventTypes, field.TypeJSON)
 	}
-	if value, ok := _u.mutation.Enabled(); ok {
-		_spec.SetField(webhookendpoint.FieldEnabled, field.TypeBool, value)
+	if value, ok := _u.mutation.DisabledAt(); ok {
+		_spec.SetField(webhookendpoint.FieldDisabledAt, field.TypeTime, value)
+	}
+	if _u.mutation.DisabledAtCleared() {
+		_spec.ClearField(webhookendpoint.FieldDisabledAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.ConsecutiveFailures(); ok {
 		_spec.SetField(webhookendpoint.FieldConsecutiveFailures, field.TypeInt, value)

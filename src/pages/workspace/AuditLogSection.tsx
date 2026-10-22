@@ -32,6 +32,7 @@ import {
   siteAuditSetRetentionMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteAuditEntryResource } from '../../generated/site/types.gen.ts'
+import { zRetentionDays, zSiteAuditActorKind } from '../../generated/site/zod.gen.ts'
 import { useNotify } from '../../hooks/useNotify.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as auditLogRoute } from '../../routes/workspaces/$workspaceId/settings/audit-log.tsx'
@@ -309,8 +310,8 @@ function RetentionForm({ workspaceId, days }: { workspaceId: string; days: numbe
         label={t(($) => $.settings.auditLog.retentionLabel)}
         description={t(($) => $.settings.auditLog.retentionDescription)}
         placeholder={t(($) => $.settings.auditLog.retentionPlaceholder)}
-        min={1}
-        max={3650}
+        min={zRetentionDays.minValue ?? 1}
+        max={zRetentionDays.maxValue ?? 1}
         allowDecimal={false}
         value={value}
         onChange={setValue}
@@ -463,10 +464,8 @@ function FilterForm({
   )
 }
 
-const ACTOR_KINDS = ['user', 'api_token', 'staff', 'system'] as const
-
 function auditFilterKind(value: string | null) {
-  return ACTOR_KINDS.find((kind) => kind === value)
+  return zSiteAuditActorKind.options.find((kind) => kind === value)
 }
 
 // ChangeHistoryLink opens the Audit log pre-filtered to one object (an Integration or a

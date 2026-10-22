@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationversion"
+	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
@@ -58,9 +59,11 @@ type AutomationRunEdges struct {
 	Automation *Automation `json:"automation,omitempty"`
 	// Version holds the value of the version edge.
 	Version *AutomationVersion `json:"version,omitempty"`
+	// Contact holds the value of the contact edge.
+	Contact *Contact `json:"contact,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 }
 
 // WorkspaceOrErr returns the Workspace value or an error if the edge
@@ -94,6 +97,17 @@ func (e AutomationRunEdges) VersionOrErr() (*AutomationVersion, error) {
 		return nil, &NotFoundError{label: automationversion.Label}
 	}
 	return nil, &NotLoadedError{edge: "version"}
+}
+
+// ContactOrErr returns the Contact value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e AutomationRunEdges) ContactOrErr() (*Contact, error) {
+	if e.Contact != nil {
+		return e.Contact, nil
+	} else if e.loadedTypes[3] {
+		return nil, &NotFoundError{label: contact.Label}
+	}
+	return nil, &NotLoadedError{edge: "contact"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -230,6 +244,11 @@ func (_m *AutomationRun) QueryAutomation() *AutomationQuery {
 // QueryVersion queries the "version" edge of the AutomationRun entity.
 func (_m *AutomationRun) QueryVersion() *AutomationVersionQuery {
 	return NewAutomationRunClient(_m.config).QueryVersion(_m)
+}
+
+// QueryContact queries the "contact" edge of the AutomationRun entity.
+func (_m *AutomationRun) QueryContact() *ContactQuery {
+	return NewAutomationRunClient(_m.config).QueryContact(_m)
 }
 
 // Update returns a builder for updating this AutomationRun.

@@ -4,6 +4,43 @@
 import * as z from 'zod';
 
 /**
+ * Every API token scope: the one vocabulary of the external API
+ */
+export const zApiTokenScope = z.enum([
+  'contacts:read',
+  'contacts:write',
+  'events:read',
+  'events:write',
+  'segments:read',
+  'segments:write',
+  'broadcasts:read',
+  'broadcasts:write',
+  'automations:read',
+  'automations:write',
+  'enrollments:read',
+  'templates:read',
+  'templates:write',
+  'webhooks:read',
+  'webhooks:write',
+  'webhooks:regenerate',
+  'webhooks:test',
+  'custom_fields:read',
+  'sending_domains:read',
+  'integrations:read',
+  'emails:send',
+  'broadcasts:send',
+  'automations:activate',
+  'mcp:send',
+  'contacts:erase',
+  'sending_domains:write',
+  'integrations:write',
+  'tokens:read',
+  'tokens:write',
+  'audit:read',
+  'export:read'
+]);
+
+/**
  * An arbitrary JSON object: typed custom field values or event properties
  */
 export const zContactExportJson = z.record(z.string(), z.unknown());
@@ -18,6 +55,34 @@ export const zEmailAddress = z.email().max(320);
  * reaches, so every id the schema admits fits an int64.
  */
 export const zEntityId = z.string().regex(/^[0-9]+$/);
+
+/**
+ * Scopes an OAuth client may be granted without any extra opt-in: the external
+ * API's read/write vocabulary. Token management scopes are deliberately absent,
+ * so a connector can never mint further credentials.
+ */
+export const zGrantableScope = z.enum([
+  'contacts:read',
+  'contacts:write',
+  'events:read',
+  'events:write',
+  'segments:read',
+  'segments:write',
+  'broadcasts:read',
+  'broadcasts:write',
+  'automations:read',
+  'automations:write',
+  'enrollments:read',
+  'templates:read',
+  'templates:write',
+  'webhooks:read',
+  'webhooks:write',
+  'webhooks:regenerate',
+  'webhooks:test',
+  'custom_fields:read',
+  'sending_domains:read',
+  'integrations:read'
+]);
 
 /**
  * What a lint finding is about (ADR 0040)
@@ -41,6 +106,12 @@ export const zLintFinding = z.object({
   element: z.exactOptional(z.string()),
   detail: z.exactOptional(z.string())
 });
+
+/**
+ * What a User calls a Passkey, to tell it from their others: 1 to 100 characters. Surrounding
+ * spaces are trimmed before the name is stored, so a name of spaces only is refused too.
+ */
+export const zPasskeyName = z.string().min(1).max(100);
 
 /**
  * A machine-readable reason a client branches on, beyond the HTTP status
@@ -79,6 +150,23 @@ export const zProblemDetails = z.object({
   retryAfter: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
   debug: z.exactOptional(zProblemDebug)
 });
+
+/**
+ * A number of days an Audit log is kept: 1 to 3650
+ */
+export const zRetentionDays = z.int().gte(1).lte(3650);
+
+/**
+ * Send-class scopes (ADR 0016, "Send is a second lock"). An OAuth client gets them
+ * only when the user explicitly opts in. mcp:send is the MCP-specific key: send-class
+ * tools are not listed over /mcp without it, so any send-class grant brings it along.
+ */
+export const zSendScope = z.enum([
+  'emails:send',
+  'broadcasts:send',
+  'automations:activate',
+  'mcp:send'
+]);
 
 /**
  * The metric of a Sending domain that is over a warning limit of the abuse detector
@@ -208,7 +296,7 @@ export const zSiteAuditActor = z.object({
  * How long the Audit log is kept; the Enterprise advanced-retention control
  */
 export const zSiteAuditRetention = z.object({
-  retentionDays: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable()
+  retentionDays: zRetentionDays.nullable()
 });
 
 /**
@@ -614,8 +702,8 @@ export const zSiteOAuthAuthorizationRequest = z.object({
   clientHost: z.exactOptional(z.string()),
   redirectUri: z.string(),
   localRedirect: z.boolean(),
-  scopes: z.array(z.string()),
-  sendScopes: z.array(z.string())
+  scopes: z.array(zGrantableScope),
+  sendScopes: z.array(zSendScope)
 });
 
 /**
@@ -698,7 +786,7 @@ export const zSitePasskeyRegistrationResponse = z.record(z.string(), z.unknown()
  */
 export const zSitePasskeyRegistrationInput = z.object({
   currentPassword: z.exactOptional(z.string()),
-  name: z.string(),
+  name: zPasskeyName,
   credential: zSitePasskeyRegistrationResponse
 });
 
@@ -721,7 +809,7 @@ export const zSitePasskeyRemoveInput = z.object({
  * The new name of a Passkey
  */
 export const zSitePasskeyRenameInput = z.object({
-  name: z.string()
+  name: zPasskeyName
 });
 
 /**
@@ -859,10 +947,10 @@ export const zSiteSaveBrandKitInput = z.object({
   backgroundColor: z.string(),
   headingFont: z.string(),
   bodyFont: z.string(),
-  logoUrl: z.string(),
+  logoUrl: z.string().max(2048),
   buttonTextColor: z.string(),
-  buttonRadius: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  footerText: z.string()
+  buttonRadius: z.int().gte(0).lte(32),
+  footerText: z.string().max(500)
 });
 
 /**
@@ -1295,11 +1383,15 @@ export const zSiteVerifyEmailInput = z.object({
 });
 
 /**
- * Why an endpoint turned itself off. A closed set: `gone` (the receiver answered 410
- * Gone) and `persistent_failure` (deliveries failed for longer than the window).
- * Absent for an endpoint an owner disabled, and while the endpoint is enabled.
+ * Why an endpoint is off. A closed set: `owner` (a member turned it off), `gone` (the
+ * receiver answered 410 Gone) and `persistent_failure` (deliveries failed for longer
+ * than the window). Absent while the endpoint is enabled.
  */
-export const zSiteWebhookDisabledReason = z.enum(['gone', 'persistent_failure']);
+export const zSiteWebhookDisabledReason = z.enum([
+  'owner',
+  'gone',
+  'persistent_failure'
+]);
 
 /**
  * Why a delivery to a webhook endpoint failed. A closed set: `timeout` (no answer in
@@ -1508,7 +1600,7 @@ export const zSiteApiTokenResource = z.object({
   id: zEntityId,
   name: z.string(),
   prefix: z.string(),
-  scopes: z.array(z.string()),
+  scopes: z.array(zApiTokenScope),
   lastUsedAt: z.exactOptional(zTimestamp.nullable()),
   expiresAt: z.exactOptional(zTimestamp.nullable()),
   revokedAt: z.exactOptional(zTimestamp.nullable()),
@@ -1632,7 +1724,7 @@ export const zSiteContactResource = z.object({
  */
 export const zSiteCreateTokenInput = z.object({
   name: z.string(),
-  scopes: z.array(z.string()),
+  scopes: z.array(zApiTokenScope),
   expiresAt: z.exactOptional(zTimestamp.nullable())
 });
 
@@ -1809,7 +1901,7 @@ export const zSiteMembershipResource = z.object({
  */
 export const zSitePasskey = z.object({
   id: zEntityId,
-  name: z.string(),
+  name: zPasskeyName,
   createdAt: zTimestamp,
   lastUsedAt: z.exactOptional(zTimestamp)
 });
@@ -1869,8 +1961,8 @@ export const zSiteTrackingRecord = z.object({
 /**
  * Sending domain resource used by the site UI (ADR 0010). sphericon generates the
  * DKIM keypair; the user publishes the DKIM TXT to authenticate the domain. The
- * private key is never exposed. `verified` is a live property re-checked in the
- * background — it can flip back if the DNS record disappears.
+ * private key is never exposed. `verified` is re-checked in the background:
+ * the domain loses it (`verificationLostAt`) if the DNS record disappears.
  */
 export const zSiteSendingDomainResource = z.object({
   id: zEntityId,
@@ -1883,6 +1975,7 @@ export const zSiteSendingDomainResource = z.object({
   trackingRecord: z.exactOptional(zSiteTrackingRecord),
   lastCheckedAt: z.exactOptional(zTimestamp.nullable()),
   verifiedAt: z.exactOptional(zTimestamp.nullable()),
+  verificationLostAt: z.exactOptional(zTimestamp.nullable()),
   archivedAt: z.exactOptional(zTimestamp.nullable()),
   createdAt: zTimestamp,
   updatedAt: zTimestamp
@@ -1933,6 +2026,7 @@ export const zSiteWebhookEndpointResource = z.object({
   secret: z.string(),
   eventTypes: z.array(z.string()),
   enabled: z.boolean(),
+  disabledAt: z.exactOptional(zTimestamp),
   disabledReason: z.exactOptional(zSiteWebhookDisabledReason),
   failure: z.exactOptional(zSiteWebhookFailure),
   createdAt: zTimestamp,
@@ -1951,6 +2045,19 @@ export const zSiteWorkspaceHold = z.object({
   since: zTimestamp,
   actionUrl: z.exactOptional(z.string().nullable())
 });
+
+/**
+ * Scopes only an API token can hold, never an OAuth grant
+ */
+export const zTokenOnlyScope = z.enum([
+  'contacts:erase',
+  'sending_domains:write',
+  'integrations:write',
+  'tokens:read',
+  'tokens:write',
+  'audit:read',
+  'export:read'
+]);
 
 /**
  * What kind of row a refused removal names as a user of the row (ADR 0049). One value per kind
@@ -2140,12 +2247,12 @@ export const zArchivedFilter = z.boolean();
 /**
  * Page number (1-based)
  */
-export const zPageQueryPage = z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).default(1);
+export const zPageQueryPage = z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).default(1);
 
 /**
  * Page size
  */
-export const zPageQueryPageSize = z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).default(25);
+export const zPageQueryPageSize = z.int().gte(1).lte(100).default(25);
 
 /**
  * Unique identifier
@@ -2795,7 +2902,7 @@ export const zSiteAuditListQuery = z.object({
   ip: z.exactOptional(z.string()),
   requestId: z.exactOptional(z.string()),
   cursor: z.exactOptional(z.string()),
-  limit: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(25)
+  limit: z.int().gte(1).lte(100).optional().default(25)
 });
 
 /**
@@ -2849,8 +2956,8 @@ export const zSiteAutomationsListPath = z.object({
 });
 
 export const zSiteAutomationsListQuery = z.object({
-  page: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
-  pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(25),
+  page: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
+  pageSize: z.int().gte(1).lte(100).optional().default(25),
   archived: z.exactOptional(z.boolean())
 });
 
@@ -2893,8 +3000,8 @@ export const zSiteEnrollmentsListPath = z.object({
 });
 
 export const zSiteEnrollmentsListQuery = z.object({
-  page: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
-  pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(25),
+  page: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
+  pageSize: z.int().gte(1).lte(100).optional().default(25),
   status: z.exactOptional(zSiteEnrollmentStatus)
 });
 
@@ -3026,8 +3133,8 @@ export const zSiteBroadcastsListPath = z.object({
 });
 
 export const zSiteBroadcastsListQuery = z.object({
-  page: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
-  pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(25),
+  page: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
+  pageSize: z.int().gte(1).lte(100).optional().default(25),
   archived: z.exactOptional(z.boolean())
 });
 
@@ -3144,8 +3251,8 @@ export const zSiteContactsListPath = z.object({
 });
 
 export const zSiteContactsListQuery = z.object({
-  page: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
-  pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(25),
+  page: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
+  pageSize: z.int().gte(1).lte(100).optional().default(25),
   email: z.exactOptional(z.string())
 });
 
@@ -3217,8 +3324,8 @@ export const zSiteTagsListForContactPath = z.object({
 });
 
 export const zSiteTagsListForContactQuery = z.object({
-  page: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
-  pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(25)
+  page: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
+  pageSize: z.int().gte(1).lte(100).optional().default(25)
 });
 
 /**
@@ -3338,8 +3445,8 @@ export const zSiteEventsListPath = z.object({
 });
 
 export const zSiteEventsListQuery = z.object({
-  page: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
-  pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(25),
+  page: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
+  pageSize: z.int().gte(1).lte(100).optional().default(25),
   action: z.exactOptional(z.string()),
   contactId: z.exactOptional(zEntityId),
   email: z.exactOptional(z.string())
@@ -3587,8 +3694,8 @@ export const zSiteSegmentContactsListPath = z.object({
 });
 
 export const zSiteSegmentContactsListQuery = z.object({
-  page: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
-  pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(25)
+  page: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
+  pageSize: z.int().gte(1).lte(100).optional().default(25)
 });
 
 /**
@@ -3607,8 +3714,8 @@ export const zSiteSendingDomainsListPath = z.object({
 });
 
 export const zSiteSendingDomainsListQuery = z.object({
-  page: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
-  pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(25),
+  page: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
+  pageSize: z.int().gte(1).lte(100).optional().default(25),
   archived: z.exactOptional(z.boolean())
 });
 
@@ -3688,8 +3795,8 @@ export const zSiteSuppressionsListPath = z.object({
 });
 
 export const zSiteSuppressionsListQuery = z.object({
-  page: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
-  pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(25),
+  page: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
+  pageSize: z.int().gte(1).lte(100).optional().default(25),
   lifted: z.exactOptional(z.boolean())
 });
 
@@ -3730,8 +3837,8 @@ export const zSiteTagsListPath = z.object({
 });
 
 export const zSiteTagsListQuery = z.object({
-  page: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
-  pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(25)
+  page: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
+  pageSize: z.int().gte(1).lte(100).optional().default(25)
 });
 
 /**
@@ -3760,8 +3867,8 @@ export const zSiteTemplatesListPath = z.object({
 });
 
 export const zSiteTemplatesListQuery = z.object({
-  page: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
-  pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(25)
+  page: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
+  pageSize: z.int().gte(1).lte(100).optional().default(25)
 });
 
 /**
@@ -3853,8 +3960,8 @@ export const zSiteTransactionalEmailsListPath = z.object({
 });
 
 export const zSiteTransactionalEmailsListQuery = z.object({
-  page: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
-  pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(25)
+  page: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
+  pageSize: z.int().gte(1).lte(100).optional().default(25)
 });
 
 /**
@@ -3873,8 +3980,8 @@ export const zSiteWebhooksListPath = z.object({
 });
 
 export const zSiteWebhooksListQuery = z.object({
-  page: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
-  pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(25)
+  page: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
+  pageSize: z.int().gte(1).lte(100).optional().default(25)
 });
 
 /**
@@ -3958,8 +4065,8 @@ export const zSiteSegmentsListPath = z.object({
 });
 
 export const zSiteSegmentsListQuery = z.object({
-  page: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
-  pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(25),
+  page: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
+  pageSize: z.int().gte(1).lte(100).optional().default(25),
   archived: z.exactOptional(z.boolean())
 });
 

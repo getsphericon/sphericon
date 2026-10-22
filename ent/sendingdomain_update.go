@@ -126,20 +126,6 @@ func (_u *SendingDomainUpdate) SetNillableDkimPublicKey(v *string) *SendingDomai
 	return _u
 }
 
-// SetVerified sets the "verified" field.
-func (_u *SendingDomainUpdate) SetVerified(v bool) *SendingDomainUpdate {
-	_u.mutation.SetVerified(v)
-	return _u
-}
-
-// SetNillableVerified sets the "verified" field if the given value is not nil.
-func (_u *SendingDomainUpdate) SetNillableVerified(v *bool) *SendingDomainUpdate {
-	if v != nil {
-		_u.SetVerified(*v)
-	}
-	return _u
-}
-
 // SetLastCheckedAt sets the "last_checked_at" field.
 func (_u *SendingDomainUpdate) SetLastCheckedAt(v time.Time) *SendingDomainUpdate {
 	_u.mutation.SetLastCheckedAt(v)
@@ -177,6 +163,26 @@ func (_u *SendingDomainUpdate) SetNillableVerifiedAt(v *time.Time) *SendingDomai
 // ClearVerifiedAt clears the value of the "verified_at" field.
 func (_u *SendingDomainUpdate) ClearVerifiedAt() *SendingDomainUpdate {
 	_u.mutation.ClearVerifiedAt()
+	return _u
+}
+
+// SetVerificationLostAt sets the "verification_lost_at" field.
+func (_u *SendingDomainUpdate) SetVerificationLostAt(v time.Time) *SendingDomainUpdate {
+	_u.mutation.SetVerificationLostAt(v)
+	return _u
+}
+
+// SetNillableVerificationLostAt sets the "verification_lost_at" field if the given value is not nil.
+func (_u *SendingDomainUpdate) SetNillableVerificationLostAt(v *time.Time) *SendingDomainUpdate {
+	if v != nil {
+		_u.SetVerificationLostAt(*v)
+	}
+	return _u
+}
+
+// ClearVerificationLostAt clears the value of the "verification_lost_at" field.
+func (_u *SendingDomainUpdate) ClearVerificationLostAt() *SendingDomainUpdate {
+	_u.mutation.ClearVerificationLostAt()
 	return _u
 }
 
@@ -378,9 +384,6 @@ func (_u *SendingDomainUpdate) sqlSave(ctx context.Context) (_node int, err erro
 	if value, ok := _u.mutation.DkimPublicKey(); ok {
 		_spec.SetField(sendingdomain.FieldDkimPublicKey, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.Verified(); ok {
-		_spec.SetField(sendingdomain.FieldVerified, field.TypeBool, value)
-	}
 	if value, ok := _u.mutation.LastCheckedAt(); ok {
 		_spec.SetField(sendingdomain.FieldLastCheckedAt, field.TypeTime, value)
 	}
@@ -392,6 +395,12 @@ func (_u *SendingDomainUpdate) sqlSave(ctx context.Context) (_node int, err erro
 	}
 	if _u.mutation.VerifiedAtCleared() {
 		_spec.ClearField(sendingdomain.FieldVerifiedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.VerificationLostAt(); ok {
+		_spec.SetField(sendingdomain.FieldVerificationLostAt, field.TypeTime, value)
+	}
+	if _u.mutation.VerificationLostAtCleared() {
+		_spec.ClearField(sendingdomain.FieldVerificationLostAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.TrackingState(); ok {
 		_spec.SetField(sendingdomain.FieldTrackingState, field.TypeEnum, value)
@@ -561,20 +570,6 @@ func (_u *SendingDomainUpdateOne) SetNillableDkimPublicKey(v *string) *SendingDo
 	return _u
 }
 
-// SetVerified sets the "verified" field.
-func (_u *SendingDomainUpdateOne) SetVerified(v bool) *SendingDomainUpdateOne {
-	_u.mutation.SetVerified(v)
-	return _u
-}
-
-// SetNillableVerified sets the "verified" field if the given value is not nil.
-func (_u *SendingDomainUpdateOne) SetNillableVerified(v *bool) *SendingDomainUpdateOne {
-	if v != nil {
-		_u.SetVerified(*v)
-	}
-	return _u
-}
-
 // SetLastCheckedAt sets the "last_checked_at" field.
 func (_u *SendingDomainUpdateOne) SetLastCheckedAt(v time.Time) *SendingDomainUpdateOne {
 	_u.mutation.SetLastCheckedAt(v)
@@ -612,6 +607,26 @@ func (_u *SendingDomainUpdateOne) SetNillableVerifiedAt(v *time.Time) *SendingDo
 // ClearVerifiedAt clears the value of the "verified_at" field.
 func (_u *SendingDomainUpdateOne) ClearVerifiedAt() *SendingDomainUpdateOne {
 	_u.mutation.ClearVerifiedAt()
+	return _u
+}
+
+// SetVerificationLostAt sets the "verification_lost_at" field.
+func (_u *SendingDomainUpdateOne) SetVerificationLostAt(v time.Time) *SendingDomainUpdateOne {
+	_u.mutation.SetVerificationLostAt(v)
+	return _u
+}
+
+// SetNillableVerificationLostAt sets the "verification_lost_at" field if the given value is not nil.
+func (_u *SendingDomainUpdateOne) SetNillableVerificationLostAt(v *time.Time) *SendingDomainUpdateOne {
+	if v != nil {
+		_u.SetVerificationLostAt(*v)
+	}
+	return _u
+}
+
+// ClearVerificationLostAt clears the value of the "verification_lost_at" field.
+func (_u *SendingDomainUpdateOne) ClearVerificationLostAt() *SendingDomainUpdateOne {
+	_u.mutation.ClearVerificationLostAt()
 	return _u
 }
 
@@ -843,9 +858,6 @@ func (_u *SendingDomainUpdateOne) sqlSave(ctx context.Context) (_node *SendingDo
 	if value, ok := _u.mutation.DkimPublicKey(); ok {
 		_spec.SetField(sendingdomain.FieldDkimPublicKey, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.Verified(); ok {
-		_spec.SetField(sendingdomain.FieldVerified, field.TypeBool, value)
-	}
 	if value, ok := _u.mutation.LastCheckedAt(); ok {
 		_spec.SetField(sendingdomain.FieldLastCheckedAt, field.TypeTime, value)
 	}
@@ -857,6 +869,12 @@ func (_u *SendingDomainUpdateOne) sqlSave(ctx context.Context) (_node *SendingDo
 	}
 	if _u.mutation.VerifiedAtCleared() {
 		_spec.ClearField(sendingdomain.FieldVerifiedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.VerificationLostAt(); ok {
+		_spec.SetField(sendingdomain.FieldVerificationLostAt, field.TypeTime, value)
+	}
+	if _u.mutation.VerificationLostAtCleared() {
+		_spec.ClearField(sendingdomain.FieldVerificationLostAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.TrackingState(); ok {
 		_spec.SetField(sendingdomain.FieldTrackingState, field.TypeEnum, value)

@@ -48,6 +48,7 @@ func TestAuditedTagWritesRecordActorActionAndDiff(t *testing.T) {
 	ctx := t.Context()
 	s := env.Bus.Act(env.DB.Scoped(acme), johnActor)
 
+	// test writes: the scoped wrapper is the subject
 	created, err := s.Tag().Create().SetName("audited").Save(ctx)
 	require.NoError(t, err)
 	require.NoError(t, s.Tag().UpdateOneID(created.ID).SetName("renamed").Exec(ctx))
@@ -77,6 +78,7 @@ func TestAuditedBulkWritesRecordOneEntryPerRow(t *testing.T) {
 	ctx := t.Context()
 	s := env.Bus.Act(env.DB.Scoped(acme), johnActor)
 
+	// test writes: the scoped wrapper is the subject
 	_, err := s.Tag().CreateBulk(s.Tag().Create().SetName("bulk-a"), s.Tag().Create().SetName("bulk-b")).Save(ctx)
 	require.NoError(t, err)
 	n, err := s.Tag().Update().Where(tag.Name("bulk-a")).SetName("bulk-c").Save(ctx)
@@ -104,12 +106,14 @@ func TestAuditedWriteRollsBackWithItsTransaction(t *testing.T) {
 	boom := errors.New("boom")
 
 	// A failed audited write (unique name) leaves no entry.
+	// test writes: the scoped wrapper is the subject
 	_, err := s.Tag().Create().SetName("vip").Save(ctx)
 	require.Error(t, err)
 	assert.Empty(t, auditEntries(t, env))
 
 	// An outer transaction that rolls back takes the entry with it.
 	err = env.Bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+		// test writes: the scoped wrapper is the subject
 		require.NoError(t, ts.Tag().Create().SetName("rolled-back").Exec(ctx))
 		return boom
 	})
@@ -121,6 +125,7 @@ func TestAuditedWriteRollsBackWithItsTransaction(t *testing.T) {
 
 	// One that commits keeps the mutation and the entry, under the scope's actor.
 	require.NoError(t, env.Bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+		// test writes: the scoped wrapper is the subject
 		return ts.Tag().Create().SetName("kept").Exec(ctx)
 	}))
 	got := auditEntries(t, env)
@@ -151,6 +156,7 @@ func TestAuditedWriteJoinsTheTransactionOfItsScope(t *testing.T) {
 	opener, pub := &countingOpener{}, &recordingPublisher{}
 	s := env.DB.Scoped(acme).As(johnActor, opener).InTx(env.DB, pub)
 
+	// test writes: the scoped wrapper is the subject
 	require.NoError(t, s.Tag().Create().SetName("joined").Exec(t.Context()))
 
 	assert.Zero(t, opener.calls)
@@ -163,6 +169,7 @@ func TestAuditedActorWithoutAnOpenerIsAnError(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(acme).As(johnActor, nil)
 
+	// test writes: the scoped wrapper is the subject
 	err := s.Tag().Create().SetName("no-opener").Exec(t.Context())
 	require.ErrorIs(t, err, ent.ErrAuditUnavailable)
 }
@@ -173,8 +180,11 @@ func TestIngestAndAnonymousScopesAreNeverAudited(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 
+	// test writes: the scoped wrapper is the subject
 	require.NoError(t, events.Ingest(env.DB.Scoped(acme)).Tag().Create().SetName("ingested").Exec(ctx))
+	// test writes: the scoped wrapper is the subject
 	require.NoError(t, env.DB.Scoped(acme).Tag().Create().SetName("anonymous").Exec(ctx))
+	// test writes: the scoped wrapper is the subject
 	require.NoError(t, env.Bus.Act(env.DB.Scoped(acme), events.Actor{Kind: events.ActorSystem}).Tag().Create().SetName("by-system").Exec(ctx))
 
 	got := auditEntries(t, env)
@@ -190,6 +200,7 @@ func TestAuditedUpsertRecordsOnlyTheInsert(t *testing.T) {
 	ctx := t.Context()
 	s := env.Bus.Act(env.DB.Scoped(acme), johnActor)
 	upsert := func(name string) error {
+		// test writes: the scoped wrapper is the subject
 		return s.Tag().Create().SetName(name).OnConflictColumns(tag.FieldName, tag.FieldWorkspaceID).DoNothing().Exec(ctx)
 	}
 
@@ -198,6 +209,7 @@ func TestAuditedUpsertRecordsOnlyTheInsert(t *testing.T) {
 	require.ErrorContains(t, upsert("vip"), "no rows")
 	assert.Len(t, auditEntries(t, env), 1)
 
+	// test writes: the scoped wrapper is the subject
 	err := s.Tag().Create().SetName("x").OnConflictColumns(tag.FieldName, tag.FieldWorkspaceID).Ignore().Exec(ctx)
 	require.ErrorIs(t, err, ent.ErrAuditUpsert)
 }

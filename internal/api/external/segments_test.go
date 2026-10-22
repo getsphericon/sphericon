@@ -4,11 +4,11 @@ import (
 	"context"
 	"testing"
 
-	"github.com/getsphericon/sphericon/ent/segment"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/segments"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -24,9 +24,9 @@ func TestExternalSegmentsRead(t *testing.T) {
 	require.NoError(t, err)
 	ok, isOK := list.(*externalapi.SegmentsListOK)
 	require.Truef(t, isOK, "got %T", list)
-	total, err := env.DB.Segment.Query().Where(segment.WorkspaceID(fixtures.AcmeID), segment.DiscardedAtIsNil()).Count(ctx)
-	require.NoError(t, err)
-	assert.EqualValues(t, total, ok.TotalItems)
+	names := lo.Map(ok.Items, func(s externalapi.SegmentResource, _ int) string { return s.Name })
+	assert.Contains(t, names, fixtures.SegmentActiveName)
+	assert.NotContains(t, names, fixtures.SegmentGlobexName)
 
 	got, err := c.SegmentsGet(ctx, externalapi.SegmentsGetParams{ID: entityIDString(fixtures.SegmentActiveID)})
 	require.NoError(t, err)

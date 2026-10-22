@@ -20,7 +20,7 @@ model SiteApiTokenResource {
   prefix: string;
 
   /** Granted scopes */
-  scopes: string[];
+  scopes: ApiTokenScope[];
 
   /** Last time the token authenticated, if ever */
   lastUsedAt?: Timestamp | null;
@@ -38,7 +38,7 @@ model SiteApiTokenResource {
 /** Create a workspace API token */
 model SiteCreateTokenInput {
   name: string;
-  scopes: string[];
+  scopes: ApiTokenScope[];
   expiresAt?: Timestamp | null;
 }
 

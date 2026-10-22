@@ -52,9 +52,6 @@ func TestSiteSuppressionsErrorBranches(t *testing.T) {
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSuppressionsCreateUnprocessableEntity{}, r2)
 
-	before, err := env.DB.Suppression.Query().Count(ctx)
-	require.NoError(t, err)
-
 	r3, err := c.SiteSuppressionsDelete(ctx, siteapi.SiteSuppressionsDeleteParams{WorkspaceId: foreign, ID: 100})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSuppressionsDeleteNotFound{}, r3)
@@ -63,16 +60,13 @@ func TestSiteSuppressionsErrorBranches(t *testing.T) {
 	assert.IsType(t, &siteapi.SiteSuppressionsDeleteNotFound{}, r5)
 
 	// A suppression of another workspace cannot be deleted through Acme.
-	other, err := env.DB.Suppression.Create().SetWorkspaceID(fixtures.GlobexID).
-		SetChannel(suppression.ChannelEmail).SetDestination("x@globex.test").SetReason(suppression.ReasonManual).Save(ctx)
-	require.NoError(t, err)
-	r6, err := c.SiteSuppressionsDelete(ctx, siteapi.SiteSuppressionsDeleteParams{WorkspaceId: acme, ID: idStr(int64(other.ID))})
+	r6, err := c.SiteSuppressionsDelete(ctx, siteapi.SiteSuppressionsDeleteParams{WorkspaceId: acme, ID: idStr(fixtures.SuppressionGlobexID)})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSuppressionsDeleteNotFound{}, r6)
 
-	after, err := env.DB.Suppression.Query().Count(ctx)
-	require.NoError(t, err)
-	assert.Equal(t, before+1, after, "nothing was deleted")
+	for _, id := range []int64{fixtures.SuppressionGlobexID, fixtures.SuppressionGhostBounceID} {
+		assert.True(t, env.DB.Suppression.Query().Where(suppression.ID(id)).ExistX(ctx), "nothing was deleted")
+	}
 }
 
 func TestSiteTokensListCreateAndRevoke(t *testing.T) {
@@ -94,7 +88,7 @@ func TestSiteTokensListCreateAndRevoke(t *testing.T) {
 
 	// Create with an expiry, then revoke it.
 	created, err := c.SiteTokensCreate(ctx, &siteapi.SiteCreateTokenInput{
-		Name: " CI ", Scopes: []string{"contacts:read"},
+		Name: " CI ", Scopes: []siteapi.ApiTokenScope{"contacts:read"},
 		ExpiresAt: siteapi.NewOptNilTimestamp(siteapi.Timestamp(time.Now().Add(24 * time.Hour))),
 	}, siteapi.SiteTokensCreateParams{WorkspaceId: acme})
 	require.NoError(t, err)
@@ -133,12 +127,12 @@ func TestSiteTokensErrorBranches(t *testing.T) {
 	member := env.SiteActor(t, fixtures.MemberMaryEmail)
 	ctx := context.Background()
 	acme, foreign := siteapi.WorkspaceId(fixtures.AcmePublicID), siteapi.WorkspaceId(fixtures.GlobexPublicID)
-	in := &siteapi.SiteCreateTokenInput{Name: "x", Scopes: []string{"contacts:read"}}
+	in := &siteapi.SiteCreateTokenInput{Name: "x", Scopes: []siteapi.ApiTokenScope{"contacts:read"}}
 
 	r1, err := owner.SiteTokensCreate(ctx, in, siteapi.SiteTokensCreateParams{WorkspaceId: foreign})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteTokensCreateNotFound{}, r1)
-	r2, err := owner.SiteTokensCreate(ctx, &siteapi.SiteCreateTokenInput{Name: " ", Scopes: []string{}}, siteapi.SiteTokensCreateParams{WorkspaceId: acme})
+	r2, err := owner.SiteTokensCreate(ctx, &siteapi.SiteCreateTokenInput{Name: " ", Scopes: []siteapi.ApiTokenScope{}}, siteapi.SiteTokensCreateParams{WorkspaceId: acme})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteTokensCreateUnprocessableEntity{}, r2)
 	r3, err := member.SiteTokensCreate(ctx, in, siteapi.SiteTokensCreateParams{WorkspaceId: acme})

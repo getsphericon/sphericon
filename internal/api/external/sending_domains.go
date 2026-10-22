@@ -23,7 +23,7 @@ import (
 
 // SendingDomainsList returns the Workspace's Sending domains with the DNS records to publish.
 func (h *Handlers) SendingDomainsList(ctx context.Context, params externalapi.SendingDomainsListParams) (externalapi.SendingDomainsListRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), "sending_domains:read") {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeSendingDomainsRead) {
 		res := externalapi.SendingDomainsListUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
@@ -44,7 +44,7 @@ func (h *Handlers) SendingDomainsList(ctx context.Context, params externalapi.Se
 
 // SendingDomainsCreate adds a Sending domain; the DKIM keypair is minted and sealed.
 func (h *Handlers) SendingDomainsCreate(ctx context.Context, req *externalapi.CreateSendingDomainInput) (externalapi.SendingDomainsCreateRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), "sending_domains:write") {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeSendingDomainsWrite) {
 		res := externalapi.SendingDomainsCreateUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
@@ -68,7 +68,7 @@ func (h *Handlers) SendingDomainsCreate(ctx context.Context, req *externalapi.Cr
 
 // SendingDomainsGet returns one Sending domain.
 func (h *Handlers) SendingDomainsGet(ctx context.Context, params externalapi.SendingDomainsGetParams) (externalapi.SendingDomainsGetRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), "sending_domains:read") {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeSendingDomainsRead) {
 		res := externalapi.SendingDomainsGetUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
@@ -87,7 +87,7 @@ func (h *Handlers) SendingDomainsGet(ctx context.Context, params externalapi.Sen
 
 // SendingDomainsUpdate changes the DKIM selector, which unverifies the domain.
 func (h *Handlers) SendingDomainsUpdate(ctx context.Context, req *externalapi.UpdateSendingDomainInput, params externalapi.SendingDomainsUpdateParams) (externalapi.SendingDomainsUpdateRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), "sending_domains:write") {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeSendingDomainsWrite) {
 		res := externalapi.SendingDomainsUpdateUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
@@ -113,7 +113,7 @@ func (h *Handlers) SendingDomainsUpdate(ctx context.Context, req *externalapi.Up
 // SendingDomainsArchive archives a Sending domain (ADR 0049): it leaves the list and serves no
 // Tracking domain host. Live sends from it refuse it with 409.
 func (h *Handlers) SendingDomainsArchive(ctx context.Context, params externalapi.SendingDomainsArchiveParams) (externalapi.SendingDomainsArchiveRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), "sending_domains:write") {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeSendingDomainsWrite) {
 		res := externalapi.SendingDomainsArchiveUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
@@ -141,7 +141,7 @@ func (h *Handlers) SendingDomainsArchive(ctx context.Context, params externalapi
 
 // SendingDomainsUnarchive restores an archived Sending domain and starts a DNS check.
 func (h *Handlers) SendingDomainsUnarchive(ctx context.Context, params externalapi.SendingDomainsUnarchiveParams) (externalapi.SendingDomainsUnarchiveRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), "sending_domains:write") {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeSendingDomainsWrite) {
 		res := externalapi.SendingDomainsUnarchiveUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
@@ -169,7 +169,7 @@ func (h *Handlers) SendingDomainsUnarchive(ctx context.Context, params externala
 // SendingDomainsVerify triggers the live DKIM check and returns the domain as it stands;
 // the outcome shows on a later read (`verified`, `lastCheckedAt`).
 func (h *Handlers) SendingDomainsVerify(ctx context.Context, params externalapi.SendingDomainsVerifyParams) (externalapi.SendingDomainsVerifyRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), "sending_domains:write") {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeSendingDomainsWrite) {
 		res := externalapi.SendingDomainsVerifyUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}

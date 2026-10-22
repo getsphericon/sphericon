@@ -39,7 +39,10 @@ func (w *Workspace) SaveBrandKit() {
 func StarterWelcomeName() string { return i18n.T("brandkit.welcome.name", nil) }
 
 // agentScopes are what an agent that only drafts holds: no send scope and no mcp:send.
-var agentScopes = []string{"templates:read", "templates:write", "broadcasts:read", "broadcasts:write"}
+var agentScopes = scopeStrings(
+	externalapi.ApiTokenScopeTemplatesRead, externalapi.ApiTokenScopeTemplatesWrite,
+	externalapi.ApiTokenScopeBroadcastsRead, externalapi.ApiTokenScopeBroadcastsWrite,
+)
 
 // Agent is an AI agent connected to the Workspace over MCP with a token that can draft but not
 // send. Every step is a tool call, over the real listener.

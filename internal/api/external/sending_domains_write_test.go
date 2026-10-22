@@ -145,6 +145,8 @@ func TestExternalSendingDomainsUpdateMovesTheSelectorAndUnverifies(t *testing.T)
 	assert.Equal(t, "s2", updated.DkimSelector)
 	assert.Equal(t, "s2._domainkey.mail.acme.com", updated.DkimRecord.Host)
 	assert.False(t, updated.Verified, "the new record is not published yet")
+	assert.True(t, updated.VerificationLostAt.Set && !updated.VerificationLostAt.Null, "the loss is visible in the API")
+	assert.True(t, updated.VerifiedAt.Set && !updated.VerifiedAt.Null, "when it was verified is kept")
 	assert.Equal(t, fixtures.SendingDomainVerifiedDomain, updated.Domain, "the name is immutable")
 
 	bad, err := c.SendingDomainsUpdate(ctx, &externalapi.UpdateSendingDomainInput{DkimSelector: externalapi.NewOptString("bad selector!")}, externalapi.SendingDomainsUpdateParams{ID: id})

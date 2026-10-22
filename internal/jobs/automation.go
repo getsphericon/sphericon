@@ -99,7 +99,7 @@ type RunStepWorker struct {
 	river.WorkerDefaults[RunStepArgs]
 	ent   *ent.Client
 	mod   *outbound.Module
-	fence Fencer
+	fence automations.Fencer
 }
 
 func (w *RunStepWorker) Work(ctx context.Context, job *river.Job[RunStepArgs]) error {
@@ -139,7 +139,7 @@ type StepResult struct {
 // one Outbound send under this automation's Sending source (ADR 0015): the module
 // owns eligibility, the unsubscribe footer and headers, and the send record, and
 // RunStep only turns its Outcome into the enrollment's next state.
-func RunStep(ctx context.Context, client *ent.Client, fence Fencer, mod *outbound.Module, runID int64) (StepResult, error) {
+func RunStep(ctx context.Context, client *ent.Client, fence automations.Fencer, mod *outbound.Module, runID int64) (StepResult, error) {
 	run, err := client.AutomationRun.Get(ctx, runID)
 	if ent.IsNotFound(err) {
 		return StepResult{Done: true}, nil // erased with its Contact (ADR 0021) after the job was queued

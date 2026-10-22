@@ -34,11 +34,6 @@ func (m *Module) TrackingHostFeed(ctx context.Context, cursor string, limit int)
 	if err != nil {
 		return TrackingHostChanges{}, err
 	}
-	if limit <= 0 {
-		limit = DefaultFeedLimit
-	}
-	limit = min(limit, MaxFeedLimit)
-
 	rows, err := m.ent.TrackingHostChange.Query().
 		Where(trackinghostchange.IDGT(after)).
 		Order(ent.Asc(trackinghostchange.FieldID)).

@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
@@ -106,6 +107,11 @@ func (_c *UnsubscribeCreate) SetID(v int64) *UnsubscribeCreate {
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_c *UnsubscribeCreate) SetWorkspace(v *Workspace) *UnsubscribeCreate {
 	return _c.SetWorkspaceID(v.ID)
+}
+
+// SetContact sets the "contact" edge to the Contact entity.
+func (_c *UnsubscribeCreate) SetContact(v *Contact) *UnsubscribeCreate {
+	return _c.SetContactID(v.ID)
 }
 
 // Mutation returns the UnsubscribeMutation object of the builder.
@@ -248,10 +254,6 @@ func (_c *UnsubscribeCreate) createSpec() (*Unsubscribe, *sqlgraph.CreateSpec) {
 		_spec.SetField(unsubscribe.FieldSendingSource, field.TypeString, value)
 		_node.SendingSource = value
 	}
-	if value, ok := _c.mutation.ContactID(); ok {
-		_spec.SetField(unsubscribe.FieldContactID, field.TypeInt64, value)
-		_node.ContactID = &value
-	}
 	if nodes := _c.mutation.WorkspaceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -267,6 +269,23 @@ func (_c *UnsubscribeCreate) createSpec() (*Unsubscribe, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.WorkspaceID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ContactIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   unsubscribe.ContactTable,
+			Columns: []string{unsubscribe.ContactColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contact.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.ContactID = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -390,12 +409,6 @@ func (u *UnsubscribeUpsert) SetContactID(v int64) *UnsubscribeUpsert {
 // UpdateContactID sets the "contact_id" field to the value that was provided on create.
 func (u *UnsubscribeUpsert) UpdateContactID() *UnsubscribeUpsert {
 	u.SetExcluded(unsubscribe.FieldContactID)
-	return u
-}
-
-// AddContactID adds v to the "contact_id" field.
-func (u *UnsubscribeUpsert) AddContactID(v int64) *UnsubscribeUpsert {
-	u.Add(unsubscribe.FieldContactID, v)
 	return u
 }
 
@@ -530,13 +543,6 @@ func (u *UnsubscribeUpsertOne) UpdateSendingSource() *UnsubscribeUpsertOne {
 func (u *UnsubscribeUpsertOne) SetContactID(v int64) *UnsubscribeUpsertOne {
 	return u.Update(func(s *UnsubscribeUpsert) {
 		s.SetContactID(v)
-	})
-}
-
-// AddContactID adds v to the "contact_id" field.
-func (u *UnsubscribeUpsertOne) AddContactID(v int64) *UnsubscribeUpsertOne {
-	return u.Update(func(s *UnsubscribeUpsert) {
-		s.AddContactID(v)
 	})
 }
 
@@ -845,13 +851,6 @@ func (u *UnsubscribeUpsertBulk) UpdateSendingSource() *UnsubscribeUpsertBulk {
 func (u *UnsubscribeUpsertBulk) SetContactID(v int64) *UnsubscribeUpsertBulk {
 	return u.Update(func(s *UnsubscribeUpsert) {
 		s.SetContactID(v)
-	})
-}
-
-// AddContactID adds v to the "contact_id" field.
-func (u *UnsubscribeUpsertBulk) AddContactID(v int64) *UnsubscribeUpsertBulk {
-	return u.Update(func(s *UnsubscribeUpsert) {
-		s.AddContactID(v)
 	})
 }
 

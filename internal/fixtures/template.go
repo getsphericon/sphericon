@@ -43,11 +43,30 @@ func TemplateFuncs(cipher *secrets.Cipher, now time.Time) template.FuncMap {
 	at := func(d time.Duration) string { return base.Add(d).Format(timeLayout) }
 	day := 24 * time.Hour
 	return template.FuncMap{
-		"now":       func() string { return base.Format(timeLayout) },
-		"daysAgo":   func(n int) string { return at(-time.Duration(n) * day) },
-		"daysAhead": func(n int) string { return at(time.Duration(n) * day) },
-		"hoursAgo":  func(n int) string { return at(-time.Duration(n) * time.Hour) },
-		"encrypt":   func(s string) (string, error) { return cipher.Encrypt([]byte(s)) },
+		"now":        func() string { return base.Format(timeLayout) },
+		"daysAgo":    func(n int) string { return at(-time.Duration(n) * day) },
+		"daysAhead":  func(n int) string { return at(time.Duration(n) * day) },
+		"hoursAgo":   func(n int) string { return at(-time.Duration(n) * time.Hour) },
+		"hoursAhead": func(n int) string { return at(time.Duration(n) * time.Hour) },
+		// seq repeats a row: {{range $i := seq 100 199}} runs for 100 through 199, both included.
+		// The loop renders inside one file, so one Load inserts it with the rest (a second Load of
+		// the same table would wipe the first). The generator names a loop body's rows once.
+		"seq": func(from, to int) []int {
+			out := make([]int, 0, max(to-from+1, 0))
+			for i := from; i <= to; i++ {
+				out = append(out, i)
+			}
+			return out
+		},
+		// monthAgo is a moment inside a calendar month (UTC) some months back: {{monthAgo 6 3 10}} is the
+		// 3rd, 10:00 of the month six months ago; a fourth number adds minutes, which may be negative
+		// ({{monthAgo 6 1 0 -1}} is the last minute of the month before). Usage is measured per calendar month, so a scenario
+		// that spans a month boundary needs rows pinned to a month, not to a number of days.
+		"monthAgo": func(months, dayOfMonth, hour, minute int) string {
+			start := time.Date(base.Year(), base.Month()-time.Month(months), 1, 0, 0, 0, 0, time.UTC)
+			return start.AddDate(0, 0, dayOfMonth-1).Add(time.Duration(hour)*time.Hour + time.Duration(minute)*time.Minute).Format(timeLayout)
+		},
+		"encrypt": func(s string) (string, error) { return cipher.Encrypt([]byte(s)) },
 		// Invitation tokens are stored only as a SHA-256 hash; fixtures express the
 		// raw token and hash it at load time so tests can present the raw value.
 		"inviteHash": accounts.HashInviteToken,

@@ -80,9 +80,9 @@ func SecretEncrypted(v string) predicate.WebhookEndpoint {
 	return predicate.WebhookEndpoint(sql.FieldEQ(FieldSecretEncrypted, v))
 }
 
-// Enabled applies equality check predicate on the "enabled" field. It's identical to EnabledEQ.
-func Enabled(v bool) predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldEQ(FieldEnabled, v))
+// DisabledAt applies equality check predicate on the "disabled_at" field. It's identical to DisabledAtEQ.
+func DisabledAt(v time.Time) predicate.WebhookEndpoint {
+	return predicate.WebhookEndpoint(sql.FieldEQ(FieldDisabledAt, v))
 }
 
 // ConsecutiveFailures applies equality check predicate on the "consecutive_failures" field. It's identical to ConsecutiveFailuresEQ.
@@ -345,14 +345,54 @@ func EventTypesNotNil() predicate.WebhookEndpoint {
 	return predicate.WebhookEndpoint(sql.FieldNotNull(FieldEventTypes))
 }
 
-// EnabledEQ applies the EQ predicate on the "enabled" field.
-func EnabledEQ(v bool) predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldEQ(FieldEnabled, v))
+// DisabledAtEQ applies the EQ predicate on the "disabled_at" field.
+func DisabledAtEQ(v time.Time) predicate.WebhookEndpoint {
+	return predicate.WebhookEndpoint(sql.FieldEQ(FieldDisabledAt, v))
 }
 
-// EnabledNEQ applies the NEQ predicate on the "enabled" field.
-func EnabledNEQ(v bool) predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldNEQ(FieldEnabled, v))
+// DisabledAtNEQ applies the NEQ predicate on the "disabled_at" field.
+func DisabledAtNEQ(v time.Time) predicate.WebhookEndpoint {
+	return predicate.WebhookEndpoint(sql.FieldNEQ(FieldDisabledAt, v))
+}
+
+// DisabledAtIn applies the In predicate on the "disabled_at" field.
+func DisabledAtIn(vs ...time.Time) predicate.WebhookEndpoint {
+	return predicate.WebhookEndpoint(sql.FieldIn(FieldDisabledAt, vs...))
+}
+
+// DisabledAtNotIn applies the NotIn predicate on the "disabled_at" field.
+func DisabledAtNotIn(vs ...time.Time) predicate.WebhookEndpoint {
+	return predicate.WebhookEndpoint(sql.FieldNotIn(FieldDisabledAt, vs...))
+}
+
+// DisabledAtGT applies the GT predicate on the "disabled_at" field.
+func DisabledAtGT(v time.Time) predicate.WebhookEndpoint {
+	return predicate.WebhookEndpoint(sql.FieldGT(FieldDisabledAt, v))
+}
+
+// DisabledAtGTE applies the GTE predicate on the "disabled_at" field.
+func DisabledAtGTE(v time.Time) predicate.WebhookEndpoint {
+	return predicate.WebhookEndpoint(sql.FieldGTE(FieldDisabledAt, v))
+}
+
+// DisabledAtLT applies the LT predicate on the "disabled_at" field.
+func DisabledAtLT(v time.Time) predicate.WebhookEndpoint {
+	return predicate.WebhookEndpoint(sql.FieldLT(FieldDisabledAt, v))
+}
+
+// DisabledAtLTE applies the LTE predicate on the "disabled_at" field.
+func DisabledAtLTE(v time.Time) predicate.WebhookEndpoint {
+	return predicate.WebhookEndpoint(sql.FieldLTE(FieldDisabledAt, v))
+}
+
+// DisabledAtIsNil applies the IsNil predicate on the "disabled_at" field.
+func DisabledAtIsNil() predicate.WebhookEndpoint {
+	return predicate.WebhookEndpoint(sql.FieldIsNull(FieldDisabledAt))
+}
+
+// DisabledAtNotNil applies the NotNil predicate on the "disabled_at" field.
+func DisabledAtNotNil() predicate.WebhookEndpoint {
+	return predicate.WebhookEndpoint(sql.FieldNotNull(FieldDisabledAt))
 }
 
 // ConsecutiveFailuresEQ applies the EQ predicate on the "consecutive_failures" field.

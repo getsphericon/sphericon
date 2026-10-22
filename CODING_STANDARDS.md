@@ -1,7 +1,8 @@
 # Coding standards
 
-The rules a change is reviewed against. How the repo is built, run and generated is in
-`AGENTS.md`; the vocabulary is in `GLOSSARY.md`.
+How the repo does things: mechanics, tools and conventions. The rules a change is reviewed against
+are in `docs/agents/review-rules.md`: read it too, and do not restate a rule here. How the repo is
+built, run and generated is in `AGENTS.md`; the vocabulary is in `GLOSSARY.md`.
 
 ## Code shape
 
@@ -11,8 +12,70 @@ The rules a change is reviewed against. How the repo is built, run and generated
   The same goes for production code: `rows, err := ...` first, then the `if` or the `return` that
   uses them. A test that fails then shows which step produced the wrong value.
 
+## Project checks
+
+Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs/agents/review-rules.md`).
+
+- **Syntax only: an ast-grep rule** (`ast-grep/rules`, tests in `ast-grep/tests`, run by `mise run check:ast`).
+- **Needs Go types: an analyzer of our own** (`tools/analyzers`, its own Go module). It is a
+  `go/analysis` analyzer compiled into golangci-lint by `golangci-lint custom` (`.custom-gcl.yml`,
+  `mise run build:lint` -> `.bin/custom-gcl`) and enabled as the linter `sphericon` in `.golangci.yml`.
+  `check:be`, CI and the heavy-command wrapper all run that build, never a stock `golangci-lint`.
+  The `golang.org/x/tools` and `plugin-module-register` versions in `tools/analyzers/go.mod` must be
+  the ones the pinned golangci-lint uses, and `.custom-gcl.yml`'s `version` must be the one in
+  `mise.lock`; `mise run check:lint-pins` fails otherwise and prints the command that fixes it.
+- **Message contract.** A finding begins with the rule number and ends with how to fix it:
+  `rule <n>: <what is wrong>; fix: <what to do instead>`. Build it with `rule.Message(n, what, fix)`
+  (`tools/analyzers/rule`), never by hand.
+- **A check is on at once.** Run it over the repository and fix every finding in the same change; there
+  is no baseline of known violations and no ignore list.
+- **Rule 1, `handmapper`.** A function that takes an ent entity and returns a type of a `gen/*` package
+  must map through a goverter converter (it calls a `...Converter`/`...ConverterImpl` method, directly or
+  through a package function that does) or be registered in the converter (`goverter:extend`, or named in
+  a `goverter:map ... | helper` line). Add the mapping to the surface's `Converter` instead; test files are not checked.
+- **Rule 6, `check:copies` (`cmd/contractcopy`, in `check`).** It reads the generated `openapi/*.openapi.json`
+  and fails on a hand-written copy of its values: a Go list, `case` list or TypeScript array or union of
+  literals that restates an enum (all of its values, or three or more that are a quarter of a larger one),
+  a Go or TypeScript `Max*`/`Min*`/`Default*` constant equal to a declared length, range or default, and a
+  fixture scope (`fixtures/*.yml`, which cannot import Go) the contract does not declare. A value that only
+  looks like a contract value (an OAuth limit, a secret floor) carries `// contract-copy: <reason>` on its
+  line or the line above; a marker without a reason is still a finding, and there is no baseline file. Typed
+  Go `const` blocks are domain vocabulary and are not read. Tests use the generated constants
+  (`externalapi.ApiTokenScope…`) or the generated zod (`zSiteMembershipRole.options`), not string lists.
+- **Rule 7, a state is moved by a conditional write.** A machine column (`status`, `tracking_state`) is written only by its transition table: the ast-grep rule `no-status-write-outside-lifecycle`. A state kept as a moment that a background job moves on its own (`verified_at` and `verification_lost_at` of a Sending domain, `disabled_at` of a Webhook endpoint, `suspended_at` of a Workspace, `verified_at` of a Join domain) is written only by an update with a `.Where(...)` on the state it leaves (analyzer `statemoment`); a lost race surfaces as `ent.IsNotFound` and the caller handles it. To cover a new moment, add its builder method to `moments` in `tools/analyzers/statemoment`.
+- **Rule 10, `testwrites`.** A call to an ent `Create` or `CreateBulk` builder (the raw client, a transaction's client
+  or a scoped wrapper) in a `_test.go` file, `e2e/` included (the lint run sets the `e2e` tag), needs
+  `// test writes: <why the write is the operation under test>` on the line above its statement or trailing on
+  its line; an empty reason is still a finding, there is no baseline file, and `*_gen_test.go` mocks are skipped.
+  What counts as the operation under test is rule 10; any other test takes its rows from `fixtures/`
+  (add a row, `internal/AGENTS.md`). Test-support code outside `_test.go` files
+  (`internal/testhelper`) is the fixture tooling and is not read.
+- **Rule 5, `entrywrite`.** An entry point does not write through ent: a call that starts a mutation
+  (`Create`, `CreateBulk`, `Update`, `UpdateOne`, `UpdateOneID`, `Delete`, `DeleteOne`, `DeleteOneID`) or an
+  upsert (`OnConflict`, `OnConflictColumns`, `OnConflictColumnsWhere`) on a type of the `ent` package (the raw
+  client, a transaction, the scoped client and its wrappers) is a finding; reads are allowed, test files are
+  not read. The closed list of entry points is `entryPoints` in `tools/analyzers/entrywrite`: the site,
+  external and collect handlers, `internal/mcpserver`, `internal/jobs` and `internal/server`. `ee/staff` holds
+  the Staff handlers and their domain module in one package, so only the methods of its handler types
+  (`Handlers`, `ServiceHandlers`, `SecurityHandler`, `ServiceSecurityHandler`, `Surface`, `ServiceSurface`) are
+  checked and `*Module` is the domain module; a new handler type there is added to `mixedPackages`. The write
+  goes into the domain module that owns the entity (the raw-client packages of `AGENTS.md`), which the entry
+  point calls. The helpers the analyzers share about the generated package are in `tools/analyzers/entx`.
+- **Adding an analyzer.** (1) Create `tools/analyzers/<name>/` with `Analyzer` (see `noprint`) and report
+  through `rule.Message`. (2) Write `<name>_test.go` with `analysistest.Run` and a test data package per
+  case under `testdata/src/` (a `bad` package whose violating lines carry `// want` with the message
+  regexp, and a `clean` one that must report nothing); watch it fail, then make it pass. (3) Add the
+  analyzer to `BuildAnalyzers` in `tools/analyzers/plugin.go`. (4) `mise run check:be` rebuilds the linter,
+  runs it over the repository and the analyzers' tests; fix everything it finds. `noprint` (rule 0) is the
+  sample that proves the pipeline.
+
 ## Database
 
+- **Raw SQL needs its reason (rule 4, analyzer `rawsql`).** A statement run as text (`ExecContext`,
+  `QueryContext`, `QueryRowContext`, `Exec`, `Query`, `QueryRow` on `database/sql`) or a raw fragment
+  in an ent query (`sql.P`, `ExprFunc`, `Expr`, `ExprP`, `Raw`) carries `// raw sql: <why ent cannot
+  express it>` on the line above it or its statement, or trailing. The advisory lock and the Postgres
+  version are written once, in `internal/postgres` (`LockTx`, `ServerMajor`); call those.
 - **Plain tables only: no database functions, triggers, stored procedures or views.** The schema is
   tables, columns, constraints and indexes. Logic that must run on every write (a change log, a
   counter, a derived row) lives in Go: an ent hook (like `internal/workspacefeed` or
@@ -20,12 +83,7 @@ The rules a change is reviewed against. How the repo is built, run and generated
 
 ## Go tests
 
-- **A test asserts what an operation left behind** (rows, outbox events, enqueued jobs, the response),
-  never what was called, how often or with which arguments: no call-verification tests. Do not assert
-  how many rows a table holds (a new fixture breaks that) or a raw id: count the rows you start from
-  and assert business facts (name, order, label). A test that depends on today's date does not read
-  the wall clock; it injects the clock.
-- **No direct SQL in tests.** Tests read and write through ent (`env.DB`) or river's own API. The
+- **Tests use the ent client or river's own API for data (rule 4)**: `env.DB`. The
   domain-event outbox is modelled in ent too (`OutboxMessage`, `OutboxOffset`: watermill owns the
   tables, `entsql.Skip` keeps them out of migrations, only the client is generated), so
   `env.Outbox*`, `env.OutboxCount` and the cursor helpers sit on the generated client.
@@ -37,14 +95,6 @@ The rules a change is reviewed against. How the repo is built, run and generated
   other test rides the transaction `dbcleaner` hands out, which rolls back. A `t.Cleanup` that
   deletes rows, a purge or a reset at the top of a test means a test is committing outside its
   transaction: fix that test.
-- **A test body does not branch.** No `if`, `switch` or `select` in a `Test…` function or its subtest
-  closures (`ast-grep/rules/no-branching-in-go-tests.yml`, run by `mise run check:ast`): a branch
-  chooses what to check, so a wrong run can take the path that checks nothing. State the expectation
-  with `assert`/`require` on a value read beforehand; keep a table's rows as data (split a table
-  whose rows need different assertions into two tests, give a row its expected value rather than a
-  flag that picks one); filter and find with `lo.Filter`/`lo.Find`; wait on a channel with
-  `testhelper.Receive`. Logic that has to branch (a simulated clock, a pager, a conditional skip by
-  build tag) goes into a helper function or a file with a build constraint, named for what it does.
 - **No `time.Sleep`, anywhere.** A sleep is a guess about how long something takes: it makes a test
   slow where it guesses high and flaky where it guesses low, and in code it hides a missing signal.
   Wait on the condition (a channel, `assert.Eventually`, a returned handle), and write the logic so
@@ -52,12 +102,6 @@ The rules a change is reviewed against. How the repo is built, run and generated
   needs a run of events is a small pure type fed those events. A test that must move time inside a
   `testing/synctest` bubble calls `testhelper.Elapse(d)`, which advances the bubble's fake clock
   and returns at once. `forbidigo` rejects `time.Sleep` everywhere.
-- **Tests cover logic only.** A test exercises a decision the code makes and checks what came out.
-  There are no tests of how long something takes, how much memory it uses, a timeout firing on the
-  wall clock, a runtime limit or a resource guard, or of the machine and the process around the
-  code: they pass or fail with the load of the host and prove nothing about the code. A guard whose
-  decision is real logic (when does a run of polls count as growth) is a small pure type tested on
-  its inputs; the clock, the heap and the timer feeding it are not tested.
 - **Pure logic gets property tests.** A function or small type that decides something from its
   inputs alone (a delay, a normalization, a counter of polls) is tested with `pgregory.net/rapid`:
   state the property that must hold for every input (bounds, idempotence, monotonicity, agreement
@@ -72,9 +116,13 @@ The rules a change is reviewed against. How the repo is built, run and generated
 - **A package that starts goroutines checks that its tests stop them.** It has a `main_test.go`
   with `goleak.VerifyTestMain`: a test that leaves a server, worker or subscriber running fails the
   package. A new package that starts goroutines gets the same file.
-- **No tests of built-in behaviour.** A test exercises sphericon's own code. One whose only subject is a
-  Mantine component, the standard library or another dependency (a copy button showing "Copied", a
-  library's defaults or retries) is deleted, and none is added.
+- **Tools for tests without branching (rule 14).** Filter and find with `lo.Filter`/`lo.Find`; wait
+  on a channel with `testhelper.Receive`; logic that has to branch (a simulated clock, a pager, a
+  conditional skip by build tag) goes into a helper function or a file with a build constraint,
+  named for what it does. Split a table whose rows need different assertions into two tests.
+- **A guard with real logic is tested as a pure type (rule 12).** When does a run of polls count as
+  growth is a decision, tested on its inputs; the clock, the heap and the timer feeding it are not
+  tested.
 
 ## Frontend
 

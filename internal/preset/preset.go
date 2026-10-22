@@ -27,6 +27,7 @@ const (
 	// MaxProgramBytes is the largest transform program.
 	MaxProgramBytes = 16 << 10
 	// MaxFailures is the most Delivery failures one request may yield.
+	// contract-copy: provider preset cap on Delivery failures per request; not in the contract
 	MaxFailures = 100
 	// TransformTimeout bounds one run of a transform.
 	TransformTimeout = 100 * time.Millisecond

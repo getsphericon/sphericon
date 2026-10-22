@@ -2,40 +2,6 @@ using TypeSpec.Http;
 
 namespace Sphericon;
 
-enum ApiTokenScope {
-  contactsRead: "contacts:read",
-  contactsWrite: "contacts:write",
-  contactsErase: "contacts:erase",
-  segmentsRead: "segments:read",
-  segmentsWrite: "segments:write",
-  eventsRead: "events:read",
-  eventsWrite: "events:write",
-  broadcastsRead: "broadcasts:read",
-  broadcastsWrite: "broadcasts:write",
-  automationsRead: "automations:read",
-  automationsWrite: "automations:write",
-  enrollmentsRead: "enrollments:read",
-  templatesRead: "templates:read",
-  templatesWrite: "templates:write",
-  webhooksRead: "webhooks:read",
-  webhooksWrite: "webhooks:write",
-  webhooksRegenerate: "webhooks:regenerate",
-  webhooksTest: "webhooks:test",
-  customFieldsRead: "custom_fields:read",
-  sendingDomainsRead: "sending_domains:read",
-  sendingDomainsWrite: "sending_domains:write",
-  integrationsRead: "integrations:read",
-  integrationsWrite: "integrations:write",
-  emailsSend: "emails:send",
-  broadcastsSend: "broadcasts:send",
-  automationsActivate: "automations:activate",
-  mcpSend: "mcp:send",
-  tokensRead: "tokens:read",
-  tokensWrite: "tokens:write",
-  auditRead: "audit:read",
-  exportRead: "export:read",
-}
-
 model ApiTokenInfo {
   id: EntityId;
   name: string;

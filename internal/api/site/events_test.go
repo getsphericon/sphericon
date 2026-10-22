@@ -90,11 +90,7 @@ func TestSiteEventsActions(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 
-	// An extra page_view exercises de-duplication (it must not appear twice).
-	_, err := env.DB.Event.Create().
-		SetWorkspaceID(fixtures.AcmeID).SetSubjectID("x@test.dev").SetAction("page_view").Save(ctx)
-	require.NoError(t, err)
-
+	// Many fixture events are page_views: de-duplication shows it once.
 	out, err := c.SiteEventsActions(ctx, siteapi.SiteEventsActionsParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	res, ok := out.(*siteapi.SiteEventActionsResult)

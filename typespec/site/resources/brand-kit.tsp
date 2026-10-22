@@ -65,15 +65,19 @@ model SiteSaveBrandKitInput {
   bodyFont: string;
 
   /** Address (http or https) of the logo image; empty for none */
+  @maxLength(2048)
   logoUrl: string;
 
   /** Color of the text on a button, `#rrggbb` */
   buttonTextColor: string;
 
   /** Corner radius of a button in pixels, 0 to 32 */
+  @minValue(0)
+  @maxValue(32)
   buttonRadius: int32;
 
   /** Plain text printed under the starter messages, at most 500 characters; empty for none */
+  @maxLength(500)
   footerText: string;
 }
 

@@ -1,0 +1,22 @@
+id: no-mock-calls-in-go-tests
+valid:
+  - |
+    func TestResult(t *testing.T) {
+    	rows := env.DB.Scoped(fixtures.AcmeID).Contact().Query().AllX(ctx)
+    	assert.Len(t, rows, 1)
+    }
+  - |
+    func TestStub(t *testing.T) {
+    	ses := &SESMock{QuotaFunc: func(ctx context.Context) (int, error) { return 1, nil }}
+    	assert.NotNil(t, ses)
+    }
+invalid:
+  - |
+    func TestCalls(t *testing.T) {
+    	assert.Zero(t, ses.QuotaCalls())
+    }
+  - |
+    func TestCallsIndexed(t *testing.T) {
+    	require.Len(t, d.DispatchCalls(), 1)
+    	body := d.DispatchCalls()[0].Body
+    }

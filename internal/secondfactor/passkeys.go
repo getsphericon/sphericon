@@ -31,9 +31,6 @@ const CeremonyTTL = 5 * time.Minute
 // of a pruned challenge fails on the cookie's expiry instead.
 const SpentChallengeRetention = 24 * time.Hour
 
-// MaxPasskeyNameLength bounds the name of a Passkey, in runes.
-const MaxPasskeyNameLength = 100
-
 var (
 	// ErrCeremony: the ceremony cookie is missing, forged, expired, another ceremony's or
 	// another User's, or the User's sessions ended since it was minted.

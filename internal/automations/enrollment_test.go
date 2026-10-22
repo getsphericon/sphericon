@@ -5,29 +5,38 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func newContact(t *testing.T, s *ent.Scoped, email string) *ent.Contact {
+// enrollable is the nth Contact of the Workspace, by id, that no Automation has enrolled yet.
+func enrollable(t *testing.T, s *ent.Scoped, nth int) *ent.Contact {
 	t.Helper()
-	c, err := s.Contact().Create().SetEmail(email).Save(context.Background())
+	enrolledIDs, err := s.AutomationRun().Query().Select(automationrun.FieldContactID).Ints(context.Background())
 	require.NoError(t, err)
-	return c
+	enrolled := lo.Map(enrolledIDs, func(id int, _ int) int64 { return int64(id) })
+	free, err := s.Contact().Query().
+		Where(contact.EmailNotNil(), contact.IDNotIn(enrolled...)).
+		Order(ent.Asc(contact.FieldID)).Limit(nth + 1).All(context.Background())
+	require.NoError(t, err)
+	require.Greater(t, len(free), nth, "the fixtures hold enough Contacts no Automation has enrolled")
+	return free[nth]
 }
 
 func TestEnrollIsOnceEverPerContactAndAutomation(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
-	c := newContact(t, s, "enroll-once@example.com")
+	c := enrollable(t, s, 0)
 
 	runID, enrolled, err := automations.Enroll(ctx, s, fixtures.AutomationWelcomeSeriesID, c.ID)
 	require.NoError(t, err)
@@ -49,7 +58,7 @@ func TestExitEndsOnlyAnActiveEnrollmentAndEnrollmentStaysOnceEver(t *testing.T) 
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
-	c := newContact(t, s, "exit@example.com")
+	c := enrollable(t, s, 0)
 
 	runID, _, err := automations.Enroll(ctx, s, fixtures.AutomationWelcomeSeriesID, c.ID)
 	require.NoError(t, err)
@@ -75,7 +84,7 @@ func TestExitRunEndsOneEnrollment(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
-	c := newContact(t, s, "exit-run@example.com")
+	c := enrollable(t, s, 0)
 	runID, _, err := automations.Enroll(ctx, s, fixtures.AutomationWelcomeSeriesID, c.ID)
 	require.NoError(t, err)
 
@@ -89,7 +98,7 @@ func TestAnExitedEnrollmentIsNeitherCompletedNorFailed(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
-	c := newContact(t, s, "late-step@example.com")
+	c := enrollable(t, s, 0)
 	runID, _, err := automations.Enroll(ctx, s, fixtures.AutomationWelcomeSeriesID, c.ID)
 	require.NoError(t, err)
 	require.NoError(t, automations.ExitRun(ctx, s, runID))
@@ -106,9 +115,9 @@ func TestFailKeepsTheReasonAndCompleteEndsTheRun(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
-	failing, _, err := automations.Enroll(ctx, s, fixtures.AutomationWelcomeSeriesID, newContact(t, s, "fail@example.com").ID)
+	failing, _, err := automations.Enroll(ctx, s, fixtures.AutomationWelcomeSeriesID, enrollable(t, s, 0).ID)
 	require.NoError(t, err)
-	done, _, err := automations.Enroll(ctx, s, fixtures.AutomationWelcomeSeriesID, newContact(t, s, "done@example.com").ID)
+	done, _, err := automations.Enroll(ctx, s, fixtures.AutomationWelcomeSeriesID, enrollable(t, s, 1).ID)
 	require.NoError(t, err)
 
 	require.NoError(t, automations.Fail(ctx, s, failing, automations.Failure{
@@ -132,7 +141,7 @@ func TestEnrollRefusesAContactOrAutomationOfAnotherWorkspace(t *testing.T) {
 	ctx := context.Background()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	globex := env.DB.Scoped(fixtures.GlobexID)
-	c := newContact(t, acme, "isolated@example.com")
+	c := enrollable(t, acme, 0)
 
 	_, _, err := automations.Enroll(ctx, globex, fixtures.AutomationGlobexID, c.ID)
 	require.ErrorIs(t, err, ent.ErrNotInWorkspace, "Globex cannot enroll an Acme Contact")
@@ -144,9 +153,9 @@ func TestAdvanceMovesOnlyAnActiveEnrollment(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
-	live, _, err := automations.Enroll(ctx, s, fixtures.AutomationWelcomeSeriesID, newContact(t, s, "adv-live@example.com").ID)
+	live, _, err := automations.Enroll(ctx, s, fixtures.AutomationWelcomeSeriesID, enrollable(t, s, 0).ID)
 	require.NoError(t, err)
-	gone, _, err := automations.Enroll(ctx, s, fixtures.AutomationWelcomeSeriesID, newContact(t, s, "adv-gone@example.com").ID)
+	gone, _, err := automations.Enroll(ctx, s, fixtures.AutomationWelcomeSeriesID, enrollable(t, s, 1).ID)
 	require.NoError(t, err)
 	require.NoError(t, automations.ExitRun(ctx, s, gone))
 	resume := time.Now().Add(time.Hour)
@@ -168,7 +177,7 @@ func TestIsActiveReadsTheLifecycle(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
-	runID, _, err := automations.Enroll(ctx, s, fixtures.AutomationWelcomeSeriesID, newContact(t, s, "isactive@example.com").ID)
+	runID, _, err := automations.Enroll(ctx, s, fixtures.AutomationWelcomeSeriesID, enrollable(t, s, 0).ID)
 	require.NoError(t, err)
 
 	ok, err := automations.IsActive(ctx, s, runID)

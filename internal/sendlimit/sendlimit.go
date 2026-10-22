@@ -143,6 +143,8 @@ func take(ctx context.Context, s *ent.Scoped, integrationID int64, l Limits, now
 			if b.capacity == nil {
 				continue
 			}
+			// raw sql: compares a refilled value computed from the stored fill and elapsed time; ent
+			// predicates compare columns only.
 			sel.Where(entsql.P(func(bld *entsql.Builder) {
 				b.writeRefilled(bld, now)
 				bld.WriteString(" >= ")
@@ -159,6 +161,8 @@ func take(ctx context.Context, s *ent.Scoped, integrationID int64, l Limits, now
 					u.Set(b.column, 1.0) // not limited: keep it full for when a limit appears
 					continue
 				}
+				// raw sql: refill and spend one token in the same UPDATE, computed from the stored row;
+				// ent's setters take a value, not an expression over columns.
 				u.Set(b.column, entsql.ExprFunc(func(bld *entsql.Builder) {
 					bld.WriteString("(")
 					b.writeRefilled(bld, now)
@@ -167,6 +171,7 @@ func take(ctx context.Context, s *ent.Scoped, integrationID int64, l Limits, now
 					bld.WriteString("::float8")
 				}))
 			}
+			// raw sql: GREATEST(refilled_at, now) so the clock never moves back; ent has no GREATEST.
 			u.Set(sendlimiter.FieldRefilledAt, entsql.ExprFunc(func(bld *entsql.Builder) {
 				bld.WriteString("GREATEST(" + sendlimiter.FieldRefilledAt + ", ")
 				bld.Arg(now)

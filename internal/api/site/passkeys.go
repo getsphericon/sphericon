@@ -6,9 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"strings"
-	"unicode/utf8"
 
-	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/i18n"
@@ -33,7 +31,7 @@ func (h *Handlers) SitePasskeysList(ctx context.Context) (*siteapi.SitePasskeyLi
 	}
 	items := make([]siteapi.SitePasskey, len(rows))
 	for i, row := range rows {
-		items[i] = passkeyResource(row)
+		items[i] = mapper.PasskeyToResource(row)
 	}
 	return &siteapi.SitePasskeyList{
 		Items: items, Available: h.passkeys.Available(), PasswordSet: u.PasswordHash != "", IdentityProofFresh: u.PasswordHash == "" && h.identityProofFresh(ctx),
@@ -73,7 +71,7 @@ func (h *Handlers) SitePasskeysBeginRegistration(ctx context.Context) (siteapi.S
 // password, or a fresh provider login) and the authenticator's response checks out. It ends
 // the other sessions, reissues the acting one and mails the owner.
 func (h *Handlers) SitePasskeysFinishRegistration(ctx context.Context, req *siteapi.SitePasskeyRegistrationInput, params siteapi.SitePasskeysFinishRegistrationParams) (siteapi.SitePasskeysFinishRegistrationRes, error) {
-	name, invalid := passkeyName(req.Name)
+	name, invalid := passkeyName(string(req.Name))
 	if invalid != nil {
 		v := siteapi.SitePasskeysFinishRegistrationUnprocessableEntity(*invalid)
 		return &v, nil
@@ -107,7 +105,7 @@ func (h *Handlers) SitePasskeysFinishRegistration(ctx context.Context, req *site
 		return nil, err
 	}
 	_ = h.sysmail.EnqueuePasskeyNotice(ctx, u.Email, jobs.PasskeyAdded, row.Name)
-	return &siteapi.SitePasskeyHeaders{SetCookie: cookie.String(), Response: passkeyResource(row)}, nil
+	return &siteapi.SitePasskeyHeaders{SetCookie: cookie.String(), Response: mapper.PasskeyToResource(row)}, nil
 }
 
 // SitePasskeysBeginCheck answers the request options of a fresh Passkey check of the session
@@ -217,19 +215,11 @@ func (h *Handlers) ceremonyCookie(path, ceremony string) string {
 	return h.sessions.PasskeyCeremony(path, ceremony, secondfactor.CeremonyTTL).String()
 }
 
-func passkeyResource(row *ent.Passkey) siteapi.SitePasskey {
-	r := siteapi.SitePasskey{ID: siteapi.EntityId(row.ID), Name: row.Name, CreatedAt: siteapi.Timestamp(row.CreatedAt)}
-	if row.LastUsedAt != nil {
-		r.LastUsedAt = siteapi.NewOptTimestamp(siteapi.Timestamp(*row.LastUsedAt))
-	}
-	return r
-}
-
-// passkeyName trims name and checks its length; invalid is the 422 problem when it is empty or
-// too long.
+// passkeyName trims name; invalid is the 422 problem when nothing is left. The contract
+// (PasskeyName) already bounds the length.
 func passkeyName(name string) (trimmed string, invalid *siteapi.ProblemDetails) {
 	trimmed = strings.TrimSpace(name)
-	if trimmed == "" || utf8.RuneCountInString(trimmed) > secondfactor.MaxPasskeyNameLength {
+	if trimmed == "" {
 		msg := i18n.T("errors.passkey_name_invalid", nil)
 		v := problemWithErrors(http.StatusUnprocessableEntity, msg, map[string][]string{"name": {msg}})
 		return "", &v
@@ -247,7 +237,7 @@ func (h *Handlers) SitePasskeysRename(ctx context.Context, req *siteapi.SitePass
 	if err != nil {
 		return nil, err
 	}
-	name, invalid := passkeyName(req.Name)
+	name, invalid := passkeyName(string(req.Name))
 	if invalid != nil {
 		v := siteapi.SitePasskeysRenameUnprocessableEntity(*invalid)
 		return &v, nil
@@ -260,7 +250,7 @@ func (h *Handlers) SitePasskeysRename(ctx context.Context, req *siteapi.SitePass
 	if err != nil {
 		return nil, err
 	}
-	res := passkeyResource(row)
+	res := mapper.PasskeyToResource(row)
 	return &res, nil
 }
 

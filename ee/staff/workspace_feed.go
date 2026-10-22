@@ -10,19 +10,12 @@ import (
 	"strings"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/membership"
 	entworkspace "github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/accounts"
 )
 
 // ErrInvalidFeedCursor refuses a cursor the feed never handed out.
 var ErrInvalidFeedCursor = errors.New("staff: the cursor is not one the workspace feed returned")
-
-const (
-	// DefaultFeedLimit is the page size of a feed read that names none.
-	DefaultFeedLimit = 100
-	// MaxFeedLimit is the most entries one feed page carries.
-	MaxFeedLimit = 200
-)
 
 // FeedEntry is a Workspace as the feed reports it: its identity and all of its owners.
 type FeedEntry struct {
@@ -55,11 +48,6 @@ func (m *Module) WorkspaceFeed(ctx context.Context, cursor string, limit int) (F
 	if err != nil {
 		return FeedPage{}, err
 	}
-	if limit <= 0 {
-		limit = DefaultFeedLimit
-	}
-	limit = min(limit, MaxFeedLimit)
-
 	rows, err := m.ent.Workspace.Query().
 		Where(entworkspace.Or(
 			entworkspace.FeedPositionGT(position),
@@ -78,11 +66,7 @@ func (m *Module) WorkspaceFeed(ctx context.Context, cursor string, limit int) (F
 	for i, w := range rows {
 		ids[i] = w.ID
 	}
-	owners, err := m.ent.Membership.Query().
-		Where(membership.WorkspaceIDIn(ids...), membership.RoleEQ(membership.RoleOwner)).
-		WithUser().
-		Order(ent.Asc(membership.FieldID)).
-		All(ctx)
+	owners, err := accounts.OwnersOf(ctx, m.ent, ids...)
 	if err != nil {
 		return FeedPage{}, err
 	}

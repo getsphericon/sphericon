@@ -1,4 +1,5 @@
 using TypeSpec.Http;
+using TypeSpec.OpenAPI;
 
 namespace Sphericon;
 
@@ -57,8 +58,9 @@ namespace ServiceWorkspaceFeed {
    * owners, in a stable order by change position. A change is a new Workspace, an owner
    * added, removed or transferred, or an owner's email or verification changing.
    * Delivery is at-least-once: replaying a cursor returns the same entries, and an
-   * empty cursor starts from the beginning. Needs the `workspaces:read` scope. */
+   * empty cursor starts from the beginning. */
   @get
+  @extension("x-required-scopes", #[ServiceScope.workspacesRead])
   op list(
     /** The `nextCursor` of a page the caller has saved; empty starts from the beginning */
     @query cursor?: string,
@@ -67,7 +69,7 @@ namespace ServiceWorkspaceFeed {
     @query
     @minValue(1)
     @maxValue(200)
-    limit?: int32,
+    limit?: int32 = 100,
   ):
     | ServiceWorkspaceFeedPage
     | BadRequestProblem

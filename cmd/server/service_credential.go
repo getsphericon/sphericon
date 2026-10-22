@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	"io"
 	"strings"
 	"text/tabwriter"
@@ -163,7 +164,7 @@ func formatTime(t *time.Time, none string) string {
 	return t.UTC().Format(time.RFC3339)
 }
 
-func joinScopes(scopes []staff.Scope) string {
+func joinScopes(scopes []serviceapi.ServiceScope) string {
 	parts := make([]string, len(scopes))
 	for i, s := range scopes {
 		parts[i] = string(s)
@@ -171,11 +172,11 @@ func joinScopes(scopes []staff.Scope) string {
 	return strings.Join(parts, ",")
 }
 
-func parseScopes(list string) []staff.Scope {
-	var scopes []staff.Scope
+func parseScopes(list string) []serviceapi.ServiceScope {
+	var scopes []serviceapi.ServiceScope
 	for part := range strings.SplitSeq(list, ",") {
 		if part = strings.TrimSpace(part); part != "" {
-			scopes = append(scopes, staff.Scope(part))
+			scopes = append(scopes, serviceapi.ServiceScope(part))
 		}
 	}
 	return scopes

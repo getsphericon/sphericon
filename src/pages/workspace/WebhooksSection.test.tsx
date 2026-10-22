@@ -90,6 +90,17 @@ test('says why an endpoint turned itself off', async () => {
   await expect.element(screen.getByText('Receiver answered 410 Gone')).toBeInTheDocument()
 })
 
+test('says when an owner turned an endpoint off', async () => {
+  worker.use(
+    list([
+      endpoint({ enabled: false, disabledReason: 'owner', disabledAt: '2026-01-03T00:00:00Z' }),
+    ]),
+  )
+  const { screen } = await renderWithRouter(<WebhooksSection workspaceId={WORKSPACE_ID} />)
+
+  await expect.element(screen.getByText(/Turned off by a member \(/)).toBeInTheDocument()
+})
+
 test('creates an endpoint from the form', async () => {
   const bodies: unknown[] = []
   worker.use(

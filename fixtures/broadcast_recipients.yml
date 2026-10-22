@@ -1866,3 +1866,41 @@
   clicked_at: '{{hoursAgo 70}}'
   created_at: '{{hoursAgo 84}}'
   updated_at: '{{hoursAgo 72}}'
+
+# Alice on the tracking-sample Broadcast (5700): no open, click or unsubscribe yet.
+- {
+    id: 5700, # fixture: BroadcastRecipientUntracked
+    broadcast_id: 5700,
+    contact_id: 1,
+    workspace_id: 1,
+    created_at: '{{daysAgo 2}}',
+    updated_at: '{{daysAgo 1}}',
+  }
+
+# Parked recipients (Alice, Bob, Carol) on the archived Broadcast: delivery tests move one onto the
+# Broadcast they send (testhelper PlaceRecipient), so each starts from exactly the recipients it
+# names. Bob's has a stale pending message, the claim a test makes live (ClaimRecipient).
+- {
+    id: 5710, # fixture: BroadcastRecipientParkedAlice
+    broadcast_id: 107,
+    contact_id: 1,
+    workspace_id: 1,
+    created_at: '{{daysAgo 5}}',
+    updated_at: '{{daysAgo 5}}',
+  }
+- {
+    id: 5711, # fixture: BroadcastRecipientParkedBob
+    broadcast_id: 107,
+    contact_id: 2,
+    workspace_id: 1,
+    created_at: '{{daysAgo 5}}',
+    updated_at: '{{daysAgo 5}}',
+  }
+- {
+    id: 5712, # fixture: BroadcastRecipientParkedCarol
+    broadcast_id: 107,
+    contact_id: 3,
+    workspace_id: 1,
+    created_at: '{{daysAgo 5}}',
+    updated_at: '{{daysAgo 5}}',
+  }

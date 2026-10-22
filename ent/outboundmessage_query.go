@@ -12,6 +12,13 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/getsphericon/sphericon/ent/automation"
+	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/broadcast"
+	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
+	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/emailtemplate"
+	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/workspace"
@@ -20,12 +27,19 @@ import (
 // OutboundMessageQuery is the builder for querying OutboundMessage entities.
 type OutboundMessageQuery struct {
 	config
-	ctx           *QueryContext
-	order         []outboundmessage.OrderOption
-	inters        []Interceptor
-	predicates    []predicate.OutboundMessage
-	withWorkspace *WorkspaceQuery
-	modifiers     []func(*sql.Selector)
+	ctx                    *QueryContext
+	order                  []outboundmessage.OrderOption
+	inters                 []Interceptor
+	predicates             []predicate.OutboundMessage
+	withWorkspace          *WorkspaceQuery
+	withBroadcast          *BroadcastQuery
+	withAutomation         *AutomationQuery
+	withIntegration        *IntegrationQuery
+	withBroadcastRecipient *BroadcastRecipientQuery
+	withAutomationRun      *AutomationRunQuery
+	withContact            *ContactQuery
+	withTemplate           *EmailTemplateQuery
+	modifiers              []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -77,6 +91,160 @@ func (_q *OutboundMessageQuery) QueryWorkspace() *WorkspaceQuery {
 			sqlgraph.From(outboundmessage.Table, outboundmessage.FieldID, selector),
 			sqlgraph.To(workspace.Table, workspace.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, outboundmessage.WorkspaceTable, outboundmessage.WorkspaceColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryBroadcast chains the current query on the "broadcast" edge.
+func (_q *OutboundMessageQuery) QueryBroadcast() *BroadcastQuery {
+	query := (&BroadcastClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(outboundmessage.Table, outboundmessage.FieldID, selector),
+			sqlgraph.To(broadcast.Table, broadcast.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, outboundmessage.BroadcastTable, outboundmessage.BroadcastColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryAutomation chains the current query on the "automation" edge.
+func (_q *OutboundMessageQuery) QueryAutomation() *AutomationQuery {
+	query := (&AutomationClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(outboundmessage.Table, outboundmessage.FieldID, selector),
+			sqlgraph.To(automation.Table, automation.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, outboundmessage.AutomationTable, outboundmessage.AutomationColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryIntegration chains the current query on the "integration" edge.
+func (_q *OutboundMessageQuery) QueryIntegration() *IntegrationQuery {
+	query := (&IntegrationClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(outboundmessage.Table, outboundmessage.FieldID, selector),
+			sqlgraph.To(integration.Table, integration.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, outboundmessage.IntegrationTable, outboundmessage.IntegrationColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryBroadcastRecipient chains the current query on the "broadcast_recipient" edge.
+func (_q *OutboundMessageQuery) QueryBroadcastRecipient() *BroadcastRecipientQuery {
+	query := (&BroadcastRecipientClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(outboundmessage.Table, outboundmessage.FieldID, selector),
+			sqlgraph.To(broadcastrecipient.Table, broadcastrecipient.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, outboundmessage.BroadcastRecipientTable, outboundmessage.BroadcastRecipientColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryAutomationRun chains the current query on the "automation_run" edge.
+func (_q *OutboundMessageQuery) QueryAutomationRun() *AutomationRunQuery {
+	query := (&AutomationRunClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(outboundmessage.Table, outboundmessage.FieldID, selector),
+			sqlgraph.To(automationrun.Table, automationrun.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, outboundmessage.AutomationRunTable, outboundmessage.AutomationRunColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryContact chains the current query on the "contact" edge.
+func (_q *OutboundMessageQuery) QueryContact() *ContactQuery {
+	query := (&ContactClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(outboundmessage.Table, outboundmessage.FieldID, selector),
+			sqlgraph.To(contact.Table, contact.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, outboundmessage.ContactTable, outboundmessage.ContactColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryTemplate chains the current query on the "template" edge.
+func (_q *OutboundMessageQuery) QueryTemplate() *EmailTemplateQuery {
+	query := (&EmailTemplateClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(outboundmessage.Table, outboundmessage.FieldID, selector),
+			sqlgraph.To(emailtemplate.Table, emailtemplate.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, outboundmessage.TemplateTable, outboundmessage.TemplateColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -271,12 +439,19 @@ func (_q *OutboundMessageQuery) Clone() *OutboundMessageQuery {
 		return nil
 	}
 	return &OutboundMessageQuery{
-		config:        _q.config,
-		ctx:           _q.ctx.Clone(),
-		order:         append([]outboundmessage.OrderOption{}, _q.order...),
-		inters:        append([]Interceptor{}, _q.inters...),
-		predicates:    append([]predicate.OutboundMessage{}, _q.predicates...),
-		withWorkspace: _q.withWorkspace.Clone(),
+		config:                 _q.config,
+		ctx:                    _q.ctx.Clone(),
+		order:                  append([]outboundmessage.OrderOption{}, _q.order...),
+		inters:                 append([]Interceptor{}, _q.inters...),
+		predicates:             append([]predicate.OutboundMessage{}, _q.predicates...),
+		withWorkspace:          _q.withWorkspace.Clone(),
+		withBroadcast:          _q.withBroadcast.Clone(),
+		withAutomation:         _q.withAutomation.Clone(),
+		withIntegration:        _q.withIntegration.Clone(),
+		withBroadcastRecipient: _q.withBroadcastRecipient.Clone(),
+		withAutomationRun:      _q.withAutomationRun.Clone(),
+		withContact:            _q.withContact.Clone(),
+		withTemplate:           _q.withTemplate.Clone(),
 		// clone intermediate query.
 		sql:       _q.sql.Clone(),
 		path:      _q.path,
@@ -292,6 +467,83 @@ func (_q *OutboundMessageQuery) WithWorkspace(opts ...func(*WorkspaceQuery)) *Ou
 		opt(query)
 	}
 	_q.withWorkspace = query
+	return _q
+}
+
+// WithBroadcast tells the query-builder to eager-load the nodes that are connected to
+// the "broadcast" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *OutboundMessageQuery) WithBroadcast(opts ...func(*BroadcastQuery)) *OutboundMessageQuery {
+	query := (&BroadcastClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withBroadcast = query
+	return _q
+}
+
+// WithAutomation tells the query-builder to eager-load the nodes that are connected to
+// the "automation" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *OutboundMessageQuery) WithAutomation(opts ...func(*AutomationQuery)) *OutboundMessageQuery {
+	query := (&AutomationClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withAutomation = query
+	return _q
+}
+
+// WithIntegration tells the query-builder to eager-load the nodes that are connected to
+// the "integration" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *OutboundMessageQuery) WithIntegration(opts ...func(*IntegrationQuery)) *OutboundMessageQuery {
+	query := (&IntegrationClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withIntegration = query
+	return _q
+}
+
+// WithBroadcastRecipient tells the query-builder to eager-load the nodes that are connected to
+// the "broadcast_recipient" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *OutboundMessageQuery) WithBroadcastRecipient(opts ...func(*BroadcastRecipientQuery)) *OutboundMessageQuery {
+	query := (&BroadcastRecipientClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withBroadcastRecipient = query
+	return _q
+}
+
+// WithAutomationRun tells the query-builder to eager-load the nodes that are connected to
+// the "automation_run" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *OutboundMessageQuery) WithAutomationRun(opts ...func(*AutomationRunQuery)) *OutboundMessageQuery {
+	query := (&AutomationRunClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withAutomationRun = query
+	return _q
+}
+
+// WithContact tells the query-builder to eager-load the nodes that are connected to
+// the "contact" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *OutboundMessageQuery) WithContact(opts ...func(*ContactQuery)) *OutboundMessageQuery {
+	query := (&ContactClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withContact = query
+	return _q
+}
+
+// WithTemplate tells the query-builder to eager-load the nodes that are connected to
+// the "template" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *OutboundMessageQuery) WithTemplate(opts ...func(*EmailTemplateQuery)) *OutboundMessageQuery {
+	query := (&EmailTemplateClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withTemplate = query
 	return _q
 }
 
@@ -373,8 +625,15 @@ func (_q *OutboundMessageQuery) sqlAll(ctx context.Context, hooks ...queryHook) 
 	var (
 		nodes       = []*OutboundMessage{}
 		_spec       = _q.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [8]bool{
 			_q.withWorkspace != nil,
+			_q.withBroadcast != nil,
+			_q.withAutomation != nil,
+			_q.withIntegration != nil,
+			_q.withBroadcastRecipient != nil,
+			_q.withAutomationRun != nil,
+			_q.withContact != nil,
+			_q.withTemplate != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -404,6 +663,48 @@ func (_q *OutboundMessageQuery) sqlAll(ctx context.Context, hooks ...queryHook) 
 			return nil, err
 		}
 	}
+	if query := _q.withBroadcast; query != nil {
+		if err := _q.loadBroadcast(ctx, query, nodes, nil,
+			func(n *OutboundMessage, e *Broadcast) { n.Edges.Broadcast = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withAutomation; query != nil {
+		if err := _q.loadAutomation(ctx, query, nodes, nil,
+			func(n *OutboundMessage, e *Automation) { n.Edges.Automation = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withIntegration; query != nil {
+		if err := _q.loadIntegration(ctx, query, nodes, nil,
+			func(n *OutboundMessage, e *Integration) { n.Edges.Integration = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withBroadcastRecipient; query != nil {
+		if err := _q.loadBroadcastRecipient(ctx, query, nodes, nil,
+			func(n *OutboundMessage, e *BroadcastRecipient) { n.Edges.BroadcastRecipient = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withAutomationRun; query != nil {
+		if err := _q.loadAutomationRun(ctx, query, nodes, nil,
+			func(n *OutboundMessage, e *AutomationRun) { n.Edges.AutomationRun = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withContact; query != nil {
+		if err := _q.loadContact(ctx, query, nodes, nil,
+			func(n *OutboundMessage, e *Contact) { n.Edges.Contact = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withTemplate; query != nil {
+		if err := _q.loadTemplate(ctx, query, nodes, nil,
+			func(n *OutboundMessage, e *EmailTemplate) { n.Edges.Template = e }); err != nil {
+			return nil, err
+		}
+	}
 	return nodes, nil
 }
 
@@ -429,6 +730,230 @@ func (_q *OutboundMessageQuery) loadWorkspace(ctx context.Context, query *Worksp
 		nodes, ok := nodeids[n.ID]
 		if !ok {
 			return fmt.Errorf(`unexpected foreign-key "workspace_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (_q *OutboundMessageQuery) loadBroadcast(ctx context.Context, query *BroadcastQuery, nodes []*OutboundMessage, init func(*OutboundMessage), assign func(*OutboundMessage, *Broadcast)) error {
+	ids := make([]int64, 0, len(nodes))
+	nodeids := make(map[int64][]*OutboundMessage)
+	for i := range nodes {
+		if nodes[i].BroadcastID == nil {
+			continue
+		}
+		fk := *nodes[i].BroadcastID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(broadcast.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "broadcast_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (_q *OutboundMessageQuery) loadAutomation(ctx context.Context, query *AutomationQuery, nodes []*OutboundMessage, init func(*OutboundMessage), assign func(*OutboundMessage, *Automation)) error {
+	ids := make([]int64, 0, len(nodes))
+	nodeids := make(map[int64][]*OutboundMessage)
+	for i := range nodes {
+		if nodes[i].AutomationID == nil {
+			continue
+		}
+		fk := *nodes[i].AutomationID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(automation.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "automation_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (_q *OutboundMessageQuery) loadIntegration(ctx context.Context, query *IntegrationQuery, nodes []*OutboundMessage, init func(*OutboundMessage), assign func(*OutboundMessage, *Integration)) error {
+	ids := make([]int64, 0, len(nodes))
+	nodeids := make(map[int64][]*OutboundMessage)
+	for i := range nodes {
+		if nodes[i].IntegrationID == nil {
+			continue
+		}
+		fk := *nodes[i].IntegrationID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(integration.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "integration_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (_q *OutboundMessageQuery) loadBroadcastRecipient(ctx context.Context, query *BroadcastRecipientQuery, nodes []*OutboundMessage, init func(*OutboundMessage), assign func(*OutboundMessage, *BroadcastRecipient)) error {
+	ids := make([]int64, 0, len(nodes))
+	nodeids := make(map[int64][]*OutboundMessage)
+	for i := range nodes {
+		if nodes[i].BroadcastRecipientID == nil {
+			continue
+		}
+		fk := *nodes[i].BroadcastRecipientID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(broadcastrecipient.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "broadcast_recipient_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (_q *OutboundMessageQuery) loadAutomationRun(ctx context.Context, query *AutomationRunQuery, nodes []*OutboundMessage, init func(*OutboundMessage), assign func(*OutboundMessage, *AutomationRun)) error {
+	ids := make([]int64, 0, len(nodes))
+	nodeids := make(map[int64][]*OutboundMessage)
+	for i := range nodes {
+		if nodes[i].AutomationRunID == nil {
+			continue
+		}
+		fk := *nodes[i].AutomationRunID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(automationrun.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "automation_run_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (_q *OutboundMessageQuery) loadContact(ctx context.Context, query *ContactQuery, nodes []*OutboundMessage, init func(*OutboundMessage), assign func(*OutboundMessage, *Contact)) error {
+	ids := make([]int64, 0, len(nodes))
+	nodeids := make(map[int64][]*OutboundMessage)
+	for i := range nodes {
+		if nodes[i].ContactID == nil {
+			continue
+		}
+		fk := *nodes[i].ContactID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(contact.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "contact_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (_q *OutboundMessageQuery) loadTemplate(ctx context.Context, query *EmailTemplateQuery, nodes []*OutboundMessage, init func(*OutboundMessage), assign func(*OutboundMessage, *EmailTemplate)) error {
+	ids := make([]int64, 0, len(nodes))
+	nodeids := make(map[int64][]*OutboundMessage)
+	for i := range nodes {
+		if nodes[i].TemplateID == nil {
+			continue
+		}
+		fk := *nodes[i].TemplateID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(emailtemplate.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "template_id" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
@@ -467,6 +992,27 @@ func (_q *OutboundMessageQuery) querySpec() *sqlgraph.QuerySpec {
 		}
 		if _q.withWorkspace != nil {
 			_spec.Node.AddColumnOnce(outboundmessage.FieldWorkspaceID)
+		}
+		if _q.withBroadcast != nil {
+			_spec.Node.AddColumnOnce(outboundmessage.FieldBroadcastID)
+		}
+		if _q.withAutomation != nil {
+			_spec.Node.AddColumnOnce(outboundmessage.FieldAutomationID)
+		}
+		if _q.withIntegration != nil {
+			_spec.Node.AddColumnOnce(outboundmessage.FieldIntegrationID)
+		}
+		if _q.withBroadcastRecipient != nil {
+			_spec.Node.AddColumnOnce(outboundmessage.FieldBroadcastRecipientID)
+		}
+		if _q.withAutomationRun != nil {
+			_spec.Node.AddColumnOnce(outboundmessage.FieldAutomationRunID)
+		}
+		if _q.withContact != nil {
+			_spec.Node.AddColumnOnce(outboundmessage.FieldContactID)
+		}
+		if _q.withTemplate != nil {
+			_spec.Node.AddColumnOnce(outboundmessage.FieldTemplateID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

@@ -4,6 +4,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
+	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
 )
@@ -52,11 +53,18 @@ func (Unsubscribe) Fields() []ent.Field {
 		field.String("sending_source").
 			NotEmpty(),
 		// The contact this destination belongs to, when known. Display only;
-		// the opt-out is keyed by destination and outlives the contact. Nullable.
+		// the opt-out is keyed by destination and outlives the contact (ON DELETE SET NULL;
+		// Erasure clears it and the refusal stays). Nullable.
 		field.Int64("contact_id").
 			Optional().
-			Nillable().
-			Annotations(ScopedRef{Entity: "Contact"}),
+			Nillable(),
+	}
+}
+
+func (Unsubscribe) Edges() []ent.Edge {
+	return []ent.Edge{
+		edge.To("contact", Contact.Type).Field("contact_id").Unique().
+			Annotations(entsql.OnDelete(entsql.SetNull)),
 	}
 }
 
@@ -68,9 +76,9 @@ func (Unsubscribe) Indexes() []ent.Index {
 		index.Fields("workspace_id", "channel", "destination", "sending_source").
 			Unique().
 			StorageKey("unsubscribes_ws_channel_dest_source"),
-		// Erasure and contact lookups reach this table by contact.
-		index.Fields("workspace_id", "contact_id").
-			StorageKey("unsubscribes_workspace_id_contact_id").
-			Annotations(entsql.IndexWhere("contact_id IS NOT NULL")),
+		// Erasure and contact lookups reach this table by contact; the contact foreign key's
+		// index (whole: a key's index cannot be partial).
+		index.Fields("contact_id").
+			StorageKey("unsubscribes_contact_id"),
 	}
 }

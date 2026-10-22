@@ -8,6 +8,7 @@ import (
 
 	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill/message"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -33,11 +34,15 @@ func deliveryBody(t *testing.T, env *testhelper.TestEnv, ev events.DomainEvent) 
 	raw, err := json.Marshal(envelopes[before])
 	require.NoError(t, err)
 
-	d := &WebhookDispatcherMock{DispatchFunc: func(context.Context, *ent.Scoped, string, string, []byte) error { return nil }}
-	require.NoError(t, events.WebhooksConsumer(env.DB, d)(message.NewMessage(watermill.NewUUID(), raw)))
-	calls := d.DispatchCalls()
-	require.Len(t, calls, 1)
-	return calls[0].Body
+	queued := len(env.JobsOf(t, jobkind.DeliverWebhook.Kind))
+	require.NoError(t, events.WebhooksConsumer(env.DB, queueingJobs(t, env))(message.NewMessage(watermill.NewUUID(), raw)))
+	after := env.JobsOf(t, jobkind.DeliverWebhook.Kind)
+	require.Len(t, after, queued+1)
+	encoded, err := json.Marshal(after[queued])
+	require.NoError(t, err)
+	var job jobs.DeliverWebhookArgs
+	require.NoError(t, json.Unmarshal(encoded, &job))
+	return job.Body
 }
 
 // withoutPath returns body with the JSON object member at path removed, so a delivery
@@ -91,6 +96,7 @@ func TestPurgeWebhookJobsMatchesTheBodyDispatchBuilds(t *testing.T) {
 	assert.EqualValues(t, fixtures.ContactBystanderID, payload.Data.ContactID)
 	assert.Equal(t, fixtures.ContactBystanderEmail, payload.Data.Email)
 
+	var names []string
 	for _, d := range []struct {
 		endpoint int64
 		id       string
@@ -104,6 +110,7 @@ func TestPurgeWebhookJobsMatchesTheBodyDispatchBuilds(t *testing.T) {
 		{fixtures.WebhookInitechID, "nobody", nobody},
 		{fixtures.WebhookGlobexID, "other-tenant", otherTenant},
 	} {
+		names = append(names, d.id)
 		env.EnqueueJob(t, jobs.DeliverWebhookArgs{EndpointID: d.endpoint, EventName: "x", DeliveryID: d.id, Body: d.body})
 	}
 
@@ -112,9 +119,11 @@ func TestPurgeWebhookJobsMatchesTheBodyDispatchBuilds(t *testing.T) {
 		return pub.PurgeWebhookJobs(ctx, fixtures.InitechID, fixtures.ContactErasableID, []string{fixtures.ContactErasableEmail})
 	}))
 
-	var left []string
-	for _, args := range env.JobsOf(t, jobkind.DeliverWebhook.Kind) {
-		left = append(left, fmt.Sprint(args["delivery_id"]))
-	}
+	// The deliveries queued while building the bodies above stay in the queue too; only the
+	// ones enqueued here under a name are the purge's subject.
+	queuedIDs := lo.Map(env.JobsOf(t, jobkind.DeliverWebhook.Kind), func(args map[string]any, _ int) string {
+		return fmt.Sprint(args["delivery_id"])
+	})
+	left := lo.Intersect(queuedIDs, names)
 	assert.ElementsMatch(t, []string{"bystander", "nobody", "other-tenant"}, left)
 }

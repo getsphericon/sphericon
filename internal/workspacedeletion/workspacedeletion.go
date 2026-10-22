@@ -202,7 +202,7 @@ func (m *Module) Delete(ctx context.Context, s *ent.Scoped, actor events.Actor, 
 // recently deleted first, each with its Owner Membership and Workspace loaded.
 func (m *Module) Deleted(ctx context.Context, userID int64, now time.Time) ([]*ent.Membership, error) {
 	return m.client.Membership.Query().
-		Where(membership.UserID(userID), membership.RoleEQ(membership.RoleOwner),
+		Where(membership.UserID(userID), accounts.OwnerMembership(),
 			membership.HasWorkspaceWith(insideWindow(now), workspace.DiscardedAtNotNil())).
 		WithWorkspace().
 		Order(membership.ByWorkspaceField(workspace.FieldDiscardedAt, sql.OrderDesc()), ent.Desc(membership.FieldID)).
@@ -213,7 +213,7 @@ func (m *Module) Deleted(ctx context.Context, userID int64, now time.Time) ([]*e
 // Workspaces a User owns, it names the ones that have no other Owner to restore them.
 func (m *Module) SoleOwned(ctx context.Context, workspaceIDs []int64) (map[int64]bool, error) {
 	owners, err := m.client.Membership.Query().
-		Where(membership.WorkspaceIDIn(workspaceIDs...), membership.RoleEQ(membership.RoleOwner)).
+		Where(membership.WorkspaceIDIn(workspaceIDs...), accounts.OwnerMembership()).
 		All(ctx)
 	if err != nil {
 		return nil, err
@@ -234,7 +234,7 @@ func (m *Module) Restore(ctx context.Context, userID int64, publicID string, act
 	// lifecycle.ErrInvalidTransition from an erased row is only reachable through the table.
 	workspaceID, err := m.client.Workspace.Query().
 		Where(workspace.PublicID(publicID), workspace.DiscardedAtNotNil(),
-			workspace.HasMembershipsWith(membership.UserID(userID), membership.RoleEQ(membership.RoleOwner))).
+			workspace.HasMembershipsWith(membership.UserID(userID), accounts.OwnerMembership())).
 		OnlyID(ctx)
 	if err != nil {
 		return nil, err

@@ -23,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/internal/db"
+	"github.com/getsphericon/sphericon/internal/dkimstate"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/inuse"
@@ -181,10 +182,17 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		if in.Selector == nil || selector == cur.DkimSelector {
 			return nil
 		}
-		row, err = ts.SendingDomain().UpdateOneID(id).
-			SetDkimSelector(selector).
-			SetVerified(false).
-			Save(ctx)
+		if dkimstate.Is(cur) {
+			// The published record is under the old selector: the verification is lost. The
+			// loss lands only while the domain is still verified; a miss means a check moved
+			// it meanwhile, and the plain edit below stands.
+			row, err = ts.SendingDomain().UpdateOneID(id).Where(dkimstate.Verified()).
+				SetDkimSelector(selector).SetVerificationLostAt(time.Now()).Save(ctx)
+			if !ent.IsNotFound(err) {
+				return err
+			}
+		}
+		row, err = ts.SendingDomain().UpdateOneID(id).SetDkimSelector(selector).Save(ctx)
 		return err
 	})
 	if err != nil {

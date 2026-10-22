@@ -1,4 +1,5 @@
 using TypeSpec.Http;
+using TypeSpec.OpenAPI;
 
 namespace Sphericon;
 
@@ -77,6 +78,7 @@ model HoldList {
 namespace ServiceHolds {
   /** The holds of a Workspace that are active now; a lapsed one is not listed */
   @get
+  @extension("x-required-scopes", #[ServiceScope.holdsWrite])
   op list(@path workspaceId: WorkspaceId):
     | HoldList
     | UnauthorizedProblem
@@ -88,6 +90,7 @@ namespace ServiceHolds {
    * renewing with a different expiry is a change. */
   @route("/{key}")
   @put
+  @extension("x-required-scopes", #[ServiceScope.holdsWrite])
   op set(
     @path workspaceId: WorkspaceId,
     @path key: string,
@@ -102,6 +105,7 @@ namespace ServiceHolds {
   /** Clear a hold by its key. Idempotent: clearing a missing hold succeeds with `changed` false. */
   @route("/{key}")
   @delete
+  @extension("x-required-scopes", #[ServiceScope.holdsWrite])
   op clear(@path workspaceId: WorkspaceId, @path key: string):
     | HoldClearResult
     | UnauthorizedProblem

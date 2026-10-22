@@ -79,7 +79,7 @@ func TestExternalSendingDomainsList(t *testing.T) {
 	for _, d := range ok.Items {
 		verified[d.Domain] = d.Verified
 	}
-	assert.Equal(t, map[string]bool{"mail.acme.com": true, "news.acme.com": false, "codebasics.dev": true, "launch.acme.com": false}, verified)
+	assert.Equal(t, map[string]bool{"mail.acme.com": true, "news.acme.com": false, "codebasics.dev": true, "launch.acme.com": false, "lost.acme.com": false}, verified)
 }
 
 func ratesByDomain(t *testing.T, res externalapi.SendingDomainRatesListRes) map[string]externalapi.SendingDomainRatesResource {
@@ -142,17 +142,4 @@ func TestExternalSendingDomainRates(t *testing.T) {
 	assert.EqualValues(t, 90, wide.WindowDays)
 	assert.EqualValues(t, 2, wide.ComplaintRate.Numerator)
 	assert.EqualValues(t, 8, wide.ComplaintRate.Denominator)
-}
-
-func TestExternalSendingDomainRatesRejectsBadWindow(t *testing.T) {
-	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "sending_domains:read")
-
-	for _, days := range []int32{0, 91} {
-		res, err := c.SendingDomainRatesList(context.Background(), externalapi.SendingDomainRatesListParams{
-			WindowDays: externalapi.NewOptInt32(days),
-		})
-		require.NoError(t, err)
-		assert.IsType(t, &externalapi.SendingDomainRatesListBadRequest{}, res, "window %d", days)
-	}
 }

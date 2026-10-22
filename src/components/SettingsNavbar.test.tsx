@@ -1,6 +1,7 @@
 import { beforeEach, expect, test } from 'vitest'
 
 import { handleSiteWorkspacesList } from '../generated/site/msw.gen.ts'
+import type { SiteMembershipRole } from '../generated/site/types.gen.ts'
 import { Route as overviewRoute } from '../routes/workspaces/$workspaceId/index.tsx'
 import { Route as auditLogRoute } from '../routes/workspaces/$workspaceId/settings/audit-log.tsx'
 import { Route as developersRoute } from '../routes/workspaces/$workspaceId/settings/developers.tsx'
@@ -27,7 +28,7 @@ const LINKS = [
   ['Privacy requests', privacyRoute],
 ] as const
 
-const workspace = (role: 'owner' | 'admin' | 'member') => ({
+const workspace = (role: SiteMembershipRole) => ({
   id: 'AcmeWs01',
   name: 'Acme',
   collectKey: 'omck_test_key',

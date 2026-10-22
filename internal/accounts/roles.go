@@ -224,10 +224,7 @@ func deleteLocked(ctx context.Context, ts *ent.Scoped, pub events.Publisher, act
 // target with its User and returns the count of owners. Locking first serializes
 // concurrent Owner changes: the second waits, then reads the committed outcome of the first.
 func lockedTarget(ctx context.Context, ts *ent.Scoped, target predicate.Membership) (*ent.Membership, int, error) {
-	ownerIDs, err := ts.Membership().Query().
-		Where(membership.RoleEQ(membership.RoleOwner)).
-		ForUpdate().
-		IDs(ctx)
+	ownerIDs, err := LockOwners(ctx, ts)
 	if err != nil {
 		return nil, 0, err
 	}

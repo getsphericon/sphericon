@@ -9,12 +9,8 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
-	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
-	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
-	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
-	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/jobs"
@@ -68,54 +64,47 @@ func TestSendBroadcastDeliversToEligibleContacts(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	// Eligibility is derived (ADR 0001): the audience is the workspace contacts
-	// minus the ineligible. Bob is unsubscribed from "broadcasts" in the fixtures,
-	// so alice + carol remain.
-	eligible, err := env.DB.Contact.Query().
-		Where(contact.WorkspaceID(fixtures.AcmeID),
-			eligibility.Predicate(eligibility.ChannelEmail, eligibility.SourceBroadcasts)).
-		All(ctx)
-	require.NoError(t, err)
-	eligibleCount := len(eligible)
-	require.Positive(t, eligibleCount, "the workspace has broadcast-eligible contacts")
-	// Bob is unsubscribed from "broadcasts", so he must not be in the eligible set.
-	for _, e := range eligible {
-		require.NotEqual(t, "bob@example.com", *e.Email, "unsubscribed contact is excluded from the audience")
-	}
-
-	// Send the draft fixture broadcast (100).
+	// Eligibility is derived (ADR 0001): the audience is the workspace contacts minus the
+	// ineligible. Bob is unsubscribed from "broadcasts" in the fixtures, the email-less
+	// contact has no destination.
 	fs := &fakeSender{}
 	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, newMod(env, resolvingTo(fs)), fixtures.BroadcastDraftID))
 
-	// One message per eligible contact; no unrendered merge tags leak through
+	// One message per delivered contact; no unrendered merge tags leak through
 	// (substitution itself is covered by the emailrender tests).
-	assert.Len(t, fs.sent, eligibleCount)
-	for _, m := range fs.sent {
-		assert.NotEqual(t, "bob@example.com", m.To, "unsubscribed destination must not be sent to")
+	got := make([]string, len(fs.sent))
+	for i, m := range fs.sent {
+		got[i] = m.To
 		assert.NotContains(t, m.Subject, "{{")
 		assert.NotContains(t, m.HTML, "{{")
 		assert.NotEmpty(t, m.Text, "text part derived from HTML")
 	}
+	assert.Contains(t, got, fixtures.ContactAliceEmail)
+	assert.Contains(t, got, fixtures.ContactCarolEmail)
+	assert.NotContains(t, got, fixtures.ContactBobEmail, "unsubscribed destination must not be sent to")
+	sent := len(fs.sent)
 
 	// Broadcast is marked sent with accurate counters.
-	got := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID)
-	assert.Equal(t, broadcast.StatusSent, got.Status)
-	assert.Equal(t, broadcasts.Stats{Recipients: eligibleCount, Sent: eligibleCount}, figuresOf(t, env, fixtures.BroadcastDraftID))
-	require.NotNil(t, got.SentAt)
+	done := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID)
+	assert.Equal(t, broadcast.StatusSent, done.Status)
+	assert.Equal(t, broadcasts.Stats{Recipients: sent, Sent: sent}, figuresOf(t, env, fixtures.BroadcastDraftID))
+	require.NotNil(t, done.SentAt)
 
-	// A recipient row exists per eligible contact, none still pending (the figures above
-	// count each one's sent message).
+	// A recipient row exists per delivered contact and none for the email-less one.
 	recs, err := env.DB.BroadcastRecipient.Query().
 		Where(broadcastrecipient.BroadcastID(fixtures.BroadcastDraftID)).
 		All(ctx)
 	require.NoError(t, err)
-	assert.Len(t, recs, eligibleCount)
+	assert.Len(t, recs, sent)
+	assert.False(t, env.DB.BroadcastRecipient.Query().
+		Where(broadcastrecipient.BroadcastID(fixtures.BroadcastDraftID), broadcastrecipient.ContactID(fixtures.ContactJobsNoEmailID)).
+		ExistX(ctx), "a contact without an email is not a recipient")
 
 	// Each send publishes an email.sent event onto the transactional outbox, so the
 	// send fact reaches the Event log (Events are the source of truth; persist runs
 	// off the bus, not under txdb — projection is covered by the events tests). One
 	// per sent recipient, no more (exactly-once).
-	assert.Equal(t, eligibleCount, countOutboxEvents(t, env, "email.sent", fixtures.BroadcastDraftID))
+	assert.Equal(t, sent, countOutboxEvents(t, env, "email.sent", fixtures.BroadcastDraftID))
 }
 
 // countOutboxEvents returns how many events of the given name for the given
@@ -167,9 +156,7 @@ func TestUnsubscribeBetweenPlanAndSendSkipsTheRecipient(t *testing.T) {
 	require.NoError(t, err)
 	rec := env.DB.BroadcastRecipient.GetX(ctx, ids[0])
 	c := env.DB.Contact.GetX(ctx, rec.ContactID)
-	env.DB.Unsubscribe.Create().SetWorkspaceID(fixtures.AcmeID).SetChannel("email").
-		SetDestination(suppression.NormalizeDestination(*c.Email)).
-		SetSendingSource(eligibility.SourceBroadcasts).ExecX(ctx)
+	env.UnsubscribeFromBroadcasts(ctx, suppression.NormalizeDestination(*c.Email))
 
 	require.NoError(t, deliverRecipient(ctx, env.DB, mod, ids[0]))
 	assert.Equal(t, outboundmessage.StatusSkipped, env.DB.OutboundMessage.Query().Where(outboundmessage.BroadcastRecipientID(ids[0])).OnlyX(ctx).Status)
@@ -181,44 +168,25 @@ func TestUnsubscribeBetweenPlanAndSendSkipsTheRecipient(t *testing.T) {
 func TestSendBroadcastSkipsSuppressed(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-
-	// Eligible for broadcasts before suppression: alice + carol (bob is
-	// unsubscribed from broadcasts in the fixtures).
-	eligibleBefore, err := env.DB.Contact.Query().
-		Where(contact.WorkspaceID(fixtures.AcmeID),
-			eligibility.Predicate(eligibility.ChannelEmail, eligibility.SourceBroadcasts)).
-		Count(ctx)
-	require.NoError(t, err)
-	require.GreaterOrEqual(t, eligibleBefore, 2)
-
-	// Suppress alice (id 1 in fixtures) — a global hard floor on every surface.
-	// The suppression is an incidental edge no fixture expresses, so it's created
-	// inline; the broadcast itself is a fixture (scheduled broadcast 101).
-	alice := env.DB.Contact.GetX(ctx, fixtures.ContactAliceID)
-	_, err = env.DB.Suppression.Create().
-		SetWorkspaceID(fixtures.AcmeID).
-		SetChannel(entsuppression.ChannelEmail).
-		SetDestination(*alice.Email).
-		SetReason(entsuppression.ReasonManual).
-		Save(ctx)
-	require.NoError(t, err)
+	bounced := env.DB.Contact.GetX(ctx, fixtures.ContactBouncedID)
+	complained := env.DB.Contact.GetX(ctx, fixtures.ContactComplainedID)
 
 	fs := &fakeSender{}
 	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, newMod(env, resolvingTo(fs)), fixtures.BroadcastScheduledID))
 
-	// alice gets no message.
-	for _, m := range fs.sent {
-		assert.NotEqual(t, *alice.Email, m.To, "suppressed address must not be sent to")
+	got := make([]string, len(fs.sent))
+	for i, m := range fs.sent {
+		got[i] = m.To
 	}
-	assert.Len(t, fs.sent, eligibleBefore-1)
+	assert.Contains(t, got, fixtures.ContactAliceEmail, "an unsuppressed contact still receives the broadcast")
+	assert.NotContains(t, got, *bounced.Email, "an address suppressed for a bounce must not be sent to")
+	assert.NotContains(t, got, *complained.Email, "an address suppressed for a complaint must not be sent to")
 
-	// The figures exclude the suppressed contact, and she has no recipient row.
-	assert.Equal(t, broadcasts.Stats{Recipients: eligibleBefore - 1, Sent: eligibleBefore - 1}, figuresOf(t, env, fixtures.BroadcastScheduledID))
-	n, err := env.DB.BroadcastRecipient.Query().
-		Where(broadcastrecipient.BroadcastID(fixtures.BroadcastScheduledID), broadcastrecipient.ContactID(alice.ID)).
-		Count(ctx)
-	require.NoError(t, err)
-	assert.Zero(t, n, "no recipient row for a suppressed contact")
+	// The figures count what was delivered, and a suppressed contact has no recipient row.
+	assert.Equal(t, broadcasts.Stats{Recipients: len(fs.sent), Sent: len(fs.sent)}, figuresOf(t, env, fixtures.BroadcastScheduledID))
+	assert.False(t, env.DB.BroadcastRecipient.Query().
+		Where(broadcastrecipient.BroadcastID(fixtures.BroadcastScheduledID), broadcastrecipient.ContactID(bounced.ID)).
+		ExistX(ctx), "no recipient row for a suppressed contact")
 }
 
 // A destination unsubscribed from "everything" is excluded from broadcasts even
@@ -226,36 +194,21 @@ func TestSendBroadcastSkipsSuppressed(t *testing.T) {
 func TestSendBroadcastSkipsUnsubscribedFromEverything(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-
-	// The everything-opt-out contact + unsubscribe are the edge under test and no
-	// fixture expresses them, so they're created inline; the broadcast is a fixture
-	// (sending broadcast 102).
-	c, err := env.DB.Contact.Create().SetWorkspaceID(fixtures.AcmeID).
-		SetEmail("gone@everything.test").SetFirstName("Gone").Save(ctx)
-	require.NoError(t, err)
-	_, err = env.DB.Unsubscribe.Create().
-		SetWorkspaceID(fixtures.AcmeID).
-		SetChannel(unsubscribe.ChannelEmail).
-		SetDestination(*c.Email).
-		SetSendingSource(eligibility.SourceEverything).
-		SetContactID(c.ID).
-		Save(ctx)
-	require.NoError(t, err)
+	gone := env.DB.Contact.GetX(ctx, fixtures.ContactUnsubscribedEverythingID)
 
 	fs := &fakeSender{}
 	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, newMod(env, resolvingTo(fs)), fixtures.BroadcastSendingID))
 
 	// Positive control: the eligible audience (alice + carol; bob is broadcasts-
 	// unsubscribed) is still delivered to, and the everything-opt-out is excluded.
-	require.NotEmpty(t, fs.sent, "eligible contacts must still receive the broadcast")
 	got := make([]string, len(fs.sent))
 	for i, m := range fs.sent {
 		got[i] = m.To
 	}
-	assert.NotContains(t, got, *c.Email, "everything-unsubscribed destination must not be sent to")
-	assert.Contains(t, got, "alice@example.com")
-	assert.Contains(t, got, "carol@example.com")
-	assert.NotContains(t, got, "bob@example.com")
+	assert.NotContains(t, got, *gone.Email, "everything-unsubscribed destination must not be sent to")
+	assert.Contains(t, got, fixtures.ContactAliceEmail)
+	assert.Contains(t, got, fixtures.ContactCarolEmail)
+	assert.NotContains(t, got, fixtures.ContactBobEmail)
 
 	// Every broadcast carries an RFC 8058 one-click unsubscribe URL (ADR 0012),
 	// scoped to the "broadcasts" source (the /e/u/ token endpoint).
@@ -294,30 +247,24 @@ func TestSendBroadcastMarksFailedOnSendError(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	eligible, err := env.DB.Contact.Query().
-		Where(contact.WorkspaceID(fixtures.AcmeID),
-			eligibility.Predicate(eligibility.ChannelEmail, eligibility.SourceBroadcasts)).
-		Count(ctx)
-	require.NoError(t, err)
-	require.Positive(t, eligible)
-
 	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, newMod(env, resolvingTo(erroringSender{})), fixtures.BroadcastScheduledID))
 
 	got := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastScheduledID)
 	assert.Equal(t, broadcast.StatusSent, got.Status, "broadcast finalizes even when every send fails")
-	assert.Equal(t, broadcasts.Stats{Recipients: eligible, Failed: eligible}, figuresOf(t, env, fixtures.BroadcastScheduledID))
 	require.NotNil(t, got.SentAt)
 
 	recs, err := env.DB.BroadcastRecipient.Query().
 		Where(broadcastrecipient.BroadcastID(fixtures.BroadcastScheduledID)).
 		All(ctx)
 	require.NoError(t, err)
-	assert.Len(t, recs, eligible)
+	audience := len(recs)
+	require.Positive(t, audience, "the broadcast has an audience")
+	assert.Equal(t, broadcasts.Stats{Recipients: audience, Failed: audience}, figuresOf(t, env, fixtures.BroadcastScheduledID))
 	msgs, err := env.DB.OutboundMessage.Query().
 		Where(outboundmessage.BroadcastID(fixtures.BroadcastScheduledID)).
 		All(ctx)
 	require.NoError(t, err)
-	assert.Len(t, msgs, eligible, "every recipient ends with one message, each failed with its cause")
+	assert.Len(t, msgs, audience, "every recipient ends with one message, each failed with its cause")
 	for _, m := range msgs {
 		assert.Equal(t, outboundmessage.StatusFailed, m.Status)
 		require.NotNil(t, m.Reason)

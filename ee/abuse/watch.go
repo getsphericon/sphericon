@@ -6,7 +6,11 @@ import (
 
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/reputation"
+	"github.com/getsphericon/sphericon/internal/suspension"
 )
 
 // Watch reads a Workspace's standing with the detector, without acting on it: the
@@ -51,8 +55,37 @@ func (w *Watch) Standing(ctx context.Context, s *ent.Scoped, ws *ent.Workspace, 
 // unlicensed instance, an exempt Workspace (never warned or frozen automatically) or one
 // that is already suspended.
 func (w *Watch) Warning(ctx context.Context, s *ent.Scoped, ws *ent.Workspace, now time.Time) (Breach, error) {
-	if !w.Licensed() || ws.AbuseExempt || ws.SuspendedAt != nil {
+	if !w.Licensed() || ws.AbuseExempt || suspension.Is(ws) {
 		return Breach{}, nil
 	}
 	return w.Standing(ctx, s, ws, now)
+}
+
+// Review narrows the console's Workspace list to the ones the abuse detector surfaces
+// (ADR 0026); the filters are stated here, with the detector, once.
+type Review string
+
+const (
+	ReviewNone Review = ""
+	// ReviewWarned: the owners were warned and the Workspace is still in the warning tier.
+	ReviewWarned Review = "warned"
+	// ReviewSystemFrozen: suspended by the detector (actor `system`).
+	ReviewSystemFrozen Review = "system_frozen"
+	// ReviewDeleted: in the deletion window or erased (ADR 0043); every other list hides them.
+	ReviewDeleted Review = "deleted"
+)
+
+// Predicate is the Workspace filter a review state names. Every list but the deleted one hides
+// the deleted Workspaces (accounts.Live).
+func (r Review) Predicate() predicate.Workspace {
+	switch r {
+	case ReviewDeleted:
+		return accounts.Deleted()
+	case ReviewWarned:
+		return workspace.And(accounts.Live(), workspace.AbuseWarningNotifiedAtNotNil(), suspension.NotSuspended(), workspace.AbuseExempt(false))
+	case ReviewSystemFrozen:
+		return workspace.And(accounts.Live(), suspension.BySystem())
+	default:
+		return accounts.Live()
+	}
 }

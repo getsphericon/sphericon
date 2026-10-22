@@ -8,7 +8,10 @@ import {
   handleSiteSetupChecklistGet,
   handleSiteWorkspacesList,
 } from '../../generated/site/msw.gen.ts'
-import type { SiteSendingDomainResource } from '../../generated/site/types.gen.ts'
+import type {
+  SiteSendingDomainResource,
+  SiteSetupStepStatus,
+} from '../../generated/site/types.gen.ts'
 import { Route as overviewRoute } from '../../routes/workspaces/$workspaceId/index.tsx'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
@@ -18,7 +21,7 @@ import { OverviewPage } from './overview.tsx'
 
 const mount = routeMount(overviewRoute, { workspaceId: 'TestWs01' })
 
-const checklist = (sendingDomain: 'todo' | 'pending' | 'done') =>
+const checklist = (sendingDomain: SiteSetupStepStatus) =>
   ({
     steps: { integration: 'done', sendingDomain, contact: 'todo', sentEmail: 'todo' },
     complete: false,

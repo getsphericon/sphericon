@@ -455,26 +455,6 @@ func ContactIDNotIn(vs ...int64) predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldNotIn(FieldContactID, vs...))
 }
 
-// ContactIDGT applies the GT predicate on the "contact_id" field.
-func ContactIDGT(v int64) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldGT(FieldContactID, v))
-}
-
-// ContactIDGTE applies the GTE predicate on the "contact_id" field.
-func ContactIDGTE(v int64) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldGTE(FieldContactID, v))
-}
-
-// ContactIDLT applies the LT predicate on the "contact_id" field.
-func ContactIDLT(v int64) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldLT(FieldContactID, v))
-}
-
-// ContactIDLTE applies the LTE predicate on the "contact_id" field.
-func ContactIDLTE(v int64) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldLTE(FieldContactID, v))
-}
-
 // ContactIDIsNil applies the IsNil predicate on the "contact_id" field.
 func ContactIDIsNil() predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldIsNull(FieldContactID))
@@ -915,26 +895,6 @@ func BroadcastIDNotIn(vs ...int64) predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldNotIn(FieldBroadcastID, vs...))
 }
 
-// BroadcastIDGT applies the GT predicate on the "broadcast_id" field.
-func BroadcastIDGT(v int64) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldGT(FieldBroadcastID, v))
-}
-
-// BroadcastIDGTE applies the GTE predicate on the "broadcast_id" field.
-func BroadcastIDGTE(v int64) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldGTE(FieldBroadcastID, v))
-}
-
-// BroadcastIDLT applies the LT predicate on the "broadcast_id" field.
-func BroadcastIDLT(v int64) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldLT(FieldBroadcastID, v))
-}
-
-// BroadcastIDLTE applies the LTE predicate on the "broadcast_id" field.
-func BroadcastIDLTE(v int64) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldLTE(FieldBroadcastID, v))
-}
-
 // BroadcastIDIsNil applies the IsNil predicate on the "broadcast_id" field.
 func BroadcastIDIsNil() predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldIsNull(FieldBroadcastID))
@@ -963,26 +923,6 @@ func BroadcastRecipientIDIn(vs ...int64) predicate.OutboundMessage {
 // BroadcastRecipientIDNotIn applies the NotIn predicate on the "broadcast_recipient_id" field.
 func BroadcastRecipientIDNotIn(vs ...int64) predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldNotIn(FieldBroadcastRecipientID, vs...))
-}
-
-// BroadcastRecipientIDGT applies the GT predicate on the "broadcast_recipient_id" field.
-func BroadcastRecipientIDGT(v int64) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldGT(FieldBroadcastRecipientID, v))
-}
-
-// BroadcastRecipientIDGTE applies the GTE predicate on the "broadcast_recipient_id" field.
-func BroadcastRecipientIDGTE(v int64) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldGTE(FieldBroadcastRecipientID, v))
-}
-
-// BroadcastRecipientIDLT applies the LT predicate on the "broadcast_recipient_id" field.
-func BroadcastRecipientIDLT(v int64) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldLT(FieldBroadcastRecipientID, v))
-}
-
-// BroadcastRecipientIDLTE applies the LTE predicate on the "broadcast_recipient_id" field.
-func BroadcastRecipientIDLTE(v int64) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldLTE(FieldBroadcastRecipientID, v))
 }
 
 // BroadcastRecipientIDIsNil applies the IsNil predicate on the "broadcast_recipient_id" field.
@@ -1015,26 +955,6 @@ func AutomationIDNotIn(vs ...int64) predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldNotIn(FieldAutomationID, vs...))
 }
 
-// AutomationIDGT applies the GT predicate on the "automation_id" field.
-func AutomationIDGT(v int64) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldGT(FieldAutomationID, v))
-}
-
-// AutomationIDGTE applies the GTE predicate on the "automation_id" field.
-func AutomationIDGTE(v int64) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldGTE(FieldAutomationID, v))
-}
-
-// AutomationIDLT applies the LT predicate on the "automation_id" field.
-func AutomationIDLT(v int64) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldLT(FieldAutomationID, v))
-}
-
-// AutomationIDLTE applies the LTE predicate on the "automation_id" field.
-func AutomationIDLTE(v int64) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldLTE(FieldAutomationID, v))
-}
-
 // AutomationIDIsNil applies the IsNil predicate on the "automation_id" field.
 func AutomationIDIsNil() predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldIsNull(FieldAutomationID))
@@ -1063,26 +983,6 @@ func AutomationRunIDIn(vs ...int64) predicate.OutboundMessage {
 // AutomationRunIDNotIn applies the NotIn predicate on the "automation_run_id" field.
 func AutomationRunIDNotIn(vs ...int64) predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldNotIn(FieldAutomationRunID, vs...))
-}
-
-// AutomationRunIDGT applies the GT predicate on the "automation_run_id" field.
-func AutomationRunIDGT(v int64) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldGT(FieldAutomationRunID, v))
-}
-
-// AutomationRunIDGTE applies the GTE predicate on the "automation_run_id" field.
-func AutomationRunIDGTE(v int64) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldGTE(FieldAutomationRunID, v))
-}
-
-// AutomationRunIDLT applies the LT predicate on the "automation_run_id" field.
-func AutomationRunIDLT(v int64) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldLT(FieldAutomationRunID, v))
-}
-
-// AutomationRunIDLTE applies the LTE predicate on the "automation_run_id" field.
-func AutomationRunIDLTE(v int64) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldLTE(FieldAutomationRunID, v))
 }
 
 // AutomationRunIDIsNil applies the IsNil predicate on the "automation_run_id" field.
@@ -1165,26 +1065,6 @@ func IntegrationIDNotIn(vs ...int64) predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldNotIn(FieldIntegrationID, vs...))
 }
 
-// IntegrationIDGT applies the GT predicate on the "integration_id" field.
-func IntegrationIDGT(v int64) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldGT(FieldIntegrationID, v))
-}
-
-// IntegrationIDGTE applies the GTE predicate on the "integration_id" field.
-func IntegrationIDGTE(v int64) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldGTE(FieldIntegrationID, v))
-}
-
-// IntegrationIDLT applies the LT predicate on the "integration_id" field.
-func IntegrationIDLT(v int64) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldLT(FieldIntegrationID, v))
-}
-
-// IntegrationIDLTE applies the LTE predicate on the "integration_id" field.
-func IntegrationIDLTE(v int64) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldLTE(FieldIntegrationID, v))
-}
-
 // IntegrationIDIsNil applies the IsNil predicate on the "integration_id" field.
 func IntegrationIDIsNil() predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldIsNull(FieldIntegrationID))
@@ -1213,26 +1093,6 @@ func TemplateIDIn(vs ...int64) predicate.OutboundMessage {
 // TemplateIDNotIn applies the NotIn predicate on the "template_id" field.
 func TemplateIDNotIn(vs ...int64) predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldNotIn(FieldTemplateID, vs...))
-}
-
-// TemplateIDGT applies the GT predicate on the "template_id" field.
-func TemplateIDGT(v int64) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldGT(FieldTemplateID, v))
-}
-
-// TemplateIDGTE applies the GTE predicate on the "template_id" field.
-func TemplateIDGTE(v int64) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldGTE(FieldTemplateID, v))
-}
-
-// TemplateIDLT applies the LT predicate on the "template_id" field.
-func TemplateIDLT(v int64) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldLT(FieldTemplateID, v))
-}
-
-// TemplateIDLTE applies the LTE predicate on the "template_id" field.
-func TemplateIDLTE(v int64) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldLTE(FieldTemplateID, v))
 }
 
 // TemplateIDIsNil applies the IsNil predicate on the "template_id" field.
@@ -1335,6 +1195,167 @@ func HasWorkspace() predicate.OutboundMessage {
 func HasWorkspaceWith(preds ...predicate.Workspace) predicate.OutboundMessage {
 	return predicate.OutboundMessage(func(s *sql.Selector) {
 		step := newWorkspaceStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasBroadcast applies the HasEdge predicate on the "broadcast" edge.
+func HasBroadcast() predicate.OutboundMessage {
+	return predicate.OutboundMessage(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, BroadcastTable, BroadcastColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasBroadcastWith applies the HasEdge predicate on the "broadcast" edge with a given conditions (other predicates).
+func HasBroadcastWith(preds ...predicate.Broadcast) predicate.OutboundMessage {
+	return predicate.OutboundMessage(func(s *sql.Selector) {
+		step := newBroadcastStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasAutomation applies the HasEdge predicate on the "automation" edge.
+func HasAutomation() predicate.OutboundMessage {
+	return predicate.OutboundMessage(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, AutomationTable, AutomationColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasAutomationWith applies the HasEdge predicate on the "automation" edge with a given conditions (other predicates).
+func HasAutomationWith(preds ...predicate.Automation) predicate.OutboundMessage {
+	return predicate.OutboundMessage(func(s *sql.Selector) {
+		step := newAutomationStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasIntegration applies the HasEdge predicate on the "integration" edge.
+func HasIntegration() predicate.OutboundMessage {
+	return predicate.OutboundMessage(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, IntegrationTable, IntegrationColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasIntegrationWith applies the HasEdge predicate on the "integration" edge with a given conditions (other predicates).
+func HasIntegrationWith(preds ...predicate.Integration) predicate.OutboundMessage {
+	return predicate.OutboundMessage(func(s *sql.Selector) {
+		step := newIntegrationStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasBroadcastRecipient applies the HasEdge predicate on the "broadcast_recipient" edge.
+func HasBroadcastRecipient() predicate.OutboundMessage {
+	return predicate.OutboundMessage(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, BroadcastRecipientTable, BroadcastRecipientColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasBroadcastRecipientWith applies the HasEdge predicate on the "broadcast_recipient" edge with a given conditions (other predicates).
+func HasBroadcastRecipientWith(preds ...predicate.BroadcastRecipient) predicate.OutboundMessage {
+	return predicate.OutboundMessage(func(s *sql.Selector) {
+		step := newBroadcastRecipientStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasAutomationRun applies the HasEdge predicate on the "automation_run" edge.
+func HasAutomationRun() predicate.OutboundMessage {
+	return predicate.OutboundMessage(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, AutomationRunTable, AutomationRunColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasAutomationRunWith applies the HasEdge predicate on the "automation_run" edge with a given conditions (other predicates).
+func HasAutomationRunWith(preds ...predicate.AutomationRun) predicate.OutboundMessage {
+	return predicate.OutboundMessage(func(s *sql.Selector) {
+		step := newAutomationRunStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasContact applies the HasEdge predicate on the "contact" edge.
+func HasContact() predicate.OutboundMessage {
+	return predicate.OutboundMessage(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, ContactTable, ContactColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasContactWith applies the HasEdge predicate on the "contact" edge with a given conditions (other predicates).
+func HasContactWith(preds ...predicate.Contact) predicate.OutboundMessage {
+	return predicate.OutboundMessage(func(s *sql.Selector) {
+		step := newContactStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasTemplate applies the HasEdge predicate on the "template" edge.
+func HasTemplate() predicate.OutboundMessage {
+	return predicate.OutboundMessage(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, TemplateTable, TemplateColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasTemplateWith applies the HasEdge predicate on the "template" edge with a given conditions (other predicates).
+func HasTemplateWith(preds ...predicate.EmailTemplate) predicate.OutboundMessage {
+	return predicate.OutboundMessage(func(s *sql.Selector) {
+		step := newTemplateStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

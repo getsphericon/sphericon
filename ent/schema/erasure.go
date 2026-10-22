@@ -44,7 +44,10 @@ func (Erasure) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			Immutable().
-			Annotations(ScopedRef{Unchecked: true}),
+			Annotations(ScopedRef{
+				Unchecked: true,
+				Reason:    "tombstone of an erased Contact: its row is gone, so there is nothing for a key to point at",
+			}),
 		// The customer's own id for the person; empty when there was none to give.
 		field.String("subject_id").
 			Default("").

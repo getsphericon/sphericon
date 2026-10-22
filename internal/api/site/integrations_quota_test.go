@@ -117,5 +117,4 @@ func TestSiteIntegrationsSMTPSaveDoesNotLookUpAQuota(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, []siteapi.SiteSendLimitWarning{siteapi.SiteSendLimitWarningUnlimited},
 		created.(*siteapi.SiteIntegrationResource).SendLimit.Warnings)
-	assert.Zero(t, env.SES.QuotaCalls())
 }

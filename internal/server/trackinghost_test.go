@@ -7,10 +7,8 @@ import (
 	"net/netip"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/getsphericon/sphericon/config"
-	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -83,10 +81,7 @@ func TestTrackingHostServesOnlyLinkPaths(t *testing.T) {
 	assert.True(t, strings.HasPrefix(resp.Header().Get("Location"), cfg.AppURL+"/confirm?token="))
 
 	// Open and click of a recipient of another Workspace are a 404.
-	b, err := env.DB.Broadcast.Create().SetWorkspaceID(fixtures.AcmeID).SetName("T").SetSubject("S").SetStatus(broadcast.StatusSent).SetSentAt(time.Now()).Save(ctx)
-	require.NoError(t, err)
-	rec, err := env.DB.BroadcastRecipient.Create().SetWorkspaceID(fixtures.AcmeID).SetBroadcastID(b.ID).SetContactID(fixtures.ContactAliceID).Save(ctx)
-	require.NoError(t, err)
+	rec := env.DB.BroadcastRecipient.GetX(ctx, fixtures.BroadcastRecipientUntrackedID)
 	rtoken, err := tr.Token(rec.ID)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusNotFound, hostReq(env, http.MethodGet, host, "/e/o/"+rtoken).Code)

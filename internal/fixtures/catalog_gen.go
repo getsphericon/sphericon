@@ -79,6 +79,52 @@ const (
 	AutomationInitechName = "Initech onboarding"
 	// AutomationInitechVersionID is from fixtures/automation_versions.
 	AutomationInitechVersionID = 300
+	// AutomationJobsBranchesID is from fixtures/automations.
+	AutomationJobsBranchesID = 5563
+	// AutomationJobsBranchesName is from fixtures/automations.
+	AutomationJobsBranchesName = "Jobs step outcomes"
+	// AutomationJobsBrokenTemplateVersionID is from fixtures/automation_versions.
+	AutomationJobsBrokenTemplateVersionID = 55634
+	// AutomationJobsEditableID is from fixtures/automations.
+	AutomationJobsEditableID = 5564
+	// AutomationJobsEditableName is from fixtures/automations.
+	AutomationJobsEditableName = "Jobs editable"
+	// AutomationJobsEditableVersionID is from fixtures/automation_versions.
+	AutomationJobsEditableVersionID = 5564
+	// AutomationJobsEmptyVersionID is from fixtures/automation_versions.
+	AutomationJobsEmptyVersionID = 55633
+	// AutomationJobsGreetingDraftID is from fixtures/automations.
+	AutomationJobsGreetingDraftID = 5566
+	// AutomationJobsGreetingDraftName is from fixtures/automations.
+	AutomationJobsGreetingDraftName = "Jobs greeting draft"
+	// AutomationJobsGreetingID is from fixtures/automations.
+	AutomationJobsGreetingID = 5560
+	// AutomationJobsGreetingName is from fixtures/automations.
+	AutomationJobsGreetingName = "Jobs greeting"
+	// AutomationJobsGreetingVersionID is from fixtures/automation_versions.
+	AutomationJobsGreetingVersionID = 5560
+	// AutomationJobsSingleEmailID is from fixtures/automations.
+	AutomationJobsSingleEmailID = 5561
+	// AutomationJobsSingleEmailName is from fixtures/automations.
+	AutomationJobsSingleEmailName = "Jobs single email"
+	// AutomationJobsSingleEmailVersionID is from fixtures/automation_versions.
+	AutomationJobsSingleEmailVersionID = 5561
+	// AutomationJobsSystemTagID is from fixtures/automations.
+	AutomationJobsSystemTagID = 5565
+	// AutomationJobsSystemTagName is from fixtures/automations.
+	AutomationJobsSystemTagName = "Jobs system tag"
+	// AutomationJobsSystemTagVersionID is from fixtures/automation_versions.
+	AutomationJobsSystemTagVersionID = 5565
+	// AutomationJobsUndecodableVersionID is from fixtures/automation_versions.
+	AutomationJobsUndecodableVersionID = 5563
+	// AutomationJobsUnknownStepVersionID is from fixtures/automation_versions.
+	AutomationJobsUnknownStepVersionID = 55632
+	// AutomationJobsWaitFirstID is from fixtures/automations.
+	AutomationJobsWaitFirstID = 5562
+	// AutomationJobsWaitFirstName is from fixtures/automations.
+	AutomationJobsWaitFirstName = "Jobs wait first"
+	// AutomationJobsWaitFirstVersionID is from fixtures/automation_versions.
+	AutomationJobsWaitFirstVersionID = 5562
 	// AutomationNotifySlackID is from fixtures/automations.
 	AutomationNotifySlackID = 105
 	// AutomationNotifySlackName is from fixtures/automations.
@@ -103,10 +149,30 @@ const (
 	AutomationRunErasableID = 3000
 	// AutomationRunHTTPFailedID is from fixtures/automation_runs.
 	AutomationRunHTTPFailedID = 1101
+	// AutomationRunJobsBrokenTemplateID is from fixtures/automation_runs.
+	AutomationRunJobsBrokenTemplateID = 5568
+	// AutomationRunJobsEmptyStepsID is from fixtures/automation_runs.
+	AutomationRunJobsEmptyStepsID = 5567
+	// AutomationRunJobsExitedOnEmailID is from fixtures/automation_runs.
+	AutomationRunJobsExitedOnEmailID = 5562
+	// AutomationRunJobsExitedOnTagID is from fixtures/automation_runs.
+	AutomationRunJobsExitedOnTagID = 5563
+	// AutomationRunJobsExitedOnWaitID is from fixtures/automation_runs.
+	AutomationRunJobsExitedOnWaitID = 5564
+	// AutomationRunJobsNoEmailID is from fixtures/automation_runs.
+	AutomationRunJobsNoEmailID = 5560
+	// AutomationRunJobsPendingID is from fixtures/automation_runs.
+	AutomationRunJobsPendingID = 5561
+	// AutomationRunJobsUndecodableID is from fixtures/automation_runs.
+	AutomationRunJobsUndecodableID = 5565
+	// AutomationRunJobsUnknownStepID is from fixtures/automation_runs.
+	AutomationRunJobsUnknownStepID = 5566
 	// AutomationRunOnboardingOnVersion1ID is from fixtures/automation_runs.
 	AutomationRunOnboardingOnVersion1ID = 1200
 	// AutomationRunOnboardingOnVersion2ID is from fixtures/automation_runs.
 	AutomationRunOnboardingOnVersion2ID = 1202
+	// AutomationRunTagOnEngagementAliceID is from fixtures/automation_runs.
+	AutomationRunTagOnEngagementAliceID = 1100
 	// AutomationRunWelcomeCompletedID is from fixtures/automation_runs.
 	AutomationRunWelcomeCompletedID = 1000
 	// AutomationTagOnEngagementID is from fixtures/automations.
@@ -229,12 +295,20 @@ const (
 	BroadcastRecipientErasablePendingID = 3002
 	// BroadcastRecipientErasableSoloID is from fixtures/broadcast_recipients.
 	BroadcastRecipientErasableSoloID = 3004
+	// BroadcastRecipientParkedAliceID is from fixtures/broadcast_recipients.
+	BroadcastRecipientParkedAliceID = 5710
+	// BroadcastRecipientParkedBobID is from fixtures/broadcast_recipients.
+	BroadcastRecipientParkedBobID = 5711
+	// BroadcastRecipientParkedCarolID is from fixtures/broadcast_recipients.
+	BroadcastRecipientParkedCarolID = 5712
 	// BroadcastRecipientSentID is from fixtures/broadcast_recipients.
 	BroadcastRecipientSentID = 1000
 	// BroadcastRecipientUnengagedFirstID is from fixtures/broadcast_recipients.
 	BroadcastRecipientUnengagedFirstID = 1005
 	// BroadcastRecipientUnengagedSecondID is from fixtures/broadcast_recipients.
 	BroadcastRecipientUnengagedSecondID = 1006
+	// BroadcastRecipientUntrackedID is from fixtures/broadcast_recipients.
+	BroadcastRecipientUntrackedID = 5700
 	// BroadcastScheduledFromLaunchDomainID is from fixtures/broadcasts.
 	BroadcastScheduledFromLaunchDomainID = 110
 	// BroadcastScheduledFromLaunchDomainName is from fixtures/broadcasts.
@@ -265,6 +339,12 @@ const (
 	BroadcastSentName = "Python crash course is here"
 	// BroadcastSentSubject is from fixtures/broadcasts.
 	BroadcastSentSubject = "Python crash course is here"
+	// BroadcastSentUntrackedID is from fixtures/broadcasts.
+	BroadcastSentUntrackedID = 5700
+	// BroadcastSentUntrackedName is from fixtures/broadcasts.
+	BroadcastSentUntrackedName = "Tracking sample"
+	// BroadcastSentUntrackedSubject is from fixtures/broadcasts.
+	BroadcastSentUntrackedSubject = "Tracking sample"
 	// BroadcastSentViaArchivedIntegrationID is from fixtures/broadcasts.
 	BroadcastSentViaArchivedIntegrationID = 108
 	// BroadcastSentViaArchivedIntegrationName is from fixtures/broadcasts.
@@ -291,6 +371,10 @@ const (
 	ContactBobEmail = "bob@example.com"
 	// ContactBobID is from fixtures/contacts.
 	ContactBobID = 2
+	// ContactBouncedEmail is from fixtures/contacts.
+	ContactBouncedEmail = "ethan.data@codebasics.dev"
+	// ContactBouncedID is from fixtures/contacts.
+	ContactBouncedID = 104
 	// ContactBystanderEmail is from fixtures/contacts.
 	ContactBystanderEmail = "ben@initech.test"
 	// ContactBystanderID is from fixtures/contacts.
@@ -299,10 +383,18 @@ const (
 	ContactCarolEmail = "carol@example.com"
 	// ContactCarolID is from fixtures/contacts.
 	ContactCarolID = 3
+	// ContactComplainedEmail is from fixtures/contacts.
+	ContactComplainedEmail = "mia.data@codebasics.dev"
+	// ContactComplainedID is from fixtures/contacts.
+	ContactComplainedID = 109
 	// ContactErasableEmail is from fixtures/contacts.
 	ContactErasableEmail = "erin@initech.test"
 	// ContactErasableID is from fixtures/contacts.
 	ContactErasableID = 300
+	// ContactExportHeavyEmail is from fixtures/contacts.
+	ContactExportHeavyEmail = "export.heavy@example.com"
+	// ContactExportHeavyID is from fixtures/contacts.
+	ContactExportHeavyID = 5703
 	// ContactExportSubjectEmail is from fixtures/contacts.
 	ContactExportSubjectEmail = "export.subject@example.com"
 	// ContactExportSubjectID is from fixtures/contacts.
@@ -315,6 +407,8 @@ const (
 	ContactHoldDemoEmail = "hold.demo@codebasics.dev"
 	// ContactHoldDemoID is from fixtures/contacts.
 	ContactHoldDemoID = 130
+	// ContactJobsNoEmailID is from fixtures/contacts.
+	ContactJobsNoEmailID = 5560
 	// ContactLiamEmail is from fixtures/contacts.
 	ContactLiamEmail = "liam.python@codebasics.dev"
 	// ContactLiamID is from fixtures/contacts.
@@ -327,6 +421,14 @@ const (
 	ContactNoahEmail = "noah.js@codebasics.dev"
 	// ContactNoahID is from fixtures/contacts.
 	ContactNoahID = 102
+	// ContactOptedOutOfWelcomeEmail is from fixtures/contacts.
+	ContactOptedOutOfWelcomeEmail = "leo.devops@codebasics.dev"
+	// ContactOptedOutOfWelcomeID is from fixtures/contacts.
+	ContactOptedOutOfWelcomeID = 128
+	// ContactUnsubscribedEverythingEmail is from fixtures/contacts.
+	ContactUnsubscribedEverythingEmail = "scarlett.sql@codebasics.dev"
+	// ContactUnsubscribedEverythingID is from fixtures/contacts.
+	ContactUnsubscribedEverythingID = 121
 	// ContractTokenID is from fixtures/api_tokens.
 	ContractTokenID = 103
 	// ContractTokenName is from fixtures/api_tokens.
@@ -341,6 +443,12 @@ const (
 	CustomFieldGlobexKey = "globex_only"
 	// CustomFieldGlobexName is from fixtures/custom_fields.
 	CustomFieldGlobexName = "Globex only"
+	// CustomFieldInitrodeInjectionID is from fixtures/custom_fields.
+	CustomFieldInitrodeInjectionID = 5504
+	// CustomFieldInitrodeInjectionKey is from fixtures/custom_fields.
+	CustomFieldInitrodeInjectionKey = "x' IS NOT NULL AND (SELECT count(*) FROM users)>0 AND 'a"
+	// CustomFieldInitrodeInjectionName is from fixtures/custom_fields.
+	CustomFieldInitrodeInjectionName = "Injection-looking key"
 	// CyberdyneCollectKey is from fixtures/workspaces.
 	CyberdyneCollectKey = "omck_test_cyberdyne_collect_key"
 	// CyberdyneID is from fixtures/workspaces.
@@ -359,10 +467,50 @@ const (
 	DeletedWorkspaceOwnerDanName = "Dan"
 	// DeletedWorkspaceOwnerDanPassword is from fixtures/users.
 	DeletedWorkspaceOwnerDanPassword = "password"
+	// DunderCollectKey is from fixtures/workspaces.
+	DunderCollectKey = "omck_test_dunder_collect_key"
+	// DunderEventPreviewEmail is from fixtures/contacts.
+	DunderEventPreviewEmail = "ev-prev@dunder.test"
+	// DunderEventPreviewID is from fixtures/contacts.
+	DunderEventPreviewID = 5551
+	// DunderID is from fixtures/workspaces.
+	DunderID = 60
+	// DunderName is from fixtures/workspaces.
+	DunderName = "Dunder"
+	// DunderOwnerDwightEmail is from fixtures/users.
+	DunderOwnerDwightEmail = "dwight@dunder.test"
+	// DunderOwnerDwightID is from fixtures/users.
+	DunderOwnerDwightID = 5500
+	// DunderOwnerDwightName is from fixtures/users.
+	DunderOwnerDwightName = "Dwight"
+	// DunderOwnerDwightPassword is from fixtures/users.
+	DunderOwnerDwightPassword = "password"
+	// DunderOwnerMembershipID is from fixtures/memberships.
+	DunderOwnerMembershipID = 5500
+	// DunderPreviewTargetEmail is from fixtures/contacts.
+	DunderPreviewTargetEmail = "preview-target@dunder.test"
+	// DunderPreviewTargetID is from fixtures/contacts.
+	DunderPreviewTargetID = 5550
+	// DunderPublicID is from fixtures/workspaces.
+	DunderPublicID = "DundrW60"
+	// EventAnonymousFirstAction is from fixtures/events.
+	EventAnonymousFirstAction = "page_view"
+	// EventAnonymousFirstID is from fixtures/events.
+	EventAnonymousFirstID = 150
+	// EventAnonymousFirstVisitorID is from fixtures/events.
+	EventAnonymousFirstVisitorID = "anon-codebasics-1"
+	// EventAnonymousSecondAction is from fixtures/events.
+	EventAnonymousSecondAction = "page_view"
+	// EventAnonymousSecondID is from fixtures/events.
+	EventAnonymousSecondID = 151
+	// EventAnonymousSecondVisitorID is from fixtures/events.
+	EventAnonymousSecondVisitorID = "anon-codebasics-2"
 	// EventAnonymousVisitorAction is from fixtures/events.
 	EventAnonymousVisitorAction = "pricing_viewed"
 	// EventAnonymousVisitorID is from fixtures/events.
 	EventAnonymousVisitorID = 980
+	// EventAnonymousVisitorVisitorID is from fixtures/events.
+	EventAnonymousVisitorVisitorID = "vis-anonymous-301"
 	// EventBystanderCustomAction is from fixtures/events.
 	EventBystanderCustomAction = "plan_upgraded"
 	// EventBystanderCustomEmail is from fixtures/events.
@@ -379,6 +527,8 @@ const (
 	EventErasableAnonymousAction = "pricing_viewed"
 	// EventErasableAnonymousID is from fixtures/events.
 	EventErasableAnonymousID = 951
+	// EventErasableAnonymousVisitorID is from fixtures/events.
+	EventErasableAnonymousVisitorID = "vis-erasable-laptop"
 	// EventErasableBouncedAction is from fixtures/events.
 	EventErasableBouncedAction = "email.bounced"
 	// EventErasableBouncedEmail is from fixtures/events.
@@ -439,6 +589,8 @@ const (
 	EventExportCustomEmail = "export.subject@example.com"
 	// EventExportCustomID is from fixtures/events.
 	EventExportCustomID = 800
+	// EventExportCustomVisitorID is from fixtures/events.
+	EventExportCustomVisitorID = "vis-export-laptop"
 	// EventGlobexAction is from fixtures/events.
 	EventGlobexAction = "globex_only"
 	// EventGlobexID is from fixtures/events.
@@ -561,6 +713,14 @@ const (
 	HoldAcmeLapsedID = 1
 	// HoldAcmeLapsedKey is from fixtures/holds.
 	HoldAcmeLapsedKey = "lapsed"
+	// HoldAcmeSecondLapsedID is from fixtures/holds.
+	HoldAcmeSecondLapsedID = 5701
+	// HoldAcmeSecondLapsedKey is from fixtures/holds.
+	HoldAcmeSecondLapsedKey = "lapsed-second"
+	// HoldAcmeThirdLapsedID is from fixtures/holds.
+	HoldAcmeThirdLapsedID = 5702
+	// HoldAcmeThirdLapsedKey is from fixtures/holds.
+	HoldAcmeThirdLapsedKey = "lapsed-third"
 	// HoldGlobexLapsedID is from fixtures/holds.
 	HoldGlobexLapsedID = 900
 	// HoldGlobexLapsedKey is from fixtures/holds.
@@ -575,6 +735,8 @@ const (
 	HooliPublicID = "HooliWs5"
 	// HooliSallyMembershipID is from fixtures/memberships.
 	HooliSallyMembershipID = 17
+	// HooliStaleUnverifiedMembershipID is from fixtures/memberships.
+	HooliStaleUnverifiedMembershipID = 5700
 	// InitechAdminAdaEmail is from fixtures/users.
 	InitechAdminAdaEmail = "ada@initech.test"
 	// InitechAdminAdaID is from fixtures/users.
@@ -633,6 +795,30 @@ const (
 	InitechPublicID = "InitcWs3"
 	// InitechRitaMembershipID is from fixtures/memberships.
 	InitechRitaMembershipID = 13
+	// InitrodeCollectKey is from fixtures/workspaces.
+	InitrodeCollectKey = "omck_test_initrode_collect_key"
+	// InitrodeID is from fixtures/workspaces.
+	InitrodeID = 59
+	// InitrodeName is from fixtures/workspaces.
+	InitrodeName = "Initrode"
+	// InitrodeOneEmail is from fixtures/contacts.
+	InitrodeOneEmail = "one@initrode.test"
+	// InitrodeOneID is from fixtures/contacts.
+	InitrodeOneID = 5546
+	// InitrodePublicID is from fixtures/workspaces.
+	InitrodePublicID = "InitrW59"
+	// InitrodeQuoteEmail is from fixtures/contacts.
+	InitrodeQuoteEmail = "quote@initrode.test"
+	// InitrodeQuoteID is from fixtures/contacts.
+	InitrodeQuoteID = 5549
+	// InitrodeThreeEmail is from fixtures/contacts.
+	InitrodeThreeEmail = "three@initrode.test"
+	// InitrodeThreeID is from fixtures/contacts.
+	InitrodeThreeID = 5548
+	// InitrodeTwoEmail is from fixtures/contacts.
+	InitrodeTwoEmail = "two@initrode.test"
+	// InitrodeTwoID is from fixtures/contacts.
+	InitrodeTwoID = 5547
 	// IntegrationAcmeArchivedID is from fixtures/integrations.
 	IntegrationAcmeArchivedID = 6
 	// IntegrationAcmeArchivedIngestKey is from fixtures/integrations.
@@ -779,12 +965,72 @@ const (
 	KramericaOwnerNewmanPassword = "password"
 	// KramericaPublicID is from fixtures/workspaces.
 	KramericaPublicID = "KramrWs8"
+	// LumonCollectKey is from fixtures/workspaces.
+	LumonCollectKey = "omck_test_lumon_collect_key"
+	// LumonID is from fixtures/workspaces.
+	LumonID = 55
+	// LumonMatrixCleanEmail is from fixtures/contacts.
+	LumonMatrixCleanEmail = "clean@lumon.test"
+	// LumonMatrixCleanID is from fixtures/contacts.
+	LumonMatrixCleanID = 5520
+	// LumonMatrixConfirmedEmail is from fixtures/contacts.
+	LumonMatrixConfirmedEmail = "confirmed@lumon.test"
+	// LumonMatrixConfirmedID is from fixtures/contacts.
+	LumonMatrixConfirmedID = 5525
+	// LumonMatrixConfirmedSuppressedEmail is from fixtures/contacts.
+	LumonMatrixConfirmedSuppressedEmail = "confirmed-suppressed@lumon.test"
+	// LumonMatrixConfirmedSuppressedID is from fixtures/contacts.
+	LumonMatrixConfirmedSuppressedID = 5526
+	// LumonMatrixMixedCaseEmail is from fixtures/contacts.
+	LumonMatrixMixedCaseEmail = "Mixed.Case@lumon.test"
+	// LumonMatrixMixedCaseID is from fixtures/contacts.
+	LumonMatrixMixedCaseID = 5527
+	// LumonMatrixSuppressedEmail is from fixtures/contacts.
+	LumonMatrixSuppressedEmail = "suppressed@lumon.test"
+	// LumonMatrixSuppressedID is from fixtures/contacts.
+	LumonMatrixSuppressedID = 5521
+	// LumonMatrixUnsubAutomationEmail is from fixtures/contacts.
+	LumonMatrixUnsubAutomationEmail = "unsub-automation@lumon.test"
+	// LumonMatrixUnsubAutomationID is from fixtures/contacts.
+	LumonMatrixUnsubAutomationID = 5524
+	// LumonMatrixUnsubBroadcastsEmail is from fixtures/contacts.
+	LumonMatrixUnsubBroadcastsEmail = "unsub-broadcasts@lumon.test"
+	// LumonMatrixUnsubBroadcastsID is from fixtures/contacts.
+	LumonMatrixUnsubBroadcastsID = 5523
+	// LumonMatrixUnsubEverythingEmail is from fixtures/contacts.
+	LumonMatrixUnsubEverythingEmail = "unsub-everything@lumon.test"
+	// LumonMatrixUnsubEverythingID is from fixtures/contacts.
+	LumonMatrixUnsubEverythingID = 5522
+	// LumonName is from fixtures/workspaces.
+	LumonName = "Lumon"
+	// LumonPublicID is from fixtures/workspaces.
+	LumonPublicID = "LumonW55"
 	// MaryGoogleIdentityID is from fixtures/user_identities.
 	MaryGoogleIdentityID = 1
 	// MaryGoogleIdentityProvider is from fixtures/user_identities.
 	MaryGoogleIdentityProvider = "google"
 	// MaryGoogleIdentitySubject is from fixtures/user_identities.
 	MaryGoogleIdentitySubject = "google-subject-of-mary"
+	// MassiveAnnEmail is from fixtures/contacts.
+	MassiveAnnEmail = "ann@massive.test"
+	// MassiveAnnID is from fixtures/contacts.
+	MassiveAnnID = 5543
+	// MassiveBobEmail is from fixtures/contacts.
+	MassiveBobEmail = "bob@massive.test"
+	// MassiveBobID is from fixtures/contacts.
+	MassiveBobID = 5544
+	// MassiveCaraEmail is from fixtures/contacts.
+	MassiveCaraEmail = "cara@massive.test"
+	// MassiveCaraID is from fixtures/contacts.
+	MassiveCaraID = 5545
+	// MassiveCollectKey is from fixtures/workspaces.
+	MassiveCollectKey = "omck_test_massive_collect_key"
+	// MassiveID is from fixtures/workspaces.
+	MassiveID = 58
+	// MassiveName is from fixtures/workspaces.
+	MassiveName = "Massive"
+	// MassivePublicID is from fixtures/workspaces.
+	MassivePublicID = "MassvW58"
 	// MemberMaryEmail is from fixtures/users.
 	MemberMaryEmail = "mary@acme.test"
 	// MemberMaryID is from fixtures/users.
@@ -793,10 +1039,42 @@ const (
 	MemberMaryName = "Mary"
 	// MemberMaryPassword is from fixtures/users.
 	MemberMaryPassword = "password"
+	// MeterCollectKey is from fixtures/workspaces.
+	MeterCollectKey = "omck_test_meter_collect_key"
+	// MeterID is from fixtures/workspaces.
+	MeterID = 5800
+	// MeterName is from fixtures/workspaces.
+	MeterName = "Meter"
+	// MeterPublicID is from fixtures/workspaces.
+	MeterPublicID = "MeterW80"
+	// OscorpAndyEmail is from fixtures/contacts.
+	OscorpAndyEmail = "andy@oscorp.test"
+	// OscorpAndyID is from fixtures/contacts.
+	OscorpAndyID = 5541
+	// OscorpAnnaEmail is from fixtures/contacts.
+	OscorpAnnaEmail = "anna@oscorp.test"
+	// OscorpAnnaID is from fixtures/contacts.
+	OscorpAnnaID = 5540
+	// OscorpBellaEmail is from fixtures/contacts.
+	OscorpBellaEmail = "bella@oscorp.test"
+	// OscorpBellaID is from fixtures/contacts.
+	OscorpBellaID = 5542
+	// OscorpCollectKey is from fixtures/workspaces.
+	OscorpCollectKey = "omck_test_oscorp_collect_key"
+	// OscorpID is from fixtures/workspaces.
+	OscorpID = 57
+	// OscorpName is from fixtures/workspaces.
+	OscorpName = "Oscorp"
+	// OscorpPublicID is from fixtures/workspaces.
+	OscorpPublicID = "OscorW57"
 	// OutboundMessageBystanderDestination is from fixtures/outbound_messages.
 	OutboundMessageBystanderDestination = "ben@initech.test"
 	// OutboundMessageBystanderID is from fixtures/outbound_messages.
 	OutboundMessageBystanderID = 302
+	// OutboundMessageErasableAutomationDestination is from fixtures/outbound_messages.
+	OutboundMessageErasableAutomationDestination = "erin@initech.test"
+	// OutboundMessageErasableAutomationID is from fixtures/outbound_messages.
+	OutboundMessageErasableAutomationID = 305
 	// OutboundMessageErasableBroadcastDestination is from fixtures/outbound_messages.
 	OutboundMessageErasableBroadcastDestination = "erin@initech.test"
 	// OutboundMessageErasableBroadcastID is from fixtures/outbound_messages.
@@ -813,10 +1091,22 @@ const (
 	OutboundMessageMovedOriginDestination = "moved@initech.test"
 	// OutboundMessageMovedOriginID is from fixtures/outbound_messages.
 	OutboundMessageMovedOriginID = 304
+	// OutboundMessageParkedClaimDestination is from fixtures/outbound_messages.
+	OutboundMessageParkedClaimDestination = "bob@example.com"
+	// OutboundMessageParkedClaimID is from fixtures/outbound_messages.
+	OutboundMessageParkedClaimID = 5711
+	// OutboundMessageStaleClaimDestination is from fixtures/outbound_messages.
+	OutboundMessageStaleClaimDestination = "lease.demo@codebasics.dev"
+	// OutboundMessageStaleClaimID is from fixtures/outbound_messages.
+	OutboundMessageStaleClaimID = 106
 	// OutboundMessageStrangerDestination is from fixtures/outbound_messages.
 	OutboundMessageStrangerDestination = "stranger@initech.test"
 	// OutboundMessageStrangerID is from fixtures/outbound_messages.
 	OutboundMessageStrangerID = 303
+	// OutboundMessageWelcomeDestination is from fixtures/outbound_messages.
+	OutboundMessageWelcomeDestination = "liam.python@codebasics.dev"
+	// OutboundMessageWelcomeID is from fixtures/outbound_messages.
+	OutboundMessageWelcomeID = 100
 	// OutsiderOscarEmail is from fixtures/users.
 	OutsiderOscarEmail = "oscar@nowhere.test"
 	// OutsiderOscarID is from fixtures/users.
@@ -1029,6 +1319,10 @@ const (
 	SendingDomainLaunchDomain = "launch.acme.com"
 	// SendingDomainLaunchID is from fixtures/sending_domains.
 	SendingDomainLaunchID = 5
+	// SendingDomainLostDomain is from fixtures/sending_domains.
+	SendingDomainLostDomain = "lost.acme.com"
+	// SendingDomainLostID is from fixtures/sending_domains.
+	SendingDomainLostID = 6
 	// SendingDomainSoylentDomain is from fixtures/sending_domains.
 	SendingDomainSoylentDomain = "mail.soylent.test"
 	// SendingDomainSoylentID is from fixtures/sending_domains.
@@ -1155,6 +1449,18 @@ const (
 	StaleLoginAttemptEmail = "stale@attempts.test"
 	// StaleLoginAttemptID is from fixtures/auth_attempts.
 	StaleLoginAttemptID = 100
+	// StaleUnverifiedBulkOneEmail is from fixtures/users.
+	StaleUnverifiedBulkOneEmail = "bulk-one@unverified.test"
+	// StaleUnverifiedBulkOneID is from fixtures/users.
+	StaleUnverifiedBulkOneID = 5700
+	// StaleUnverifiedBulkOneName is from fixtures/users.
+	StaleUnverifiedBulkOneName = "Bulk One"
+	// StaleUnverifiedBulkTwoEmail is from fixtures/users.
+	StaleUnverifiedBulkTwoEmail = "bulk-two@unverified.test"
+	// StaleUnverifiedBulkTwoID is from fixtures/users.
+	StaleUnverifiedBulkTwoID = 5701
+	// StaleUnverifiedBulkTwoName is from fixtures/users.
+	StaleUnverifiedBulkTwoName = "Bulk Two"
 	// StaleUnverifiedMemberEmail is from fixtures/users.
 	StaleUnverifiedMemberEmail = "stale-member@unverified.test"
 	// StaleUnverifiedMemberID is from fixtures/users.
@@ -1187,6 +1493,38 @@ const (
 	SuppressionLiftedDestination = "lifted@codebasics.dev"
 	// SuppressionLiftedID is from fixtures/suppressions.
 	SuppressionLiftedID = 105
+	// SuppressionLumonConfirmedSuppressedDestination is from fixtures/suppressions.
+	SuppressionLumonConfirmedSuppressedDestination = "confirmed-suppressed@lumon.test"
+	// SuppressionLumonConfirmedSuppressedID is from fixtures/suppressions.
+	SuppressionLumonConfirmedSuppressedID = 5504
+	// SuppressionLumonMixedCaseDestination is from fixtures/suppressions.
+	SuppressionLumonMixedCaseDestination = "mixed.case@lumon.test"
+	// SuppressionLumonMixedCaseID is from fixtures/suppressions.
+	SuppressionLumonMixedCaseID = 5505
+	// SuppressionLumonSuppressedDestination is from fixtures/suppressions.
+	SuppressionLumonSuppressedDestination = "suppressed@lumon.test"
+	// SuppressionLumonSuppressedID is from fixtures/suppressions.
+	SuppressionLumonSuppressedID = 5503
+	// SuppressionTyrellConfirmedSuppressedDestination is from fixtures/suppressions.
+	SuppressionTyrellConfirmedSuppressedDestination = "confirmed-suppressed@tyrell.test"
+	// SuppressionTyrellConfirmedSuppressedID is from fixtures/suppressions.
+	SuppressionTyrellConfirmedSuppressedID = 5501
+	// SuppressionTyrellMixedCaseDestination is from fixtures/suppressions.
+	SuppressionTyrellMixedCaseDestination = "mixed.case@tyrell.test"
+	// SuppressionTyrellMixedCaseID is from fixtures/suppressions.
+	SuppressionTyrellMixedCaseID = 5502
+	// SuppressionTyrellNoContactDestination is from fixtures/suppressions.
+	SuppressionTyrellNoContactDestination = "nocontact@tyrell.test"
+	// SuppressionTyrellNoContactID is from fixtures/suppressions.
+	SuppressionTyrellNoContactID = 5506
+	// SuppressionTyrellSuppressedDestination is from fixtures/suppressions.
+	SuppressionTyrellSuppressedDestination = "suppressed@tyrell.test"
+	// SuppressionTyrellSuppressedID is from fixtures/suppressions.
+	SuppressionTyrellSuppressedID = 5500
+	// SuppressionTyrellTransactionalDestination is from fixtures/suppressions.
+	SuppressionTyrellTransactionalDestination = "txn-both@tyrell.test"
+	// SuppressionTyrellTransactionalID is from fixtures/suppressions.
+	SuppressionTyrellTransactionalID = 5507
 	// TagGlobexID is from fixtures/tags.
 	TagGlobexID = 900
 	// TagGlobexName is from fixtures/tags.
@@ -1219,18 +1557,70 @@ const (
 	TemplateGlobexName = "Globex template"
 	// TemplateGlobexSubject is from fixtures/email_templates.
 	TemplateGlobexSubject = "Globex"
+	// TemplateVandelayID is from fixtures/email_templates.
+	TemplateVandelayID = 5701
+	// TemplateVandelayName is from fixtures/email_templates.
+	TemplateVandelayName = "Vandelay notice"
+	// TemplateVandelaySubject is from fixtures/email_templates.
+	TemplateVandelaySubject = "Vandelay notice"
 	// TemplateWelcomeID is from fixtures/email_templates.
 	TemplateWelcomeID = 1
 	// TemplateWelcomeName is from fixtures/email_templates.
 	TemplateWelcomeName = "Welcome"
 	// TemplateWelcomeSubject is from fixtures/email_templates.
 	TemplateWelcomeSubject = "Welcome to CodeBasics 👋"
+	// TemplateWithVariablesID is from fixtures/email_templates.
+	TemplateWithVariablesID = 5700
+	// TemplateWithVariablesName is from fixtures/email_templates.
+	TemplateWithVariablesName = "Order receipt"
+	// TemplateWithVariablesSubject is from fixtures/email_templates.
+	TemplateWithVariablesSubject = "{{`Hello {{ name }}`}}"
 	// TokenGlobexID is from fixtures/api_tokens.
 	TokenGlobexID = 900
 	// TokenGlobexName is from fixtures/api_tokens.
 	TokenGlobexName = "Globex token"
 	// TokenGlobexPrefix is from fixtures/api_tokens.
 	TokenGlobexPrefix = "globextok001"
+	// TyrellCollectKey is from fixtures/workspaces.
+	TyrellCollectKey = "omck_test_tyrell_collect_key"
+	// TyrellID is from fixtures/workspaces.
+	TyrellID = 56
+	// TyrellMatrixCleanEmail is from fixtures/contacts.
+	TyrellMatrixCleanEmail = "clean@tyrell.test"
+	// TyrellMatrixCleanID is from fixtures/contacts.
+	TyrellMatrixCleanID = 5510
+	// TyrellMatrixConfirmedEmail is from fixtures/contacts.
+	TyrellMatrixConfirmedEmail = "confirmed@tyrell.test"
+	// TyrellMatrixConfirmedID is from fixtures/contacts.
+	TyrellMatrixConfirmedID = 5515
+	// TyrellMatrixConfirmedSuppressedEmail is from fixtures/contacts.
+	TyrellMatrixConfirmedSuppressedEmail = "confirmed-suppressed@tyrell.test"
+	// TyrellMatrixConfirmedSuppressedID is from fixtures/contacts.
+	TyrellMatrixConfirmedSuppressedID = 5516
+	// TyrellMatrixMixedCaseEmail is from fixtures/contacts.
+	TyrellMatrixMixedCaseEmail = "Mixed.Case@tyrell.test"
+	// TyrellMatrixMixedCaseID is from fixtures/contacts.
+	TyrellMatrixMixedCaseID = 5517
+	// TyrellMatrixSuppressedEmail is from fixtures/contacts.
+	TyrellMatrixSuppressedEmail = "suppressed@tyrell.test"
+	// TyrellMatrixSuppressedID is from fixtures/contacts.
+	TyrellMatrixSuppressedID = 5511
+	// TyrellMatrixUnsubAutomationEmail is from fixtures/contacts.
+	TyrellMatrixUnsubAutomationEmail = "unsub-automation@tyrell.test"
+	// TyrellMatrixUnsubAutomationID is from fixtures/contacts.
+	TyrellMatrixUnsubAutomationID = 5514
+	// TyrellMatrixUnsubBroadcastsEmail is from fixtures/contacts.
+	TyrellMatrixUnsubBroadcastsEmail = "unsub-broadcasts@tyrell.test"
+	// TyrellMatrixUnsubBroadcastsID is from fixtures/contacts.
+	TyrellMatrixUnsubBroadcastsID = 5513
+	// TyrellMatrixUnsubEverythingEmail is from fixtures/contacts.
+	TyrellMatrixUnsubEverythingEmail = "unsub-everything@tyrell.test"
+	// TyrellMatrixUnsubEverythingID is from fixtures/contacts.
+	TyrellMatrixUnsubEverythingID = 5512
+	// TyrellName is from fixtures/workspaces.
+	TyrellName = "Tyrell"
+	// TyrellPublicID is from fixtures/workspaces.
+	TyrellPublicID = "TyrelW56"
 	// UmbrellaCollectKey is from fixtures/workspaces.
 	UmbrellaCollectKey = "omck_test_umbrella_collect_key"
 	// UmbrellaID is from fixtures/workspaces.
@@ -1261,14 +1651,26 @@ const (
 	UmbrellaRitaMembershipID = 10
 	// UmbrellaSamMembershipID is from fixtures/memberships.
 	UmbrellaSamMembershipID = 12
+	// UnsubscribeAutomationLeoDestination is from fixtures/unsubscribes.
+	UnsubscribeAutomationLeoDestination = "leo.devops@codebasics.dev"
+	// UnsubscribeAutomationLeoID is from fixtures/unsubscribes.
+	UnsubscribeAutomationLeoID = 103
 	// UnsubscribeErasableDestination is from fixtures/unsubscribes.
 	UnsubscribeErasableDestination = "erin@initech.test"
 	// UnsubscribeErasableID is from fixtures/unsubscribes.
 	UnsubscribeErasableID = 300
+	// UnsubscribeEverythingNoContactDestination is from fixtures/unsubscribes.
+	UnsubscribeEverythingNoContactDestination = "optout@example.com"
+	// UnsubscribeEverythingNoContactID is from fixtures/unsubscribes.
+	UnsubscribeEverythingNoContactID = 5700
 	// UnsubscribeGlobexDestination is from fixtures/unsubscribes.
 	UnsubscribeGlobexDestination = "pat@globex.test"
 	// UnsubscribeGlobexID is from fixtures/unsubscribes.
 	UnsubscribeGlobexID = 900
+	// UnsubscribeTyrellTransactionalDestination is from fixtures/unsubscribes.
+	UnsubscribeTyrellTransactionalDestination = "txn-both@tyrell.test"
+	// UnsubscribeTyrellTransactionalID is from fixtures/unsubscribes.
+	UnsubscribeTyrellTransactionalID = 5506
 	// VandelayArtMembershipID is from fixtures/memberships.
 	VandelayArtMembershipID = 14
 	// VandelayCollectKey is from fixtures/workspaces.
@@ -1299,10 +1701,16 @@ const (
 	VandelayPublicID = "VandlWs7"
 	// VisitorAnonymousID is from fixtures/visitors.
 	VisitorAnonymousID = 301
+	// VisitorAnonymousVisitorID is from fixtures/visitors.
+	VisitorAnonymousVisitorID = "vis-anonymous-301"
 	// VisitorErasableID is from fixtures/visitors.
 	VisitorErasableID = 300
+	// VisitorErasableVisitorID is from fixtures/visitors.
+	VisitorErasableVisitorID = "vis-erasable-laptop"
 	// VisitorGlobexID is from fixtures/visitors.
 	VisitorGlobexID = 900
+	// VisitorGlobexVisitorID is from fixtures/visitors.
+	VisitorGlobexVisitorID = "vis-globex-1"
 	// WayneCollectKey is from fixtures/workspaces.
 	WayneCollectKey = "omck_test_wayne_collect_key"
 	// WayneID is from fixtures/workspaces.
@@ -1331,6 +1739,10 @@ const (
 	WebhookGlobexID = 900
 	// WebhookGlobexURL is from fixtures/webhook_endpoints.
 	WebhookGlobexURL = "https://globex.example/hook"
+	// WebhookInitechAuditID is from fixtures/webhook_endpoints.
+	WebhookInitechAuditID = 301
+	// WebhookInitechAuditURL is from fixtures/webhook_endpoints.
+	WebhookInitechAuditURL = "https://initech.example/audit"
 	// WebhookInitechID is from fixtures/webhook_endpoints.
 	WebhookInitechID = 300
 	// WebhookInitechURL is from fixtures/webhook_endpoints.

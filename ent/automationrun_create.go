@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationversion"
+	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
@@ -182,6 +183,11 @@ func (_c *AutomationRunCreate) SetVersion(v *AutomationVersion) *AutomationRunCr
 	return _c.SetVersionID(v.ID)
 }
 
+// SetContact sets the "contact" edge to the Contact entity.
+func (_c *AutomationRunCreate) SetContact(v *Contact) *AutomationRunCreate {
+	return _c.SetContactID(v.ID)
+}
+
 // Mutation returns the AutomationRunMutation object of the builder.
 func (_c *AutomationRunCreate) Mutation() *AutomationRunMutation {
 	return _c.mutation
@@ -285,6 +291,9 @@ func (_c *AutomationRunCreate) check() error {
 	if len(_c.mutation.VersionIDs()) == 0 {
 		return &ValidationError{Name: "version", err: errors.New(`ent: missing required edge "AutomationRun.version"`)}
 	}
+	if len(_c.mutation.ContactIDs()) == 0 {
+		return &ValidationError{Name: "contact", err: errors.New(`ent: missing required edge "AutomationRun.contact"`)}
+	}
 	return nil
 }
 
@@ -325,10 +334,6 @@ func (_c *AutomationRunCreate) createSpec() (*AutomationRun, *sqlgraph.CreateSpe
 	if value, ok := _c.mutation.UpdatedAt(); ok {
 		_spec.SetField(automationrun.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
-	}
-	if value, ok := _c.mutation.ContactID(); ok {
-		_spec.SetField(automationrun.FieldContactID, field.TypeInt64, value)
-		_node.ContactID = value
 	}
 	if value, ok := _c.mutation.Status(); ok {
 		_spec.SetField(automationrun.FieldStatus, field.TypeEnum, value)
@@ -403,6 +408,23 @@ func (_c *AutomationRunCreate) createSpec() (*AutomationRun, *sqlgraph.CreateSpe
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.VersionID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ContactIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   automationrun.ContactTable,
+			Columns: []string{automationrun.ContactColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contact.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.ContactID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -502,12 +524,6 @@ func (u *AutomationRunUpsert) SetContactID(v int64) *AutomationRunUpsert {
 // UpdateContactID sets the "contact_id" field to the value that was provided on create.
 func (u *AutomationRunUpsert) UpdateContactID() *AutomationRunUpsert {
 	u.SetExcluded(automationrun.FieldContactID)
-	return u
-}
-
-// AddContactID adds v to the "contact_id" field.
-func (u *AutomationRunUpsert) AddContactID(v int64) *AutomationRunUpsert {
-	u.Add(automationrun.FieldContactID, v)
 	return u
 }
 
@@ -728,13 +744,6 @@ func (u *AutomationRunUpsertOne) UpdateAutomationID() *AutomationRunUpsertOne {
 func (u *AutomationRunUpsertOne) SetContactID(v int64) *AutomationRunUpsertOne {
 	return u.Update(func(s *AutomationRunUpsert) {
 		s.SetContactID(v)
-	})
-}
-
-// AddContactID adds v to the "contact_id" field.
-func (u *AutomationRunUpsertOne) AddContactID(v int64) *AutomationRunUpsertOne {
-	return u.Update(func(s *AutomationRunUpsert) {
-		s.AddContactID(v)
 	})
 }
 
@@ -1148,13 +1157,6 @@ func (u *AutomationRunUpsertBulk) UpdateAutomationID() *AutomationRunUpsertBulk 
 func (u *AutomationRunUpsertBulk) SetContactID(v int64) *AutomationRunUpsertBulk {
 	return u.Update(func(s *AutomationRunUpsert) {
 		s.SetContactID(v)
-	})
-}
-
-// AddContactID adds v to the "contact_id" field.
-func (u *AutomationRunUpsertBulk) AddContactID(v int64) *AutomationRunUpsertBulk {
-	return u.Update(func(s *AutomationRunUpsert) {
-		s.AddContactID(v)
 	})
 }
 

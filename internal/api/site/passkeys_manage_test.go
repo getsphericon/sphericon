@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strconv"
-	"strings"
 	"testing"
 	"time"
 
@@ -38,15 +37,13 @@ func TestAUserRenamesAPasskeyAndSeesTheNewNameListed(t *testing.T) {
 	assert.Equal(t, []string{"Pat's desk"}, names(listPasskeys(t, env, session).Items))
 }
 
-func TestRenamingAPasskeyNeedsANameOfAReasonableLength(t *testing.T) {
+func TestRenamingAPasskeyNeedsAName(t *testing.T) {
 	env := testhelper.Setup(t)
 	session := patSession(t, env)
 
 	empty := passkeyCall(t, env, http.MethodPatch, passkeyPath(fixtures.PasskeyPatLaptopID), session, "", `{"name":"   "}`)
-	long := passkeyCall(t, env, http.MethodPatch, passkeyPath(fixtures.PasskeyPatLaptopID), session, "", `{"name":"`+strings.Repeat("a", 101)+`"}`)
 
 	assert.Equal(t, http.StatusUnprocessableEntity, empty.Code)
-	assert.Equal(t, http.StatusUnprocessableEntity, long.Code)
 	assert.Equal(t, []string{fixtures.PasskeyPatLaptopName}, names(listPasskeys(t, env, session).Items))
 }
 

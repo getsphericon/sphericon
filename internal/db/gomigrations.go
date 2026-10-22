@@ -38,6 +38,8 @@ func backfillWorkspacePublicIDs(ctx context.Context, tx *sql.Tx) error {
 			publicID = workspaceid.New()
 		}
 		taken[publicID] = true
+		// raw sql: a Go migration runs on the schema as it was then (frozen); the current ent
+		// entities describe a later one.
 		if _, err := tx.ExecContext(ctx, `UPDATE "workspaces" SET "public_id" = $1 WHERE "id" = $2`, publicID, id); err != nil {
 			return fmt.Errorf("workspace %d: %w", id, err)
 		}
@@ -47,6 +49,7 @@ func backfillWorkspacePublicIDs(ctx context.Context, tx *sql.Tx) error {
 
 // workspacePublicIDs returns the ids already taken and the Workspaces that have none.
 func workspacePublicIDs(ctx context.Context, tx *sql.Tx) (taken map[string]bool, missing []int64, err error) {
+	// raw sql: a Go migration runs on the schema as it was then (frozen), see backfillWorkspacePublicIDs.
 	rows, err := tx.QueryContext(ctx, `SELECT "id", "public_id" FROM "workspaces"`)
 	if err != nil {
 		return nil, nil, err

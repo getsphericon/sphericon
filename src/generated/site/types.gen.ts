@@ -6,6 +6,48 @@ export type ClientOptions = {
 };
 
 /**
+ * Every API token scope: the one vocabulary of the external API
+ */
+export const ApiTokenScope = {
+  CONTACTS_READ: 'contacts:read',
+  CONTACTS_WRITE: 'contacts:write',
+  EVENTS_READ: 'events:read',
+  EVENTS_WRITE: 'events:write',
+  SEGMENTS_READ: 'segments:read',
+  SEGMENTS_WRITE: 'segments:write',
+  BROADCASTS_READ: 'broadcasts:read',
+  BROADCASTS_WRITE: 'broadcasts:write',
+  AUTOMATIONS_READ: 'automations:read',
+  AUTOMATIONS_WRITE: 'automations:write',
+  ENROLLMENTS_READ: 'enrollments:read',
+  TEMPLATES_READ: 'templates:read',
+  TEMPLATES_WRITE: 'templates:write',
+  WEBHOOKS_READ: 'webhooks:read',
+  WEBHOOKS_WRITE: 'webhooks:write',
+  WEBHOOKS_REGENERATE: 'webhooks:regenerate',
+  WEBHOOKS_TEST: 'webhooks:test',
+  CUSTOM_FIELDS_READ: 'custom_fields:read',
+  SENDING_DOMAINS_READ: 'sending_domains:read',
+  INTEGRATIONS_READ: 'integrations:read',
+  EMAILS_SEND: 'emails:send',
+  BROADCASTS_SEND: 'broadcasts:send',
+  AUTOMATIONS_ACTIVATE: 'automations:activate',
+  MCP_SEND: 'mcp:send',
+  CONTACTS_ERASE: 'contacts:erase',
+  SENDING_DOMAINS_WRITE: 'sending_domains:write',
+  INTEGRATIONS_WRITE: 'integrations:write',
+  TOKENS_READ: 'tokens:read',
+  TOKENS_WRITE: 'tokens:write',
+  AUDIT_READ: 'audit:read',
+  EXPORT_READ: 'export:read'
+} as const;
+
+/**
+ * Every API token scope: the one vocabulary of the external API
+ */
+export type ApiTokenScope = typeof ApiTokenScope[keyof typeof ApiTokenScope];
+
+/**
  * The contact's engagement with one broadcast (how its send ended is in `outboundMessages`)
  */
 export type ContactExportBroadcastRecipient = {
@@ -382,6 +424,41 @@ export type EmailAddress = string;
 export type EntityId = string;
 
 /**
+ * Scopes an OAuth client may be granted without any extra opt-in: the external
+ * API's read/write vocabulary. Token management scopes are deliberately absent,
+ * so a connector can never mint further credentials.
+ */
+export const GrantableScope = {
+  CONTACTS_READ: 'contacts:read',
+  CONTACTS_WRITE: 'contacts:write',
+  EVENTS_READ: 'events:read',
+  EVENTS_WRITE: 'events:write',
+  SEGMENTS_READ: 'segments:read',
+  SEGMENTS_WRITE: 'segments:write',
+  BROADCASTS_READ: 'broadcasts:read',
+  BROADCASTS_WRITE: 'broadcasts:write',
+  AUTOMATIONS_READ: 'automations:read',
+  AUTOMATIONS_WRITE: 'automations:write',
+  ENROLLMENTS_READ: 'enrollments:read',
+  TEMPLATES_READ: 'templates:read',
+  TEMPLATES_WRITE: 'templates:write',
+  WEBHOOKS_READ: 'webhooks:read',
+  WEBHOOKS_WRITE: 'webhooks:write',
+  WEBHOOKS_REGENERATE: 'webhooks:regenerate',
+  WEBHOOKS_TEST: 'webhooks:test',
+  CUSTOM_FIELDS_READ: 'custom_fields:read',
+  SENDING_DOMAINS_READ: 'sending_domains:read',
+  INTEGRATIONS_READ: 'integrations:read'
+} as const;
+
+/**
+ * Scopes an OAuth client may be granted without any extra opt-in: the external
+ * API's read/write vocabulary. Token management scopes are deliberately absent,
+ * so a connector can never mint further credentials.
+ */
+export type GrantableScope = typeof GrantableScope[keyof typeof GrantableScope];
+
+/**
  * The body of a refused removal (ADR 0049): ProblemDetails plus the rows that use it
  */
 export type InUseProblemDetails = {
@@ -480,6 +557,12 @@ export type LintFinding = {
 };
 
 /**
+ * What a User calls a Passkey, to tell it from their others: 1 to 100 characters. Surrounding
+ * spaces are trimmed before the name is stored, so a name of spaces only is refused too.
+ */
+export type PasskeyName = string;
+
+/**
  * A machine-readable reason a client branches on, beyond the HTTP status
  */
 export const ProblemCode = {
@@ -573,6 +656,30 @@ export type ProblemDetails = {
    */
   debug?: ProblemDebug;
 };
+
+/**
+ * A number of days an Audit log is kept: 1 to 3650
+ */
+export type RetentionDays = number;
+
+/**
+ * Send-class scopes (ADR 0016, "Send is a second lock"). An OAuth client gets them
+ * only when the user explicitly opts in. mcp:send is the MCP-specific key: send-class
+ * tools are not listed over /mcp without it, so any send-class grant brings it along.
+ */
+export const SendScope = {
+  EMAILS_SEND: 'emails:send',
+  BROADCASTS_SEND: 'broadcasts:send',
+  AUTOMATIONS_ACTIVATE: 'automations:activate',
+  MCP_SEND: 'mcp:send'
+} as const;
+
+/**
+ * Send-class scopes (ADR 0016, "Send is a second lock"). An OAuth client gets them
+ * only when the user explicitly opts in. mcp:send is the MCP-specific key: send-class
+ * tools are not listed over /mcp without it, so any send-class grant brings it along.
+ */
+export type SendScope = typeof SendScope[keyof typeof SendScope];
 
 /**
  * The metric of a Sending domain that is over a warning limit of the abuse detector
@@ -795,7 +902,7 @@ export type SiteApiTokenResource = {
   /**
    * Granted scopes
    */
-  scopes: Array<string>;
+  scopes: Array<ApiTokenScope>;
   /**
    * Last time the token authenticated, if ever
    */
@@ -919,7 +1026,7 @@ export type SiteAuditRetention = {
   /**
    * Entries older than this many days are pruned; null keeps them forever
    */
-  retentionDays: number | null;
+  retentionDays: RetentionDays | null;
 };
 
 /**
@@ -1616,7 +1723,7 @@ export type SiteCreateSuppressionInput = {
  */
 export type SiteCreateTokenInput = {
   name: string;
-  scopes: Array<string>;
+  scopes: Array<ApiTokenScope>;
   expiresAt?: Timestamp | null;
 };
 
@@ -2532,11 +2639,11 @@ export type SiteOAuthAuthorizationRequest = {
   /**
    * Scopes the client asked for that sphericon will grant by default
    */
-  scopes: Array<string>;
+  scopes: Array<GrantableScope>;
   /**
    * Requested send-class scopes: granted only when the user opts in explicitly
    */
-  sendScopes: Array<string>;
+  sendScopes: Array<SendScope>;
 };
 
 /**
@@ -2590,7 +2697,7 @@ export type SitePasskey = {
   /**
    * What the User calls it, to tell their Passkeys apart
    */
-  name: string;
+  name: PasskeyName;
   /**
    * When the Passkey was registered
    */
@@ -2744,7 +2851,7 @@ export type SitePasskeyRegistrationInput = {
   /**
    * What to call the Passkey, to tell it from the User's others
    */
-  name: string;
+  name: PasskeyName;
   /**
    * The authenticator's response to the creation options
    */
@@ -2788,7 +2895,7 @@ export type SitePasskeyRenameInput = {
   /**
    * What to call the Passkey, to tell it from the User's others
    */
-  name: string;
+  name: PasskeyName;
 };
 
 /**
@@ -3247,8 +3354,8 @@ export type SiteSendLimitWarning = typeof SiteSendLimitWarning[keyof typeof Site
 /**
  * Sending domain resource used by the site UI (ADR 0010). sphericon generates the
  * DKIM keypair; the user publishes the DKIM TXT to authenticate the domain. The
- * private key is never exposed. `verified` is a live property re-checked in the
- * background — it can flip back if the DNS record disappears.
+ * private key is never exposed. `verified` is re-checked in the background:
+ * the domain loses it (`verificationLostAt`) if the DNS record disappears.
  */
 export type SiteSendingDomainResource = {
   /**
@@ -3264,7 +3371,7 @@ export type SiteSendingDomainResource = {
    */
   dkimSelector: string;
   /**
-   * Whether the DKIM DNS is currently published and matches our key
+   * Whether the domain is verified now: it has a `verifiedAt` and no `verificationLostAt` since
    */
   verified: boolean;
   /**
@@ -3288,9 +3395,13 @@ export type SiteSendingDomainResource = {
    */
   lastCheckedAt?: Timestamp | null;
   /**
-   * When the domain most recently became verified (null = never)
+   * When the domain most recently became verified (null = never); kept after a loss
    */
   verifiedAt?: Timestamp | null;
+  /**
+   * When a re-check most recently found the verified DKIM DNS gone (null = not lost: never verified, or verified again since)
+   */
+  verificationLostAt?: Timestamp | null;
   /**
    * When the domain was archived; null while it is kept. An archived domain serves no Tracking domain host.
    */
@@ -3972,16 +4083,20 @@ export type SiteVerifyEmailResult = {
 };
 
 /**
- * Why an endpoint turned itself off. A closed set: `gone` (the receiver answered 410
- * Gone) and `persistent_failure` (deliveries failed for longer than the window).
- * Absent for an endpoint an owner disabled, and while the endpoint is enabled.
+ * Why an endpoint is off. A closed set: `owner` (a member turned it off), `gone` (the
+ * receiver answered 410 Gone) and `persistent_failure` (deliveries failed for longer
+ * than the window). Absent while the endpoint is enabled.
  */
-export const SiteWebhookDisabledReason = { GONE: 'gone', PERSISTENT_FAILURE: 'persistent_failure' } as const;
+export const SiteWebhookDisabledReason = {
+  OWNER: 'owner',
+  GONE: 'gone',
+  PERSISTENT_FAILURE: 'persistent_failure'
+} as const;
 
 /**
- * Why an endpoint turned itself off. A closed set: `gone` (the receiver answered 410
- * Gone) and `persistent_failure` (deliveries failed for longer than the window).
- * Absent for an endpoint an owner disabled, and while the endpoint is enabled.
+ * Why an endpoint is off. A closed set: `owner` (a member turned it off), `gone` (the
+ * receiver answered 410 Gone) and `persistent_failure` (deliveries failed for longer
+ * than the window). Absent while the endpoint is enabled.
  */
 export type SiteWebhookDisabledReason = typeof SiteWebhookDisabledReason[keyof typeof SiteWebhookDisabledReason];
 
@@ -4006,11 +4121,15 @@ export type SiteWebhookEndpointResource = {
    */
   eventTypes: Array<string>;
   /**
-   * Whether the endpoint receives deliveries
+   * Whether the endpoint receives deliveries: true while it has no `disabledAt`
    */
   enabled: boolean;
   /**
-   * Why the endpoint turned itself off; absent when an owner disabled it or it is enabled
+   * When the endpoint was turned off; absent while it is enabled
+   */
+  disabledAt?: Timestamp;
+  /**
+   * Why the endpoint is off; present exactly when `disabledAt` is
    */
   disabledReason?: SiteWebhookDisabledReason;
   /**
@@ -4200,6 +4319,24 @@ export type SiteWorkspaceResource = {
 export type TimeZoneName = string;
 
 export type Timestamp = string;
+
+/**
+ * Scopes only an API token can hold, never an OAuth grant
+ */
+export const TokenOnlyScope = {
+  CONTACTS_ERASE: 'contacts:erase',
+  SENDING_DOMAINS_WRITE: 'sending_domains:write',
+  INTEGRATIONS_WRITE: 'integrations:write',
+  TOKENS_READ: 'tokens:read',
+  TOKENS_WRITE: 'tokens:write',
+  AUDIT_READ: 'audit:read',
+  EXPORT_READ: 'export:read'
+} as const;
+
+/**
+ * Scopes only an API token can hold, never an OAuth grant
+ */
+export type TokenOnlyScope = typeof TokenOnlyScope[keyof typeof TokenOnlyScope];
 
 /**
  * A row that uses the one a removal was refused for: what a client shows to say what to

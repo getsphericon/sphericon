@@ -31,8 +31,8 @@ type WebhookEndpoint struct {
 	SecretEncrypted string `json:"-"`
 	// EventTypes holds the value of the "event_types" field.
 	EventTypes []string `json:"event_types,omitempty"`
-	// Enabled holds the value of the "enabled" field.
-	Enabled bool `json:"enabled,omitempty"`
+	// DisabledAt holds the value of the "disabled_at" field.
+	DisabledAt *time.Time `json:"disabled_at,omitempty"`
 	// ConsecutiveFailures holds the value of the "consecutive_failures" field.
 	ConsecutiveFailures *int `json:"consecutive_failures,omitempty"`
 	// FailingSince holds the value of the "failing_since" field.
@@ -78,13 +78,11 @@ func (*WebhookEndpoint) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case webhookendpoint.FieldEventTypes:
 			values[i] = new([]byte)
-		case webhookendpoint.FieldEnabled:
-			values[i] = new(sql.NullBool)
 		case webhookendpoint.FieldID, webhookendpoint.FieldWorkspaceID, webhookendpoint.FieldConsecutiveFailures, webhookendpoint.FieldLastErrorStatus:
 			values[i] = new(sql.NullInt64)
 		case webhookendpoint.FieldURL, webhookendpoint.FieldSecretEncrypted, webhookendpoint.FieldLastErrorKind, webhookendpoint.FieldDisabledReason:
 			values[i] = new(sql.NullString)
-		case webhookendpoint.FieldCreatedAt, webhookendpoint.FieldUpdatedAt, webhookendpoint.FieldFailingSince, webhookendpoint.FieldLastFailureAt:
+		case webhookendpoint.FieldCreatedAt, webhookendpoint.FieldUpdatedAt, webhookendpoint.FieldDisabledAt, webhookendpoint.FieldFailingSince, webhookendpoint.FieldLastFailureAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -145,11 +143,12 @@ func (_m *WebhookEndpoint) assignValues(columns []string, values []any) error {
 					return fmt.Errorf("unmarshal field event_types: %w", err)
 				}
 			}
-		case webhookendpoint.FieldEnabled:
-			if value, ok := values[i].(*sql.NullBool); !ok {
-				return fmt.Errorf("unexpected type %T for field enabled", values[i])
+		case webhookendpoint.FieldDisabledAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field disabled_at", values[i])
 			} else if value.Valid {
-				_m.Enabled = value.Bool
+				_m.DisabledAt = new(time.Time)
+				*_m.DisabledAt = value.Time
 			}
 		case webhookendpoint.FieldConsecutiveFailures:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -251,8 +250,10 @@ func (_m *WebhookEndpoint) String() string {
 	builder.WriteString("event_types=")
 	builder.WriteString(fmt.Sprintf("%v", _m.EventTypes))
 	builder.WriteString(", ")
-	builder.WriteString("enabled=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Enabled))
+	if v := _m.DisabledAt; v != nil {
+		builder.WriteString("disabled_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
 	builder.WriteString(", ")
 	if v := _m.ConsecutiveFailures; v != nil {
 		builder.WriteString("consecutive_failures=")

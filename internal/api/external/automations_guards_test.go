@@ -22,10 +22,7 @@ func TestExternalAutomationsAreWorkspaceScoped(t *testing.T) {
 	ctx := context.Background()
 	c := env.ExternalScoped(t, "automations:read", "automations:write", "automations:activate")
 
-	foreign, err := env.DB.Automation.Create().
-		SetWorkspaceID(fixtures.GlobexID).SetName("Globex flow").SetTriggerEvent("signup").
-		SetStatus(automation.StatusDraft).Save(ctx)
-	require.NoError(t, err)
+	foreign := env.DB.Automation.GetX(ctx, fixtures.AutomationGlobexID)
 
 	for name, id := range map[string]externalapi.EntityId{
 		"missing": missingAutomation,
@@ -56,6 +53,6 @@ func TestExternalAutomationsAreWorkspaceScoped(t *testing.T) {
 
 	stored, err := env.DB.Automation.Get(ctx, foreign.ID)
 	require.NoError(t, err, "the foreign automation survives")
-	assert.Equal(t, "Globex flow", stored.Name)
+	assert.Equal(t, fixtures.AutomationGlobexName, stored.Name)
 	assert.Equal(t, automation.StatusDraft, stored.Status, "never activated across tenants")
 }

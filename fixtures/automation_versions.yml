@@ -116,6 +116,92 @@
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 
+# The steps of the job tests' automations (automation_versions rows of internal/jobs scenarios).
+
+- id: 5560 # fixture: AutomationJobsGreetingVersion
+  automation_id: 5560
+  version: 1
+  steps: '[{"type":"email","subject":"Hi {{ "{{ first_name }}" }}","body":"<p>Hi {{ "{{ first_name }}" }}</p>"},{"type":"wait","seconds":3600},{"type":"email","subject":"Hi {{ "{{ first_name }}" }}","body":"<p>Hi {{ "{{ first_name }}" }}</p>"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+
+- id: 5561 # fixture: AutomationJobsSingleEmailVersion
+  automation_id: 5561
+  version: 1
+  steps: '[{"type":"email","subject":"Hi {{ "{{ first_name }}" }}","body":"<p>Hi {{ "{{ first_name }}" }}</p>"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+
+- id: 5562 # fixture: AutomationJobsWaitFirstVersion
+  automation_id: 5562
+  version: 1
+  steps: '[{"type":"wait","seconds":3600},{"type":"email","subject":"Hi {{ "{{ first_name }}" }}","body":"<p>Hi {{ "{{ first_name }}" }}</p>"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+
+# Jobs step outcomes: the newest version is the one a listing decodes; the older ones are what
+# Enrollments began on. Version 1 stands for a definition that can no longer be decoded: its steps
+# are corrupted by the test itself, since stored steps must stay decodable (key rotation reads
+# every version).
+- id: 5563 # fixture: AutomationJobsUndecodableVersion
+  automation_id: 5563
+  version: 1
+  steps: '[]'
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+
+- id: 55632 # fixture: AutomationJobsUnknownStepVersion
+  automation_id: 5563
+  version: 2
+  steps: '[{"type":"teleport"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+
+- id: 55633 # fixture: AutomationJobsEmptyVersion
+  automation_id: 5563
+  version: 3
+  steps: '[]'
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+
+- id: 55634 # fixture: AutomationJobsBrokenTemplateVersion
+  automation_id: 5563
+  version: 4
+  steps: '[{"type":"email","subject":"{% if x %}open","body":"<p>Hi</p>"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+
+- id: 5564 # fixture: AutomationJobsEditableVersion
+  automation_id: 5564
+  version: 1
+  steps: '[{"type":"wait","seconds":60},{"type":"email","subject":"Old steps","body":"<p>old</p>"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+
+- id: 5565 # fixture: AutomationJobsSystemTagVersion
+  automation_id: 5565
+  version: 1
+  steps: '[{"type":"apply_tag","tag":"system-made"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+
+- id: 5566
+  automation_id: 5566
+  version: 1
+  steps: '[{"type":"email","subject":"Hi {{ "{{ first_name }}" }}","body":"<p>Hi {{ "{{ first_name }}" }}</p>"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+
 # --- Brightpath (workspace 20): demo workspace behind the screenshots on getsphericon.com ---
 - id: 20001
   automation_id: 20001

@@ -6,8 +6,8 @@
 // A leaf is built from ent's generated predicates wherever one exists: the core
 // attributes (contact.EmailEQ …), Tags (contact.HasTagsWith) and Events
 // (contact.HasEventsWith). The one dynamic piece is a Custom field's key inside the
-// custom_fields JSON column, which no generated predicate covers; it is a bound
-// argument, never part of the query text. A leaf may only name a core attribute, a
+// custom_fields JSON column, which no generated predicate covers; it is addressed
+// with ent's JSON predicates (sqljson) after the key is checked. A leaf may only name a core attribute, a
 // Tag, an Event action, or a Custom field of the Workspace's catalogue (ADR 0006).
 package segments
 
@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqljson"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
@@ -269,7 +270,7 @@ func tagRule(op, value string) (predicate.Contact, error) {
 }
 
 // custom is a condition on one Custom field. The key must be in the Workspace's
-// catalogue (ADR 0006), and it reaches the query only as a bound argument: no
+// catalogue (ADR 0006), and it is addressed with ent's JSON predicates (sqljson), since no
 // generated predicate addresses a key of the custom_fields JSON column.
 func (c *compiler) custom(key, op, value string) (predicate.Contact, error) {
 	if key == "" {
@@ -279,37 +280,39 @@ func (c *compiler) custom(key, op, value string) (predicate.Contact, error) {
 		return nil, err
 	}
 
-	var write func(b *sql.Builder, column string)
+	// ent inlines a JSON path key into the statement as a quoted literal instead of binding
+	// it: quotes are doubled so any key stays one literal (standard_conforming_strings
+	// makes a backslash plain), and a key ent would read as an array index is refused.
+	if isIndexKey(key) {
+		return nil, fmt.Errorf("unsupported custom field key %q", key)
+	}
+	path := sqljson.Path(strings.ReplaceAll(key, "'", "''"))
+	var cond func(column string) *sql.Predicate
 	switch op {
-	case "eq", "neq":
-		cmp := " = "
-		if op == "neq" {
-			cmp = " <> "
-		}
-		write = func(b *sql.Builder, column string) {
-			b.WriteString("(").WriteString(column).WriteString(" ->> ").Arg(key).WriteString(")").
-				WriteString(cmp).Arg(value)
-		}
+	case "eq":
+		cond = func(column string) *sql.Predicate { return sqljson.ValueEQ(column, value, path) }
+	case "neq":
+		cond = func(column string) *sql.Predicate { return sqljson.ValueNEQ(column, value, path) }
 	case "contains":
-		// Membership of a JSON array (jsonb containment of the encoded value).
-		encoded, err := json.Marshal(value)
-		if err != nil {
-			return nil, fmt.Errorf("encode json value: %w", err)
-		}
-		write = func(b *sql.Builder, column string) {
-			b.WriteString("(").WriteString(column).WriteString(" -> ").Arg(key).WriteString(") @> ").
-				Arg(string(encoded)).WriteString("::jsonb")
+		// Membership of a JSON array (jsonb containment of the encoded value). The value
+		// is read as JSON, not unquoted to text, so a string element matches as a string.
+		cond = func(column string) *sql.Predicate {
+			return sqljson.ValueContains(column, value, path, sqljson.Unquote(false))
 		}
 	case "notNull":
-		write = func(b *sql.Builder, column string) {
-			b.WriteString("(").WriteString(column).WriteString(" -> ").Arg(key).WriteString(") IS NOT NULL")
-		}
+		cond = func(column string) *sql.Predicate { return sqljson.HasKey(column, path) }
 	default:
 		return nil, fmt.Errorf("unsupported operator %q for json field", op)
 	}
 	return predicate.Contact(func(s *sql.Selector) {
-		s.Where(sql.P(func(b *sql.Builder) { write(b, s.C(contact.FieldCustomFields)) }))
+		s.Where(cond(s.C(contact.FieldCustomFields)))
 	}), nil
+}
+
+// isIndexKey reports whether ent would read key as an array index ("[0]") rather than
+// an object key.
+func isIndexKey(key string) bool {
+	return len(key) > 2 && key[0] == '[' && key[len(key)-1] == ']'
 }
 
 // requireCustomField checks key against the Workspace's Custom field catalogue.

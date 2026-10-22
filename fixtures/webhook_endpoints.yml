@@ -4,14 +4,14 @@
   url: https://codebasics.dev/webhooks/sphericon
   secret_encrypted: '{{ encrypt "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw" }}'
   event_types: '["contact.created","email.opened","email.clicked"]'
-  enabled: true
   workspace_id: 1
   created_at: '{{daysAgo 70}}'
   updated_at: '{{daysAgo 70}}'
 - id: 101 # fixture: WebhookCodebasicsDisabled
   url: https://hooks.codebasics.dev/disabled
   secret_encrypted: '{{ encrypt "whsec_Y29kZWJhc2ljc19kaXNhYmxlZF9zZWNyZXQ=" }}'
-  enabled: false
+  disabled_at: '{{daysAgo 3}}'
+  disabled_reason: owner
   workspace_id: 1
   created_at: '{{daysAgo 50}}'
   updated_at: '{{daysAgo 50}}'
@@ -20,7 +20,6 @@
   url: https://failing.codebasics.dev/hook
   secret_encrypted: '{{ encrypt "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw" }}'
   event_types: '["segment.deleted"]'
-  enabled: true
   consecutive_failures: 7
   failing_since: '{{hoursAgo 26}}'
   last_error_kind: http_status
@@ -33,7 +32,7 @@
 - id: 103 # fixture: WebhookCodebasicsGone
   url: https://gone.codebasics.dev/hook
   secret_encrypted: '{{ encrypt "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw" }}'
-  enabled: false
+  disabled_at: '{{hoursAgo 5}}'
   consecutive_failures: 1
   failing_since: '{{hoursAgo 5}}'
   last_error_kind: http_status
@@ -48,7 +47,6 @@
 - id: 900 # fixture: WebhookGlobex
   url: https://globex.example/hook
   secret_encrypted: '{{ encrypt "whsec_globex" }}'
-  enabled: true
   workspace_id: 2
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
@@ -57,7 +55,14 @@
 - id: 300 # fixture: WebhookInitech
   url: https://initech.example/hook
   secret_encrypted: '{{ encrypt "whsec_initech" }}'
-  enabled: true
+  workspace_id: 3
+  created_at: '{{daysAgo 30}}'
+  updated_at: '{{daysAgo 30}}'
+# Selects only Audit entries, which an endpoint with no filter never receives (ADR 0022).
+- id: 301 # fixture: WebhookInitechAudit
+  url: https://initech.example/audit
+  secret_encrypted: '{{ encrypt "whsec_initech_audit" }}'
+  event_types: '["audit.entry"]'
   workspace_id: 3
   created_at: '{{daysAgo 30}}'
   updated_at: '{{daysAgo 30}}'

@@ -3,7 +3,6 @@ package broadcasts_test
 import (
 	"context"
 	"errors"
-	"strconv"
 	"testing"
 	"time"
 
@@ -77,10 +76,7 @@ func newDelivery(t *testing.T) *delivery {
 
 // recipient adds a pending recipient row for a Contact to the sending Broadcast.
 func (d *delivery) recipient(contactID int64) int64 {
-	rec, err := d.s.BroadcastRecipient().Create().
-		SetBroadcastID(fixtures.BroadcastSendingID).SetContactID(contactID).Save(d.ctx)
-	require.NoError(d.t, err)
-	return rec.ID
+	return d.env.PlaceRecipient(d.ctx, fixtures.BroadcastSendingID, contactID)
 }
 
 func (d *delivery) recipientRow(id int64) *ent.BroadcastRecipient {
@@ -110,17 +106,10 @@ func (d *delivery) messageOf(recipientID int64) *ent.OutboundMessage {
 		Where(outboundmessage.BroadcastRecipientID(recipientID)).OnlyX(d.ctx)
 }
 
-// claim leaves a pending Outbound message on the recipient's key, claimed `age` ago: another
-// attempt's claim, live while younger than the lease.
+// claim moves the claim of a placed recipient's pending Outbound message (only Bob's has one) to
+// `age` ago: another attempt's claim, live while younger than the lease.
 func (d *delivery) claim(recipientID int64, age time.Duration) {
-	d.env.DB.OutboundMessage.Create().
-		SetWorkspaceID(fixtures.AcmeID).
-		SetKind(outboundmessage.KindBroadcast).
-		SetIdempotencyKey("broadcast:" + strconv.FormatInt(recipientID, 10)).
-		SetBroadcastID(fixtures.BroadcastSendingID).
-		SetBroadcastRecipientID(recipientID).
-		SetClaimedAt(time.Now().Add(-age)).
-		ExecX(d.ctx)
+	d.env.ClaimRecipient(d.ctx, recipientID, age)
 }
 
 func TestSentRecipientIsRecordedAndSettlesTheBroadcast(t *testing.T) {
@@ -170,8 +159,7 @@ func TestSuppressedRecipientIsSkippedNotFailed(t *testing.T) {
 	d := newDelivery(t)
 	id := d.recipient(fixtures.ContactAliceID)
 	alice := d.env.DB.Contact.GetX(d.ctx, fixtures.ContactAliceID)
-	d.env.DB.Suppression.Create().SetWorkspaceID(fixtures.AcmeID).SetChannel("email").
-		SetDestination(*alice.Email).SetReason("bounce").ExecX(d.ctx)
+	d.env.SuppressDestination(d.ctx, *alice.Email)
 
 	require.NoError(t, d.del.SendRecipient(d.ctx, d.s, id))
 
@@ -258,7 +246,7 @@ func TestGiveUpFailsTheRecipientWithTheCauseAndSettlesTheBroadcast(t *testing.T)
 // so the recipient is not left failed while its mail goes out, and the adapter can ask again.
 func TestGiveUpWaitsOutALiveClaim(t *testing.T) {
 	d := newDelivery(t)
-	id := d.recipient(fixtures.ContactAliceID)
+	id := d.recipient(fixtures.ContactBobID)
 	d.claim(id, 0)
 
 	err := d.del.GiveUp(d.ctx, d.s, id, errors.New("smtp unavailable"))
@@ -271,7 +259,7 @@ func TestGiveUpWaitsOutALiveClaim(t *testing.T) {
 
 func TestGiveUpFailsAnExpiredClaim(t *testing.T) {
 	d := newDelivery(t)
-	id := d.recipient(fixtures.ContactAliceID)
+	id := d.recipient(fixtures.ContactBobID)
 	d.claim(id, time.Hour)
 
 	require.NoError(t, d.del.GiveUp(d.ctx, d.s, id, errors.New("smtp unavailable")))

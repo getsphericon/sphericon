@@ -411,12 +411,12 @@ export const zStaffSuspensionChange = z.object({
 /**
  * Page number (1-based)
  */
-export const zPageQueryPage = z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).default(1);
+export const zPageQueryPage = z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).default(1);
 
 /**
  * Page size
  */
-export const zPageQueryPageSize = z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).default(25);
+export const zPageQueryPageSize = z.int().gte(1).lte(100).default(25);
 
 /**
  * Only Workspaces in this review state
@@ -456,8 +456,8 @@ export const zStaffMeGetResponse = zStaffResource;
 export const zStaffWorkspacesListQuery = z.object({
   review: z.exactOptional(zStaffWorkspaceReview),
   search: z.exactOptional(z.string()),
-  page: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
-  pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(25)
+  page: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
+  pageSize: z.int().gte(1).lte(100).optional().default(25)
 });
 
 /**
@@ -486,7 +486,7 @@ export const zStaffWorkspaceAuditListPath = z.object({
 
 export const zStaffWorkspaceAuditListQuery = z.object({
   cursor: z.exactOptional(z.string()),
-  limit: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(25)
+  limit: z.int().gte(1).lte(100).optional().default(25)
 });
 
 /**

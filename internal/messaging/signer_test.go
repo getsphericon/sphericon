@@ -54,6 +54,19 @@ func TestDKIMSignerUnverifiedDomain(t *testing.T) {
 	assert.Nil(t, dk, "an unverified sending domain must not be signed (slice 2)")
 }
 
+func TestDKIMSignerLostVerification(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	signer := messaging.NewDKIMSigner(env.DB.Scoped(fixtures.AcmeID), envCipher(t))
+
+	dk, err := signer.DKIMSigner(ctx, "hello@"+fixtures.SendingDomainLostDomain)
+	require.NoError(t, err)
+	assert.Nil(t, dk, "a domain whose verification was lost must not be signed")
+	has, err := messaging.HasVerifiedSendingDomain(ctx, env.DB.Scoped(fixtures.AcmeID), "hello@"+fixtures.SendingDomainLostDomain)
+	require.NoError(t, err)
+	assert.False(t, has)
+}
+
 func TestDKIMSignerUnknownDomain(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()

@@ -9,6 +9,75 @@ import (
 	"github.com/ogen-go/ogen/validate"
 )
 
+func (s ApiTokenScope) Validate() error {
+	switch s {
+	case "contacts:read":
+		return nil
+	case "contacts:write":
+		return nil
+	case "events:read":
+		return nil
+	case "events:write":
+		return nil
+	case "segments:read":
+		return nil
+	case "segments:write":
+		return nil
+	case "broadcasts:read":
+		return nil
+	case "broadcasts:write":
+		return nil
+	case "automations:read":
+		return nil
+	case "automations:write":
+		return nil
+	case "enrollments:read":
+		return nil
+	case "templates:read":
+		return nil
+	case "templates:write":
+		return nil
+	case "webhooks:read":
+		return nil
+	case "webhooks:write":
+		return nil
+	case "webhooks:regenerate":
+		return nil
+	case "webhooks:test":
+		return nil
+	case "custom_fields:read":
+		return nil
+	case "sending_domains:read":
+		return nil
+	case "integrations:read":
+		return nil
+	case "emails:send":
+		return nil
+	case "broadcasts:send":
+		return nil
+	case "automations:activate":
+		return nil
+	case "mcp:send":
+		return nil
+	case "contacts:erase":
+		return nil
+	case "sending_domains:write":
+		return nil
+	case "integrations:write":
+		return nil
+	case "tokens:read":
+		return nil
+	case "tokens:write":
+		return nil
+	case "audit:read":
+		return nil
+	case "export:read":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s *ContactExportDocument) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -152,6 +221,53 @@ func (s EmailAddress) Validate() error {
 	return nil
 }
 
+func (s GrantableScope) Validate() error {
+	switch s {
+	case "contacts:read":
+		return nil
+	case "contacts:write":
+		return nil
+	case "events:read":
+		return nil
+	case "events:write":
+		return nil
+	case "segments:read":
+		return nil
+	case "segments:write":
+		return nil
+	case "broadcasts:read":
+		return nil
+	case "broadcasts:write":
+		return nil
+	case "automations:read":
+		return nil
+	case "automations:write":
+		return nil
+	case "enrollments:read":
+		return nil
+	case "templates:read":
+		return nil
+	case "templates:write":
+		return nil
+	case "webhooks:read":
+		return nil
+	case "webhooks:write":
+		return nil
+	case "webhooks:regenerate":
+		return nil
+	case "webhooks:test":
+		return nil
+	case "custom_fields:read":
+		return nil
+	case "sending_domains:read":
+		return nil
+	case "integrations:read":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s *InUseProblemDetails) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -292,6 +408,26 @@ func (s *LintFinding) Validate() error {
 	return nil
 }
 
+func (s PasskeyName) Validate() error {
+	alias := (string)(s)
+	if err := (validate.String{
+		MinLength:     1,
+		MinLengthSet:  true,
+		MaxLength:     100,
+		MaxLengthSet:  true,
+		Email:         false,
+		Hostname:      false,
+		Regex:         nil,
+		MinNumeric:    0,
+		MinNumericSet: false,
+		MaxNumeric:    0,
+		MaxNumericSet: false,
+	}).Validate(string(alias)); err != nil {
+		return errors.Wrap(err, "string")
+	}
+	return nil
+}
+
 func (s ProblemCode) Validate() error {
 	switch s {
 	case "second_factor_required":
@@ -396,6 +532,39 @@ func (s *ProblemDetailsHeaders) Validate() error {
 		return &validate.Error{Fields: failures}
 	}
 	return nil
+}
+
+func (s RetentionDays) Validate() error {
+	alias := (int32)(s)
+	if err := (validate.Int{
+		MinSet:        true,
+		Min:           1,
+		MaxSet:        true,
+		Max:           3650,
+		MinExclusive:  false,
+		MaxExclusive:  false,
+		MultipleOfSet: false,
+		MultipleOf:    0,
+		Pattern:       nil,
+	}).Validate(int64(alias)); err != nil {
+		return errors.Wrap(err, "int")
+	}
+	return nil
+}
+
+func (s SendScope) Validate() error {
+	switch s {
+	case "emails:send":
+		return nil
+	case "broadcasts:send":
+		return nil
+	case "automations:activate":
+		return nil
+	case "mcp:send":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
 }
 
 func (s SiteAbuseMetric) Validate() error {
@@ -562,6 +731,23 @@ func (s *SiteApiTokenResource) Validate() error {
 	if err := func() error {
 		if s.Scopes == nil {
 			return errors.New("nil is invalid value")
+		}
+		var failures []validate.FieldError
+		for i, elem := range s.Scopes {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
 		}
 		return nil
 	}(); err != nil {
@@ -753,6 +939,36 @@ func (s *SiteAuditListPaymentRequired) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
+	}
+	return nil
+}
+
+func (s *SiteAuditRetention) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if value, ok := s.RetentionDays.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "retentionDays",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
 	}
 	return nil
 }
@@ -2229,6 +2445,23 @@ func (s *SiteCreateTokenInput) Validate() error {
 	if err := func() error {
 		if s.Scopes == nil {
 			return errors.New("nil is invalid value")
+		}
+		var failures []validate.FieldError
+		for i, elem := range s.Scopes {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
 		}
 		return nil
 	}(); err != nil {
@@ -3954,6 +4187,23 @@ func (s *SiteOAuthAuthorizationRequest) Validate() error {
 		if s.Scopes == nil {
 			return errors.New("nil is invalid value")
 		}
+		var failures []validate.FieldError
+		for i, elem := range s.Scopes {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
+		}
 		return nil
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
@@ -3964,6 +4214,23 @@ func (s *SiteOAuthAuthorizationRequest) Validate() error {
 	if err := func() error {
 		if s.SendScopes == nil {
 			return errors.New("nil is invalid value")
+		}
+		var failures []validate.FieldError
+		for i, elem := range s.SendScopes {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
 		}
 		return nil
 	}(); err != nil {
@@ -4037,6 +4304,29 @@ func (s *SiteOAuthDescribeNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
+	}
+	return nil
+}
+
+func (s *SitePasskey) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Name.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "name",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
 	}
 	return nil
 }
@@ -4380,6 +4670,29 @@ func (s SitePasskeyDescriptorType) Validate() error {
 	}
 }
 
+func (s *SitePasskeyHeaders) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Response.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "Response",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
 func (s *SitePasskeyList) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -4389,6 +4702,23 @@ func (s *SitePasskeyList) Validate() error {
 	if err := func() error {
 		if s.Items == nil {
 			return errors.New("nil is invalid value")
+		}
+		var failures []validate.FieldError
+		for i, elem := range s.Items {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
 		}
 		return nil
 	}(); err != nil {
@@ -4518,6 +4848,52 @@ func (s *SitePasskeyRegistrationBegunHeaders) Validate() error {
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
 			Name:  "Response",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *SitePasskeyRegistrationInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Name.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "name",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *SitePasskeyRenameInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Name.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "name",
 			Error: err,
 		})
 	}
@@ -4836,6 +5212,85 @@ func (s *SiteResendVerificationInput) Validate() error {
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
 			Name:  "email",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *SiteSaveBrandKitInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := (validate.String{
+			MinLength:     0,
+			MinLengthSet:  false,
+			MaxLength:     2048,
+			MaxLengthSet:  true,
+			Email:         false,
+			Hostname:      false,
+			Regex:         nil,
+			MinNumeric:    0,
+			MinNumericSet: false,
+			MaxNumeric:    0,
+			MaxNumericSet: false,
+		}).Validate(string(s.LogoUrl)); err != nil {
+			return errors.Wrap(err, "string")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "logoUrl",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := (validate.Int{
+			MinSet:        true,
+			Min:           0,
+			MaxSet:        true,
+			Max:           32,
+			MinExclusive:  false,
+			MaxExclusive:  false,
+			MultipleOfSet: false,
+			MultipleOf:    0,
+			Pattern:       nil,
+		}).Validate(int64(s.ButtonRadius)); err != nil {
+			return errors.Wrap(err, "int")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "buttonRadius",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := (validate.String{
+			MinLength:     0,
+			MinLengthSet:  false,
+			MaxLength:     500,
+			MaxLengthSet:  true,
+			Email:         false,
+			Hostname:      false,
+			Regex:         nil,
+			MinNumeric:    0,
+			MinNumericSet: false,
+			MaxNumeric:    0,
+			MaxNumericSet: false,
+		}).Validate(string(s.FooterText)); err != nil {
+			return errors.Wrap(err, "string")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "footerText",
 			Error: err,
 		})
 	}
@@ -7178,6 +7633,8 @@ func (s *SiteVerifyEmailResultHeaders) Validate() error {
 
 func (s SiteWebhookDisabledReason) Validate() error {
 	switch s {
+	case "owner":
+		return nil
 	case "gone":
 		return nil
 	case "persistent_failure":

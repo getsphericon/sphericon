@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/reputation"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -73,28 +72,24 @@ func TestRatesWindowSelectsByTheEventsOwnTimestamp(t *testing.T) {
 	assert.Greater(t, w.Bounce.Denominator, n.Bounce.Denominator, "the 40-day-old sends join a wider window")
 }
 
-// An Event with no occurred_at falls back to its ingest time (created_at).
+// An Event with no occurred_at falls back to its ingest time (created_at): with the moment of
+// the fixture traffic cleared, the rates are the ones the moment gave.
 func TestRatesFallBackToIngestTime(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	create := func(action string, props map[string]any) {
-		env.DB.Event.Create().SetWorkspaceID(fixtures.AcmeID).SetAction(action).SetProperties(props).ExecX(ctx)
-	}
-	create(events.NameEmailSent, map[string]any{"sendingDomain": "news.acme.com"})
-	create(events.NameEmailSent, map[string]any{"sendingDomain": "news.acme.com"})
-	create(events.NameEmailBounced, map[string]any{"sendingDomain": "news.acme.com", "bounceKind": events.BounceKindPermanent})
-	create(events.NameEmailBounced, map[string]any{"sendingDomain": "news.acme.com", "bounceKind": events.BounceKindTransient})
-	create(events.NameEmailComplained, map[string]any{"sendingDomain": "other.example"})
-
-	rates, err := reputation.New().Rates(ctx, env.DB.Scoped(fixtures.AcmeID), reputation.Trailing(day))
+	s := env.DB.Scoped(fixtures.AcmeID)
+	trailing := reputation.Trailing(7 * day)
+	before, err := reputation.New().Rates(ctx, s, trailing)
 	require.NoError(t, err)
-	news := byDomain(t, rates)["news.acme.com"]
-	assert.Equal(t, 1, news.Bounce.Numerator, "only the permanent bounce counts")
-	assert.Equal(t, 2, news.Bounce.Denominator)
-	assert.Equal(t, 0, news.Complaint.Numerator, "a complaint on another domain is not counted")
-	assert.Equal(t, 1, news.Complaint.Denominator, "sent minus hard bounces")
-	require.NotNil(t, news.Complaint.Rate)
-	assert.Zero(t, *news.Complaint.Rate)
+	require.NoError(t, s.Event().Update().ClearOccurredAt().Exec(ctx))
+
+	after, err := reputation.New().Rates(ctx, s, trailing)
+
+	require.NoError(t, err)
+	was, now := byDomain(t, before)["mail.acme.com"], byDomain(t, after)["mail.acme.com"]
+	assert.Equal(t, was.Bounce, now.Bounce)
+	assert.Equal(t, was.Complaint, now.Complaint)
+	assert.Equal(t, 8, byDomain(t, after)["mail.acme.com"].Bounce.Denominator, "the fixture sends still count")
 }
 
 func TestRatesAreWorkspaceScoped(t *testing.T) {

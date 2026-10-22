@@ -45,6 +45,7 @@ func TestMCPEmailLintReturnsWarningsAndSavesNothing(t *testing.T) {
 
 	assert.Empty(t, got.Errors)
 	// Acme's saved Brand kit is Arial with #1a73e8, #202124, white.
+	// contract-copy: the expected wire values of the lint codes, an independent source of truth
 	assert.ElementsMatch(t, []string{"missing_alt", "off_brand_color", "off_brand_font", "unknown_construct"}, codes(got.Warnings))
 	assert.Equal(t, before, env.DB.EmailTemplate.Query().CountX(t.Context()), "linting stores nothing")
 }

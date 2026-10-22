@@ -39,6 +39,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/db"
+	"github.com/getsphericon/sphericon/internal/domainverify"
 	"github.com/getsphericon/sphericon/internal/erasure"
 	"github.com/getsphericon/sphericon/internal/eventlog"
 	"github.com/getsphericon/sphericon/internal/events"
@@ -378,7 +379,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	sender := outbound.New(bus, edition.Holds(), resolver, tracker, outboundOpts...)
 	fakeSES := &FakeSES{}
 	catalog := catalogWith(fakeSES)
-	inline := jobs.NewInline(client, sender, systemMail, stubTXT, nil, cipher, catalog, cfg.AppURL)
+	inline := jobs.NewInline(client, sender, systemMail, domainverify.New(client, stubTXT, nil, accounts.OwnerNotifier(client, systemMail)), cipher, catalog, cfg.AppURL)
 	// The transactional send surface resolves a workspace sender directly (not via
 	// river), so it gets the same capturing resolver — its sends land in CustomerMail.
 	// inline implements every enqueue seam (broadcast, welcome, account mail,
@@ -392,7 +393,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	templatesModule := templates.New()
 	brandKitModule := brandkit.New(bus, templatesModule)
 	tagsModule := tags.New()
-	webhooksModule := webhooks.New(bus, cipher, edition.Audit, webhook.NewClientAllowing(webhooks.TestSendTimeout, cfg.OutboundAllow))
+	webhooksModule := webhooks.New(bus, cipher, edition.Audit, webhook.NewClientAllowing(webhooks.TestSendTimeout, cfg.OutboundAllow), nil)
 	// An `sns` Preset checks signatures against the test certificate, so a test posts a
 	// notification signed offline; confirmations are recorded, never fetched.
 	certs := st.certs
@@ -406,7 +407,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	confirmations := &Confirmations{}
 	integrationsModule := integrations.New(bus, cipher, catalog, inline, presets, cfg.AppURL, integrations.WithSubscriptionConfirmer(confirmations.confirm))
 	sendingDomainsModule := sendingdomains.New(bus, cipher, inline, cfg.TrackingCNAMETarget)
-	joinDomainsModule := joindomains.New(client, bus, stubTXT, st.now, jobs.OwnerNotifier(client, systemMail))
+	joinDomainsModule := joindomains.New(client, bus, stubTXT, st.now, accounts.OwnerNotifier(client, systemMail))
 	automationsModule := automations.New(cipher, bus)
 	broadcastsModule := broadcasts.New(bus)
 	acc := accounts.New(client, bus)
@@ -568,6 +569,14 @@ func migrateSchema(ctx context.Context, sqlDB *sql.DB) error {
 // templating for relative dates, which must be relative to now, not to when a template was
 // built.
 func loadFixtures(ctx context.Context, sqlDB *sql.DB, cfg *config.Config, projectRoot string) error {
+	// ResetSequencesTo keeps the explicit fixture ids clear of app-inserted rows.
+	return loadFixtureDir(ctx, sqlDB, cfg, filepath.Join(projectRoot, "fixtures"), testfixtures.ResetSequencesTo(100000))
+}
+
+// loadFixtureDir loads the YAML files of one directory through the fixture library, with its
+// templating (relative dates, load-time encryption); the caller's option says what happens to
+// the sequences afterwards.
+func loadFixtureDir(ctx context.Context, sqlDB *sql.DB, cfg *config.Config, dir string, sequences func(*testfixtures.Loader) error) error {
 	cipher, err := secrets.NewCipher(cfg.EncryptionKey)
 	if err != nil {
 		return err
@@ -577,6 +586,7 @@ func loadFixtures(ctx context.Context, sqlDB *sql.DB, cfg *config.Config, projec
 	// testing/synctest bubble, where time.Now() starts in the year 2000, and every fixture
 	// of the process would be dated around it.
 	var now time.Time
+	// raw sql: the database's clock as a bare value, read before any fixture exists.
 	if err := sqlDB.QueryRowContext(ctx, `SELECT now()`).Scan(&now); err != nil {
 		return err
 	}
@@ -589,9 +599,8 @@ func loadFixtures(ctx context.Context, sqlDB *sql.DB, cfg *config.Config, projec
 		// for relative dates and load-time encryption (internal/fixtures).
 		testfixtures.Template(),
 		testfixtures.TemplateFuncs(fixtures.TemplateFuncs(cipher, now)),
-		testfixtures.Directory(filepath.Join(projectRoot, "fixtures")),
-		// ResetSequencesTo keeps the explicit fixture ids clear of app-inserted rows.
-		testfixtures.ResetSequencesTo(100000),
+		testfixtures.Directory(dir),
+		sequences,
 	)
 	if err != nil {
 		return err

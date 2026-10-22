@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/ee/staff"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -56,7 +55,7 @@ func hostStates(entries []serviceapi.ServiceTrackingHostChange) map[string]servi
 
 func domainsReader(t *testing.T, h *harness) *serviceapi.Client {
 	t.Helper()
-	return h.env.ServiceClient(t, h.env.IssueServiceCredential(t, "service-edge", staff.ScopeDomainsRead))
+	return h.env.ServiceClient(t, h.env.IssueServiceCredential(t, "service-edge", serviceapi.ServiceScopeDomainsRead))
 }
 
 // setTracking moves a fixture Sending domain of Umbrella to state through ent, the way the

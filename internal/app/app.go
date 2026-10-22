@@ -35,6 +35,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/buildinfo"
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/db"
+	"github.com/getsphericon/sphericon/internal/domainverify"
 	"github.com/getsphericon/sphericon/internal/erasure"
 	"github.com/getsphericon/sphericon/internal/eventlog"
 	"github.com/getsphericon/sphericon/internal/events"
@@ -576,7 +577,7 @@ func (a *App) SuspendWorkspace(ctx context.Context, publicID string, by suspensi
 	if err != nil {
 		return true, fmt.Errorf("workspace suspended, but the owner notice could not be sent: %w", err)
 	}
-	if err := jobs.NotifyWorkspaceSuspended(ctx, client.Client, sys.EmailSender, cfg.SupportEmail, id); err != nil {
+	if err := suspension.NotifyOwners(ctx, client.Client, accounts.OwnerNotifier(client.Client, sys.EmailSender), cfg.SupportEmail, id); err != nil {
 		return true, fmt.Errorf("workspace suspended, but the owner notice could not be sent: %w", err)
 	}
 	return true, nil
@@ -822,16 +823,16 @@ func register(injector do.Injector, env string, o options) {
 			return nil, err
 		}
 		// Prod verifies against published DNS records (ADR 0010). Dev does too, except
-		// for jobs.ShortcutDomain, which verifies at once; the e2e suite's domains all do.
+		// for domainverify.ShortcutDomain, which verifies at once; the e2e suite's domains all do.
 		if cfg.IsDev || o.e2eDKIMLookup {
 			client, err := do.Invoke[*entClient](i)
 			if err != nil {
 				return nil, err
 			}
 			if o.e2eDKIMLookup {
-				return &dkimLookup{TXTLookup: jobs.DevTXTLookup(client.Client)}, nil
+				return &dkimLookup{TXTLookup: domainverify.DevTXTLookup(client.Client)}, nil
 			}
-			return &dkimLookup{TXTLookup: jobs.ShortcutTXTLookup(client.Client, net.DefaultResolver.LookupTXT)}, nil
+			return &dkimLookup{TXTLookup: domainverify.ShortcutTXTLookup(client.Client, net.DefaultResolver.LookupTXT)}, nil
 		}
 		return &dkimLookup{TXTLookup: net.DefaultResolver.LookupTXT}, nil
 	})
@@ -1234,7 +1235,7 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		return joindomains.New(client.Client, bus.Bus, lookup.TXTLookup, time.Now, jobs.OwnerNotifier(client.Client, sys.EmailSender)), nil
+		return joindomains.New(client.Client, bus.Bus, lookup.TXTLookup, time.Now, accounts.OwnerNotifier(client.Client, sys.EmailSender)), nil
 	})
 
 	do.Provide(injector, func(do.Injector) (*templates.Module, error) {
@@ -1273,7 +1274,7 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		return webhooks.New(bus.Bus, cipher, edition.Audit, webhook.NewClientAllowing(webhooks.TestSendTimeout, cfg.OutboundAllow)), nil
+		return webhooks.New(bus.Bus, cipher, edition.Audit, webhook.NewClientAllowing(webhooks.TestSendTimeout, cfg.OutboundAllow), nil), nil
 	})
 
 	do.Provide(injector, func(i do.Injector) (*automations.Module, error) {
