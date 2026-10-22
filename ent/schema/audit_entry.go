@@ -47,7 +47,11 @@ func (AuditEntry) Fields() []ent.Field {
 		field.String("actor_id").
 			Optional().
 			Nillable().
-			Immutable(),
+			Immutable().
+			Annotations(ScopedRef{
+				Unchecked: true,
+				Reason:    "snapshot of the actor's id: the entry outlives the User, token or Staff member that acted, and the id is a string whose table depends on actor_kind",
+			}),
 		// Snapshot of the actor's display name (a User's name), so the entry stays
 		// readable after the actor is gone.
 		field.String("actor_name").
@@ -64,7 +68,11 @@ func (AuditEntry) Fields() []ent.Field {
 		field.String("target_id").
 			Optional().
 			Nillable().
-			Immutable(),
+			Immutable().
+			Annotations(ScopedRef{
+				Unchecked: true,
+				Reason:    "snapshot of the target's id: the entry outlives the row it reports, and the id is a string whose table depends on target_type",
+			}),
 		// Snapshot of the target's name; absent for a Contact (personal data).
 		field.String("target_name").
 			Optional().

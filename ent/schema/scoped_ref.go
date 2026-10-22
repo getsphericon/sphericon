@@ -12,8 +12,9 @@ type ScopedRef struct {
 	// Unchecked marks an id column that deliberately outlives the referenced row and
 	// is therefore not verified (Entity stays empty).
 	Unchecked bool
-	// Reason says why the column has no foreign key (a tombstone or a snapshot): an unchecked
-	// reference states it at the field.
+	// Reason says why the column has no foreign key (a tombstone or a snapshot). It is required
+	// with Unchecked: ent/entc.go fails the generation without it (rule 8), and an Int64 id column
+	// that is neither an edge field nor annotated fails too.
 	Reason string
 }
 

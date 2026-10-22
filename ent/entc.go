@@ -130,22 +130,28 @@ func scopedFuncs() template.FuncMap {
 	}
 }
 
-// checkScopedRefs fails the generation when a scoped entity has a plain id column
-// that is neither an edge field nor annotated: its references would go unchecked.
+// checkScopedRefs fails the generation when a reference column has no foreign key and no written
+// reason (rule 8, ADR 0033). Every Int64 id column of any entity must be an edge field (a key) or carry
+// schema.ScopedRef: Entity (a scoped client check) or Unchecked with a Reason (a tombstone or a snapshot
+// that outlives its target). Unchecked without a Reason fails on any field, string snapshots included.
 func checkScopedRefs(g *gen.Graph) {
 	for _, n := range g.Nodes {
-		if !isScoped(n) {
-			continue
-		}
 		for _, f := range n.Fields {
-			if f.Name == "workspace_id" || f.IsEdgeField() || f.Type.Type != field.TypeInt64 || !strings.HasSuffix(f.Name, "_id") {
+			ann, annotated := f.Annotations["ScopedRef"].(map[string]any)
+			if annotated && ann["Unchecked"] == true {
+				if reason, _ := ann["Reason"].(string); strings.TrimSpace(reason) == "" {
+					log.Fatalf("%s.%s is an unchecked reference with no foreign key: schema.ScopedRef needs a Reason (tombstone or snapshot)", n.Name, f.Name)
+				}
 				continue
 			}
-			if ann, ok := f.Annotations["ScopedRef"].(map[string]any); ok && ann["Unchecked"] == true {
+			if f.Name == "workspace_id" && f.Position != nil && f.Position.MixedIn {
+				continue
+			}
+			if f.IsEdgeField() || f.Type.Type != field.TypeInt64 || !strings.HasSuffix(f.Name, "_id") {
 				continue
 			}
 			if annotatedTarget(g, f) == nil {
-				log.Fatalf("%s.%s looks like a reference: annotate it with schema.ScopedRef{Entity: ...} so the scoped client verifies it", n.Name, f.Name)
+				log.Fatalf("%s.%s looks like a reference with no foreign key: add an edge, or annotate it with schema.ScopedRef{Entity: ...} (scoped check) or {Unchecked: true, Reason: ...} (tombstone or snapshot)", n.Name, f.Name)
 			}
 		}
 	}

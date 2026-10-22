@@ -34,7 +34,11 @@ func (TrackingHostChange) Fields() []ent.Field {
 			Immutable(),
 		// The Workspace that held the host at this change.
 		field.Int64("workspace_id").
-			Immutable(),
+			Immutable().
+			Annotations(ScopedRef{
+				Unchecked: true,
+				Reason:    "tombstone of the Workspace that held the host: the entry outlives the Workspace row, because the removal of a host is what the platform service reads the log for",
+			}),
 		// The Sending domain; the host is track.<domain>.
 		field.String("domain").
 			NotEmpty().
