@@ -3,6 +3,7 @@ package jobs_test
 import (
 	"context"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -18,6 +19,16 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/webhook"
 )
+
+// recoverAfterFirstCall makes the receiver answer 503 to the first call and 200 to every one after.
+func recoverAfterFirstCall(rcv *hookReceiver) {
+	rcv.respond(http.StatusServiceUnavailable, "try later", "")
+	rcv.onCall = func() {
+		if len(rcv.received()) == 1 {
+			rcv.respond(http.StatusOK, "", "")
+		}
+	}
+}
 
 const testSigner = "dGVzdC1zZWNyZXQ="
 
@@ -77,12 +88,7 @@ func TestAnHTTPActionPostsTheContactAndTheEvent(t *testing.T) {
 func TestAnHTTPActionRetriesAServerErrorAndSucceeds(t *testing.T) {
 	env := testhelper.Setup(t)
 	rcv := newHookReceiver(t)
-	rcv.respond(http.StatusServiceUnavailable, "try later", "")
-	rcv.onCall = func() {
-		if len(rcv.received()) == 1 { // the second call finds the receiver recovered
-			rcv.respond(http.StatusOK, "", "")
-		}
-	}
+	recoverAfterFirstCall(rcv)
 
 	f := fireHTTPRule(t, env, rcv, webhook.NewClientAllowing(2*time.Second, rcv.allow), `{}`, nil)
 
@@ -109,20 +115,12 @@ func TestAnHTTPActionThatKeepsFailingRecordsTheStatusAndTheAnswerAndTheNextActio
 func TestAnHTTPActionKeepsOnlyTheFirstKiBOfTheAnswer(t *testing.T) {
 	env := testhelper.Setup(t)
 	rcv := newHookReceiver(t)
-	rcv.respond(http.StatusBadRequest, longAnswer(), "")
+	rcv.respond(http.StatusBadRequest, strings.Repeat("x", 5000), "")
 
 	f := fireHTTPRule(t, env, rcv, webhook.NewClientAllowing(2*time.Second, rcv.allow), `{}`, nil)
 
 	assert.Len(t, rcv.received(), 1, "a 4xx would answer the same: no retry")
 	assert.Len(t, resultsOf(t, f)[0].Detail, len("http_status 400: ")+webhook.ExcerptBytes)
-}
-
-func longAnswer() string {
-	b := make([]byte, 5000)
-	for i := range b {
-		b[i] = 'x'
-	}
-	return string(b)
 }
 
 func TestAnHTTPActionDoesNotCallABlockedAddress(t *testing.T) {

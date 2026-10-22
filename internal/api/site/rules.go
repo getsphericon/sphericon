@@ -56,13 +56,11 @@ func (h *Handlers) SiteRulesCreate(ctx context.Context, req *siteapi.SiteCreateR
 		TriggerEvents: req.TriggerEvents,
 		Actions:       resources.RuleActions(req.Actions),
 	}
-	if group, ok := req.Condition.Get(); ok {
-		def, err := condition.Encode(&group)
-		if err != nil {
-			return nil, err
-		}
-		in.Condition = &def
+	def, err := ruleCondition(req.Condition)
+	if err != nil {
+		return nil, err
 	}
+	in.Condition = def
 	r, err := h.rules.Create(ctx, ws, in)
 	if errors.Is(err, rules.ErrInvalid) {
 		v := siteapi.SiteRulesCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
@@ -115,13 +113,11 @@ func (h *Handlers) SiteRulesUpdate(ctx context.Context, req *siteapi.SiteUpdateR
 		actions := resources.RuleActions(req.Actions)
 		in.Actions = &actions
 	}
-	if group, ok := req.Condition.Get(); ok {
-		def, err := condition.Encode(&group)
-		if err != nil {
-			return nil, err
-		}
-		in.Condition = &def
+	def, err := ruleCondition(req.Condition)
+	if err != nil {
+		return nil, err
 	}
+	in.Condition = def
 	r, err := h.rules.Update(ctx, ws, int64(params.ID), in)
 	switch {
 	case errors.Is(err, rules.ErrNotFound):
@@ -321,4 +317,17 @@ func (h *Handlers) SiteRuleFiringsList(ctx context.Context, params siteapi.SiteR
 		TotalItems: int32(page.TotalItems),
 		TotalPages: int32(page.TotalPages),
 	}, nil
+}
+
+// ruleCondition is the stored form of the Condition a request carries, nil when it carries none.
+func ruleCondition(opt siteapi.OptSiteConditionGroup) (*string, error) {
+	group, ok := opt.Get()
+	if !ok {
+		return nil, nil
+	}
+	def, err := condition.Encode(&group)
+	if err != nil {
+		return nil, err
+	}
+	return &def, nil
 }
