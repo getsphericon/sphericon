@@ -21,5 +21,13 @@
     "allowJs": true,
     "resolveJsonModule": true
   },
-  "exclude": ["node_modules", "src/generated", ".claude"]
+  "exclude": [
+    "node_modules",
+    "src/generated",
+    ".claude",
+    "dist",
+    "dist-release",
+    "packages/*/dist",
+    "internal/server/assets/spa"
+  ]
 }
