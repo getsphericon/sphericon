@@ -10,6 +10,7 @@ export default defineConfig({
   sortPackageJson: true,
   ignorePatterns: [
     'dist',
+    'CHANGELOG.md',
     'src/generated',
     'src/routeTree.gen.ts',
     'internal/contractcopy/testdata',
