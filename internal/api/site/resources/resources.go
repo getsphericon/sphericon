@@ -20,10 +20,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/integrations"
 
+	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/dkimstate"
 	"github.com/getsphericon/sphericon/internal/joindomains"
 	"github.com/getsphericon/sphericon/internal/linkclicks"
-	"github.com/getsphericon/sphericon/internal/segments"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/sendlimit"
 	"github.com/getsphericon/sphericon/internal/workspacedeletion"
@@ -54,7 +54,7 @@ import (
 // goverter:extend templateDoc
 // goverter:extend broadcastDoc
 // goverter:extend automationSteps
-// goverter:extend segmentDefinition
+// goverter:extend segmentCondition
 // goverter:extend emailVerified
 // goverter:extend transactionalChannel
 // goverter:extend transactionalStatus
@@ -562,17 +562,17 @@ func docJSON(o siteapi.OptSiteAutomationStepDoc) json.RawMessage {
 	return b
 }
 
-// segmentDefinition decodes the stored rule group into the typed DTO. A segment with no
+// segmentCondition decodes the stored rule group into the typed DTO. A segment with no
 // definition (or one that no longer decodes) reads as having none.
-func segmentDefinition(def *string) siteapi.OptSiteSegmentRuleGroup {
+func segmentCondition(def *string) siteapi.OptSiteConditionGroup {
 	if def == nil || *def == "" {
-		return siteapi.OptSiteSegmentRuleGroup{}
+		return siteapi.OptSiteConditionGroup{}
 	}
-	var group siteapi.SiteSegmentRuleGroup
-	if err := segments.Decode(*def, &group); err != nil {
-		return siteapi.OptSiteSegmentRuleGroup{}
+	var group siteapi.SiteConditionGroup
+	if err := condition.Decode(*def, &group); err != nil {
+		return siteapi.OptSiteConditionGroup{}
 	}
-	return siteapi.NewOptSiteSegmentRuleGroup(group)
+	return siteapi.NewOptSiteConditionGroup(group)
 }
 
 func optTimestamp(v *time.Time) siteapi.OptTimestamp {

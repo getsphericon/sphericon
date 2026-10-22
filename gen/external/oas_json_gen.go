@@ -6996,6 +6996,650 @@ func (s *BroadcastsUpdateUnprocessableEntity) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes ConditionCombinator as json.
+func (s ConditionCombinator) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes ConditionCombinator from json.
+func (s *ConditionCombinator) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ConditionCombinator to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch ConditionCombinator(v) {
+	case ConditionCombinatorAnd:
+		*s = ConditionCombinatorAnd
+	case ConditionCombinatorOr:
+		*s = ConditionCombinatorOr
+	default:
+		*s = ConditionCombinator(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s ConditionCombinator) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ConditionCombinator) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *ConditionGroup) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *ConditionGroup) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("kind")
+		s.Kind.Encode(e)
+	}
+	{
+		e.FieldStart("combinator")
+		s.Combinator.Encode(e)
+	}
+	{
+		if s.Not.Set {
+			e.FieldStart("not")
+			s.Not.Encode(e)
+		}
+	}
+	{
+		e.FieldStart("rules")
+		e.ArrStart()
+		for _, elem := range s.Rules {
+			elem.Encode(e)
+		}
+		e.ArrEnd()
+	}
+}
+
+var jsonFieldsNameOfConditionGroup = [4]string{
+	0: "kind",
+	1: "combinator",
+	2: "not",
+	3: "rules",
+}
+
+// Decode decodes ConditionGroup from json.
+func (s *ConditionGroup) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ConditionGroup to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "kind":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Kind.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"kind\"")
+			}
+		case "combinator":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Combinator.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"combinator\"")
+			}
+		case "not":
+			if err := func() error {
+				s.Not.Reset()
+				if err := s.Not.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"not\"")
+			}
+		case "rules":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				s.Rules = make([]ConditionNode, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem ConditionNode
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.Rules = append(s.Rules, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"rules\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode ConditionGroup")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00001011,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfConditionGroup) {
+					name = jsonFieldsNameOfConditionGroup[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *ConditionGroup) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ConditionGroup) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ConditionGroupKind as json.
+func (s ConditionGroupKind) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes ConditionGroupKind from json.
+func (s *ConditionGroupKind) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ConditionGroupKind to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch ConditionGroupKind(v) {
+	case ConditionGroupKindGroup:
+		*s = ConditionGroupKindGroup
+	default:
+		*s = ConditionGroupKind(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s ConditionGroupKind) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ConditionGroupKind) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *ConditionLeaf) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *ConditionLeaf) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("kind")
+		s.Kind.Encode(e)
+	}
+	{
+		e.FieldStart("field")
+		e.Str(s.Field)
+	}
+	{
+		e.FieldStart("operator")
+		s.Operator.Encode(e)
+	}
+	{
+		if s.Value.Set {
+			e.FieldStart("value")
+			s.Value.Encode(e)
+		}
+	}
+}
+
+var jsonFieldsNameOfConditionLeaf = [4]string{
+	0: "kind",
+	1: "field",
+	2: "operator",
+	3: "value",
+}
+
+// Decode decodes ConditionLeaf from json.
+func (s *ConditionLeaf) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ConditionLeaf to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "kind":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Kind.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"kind\"")
+			}
+		case "field":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.Field = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"field\"")
+			}
+		case "operator":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				if err := s.Operator.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"operator\"")
+			}
+		case "value":
+			if err := func() error {
+				s.Value.Reset()
+				if err := s.Value.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"value\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode ConditionLeaf")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfConditionLeaf) {
+					name = jsonFieldsNameOfConditionLeaf[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *ConditionLeaf) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ConditionLeaf) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ConditionLeafKind as json.
+func (s ConditionLeafKind) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes ConditionLeafKind from json.
+func (s *ConditionLeafKind) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ConditionLeafKind to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch ConditionLeafKind(v) {
+	case ConditionLeafKindRule:
+		*s = ConditionLeafKindRule
+	default:
+		*s = ConditionLeafKind(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s ConditionLeafKind) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ConditionLeafKind) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *ConditionNode) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *ConditionNode) encodeFields(e *jx.Encoder) {
+	s.OneOf.encodeFields(e)
+}
+
+var jsonFieldsNameOfConditionNode = [0]string{}
+
+// Decode decodes ConditionNode from json.
+func (s *ConditionNode) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ConditionNode to nil")
+	}
+	if err := d.Capture(func(d *jx.Decoder) error {
+		return s.OneOf.Decode(d)
+	}); err != nil {
+		return errors.Wrap(err, "decode field OneOf")
+	}
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		default:
+			return d.Skip()
+		}
+	}); err != nil {
+		return errors.Wrap(err, "decode ConditionNode")
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *ConditionNode) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ConditionNode) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ConditionNodeSum as json.
+func (s ConditionNodeSum) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+func (s ConditionNodeSum) encodeFields(e *jx.Encoder) {
+	switch s.Type {
+	case ConditionLeafConditionNodeSum:
+		e.FieldStart("kind")
+		e.Str("rule")
+		{
+			s := s.ConditionLeaf
+			{
+				e.FieldStart("field")
+				e.Str(s.Field)
+			}
+			{
+				e.FieldStart("operator")
+				s.Operator.Encode(e)
+			}
+			{
+				if s.Value.Set {
+					e.FieldStart("value")
+					s.Value.Encode(e)
+				}
+			}
+		}
+	case ConditionGroupConditionNodeSum:
+		e.FieldStart("kind")
+		e.Str("group")
+		{
+			s := s.ConditionGroup
+			{
+				e.FieldStart("combinator")
+				s.Combinator.Encode(e)
+			}
+			{
+				if s.Not.Set {
+					e.FieldStart("not")
+					s.Not.Encode(e)
+				}
+			}
+			{
+				e.FieldStart("rules")
+				e.ArrStart()
+				for _, elem := range s.Rules {
+					elem.Encode(e)
+				}
+				e.ArrEnd()
+			}
+		}
+	}
+}
+
+// Decode decodes ConditionNodeSum from json.
+func (s *ConditionNodeSum) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ConditionNodeSum to nil")
+	}
+	// Sum type discriminator.
+	if typ := d.Next(); typ != jx.Object {
+		return errors.Errorf("unexpected json type %q", typ)
+	}
+
+	var found bool
+	if err := d.Capture(func(d *jx.Decoder) error {
+		return d.ObjBytes(func(d *jx.Decoder, key []byte) error {
+			if found {
+				return d.Skip()
+			}
+			switch string(key) {
+			case "kind":
+				typ, err := d.Str()
+				if err != nil {
+					return err
+				}
+				switch typ {
+				case "rule":
+					s.Type = ConditionLeafConditionNodeSum
+					found = true
+				case "group":
+					s.Type = ConditionGroupConditionNodeSum
+					found = true
+				default:
+					return errors.Errorf("unknown type %s", typ)
+				}
+				return nil
+			}
+			return d.Skip()
+		})
+	}); err != nil {
+		return errors.Wrap(err, "capture")
+	}
+	if !found {
+		return errors.New("unable to detect sum type variant")
+	}
+	switch s.Type {
+	case ConditionLeafConditionNodeSum:
+		if err := s.ConditionLeaf.Decode(d); err != nil {
+			return err
+		}
+	case ConditionGroupConditionNodeSum:
+		if err := s.ConditionGroup.Decode(d); err != nil {
+			return err
+		}
+	default:
+		return errors.Errorf("inferred invalid type: %s", s.Type)
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s ConditionNodeSum) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ConditionNodeSum) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ConditionOperator as json.
+func (s ConditionOperator) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes ConditionOperator from json.
+func (s *ConditionOperator) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ConditionOperator to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch ConditionOperator(v) {
+	case ConditionOperatorEq:
+		*s = ConditionOperatorEq
+	case ConditionOperatorNeq:
+		*s = ConditionOperatorNeq
+	case ConditionOperatorContains:
+		*s = ConditionOperatorContains
+	case ConditionOperatorBeginsWith:
+		*s = ConditionOperatorBeginsWith
+	case ConditionOperatorNull:
+		*s = ConditionOperatorNull
+	case ConditionOperatorNotNull:
+		*s = ConditionOperatorNotNull
+	case ConditionOperatorPerformed:
+		*s = ConditionOperatorPerformed
+	case ConditionOperatorNotPerformed:
+		*s = ConditionOperatorNotPerformed
+	case ConditionOperatorHas:
+		*s = ConditionOperatorHas
+	case ConditionOperatorDoesNotHave:
+		*s = ConditionOperatorDoesNotHave
+	default:
+		*s = ConditionOperator(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s ConditionOperator) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ConditionOperator) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode implements json.Marshaler.
 func (s *ContactBatchItemResult) Encode(e *jx.Encoder) {
 	e.ObjStart()
@@ -12058,14 +12702,14 @@ func (s *CreateSegmentInput) encodeFields(e *jx.Encoder) {
 		e.Str(s.Name)
 	}
 	{
-		e.FieldStart("definition")
-		s.Definition.Encode(e)
+		e.FieldStart("condition")
+		s.Condition.Encode(e)
 	}
 }
 
 var jsonFieldsNameOfCreateSegmentInput = [2]string{
 	0: "name",
-	1: "definition",
+	1: "condition",
 }
 
 // Decode decodes CreateSegmentInput from json.
@@ -12089,15 +12733,15 @@ func (s *CreateSegmentInput) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"name\"")
 			}
-		case "definition":
+		case "condition":
 			requiredBitSet[0] |= 1 << 1
 			if err := func() error {
-				if err := s.Definition.Decode(d); err != nil {
+				if err := s.Condition.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"definition\"")
+				return errors.Wrap(err, "decode field \"condition\"")
 			}
 		default:
 			return d.Skip()
@@ -20383,6 +21027,39 @@ func (s *OptBool) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes ConditionGroup as json.
+func (o OptConditionGroup) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes ConditionGroup from json.
+func (o *OptConditionGroup) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptConditionGroup to nil")
+	}
+	o.Set = true
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptConditionGroup) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptConditionGroup) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes CreateBroadcastInputDoc as json.
 func (o OptCreateBroadcastInputDoc) Encode(e *jx.Encoder) {
 	if !o.Set {
@@ -21750,39 +22427,6 @@ func (s *OptProblemDetailsFields) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
-// Encode encodes SegmentRuleGroup as json.
-func (o OptSegmentRuleGroup) Encode(e *jx.Encoder) {
-	if !o.Set {
-		return
-	}
-	o.Value.Encode(e)
-}
-
-// Decode decodes SegmentRuleGroup from json.
-func (o *OptSegmentRuleGroup) Decode(d *jx.Decoder) error {
-	if o == nil {
-		return errors.New("invalid: unable to decode OptSegmentRuleGroup to nil")
-	}
-	o.Set = true
-	if err := o.Value.Decode(d); err != nil {
-		return err
-	}
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s OptSegmentRuleGroup) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *OptSegmentRuleGroup) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
 // Encode encodes SendTransactionalEmailInputVariables as json.
 func (o OptSendTransactionalEmailInputVariables) Encode(e *jx.Encoder) {
 	if !o.Set {
@@ -22522,15 +23166,15 @@ func (s *PreviewSegmentInput) Encode(e *jx.Encoder) {
 // encodeFields encodes fields.
 func (s *PreviewSegmentInput) encodeFields(e *jx.Encoder) {
 	{
-		if s.Definition.Set {
-			e.FieldStart("definition")
-			s.Definition.Encode(e)
+		if s.Condition.Set {
+			e.FieldStart("condition")
+			s.Condition.Encode(e)
 		}
 	}
 }
 
 var jsonFieldsNameOfPreviewSegmentInput = [1]string{
-	0: "definition",
+	0: "condition",
 }
 
 // Decode decodes PreviewSegmentInput from json.
@@ -22541,15 +23185,15 @@ func (s *PreviewSegmentInput) Decode(d *jx.Decoder) error {
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
-		case "definition":
+		case "condition":
 			if err := func() error {
-				s.Definition.Reset()
-				if err := s.Definition.Decode(d); err != nil {
+				s.Condition.Reset()
+				if err := s.Condition.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"definition\"")
+				return errors.Wrap(err, "decode field \"condition\"")
 			}
 		default:
 			return d.Skip()
@@ -23791,102 +24435,6 @@ func (s *ScheduleBroadcastInput) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
-// Encode encodes SegmentCombinator as json.
-func (s SegmentCombinator) Encode(e *jx.Encoder) {
-	e.Str(string(s))
-}
-
-// Decode decodes SegmentCombinator from json.
-func (s *SegmentCombinator) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode SegmentCombinator to nil")
-	}
-	v, err := d.StrBytes()
-	if err != nil {
-		return err
-	}
-	// Try to use constant string.
-	switch SegmentCombinator(v) {
-	case SegmentCombinatorAnd:
-		*s = SegmentCombinatorAnd
-	case SegmentCombinatorOr:
-		*s = SegmentCombinatorOr
-	default:
-		*s = SegmentCombinator(v)
-	}
-
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s SegmentCombinator) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *SegmentCombinator) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode encodes SegmentOperator as json.
-func (s SegmentOperator) Encode(e *jx.Encoder) {
-	e.Str(string(s))
-}
-
-// Decode decodes SegmentOperator from json.
-func (s *SegmentOperator) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode SegmentOperator to nil")
-	}
-	v, err := d.StrBytes()
-	if err != nil {
-		return err
-	}
-	// Try to use constant string.
-	switch SegmentOperator(v) {
-	case SegmentOperatorEq:
-		*s = SegmentOperatorEq
-	case SegmentOperatorNeq:
-		*s = SegmentOperatorNeq
-	case SegmentOperatorContains:
-		*s = SegmentOperatorContains
-	case SegmentOperatorBeginsWith:
-		*s = SegmentOperatorBeginsWith
-	case SegmentOperatorNull:
-		*s = SegmentOperatorNull
-	case SegmentOperatorNotNull:
-		*s = SegmentOperatorNotNull
-	case SegmentOperatorPerformed:
-		*s = SegmentOperatorPerformed
-	case SegmentOperatorNotPerformed:
-		*s = SegmentOperatorNotPerformed
-	case SegmentOperatorHas:
-		*s = SegmentOperatorHas
-	case SegmentOperatorDoesNotHave:
-		*s = SegmentOperatorDoesNotHave
-	default:
-		*s = SegmentOperator(v)
-	}
-
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s SegmentOperator) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *SegmentOperator) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
 // Encode implements json.Marshaler.
 func (s *SegmentResource) Encode(e *jx.Encoder) {
 	e.ObjStart()
@@ -23905,9 +24453,9 @@ func (s *SegmentResource) encodeFields(e *jx.Encoder) {
 		e.Str(s.Name)
 	}
 	{
-		if s.Definition.Set {
-			e.FieldStart("definition")
-			s.Definition.Encode(e)
+		if s.Condition.Set {
+			e.FieldStart("condition")
+			s.Condition.Encode(e)
 		}
 	}
 	{
@@ -23929,7 +24477,7 @@ func (s *SegmentResource) encodeFields(e *jx.Encoder) {
 var jsonFieldsNameOfSegmentResource = [6]string{
 	0: "id",
 	1: "name",
-	2: "definition",
+	2: "condition",
 	3: "archivedAt",
 	4: "createdAt",
 	5: "updatedAt",
@@ -23966,15 +24514,15 @@ func (s *SegmentResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"name\"")
 			}
-		case "definition":
+		case "condition":
 			if err := func() error {
-				s.Definition.Reset()
-				if err := s.Definition.Decode(d); err != nil {
+				s.Condition.Reset()
+				if err := s.Condition.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"definition\"")
+				return errors.Wrap(err, "decode field \"condition\"")
 			}
 		case "archivedAt":
 			if err := func() error {
@@ -24058,554 +24606,6 @@ func (s *SegmentResource) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *SegmentResource) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode implements json.Marshaler.
-func (s *SegmentRule) Encode(e *jx.Encoder) {
-	e.ObjStart()
-	s.encodeFields(e)
-	e.ObjEnd()
-}
-
-// encodeFields encodes fields.
-func (s *SegmentRule) encodeFields(e *jx.Encoder) {
-	{
-		e.FieldStart("kind")
-		s.Kind.Encode(e)
-	}
-	{
-		e.FieldStart("field")
-		e.Str(s.Field)
-	}
-	{
-		e.FieldStart("operator")
-		s.Operator.Encode(e)
-	}
-	{
-		if s.Value.Set {
-			e.FieldStart("value")
-			s.Value.Encode(e)
-		}
-	}
-}
-
-var jsonFieldsNameOfSegmentRule = [4]string{
-	0: "kind",
-	1: "field",
-	2: "operator",
-	3: "value",
-}
-
-// Decode decodes SegmentRule from json.
-func (s *SegmentRule) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode SegmentRule to nil")
-	}
-	var requiredBitSet [1]uint8
-
-	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
-		switch string(k) {
-		case "kind":
-			requiredBitSet[0] |= 1 << 0
-			if err := func() error {
-				if err := s.Kind.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"kind\"")
-			}
-		case "field":
-			requiredBitSet[0] |= 1 << 1
-			if err := func() error {
-				v, err := d.Str()
-				s.Field = string(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"field\"")
-			}
-		case "operator":
-			requiredBitSet[0] |= 1 << 2
-			if err := func() error {
-				if err := s.Operator.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"operator\"")
-			}
-		case "value":
-			if err := func() error {
-				s.Value.Reset()
-				if err := s.Value.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"value\"")
-			}
-		default:
-			return d.Skip()
-		}
-		return nil
-	}); err != nil {
-		return errors.Wrap(err, "decode SegmentRule")
-	}
-	// Validate required fields.
-	var failures []validate.FieldError
-	for i, mask := range [1]uint8{
-		0b00000111,
-	} {
-		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
-			// Mask only required fields and check equality to mask using XOR.
-			//
-			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
-			// Bits of fields which would be set are actually bits of missed fields.
-			missed := bits.OnesCount8(result)
-			for bitN := 0; bitN < missed; bitN++ {
-				bitIdx := bits.TrailingZeros8(result)
-				fieldIdx := i*8 + bitIdx
-				var name string
-				if fieldIdx < len(jsonFieldsNameOfSegmentRule) {
-					name = jsonFieldsNameOfSegmentRule[fieldIdx]
-				} else {
-					name = strconv.Itoa(fieldIdx)
-				}
-				failures = append(failures, validate.FieldError{
-					Name:  name,
-					Error: validate.ErrFieldRequired,
-				})
-				// Reset bit.
-				result &^= 1 << bitIdx
-			}
-		}
-	}
-	if len(failures) > 0 {
-		return &validate.Error{Fields: failures}
-	}
-
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s *SegmentRule) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *SegmentRule) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode implements json.Marshaler.
-func (s *SegmentRuleGroup) Encode(e *jx.Encoder) {
-	e.ObjStart()
-	s.encodeFields(e)
-	e.ObjEnd()
-}
-
-// encodeFields encodes fields.
-func (s *SegmentRuleGroup) encodeFields(e *jx.Encoder) {
-	{
-		e.FieldStart("kind")
-		s.Kind.Encode(e)
-	}
-	{
-		e.FieldStart("combinator")
-		s.Combinator.Encode(e)
-	}
-	{
-		if s.Not.Set {
-			e.FieldStart("not")
-			s.Not.Encode(e)
-		}
-	}
-	{
-		e.FieldStart("rules")
-		e.ArrStart()
-		for _, elem := range s.Rules {
-			elem.Encode(e)
-		}
-		e.ArrEnd()
-	}
-}
-
-var jsonFieldsNameOfSegmentRuleGroup = [4]string{
-	0: "kind",
-	1: "combinator",
-	2: "not",
-	3: "rules",
-}
-
-// Decode decodes SegmentRuleGroup from json.
-func (s *SegmentRuleGroup) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode SegmentRuleGroup to nil")
-	}
-	var requiredBitSet [1]uint8
-
-	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
-		switch string(k) {
-		case "kind":
-			requiredBitSet[0] |= 1 << 0
-			if err := func() error {
-				if err := s.Kind.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"kind\"")
-			}
-		case "combinator":
-			requiredBitSet[0] |= 1 << 1
-			if err := func() error {
-				if err := s.Combinator.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"combinator\"")
-			}
-		case "not":
-			if err := func() error {
-				s.Not.Reset()
-				if err := s.Not.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"not\"")
-			}
-		case "rules":
-			requiredBitSet[0] |= 1 << 3
-			if err := func() error {
-				s.Rules = make([]SegmentRuleNode, 0)
-				if err := d.Arr(func(d *jx.Decoder) error {
-					var elem SegmentRuleNode
-					if err := elem.Decode(d); err != nil {
-						return err
-					}
-					s.Rules = append(s.Rules, elem)
-					return nil
-				}); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"rules\"")
-			}
-		default:
-			return d.Skip()
-		}
-		return nil
-	}); err != nil {
-		return errors.Wrap(err, "decode SegmentRuleGroup")
-	}
-	// Validate required fields.
-	var failures []validate.FieldError
-	for i, mask := range [1]uint8{
-		0b00001011,
-	} {
-		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
-			// Mask only required fields and check equality to mask using XOR.
-			//
-			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
-			// Bits of fields which would be set are actually bits of missed fields.
-			missed := bits.OnesCount8(result)
-			for bitN := 0; bitN < missed; bitN++ {
-				bitIdx := bits.TrailingZeros8(result)
-				fieldIdx := i*8 + bitIdx
-				var name string
-				if fieldIdx < len(jsonFieldsNameOfSegmentRuleGroup) {
-					name = jsonFieldsNameOfSegmentRuleGroup[fieldIdx]
-				} else {
-					name = strconv.Itoa(fieldIdx)
-				}
-				failures = append(failures, validate.FieldError{
-					Name:  name,
-					Error: validate.ErrFieldRequired,
-				})
-				// Reset bit.
-				result &^= 1 << bitIdx
-			}
-		}
-	}
-	if len(failures) > 0 {
-		return &validate.Error{Fields: failures}
-	}
-
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s *SegmentRuleGroup) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *SegmentRuleGroup) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode encodes SegmentRuleGroupKind as json.
-func (s SegmentRuleGroupKind) Encode(e *jx.Encoder) {
-	e.Str(string(s))
-}
-
-// Decode decodes SegmentRuleGroupKind from json.
-func (s *SegmentRuleGroupKind) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode SegmentRuleGroupKind to nil")
-	}
-	v, err := d.StrBytes()
-	if err != nil {
-		return err
-	}
-	// Try to use constant string.
-	switch SegmentRuleGroupKind(v) {
-	case SegmentRuleGroupKindGroup:
-		*s = SegmentRuleGroupKindGroup
-	default:
-		*s = SegmentRuleGroupKind(v)
-	}
-
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s SegmentRuleGroupKind) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *SegmentRuleGroupKind) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode encodes SegmentRuleKind as json.
-func (s SegmentRuleKind) Encode(e *jx.Encoder) {
-	e.Str(string(s))
-}
-
-// Decode decodes SegmentRuleKind from json.
-func (s *SegmentRuleKind) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode SegmentRuleKind to nil")
-	}
-	v, err := d.StrBytes()
-	if err != nil {
-		return err
-	}
-	// Try to use constant string.
-	switch SegmentRuleKind(v) {
-	case SegmentRuleKindRule:
-		*s = SegmentRuleKindRule
-	default:
-		*s = SegmentRuleKind(v)
-	}
-
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s SegmentRuleKind) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *SegmentRuleKind) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode implements json.Marshaler.
-func (s *SegmentRuleNode) Encode(e *jx.Encoder) {
-	e.ObjStart()
-	s.encodeFields(e)
-	e.ObjEnd()
-}
-
-// encodeFields encodes fields.
-func (s *SegmentRuleNode) encodeFields(e *jx.Encoder) {
-	s.OneOf.encodeFields(e)
-}
-
-var jsonFieldsNameOfSegmentRuleNode = [0]string{}
-
-// Decode decodes SegmentRuleNode from json.
-func (s *SegmentRuleNode) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode SegmentRuleNode to nil")
-	}
-	if err := d.Capture(func(d *jx.Decoder) error {
-		return s.OneOf.Decode(d)
-	}); err != nil {
-		return errors.Wrap(err, "decode field OneOf")
-	}
-
-	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
-		switch string(k) {
-		default:
-			return d.Skip()
-		}
-	}); err != nil {
-		return errors.Wrap(err, "decode SegmentRuleNode")
-	}
-
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s *SegmentRuleNode) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *SegmentRuleNode) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode encodes SegmentRuleNodeSum as json.
-func (s SegmentRuleNodeSum) Encode(e *jx.Encoder) {
-	e.ObjStart()
-	s.encodeFields(e)
-	e.ObjEnd()
-}
-
-func (s SegmentRuleNodeSum) encodeFields(e *jx.Encoder) {
-	switch s.Type {
-	case SegmentRuleSegmentRuleNodeSum:
-		e.FieldStart("kind")
-		e.Str("rule")
-		{
-			s := s.SegmentRule
-			{
-				e.FieldStart("field")
-				e.Str(s.Field)
-			}
-			{
-				e.FieldStart("operator")
-				s.Operator.Encode(e)
-			}
-			{
-				if s.Value.Set {
-					e.FieldStart("value")
-					s.Value.Encode(e)
-				}
-			}
-		}
-	case SegmentRuleGroupSegmentRuleNodeSum:
-		e.FieldStart("kind")
-		e.Str("group")
-		{
-			s := s.SegmentRuleGroup
-			{
-				e.FieldStart("combinator")
-				s.Combinator.Encode(e)
-			}
-			{
-				if s.Not.Set {
-					e.FieldStart("not")
-					s.Not.Encode(e)
-				}
-			}
-			{
-				e.FieldStart("rules")
-				e.ArrStart()
-				for _, elem := range s.Rules {
-					elem.Encode(e)
-				}
-				e.ArrEnd()
-			}
-		}
-	}
-}
-
-// Decode decodes SegmentRuleNodeSum from json.
-func (s *SegmentRuleNodeSum) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode SegmentRuleNodeSum to nil")
-	}
-	// Sum type discriminator.
-	if typ := d.Next(); typ != jx.Object {
-		return errors.Errorf("unexpected json type %q", typ)
-	}
-
-	var found bool
-	if err := d.Capture(func(d *jx.Decoder) error {
-		return d.ObjBytes(func(d *jx.Decoder, key []byte) error {
-			if found {
-				return d.Skip()
-			}
-			switch string(key) {
-			case "kind":
-				typ, err := d.Str()
-				if err != nil {
-					return err
-				}
-				switch typ {
-				case "rule":
-					s.Type = SegmentRuleSegmentRuleNodeSum
-					found = true
-				case "group":
-					s.Type = SegmentRuleGroupSegmentRuleNodeSum
-					found = true
-				default:
-					return errors.Errorf("unknown type %s", typ)
-				}
-				return nil
-			}
-			return d.Skip()
-		})
-	}); err != nil {
-		return errors.Wrap(err, "capture")
-	}
-	if !found {
-		return errors.New("unable to detect sum type variant")
-	}
-	switch s.Type {
-	case SegmentRuleSegmentRuleNodeSum:
-		if err := s.SegmentRule.Decode(d); err != nil {
-			return err
-		}
-	case SegmentRuleGroupSegmentRuleNodeSum:
-		if err := s.SegmentRuleGroup.Decode(d); err != nil {
-			return err
-		}
-	default:
-		return errors.Errorf("inferred invalid type: %s", s.Type)
-	}
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s SegmentRuleNodeSum) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *SegmentRuleNodeSum) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -33309,16 +33309,16 @@ func (s *UpdateSegmentInput) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
-		if s.Definition.Set {
-			e.FieldStart("definition")
-			s.Definition.Encode(e)
+		if s.Condition.Set {
+			e.FieldStart("condition")
+			s.Condition.Encode(e)
 		}
 	}
 }
 
 var jsonFieldsNameOfUpdateSegmentInput = [2]string{
 	0: "name",
-	1: "definition",
+	1: "condition",
 }
 
 // Decode decodes UpdateSegmentInput from json.
@@ -33339,15 +33339,15 @@ func (s *UpdateSegmentInput) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"name\"")
 			}
-		case "definition":
+		case "condition":
 			if err := func() error {
-				s.Definition.Reset()
-				if err := s.Definition.Decode(d); err != nil {
+				s.Condition.Reset()
+				if err := s.Condition.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"definition\"")
+				return errors.Wrap(err, "decode field \"condition\"")
 			}
 		default:
 			return d.Skip()

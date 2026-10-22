@@ -15,10 +15,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/auditapi"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/brandkit"
+	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/dkimstate"
 	"github.com/getsphericon/sphericon/internal/integrations"
-	"github.com/getsphericon/sphericon/internal/segments"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/sendlimit"
 	"github.com/go-faster/jx"
@@ -102,7 +102,7 @@ func AutomationSteps(steps []externalapi.AutomationStep) []automations.Step {
 // goverter:extend contactCustomFields
 // goverter:extend optNilInt32
 // goverter:extend exportJSON
-// goverter:extend segmentDefinition
+// goverter:extend segmentCondition
 // goverter:extend templateDoc
 // goverter:extend broadcastDoc
 // goverter:extend nilInt32
@@ -336,17 +336,17 @@ func contactCustomFields(m map[string]any) externalapi.OptNilContactResourceCust
 	return externalapi.NewOptNilContactResourceCustomFields(fields)
 }
 
-// segmentDefinition decodes the stored rule group into the typed DTO. A segment with no
+// segmentCondition decodes the stored rule group into the typed DTO. A segment with no
 // definition (or one that no longer decodes) reads as having none.
-func segmentDefinition(def *string) externalapi.OptSegmentRuleGroup {
+func segmentCondition(def *string) externalapi.OptConditionGroup {
 	if def == nil || *def == "" {
-		return externalapi.OptSegmentRuleGroup{}
+		return externalapi.OptConditionGroup{}
 	}
-	var group externalapi.SegmentRuleGroup
-	if err := segments.Decode(*def, &group); err != nil {
-		return externalapi.OptSegmentRuleGroup{}
+	var group externalapi.ConditionGroup
+	if err := condition.Decode(*def, &group); err != nil {
+		return externalapi.OptConditionGroup{}
 	}
-	return externalapi.NewOptSegmentRuleGroup(group)
+	return externalapi.NewOptConditionGroup(group)
 }
 
 // templateDoc is a Template's stored editor document as the opaque object of the contract; a

@@ -84,23 +84,23 @@ func (_u *SegmentUpdate) SetNillableName(v *string) *SegmentUpdate {
 	return _u
 }
 
-// SetDefinition sets the "definition" field.
-func (_u *SegmentUpdate) SetDefinition(v string) *SegmentUpdate {
-	_u.mutation.SetDefinition(v)
+// SetCondition sets the "condition" field.
+func (_u *SegmentUpdate) SetCondition(v string) *SegmentUpdate {
+	_u.mutation.SetCondition(v)
 	return _u
 }
 
-// SetNillableDefinition sets the "definition" field if the given value is not nil.
-func (_u *SegmentUpdate) SetNillableDefinition(v *string) *SegmentUpdate {
+// SetNillableCondition sets the "condition" field if the given value is not nil.
+func (_u *SegmentUpdate) SetNillableCondition(v *string) *SegmentUpdate {
 	if v != nil {
-		_u.SetDefinition(*v)
+		_u.SetCondition(*v)
 	}
 	return _u
 }
 
-// ClearDefinition clears the value of the "definition" field.
-func (_u *SegmentUpdate) ClearDefinition() *SegmentUpdate {
-	_u.mutation.ClearDefinition()
+// ClearCondition clears the value of the "condition" field.
+func (_u *SegmentUpdate) ClearCondition() *SegmentUpdate {
+	_u.mutation.ClearCondition()
 	return _u
 }
 
@@ -199,11 +199,11 @@ func (_u *SegmentUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(segment.FieldName, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.Definition(); ok {
-		_spec.SetField(segment.FieldDefinition, field.TypeString, value)
+	if value, ok := _u.mutation.Condition(); ok {
+		_spec.SetField(segment.FieldCondition, field.TypeString, value)
 	}
-	if _u.mutation.DefinitionCleared() {
-		_spec.ClearField(segment.FieldDefinition, field.TypeString)
+	if _u.mutation.ConditionCleared() {
+		_spec.ClearField(segment.FieldCondition, field.TypeString)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -310,23 +310,23 @@ func (_u *SegmentUpdateOne) SetNillableName(v *string) *SegmentUpdateOne {
 	return _u
 }
 
-// SetDefinition sets the "definition" field.
-func (_u *SegmentUpdateOne) SetDefinition(v string) *SegmentUpdateOne {
-	_u.mutation.SetDefinition(v)
+// SetCondition sets the "condition" field.
+func (_u *SegmentUpdateOne) SetCondition(v string) *SegmentUpdateOne {
+	_u.mutation.SetCondition(v)
 	return _u
 }
 
-// SetNillableDefinition sets the "definition" field if the given value is not nil.
-func (_u *SegmentUpdateOne) SetNillableDefinition(v *string) *SegmentUpdateOne {
+// SetNillableCondition sets the "condition" field if the given value is not nil.
+func (_u *SegmentUpdateOne) SetNillableCondition(v *string) *SegmentUpdateOne {
 	if v != nil {
-		_u.SetDefinition(*v)
+		_u.SetCondition(*v)
 	}
 	return _u
 }
 
-// ClearDefinition clears the value of the "definition" field.
-func (_u *SegmentUpdateOne) ClearDefinition() *SegmentUpdateOne {
-	_u.mutation.ClearDefinition()
+// ClearCondition clears the value of the "condition" field.
+func (_u *SegmentUpdateOne) ClearCondition() *SegmentUpdateOne {
+	_u.mutation.ClearCondition()
 	return _u
 }
 
@@ -455,11 +455,11 @@ func (_u *SegmentUpdateOne) sqlSave(ctx context.Context) (_node *Segment, err er
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(segment.FieldName, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.Definition(); ok {
-		_spec.SetField(segment.FieldDefinition, field.TypeString, value)
+	if value, ok := _u.mutation.Condition(); ok {
+		_spec.SetField(segment.FieldCondition, field.TypeString, value)
 	}
-	if _u.mutation.DefinitionCleared() {
-		_spec.ClearField(segment.FieldDefinition, field.TypeString)
+	if _u.mutation.ConditionCleared() {
+		_spec.ClearField(segment.FieldCondition, field.TypeString)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{

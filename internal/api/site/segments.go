@@ -9,6 +9,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/pagination"
@@ -51,15 +52,15 @@ func (h *Handlers) SiteSegmentsCreate(ctx context.Context, req *siteapi.SiteCrea
 		return nil, err
 	}
 
-	def, err := segments.Encode(&req.Definition)
+	def, err := condition.Encode(&req.Condition)
 	if err != nil {
 		return nil, err
 	}
 	s, err := h.segments.Create(ctx, ws, segments.CreateInput{
-		Name:       req.Name,
-		Definition: &def,
+		Name:      req.Name,
+		Condition: &def,
 	})
-	if errors.Is(err, segments.ErrInvalidDefinition) {
+	if errors.Is(err, segments.ErrInvalidCondition) {
 		v := siteapi.SiteSegmentsCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
 		return &v, nil
 	}
@@ -105,15 +106,15 @@ func (h *Handlers) SiteSegmentsUpdate(ctx context.Context, req *siteapi.SiteUpda
 
 	id := int64(params.ID)
 	in := segments.UpdateInput{Name: convert.StringPtr(req.Name)}
-	if group, ok := req.Definition.Get(); ok {
-		def, err := segments.Encode(&group)
+	if group, ok := req.Condition.Get(); ok {
+		def, err := condition.Encode(&group)
 		if err != nil {
 			return nil, err
 		}
-		in.Definition = &def
+		in.Condition = &def
 	}
 	s, err := h.segments.Update(ctx, ws, id, in)
-	if errors.Is(err, segments.ErrInvalidDefinition) {
+	if errors.Is(err, segments.ErrInvalidCondition) {
 		v := siteapi.SiteSegmentsUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
 		return &v, nil
 	}
@@ -203,13 +204,13 @@ func (h *Handlers) SiteSegmentsPreview(ctx context.Context, req *siteapi.SitePre
 	}
 
 	def := ""
-	if group, ok := req.Definition.Get(); ok {
-		if def, err = segments.Encode(&group); err != nil {
+	if group, ok := req.Condition.Get(); ok {
+		if def, err = condition.Encode(&group); err != nil {
 			return nil, err
 		}
 	}
 	count, err := h.segments.Preview(ctx, ws, def)
-	if errors.Is(err, segments.ErrInvalidDefinition) {
+	if errors.Is(err, segments.ErrInvalidCondition) {
 		v := siteapi.SiteSegmentsPreviewUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
 		return &v, nil
 	}

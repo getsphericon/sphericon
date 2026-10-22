@@ -4,28 +4,28 @@ import { useTranslation } from 'react-i18next'
 import * as z from 'zod'
 
 import { ButtonLink } from '../../components/RouterLink.tsx'
-import type { SiteSegmentRuleGroup } from '../../generated/site/types.gen.ts'
+import type { SiteConditionGroup } from '../../generated/site/types.gen.ts'
 import type { ResourceFormProps } from '../../resources/defineResource.tsx'
 import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
 import { Route as segmentsRoute } from '../../routes/workspaces/$workspaceId/segments/index.tsx'
-import { definitionCodec, emptyGroup } from './rules.ts'
-import { SegmentRuleBuilder } from './SegmentRuleBuilder.tsx'
+import { conditionCodec, emptyGroup } from './condition.ts'
+import { ConditionBuilder } from './ConditionBuilder.tsx'
 
-// A Segment is always a rule, so the payload carries a rule group.
+// A Segment is always a Condition, so the payload carries one.
 export interface SegmentPayload {
   name: string
-  definition: SiteSegmentRuleGroup
+  condition: SiteConditionGroup
 }
 
 export function SegmentForm({ form, isPending, onSubmit }: ResourceFormProps<SegmentPayload>) {
   const { t } = useTranslation()
   const { workspaceId } = workspaceRoute.useParams()
-  const definition = form.values.definition
-  // The form holds the rule group as JSON text; a blank or unreadable text is the empty group.
+  const condition = form.values.condition
+  // The form holds the Condition as JSON text; a blank or unreadable text is the empty group.
   const group = useMemo(() => {
-    const parsed = definitionCodec.safeParse(definition)
+    const parsed = conditionCodec.safeParse(condition)
     return parsed.success ? parsed.data : emptyGroup
-  }, [definition])
+  }, [condition])
 
   return (
     <form onSubmit={form.onSubmit(onSubmit)}>
@@ -36,13 +36,13 @@ export function SegmentForm({ form, isPending, onSubmit }: ResourceFormProps<Seg
           {...form.getInputProps('name')}
         />
         <Input.Wrapper
-          label={t(($) => $.segments.rulesLabel)}
-          description={t(($) => $.segments.definitionHint)}
+          label={t(($) => $.segments.conditionLabel)}
+          description={t(($) => $.segments.conditionHint)}
         >
-          <SegmentRuleBuilder
+          <ConditionBuilder
             workspaceId={workspaceId}
             value={group}
-            onChange={(next) => form.setFieldValue('definition', z.encode(definitionCodec, next))}
+            onChange={(next) => form.setFieldValue('condition', z.encode(conditionCodec, next))}
           />
         </Input.Wrapper>
 

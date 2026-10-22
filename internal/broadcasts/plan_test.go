@@ -148,7 +148,7 @@ func TestPlanFailsOnABrokenSegment(t *testing.T) {
 
 	t.Run("segment with an undecodable definition", func(t *testing.T) {
 		d := newDelivery(t)
-		d.env.DB.Segment.UpdateOneID(fixtures.SegmentProPlanID).SetDefinition("{not json").ExecX(d.ctx)
+		d.env.DB.Segment.UpdateOneID(fixtures.SegmentProPlanID).SetCondition("{not json").ExecX(d.ctx)
 		d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastDraftID).SetSegmentID(fixtures.SegmentProPlanID).ExecX(d.ctx)
 
 		_, err := d.del.Plan(d.ctx, d.s, fixtures.BroadcastDraftID)

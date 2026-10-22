@@ -80,9 +80,9 @@ func Name(v string) predicate.Segment {
 	return predicate.Segment(sql.FieldEQ(FieldName, v))
 }
 
-// Definition applies equality check predicate on the "definition" field. It's identical to DefinitionEQ.
-func Definition(v string) predicate.Segment {
-	return predicate.Segment(sql.FieldEQ(FieldDefinition, v))
+// Condition applies equality check predicate on the "condition" field. It's identical to ConditionEQ.
+func Condition(v string) predicate.Segment {
+	return predicate.Segment(sql.FieldEQ(FieldCondition, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
@@ -300,79 +300,79 @@ func NameContainsFold(v string) predicate.Segment {
 	return predicate.Segment(sql.FieldContainsFold(FieldName, v))
 }
 
-// DefinitionEQ applies the EQ predicate on the "definition" field.
-func DefinitionEQ(v string) predicate.Segment {
-	return predicate.Segment(sql.FieldEQ(FieldDefinition, v))
+// ConditionEQ applies the EQ predicate on the "condition" field.
+func ConditionEQ(v string) predicate.Segment {
+	return predicate.Segment(sql.FieldEQ(FieldCondition, v))
 }
 
-// DefinitionNEQ applies the NEQ predicate on the "definition" field.
-func DefinitionNEQ(v string) predicate.Segment {
-	return predicate.Segment(sql.FieldNEQ(FieldDefinition, v))
+// ConditionNEQ applies the NEQ predicate on the "condition" field.
+func ConditionNEQ(v string) predicate.Segment {
+	return predicate.Segment(sql.FieldNEQ(FieldCondition, v))
 }
 
-// DefinitionIn applies the In predicate on the "definition" field.
-func DefinitionIn(vs ...string) predicate.Segment {
-	return predicate.Segment(sql.FieldIn(FieldDefinition, vs...))
+// ConditionIn applies the In predicate on the "condition" field.
+func ConditionIn(vs ...string) predicate.Segment {
+	return predicate.Segment(sql.FieldIn(FieldCondition, vs...))
 }
 
-// DefinitionNotIn applies the NotIn predicate on the "definition" field.
-func DefinitionNotIn(vs ...string) predicate.Segment {
-	return predicate.Segment(sql.FieldNotIn(FieldDefinition, vs...))
+// ConditionNotIn applies the NotIn predicate on the "condition" field.
+func ConditionNotIn(vs ...string) predicate.Segment {
+	return predicate.Segment(sql.FieldNotIn(FieldCondition, vs...))
 }
 
-// DefinitionGT applies the GT predicate on the "definition" field.
-func DefinitionGT(v string) predicate.Segment {
-	return predicate.Segment(sql.FieldGT(FieldDefinition, v))
+// ConditionGT applies the GT predicate on the "condition" field.
+func ConditionGT(v string) predicate.Segment {
+	return predicate.Segment(sql.FieldGT(FieldCondition, v))
 }
 
-// DefinitionGTE applies the GTE predicate on the "definition" field.
-func DefinitionGTE(v string) predicate.Segment {
-	return predicate.Segment(sql.FieldGTE(FieldDefinition, v))
+// ConditionGTE applies the GTE predicate on the "condition" field.
+func ConditionGTE(v string) predicate.Segment {
+	return predicate.Segment(sql.FieldGTE(FieldCondition, v))
 }
 
-// DefinitionLT applies the LT predicate on the "definition" field.
-func DefinitionLT(v string) predicate.Segment {
-	return predicate.Segment(sql.FieldLT(FieldDefinition, v))
+// ConditionLT applies the LT predicate on the "condition" field.
+func ConditionLT(v string) predicate.Segment {
+	return predicate.Segment(sql.FieldLT(FieldCondition, v))
 }
 
-// DefinitionLTE applies the LTE predicate on the "definition" field.
-func DefinitionLTE(v string) predicate.Segment {
-	return predicate.Segment(sql.FieldLTE(FieldDefinition, v))
+// ConditionLTE applies the LTE predicate on the "condition" field.
+func ConditionLTE(v string) predicate.Segment {
+	return predicate.Segment(sql.FieldLTE(FieldCondition, v))
 }
 
-// DefinitionContains applies the Contains predicate on the "definition" field.
-func DefinitionContains(v string) predicate.Segment {
-	return predicate.Segment(sql.FieldContains(FieldDefinition, v))
+// ConditionContains applies the Contains predicate on the "condition" field.
+func ConditionContains(v string) predicate.Segment {
+	return predicate.Segment(sql.FieldContains(FieldCondition, v))
 }
 
-// DefinitionHasPrefix applies the HasPrefix predicate on the "definition" field.
-func DefinitionHasPrefix(v string) predicate.Segment {
-	return predicate.Segment(sql.FieldHasPrefix(FieldDefinition, v))
+// ConditionHasPrefix applies the HasPrefix predicate on the "condition" field.
+func ConditionHasPrefix(v string) predicate.Segment {
+	return predicate.Segment(sql.FieldHasPrefix(FieldCondition, v))
 }
 
-// DefinitionHasSuffix applies the HasSuffix predicate on the "definition" field.
-func DefinitionHasSuffix(v string) predicate.Segment {
-	return predicate.Segment(sql.FieldHasSuffix(FieldDefinition, v))
+// ConditionHasSuffix applies the HasSuffix predicate on the "condition" field.
+func ConditionHasSuffix(v string) predicate.Segment {
+	return predicate.Segment(sql.FieldHasSuffix(FieldCondition, v))
 }
 
-// DefinitionIsNil applies the IsNil predicate on the "definition" field.
-func DefinitionIsNil() predicate.Segment {
-	return predicate.Segment(sql.FieldIsNull(FieldDefinition))
+// ConditionIsNil applies the IsNil predicate on the "condition" field.
+func ConditionIsNil() predicate.Segment {
+	return predicate.Segment(sql.FieldIsNull(FieldCondition))
 }
 
-// DefinitionNotNil applies the NotNil predicate on the "definition" field.
-func DefinitionNotNil() predicate.Segment {
-	return predicate.Segment(sql.FieldNotNull(FieldDefinition))
+// ConditionNotNil applies the NotNil predicate on the "condition" field.
+func ConditionNotNil() predicate.Segment {
+	return predicate.Segment(sql.FieldNotNull(FieldCondition))
 }
 
-// DefinitionEqualFold applies the EqualFold predicate on the "definition" field.
-func DefinitionEqualFold(v string) predicate.Segment {
-	return predicate.Segment(sql.FieldEqualFold(FieldDefinition, v))
+// ConditionEqualFold applies the EqualFold predicate on the "condition" field.
+func ConditionEqualFold(v string) predicate.Segment {
+	return predicate.Segment(sql.FieldEqualFold(FieldCondition, v))
 }
 
-// DefinitionContainsFold applies the ContainsFold predicate on the "definition" field.
-func DefinitionContainsFold(v string) predicate.Segment {
-	return predicate.Segment(sql.FieldContainsFold(FieldDefinition, v))
+// ConditionContainsFold applies the ContainsFold predicate on the "condition" field.
+func ConditionContainsFold(v string) predicate.Segment {
+	return predicate.Segment(sql.FieldContainsFold(FieldCondition, v))
 }
 
 // HasWorkspace applies the HasEdge predicate on the "workspace" edge.

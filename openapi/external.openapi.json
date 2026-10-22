@@ -11155,6 +11155,103 @@
         "enum": ["draft", "scheduled", "sending", "sent", "failed"],
         "description": "Broadcast lifecycle status"
       },
+      "ConditionCombinator": {
+        "type": "string",
+        "enum": ["and", "or"],
+        "description": "How a condition group combines its entries"
+      },
+      "ConditionGroup": {
+        "type": "object",
+        "required": ["kind", "combinator", "rules"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["group"]
+          },
+          "combinator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ConditionCombinator"
+              }
+            ],
+            "description": "How the entries combine"
+          },
+          "not": {
+            "type": "boolean",
+            "description": "Negate the whole group"
+          },
+          "rules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConditionNode"
+            },
+            "description": "The group's leaves and nested groups"
+          }
+        },
+        "description": "A group of tests combined with and/or, optionally negated. An empty group matches every\ncontact (an empty negated group matches none)."
+      },
+      "ConditionLeaf": {
+        "type": "object",
+        "required": ["kind", "field", "operator"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["rule"]
+          },
+          "field": {
+            "type": "string",
+            "description": "What it tests: a contact attribute (email, phone, subject_id, first_name, last_name,\ntime_zone), \"tag\", \"custom:<key>\" for a custom field of the workspace, or \"event:<action>\""
+          },
+          "operator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ConditionOperator"
+              }
+            ],
+            "description": "How the field is tested"
+          },
+          "value": {
+            "type": "string",
+            "description": "The value to test against: a tag name, a day window for events (\"\" = ever), blank for\nnull and notNull"
+          }
+        },
+        "description": "One test of a condition: a field, an operator and a value"
+      },
+      "ConditionNode": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/ConditionLeaf"
+          },
+          {
+            "$ref": "#/components/schemas/ConditionGroup"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "rule": "#/components/schemas/ConditionLeaf",
+            "group": "#/components/schemas/ConditionGroup"
+          }
+        },
+        "description": "A leaf or a nested group inside a condition group, discriminated by `kind`."
+      },
+      "ConditionOperator": {
+        "type": "string",
+        "enum": [
+          "eq",
+          "neq",
+          "contains",
+          "beginsWith",
+          "null",
+          "notNull",
+          "performed",
+          "notPerformed",
+          "has",
+          "doesNotHave"
+        ],
+        "description": "What a condition leaf tests. A text attribute takes eq, neq, contains, beginsWith, null and\nnotNull; a custom field takes eq, neq, contains and notNull; an event takes performed and\nnotPerformed; the tag field takes has and doesNotHave."
+      },
       "ContactBatchItemResult": {
         "type": "object",
         "required": ["index", "status"],
@@ -12075,19 +12172,19 @@
       },
       "CreateSegmentInput": {
         "type": "object",
-        "required": ["name", "definition"],
+        "required": ["name", "condition"],
         "properties": {
           "name": {
             "type": "string",
             "description": "Segment name"
           },
-          "definition": {
+          "condition": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/SegmentRuleGroup"
+                "$ref": "#/components/schemas/ConditionGroup"
               }
             ],
-            "description": "Segment definition: the rule group; an empty group matches all contacts"
+            "description": "Segment condition: the tree of tests; an empty group matches all contacts"
           }
         },
         "description": "Request body for creating a segment"
@@ -12201,7 +12298,7 @@
           },
           "key": {
             "type": "string",
-            "description": "Machine key, how values are addressed in custom fields and segment rules",
+            "description": "Machine key, how values are addressed in custom fields and segment conditions",
             "x-untrusted": true
           },
           "name": {
@@ -13614,16 +13711,16 @@
       "PreviewSegmentInput": {
         "type": "object",
         "properties": {
-          "definition": {
+          "condition": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/SegmentRuleGroup"
+                "$ref": "#/components/schemas/ConditionGroup"
               }
             ],
-            "description": "Rule definition; absent means all contacts"
+            "description": "Condition; absent means all contacts"
           }
         },
-        "description": "Request body for previewing a rule definition's audience"
+        "description": "Request body for previewing a condition's audience"
       },
       "PreviewSegmentResult": {
         "type": "object",
@@ -13632,7 +13729,7 @@
           "count": {
             "type": "integer",
             "format": "int32",
-            "description": "Number of contacts matching the rule"
+            "description": "Number of contacts matching the condition"
           }
         },
         "description": "Result of a segment preview"
@@ -13824,27 +13921,6 @@
         },
         "description": "Request body for scheduling a broadcast"
       },
-      "SegmentCombinator": {
-        "type": "string",
-        "enum": ["and", "or"],
-        "description": "How a segment group combines its rules"
-      },
-      "SegmentOperator": {
-        "type": "string",
-        "enum": [
-          "eq",
-          "neq",
-          "contains",
-          "beginsWith",
-          "null",
-          "notNull",
-          "performed",
-          "notPerformed",
-          "has",
-          "doesNotHave"
-        ],
-        "description": "What a segment rule tests. A text attribute takes eq, neq, contains, beginsWith, null and\nnotNull; a custom field takes eq, neq, contains and notNull; an event takes performed and\nnotPerformed; the tag field takes has and doesNotHave."
-      },
       "SegmentResource": {
         "type": "object",
         "required": ["id", "name", "createdAt", "updatedAt"],
@@ -13861,13 +13937,13 @@
             "type": "string",
             "description": "Segment name"
           },
-          "definition": {
+          "condition": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/SegmentRuleGroup"
+                "$ref": "#/components/schemas/ConditionGroup"
               }
             ],
-            "description": "Segment definition: the rule group; an empty group matches all contacts"
+            "description": "Segment condition: the tree of tests; an empty group matches all contacts"
           },
           "archivedAt": {
             "type": "string",
@@ -13897,82 +13973,6 @@
           }
         },
         "description": "Segment resource"
-      },
-      "SegmentRule": {
-        "type": "object",
-        "required": ["kind", "field", "operator"],
-        "properties": {
-          "kind": {
-            "type": "string",
-            "enum": ["rule"]
-          },
-          "field": {
-            "type": "string",
-            "description": "What it tests: a contact attribute (email, phone, subject_id, first_name, last_name,\ntime_zone), \"tag\", \"custom:<key>\" for a custom field of the workspace, or \"event:<action>\""
-          },
-          "operator": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/SegmentOperator"
-              }
-            ],
-            "description": "How the field is tested"
-          },
-          "value": {
-            "type": "string",
-            "description": "The value to test against: a tag name, a day window for events (\"\" = ever), blank for\nnull and notNull"
-          }
-        },
-        "description": "One condition of a segment: a field, an operator and a value"
-      },
-      "SegmentRuleGroup": {
-        "type": "object",
-        "required": ["kind", "combinator", "rules"],
-        "properties": {
-          "kind": {
-            "type": "string",
-            "enum": ["group"]
-          },
-          "combinator": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/SegmentCombinator"
-              }
-            ],
-            "description": "How the rules combine"
-          },
-          "not": {
-            "type": "boolean",
-            "description": "Negate the whole group"
-          },
-          "rules": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/SegmentRuleNode"
-            },
-            "description": "The group's rules and nested groups"
-          }
-        },
-        "description": "A group of rules combined with and/or, optionally negated. An empty group matches every\ncontact (an empty negated group matches none)."
-      },
-      "SegmentRuleNode": {
-        "type": "object",
-        "oneOf": [
-          {
-            "$ref": "#/components/schemas/SegmentRule"
-          },
-          {
-            "$ref": "#/components/schemas/SegmentRuleGroup"
-          }
-        ],
-        "discriminator": {
-          "propertyName": "kind",
-          "mapping": {
-            "rule": "#/components/schemas/SegmentRule",
-            "group": "#/components/schemas/SegmentRuleGroup"
-          }
-        },
-        "description": "A rule or a nested group inside a segment group, discriminated by `kind`."
       },
       "SendLimitSource": {
         "type": "string",
@@ -14852,13 +14852,13 @@
             "type": "string",
             "description": "Segment name"
           },
-          "definition": {
+          "condition": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/SegmentRuleGroup"
+                "$ref": "#/components/schemas/ConditionGroup"
               }
             ],
-            "description": "Segment definition: the rule group; an empty group matches all contacts"
+            "description": "Segment condition: the tree of tests; an empty group matches all contacts"
           }
         },
         "description": "Request body for updating a segment"

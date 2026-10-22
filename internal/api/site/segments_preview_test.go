@@ -25,7 +25,7 @@ func TestSiteSegmentsPreviewCountsMatchingActiveContacts(t *testing.T) {
 
 	def := `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:plan","operator":"eq","value":"preview-pro"}]}`
 	out, err := c.SiteSegmentsPreview(ctx, &siteapi.SitePreviewSegmentInput{
-		Definition: siteapi.NewOptSiteSegmentRuleGroup(testhelper.SiteRuleGroup(t, def)),
+		Condition: siteapi.NewOptSiteConditionGroup(testhelper.SiteRuleGroup(t, def)),
 	}, siteapi.SiteSegmentsPreviewParams{WorkspaceId: fixtures.DunderPublicID})
 	require.NoError(t, err)
 	res, ok := out.(*siteapi.SitePreviewSegmentResult)
@@ -42,7 +42,7 @@ func TestSiteSegmentsPreviewEventCondition(t *testing.T) {
 
 	def := `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"event:signed_up","operator":"performed","value":"30"}]}`
 	out, err := c.SiteSegmentsPreview(ctx, &siteapi.SitePreviewSegmentInput{
-		Definition: siteapi.NewOptSiteSegmentRuleGroup(testhelper.SiteRuleGroup(t, def)),
+		Condition: siteapi.NewOptSiteConditionGroup(testhelper.SiteRuleGroup(t, def)),
 	}, siteapi.SiteSegmentsPreviewParams{WorkspaceId: fixtures.DunderPublicID})
 	require.NoError(t, err)
 	res, ok := out.(*siteapi.SitePreviewSegmentResult)
@@ -56,7 +56,7 @@ func TestSiteSegmentsPreviewRejectsInvalidDefinition(t *testing.T) {
 	ctx := context.Background()
 
 	out, err := c.SiteSegmentsPreview(ctx, &siteapi.SitePreviewSegmentInput{
-		Definition: siteapi.NewOptSiteSegmentRuleGroup(testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`)),
+		Condition: siteapi.NewOptSiteConditionGroup(testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`)),
 	}, siteapi.SiteSegmentsPreviewParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSegmentsPreviewUnprocessableEntity{}, out)
@@ -68,8 +68,8 @@ func TestSiteSegmentsCreateRejectsInvalidRuleDefinition(t *testing.T) {
 	ctx := context.Background()
 
 	out, err := c.SiteSegmentsCreate(ctx, &siteapi.SiteCreateSegmentInput{
-		Name:       "Bad rule",
-		Definition: testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`),
+		Name:      "Bad rule",
+		Condition: testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`),
 	}, siteapi.SiteSegmentsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSegmentsCreateUnprocessableEntity{}, out)
@@ -83,12 +83,12 @@ func TestSiteSegmentsCreateAndUpdateShareValidation(t *testing.T) {
 
 	// Create rejects a bad definition.
 	created, err := c.SiteSegmentsCreate(ctx, &siteapi.SiteCreateSegmentInput{
-		Name: "Bad", Definition: bad,
+		Name: "Bad", Condition: bad,
 	}, siteapi.SiteSegmentsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSegmentsCreateUnprocessableEntity{}, created)
 
-	updated, err := c.SiteSegmentsUpdate(ctx, &siteapi.SiteUpdateSegmentInput{Definition: siteapi.NewOptSiteSegmentRuleGroup(bad)},
+	updated, err := c.SiteSegmentsUpdate(ctx, &siteapi.SiteUpdateSegmentInput{Condition: siteapi.NewOptSiteConditionGroup(bad)},
 		siteapi.SiteSegmentsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.SegmentActiveID)})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSegmentsUpdateUnprocessableEntity{}, updated)
@@ -107,11 +107,11 @@ func (r rawBody) Do(req *http.Request) (*http.Response, error) {
 	return r.inner.Do(req)
 }
 
-// A Segment is always a rule: the contract types definition as a non-nullable
-// rule group, so the server rejects an explicit JSON null at the edge (400 from the
-// generated request validation) and leaves the stored rule untouched. An absent
-// key keeps the stored rule.
-func TestSiteSegmentsUpdateContractRejectsNullDefinition(t *testing.T) {
+// A Segment is always a Condition: the contract types condition as a non-nullable
+// group, so the server rejects an explicit JSON null at the edge (400 from the
+// generated request validation) and leaves the stored Condition untouched. An absent
+// key keeps the stored Condition.
+func TestSiteSegmentsUpdateContractRejectsNullCondition(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	params := siteapi.SiteSegmentsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.SegmentActiveID)}
@@ -122,7 +122,7 @@ func TestSiteSegmentsUpdateContractRejectsNullDefinition(t *testing.T) {
 	require.Truef(t, ok, "got %T", before)
 
 	raw := env.SiteActorVia(t, fixtures.OwnerJohnEmail, func(inner ht.Client) ht.Client {
-		return rawBody{inner: inner, body: `{"definition": null}`}
+		return rawBody{inner: inner, body: `{"condition": null}`}
 	})
 	out, err := raw.SiteSegmentsUpdate(ctx, &siteapi.SiteUpdateSegmentInput{}, params)
 	require.NoError(t, err)
@@ -130,11 +130,11 @@ func TestSiteSegmentsUpdateContractRejectsNullDefinition(t *testing.T) {
 	require.Truef(t, ok, "got %T", out)
 	assert.Equal(t, siteapi.NewOptInt32(http.StatusBadRequest), bad.Status)
 
-	// Absent definition still updates the name and keeps the rule.
+	// Absent condition still updates the name and keeps the Condition.
 	out, err = reader.SiteSegmentsUpdate(ctx, &siteapi.SiteUpdateSegmentInput{Name: siteapi.NewOptString("Renamed")}, params)
 	require.NoError(t, err)
 	updated, ok := out.(*siteapi.SiteSegmentResource)
 	require.Truef(t, ok, "got %T", out)
 	assert.Equal(t, "Renamed", updated.Name)
-	assert.Equal(t, stored.Definition, updated.Definition)
+	assert.Equal(t, stored.Condition, updated.Condition)
 }

@@ -11,10 +11,10 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/segment"
+	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/messaging"
-	"github.com/getsphericon/sphericon/internal/segments"
 	"github.com/getsphericon/sphericon/internal/sendlimit"
 )
 
@@ -180,10 +180,10 @@ func (d *Delivery) plan(ctx context.Context, s *ent.Scoped, id int64, t trigger)
 			return nil, failPlan(ctx, s, b.ID, fmt.Errorf("load segment %d: %w", *b.SegmentID, err))
 		}
 		def := ""
-		if seg.Definition != nil {
-			def = *seg.Definition
+		if seg.Condition != nil {
+			def = *seg.Condition
 		}
-		pred, err := segments.ContactPredicate(ctx, s, def)
+		pred, err := condition.ContactPredicate(ctx, s, def)
 		if err != nil {
 			return nil, failPlan(ctx, s, b.ID, fmt.Errorf("segment %d definition: %w", seg.ID, err))
 		}

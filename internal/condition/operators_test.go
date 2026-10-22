@@ -1,19 +1,19 @@
-package segments_test
+package condition_test
 
 import (
 	"context"
 	"encoding/json"
 	"testing"
 
+	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/segments"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func opsGroup(entries ...any) segments.Group {
-	return segments.Group{Kind: "group", Combinator: "and", Rules: marshal(entries...)}
+func opsGroup(entries ...any) condition.Group {
+	return condition.Group{Kind: "group", Combinator: "and", Rules: marshal(entries...)}
 }
 
 func TestPlainColumnOperators(t *testing.T) {
@@ -21,7 +21,7 @@ func TestPlainColumnOperators(t *testing.T) {
 	const anna, andy, bella = fixtures.OscorpAnnaEmail, fixtures.OscorpAndyEmail, fixtures.OscorpBellaEmail
 
 	for name, tc := range map[string]struct {
-		rule segments.Rule
+		rule condition.Leaf
 		want []string
 	}{
 		"equals":      {rule("first_name", "eq", "Anna"), []string{anna}},
@@ -37,7 +37,7 @@ func TestPlainColumnOperators(t *testing.T) {
 
 func TestCustomFieldOperators(t *testing.T) {
 	env := testhelper.Setup(t)
-	match := func(r segments.Rule) []string { return emailsIn(t, env, fixtures.InitrodeID, opsGroup(r)) }
+	match := func(r condition.Leaf) []string { return emailsIn(t, env, fixtures.InitrodeID, opsGroup(r)) }
 
 	assert.Equal(t, []string{fixtures.InitrodeOneEmail}, match(rule("custom:plan", "eq", "pro")))
 	assert.Equal(t, []string{fixtures.InitrodeTwoEmail}, match(rule("custom:plan", "neq", "pro")))
@@ -51,7 +51,7 @@ func TestCustomFieldOperators(t *testing.T) {
 // and an injection payload is just a key nobody has.
 func TestCustomFieldKeyIsABoundArgument(t *testing.T) {
 	env := testhelper.Setup(t)
-	match := func(r segments.Rule) []string { return emailsIn(t, env, fixtures.InitrodeID, opsGroup(r)) }
+	match := func(r condition.Leaf) []string { return emailsIn(t, env, fixtures.InitrodeID, opsGroup(r)) }
 
 	assert.Equal(t, []string{fixtures.InitrodeQuoteEmail}, match(rule("custom:it's", "eq", "here")))
 
@@ -66,7 +66,6 @@ func TestCustomFieldKeyIsABoundArgument(t *testing.T) {
 
 func TestCustomFieldMustBeInTheWorkspaceCatalogue(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := segments.New(env.Bus)
 	ws := env.DB.Scoped(fixtures.AcmeID)
 
 	for name, key := range map[string]string{
@@ -76,8 +75,8 @@ func TestCustomFieldMustBeInTheWorkspaceCatalogue(t *testing.T) {
 	} {
 		def, err := json.Marshal(opsGroup(rule("custom:"+key, "eq", "a")))
 		require.NoError(t, err)
-		_, err = m.Preview(context.Background(), ws, string(def))
-		require.ErrorIs(t, err, segments.ErrInvalidDefinition, name)
+		_, err = condition.ContactPredicate(context.Background(), ws, string(def))
+		require.Error(t, err, name)
 		assert.Contains(t, err.Error(), "unknown custom field", name)
 	}
 }
@@ -87,15 +86,15 @@ func TestEmptyGroupsMatchEveryoneUnlessNegated(t *testing.T) {
 
 	assert.Equal(t, []string{
 		fixtures.InitrodeOneEmail, fixtures.InitrodeQuoteEmail, fixtures.InitrodeThreeEmail, fixtures.InitrodeTwoEmail,
-	}, emailsIn(t, env, fixtures.InitrodeID, segments.Group{Kind: "group", Combinator: "and"}))
-	assert.Empty(t, emailsIn(t, env, fixtures.InitrodeID, segments.Group{Kind: "group", Combinator: "and", Not: true}),
+	}, emailsIn(t, env, fixtures.InitrodeID, condition.Group{Kind: "group", Combinator: "and"}))
+	assert.Empty(t, emailsIn(t, env, fixtures.InitrodeID, condition.Group{Kind: "group", Combinator: "and", Not: true}),
 		"an empty negated group matches no one")
 }
 
 func TestCompileRefusesWhatTheRuleSetDoesNotAllow(t *testing.T) {
 	env := testhelper.Setup(t)
 	for name, tc := range map[string]struct {
-		rule segments.Rule
+		rule condition.Leaf
 		msg  string
 	}{
 		"unknown column":                {rule("password", "eq", "x"), "unknown field"},
@@ -110,7 +109,7 @@ func TestCompileRefusesWhatTheRuleSetDoesNotAllow(t *testing.T) {
 		"json prefix without a key":     {rule("custom:", "eq", "x"), "unknown field"},
 		"plain operator on json column": {rule("custom:plan", "null", ""), "for json field"},
 	} {
-		_, err := segments.Compile(context.Background(), env.DB.Scoped(fixtures.AcmeID), opsGroup(tc.rule))
+		_, err := condition.Compile(context.Background(), env.DB.Scoped(fixtures.AcmeID), opsGroup(tc.rule))
 		require.Error(t, err, name)
 		assert.Contains(t, err.Error(), tc.msg, name)
 		assert.Contains(t, err.Error(), "rule 0", "%s: the error names the offending rule", name)
@@ -123,50 +122,50 @@ func TestCompileRefusesMalformedEntries(t *testing.T) {
 	ws := env.DB.Scoped(fixtures.AcmeID)
 
 	// A rules[] entry that is not an object at all.
-	_, err := segments.Compile(ctx, ws, segments.Group{Kind: "group", Combinator: "and", Rules: []json.RawMessage{json.RawMessage(`42`)}})
+	_, err := condition.Compile(ctx, ws, condition.Group{Kind: "group", Combinator: "and", Rules: []json.RawMessage{json.RawMessage(`42`)}})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "malformed rule")
 
 	// A nested group whose own rules are not a list.
-	_, err = segments.Compile(ctx, ws, segments.Group{Kind: "group", Combinator: "and", Rules: []json.RawMessage{json.RawMessage(`{"kind":"group","combinator":"or","rules":"nope"}`)}})
+	_, err = condition.Compile(ctx, ws, condition.Group{Kind: "group", Combinator: "and", Rules: []json.RawMessage{json.RawMessage(`{"kind":"group","combinator":"or","rules":"nope"}`)}})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "malformed group")
 
 	// A leaf whose value is not a string.
-	_, err = segments.Compile(ctx, ws, segments.Group{Kind: "group", Combinator: "and", Rules: []json.RawMessage{json.RawMessage(`{"kind":"rule","field":"email","operator":"eq","value":{"a":1}}`)}})
+	_, err = condition.Compile(ctx, ws, condition.Group{Kind: "group", Combinator: "and", Rules: []json.RawMessage{json.RawMessage(`{"kind":"rule","field":"email","operator":"eq","value":{"a":1}}`)}})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "malformed rule")
 
 	// An entry whose kind is missing or unknown is refused, not guessed from its fields.
-	_, err = segments.Compile(ctx, ws, segments.Group{Kind: "group", Combinator: "and", Rules: []json.RawMessage{json.RawMessage(`{"field":"email","operator":"eq","value":"x"}`)}})
+	_, err = condition.Compile(ctx, ws, condition.Group{Kind: "group", Combinator: "and", Rules: []json.RawMessage{json.RawMessage(`{"field":"email","operator":"eq","value":"x"}`)}})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "unknown rule kind")
 
 	// An unknown combinator is refused, not read as "and".
-	_, err = segments.Compile(ctx, ws, segments.Group{Kind: "group", Combinator: "xor"})
+	_, err = condition.Compile(ctx, ws, condition.Group{Kind: "group", Combinator: "xor"})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "unknown combinator")
 
 	// An error deep in a nested group is reported with its path.
 	nested := opsGroup(opsGroup(rule("password", "eq", "x")))
-	_, err = segments.Compile(ctx, ws, nested)
+	_, err = condition.Compile(ctx, ws, nested)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "rule 0: rule 0: unknown field")
 }
 
-func TestContactPredicateRefusesInvalidDefinitions(t *testing.T) {
+func TestContactPredicateRefusesInvalidConditions(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	ws := env.DB.Scoped(fixtures.AcmeID)
 
-	_, err := segments.ContactPredicate(ctx, ws, "{not json")
+	_, err := condition.ContactPredicate(ctx, ws, "{not json")
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "invalid segment definition")
+	assert.Contains(t, err.Error(), "invalid condition")
 
-	_, err = segments.ContactPredicate(ctx, ws, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`)
+	_, err = condition.ContactPredicate(ctx, ws, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`)
 	require.Error(t, err)
 
-	p, err := segments.ContactPredicate(ctx, ws, "")
+	p, err := condition.ContactPredicate(ctx, ws, "")
 	require.NoError(t, err)
 	assert.NotNil(t, p, "a blank definition matches everyone")
 }

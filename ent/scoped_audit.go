@@ -693,7 +693,7 @@ func (e *Segment) auditFields() map[string]any {
 	return map[string]any{
 		"discarded_at": derefAudit(e.DiscardedAt),
 		"name":         e.Name,
-		"definition":   derefAudit(e.Definition),
+		"condition":    derefAudit(e.Condition),
 	}
 }
 

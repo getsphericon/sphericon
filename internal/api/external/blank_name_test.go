@@ -19,7 +19,7 @@ func TestExternalBlankNamesAreRefusedWith422(t *testing.T) {
 	c := env.ExternalScoped(t, "segments:write", "broadcasts:write")
 	const def = `{"kind":"group","combinator":"and","rules":[]}`
 
-	segment, err := c.SegmentsCreate(ctx, &externalapi.CreateSegmentInput{Name: "", Definition: testhelper.ExternalRuleGroup(t, def)})
+	segment, err := c.SegmentsCreate(ctx, &externalapi.CreateSegmentInput{Name: "", Condition: testhelper.ExternalRuleGroup(t, def)})
 	require.NoError(t, err)
 	broadcast, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Name: externalapi.NewOptString("")},
 		externalapi.BroadcastsUpdateParams{ID: draftBroadcast})

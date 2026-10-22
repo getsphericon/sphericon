@@ -14,7 +14,7 @@ import {
   handleSiteSegmentsList,
   handleSiteSegmentsUpdate,
 } from '../../generated/site/msw.gen.ts'
-import type { SiteSegmentRuleGroup } from '../../generated/site/types.gen.ts'
+import type { SiteConditionGroup } from '../../generated/site/types.gen.ts'
 import { Route as segmentsEditRoute } from '../../routes/workspaces/$workspaceId/segments/$segmentId/edit.tsx'
 import { Route as segmentsCreateRoute } from '../../routes/workspaces/$workspaceId/segments/new.tsx'
 import { page } from '../../test/payloads.ts'
@@ -24,7 +24,7 @@ import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
 import { SegmentCreatePage, SegmentEditPage } from './resource.tsx'
 
-const RULE: SiteSegmentRuleGroup = {
+const RULE: SiteConditionGroup = {
   kind: 'group',
   combinator: 'and',
   rules: [{ kind: 'rule', field: 'email', operator: 'contains', value: '@x' }],
@@ -46,7 +46,7 @@ function DetailProbe() {
   return null
 }
 
-// Everything the segment form reads besides the segment itself (rule builder catalogues).
+// Everything the segment form reads besides the segment itself (condition builder catalogues).
 function serveCatalogue() {
   worker.use(
     handleSiteEventsActions({ body: { actions: [] } }),
@@ -85,7 +85,7 @@ test('creating a segment sends name and a rule, refreshes the list and opens the
   await expect.poll(() => bodies.length).toBe(1)
   // A new segment starts as the empty rule group, which matches every contact.
   expect(bodies).toEqual([
-    { name: 'Everyone', definition: { kind: 'group', combinator: 'and', rules: [] } },
+    { name: 'Everyone', condition: { kind: 'group', combinator: 'and', rules: [] } },
   ])
   await expect.element(screen.getByText('Segment created')).toBeInTheDocument()
   await expect.poll(() => listFetches).toBe(2)
@@ -121,7 +121,7 @@ test('editing shows the stored rule untouched, saves a renamed segment and refre
   worker.use(
     handleSiteSegmentsUpdate(async ({ request }) => {
       bodies.push(await request.json())
-      return HttpResponse.json({ id: '7', name: 'Renamed', definition: RULE })
+      return HttpResponse.json({ id: '7', name: 'Renamed', condition: RULE })
     }),
     handleSiteSegmentsList(() => {
       listFetches++
@@ -129,7 +129,7 @@ test('editing shows the stored rule untouched, saves a renamed segment and refre
     }),
     handleSiteSegmentsGet(() => {
       detailFetches++
-      return HttpResponse.json({ id: '7', name: 'Mail users', definition: RULE })
+      return HttpResponse.json({ id: '7', name: 'Mail users', condition: RULE })
     }),
   )
 
@@ -148,7 +148,7 @@ test('editing shows the stored rule untouched, saves a renamed segment and refre
   await screen.getByLabelText('Name', { exact: false }).fill('Renamed')
   await screen.getByRole('button', { name: 'Save' }).click()
 
-  await expect.poll(() => bodies).toEqual([{ name: 'Renamed', definition: RULE }])
+  await expect.poll(() => bodies).toEqual([{ name: 'Renamed', condition: RULE }])
   await expect.element(screen.getByText('Segment updated')).toBeInTheDocument()
   await expect.poll(() => listFetches).toBe(2)
   await expect.poll(() => detailFetches).toBeGreaterThan(1)
@@ -172,7 +172,7 @@ test('editing shows no form while the segment loads, then the loaded values', as
   worker.use(
     handleSiteSegmentsGet(async () => {
       await gate.promise
-      return HttpResponse.json({ id: '7', name: 'Mail users', definition: RULE })
+      return HttpResponse.json({ id: '7', name: 'Mail users', condition: RULE })
     }),
   )
 

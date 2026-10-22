@@ -19959,15 +19959,15 @@ func (x *SegmentScopedCreate) SetName(v string) *SegmentScopedCreate {
 	return x
 }
 
-// SetDefinition sets the "definition" field.
-func (x *SegmentScopedCreate) SetDefinition(v string) *SegmentScopedCreate {
-	x.b.SetDefinition(v)
+// SetCondition sets the "condition" field.
+func (x *SegmentScopedCreate) SetCondition(v string) *SegmentScopedCreate {
+	x.b.SetCondition(v)
 	return x
 }
 
-// SetNillableDefinition sets the "definition" field if the given value is not nil.
-func (x *SegmentScopedCreate) SetNillableDefinition(v *string) *SegmentScopedCreate {
-	x.b.SetNillableDefinition(v)
+// SetNillableCondition sets the "condition" field if the given value is not nil.
+func (x *SegmentScopedCreate) SetNillableCondition(v *string) *SegmentScopedCreate {
+	x.b.SetNillableCondition(v)
 	return x
 }
 
@@ -20110,21 +20110,21 @@ func (u *SegmentScopedUpsert) UpdateName() *SegmentScopedUpsert {
 	return u
 }
 
-// SetDefinition sets the "definition" field.
-func (u *SegmentScopedUpsert) SetDefinition(v string) *SegmentScopedUpsert {
-	u.u.Set(segment.FieldDefinition, v)
+// SetCondition sets the "condition" field.
+func (u *SegmentScopedUpsert) SetCondition(v string) *SegmentScopedUpsert {
+	u.u.Set(segment.FieldCondition, v)
 	return u
 }
 
-// UpdateDefinition sets the "definition" field to the value that was provided on create.
-func (u *SegmentScopedUpsert) UpdateDefinition() *SegmentScopedUpsert {
-	u.u.SetExcluded(segment.FieldDefinition)
+// UpdateCondition sets the "condition" field to the value that was provided on create.
+func (u *SegmentScopedUpsert) UpdateCondition() *SegmentScopedUpsert {
+	u.u.SetExcluded(segment.FieldCondition)
 	return u
 }
 
-// ClearDefinition clears the value of the "definition" field.
-func (u *SegmentScopedUpsert) ClearDefinition() *SegmentScopedUpsert {
-	u.u.SetNull(segment.FieldDefinition)
+// ClearCondition clears the value of the "condition" field.
+func (u *SegmentScopedUpsert) ClearCondition() *SegmentScopedUpsert {
+	u.u.SetNull(segment.FieldCondition)
 	return u
 }
 
@@ -20342,21 +20342,21 @@ func (x *SegmentScopedUpdateOne) SetNillableName(v *string) *SegmentScopedUpdate
 	return x
 }
 
-// SetDefinition sets the "definition" field.
-func (x *SegmentScopedUpdateOne) SetDefinition(v string) *SegmentScopedUpdateOne {
-	x.b.SetDefinition(v)
+// SetCondition sets the "condition" field.
+func (x *SegmentScopedUpdateOne) SetCondition(v string) *SegmentScopedUpdateOne {
+	x.b.SetCondition(v)
 	return x
 }
 
-// SetNillableDefinition sets the "definition" field if the given value is not nil.
-func (x *SegmentScopedUpdateOne) SetNillableDefinition(v *string) *SegmentScopedUpdateOne {
-	x.b.SetNillableDefinition(v)
+// SetNillableCondition sets the "condition" field if the given value is not nil.
+func (x *SegmentScopedUpdateOne) SetNillableCondition(v *string) *SegmentScopedUpdateOne {
+	x.b.SetNillableCondition(v)
 	return x
 }
 
-// ClearDefinition clears the value of the "definition" field.
-func (x *SegmentScopedUpdateOne) ClearDefinition() *SegmentScopedUpdateOne {
-	x.b.ClearDefinition()
+// ClearCondition clears the value of the "condition" field.
+func (x *SegmentScopedUpdateOne) ClearCondition() *SegmentScopedUpdateOne {
+	x.b.ClearCondition()
 	return x
 }
 
@@ -20468,21 +20468,21 @@ func (x *SegmentScopedUpdate) SetNillableName(v *string) *SegmentScopedUpdate {
 	return x
 }
 
-// SetDefinition sets the "definition" field.
-func (x *SegmentScopedUpdate) SetDefinition(v string) *SegmentScopedUpdate {
-	x.b.SetDefinition(v)
+// SetCondition sets the "condition" field.
+func (x *SegmentScopedUpdate) SetCondition(v string) *SegmentScopedUpdate {
+	x.b.SetCondition(v)
 	return x
 }
 
-// SetNillableDefinition sets the "definition" field if the given value is not nil.
-func (x *SegmentScopedUpdate) SetNillableDefinition(v *string) *SegmentScopedUpdate {
-	x.b.SetNillableDefinition(v)
+// SetNillableCondition sets the "condition" field if the given value is not nil.
+func (x *SegmentScopedUpdate) SetNillableCondition(v *string) *SegmentScopedUpdate {
+	x.b.SetNillableCondition(v)
 	return x
 }
 
-// ClearDefinition clears the value of the "definition" field.
-func (x *SegmentScopedUpdate) ClearDefinition() *SegmentScopedUpdate {
-	x.b.ClearDefinition()
+// ClearCondition clears the value of the "condition" field.
+func (x *SegmentScopedUpdate) ClearCondition() *SegmentScopedUpdate {
+	x.b.ClearCondition()
 	return x
 }
 
