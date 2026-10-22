@@ -1417,6 +1417,11 @@ var (
 				Columns: []*schema.Column{RuleFiringsColumns[9], RuleFiringsColumns[4]},
 			},
 			{
+				Name:    "rulefiring_workspace_id",
+				Unique:  false,
+				Columns: []*schema.Column{RuleFiringsColumns[11]},
+			},
+			{
 				Name:    "rule_firings_contact_id",
 				Unique:  false,
 				Columns: []*schema.Column{RuleFiringsColumns[10]},

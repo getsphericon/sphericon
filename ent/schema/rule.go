@@ -198,6 +198,8 @@ func (RuleFiring) Indexes() []ent.Index {
 		// At most one Firing per Rule and Event; the leading rule_id also serves the foreign key.
 		index.Fields("rule_id", "source_id").
 			Unique(),
+		// The Workspace foreign key's index: erasing a Workspace finds its Firings by it.
+		index.Fields("workspace_id"),
 		// The contact foreign key's index: deleting a Contact finds its Firings by it.
 		index.Fields("contact_id").
 			StorageKey("rule_firings_contact_id"),
