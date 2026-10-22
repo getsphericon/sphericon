@@ -58,9 +58,11 @@ only generated files being the two `converter_gen.go`, `ee/staff/resources/{staf
 
 ## Common commands
 
-Every task runs natively with the toolchain pinned in `.mise.toml` / `mise.lock` (Go and
-Node track `latest`); CI installs the same toolchain with `jdx/mise-action` and runs the same
-tasks. There are no dev containers and no Makefile: tasks live in `mise/tasks.toml` (included
+Every task runs natively with the toolchain pinned in `.mise.toml` / `mise.lock` (Go and Node
+are pinned to the exact versions the `Dockerfile` builds with, Go also to the `go` line of
+`go.mod`: bump them together); CI installs the same toolchain with `jdx/mise-action` and runs
+the same tasks.
+There are no dev containers and no Makefile: tasks live in `mise/tasks.toml` (included
 from `.mise.toml`); `mise tasks` lists them. The dev stack (Postgres, Mailpit, backend, Vite,
 Caddy) is a set of **mise daemons** (`[daemons]` in `.mise.toml`, experimental). Tasks that need
 Postgres depend on `db:up` (below) instead of a `db` daemon of their own.

@@ -8,6 +8,8 @@
 
 # Dependencies / build caches (provided via bind-mount or installed in-image)
 node_modules
+# Workspace packages' links too: `COPY . .` runs after the install and would replace them.
+**/node_modules
 .pnpm-store
 tmp
 npm-cache
