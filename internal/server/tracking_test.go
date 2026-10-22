@@ -7,12 +7,9 @@ import (
 	"net/url"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/getsphericon/sphericon/config"
-	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
-	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
@@ -135,11 +132,7 @@ func TestUnsubscribeEverythingInvalidatesConfirmation(t *testing.T) {
 		return w
 	}
 
-	c := env.DB.Contact.GetX(ctx, fixtures.ContactAliceID)
-	_, err = env.DB.Confirmation.Create().SetWorkspaceID(fixtures.AcmeID).
-		SetChannel(confirmation.ChannelEmail).SetDestination(*c.Email).
-		SetProvenance(confirmation.ProvenanceDoubleOptIn).SetContactID(c.ID).Save(ctx)
-	require.NoError(t, err)
+	c := env.DB.Contact.GetX(ctx, fixtures.ContactLiamID)
 
 	confExists := func() bool {
 		ok, err := env.DB.Confirmation.Query().Where(
@@ -176,15 +169,8 @@ func TestTrackingEndpoints(t *testing.T) {
 	// A recipient in fixture workspace Acme. Alice is not already
 	// unsubscribed from broadcasts (bob is, in the fixtures).
 	c := env.DB.Contact.GetX(ctx, fixtures.ContactAliceID)
-
-	b, err := env.DB.Broadcast.Create().
-		SetWorkspaceID(fixtures.AcmeID).SetName("Track").SetSubject("Hi").
-		SetStatus(broadcast.StatusSent).SetSentAt(time.Now()).Save(ctx)
-	require.NoError(t, err)
-
-	rec, err := env.DB.BroadcastRecipient.Create().
-		SetBroadcastID(b.ID).SetWorkspaceID(fixtures.AcmeID).SetContactID(c.ID).Save(ctx)
-	require.NoError(t, err)
+	b := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastSentUntrackedID)
+	rec := env.DB.BroadcastRecipient.GetX(ctx, fixtures.BroadcastRecipientUntrackedID)
 
 	token, err := tr.Token(rec.ID)
 	require.NoError(t, err)
@@ -287,15 +273,9 @@ func TestUnsubscribeAutomationExitsEnrollment(t *testing.T) {
 	}
 
 	c := env.DB.Contact.GetX(ctx, fixtures.ContactAliceID)
-	a, err := testhelper.AutomationWithSteps(ctx, env.DB, env.DB.Automation.Create().SetWorkspaceID(fixtures.AcmeID).
-		SetName("Welcome").SetTriggerEvent("contact.created").SetStatus(automation.StatusActive), "[]")
-	require.NoError(t, err)
-	versionID, err := testhelper.LatestVersionID(ctx, env.DB, a.ID)
-	require.NoError(t, err)
-	run, err := env.DB.AutomationRun.Create().
-		SetWorkspaceID(fixtures.AcmeID).SetAutomationID(a.ID).SetVersionID(versionID).SetContactID(c.ID).
-		SetStatus(automationrun.StatusActive).Save(ctx)
-	require.NoError(t, err)
+	a := env.DB.Automation.GetX(ctx, fixtures.AutomationTagOnEngagementID)
+	run := env.DB.AutomationRun.GetX(ctx, fixtures.AutomationRunTagOnEngagementAliceID)
+	require.Equal(t, c.ID, run.ContactID, "Alice is enrolled")
 
 	// POST performs the opt-out (GET only renders the confirm page — ADR 0012).
 	resp := post(unsubPath(t, tr, tracking.UnsubTarget{
@@ -340,9 +320,7 @@ func TestUnsubscribeEverythingEscalation(t *testing.T) {
 	}
 
 	c := env.DB.Contact.GetX(ctx, fixtures.ContactAliceID)
-	b, err := env.DB.Broadcast.Create().SetWorkspaceID(fixtures.AcmeID).SetName("B").SetSubject("Hi").
-		SetStatus(broadcast.StatusSent).SetSentAt(time.Now()).Save(ctx)
-	require.NoError(t, err)
+	b := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastSentID)
 
 	// GET the source unsubscribe → confirm-page redirect carrying the escalation
 	// URL in ?all=.

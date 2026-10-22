@@ -233,8 +233,9 @@ func TestAContactAndAStaffMemberWithTheUsersAddressAreUntouched(t *testing.T) {
 	env := testhelper.Setup(t)
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	// John is no longer Acme's only Owner, so his deletion goes through.
-	require.NoError(t, acme.Membership().Create().SetUserID(fixtures.OutsiderOscarID).SetRole(membership.RoleOwner).Exec(t.Context()))
-	contact, err := acme.Contact().Create().SetEmail(fixtures.OwnerJohnEmail).SetFirstName("Johnny").Save(t.Context())
+	require.NoError(t, acme.Membership().UpdateOneID(fixtures.AcmeMemberMembershipID).SetRole(membership.RoleOwner).Exec(t.Context()))
+	// A Contact that carries the User's address (a fixture Contact moves to it).
+	contact, err := acme.Contact().UpdateOneID(fixtures.ContactAliceID).SetEmail(fixtures.OwnerJohnEmail).SetFirstName("Johnny").Save(t.Context())
 	require.NoError(t, err)
 	staffBefore := env.DB.StaffMember.GetX(t.Context(), fixtures.StaffAlsoCustomerID)
 

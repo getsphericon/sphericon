@@ -116,6 +116,5 @@ through the production hash/generate functions.
 `env.MCPClient(t, bearer)` connects an MCP session.
 
 Tenant-isolation tests use the committed Globex rows by name (`fixtures.SegmentGlobexID`,
-`fixtures.TemplateGlobexName`, …). The admin role has no fixture user (a committed admin
-would change the exact Acme member list), so a role test that needs one creates it inline;
-owner and member are `OwnerJohn` and `MemberMary`.
+`fixtures.TemplateGlobexName`, …). Acme's three roles are `OwnerJohn`, `AdminAlice` and
+`MemberMary`.

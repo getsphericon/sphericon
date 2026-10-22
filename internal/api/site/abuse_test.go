@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -9,29 +8,24 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/config"
-	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/suspension"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// layTraffic puts a Sending domain's last-hour traffic into the Workspace.
-func layTraffic(t *testing.T, env *testhelper.TestEnv, ws int64, domain string, sent, complaints int) {
-	t.Helper()
-	s := env.DB.Scoped(ws)
-	at := time.Now().Add(-time.Hour)
-	var creates []*ent.EventScopedCreate
-	for i := range sent {
-		creates = append(creates, s.Event().Create().SetEmail(fmt.Sprintf("s%d@example.com", i)).
-			SetAction(events.NameEmailSent).SetProperties(map[string]any{"sendingDomain": domain}).SetOccurredAt(at))
-	}
-	for i := range complaints {
-		creates = append(creates, s.Event().Create().SetEmail(fmt.Sprintf("c%d@example.com", i)).
-			SetAction(events.NameEmailComplained).SetProperties(map[string]any{"sendingDomain": domain}).SetOccurredAt(at))
-	}
-	require.NoError(t, s.Event().CreateBulk(creates...).Exec(t.Context()))
+// The traffic the dashboard judges is in fixtures/events.yml, one scenario per day offset (the
+// detector tests name them too): a test moves the clock back that many days, so the trailing
+// hours hold only its own scenario. The volumes are small, so the tests judge with a floor of 20.
+const (
+	belowFloorDay = 6  // Vandelay: 19 sent, every one bounced hard, under the floor
+	warningDay    = 30 // Vandelay: 3 of 40 bounced hard, in the warning tier
+)
+
+const volumeFloor = 20
+
+func daysAgo(days int) func() time.Time {
+	return func() time.Time { return time.Now().Add(-time.Duration(days) * 24 * time.Hour) }
 }
 
 func overview(t *testing.T, env *testhelper.TestEnv, email string, workspaceID siteapi.WorkspaceId) *siteapi.SiteAnalyticsOverview {
@@ -44,25 +38,26 @@ func overview(t *testing.T, env *testhelper.TestEnv, email string, workspaceID s
 }
 
 func TestTheDashboardShowsTheWarningTierLive(t *testing.T) {
-	env := testhelper.Setup(t)
-	layTraffic(t, env, fixtures.VandelayID, "mail.vandelay.test", 2000, 3) // 0.15% complaints
+	env := testhelper.Setup(t, testhelper.WithClock(daysAgo(warningDay)), testhelper.WithStaffVolumeFloor(volumeFloor))
 
 	warning := overview(t, env, fixtures.VandelayOwnerArtEmail, fixtures.VandelayPublicID).AbuseWarning
 
 	require.True(t, warning.Set)
 	assert.Equal(t, "mail.vandelay.test", warning.Value.Domain)
-	assert.Equal(t, siteapi.SiteAbuseMetricComplaint, warning.Value.Metric)
-	assert.InDelta(t, 0.0015, warning.Value.Rate, 1e-9)
+	assert.Equal(t, siteapi.SiteAbuseMetricBounce, warning.Value.Metric)
+	assert.InDelta(t, 3.0/40.0, warning.Value.Rate, 1e-9)
 }
 
-func TestTheDashboardShowsNoWarningBelowTheFloorOrWhenUnlicensed(t *testing.T) {
-	below := testhelper.Setup(t)
-	layTraffic(t, below, fixtures.VandelayID, "mail.vandelay.test", 999, 99)
-	assert.False(t, overview(t, below, fixtures.VandelayOwnerArtEmail, fixtures.VandelayPublicID).AbuseWarning.Set)
+func TestTheDashboardShowsNoWarningBelowTheFloor(t *testing.T) {
+	env := testhelper.Setup(t, testhelper.WithClock(daysAgo(belowFloorDay)), testhelper.WithStaffVolumeFloor(volumeFloor))
 
-	unlicensed := testhelper.Setup(t, testhelper.WithoutLicense())
-	layTraffic(t, unlicensed, fixtures.VandelayID, "mail.vandelay.test", 2000, 3)
-	assert.False(t, overview(t, unlicensed, fixtures.VandelayOwnerArtEmail, fixtures.VandelayPublicID).AbuseWarning.Set)
+	assert.False(t, overview(t, env, fixtures.VandelayOwnerArtEmail, fixtures.VandelayPublicID).AbuseWarning.Set)
+}
+
+func TestTheDashboardShowsNoWarningWhenUnlicensed(t *testing.T) {
+	env := testhelper.Setup(t, testhelper.WithoutLicense(), testhelper.WithClock(daysAgo(warningDay)), testhelper.WithStaffVolumeFloor(volumeFloor))
+
+	assert.False(t, overview(t, env, fixtures.VandelayOwnerArtEmail, fixtures.VandelayPublicID).AbuseWarning.Set)
 }
 
 func TestASuspendedWorkspaceCarriesTheSupportContactForItsBanner(t *testing.T) {

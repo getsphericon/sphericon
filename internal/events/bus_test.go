@@ -139,12 +139,9 @@ func TestPersistLeavesAnEventUnlinkedWhenItsContactIsGone(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	gone, err := env.DB.Contact.Create().SetWorkspaceID(fixtures.AcmeID).SetEmail("gone@persist.test").Save(ctx)
-	require.NoError(t, err)
-	require.NoError(t, env.DB.Contact.DeleteOneID(gone.ID).Exec(ctx))
-
 	for id, contactID := range map[string]int64{
-		"01J0PERSISTGONE0000000000": gone.ID,
+		// A Contact that is gone: its id no longer exists.
+		"01J0PERSISTGONE0000000000": 999999,
 		// Globex's contact is not an Acme contact.
 		"01J0PERSISTFOREIGN00000000": fixtures.ContactGlobexID,
 	} {
@@ -164,12 +161,10 @@ func TestDeletingAContactKeepsItsEvents(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	c, err := env.DB.Contact.Create().SetWorkspaceID(fixtures.AcmeID).SetEmail("unlink@persist.test").Save(ctx)
-	require.NoError(t, err)
-	ev, err := env.DB.Event.Create().SetWorkspaceID(fixtures.AcmeID).SetContactID(c.ID).SetAction("page_view").Save(ctx)
-	require.NoError(t, err)
+	ev, err := env.DB.Event.Query().Where(event.ContactID(fixtures.ContactAliceID)).First(ctx)
+	require.NoError(t, err, "the fixtures hold Events of Alice")
 
-	require.NoError(t, env.DB.Contact.DeleteOneID(c.ID).Exec(ctx))
+	require.NoError(t, env.DB.Contact.DeleteOneID(fixtures.ContactAliceID).Exec(ctx))
 
 	kept, err := env.DB.Event.Get(ctx, ev.ID)
 	require.NoError(t, err)

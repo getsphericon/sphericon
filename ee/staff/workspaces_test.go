@@ -271,24 +271,11 @@ func TestTheSendVolumeIsTheCountOfSentEventsInTheWindow(t *testing.T) {
 	c, _ := h.staffSession(t)
 	ctx := t.Context()
 	s := h.env.DB.Scoped(fixtures.SoylentID)
-	inWindow := func() int {
-		return s.Event().Query().Where(
-			event.Action(events.NameEmailSent),
-			event.OccurredAtGTE(time.Now().Add(-abuse.Window)),
-		).CountX(ctx)
-	}
-	require.Equal(t, 8, inWindow(), "the fixtures hold 8 sends in the window")
-	assert.EqualValues(t, inWindow(), soylentDeliverabilityAs(t, h, c).SendVolume)
+	sent := s.Event().Query().Where(event.Action(events.NameEmailSent))
+	inWindow := sent.Clone().Where(event.OccurredAtGTE(time.Now().Add(-abuse.Window))).CountX(ctx)
+	require.Greater(t, sent.CountX(ctx), inWindow, "the fixtures hold a send older than the window")
 
-	require.NoError(t, s.Event().Create().SetAction(events.NameEmailSent).SetEmail("extra@example.com").
-		SetProperties(map[string]any{"sendingDomain": fixtures.SendingDomainSoylentDomain}).
-		SetOccurredAt(time.Now().Add(-time.Hour)).Exec(ctx))
-	require.NoError(t, s.Event().Create().SetAction(events.NameEmailSent).SetEmail("old@example.com").
-		SetProperties(map[string]any{"sendingDomain": fixtures.SendingDomainSoylentDomain}).
-		SetOccurredAt(time.Now().Add(-abuse.Window-time.Hour)).Exec(ctx))
-
-	assert.Equal(t, 9, inWindow())
-	assert.EqualValues(t, 9, soylentDeliverabilityAs(t, h, c).SendVolume, "a new send counts, one past the window does not")
+	assert.EqualValues(t, inWindow, soylentDeliverabilityAs(t, h, c).SendVolume, "a send past the window does not count")
 }
 
 func TestAtOrAboveTheVolumeFloorTheRatesAreDefined(t *testing.T) {

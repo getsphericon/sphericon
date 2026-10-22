@@ -86,12 +86,19 @@ func TestCreateStoresADraftWithEncodedSteps(t *testing.T) {
 	assert.Empty(t, none)
 }
 
+// automationNames are the names of Acme's Automations.
+func automationNames(t *testing.T, env *testhelper.TestEnv) []string {
+	t.Helper()
+	names, err := env.DB.Scoped(fixtures.AcmeID).Automation().Query().Select(automation.FieldName).Strings(context.Background())
+	require.NoError(t, err)
+	return names
+}
+
 func TestInvalidStepsAreRefusedAndNothingIsStored(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := automations.New(env.Cipher, env.Bus)
 	ctx := context.Background()
-	before, err := env.DB.Automation.Query().Count(ctx)
-	require.NoError(t, err)
+	before := automationNames(t, env)
 
 	for name, steps := range map[string][]automations.Step{
 		"unknown type":        {{Type: "sms"}},
@@ -106,9 +113,7 @@ func TestInvalidStepsAreRefusedAndNothingIsStored(t *testing.T) {
 		require.ErrorIs(t, err, automations.ErrInvalidStep, "update: "+name)
 	}
 
-	after, err := env.DB.Automation.Query().Count(ctx)
-	require.NoError(t, err)
-	assert.Equal(t, before, after)
+	assert.ElementsMatch(t, before, automationNames(t, env), "nothing was stored")
 	welcome, err := m.Get(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationWelcomeSeriesID)
 	require.NoError(t, err)
 	stored, err := automations.CurrentSteps(welcome)
@@ -174,13 +179,11 @@ func TestDeleteRemovesTheAutomation(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := automations.New(env.Cipher, env.Bus)
 	ctx := context.Background()
-	a, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), automations.CreateInput{Name: "Temp", TriggerEvent: "x"})
-	require.NoError(t, err)
 
-	require.NoError(t, m.Delete(ctx, env.DB.Scoped(fixtures.AcmeID), a.ID))
-	_, err = m.Get(ctx, env.DB.Scoped(fixtures.AcmeID), a.ID)
+	require.NoError(t, m.Delete(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationWinBackID))
+	_, err := m.Get(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationWinBackID)
 	require.ErrorIs(t, err, automations.ErrNotFound)
-	assert.ErrorIs(t, m.Delete(ctx, env.DB.Scoped(fixtures.AcmeID), a.ID), automations.ErrNotFound, "deleting twice")
+	assert.ErrorIs(t, m.Delete(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationWinBackID), automations.ErrNotFound, "deleting twice")
 }
 
 // Every operation is workspace-scoped: another tenant's id is "not found" and the
@@ -189,10 +192,9 @@ func TestOperationsNeverReachAnotherWorkspacesAutomation(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := automations.New(env.Cipher, env.Bus)
 	ctx := context.Background()
-	foreign, err := env.DB.Automation.Create().SetWorkspaceID(fixtures.GlobexID).SetName("Globex flow").SetTriggerEvent("x").Save(ctx)
-	require.NoError(t, err)
+	foreign := env.DB.Automation.GetX(ctx, fixtures.AutomationGlobexID)
 
-	_, err = m.Get(ctx, env.DB.Scoped(fixtures.AcmeID), foreign.ID)
+	_, err := m.Get(ctx, env.DB.Scoped(fixtures.AcmeID), foreign.ID)
 	require.ErrorIs(t, err, automations.ErrNotFound)
 	_, err = m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), foreign.ID, automations.UpdateInput{Name: new("hijacked")})
 	require.ErrorIs(t, err, automations.ErrNotFound)
@@ -207,7 +209,7 @@ func TestOperationsNeverReachAnotherWorkspacesAutomation(t *testing.T) {
 
 	stored, err := env.DB.Automation.Get(ctx, foreign.ID)
 	require.NoError(t, err)
-	assert.Equal(t, "Globex flow", stored.Name)
+	assert.Equal(t, fixtures.AutomationGlobexName, stored.Name)
 	assert.Equal(t, automation.StatusDraft, stored.Status)
 }
 

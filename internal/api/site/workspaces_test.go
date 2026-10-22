@@ -39,10 +39,7 @@ func TestSiteWorkspacesUpdateRenames(t *testing.T) {
 func TestSiteWorkspacesUpdateResponseListsActiveStaffHolds(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	_, err := env.DB.Scoped(fixtures.AcmeID).Hold().Create().
-		SetKey("k1").SetReasonCode("review").SetMessage("held").SetSetBy("service-a").
-		SetExpiresAt(time.Now().Add(time.Hour)).Save(ctx)
-	require.NoError(t, err)
+	env.ExtendHold(ctx, fixtures.AcmeID, fixtures.HoldAcmeLapsedID, time.Now().Add(time.Hour))
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
 	res, err := c.SiteWorkspacesUpdate(ctx,
@@ -53,7 +50,7 @@ func TestSiteWorkspacesUpdateResponseListsActiveStaffHolds(t *testing.T) {
 	require.Truef(t, ok, "got %T", res)
 
 	require.Len(t, updated.Holds, 1)
-	assert.Equal(t, "k1", updated.Holds[0].Key)
+	assert.Equal(t, fixtures.HoldAcmeLapsedKey, updated.Holds[0].Key)
 }
 
 func TestSiteWorkspacesUpdateNotOwned(t *testing.T) {
@@ -110,15 +107,12 @@ func TestSiteWorkspacesListExposesActiveStaffHolds(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	const message = "Sending is paused for now."
-	_, err := env.DB.Scoped(fixtures.AcmeID).Hold().Create().
-		SetKey("k1").SetReasonCode("review").SetMessage(message).SetSetBy("service-a").
-		SetExpiresAt(time.Now().Add(time.Hour)).Save(ctx)
-	require.NoError(t, err)
+	env.ExtendHold(ctx, fixtures.AcmeID, fixtures.HoldAcmeLapsedID, time.Now().Add(time.Hour))
 
 	for _, email := range []string{fixtures.OwnerJohnEmail, fixtures.MemberMaryEmail} {
 		acme := workspaceOf(t, env.SiteActor(t, email), fixtures.AcmePublicID)
-		require.Len(t, acme.Holds, 1, "the lapsed fixture hold is not listed")
-		assert.Equal(t, "k1", acme.Holds[0].Key)
+		require.Len(t, acme.Holds, 1, "only the Acme hold is listed")
+		assert.Equal(t, fixtures.HoldAcmeLapsedKey, acme.Holds[0].Key)
 		assert.Equal(t, "review", acme.Holds[0].ReasonCode)
 		assert.Equal(t, message, acme.Holds[0].Message)
 		assert.False(t, time.Time(acme.Holds[0].Since).IsZero())
@@ -132,10 +126,7 @@ func TestSiteWorkspacesListShowsNoHoldsForAnUnaffectedWorkspace(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	assert.Empty(t, workspaceOf(t, c, fixtures.AcmePublicID).Holds, "only a lapsed hold exists")
 
-	_, err := env.DB.Scoped(fixtures.GlobexID).Hold().Create().
-		SetKey("k1").SetReasonCode("review").SetMessage("held").SetSetBy("service-a").
-		SetExpiresAt(time.Now().Add(time.Hour)).Save(context.Background())
-	require.NoError(t, err)
+	env.ExtendHold(context.Background(), fixtures.GlobexID, fixtures.HoldGlobexLapsedID, time.Now().Add(time.Hour))
 	assert.Empty(t, workspaceOf(t, c, fixtures.AcmePublicID).Holds, "another Workspace's hold does not leak")
 }
 
@@ -143,10 +134,7 @@ func TestSiteWorkspacesListShowsNoHoldsForAnUnaffectedWorkspace(t *testing.T) {
 // Workspace is shown alike: an unlicensed instance lists none.
 func TestSiteWorkspacesListShowsNoHoldsWithoutTheStaffLicense(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithoutLicense())
-	_, err := env.DB.Scoped(fixtures.AcmeID).Hold().Create().
-		SetKey("k1").SetReasonCode("review").SetMessage("held").SetSetBy("service-a").
-		SetExpiresAt(time.Now().Add(time.Hour)).Save(context.Background())
-	require.NoError(t, err)
+	env.ExtendHold(context.Background(), fixtures.AcmeID, fixtures.HoldAcmeLapsedID, time.Now().Add(time.Hour))
 	assert.Empty(t, workspaceOf(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmePublicID).Holds)
 }
 

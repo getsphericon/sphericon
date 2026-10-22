@@ -22,7 +22,7 @@ func TestExternalEmailsSendFailedRenderSpendsTheIdempotencyKey(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	c := env.ExternalScoped(t, "emails:send")
-	tmpl := seedTemplate(t, env.DB, fixtures.AcmeID)
+	tmpl := variablesTemplate(env.DB)
 	tmpl = env.DB.EmailTemplate.UpdateOne(tmpl).SetSubject("{% if %}broken").SaveX(ctx)
 
 	send := func() externalapi.EmailsSendRes {
@@ -52,7 +52,7 @@ func TestExternalEmailsSendIsHeldWhileTheWorkspaceIsSuspended(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	c := env.ExternalScoped(t, "emails:send")
-	tmpl := seedTemplate(t, env.DB, fixtures.AcmeID)
+	tmpl := variablesTemplate(env.DB)
 	suspended, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.StaffMember("op-42"), "abuse report")
 	require.NoError(t, err)
 	require.True(t, suspended)

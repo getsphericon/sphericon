@@ -209,7 +209,7 @@
 
 # Tag on engagement (104): contact 1 (has "vip" and "newsletter") enrolled, not yet stepped.
 - {
-    id: 1100,
+    id: 1100, # fixture: AutomationRunTagOnEngagementAlice
     automation_id: 104,
     version_id: 104,
     contact_id: 1,

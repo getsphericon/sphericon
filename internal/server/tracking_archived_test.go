@@ -5,13 +5,11 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/config"
-	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/tracking"
@@ -26,14 +24,8 @@ func TestTrackingKeepsRecordingForAnArchivedBroadcast(t *testing.T) {
 	require.NoError(t, err)
 	tr := tracking.New(cfg.JWTSecret, cfg.AppURL)
 
-	c := env.DB.Contact.GetX(ctx, fixtures.ContactAliceID)
-	b, err := env.DB.Broadcast.Create().
-		SetWorkspaceID(fixtures.AcmeID).SetName("Track").SetSubject("Hi").
-		SetStatus(broadcast.StatusSent).SetSentAt(time.Now()).Save(ctx)
-	require.NoError(t, err)
-	rec, err := env.DB.BroadcastRecipient.Create().
-		SetBroadcastID(b.ID).SetWorkspaceID(fixtures.AcmeID).SetContactID(c.ID).Save(ctx)
-	require.NoError(t, err)
+	b := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastSentUntrackedID)
+	rec := env.DB.BroadcastRecipient.GetX(ctx, fixtures.BroadcastRecipientUntrackedID)
 	require.NoError(t, env.DB.Scoped(fixtures.AcmeID).Broadcast().Discard(ctx, b.ID))
 	token, err := tr.Token(rec.ID)
 	require.NoError(t, err)

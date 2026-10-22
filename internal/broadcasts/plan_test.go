@@ -13,7 +13,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
-	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/holds"
@@ -420,9 +419,7 @@ func TestSuppressionDuringPacingIsHonouredAtSendTime(t *testing.T) {
 	require.NoError(t, err)
 
 	alice := d.env.DB.Contact.GetX(d.ctx, fixtures.ContactAliceID)
-	d.env.DB.Suppression.Create().SetWorkspaceID(fixtures.AcmeID).
-		SetChannel(suppression.ChannelEmail).SetDestination(*alice.Email).
-		SetReason(suppression.ReasonManual).ExecX(d.ctx)
+	d.env.SuppressDestination(d.ctx, *alice.Email)
 	rec := d.env.DB.BroadcastRecipient.Query().
 		Where(broadcastrecipient.BroadcastID(fixtures.BroadcastDraftID), broadcastrecipient.ContactID(alice.ID)).OnlyX(d.ctx)
 

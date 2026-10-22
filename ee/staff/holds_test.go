@@ -243,9 +243,7 @@ func TestEveryChangingSetRenewalAndClearIsRecordedUnderTheCredentialsName(t *tes
 
 func TestWithoutALicenseHoldsFreezeNothing(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithoutLicense())
-	_, err := env.DB.Scoped(fixtures.AcmeID).Hold().Create().
-		SetKey("stray").SetReasonCode("r").SetMessage("m").SetSetBy("x").SetExpiresAt(time.Now().Add(time.Hour)).Save(t.Context())
-	require.NoError(t, err)
+	env.ExtendHold(t.Context(), fixtures.AcmeID, fixtures.HoldAcmeLapsedID, time.Now().Add(time.Hour))
 	h := &harness{env: env}
 
 	assert.IsType(t, &externalapi.SendTransactionalEmailResponse{}, h.sendOnAPI(t, "free@example.com"))

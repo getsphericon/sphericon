@@ -5,10 +5,8 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"io"
-	"strconv"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -68,18 +66,12 @@ func TestAuditExportIsTheWholeLogAsCSV(t *testing.T) {
 
 func TestAuditExportSpansPagesAndNeverLeaksAnotherTenant(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
-	s := env.DB.Scoped(fixtures.AcmeID)
-	const extra = 250 // more than one internal page
-	for i := range extra {
-		require.NoError(t, s.AuditEntry().Create().
-			SetEntryKey("bulk-"+strconv.Itoa(i)).SetOccurredAt(time.Now()).
-			SetActorKind("system").SetAction("tag.create").SetTargetType("tag").
-			Exec(ctx))
-	}
+	logged, err := env.DB.Scoped(fixtures.HooliID).AuditEntry().Query().Count(t.Context())
+	require.NoError(t, err)
+	require.Greater(t, logged, 500, "the fixture log is longer than one export page")
 
-	rows := auditCSV(t, auditExport(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmePublicID))
-	assert.Len(t, rows, 1+extra+1, "header, every extra entry and the fixture entry; none of Globex's")
+	rows := auditCSV(t, auditExport(t, env.SiteActor(t, fixtures.OwnerSallyEmail), fixtures.HooliPublicID))
+	assert.Len(t, rows, 1+logged, "the header and every entry of the Workspace, none of another tenant's")
 }
 
 func TestAuditExportNeutralisesSpreadsheetFormulas(t *testing.T) {

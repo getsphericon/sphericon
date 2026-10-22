@@ -91,7 +91,7 @@
   updated_at: '{{daysAgo 4}}'
 # A pending claim whose attempt died long ago (claimed_at is a day old): a retry takes it
 # over. Tests that need a LIVE claim set claimed_at to now (txdb rolls it back).
-- id: 106
+- id: 106 # fixture: OutboundMessageStaleClaim
   kind: transactional
   idempotency_key: 'transactional:fixture-stale-claim'
   channel: email
@@ -4054,3 +4054,18 @@
   workspace_id: 20
   created_at: '{{hoursAgo 120}}'
   updated_at: '{{hoursAgo 120}}'
+
+# Bob's parked recipient (5711) on the archived Broadcast holds a pending message whose claim is a
+# day old: no live attempt. Delivery tests move the claim to now when they need a live one.
+- id: 5711 # fixture: OutboundMessageParkedClaim
+  kind: broadcast
+  idempotency_key: 'broadcast:5711'
+  channel: email
+  destination: bob@example.com
+  status: pending
+  broadcast_id: 107
+  broadcast_recipient_id: 5711
+  claimed_at: '{{daysAgo 1}}'
+  workspace_id: 1
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'

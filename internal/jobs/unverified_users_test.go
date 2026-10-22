@@ -52,10 +52,6 @@ func TestPruneUnverifiedUsersKeepsYoungAndVerifiedUsers(t *testing.T) {
 
 func TestPruneUnverifiedUsersKeepsOneWithAMembership(t *testing.T) {
 	env := testhelper.Setup(t)
-	_, err := env.DB.Scoped(fixtures.AcmeID).Membership().Create().
-		SetUserID(fixtures.StaleUnverifiedMemberID).SetRole(membership.RoleMember).Save(context.Background())
-	require.NoError(t, err)
-
 	pruneUnverified(t, env, unverifiedRetention)
 
 	assert.True(t, userExists(t, env, fixtures.StaleUnverifiedMemberID))

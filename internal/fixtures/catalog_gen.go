@@ -171,6 +171,8 @@ const (
 	AutomationRunOnboardingOnVersion1ID = 1200
 	// AutomationRunOnboardingOnVersion2ID is from fixtures/automation_runs.
 	AutomationRunOnboardingOnVersion2ID = 1202
+	// AutomationRunTagOnEngagementAliceID is from fixtures/automation_runs.
+	AutomationRunTagOnEngagementAliceID = 1100
 	// AutomationRunWelcomeCompletedID is from fixtures/automation_runs.
 	AutomationRunWelcomeCompletedID = 1000
 	// AutomationTagOnEngagementID is from fixtures/automations.
@@ -293,12 +295,20 @@ const (
 	BroadcastRecipientErasablePendingID = 3002
 	// BroadcastRecipientErasableSoloID is from fixtures/broadcast_recipients.
 	BroadcastRecipientErasableSoloID = 3004
+	// BroadcastRecipientParkedAliceID is from fixtures/broadcast_recipients.
+	BroadcastRecipientParkedAliceID = 5710
+	// BroadcastRecipientParkedBobID is from fixtures/broadcast_recipients.
+	BroadcastRecipientParkedBobID = 5711
+	// BroadcastRecipientParkedCarolID is from fixtures/broadcast_recipients.
+	BroadcastRecipientParkedCarolID = 5712
 	// BroadcastRecipientSentID is from fixtures/broadcast_recipients.
 	BroadcastRecipientSentID = 1000
 	// BroadcastRecipientUnengagedFirstID is from fixtures/broadcast_recipients.
 	BroadcastRecipientUnengagedFirstID = 1005
 	// BroadcastRecipientUnengagedSecondID is from fixtures/broadcast_recipients.
 	BroadcastRecipientUnengagedSecondID = 1006
+	// BroadcastRecipientUntrackedID is from fixtures/broadcast_recipients.
+	BroadcastRecipientUntrackedID = 5700
 	// BroadcastScheduledFromLaunchDomainID is from fixtures/broadcasts.
 	BroadcastScheduledFromLaunchDomainID = 110
 	// BroadcastScheduledFromLaunchDomainName is from fixtures/broadcasts.
@@ -329,6 +339,12 @@ const (
 	BroadcastSentName = "Python crash course is here"
 	// BroadcastSentSubject is from fixtures/broadcasts.
 	BroadcastSentSubject = "Python crash course is here"
+	// BroadcastSentUntrackedID is from fixtures/broadcasts.
+	BroadcastSentUntrackedID = 5700
+	// BroadcastSentUntrackedName is from fixtures/broadcasts.
+	BroadcastSentUntrackedName = "Tracking sample"
+	// BroadcastSentUntrackedSubject is from fixtures/broadcasts.
+	BroadcastSentUntrackedSubject = "Tracking sample"
 	// BroadcastSentViaArchivedIntegrationID is from fixtures/broadcasts.
 	BroadcastSentViaArchivedIntegrationID = 108
 	// BroadcastSentViaArchivedIntegrationName is from fixtures/broadcasts.
@@ -689,6 +705,8 @@ const (
 	HooliPublicID = "HooliWs5"
 	// HooliSallyMembershipID is from fixtures/memberships.
 	HooliSallyMembershipID = 17
+	// HooliStaleUnverifiedMembershipID is from fixtures/memberships.
+	HooliStaleUnverifiedMembershipID = 5700
 	// InitechAdminAdaEmail is from fixtures/users.
 	InitechAdminAdaEmail = "ada@initech.test"
 	// InitechAdminAdaID is from fixtures/users.
@@ -1035,6 +1053,14 @@ const (
 	OutboundMessageMovedOriginDestination = "moved@initech.test"
 	// OutboundMessageMovedOriginID is from fixtures/outbound_messages.
 	OutboundMessageMovedOriginID = 304
+	// OutboundMessageParkedClaimDestination is from fixtures/outbound_messages.
+	OutboundMessageParkedClaimDestination = "bob@example.com"
+	// OutboundMessageParkedClaimID is from fixtures/outbound_messages.
+	OutboundMessageParkedClaimID = 5711
+	// OutboundMessageStaleClaimDestination is from fixtures/outbound_messages.
+	OutboundMessageStaleClaimDestination = "lease.demo@codebasics.dev"
+	// OutboundMessageStaleClaimID is from fixtures/outbound_messages.
+	OutboundMessageStaleClaimID = 106
 	// OutboundMessageStrangerDestination is from fixtures/outbound_messages.
 	OutboundMessageStrangerDestination = "stranger@initech.test"
 	// OutboundMessageStrangerID is from fixtures/outbound_messages.
@@ -1481,12 +1507,24 @@ const (
 	TemplateGlobexName = "Globex template"
 	// TemplateGlobexSubject is from fixtures/email_templates.
 	TemplateGlobexSubject = "Globex"
+	// TemplateVandelayID is from fixtures/email_templates.
+	TemplateVandelayID = 5701
+	// TemplateVandelayName is from fixtures/email_templates.
+	TemplateVandelayName = "Vandelay notice"
+	// TemplateVandelaySubject is from fixtures/email_templates.
+	TemplateVandelaySubject = "Vandelay notice"
 	// TemplateWelcomeID is from fixtures/email_templates.
 	TemplateWelcomeID = 1
 	// TemplateWelcomeName is from fixtures/email_templates.
 	TemplateWelcomeName = "Welcome"
 	// TemplateWelcomeSubject is from fixtures/email_templates.
 	TemplateWelcomeSubject = "Welcome to CodeBasics 👋"
+	// TemplateWithVariablesID is from fixtures/email_templates.
+	TemplateWithVariablesID = 5700
+	// TemplateWithVariablesName is from fixtures/email_templates.
+	TemplateWithVariablesName = "Order receipt"
+	// TemplateWithVariablesSubject is from fixtures/email_templates.
+	TemplateWithVariablesSubject = "{{`Hello {{ name }}`}}"
 	// TokenGlobexID is from fixtures/api_tokens.
 	TokenGlobexID = 900
 	// TokenGlobexName is from fixtures/api_tokens.
@@ -1567,6 +1605,10 @@ const (
 	UnsubscribeErasableDestination = "erin@initech.test"
 	// UnsubscribeErasableID is from fixtures/unsubscribes.
 	UnsubscribeErasableID = 300
+	// UnsubscribeEverythingNoContactDestination is from fixtures/unsubscribes.
+	UnsubscribeEverythingNoContactDestination = "optout@example.com"
+	// UnsubscribeEverythingNoContactID is from fixtures/unsubscribes.
+	UnsubscribeEverythingNoContactID = 5700
 	// UnsubscribeGlobexDestination is from fixtures/unsubscribes.
 	UnsubscribeGlobexDestination = "pat@globex.test"
 	// UnsubscribeGlobexID is from fixtures/unsubscribes.

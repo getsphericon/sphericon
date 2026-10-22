@@ -1,7 +1,6 @@
 package staff_test
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -11,7 +10,6 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
 
-	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -138,26 +136,21 @@ func TestAnExemptWorkspaceHasNoWarningButKeepsItsRates(t *testing.T) {
 	assert.EqualValues(t, 8, detail.Deliverability.SendVolume)
 }
 
+// The detector judges the traffic of the "over the freeze limit" scenario in fixtures/events.yml
+// (Vandelay, three days ago, at a floor of 20 sent), at the moment of that scenario.
 func TestAWorkspaceFrozenByTheDetectorRefusesSendsOnTheAPI(t *testing.T) {
-	h := newHarness(t)
-	now := time.Now()
-	s := h.env.DB.Scoped(fixtures.AcmeID)
-	var creates []*ent.EventScopedCreate
-	for i := range 2000 {
-		creates = append(creates, s.Event().Create().SetEmail(fmt.Sprintf("s%d@example.com", i)).
-			SetAction(events.NameEmailSent).SetProperties(map[string]any{"sendingDomain": fixtures.SendingDomainVerifiedDomain}).SetOccurredAt(now.Add(-time.Hour)))
-	}
-	for i := range 20 {
-		creates = append(creates, s.Event().Create().SetEmail(fmt.Sprintf("c%d@example.com", i)).
-			SetAction(events.NameEmailComplained).SetProperties(map[string]any{"sendingDomain": fixtures.SendingDomainVerifiedDomain}).SetOccurredAt(now.Add(-time.Hour)))
-	}
-	require.NoError(t, s.Event().CreateBulk(creates...).Exec(t.Context()))
-
-	summary, err := h.env.Abuse().Run(t.Context(), now)
+	h := newHarness(t, testhelper.WithStaffVolumeFloor(20))
+	summary, err := h.env.Abuse().Run(t.Context(), time.Now().Add(-3*24*time.Hour))
 	require.NoError(t, err)
-	require.Equal(t, []int64{fixtures.AcmeID}, summary.Frozen)
+	require.Equal(t, []int64{fixtures.VandelayID}, summary.Frozen)
+	vandelay := h.env.ExternalWithToken(t, h.env.ScopedBearerFor(t, fixtures.VandelayID, "emails:send"))
 
-	held, ok := h.sendOnAPI(t, "held@example.com").(*externalapi.EmailsSendUnprocessableEntity)
+	res, err := vandelay.EmailsSend(t.Context(), &externalapi.SendTransactionalEmailInput{
+		TemplateId: externalapi.EntityId(int64(fixtures.TemplateVandelayID)), Destination: "held@example.com",
+	}, externalapi.EmailsSendParams{})
+	require.NoError(t, err)
+
+	held, ok := res.(*externalapi.EmailsSendUnprocessableEntity)
 	require.True(t, ok, "a send is refused with a 4xx")
 	assert.Equal(t, outbound.Detail(holds.ReasonSuspended), held.Detail.Value)
 }

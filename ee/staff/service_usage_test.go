@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ee/usage"
-	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 )
@@ -44,9 +43,7 @@ func readUsage(t *testing.T, c *serviceapi.Client, params serviceapi.ServiceUsag
 func TestAServiceReadsLiveUsageOfTheCurrentPeriodByDefault(t *testing.T) {
 	h := newHarness(t)
 	now := time.Now().UTC()
-	require.NoError(t, h.env.DB.Scoped(fixtures.AcmeID).OutboundMessage().Create().
-		SetKind(outboundmessage.KindBroadcast).SetIdempotencyKey("usage-read:now").
-		SetStatus(outboundmessage.StatusPending).SetClaimedAt(now).Exec(t.Context()))
+	h.env.ClaimOutbound(t.Context(), fixtures.AcmeID, fixtures.OutboundMessageStaleClaimID, now)
 	h.env.RefreshUsage(t, now)
 
 	page := readUsage(t, h.env.ServiceClient(t, primary), serviceapi.ServiceUsageListParams{})

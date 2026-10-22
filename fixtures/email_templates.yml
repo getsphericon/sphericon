@@ -79,3 +79,22 @@
   workspace_id: 20
   created_at: '{{hoursAgo 2400}}'
   updated_at: '{{hoursAgo 480}}'
+
+# Acme: a transactional template with per-send variables (name, code). The raw-string actions
+# escape the braces from the fixture loader's own templating, so the stored text keeps its braces.
+- id: 5700 # fixture: TemplateWithVariables
+  name: Order receipt
+  subject: '{{`Hello {{ name }}`}}'
+  body: '{{`<p>Hi {{ name }}, your code is {{ code }}</p>`}}'
+  workspace_id: 1
+  created_at: '{{daysAgo 5}}'
+  updated_at: '{{daysAgo 5}}'
+
+# Vandelay (workspace 7): a template for the send refused while the detector has frozen it.
+- id: 5701 # fixture: TemplateVandelay
+  name: Vandelay notice
+  subject: Vandelay notice
+  body: '<p>Notice.</p>'
+  workspace_id: 7
+  created_at: '{{daysAgo 5}}'
+  updated_at: '{{daysAgo 5}}'

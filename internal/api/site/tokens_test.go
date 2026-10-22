@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/getsphericon/sphericon/ent/apitoken"
-	"github.com/getsphericon/sphericon/ent/membership"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -71,7 +70,6 @@ func TestSiteTokensWorkspaceNotFound(t *testing.T) {
 
 func TestSiteTokensNeedAnOwnerOrAdmin(t *testing.T) {
 	env := testhelper.Setup(t)
-	addMember(t, env, "admin@acme.test", membership.RoleAdmin)
 	c := env.SiteActor(t, fixtures.MemberMaryEmail)
 	ctx := context.Background()
 
@@ -86,7 +84,7 @@ func TestSiteTokensNeedAnOwnerOrAdmin(t *testing.T) {
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteTokensDeleteForbidden{}, deleted)
 
-	ok, err := env.SiteActor(t, "admin@acme.test").SiteTokensCreate(ctx,
+	ok, err := env.SiteActor(t, fixtures.AdminAliceEmail).SiteTokensCreate(ctx,
 		&siteapi.SiteCreateTokenInput{Name: "ci", Scopes: []siteapi.ApiTokenScope{"contacts:read"}},
 		siteapi.SiteTokensCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)

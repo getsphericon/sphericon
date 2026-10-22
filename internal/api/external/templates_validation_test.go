@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
-	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -25,7 +24,7 @@ func TestExternalTemplatesMapABlankNameTo422(t *testing.T) {
 func TestExternalTemplatesUpdateMapsABlankNameTo422(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, "templates:read", "templates:write")
-	tmpl := seedTemplate(t, env.DB, fixtures.AcmeID)
+	tmpl := variablesTemplate(env.DB)
 
 	upd, err := c.TemplatesUpdate(context.Background(), &externalapi.UpdateTemplateInput{Name: externalapi.NewOptString("")},
 		externalapi.TemplatesUpdateParams{ID: templateID(tmpl)})
