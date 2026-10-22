@@ -38,6 +38,11 @@ test('shows the tracking snippet and the test command with the collect key', asy
   const { screen } = await renderWithRouter(<TrackingPage />, TRACKING_ROUTE)
 
   await expect.element(screen.getByText(/omck_test_key/).first()).toBeInTheDocument()
+  // The snippet is a queue stub that loads t.js asynchronously, not a bare script tag.
+  await expect
+    .element(screen.getByText(/_omq\.push\(\['init', \{ collectKey: "omck_test_key"/))
+    .toBeInTheDocument()
+  await expect.element(screen.getByText(/s\.async = true/)).toBeInTheDocument()
   await expect.element(screen.getByText(/x-collect-key: omck_test_key/)).toBeInTheDocument()
   // No events yet → waiting state.
   await expect.element(screen.getByText('Waiting for the first event…')).toBeInTheDocument()

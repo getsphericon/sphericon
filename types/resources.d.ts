@@ -1202,7 +1202,7 @@ export default interface Resources {
         "scopesLabel": "Scopes",
         "secretNotice": "Copy this token now — it won't be shown again."
       },
-      "trackingDescription": "Paste this snippet into the <head> of your site to start collecting events.",
+      "trackingDescription": "Paste this snippet into the <head> of your site to start collecting events. It loads the tracker without blocking the page, and calls such as _omq.push(['track', 'signed_up']) made before it has loaded are queued and sent once it is ready.",
       "trackingTitle": "Embed snippet",
       "viewActivity": "Open activity feed",
       "webhooks": {

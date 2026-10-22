@@ -81,7 +81,18 @@ function TestEvent({ collectKey }: { collectKey: string }) {
 function TrackingSection({ collectKey, workspaceId }: { collectKey: string; workspaceId: string }) {
   const { t } = useTranslation()
   const origin = window.location.origin
-  const snippet = `<script async src="${origin}/t.js" data-collect-key="${collectKey}" data-collect-url="${origin}"></script>`
+  // The stub creates the command queue the tracker drains once t.js has loaded, so
+  // `_omq.push(['track', …])` works from the first line while t.js loads asynchronously.
+  const snippet = `<script>
+  window._omq = window._omq || [];
+  _omq.push(['init', { collectKey: ${JSON.stringify(collectKey)}, baseUrl: ${JSON.stringify(origin)} }]);
+  (function () {
+    var s = document.createElement('script');
+    s.async = true;
+    s.src = ${JSON.stringify(`${origin}/t.js`)};
+    document.head.appendChild(s);
+  })();
+</script>`
 
   return (
     <Box>
