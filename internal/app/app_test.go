@@ -3,6 +3,7 @@ package app
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -133,7 +134,9 @@ func newApp(t *testing.T) *App {
 	}
 	t.Cleanup(func() {
 		cancel()
-		<-done
+		if err := <-done; err != nil && !errors.Is(err, context.Canceled) {
+			t.Errorf("event router: %v", err)
+		}
 		_ = a.Shutdown(context.Background())
 	})
 	return a

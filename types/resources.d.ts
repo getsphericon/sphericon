@@ -631,9 +631,6 @@ export default interface Resources {
       "sourceHint": "This message was written as HTML, so it opens as source. Saving keeps it as HTML.",
       "sourceLabel": "Body",
       "toolbar": {
-        "alignCenter": "Align center",
-        "alignLeft": "Align left",
-        "alignRight": "Align right",
         "bold": "Bold",
         "bulletList": "Bulleted list",
         "heading1": "Heading 1",
