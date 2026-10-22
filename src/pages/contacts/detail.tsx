@@ -200,8 +200,9 @@ export function ContactDetailPage() {
       ) : null}
 
       <DataTable
-        minHeight={200}
+        minHeight={eventRecords.length === 0 ? 200 : 0}
         withTableBorder
+        highlightOnHover
         records={eventRecords}
         idAccessor="id"
         columns={[

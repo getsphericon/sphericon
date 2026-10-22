@@ -240,7 +240,7 @@ export function WebhooksSection({ workspaceId }: { workspaceId: string }) {
       {webhooksQuery.isLoading ? <Loader /> : null}
 
       <DataTable
-        minHeight={200}
+        minHeight={records.length === 0 ? 200 : 0}
         withTableBorder
         records={records}
         idAccessor="id"

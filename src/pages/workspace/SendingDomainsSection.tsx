@@ -273,8 +273,9 @@ export function SendingDomainsSection({
       {domainsQuery.isLoading ? <Loader /> : null}
 
       <DataTable
-        minHeight={200}
+        minHeight={records.length === 0 ? 200 : 0}
         withTableBorder
+        highlightOnHover
         records={records}
         idAccessor="id"
         emptyState={<EmptyState title={t(($) => $.settings.sendingDomains.empty)} />}

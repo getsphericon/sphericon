@@ -180,7 +180,7 @@ export function MembersSection({ workspaceId }: { workspaceId: string }) {
 
         <Tabs.Panel value="members">
           <DataTable
-            minHeight={200}
+            minHeight={membersQuery.data?.length ? 0 : 200}
             withTableBorder
             records={membersQuery.data ?? []}
             idAccessor="id"
@@ -239,7 +239,7 @@ export function MembersSection({ workspaceId }: { workspaceId: string }) {
 
         <Tabs.Panel value="invitations">
           <DataTable
-            minHeight={200}
+            minHeight={invitesQuery.data?.length ? 0 : 200}
             withTableBorder
             records={invitesQuery.data ?? []}
             idAccessor="id"

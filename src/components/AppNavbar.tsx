@@ -2,6 +2,7 @@ import { NavLink, Stack } from '@mantine/core'
 import {
   IconActivity,
   IconChartBar,
+  IconForms,
   IconLayoutDashboard,
   IconMail,
   IconMailbox,
@@ -9,7 +10,9 @@ import {
   IconPalette,
   IconRobot,
   IconSettings,
+  IconTag,
   IconTemplate,
+  IconUser,
   IconUsers,
   IconUsersGroup,
 } from '@tabler/icons-react'
@@ -23,9 +26,11 @@ import { Route as automationsRoute } from '../routes/workspaces/$workspaceId/aut
 import { Route as brandKitRoute } from '../routes/workspaces/$workspaceId/brand-kit.tsx'
 import { Route as broadcastsRoute } from '../routes/workspaces/$workspaceId/broadcasts/index.tsx'
 import { Route as contactsRoute } from '../routes/workspaces/$workspaceId/contacts/index.tsx'
+import { Route as customFieldsRoute } from '../routes/workspaces/$workspaceId/custom-fields/index.tsx'
 import { Route as overviewRoute } from '../routes/workspaces/$workspaceId/index.tsx'
 import { Route as segmentsRoute } from '../routes/workspaces/$workspaceId/segments/index.tsx'
 import { Route as settingsRoute } from '../routes/workspaces/$workspaceId/settings/index.tsx'
+import { Route as tagsRoute } from '../routes/workspaces/$workspaceId/tags/index.tsx'
 import { Route as templatesRoute } from '../routes/workspaces/$workspaceId/templates/index.tsx'
 import { Route as transactionalEmailsRoute } from '../routes/workspaces/$workspaceId/transactional-emails/index.tsx'
 import { NavLinkLink } from './RouterLink.tsx'
@@ -58,9 +63,24 @@ export function AppNavbar({ workspaceId }: { workspaceId: string }) {
     />
   )
 
-  // Email-only sections live under one group, closed by default (open when one of its pages is being viewed): the other channels (SMS, loyalty,
-  // forms, bots) get groups of their own beside it. Automations stay outside: they will span
-  // channels.
+  // A group is closed by default and open when one of its pages is being viewed.
+  const viewing = (items: { route: { to: string } }[]) =>
+    items.some((item) => matchRoute({ to: item.route.to, params: { workspaceId }, fuzzy: true }))
+
+  // Everything that describes or selects the people a workspace talks to.
+  const people = [
+    { route: contactsRoute, label: t(($) => $.nav.contacts), icon: <IconUser size={18} /> },
+    { route: segmentsRoute, label: t(($) => $.nav.segments), icon: <IconUsersGroup size={18} /> },
+    { route: tagsRoute, label: t(($) => $.nav.tags), icon: <IconTag size={18} /> },
+    {
+      route: customFieldsRoute,
+      label: t(($) => $.nav.customFields),
+      icon: <IconForms size={18} />,
+    },
+  ]
+
+  // Email-only sections live under one group: the other channels (SMS, loyalty, forms, bots) get
+  // groups of their own beside it. Automations stay outside: they will span channels.
   const emails = [
     { route: broadcastsRoute, label: t(($) => $.nav.broadcasts), icon: <IconMailbox size={18} /> },
     { route: templatesRoute, label: t(($) => $.nav.templates), icon: <IconTemplate size={18} /> },
@@ -80,22 +100,17 @@ export function AppNavbar({ workspaceId }: { workspaceId: string }) {
         icon: <IconLayoutDashboard size={18} />,
         exact: true,
       })}
-      {link({
-        route: contactsRoute,
-        label: t(($) => $.nav.contacts),
-        icon: <IconUsers size={18} />,
-      })}
-      {link({
-        route: segmentsRoute,
-        label: t(($) => $.nav.segments),
-        icon: <IconUsersGroup size={18} />,
-      })}
+      <NavLink
+        label={t(($) => $.nav.people)}
+        leftSection={<IconUsers size={18} />}
+        defaultOpened={viewing(people)}
+      >
+        {people.map((item) => link(item))}
+      </NavLink>
       <NavLink
         label={t(($) => $.nav.emails)}
         leftSection={<IconMail size={18} />}
-        defaultOpened={emails.some((item) =>
-          matchRoute({ to: item.route.to, params: { workspaceId }, fuzzy: true }),
-        )}
+        defaultOpened={viewing(emails)}
       >
         {emails.map((item) => link(item))}
       </NavLink>

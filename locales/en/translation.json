@@ -64,6 +64,7 @@
     "broadcastSaveErrorTitle": "Failed to save broadcast",
     "broadcastSendErrorTitle": "Failed to send broadcast",
     "contactLoadErrorTitle": "Failed to load contact",
+    "customFieldLoadErrorTitle": "Failed to load custom fields",
     "deleteErrorTitle": "Failed to delete contact",
     "eraseErrorTitle": "Failed to erase contact",
     "exportErrorTitle": "Failed to export contact data",
@@ -501,6 +502,20 @@
     "title": "Create a workspace",
     "verifyFirst": "Verify your email address before creating a workspace."
   },
+  "customFields": {
+    "emptyState": "Custom fields appear here once a contact is identified with a new attribute.",
+    "hint": "Attributes beyond the core contact fields. A new key from Identify or an event becomes a field automatically.",
+    "keyLabel": "Key",
+    "nameLabel": "Name",
+    "noRecords": "No custom fields yet",
+    "typeLabel": "Type",
+    "types": {
+      "bool": "Boolean",
+      "datetime": "Date and time",
+      "number": "Number",
+      "string": "Text"
+    }
+  },
   "forgotPassword": {
     "backToLogin": "Back to sign in",
     "description": "Enter your email and we'll send you a reset link.",
@@ -613,9 +628,11 @@
     "brandKit": "Brand kit",
     "broadcasts": "Broadcasts",
     "contacts": "Contacts",
+    "customFields": "Custom fields",
     "docs": "Docs",
     "emails": "Emails",
     "overview": "Overview",
+    "people": "People",
     "segments": "Segments",
     "settings": "Settings",
     "tags": "Tags",
@@ -1318,6 +1335,7 @@
     "timeZone": "Time zone"
   },
   "tags": {
+    "createdAtLabel": "Created",
     "emptyState": "Tags appear here once a contact is tagged.",
     "nameLabel": "Name",
     "noRecords": "No tags yet"

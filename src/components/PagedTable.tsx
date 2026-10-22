@@ -51,7 +51,7 @@ export function PagedTable<TPage extends Page, TError extends ApiErrorLike, TKey
       {list.isLoading ? <Loader /> : null}
 
       <DataTable<TPage['items'][number]>
-        minHeight={200}
+        minHeight={list.data?.items.length ? 0 : 200}
         withTableBorder
         records={list.data?.items ?? []}
         columns={columns}
