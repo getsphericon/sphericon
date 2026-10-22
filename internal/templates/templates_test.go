@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/templates"
@@ -89,6 +90,17 @@ func TestUpdateChangesGivenFieldsOnly(t *testing.T) {
 
 	_, err = m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateGlobexID, templates.UpdateInput{Subject: new("x")})
 	assert.ErrorIs(t, err, templates.ErrNotFound)
+}
+
+// A sent message outlives its deleted Template: it stays, and no longer names the Template.
+func TestDeleteLeavesTheSentMessageWithoutATemplate(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	require.NoError(t, templates.New().Delete(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateWelcomeID))
+
+	msg := env.DB.OutboundMessage.GetX(ctx, fixtures.OutboundMessageWelcomeID)
+	assert.Nil(t, msg.TemplateID)
+	assert.Equal(t, outboundmessage.StatusSent, msg.Status)
 }
 
 func TestDelete(t *testing.T) {

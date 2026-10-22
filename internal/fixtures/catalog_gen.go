@@ -1015,6 +1015,10 @@ const (
 	OutboundMessageBystanderDestination = "ben@initech.test"
 	// OutboundMessageBystanderID is from fixtures/outbound_messages.
 	OutboundMessageBystanderID = 302
+	// OutboundMessageErasableAutomationDestination is from fixtures/outbound_messages.
+	OutboundMessageErasableAutomationDestination = "erin@initech.test"
+	// OutboundMessageErasableAutomationID is from fixtures/outbound_messages.
+	OutboundMessageErasableAutomationID = 305
 	// OutboundMessageErasableBroadcastDestination is from fixtures/outbound_messages.
 	OutboundMessageErasableBroadcastDestination = "erin@initech.test"
 	// OutboundMessageErasableBroadcastID is from fixtures/outbound_messages.
@@ -1035,6 +1039,10 @@ const (
 	OutboundMessageStrangerDestination = "stranger@initech.test"
 	// OutboundMessageStrangerID is from fixtures/outbound_messages.
 	OutboundMessageStrangerID = 303
+	// OutboundMessageWelcomeDestination is from fixtures/outbound_messages.
+	OutboundMessageWelcomeDestination = "liam.python@codebasics.dev"
+	// OutboundMessageWelcomeID is from fixtures/outbound_messages.
+	OutboundMessageWelcomeID = 100
 	// OutsiderOscarEmail is from fixtures/users.
 	OutsiderOscarEmail = "oscar@nowhere.test"
 	// OutsiderOscarID is from fixtures/users.

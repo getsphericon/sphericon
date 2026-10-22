@@ -18054,42 +18054,66 @@ func (x *OutboundMessageScopedCreate) SetNillableAppOrigin(v *string) *OutboundM
 	return x
 }
 
+// SetBroadcast sets the "broadcast" edge to the Broadcast entity.
+func (x *OutboundMessageScopedCreate) SetBroadcast(v *Broadcast) *OutboundMessageScopedCreate {
+	x.b.SetBroadcast(v)
+	return x
+}
+
+// SetAutomation sets the "automation" edge to the Automation entity.
+func (x *OutboundMessageScopedCreate) SetAutomation(v *Automation) *OutboundMessageScopedCreate {
+	x.b.SetAutomation(v)
+	return x
+}
+
+// SetIntegration sets the "integration" edge to the Integration entity.
+func (x *OutboundMessageScopedCreate) SetIntegration(v *Integration) *OutboundMessageScopedCreate {
+	x.b.SetIntegration(v)
+	return x
+}
+
+// SetBroadcastRecipient sets the "broadcast_recipient" edge to the BroadcastRecipient entity.
+func (x *OutboundMessageScopedCreate) SetBroadcastRecipient(v *BroadcastRecipient) *OutboundMessageScopedCreate {
+	x.b.SetBroadcastRecipient(v)
+	return x
+}
+
+// SetAutomationRun sets the "automation_run" edge to the AutomationRun entity.
+func (x *OutboundMessageScopedCreate) SetAutomationRun(v *AutomationRun) *OutboundMessageScopedCreate {
+	x.b.SetAutomationRun(v)
+	return x
+}
+
+// SetTemplate sets the "template" edge to the EmailTemplate entity.
+func (x *OutboundMessageScopedCreate) SetTemplate(v *EmailTemplate) *OutboundMessageScopedCreate {
+	x.b.SetTemplate(v)
+	return x
+}
+
 func (x *OutboundMessageScopedCreate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
+	if err := x.s.verifyBroadcast(ctx, m.BroadcastIDs()); err != nil {
+		return fmt.Errorf("broadcast: %w", err)
+	}
+	if err := x.s.verifyAutomation(ctx, m.AutomationIDs()); err != nil {
+		return fmt.Errorf("automation: %w", err)
+	}
+	if err := x.s.verifyIntegration(ctx, m.IntegrationIDs()); err != nil {
+		return fmt.Errorf("integration: %w", err)
+	}
+	if err := x.s.verifyBroadcastRecipient(ctx, m.BroadcastRecipientIDs()); err != nil {
+		return fmt.Errorf("broadcast_recipient: %w", err)
+	}
+	if err := x.s.verifyAutomationRun(ctx, m.AutomationRunIDs()); err != nil {
+		return fmt.Errorf("automation_run: %w", err)
+	}
+	if err := x.s.verifyEmailTemplate(ctx, m.TemplateIDs()); err != nil {
+		return fmt.Errorf("template: %w", err)
+	}
 	if v, ok := m.ContactID(); ok {
 		if err := x.s.verifyContact(ctx, []int64{v}); err != nil {
 			return fmt.Errorf("contact_id: %w", err)
-		}
-	}
-	if v, ok := m.BroadcastID(); ok {
-		if err := x.s.verifyBroadcast(ctx, []int64{v}); err != nil {
-			return fmt.Errorf("broadcast_id: %w", err)
-		}
-	}
-	if v, ok := m.BroadcastRecipientID(); ok {
-		if err := x.s.verifyBroadcastRecipient(ctx, []int64{v}); err != nil {
-			return fmt.Errorf("broadcast_recipient_id: %w", err)
-		}
-	}
-	if v, ok := m.AutomationID(); ok {
-		if err := x.s.verifyAutomation(ctx, []int64{v}); err != nil {
-			return fmt.Errorf("automation_id: %w", err)
-		}
-	}
-	if v, ok := m.AutomationRunID(); ok {
-		if err := x.s.verifyAutomationRun(ctx, []int64{v}); err != nil {
-			return fmt.Errorf("automation_run_id: %w", err)
-		}
-	}
-	if v, ok := m.IntegrationID(); ok {
-		if err := x.s.verifyIntegration(ctx, []int64{v}); err != nil {
-			return fmt.Errorf("integration_id: %w", err)
-		}
-	}
-	if v, ok := m.TemplateID(); ok {
-		if err := x.s.verifyEmailTemplate(ctx, []int64{v}); err != nil {
-			return fmt.Errorf("template_id: %w", err)
 		}
 	}
 	return nil
@@ -18753,12 +18777,6 @@ func (x *OutboundMessageScopedUpdateOne) SetNillableBroadcastID(v *int64) *Outbo
 	return x
 }
 
-// AddBroadcastID adds value to the "broadcast_id" field.
-func (x *OutboundMessageScopedUpdateOne) AddBroadcastID(v int64) *OutboundMessageScopedUpdateOne {
-	x.b.AddBroadcastID(v)
-	return x
-}
-
 // ClearBroadcastID clears the value of the "broadcast_id" field.
 func (x *OutboundMessageScopedUpdateOne) ClearBroadcastID() *OutboundMessageScopedUpdateOne {
 	x.b.ClearBroadcastID()
@@ -18774,12 +18792,6 @@ func (x *OutboundMessageScopedUpdateOne) SetBroadcastRecipientID(v int64) *Outbo
 // SetNillableBroadcastRecipientID sets the "broadcast_recipient_id" field if the given value is not nil.
 func (x *OutboundMessageScopedUpdateOne) SetNillableBroadcastRecipientID(v *int64) *OutboundMessageScopedUpdateOne {
 	x.b.SetNillableBroadcastRecipientID(v)
-	return x
-}
-
-// AddBroadcastRecipientID adds value to the "broadcast_recipient_id" field.
-func (x *OutboundMessageScopedUpdateOne) AddBroadcastRecipientID(v int64) *OutboundMessageScopedUpdateOne {
-	x.b.AddBroadcastRecipientID(v)
 	return x
 }
 
@@ -18801,12 +18813,6 @@ func (x *OutboundMessageScopedUpdateOne) SetNillableAutomationID(v *int64) *Outb
 	return x
 }
 
-// AddAutomationID adds value to the "automation_id" field.
-func (x *OutboundMessageScopedUpdateOne) AddAutomationID(v int64) *OutboundMessageScopedUpdateOne {
-	x.b.AddAutomationID(v)
-	return x
-}
-
 // ClearAutomationID clears the value of the "automation_id" field.
 func (x *OutboundMessageScopedUpdateOne) ClearAutomationID() *OutboundMessageScopedUpdateOne {
 	x.b.ClearAutomationID()
@@ -18822,12 +18828,6 @@ func (x *OutboundMessageScopedUpdateOne) SetAutomationRunID(v int64) *OutboundMe
 // SetNillableAutomationRunID sets the "automation_run_id" field if the given value is not nil.
 func (x *OutboundMessageScopedUpdateOne) SetNillableAutomationRunID(v *int64) *OutboundMessageScopedUpdateOne {
 	x.b.SetNillableAutomationRunID(v)
-	return x
-}
-
-// AddAutomationRunID adds value to the "automation_run_id" field.
-func (x *OutboundMessageScopedUpdateOne) AddAutomationRunID(v int64) *OutboundMessageScopedUpdateOne {
-	x.b.AddAutomationRunID(v)
 	return x
 }
 
@@ -18873,12 +18873,6 @@ func (x *OutboundMessageScopedUpdateOne) SetNillableIntegrationID(v *int64) *Out
 	return x
 }
 
-// AddIntegrationID adds value to the "integration_id" field.
-func (x *OutboundMessageScopedUpdateOne) AddIntegrationID(v int64) *OutboundMessageScopedUpdateOne {
-	x.b.AddIntegrationID(v)
-	return x
-}
-
 // ClearIntegrationID clears the value of the "integration_id" field.
 func (x *OutboundMessageScopedUpdateOne) ClearIntegrationID() *OutboundMessageScopedUpdateOne {
 	x.b.ClearIntegrationID()
@@ -18897,54 +18891,108 @@ func (x *OutboundMessageScopedUpdateOne) SetNillableTemplateID(v *int64) *Outbou
 	return x
 }
 
-// AddTemplateID adds value to the "template_id" field.
-func (x *OutboundMessageScopedUpdateOne) AddTemplateID(v int64) *OutboundMessageScopedUpdateOne {
-	x.b.AddTemplateID(v)
-	return x
-}
-
 // ClearTemplateID clears the value of the "template_id" field.
 func (x *OutboundMessageScopedUpdateOne) ClearTemplateID() *OutboundMessageScopedUpdateOne {
 	x.b.ClearTemplateID()
 	return x
 }
 
+// SetBroadcast sets the "broadcast" edge to the Broadcast entity.
+func (x *OutboundMessageScopedUpdateOne) SetBroadcast(v *Broadcast) *OutboundMessageScopedUpdateOne {
+	x.b.SetBroadcast(v)
+	return x
+}
+
+// ClearBroadcast clears the "broadcast" edge to the Broadcast entity.
+func (x *OutboundMessageScopedUpdateOne) ClearBroadcast() *OutboundMessageScopedUpdateOne {
+	x.b.ClearBroadcast()
+	return x
+}
+
+// SetAutomation sets the "automation" edge to the Automation entity.
+func (x *OutboundMessageScopedUpdateOne) SetAutomation(v *Automation) *OutboundMessageScopedUpdateOne {
+	x.b.SetAutomation(v)
+	return x
+}
+
+// ClearAutomation clears the "automation" edge to the Automation entity.
+func (x *OutboundMessageScopedUpdateOne) ClearAutomation() *OutboundMessageScopedUpdateOne {
+	x.b.ClearAutomation()
+	return x
+}
+
+// SetIntegration sets the "integration" edge to the Integration entity.
+func (x *OutboundMessageScopedUpdateOne) SetIntegration(v *Integration) *OutboundMessageScopedUpdateOne {
+	x.b.SetIntegration(v)
+	return x
+}
+
+// ClearIntegration clears the "integration" edge to the Integration entity.
+func (x *OutboundMessageScopedUpdateOne) ClearIntegration() *OutboundMessageScopedUpdateOne {
+	x.b.ClearIntegration()
+	return x
+}
+
+// SetBroadcastRecipient sets the "broadcast_recipient" edge to the BroadcastRecipient entity.
+func (x *OutboundMessageScopedUpdateOne) SetBroadcastRecipient(v *BroadcastRecipient) *OutboundMessageScopedUpdateOne {
+	x.b.SetBroadcastRecipient(v)
+	return x
+}
+
+// ClearBroadcastRecipient clears the "broadcast_recipient" edge to the BroadcastRecipient entity.
+func (x *OutboundMessageScopedUpdateOne) ClearBroadcastRecipient() *OutboundMessageScopedUpdateOne {
+	x.b.ClearBroadcastRecipient()
+	return x
+}
+
+// SetAutomationRun sets the "automation_run" edge to the AutomationRun entity.
+func (x *OutboundMessageScopedUpdateOne) SetAutomationRun(v *AutomationRun) *OutboundMessageScopedUpdateOne {
+	x.b.SetAutomationRun(v)
+	return x
+}
+
+// ClearAutomationRun clears the "automation_run" edge to the AutomationRun entity.
+func (x *OutboundMessageScopedUpdateOne) ClearAutomationRun() *OutboundMessageScopedUpdateOne {
+	x.b.ClearAutomationRun()
+	return x
+}
+
+// SetTemplate sets the "template" edge to the EmailTemplate entity.
+func (x *OutboundMessageScopedUpdateOne) SetTemplate(v *EmailTemplate) *OutboundMessageScopedUpdateOne {
+	x.b.SetTemplate(v)
+	return x
+}
+
+// ClearTemplate clears the "template" edge to the EmailTemplate entity.
+func (x *OutboundMessageScopedUpdateOne) ClearTemplate() *OutboundMessageScopedUpdateOne {
+	x.b.ClearTemplate()
+	return x
+}
+
 func (x *OutboundMessageScopedUpdateOne) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
+	if err := x.s.verifyBroadcast(ctx, m.BroadcastIDs()); err != nil {
+		return fmt.Errorf("broadcast: %w", err)
+	}
+	if err := x.s.verifyAutomation(ctx, m.AutomationIDs()); err != nil {
+		return fmt.Errorf("automation: %w", err)
+	}
+	if err := x.s.verifyIntegration(ctx, m.IntegrationIDs()); err != nil {
+		return fmt.Errorf("integration: %w", err)
+	}
+	if err := x.s.verifyBroadcastRecipient(ctx, m.BroadcastRecipientIDs()); err != nil {
+		return fmt.Errorf("broadcast_recipient: %w", err)
+	}
+	if err := x.s.verifyAutomationRun(ctx, m.AutomationRunIDs()); err != nil {
+		return fmt.Errorf("automation_run: %w", err)
+	}
+	if err := x.s.verifyEmailTemplate(ctx, m.TemplateIDs()); err != nil {
+		return fmt.Errorf("template: %w", err)
+	}
 	if v, ok := m.ContactID(); ok {
 		if err := x.s.verifyContact(ctx, []int64{v}); err != nil {
 			return fmt.Errorf("contact_id: %w", err)
-		}
-	}
-	if v, ok := m.BroadcastID(); ok {
-		if err := x.s.verifyBroadcast(ctx, []int64{v}); err != nil {
-			return fmt.Errorf("broadcast_id: %w", err)
-		}
-	}
-	if v, ok := m.BroadcastRecipientID(); ok {
-		if err := x.s.verifyBroadcastRecipient(ctx, []int64{v}); err != nil {
-			return fmt.Errorf("broadcast_recipient_id: %w", err)
-		}
-	}
-	if v, ok := m.AutomationID(); ok {
-		if err := x.s.verifyAutomation(ctx, []int64{v}); err != nil {
-			return fmt.Errorf("automation_id: %w", err)
-		}
-	}
-	if v, ok := m.AutomationRunID(); ok {
-		if err := x.s.verifyAutomationRun(ctx, []int64{v}); err != nil {
-			return fmt.Errorf("automation_run_id: %w", err)
-		}
-	}
-	if v, ok := m.IntegrationID(); ok {
-		if err := x.s.verifyIntegration(ctx, []int64{v}); err != nil {
-			return fmt.Errorf("integration_id: %w", err)
-		}
-	}
-	if v, ok := m.TemplateID(); ok {
-		if err := x.s.verifyEmailTemplate(ctx, []int64{v}); err != nil {
-			return fmt.Errorf("template_id: %w", err)
 		}
 	}
 	return nil
@@ -19186,12 +19234,6 @@ func (x *OutboundMessageScopedUpdate) SetNillableBroadcastID(v *int64) *Outbound
 	return x
 }
 
-// AddBroadcastID adds value to the "broadcast_id" field.
-func (x *OutboundMessageScopedUpdate) AddBroadcastID(v int64) *OutboundMessageScopedUpdate {
-	x.b.AddBroadcastID(v)
-	return x
-}
-
 // ClearBroadcastID clears the value of the "broadcast_id" field.
 func (x *OutboundMessageScopedUpdate) ClearBroadcastID() *OutboundMessageScopedUpdate {
 	x.b.ClearBroadcastID()
@@ -19207,12 +19249,6 @@ func (x *OutboundMessageScopedUpdate) SetBroadcastRecipientID(v int64) *Outbound
 // SetNillableBroadcastRecipientID sets the "broadcast_recipient_id" field if the given value is not nil.
 func (x *OutboundMessageScopedUpdate) SetNillableBroadcastRecipientID(v *int64) *OutboundMessageScopedUpdate {
 	x.b.SetNillableBroadcastRecipientID(v)
-	return x
-}
-
-// AddBroadcastRecipientID adds value to the "broadcast_recipient_id" field.
-func (x *OutboundMessageScopedUpdate) AddBroadcastRecipientID(v int64) *OutboundMessageScopedUpdate {
-	x.b.AddBroadcastRecipientID(v)
 	return x
 }
 
@@ -19234,12 +19270,6 @@ func (x *OutboundMessageScopedUpdate) SetNillableAutomationID(v *int64) *Outboun
 	return x
 }
 
-// AddAutomationID adds value to the "automation_id" field.
-func (x *OutboundMessageScopedUpdate) AddAutomationID(v int64) *OutboundMessageScopedUpdate {
-	x.b.AddAutomationID(v)
-	return x
-}
-
 // ClearAutomationID clears the value of the "automation_id" field.
 func (x *OutboundMessageScopedUpdate) ClearAutomationID() *OutboundMessageScopedUpdate {
 	x.b.ClearAutomationID()
@@ -19255,12 +19285,6 @@ func (x *OutboundMessageScopedUpdate) SetAutomationRunID(v int64) *OutboundMessa
 // SetNillableAutomationRunID sets the "automation_run_id" field if the given value is not nil.
 func (x *OutboundMessageScopedUpdate) SetNillableAutomationRunID(v *int64) *OutboundMessageScopedUpdate {
 	x.b.SetNillableAutomationRunID(v)
-	return x
-}
-
-// AddAutomationRunID adds value to the "automation_run_id" field.
-func (x *OutboundMessageScopedUpdate) AddAutomationRunID(v int64) *OutboundMessageScopedUpdate {
-	x.b.AddAutomationRunID(v)
 	return x
 }
 
@@ -19306,12 +19330,6 @@ func (x *OutboundMessageScopedUpdate) SetNillableIntegrationID(v *int64) *Outbou
 	return x
 }
 
-// AddIntegrationID adds value to the "integration_id" field.
-func (x *OutboundMessageScopedUpdate) AddIntegrationID(v int64) *OutboundMessageScopedUpdate {
-	x.b.AddIntegrationID(v)
-	return x
-}
-
 // ClearIntegrationID clears the value of the "integration_id" field.
 func (x *OutboundMessageScopedUpdate) ClearIntegrationID() *OutboundMessageScopedUpdate {
 	x.b.ClearIntegrationID()
@@ -19330,54 +19348,108 @@ func (x *OutboundMessageScopedUpdate) SetNillableTemplateID(v *int64) *OutboundM
 	return x
 }
 
-// AddTemplateID adds value to the "template_id" field.
-func (x *OutboundMessageScopedUpdate) AddTemplateID(v int64) *OutboundMessageScopedUpdate {
-	x.b.AddTemplateID(v)
-	return x
-}
-
 // ClearTemplateID clears the value of the "template_id" field.
 func (x *OutboundMessageScopedUpdate) ClearTemplateID() *OutboundMessageScopedUpdate {
 	x.b.ClearTemplateID()
 	return x
 }
 
+// SetBroadcast sets the "broadcast" edge to the Broadcast entity.
+func (x *OutboundMessageScopedUpdate) SetBroadcast(v *Broadcast) *OutboundMessageScopedUpdate {
+	x.b.SetBroadcast(v)
+	return x
+}
+
+// ClearBroadcast clears the "broadcast" edge to the Broadcast entity.
+func (x *OutboundMessageScopedUpdate) ClearBroadcast() *OutboundMessageScopedUpdate {
+	x.b.ClearBroadcast()
+	return x
+}
+
+// SetAutomation sets the "automation" edge to the Automation entity.
+func (x *OutboundMessageScopedUpdate) SetAutomation(v *Automation) *OutboundMessageScopedUpdate {
+	x.b.SetAutomation(v)
+	return x
+}
+
+// ClearAutomation clears the "automation" edge to the Automation entity.
+func (x *OutboundMessageScopedUpdate) ClearAutomation() *OutboundMessageScopedUpdate {
+	x.b.ClearAutomation()
+	return x
+}
+
+// SetIntegration sets the "integration" edge to the Integration entity.
+func (x *OutboundMessageScopedUpdate) SetIntegration(v *Integration) *OutboundMessageScopedUpdate {
+	x.b.SetIntegration(v)
+	return x
+}
+
+// ClearIntegration clears the "integration" edge to the Integration entity.
+func (x *OutboundMessageScopedUpdate) ClearIntegration() *OutboundMessageScopedUpdate {
+	x.b.ClearIntegration()
+	return x
+}
+
+// SetBroadcastRecipient sets the "broadcast_recipient" edge to the BroadcastRecipient entity.
+func (x *OutboundMessageScopedUpdate) SetBroadcastRecipient(v *BroadcastRecipient) *OutboundMessageScopedUpdate {
+	x.b.SetBroadcastRecipient(v)
+	return x
+}
+
+// ClearBroadcastRecipient clears the "broadcast_recipient" edge to the BroadcastRecipient entity.
+func (x *OutboundMessageScopedUpdate) ClearBroadcastRecipient() *OutboundMessageScopedUpdate {
+	x.b.ClearBroadcastRecipient()
+	return x
+}
+
+// SetAutomationRun sets the "automation_run" edge to the AutomationRun entity.
+func (x *OutboundMessageScopedUpdate) SetAutomationRun(v *AutomationRun) *OutboundMessageScopedUpdate {
+	x.b.SetAutomationRun(v)
+	return x
+}
+
+// ClearAutomationRun clears the "automation_run" edge to the AutomationRun entity.
+func (x *OutboundMessageScopedUpdate) ClearAutomationRun() *OutboundMessageScopedUpdate {
+	x.b.ClearAutomationRun()
+	return x
+}
+
+// SetTemplate sets the "template" edge to the EmailTemplate entity.
+func (x *OutboundMessageScopedUpdate) SetTemplate(v *EmailTemplate) *OutboundMessageScopedUpdate {
+	x.b.SetTemplate(v)
+	return x
+}
+
+// ClearTemplate clears the "template" edge to the EmailTemplate entity.
+func (x *OutboundMessageScopedUpdate) ClearTemplate() *OutboundMessageScopedUpdate {
+	x.b.ClearTemplate()
+	return x
+}
+
 func (x *OutboundMessageScopedUpdate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
+	if err := x.s.verifyBroadcast(ctx, m.BroadcastIDs()); err != nil {
+		return fmt.Errorf("broadcast: %w", err)
+	}
+	if err := x.s.verifyAutomation(ctx, m.AutomationIDs()); err != nil {
+		return fmt.Errorf("automation: %w", err)
+	}
+	if err := x.s.verifyIntegration(ctx, m.IntegrationIDs()); err != nil {
+		return fmt.Errorf("integration: %w", err)
+	}
+	if err := x.s.verifyBroadcastRecipient(ctx, m.BroadcastRecipientIDs()); err != nil {
+		return fmt.Errorf("broadcast_recipient: %w", err)
+	}
+	if err := x.s.verifyAutomationRun(ctx, m.AutomationRunIDs()); err != nil {
+		return fmt.Errorf("automation_run: %w", err)
+	}
+	if err := x.s.verifyEmailTemplate(ctx, m.TemplateIDs()); err != nil {
+		return fmt.Errorf("template: %w", err)
+	}
 	if v, ok := m.ContactID(); ok {
 		if err := x.s.verifyContact(ctx, []int64{v}); err != nil {
 			return fmt.Errorf("contact_id: %w", err)
-		}
-	}
-	if v, ok := m.BroadcastID(); ok {
-		if err := x.s.verifyBroadcast(ctx, []int64{v}); err != nil {
-			return fmt.Errorf("broadcast_id: %w", err)
-		}
-	}
-	if v, ok := m.BroadcastRecipientID(); ok {
-		if err := x.s.verifyBroadcastRecipient(ctx, []int64{v}); err != nil {
-			return fmt.Errorf("broadcast_recipient_id: %w", err)
-		}
-	}
-	if v, ok := m.AutomationID(); ok {
-		if err := x.s.verifyAutomation(ctx, []int64{v}); err != nil {
-			return fmt.Errorf("automation_id: %w", err)
-		}
-	}
-	if v, ok := m.AutomationRunID(); ok {
-		if err := x.s.verifyAutomationRun(ctx, []int64{v}); err != nil {
-			return fmt.Errorf("automation_run_id: %w", err)
-		}
-	}
-	if v, ok := m.IntegrationID(); ok {
-		if err := x.s.verifyIntegration(ctx, []int64{v}); err != nil {
-			return fmt.Errorf("integration_id: %w", err)
-		}
-	}
-	if v, ok := m.TemplateID(); ok {
-		if err := x.s.verifyEmailTemplate(ctx, []int64{v}); err != nil {
-			return fmt.Errorf("template_id: %w", err)
 		}
 	}
 	return nil

@@ -1076,14 +1076,14 @@ var (
 		{Name: "reason", Type: field.TypeString, Nullable: true},
 		{Name: "claimed_at", Type: field.TypeTime},
 		{Name: "sent_at", Type: field.TypeTime, Nullable: true},
-		{Name: "broadcast_id", Type: field.TypeInt64, Nullable: true},
-		{Name: "broadcast_recipient_id", Type: field.TypeInt64, Nullable: true},
-		{Name: "automation_id", Type: field.TypeInt64, Nullable: true},
-		{Name: "automation_run_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "automation_step", Type: field.TypeInt, Nullable: true},
-		{Name: "integration_id", Type: field.TypeInt64, Nullable: true},
-		{Name: "template_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "app_origin", Type: field.TypeString, Nullable: true},
+		{Name: "broadcast_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "automation_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "integration_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "broadcast_recipient_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "automation_run_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "template_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
 	// OutboundMessagesTable holds the schema information for the "outbound_messages" table.
@@ -1092,6 +1092,42 @@ var (
 		Columns:    OutboundMessagesColumns,
 		PrimaryKey: []*schema.Column{OutboundMessagesColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "outbound_messages_broadcasts_broadcast",
+				Columns:    []*schema.Column{OutboundMessagesColumns[17]},
+				RefColumns: []*schema.Column{BroadcastsColumns[0]},
+				OnDelete:   schema.Restrict,
+			},
+			{
+				Symbol:     "outbound_messages_automations_automation",
+				Columns:    []*schema.Column{OutboundMessagesColumns[18]},
+				RefColumns: []*schema.Column{AutomationsColumns[0]},
+				OnDelete:   schema.Restrict,
+			},
+			{
+				Symbol:     "outbound_messages_integrations_integration",
+				Columns:    []*schema.Column{OutboundMessagesColumns[19]},
+				RefColumns: []*schema.Column{IntegrationsColumns[0]},
+				OnDelete:   schema.Restrict,
+			},
+			{
+				Symbol:     "outbound_messages_broadcast_recipients_broadcast_recipient",
+				Columns:    []*schema.Column{OutboundMessagesColumns[20]},
+				RefColumns: []*schema.Column{BroadcastRecipientsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "outbound_messages_automation_runs_automation_run",
+				Columns:    []*schema.Column{OutboundMessagesColumns[21]},
+				RefColumns: []*schema.Column{AutomationRunsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "outbound_messages_email_templates_template",
+				Columns:    []*schema.Column{OutboundMessagesColumns[22]},
+				RefColumns: []*schema.Column{EmailTemplatesColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
 			{
 				Symbol:     "outbound_messages_workspaces_outbound_messages",
 				Columns:    []*schema.Column{OutboundMessagesColumns[23]},
@@ -1113,7 +1149,7 @@ var (
 			{
 				Name:    "outboundmessage_workspace_id_integration_id_sent_at",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[23], OutboundMessagesColumns[20], OutboundMessagesColumns[14]},
+				Columns: []*schema.Column{OutboundMessagesColumns[23], OutboundMessagesColumns[19], OutboundMessagesColumns[14]},
 			},
 			{
 				Name:    "outboundmessage_workspace_id_sending_domain_created_at",
@@ -1136,15 +1172,37 @@ var (
 			{
 				Name:    "outboundmessage_workspace_id_broadcast_id_status",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[23], OutboundMessagesColumns[15], OutboundMessagesColumns[11]},
+				Columns: []*schema.Column{OutboundMessagesColumns[23], OutboundMessagesColumns[17], OutboundMessagesColumns[11]},
 			},
 			{
 				Name:    "outbound_messages_broadcast_recipient_id",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[16]},
-				Annotation: &entsql.IndexAnnotation{
-					Where: "broadcast_recipient_id IS NOT NULL",
-				},
+				Columns: []*schema.Column{OutboundMessagesColumns[20]},
+			},
+			{
+				Name:    "outbound_messages_broadcast_id",
+				Unique:  false,
+				Columns: []*schema.Column{OutboundMessagesColumns[17]},
+			},
+			{
+				Name:    "outbound_messages_integration_id",
+				Unique:  false,
+				Columns: []*schema.Column{OutboundMessagesColumns[19]},
+			},
+			{
+				Name:    "outbound_messages_automation_id",
+				Unique:  false,
+				Columns: []*schema.Column{OutboundMessagesColumns[18]},
+			},
+			{
+				Name:    "outbound_messages_automation_run_id",
+				Unique:  false,
+				Columns: []*schema.Column{OutboundMessagesColumns[21]},
+			},
+			{
+				Name:    "outbound_messages_template_id",
+				Unique:  false,
+				Columns: []*schema.Column{OutboundMessagesColumns[22]},
 			},
 			{
 				Name:    "outbound_messages_workspace_id_sent_at_broadcast",
@@ -1955,7 +2013,13 @@ func init() {
 	OauthRefreshTokensTable.Annotation = &entsql.Annotation{
 		Table: "oauth_refresh_tokens",
 	}
-	OutboundMessagesTable.ForeignKeys[0].RefTable = WorkspacesTable
+	OutboundMessagesTable.ForeignKeys[0].RefTable = BroadcastsTable
+	OutboundMessagesTable.ForeignKeys[1].RefTable = AutomationsTable
+	OutboundMessagesTable.ForeignKeys[2].RefTable = IntegrationsTable
+	OutboundMessagesTable.ForeignKeys[3].RefTable = BroadcastRecipientsTable
+	OutboundMessagesTable.ForeignKeys[4].RefTable = AutomationRunsTable
+	OutboundMessagesTable.ForeignKeys[5].RefTable = EmailTemplatesTable
+	OutboundMessagesTable.ForeignKeys[6].RefTable = WorkspacesTable
 	OutboundMessagesTable.Annotation = &entsql.Annotation{
 		Table: "outbound_messages",
 	}

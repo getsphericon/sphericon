@@ -9,6 +9,12 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"github.com/getsphericon/sphericon/ent/automation"
+	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/broadcast"
+	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
+	"github.com/getsphericon/sphericon/ent/emailtemplate"
+	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
@@ -74,9 +80,21 @@ type OutboundMessage struct {
 type OutboundMessageEdges struct {
 	// Workspace holds the value of the workspace edge.
 	Workspace *Workspace `json:"workspace,omitempty"`
+	// Broadcast holds the value of the broadcast edge.
+	Broadcast *Broadcast `json:"broadcast,omitempty"`
+	// Automation holds the value of the automation edge.
+	Automation *Automation `json:"automation,omitempty"`
+	// Integration holds the value of the integration edge.
+	Integration *Integration `json:"integration,omitempty"`
+	// BroadcastRecipient holds the value of the broadcast_recipient edge.
+	BroadcastRecipient *BroadcastRecipient `json:"broadcast_recipient,omitempty"`
+	// AutomationRun holds the value of the automation_run edge.
+	AutomationRun *AutomationRun `json:"automation_run,omitempty"`
+	// Template holds the value of the template edge.
+	Template *EmailTemplate `json:"template,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [7]bool
 }
 
 // WorkspaceOrErr returns the Workspace value or an error if the edge
@@ -88,6 +106,72 @@ func (e OutboundMessageEdges) WorkspaceOrErr() (*Workspace, error) {
 		return nil, &NotFoundError{label: workspace.Label}
 	}
 	return nil, &NotLoadedError{edge: "workspace"}
+}
+
+// BroadcastOrErr returns the Broadcast value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e OutboundMessageEdges) BroadcastOrErr() (*Broadcast, error) {
+	if e.Broadcast != nil {
+		return e.Broadcast, nil
+	} else if e.loadedTypes[1] {
+		return nil, &NotFoundError{label: broadcast.Label}
+	}
+	return nil, &NotLoadedError{edge: "broadcast"}
+}
+
+// AutomationOrErr returns the Automation value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e OutboundMessageEdges) AutomationOrErr() (*Automation, error) {
+	if e.Automation != nil {
+		return e.Automation, nil
+	} else if e.loadedTypes[2] {
+		return nil, &NotFoundError{label: automation.Label}
+	}
+	return nil, &NotLoadedError{edge: "automation"}
+}
+
+// IntegrationOrErr returns the Integration value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e OutboundMessageEdges) IntegrationOrErr() (*Integration, error) {
+	if e.Integration != nil {
+		return e.Integration, nil
+	} else if e.loadedTypes[3] {
+		return nil, &NotFoundError{label: integration.Label}
+	}
+	return nil, &NotLoadedError{edge: "integration"}
+}
+
+// BroadcastRecipientOrErr returns the BroadcastRecipient value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e OutboundMessageEdges) BroadcastRecipientOrErr() (*BroadcastRecipient, error) {
+	if e.BroadcastRecipient != nil {
+		return e.BroadcastRecipient, nil
+	} else if e.loadedTypes[4] {
+		return nil, &NotFoundError{label: broadcastrecipient.Label}
+	}
+	return nil, &NotLoadedError{edge: "broadcast_recipient"}
+}
+
+// AutomationRunOrErr returns the AutomationRun value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e OutboundMessageEdges) AutomationRunOrErr() (*AutomationRun, error) {
+	if e.AutomationRun != nil {
+		return e.AutomationRun, nil
+	} else if e.loadedTypes[5] {
+		return nil, &NotFoundError{label: automationrun.Label}
+	}
+	return nil, &NotLoadedError{edge: "automation_run"}
+}
+
+// TemplateOrErr returns the Template value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e OutboundMessageEdges) TemplateOrErr() (*EmailTemplate, error) {
+	if e.Template != nil {
+		return e.Template, nil
+	} else if e.loadedTypes[6] {
+		return nil, &NotFoundError{label: emailtemplate.Label}
+	}
+	return nil, &NotLoadedError{edge: "template"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -290,6 +374,36 @@ func (_m *OutboundMessage) Value(name string) (ent.Value, error) {
 // QueryWorkspace queries the "workspace" edge of the OutboundMessage entity.
 func (_m *OutboundMessage) QueryWorkspace() *WorkspaceQuery {
 	return NewOutboundMessageClient(_m.config).QueryWorkspace(_m)
+}
+
+// QueryBroadcast queries the "broadcast" edge of the OutboundMessage entity.
+func (_m *OutboundMessage) QueryBroadcast() *BroadcastQuery {
+	return NewOutboundMessageClient(_m.config).QueryBroadcast(_m)
+}
+
+// QueryAutomation queries the "automation" edge of the OutboundMessage entity.
+func (_m *OutboundMessage) QueryAutomation() *AutomationQuery {
+	return NewOutboundMessageClient(_m.config).QueryAutomation(_m)
+}
+
+// QueryIntegration queries the "integration" edge of the OutboundMessage entity.
+func (_m *OutboundMessage) QueryIntegration() *IntegrationQuery {
+	return NewOutboundMessageClient(_m.config).QueryIntegration(_m)
+}
+
+// QueryBroadcastRecipient queries the "broadcast_recipient" edge of the OutboundMessage entity.
+func (_m *OutboundMessage) QueryBroadcastRecipient() *BroadcastRecipientQuery {
+	return NewOutboundMessageClient(_m.config).QueryBroadcastRecipient(_m)
+}
+
+// QueryAutomationRun queries the "automation_run" edge of the OutboundMessage entity.
+func (_m *OutboundMessage) QueryAutomationRun() *AutomationRunQuery {
+	return NewOutboundMessageClient(_m.config).QueryAutomationRun(_m)
+}
+
+// QueryTemplate queries the "template" edge of the OutboundMessage entity.
+func (_m *OutboundMessage) QueryTemplate() *EmailTemplateQuery {
+	return NewOutboundMessageClient(_m.config).QueryTemplate(_m)
 }
 
 // Update returns a builder for updating this OutboundMessage.

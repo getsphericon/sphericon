@@ -11,6 +11,12 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/getsphericon/sphericon/ent/automation"
+	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/broadcast"
+	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
+	"github.com/getsphericon/sphericon/ent/emailtemplate"
+	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/workspace"
@@ -241,7 +247,6 @@ func (_u *OutboundMessageUpdate) ClearSentAt() *OutboundMessageUpdate {
 
 // SetBroadcastID sets the "broadcast_id" field.
 func (_u *OutboundMessageUpdate) SetBroadcastID(v int64) *OutboundMessageUpdate {
-	_u.mutation.ResetBroadcastID()
 	_u.mutation.SetBroadcastID(v)
 	return _u
 }
@@ -254,12 +259,6 @@ func (_u *OutboundMessageUpdate) SetNillableBroadcastID(v *int64) *OutboundMessa
 	return _u
 }
 
-// AddBroadcastID adds value to the "broadcast_id" field.
-func (_u *OutboundMessageUpdate) AddBroadcastID(v int64) *OutboundMessageUpdate {
-	_u.mutation.AddBroadcastID(v)
-	return _u
-}
-
 // ClearBroadcastID clears the value of the "broadcast_id" field.
 func (_u *OutboundMessageUpdate) ClearBroadcastID() *OutboundMessageUpdate {
 	_u.mutation.ClearBroadcastID()
@@ -268,7 +267,6 @@ func (_u *OutboundMessageUpdate) ClearBroadcastID() *OutboundMessageUpdate {
 
 // SetBroadcastRecipientID sets the "broadcast_recipient_id" field.
 func (_u *OutboundMessageUpdate) SetBroadcastRecipientID(v int64) *OutboundMessageUpdate {
-	_u.mutation.ResetBroadcastRecipientID()
 	_u.mutation.SetBroadcastRecipientID(v)
 	return _u
 }
@@ -281,12 +279,6 @@ func (_u *OutboundMessageUpdate) SetNillableBroadcastRecipientID(v *int64) *Outb
 	return _u
 }
 
-// AddBroadcastRecipientID adds value to the "broadcast_recipient_id" field.
-func (_u *OutboundMessageUpdate) AddBroadcastRecipientID(v int64) *OutboundMessageUpdate {
-	_u.mutation.AddBroadcastRecipientID(v)
-	return _u
-}
-
 // ClearBroadcastRecipientID clears the value of the "broadcast_recipient_id" field.
 func (_u *OutboundMessageUpdate) ClearBroadcastRecipientID() *OutboundMessageUpdate {
 	_u.mutation.ClearBroadcastRecipientID()
@@ -295,7 +287,6 @@ func (_u *OutboundMessageUpdate) ClearBroadcastRecipientID() *OutboundMessageUpd
 
 // SetAutomationID sets the "automation_id" field.
 func (_u *OutboundMessageUpdate) SetAutomationID(v int64) *OutboundMessageUpdate {
-	_u.mutation.ResetAutomationID()
 	_u.mutation.SetAutomationID(v)
 	return _u
 }
@@ -308,12 +299,6 @@ func (_u *OutboundMessageUpdate) SetNillableAutomationID(v *int64) *OutboundMess
 	return _u
 }
 
-// AddAutomationID adds value to the "automation_id" field.
-func (_u *OutboundMessageUpdate) AddAutomationID(v int64) *OutboundMessageUpdate {
-	_u.mutation.AddAutomationID(v)
-	return _u
-}
-
 // ClearAutomationID clears the value of the "automation_id" field.
 func (_u *OutboundMessageUpdate) ClearAutomationID() *OutboundMessageUpdate {
 	_u.mutation.ClearAutomationID()
@@ -322,7 +307,6 @@ func (_u *OutboundMessageUpdate) ClearAutomationID() *OutboundMessageUpdate {
 
 // SetAutomationRunID sets the "automation_run_id" field.
 func (_u *OutboundMessageUpdate) SetAutomationRunID(v int64) *OutboundMessageUpdate {
-	_u.mutation.ResetAutomationRunID()
 	_u.mutation.SetAutomationRunID(v)
 	return _u
 }
@@ -332,12 +316,6 @@ func (_u *OutboundMessageUpdate) SetNillableAutomationRunID(v *int64) *OutboundM
 	if v != nil {
 		_u.SetAutomationRunID(*v)
 	}
-	return _u
-}
-
-// AddAutomationRunID adds value to the "automation_run_id" field.
-func (_u *OutboundMessageUpdate) AddAutomationRunID(v int64) *OutboundMessageUpdate {
-	_u.mutation.AddAutomationRunID(v)
 	return _u
 }
 
@@ -376,7 +354,6 @@ func (_u *OutboundMessageUpdate) ClearAutomationStep() *OutboundMessageUpdate {
 
 // SetIntegrationID sets the "integration_id" field.
 func (_u *OutboundMessageUpdate) SetIntegrationID(v int64) *OutboundMessageUpdate {
-	_u.mutation.ResetIntegrationID()
 	_u.mutation.SetIntegrationID(v)
 	return _u
 }
@@ -389,12 +366,6 @@ func (_u *OutboundMessageUpdate) SetNillableIntegrationID(v *int64) *OutboundMes
 	return _u
 }
 
-// AddIntegrationID adds value to the "integration_id" field.
-func (_u *OutboundMessageUpdate) AddIntegrationID(v int64) *OutboundMessageUpdate {
-	_u.mutation.AddIntegrationID(v)
-	return _u
-}
-
 // ClearIntegrationID clears the value of the "integration_id" field.
 func (_u *OutboundMessageUpdate) ClearIntegrationID() *OutboundMessageUpdate {
 	_u.mutation.ClearIntegrationID()
@@ -403,7 +374,6 @@ func (_u *OutboundMessageUpdate) ClearIntegrationID() *OutboundMessageUpdate {
 
 // SetTemplateID sets the "template_id" field.
 func (_u *OutboundMessageUpdate) SetTemplateID(v int64) *OutboundMessageUpdate {
-	_u.mutation.ResetTemplateID()
 	_u.mutation.SetTemplateID(v)
 	return _u
 }
@@ -413,12 +383,6 @@ func (_u *OutboundMessageUpdate) SetNillableTemplateID(v *int64) *OutboundMessag
 	if v != nil {
 		_u.SetTemplateID(*v)
 	}
-	return _u
-}
-
-// AddTemplateID adds value to the "template_id" field.
-func (_u *OutboundMessageUpdate) AddTemplateID(v int64) *OutboundMessageUpdate {
-	_u.mutation.AddTemplateID(v)
 	return _u
 }
 
@@ -433,6 +397,36 @@ func (_u *OutboundMessageUpdate) SetWorkspace(v *Workspace) *OutboundMessageUpda
 	return _u.SetWorkspaceID(v.ID)
 }
 
+// SetBroadcast sets the "broadcast" edge to the Broadcast entity.
+func (_u *OutboundMessageUpdate) SetBroadcast(v *Broadcast) *OutboundMessageUpdate {
+	return _u.SetBroadcastID(v.ID)
+}
+
+// SetAutomation sets the "automation" edge to the Automation entity.
+func (_u *OutboundMessageUpdate) SetAutomation(v *Automation) *OutboundMessageUpdate {
+	return _u.SetAutomationID(v.ID)
+}
+
+// SetIntegration sets the "integration" edge to the Integration entity.
+func (_u *OutboundMessageUpdate) SetIntegration(v *Integration) *OutboundMessageUpdate {
+	return _u.SetIntegrationID(v.ID)
+}
+
+// SetBroadcastRecipient sets the "broadcast_recipient" edge to the BroadcastRecipient entity.
+func (_u *OutboundMessageUpdate) SetBroadcastRecipient(v *BroadcastRecipient) *OutboundMessageUpdate {
+	return _u.SetBroadcastRecipientID(v.ID)
+}
+
+// SetAutomationRun sets the "automation_run" edge to the AutomationRun entity.
+func (_u *OutboundMessageUpdate) SetAutomationRun(v *AutomationRun) *OutboundMessageUpdate {
+	return _u.SetAutomationRunID(v.ID)
+}
+
+// SetTemplate sets the "template" edge to the EmailTemplate entity.
+func (_u *OutboundMessageUpdate) SetTemplate(v *EmailTemplate) *OutboundMessageUpdate {
+	return _u.SetTemplateID(v.ID)
+}
+
 // Mutation returns the OutboundMessageMutation object of the builder.
 func (_u *OutboundMessageUpdate) Mutation() *OutboundMessageMutation {
 	return _u.mutation
@@ -441,6 +435,42 @@ func (_u *OutboundMessageUpdate) Mutation() *OutboundMessageMutation {
 // ClearWorkspace clears the "workspace" edge to the Workspace entity.
 func (_u *OutboundMessageUpdate) ClearWorkspace() *OutboundMessageUpdate {
 	_u.mutation.ClearWorkspace()
+	return _u
+}
+
+// ClearBroadcast clears the "broadcast" edge to the Broadcast entity.
+func (_u *OutboundMessageUpdate) ClearBroadcast() *OutboundMessageUpdate {
+	_u.mutation.ClearBroadcast()
+	return _u
+}
+
+// ClearAutomation clears the "automation" edge to the Automation entity.
+func (_u *OutboundMessageUpdate) ClearAutomation() *OutboundMessageUpdate {
+	_u.mutation.ClearAutomation()
+	return _u
+}
+
+// ClearIntegration clears the "integration" edge to the Integration entity.
+func (_u *OutboundMessageUpdate) ClearIntegration() *OutboundMessageUpdate {
+	_u.mutation.ClearIntegration()
+	return _u
+}
+
+// ClearBroadcastRecipient clears the "broadcast_recipient" edge to the BroadcastRecipient entity.
+func (_u *OutboundMessageUpdate) ClearBroadcastRecipient() *OutboundMessageUpdate {
+	_u.mutation.ClearBroadcastRecipient()
+	return _u
+}
+
+// ClearAutomationRun clears the "automation_run" edge to the AutomationRun entity.
+func (_u *OutboundMessageUpdate) ClearAutomationRun() *OutboundMessageUpdate {
+	_u.mutation.ClearAutomationRun()
+	return _u
+}
+
+// ClearTemplate clears the "template" edge to the EmailTemplate entity.
+func (_u *OutboundMessageUpdate) ClearTemplate() *OutboundMessageUpdate {
+	_u.mutation.ClearTemplate()
 	return _u
 }
 
@@ -573,42 +603,6 @@ func (_u *OutboundMessageUpdate) sqlSave(ctx context.Context) (_node int, err er
 	if _u.mutation.SentAtCleared() {
 		_spec.ClearField(outboundmessage.FieldSentAt, field.TypeTime)
 	}
-	if value, ok := _u.mutation.BroadcastID(); ok {
-		_spec.SetField(outboundmessage.FieldBroadcastID, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.AddedBroadcastID(); ok {
-		_spec.AddField(outboundmessage.FieldBroadcastID, field.TypeInt64, value)
-	}
-	if _u.mutation.BroadcastIDCleared() {
-		_spec.ClearField(outboundmessage.FieldBroadcastID, field.TypeInt64)
-	}
-	if value, ok := _u.mutation.BroadcastRecipientID(); ok {
-		_spec.SetField(outboundmessage.FieldBroadcastRecipientID, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.AddedBroadcastRecipientID(); ok {
-		_spec.AddField(outboundmessage.FieldBroadcastRecipientID, field.TypeInt64, value)
-	}
-	if _u.mutation.BroadcastRecipientIDCleared() {
-		_spec.ClearField(outboundmessage.FieldBroadcastRecipientID, field.TypeInt64)
-	}
-	if value, ok := _u.mutation.AutomationID(); ok {
-		_spec.SetField(outboundmessage.FieldAutomationID, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.AddedAutomationID(); ok {
-		_spec.AddField(outboundmessage.FieldAutomationID, field.TypeInt64, value)
-	}
-	if _u.mutation.AutomationIDCleared() {
-		_spec.ClearField(outboundmessage.FieldAutomationID, field.TypeInt64)
-	}
-	if value, ok := _u.mutation.AutomationRunID(); ok {
-		_spec.SetField(outboundmessage.FieldAutomationRunID, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.AddedAutomationRunID(); ok {
-		_spec.AddField(outboundmessage.FieldAutomationRunID, field.TypeInt64, value)
-	}
-	if _u.mutation.AutomationRunIDCleared() {
-		_spec.ClearField(outboundmessage.FieldAutomationRunID, field.TypeInt64)
-	}
 	if value, ok := _u.mutation.AutomationStep(); ok {
 		_spec.SetField(outboundmessage.FieldAutomationStep, field.TypeInt, value)
 	}
@@ -617,24 +611,6 @@ func (_u *OutboundMessageUpdate) sqlSave(ctx context.Context) (_node int, err er
 	}
 	if _u.mutation.AutomationStepCleared() {
 		_spec.ClearField(outboundmessage.FieldAutomationStep, field.TypeInt)
-	}
-	if value, ok := _u.mutation.IntegrationID(); ok {
-		_spec.SetField(outboundmessage.FieldIntegrationID, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.AddedIntegrationID(); ok {
-		_spec.AddField(outboundmessage.FieldIntegrationID, field.TypeInt64, value)
-	}
-	if _u.mutation.IntegrationIDCleared() {
-		_spec.ClearField(outboundmessage.FieldIntegrationID, field.TypeInt64)
-	}
-	if value, ok := _u.mutation.TemplateID(); ok {
-		_spec.SetField(outboundmessage.FieldTemplateID, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.AddedTemplateID(); ok {
-		_spec.AddField(outboundmessage.FieldTemplateID, field.TypeInt64, value)
-	}
-	if _u.mutation.TemplateIDCleared() {
-		_spec.ClearField(outboundmessage.FieldTemplateID, field.TypeInt64)
 	}
 	if _u.mutation.AppOriginCleared() {
 		_spec.ClearField(outboundmessage.FieldAppOrigin, field.TypeString)
@@ -661,6 +637,180 @@ func (_u *OutboundMessageUpdate) sqlSave(ctx context.Context) (_node int, err er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(workspace.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.BroadcastCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   outboundmessage.BroadcastTable,
+			Columns: []string{outboundmessage.BroadcastColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(broadcast.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.BroadcastIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   outboundmessage.BroadcastTable,
+			Columns: []string{outboundmessage.BroadcastColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(broadcast.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.AutomationCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   outboundmessage.AutomationTable,
+			Columns: []string{outboundmessage.AutomationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automation.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.AutomationIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   outboundmessage.AutomationTable,
+			Columns: []string{outboundmessage.AutomationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automation.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.IntegrationCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   outboundmessage.IntegrationTable,
+			Columns: []string{outboundmessage.IntegrationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(integration.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.IntegrationIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   outboundmessage.IntegrationTable,
+			Columns: []string{outboundmessage.IntegrationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(integration.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.BroadcastRecipientCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   outboundmessage.BroadcastRecipientTable,
+			Columns: []string{outboundmessage.BroadcastRecipientColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(broadcastrecipient.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.BroadcastRecipientIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   outboundmessage.BroadcastRecipientTable,
+			Columns: []string{outboundmessage.BroadcastRecipientColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(broadcastrecipient.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.AutomationRunCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   outboundmessage.AutomationRunTable,
+			Columns: []string{outboundmessage.AutomationRunColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationrun.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.AutomationRunIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   outboundmessage.AutomationRunTable,
+			Columns: []string{outboundmessage.AutomationRunColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationrun.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.TemplateCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   outboundmessage.TemplateTable,
+			Columns: []string{outboundmessage.TemplateColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(emailtemplate.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.TemplateIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   outboundmessage.TemplateTable,
+			Columns: []string{outboundmessage.TemplateColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(emailtemplate.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -901,7 +1051,6 @@ func (_u *OutboundMessageUpdateOne) ClearSentAt() *OutboundMessageUpdateOne {
 
 // SetBroadcastID sets the "broadcast_id" field.
 func (_u *OutboundMessageUpdateOne) SetBroadcastID(v int64) *OutboundMessageUpdateOne {
-	_u.mutation.ResetBroadcastID()
 	_u.mutation.SetBroadcastID(v)
 	return _u
 }
@@ -914,12 +1063,6 @@ func (_u *OutboundMessageUpdateOne) SetNillableBroadcastID(v *int64) *OutboundMe
 	return _u
 }
 
-// AddBroadcastID adds value to the "broadcast_id" field.
-func (_u *OutboundMessageUpdateOne) AddBroadcastID(v int64) *OutboundMessageUpdateOne {
-	_u.mutation.AddBroadcastID(v)
-	return _u
-}
-
 // ClearBroadcastID clears the value of the "broadcast_id" field.
 func (_u *OutboundMessageUpdateOne) ClearBroadcastID() *OutboundMessageUpdateOne {
 	_u.mutation.ClearBroadcastID()
@@ -928,7 +1071,6 @@ func (_u *OutboundMessageUpdateOne) ClearBroadcastID() *OutboundMessageUpdateOne
 
 // SetBroadcastRecipientID sets the "broadcast_recipient_id" field.
 func (_u *OutboundMessageUpdateOne) SetBroadcastRecipientID(v int64) *OutboundMessageUpdateOne {
-	_u.mutation.ResetBroadcastRecipientID()
 	_u.mutation.SetBroadcastRecipientID(v)
 	return _u
 }
@@ -941,12 +1083,6 @@ func (_u *OutboundMessageUpdateOne) SetNillableBroadcastRecipientID(v *int64) *O
 	return _u
 }
 
-// AddBroadcastRecipientID adds value to the "broadcast_recipient_id" field.
-func (_u *OutboundMessageUpdateOne) AddBroadcastRecipientID(v int64) *OutboundMessageUpdateOne {
-	_u.mutation.AddBroadcastRecipientID(v)
-	return _u
-}
-
 // ClearBroadcastRecipientID clears the value of the "broadcast_recipient_id" field.
 func (_u *OutboundMessageUpdateOne) ClearBroadcastRecipientID() *OutboundMessageUpdateOne {
 	_u.mutation.ClearBroadcastRecipientID()
@@ -955,7 +1091,6 @@ func (_u *OutboundMessageUpdateOne) ClearBroadcastRecipientID() *OutboundMessage
 
 // SetAutomationID sets the "automation_id" field.
 func (_u *OutboundMessageUpdateOne) SetAutomationID(v int64) *OutboundMessageUpdateOne {
-	_u.mutation.ResetAutomationID()
 	_u.mutation.SetAutomationID(v)
 	return _u
 }
@@ -968,12 +1103,6 @@ func (_u *OutboundMessageUpdateOne) SetNillableAutomationID(v *int64) *OutboundM
 	return _u
 }
 
-// AddAutomationID adds value to the "automation_id" field.
-func (_u *OutboundMessageUpdateOne) AddAutomationID(v int64) *OutboundMessageUpdateOne {
-	_u.mutation.AddAutomationID(v)
-	return _u
-}
-
 // ClearAutomationID clears the value of the "automation_id" field.
 func (_u *OutboundMessageUpdateOne) ClearAutomationID() *OutboundMessageUpdateOne {
 	_u.mutation.ClearAutomationID()
@@ -982,7 +1111,6 @@ func (_u *OutboundMessageUpdateOne) ClearAutomationID() *OutboundMessageUpdateOn
 
 // SetAutomationRunID sets the "automation_run_id" field.
 func (_u *OutboundMessageUpdateOne) SetAutomationRunID(v int64) *OutboundMessageUpdateOne {
-	_u.mutation.ResetAutomationRunID()
 	_u.mutation.SetAutomationRunID(v)
 	return _u
 }
@@ -992,12 +1120,6 @@ func (_u *OutboundMessageUpdateOne) SetNillableAutomationRunID(v *int64) *Outbou
 	if v != nil {
 		_u.SetAutomationRunID(*v)
 	}
-	return _u
-}
-
-// AddAutomationRunID adds value to the "automation_run_id" field.
-func (_u *OutboundMessageUpdateOne) AddAutomationRunID(v int64) *OutboundMessageUpdateOne {
-	_u.mutation.AddAutomationRunID(v)
 	return _u
 }
 
@@ -1036,7 +1158,6 @@ func (_u *OutboundMessageUpdateOne) ClearAutomationStep() *OutboundMessageUpdate
 
 // SetIntegrationID sets the "integration_id" field.
 func (_u *OutboundMessageUpdateOne) SetIntegrationID(v int64) *OutboundMessageUpdateOne {
-	_u.mutation.ResetIntegrationID()
 	_u.mutation.SetIntegrationID(v)
 	return _u
 }
@@ -1049,12 +1170,6 @@ func (_u *OutboundMessageUpdateOne) SetNillableIntegrationID(v *int64) *Outbound
 	return _u
 }
 
-// AddIntegrationID adds value to the "integration_id" field.
-func (_u *OutboundMessageUpdateOne) AddIntegrationID(v int64) *OutboundMessageUpdateOne {
-	_u.mutation.AddIntegrationID(v)
-	return _u
-}
-
 // ClearIntegrationID clears the value of the "integration_id" field.
 func (_u *OutboundMessageUpdateOne) ClearIntegrationID() *OutboundMessageUpdateOne {
 	_u.mutation.ClearIntegrationID()
@@ -1063,7 +1178,6 @@ func (_u *OutboundMessageUpdateOne) ClearIntegrationID() *OutboundMessageUpdateO
 
 // SetTemplateID sets the "template_id" field.
 func (_u *OutboundMessageUpdateOne) SetTemplateID(v int64) *OutboundMessageUpdateOne {
-	_u.mutation.ResetTemplateID()
 	_u.mutation.SetTemplateID(v)
 	return _u
 }
@@ -1073,12 +1187,6 @@ func (_u *OutboundMessageUpdateOne) SetNillableTemplateID(v *int64) *OutboundMes
 	if v != nil {
 		_u.SetTemplateID(*v)
 	}
-	return _u
-}
-
-// AddTemplateID adds value to the "template_id" field.
-func (_u *OutboundMessageUpdateOne) AddTemplateID(v int64) *OutboundMessageUpdateOne {
-	_u.mutation.AddTemplateID(v)
 	return _u
 }
 
@@ -1093,6 +1201,36 @@ func (_u *OutboundMessageUpdateOne) SetWorkspace(v *Workspace) *OutboundMessageU
 	return _u.SetWorkspaceID(v.ID)
 }
 
+// SetBroadcast sets the "broadcast" edge to the Broadcast entity.
+func (_u *OutboundMessageUpdateOne) SetBroadcast(v *Broadcast) *OutboundMessageUpdateOne {
+	return _u.SetBroadcastID(v.ID)
+}
+
+// SetAutomation sets the "automation" edge to the Automation entity.
+func (_u *OutboundMessageUpdateOne) SetAutomation(v *Automation) *OutboundMessageUpdateOne {
+	return _u.SetAutomationID(v.ID)
+}
+
+// SetIntegration sets the "integration" edge to the Integration entity.
+func (_u *OutboundMessageUpdateOne) SetIntegration(v *Integration) *OutboundMessageUpdateOne {
+	return _u.SetIntegrationID(v.ID)
+}
+
+// SetBroadcastRecipient sets the "broadcast_recipient" edge to the BroadcastRecipient entity.
+func (_u *OutboundMessageUpdateOne) SetBroadcastRecipient(v *BroadcastRecipient) *OutboundMessageUpdateOne {
+	return _u.SetBroadcastRecipientID(v.ID)
+}
+
+// SetAutomationRun sets the "automation_run" edge to the AutomationRun entity.
+func (_u *OutboundMessageUpdateOne) SetAutomationRun(v *AutomationRun) *OutboundMessageUpdateOne {
+	return _u.SetAutomationRunID(v.ID)
+}
+
+// SetTemplate sets the "template" edge to the EmailTemplate entity.
+func (_u *OutboundMessageUpdateOne) SetTemplate(v *EmailTemplate) *OutboundMessageUpdateOne {
+	return _u.SetTemplateID(v.ID)
+}
+
 // Mutation returns the OutboundMessageMutation object of the builder.
 func (_u *OutboundMessageUpdateOne) Mutation() *OutboundMessageMutation {
 	return _u.mutation
@@ -1101,6 +1239,42 @@ func (_u *OutboundMessageUpdateOne) Mutation() *OutboundMessageMutation {
 // ClearWorkspace clears the "workspace" edge to the Workspace entity.
 func (_u *OutboundMessageUpdateOne) ClearWorkspace() *OutboundMessageUpdateOne {
 	_u.mutation.ClearWorkspace()
+	return _u
+}
+
+// ClearBroadcast clears the "broadcast" edge to the Broadcast entity.
+func (_u *OutboundMessageUpdateOne) ClearBroadcast() *OutboundMessageUpdateOne {
+	_u.mutation.ClearBroadcast()
+	return _u
+}
+
+// ClearAutomation clears the "automation" edge to the Automation entity.
+func (_u *OutboundMessageUpdateOne) ClearAutomation() *OutboundMessageUpdateOne {
+	_u.mutation.ClearAutomation()
+	return _u
+}
+
+// ClearIntegration clears the "integration" edge to the Integration entity.
+func (_u *OutboundMessageUpdateOne) ClearIntegration() *OutboundMessageUpdateOne {
+	_u.mutation.ClearIntegration()
+	return _u
+}
+
+// ClearBroadcastRecipient clears the "broadcast_recipient" edge to the BroadcastRecipient entity.
+func (_u *OutboundMessageUpdateOne) ClearBroadcastRecipient() *OutboundMessageUpdateOne {
+	_u.mutation.ClearBroadcastRecipient()
+	return _u
+}
+
+// ClearAutomationRun clears the "automation_run" edge to the AutomationRun entity.
+func (_u *OutboundMessageUpdateOne) ClearAutomationRun() *OutboundMessageUpdateOne {
+	_u.mutation.ClearAutomationRun()
+	return _u
+}
+
+// ClearTemplate clears the "template" edge to the EmailTemplate entity.
+func (_u *OutboundMessageUpdateOne) ClearTemplate() *OutboundMessageUpdateOne {
+	_u.mutation.ClearTemplate()
 	return _u
 }
 
@@ -1263,42 +1437,6 @@ func (_u *OutboundMessageUpdateOne) sqlSave(ctx context.Context) (_node *Outboun
 	if _u.mutation.SentAtCleared() {
 		_spec.ClearField(outboundmessage.FieldSentAt, field.TypeTime)
 	}
-	if value, ok := _u.mutation.BroadcastID(); ok {
-		_spec.SetField(outboundmessage.FieldBroadcastID, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.AddedBroadcastID(); ok {
-		_spec.AddField(outboundmessage.FieldBroadcastID, field.TypeInt64, value)
-	}
-	if _u.mutation.BroadcastIDCleared() {
-		_spec.ClearField(outboundmessage.FieldBroadcastID, field.TypeInt64)
-	}
-	if value, ok := _u.mutation.BroadcastRecipientID(); ok {
-		_spec.SetField(outboundmessage.FieldBroadcastRecipientID, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.AddedBroadcastRecipientID(); ok {
-		_spec.AddField(outboundmessage.FieldBroadcastRecipientID, field.TypeInt64, value)
-	}
-	if _u.mutation.BroadcastRecipientIDCleared() {
-		_spec.ClearField(outboundmessage.FieldBroadcastRecipientID, field.TypeInt64)
-	}
-	if value, ok := _u.mutation.AutomationID(); ok {
-		_spec.SetField(outboundmessage.FieldAutomationID, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.AddedAutomationID(); ok {
-		_spec.AddField(outboundmessage.FieldAutomationID, field.TypeInt64, value)
-	}
-	if _u.mutation.AutomationIDCleared() {
-		_spec.ClearField(outboundmessage.FieldAutomationID, field.TypeInt64)
-	}
-	if value, ok := _u.mutation.AutomationRunID(); ok {
-		_spec.SetField(outboundmessage.FieldAutomationRunID, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.AddedAutomationRunID(); ok {
-		_spec.AddField(outboundmessage.FieldAutomationRunID, field.TypeInt64, value)
-	}
-	if _u.mutation.AutomationRunIDCleared() {
-		_spec.ClearField(outboundmessage.FieldAutomationRunID, field.TypeInt64)
-	}
 	if value, ok := _u.mutation.AutomationStep(); ok {
 		_spec.SetField(outboundmessage.FieldAutomationStep, field.TypeInt, value)
 	}
@@ -1307,24 +1445,6 @@ func (_u *OutboundMessageUpdateOne) sqlSave(ctx context.Context) (_node *Outboun
 	}
 	if _u.mutation.AutomationStepCleared() {
 		_spec.ClearField(outboundmessage.FieldAutomationStep, field.TypeInt)
-	}
-	if value, ok := _u.mutation.IntegrationID(); ok {
-		_spec.SetField(outboundmessage.FieldIntegrationID, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.AddedIntegrationID(); ok {
-		_spec.AddField(outboundmessage.FieldIntegrationID, field.TypeInt64, value)
-	}
-	if _u.mutation.IntegrationIDCleared() {
-		_spec.ClearField(outboundmessage.FieldIntegrationID, field.TypeInt64)
-	}
-	if value, ok := _u.mutation.TemplateID(); ok {
-		_spec.SetField(outboundmessage.FieldTemplateID, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.AddedTemplateID(); ok {
-		_spec.AddField(outboundmessage.FieldTemplateID, field.TypeInt64, value)
-	}
-	if _u.mutation.TemplateIDCleared() {
-		_spec.ClearField(outboundmessage.FieldTemplateID, field.TypeInt64)
 	}
 	if _u.mutation.AppOriginCleared() {
 		_spec.ClearField(outboundmessage.FieldAppOrigin, field.TypeString)
@@ -1351,6 +1471,180 @@ func (_u *OutboundMessageUpdateOne) sqlSave(ctx context.Context) (_node *Outboun
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(workspace.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.BroadcastCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   outboundmessage.BroadcastTable,
+			Columns: []string{outboundmessage.BroadcastColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(broadcast.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.BroadcastIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   outboundmessage.BroadcastTable,
+			Columns: []string{outboundmessage.BroadcastColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(broadcast.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.AutomationCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   outboundmessage.AutomationTable,
+			Columns: []string{outboundmessage.AutomationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automation.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.AutomationIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   outboundmessage.AutomationTable,
+			Columns: []string{outboundmessage.AutomationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automation.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.IntegrationCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   outboundmessage.IntegrationTable,
+			Columns: []string{outboundmessage.IntegrationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(integration.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.IntegrationIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   outboundmessage.IntegrationTable,
+			Columns: []string{outboundmessage.IntegrationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(integration.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.BroadcastRecipientCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   outboundmessage.BroadcastRecipientTable,
+			Columns: []string{outboundmessage.BroadcastRecipientColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(broadcastrecipient.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.BroadcastRecipientIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   outboundmessage.BroadcastRecipientTable,
+			Columns: []string{outboundmessage.BroadcastRecipientColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(broadcastrecipient.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.AutomationRunCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   outboundmessage.AutomationRunTable,
+			Columns: []string{outboundmessage.AutomationRunColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationrun.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.AutomationRunIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   outboundmessage.AutomationRunTable,
+			Columns: []string{outboundmessage.AutomationRunColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationrun.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.TemplateCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   outboundmessage.TemplateTable,
+			Columns: []string{outboundmessage.TemplateColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(emailtemplate.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.TemplateIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   outboundmessage.TemplateTable,
+			Columns: []string{outboundmessage.TemplateColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(emailtemplate.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

@@ -18,6 +18,7 @@ import (
 
 	sphericon "github.com/getsphericon/sphericon"
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/jobs"
@@ -265,6 +266,64 @@ func TestMigrateRefusesToDropTheDefinitionBeforeTheBackfill(t *testing.T) {
 	_, err = db.MigrateFS(t.Context(), sqlDB, all)
 	require.ErrorContains(t, err, "automations.definition cannot be dropped")
 	assert.Equal(t, 1, testhelper.ColumnsOf(t, sqlDB, "automations", "definition"), "the column is still there")
+}
+
+// An Instance whose Outbound messages hold ids of rows that are gone (an Automation run or a Template
+// erased before the references were foreign keys) migrates: the keys are added NOT VALID, so the
+// old rows are left alone and the next write to one still works.
+func TestMigrateAddsTheOutboundMessageKeysNotValidOverDanglingIds(t *testing.T) {
+	sqlDB := openEmpty(t)
+	client := migrateWithDanglingOutboundRefs(t, sqlDB)
+
+	assert.Len(t, testhelper.UnvalidatedConstraints(t, sqlDB, "outbound_messages"), 6)
+	err := client.OutboundMessage.UpdateOneID(2).SetStatus(outboundmessage.StatusFailed).Exec(t.Context())
+	require.NoError(t, err, "a message with a dangling id can still change")
+}
+
+// The job clears exactly the ids that point at nothing, keeps every other column and every id that
+// resolves, then validates the keys; once it has run it finds nothing.
+func TestClearOutboundMessageRefsClearsDanglingIdsThenValidatesTheKeys(t *testing.T) {
+	sqlDB := openEmpty(t)
+	client := migrateWithDanglingOutboundRefs(t, sqlDB)
+
+	// A batch of one makes the job loop.
+	cleared, err := jobs.ClearOutboundMessageRefs(t.Context(), client, 1)
+	require.NoError(t, err)
+	assert.Equal(t, 3, cleared)
+
+	type refs struct {
+		Template, Run, Integration *int64
+		Destination                string
+	}
+	messages, err := client.OutboundMessage.Query().Order(ent.Asc(outboundmessage.FieldID)).All(t.Context())
+	require.NoError(t, err)
+	got := lo.Map(messages, func(m *ent.OutboundMessage, _ int) refs {
+		return refs{m.TemplateID, m.AutomationRunID, m.IntegrationID, m.Destination}
+	})
+	assert.Equal(t, []refs{
+		{new(int64(1)), nil, nil, "a@x.test"},
+		{nil, nil, nil, "b@x.test"},
+		{nil, nil, nil, "c@x.test"},
+	}, got)
+	assert.Empty(t, testhelper.UnvalidatedConstraints(t, sqlDB, "outbound_messages"))
+
+	cleared, err = jobs.ClearOutboundMessageRefs(t.Context(), client, 1)
+	require.NoError(t, err)
+	assert.Zero(t, cleared)
+}
+
+func migrateWithDanglingOutboundRefs(t *testing.T, sqlDB *sql.DB) *ent.Client {
+	t.Helper()
+	before := migrationsWhere(t, func(name string) bool { return name < "20261022003116" })
+	_, err := db.MigrateFS(t.Context(), sqlDB, before)
+	require.NoError(t, err)
+	testhelper.LoadLegacyFixtures(t, sqlDB, legacyFixtures("20261022003116_outbound_message_refs.sql"))
+	all := migrationsWhere(t, func(string) bool { return true })
+	_, err = db.MigrateFS(t.Context(), sqlDB, all)
+	require.NoError(t, err)
+	client := db.NewEntClient(sqlDB)
+	t.Cleanup(func() { _ = client.Close() })
+	return client
 }
 
 // An Instance with no Enrollment to move ends with the column the ent schema declares: NOT NULL.

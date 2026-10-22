@@ -1,9 +1,9 @@
 # Workspace acme (id 1). Outbound messages (ADR 0015): the durable record of every email
 # sent on the workspace's behalf. These rows are the transactional surface's history
-# (kind: transactional); template_id is a plain id snapshot into email_templates (not
-# an FK). Outcomes cover sent / skipped (suppression) / failed; idempotency_key is
+# (kind: transactional); template_id is a foreign key into email_templates (set null when the
+# Template is deleted). Outcomes cover sent / skipped (suppression) / failed; idempotency_key is
 # unique per (workspace, key) and namespaced by surface. Rows 100-105 are anchors.
-- id: 100
+- id: 100 # fixture: OutboundMessageWelcome
   kind: transactional
   idempotency_key: 'transactional:txn-welcome-100'
   channel: email
@@ -105,7 +105,7 @@
 
 # Usage of the Integrations over the trailing 24 hours (ADR 0023): two sends inside the
 # window and one outside it through the default Integration (1), one inside through the
-# disabled SES one (2). integration_id is a plain id snapshot, not an FK.
+# disabled SES one (2). integration_id is a foreign key.
 - id: 107
   kind: broadcast
   idempotency_key: 'broadcast:fixture-usage-107'
@@ -203,6 +203,24 @@
   channel: email
   destination: erin@initech.test
   contact_id: 300
+  status: sent
+  sending_domain: mail.initech.test
+  sent_at: '2026-01-02 00:00:00'
+  claimed_at: '2026-01-02 00:00:00'
+  workspace_id: 3
+  created_at: '2026-01-02 00:00:00'
+  updated_at: '2026-01-02 00:00:00'
+# Initech: a send of Automation 300 to ContactErasable, for its Enrollment (run 3000), which
+# Erasure deletes while the message stays.
+- id: 305 # fixture: OutboundMessageErasableAutomation
+  kind: automation
+  idempotency_key: 'automation:3000:0'
+  channel: email
+  destination: erin@initech.test
+  contact_id: 300
+  automation_id: 300
+  automation_run_id: 3000
+  automation_step: 0
   status: sent
   sending_domain: mail.initech.test
   sent_at: '2026-01-02 00:00:00'

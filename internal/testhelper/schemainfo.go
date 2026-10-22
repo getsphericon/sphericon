@@ -30,3 +30,22 @@ func ColumnIsNullable(t *testing.T, sqlDB *sql.DB, table, column string) bool {
 		`SELECT is_nullable FROM information_schema.columns WHERE table_name = $1 AND column_name = $2`, table, column).Scan(&nullable))
 	return nullable == "YES"
 }
+
+// UnvalidatedConstraints is the names of the constraints of table that were added NOT VALID and
+// are not validated yet, sorted.
+func UnvalidatedConstraints(t *testing.T, sqlDB *sql.DB, table string) []string {
+	t.Helper()
+	// raw sql: reads pg_constraint, which is not an ent entity.
+	rows, err := sqlDB.QueryContext(t.Context(),
+		`SELECT conname FROM pg_constraint WHERE conrelid = $1::regclass AND NOT convalidated ORDER BY conname`, table)
+	require.NoError(t, err)
+	defer func() { _ = rows.Close() }()
+	var names []string
+	for rows.Next() {
+		var name string
+		require.NoError(t, rows.Scan(&name))
+		names = append(names, name)
+	}
+	require.NoError(t, rows.Err())
+	return names
+}

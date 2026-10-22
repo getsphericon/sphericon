@@ -4721,6 +4721,102 @@ func (c *OutboundMessageClient) QueryWorkspace(_m *OutboundMessage) *WorkspaceQu
 	return query
 }
 
+// QueryBroadcast queries the broadcast edge of a OutboundMessage.
+func (c *OutboundMessageClient) QueryBroadcast(_m *OutboundMessage) *BroadcastQuery {
+	query := (&BroadcastClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(outboundmessage.Table, outboundmessage.FieldID, id),
+			sqlgraph.To(broadcast.Table, broadcast.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, outboundmessage.BroadcastTable, outboundmessage.BroadcastColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryAutomation queries the automation edge of a OutboundMessage.
+func (c *OutboundMessageClient) QueryAutomation(_m *OutboundMessage) *AutomationQuery {
+	query := (&AutomationClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(outboundmessage.Table, outboundmessage.FieldID, id),
+			sqlgraph.To(automation.Table, automation.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, outboundmessage.AutomationTable, outboundmessage.AutomationColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryIntegration queries the integration edge of a OutboundMessage.
+func (c *OutboundMessageClient) QueryIntegration(_m *OutboundMessage) *IntegrationQuery {
+	query := (&IntegrationClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(outboundmessage.Table, outboundmessage.FieldID, id),
+			sqlgraph.To(integration.Table, integration.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, outboundmessage.IntegrationTable, outboundmessage.IntegrationColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryBroadcastRecipient queries the broadcast_recipient edge of a OutboundMessage.
+func (c *OutboundMessageClient) QueryBroadcastRecipient(_m *OutboundMessage) *BroadcastRecipientQuery {
+	query := (&BroadcastRecipientClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(outboundmessage.Table, outboundmessage.FieldID, id),
+			sqlgraph.To(broadcastrecipient.Table, broadcastrecipient.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, outboundmessage.BroadcastRecipientTable, outboundmessage.BroadcastRecipientColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryAutomationRun queries the automation_run edge of a OutboundMessage.
+func (c *OutboundMessageClient) QueryAutomationRun(_m *OutboundMessage) *AutomationRunQuery {
+	query := (&AutomationRunClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(outboundmessage.Table, outboundmessage.FieldID, id),
+			sqlgraph.To(automationrun.Table, automationrun.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, outboundmessage.AutomationRunTable, outboundmessage.AutomationRunColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryTemplate queries the template edge of a OutboundMessage.
+func (c *OutboundMessageClient) QueryTemplate(_m *OutboundMessage) *EmailTemplateQuery {
+	query := (&EmailTemplateClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(outboundmessage.Table, outboundmessage.FieldID, id),
+			sqlgraph.To(emailtemplate.Table, emailtemplate.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, outboundmessage.TemplateTable, outboundmessage.TemplateColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *OutboundMessageClient) Hooks() []Hook {
 	return c.hooks.OutboundMessage

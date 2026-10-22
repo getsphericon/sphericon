@@ -145,6 +145,12 @@ func TestExternalContactsEraseRemovesThePersonsData(t *testing.T) {
 	r, err := env.DB.BroadcastRecipient.Get(ctx, fixtures.BroadcastRecipientErasableID)
 	require.NoError(t, err)
 	assert.Zero(t, r.ContactID)
+
+	// The Enrollment is deleted; the message it sent keeps its Automation and loses the run.
+	sent, err := env.DB.OutboundMessage.Get(ctx, fixtures.OutboundMessageErasableAutomationID)
+	require.NoError(t, err)
+	assert.Nil(t, sent.AutomationRunID)
+	assert.EqualValues(t, fixtures.AutomationInitechID, *sent.AutomationID)
 }
 
 func TestExternalContactsEraseLeavesOtherContactsAlone(t *testing.T) {

@@ -1,5 +1,5 @@
 # Workspace acme (id 1). Reusable HTML bodies. transactional_emails reference these
-# by id snapshot (not FK).
+# by foreign key.
 - id: 1 # fixture: TemplateWelcome
   name: Welcome
   subject: "Welcome to CodeBasics \U0001F44B"

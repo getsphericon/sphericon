@@ -1252,45 +1252,45 @@ func ScopedEntities() []ScopedEntity {
 			},
 			Refs: []ScopedRef{
 				{
-					Name: "contact_id", Target: "Contact",
-					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
-						return s.OutboundMessage().UpdateOneID(id).SetContactID(target).Exec(ctx)
-					},
-				},
-				{
-					Name: "broadcast_id", Target: "Broadcast",
+					Name: "broadcast", Target: "Broadcast",
 					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
 						return s.OutboundMessage().UpdateOneID(id).SetBroadcastID(target).Exec(ctx)
 					},
 				},
 				{
-					Name: "broadcast_recipient_id", Target: "BroadcastRecipient",
-					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
-						return s.OutboundMessage().UpdateOneID(id).SetBroadcastRecipientID(target).Exec(ctx)
-					},
-				},
-				{
-					Name: "automation_id", Target: "Automation",
+					Name: "automation", Target: "Automation",
 					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
 						return s.OutboundMessage().UpdateOneID(id).SetAutomationID(target).Exec(ctx)
 					},
 				},
 				{
-					Name: "automation_run_id", Target: "AutomationRun",
-					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
-						return s.OutboundMessage().UpdateOneID(id).SetAutomationRunID(target).Exec(ctx)
-					},
-				},
-				{
-					Name: "integration_id", Target: "Integration",
+					Name: "integration", Target: "Integration",
 					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
 						return s.OutboundMessage().UpdateOneID(id).SetIntegrationID(target).Exec(ctx)
 					},
 				},
 				{
-					Name: "template_id", Target: "EmailTemplate",
+					Name: "broadcast_recipient", Target: "BroadcastRecipient",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.OutboundMessage().UpdateOneID(id).SetBroadcastRecipientID(target).Exec(ctx)
+					},
+				},
+				{
+					Name: "automation_run", Target: "AutomationRun",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.OutboundMessage().UpdateOneID(id).SetAutomationRunID(target).Exec(ctx)
+					},
+				},
+				{
+					Name: "template", Target: "EmailTemplate",
 					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
 						return s.OutboundMessage().UpdateOneID(id).SetTemplateID(target).Exec(ctx)
+					},
+				},
+				{
+					Name: "contact_id", Target: "Contact",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.OutboundMessage().UpdateOneID(id).SetContactID(target).Exec(ctx)
 					},
 				},
 			},

@@ -6,6 +6,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
+	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
 )
@@ -16,8 +17,10 @@ import (
 // retried job or request never sends twice; the outcome and the `email.sent` Event
 // are written in one transaction afterwards. It carries provenance and outcome
 // only — never the rendered content (PII + volume) — and references the surface's
-// own records by plain id snapshots (no FKs: the record outlives a deleted
-// template, broadcast or automation).
+// own records by foreign keys (CODING_STANDARDS rule 8): RESTRICT for a Broadcast, an
+// Automation and an Integration, which are discarded and never deleted (ADR 0049), SET NULL
+// for a Template, an Automation run and a Broadcast recipient, which a physical delete or an
+// Erasure removes while the message stays as a delivery record.
 type OutboundMessage struct {
 	ent.Schema
 }
@@ -91,24 +94,17 @@ func (OutboundMessage) Fields() []ent.Field {
 		field.Time("sent_at").
 			Optional().
 			Nillable(),
-		// Surface provenance, plain id snapshots.
-		field.Int64("broadcast_id").Optional().Nillable().
-			Annotations(ScopedRef{Entity: "Broadcast"}),
-		field.Int64("broadcast_recipient_id").Optional().Nillable().
-			Annotations(ScopedRef{Entity: "BroadcastRecipient"}),
-		field.Int64("automation_id").Optional().Nillable().
-			Annotations(ScopedRef{Entity: "Automation"}),
-		field.Int64("automation_run_id").Optional().Nillable().
-			Annotations(ScopedRef{Entity: "AutomationRun"}),
+		// Surface provenance, foreign keys declared in Edges.
+		field.Int64("broadcast_id").Optional().Nillable(),
+		field.Int64("broadcast_recipient_id").Optional().Nillable(),
+		field.Int64("automation_id").Optional().Nillable(),
+		field.Int64("automation_run_id").Optional().Nillable(),
 		field.Int("automation_step").Optional().Nillable(),
-		// The Integration the message went out through (ADR 0023), a plain id snapshot
-		// like the other provenance ids: its sent count over 24 hours is the
+		// The Integration the message went out through (ADR 0023), its sent count over 24 hours is the
 		// Integration's usage. Nil when the sender had no Integration row.
-		field.Int64("integration_id").Optional().Nillable().
-			Annotations(ScopedRef{Entity: "Integration"}),
+		field.Int64("integration_id").Optional().Nillable(),
 		// The Template a transactional send referenced (ADR 0005).
-		field.Int64("template_id").Optional().Nillable().
-			Annotations(ScopedRef{Entity: "EmailTemplate"}),
+		field.Int64("template_id").Optional().Nillable(),
 		// The Instance's origin (SPHERICON_APP_URL) the message's links were built on, so
 		// `sphericon doctor` can warn when the configured origin has since changed (ADR 0036).
 		// Nil when the send carried no links of its own (a Transactional send has no Tracker).
@@ -116,6 +112,23 @@ func (OutboundMessage) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			Immutable(),
+	}
+}
+
+func (OutboundMessage) Edges() []ent.Edge {
+	return []ent.Edge{
+		edge.To("broadcast", Broadcast.Type).Field("broadcast_id").Unique().
+			Annotations(entsql.OnDelete(entsql.Restrict)),
+		edge.To("automation", Automation.Type).Field("automation_id").Unique().
+			Annotations(entsql.OnDelete(entsql.Restrict)),
+		edge.To("integration", Integration.Type).Field("integration_id").Unique().
+			Annotations(entsql.OnDelete(entsql.Restrict)),
+		edge.To("broadcast_recipient", BroadcastRecipient.Type).Field("broadcast_recipient_id").Unique().
+			Annotations(entsql.OnDelete(entsql.SetNull)),
+		edge.To("automation_run", AutomationRun.Type).Field("automation_run_id").Unique().
+			Annotations(entsql.OnDelete(entsql.SetNull)),
+		edge.To("template", EmailTemplate.Type).Field("template_id").Unique().
+			Annotations(entsql.OnDelete(entsql.SetNull)),
 	}
 }
 
@@ -141,8 +154,18 @@ func (OutboundMessage) Indexes() []ent.Index {
 		// A Broadcast recipient's message: one per recipient, so "is this recipient still
 		// pending" is an indexed lookup. Only Broadcast sends carry the column.
 		index.Fields("broadcast_recipient_id").
-			StorageKey("outbound_messages_broadcast_recipient_id").
-			Annotations(entsql.IndexWhere("broadcast_recipient_id IS NOT NULL")),
+			StorageKey("outbound_messages_broadcast_recipient_id"),
+		// The keys that need a lookup by the referenced row: its delete or its restriction check.
+		index.Fields("broadcast_id").
+			StorageKey("outbound_messages_broadcast_id"),
+		index.Fields("integration_id").
+			StorageKey("outbound_messages_integration_id"),
+		index.Fields("automation_id").
+			StorageKey("outbound_messages_automation_id"),
+		index.Fields("automation_run_id").
+			StorageKey("outbound_messages_automation_run_id"),
+		index.Fields("template_id").
+			StorageKey("outbound_messages_template_id"),
 		// The workspace analytics dashboard's send cohort: Broadcast sends by send time.
 		index.Fields("workspace_id", "sent_at").
 			StorageKey("outbound_messages_workspace_id_sent_at_broadcast").

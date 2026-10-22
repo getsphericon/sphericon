@@ -119,6 +119,7 @@ func NewClient(riverDB *sql.DB, entClient *ent.Client, mod *outbound.Module, cip
 	river.AddWorker(workers, &PruneUnverifiedUsersWorker{accounts: accounts.New(entClient, bus), retention: retention.UnverifiedUsers})
 	river.AddWorker(workers, &PrunePasskeyChallengesWorker{ent: entClient, now: time.Now})
 	river.AddWorker(workers, &BackfillAutomationVersionsWorker{ent: entClient})
+	river.AddWorker(workers, &ClearOutboundMessageRefsWorker{ent: entClient})
 	river.AddWorker(workers, &EraseWorkspacesWorker{deletion: workspacedeletion.New(entClient, bus), now: time.Now})
 
 	var extraPeriodic []*river.PeriodicJob
@@ -243,6 +244,14 @@ func newRiverConfig(workers *river.Workers, logger *slog.Logger, extra ...*river
 				river.PeriodicInterval(backfillVersionsInterval),
 				func() (river.JobArgs, *river.InsertOpts) {
 					return BackfillAutomationVersionsArgs{}, nil
+				},
+				&river.PeriodicJobOpts{RunOnStart: true},
+			),
+			// Clear Outbound message references that point at nothing, then validate the keys.
+			river.NewPeriodicJob(
+				river.PeriodicInterval(clearOutboundRefsInterval),
+				func() (river.JobArgs, *river.InsertOpts) {
+					return ClearOutboundMessageRefsArgs{}, nil
 				},
 				&river.PeriodicJobOpts{RunOnStart: true},
 			),
