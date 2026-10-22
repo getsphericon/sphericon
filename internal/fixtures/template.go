@@ -58,6 +58,14 @@ func TemplateFuncs(cipher *secrets.Cipher, now time.Time) template.FuncMap {
 			}
 			return out
 		},
+		// monthAgo is a moment inside a calendar month (UTC) some months back: {{monthAgo 6 3 10}} is the
+		// 3rd, 10:00 of the month six months ago; a fourth number adds minutes, which may be negative
+		// ({{monthAgo 6 1 0 -1}} is the last minute of the month before). Usage is measured per calendar month, so a scenario
+		// that spans a month boundary needs rows pinned to a month, not to a number of days.
+		"monthAgo": func(months, dayOfMonth, hour, minute int) string {
+			start := time.Date(base.Year(), base.Month()-time.Month(months), 1, 0, 0, 0, 0, time.UTC)
+			return start.AddDate(0, 0, dayOfMonth-1).Add(time.Duration(hour)*time.Hour + time.Duration(minute)*time.Minute).Format(timeLayout)
+		},
 		"encrypt": func(s string) (string, error) { return cipher.Encrypt([]byte(s)) },
 		// Invitation tokens are stored only as a SHA-256 hash; fixtures express the
 		// raw token and hash it at load time so tests can present the raw value.

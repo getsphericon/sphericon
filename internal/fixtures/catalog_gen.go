@@ -1039,6 +1039,14 @@ const (
 	MemberMaryName = "Mary"
 	// MemberMaryPassword is from fixtures/users.
 	MemberMaryPassword = "password"
+	// MeterCollectKey is from fixtures/workspaces.
+	MeterCollectKey = "omck_test_meter_collect_key"
+	// MeterID is from fixtures/workspaces.
+	MeterID = 5800
+	// MeterName is from fixtures/workspaces.
+	MeterName = "Meter"
+	// MeterPublicID is from fixtures/workspaces.
+	MeterPublicID = "MeterW80"
 	// OscorpAndyEmail is from fixtures/contacts.
 	OscorpAndyEmail = "andy@oscorp.test"
 	// OscorpAndyID is from fixtures/contacts.

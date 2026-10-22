@@ -30,3 +30,16 @@ func TestHoursAheadIsInTheFutureWithAnExplicitUTCOffset(t *testing.T) {
 
 	assert.WithinDuration(t, time.Now().Add(2*time.Hour), got, time.Minute)
 }
+
+// monthAgo pins a fixture to a calendar month: the 3rd at 10:00 of the month two months back.
+func TestMonthAgoIsAMomentInsideAnEarlierCalendarMonth(t *testing.T) {
+	now := time.Date(2026, time.March, 31, 15, 0, 0, 0, time.UTC)
+	funcs := fixtures.TemplateFuncs(nil, now)
+	monthAgo, ok := funcs["monthAgo"].(func(int, int, int, int) string)
+	require.True(t, ok)
+
+	got, err := time.Parse("2006-01-02 15:04:05-07", monthAgo(2, 3, 10, 0))
+	require.NoError(t, err)
+
+	assert.Equal(t, time.Date(2026, time.January, 3, 10, 0, 0, 0, time.UTC), got.UTC())
+}
