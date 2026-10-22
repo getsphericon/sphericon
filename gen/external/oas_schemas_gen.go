@@ -11020,13 +11020,30 @@ func (s *RecordEventsInput) SetEvents(val []EventInput) {
 }
 
 // One Action of a Rule, run in order when the Rule fires. A flat shape: tag actions carry the tag
-// name.
+// name, http actions the call.
 // Ref: #/components/schemas/RuleAction
 type RuleAction struct {
 	// Action kind.
 	Type RuleActionType `json:"type"`
 	// Tag name to apply to or remove from the Contact (apply_tag and remove_tag).
 	Tag OptString `json:"tag"`
+	// Action id (http actions). Assigned on save; send it back on edit so the action keeps its secrets.
+	ID OptString `json:"id"`
+	// URL to POST to (http actions). A secret: never returned. Omit it when editing to keep the stored
+	// URL. Up to 2 KiB, http or https.
+	URL OptString `json:"url"`
+	// Up to 5 request headers (http actions). On read, only the names are returned.
+	Headers []AutomationHttpHeader `json:"headers"`
+	// Liquid JSON request body (http actions): Contact bindings plus `event.action` and
+	// `event.properties`, strings JSON-escaped, up to 64 KiB, must render to valid JSON.
+	Body OptString `json:"body"`
+	// Signing secret (http actions): when set, the request is signed with Standard Webhooks. Never
+	// returned. Omit it when editing to keep the stored secret.
+	Secret OptString `json:"secret"`
+	// Remove the signing secret on save (http actions).
+	ClearSecret OptBool `json:"clearSecret"`
+	// Whether a signing secret is stored (http actions, read only).
+	HasSecret OptBool `json:"hasSecret"`
 }
 
 // GetType returns the value of Type.
@@ -11039,6 +11056,41 @@ func (s *RuleAction) GetTag() OptString {
 	return s.Tag
 }
 
+// GetID returns the value of ID.
+func (s *RuleAction) GetID() OptString {
+	return s.ID
+}
+
+// GetURL returns the value of URL.
+func (s *RuleAction) GetURL() OptString {
+	return s.URL
+}
+
+// GetHeaders returns the value of Headers.
+func (s *RuleAction) GetHeaders() []AutomationHttpHeader {
+	return s.Headers
+}
+
+// GetBody returns the value of Body.
+func (s *RuleAction) GetBody() OptString {
+	return s.Body
+}
+
+// GetSecret returns the value of Secret.
+func (s *RuleAction) GetSecret() OptString {
+	return s.Secret
+}
+
+// GetClearSecret returns the value of ClearSecret.
+func (s *RuleAction) GetClearSecret() OptBool {
+	return s.ClearSecret
+}
+
+// GetHasSecret returns the value of HasSecret.
+func (s *RuleAction) GetHasSecret() OptBool {
+	return s.HasSecret
+}
+
 // SetType sets the value of Type.
 func (s *RuleAction) SetType(val RuleActionType) {
 	s.Type = val
@@ -11047,6 +11099,41 @@ func (s *RuleAction) SetType(val RuleActionType) {
 // SetTag sets the value of Tag.
 func (s *RuleAction) SetTag(val OptString) {
 	s.Tag = val
+}
+
+// SetID sets the value of ID.
+func (s *RuleAction) SetID(val OptString) {
+	s.ID = val
+}
+
+// SetURL sets the value of URL.
+func (s *RuleAction) SetURL(val OptString) {
+	s.URL = val
+}
+
+// SetHeaders sets the value of Headers.
+func (s *RuleAction) SetHeaders(val []AutomationHttpHeader) {
+	s.Headers = val
+}
+
+// SetBody sets the value of Body.
+func (s *RuleAction) SetBody(val OptString) {
+	s.Body = val
+}
+
+// SetSecret sets the value of Secret.
+func (s *RuleAction) SetSecret(val OptString) {
+	s.Secret = val
+}
+
+// SetClearSecret sets the value of ClearSecret.
+func (s *RuleAction) SetClearSecret(val OptBool) {
+	s.ClearSecret = val
+}
+
+// SetHasSecret sets the value of HasSecret.
+func (s *RuleAction) SetHasSecret(val OptBool) {
+	s.HasSecret = val
 }
 
 // What one Action did when a Rule fired.
@@ -11147,6 +11234,7 @@ type RuleActionType string
 const (
 	RuleActionTypeApplyTag  RuleActionType = "apply_tag"
 	RuleActionTypeRemoveTag RuleActionType = "remove_tag"
+	RuleActionTypeHTTP      RuleActionType = "http"
 )
 
 // AllValues returns all RuleActionType values.
@@ -11154,6 +11242,7 @@ func (RuleActionType) AllValues() []RuleActionType {
 	return []RuleActionType{
 		RuleActionTypeApplyTag,
 		RuleActionTypeRemoveTag,
+		RuleActionTypeHTTP,
 	}
 }
 
@@ -11163,6 +11252,8 @@ func (s RuleActionType) MarshalText() ([]byte, error) {
 	case RuleActionTypeApplyTag:
 		return []byte(s), nil
 	case RuleActionTypeRemoveTag:
+		return []byte(s), nil
+	case RuleActionTypeHTTP:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -11177,6 +11268,9 @@ func (s *RuleActionType) UnmarshalText(data []byte) error {
 		return nil
 	case RuleActionTypeRemoveTag:
 		*s = RuleActionTypeRemoveTag
+		return nil
+	case RuleActionTypeHTTP:
+		*s = RuleActionTypeHTTP
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)

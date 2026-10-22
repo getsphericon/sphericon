@@ -82,9 +82,9 @@ func NewClient(riverDB *sql.DB, entClient *ent.Client, mod *outbound.Module, cip
 	river.AddWorker(workers, &SendRecipientWorker{ent: entClient, del: broadcasts.NewDelivery(mod)})
 	river.AddWorker(workers, &EvaluateTriggerWorker{ent: entClient})
 	river.AddWorker(workers, &RunStepWorker{ent: entClient, mod: mod, fence: automations.FenceOn(entClient)})
-	ruleMod := rules.New(bus)
+	ruleMod := rules.New(cipher, bus)
 	river.AddWorker(workers, &EvaluateRulesWorker{ent: entClient, mod: ruleMod})
-	river.AddWorker(workers, &RunRuleActionsWorker{ent: entClient, mod: ruleMod, runners: RuleActionRunners(mod, bus)})
+	river.AddWorker(workers, &RunRuleActionsWorker{ent: entClient, mod: ruleMod, runners: RuleActionRunners(mod, ruleMod, bus, webhook.NewClientAllowing(webhookDeliveryTimeout, outboundAllow))})
 	river.AddWorker(workers, &RunHTTPStepWorker{
 		ent:    entClient,
 		mod:    automations.New(cipher, bus),

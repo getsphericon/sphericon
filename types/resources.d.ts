@@ -836,6 +836,7 @@ export default interface Resources {
       "actionType": {
         "apply_tag": "Apply tag",
         "enroll_automation": "Enroll in automation",
+        "http": "Call a URL",
         "remove_tag": "Remove tag"
       },
       "actionTypeLabel": "Action",
@@ -861,6 +862,18 @@ export default interface Resources {
         "succeeded": "Succeeded"
       },
       "firingsTitle": "Firings",
+      "http": {
+        "addHeader": "Add header",
+        "bodyHint": "A JSON template. It sees the contact's fields and event.action and event.properties, and must be valid JSON when they are empty.",
+        "bodyLabel": "Request body",
+        "headerNameLabel": "Header name",
+        "headerValueLabel": "Header value",
+        "keepHint": "Stored. Leave empty to keep it.",
+        "removeHeader": "Remove header",
+        "secretHint": "Optional. When set, the request is signed (Standard Webhooks).",
+        "secretLabel": "Signing secret",
+        "urlLabel": "URL"
+      },
       "nameLabel": "Name",
       "noFirings": "This rule has not fired yet",
       "noRecords": "No rules yet",

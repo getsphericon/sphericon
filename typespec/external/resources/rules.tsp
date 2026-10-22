@@ -14,15 +14,37 @@ enum RuleStatus {
 enum RuleActionType {
   apply_tag,
   remove_tag,
+  http,
 }
 
-/** One Action of a Rule, run in order when the Rule fires. A flat shape: tag actions carry the tag name. */
+/** One Action of a Rule, run in order when the Rule fires. A flat shape: tag actions carry the tag name, http actions the call. */
 model RuleAction {
   /** Action kind */
   type: RuleActionType;
 
   /** Tag name to apply to or remove from the Contact (apply_tag and remove_tag) */
   tag?: string;
+
+  /** Action id (http actions). Assigned on save; send it back on edit so the action keeps its secrets. */
+  id?: string;
+
+  /** URL to POST to (http actions). A secret: never returned. Omit it when editing to keep the stored URL. Up to 2 KiB, http or https. */
+  url?: string;
+
+  /** Up to 5 request headers (http actions). On read, only the names are returned. */
+  headers?: AutomationHttpHeader[];
+
+  /** Liquid JSON request body (http actions): Contact bindings plus `event.action` and `event.properties`, strings JSON-escaped, up to 64 KiB, must render to valid JSON */
+  body?: string;
+
+  /** Signing secret (http actions): when set, the request is signed with Standard Webhooks. Never returned. Omit it when editing to keep the stored secret. */
+  secret?: string;
+
+  /** Remove the signing secret on save (http actions) */
+  clearSecret?: boolean;
+
+  /** Whether a signing secret is stored (http actions, read only) */
+  hasSecret?: boolean;
 }
 
 /** How one Action of a Firing ended */

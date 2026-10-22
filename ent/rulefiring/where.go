@@ -95,6 +95,11 @@ func Actions(v string) predicate.RuleFiring {
 	return predicate.RuleFiring(sql.FieldEQ(FieldActions, v))
 }
 
+// Properties applies equality check predicate on the "properties" field. It's identical to PropertiesEQ.
+func Properties(v string) predicate.RuleFiring {
+	return predicate.RuleFiring(sql.FieldEQ(FieldProperties, v))
+}
+
 // Results applies equality check predicate on the "results" field. It's identical to ResultsEQ.
 func Results(v string) predicate.RuleFiring {
 	return predicate.RuleFiring(sql.FieldEQ(FieldResults, v))
@@ -438,6 +443,81 @@ func ActionsEqualFold(v string) predicate.RuleFiring {
 // ActionsContainsFold applies the ContainsFold predicate on the "actions" field.
 func ActionsContainsFold(v string) predicate.RuleFiring {
 	return predicate.RuleFiring(sql.FieldContainsFold(FieldActions, v))
+}
+
+// PropertiesEQ applies the EQ predicate on the "properties" field.
+func PropertiesEQ(v string) predicate.RuleFiring {
+	return predicate.RuleFiring(sql.FieldEQ(FieldProperties, v))
+}
+
+// PropertiesNEQ applies the NEQ predicate on the "properties" field.
+func PropertiesNEQ(v string) predicate.RuleFiring {
+	return predicate.RuleFiring(sql.FieldNEQ(FieldProperties, v))
+}
+
+// PropertiesIn applies the In predicate on the "properties" field.
+func PropertiesIn(vs ...string) predicate.RuleFiring {
+	return predicate.RuleFiring(sql.FieldIn(FieldProperties, vs...))
+}
+
+// PropertiesNotIn applies the NotIn predicate on the "properties" field.
+func PropertiesNotIn(vs ...string) predicate.RuleFiring {
+	return predicate.RuleFiring(sql.FieldNotIn(FieldProperties, vs...))
+}
+
+// PropertiesGT applies the GT predicate on the "properties" field.
+func PropertiesGT(v string) predicate.RuleFiring {
+	return predicate.RuleFiring(sql.FieldGT(FieldProperties, v))
+}
+
+// PropertiesGTE applies the GTE predicate on the "properties" field.
+func PropertiesGTE(v string) predicate.RuleFiring {
+	return predicate.RuleFiring(sql.FieldGTE(FieldProperties, v))
+}
+
+// PropertiesLT applies the LT predicate on the "properties" field.
+func PropertiesLT(v string) predicate.RuleFiring {
+	return predicate.RuleFiring(sql.FieldLT(FieldProperties, v))
+}
+
+// PropertiesLTE applies the LTE predicate on the "properties" field.
+func PropertiesLTE(v string) predicate.RuleFiring {
+	return predicate.RuleFiring(sql.FieldLTE(FieldProperties, v))
+}
+
+// PropertiesContains applies the Contains predicate on the "properties" field.
+func PropertiesContains(v string) predicate.RuleFiring {
+	return predicate.RuleFiring(sql.FieldContains(FieldProperties, v))
+}
+
+// PropertiesHasPrefix applies the HasPrefix predicate on the "properties" field.
+func PropertiesHasPrefix(v string) predicate.RuleFiring {
+	return predicate.RuleFiring(sql.FieldHasPrefix(FieldProperties, v))
+}
+
+// PropertiesHasSuffix applies the HasSuffix predicate on the "properties" field.
+func PropertiesHasSuffix(v string) predicate.RuleFiring {
+	return predicate.RuleFiring(sql.FieldHasSuffix(FieldProperties, v))
+}
+
+// PropertiesIsNil applies the IsNil predicate on the "properties" field.
+func PropertiesIsNil() predicate.RuleFiring {
+	return predicate.RuleFiring(sql.FieldIsNull(FieldProperties))
+}
+
+// PropertiesNotNil applies the NotNil predicate on the "properties" field.
+func PropertiesNotNil() predicate.RuleFiring {
+	return predicate.RuleFiring(sql.FieldNotNull(FieldProperties))
+}
+
+// PropertiesEqualFold applies the EqualFold predicate on the "properties" field.
+func PropertiesEqualFold(v string) predicate.RuleFiring {
+	return predicate.RuleFiring(sql.FieldEqualFold(FieldProperties, v))
+}
+
+// PropertiesContainsFold applies the ContainsFold predicate on the "properties" field.
+func PropertiesContainsFold(v string) predicate.RuleFiring {
+	return predicate.RuleFiring(sql.FieldContainsFold(FieldProperties, v))
 }
 
 // ResultsEQ applies the EQ predicate on the "results" field.

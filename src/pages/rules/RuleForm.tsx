@@ -30,9 +30,11 @@ import {
   newAction,
   ruleActionKinds,
   takesAutomation,
+  takesCall,
   takesTag,
   triggerEventsCodec,
 } from './actions.ts'
+import { HttpActionFields } from './HttpActionFields.tsx'
 
 export interface RulePayload {
   name: string
@@ -114,51 +116,59 @@ export function RuleForm({ form, isPending, onSubmit }: ResourceFormProps<RulePa
         >
           <Stack gap="xs" mt="xs">
             {actions.map((action, index) => (
-              <Group key={index} align="flex-end" wrap="nowrap">
-                <Select
-                  label={t(($) => $.rules.actionTypeLabel)}
-                  allowDeselect={false}
-                  data={ruleActionKinds.map((type) => ({
-                    value: type,
-                    label: t(($) => $.rules.actionType[type]),
-                  }))}
-                  value={action.type}
-                  onChange={(next) => {
-                    const type = ruleActionKinds.find((kind) => kind === next)
-                    if (type) {
-                      changeAction(index, { type })
-                    }
-                  }}
-                />
-                {takesTag(action.type) ? (
-                  <TextInput
-                    label={t(($) => $.rules.actionTagLabel)}
-                    value={action.tag ?? ''}
-                    onChange={(event) => changeAction(index, { tag: event.currentTarget.value })}
-                  />
-                ) : null}
-                {takesAutomation(action.type) ? (
+              <Stack key={index} gap="xs">
+                <Group align="flex-end" wrap="nowrap">
                   <Select
-                    label={t(($) => $.rules.actionAutomationLabel)}
-                    searchable
-                    data={automationOptions}
-                    value={action.automationId ?? null}
+                    label={t(($) => $.rules.actionTypeLabel)}
+                    allowDeselect={false}
+                    data={ruleActionKinds.map((type) => ({
+                      value: type,
+                      label: t(($) => $.rules.actionType[type]),
+                    }))}
+                    value={action.type}
                     onChange={(next) => {
-                      if (next) {
-                        changeAction(index, { automationId: next })
+                      const type = ruleActionKinds.find((kind) => kind === next)
+                      if (type) {
+                        changeAction(index, { type })
                       }
                     }}
                   />
+                  {takesTag(action.type) ? (
+                    <TextInput
+                      label={t(($) => $.rules.actionTagLabel)}
+                      value={action.tag ?? ''}
+                      onChange={(event) => changeAction(index, { tag: event.currentTarget.value })}
+                    />
+                  ) : null}
+                  {takesAutomation(action.type) ? (
+                    <Select
+                      label={t(($) => $.rules.actionAutomationLabel)}
+                      searchable
+                      data={automationOptions}
+                      value={action.automationId ?? null}
+                      onChange={(next) => {
+                        if (next) {
+                          changeAction(index, { automationId: next })
+                        }
+                      }}
+                    />
+                  ) : null}
+                  <ActionIcon
+                    variant="subtle"
+                    color="red"
+                    aria-label={t(($) => $.rules.actionRemove)}
+                    onClick={() => setActions(actions.filter((_, at) => at !== index))}
+                  >
+                    <IconTrash size={16} />
+                  </ActionIcon>
+                </Group>
+                {takesCall(action.type) ? (
+                  <HttpActionFields
+                    action={action}
+                    onChange={(change) => changeAction(index, change)}
+                  />
                 ) : null}
-                <ActionIcon
-                  variant="subtle"
-                  color="red"
-                  aria-label={t(($) => $.rules.actionRemove)}
-                  onClick={() => setActions(actions.filter((_, at) => at !== index))}
-                >
-                  <IconTrash size={16} />
-                </ActionIcon>
-              </Group>
+              </Stack>
             ))}
             <Group>
               <Button

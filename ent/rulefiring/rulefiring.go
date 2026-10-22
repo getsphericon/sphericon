@@ -30,6 +30,8 @@ const (
 	FieldSourceID = "source_id"
 	// FieldActions holds the string denoting the actions field in the database.
 	FieldActions = "actions"
+	// FieldProperties holds the string denoting the properties field in the database.
+	FieldProperties = "properties"
 	// FieldResults holds the string denoting the results field in the database.
 	FieldResults = "results"
 	// FieldCompletedAt holds the string denoting the completed_at field in the database.
@@ -76,6 +78,7 @@ var Columns = []string{
 	FieldAction,
 	FieldSourceID,
 	FieldActions,
+	FieldProperties,
 	FieldResults,
 	FieldCompletedAt,
 }
@@ -153,6 +156,11 @@ func BySourceID(opts ...sql.OrderTermOption) OrderOption {
 // ByActions orders the results by the actions field.
 func ByActions(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldActions, opts...).ToFunc()
+}
+
+// ByProperties orders the results by the properties field.
+func ByProperties(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldProperties, opts...).ToFunc()
 }
 
 // ByResults orders the results by the results field.

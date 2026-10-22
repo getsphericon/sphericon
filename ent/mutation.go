@@ -31978,6 +31978,7 @@ type RuleFiringMutation struct {
 	action           *string
 	source_id        *string
 	actions          *string
+	properties       *string
 	results          *string
 	completed_at     *time.Time
 	clearedFields    map[string]struct{}
@@ -32384,6 +32385,55 @@ func (m *RuleFiringMutation) ResetActions() {
 	m.actions = nil
 }
 
+// SetProperties sets the "properties" field.
+func (m *RuleFiringMutation) SetProperties(s string) {
+	m.properties = &s
+}
+
+// Properties returns the value of the "properties" field in the mutation.
+func (m *RuleFiringMutation) Properties() (r string, exists bool) {
+	v := m.properties
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProperties returns the old "properties" field's value of the RuleFiring entity.
+// If the RuleFiring object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RuleFiringMutation) OldProperties(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProperties is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProperties requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProperties: %w", err)
+	}
+	return oldValue.Properties, nil
+}
+
+// ClearProperties clears the value of the "properties" field.
+func (m *RuleFiringMutation) ClearProperties() {
+	m.properties = nil
+	m.clearedFields[rulefiring.FieldProperties] = struct{}{}
+}
+
+// PropertiesCleared returns if the "properties" field was cleared in this mutation.
+func (m *RuleFiringMutation) PropertiesCleared() bool {
+	_, ok := m.clearedFields[rulefiring.FieldProperties]
+	return ok
+}
+
+// ResetProperties resets all changes to the "properties" field.
+func (m *RuleFiringMutation) ResetProperties() {
+	m.properties = nil
+	delete(m.clearedFields, rulefiring.FieldProperties)
+}
+
 // SetResults sets the "results" field.
 func (m *RuleFiringMutation) SetResults(s string) {
 	m.results = &s
@@ -32584,7 +32634,7 @@ func (m *RuleFiringMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *RuleFiringMutation) Fields() []string {
-	fields := make([]string, 0, 10)
+	fields := make([]string, 0, 11)
 	if m.created_at != nil {
 		fields = append(fields, rulefiring.FieldCreatedAt)
 	}
@@ -32608,6 +32658,9 @@ func (m *RuleFiringMutation) Fields() []string {
 	}
 	if m.actions != nil {
 		fields = append(fields, rulefiring.FieldActions)
+	}
+	if m.properties != nil {
+		fields = append(fields, rulefiring.FieldProperties)
 	}
 	if m.results != nil {
 		fields = append(fields, rulefiring.FieldResults)
@@ -32639,6 +32692,8 @@ func (m *RuleFiringMutation) Field(name string) (ent.Value, bool) {
 		return m.SourceID()
 	case rulefiring.FieldActions:
 		return m.Actions()
+	case rulefiring.FieldProperties:
+		return m.Properties()
 	case rulefiring.FieldResults:
 		return m.Results()
 	case rulefiring.FieldCompletedAt:
@@ -32668,6 +32723,8 @@ func (m *RuleFiringMutation) OldField(ctx context.Context, name string) (ent.Val
 		return m.OldSourceID(ctx)
 	case rulefiring.FieldActions:
 		return m.OldActions(ctx)
+	case rulefiring.FieldProperties:
+		return m.OldProperties(ctx)
 	case rulefiring.FieldResults:
 		return m.OldResults(ctx)
 	case rulefiring.FieldCompletedAt:
@@ -32737,6 +32794,13 @@ func (m *RuleFiringMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetActions(v)
 		return nil
+	case rulefiring.FieldProperties:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProperties(v)
+		return nil
 	case rulefiring.FieldResults:
 		v, ok := value.(string)
 		if !ok {
@@ -32784,6 +32848,9 @@ func (m *RuleFiringMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *RuleFiringMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(rulefiring.FieldProperties) {
+		fields = append(fields, rulefiring.FieldProperties)
+	}
 	if m.FieldCleared(rulefiring.FieldCompletedAt) {
 		fields = append(fields, rulefiring.FieldCompletedAt)
 	}
@@ -32801,6 +32868,9 @@ func (m *RuleFiringMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *RuleFiringMutation) ClearField(name string) error {
 	switch name {
+	case rulefiring.FieldProperties:
+		m.ClearProperties()
+		return nil
 	case rulefiring.FieldCompletedAt:
 		m.ClearCompletedAt()
 		return nil
@@ -32835,6 +32905,9 @@ func (m *RuleFiringMutation) ResetField(name string) error {
 		return nil
 	case rulefiring.FieldActions:
 		m.ResetActions()
+		return nil
+	case rulefiring.FieldProperties:
+		m.ResetProperties()
 		return nil
 	case rulefiring.FieldResults:
 		m.ResetResults()

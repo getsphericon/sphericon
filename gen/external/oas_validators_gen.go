@@ -4090,6 +4090,8 @@ func (s RuleActionType) Validate() error {
 		return nil
 	case "remove_tag":
 		return nil
+	case "http":
+		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
 	}

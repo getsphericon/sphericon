@@ -18,6 +18,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/oklog/ulid/v2"
 	"github.com/riverqueue/river"
 	"github.com/samber/lo"
 
@@ -29,8 +30,10 @@ import (
 	"github.com/getsphericon/sphericon/ent/ruletrigger"
 	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/httpcall"
 	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/secrets"
 )
 
 // The fixed caps on a Rule (ADR 0054). There is none on the number of Rules.
@@ -48,7 +51,16 @@ const (
 	ActionRemoveTag = "remove_tag"
 	// ActionEnroll enrolls the Contact in an Automation (once ever, ADR 0046).
 	ActionEnroll = "enroll_automation"
+	// ActionHTTP calls a URL with a body rendered for the Contact and the Event.
+	ActionHTTP = "http"
 )
+
+// MaxHTTPActionsPerRule keeps one Rule from queueing an unbounded number of outbound calls.
+const MaxHTTPActionsPerRule = 5
+
+// MaxFiringPropertiesBytes caps the Event properties kept on a Firing for its Actions to
+// template; an Event with more keeps none (the Actions still run, the properties render empty).
+const MaxFiringPropertiesBytes = 32 << 10
 
 // Domain errors returned by Module. Callers match with errors.Is.
 var (
@@ -67,6 +79,18 @@ type Action struct {
 	Tag string `json:"tag,omitempty"`
 	// AutomationID is the Automation enroll_automation enrolls the Contact in.
 	AutomationID int64 `json:"automation_id,omitempty"`
+
+	// An http Action (ADR 0039 shape, shared through internal/httpcall) has ID, URL, Headers, Body
+	// (a Liquid JSON template that sees the Contact and the `event`) and Secret. Stored, URL,
+	// header values and Secret are ciphertext, sealed per field; in an Action being saved, an
+	// empty one keeps the stored value of the Action of the same ID, and ClearSecret drops the
+	// signing secret.
+	ID          string            `json:"id,omitempty"`
+	URL         string            `json:"url,omitempty"`
+	Headers     []httpcall.Header `json:"headers,omitempty"`
+	Body        string            `json:"body,omitempty"`
+	Secret      string            `json:"secret,omitempty"`
+	ClearSecret bool              `json:"-"`
 }
 
 // Outcome is how one Action ended.
@@ -106,12 +130,13 @@ type ActionRunners map[string]Runner
 
 // Module is the one place a Rule is written, validated, evaluated and run.
 type Module struct {
-	bus *events.Bus
+	cipher *secrets.Cipher
+	bus    *events.Bus
 }
 
-// New builds the Rules module. The bus runs a Firing and the job that executes it in one
-// transaction.
-func New(bus *events.Bus) *Module { return &Module{bus: bus} }
+// New builds the Rules module. The cipher seals an http Action's secrets; the bus runs a Firing
+// and the job that executes it in one transaction.
+func New(cipher *secrets.Cipher, bus *events.Bus) *Module { return &Module{cipher: cipher, bus: bus} }
 
 // CreateInput is a new Rule, always a draft.
 type CreateInput struct {
@@ -139,7 +164,7 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 	if err := m.validateCondition(ctx, s, in.Condition); err != nil {
 		return nil, err
 	}
-	actions, err := encodeActions(in.Actions)
+	actions, err := m.encodeActions(in.Actions, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -180,7 +205,15 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 	}
 	var actions *string
 	if in.Actions != nil {
-		encoded, err := encodeActions(*in.Actions)
+		stored, err := m.Get(ctx, s, id)
+		if err != nil {
+			return nil, err
+		}
+		prev, err := DecodeActions(stored.Actions)
+		if err != nil {
+			return nil, err
+		}
+		encoded, err := m.encodeActions(*in.Actions, prev)
 		if err != nil {
 			return nil, err
 		}
@@ -438,12 +471,20 @@ func (m *Module) validateCondition(ctx context.Context, s *ent.Scoped, cond *str
 }
 
 // encodeActions validates the Actions and returns the stored JSON, dropping the fields that do
-// not belong to each type.
-func encodeActions(actions []Action) (string, error) {
+// not belong to each type. stored are the Rule's Actions as saved now (none for a new Rule): an
+// http Action that names one of them by ID keeps the secrets it does not resend.
+func (m *Module) encodeActions(actions, stored []Action) (string, error) {
 	if len(actions) > MaxActions {
 		return "", fmt.Errorf("%w: a Rule runs at most %d Actions, this one has %d", ErrInvalid, MaxActions, len(actions))
 	}
-	stored := make([]Action, 0, len(actions))
+	prev := map[string]Action{}
+	for _, p := range stored {
+		if p.Type == ActionHTTP {
+			prev[p.ID] = p
+		}
+	}
+	out := make([]Action, 0, len(actions))
+	seen := map[string]bool{}
 	for i, a := range actions {
 		switch a.Type {
 		case ActionApplyTag, ActionRemoveTag:
@@ -451,18 +492,59 @@ func encodeActions(actions []Action) (string, error) {
 			if tag == "" {
 				return "", fmt.Errorf("%w: action %d: a tag action needs a tag", ErrInvalid, i+1)
 			}
-			stored = append(stored, Action{Type: a.Type, Tag: tag})
+			out = append(out, Action{Type: a.Type, Tag: tag})
 		case ActionEnroll:
 			if a.AutomationID <= 0 {
 				return "", fmt.Errorf("%w: action %d: an enroll action needs an automation", ErrInvalid, i+1)
 			}
-			stored = append(stored, Action{Type: a.Type, AutomationID: a.AutomationID})
+			out = append(out, Action{Type: a.Type, AutomationID: a.AutomationID})
+		case ActionHTTP:
+			if len(seen) >= MaxHTTPActionsPerRule {
+				return "", fmt.Errorf("%w: a Rule has at most %d http Actions", ErrInvalid, MaxHTTPActionsPerRule)
+			}
+			sealed, err := m.sealHTTP(a, prev)
+			if bad, ok := errors.AsType[httpcall.InvalidError](err); ok {
+				return "", fmt.Errorf("%w: action %d: %w", ErrInvalid, i+1, bad)
+			}
+			if err != nil {
+				return "", err
+			}
+			if seen[sealed.ID] {
+				return "", fmt.Errorf("%w: action %d: duplicate http Action id", ErrInvalid, i+1)
+			}
+			seen[sealed.ID] = true
+			out = append(out, sealed)
 		default:
 			return "", fmt.Errorf("%w: action %d: unknown action type %q", ErrInvalid, i+1, a.Type)
 		}
 	}
-	b, err := json.Marshal(stored)
+	b, err := json.Marshal(out)
 	return string(b), err
+}
+
+// sealHTTP turns an http Action being saved into its stored form. An Action that names a stored
+// one by ID keeps what it does not resend; any other gets a new ID and no stored values.
+func (m *Module) sealHTTP(a Action, prev map[string]Action) (Action, error) {
+	p, known := prev[a.ID]
+	out := Action{Type: ActionHTTP, ID: a.ID}
+	if !known || a.ID == "" {
+		p, out.ID = Action{}, ulid.Make().String()
+	}
+	sealed, err := httpcall.Seal(m.cipher, httpSpec(a), httpSpec(p), "http action")
+	if err != nil {
+		return out, err
+	}
+	out.URL, out.Headers, out.Body, out.Secret = sealed.URL, sealed.Headers, sealed.Body, sealed.Secret
+	return out, nil
+}
+
+func httpSpec(a Action) httpcall.Spec {
+	return httpcall.Spec{URL: a.URL, Headers: a.Headers, Body: a.Body, Secret: a.Secret, ClearSecret: a.ClearSecret}
+}
+
+// OpenHTTP decrypts a stored http Action's URL, header values and secret, for its Runner.
+func (m *Module) OpenHTTP(a Action) (httpcall.Opened, error) {
+	return httpcall.Open(m.cipher, httpSpec(a))
 }
 
 // Event is what Evaluate needs of a recorded Event.
@@ -569,6 +651,7 @@ func (m *Module) fire(ctx context.Context, s *ent.Scoped, r *ent.Rule, ev Event)
 			SetAction(ev.Action).
 			SetSourceID(ev.SourceID).
 			SetActions(r.Actions).
+			SetNillableProperties(propertiesJSON(ev.Properties)).
 			Save(ctx)
 		if err != nil {
 			return err
@@ -660,4 +743,17 @@ func EnrollingInto(ctx context.Context, s *ent.Scoped, automationID int64) ([]*e
 		}
 	}
 	return using, nil
+}
+
+// propertiesJSON is the Event's properties as kept on its Firing, nil when there are none or
+// they exceed MaxFiringPropertiesBytes.
+func propertiesJSON(props map[string]any) *string {
+	if len(props) == 0 {
+		return nil
+	}
+	b, err := json.Marshal(props)
+	if err != nil || len(b) > MaxFiringPropertiesBytes {
+		return nil
+	}
+	return new(string(b))
 }

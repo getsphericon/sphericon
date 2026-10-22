@@ -122,6 +122,26 @@ func (_u *RuleFiringUpdate) SetNillableActions(v *string) *RuleFiringUpdate {
 	return _u
 }
 
+// SetProperties sets the "properties" field.
+func (_u *RuleFiringUpdate) SetProperties(v string) *RuleFiringUpdate {
+	_u.mutation.SetProperties(v)
+	return _u
+}
+
+// SetNillableProperties sets the "properties" field if the given value is not nil.
+func (_u *RuleFiringUpdate) SetNillableProperties(v *string) *RuleFiringUpdate {
+	if v != nil {
+		_u.SetProperties(*v)
+	}
+	return _u
+}
+
+// ClearProperties clears the value of the "properties" field.
+func (_u *RuleFiringUpdate) ClearProperties() *RuleFiringUpdate {
+	_u.mutation.ClearProperties()
+	return _u
+}
+
 // SetResults sets the "results" field.
 func (_u *RuleFiringUpdate) SetResults(v string) *RuleFiringUpdate {
 	_u.mutation.SetResults(v)
@@ -283,6 +303,12 @@ func (_u *RuleFiringUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 	}
 	if value, ok := _u.mutation.Actions(); ok {
 		_spec.SetField(rulefiring.FieldActions, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.Properties(); ok {
+		_spec.SetField(rulefiring.FieldProperties, field.TypeString, value)
+	}
+	if _u.mutation.PropertiesCleared() {
+		_spec.ClearField(rulefiring.FieldProperties, field.TypeString)
 	}
 	if value, ok := _u.mutation.Results(); ok {
 		_spec.SetField(rulefiring.FieldResults, field.TypeString, value)
@@ -492,6 +518,26 @@ func (_u *RuleFiringUpdateOne) SetNillableActions(v *string) *RuleFiringUpdateOn
 	return _u
 }
 
+// SetProperties sets the "properties" field.
+func (_u *RuleFiringUpdateOne) SetProperties(v string) *RuleFiringUpdateOne {
+	_u.mutation.SetProperties(v)
+	return _u
+}
+
+// SetNillableProperties sets the "properties" field if the given value is not nil.
+func (_u *RuleFiringUpdateOne) SetNillableProperties(v *string) *RuleFiringUpdateOne {
+	if v != nil {
+		_u.SetProperties(*v)
+	}
+	return _u
+}
+
+// ClearProperties clears the value of the "properties" field.
+func (_u *RuleFiringUpdateOne) ClearProperties() *RuleFiringUpdateOne {
+	_u.mutation.ClearProperties()
+	return _u
+}
+
 // SetResults sets the "results" field.
 func (_u *RuleFiringUpdateOne) SetResults(v string) *RuleFiringUpdateOne {
 	_u.mutation.SetResults(v)
@@ -683,6 +729,12 @@ func (_u *RuleFiringUpdateOne) sqlSave(ctx context.Context) (_node *RuleFiring, 
 	}
 	if value, ok := _u.mutation.Actions(); ok {
 		_spec.SetField(rulefiring.FieldActions, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.Properties(); ok {
+		_spec.SetField(rulefiring.FieldProperties, field.TypeString, value)
+	}
+	if _u.mutation.PropertiesCleared() {
+		_spec.ClearField(rulefiring.FieldProperties, field.TypeString)
 	}
 	if value, ok := _u.mutation.Results(); ok {
 		_spec.SetField(rulefiring.FieldResults, field.TypeString, value)

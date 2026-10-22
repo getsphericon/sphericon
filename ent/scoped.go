@@ -21052,6 +21052,18 @@ func (x *RuleFiringScopedCreate) SetNillableActions(v *string) *RuleFiringScoped
 	return x
 }
 
+// SetProperties sets the "properties" field.
+func (x *RuleFiringScopedCreate) SetProperties(v string) *RuleFiringScopedCreate {
+	x.b.SetProperties(v)
+	return x
+}
+
+// SetNillableProperties sets the "properties" field if the given value is not nil.
+func (x *RuleFiringScopedCreate) SetNillableProperties(v *string) *RuleFiringScopedCreate {
+	x.b.SetNillableProperties(v)
+	return x
+}
+
 // SetResults sets the "results" field.
 func (x *RuleFiringScopedCreate) SetResults(v string) *RuleFiringScopedCreate {
 	x.b.SetResults(v)
@@ -21219,6 +21231,24 @@ func (u *RuleFiringScopedUpsert) SetActions(v string) *RuleFiringScopedUpsert {
 // UpdateActions sets the "actions" field to the value that was provided on create.
 func (u *RuleFiringScopedUpsert) UpdateActions() *RuleFiringScopedUpsert {
 	u.u.SetExcluded(rulefiring.FieldActions)
+	return u
+}
+
+// SetProperties sets the "properties" field.
+func (u *RuleFiringScopedUpsert) SetProperties(v string) *RuleFiringScopedUpsert {
+	u.u.Set(rulefiring.FieldProperties, v)
+	return u
+}
+
+// UpdateProperties sets the "properties" field to the value that was provided on create.
+func (u *RuleFiringScopedUpsert) UpdateProperties() *RuleFiringScopedUpsert {
+	u.u.SetExcluded(rulefiring.FieldProperties)
+	return u
+}
+
+// ClearProperties clears the value of the "properties" field.
+func (u *RuleFiringScopedUpsert) ClearProperties() *RuleFiringScopedUpsert {
+	u.u.SetNull(rulefiring.FieldProperties)
 	return u
 }
 
@@ -21464,6 +21494,24 @@ func (x *RuleFiringScopedUpdateOne) SetNillableActions(v *string) *RuleFiringSco
 	return x
 }
 
+// SetProperties sets the "properties" field.
+func (x *RuleFiringScopedUpdateOne) SetProperties(v string) *RuleFiringScopedUpdateOne {
+	x.b.SetProperties(v)
+	return x
+}
+
+// SetNillableProperties sets the "properties" field if the given value is not nil.
+func (x *RuleFiringScopedUpdateOne) SetNillableProperties(v *string) *RuleFiringScopedUpdateOne {
+	x.b.SetNillableProperties(v)
+	return x
+}
+
+// ClearProperties clears the value of the "properties" field.
+func (x *RuleFiringScopedUpdateOne) ClearProperties() *RuleFiringScopedUpdateOne {
+	x.b.ClearProperties()
+	return x
+}
+
 // SetResults sets the "results" field.
 func (x *RuleFiringScopedUpdateOne) SetResults(v string) *RuleFiringScopedUpdateOne {
 	x.b.SetResults(v)
@@ -21643,6 +21691,24 @@ func (x *RuleFiringScopedUpdate) SetActions(v string) *RuleFiringScopedUpdate {
 // SetNillableActions sets the "actions" field if the given value is not nil.
 func (x *RuleFiringScopedUpdate) SetNillableActions(v *string) *RuleFiringScopedUpdate {
 	x.b.SetNillableActions(v)
+	return x
+}
+
+// SetProperties sets the "properties" field.
+func (x *RuleFiringScopedUpdate) SetProperties(v string) *RuleFiringScopedUpdate {
+	x.b.SetProperties(v)
+	return x
+}
+
+// SetNillableProperties sets the "properties" field if the given value is not nil.
+func (x *RuleFiringScopedUpdate) SetNillableProperties(v *string) *RuleFiringScopedUpdate {
+	x.b.SetNillableProperties(v)
+	return x
+}
+
+// ClearProperties clears the value of the "properties" field.
+func (x *RuleFiringScopedUpdate) ClearProperties() *RuleFiringScopedUpdate {
+	x.b.ClearProperties()
 	return x
 }
 

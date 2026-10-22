@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/dkimstate"
+	"github.com/getsphericon/sphericon/internal/httpcall"
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
@@ -523,14 +524,31 @@ func ruleActions(stored string) []externalapi.RuleAction {
 		return nil
 	}
 	return lo.Map(actions, func(a rules.Action, _ int) externalapi.RuleAction {
-		return externalapi.RuleAction{Type: externalapi.RuleActionType(a.Type), Tag: ruleOptString(a.Tag)}
+		out := externalapi.RuleAction{Type: externalapi.RuleActionType(a.Type), Tag: ruleOptString(a.Tag)}
+		if a.Type == rules.ActionHTTP {
+			// Masked: the URL, header values and signing secret never leave the server.
+			out.ID = ruleOptString(a.ID)
+			out.Body = ruleOptString(a.Body)
+			out.HasSecret = externalapi.NewOptBool(a.Secret != "")
+			out.Headers = lo.Map(a.Headers, func(h httpcall.Header, _ int) externalapi.AutomationHttpHeader {
+				return externalapi.AutomationHttpHeader{Name: h.Name}
+			})
+		}
+		return out
 	})
 }
 
 // RuleActions converts the typed Actions DTO to the Rule module's Actions.
 func RuleActions(actions []externalapi.RuleAction) []rules.Action {
 	return lo.Map(actions, func(a externalapi.RuleAction, _ int) rules.Action {
-		return rules.Action{Type: string(a.Type), Tag: a.Tag.Or("")}
+		return rules.Action{
+			Type: string(a.Type), Tag: a.Tag.Or(""),
+			ID: a.ID.Or(""), URL: a.URL.Or(""), Body: a.Body.Or(""),
+			Headers: lo.Map(a.Headers, func(h externalapi.AutomationHttpHeader, _ int) httpcall.Header {
+				return httpcall.Header{Name: h.Name, Value: h.Value.Or("")}
+			}),
+			Secret: a.Secret.Or(""), ClearSecret: a.ClearSecret.Or(false),
+		}
 	})
 }
 
