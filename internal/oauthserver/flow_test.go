@@ -11,7 +11,6 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent/apitoken"
-	"github.com/getsphericon/sphericon/ent/membership"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/oauthserver"
@@ -121,22 +120,9 @@ func TestConsentToAWorkspaceTheUserDoesNotBelongToIsRefused(t *testing.T) {
 	assert.IsType(t, &siteapi.SiteOAuthDecideNotFound{}, res)
 }
 
-// Approving mints a non-expiring API token, so it takes the role that may create one.
-func newAdmin(t *testing.T, env *testhelper.TestEnv) string {
-	t.Helper()
-	// Admin has no fixture user (a committed admin would change the exact member
-	// list of the Acme roster), so it is created inline; the member is MemberMary.
-	admin := "admin@acme.test"
-	u, err := env.DB.User.Create().SetName(admin).SetEmail(admin).Save(t.Context())
-	require.NoError(t, err)
-	_, err = env.DB.Membership.Create().SetUserID(u.ID).SetWorkspaceID(fixtures.AcmeID).SetRole(membership.RoleAdmin).Save(t.Context())
-	require.NoError(t, err)
-	return admin
-}
-
 func TestConsentAnAdminMayApprove(t *testing.T) {
 	env := testhelper.Setup(t)
-	admin := newAdmin(t, env)
+	admin := fixtures.AdminAliceEmail
 	in := approval("contacts:write", false)
 
 	res, err := env.SiteActor(t, admin).SiteOAuthDecide(t.Context(), &in)

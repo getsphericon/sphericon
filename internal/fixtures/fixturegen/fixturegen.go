@@ -44,6 +44,7 @@ var catalogColumns = []struct {
 	{"url", "URL", false},
 	{"action", "Action", false},
 	{"key", "Key", false},
+	{"visitor_id", "VisitorID", false},
 	{"destination", "Destination", false},
 	{"provider", "Provider", false},
 	{"subject", "Subject", false},

@@ -148,6 +148,17 @@
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
   email_verified_at: '2026-01-01 00:00:00'
+# Two more stale unverified Users with nothing attached, so the prune job has several to remove.
+- id: 5700 # fixture: StaleUnverifiedBulkOne
+  name: Bulk One
+  email: bulk-one@unverified.test
+  created_at: '{{daysAgo 30}}'
+  updated_at: '{{daysAgo 30}}'
+- id: 5701 # fixture: StaleUnverifiedBulkTwo
+  name: Bulk Two
+  email: bulk-two@unverified.test
+  created_at: '{{daysAgo 30}}'
+  updated_at: '{{daysAgo 30}}'
 # Dora is the only Owner of two live Workspaces (PiedPiper, Aviato): her User deletion is refused.
 - id: 20 # fixture: SoleOwnerDora
   name: Dora

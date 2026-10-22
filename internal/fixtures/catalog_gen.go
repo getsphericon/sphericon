@@ -391,6 +391,10 @@ const (
 	ContactErasableEmail = "erin@initech.test"
 	// ContactErasableID is from fixtures/contacts.
 	ContactErasableID = 300
+	// ContactExportHeavyEmail is from fixtures/contacts.
+	ContactExportHeavyEmail = "export.heavy@example.com"
+	// ContactExportHeavyID is from fixtures/contacts.
+	ContactExportHeavyID = 5703
 	// ContactExportSubjectEmail is from fixtures/contacts.
 	ContactExportSubjectEmail = "export.subject@example.com"
 	// ContactExportSubjectID is from fixtures/contacts.
@@ -489,10 +493,24 @@ const (
 	DunderPreviewTargetID = 5550
 	// DunderPublicID is from fixtures/workspaces.
 	DunderPublicID = "DundrW60"
+	// EventAnonymousFirstAction is from fixtures/events.
+	EventAnonymousFirstAction = "page_view"
+	// EventAnonymousFirstID is from fixtures/events.
+	EventAnonymousFirstID = 150
+	// EventAnonymousFirstVisitorID is from fixtures/events.
+	EventAnonymousFirstVisitorID = "anon-codebasics-1"
+	// EventAnonymousSecondAction is from fixtures/events.
+	EventAnonymousSecondAction = "page_view"
+	// EventAnonymousSecondID is from fixtures/events.
+	EventAnonymousSecondID = 151
+	// EventAnonymousSecondVisitorID is from fixtures/events.
+	EventAnonymousSecondVisitorID = "anon-codebasics-2"
 	// EventAnonymousVisitorAction is from fixtures/events.
 	EventAnonymousVisitorAction = "pricing_viewed"
 	// EventAnonymousVisitorID is from fixtures/events.
 	EventAnonymousVisitorID = 980
+	// EventAnonymousVisitorVisitorID is from fixtures/events.
+	EventAnonymousVisitorVisitorID = "vis-anonymous-301"
 	// EventBystanderCustomAction is from fixtures/events.
 	EventBystanderCustomAction = "plan_upgraded"
 	// EventBystanderCustomEmail is from fixtures/events.
@@ -509,6 +527,8 @@ const (
 	EventErasableAnonymousAction = "pricing_viewed"
 	// EventErasableAnonymousID is from fixtures/events.
 	EventErasableAnonymousID = 951
+	// EventErasableAnonymousVisitorID is from fixtures/events.
+	EventErasableAnonymousVisitorID = "vis-erasable-laptop"
 	// EventErasableBouncedAction is from fixtures/events.
 	EventErasableBouncedAction = "email.bounced"
 	// EventErasableBouncedEmail is from fixtures/events.
@@ -569,6 +589,8 @@ const (
 	EventExportCustomEmail = "export.subject@example.com"
 	// EventExportCustomID is from fixtures/events.
 	EventExportCustomID = 800
+	// EventExportCustomVisitorID is from fixtures/events.
+	EventExportCustomVisitorID = "vis-export-laptop"
 	// EventGlobexAction is from fixtures/events.
 	EventGlobexAction = "globex_only"
 	// EventGlobexID is from fixtures/events.
@@ -691,6 +713,14 @@ const (
 	HoldAcmeLapsedID = 1
 	// HoldAcmeLapsedKey is from fixtures/holds.
 	HoldAcmeLapsedKey = "lapsed"
+	// HoldAcmeSecondLapsedID is from fixtures/holds.
+	HoldAcmeSecondLapsedID = 5701
+	// HoldAcmeSecondLapsedKey is from fixtures/holds.
+	HoldAcmeSecondLapsedKey = "lapsed-second"
+	// HoldAcmeThirdLapsedID is from fixtures/holds.
+	HoldAcmeThirdLapsedID = 5702
+	// HoldAcmeThirdLapsedKey is from fixtures/holds.
+	HoldAcmeThirdLapsedKey = "lapsed-third"
 	// HoldGlobexLapsedID is from fixtures/holds.
 	HoldGlobexLapsedID = 900
 	// HoldGlobexLapsedKey is from fixtures/holds.
@@ -1411,6 +1441,18 @@ const (
 	StaleLoginAttemptEmail = "stale@attempts.test"
 	// StaleLoginAttemptID is from fixtures/auth_attempts.
 	StaleLoginAttemptID = 100
+	// StaleUnverifiedBulkOneEmail is from fixtures/users.
+	StaleUnverifiedBulkOneEmail = "bulk-one@unverified.test"
+	// StaleUnverifiedBulkOneID is from fixtures/users.
+	StaleUnverifiedBulkOneID = 5700
+	// StaleUnverifiedBulkOneName is from fixtures/users.
+	StaleUnverifiedBulkOneName = "Bulk One"
+	// StaleUnverifiedBulkTwoEmail is from fixtures/users.
+	StaleUnverifiedBulkTwoEmail = "bulk-two@unverified.test"
+	// StaleUnverifiedBulkTwoID is from fixtures/users.
+	StaleUnverifiedBulkTwoID = 5701
+	// StaleUnverifiedBulkTwoName is from fixtures/users.
+	StaleUnverifiedBulkTwoName = "Bulk Two"
 	// StaleUnverifiedMemberEmail is from fixtures/users.
 	StaleUnverifiedMemberEmail = "stale-member@unverified.test"
 	// StaleUnverifiedMemberID is from fixtures/users.
@@ -1601,6 +1643,10 @@ const (
 	UmbrellaRitaMembershipID = 10
 	// UmbrellaSamMembershipID is from fixtures/memberships.
 	UmbrellaSamMembershipID = 12
+	// UnsubscribeAutomationLeoDestination is from fixtures/unsubscribes.
+	UnsubscribeAutomationLeoDestination = "leo.devops@codebasics.dev"
+	// UnsubscribeAutomationLeoID is from fixtures/unsubscribes.
+	UnsubscribeAutomationLeoID = 103
 	// UnsubscribeErasableDestination is from fixtures/unsubscribes.
 	UnsubscribeErasableDestination = "erin@initech.test"
 	// UnsubscribeErasableID is from fixtures/unsubscribes.
@@ -1647,10 +1693,16 @@ const (
 	VandelayPublicID = "VandlWs7"
 	// VisitorAnonymousID is from fixtures/visitors.
 	VisitorAnonymousID = 301
+	// VisitorAnonymousVisitorID is from fixtures/visitors.
+	VisitorAnonymousVisitorID = "vis-anonymous-301"
 	// VisitorErasableID is from fixtures/visitors.
 	VisitorErasableID = 300
+	// VisitorErasableVisitorID is from fixtures/visitors.
+	VisitorErasableVisitorID = "vis-erasable-laptop"
 	// VisitorGlobexID is from fixtures/visitors.
 	VisitorGlobexID = 900
+	// VisitorGlobexVisitorID is from fixtures/visitors.
+	VisitorGlobexVisitorID = "vis-globex-1"
 	// WayneCollectKey is from fixtures/workspaces.
 	WayneCollectKey = "omck_test_wayne_collect_key"
 	// WayneID is from fixtures/workspaces.

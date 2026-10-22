@@ -177,7 +177,9 @@ func TestSiteInstanceTelemetrySettingFollowsTheEnvironment(t *testing.T) {
 			}))
 			john := env.SiteActor(t, fixtures.OwnerJohnEmail)
 			for _, stored := range tc.stored {
-				require.NoError(t, env.DB.InstanceState.Create().SetID(1).SetTelemetryEnabled(stored).Exec(t.Context()))
+				row, err := env.Instance.Ensure(t.Context())
+				require.NoError(t, err)
+				require.NoError(t, env.DB.InstanceState.UpdateOneID(row.ID).SetTelemetryEnabled(stored).Exec(t.Context()))
 			}
 
 			state := instanceState(t, john)

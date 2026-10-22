@@ -1,8 +1,6 @@
 package app
 
 import (
-	"database/sql"
-
 	"github.com/samber/do/v2"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -16,13 +14,4 @@ func invokeEnt(a *App) (*ent.Client, error) {
 		return nil, err
 	}
 	return c.Client, nil
-}
-
-// invokeSQL resolves the app's database pool, the one its outbox writes through.
-func invokeSQL(a *App) (*sql.DB, error) {
-	d, err := do.Invoke[*sqlDB](a.injector)
-	if err != nil {
-		return nil, err
-	}
-	return d.DB, nil
 }

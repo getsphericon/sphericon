@@ -34,14 +34,11 @@ func TestIdentifyCreatesTheContactBindsTheDeviceAndStitchesEarlierEvents(t *test
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	// An earlier anonymous event from the device, and one from another device.
-	for _, v := range []string{"dev-1", "dev-2"} {
-		_, err := env.DB.Event.Create().SetWorkspaceID(fixtures.AcmeID).SetVisitorID(v).SetAction("page_view").Save(ctx)
-		require.NoError(t, err)
-	}
+	// The fixtures hold an earlier anonymous event from the device, and one from another device.
+	const device, otherDevice = fixtures.EventAnonymousFirstVisitorID, fixtures.EventAnonymousSecondVisitorID
 
 	err := visitors.Identify(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), visitors.IdentifyInput{
-		VisitorID: "  dev-1 ",
+		VisitorID: "  " + device + " ",
 		Email:     new("Visitor@Example.com"),
 		Traits:    map[string]any{"plan": "pro"},
 	})
@@ -51,14 +48,14 @@ func TestIdentifyCreatesTheContactBindsTheDeviceAndStitchesEarlierEvents(t *test
 	require.NoError(t, err)
 	assert.Equal(t, "pro", c.CustomFields["plan"])
 
-	v, err := env.DB.Visitor.Query().Where(visitor.WorkspaceID(fixtures.AcmeID), visitor.VisitorID("dev-1")).Only(ctx)
+	v, err := env.DB.Visitor.Query().Where(visitor.WorkspaceID(fixtures.AcmeID), visitor.VisitorID(device)).Only(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, c.ID, lo.FromPtr(v.ContactID), "the device is bound to the contact")
 
-	stitched, err := env.DB.Event.Query().Where(event.VisitorID("dev-1")).Only(ctx)
+	stitched, err := env.DB.Event.Query().Where(event.VisitorID(device)).Only(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, c.ID, lo.FromPtr(stitched.ContactID), "pre-identify behavior is attached")
-	other, err := env.DB.Event.Query().Where(event.VisitorID("dev-2")).Only(ctx)
+	other, err := env.DB.Event.Query().Where(event.VisitorID(otherDevice)).Only(ctx)
 	require.NoError(t, err)
 	assert.Nil(t, other.ContactID, "another device stays anonymous")
 }

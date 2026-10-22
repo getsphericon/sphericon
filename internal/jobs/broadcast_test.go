@@ -11,7 +11,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
-	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/jobs"
@@ -157,9 +156,7 @@ func TestUnsubscribeBetweenPlanAndSendSkipsTheRecipient(t *testing.T) {
 	require.NoError(t, err)
 	rec := env.DB.BroadcastRecipient.GetX(ctx, ids[0])
 	c := env.DB.Contact.GetX(ctx, rec.ContactID)
-	env.DB.Unsubscribe.Create().SetWorkspaceID(fixtures.AcmeID).SetChannel("email").
-		SetDestination(suppression.NormalizeDestination(*c.Email)).
-		SetSendingSource(eligibility.SourceBroadcasts).ExecX(ctx)
+	env.UnsubscribeFromBroadcasts(ctx, suppression.NormalizeDestination(*c.Email))
 
 	require.NoError(t, deliverRecipient(ctx, env.DB, mod, ids[0]))
 	assert.Equal(t, outboundmessage.StatusSkipped, env.DB.OutboundMessage.Query().Where(outboundmessage.BroadcastRecipientID(ids[0])).OnlyX(ctx).Status)

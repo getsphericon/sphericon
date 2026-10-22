@@ -67,8 +67,7 @@ func TestActionsAreDistinctSortedAndWorkspaceScoped(t *testing.T) {
 	ctx := context.Background()
 	m := newModule(env)
 
-	env.DB.Event.Create().SetWorkspaceID(fixtures.AcmeID).SetSubjectID("dup").SetAction("page_view").SaveX(ctx)
-
+	// The fixtures hold many page_view Events: the action is listed once.
 	got, err := m.Actions(ctx, env.DB.Scoped(fixtures.AcmeID))
 	require.NoError(t, err)
 	assert.True(t, sort.StringsAreSorted(got))

@@ -18,7 +18,6 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -243,23 +242,6 @@ func TestStopShutsDownTheMetricsServer(t *testing.T) {
 	assert.Error(t, err, "metrics listener stopped accepting after Stop")
 }
 
-// ownedWorkspace creates a workspace with one owner on the test's own database (the
-// app connects outside the txdb harness).
-func ownedWorkspace(t *testing.T, a *App, publicID, ownerEmail string) {
-	t.Helper()
-	ctx := context.Background()
-	database, err := invokeSQL(a)
-	require.NoError(t, err)
-	// The Workspace feed takes a position only inside a transaction.
-	require.NoError(t, events.New(database).WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
-		ws := tx.Workspace.Create().SetName("App Test").SetPublicID(publicID).
-			SetCollectKey("ck_" + publicID).SaveX(ctx)
-		u := tx.User.Create().SetName("Owner").SetEmail(ownerEmail).SaveX(ctx)
-		tx.Membership.Create().SetUserID(u.ID).SetWorkspaceID(ws.ID).SetRole(membership.RoleOwner).ExecX(ctx)
-		return nil
-	}))
-}
-
 func TestSuspendAndUnsuspendWorkspace(t *testing.T) {
 	sink := newSMTPSink(t)
 	t.Setenv("SPHERICON_SMTP_HOST", "127.0.0.1")
@@ -270,15 +252,14 @@ func TestSuspendAndUnsuspendWorkspace(t *testing.T) {
 	a, err := NewCommandApp("test")
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = a.Shutdown(context.Background()) })
-	ownedWorkspace(t, a, "AppSusp1", "owner@app-suspend.test")
 	ctx := context.Background()
 	client, err := invokeEnt(a)
 	require.NoError(t, err)
 	state := func() *ent.Workspace {
-		return client.Workspace.Query().Where(workspace.PublicID("AppSusp1")).OnlyX(ctx)
+		return client.Workspace.Query().Where(workspace.PublicID(fixtures.KramericaPublicID)).OnlyX(ctx)
 	}
 
-	changed, err := a.SuspendWorkspace(ctx, "AppSusp1", suspension.StaffMember("op-42"), "complaint rate")
+	changed, err := a.SuspendWorkspace(ctx, fixtures.KramericaPublicID, suspension.StaffMember("op-42"), "complaint rate")
 	require.NoError(t, err)
 	assert.True(t, changed)
 	ws := state()
@@ -287,20 +268,20 @@ func TestSuspendAndUnsuspendWorkspace(t *testing.T) {
 	assert.Equal(t, "op-42", *ws.SuspendedByID)
 	assert.Equal(t, "complaint rate", *ws.SuspensionReason)
 	assert.Len(t, sink.recipients(), 1, "the owner is told")
-	assert.Contains(t, sink.recipients()[0], "owner@app-suspend.test")
+	assert.Contains(t, sink.recipients()[0], fixtures.KramericaOwnerNewmanEmail)
 
-	changed, err = a.SuspendWorkspace(ctx, "AppSusp1", suspension.CLI, "again")
+	changed, err = a.SuspendWorkspace(ctx, fixtures.KramericaPublicID, suspension.CLI, "again")
 	require.NoError(t, err)
 	assert.False(t, changed, "already suspended: nothing changes")
 	assert.Len(t, sink.recipients(), 1, "and the owner is not told twice")
 	assert.Equal(t, "complaint rate", *state().SuspensionReason)
 
-	changed, err = a.UnsuspendWorkspace(ctx, "AppSusp1", suspension.CLI)
+	changed, err = a.UnsuspendWorkspace(ctx, fixtures.KramericaPublicID, suspension.CLI)
 	require.NoError(t, err)
 	assert.True(t, changed)
 	assert.Nil(t, state().SuspendedAt)
 
-	changed, err = a.UnsuspendWorkspace(ctx, "AppSusp1", suspension.CLI)
+	changed, err = a.UnsuspendWorkspace(ctx, fixtures.KramericaPublicID, suspension.CLI)
 	require.NoError(t, err)
 	assert.False(t, changed)
 }
@@ -317,16 +298,15 @@ func TestSuspendWorkspaceKeepsTheSuspensionWhenTheNoticeFails(t *testing.T) {
 	a, err := NewCommandApp("test")
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = a.Shutdown(context.Background()) })
-	ownedWorkspace(t, a, "AppSusp2", "owner@app-suspend-fail.test")
 	ctx := context.Background()
 
-	changed, err := a.SuspendWorkspace(ctx, "AppSusp2", suspension.CLI, "abuse")
+	changed, err := a.SuspendWorkspace(ctx, fixtures.KramericaPublicID, suspension.CLI, "abuse")
 	assert.True(t, changed)
 	require.ErrorContains(t, err, "workspace suspended, but the owner notice could not be sent")
 
 	client, cerr := invokeEnt(a)
 	require.NoError(t, cerr)
-	assert.NotNil(t, client.Workspace.Query().Where(workspace.PublicID("AppSusp2")).OnlyX(ctx).SuspendedAt)
+	assert.NotNil(t, client.Workspace.Query().Where(workspace.PublicID(fixtures.KramericaPublicID)).OnlyX(ctx).SuspendedAt)
 }
 
 func TestSuspendAndUnsuspendRejectBadInput(t *testing.T) {
@@ -341,8 +321,7 @@ func TestSuspendAndUnsuspendRejectBadInput(t *testing.T) {
 	_, err = a.UnsuspendWorkspace(ctx, "NoSuchId", suspension.CLI)
 	require.ErrorContains(t, err, `workspace "NoSuchId"`)
 
-	ownedWorkspace(t, a, "AppSusp3", "owner@app-suspend-input.test")
-	changed, err := a.SuspendWorkspace(ctx, "AppSusp3", suspension.Actor{}, "reason")
+	changed, err := a.SuspendWorkspace(ctx, fixtures.KramericaPublicID, suspension.Actor{}, "reason")
 	assert.False(t, changed)
 	assert.ErrorContains(t, err, "an actor is required")
 }

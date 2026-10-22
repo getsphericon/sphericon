@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -19,7 +20,7 @@ func TestExternalTagsRemoveForAnUnknownOrForeignContactIsNotFound(t *testing.T) 
 
 	for name, id := range map[string]externalapi.EntityId{
 		"unknown": 999999,
-		"foreign": entityIDString(globexContact(t, env, "tagless@globex.test")),
+		"foreign": entityIDString(fixtures.ContactGlobexID),
 	} {
 		t.Run(name, func(t *testing.T) {
 			res, err := c.TagsRemove(ctx, externalapi.TagsRemoveParams{ContactId: id, Name: "vip"})

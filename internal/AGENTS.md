@@ -29,9 +29,12 @@ never bare id literals (a deliberately missing id such as `999999` is fine). Que
 that vary with the dataset dynamically instead of hardcoding them. If a
 scenario isn't covered, **add a fixture row** rather than a `client.X.Create()` in the
 test. Anchor rows flagged "DO NOT change" in the YAML are referenced across the suite —
-leave them. txdb rolls back each test, so mutating a fixture row inside a test is fine.
-Exception: incidental one-off records (e.g. a suppression to trip a specific edge) may be
-created inline when no fixture expresses them.
+leave them. txdb rolls back each test, so mutating a fixture row inside a test is fine, and
+it is how a test puts a row into the state it needs at a chosen moment: the fixture Staff holds
+and the pending Outbound message are lapsed and stale, and `env.ExtendHold`, `env.ClaimOutbound`,
+`env.ClaimRecipient`, `env.PlaceRecipient` (parked recipients), `env.SuppressDestination` and
+`env.UnsubscribeFromBroadcasts` (the lifted Suppression and a per-Automation opt-out) move them.
+A test creates rows itself only when creating them is the operation under test.
 
 ## Fixture catalog
 

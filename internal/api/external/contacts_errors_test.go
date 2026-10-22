@@ -18,13 +18,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func globexContact(t *testing.T, env *testhelper.TestEnv, email string) int64 {
-	t.Helper()
-	c, err := env.DB.Contact.Create().SetWorkspaceID(fixtures.GlobexID).SetEmail(email).SetFirstName("Gil").Save(context.Background())
-	require.NoError(t, err)
-	return c.ID
-}
-
 func TestExternalContactsUpdatePersistsAttributesAndCustomFields(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
@@ -69,8 +62,9 @@ func TestExternalContactsUpdateConflictNamesTheField(t *testing.T) {
 func TestExternalContactsAreWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	foreign := entityIDString(globexContact(t, env, "gil@globex.test"))
+	foreign := entityIDString(fixtures.ContactGlobexID)
 	c := env.ExternalScoped(t, "contacts:read", "contacts:write", "contacts:erase")
+	before := env.DB.Contact.GetX(ctx, int64(foreign))
 
 	get, err := c.ContactsGet(ctx, externalapi.ContactsGetParams{ID: foreign})
 	require.NoError(t, err)
@@ -84,7 +78,7 @@ func TestExternalContactsAreWorkspaceScoped(t *testing.T) {
 
 	still, err := env.DB.Contact.Get(ctx, int64(foreign))
 	require.NoError(t, err)
-	assert.Equal(t, "Gil", *still.FirstName, "the foreign contact is untouched")
+	assert.Equal(t, before.FirstName, still.FirstName, "the foreign contact is untouched")
 
 	missing, err := c.ContactsUpdate(ctx, &externalapi.UpdateContactInput{}, externalapi.ContactsUpdateParams{ID: 999999})
 	require.NoError(t, err)

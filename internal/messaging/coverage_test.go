@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -140,23 +139,15 @@ func TestDKIMSignerBrokenKeyMaterial(t *testing.T) {
 	cipher := envCipher(t)
 
 	// Ciphertext that does not decrypt under the workspace cipher.
-	_, err := env.DB.SendingDomain.Create().
-		SetWorkspaceID(1).SetDomain("garbled.acme.com").SetDkimSelector("sphericon").
-		SetDkimPrivateKeyEncrypted("not-a-ciphertext").SetDkimPublicKey("v=DKIM1").SetVerifiedAt(time.Now()).
-		Save(ctx)
-	require.NoError(t, err)
-	_, err = messaging.NewDKIMSigner(env.DB.Scoped(fixtures.AcmeID), cipher).DKIMSigner(ctx, "hi@garbled.acme.com")
+	env.DB.SendingDomain.UpdateOneID(fixtures.SendingDomainVerifiedID).SetDkimPrivateKeyEncrypted("not-a-ciphertext").ExecX(ctx)
+	_, err := messaging.NewDKIMSigner(env.DB.Scoped(fixtures.AcmeID), cipher).DKIMSigner(ctx, "hi@"+fixtures.SendingDomainVerifiedDomain)
 	require.ErrorContains(t, err, "decrypt dkim key")
 
 	// Decrypts fine but is not a PEM private key.
 	sealed, err := cipher.Encrypt([]byte("definitely not PEM"))
 	require.NoError(t, err)
-	_, err = env.DB.SendingDomain.Create().
-		SetWorkspaceID(1).SetDomain("nopem.acme.com").SetDkimSelector("sphericon").
-		SetDkimPrivateKeyEncrypted(sealed).SetDkimPublicKey("v=DKIM1").SetVerifiedAt(time.Now()).
-		Save(ctx)
-	require.NoError(t, err)
-	_, err = messaging.NewDKIMSigner(env.DB.Scoped(fixtures.AcmeID), cipher).DKIMSigner(ctx, "hi@nopem.acme.com")
+	env.DB.SendingDomain.UpdateOneID(fixtures.SendingDomainVerifiedID).SetDkimPrivateKeyEncrypted(sealed).ExecX(ctx)
+	_, err = messaging.NewDKIMSigner(env.DB.Scoped(fixtures.AcmeID), cipher).DKIMSigner(ctx, "hi@"+fixtures.SendingDomainVerifiedDomain)
 	assert.ErrorContains(t, err, "parse dkim key")
 }
 
@@ -192,11 +183,7 @@ func TestResolverErrors(t *testing.T) {
 	require.Error(t, err)
 	require.NotErrorIs(t, err, messaging.ErrNoProvider)
 
-	_, err = env.DB.Integration.Create().
-		SetWorkspaceID(fixtures.GlobexID).SetName("broken").SetProvider("smtp").
-		SetConfigEncrypted("not-a-ciphertext").SetIngestKey("omik_broken").SetIsDefault(true).
-		Save(ctx)
-	require.NoError(t, err)
+	env.DB.Integration.UpdateOneID(fixtures.IntegrationGlobexID).SetConfigEncrypted("not-a-ciphertext").SetIsDefault(true).ExecX(ctx)
 	_, err = resolver.EmailSender(ctx, env.DB.Scoped(fixtures.GlobexID))
 	assert.ErrorContains(t, err, "decrypt integration")
 }

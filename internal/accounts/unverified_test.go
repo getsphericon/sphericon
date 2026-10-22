@@ -17,18 +17,13 @@ const unverifiedRetention = 7 * 24 * time.Hour
 
 func TestPruneUnverifiedDeletesInBoundedBatches(t *testing.T) {
 	env := testhelper.Setup(t)
-	bulk := []string{"a@bulk.test", "b@bulk.test", "c@bulk.test"}
-	for _, email := range bulk {
-		_, err := env.DB.User.Create().SetName("Bulk").SetEmail(email).
-			SetCreatedAt(time.Now().Add(-30 * 24 * time.Hour)).Save(t.Context())
-		require.NoError(t, err)
-	}
+	stale := []int64{fixtures.StaleUnverifiedUserID, fixtures.StaleUnverifiedBulkOneID, fixtures.StaleUnverifiedBulkTwoID}
 
 	// A batch of one forces several rounds; every stale row still goes.
 	deleted, err := accounts.New(env.DB, env.Bus).PruneUnverified(t.Context(), unverifiedRetention, 1)
 
 	require.NoError(t, err)
-	assert.GreaterOrEqual(t, int(deleted), len(bulk), "at least the bulk Users go, one batch at a time")
-	assert.Zero(t, env.DB.User.Query().Where(user.EmailIn(bulk...)).CountX(t.Context()))
+	assert.GreaterOrEqual(t, int(deleted), len(stale), "at least the stale Users go, one batch at a time")
+	assert.Zero(t, env.DB.User.Query().Where(user.IDIn(stale...)).CountX(t.Context()))
 	assert.True(t, env.DB.User.Query().Where(user.ID(fixtures.FreshUnverifiedUserID)).ExistX(t.Context()), "younger than the window")
 }

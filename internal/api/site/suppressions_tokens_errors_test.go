@@ -52,9 +52,6 @@ func TestSiteSuppressionsErrorBranches(t *testing.T) {
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSuppressionsCreateUnprocessableEntity{}, r2)
 
-	before, err := env.DB.Suppression.Query().Count(ctx)
-	require.NoError(t, err)
-
 	r3, err := c.SiteSuppressionsDelete(ctx, siteapi.SiteSuppressionsDeleteParams{WorkspaceId: foreign, ID: 100})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSuppressionsDeleteNotFound{}, r3)
@@ -63,16 +60,13 @@ func TestSiteSuppressionsErrorBranches(t *testing.T) {
 	assert.IsType(t, &siteapi.SiteSuppressionsDeleteNotFound{}, r5)
 
 	// A suppression of another workspace cannot be deleted through Acme.
-	other, err := env.DB.Suppression.Create().SetWorkspaceID(fixtures.GlobexID).
-		SetChannel(suppression.ChannelEmail).SetDestination("x@globex.test").SetReason(suppression.ReasonManual).Save(ctx)
-	require.NoError(t, err)
-	r6, err := c.SiteSuppressionsDelete(ctx, siteapi.SiteSuppressionsDeleteParams{WorkspaceId: acme, ID: idStr(int64(other.ID))})
+	r6, err := c.SiteSuppressionsDelete(ctx, siteapi.SiteSuppressionsDeleteParams{WorkspaceId: acme, ID: idStr(fixtures.SuppressionGlobexID)})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSuppressionsDeleteNotFound{}, r6)
 
-	after, err := env.DB.Suppression.Query().Count(ctx)
-	require.NoError(t, err)
-	assert.Equal(t, before+1, after, "nothing was deleted")
+	for _, id := range []int64{fixtures.SuppressionGlobexID, fixtures.SuppressionGhostBounceID} {
+		assert.True(t, env.DB.Suppression.Query().Where(suppression.ID(id)).ExistX(ctx), "nothing was deleted")
+	}
 }
 
 func TestSiteTokensListCreateAndRevoke(t *testing.T) {
