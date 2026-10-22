@@ -24,8 +24,8 @@ type Automation struct {
 
 // ActivateAutomation creates an Automation with a single email step (no wait steps, so
 // the email goes out as soon as a Contact is enrolled) and activates it. Creation
-// always stores a draft; activating is a separate step.
-func (w *Workspace) ActivateAutomation(a Automation) {
+// always stores a draft; activating is a separate step. It returns the Automation's id.
+func (w *Workspace) ActivateAutomation(a Automation) int64 {
 	w.t.Helper()
 	ctx := w.t.Context()
 	if a.Name == "" {
@@ -45,6 +45,7 @@ func (w *Workspace) ActivateAutomation(a Automation) {
 	act, err := w.api.AutomationsActivate(ctx, externalapi.AutomationsActivateParams{ID: created.ID})
 	got := ok[externalapi.AutomationResource](w.t, "activate automation", act, err)
 	require.Equal(w.t, externalapi.AutomationStatusActive, got.Status)
+	return int64(got.ID)
 }
 
 // AuthoredAutomation is what a scenario chooses about an Automation whose one email step is
