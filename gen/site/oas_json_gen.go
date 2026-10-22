@@ -32718,11 +32718,18 @@ func (s *SiteRuleAction) encodeFields(e *jx.Encoder) {
 			s.Tag.Encode(e)
 		}
 	}
+	{
+		if s.AutomationId.Set {
+			e.FieldStart("automationId")
+			s.AutomationId.Encode(e)
+		}
+	}
 }
 
-var jsonFieldsNameOfSiteRuleAction = [2]string{
+var jsonFieldsNameOfSiteRuleAction = [3]string{
 	0: "type",
 	1: "tag",
+	2: "automationId",
 }
 
 // Decode decodes SiteRuleAction from json.
@@ -32753,6 +32760,16 @@ func (s *SiteRuleAction) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"tag\"")
+			}
+		case "automationId":
+			if err := func() error {
+				s.AutomationId.Reset()
+				if err := s.AutomationId.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"automationId\"")
 			}
 		default:
 			return d.Skip()
@@ -32998,6 +33015,8 @@ func (s *SiteRuleActionType) Decode(d *jx.Decoder) error {
 		*s = SiteRuleActionTypeApplyTag
 	case SiteRuleActionTypeRemoveTag:
 		*s = SiteRuleActionTypeRemoveTag
+	case SiteRuleActionTypeEnrollAutomation:
+		*s = SiteRuleActionTypeEnrollAutomation
 	default:
 		*s = SiteRuleActionType(v)
 	}
@@ -49479,6 +49498,8 @@ func (s *UsedByKind) Decode(d *jx.Decoder) error {
 		*s = UsedByKindAutomation
 	case UsedByKindSegment:
 		*s = UsedByKindSegment
+	case UsedByKindRule:
+		*s = UsedByKindRule
 	case UsedByKindEnrollment:
 		*s = UsedByKindEnrollment
 	default:

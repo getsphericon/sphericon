@@ -14,6 +14,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -21,6 +22,7 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/ent/rulefiring"
@@ -34,6 +36,8 @@ import (
 const (
 	ActionApplyTag  = "apply_tag"
 	ActionRemoveTag = "remove_tag"
+	// ActionEnroll enrolls the Contact in an Automation (once ever, ADR 0046).
+	ActionEnroll = "enroll_automation"
 )
 
 // Domain errors returned by Module. Callers match with errors.Is.
@@ -51,6 +55,8 @@ type Action struct {
 	Type string `json:"type"`
 	// Tag is the Tag name of apply_tag and remove_tag.
 	Tag string `json:"tag,omitempty"`
+	// AutomationID is the Automation enroll_automation enrolls the Contact in.
+	AutomationID int64 `json:"automation_id,omitempty"`
 }
 
 // Outcome is how one Action ended.
@@ -127,6 +133,9 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 	if err != nil {
 		return nil, err
 	}
+	if err := requireAutomations(ctx, s, in.Actions); err != nil {
+		return nil, err
+	}
 	var id int64
 	err = m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		r, err := ts.Rule().Create().
@@ -163,6 +172,9 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 	if in.Actions != nil {
 		encoded, err := encodeActions(*in.Actions)
 		if err != nil {
+			return nil, err
+		}
+		if err := requireAutomations(ctx, s, *in.Actions); err != nil {
 			return nil, err
 		}
 		actions = &encoded
@@ -336,6 +348,11 @@ func encodeActions(actions []Action) (string, error) {
 				return "", fmt.Errorf("%w: action %d: a tag action needs a tag", ErrInvalid, i+1)
 			}
 			stored = append(stored, Action{Type: a.Type, Tag: tag})
+		case ActionEnroll:
+			if a.AutomationID <= 0 {
+				return "", fmt.Errorf("%w: action %d: an enroll action needs an automation", ErrInvalid, i+1)
+			}
+			stored = append(stored, Action{Type: a.Type, AutomationID: a.AutomationID})
 		default:
 			return "", fmt.Errorf("%w: action %d: unknown action type %q", ErrInvalid, i+1, a.Type)
 		}
@@ -499,4 +516,44 @@ func (m *Module) RunActions(ctx context.Context, s *ent.Scoped, firingID int64, 
 		}
 	}
 	return s.RuleFiring().UpdateOneID(f.ID).SetCompletedAt(time.Now()).Exec(ctx)
+}
+
+// requireAutomations refuses an enroll Action whose Automation is not a kept Automation of the
+// Workspace (ErrInvalid).
+func requireAutomations(ctx context.Context, s *ent.Scoped, actions []Action) error {
+	for i, a := range actions {
+		if a.Type != ActionEnroll {
+			continue
+		}
+		ok, err := s.Automation().Query().Where(automation.ID(a.AutomationID)).Exist(ctx)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			return fmt.Errorf("%w: action %d: automation %d not found", ErrInvalid, i+1, a.AutomationID)
+		}
+	}
+	return nil
+}
+
+// EnrollingInto returns the active Rules that have an Action enrolling Contacts in the Automation.
+// A removal of the Automation is refused while there are any (ADR 0049, ADR 0054).
+func EnrollingInto(ctx context.Context, s *ent.Scoped, automationID int64) ([]*ent.Rule, error) {
+	active, err := s.Rule().Query().Where(rule.StatusEQ(rule.StatusActive)).Order(ent.Asc(rule.FieldID)).All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var using []*ent.Rule
+	for _, r := range active {
+		actions, err := DecodeActions(r.Actions)
+		if err != nil {
+			return nil, err
+		}
+		if slices.ContainsFunc(actions, func(a Action) bool {
+			return a.Type == ActionEnroll && a.AutomationID == automationID
+		}) {
+			using = append(using, r)
+		}
+	}
+	return using, nil
 }

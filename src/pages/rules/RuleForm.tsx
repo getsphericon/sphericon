@@ -15,7 +15,10 @@ import { useTranslation } from 'react-i18next'
 import * as z from 'zod'
 
 import { ButtonLink } from '../../components/RouterLink.tsx'
-import { siteEventsActionsOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
+import {
+  siteAutomationsListOptions,
+  siteEventsActionsOptions,
+} from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteConditionGroup, SiteRuleAction } from '../../generated/site/types.gen.ts'
 import type { ResourceFormProps } from '../../resources/defineResource.tsx'
 import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
@@ -26,6 +29,7 @@ import {
   actionsCodec,
   newAction,
   ruleActionKinds,
+  takesAutomation,
   takesTag,
   triggerEventsCodec,
 } from './actions.ts'
@@ -56,6 +60,15 @@ export function RuleForm({ form, isPending, onSubmit }: ResourceFormProps<RulePa
   }, [form.values.actions])
 
   const knownEvents = useQuery(siteEventsActionsOptions({ path: { workspaceId } }))
+  // The automations an enroll action can pick from; read only once an action needs them.
+  const automationsQuery = useQuery({
+    ...siteAutomationsListOptions({ path: { workspaceId }, query: { pageSize: 100 } }),
+    enabled: actions.some((action) => takesAutomation(action.type)),
+  })
+  const automationOptions = (automationsQuery.data?.items ?? []).map((automation) => ({
+    value: automation.id,
+    label: automation.name,
+  }))
   const setActions = (next: SiteRuleAction[]) =>
     form.setFieldValue('actions', z.encode(actionsCodec, next))
   const changeAction = (index: number, change: Partial<SiteRuleAction>) =>
@@ -122,6 +135,19 @@ export function RuleForm({ form, isPending, onSubmit }: ResourceFormProps<RulePa
                     label={t(($) => $.rules.actionTagLabel)}
                     value={action.tag ?? ''}
                     onChange={(event) => changeAction(index, { tag: event.currentTarget.value })}
+                  />
+                ) : null}
+                {takesAutomation(action.type) ? (
+                  <Select
+                    label={t(($) => $.rules.actionAutomationLabel)}
+                    searchable
+                    data={automationOptions}
+                    value={action.automationId ?? null}
+                    onChange={(next) => {
+                      if (next) {
+                        changeAction(index, { automationId: next })
+                      }
+                    }}
                   />
                 ) : null}
                 <ActionIcon

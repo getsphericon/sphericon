@@ -28,7 +28,7 @@ func fireAndRun(t *testing.T, env *testhelper.TestEnv, contactID int64, action, 
 	fired, err := m.Evaluate(ctx, s, rules.Event{ContactID: contactID, Action: action, SourceID: sourceID, RecordedAt: time.Now()})
 	require.NoError(t, err)
 	require.Len(t, fired, 1)
-	require.NoError(t, m.RunActions(ctx, s, fired[0].ID, jobs.RuleActionRunners(newMod(env, nil))))
+	require.NoError(t, m.RunActions(ctx, s, fired[0].ID, jobs.RuleActionRunners(newMod(env, nil), env.Bus)))
 	return env.DB.RuleFiring.GetX(ctx, fired[0].ID)
 }
 
@@ -94,7 +94,7 @@ func TestRunningAFinishedFiringAgainChangesNothing(t *testing.T) {
 	f := fireAndRun(t, env, fixtures.ContactBobID, "rule_click", "evt-again")
 	env.DB.Tag.Delete().Where(tag.Name("rule-clicked")).ExecX(ctx)
 
-	err := rules.New(env.Bus).RunActions(ctx, s, f.ID, jobs.RuleActionRunners(newMod(env, nil)))
+	err := rules.New(env.Bus).RunActions(ctx, s, f.ID, jobs.RuleActionRunners(newMod(env, nil), env.Bus))
 
 	require.NoError(t, err)
 	assert.Empty(t, tagsOf(t, env, fixtures.ContactBobID), "the Action did not run a second time")
@@ -106,7 +106,7 @@ func TestRunActionsOfAFiringThatIsGoneDoesNothing(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 	env.DB.RuleFiring.Delete().Where(rulefiring.ID(fixtures.RuleFiringPendingID)).ExecX(context.Background())
 
-	err := rules.New(env.Bus).RunActions(context.Background(), s, fixtures.RuleFiringPendingID, jobs.RuleActionRunners(newMod(env, nil)))
+	err := rules.New(env.Bus).RunActions(context.Background(), s, fixtures.RuleFiringPendingID, jobs.RuleActionRunners(newMod(env, nil), env.Bus))
 
 	assert.NoError(t, err)
 }

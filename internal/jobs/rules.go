@@ -8,6 +8,8 @@ import (
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/automation"
+	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/jobkind"
 	"github.com/getsphericon/sphericon/internal/outbound"
@@ -95,11 +97,49 @@ func (w *RunRuleActionsWorker) Work(ctx context.Context, job *river.Job[rules.Ac
 
 // RuleActionRunners are the Runners of the Actions a Rule can have. Each reuses the module that
 // already does the thing for an Automation step; internal/rules imports none of them.
-func RuleActionRunners(mod *outbound.Module) rules.ActionRunners {
+func RuleActionRunners(mod *outbound.Module, bus *events.Bus) rules.ActionRunners {
 	return rules.ActionRunners{
 		rules.ActionApplyTag:  tagAction{mod: mod, apply: true},
 		rules.ActionRemoveTag: tagAction{mod: mod},
+		rules.ActionEnroll:    enrollAction{bus: bus},
 	}
+}
+
+// enrollAction enrolls the Contact in an Automation through the same Enrollment an Automation's
+// trigger uses: once ever, fenced (ADR 0046). An Automation that is not active (a draft or an
+// archived one) or a Contact already enrolled is Skipped, not Failed. The Enrollment and the job
+// that starts stepping it commit together, so a retry never finds an enrolled Contact whose run
+// never started.
+type enrollAction struct {
+	bus *events.Bus
+}
+
+func (a enrollAction) Run(ctx context.Context, s *ent.Scoped, in rules.ActionInput) (rules.Result, error) {
+	auto, err := s.Automation().Query().Where(automation.ID(in.Action.AutomationID)).Only(ctx)
+	switch {
+	case ent.IsNotFound(err):
+		return rules.Result{Status: rules.Skipped, Detail: "the automation is gone"}, nil
+	case err != nil:
+		return rules.Result{}, err
+	case auto.Status != automation.StatusActive:
+		return rules.Result{Status: rules.Skipped, Detail: "the automation is not active"}, nil
+	}
+	enrolled := false
+	err = a.bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, q events.Enqueuer) error {
+		runID, ok, err := automations.Enroll(ctx, ts, auto.ID, in.ContactID)
+		if err != nil || !ok {
+			return err
+		}
+		enrolled = true
+		return q.Enqueue(ctx, RunStepArgs{RunID: runID}, nil)
+	})
+	switch {
+	case err != nil:
+		return rules.Result{}, err
+	case !enrolled:
+		return rules.Result{Status: rules.Skipped, Detail: "the contact is already enrolled"}, nil
+	}
+	return rules.Result{Status: rules.Succeeded}, nil
 }
 
 // tagAction applies or removes a Tag. The change is the `system` actor's (ADR 0022), as an

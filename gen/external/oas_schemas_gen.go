@@ -14919,6 +14919,7 @@ const (
 	UsedByKindBroadcast  UsedByKind = "broadcast"
 	UsedByKindAutomation UsedByKind = "automation"
 	UsedByKindSegment    UsedByKind = "segment"
+	UsedByKindRule       UsedByKind = "rule"
 	UsedByKindEnrollment UsedByKind = "enrollment"
 )
 
@@ -14928,6 +14929,7 @@ func (UsedByKind) AllValues() []UsedByKind {
 		UsedByKindBroadcast,
 		UsedByKindAutomation,
 		UsedByKindSegment,
+		UsedByKindRule,
 		UsedByKindEnrollment,
 	}
 }
@@ -14940,6 +14942,8 @@ func (s UsedByKind) MarshalText() ([]byte, error) {
 	case UsedByKindAutomation:
 		return []byte(s), nil
 	case UsedByKindSegment:
+		return []byte(s), nil
+	case UsedByKindRule:
 		return []byte(s), nil
 	case UsedByKindEnrollment:
 		return []byte(s), nil
@@ -14959,6 +14963,9 @@ func (s *UsedByKind) UnmarshalText(data []byte) error {
 		return nil
 	case UsedByKindSegment:
 		*s = UsedByKindSegment
+		return nil
+	case UsedByKindRule:
+		*s = UsedByKindRule
 		return nil
 	case UsedByKindEnrollment:
 		*s = UsedByKindEnrollment

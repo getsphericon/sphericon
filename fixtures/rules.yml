@@ -55,6 +55,41 @@
   created_at: '{{daysAgo 1}}'
   updated_at: '{{daysAgo 1}}'
 
+# The enroll Action: into an active Automation (Contact 3 is already enrolled in it), a draft one, one the test archives.
+- id: 106 # fixture: RuleEnrollGreeting
+  name: Enroll in the greeting
+  status: active
+  activated_at: '{{daysAgo 30}}'
+  actions: '[{"type":"enroll_automation","automation_id":5560}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 30}}'
+- id: 107 # fixture: RuleEnrollDraftAutomation
+  name: Enroll in a draft automation
+  status: active
+  activated_at: '{{daysAgo 30}}'
+  actions: '[{"type":"enroll_automation","automation_id":5566}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 30}}'
+- id: 108 # fixture: RuleEnrollSingleEmail
+  name: Enroll in the single-email automation
+  status: active
+  activated_at: '{{daysAgo 30}}'
+  actions: '[{"type":"enroll_automation","automation_id":5561}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 30}}'
+# Keeps the wait-first Automation (it has no Enrollments) from being removed.
+- id: 109 # fixture: RuleEnrollWaitFirst
+  name: Enroll in the wait-first automation
+  status: active
+  activated_at: '{{daysAgo 30}}'
+  actions: '[{"type":"enroll_automation","automation_id":5562}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 30}}'
+
 # --- Globex (workspace 2) foreign row ---
 - id: 900 # fixture: RuleGlobex
   name: Globex rule

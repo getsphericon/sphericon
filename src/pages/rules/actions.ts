@@ -6,16 +6,21 @@ import { zSiteRuleAction } from '../../generated/site/zod.gen.ts'
 import { jsonText } from '../../utils/jsonText.ts'
 
 // Every kind of Action the editor offers and what it is edited with. A later kind (a webhook
-// call, an enrollment) is one more entry here, with its own fields rendered by RuleForm.
-const actionKinds: Record<SiteRuleActionType, { takesTag: boolean }> = {
-  [SiteRuleActionType.APPLY_TAG]: { takesTag: true },
-  [SiteRuleActionType.REMOVE_TAG]: { takesTag: true },
+// call) is one more entry here, with its own fields rendered by RuleForm.
+const actionKinds: Record<SiteRuleActionType, { takesTag: boolean; takesAutomation: boolean }> = {
+  [SiteRuleActionType.APPLY_TAG]: { takesTag: true, takesAutomation: false },
+  [SiteRuleActionType.REMOVE_TAG]: { takesTag: true, takesAutomation: false },
+  [SiteRuleActionType.ENROLL_AUTOMATION]: { takesTag: false, takesAutomation: true },
 }
 
 export const ruleActionKinds = Object.values(SiteRuleActionType)
 
 export function takesTag(type: SiteRuleActionType): boolean {
   return actionKinds[type].takesTag
+}
+
+export function takesAutomation(type: SiteRuleActionType): boolean {
+  return actionKinds[type].takesAutomation
 }
 
 export function newAction(): SiteRuleAction {

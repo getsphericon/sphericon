@@ -115,6 +115,9 @@ enum UsedByKind {
   /** A Segment, through a rule that names a Tag */
   segment,
 
+  /** An active Rule with an Action that uses the row */
+  rule,
+
   /** The Enrollments of an Automation, as one entry carrying their count: the active ones when
    * the Automation is archived, all of them when it is deleted */
   enrollment,

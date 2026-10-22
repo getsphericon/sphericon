@@ -3,13 +3,18 @@ import { expect, test } from 'vitest'
 import { userEvent } from 'vitest/browser'
 
 import {
+  handleSiteAutomationsList,
   handleSiteCustomFieldsList,
   handleSiteEventsActions,
   handleSiteRulesCreate,
   handleSiteRulesGet,
   handleSiteRulesUpdate,
 } from '../../generated/site/msw.gen.ts'
-import type { SiteConditionGroup, SiteRuleResource } from '../../generated/site/types.gen.ts'
+import type {
+  SiteAutomationResource,
+  SiteConditionGroup,
+  SiteRuleResource,
+} from '../../generated/site/types.gen.ts'
 import { Route as rulesEditRoute } from '../../routes/workspaces/$workspaceId/rules/$ruleId/edit.tsx'
 import { Route as rulesCreateRoute } from '../../routes/workspaces/$workspaceId/rules/new.tsx'
 import { page, TIMESTAMPS } from '../../test/payloads.ts'
@@ -125,4 +130,50 @@ test('editing shows the stored rule and saves a change, a removed action include
     .poll(() => bodies)
     .toEqual([{ name: 'Renamed', triggerEvents: ['signed_up'], condition: CONDITION, actions: [] }])
   await expect.element(screen.getByText('Rule updated')).toBeInTheDocument()
+})
+
+const automation = (id: string, name: string): SiteAutomationResource => ({
+  id,
+  name,
+  status: 'active',
+  triggerEvent: 'signed_up',
+  steps: [],
+  ...TIMESTAMPS,
+})
+
+test('an enroll action picks one of the automations and saves it', async () => {
+  const bodies: unknown[] = []
+  serveCatalogue()
+  worker.use(
+    handleSiteAutomationsList({
+      body: page([automation('5', 'Welcome flow'), automation('6', 'Nurture flow')], 2),
+    }),
+    handleSiteRulesGet({
+      body: { ...STORED, actions: [{ type: 'enroll_automation', automationId: '5' }] },
+    }),
+    handleSiteRulesUpdate(async ({ request }) => {
+      bodies.push(await request.json())
+      return HttpResponse.json(STORED)
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<RuleEditPage />, EDIT_ROUTE)
+
+  await expect
+    .element(screen.getByRole('combobox', { name: 'Automation' }))
+    .toHaveValue('Welcome flow')
+  await screen.getByRole('combobox', { name: 'Automation' }).click()
+  await screen.getByRole('option', { name: 'Nurture flow' }).click()
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect
+    .poll(() => bodies)
+    .toEqual([
+      {
+        name: 'Tag signups',
+        triggerEvents: ['signed_up'],
+        condition: CONDITION,
+        actions: [{ type: 'enroll_automation', automationId: '6' }],
+      },
+    ])
 })

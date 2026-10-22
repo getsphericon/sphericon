@@ -5641,6 +5641,8 @@ func (s SiteRuleActionType) Validate() error {
 		return nil
 	case "remove_tag":
 		return nil
+	case "enroll_automation":
+		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
 	}
@@ -8860,6 +8862,8 @@ func (s UsedByKind) Validate() error {
 	case "automation":
 		return nil
 	case "segment":
+		return nil
+	case "rule":
 		return nil
 	case "enrollment":
 		return nil
