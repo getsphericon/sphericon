@@ -1,0 +1,74 @@
+# The Trigger events of the Rules in rules.yml (workspace acme, id 1, and Globex, id 2).
+- {
+    id: 100,
+    rule_id: 100,
+    action: rule_click,
+    workspace_id: 1,
+    created_at: '{{daysAgo 40}}',
+    updated_at: '{{daysAgo 40}}',
+  }
+- {
+    id: 101,
+    rule_id: 101,
+    action: rule_vip,
+    workspace_id: 1,
+    created_at: '{{daysAgo 40}}',
+    updated_at: '{{daysAgo 40}}',
+  }
+- {
+    id: 102,
+    rule_id: 102,
+    action: rule_draft,
+    workspace_id: 1,
+    created_at: '{{daysAgo 20}}',
+    updated_at: '{{daysAgo 20}}',
+  }
+- {
+    id: 103,
+    rule_id: 103,
+    action: rule_multi_a,
+    workspace_id: 1,
+    created_at: '{{daysAgo 40}}',
+    updated_at: '{{daysAgo 40}}',
+  }
+- {
+    id: 104,
+    rule_id: 103,
+    action: rule_multi_b,
+    workspace_id: 1,
+    created_at: '{{daysAgo 40}}',
+    updated_at: '{{daysAgo 40}}',
+  }
+- {
+    id: 105,
+    rule_id: 104,
+    action: rule_fail,
+    workspace_id: 1,
+    created_at: '{{daysAgo 40}}',
+    updated_at: '{{daysAgo 40}}',
+  }
+- {
+    id: 106,
+    rule_id: 105,
+    action: rule_later,
+    workspace_id: 1,
+    created_at: '{{daysAgo 1}}',
+    updated_at: '{{daysAgo 1}}',
+  }
+# Globex reacts to the same action as RuleTagClicked: an Event of one Workspace never fires the other's.
+- {
+    id: 900,
+    rule_id: 900,
+    action: rule_click,
+    workspace_id: 2,
+    created_at: '{{daysAgo 40}}',
+    updated_at: '{{daysAgo 40}}',
+  }
+- {
+    id: 300,
+    rule_id: 300,
+    action: rule_initech,
+    workspace_id: 3,
+    created_at: '{{daysAgo 40}}',
+    updated_at: '{{daysAgo 40}}',
+  }

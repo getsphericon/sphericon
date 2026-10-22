@@ -1,0 +1,215 @@
+package site
+
+import (
+	"context"
+	"errors"
+	"net/http"
+
+	"github.com/samber/lo"
+
+	"github.com/getsphericon/sphericon/ent"
+	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/api/site/resources"
+	"github.com/getsphericon/sphericon/internal/condition"
+	"github.com/getsphericon/sphericon/internal/convert"
+	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/rules"
+)
+
+func (h *Handlers) SiteRulesList(ctx context.Context, params siteapi.SiteRulesListParams) (siteapi.SiteRulesListRes, error) {
+	ws, err := h.scopedFor(ctx, params.WorkspaceId)
+	if ent.IsNotFound(err) {
+		v := siteapi.SiteRulesListNotFound(problem(http.StatusNotFound, "workspace not found"))
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	page, err := h.rules.List(ctx, ws, pagination.ParamsOf(params.Page, params.PageSize))
+	if err != nil {
+		return nil, err
+	}
+	return &siteapi.SiteRulesListOK{
+		Items:      lo.Map(page.Items, func(r *ent.Rule, _ int) siteapi.SiteRuleResource { return mapper.RuleToResource(r) }),
+		Page:       int32(page.Page),
+		PageSize:   int32(page.PageSize),
+		TotalItems: int32(page.TotalItems),
+		TotalPages: int32(page.TotalPages),
+	}, nil
+}
+
+// SiteRulesCreate always stores a draft.
+func (h *Handlers) SiteRulesCreate(ctx context.Context, req *siteapi.SiteCreateRuleInput, params siteapi.SiteRulesCreateParams) (siteapi.SiteRulesCreateRes, error) {
+	ws, err := h.scopedFor(ctx, params.WorkspaceId)
+	if ent.IsNotFound(err) {
+		v := siteapi.SiteRulesCreateNotFound(problem(http.StatusNotFound, "workspace not found"))
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	in := rules.CreateInput{
+		Name:          req.Name,
+		TriggerEvents: req.TriggerEvents,
+		Actions:       resources.RuleActions(req.Actions),
+	}
+	if group, ok := req.Condition.Get(); ok {
+		def, err := condition.Encode(&group)
+		if err != nil {
+			return nil, err
+		}
+		in.Condition = &def
+	}
+	r, err := h.rules.Create(ctx, ws, in)
+	if errors.Is(err, rules.ErrInvalid) {
+		v := siteapi.SiteRulesCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	res := mapper.RuleToResource(r)
+	return &res, nil
+}
+
+func (h *Handlers) SiteRulesGet(ctx context.Context, params siteapi.SiteRulesGetParams) (siteapi.SiteRulesGetRes, error) {
+	ws, err := h.scopedFor(ctx, params.WorkspaceId)
+	if ent.IsNotFound(err) {
+		v := siteapi.SiteRulesGetNotFound(problem(http.StatusNotFound, "workspace not found"))
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	r, err := h.rules.Get(ctx, ws, int64(params.ID))
+	if errors.Is(err, rules.ErrNotFound) {
+		v := siteapi.SiteRulesGetNotFound(problem(http.StatusNotFound, "rule not found"))
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	res := mapper.RuleToResource(r)
+	return &res, nil
+}
+
+func (h *Handlers) SiteRulesUpdate(ctx context.Context, req *siteapi.SiteUpdateRuleInput, params siteapi.SiteRulesUpdateParams) (siteapi.SiteRulesUpdateRes, error) {
+	ws, err := h.scopedFor(ctx, params.WorkspaceId)
+	if ent.IsNotFound(err) {
+		v := siteapi.SiteRulesUpdateNotFound(problem(http.StatusNotFound, "workspace not found"))
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	in := rules.UpdateInput{Name: convert.StringPtr(req.Name)}
+	if req.TriggerEvents != nil {
+		in.TriggerEvents = &req.TriggerEvents
+	}
+	if req.Actions != nil {
+		actions := resources.RuleActions(req.Actions)
+		in.Actions = &actions
+	}
+	if group, ok := req.Condition.Get(); ok {
+		def, err := condition.Encode(&group)
+		if err != nil {
+			return nil, err
+		}
+		in.Condition = &def
+	}
+	r, err := h.rules.Update(ctx, ws, int64(params.ID), in)
+	switch {
+	case errors.Is(err, rules.ErrNotFound):
+		v := siteapi.SiteRulesUpdateNotFound(problem(http.StatusNotFound, "rule not found"))
+		return &v, nil
+	case errors.Is(err, rules.ErrInvalid):
+		v := siteapi.SiteRulesUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
+		return &v, nil
+	case err != nil:
+		return nil, err
+	}
+	res := mapper.RuleToResource(r)
+	return &res, nil
+}
+
+// SiteRulesActivate makes the Rule react to the Events recorded from now on.
+func (h *Handlers) SiteRulesActivate(ctx context.Context, params siteapi.SiteRulesActivateParams) (siteapi.SiteRulesActivateRes, error) {
+	ws, err := h.scopedFor(ctx, params.WorkspaceId)
+	if ent.IsNotFound(err) {
+		v := siteapi.SiteRulesActivateNotFound(problem(http.StatusNotFound, "workspace not found"))
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	r, err := h.rules.Activate(ctx, ws, int64(params.ID))
+	switch {
+	case errors.Is(err, rules.ErrNotFound):
+		v := siteapi.SiteRulesActivateNotFound(problem(http.StatusNotFound, "rule not found"))
+		return &v, nil
+	case errors.Is(err, rules.ErrInvalid):
+		v := siteapi.SiteRulesActivateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
+		return &v, nil
+	case err != nil:
+		return nil, err
+	}
+	res := mapper.RuleToResource(r)
+	return &res, nil
+}
+
+func (h *Handlers) SiteRulesDeactivate(ctx context.Context, params siteapi.SiteRulesDeactivateParams) (siteapi.SiteRulesDeactivateRes, error) {
+	ws, err := h.scopedFor(ctx, params.WorkspaceId)
+	if ent.IsNotFound(err) {
+		v := siteapi.SiteRulesDeactivateNotFound(problem(http.StatusNotFound, "workspace not found"))
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	r, err := h.rules.Deactivate(ctx, ws, int64(params.ID))
+	if errors.Is(err, rules.ErrNotFound) {
+		v := siteapi.SiteRulesDeactivateNotFound(problem(http.StatusNotFound, "rule not found"))
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	res := mapper.RuleToResource(r)
+	return &res, nil
+}
+
+// SiteRuleFiringsList lists a Rule's Firings, newest first.
+func (h *Handlers) SiteRuleFiringsList(ctx context.Context, params siteapi.SiteRuleFiringsListParams) (siteapi.SiteRuleFiringsListRes, error) {
+	ws, err := h.scopedFor(ctx, params.WorkspaceId)
+	if ent.IsNotFound(err) {
+		v := siteapi.SiteRuleFiringsListNotFound(problem(http.StatusNotFound, "workspace not found"))
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	page, err := h.rules.Firings(ctx, ws, int64(params.RuleId), pagination.ParamsOf(params.Page, params.PageSize))
+	if errors.Is(err, rules.ErrNotFound) {
+		v := siteapi.SiteRuleFiringsListNotFound(problem(http.StatusNotFound, "rule not found"))
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &siteapi.SiteRuleFiringsListOK{
+		Items: lo.Map(page.Items, func(f *ent.RuleFiring, _ int) siteapi.SiteRuleFiringResource {
+			return mapper.RuleFiringToResource(f)
+		}),
+		Page:       int32(page.Page),
+		PageSize:   int32(page.PageSize),
+		TotalItems: int32(page.TotalItems),
+		TotalPages: int32(page.TotalPages),
+	}, nil
+}

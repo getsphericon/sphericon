@@ -1303,6 +1303,58 @@ const (
 	PruGoogleIdentityProvider = "google"
 	// PruGoogleIdentitySubject is from fixtures/user_identities.
 	PruGoogleIdentitySubject = "google-subject-of-pru"
+	// RuleActivatedLaterID is from fixtures/rules.
+	RuleActivatedLaterID = 105
+	// RuleActivatedLaterName is from fixtures/rules.
+	RuleActivatedLaterName = "Activated later"
+	// RuleDraftID is from fixtures/rules.
+	RuleDraftID = 102
+	// RuleDraftName is from fixtures/rules.
+	RuleDraftName = "Draft rule"
+	// RuleFailThenTagID is from fixtures/rules.
+	RuleFailThenTagID = 104
+	// RuleFailThenTagName is from fixtures/rules.
+	RuleFailThenTagName = "A failing action then a tag"
+	// RuleFiringBystanderAction is from fixtures/rule_firings.
+	RuleFiringBystanderAction = "rule_initech"
+	// RuleFiringBystanderID is from fixtures/rule_firings.
+	RuleFiringBystanderID = 301
+	// RuleFiringDoneAction is from fixtures/rule_firings.
+	RuleFiringDoneAction = "rule_click"
+	// RuleFiringDoneID is from fixtures/rule_firings.
+	RuleFiringDoneID = 100
+	// RuleFiringErasableAction is from fixtures/rule_firings.
+	RuleFiringErasableAction = "rule_initech"
+	// RuleFiringErasableID is from fixtures/rule_firings.
+	RuleFiringErasableID = 300
+	// RuleFiringGlobexAction is from fixtures/rule_firings.
+	RuleFiringGlobexAction = "rule_click"
+	// RuleFiringGlobexID is from fixtures/rule_firings.
+	RuleFiringGlobexID = 900
+	// RuleFiringPendingAction is from fixtures/rule_firings.
+	RuleFiringPendingAction = "rule_click"
+	// RuleFiringPendingID is from fixtures/rule_firings.
+	RuleFiringPendingID = 101
+	// RuleGlobexID is from fixtures/rules.
+	RuleGlobexID = 900
+	// RuleGlobexName is from fixtures/rules.
+	RuleGlobexName = "Globex rule"
+	// RuleInitechID is from fixtures/rules.
+	RuleInitechID = 300
+	// RuleInitechName is from fixtures/rules.
+	RuleInitechName = "Initech rule"
+	// RuleMultiTriggerID is from fixtures/rules.
+	RuleMultiTriggerID = 103
+	// RuleMultiTriggerName is from fixtures/rules.
+	RuleMultiTriggerName = "Either of two events"
+	// RuleTagClickedID is from fixtures/rules.
+	RuleTagClickedID = 100
+	// RuleTagClickedName is from fixtures/rules.
+	RuleTagClickedName = "Tag a Contact who clicked"
+	// RuleVipOnlyID is from fixtures/rules.
+	RuleVipOnlyID = 101
+	// RuleVipOnlyName is from fixtures/rules.
+	RuleVipOnlyName = "Tag a vip who did it"
 	// SamGoogleIdentityID is from fixtures/user_identities.
 	SamGoogleIdentityID = 2
 	// SamGoogleIdentityProvider is from fixtures/user_identities.

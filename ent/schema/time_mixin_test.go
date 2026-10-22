@@ -24,5 +24,9 @@ func TestEveryEntityTableHasTimestamps(t *testing.T) {
 		require.True(t, names["created_at"], "%s lacks created_at", table.Name)
 		require.True(t, names["updated_at"], "%s lacks updated_at", table.Name)
 	}
+<<<<<<< HEAD
 	require.Equal(t, 45, checked)
+=======
+	require.Equal(t, 47, checked)
+>>>>>>> caa1823 (feat: a Rule applies and removes Tags on an Event (tracer bullet, ADR 0054))
 }

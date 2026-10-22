@@ -45,9 +45,11 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboxoffset"
 	"github.com/getsphericon/sphericon/ent/passkey"
 	"github.com/getsphericon/sphericon/ent/passkeychallenge"
-	"github.com/getsphericon/sphericon/ent/privaterelayrange"
 	"github.com/getsphericon/sphericon/ent/recoverycode"
 	"github.com/getsphericon/sphericon/ent/riverjob"
+	"github.com/getsphericon/sphericon/ent/rule"
+	"github.com/getsphericon/sphericon/ent/rulefiring"
+	"github.com/getsphericon/sphericon/ent/ruletrigger"
 	"github.com/getsphericon/sphericon/ent/schemastate"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
@@ -133,12 +135,16 @@ type Client struct {
 	Passkey *PasskeyClient
 	// PasskeyChallenge is the client for interacting with the PasskeyChallenge builders.
 	PasskeyChallenge *PasskeyChallengeClient
-	// PrivateRelayRange is the client for interacting with the PrivateRelayRange builders.
-	PrivateRelayRange *PrivateRelayRangeClient
 	// RecoveryCode is the client for interacting with the RecoveryCode builders.
 	RecoveryCode *RecoveryCodeClient
 	// RiverJob is the client for interacting with the RiverJob builders.
 	RiverJob *RiverJobClient
+	// Rule is the client for interacting with the Rule builders.
+	Rule *RuleClient
+	// RuleFiring is the client for interacting with the RuleFiring builders.
+	RuleFiring *RuleFiringClient
+	// RuleTrigger is the client for interacting with the RuleTrigger builders.
+	RuleTrigger *RuleTriggerClient
 	// SchemaState is the client for interacting with the SchemaState builders.
 	SchemaState *SchemaStateClient
 	// Segment is the client for interacting with the Segment builders.
@@ -212,9 +218,11 @@ func (c *Client) init() {
 	c.OutboxOffset = NewOutboxOffsetClient(c.config)
 	c.Passkey = NewPasskeyClient(c.config)
 	c.PasskeyChallenge = NewPasskeyChallengeClient(c.config)
-	c.PrivateRelayRange = NewPrivateRelayRangeClient(c.config)
 	c.RecoveryCode = NewRecoveryCodeClient(c.config)
 	c.RiverJob = NewRiverJobClient(c.config)
+	c.Rule = NewRuleClient(c.config)
+	c.RuleFiring = NewRuleFiringClient(c.config)
+	c.RuleTrigger = NewRuleTriggerClient(c.config)
 	c.SchemaState = NewSchemaStateClient(c.config)
 	c.Segment = NewSegmentClient(c.config)
 	c.SendLimiter = NewSendLimiterClient(c.config)
@@ -353,9 +361,11 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		OutboxOffset:       NewOutboxOffsetClient(cfg),
 		Passkey:            NewPasskeyClient(cfg),
 		PasskeyChallenge:   NewPasskeyChallengeClient(cfg),
-		PrivateRelayRange:  NewPrivateRelayRangeClient(cfg),
 		RecoveryCode:       NewRecoveryCodeClient(cfg),
 		RiverJob:           NewRiverJobClient(cfg),
+		Rule:               NewRuleClient(cfg),
+		RuleFiring:         NewRuleFiringClient(cfg),
+		RuleTrigger:        NewRuleTriggerClient(cfg),
 		SchemaState:        NewSchemaStateClient(cfg),
 		Segment:            NewSegmentClient(cfg),
 		SendLimiter:        NewSendLimiterClient(cfg),
@@ -421,9 +431,11 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		OutboxOffset:       NewOutboxOffsetClient(cfg),
 		Passkey:            NewPasskeyClient(cfg),
 		PasskeyChallenge:   NewPasskeyChallengeClient(cfg),
-		PrivateRelayRange:  NewPrivateRelayRangeClient(cfg),
 		RecoveryCode:       NewRecoveryCodeClient(cfg),
 		RiverJob:           NewRiverJobClient(cfg),
+		Rule:               NewRuleClient(cfg),
+		RuleFiring:         NewRuleFiringClient(cfg),
+		RuleTrigger:        NewRuleTriggerClient(cfg),
 		SchemaState:        NewSchemaStateClient(cfg),
 		Segment:            NewSegmentClient(cfg),
 		SendLimiter:        NewSendLimiterClient(cfg),
@@ -475,10 +487,11 @@ func (c *Client) Use(hooks ...Hook) {
 		c.Erasure, c.Event, c.Hold, c.InstanceState, c.Integration, c.Invitation,
 		c.JoinDomain, c.Membership, c.OAuthClient, c.OAuthCode, c.OAuthRefreshToken,
 		c.OutboundMessage, c.OutboxMessage, c.OutboxOffset, c.Passkey,
-		c.PasskeyChallenge, c.PrivateRelayRange, c.RecoveryCode, c.RiverJob,
-		c.SchemaState, c.Segment, c.SendLimiter, c.SendingDomain, c.ServiceCredential,
-		c.StaffMember, c.Suppression, c.Tag, c.TrackingHostChange, c.Unsubscribe,
-		c.Usage, c.User, c.UserIdentity, c.Visitor, c.WebhookEndpoint, c.Workspace,
+		c.PasskeyChallenge, c.RecoveryCode, c.RiverJob, c.Rule, c.RuleFiring,
+		c.RuleTrigger, c.SchemaState, c.Segment, c.SendLimiter, c.SendingDomain,
+		c.ServiceCredential, c.StaffMember, c.Suppression, c.Tag, c.TrackingHostChange,
+		c.Unsubscribe, c.Usage, c.User, c.UserIdentity, c.Visitor, c.WebhookEndpoint,
+		c.Workspace,
 	} {
 		n.Use(hooks...)
 	}
@@ -494,10 +507,11 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.Erasure, c.Event, c.Hold, c.InstanceState, c.Integration, c.Invitation,
 		c.JoinDomain, c.Membership, c.OAuthClient, c.OAuthCode, c.OAuthRefreshToken,
 		c.OutboundMessage, c.OutboxMessage, c.OutboxOffset, c.Passkey,
-		c.PasskeyChallenge, c.PrivateRelayRange, c.RecoveryCode, c.RiverJob,
-		c.SchemaState, c.Segment, c.SendLimiter, c.SendingDomain, c.ServiceCredential,
-		c.StaffMember, c.Suppression, c.Tag, c.TrackingHostChange, c.Unsubscribe,
-		c.Usage, c.User, c.UserIdentity, c.Visitor, c.WebhookEndpoint, c.Workspace,
+		c.PasskeyChallenge, c.RecoveryCode, c.RiverJob, c.Rule, c.RuleFiring,
+		c.RuleTrigger, c.SchemaState, c.Segment, c.SendLimiter, c.SendingDomain,
+		c.ServiceCredential, c.StaffMember, c.Suppression, c.Tag, c.TrackingHostChange,
+		c.Unsubscribe, c.Usage, c.User, c.UserIdentity, c.Visitor, c.WebhookEndpoint,
+		c.Workspace,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -566,12 +580,16 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Passkey.mutate(ctx, m)
 	case *PasskeyChallengeMutation:
 		return c.PasskeyChallenge.mutate(ctx, m)
-	case *PrivateRelayRangeMutation:
-		return c.PrivateRelayRange.mutate(ctx, m)
 	case *RecoveryCodeMutation:
 		return c.RecoveryCode.mutate(ctx, m)
 	case *RiverJobMutation:
 		return c.RiverJob.mutate(ctx, m)
+	case *RuleMutation:
+		return c.Rule.mutate(ctx, m)
+	case *RuleFiringMutation:
+		return c.RuleFiring.mutate(ctx, m)
+	case *RuleTriggerMutation:
+		return c.RuleTrigger.mutate(ctx, m)
 	case *SchemaStateMutation:
 		return c.SchemaState.mutate(ctx, m)
 	case *SegmentMutation:
@@ -5462,139 +5480,6 @@ func (c *PasskeyChallengeClient) mutate(ctx context.Context, m *PasskeyChallenge
 	}
 }
 
-// PrivateRelayRangeClient is a client for the PrivateRelayRange schema.
-type PrivateRelayRangeClient struct {
-	config
-}
-
-// NewPrivateRelayRangeClient returns a client for the PrivateRelayRange from the given config.
-func NewPrivateRelayRangeClient(c config) *PrivateRelayRangeClient {
-	return &PrivateRelayRangeClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `privaterelayrange.Hooks(f(g(h())))`.
-func (c *PrivateRelayRangeClient) Use(hooks ...Hook) {
-	c.hooks.PrivateRelayRange = append(c.hooks.PrivateRelayRange, hooks...)
-}
-
-// Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `privaterelayrange.Intercept(f(g(h())))`.
-func (c *PrivateRelayRangeClient) Intercept(interceptors ...Interceptor) {
-	c.inters.PrivateRelayRange = append(c.inters.PrivateRelayRange, interceptors...)
-}
-
-// Create returns a builder for creating a PrivateRelayRange entity.
-func (c *PrivateRelayRangeClient) Create() *PrivateRelayRangeCreate {
-	mutation := newPrivateRelayRangeMutation(c.config, OpCreate)
-	return &PrivateRelayRangeCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of PrivateRelayRange entities.
-func (c *PrivateRelayRangeClient) CreateBulk(builders ...*PrivateRelayRangeCreate) *PrivateRelayRangeCreateBulk {
-	return &PrivateRelayRangeCreateBulk{config: c.config, builders: builders}
-}
-
-// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
-// a builder and applies setFunc on it.
-func (c *PrivateRelayRangeClient) MapCreateBulk(slice any, setFunc func(*PrivateRelayRangeCreate, int)) *PrivateRelayRangeCreateBulk {
-	rv := reflect.ValueOf(slice)
-	if rv.Kind() != reflect.Slice {
-		return &PrivateRelayRangeCreateBulk{err: fmt.Errorf("calling to PrivateRelayRangeClient.MapCreateBulk with wrong type %T, need slice", slice)}
-	}
-	builders := make([]*PrivateRelayRangeCreate, rv.Len())
-	for i := 0; i < rv.Len(); i++ {
-		builders[i] = c.Create()
-		setFunc(builders[i], i)
-	}
-	return &PrivateRelayRangeCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for PrivateRelayRange.
-func (c *PrivateRelayRangeClient) Update() *PrivateRelayRangeUpdate {
-	mutation := newPrivateRelayRangeMutation(c.config, OpUpdate)
-	return &PrivateRelayRangeUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *PrivateRelayRangeClient) UpdateOne(_m *PrivateRelayRange) *PrivateRelayRangeUpdateOne {
-	mutation := newPrivateRelayRangeMutation(c.config, OpUpdateOne, withPrivateRelayRange(_m))
-	return &PrivateRelayRangeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *PrivateRelayRangeClient) UpdateOneID(id int64) *PrivateRelayRangeUpdateOne {
-	mutation := newPrivateRelayRangeMutation(c.config, OpUpdateOne, withPrivateRelayRangeID(id))
-	return &PrivateRelayRangeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for PrivateRelayRange.
-func (c *PrivateRelayRangeClient) Delete() *PrivateRelayRangeDelete {
-	mutation := newPrivateRelayRangeMutation(c.config, OpDelete)
-	return &PrivateRelayRangeDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *PrivateRelayRangeClient) DeleteOne(_m *PrivateRelayRange) *PrivateRelayRangeDeleteOne {
-	return c.DeleteOneID(_m.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *PrivateRelayRangeClient) DeleteOneID(id int64) *PrivateRelayRangeDeleteOne {
-	builder := c.Delete().Where(privaterelayrange.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &PrivateRelayRangeDeleteOne{builder}
-}
-
-// Query returns a query builder for PrivateRelayRange.
-func (c *PrivateRelayRangeClient) Query() *PrivateRelayRangeQuery {
-	return &PrivateRelayRangeQuery{
-		config: c.config,
-		ctx:    &QueryContext{Type: TypePrivateRelayRange},
-		inters: c.Interceptors(),
-	}
-}
-
-// Get returns a PrivateRelayRange entity by its id.
-func (c *PrivateRelayRangeClient) Get(ctx context.Context, id int64) (*PrivateRelayRange, error) {
-	return c.Query().Where(privaterelayrange.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *PrivateRelayRangeClient) GetX(ctx context.Context, id int64) *PrivateRelayRange {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// Hooks returns the client hooks.
-func (c *PrivateRelayRangeClient) Hooks() []Hook {
-	return c.hooks.PrivateRelayRange
-}
-
-// Interceptors returns the client interceptors.
-func (c *PrivateRelayRangeClient) Interceptors() []Interceptor {
-	return c.inters.PrivateRelayRange
-}
-
-func (c *PrivateRelayRangeClient) mutate(ctx context.Context, m *PrivateRelayRangeMutation) (Value, error) {
-	switch m.Op() {
-	case OpCreate:
-		return (&PrivateRelayRangeCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdate:
-		return (&PrivateRelayRangeUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdateOne:
-		return (&PrivateRelayRangeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpDelete, OpDeleteOne:
-		return (&PrivateRelayRangeDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
-	default:
-		return nil, fmt.Errorf("ent: unknown PrivateRelayRange mutation op: %q", m.Op())
-	}
-}
-
 // RecoveryCodeClient is a client for the RecoveryCode schema.
 type RecoveryCodeClient struct {
 	config
@@ -5874,6 +5759,533 @@ func (c *RiverJobClient) mutate(ctx context.Context, m *RiverJobMutation) (Value
 		return (&RiverJobDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown RiverJob mutation op: %q", m.Op())
+	}
+}
+
+// RuleClient is a client for the Rule schema.
+type RuleClient struct {
+	config
+}
+
+// NewRuleClient returns a client for the Rule from the given config.
+func NewRuleClient(c config) *RuleClient {
+	return &RuleClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `rule.Hooks(f(g(h())))`.
+func (c *RuleClient) Use(hooks ...Hook) {
+	c.hooks.Rule = append(c.hooks.Rule, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `rule.Intercept(f(g(h())))`.
+func (c *RuleClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Rule = append(c.inters.Rule, interceptors...)
+}
+
+// Create returns a builder for creating a Rule entity.
+func (c *RuleClient) Create() *RuleCreate {
+	mutation := newRuleMutation(c.config, OpCreate)
+	return &RuleCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Rule entities.
+func (c *RuleClient) CreateBulk(builders ...*RuleCreate) *RuleCreateBulk {
+	return &RuleCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *RuleClient) MapCreateBulk(slice any, setFunc func(*RuleCreate, int)) *RuleCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &RuleCreateBulk{err: fmt.Errorf("calling to RuleClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*RuleCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &RuleCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Rule.
+func (c *RuleClient) Update() *RuleUpdate {
+	mutation := newRuleMutation(c.config, OpUpdate)
+	return &RuleUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *RuleClient) UpdateOne(_m *Rule) *RuleUpdateOne {
+	mutation := newRuleMutation(c.config, OpUpdateOne, withRule(_m))
+	return &RuleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *RuleClient) UpdateOneID(id int64) *RuleUpdateOne {
+	mutation := newRuleMutation(c.config, OpUpdateOne, withRuleID(id))
+	return &RuleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Rule.
+func (c *RuleClient) Delete() *RuleDelete {
+	mutation := newRuleMutation(c.config, OpDelete)
+	return &RuleDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *RuleClient) DeleteOne(_m *Rule) *RuleDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *RuleClient) DeleteOneID(id int64) *RuleDeleteOne {
+	builder := c.Delete().Where(rule.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &RuleDeleteOne{builder}
+}
+
+// Query returns a query builder for Rule.
+func (c *RuleClient) Query() *RuleQuery {
+	return &RuleQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeRule},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Rule entity by its id.
+func (c *RuleClient) Get(ctx context.Context, id int64) (*Rule, error) {
+	return c.Query().Where(rule.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *RuleClient) GetX(ctx context.Context, id int64) *Rule {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryWorkspace queries the workspace edge of a Rule.
+func (c *RuleClient) QueryWorkspace(_m *Rule) *WorkspaceQuery {
+	query := (&WorkspaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(rule.Table, rule.FieldID, id),
+			sqlgraph.To(workspace.Table, workspace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, rule.WorkspaceTable, rule.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryTriggers queries the triggers edge of a Rule.
+func (c *RuleClient) QueryTriggers(_m *Rule) *RuleTriggerQuery {
+	query := (&RuleTriggerClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(rule.Table, rule.FieldID, id),
+			sqlgraph.To(ruletrigger.Table, ruletrigger.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, rule.TriggersTable, rule.TriggersColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryFirings queries the firings edge of a Rule.
+func (c *RuleClient) QueryFirings(_m *Rule) *RuleFiringQuery {
+	query := (&RuleFiringClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(rule.Table, rule.FieldID, id),
+			sqlgraph.To(rulefiring.Table, rulefiring.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, rule.FiringsTable, rule.FiringsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *RuleClient) Hooks() []Hook {
+	return c.hooks.Rule
+}
+
+// Interceptors returns the client interceptors.
+func (c *RuleClient) Interceptors() []Interceptor {
+	return c.inters.Rule
+}
+
+func (c *RuleClient) mutate(ctx context.Context, m *RuleMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&RuleCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&RuleUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&RuleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&RuleDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Rule mutation op: %q", m.Op())
+	}
+}
+
+// RuleFiringClient is a client for the RuleFiring schema.
+type RuleFiringClient struct {
+	config
+}
+
+// NewRuleFiringClient returns a client for the RuleFiring from the given config.
+func NewRuleFiringClient(c config) *RuleFiringClient {
+	return &RuleFiringClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `rulefiring.Hooks(f(g(h())))`.
+func (c *RuleFiringClient) Use(hooks ...Hook) {
+	c.hooks.RuleFiring = append(c.hooks.RuleFiring, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `rulefiring.Intercept(f(g(h())))`.
+func (c *RuleFiringClient) Intercept(interceptors ...Interceptor) {
+	c.inters.RuleFiring = append(c.inters.RuleFiring, interceptors...)
+}
+
+// Create returns a builder for creating a RuleFiring entity.
+func (c *RuleFiringClient) Create() *RuleFiringCreate {
+	mutation := newRuleFiringMutation(c.config, OpCreate)
+	return &RuleFiringCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of RuleFiring entities.
+func (c *RuleFiringClient) CreateBulk(builders ...*RuleFiringCreate) *RuleFiringCreateBulk {
+	return &RuleFiringCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *RuleFiringClient) MapCreateBulk(slice any, setFunc func(*RuleFiringCreate, int)) *RuleFiringCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &RuleFiringCreateBulk{err: fmt.Errorf("calling to RuleFiringClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*RuleFiringCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &RuleFiringCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for RuleFiring.
+func (c *RuleFiringClient) Update() *RuleFiringUpdate {
+	mutation := newRuleFiringMutation(c.config, OpUpdate)
+	return &RuleFiringUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *RuleFiringClient) UpdateOne(_m *RuleFiring) *RuleFiringUpdateOne {
+	mutation := newRuleFiringMutation(c.config, OpUpdateOne, withRuleFiring(_m))
+	return &RuleFiringUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *RuleFiringClient) UpdateOneID(id int64) *RuleFiringUpdateOne {
+	mutation := newRuleFiringMutation(c.config, OpUpdateOne, withRuleFiringID(id))
+	return &RuleFiringUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for RuleFiring.
+func (c *RuleFiringClient) Delete() *RuleFiringDelete {
+	mutation := newRuleFiringMutation(c.config, OpDelete)
+	return &RuleFiringDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *RuleFiringClient) DeleteOne(_m *RuleFiring) *RuleFiringDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *RuleFiringClient) DeleteOneID(id int64) *RuleFiringDeleteOne {
+	builder := c.Delete().Where(rulefiring.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &RuleFiringDeleteOne{builder}
+}
+
+// Query returns a query builder for RuleFiring.
+func (c *RuleFiringClient) Query() *RuleFiringQuery {
+	return &RuleFiringQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeRuleFiring},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a RuleFiring entity by its id.
+func (c *RuleFiringClient) Get(ctx context.Context, id int64) (*RuleFiring, error) {
+	return c.Query().Where(rulefiring.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *RuleFiringClient) GetX(ctx context.Context, id int64) *RuleFiring {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryWorkspace queries the workspace edge of a RuleFiring.
+func (c *RuleFiringClient) QueryWorkspace(_m *RuleFiring) *WorkspaceQuery {
+	query := (&WorkspaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(rulefiring.Table, rulefiring.FieldID, id),
+			sqlgraph.To(workspace.Table, workspace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, rulefiring.WorkspaceTable, rulefiring.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryRule queries the rule edge of a RuleFiring.
+func (c *RuleFiringClient) QueryRule(_m *RuleFiring) *RuleQuery {
+	query := (&RuleClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(rulefiring.Table, rulefiring.FieldID, id),
+			sqlgraph.To(rule.Table, rule.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, rulefiring.RuleTable, rulefiring.RuleColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryContact queries the contact edge of a RuleFiring.
+func (c *RuleFiringClient) QueryContact(_m *RuleFiring) *ContactQuery {
+	query := (&ContactClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(rulefiring.Table, rulefiring.FieldID, id),
+			sqlgraph.To(contact.Table, contact.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, rulefiring.ContactTable, rulefiring.ContactColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *RuleFiringClient) Hooks() []Hook {
+	return c.hooks.RuleFiring
+}
+
+// Interceptors returns the client interceptors.
+func (c *RuleFiringClient) Interceptors() []Interceptor {
+	return c.inters.RuleFiring
+}
+
+func (c *RuleFiringClient) mutate(ctx context.Context, m *RuleFiringMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&RuleFiringCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&RuleFiringUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&RuleFiringUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&RuleFiringDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown RuleFiring mutation op: %q", m.Op())
+	}
+}
+
+// RuleTriggerClient is a client for the RuleTrigger schema.
+type RuleTriggerClient struct {
+	config
+}
+
+// NewRuleTriggerClient returns a client for the RuleTrigger from the given config.
+func NewRuleTriggerClient(c config) *RuleTriggerClient {
+	return &RuleTriggerClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `ruletrigger.Hooks(f(g(h())))`.
+func (c *RuleTriggerClient) Use(hooks ...Hook) {
+	c.hooks.RuleTrigger = append(c.hooks.RuleTrigger, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `ruletrigger.Intercept(f(g(h())))`.
+func (c *RuleTriggerClient) Intercept(interceptors ...Interceptor) {
+	c.inters.RuleTrigger = append(c.inters.RuleTrigger, interceptors...)
+}
+
+// Create returns a builder for creating a RuleTrigger entity.
+func (c *RuleTriggerClient) Create() *RuleTriggerCreate {
+	mutation := newRuleTriggerMutation(c.config, OpCreate)
+	return &RuleTriggerCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of RuleTrigger entities.
+func (c *RuleTriggerClient) CreateBulk(builders ...*RuleTriggerCreate) *RuleTriggerCreateBulk {
+	return &RuleTriggerCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *RuleTriggerClient) MapCreateBulk(slice any, setFunc func(*RuleTriggerCreate, int)) *RuleTriggerCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &RuleTriggerCreateBulk{err: fmt.Errorf("calling to RuleTriggerClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*RuleTriggerCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &RuleTriggerCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for RuleTrigger.
+func (c *RuleTriggerClient) Update() *RuleTriggerUpdate {
+	mutation := newRuleTriggerMutation(c.config, OpUpdate)
+	return &RuleTriggerUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *RuleTriggerClient) UpdateOne(_m *RuleTrigger) *RuleTriggerUpdateOne {
+	mutation := newRuleTriggerMutation(c.config, OpUpdateOne, withRuleTrigger(_m))
+	return &RuleTriggerUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *RuleTriggerClient) UpdateOneID(id int64) *RuleTriggerUpdateOne {
+	mutation := newRuleTriggerMutation(c.config, OpUpdateOne, withRuleTriggerID(id))
+	return &RuleTriggerUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for RuleTrigger.
+func (c *RuleTriggerClient) Delete() *RuleTriggerDelete {
+	mutation := newRuleTriggerMutation(c.config, OpDelete)
+	return &RuleTriggerDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *RuleTriggerClient) DeleteOne(_m *RuleTrigger) *RuleTriggerDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *RuleTriggerClient) DeleteOneID(id int64) *RuleTriggerDeleteOne {
+	builder := c.Delete().Where(ruletrigger.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &RuleTriggerDeleteOne{builder}
+}
+
+// Query returns a query builder for RuleTrigger.
+func (c *RuleTriggerClient) Query() *RuleTriggerQuery {
+	return &RuleTriggerQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeRuleTrigger},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a RuleTrigger entity by its id.
+func (c *RuleTriggerClient) Get(ctx context.Context, id int64) (*RuleTrigger, error) {
+	return c.Query().Where(ruletrigger.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *RuleTriggerClient) GetX(ctx context.Context, id int64) *RuleTrigger {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryWorkspace queries the workspace edge of a RuleTrigger.
+func (c *RuleTriggerClient) QueryWorkspace(_m *RuleTrigger) *WorkspaceQuery {
+	query := (&WorkspaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(ruletrigger.Table, ruletrigger.FieldID, id),
+			sqlgraph.To(workspace.Table, workspace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, ruletrigger.WorkspaceTable, ruletrigger.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryRule queries the rule edge of a RuleTrigger.
+func (c *RuleTriggerClient) QueryRule(_m *RuleTrigger) *RuleQuery {
+	query := (&RuleClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(ruletrigger.Table, ruletrigger.FieldID, id),
+			sqlgraph.To(rule.Table, rule.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, ruletrigger.RuleTable, ruletrigger.RuleColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *RuleTriggerClient) Hooks() []Hook {
+	return c.hooks.RuleTrigger
+}
+
+// Interceptors returns the client interceptors.
+func (c *RuleTriggerClient) Interceptors() []Interceptor {
+	return c.inters.RuleTrigger
+}
+
+func (c *RuleTriggerClient) mutate(ctx context.Context, m *RuleTriggerMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&RuleTriggerCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&RuleTriggerUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&RuleTriggerUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&RuleTriggerDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown RuleTrigger mutation op: %q", m.Op())
 	}
 }
 
@@ -8620,6 +9032,54 @@ func (c *WorkspaceClient) QueryAutomationRuns(_m *Workspace) *AutomationRunQuery
 	return query
 }
 
+// QueryRules queries the rules edge of a Workspace.
+func (c *WorkspaceClient) QueryRules(_m *Workspace) *RuleQuery {
+	query := (&RuleClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, id),
+			sqlgraph.To(rule.Table, rule.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.RulesTable, workspace.RulesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryRuleTriggers queries the rule_triggers edge of a Workspace.
+func (c *WorkspaceClient) QueryRuleTriggers(_m *Workspace) *RuleTriggerQuery {
+	query := (&RuleTriggerClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, id),
+			sqlgraph.To(ruletrigger.Table, ruletrigger.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.RuleTriggersTable, workspace.RuleTriggersColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryRuleFirings queries the rule_firings edge of a Workspace.
+func (c *WorkspaceClient) QueryRuleFirings(_m *Workspace) *RuleFiringQuery {
+	query := (&RuleFiringClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, id),
+			sqlgraph.To(rulefiring.Table, rulefiring.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.RuleFiringsTable, workspace.RuleFiringsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryWebhookEndpoints queries the webhook_endpoints edge of a Workspace.
 func (c *WorkspaceClient) QueryWebhookEndpoints(_m *Workspace) *WebhookEndpointQuery {
 	query := (&WebhookEndpointClient{config: c.config}).Query()
@@ -8813,8 +9273,8 @@ type (
 		CustomField, EmailTemplate, Erasure, Event, Hold, InstanceState, Integration,
 		Invitation, JoinDomain, Membership, OAuthClient, OAuthCode, OAuthRefreshToken,
 		OutboundMessage, OutboxMessage, OutboxOffset, Passkey, PasskeyChallenge,
-		PrivateRelayRange, RecoveryCode, RiverJob, SchemaState, Segment, SendLimiter,
-		SendingDomain, ServiceCredential, StaffMember, Suppression, Tag,
+		RecoveryCode, RiverJob, Rule, RuleFiring, RuleTrigger, SchemaState, Segment,
+		SendLimiter, SendingDomain, ServiceCredential, StaffMember, Suppression, Tag,
 		TrackingHostChange, Unsubscribe, Usage, User, UserIdentity, Visitor,
 		WebhookEndpoint, Workspace []ent.Hook
 	}
@@ -8824,8 +9284,8 @@ type (
 		CustomField, EmailTemplate, Erasure, Event, Hold, InstanceState, Integration,
 		Invitation, JoinDomain, Membership, OAuthClient, OAuthCode, OAuthRefreshToken,
 		OutboundMessage, OutboxMessage, OutboxOffset, Passkey, PasskeyChallenge,
-		PrivateRelayRange, RecoveryCode, RiverJob, SchemaState, Segment, SendLimiter,
-		SendingDomain, ServiceCredential, StaffMember, Suppression, Tag,
+		RecoveryCode, RiverJob, Rule, RuleFiring, RuleTrigger, SchemaState, Segment,
+		SendLimiter, SendingDomain, ServiceCredential, StaffMember, Suppression, Tag,
 		TrackingHostChange, Unsubscribe, Usage, User, UserIdentity, Visitor,
 		WebhookEndpoint, Workspace []ent.Interceptor
 	}

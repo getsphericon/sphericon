@@ -1017,6 +1017,69 @@ func (UnimplementedHandler) SitePublicUnsubscribesPerform(ctx context.Context, p
 	return r, ht.ErrNotImplemented
 }
 
+// SiteRuleFiringsList implements SiteRuleFirings_list operation.
+//
+// List a Rule's Firings, newest first.
+//
+// GET /workspaces/{workspaceId}/rules/{ruleId}/firings
+func (UnimplementedHandler) SiteRuleFiringsList(ctx context.Context, params SiteRuleFiringsListParams) (r SiteRuleFiringsListRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteRulesActivate implements SiteRules_activate operation.
+//
+// Activate a Rule: it reacts to Events recorded from now on, never to past ones.
+//
+// POST /workspaces/{workspaceId}/rules/{id}/activate
+func (UnimplementedHandler) SiteRulesActivate(ctx context.Context, params SiteRulesActivateParams) (r SiteRulesActivateRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteRulesCreate implements SiteRules_create operation.
+//
+// Create a resource from the site UI.
+//
+// POST /workspaces/{workspaceId}/rules
+func (UnimplementedHandler) SiteRulesCreate(ctx context.Context, req *SiteCreateRuleInput, params SiteRulesCreateParams) (r SiteRulesCreateRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteRulesDeactivate implements SiteRules_deactivate operation.
+//
+// Deactivate a Rule: it stops firing.
+//
+// POST /workspaces/{workspaceId}/rules/{id}/deactivate
+func (UnimplementedHandler) SiteRulesDeactivate(ctx context.Context, params SiteRulesDeactivateParams) (r SiteRulesDeactivateRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteRulesGet implements SiteRules_get operation.
+//
+// Get a resource by ID for the site UI.
+//
+// GET /workspaces/{workspaceId}/rules/{id}
+func (UnimplementedHandler) SiteRulesGet(ctx context.Context, params SiteRulesGetParams) (r SiteRulesGetRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteRulesList implements SiteRules_list operation.
+//
+// List resources for the site UI.
+//
+// GET /workspaces/{workspaceId}/rules
+func (UnimplementedHandler) SiteRulesList(ctx context.Context, params SiteRulesListParams) (r SiteRulesListRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteRulesUpdate implements SiteRules_update operation.
+//
+// Update a resource from the site UI.
+//
+// PUT /workspaces/{workspaceId}/rules/{id}
+func (UnimplementedHandler) SiteRulesUpdate(ctx context.Context, req *SiteUpdateRuleInput, params SiteRulesUpdateParams) (r SiteRulesUpdateRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteSecondFactorConfirmEnrollment implements SiteSecondFactor_confirmEnrollment operation.
 //
 // Confirm the pending enrollment with the password and a code from the app. On success the Second

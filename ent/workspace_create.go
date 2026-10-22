@@ -31,6 +31,9 @@ import (
 	"github.com/getsphericon/sphericon/ent/joindomain"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
+	"github.com/getsphericon/sphericon/ent/rule"
+	"github.com/getsphericon/sphericon/ent/rulefiring"
+	"github.com/getsphericon/sphericon/ent/ruletrigger"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/sendlimiter"
@@ -610,6 +613,51 @@ func (_c *WorkspaceCreate) AddAutomationRuns(v ...*AutomationRun) *WorkspaceCrea
 		ids[i] = v[i].ID
 	}
 	return _c.AddAutomationRunIDs(ids...)
+}
+
+// AddRuleIDs adds the "rules" edge to the Rule entity by IDs.
+func (_c *WorkspaceCreate) AddRuleIDs(ids ...int64) *WorkspaceCreate {
+	_c.mutation.AddRuleIDs(ids...)
+	return _c
+}
+
+// AddRules adds the "rules" edges to the Rule entity.
+func (_c *WorkspaceCreate) AddRules(v ...*Rule) *WorkspaceCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddRuleIDs(ids...)
+}
+
+// AddRuleTriggerIDs adds the "rule_triggers" edge to the RuleTrigger entity by IDs.
+func (_c *WorkspaceCreate) AddRuleTriggerIDs(ids ...int64) *WorkspaceCreate {
+	_c.mutation.AddRuleTriggerIDs(ids...)
+	return _c
+}
+
+// AddRuleTriggers adds the "rule_triggers" edges to the RuleTrigger entity.
+func (_c *WorkspaceCreate) AddRuleTriggers(v ...*RuleTrigger) *WorkspaceCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddRuleTriggerIDs(ids...)
+}
+
+// AddRuleFiringIDs adds the "rule_firings" edge to the RuleFiring entity by IDs.
+func (_c *WorkspaceCreate) AddRuleFiringIDs(ids ...int64) *WorkspaceCreate {
+	_c.mutation.AddRuleFiringIDs(ids...)
+	return _c
+}
+
+// AddRuleFirings adds the "rule_firings" edges to the RuleFiring entity.
+func (_c *WorkspaceCreate) AddRuleFirings(v ...*RuleFiring) *WorkspaceCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddRuleFiringIDs(ids...)
 }
 
 // AddWebhookEndpointIDs adds the "webhook_endpoints" edge to the WebhookEndpoint entity by IDs.
@@ -1290,6 +1338,54 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(automationrun.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.RulesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.RulesTable,
+			Columns: []string{workspace.RulesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(rule.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.RuleTriggersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.RuleTriggersTable,
+			Columns: []string{workspace.RuleTriggersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ruletrigger.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.RuleFiringsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.RuleFiringsTable,
+			Columns: []string{workspace.RuleFiringsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(rulefiring.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

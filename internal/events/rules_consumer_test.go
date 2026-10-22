@@ -1,0 +1,75 @@
+package events_test
+
+import (
+	"encoding/json"
+	"testing"
+
+	"github.com/ThreeDotsLabs/watermill"
+	"github.com/ThreeDotsLabs/watermill/message"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/jobkind"
+	"github.com/getsphericon/sphericon/internal/testhelper"
+)
+
+// msgCausedBy is msgFor for an event an Action of a Rule published: its envelope carries the marker.
+func msgCausedBy(t *testing.T, ev events.DomainEvent, cause string) *message.Message {
+	t.Helper()
+	data, err := json.Marshal(ev)
+	require.NoError(t, err)
+	body, err := json.Marshal(events.Envelope{ID: "evt_caused", Name: ev.EventName(), Version: ev.EventVersion(), WorkspaceID: ev.Workspace(), Data: data, CausedBy: cause})
+	require.NoError(t, err)
+	return message.NewMessage(watermill.NewUUID(), body)
+}
+
+// A recorded Event for a Contact is queued for evaluation with what a Firing is unique on (the
+// envelope id, as no DedupKey is set) and the properties it carries.
+func TestRulesConsumerQueuesTheEventForEvaluation(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	require.NoError(t, events.RulesConsumer(queueingJobs(t, env))(msgFor(t, &events.CollectedEvent{
+		WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID, SubjectID: "alice", Action: "rule_click",
+		Properties: map[string]any{"url": "https://example.com/a"},
+	})))
+
+	queued := env.JobsOf(t, jobkind.RuleEvaluate.Kind)
+	require.Len(t, queued, 1)
+	assert.EqualValues(t, fixtures.AcmeID, queued[0]["workspace_id"])
+	assert.EqualValues(t, fixtures.ContactAliceID, queued[0]["contact_id"])
+	assert.Equal(t, "rule_click", queued[0]["action"])
+	assert.Equal(t, "evt_test", queued[0]["source_id"])
+	assert.Equal(t, map[string]any{"url": "https://example.com/a"}, queued[0]["properties"])
+}
+
+func TestRulesConsumerSkipsAnEventWithNoContact(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	require.NoError(t, events.RulesConsumer(queueingJobs(t, env))(msgFor(t, &events.CollectedEvent{
+		WorkspaceID: fixtures.AcmeID, SubjectID: "visitor:x", Action: "rule_click",
+	})))
+
+	assert.Empty(t, env.JobsOf(t, jobkind.RuleEvaluate.Kind))
+}
+
+func TestRulesConsumerSkipsAnEventAnActionPublished(t *testing.T) {
+	env := testhelper.Setup(t)
+	ev := &events.CollectedEvent{WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID, SubjectID: "alice", Action: "rule_click"}
+
+	require.NoError(t, events.RulesConsumer(queueingJobs(t, env))(msgCausedBy(t, ev, "rule:1")))
+
+	assert.Empty(t, env.JobsOf(t, jobkind.RuleEvaluate.Kind))
+}
+
+func TestRulesConsumerSkipsHistoryAndAuditEntries(t *testing.T) {
+	env := testhelper.Setup(t)
+	consume := events.RulesConsumer(queueingJobs(t, env))
+
+	history := &events.CollectedEvent{WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID, SubjectID: "alice", Action: "rule_click", Backfill: true}
+	require.NoError(t, consume(msgFor(t, history)))
+	require.NoError(t, consume(msgFor(t, entryBy(events.Actor{Kind: events.ActorUser}, "membership.update"))))
+
+	assert.Empty(t, env.JobsOf(t, jobkind.RuleEvaluate.Kind))
+}

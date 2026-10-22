@@ -350,6 +350,36 @@ func (c *ConverterImpl) PasskeyToResource(source *ent.Passkey) site.SitePasskey 
 	}
 	return siteapiSitePasskey
 }
+func (c *ConverterImpl) RuleFiringToResource(source *ent.RuleFiring) site.SiteRuleFiringResource {
+	var siteapiSiteRuleFiringResource site.SiteRuleFiringResource
+	if source != nil {
+		siteapiSiteRuleFiringResource.ID = site.EntityId((*source).ID)
+		siteapiSiteRuleFiringResource.RuleId = site.EntityId((*source).RuleID)
+		siteapiSiteRuleFiringResource.ContactId = site.EntityId((*source).ContactID)
+		siteapiSiteRuleFiringResource.Action = (*source).Action
+		siteapiSiteRuleFiringResource.EventSourceId = (*source).SourceID
+		siteapiSiteRuleFiringResource.Results = ruleResults((*source).Results)
+		siteapiSiteRuleFiringResource.CompletedAt = optTimestamp((*source).CompletedAt)
+		siteapiSiteRuleFiringResource.CreatedAt = timestamp((*source).CreatedAt)
+	}
+	return siteapiSiteRuleFiringResource
+}
+func (c *ConverterImpl) RuleToResource(source *ent.Rule) site.SiteRuleResource {
+	var siteapiSiteRuleResource site.SiteRuleResource
+	if source != nil {
+		siteapiSiteRuleResource.ID = site.EntityId((*source).ID)
+		siteapiSiteRuleResource.Name = (*source).Name
+		siteapiSiteRuleResource.Status = site.SiteRuleStatus((*source).Status)
+		siteapiSiteRuleResource.TriggerEvents = ruleTriggerEvents(source)
+		siteapiSiteRuleResource.Condition = segmentCondition((*source).Condition)
+		siteapiSiteRuleResource.Actions = ruleActions((*source).Actions)
+		siteapiSiteRuleResource.ActivatedAt = optNilTimestamp((*source).ActivatedAt)
+		siteapiSiteRuleResource.ArchivedAt = optNilTimestamp((*source).DiscardedAt)
+		siteapiSiteRuleResource.CreatedAt = timestamp((*source).CreatedAt)
+		siteapiSiteRuleResource.UpdatedAt = timestamp((*source).UpdatedAt)
+	}
+	return siteapiSiteRuleResource
+}
 func (c *ConverterImpl) SegmentToResource(source *ent.Segment) site.SiteSegmentResource {
 	var siteapiSiteSegmentResource site.SiteSegmentResource
 	if source != nil {

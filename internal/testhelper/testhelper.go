@@ -56,6 +56,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/preset"
 	"github.com/getsphericon/sphericon/internal/reputation"
+	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/secondfactor"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/segments"
@@ -415,12 +416,13 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	sendingDomainsModule := sendingdomains.New(bus, cipher, inline, cfg.TrackingCNAMETarget)
 	joinDomainsModule := joindomains.New(client, bus, stubTXT, st.now, accounts.OwnerNotifier(client, systemMail))
 	automationsModule := automations.New(cipher, bus)
+	rulesModule := rules.New(bus)
 	broadcastsModule := broadcasts.New(bus)
 	acc := accounts.New(client, bus)
 	external, err := server.NewExternalAPI(client, apiexternal.Deps{
 		Accounts: acc, Bus: bus, Webhooks: webhooksModule, Outbound: sender,
 		Segments: segmentsModule, EventLog: eventLog, Contacts: contactsModule, Erasure: erasureModule, Tags: tagsModule, Templates: templatesModule,
-		Automations: automationsModule, Broadcasts: broadcastsModule, Reputation: reputation.New(), Integrations: integrationsModule, SendingDomains: sendingDomainsModule,
+		Automations: automationsModule, Rules: rulesModule, Broadcasts: broadcastsModule, Reputation: reputation.New(), Integrations: integrationsModule, SendingDomains: sendingDomainsModule,
 		BootstrapToken: baseCfg.BootstrapToken, Audit: edition.Audit, Export: edition.Export,
 	})
 	require.NoError(t, err, "build external API")
@@ -449,7 +451,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		Instance: inst,
 		Accounts: acc, Attempts: attempts, OAuth: oauthserver.NewService(client, oauthFetcher), Bus: bus, Webhooks: webhooksModule, Outbound: sender,
 		Segments: segmentsModule, EventLog: eventLog, Contacts: contactsModule, Erasure: erasureModule, Tags: tagsModule, Templates: templatesModule, BrandKit: brandKitModule,
-		Automations: automationsModule, Broadcasts: broadcastsModule,
+		Automations: automationsModule, Rules: rulesModule, Broadcasts: broadcastsModule,
 		Welcome: inline, SysMail: inline, SendingDomains: sendingDomainsModule, JoinDomains: joinDomainsModule, Integrations: integrationsModule,
 		Tokens: authtoken.New(baseCfg.JWTSecret).WithClock(st.now), Tracker: tracker, AppURL: baseCfg.AppURL, Audit: edition.Audit, Analytics: analytics.New(),
 		SecondFactor:             secondFactor,

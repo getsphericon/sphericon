@@ -237,6 +237,34 @@ type PresetsListRes interface {
 	presetsListRes()
 }
 
+type RuleFiringsListRes interface {
+	ruleFiringsListRes()
+}
+
+type RulesActivateRes interface {
+	rulesActivateRes()
+}
+
+type RulesCreateRes interface {
+	rulesCreateRes()
+}
+
+type RulesDeactivateRes interface {
+	rulesDeactivateRes()
+}
+
+type RulesGetRes interface {
+	rulesGetRes()
+}
+
+type RulesListRes interface {
+	rulesListRes()
+}
+
+type RulesUpdateRes interface {
+	rulesUpdateRes()
+}
+
 type SegmentsArchiveRes interface {
 	segmentsArchiveRes()
 }

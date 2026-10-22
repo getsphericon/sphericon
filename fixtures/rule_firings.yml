@@ -1,0 +1,60 @@
+# Workspace acme (id 1). Firings of RuleTagClicked (100): one finished, one whose Actions are
+# still to run. Unique (rule_id, source_id).
+- id: 100 # fixture: RuleFiringDone
+  rule_id: 100
+  contact_id: 1
+  action: rule_click
+  source_id: 'fixture:rule-firing-done'
+  actions: '[{"type":"apply_tag","tag":"rule-clicked"}]'
+  results: '[{"type":"apply_tag","status":"succeeded"}]'
+  completed_at: '{{daysAgo 2}}'
+  workspace_id: 1
+  created_at: '{{daysAgo 2}}'
+  updated_at: '{{daysAgo 2}}'
+- id: 101 # fixture: RuleFiringPending
+  rule_id: 100
+  contact_id: 2
+  action: rule_click
+  source_id: 'fixture:rule-firing-pending'
+  actions: '[{"type":"apply_tag","tag":"rule-clicked"}]'
+  results: '[]'
+  workspace_id: 1
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+
+# Globex (workspace 2) foreign row.
+- id: 900 # fixture: RuleFiringGlobex
+  rule_id: 900
+  contact_id: 900
+  action: rule_click
+  source_id: 'fixture:rule-firing-globex'
+  actions: '[{"type":"apply_tag","tag":"globex-rule"}]'
+  results: '[{"type":"apply_tag","status":"succeeded"}]'
+  completed_at: '{{daysAgo 2}}'
+  workspace_id: 2
+  created_at: '{{daysAgo 2}}'
+  updated_at: '{{daysAgo 2}}'
+
+# Initech (workspace 3): one Firing of the erasable Contact and one of its bystander.
+- id: 300 # fixture: RuleFiringErasable
+  rule_id: 300
+  contact_id: 300
+  action: rule_initech
+  source_id: 'fixture:rule-firing-erasable'
+  actions: '[{"type":"apply_tag","tag":"initech-rule"}]'
+  results: '[{"type":"apply_tag","status":"succeeded"}]'
+  completed_at: '{{daysAgo 2}}'
+  workspace_id: 3
+  created_at: '{{daysAgo 2}}'
+  updated_at: '{{daysAgo 2}}'
+- id: 301 # fixture: RuleFiringBystander
+  rule_id: 300
+  contact_id: 301
+  action: rule_initech
+  source_id: 'fixture:rule-firing-bystander'
+  actions: '[{"type":"apply_tag","tag":"initech-rule"}]'
+  results: '[{"type":"apply_tag","status":"succeeded"}]'
+  completed_at: '{{daysAgo 2}}'
+  workspace_id: 3
+  created_at: '{{daysAgo 2}}'
+  updated_at: '{{daysAgo 2}}'

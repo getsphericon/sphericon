@@ -4579,6 +4579,57 @@ func (s *CreateIntegrationInputParams) init() CreateIntegrationInputParams {
 	return m
 }
 
+// Request body for creating a Rule (always created as a draft).
+// Ref: #/components/schemas/CreateRuleInput
+type CreateRuleInput struct {
+	Name string `json:"name"`
+	// The Event actions that make the Rule fire; at least one.
+	TriggerEvents []string          `json:"triggerEvents"`
+	Condition     OptConditionGroup `json:"condition"`
+	// The Actions to run, in order.
+	Actions []RuleAction `json:"actions"`
+}
+
+// GetName returns the value of Name.
+func (s *CreateRuleInput) GetName() string {
+	return s.Name
+}
+
+// GetTriggerEvents returns the value of TriggerEvents.
+func (s *CreateRuleInput) GetTriggerEvents() []string {
+	return s.TriggerEvents
+}
+
+// GetCondition returns the value of Condition.
+func (s *CreateRuleInput) GetCondition() OptConditionGroup {
+	return s.Condition
+}
+
+// GetActions returns the value of Actions.
+func (s *CreateRuleInput) GetActions() []RuleAction {
+	return s.Actions
+}
+
+// SetName sets the value of Name.
+func (s *CreateRuleInput) SetName(val string) {
+	s.Name = val
+}
+
+// SetTriggerEvents sets the value of TriggerEvents.
+func (s *CreateRuleInput) SetTriggerEvents(val []string) {
+	s.TriggerEvents = val
+}
+
+// SetCondition sets the value of Condition.
+func (s *CreateRuleInput) SetCondition(val OptConditionGroup) {
+	s.Condition = val
+}
+
+// SetActions sets the value of Actions.
+func (s *CreateRuleInput) SetActions(val []RuleAction) {
+	s.Actions = val
+}
+
 // Request body for creating a segment.
 // Ref: #/components/schemas/CreateSegmentInput
 type CreateSegmentInput struct {
@@ -10811,6 +10862,13 @@ func (*ProblemDetailsHeaders) integrationsRegenerateKeyRes() {}
 func (*ProblemDetailsHeaders) integrationsUnarchiveRes()     {}
 func (*ProblemDetailsHeaders) integrationsUpdateRes()        {}
 func (*ProblemDetailsHeaders) presetsListRes()               {}
+func (*ProblemDetailsHeaders) ruleFiringsListRes()           {}
+func (*ProblemDetailsHeaders) rulesActivateRes()             {}
+func (*ProblemDetailsHeaders) rulesCreateRes()               {}
+func (*ProblemDetailsHeaders) rulesDeactivateRes()           {}
+func (*ProblemDetailsHeaders) rulesGetRes()                  {}
+func (*ProblemDetailsHeaders) rulesListRes()                 {}
+func (*ProblemDetailsHeaders) rulesUpdateRes()               {}
 func (*ProblemDetailsHeaders) segmentsArchiveRes()           {}
 func (*ProblemDetailsHeaders) segmentsCreateRes()            {}
 func (*ProblemDetailsHeaders) segmentsGetRes()               {}
@@ -10954,6 +11012,671 @@ func (s *RecordEventsInput) GetEvents() []EventInput {
 func (s *RecordEventsInput) SetEvents(val []EventInput) {
 	s.Events = val
 }
+
+// One Action of a Rule, run in order when the Rule fires. A flat shape: tag actions carry the tag
+// name.
+// Ref: #/components/schemas/RuleAction
+type RuleAction struct {
+	// Action kind.
+	Type RuleActionType `json:"type"`
+	// Tag name to apply to or remove from the Contact (apply_tag and remove_tag).
+	Tag OptString `json:"tag"`
+}
+
+// GetType returns the value of Type.
+func (s *RuleAction) GetType() RuleActionType {
+	return s.Type
+}
+
+// GetTag returns the value of Tag.
+func (s *RuleAction) GetTag() OptString {
+	return s.Tag
+}
+
+// SetType sets the value of Type.
+func (s *RuleAction) SetType(val RuleActionType) {
+	s.Type = val
+}
+
+// SetTag sets the value of Tag.
+func (s *RuleAction) SetTag(val OptString) {
+	s.Tag = val
+}
+
+// What one Action did when a Rule fired.
+// Ref: #/components/schemas/RuleActionResult
+type RuleActionResult struct {
+	// The Action's kind.
+	Type RuleActionType `json:"type"`
+	// How it ended; a skipped Action is an expected outcome, not an error.
+	Status RuleActionStatus `json:"status"`
+	// Why it failed or was skipped.
+	Detail OptString `json:"detail"`
+}
+
+// GetType returns the value of Type.
+func (s *RuleActionResult) GetType() RuleActionType {
+	return s.Type
+}
+
+// GetStatus returns the value of Status.
+func (s *RuleActionResult) GetStatus() RuleActionStatus {
+	return s.Status
+}
+
+// GetDetail returns the value of Detail.
+func (s *RuleActionResult) GetDetail() OptString {
+	return s.Detail
+}
+
+// SetType sets the value of Type.
+func (s *RuleActionResult) SetType(val RuleActionType) {
+	s.Type = val
+}
+
+// SetStatus sets the value of Status.
+func (s *RuleActionResult) SetStatus(val RuleActionStatus) {
+	s.Status = val
+}
+
+// SetDetail sets the value of Detail.
+func (s *RuleActionResult) SetDetail(val OptString) {
+	s.Detail = val
+}
+
+// How one Action of a Firing ended.
+// Ref: #/components/schemas/RuleActionStatus
+type RuleActionStatus string
+
+const (
+	RuleActionStatusSucceeded RuleActionStatus = "succeeded"
+	RuleActionStatusFailed    RuleActionStatus = "failed"
+	RuleActionStatusSkipped   RuleActionStatus = "skipped"
+)
+
+// AllValues returns all RuleActionStatus values.
+func (RuleActionStatus) AllValues() []RuleActionStatus {
+	return []RuleActionStatus{
+		RuleActionStatusSucceeded,
+		RuleActionStatusFailed,
+		RuleActionStatusSkipped,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s RuleActionStatus) MarshalText() ([]byte, error) {
+	switch s {
+	case RuleActionStatusSucceeded:
+		return []byte(s), nil
+	case RuleActionStatusFailed:
+		return []byte(s), nil
+	case RuleActionStatusSkipped:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *RuleActionStatus) UnmarshalText(data []byte) error {
+	switch RuleActionStatus(data) {
+	case RuleActionStatusSucceeded:
+		*s = RuleActionStatusSucceeded
+		return nil
+	case RuleActionStatusFailed:
+		*s = RuleActionStatusFailed
+		return nil
+	case RuleActionStatusSkipped:
+		*s = RuleActionStatusSkipped
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Kind of Rule action.
+// Ref: #/components/schemas/RuleActionType
+type RuleActionType string
+
+const (
+	RuleActionTypeApplyTag  RuleActionType = "apply_tag"
+	RuleActionTypeRemoveTag RuleActionType = "remove_tag"
+)
+
+// AllValues returns all RuleActionType values.
+func (RuleActionType) AllValues() []RuleActionType {
+	return []RuleActionType{
+		RuleActionTypeApplyTag,
+		RuleActionTypeRemoveTag,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s RuleActionType) MarshalText() ([]byte, error) {
+	switch s {
+	case RuleActionTypeApplyTag:
+		return []byte(s), nil
+	case RuleActionTypeRemoveTag:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *RuleActionType) UnmarshalText(data []byte) error {
+	switch RuleActionType(data) {
+	case RuleActionTypeApplyTag:
+		*s = RuleActionTypeApplyTag
+		return nil
+	case RuleActionTypeRemoveTag:
+		*s = RuleActionTypeRemoveTag
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// One execution of a Rule for one Event, with what each Action did. Erased with the Contact.
+// Ref: #/components/schemas/RuleFiringResource
+type RuleFiringResource struct {
+	// Unique identifier.
+	ID EntityId `json:"id"`
+	// The Rule that fired.
+	RuleId EntityId `json:"ruleId"`
+	// The Contact the Event was for.
+	ContactId EntityId `json:"contactId"`
+	// The Trigger event: the action of the Event that fired the Rule.
+	Action string `json:"action"`
+	// The Event's source id: the same Event delivered twice fires a Rule once.
+	EventSourceId string `json:"eventSourceId"`
+	// One result per Action run so far, in the Rule's order.
+	Results []RuleActionResult `json:"results"`
+	// When the last Action finished; absent while Actions are still to run.
+	CompletedAt OptTimestamp `json:"completedAt"`
+	// When the Rule fired.
+	CreatedAt Timestamp `json:"createdAt"`
+}
+
+// GetID returns the value of ID.
+func (s *RuleFiringResource) GetID() EntityId {
+	return s.ID
+}
+
+// GetRuleId returns the value of RuleId.
+func (s *RuleFiringResource) GetRuleId() EntityId {
+	return s.RuleId
+}
+
+// GetContactId returns the value of ContactId.
+func (s *RuleFiringResource) GetContactId() EntityId {
+	return s.ContactId
+}
+
+// GetAction returns the value of Action.
+func (s *RuleFiringResource) GetAction() string {
+	return s.Action
+}
+
+// GetEventSourceId returns the value of EventSourceId.
+func (s *RuleFiringResource) GetEventSourceId() string {
+	return s.EventSourceId
+}
+
+// GetResults returns the value of Results.
+func (s *RuleFiringResource) GetResults() []RuleActionResult {
+	return s.Results
+}
+
+// GetCompletedAt returns the value of CompletedAt.
+func (s *RuleFiringResource) GetCompletedAt() OptTimestamp {
+	return s.CompletedAt
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *RuleFiringResource) GetCreatedAt() Timestamp {
+	return s.CreatedAt
+}
+
+// SetID sets the value of ID.
+func (s *RuleFiringResource) SetID(val EntityId) {
+	s.ID = val
+}
+
+// SetRuleId sets the value of RuleId.
+func (s *RuleFiringResource) SetRuleId(val EntityId) {
+	s.RuleId = val
+}
+
+// SetContactId sets the value of ContactId.
+func (s *RuleFiringResource) SetContactId(val EntityId) {
+	s.ContactId = val
+}
+
+// SetAction sets the value of Action.
+func (s *RuleFiringResource) SetAction(val string) {
+	s.Action = val
+}
+
+// SetEventSourceId sets the value of EventSourceId.
+func (s *RuleFiringResource) SetEventSourceId(val string) {
+	s.EventSourceId = val
+}
+
+// SetResults sets the value of Results.
+func (s *RuleFiringResource) SetResults(val []RuleActionResult) {
+	s.Results = val
+}
+
+// SetCompletedAt sets the value of CompletedAt.
+func (s *RuleFiringResource) SetCompletedAt(val OptTimestamp) {
+	s.CompletedAt = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *RuleFiringResource) SetCreatedAt(val Timestamp) {
+	s.CreatedAt = val
+}
+
+type RuleFiringsListBadRequest ProblemDetails
+
+func (*RuleFiringsListBadRequest) ruleFiringsListRes() {}
+
+type RuleFiringsListNotFound ProblemDetails
+
+func (*RuleFiringsListNotFound) ruleFiringsListRes() {}
+
+// Paginated response.
+type RuleFiringsListOK struct {
+	// List of items.
+	Items []RuleFiringResource `json:"items"`
+	// Page number (1-based).
+	Page int32 `json:"page"`
+	// Page size.
+	PageSize int32 `json:"pageSize"`
+	// Total number of elements.
+	TotalItems int32 `json:"totalItems"`
+	// Total number of pages.
+	TotalPages int32 `json:"totalPages"`
+}
+
+// GetItems returns the value of Items.
+func (s *RuleFiringsListOK) GetItems() []RuleFiringResource {
+	return s.Items
+}
+
+// GetPage returns the value of Page.
+func (s *RuleFiringsListOK) GetPage() int32 {
+	return s.Page
+}
+
+// GetPageSize returns the value of PageSize.
+func (s *RuleFiringsListOK) GetPageSize() int32 {
+	return s.PageSize
+}
+
+// GetTotalItems returns the value of TotalItems.
+func (s *RuleFiringsListOK) GetTotalItems() int32 {
+	return s.TotalItems
+}
+
+// GetTotalPages returns the value of TotalPages.
+func (s *RuleFiringsListOK) GetTotalPages() int32 {
+	return s.TotalPages
+}
+
+// SetItems sets the value of Items.
+func (s *RuleFiringsListOK) SetItems(val []RuleFiringResource) {
+	s.Items = val
+}
+
+// SetPage sets the value of Page.
+func (s *RuleFiringsListOK) SetPage(val int32) {
+	s.Page = val
+}
+
+// SetPageSize sets the value of PageSize.
+func (s *RuleFiringsListOK) SetPageSize(val int32) {
+	s.PageSize = val
+}
+
+// SetTotalItems sets the value of TotalItems.
+func (s *RuleFiringsListOK) SetTotalItems(val int32) {
+	s.TotalItems = val
+}
+
+// SetTotalPages sets the value of TotalPages.
+func (s *RuleFiringsListOK) SetTotalPages(val int32) {
+	s.TotalPages = val
+}
+
+func (*RuleFiringsListOK) ruleFiringsListRes() {}
+
+type RuleFiringsListUnauthorized ProblemDetails
+
+func (*RuleFiringsListUnauthorized) ruleFiringsListRes() {}
+
+// A Rule: a stateless reaction to an Event. When any of its Trigger events is recorded for a Contact
+// and its condition holds, its Actions run at once, in order. Created Rules are drafts; activating is
+// a separate, send-class operation.
+// Ref: #/components/schemas/RuleResource
+type RuleResource struct {
+	// Unique identifier.
+	ID EntityId `json:"id"`
+	// Rule name.
+	Name string `json:"name"`
+	// Lifecycle status.
+	Status RuleStatus `json:"status"`
+	// The Event actions that make the Rule fire; any one of them does.
+	TriggerEvents []string `json:"triggerEvents"`
+	// The Contact must match this condition for the Rule to fire; absent or empty means every Contact.
+	Condition OptConditionGroup `json:"condition"`
+	// The Rule's ordered Actions.
+	Actions []RuleAction `json:"actions"`
+	// When the Rule was last activated. It acts only on Events recorded after it.
+	ActivatedAt OptNilTimestamp `json:"activatedAt"`
+	// When the Rule was archived; null while it is kept.
+	ArchivedAt OptNilTimestamp `json:"archivedAt"`
+	// Creation timestamp.
+	CreatedAt Timestamp `json:"createdAt"`
+	// Last update timestamp.
+	UpdatedAt Timestamp `json:"updatedAt"`
+}
+
+// GetID returns the value of ID.
+func (s *RuleResource) GetID() EntityId {
+	return s.ID
+}
+
+// GetName returns the value of Name.
+func (s *RuleResource) GetName() string {
+	return s.Name
+}
+
+// GetStatus returns the value of Status.
+func (s *RuleResource) GetStatus() RuleStatus {
+	return s.Status
+}
+
+// GetTriggerEvents returns the value of TriggerEvents.
+func (s *RuleResource) GetTriggerEvents() []string {
+	return s.TriggerEvents
+}
+
+// GetCondition returns the value of Condition.
+func (s *RuleResource) GetCondition() OptConditionGroup {
+	return s.Condition
+}
+
+// GetActions returns the value of Actions.
+func (s *RuleResource) GetActions() []RuleAction {
+	return s.Actions
+}
+
+// GetActivatedAt returns the value of ActivatedAt.
+func (s *RuleResource) GetActivatedAt() OptNilTimestamp {
+	return s.ActivatedAt
+}
+
+// GetArchivedAt returns the value of ArchivedAt.
+func (s *RuleResource) GetArchivedAt() OptNilTimestamp {
+	return s.ArchivedAt
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *RuleResource) GetCreatedAt() Timestamp {
+	return s.CreatedAt
+}
+
+// GetUpdatedAt returns the value of UpdatedAt.
+func (s *RuleResource) GetUpdatedAt() Timestamp {
+	return s.UpdatedAt
+}
+
+// SetID sets the value of ID.
+func (s *RuleResource) SetID(val EntityId) {
+	s.ID = val
+}
+
+// SetName sets the value of Name.
+func (s *RuleResource) SetName(val string) {
+	s.Name = val
+}
+
+// SetStatus sets the value of Status.
+func (s *RuleResource) SetStatus(val RuleStatus) {
+	s.Status = val
+}
+
+// SetTriggerEvents sets the value of TriggerEvents.
+func (s *RuleResource) SetTriggerEvents(val []string) {
+	s.TriggerEvents = val
+}
+
+// SetCondition sets the value of Condition.
+func (s *RuleResource) SetCondition(val OptConditionGroup) {
+	s.Condition = val
+}
+
+// SetActions sets the value of Actions.
+func (s *RuleResource) SetActions(val []RuleAction) {
+	s.Actions = val
+}
+
+// SetActivatedAt sets the value of ActivatedAt.
+func (s *RuleResource) SetActivatedAt(val OptNilTimestamp) {
+	s.ActivatedAt = val
+}
+
+// SetArchivedAt sets the value of ArchivedAt.
+func (s *RuleResource) SetArchivedAt(val OptNilTimestamp) {
+	s.ArchivedAt = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *RuleResource) SetCreatedAt(val Timestamp) {
+	s.CreatedAt = val
+}
+
+// SetUpdatedAt sets the value of UpdatedAt.
+func (s *RuleResource) SetUpdatedAt(val Timestamp) {
+	s.UpdatedAt = val
+}
+
+func (*RuleResource) rulesActivateRes()   {}
+func (*RuleResource) rulesCreateRes()     {}
+func (*RuleResource) rulesDeactivateRes() {}
+func (*RuleResource) rulesGetRes()        {}
+func (*RuleResource) rulesUpdateRes()     {}
+
+// Rule lifecycle status.
+// Ref: #/components/schemas/RuleStatus
+type RuleStatus string
+
+const (
+	RuleStatusDraft  RuleStatus = "draft"
+	RuleStatusActive RuleStatus = "active"
+)
+
+// AllValues returns all RuleStatus values.
+func (RuleStatus) AllValues() []RuleStatus {
+	return []RuleStatus{
+		RuleStatusDraft,
+		RuleStatusActive,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s RuleStatus) MarshalText() ([]byte, error) {
+	switch s {
+	case RuleStatusDraft:
+		return []byte(s), nil
+	case RuleStatusActive:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *RuleStatus) UnmarshalText(data []byte) error {
+	switch RuleStatus(data) {
+	case RuleStatusDraft:
+		*s = RuleStatusDraft
+		return nil
+	case RuleStatusActive:
+		*s = RuleStatusActive
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type RulesActivateBadRequest ProblemDetails
+
+func (*RulesActivateBadRequest) rulesActivateRes() {}
+
+type RulesActivateNotFound ProblemDetails
+
+func (*RulesActivateNotFound) rulesActivateRes() {}
+
+type RulesActivateUnauthorized ProblemDetails
+
+func (*RulesActivateUnauthorized) rulesActivateRes() {}
+
+type RulesActivateUnprocessableEntity ProblemDetails
+
+func (*RulesActivateUnprocessableEntity) rulesActivateRes() {}
+
+type RulesCreateBadRequest ProblemDetails
+
+func (*RulesCreateBadRequest) rulesCreateRes() {}
+
+type RulesCreateUnauthorized ProblemDetails
+
+func (*RulesCreateUnauthorized) rulesCreateRes() {}
+
+type RulesCreateUnprocessableEntity ProblemDetails
+
+func (*RulesCreateUnprocessableEntity) rulesCreateRes() {}
+
+type RulesDeactivateBadRequest ProblemDetails
+
+func (*RulesDeactivateBadRequest) rulesDeactivateRes() {}
+
+type RulesDeactivateNotFound ProblemDetails
+
+func (*RulesDeactivateNotFound) rulesDeactivateRes() {}
+
+type RulesDeactivateUnauthorized ProblemDetails
+
+func (*RulesDeactivateUnauthorized) rulesDeactivateRes() {}
+
+type RulesGetBadRequest ProblemDetails
+
+func (*RulesGetBadRequest) rulesGetRes() {}
+
+type RulesGetNotFound ProblemDetails
+
+func (*RulesGetNotFound) rulesGetRes() {}
+
+type RulesGetUnauthorized ProblemDetails
+
+func (*RulesGetUnauthorized) rulesGetRes() {}
+
+type RulesListBadRequest ProblemDetails
+
+func (*RulesListBadRequest) rulesListRes() {}
+
+// Paginated response.
+type RulesListOK struct {
+	// List of items.
+	Items []RuleResource `json:"items"`
+	// Page number (1-based).
+	Page int32 `json:"page"`
+	// Page size.
+	PageSize int32 `json:"pageSize"`
+	// Total number of elements.
+	TotalItems int32 `json:"totalItems"`
+	// Total number of pages.
+	TotalPages int32 `json:"totalPages"`
+}
+
+// GetItems returns the value of Items.
+func (s *RulesListOK) GetItems() []RuleResource {
+	return s.Items
+}
+
+// GetPage returns the value of Page.
+func (s *RulesListOK) GetPage() int32 {
+	return s.Page
+}
+
+// GetPageSize returns the value of PageSize.
+func (s *RulesListOK) GetPageSize() int32 {
+	return s.PageSize
+}
+
+// GetTotalItems returns the value of TotalItems.
+func (s *RulesListOK) GetTotalItems() int32 {
+	return s.TotalItems
+}
+
+// GetTotalPages returns the value of TotalPages.
+func (s *RulesListOK) GetTotalPages() int32 {
+	return s.TotalPages
+}
+
+// SetItems sets the value of Items.
+func (s *RulesListOK) SetItems(val []RuleResource) {
+	s.Items = val
+}
+
+// SetPage sets the value of Page.
+func (s *RulesListOK) SetPage(val int32) {
+	s.Page = val
+}
+
+// SetPageSize sets the value of PageSize.
+func (s *RulesListOK) SetPageSize(val int32) {
+	s.PageSize = val
+}
+
+// SetTotalItems sets the value of TotalItems.
+func (s *RulesListOK) SetTotalItems(val int32) {
+	s.TotalItems = val
+}
+
+// SetTotalPages sets the value of TotalPages.
+func (s *RulesListOK) SetTotalPages(val int32) {
+	s.TotalPages = val
+}
+
+func (*RulesListOK) rulesListRes() {}
+
+type RulesListUnauthorized ProblemDetails
+
+func (*RulesListUnauthorized) rulesListRes() {}
+
+type RulesListUnprocessableEntity ProblemDetails
+
+func (*RulesListUnprocessableEntity) rulesListRes() {}
+
+type RulesUpdateBadRequest ProblemDetails
+
+func (*RulesUpdateBadRequest) rulesUpdateRes() {}
+
+type RulesUpdateNotFound ProblemDetails
+
+func (*RulesUpdateNotFound) rulesUpdateRes() {}
+
+type RulesUpdateUnauthorized ProblemDetails
+
+func (*RulesUpdateUnauthorized) rulesUpdateRes() {}
+
+type RulesUpdateUnprocessableEntity ProblemDetails
+
+func (*RulesUpdateUnprocessableEntity) rulesUpdateRes() {}
 
 // Request body for scheduling a broadcast.
 // Ref: #/components/schemas/ScheduleBroadcastInput
@@ -13784,6 +14507,57 @@ func (s *UpdateIntegrationInputParams) init() UpdateIntegrationInputParams {
 		*s = m
 	}
 	return m
+}
+
+// Request body for updating a Rule.
+// Ref: #/components/schemas/UpdateRuleInput
+type UpdateRuleInput struct {
+	Name OptString `json:"name"`
+	// The Event actions that make the Rule fire; at least one.
+	TriggerEvents []string          `json:"triggerEvents"`
+	Condition     OptConditionGroup `json:"condition"`
+	// The Actions to run, in order.
+	Actions []RuleAction `json:"actions"`
+}
+
+// GetName returns the value of Name.
+func (s *UpdateRuleInput) GetName() OptString {
+	return s.Name
+}
+
+// GetTriggerEvents returns the value of TriggerEvents.
+func (s *UpdateRuleInput) GetTriggerEvents() []string {
+	return s.TriggerEvents
+}
+
+// GetCondition returns the value of Condition.
+func (s *UpdateRuleInput) GetCondition() OptConditionGroup {
+	return s.Condition
+}
+
+// GetActions returns the value of Actions.
+func (s *UpdateRuleInput) GetActions() []RuleAction {
+	return s.Actions
+}
+
+// SetName sets the value of Name.
+func (s *UpdateRuleInput) SetName(val OptString) {
+	s.Name = val
+}
+
+// SetTriggerEvents sets the value of TriggerEvents.
+func (s *UpdateRuleInput) SetTriggerEvents(val []string) {
+	s.TriggerEvents = val
+}
+
+// SetCondition sets the value of Condition.
+func (s *UpdateRuleInput) SetCondition(val OptConditionGroup) {
+	s.Condition = val
+}
+
+// SetActions sets the value of Actions.
+func (s *UpdateRuleInput) SetActions(val []RuleAction) {
+	s.Actions = val
 }
 
 // Request body for updating a segment.

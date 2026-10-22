@@ -32,6 +32,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/login"
 	"github.com/getsphericon/sphericon/internal/oauthserver"
 	"github.com/getsphericon/sphericon/internal/outbound"
+	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/secondfactor"
 	"github.com/getsphericon/sphericon/internal/segments"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
@@ -111,6 +112,7 @@ type Handlers struct {
 	templates      *templates.Module
 	brandKit       *brandkit.Module
 	automations    *automations.Module
+	rules          *rules.Module
 	oauth          *oauthserver.Service
 	audit          AuditLog
 	abuseWatch     AbuseWatch
@@ -192,6 +194,7 @@ type Deps struct {
 	Templates      *templates.Module
 	BrandKit       *brandkit.Module
 	Automations    *automations.Module
+	Rules          *rules.Module
 	Broadcasts     *broadcasts.Module
 	Welcome        WelcomeEnqueuer
 	SysMail        SystemMailEnqueuer
@@ -244,7 +247,7 @@ func NewHandlers(d Deps) *Handlers {
 	h := &Handlers{
 		accounts: d.Accounts, deletion: d.Deletion, attempts: d.Attempts, bus: d.Bus, webhooks: d.Webhooks, outbound: d.Outbound,
 		segments: d.Segments, eventlog: d.EventLog, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, templates: d.Templates, brandKit: d.BrandKit,
-		automations: d.Automations, broadcasts: d.Broadcasts, welcome: d.Welcome,
+		automations: d.Automations, rules: d.Rules, broadcasts: d.Broadcasts, welcome: d.Welcome,
 		sysmail: d.SysMail, sendingDomains: d.SendingDomains, joinDomains: d.JoinDomains, integrations: d.Integrations, tokens: d.Tokens, tracker: d.Tracker, appURL: d.AppURL,
 		oauth: d.OAuth, audit: d.Audit, abuseWatch: d.AbuseWatch, supportEmail: d.SupportEmail, mcpURL: d.MCPURL, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, passkeys: d.Passkeys, now: now, instance: d.Instance, accountLink: d.AccountLink, holds: d.Holds, requireVerification: d.RequireEmailVerification, signupOpen: d.SignupOpen,
 		signin:     d.Signin,

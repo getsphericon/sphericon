@@ -53,6 +53,7 @@ namespace Sphericon;
 // callable, only for tokens that also carry the `mcp:send` scope. Deactivating an
 // automation only stops new enrollments, so it stays an authoring tool.
 @@extension(Automations.activate, "x-mcp", #{ send: true });
+@@extension(Rules.activate, "x-mcp", #{ send: true });
 @@extension(Emails.send, "x-mcp", #{ send: true });
 @@extension(Broadcasts.schedule, "x-mcp", #{ send: true });
 @@extension(Broadcasts.unschedule, "x-mcp", #{ send: true });

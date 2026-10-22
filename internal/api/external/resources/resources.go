@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/dkimstate"
 	"github.com/getsphericon/sphericon/internal/integrations"
+	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/sendlimit"
 	"github.com/go-faster/jx"
@@ -103,6 +104,8 @@ func AutomationSteps(steps []externalapi.AutomationStep) []automations.Step {
 // goverter:extend optNilInt32
 // goverter:extend exportJSON
 // goverter:extend segmentCondition
+// goverter:extend ruleActions
+// goverter:extend ruleResults
 // goverter:extend templateDoc
 // goverter:extend broadcastDoc
 // goverter:extend nilInt32
@@ -152,6 +155,17 @@ type Converter interface {
 	SesConfigToResource(source integrations.RedactedSES) externalapi.SesConfig
 	// goverter:map Sent24h SentLast24h
 	SendLimitToStatus(source sendlimit.Status) externalapi.SendLimitStatus
+
+	// The contract names the discarded state "archived" (ADR 0049). The Trigger events are
+	// the rows of the Rule's `triggers` edge, loaded with the Rule; the stored actions JSON
+	// is decoded into the typed Actions at this boundary.
+	// goverter:map DiscardedAt ArchivedAt
+	// goverter:map . TriggerEvents | ruleTriggerEvents
+	RuleToResource(source *ent.Rule) externalapi.RuleResource
+
+	// The store names the Event's source id; the contract says whose it is.
+	// goverter:map SourceID EventSourceId
+	RuleFiringToResource(source *ent.RuleFiring) externalapi.RuleFiringResource
 
 	// goverter:map . Failure | enrollmentFailure
 	EnrollmentToResource(source *ent.AutomationRun) externalapi.EnrollmentResource
@@ -489,3 +503,48 @@ func sendingDomainVerified(d ent.SendingDomain) bool { return dkimstate.Is(&d) }
 
 // webhookEnabled derives the enabled flag: an endpoint is enabled until it has a disabled moment.
 func webhookEnabled(e ent.WebhookEndpoint) bool { return e.DisabledAt == nil }
+
+// ruleTriggerEvents names a Rule's Trigger events: the rows of its `triggers` edge.
+func ruleTriggerEvents(r *ent.Rule) []string { return rules.Triggers(r) }
+
+// ruleOptString is a text that is absent when empty.
+func ruleOptString(s string) externalapi.OptString {
+	if s == "" {
+		return externalapi.OptString{}
+	}
+	return externalapi.NewOptString(s)
+}
+
+// ruleActions decodes a Rule's stored Actions into the typed DTO. Malformed or missing actions
+// yield none rather than an error.
+func ruleActions(stored string) []externalapi.RuleAction {
+	actions, err := rules.DecodeActions(stored)
+	if err != nil {
+		return nil
+	}
+	return lo.Map(actions, func(a rules.Action, _ int) externalapi.RuleAction {
+		return externalapi.RuleAction{Type: externalapi.RuleActionType(a.Type), Tag: ruleOptString(a.Tag)}
+	})
+}
+
+// RuleActions converts the typed Actions DTO to the Rule module's Actions.
+func RuleActions(actions []externalapi.RuleAction) []rules.Action {
+	return lo.Map(actions, func(a externalapi.RuleAction, _ int) rules.Action {
+		return rules.Action{Type: string(a.Type), Tag: a.Tag.Or("")}
+	})
+}
+
+// ruleResults decodes a Firing's stored results into the typed DTO.
+func ruleResults(stored string) []externalapi.RuleActionResult {
+	results, err := rules.DecodeResults(stored)
+	if err != nil {
+		return nil
+	}
+	return lo.Map(results, func(r rules.Result, _ int) externalapi.RuleActionResult {
+		return externalapi.RuleActionResult{
+			Type:   externalapi.RuleActionType(r.Type),
+			Status: externalapi.RuleActionStatus(r.Status),
+			Detail: ruleOptString(r.Detail),
+		}
+	})
+}

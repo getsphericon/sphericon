@@ -114,6 +114,14 @@ type Envelope struct {
 	// natural upstream id (a provider notification) sets it so at-least-once
 	// redelivery dedupes, while ID stays a short ULID for the message-id column.
 	DedupKey string `json:"dedupKey,omitempty"`
+	// RecordedAt is when the event was published, as opposed to OccurredAt, which a client may
+	// backdate. Rules act only on events recorded after they were activated (ADR 0054).
+	RecordedAt time.Time `json:"recordedAt"`
+	// CausedBy names what published the event when it was not a customer or a provider: an
+	// Action of a Rule stamps it on any event it publishes, and the Rule consumer skips an event
+	// that carries it, so Rules never chain (ADR 0054). No Action publishes an event today, so
+	// nothing stamps it yet; the consumer honours it already.
+	CausedBy string `json:"causedBy,omitempty"`
 }
 
 // Projection is the durable Event-row an event maps to. Each event type computes

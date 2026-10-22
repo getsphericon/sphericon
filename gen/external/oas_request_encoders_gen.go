@@ -276,6 +276,34 @@ func encodeIntegrationsUpdateRequest(
 	return nil
 }
 
+func encodeRulesCreateRequest(
+	req *CreateRuleInput,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
+func encodeRulesUpdateRequest(
+	req *UpdateRuleInput,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
 func encodeSegmentsCreateRequest(
 	req *CreateSegmentInput,
 	r *http.Request,

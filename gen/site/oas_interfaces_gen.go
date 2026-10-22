@@ -373,6 +373,34 @@ type SitePublicUnsubscribesPerformRes interface {
 	sitePublicUnsubscribesPerformRes()
 }
 
+type SiteRuleFiringsListRes interface {
+	siteRuleFiringsListRes()
+}
+
+type SiteRulesActivateRes interface {
+	siteRulesActivateRes()
+}
+
+type SiteRulesCreateRes interface {
+	siteRulesCreateRes()
+}
+
+type SiteRulesDeactivateRes interface {
+	siteRulesDeactivateRes()
+}
+
+type SiteRulesGetRes interface {
+	siteRulesGetRes()
+}
+
+type SiteRulesListRes interface {
+	siteRulesListRes()
+}
+
+type SiteRulesUpdateRes interface {
+	siteRulesUpdateRes()
+}
+
 type SiteSecondFactorConfirmEnrollmentRes interface {
 	siteSecondFactorConfirmEnrollmentRes()
 }

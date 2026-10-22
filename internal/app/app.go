@@ -53,6 +53,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/preset"
 	"github.com/getsphericon/sphericon/internal/rekey"
 	"github.com/getsphericon/sphericon/internal/reputation"
+	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/secondfactor"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/segments"
@@ -898,7 +899,7 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		if err := events.RegisterSubscribers(router, database.DB, client.Client, jc.Client, edition.Webhooks(jc.Client), edition.Consumers); err != nil {
+		if err := events.RegisterSubscribers(router, database.DB, client.Client, jc.Client, jc.Client, edition.Webhooks(jc.Client), edition.Consumers); err != nil {
 			return nil, err
 		}
 		return &eventsRuntime{router: router}, nil
@@ -1304,6 +1305,14 @@ func register(injector do.Injector, env string, o options) {
 		return automations.New(cipher, bus.Bus), nil
 	})
 
+	do.Provide(injector, func(i do.Injector) (*rules.Module, error) {
+		bus, err := do.Invoke[*eventsBus](i)
+		if err != nil {
+			return nil, err
+		}
+		return rules.New(bus.Bus), nil
+	})
+
 	do.Provide(injector, func(i do.Injector) (*eventlog.Module, error) {
 		bus, err := do.Invoke[*eventsBus](i)
 		if err != nil {
@@ -1512,6 +1521,10 @@ func externalDeps(i do.Injector) (apiexternal.Deps, error) {
 	if err != nil {
 		return apiexternal.Deps{}, err
 	}
+	rl, err := do.Invoke[*rules.Module](i)
+	if err != nil {
+		return apiexternal.Deps{}, err
+	}
 	bc, err := do.Invoke[*broadcasts.Module](i)
 	if err != nil {
 		return apiexternal.Deps{}, err
@@ -1534,7 +1547,7 @@ func externalDeps(i do.Injector) (apiexternal.Deps, error) {
 	}
 	return apiexternal.Deps{
 		Accounts: acc, Bus: bus.Bus, Webhooks: wh, Outbound: sender.Module,
-		Segments: seg, EventLog: evlog, Contacts: con, Erasure: er, Tags: tg, Templates: tpl, BrandKit: bk, Automations: auto,
+		Segments: seg, EventLog: evlog, Contacts: con, Erasure: er, Tags: tg, Templates: tpl, BrandKit: bk, Automations: auto, Rules: rl,
 		Broadcasts: bc, Reputation: rep, Integrations: integ, SendingDomains: sd, BootstrapToken: cfg.BootstrapToken, Audit: edition.Audit, Export: edition.Export,
 	}, nil
 }
@@ -1594,6 +1607,10 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		return apisite.Deps{}, err
 	}
 	auto, err := do.Invoke[*automations.Module](i)
+	if err != nil {
+		return apisite.Deps{}, err
+	}
+	rl, err := do.Invoke[*rules.Module](i)
 	if err != nil {
 		return apisite.Deps{}, err
 	}
@@ -1665,7 +1682,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		Deletion:    deletion,
 		AccountLink: accountLink, Holds: edition.Holds(), AbuseWatch: edition.AbuseWatch(), SupportEmail: cfg.SupportEmail, MCPURL: cfg.MCPOrigin(),
 		Accounts: acc, Attempts: attempts, OAuth: oauthserver.NewService(client.Client, oauthserver.NewFetcher(cfg.OutboundAllow)), Bus: bus.Bus, Webhooks: wh, Outbound: sender.Module,
-		Segments: seg, EventLog: evlog, Contacts: con, Erasure: er, Tags: tg, Templates: tpl, BrandKit: bk, Automations: auto,
+		Segments: seg, EventLog: evlog, Contacts: con, Erasure: er, Tags: tg, Templates: tpl, BrandKit: bk, Automations: auto, Rules: rl,
 		Broadcasts: bc, Welcome: jc.Client, SysMail: jc.Client, SendingDomains: sd, JoinDomains: jd, Integrations: integ,
 		Tokens: tokens, Tracker: tracker, AppURL: cfg.AppURL, Audit: edition.Audit, SecondFactor: sf, Passkeys: pk, Analytics: an,
 		RequireEmailVerification: cfg.RequireEmailVerification, SignupOpen: cfg.SignupOpen,

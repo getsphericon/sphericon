@@ -16,6 +16,7 @@ import "./resources/segments.tsp";
 import "./resources/tags.tsp";
 import "./resources/automations.tsp";
 import "./resources/enrollments.tsp";
+import "./resources/rules.tsp";
 import "./resources/broadcasts.tsp";
 import "./resources/emails.tsp";
 import "./resources/events.tsp";

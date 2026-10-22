@@ -715,6 +715,48 @@ type Handler interface {
 	//
 	// POST /unsubscribes/{token}
 	SitePublicUnsubscribesPerform(ctx context.Context, params SitePublicUnsubscribesPerformParams) (SitePublicUnsubscribesPerformRes, error)
+	// SiteRuleFiringsList implements SiteRuleFirings_list operation.
+	//
+	// List a Rule's Firings, newest first.
+	//
+	// GET /workspaces/{workspaceId}/rules/{ruleId}/firings
+	SiteRuleFiringsList(ctx context.Context, params SiteRuleFiringsListParams) (SiteRuleFiringsListRes, error)
+	// SiteRulesActivate implements SiteRules_activate operation.
+	//
+	// Activate a Rule: it reacts to Events recorded from now on, never to past ones.
+	//
+	// POST /workspaces/{workspaceId}/rules/{id}/activate
+	SiteRulesActivate(ctx context.Context, params SiteRulesActivateParams) (SiteRulesActivateRes, error)
+	// SiteRulesCreate implements SiteRules_create operation.
+	//
+	// Create a resource from the site UI.
+	//
+	// POST /workspaces/{workspaceId}/rules
+	SiteRulesCreate(ctx context.Context, req *SiteCreateRuleInput, params SiteRulesCreateParams) (SiteRulesCreateRes, error)
+	// SiteRulesDeactivate implements SiteRules_deactivate operation.
+	//
+	// Deactivate a Rule: it stops firing.
+	//
+	// POST /workspaces/{workspaceId}/rules/{id}/deactivate
+	SiteRulesDeactivate(ctx context.Context, params SiteRulesDeactivateParams) (SiteRulesDeactivateRes, error)
+	// SiteRulesGet implements SiteRules_get operation.
+	//
+	// Get a resource by ID for the site UI.
+	//
+	// GET /workspaces/{workspaceId}/rules/{id}
+	SiteRulesGet(ctx context.Context, params SiteRulesGetParams) (SiteRulesGetRes, error)
+	// SiteRulesList implements SiteRules_list operation.
+	//
+	// List resources for the site UI.
+	//
+	// GET /workspaces/{workspaceId}/rules
+	SiteRulesList(ctx context.Context, params SiteRulesListParams) (SiteRulesListRes, error)
+	// SiteRulesUpdate implements SiteRules_update operation.
+	//
+	// Update a resource from the site UI.
+	//
+	// PUT /workspaces/{workspaceId}/rules/{id}
+	SiteRulesUpdate(ctx context.Context, req *SiteUpdateRuleInput, params SiteRulesUpdateParams) (SiteRulesUpdateRes, error)
 	// SiteSecondFactorConfirmEnrollment implements SiteSecondFactor_confirmEnrollment operation.
 	//
 	// Confirm the pending enrollment with the password and a code from the app. On success the Second

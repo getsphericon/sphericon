@@ -259,6 +259,36 @@ func (c *ConverterImpl) OutboundMessageToExport(source *ent.OutboundMessage) ext
 	}
 	return externalapiContactExportOutboundMessage
 }
+func (c *ConverterImpl) RuleFiringToResource(source *ent.RuleFiring) external.RuleFiringResource {
+	var externalapiRuleFiringResource external.RuleFiringResource
+	if source != nil {
+		externalapiRuleFiringResource.ID = external.EntityId((*source).ID)
+		externalapiRuleFiringResource.RuleId = external.EntityId((*source).RuleID)
+		externalapiRuleFiringResource.ContactId = external.EntityId((*source).ContactID)
+		externalapiRuleFiringResource.Action = (*source).Action
+		externalapiRuleFiringResource.EventSourceId = (*source).SourceID
+		externalapiRuleFiringResource.Results = ruleResults((*source).Results)
+		externalapiRuleFiringResource.CompletedAt = optTimestamp((*source).CompletedAt)
+		externalapiRuleFiringResource.CreatedAt = timestamp((*source).CreatedAt)
+	}
+	return externalapiRuleFiringResource
+}
+func (c *ConverterImpl) RuleToResource(source *ent.Rule) external.RuleResource {
+	var externalapiRuleResource external.RuleResource
+	if source != nil {
+		externalapiRuleResource.ID = external.EntityId((*source).ID)
+		externalapiRuleResource.Name = (*source).Name
+		externalapiRuleResource.Status = external.RuleStatus((*source).Status)
+		externalapiRuleResource.TriggerEvents = ruleTriggerEvents(source)
+		externalapiRuleResource.Condition = segmentCondition((*source).Condition)
+		externalapiRuleResource.Actions = ruleActions((*source).Actions)
+		externalapiRuleResource.ActivatedAt = optNilTimestamp((*source).ActivatedAt)
+		externalapiRuleResource.ArchivedAt = optNilTimestamp((*source).DiscardedAt)
+		externalapiRuleResource.CreatedAt = timestamp((*source).CreatedAt)
+		externalapiRuleResource.UpdatedAt = timestamp((*source).UpdatedAt)
+	}
+	return externalapiRuleResource
+}
 func (c *ConverterImpl) SegmentToResource(source *ent.Segment) external.SegmentResource {
 	var externalapiSegmentResource external.SegmentResource
 	if source != nil {

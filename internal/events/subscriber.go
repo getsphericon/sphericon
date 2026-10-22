@@ -26,6 +26,25 @@ type Enroller interface {
 	OnEvent(ctx context.Context, workspaceID, contactID int64, action string, sourceAutomationID int64) error
 }
 
+// RuleEvent is an Event a Rule may react to, as the Rules consumer hands it to the queue: the
+// Contact it is for, its action, the id a Firing is unique on (the DedupKey, else the envelope
+// id: what persist stores as source_id), when it was recorded and the properties it carries.
+type RuleEvent struct {
+	WorkspaceID int64
+	ContactID   int64
+	Action      string
+	SourceID    string
+	RecordedAt  time.Time
+	Properties  map[string]any
+}
+
+// RuleEvaluator queues the evaluation of an Event against the Workspace's Rules. The Rules
+// subscriber delegates to it, keeping durable execution in river (the implementation enqueues
+// an evaluation job), like Enroller does for Automations.
+type RuleEvaluator interface {
+	OnRuleEvent(ctx context.Context, ev RuleEvent) error
+}
+
 // WebhookDispatcher fans an event out to the workspace's matching webhook
 // endpoints. The webhooks subscriber delegates to it, keeping durable delivery
 // (per-endpoint jobs, retries) in river.
@@ -54,6 +73,7 @@ func NewRouter() (*message.Router, error) {
 const (
 	GroupPersist     = "persist"
 	GroupAutomations = "automations"
+	GroupRules       = "rules"
 	GroupWebhooks    = "webhooks"
 	GroupSuppression = "suppression"
 	// GroupAudit is the Enterprise audit subscriber's group (ee/audit). Core lists it
@@ -67,7 +87,7 @@ const (
 
 // coreGroups are the groups core wires itself, in registration order.
 func coreGroups() []string {
-	return []string{GroupPersist, GroupAutomations, GroupWebhooks, GroupSuppression}
+	return []string{GroupPersist, GroupAutomations, GroupRules, GroupWebhooks, GroupSuppression}
 }
 
 // ConsumerGroups lists every consumer group registered in code, in registration
@@ -87,13 +107,14 @@ func ConsumerGroups() []string {
 // ConsumerGroups so the outbox prune waits for it.
 //
 // opts tune every subscriber it builds (see SubscribeOption).
-func RegisterSubscribers(router *message.Router, db *sql.DB, client *ent.Client, enroller Enroller, dispatcher WebhookDispatcher, extra []Consumer, opts ...SubscribeOption) error {
+func RegisterSubscribers(router *message.Router, db *sql.DB, client *ent.Client, enroller Enroller, rules RuleEvaluator, dispatcher WebhookDispatcher, extra []Consumer, opts ...SubscribeOption) error {
 	handlers := map[string]struct {
 		name    string
 		handler message.NoPublishHandlerFunc
 	}{
 		GroupPersist:     {"persist_event", persistConsumer(client)},
 		GroupAutomations: {"enroll_automations", automationsConsumer(enroller)},
+		GroupRules:       {"evaluate_rules", rulesConsumer(rules)},
 		GroupWebhooks:    {"dispatch_webhooks", webhooksConsumer(client, dispatcher)},
 		GroupSuppression: {"update_suppression", suppressionConsumer(client)},
 	}
@@ -267,6 +288,71 @@ func automationsConsumer(enroller Enroller) message.NoPublishHandlerFunc {
 		// Enroll on the semantic action so a trigger can be "contact.created" or a
 		// customer action like "page_view".
 		return enroller.OnEvent(msg.Context(), env.WorkspaceID, p.ContactID, p.Action, p.AutomationID)
+	}
+}
+
+// ruleEventPropertiesBound is the most JSON an Event's properties may weigh to travel in a job
+// argument. Ingest already refuses larger customer events; a larger one reaching the queue anyway
+// is queued without its properties, so a Rule tests them as absent rather than a job row growing
+// without limit.
+const ruleEventPropertiesBound = 32 << 10
+
+// machineEvent reports whether ev was caused by a machine (a mail scanner's open or click, ADR
+// 0053), which never triggers a Rule. The flag on the Event does not exist yet (issue #592), so
+// no Event is a machine Event today; this is the one place that decides it once the flag lands:
+// read it from the decoded event here.
+func machineEvent(DomainEvent) bool { return false }
+
+// rulesConsumer queues the evaluation of the event against the Workspace's Rules (ADR 0054).
+// Like the Automations consumer it skips the events that are never a trigger, and it also skips
+// an event with no Contact, a machine event and an event a Rule's Action published (its
+// envelope carries CausedBy).
+func rulesConsumer(rules RuleEvaluator) message.NoPublishHandlerFunc {
+	return func(msg *message.Message) error {
+		var env Envelope
+		if err := json.Unmarshal(msg.Payload, &env); err != nil {
+			return fmt.Errorf("unmarshal envelope: %w", err)
+		}
+		if env.CausedBy != "" {
+			return nil // an Action's own event: Rules never chain
+		}
+		ev, err := Decode(env)
+		if err != nil {
+			return err
+		}
+		if _, skip := ev.(Unprojected); skip {
+			return nil
+		}
+		if IsBackfill(ev) {
+			return nil // loaded history never fires a Rule
+		}
+		if machineEvent(ev) {
+			return nil
+		}
+		p := ev.Project()
+		if p.ContactID == 0 {
+			return nil // no Contact to act on
+		}
+		props := p.Properties
+		if encoded, err := json.Marshal(props); err != nil || len(encoded) > ruleEventPropertiesBound {
+			props = nil
+		}
+		sourceID := env.DedupKey
+		if sourceID == "" {
+			sourceID = env.ID
+		}
+		recorded := env.RecordedAt
+		if recorded.IsZero() {
+			recorded = env.OccurredAt
+		}
+		return rules.OnRuleEvent(msg.Context(), RuleEvent{
+			WorkspaceID: env.WorkspaceID,
+			ContactID:   p.ContactID,
+			Action:      p.Action,
+			SourceID:    sourceID,
+			RecordedAt:  recorded,
+			Properties:  props,
+		})
 	}
 }
 

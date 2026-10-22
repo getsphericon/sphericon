@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/suppression"
 )
 
@@ -57,6 +58,16 @@ func cancelBroadcastWork(ctx context.Context, s *ent.Scoped, t *Target, purger e
 // run, which eraseRuns deletes).
 func cancelAutomationWork(ctx context.Context, s *ent.Scoped, t *Target, purger events.PurgingPublisher) error {
 	return automations.CancelPending(ctx, s, t.ContactID, purger)
+}
+
+// cancelRuleWork has the Rule module cancel the queued evaluations that name the Contact.
+func cancelRuleWork(ctx context.Context, s *ent.Scoped, t *Target, purger events.PurgingPublisher) error {
+	return rules.CancelPending(ctx, s, t.ContactID, purger)
+}
+
+// eraseFirings deletes the Contact's Rule Firings.
+func eraseFirings(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
+	return rules.EraseFirings(ctx, s, t.ContactID)
 }
 
 // purgeOutbox deletes the domain-event outbox rows that name the subject; the bus is the

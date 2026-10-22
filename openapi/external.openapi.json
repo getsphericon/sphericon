@@ -16,6 +16,9 @@
       "name": "Enrollments"
     },
     {
+      "name": "Rules"
+    },
+    {
       "name": "Emails"
     },
     {
@@ -6749,6 +6752,803 @@
         }
       }
     },
+    "/rules": {
+      "get": {
+        "operationId": "Rules_list",
+        "description": "List resources with pagination",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PageQuery.page"
+          },
+          {
+            "$ref": "#/components/parameters/PageQuery.pageSize"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/RuleResource"
+                      },
+                      "description": "List of items"
+                    },
+                    "page": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "Page number (1-based)"
+                    },
+                    "pageSize": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "Page size"
+                    },
+                    "totalItems": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "Total number of elements"
+                    },
+                    "totalPages": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "Total number of pages"
+                    }
+                  },
+                  "description": "Paginated response"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Rules"]
+      },
+      "post": {
+        "operationId": "Rules_create",
+        "description": "Create a resource",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "The request has succeeded and a new resource has been created as a result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RuleResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Rules"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRuleInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rules/{id}": {
+      "get": {
+        "operationId": "Rules_get",
+        "description": "Get a resource by ID",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RuleResourceKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RuleResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Rules"]
+      },
+      "put": {
+        "operationId": "Rules_update",
+        "description": "Update a resource",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RuleResourceKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RuleResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Rules"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRuleInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rules/{id}/activate": {
+      "post": {
+        "operationId": "Rules_activate",
+        "description": "Activate a Rule: it reacts to Events recorded from now on, never to past ones. Needs the automations:activate scope.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RuleResourceKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RuleResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Rules"],
+        "x-mcp": {
+          "send": true
+        }
+      }
+    },
+    "/rules/{id}/deactivate": {
+      "post": {
+        "operationId": "Rules_deactivate",
+        "description": "Deactivate a Rule: it stops firing. Needs the automations:activate scope.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RuleResourceKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RuleResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Rules"]
+      }
+    },
+    "/rules/{ruleId}/firings": {
+      "get": {
+        "operationId": "RuleFirings_list",
+        "description": "List a Rule's Firings, newest first. Needs the automations:read scope.",
+        "parameters": [
+          {
+            "name": "ruleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/PageQuery.page"
+          },
+          {
+            "$ref": "#/components/parameters/PageQuery.pageSize"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/RuleFiringResource"
+                      },
+                      "description": "List of items"
+                    },
+                    "page": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "Page number (1-based)"
+                    },
+                    "pageSize": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "Page size"
+                    },
+                    "totalItems": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "Total number of elements"
+                    },
+                    "totalPages": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "Total number of pages"
+                    }
+                  },
+                  "description": "Paginated response"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Rules"]
+      }
+    },
     "/segments": {
       "get": {
         "operationId": "Segments_list",
@@ -10412,6 +11212,15 @@
         },
         "explode": false
       },
+      "RuleResourceKey": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "description": "Unique identifier",
+        "schema": {
+          "$ref": "#/components/schemas/EntityId"
+        }
+      },
       "SegmentResourceKey": {
         "name": "id",
         "in": "path",
@@ -12170,6 +12979,34 @@
         },
         "description": "Create an Integration. The provider and channel are derived from `config.kind`."
       },
+      "CreateRuleInput": {
+        "type": "object",
+        "required": ["name", "triggerEvents"],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "triggerEvents": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "description": "The Event actions that make the Rule fire; at least one"
+          },
+          "condition": {
+            "$ref": "#/components/schemas/ConditionGroup"
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RuleAction"
+            },
+            "description": "The Actions to run, in order"
+          }
+        },
+        "description": "Request body for creating a Rule (always created as a draft)"
+      },
       "CreateSegmentInput": {
         "type": "object",
         "required": ["name", "condition"],
@@ -13906,6 +14743,222 @@
         },
         "description": "Request body for recording events"
       },
+      "RuleAction": {
+        "type": "object",
+        "required": ["type"],
+        "properties": {
+          "type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RuleActionType"
+              }
+            ],
+            "description": "Action kind"
+          },
+          "tag": {
+            "type": "string",
+            "description": "Tag name to apply to or remove from the Contact (apply_tag and remove_tag)"
+          }
+        },
+        "description": "One Action of a Rule, run in order when the Rule fires. A flat shape: tag actions carry the tag name."
+      },
+      "RuleActionResult": {
+        "type": "object",
+        "required": ["type", "status"],
+        "properties": {
+          "type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RuleActionType"
+              }
+            ],
+            "description": "The Action's kind"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RuleActionStatus"
+              }
+            ],
+            "description": "How it ended; a skipped Action is an expected outcome, not an error"
+          },
+          "detail": {
+            "type": "string",
+            "description": "Why it failed or was skipped"
+          }
+        },
+        "description": "What one Action did when a Rule fired"
+      },
+      "RuleActionStatus": {
+        "type": "string",
+        "enum": ["succeeded", "failed", "skipped"],
+        "description": "How one Action of a Firing ended"
+      },
+      "RuleActionType": {
+        "type": "string",
+        "enum": ["apply_tag", "remove_tag"],
+        "description": "Kind of Rule action"
+      },
+      "RuleFiringResource": {
+        "type": "object",
+        "required": [
+          "id",
+          "ruleId",
+          "contactId",
+          "action",
+          "eventSourceId",
+          "results",
+          "createdAt"
+        ],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Unique identifier"
+          },
+          "ruleId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "The Rule that fired"
+          },
+          "contactId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "The Contact the Event was for"
+          },
+          "action": {
+            "type": "string",
+            "description": "The Trigger event: the action of the Event that fired the Rule"
+          },
+          "eventSourceId": {
+            "type": "string",
+            "description": "The Event's source id: the same Event delivered twice fires a Rule once"
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RuleActionResult"
+            },
+            "description": "One result per Action run so far, in the Rule's order"
+          },
+          "completedAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the last Action finished; absent while Actions are still to run"
+          },
+          "createdAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the Rule fired"
+          }
+        },
+        "description": "One execution of a Rule for one Event, with what each Action did. Erased with the Contact."
+      },
+      "RuleResource": {
+        "type": "object",
+        "required": ["id", "name", "status", "triggerEvents", "actions", "createdAt", "updatedAt"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Unique identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Rule name"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RuleStatus"
+              }
+            ],
+            "description": "Lifecycle status"
+          },
+          "triggerEvents": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The Event actions that make the Rule fire; any one of them does"
+          },
+          "condition": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ConditionGroup"
+              }
+            ],
+            "description": "The Contact must match this condition for the Rule to fire; absent or empty means every Contact"
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RuleAction"
+            },
+            "description": "The Rule's ordered Actions"
+          },
+          "activatedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the Rule was last activated. It acts only on Events recorded after it."
+          },
+          "archivedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the Rule was archived; null while it is kept"
+          },
+          "createdAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "Creation timestamp"
+          },
+          "updatedAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "Last update timestamp"
+          }
+        },
+        "description": "A Rule: a stateless reaction to an Event. When any of its Trigger events is recorded for a\nContact and its condition holds, its Actions run at once, in order. Created Rules are drafts;\nactivating is a separate, send-class operation."
+      },
+      "RuleStatus": {
+        "type": "string",
+        "enum": ["draft", "active"],
+        "description": "Rule lifecycle status"
+      },
       "ScheduleBroadcastInput": {
         "type": "object",
         "required": ["scheduledAt"],
@@ -14844,6 +15897,33 @@
           }
         },
         "description": "Update an Integration. Omit `config` to keep stored credentials; blank secret fields inside it keep the stored secret."
+      },
+      "UpdateRuleInput": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "triggerEvents": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "description": "The Event actions that make the Rule fire; at least one"
+          },
+          "condition": {
+            "$ref": "#/components/schemas/ConditionGroup"
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RuleAction"
+            },
+            "description": "The Actions to run, in order"
+          }
+        },
+        "description": "Request body for updating a Rule"
       },
       "UpdateSegmentInput": {
         "type": "object",

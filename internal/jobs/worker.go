@@ -25,6 +25,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/refsettle"
+	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/sending"
 	"github.com/getsphericon/sphericon/internal/trackingdomain"
@@ -81,6 +82,9 @@ func NewClient(riverDB *sql.DB, entClient *ent.Client, mod *outbound.Module, cip
 	river.AddWorker(workers, &SendRecipientWorker{ent: entClient, del: broadcasts.NewDelivery(mod)})
 	river.AddWorker(workers, &EvaluateTriggerWorker{ent: entClient})
 	river.AddWorker(workers, &RunStepWorker{ent: entClient, mod: mod, fence: automations.FenceOn(entClient)})
+	ruleMod := rules.New(bus)
+	river.AddWorker(workers, &EvaluateRulesWorker{ent: entClient, mod: ruleMod})
+	river.AddWorker(workers, &RunRuleActionsWorker{ent: entClient, mod: ruleMod, runners: RuleActionRunners(mod)})
 	river.AddWorker(workers, &RunHTTPStepWorker{
 		ent:    entClient,
 		mod:    automations.New(cipher, bus),

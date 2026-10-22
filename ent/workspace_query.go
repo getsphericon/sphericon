@@ -34,6 +34,9 @@ import (
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/ent/rule"
+	"github.com/getsphericon/sphericon/ent/rulefiring"
+	"github.com/getsphericon/sphericon/ent/ruletrigger"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/sendlimiter"
@@ -72,6 +75,9 @@ type WorkspaceQuery struct {
 	withAutomations         *AutomationQuery
 	withAutomationVersions  *AutomationVersionQuery
 	withAutomationRuns      *AutomationRunQuery
+	withRules               *RuleQuery
+	withRuleTriggers        *RuleTriggerQuery
+	withRuleFirings         *RuleFiringQuery
 	withWebhookEndpoints    *WebhookEndpointQuery
 	withSuppressions        *SuppressionQuery
 	withUnsubscribes        *UnsubscribeQuery
@@ -537,6 +543,72 @@ func (_q *WorkspaceQuery) QueryAutomationRuns() *AutomationRunQuery {
 	return query
 }
 
+// QueryRules chains the current query on the "rules" edge.
+func (_q *WorkspaceQuery) QueryRules() *RuleQuery {
+	query := (&RuleClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
+			sqlgraph.To(rule.Table, rule.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.RulesTable, workspace.RulesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryRuleTriggers chains the current query on the "rule_triggers" edge.
+func (_q *WorkspaceQuery) QueryRuleTriggers() *RuleTriggerQuery {
+	query := (&RuleTriggerClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
+			sqlgraph.To(ruletrigger.Table, ruletrigger.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.RuleTriggersTable, workspace.RuleTriggersColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryRuleFirings chains the current query on the "rule_firings" edge.
+func (_q *WorkspaceQuery) QueryRuleFirings() *RuleFiringQuery {
+	query := (&RuleFiringClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
+			sqlgraph.To(rulefiring.Table, rulefiring.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.RuleFiringsTable, workspace.RuleFiringsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // QueryWebhookEndpoints chains the current query on the "webhook_endpoints" edge.
 func (_q *WorkspaceQuery) QueryWebhookEndpoints() *WebhookEndpointQuery {
 	query := (&WebhookEndpointClient{config: _q.config}).Query()
@@ -968,6 +1040,9 @@ func (_q *WorkspaceQuery) Clone() *WorkspaceQuery {
 		withAutomations:         _q.withAutomations.Clone(),
 		withAutomationVersions:  _q.withAutomationVersions.Clone(),
 		withAutomationRuns:      _q.withAutomationRuns.Clone(),
+		withRules:               _q.withRules.Clone(),
+		withRuleTriggers:        _q.withRuleTriggers.Clone(),
+		withRuleFirings:         _q.withRuleFirings.Clone(),
 		withWebhookEndpoints:    _q.withWebhookEndpoints.Clone(),
 		withSuppressions:        _q.withSuppressions.Clone(),
 		withUnsubscribes:        _q.withUnsubscribes.Clone(),
@@ -1194,6 +1269,39 @@ func (_q *WorkspaceQuery) WithAutomationRuns(opts ...func(*AutomationRunQuery)) 
 	return _q
 }
 
+// WithRules tells the query-builder to eager-load the nodes that are connected to
+// the "rules" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *WorkspaceQuery) WithRules(opts ...func(*RuleQuery)) *WorkspaceQuery {
+	query := (&RuleClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withRules = query
+	return _q
+}
+
+// WithRuleTriggers tells the query-builder to eager-load the nodes that are connected to
+// the "rule_triggers" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *WorkspaceQuery) WithRuleTriggers(opts ...func(*RuleTriggerQuery)) *WorkspaceQuery {
+	query := (&RuleTriggerClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withRuleTriggers = query
+	return _q
+}
+
+// WithRuleFirings tells the query-builder to eager-load the nodes that are connected to
+// the "rule_firings" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *WorkspaceQuery) WithRuleFirings(opts ...func(*RuleFiringQuery)) *WorkspaceQuery {
+	query := (&RuleFiringClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withRuleFirings = query
+	return _q
+}
+
 // WithWebhookEndpoints tells the query-builder to eager-load the nodes that are connected to
 // the "webhook_endpoints" edge. The optional arguments are used to configure the query builder of the edge.
 func (_q *WorkspaceQuery) WithWebhookEndpoints(opts ...func(*WebhookEndpointQuery)) *WorkspaceQuery {
@@ -1382,7 +1490,7 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 	var (
 		nodes       = []*Workspace{}
 		_spec       = _q.querySpec()
-		loadedTypes = [29]bool{
+		loadedTypes = [32]bool{
 			_q.withContacts != nil,
 			_q.withCustomFields != nil,
 			_q.withTags != nil,
@@ -1402,6 +1510,9 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 			_q.withAutomations != nil,
 			_q.withAutomationVersions != nil,
 			_q.withAutomationRuns != nil,
+			_q.withRules != nil,
+			_q.withRuleTriggers != nil,
+			_q.withRuleFirings != nil,
 			_q.withWebhookEndpoints != nil,
 			_q.withSuppressions != nil,
 			_q.withUnsubscribes != nil,
@@ -1569,6 +1680,27 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 		if err := _q.loadAutomationRuns(ctx, query, nodes,
 			func(n *Workspace) { n.Edges.AutomationRuns = []*AutomationRun{} },
 			func(n *Workspace, e *AutomationRun) { n.Edges.AutomationRuns = append(n.Edges.AutomationRuns, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withRules; query != nil {
+		if err := _q.loadRules(ctx, query, nodes,
+			func(n *Workspace) { n.Edges.Rules = []*Rule{} },
+			func(n *Workspace, e *Rule) { n.Edges.Rules = append(n.Edges.Rules, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withRuleTriggers; query != nil {
+		if err := _q.loadRuleTriggers(ctx, query, nodes,
+			func(n *Workspace) { n.Edges.RuleTriggers = []*RuleTrigger{} },
+			func(n *Workspace, e *RuleTrigger) { n.Edges.RuleTriggers = append(n.Edges.RuleTriggers, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withRuleFirings; query != nil {
+		if err := _q.loadRuleFirings(ctx, query, nodes,
+			func(n *Workspace) { n.Edges.RuleFirings = []*RuleFiring{} },
+			func(n *Workspace, e *RuleFiring) { n.Edges.RuleFirings = append(n.Edges.RuleFirings, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -2200,6 +2332,96 @@ func (_q *WorkspaceQuery) loadAutomationRuns(ctx context.Context, query *Automat
 	}
 	query.Where(predicate.AutomationRun(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(workspace.AutomationRunsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.WorkspaceID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "workspace_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *WorkspaceQuery) loadRules(ctx context.Context, query *RuleQuery, nodes []*Workspace, init func(*Workspace), assign func(*Workspace, *Rule)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Workspace)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(rule.FieldWorkspaceID)
+	}
+	query.Where(predicate.Rule(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(workspace.RulesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.WorkspaceID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "workspace_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *WorkspaceQuery) loadRuleTriggers(ctx context.Context, query *RuleTriggerQuery, nodes []*Workspace, init func(*Workspace), assign func(*Workspace, *RuleTrigger)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Workspace)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(ruletrigger.FieldWorkspaceID)
+	}
+	query.Where(predicate.RuleTrigger(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(workspace.RuleTriggersColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.WorkspaceID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "workspace_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *WorkspaceQuery) loadRuleFirings(ctx context.Context, query *RuleFiringQuery, nodes []*Workspace, init func(*Workspace), assign func(*Workspace, *RuleFiring)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Workspace)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(rulefiring.FieldWorkspaceID)
+	}
+	query.Where(predicate.RuleFiring(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(workspace.RuleFiringsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

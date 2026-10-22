@@ -7,7 +7,7 @@ note: >-
   refuses and it loses no race. Fire a trigger on the entity's machine instead (its table lives in
   the owning module, built with `lifecycle.New`); the compare-and-swap `Write` inside
   `lifecycle.Storage{...}` is the one place the column is set. Creating a row in its first state
-  is not an update. `Automation.status` is a two-state flag, not a machine (ADR 0046).
+  is not an update. `Automation.status` and `Rule.status` are two-state flags, not machines (ADR 0046, ADR 0054).
 # A Go pattern such as `x.SetStatus($$$A)` parses as a type conversion, so each call pattern
 # names its statement context and selects the call_expression.
 rule:
@@ -32,9 +32,13 @@ rule:
     - not:
         has:
           stopBy: end
-          pattern:
-            context: 'func _() { $_.Automation() }'
-            selector: call_expression
+          any:
+            - pattern:
+                context: 'func _() { $_.Automation() }'
+                selector: call_expression
+            - pattern:
+                context: 'func _() { $_.Rule() }'
+                selector: call_expression
     - not:
         inside:
           stopBy: end

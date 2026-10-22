@@ -1592,6 +1592,75 @@ func HasAutomationRunsWith(preds ...predicate.AutomationRun) predicate.Workspace
 	})
 }
 
+// HasRules applies the HasEdge predicate on the "rules" edge.
+func HasRules() predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, RulesTable, RulesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasRulesWith applies the HasEdge predicate on the "rules" edge with a given conditions (other predicates).
+func HasRulesWith(preds ...predicate.Rule) predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := newRulesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasRuleTriggers applies the HasEdge predicate on the "rule_triggers" edge.
+func HasRuleTriggers() predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, RuleTriggersTable, RuleTriggersColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasRuleTriggersWith applies the HasEdge predicate on the "rule_triggers" edge with a given conditions (other predicates).
+func HasRuleTriggersWith(preds ...predicate.RuleTrigger) predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := newRuleTriggersStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasRuleFirings applies the HasEdge predicate on the "rule_firings" edge.
+func HasRuleFirings() predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, RuleFiringsTable, RuleFiringsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasRuleFiringsWith applies the HasEdge predicate on the "rule_firings" edge with a given conditions (other predicates).
+func HasRuleFiringsWith(preds ...predicate.RuleFiring) predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := newRuleFiringsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasWebhookEndpoints applies the HasEdge predicate on the "webhook_endpoints" edge.
 func HasWebhookEndpoints() predicate.Workspace {
 	return predicate.Workspace(func(s *sql.Selector) {

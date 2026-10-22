@@ -388,6 +388,49 @@ type Handler interface {
 	//
 	// GET /presets
 	PresetsList(ctx context.Context) (PresetsListRes, error)
+	// RuleFiringsList implements RuleFirings_list operation.
+	//
+	// List a Rule's Firings, newest first. Needs the automations:read scope.
+	//
+	// GET /rules/{ruleId}/firings
+	RuleFiringsList(ctx context.Context, params RuleFiringsListParams) (RuleFiringsListRes, error)
+	// RulesActivate implements Rules_activate operation.
+	//
+	// Activate a Rule: it reacts to Events recorded from now on, never to past ones. Needs the
+	// automations:activate scope.
+	//
+	// POST /rules/{id}/activate
+	RulesActivate(ctx context.Context, params RulesActivateParams) (RulesActivateRes, error)
+	// RulesCreate implements Rules_create operation.
+	//
+	// Create a resource.
+	//
+	// POST /rules
+	RulesCreate(ctx context.Context, req *CreateRuleInput) (RulesCreateRes, error)
+	// RulesDeactivate implements Rules_deactivate operation.
+	//
+	// Deactivate a Rule: it stops firing. Needs the automations:activate scope.
+	//
+	// POST /rules/{id}/deactivate
+	RulesDeactivate(ctx context.Context, params RulesDeactivateParams) (RulesDeactivateRes, error)
+	// RulesGet implements Rules_get operation.
+	//
+	// Get a resource by ID.
+	//
+	// GET /rules/{id}
+	RulesGet(ctx context.Context, params RulesGetParams) (RulesGetRes, error)
+	// RulesList implements Rules_list operation.
+	//
+	// List resources with pagination.
+	//
+	// GET /rules
+	RulesList(ctx context.Context, params RulesListParams) (RulesListRes, error)
+	// RulesUpdate implements Rules_update operation.
+	//
+	// Update a resource.
+	//
+	// PUT /rules/{id}
+	RulesUpdate(ctx context.Context, req *UpdateRuleInput, params RulesUpdateParams) (RulesUpdateRes, error)
 	// SegmentsArchive implements Segments_archive operation.
 	//
 	// Archive a resource: it leaves the list and new work, keeps its history, and can be restored. Refused
