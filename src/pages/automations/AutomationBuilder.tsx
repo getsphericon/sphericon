@@ -1,11 +1,18 @@
 import { Box, Button, Group, Modal, Paper, TextInput, useComputedColorScheme } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useStore, useWorkflowBuilderActions, WorkflowBuilder } from '@workflowbuilder/sdk'
+import {
+  closeSnackbar,
+  registerComponentDecorator,
+  useStore,
+  useWorkflowBuilderActions,
+  WorkflowBuilder,
+} from '@workflowbuilder/sdk'
 import type {
   DidSaveStatus,
   IntegrationDataFormat,
   OnSaveExternal,
+  WorkflowBuilderPlugin,
   WorkflowBuilderIsValidConnection,
 } from '@workflowbuilder/sdk'
 import i18next from 'i18next'
@@ -40,6 +47,32 @@ import builderStyles from '@workflowbuilder/sdk/style.css?inline'
 // The email step's message is edited by the editor, not a text field, and the Trigger's event
 // is typed with suggestions. A stable reference.
 const jsonForm = { renderers: [messageRenderer, triggerRenderer] }
+
+// The SDK ships a Templates button in the palette footer, for diagrams the model cannot hold.
+// A wrapper decorator that renders nothing leaves the footer empty. A stable reference.
+const withoutTemplates: WorkflowBuilderPlugin = () => {
+  registerComponentDecorator('OptionalFooterContent', {
+    place: 'wrapper',
+    content: () => null,
+    name: 'automationWithoutTemplates',
+  })
+}
+const plugins = [withoutTemplates]
+
+// The SDK announces that it restored the saved diagram on every mount, though the diagram was
+// handed to it as props. Its snackbars are keyed `<variant>:<title>:<subtitle>`.
+const RESTORED_SNACKBAR_KEY = 'success:restoreDiagramSuccess:'
+
+function QuietRestore() {
+  useEffect(() => {
+    const timers = [0, 100, 400].map((delay) =>
+      setTimeout(() => closeSnackbar(RESTORED_SNACKBAR_KEY), delay),
+    )
+    return () => timers.forEach((timer) => clearTimeout(timer))
+  }, [])
+
+  return null
+}
 
 // The linear model has one way in: nothing connects into the Trigger.
 const isValidConnection: WorkflowBuilderIsValidConnection = ({ targetNode }) =>
@@ -270,8 +303,10 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
           integration={integration}
           isValidConnection={isValidConnection}
           jsonForm={jsonForm}
+          plugins={plugins}
         >
           <ThemeSync />
+          <QuietRestore />
           <LeaveGuard name={form.values.name} saved={saved} />
           <Box pos="relative" w="100vw" h="100vh">
             <WorkflowBuilder.Canvas />

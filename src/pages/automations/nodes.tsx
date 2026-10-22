@@ -90,8 +90,18 @@ export function useAutomationNodeTypes(): PaletteItem[] {
         uischema: {
           type: 'VerticalLayout',
           elements: [
-            { type: 'Text', scope: '#/properties/subject', placeholder: '' },
-            { type: 'Text', scope: '#/properties/body', placeholder: '' },
+            {
+              type: 'Text',
+              scope: '#/properties/subject',
+              label: t(($) => $.automations.emailSubjectLabel),
+              placeholder: '',
+            },
+            {
+              type: 'Text',
+              scope: '#/properties/body',
+              label: t(($) => $.automations.emailBodyLabel),
+              placeholder: '',
+            },
           ],
         } satisfies UISchema,
       },
@@ -119,6 +129,7 @@ export function useAutomationNodeTypes(): PaletteItem[] {
             {
               type: 'Text',
               scope: '#/properties/seconds',
+              label: t(($) => $.automations.waitSecondsLabel),
               inputType: 'number',
               placeholder: '3600',
             },
@@ -148,23 +159,27 @@ export function useAutomationNodeTypes(): PaletteItem[] {
             {
               type: 'Text',
               scope: '#/properties/url',
+              label: t(($) => $.automations.httpUrlLabel),
               placeholder: t(($) => $.automations.httpUrlHint),
             },
             {
               type: 'TextArea',
               scope: '#/properties/headers',
+              label: t(($) => $.automations.httpHeadersLabel),
               minRows: 2,
               placeholder: t(($) => $.automations.httpHeadersHint),
             },
             {
               type: 'TextArea',
               scope: '#/properties/body',
+              label: t(($) => $.automations.httpBodyLabel),
               minRows: 6,
               placeholder: t(($) => $.automations.httpBodyHint),
             },
             {
               type: 'Text',
               scope: '#/properties/secret',
+              label: t(($) => $.automations.httpSecretLabel),
               placeholder: t(($) => $.automations.httpSecretHint),
             },
           ],
@@ -197,7 +212,14 @@ export function useAutomationNodeTypes(): PaletteItem[] {
         },
         uischema: {
           type: 'VerticalLayout',
-          elements: [{ type: 'Text', scope: '#/properties/tag', placeholder: '' }],
+          elements: [
+            {
+              type: 'Text',
+              scope: '#/properties/tag',
+              label: t(($) => $.automations.tagNameLabel),
+              placeholder: '',
+            },
+          ],
         } satisfies UISchema,
       })),
     ],
