@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
@@ -128,6 +129,11 @@ func (_c *SuppressionCreate) SetID(v int64) *SuppressionCreate {
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_c *SuppressionCreate) SetWorkspace(v *Workspace) *SuppressionCreate {
 	return _c.SetWorkspaceID(v.ID)
+}
+
+// SetContact sets the "contact" edge to the Contact entity.
+func (_c *SuppressionCreate) SetContact(v *Contact) *SuppressionCreate {
+	return _c.SetContactID(v.ID)
 }
 
 // Mutation returns the SuppressionMutation object of the builder.
@@ -274,10 +280,6 @@ func (_c *SuppressionCreate) createSpec() (*Suppression, *sqlgraph.CreateSpec) {
 		_spec.SetField(suppression.FieldReason, field.TypeEnum, value)
 		_node.Reason = value
 	}
-	if value, ok := _c.mutation.ContactID(); ok {
-		_spec.SetField(suppression.FieldContactID, field.TypeInt64, value)
-		_node.ContactID = &value
-	}
 	if value, ok := _c.mutation.LiftedAt(); ok {
 		_spec.SetField(suppression.FieldLiftedAt, field.TypeTime, value)
 		_node.LiftedAt = &value
@@ -297,6 +299,23 @@ func (_c *SuppressionCreate) createSpec() (*Suppression, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.WorkspaceID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ContactIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   suppression.ContactTable,
+			Columns: []string{suppression.ContactColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contact.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.ContactID = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -420,12 +439,6 @@ func (u *SuppressionUpsert) SetContactID(v int64) *SuppressionUpsert {
 // UpdateContactID sets the "contact_id" field to the value that was provided on create.
 func (u *SuppressionUpsert) UpdateContactID() *SuppressionUpsert {
 	u.SetExcluded(suppression.FieldContactID)
-	return u
-}
-
-// AddContactID adds v to the "contact_id" field.
-func (u *SuppressionUpsert) AddContactID(v int64) *SuppressionUpsert {
-	u.Add(suppression.FieldContactID, v)
 	return u
 }
 
@@ -578,13 +591,6 @@ func (u *SuppressionUpsertOne) UpdateReason() *SuppressionUpsertOne {
 func (u *SuppressionUpsertOne) SetContactID(v int64) *SuppressionUpsertOne {
 	return u.Update(func(s *SuppressionUpsert) {
 		s.SetContactID(v)
-	})
-}
-
-// AddContactID adds v to the "contact_id" field.
-func (u *SuppressionUpsertOne) AddContactID(v int64) *SuppressionUpsertOne {
-	return u.Update(func(s *SuppressionUpsert) {
-		s.AddContactID(v)
 	})
 }
 
@@ -914,13 +920,6 @@ func (u *SuppressionUpsertBulk) UpdateReason() *SuppressionUpsertBulk {
 func (u *SuppressionUpsertBulk) SetContactID(v int64) *SuppressionUpsertBulk {
 	return u.Update(func(s *SuppressionUpsert) {
 		s.SetContactID(v)
-	})
-}
-
-// AddContactID adds v to the "contact_id" field.
-func (u *SuppressionUpsertBulk) AddContactID(v int64) *SuppressionUpsertBulk {
-	return u.Update(func(s *SuppressionUpsert) {
-		s.AddContactID(v)
 	})
 }
 

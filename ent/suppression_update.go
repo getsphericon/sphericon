@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/workspace"
@@ -94,7 +95,6 @@ func (_u *SuppressionUpdate) SetNillableReason(v *suppression.Reason) *Suppressi
 
 // SetContactID sets the "contact_id" field.
 func (_u *SuppressionUpdate) SetContactID(v int64) *SuppressionUpdate {
-	_u.mutation.ResetContactID()
 	_u.mutation.SetContactID(v)
 	return _u
 }
@@ -104,12 +104,6 @@ func (_u *SuppressionUpdate) SetNillableContactID(v *int64) *SuppressionUpdate {
 	if v != nil {
 		_u.SetContactID(*v)
 	}
-	return _u
-}
-
-// AddContactID adds value to the "contact_id" field.
-func (_u *SuppressionUpdate) AddContactID(v int64) *SuppressionUpdate {
-	_u.mutation.AddContactID(v)
 	return _u
 }
 
@@ -144,6 +138,11 @@ func (_u *SuppressionUpdate) SetWorkspace(v *Workspace) *SuppressionUpdate {
 	return _u.SetWorkspaceID(v.ID)
 }
 
+// SetContact sets the "contact" edge to the Contact entity.
+func (_u *SuppressionUpdate) SetContact(v *Contact) *SuppressionUpdate {
+	return _u.SetContactID(v.ID)
+}
+
 // Mutation returns the SuppressionMutation object of the builder.
 func (_u *SuppressionUpdate) Mutation() *SuppressionMutation {
 	return _u.mutation
@@ -152,6 +151,12 @@ func (_u *SuppressionUpdate) Mutation() *SuppressionMutation {
 // ClearWorkspace clears the "workspace" edge to the Workspace entity.
 func (_u *SuppressionUpdate) ClearWorkspace() *SuppressionUpdate {
 	_u.mutation.ClearWorkspace()
+	return _u
+}
+
+// ClearContact clears the "contact" edge to the Contact entity.
+func (_u *SuppressionUpdate) ClearContact() *SuppressionUpdate {
+	_u.mutation.ClearContact()
 	return _u
 }
 
@@ -244,15 +249,6 @@ func (_u *SuppressionUpdate) sqlSave(ctx context.Context) (_node int, err error)
 	if value, ok := _u.mutation.Reason(); ok {
 		_spec.SetField(suppression.FieldReason, field.TypeEnum, value)
 	}
-	if value, ok := _u.mutation.ContactID(); ok {
-		_spec.SetField(suppression.FieldContactID, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.AddedContactID(); ok {
-		_spec.AddField(suppression.FieldContactID, field.TypeInt64, value)
-	}
-	if _u.mutation.ContactIDCleared() {
-		_spec.ClearField(suppression.FieldContactID, field.TypeInt64)
-	}
 	if value, ok := _u.mutation.LiftedAt(); ok {
 		_spec.SetField(suppression.FieldLiftedAt, field.TypeTime, value)
 	}
@@ -281,6 +277,35 @@ func (_u *SuppressionUpdate) sqlSave(ctx context.Context) (_node int, err error)
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(workspace.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ContactCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   suppression.ContactTable,
+			Columns: []string{suppression.ContactColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contact.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ContactIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   suppression.ContactTable,
+			Columns: []string{suppression.ContactColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contact.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -374,7 +399,6 @@ func (_u *SuppressionUpdateOne) SetNillableReason(v *suppression.Reason) *Suppre
 
 // SetContactID sets the "contact_id" field.
 func (_u *SuppressionUpdateOne) SetContactID(v int64) *SuppressionUpdateOne {
-	_u.mutation.ResetContactID()
 	_u.mutation.SetContactID(v)
 	return _u
 }
@@ -384,12 +408,6 @@ func (_u *SuppressionUpdateOne) SetNillableContactID(v *int64) *SuppressionUpdat
 	if v != nil {
 		_u.SetContactID(*v)
 	}
-	return _u
-}
-
-// AddContactID adds value to the "contact_id" field.
-func (_u *SuppressionUpdateOne) AddContactID(v int64) *SuppressionUpdateOne {
-	_u.mutation.AddContactID(v)
 	return _u
 }
 
@@ -424,6 +442,11 @@ func (_u *SuppressionUpdateOne) SetWorkspace(v *Workspace) *SuppressionUpdateOne
 	return _u.SetWorkspaceID(v.ID)
 }
 
+// SetContact sets the "contact" edge to the Contact entity.
+func (_u *SuppressionUpdateOne) SetContact(v *Contact) *SuppressionUpdateOne {
+	return _u.SetContactID(v.ID)
+}
+
 // Mutation returns the SuppressionMutation object of the builder.
 func (_u *SuppressionUpdateOne) Mutation() *SuppressionMutation {
 	return _u.mutation
@@ -432,6 +455,12 @@ func (_u *SuppressionUpdateOne) Mutation() *SuppressionMutation {
 // ClearWorkspace clears the "workspace" edge to the Workspace entity.
 func (_u *SuppressionUpdateOne) ClearWorkspace() *SuppressionUpdateOne {
 	_u.mutation.ClearWorkspace()
+	return _u
+}
+
+// ClearContact clears the "contact" edge to the Contact entity.
+func (_u *SuppressionUpdateOne) ClearContact() *SuppressionUpdateOne {
+	_u.mutation.ClearContact()
 	return _u
 }
 
@@ -554,15 +583,6 @@ func (_u *SuppressionUpdateOne) sqlSave(ctx context.Context) (_node *Suppression
 	if value, ok := _u.mutation.Reason(); ok {
 		_spec.SetField(suppression.FieldReason, field.TypeEnum, value)
 	}
-	if value, ok := _u.mutation.ContactID(); ok {
-		_spec.SetField(suppression.FieldContactID, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.AddedContactID(); ok {
-		_spec.AddField(suppression.FieldContactID, field.TypeInt64, value)
-	}
-	if _u.mutation.ContactIDCleared() {
-		_spec.ClearField(suppression.FieldContactID, field.TypeInt64)
-	}
 	if value, ok := _u.mutation.LiftedAt(); ok {
 		_spec.SetField(suppression.FieldLiftedAt, field.TypeTime, value)
 	}
@@ -591,6 +611,35 @@ func (_u *SuppressionUpdateOne) sqlSave(ctx context.Context) (_node *Suppression
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(workspace.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ContactCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   suppression.ContactTable,
+			Columns: []string{suppression.ContactColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contact.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ContactIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   suppression.ContactTable,
+			Columns: []string{suppression.ContactColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contact.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

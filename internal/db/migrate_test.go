@@ -18,7 +18,9 @@ import (
 
 	sphericon "github.com/getsphericon/sphericon"
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
+	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/jobs"
@@ -318,12 +320,83 @@ func migrateWithDanglingOutboundRefs(t *testing.T, sqlDB *sql.DB) *ent.Client {
 	_, err := db.MigrateFS(t.Context(), sqlDB, before)
 	require.NoError(t, err)
 	testhelper.LoadLegacyFixtures(t, sqlDB, legacyFixtures("20261022003116_outbound_message_refs.sql"))
+	upTo := migrationsWhere(t, func(name string) bool { return name < "20261022014358" })
+	_, err = db.MigrateFS(t.Context(), sqlDB, upTo)
+	require.NoError(t, err)
+	client := db.NewEntClient(sqlDB)
+	t.Cleanup(func() { _ = client.Close() })
+	return client
+}
+
+// An Instance whose rows name Contacts that are erased (before the references were foreign keys)
+// migrates: the keys are added NOT VALID, so the old rows are left alone.
+func TestMigrateAddsTheContactKeysNotValidOverDanglingIds(t *testing.T) {
+	sqlDB := openEmpty(t)
+	client := migrateWithDanglingContactRefs(t, sqlDB)
+
+	assert.Equal(t, []string{
+		"automation_runs_contacts_contact", "broadcast_recipients_contacts_contact", "confirmations_contacts_contact",
+		"outbound_messages_contacts_contact", "suppressions_contacts_contact", "unsubscribes_contacts_contact",
+	}, unvalidatedContactKeys(t, sqlDB))
+	err := client.OutboundMessage.UpdateOneID(2).SetStatus(outboundmessage.StatusFailed).Exec(t.Context())
+	require.NoError(t, err, "a message naming an erased Contact can still change")
+}
+
+// The job settles exactly the rows that name a Contact that is gone, the way the key would have
+// (a Confirmation dies with it, an opt-out and a message only lose the id), keeps the rows that
+// resolve, then validates the keys; once it has run it finds nothing.
+func TestClearContactRefsSettlesDanglingRowsThenValidatesTheKeys(t *testing.T) {
+	sqlDB := openEmpty(t)
+	client := migrateWithDanglingContactRefs(t, sqlDB)
+
+	// A batch of one makes the job loop.
+	settled, err := jobs.ClearContactRefs(t.Context(), client, 1)
+	require.NoError(t, err)
+	assert.Equal(t, 3, settled)
+
+	confirmed, err := client.Confirmation.Query().Order(ent.Asc(confirmation.FieldID)).All(t.Context())
+	require.NoError(t, err)
+	assert.Equal(t, []string{"here@x.test"}, lo.Map(confirmed, func(c *ent.Confirmation, _ int) string { return c.Destination }))
+
+	optOuts, err := client.Unsubscribe.Query().Order(ent.Asc(unsubscribe.FieldID)).All(t.Context())
+	require.NoError(t, err)
+	assert.Equal(t, []*int64{new(int64(1)), nil}, lo.Map(optOuts, func(u *ent.Unsubscribe, _ int) *int64 { return u.ContactID }))
+	assert.Equal(t, "gone@x.test", optOuts[1].Destination, "the refusal stays")
+
+	messages, err := client.OutboundMessage.Query().Order(ent.Asc(outboundmessage.FieldID)).All(t.Context())
+	require.NoError(t, err)
+	assert.Equal(t, []*int64{new(int64(1)), nil}, lo.Map(messages, func(m *ent.OutboundMessage, _ int) *int64 { return m.ContactID }))
+
+	assert.Empty(t, unvalidatedContactKeys(t, sqlDB))
+
+	settled, err = jobs.ClearContactRefs(t.Context(), client, 1)
+	require.NoError(t, err)
+	assert.Zero(t, settled)
+}
+
+func migrateWithDanglingContactRefs(t *testing.T, sqlDB *sql.DB) *ent.Client {
+	t.Helper()
+	before := migrationsWhere(t, func(name string) bool { return name < "20261022014358" })
+	_, err := db.MigrateFS(t.Context(), sqlDB, before)
+	require.NoError(t, err)
+	testhelper.LoadLegacyFixtures(t, sqlDB, legacyFixtures("20261022014358_contact_refs.sql"))
 	all := migrationsWhere(t, func(string) bool { return true })
 	_, err = db.MigrateFS(t.Context(), sqlDB, all)
 	require.NoError(t, err)
 	client := db.NewEntClient(sqlDB)
 	t.Cleanup(func() { _ = client.Close() })
 	return client
+}
+
+// unvalidatedContactKeys is the Contact keys still NOT VALID, over every table that references one.
+func unvalidatedContactKeys(t *testing.T, sqlDB *sql.DB) []string {
+	t.Helper()
+	tables := []string{"automation_runs", "broadcast_recipients", "confirmations", "outbound_messages", "suppressions", "unsubscribes"}
+	return lo.FlatMap(tables, func(table string, _ int) []string {
+		return lo.Filter(testhelper.UnvalidatedConstraints(t, sqlDB, table), func(name string, _ int) bool {
+			return strings.HasSuffix(name, "_contacts_contact")
+		})
+	})
 }
 
 // An Instance with no Enrollment to move ends with the column the ent schema declares: NOT NULL.

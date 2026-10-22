@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
+	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
@@ -90,11 +91,13 @@ type OutboundMessageEdges struct {
 	BroadcastRecipient *BroadcastRecipient `json:"broadcast_recipient,omitempty"`
 	// AutomationRun holds the value of the automation_run edge.
 	AutomationRun *AutomationRun `json:"automation_run,omitempty"`
+	// Contact holds the value of the contact edge.
+	Contact *Contact `json:"contact,omitempty"`
 	// Template holds the value of the template edge.
 	Template *EmailTemplate `json:"template,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [7]bool
+	loadedTypes [8]bool
 }
 
 // WorkspaceOrErr returns the Workspace value or an error if the edge
@@ -163,12 +166,23 @@ func (e OutboundMessageEdges) AutomationRunOrErr() (*AutomationRun, error) {
 	return nil, &NotLoadedError{edge: "automation_run"}
 }
 
+// ContactOrErr returns the Contact value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e OutboundMessageEdges) ContactOrErr() (*Contact, error) {
+	if e.Contact != nil {
+		return e.Contact, nil
+	} else if e.loadedTypes[6] {
+		return nil, &NotFoundError{label: contact.Label}
+	}
+	return nil, &NotLoadedError{edge: "contact"}
+}
+
 // TemplateOrErr returns the Template value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e OutboundMessageEdges) TemplateOrErr() (*EmailTemplate, error) {
 	if e.Template != nil {
 		return e.Template, nil
-	} else if e.loadedTypes[6] {
+	} else if e.loadedTypes[7] {
 		return nil, &NotFoundError{label: emailtemplate.Label}
 	}
 	return nil, &NotLoadedError{edge: "template"}
@@ -399,6 +413,11 @@ func (_m *OutboundMessage) QueryBroadcastRecipient() *BroadcastRecipientQuery {
 // QueryAutomationRun queries the "automation_run" edge of the OutboundMessage entity.
 func (_m *OutboundMessage) QueryAutomationRun() *AutomationRunQuery {
 	return NewOutboundMessageClient(_m.config).QueryAutomationRun(_m)
+}
+
+// QueryContact queries the "contact" edge of the OutboundMessage entity.
+func (_m *OutboundMessage) QueryContact() *ContactQuery {
+	return NewOutboundMessageClient(_m.config).QueryContact(_m)
 }
 
 // QueryTemplate queries the "template" edge of the OutboundMessage entity.

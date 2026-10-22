@@ -120,6 +120,7 @@ func NewClient(riverDB *sql.DB, entClient *ent.Client, mod *outbound.Module, cip
 	river.AddWorker(workers, &PrunePasskeyChallengesWorker{ent: entClient, now: time.Now})
 	river.AddWorker(workers, &BackfillAutomationVersionsWorker{ent: entClient})
 	river.AddWorker(workers, &ClearOutboundMessageRefsWorker{ent: entClient})
+	river.AddWorker(workers, &ClearContactRefsWorker{ent: entClient})
 	river.AddWorker(workers, &EraseWorkspacesWorker{deletion: workspacedeletion.New(entClient, bus), now: time.Now})
 
 	var extraPeriodic []*river.PeriodicJob
@@ -252,6 +253,14 @@ func newRiverConfig(workers *river.Workers, logger *slog.Logger, extra ...*river
 				river.PeriodicInterval(clearOutboundRefsInterval),
 				func() (river.JobArgs, *river.InsertOpts) {
 					return ClearOutboundMessageRefsArgs{}, nil
+				},
+				&river.PeriodicJobOpts{RunOnStart: true},
+			),
+			// Settle rows that name a Contact which is gone, then validate the keys.
+			river.NewPeriodicJob(
+				river.PeriodicInterval(clearContactRefsInterval),
+				func() (river.JobArgs, *river.InsertOpts) {
+					return ClearContactRefsArgs{}, nil
 				},
 				&river.PeriodicJobOpts{RunOnStart: true},
 			),

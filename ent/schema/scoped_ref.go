@@ -12,6 +12,9 @@ type ScopedRef struct {
 	// Unchecked marks an id column that deliberately outlives the referenced row and
 	// is therefore not verified (Entity stays empty).
 	Unchecked bool
+	// Reason says why the column has no foreign key (a tombstone or a snapshot): an unchecked
+	// reference states it at the field.
+	Reason string
 }
 
 func (ScopedRef) Name() string { return "ScopedRef" }

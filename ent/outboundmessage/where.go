@@ -455,26 +455,6 @@ func ContactIDNotIn(vs ...int64) predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldNotIn(FieldContactID, vs...))
 }
 
-// ContactIDGT applies the GT predicate on the "contact_id" field.
-func ContactIDGT(v int64) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldGT(FieldContactID, v))
-}
-
-// ContactIDGTE applies the GTE predicate on the "contact_id" field.
-func ContactIDGTE(v int64) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldGTE(FieldContactID, v))
-}
-
-// ContactIDLT applies the LT predicate on the "contact_id" field.
-func ContactIDLT(v int64) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldLT(FieldContactID, v))
-}
-
-// ContactIDLTE applies the LTE predicate on the "contact_id" field.
-func ContactIDLTE(v int64) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldLTE(FieldContactID, v))
-}
-
 // ContactIDIsNil applies the IsNil predicate on the "contact_id" field.
 func ContactIDIsNil() predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldIsNull(FieldContactID))
@@ -1330,6 +1310,29 @@ func HasAutomationRun() predicate.OutboundMessage {
 func HasAutomationRunWith(preds ...predicate.AutomationRun) predicate.OutboundMessage {
 	return predicate.OutboundMessage(func(s *sql.Selector) {
 		step := newAutomationRunStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasContact applies the HasEdge predicate on the "contact" edge.
+func HasContact() predicate.OutboundMessage {
+	return predicate.OutboundMessage(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, ContactTable, ContactColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasContactWith applies the HasEdge predicate on the "contact" edge with a given conditions (other predicates).
+func HasContactWith(preds ...predicate.Contact) predicate.OutboundMessage {
+	return predicate.OutboundMessage(func(s *sql.Selector) {
+		step := newContactStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

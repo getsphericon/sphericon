@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
+	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
@@ -92,7 +93,6 @@ func (_u *OutboundMessageUpdate) ClearDestination() *OutboundMessageUpdate {
 
 // SetContactID sets the "contact_id" field.
 func (_u *OutboundMessageUpdate) SetContactID(v int64) *OutboundMessageUpdate {
-	_u.mutation.ResetContactID()
 	_u.mutation.SetContactID(v)
 	return _u
 }
@@ -102,12 +102,6 @@ func (_u *OutboundMessageUpdate) SetNillableContactID(v *int64) *OutboundMessage
 	if v != nil {
 		_u.SetContactID(*v)
 	}
-	return _u
-}
-
-// AddContactID adds value to the "contact_id" field.
-func (_u *OutboundMessageUpdate) AddContactID(v int64) *OutboundMessageUpdate {
-	_u.mutation.AddContactID(v)
 	return _u
 }
 
@@ -422,6 +416,11 @@ func (_u *OutboundMessageUpdate) SetAutomationRun(v *AutomationRun) *OutboundMes
 	return _u.SetAutomationRunID(v.ID)
 }
 
+// SetContact sets the "contact" edge to the Contact entity.
+func (_u *OutboundMessageUpdate) SetContact(v *Contact) *OutboundMessageUpdate {
+	return _u.SetContactID(v.ID)
+}
+
 // SetTemplate sets the "template" edge to the EmailTemplate entity.
 func (_u *OutboundMessageUpdate) SetTemplate(v *EmailTemplate) *OutboundMessageUpdate {
 	return _u.SetTemplateID(v.ID)
@@ -465,6 +464,12 @@ func (_u *OutboundMessageUpdate) ClearBroadcastRecipient() *OutboundMessageUpdat
 // ClearAutomationRun clears the "automation_run" edge to the AutomationRun entity.
 func (_u *OutboundMessageUpdate) ClearAutomationRun() *OutboundMessageUpdate {
 	_u.mutation.ClearAutomationRun()
+	return _u
+}
+
+// ClearContact clears the "contact" edge to the Contact entity.
+func (_u *OutboundMessageUpdate) ClearContact() *OutboundMessageUpdate {
+	_u.mutation.ClearContact()
 	return _u
 }
 
@@ -557,15 +562,6 @@ func (_u *OutboundMessageUpdate) sqlSave(ctx context.Context) (_node int, err er
 	}
 	if _u.mutation.DestinationCleared() {
 		_spec.ClearField(outboundmessage.FieldDestination, field.TypeString)
-	}
-	if value, ok := _u.mutation.ContactID(); ok {
-		_spec.SetField(outboundmessage.FieldContactID, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.AddedContactID(); ok {
-		_spec.AddField(outboundmessage.FieldContactID, field.TypeInt64, value)
-	}
-	if _u.mutation.ContactIDCleared() {
-		_spec.ClearField(outboundmessage.FieldContactID, field.TypeInt64)
 	}
 	if value, ok := _u.mutation.SendingSource(); ok {
 		_spec.SetField(outboundmessage.FieldSendingSource, field.TypeString, value)
@@ -789,6 +785,35 @@ func (_u *OutboundMessageUpdate) sqlSave(ctx context.Context) (_node int, err er
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.ContactCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   outboundmessage.ContactTable,
+			Columns: []string{outboundmessage.ContactColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contact.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ContactIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   outboundmessage.ContactTable,
+			Columns: []string{outboundmessage.ContactColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contact.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _u.mutation.TemplateCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -896,7 +921,6 @@ func (_u *OutboundMessageUpdateOne) ClearDestination() *OutboundMessageUpdateOne
 
 // SetContactID sets the "contact_id" field.
 func (_u *OutboundMessageUpdateOne) SetContactID(v int64) *OutboundMessageUpdateOne {
-	_u.mutation.ResetContactID()
 	_u.mutation.SetContactID(v)
 	return _u
 }
@@ -906,12 +930,6 @@ func (_u *OutboundMessageUpdateOne) SetNillableContactID(v *int64) *OutboundMess
 	if v != nil {
 		_u.SetContactID(*v)
 	}
-	return _u
-}
-
-// AddContactID adds value to the "contact_id" field.
-func (_u *OutboundMessageUpdateOne) AddContactID(v int64) *OutboundMessageUpdateOne {
-	_u.mutation.AddContactID(v)
 	return _u
 }
 
@@ -1226,6 +1244,11 @@ func (_u *OutboundMessageUpdateOne) SetAutomationRun(v *AutomationRun) *Outbound
 	return _u.SetAutomationRunID(v.ID)
 }
 
+// SetContact sets the "contact" edge to the Contact entity.
+func (_u *OutboundMessageUpdateOne) SetContact(v *Contact) *OutboundMessageUpdateOne {
+	return _u.SetContactID(v.ID)
+}
+
 // SetTemplate sets the "template" edge to the EmailTemplate entity.
 func (_u *OutboundMessageUpdateOne) SetTemplate(v *EmailTemplate) *OutboundMessageUpdateOne {
 	return _u.SetTemplateID(v.ID)
@@ -1269,6 +1292,12 @@ func (_u *OutboundMessageUpdateOne) ClearBroadcastRecipient() *OutboundMessageUp
 // ClearAutomationRun clears the "automation_run" edge to the AutomationRun entity.
 func (_u *OutboundMessageUpdateOne) ClearAutomationRun() *OutboundMessageUpdateOne {
 	_u.mutation.ClearAutomationRun()
+	return _u
+}
+
+// ClearContact clears the "contact" edge to the Contact entity.
+func (_u *OutboundMessageUpdateOne) ClearContact() *OutboundMessageUpdateOne {
+	_u.mutation.ClearContact()
 	return _u
 }
 
@@ -1391,15 +1420,6 @@ func (_u *OutboundMessageUpdateOne) sqlSave(ctx context.Context) (_node *Outboun
 	}
 	if _u.mutation.DestinationCleared() {
 		_spec.ClearField(outboundmessage.FieldDestination, field.TypeString)
-	}
-	if value, ok := _u.mutation.ContactID(); ok {
-		_spec.SetField(outboundmessage.FieldContactID, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.AddedContactID(); ok {
-		_spec.AddField(outboundmessage.FieldContactID, field.TypeInt64, value)
-	}
-	if _u.mutation.ContactIDCleared() {
-		_spec.ClearField(outboundmessage.FieldContactID, field.TypeInt64)
 	}
 	if value, ok := _u.mutation.SendingSource(); ok {
 		_spec.SetField(outboundmessage.FieldSendingSource, field.TypeString, value)
@@ -1616,6 +1636,35 @@ func (_u *OutboundMessageUpdateOne) sqlSave(ctx context.Context) (_node *Outboun
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(automationrun.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ContactCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   outboundmessage.ContactTable,
+			Columns: []string{outboundmessage.ContactColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contact.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ContactIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   outboundmessage.ContactTable,
+			Columns: []string{outboundmessage.ContactColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contact.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

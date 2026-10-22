@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/workspace"
@@ -94,7 +95,6 @@ func (_u *UnsubscribeUpdate) SetNillableSendingSource(v *string) *UnsubscribeUpd
 
 // SetContactID sets the "contact_id" field.
 func (_u *UnsubscribeUpdate) SetContactID(v int64) *UnsubscribeUpdate {
-	_u.mutation.ResetContactID()
 	_u.mutation.SetContactID(v)
 	return _u
 }
@@ -104,12 +104,6 @@ func (_u *UnsubscribeUpdate) SetNillableContactID(v *int64) *UnsubscribeUpdate {
 	if v != nil {
 		_u.SetContactID(*v)
 	}
-	return _u
-}
-
-// AddContactID adds value to the "contact_id" field.
-func (_u *UnsubscribeUpdate) AddContactID(v int64) *UnsubscribeUpdate {
-	_u.mutation.AddContactID(v)
 	return _u
 }
 
@@ -124,6 +118,11 @@ func (_u *UnsubscribeUpdate) SetWorkspace(v *Workspace) *UnsubscribeUpdate {
 	return _u.SetWorkspaceID(v.ID)
 }
 
+// SetContact sets the "contact" edge to the Contact entity.
+func (_u *UnsubscribeUpdate) SetContact(v *Contact) *UnsubscribeUpdate {
+	return _u.SetContactID(v.ID)
+}
+
 // Mutation returns the UnsubscribeMutation object of the builder.
 func (_u *UnsubscribeUpdate) Mutation() *UnsubscribeMutation {
 	return _u.mutation
@@ -132,6 +131,12 @@ func (_u *UnsubscribeUpdate) Mutation() *UnsubscribeMutation {
 // ClearWorkspace clears the "workspace" edge to the Workspace entity.
 func (_u *UnsubscribeUpdate) ClearWorkspace() *UnsubscribeUpdate {
 	_u.mutation.ClearWorkspace()
+	return _u
+}
+
+// ClearContact clears the "contact" edge to the Contact entity.
+func (_u *UnsubscribeUpdate) ClearContact() *UnsubscribeUpdate {
+	_u.mutation.ClearContact()
 	return _u
 }
 
@@ -224,15 +229,6 @@ func (_u *UnsubscribeUpdate) sqlSave(ctx context.Context) (_node int, err error)
 	if value, ok := _u.mutation.SendingSource(); ok {
 		_spec.SetField(unsubscribe.FieldSendingSource, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.ContactID(); ok {
-		_spec.SetField(unsubscribe.FieldContactID, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.AddedContactID(); ok {
-		_spec.AddField(unsubscribe.FieldContactID, field.TypeInt64, value)
-	}
-	if _u.mutation.ContactIDCleared() {
-		_spec.ClearField(unsubscribe.FieldContactID, field.TypeInt64)
-	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -255,6 +251,35 @@ func (_u *UnsubscribeUpdate) sqlSave(ctx context.Context) (_node int, err error)
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(workspace.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ContactCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   unsubscribe.ContactTable,
+			Columns: []string{unsubscribe.ContactColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contact.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ContactIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   unsubscribe.ContactTable,
+			Columns: []string{unsubscribe.ContactColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contact.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -348,7 +373,6 @@ func (_u *UnsubscribeUpdateOne) SetNillableSendingSource(v *string) *Unsubscribe
 
 // SetContactID sets the "contact_id" field.
 func (_u *UnsubscribeUpdateOne) SetContactID(v int64) *UnsubscribeUpdateOne {
-	_u.mutation.ResetContactID()
 	_u.mutation.SetContactID(v)
 	return _u
 }
@@ -358,12 +382,6 @@ func (_u *UnsubscribeUpdateOne) SetNillableContactID(v *int64) *UnsubscribeUpdat
 	if v != nil {
 		_u.SetContactID(*v)
 	}
-	return _u
-}
-
-// AddContactID adds value to the "contact_id" field.
-func (_u *UnsubscribeUpdateOne) AddContactID(v int64) *UnsubscribeUpdateOne {
-	_u.mutation.AddContactID(v)
 	return _u
 }
 
@@ -378,6 +396,11 @@ func (_u *UnsubscribeUpdateOne) SetWorkspace(v *Workspace) *UnsubscribeUpdateOne
 	return _u.SetWorkspaceID(v.ID)
 }
 
+// SetContact sets the "contact" edge to the Contact entity.
+func (_u *UnsubscribeUpdateOne) SetContact(v *Contact) *UnsubscribeUpdateOne {
+	return _u.SetContactID(v.ID)
+}
+
 // Mutation returns the UnsubscribeMutation object of the builder.
 func (_u *UnsubscribeUpdateOne) Mutation() *UnsubscribeMutation {
 	return _u.mutation
@@ -386,6 +409,12 @@ func (_u *UnsubscribeUpdateOne) Mutation() *UnsubscribeMutation {
 // ClearWorkspace clears the "workspace" edge to the Workspace entity.
 func (_u *UnsubscribeUpdateOne) ClearWorkspace() *UnsubscribeUpdateOne {
 	_u.mutation.ClearWorkspace()
+	return _u
+}
+
+// ClearContact clears the "contact" edge to the Contact entity.
+func (_u *UnsubscribeUpdateOne) ClearContact() *UnsubscribeUpdateOne {
+	_u.mutation.ClearContact()
 	return _u
 }
 
@@ -508,15 +537,6 @@ func (_u *UnsubscribeUpdateOne) sqlSave(ctx context.Context) (_node *Unsubscribe
 	if value, ok := _u.mutation.SendingSource(); ok {
 		_spec.SetField(unsubscribe.FieldSendingSource, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.ContactID(); ok {
-		_spec.SetField(unsubscribe.FieldContactID, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.AddedContactID(); ok {
-		_spec.AddField(unsubscribe.FieldContactID, field.TypeInt64, value)
-	}
-	if _u.mutation.ContactIDCleared() {
-		_spec.ClearField(unsubscribe.FieldContactID, field.TypeInt64)
-	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -539,6 +559,35 @@ func (_u *UnsubscribeUpdateOne) sqlSave(ctx context.Context) (_node *Unsubscribe
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(workspace.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ContactCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   unsubscribe.ContactTable,
+			Columns: []string{unsubscribe.ContactColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contact.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ContactIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   unsubscribe.ContactTable,
+			Columns: []string{unsubscribe.ContactColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contact.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

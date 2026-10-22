@@ -19,7 +19,7 @@ import (
 // only — never the rendered content (PII + volume) — and references the surface's
 // own records by foreign keys (CODING_STANDARDS rule 8): RESTRICT for a Broadcast, an
 // Automation and an Integration, which are discarded and never deleted (ADR 0049), SET NULL
-// for a Template, an Automation run and a Broadcast recipient, which a physical delete or an
+// for a Contact, a Template, an Automation run and a Broadcast recipient, which a physical delete or an
 // Erasure removes while the message stays as a delivery record.
 type OutboundMessage struct {
 	ent.Schema
@@ -59,11 +59,11 @@ func (OutboundMessage) Fields() []ent.Field {
 		field.String("destination").
 			Optional(),
 		// The Contact this destination resolved to, when one exists (a transactional
-		// destination may have none). Display and Event attribution only.
+		// destination may have none). Display and Event attribution only. SET NULL: the
+		// message stays as an anonymous delivery record when the Contact is erased.
 		field.Int64("contact_id").
 			Optional().
-			Nillable().
-			Annotations(ScopedRef{Entity: "Contact"}),
+			Nillable(),
 		// The unsubscribe Sending source; nil for transactional (it carries none).
 		field.String("sending_source").
 			Optional().
@@ -127,6 +127,8 @@ func (OutboundMessage) Edges() []ent.Edge {
 			Annotations(entsql.OnDelete(entsql.SetNull)),
 		edge.To("automation_run", AutomationRun.Type).Field("automation_run_id").Unique().
 			Annotations(entsql.OnDelete(entsql.SetNull)),
+		edge.To("contact", Contact.Type).Field("contact_id").Unique().
+			Annotations(entsql.OnDelete(entsql.SetNull)),
 		edge.To("template", EmailTemplate.Type).Field("template_id").Unique().
 			Annotations(entsql.OnDelete(entsql.SetNull)),
 	}
@@ -145,10 +147,10 @@ func (OutboundMessage) Indexes() []ent.Index {
 		index.Fields("workspace_id", "sending_domain", "created_at"),
 		// The Outbound messages Export stream's cursor (ADR 0045).
 		index.Fields("workspace_id", "updated_at", "id"),
-		// Erasure and contact lookups reach this table by contact.
-		index.Fields("workspace_id", "contact_id").
-			StorageKey("outbound_messages_workspace_id_contact_id").
-			Annotations(entsql.IndexWhere("contact_id IS NOT NULL")),
+		// Erasure and contact lookups reach this table by contact; the contact foreign key's
+		// index (whole: a key's index cannot be partial).
+		index.Fields("contact_id").
+			StorageKey("outbound_messages_contact_id"),
 		// A Broadcast's delivery figures: its messages grouped by status (ADR 0015).
 		index.Fields("workspace_id", "broadcast_id", "status"),
 		// A Broadcast recipient's message: one per recipient, so "is this recipient still

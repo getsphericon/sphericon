@@ -101,19 +101,20 @@ func ClearOutboundMessageRefs(ctx context.Context, client *ent.Client, batch int
 				break
 			}
 		}
-		if err := validateOutboundRef(ctx, client, ref.constraint); err != nil {
+		if err := validateRef(ctx, client, "outbound_messages", ref.constraint); err != nil {
 			return total, err
 		}
 	}
 	return total, nil
 }
 
-// validateOutboundRef validates one key of outbound_messages that the migration added NOT VALID.
-func validateOutboundRef(ctx context.Context, client *ent.Client, constraint string) error {
+// validateRef validates one key of table that a migration added NOT VALID. The table and the
+// constraint are constants of the jobs package, never input.
+func validateRef(ctx context.Context, client *ent.Client, table, constraint string) error {
 	// raw sql: reads pg_constraint to see whether the migration's key is still NOT VALID; the
 	// catalog is not an ent entity.
 	rows, err := client.QueryContext(ctx,
-		`SELECT NOT convalidated FROM pg_constraint WHERE conname = $1 AND conrelid = 'outbound_messages'::regclass`, constraint)
+		`SELECT NOT convalidated FROM pg_constraint WHERE conname = $1 AND conrelid = $2::regclass`, constraint, table)
 	if err != nil {
 		return fmt.Errorf("look up %s: %w", constraint, err)
 	}
@@ -132,7 +133,7 @@ func validateOutboundRef(ctx context.Context, client *ent.Client, constraint str
 	}
 	// raw sql: the DDL that completes the migration's NOT VALID key once the data is clean
 	// (ADR 0033); ent runs no DDL outside a migration. The name is a constant of this file.
-	if _, err := client.ExecContext(ctx, `ALTER TABLE outbound_messages VALIDATE CONSTRAINT `+constraint); err != nil {
+	if _, err := client.ExecContext(ctx, `ALTER TABLE `+table+` VALIDATE CONSTRAINT `+constraint); err != nil {
 		return fmt.Errorf("validate %s: %w", constraint, err)
 	}
 	return nil

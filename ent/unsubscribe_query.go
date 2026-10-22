@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/workspace"
@@ -25,6 +26,7 @@ type UnsubscribeQuery struct {
 	inters        []Interceptor
 	predicates    []predicate.Unsubscribe
 	withWorkspace *WorkspaceQuery
+	withContact   *ContactQuery
 	modifiers     []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -77,6 +79,28 @@ func (_q *UnsubscribeQuery) QueryWorkspace() *WorkspaceQuery {
 			sqlgraph.From(unsubscribe.Table, unsubscribe.FieldID, selector),
 			sqlgraph.To(workspace.Table, workspace.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, unsubscribe.WorkspaceTable, unsubscribe.WorkspaceColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryContact chains the current query on the "contact" edge.
+func (_q *UnsubscribeQuery) QueryContact() *ContactQuery {
+	query := (&ContactClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(unsubscribe.Table, unsubscribe.FieldID, selector),
+			sqlgraph.To(contact.Table, contact.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, unsubscribe.ContactTable, unsubscribe.ContactColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -277,6 +301,7 @@ func (_q *UnsubscribeQuery) Clone() *UnsubscribeQuery {
 		inters:        append([]Interceptor{}, _q.inters...),
 		predicates:    append([]predicate.Unsubscribe{}, _q.predicates...),
 		withWorkspace: _q.withWorkspace.Clone(),
+		withContact:   _q.withContact.Clone(),
 		// clone intermediate query.
 		sql:       _q.sql.Clone(),
 		path:      _q.path,
@@ -292,6 +317,17 @@ func (_q *UnsubscribeQuery) WithWorkspace(opts ...func(*WorkspaceQuery)) *Unsubs
 		opt(query)
 	}
 	_q.withWorkspace = query
+	return _q
+}
+
+// WithContact tells the query-builder to eager-load the nodes that are connected to
+// the "contact" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *UnsubscribeQuery) WithContact(opts ...func(*ContactQuery)) *UnsubscribeQuery {
+	query := (&ContactClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withContact = query
 	return _q
 }
 
@@ -373,8 +409,9 @@ func (_q *UnsubscribeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*
 	var (
 		nodes       = []*Unsubscribe{}
 		_spec       = _q.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
 			_q.withWorkspace != nil,
+			_q.withContact != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -404,6 +441,12 @@ func (_q *UnsubscribeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*
 			return nil, err
 		}
 	}
+	if query := _q.withContact; query != nil {
+		if err := _q.loadContact(ctx, query, nodes, nil,
+			func(n *Unsubscribe, e *Contact) { n.Edges.Contact = e }); err != nil {
+			return nil, err
+		}
+	}
 	return nodes, nil
 }
 
@@ -429,6 +472,38 @@ func (_q *UnsubscribeQuery) loadWorkspace(ctx context.Context, query *WorkspaceQ
 		nodes, ok := nodeids[n.ID]
 		if !ok {
 			return fmt.Errorf(`unexpected foreign-key "workspace_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (_q *UnsubscribeQuery) loadContact(ctx context.Context, query *ContactQuery, nodes []*Unsubscribe, init func(*Unsubscribe), assign func(*Unsubscribe, *Contact)) error {
+	ids := make([]int64, 0, len(nodes))
+	nodeids := make(map[int64][]*Unsubscribe)
+	for i := range nodes {
+		if nodes[i].ContactID == nil {
+			continue
+		}
+		fk := *nodes[i].ContactID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(contact.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "contact_id" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
@@ -467,6 +542,9 @@ func (_q *UnsubscribeQuery) querySpec() *sqlgraph.QuerySpec {
 		}
 		if _q.withWorkspace != nil {
 			_spec.Node.AddColumnOnce(unsubscribe.FieldWorkspaceID)
+		}
+		if _q.withContact != nil {
+			_spec.Node.AddColumnOnce(unsubscribe.FieldContactID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

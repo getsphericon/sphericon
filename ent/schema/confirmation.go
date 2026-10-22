@@ -4,6 +4,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
+	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
 )
@@ -54,11 +55,18 @@ func (Confirmation) Fields() []ent.Field {
 		field.Enum("provenance").
 			Values("double_opt_in", "grandfathered", "imported"),
 		// The contact this destination belongs to, when known. Display only; the
-		// confirmation is keyed by destination and outlives the contact. Nullable.
+		// confirmation is keyed by destination. It is consent proof for that person, so it
+		// dies with the Contact (ON DELETE CASCADE; Erasure deletes it, ADR 0021). Nullable.
 		field.Int64("contact_id").
 			Optional().
-			Nillable().
-			Annotations(ScopedRef{Unchecked: true}),
+			Nillable(),
+	}
+}
+
+func (Confirmation) Edges() []ent.Edge {
+	return []ent.Edge{
+		edge.To("contact", Contact.Type).Field("contact_id").Unique().
+			Annotations(entsql.OnDelete(entsql.Cascade)),
 	}
 }
 
@@ -69,9 +77,9 @@ func (Confirmation) Indexes() []ent.Index {
 		index.Fields("workspace_id", "channel", "destination").
 			Unique().
 			StorageKey("confirmations_ws_channel_dest"),
-		// Erasure and contact lookups reach this table by contact.
-		index.Fields("workspace_id", "contact_id").
-			StorageKey("confirmations_workspace_id_contact_id").
-			Annotations(entsql.IndexWhere("contact_id IS NOT NULL")),
+		// Erasure and contact lookups reach this table by contact. Not partial: it is also the
+		// contact foreign key's index.
+		index.Fields("contact_id").
+			StorageKey("confirmations_contact_id"),
 	}
 }

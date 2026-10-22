@@ -9,6 +9,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
@@ -42,9 +43,11 @@ type Unsubscribe struct {
 type UnsubscribeEdges struct {
 	// Workspace holds the value of the workspace edge.
 	Workspace *Workspace `json:"workspace,omitempty"`
+	// Contact holds the value of the contact edge.
+	Contact *Contact `json:"contact,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 }
 
 // WorkspaceOrErr returns the Workspace value or an error if the edge
@@ -56,6 +59,17 @@ func (e UnsubscribeEdges) WorkspaceOrErr() (*Workspace, error) {
 		return nil, &NotFoundError{label: workspace.Label}
 	}
 	return nil, &NotLoadedError{edge: "workspace"}
+}
+
+// ContactOrErr returns the Contact value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e UnsubscribeEdges) ContactOrErr() (*Contact, error) {
+	if e.Contact != nil {
+		return e.Contact, nil
+	} else if e.loadedTypes[1] {
+		return nil, &NotFoundError{label: contact.Label}
+	}
+	return nil, &NotLoadedError{edge: "contact"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -149,6 +163,11 @@ func (_m *Unsubscribe) Value(name string) (ent.Value, error) {
 // QueryWorkspace queries the "workspace" edge of the Unsubscribe entity.
 func (_m *Unsubscribe) QueryWorkspace() *WorkspaceQuery {
 	return NewUnsubscribeClient(_m.config).QueryWorkspace(_m)
+}
+
+// QueryContact queries the "contact" edge of the Unsubscribe entity.
+func (_m *Unsubscribe) QueryContact() *ContactQuery {
+	return NewUnsubscribeClient(_m.config).QueryContact(_m)
 }
 
 // Update returns a builder for updating this Unsubscribe.

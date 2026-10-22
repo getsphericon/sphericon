@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationversion"
+	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
@@ -68,7 +69,6 @@ func (_u *AutomationRunUpdate) SetNillableAutomationID(v *int64) *AutomationRunU
 
 // SetContactID sets the "contact_id" field.
 func (_u *AutomationRunUpdate) SetContactID(v int64) *AutomationRunUpdate {
-	_u.mutation.ResetContactID()
 	_u.mutation.SetContactID(v)
 	return _u
 }
@@ -78,12 +78,6 @@ func (_u *AutomationRunUpdate) SetNillableContactID(v *int64) *AutomationRunUpda
 	if v != nil {
 		_u.SetContactID(*v)
 	}
-	return _u
-}
-
-// AddContactID adds value to the "contact_id" field.
-func (_u *AutomationRunUpdate) AddContactID(v int64) *AutomationRunUpdate {
-	_u.mutation.AddContactID(v)
 	return _u
 }
 
@@ -238,6 +232,11 @@ func (_u *AutomationRunUpdate) SetVersion(v *AutomationVersion) *AutomationRunUp
 	return _u.SetVersionID(v.ID)
 }
 
+// SetContact sets the "contact" edge to the Contact entity.
+func (_u *AutomationRunUpdate) SetContact(v *Contact) *AutomationRunUpdate {
+	return _u.SetContactID(v.ID)
+}
+
 // Mutation returns the AutomationRunMutation object of the builder.
 func (_u *AutomationRunUpdate) Mutation() *AutomationRunMutation {
 	return _u.mutation
@@ -258,6 +257,12 @@ func (_u *AutomationRunUpdate) ClearAutomation() *AutomationRunUpdate {
 // ClearVersion clears the "version" edge to the AutomationVersion entity.
 func (_u *AutomationRunUpdate) ClearVersion() *AutomationRunUpdate {
 	_u.mutation.ClearVersion()
+	return _u
+}
+
+// ClearContact clears the "contact" edge to the Contact entity.
+func (_u *AutomationRunUpdate) ClearContact() *AutomationRunUpdate {
+	_u.mutation.ClearContact()
 	return _u
 }
 
@@ -323,6 +328,9 @@ func (_u *AutomationRunUpdate) check() error {
 	if _u.mutation.VersionCleared() && len(_u.mutation.VersionIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "AutomationRun.version"`)
 	}
+	if _u.mutation.ContactCleared() && len(_u.mutation.ContactIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "AutomationRun.contact"`)
+	}
 	return nil
 }
 
@@ -346,12 +354,6 @@ func (_u *AutomationRunUpdate) sqlSave(ctx context.Context) (_node int, err erro
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(automationrun.FieldUpdatedAt, field.TypeTime, value)
-	}
-	if value, ok := _u.mutation.ContactID(); ok {
-		_spec.SetField(automationrun.FieldContactID, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.AddedContactID(); ok {
-		_spec.AddField(automationrun.FieldContactID, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(automationrun.FieldStatus, field.TypeEnum, value)
@@ -476,6 +478,35 @@ func (_u *AutomationRunUpdate) sqlSave(ctx context.Context) (_node int, err erro
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.ContactCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   automationrun.ContactTable,
+			Columns: []string{automationrun.ContactColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contact.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ContactIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   automationrun.ContactTable,
+			Columns: []string{automationrun.ContactColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contact.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -534,7 +565,6 @@ func (_u *AutomationRunUpdateOne) SetNillableAutomationID(v *int64) *AutomationR
 
 // SetContactID sets the "contact_id" field.
 func (_u *AutomationRunUpdateOne) SetContactID(v int64) *AutomationRunUpdateOne {
-	_u.mutation.ResetContactID()
 	_u.mutation.SetContactID(v)
 	return _u
 }
@@ -544,12 +574,6 @@ func (_u *AutomationRunUpdateOne) SetNillableContactID(v *int64) *AutomationRunU
 	if v != nil {
 		_u.SetContactID(*v)
 	}
-	return _u
-}
-
-// AddContactID adds value to the "contact_id" field.
-func (_u *AutomationRunUpdateOne) AddContactID(v int64) *AutomationRunUpdateOne {
-	_u.mutation.AddContactID(v)
 	return _u
 }
 
@@ -704,6 +728,11 @@ func (_u *AutomationRunUpdateOne) SetVersion(v *AutomationVersion) *AutomationRu
 	return _u.SetVersionID(v.ID)
 }
 
+// SetContact sets the "contact" edge to the Contact entity.
+func (_u *AutomationRunUpdateOne) SetContact(v *Contact) *AutomationRunUpdateOne {
+	return _u.SetContactID(v.ID)
+}
+
 // Mutation returns the AutomationRunMutation object of the builder.
 func (_u *AutomationRunUpdateOne) Mutation() *AutomationRunMutation {
 	return _u.mutation
@@ -724,6 +753,12 @@ func (_u *AutomationRunUpdateOne) ClearAutomation() *AutomationRunUpdateOne {
 // ClearVersion clears the "version" edge to the AutomationVersion entity.
 func (_u *AutomationRunUpdateOne) ClearVersion() *AutomationRunUpdateOne {
 	_u.mutation.ClearVersion()
+	return _u
+}
+
+// ClearContact clears the "contact" edge to the Contact entity.
+func (_u *AutomationRunUpdateOne) ClearContact() *AutomationRunUpdateOne {
+	_u.mutation.ClearContact()
 	return _u
 }
 
@@ -802,6 +837,9 @@ func (_u *AutomationRunUpdateOne) check() error {
 	if _u.mutation.VersionCleared() && len(_u.mutation.VersionIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "AutomationRun.version"`)
 	}
+	if _u.mutation.ContactCleared() && len(_u.mutation.ContactIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "AutomationRun.contact"`)
+	}
 	return nil
 }
 
@@ -842,12 +880,6 @@ func (_u *AutomationRunUpdateOne) sqlSave(ctx context.Context) (_node *Automatio
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(automationrun.FieldUpdatedAt, field.TypeTime, value)
-	}
-	if value, ok := _u.mutation.ContactID(); ok {
-		_spec.SetField(automationrun.FieldContactID, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.AddedContactID(); ok {
-		_spec.AddField(automationrun.FieldContactID, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(automationrun.FieldStatus, field.TypeEnum, value)
@@ -965,6 +997,35 @@ func (_u *AutomationRunUpdateOne) sqlSave(ctx context.Context) (_node *Automatio
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(automationversion.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ContactCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   automationrun.ContactTable,
+			Columns: []string{automationrun.ContactColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contact.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ContactIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   automationrun.ContactTable,
+			Columns: []string{automationrun.ContactColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contact.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

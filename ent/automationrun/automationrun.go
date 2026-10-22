@@ -45,6 +45,8 @@ const (
 	EdgeAutomation = "automation"
 	// EdgeVersion holds the string denoting the version edge name in mutations.
 	EdgeVersion = "version"
+	// EdgeContact holds the string denoting the contact edge name in mutations.
+	EdgeContact = "contact"
 	// Table holds the table name of the automationrun in the database.
 	Table = "automation_runs"
 	// WorkspaceTable is the table that holds the workspace relation/edge.
@@ -68,6 +70,13 @@ const (
 	VersionInverseTable = "automation_versions"
 	// VersionColumn is the table column denoting the version relation/edge.
 	VersionColumn = "version_id"
+	// ContactTable is the table that holds the contact relation/edge.
+	ContactTable = "automation_runs"
+	// ContactInverseTable is the table name for the Contact entity.
+	// It exists in this package in order to avoid circular dependency with the "contact" package.
+	ContactInverseTable = "contacts"
+	// ContactColumn is the table column denoting the contact relation/edge.
+	ContactColumn = "contact_id"
 )
 
 // Columns holds all SQL columns for automationrun fields.
@@ -252,6 +261,13 @@ func ByVersionField(field string, opts ...sql.OrderTermOption) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newVersionStep(), sql.OrderByField(field, opts...))
 	}
 }
+
+// ByContactField orders the results by contact field.
+func ByContactField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newContactStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newWorkspaceStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -271,5 +287,12 @@ func newVersionStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(VersionInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, VersionTable, VersionColumn),
+	)
+}
+func newContactStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ContactInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, ContactTable, ContactColumn),
 	)
 }

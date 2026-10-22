@@ -1369,6 +1369,22 @@ func (c *AutomationRunClient) QueryVersion(_m *AutomationRun) *AutomationVersion
 	return query
 }
 
+// QueryContact queries the contact edge of a AutomationRun.
+func (c *AutomationRunClient) QueryContact(_m *AutomationRun) *ContactQuery {
+	query := (&ContactClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(automationrun.Table, automationrun.FieldID, id),
+			sqlgraph.To(contact.Table, contact.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, automationrun.ContactTable, automationrun.ContactColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *AutomationRunClient) Hooks() []Hook {
 	return c.hooks.AutomationRun
@@ -2061,6 +2077,22 @@ func (c *BroadcastRecipientClient) QueryBroadcast(_m *BroadcastRecipient) *Broad
 	return query
 }
 
+// QueryContact queries the contact edge of a BroadcastRecipient.
+func (c *BroadcastRecipientClient) QueryContact(_m *BroadcastRecipient) *ContactQuery {
+	query := (&ContactClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(broadcastrecipient.Table, broadcastrecipient.FieldID, id),
+			sqlgraph.To(contact.Table, contact.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, broadcastrecipient.ContactTable, broadcastrecipient.ContactColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *BroadcastRecipientClient) Hooks() []Hook {
 	return c.hooks.BroadcastRecipient
@@ -2203,6 +2235,22 @@ func (c *ConfirmationClient) QueryWorkspace(_m *Confirmation) *WorkspaceQuery {
 			sqlgraph.From(confirmation.Table, confirmation.FieldID, id),
 			sqlgraph.To(workspace.Table, workspace.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, confirmation.WorkspaceTable, confirmation.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryContact queries the contact edge of a Confirmation.
+func (c *ConfirmationClient) QueryContact(_m *Confirmation) *ContactQuery {
+	query := (&ContactClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(confirmation.Table, confirmation.FieldID, id),
+			sqlgraph.To(contact.Table, contact.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, confirmation.ContactTable, confirmation.ContactColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -4801,6 +4849,22 @@ func (c *OutboundMessageClient) QueryAutomationRun(_m *OutboundMessage) *Automat
 	return query
 }
 
+// QueryContact queries the contact edge of a OutboundMessage.
+func (c *OutboundMessageClient) QueryContact(_m *OutboundMessage) *ContactQuery {
+	query := (&ContactClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(outboundmessage.Table, outboundmessage.FieldID, id),
+			sqlgraph.To(contact.Table, contact.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, outboundmessage.ContactTable, outboundmessage.ContactColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryTemplate queries the template edge of a OutboundMessage.
 func (c *OutboundMessageClient) QueryTemplate(_m *OutboundMessage) *EmailTemplateQuery {
 	query := (&EmailTemplateClient{config: c.config}).Query()
@@ -6658,6 +6722,22 @@ func (c *SuppressionClient) QueryWorkspace(_m *Suppression) *WorkspaceQuery {
 	return query
 }
 
+// QueryContact queries the contact edge of a Suppression.
+func (c *SuppressionClient) QueryContact(_m *Suppression) *ContactQuery {
+	query := (&ContactClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(suppression.Table, suppression.FieldID, id),
+			sqlgraph.To(contact.Table, contact.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, suppression.ContactTable, suppression.ContactColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *SuppressionClient) Hooks() []Hook {
 	return c.hooks.Suppression
@@ -7114,6 +7194,22 @@ func (c *UnsubscribeClient) QueryWorkspace(_m *Unsubscribe) *WorkspaceQuery {
 			sqlgraph.From(unsubscribe.Table, unsubscribe.FieldID, id),
 			sqlgraph.To(workspace.Table, workspace.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, unsubscribe.WorkspaceTable, unsubscribe.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryContact queries the contact edge of a Unsubscribe.
+func (c *UnsubscribeClient) QueryContact(_m *Unsubscribe) *ContactQuery {
+	query := (&ContactClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(unsubscribe.Table, unsubscribe.FieldID, id),
+			sqlgraph.To(contact.Table, contact.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, unsubscribe.ContactTable, unsubscribe.ContactColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil

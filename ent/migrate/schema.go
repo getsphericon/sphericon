@@ -160,7 +160,6 @@ var (
 		{Name: "id", Type: field.TypeInt64, Increment: true},
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
-		{Name: "contact_id", Type: field.TypeInt64},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"active", "completed", "failed", "exited"}, Default: "active"},
 		{Name: "current_step", Type: field.TypeInt, Default: 0},
 		{Name: "resume_at", Type: field.TypeTime, Nullable: true},
@@ -168,6 +167,7 @@ var (
 		{Name: "failure_status", Type: field.TypeInt, Nullable: true},
 		{Name: "failure_excerpt", Type: field.TypeString, Nullable: true},
 		{Name: "automation_id", Type: field.TypeInt64},
+		{Name: "contact_id", Type: field.TypeInt64},
 		{Name: "version_id", Type: field.TypeInt64},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
@@ -179,8 +179,14 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "automation_runs_automations_runs",
-				Columns:    []*schema.Column{AutomationRunsColumns[10]},
+				Columns:    []*schema.Column{AutomationRunsColumns[9]},
 				RefColumns: []*schema.Column{AutomationsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "automation_runs_contacts_contact",
+				Columns:    []*schema.Column{AutomationRunsColumns[10]},
+				RefColumns: []*schema.Column{ContactsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
@@ -200,12 +206,17 @@ var (
 			{
 				Name:    "automation_runs_automation_id_contact_id",
 				Unique:  true,
-				Columns: []*schema.Column{AutomationRunsColumns[10], AutomationRunsColumns[3]},
+				Columns: []*schema.Column{AutomationRunsColumns[9], AutomationRunsColumns[10]},
 			},
 			{
 				Name:    "automationrun_workspace_id_contact_id",
 				Unique:  false,
-				Columns: []*schema.Column{AutomationRunsColumns[12], AutomationRunsColumns[3]},
+				Columns: []*schema.Column{AutomationRunsColumns[12], AutomationRunsColumns[10]},
+			},
+			{
+				Name:    "automation_runs_contact_id",
+				Unique:  false,
+				Columns: []*schema.Column{AutomationRunsColumns[10]},
 			},
 			{
 				Name:    "automationrun_version_id",
@@ -364,12 +375,12 @@ var (
 		{Name: "id", Type: field.TypeInt64, Increment: true},
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
-		{Name: "contact_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "deferred_until", Type: field.TypeTime, Nullable: true},
 		{Name: "opened_at", Type: field.TypeTime, Nullable: true},
 		{Name: "clicked_at", Type: field.TypeTime, Nullable: true},
 		{Name: "unsubscribed_at", Type: field.TypeTime, Nullable: true},
 		{Name: "broadcast_id", Type: field.TypeInt64},
+		{Name: "contact_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
 	// BroadcastRecipientsTable holds the schema information for the "broadcast_recipients" table.
@@ -380,9 +391,15 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "broadcast_recipients_broadcasts_recipients",
-				Columns:    []*schema.Column{BroadcastRecipientsColumns[8]},
+				Columns:    []*schema.Column{BroadcastRecipientsColumns[7]},
 				RefColumns: []*schema.Column{BroadcastsColumns[0]},
 				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "broadcast_recipients_contacts_contact",
+				Columns:    []*schema.Column{BroadcastRecipientsColumns[8]},
+				RefColumns: []*schema.Column{ContactsColumns[0]},
+				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "broadcast_recipients_workspaces_broadcast_recipients",
@@ -395,7 +412,7 @@ var (
 			{
 				Name:    "broadcast_recipients_broadcast_id_contact_id",
 				Unique:  true,
-				Columns: []*schema.Column{BroadcastRecipientsColumns[8], BroadcastRecipientsColumns[3]},
+				Columns: []*schema.Column{BroadcastRecipientsColumns[7], BroadcastRecipientsColumns[8]},
 			},
 			{
 				Name:    "broadcastrecipient_workspace_id",
@@ -403,12 +420,9 @@ var (
 				Columns: []*schema.Column{BroadcastRecipientsColumns[9]},
 			},
 			{
-				Name:    "broadcast_recipients_workspace_id_contact_id",
+				Name:    "broadcast_recipients_contact_id",
 				Unique:  false,
-				Columns: []*schema.Column{BroadcastRecipientsColumns[9], BroadcastRecipientsColumns[3]},
-				Annotation: &entsql.IndexAnnotation{
-					Where: "contact_id IS NOT NULL",
-				},
+				Columns: []*schema.Column{BroadcastRecipientsColumns[8]},
 			},
 		},
 	}
@@ -430,6 +444,12 @@ var (
 		PrimaryKey: []*schema.Column{ConfirmationsColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
+				Symbol:     "confirmations_contacts_contact",
+				Columns:    []*schema.Column{ConfirmationsColumns[6]},
+				RefColumns: []*schema.Column{ContactsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
 				Symbol:     "confirmations_workspaces_confirmations",
 				Columns:    []*schema.Column{ConfirmationsColumns[7]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
@@ -443,12 +463,9 @@ var (
 				Columns: []*schema.Column{ConfirmationsColumns[7], ConfirmationsColumns[3], ConfirmationsColumns[4]},
 			},
 			{
-				Name:    "confirmations_workspace_id_contact_id",
+				Name:    "confirmations_contact_id",
 				Unique:  false,
-				Columns: []*schema.Column{ConfirmationsColumns[7], ConfirmationsColumns[6]},
-				Annotation: &entsql.IndexAnnotation{
-					Where: "contact_id IS NOT NULL",
-				},
+				Columns: []*schema.Column{ConfirmationsColumns[6]},
 			},
 		},
 	}
@@ -1068,7 +1085,6 @@ var (
 		{Name: "idempotency_key", Type: field.TypeString},
 		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email"}, Default: "email"},
 		{Name: "destination", Type: field.TypeString, Nullable: true},
-		{Name: "contact_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "sending_source", Type: field.TypeString, Nullable: true},
 		{Name: "sending_domain", Type: field.TypeString, Nullable: true},
 		{Name: "provider_message_id", Type: field.TypeString, Nullable: true},
@@ -1083,6 +1099,7 @@ var (
 		{Name: "integration_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "broadcast_recipient_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "automation_run_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "contact_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "template_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
@@ -1094,32 +1111,38 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "outbound_messages_broadcasts_broadcast",
-				Columns:    []*schema.Column{OutboundMessagesColumns[17]},
+				Columns:    []*schema.Column{OutboundMessagesColumns[16]},
 				RefColumns: []*schema.Column{BroadcastsColumns[0]},
 				OnDelete:   schema.Restrict,
 			},
 			{
 				Symbol:     "outbound_messages_automations_automation",
-				Columns:    []*schema.Column{OutboundMessagesColumns[18]},
+				Columns:    []*schema.Column{OutboundMessagesColumns[17]},
 				RefColumns: []*schema.Column{AutomationsColumns[0]},
 				OnDelete:   schema.Restrict,
 			},
 			{
 				Symbol:     "outbound_messages_integrations_integration",
-				Columns:    []*schema.Column{OutboundMessagesColumns[19]},
+				Columns:    []*schema.Column{OutboundMessagesColumns[18]},
 				RefColumns: []*schema.Column{IntegrationsColumns[0]},
 				OnDelete:   schema.Restrict,
 			},
 			{
 				Symbol:     "outbound_messages_broadcast_recipients_broadcast_recipient",
-				Columns:    []*schema.Column{OutboundMessagesColumns[20]},
+				Columns:    []*schema.Column{OutboundMessagesColumns[19]},
 				RefColumns: []*schema.Column{BroadcastRecipientsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "outbound_messages_automation_runs_automation_run",
-				Columns:    []*schema.Column{OutboundMessagesColumns[21]},
+				Columns:    []*schema.Column{OutboundMessagesColumns[20]},
 				RefColumns: []*schema.Column{AutomationRunsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "outbound_messages_contacts_contact",
+				Columns:    []*schema.Column{OutboundMessagesColumns[21]},
+				RefColumns: []*schema.Column{ContactsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
@@ -1149,12 +1172,12 @@ var (
 			{
 				Name:    "outboundmessage_workspace_id_integration_id_sent_at",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[23], OutboundMessagesColumns[19], OutboundMessagesColumns[14]},
+				Columns: []*schema.Column{OutboundMessagesColumns[23], OutboundMessagesColumns[18], OutboundMessagesColumns[13]},
 			},
 			{
 				Name:    "outboundmessage_workspace_id_sending_domain_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[23], OutboundMessagesColumns[9], OutboundMessagesColumns[1]},
+				Columns: []*schema.Column{OutboundMessagesColumns[23], OutboundMessagesColumns[8], OutboundMessagesColumns[1]},
 			},
 			{
 				Name:    "outboundmessage_workspace_id_updated_at_id",
@@ -1162,42 +1185,39 @@ var (
 				Columns: []*schema.Column{OutboundMessagesColumns[23], OutboundMessagesColumns[2], OutboundMessagesColumns[0]},
 			},
 			{
-				Name:    "outbound_messages_workspace_id_contact_id",
+				Name:    "outbound_messages_contact_id",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[23], OutboundMessagesColumns[7]},
-				Annotation: &entsql.IndexAnnotation{
-					Where: "contact_id IS NOT NULL",
-				},
+				Columns: []*schema.Column{OutboundMessagesColumns[21]},
 			},
 			{
 				Name:    "outboundmessage_workspace_id_broadcast_id_status",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[23], OutboundMessagesColumns[17], OutboundMessagesColumns[11]},
+				Columns: []*schema.Column{OutboundMessagesColumns[23], OutboundMessagesColumns[16], OutboundMessagesColumns[10]},
 			},
 			{
 				Name:    "outbound_messages_broadcast_recipient_id",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[20]},
+				Columns: []*schema.Column{OutboundMessagesColumns[19]},
 			},
 			{
 				Name:    "outbound_messages_broadcast_id",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[17]},
+				Columns: []*schema.Column{OutboundMessagesColumns[16]},
 			},
 			{
 				Name:    "outbound_messages_integration_id",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[19]},
+				Columns: []*schema.Column{OutboundMessagesColumns[18]},
 			},
 			{
 				Name:    "outbound_messages_automation_id",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[18]},
+				Columns: []*schema.Column{OutboundMessagesColumns[17]},
 			},
 			{
 				Name:    "outbound_messages_automation_run_id",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[21]},
+				Columns: []*schema.Column{OutboundMessagesColumns[20]},
 			},
 			{
 				Name:    "outbound_messages_template_id",
@@ -1207,7 +1227,7 @@ var (
 			{
 				Name:    "outbound_messages_workspace_id_sent_at_broadcast",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[23], OutboundMessagesColumns[14]},
+				Columns: []*schema.Column{OutboundMessagesColumns[23], OutboundMessagesColumns[13]},
 				Annotation: &entsql.IndexAnnotation{
 					Where: "broadcast_recipient_id IS NOT NULL",
 				},
@@ -1484,8 +1504,8 @@ var (
 		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email"}, Default: "email"},
 		{Name: "destination", Type: field.TypeString},
 		{Name: "reason", Type: field.TypeEnum, Enums: []string{"bounce", "complaint", "manual"}, Default: "manual"},
-		{Name: "contact_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "lifted_at", Type: field.TypeTime, Nullable: true},
+		{Name: "contact_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
 	// SuppressionsTable holds the schema information for the "suppressions" table.
@@ -1494,6 +1514,12 @@ var (
 		Columns:    SuppressionsColumns,
 		PrimaryKey: []*schema.Column{SuppressionsColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "suppressions_contacts_contact",
+				Columns:    []*schema.Column{SuppressionsColumns[7]},
+				RefColumns: []*schema.Column{ContactsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
 			{
 				Symbol:     "suppressions_workspaces_suppressions",
 				Columns:    []*schema.Column{SuppressionsColumns[8]},
@@ -1513,7 +1539,12 @@ var (
 			{
 				Name:    "suppressions_workspace_id_contact_id",
 				Unique:  false,
-				Columns: []*schema.Column{SuppressionsColumns[8], SuppressionsColumns[6]},
+				Columns: []*schema.Column{SuppressionsColumns[8], SuppressionsColumns[7]},
+			},
+			{
+				Name:    "suppressions_contact_id",
+				Unique:  false,
+				Columns: []*schema.Column{SuppressionsColumns[7]},
 			},
 		},
 	}
@@ -1586,6 +1617,12 @@ var (
 		PrimaryKey: []*schema.Column{UnsubscribesColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
+				Symbol:     "unsubscribes_contacts_contact",
+				Columns:    []*schema.Column{UnsubscribesColumns[6]},
+				RefColumns: []*schema.Column{ContactsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
 				Symbol:     "unsubscribes_workspaces_unsubscribes",
 				Columns:    []*schema.Column{UnsubscribesColumns[7]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
@@ -1599,12 +1636,9 @@ var (
 				Columns: []*schema.Column{UnsubscribesColumns[7], UnsubscribesColumns[3], UnsubscribesColumns[4], UnsubscribesColumns[5]},
 			},
 			{
-				Name:    "unsubscribes_workspace_id_contact_id",
+				Name:    "unsubscribes_contact_id",
 				Unique:  false,
-				Columns: []*schema.Column{UnsubscribesColumns[7], UnsubscribesColumns[6]},
-				Annotation: &entsql.IndexAnnotation{
-					Where: "contact_id IS NOT NULL",
-				},
+				Columns: []*schema.Column{UnsubscribesColumns[6]},
 			},
 		},
 	}
@@ -1893,8 +1927,9 @@ func init() {
 		"automations_status_check": "status IN ('draft', 'active')",
 	}
 	AutomationRunsTable.ForeignKeys[0].RefTable = AutomationsTable
-	AutomationRunsTable.ForeignKeys[1].RefTable = AutomationVersionsTable
-	AutomationRunsTable.ForeignKeys[2].RefTable = WorkspacesTable
+	AutomationRunsTable.ForeignKeys[1].RefTable = ContactsTable
+	AutomationRunsTable.ForeignKeys[2].RefTable = AutomationVersionsTable
+	AutomationRunsTable.ForeignKeys[3].RefTable = WorkspacesTable
 	AutomationRunsTable.Annotation = &entsql.Annotation{
 		Table: "automation_runs",
 	}
@@ -1923,11 +1958,13 @@ func init() {
 		"broadcasts_status_check":       "status IN ('draft', 'scheduled', 'sending', 'sent', 'failed')",
 	}
 	BroadcastRecipientsTable.ForeignKeys[0].RefTable = BroadcastsTable
-	BroadcastRecipientsTable.ForeignKeys[1].RefTable = WorkspacesTable
+	BroadcastRecipientsTable.ForeignKeys[1].RefTable = ContactsTable
+	BroadcastRecipientsTable.ForeignKeys[2].RefTable = WorkspacesTable
 	BroadcastRecipientsTable.Annotation = &entsql.Annotation{
 		Table: "broadcast_recipients",
 	}
-	ConfirmationsTable.ForeignKeys[0].RefTable = WorkspacesTable
+	ConfirmationsTable.ForeignKeys[0].RefTable = ContactsTable
+	ConfirmationsTable.ForeignKeys[1].RefTable = WorkspacesTable
 	ConfirmationsTable.Annotation = &entsql.Annotation{
 		Table: "confirmations",
 	}
@@ -2018,8 +2055,9 @@ func init() {
 	OutboundMessagesTable.ForeignKeys[2].RefTable = IntegrationsTable
 	OutboundMessagesTable.ForeignKeys[3].RefTable = BroadcastRecipientsTable
 	OutboundMessagesTable.ForeignKeys[4].RefTable = AutomationRunsTable
-	OutboundMessagesTable.ForeignKeys[5].RefTable = EmailTemplatesTable
-	OutboundMessagesTable.ForeignKeys[6].RefTable = WorkspacesTable
+	OutboundMessagesTable.ForeignKeys[5].RefTable = ContactsTable
+	OutboundMessagesTable.ForeignKeys[6].RefTable = EmailTemplatesTable
+	OutboundMessagesTable.ForeignKeys[7].RefTable = WorkspacesTable
 	OutboundMessagesTable.Annotation = &entsql.Annotation{
 		Table: "outbound_messages",
 	}
@@ -2066,7 +2104,8 @@ func init() {
 	StaffMembersTable.Annotation = &entsql.Annotation{
 		Table: "staff_members",
 	}
-	SuppressionsTable.ForeignKeys[0].RefTable = WorkspacesTable
+	SuppressionsTable.ForeignKeys[0].RefTable = ContactsTable
+	SuppressionsTable.ForeignKeys[1].RefTable = WorkspacesTable
 	SuppressionsTable.Annotation = &entsql.Annotation{
 		Table: "suppressions",
 	}
@@ -2084,7 +2123,8 @@ func init() {
 	TrackingHostChangesTable.Annotation.Checks = map[string]string{
 		"tracking_host_changes_state_check": "state IN ('dns_verified', 'serving', 'removed')",
 	}
-	UnsubscribesTable.ForeignKeys[0].RefTable = WorkspacesTable
+	UnsubscribesTable.ForeignKeys[0].RefTable = ContactsTable
+	UnsubscribesTable.ForeignKeys[1].RefTable = WorkspacesTable
 	UnsubscribesTable.Annotation = &entsql.Annotation{
 		Table: "unsubscribes",
 	}

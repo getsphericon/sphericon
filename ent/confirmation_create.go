@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/confirmation"
+	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
@@ -106,6 +107,11 @@ func (_c *ConfirmationCreate) SetID(v int64) *ConfirmationCreate {
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_c *ConfirmationCreate) SetWorkspace(v *Workspace) *ConfirmationCreate {
 	return _c.SetWorkspaceID(v.ID)
+}
+
+// SetContact sets the "contact" edge to the Contact entity.
+func (_c *ConfirmationCreate) SetContact(v *Contact) *ConfirmationCreate {
+	return _c.SetContactID(v.ID)
 }
 
 // Mutation returns the ConfirmationMutation object of the builder.
@@ -248,10 +254,6 @@ func (_c *ConfirmationCreate) createSpec() (*Confirmation, *sqlgraph.CreateSpec)
 		_spec.SetField(confirmation.FieldProvenance, field.TypeEnum, value)
 		_node.Provenance = value
 	}
-	if value, ok := _c.mutation.ContactID(); ok {
-		_spec.SetField(confirmation.FieldContactID, field.TypeInt64, value)
-		_node.ContactID = &value
-	}
 	if nodes := _c.mutation.WorkspaceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -267,6 +269,23 @@ func (_c *ConfirmationCreate) createSpec() (*Confirmation, *sqlgraph.CreateSpec)
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.WorkspaceID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ContactIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   confirmation.ContactTable,
+			Columns: []string{confirmation.ContactColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contact.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.ContactID = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -390,12 +409,6 @@ func (u *ConfirmationUpsert) SetContactID(v int64) *ConfirmationUpsert {
 // UpdateContactID sets the "contact_id" field to the value that was provided on create.
 func (u *ConfirmationUpsert) UpdateContactID() *ConfirmationUpsert {
 	u.SetExcluded(confirmation.FieldContactID)
-	return u
-}
-
-// AddContactID adds v to the "contact_id" field.
-func (u *ConfirmationUpsert) AddContactID(v int64) *ConfirmationUpsert {
-	u.Add(confirmation.FieldContactID, v)
 	return u
 }
 
@@ -530,13 +543,6 @@ func (u *ConfirmationUpsertOne) UpdateProvenance() *ConfirmationUpsertOne {
 func (u *ConfirmationUpsertOne) SetContactID(v int64) *ConfirmationUpsertOne {
 	return u.Update(func(s *ConfirmationUpsert) {
 		s.SetContactID(v)
-	})
-}
-
-// AddContactID adds v to the "contact_id" field.
-func (u *ConfirmationUpsertOne) AddContactID(v int64) *ConfirmationUpsertOne {
-	return u.Update(func(s *ConfirmationUpsert) {
-		s.AddContactID(v)
 	})
 }
 
@@ -845,13 +851,6 @@ func (u *ConfirmationUpsertBulk) UpdateProvenance() *ConfirmationUpsertBulk {
 func (u *ConfirmationUpsertBulk) SetContactID(v int64) *ConfirmationUpsertBulk {
 	return u.Update(func(s *ConfirmationUpsert) {
 		s.SetContactID(v)
-	})
-}
-
-// AddContactID adds v to the "contact_id" field.
-func (u *ConfirmationUpsertBulk) AddContactID(v int64) *ConfirmationUpsertBulk {
-	return u.Update(func(s *ConfirmationUpsert) {
-		s.AddContactID(v)
 	})
 }
 

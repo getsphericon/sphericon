@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
+	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
@@ -363,6 +364,11 @@ func (_c *OutboundMessageCreate) SetAutomationRun(v *AutomationRun) *OutboundMes
 	return _c.SetAutomationRunID(v.ID)
 }
 
+// SetContact sets the "contact" edge to the Contact entity.
+func (_c *OutboundMessageCreate) SetContact(v *Contact) *OutboundMessageCreate {
+	return _c.SetContactID(v.ID)
+}
+
 // SetTemplate sets the "template" edge to the EmailTemplate entity.
 func (_c *OutboundMessageCreate) SetTemplate(v *EmailTemplate) *OutboundMessageCreate {
 	return _c.SetTemplateID(v.ID)
@@ -531,10 +537,6 @@ func (_c *OutboundMessageCreate) createSpec() (*OutboundMessage, *sqlgraph.Creat
 		_spec.SetField(outboundmessage.FieldDestination, field.TypeString, value)
 		_node.Destination = value
 	}
-	if value, ok := _c.mutation.ContactID(); ok {
-		_spec.SetField(outboundmessage.FieldContactID, field.TypeInt64, value)
-		_node.ContactID = &value
-	}
 	if value, ok := _c.mutation.SendingSource(); ok {
 		_spec.SetField(outboundmessage.FieldSendingSource, field.TypeString, value)
 		_node.SendingSource = &value
@@ -673,6 +675,23 @@ func (_c *OutboundMessageCreate) createSpec() (*OutboundMessage, *sqlgraph.Creat
 		_node.AutomationRunID = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
+	if nodes := _c.mutation.ContactIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   outboundmessage.ContactTable,
+			Columns: []string{outboundmessage.ContactColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contact.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.ContactID = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
 	if nodes := _c.mutation.TemplateIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -805,12 +824,6 @@ func (u *OutboundMessageUpsert) SetContactID(v int64) *OutboundMessageUpsert {
 // UpdateContactID sets the "contact_id" field to the value that was provided on create.
 func (u *OutboundMessageUpsert) UpdateContactID() *OutboundMessageUpsert {
 	u.SetExcluded(outboundmessage.FieldContactID)
-	return u
-}
-
-// AddContactID adds v to the "contact_id" field.
-func (u *OutboundMessageUpsert) AddContactID(v int64) *OutboundMessageUpsert {
-	u.Add(outboundmessage.FieldContactID, v)
 	return u
 }
 
@@ -1193,13 +1206,6 @@ func (u *OutboundMessageUpsertOne) ClearDestination() *OutboundMessageUpsertOne 
 func (u *OutboundMessageUpsertOne) SetContactID(v int64) *OutboundMessageUpsertOne {
 	return u.Update(func(s *OutboundMessageUpsert) {
 		s.SetContactID(v)
-	})
-}
-
-// AddContactID adds v to the "contact_id" field.
-func (u *OutboundMessageUpsertOne) AddContactID(v int64) *OutboundMessageUpsertOne {
-	return u.Update(func(s *OutboundMessageUpsert) {
-		s.AddContactID(v)
 	})
 }
 
@@ -1797,13 +1803,6 @@ func (u *OutboundMessageUpsertBulk) ClearDestination() *OutboundMessageUpsertBul
 func (u *OutboundMessageUpsertBulk) SetContactID(v int64) *OutboundMessageUpsertBulk {
 	return u.Update(func(s *OutboundMessageUpsert) {
 		s.SetContactID(v)
-	})
-}
-
-// AddContactID adds v to the "contact_id" field.
-func (u *OutboundMessageUpsertBulk) AddContactID(v int64) *OutboundMessageUpsertBulk {
-	return u.Update(func(s *OutboundMessageUpsert) {
-		s.AddContactID(v)
 	})
 }
 

@@ -355,26 +355,6 @@ func ContactIDNotIn(vs ...int64) predicate.Unsubscribe {
 	return predicate.Unsubscribe(sql.FieldNotIn(FieldContactID, vs...))
 }
 
-// ContactIDGT applies the GT predicate on the "contact_id" field.
-func ContactIDGT(v int64) predicate.Unsubscribe {
-	return predicate.Unsubscribe(sql.FieldGT(FieldContactID, v))
-}
-
-// ContactIDGTE applies the GTE predicate on the "contact_id" field.
-func ContactIDGTE(v int64) predicate.Unsubscribe {
-	return predicate.Unsubscribe(sql.FieldGTE(FieldContactID, v))
-}
-
-// ContactIDLT applies the LT predicate on the "contact_id" field.
-func ContactIDLT(v int64) predicate.Unsubscribe {
-	return predicate.Unsubscribe(sql.FieldLT(FieldContactID, v))
-}
-
-// ContactIDLTE applies the LTE predicate on the "contact_id" field.
-func ContactIDLTE(v int64) predicate.Unsubscribe {
-	return predicate.Unsubscribe(sql.FieldLTE(FieldContactID, v))
-}
-
 // ContactIDIsNil applies the IsNil predicate on the "contact_id" field.
 func ContactIDIsNil() predicate.Unsubscribe {
 	return predicate.Unsubscribe(sql.FieldIsNull(FieldContactID))
@@ -400,6 +380,29 @@ func HasWorkspace() predicate.Unsubscribe {
 func HasWorkspaceWith(preds ...predicate.Workspace) predicate.Unsubscribe {
 	return predicate.Unsubscribe(func(s *sql.Selector) {
 		step := newWorkspaceStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasContact applies the HasEdge predicate on the "contact" edge.
+func HasContact() predicate.Unsubscribe {
+	return predicate.Unsubscribe(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, ContactTable, ContactColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasContactWith applies the HasEdge predicate on the "contact" edge with a given conditions (other predicates).
+func HasContactWith(preds ...predicate.Contact) predicate.Unsubscribe {
+	return predicate.Unsubscribe(func(s *sql.Selector) {
+		step := newContactStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

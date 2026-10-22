@@ -316,7 +316,7 @@ func ScopedEntities() []ScopedEntity {
 					},
 				},
 				{
-					Name: "contact_id", Target: "Contact",
+					Name: "contact", Target: "Contact",
 					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
 						return s.AutomationRun().UpdateOneID(id).SetContactID(target).Exec(ctx)
 					},
@@ -575,7 +575,7 @@ func ScopedEntities() []ScopedEntity {
 					},
 				},
 				{
-					Name: "contact_id", Target: "Contact",
+					Name: "contact", Target: "Contact",
 					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
 						return s.BroadcastRecipient().UpdateOneID(id).SetContactID(target).Exec(ctx)
 					},
@@ -615,7 +615,7 @@ func ScopedEntities() []ScopedEntity {
 				b.SetDestination(src.Destination)
 				b.SetProvenance(src.Provenance)
 				if src.ContactID != nil {
-					b.SetContactID(*src.ContactID)
+					b.SetContactID(remap("Contact", *src.ContactID))
 				}
 				created, err := b.Save(ctx)
 				if err != nil {
@@ -623,7 +623,14 @@ func ScopedEntities() []ScopedEntity {
 				}
 				return created.WorkspaceID, nil
 			},
-			Refs: []ScopedRef{},
+			Refs: []ScopedRef{
+				{
+					Name: "contact", Target: "Contact",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.Confirmation().UpdateOneID(id).SetContactID(target).Exec(ctx)
+					},
+				},
+			},
 		},
 		{
 			Name:    "Contact",
@@ -1282,15 +1289,15 @@ func ScopedEntities() []ScopedEntity {
 					},
 				},
 				{
-					Name: "template", Target: "EmailTemplate",
+					Name: "contact", Target: "Contact",
 					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
-						return s.OutboundMessage().UpdateOneID(id).SetTemplateID(target).Exec(ctx)
+						return s.OutboundMessage().UpdateOneID(id).SetContactID(target).Exec(ctx)
 					},
 				},
 				{
-					Name: "contact_id", Target: "Contact",
+					Name: "template", Target: "EmailTemplate",
 					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
-						return s.OutboundMessage().UpdateOneID(id).SetContactID(target).Exec(ctx)
+						return s.OutboundMessage().UpdateOneID(id).SetTemplateID(target).Exec(ctx)
 					},
 				},
 			},
@@ -1476,7 +1483,7 @@ func ScopedEntities() []ScopedEntity {
 				b.SetDestination(src.Destination)
 				b.SetReason(src.Reason)
 				if src.ContactID != nil {
-					b.SetContactID(*src.ContactID)
+					b.SetContactID(remap("Contact", *src.ContactID))
 				}
 				if src.LiftedAt != nil {
 					b.SetLiftedAt(*src.LiftedAt)
@@ -1487,7 +1494,14 @@ func ScopedEntities() []ScopedEntity {
 				}
 				return created.WorkspaceID, nil
 			},
-			Refs: []ScopedRef{},
+			Refs: []ScopedRef{
+				{
+					Name: "contact", Target: "Contact",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.Suppression().UpdateOneID(id).SetContactID(target).Exec(ctx)
+					},
+				},
+			},
 		},
 		{
 			Name:    "Tag",
@@ -1577,7 +1591,7 @@ func ScopedEntities() []ScopedEntity {
 			},
 			Refs: []ScopedRef{
 				{
-					Name: "contact_id", Target: "Contact",
+					Name: "contact", Target: "Contact",
 					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
 						return s.Unsubscribe().UpdateOneID(id).SetContactID(target).Exec(ctx)
 					},

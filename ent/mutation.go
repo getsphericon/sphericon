@@ -3976,8 +3976,6 @@ type AutomationRunMutation struct {
 	id                *int64
 	created_at        *time.Time
 	updated_at        *time.Time
-	contact_id        *int64
-	addcontact_id     *int64
 	status            *automationrun.Status
 	current_step      *int
 	addcurrent_step   *int
@@ -3993,6 +3991,8 @@ type AutomationRunMutation struct {
 	clearedautomation bool
 	version           *int64
 	clearedversion    bool
+	contact           *int64
+	clearedcontact    bool
 	done              bool
 	oldValue          func(context.Context) (*AutomationRun, error)
 	predicates        []predicate.AutomationRun
@@ -4248,13 +4248,12 @@ func (m *AutomationRunMutation) ResetAutomationID() {
 
 // SetContactID sets the "contact_id" field.
 func (m *AutomationRunMutation) SetContactID(i int64) {
-	m.contact_id = &i
-	m.addcontact_id = nil
+	m.contact = &i
 }
 
 // ContactID returns the value of the "contact_id" field in the mutation.
 func (m *AutomationRunMutation) ContactID() (r int64, exists bool) {
-	v := m.contact_id
+	v := m.contact
 	if v == nil {
 		return
 	}
@@ -4278,28 +4277,9 @@ func (m *AutomationRunMutation) OldContactID(ctx context.Context) (v int64, err 
 	return oldValue.ContactID, nil
 }
 
-// AddContactID adds i to the "contact_id" field.
-func (m *AutomationRunMutation) AddContactID(i int64) {
-	if m.addcontact_id != nil {
-		*m.addcontact_id += i
-	} else {
-		m.addcontact_id = &i
-	}
-}
-
-// AddedContactID returns the value that was added to the "contact_id" field in this mutation.
-func (m *AutomationRunMutation) AddedContactID() (r int64, exists bool) {
-	v := m.addcontact_id
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
 // ResetContactID resets all changes to the "contact_id" field.
 func (m *AutomationRunMutation) ResetContactID() {
-	m.contact_id = nil
-	m.addcontact_id = nil
+	m.contact = nil
 }
 
 // SetVersionID sets the "version_id" field.
@@ -4728,6 +4708,33 @@ func (m *AutomationRunMutation) ResetVersion() {
 	m.clearedversion = false
 }
 
+// ClearContact clears the "contact" edge to the Contact entity.
+func (m *AutomationRunMutation) ClearContact() {
+	m.clearedcontact = true
+	m.clearedFields[automationrun.FieldContactID] = struct{}{}
+}
+
+// ContactCleared reports if the "contact" edge to the Contact entity was cleared.
+func (m *AutomationRunMutation) ContactCleared() bool {
+	return m.clearedcontact
+}
+
+// ContactIDs returns the "contact" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ContactID instead. It exists only for internal usage by the builders.
+func (m *AutomationRunMutation) ContactIDs() (ids []int64) {
+	if id := m.contact; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetContact resets all changes to the "contact" edge.
+func (m *AutomationRunMutation) ResetContact() {
+	m.contact = nil
+	m.clearedcontact = false
+}
+
 // Where appends a list predicates to the AutomationRunMutation builder.
 func (m *AutomationRunMutation) Where(ps ...predicate.AutomationRun) {
 	m.predicates = append(m.predicates, ps...)
@@ -4775,7 +4782,7 @@ func (m *AutomationRunMutation) Fields() []string {
 	if m.automation != nil {
 		fields = append(fields, automationrun.FieldAutomationID)
 	}
-	if m.contact_id != nil {
+	if m.contact != nil {
 		fields = append(fields, automationrun.FieldContactID)
 	}
 	if m.version != nil {
@@ -4965,9 +4972,6 @@ func (m *AutomationRunMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *AutomationRunMutation) AddedFields() []string {
 	var fields []string
-	if m.addcontact_id != nil {
-		fields = append(fields, automationrun.FieldContactID)
-	}
 	if m.addcurrent_step != nil {
 		fields = append(fields, automationrun.FieldCurrentStep)
 	}
@@ -4982,8 +4986,6 @@ func (m *AutomationRunMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *AutomationRunMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
-	case automationrun.FieldContactID:
-		return m.AddedContactID()
 	case automationrun.FieldCurrentStep:
 		return m.AddedCurrentStep()
 	case automationrun.FieldFailureStatus:
@@ -4997,13 +4999,6 @@ func (m *AutomationRunMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *AutomationRunMutation) AddField(name string, value ent.Value) error {
 	switch name {
-	case automationrun.FieldContactID:
-		v, ok := value.(int64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddContactID(v)
-		return nil
 	case automationrun.FieldCurrentStep:
 		v, ok := value.(int)
 		if !ok {
@@ -5114,7 +5109,7 @@ func (m *AutomationRunMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *AutomationRunMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.workspace != nil {
 		edges = append(edges, automationrun.EdgeWorkspace)
 	}
@@ -5123,6 +5118,9 @@ func (m *AutomationRunMutation) AddedEdges() []string {
 	}
 	if m.version != nil {
 		edges = append(edges, automationrun.EdgeVersion)
+	}
+	if m.contact != nil {
+		edges = append(edges, automationrun.EdgeContact)
 	}
 	return edges
 }
@@ -5143,13 +5141,17 @@ func (m *AutomationRunMutation) AddedIDs(name string) []ent.Value {
 		if id := m.version; id != nil {
 			return []ent.Value{*id}
 		}
+	case automationrun.EdgeContact:
+		if id := m.contact; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *AutomationRunMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	return edges
 }
 
@@ -5161,7 +5163,7 @@ func (m *AutomationRunMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *AutomationRunMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.clearedworkspace {
 		edges = append(edges, automationrun.EdgeWorkspace)
 	}
@@ -5170,6 +5172,9 @@ func (m *AutomationRunMutation) ClearedEdges() []string {
 	}
 	if m.clearedversion {
 		edges = append(edges, automationrun.EdgeVersion)
+	}
+	if m.clearedcontact {
+		edges = append(edges, automationrun.EdgeContact)
 	}
 	return edges
 }
@@ -5184,6 +5189,8 @@ func (m *AutomationRunMutation) EdgeCleared(name string) bool {
 		return m.clearedautomation
 	case automationrun.EdgeVersion:
 		return m.clearedversion
+	case automationrun.EdgeContact:
+		return m.clearedcontact
 	}
 	return false
 }
@@ -5201,6 +5208,9 @@ func (m *AutomationRunMutation) ClearEdge(name string) error {
 	case automationrun.EdgeVersion:
 		m.ClearVersion()
 		return nil
+	case automationrun.EdgeContact:
+		m.ClearContact()
+		return nil
 	}
 	return fmt.Errorf("unknown AutomationRun unique edge %s", name)
 }
@@ -5217,6 +5227,9 @@ func (m *AutomationRunMutation) ResetEdge(name string) error {
 		return nil
 	case automationrun.EdgeVersion:
 		m.ResetVersion()
+		return nil
+	case automationrun.EdgeContact:
+		m.ResetContact()
 		return nil
 	}
 	return fmt.Errorf("unknown AutomationRun edge %s", name)
@@ -8836,8 +8849,6 @@ type BroadcastRecipientMutation struct {
 	id               *int64
 	created_at       *time.Time
 	updated_at       *time.Time
-	contact_id       *int64
-	addcontact_id    *int64
 	deferred_until   *time.Time
 	opened_at        *time.Time
 	clicked_at       *time.Time
@@ -8847,6 +8858,8 @@ type BroadcastRecipientMutation struct {
 	clearedworkspace bool
 	broadcast        *int64
 	clearedbroadcast bool
+	contact          *int64
+	clearedcontact   bool
 	done             bool
 	oldValue         func(context.Context) (*BroadcastRecipient, error)
 	predicates       []predicate.BroadcastRecipient
@@ -9102,13 +9115,12 @@ func (m *BroadcastRecipientMutation) ResetBroadcastID() {
 
 // SetContactID sets the "contact_id" field.
 func (m *BroadcastRecipientMutation) SetContactID(i int64) {
-	m.contact_id = &i
-	m.addcontact_id = nil
+	m.contact = &i
 }
 
 // ContactID returns the value of the "contact_id" field in the mutation.
 func (m *BroadcastRecipientMutation) ContactID() (r int64, exists bool) {
-	v := m.contact_id
+	v := m.contact
 	if v == nil {
 		return
 	}
@@ -9132,28 +9144,9 @@ func (m *BroadcastRecipientMutation) OldContactID(ctx context.Context) (v int64,
 	return oldValue.ContactID, nil
 }
 
-// AddContactID adds i to the "contact_id" field.
-func (m *BroadcastRecipientMutation) AddContactID(i int64) {
-	if m.addcontact_id != nil {
-		*m.addcontact_id += i
-	} else {
-		m.addcontact_id = &i
-	}
-}
-
-// AddedContactID returns the value that was added to the "contact_id" field in this mutation.
-func (m *BroadcastRecipientMutation) AddedContactID() (r int64, exists bool) {
-	v := m.addcontact_id
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
 // ClearContactID clears the value of the "contact_id" field.
 func (m *BroadcastRecipientMutation) ClearContactID() {
-	m.contact_id = nil
-	m.addcontact_id = nil
+	m.contact = nil
 	m.clearedFields[broadcastrecipient.FieldContactID] = struct{}{}
 }
 
@@ -9165,8 +9158,7 @@ func (m *BroadcastRecipientMutation) ContactIDCleared() bool {
 
 // ResetContactID resets all changes to the "contact_id" field.
 func (m *BroadcastRecipientMutation) ResetContactID() {
-	m.contact_id = nil
-	m.addcontact_id = nil
+	m.contact = nil
 	delete(m.clearedFields, broadcastrecipient.FieldContactID)
 }
 
@@ -9420,6 +9412,33 @@ func (m *BroadcastRecipientMutation) ResetBroadcast() {
 	m.clearedbroadcast = false
 }
 
+// ClearContact clears the "contact" edge to the Contact entity.
+func (m *BroadcastRecipientMutation) ClearContact() {
+	m.clearedcontact = true
+	m.clearedFields[broadcastrecipient.FieldContactID] = struct{}{}
+}
+
+// ContactCleared reports if the "contact" edge to the Contact entity was cleared.
+func (m *BroadcastRecipientMutation) ContactCleared() bool {
+	return m.ContactIDCleared() || m.clearedcontact
+}
+
+// ContactIDs returns the "contact" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ContactID instead. It exists only for internal usage by the builders.
+func (m *BroadcastRecipientMutation) ContactIDs() (ids []int64) {
+	if id := m.contact; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetContact resets all changes to the "contact" edge.
+func (m *BroadcastRecipientMutation) ResetContact() {
+	m.contact = nil
+	m.clearedcontact = false
+}
+
 // Where appends a list predicates to the BroadcastRecipientMutation builder.
 func (m *BroadcastRecipientMutation) Where(ps ...predicate.BroadcastRecipient) {
 	m.predicates = append(m.predicates, ps...)
@@ -9467,7 +9486,7 @@ func (m *BroadcastRecipientMutation) Fields() []string {
 	if m.broadcast != nil {
 		fields = append(fields, broadcastrecipient.FieldBroadcastID)
 	}
-	if m.contact_id != nil {
+	if m.contact != nil {
 		fields = append(fields, broadcastrecipient.FieldContactID)
 	}
 	if m.deferred_until != nil {
@@ -9615,9 +9634,6 @@ func (m *BroadcastRecipientMutation) SetField(name string, value ent.Value) erro
 // this mutation.
 func (m *BroadcastRecipientMutation) AddedFields() []string {
 	var fields []string
-	if m.addcontact_id != nil {
-		fields = append(fields, broadcastrecipient.FieldContactID)
-	}
 	return fields
 }
 
@@ -9626,8 +9642,6 @@ func (m *BroadcastRecipientMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *BroadcastRecipientMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
-	case broadcastrecipient.FieldContactID:
-		return m.AddedContactID()
 	}
 	return nil, false
 }
@@ -9637,13 +9651,6 @@ func (m *BroadcastRecipientMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *BroadcastRecipientMutation) AddField(name string, value ent.Value) error {
 	switch name {
-	case broadcastrecipient.FieldContactID:
-		v, ok := value.(int64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddContactID(v)
-		return nil
 	}
 	return fmt.Errorf("unknown BroadcastRecipient numeric field %s", name)
 }
@@ -9737,12 +9744,15 @@ func (m *BroadcastRecipientMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *BroadcastRecipientMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.workspace != nil {
 		edges = append(edges, broadcastrecipient.EdgeWorkspace)
 	}
 	if m.broadcast != nil {
 		edges = append(edges, broadcastrecipient.EdgeBroadcast)
+	}
+	if m.contact != nil {
+		edges = append(edges, broadcastrecipient.EdgeContact)
 	}
 	return edges
 }
@@ -9759,13 +9769,17 @@ func (m *BroadcastRecipientMutation) AddedIDs(name string) []ent.Value {
 		if id := m.broadcast; id != nil {
 			return []ent.Value{*id}
 		}
+	case broadcastrecipient.EdgeContact:
+		if id := m.contact; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *BroadcastRecipientMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	return edges
 }
 
@@ -9777,12 +9791,15 @@ func (m *BroadcastRecipientMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *BroadcastRecipientMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.clearedworkspace {
 		edges = append(edges, broadcastrecipient.EdgeWorkspace)
 	}
 	if m.clearedbroadcast {
 		edges = append(edges, broadcastrecipient.EdgeBroadcast)
+	}
+	if m.clearedcontact {
+		edges = append(edges, broadcastrecipient.EdgeContact)
 	}
 	return edges
 }
@@ -9795,6 +9812,8 @@ func (m *BroadcastRecipientMutation) EdgeCleared(name string) bool {
 		return m.clearedworkspace
 	case broadcastrecipient.EdgeBroadcast:
 		return m.clearedbroadcast
+	case broadcastrecipient.EdgeContact:
+		return m.clearedcontact
 	}
 	return false
 }
@@ -9809,6 +9828,9 @@ func (m *BroadcastRecipientMutation) ClearEdge(name string) error {
 	case broadcastrecipient.EdgeBroadcast:
 		m.ClearBroadcast()
 		return nil
+	case broadcastrecipient.EdgeContact:
+		m.ClearContact()
+		return nil
 	}
 	return fmt.Errorf("unknown BroadcastRecipient unique edge %s", name)
 }
@@ -9822,6 +9844,9 @@ func (m *BroadcastRecipientMutation) ResetEdge(name string) error {
 		return nil
 	case broadcastrecipient.EdgeBroadcast:
 		m.ResetBroadcast()
+		return nil
+	case broadcastrecipient.EdgeContact:
+		m.ResetContact()
 		return nil
 	}
 	return fmt.Errorf("unknown BroadcastRecipient edge %s", name)
@@ -9838,11 +9863,11 @@ type ConfirmationMutation struct {
 	channel          *confirmation.Channel
 	destination      *string
 	provenance       *confirmation.Provenance
-	contact_id       *int64
-	addcontact_id    *int64
 	clearedFields    map[string]struct{}
 	workspace        *int64
 	clearedworkspace bool
+	contact          *int64
+	clearedcontact   bool
 	done             bool
 	oldValue         func(context.Context) (*Confirmation, error)
 	predicates       []predicate.Confirmation
@@ -10170,13 +10195,12 @@ func (m *ConfirmationMutation) ResetProvenance() {
 
 // SetContactID sets the "contact_id" field.
 func (m *ConfirmationMutation) SetContactID(i int64) {
-	m.contact_id = &i
-	m.addcontact_id = nil
+	m.contact = &i
 }
 
 // ContactID returns the value of the "contact_id" field in the mutation.
 func (m *ConfirmationMutation) ContactID() (r int64, exists bool) {
-	v := m.contact_id
+	v := m.contact
 	if v == nil {
 		return
 	}
@@ -10200,28 +10224,9 @@ func (m *ConfirmationMutation) OldContactID(ctx context.Context) (v *int64, err 
 	return oldValue.ContactID, nil
 }
 
-// AddContactID adds i to the "contact_id" field.
-func (m *ConfirmationMutation) AddContactID(i int64) {
-	if m.addcontact_id != nil {
-		*m.addcontact_id += i
-	} else {
-		m.addcontact_id = &i
-	}
-}
-
-// AddedContactID returns the value that was added to the "contact_id" field in this mutation.
-func (m *ConfirmationMutation) AddedContactID() (r int64, exists bool) {
-	v := m.addcontact_id
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
 // ClearContactID clears the value of the "contact_id" field.
 func (m *ConfirmationMutation) ClearContactID() {
-	m.contact_id = nil
-	m.addcontact_id = nil
+	m.contact = nil
 	m.clearedFields[confirmation.FieldContactID] = struct{}{}
 }
 
@@ -10233,8 +10238,7 @@ func (m *ConfirmationMutation) ContactIDCleared() bool {
 
 // ResetContactID resets all changes to the "contact_id" field.
 func (m *ConfirmationMutation) ResetContactID() {
-	m.contact_id = nil
-	m.addcontact_id = nil
+	m.contact = nil
 	delete(m.clearedFields, confirmation.FieldContactID)
 }
 
@@ -10263,6 +10267,33 @@ func (m *ConfirmationMutation) WorkspaceIDs() (ids []int64) {
 func (m *ConfirmationMutation) ResetWorkspace() {
 	m.workspace = nil
 	m.clearedworkspace = false
+}
+
+// ClearContact clears the "contact" edge to the Contact entity.
+func (m *ConfirmationMutation) ClearContact() {
+	m.clearedcontact = true
+	m.clearedFields[confirmation.FieldContactID] = struct{}{}
+}
+
+// ContactCleared reports if the "contact" edge to the Contact entity was cleared.
+func (m *ConfirmationMutation) ContactCleared() bool {
+	return m.ContactIDCleared() || m.clearedcontact
+}
+
+// ContactIDs returns the "contact" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ContactID instead. It exists only for internal usage by the builders.
+func (m *ConfirmationMutation) ContactIDs() (ids []int64) {
+	if id := m.contact; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetContact resets all changes to the "contact" edge.
+func (m *ConfirmationMutation) ResetContact() {
+	m.contact = nil
+	m.clearedcontact = false
 }
 
 // Where appends a list predicates to the ConfirmationMutation builder.
@@ -10318,7 +10349,7 @@ func (m *ConfirmationMutation) Fields() []string {
 	if m.provenance != nil {
 		fields = append(fields, confirmation.FieldProvenance)
 	}
-	if m.contact_id != nil {
+	if m.contact != nil {
 		fields = append(fields, confirmation.FieldContactID)
 	}
 	return fields
@@ -10432,9 +10463,6 @@ func (m *ConfirmationMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *ConfirmationMutation) AddedFields() []string {
 	var fields []string
-	if m.addcontact_id != nil {
-		fields = append(fields, confirmation.FieldContactID)
-	}
 	return fields
 }
 
@@ -10443,8 +10471,6 @@ func (m *ConfirmationMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *ConfirmationMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
-	case confirmation.FieldContactID:
-		return m.AddedContactID()
 	}
 	return nil, false
 }
@@ -10454,13 +10480,6 @@ func (m *ConfirmationMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *ConfirmationMutation) AddField(name string, value ent.Value) error {
 	switch name {
-	case confirmation.FieldContactID:
-		v, ok := value.(int64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddContactID(v)
-		return nil
 	}
 	return fmt.Errorf("unknown Confirmation numeric field %s", name)
 }
@@ -10524,9 +10543,12 @@ func (m *ConfirmationMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *ConfirmationMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.workspace != nil {
 		edges = append(edges, confirmation.EdgeWorkspace)
+	}
+	if m.contact != nil {
+		edges = append(edges, confirmation.EdgeContact)
 	}
 	return edges
 }
@@ -10539,13 +10561,17 @@ func (m *ConfirmationMutation) AddedIDs(name string) []ent.Value {
 		if id := m.workspace; id != nil {
 			return []ent.Value{*id}
 		}
+	case confirmation.EdgeContact:
+		if id := m.contact; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *ConfirmationMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	return edges
 }
 
@@ -10557,9 +10583,12 @@ func (m *ConfirmationMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *ConfirmationMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.clearedworkspace {
 		edges = append(edges, confirmation.EdgeWorkspace)
+	}
+	if m.clearedcontact {
+		edges = append(edges, confirmation.EdgeContact)
 	}
 	return edges
 }
@@ -10570,6 +10599,8 @@ func (m *ConfirmationMutation) EdgeCleared(name string) bool {
 	switch name {
 	case confirmation.EdgeWorkspace:
 		return m.clearedworkspace
+	case confirmation.EdgeContact:
+		return m.clearedcontact
 	}
 	return false
 }
@@ -10581,6 +10612,9 @@ func (m *ConfirmationMutation) ClearEdge(name string) error {
 	case confirmation.EdgeWorkspace:
 		m.ClearWorkspace()
 		return nil
+	case confirmation.EdgeContact:
+		m.ClearContact()
+		return nil
 	}
 	return fmt.Errorf("unknown Confirmation unique edge %s", name)
 }
@@ -10591,6 +10625,9 @@ func (m *ConfirmationMutation) ResetEdge(name string) error {
 	switch name {
 	case confirmation.EdgeWorkspace:
 		m.ResetWorkspace()
+		return nil
+	case confirmation.EdgeContact:
+		m.ResetContact()
 		return nil
 	}
 	return fmt.Errorf("unknown Confirmation edge %s", name)
@@ -24279,8 +24316,6 @@ type OutboundMessageMutation struct {
 	idempotency_key            *string
 	channel                    *outboundmessage.Channel
 	destination                *string
-	contact_id                 *int64
-	addcontact_id              *int64
 	sending_source             *string
 	sending_domain             *string
 	provider_message_id        *string
@@ -24304,6 +24339,8 @@ type OutboundMessageMutation struct {
 	clearedbroadcast_recipient bool
 	automation_run             *int64
 	clearedautomation_run      bool
+	contact                    *int64
+	clearedcontact             bool
 	template                   *int64
 	clearedtemplate            bool
 	done                       bool
@@ -24682,13 +24719,12 @@ func (m *OutboundMessageMutation) ResetDestination() {
 
 // SetContactID sets the "contact_id" field.
 func (m *OutboundMessageMutation) SetContactID(i int64) {
-	m.contact_id = &i
-	m.addcontact_id = nil
+	m.contact = &i
 }
 
 // ContactID returns the value of the "contact_id" field in the mutation.
 func (m *OutboundMessageMutation) ContactID() (r int64, exists bool) {
-	v := m.contact_id
+	v := m.contact
 	if v == nil {
 		return
 	}
@@ -24712,28 +24748,9 @@ func (m *OutboundMessageMutation) OldContactID(ctx context.Context) (v *int64, e
 	return oldValue.ContactID, nil
 }
 
-// AddContactID adds i to the "contact_id" field.
-func (m *OutboundMessageMutation) AddContactID(i int64) {
-	if m.addcontact_id != nil {
-		*m.addcontact_id += i
-	} else {
-		m.addcontact_id = &i
-	}
-}
-
-// AddedContactID returns the value that was added to the "contact_id" field in this mutation.
-func (m *OutboundMessageMutation) AddedContactID() (r int64, exists bool) {
-	v := m.addcontact_id
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
 // ClearContactID clears the value of the "contact_id" field.
 func (m *OutboundMessageMutation) ClearContactID() {
-	m.contact_id = nil
-	m.addcontact_id = nil
+	m.contact = nil
 	m.clearedFields[outboundmessage.FieldContactID] = struct{}{}
 }
 
@@ -24745,8 +24762,7 @@ func (m *OutboundMessageMutation) ContactIDCleared() bool {
 
 // ResetContactID resets all changes to the "contact_id" field.
 func (m *OutboundMessageMutation) ResetContactID() {
-	m.contact_id = nil
-	m.addcontact_id = nil
+	m.contact = nil
 	delete(m.clearedFields, outboundmessage.FieldContactID)
 }
 
@@ -25642,6 +25658,33 @@ func (m *OutboundMessageMutation) ResetAutomationRun() {
 	m.clearedautomation_run = false
 }
 
+// ClearContact clears the "contact" edge to the Contact entity.
+func (m *OutboundMessageMutation) ClearContact() {
+	m.clearedcontact = true
+	m.clearedFields[outboundmessage.FieldContactID] = struct{}{}
+}
+
+// ContactCleared reports if the "contact" edge to the Contact entity was cleared.
+func (m *OutboundMessageMutation) ContactCleared() bool {
+	return m.ContactIDCleared() || m.clearedcontact
+}
+
+// ContactIDs returns the "contact" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ContactID instead. It exists only for internal usage by the builders.
+func (m *OutboundMessageMutation) ContactIDs() (ids []int64) {
+	if id := m.contact; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetContact resets all changes to the "contact" edge.
+func (m *OutboundMessageMutation) ResetContact() {
+	m.contact = nil
+	m.clearedcontact = false
+}
+
 // ClearTemplate clears the "template" edge to the EmailTemplate entity.
 func (m *OutboundMessageMutation) ClearTemplate() {
 	m.clearedtemplate = true
@@ -25725,7 +25768,7 @@ func (m *OutboundMessageMutation) Fields() []string {
 	if m.destination != nil {
 		fields = append(fields, outboundmessage.FieldDestination)
 	}
-	if m.contact_id != nil {
+	if m.contact != nil {
 		fields = append(fields, outboundmessage.FieldContactID)
 	}
 	if m.sending_source != nil {
@@ -26060,9 +26103,6 @@ func (m *OutboundMessageMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *OutboundMessageMutation) AddedFields() []string {
 	var fields []string
-	if m.addcontact_id != nil {
-		fields = append(fields, outboundmessage.FieldContactID)
-	}
 	if m.addautomation_step != nil {
 		fields = append(fields, outboundmessage.FieldAutomationStep)
 	}
@@ -26074,8 +26114,6 @@ func (m *OutboundMessageMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *OutboundMessageMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
-	case outboundmessage.FieldContactID:
-		return m.AddedContactID()
 	case outboundmessage.FieldAutomationStep:
 		return m.AddedAutomationStep()
 	}
@@ -26087,13 +26125,6 @@ func (m *OutboundMessageMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *OutboundMessageMutation) AddField(name string, value ent.Value) error {
 	switch name {
-	case outboundmessage.FieldContactID:
-		v, ok := value.(int64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddContactID(v)
-		return nil
 	case outboundmessage.FieldAutomationStep:
 		v, ok := value.(int)
 		if !ok {
@@ -26296,7 +26327,7 @@ func (m *OutboundMessageMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *OutboundMessageMutation) AddedEdges() []string {
-	edges := make([]string, 0, 7)
+	edges := make([]string, 0, 8)
 	if m.workspace != nil {
 		edges = append(edges, outboundmessage.EdgeWorkspace)
 	}
@@ -26314,6 +26345,9 @@ func (m *OutboundMessageMutation) AddedEdges() []string {
 	}
 	if m.automation_run != nil {
 		edges = append(edges, outboundmessage.EdgeAutomationRun)
+	}
+	if m.contact != nil {
+		edges = append(edges, outboundmessage.EdgeContact)
 	}
 	if m.template != nil {
 		edges = append(edges, outboundmessage.EdgeTemplate)
@@ -26349,6 +26383,10 @@ func (m *OutboundMessageMutation) AddedIDs(name string) []ent.Value {
 		if id := m.automation_run; id != nil {
 			return []ent.Value{*id}
 		}
+	case outboundmessage.EdgeContact:
+		if id := m.contact; id != nil {
+			return []ent.Value{*id}
+		}
 	case outboundmessage.EdgeTemplate:
 		if id := m.template; id != nil {
 			return []ent.Value{*id}
@@ -26359,7 +26397,7 @@ func (m *OutboundMessageMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *OutboundMessageMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 7)
+	edges := make([]string, 0, 8)
 	return edges
 }
 
@@ -26371,7 +26409,7 @@ func (m *OutboundMessageMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *OutboundMessageMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 7)
+	edges := make([]string, 0, 8)
 	if m.clearedworkspace {
 		edges = append(edges, outboundmessage.EdgeWorkspace)
 	}
@@ -26389,6 +26427,9 @@ func (m *OutboundMessageMutation) ClearedEdges() []string {
 	}
 	if m.clearedautomation_run {
 		edges = append(edges, outboundmessage.EdgeAutomationRun)
+	}
+	if m.clearedcontact {
+		edges = append(edges, outboundmessage.EdgeContact)
 	}
 	if m.clearedtemplate {
 		edges = append(edges, outboundmessage.EdgeTemplate)
@@ -26412,6 +26453,8 @@ func (m *OutboundMessageMutation) EdgeCleared(name string) bool {
 		return m.clearedbroadcast_recipient
 	case outboundmessage.EdgeAutomationRun:
 		return m.clearedautomation_run
+	case outboundmessage.EdgeContact:
+		return m.clearedcontact
 	case outboundmessage.EdgeTemplate:
 		return m.clearedtemplate
 	}
@@ -26439,6 +26482,9 @@ func (m *OutboundMessageMutation) ClearEdge(name string) error {
 		return nil
 	case outboundmessage.EdgeAutomationRun:
 		m.ClearAutomationRun()
+		return nil
+	case outboundmessage.EdgeContact:
+		m.ClearContact()
 		return nil
 	case outboundmessage.EdgeTemplate:
 		m.ClearTemplate()
@@ -26468,6 +26514,9 @@ func (m *OutboundMessageMutation) ResetEdge(name string) error {
 		return nil
 	case outboundmessage.EdgeAutomationRun:
 		m.ResetAutomationRun()
+		return nil
+	case outboundmessage.EdgeContact:
+		m.ResetContact()
 		return nil
 	case outboundmessage.EdgeTemplate:
 		m.ResetTemplate()
@@ -35190,12 +35239,12 @@ type SuppressionMutation struct {
 	channel          *suppression.Channel
 	destination      *string
 	reason           *suppression.Reason
-	contact_id       *int64
-	addcontact_id    *int64
 	lifted_at        *time.Time
 	clearedFields    map[string]struct{}
 	workspace        *int64
 	clearedworkspace bool
+	contact          *int64
+	clearedcontact   bool
 	done             bool
 	oldValue         func(context.Context) (*Suppression, error)
 	predicates       []predicate.Suppression
@@ -35523,13 +35572,12 @@ func (m *SuppressionMutation) ResetReason() {
 
 // SetContactID sets the "contact_id" field.
 func (m *SuppressionMutation) SetContactID(i int64) {
-	m.contact_id = &i
-	m.addcontact_id = nil
+	m.contact = &i
 }
 
 // ContactID returns the value of the "contact_id" field in the mutation.
 func (m *SuppressionMutation) ContactID() (r int64, exists bool) {
-	v := m.contact_id
+	v := m.contact
 	if v == nil {
 		return
 	}
@@ -35553,28 +35601,9 @@ func (m *SuppressionMutation) OldContactID(ctx context.Context) (v *int64, err e
 	return oldValue.ContactID, nil
 }
 
-// AddContactID adds i to the "contact_id" field.
-func (m *SuppressionMutation) AddContactID(i int64) {
-	if m.addcontact_id != nil {
-		*m.addcontact_id += i
-	} else {
-		m.addcontact_id = &i
-	}
-}
-
-// AddedContactID returns the value that was added to the "contact_id" field in this mutation.
-func (m *SuppressionMutation) AddedContactID() (r int64, exists bool) {
-	v := m.addcontact_id
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
 // ClearContactID clears the value of the "contact_id" field.
 func (m *SuppressionMutation) ClearContactID() {
-	m.contact_id = nil
-	m.addcontact_id = nil
+	m.contact = nil
 	m.clearedFields[suppression.FieldContactID] = struct{}{}
 }
 
@@ -35586,8 +35615,7 @@ func (m *SuppressionMutation) ContactIDCleared() bool {
 
 // ResetContactID resets all changes to the "contact_id" field.
 func (m *SuppressionMutation) ResetContactID() {
-	m.contact_id = nil
-	m.addcontact_id = nil
+	m.contact = nil
 	delete(m.clearedFields, suppression.FieldContactID)
 }
 
@@ -35667,6 +35695,33 @@ func (m *SuppressionMutation) ResetWorkspace() {
 	m.clearedworkspace = false
 }
 
+// ClearContact clears the "contact" edge to the Contact entity.
+func (m *SuppressionMutation) ClearContact() {
+	m.clearedcontact = true
+	m.clearedFields[suppression.FieldContactID] = struct{}{}
+}
+
+// ContactCleared reports if the "contact" edge to the Contact entity was cleared.
+func (m *SuppressionMutation) ContactCleared() bool {
+	return m.ContactIDCleared() || m.clearedcontact
+}
+
+// ContactIDs returns the "contact" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ContactID instead. It exists only for internal usage by the builders.
+func (m *SuppressionMutation) ContactIDs() (ids []int64) {
+	if id := m.contact; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetContact resets all changes to the "contact" edge.
+func (m *SuppressionMutation) ResetContact() {
+	m.contact = nil
+	m.clearedcontact = false
+}
+
 // Where appends a list predicates to the SuppressionMutation builder.
 func (m *SuppressionMutation) Where(ps ...predicate.Suppression) {
 	m.predicates = append(m.predicates, ps...)
@@ -35720,7 +35775,7 @@ func (m *SuppressionMutation) Fields() []string {
 	if m.reason != nil {
 		fields = append(fields, suppression.FieldReason)
 	}
-	if m.contact_id != nil {
+	if m.contact != nil {
 		fields = append(fields, suppression.FieldContactID)
 	}
 	if m.lifted_at != nil {
@@ -35848,9 +35903,6 @@ func (m *SuppressionMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *SuppressionMutation) AddedFields() []string {
 	var fields []string
-	if m.addcontact_id != nil {
-		fields = append(fields, suppression.FieldContactID)
-	}
 	return fields
 }
 
@@ -35859,8 +35911,6 @@ func (m *SuppressionMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *SuppressionMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
-	case suppression.FieldContactID:
-		return m.AddedContactID()
 	}
 	return nil, false
 }
@@ -35870,13 +35920,6 @@ func (m *SuppressionMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *SuppressionMutation) AddField(name string, value ent.Value) error {
 	switch name {
-	case suppression.FieldContactID:
-		v, ok := value.(int64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddContactID(v)
-		return nil
 	}
 	return fmt.Errorf("unknown Suppression numeric field %s", name)
 }
@@ -35949,9 +35992,12 @@ func (m *SuppressionMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *SuppressionMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.workspace != nil {
 		edges = append(edges, suppression.EdgeWorkspace)
+	}
+	if m.contact != nil {
+		edges = append(edges, suppression.EdgeContact)
 	}
 	return edges
 }
@@ -35964,13 +36010,17 @@ func (m *SuppressionMutation) AddedIDs(name string) []ent.Value {
 		if id := m.workspace; id != nil {
 			return []ent.Value{*id}
 		}
+	case suppression.EdgeContact:
+		if id := m.contact; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *SuppressionMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	return edges
 }
 
@@ -35982,9 +36032,12 @@ func (m *SuppressionMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *SuppressionMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.clearedworkspace {
 		edges = append(edges, suppression.EdgeWorkspace)
+	}
+	if m.clearedcontact {
+		edges = append(edges, suppression.EdgeContact)
 	}
 	return edges
 }
@@ -35995,6 +36048,8 @@ func (m *SuppressionMutation) EdgeCleared(name string) bool {
 	switch name {
 	case suppression.EdgeWorkspace:
 		return m.clearedworkspace
+	case suppression.EdgeContact:
+		return m.clearedcontact
 	}
 	return false
 }
@@ -36006,6 +36061,9 @@ func (m *SuppressionMutation) ClearEdge(name string) error {
 	case suppression.EdgeWorkspace:
 		m.ClearWorkspace()
 		return nil
+	case suppression.EdgeContact:
+		m.ClearContact()
+		return nil
 	}
 	return fmt.Errorf("unknown Suppression unique edge %s", name)
 }
@@ -36016,6 +36074,9 @@ func (m *SuppressionMutation) ResetEdge(name string) error {
 	switch name {
 	case suppression.EdgeWorkspace:
 		m.ResetWorkspace()
+		return nil
+	case suppression.EdgeContact:
+		m.ResetContact()
 		return nil
 	}
 	return fmt.Errorf("unknown Suppression edge %s", name)
@@ -37252,11 +37313,11 @@ type UnsubscribeMutation struct {
 	channel          *unsubscribe.Channel
 	destination      *string
 	sending_source   *string
-	contact_id       *int64
-	addcontact_id    *int64
 	clearedFields    map[string]struct{}
 	workspace        *int64
 	clearedworkspace bool
+	contact          *int64
+	clearedcontact   bool
 	done             bool
 	oldValue         func(context.Context) (*Unsubscribe, error)
 	predicates       []predicate.Unsubscribe
@@ -37584,13 +37645,12 @@ func (m *UnsubscribeMutation) ResetSendingSource() {
 
 // SetContactID sets the "contact_id" field.
 func (m *UnsubscribeMutation) SetContactID(i int64) {
-	m.contact_id = &i
-	m.addcontact_id = nil
+	m.contact = &i
 }
 
 // ContactID returns the value of the "contact_id" field in the mutation.
 func (m *UnsubscribeMutation) ContactID() (r int64, exists bool) {
-	v := m.contact_id
+	v := m.contact
 	if v == nil {
 		return
 	}
@@ -37614,28 +37674,9 @@ func (m *UnsubscribeMutation) OldContactID(ctx context.Context) (v *int64, err e
 	return oldValue.ContactID, nil
 }
 
-// AddContactID adds i to the "contact_id" field.
-func (m *UnsubscribeMutation) AddContactID(i int64) {
-	if m.addcontact_id != nil {
-		*m.addcontact_id += i
-	} else {
-		m.addcontact_id = &i
-	}
-}
-
-// AddedContactID returns the value that was added to the "contact_id" field in this mutation.
-func (m *UnsubscribeMutation) AddedContactID() (r int64, exists bool) {
-	v := m.addcontact_id
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
 // ClearContactID clears the value of the "contact_id" field.
 func (m *UnsubscribeMutation) ClearContactID() {
-	m.contact_id = nil
-	m.addcontact_id = nil
+	m.contact = nil
 	m.clearedFields[unsubscribe.FieldContactID] = struct{}{}
 }
 
@@ -37647,8 +37688,7 @@ func (m *UnsubscribeMutation) ContactIDCleared() bool {
 
 // ResetContactID resets all changes to the "contact_id" field.
 func (m *UnsubscribeMutation) ResetContactID() {
-	m.contact_id = nil
-	m.addcontact_id = nil
+	m.contact = nil
 	delete(m.clearedFields, unsubscribe.FieldContactID)
 }
 
@@ -37677,6 +37717,33 @@ func (m *UnsubscribeMutation) WorkspaceIDs() (ids []int64) {
 func (m *UnsubscribeMutation) ResetWorkspace() {
 	m.workspace = nil
 	m.clearedworkspace = false
+}
+
+// ClearContact clears the "contact" edge to the Contact entity.
+func (m *UnsubscribeMutation) ClearContact() {
+	m.clearedcontact = true
+	m.clearedFields[unsubscribe.FieldContactID] = struct{}{}
+}
+
+// ContactCleared reports if the "contact" edge to the Contact entity was cleared.
+func (m *UnsubscribeMutation) ContactCleared() bool {
+	return m.ContactIDCleared() || m.clearedcontact
+}
+
+// ContactIDs returns the "contact" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ContactID instead. It exists only for internal usage by the builders.
+func (m *UnsubscribeMutation) ContactIDs() (ids []int64) {
+	if id := m.contact; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetContact resets all changes to the "contact" edge.
+func (m *UnsubscribeMutation) ResetContact() {
+	m.contact = nil
+	m.clearedcontact = false
 }
 
 // Where appends a list predicates to the UnsubscribeMutation builder.
@@ -37732,7 +37799,7 @@ func (m *UnsubscribeMutation) Fields() []string {
 	if m.sending_source != nil {
 		fields = append(fields, unsubscribe.FieldSendingSource)
 	}
-	if m.contact_id != nil {
+	if m.contact != nil {
 		fields = append(fields, unsubscribe.FieldContactID)
 	}
 	return fields
@@ -37846,9 +37913,6 @@ func (m *UnsubscribeMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *UnsubscribeMutation) AddedFields() []string {
 	var fields []string
-	if m.addcontact_id != nil {
-		fields = append(fields, unsubscribe.FieldContactID)
-	}
 	return fields
 }
 
@@ -37857,8 +37921,6 @@ func (m *UnsubscribeMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *UnsubscribeMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
-	case unsubscribe.FieldContactID:
-		return m.AddedContactID()
 	}
 	return nil, false
 }
@@ -37868,13 +37930,6 @@ func (m *UnsubscribeMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *UnsubscribeMutation) AddField(name string, value ent.Value) error {
 	switch name {
-	case unsubscribe.FieldContactID:
-		v, ok := value.(int64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddContactID(v)
-		return nil
 	}
 	return fmt.Errorf("unknown Unsubscribe numeric field %s", name)
 }
@@ -37938,9 +37993,12 @@ func (m *UnsubscribeMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UnsubscribeMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.workspace != nil {
 		edges = append(edges, unsubscribe.EdgeWorkspace)
+	}
+	if m.contact != nil {
+		edges = append(edges, unsubscribe.EdgeContact)
 	}
 	return edges
 }
@@ -37953,13 +38011,17 @@ func (m *UnsubscribeMutation) AddedIDs(name string) []ent.Value {
 		if id := m.workspace; id != nil {
 			return []ent.Value{*id}
 		}
+	case unsubscribe.EdgeContact:
+		if id := m.contact; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UnsubscribeMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	return edges
 }
 
@@ -37971,9 +38033,12 @@ func (m *UnsubscribeMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UnsubscribeMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.clearedworkspace {
 		edges = append(edges, unsubscribe.EdgeWorkspace)
+	}
+	if m.clearedcontact {
+		edges = append(edges, unsubscribe.EdgeContact)
 	}
 	return edges
 }
@@ -37984,6 +38049,8 @@ func (m *UnsubscribeMutation) EdgeCleared(name string) bool {
 	switch name {
 	case unsubscribe.EdgeWorkspace:
 		return m.clearedworkspace
+	case unsubscribe.EdgeContact:
+		return m.clearedcontact
 	}
 	return false
 }
@@ -37995,6 +38062,9 @@ func (m *UnsubscribeMutation) ClearEdge(name string) error {
 	case unsubscribe.EdgeWorkspace:
 		m.ClearWorkspace()
 		return nil
+	case unsubscribe.EdgeContact:
+		m.ClearContact()
+		return nil
 	}
 	return fmt.Errorf("unknown Unsubscribe unique edge %s", name)
 }
@@ -38005,6 +38075,9 @@ func (m *UnsubscribeMutation) ResetEdge(name string) error {
 	switch name {
 	case unsubscribe.EdgeWorkspace:
 		m.ResetWorkspace()
+		return nil
+	case unsubscribe.EdgeContact:
+		m.ResetContact()
 		return nil
 	}
 	return fmt.Errorf("unknown Unsubscribe edge %s", name)

@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
@@ -32,8 +33,8 @@ func (AutomationRun) Fields() []ent.Field {
 			StorageKey("id").
 			Immutable(),
 		field.Int64("automation_id"),
-		field.Int64("contact_id").
-			Annotations(ScopedRef{Entity: "Contact"}),
+		// The Enrollment dies with its Contact (ON DELETE CASCADE; Erasure deletes it).
+		field.Int64("contact_id"),
 		// The Automation version the Enrollment began on (ADR 0049): current_step indexes
 		// its steps, and the worker reads them from it, so an edit never moves the step an
 		// Enrollment stands on.
@@ -77,6 +78,8 @@ func (AutomationRun) Edges() []ent.Edge {
 			Field("version_id").
 			Required().
 			Unique(),
+		edge.To("contact", Contact.Type).Field("contact_id").Required().Unique().
+			Annotations(entsql.OnDelete(entsql.Cascade)),
 	}
 }
 
@@ -87,6 +90,9 @@ func (AutomationRun) Indexes() []ent.Index {
 			StorageKey("automation_runs_automation_id_contact_id"),
 		// Erasure reaches runs by contact; the leading workspace_id also serves workspace scans.
 		index.Fields("workspace_id", "contact_id"),
+		// The contact foreign key's index: deleting a Contact finds its runs by it.
+		index.Fields("contact_id").
+			StorageKey("automation_runs_contact_id"),
 		// "Does an Enrollment stand on this version" decides rewrite or supersede.
 		index.Fields("version_id"),
 	}

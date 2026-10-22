@@ -73,6 +73,8 @@ const (
 	EdgeBroadcastRecipient = "broadcast_recipient"
 	// EdgeAutomationRun holds the string denoting the automation_run edge name in mutations.
 	EdgeAutomationRun = "automation_run"
+	// EdgeContact holds the string denoting the contact edge name in mutations.
+	EdgeContact = "contact"
 	// EdgeTemplate holds the string denoting the template edge name in mutations.
 	EdgeTemplate = "template"
 	// Table holds the table name of the outboundmessage in the database.
@@ -119,6 +121,13 @@ const (
 	AutomationRunInverseTable = "automation_runs"
 	// AutomationRunColumn is the table column denoting the automation_run relation/edge.
 	AutomationRunColumn = "automation_run_id"
+	// ContactTable is the table that holds the contact relation/edge.
+	ContactTable = "outbound_messages"
+	// ContactInverseTable is the table name for the Contact entity.
+	// It exists in this package in order to avoid circular dependency with the "contact" package.
+	ContactInverseTable = "contacts"
+	// ContactColumn is the table column denoting the contact relation/edge.
+	ContactColumn = "contact_id"
 	// TemplateTable is the table that holds the template relation/edge.
 	TemplateTable = "outbound_messages"
 	// TemplateInverseTable is the table name for the EmailTemplate entity.
@@ -421,6 +430,13 @@ func ByAutomationRunField(field string, opts ...sql.OrderTermOption) OrderOption
 	}
 }
 
+// ByContactField orders the results by contact field.
+func ByContactField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newContactStep(), sql.OrderByField(field, opts...))
+	}
+}
+
 // ByTemplateField orders the results by template field.
 func ByTemplateField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -467,6 +483,13 @@ func newAutomationRunStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(AutomationRunInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, false, AutomationRunTable, AutomationRunColumn),
+	)
+}
+func newContactStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ContactInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, ContactTable, ContactColumn),
 	)
 }
 func newTemplateStep() *sqlgraph.Step {

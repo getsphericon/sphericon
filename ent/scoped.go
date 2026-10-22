@@ -3185,6 +3185,12 @@ func (x *AutomationRunScopedCreate) SetVersion(v *AutomationVersion) *Automation
 	return x
 }
 
+// SetContact sets the "contact" edge to the Contact entity.
+func (x *AutomationRunScopedCreate) SetContact(v *Contact) *AutomationRunScopedCreate {
+	x.b.SetContact(v)
+	return x
+}
+
 func (x *AutomationRunScopedCreate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -3194,10 +3200,8 @@ func (x *AutomationRunScopedCreate) check(ctx context.Context) error {
 	if err := x.s.verifyAutomationVersion(ctx, m.VersionIDs()); err != nil {
 		return fmt.Errorf("version: %w", err)
 	}
-	if v, ok := m.ContactID(); ok {
-		if err := x.s.verifyContact(ctx, []int64{v}); err != nil {
-			return fmt.Errorf("contact_id: %w", err)
-		}
+	if err := x.s.verifyContact(ctx, m.ContactIDs()); err != nil {
+		return fmt.Errorf("contact: %w", err)
 	}
 	return nil
 }
@@ -3578,12 +3582,6 @@ func (x *AutomationRunScopedUpdateOne) SetNillableContactID(v *int64) *Automatio
 	return x
 }
 
-// AddContactID adds value to the "contact_id" field.
-func (x *AutomationRunScopedUpdateOne) AddContactID(v int64) *AutomationRunScopedUpdateOne {
-	x.b.AddContactID(v)
-	return x
-}
-
 // SetVersionID sets the "version_id" field.
 func (x *AutomationRunScopedUpdateOne) SetVersionID(v int64) *AutomationRunScopedUpdateOne {
 	x.b.SetVersionID(v)
@@ -3728,6 +3726,18 @@ func (x *AutomationRunScopedUpdateOne) ClearVersion() *AutomationRunScopedUpdate
 	return x
 }
 
+// SetContact sets the "contact" edge to the Contact entity.
+func (x *AutomationRunScopedUpdateOne) SetContact(v *Contact) *AutomationRunScopedUpdateOne {
+	x.b.SetContact(v)
+	return x
+}
+
+// ClearContact clears the "contact" edge to the Contact entity.
+func (x *AutomationRunScopedUpdateOne) ClearContact() *AutomationRunScopedUpdateOne {
+	x.b.ClearContact()
+	return x
+}
+
 func (x *AutomationRunScopedUpdateOne) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -3737,10 +3747,8 @@ func (x *AutomationRunScopedUpdateOne) check(ctx context.Context) error {
 	if err := x.s.verifyAutomationVersion(ctx, m.VersionIDs()); err != nil {
 		return fmt.Errorf("version: %w", err)
 	}
-	if v, ok := m.ContactID(); ok {
-		if err := x.s.verifyContact(ctx, []int64{v}); err != nil {
-			return fmt.Errorf("contact_id: %w", err)
-		}
+	if err := x.s.verifyContact(ctx, m.ContactIDs()); err != nil {
+		return fmt.Errorf("contact: %w", err)
 	}
 	return nil
 }
@@ -3822,12 +3830,6 @@ func (x *AutomationRunScopedUpdate) SetContactID(v int64) *AutomationRunScopedUp
 // SetNillableContactID sets the "contact_id" field if the given value is not nil.
 func (x *AutomationRunScopedUpdate) SetNillableContactID(v *int64) *AutomationRunScopedUpdate {
 	x.b.SetNillableContactID(v)
-	return x
-}
-
-// AddContactID adds value to the "contact_id" field.
-func (x *AutomationRunScopedUpdate) AddContactID(v int64) *AutomationRunScopedUpdate {
-	x.b.AddContactID(v)
 	return x
 }
 
@@ -3975,6 +3977,18 @@ func (x *AutomationRunScopedUpdate) ClearVersion() *AutomationRunScopedUpdate {
 	return x
 }
 
+// SetContact sets the "contact" edge to the Contact entity.
+func (x *AutomationRunScopedUpdate) SetContact(v *Contact) *AutomationRunScopedUpdate {
+	x.b.SetContact(v)
+	return x
+}
+
+// ClearContact clears the "contact" edge to the Contact entity.
+func (x *AutomationRunScopedUpdate) ClearContact() *AutomationRunScopedUpdate {
+	x.b.ClearContact()
+	return x
+}
+
 func (x *AutomationRunScopedUpdate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -3984,10 +3998,8 @@ func (x *AutomationRunScopedUpdate) check(ctx context.Context) error {
 	if err := x.s.verifyAutomationVersion(ctx, m.VersionIDs()); err != nil {
 		return fmt.Errorf("version: %w", err)
 	}
-	if v, ok := m.ContactID(); ok {
-		if err := x.s.verifyContact(ctx, []int64{v}); err != nil {
-			return fmt.Errorf("contact_id: %w", err)
-		}
+	if err := x.s.verifyContact(ctx, m.ContactIDs()); err != nil {
+		return fmt.Errorf("contact: %w", err)
 	}
 	return nil
 }
@@ -7504,16 +7516,20 @@ func (x *BroadcastRecipientScopedCreate) SetBroadcast(v *Broadcast) *BroadcastRe
 	return x
 }
 
+// SetContact sets the "contact" edge to the Contact entity.
+func (x *BroadcastRecipientScopedCreate) SetContact(v *Contact) *BroadcastRecipientScopedCreate {
+	x.b.SetContact(v)
+	return x
+}
+
 func (x *BroadcastRecipientScopedCreate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
 	if err := x.s.verifyBroadcast(ctx, m.BroadcastIDs()); err != nil {
 		return fmt.Errorf("broadcast: %w", err)
 	}
-	if v, ok := m.ContactID(); ok {
-		if err := x.s.verifyContact(ctx, []int64{v}); err != nil {
-			return fmt.Errorf("contact_id: %w", err)
-		}
+	if err := x.s.verifyContact(ctx, m.ContactIDs()); err != nil {
+		return fmt.Errorf("contact: %w", err)
 	}
 	return nil
 }
@@ -7858,12 +7874,6 @@ func (x *BroadcastRecipientScopedUpdateOne) SetNillableContactID(v *int64) *Broa
 	return x
 }
 
-// AddContactID adds value to the "contact_id" field.
-func (x *BroadcastRecipientScopedUpdateOne) AddContactID(v int64) *BroadcastRecipientScopedUpdateOne {
-	x.b.AddContactID(v)
-	return x
-}
-
 // ClearContactID clears the value of the "contact_id" field.
 func (x *BroadcastRecipientScopedUpdateOne) ClearContactID() *BroadcastRecipientScopedUpdateOne {
 	x.b.ClearContactID()
@@ -7954,16 +7964,26 @@ func (x *BroadcastRecipientScopedUpdateOne) ClearBroadcast() *BroadcastRecipient
 	return x
 }
 
+// SetContact sets the "contact" edge to the Contact entity.
+func (x *BroadcastRecipientScopedUpdateOne) SetContact(v *Contact) *BroadcastRecipientScopedUpdateOne {
+	x.b.SetContact(v)
+	return x
+}
+
+// ClearContact clears the "contact" edge to the Contact entity.
+func (x *BroadcastRecipientScopedUpdateOne) ClearContact() *BroadcastRecipientScopedUpdateOne {
+	x.b.ClearContact()
+	return x
+}
+
 func (x *BroadcastRecipientScopedUpdateOne) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
 	if err := x.s.verifyBroadcast(ctx, m.BroadcastIDs()); err != nil {
 		return fmt.Errorf("broadcast: %w", err)
 	}
-	if v, ok := m.ContactID(); ok {
-		if err := x.s.verifyContact(ctx, []int64{v}); err != nil {
-			return fmt.Errorf("contact_id: %w", err)
-		}
+	if err := x.s.verifyContact(ctx, m.ContactIDs()); err != nil {
+		return fmt.Errorf("contact: %w", err)
 	}
 	return nil
 }
@@ -8045,12 +8065,6 @@ func (x *BroadcastRecipientScopedUpdate) SetContactID(v int64) *BroadcastRecipie
 // SetNillableContactID sets the "contact_id" field if the given value is not nil.
 func (x *BroadcastRecipientScopedUpdate) SetNillableContactID(v *int64) *BroadcastRecipientScopedUpdate {
 	x.b.SetNillableContactID(v)
-	return x
-}
-
-// AddContactID adds value to the "contact_id" field.
-func (x *BroadcastRecipientScopedUpdate) AddContactID(v int64) *BroadcastRecipientScopedUpdate {
-	x.b.AddContactID(v)
 	return x
 }
 
@@ -8144,16 +8158,26 @@ func (x *BroadcastRecipientScopedUpdate) ClearBroadcast() *BroadcastRecipientSco
 	return x
 }
 
+// SetContact sets the "contact" edge to the Contact entity.
+func (x *BroadcastRecipientScopedUpdate) SetContact(v *Contact) *BroadcastRecipientScopedUpdate {
+	x.b.SetContact(v)
+	return x
+}
+
+// ClearContact clears the "contact" edge to the Contact entity.
+func (x *BroadcastRecipientScopedUpdate) ClearContact() *BroadcastRecipientScopedUpdate {
+	x.b.ClearContact()
+	return x
+}
+
 func (x *BroadcastRecipientScopedUpdate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
 	if err := x.s.verifyBroadcast(ctx, m.BroadcastIDs()); err != nil {
 		return fmt.Errorf("broadcast: %w", err)
 	}
-	if v, ok := m.ContactID(); ok {
-		if err := x.s.verifyContact(ctx, []int64{v}); err != nil {
-			return fmt.Errorf("contact_id: %w", err)
-		}
+	if err := x.s.verifyContact(ctx, m.ContactIDs()); err != nil {
+		return fmt.Errorf("contact: %w", err)
 	}
 	return nil
 }
@@ -8309,9 +8333,18 @@ func (x *ConfirmationScopedCreate) SetNillableContactID(v *int64) *ConfirmationS
 	return x
 }
 
+// SetContact sets the "contact" edge to the Contact entity.
+func (x *ConfirmationScopedCreate) SetContact(v *Contact) *ConfirmationScopedCreate {
+	x.b.SetContact(v)
+	return x
+}
+
 func (x *ConfirmationScopedCreate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
+	if err := x.s.verifyContact(ctx, m.ContactIDs()); err != nil {
+		return fmt.Errorf("contact: %w", err)
+	}
 	return nil
 }
 
@@ -8422,18 +8455,6 @@ func (u *ConfirmationScopedUpsert) SetProvenance(v confirmation.Provenance) *Con
 // UpdateProvenance sets the "provenance" field to the value that was provided on create.
 func (u *ConfirmationScopedUpsert) UpdateProvenance() *ConfirmationScopedUpsert {
 	u.u.SetExcluded(confirmation.FieldProvenance)
-	return u
-}
-
-// SetContactID sets the "contact_id" field.
-func (u *ConfirmationScopedUpsert) SetContactID(v int64) *ConfirmationScopedUpsert {
-	u.u.Set(confirmation.FieldContactID, v)
-	return u
-}
-
-// AddContactID adds v to the "contact_id" field.
-func (u *ConfirmationScopedUpsert) AddContactID(v int64) *ConfirmationScopedUpsert {
-	u.u.Add(confirmation.FieldContactID, v)
 	return u
 }
 
@@ -8649,21 +8670,30 @@ func (x *ConfirmationScopedUpdateOne) SetNillableContactID(v *int64) *Confirmati
 	return x
 }
 
-// AddContactID adds value to the "contact_id" field.
-func (x *ConfirmationScopedUpdateOne) AddContactID(v int64) *ConfirmationScopedUpdateOne {
-	x.b.AddContactID(v)
-	return x
-}
-
 // ClearContactID clears the value of the "contact_id" field.
 func (x *ConfirmationScopedUpdateOne) ClearContactID() *ConfirmationScopedUpdateOne {
 	x.b.ClearContactID()
 	return x
 }
 
+// SetContact sets the "contact" edge to the Contact entity.
+func (x *ConfirmationScopedUpdateOne) SetContact(v *Contact) *ConfirmationScopedUpdateOne {
+	x.b.SetContact(v)
+	return x
+}
+
+// ClearContact clears the "contact" edge to the Contact entity.
+func (x *ConfirmationScopedUpdateOne) ClearContact() *ConfirmationScopedUpdateOne {
+	x.b.ClearContact()
+	return x
+}
+
 func (x *ConfirmationScopedUpdateOne) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
+	if err := x.s.verifyContact(ctx, m.ContactIDs()); err != nil {
+		return fmt.Errorf("contact: %w", err)
+	}
 	return nil
 }
 
@@ -8771,21 +8801,30 @@ func (x *ConfirmationScopedUpdate) SetNillableContactID(v *int64) *ConfirmationS
 	return x
 }
 
-// AddContactID adds value to the "contact_id" field.
-func (x *ConfirmationScopedUpdate) AddContactID(v int64) *ConfirmationScopedUpdate {
-	x.b.AddContactID(v)
-	return x
-}
-
 // ClearContactID clears the value of the "contact_id" field.
 func (x *ConfirmationScopedUpdate) ClearContactID() *ConfirmationScopedUpdate {
 	x.b.ClearContactID()
 	return x
 }
 
+// SetContact sets the "contact" edge to the Contact entity.
+func (x *ConfirmationScopedUpdate) SetContact(v *Contact) *ConfirmationScopedUpdate {
+	x.b.SetContact(v)
+	return x
+}
+
+// ClearContact clears the "contact" edge to the Contact entity.
+func (x *ConfirmationScopedUpdate) ClearContact() *ConfirmationScopedUpdate {
+	x.b.ClearContact()
+	return x
+}
+
 func (x *ConfirmationScopedUpdate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
+	if err := x.s.verifyContact(ctx, m.ContactIDs()); err != nil {
+		return fmt.Errorf("contact: %w", err)
+	}
 	return nil
 }
 
@@ -18084,6 +18123,12 @@ func (x *OutboundMessageScopedCreate) SetAutomationRun(v *AutomationRun) *Outbou
 	return x
 }
 
+// SetContact sets the "contact" edge to the Contact entity.
+func (x *OutboundMessageScopedCreate) SetContact(v *Contact) *OutboundMessageScopedCreate {
+	x.b.SetContact(v)
+	return x
+}
+
 // SetTemplate sets the "template" edge to the EmailTemplate entity.
 func (x *OutboundMessageScopedCreate) SetTemplate(v *EmailTemplate) *OutboundMessageScopedCreate {
 	x.b.SetTemplate(v)
@@ -18108,13 +18153,11 @@ func (x *OutboundMessageScopedCreate) check(ctx context.Context) error {
 	if err := x.s.verifyAutomationRun(ctx, m.AutomationRunIDs()); err != nil {
 		return fmt.Errorf("automation_run: %w", err)
 	}
+	if err := x.s.verifyContact(ctx, m.ContactIDs()); err != nil {
+		return fmt.Errorf("contact: %w", err)
+	}
 	if err := x.s.verifyEmailTemplate(ctx, m.TemplateIDs()); err != nil {
 		return fmt.Errorf("template: %w", err)
-	}
-	if v, ok := m.ContactID(); ok {
-		if err := x.s.verifyContact(ctx, []int64{v}); err != nil {
-			return fmt.Errorf("contact_id: %w", err)
-		}
 	}
 	return nil
 }
@@ -18639,12 +18682,6 @@ func (x *OutboundMessageScopedUpdateOne) SetNillableContactID(v *int64) *Outboun
 	return x
 }
 
-// AddContactID adds value to the "contact_id" field.
-func (x *OutboundMessageScopedUpdateOne) AddContactID(v int64) *OutboundMessageScopedUpdateOne {
-	x.b.AddContactID(v)
-	return x
-}
-
 // ClearContactID clears the value of the "contact_id" field.
 func (x *OutboundMessageScopedUpdateOne) ClearContactID() *OutboundMessageScopedUpdateOne {
 	x.b.ClearContactID()
@@ -18957,6 +18994,18 @@ func (x *OutboundMessageScopedUpdateOne) ClearAutomationRun() *OutboundMessageSc
 	return x
 }
 
+// SetContact sets the "contact" edge to the Contact entity.
+func (x *OutboundMessageScopedUpdateOne) SetContact(v *Contact) *OutboundMessageScopedUpdateOne {
+	x.b.SetContact(v)
+	return x
+}
+
+// ClearContact clears the "contact" edge to the Contact entity.
+func (x *OutboundMessageScopedUpdateOne) ClearContact() *OutboundMessageScopedUpdateOne {
+	x.b.ClearContact()
+	return x
+}
+
 // SetTemplate sets the "template" edge to the EmailTemplate entity.
 func (x *OutboundMessageScopedUpdateOne) SetTemplate(v *EmailTemplate) *OutboundMessageScopedUpdateOne {
 	x.b.SetTemplate(v)
@@ -18987,13 +19036,11 @@ func (x *OutboundMessageScopedUpdateOne) check(ctx context.Context) error {
 	if err := x.s.verifyAutomationRun(ctx, m.AutomationRunIDs()); err != nil {
 		return fmt.Errorf("automation_run: %w", err)
 	}
+	if err := x.s.verifyContact(ctx, m.ContactIDs()); err != nil {
+		return fmt.Errorf("contact: %w", err)
+	}
 	if err := x.s.verifyEmailTemplate(ctx, m.TemplateIDs()); err != nil {
 		return fmt.Errorf("template: %w", err)
-	}
-	if v, ok := m.ContactID(); ok {
-		if err := x.s.verifyContact(ctx, []int64{v}); err != nil {
-			return fmt.Errorf("contact_id: %w", err)
-		}
 	}
 	return nil
 }
@@ -19093,12 +19140,6 @@ func (x *OutboundMessageScopedUpdate) SetContactID(v int64) *OutboundMessageScop
 // SetNillableContactID sets the "contact_id" field if the given value is not nil.
 func (x *OutboundMessageScopedUpdate) SetNillableContactID(v *int64) *OutboundMessageScopedUpdate {
 	x.b.SetNillableContactID(v)
-	return x
-}
-
-// AddContactID adds value to the "contact_id" field.
-func (x *OutboundMessageScopedUpdate) AddContactID(v int64) *OutboundMessageScopedUpdate {
-	x.b.AddContactID(v)
 	return x
 }
 
@@ -19414,6 +19455,18 @@ func (x *OutboundMessageScopedUpdate) ClearAutomationRun() *OutboundMessageScope
 	return x
 }
 
+// SetContact sets the "contact" edge to the Contact entity.
+func (x *OutboundMessageScopedUpdate) SetContact(v *Contact) *OutboundMessageScopedUpdate {
+	x.b.SetContact(v)
+	return x
+}
+
+// ClearContact clears the "contact" edge to the Contact entity.
+func (x *OutboundMessageScopedUpdate) ClearContact() *OutboundMessageScopedUpdate {
+	x.b.ClearContact()
+	return x
+}
+
 // SetTemplate sets the "template" edge to the EmailTemplate entity.
 func (x *OutboundMessageScopedUpdate) SetTemplate(v *EmailTemplate) *OutboundMessageScopedUpdate {
 	x.b.SetTemplate(v)
@@ -19444,13 +19497,11 @@ func (x *OutboundMessageScopedUpdate) check(ctx context.Context) error {
 	if err := x.s.verifyAutomationRun(ctx, m.AutomationRunIDs()); err != nil {
 		return fmt.Errorf("automation_run: %w", err)
 	}
+	if err := x.s.verifyContact(ctx, m.ContactIDs()); err != nil {
+		return fmt.Errorf("contact: %w", err)
+	}
 	if err := x.s.verifyEmailTemplate(ctx, m.TemplateIDs()); err != nil {
 		return fmt.Errorf("template: %w", err)
-	}
-	if v, ok := m.ContactID(); ok {
-		if err := x.s.verifyContact(ctx, []int64{v}); err != nil {
-			return fmt.Errorf("contact_id: %w", err)
-		}
 	}
 	return nil
 }
@@ -22334,9 +22385,18 @@ func (x *SuppressionScopedCreate) SetNillableLiftedAt(v *time.Time) *Suppression
 	return x
 }
 
+// SetContact sets the "contact" edge to the Contact entity.
+func (x *SuppressionScopedCreate) SetContact(v *Contact) *SuppressionScopedCreate {
+	x.b.SetContact(v)
+	return x
+}
+
 func (x *SuppressionScopedCreate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
+	if err := x.s.verifyContact(ctx, m.ContactIDs()); err != nil {
+		return fmt.Errorf("contact: %w", err)
+	}
 	return nil
 }
 
@@ -22447,18 +22507,6 @@ func (u *SuppressionScopedUpsert) SetReason(v suppression.Reason) *SuppressionSc
 // UpdateReason sets the "reason" field to the value that was provided on create.
 func (u *SuppressionScopedUpsert) UpdateReason() *SuppressionScopedUpsert {
 	u.u.SetExcluded(suppression.FieldReason)
-	return u
-}
-
-// SetContactID sets the "contact_id" field.
-func (u *SuppressionScopedUpsert) SetContactID(v int64) *SuppressionScopedUpsert {
-	u.u.Set(suppression.FieldContactID, v)
-	return u
-}
-
-// AddContactID adds v to the "contact_id" field.
-func (u *SuppressionScopedUpsert) AddContactID(v int64) *SuppressionScopedUpsert {
-	u.u.Add(suppression.FieldContactID, v)
 	return u
 }
 
@@ -22692,12 +22740,6 @@ func (x *SuppressionScopedUpdateOne) SetNillableContactID(v *int64) *Suppression
 	return x
 }
 
-// AddContactID adds value to the "contact_id" field.
-func (x *SuppressionScopedUpdateOne) AddContactID(v int64) *SuppressionScopedUpdateOne {
-	x.b.AddContactID(v)
-	return x
-}
-
 // ClearContactID clears the value of the "contact_id" field.
 func (x *SuppressionScopedUpdateOne) ClearContactID() *SuppressionScopedUpdateOne {
 	x.b.ClearContactID()
@@ -22722,9 +22764,24 @@ func (x *SuppressionScopedUpdateOne) ClearLiftedAt() *SuppressionScopedUpdateOne
 	return x
 }
 
+// SetContact sets the "contact" edge to the Contact entity.
+func (x *SuppressionScopedUpdateOne) SetContact(v *Contact) *SuppressionScopedUpdateOne {
+	x.b.SetContact(v)
+	return x
+}
+
+// ClearContact clears the "contact" edge to the Contact entity.
+func (x *SuppressionScopedUpdateOne) ClearContact() *SuppressionScopedUpdateOne {
+	x.b.ClearContact()
+	return x
+}
+
 func (x *SuppressionScopedUpdateOne) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
+	if err := x.s.verifyContact(ctx, m.ContactIDs()); err != nil {
+		return fmt.Errorf("contact: %w", err)
+	}
 	return nil
 }
 
@@ -22832,12 +22889,6 @@ func (x *SuppressionScopedUpdate) SetNillableContactID(v *int64) *SuppressionSco
 	return x
 }
 
-// AddContactID adds value to the "contact_id" field.
-func (x *SuppressionScopedUpdate) AddContactID(v int64) *SuppressionScopedUpdate {
-	x.b.AddContactID(v)
-	return x
-}
-
 // ClearContactID clears the value of the "contact_id" field.
 func (x *SuppressionScopedUpdate) ClearContactID() *SuppressionScopedUpdate {
 	x.b.ClearContactID()
@@ -22862,9 +22913,24 @@ func (x *SuppressionScopedUpdate) ClearLiftedAt() *SuppressionScopedUpdate {
 	return x
 }
 
+// SetContact sets the "contact" edge to the Contact entity.
+func (x *SuppressionScopedUpdate) SetContact(v *Contact) *SuppressionScopedUpdate {
+	x.b.SetContact(v)
+	return x
+}
+
+// ClearContact clears the "contact" edge to the Contact entity.
+func (x *SuppressionScopedUpdate) ClearContact() *SuppressionScopedUpdate {
+	x.b.ClearContact()
+	return x
+}
+
 func (x *SuppressionScopedUpdate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
+	if err := x.s.verifyContact(ctx, m.ContactIDs()); err != nil {
+		return fmt.Errorf("contact: %w", err)
+	}
 	return nil
 }
 
@@ -23701,13 +23767,17 @@ func (x *UnsubscribeScopedCreate) SetNillableContactID(v *int64) *UnsubscribeSco
 	return x
 }
 
+// SetContact sets the "contact" edge to the Contact entity.
+func (x *UnsubscribeScopedCreate) SetContact(v *Contact) *UnsubscribeScopedCreate {
+	x.b.SetContact(v)
+	return x
+}
+
 func (x *UnsubscribeScopedCreate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
-	if v, ok := m.ContactID(); ok {
-		if err := x.s.verifyContact(ctx, []int64{v}); err != nil {
-			return fmt.Errorf("contact_id: %w", err)
-		}
+	if err := x.s.verifyContact(ctx, m.ContactIDs()); err != nil {
+		return fmt.Errorf("contact: %w", err)
 	}
 	return nil
 }
@@ -24034,25 +24104,29 @@ func (x *UnsubscribeScopedUpdateOne) SetNillableContactID(v *int64) *Unsubscribe
 	return x
 }
 
-// AddContactID adds value to the "contact_id" field.
-func (x *UnsubscribeScopedUpdateOne) AddContactID(v int64) *UnsubscribeScopedUpdateOne {
-	x.b.AddContactID(v)
-	return x
-}
-
 // ClearContactID clears the value of the "contact_id" field.
 func (x *UnsubscribeScopedUpdateOne) ClearContactID() *UnsubscribeScopedUpdateOne {
 	x.b.ClearContactID()
 	return x
 }
 
+// SetContact sets the "contact" edge to the Contact entity.
+func (x *UnsubscribeScopedUpdateOne) SetContact(v *Contact) *UnsubscribeScopedUpdateOne {
+	x.b.SetContact(v)
+	return x
+}
+
+// ClearContact clears the "contact" edge to the Contact entity.
+func (x *UnsubscribeScopedUpdateOne) ClearContact() *UnsubscribeScopedUpdateOne {
+	x.b.ClearContact()
+	return x
+}
+
 func (x *UnsubscribeScopedUpdateOne) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
-	if v, ok := m.ContactID(); ok {
-		if err := x.s.verifyContact(ctx, []int64{v}); err != nil {
-			return fmt.Errorf("contact_id: %w", err)
-		}
+	if err := x.s.verifyContact(ctx, m.ContactIDs()); err != nil {
+		return fmt.Errorf("contact: %w", err)
 	}
 	return nil
 }
@@ -24161,25 +24235,29 @@ func (x *UnsubscribeScopedUpdate) SetNillableContactID(v *int64) *UnsubscribeSco
 	return x
 }
 
-// AddContactID adds value to the "contact_id" field.
-func (x *UnsubscribeScopedUpdate) AddContactID(v int64) *UnsubscribeScopedUpdate {
-	x.b.AddContactID(v)
-	return x
-}
-
 // ClearContactID clears the value of the "contact_id" field.
 func (x *UnsubscribeScopedUpdate) ClearContactID() *UnsubscribeScopedUpdate {
 	x.b.ClearContactID()
 	return x
 }
 
+// SetContact sets the "contact" edge to the Contact entity.
+func (x *UnsubscribeScopedUpdate) SetContact(v *Contact) *UnsubscribeScopedUpdate {
+	x.b.SetContact(v)
+	return x
+}
+
+// ClearContact clears the "contact" edge to the Contact entity.
+func (x *UnsubscribeScopedUpdate) ClearContact() *UnsubscribeScopedUpdate {
+	x.b.ClearContact()
+	return x
+}
+
 func (x *UnsubscribeScopedUpdate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
-	if v, ok := m.ContactID(); ok {
-		if err := x.s.verifyContact(ctx, []int64{v}); err != nil {
-			return fmt.Errorf("contact_id: %w", err)
-		}
+	if err := x.s.verifyContact(ctx, m.ContactIDs()); err != nil {
+		return fmt.Errorf("contact: %w", err)
 	}
 	return nil
 }

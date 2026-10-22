@@ -305,26 +305,6 @@ func ContactIDNotIn(vs ...int64) predicate.Confirmation {
 	return predicate.Confirmation(sql.FieldNotIn(FieldContactID, vs...))
 }
 
-// ContactIDGT applies the GT predicate on the "contact_id" field.
-func ContactIDGT(v int64) predicate.Confirmation {
-	return predicate.Confirmation(sql.FieldGT(FieldContactID, v))
-}
-
-// ContactIDGTE applies the GTE predicate on the "contact_id" field.
-func ContactIDGTE(v int64) predicate.Confirmation {
-	return predicate.Confirmation(sql.FieldGTE(FieldContactID, v))
-}
-
-// ContactIDLT applies the LT predicate on the "contact_id" field.
-func ContactIDLT(v int64) predicate.Confirmation {
-	return predicate.Confirmation(sql.FieldLT(FieldContactID, v))
-}
-
-// ContactIDLTE applies the LTE predicate on the "contact_id" field.
-func ContactIDLTE(v int64) predicate.Confirmation {
-	return predicate.Confirmation(sql.FieldLTE(FieldContactID, v))
-}
-
 // ContactIDIsNil applies the IsNil predicate on the "contact_id" field.
 func ContactIDIsNil() predicate.Confirmation {
 	return predicate.Confirmation(sql.FieldIsNull(FieldContactID))
@@ -350,6 +330,29 @@ func HasWorkspace() predicate.Confirmation {
 func HasWorkspaceWith(preds ...predicate.Workspace) predicate.Confirmation {
 	return predicate.Confirmation(func(s *sql.Selector) {
 		step := newWorkspaceStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasContact applies the HasEdge predicate on the "contact" edge.
+func HasContact() predicate.Confirmation {
+	return predicate.Confirmation(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, ContactTable, ContactColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasContactWith applies the HasEdge predicate on the "contact" edge with a given conditions (other predicates).
+func HasContactWith(preds ...predicate.Contact) predicate.Confirmation {
+	return predicate.Confirmation(func(s *sql.Selector) {
+		step := newContactStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)
