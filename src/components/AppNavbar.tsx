@@ -1,15 +1,19 @@
-import { NavLink, Stack } from '@mantine/core'
+import { Badge, NavLink, Stack } from '@mantine/core'
 import {
   IconActivity,
+  IconBell,
   IconBolt,
+  IconBrowser,
   IconChartBar,
   IconForms,
+  IconLayoutBottombar,
   IconLayoutDashboard,
   IconMail,
   IconMailbox,
   IconMailFast,
   IconPalette,
   IconRobot,
+  IconRoute,
   IconSettings,
   IconTag,
   IconTemplate,
@@ -82,7 +86,7 @@ export function AppNavbar({ workspaceId }: { workspaceId: string }) {
   ]
 
   // Email-only sections live under one group: the other channels (SMS, loyalty, forms, bots) get
-  // groups of their own beside it. Automations stay outside: they will span channels.
+  // groups of their own beside it. Automations and Rules stay out of it: they span channels.
   const emails = [
     { route: broadcastsRoute, label: t(($) => $.nav.broadcasts), icon: <IconMailbox size={18} /> },
     { route: templatesRoute, label: t(($) => $.nav.templates), icon: <IconTemplate size={18} /> },
@@ -92,6 +96,20 @@ export function AppNavbar({ workspaceId }: { workspaceId: string }) {
       icon: <IconMailFast size={18} />,
     },
     { route: brandKitRoute, label: t(($) => $.nav.brandKit), icon: <IconPalette size={18} /> },
+  ]
+
+  // What a workspace does on its own: Automations walk a contact through steps, Rules react to
+  // a single Event.
+  const workflows = [
+    { route: automationsRoute, label: t(($) => $.nav.automations), icon: <IconRobot size={18} /> },
+    { route: rulesRoute, label: t(($) => $.nav.rules), icon: <IconBolt size={18} /> },
+  ]
+
+  // What a workspace shows on its own site. None of it exists yet: the pages are announced, not linked.
+  const website = [
+    { label: t(($) => $.nav.forms), icon: <IconForms size={18} /> },
+    { label: t(($) => $.nav.popups), icon: <IconLayoutBottombar size={18} /> },
+    { label: t(($) => $.nav.banners), icon: <IconBell size={18} /> },
   ]
 
   return (
@@ -116,16 +134,24 @@ export function AppNavbar({ workspaceId }: { workspaceId: string }) {
       >
         {emails.map((item) => link(item))}
       </NavLink>
-      {link({
-        route: automationsRoute,
-        label: t(($) => $.nav.automations),
-        icon: <IconRobot size={18} />,
-      })}
-      {link({
-        route: rulesRoute,
-        label: t(($) => $.nav.rules),
-        icon: <IconBolt size={18} />,
-      })}
+      <NavLink
+        label={t(($) => $.nav.workflows)}
+        leftSection={<IconRoute size={18} />}
+        defaultOpened={viewing(workflows)}
+      >
+        {workflows.map((item) => link(item))}
+      </NavLink>
+      <NavLink label={t(($) => $.nav.website)} leftSection={<IconBrowser size={18} />}>
+        {website.map((item) => (
+          <NavLink
+            key={item.label}
+            label={item.label}
+            leftSection={item.icon}
+            rightSection={<Badge variant="light">{t(($) => $.nav.soon)}</Badge>}
+            disabled
+          />
+        ))}
+      </NavLink>
       {link({
         route: analyticsRoute,
         label: t(($) => $.nav.analytics),

@@ -20,8 +20,6 @@ import { AppNavbar } from './AppNavbar.tsx'
 
 const SECTIONS = [
   ['Overview', overviewRoute],
-  ['Automations', automationsRoute],
-  ['Rules', rulesRoute],
   ['Analytics', analyticsRoute],
   ['Activity', activityRoute],
   ['Settings', settingsRoute],
@@ -41,6 +39,12 @@ const EMAIL_SECTIONS = [
   ['Templates', templatesRoute],
   ['Transactional emails', transactionalEmailsRoute],
   ['Brand kit', brandKitRoute],
+] as const
+
+// Under the Workflows group, which is closed until one of its pages is viewed.
+const WORKFLOW_SECTIONS = [
+  ['Automations', automationsRoute],
+  ['Rules', rulesRoute],
 ] as const
 
 test.each(SECTIONS)('%s links to its workspace-scoped route', async (label, target) => {
@@ -63,6 +67,15 @@ test.each(PEOPLE_SECTIONS)('%s links to its workspace-scoped route', async (labe
 test.each(EMAIL_SECTIONS)('%s links to its workspace-scoped route', async (label, target) => {
   const { screen } = await renderWithRouter(<AppNavbar workspaceId="AcmeWs01" />)
   await screen.getByText('Emails', { exact: true }).click()
+
+  await expect
+    .element(screen.getByRole('link', { name: label, exact: true }))
+    .toHaveAttribute('href', routeMount(target, { workspaceId: 'AcmeWs01' }).initialPath)
+})
+
+test.each(WORKFLOW_SECTIONS)('%s links to its workspace-scoped route', async (label, target) => {
+  const { screen } = await renderWithRouter(<AppNavbar workspaceId="AcmeWs01" />)
+  await screen.getByText('Workflows', { exact: true }).click()
 
   await expect
     .element(screen.getByRole('link', { name: label, exact: true }))
@@ -117,4 +130,21 @@ test('the email group is open on one of its pages', async () => {
   )
 
   await expect.element(screen.getByRole('link', { name: 'Broadcasts', exact: true })).toBeVisible()
+})
+
+test('the workflow group is open on one of its pages', async () => {
+  const { screen } = await renderWithRouter(
+    <AppNavbar workspaceId="AcmeWs01" />,
+    routeMount(rulesRoute, { workspaceId: 'AcmeWs01' }),
+  )
+
+  await expect.element(screen.getByRole('link', { name: 'Automations', exact: true })).toBeVisible()
+})
+
+test('the website group announces its pages as coming soon, without links', async () => {
+  const { screen } = await renderWithRouter(<AppNavbar workspaceId="AcmeWs01" />)
+  await screen.getByText('Website', { exact: true }).click()
+
+  await expect.element(screen.getByText('Popups', { exact: true })).toBeVisible()
+  await expect.element(screen.getByRole('link', { name: 'Popups' })).not.toBeInTheDocument()
 })
