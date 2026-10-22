@@ -3,8 +3,11 @@ import { expect, test } from 'vitest'
 
 import {
   handleSiteRulesActivate,
+  handleSiteRulesArchive,
   handleSiteRulesDeactivate,
+  handleSiteRulesDelete,
   handleSiteRulesList,
+  handleSiteRulesUnarchive,
 } from '../../generated/site/msw.gen.ts'
 import type { SiteRuleResource } from '../../generated/site/types.gen.ts'
 import { Route as rulesRoute } from '../../routes/workspaces/$workspaceId/rules/index.tsx'
@@ -142,4 +145,92 @@ test('a failed activation shows the problem', async () => {
 
   await expect.element(screen.getByText('Failed to change rule status')).toBeInTheDocument()
   await expect.element(screen.getByText('a Rule needs an Action')).toBeInTheDocument()
+})
+
+test('archiving a rule calls archive and refreshes the list', async () => {
+  const archived: string[] = []
+  let listFetches = 0
+  worker.use(
+    handleSiteRulesList(() => {
+      listFetches++
+      return HttpResponse.json(page([WELCOME], 1))
+    }),
+    handleSiteRulesArchive(({ params }) => {
+      archived.push(params.id)
+      return HttpResponse.json({ ...WELCOME, archivedAt: TIMESTAMPS.updatedAt })
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<RulesListPage />, LIST_ROUTE)
+  await expect.element(screen.getByText('Tag signups')).toBeInTheDocument()
+  await screen.getByRole('button', { name: 'More actions' }).first().click()
+  await screen.getByRole('menuitem', { name: 'Archive' }).click()
+
+  await expect.poll(() => archived).toEqual(['1'])
+  await expect.element(screen.getByText('Rule archived')).toBeInTheDocument()
+  await expect.poll(() => listFetches).toBe(2)
+})
+
+test('the archived view lists archived rules and restores one', async () => {
+  const flags: (string | null)[] = []
+  const restored: string[] = []
+  worker.use(
+    handleSiteRulesList(({ request }) => {
+      flags.push(new URL(request.url).searchParams.get('archived'))
+      return HttpResponse.json(page([{ ...WELCOME, archivedAt: TIMESTAMPS.updatedAt }], 1))
+    }),
+    handleSiteRulesUnarchive(({ params }) => {
+      restored.push(params.id)
+      return HttpResponse.json(WELCOME)
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<RulesListPage />, LIST_ROUTE)
+  await screen.getByRole('switch', { name: 'Show archived' }).click()
+  await expect.poll(() => flags).toEqual(['false', 'true'])
+
+  await screen.getByRole('button', { name: 'More actions' }).first().click()
+  await expect.element(screen.getByRole('menuitem', { name: 'Edit' })).not.toBeInTheDocument()
+  await screen.getByRole('menuitem', { name: 'Restore' }).click()
+
+  await expect.poll(() => restored).toEqual(['1'])
+  await expect.element(screen.getByText('Rule restored')).toBeInTheDocument()
+})
+
+test('deleting a rule asks for confirmation first', async () => {
+  const deleted: string[] = []
+  worker.use(
+    handleSiteRulesList({ body: page([WELCOME], 1) }),
+    handleSiteRulesDelete(({ params }) => {
+      deleted.push(params.id)
+      return new HttpResponse(null, { status: 204 })
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<RulesListPage />, LIST_ROUTE)
+  await expect.element(screen.getByText('Tag signups')).toBeInTheDocument()
+  await screen.getByRole('button', { name: 'More actions' }).first().click()
+  await screen.getByRole('menuitem', { name: 'Delete' }).click()
+  expect(deleted).toEqual([])
+  await screen.getByRole('dialog').getByRole('button', { name: 'Delete' }).click()
+
+  await expect.poll(() => deleted).toEqual(['1'])
+  await expect.element(screen.getByText('Rule deleted')).toBeInTheDocument()
+})
+
+test('a rule with firings is not deleted and their count is shown', async () => {
+  worker.use(
+    handleSiteRulesList({ body: page([WELCOME], 1) }),
+    handleSiteRulesDelete(() =>
+      problem(409, { usedBy: [{ kind: 'firing', id: '1', name: 'Tag signups', count: 4 }] }),
+    ),
+  )
+
+  const { screen } = await renderWithRouter(<RulesListPage />, LIST_ROUTE)
+  await expect.element(screen.getByText('Tag signups')).toBeInTheDocument()
+  await screen.getByRole('button', { name: 'More actions' }).first().click()
+  await screen.getByRole('menuitem', { name: 'Delete' }).click()
+  await screen.getByRole('dialog').getByRole('button', { name: 'Delete' }).click()
+
+  await expect.element(screen.getByText(/4 firings of "Tag signups"/)).toBeInTheDocument()
 })
