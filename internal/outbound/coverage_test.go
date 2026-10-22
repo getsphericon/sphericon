@@ -353,6 +353,7 @@ func TestClaimErrors(t *testing.T) {
 			if m.Op().Is(ent.OpCreate) && !raced {
 				raced = true
 				// Another attempt records the same key as sent between our replay check and insert.
+				// test writes: a concurrent write simulated inside a hook is the race under test
 				env.DB.OutboundMessage.Create().SetWorkspaceID(fixtures.AcmeID).SetKind(outboundmessage.KindTransactional).
 					SetIdempotencyKey("tx:race").SetDestination("a@example.com").SetClaimedAt(time.Now()).
 					SetStatus(outboundmessage.StatusSent).ExecX(ctx)
@@ -375,6 +376,7 @@ func TestClaimErrors(t *testing.T) {
 		onOutboundMutation(env, func(ctx context.Context, m *ent.OutboundMessageMutation, next ent.Mutator) (ent.Value, error) {
 			if m.Op().Is(ent.OpCreate) && !raced {
 				raced = true
+				// test writes: a concurrent write simulated inside a hook is the race under test
 				env.DB.OutboundMessage.Create().SetWorkspaceID(fixtures.AcmeID).SetKind(outboundmessage.KindTransactional).
 					SetIdempotencyKey("tx:race").SetDestination("a@example.com").SetClaimedAt(time.Now()).ExecX(ctx)
 				// The real insert would now violate the unique key; Postgres would also abort the
@@ -394,6 +396,7 @@ func TestClaimErrors(t *testing.T) {
 		onOutboundMutation(env, func(ctx context.Context, m *ent.OutboundMessageMutation, next ent.Mutator) (ent.Value, error) {
 			if m.Op().Is(ent.OpCreate) && !raced {
 				raced = true
+				// test writes: a concurrent write simulated inside a hook is the race under test
 				env.DB.OutboundMessage.Create().SetWorkspaceID(fixtures.AcmeID).SetKind(outboundmessage.KindTransactional).
 					SetIdempotencyKey("tx:race").SetDestination("a@example.com").
 					SetClaimedAt(time.Now().Add(-time.Hour)).ExecX(ctx)

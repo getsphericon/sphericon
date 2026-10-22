@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/tools/analyzers/noprint"
 	"github.com/getsphericon/sphericon/tools/analyzers/rawsql"
 	"github.com/getsphericon/sphericon/tools/analyzers/statemoment"
+	"github.com/getsphericon/sphericon/tools/analyzers/testwrites"
 )
 
 func init() {
@@ -28,7 +29,7 @@ func New(any) (register.LinterPlugin, error) {
 
 // BuildAnalyzers lists the analyzers; add a new one here.
 func (Plugin) BuildAnalyzers() ([]*analysis.Analyzer, error) {
-	return []*analysis.Analyzer{noprint.Analyzer, rawsql.Analyzer, handmapper.Analyzer, entrywrite.Analyzer, statemoment.Analyzer}, nil
+	return []*analysis.Analyzer{noprint.Analyzer, rawsql.Analyzer, handmapper.Analyzer, entrywrite.Analyzer, statemoment.Analyzer, testwrites.Analyzer}, nil
 }
 
 // GetLoadMode asks for types, which every analyzer here needs.

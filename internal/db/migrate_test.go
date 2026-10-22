@@ -121,6 +121,7 @@ func TestMigrateGivesExistingWorkspacesAnIdAndEndsRequired(t *testing.T) {
 	assert.Len(t, seen, 3, "every id is its own")
 
 	// The ids are unique now: a fourth Workspace cannot take one of them.
+	// test writes: the unique violation is the outcome under test
 	err = client.Workspace.Create().SetName("y").SetCollectKey("y").SetPublicID(workspaces[0].PublicID).Exec(t.Context())
 	assert.True(t, db.IsUniqueViolation(err))
 }

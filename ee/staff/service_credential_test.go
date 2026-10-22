@@ -341,6 +341,7 @@ func TestAWriteUnderACredentialIsAttributedToItsNameInTheAuditLog(t *testing.T) 
 	h := newHarness(t)
 	cred := h.env.DB.ServiceCredential.GetX(t.Context(), fixtures.ServiceCredentialPrimaryID)
 	scoped := h.env.Bus.Act(h.env.DB.Scoped(fixtures.AcmeID), staff.ServiceActor(cred))
+	// test writes: audit attribution of a scoped write is the subject
 	_, err := scoped.Tag().Create().SetName("attributed-tag").Save(t.Context())
 	require.NoError(t, err)
 	h.env.DeliverToEE(t)

@@ -61,6 +61,7 @@ func firstInsertMember(next ent.Mutator) ent.Mutator {
 		}
 		userID, _ := m.UserID()
 		workspaceID, _ := m.WorkspaceID()
+		// test writes: a concurrent write simulated inside a hook is the race under test
 		err := m.Client().Membership.Create().
 			SetUserID(userID).
 			SetWorkspaceID(workspaceID).

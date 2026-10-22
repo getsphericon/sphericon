@@ -46,6 +46,7 @@ func contactsEnv(t *testing.T, now time.Time) (*testhelper.TestEnv, *clock, int6
 // tracker Contact (no email Destination) when it is empty.
 func addContact(t *testing.T, env *testhelper.TestEnv, email string) int64 {
 	t.Helper()
+	// test writes: the contacts-peak hook fires on this Contact write
 	c := env.DB.Scoped(fixtures.AcmeID).Contact().Create()
 	if email != "" {
 		c.SetEmail(email)

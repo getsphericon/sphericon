@@ -43,6 +43,14 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   Go `const` blocks are domain vocabulary and are not read. Tests use the generated constants
   (`externalapi.ApiTokenScope…`) or the generated zod (`zSiteMembershipRole.options`), not string lists.
 - **Rule 7, a state is moved by a conditional write.** A machine column (`status`, `tracking_state`) is written only by its transition table: the ast-grep rule `no-status-write-outside-lifecycle`. A state kept as a moment that a background job moves on its own (`verified_at` and `verification_lost_at` of a Sending domain, `disabled_at` of a Webhook endpoint, `suspended_at` of a Workspace, `verified_at` of a Join domain) is written only by an update with a `.Where(...)` on the state it leaves (analyzer `statemoment`); a lost race surfaces as `ent.IsNotFound` and the caller handles it. To cover a new moment, add its builder method to `moments` in `tools/analyzers/statemoment`.
+- **Rule 10, `testwrites`.** A call to an ent `Create` or `CreateBulk` builder (the raw client, a transaction's client
+  or a scoped wrapper) in a `_test.go` file, `e2e/` included (the lint run sets the `e2e` tag), needs
+  `// test writes: <why the write is the operation under test>` on the line above its statement or trailing on
+  its line; an empty reason is still a finding, there is no baseline file, and `*_gen_test.go` mocks are skipped.
+  The operation under test is the write itself: the scoped wrapper's own behavior, a transaction commit or
+  rollback through the bus, a hook that fires on the write, a race simulated inside a hook. Any other test takes
+  its rows from `fixtures/` (add a row, `internal/AGENTS.md`). Test-support code outside `_test.go` files
+  (`internal/testhelper`) is the fixture tooling and is not read.
 - **Adding an analyzer.** (1) Create `tools/analyzers/<name>/` with `Analyzer` (see `noprint`) and report
   through `rule.Message`. (2) Write `<name>_test.go` with `analysistest.Run` and a test data package per
   case under `testdata/src/` (a `bad` package whose violating lines carry `// want` with the message

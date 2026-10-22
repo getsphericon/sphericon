@@ -81,6 +81,7 @@ func writeEventAfterContactDelete(next ent.Mutator) ent.Mutator {
 		if err != nil || !m.Op().Is(ent.OpDelete|ent.OpDeleteOne) {
 			return v, err
 		}
+		// test writes: a concurrent write simulated inside a hook is the race under test
 		return v, m.Client().Event.Create().SetWorkspaceID(fixtures.UmbrellaID).SetAction("written.during.erasure").Exec(ctx)
 	})
 }

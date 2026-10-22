@@ -24,6 +24,7 @@ func TestScopedOverTransaction(t *testing.T) {
 	t.Run("commit keeps the write", func(t *testing.T) {
 		tx, err := env.DB.Tx(ctx)
 		require.NoError(t, err)
+		// test writes: the scoped wrapper is the subject
 		created, err := tx.Client().Scoped(acme).Tag().Create().
 			SetName("via-tx").
 			AddContactIDs(fixtures.ContactAliceID).
@@ -40,6 +41,7 @@ func TestScopedOverTransaction(t *testing.T) {
 	t.Run("a foreign reference is refused inside the transaction", func(t *testing.T) {
 		tx, err := env.DB.Tx(ctx)
 		require.NoError(t, err)
+		// test writes: the scoped wrapper is the subject
 		_, err = tx.Client().Scoped(acme).Tag().Create().
 			SetName("via-tx-bad").
 			AddContactIDs(fixtures.ContactGlobexID).
@@ -51,6 +53,7 @@ func TestScopedOverTransaction(t *testing.T) {
 	t.Run("rollback drops the write", func(t *testing.T) {
 		tx, err := env.DB.Tx(ctx)
 		require.NoError(t, err)
+		// test writes: the scoped wrapper is the subject
 		_, err = tx.Client().Scoped(acme).Tag().Create().SetName("via-tx-rolled-back").Save(ctx)
 		require.NoError(t, err)
 		require.NoError(t, tx.Rollback())
@@ -66,6 +69,7 @@ func TestScopedOverEventsBusTx(t *testing.T) {
 	ctx := t.Context()
 
 	err := env.Bus.WithinTx(ctx, func(c *ent.Client, _ events.Publisher) error {
+		// test writes: the scoped wrapper is the subject
 		_, err := c.Scoped(acme).Tag().Create().
 			SetName("via-bus").
 			AddContactIDs(fixtures.ContactAliceID).
@@ -78,6 +82,7 @@ func TestScopedOverEventsBusTx(t *testing.T) {
 	assert.True(t, exists)
 
 	err = env.Bus.WithinTx(ctx, func(c *ent.Client, _ events.Publisher) error {
+		// test writes: the scoped wrapper is the subject
 		_, err := c.Scoped(acme).Tag().Create().
 			SetName("via-bus-bad").
 			AddContactIDs(fixtures.ContactGlobexID).
@@ -165,6 +170,7 @@ func TestScopedUpsert(t *testing.T) {
 
 	t.Run("ignore converges on one row", func(t *testing.T) {
 		for range 2 {
+			// test writes: the scoped wrapper is the subject
 			require.NoError(t, acmeScope.Tag().Create().SetName("upserted").
 				OnConflictColumns(tag.FieldName, tag.FieldWorkspaceID).Ignore().Exec(ctx))
 		}
@@ -174,6 +180,7 @@ func TestScopedUpsert(t *testing.T) {
 	})
 
 	t.Run("update new values on the unique key", func(t *testing.T) {
+		// test writes: the scoped wrapper is the subject
 		id, err := acmeScope.Contact().Create().SetEmail(fixtures.ContactAliceEmail).SetFirstName("Alicia").
 			OnConflictColumns(contact.FieldEmail, contact.FieldWorkspaceID).
 			Update(func(u *ent.ContactScopedUpsert) { u.UpdateFirstName() }).
@@ -187,6 +194,7 @@ func TestScopedUpsert(t *testing.T) {
 	})
 
 	t.Run("a foreign reference is refused", func(t *testing.T) {
+		// test writes: the scoped wrapper is the subject
 		err := acmeScope.Broadcast().Create().
 			SetName("upsert").
 			SetSegmentID(fixtures.SegmentGlobexID).
@@ -198,6 +206,7 @@ func TestScopedUpsert(t *testing.T) {
 
 	t.Run("a conflicting row of another Workspace is not updated", func(t *testing.T) {
 		// api_tokens.prefix is unique across Workspaces, so this conflicts with Globex's row.
+		// test writes: the scoped wrapper is the subject
 		err := acmeScope.ApiToken().Create().
 			SetName("hijack").
 			SetPrefix(fixtures.TokenGlobexPrefix).
@@ -222,10 +231,12 @@ func TestScopedCreateBulk(t *testing.T) {
 	br := acmeScope.BroadcastRecipient()
 
 	newRecipient := func(contactID int64) *ent.BroadcastRecipientScopedCreate {
+		// test writes: the scoped wrapper is the subject
 		return br.Create().SetBroadcastID(fixtures.BroadcastDraftID).SetContactID(contactID)
 	}
 
 	t.Run("one foreign reference refuses the whole batch", func(t *testing.T) {
+		// test writes: the scoped wrapper is the subject
 		err := br.CreateBulk(newRecipient(fixtures.ContactAliceID), newRecipient(fixtures.ContactGlobexID)).Exec(ctx)
 		require.ErrorIs(t, err, ent.ErrNotInWorkspace)
 		n, err := br.Query().Where(broadcastrecipient.BroadcastID(fixtures.BroadcastDraftID)).Count(ctx)
@@ -235,6 +246,7 @@ func TestScopedCreateBulk(t *testing.T) {
 
 	t.Run("creates the rows in the Workspace, idempotently with on-conflict ignore", func(t *testing.T) {
 		for range 2 {
+			// test writes: the scoped wrapper is the subject
 			require.NoError(t, br.CreateBulk(
 				newRecipient(fixtures.ContactAliceID),
 				newRecipient(fixtures.ContactBobID),
@@ -249,8 +261,10 @@ func TestScopedCreateBulk(t *testing.T) {
 	})
 
 	t.Run("a builder of another scope is refused", func(t *testing.T) {
+		// test writes: the scoped wrapper is the subject
 		other := env.DB.Scoped(globex).BroadcastRecipient().Create().
 			SetBroadcastID(fixtures.BroadcastGlobexID).SetContactID(fixtures.ContactGlobexID)
+		// test writes: the scoped wrapper is the subject
 		err := br.CreateBulk(other).Exec(ctx)
 		assert.ErrorIs(t, err, ent.ErrNotInWorkspace)
 	})
@@ -272,6 +286,7 @@ func TestScopedGroupBy(t *testing.T) {
 
 func TestScopedNotInWorkspaceIsTyped(t *testing.T) {
 	env := testhelper.Setup(t)
+	// test writes: the scoped wrapper is the subject
 	_, err := env.DB.Scoped(acme).Tag().Create().SetName("x").AddContactIDs(fixtures.ContactGlobexID).Save(t.Context())
 	require.Error(t, err)
 	assert.ErrorIs(t, err, ent.ErrNotInWorkspace)

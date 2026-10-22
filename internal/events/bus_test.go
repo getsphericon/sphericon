@@ -38,6 +38,7 @@ func TestBusWithinTxCommitsStateAndOutbox(t *testing.T) {
 
 	var created *ent.Contact
 	err := env.Bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+		// test writes: transaction commit and rollback through the bus is the subject
 		c, err := tx.Contact.Create().
 			SetWorkspaceID(fixtures.AcmeID).
 			SetEmail("outbox-commit@example.com").
@@ -66,6 +67,7 @@ func TestBusWithinTxRollsBackBoth(t *testing.T) {
 
 	boom := errors.New("boom")
 	err := env.Bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+		// test writes: transaction commit and rollback through the bus is the subject
 		if _, err := tx.Contact.Create().
 			SetWorkspaceID(fixtures.AcmeID).
 			SetEmail("outbox-rollback@example.com").
