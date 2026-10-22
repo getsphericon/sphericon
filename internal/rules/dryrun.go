@@ -6,6 +6,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/rule"
+	"github.com/getsphericon/sphericon/internal/events"
 )
 
 // DryRunOutcome is whether a stored Event would fire a Rule, and if not, why.
@@ -72,7 +73,7 @@ func (m *Module) DryRun(ctx context.Context, s *ent.Scoped, ruleID, eventID int6
 	if stored.ContactID == nil {
 		return DryRun{Outcome: NoContact}, nil
 	}
-	ev := Event{ContactID: *stored.ContactID, Action: stored.Action, Properties: stored.Properties}
+	ev := Event{ContactID: *stored.ContactID, Action: stored.Action, Properties: events.RuleProperties(stored.Properties)}
 
 	triggered, err := s.Rule().Query().Where(rule.ID(r.ID), triggeredBy(ev.Action)).Exist(ctx)
 	if err != nil {

@@ -59,10 +59,6 @@ const (
 // MaxHTTPActionsPerRule keeps one Rule from queueing an unbounded number of outbound calls.
 const MaxHTTPActionsPerRule = 5
 
-// MaxFiringPropertiesBytes caps the Event properties kept on a Firing for its Actions to
-// template; an Event with more keeps none (the Actions still run, the properties render empty).
-const MaxFiringPropertiesBytes = 32 << 10
-
 // Domain errors returned by Module. Callers match with errors.Is.
 var (
 	// ErrInvalid: the Rule does not fit the rules of a Rule (no Trigger event, an unknown
@@ -586,6 +582,7 @@ func (ActionsArgs) Kind() string { return ActionsKind }
 // It returns the Firings it wrote. It is queue-free apart from the enqueue inside the
 // transaction, so a test drives it directly.
 func (m *Module) Evaluate(ctx context.Context, s *ent.Scoped, ev Event) ([]*ent.RuleFiring, error) {
+	ev.Properties = events.RuleProperties(ev.Properties)
 	active, err := s.Rule().Query().
 		Where(
 			rule.StatusEQ(rule.StatusActive),
@@ -754,14 +751,15 @@ func EnrollingInto(ctx context.Context, s *ent.Scoped, automationID int64) ([]*e
 	return using, nil
 }
 
-// propertiesJSON is the Event's properties as kept on its Firing, nil when there are none or
-// they exceed MaxFiringPropertiesBytes.
+// propertiesJSON is the Event's properties as kept on its Firing, nil when there are none. The
+// caller has already bounded them (events.RuleProperties), so a Firing keeps exactly what its
+// Rule's Condition saw.
 func propertiesJSON(props map[string]any) *string {
 	if len(props) == 0 {
 		return nil
 	}
 	b, err := json.Marshal(props)
-	if err != nil || len(b) > MaxFiringPropertiesBytes {
+	if err != nil {
 		return nil
 	}
 	return new(string(b))

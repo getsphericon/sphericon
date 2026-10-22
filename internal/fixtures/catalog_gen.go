@@ -697,6 +697,10 @@ const (
 	EventRuleUrlDocsAction = "rule_url"
 	// EventRuleUrlDocsID is from fixtures/events.
 	EventRuleUrlDocsID = 9104
+	// EventRuleUrlOversizedAction is from fixtures/events.
+	EventRuleUrlOversizedAction = "rule_url"
+	// EventRuleUrlOversizedID is from fixtures/events.
+	EventRuleUrlOversizedID = 9105
 	// EventRuleUrlPricingAction is from fixtures/events.
 	EventRuleUrlPricingAction = "rule_url"
 	// EventRuleUrlPricingID is from fixtures/events.

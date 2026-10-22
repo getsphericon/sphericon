@@ -2,6 +2,7 @@ package rules_test
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent/rulefiring"
+	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -175,4 +177,20 @@ func TestEvaluateTestsTheEventsProperties(t *testing.T) {
 	assert.Equal(t, 0, fire("p-missing", map[string]any{"other": "pricing"}))
 	assert.Equal(t, 0, fire("p-type", map[string]any{"url": 7}))
 	assert.Equal(t, 0, fire("p-none", nil))
+}
+
+// An Event whose properties exceed the bound a Rule is shown has none for evaluation and for the
+// Firing alike: the Condition does not see the url the Actions could never have templated.
+func TestEvaluateSeesAnOversizedEventsPropertiesAsAbsent(t *testing.T) {
+	env := testhelper.Setup(t)
+	m := rules.New(env.Cipher, env.Bus)
+
+	fired, err := m.Evaluate(context.Background(), env.DB.Scoped(fixtures.AcmeID), rules.Event{
+		ContactID: fixtures.ContactAliceID, Action: "rule_url", SourceID: "evt-oversized",
+		RecordedAt: time.Now(),
+		Properties: map[string]any{"url": "https://x.test/pricing", "pad": strings.Repeat("x", events.RulePropertiesBound)},
+	})
+
+	require.NoError(t, err)
+	assert.Empty(t, fired)
 }

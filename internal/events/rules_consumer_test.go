@@ -2,6 +2,7 @@ package events_test
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/ThreeDotsLabs/watermill"
@@ -72,4 +73,33 @@ func TestRulesConsumerSkipsHistoryAndAuditEntries(t *testing.T) {
 	require.NoError(t, consume(msgFor(t, entryBy(events.Actor{Kind: events.ActorUser}, "membership.update"))))
 
 	assert.Empty(t, env.JobsOf(t, jobkind.RuleEvaluate.Kind))
+}
+
+// An Event heavier than RulePropertiesBound is queued without its properties.
+func TestRulesConsumerQueuesAnOversizedEventWithoutItsProperties(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	require.NoError(t, events.RulesConsumer(queueingJobs(t, env))(msgFor(t, &events.CollectedEvent{
+		WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID, SubjectID: "alice", Action: "rule_click",
+		Properties: map[string]any{"pad": strings.Repeat("x", events.RulePropertiesBound)},
+	})))
+
+	queued := env.JobsOf(t, jobkind.RuleEvaluate.Kind)
+	require.Len(t, queued, 1)
+	assert.NotContains(t, queued[0], "properties")
+}
+
+func TestRulePropertiesKeepsWhatFitsTheBoundAndDropsWhatDoesNot(t *testing.T) {
+	small := map[string]any{"url": "https://x.test"}
+	large := map[string]any{"pad": strings.Repeat("x", events.RulePropertiesBound)}
+
+	for name, tc := range map[string]struct{ in, want map[string]any }{
+		"none":      {in: nil, want: nil},
+		"fits":      {in: small, want: small},
+		"too large": {in: large, want: nil},
+	} {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tc.want, events.RuleProperties(tc.in))
+		})
+	}
 }

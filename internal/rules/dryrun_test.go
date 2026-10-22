@@ -63,6 +63,14 @@ func TestDryRunTestsTheStoredEventsProperties(t *testing.T) {
 	assert.Equal(t, rules.ConditionNotMet, dryRun(t, env, fixtures.RuleUrlPricingID, fixtures.EventRuleUrlDocsID).Outcome)
 }
 
+// An Event too heavy to be shown to a Rule has no properties for a real firing; a dry run must
+// say the same, not "would fire" for an Event the Rule would never fire on.
+func TestDryRunSeesAnOversizedEventsPropertiesAsAbsent(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	assert.Equal(t, rules.ConditionNotMet, dryRun(t, env, fixtures.RuleUrlPricingID, fixtures.EventRuleUrlOversizedID).Outcome)
+}
+
 func TestDryRunTestsADraftWithoutLookingAtActivation(t *testing.T) {
 	env := testhelper.Setup(t)
 

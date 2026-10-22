@@ -4,6 +4,7 @@
 package fixtures
 
 import (
+	"strings"
 	"text/template"
 	"time"
 
@@ -58,6 +59,8 @@ func TemplateFuncs(cipher *secrets.Cipher, now time.Time) template.FuncMap {
 			}
 			return out
 		},
+		// repeat builds a long value without writing it out: {{repeat "x" 33000}}.
+		"repeat": strings.Repeat,
 		// monthAgo is a moment inside a calendar month (UTC) some months back: {{monthAgo 6 3 10}} is the
 		// 3rd, 10:00 of the month six months ago; a fourth number adds minutes, which may be negative
 		// ({{monthAgo 6 1 0 -1}} is the last minute of the month before). Usage is measured per calendar month, so a scenario

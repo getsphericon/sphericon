@@ -291,11 +291,24 @@ func automationsConsumer(enroller Enroller) message.NoPublishHandlerFunc {
 	}
 }
 
-// ruleEventPropertiesBound is the most JSON an Event's properties may weigh to travel in a job
-// argument. Ingest already refuses larger customer events; a larger one reaching the queue anyway
-// is queued without its properties, so a Rule tests them as absent rather than a job row growing
-// without limit.
-const ruleEventPropertiesBound = 32 << 10
+// RulePropertiesBound is the most JSON an Event's properties may weigh to be shown to a Rule.
+// Ingest already refuses larger customer events; a larger one reaching a Rule anyway has no
+// properties, for the Condition and for the Firing's Actions alike, so a Rule never decides on a
+// value its Actions could not template and a job row does not grow without limit.
+const RulePropertiesBound = 32 << 10
+
+// RuleProperties is the view of an Event's properties that a Rule evaluates and a Firing keeps:
+// the properties themselves, or nil when they weigh more than RulePropertiesBound. Every path
+// that shows properties to a Rule (the consumer, Evaluate, a dry run) goes through it.
+func RuleProperties(props map[string]any) map[string]any {
+	if len(props) == 0 {
+		return props
+	}
+	if encoded, err := json.Marshal(props); err != nil || len(encoded) > RulePropertiesBound {
+		return nil
+	}
+	return props
+}
 
 // machineEvent reports whether ev was caused by a machine (a mail scanner's open or click, ADR
 // 0053), which never triggers a Rule. The flag on the Event does not exist yet (issue #592), so
@@ -333,10 +346,6 @@ func rulesConsumer(rules RuleEvaluator) message.NoPublishHandlerFunc {
 		if p.ContactID == 0 {
 			return nil // no Contact to act on
 		}
-		props := p.Properties
-		if encoded, err := json.Marshal(props); err != nil || len(encoded) > ruleEventPropertiesBound {
-			props = nil
-		}
 		sourceID := env.DedupKey
 		if sourceID == "" {
 			sourceID = env.ID
@@ -351,7 +360,7 @@ func rulesConsumer(rules RuleEvaluator) message.NoPublishHandlerFunc {
 			Action:      p.Action,
 			SourceID:    sourceID,
 			RecordedAt:  recorded,
-			Properties:  props,
+			Properties:  RuleProperties(p.Properties),
 		})
 	}
 }
