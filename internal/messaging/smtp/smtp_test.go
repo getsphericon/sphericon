@@ -127,7 +127,6 @@ func parseReply(reply string) error {
 	}
 	parts := strings.SplitN(reply, " ", 3)
 	return &gosmtp.SMTPError{Code: code, EnhancedCode: gosmtp.EnhancedCode{class, subject, detail}, Message: parts[2]}
-
 }
 
 // Reset keeps the credentials: AUTH happens once per connection, before each message.

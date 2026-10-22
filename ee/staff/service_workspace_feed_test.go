@@ -49,8 +49,8 @@ func feedFrom(t *testing.T, c *serviceapi.Client, cursor string) ([]serviceapi.S
 
 func feedIDs(entries []serviceapi.ServiceWorkspaceResource) []string {
 	out := make([]string, len(entries))
-	for i, e := range entries {
-		out[i] = string(e.ID)
+	for i := range entries {
+		out[i] = string(entries[i].ID)
 	}
 	return out
 }
@@ -65,9 +65,9 @@ func ownerIDs(w serviceapi.ServiceWorkspaceResource) []int64 {
 
 func entry(t *testing.T, entries []serviceapi.ServiceWorkspaceResource, id string) serviceapi.ServiceWorkspaceResource {
 	t.Helper()
-	for _, e := range entries {
-		if string(e.ID) == id {
-			return e
+	for i := range entries {
+		if string(entries[i].ID) == id {
+			return entries[i]
 		}
 	}
 	require.FailNowf(t, "entry missing", "no %q in %v", id, feedIDs(entries))

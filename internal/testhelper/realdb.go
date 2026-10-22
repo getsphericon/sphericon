@@ -95,7 +95,10 @@ func (emptyMigrator) Hash() (string, error) { return "empty", nil }
 func (emptyMigrator) Migrate(context.Context, *sql.DB, pgtestdb.Config) error { return nil }
 
 func projectRoot() string {
-	_, file, _, _ := runtime.Caller(0)
+	_, file, _, ok := runtime.Caller(0)
+	if !ok {
+		panic("testhelper: cannot locate its own source to find the project root")
+	}
 	return filepath.Join(filepath.Dir(file), "..", "..")
 }
 

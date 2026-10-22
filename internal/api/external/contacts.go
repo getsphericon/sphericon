@@ -170,7 +170,8 @@ func (h *Handlers) ContactsBatchUpsert(ctx context.Context, req *externalapi.Ups
 	}
 
 	items := make([]contacts.Attributes, len(req.Contacts))
-	for i, c := range req.Contacts {
+	for i := range req.Contacts {
+		c := &req.Contacts[i]
 		items[i] = contacts.Attributes{
 			SubjectID: convert.StringPtr(c.SubjectId),
 			Email:     convert.StringPtr(c.Email),

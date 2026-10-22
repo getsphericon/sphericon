@@ -105,7 +105,6 @@ func TestRegisteringValidatesNameAndEmail(t *testing.T) {
 	exists, err := env.DB.User.Query().Where(entuser.Email("blank@example.com")).Exist(t.Context())
 	require.NoError(t, err)
 	assert.False(t, exists, "a rejected registration creates no user")
-
 }
 
 func TestLoginRefusesAnUnverifiedUserWithATypedAnswerAndNoSession(t *testing.T) {

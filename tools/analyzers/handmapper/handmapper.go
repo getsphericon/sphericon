@@ -7,6 +7,7 @@
 package handmapper
 
 import (
+	"fmt"
 	"go/ast"
 	"go/types"
 	"regexp"
@@ -35,10 +36,16 @@ var (
 
 func run(pass *analysis.Pass) (any, error) {
 	registered := registeredHelpers(pass)
-	insp := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
+	insp, ok := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
+	if !ok {
+		return nil, fmt.Errorf("%s: the inspect analyzer gave no *inspector.Inspector", pass.Analyzer.Name)
+	}
 	via := viaConverter(pass, insp)
 	insp.Preorder([]ast.Node{(*ast.FuncDecl)(nil)}, func(n ast.Node) {
-		fn := n.(*ast.FuncDecl)
+		fn, isNode := n.(*ast.FuncDecl)
+		if !isNode {
+			return
+		}
 		if strings.HasSuffix(pass.Fset.File(fn.Pos()).Name(), "_test.go") || generated(pass, fn) || registered[fn.Name.Name] {
 			return
 		}
@@ -46,7 +53,10 @@ func run(pass *analysis.Pass) (any, error) {
 		if !ok {
 			return
 		}
-		sig := obj.Type().(*types.Signature)
+		sig, isSig := obj.Type().(*types.Signature)
+		if !isSig {
+			return
+		}
 		if !anyType(sig.Params(), isEntity) || !anyType(sig.Results(), isResource) {
 			return
 		}
@@ -68,7 +78,10 @@ func viaConverter(pass *analysis.Pass, insp *inspector.Inspector) map[types.Obje
 	calls := map[types.Object][]types.Object{}
 	via := map[types.Object]bool{}
 	insp.Preorder([]ast.Node{(*ast.FuncDecl)(nil)}, func(n ast.Node) {
-		fn := n.(*ast.FuncDecl)
+		fn, isNode := n.(*ast.FuncDecl)
+		if !isNode {
+			return
+		}
 		self := pass.TypesInfo.Defs[fn.Name]
 		if fn.Body == nil || self == nil {
 			return

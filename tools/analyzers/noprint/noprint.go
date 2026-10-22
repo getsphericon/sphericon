@@ -5,6 +5,7 @@
 package noprint
 
 import (
+	"fmt"
 	"go/ast"
 	"go/types"
 
@@ -24,9 +25,15 @@ var Analyzer = &analysis.Analyzer{
 }
 
 func run(pass *analysis.Pass) (any, error) {
-	insp := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
+	insp, ok := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
+	if !ok {
+		return nil, fmt.Errorf("%s: the inspect analyzer gave no *inspector.Inspector", pass.Analyzer.Name)
+	}
 	insp.Preorder([]ast.Node{(*ast.CallExpr)(nil)}, func(n ast.Node) {
-		call := n.(*ast.CallExpr)
+		call, isNode := n.(*ast.CallExpr)
+		if !isNode {
+			return
+		}
 		id, ok := call.Fun.(*ast.Ident)
 		if !ok {
 			return

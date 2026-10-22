@@ -15,8 +15,8 @@ import (
 
 func actions(items []siteapi.SiteAuditEntryResource) []string {
 	out := make([]string, len(items))
-	for i, e := range items {
-		out[i] = e.Action
+	for i := range items {
+		out[i] = items[i].Action
 	}
 	return out
 }

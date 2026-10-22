@@ -58,8 +58,8 @@ func (h *harness) getWorkspace(t *testing.T, c *staffapi.Client, id string) staf
 
 func names(items []staffapi.StaffWorkspaceResource) []string {
 	out := make([]string, 0, len(items))
-	for _, w := range items {
-		out = append(out, w.Name)
+	for i := range items {
+		out = append(out, items[i].Name)
 	}
 	return out
 }

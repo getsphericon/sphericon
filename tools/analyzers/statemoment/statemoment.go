@@ -9,6 +9,7 @@
 package statemoment
 
 import (
+	"fmt"
 	"go/ast"
 	"go/types"
 	"strings"
@@ -45,9 +46,15 @@ var Analyzer = &analysis.Analyzer{
 }
 
 func run(pass *analysis.Pass) (any, error) {
-	insp := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
+	insp, ok := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
+	if !ok {
+		return nil, fmt.Errorf("%s: the inspect analyzer gave no *inspector.Inspector", pass.Analyzer.Name)
+	}
 	insp.Preorder([]ast.Node{(*ast.FuncDecl)(nil)}, func(n ast.Node) {
-		decl := n.(*ast.FuncDecl)
+		decl, isNode := n.(*ast.FuncDecl)
+		if !isNode {
+			return
+		}
 		if decl.Body == nil || strings.HasSuffix(pass.Fset.Position(decl.Pos()).Filename, "_test.go") {
 			return
 		}

@@ -376,7 +376,10 @@ type environment struct {
 // loadVars reads the variables of the process: the env files, then the environment over
 // them, then the `_FILE` siblings of the secrets.
 func loadVars(envName string) (map[string]string, error) {
-	_, file, _, _ := runtime.Caller(0)
+	_, file, _, ok := runtime.Caller(0)
+	if !ok {
+		return nil, fmt.Errorf("locate the config package's source to find the .env files")
+	}
 	rootDir := filepath.Join(filepath.Dir(file), "..")
 
 	vars, err := readEnvFiles(envFiles(rootDir, envName))

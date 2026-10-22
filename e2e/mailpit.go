@@ -204,5 +204,9 @@ func freePort(ctx context.Context) (int, error) {
 		return 0, err
 	}
 	defer func() { _ = ln.Close() }()
-	return ln.Addr().(*net.TCPAddr).Port, nil
+	addr, ok := ln.Addr().(*net.TCPAddr)
+	if !ok {
+		return 0, fmt.Errorf("a tcp listener has a %T address", ln.Addr())
+	}
+	return addr.Port, nil
 }

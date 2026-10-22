@@ -48,7 +48,10 @@ func New(address, seed, issuer string) (*Link, error) {
 		return nil, fmt.Errorf("SPHERICON_ACCOUNT_LINK_SIGNING_KEY must be a base64 %d-byte Ed25519 seed (e.g. `openssl rand -base64 32`)", ed25519.SeedSize)
 	}
 	key := ed25519.NewKeyFromSeed(raw)
-	pub := key.Public().(ed25519.PublicKey)
+	pub, ok := key.Public().(ed25519.PublicKey)
+	if !ok {
+		return nil, fmt.Errorf("ed25519 key has a %T public key", key.Public())
+	}
 	sum := sha256.Sum256(pub)
 	kid := hex.EncodeToString(sum[:8])
 	set, err := json.Marshal(jose.JSONWebKeySet{Keys: []jose.JSONWebKey{{

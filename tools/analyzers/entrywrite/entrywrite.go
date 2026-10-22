@@ -11,6 +11,7 @@
 package entrywrite
 
 import (
+	"fmt"
 	"go/ast"
 	"slices"
 	"strings"
@@ -82,9 +83,15 @@ func run(pass *analysis.Pass) (any, error) {
 	if !mixed && !isEntryPoint(pass.Pkg.Path()) {
 		return nil, nil
 	}
-	insp := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
+	insp, ok := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
+	if !ok {
+		return nil, fmt.Errorf("%s: the inspect analyzer gave no *inspector.Inspector", pass.Analyzer.Name)
+	}
 	insp.WithStack([]ast.Node{(*ast.CallExpr)(nil)}, func(n ast.Node, push bool, stack []ast.Node) bool {
-		call := n.(*ast.CallExpr)
+		call, isNode := n.(*ast.CallExpr)
+		if !isNode {
+			return true
+		}
 		if !push || strings.HasSuffix(pass.Fset.Position(call.Pos()).Filename, "_test.go") {
 			return true
 		}

@@ -8,6 +8,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"testing"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/stretchr/testify/require"
@@ -129,8 +130,11 @@ func (a *Agent) CopyStarter(name string) Draft {
 
 	list := a.mustCall("templates_list", map[string]any{})
 	var id string
-	for _, item := range list["items"].([]any) {
-		tpl := item.(map[string]any)
+	items, isList := list["items"].([]any)
+	require.True(a.w.t, isList, "templates_list returns its items")
+	for _, item := range items {
+		tpl, isTemplate := item.(map[string]any)
+		require.True(a.w.t, isTemplate, "a listed Template is an object")
 		if tpl["name"] == name {
 			id = jsonID(tpl["id"])
 		}
@@ -141,7 +145,11 @@ func (a *Agent) CopyStarter(name string) Draft {
 	doc, isDoc := tpl["doc"].(map[string]any)
 	require.True(a.w.t, isDoc, "the starter Template carries its document")
 	copied := a.mustCall("templates_create", map[string]any{"name": name + " (copy)", "subject": tpl["subject"], "doc": doc})
-	return Draft{Subject: copied["subject"].(string), Doc: copied["doc"].(map[string]any)}
+	subject, isSubject := copied["subject"].(string)
+	require.True(a.w.t, isSubject, "the copy carries its subject")
+	copiedDoc, isCopiedDoc := copied["doc"].(map[string]any)
+	require.True(a.w.t, isCopiedDoc, "the copy carries its document")
+	return Draft{Subject: subject, Doc: copiedDoc}
 }
 
 // Edit replaces text in the draft's document: the first text node that contains old.
@@ -171,13 +179,20 @@ type Lint struct {
 func (a *Agent) Lint(d Draft) Lint {
 	a.w.t.Helper()
 	out := a.mustCall("email_lint", map[string]any{"subject": d.Subject, "doc": d.Doc})
-	return Lint{Errors: codesOf(out["errors"]), Warnings: codesOf(out["warnings"])}
+	return Lint{Errors: codesOf(a.w.t, out["errors"]), Warnings: codesOf(a.w.t, out["warnings"])}
 }
 
-func codesOf(v any) []string {
+func codesOf(tb testing.TB, v any) []string {
+	tb.Helper()
+	findings, isList := v.([]any)
+	require.True(tb, isList, "the findings are a list")
 	var codes []string
-	for _, f := range v.([]any) {
-		codes = append(codes, f.(map[string]any)["code"].(string))
+	for _, f := range findings {
+		finding, isFinding := f.(map[string]any)
+		require.True(tb, isFinding, "a finding is an object")
+		code, isCode := finding["code"].(string)
+		require.True(tb, isCode, "a finding carries its code")
+		codes = append(codes, code)
 	}
 	return codes
 }

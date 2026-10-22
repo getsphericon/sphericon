@@ -6,6 +6,7 @@
 package rawsql
 
 import (
+	"fmt"
 	"go/ast"
 	"go/token"
 	"go/types"
@@ -41,12 +42,18 @@ var stdMethods = map[string]bool{"Exec": true, "Query": true, "QueryRow": true}
 var fragmentFuncs = map[string]bool{"P": true, "ExprFunc": true, "Expr": true, "ExprP": true, "Raw": true}
 
 func run(pass *analysis.Pass) (any, error) {
-	insp := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
+	insp, ok := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
+	if !ok {
+		return nil, fmt.Errorf("%s: the inspect analyzer gave no *inspector.Inspector", pass.Analyzer.Name)
+	}
 	insp.WithStack([]ast.Node{(*ast.CallExpr)(nil)}, func(n ast.Node, push bool, stack []ast.Node) bool {
 		if !push {
 			return true
 		}
-		call := n.(*ast.CallExpr)
+		call, isNode := n.(*ast.CallExpr)
+		if !isNode {
+			return true
+		}
 		kind := classify(pass, call)
 		if kind == "" {
 			return true

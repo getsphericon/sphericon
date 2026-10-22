@@ -87,7 +87,8 @@ var (
 func build(ctx context.Context, steps []Step) ([]Step, error) {
 	out := make([]Step, len(steps))
 	copy(out, steps)
-	for i, s := range out {
+	for i := range out {
+		s := out[i]
 		if s.Type != StepEmail || len(s.Doc) == 0 {
 			continue
 		}
@@ -125,7 +126,8 @@ func Decode(definition string) ([]Step, error) {
 // not belong to each step's type, trimming tag names and sanitizing an email step's body.
 func Encode(steps []Step) (string, error) {
 	stored := make([]Step, 0, len(steps))
-	for _, s := range steps {
+	for i := range steps {
+		s := &steps[i]
 		switch s.Type {
 		case StepWait:
 			stored = append(stored, Step{Type: StepWait, Seconds: s.Seconds})
@@ -146,7 +148,8 @@ func Encode(steps []Step) (string, error) {
 }
 
 func validate(steps []Step) error {
-	for _, s := range steps {
+	for i := range steps {
+		s := &steps[i]
 		switch s.Type {
 		case StepEmail:
 			if err := emailrender.Lint(s.Subject, s.Body, nil).Error; err != nil {

@@ -95,14 +95,15 @@ func invalid(format string, a ...any) error {
 // stored step with the same id.
 func (m *Module) sealSteps(steps, stored []Step) ([]Step, error) {
 	prev := map[string]Step{}
-	for _, p := range stored {
-		if p.Type == StepHTTP {
-			prev[p.ID] = p
+	for i := range stored {
+		if stored[i].Type == StepHTTP {
+			prev[stored[i].ID] = stored[i]
 		}
 	}
 	out := make([]Step, len(steps))
 	seen := map[string]bool{}
-	for i, s := range steps {
+	for i := range steps {
+		s := steps[i]
 		if s.Type != StepHTTP {
 			out[i] = s
 			continue

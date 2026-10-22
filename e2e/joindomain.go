@@ -102,8 +102,8 @@ func (w *Workspace) RequireJoinedByDomain(c *Colleague) {
 	listed, err := c.site.SiteWorkspacesList(ctx)
 	require.NoError(w.t, err)
 	ids := make([]string, len(listed))
-	for i, ws := range listed {
-		ids[i] = string(ws.ID)
+	for i := range listed {
+		ids[i] = string(listed[i].ID)
 	}
 	require.Contains(w.t, ids, w.publicID, "the Colleague reaches the Workspace")
 	require.Len(w.t, ids, 2, "and still has a personal Workspace of their own")

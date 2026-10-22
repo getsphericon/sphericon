@@ -3,6 +3,7 @@ package testhelper
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 
 	"github.com/getsphericon/sphericon/internal/messaging"
@@ -86,7 +87,11 @@ func catalogWith(fake *FakeSES) *messaging.Catalog {
 		if err != nil {
 			return nil, err
 		}
-		return quotaSender{EmailSender: built.(messaging.EmailSender), fake: fake}, nil
+		sender, ok := built.(messaging.EmailSender)
+		if !ok {
+			return nil, fmt.Errorf("the ses descriptor built a %T, not a messaging.EmailSender", built)
+		}
+		return quotaSender{EmailSender: sender, fake: fake}, nil
 	}
 	return messaging.NewCatalog(smtp.Descriptor(), real)
 }

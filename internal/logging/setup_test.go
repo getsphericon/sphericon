@@ -31,14 +31,17 @@ func TestNewTextFormatIsCaseInsensitive(t *testing.T) {
 }
 
 func TestParseLevelNamedLevels(t *testing.T) {
-	for in, want := range map[string]slog.Level{
-		"warn":      slog.LevelWarn,
-		" Warning ": slog.LevelWarn,
-		"error":     slog.LevelError,
-		"info":      slog.LevelInfo,
-		"":          slog.LevelInfo,
+	for _, c := range []struct {
+		in   string
+		want slog.Level
+	}{
+		{"warn", slog.LevelWarn},
+		{" Warning ", slog.LevelWarn},
+		{"error", slog.LevelError},
+		{"info", slog.LevelInfo},
+		{"", slog.LevelInfo},
 	} {
-		got := parseLevel(in)
-		assert.Equalf(t, want, got, "parseLevel(%q) = %v, want %v", in, got, want)
+		got := parseLevel(c.in)
+		assert.Equalf(t, c.want, got, "parseLevel(%q) = %v, want %v", c.in, got, c.want)
 	}
 }
