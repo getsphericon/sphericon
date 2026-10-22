@@ -256,30 +256,39 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 	if err := m.checkTypes(in.EventTypes); err != nil {
 		return Endpoint{}, err
 	}
-	upd := s.WebhookEndpoint().UpdateOneID(id).
-		SetNillableURL(in.URL)
-	if in.EventTypes != nil {
-		upd = upd.SetEventTypes(in.EventTypes)
-	}
-	if in.Enabled != nil {
-		// Whoever flips the switch decides now: the reason it last turned itself off no
-		// longer applies, and enabling starts the failure run over (ADR 0039). Disabling an
-		// endpoint that is already off keeps the moment and the reason it has.
-		if *in.Enabled {
-			upd = upd.ClearDisabledAt().ClearDisabledReason().
-				ClearConsecutiveFailures().ClearFailingSince().ClearLastErrorKind().
-				ClearLastErrorStatus().ClearLastFailureAt()
-		} else {
-			current, err := s.WebhookEndpoint().Get(ctx, id)
-			if err != nil {
-				return Endpoint{}, err
-			}
-			if current.DisabledAt == nil {
-				upd = upd.SetDisabledAt(time.Now()).SetDisabledReason(webhookendpoint.DisabledReasonOwner)
-			}
+	build := func() *ent.WebhookEndpointScopedUpdateOne {
+		upd := s.WebhookEndpoint().UpdateOneID(id).SetNillableURL(in.URL)
+		if in.EventTypes != nil {
+			upd = upd.SetEventTypes(in.EventTypes)
 		}
+		return upd
 	}
-	e, err := upd.Save(ctx)
+	if in.Enabled == nil {
+		e, err := build().Save(ctx)
+		if err != nil {
+			return Endpoint{}, err
+		}
+		return m.open(e)
+	}
+	// Whoever flips the switch decides now: the reason it last turned itself off no longer
+	// applies, and enabling starts the failure run over (ADR 0039).
+	if *in.Enabled {
+		e, err := build().ClearDisabledAt().ClearDisabledReason().
+			ClearConsecutiveFailures().ClearFailingSince().ClearLastErrorKind().
+			ClearLastErrorStatus().ClearLastFailureAt().Save(ctx)
+		if err != nil {
+			return Endpoint{}, err
+		}
+		return m.open(e)
+	}
+	// Disabling is the move out of enabled, so it lands only while the endpoint is still
+	// enabled. An endpoint that is already off keeps the moment and the reason it has: the
+	// miss falls back to the plain edit, whose own miss means the endpoint is gone.
+	e, err := build().Where(webhookendpoint.DisabledAtIsNil()).
+		SetDisabledAt(time.Now()).SetDisabledReason(webhookendpoint.DisabledReasonOwner).Save(ctx)
+	if ent.IsNotFound(err) {
+		e, err = build().Save(ctx)
+	}
 	if err != nil {
 		return Endpoint{}, err
 	}

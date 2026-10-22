@@ -182,12 +182,17 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		if in.Selector == nil || selector == cur.DkimSelector {
 			return nil
 		}
-		upd := ts.SendingDomain().UpdateOneID(id).SetDkimSelector(selector)
 		if dkimstate.Is(cur) {
-			// The published record is under the old selector: the verification is lost.
-			upd.SetVerificationLostAt(time.Now())
+			// The published record is under the old selector: the verification is lost. The
+			// loss lands only while the domain is still verified; a miss means a check moved
+			// it meanwhile, and the plain edit below stands.
+			row, err = ts.SendingDomain().UpdateOneID(id).Where(dkimstate.Verified()).
+				SetDkimSelector(selector).SetVerificationLostAt(time.Now()).Save(ctx)
+			if !ent.IsNotFound(err) {
+				return err
+			}
 		}
-		row, err = upd.Save(ctx)
+		row, err = ts.SendingDomain().UpdateOneID(id).SetDkimSelector(selector).Save(ctx)
 		return err
 	})
 	if err != nil {

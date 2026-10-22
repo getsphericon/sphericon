@@ -166,7 +166,7 @@ func (m *Module) Verify(ctx context.Context, s *ent.Scoped, id int64) (*ent.Join
 	var verified *ent.JoinDomain
 	markVerified := func(to *ent.Scoped) error {
 		var uerr error
-		verified, uerr = to.JoinDomain().UpdateOneID(row.ID).SetVerifiedAt(now).SetLastCheckedAt(now).Save(ctx)
+		verified, uerr = to.JoinDomain().UpdateOneID(row.ID).Where(joindomain.VerifiedAtIsNil()).SetVerifiedAt(now).SetLastCheckedAt(now).Save(ctx)
 		return uerr
 	}
 	if holder == nil {
@@ -174,7 +174,9 @@ func (m *Module) Verify(ctx context.Context, s *ent.Scoped, id int64) (*ent.Join
 	} else {
 		// The holder's row goes first: the verified-only unique index admits one at a time.
 		err = m.bus.WithinHandOverTx(ctx, s, holder.WorkspaceID, func(to, from *ent.Scoped) error {
-			if err := from.JoinDomain().UpdateOneID(holder.ID).ClearVerifiedAt().Exec(ctx); err != nil {
+			// A miss means a re-check already reverted the holder.
+			err := from.JoinDomain().UpdateOneID(holder.ID).Where(joindomain.VerifiedAtNotNil()).ClearVerifiedAt().Exec(ctx)
+			if err != nil && !ent.IsNotFound(err) {
 				return err
 			}
 			return markVerified(to)
@@ -183,6 +185,10 @@ func (m *Module) Verify(ctx context.Context, s *ent.Scoped, id int64) (*ent.Join
 	if db.IsUniqueViolation(err) {
 		// Another Workspace verified it between the lookup and the write.
 		return nil, ErrHeldElsewhere
+	}
+	if ent.IsNotFound(err) {
+		// A concurrent Verify got there first: the stored row is the answer.
+		return s.JoinDomain().Get(ctx, id)
 	}
 	if err != nil {
 		return nil, err
@@ -229,7 +235,11 @@ func (m *Module) Recheck(ctx context.Context, id int64) (flipped bool, err error
 	slog.WarnContext(ctx, "join domain verification lost",
 		"join_domain_id", id, "workspace_id", row.WorkspaceID, "domain", row.Domain)
 	system := m.bus.Act(s, events.Actor{Kind: events.ActorSystem})
-	err = system.JoinDomain().UpdateOneID(id).ClearVerifiedAt().SetLastCheckedAt(m.now()).Exec(ctx)
+	err = system.JoinDomain().UpdateOneID(id).Where(joindomain.VerifiedAtNotNil()).ClearVerifiedAt().SetLastCheckedAt(m.now()).Exec(ctx)
+	if ent.IsNotFound(err) {
+		// Lost the swap: another re-check or a hand-over already reverted it and told the Owners.
+		return false, nil
+	}
 	if err != nil {
 		return false, err
 	}

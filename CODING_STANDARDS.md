@@ -42,6 +42,7 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   line or the line above; a marker without a reason is still a finding, and there is no baseline file. Typed
   Go `const` blocks are domain vocabulary and are not read. Tests use the generated constants
   (`externalapi.ApiTokenScope…`) or the generated zod (`zSiteMembershipRole.options`), not string lists.
+- **Rule 7, a state is moved by a conditional write.** A machine column (`status`, `tracking_state`) is written only by its transition table: the ast-grep rule `no-status-write-outside-lifecycle`. A state kept as a moment that a background job moves on its own (`verified_at` and `verification_lost_at` of a Sending domain, `disabled_at` of a Webhook endpoint, `suspended_at` of a Workspace, `verified_at` of a Join domain) is written only by an update with a `.Where(...)` on the state it leaves (analyzer `statemoment`); a lost race surfaces as `ent.IsNotFound` and the caller handles it. To cover a new moment, add its builder method to `moments` in `tools/analyzers/statemoment`.
 - **Adding an analyzer.** (1) Create `tools/analyzers/<name>/` with `Analyzer` (see `noprint`) and report
   through `rule.Message`. (2) Write `<name>_test.go` with `analysistest.Run` and a test data package per
   case under `testdata/src/` (a `bad` package whose violating lines carry `// want` with the message
