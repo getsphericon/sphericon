@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded in part by ADR 0053 (a delivered denominator replaces the proxy)
 ---
 
 # Deliverability rate metrics: complaint & bounce rate in core, thresholds in EE

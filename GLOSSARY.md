@@ -70,7 +70,8 @@ at a time). Attached to a Contact by **stable identity resolved at ingest** — 
 and carries denormalized identity snapshot fields for debugging. The link is a nullable
 foreign key that is set to null when the Contact is deleted: an Event outlives the mutable
 Contact, it never blocks or follows its deletion. The raw material behind behavioral segmentation. sphericon's own delivery and
-engagement facts (`email.sent`, `email.opened`, `email.clicked`) are Events too — reserved,
+delivery and engagement facts (`email.sent`, `email.delivered`, `email.delayed`, `email.dropped`, `email.bounced`,
+`email.complained`, `email.opened`, `email.clicked`, `email.unsubscribed`) are Events too — reserved,
 system-generated actions — so engagement is segmentable through the very same machinery as
 customer-tracked actions, with no parallel event stream.
 _Avoid_: Activity, log entry, signal
@@ -285,10 +286,11 @@ is refused. Distinct from _Skipped_, which is final for one destination.
 _Avoid_: Block, failure, ban
 
 **Sent** (vs delivered):
-"Sent" means a message was _accepted by the email provider_ — not that it reached the inbox.
-True delivery failures surface afterward as bounces / complaints, which flow into Suppression.
-A broadcast's delivery rate is accepted-by-provider ÷ targeted, not inbox delivery.
-_Avoid_: Delivered (for the accepted-by-provider sense)
+"Sent" means a message was _accepted by the email provider_ — not that it reached the inbox
+(`email.sent`). **Delivered** means the receiving mail server accepted it, as the provider reports
+in a Delivery notice (`email.delivered`); it is still not "opened" or "in the inbox". A
+broadcast's send rate is accepted-by-provider ÷ targeted.
+_Avoid_: Delivered (for the accepted-by-provider sense), Sent (for the receiving-server sense)
 
 **Transactional send**:
 A single-recipient email triggered by the customer's own application through the `/api`
@@ -545,22 +547,32 @@ deduplicates. Pull, the opposite direction from a Webhook endpoint, which pushes
 _Avoid_: Sync, replication, feed, data export (that is one Contact's subject access bundle)
 
 **Ingest hook** (inbound provider webhook):
-The inbound endpoint of one Integration that **receives** its provider's callbacks (bounce /
-complaint), addressed by the Integration's ingest key and decoded by the Integration's Preset. The
+The inbound endpoint of one Integration that **receives** its provider's callbacks (bounce,
+complaint, delivery, delay, drop), addressed by the Integration's ingest key and decoded by the Integration's Preset. The
 opposite direction from a Webhook endpoint; it feeds Suppression.
 _Avoid_: Webhook (unqualified), inbound webhook
 
 **Preset**:
 A declarative description of one provider's callbacks — how its signature is verified and how its
-payload becomes Delivery failures. Built into the binary (ses, postmark, mailgun, generic) or
+payload becomes Delivery notices. Built into the binary (ses, postmark, mailgun, generic) or
 supplied by the Self-hoster for the whole Instance, never by a Workspace.
 _Avoid_: Adapter, plugin, provider (alone)
 
-**Delivery failure**:
-The one normalized shape every Preset produces: a Destination, whether it is a bounce or a
-complaint, and for a bounce whether it is permanent. Only permanent bounces and complaints enter
-Suppression.
-_Avoid_: Bounce event (it also covers complaints)
+**Delivery notice**:
+The one normalized shape every Preset produces: a Destination, its kind (bounce, complaint,
+delivery, delayed or dropped), for a bounce whether it is permanent, and, when the provider
+returns it, the provider's message id, which links the notice to the Outbound message it is
+about. Only permanent bounces and complaints enter Suppression. A notice with no message id stays
+at the level of the address.
+_Avoid_: Delivery failure (delivery and delay are not failures), Bounce event (it also covers complaints)
+
+**Machine engagement**:
+An open or click made by software rather than the recipient: a mail client's privacy proxy (Apple
+Mail Privacy Protection), a security scanner or a link prefetcher. It is still recorded as an
+`email.opened` / `email.clicked` Event, flagged `machine`, but it never counts toward open or click
+figures, never sets a Broadcast recipient's rollup and never starts an Automation. Detected from
+the request's user-agent and source address, neither of which is stored.
+_Avoid_: Bot open, false open
 
 **User**:
 A human who authenticates (email + password). A User reaches Workspaces through Memberships,
