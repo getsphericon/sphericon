@@ -1336,6 +1336,133 @@ var (
 			},
 		},
 	}
+	// RulesColumns holds the columns for the "rules" table.
+	RulesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "discarded_at", Type: field.TypeTime, Nullable: true},
+		{Name: "name", Type: field.TypeString},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"draft", "active"}, Default: "draft"},
+		{Name: "activated_at", Type: field.TypeTime, Nullable: true},
+		{Name: "condition", Type: field.TypeString, Nullable: true},
+		{Name: "actions", Type: field.TypeString, Default: "[]"},
+		{Name: "workspace_id", Type: field.TypeInt64},
+	}
+	// RulesTable holds the schema information for the "rules" table.
+	RulesTable = &schema.Table{
+		Name:       "rules",
+		Columns:    RulesColumns,
+		PrimaryKey: []*schema.Column{RulesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "rules_workspaces_rules",
+				Columns:    []*schema.Column{RulesColumns[9]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "rule_workspace_id",
+				Unique:  false,
+				Columns: []*schema.Column{RulesColumns[9]},
+			},
+		},
+	}
+	// RuleFiringsColumns holds the columns for the "rule_firings" table.
+	RuleFiringsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "action", Type: field.TypeString},
+		{Name: "source_id", Type: field.TypeString},
+		{Name: "actions", Type: field.TypeString, Default: "[]"},
+		{Name: "results", Type: field.TypeString, Default: "[]"},
+		{Name: "completed_at", Type: field.TypeTime, Nullable: true},
+		{Name: "rule_id", Type: field.TypeInt64},
+		{Name: "contact_id", Type: field.TypeInt64},
+		{Name: "workspace_id", Type: field.TypeInt64},
+	}
+	// RuleFiringsTable holds the schema information for the "rule_firings" table.
+	RuleFiringsTable = &schema.Table{
+		Name:       "rule_firings",
+		Columns:    RuleFiringsColumns,
+		PrimaryKey: []*schema.Column{RuleFiringsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "rule_firings_rules_firings",
+				Columns:    []*schema.Column{RuleFiringsColumns[8]},
+				RefColumns: []*schema.Column{RulesColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "rule_firings_contacts_contact",
+				Columns:    []*schema.Column{RuleFiringsColumns[9]},
+				RefColumns: []*schema.Column{ContactsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "rule_firings_workspaces_rule_firings",
+				Columns:    []*schema.Column{RuleFiringsColumns[10]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "rulefiring_rule_id_source_id",
+				Unique:  true,
+				Columns: []*schema.Column{RuleFiringsColumns[8], RuleFiringsColumns[4]},
+			},
+			{
+				Name:    "rule_firings_contact_id",
+				Unique:  false,
+				Columns: []*schema.Column{RuleFiringsColumns[9]},
+			},
+		},
+	}
+	// RuleTriggersColumns holds the columns for the "rule_triggers" table.
+	RuleTriggersColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "action", Type: field.TypeString},
+		{Name: "rule_id", Type: field.TypeInt64},
+		{Name: "workspace_id", Type: field.TypeInt64},
+	}
+	// RuleTriggersTable holds the schema information for the "rule_triggers" table.
+	RuleTriggersTable = &schema.Table{
+		Name:       "rule_triggers",
+		Columns:    RuleTriggersColumns,
+		PrimaryKey: []*schema.Column{RuleTriggersColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "rule_triggers_rules_triggers",
+				Columns:    []*schema.Column{RuleTriggersColumns[4]},
+				RefColumns: []*schema.Column{RulesColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "rule_triggers_workspaces_rule_triggers",
+				Columns:    []*schema.Column{RuleTriggersColumns[5]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "ruletrigger_workspace_id_action",
+				Unique:  false,
+				Columns: []*schema.Column{RuleTriggersColumns[5], RuleTriggersColumns[3]},
+			},
+			{
+				Name:    "ruletrigger_rule_id_action",
+				Unique:  true,
+				Columns: []*schema.Column{RuleTriggersColumns[4], RuleTriggersColumns[3]},
+			},
+		},
+	}
 	// SchemaStateColumns holds the columns for the "schema_state" table.
 	SchemaStateColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -1907,6 +2034,9 @@ var (
 		PasskeyChallengesTable,
 		PrivateRelayRangesTable,
 		RecoveryCodesTable,
+		RulesTable,
+		RuleFiringsTable,
+		RuleTriggersTable,
 		SchemaStateTable,
 		SegmentsTable,
 		SendLimitersTable,
@@ -2101,6 +2231,24 @@ func init() {
 	RecoveryCodesTable.ForeignKeys[0].RefTable = UsersTable
 	RecoveryCodesTable.Annotation = &entsql.Annotation{
 		Table: "recovery_codes",
+	}
+	RulesTable.ForeignKeys[0].RefTable = WorkspacesTable
+	RulesTable.Annotation = &entsql.Annotation{
+		Table: "rules",
+	}
+	RulesTable.Annotation.Checks = map[string]string{
+		"rules_status_check": "status IN ('draft', 'active')",
+	}
+	RuleFiringsTable.ForeignKeys[0].RefTable = RulesTable
+	RuleFiringsTable.ForeignKeys[1].RefTable = ContactsTable
+	RuleFiringsTable.ForeignKeys[2].RefTable = WorkspacesTable
+	RuleFiringsTable.Annotation = &entsql.Annotation{
+		Table: "rule_firings",
+	}
+	RuleTriggersTable.ForeignKeys[0].RefTable = RulesTable
+	RuleTriggersTable.ForeignKeys[1].RefTable = WorkspacesTable
+	RuleTriggersTable.Annotation = &entsql.Annotation{
+		Table: "rule_triggers",
 	}
 	SchemaStateTable.Annotation = &entsql.Annotation{
 		Table: "schema_state",

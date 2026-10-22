@@ -33,6 +33,7 @@ import "./resources/brand-kit.tsp";
 import "./resources/join-domains.tsp";
 import "./resources/automations.tsp";
 import "./resources/enrollments.tsp";
+import "./resources/rules.tsp";
 import "./resources/webhooks.tsp";
 import "./resources/sending-domains.tsp";
 import "./resources/analytics.tsp";

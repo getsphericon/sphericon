@@ -34,6 +34,9 @@ import (
 	"github.com/getsphericon/sphericon/ent/passkeychallenge"
 	"github.com/getsphericon/sphericon/ent/privaterelayrange"
 	"github.com/getsphericon/sphericon/ent/recoverycode"
+	"github.com/getsphericon/sphericon/ent/rule"
+	"github.com/getsphericon/sphericon/ent/rulefiring"
+	"github.com/getsphericon/sphericon/ent/ruletrigger"
 	"github.com/getsphericon/sphericon/ent/schema"
 	"github.com/getsphericon/sphericon/ent/schemastate"
 	"github.com/getsphericon/sphericon/ent/segment"
@@ -746,6 +749,79 @@ func init() {
 	recoverycodeDescCodeHash := recoverycodeFields[2].Descriptor()
 	// recoverycode.CodeHashValidator is a validator for the "code_hash" field. It is called by the builders before save.
 	recoverycode.CodeHashValidator = recoverycodeDescCodeHash.Validators[0].(func(string) error)
+	ruleMixin := schema.Rule{}.Mixin()
+	ruleMixinFields0 := ruleMixin[0].Fields()
+	_ = ruleMixinFields0
+	ruleFields := schema.Rule{}.Fields()
+	_ = ruleFields
+	// ruleDescCreatedAt is the schema descriptor for created_at field.
+	ruleDescCreatedAt := ruleMixinFields0[0].Descriptor()
+	// rule.DefaultCreatedAt holds the default value on creation for the created_at field.
+	rule.DefaultCreatedAt = ruleDescCreatedAt.Default.(func() time.Time)
+	// ruleDescUpdatedAt is the schema descriptor for updated_at field.
+	ruleDescUpdatedAt := ruleMixinFields0[1].Descriptor()
+	// rule.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	rule.DefaultUpdatedAt = ruleDescUpdatedAt.Default.(func() time.Time)
+	// rule.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	rule.UpdateDefaultUpdatedAt = ruleDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// ruleDescName is the schema descriptor for name field.
+	ruleDescName := ruleFields[1].Descriptor()
+	// rule.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	rule.NameValidator = ruleDescName.Validators[0].(func(string) error)
+	// ruleDescActions is the schema descriptor for actions field.
+	ruleDescActions := ruleFields[5].Descriptor()
+	// rule.DefaultActions holds the default value on creation for the actions field.
+	rule.DefaultActions = ruleDescActions.Default.(string)
+	rulefiringMixin := schema.RuleFiring{}.Mixin()
+	rulefiringMixinFields0 := rulefiringMixin[0].Fields()
+	_ = rulefiringMixinFields0
+	rulefiringFields := schema.RuleFiring{}.Fields()
+	_ = rulefiringFields
+	// rulefiringDescCreatedAt is the schema descriptor for created_at field.
+	rulefiringDescCreatedAt := rulefiringMixinFields0[0].Descriptor()
+	// rulefiring.DefaultCreatedAt holds the default value on creation for the created_at field.
+	rulefiring.DefaultCreatedAt = rulefiringDescCreatedAt.Default.(func() time.Time)
+	// rulefiringDescUpdatedAt is the schema descriptor for updated_at field.
+	rulefiringDescUpdatedAt := rulefiringMixinFields0[1].Descriptor()
+	// rulefiring.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	rulefiring.DefaultUpdatedAt = rulefiringDescUpdatedAt.Default.(func() time.Time)
+	// rulefiring.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	rulefiring.UpdateDefaultUpdatedAt = rulefiringDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// rulefiringDescAction is the schema descriptor for action field.
+	rulefiringDescAction := rulefiringFields[3].Descriptor()
+	// rulefiring.ActionValidator is a validator for the "action" field. It is called by the builders before save.
+	rulefiring.ActionValidator = rulefiringDescAction.Validators[0].(func(string) error)
+	// rulefiringDescSourceID is the schema descriptor for source_id field.
+	rulefiringDescSourceID := rulefiringFields[4].Descriptor()
+	// rulefiring.SourceIDValidator is a validator for the "source_id" field. It is called by the builders before save.
+	rulefiring.SourceIDValidator = rulefiringDescSourceID.Validators[0].(func(string) error)
+	// rulefiringDescActions is the schema descriptor for actions field.
+	rulefiringDescActions := rulefiringFields[5].Descriptor()
+	// rulefiring.DefaultActions holds the default value on creation for the actions field.
+	rulefiring.DefaultActions = rulefiringDescActions.Default.(string)
+	// rulefiringDescResults is the schema descriptor for results field.
+	rulefiringDescResults := rulefiringFields[6].Descriptor()
+	// rulefiring.DefaultResults holds the default value on creation for the results field.
+	rulefiring.DefaultResults = rulefiringDescResults.Default.(string)
+	ruletriggerMixin := schema.RuleTrigger{}.Mixin()
+	ruletriggerMixinFields0 := ruletriggerMixin[0].Fields()
+	_ = ruletriggerMixinFields0
+	ruletriggerFields := schema.RuleTrigger{}.Fields()
+	_ = ruletriggerFields
+	// ruletriggerDescCreatedAt is the schema descriptor for created_at field.
+	ruletriggerDescCreatedAt := ruletriggerMixinFields0[0].Descriptor()
+	// ruletrigger.DefaultCreatedAt holds the default value on creation for the created_at field.
+	ruletrigger.DefaultCreatedAt = ruletriggerDescCreatedAt.Default.(func() time.Time)
+	// ruletriggerDescUpdatedAt is the schema descriptor for updated_at field.
+	ruletriggerDescUpdatedAt := ruletriggerMixinFields0[1].Descriptor()
+	// ruletrigger.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	ruletrigger.DefaultUpdatedAt = ruletriggerDescUpdatedAt.Default.(func() time.Time)
+	// ruletrigger.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	ruletrigger.UpdateDefaultUpdatedAt = ruletriggerDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// ruletriggerDescAction is the schema descriptor for action field.
+	ruletriggerDescAction := ruletriggerFields[2].Descriptor()
+	// ruletrigger.ActionValidator is a validator for the "action" field. It is called by the builders before save.
+	ruletrigger.ActionValidator = ruletriggerDescAction.Validators[0].(func(string) error)
 	schemastateMixin := schema.SchemaState{}.Mixin()
 	schemastateMixinFields0 := schemastateMixin[0].Fields()
 	_ = schemastateMixinFields0

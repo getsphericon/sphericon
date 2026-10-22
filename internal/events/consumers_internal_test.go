@@ -31,6 +31,7 @@ func TestConsumersRejectUndecodableMessages(t *testing.T) {
 		"suppression": suppressionConsumer(nil),
 		"webhooks":    webhooksConsumer(nil, nil),
 		"automations": automationsConsumer(nil),
+		"rules":       rulesConsumer(nil),
 	}
 	for name, handle := range consumers {
 		require.Error(t, handle(rawMsg("not json")), name+": not an envelope")

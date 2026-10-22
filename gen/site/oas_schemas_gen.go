@@ -9812,6 +9812,57 @@ func (s *SiteCreateInvitationResponse) SetResource(val SiteInvitationResource) {
 
 func (*SiteCreateInvitationResponse) siteInvitationsCreateRes() {}
 
+// Site request body for creating a Rule (always created as a draft).
+// Ref: #/components/schemas/SiteCreateRuleInput
+type SiteCreateRuleInput struct {
+	Name string `json:"name"`
+	// The Event actions that make the Rule fire; at least one.
+	TriggerEvents []string              `json:"triggerEvents"`
+	Condition     OptSiteConditionGroup `json:"condition"`
+	// The Actions to run, in order.
+	Actions []SiteRuleAction `json:"actions"`
+}
+
+// GetName returns the value of Name.
+func (s *SiteCreateRuleInput) GetName() string {
+	return s.Name
+}
+
+// GetTriggerEvents returns the value of TriggerEvents.
+func (s *SiteCreateRuleInput) GetTriggerEvents() []string {
+	return s.TriggerEvents
+}
+
+// GetCondition returns the value of Condition.
+func (s *SiteCreateRuleInput) GetCondition() OptSiteConditionGroup {
+	return s.Condition
+}
+
+// GetActions returns the value of Actions.
+func (s *SiteCreateRuleInput) GetActions() []SiteRuleAction {
+	return s.Actions
+}
+
+// SetName sets the value of Name.
+func (s *SiteCreateRuleInput) SetName(val string) {
+	s.Name = val
+}
+
+// SetTriggerEvents sets the value of TriggerEvents.
+func (s *SiteCreateRuleInput) SetTriggerEvents(val []string) {
+	s.TriggerEvents = val
+}
+
+// SetCondition sets the value of Condition.
+func (s *SiteCreateRuleInput) SetCondition(val OptSiteConditionGroup) {
+	s.Condition = val
+}
+
+// SetActions sets the value of Actions.
+func (s *SiteCreateRuleInput) SetActions(val []SiteRuleAction) {
+	s.Actions = val
+}
+
 // Site request body for creating a segment.
 // Ref: #/components/schemas/SiteCreateSegmentInput
 type SiteCreateSegmentInput struct {
@@ -14841,6 +14892,645 @@ func (s *SiteResetPasswordInput) SetPassword(val string) {
 	s.Password = val
 }
 
+// One Action of a Rule, run in order when the Rule fires. A flat shape: tag actions carry the tag
+// name.
+// Ref: #/components/schemas/SiteRuleAction
+type SiteRuleAction struct {
+	// Action kind.
+	Type SiteRuleActionType `json:"type"`
+	// Tag name to apply to or remove from the Contact (apply_tag and remove_tag).
+	Tag OptString `json:"tag"`
+}
+
+// GetType returns the value of Type.
+func (s *SiteRuleAction) GetType() SiteRuleActionType {
+	return s.Type
+}
+
+// GetTag returns the value of Tag.
+func (s *SiteRuleAction) GetTag() OptString {
+	return s.Tag
+}
+
+// SetType sets the value of Type.
+func (s *SiteRuleAction) SetType(val SiteRuleActionType) {
+	s.Type = val
+}
+
+// SetTag sets the value of Tag.
+func (s *SiteRuleAction) SetTag(val OptString) {
+	s.Tag = val
+}
+
+// What one Action did when a Rule fired.
+// Ref: #/components/schemas/SiteRuleActionResult
+type SiteRuleActionResult struct {
+	// The Action's kind.
+	Type SiteRuleActionType `json:"type"`
+	// How it ended; a skipped Action is an expected outcome, not an error.
+	Status SiteRuleActionStatus `json:"status"`
+	// Why it failed or was skipped.
+	Detail OptString `json:"detail"`
+}
+
+// GetType returns the value of Type.
+func (s *SiteRuleActionResult) GetType() SiteRuleActionType {
+	return s.Type
+}
+
+// GetStatus returns the value of Status.
+func (s *SiteRuleActionResult) GetStatus() SiteRuleActionStatus {
+	return s.Status
+}
+
+// GetDetail returns the value of Detail.
+func (s *SiteRuleActionResult) GetDetail() OptString {
+	return s.Detail
+}
+
+// SetType sets the value of Type.
+func (s *SiteRuleActionResult) SetType(val SiteRuleActionType) {
+	s.Type = val
+}
+
+// SetStatus sets the value of Status.
+func (s *SiteRuleActionResult) SetStatus(val SiteRuleActionStatus) {
+	s.Status = val
+}
+
+// SetDetail sets the value of Detail.
+func (s *SiteRuleActionResult) SetDetail(val OptString) {
+	s.Detail = val
+}
+
+// How one Action of a Firing ended.
+// Ref: #/components/schemas/SiteRuleActionStatus
+type SiteRuleActionStatus string
+
+const (
+	SiteRuleActionStatusSucceeded SiteRuleActionStatus = "succeeded"
+	SiteRuleActionStatusFailed    SiteRuleActionStatus = "failed"
+	SiteRuleActionStatusSkipped   SiteRuleActionStatus = "skipped"
+)
+
+// AllValues returns all SiteRuleActionStatus values.
+func (SiteRuleActionStatus) AllValues() []SiteRuleActionStatus {
+	return []SiteRuleActionStatus{
+		SiteRuleActionStatusSucceeded,
+		SiteRuleActionStatusFailed,
+		SiteRuleActionStatusSkipped,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteRuleActionStatus) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteRuleActionStatusSucceeded:
+		return []byte(s), nil
+	case SiteRuleActionStatusFailed:
+		return []byte(s), nil
+	case SiteRuleActionStatusSkipped:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteRuleActionStatus) UnmarshalText(data []byte) error {
+	switch SiteRuleActionStatus(data) {
+	case SiteRuleActionStatusSucceeded:
+		*s = SiteRuleActionStatusSucceeded
+		return nil
+	case SiteRuleActionStatusFailed:
+		*s = SiteRuleActionStatusFailed
+		return nil
+	case SiteRuleActionStatusSkipped:
+		*s = SiteRuleActionStatusSkipped
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Kind of Rule action.
+// Ref: #/components/schemas/SiteRuleActionType
+type SiteRuleActionType string
+
+const (
+	SiteRuleActionTypeApplyTag  SiteRuleActionType = "apply_tag"
+	SiteRuleActionTypeRemoveTag SiteRuleActionType = "remove_tag"
+)
+
+// AllValues returns all SiteRuleActionType values.
+func (SiteRuleActionType) AllValues() []SiteRuleActionType {
+	return []SiteRuleActionType{
+		SiteRuleActionTypeApplyTag,
+		SiteRuleActionTypeRemoveTag,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteRuleActionType) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteRuleActionTypeApplyTag:
+		return []byte(s), nil
+	case SiteRuleActionTypeRemoveTag:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteRuleActionType) UnmarshalText(data []byte) error {
+	switch SiteRuleActionType(data) {
+	case SiteRuleActionTypeApplyTag:
+		*s = SiteRuleActionTypeApplyTag
+		return nil
+	case SiteRuleActionTypeRemoveTag:
+		*s = SiteRuleActionTypeRemoveTag
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// One execution of a Rule for one Event, with what each Action did. Erased with the Contact.
+// Ref: #/components/schemas/SiteRuleFiringResource
+type SiteRuleFiringResource struct {
+	// Unique identifier.
+	ID EntityId `json:"id"`
+	// The Rule that fired.
+	RuleId EntityId `json:"ruleId"`
+	// The Contact the Event was for.
+	ContactId EntityId `json:"contactId"`
+	// The Trigger event: the action of the Event that fired the Rule.
+	Action string `json:"action"`
+	// The Event's source id: the same Event delivered twice fires a Rule once.
+	EventSourceId string `json:"eventSourceId"`
+	// One result per Action run so far, in the Rule's order.
+	Results []SiteRuleActionResult `json:"results"`
+	// When the last Action finished; absent while Actions are still to run.
+	CompletedAt OptTimestamp `json:"completedAt"`
+	// When the Rule fired.
+	CreatedAt Timestamp `json:"createdAt"`
+}
+
+// GetID returns the value of ID.
+func (s *SiteRuleFiringResource) GetID() EntityId {
+	return s.ID
+}
+
+// GetRuleId returns the value of RuleId.
+func (s *SiteRuleFiringResource) GetRuleId() EntityId {
+	return s.RuleId
+}
+
+// GetContactId returns the value of ContactId.
+func (s *SiteRuleFiringResource) GetContactId() EntityId {
+	return s.ContactId
+}
+
+// GetAction returns the value of Action.
+func (s *SiteRuleFiringResource) GetAction() string {
+	return s.Action
+}
+
+// GetEventSourceId returns the value of EventSourceId.
+func (s *SiteRuleFiringResource) GetEventSourceId() string {
+	return s.EventSourceId
+}
+
+// GetResults returns the value of Results.
+func (s *SiteRuleFiringResource) GetResults() []SiteRuleActionResult {
+	return s.Results
+}
+
+// GetCompletedAt returns the value of CompletedAt.
+func (s *SiteRuleFiringResource) GetCompletedAt() OptTimestamp {
+	return s.CompletedAt
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *SiteRuleFiringResource) GetCreatedAt() Timestamp {
+	return s.CreatedAt
+}
+
+// SetID sets the value of ID.
+func (s *SiteRuleFiringResource) SetID(val EntityId) {
+	s.ID = val
+}
+
+// SetRuleId sets the value of RuleId.
+func (s *SiteRuleFiringResource) SetRuleId(val EntityId) {
+	s.RuleId = val
+}
+
+// SetContactId sets the value of ContactId.
+func (s *SiteRuleFiringResource) SetContactId(val EntityId) {
+	s.ContactId = val
+}
+
+// SetAction sets the value of Action.
+func (s *SiteRuleFiringResource) SetAction(val string) {
+	s.Action = val
+}
+
+// SetEventSourceId sets the value of EventSourceId.
+func (s *SiteRuleFiringResource) SetEventSourceId(val string) {
+	s.EventSourceId = val
+}
+
+// SetResults sets the value of Results.
+func (s *SiteRuleFiringResource) SetResults(val []SiteRuleActionResult) {
+	s.Results = val
+}
+
+// SetCompletedAt sets the value of CompletedAt.
+func (s *SiteRuleFiringResource) SetCompletedAt(val OptTimestamp) {
+	s.CompletedAt = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *SiteRuleFiringResource) SetCreatedAt(val Timestamp) {
+	s.CreatedAt = val
+}
+
+type SiteRuleFiringsListBadRequest ProblemDetails
+
+func (*SiteRuleFiringsListBadRequest) siteRuleFiringsListRes() {}
+
+type SiteRuleFiringsListNotFound ProblemDetails
+
+func (*SiteRuleFiringsListNotFound) siteRuleFiringsListRes() {}
+
+// Paginated response.
+type SiteRuleFiringsListOK struct {
+	// List of items.
+	Items []SiteRuleFiringResource `json:"items"`
+	// Page number (1-based).
+	Page int32 `json:"page"`
+	// Page size.
+	PageSize int32 `json:"pageSize"`
+	// Total number of elements.
+	TotalItems int32 `json:"totalItems"`
+	// Total number of pages.
+	TotalPages int32 `json:"totalPages"`
+}
+
+// GetItems returns the value of Items.
+func (s *SiteRuleFiringsListOK) GetItems() []SiteRuleFiringResource {
+	return s.Items
+}
+
+// GetPage returns the value of Page.
+func (s *SiteRuleFiringsListOK) GetPage() int32 {
+	return s.Page
+}
+
+// GetPageSize returns the value of PageSize.
+func (s *SiteRuleFiringsListOK) GetPageSize() int32 {
+	return s.PageSize
+}
+
+// GetTotalItems returns the value of TotalItems.
+func (s *SiteRuleFiringsListOK) GetTotalItems() int32 {
+	return s.TotalItems
+}
+
+// GetTotalPages returns the value of TotalPages.
+func (s *SiteRuleFiringsListOK) GetTotalPages() int32 {
+	return s.TotalPages
+}
+
+// SetItems sets the value of Items.
+func (s *SiteRuleFiringsListOK) SetItems(val []SiteRuleFiringResource) {
+	s.Items = val
+}
+
+// SetPage sets the value of Page.
+func (s *SiteRuleFiringsListOK) SetPage(val int32) {
+	s.Page = val
+}
+
+// SetPageSize sets the value of PageSize.
+func (s *SiteRuleFiringsListOK) SetPageSize(val int32) {
+	s.PageSize = val
+}
+
+// SetTotalItems sets the value of TotalItems.
+func (s *SiteRuleFiringsListOK) SetTotalItems(val int32) {
+	s.TotalItems = val
+}
+
+// SetTotalPages sets the value of TotalPages.
+func (s *SiteRuleFiringsListOK) SetTotalPages(val int32) {
+	s.TotalPages = val
+}
+
+func (*SiteRuleFiringsListOK) siteRuleFiringsListRes() {}
+
+// Rule resource used by the site UI: a stateless reaction to an Event. Created Rules are drafts.
+// Ref: #/components/schemas/SiteRuleResource
+type SiteRuleResource struct {
+	// Unique identifier.
+	ID EntityId `json:"id"`
+	// Rule name.
+	Name string `json:"name"`
+	// Lifecycle status.
+	Status SiteRuleStatus `json:"status"`
+	// The Event actions that make the Rule fire; any one of them does.
+	TriggerEvents []string `json:"triggerEvents"`
+	// The Contact must match this condition for the Rule to fire; absent or empty means every Contact.
+	Condition OptSiteConditionGroup `json:"condition"`
+	// The Rule's ordered Actions.
+	Actions []SiteRuleAction `json:"actions"`
+	// When the Rule was last activated. It acts only on Events recorded after it.
+	ActivatedAt OptNilTimestamp `json:"activatedAt"`
+	// When the Rule was archived; null while it is kept.
+	ArchivedAt OptNilTimestamp `json:"archivedAt"`
+	// Creation timestamp.
+	CreatedAt Timestamp `json:"createdAt"`
+	// Last update timestamp.
+	UpdatedAt Timestamp `json:"updatedAt"`
+}
+
+// GetID returns the value of ID.
+func (s *SiteRuleResource) GetID() EntityId {
+	return s.ID
+}
+
+// GetName returns the value of Name.
+func (s *SiteRuleResource) GetName() string {
+	return s.Name
+}
+
+// GetStatus returns the value of Status.
+func (s *SiteRuleResource) GetStatus() SiteRuleStatus {
+	return s.Status
+}
+
+// GetTriggerEvents returns the value of TriggerEvents.
+func (s *SiteRuleResource) GetTriggerEvents() []string {
+	return s.TriggerEvents
+}
+
+// GetCondition returns the value of Condition.
+func (s *SiteRuleResource) GetCondition() OptSiteConditionGroup {
+	return s.Condition
+}
+
+// GetActions returns the value of Actions.
+func (s *SiteRuleResource) GetActions() []SiteRuleAction {
+	return s.Actions
+}
+
+// GetActivatedAt returns the value of ActivatedAt.
+func (s *SiteRuleResource) GetActivatedAt() OptNilTimestamp {
+	return s.ActivatedAt
+}
+
+// GetArchivedAt returns the value of ArchivedAt.
+func (s *SiteRuleResource) GetArchivedAt() OptNilTimestamp {
+	return s.ArchivedAt
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *SiteRuleResource) GetCreatedAt() Timestamp {
+	return s.CreatedAt
+}
+
+// GetUpdatedAt returns the value of UpdatedAt.
+func (s *SiteRuleResource) GetUpdatedAt() Timestamp {
+	return s.UpdatedAt
+}
+
+// SetID sets the value of ID.
+func (s *SiteRuleResource) SetID(val EntityId) {
+	s.ID = val
+}
+
+// SetName sets the value of Name.
+func (s *SiteRuleResource) SetName(val string) {
+	s.Name = val
+}
+
+// SetStatus sets the value of Status.
+func (s *SiteRuleResource) SetStatus(val SiteRuleStatus) {
+	s.Status = val
+}
+
+// SetTriggerEvents sets the value of TriggerEvents.
+func (s *SiteRuleResource) SetTriggerEvents(val []string) {
+	s.TriggerEvents = val
+}
+
+// SetCondition sets the value of Condition.
+func (s *SiteRuleResource) SetCondition(val OptSiteConditionGroup) {
+	s.Condition = val
+}
+
+// SetActions sets the value of Actions.
+func (s *SiteRuleResource) SetActions(val []SiteRuleAction) {
+	s.Actions = val
+}
+
+// SetActivatedAt sets the value of ActivatedAt.
+func (s *SiteRuleResource) SetActivatedAt(val OptNilTimestamp) {
+	s.ActivatedAt = val
+}
+
+// SetArchivedAt sets the value of ArchivedAt.
+func (s *SiteRuleResource) SetArchivedAt(val OptNilTimestamp) {
+	s.ArchivedAt = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *SiteRuleResource) SetCreatedAt(val Timestamp) {
+	s.CreatedAt = val
+}
+
+// SetUpdatedAt sets the value of UpdatedAt.
+func (s *SiteRuleResource) SetUpdatedAt(val Timestamp) {
+	s.UpdatedAt = val
+}
+
+func (*SiteRuleResource) siteRulesActivateRes()   {}
+func (*SiteRuleResource) siteRulesCreateRes()     {}
+func (*SiteRuleResource) siteRulesDeactivateRes() {}
+func (*SiteRuleResource) siteRulesGetRes()        {}
+func (*SiteRuleResource) siteRulesUpdateRes()     {}
+
+// Rule lifecycle status.
+// Ref: #/components/schemas/SiteRuleStatus
+type SiteRuleStatus string
+
+const (
+	SiteRuleStatusDraft  SiteRuleStatus = "draft"
+	SiteRuleStatusActive SiteRuleStatus = "active"
+)
+
+// AllValues returns all SiteRuleStatus values.
+func (SiteRuleStatus) AllValues() []SiteRuleStatus {
+	return []SiteRuleStatus{
+		SiteRuleStatusDraft,
+		SiteRuleStatusActive,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteRuleStatus) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteRuleStatusDraft:
+		return []byte(s), nil
+	case SiteRuleStatusActive:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteRuleStatus) UnmarshalText(data []byte) error {
+	switch SiteRuleStatus(data) {
+	case SiteRuleStatusDraft:
+		*s = SiteRuleStatusDraft
+		return nil
+	case SiteRuleStatusActive:
+		*s = SiteRuleStatusActive
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type SiteRulesActivateBadRequest ProblemDetails
+
+func (*SiteRulesActivateBadRequest) siteRulesActivateRes() {}
+
+type SiteRulesActivateNotFound ProblemDetails
+
+func (*SiteRulesActivateNotFound) siteRulesActivateRes() {}
+
+type SiteRulesActivateUnprocessableEntity ProblemDetails
+
+func (*SiteRulesActivateUnprocessableEntity) siteRulesActivateRes() {}
+
+type SiteRulesCreateNotFound ProblemDetails
+
+func (*SiteRulesCreateNotFound) siteRulesCreateRes() {}
+
+type SiteRulesCreateUnprocessableEntity ProblemDetails
+
+func (*SiteRulesCreateUnprocessableEntity) siteRulesCreateRes() {}
+
+type SiteRulesDeactivateBadRequest ProblemDetails
+
+func (*SiteRulesDeactivateBadRequest) siteRulesDeactivateRes() {}
+
+type SiteRulesDeactivateNotFound ProblemDetails
+
+func (*SiteRulesDeactivateNotFound) siteRulesDeactivateRes() {}
+
+type SiteRulesGetBadRequest ProblemDetails
+
+func (*SiteRulesGetBadRequest) siteRulesGetRes() {}
+
+type SiteRulesGetNotFound ProblemDetails
+
+func (*SiteRulesGetNotFound) siteRulesGetRes() {}
+
+type SiteRulesListBadRequest ProblemDetails
+
+func (*SiteRulesListBadRequest) siteRulesListRes() {}
+
+type SiteRulesListNotFound ProblemDetails
+
+func (*SiteRulesListNotFound) siteRulesListRes() {}
+
+// Paginated response.
+type SiteRulesListOK struct {
+	// List of items.
+	Items []SiteRuleResource `json:"items"`
+	// Page number (1-based).
+	Page int32 `json:"page"`
+	// Page size.
+	PageSize int32 `json:"pageSize"`
+	// Total number of elements.
+	TotalItems int32 `json:"totalItems"`
+	// Total number of pages.
+	TotalPages int32 `json:"totalPages"`
+}
+
+// GetItems returns the value of Items.
+func (s *SiteRulesListOK) GetItems() []SiteRuleResource {
+	return s.Items
+}
+
+// GetPage returns the value of Page.
+func (s *SiteRulesListOK) GetPage() int32 {
+	return s.Page
+}
+
+// GetPageSize returns the value of PageSize.
+func (s *SiteRulesListOK) GetPageSize() int32 {
+	return s.PageSize
+}
+
+// GetTotalItems returns the value of TotalItems.
+func (s *SiteRulesListOK) GetTotalItems() int32 {
+	return s.TotalItems
+}
+
+// GetTotalPages returns the value of TotalPages.
+func (s *SiteRulesListOK) GetTotalPages() int32 {
+	return s.TotalPages
+}
+
+// SetItems sets the value of Items.
+func (s *SiteRulesListOK) SetItems(val []SiteRuleResource) {
+	s.Items = val
+}
+
+// SetPage sets the value of Page.
+func (s *SiteRulesListOK) SetPage(val int32) {
+	s.Page = val
+}
+
+// SetPageSize sets the value of PageSize.
+func (s *SiteRulesListOK) SetPageSize(val int32) {
+	s.PageSize = val
+}
+
+// SetTotalItems sets the value of TotalItems.
+func (s *SiteRulesListOK) SetTotalItems(val int32) {
+	s.TotalItems = val
+}
+
+// SetTotalPages sets the value of TotalPages.
+func (s *SiteRulesListOK) SetTotalPages(val int32) {
+	s.TotalPages = val
+}
+
+func (*SiteRulesListOK) siteRulesListRes() {}
+
+type SiteRulesListUnprocessableEntity ProblemDetails
+
+func (*SiteRulesListUnprocessableEntity) siteRulesListRes() {}
+
+type SiteRulesUpdateBadRequest ProblemDetails
+
+func (*SiteRulesUpdateBadRequest) siteRulesUpdateRes() {}
+
+type SiteRulesUpdateNotFound ProblemDetails
+
+func (*SiteRulesUpdateNotFound) siteRulesUpdateRes() {}
+
+type SiteRulesUpdateUnprocessableEntity ProblemDetails
+
+func (*SiteRulesUpdateUnprocessableEntity) siteRulesUpdateRes() {}
+
 // Save the Brand kit: the first save creates it and the starter Templates, a later one replaces its
 // values.
 // Ref: #/components/schemas/SiteSaveBrandKitInput
@@ -18435,6 +19125,57 @@ func (s *SiteUpdateMembershipInput) GetRole() SiteMembershipRole {
 // SetRole sets the value of Role.
 func (s *SiteUpdateMembershipInput) SetRole(val SiteMembershipRole) {
 	s.Role = val
+}
+
+// Site request body for updating a Rule.
+// Ref: #/components/schemas/SiteUpdateRuleInput
+type SiteUpdateRuleInput struct {
+	Name OptString `json:"name"`
+	// The Event actions that make the Rule fire; at least one.
+	TriggerEvents []string              `json:"triggerEvents"`
+	Condition     OptSiteConditionGroup `json:"condition"`
+	// The Actions to run, in order.
+	Actions []SiteRuleAction `json:"actions"`
+}
+
+// GetName returns the value of Name.
+func (s *SiteUpdateRuleInput) GetName() OptString {
+	return s.Name
+}
+
+// GetTriggerEvents returns the value of TriggerEvents.
+func (s *SiteUpdateRuleInput) GetTriggerEvents() []string {
+	return s.TriggerEvents
+}
+
+// GetCondition returns the value of Condition.
+func (s *SiteUpdateRuleInput) GetCondition() OptSiteConditionGroup {
+	return s.Condition
+}
+
+// GetActions returns the value of Actions.
+func (s *SiteUpdateRuleInput) GetActions() []SiteRuleAction {
+	return s.Actions
+}
+
+// SetName sets the value of Name.
+func (s *SiteUpdateRuleInput) SetName(val OptString) {
+	s.Name = val
+}
+
+// SetTriggerEvents sets the value of TriggerEvents.
+func (s *SiteUpdateRuleInput) SetTriggerEvents(val []string) {
+	s.TriggerEvents = val
+}
+
+// SetCondition sets the value of Condition.
+func (s *SiteUpdateRuleInput) SetCondition(val OptSiteConditionGroup) {
+	s.Condition = val
+}
+
+// SetActions sets the value of Actions.
+func (s *SiteUpdateRuleInput) SetActions(val []SiteRuleAction) {
+	s.Actions = val
 }
 
 // Site request body for updating a segment.

@@ -51,7 +51,7 @@ func TestRegisterSubscribersFansEveryEventOutToAllConsumers(t *testing.T) {
 	require.NoError(t, err)
 	reader, err := river.NewClient(riverdatabasesql.New(sqlDB), &river.Config{})
 	require.NoError(t, err)
-	require.NoError(t, events.RegisterSubscribers(router, sqlDB, client, queue, queue, nil, testhelper.PrivateOutbox()))
+	require.NoError(t, events.RegisterSubscribers(router, sqlDB, client, queue, queue, queue, nil, testhelper.PrivateOutbox()))
 
 	runCtx, cancel := context.WithCancel(ctx)
 	t.Cleanup(cancel)

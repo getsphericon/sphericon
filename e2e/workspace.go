@@ -15,6 +15,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/membership"
+	collectapi "github.com/getsphericon/sphericon/gen/collect"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
@@ -45,6 +46,8 @@ type Workspace struct {
 	t   testing.TB
 	env *Env
 	api *externalapi.Client
+	// collect is the tracking ingestion API, carrying the Workspace's collect key.
+	collect *collectapi.Client
 	// site is the SPA's API, signed in as the owner.
 	site     *siteapi.Client
 	publicID string
@@ -79,6 +82,13 @@ func (b bearer) BearerAuth(context.Context, externalapi.OperationName) (external
 	return externalapi.BearerAuth{Token: string(b)}, nil
 }
 
+// collectKey is the x-collect-key of a Workspace, the credential of the tracking snippet.
+type collectKey string
+
+func (k collectKey) ApiKeyAuth(context.Context, collectapi.OperationName) (collectapi.ApiKeyAuth, error) {
+	return collectapi.ApiKeyAuth{APIKey: string(k)}, nil
+}
+
 // NewWorkspace is the arrange step: a User, a Workspace and its first API token, made
 // with internal/accounts and internal/apitokens (the bootstrap token is not used, it
 // only addresses the oldest Workspace). Its Inbox deletes the test's own mail on cleanup.
@@ -99,13 +109,16 @@ func (e *Env) NewWorkspace(tb testing.TB) *Workspace {
 	api, err := externalapi.NewClient(e.BaseURL+"/api", bearer(minted.Value))
 	require.NoError(tb, err)
 
+	collect, err := collectapi.NewClient(e.BaseURL+"/collect", collectKey(ws.CollectKey))
+	require.NoError(tb, err)
+
 	cookie, err := e.sessions.Issue(user, auth.Session{Method: auth.MethodPassword})
 	require.NoError(tb, err)
 	site, err := siteapi.NewClient(e.BaseURL+"/site", cookieSource(cookie.Value))
 	require.NoError(tb, err)
 
 	w := &Workspace{
-		t: tb, env: e, api: api, site: site, publicID: ws.PublicID, OwnerEmail: user.Email,
+		t: tb, env: e, api: api, collect: collect, site: site, publicID: ws.PublicID, OwnerEmail: user.Email,
 		Domain:    id + ".e2e.test",
 		FromEmail: "news@" + id + ".e2e.test",
 		FromName:  "E2E News",

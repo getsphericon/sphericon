@@ -80,6 +80,12 @@ type Tx struct {
 	RecoveryCode *RecoveryCodeClient
 	// RiverJob is the client for interacting with the RiverJob builders.
 	RiverJob *RiverJobClient
+	// Rule is the client for interacting with the Rule builders.
+	Rule *RuleClient
+	// RuleFiring is the client for interacting with the RuleFiring builders.
+	RuleFiring *RuleFiringClient
+	// RuleTrigger is the client for interacting with the RuleTrigger builders.
+	RuleTrigger *RuleTriggerClient
 	// SchemaState is the client for interacting with the SchemaState builders.
 	SchemaState *SchemaStateClient
 	// Segment is the client for interacting with the Segment builders.
@@ -276,6 +282,9 @@ func (tx *Tx) init() {
 	tx.PrivateRelayRange = NewPrivateRelayRangeClient(tx.config)
 	tx.RecoveryCode = NewRecoveryCodeClient(tx.config)
 	tx.RiverJob = NewRiverJobClient(tx.config)
+	tx.Rule = NewRuleClient(tx.config)
+	tx.RuleFiring = NewRuleFiringClient(tx.config)
+	tx.RuleTrigger = NewRuleTriggerClient(tx.config)
 	tx.SchemaState = NewSchemaStateClient(tx.config)
 	tx.Segment = NewSegmentClient(tx.config)
 	tx.SendLimiter = NewSendLimiterClient(tx.config)

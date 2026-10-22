@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/go-faster/jx"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
@@ -41,29 +42,30 @@ func (w *Workspace) OneClickUnsubscribe(msg Message) {
 // (its opt-outs); the opt-out is recorded asynchronously, so it is polled.
 func (w *Workspace) RequireUnsubscribed(email string) {
 	w.t.Helper()
-	ctx := w.t.Context()
 	require.Eventually(w.t, func() bool {
-		res, err := w.api.ContactsExport(ctx, externalapi.ContactsExportParams{Email: externalapi.NewOptEmailAddress(externalapi.EmailAddress(email))})
-		if err != nil {
-			return false
-		}
-		dl, isDL := res.(*externalapi.ContactsExportOKApplicationOctetStreamHeaders)
-		if !isDL {
-			return false
-		}
-		raw, err := io.ReadAll(dl.Response)
-		if err != nil {
-			return false
-		}
-		var doc externalapi.ContactExportDocument
-		if err := doc.Decode(jx.DecodeBytes(raw)); err != nil {
-			return false
-		}
-		for _, u := range doc.Unsubscribes {
-			if strings.EqualFold(u.Destination, email) && u.SendingSource == eligibility.SourceBroadcasts {
-				return true
-			}
-		}
-		return false
+		doc, found := w.contactExport(email)
+		return found && lo.ContainsBy(doc.Unsubscribes, func(u externalapi.ContactExportUnsubscribe) bool {
+			return strings.EqualFold(u.Destination, email) && u.SendingSource == eligibility.SourceBroadcasts
+		})
 	}, EmailTimeout, 100*time.Millisecond, "%s never read as unsubscribed from broadcasts", email)
+}
+
+// contactExport reads the data export of the Contact with this email through the external API.
+// It reports false while the Contact cannot be read yet.
+func (w *Workspace) contactExport(email string) (externalapi.ContactExportDocument, bool) {
+	w.t.Helper()
+	var doc externalapi.ContactExportDocument
+	res, err := w.api.ContactsExport(w.t.Context(), externalapi.ContactsExportParams{Email: externalapi.NewOptEmailAddress(externalapi.EmailAddress(email))})
+	if err != nil {
+		return doc, false
+	}
+	dl, isDL := res.(*externalapi.ContactsExportOKApplicationOctetStreamHeaders)
+	if !isDL {
+		return doc, false
+	}
+	raw, err := io.ReadAll(dl.Response)
+	if err != nil {
+		return doc, false
+	}
+	return doc, doc.Decode(jx.DecodeBytes(raw)) == nil
 }

@@ -1001,6 +1001,42 @@ export const zSiteResetPasswordInput = z.object({
 });
 
 /**
+ * How one Action of a Firing ended
+ */
+export const zSiteRuleActionStatus = z.enum([
+  'succeeded',
+  'failed',
+  'skipped'
+]);
+
+/**
+ * Kind of Rule action
+ */
+export const zSiteRuleActionType = z.enum(['apply_tag', 'remove_tag']);
+
+/**
+ * One Action of a Rule, run in order when the Rule fires. A flat shape: tag actions carry the tag name.
+ */
+export const zSiteRuleAction = z.object({
+  type: zSiteRuleActionType,
+  tag: z.exactOptional(z.string())
+});
+
+/**
+ * What one Action did when a Rule fired
+ */
+export const zSiteRuleActionResult = z.object({
+  type: zSiteRuleActionType,
+  status: zSiteRuleActionStatus,
+  detail: z.exactOptional(z.string())
+});
+
+/**
+ * Rule lifecycle status
+ */
+export const zSiteRuleStatus = z.enum(['draft', 'active']);
+
+/**
  * Save the Brand kit: the first save creates it and the starter Templates, a later one replaces
  * its values.
  */
@@ -1950,6 +1986,20 @@ export const zSitePasskeyList = z.object({
 });
 
 /**
+ * One execution of a Rule for one Event, with what each Action did. Erased with the Contact.
+ */
+export const zSiteRuleFiringResource = z.object({
+  id: zEntityId,
+  ruleId: zEntityId,
+  contactId: zEntityId,
+  action: z.string(),
+  eventSourceId: z.string(),
+  results: z.array(zSiteRuleActionResult),
+  completedAt: z.exactOptional(zTimestamp),
+  createdAt: zTimestamp
+});
+
+/**
  * Site request body for scheduling a broadcast
  */
 export const zSiteScheduleBroadcastInput = z.object({
@@ -2238,6 +2288,16 @@ export const zSiteConditionNode = z.discriminatedUnion('kind', [
 ]);
 
 /**
+ * Site request body for creating a Rule (always created as a draft)
+ */
+export const zSiteCreateRuleInput = z.object({
+  name: z.string(),
+  triggerEvents: z.array(z.string()).min(1),
+  condition: z.exactOptional(zSiteConditionGroup),
+  actions: z.exactOptional(z.array(zSiteRuleAction))
+});
+
+/**
  * Site request body for creating a segment
  */
 export const zSiteCreateSegmentInput = z.object({
@@ -2253,6 +2313,22 @@ export const zSitePreviewSegmentInput = z.object({
 });
 
 /**
+ * Rule resource used by the site UI: a stateless reaction to an Event. Created Rules are drafts.
+ */
+export const zSiteRuleResource = z.object({
+  id: zEntityId,
+  name: z.string(),
+  status: zSiteRuleStatus,
+  triggerEvents: z.array(z.string()),
+  condition: z.exactOptional(zSiteConditionGroup),
+  actions: z.array(zSiteRuleAction),
+  activatedAt: z.exactOptional(zTimestamp.nullable()),
+  archivedAt: z.exactOptional(zTimestamp.nullable()),
+  createdAt: zTimestamp,
+  updatedAt: zTimestamp
+});
+
+/**
  * Segment resource used by the site UI
  */
 export const zSiteSegmentResource = z.object({
@@ -2262,6 +2338,16 @@ export const zSiteSegmentResource = z.object({
   archivedAt: z.exactOptional(zTimestamp.nullable()),
   createdAt: zTimestamp,
   updatedAt: zTimestamp
+});
+
+/**
+ * Site request body for updating a Rule
+ */
+export const zSiteUpdateRuleInput = z.object({
+  name: z.exactOptional(z.string()),
+  triggerEvents: z.exactOptional(z.array(z.string()).min(1)),
+  condition: z.exactOptional(zSiteConditionGroup),
+  actions: z.exactOptional(z.array(zSiteRuleAction))
 });
 
 /**
@@ -2499,6 +2585,23 @@ export const zSiteMembershipResourceKeyWorkspaceId = zWorkspaceId;
  * workspace resources (ADR 0043)
  */
 export const zSiteMembershipResourceParentKey = zWorkspaceId;
+
+/**
+ * Unique identifier
+ */
+export const zSiteRuleResourceKeyId = zEntityId;
+
+/**
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
+ */
+export const zSiteRuleResourceKeyWorkspaceId = zWorkspaceId;
+
+/**
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
+ */
+export const zSiteRuleResourceParentKey = zWorkspaceId;
 
 /**
  * Unique identifier
@@ -3731,6 +3834,27 @@ export const zSiteWorkspacesRestorePath = z.object({
  */
 export const zSiteWorkspacesRestoreResponse = zSiteWorkspaceResource;
 
+export const zSiteRuleFiringsListPath = z.object({
+  workspaceId: zWorkspaceId,
+  ruleId: zEntityId
+});
+
+export const zSiteRuleFiringsListQuery = z.object({
+  page: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
+  pageSize: z.int().gte(1).lte(100).optional().default(25)
+});
+
+/**
+ * Paginated response
+ */
+export const zSiteRuleFiringsListResponse = z.object({
+  items: z.array(zSiteRuleFiringResource),
+  page: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  totalItems: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  totalPages: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
 export const zSiteWorkspacesSetSecondFactorRequirementBody = zSiteSecondFactorRequirementInput;
 
 export const zSiteWorkspacesSetSecondFactorRequirementPath = z.object({
@@ -4113,6 +4237,79 @@ export const zSiteWebhooksTestPath = z.object({
  * The request has succeeded.
  */
 export const zSiteWebhooksTestResponse = zSiteWebhookTestResult;
+
+export const zSiteRulesListPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+export const zSiteRulesListQuery = z.object({
+  page: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
+  pageSize: z.int().gte(1).lte(100).optional().default(25)
+});
+
+/**
+ * Paginated response
+ */
+export const zSiteRulesListResponse = z.object({
+  items: z.array(zSiteRuleResource),
+  page: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  totalItems: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  totalPages: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+export const zSiteRulesCreateBody = zSiteCreateRuleInput;
+
+export const zSiteRulesCreatePath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded and a new resource has been created as a result.
+ */
+export const zSiteRulesCreateResponse = zSiteRuleResource;
+
+export const zSiteRulesGetPath = z.object({
+  workspaceId: zWorkspaceId,
+  id: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteRulesGetResponse = zSiteRuleResource;
+
+export const zSiteRulesUpdateBody = zSiteUpdateRuleInput;
+
+export const zSiteRulesUpdatePath = z.object({
+  workspaceId: zWorkspaceId,
+  id: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteRulesUpdateResponse = zSiteRuleResource;
+
+export const zSiteRulesActivatePath = z.object({
+  workspaceId: zWorkspaceId,
+  id: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteRulesActivateResponse = zSiteRuleResource;
+
+export const zSiteRulesDeactivatePath = z.object({
+  workspaceId: zWorkspaceId,
+  id: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteRulesDeactivateResponse = zSiteRuleResource;
 
 export const zSiteSegmentsListPath = z.object({
   workspaceId: zWorkspaceId

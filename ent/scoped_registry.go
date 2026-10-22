@@ -26,6 +26,9 @@ import (
 	"github.com/getsphericon/sphericon/ent/joindomain"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
+	"github.com/getsphericon/sphericon/ent/rule"
+	"github.com/getsphericon/sphericon/ent/rulefiring"
+	"github.com/getsphericon/sphericon/ent/ruletrigger"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/sendlimiter"
@@ -1309,6 +1312,173 @@ func ScopedEntities() []ScopedEntity {
 					Name: "template", Target: "EmailTemplate",
 					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
 						return s.OutboundMessage().UpdateOneID(id).SetTemplateID(target).Exec(ctx)
+					},
+				},
+			},
+		},
+		{
+			Name:    "Rule",
+			Audited: false,
+			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
+				return c.Rule.Query().Where(rule.WorkspaceID(ws)).Order(Asc(rule.FieldID)).IDs(ctx)
+			},
+			Get: func(ctx context.Context, s *Scoped, id int64) error {
+				_, err := s.Rule().Get(ctx, id)
+				return err
+			},
+			Touch: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.Rule().UpdateOneID(id).Exec(ctx)
+			},
+			BulkTouch: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.Rule().Update().Where(rule.ID(id)).Save(ctx)
+			},
+			Delete: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.Rule().PurgeOneID(id).Exec(ctx)
+			},
+			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.Rule().Purge().Where(rule.ID(id)).Exec(ctx)
+			},
+			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
+				src, err := s.c.Rule.Get(ctx, id)
+				if err != nil {
+					return 0, err
+				}
+				_ = remap
+				b := s.Rule().Create()
+				if src.DiscardedAt != nil {
+					b.SetDiscardedAt(*src.DiscardedAt)
+				}
+				b.SetName(src.Name)
+				b.SetStatus(src.Status)
+				if src.ActivatedAt != nil {
+					b.SetActivatedAt(*src.ActivatedAt)
+				}
+				if src.Condition != nil {
+					b.SetCondition(*src.Condition)
+				}
+				b.SetActions(src.Actions)
+				created, err := b.Save(ctx)
+				if err != nil {
+					return 0, err
+				}
+				return created.WorkspaceID, nil
+			},
+			Refs: []ScopedRef{
+				{
+					Name: "triggers", Target: "RuleTrigger",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.Rule().UpdateOneID(id).AddTriggerIDs(target).Exec(ctx)
+					},
+				},
+				{
+					Name: "firings", Target: "RuleFiring",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.Rule().UpdateOneID(id).AddFiringIDs(target).Exec(ctx)
+					},
+				},
+			},
+		},
+		{
+			Name:    "RuleFiring",
+			Audited: false,
+			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
+				return c.RuleFiring.Query().Where(rulefiring.WorkspaceID(ws)).Order(Asc(rulefiring.FieldID)).IDs(ctx)
+			},
+			Get: func(ctx context.Context, s *Scoped, id int64) error {
+				_, err := s.RuleFiring().Get(ctx, id)
+				return err
+			},
+			Touch: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.RuleFiring().UpdateOneID(id).Exec(ctx)
+			},
+			BulkTouch: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.RuleFiring().Update().Where(rulefiring.ID(id)).Save(ctx)
+			},
+			Delete: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.RuleFiring().DeleteOneID(id).Exec(ctx)
+			},
+			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.RuleFiring().Delete().Where(rulefiring.ID(id)).Exec(ctx)
+			},
+			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
+				src, err := s.c.RuleFiring.Get(ctx, id)
+				if err != nil {
+					return 0, err
+				}
+				_ = remap
+				b := s.RuleFiring().Create()
+				b.SetRuleID(remap("Rule", src.RuleID))
+				b.SetContactID(remap("Contact", src.ContactID))
+				b.SetAction(src.Action)
+				b.SetSourceID(src.SourceID)
+				b.SetActions(src.Actions)
+				b.SetResults(src.Results)
+				if src.CompletedAt != nil {
+					b.SetCompletedAt(*src.CompletedAt)
+				}
+				created, err := b.Save(ctx)
+				if err != nil {
+					return 0, err
+				}
+				return created.WorkspaceID, nil
+			},
+			Refs: []ScopedRef{
+				{
+					Name: "rule", Target: "Rule",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.RuleFiring().UpdateOneID(id).SetRuleID(target).Exec(ctx)
+					},
+				},
+				{
+					Name: "contact", Target: "Contact",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.RuleFiring().UpdateOneID(id).SetContactID(target).Exec(ctx)
+					},
+				},
+			},
+		},
+		{
+			Name:    "RuleTrigger",
+			Audited: false,
+			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
+				return c.RuleTrigger.Query().Where(ruletrigger.WorkspaceID(ws)).Order(Asc(ruletrigger.FieldID)).IDs(ctx)
+			},
+			Get: func(ctx context.Context, s *Scoped, id int64) error {
+				_, err := s.RuleTrigger().Get(ctx, id)
+				return err
+			},
+			Touch: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.RuleTrigger().UpdateOneID(id).Exec(ctx)
+			},
+			BulkTouch: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.RuleTrigger().Update().Where(ruletrigger.ID(id)).Save(ctx)
+			},
+			Delete: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.RuleTrigger().DeleteOneID(id).Exec(ctx)
+			},
+			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.RuleTrigger().Delete().Where(ruletrigger.ID(id)).Exec(ctx)
+			},
+			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
+				src, err := s.c.RuleTrigger.Get(ctx, id)
+				if err != nil {
+					return 0, err
+				}
+				_ = remap
+				b := s.RuleTrigger().Create()
+				b.SetRuleID(remap("Rule", src.RuleID))
+				b.SetAction(src.Action)
+				created, err := b.Save(ctx)
+				if err != nil {
+					return 0, err
+				}
+				return created.WorkspaceID, nil
+			},
+			Refs: []ScopedRef{
+				{
+					Name: "rule", Target: "Rule",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.RuleTrigger().UpdateOneID(id).SetRuleID(target).Exec(ctx)
 					},
 				},
 			},

@@ -29,6 +29,11 @@ valid:
     	return err
     }
   - |
+    func ruleFlag(ctx context.Context, s *ent.Scoped, id int64, status rule.Status) error {
+    	_, err := s.Rule().Update().Where(rule.ID(id)).SetStatus(status).Save(ctx)
+    	return err
+    }
+  - |
     func span(s trace.Span, err error) {
     	s.SetStatus(codes.Error, err.Error())
     }

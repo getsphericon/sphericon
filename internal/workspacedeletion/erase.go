@@ -28,6 +28,9 @@ import (
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/oauthcode"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
+	"github.com/getsphericon/sphericon/ent/rule"
+	"github.com/getsphericon/sphericon/ent/rulefiring"
+	"github.com/getsphericon/sphericon/ent/ruletrigger"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/sendlimiter"
@@ -209,6 +212,9 @@ var eraseSteps = []eraseStep{
 	stepOf((*ent.Scoped).Event, event.IDIn),
 	stepOf((*ent.Scoped).OutboundMessage, outboundmessage.IDIn),
 	stepOf((*ent.Scoped).BroadcastRecipient, broadcastrecipient.IDIn),
+	stepOf((*ent.Scoped).RuleFiring, rulefiring.IDIn),
+	stepOf((*ent.Scoped).RuleTrigger, ruletrigger.IDIn),
+	purgeStepOf((*ent.Scoped).Rule, rule.IDIn),
 	stepOf((*ent.Scoped).AutomationRun, automationrun.IDIn),
 	stepOf((*ent.Scoped).AutomationVersion, automationversion.IDIn),
 	stepOf((*ent.Scoped).Visitor, visitor.IDIn),

@@ -32,6 +32,9 @@ import (
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/ent/rule"
+	"github.com/getsphericon/sphericon/ent/rulefiring"
+	"github.com/getsphericon/sphericon/ent/ruletrigger"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/sendlimiter"
@@ -687,6 +690,51 @@ func (_u *WorkspaceUpdate) AddAutomationRuns(v ...*AutomationRun) *WorkspaceUpda
 	return _u.AddAutomationRunIDs(ids...)
 }
 
+// AddRuleIDs adds the "rules" edge to the Rule entity by IDs.
+func (_u *WorkspaceUpdate) AddRuleIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.AddRuleIDs(ids...)
+	return _u
+}
+
+// AddRules adds the "rules" edges to the Rule entity.
+func (_u *WorkspaceUpdate) AddRules(v ...*Rule) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddRuleIDs(ids...)
+}
+
+// AddRuleTriggerIDs adds the "rule_triggers" edge to the RuleTrigger entity by IDs.
+func (_u *WorkspaceUpdate) AddRuleTriggerIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.AddRuleTriggerIDs(ids...)
+	return _u
+}
+
+// AddRuleTriggers adds the "rule_triggers" edges to the RuleTrigger entity.
+func (_u *WorkspaceUpdate) AddRuleTriggers(v ...*RuleTrigger) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddRuleTriggerIDs(ids...)
+}
+
+// AddRuleFiringIDs adds the "rule_firings" edge to the RuleFiring entity by IDs.
+func (_u *WorkspaceUpdate) AddRuleFiringIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.AddRuleFiringIDs(ids...)
+	return _u
+}
+
+// AddRuleFirings adds the "rule_firings" edges to the RuleFiring entity.
+func (_u *WorkspaceUpdate) AddRuleFirings(v ...*RuleFiring) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddRuleFiringIDs(ids...)
+}
+
 // AddWebhookEndpointIDs adds the "webhook_endpoints" edge to the WebhookEndpoint entity by IDs.
 func (_u *WorkspaceUpdate) AddWebhookEndpointIDs(ids ...int64) *WorkspaceUpdate {
 	_u.mutation.AddWebhookEndpointIDs(ids...)
@@ -1239,6 +1287,69 @@ func (_u *WorkspaceUpdate) RemoveAutomationRuns(v ...*AutomationRun) *WorkspaceU
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveAutomationRunIDs(ids...)
+}
+
+// ClearRules clears all "rules" edges to the Rule entity.
+func (_u *WorkspaceUpdate) ClearRules() *WorkspaceUpdate {
+	_u.mutation.ClearRules()
+	return _u
+}
+
+// RemoveRuleIDs removes the "rules" edge to Rule entities by IDs.
+func (_u *WorkspaceUpdate) RemoveRuleIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.RemoveRuleIDs(ids...)
+	return _u
+}
+
+// RemoveRules removes "rules" edges to Rule entities.
+func (_u *WorkspaceUpdate) RemoveRules(v ...*Rule) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveRuleIDs(ids...)
+}
+
+// ClearRuleTriggers clears all "rule_triggers" edges to the RuleTrigger entity.
+func (_u *WorkspaceUpdate) ClearRuleTriggers() *WorkspaceUpdate {
+	_u.mutation.ClearRuleTriggers()
+	return _u
+}
+
+// RemoveRuleTriggerIDs removes the "rule_triggers" edge to RuleTrigger entities by IDs.
+func (_u *WorkspaceUpdate) RemoveRuleTriggerIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.RemoveRuleTriggerIDs(ids...)
+	return _u
+}
+
+// RemoveRuleTriggers removes "rule_triggers" edges to RuleTrigger entities.
+func (_u *WorkspaceUpdate) RemoveRuleTriggers(v ...*RuleTrigger) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveRuleTriggerIDs(ids...)
+}
+
+// ClearRuleFirings clears all "rule_firings" edges to the RuleFiring entity.
+func (_u *WorkspaceUpdate) ClearRuleFirings() *WorkspaceUpdate {
+	_u.mutation.ClearRuleFirings()
+	return _u
+}
+
+// RemoveRuleFiringIDs removes the "rule_firings" edge to RuleFiring entities by IDs.
+func (_u *WorkspaceUpdate) RemoveRuleFiringIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.RemoveRuleFiringIDs(ids...)
+	return _u
+}
+
+// RemoveRuleFirings removes "rule_firings" edges to RuleFiring entities.
+func (_u *WorkspaceUpdate) RemoveRuleFirings(v ...*RuleFiring) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveRuleFiringIDs(ids...)
 }
 
 // ClearWebhookEndpoints clears all "webhook_endpoints" edges to the WebhookEndpoint entity.
@@ -2479,6 +2590,141 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.RulesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.RulesTable,
+			Columns: []string{workspace.RulesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(rule.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedRulesIDs(); len(nodes) > 0 && !_u.mutation.RulesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.RulesTable,
+			Columns: []string{workspace.RulesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(rule.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RulesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.RulesTable,
+			Columns: []string{workspace.RulesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(rule.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.RuleTriggersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.RuleTriggersTable,
+			Columns: []string{workspace.RuleTriggersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ruletrigger.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedRuleTriggersIDs(); len(nodes) > 0 && !_u.mutation.RuleTriggersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.RuleTriggersTable,
+			Columns: []string{workspace.RuleTriggersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ruletrigger.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RuleTriggersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.RuleTriggersTable,
+			Columns: []string{workspace.RuleTriggersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ruletrigger.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.RuleFiringsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.RuleFiringsTable,
+			Columns: []string{workspace.RuleFiringsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(rulefiring.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedRuleFiringsIDs(); len(nodes) > 0 && !_u.mutation.RuleFiringsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.RuleFiringsTable,
+			Columns: []string{workspace.RuleFiringsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(rulefiring.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RuleFiringsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.RuleFiringsTable,
+			Columns: []string{workspace.RuleFiringsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(rulefiring.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _u.mutation.WebhookEndpointsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -3580,6 +3826,51 @@ func (_u *WorkspaceUpdateOne) AddAutomationRuns(v ...*AutomationRun) *WorkspaceU
 	return _u.AddAutomationRunIDs(ids...)
 }
 
+// AddRuleIDs adds the "rules" edge to the Rule entity by IDs.
+func (_u *WorkspaceUpdateOne) AddRuleIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.AddRuleIDs(ids...)
+	return _u
+}
+
+// AddRules adds the "rules" edges to the Rule entity.
+func (_u *WorkspaceUpdateOne) AddRules(v ...*Rule) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddRuleIDs(ids...)
+}
+
+// AddRuleTriggerIDs adds the "rule_triggers" edge to the RuleTrigger entity by IDs.
+func (_u *WorkspaceUpdateOne) AddRuleTriggerIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.AddRuleTriggerIDs(ids...)
+	return _u
+}
+
+// AddRuleTriggers adds the "rule_triggers" edges to the RuleTrigger entity.
+func (_u *WorkspaceUpdateOne) AddRuleTriggers(v ...*RuleTrigger) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddRuleTriggerIDs(ids...)
+}
+
+// AddRuleFiringIDs adds the "rule_firings" edge to the RuleFiring entity by IDs.
+func (_u *WorkspaceUpdateOne) AddRuleFiringIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.AddRuleFiringIDs(ids...)
+	return _u
+}
+
+// AddRuleFirings adds the "rule_firings" edges to the RuleFiring entity.
+func (_u *WorkspaceUpdateOne) AddRuleFirings(v ...*RuleFiring) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddRuleFiringIDs(ids...)
+}
+
 // AddWebhookEndpointIDs adds the "webhook_endpoints" edge to the WebhookEndpoint entity by IDs.
 func (_u *WorkspaceUpdateOne) AddWebhookEndpointIDs(ids ...int64) *WorkspaceUpdateOne {
 	_u.mutation.AddWebhookEndpointIDs(ids...)
@@ -4132,6 +4423,69 @@ func (_u *WorkspaceUpdateOne) RemoveAutomationRuns(v ...*AutomationRun) *Workspa
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveAutomationRunIDs(ids...)
+}
+
+// ClearRules clears all "rules" edges to the Rule entity.
+func (_u *WorkspaceUpdateOne) ClearRules() *WorkspaceUpdateOne {
+	_u.mutation.ClearRules()
+	return _u
+}
+
+// RemoveRuleIDs removes the "rules" edge to Rule entities by IDs.
+func (_u *WorkspaceUpdateOne) RemoveRuleIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.RemoveRuleIDs(ids...)
+	return _u
+}
+
+// RemoveRules removes "rules" edges to Rule entities.
+func (_u *WorkspaceUpdateOne) RemoveRules(v ...*Rule) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveRuleIDs(ids...)
+}
+
+// ClearRuleTriggers clears all "rule_triggers" edges to the RuleTrigger entity.
+func (_u *WorkspaceUpdateOne) ClearRuleTriggers() *WorkspaceUpdateOne {
+	_u.mutation.ClearRuleTriggers()
+	return _u
+}
+
+// RemoveRuleTriggerIDs removes the "rule_triggers" edge to RuleTrigger entities by IDs.
+func (_u *WorkspaceUpdateOne) RemoveRuleTriggerIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.RemoveRuleTriggerIDs(ids...)
+	return _u
+}
+
+// RemoveRuleTriggers removes "rule_triggers" edges to RuleTrigger entities.
+func (_u *WorkspaceUpdateOne) RemoveRuleTriggers(v ...*RuleTrigger) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveRuleTriggerIDs(ids...)
+}
+
+// ClearRuleFirings clears all "rule_firings" edges to the RuleFiring entity.
+func (_u *WorkspaceUpdateOne) ClearRuleFirings() *WorkspaceUpdateOne {
+	_u.mutation.ClearRuleFirings()
+	return _u
+}
+
+// RemoveRuleFiringIDs removes the "rule_firings" edge to RuleFiring entities by IDs.
+func (_u *WorkspaceUpdateOne) RemoveRuleFiringIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.RemoveRuleFiringIDs(ids...)
+	return _u
+}
+
+// RemoveRuleFirings removes "rule_firings" edges to RuleFiring entities.
+func (_u *WorkspaceUpdateOne) RemoveRuleFirings(v ...*RuleFiring) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveRuleFiringIDs(ids...)
 }
 
 // ClearWebhookEndpoints clears all "webhook_endpoints" edges to the WebhookEndpoint entity.
@@ -5395,6 +5749,141 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(automationrun.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.RulesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.RulesTable,
+			Columns: []string{workspace.RulesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(rule.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedRulesIDs(); len(nodes) > 0 && !_u.mutation.RulesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.RulesTable,
+			Columns: []string{workspace.RulesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(rule.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RulesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.RulesTable,
+			Columns: []string{workspace.RulesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(rule.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.RuleTriggersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.RuleTriggersTable,
+			Columns: []string{workspace.RuleTriggersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ruletrigger.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedRuleTriggersIDs(); len(nodes) > 0 && !_u.mutation.RuleTriggersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.RuleTriggersTable,
+			Columns: []string{workspace.RuleTriggersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ruletrigger.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RuleTriggersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.RuleTriggersTable,
+			Columns: []string{workspace.RuleTriggersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ruletrigger.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.RuleFiringsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.RuleFiringsTable,
+			Columns: []string{workspace.RuleFiringsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(rulefiring.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedRuleFiringsIDs(); len(nodes) > 0 && !_u.mutation.RuleFiringsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.RuleFiringsTable,
+			Columns: []string{workspace.RuleFiringsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(rulefiring.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RuleFiringsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.RuleFiringsTable,
+			Columns: []string{workspace.RuleFiringsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(rulefiring.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

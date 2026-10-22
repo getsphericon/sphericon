@@ -405,6 +405,42 @@ func (f RiverJobFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, er
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RiverJobMutation", m)
 }
 
+// The RuleFunc type is an adapter to allow the use of ordinary
+// function as Rule mutator.
+type RuleFunc func(context.Context, *ent.RuleMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f RuleFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.RuleMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RuleMutation", m)
+}
+
+// The RuleFiringFunc type is an adapter to allow the use of ordinary
+// function as RuleFiring mutator.
+type RuleFiringFunc func(context.Context, *ent.RuleFiringMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f RuleFiringFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.RuleFiringMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RuleFiringMutation", m)
+}
+
+// The RuleTriggerFunc type is an adapter to allow the use of ordinary
+// function as RuleTrigger mutator.
+type RuleTriggerFunc func(context.Context, *ent.RuleTriggerMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f RuleTriggerFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.RuleTriggerMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RuleTriggerMutation", m)
+}
+
 // The SchemaStateFunc type is an adapter to allow the use of ordinary
 // function as SchemaState mutator.
 type SchemaStateFunc func(context.Context, *ent.SchemaStateMutation) (ent.Value, error)

@@ -32,6 +32,9 @@ import (
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/ent/rule"
+	"github.com/getsphericon/sphericon/ent/rulefiring"
+	"github.com/getsphericon/sphericon/ent/ruletrigger"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/sendlimiter"
@@ -424,6 +427,54 @@ func (s *Scoped) verifyOutboundMessage(ctx context.Context, ids []int64) error {
 	}
 	if n != len(ids) {
 		return fmt.Errorf("OutboundMessage: %w", ErrNotInWorkspace)
+	}
+	return nil
+}
+
+// verifyRule fails with ErrNotInWorkspace unless every id is a Rule of the Workspace.
+func (s *Scoped) verifyRule(ctx context.Context, ids []int64) error {
+	ids = uniqueIDs(ids)
+	if len(ids) == 0 {
+		return nil
+	}
+	n, err := s.c.Rule.Query().Where(rule.IDIn(ids...), rule.WorkspaceID(s.ws)).Count(ctx)
+	if err != nil {
+		return err
+	}
+	if n != len(ids) {
+		return fmt.Errorf("Rule: %w", ErrNotInWorkspace)
+	}
+	return nil
+}
+
+// verifyRuleFiring fails with ErrNotInWorkspace unless every id is a RuleFiring of the Workspace.
+func (s *Scoped) verifyRuleFiring(ctx context.Context, ids []int64) error {
+	ids = uniqueIDs(ids)
+	if len(ids) == 0 {
+		return nil
+	}
+	n, err := s.c.RuleFiring.Query().Where(rulefiring.IDIn(ids...), rulefiring.WorkspaceID(s.ws)).Count(ctx)
+	if err != nil {
+		return err
+	}
+	if n != len(ids) {
+		return fmt.Errorf("RuleFiring: %w", ErrNotInWorkspace)
+	}
+	return nil
+}
+
+// verifyRuleTrigger fails with ErrNotInWorkspace unless every id is a RuleTrigger of the Workspace.
+func (s *Scoped) verifyRuleTrigger(ctx context.Context, ids []int64) error {
+	ids = uniqueIDs(ids)
+	if len(ids) == 0 {
+		return nil
+	}
+	n, err := s.c.RuleTrigger.Query().Where(ruletrigger.IDIn(ids...), ruletrigger.WorkspaceID(s.ws)).Count(ctx)
+	if err != nil {
+		return err
+	}
+	if n != len(ids) {
+		return fmt.Errorf("RuleTrigger: %w", ErrNotInWorkspace)
 	}
 	return nil
 }
@@ -19736,6 +19787,2316 @@ func (x *OutboundMessageScopedUpdate) Save(ctx context.Context) (int, error) {
 
 // Exec is like Save, discarding the count.
 func (x *OutboundMessageScopedUpdate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// RuleScoped reaches Rule entities of one Workspace.
+type RuleScoped struct{ s *Scoped }
+
+// Rule returns the Rule entities of the Workspace.
+func (s *Scoped) Rule() *RuleScoped { return &RuleScoped{s: s} }
+
+// Query returns a Rule query already confined to the Workspace, hiding discarded rows
+// (a list query; QueryWithDiscarded sees them too).
+func (t *RuleScoped) Query() *RuleQuery {
+	return t.s.c.Rule.Query().Where(rule.WorkspaceID(t.s.ws), rule.DiscardedAtIsNil())
+}
+
+// QueryWithDiscarded returns a Rule query confined to the Workspace that also sees discarded rows.
+func (t *RuleScoped) QueryWithDiscarded() *RuleQuery {
+	return t.s.c.Rule.Query().Where(rule.WorkspaceID(t.s.ws))
+}
+
+// QueryDiscarded returns a Rule query confined to the Workspace that sees only discarded rows.
+func (t *RuleScoped) QueryDiscarded() *RuleQuery {
+	return t.QueryWithDiscarded().Where(rule.DiscardedAtNotNil())
+}
+
+// Get returns the Rule with the id, discarded or not; a row of another Workspace is not found.
+func (t *RuleScoped) Get(ctx context.Context, id int64) (*Rule, error) {
+	return t.QueryWithDiscarded().Where(rule.ID(id)).Only(ctx)
+}
+
+// Discard stamps discarded_at on the kept Rule with the id (ps fence it further); a row of
+// another Workspace, an already discarded row or one a predicate excludes is not found.
+func (t *RuleScoped) Discard(ctx context.Context, id int64, ps ...predicate.Rule) error {
+	return t.setDiscarded(ctx, id, true, ps)
+}
+
+// Undiscard clears discarded_at on the discarded Rule with the id; a row that is not
+// discarded is not found.
+func (t *RuleScoped) Undiscard(ctx context.Context, id int64) error {
+	return t.setDiscarded(ctx, id, false, nil)
+}
+
+// Restore is Undiscard that leaves a kept Rule as it is: only a row that does not exist in the
+// Workspace is not found.
+func (t *RuleScoped) Restore(ctx context.Context, id int64) error {
+	err := t.Undiscard(ctx, id)
+	if !IsNotFound(err) {
+		return err
+	}
+	_, err = t.Get(ctx, id)
+	return err
+}
+
+func (t *RuleScoped) setDiscarded(ctx context.Context, id int64, discard bool, ps []predicate.Rule) error {
+	where := append([]predicate.Rule{rule.ID(id), rule.WorkspaceID(t.s.ws)}, ps...)
+	if discard {
+		where = append(where, rule.DiscardedAtIsNil())
+	} else {
+		where = append(where, rule.DiscardedAtNotNil())
+	}
+	write := func(c *Client) (*Rule, error) {
+		u := c.Rule.UpdateOneID(id).Where(where...)
+		if discard {
+			u.SetDiscardedAt(time.Now())
+		} else {
+			u.ClearDiscardedAt()
+		}
+		return u.Save(ctx)
+	}
+	_, err := write(t.s.c)
+	return err
+}
+
+// RuleScopedDeleteOne wraps RuleDeleteOne.
+type RuleScopedDeleteOne struct {
+	s *Scoped
+	b *RuleDeleteOne
+}
+
+// PurgeOneID physically removes the Rule with the id; a row of another Workspace is not found.
+func (t *RuleScoped) PurgeOneID(id int64) *RuleScopedDeleteOne {
+	return &RuleScopedDeleteOne{s: t.s, b: t.s.c.Rule.DeleteOneID(id).Where(rule.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *RuleScopedDeleteOne) Where(ps ...predicate.Rule) *RuleScopedDeleteOne {
+	x.b.Where(ps...)
+	return x
+}
+
+// Exec deletes the row; a missing row is a NotFoundError.
+func (x *RuleScopedDeleteOne) Exec(ctx context.Context) error {
+	return x.b.Exec(ctx)
+}
+
+// RuleScopedDelete wraps RuleDelete.
+type RuleScopedDelete struct {
+	s *Scoped
+	b *RuleDelete
+}
+
+// Purge physically removes the Rule entities of the Workspace that match the predicates.
+func (t *RuleScoped) Purge() *RuleScopedDelete {
+	return &RuleScopedDelete{s: t.s, b: t.s.c.Rule.Delete().Where(rule.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *RuleScopedDelete) Where(ps ...predicate.Rule) *RuleScopedDelete {
+	x.b.Where(ps...)
+	return x
+}
+
+// Exec deletes the rows and returns how many were deleted.
+func (x *RuleScopedDelete) Exec(ctx context.Context) (int, error) {
+	return x.b.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- create
+
+// RuleScopedCreate wraps RuleCreate. It has no way to name a Workspace.
+type RuleScopedCreate struct {
+	s *Scoped
+	b *RuleCreate
+}
+
+// Create starts a Rule in the Workspace.
+func (t *RuleScoped) Create() *RuleScopedCreate {
+	return &RuleScopedCreate{s: t.s, b: t.s.c.Rule.Create().SetWorkspaceID(t.s.ws)}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (x *RuleScopedCreate) SetCreatedAt(v time.Time) *RuleScopedCreate {
+	x.b.SetCreatedAt(v)
+	return x
+}
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (x *RuleScopedCreate) SetNillableCreatedAt(v *time.Time) *RuleScopedCreate {
+	x.b.SetNillableCreatedAt(v)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *RuleScopedCreate) SetUpdatedAt(v time.Time) *RuleScopedCreate {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (x *RuleScopedCreate) SetNillableUpdatedAt(v *time.Time) *RuleScopedCreate {
+	x.b.SetNillableUpdatedAt(v)
+	return x
+}
+
+// SetDiscardedAt sets the "discarded_at" field.
+func (x *RuleScopedCreate) SetDiscardedAt(v time.Time) *RuleScopedCreate {
+	x.b.SetDiscardedAt(v)
+	return x
+}
+
+// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
+func (x *RuleScopedCreate) SetNillableDiscardedAt(v *time.Time) *RuleScopedCreate {
+	x.b.SetNillableDiscardedAt(v)
+	return x
+}
+
+// SetName sets the "name" field.
+func (x *RuleScopedCreate) SetName(v string) *RuleScopedCreate {
+	x.b.SetName(v)
+	return x
+}
+
+// SetStatus sets the "status" field.
+func (x *RuleScopedCreate) SetStatus(v rule.Status) *RuleScopedCreate {
+	x.b.SetStatus(v)
+	return x
+}
+
+// SetNillableStatus sets the "status" field if the given value is not nil.
+func (x *RuleScopedCreate) SetNillableStatus(v *rule.Status) *RuleScopedCreate {
+	x.b.SetNillableStatus(v)
+	return x
+}
+
+// SetActivatedAt sets the "activated_at" field.
+func (x *RuleScopedCreate) SetActivatedAt(v time.Time) *RuleScopedCreate {
+	x.b.SetActivatedAt(v)
+	return x
+}
+
+// SetNillableActivatedAt sets the "activated_at" field if the given value is not nil.
+func (x *RuleScopedCreate) SetNillableActivatedAt(v *time.Time) *RuleScopedCreate {
+	x.b.SetNillableActivatedAt(v)
+	return x
+}
+
+// SetCondition sets the "condition" field.
+func (x *RuleScopedCreate) SetCondition(v string) *RuleScopedCreate {
+	x.b.SetCondition(v)
+	return x
+}
+
+// SetNillableCondition sets the "condition" field if the given value is not nil.
+func (x *RuleScopedCreate) SetNillableCondition(v *string) *RuleScopedCreate {
+	x.b.SetNillableCondition(v)
+	return x
+}
+
+// SetActions sets the "actions" field.
+func (x *RuleScopedCreate) SetActions(v string) *RuleScopedCreate {
+	x.b.SetActions(v)
+	return x
+}
+
+// SetNillableActions sets the "actions" field if the given value is not nil.
+func (x *RuleScopedCreate) SetNillableActions(v *string) *RuleScopedCreate {
+	x.b.SetNillableActions(v)
+	return x
+}
+
+// AddTriggerIDs adds the "triggers" edge to the RuleTrigger entity by IDs.
+func (x *RuleScopedCreate) AddTriggerIDs(ids ...int64) *RuleScopedCreate {
+	x.b.AddTriggerIDs(ids...)
+	return x
+}
+
+// AddTriggers adds the "triggers" edges to the RuleTrigger entity.
+func (x *RuleScopedCreate) AddTriggers(v ...*RuleTrigger) *RuleScopedCreate {
+	x.b.AddTriggers(v...)
+	return x
+}
+
+// AddFiringIDs adds the "firings" edge to the RuleFiring entity by IDs.
+func (x *RuleScopedCreate) AddFiringIDs(ids ...int64) *RuleScopedCreate {
+	x.b.AddFiringIDs(ids...)
+	return x
+}
+
+// AddFirings adds the "firings" edges to the RuleFiring entity.
+func (x *RuleScopedCreate) AddFirings(v ...*RuleFiring) *RuleScopedCreate {
+	x.b.AddFirings(v...)
+	return x
+}
+
+func (x *RuleScopedCreate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	if err := x.s.verifyRuleTrigger(ctx, m.TriggersIDs()); err != nil {
+		return fmt.Errorf("triggers: %w", err)
+	}
+	if err := x.s.verifyRuleFiring(ctx, m.FiringsIDs()); err != nil {
+		return fmt.Errorf("firings: %w", err)
+	}
+	return nil
+}
+
+// Save verifies the references against the Workspace, then creates the Rule.
+func (x *RuleScopedCreate) Save(ctx context.Context) (*Rule, error) {
+	if err := x.check(ctx); err != nil {
+		return nil, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *RuleScopedCreate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- create bulk
+
+// RuleScopedCreateBulk creates several Rule entities of one Workspace at once.
+type RuleScopedCreateBulk struct {
+	s  *Scoped
+	xs []*RuleScopedCreate
+}
+
+// CreateBulk batches creates started on this Workspace.
+func (t *RuleScoped) CreateBulk(xs ...*RuleScopedCreate) *RuleScopedCreateBulk {
+	return &RuleScopedCreateBulk{s: t.s, xs: xs}
+}
+
+func (b *RuleScopedCreateBulk) raw(ctx context.Context) (*RuleCreateBulk, error) {
+	builders := make([]*RuleCreate, len(b.xs))
+	for i, x := range b.xs {
+		if x.s.ws != b.s.ws {
+			return nil, fmt.Errorf("Rule: builder of another scope: %w", ErrNotInWorkspace)
+		}
+		if err := x.check(ctx); err != nil {
+			return nil, err
+		}
+		builders[i] = x.b
+	}
+	return b.s.c.Rule.CreateBulk(builders...), nil
+}
+
+// Save verifies every builder's references, then creates the Rule entities.
+func (b *RuleScopedCreateBulk) Save(ctx context.Context) ([]*Rule, error) {
+	raw, err := b.raw(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return raw.Save(ctx)
+}
+
+// Exec is like Save, discarding the entities.
+func (b *RuleScopedCreateBulk) Exec(ctx context.Context) error {
+	_, err := b.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- upsert
+
+// RuleScopedUpsert is the "ON CONFLICT ... DO UPDATE" setter. It cannot move a row to
+// another Workspace or point a reference at a value that was not verified on create.
+type RuleScopedUpsert struct{ u *sql.UpdateSet }
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *RuleScopedUpsert) SetUpdatedAt(v time.Time) *RuleScopedUpsert {
+	u.u.Set(rule.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *RuleScopedUpsert) UpdateUpdatedAt() *RuleScopedUpsert {
+	u.u.SetExcluded(rule.FieldUpdatedAt)
+	return u
+}
+
+// SetDiscardedAt sets the "discarded_at" field.
+func (u *RuleScopedUpsert) SetDiscardedAt(v time.Time) *RuleScopedUpsert {
+	u.u.Set(rule.FieldDiscardedAt, v)
+	return u
+}
+
+// UpdateDiscardedAt sets the "discarded_at" field to the value that was provided on create.
+func (u *RuleScopedUpsert) UpdateDiscardedAt() *RuleScopedUpsert {
+	u.u.SetExcluded(rule.FieldDiscardedAt)
+	return u
+}
+
+// ClearDiscardedAt clears the value of the "discarded_at" field.
+func (u *RuleScopedUpsert) ClearDiscardedAt() *RuleScopedUpsert {
+	u.u.SetNull(rule.FieldDiscardedAt)
+	return u
+}
+
+// SetName sets the "name" field.
+func (u *RuleScopedUpsert) SetName(v string) *RuleScopedUpsert {
+	u.u.Set(rule.FieldName, v)
+	return u
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *RuleScopedUpsert) UpdateName() *RuleScopedUpsert {
+	u.u.SetExcluded(rule.FieldName)
+	return u
+}
+
+// SetStatus sets the "status" field.
+func (u *RuleScopedUpsert) SetStatus(v rule.Status) *RuleScopedUpsert {
+	u.u.Set(rule.FieldStatus, v)
+	return u
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *RuleScopedUpsert) UpdateStatus() *RuleScopedUpsert {
+	u.u.SetExcluded(rule.FieldStatus)
+	return u
+}
+
+// SetActivatedAt sets the "activated_at" field.
+func (u *RuleScopedUpsert) SetActivatedAt(v time.Time) *RuleScopedUpsert {
+	u.u.Set(rule.FieldActivatedAt, v)
+	return u
+}
+
+// UpdateActivatedAt sets the "activated_at" field to the value that was provided on create.
+func (u *RuleScopedUpsert) UpdateActivatedAt() *RuleScopedUpsert {
+	u.u.SetExcluded(rule.FieldActivatedAt)
+	return u
+}
+
+// ClearActivatedAt clears the value of the "activated_at" field.
+func (u *RuleScopedUpsert) ClearActivatedAt() *RuleScopedUpsert {
+	u.u.SetNull(rule.FieldActivatedAt)
+	return u
+}
+
+// SetCondition sets the "condition" field.
+func (u *RuleScopedUpsert) SetCondition(v string) *RuleScopedUpsert {
+	u.u.Set(rule.FieldCondition, v)
+	return u
+}
+
+// UpdateCondition sets the "condition" field to the value that was provided on create.
+func (u *RuleScopedUpsert) UpdateCondition() *RuleScopedUpsert {
+	u.u.SetExcluded(rule.FieldCondition)
+	return u
+}
+
+// ClearCondition clears the value of the "condition" field.
+func (u *RuleScopedUpsert) ClearCondition() *RuleScopedUpsert {
+	u.u.SetNull(rule.FieldCondition)
+	return u
+}
+
+// SetActions sets the "actions" field.
+func (u *RuleScopedUpsert) SetActions(v string) *RuleScopedUpsert {
+	u.u.Set(rule.FieldActions, v)
+	return u
+}
+
+// UpdateActions sets the "actions" field to the value that was provided on create.
+func (u *RuleScopedUpsert) UpdateActions() *RuleScopedUpsert {
+	u.u.SetExcluded(rule.FieldActions)
+	return u
+}
+
+// conflictOptions confines the DO UPDATE part to rows of the Workspace.
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *RuleScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
+		sql.ConflictColumns(columns...),
+		sql.UpdateWhere(sql.EQ(rule.FieldWorkspaceID, t.s.ws)),
+	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
+}
+
+// RuleScopedUpsertOne is the "upsert" of one Rule.
+type RuleScopedUpsertOne struct {
+	x *RuleScopedCreate
+	u *RuleUpsertOne
+	// doNothing: the conflict action is DO NOTHING (the only upsert an audited entity allows).
+	doNothing bool
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (x *RuleScopedCreate) OnConflictColumns(columns ...string) *RuleScopedUpsertOne {
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *RuleScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *RuleScopedUpsertOne {
+	return &RuleScopedUpsertOne{x: x, u: x.b.OnConflict((&RuleScoped{s: x.s}).conflictOptions(columns, target)...)}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *RuleScopedUpsertOne) UpdateNewValues() *RuleScopedUpsertOne {
+	u.u.UpdateNewValues()
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *RuleScopedUpsertOne) Ignore() *RuleScopedUpsertOne {
+	u.u.Ignore()
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *RuleScopedUpsertOne) DoNothing() *RuleScopedUpsertOne {
+	u.u.DoNothing()
+	u.doNothing = true
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *RuleScopedUpsertOne) Update(set func(*RuleScopedUpsert)) *RuleScopedUpsertOne {
+	u.u.Update(func(s *RuleUpsert) { set(&RuleScopedUpsert{u: s.UpdateSet}) })
+	return u
+}
+
+// Exec verifies the references, then executes the upsert.
+func (u *RuleScopedUpsertOne) Exec(ctx context.Context) error {
+	if err := u.x.check(ctx); err != nil {
+		return err
+	}
+	return u.u.Exec(ctx)
+}
+
+// ID is like Exec, returning the inserted or updated id.
+func (u *RuleScopedUpsertOne) ID(ctx context.Context) (int64, error) {
+	if err := u.x.check(ctx); err != nil {
+		return 0, err
+	}
+	return u.u.ID(ctx)
+}
+
+// RuleScopedUpsertBulk is the "upsert" of several Rule entities.
+type RuleScopedUpsertBulk struct {
+	b       *RuleScopedCreateBulk
+	t       *RuleScoped
+	columns []string
+	opts    []func(*RuleUpsertBulk)
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (b *RuleScopedCreateBulk) OnConflictColumns(columns ...string) *RuleScopedUpsertBulk {
+	return &RuleScopedUpsertBulk{b: b, t: &RuleScoped{s: b.s}, columns: columns}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *RuleScopedUpsertBulk) UpdateNewValues() *RuleScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *RuleUpsertBulk) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *RuleScopedUpsertBulk) Ignore() *RuleScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *RuleUpsertBulk) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *RuleScopedUpsertBulk) DoNothing() *RuleScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *RuleUpsertBulk) { r.DoNothing() })
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *RuleScopedUpsertBulk) Update(set func(*RuleScopedUpsert)) *RuleScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *RuleUpsertBulk) {
+		r.Update(func(s *RuleUpsert) { set(&RuleScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// Exec verifies every builder's references, then executes the upsert.
+func (u *RuleScopedUpsertBulk) Exec(ctx context.Context) error {
+	raw, err := u.b.raw(ctx)
+	if err != nil {
+		return err
+	}
+	r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
+	for _, o := range u.opts {
+		o(r)
+	}
+	return r.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- update
+
+// RuleScopedUpdateOne wraps RuleUpdateOne. It has no way to move the row to another Workspace.
+type RuleScopedUpdateOne struct {
+	s *Scoped
+	b *RuleUpdateOne
+}
+
+// UpdateOneID updates the Rule with the id; a row of another Workspace is not found.
+func (t *RuleScoped) UpdateOneID(id int64) *RuleScopedUpdateOne {
+	return &RuleScopedUpdateOne{s: t.s, b: t.s.c.Rule.UpdateOneID(id).Where(rule.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *RuleScopedUpdateOne) Where(ps ...predicate.Rule) *RuleScopedUpdateOne {
+	x.b.Where(ps...)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *RuleScopedUpdateOne) SetUpdatedAt(v time.Time) *RuleScopedUpdateOne {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetDiscardedAt sets the "discarded_at" field.
+func (x *RuleScopedUpdateOne) SetDiscardedAt(v time.Time) *RuleScopedUpdateOne {
+	x.b.SetDiscardedAt(v)
+	return x
+}
+
+// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
+func (x *RuleScopedUpdateOne) SetNillableDiscardedAt(v *time.Time) *RuleScopedUpdateOne {
+	x.b.SetNillableDiscardedAt(v)
+	return x
+}
+
+// ClearDiscardedAt clears the value of the "discarded_at" field.
+func (x *RuleScopedUpdateOne) ClearDiscardedAt() *RuleScopedUpdateOne {
+	x.b.ClearDiscardedAt()
+	return x
+}
+
+// SetName sets the "name" field.
+func (x *RuleScopedUpdateOne) SetName(v string) *RuleScopedUpdateOne {
+	x.b.SetName(v)
+	return x
+}
+
+// SetNillableName sets the "name" field if the given value is not nil.
+func (x *RuleScopedUpdateOne) SetNillableName(v *string) *RuleScopedUpdateOne {
+	x.b.SetNillableName(v)
+	return x
+}
+
+// SetStatus sets the "status" field.
+func (x *RuleScopedUpdateOne) SetStatus(v rule.Status) *RuleScopedUpdateOne {
+	x.b.SetStatus(v)
+	return x
+}
+
+// SetNillableStatus sets the "status" field if the given value is not nil.
+func (x *RuleScopedUpdateOne) SetNillableStatus(v *rule.Status) *RuleScopedUpdateOne {
+	x.b.SetNillableStatus(v)
+	return x
+}
+
+// SetActivatedAt sets the "activated_at" field.
+func (x *RuleScopedUpdateOne) SetActivatedAt(v time.Time) *RuleScopedUpdateOne {
+	x.b.SetActivatedAt(v)
+	return x
+}
+
+// SetNillableActivatedAt sets the "activated_at" field if the given value is not nil.
+func (x *RuleScopedUpdateOne) SetNillableActivatedAt(v *time.Time) *RuleScopedUpdateOne {
+	x.b.SetNillableActivatedAt(v)
+	return x
+}
+
+// ClearActivatedAt clears the value of the "activated_at" field.
+func (x *RuleScopedUpdateOne) ClearActivatedAt() *RuleScopedUpdateOne {
+	x.b.ClearActivatedAt()
+	return x
+}
+
+// SetCondition sets the "condition" field.
+func (x *RuleScopedUpdateOne) SetCondition(v string) *RuleScopedUpdateOne {
+	x.b.SetCondition(v)
+	return x
+}
+
+// SetNillableCondition sets the "condition" field if the given value is not nil.
+func (x *RuleScopedUpdateOne) SetNillableCondition(v *string) *RuleScopedUpdateOne {
+	x.b.SetNillableCondition(v)
+	return x
+}
+
+// ClearCondition clears the value of the "condition" field.
+func (x *RuleScopedUpdateOne) ClearCondition() *RuleScopedUpdateOne {
+	x.b.ClearCondition()
+	return x
+}
+
+// SetActions sets the "actions" field.
+func (x *RuleScopedUpdateOne) SetActions(v string) *RuleScopedUpdateOne {
+	x.b.SetActions(v)
+	return x
+}
+
+// SetNillableActions sets the "actions" field if the given value is not nil.
+func (x *RuleScopedUpdateOne) SetNillableActions(v *string) *RuleScopedUpdateOne {
+	x.b.SetNillableActions(v)
+	return x
+}
+
+// AddTriggerIDs adds the "triggers" edge to the RuleTrigger entity by IDs.
+func (x *RuleScopedUpdateOne) AddTriggerIDs(ids ...int64) *RuleScopedUpdateOne {
+	x.b.AddTriggerIDs(ids...)
+	return x
+}
+
+// AddTriggers adds the "triggers" edges to the RuleTrigger entity.
+func (x *RuleScopedUpdateOne) AddTriggers(v ...*RuleTrigger) *RuleScopedUpdateOne {
+	x.b.AddTriggers(v...)
+	return x
+}
+
+// ClearTriggers clears the "triggers" edges to the RuleTrigger entity.
+func (x *RuleScopedUpdateOne) ClearTriggers() *RuleScopedUpdateOne {
+	x.b.ClearTriggers()
+	return x
+}
+
+// RemoveTriggerIDs removes the "triggers" edge to RuleTrigger entities by IDs.
+func (x *RuleScopedUpdateOne) RemoveTriggerIDs(ids ...int64) *RuleScopedUpdateOne {
+	x.b.RemoveTriggerIDs(ids...)
+	return x
+}
+
+// RemoveTriggers removes "triggers" edges to RuleTrigger entities.
+func (x *RuleScopedUpdateOne) RemoveTriggers(v ...*RuleTrigger) *RuleScopedUpdateOne {
+	x.b.RemoveTriggers(v...)
+	return x
+}
+
+// AddFiringIDs adds the "firings" edge to the RuleFiring entity by IDs.
+func (x *RuleScopedUpdateOne) AddFiringIDs(ids ...int64) *RuleScopedUpdateOne {
+	x.b.AddFiringIDs(ids...)
+	return x
+}
+
+// AddFirings adds the "firings" edges to the RuleFiring entity.
+func (x *RuleScopedUpdateOne) AddFirings(v ...*RuleFiring) *RuleScopedUpdateOne {
+	x.b.AddFirings(v...)
+	return x
+}
+
+// ClearFirings clears the "firings" edges to the RuleFiring entity.
+func (x *RuleScopedUpdateOne) ClearFirings() *RuleScopedUpdateOne {
+	x.b.ClearFirings()
+	return x
+}
+
+// RemoveFiringIDs removes the "firings" edge to RuleFiring entities by IDs.
+func (x *RuleScopedUpdateOne) RemoveFiringIDs(ids ...int64) *RuleScopedUpdateOne {
+	x.b.RemoveFiringIDs(ids...)
+	return x
+}
+
+// RemoveFirings removes "firings" edges to RuleFiring entities.
+func (x *RuleScopedUpdateOne) RemoveFirings(v ...*RuleFiring) *RuleScopedUpdateOne {
+	x.b.RemoveFirings(v...)
+	return x
+}
+
+func (x *RuleScopedUpdateOne) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	if err := x.s.verifyRuleTrigger(ctx, m.TriggersIDs()); err != nil {
+		return fmt.Errorf("triggers: %w", err)
+	}
+	if err := x.s.verifyRuleFiring(ctx, m.FiringsIDs()); err != nil {
+		return fmt.Errorf("firings: %w", err)
+	}
+	return nil
+}
+
+// Save verifies the references against the Workspace, then updates the Rule.
+func (x *RuleScopedUpdateOne) Save(ctx context.Context) (*Rule, error) {
+	if err := x.check(ctx); err != nil {
+		return nil, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *RuleScopedUpdateOne) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// RuleScopedUpdate wraps RuleUpdate: a conditional bulk update of one Workspace.
+type RuleScopedUpdate struct {
+	s *Scoped
+	b *RuleUpdate
+	// modErr is set when a Modify modifier tried to assign workspace_id.
+	modErr error
+}
+
+// Update updates the Rule entities of the Workspace that match the predicates.
+func (t *RuleScoped) Update() *RuleScopedUpdate {
+	return &RuleScopedUpdate{s: t.s, b: t.s.c.Rule.Update().Where(rule.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *RuleScopedUpdate) Where(ps ...predicate.Rule) *RuleScopedUpdate {
+	x.b.Where(ps...)
+	return x
+}
+
+// Modify adds a statement modifier for computed assignments the typed setters cannot
+// express (SET col = LEAST(col + ..., ...)). A modifier gets assignment-only access
+// (ScopedAssign), so it cannot widen the Workspace predicate; an assignment to
+// workspace_id is refused: each modifier is probed against a scratch statement here, and
+// Save fails with ErrWorkspaceAssign.
+func (x *RuleScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *RuleScopedUpdate {
+	for _, m := range modifiers {
+		probe := &ScopedAssign{u: sql.Update(rule.Table)}
+		m(probe)
+		if probe.workspace {
+			x.modErr = ErrWorkspaceAssign
+		}
+		x.b.Modify(func(u *sql.UpdateBuilder) { m(&ScopedAssign{u: u}) })
+	}
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *RuleScopedUpdate) SetUpdatedAt(v time.Time) *RuleScopedUpdate {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetDiscardedAt sets the "discarded_at" field.
+func (x *RuleScopedUpdate) SetDiscardedAt(v time.Time) *RuleScopedUpdate {
+	x.b.SetDiscardedAt(v)
+	return x
+}
+
+// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
+func (x *RuleScopedUpdate) SetNillableDiscardedAt(v *time.Time) *RuleScopedUpdate {
+	x.b.SetNillableDiscardedAt(v)
+	return x
+}
+
+// ClearDiscardedAt clears the value of the "discarded_at" field.
+func (x *RuleScopedUpdate) ClearDiscardedAt() *RuleScopedUpdate {
+	x.b.ClearDiscardedAt()
+	return x
+}
+
+// SetName sets the "name" field.
+func (x *RuleScopedUpdate) SetName(v string) *RuleScopedUpdate {
+	x.b.SetName(v)
+	return x
+}
+
+// SetNillableName sets the "name" field if the given value is not nil.
+func (x *RuleScopedUpdate) SetNillableName(v *string) *RuleScopedUpdate {
+	x.b.SetNillableName(v)
+	return x
+}
+
+// SetStatus sets the "status" field.
+func (x *RuleScopedUpdate) SetStatus(v rule.Status) *RuleScopedUpdate {
+	x.b.SetStatus(v)
+	return x
+}
+
+// SetNillableStatus sets the "status" field if the given value is not nil.
+func (x *RuleScopedUpdate) SetNillableStatus(v *rule.Status) *RuleScopedUpdate {
+	x.b.SetNillableStatus(v)
+	return x
+}
+
+// SetActivatedAt sets the "activated_at" field.
+func (x *RuleScopedUpdate) SetActivatedAt(v time.Time) *RuleScopedUpdate {
+	x.b.SetActivatedAt(v)
+	return x
+}
+
+// SetNillableActivatedAt sets the "activated_at" field if the given value is not nil.
+func (x *RuleScopedUpdate) SetNillableActivatedAt(v *time.Time) *RuleScopedUpdate {
+	x.b.SetNillableActivatedAt(v)
+	return x
+}
+
+// ClearActivatedAt clears the value of the "activated_at" field.
+func (x *RuleScopedUpdate) ClearActivatedAt() *RuleScopedUpdate {
+	x.b.ClearActivatedAt()
+	return x
+}
+
+// SetCondition sets the "condition" field.
+func (x *RuleScopedUpdate) SetCondition(v string) *RuleScopedUpdate {
+	x.b.SetCondition(v)
+	return x
+}
+
+// SetNillableCondition sets the "condition" field if the given value is not nil.
+func (x *RuleScopedUpdate) SetNillableCondition(v *string) *RuleScopedUpdate {
+	x.b.SetNillableCondition(v)
+	return x
+}
+
+// ClearCondition clears the value of the "condition" field.
+func (x *RuleScopedUpdate) ClearCondition() *RuleScopedUpdate {
+	x.b.ClearCondition()
+	return x
+}
+
+// SetActions sets the "actions" field.
+func (x *RuleScopedUpdate) SetActions(v string) *RuleScopedUpdate {
+	x.b.SetActions(v)
+	return x
+}
+
+// SetNillableActions sets the "actions" field if the given value is not nil.
+func (x *RuleScopedUpdate) SetNillableActions(v *string) *RuleScopedUpdate {
+	x.b.SetNillableActions(v)
+	return x
+}
+
+// AddTriggerIDs adds the "triggers" edge to the RuleTrigger entity by IDs.
+func (x *RuleScopedUpdate) AddTriggerIDs(ids ...int64) *RuleScopedUpdate {
+	x.b.AddTriggerIDs(ids...)
+	return x
+}
+
+// AddTriggers adds the "triggers" edges to the RuleTrigger entity.
+func (x *RuleScopedUpdate) AddTriggers(v ...*RuleTrigger) *RuleScopedUpdate {
+	x.b.AddTriggers(v...)
+	return x
+}
+
+// ClearTriggers clears the "triggers" edges to the RuleTrigger entity.
+func (x *RuleScopedUpdate) ClearTriggers() *RuleScopedUpdate {
+	x.b.ClearTriggers()
+	return x
+}
+
+// RemoveTriggerIDs removes the "triggers" edge to RuleTrigger entities by IDs.
+func (x *RuleScopedUpdate) RemoveTriggerIDs(ids ...int64) *RuleScopedUpdate {
+	x.b.RemoveTriggerIDs(ids...)
+	return x
+}
+
+// RemoveTriggers removes "triggers" edges to RuleTrigger entities.
+func (x *RuleScopedUpdate) RemoveTriggers(v ...*RuleTrigger) *RuleScopedUpdate {
+	x.b.RemoveTriggers(v...)
+	return x
+}
+
+// AddFiringIDs adds the "firings" edge to the RuleFiring entity by IDs.
+func (x *RuleScopedUpdate) AddFiringIDs(ids ...int64) *RuleScopedUpdate {
+	x.b.AddFiringIDs(ids...)
+	return x
+}
+
+// AddFirings adds the "firings" edges to the RuleFiring entity.
+func (x *RuleScopedUpdate) AddFirings(v ...*RuleFiring) *RuleScopedUpdate {
+	x.b.AddFirings(v...)
+	return x
+}
+
+// ClearFirings clears the "firings" edges to the RuleFiring entity.
+func (x *RuleScopedUpdate) ClearFirings() *RuleScopedUpdate {
+	x.b.ClearFirings()
+	return x
+}
+
+// RemoveFiringIDs removes the "firings" edge to RuleFiring entities by IDs.
+func (x *RuleScopedUpdate) RemoveFiringIDs(ids ...int64) *RuleScopedUpdate {
+	x.b.RemoveFiringIDs(ids...)
+	return x
+}
+
+// RemoveFirings removes "firings" edges to RuleFiring entities.
+func (x *RuleScopedUpdate) RemoveFirings(v ...*RuleFiring) *RuleScopedUpdate {
+	x.b.RemoveFirings(v...)
+	return x
+}
+
+func (x *RuleScopedUpdate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	if err := x.s.verifyRuleTrigger(ctx, m.TriggersIDs()); err != nil {
+		return fmt.Errorf("triggers: %w", err)
+	}
+	if err := x.s.verifyRuleFiring(ctx, m.FiringsIDs()); err != nil {
+		return fmt.Errorf("firings: %w", err)
+	}
+	return nil
+}
+
+// Save verifies the references against the Workspace, then updates the rows and
+// returns how many changed.
+func (x *RuleScopedUpdate) Save(ctx context.Context) (int, error) {
+	if x.modErr != nil {
+		return 0, x.modErr
+	}
+	if err := x.check(ctx); err != nil {
+		return 0, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the count.
+func (x *RuleScopedUpdate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// RuleFiringScoped reaches RuleFiring entities of one Workspace.
+type RuleFiringScoped struct{ s *Scoped }
+
+// RuleFiring returns the RuleFiring entities of the Workspace.
+func (s *Scoped) RuleFiring() *RuleFiringScoped { return &RuleFiringScoped{s: s} }
+
+// Query returns a RuleFiring query already confined to the Workspace.
+func (t *RuleFiringScoped) Query() *RuleFiringQuery {
+	return t.s.c.RuleFiring.Query().Where(rulefiring.WorkspaceID(t.s.ws))
+}
+
+// Get returns the RuleFiring with the id; a row of another Workspace is not found.
+func (t *RuleFiringScoped) Get(ctx context.Context, id int64) (*RuleFiring, error) {
+	return t.Query().Where(rulefiring.ID(id)).Only(ctx)
+}
+
+// RuleFiringScopedDeleteOne wraps RuleFiringDeleteOne.
+type RuleFiringScopedDeleteOne struct {
+	s *Scoped
+	b *RuleFiringDeleteOne
+}
+
+// DeleteOneID deletes the RuleFiring with the id; a row of another Workspace is not found.
+func (t *RuleFiringScoped) DeleteOneID(id int64) *RuleFiringScopedDeleteOne {
+	return &RuleFiringScopedDeleteOne{s: t.s, b: t.s.c.RuleFiring.DeleteOneID(id).Where(rulefiring.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *RuleFiringScopedDeleteOne) Where(ps ...predicate.RuleFiring) *RuleFiringScopedDeleteOne {
+	x.b.Where(ps...)
+	return x
+}
+
+// Exec deletes the row; a missing row is a NotFoundError.
+func (x *RuleFiringScopedDeleteOne) Exec(ctx context.Context) error {
+	return x.b.Exec(ctx)
+}
+
+// RuleFiringScopedDelete wraps RuleFiringDelete.
+type RuleFiringScopedDelete struct {
+	s *Scoped
+	b *RuleFiringDelete
+}
+
+// Delete deletes the RuleFiring entities of the Workspace that match the predicates.
+func (t *RuleFiringScoped) Delete() *RuleFiringScopedDelete {
+	return &RuleFiringScopedDelete{s: t.s, b: t.s.c.RuleFiring.Delete().Where(rulefiring.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *RuleFiringScopedDelete) Where(ps ...predicate.RuleFiring) *RuleFiringScopedDelete {
+	x.b.Where(ps...)
+	return x
+}
+
+// Exec deletes the rows and returns how many were deleted.
+func (x *RuleFiringScopedDelete) Exec(ctx context.Context) (int, error) {
+	return x.b.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- create
+
+// RuleFiringScopedCreate wraps RuleFiringCreate. It has no way to name a Workspace.
+type RuleFiringScopedCreate struct {
+	s *Scoped
+	b *RuleFiringCreate
+}
+
+// Create starts a RuleFiring in the Workspace.
+func (t *RuleFiringScoped) Create() *RuleFiringScopedCreate {
+	return &RuleFiringScopedCreate{s: t.s, b: t.s.c.RuleFiring.Create().SetWorkspaceID(t.s.ws)}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (x *RuleFiringScopedCreate) SetCreatedAt(v time.Time) *RuleFiringScopedCreate {
+	x.b.SetCreatedAt(v)
+	return x
+}
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (x *RuleFiringScopedCreate) SetNillableCreatedAt(v *time.Time) *RuleFiringScopedCreate {
+	x.b.SetNillableCreatedAt(v)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *RuleFiringScopedCreate) SetUpdatedAt(v time.Time) *RuleFiringScopedCreate {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (x *RuleFiringScopedCreate) SetNillableUpdatedAt(v *time.Time) *RuleFiringScopedCreate {
+	x.b.SetNillableUpdatedAt(v)
+	return x
+}
+
+// SetRuleID sets the "rule_id" field.
+func (x *RuleFiringScopedCreate) SetRuleID(v int64) *RuleFiringScopedCreate {
+	x.b.SetRuleID(v)
+	return x
+}
+
+// SetContactID sets the "contact_id" field.
+func (x *RuleFiringScopedCreate) SetContactID(v int64) *RuleFiringScopedCreate {
+	x.b.SetContactID(v)
+	return x
+}
+
+// SetAction sets the "action" field.
+func (x *RuleFiringScopedCreate) SetAction(v string) *RuleFiringScopedCreate {
+	x.b.SetAction(v)
+	return x
+}
+
+// SetSourceID sets the "source_id" field.
+func (x *RuleFiringScopedCreate) SetSourceID(v string) *RuleFiringScopedCreate {
+	x.b.SetSourceID(v)
+	return x
+}
+
+// SetActions sets the "actions" field.
+func (x *RuleFiringScopedCreate) SetActions(v string) *RuleFiringScopedCreate {
+	x.b.SetActions(v)
+	return x
+}
+
+// SetNillableActions sets the "actions" field if the given value is not nil.
+func (x *RuleFiringScopedCreate) SetNillableActions(v *string) *RuleFiringScopedCreate {
+	x.b.SetNillableActions(v)
+	return x
+}
+
+// SetResults sets the "results" field.
+func (x *RuleFiringScopedCreate) SetResults(v string) *RuleFiringScopedCreate {
+	x.b.SetResults(v)
+	return x
+}
+
+// SetNillableResults sets the "results" field if the given value is not nil.
+func (x *RuleFiringScopedCreate) SetNillableResults(v *string) *RuleFiringScopedCreate {
+	x.b.SetNillableResults(v)
+	return x
+}
+
+// SetCompletedAt sets the "completed_at" field.
+func (x *RuleFiringScopedCreate) SetCompletedAt(v time.Time) *RuleFiringScopedCreate {
+	x.b.SetCompletedAt(v)
+	return x
+}
+
+// SetNillableCompletedAt sets the "completed_at" field if the given value is not nil.
+func (x *RuleFiringScopedCreate) SetNillableCompletedAt(v *time.Time) *RuleFiringScopedCreate {
+	x.b.SetNillableCompletedAt(v)
+	return x
+}
+
+// SetRule sets the "rule" edge to the Rule entity.
+func (x *RuleFiringScopedCreate) SetRule(v *Rule) *RuleFiringScopedCreate {
+	x.b.SetRule(v)
+	return x
+}
+
+// SetContact sets the "contact" edge to the Contact entity.
+func (x *RuleFiringScopedCreate) SetContact(v *Contact) *RuleFiringScopedCreate {
+	x.b.SetContact(v)
+	return x
+}
+
+func (x *RuleFiringScopedCreate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	if err := x.s.verifyRule(ctx, m.RuleIDs()); err != nil {
+		return fmt.Errorf("rule: %w", err)
+	}
+	if err := x.s.verifyContact(ctx, m.ContactIDs()); err != nil {
+		return fmt.Errorf("contact: %w", err)
+	}
+	return nil
+}
+
+// Save verifies the references against the Workspace, then creates the RuleFiring.
+func (x *RuleFiringScopedCreate) Save(ctx context.Context) (*RuleFiring, error) {
+	if err := x.check(ctx); err != nil {
+		return nil, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *RuleFiringScopedCreate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- create bulk
+
+// RuleFiringScopedCreateBulk creates several RuleFiring entities of one Workspace at once.
+type RuleFiringScopedCreateBulk struct {
+	s  *Scoped
+	xs []*RuleFiringScopedCreate
+}
+
+// CreateBulk batches creates started on this Workspace.
+func (t *RuleFiringScoped) CreateBulk(xs ...*RuleFiringScopedCreate) *RuleFiringScopedCreateBulk {
+	return &RuleFiringScopedCreateBulk{s: t.s, xs: xs}
+}
+
+func (b *RuleFiringScopedCreateBulk) raw(ctx context.Context) (*RuleFiringCreateBulk, error) {
+	builders := make([]*RuleFiringCreate, len(b.xs))
+	for i, x := range b.xs {
+		if x.s.ws != b.s.ws {
+			return nil, fmt.Errorf("RuleFiring: builder of another scope: %w", ErrNotInWorkspace)
+		}
+		if err := x.check(ctx); err != nil {
+			return nil, err
+		}
+		builders[i] = x.b
+	}
+	return b.s.c.RuleFiring.CreateBulk(builders...), nil
+}
+
+// Save verifies every builder's references, then creates the RuleFiring entities.
+func (b *RuleFiringScopedCreateBulk) Save(ctx context.Context) ([]*RuleFiring, error) {
+	raw, err := b.raw(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return raw.Save(ctx)
+}
+
+// Exec is like Save, discarding the entities.
+func (b *RuleFiringScopedCreateBulk) Exec(ctx context.Context) error {
+	_, err := b.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- upsert
+
+// RuleFiringScopedUpsert is the "ON CONFLICT ... DO UPDATE" setter. It cannot move a row to
+// another Workspace or point a reference at a value that was not verified on create.
+type RuleFiringScopedUpsert struct{ u *sql.UpdateSet }
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *RuleFiringScopedUpsert) SetUpdatedAt(v time.Time) *RuleFiringScopedUpsert {
+	u.u.Set(rulefiring.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *RuleFiringScopedUpsert) UpdateUpdatedAt() *RuleFiringScopedUpsert {
+	u.u.SetExcluded(rulefiring.FieldUpdatedAt)
+	return u
+}
+
+// UpdateRuleID sets the "rule_id" field to the value that was provided on create.
+func (u *RuleFiringScopedUpsert) UpdateRuleID() *RuleFiringScopedUpsert {
+	u.u.SetExcluded(rulefiring.FieldRuleID)
+	return u
+}
+
+// UpdateContactID sets the "contact_id" field to the value that was provided on create.
+func (u *RuleFiringScopedUpsert) UpdateContactID() *RuleFiringScopedUpsert {
+	u.u.SetExcluded(rulefiring.FieldContactID)
+	return u
+}
+
+// SetAction sets the "action" field.
+func (u *RuleFiringScopedUpsert) SetAction(v string) *RuleFiringScopedUpsert {
+	u.u.Set(rulefiring.FieldAction, v)
+	return u
+}
+
+// UpdateAction sets the "action" field to the value that was provided on create.
+func (u *RuleFiringScopedUpsert) UpdateAction() *RuleFiringScopedUpsert {
+	u.u.SetExcluded(rulefiring.FieldAction)
+	return u
+}
+
+// SetSourceID sets the "source_id" field.
+func (u *RuleFiringScopedUpsert) SetSourceID(v string) *RuleFiringScopedUpsert {
+	u.u.Set(rulefiring.FieldSourceID, v)
+	return u
+}
+
+// UpdateSourceID sets the "source_id" field to the value that was provided on create.
+func (u *RuleFiringScopedUpsert) UpdateSourceID() *RuleFiringScopedUpsert {
+	u.u.SetExcluded(rulefiring.FieldSourceID)
+	return u
+}
+
+// SetActions sets the "actions" field.
+func (u *RuleFiringScopedUpsert) SetActions(v string) *RuleFiringScopedUpsert {
+	u.u.Set(rulefiring.FieldActions, v)
+	return u
+}
+
+// UpdateActions sets the "actions" field to the value that was provided on create.
+func (u *RuleFiringScopedUpsert) UpdateActions() *RuleFiringScopedUpsert {
+	u.u.SetExcluded(rulefiring.FieldActions)
+	return u
+}
+
+// SetResults sets the "results" field.
+func (u *RuleFiringScopedUpsert) SetResults(v string) *RuleFiringScopedUpsert {
+	u.u.Set(rulefiring.FieldResults, v)
+	return u
+}
+
+// UpdateResults sets the "results" field to the value that was provided on create.
+func (u *RuleFiringScopedUpsert) UpdateResults() *RuleFiringScopedUpsert {
+	u.u.SetExcluded(rulefiring.FieldResults)
+	return u
+}
+
+// SetCompletedAt sets the "completed_at" field.
+func (u *RuleFiringScopedUpsert) SetCompletedAt(v time.Time) *RuleFiringScopedUpsert {
+	u.u.Set(rulefiring.FieldCompletedAt, v)
+	return u
+}
+
+// UpdateCompletedAt sets the "completed_at" field to the value that was provided on create.
+func (u *RuleFiringScopedUpsert) UpdateCompletedAt() *RuleFiringScopedUpsert {
+	u.u.SetExcluded(rulefiring.FieldCompletedAt)
+	return u
+}
+
+// ClearCompletedAt clears the value of the "completed_at" field.
+func (u *RuleFiringScopedUpsert) ClearCompletedAt() *RuleFiringScopedUpsert {
+	u.u.SetNull(rulefiring.FieldCompletedAt)
+	return u
+}
+
+// conflictOptions confines the DO UPDATE part to rows of the Workspace.
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *RuleFiringScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
+		sql.ConflictColumns(columns...),
+		sql.UpdateWhere(sql.EQ(rulefiring.FieldWorkspaceID, t.s.ws)),
+	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
+}
+
+// RuleFiringScopedUpsertOne is the "upsert" of one RuleFiring.
+type RuleFiringScopedUpsertOne struct {
+	x *RuleFiringScopedCreate
+	u *RuleFiringUpsertOne
+	// doNothing: the conflict action is DO NOTHING (the only upsert an audited entity allows).
+	doNothing bool
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (x *RuleFiringScopedCreate) OnConflictColumns(columns ...string) *RuleFiringScopedUpsertOne {
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *RuleFiringScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *RuleFiringScopedUpsertOne {
+	return &RuleFiringScopedUpsertOne{x: x, u: x.b.OnConflict((&RuleFiringScoped{s: x.s}).conflictOptions(columns, target)...)}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *RuleFiringScopedUpsertOne) UpdateNewValues() *RuleFiringScopedUpsertOne {
+	u.u.UpdateNewValues()
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *RuleFiringScopedUpsertOne) Ignore() *RuleFiringScopedUpsertOne {
+	u.u.Ignore()
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *RuleFiringScopedUpsertOne) DoNothing() *RuleFiringScopedUpsertOne {
+	u.u.DoNothing()
+	u.doNothing = true
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *RuleFiringScopedUpsertOne) Update(set func(*RuleFiringScopedUpsert)) *RuleFiringScopedUpsertOne {
+	u.u.Update(func(s *RuleFiringUpsert) { set(&RuleFiringScopedUpsert{u: s.UpdateSet}) })
+	return u
+}
+
+// Exec verifies the references, then executes the upsert.
+func (u *RuleFiringScopedUpsertOne) Exec(ctx context.Context) error {
+	if err := u.x.check(ctx); err != nil {
+		return err
+	}
+	return u.u.Exec(ctx)
+}
+
+// ID is like Exec, returning the inserted or updated id.
+func (u *RuleFiringScopedUpsertOne) ID(ctx context.Context) (int64, error) {
+	if err := u.x.check(ctx); err != nil {
+		return 0, err
+	}
+	return u.u.ID(ctx)
+}
+
+// RuleFiringScopedUpsertBulk is the "upsert" of several RuleFiring entities.
+type RuleFiringScopedUpsertBulk struct {
+	b       *RuleFiringScopedCreateBulk
+	t       *RuleFiringScoped
+	columns []string
+	opts    []func(*RuleFiringUpsertBulk)
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (b *RuleFiringScopedCreateBulk) OnConflictColumns(columns ...string) *RuleFiringScopedUpsertBulk {
+	return &RuleFiringScopedUpsertBulk{b: b, t: &RuleFiringScoped{s: b.s}, columns: columns}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *RuleFiringScopedUpsertBulk) UpdateNewValues() *RuleFiringScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *RuleFiringUpsertBulk) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *RuleFiringScopedUpsertBulk) Ignore() *RuleFiringScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *RuleFiringUpsertBulk) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *RuleFiringScopedUpsertBulk) DoNothing() *RuleFiringScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *RuleFiringUpsertBulk) { r.DoNothing() })
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *RuleFiringScopedUpsertBulk) Update(set func(*RuleFiringScopedUpsert)) *RuleFiringScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *RuleFiringUpsertBulk) {
+		r.Update(func(s *RuleFiringUpsert) { set(&RuleFiringScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// Exec verifies every builder's references, then executes the upsert.
+func (u *RuleFiringScopedUpsertBulk) Exec(ctx context.Context) error {
+	raw, err := u.b.raw(ctx)
+	if err != nil {
+		return err
+	}
+	r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
+	for _, o := range u.opts {
+		o(r)
+	}
+	return r.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- update
+
+// RuleFiringScopedUpdateOne wraps RuleFiringUpdateOne. It has no way to move the row to another Workspace.
+type RuleFiringScopedUpdateOne struct {
+	s *Scoped
+	b *RuleFiringUpdateOne
+}
+
+// UpdateOneID updates the RuleFiring with the id; a row of another Workspace is not found.
+func (t *RuleFiringScoped) UpdateOneID(id int64) *RuleFiringScopedUpdateOne {
+	return &RuleFiringScopedUpdateOne{s: t.s, b: t.s.c.RuleFiring.UpdateOneID(id).Where(rulefiring.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *RuleFiringScopedUpdateOne) Where(ps ...predicate.RuleFiring) *RuleFiringScopedUpdateOne {
+	x.b.Where(ps...)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *RuleFiringScopedUpdateOne) SetUpdatedAt(v time.Time) *RuleFiringScopedUpdateOne {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetRuleID sets the "rule_id" field.
+func (x *RuleFiringScopedUpdateOne) SetRuleID(v int64) *RuleFiringScopedUpdateOne {
+	x.b.SetRuleID(v)
+	return x
+}
+
+// SetNillableRuleID sets the "rule_id" field if the given value is not nil.
+func (x *RuleFiringScopedUpdateOne) SetNillableRuleID(v *int64) *RuleFiringScopedUpdateOne {
+	x.b.SetNillableRuleID(v)
+	return x
+}
+
+// SetContactID sets the "contact_id" field.
+func (x *RuleFiringScopedUpdateOne) SetContactID(v int64) *RuleFiringScopedUpdateOne {
+	x.b.SetContactID(v)
+	return x
+}
+
+// SetNillableContactID sets the "contact_id" field if the given value is not nil.
+func (x *RuleFiringScopedUpdateOne) SetNillableContactID(v *int64) *RuleFiringScopedUpdateOne {
+	x.b.SetNillableContactID(v)
+	return x
+}
+
+// SetAction sets the "action" field.
+func (x *RuleFiringScopedUpdateOne) SetAction(v string) *RuleFiringScopedUpdateOne {
+	x.b.SetAction(v)
+	return x
+}
+
+// SetNillableAction sets the "action" field if the given value is not nil.
+func (x *RuleFiringScopedUpdateOne) SetNillableAction(v *string) *RuleFiringScopedUpdateOne {
+	x.b.SetNillableAction(v)
+	return x
+}
+
+// SetSourceID sets the "source_id" field.
+func (x *RuleFiringScopedUpdateOne) SetSourceID(v string) *RuleFiringScopedUpdateOne {
+	x.b.SetSourceID(v)
+	return x
+}
+
+// SetNillableSourceID sets the "source_id" field if the given value is not nil.
+func (x *RuleFiringScopedUpdateOne) SetNillableSourceID(v *string) *RuleFiringScopedUpdateOne {
+	x.b.SetNillableSourceID(v)
+	return x
+}
+
+// SetActions sets the "actions" field.
+func (x *RuleFiringScopedUpdateOne) SetActions(v string) *RuleFiringScopedUpdateOne {
+	x.b.SetActions(v)
+	return x
+}
+
+// SetNillableActions sets the "actions" field if the given value is not nil.
+func (x *RuleFiringScopedUpdateOne) SetNillableActions(v *string) *RuleFiringScopedUpdateOne {
+	x.b.SetNillableActions(v)
+	return x
+}
+
+// SetResults sets the "results" field.
+func (x *RuleFiringScopedUpdateOne) SetResults(v string) *RuleFiringScopedUpdateOne {
+	x.b.SetResults(v)
+	return x
+}
+
+// SetNillableResults sets the "results" field if the given value is not nil.
+func (x *RuleFiringScopedUpdateOne) SetNillableResults(v *string) *RuleFiringScopedUpdateOne {
+	x.b.SetNillableResults(v)
+	return x
+}
+
+// SetCompletedAt sets the "completed_at" field.
+func (x *RuleFiringScopedUpdateOne) SetCompletedAt(v time.Time) *RuleFiringScopedUpdateOne {
+	x.b.SetCompletedAt(v)
+	return x
+}
+
+// SetNillableCompletedAt sets the "completed_at" field if the given value is not nil.
+func (x *RuleFiringScopedUpdateOne) SetNillableCompletedAt(v *time.Time) *RuleFiringScopedUpdateOne {
+	x.b.SetNillableCompletedAt(v)
+	return x
+}
+
+// ClearCompletedAt clears the value of the "completed_at" field.
+func (x *RuleFiringScopedUpdateOne) ClearCompletedAt() *RuleFiringScopedUpdateOne {
+	x.b.ClearCompletedAt()
+	return x
+}
+
+// SetRule sets the "rule" edge to the Rule entity.
+func (x *RuleFiringScopedUpdateOne) SetRule(v *Rule) *RuleFiringScopedUpdateOne {
+	x.b.SetRule(v)
+	return x
+}
+
+// ClearRule clears the "rule" edge to the Rule entity.
+func (x *RuleFiringScopedUpdateOne) ClearRule() *RuleFiringScopedUpdateOne {
+	x.b.ClearRule()
+	return x
+}
+
+// SetContact sets the "contact" edge to the Contact entity.
+func (x *RuleFiringScopedUpdateOne) SetContact(v *Contact) *RuleFiringScopedUpdateOne {
+	x.b.SetContact(v)
+	return x
+}
+
+// ClearContact clears the "contact" edge to the Contact entity.
+func (x *RuleFiringScopedUpdateOne) ClearContact() *RuleFiringScopedUpdateOne {
+	x.b.ClearContact()
+	return x
+}
+
+func (x *RuleFiringScopedUpdateOne) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	if err := x.s.verifyRule(ctx, m.RuleIDs()); err != nil {
+		return fmt.Errorf("rule: %w", err)
+	}
+	if err := x.s.verifyContact(ctx, m.ContactIDs()); err != nil {
+		return fmt.Errorf("contact: %w", err)
+	}
+	return nil
+}
+
+// Save verifies the references against the Workspace, then updates the RuleFiring.
+func (x *RuleFiringScopedUpdateOne) Save(ctx context.Context) (*RuleFiring, error) {
+	if err := x.check(ctx); err != nil {
+		return nil, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *RuleFiringScopedUpdateOne) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// RuleFiringScopedUpdate wraps RuleFiringUpdate: a conditional bulk update of one Workspace.
+type RuleFiringScopedUpdate struct {
+	s *Scoped
+	b *RuleFiringUpdate
+	// modErr is set when a Modify modifier tried to assign workspace_id.
+	modErr error
+}
+
+// Update updates the RuleFiring entities of the Workspace that match the predicates.
+func (t *RuleFiringScoped) Update() *RuleFiringScopedUpdate {
+	return &RuleFiringScopedUpdate{s: t.s, b: t.s.c.RuleFiring.Update().Where(rulefiring.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *RuleFiringScopedUpdate) Where(ps ...predicate.RuleFiring) *RuleFiringScopedUpdate {
+	x.b.Where(ps...)
+	return x
+}
+
+// Modify adds a statement modifier for computed assignments the typed setters cannot
+// express (SET col = LEAST(col + ..., ...)). A modifier gets assignment-only access
+// (ScopedAssign), so it cannot widen the Workspace predicate; an assignment to
+// workspace_id is refused: each modifier is probed against a scratch statement here, and
+// Save fails with ErrWorkspaceAssign.
+func (x *RuleFiringScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *RuleFiringScopedUpdate {
+	for _, m := range modifiers {
+		probe := &ScopedAssign{u: sql.Update(rulefiring.Table)}
+		m(probe)
+		if probe.workspace {
+			x.modErr = ErrWorkspaceAssign
+		}
+		x.b.Modify(func(u *sql.UpdateBuilder) { m(&ScopedAssign{u: u}) })
+	}
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *RuleFiringScopedUpdate) SetUpdatedAt(v time.Time) *RuleFiringScopedUpdate {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetRuleID sets the "rule_id" field.
+func (x *RuleFiringScopedUpdate) SetRuleID(v int64) *RuleFiringScopedUpdate {
+	x.b.SetRuleID(v)
+	return x
+}
+
+// SetNillableRuleID sets the "rule_id" field if the given value is not nil.
+func (x *RuleFiringScopedUpdate) SetNillableRuleID(v *int64) *RuleFiringScopedUpdate {
+	x.b.SetNillableRuleID(v)
+	return x
+}
+
+// SetContactID sets the "contact_id" field.
+func (x *RuleFiringScopedUpdate) SetContactID(v int64) *RuleFiringScopedUpdate {
+	x.b.SetContactID(v)
+	return x
+}
+
+// SetNillableContactID sets the "contact_id" field if the given value is not nil.
+func (x *RuleFiringScopedUpdate) SetNillableContactID(v *int64) *RuleFiringScopedUpdate {
+	x.b.SetNillableContactID(v)
+	return x
+}
+
+// SetAction sets the "action" field.
+func (x *RuleFiringScopedUpdate) SetAction(v string) *RuleFiringScopedUpdate {
+	x.b.SetAction(v)
+	return x
+}
+
+// SetNillableAction sets the "action" field if the given value is not nil.
+func (x *RuleFiringScopedUpdate) SetNillableAction(v *string) *RuleFiringScopedUpdate {
+	x.b.SetNillableAction(v)
+	return x
+}
+
+// SetSourceID sets the "source_id" field.
+func (x *RuleFiringScopedUpdate) SetSourceID(v string) *RuleFiringScopedUpdate {
+	x.b.SetSourceID(v)
+	return x
+}
+
+// SetNillableSourceID sets the "source_id" field if the given value is not nil.
+func (x *RuleFiringScopedUpdate) SetNillableSourceID(v *string) *RuleFiringScopedUpdate {
+	x.b.SetNillableSourceID(v)
+	return x
+}
+
+// SetActions sets the "actions" field.
+func (x *RuleFiringScopedUpdate) SetActions(v string) *RuleFiringScopedUpdate {
+	x.b.SetActions(v)
+	return x
+}
+
+// SetNillableActions sets the "actions" field if the given value is not nil.
+func (x *RuleFiringScopedUpdate) SetNillableActions(v *string) *RuleFiringScopedUpdate {
+	x.b.SetNillableActions(v)
+	return x
+}
+
+// SetResults sets the "results" field.
+func (x *RuleFiringScopedUpdate) SetResults(v string) *RuleFiringScopedUpdate {
+	x.b.SetResults(v)
+	return x
+}
+
+// SetNillableResults sets the "results" field if the given value is not nil.
+func (x *RuleFiringScopedUpdate) SetNillableResults(v *string) *RuleFiringScopedUpdate {
+	x.b.SetNillableResults(v)
+	return x
+}
+
+// SetCompletedAt sets the "completed_at" field.
+func (x *RuleFiringScopedUpdate) SetCompletedAt(v time.Time) *RuleFiringScopedUpdate {
+	x.b.SetCompletedAt(v)
+	return x
+}
+
+// SetNillableCompletedAt sets the "completed_at" field if the given value is not nil.
+func (x *RuleFiringScopedUpdate) SetNillableCompletedAt(v *time.Time) *RuleFiringScopedUpdate {
+	x.b.SetNillableCompletedAt(v)
+	return x
+}
+
+// ClearCompletedAt clears the value of the "completed_at" field.
+func (x *RuleFiringScopedUpdate) ClearCompletedAt() *RuleFiringScopedUpdate {
+	x.b.ClearCompletedAt()
+	return x
+}
+
+// SetRule sets the "rule" edge to the Rule entity.
+func (x *RuleFiringScopedUpdate) SetRule(v *Rule) *RuleFiringScopedUpdate {
+	x.b.SetRule(v)
+	return x
+}
+
+// ClearRule clears the "rule" edge to the Rule entity.
+func (x *RuleFiringScopedUpdate) ClearRule() *RuleFiringScopedUpdate {
+	x.b.ClearRule()
+	return x
+}
+
+// SetContact sets the "contact" edge to the Contact entity.
+func (x *RuleFiringScopedUpdate) SetContact(v *Contact) *RuleFiringScopedUpdate {
+	x.b.SetContact(v)
+	return x
+}
+
+// ClearContact clears the "contact" edge to the Contact entity.
+func (x *RuleFiringScopedUpdate) ClearContact() *RuleFiringScopedUpdate {
+	x.b.ClearContact()
+	return x
+}
+
+func (x *RuleFiringScopedUpdate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	if err := x.s.verifyRule(ctx, m.RuleIDs()); err != nil {
+		return fmt.Errorf("rule: %w", err)
+	}
+	if err := x.s.verifyContact(ctx, m.ContactIDs()); err != nil {
+		return fmt.Errorf("contact: %w", err)
+	}
+	return nil
+}
+
+// Save verifies the references against the Workspace, then updates the rows and
+// returns how many changed.
+func (x *RuleFiringScopedUpdate) Save(ctx context.Context) (int, error) {
+	if x.modErr != nil {
+		return 0, x.modErr
+	}
+	if err := x.check(ctx); err != nil {
+		return 0, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the count.
+func (x *RuleFiringScopedUpdate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// RuleTriggerScoped reaches RuleTrigger entities of one Workspace.
+type RuleTriggerScoped struct{ s *Scoped }
+
+// RuleTrigger returns the RuleTrigger entities of the Workspace.
+func (s *Scoped) RuleTrigger() *RuleTriggerScoped { return &RuleTriggerScoped{s: s} }
+
+// Query returns a RuleTrigger query already confined to the Workspace.
+func (t *RuleTriggerScoped) Query() *RuleTriggerQuery {
+	return t.s.c.RuleTrigger.Query().Where(ruletrigger.WorkspaceID(t.s.ws))
+}
+
+// Get returns the RuleTrigger with the id; a row of another Workspace is not found.
+func (t *RuleTriggerScoped) Get(ctx context.Context, id int64) (*RuleTrigger, error) {
+	return t.Query().Where(ruletrigger.ID(id)).Only(ctx)
+}
+
+// RuleTriggerScopedDeleteOne wraps RuleTriggerDeleteOne.
+type RuleTriggerScopedDeleteOne struct {
+	s *Scoped
+	b *RuleTriggerDeleteOne
+}
+
+// DeleteOneID deletes the RuleTrigger with the id; a row of another Workspace is not found.
+func (t *RuleTriggerScoped) DeleteOneID(id int64) *RuleTriggerScopedDeleteOne {
+	return &RuleTriggerScopedDeleteOne{s: t.s, b: t.s.c.RuleTrigger.DeleteOneID(id).Where(ruletrigger.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *RuleTriggerScopedDeleteOne) Where(ps ...predicate.RuleTrigger) *RuleTriggerScopedDeleteOne {
+	x.b.Where(ps...)
+	return x
+}
+
+// Exec deletes the row; a missing row is a NotFoundError.
+func (x *RuleTriggerScopedDeleteOne) Exec(ctx context.Context) error {
+	return x.b.Exec(ctx)
+}
+
+// RuleTriggerScopedDelete wraps RuleTriggerDelete.
+type RuleTriggerScopedDelete struct {
+	s *Scoped
+	b *RuleTriggerDelete
+}
+
+// Delete deletes the RuleTrigger entities of the Workspace that match the predicates.
+func (t *RuleTriggerScoped) Delete() *RuleTriggerScopedDelete {
+	return &RuleTriggerScopedDelete{s: t.s, b: t.s.c.RuleTrigger.Delete().Where(ruletrigger.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *RuleTriggerScopedDelete) Where(ps ...predicate.RuleTrigger) *RuleTriggerScopedDelete {
+	x.b.Where(ps...)
+	return x
+}
+
+// Exec deletes the rows and returns how many were deleted.
+func (x *RuleTriggerScopedDelete) Exec(ctx context.Context) (int, error) {
+	return x.b.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- create
+
+// RuleTriggerScopedCreate wraps RuleTriggerCreate. It has no way to name a Workspace.
+type RuleTriggerScopedCreate struct {
+	s *Scoped
+	b *RuleTriggerCreate
+}
+
+// Create starts a RuleTrigger in the Workspace.
+func (t *RuleTriggerScoped) Create() *RuleTriggerScopedCreate {
+	return &RuleTriggerScopedCreate{s: t.s, b: t.s.c.RuleTrigger.Create().SetWorkspaceID(t.s.ws)}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (x *RuleTriggerScopedCreate) SetCreatedAt(v time.Time) *RuleTriggerScopedCreate {
+	x.b.SetCreatedAt(v)
+	return x
+}
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (x *RuleTriggerScopedCreate) SetNillableCreatedAt(v *time.Time) *RuleTriggerScopedCreate {
+	x.b.SetNillableCreatedAt(v)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *RuleTriggerScopedCreate) SetUpdatedAt(v time.Time) *RuleTriggerScopedCreate {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (x *RuleTriggerScopedCreate) SetNillableUpdatedAt(v *time.Time) *RuleTriggerScopedCreate {
+	x.b.SetNillableUpdatedAt(v)
+	return x
+}
+
+// SetRuleID sets the "rule_id" field.
+func (x *RuleTriggerScopedCreate) SetRuleID(v int64) *RuleTriggerScopedCreate {
+	x.b.SetRuleID(v)
+	return x
+}
+
+// SetAction sets the "action" field.
+func (x *RuleTriggerScopedCreate) SetAction(v string) *RuleTriggerScopedCreate {
+	x.b.SetAction(v)
+	return x
+}
+
+// SetRule sets the "rule" edge to the Rule entity.
+func (x *RuleTriggerScopedCreate) SetRule(v *Rule) *RuleTriggerScopedCreate {
+	x.b.SetRule(v)
+	return x
+}
+
+func (x *RuleTriggerScopedCreate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	if err := x.s.verifyRule(ctx, m.RuleIDs()); err != nil {
+		return fmt.Errorf("rule: %w", err)
+	}
+	return nil
+}
+
+// Save verifies the references against the Workspace, then creates the RuleTrigger.
+func (x *RuleTriggerScopedCreate) Save(ctx context.Context) (*RuleTrigger, error) {
+	if err := x.check(ctx); err != nil {
+		return nil, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *RuleTriggerScopedCreate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- create bulk
+
+// RuleTriggerScopedCreateBulk creates several RuleTrigger entities of one Workspace at once.
+type RuleTriggerScopedCreateBulk struct {
+	s  *Scoped
+	xs []*RuleTriggerScopedCreate
+}
+
+// CreateBulk batches creates started on this Workspace.
+func (t *RuleTriggerScoped) CreateBulk(xs ...*RuleTriggerScopedCreate) *RuleTriggerScopedCreateBulk {
+	return &RuleTriggerScopedCreateBulk{s: t.s, xs: xs}
+}
+
+func (b *RuleTriggerScopedCreateBulk) raw(ctx context.Context) (*RuleTriggerCreateBulk, error) {
+	builders := make([]*RuleTriggerCreate, len(b.xs))
+	for i, x := range b.xs {
+		if x.s.ws != b.s.ws {
+			return nil, fmt.Errorf("RuleTrigger: builder of another scope: %w", ErrNotInWorkspace)
+		}
+		if err := x.check(ctx); err != nil {
+			return nil, err
+		}
+		builders[i] = x.b
+	}
+	return b.s.c.RuleTrigger.CreateBulk(builders...), nil
+}
+
+// Save verifies every builder's references, then creates the RuleTrigger entities.
+func (b *RuleTriggerScopedCreateBulk) Save(ctx context.Context) ([]*RuleTrigger, error) {
+	raw, err := b.raw(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return raw.Save(ctx)
+}
+
+// Exec is like Save, discarding the entities.
+func (b *RuleTriggerScopedCreateBulk) Exec(ctx context.Context) error {
+	_, err := b.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- upsert
+
+// RuleTriggerScopedUpsert is the "ON CONFLICT ... DO UPDATE" setter. It cannot move a row to
+// another Workspace or point a reference at a value that was not verified on create.
+type RuleTriggerScopedUpsert struct{ u *sql.UpdateSet }
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *RuleTriggerScopedUpsert) SetUpdatedAt(v time.Time) *RuleTriggerScopedUpsert {
+	u.u.Set(ruletrigger.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *RuleTriggerScopedUpsert) UpdateUpdatedAt() *RuleTriggerScopedUpsert {
+	u.u.SetExcluded(ruletrigger.FieldUpdatedAt)
+	return u
+}
+
+// UpdateRuleID sets the "rule_id" field to the value that was provided on create.
+func (u *RuleTriggerScopedUpsert) UpdateRuleID() *RuleTriggerScopedUpsert {
+	u.u.SetExcluded(ruletrigger.FieldRuleID)
+	return u
+}
+
+// SetAction sets the "action" field.
+func (u *RuleTriggerScopedUpsert) SetAction(v string) *RuleTriggerScopedUpsert {
+	u.u.Set(ruletrigger.FieldAction, v)
+	return u
+}
+
+// UpdateAction sets the "action" field to the value that was provided on create.
+func (u *RuleTriggerScopedUpsert) UpdateAction() *RuleTriggerScopedUpsert {
+	u.u.SetExcluded(ruletrigger.FieldAction)
+	return u
+}
+
+// conflictOptions confines the DO UPDATE part to rows of the Workspace.
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *RuleTriggerScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
+		sql.ConflictColumns(columns...),
+		sql.UpdateWhere(sql.EQ(ruletrigger.FieldWorkspaceID, t.s.ws)),
+	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
+}
+
+// RuleTriggerScopedUpsertOne is the "upsert" of one RuleTrigger.
+type RuleTriggerScopedUpsertOne struct {
+	x *RuleTriggerScopedCreate
+	u *RuleTriggerUpsertOne
+	// doNothing: the conflict action is DO NOTHING (the only upsert an audited entity allows).
+	doNothing bool
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (x *RuleTriggerScopedCreate) OnConflictColumns(columns ...string) *RuleTriggerScopedUpsertOne {
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *RuleTriggerScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *RuleTriggerScopedUpsertOne {
+	return &RuleTriggerScopedUpsertOne{x: x, u: x.b.OnConflict((&RuleTriggerScoped{s: x.s}).conflictOptions(columns, target)...)}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *RuleTriggerScopedUpsertOne) UpdateNewValues() *RuleTriggerScopedUpsertOne {
+	u.u.UpdateNewValues()
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *RuleTriggerScopedUpsertOne) Ignore() *RuleTriggerScopedUpsertOne {
+	u.u.Ignore()
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *RuleTriggerScopedUpsertOne) DoNothing() *RuleTriggerScopedUpsertOne {
+	u.u.DoNothing()
+	u.doNothing = true
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *RuleTriggerScopedUpsertOne) Update(set func(*RuleTriggerScopedUpsert)) *RuleTriggerScopedUpsertOne {
+	u.u.Update(func(s *RuleTriggerUpsert) { set(&RuleTriggerScopedUpsert{u: s.UpdateSet}) })
+	return u
+}
+
+// Exec verifies the references, then executes the upsert.
+func (u *RuleTriggerScopedUpsertOne) Exec(ctx context.Context) error {
+	if err := u.x.check(ctx); err != nil {
+		return err
+	}
+	return u.u.Exec(ctx)
+}
+
+// ID is like Exec, returning the inserted or updated id.
+func (u *RuleTriggerScopedUpsertOne) ID(ctx context.Context) (int64, error) {
+	if err := u.x.check(ctx); err != nil {
+		return 0, err
+	}
+	return u.u.ID(ctx)
+}
+
+// RuleTriggerScopedUpsertBulk is the "upsert" of several RuleTrigger entities.
+type RuleTriggerScopedUpsertBulk struct {
+	b       *RuleTriggerScopedCreateBulk
+	t       *RuleTriggerScoped
+	columns []string
+	opts    []func(*RuleTriggerUpsertBulk)
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (b *RuleTriggerScopedCreateBulk) OnConflictColumns(columns ...string) *RuleTriggerScopedUpsertBulk {
+	return &RuleTriggerScopedUpsertBulk{b: b, t: &RuleTriggerScoped{s: b.s}, columns: columns}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *RuleTriggerScopedUpsertBulk) UpdateNewValues() *RuleTriggerScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *RuleTriggerUpsertBulk) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *RuleTriggerScopedUpsertBulk) Ignore() *RuleTriggerScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *RuleTriggerUpsertBulk) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *RuleTriggerScopedUpsertBulk) DoNothing() *RuleTriggerScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *RuleTriggerUpsertBulk) { r.DoNothing() })
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *RuleTriggerScopedUpsertBulk) Update(set func(*RuleTriggerScopedUpsert)) *RuleTriggerScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *RuleTriggerUpsertBulk) {
+		r.Update(func(s *RuleTriggerUpsert) { set(&RuleTriggerScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// Exec verifies every builder's references, then executes the upsert.
+func (u *RuleTriggerScopedUpsertBulk) Exec(ctx context.Context) error {
+	raw, err := u.b.raw(ctx)
+	if err != nil {
+		return err
+	}
+	r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
+	for _, o := range u.opts {
+		o(r)
+	}
+	return r.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- update
+
+// RuleTriggerScopedUpdateOne wraps RuleTriggerUpdateOne. It has no way to move the row to another Workspace.
+type RuleTriggerScopedUpdateOne struct {
+	s *Scoped
+	b *RuleTriggerUpdateOne
+}
+
+// UpdateOneID updates the RuleTrigger with the id; a row of another Workspace is not found.
+func (t *RuleTriggerScoped) UpdateOneID(id int64) *RuleTriggerScopedUpdateOne {
+	return &RuleTriggerScopedUpdateOne{s: t.s, b: t.s.c.RuleTrigger.UpdateOneID(id).Where(ruletrigger.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *RuleTriggerScopedUpdateOne) Where(ps ...predicate.RuleTrigger) *RuleTriggerScopedUpdateOne {
+	x.b.Where(ps...)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *RuleTriggerScopedUpdateOne) SetUpdatedAt(v time.Time) *RuleTriggerScopedUpdateOne {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetRuleID sets the "rule_id" field.
+func (x *RuleTriggerScopedUpdateOne) SetRuleID(v int64) *RuleTriggerScopedUpdateOne {
+	x.b.SetRuleID(v)
+	return x
+}
+
+// SetNillableRuleID sets the "rule_id" field if the given value is not nil.
+func (x *RuleTriggerScopedUpdateOne) SetNillableRuleID(v *int64) *RuleTriggerScopedUpdateOne {
+	x.b.SetNillableRuleID(v)
+	return x
+}
+
+// SetAction sets the "action" field.
+func (x *RuleTriggerScopedUpdateOne) SetAction(v string) *RuleTriggerScopedUpdateOne {
+	x.b.SetAction(v)
+	return x
+}
+
+// SetNillableAction sets the "action" field if the given value is not nil.
+func (x *RuleTriggerScopedUpdateOne) SetNillableAction(v *string) *RuleTriggerScopedUpdateOne {
+	x.b.SetNillableAction(v)
+	return x
+}
+
+// SetRule sets the "rule" edge to the Rule entity.
+func (x *RuleTriggerScopedUpdateOne) SetRule(v *Rule) *RuleTriggerScopedUpdateOne {
+	x.b.SetRule(v)
+	return x
+}
+
+// ClearRule clears the "rule" edge to the Rule entity.
+func (x *RuleTriggerScopedUpdateOne) ClearRule() *RuleTriggerScopedUpdateOne {
+	x.b.ClearRule()
+	return x
+}
+
+func (x *RuleTriggerScopedUpdateOne) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	if err := x.s.verifyRule(ctx, m.RuleIDs()); err != nil {
+		return fmt.Errorf("rule: %w", err)
+	}
+	return nil
+}
+
+// Save verifies the references against the Workspace, then updates the RuleTrigger.
+func (x *RuleTriggerScopedUpdateOne) Save(ctx context.Context) (*RuleTrigger, error) {
+	if err := x.check(ctx); err != nil {
+		return nil, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *RuleTriggerScopedUpdateOne) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// RuleTriggerScopedUpdate wraps RuleTriggerUpdate: a conditional bulk update of one Workspace.
+type RuleTriggerScopedUpdate struct {
+	s *Scoped
+	b *RuleTriggerUpdate
+	// modErr is set when a Modify modifier tried to assign workspace_id.
+	modErr error
+}
+
+// Update updates the RuleTrigger entities of the Workspace that match the predicates.
+func (t *RuleTriggerScoped) Update() *RuleTriggerScopedUpdate {
+	return &RuleTriggerScopedUpdate{s: t.s, b: t.s.c.RuleTrigger.Update().Where(ruletrigger.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *RuleTriggerScopedUpdate) Where(ps ...predicate.RuleTrigger) *RuleTriggerScopedUpdate {
+	x.b.Where(ps...)
+	return x
+}
+
+// Modify adds a statement modifier for computed assignments the typed setters cannot
+// express (SET col = LEAST(col + ..., ...)). A modifier gets assignment-only access
+// (ScopedAssign), so it cannot widen the Workspace predicate; an assignment to
+// workspace_id is refused: each modifier is probed against a scratch statement here, and
+// Save fails with ErrWorkspaceAssign.
+func (x *RuleTriggerScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *RuleTriggerScopedUpdate {
+	for _, m := range modifiers {
+		probe := &ScopedAssign{u: sql.Update(ruletrigger.Table)}
+		m(probe)
+		if probe.workspace {
+			x.modErr = ErrWorkspaceAssign
+		}
+		x.b.Modify(func(u *sql.UpdateBuilder) { m(&ScopedAssign{u: u}) })
+	}
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *RuleTriggerScopedUpdate) SetUpdatedAt(v time.Time) *RuleTriggerScopedUpdate {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetRuleID sets the "rule_id" field.
+func (x *RuleTriggerScopedUpdate) SetRuleID(v int64) *RuleTriggerScopedUpdate {
+	x.b.SetRuleID(v)
+	return x
+}
+
+// SetNillableRuleID sets the "rule_id" field if the given value is not nil.
+func (x *RuleTriggerScopedUpdate) SetNillableRuleID(v *int64) *RuleTriggerScopedUpdate {
+	x.b.SetNillableRuleID(v)
+	return x
+}
+
+// SetAction sets the "action" field.
+func (x *RuleTriggerScopedUpdate) SetAction(v string) *RuleTriggerScopedUpdate {
+	x.b.SetAction(v)
+	return x
+}
+
+// SetNillableAction sets the "action" field if the given value is not nil.
+func (x *RuleTriggerScopedUpdate) SetNillableAction(v *string) *RuleTriggerScopedUpdate {
+	x.b.SetNillableAction(v)
+	return x
+}
+
+// SetRule sets the "rule" edge to the Rule entity.
+func (x *RuleTriggerScopedUpdate) SetRule(v *Rule) *RuleTriggerScopedUpdate {
+	x.b.SetRule(v)
+	return x
+}
+
+// ClearRule clears the "rule" edge to the Rule entity.
+func (x *RuleTriggerScopedUpdate) ClearRule() *RuleTriggerScopedUpdate {
+	x.b.ClearRule()
+	return x
+}
+
+func (x *RuleTriggerScopedUpdate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	if err := x.s.verifyRule(ctx, m.RuleIDs()); err != nil {
+		return fmt.Errorf("rule: %w", err)
+	}
+	return nil
+}
+
+// Save verifies the references against the Workspace, then updates the rows and
+// returns how many changed.
+func (x *RuleTriggerScopedUpdate) Save(ctx context.Context) (int, error) {
+	if x.modErr != nil {
+		return 0, x.modErr
+	}
+	if err := x.check(ctx); err != nil {
+		return 0, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the count.
+func (x *RuleTriggerScopedUpdate) Exec(ctx context.Context) error {
 	_, err := x.Save(ctx)
 	return err
 }

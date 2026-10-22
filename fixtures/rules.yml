@@ -1,0 +1,76 @@
+# Workspace acme (id 1). Rules react to custom Event actions (rule_*) that no Automation
+# fixture uses. The Trigger events are in rule_triggers.yml, the Firings in rule_firings.yml.
+# Actions are stored JSON: ent writes the same text.
+- id: 100 # fixture: RuleTagClicked
+  name: Tag a Contact who clicked
+  status: active
+  activated_at: '{{daysAgo 30}}'
+  actions: '[{"type":"apply_tag","tag":"rule-clicked"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 30}}'
+# Fires only for a Contact who has the vip Tag (Alice and Carol, not Bob).
+- id: 101 # fixture: RuleVipOnly
+  name: Tag a vip who did it
+  status: active
+  activated_at: '{{daysAgo 30}}'
+  condition: '{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"tag","operator":"has","value":"vip"}]}'
+  actions: '[{"type":"apply_tag","tag":"rule-vip-seen"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 30}}'
+- id: 102 # fixture: RuleDraft
+  name: Draft rule
+  status: draft
+  actions: '[{"type":"apply_tag","tag":"rule-draft"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 20}}'
+  updated_at: '{{daysAgo 20}}'
+# Two Trigger events, two Actions in order: apply then remove.
+- id: 103 # fixture: RuleMultiTrigger
+  name: Either of two events
+  status: active
+  activated_at: '{{daysAgo 30}}'
+  actions: '[{"type":"apply_tag","tag":"rule-multi"},{"type":"remove_tag","tag":"vip"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 30}}'
+# The first Action names no Tag (a stored shape the API refuses, so it cannot be applied): it fails and the
+# second one still runs.
+- id: 104 # fixture: RuleFailThenTag
+  name: A failing action then a tag
+  status: active
+  activated_at: '{{daysAgo 30}}'
+  actions: '[{"type":"apply_tag","tag":""},{"type":"apply_tag","tag":"rule-after-failure"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 30}}'
+# Active, but activated in the future of every fixture Event: it acts on nothing yet.
+- id: 105 # fixture: RuleActivatedLater
+  name: Activated later
+  status: active
+  activated_at: '{{hoursAhead 1}}'
+  actions: '[{"type":"apply_tag","tag":"rule-later"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+
+# --- Globex (workspace 2) foreign row ---
+- id: 900 # fixture: RuleGlobex
+  name: Globex rule
+  status: active
+  activated_at: '{{daysAgo 30}}'
+  actions: '[{"type":"apply_tag","tag":"globex-rule"}]'
+  workspace_id: 2
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 30}}'
+
+# --- Initech (workspace 3): the tenant whose Contacts the erasure tests use ---
+- id: 300 # fixture: RuleInitech
+  name: Initech rule
+  status: active
+  activated_at: '{{daysAgo 30}}'
+  actions: '[{"type":"apply_tag","tag":"initech-rule"}]'
+  workspace_id: 3
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 30}}'

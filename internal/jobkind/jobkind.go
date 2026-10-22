@@ -19,6 +19,8 @@ var (
 	RunStep         = Key{Kind: "automation_run_step", Arg: "run_id"}
 	HTTPStep        = Key{Kind: "automation_http_step", Arg: "run_id"}
 	SendRecipient   = Key{Kind: "send_broadcast_recipient", Arg: "recipient_id"}
+	// RuleEvaluate carries the Event's properties, so it is matched by its Contact.
+	RuleEvaluate = Key{Kind: "rule_evaluate_event", Arg: "contact_id"}
 )
 
 // DeliverWebhookBodyArg is the argument of a queued webhook delivery that holds the event
@@ -26,4 +28,4 @@ var (
 const DeliverWebhookBodyArg = "body"
 
 // Purged lists every kind Erasure purges.
-var Purged = []Key{DeliverWebhook, EvaluateTrigger, RunStep, HTTPStep, SendRecipient}
+var Purged = []Key{DeliverWebhook, EvaluateTrigger, RunStep, HTTPStep, SendRecipient, RuleEvaluate}

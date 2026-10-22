@@ -105,6 +105,15 @@ type RecoveryCode func(*sql.Selector)
 // RiverJob is the predicate function for riverjob builders.
 type RiverJob func(*sql.Selector)
 
+// Rule is the predicate function for rule builders.
+type Rule func(*sql.Selector)
+
+// RuleFiring is the predicate function for rulefiring builders.
+type RuleFiring func(*sql.Selector)
+
+// RuleTrigger is the predicate function for ruletrigger builders.
+type RuleTrigger func(*sql.Selector)
+
 // SchemaState is the predicate function for schemastate builders.
 type SchemaState func(*sql.Selector)
 

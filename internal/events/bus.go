@@ -185,6 +185,7 @@ func (p *txPublisher) Publish(ctx context.Context, ev DomainEvent) error {
 		Version:     ev.EventVersion(),
 		WorkspaceID: ev.Workspace(),
 		OccurredAt:  occurred,
+		RecordedAt:  time.Now().UTC(),
 		Data:        data,
 		DedupKey:    dedupKey,
 	}

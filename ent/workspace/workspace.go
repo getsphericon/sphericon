@@ -95,6 +95,12 @@ const (
 	EdgeAutomationVersions = "automation_versions"
 	// EdgeAutomationRuns holds the string denoting the automation_runs edge name in mutations.
 	EdgeAutomationRuns = "automation_runs"
+	// EdgeRules holds the string denoting the rules edge name in mutations.
+	EdgeRules = "rules"
+	// EdgeRuleTriggers holds the string denoting the rule_triggers edge name in mutations.
+	EdgeRuleTriggers = "rule_triggers"
+	// EdgeRuleFirings holds the string denoting the rule_firings edge name in mutations.
+	EdgeRuleFirings = "rule_firings"
 	// EdgeWebhookEndpoints holds the string denoting the webhook_endpoints edge name in mutations.
 	EdgeWebhookEndpoints = "webhook_endpoints"
 	// EdgeSuppressions holds the string denoting the suppressions edge name in mutations.
@@ -250,6 +256,27 @@ const (
 	AutomationRunsInverseTable = "automation_runs"
 	// AutomationRunsColumn is the table column denoting the automation_runs relation/edge.
 	AutomationRunsColumn = "workspace_id"
+	// RulesTable is the table that holds the rules relation/edge.
+	RulesTable = "rules"
+	// RulesInverseTable is the table name for the Rule entity.
+	// It exists in this package in order to avoid circular dependency with the "rule" package.
+	RulesInverseTable = "rules"
+	// RulesColumn is the table column denoting the rules relation/edge.
+	RulesColumn = "workspace_id"
+	// RuleTriggersTable is the table that holds the rule_triggers relation/edge.
+	RuleTriggersTable = "rule_triggers"
+	// RuleTriggersInverseTable is the table name for the RuleTrigger entity.
+	// It exists in this package in order to avoid circular dependency with the "ruletrigger" package.
+	RuleTriggersInverseTable = "rule_triggers"
+	// RuleTriggersColumn is the table column denoting the rule_triggers relation/edge.
+	RuleTriggersColumn = "workspace_id"
+	// RuleFiringsTable is the table that holds the rule_firings relation/edge.
+	RuleFiringsTable = "rule_firings"
+	// RuleFiringsInverseTable is the table name for the RuleFiring entity.
+	// It exists in this package in order to avoid circular dependency with the "rulefiring" package.
+	RuleFiringsInverseTable = "rule_firings"
+	// RuleFiringsColumn is the table column denoting the rule_firings relation/edge.
+	RuleFiringsColumn = "workspace_id"
 	// WebhookEndpointsTable is the table that holds the webhook_endpoints relation/edge.
 	WebhookEndpointsTable = "webhook_endpoints"
 	// WebhookEndpointsInverseTable is the table name for the WebhookEndpoint entity.
@@ -786,6 +813,48 @@ func ByAutomationRuns(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// ByRulesCount orders the results by rules count.
+func ByRulesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newRulesStep(), opts...)
+	}
+}
+
+// ByRules orders the results by rules terms.
+func ByRules(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newRulesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByRuleTriggersCount orders the results by rule_triggers count.
+func ByRuleTriggersCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newRuleTriggersStep(), opts...)
+	}
+}
+
+// ByRuleTriggers orders the results by rule_triggers terms.
+func ByRuleTriggers(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newRuleTriggersStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByRuleFiringsCount orders the results by rule_firings count.
+func ByRuleFiringsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newRuleFiringsStep(), opts...)
+	}
+}
+
+// ByRuleFirings orders the results by rule_firings terms.
+func ByRuleFirings(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newRuleFiringsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByWebhookEndpointsCount orders the results by webhook_endpoints count.
 func ByWebhookEndpointsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -1056,6 +1125,27 @@ func newAutomationRunsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(AutomationRunsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, AutomationRunsTable, AutomationRunsColumn),
+	)
+}
+func newRulesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(RulesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, RulesTable, RulesColumn),
+	)
+}
+func newRuleTriggersStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(RuleTriggersInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, RuleTriggersTable, RuleTriggersColumn),
+	)
+}
+func newRuleFiringsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(RuleFiringsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, RuleFiringsTable, RuleFiringsColumn),
 	)
 }
 func newWebhookEndpointsStep() *sqlgraph.Step {

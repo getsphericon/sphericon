@@ -45,6 +45,9 @@ import (
 	"github.com/getsphericon/sphericon/ent/privaterelayrange"
 	"github.com/getsphericon/sphericon/ent/recoverycode"
 	"github.com/getsphericon/sphericon/ent/riverjob"
+	"github.com/getsphericon/sphericon/ent/rule"
+	"github.com/getsphericon/sphericon/ent/rulefiring"
+	"github.com/getsphericon/sphericon/ent/ruletrigger"
 	"github.com/getsphericon/sphericon/ent/schemastate"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
@@ -154,6 +157,9 @@ func checkColumn(t, c string) error {
 			privaterelayrange.Table:  privaterelayrange.ValidColumn,
 			recoverycode.Table:       recoverycode.ValidColumn,
 			riverjob.Table:           riverjob.ValidColumn,
+			rule.Table:               rule.ValidColumn,
+			rulefiring.Table:         rulefiring.ValidColumn,
+			ruletrigger.Table:        ruletrigger.ValidColumn,
 			schemastate.Table:        schemastate.ValidColumn,
 			segment.Table:            segment.ValidColumn,
 			sendlimiter.Table:        sendlimiter.ValidColumn,

@@ -570,6 +570,70 @@ func (UnimplementedHandler) PresetsList(ctx context.Context) (r PresetsListRes, 
 	return r, ht.ErrNotImplemented
 }
 
+// RuleFiringsList implements RuleFirings_list operation.
+//
+// List a Rule's Firings, newest first. Needs the automations:read scope.
+//
+// GET /rules/{ruleId}/firings
+func (UnimplementedHandler) RuleFiringsList(ctx context.Context, params RuleFiringsListParams) (r RuleFiringsListRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// RulesActivate implements Rules_activate operation.
+//
+// Activate a Rule: it reacts to Events recorded from now on, never to past ones. Needs the
+// automations:activate scope.
+//
+// POST /rules/{id}/activate
+func (UnimplementedHandler) RulesActivate(ctx context.Context, params RulesActivateParams) (r RulesActivateRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// RulesCreate implements Rules_create operation.
+//
+// Create a resource.
+//
+// POST /rules
+func (UnimplementedHandler) RulesCreate(ctx context.Context, req *CreateRuleInput) (r RulesCreateRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// RulesDeactivate implements Rules_deactivate operation.
+//
+// Deactivate a Rule: it stops firing. Needs the automations:activate scope.
+//
+// POST /rules/{id}/deactivate
+func (UnimplementedHandler) RulesDeactivate(ctx context.Context, params RulesDeactivateParams) (r RulesDeactivateRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// RulesGet implements Rules_get operation.
+//
+// Get a resource by ID.
+//
+// GET /rules/{id}
+func (UnimplementedHandler) RulesGet(ctx context.Context, params RulesGetParams) (r RulesGetRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// RulesList implements Rules_list operation.
+//
+// List resources with pagination.
+//
+// GET /rules
+func (UnimplementedHandler) RulesList(ctx context.Context, params RulesListParams) (r RulesListRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// RulesUpdate implements Rules_update operation.
+//
+// Update a resource.
+//
+// PUT /rules/{id}
+func (UnimplementedHandler) RulesUpdate(ctx context.Context, req *UpdateRuleInput, params RulesUpdateParams) (r RulesUpdateRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SegmentsArchive implements Segments_archive operation.
 //
 // Archive a resource: it leaves the list and new work, keeps its history, and can be restored. Refused

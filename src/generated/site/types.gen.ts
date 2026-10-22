@@ -1826,6 +1826,22 @@ export type SiteCreateInvitationResponse = {
 };
 
 /**
+ * Site request body for creating a Rule (always created as a draft)
+ */
+export type SiteCreateRuleInput = {
+  name: string;
+  /**
+   * The Event actions that make the Rule fire; at least one
+   */
+  triggerEvents: Array<string>;
+  condition?: SiteConditionGroup;
+  /**
+   * The Actions to run, in order
+   */
+  actions?: Array<SiteRuleAction>;
+};
+
+/**
  * Site request body for creating a segment
  */
 export type SiteCreateSegmentInput = {
@@ -3191,6 +3207,156 @@ export type SiteResetPasswordInput = {
 };
 
 /**
+ * One Action of a Rule, run in order when the Rule fires. A flat shape: tag actions carry the tag name.
+ */
+export type SiteRuleAction = {
+  /**
+   * Action kind
+   */
+  type: SiteRuleActionType;
+  /**
+   * Tag name to apply to or remove from the Contact (apply_tag and remove_tag)
+   */
+  tag?: string;
+};
+
+/**
+ * What one Action did when a Rule fired
+ */
+export type SiteRuleActionResult = {
+  /**
+   * The Action's kind
+   */
+  type: SiteRuleActionType;
+  /**
+   * How it ended; a skipped Action is an expected outcome, not an error
+   */
+  status: SiteRuleActionStatus;
+  /**
+   * Why it failed or was skipped
+   */
+  detail?: string;
+};
+
+/**
+ * How one Action of a Firing ended
+ */
+export const SiteRuleActionStatus = {
+  SUCCEEDED: 'succeeded',
+  FAILED: 'failed',
+  SKIPPED: 'skipped'
+} as const;
+
+/**
+ * How one Action of a Firing ended
+ */
+export type SiteRuleActionStatus = typeof SiteRuleActionStatus[keyof typeof SiteRuleActionStatus];
+
+/**
+ * Kind of Rule action
+ */
+export const SiteRuleActionType = { APPLY_TAG: 'apply_tag', REMOVE_TAG: 'remove_tag' } as const;
+
+/**
+ * Kind of Rule action
+ */
+export type SiteRuleActionType = typeof SiteRuleActionType[keyof typeof SiteRuleActionType];
+
+/**
+ * One execution of a Rule for one Event, with what each Action did. Erased with the Contact.
+ */
+export type SiteRuleFiringResource = {
+  /**
+   * Unique identifier
+   */
+  id: EntityId;
+  /**
+   * The Rule that fired
+   */
+  ruleId: EntityId;
+  /**
+   * The Contact the Event was for
+   */
+  contactId: EntityId;
+  /**
+   * The Trigger event: the action of the Event that fired the Rule
+   */
+  action: string;
+  /**
+   * The Event's source id: the same Event delivered twice fires a Rule once
+   */
+  eventSourceId: string;
+  /**
+   * One result per Action run so far, in the Rule's order
+   */
+  results: Array<SiteRuleActionResult>;
+  /**
+   * When the last Action finished; absent while Actions are still to run
+   */
+  completedAt?: Timestamp;
+  /**
+   * When the Rule fired
+   */
+  createdAt: Timestamp;
+};
+
+/**
+ * Rule resource used by the site UI: a stateless reaction to an Event. Created Rules are drafts.
+ */
+export type SiteRuleResource = {
+  /**
+   * Unique identifier
+   */
+  id: EntityId;
+  /**
+   * Rule name
+   */
+  name: string;
+  /**
+   * Lifecycle status
+   */
+  status: SiteRuleStatus;
+  /**
+   * The Event actions that make the Rule fire; any one of them does
+   */
+  triggerEvents: Array<string>;
+  /**
+   * The Contact must match this condition for the Rule to fire; absent or empty means every Contact
+   */
+  condition?: SiteConditionGroup;
+  /**
+   * The Rule's ordered Actions
+   */
+  actions: Array<SiteRuleAction>;
+  /**
+   * When the Rule was last activated. It acts only on Events recorded after it.
+   */
+  activatedAt?: Timestamp | null;
+  /**
+   * When the Rule was archived; null while it is kept
+   */
+  archivedAt?: Timestamp | null;
+  /**
+   * Creation timestamp
+   */
+  createdAt: Timestamp;
+  /**
+   * Last update timestamp
+   */
+  updatedAt: Timestamp;
+};
+
+/**
+ * Rule lifecycle status
+ */
+export const SiteRuleStatus = { DRAFT: 'draft', ACTIVE: 'active' } as const;
+
+/**
+ * Rule lifecycle status
+ */
+export type SiteRuleStatus = typeof SiteRuleStatus[keyof typeof SiteRuleStatus];
+
+/**
  * Save the Brand kit: the first save creates it and the starter Templates, a later one replaces
  * its values.
  */
@@ -4074,6 +4240,22 @@ export type SiteUpdateMembershipInput = {
 };
 
 /**
+ * Site request body for updating a Rule
+ */
+export type SiteUpdateRuleInput = {
+  name?: string;
+  /**
+   * The Event actions that make the Rule fire; at least one
+   */
+  triggerEvents?: Array<string>;
+  condition?: SiteConditionGroup;
+  /**
+   * The Actions to run, in order
+   */
+  actions?: Array<SiteRuleAction>;
+};
+
+/**
  * Site request body for updating a segment
  */
 export type SiteUpdateSegmentInput = {
@@ -4690,6 +4872,23 @@ export type SiteMembershipResourceKeyWorkspaceId = WorkspaceId;
  * workspace resources (ADR 0043)
  */
 export type SiteMembershipResourceParentKey = WorkspaceId;
+
+/**
+ * Unique identifier
+ */
+export type SiteRuleResourceKeyId = EntityId;
+
+/**
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
+ */
+export type SiteRuleResourceKeyWorkspaceId = WorkspaceId;
+
+/**
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
+ */
+export type SiteRuleResourceParentKey = WorkspaceId;
 
 /**
  * Unique identifier
@@ -9146,6 +9345,336 @@ export type SiteWorkspacesRestoreResponses = {
 };
 
 export type SiteWorkspacesRestoreResponse = SiteWorkspacesRestoreResponses[keyof SiteWorkspacesRestoreResponses];
+
+export type SiteRulesListData = {
+  body?: never;
+  path: {
+    /**
+     * The Workspace id: its short opaque public address and the route key for nested
+     * workspace resources (ADR 0043)
+     */
+    workspaceId: WorkspaceId;
+  };
+  query?: {
+    /**
+     * Page number (1-based)
+     */
+    page?: number;
+    /**
+     * Page size
+     */
+    pageSize?: number;
+  };
+  url: '/workspaces/{workspaceId}/rules';
+};
+
+export type SiteRulesListErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+};
+
+export type SiteRulesListError = SiteRulesListErrors[keyof SiteRulesListErrors];
+
+export type SiteRulesListResponses = {
+  /**
+   * Paginated response
+   */
+  200: {
+    /**
+     * List of items
+     */
+    items: Array<SiteRuleResource>;
+    /**
+     * Page number (1-based)
+     */
+    page: number;
+    /**
+     * Page size
+     */
+    pageSize: number;
+    /**
+     * Total number of elements
+     */
+    totalItems: number;
+    /**
+     * Total number of pages
+     */
+    totalPages: number;
+  };
+};
+
+export type SiteRulesListResponse = SiteRulesListResponses[keyof SiteRulesListResponses];
+
+export type SiteRulesCreateData = {
+  body: SiteCreateRuleInput;
+  path: {
+    /**
+     * The Workspace id: its short opaque public address and the route key for nested
+     * workspace resources (ADR 0043)
+     */
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/rules';
+};
+
+export type SiteRulesCreateErrors = {
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+};
+
+export type SiteRulesCreateError = SiteRulesCreateErrors[keyof SiteRulesCreateErrors];
+
+export type SiteRulesCreateResponses = {
+  /**
+   * The request has succeeded and a new resource has been created as a result.
+   */
+  201: SiteRuleResource;
+};
+
+export type SiteRulesCreateResponse = SiteRulesCreateResponses[keyof SiteRulesCreateResponses];
+
+export type SiteRulesGetData = {
+  body?: never;
+  path: {
+    /**
+     * The Workspace id: its short opaque public address and the route key for nested
+     * workspace resources (ADR 0043)
+     */
+    workspaceId: WorkspaceId;
+    /**
+     * Unique identifier
+     */
+    id: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/rules/{id}';
+};
+
+export type SiteRulesGetErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteRulesGetError = SiteRulesGetErrors[keyof SiteRulesGetErrors];
+
+export type SiteRulesGetResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteRuleResource;
+};
+
+export type SiteRulesGetResponse = SiteRulesGetResponses[keyof SiteRulesGetResponses];
+
+export type SiteRulesUpdateData = {
+  body: SiteUpdateRuleInput;
+  path: {
+    /**
+     * The Workspace id: its short opaque public address and the route key for nested
+     * workspace resources (ADR 0043)
+     */
+    workspaceId: WorkspaceId;
+    /**
+     * Unique identifier
+     */
+    id: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/rules/{id}';
+};
+
+export type SiteRulesUpdateErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+};
+
+export type SiteRulesUpdateError = SiteRulesUpdateErrors[keyof SiteRulesUpdateErrors];
+
+export type SiteRulesUpdateResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteRuleResource;
+};
+
+export type SiteRulesUpdateResponse = SiteRulesUpdateResponses[keyof SiteRulesUpdateResponses];
+
+export type SiteRulesActivateData = {
+  body?: never;
+  path: {
+    /**
+     * The Workspace id: its short opaque public address and the route key for nested
+     * workspace resources (ADR 0043)
+     */
+    workspaceId: WorkspaceId;
+    /**
+     * Unique identifier
+     */
+    id: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/rules/{id}/activate';
+};
+
+export type SiteRulesActivateErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+};
+
+export type SiteRulesActivateError = SiteRulesActivateErrors[keyof SiteRulesActivateErrors];
+
+export type SiteRulesActivateResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteRuleResource;
+};
+
+export type SiteRulesActivateResponse = SiteRulesActivateResponses[keyof SiteRulesActivateResponses];
+
+export type SiteRulesDeactivateData = {
+  body?: never;
+  path: {
+    /**
+     * The Workspace id: its short opaque public address and the route key for nested
+     * workspace resources (ADR 0043)
+     */
+    workspaceId: WorkspaceId;
+    /**
+     * Unique identifier
+     */
+    id: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/rules/{id}/deactivate';
+};
+
+export type SiteRulesDeactivateErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteRulesDeactivateError = SiteRulesDeactivateErrors[keyof SiteRulesDeactivateErrors];
+
+export type SiteRulesDeactivateResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteRuleResource;
+};
+
+export type SiteRulesDeactivateResponse = SiteRulesDeactivateResponses[keyof SiteRulesDeactivateResponses];
+
+export type SiteRuleFiringsListData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+    ruleId: EntityId;
+  };
+  query?: {
+    /**
+     * Page number (1-based)
+     */
+    page?: number;
+    /**
+     * Page size
+     */
+    pageSize?: number;
+  };
+  url: '/workspaces/{workspaceId}/rules/{ruleId}/firings';
+};
+
+export type SiteRuleFiringsListErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteRuleFiringsListError = SiteRuleFiringsListErrors[keyof SiteRuleFiringsListErrors];
+
+export type SiteRuleFiringsListResponses = {
+  /**
+   * Paginated response
+   */
+  200: {
+    /**
+     * List of items
+     */
+    items: Array<SiteRuleFiringResource>;
+    /**
+     * Page number (1-based)
+     */
+    page: number;
+    /**
+     * Page size
+     */
+    pageSize: number;
+    /**
+     * Total number of elements
+     */
+    totalItems: number;
+    /**
+     * Total number of pages
+     */
+    totalPages: number;
+  };
+};
+
+export type SiteRuleFiringsListResponse = SiteRuleFiringsListResponses[keyof SiteRuleFiringsListResponses];
 
 export type SiteWorkspacesSetSecondFactorRequirementData = {
   body: SiteSecondFactorRequirementInput;
