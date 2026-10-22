@@ -8,6 +8,7 @@ import { Route as broadcastsRoute } from '../routes/workspaces/$workspaceId/broa
 import { Route as contactsRoute } from '../routes/workspaces/$workspaceId/contacts/index.tsx'
 import { Route as customFieldsRoute } from '../routes/workspaces/$workspaceId/custom-fields/index.tsx'
 import { Route as overviewRoute } from '../routes/workspaces/$workspaceId/index.tsx'
+import { Route as rulesRoute } from '../routes/workspaces/$workspaceId/rules/index.tsx'
 import { Route as segmentsRoute } from '../routes/workspaces/$workspaceId/segments/index.tsx'
 import { Route as settingsRoute } from '../routes/workspaces/$workspaceId/settings/index.tsx'
 import { Route as tagsRoute } from '../routes/workspaces/$workspaceId/tags/index.tsx'
@@ -20,6 +21,7 @@ import { AppNavbar } from './AppNavbar.tsx'
 const SECTIONS = [
   ['Overview', overviewRoute],
   ['Automations', automationsRoute],
+  ['Rules', rulesRoute],
   ['Analytics', analyticsRoute],
   ['Activity', activityRoute],
   ['Settings', settingsRoute],
