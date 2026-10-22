@@ -28,6 +28,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/ownernotice"
 	"github.com/getsphericon/sphericon/internal/sending"
 )
 
@@ -59,23 +60,19 @@ type Record struct {
 	Value string
 }
 
-// Notify mails the Owners of a Workspace through the system sender. A nil Notify sends
-// nothing.
-type Notify func(ctx context.Context, workspaceID int64, subject, body string) error
-
 // Module holds the shared collaborators; it is stateless otherwise.
 type Module struct {
 	client *ent.Client
 	bus    *events.Bus
 	lookup sending.TXTLookup
 	now    func() time.Time
-	notify Notify
+	notify ownernotice.Notify
 }
 
 // New builds the module. lookup is the injectable TXT resolver Sending domain
 // verification uses; now is the clock the check times are stamped with; notify mails a
 // Workspace's Owners when it loses a verified domain.
-func New(client *ent.Client, bus *events.Bus, lookup sending.TXTLookup, now func() time.Time, notify Notify) *Module {
+func New(client *ent.Client, bus *events.Bus, lookup sending.TXTLookup, now func() time.Time, notify ownernotice.Notify) *Module {
 	return &Module{client: client, bus: bus, lookup: lookup, now: now, notify: notify}
 }
 
@@ -250,16 +247,8 @@ func (m *Module) Recheck(ctx context.Context, id int64) (flipped bool, err error
 // notifyLost mails the Owners of the Workspace that held the domain, best-effort: a mail
 // failure is logged, never returned.
 func (m *Module) notifyLost(ctx context.Context, row *ent.JoinDomain) {
-	if m.notify == nil {
-		return
-	}
 	data := map[string]any{"Domain": row.Domain, "Record": RecordOf(row).Host}
-	subject := i18n.T("email.join_domain_unverified.subject", data)
-	body := i18n.T("email.join_domain_unverified.body", data)
-	if err := m.notify(ctx, row.WorkspaceID, subject, body); err != nil {
-		slog.WarnContext(ctx, "notify join domain unverified failed",
-			"join_domain_id", row.ID, "workspace_id", row.WorkspaceID, "err", err)
-	}
+	m.notify.TellBestEffort(ctx, row.WorkspaceID, "email.join_domain_unverified", data, "join_domain_id", row.ID)
 }
 
 // Holder returns the Join domain row that has the domain verified, across every

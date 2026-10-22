@@ -36,7 +36,7 @@ func Write(specPath, outPath string) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(outPath, src, 0o644) //nolint:gosec // a source file, not a secret
+	return os.WriteFile(outPath, src, 0o600)
 }
 
 // Generate renders the Go source for an OpenAPI document.

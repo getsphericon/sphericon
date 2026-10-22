@@ -24,6 +24,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/refsettle"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/workspaceid"
 )
@@ -290,7 +291,7 @@ func TestClearOutboundMessageRefsClearsDanglingIdsThenValidatesTheKeys(t *testin
 	client := migrateWithDanglingOutboundRefs(t, sqlDB)
 
 	// A batch of one makes the job loop.
-	cleared, err := jobs.ClearOutboundMessageRefs(t.Context(), client, 1)
+	cleared, err := refsettle.New(client).ClearOutboundMessageRefs(t.Context(), 1)
 	require.NoError(t, err)
 	assert.Equal(t, 3, cleared)
 
@@ -310,7 +311,7 @@ func TestClearOutboundMessageRefsClearsDanglingIdsThenValidatesTheKeys(t *testin
 	}, got)
 	assert.Empty(t, testhelper.UnvalidatedConstraints(t, sqlDB, "outbound_messages"))
 
-	cleared, err = jobs.ClearOutboundMessageRefs(t.Context(), client, 1)
+	cleared, err = refsettle.New(client).ClearOutboundMessageRefs(t.Context(), 1)
 	require.NoError(t, err)
 	assert.Zero(t, cleared)
 }
@@ -351,7 +352,7 @@ func TestClearContactRefsSettlesDanglingRowsThenValidatesTheKeys(t *testing.T) {
 	client := migrateWithDanglingContactRefs(t, sqlDB)
 
 	// A batch of one makes the job loop.
-	settled, err := jobs.ClearContactRefs(t.Context(), client, 1)
+	settled, err := refsettle.New(client).ClearContactRefs(t.Context(), 1)
 	require.NoError(t, err)
 	assert.Equal(t, 3, settled)
 
@@ -370,7 +371,7 @@ func TestClearContactRefsSettlesDanglingRowsThenValidatesTheKeys(t *testing.T) {
 
 	assert.Empty(t, unvalidatedContactKeys(t, sqlDB))
 
-	settled, err = jobs.ClearContactRefs(t.Context(), client, 1)
+	settled, err = refsettle.New(client).ClearContactRefs(t.Context(), 1)
 	require.NoError(t, err)
 	assert.Zero(t, settled)
 }

@@ -23,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/joindomains"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/outbound"
+	"github.com/getsphericon/sphericon/internal/refsettle"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/sending"
 	"github.com/getsphericon/sphericon/internal/trackingdomain"
@@ -86,12 +87,13 @@ func NewClient(riverDB *sql.DB, entClient *ent.Client, mod *outbound.Module, cip
 		now:    time.Now,
 		fence:  automations.FenceOn(entClient),
 	})
+	notifyOwners := accounts.OwnerNotifier(entClient, systemSender)
 	river.AddWorker(workers, &DeliverWebhookWorker{
 		ent:    entClient,
 		cipher: cipher,
 		client: webhook.NewClientAllowing(webhookDeliveryTimeout, outboundAllow),
 		now:    time.Now,
-		mod:    webhooks.New(bus, cipher, nil, nil, accounts.OwnerNotifier(entClient, systemSender)),
+		mod:    webhooks.New(bus, cipher, nil, nil, notifyOwners),
 	})
 	river.AddWorker(workers, &SendWelcomeWorker{sender: systemSender})
 	river.AddWorker(workers, &SendAuthMailWorker{sender: systemSender, appURL: appURL})
@@ -100,11 +102,11 @@ func NewClient(riverDB *sql.DB, entClient *ent.Client, mod *outbound.Module, cip
 	river.AddWorker(workers, &RemindSecondFactorWorker{ent: entClient, sender: systemSender, appURL: appURL})
 	// Sending-domain DKIM verification (ADR 0010). LookupTXT re-checks published
 	// DNS; verified is a live property re-validated by the periodic job below.
-	domains := domainverify.New(entClient, lookup, tracking, accounts.OwnerNotifier(entClient, systemSender))
+	domains := domainverify.New(entClient, lookup, tracking, notifyOwners)
 	river.AddWorker(workers, &VerifySendingDomainWorker{mod: domains})
 	river.AddWorker(workers, &RecheckSendingDomainsWorker{mod: domains})
 	// Join domains stay verified only while their TXT record is published.
-	joinDomains := joindomains.New(entClient, bus, lookup, time.Now, accounts.OwnerNotifier(entClient, systemSender))
+	joinDomains := joindomains.New(entClient, bus, lookup, time.Now, notifyOwners)
 	river.AddWorker(workers, &VerifyJoinDomainWorker{mod: joinDomains})
 	river.AddWorker(workers, &RecheckJoinDomainsWorker{mod: joinDomains})
 	river.AddWorker(workers, &VerifyTrackingDomainWorker{mod: domains})
@@ -119,8 +121,11 @@ func NewClient(riverDB *sql.DB, entClient *ent.Client, mod *outbound.Module, cip
 	river.AddWorker(workers, &PruneUnverifiedUsersWorker{accounts: accounts.New(entClient, bus), retention: retention.UnverifiedUsers})
 	river.AddWorker(workers, &PrunePasskeyChallengesWorker{ent: entClient, now: time.Now})
 	river.AddWorker(workers, &BackfillAutomationVersionsWorker{ent: entClient})
-	river.AddWorker(workers, &ClearOutboundMessageRefsWorker{ent: entClient})
-	river.AddWorker(workers, &ClearContactRefsWorker{ent: entClient})
+	refs := refsettle.New(entClient)
+	river.AddWorker(workers, &refSettleWorker[ClearOutboundMessageRefsArgs]{
+		settle: refs.ClearOutboundMessageRefs, message: "dangling Outbound message references cleared"})
+	river.AddWorker(workers, &refSettleWorker[ClearContactRefsArgs]{
+		settle: refs.ClearContactRefs, message: "dangling Contact references settled"})
 	river.AddWorker(workers, &EraseWorkspacesWorker{deletion: workspacedeletion.New(entClient, bus), now: time.Now})
 
 	var extraPeriodic []*river.PeriodicJob
@@ -249,21 +254,9 @@ func newRiverConfig(workers *river.Workers, logger *slog.Logger, extra ...*river
 				&river.PeriodicJobOpts{RunOnStart: true},
 			),
 			// Clear Outbound message references that point at nothing, then validate the keys.
-			river.NewPeriodicJob(
-				river.PeriodicInterval(clearOutboundRefsInterval),
-				func() (river.JobArgs, *river.InsertOpts) {
-					return ClearOutboundMessageRefsArgs{}, nil
-				},
-				&river.PeriodicJobOpts{RunOnStart: true},
-			),
+			refSettlePeriodic(ClearOutboundMessageRefsArgs{}),
 			// Settle rows that name a Contact which is gone, then validate the keys.
-			river.NewPeriodicJob(
-				river.PeriodicInterval(clearContactRefsInterval),
-				func() (river.JobArgs, *river.InsertOpts) {
-					return ClearContactRefsArgs{}, nil
-				},
-				&river.PeriodicJobOpts{RunOnStart: true},
-			),
+			refSettlePeriodic(ClearContactRefsArgs{}),
 			// Delete stale Unverified Users daily at 04:00 UTC (ADR 0030).
 			river.NewPeriodicJob(
 				dailyAtUTC{hour: unverifiedUsersHourUTC},

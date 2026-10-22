@@ -10,7 +10,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/webhook"
@@ -24,9 +23,6 @@ const (
 	DisableFailures = 20
 	DisableWindow   = 2 * time.Hour
 )
-
-// Notify mails the Owners of a Workspace through the system sender. A nil Notify sends nothing.
-type Notify = accounts.Notify
 
 // RecordDelivery keeps the endpoint's failure state after one delivery attempt (ADR 0039): a
 // failed delivery extends the run of failures with its closed error kind, a 2xx clears it, and
@@ -100,19 +96,18 @@ func (m *Module) disable(ctx context.Context, s *ent.Scoped, e *ent.WebhookEndpo
 	}
 	// A failed notice is logged, not returned: river would retry a delivery whose
 	// endpoint is already off.
-	if err := m.notifyOwners(ctx, s, e, reason); err != nil {
-		slog.ErrorContext(ctx, "webhook disable notice failed", "endpoint_id", e.ID, "error", err)
-	}
+	m.notifyOwners(ctx, s, e, reason)
 	return nil
 }
 
-func (m *Module) notifyOwners(ctx context.Context, s *ent.Scoped, e *ent.WebhookEndpoint, reason webhookendpoint.DisabledReason) error {
+func (m *Module) notifyOwners(ctx context.Context, s *ent.Scoped, e *ent.WebhookEndpoint, reason webhookendpoint.DisabledReason) {
 	if m.notify == nil {
-		return nil
+		return
 	}
 	ws, err := s.Workspace(ctx)
 	if err != nil {
-		return err
+		slog.ErrorContext(ctx, "webhook disable notice failed", "endpoint_id", e.ID, "error", err)
+		return
 	}
 	data := map[string]any{
 		"Workspace": ws.Name,
@@ -121,7 +116,7 @@ func (m *Module) notifyOwners(ctx context.Context, s *ent.Scoped, e *ent.Webhook
 		"Window":    DisableWindow.String(),
 	}
 	data["Reason"] = i18n.T("email.webhook_disabled.reason_"+string(reason), data)
-	return m.notify(ctx, ws.ID, i18n.T("email.webhook_disabled.subject", data), i18n.T("email.webhook_disabled.body", data))
+	m.notify.TellBestEffort(ctx, ws.ID, "email.webhook_disabled", data, "endpoint_id", e.ID)
 }
 
 // originOf keeps scheme and host of an endpoint URL for a mail: the path and query may

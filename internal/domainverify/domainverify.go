@@ -22,30 +22,25 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/joindomain"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/dkimstate"
-	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/joindomains"
 	"github.com/getsphericon/sphericon/internal/lifecycle"
+	"github.com/getsphericon/sphericon/internal/ownernotice"
 	"github.com/getsphericon/sphericon/internal/sending"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/trackingdomain"
 	"github.com/getsphericon/sphericon/internal/trackinghostlog"
 )
 
-// Notify mails the Owners of a Workspace through the system sender. A nil Notify sends
-// nothing (no platform sender is configured).
-type Notify = accounts.Notify
-
 // Module checks Sending domains. tracking is nil while the Tracking domain feature is off.
 type Module struct {
 	client   *ent.Client
 	lookup   sending.TXTLookup
 	tracking *trackingdomain.Verifier
-	notify   Notify
+	notify   ownernotice.Notify
 }
 
-func New(client *ent.Client, lookup sending.TXTLookup, tracking *trackingdomain.Verifier, notify Notify) *Module {
+func New(client *ent.Client, lookup sending.TXTLookup, tracking *trackingdomain.Verifier, notify ownernotice.Notify) *Module {
 	return &Module{client: client, lookup: lookup, tracking: tracking, notify: notify}
 }
 
@@ -107,16 +102,8 @@ func (m *Module) VerifyDKIM(ctx context.Context, id int64) (verified bool, err e
 }
 
 func (m *Module) notifyUnverified(ctx context.Context, dom *ent.SendingDomain) {
-	if m.notify == nil {
-		return
-	}
 	data := map[string]any{"Domain": dom.Domain, "Record": dom.DkimSelector + "._domainkey." + dom.Domain}
-	subject := i18n.T("email.sending_domain_unverified.subject", data)
-	body := i18n.T("email.sending_domain_unverified.body", data)
-	if err := m.notify(ctx, dom.WorkspaceID, subject, body); err != nil {
-		slog.WarnContext(ctx, "notify sending domain unverified failed",
-			"sending_domain_id", dom.ID, "err", err)
-	}
+	m.notify.TellBestEffort(ctx, dom.WorkspaceID, "email.sending_domain_unverified", data, "sending_domain_id", dom.ID)
 }
 
 // VerifyTracking re-checks a Sending domain's Tracking domain (the CNAME, then the HTTPS
@@ -157,18 +144,11 @@ func (m *Module) VerifyTracking(ctx context.Context, id int64) error {
 }
 
 func (m *Module) notifyRegressed(ctx context.Context, dom *ent.SendingDomain, next sendingdomain.TrackingState) {
-	if m.notify == nil {
-		return
-	}
 	data := map[string]any{
 		"Host": sendingdomains.TrackingHost(dom.Domain), "Domain": dom.Domain,
 		"From": dom.TrackingState, "To": next, "Target": m.tracking.Target,
 	}
-	subject := i18n.T("email.tracking_domain_regressed.subject", data)
-	body := i18n.T("email.tracking_domain_regressed.body", data)
-	if err := m.notify(ctx, dom.WorkspaceID, subject, body); err != nil {
-		slog.WarnContext(ctx, "notify tracking domain regression failed", "sending_domain_id", dom.ID, "err", err)
-	}
+	m.notify.TellBestEffort(ctx, dom.WorkspaceID, "email.tracking_domain_regressed", data, "sending_domain_id", dom.ID)
 }
 
 // Due returns up to limit ids of the Sending domains whose DKIM is to be re-checked,

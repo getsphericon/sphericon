@@ -8,6 +8,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/ownernotice"
 )
 
 // Is is the one meaning of "suspended": a Workspace whose suspended_at is set (ADR 0007).
@@ -26,11 +27,11 @@ func BySystem() predicate.Workspace {
 }
 
 // NotifyOwners tells the Workspace's Owners that outbound sending is frozen, why, and who set
-// it (ADR 0007). notify is the accounts.Notify seam: the platform's system sender, not the
+// it (ADR 0007). notify is the ownernotice.Notify seam: the platform's system sender, not the
 // Workspace's own Integration, because the Workspace cannot send while suspended (ADR 0015).
 // supportEmail, when set, is where the Owner appeals. A nil notify or a Workspace that is not
 // suspended is a no-op. It stamps the abuse freeze notice marker once the notice went.
-func NotifyOwners(ctx context.Context, client *ent.Client, notify func(ctx context.Context, workspaceID int64, subject, body string) error, supportEmail string, workspaceID int64) error {
+func NotifyOwners(ctx context.Context, client *ent.Client, notify ownernotice.Notify, supportEmail string, workspaceID int64) error {
 	if notify == nil {
 		return nil
 	}
@@ -51,7 +52,7 @@ func NotifyOwners(ctx context.Context, client *ent.Client, notify func(ctx conte
 		actorKey = "email.workspace_suspended.actor_system"
 	}
 	data := map[string]any{"Workspace": ws.Name, "Reason": reason, "Actor": i18n.T(actorKey, nil), "Support": supportEmail}
-	if err := notify(ctx, ws.ID, i18n.T("email.workspace_suspended.subject", data), i18n.T("email.workspace_suspended.body", data)); err != nil {
+	if err := notify.Tell(ctx, ws.ID, "email.workspace_suspended", data); err != nil {
 		return err
 	}
 	return client.Workspace.UpdateOneID(ws.ID).SetAbuseFreezeNotifiedAt(time.Now()).Exec(ctx)

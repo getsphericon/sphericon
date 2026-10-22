@@ -25,6 +25,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/ownernotice"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/webhook"
@@ -69,13 +70,13 @@ type Module struct {
 	cipher *secrets.Cipher
 	lic    Licensing
 	client webhook.Doer
-	notify Notify
+	notify ownernotice.Notify
 }
 
 // New builds the module. lic may be nil (unlicensed). client is the one hardened
 // outbound client, used by TestSend. notify mails the Owners when an endpoint disables
 // itself; nil sends nothing.
-func New(bus *events.Bus, cipher *secrets.Cipher, lic Licensing, client webhook.Doer, notify Notify) *Module {
+func New(bus *events.Bus, cipher *secrets.Cipher, lic Licensing, client webhook.Doer, notify ownernotice.Notify) *Module {
 	return &Module{bus: bus, cipher: cipher, lic: lic, client: client, notify: notify}
 }
 
