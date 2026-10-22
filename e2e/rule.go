@@ -11,30 +11,43 @@ import (
 
 	collectapi "github.com/getsphericon/sphericon/gen/collect"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	siteapi "github.com/getsphericon/sphericon/gen/site"
 )
 
-// Rule is what a scenario chooses about a Rule: one Trigger event and one apply-Tag Action.
+// Rule is what a scenario chooses about a Rule: one Trigger event, one apply-Tag Action and,
+// optionally, a second Action that enrolls the Contact in an Automation.
 type Rule struct {
 	TriggerEvent string
 	// Tag is applied to the Contact the Event is for.
 	Tag string
+	// EnrollIn is the id of an Automation (from ActivateAutomation) the Contact is enrolled in;
+	// zero adds no enroll Action.
+	EnrollIn int64
 }
 
-// ActivateRule creates a Rule that applies Tag when TriggerEvent is recorded, and activates it.
-// Creation always stores a draft; activating is a separate step.
+// ActivateRule creates a Rule through the site API (the external API offers no enroll Action)
+// and activates it. Creation always stores a draft; activating is a separate step.
 func (w *Workspace) ActivateRule(r Rule) {
 	w.t.Helper()
 	ctx := w.t.Context()
-	res, err := w.api.RulesCreate(ctx, &externalapi.CreateRuleInput{
+	ws := siteapi.WorkspaceId(w.publicID)
+	actions := []siteapi.SiteRuleAction{{Type: siteapi.SiteRuleActionTypeApplyTag, Tag: siteapi.NewOptString(r.Tag)}}
+	if r.EnrollIn != 0 {
+		actions = append(actions, siteapi.SiteRuleAction{
+			Type:         siteapi.SiteRuleActionTypeEnrollAutomation,
+			AutomationId: siteapi.NewOptEntityId(siteapi.EntityId(r.EnrollIn)),
+		})
+	}
+	res, err := w.site.SiteRulesCreate(ctx, &siteapi.SiteCreateRuleInput{
 		Name:          "e2e rule " + uniq(),
 		TriggerEvents: []string{r.TriggerEvent},
-		Actions:       []externalapi.RuleAction{{Type: externalapi.RuleActionTypeApplyTag, Tag: externalapi.NewOptString(r.Tag)}},
-	})
-	created := ok[externalapi.RuleResource](w.t, "create rule", res, err)
+		Actions:       actions,
+	}, siteapi.SiteRulesCreateParams{WorkspaceId: ws})
+	created := ok[siteapi.SiteRuleResource](w.t, "create rule", res, err)
 
-	act, err := w.api.RulesActivate(ctx, externalapi.RulesActivateParams{ID: created.ID})
-	got := ok[externalapi.RuleResource](w.t, "activate rule", act, err)
-	require.Equal(w.t, externalapi.RuleStatusActive, got.Status)
+	act, err := w.site.SiteRulesActivate(ctx, siteapi.SiteRulesActivateParams{WorkspaceId: ws, ID: created.ID})
+	got := ok[siteapi.SiteRuleResource](w.t, "activate rule", act, err)
+	require.Equal(w.t, siteapi.SiteRuleStatusActive, got.Status)
 }
 
 // Visit is what the tracking snippet does on a customer's site: it identifies the visitor as the
