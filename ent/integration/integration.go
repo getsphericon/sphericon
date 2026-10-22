@@ -51,8 +51,8 @@ const (
 	FieldProviderMaxPerDay = "provider_max_per_day"
 	// FieldProviderQuotaCheckedAt holds the string denoting the provider_quota_checked_at field in the database.
 	FieldProviderQuotaCheckedAt = "provider_quota_checked_at"
-	// FieldProviderQuotaUnavailable holds the string denoting the provider_quota_unavailable field in the database.
-	FieldProviderQuotaUnavailable = "provider_quota_unavailable"
+	// FieldProviderQuotaFailedAt holds the string denoting the provider_quota_failed_at field in the database.
+	FieldProviderQuotaFailedAt = "provider_quota_failed_at"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
 	EdgeWorkspace = "workspace"
 	// EdgeSendLimiter holds the string denoting the send_limiter edge name in mutations.
@@ -96,7 +96,7 @@ var Columns = []string{
 	FieldProviderMaxPerSecond,
 	FieldProviderMaxPerDay,
 	FieldProviderQuotaCheckedAt,
-	FieldProviderQuotaUnavailable,
+	FieldProviderQuotaFailedAt,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -130,8 +130,6 @@ var (
 	MaxPerSecondValidator func(int) error
 	// MaxPerDayValidator is a validator for the "max_per_day" field. It is called by the builders before save.
 	MaxPerDayValidator func(int) error
-	// DefaultProviderQuotaUnavailable holds the default value on creation for the "provider_quota_unavailable" field.
-	DefaultProviderQuotaUnavailable bool
 )
 
 // Channel defines the type for the "channel" enum field.
@@ -281,9 +279,9 @@ func ByProviderQuotaCheckedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldProviderQuotaCheckedAt, opts...).ToFunc()
 }
 
-// ByProviderQuotaUnavailable orders the results by the provider_quota_unavailable field.
-func ByProviderQuotaUnavailable(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldProviderQuotaUnavailable, opts...).ToFunc()
+// ByProviderQuotaFailedAt orders the results by the provider_quota_failed_at field.
+func ByProviderQuotaFailedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldProviderQuotaFailedAt, opts...).ToFunc()
 }
 
 // ByWorkspaceField orders the results by workspace field.

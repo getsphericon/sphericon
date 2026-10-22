@@ -135,9 +135,9 @@ func ProviderQuotaCheckedAt(v time.Time) predicate.Integration {
 	return predicate.Integration(sql.FieldEQ(FieldProviderQuotaCheckedAt, v))
 }
 
-// ProviderQuotaUnavailable applies equality check predicate on the "provider_quota_unavailable" field. It's identical to ProviderQuotaUnavailableEQ.
-func ProviderQuotaUnavailable(v bool) predicate.Integration {
-	return predicate.Integration(sql.FieldEQ(FieldProviderQuotaUnavailable, v))
+// ProviderQuotaFailedAt applies equality check predicate on the "provider_quota_failed_at" field. It's identical to ProviderQuotaFailedAtEQ.
+func ProviderQuotaFailedAt(v time.Time) predicate.Integration {
+	return predicate.Integration(sql.FieldEQ(FieldProviderQuotaFailedAt, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
@@ -945,14 +945,54 @@ func ProviderQuotaCheckedAtNotNil() predicate.Integration {
 	return predicate.Integration(sql.FieldNotNull(FieldProviderQuotaCheckedAt))
 }
 
-// ProviderQuotaUnavailableEQ applies the EQ predicate on the "provider_quota_unavailable" field.
-func ProviderQuotaUnavailableEQ(v bool) predicate.Integration {
-	return predicate.Integration(sql.FieldEQ(FieldProviderQuotaUnavailable, v))
+// ProviderQuotaFailedAtEQ applies the EQ predicate on the "provider_quota_failed_at" field.
+func ProviderQuotaFailedAtEQ(v time.Time) predicate.Integration {
+	return predicate.Integration(sql.FieldEQ(FieldProviderQuotaFailedAt, v))
 }
 
-// ProviderQuotaUnavailableNEQ applies the NEQ predicate on the "provider_quota_unavailable" field.
-func ProviderQuotaUnavailableNEQ(v bool) predicate.Integration {
-	return predicate.Integration(sql.FieldNEQ(FieldProviderQuotaUnavailable, v))
+// ProviderQuotaFailedAtNEQ applies the NEQ predicate on the "provider_quota_failed_at" field.
+func ProviderQuotaFailedAtNEQ(v time.Time) predicate.Integration {
+	return predicate.Integration(sql.FieldNEQ(FieldProviderQuotaFailedAt, v))
+}
+
+// ProviderQuotaFailedAtIn applies the In predicate on the "provider_quota_failed_at" field.
+func ProviderQuotaFailedAtIn(vs ...time.Time) predicate.Integration {
+	return predicate.Integration(sql.FieldIn(FieldProviderQuotaFailedAt, vs...))
+}
+
+// ProviderQuotaFailedAtNotIn applies the NotIn predicate on the "provider_quota_failed_at" field.
+func ProviderQuotaFailedAtNotIn(vs ...time.Time) predicate.Integration {
+	return predicate.Integration(sql.FieldNotIn(FieldProviderQuotaFailedAt, vs...))
+}
+
+// ProviderQuotaFailedAtGT applies the GT predicate on the "provider_quota_failed_at" field.
+func ProviderQuotaFailedAtGT(v time.Time) predicate.Integration {
+	return predicate.Integration(sql.FieldGT(FieldProviderQuotaFailedAt, v))
+}
+
+// ProviderQuotaFailedAtGTE applies the GTE predicate on the "provider_quota_failed_at" field.
+func ProviderQuotaFailedAtGTE(v time.Time) predicate.Integration {
+	return predicate.Integration(sql.FieldGTE(FieldProviderQuotaFailedAt, v))
+}
+
+// ProviderQuotaFailedAtLT applies the LT predicate on the "provider_quota_failed_at" field.
+func ProviderQuotaFailedAtLT(v time.Time) predicate.Integration {
+	return predicate.Integration(sql.FieldLT(FieldProviderQuotaFailedAt, v))
+}
+
+// ProviderQuotaFailedAtLTE applies the LTE predicate on the "provider_quota_failed_at" field.
+func ProviderQuotaFailedAtLTE(v time.Time) predicate.Integration {
+	return predicate.Integration(sql.FieldLTE(FieldProviderQuotaFailedAt, v))
+}
+
+// ProviderQuotaFailedAtIsNil applies the IsNil predicate on the "provider_quota_failed_at" field.
+func ProviderQuotaFailedAtIsNil() predicate.Integration {
+	return predicate.Integration(sql.FieldIsNull(FieldProviderQuotaFailedAt))
+}
+
+// ProviderQuotaFailedAtNotNil applies the NotNil predicate on the "provider_quota_failed_at" field.
+func ProviderQuotaFailedAtNotNil() predicate.Integration {
+	return predicate.Integration(sql.FieldNotNull(FieldProviderQuotaFailedAt))
 }
 
 // HasWorkspace applies the HasEdge predicate on the "workspace" edge.

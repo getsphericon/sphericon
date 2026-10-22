@@ -577,22 +577,22 @@ var IntegrationAuditSensitive = map[string]bool{
 // auditFields maps every audited field of the Integration to its value.
 func (e *Integration) auditFields() map[string]any {
 	return map[string]any{
-		"discarded_at":               derefAudit(e.DiscardedAt),
-		"name":                       e.Name,
-		"channel":                    e.Channel,
-		"provider":                   e.Provider,
-		"config_encrypted":           e.ConfigEncrypted,
-		"preset":                     derefAudit(e.Preset),
-		"params_encrypted":           e.ParamsEncrypted,
-		"ingest_key":                 e.IngestKey,
-		"enabled":                    e.Enabled,
-		"is_default":                 e.IsDefault,
-		"max_per_second":             derefAudit(e.MaxPerSecond),
-		"max_per_day":                derefAudit(e.MaxPerDay),
-		"provider_max_per_second":    derefAudit(e.ProviderMaxPerSecond),
-		"provider_max_per_day":       derefAudit(e.ProviderMaxPerDay),
-		"provider_quota_checked_at":  derefAudit(e.ProviderQuotaCheckedAt),
-		"provider_quota_unavailable": e.ProviderQuotaUnavailable,
+		"discarded_at":              derefAudit(e.DiscardedAt),
+		"name":                      e.Name,
+		"channel":                   e.Channel,
+		"provider":                  e.Provider,
+		"config_encrypted":          e.ConfigEncrypted,
+		"preset":                    derefAudit(e.Preset),
+		"params_encrypted":          e.ParamsEncrypted,
+		"ingest_key":                e.IngestKey,
+		"enabled":                   e.Enabled,
+		"is_default":                e.IsDefault,
+		"max_per_second":            derefAudit(e.MaxPerSecond),
+		"max_per_day":               derefAudit(e.MaxPerDay),
+		"provider_max_per_second":   derefAudit(e.ProviderMaxPerSecond),
+		"provider_max_per_day":      derefAudit(e.ProviderMaxPerDay),
+		"provider_quota_checked_at": derefAudit(e.ProviderQuotaCheckedAt),
+		"provider_quota_failed_at":  derefAudit(e.ProviderQuotaFailedAt),
 	}
 }
 

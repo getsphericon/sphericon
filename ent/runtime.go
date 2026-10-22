@@ -500,10 +500,6 @@ func init() {
 	integrationDescMaxPerDay := integrationFields[11].Descriptor()
 	// integration.MaxPerDayValidator is a validator for the "max_per_day" field. It is called by the builders before save.
 	integration.MaxPerDayValidator = integrationDescMaxPerDay.Validators[0].(func(int) error)
-	// integrationDescProviderQuotaUnavailable is the schema descriptor for provider_quota_unavailable field.
-	integrationDescProviderQuotaUnavailable := integrationFields[15].Descriptor()
-	// integration.DefaultProviderQuotaUnavailable holds the default value on creation for the provider_quota_unavailable field.
-	integration.DefaultProviderQuotaUnavailable = integrationDescProviderQuotaUnavailable.Default.(bool)
 	invitationMixin := schema.Invitation{}.Mixin()
 	invitationMixinFields0 := invitationMixin[0].Fields()
 	_ = invitationMixinFields0
@@ -973,10 +969,6 @@ func init() {
 	usage.DefaultValue = usageDescValue.Default.(int64)
 	// usage.ValueValidator is a validator for the "value" field. It is called by the builders before save.
 	usage.ValueValidator = usageDescValue.Validators[0].(func(int64) error)
-	// usageDescFinal is the schema descriptor for final field.
-	usageDescFinal := usageFields[4].Descriptor()
-	// usage.DefaultFinal holds the default value on creation for the final field.
-	usage.DefaultFinal = usageDescFinal.Default.(bool)
 	userMixin := schema.User{}.Mixin()
 	userMixinFields0 := userMixin[0].Fields()
 	_ = userMixinFields0

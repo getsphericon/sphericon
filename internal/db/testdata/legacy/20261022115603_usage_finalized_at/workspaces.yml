@@ -1,0 +1,6 @@
+- id: 1
+  name: w
+  public_id: aaaaaaaa
+  collect_key: k
+  created_at: '{{now}}'
+  updated_at: '{{now}}'

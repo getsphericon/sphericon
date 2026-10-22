@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/secrets"
 )
@@ -22,7 +23,7 @@ const quotaTimeout = 15 * time.Second
 //
 // A failed lookup (no ses:GetSendQuota permission, an SES-compatible service such as
 // Postbox, a timeout) never blocks sending and is not returned: it is recorded as
-// ProviderQuotaUnavailable, which the UI shows as a warning, and the last known
+// the moment it first failed (provider_quota_failed_at), which the UI shows as a warning, and the last known
 // provider values stay so a transient blip does not lift a ceiling. A later success
 // clears the warning. Providers that cannot report a quota (SMTP) are left untouched.
 // An error is returned only when the stored config cannot be read or the row cannot
@@ -49,17 +50,40 @@ func RefreshQuota(ctx context.Context, s *ent.Scoped, cipher *secrets.Cipher, ca
 	if lookupErr != nil {
 		slog.WarnContext(ctx, "provider send quota unavailable",
 			"integration_id", integ.ID, "workspace_id", integ.WorkspaceID, "err", lookupErr)
-		upd.SetProviderQuotaUnavailable(true)
-	} else {
-		upd.SetProviderQuotaUnavailable(false).
-			SetNillableProviderMaxPerSecond(quota.PerSecond).
-			SetNillableProviderMaxPerDay(quota.PerDay)
-		if quota.PerSecond == nil {
-			upd.ClearProviderMaxPerSecond()
+		if err := upd.Exec(ctx); err != nil {
+			return err
 		}
-		if quota.PerDay == nil {
-			upd.ClearProviderMaxPerDay()
-		}
+		return markQuotaFailed(ctx, s, integ.ID)
 	}
-	return upd.Exec(ctx)
+	upd.SetNillableProviderMaxPerSecond(quota.PerSecond).
+		SetNillableProviderMaxPerDay(quota.PerDay)
+	if quota.PerSecond == nil {
+		upd.ClearProviderMaxPerSecond()
+	}
+	if quota.PerDay == nil {
+		upd.ClearProviderMaxPerDay()
+	}
+	if err := upd.Exec(ctx); err != nil {
+		return err
+	}
+	return clearQuotaFailed(ctx, s, integ.ID)
+}
+
+// markQuotaFailed records the moment the lookup first failed: it writes only while no failure is
+// recorded, so a second failed lookup keeps the first moment.
+func markQuotaFailed(ctx context.Context, s *ent.Scoped, id int64) error {
+	_, err := s.Integration().Update().
+		Where(integration.ID(id), integration.ProviderQuotaFailedAtIsNil()).
+		SetProviderQuotaFailedAt(time.Now()).
+		Save(ctx)
+	return err
+}
+
+// clearQuotaFailed ends a failure after a successful lookup; it writes only while one is recorded.
+func clearQuotaFailed(ctx context.Context, s *ent.Scoped, id int64) error {
+	_, err := s.Integration().Update().
+		Where(integration.ID(id), integration.ProviderQuotaFailedAtNotNil()).
+		ClearProviderQuotaFailedAt().
+		Save(ctx)
+	return err
 }

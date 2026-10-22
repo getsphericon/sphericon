@@ -806,7 +806,7 @@ var (
 		{Name: "provider_max_per_second", Type: field.TypeInt, Nullable: true},
 		{Name: "provider_max_per_day", Type: field.TypeInt, Nullable: true},
 		{Name: "provider_quota_checked_at", Type: field.TypeTime, Nullable: true},
-		{Name: "provider_quota_unavailable", Type: field.TypeBool, Default: false},
+		{Name: "provider_quota_failed_at", Type: field.TypeTime, Nullable: true},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
 	// IntegrationsTable holds the schema information for the "integrations" table.
@@ -1650,7 +1650,7 @@ var (
 		{Name: "period_start", Type: field.TypeTime},
 		{Name: "metric", Type: field.TypeString},
 		{Name: "value", Type: field.TypeInt64, Default: 0},
-		{Name: "final", Type: field.TypeBool, Default: false},
+		{Name: "finalized_at", Type: field.TypeTime, Nullable: true},
 		{Name: "computed_at", Type: field.TypeTime},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}

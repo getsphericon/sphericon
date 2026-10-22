@@ -14243,15 +14243,15 @@ func (x *IntegrationScopedCreate) SetNillableProviderQuotaCheckedAt(v *time.Time
 	return x
 }
 
-// SetProviderQuotaUnavailable sets the "provider_quota_unavailable" field.
-func (x *IntegrationScopedCreate) SetProviderQuotaUnavailable(v bool) *IntegrationScopedCreate {
-	x.b.SetProviderQuotaUnavailable(v)
+// SetProviderQuotaFailedAt sets the "provider_quota_failed_at" field.
+func (x *IntegrationScopedCreate) SetProviderQuotaFailedAt(v time.Time) *IntegrationScopedCreate {
+	x.b.SetProviderQuotaFailedAt(v)
 	return x
 }
 
-// SetNillableProviderQuotaUnavailable sets the "provider_quota_unavailable" field if the given value is not nil.
-func (x *IntegrationScopedCreate) SetNillableProviderQuotaUnavailable(v *bool) *IntegrationScopedCreate {
-	x.b.SetNillableProviderQuotaUnavailable(v)
+// SetNillableProviderQuotaFailedAt sets the "provider_quota_failed_at" field if the given value is not nil.
+func (x *IntegrationScopedCreate) SetNillableProviderQuotaFailedAt(v *time.Time) *IntegrationScopedCreate {
+	x.b.SetNillableProviderQuotaFailedAt(v)
 	return x
 }
 
@@ -14637,15 +14637,21 @@ func (u *IntegrationScopedUpsert) ClearProviderQuotaCheckedAt() *IntegrationScop
 	return u
 }
 
-// SetProviderQuotaUnavailable sets the "provider_quota_unavailable" field.
-func (u *IntegrationScopedUpsert) SetProviderQuotaUnavailable(v bool) *IntegrationScopedUpsert {
-	u.u.Set(integration.FieldProviderQuotaUnavailable, v)
+// SetProviderQuotaFailedAt sets the "provider_quota_failed_at" field.
+func (u *IntegrationScopedUpsert) SetProviderQuotaFailedAt(v time.Time) *IntegrationScopedUpsert {
+	u.u.Set(integration.FieldProviderQuotaFailedAt, v)
 	return u
 }
 
-// UpdateProviderQuotaUnavailable sets the "provider_quota_unavailable" field to the value that was provided on create.
-func (u *IntegrationScopedUpsert) UpdateProviderQuotaUnavailable() *IntegrationScopedUpsert {
-	u.u.SetExcluded(integration.FieldProviderQuotaUnavailable)
+// UpdateProviderQuotaFailedAt sets the "provider_quota_failed_at" field to the value that was provided on create.
+func (u *IntegrationScopedUpsert) UpdateProviderQuotaFailedAt() *IntegrationScopedUpsert {
+	u.u.SetExcluded(integration.FieldProviderQuotaFailedAt)
+	return u
+}
+
+// ClearProviderQuotaFailedAt clears the value of the "provider_quota_failed_at" field.
+func (u *IntegrationScopedUpsert) ClearProviderQuotaFailedAt() *IntegrationScopedUpsert {
+	u.u.SetNull(integration.FieldProviderQuotaFailedAt)
 	return u
 }
 
@@ -15085,15 +15091,21 @@ func (x *IntegrationScopedUpdateOne) ClearProviderQuotaCheckedAt() *IntegrationS
 	return x
 }
 
-// SetProviderQuotaUnavailable sets the "provider_quota_unavailable" field.
-func (x *IntegrationScopedUpdateOne) SetProviderQuotaUnavailable(v bool) *IntegrationScopedUpdateOne {
-	x.b.SetProviderQuotaUnavailable(v)
+// SetProviderQuotaFailedAt sets the "provider_quota_failed_at" field.
+func (x *IntegrationScopedUpdateOne) SetProviderQuotaFailedAt(v time.Time) *IntegrationScopedUpdateOne {
+	x.b.SetProviderQuotaFailedAt(v)
 	return x
 }
 
-// SetNillableProviderQuotaUnavailable sets the "provider_quota_unavailable" field if the given value is not nil.
-func (x *IntegrationScopedUpdateOne) SetNillableProviderQuotaUnavailable(v *bool) *IntegrationScopedUpdateOne {
-	x.b.SetNillableProviderQuotaUnavailable(v)
+// SetNillableProviderQuotaFailedAt sets the "provider_quota_failed_at" field if the given value is not nil.
+func (x *IntegrationScopedUpdateOne) SetNillableProviderQuotaFailedAt(v *time.Time) *IntegrationScopedUpdateOne {
+	x.b.SetNillableProviderQuotaFailedAt(v)
+	return x
+}
+
+// ClearProviderQuotaFailedAt clears the value of the "provider_quota_failed_at" field.
+func (x *IntegrationScopedUpdateOne) ClearProviderQuotaFailedAt() *IntegrationScopedUpdateOne {
+	x.b.ClearProviderQuotaFailedAt()
 	return x
 }
 
@@ -15454,15 +15466,21 @@ func (x *IntegrationScopedUpdate) ClearProviderQuotaCheckedAt() *IntegrationScop
 	return x
 }
 
-// SetProviderQuotaUnavailable sets the "provider_quota_unavailable" field.
-func (x *IntegrationScopedUpdate) SetProviderQuotaUnavailable(v bool) *IntegrationScopedUpdate {
-	x.b.SetProviderQuotaUnavailable(v)
+// SetProviderQuotaFailedAt sets the "provider_quota_failed_at" field.
+func (x *IntegrationScopedUpdate) SetProviderQuotaFailedAt(v time.Time) *IntegrationScopedUpdate {
+	x.b.SetProviderQuotaFailedAt(v)
 	return x
 }
 
-// SetNillableProviderQuotaUnavailable sets the "provider_quota_unavailable" field if the given value is not nil.
-func (x *IntegrationScopedUpdate) SetNillableProviderQuotaUnavailable(v *bool) *IntegrationScopedUpdate {
-	x.b.SetNillableProviderQuotaUnavailable(v)
+// SetNillableProviderQuotaFailedAt sets the "provider_quota_failed_at" field if the given value is not nil.
+func (x *IntegrationScopedUpdate) SetNillableProviderQuotaFailedAt(v *time.Time) *IntegrationScopedUpdate {
+	x.b.SetNillableProviderQuotaFailedAt(v)
+	return x
+}
+
+// ClearProviderQuotaFailedAt clears the value of the "provider_quota_failed_at" field.
+func (x *IntegrationScopedUpdate) ClearProviderQuotaFailedAt() *IntegrationScopedUpdate {
+	x.b.ClearProviderQuotaFailedAt()
 	return x
 }
 
@@ -24401,15 +24419,15 @@ func (x *UsageScopedCreate) SetNillableValue(v *int64) *UsageScopedCreate {
 	return x
 }
 
-// SetFinal sets the "final" field.
-func (x *UsageScopedCreate) SetFinal(v bool) *UsageScopedCreate {
-	x.b.SetFinal(v)
+// SetFinalizedAt sets the "finalized_at" field.
+func (x *UsageScopedCreate) SetFinalizedAt(v time.Time) *UsageScopedCreate {
+	x.b.SetFinalizedAt(v)
 	return x
 }
 
-// SetNillableFinal sets the "final" field if the given value is not nil.
-func (x *UsageScopedCreate) SetNillableFinal(v *bool) *UsageScopedCreate {
-	x.b.SetNillableFinal(v)
+// SetNillableFinalizedAt sets the "finalized_at" field if the given value is not nil.
+func (x *UsageScopedCreate) SetNillableFinalizedAt(v *time.Time) *UsageScopedCreate {
+	x.b.SetNillableFinalizedAt(v)
 	return x
 }
 
@@ -24517,15 +24535,21 @@ func (u *UsageScopedUpsert) UpdateValue() *UsageScopedUpsert {
 	return u
 }
 
-// SetFinal sets the "final" field.
-func (u *UsageScopedUpsert) SetFinal(v bool) *UsageScopedUpsert {
-	u.u.Set(usage.FieldFinal, v)
+// SetFinalizedAt sets the "finalized_at" field.
+func (u *UsageScopedUpsert) SetFinalizedAt(v time.Time) *UsageScopedUpsert {
+	u.u.Set(usage.FieldFinalizedAt, v)
 	return u
 }
 
-// UpdateFinal sets the "final" field to the value that was provided on create.
-func (u *UsageScopedUpsert) UpdateFinal() *UsageScopedUpsert {
-	u.u.SetExcluded(usage.FieldFinal)
+// UpdateFinalizedAt sets the "finalized_at" field to the value that was provided on create.
+func (u *UsageScopedUpsert) UpdateFinalizedAt() *UsageScopedUpsert {
+	u.u.SetExcluded(usage.FieldFinalizedAt)
+	return u
+}
+
+// ClearFinalizedAt clears the value of the "finalized_at" field.
+func (u *UsageScopedUpsert) ClearFinalizedAt() *UsageScopedUpsert {
+	u.u.SetNull(usage.FieldFinalizedAt)
 	return u
 }
 
@@ -24711,15 +24735,21 @@ func (x *UsageScopedUpdateOne) AddValue(v int64) *UsageScopedUpdateOne {
 	return x
 }
 
-// SetFinal sets the "final" field.
-func (x *UsageScopedUpdateOne) SetFinal(v bool) *UsageScopedUpdateOne {
-	x.b.SetFinal(v)
+// SetFinalizedAt sets the "finalized_at" field.
+func (x *UsageScopedUpdateOne) SetFinalizedAt(v time.Time) *UsageScopedUpdateOne {
+	x.b.SetFinalizedAt(v)
 	return x
 }
 
-// SetNillableFinal sets the "final" field if the given value is not nil.
-func (x *UsageScopedUpdateOne) SetNillableFinal(v *bool) *UsageScopedUpdateOne {
-	x.b.SetNillableFinal(v)
+// SetNillableFinalizedAt sets the "finalized_at" field if the given value is not nil.
+func (x *UsageScopedUpdateOne) SetNillableFinalizedAt(v *time.Time) *UsageScopedUpdateOne {
+	x.b.SetNillableFinalizedAt(v)
+	return x
+}
+
+// ClearFinalizedAt clears the value of the "finalized_at" field.
+func (x *UsageScopedUpdateOne) ClearFinalizedAt() *UsageScopedUpdateOne {
+	x.b.ClearFinalizedAt()
 	return x
 }
 
@@ -24815,15 +24845,21 @@ func (x *UsageScopedUpdate) AddValue(v int64) *UsageScopedUpdate {
 	return x
 }
 
-// SetFinal sets the "final" field.
-func (x *UsageScopedUpdate) SetFinal(v bool) *UsageScopedUpdate {
-	x.b.SetFinal(v)
+// SetFinalizedAt sets the "finalized_at" field.
+func (x *UsageScopedUpdate) SetFinalizedAt(v time.Time) *UsageScopedUpdate {
+	x.b.SetFinalizedAt(v)
 	return x
 }
 
-// SetNillableFinal sets the "final" field if the given value is not nil.
-func (x *UsageScopedUpdate) SetNillableFinal(v *bool) *UsageScopedUpdate {
-	x.b.SetNillableFinal(v)
+// SetNillableFinalizedAt sets the "finalized_at" field if the given value is not nil.
+func (x *UsageScopedUpdate) SetNillableFinalizedAt(v *time.Time) *UsageScopedUpdate {
+	x.b.SetNillableFinalizedAt(v)
+	return x
+}
+
+// ClearFinalizedAt clears the value of the "finalized_at" field.
+func (x *UsageScopedUpdate) ClearFinalizedAt() *UsageScopedUpdate {
+	x.b.ClearFinalizedAt()
 	return x
 }
 

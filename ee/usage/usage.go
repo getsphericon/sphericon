@@ -146,7 +146,7 @@ func refreshWorkspace(ctx context.Context, s *ent.Scoped, first, current, now ti
 		open := start.Equal(current)
 		for _, m := range metrics {
 			prior := stored[key{start, m.metric}]
-			if prior != nil && prior.Final {
+			if prior != nil && prior.FinalizedAt != nil {
 				continue
 			}
 			if err := materialize(ctx, s, periodFrom(start), m.metric, m.measure, open, prior, now); err != nil {
@@ -164,15 +164,19 @@ func materialize(ctx context.Context, s *ent.Scoped, p Period, metric Metric, me
 	if err != nil {
 		return err
 	}
+	var closed *time.Time
+	if !open {
+		closed = &now
+	}
 	if prior == nil {
 		return s.Usage().Create().
 			SetPeriodStart(p.Start).SetMetric(string(metric)).
-			SetValue(value).SetFinal(!open).SetComputedAt(now).
+			SetValue(value).SetNillableFinalizedAt(closed).SetComputedAt(now).
 			Exec(ctx)
 	}
 	return s.Usage().UpdateOneID(prior.ID).
-		Where(entusage.Final(false)).
-		SetValue(value).SetFinal(!open).SetComputedAt(now).
+		Where(entusage.FinalizedAtIsNil()).
+		SetValue(value).SetNillableFinalizedAt(closed).SetComputedAt(now).
 		Exec(ctx)
 }
 
@@ -182,6 +186,11 @@ type Figure struct {
 	Value      int64
 	Final      bool
 	ComputedAt time.Time
+}
+
+// figureOf is the figure a stored row holds: it is final once the period closed (finalized_at set).
+func figureOf(r *ent.Usage) Figure {
+	return Figure{Metric: Metric(r.Metric), Value: r.Value, Final: r.FinalizedAt != nil, ComputedAt: r.ComputedAt}
 }
 
 // WorkspaceUsage is the figures of one Workspace for one period.
@@ -219,7 +228,7 @@ func List(ctx context.Context, client *ent.Client, period time.Time, p paginatio
 					out = append(out, WorkspaceUsage{WorkspaceID: r.WorkspaceID, Period: period})
 				}
 				w := &out[len(out)-1]
-				w.Figures = append(w.Figures, Figure{Metric: Metric(r.Metric), Value: r.Value, Final: r.Final, ComputedAt: r.ComputedAt})
+				w.Figures = append(w.Figures, figureOf(r))
 			}
 			return out, nil
 		})
@@ -238,7 +247,7 @@ func Get(ctx context.Context, s *ent.Scoped, period time.Time) (WorkspaceUsage, 
 	}
 	out := WorkspaceUsage{WorkspaceID: s.WorkspaceID(), Period: period}
 	for _, r := range rows {
-		out.Figures = append(out.Figures, Figure{Metric: Metric(r.Metric), Value: r.Value, Final: r.Final, ComputedAt: r.ComputedAt})
+		out.Figures = append(out.Figures, figureOf(r))
 	}
 	return out, nil
 }

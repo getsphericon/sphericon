@@ -30,8 +30,8 @@ type Usage struct {
 	Metric string `json:"metric,omitempty"`
 	// Value holds the value of the "value" field.
 	Value int64 `json:"value,omitempty"`
-	// Final holds the value of the "final" field.
-	Final bool `json:"final,omitempty"`
+	// FinalizedAt holds the value of the "finalized_at" field.
+	FinalizedAt *time.Time `json:"finalized_at,omitempty"`
 	// ComputedAt holds the value of the "computed_at" field.
 	ComputedAt time.Time `json:"computed_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -65,13 +65,11 @@ func (*Usage) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case usage.FieldFinal:
-			values[i] = new(sql.NullBool)
 		case usage.FieldID, usage.FieldWorkspaceID, usage.FieldValue:
 			values[i] = new(sql.NullInt64)
 		case usage.FieldMetric:
 			values[i] = new(sql.NullString)
-		case usage.FieldCreatedAt, usage.FieldUpdatedAt, usage.FieldPeriodStart, usage.FieldComputedAt:
+		case usage.FieldCreatedAt, usage.FieldUpdatedAt, usage.FieldPeriodStart, usage.FieldFinalizedAt, usage.FieldComputedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -130,11 +128,12 @@ func (_m *Usage) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Value = value.Int64
 			}
-		case usage.FieldFinal:
-			if value, ok := values[i].(*sql.NullBool); !ok {
-				return fmt.Errorf("unexpected type %T for field final", values[i])
+		case usage.FieldFinalizedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field finalized_at", values[i])
 			} else if value.Valid {
-				_m.Final = value.Bool
+				_m.FinalizedAt = new(time.Time)
+				*_m.FinalizedAt = value.Time
 			}
 		case usage.FieldComputedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -201,8 +200,10 @@ func (_m *Usage) String() string {
 	builder.WriteString("value=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Value))
 	builder.WriteString(", ")
-	builder.WriteString("final=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Final))
+	if v := _m.FinalizedAt; v != nil {
+		builder.WriteString("finalized_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
 	builder.WriteString(", ")
 	builder.WriteString("computed_at=")
 	builder.WriteString(_m.ComputedAt.Format(time.ANSIC))

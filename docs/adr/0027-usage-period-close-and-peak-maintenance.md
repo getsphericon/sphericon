@@ -31,7 +31,7 @@ invisible to a self-hosted install.
   records the count first. A new period's peak starts at the Contacts there are at the period's
   first refresh or change.
 - **A final row is never rewritten.** Closing is idempotent by (Workspace, period, metric): the
-  update is conditional on `final = false`, and a re-run, a late run or a later straggler leaves a
+  update is conditional on `finalized_at IS NULL`, and a re-run, a late run or a later straggler leaves a
   closed figure unchanged.
 - **Snapshots are independent of retention.** The retention job (ADR 0014) removes Audit entries
   only and never touches the usage table, so a closed snapshot outlives the Events it was computed

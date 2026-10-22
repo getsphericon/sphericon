@@ -55,8 +55,8 @@ type Integration struct {
 	ProviderMaxPerDay *int `json:"provider_max_per_day,omitempty"`
 	// ProviderQuotaCheckedAt holds the value of the "provider_quota_checked_at" field.
 	ProviderQuotaCheckedAt *time.Time `json:"provider_quota_checked_at,omitempty"`
-	// ProviderQuotaUnavailable holds the value of the "provider_quota_unavailable" field.
-	ProviderQuotaUnavailable bool `json:"provider_quota_unavailable,omitempty"`
+	// ProviderQuotaFailedAt holds the value of the "provider_quota_failed_at" field.
+	ProviderQuotaFailedAt *time.Time `json:"provider_quota_failed_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the IntegrationQuery when eager-loading is set.
 	Edges        IntegrationEdges `json:"edges"`
@@ -101,13 +101,13 @@ func (*Integration) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case integration.FieldEnabled, integration.FieldIsDefault, integration.FieldProviderQuotaUnavailable:
+		case integration.FieldEnabled, integration.FieldIsDefault:
 			values[i] = new(sql.NullBool)
 		case integration.FieldID, integration.FieldWorkspaceID, integration.FieldMaxPerSecond, integration.FieldMaxPerDay, integration.FieldProviderMaxPerSecond, integration.FieldProviderMaxPerDay:
 			values[i] = new(sql.NullInt64)
 		case integration.FieldName, integration.FieldChannel, integration.FieldProvider, integration.FieldConfigEncrypted, integration.FieldPreset, integration.FieldParamsEncrypted, integration.FieldIngestKey:
 			values[i] = new(sql.NullString)
-		case integration.FieldCreatedAt, integration.FieldUpdatedAt, integration.FieldDiscardedAt, integration.FieldProviderQuotaCheckedAt:
+		case integration.FieldCreatedAt, integration.FieldUpdatedAt, integration.FieldDiscardedAt, integration.FieldProviderQuotaCheckedAt, integration.FieldProviderQuotaFailedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -245,11 +245,12 @@ func (_m *Integration) assignValues(columns []string, values []any) error {
 				_m.ProviderQuotaCheckedAt = new(time.Time)
 				*_m.ProviderQuotaCheckedAt = value.Time
 			}
-		case integration.FieldProviderQuotaUnavailable:
-			if value, ok := values[i].(*sql.NullBool); !ok {
-				return fmt.Errorf("unexpected type %T for field provider_quota_unavailable", values[i])
+		case integration.FieldProviderQuotaFailedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field provider_quota_failed_at", values[i])
 			} else if value.Valid {
-				_m.ProviderQuotaUnavailable = value.Bool
+				_m.ProviderQuotaFailedAt = new(time.Time)
+				*_m.ProviderQuotaFailedAt = value.Time
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -363,8 +364,10 @@ func (_m *Integration) String() string {
 		builder.WriteString(v.Format(time.ANSIC))
 	}
 	builder.WriteString(", ")
-	builder.WriteString("provider_quota_unavailable=")
-	builder.WriteString(fmt.Sprintf("%v", _m.ProviderQuotaUnavailable))
+	if v := _m.ProviderQuotaFailedAt; v != nil {
+		builder.WriteString("provider_quota_failed_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }

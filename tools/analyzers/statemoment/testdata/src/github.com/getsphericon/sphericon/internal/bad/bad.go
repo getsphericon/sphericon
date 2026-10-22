@@ -30,3 +30,16 @@ func webhook(c *ent.Client) {
 func join(c *ent.Client) {
 	c.JoinDomain().ClearVerifiedAt() // want `rule 7: ClearVerifiedAt writes a state moment`
 }
+
+func usage(c *ent.Client) {
+	c.Usage().SetFinalizedAt(time.Now()) // want `rule 7: SetFinalizedAt writes a state moment`
+}
+
+func usageNillable(c *ent.Client, at *time.Time) {
+	c.Usage().SetNillableFinalizedAt(at) // want `rule 7: SetNillableFinalizedAt writes a state moment`
+}
+
+func quota(c *ent.Client) {
+	c.Integration().SetProviderQuotaFailedAt(time.Now()) // want `rule 7: SetProviderQuotaFailedAt writes a state moment`
+	c.Integration().ClearProviderQuotaFailedAt()         // want `rule 7: ClearProviderQuotaFailedAt writes a state moment`
+}

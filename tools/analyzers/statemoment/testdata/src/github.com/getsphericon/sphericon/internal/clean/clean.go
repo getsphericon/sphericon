@@ -39,3 +39,11 @@ func ownerEnables(c *ent.Client) {
 func other(c *ent.Client) {
 	c.Tag().SetVerifiedAt(time.Now())
 }
+
+func closesOnce(c *ent.Client) {
+	c.Usage().Where(ent.Predicate{}).SetFinalizedAt(time.Now())
+}
+
+func quotaGuarded(c *ent.Client) {
+	c.Integration().Where(ent.Predicate{}).SetProviderQuotaFailedAt(time.Now())
+}

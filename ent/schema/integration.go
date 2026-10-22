@@ -93,10 +93,12 @@ func (Integration) Fields() []ent.Field {
 		field.Time("provider_quota_checked_at").
 			Optional().
 			Nillable(),
-		// The last lookup failed (no ses:GetSendQuota permission, an SES-compatible
-		// service); the UI warns and a later success clears it.
-		field.Bool("provider_quota_unavailable").
-			Default(false),
+		// When the lookup first failed (no ses:GetSendQuota permission, an SES-compatible
+		// service) in the failing run it is still in; the UI warns while it is set and a
+		// later success clears it. A further failure keeps the first moment.
+		field.Time("provider_quota_failed_at").
+			Optional().
+			Nillable(),
 	}
 }
 
