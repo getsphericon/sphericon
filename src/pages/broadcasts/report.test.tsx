@@ -1,7 +1,10 @@
 import { HttpResponse } from 'msw'
 import { expect, test } from 'vitest'
 
-import { handleSiteBroadcastsGet } from '../../generated/site/msw.gen.ts'
+import {
+  handleSiteBroadcastLinksList,
+  handleSiteBroadcastsGet,
+} from '../../generated/site/msw.gen.ts'
 import { Route as broadcastsReportRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/report.tsx'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
@@ -21,6 +24,9 @@ const STATS = {
   clickedCount: 20,
   unsubscribedCount: 3,
   failedCount: 10,
+  deliveredCount: 171,
+  bouncedCount: 13,
+  complainedCount: 6,
   deliveryRate: 0.95,
   openRate: 0.5,
   clickRate: 0.125,
@@ -38,7 +44,10 @@ const BROADCAST = {
 }
 
 test('renders the broadcast header, counters and rates', async () => {
-  worker.use(handleSiteBroadcastsGet(() => HttpResponse.json(BROADCAST)))
+  worker.use(
+    handleSiteBroadcastsGet(() => HttpResponse.json(BROADCAST)),
+    handleSiteBroadcastLinksList(() => HttpResponse.json({ items: [] })),
+  )
 
   const { screen } = await renderWithRouter(<BroadcastReportPage />, REPORT_ROUTE)
 
@@ -46,9 +55,36 @@ test('renders the broadcast header, counters and rates', async () => {
   await expect.element(screen.getByText('Read this')).toBeInTheDocument()
   await expect.element(screen.getByText('Sent', { exact: true }).first()).toBeInTheDocument()
   await expect.element(screen.getByText('200')).toBeInTheDocument()
+  await expect.element(screen.getByText('Delivered', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('171')).toBeInTheDocument()
+  await expect.element(screen.getByText('Bounced', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('13')).toBeInTheDocument()
+  await expect.element(screen.getByText('Complained', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('6', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByText('95%')).toBeInTheDocument()
   await expect.element(screen.getByText('12.5%')).toBeInTheDocument()
   await expect.element(screen.getByText('Sending is on hold')).not.toBeInTheDocument()
+})
+
+test('lists the clicked links with their counts', async () => {
+  worker.use(
+    handleSiteBroadcastsGet(() => HttpResponse.json(BROADCAST)),
+    handleSiteBroadcastLinksList(() =>
+      HttpResponse.json({
+        items: [
+          { url: 'https://dest.test/a', clicks: 7 },
+          { url: 'https://dest.test/b', clicks: 2 },
+        ],
+      }),
+    ),
+  )
+
+  const { screen } = await renderWithRouter(<BroadcastReportPage />, REPORT_ROUTE)
+
+  await expect.element(screen.getByText('Clicked links')).toBeInTheDocument()
+  await expect.element(screen.getByText('https://dest.test/a')).toBeInTheDocument()
+  await expect.element(screen.getByText('7', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('https://dest.test/b')).toBeInTheDocument()
 })
 
 test('shows the hold alert when the broadcast is on hold', async () => {
@@ -56,6 +92,7 @@ test('shows the hold alert when the broadcast is on hold', async () => {
     handleSiteBroadcastsGet(() =>
       HttpResponse.json({ ...BROADCAST, status: 'sending', holdReason: 'no_integration' }),
     ),
+    handleSiteBroadcastLinksList(() => HttpResponse.json({ items: [] })),
   )
 
   const { screen } = await renderWithRouter(<BroadcastReportPage />, REPORT_ROUTE)
@@ -70,4 +107,21 @@ test('shows an error alert when the broadcast fails to load', async () => {
   const { screen } = await renderWithRouter(<BroadcastReportPage />, REPORT_ROUTE)
 
   await expect.element(screen.getByText('Failed to load broadcasts')).toBeInTheDocument()
+})
+
+test('shows how far a sending broadcast has got', async () => {
+  worker.use(
+    handleSiteBroadcastsGet(() =>
+      HttpResponse.json({
+        ...BROADCAST,
+        status: 'sending',
+        progress: { processedCount: 120, remainingCount: 80 },
+      }),
+    ),
+    handleSiteBroadcastLinksList(() => HttpResponse.json({ items: [] })),
+  )
+
+  const { screen } = await renderWithRouter(<BroadcastReportPage />, REPORT_ROUTE)
+
+  await expect.element(screen.getByText('Sent 120 of 200')).toBeInTheDocument()
 })

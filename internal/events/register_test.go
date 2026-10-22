@@ -47,7 +47,7 @@ func TestRegisterSubscribersFansEveryEventOutToAllConsumers(t *testing.T) {
 	require.NoError(t, err)
 	bus := events.New(sqlDB)
 	mod := outbound.New(bus, nil, nil, tracking.New("test-secret", "http://local"))
-	queue, err := jobs.NewClient(sqlDB, client, mod, cipher, bus, nil, nil, nil, registry.Default(), cfg.AppURL, cfg.OutboundAllow, jobs.Retention{})
+	queue, err := jobs.NewClient(sqlDB, client, mod, cipher, bus, nil, nil, nil, registry.Default(), cfg.AppURL, cfg.OutboundAllow, nil, jobs.Retention{})
 	require.NoError(t, err)
 	reader, err := river.NewClient(riverdatabasesql.New(sqlDB), &river.Config{})
 	require.NoError(t, err)
@@ -59,7 +59,7 @@ func TestRegisterSubscribersFansEveryEventOutToAllConsumers(t *testing.T) {
 	<-router.Running()
 
 	require.NoError(t, events.New(sqlDB).WithinTx(ctx, func(_ *ent.Client, pub events.Publisher) error {
-		return pub.Publish(ctx, &events.EmailDeliveryFailure{
+		return pub.Publish(ctx, &events.EmailDelivery{
 			Action: events.NameEmailBounced, WorkspaceID: fixtures.InitechID, ContactID: fixtures.ContactErasableID,
 			Email: dest, BounceKind: events.BounceKindPermanent, DedupID: "registered-bounce-1",
 		})

@@ -90,6 +90,15 @@
   created_at: '{{daysAgo 5}}'
   updated_at: '{{daysAgo 5}}'
 
+# Acme: a transactional template with a link, for the tracked send (ADR 0053).
+- id: 5702 # fixture: TemplateWithLink
+  name: Order link
+  subject: Your order
+  body: '<p>See <a href="https://shop.test/order">your order</a></p>'
+  workspace_id: 1
+  created_at: '{{daysAgo 5}}'
+  updated_at: '{{daysAgo 5}}'
+
 # Vandelay (workspace 7): a template for the send refused while the detector has frozen it.
 - id: 5701 # fixture: TemplateVandelay
   name: Vandelay notice

@@ -33,6 +33,15 @@ model SiteBroadcastStats {
   /** Messages that failed to send */
   failedCount: int32;
 
+  /** Messages the provider reported delivered, read from the delivery result stamped on each message */
+  deliveredCount: int32;
+
+  /** Messages the provider reported bounced, read from the delivery result stamped on each message */
+  bouncedCount: int32;
+
+  /** Messages a recipient complained about, read from the delivery result stamped on each message */
+  complainedCount: int32;
+
   /** Messages handed to the provider ÷ recipients targeted (0–1) */
   deliveryRate: float32;
 
@@ -300,4 +309,25 @@ interface SiteBroadcasts
     | NotFoundProblem
     | UnprocessableEntityProblem
     | TooManyRequestsProblem;
+}
+
+/** A broadcast's per-link click figures, most clicked first */
+model SiteBroadcastLinkClicksList {
+  /** One entry per clicked link */
+  items: SiteLinkClicks[];
+}
+
+@route("/workspaces/{workspaceId}/broadcasts/{broadcastId}/links")
+@tag("Site Broadcasts")
+namespace SiteBroadcastLinks {
+  /**
+   * The links of a broadcast that were clicked, with a count each, most clicked first. The counts
+   * come from the `email.clicked` Events, so they cover the Event retention window; the unique
+   * click figure in the broadcast's stats does not.
+   */
+  @get
+  op list(@path workspaceId: WorkspaceId, @path broadcastId: EntityId):
+    | SiteBroadcastLinkClicksList
+    | BadRequestProblem
+    | NotFoundProblem;
 }

@@ -22,7 +22,7 @@ func (h *Handlers) SiteEventsList(ctx context.Context, params siteapi.SiteEvents
 		return nil, err
 	}
 
-	f := eventlog.Filter{Action: params.Action.Or(""), Email: params.Email.Or("")}
+	f := eventlog.Filter{Action: params.Action.Or(""), Email: params.Email.Or(""), IncludeMachine: params.IncludeMachine.Or(false)}
 	f.ContactID = convert.Int64Ptr(params.ContactId)
 	page, err := h.eventlog.List(ctx, scoped, f, pagination.ParamsOf(params.Page, params.PageSize))
 	if err != nil {

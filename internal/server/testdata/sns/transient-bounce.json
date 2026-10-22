@@ -1,7 +1,7 @@
 {
   "Message": "{\"notificationType\":\"Bounce\",\"bounce\":{\"bounceType\":\"Transient\",\"bouncedRecipients\":[{\"emailAddress\":\"soft@example.com\"}]}}",
   "MessageId": "sns-msg-2",
-  "Signature": "0U3ktSf3jHp1wZ3QjoOmUnZEkiGgtNe+r1mXV/lWc+hxxtWWsahjkmq2HPiUzFWc8Lpg81zhB/qLxNL2Zmkk8ku2MV63e5DQ/8ZSxQPH809PBpUA9CMJF2ZPOUltHEJrtQSdwujiWPLdae+HYAWGP7vasnNwHnlGHfMcbrOHtGI3Aq9uZWyRwSdMoJRQjdv4+CgaMkdxdoj4P7YhxdPPZH9rHLtiEapYjAxxYmrh9gT0Fb/4d80i1Um0KbsUUgtFTQVPLUmMr9UzJRI1epaQd/dmIFULTzBwetA1peUQQg53KGOHKHANWJug7m2bM1cSOJOrTZFqG7y5F7ZzbnzNew==",
+  "Signature": "nzbz6GNk3lRpJ39hLjHG1EFCaO01qq9h+M776U+UBpu5amosiEflH9VkUiGnwe7vnKTkd6Z/L3KNMgMRWTJ3cq4vAgxFPYF0/0ir3JMviATJEhrBvfGRMh0lyhVg1ueT2TS0I2f1dWB4BoPeMDqBXH6L/bt6PEgtf4EJWWVxYEcQRk84r9/YYMXTm0E4qH5/QHE0ubqFSm06fOl0s6Y5uSSsVQ9rhEgVzLXD9NXL/ji8XbhDYWBXLYJzkL/fOyATzXa04H4Tr8uYZJdqKn66jdZ8oVTO2fIbefP6bGoP9sdpFELROD8jAPFiSlWXNo1AYL9mlSd2tLYP9pHD7aALRQ==",
   "SignatureVersion": "2",
   "SigningCertURL": "https://sns.eu-west-1.amazonaws.com/SimpleNotificationService-sphericon-test.pem",
   "Timestamp": "2026-01-01T00:00:00.000Z",

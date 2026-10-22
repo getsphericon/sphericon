@@ -74,6 +74,8 @@ type Tx struct {
 	Passkey *PasskeyClient
 	// PasskeyChallenge is the client for interacting with the PasskeyChallenge builders.
 	PasskeyChallenge *PasskeyChallengeClient
+	// PrivateRelayRange is the client for interacting with the PrivateRelayRange builders.
+	PrivateRelayRange *PrivateRelayRangeClient
 	// RecoveryCode is the client for interacting with the RecoveryCode builders.
 	RecoveryCode *RecoveryCodeClient
 	// RiverJob is the client for interacting with the RiverJob builders.
@@ -271,6 +273,7 @@ func (tx *Tx) init() {
 	tx.OutboxOffset = NewOutboxOffsetClient(tx.config)
 	tx.Passkey = NewPasskeyClient(tx.config)
 	tx.PasskeyChallenge = NewPasskeyChallengeClient(tx.config)
+	tx.PrivateRelayRange = NewPrivateRelayRangeClient(tx.config)
 	tx.RecoveryCode = NewRecoveryCodeClient(tx.config)
 	tx.RiverJob = NewRiverJobClient(tx.config)
 	tx.SchemaState = NewSchemaStateClient(tx.config)

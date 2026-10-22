@@ -54,7 +54,7 @@ func (h *Handlers) SiteAutomationsCreate(ctx context.Context, req *siteapi.SiteC
 		in.Steps = resources.AutomationSteps(req.Steps)
 	}
 	a, err := h.automations.Create(ctx, ws, in)
-	if errors.Is(err, automations.ErrInvalidStep) {
+	if automations.IsInvalid(err) {
 		v := siteapi.SiteAutomationsCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
 		return &v, nil
 	}
@@ -112,7 +112,7 @@ func (h *Handlers) SiteAutomationsUpdate(ctx context.Context, req *siteapi.SiteU
 		v := siteapi.SiteAutomationsUpdateNotFound(problem(http.StatusNotFound, "automation not found"))
 		return &v, nil
 	}
-	if errors.Is(err, automations.ErrInvalidStep) {
+	if automations.IsInvalid(err) {
 		v := siteapi.SiteAutomationsUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
 		return &v, nil
 	}

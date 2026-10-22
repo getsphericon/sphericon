@@ -175,6 +175,31 @@ test('offers the next page while a cursor is returned', async () => {
   await expect.element(screen.getByRole('button', { name: 'Load more' })).toBeInTheDocument()
 })
 
+test('loading more appends the next page below the first', async () => {
+  const cursors: (string | null)[] = []
+  worker.use(
+    handleSiteAuditList(({ request }) => {
+      const cursor = new URL(request.url).searchParams.get('cursor')
+      cursors.push(cursor)
+      return HttpResponse.json(
+        cursor
+          ? { items: [entry({ id: '3', action: 'membership.remove' })] }
+          : { items: [entry()], nextCursor: '2' },
+      )
+    }),
+  )
+  const { screen } = await renderWithRouter(
+    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={() => {}} />,
+  )
+
+  await screen.getByRole('button', { name: 'Load more' }).click()
+
+  await expect.element(screen.getByText('membership.remove')).toBeInTheDocument()
+  await expect.element(screen.getByText('membership.update')).toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Load more' })).not.toBeInTheDocument()
+  expect(cursors).toContain('2')
+})
+
 test.each([402, 403])('renders nothing when the API answers %i', async (status) => {
   worker.use(handleSiteAuditList(() => problem(status, { detail: 'refused' })))
   const { screen } = await renderWithRouter(
@@ -327,4 +352,26 @@ test('an entry without a diff or a name falls back gracefully', async () => {
   await expect.element(screen.getByText('API token #7')).toBeInTheDocument()
   await expect.element(screen.getByRole('cell', { name: 'System' })).toBeInTheDocument()
   await expect.element(screen.getByText('tag #9')).toBeInTheDocument()
+})
+
+test('names an API token actor by its name when it has one', async () => {
+  worker.use(
+    handleSiteAuditList({
+      body: { items: [entry({ actor: { kind: 'api_token', id: '12', name: 'CI deploy' } })] },
+    }),
+  )
+  const { screen } = await renderWithRouter(
+    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={() => {}} />,
+  )
+
+  await expect.element(screen.getByText('CI deploy', { exact: true })).toBeInTheDocument()
+})
+
+test('reports a failed load of the log', async () => {
+  worker.use(handleSiteAuditList(() => problem(500)))
+  const { screen } = await renderWithRouter(
+    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={() => {}} />,
+  )
+
+  await expect.element(screen.getByText('Failed to load the audit log').first()).toBeInTheDocument()
 })

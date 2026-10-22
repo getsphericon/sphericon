@@ -1229,6 +1229,15 @@ func ScopedEntities() []ScopedEntity {
 				if src.SentAt != nil {
 					b.SetSentAt(*src.SentAt)
 				}
+				if src.DeliveredAt != nil {
+					b.SetDeliveredAt(*src.DeliveredAt)
+				}
+				if src.BouncedAt != nil {
+					b.SetBouncedAt(*src.BouncedAt)
+				}
+				if src.ComplainedAt != nil {
+					b.SetComplainedAt(*src.ComplainedAt)
+				}
 				if src.BroadcastID != nil {
 					b.SetBroadcastID(remap("Broadcast", *src.BroadcastID))
 				}

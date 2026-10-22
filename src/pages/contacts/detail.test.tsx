@@ -92,6 +92,38 @@ test('lists the contact events and filters them by contact id', async () => {
   await expect.element(screen.getByText('Custom fields')).not.toBeInTheDocument()
 })
 
+test('asks the API for machine events only behind a toggle', async () => {
+  const requested: (string | null)[] = []
+  worker.use(
+    handleSiteContactsGet({ body: { ...ADA, customFields: null } }),
+    handleSiteEventsList(({ request }) => {
+      const includeMachine = new URL(request.url).searchParams.get('includeMachine')
+      requested.push(includeMachine)
+      const human = { id: 'e2', subjectId: 's1', action: 'email.clicked', createdAt: NOW }
+      const machine = { id: 'e1', subjectId: 's1', action: 'email.opened', createdAt: NOW }
+      return HttpResponse.json({
+        items: includeMachine === 'true' ? [machine, human] : [human],
+        totalItems: includeMachine === 'true' ? 2 : 1,
+      })
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<ContactDetailPage />, DETAIL_ROUTE)
+
+  await expect.element(screen.getByText('email.clicked')).toBeInTheDocument()
+  await expect.element(screen.getByText('email.opened')).not.toBeInTheDocument()
+  expect(requested.at(-1)).not.toBe('true')
+
+  await screen.getByRole('switch', { name: 'Show machine events' }).click()
+
+  await expect.element(screen.getByText('email.opened')).toBeInTheDocument()
+  expect(requested.at(-1)).toBe('true')
+
+  await screen.getByRole('switch', { name: 'Show machine events' }).click()
+
+  await expect.element(screen.getByText('email.opened')).not.toBeInTheDocument()
+})
+
 test('falls back to the subject id as the title when there is no email', async () => {
   worker.use(
     handleSiteContactsGet({
@@ -249,4 +281,35 @@ test('exporting a contact saves the document under the filename the server sugge
   await screen.getByRole('button', { name: 'Export data' }).click()
 
   await expect.poll(() => saved).toEqual(['Ада.json'])
+})
+
+async function heading(contact: SiteContactResource) {
+  worker.use(handleSiteContactsGet({ body: contact }), NO_EVENTS)
+  const { screen } = await renderWithRouter(<ContactDetailPage />, DETAIL_ROUTE)
+  return screen
+}
+
+test('falls back from the email to the subject id, the phone and a dash in the heading', async () => {
+  const base = { ...ADA, email: null, firstName: null, lastName: null, customFields: null }
+
+  const bySubject = await heading({ ...base, subjectId: 'user-77' })
+  await expect.element(bySubject.getByRole('heading', { name: 'user-77' })).toBeInTheDocument()
+
+  const byPhone = await heading({ ...base, phone: '+15550100' })
+  await expect.element(byPhone.getByRole('heading', { name: '+15550100' })).toBeInTheDocument()
+
+  const bare = await heading(base)
+  await expect.element(bare.getByRole('heading', { name: '—' })).toBeInTheDocument()
+})
+
+test('lists the tags of the contact', async () => {
+  worker.use(
+    handleSiteContactsGet({ body: { ...ADA, customFields: null, tags: ['vip', 'beta'] } }),
+    NO_EVENTS,
+  )
+
+  const { screen } = await renderWithRouter(<ContactDetailPage />, DETAIL_ROUTE)
+
+  await expect.element(screen.getByText('vip', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('beta', { exact: true })).toBeInTheDocument()
 })

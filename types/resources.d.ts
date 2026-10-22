@@ -147,15 +147,21 @@ export default interface Resources {
       "activate": "Activate",
       "addAutomation": "New automation",
       "applyTagNodeDescription": "Add a tag to the contact.",
+      "bounced": "Bounced",
       "branchesUnsupported": "Only a single linear path is saved. Nodes off the main chain were ignored.",
       "branchesUnsupportedTitle": "Branches not supported yet",
+      "clicks": "Clicks",
+      "complained": "Complained",
       "createTitle": "New automation",
       "deactivate": "Deactivate",
+      "delivered": "Delivered",
       "editMessage": "Edit message",
       "emailBodyLabel": "Email body",
       "emailNodeDescription": "Send an email to the contact.",
       "emailSubjectLabel": "Subject",
       "emptyState": "Create your first automation.",
+      "engagementHint": "Every open and click counts here, so a person who opens twice shows twice. Opens and clicks cover the Event retention window; delivered, bounced and complained do not.",
+      "engagementTitle": "Engagement",
       "enrolledAt": "Enrolled at",
       "enrollmentStatus": {
         "active": "In progress",
@@ -192,6 +198,7 @@ export default interface Resources {
       "nameLabel": "Name",
       "noEnrollments": "No contacts enrolled yet",
       "noRecords": "No automations yet",
+      "opens": "Opens",
       "removeTagNodeDescription": "Take a tag off the contact.",
       "showArchived": "Show archived",
       "statusActive": "Active",
@@ -278,9 +285,12 @@ export default interface Resources {
       "sendNow": "Send now",
       "showArchived": "Show archived",
       "stats": {
+        "bounced": "Bounced",
         "clickRate": "Click rate",
         "clickToOpenRate": "Click-to-open",
         "clicked": "Clicked",
+        "complained": "Complained",
+        "delivered": "Delivered",
         "deliveryRate": "Delivery rate",
         "failed": "Failed",
         "failureRate": "Failure rate",
@@ -497,6 +507,7 @@ export default interface Resources {
       "export": "Export data",
       "noRecords": "No contacts yet",
       "searchPlaceholder": "Search by email",
+      "showMachineEvents": "Show machine events",
       "statusFilter": "Filter by status",
       "tagsTitle": "Tags",
       "updatedAt": "Updated at"
@@ -602,6 +613,12 @@ export default interface Resources {
       "verifiedToast": "Domain verified",
       "verify": "Verify",
       "verifyError": "Could not verify the domain"
+    },
+    "linkClicks": {
+      "clicks": "Clicks",
+      "hint": "Every click counts here, so a link clicked twice by one person shows twice. Counts cover the Event retention window.",
+      "title": "Clicked links",
+      "url": "Link"
     },
     "login": {
       "codeLabel": "Authentication code",

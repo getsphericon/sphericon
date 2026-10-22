@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domainverify"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/joindomains"
+	"github.com/getsphericon/sphericon/internal/machine"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/secrets"
@@ -71,6 +72,10 @@ func NewPruneOutboxWorker(client *ent.Client, floor time.Duration) *PruneOutboxW
 
 func NewPruneUnverifiedUsersWorker(acc *accounts.Accounts, retention time.Duration) *PruneUnverifiedUsersWorker {
 	return &PruneUnverifiedUsersWorker{accounts: acc, retention: retention}
+}
+
+func NewRefreshPrivateRelayWorker(ranges *machine.Detector) *RefreshPrivateRelayWorker {
+	return &RefreshPrivateRelayWorker{ranges: ranges}
 }
 
 func NewPruneEventsWorker(client *ent.Client, retention time.Duration) *PruneEventsWorker {

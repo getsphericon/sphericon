@@ -72,12 +72,12 @@ tests:
     params: *params
     request: { headers: *headers, body: '{"case":"env"}' }
     expect:
-      failures:
+      notices:
         - { id: '1', destination: env-is-empty@example.com, kind: bounce }
-  - name: an event the Preset does not handle yields no failures
+  - name: an event the Preset does not handle yields no notices
     params: *params
     request: { headers: *headers, body: '{"case":"delivery"}' }
-    expect: { failures: [] }
+    expect: { notices: [] }
   - name: a header scheme refuses a bad token before parsing the body
     params: *params
     request: { headers: { X-Token: wrong }, body: not json }

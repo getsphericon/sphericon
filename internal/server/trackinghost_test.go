@@ -81,11 +81,10 @@ func TestTrackingHostServesOnlyLinkPaths(t *testing.T) {
 	assert.True(t, strings.HasPrefix(resp.Header().Get("Location"), cfg.AppURL+"/confirm?token="))
 
 	// Open and click of a recipient of another Workspace are a 404.
-	rec := env.DB.BroadcastRecipient.GetX(ctx, fixtures.BroadcastRecipientUntrackedID)
-	rtoken, err := tr.Token(rec.ID)
+	rtoken, err := tr.Token(fixtures.OutboundMessageTrackingSampleID)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusNotFound, hostReq(env, http.MethodGet, host, "/e/o/"+rtoken).Code)
-	clickLink, err := tr.ClickURL(rec.ID, "https://example.com")
+	clickLink, err := tr.ClickURL(fixtures.OutboundMessageTrackingSampleID, "https://example.com")
 	require.NoError(t, err)
 	_, ctok, _ := strings.Cut(clickLink, "/e/c/")
 	assert.Equal(t, http.StatusNotFound, hostReq(env, http.MethodGet, host, "/e/c/"+ctok).Code)

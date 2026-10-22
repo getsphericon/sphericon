@@ -101,7 +101,7 @@ func TestAutomationStepDefersWhenTransactionalTrafficSpendsTheLimit(t *testing.T
 		mod := outbound.New(env.Bus, env.CoreHolds(), resolvingTo(fs), tracking.New("test-secret", "http://local"))
 		env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(1).ExecX(ctx)
 
-		runIDs, err := jobs.EvaluateTrigger(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactHoldDemoID, "hold_demo")
+		runIDs, err := jobs.EvaluateTrigger(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactHoldDemoID, "hold_demo", 0)
 		require.NoError(t, err)
 		require.Len(t, runIDs, 1)
 
@@ -143,7 +143,7 @@ func TestAutomationStepAndBroadcastRecipientShareTheLimit(t *testing.T) {
 		mod := outbound.New(e.Bus, e.CoreHolds(), resolvingTo(e.sender), tracking.New("test-secret", "http://local"))
 		e.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(1).ExecX(ctx)
 
-		runIDs, err := jobs.EvaluateTrigger(ctx, e.DB.Scoped(fixtures.AcmeID), fixtures.ContactHoldDemoID, "hold_demo")
+		runIDs, err := jobs.EvaluateTrigger(ctx, e.DB.Scoped(fixtures.AcmeID), fixtures.ContactHoldDemoID, "hold_demo", 0)
 		require.NoError(t, err)
 		res, err := jobs.RunStep(ctx, e.DB, noFence, mod, runIDs[0])
 		require.NoError(t, err)

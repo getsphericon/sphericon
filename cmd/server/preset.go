@@ -49,7 +49,7 @@ func presetTestCommand() *cli.Command {
 		Description: "Without --payload, runs the `tests` the Preset carries and prints PASS or FAIL for each case.\n" +
 			"With --payload, verifies the sample with the Preset's scheme (--header name=value and\n" +
 			"--param name=value, repeatable, supply the request headers and the Integration's params,\n" +
-			"secrets included) and prints the Delivery failures, or the reason it was refused.",
+			"secrets included) and prints the Delivery notices, or the reason it was refused.",
 		Flags: []cli.Flag{
 			&cli.StringFlag{Name: "payload", Usage: "file holding the raw request body to run the Preset on"},
 			&cli.StringSliceFlag{Name: "header", Usage: "request header of the sample, name=value"},
@@ -144,15 +144,16 @@ func runPresetSample(ctx context.Context, cmd *cli.Command, p *preset.Preset) er
 		_, _ = fmt.Fprintf(out(cmd), "refused: %v\n", err)
 		return err
 	}
-	for _, f := range res.Failures {
+	for _, f := range res.Notices {
 		kind := string(f.Kind)
 		if f.Kind == preset.Bounce {
 			kind += map[bool]string{true: " permanent", false: " transient"}[f.Permanent]
 		}
-		_, _ = fmt.Fprintf(out(cmd), "%s %s id=%s sending_domain=%s\n", kind, f.Destination, f.ID, f.SendingDomain)
+		_, _ = fmt.Fprintf(out(cmd), "%s %s id=%s sending_domain=%s message_id=%s reason=%q\n",
+			kind, f.Destination, f.ID, f.SendingDomain, f.MessageID, f.Reason)
 	}
-	if len(res.Failures) == 0 {
-		_, _ = fmt.Fprintln(out(cmd), "verified, no Delivery failures (an event the Preset does not handle)")
+	if len(res.Notices) == 0 {
+		_, _ = fmt.Fprintln(out(cmd), "verified, no Delivery notices (an event the Preset does not handle)")
 	}
 	return nil
 }

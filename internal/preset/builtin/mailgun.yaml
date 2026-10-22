@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=../preset.schema.json
 version: 1
 name: mailgun
-description: Mailgun failed and complained event webhooks, signed with the account's webhook signing key.
+description: Mailgun delivered, failed, rejected and complained event webhooks, signed with the account's webhook signing key.
 params:
   type: object
   required: [signing_key]
@@ -25,22 +25,40 @@ verify:
   signature_field: signature.signature
   algorithm: sha256
   encoding: hex
-# event `failed` carries severity permanent or temporary; `complained` carries none.
-# Everything else (accepted, delivered, opened, clicked, unsubscribed) is ignored. The
-# Sending domain is the domain of the From header, else the sending domain's name. With PII
-# redaction on, the recipient is not an address and the event is skipped.
+# Mailgun events and what they become:
+#   delivered         delivery.
+#   failed permanent  bounce, permanent; except when the reason names a suppression list
+#                     (suppress-bounce, suppress-unsubscribe, suppress-complaint) Mailgun
+#                     refused to attempt the message: that is a drop.
+#   failed temporary  delay: Mailgun keeps retrying, and the final outcome arrives as a later
+#                     permanent failure or a delivered event.
+#   rejected          drop (Mailgun refused the send, the reason is `reject.reason`).
+#   complained        complaint (no severity).
+# Everything else (accepted, opened, clicked, unsubscribed) is ignored. The Sending domain is
+# the domain of the From header, else the sending domain's name. The provider message id is the
+# Message-ID header of the message, which Mailgun reports without the angle brackets our
+# SMTP send recorded it with, so they are put back. With PII redaction on, the recipient is
+# not an address and the event is skipped.
 transform: |
+  def keep: with_entries(select(.value != null and .value != ""));
   .body["event-data"] as $e
   | ($e.recipient // "") as $to
+  | ($e.message.headers["message-id"] // "" | if . == "" then null else "<" + . + ">" end) as $mid
   | ([$e.message.headers.from // "" | ascii_downcase | capture("@(?<d>[a-z0-9.-]+)>?\\s*$").d] | first // $e.domain.name) as $domain
-  | def failure($kind; $permanent):
+  | ($e["delivery-status"].description // $e["delivery-status"].message // $e.reason) as $why
+  | def notice($kind; $reason):
       if $to | contains("@")
-      then [{id: $e.id, destination: $to, kind: $kind, permanent: $permanent, sending_domain: $domain}]
+      then [{id: $e.id, destination: $to, kind: $kind, sending_domain: $domain, message_id: $mid, reason: $reason} | keep]
       else [] end;
-  if $e.event == "complained" then failure("complaint"; false)
+  def bounce($permanent): notice("bounce"; $why) | map(. + {permanent: $permanent});
+  if $e.event == "complained" then notice("complaint"; null)
+  elif $e.event == "delivered" then notice("delivery"; null)
+  elif $e.event == "rejected" then notice("drop"; $e.reject.reason)
   elif $e.event == "failed" then
-    if $e.severity == "permanent" then failure("bounce"; true)
-    elif $e.severity == "temporary" then failure("bounce"; false)
+    if $e.severity == "permanent" then
+      if ($e.reason // "" | startswith("suppress")) then notice("drop"; $e.reason)
+      else bounce(true) end
+    elif $e.severity == "temporary" then notice("delay"; $why)
     else [] end
   else [] end
 tests:
@@ -48,45 +66,84 @@ tests:
     params:
       signing_key: mailgun-test-signing-key-0123456789
     request:
-      body: '{"signature":{"token":"0123456789abcdefghijklmnopqrstuvwxyz0123456789ab","timestamp":"1767225600","signature":"cd9b89c82f6bf18a0f3fa06927a2879cfa0fcc9d2312e23b40e7559a5d828301"},"event-data":{"event":"failed","id":"2kFItcrLQuKTdp-Ia2Xr7w","timestamp":1770918175.5923693,"log-level":"error","recipient":"Badrecipient@Sample.Mailgun.com","reason":"bounce","severity":"permanent","message":{"headers":{"from":"Sample Sender <sender@Sample.Mailgun.com>","to":"badrecipient@sample.mailgun.com"}},"delivery-status":{"code":550},"domain":{"name":"sample.mailgun.com"}}}'
+      body: '{"signature":{"token":"0123456789abcdefghijklmnopqrstuvwxyz0123456789ab","timestamp":"1767225600","signature":"cd9b89c82f6bf18a0f3fa06927a2879cfa0fcc9d2312e23b40e7559a5d828301"},"event-data":{"event":"failed","id":"2kFItcrLQuKTdp-Ia2Xr7w","timestamp":1770918175.5923693,"log-level":"error","recipient":"Badrecipient@Sample.Mailgun.com","reason":"bounce","severity":"permanent","message":{"headers":{"from":"Sample Sender <sender@Sample.Mailgun.com>","to":"badrecipient@sample.mailgun.com","message-id":"mg-msg-1@sample.mailgun.com"}},"delivery-status":{"code":550,"description":"No such mailbox"},"domain":{"name":"sample.mailgun.com"}}}'
     expect:
-      failures:
+      notices:
         - id: 2kFItcrLQuKTdp-Ia2Xr7w
           destination: badrecipient@sample.mailgun.com
           kind: bounce
           permanent: true
           sending_domain: sample.mailgun.com
-  - name: a temporary failure is a transient bounce
+          message_id: '<mg-msg-1@sample.mailgun.com>'
+          reason: No such mailbox
+  - name: a temporary failure is a delay
     params:
       signing_key: mailgun-test-signing-key-0123456789
     request:
-      body: '{"signature":{"token":"0123456789abcdefghijklmnopqrstuvwxyz0123456789ab","timestamp":"1767225600","signature":"cd9b89c82f6bf18a0f3fa06927a2879cfa0fcc9d2312e23b40e7559a5d828301"},"event-data":{"event":"failed","id":"YusK9KhoTwe2C00iRxsEqQ","log-level":"warn","recipient":"tempfailrecipient@sample.mailgun.com","reason":"generic","severity":"temporary","message":{"headers":{"from":"sender@sample.mailgun.com"}},"delivery-status":{"code":421},"domain":{"name":"sample.mailgun.com"}}}'
+      body: '{"signature":{"token":"0123456789abcdefghijklmnopqrstuvwxyz0123456789ab","timestamp":"1767225600","signature":"cd9b89c82f6bf18a0f3fa06927a2879cfa0fcc9d2312e23b40e7559a5d828301"},"event-data":{"event":"failed","id":"YusK9KhoTwe2C00iRxsEqQ","log-level":"warn","recipient":"tempfailrecipient@sample.mailgun.com","reason":"generic","severity":"temporary","message":{"headers":{"from":"sender@sample.mailgun.com"}},"delivery-status":{"code":421,"description":"try again later"},"domain":{"name":"sample.mailgun.com"}}}'
     expect:
-      failures:
+      notices:
         - id: YusK9KhoTwe2C00iRxsEqQ
           destination: tempfailrecipient@sample.mailgun.com
-          kind: bounce
-          permanent: false
+          kind: delay
           sending_domain: sample.mailgun.com
+          reason: try again later
   - name: a complaint has no severity and is a complaint
     params:
       signing_key: mailgun-test-signing-key-0123456789
     request:
       body: '{"signature":{"token":"0123456789abcdefghijklmnopqrstuvwxyz0123456789ab","timestamp":"1767225600","signature":"cd9b89c82f6bf18a0f3fa06927a2879cfa0fcc9d2312e23b40e7559a5d828301"},"event-data":{"event":"complained","id":"rIVDlyk8SY-mJauQoYmNFA","log-level":"warn","domain":{"name":"sample.mailgun.com"},"message":{"headers":{"to":"recipient@sample.mailgun.com","from":"Sample Sender <sender@sample.mailgun.com>"}},"recipient":"recipient@sample.mailgun.com"}}'
     expect:
-      failures:
+      notices:
         - id: rIVDlyk8SY-mJauQoYmNFA
           destination: recipient@sample.mailgun.com
           kind: complaint
           permanent: false
           sending_domain: sample.mailgun.com
-  - name: a delivered event is no failure
+  - name: a delivered event is a delivery with the message id
     params:
       signing_key: mailgun-test-signing-key-0123456789
     request:
-      body: '{"signature":{"token":"0123456789abcdefghijklmnopqrstuvwxyz0123456789ab","timestamp":"1767225600","signature":"cd9b89c82f6bf18a0f3fa06927a2879cfa0fcc9d2312e23b40e7559a5d828301"},"event-data":{"event":"delivered","id":"abc","recipient":"a@sample.mailgun.com"}}'
+      body: '{"signature":{"token":"0123456789abcdefghijklmnopqrstuvwxyz0123456789ab","timestamp":"1767225600","signature":"cd9b89c82f6bf18a0f3fa06927a2879cfa0fcc9d2312e23b40e7559a5d828301"},"event-data":{"event":"delivered","id":"dlv-1","recipient":"Alice@Sample.Mailgun.com","message":{"headers":{"from":"sender@sample.mailgun.com","message-id":"mg-msg-1@sample.mailgun.com"}},"delivery-status":{"code":250,"message":"OK"},"domain":{"name":"sample.mailgun.com"}}}'
     expect:
-      failures: []
+      notices:
+        - id: dlv-1
+          destination: alice@sample.mailgun.com
+          kind: delivery
+          sending_domain: sample.mailgun.com
+          message_id: '<mg-msg-1@sample.mailgun.com>'
+  - name: a rejected event is a drop with its reason
+    params:
+      signing_key: mailgun-test-signing-key-0123456789
+    request:
+      body: '{"signature":{"token":"0123456789abcdefghijklmnopqrstuvwxyz0123456789ab","timestamp":"1767225600","signature":"cd9b89c82f6bf18a0f3fa06927a2879cfa0fcc9d2312e23b40e7559a5d828301"},"event-data":{"event":"rejected","id":"rej-1","recipient":"a@sample.mailgun.com","reject":{"reason":"Sandbox subdomains are for test purposes only","description":""},"message":{"headers":{"from":"sender@sample.mailgun.com","message-id":"mg-msg-2@sample.mailgun.com"}},"domain":{"name":"sample.mailgun.com"}}}'
+    expect:
+      notices:
+        - id: rej-1
+          destination: a@sample.mailgun.com
+          kind: drop
+          sending_domain: sample.mailgun.com
+          message_id: '<mg-msg-2@sample.mailgun.com>'
+          reason: Sandbox subdomains are for test purposes only
+  - name: a failure refused because of a suppression list is a drop
+    params:
+      signing_key: mailgun-test-signing-key-0123456789
+    request:
+      body: '{"signature":{"token":"0123456789abcdefghijklmnopqrstuvwxyz0123456789ab","timestamp":"1767225600","signature":"cd9b89c82f6bf18a0f3fa06927a2879cfa0fcc9d2312e23b40e7559a5d828301"},"event-data":{"event":"failed","id":"sup-1","severity":"permanent","reason":"suppress-bounce","recipient":"a@sample.mailgun.com","message":{"headers":{"from":"sender@sample.mailgun.com"}},"delivery-status":{"description":"Not delivering to previously bounced address"},"domain":{"name":"sample.mailgun.com"}}}'
+    expect:
+      notices:
+        - id: sup-1
+          destination: a@sample.mailgun.com
+          kind: drop
+          sending_domain: sample.mailgun.com
+          reason: suppress-bounce
+  - name: an opened event yields no notice
+    params:
+      signing_key: mailgun-test-signing-key-0123456789
+    request:
+      body: '{"signature":{"token":"0123456789abcdefghijklmnopqrstuvwxyz0123456789ab","timestamp":"1767225600","signature":"cd9b89c82f6bf18a0f3fa06927a2879cfa0fcc9d2312e23b40e7559a5d828301"},"event-data":{"event":"opened","id":"abc","recipient":"a@sample.mailgun.com"}}'
+    expect:
+      notices: []
   - name: a wrong signature is refused
     params:
       signing_key: mailgun-test-signing-key-0123456789

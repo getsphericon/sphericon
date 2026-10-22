@@ -2303,6 +2303,146 @@ func decodeSiteAuthVerifyEmailParams(args [0]string, argsEscaped bool, r *http.R
 	return params, nil
 }
 
+// SiteAutomationReportsGetParams is parameters of SiteAutomationReports_get operation.
+type SiteAutomationReportsGetParams struct {
+	WorkspaceId  WorkspaceId
+	AutomationId EntityId
+}
+
+func unpackSiteAutomationReportsGetParams(packed middleware.Parameters) (params SiteAutomationReportsGetParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "workspaceId",
+			In:   "path",
+		}
+		params.WorkspaceId = packed[key].(WorkspaceId)
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "automationId",
+			In:   "path",
+		}
+		params.AutomationId = packed[key].(EntityId)
+	}
+	return params
+}
+
+func decodeSiteAutomationReportsGetParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteAutomationReportsGetParams, _ error) {
+	// Decode path: workspaceId.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "workspaceId",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "workspaceId",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	// Decode path: automationId.
+	if err := func() error {
+		param := args[1]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[1])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "automationId",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotAutomationIdVal int64
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToStringInt64(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotAutomationIdVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.AutomationId = EntityId(paramsDotAutomationIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "automationId",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
 // SiteAutomationsActivateParams is parameters of SiteAutomations_activate operation.
 type SiteAutomationsActivateParams struct {
 	// The Workspace id: its short opaque public address and the route key for nested workspace resources
@@ -4000,6 +4140,146 @@ func decodeSiteBrandKitSaveParams(args [1]string, argsEscaped bool, r *http.Requ
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
 			Name: "workspaceId",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// SiteBroadcastLinksListParams is parameters of SiteBroadcastLinks_list operation.
+type SiteBroadcastLinksListParams struct {
+	WorkspaceId WorkspaceId
+	BroadcastId EntityId
+}
+
+func unpackSiteBroadcastLinksListParams(packed middleware.Parameters) (params SiteBroadcastLinksListParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "workspaceId",
+			In:   "path",
+		}
+		params.WorkspaceId = packed[key].(WorkspaceId)
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "broadcastId",
+			In:   "path",
+		}
+		params.BroadcastId = packed[key].(EntityId)
+	}
+	return params
+}
+
+func decodeSiteBroadcastLinksListParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteBroadcastLinksListParams, _ error) {
+	// Decode path: workspaceId.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "workspaceId",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "workspaceId",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	// Decode path: broadcastId.
+	if err := func() error {
+		param := args[1]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[1])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "broadcastId",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotBroadcastIdVal int64
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToStringInt64(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotBroadcastIdVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.BroadcastId = EntityId(paramsDotBroadcastIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "broadcastId",
 			In:   "path",
 			Err:  err,
 		}
@@ -7765,6 +8045,8 @@ type SiteEventsListParams struct {
 	ContactId OptEntityId `json:",omitempty,omitzero"`
 	// Filter by the email associated with the event.
 	Email OptString `json:",omitempty,omitzero"`
+	// List the opens and clicks made by software (machine engagement) too; omitted, they are left out.
+	IncludeMachine OptBool `json:",omitempty,omitzero"`
 }
 
 func unpackSiteEventsListParams(packed middleware.Parameters) (params SiteEventsListParams) {
@@ -7818,6 +8100,15 @@ func unpackSiteEventsListParams(packed middleware.Parameters) (params SiteEvents
 		}
 		if v, ok := packed[key]; ok {
 			params.Email = v.(OptString)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "includeMachine",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.IncludeMachine = v.(OptBool)
 		}
 	}
 	return params
@@ -8153,6 +8444,47 @@ func decodeSiteEventsListParams(args [1]string, argsEscaped bool, r *http.Reques
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
 			Name: "email",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: includeMachine.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "includeMachine",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotIncludeMachineVal bool
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToBool(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotIncludeMachineVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.IncludeMachine.SetTo(paramsDotIncludeMachineVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "includeMachine",
 			In:   "query",
 			Err:  err,
 		}

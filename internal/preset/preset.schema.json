@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://getsphericon.app/schemas/preset-1.schema.json",
   "title": "Sphericon Preset",
-  "description": "A Preset describes one provider's inbound callbacks: how a request is verified and how its payload becomes Delivery failures. Format version 1.",
+  "description": "A Preset describes one provider's inbound callbacks: how a request is verified and how its payload becomes Delivery notices. Format version 1.",
   "type": "object",
   "additionalProperties": false,
   "required": ["version", "name", "params", "verify", "transform", "tests"],
@@ -23,7 +23,7 @@
     },
     "verify": { "$ref": "#/$defs/verify" },
     "transform": {
-      "description": "A gojq program. Input {body, headers}; output an array of Delivery failures {id, destination, kind, permanent, sending_domain}.",
+      "description": "A gojq program. Input {body, headers}; output an array of Delivery notices {id, destination, kind (bounce, complaint, delivery, delay or drop), permanent (bounces), sending_domain, message_id (the provider's id of the message, when it returns one), reason (at most 500 characters)}.",
       "type": "string",
       "minLength": 1,
       "maxLength": 16384
@@ -160,16 +160,18 @@
         }
       ]
     },
-    "failure": {
+    "notice": {
       "type": "object",
       "additionalProperties": false,
       "required": ["id", "destination", "kind"],
       "properties": {
         "id": { "type": "string" },
         "destination": { "type": "string" },
-        "kind": { "enum": ["bounce", "complaint"] },
+        "kind": { "enum": ["bounce", "complaint", "delivery", "delay", "drop"] },
         "permanent": { "type": "boolean" },
-        "sending_domain": { "type": "string" }
+        "sending_domain": { "type": "string" },
+        "message_id": { "type": "string" },
+        "reason": { "type": "string" }
       }
     },
     "case": {
@@ -201,9 +203,9 @@
             {
               "type": "object",
               "additionalProperties": false,
-              "required": ["failures"],
+              "required": ["notices"],
               "properties": {
-                "failures": { "type": "array", "items": { "$ref": "#/$defs/failure" } },
+                "notices": { "type": "array", "items": { "$ref": "#/$defs/notice" } },
                 "action": {
                   "description": "What the caller is asked to do, such as confirm a subscription.",
                   "type": "object",

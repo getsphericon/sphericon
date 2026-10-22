@@ -30,7 +30,7 @@ func queueingJobs(t *testing.T, env *testhelper.TestEnv) *jobs.Client {
 	cipher, err := secrets.NewCipher(cfg.EncryptionKey)
 	require.NoError(t, err)
 	mod := outbound.New(env.Bus, env.Holds, nil, tracking.New("test-secret", "http://local"))
-	client, err := jobs.NewClient(env.SQLDB, env.DB, mod, cipher, env.Bus, env.SystemMail, nil, nil, registry.Default(), cfg.AppURL, cfg.OutboundAllow, jobs.Retention{})
+	client, err := jobs.NewClient(env.SQLDB, env.DB, mod, cipher, env.Bus, env.SystemMail, nil, nil, registry.Default(), cfg.AppURL, cfg.OutboundAllow, nil, jobs.Retention{})
 	require.NoError(t, err)
 	return client
 }
@@ -89,6 +89,41 @@ func TestAutomationsConsumerEnrollsContact(t *testing.T) {
 	assert.EqualValues(t, fixtures.AcmeID, queued[0]["workspace_id"])
 	assert.EqualValues(t, fixtures.ContactAliceID, queued[0]["contact_id"])
 	assert.Equal(t, events.NameEmailOpened, queued[0]["action"])
+}
+
+// The Automation whose email the Event came from travels with the job, so it can refuse to
+// enroll the Contact into itself (ADR 0053).
+func TestAutomationsConsumerNamesTheAutomationOfTheEmail(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	require.NoError(t, events.AutomationsConsumer(queueingJobs(t, env))(msgFor(t, &events.EmailEngagement{
+		Action: events.NameEmailOpened, WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID,
+		Email: fixtures.ContactAliceEmail, AutomationID: fixtures.AutomationOnOpenID,
+	})))
+
+	queued := env.JobsOf(t, jobkind.EvaluateTrigger.Kind)
+	require.Len(t, queued, 1)
+	assert.EqualValues(t, fixtures.AutomationOnOpenID, queued[0]["source_automation_id"])
+}
+
+// A machine open or click is recorded but enrolls nobody (ADR 0053).
+func TestAutomationsConsumerSkipsMachineEngagement(t *testing.T) {
+	env := testhelper.Setup(t)
+	enroll := events.AutomationsConsumer(queueingJobs(t, env))
+
+	for _, action := range []string{events.NameEmailOpened, events.NameEmailClicked} {
+		require.NoError(t, enroll(msgFor(t, &events.EmailEngagement{
+			Action: action, WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID,
+			Email: fixtures.ContactAliceEmail, Machine: true,
+		})))
+	}
+	assert.Empty(t, env.JobsOf(t, jobkind.EvaluateTrigger.Kind))
+
+	require.NoError(t, enroll(msgFor(t, &events.EmailEngagement{
+		Action: events.NameEmailOpened, WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID,
+		Email: fixtures.ContactAliceEmail,
+	})))
+	assert.Len(t, env.JobsOf(t, jobkind.EvaluateTrigger.Kind), 1, "a person's open still enrolls")
 }
 
 // Collected (customer) events carry no contact, so they are not enrolled.

@@ -1,0 +1,10 @@
+{
+  "Message": "{\"notificationType\":\"Bounce\",\"mail\":{\"source\":\"hello@codebasics.dev\",\"messageId\":\"ses-msg-alice-1\"},\"bounce\":{\"bounceType\":\"Permanent\",\"bouncedRecipients\":[{\"emailAddress\":\"alice@example.com\",\"diagnosticCode\":\"smtp; 550 5.1.1 user unknown\"}]}}",
+  "MessageId": "sns-msg-23",
+  "Signature": "oJAZ0U1dPLUVN8d6IFyqD39dr/fCICexuPMAoIa1lgQAuQTdAf8Y0RJdpnKSgs2uRlRNDMyLpVcwv0GPZpMAT2+hWvQxPQotvEj+1YiVvf7MwZ3sC/KUXR72XM87ag038996lZtCWo/B3n6lSBPDFiTUHERGRITv83fNBwh3X1TnIqOQPzg5OaOlwVQan6NX2GoZyehCkpoFRA7a0JJGE815FE24QcHS0Khpkem+4ZCzMgeNZUyH37vxYIKXr6Oz2HpWiMfbfZkcarCUWZofuetUqhtyTE2yrEnm9VVtC5obElIpLMJvSCvv5wEf0Jmc3eiyBub8ac+gKa/2CrZjFA==",
+  "SignatureVersion": "2",
+  "SigningCertURL": "https://sns.eu-west-1.amazonaws.com/SimpleNotificationService-sphericon-test.pem",
+  "Timestamp": "2026-01-01T00:00:00.000Z",
+  "TopicArn": "arn:aws:sns:eu-west-1:123456789012:acme-ses-events",
+  "Type": "Notification"
+}

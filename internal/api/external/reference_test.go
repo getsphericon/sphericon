@@ -94,7 +94,7 @@ func ratesByDomain(t *testing.T, res externalapi.SendingDomainRatesListRes) map[
 }
 
 // The rates are the (numerator, denominator, rate) triple of ADR 0011: complaints over
-// sent minus hard bounces, hard bounces over sent, by each Event's own timestamp.
+// delivered (ADR 0053), hard bounces over sent, by each Event's own timestamp.
 func TestExternalSendingDomainRates(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
@@ -107,7 +107,7 @@ func TestExternalSendingDomainRates(t *testing.T) {
 	c := env.ExternalScoped(t, "sending_domains:read")
 
 	// Default 7-day window: mail.acme.com has 8 sent, 1 hard bounce (the soft one is
-	// excluded), 1 complaint; the 40-day-old events fall outside.
+	// excluded), 6 delivered, 1 complaint; the 40-day-old events fall outside.
 	res, err := c.SendingDomainRatesList(ctx, externalapi.SendingDomainRatesListParams{})
 	require.NoError(t, err)
 	rates := ratesByDomain(t, res)
@@ -115,8 +115,8 @@ func TestExternalSendingDomainRates(t *testing.T) {
 	mail := rates["mail.acme.com"]
 	assert.EqualValues(t, 7, mail.WindowDays)
 	assert.EqualValues(t, 1, mail.ComplaintRate.Numerator)
-	assert.EqualValues(t, 7, mail.ComplaintRate.Denominator)
-	assert.InDelta(t, 1.0/7.0, mail.ComplaintRate.Rate.Value, 1e-9)
+	assert.EqualValues(t, 6, mail.ComplaintRate.Denominator)
+	assert.InDelta(t, 1.0/6.0, mail.ComplaintRate.Rate.Value, 1e-9)
 	assert.EqualValues(t, 1, mail.BounceRate.Numerator)
 	assert.EqualValues(t, 8, mail.BounceRate.Denominator)
 	assert.InDelta(t, 1.0/8.0, mail.BounceRate.Rate.Value, 1e-9)
@@ -133,7 +133,7 @@ func TestExternalSendingDomainRates(t *testing.T) {
 	assert.True(t, idle.ComplaintRate.Rate.Null)
 	assert.True(t, idle.BounceRate.Rate.Null)
 
-	// A 90-day window pulls in the old send and complaint: 2/(9-1).
+	// A 90-day window pulls in the old send and complaint: 2/7 (delivered).
 	res, err = c.SendingDomainRatesList(ctx, externalapi.SendingDomainRatesListParams{
 		WindowDays: externalapi.NewOptInt32(90),
 	})
@@ -141,5 +141,5 @@ func TestExternalSendingDomainRates(t *testing.T) {
 	wide := ratesByDomain(t, res)["mail.acme.com"]
 	assert.EqualValues(t, 90, wide.WindowDays)
 	assert.EqualValues(t, 2, wide.ComplaintRate.Numerator)
-	assert.EqualValues(t, 8, wide.ComplaintRate.Denominator)
+	assert.EqualValues(t, 7, wide.ComplaintRate.Denominator)
 }

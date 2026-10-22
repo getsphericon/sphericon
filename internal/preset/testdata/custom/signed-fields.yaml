@@ -25,7 +25,7 @@ tests:
     request:
       body: '{"signature":{"timestamp":"1767225600","token":"abc","signature":"e019aa6bcdfe6506e47312f09c4dbce100b185babb354b1e70480fd228788382"},"events":[{"id":"1","to":"A@Example.com"}]}'
     expect:
-      failures:
+      notices:
         - { id: '1', destination: a@example.com, kind: complaint }
   - name: a forged body is parsed, then refused
     now: '2026-01-01T00:00:00Z'
@@ -49,4 +49,4 @@ tests:
     params: { body_secret: [new-secret, body-secret] }
     request:
       body: '{"signature":{"timestamp":"1767225600","token":"abc","signature":"e019aa6bcdfe6506e47312f09c4dbce100b185babb354b1e70480fd228788382"},"events":[]}'
-    expect: { failures: [] }
+    expect: { notices: [] }

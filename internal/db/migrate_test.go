@@ -382,7 +382,7 @@ func migrateWithDanglingOutboundRefs(t *testing.T, sqlDB *sql.DB) *ent.Client {
 	_, err := db.MigrateFS(t.Context(), sqlDB, before)
 	require.NoError(t, err)
 	testhelper.LoadLegacyFixtures(t, sqlDB, legacyFixtures("20261022003116_outbound_message_refs.sql"))
-	upTo := migrationsWhere(t, func(name string) bool { return name < "20261022014358" })
+	upTo := migrationsWhere(t, func(name string) bool { return name != "20261022014358_contact_refs.sql" })
 	_, err = db.MigrateFS(t.Context(), sqlDB, upTo)
 	require.NoError(t, err)
 	client := db.NewEntClient(sqlDB)

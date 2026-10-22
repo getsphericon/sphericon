@@ -42,11 +42,12 @@ func detector(t *testing.T, env *testhelper.TestEnv) *abuse.Detector {
 // the detector at `at(days)` and sees only that scenario in the trailing 24 hours. The volumes are
 // small, so the detector judges with a volume floor of 20 sent instead of the default 1000.
 const (
-	overDay      = 3  // Vandelay: 15% complaints, over the freeze limit; Kramerica, exempt: 50%
-	floorDay     = 6  // Vandelay: 19 sent, all bounced hard, under the floor
-	multiDay     = 33 // Vandelay: a clean mail domain and a news domain over the freeze limit
-	warnDay      = 36 // Vandelay: 7.5% complaints, in the warning tier
-	warnAgainDay = 34 // the same traffic once more, 48 hours later
+	overDay       = 3  // Vandelay: 15% complaints, over the freeze limit; Kramerica, exempt: 50%
+	floorDay      = 6  // Vandelay: 19 sent, all bounced hard, under the floor
+	multiDay      = 33 // Vandelay: a clean mail domain and a news domain over the freeze limit
+	warnDay       = 36 // Vandelay: 7.5% complaints, in the warning tier
+	warnAgainDay  = 34 // the same traffic once more, 48 hours later
+	noDeliveryDay = 39 // Vandelay: 40 sent and 25% complaints, but no delivery notices
 )
 
 var limits = abuse.Limits{VolumeFloor: 20, WarnComplaintBP: 500, WarnBounceBP: 1000, FreezeComplaintBP: 1000, FreezeBounceBP: 2000}
@@ -139,6 +140,24 @@ func TestEachLimitAtAndJustUnderItsBoundary(t *testing.T) {
 			assert.Equal(t, c.wantFrozen, slices.Contains(summary.Frozen, fixtures.VandelayID))
 		})
 	}
+}
+
+// Complaint rate is over delivered mail (ADR 0053): with no delivery notice at all it is
+// undefined, so even 25% complaints per send are not judged on this metric.
+func TestWithNoDeliveryNoticesTheComplaintRateIsNotJudged(t *testing.T) {
+	env := testhelper.Setup(t)
+	d := detector(t, env)
+	ws := env.DB.Workspace.GetX(t.Context(), fixtures.VandelayID)
+
+	breach, err := d.Warning(t.Context(), env.DB.Scoped(fixtures.VandelayID), ws, at(noDeliveryDay))
+	require.NoError(t, err)
+	summary, err := d.Run(t.Context(), at(noDeliveryDay))
+
+	require.NoError(t, err)
+	assert.Equal(t, abuse.TierNone, breach.Tier)
+	assert.Equal(t, abuse.Summary{}, summary)
+	assert.False(t, suspended(t, env, fixtures.VandelayID))
+	assert.Empty(t, env.SystemMail.Messages())
 }
 
 func TestAWarningMailsEveryOwnerOnceAndFreezesNothing(t *testing.T) {

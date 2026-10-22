@@ -72,7 +72,7 @@ func TestSuppressIgnoresNonSuppressingActions(t *testing.T) {
 	assert.False(t, exists)
 }
 
-// Publishing an EmailDeliveryFailure with a long natural id must succeed: the
+// Publishing an EmailDelivery with a long natural id must succeed: the
 // id becomes the envelope DedupKey, while the (short ULID) message id fills the
 // outbox uuid column. Regression test for overflowing that column with the id.
 func TestPublishDeliveryFailureWithLongDedupID(t *testing.T) {
@@ -80,7 +80,7 @@ func TestPublishDeliveryFailureWithLongDedupID(t *testing.T) {
 	ctx := context.Background()
 
 	err := env.Bus.WithinTx(ctx, func(_ *ent.Client, pub events.Publisher) error {
-		return pub.Publish(ctx, &events.EmailDeliveryFailure{
+		return pub.Publish(ctx, &events.EmailDelivery{
 			Action:      events.NameEmailBounced,
 			WorkspaceID: fixtures.AcmeID,
 			Email:       "recipient@example.com",
@@ -105,7 +105,7 @@ func TestPersistDedupesOnDedupKey(t *testing.T) {
 		WorkspaceID: fixtures.AcmeID,
 		OccurredAt:  time.Date(2026, 6, 28, 10, 0, 0, 0, time.UTC),
 		DedupKey:    "sns-msg-1/bounce@example.com",
-		Data: dataFor(t, &events.EmailDeliveryFailure{
+		Data: dataFor(t, &events.EmailDelivery{
 			Action: events.NameEmailBounced, WorkspaceID: fixtures.AcmeID,
 			Email: "bounce@example.com", BounceKind: events.BounceKindPermanent,
 		}),
@@ -131,7 +131,7 @@ func TestSuppressOnPermanentBounce(t *testing.T) {
 		Version:     1,
 		WorkspaceID: fixtures.AcmeID,
 		OccurredAt:  time.Date(2026, 6, 28, 10, 0, 0, 0, time.UTC),
-		Data: dataFor(t, &events.EmailDeliveryFailure{
+		Data: dataFor(t, &events.EmailDelivery{
 			Action:      events.NameEmailBounced,
 			WorkspaceID: fixtures.AcmeID,
 			Email:       "hardbounce@example.com",
@@ -161,7 +161,7 @@ func TestSuppressIgnoresTransientBounce(t *testing.T) {
 		Version:     1,
 		WorkspaceID: fixtures.AcmeID,
 		OccurredAt:  time.Date(2026, 6, 28, 10, 0, 0, 0, time.UTC),
-		Data: dataFor(t, &events.EmailDeliveryFailure{
+		Data: dataFor(t, &events.EmailDelivery{
 			Action:      events.NameEmailBounced,
 			WorkspaceID: fixtures.AcmeID,
 			Email:       "softbounce@example.com",
@@ -189,7 +189,7 @@ func TestSuppressOnComplaint(t *testing.T) {
 		Version:     1,
 		WorkspaceID: fixtures.AcmeID,
 		OccurredAt:  time.Date(2026, 6, 28, 10, 0, 0, 0, time.UTC),
-		Data: dataFor(t, &events.EmailDeliveryFailure{
+		Data: dataFor(t, &events.EmailDelivery{
 			Action:      events.NameEmailComplained,
 			WorkspaceID: fixtures.AcmeID,
 			Email:       "complaint@example.com",
@@ -218,7 +218,7 @@ func TestSuppressIsIdempotent(t *testing.T) {
 		Version:     1,
 		WorkspaceID: fixtures.AcmeID,
 		OccurredAt:  time.Date(2026, 6, 28, 10, 0, 0, 0, time.UTC),
-		Data: dataFor(t, &events.EmailDeliveryFailure{
+		Data: dataFor(t, &events.EmailDelivery{
 			Action:      events.NameEmailComplained,
 			WorkspaceID: fixtures.AcmeID,
 			Email:       "dupe@example.com",

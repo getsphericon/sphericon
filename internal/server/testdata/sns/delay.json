@@ -1,0 +1,10 @@
+{
+  "Message": "{\"eventType\":\"DeliveryDelay\",\"mail\":{\"source\":\"hello@codebasics.dev\",\"messageId\":\"ses-msg-alice-1\"},\"deliveryDelay\":{\"delayType\":\"RecipientServerError\",\"delayedRecipients\":[{\"emailAddress\":\"Alice@Example.com\",\"diagnosticCode\":\"smtp; 451 4.7.1 try again later\"}]}}",
+  "MessageId": "sns-msg-21",
+  "Signature": "DrzR8oH+oXe512hLY++ajGSsc0qQv6BH5dibEMdXERPWIaY2JpsAZevJDyX5ztqZOGq0jrkma/7v2eLnE0phxIK09DzCfZpGErVhlQo9iHNw/QrULZ4RDJix8n66u+GseBh/N6+4KE0HbL3mS52m7PAk97EKsllJA7lfFkoqP7few6Iiv2VNulU6jErmlTuny3oA1283afwDpESFTtcgiA5T1pEJxyI6bHR5yHFF7Y2aWMUyOwKYAzMj8lK83TfQcL9InHc20+rU+bddwbe7qrIDLhosPGF5N+1u+bScaehMdb8AOPScgHXZpc+zrHTLM4ARWKJ1Ercs0V14zcjB7w==",
+  "SignatureVersion": "2",
+  "SigningCertURL": "https://sns.eu-west-1.amazonaws.com/SimpleNotificationService-sphericon-test.pem",
+  "Timestamp": "2026-01-01T00:00:00.000Z",
+  "TopicArn": "arn:aws:sns:eu-west-1:123456789012:acme-ses-events",
+  "Type": "Notification"
+}

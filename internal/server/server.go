@@ -30,6 +30,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/logging"
+	"github.com/getsphericon/sphericon/internal/machine"
 	"github.com/getsphericon/sphericon/internal/oauthserver"
 	"github.com/getsphericon/sphericon/internal/paths"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
@@ -45,7 +46,7 @@ import (
 // New composes the HTTP handler. client is the raw ent client: only the pieces whose
 // Workspace is not known up front take it (auth, OAuth, tracking, provider hooks);
 // the site, external and collect handlers get none (ADR 0017).
-func New(cfg *config.Config, db *sql.DB, client *ent.Client, site apisite.Deps, external, mcp, staff http.Handler) (http.Handler, error) {
+func New(cfg *config.Config, db *sql.DB, client *ent.Client, site apisite.Deps, detector *machine.Detector, external, mcp, staff http.Handler) (http.Handler, error) {
 	bus := site.Bus
 	mux := http.NewServeMux()
 
@@ -120,7 +121,7 @@ func New(cfg *config.Config, db *sql.DB, client *ent.Client, site apisite.Deps, 
 	mux.Handle("/t.js", trackerHandler())
 
 	// Public email engagement endpoints (open pixel, click redirect, unsubscribe).
-	trackingH := trackingHandler(client, bus, site.Tracker, limiter, cfg.AppURL)
+	trackingH := trackingHandler(client, bus, site.Tracker, limiter, detector, cfg.AppURL)
 	mux.Handle("/e/", trackingH)
 
 	// Inbound provider callbacks (ADR 0037): POST /hooks/{key}, the key of one

@@ -188,6 +188,15 @@ model ContactExportOutboundMessage {
   /** When the message was sent */
   sentAt?: Timestamp | null;
 
+  /** When the provider first reported the message delivered */
+  deliveredAt?: Timestamp | null;
+
+  /** When the provider first reported the message bounced */
+  bouncedAt?: Timestamp | null;
+
+  /** When the provider first reported a spam complaint about the message */
+  complainedAt?: Timestamp | null;
+
   /** Broadcast that produced the message */
   broadcastId?: EntityId | null;
 

@@ -1,7 +1,7 @@
 // Package preset is the Preset engine (ADR 0037): a Preset describes one provider's
 // inbound callbacks, how a request is verified and how its payload becomes Delivery
-// failures. The engine does no I/O: it takes a Preset, the raw request and the
-// Integration's params and returns the validated Delivery failures, an optional
+// notices. The engine does no I/O: it takes a Preset, the raw request and the
+// Integration's params and returns the validated Delivery notices, an optional
 // action for the caller to perform, or a typed error.
 package preset
 
@@ -26,9 +26,9 @@ const (
 	MaxBodyBytes = 1 << 20
 	// MaxProgramBytes is the largest transform program.
 	MaxProgramBytes = 16 << 10
-	// MaxFailures is the most Delivery failures one request may yield.
-	// contract-copy: provider preset cap on Delivery failures per request; not in the contract
-	MaxFailures = 100
+	// MaxNotices is the most Delivery notices one request may yield.
+	// contract-copy: provider preset cap on Delivery notices per request; not in the contract
+	MaxNotices = 100
 	// TransformTimeout bounds one run of a transform.
 	TransformTimeout = 100 * time.Millisecond
 )
@@ -41,7 +41,7 @@ var (
 	// ErrMalformed: the body is not JSON, or is over the limit.
 	ErrMalformed = errors.New("preset: request is malformed")
 	// ErrTransformFailed: the transform failed, timed out or returned something that is
-	// not a list of valid Delivery failures.
+	// not a list of valid Delivery notices.
 	ErrTransformFailed = errors.New("preset: transform failed")
 	// ErrUnavailable: the request could not be verified because something on our side
 	// failed (the signing certificate could not be fetched). It says nothing about the
@@ -49,18 +49,25 @@ var (
 	ErrUnavailable = errors.New("preset: verification is unavailable")
 )
 
-// Kind of a Delivery failure.
+// Kind of a Delivery notice.
 type Kind string
 
 const (
 	Bounce    Kind = "bounce"
 	Complaint Kind = "complaint"
+	Delivery  Kind = "delivery"
+	Delay     Kind = "delay"
+	Drop      Kind = "drop"
 )
 
-// DeliveryFailure is the one normalized shape every Preset produces. Only a permanent
+// MaxReasonChars caps a notice's provider reason, in characters.
+// contract-copy: cap of the reason an email delivery Event keeps; not in the contract
+const MaxReasonChars = 500
+
+// DeliveryNotice is the one normalized shape every Preset produces. Only a permanent
 // bounce or a complaint enters Suppression; a transient bounce still counts in the
 // deliverability rates.
-type DeliveryFailure struct {
+type DeliveryNotice struct {
 	// ID is the provider's event id; with Destination it dedupes a redelivery.
 	ID string `json:"id"`
 	// Destination is the normalized (trimmed, lower-cased) address.
@@ -70,6 +77,12 @@ type DeliveryFailure struct {
 	Permanent bool `json:"permanent"`
 	// SendingDomain is the lower-cased domain the message was sent from, "" when unknown.
 	SendingDomain string `json:"sending_domain,omitempty"`
+	// MessageID is the provider's id of the message the notice is about, "" when the
+	// provider returns none: it links the notice to its Outbound message.
+	MessageID string `json:"message_id,omitempty"`
+	// Reason is the provider's short explanation of a bounce, delay or drop, capped at
+	// MaxReasonChars characters.
+	Reason string `json:"reason,omitempty"`
 }
 
 // ActionKind is something the caller performs for the engine.
@@ -87,8 +100,8 @@ type Action struct {
 
 // Result of a verified request.
 type Result struct {
-	Failures []DeliveryFailure
-	Action   *Action
+	Notices []DeliveryNotice
+	Action  *Action
 }
 
 // Params are the values the Owner entered on the Integration, validated against the
@@ -149,7 +162,7 @@ func (p *Preset) ValidateParams(values Params) error {
 	return nil
 }
 
-// Handle verifies the request and turns its payload into Delivery failures. Nothing
+// Handle verifies the request and turns its payload into Delivery notices. Nothing
 // reaches the transform unverified: a header scheme checks the raw bytes before any
 // parsing, a body scheme parses under the body limit, verifies, and only then
 // transforms. now is the clock, for timestamp tolerance.
@@ -175,11 +188,11 @@ func (p *Preset) Handle(ctx context.Context, req Request, params Params, now tim
 			return Result{}, err
 		}
 	}
-	failures, err := p.run(ctx, body, req.Header)
+	notices, err := p.run(ctx, body, req.Header)
 	if err != nil {
 		return Result{}, err
 	}
-	res := Result{Failures: failures}
+	res := Result{Notices: notices}
 	if a, ok := p.verifier.(interface{ action(body any) *Action }); ok {
 		res.Action = a.action(body)
 	}
@@ -187,7 +200,7 @@ func (p *Preset) Handle(ctx context.Context, req Request, params Params, now tim
 }
 
 // refusal is what a failed verification becomes: unauthentic, unless the verifier says
-// the failure was on our side.
+// the notice was on our side.
 func refusal(err error) error {
 	if errors.Is(err, ErrUnavailable) {
 		return err

@@ -94,6 +94,12 @@ func (OutboundMessage) Fields() []ent.Field {
 		field.Time("sent_at").
 			Optional().
 			Nillable(),
+		// The delivery result (ADR 0053): the first Delivery notice of each kind that
+		// names this message stamps it once, and a stamp is never cleared, so a report of
+		// an old send does not shrink when its analytical Events expire (ADR 0019).
+		field.Time("delivered_at").Optional().Nillable(),
+		field.Time("bounced_at").Optional().Nillable(),
+		field.Time("complained_at").Optional().Nillable(),
 		// Surface provenance, foreign keys declared in Edges.
 		field.Int64("broadcast_id").Optional().Nillable(),
 		field.Int64("broadcast_recipient_id").Optional().Nillable(),
@@ -145,6 +151,9 @@ func (OutboundMessage) Indexes() []ent.Index {
 		index.Fields("workspace_id", "integration_id", "sent_at"),
 		// Deliverability windows per Sending domain (ADR 0011).
 		index.Fields("workspace_id", "sending_domain", "created_at"),
+		// A Delivery notice reaches its message by the provider's message id (ADR 0053).
+		index.Fields("workspace_id", "provider_message_id").
+			StorageKey("outbound_messages_workspace_id_provider_message_id"),
 		// The Outbound messages Export stream's cursor (ADR 0045).
 		index.Fields("workspace_id", "updated_at", "id"),
 		// Erasure and contact lookups reach this table by contact; the contact foreign key's

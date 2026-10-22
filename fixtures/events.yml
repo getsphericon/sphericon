@@ -169,8 +169,9 @@
   created_at: '{{daysAgo 3}}'
 # --- Deliverability rates (ADR 0011): stamped with the Sending domain, no contact link.
 # mail.acme.com, trailing 7 days: 8 sent, 1 hard bounce, 1 soft bounce, 1 complaint, so
-#   complaint rate 1/(8-1) and bounce rate 1/8. 40 days ago: 1 sent and 1 complaint (90-day window only).
-# codebasics.dev: 2 sent, no failures. news.acme.com: no traffic (undefined rates).
+#   6 delivered, so complaint rate 1/6 (over delivered, ADR 0053) and bounce rate 1/8. 40 days ago: 1 sent,
+#   1 delivered and 1 complaint (90-day window only).
+# codebasics.dev: 2 sent, 2 delivered, no failures. news.acme.com: no traffic (undefined rates).
 - id: 200
   email: rates200@example.com
   action: email.sent
@@ -276,6 +277,69 @@
   workspace_id: 1
   occurred_at: '{{daysAgo 3}}'
   created_at: '{{daysAgo 3}}'
+- id: 215
+  email: rates215@example.com
+  action: email.delivered
+  properties: '{"sendingDomain":"mail.acme.com"}'
+  workspace_id: 1
+  occurred_at: '{{daysAgo 2}}'
+  created_at: '{{daysAgo 2}}'
+- id: 216
+  email: rates216@example.com
+  action: email.delivered
+  properties: '{"sendingDomain":"mail.acme.com"}'
+  workspace_id: 1
+  occurred_at: '{{daysAgo 2}}'
+  created_at: '{{daysAgo 2}}'
+- id: 217
+  email: rates217@example.com
+  action: email.delivered
+  properties: '{"sendingDomain":"mail.acme.com"}'
+  workspace_id: 1
+  occurred_at: '{{daysAgo 2}}'
+  created_at: '{{daysAgo 2}}'
+- id: 218
+  email: rates218@example.com
+  action: email.delivered
+  properties: '{"sendingDomain":"mail.acme.com"}'
+  workspace_id: 1
+  occurred_at: '{{daysAgo 2}}'
+  created_at: '{{daysAgo 2}}'
+- id: 219
+  email: rates219@example.com
+  action: email.delivered
+  properties: '{"sendingDomain":"mail.acme.com"}'
+  workspace_id: 1
+  occurred_at: '{{daysAgo 2}}'
+  created_at: '{{daysAgo 2}}'
+- id: 220
+  email: rates220@example.com
+  action: email.delivered
+  properties: '{"sendingDomain":"mail.acme.com"}'
+  workspace_id: 1
+  occurred_at: '{{daysAgo 2}}'
+  created_at: '{{daysAgo 2}}'
+- id: 221
+  email: rates221@example.com
+  action: email.delivered
+  properties: '{"sendingDomain":"mail.acme.com"}'
+  workspace_id: 1
+  occurred_at: '{{daysAgo 40}}'
+  created_at: '{{daysAgo 40}}'
+- id: 222
+  email: rates222@example.com
+  action: email.delivered
+  properties: '{"sendingDomain":"codebasics.dev"}'
+  workspace_id: 1
+  occurred_at: '{{daysAgo 3}}'
+  created_at: '{{daysAgo 3}}'
+- id: 223
+  email: rates223@example.com
+  action: email.delivered
+  properties: '{"sendingDomain":"codebasics.dev"}'
+  workspace_id: 1
+  occurred_at: '{{daysAgo 3}}'
+  created_at: '{{daysAgo 3}}'
 
 # --- Event retention (ADR 0019): rows far past the 400-day default window. The
 # analytical ones expire; the evidentiary ones (consent, complaint, unsubscribe,
@@ -321,6 +385,26 @@
   email: old306@example.com
   action: email.bounced
   properties: '{"bounceKind":"permanent"}'
+  workspace_id: 1
+  occurred_at: '{{daysAgo 500}}'
+  created_at: '{{daysAgo 500}}'
+- id: 307 # fixture: EventOldDelivered
+  email: old307@example.com
+  action: email.delivered
+  workspace_id: 1
+  occurred_at: '{{daysAgo 500}}'
+  created_at: '{{daysAgo 500}}'
+- id: 308 # fixture: EventOldDelayed
+  email: old308@example.com
+  action: email.delayed
+  properties: '{"reason":"smtp; 451 4.7.1 try again later"}'
+  workspace_id: 1
+  occurred_at: '{{daysAgo 500}}'
+  created_at: '{{daysAgo 500}}'
+- id: 309 # fixture: EventOldDropped
+  email: old309@example.com
+  action: email.dropped
+  properties: '{"reason":"Bad content"}'
   workspace_id: 1
   occurred_at: '{{daysAgo 500}}'
   created_at: '{{daysAgo 500}}'
@@ -412,6 +496,33 @@
   workspace_id: 3
   occurred_at: '2026-01-02 05:00:00'
   created_at: '2026-01-02 05:00:00'
+- id: 960 # fixture: EventErasableDelivered
+  contact_id: 300
+  subject_id: erin@initech.test
+  email: erin@initech.test
+  action: email.delivered
+  properties: '{"sendingDomain":"mail.initech.test","provider":"ses","outboundMessageId":300,"providerMessageId":"<erin-300@initech.test>"}'
+  workspace_id: 3
+  occurred_at: '2026-01-02 00:30:00'
+  created_at: '2026-01-02 00:30:00'
+- id: 961 # fixture: EventErasableDelayed
+  contact_id: 300
+  subject_id: erin@initech.test
+  email: erin@initech.test
+  action: email.delayed
+  properties: '{"sendingDomain":"mail.initech.test","provider":"ses","reason":"smtp; 451 4.7.1 try again later"}'
+  workspace_id: 3
+  occurred_at: '2026-01-02 00:20:00'
+  created_at: '2026-01-02 00:20:00'
+- id: 962 # fixture: EventErasableDropped
+  contact_id: 300
+  subject_id: erin@initech.test
+  email: erin@initech.test
+  action: email.dropped
+  properties: '{"sendingDomain":"mail.initech.test","provider":"ses","reason":"Bad content"}'
+  workspace_id: 3
+  occurred_at: '2026-01-02 00:10:00'
+  created_at: '2026-01-02 00:10:00'
 - id: 958 # fixture: EventErasableCreated
   contact_id: 300
   subject_id: user-erin-300
@@ -496,8 +607,8 @@
   created_at: '2030-01-01 00:00:00'
 
 # --- Soylent (workspace 6), Staff console rates (ADR 0026): on mail.soylent.test in the last
-# 24 hours 8 sent, 1 hard bounce, 1 soft bounce and 1 complaint, so complaint rate 1/(8-1) and
-# bounce rate 1/8; one older send (48 hours ago) falls outside the window.
+# 24 hours 8 sent, 6 delivered, 1 hard bounce, 1 soft bounce and 1 complaint, so complaint rate 1/6
+# (over delivered, ADR 0053) and bounce rate 1/8; one older send (48 hours ago) falls outside the window.
 - id: 400
   email: soylent400@example.com
   action: email.sent
@@ -582,6 +693,48 @@
   workspace_id: 6
   occurred_at: '{{hoursAgo 48}}'
   created_at: '{{hoursAgo 48}}'
+- id: 412
+  email: soylent412@example.com
+  action: email.delivered
+  properties: '{"sendingDomain":"mail.soylent.test"}'
+  workspace_id: 6
+  occurred_at: '{{hoursAgo 2}}'
+  created_at: '{{hoursAgo 2}}'
+- id: 413
+  email: soylent413@example.com
+  action: email.delivered
+  properties: '{"sendingDomain":"mail.soylent.test"}'
+  workspace_id: 6
+  occurred_at: '{{hoursAgo 2}}'
+  created_at: '{{hoursAgo 2}}'
+- id: 414
+  email: soylent414@example.com
+  action: email.delivered
+  properties: '{"sendingDomain":"mail.soylent.test"}'
+  workspace_id: 6
+  occurred_at: '{{hoursAgo 2}}'
+  created_at: '{{hoursAgo 2}}'
+- id: 415
+  email: soylent415@example.com
+  action: email.delivered
+  properties: '{"sendingDomain":"mail.soylent.test"}'
+  workspace_id: 6
+  occurred_at: '{{hoursAgo 2}}'
+  created_at: '{{hoursAgo 2}}'
+- id: 416
+  email: soylent416@example.com
+  action: email.delivered
+  properties: '{"sendingDomain":"mail.soylent.test"}'
+  workspace_id: 6
+  occurred_at: '{{hoursAgo 2}}'
+  created_at: '{{hoursAgo 2}}'
+- id: 417
+  email: soylent417@example.com
+  action: email.delivered
+  properties: '{"sendingDomain":"mail.soylent.test"}'
+  workspace_id: 6
+  occurred_at: '{{hoursAgo 2}}'
+  created_at: '{{hoursAgo 2}}'
 
 # --- Brightpath (workspace 20): demo workspace behind the screenshots on getsphericon.com ---
 - id: 20001
@@ -4206,6 +4359,24 @@
   occurred_at: '{{hoursAgo 73}}'
   created_at: '{{hoursAgo 73}}'
 # {{end}}
+# {{range $i := seq 40000 40039}}
+- id: '{{$i}}'
+  email: 'delivered-{{$i}}@example.com'
+  action: email.delivered
+  properties: '{"sendingDomain":"mail.vandelay.test"}'
+  workspace_id: 7
+  occurred_at: '{{hoursAgo 73}}'
+  created_at: '{{hoursAgo 73}}'
+# {{end}}
+# {{range $i := seq 40040 40079}}
+- id: '{{$i}}'
+  email: 'delivered-{{$i}}@example.com'
+  action: email.delivered
+  properties: '{"sendingDomain":"mail.kramerica.test"}'
+  workspace_id: 8
+  occurred_at: '{{hoursAgo 73}}'
+  created_at: '{{hoursAgo 73}}'
+# {{end}}
 
 # day 6, under the volume floor: 19 sent, every one bounced hard
 # {{range $i := seq 30106 30124}}
@@ -4246,6 +4417,15 @@
   occurred_at: '{{hoursAgo 217}}'
   created_at: '{{hoursAgo 217}}'
 # {{end}}
+# {{range $i := seq 40080 40119}}
+- id: '{{$i}}'
+  email: 'delivered-{{$i}}@example.com'
+  action: email.delivered
+  properties: '{"sendingDomain":"mail.vandelay.test"}'
+  workspace_id: 7
+  occurred_at: '{{hoursAgo 217}}'
+  created_at: '{{hoursAgo 217}}'
+# {{end}}
 
 # day 12, complaints just under the freeze limit
 # {{range $i := seq 30188 30227}}
@@ -4261,6 +4441,15 @@
 - id: '{{$i}}'
   email: 'complained-{{$i}}@example.com'
   action: email.complained
+  properties: '{"sendingDomain":"mail.vandelay.test"}'
+  workspace_id: 7
+  occurred_at: '{{hoursAgo 289}}'
+  created_at: '{{hoursAgo 289}}'
+# {{end}}
+# {{range $i := seq 40120 40159}}
+- id: '{{$i}}'
+  email: 'delivered-{{$i}}@example.com'
+  action: email.delivered
   properties: '{"sendingDomain":"mail.vandelay.test"}'
   workspace_id: 7
   occurred_at: '{{hoursAgo 289}}'
@@ -4286,6 +4475,15 @@
   occurred_at: '{{hoursAgo 361}}'
   created_at: '{{hoursAgo 361}}'
 # {{end}}
+# {{range $i := seq 40160 40199}}
+- id: '{{$i}}'
+  email: 'delivered-{{$i}}@example.com'
+  action: email.delivered
+  properties: '{"sendingDomain":"mail.vandelay.test"}'
+  workspace_id: 7
+  occurred_at: '{{hoursAgo 361}}'
+  created_at: '{{hoursAgo 361}}'
+# {{end}}
 
 # day 18, complaints just under the warning limit
 # {{range $i := seq 30273 30312}}
@@ -4301,6 +4499,15 @@
 - id: '{{$i}}'
   email: 'complained-{{$i}}@example.com'
   action: email.complained
+  properties: '{"sendingDomain":"mail.vandelay.test"}'
+  workspace_id: 7
+  occurred_at: '{{hoursAgo 433}}'
+  created_at: '{{hoursAgo 433}}'
+# {{end}}
+# {{range $i := seq 40200 40239}}
+- id: '{{$i}}'
+  email: 'delivered-{{$i}}@example.com'
+  action: email.delivered
   properties: '{"sendingDomain":"mail.vandelay.test"}'
   workspace_id: 7
   occurred_at: '{{hoursAgo 433}}'
@@ -4326,6 +4533,15 @@
   occurred_at: '{{hoursAgo 505}}'
   created_at: '{{hoursAgo 505}}'
 # {{end}}
+# {{range $i := seq 40240 40271}}
+- id: '{{$i}}'
+  email: 'delivered-{{$i}}@example.com'
+  action: email.delivered
+  properties: '{"sendingDomain":"mail.vandelay.test"}'
+  workspace_id: 7
+  occurred_at: '{{hoursAgo 505}}'
+  created_at: '{{hoursAgo 505}}'
+# {{end}}
 
 # day 24, bounces just under the freeze limit
 # {{range $i := seq 30362 30401}}
@@ -4342,6 +4558,15 @@
   email: 'bounced-{{$i}}@example.com'
   action: email.bounced
   properties: '{"sendingDomain":"mail.vandelay.test","bounceKind":"permanent"}'
+  workspace_id: 7
+  occurred_at: '{{hoursAgo 577}}'
+  created_at: '{{hoursAgo 577}}'
+# {{end}}
+# {{range $i := seq 40272 40304}}
+- id: '{{$i}}'
+  email: 'delivered-{{$i}}@example.com'
+  action: email.delivered
+  properties: '{"sendingDomain":"mail.vandelay.test"}'
   workspace_id: 7
   occurred_at: '{{hoursAgo 577}}'
   created_at: '{{hoursAgo 577}}'
@@ -4366,6 +4591,15 @@
   occurred_at: '{{hoursAgo 649}}'
   created_at: '{{hoursAgo 649}}'
 # {{end}}
+# {{range $i := seq 40305 40340}}
+- id: '{{$i}}'
+  email: 'delivered-{{$i}}@example.com'
+  action: email.delivered
+  properties: '{"sendingDomain":"mail.vandelay.test"}'
+  workspace_id: 7
+  occurred_at: '{{hoursAgo 649}}'
+  created_at: '{{hoursAgo 649}}'
+# {{end}}
 
 # day 30, bounces just under the warning limit
 # {{range $i := seq 30453 30492}}
@@ -4382,6 +4616,15 @@
   email: 'bounced-{{$i}}@example.com'
   action: email.bounced
   properties: '{"sendingDomain":"mail.vandelay.test","bounceKind":"permanent"}'
+  workspace_id: 7
+  occurred_at: '{{hoursAgo 721}}'
+  created_at: '{{hoursAgo 721}}'
+# {{end}}
+# {{range $i := seq 40341 40377}}
+- id: '{{$i}}'
+  email: 'delivered-{{$i}}@example.com'
+  action: email.delivered
+  properties: '{"sendingDomain":"mail.vandelay.test"}'
   workspace_id: 7
   occurred_at: '{{hoursAgo 721}}'
   created_at: '{{hoursAgo 721}}'
@@ -4410,6 +4653,24 @@
 - id: '{{$i}}'
   email: 'complained-{{$i}}@example.com'
   action: email.complained
+  properties: '{"sendingDomain":"news.vandelay.test"}'
+  workspace_id: 7
+  occurred_at: '{{hoursAgo 793}}'
+  created_at: '{{hoursAgo 793}}'
+# {{end}}
+# {{range $i := seq 40378 40477}}
+- id: '{{$i}}'
+  email: 'delivered-{{$i}}@example.com'
+  action: email.delivered
+  properties: '{"sendingDomain":"mail.vandelay.test"}'
+  workspace_id: 7
+  occurred_at: '{{hoursAgo 793}}'
+  created_at: '{{hoursAgo 793}}'
+# {{end}}
+# {{range $i := seq 40478 40517}}
+- id: '{{$i}}'
+  email: 'delivered-{{$i}}@example.com'
+  action: email.delivered
   properties: '{"sendingDomain":"news.vandelay.test"}'
   workspace_id: 7
   occurred_at: '{{hoursAgo 793}}'
@@ -4452,6 +4713,45 @@
   workspace_id: 7
   occurred_at: '{{hoursAgo 817}}'
   created_at: '{{hoursAgo 817}}'
+# {{end}}
+# {{range $i := seq 40518 40557}}
+- id: '{{$i}}'
+  email: 'delivered-{{$i}}@example.com'
+  action: email.delivered
+  properties: '{"sendingDomain":"mail.vandelay.test"}'
+  workspace_id: 7
+  occurred_at: '{{hoursAgo 865}}'
+  created_at: '{{hoursAgo 865}}'
+# {{end}}
+# {{range $i := seq 40558 40597}}
+- id: '{{$i}}'
+  email: 'delivered-{{$i}}@example.com'
+  action: email.delivered
+  properties: '{"sendingDomain":"mail.vandelay.test"}'
+  workspace_id: 7
+  occurred_at: '{{hoursAgo 817}}'
+  created_at: '{{hoursAgo 817}}'
+# {{end}}
+
+# day 39, no delivery notices (a Preset that reports none): Vandelay sent 40 and has 10 complaints
+# (25%), but with nothing delivered the Complaint rate is undefined and is not judged
+# {{range $i := seq 30800 30839}}
+- id: '{{$i}}'
+  email: 'sent-{{$i}}@example.com'
+  action: email.sent
+  properties: '{"sendingDomain":"mail.vandelay.test"}'
+  workspace_id: 7
+  occurred_at: '{{hoursAgo 937}}'
+  created_at: '{{hoursAgo 937}}'
+# {{end}}
+# {{range $i := seq 30840 30849}}
+- id: '{{$i}}'
+  email: 'complained-{{$i}}@example.com'
+  action: email.complained
+  properties: '{"sendingDomain":"mail.vandelay.test"}'
+  workspace_id: 7
+  occurred_at: '{{hoursAgo 937}}'
+  created_at: '{{hoursAgo 937}}'
 # {{end}}
 
 # day 0 (Kramerica, whose exemption the test lifts), a clearance: over the freeze limit an hour ago; then, after the Staff member clears the
@@ -4496,6 +4796,33 @@
 - id: '{{$i}}'
   email: 'sent-{{$i}}@example.com'
   action: email.sent
+  properties: '{"sendingDomain":"mail.kramerica.test"}'
+  workspace_id: 8
+  occurred_at: '{{hoursAhead 2}}'
+  created_at: '{{hoursAhead 2}}'
+# {{end}}
+# {{range $i := seq 40598 40637}}
+- id: '{{$i}}'
+  email: 'delivered-{{$i}}@example.com'
+  action: email.delivered
+  properties: '{"sendingDomain":"mail.kramerica.test"}'
+  workspace_id: 8
+  occurred_at: '{{hoursAgo 1}}'
+  created_at: '{{hoursAgo 1}}'
+# {{end}}
+# {{range $i := seq 40638 40656}}
+- id: '{{$i}}'
+  email: 'delivered-{{$i}}@example.com'
+  action: email.delivered
+  properties: '{"sendingDomain":"mail.kramerica.test"}'
+  workspace_id: 8
+  occurred_at: '{{hoursAhead 1}}'
+  created_at: '{{hoursAhead 1}}'
+# {{end}}
+# {{range $i := seq 40657 40657}}
+- id: '{{$i}}'
+  email: 'delivered-{{$i}}@example.com'
+  action: email.delivered
   properties: '{"sendingDomain":"mail.kramerica.test"}'
   workspace_id: 8
   occurred_at: '{{hoursAhead 2}}'

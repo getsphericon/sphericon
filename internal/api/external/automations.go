@@ -47,7 +47,7 @@ func (h *Handlers) AutomationsCreate(ctx context.Context, req *externalapi.Creat
 		in.Steps = resources.AutomationSteps(req.Steps)
 	}
 	a, err := h.automations.Create(ctx, auth.TokenScoped(ctx), in)
-	if errors.Is(err, automations.ErrInvalidStep) {
+	if automations.IsInvalid(err) {
 		res := externalapi.AutomationsCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
 		return &res, nil
 	}
@@ -96,7 +96,7 @@ func (h *Handlers) AutomationsUpdate(ctx context.Context, req *externalapi.Updat
 	case errors.Is(err, automations.ErrNotFound):
 		res := externalapi.AutomationsUpdateNotFound(problem(http.StatusNotFound, "automation not found"))
 		return &res, nil
-	case errors.Is(err, automations.ErrInvalidStep):
+	case automations.IsInvalid(err):
 		res := externalapi.AutomationsUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
 		return &res, nil
 	case err != nil:

@@ -72,3 +72,37 @@ func TestAutomationHTTPStepCallsTheHookThenContinues(t *testing.T) {
 	// The Enrollment moved past the HTTP step: its email step ran.
 	assert.Equal(t, "After the hook", w.Inbox.Wait(Match{To: to}).Subject)
 }
+
+// An opened Automation email is an Event that can start another Automation (ADR 0053). The Event
+// names the Automation whose email it came from, and that Automation never starts from it.
+func TestOpenedAutomationEmailStartsAnotherAutomation(t *testing.T) {
+	t.Parallel()
+	w := env.NewWorkspace(t).Ready()
+	to := w.NewRecipient()
+	w.ImportContacts(to)
+	w.ActivateAutomation(Automation{
+		TriggerEvent: "e2e.welcomed",
+		Subject:      "First email",
+		Body:         HTML("Welcome"),
+	})
+	w.ActivateAutomation(Automation{
+		TriggerEvent: "email.opened",
+		Subject:      "Second email",
+		Body:         HTML("Thanks for reading"),
+	})
+
+	w.RecordEvent(to, "e2e.welcomed")
+	w.OpenMail(w.Inbox.Wait(Match{To: to, Subject: "First email"}))
+
+	second := w.Inbox.Wait(Match{To: to, Subject: "Second email"})
+
+	// The second Automation's own email is opened: that Event starts a third Automation, not the
+	// second again.
+	w.ActivateAutomation(Automation{
+		TriggerEvent: "email.opened",
+		Subject:      "Third email",
+		Body:         HTML("Still reading"),
+	})
+	w.OpenMail(second)
+	w.Inbox.Wait(Match{To: to, Subject: "Third email"})
+}

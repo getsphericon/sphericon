@@ -29,6 +29,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/tag"
+	"github.com/getsphericon/sphericon/internal/events"
 )
 
 const (
@@ -226,6 +227,10 @@ func (c *compiler) event(action, op, value string) (predicate.Contact, error) {
 	}
 
 	preds := []predicate.Event{event.Action(action)}
+	if events.IsEngagement(action) {
+		// A machine open or click is in the log and in no count (ADR 0053).
+		preds = append(preds, events.HumanOnly)
+	}
 	if v := strings.TrimSpace(value); v != "" {
 		days, err := strconv.Atoi(v)
 		if err != nil || days < 0 {

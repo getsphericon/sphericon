@@ -4,8 +4,12 @@ import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 
 import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
+import { LinkClickTable } from '../../components/LinkClickTable.tsx'
 import { StatCard } from '../../components/StatCard.tsx'
-import { siteBroadcastsGetOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
+import {
+  siteBroadcastLinksListOptions,
+  siteBroadcastsGetOptions,
+} from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteBroadcastStats, SiteBroadcastStatus } from '../../generated/site/types.gen.ts'
 import { Route as broadcastsReportRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/report.tsx'
 import { BroadcastHoldAlert } from './BroadcastHold.tsx'
@@ -23,6 +27,9 @@ function statEntries(t: TFunction, stats: SiteBroadcastStats): { label: string; 
   return [
     { label: t(($) => $.broadcasts.stats.recipients), value: stats.recipientsTotal },
     { label: t(($) => $.broadcasts.stats.sent), value: stats.sentCount },
+    { label: t(($) => $.broadcasts.stats.delivered), value: stats.deliveredCount },
+    { label: t(($) => $.broadcasts.stats.bounced), value: stats.bouncedCount },
+    { label: t(($) => $.broadcasts.stats.complained), value: stats.complainedCount },
     { label: t(($) => $.broadcasts.stats.opened), value: stats.openedCount },
     { label: t(($) => $.broadcasts.stats.clicked), value: stats.clickedCount },
     { label: t(($) => $.broadcasts.stats.unsubscribed), value: stats.unsubscribedCount },
@@ -39,6 +46,18 @@ function rateEntries(t: TFunction, stats: SiteBroadcastStats): { label: string; 
     { label: t(($) => $.broadcasts.stats.unsubscribeRate), value: stats.unsubscribeRate },
     { label: t(($) => $.broadcasts.stats.failureRate), value: stats.failureRate },
   ]
+}
+
+// The per-link figures load beside the report: while they fail or are empty, the report stays.
+function BroadcastLinks({
+  workspaceId,
+  broadcastId,
+}: {
+  workspaceId: string
+  broadcastId: string
+}) {
+  const linksQuery = useQuery(siteBroadcastLinksListOptions({ path: { workspaceId, broadcastId } }))
+  return <LinkClickTable links={linksQuery.data?.items ?? []} />
 }
 
 export function BroadcastReportPage() {
@@ -86,6 +105,8 @@ export function BroadcastReportPage() {
           <StatCard key={entry.label} label={entry.label} value={entry.value} percent />
         ))}
       </SimpleGrid>
+
+      <BroadcastLinks workspaceId={workspaceId} broadcastId={broadcastId} />
     </Stack>
   )
 }

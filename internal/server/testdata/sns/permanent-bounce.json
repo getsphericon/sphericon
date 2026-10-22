@@ -1,7 +1,7 @@
 {
   "Message": "{\"notificationType\":\"Bounce\",\"mail\":{\"source\":\"News \u003chello@Codebasics.dev\u003e\"},\"bounce\":{\"bounceType\":\"Permanent\",\"bouncedRecipients\":[{\"emailAddress\":\"Alice@Example.com\"},{\"emailAddress\":\"b@example.com\"}]}}",
   "MessageId": "sns-msg-1",
-  "Signature": "Zq/MQ4IPluwvzxoaYElLRHswyg7lMsAOhfw+DMZKOrXjey50vpLWt9x/xD0mgLofvkZmkitKtb/6tIgrucMgPRVR4pp5I3KdX5LBb+hRwY7/onc3KnM8OEruegCRYcm4QReeStozr8f2CrVZQ/f9Le5d2WdOe63iwsnkAfVYJGLit0o0s/PBsy5YUGHDeTq+UYfTYvnPVjw08rgfdHVoCOmVmy6NMnKCISyCnhTH31/pgtPc+wn8R3KI7qbYlGAS7G3REA7v814gHdxJmor3Ks8ZG0YooclQDnZK8ToUHH+u+XGXVNfJXQKT4n7hH/8jmnVwo40MrrEOTBOLkO8hvg==",
+  "Signature": "qLGvqFSxqcU/QRAZMe+0TAEf4VhwsB/6LldYI/SzVESXTYpEP+xvt7rSHTQ4b5JrusbjK5Vca7z+ZGF5EkxoXXOOthkiUVByeMVHy2JHUlWKJq3OkMAPRwmhmsznx3RPU+WymfBo8iFxYVgiqudocjhkjbytMEjWkLXTbgwgBC0fEhqXXEqRetEv4qhumtepB70oixPrL6htyg9Z5fXI27IkGZi/cVHUFDFQ73Cp14rhSgl8W6Y7vzzOXDrLF+0eH4KlYI9ZlxYPLTWb7/2xfy9fp2DKpIv9gH6MFkDQugd6wTXl+zu0DmCt282DjeW6zU15hc76fPgdPcC6krBlVA==",
   "SignatureVersion": "2",
   "SigningCertURL": "https://sns.eu-west-1.amazonaws.com/SimpleNotificationService-sphericon-test.pem",
   "Timestamp": "2026-01-01T00:00:00.000Z",

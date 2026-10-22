@@ -15,6 +15,7 @@ import { Route as automationsDetailRoute } from '../../routes/workspaces/$worksp
 import { Route as automationsRoute } from '../../routes/workspaces/$workspaceId/automations/index.tsx'
 import { Route as contactsDetailRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/index.tsx'
 import { formatDateTime } from '../../utils/datetime.ts'
+import { AutomationReport } from './AutomationReport.tsx'
 
 export function AutomationDetailPage() {
   const { t } = useTranslation()
@@ -62,6 +63,8 @@ export function AutomationDetailPage() {
           </ButtonLink>
         </Group>
       </Group>
+
+      <AutomationReport workspaceId={workspaceId} automationId={automationId} />
 
       <Title order={5}>{t(($) => $.automations.enrollmentsTitle)}</Title>
       <PagedTable

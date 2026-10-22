@@ -22,6 +22,14 @@ model SendTransactionalEmailInput {
 
   /** Per-call variables merged into the template's subject and body (Liquid `{{ }}`) */
   variables?: Record<unknown>;
+
+  /**
+   * Track opens and clicks of this message (default false). The email then carries an open
+   * pixel and its links are rewritten; it stays transactional: no unsubscribe link, the same
+   * eligibility and Suppression. Events attach to the Contact the address resolves to, else
+   * are kept by address.
+   */
+  track?: boolean = false;
 }
 
 /** Result of a transactional send */

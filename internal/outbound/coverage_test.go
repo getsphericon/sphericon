@@ -291,7 +291,7 @@ func TestComposeBindsContactFieldsWithRequestVariablesWinning(t *testing.T) {
 func TestTrackedMarketingSendRewritesLinksAndAddsPixel(t *testing.T) {
 	env := testhelper.Setup(t)
 	req := marketing(t, env, "bc:tracked", fixtures.ContactAliceID)
-	req.TrackID = 4242
+	req.Track = true
 	req.Body = `<p><a href="https://example.com/x">go</a></p>`
 
 	res, err := newModule(env).Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), req)

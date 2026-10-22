@@ -71,7 +71,7 @@ func failureBody(id, destination string, permanent bool) string {
 // applySuppression plays the suppression consumer over everything published so far.
 func applySuppression(t *testing.T, env *testhelper.TestEnv) {
 	t.Helper()
-	for _, envelope := range env.OutboxEnvelopes(t, events.NameEmailBounced, events.NameEmailComplained) {
+	for _, envelope := range env.OutboxEnvelopes(t, deliveryNames...) {
 		require.NoError(t, events.Suppress(t.Context(), env.DB, envelope))
 	}
 }
@@ -156,7 +156,7 @@ func TestHookAcceptsAValidRequestWithNothingToHandle(t *testing.T) {
 	rec := signedPost(t, env, fixtures.IntegrationAcmeGenericAIngestKey, secretA, "msg_1", `[]`)
 
 	assert.Equal(t, http.StatusOK, rec.Code)
-	assert.Empty(t, env.OutboxEvents(t, events.NameEmailBounced, events.NameEmailComplained))
+	assert.Empty(t, env.OutboxEvents(t, deliveryNames...))
 }
 
 // A hard bounce suppresses; a soft one is still published (the deliverability rates read

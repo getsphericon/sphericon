@@ -353,6 +353,9 @@ type Report struct {
 	Opened       int
 	Clicked      int
 	Unsubscribed int
+	Delivered    int
+	Bounced      int
+	Complained   int
 	OpenRate     float32
 	ClickRate    float32
 }
@@ -372,6 +375,7 @@ func (m *Module) Report(ctx context.Context, s *ent.Scoped, id int64) (Report, e
 		Status: b.Status, HoldReason: b.HoldReason,
 		Recipients: st.Recipients, Sent: st.Sent, Skipped: st.Skipped, Failed: st.Failed,
 		Opened: st.Opened, Clicked: st.Clicked, Unsubscribed: st.Unsubscribed,
+		Delivered: st.Delivered, Bounced: st.Bounced, Complained: st.Complained,
 		OpenRate: Ratio(st.Opened, st.Sent), ClickRate: Ratio(st.Clicked, st.Sent),
 	}, nil
 }

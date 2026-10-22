@@ -295,6 +295,18 @@ export type ContactExportOutboundMessage = {
    */
   sentAt?: Timestamp | null;
   /**
+   * When the provider first reported the message delivered
+   */
+  deliveredAt?: Timestamp | null;
+  /**
+   * When the provider first reported the message bounced
+   */
+  bouncedAt?: Timestamp | null;
+  /**
+   * When the provider first reported a spam complaint about the message
+   */
+  complainedAt?: Timestamp | null;
+  /**
    * Broadcast that produced the message
    */
   broadcastId?: EntityId | null;
@@ -1072,6 +1084,36 @@ export type SiteAutomationHttpHeader = {
 };
 
 /**
+ * An automation's engagement figures
+ */
+export type SiteAutomationReport = {
+  /**
+   * Opens recorded on the automation's emails, every open counted; bounded by Event retention
+   */
+  opens: number;
+  /**
+   * Clicks recorded on the automation's emails, every click counted; bounded by Event retention
+   */
+  clicks: number;
+  /**
+   * Messages the provider reported delivered, read from the delivery result stamped on each message; not bounded by Event retention
+   */
+  delivered: number;
+  /**
+   * Messages the provider reported bounced, read from the delivery result stamped on each message; not bounded by Event retention
+   */
+  bounced: number;
+  /**
+   * Messages a recipient complained about, read from the delivery result stamped on each message; not bounded by Event retention
+   */
+  complained: number;
+  /**
+   * One entry per clicked link, most clicked first
+   */
+  links: Array<SiteLinkClicks>;
+};
+
+/**
  * Automation resource used by the site UI
  */
 export type SiteAutomationResource = {
@@ -1253,6 +1295,16 @@ export type SiteBrandKitResource = {
 };
 
 /**
+ * A broadcast's per-link click figures, most clicked first
+ */
+export type SiteBroadcastLinkClicksList = {
+  /**
+   * One entry per clicked link
+   */
+  items: Array<SiteLinkClicks>;
+};
+
+/**
  * How far a sending broadcast has got. A broadcast limited by its Integration's Send
  * rate limit is paced: recipients go out at an even interval, so the estimate is
  * derived on the server from the last scheduled time and the recipients remaining.
@@ -1395,6 +1447,18 @@ export type SiteBroadcastStats = {
    * Messages that failed to send
    */
   failedCount: number;
+  /**
+   * Messages the provider reported delivered, read from the delivery result stamped on each message
+   */
+  deliveredCount: number;
+  /**
+   * Messages the provider reported bounced, read from the delivery result stamped on each message
+   */
+  bouncedCount: number;
+  /**
+   * Messages a recipient complained about, read from the delivery result stamped on each message
+   */
+  complainedCount: number;
   /**
    * Messages handed to the provider ÷ recipients targeted (0–1)
    */
@@ -2468,6 +2532,20 @@ export type SiteJoinDomainResource = {
    * Last update timestamp
    */
   updatedAt: Timestamp;
+};
+
+/**
+ * How often one link of a broadcast's or an automation's emails was clicked
+ */
+export type SiteLinkClicks = {
+  /**
+   * The link's destination URL
+   */
+  url: string;
+  /**
+   * Clicks recorded on it, every click counted (not unique per contact); bounded by Event retention
+   */
+  clicks: number;
 };
 
 /**
@@ -6617,6 +6695,38 @@ export type SiteEnrollmentsGetResponses = {
 
 export type SiteEnrollmentsGetResponse = SiteEnrollmentsGetResponses[keyof SiteEnrollmentsGetResponses];
 
+export type SiteAutomationReportsGetData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+    automationId: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/automations/{automationId}/report';
+};
+
+export type SiteAutomationReportsGetErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteAutomationReportsGetError = SiteAutomationReportsGetErrors[keyof SiteAutomationReportsGetErrors];
+
+export type SiteAutomationReportsGetResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteAutomationReport;
+};
+
+export type SiteAutomationReportsGetResponse = SiteAutomationReportsGetResponses[keyof SiteAutomationReportsGetResponses];
+
 export type SiteAutomationsDeleteData = {
   body?: never;
   path: {
@@ -7114,6 +7224,38 @@ export type SiteBroadcastsCreateResponses = {
 };
 
 export type SiteBroadcastsCreateResponse = SiteBroadcastsCreateResponses[keyof SiteBroadcastsCreateResponses];
+
+export type SiteBroadcastLinksListData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+    broadcastId: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/broadcasts/{broadcastId}/links';
+};
+
+export type SiteBroadcastLinksListErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteBroadcastLinksListError = SiteBroadcastLinksListErrors[keyof SiteBroadcastLinksListErrors];
+
+export type SiteBroadcastLinksListResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteBroadcastLinkClicksList;
+};
+
+export type SiteBroadcastLinksListResponse = SiteBroadcastLinksListResponses[keyof SiteBroadcastLinksListResponses];
 
 export type SiteBroadcastsDeleteData = {
   body?: never;
@@ -8146,6 +8288,10 @@ export type SiteEventsListData = {
      * Filter by the email associated with the event
      */
     email?: string;
+    /**
+     * List the opens and clicks made by software (machine engagement) too; omitted, they are left out
+     */
+    includeMachine?: boolean;
   };
   url: '/workspaces/{workspaceId}/events';
 };

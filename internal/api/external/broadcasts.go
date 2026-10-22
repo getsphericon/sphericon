@@ -311,6 +311,9 @@ func (h *Handlers) BroadcastsReport(ctx context.Context, params externalapi.Broa
 		OpenedCount:       int32(r.Opened),
 		ClickedCount:      int32(r.Clicked),
 		UnsubscribedCount: int32(r.Unsubscribed),
+		DeliveredCount:    int32(r.Delivered),
+		BouncedCount:      int32(r.Bounced),
+		ComplainedCount:   int32(r.Complained),
 		OpenRate:          r.OpenRate,
 		ClickRate:         r.ClickRate,
 	}, nil

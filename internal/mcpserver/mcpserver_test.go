@@ -444,3 +444,22 @@ func TestMCPSendingDomainsAreManagedWithoutLeakingTheKey(t *testing.T) {
 	res = call(t, s, "sending_domains_archive", map[string]any{"id": created.ID})
 	require.False(t, res.IsError, text(t, res))
 }
+
+// The Transactional send tool takes the same `track` field as the API (ADR 0053): the mail then
+// carries the open pixel and its links go through the click tracker.
+func TestMCPEmailsSendAcceptsTrack(t *testing.T) {
+	env := testhelper.Setup(t)
+	s := env.MCPClient(t, env.ScopedBearer(t, "mcp:send", "emails:send"))
+
+	res := call(t, s, "emails_send", map[string]any{
+		"templateId":  strconv.Itoa(fixtures.TemplateWithLinkID),
+		"destination": fixtures.ContactAliceEmail,
+		"track":       true,
+	})
+	require.False(t, res.IsError, text(t, res))
+
+	msgs := env.CustomerMail.Messages()
+	require.Len(t, msgs, 1)
+	assert.Contains(t, msgs[0].HTML, "/e/o/")
+	assert.Contains(t, msgs[0].HTML, "/e/c/")
+}

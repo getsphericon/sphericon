@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=../preset.schema.json
 version: 1
 name: postmark
-description: Postmark bounce and spam complaint webhooks, authenticated with HTTP basic auth.
+description: Postmark delivery, bounce and spam complaint webhooks, authenticated with HTTP basic auth.
 params:
   type: object
   required: [user, secret]
@@ -23,33 +23,46 @@ verify:
   secret: secret
   basic: true
   user: user
-# One webhook per Postmark message stream; a Bounce webhook carries RecordType Bounce and a
-# Spam complaint webhook RecordType SpamComplaint. Types are the names of Postmark's Bounce
-# API table.
+# One webhook per Postmark message stream, enabled for the triggers Delivery, Bounce and Spam
+# complaint; the RecordType names the trigger. Types are the names of Postmark's Bounce API
+# table. Postmark has no webhook for a message it never attempted (a rejected send fails the
+# API call), so this Preset reports no drop.
 #
 # Mapping, a decision of ours (Postmark documents only HardBounce as hard and SoftBounce and
 # Transient as soft):
+#   delivery          RecordType Delivery.
 #   permanent bounce  HardBounce, BadEmailAddress (the address is not an address).
-#   transient bounce  Transient, SoftBounce, DnsError (temporary by Postmark's own words),
-#                     Blocked and DMARCPolicy (the sender is refused, not the address) and
-#                     Unknown (cannot be classified, so it never suppresses an address).
-#   ignored           everything else: not a delivery failure of the address (Unsubscribe,
+#   delay             Transient: Postmark's own words are a temporary issue it keeps retrying.
+#   transient bounce  SoftBounce, DnsError (temporary by Postmark's own words), Blocked and
+#                     DMARCPolicy (the sender is refused, not the address) and Unknown
+#                     (cannot be classified, so it never suppresses an address).
+#   ignored           everything else: not a Delivery notice of the address (Unsubscribe,
 #                     Subscribe, AutoResponder, AddressChange, SpamNotification,
-#                     OpenRelayTest, VirusNotification, ChallengeVerification) or not a
-#                     provider outcome (ManuallyDeactivated, Unconfirmed, SMTPApiError,
-#                     InboundError, TemplateRenderingFailed).
-# A spam complaint is RecordType SpamComplaint. From is the original sender; its domain is
-# the Sending domain. ID is a number, so it is spelled out as a string.
+#                     OpenRelayTest, VirusNotification, ChallengeVerification, Open, Click,
+#                     SubscriptionChange) or not a provider outcome (ManuallyDeactivated,
+#                     Unconfirmed, SMTPApiError, InboundError, TemplateRenderingFailed).
+# A spam complaint is RecordType SpamComplaint. From is the original sender of a bounce or
+# complaint; its domain is the Sending domain (a Delivery has no From, so it names none). The
+# notice id is the bounce's numeric ID, spelled out as a string, or a delivery's MessageID.
+# MessageID is Postmark's own id of the message, the provider message id that links the notice
+# to its Outbound message when that id is the one recorded for the send; otherwise the notice
+# stays at the address.
 transform: |
+  def keep: with_entries(select(.value != null and .value != ""));
   .body as $b
   | ($b.Type // "") as $type
   | ([$b.From // "" | ascii_downcase | capture("@(?<d>[a-z0-9.-]+)>?\\s*$").d] | first) as $domain
-  | def failure($kind; $permanent):
-      [{id: ($b.ID | tostring), destination: $b.Email, kind: $kind, permanent: $permanent, sending_domain: $domain}];
-  if $b.RecordType == "SpamComplaint" then failure("complaint"; false)
+  | def notice($kind):
+      {id: (($b.ID // $b.MessageID) | if . == null then null else tostring end),
+       destination: ($b.Email // $b.Recipient), kind: $kind, sending_domain: $domain,
+       message_id: $b.MessageID, reason: ($b.Details // $b.Description)} | keep;
+  def bounce($permanent): [notice("bounce") + {permanent: $permanent}];
+  if $b.RecordType == "SpamComplaint" then [notice("complaint")]
+  elif $b.RecordType == "Delivery" then [notice("delivery")]
   elif $b.RecordType == "Bounce" then
-    if $type | IN("HardBounce", "BadEmailAddress") then failure("bounce"; true)
-    elif $type | IN("Transient", "SoftBounce", "DnsError", "Blocked", "DMARCPolicy", "Unknown") then failure("bounce"; false)
+    if $type | IN("HardBounce", "BadEmailAddress") then bounce(true)
+    elif $type == "Transient" then [notice("delay")]
+    elif $type | IN("SoftBounce", "DnsError", "Blocked", "DMARCPolicy", "Unknown") then bounce(false)
     else [] end
   else [] end
 tests:
@@ -60,14 +73,16 @@ tests:
     request:
       headers:
         Authorization: Basic cG9zdG1hcmstdXNlcjpwb3N0bWFyay10ZXN0LXRva2VuLTAxMjM0NTY3ODk=
-      body: '{"RecordType":"Bounce","MessageStream":"outbound","ID":4323372036854775807,"Type":"HardBounce","TypeCode":1,"Name":"Hard bounce","Email":"Alice@Example.com","From":"News <Hello@News.Example.com>","BouncedAt":"2026-01-01T00:00:00Z"}'
+      body: '{"RecordType":"Bounce","MessageStream":"outbound","ID":4323372036854775807,"Type":"HardBounce","TypeCode":1,"Name":"Hard bounce","MessageID":"pm-msg-alice-1","Details":"smtp; 550 5.1.1 user unknown","Email":"Alice@Example.com","From":"News <Hello@News.Example.com>","BouncedAt":"2026-01-01T00:00:00Z"}'
     expect:
-      failures:
+      notices:
         - id: '4323372036854775807'
           destination: alice@example.com
           kind: bounce
           permanent: true
           sending_domain: news.example.com
+          message_id: pm-msg-alice-1
+          reason: 'smtp; 550 5.1.1 user unknown'
   - name: a soft bounce is a transient bounce
     params:
       user: postmark-user
@@ -77,11 +92,57 @@ tests:
         Authorization: Basic cG9zdG1hcmstdXNlcjpwb3N0bWFyay10ZXN0LXRva2VuLTAxMjM0NTY3ODk=
       body: '{"RecordType":"Bounce","ID":2,"Type":"SoftBounce","TypeCode":4096,"Email":"bob@example.com","From":"hello@news.example.com","BouncedAt":"2026-01-01T00:00:00Z"}'
     expect:
-      failures:
+      notices:
         - id: '2'
           destination: bob@example.com
           kind: bounce
           permanent: false
+          sending_domain: news.example.com
+  - name: a transient bounce is a delay
+    params:
+      user: postmark-user
+      secret: postmark-test-token-0123456789
+    request:
+      headers:
+        Authorization: Basic cG9zdG1hcmstdXNlcjpwb3N0bWFyay10ZXN0LXRva2VuLTAxMjM0NTY3ODk=
+      body: '{"RecordType":"Bounce","ID":5,"Type":"Transient","TypeCode":2,"MessageID":"pm-msg-alice-1","Details":"Mailbox temporarily unavailable","Email":"alice@example.com","From":"hello@news.example.com"}'
+    expect:
+      notices:
+        - id: '5'
+          destination: alice@example.com
+          kind: delay
+          sending_domain: news.example.com
+          message_id: pm-msg-alice-1
+          reason: Mailbox temporarily unavailable
+  - name: a delivery carries the message id and names no sending domain
+    params:
+      user: postmark-user
+      secret: postmark-test-token-0123456789
+    request:
+      headers:
+        Authorization: Basic cG9zdG1hcmstdXNlcjpwb3N0bWFyay10ZXN0LXRva2VuLTAxMjM0NTY3ODk=
+      body: '{"RecordType":"Delivery","ServerID":23,"MessageStream":"outbound","MessageID":"pm-msg-alice-1","Recipient":"Alice@Example.com","Tag":"welcome","DeliveredAt":"2026-01-01T00:00:00Z","Details":"Test delivery webhook details"}'
+    expect:
+      notices:
+        - id: pm-msg-alice-1
+          destination: alice@example.com
+          kind: delivery
+          message_id: pm-msg-alice-1
+          reason: Test delivery webhook details
+  - name: a bounce with no message id stays at the address
+    params:
+      user: postmark-user
+      secret: postmark-test-token-0123456789
+    request:
+      headers:
+        Authorization: Basic cG9zdG1hcmstdXNlcjpwb3N0bWFyay10ZXN0LXRva2VuLTAxMjM0NTY3ODk=
+      body: '{"RecordType":"Bounce","ID":6,"Type":"HardBounce","Email":"carol@example.com","From":"hello@news.example.com"}'
+    expect:
+      notices:
+        - id: '6'
+          destination: carol@example.com
+          kind: bounce
+          permanent: true
           sending_domain: news.example.com
   - name: a spam complaint is a complaint
     params:
@@ -92,13 +153,13 @@ tests:
         Authorization: Basic cG9zdG1hcmstdXNlcjpwb3N0bWFyay10ZXN0LXRva2VuLTAxMjM0NTY3ODk=
       body: '{"RecordType":"SpamComplaint","ID":692560174,"Type":"SpamComplaint","TypeCode":100001,"Email":"margareth@nasa.com","From":"alanturing@computers.com","BouncedAt":"2026-01-01T00:00:00Z"}'
     expect:
-      failures:
+      notices:
         - id: '692560174'
           destination: margareth@nasa.com
           kind: complaint
           permanent: false
           sending_domain: computers.com
-  - name: an unsubscribe request is no failure
+  - name: an unsubscribe request yields no notice
     params:
       user: postmark-user
       secret: postmark-test-token-0123456789
@@ -107,17 +168,17 @@ tests:
         Authorization: Basic cG9zdG1hcmstdXNlcjpwb3N0bWFyay10ZXN0LXRva2VuLTAxMjM0NTY3ODk=
       body: '{"RecordType":"Bounce","ID":3,"Type":"Unsubscribe","TypeCode":16,"Email":"carol@example.com","From":"hello@news.example.com"}'
     expect:
-      failures: []
-  - name: a delivery event is no failure
+      notices: []
+  - name: an open event yields no notice
     params:
       user: postmark-user
       secret: postmark-test-token-0123456789
     request:
       headers:
         Authorization: Basic cG9zdG1hcmstdXNlcjpwb3N0bWFyay10ZXN0LXRva2VuLTAxMjM0NTY3ODk=
-      body: '{"RecordType":"Delivery","MessageID":"x","Recipient":"carol@example.com"}'
+      body: '{"RecordType":"Open","MessageID":"x","Recipient":"carol@example.com"}'
     expect:
-      failures: []
+      notices: []
   - name: a request with no credentials is refused
     params:
       user: postmark-user

@@ -417,7 +417,7 @@ test('a member can read the providers but not change them', async () => {
 
 const generic = {
   name: 'generic',
-  description: 'A body already in the Delivery failure shape, signed with Standard Webhooks.',
+  description: 'A body already in the Delivery notice shape, signed with Standard Webhooks.',
   paramsSchema: {
     type: 'object',
     properties: { secret: { type: 'string', writeOnly: true } },

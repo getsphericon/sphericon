@@ -1,6 +1,7 @@
-// Package tracking mints and verifies the per-recipient tokens used by the email
-// open/click/unsubscribe endpoints, and rewrites a broadcast's HTML to route
+// Package tracking mints and verifies the per-message tokens used by the email
+// open/click/unsubscribe endpoints, and rewrites an email's HTML to route
 // links through the click tracker and embed the open pixel + unsubscribe footer.
+// An open or click token names the Outbound message (ADR 0053), whatever surface sent it.
 //
 // Tokens are signed JWTs (HS256) — we reuse the existing JWT secret rather than
 // hand-rolling a MAC. Link rewriting uses the official x/net/html tokenizer, not
@@ -69,16 +70,16 @@ type UnsubTarget struct {
 
 // The tokens' claims are typed: int64 ids travel as JSON strings (`,string`) so
 // they never pass through float64 and lose precision above 2^53.
-type recipientClaims struct {
+type messageClaims struct {
 	jwt.RegisteredClaims
-	RecipientID int64 `json:"rid,string"`
+	MessageID int64 `json:"mid,string"`
 }
 
-// clickClaims bind one link of one recipient: the destination is signed, so a click URL
+// clickClaims bind one link of one Outbound message: the destination is signed, so a click URL
 // cannot be pointed anywhere the sender did not put it.
 type clickClaims struct {
 	jwt.RegisteredClaims
-	RecipientID int64  `json:"rid,string"`
+	MessageID   int64  `json:"mid,string"`
 	Destination string `json:"dest"`
 }
 
@@ -113,47 +114,47 @@ func (t *Tracker) parse(token string, claims jwt.Claims, opts ...jwt.ParserOptio
 	return err
 }
 
-// Token mints a signed token identifying a broadcast recipient (open pixel).
-func (t *Tracker) Token(recipientID int64) (string, error) {
-	return t.sign(&recipientClaims{RecipientID: recipientID})
+// Token mints a signed token naming an Outbound message (open pixel).
+func (t *Tracker) Token(messageID int64) (string, error) {
+	return t.sign(&messageClaims{MessageID: messageID})
 }
 
-// Decode validates an open token and returns the recipient id it carries. A click token
+// Decode validates an open token and returns the Outbound message id it carries. A click token
 // carries a destination and is refused: each link kind has its own token.
 func (t *Tracker) Decode(token string) (int64, error) {
 	var c clickClaims
 	if err := t.parse(token, &c); err != nil {
 		return 0, err
 	}
-	if c.RecipientID == 0 {
-		return 0, errors.New("tracking: missing rid claim")
+	if c.MessageID == 0 {
+		return 0, errors.New("tracking: missing mid claim")
 	}
 	if c.Destination != "" {
 		return 0, errors.New("tracking: a click token is not an open token")
 	}
-	return c.RecipientID, nil
+	return c.MessageID, nil
 }
 
-// clickToken mints a signed token for one link of a recipient's email.
-func (t *Tracker) clickToken(recipientID int64, dest string) (string, error) {
-	return t.sign(&clickClaims{RecipientID: recipientID, Destination: dest})
+// clickToken mints a signed token for one link of an Outbound message.
+func (t *Tracker) clickToken(messageID int64, dest string) (string, error) {
+	return t.sign(&clickClaims{MessageID: messageID, Destination: dest})
 }
 
-// DecodeClick validates a click token and returns the recipient id and the destination it
-// carries. A recipient token (open pixel) has no destination and is refused, as is any
+// DecodeClick validates a click token and returns the Outbound message id and the destination
+// it carries. An open token (pixel) has no destination and is refused, as is any
 // destination that is not an absolute http(s) URL.
 func (t *Tracker) DecodeClick(token string) (int64, string, error) {
 	var c clickClaims
 	if err := t.parse(token, &c); err != nil {
 		return 0, "", err
 	}
-	if c.RecipientID == 0 {
-		return 0, "", errors.New("tracking: missing rid claim")
+	if c.MessageID == 0 {
+		return 0, "", errors.New("tracking: missing mid claim")
 	}
 	if !trackable(c.Destination) {
 		return 0, "", errors.New("tracking: missing or invalid dest claim")
 	}
-	return c.RecipientID, c.Destination, nil
+	return c.MessageID, c.Destination, nil
 }
 
 // unsubToken mints a signed scoped-unsubscribe token.
@@ -235,8 +236,8 @@ func (t *Tracker) OpenURL(token string) string {
 
 // ClickURL wraps a destination link so a click is recorded before redirecting. The
 // destination travels inside the signed token, never as a bare parameter.
-func (t *Tracker) ClickURL(recipientID int64, dest string) (string, error) {
-	token, err := t.clickToken(recipientID, dest)
+func (t *Tracker) ClickURL(messageID int64, dest string) (string, error) {
+	token, err := t.clickToken(messageID, dest)
 	if err != nil {
 		return "", err
 	}
@@ -286,31 +287,38 @@ func (t *Tracker) UnsubscribeFooter(target UnsubTarget, postalAddress string) (s
 	), nil
 }
 
-// Rewrite prepares a broadcast body for a recipient: it routes http(s) links
-// through the click tracker (rid token), appends the open pixel, and adds the
-// unsubscribe footer (scoped to unsub, carrying the workspace's CAN-SPAM postal
-// address). On a tokenizer error it falls back to the original body plus pixel
-// and footer so a send is never blocked by odd markup.
-func (t *Tracker) Rewrite(body string, recipientID int64, unsub UnsubTarget, postalAddress string) (string, error) {
-	token, err := t.Token(recipientID)
+// Instrument routes a body's http(s) links through the click tracker (mid token) and appends
+// the open pixel, nothing else: a Transactional send that asks for tracking uses it as is. On a
+// tokenizer error it falls back to the original body plus the pixel, so a send is never blocked
+// by odd markup.
+func (t *Tracker) Instrument(body string, messageID int64) (string, error) {
+	token, err := t.Token(messageID)
 	if err != nil {
 		return body, err
 	}
-
-	rewritten, err := t.rewriteLinks(body, recipientID)
+	rewritten, err := t.rewriteLinks(body, messageID)
 	if err != nil {
 		rewritten = body
 	}
+	pixel := fmt.Sprintf(`<img src="%s" width="1" height="1" alt="" style="display:none">`, t.OpenURL(token))
+	return rewritten + pixel, nil
+}
 
+// Rewrite prepares a marketing body for one Outbound message: Instrument, plus the
+// unsubscribe footer (scoped to unsub, carrying the workspace's CAN-SPAM postal address).
+func (t *Tracker) Rewrite(body string, messageID int64, unsub UnsubTarget, postalAddress string) (string, error) {
+	instrumented, err := t.Instrument(body, messageID)
+	if err != nil {
+		return body, err
+	}
 	footer, err := t.UnsubscribeFooter(unsub, postalAddress)
 	if err != nil {
 		return body, err
 	}
-	pixel := fmt.Sprintf(`<img src="%s" width="1" height="1" alt="" style="display:none">`, t.OpenURL(token))
-	return rewritten + pixel + footer, nil
+	return instrumented + footer, nil
 }
 
-func (t *Tracker) rewriteLinks(body string, recipientID int64) (string, error) {
+func (t *Tracker) rewriteLinks(body string, messageID int64) (string, error) {
 	z := html.NewTokenizer(strings.NewReader(body))
 	var sb strings.Builder
 	for {
@@ -325,7 +333,7 @@ func (t *Tracker) rewriteLinks(body string, recipientID int64) (string, error) {
 		if tt == html.StartTagToken && tok.Data == "a" {
 			for i, a := range tok.Attr {
 				if a.Key == "href" && trackable(a.Val) {
-					link, err := t.ClickURL(recipientID, a.Val)
+					link, err := t.ClickURL(messageID, a.Val)
 					if err != nil {
 						return "", err
 					}

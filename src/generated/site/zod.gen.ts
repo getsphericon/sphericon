@@ -367,6 +367,9 @@ export const zSiteBroadcastStats = z.object({
   clickedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   unsubscribedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   failedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  deliveredCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  bouncedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  complainedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   deliveryRate: z.number(),
   openRate: z.number(),
   clickRate: z.number(),
@@ -634,6 +637,33 @@ export const zSiteCreateInvitationInput = z.object({
 export const zSiteInvitationLookupResult = z.object({
   workspaceName: z.string(),
   email: zEmailAddress
+});
+
+/**
+ * How often one link of a broadcast's or an automation's emails was clicked
+ */
+export const zSiteLinkClicks = z.object({
+  url: z.string(),
+  clicks: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
+ * An automation's engagement figures
+ */
+export const zSiteAutomationReport = z.object({
+  opens: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  clicks: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  delivered: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  bounced: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  complained: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  links: z.array(zSiteLinkClicks)
+});
+
+/**
+ * A broadcast's per-link click figures, most clicked first
+ */
+export const zSiteBroadcastLinkClicksList = z.object({
+  items: z.array(zSiteLinkClicks)
 });
 
 /**
@@ -1517,6 +1547,9 @@ export const zContactExportOutboundMessage = z.object({
   reason: z.exactOptional(z.string().nullable()),
   claimedAt: zTimestamp,
   sentAt: z.exactOptional(zTimestamp.nullable()),
+  deliveredAt: z.exactOptional(zTimestamp.nullable()),
+  bouncedAt: z.exactOptional(zTimestamp.nullable()),
+  complainedAt: z.exactOptional(zTimestamp.nullable()),
   broadcastId: z.exactOptional(zEntityId.nullable()),
   automationId: z.exactOptional(zEntityId.nullable()),
   automationStep: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable()),
@@ -3027,6 +3060,16 @@ export const zSiteEnrollmentsGetPath = z.object({
  */
 export const zSiteEnrollmentsGetResponse = zSiteEnrollmentResource;
 
+export const zSiteAutomationReportsGetPath = z.object({
+  workspaceId: zWorkspaceId,
+  automationId: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteAutomationReportsGetResponse = zSiteAutomationReport;
+
 export const zSiteAutomationsDeletePath = z.object({
   workspaceId: zWorkspaceId,
   id: zEntityId
@@ -3159,6 +3202,16 @@ export const zSiteBroadcastsCreatePath = z.object({
  * The request has succeeded and a new resource has been created as a result.
  */
 export const zSiteBroadcastsCreateResponse = zSiteBroadcastResource;
+
+export const zSiteBroadcastLinksListPath = z.object({
+  workspaceId: zWorkspaceId,
+  broadcastId: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteBroadcastLinksListResponse = zSiteBroadcastLinkClicksList;
 
 export const zSiteBroadcastsDeletePath = z.object({
   workspaceId: zWorkspaceId,
@@ -3449,7 +3502,8 @@ export const zSiteEventsListQuery = z.object({
   pageSize: z.int().gte(1).lte(100).optional().default(25),
   action: z.exactOptional(z.string()),
   contactId: z.exactOptional(zEntityId),
-  email: z.exactOptional(z.string())
+  email: z.exactOptional(z.string()),
+  includeMachine: z.exactOptional(z.boolean())
 });
 
 /**

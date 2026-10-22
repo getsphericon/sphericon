@@ -7,6 +7,7 @@ import {
   Loader,
   SimpleGrid,
   Stack,
+  Switch,
   Text,
   Title,
 } from '@mantine/core'
@@ -69,6 +70,7 @@ export function ContactDetailPage() {
   // refuses everyone else with 403).
   const canErase = canManage(role)
   const [page, setPage] = useState(1)
+  const [showMachine, setShowMachine] = useState(false)
 
   // The component instance is reused across contactId changes, so reset the
   // events page to avoid requesting an out-of-range page for the next contact
@@ -89,7 +91,7 @@ export function ContactDetailPage() {
   const eventsQuery = useQuery(
     siteEventsListOptions({
       path: { workspaceId },
-      query: { page, pageSize: EVENTS_PAGE_SIZE, contactId },
+      query: { page, pageSize: EVENTS_PAGE_SIZE, contactId, includeMachine: showMachine },
     }),
   )
 
@@ -120,6 +122,8 @@ export function ContactDetailPage() {
 
   const fullName = [contact.firstName, contact.lastName].filter(Boolean).join(' ')
   const customFields = Object.entries(contact.customFields ?? {})
+  // A machine Event (an open or click made by software, ADR 0053) is left out by the API unless
+  // `includeMachine` asks for it.
   const eventRecords = eventsQuery.data?.items ?? []
   const eventsTotal = eventsQuery.data?.totalItems ?? 0
 
@@ -203,7 +207,14 @@ export function ContactDetailPage() {
         </>
       ) : null}
 
-      <Title order={5}>{t(($) => $.contacts.eventsTitle)}</Title>
+      <Group justify="space-between">
+        <Title order={5}>{t(($) => $.contacts.eventsTitle)}</Title>
+        <Switch
+          label={t(($) => $.contacts.showMachineEvents)}
+          checked={showMachine}
+          onChange={(e) => setShowMachine(e.currentTarget.checked)}
+        />
+      </Group>
 
       {eventsQuery.isError ? (
         <ApiErrorAlert

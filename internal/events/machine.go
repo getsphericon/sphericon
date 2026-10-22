@@ -1,0 +1,24 @@
+package events
+
+import (
+	"entgo.io/ent/dialect/sql"
+
+	"github.com/getsphericon/sphericon/ent/event"
+)
+
+// MachineProperty is the key of the Event property that marks an open or click made by software
+// (ADR 0053, GLOSSARY: Machine engagement).
+const MachineProperty = "machine"
+
+// IsEngagement reports whether action is an open or a click, the Events a machine can make.
+func IsEngagement(action string) bool {
+	return action == NameEmailOpened || action == NameEmailClicked
+}
+
+// HumanOnly narrows a query of Events (through Modify) to the ones not made by software, for every
+// figure that counts engagement: a machine Event stays in the log and in no count.
+func HumanOnly(sel *sql.Selector) {
+	// raw sql: the flag is a key of the JSON properties that is absent on a human Event, and
+	// NOT (x = true) would drop the rows where the key is missing.
+	sel.Where(sql.ExprP("COALESCE(" + sel.C(event.FieldProperties) + "->>'" + MachineProperty + "', '') <> 'true'"))
+}

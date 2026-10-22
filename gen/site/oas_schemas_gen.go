@@ -853,6 +853,12 @@ type ContactExportOutboundMessage struct {
 	ClaimedAt Timestamp `json:"claimedAt"`
 	// When the message was sent.
 	SentAt OptNilTimestamp `json:"sentAt"`
+	// When the provider first reported the message delivered.
+	DeliveredAt OptNilTimestamp `json:"deliveredAt"`
+	// When the provider first reported the message bounced.
+	BouncedAt OptNilTimestamp `json:"bouncedAt"`
+	// When the provider first reported a spam complaint about the message.
+	ComplainedAt OptNilTimestamp `json:"complainedAt"`
 	// Broadcast that produced the message.
 	BroadcastId OptNilEntityId `json:"broadcastId"`
 	// Automation that produced the message.
@@ -918,6 +924,21 @@ func (s *ContactExportOutboundMessage) GetClaimedAt() Timestamp {
 // GetSentAt returns the value of SentAt.
 func (s *ContactExportOutboundMessage) GetSentAt() OptNilTimestamp {
 	return s.SentAt
+}
+
+// GetDeliveredAt returns the value of DeliveredAt.
+func (s *ContactExportOutboundMessage) GetDeliveredAt() OptNilTimestamp {
+	return s.DeliveredAt
+}
+
+// GetBouncedAt returns the value of BouncedAt.
+func (s *ContactExportOutboundMessage) GetBouncedAt() OptNilTimestamp {
+	return s.BouncedAt
+}
+
+// GetComplainedAt returns the value of ComplainedAt.
+func (s *ContactExportOutboundMessage) GetComplainedAt() OptNilTimestamp {
+	return s.ComplainedAt
 }
 
 // GetBroadcastId returns the value of BroadcastId.
@@ -998,6 +1019,21 @@ func (s *ContactExportOutboundMessage) SetClaimedAt(val Timestamp) {
 // SetSentAt sets the value of SentAt.
 func (s *ContactExportOutboundMessage) SetSentAt(val OptNilTimestamp) {
 	s.SentAt = val
+}
+
+// SetDeliveredAt sets the value of DeliveredAt.
+func (s *ContactExportOutboundMessage) SetDeliveredAt(val OptNilTimestamp) {
+	s.DeliveredAt = val
+}
+
+// SetBouncedAt sets the value of BouncedAt.
+func (s *ContactExportOutboundMessage) SetBouncedAt(val OptNilTimestamp) {
+	s.BouncedAt = val
+}
+
+// SetComplainedAt sets the value of ComplainedAt.
+func (s *ContactExportOutboundMessage) SetComplainedAt(val OptNilTimestamp) {
+	s.ComplainedAt = val
 }
 
 // SetBroadcastId sets the value of BroadcastId.
@@ -6819,6 +6855,96 @@ func (s *SiteAutomationHttpHeader) SetValue(val OptString) {
 	s.Value = val
 }
 
+// An automation's engagement figures.
+// Ref: #/components/schemas/SiteAutomationReport
+type SiteAutomationReport struct {
+	// Opens recorded on the automation's emails, every open counted; bounded by Event retention.
+	Opens int32 `json:"opens"`
+	// Clicks recorded on the automation's emails, every click counted; bounded by Event retention.
+	Clicks int32 `json:"clicks"`
+	// Messages the provider reported delivered, read from the delivery result stamped on each message; not
+	// bounded by Event retention.
+	Delivered int32 `json:"delivered"`
+	// Messages the provider reported bounced, read from the delivery result stamped on each message; not
+	// bounded by Event retention.
+	Bounced int32 `json:"bounced"`
+	// Messages a recipient complained about, read from the delivery result stamped on each message; not
+	// bounded by Event retention.
+	Complained int32 `json:"complained"`
+	// One entry per clicked link, most clicked first.
+	Links []SiteLinkClicks `json:"links"`
+}
+
+// GetOpens returns the value of Opens.
+func (s *SiteAutomationReport) GetOpens() int32 {
+	return s.Opens
+}
+
+// GetClicks returns the value of Clicks.
+func (s *SiteAutomationReport) GetClicks() int32 {
+	return s.Clicks
+}
+
+// GetDelivered returns the value of Delivered.
+func (s *SiteAutomationReport) GetDelivered() int32 {
+	return s.Delivered
+}
+
+// GetBounced returns the value of Bounced.
+func (s *SiteAutomationReport) GetBounced() int32 {
+	return s.Bounced
+}
+
+// GetComplained returns the value of Complained.
+func (s *SiteAutomationReport) GetComplained() int32 {
+	return s.Complained
+}
+
+// GetLinks returns the value of Links.
+func (s *SiteAutomationReport) GetLinks() []SiteLinkClicks {
+	return s.Links
+}
+
+// SetOpens sets the value of Opens.
+func (s *SiteAutomationReport) SetOpens(val int32) {
+	s.Opens = val
+}
+
+// SetClicks sets the value of Clicks.
+func (s *SiteAutomationReport) SetClicks(val int32) {
+	s.Clicks = val
+}
+
+// SetDelivered sets the value of Delivered.
+func (s *SiteAutomationReport) SetDelivered(val int32) {
+	s.Delivered = val
+}
+
+// SetBounced sets the value of Bounced.
+func (s *SiteAutomationReport) SetBounced(val int32) {
+	s.Bounced = val
+}
+
+// SetComplained sets the value of Complained.
+func (s *SiteAutomationReport) SetComplained(val int32) {
+	s.Complained = val
+}
+
+// SetLinks sets the value of Links.
+func (s *SiteAutomationReport) SetLinks(val []SiteLinkClicks) {
+	s.Links = val
+}
+
+func (*SiteAutomationReport) siteAutomationReportsGetRes() {}
+
+type SiteAutomationReportsGetBadRequest ProblemDetails
+
+func (*SiteAutomationReportsGetBadRequest) siteAutomationReportsGetRes() {}
+
+type SiteAutomationReportsGetNotFound ProblemDetails
+
+func (*SiteAutomationReportsGetNotFound) siteAutomationReportsGetRes() {}
+
 // Automation resource used by the site UI.
 // Ref: #/components/schemas/SiteAutomationResource
 type SiteAutomationResource struct {
@@ -7558,6 +7684,33 @@ type SiteBrandKitSaveUnprocessableEntity ProblemDetails
 
 func (*SiteBrandKitSaveUnprocessableEntity) siteBrandKitSaveRes() {}
 
+// A broadcast's per-link click figures, most clicked first.
+// Ref: #/components/schemas/SiteBroadcastLinkClicksList
+type SiteBroadcastLinkClicksList struct {
+	// One entry per clicked link.
+	Items []SiteLinkClicks `json:"items"`
+}
+
+// GetItems returns the value of Items.
+func (s *SiteBroadcastLinkClicksList) GetItems() []SiteLinkClicks {
+	return s.Items
+}
+
+// SetItems sets the value of Items.
+func (s *SiteBroadcastLinkClicksList) SetItems(val []SiteLinkClicks) {
+	s.Items = val
+}
+
+func (*SiteBroadcastLinkClicksList) siteBroadcastLinksListRes() {}
+
+type SiteBroadcastLinksListBadRequest ProblemDetails
+
+func (*SiteBroadcastLinksListBadRequest) siteBroadcastLinksListRes() {}
+
+type SiteBroadcastLinksListNotFound ProblemDetails
+
+func (*SiteBroadcastLinksListNotFound) siteBroadcastLinksListRes() {}
+
 // How far a sending broadcast has got. A broadcast limited by its Integration's Send rate limit is
 // paced: recipients go out at an even interval, so the estimate is derived on the server from the last
 // scheduled time and the recipients remaining.
@@ -7898,6 +8051,12 @@ type SiteBroadcastStats struct {
 	UnsubscribedCount int32 `json:"unsubscribedCount"`
 	// Messages that failed to send.
 	FailedCount int32 `json:"failedCount"`
+	// Messages the provider reported delivered, read from the delivery result stamped on each message.
+	DeliveredCount int32 `json:"deliveredCount"`
+	// Messages the provider reported bounced, read from the delivery result stamped on each message.
+	BouncedCount int32 `json:"bouncedCount"`
+	// Messages a recipient complained about, read from the delivery result stamped on each message.
+	ComplainedCount int32 `json:"complainedCount"`
 	// Messages handed to the provider ÷ recipients targeted (0–1).
 	DeliveryRate float32 `json:"deliveryRate"`
 	// Unique opens ÷ messages sent (0–1).
@@ -7940,6 +8099,21 @@ func (s *SiteBroadcastStats) GetUnsubscribedCount() int32 {
 // GetFailedCount returns the value of FailedCount.
 func (s *SiteBroadcastStats) GetFailedCount() int32 {
 	return s.FailedCount
+}
+
+// GetDeliveredCount returns the value of DeliveredCount.
+func (s *SiteBroadcastStats) GetDeliveredCount() int32 {
+	return s.DeliveredCount
+}
+
+// GetBouncedCount returns the value of BouncedCount.
+func (s *SiteBroadcastStats) GetBouncedCount() int32 {
+	return s.BouncedCount
+}
+
+// GetComplainedCount returns the value of ComplainedCount.
+func (s *SiteBroadcastStats) GetComplainedCount() int32 {
+	return s.ComplainedCount
 }
 
 // GetDeliveryRate returns the value of DeliveryRate.
@@ -8000,6 +8174,21 @@ func (s *SiteBroadcastStats) SetUnsubscribedCount(val int32) {
 // SetFailedCount sets the value of FailedCount.
 func (s *SiteBroadcastStats) SetFailedCount(val int32) {
 	s.FailedCount = val
+}
+
+// SetDeliveredCount sets the value of DeliveredCount.
+func (s *SiteBroadcastStats) SetDeliveredCount(val int32) {
+	s.DeliveredCount = val
+}
+
+// SetBouncedCount sets the value of BouncedCount.
+func (s *SiteBroadcastStats) SetBouncedCount(val int32) {
+	s.BouncedCount = val
+}
+
+// SetComplainedCount sets the value of ComplainedCount.
+func (s *SiteBroadcastStats) SetComplainedCount(val int32) {
+	s.ComplainedCount = val
 }
 
 // SetDeliveryRate sets the value of DeliveryRate.
@@ -12045,6 +12234,35 @@ func (*SiteJoinDomainsVerifyNotFound) siteJoinDomainsVerifyRes() {}
 type SiteJoinDomainsVerifyUnprocessableEntity ProblemDetails
 
 func (*SiteJoinDomainsVerifyUnprocessableEntity) siteJoinDomainsVerifyRes() {}
+
+// How often one link of a broadcast's or an automation's emails was clicked.
+// Ref: #/components/schemas/SiteLinkClicks
+type SiteLinkClicks struct {
+	// The link's destination URL.
+	URL string `json:"url"`
+	// Clicks recorded on it, every click counted (not unique per contact); bounded by Event retention.
+	Clicks int32 `json:"clicks"`
+}
+
+// GetURL returns the value of URL.
+func (s *SiteLinkClicks) GetURL() string {
+	return s.URL
+}
+
+// GetClicks returns the value of Clicks.
+func (s *SiteLinkClicks) GetClicks() int32 {
+	return s.Clicks
+}
+
+// SetURL sets the value of URL.
+func (s *SiteLinkClicks) SetURL(val string) {
+	s.URL = val
+}
+
+// SetClicks sets the value of Clicks.
+func (s *SiteLinkClicks) SetClicks(val int32) {
+	s.Clicks = val
+}
 
 // The Linked identities of the authenticated User.
 // Ref: #/components/schemas/SiteLinkedIdentities

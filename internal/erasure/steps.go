@@ -38,6 +38,7 @@ var anonymousKeep = []string{"sendingDomain", "bounceKind"}
 func anonymized(action string) bool {
 	switch action {
 	case events.NameEmailSent, events.NameEmailOpened, events.NameEmailClicked,
+		events.NameEmailDelivered, events.NameEmailDelayed, events.NameEmailDropped,
 		events.NameEmailBounced, events.NameEmailComplained, events.NameEmailUnsubscribed,
 		events.NameContactCreated:
 		return true

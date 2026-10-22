@@ -68,6 +68,9 @@ var (
 	// ErrInvalidStep: a step has an unknown type, a negative wait, or a tag step
 	// without a tag name, or an email step whose content cannot render.
 	ErrInvalidStep = errors.New("automations: invalid step")
+	// ErrInvalidTrigger: the trigger is an infrastructure Event (a send or a delivery notice)
+	// that no Automation may start from (ADR 0053).
+	ErrInvalidTrigger = errors.New("automations: invalid trigger")
 
 	// ErrNoVersion: the Automation has no version yet. Only an Automation made before versions
 	// existed can be in that state, until the backfill job (internal/jobs) has run.
@@ -175,6 +178,26 @@ type Module struct {
 // opens the transaction that saves an Automation together with its steps.
 func New(cipher *secrets.Cipher, bus *events.Bus) *Module { return &Module{cipher: cipher, bus: bus} }
 
+// IsInvalid reports whether err refuses the Automation's input (a step or the trigger), which an
+// API surface renders as 422.
+func IsInvalid(err error) bool {
+	return errors.Is(err, ErrInvalidStep) || errors.Is(err, ErrInvalidTrigger)
+}
+
+// engagementTriggers are the `email.` Events an Automation may start from: what a recipient does.
+// The others (sent, delivered, delayed, dropped, bounced, complained) are infrastructure, kept
+// for the figures and the log (ADR 0053).
+var engagementTriggers = []string{events.NameEmailOpened, events.NameEmailClicked, events.NameEmailUnsubscribed}
+
+// validateTrigger refuses an infrastructure Event as the trigger.
+func validateTrigger(trigger string) error {
+	t := strings.ToLower(strings.TrimSpace(trigger))
+	if strings.HasPrefix(t, "email.") && !slices.Contains(engagementTriggers, t) {
+		return fmt.Errorf("%w: %q is not a trigger; use %s", ErrInvalidTrigger, trigger, strings.Join(engagementTriggers, ", "))
+	}
+	return nil
+}
+
 // CreateInput is the data for a new Automation. It is always created as a draft:
 // activating is a separate, deliberate operation.
 type CreateInput struct {
@@ -266,6 +289,9 @@ func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.Automat
 
 // Create stores a new draft Automation with its first version.
 func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*ent.Automation, error) {
+	if err := validateTrigger(in.TriggerEvent); err != nil {
+		return nil, err
+	}
 	built, err := build(ctx, in.Steps)
 	if err != nil {
 		return nil, err
@@ -306,6 +332,11 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 
 // Update changes the Automation's name, trigger or steps. The status is untouched.
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateInput) (*ent.Automation, error) {
+	if in.TriggerEvent != nil {
+		if err := validateTrigger(*in.TriggerEvent); err != nil {
+			return nil, err
+		}
+	}
 	var steps []Step
 	if in.Steps != nil {
 		built, err := build(ctx, *in.Steps)

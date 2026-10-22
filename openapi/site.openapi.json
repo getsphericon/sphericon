@@ -52,6 +52,9 @@
       "name": "Site Integrations"
     },
     {
+      "name": "Site Broadcasts"
+    },
+    {
       "name": "Site Brand Kit"
     },
     {
@@ -83,9 +86,6 @@
     },
     {
       "name": "Site Contacts"
-    },
-    {
-      "name": "Site Broadcasts"
     },
     {
       "name": "Site Templates"
@@ -4087,6 +4087,63 @@
         "tags": ["Site Automations"]
       }
     },
+    "/workspaces/{workspaceId}/automations/{automationId}/report": {
+      "get": {
+        "operationId": "SiteAutomationReports_get",
+        "description": "The opens and clicks of an automation's emails, with a count per clicked link. They come from\nthe `email.opened` and `email.clicked` Events, so they cover the Event retention window.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          },
+          {
+            "name": "automationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteAutomationReport"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Automations"]
+      }
+    },
     "/workspaces/{workspaceId}/automations/{id}": {
       "get": {
         "operationId": "SiteAutomations_get",
@@ -4767,6 +4824,63 @@
             }
           }
         }
+      }
+    },
+    "/workspaces/{workspaceId}/broadcasts/{broadcastId}/links": {
+      "get": {
+        "operationId": "SiteBroadcastLinks_list",
+        "description": "The links of a broadcast that were clicked, with a count each, most clicked first. The counts\ncome from the `email.clicked` Events, so they cover the Event retention window; the unique\nclick figure in the broadcast's stats does not.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          },
+          {
+            "name": "broadcastId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteBroadcastLinkClicksList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Broadcasts"]
       }
     },
     "/workspaces/{workspaceId}/broadcasts/{id}": {
@@ -6323,6 +6437,16 @@
             "description": "Filter by the email associated with the event",
             "schema": {
               "type": "string"
+            },
+            "explode": false
+          },
+          {
+            "name": "includeMachine",
+            "in": "query",
+            "required": false,
+            "description": "List the opens and clicks made by software (machine engagement) too; omitted, they are left out",
+            "schema": {
+              "type": "boolean"
             },
             "explode": false
           }
@@ -10882,6 +11006,36 @@
             "nullable": true,
             "description": "When the message was sent"
           },
+          "deliveredAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the provider first reported the message delivered"
+          },
+          "bouncedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the provider first reported the message bounced"
+          },
+          "complainedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the provider first reported a spam complaint about the message"
+          },
           "broadcastId": {
             "type": "string",
             "allOf": [
@@ -11831,6 +11985,45 @@
         },
         "description": "One request header of an HTTP step. The value is a secret: it is never returned."
       },
+      "SiteAutomationReport": {
+        "type": "object",
+        "required": ["opens", "clicks", "delivered", "bounced", "complained", "links"],
+        "properties": {
+          "opens": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Opens recorded on the automation's emails, every open counted; bounded by Event retention"
+          },
+          "clicks": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Clicks recorded on the automation's emails, every click counted; bounded by Event retention"
+          },
+          "delivered": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Messages the provider reported delivered, read from the delivery result stamped on each message; not bounded by Event retention"
+          },
+          "bounced": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Messages the provider reported bounced, read from the delivery result stamped on each message; not bounded by Event retention"
+          },
+          "complained": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Messages a recipient complained about, read from the delivery result stamped on each message; not bounded by Event retention"
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteLinkClicks"
+            },
+            "description": "One entry per clicked link, most clicked first"
+          }
+        },
+        "description": "An automation's engagement figures"
+      },
       "SiteAutomationResource": {
         "type": "object",
         "required": ["id", "name", "status", "triggerEvent", "steps", "createdAt", "updatedAt"],
@@ -12046,6 +12239,20 @@
         },
         "description": "The Workspace's Brand kit (ADR 0040): its colors, fonts, logo, button style and footer. It sets\nthe palette the editor offers and what an agent is told to use. Its values are written into a\nmessage when the message is authored, so saving it never changes a message already written. A\nWorkspace that has not saved one has the defaults and `saved` false."
       },
+      "SiteBroadcastLinkClicksList": {
+        "type": "object",
+        "required": ["items"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteLinkClicks"
+            },
+            "description": "One entry per clicked link"
+          }
+        },
+        "description": "A broadcast's per-link click figures, most clicked first"
+      },
       "SiteBroadcastProgress": {
         "type": "object",
         "required": ["processedCount", "remainingCount"],
@@ -12253,6 +12460,9 @@
           "clickedCount",
           "unsubscribedCount",
           "failedCount",
+          "deliveredCount",
+          "bouncedCount",
+          "complainedCount",
           "deliveryRate",
           "openRate",
           "clickRate",
@@ -12290,6 +12500,21 @@
             "type": "integer",
             "format": "int32",
             "description": "Messages that failed to send"
+          },
+          "deliveredCount": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Messages the provider reported delivered, read from the delivery result stamped on each message"
+          },
+          "bouncedCount": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Messages the provider reported bounced, read from the delivery result stamped on each message"
+          },
+          "complainedCount": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Messages a recipient complained about, read from the delivery result stamped on each message"
           },
           "deliveryRate": {
             "type": "number",
@@ -13774,6 +13999,22 @@
           }
         },
         "description": "A Join domain: a domain whose Users may join the Workspace once domain join\nis on, proven by a TXT record. `verified` is a live property: it holds while the record\nis published. Any Workspace may claim a domain, and only one holds it verified."
+      },
+      "SiteLinkClicks": {
+        "type": "object",
+        "required": ["url", "clicks"],
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "The link's destination URL"
+          },
+          "clicks": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Clicks recorded on it, every click counted (not unique per contact); bounded by Event retention"
+          }
+        },
+        "description": "How often one link of a broadcast's or an automation's emails was clicked"
       },
       "SiteLinkedIdentities": {
         "type": "object",
