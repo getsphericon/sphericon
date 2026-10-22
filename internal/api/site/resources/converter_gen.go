@@ -9,6 +9,7 @@ import (
 	auditapi "github.com/getsphericon/sphericon/internal/auditapi"
 	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
 	integrations "github.com/getsphericon/sphericon/internal/integrations"
+	linkclicks "github.com/getsphericon/sphericon/internal/linkclicks"
 	rules "github.com/getsphericon/sphericon/internal/rules"
 	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
 	sendlimit "github.com/getsphericon/sphericon/internal/sendlimit"
@@ -603,6 +604,12 @@ func (c *ConverterImpl) WorkspaceToResource(source *ent.Workspace) site.SiteWork
 		siteapiSiteWorkspaceResource.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return siteapiSiteWorkspaceResource
+}
+func (c *ConverterImpl) linkclicksClicksToSiteapiSiteLinkClicks(source linkclicks.Clicks) site.SiteLinkClicks {
+	var siteapiSiteLinkClicks site.SiteLinkClicks
+	siteapiSiteLinkClicks.URL = source.URL
+	siteapiSiteLinkClicks.Clicks = count(source.Clicks)
+	return siteapiSiteLinkClicks
 }
 func (c *ConverterImpl) rulesPlannedActionToSiteapiSiteRuleDryRunAction(source rules.PlannedAction) site.SiteRuleDryRunAction {
 	var siteapiSiteRuleDryRunAction site.SiteRuleDryRunAction

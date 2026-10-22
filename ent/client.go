@@ -45,6 +45,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboxoffset"
 	"github.com/getsphericon/sphericon/ent/passkey"
 	"github.com/getsphericon/sphericon/ent/passkeychallenge"
+	"github.com/getsphericon/sphericon/ent/privaterelayrange"
 	"github.com/getsphericon/sphericon/ent/recoverycode"
 	"github.com/getsphericon/sphericon/ent/riverjob"
 	"github.com/getsphericon/sphericon/ent/rule"
@@ -135,6 +136,8 @@ type Client struct {
 	Passkey *PasskeyClient
 	// PasskeyChallenge is the client for interacting with the PasskeyChallenge builders.
 	PasskeyChallenge *PasskeyChallengeClient
+	// PrivateRelayRange is the client for interacting with the PrivateRelayRange builders.
+	PrivateRelayRange *PrivateRelayRangeClient
 	// RecoveryCode is the client for interacting with the RecoveryCode builders.
 	RecoveryCode *RecoveryCodeClient
 	// RiverJob is the client for interacting with the RiverJob builders.
@@ -218,6 +221,7 @@ func (c *Client) init() {
 	c.OutboxOffset = NewOutboxOffsetClient(c.config)
 	c.Passkey = NewPasskeyClient(c.config)
 	c.PasskeyChallenge = NewPasskeyChallengeClient(c.config)
+	c.PrivateRelayRange = NewPrivateRelayRangeClient(c.config)
 	c.RecoveryCode = NewRecoveryCodeClient(c.config)
 	c.RiverJob = NewRiverJobClient(c.config)
 	c.Rule = NewRuleClient(c.config)
@@ -361,6 +365,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		OutboxOffset:       NewOutboxOffsetClient(cfg),
 		Passkey:            NewPasskeyClient(cfg),
 		PasskeyChallenge:   NewPasskeyChallengeClient(cfg),
+		PrivateRelayRange:  NewPrivateRelayRangeClient(cfg),
 		RecoveryCode:       NewRecoveryCodeClient(cfg),
 		RiverJob:           NewRiverJobClient(cfg),
 		Rule:               NewRuleClient(cfg),
@@ -431,6 +436,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		OutboxOffset:       NewOutboxOffsetClient(cfg),
 		Passkey:            NewPasskeyClient(cfg),
 		PasskeyChallenge:   NewPasskeyChallengeClient(cfg),
+		PrivateRelayRange:  NewPrivateRelayRangeClient(cfg),
 		RecoveryCode:       NewRecoveryCodeClient(cfg),
 		RiverJob:           NewRiverJobClient(cfg),
 		Rule:               NewRuleClient(cfg),
@@ -487,11 +493,11 @@ func (c *Client) Use(hooks ...Hook) {
 		c.Erasure, c.Event, c.Hold, c.InstanceState, c.Integration, c.Invitation,
 		c.JoinDomain, c.Membership, c.OAuthClient, c.OAuthCode, c.OAuthRefreshToken,
 		c.OutboundMessage, c.OutboxMessage, c.OutboxOffset, c.Passkey,
-		c.PasskeyChallenge, c.RecoveryCode, c.RiverJob, c.Rule, c.RuleFiring,
-		c.RuleTrigger, c.SchemaState, c.Segment, c.SendLimiter, c.SendingDomain,
-		c.ServiceCredential, c.StaffMember, c.Suppression, c.Tag, c.TrackingHostChange,
-		c.Unsubscribe, c.Usage, c.User, c.UserIdentity, c.Visitor, c.WebhookEndpoint,
-		c.Workspace,
+		c.PasskeyChallenge, c.PrivateRelayRange, c.RecoveryCode, c.RiverJob, c.Rule,
+		c.RuleFiring, c.RuleTrigger, c.SchemaState, c.Segment, c.SendLimiter,
+		c.SendingDomain, c.ServiceCredential, c.StaffMember, c.Suppression, c.Tag,
+		c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User, c.UserIdentity,
+		c.Visitor, c.WebhookEndpoint, c.Workspace,
 	} {
 		n.Use(hooks...)
 	}
@@ -507,11 +513,11 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.Erasure, c.Event, c.Hold, c.InstanceState, c.Integration, c.Invitation,
 		c.JoinDomain, c.Membership, c.OAuthClient, c.OAuthCode, c.OAuthRefreshToken,
 		c.OutboundMessage, c.OutboxMessage, c.OutboxOffset, c.Passkey,
-		c.PasskeyChallenge, c.RecoveryCode, c.RiverJob, c.Rule, c.RuleFiring,
-		c.RuleTrigger, c.SchemaState, c.Segment, c.SendLimiter, c.SendingDomain,
-		c.ServiceCredential, c.StaffMember, c.Suppression, c.Tag, c.TrackingHostChange,
-		c.Unsubscribe, c.Usage, c.User, c.UserIdentity, c.Visitor, c.WebhookEndpoint,
-		c.Workspace,
+		c.PasskeyChallenge, c.PrivateRelayRange, c.RecoveryCode, c.RiverJob, c.Rule,
+		c.RuleFiring, c.RuleTrigger, c.SchemaState, c.Segment, c.SendLimiter,
+		c.SendingDomain, c.ServiceCredential, c.StaffMember, c.Suppression, c.Tag,
+		c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User, c.UserIdentity,
+		c.Visitor, c.WebhookEndpoint, c.Workspace,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -580,6 +586,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Passkey.mutate(ctx, m)
 	case *PasskeyChallengeMutation:
 		return c.PasskeyChallenge.mutate(ctx, m)
+	case *PrivateRelayRangeMutation:
+		return c.PrivateRelayRange.mutate(ctx, m)
 	case *RecoveryCodeMutation:
 		return c.RecoveryCode.mutate(ctx, m)
 	case *RiverJobMutation:
@@ -5480,6 +5488,139 @@ func (c *PasskeyChallengeClient) mutate(ctx context.Context, m *PasskeyChallenge
 	}
 }
 
+// PrivateRelayRangeClient is a client for the PrivateRelayRange schema.
+type PrivateRelayRangeClient struct {
+	config
+}
+
+// NewPrivateRelayRangeClient returns a client for the PrivateRelayRange from the given config.
+func NewPrivateRelayRangeClient(c config) *PrivateRelayRangeClient {
+	return &PrivateRelayRangeClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `privaterelayrange.Hooks(f(g(h())))`.
+func (c *PrivateRelayRangeClient) Use(hooks ...Hook) {
+	c.hooks.PrivateRelayRange = append(c.hooks.PrivateRelayRange, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `privaterelayrange.Intercept(f(g(h())))`.
+func (c *PrivateRelayRangeClient) Intercept(interceptors ...Interceptor) {
+	c.inters.PrivateRelayRange = append(c.inters.PrivateRelayRange, interceptors...)
+}
+
+// Create returns a builder for creating a PrivateRelayRange entity.
+func (c *PrivateRelayRangeClient) Create() *PrivateRelayRangeCreate {
+	mutation := newPrivateRelayRangeMutation(c.config, OpCreate)
+	return &PrivateRelayRangeCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of PrivateRelayRange entities.
+func (c *PrivateRelayRangeClient) CreateBulk(builders ...*PrivateRelayRangeCreate) *PrivateRelayRangeCreateBulk {
+	return &PrivateRelayRangeCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *PrivateRelayRangeClient) MapCreateBulk(slice any, setFunc func(*PrivateRelayRangeCreate, int)) *PrivateRelayRangeCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &PrivateRelayRangeCreateBulk{err: fmt.Errorf("calling to PrivateRelayRangeClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*PrivateRelayRangeCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &PrivateRelayRangeCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for PrivateRelayRange.
+func (c *PrivateRelayRangeClient) Update() *PrivateRelayRangeUpdate {
+	mutation := newPrivateRelayRangeMutation(c.config, OpUpdate)
+	return &PrivateRelayRangeUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *PrivateRelayRangeClient) UpdateOne(_m *PrivateRelayRange) *PrivateRelayRangeUpdateOne {
+	mutation := newPrivateRelayRangeMutation(c.config, OpUpdateOne, withPrivateRelayRange(_m))
+	return &PrivateRelayRangeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *PrivateRelayRangeClient) UpdateOneID(id int64) *PrivateRelayRangeUpdateOne {
+	mutation := newPrivateRelayRangeMutation(c.config, OpUpdateOne, withPrivateRelayRangeID(id))
+	return &PrivateRelayRangeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for PrivateRelayRange.
+func (c *PrivateRelayRangeClient) Delete() *PrivateRelayRangeDelete {
+	mutation := newPrivateRelayRangeMutation(c.config, OpDelete)
+	return &PrivateRelayRangeDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *PrivateRelayRangeClient) DeleteOne(_m *PrivateRelayRange) *PrivateRelayRangeDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *PrivateRelayRangeClient) DeleteOneID(id int64) *PrivateRelayRangeDeleteOne {
+	builder := c.Delete().Where(privaterelayrange.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &PrivateRelayRangeDeleteOne{builder}
+}
+
+// Query returns a query builder for PrivateRelayRange.
+func (c *PrivateRelayRangeClient) Query() *PrivateRelayRangeQuery {
+	return &PrivateRelayRangeQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypePrivateRelayRange},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a PrivateRelayRange entity by its id.
+func (c *PrivateRelayRangeClient) Get(ctx context.Context, id int64) (*PrivateRelayRange, error) {
+	return c.Query().Where(privaterelayrange.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *PrivateRelayRangeClient) GetX(ctx context.Context, id int64) *PrivateRelayRange {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *PrivateRelayRangeClient) Hooks() []Hook {
+	return c.hooks.PrivateRelayRange
+}
+
+// Interceptors returns the client interceptors.
+func (c *PrivateRelayRangeClient) Interceptors() []Interceptor {
+	return c.inters.PrivateRelayRange
+}
+
+func (c *PrivateRelayRangeClient) mutate(ctx context.Context, m *PrivateRelayRangeMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&PrivateRelayRangeCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&PrivateRelayRangeUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&PrivateRelayRangeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&PrivateRelayRangeDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown PrivateRelayRange mutation op: %q", m.Op())
+	}
+}
+
 // RecoveryCodeClient is a client for the RecoveryCode schema.
 type RecoveryCodeClient struct {
 	config
@@ -9273,10 +9414,10 @@ type (
 		CustomField, EmailTemplate, Erasure, Event, Hold, InstanceState, Integration,
 		Invitation, JoinDomain, Membership, OAuthClient, OAuthCode, OAuthRefreshToken,
 		OutboundMessage, OutboxMessage, OutboxOffset, Passkey, PasskeyChallenge,
-		RecoveryCode, RiverJob, Rule, RuleFiring, RuleTrigger, SchemaState, Segment,
-		SendLimiter, SendingDomain, ServiceCredential, StaffMember, Suppression, Tag,
-		TrackingHostChange, Unsubscribe, Usage, User, UserIdentity, Visitor,
-		WebhookEndpoint, Workspace []ent.Hook
+		PrivateRelayRange, RecoveryCode, RiverJob, Rule, RuleFiring, RuleTrigger,
+		SchemaState, Segment, SendLimiter, SendingDomain, ServiceCredential,
+		StaffMember, Suppression, Tag, TrackingHostChange, Unsubscribe, Usage, User,
+		UserIdentity, Visitor, WebhookEndpoint, Workspace []ent.Hook
 	}
 	inters struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, AutomationVersion,
@@ -9284,10 +9425,10 @@ type (
 		CustomField, EmailTemplate, Erasure, Event, Hold, InstanceState, Integration,
 		Invitation, JoinDomain, Membership, OAuthClient, OAuthCode, OAuthRefreshToken,
 		OutboundMessage, OutboxMessage, OutboxOffset, Passkey, PasskeyChallenge,
-		RecoveryCode, RiverJob, Rule, RuleFiring, RuleTrigger, SchemaState, Segment,
-		SendLimiter, SendingDomain, ServiceCredential, StaffMember, Suppression, Tag,
-		TrackingHostChange, Unsubscribe, Usage, User, UserIdentity, Visitor,
-		WebhookEndpoint, Workspace []ent.Interceptor
+		PrivateRelayRange, RecoveryCode, RiverJob, Rule, RuleFiring, RuleTrigger,
+		SchemaState, Segment, SendLimiter, SendingDomain, ServiceCredential,
+		StaffMember, Suppression, Tag, TrackingHostChange, Unsubscribe, Usage, User,
+		UserIdentity, Visitor, WebhookEndpoint, Workspace []ent.Interceptor
 	}
 )
 
