@@ -3,6 +3,7 @@ import { expect, test } from 'vitest'
 
 import { graphToSteps, stepsToGraph } from './definition.ts'
 import type { AutomationStep } from './definition.ts'
+import { automationSnapshot } from './LeaveGuard.tsx'
 
 const STEPS: AutomationStep[] = [
   { type: 'email', subject: 'Hello', body: '<p></p>' },
@@ -281,4 +282,21 @@ test('stepsToGraph names each node by its kind', () => {
   })
 
   expect(nodes.map((n) => n.data.properties.label)).toEqual(['Trigger', 'Wait'])
+})
+
+test('the saved snapshot changes with the name, the trigger or the steps, and not with a re-layout', () => {
+  const graph = stepsToGraph('contact.created', STEPS, {})
+  const saved = automationSnapshot('Welcome', graph)
+
+  expect(automationSnapshot('  Welcome ', graph)).toBe(saved)
+  expect(automationSnapshot('Welcome 2', graph)).not.toBe(saved)
+  expect(automationSnapshot('Welcome', stepsToGraph('email.opened', STEPS, {}))).not.toBe(saved)
+  expect(
+    automationSnapshot('Welcome', stepsToGraph('contact.created', STEPS.slice(1), {})),
+  ).not.toBe(saved)
+  const moved = {
+    ...graph,
+    nodes: graph.nodes.map((n) => ({ ...n, position: { x: 50, y: n.position.y } })),
+  }
+  expect(automationSnapshot('Welcome', moved)).toBe(saved)
 })

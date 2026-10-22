@@ -9,7 +9,7 @@ import type {
   WorkflowBuilderIsValidConnection,
 } from '@workflowbuilder/sdk'
 import i18next from 'i18next'
-import { useCallback, useEffect, useLayoutEffect, useMemo } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { I18nextProvider, useTranslation } from 'react-i18next'
 
 import { ButtonLink } from '../../components/RouterLink.tsx'
@@ -26,6 +26,7 @@ import { getApiErrorMessage } from '../../utils/apiErrors.ts'
 import { graphToSteps, stepsToGraph } from './definition.ts'
 import type { AutomationGraph } from './definition.ts'
 import { FailedEnrollments } from './FailedEnrollments.tsx'
+import { automationSnapshot, LeaveGuard } from './LeaveGuard.tsx'
 import { messageRenderer } from './MessageControl.tsx'
 import { useAutomationNodeTypes } from './nodes.tsx'
 import { triggerRenderer } from './TriggerControl.tsx'
@@ -165,6 +166,8 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
     return stepsToGraph(automation.triggerEvent, automation.steps, labels)
   }, [automation.triggerEvent, automation.steps, nodeTypes])
 
+  const [saved, setSaved] = useState(() => automationSnapshot(automation.name, initialGraph))
+
   const updateMutation = useMutation({
     ...siteAutomationsUpdateMutation(),
     onSuccess: async (updated) => {
@@ -205,6 +208,7 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
             steps,
           },
         })
+        setSaved(automationSnapshot(values.name, graph))
         notify({
           color: 'teal',
           title: t(($) => $.notifications.successTitle),
@@ -268,6 +272,7 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
           jsonForm={jsonForm}
         >
           <ThemeSync />
+          <LeaveGuard name={form.values.name} saved={saved} />
           <Box pos="relative" w="100vw" h="100vh">
             <WorkflowBuilder.Canvas />
             <I18nextProvider i18n={i18n}>
