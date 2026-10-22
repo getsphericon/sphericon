@@ -14,7 +14,7 @@ const WORKSPACE_ID = { workspaceId: 'TestWs01' }
 const CREATE_ROUTE = routeMount(automationsCreateRoute, WORKSPACE_ID)
 const NOW = '2026-01-01T00:00:00Z'
 
-test('creating an automation sends the trimmed name and trigger, then opens the builder', async () => {
+test('creating an automation sends the trimmed name and the default trigger, then opens the builder', async () => {
   const bodies: unknown[] = []
   worker.use(
     handleSiteAutomationsCreate(async ({ request }) => {
@@ -48,23 +48,14 @@ test('creating an automation sends the trimmed name and trigger, then opens the 
   })
 })
 
-test('the chosen trigger event is sent', async () => {
-  const bodies: unknown[] = []
-  worker.use(
-    handleSiteAutomationsCreate(async ({ request }) => {
-      bodies.push(await request.json())
-      return problem(500)
-    }),
-  )
+test('a refused create shows an error toast', async () => {
+  worker.use(handleSiteAutomationsCreate(() => problem(500)))
 
   const { screen } = await renderWithRouter(<AutomationCreatePage />, CREATE_ROUTE)
 
   await screen.getByLabelText('Name', { exact: false }).fill('Opens')
-  await screen.getByRole('combobox', { name: 'Trigger event' }).click()
-  await screen.getByRole('option', { name: 'Email opened' }).click()
   await screen.getByRole('button', { name: 'Continue' }).click()
 
-  await expect.poll(() => bodies).toEqual([{ name: 'Opens', triggerEvent: 'email.opened' }])
   await expect.element(screen.getByText('Failed to save automation')).toBeInTheDocument()
 })
 

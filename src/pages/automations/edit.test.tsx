@@ -44,11 +44,13 @@ test('loads the automation into the builder', async () => {
 
   const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
 
-  await expect.element(screen.getByText('Edit automation')).toBeInTheDocument()
   await expect.element(screen.getByLabelText('Name', { exact: false })).toHaveValue('Welcome flow')
+  await expect.poll(() => flowNode(0)).toBeInstanceOf(Element)
+  await page.elementLocator(flowNode(0)).click()
+  await screen.getByText('Properties').click()
   await expect
-    .element(screen.getByRole('combobox', { name: 'Trigger event' }))
-    .toHaveValue('Email clicked')
+    .element(screen.getByRole('combobox', { name: 'Trigger Event' }))
+    .toHaveValue('email.clicked')
 })
 
 test('shows an error alert when the automation fails to load', async () => {
@@ -72,7 +74,7 @@ const STORED: SiteAutomationResource = {
   updatedAt: NOW,
 }
 
-test('saving from the builder sends the edited name, trigger and the canvas steps', async () => {
+test('saving from the builder sends the edited name, the trigger and the canvas steps', async () => {
   const bodies: unknown[] = []
   worker.use(
     handleSiteAutomationsGet({ body: STORED }),
@@ -99,6 +101,26 @@ test('saving from the builder sends the edited name, trigger and the canvas step
       },
     ])
   await expect.element(screen.getByText('Automation updated')).toBeInTheDocument()
+})
+
+test('saving sends the trigger event typed on the canvas, a custom one included', async () => {
+  const bodies: unknown[] = []
+  worker.use(
+    handleSiteAutomationsGet({ body: STORED }),
+    handleSiteAutomationsUpdate(async ({ request }) => {
+      bodies.push(await request.json())
+      return HttpResponse.json(STORED)
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
+  await expect.poll(() => flowNode(0)).toBeInstanceOf(Element)
+  await page.elementLocator(flowNode(0)).click()
+  await screen.getByText('Properties').click()
+  await screen.getByRole('combobox', { name: 'Trigger Event' }).fill('course_completed')
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect.poll(() => bodies).toMatchObject([{ triggerEvent: 'course_completed' }])
 })
 
 const AUTHORED_DOC = {
@@ -180,7 +202,7 @@ test('shows no failed enrollments when none has a recorded reason', async () => 
 
   const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
 
-  await expect.element(screen.getByText('Edit automation')).toBeInTheDocument()
+  await expect.element(screen.getByLabelText('Name', { exact: false })).toBeInTheDocument()
   await expect.element(screen.getByText('Failed enrollments')).not.toBeInTheDocument()
 })
 
@@ -192,7 +214,7 @@ test('shows no failed enrollments when the list cannot load', async () => {
 
   const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
 
-  await expect.element(screen.getByText('Edit automation')).toBeInTheDocument()
+  await expect.element(screen.getByLabelText('Name', { exact: false })).toBeInTheDocument()
   await expect.element(screen.getByText('Failed enrollments')).not.toBeInTheDocument()
 })
 
@@ -223,16 +245,18 @@ test('lists the enrollments an HTTP step failed, with the reason and the respons
 
   const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
 
-  await expect.element(screen.getByText('Failed enrollments')).toBeInTheDocument()
+  await screen.getByRole('button', { name: 'Failed enrollments (1)' }).click()
+
   await expect.element(screen.getByText('The receiver answered 503')).toBeInTheDocument()
   await expect.element(screen.getByText('upstream unavailable')).toBeInTheDocument()
 })
 
-// The canvas node of the only step; it throws until the canvas has drawn it, which poll retries.
-function flowNode() {
-  const node = document.querySelector('.react-flow__node')
+// The canvas node at `index` (0 is the Trigger); it throws until the canvas has drawn it, which
+// poll retries.
+function flowNode(index: number) {
+  const node = document.querySelectorAll('.react-flow__node')[index]
   if (!node) {
-    throw new Error('the canvas has not drawn the step yet')
+    throw new Error('the canvas has not drawn the node yet')
   }
   return node
 }
@@ -248,8 +272,8 @@ test('an email step opens its document in the editor from the properties panel',
   )
 
   const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
-  await expect.poll(flowNode).toBeInstanceOf(Element)
-  await page.elementLocator(flowNode()).click()
+  await expect.poll(() => flowNode(1)).toBeInstanceOf(Element)
+  await page.elementLocator(flowNode(1)).click()
   await screen.getByText('Properties').click()
   await screen.getByRole('button', { name: 'Edit message' }).click()
 

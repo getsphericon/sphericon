@@ -1,9 +1,10 @@
-import { sharedProperties } from '@workflowbuilder/sdk'
+import { NodeType, sharedProperties } from '@workflowbuilder/sdk'
 import type { PaletteItem, UISchema, WBIcon } from '@workflowbuilder/sdk'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { MESSAGE_FORMAT } from './MessageControl.tsx'
+import { TRIGGER_EVENT_FORMAT } from './TriggerControl.tsx'
 
 // The palette `type` of each node, stored on `node.data.type` and used by the
 // graph ↔ definition converters to tell email steps from wait steps.
@@ -12,12 +13,24 @@ export const WAIT_NODE_TYPE = 'wait'
 export const APPLY_TAG_NODE_TYPE = 'apply_tag'
 export const REMOVE_TAG_NODE_TYPE = 'remove_tag'
 export const HTTP_NODE_TYPE = 'http'
+// The Trigger is not a Step: it is the canvas's start node and is saved as the automation's
+// trigger event, never in the steps.
+export const TRIGGER_NODE_TYPE = 'trigger'
 
 // Phosphor icon names (WBIcon) the SDK renders in the palette and node header.
 export const EMAIL_NODE_ICON = 'Envelope'
 export const WAIT_NODE_ICON = 'Timer'
 export const TAG_NODE_ICON: WBIcon = 'Tag'
 export const HTTP_NODE_ICON: WBIcon = 'WebhooksLogo'
+export const TRIGGER_NODE_ICON: WBIcon = 'Lightning'
+
+export const TRIGGER_EVENTS = [
+  'contact.created',
+  'email.opened',
+  'email.clicked',
+  'email.unsubscribed',
+] as const
+export const DEFAULT_TRIGGER_EVENT = TRIGGER_EVENTS[0]
 
 // useAutomationNodeTypes builds the palette definitions for the visual builder.
 // Memoized so the array keeps a stable reference across renders — the SDK
@@ -27,6 +40,31 @@ export function useAutomationNodeTypes(): PaletteItem[] {
 
   return useMemo(
     () => [
+      {
+        type: TRIGGER_NODE_TYPE,
+        icon: TRIGGER_NODE_ICON,
+        templateType: NodeType.StartNode,
+        isStartNode: true,
+        label: t(($) => $.automations.stepTrigger),
+        description: t(($) => $.automations.triggerHint),
+        defaultPropertiesData: { triggerEvent: DEFAULT_TRIGGER_EVENT },
+        schema: {
+          type: 'object',
+          required: ['triggerEvent'],
+          properties: {
+            ...sharedProperties,
+            triggerEvent: {
+              type: 'string',
+              label: t(($) => $.automations.triggerLabel),
+              format: TRIGGER_EVENT_FORMAT,
+            },
+          },
+        },
+        uischema: {
+          type: 'VerticalLayout',
+          elements: [{ type: 'Text', scope: '#/properties/triggerEvent', placeholder: '' }],
+        } satisfies UISchema,
+      },
       {
         type: EMAIL_NODE_TYPE,
         icon: EMAIL_NODE_ICON,

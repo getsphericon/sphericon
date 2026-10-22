@@ -1,3 +1,4 @@
+import { NodeType } from '@workflowbuilder/sdk'
 import type { WBIcon, WorkflowBuilderEdge, WorkflowBuilderNode } from '@workflowbuilder/sdk'
 import * as z from 'zod'
 
@@ -14,6 +15,8 @@ import {
   HTTP_NODE_TYPE,
   REMOVE_TAG_NODE_TYPE,
   TAG_NODE_ICON,
+  TRIGGER_NODE_ICON,
+  TRIGGER_NODE_TYPE,
   WAIT_NODE_ICON,
   WAIT_NODE_TYPE,
 } from './nodes.tsx'
@@ -73,32 +76,58 @@ function stepProperties(step: AutomationStep): Record<string, unknown> {
   }
 }
 
-// stepsToGraph builds a linear top-to-bottom chain of nodes for the canvas from
-// the stored steps. Positions are synthesized from order, never persisted.
-export function stepsToGraph(steps: AutomationStep[]): AutomationGraph {
-  const nodes: WorkflowBuilderNode[] = steps.map((step, i) => ({
-    id: `step-${i}`,
-    type: NODE_RENDERER_TYPE,
-    position: { x: 0, y: i * Y_GAP },
-    data: {
-      type: step.type,
-      icon: STEP_ICON[step.type],
-      segments: [],
-      properties: stepProperties(step),
-    },
-  }))
+const TRIGGER_NODE_ID = 'trigger'
 
-  const edges: WorkflowBuilderEdge[] = []
-  for (let i = 1; i < steps.length; i++) {
-    edges.push({
-      id: `edge-${i - 1}-${i}`,
-      source: `step-${i - 1}`,
-      target: `step-${i}`,
-      sourceHandle: SOURCE_HANDLE,
-      targetHandle: TARGET_HANDLE,
-      type: EDGE_TYPE,
-    })
+function labelOf(labels: Record<string, string>, type: string): { label?: string } {
+  const label = labels[type]
+  return label === undefined ? {} : { label }
+}
+
+// stepsToGraph builds a linear top-to-bottom chain for the canvas: the Trigger as the start
+// node, then one node per stored step. Positions are synthesized from order, never persisted;
+// `labels` names each node kind on the canvas.
+export function stepsToGraph(
+  triggerEvent: string,
+  steps: AutomationStep[],
+  labels: Record<string, string>,
+): AutomationGraph {
+  const trigger: WorkflowBuilderNode = {
+    id: TRIGGER_NODE_ID,
+    type: NODE_RENDERER_TYPE,
+    position: { x: 0, y: 0 },
+    deletable: false,
+    data: {
+      type: TRIGGER_NODE_TYPE,
+      icon: TRIGGER_NODE_ICON,
+      templateType: NodeType.StartNode,
+      isStartNode: true,
+      segments: [],
+      properties: { triggerEvent, ...labelOf(labels, TRIGGER_NODE_TYPE) },
+    },
   }
+  const nodes: WorkflowBuilderNode[] = [
+    trigger,
+    ...steps.map((step, i): WorkflowBuilderNode => ({
+      id: `step-${i}`,
+      type: NODE_RENDERER_TYPE,
+      position: { x: 0, y: (i + 1) * Y_GAP },
+      data: {
+        type: step.type,
+        icon: STEP_ICON[step.type],
+        segments: [],
+        properties: { ...stepProperties(step), ...labelOf(labels, step.type) },
+      },
+    })),
+  ]
+
+  const edges: WorkflowBuilderEdge[] = nodes.slice(1).map((node, i) => ({
+    id: `edge-${i}`,
+    source: nodes[i]?.id ?? TRIGGER_NODE_ID,
+    target: node.id,
+    sourceHandle: SOURCE_HANDLE,
+    targetHandle: TARGET_HANDLE,
+    type: EDGE_TYPE,
+  }))
 
   return { nodes, edges }
 }
@@ -158,31 +187,31 @@ function nodeToStep(node: WorkflowBuilderNode): AutomationStep | null {
   return null
 }
 
-// graphToSteps linearizes the canvas graph into ordered steps by walking from
-// the entry node (in-degree 0) along single outgoing edges. Branches are not
-// supported yet: extra nodes off the main chain are reported via `dropped` so
-// the caller can warn instead of silently losing them.
-export function graphToSteps(graph: AutomationGraph): { steps: AutomationStep[]; dropped: number } {
+// graphToSteps linearizes the canvas graph: it finds the one Trigger node, reads the trigger
+// event off it and walks single outgoing edges from there into ordered steps. The Trigger is
+// not a Step. Branches are not supported yet: nodes off the main chain are reported via
+// `dropped` so the caller can warn instead of silently losing them. `triggerEvent` is null
+// when the canvas does not hold exactly one Trigger.
+export function graphToSteps(graph: AutomationGraph): {
+  triggerEvent: string | null
+  steps: AutomationStep[]
+  dropped: number
+} {
   const { nodes, edges } = graph
-  if (nodes.length === 0) {
-    return { steps: [], dropped: 0 }
+  const triggers = nodes.filter((n) => n.data.type === TRIGGER_NODE_TYPE)
+  const [root] = triggers
+  if (triggers.length !== 1 || !root) {
+    return { triggerEvent: null, steps: [], dropped: 0 }
   }
 
   const byId = new Map(nodes.map((n) => [n.id, n]))
-  const outgoing = new Map<string, string[]>()
-  const indegree = new Map<string, number>(nodes.map((n) => [n.id, 0]))
+  const next = new Map<string, string>()
   for (const e of edges) {
-    if (!byId.has(e.source) || !byId.has(e.target)) {
-      continue
+    if (byId.has(e.source) && byId.has(e.target) && !next.has(e.source)) {
+      next.set(e.source, e.target)
     }
-    outgoing.set(e.source, [...(outgoing.get(e.source) ?? []), e.target])
-    indegree.set(e.target, (indegree.get(e.target) ?? 0) + 1)
   }
 
-  const root = nodes.find((n) => (indegree.get(n.id) ?? 0) === 0) ?? nodes[0]
-  if (!root) {
-    return { steps: [], dropped: 0 }
-  }
   const steps: AutomationStep[] = []
   const visited = new Set<string>()
   let current: string | undefined = root.id
@@ -193,8 +222,12 @@ export function graphToSteps(graph: AutomationGraph): { steps: AutomationStep[];
     if (step) {
       steps.push(step)
     }
-    current = outgoing.get(current)?.[0]
+    current = next.get(current)
   }
 
-  return { steps, dropped: nodes.length - visited.size }
+  return {
+    triggerEvent: asText(root.data.properties.triggerEvent),
+    steps,
+    dropped: nodes.length - visited.size,
+  }
 }

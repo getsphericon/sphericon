@@ -1,4 +1,4 @@
-import { Button, Group, Stack, Title } from '@mantine/core'
+import { Button, Group, Stack, TextInput, Title } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
@@ -12,18 +12,17 @@ import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
 import { Route as automationsRoute } from '../../routes/workspaces/$workspaceId/automations/index.tsx'
 import { Route as automationsCreateRoute } from '../../routes/workspaces/$workspaceId/automations/new.tsx'
-import { AutomationDetailsFields } from './AutomationDetailsFields.tsx'
-import type { AutomationDetailsValues } from './AutomationDetailsFields.tsx'
+import { DEFAULT_TRIGGER_EVENT } from './nodes.tsx'
 
-// Create captures only name + trigger, then redirects into the visual builder
-// (edit) where the flow itself is designed — so the builder always has an id.
+// Create captures only the name, then redirects into the visual builder (edit) where the
+// trigger and the steps are designed on the canvas — so the builder always has an id.
 export function AutomationCreatePage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { workspaceId } = automationsCreateRoute.useParams()
 
-  const form = useForm<AutomationDetailsValues>({
-    initialValues: { name: '', triggerEvent: 'contact.created' },
+  const form = useForm({
+    initialValues: { name: '' },
   })
 
   const createMutation = useResourceMutation({
@@ -42,12 +41,16 @@ export function AutomationCreatePage() {
         onSubmit={form.onSubmit((values) =>
           createMutation.mutate({
             path: { workspaceId },
-            body: { name: values.name.trim(), triggerEvent: values.triggerEvent },
+            body: { name: values.name.trim(), triggerEvent: DEFAULT_TRIGGER_EVENT },
           }),
         )}
       >
         <Stack maw={480}>
-          <AutomationDetailsFields form={form} stacked />
+          <TextInput
+            label={t(($) => $.automations.nameLabel)}
+            required
+            {...form.getInputProps('name')}
+          />
           <Group justify="flex-end">
             <ButtonLink variant="default" to={automationsRoute.to} params={{ workspaceId }}>
               {t(($) => $.actions.cancel)}

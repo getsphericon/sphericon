@@ -1,4 +1,4 @@
-import { Loader, Stack, Title } from '@mantine/core'
+import { Loader } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
@@ -6,7 +6,6 @@ import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
 import { siteAutomationsGetOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
 import { AutomationBuilder } from './AutomationBuilder.tsx'
-import { FailedEnrollments } from './FailedEnrollments.tsx'
 
 export function AutomationEditPage() {
   const { t } = useTranslation()
@@ -28,11 +27,5 @@ export function AutomationEditPage() {
     )
   }
 
-  return (
-    <Stack>
-      <Title order={4}>{t(($) => $.automations.editTitle)}</Title>
-      <AutomationBuilder workspaceId={workspaceId} automation={getQuery.data} />
-      <FailedEnrollments workspaceId={workspaceId} automationId={automationId} />
-    </Stack>
-  )
+  return <AutomationBuilder workspaceId={workspaceId} automation={getQuery.data} />
 }

@@ -1,12 +1,17 @@
-import { Box, Stack, useComputedColorScheme } from '@mantine/core'
+import { Box, Button, Group, Modal, Paper, TextInput, useComputedColorScheme } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useWorkflowBuilderActions, WorkflowBuilder } from '@workflowbuilder/sdk'
-import type { IntegrationDataFormat, OnSaveExternal } from '@workflowbuilder/sdk'
+import type {
+  IntegrationDataFormat,
+  OnSaveExternal,
+  WorkflowBuilderIsValidConnection,
+} from '@workflowbuilder/sdk'
 import i18next from 'i18next'
 import { useCallback, useEffect, useLayoutEffect, useMemo } from 'react'
 import { I18nextProvider, useTranslation } from 'react-i18next'
 
+import { ButtonLink } from '../../components/RouterLink.tsx'
 import {
   siteAutomationsGetQueryKey,
   siteAutomationsListQueryKey,
@@ -14,12 +19,14 @@ import {
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteAutomationResource } from '../../generated/site/types.gen.ts'
 import { useNotify } from '../../hooks/useNotify.ts'
+import { i18n } from '../../i18n.ts'
+import { Route as automationsRoute } from '../../routes/workspaces/$workspaceId/automations/index.tsx'
 import { getApiErrorMessage } from '../../utils/apiErrors.ts'
-import { AutomationDetailsFields } from './AutomationDetailsFields.tsx'
-import type { AutomationDetailsValues } from './AutomationDetailsFields.tsx'
 import { graphToSteps, stepsToGraph } from './definition.ts'
+import { FailedEnrollments } from './FailedEnrollments.tsx'
 import { messageRenderer } from './MessageControl.tsx'
 import { useAutomationNodeTypes } from './nodes.tsx'
+import { triggerRenderer } from './TriggerControl.tsx'
 
 // Imported as a raw string (not auto-injected): the SDK sheet carries unlayered
 // global resets and .mantine-* overrides that would leak app-wide. We mount it
@@ -27,8 +34,26 @@ import { useAutomationNodeTypes } from './nodes.tsx'
 // touches the rest of the app (e.g. the dashboard's body scroll).
 import builderStyles from '@workflowbuilder/sdk/style.css?inline'
 
-// The email step's message is edited by the editor, not a text field. A stable reference.
-const jsonForm = { renderers: [messageRenderer] }
+// The email step's message is edited by the editor, not a text field, and the Trigger's event
+// is typed with suggestions. A stable reference.
+const jsonForm = { renderers: [messageRenderer, triggerRenderer] }
+
+// The linear model has one way in: nothing connects into the Trigger.
+const isValidConnection: WorkflowBuilderIsValidConnection = ({ targetNode }) =>
+  !targetNode.data.isStartNode
+
+interface AutomationNameValues {
+  name: string
+}
+type AutomationNameForm = ReturnType<typeof useAutomationNameForm>
+
+function useAutomationNameForm(name: string) {
+  const { t } = useTranslation()
+  return useForm<AutomationNameValues>({
+    initialValues: { name },
+    validate: { name: (value) => (value.trim() === '' ? t(($) => $.validation.required) : null) },
+  })
+}
 
 interface AutomationBuilderProps {
   workspaceId: string
@@ -53,10 +78,59 @@ function ThemeSync() {
   return null
 }
 
-// AutomationBuilder hosts the visual flow editor. Name + trigger are edited as
-// Mantine chrome above the canvas; the SDK's Save (top bar) drives onDataSave,
-// which converts the graph to the linear []step definition and persists name,
-// trigger and definition together through the generated update mutation.
+// The bar floating over the canvas replaces the SDK's own top bar: the way back, the
+// automation's name, the failed Enrollments and the Save that drives onDataSave. It sits inside
+// <WorkflowBuilder.Root> to reach the save action, and under the SDK's i18next instance, which
+// does not hold the app's strings, so it is bound back to the app's instance.
+function BuilderBar({
+  form,
+  workspaceId,
+  automationId,
+}: {
+  form: AutomationNameForm
+  workspaceId: string
+  automationId: string
+}) {
+  const { t } = useTranslation()
+  const { save } = useWorkflowBuilderActions()
+  const saveMutation = useMutation({ mutationFn: save })
+
+  return (
+    <Paper withBorder shadow="sm" p="xs" pos="absolute" top={16} left={16} right={16}>
+      <Group justify="space-between" wrap="nowrap">
+        <Group wrap="nowrap">
+          <ButtonLink variant="default" to={automationsRoute.to} params={{ workspaceId }}>
+            {t(($) => $.actions.back)}
+          </ButtonLink>
+          <TextInput
+            aria-label={t(($) => $.automations.nameLabel)}
+            placeholder={t(($) => $.automations.nameLabel)}
+            w={320}
+            {...form.getInputProps('name')}
+          />
+        </Group>
+        <Group wrap="nowrap">
+          <FailedEnrollments workspaceId={workspaceId} automationId={automationId} />
+          <Button
+            loading={saveMutation.isPending}
+            onClick={() => {
+              if (!form.validate().hasErrors) {
+                saveMutation.mutate()
+              }
+            }}
+          >
+            {t(($) => $.actions.save)}
+          </Button>
+        </Group>
+      </Group>
+    </Paper>
+  )
+}
+
+// AutomationBuilder hosts the visual flow editor. The name is edited in the bar over the canvas;
+// the Trigger is the canvas's first node. Save drives onDataSave, which converts the graph to
+// the trigger event and the linear []step definition and persists name, trigger and steps
+// together through the generated update mutation.
 export function AutomationBuilder({ workspaceId, automation }: AutomationBuilderProps) {
   const { t } = useTranslation()
   const notify = useNotify()
@@ -74,11 +148,14 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
     return () => style.remove()
   }, [])
 
-  const form = useForm<AutomationDetailsValues>({
-    initialValues: { name: automation.name, triggerEvent: automation.triggerEvent },
-  })
+  const form = useAutomationNameForm(automation.name)
 
-  const initialGraph = useMemo(() => stepsToGraph(automation.steps), [automation.steps])
+  const initialGraph = useMemo(() => {
+    const labels = Object.fromEntries(
+      nodeTypes.flatMap((item) => ('type' in item ? [[item.type, item.label]] : [])),
+    )
+    return stepsToGraph(automation.triggerEvent, automation.steps, labels)
+  }, [automation.triggerEvent, automation.steps, nodeTypes])
 
   const updateMutation = useMutation({
     ...siteAutomationsUpdateMutation(),
@@ -94,7 +171,18 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
 
   const onDataSave = useCallback<OnSaveExternal>(
     async (data: IntegrationDataFormat) => {
-      const { steps, dropped } = graphToSteps({ nodes: data.nodes, edges: data.edges })
+      const { triggerEvent, steps, dropped } = graphToSteps({
+        nodes: data.nodes,
+        edges: data.edges,
+      })
+      if (triggerEvent === null) {
+        notify({
+          color: 'red',
+          title: t(($) => $.automations.triggerMissingTitle),
+          message: t(($) => $.automations.triggerMissing),
+        })
+        return 'error'
+      }
       if (dropped > 0) {
         notify({
           color: 'yellow',
@@ -108,7 +196,7 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
           path: { workspaceId, id: automation.id },
           body: {
             name: values.name.trim(),
-            triggerEvent: values.triggerEvent,
+            triggerEvent,
             steps,
           },
         })
@@ -135,32 +223,53 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
 
   const integration = useMemo(() => ({ strategy: 'props' as const, onDataSave }), [onDataSave])
 
+  // The SDK's canvas fills the viewport (100vw by 100vh), so the editor is a full-screen layer
+  // over the app rather than a block inside a page. Its focus trap is off so the SDK's own
+  // menus, rendered outside the dialog, stay usable.
   return (
-    <Stack>
-      <AutomationDetailsFields form={form} />
-      <Box pos="relative" h="calc(100vh - 220px)" w="100%">
-        {/* The SDK initialises and reads the global i18next instance for its own
-            strings. The app tree runs on a private instance (see main.tsx), so the
-            builder subtree is bound back to the global one here. */}
-        <I18nextProvider i18n={i18next}>
-          {/* Passing children replaces the SDK's default layout, so we mount
-              it explicitly (<DefaultLayout />) and add ThemeSync alongside to
-              keep the canvas theme in step with Mantine's color scheme. */}
-          <WorkflowBuilder.Root
-            key={automation.id}
-            name={automation.name}
-            layoutDirection="DOWN"
-            nodeTypes={nodeTypes}
-            initialNodes={initialGraph.nodes}
-            initialEdges={initialGraph.edges}
-            integration={integration}
-            jsonForm={jsonForm}
-          >
-            <ThemeSync />
-            <WorkflowBuilder.DefaultLayout />
-          </WorkflowBuilder.Root>
-        </I18nextProvider>
-      </Box>
-    </Stack>
+    <Modal
+      opened
+      onClose={() => undefined}
+      fullScreen
+      padding={0}
+      withCloseButton={false}
+      closeOnEscape={false}
+      trapFocus={false}
+      transitionProps={{ duration: 0 }}
+    >
+      {/* The SDK initialises and reads the global i18next instance for its own
+          strings. The app tree runs on a private instance (see main.tsx), so the
+          builder subtree is bound back to the global one here. */}
+      <I18nextProvider i18n={i18next}>
+        {/* Children replace the SDK's default layout: its top bar (logo, folder name,
+            language, theme and read-only toggles) is swapped for <BuilderBar />, and
+            ThemeSync keeps the canvas theme in step with Mantine's color scheme. */}
+        <WorkflowBuilder.Root
+          key={automation.id}
+          name={automation.name}
+          layoutDirection="DOWN"
+          nodeTypes={nodeTypes}
+          initialNodes={initialGraph.nodes}
+          initialEdges={initialGraph.edges}
+          integration={integration}
+          isValidConnection={isValidConnection}
+          jsonForm={jsonForm}
+        >
+          <ThemeSync />
+          <Box pos="relative" w="100vw" h="100vh">
+            <WorkflowBuilder.Canvas />
+            <I18nextProvider i18n={i18n}>
+              <BuilderBar form={form} workspaceId={workspaceId} automationId={automation.id} />
+            </I18nextProvider>
+            <Box pos="absolute" top={88} left={16}>
+              <WorkflowBuilder.Palette />
+            </Box>
+            <Box pos="absolute" top={88} right={16}>
+              <WorkflowBuilder.PropertiesPanel />
+            </Box>
+          </Box>
+        </WorkflowBuilder.Root>
+      </I18nextProvider>
+    </Modal>
   )
 }
