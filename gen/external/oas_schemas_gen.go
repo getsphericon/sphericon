@@ -2417,7 +2417,9 @@ func (s *ConditionGroupKind) UnmarshalText(data []byte) error {
 type ConditionLeaf struct {
 	Kind ConditionLeafKind `json:"kind"`
 	// What it tests: a contact attribute (email, phone, subject_id, first_name, last_name, time_zone),
-	// "tag", "custom:" for a custom field of the workspace, or "event:".
+	// "tag", "custom:" for a custom field of the workspace, "event:", or "trigger:" (a property of the
+	// Event that fired a rule: valid only in a rule, refused in a segment, takes the text operators, and
+	// is false when the Event lacks the key or holds a value that is not text).
 	Field string `json:"field"`
 	// How the field is tested.
 	Operator ConditionOperator `json:"operator"`

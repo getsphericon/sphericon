@@ -40,6 +40,9 @@ const (
 	// tagField marks a leaf as a Tag condition: field "tag" with operator "has" or
 	// "doesNotHave" and value = the Tag name.
 	tagField = "tag"
+	// triggerFieldPrefix marks a leaf as a test on the triggering Event's own properties:
+	// "trigger:<key>". Valid only in a Rule (RulePredicate); a Segment refuses it.
+	triggerFieldPrefix = "trigger:"
 )
 
 const (
@@ -104,9 +107,22 @@ func ContactPredicate(ctx context.Context, s *ent.Scoped, def string) (predicate
 
 // Compile turns a condition group into a Contact predicate. An empty rule set
 // matches everyone (an empty negated group matches no one) — deliberate, so an
-// empty rule is never a silent "nobody".
+// empty rule is never a silent "nobody". A "trigger:" leaf is refused: only a Rule has an Event.
 func Compile(ctx context.Context, s *ent.Scoped, g Group) (predicate.Contact, error) {
 	return (&compiler{ctx: ctx, s: s, now: time.Now()}).group(g)
+}
+
+// RulePredicate parses a Rule's stored condition and compiles it for the Workspace of s, with
+// "trigger:<key>" leaves allowed. They are evaluated in memory against props, the properties of
+// the Event that fired the Rule, and folded into the tree as constants before the rest compiles
+// to a predicate (the Event's row may not exist yet). A key the Event lacks, or a value of
+// another type, makes the leaf false. Any key is valid, so props may be nil to only validate.
+func RulePredicate(ctx context.Context, s *ent.Scoped, def string, props map[string]any) (predicate.Contact, error) {
+	g, err := Parse(def)
+	if err != nil {
+		return nil, err
+	}
+	return (&compiler{ctx: ctx, s: s, now: time.Now(), trigger: &props}).group(g)
 }
 
 // compiler holds what one compilation needs: the Workspace's Custom field keys are
@@ -116,6 +132,9 @@ type compiler struct {
 	s    *ent.Scoped
 	now  time.Time
 	keys map[string]struct{}
+	// trigger is the properties of the Event a Rule's "trigger:" leaves read; nil in a Segment,
+	// where such a leaf is refused.
+	trigger *map[string]any
 }
 
 func (c *compiler) group(g Group) (predicate.Contact, error) {
@@ -189,27 +208,37 @@ func (c *compiler) rule(r Leaf) (predicate.Contact, error) {
 		return tagRule(r.Operator, r.Value)
 	case strings.HasPrefix(r.Field, customFieldPrefix):
 		return c.custom(strings.TrimPrefix(r.Field, customFieldPrefix), r.Operator, r.Value)
+	case strings.HasPrefix(r.Field, triggerFieldPrefix):
+		return c.triggerRule(strings.TrimPrefix(r.Field, triggerFieldPrefix), r.Operator, r.Value)
 	}
 	f, ok := textFields[r.Field]
 	if !ok {
 		return nil, fmt.Errorf("unknown field %q", r.Field)
 	}
-	switch r.Operator {
-	case "eq":
-		return f.eq(r.Value), nil
-	case "neq":
-		return f.neq(r.Value), nil
-	case "contains":
-		return f.contains(r.Value), nil
-	case "beginsWith":
-		return f.beginsWith(r.Value), nil
-	case "null":
-		return f.null, nil
-	case "notNull":
-		return f.notNull, nil
-	default:
+	op, ok := operators[r.Operator]
+	if !ok {
 		return nil, fmt.Errorf("unsupported operator %q", r.Operator)
 	}
+	return op.contact(f, r.Value), nil
+}
+
+// triggerRule is a test on one property of the triggering Event. It is decided here, in memory,
+// and becomes the constant predicate "everyone" or "no one" for the rest of the tree.
+func (c *compiler) triggerRule(key, op, value string) (predicate.Contact, error) {
+	if c.trigger == nil {
+		return nil, fmt.Errorf("field %q tests the triggering Event and is valid only in a Rule", triggerFieldPrefix+key)
+	}
+	if key == "" {
+		return nil, fmt.Errorf("unknown field %q", triggerFieldPrefix)
+	}
+	o, ok := operators[op]
+	if !ok {
+		return nil, fmt.Errorf("unsupported operator %q for trigger field", op)
+	}
+	if have, present := (*c.trigger)[key]; present && o.event(have, value) {
+		return contact.And(), nil
+	}
+	return predicate.Contact(func(s *sql.Selector) { s.Where(sql.False()) }), nil
 }
 
 // event is the subject performed (or never performed) `action`, optionally within the

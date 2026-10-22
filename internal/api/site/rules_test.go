@@ -128,6 +128,28 @@ func TestSiteRulesAreRefusedWhenInvalid(t *testing.T) {
 	assert.IsType(t, &siteapi.SiteRulesUpdateUnprocessableEntity{}, typoUpdate)
 }
 
+func TestSiteTriggerLeafIsAcceptedInARuleAndRefusedInASegment(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	ctx := context.Background()
+	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
+	leaf := `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"trigger:url","operator":"contains","value":"pricing"}]}`
+
+	rule, err := c.SiteRulesCreate(ctx, &siteapi.SiteCreateRuleInput{
+		Name: "Pricing", TriggerEvents: []string{"a"},
+		Actions:   []siteapi.SiteRuleAction{tagAction(siteapi.SiteRuleActionTypeApplyTag, "x")},
+		Condition: siteapi.NewOptSiteConditionGroup(testhelper.SiteRuleGroup(t, leaf)),
+	}, siteapi.SiteRulesCreateParams{WorkspaceId: workspaceID})
+	require.NoError(t, err)
+	assert.IsType(t, &siteapi.SiteRuleResource{}, rule)
+
+	segment, err := c.SiteSegmentsCreate(ctx, &siteapi.SiteCreateSegmentInput{
+		Name: "Pricing", Condition: testhelper.SiteRuleGroup(t, leaf),
+	}, siteapi.SiteSegmentsCreateParams{WorkspaceId: fixtures.AcmePublicID})
+	require.NoError(t, err)
+	assert.IsType(t, &siteapi.SiteSegmentsCreateUnprocessableEntity{}, segment)
+}
+
 func TestSiteRulesActivateRefusesARuleWithNoActions(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)

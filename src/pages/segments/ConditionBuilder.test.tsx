@@ -48,6 +48,38 @@ test('sends the current rule to the audience preview', async () => {
   await expect.element(screen.getByText('3 matching contacts')).toBeInTheDocument()
 })
 
+test('a rule edits an Event property and has no audience preview', async () => {
+  serve()
+  const value: SiteConditionGroup = {
+    kind: 'group',
+    combinator: 'and',
+    rules: [{ kind: 'rule', field: 'trigger:url', operator: 'contains', value: 'pricing' }],
+  }
+  const { screen } = await renderWithRouter(
+    <ConditionBuilder workspaceId="TestWs01" value={value} onChange={() => {}} triggerLeaves />,
+  )
+
+  await expect.element(screen.getByLabelText('Event property name')).toHaveValue('url')
+  await expect
+    .element(screen.getByRole('button', { name: 'Preview audience' }))
+    .not.toBeInTheDocument()
+})
+
+test('a segment offers no Event property', async () => {
+  serve()
+  const value: SiteConditionGroup = {
+    kind: 'group',
+    combinator: 'and',
+    rules: [{ kind: 'rule', field: 'email', operator: 'contains', value: '@x' }],
+  }
+  const { screen } = await renderWithRouter(
+    <ConditionBuilder workspaceId="TestWs01" value={value} onChange={() => {}} />,
+  )
+
+  await expect.element(screen.getByRole('button', { name: 'Preview audience' })).toBeInTheDocument()
+  await expect.element(screen.getByLabelText('Event property name')).not.toBeInTheDocument()
+})
+
 test('adding a rule emits the typed rule group', async () => {
   serve()
   const onChange = vi.fn<(group: SiteConditionGroup) => void>()

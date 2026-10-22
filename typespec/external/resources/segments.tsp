@@ -31,7 +31,9 @@ model ConditionLeaf {
   kind: "rule";
 
   /** What it tests: a contact attribute (email, phone, subject_id, first_name, last_name,
-   * time_zone), "tag", "custom:<key>" for a custom field of the workspace, or "event:<action>" */
+   * time_zone), "tag", "custom:<key>" for a custom field of the workspace, "event:<action>", or "trigger:<key>"
+   * (a property of the Event that fired a rule: valid only in a rule, refused in a segment, takes the
+   * text operators, and is false when the Event lacks the key or holds a value that is not text) */
   field: string;
 
   /** How the field is tested */

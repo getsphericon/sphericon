@@ -14,6 +14,7 @@ import {
 import { SiteConditionOperator } from '../../generated/site/types.gen.ts'
 import type { SiteConditionGroup } from '../../generated/site/types.gen.ts'
 import { toGroup, toQuery } from './condition.ts'
+import { TriggerFieldSelector, triggerFieldPrefix } from './TriggerFieldSelector.tsx'
 
 // What the backend segment engine compiles for each kind of field.
 const textOperators: Operator[] = [
@@ -54,12 +55,20 @@ interface ConditionBuilderProps {
   workspaceId: string
   value: SiteConditionGroup
   onChange: (group: SiteConditionGroup) => void
+  // Offer the tests on the triggering Event's properties. Only a Rule has an Event: a
+  // Segment refuses them, and so does the audience preview, which is hidden with them.
+  triggerLeaves?: boolean
 }
 
 // ConditionBuilder is the visual Condition editor (react-querybuilder + the official
 // Mantine compat package — no hand-rolled condition rows, no custom CSS). It edits the
 // API's typed rule group and offers a live preview of how many active contacts match.
-export function ConditionBuilder({ workspaceId, value, onChange }: ConditionBuilderProps) {
+export function ConditionBuilder({
+  workspaceId,
+  value,
+  onChange,
+  triggerLeaves = false,
+}: ConditionBuilderProps) {
   const { t } = useTranslation()
   const query = useMemo(() => toQuery(value), [value])
   const preview = useMutation(siteSegmentsPreviewMutation())
@@ -84,8 +93,11 @@ export function ConditionBuilder({ workspaceId, value, onChange }: ConditionBuil
       defaultOperator: SiteConditionOperator.PERFORMED,
       inputType: 'number',
     }))
-    return [...contactFields, ...customFields, ...eventFields]
-  }, [actionsQuery.data, customFieldsQuery.data])
+    const triggerFields: Field[] = triggerLeaves
+      ? [{ name: triggerFieldPrefix, label: 'Event property' }]
+      : []
+    return [...contactFields, ...customFields, ...eventFields, ...triggerFields]
+  }, [actionsQuery.data, customFieldsQuery.data, triggerLeaves])
 
   return (
     <Stack gap="xs">
@@ -95,22 +107,27 @@ export function ConditionBuilder({ workspaceId, value, onChange }: ConditionBuil
           operators={textOperators}
           query={query}
           enableMountQueryChange={false}
+          controlElements={triggerLeaves ? { fieldSelector: TriggerFieldSelector } : {}}
           onQueryChange={(q) => onChange(toGroup(q))}
         />
       </QueryBuilderMantine>
-      <Group>
-        <Button
-          variant="light"
-          size="compact-sm"
-          loading={preview.isPending}
-          onClick={() => preview.mutate({ path: { workspaceId }, body: { condition: value } })}
-        >
-          {t(($) => $.segments.previewButton)}
-        </Button>
-        {preview.data ? (
-          <Text size="sm">{t(($) => $.segments.previewCount, { count: preview.data.count })}</Text>
-        ) : null}
-      </Group>
+      {triggerLeaves ? null : (
+        <Group>
+          <Button
+            variant="light"
+            size="compact-sm"
+            loading={preview.isPending}
+            onClick={() => preview.mutate({ path: { workspaceId }, body: { condition: value } })}
+          >
+            {t(($) => $.segments.previewButton)}
+          </Button>
+          {preview.data ? (
+            <Text size="sm">
+              {t(($) => $.segments.previewCount, { count: preview.data.count })}
+            </Text>
+          ) : null}
+        </Group>
+      )}
     </Stack>
   )
 }
