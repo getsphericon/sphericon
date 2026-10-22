@@ -160,7 +160,14 @@ func (RuleFiring) Fields() []ent.Field {
 		// of the Rule after that does not change what this Firing runs, or what its results
 		// index into.
 		field.String("actions").
-			Default("[]"),
+			Default("[]").
+			Annotations(Sensitive{}),
+		// The Event's properties as JSON, for the Actions to template (an http Action's body sees
+		// them as `event.properties`). Personal data: it goes with the Contact on Erasure. Empty
+		// when the Event had none or more than the cap (rules.MaxFiringPropertiesBytes).
+		field.String("properties").
+			Optional().
+			Nillable(),
 		// JSON array with one result per Action run so far, in the Rule's order:
 		// [{"type":"apply_tag","status":"succeeded"}]. The Actions job appends as it goes.
 		field.String("results").

@@ -1,6 +1,7 @@
 package jobs
 
 import (
+	"context"
 	"database/sql"
 	"log/slog"
 	"time"
@@ -17,11 +18,20 @@ import (
 	"github.com/getsphericon/sphericon/internal/machine"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/outbound"
+	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/webhook"
 	"github.com/getsphericon/sphericon/internal/webhooks"
 	"github.com/getsphericon/sphericon/internal/workspacedeletion"
 )
+
+// RuleActionRunnersWithoutWait are the Rule Actions' Runners with no pause between the attempts
+// of an http Action, so a test of its retries does not wait seconds.
+func RuleActionRunnersWithoutWait(mod *outbound.Module, ruleMod *rules.Module, bus *events.Bus, client webhook.Doer) rules.ActionRunners {
+	runners := RuleActionRunners(mod, ruleMod, bus, client)
+	runners[rules.ActionHTTP] = httpAction{mod: ruleMod, client: client, wait: func(context.Context, time.Duration) error { return nil }}
+	return runners
+}
 
 // Worker constructors for the external jobs_test package: Work is exercised
 // directly (no river runtime), with the dependencies each worker would carry.

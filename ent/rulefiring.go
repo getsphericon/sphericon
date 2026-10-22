@@ -36,6 +36,8 @@ type RuleFiring struct {
 	SourceID string `json:"source_id,omitempty"`
 	// Actions holds the value of the "actions" field.
 	Actions string `json:"actions,omitempty"`
+	// Properties holds the value of the "properties" field.
+	Properties *string `json:"properties,omitempty"`
 	// Results holds the value of the "results" field.
 	Results string `json:"results,omitempty"`
 	// CompletedAt holds the value of the "completed_at" field.
@@ -99,7 +101,7 @@ func (*RuleFiring) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case rulefiring.FieldID, rulefiring.FieldWorkspaceID, rulefiring.FieldRuleID, rulefiring.FieldContactID:
 			values[i] = new(sql.NullInt64)
-		case rulefiring.FieldAction, rulefiring.FieldSourceID, rulefiring.FieldActions, rulefiring.FieldResults:
+		case rulefiring.FieldAction, rulefiring.FieldSourceID, rulefiring.FieldActions, rulefiring.FieldProperties, rulefiring.FieldResults:
 			values[i] = new(sql.NullString)
 		case rulefiring.FieldCreatedAt, rulefiring.FieldUpdatedAt, rulefiring.FieldCompletedAt:
 			values[i] = new(sql.NullTime)
@@ -171,6 +173,13 @@ func (_m *RuleFiring) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field actions", values[i])
 			} else if value.Valid {
 				_m.Actions = value.String
+			}
+		case rulefiring.FieldProperties:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field properties", values[i])
+			} else if value.Valid {
+				_m.Properties = new(string)
+				*_m.Properties = value.String
 			}
 		case rulefiring.FieldResults:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -259,6 +268,11 @@ func (_m *RuleFiring) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("actions=")
 	builder.WriteString(_m.Actions)
+	builder.WriteString(", ")
+	if v := _m.Properties; v != nil {
+		builder.WriteString("properties=")
+		builder.WriteString(*v)
+	}
 	builder.WriteString(", ")
 	builder.WriteString("results=")
 	builder.WriteString(_m.Results)

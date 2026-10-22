@@ -1378,6 +1378,7 @@ var (
 		{Name: "action", Type: field.TypeString},
 		{Name: "source_id", Type: field.TypeString},
 		{Name: "actions", Type: field.TypeString, Default: "[]"},
+		{Name: "properties", Type: field.TypeString, Nullable: true},
 		{Name: "results", Type: field.TypeString, Default: "[]"},
 		{Name: "completed_at", Type: field.TypeTime, Nullable: true},
 		{Name: "rule_id", Type: field.TypeInt64},
@@ -1392,19 +1393,19 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "rule_firings_rules_firings",
-				Columns:    []*schema.Column{RuleFiringsColumns[8]},
+				Columns:    []*schema.Column{RuleFiringsColumns[9]},
 				RefColumns: []*schema.Column{RulesColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "rule_firings_contacts_contact",
-				Columns:    []*schema.Column{RuleFiringsColumns[9]},
+				Columns:    []*schema.Column{RuleFiringsColumns[10]},
 				RefColumns: []*schema.Column{ContactsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "rule_firings_workspaces_rule_firings",
-				Columns:    []*schema.Column{RuleFiringsColumns[10]},
+				Columns:    []*schema.Column{RuleFiringsColumns[11]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1413,12 +1414,12 @@ var (
 			{
 				Name:    "rulefiring_rule_id_source_id",
 				Unique:  true,
-				Columns: []*schema.Column{RuleFiringsColumns[8], RuleFiringsColumns[4]},
+				Columns: []*schema.Column{RuleFiringsColumns[9], RuleFiringsColumns[4]},
 			},
 			{
 				Name:    "rule_firings_contact_id",
 				Unique:  false,
-				Columns: []*schema.Column{RuleFiringsColumns[9]},
+				Columns: []*schema.Column{RuleFiringsColumns[10]},
 			},
 			{
 				Name:    "rulefiring_created_at",

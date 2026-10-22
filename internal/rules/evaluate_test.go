@@ -18,7 +18,7 @@ import (
 // jobs it writes sit in the test's queue.
 func evaluate(t *testing.T, env *testhelper.TestEnv, contactID int64, action, sourceID string) []int64 {
 	t.Helper()
-	m := rules.New(env.Bus)
+	m := rules.New(env.Cipher, env.Bus)
 	fired, err := m.Evaluate(context.Background(), env.DB.Scoped(fixtures.AcmeID), rules.Event{
 		ContactID:  contactID,
 		Action:     action,
@@ -123,7 +123,7 @@ func TestEvaluateNeverReplaysAnEventRecordedBeforeActivation(t *testing.T) {
 	// RuleActivatedLater was activated an hour from now: an Event recorded now predates it.
 	before := evaluate(t, env, fixtures.ContactAliceID, "rule_later", "evt-before")
 
-	m := rules.New(env.Bus)
+	m := rules.New(env.Cipher, env.Bus)
 	after, err := m.Evaluate(context.Background(), env.DB.Scoped(fixtures.AcmeID), rules.Event{
 		ContactID: fixtures.ContactAliceID, Action: "rule_later", SourceID: "evt-after", RecordedAt: time.Now().Add(2 * time.Hour),
 	})
@@ -136,7 +136,7 @@ func TestEvaluateNeverReplaysAnEventRecordedBeforeActivation(t *testing.T) {
 
 func TestEvaluateFiresNothingForAnotherWorkspacesContact(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := rules.New(env.Bus)
+	m := rules.New(env.Cipher, env.Bus)
 
 	// The Contact belongs to Globex; the scope is Acme's.
 	fired, err := m.Evaluate(context.Background(), env.DB.Scoped(fixtures.AcmeID), rules.Event{
@@ -151,7 +151,7 @@ func TestEvaluateTestsTheEventsProperties(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
-	m := rules.New(env.Bus)
+	m := rules.New(env.Cipher, env.Bus)
 	cond := `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"trigger:url","operator":"contains","value":"pricing"}]}`
 	r, err := m.Create(ctx, s, rules.CreateInput{
 		Name: "Pricing clicks", TriggerEvents: []string{"props_click"}, Condition: &cond,

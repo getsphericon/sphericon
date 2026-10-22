@@ -1306,11 +1306,15 @@ func register(injector do.Injector, env string, o options) {
 	})
 
 	do.Provide(injector, func(i do.Injector) (*rules.Module, error) {
+		cipher, err := do.Invoke[*secrets.Cipher](i)
+		if err != nil {
+			return nil, err
+		}
 		bus, err := do.Invoke[*eventsBus](i)
 		if err != nil {
 			return nil, err
 		}
-		return rules.New(bus.Bus), nil
+		return rules.New(cipher, bus.Bus), nil
 	})
 
 	do.Provide(injector, func(i do.Injector) (*eventlog.Module, error) {

@@ -97,6 +97,20 @@ func (_c *RuleFiringCreate) SetNillableActions(v *string) *RuleFiringCreate {
 	return _c
 }
 
+// SetProperties sets the "properties" field.
+func (_c *RuleFiringCreate) SetProperties(v string) *RuleFiringCreate {
+	_c.mutation.SetProperties(v)
+	return _c
+}
+
+// SetNillableProperties sets the "properties" field if the given value is not nil.
+func (_c *RuleFiringCreate) SetNillableProperties(v *string) *RuleFiringCreate {
+	if v != nil {
+		_c.SetProperties(*v)
+	}
+	return _c
+}
+
 // SetResults sets the "results" field.
 func (_c *RuleFiringCreate) SetResults(v string) *RuleFiringCreate {
 	_c.mutation.SetResults(v)
@@ -300,6 +314,10 @@ func (_c *RuleFiringCreate) createSpec() (*RuleFiring, *sqlgraph.CreateSpec) {
 		_spec.SetField(rulefiring.FieldActions, field.TypeString, value)
 		_node.Actions = value
 	}
+	if value, ok := _c.mutation.Properties(); ok {
+		_spec.SetField(rulefiring.FieldProperties, field.TypeString, value)
+		_node.Properties = &value
+	}
 	if value, ok := _c.mutation.Results(); ok {
 		_spec.SetField(rulefiring.FieldResults, field.TypeString, value)
 		_node.Results = value
@@ -495,6 +513,24 @@ func (u *RuleFiringUpsert) UpdateActions() *RuleFiringUpsert {
 	return u
 }
 
+// SetProperties sets the "properties" field.
+func (u *RuleFiringUpsert) SetProperties(v string) *RuleFiringUpsert {
+	u.Set(rulefiring.FieldProperties, v)
+	return u
+}
+
+// UpdateProperties sets the "properties" field to the value that was provided on create.
+func (u *RuleFiringUpsert) UpdateProperties() *RuleFiringUpsert {
+	u.SetExcluded(rulefiring.FieldProperties)
+	return u
+}
+
+// ClearProperties clears the value of the "properties" field.
+func (u *RuleFiringUpsert) ClearProperties() *RuleFiringUpsert {
+	u.SetNull(rulefiring.FieldProperties)
+	return u
+}
+
 // SetResults sets the "results" field.
 func (u *RuleFiringUpsert) SetResults(v string) *RuleFiringUpsert {
 	u.Set(rulefiring.FieldResults, v)
@@ -671,6 +707,27 @@ func (u *RuleFiringUpsertOne) SetActions(v string) *RuleFiringUpsertOne {
 func (u *RuleFiringUpsertOne) UpdateActions() *RuleFiringUpsertOne {
 	return u.Update(func(s *RuleFiringUpsert) {
 		s.UpdateActions()
+	})
+}
+
+// SetProperties sets the "properties" field.
+func (u *RuleFiringUpsertOne) SetProperties(v string) *RuleFiringUpsertOne {
+	return u.Update(func(s *RuleFiringUpsert) {
+		s.SetProperties(v)
+	})
+}
+
+// UpdateProperties sets the "properties" field to the value that was provided on create.
+func (u *RuleFiringUpsertOne) UpdateProperties() *RuleFiringUpsertOne {
+	return u.Update(func(s *RuleFiringUpsert) {
+		s.UpdateProperties()
+	})
+}
+
+// ClearProperties clears the value of the "properties" field.
+func (u *RuleFiringUpsertOne) ClearProperties() *RuleFiringUpsertOne {
+	return u.Update(func(s *RuleFiringUpsert) {
+		s.ClearProperties()
 	})
 }
 
@@ -1021,6 +1078,27 @@ func (u *RuleFiringUpsertBulk) SetActions(v string) *RuleFiringUpsertBulk {
 func (u *RuleFiringUpsertBulk) UpdateActions() *RuleFiringUpsertBulk {
 	return u.Update(func(s *RuleFiringUpsert) {
 		s.UpdateActions()
+	})
+}
+
+// SetProperties sets the "properties" field.
+func (u *RuleFiringUpsertBulk) SetProperties(v string) *RuleFiringUpsertBulk {
+	return u.Update(func(s *RuleFiringUpsert) {
+		s.SetProperties(v)
+	})
+}
+
+// UpdateProperties sets the "properties" field to the value that was provided on create.
+func (u *RuleFiringUpsertBulk) UpdateProperties() *RuleFiringUpsertBulk {
+	return u.Update(func(s *RuleFiringUpsert) {
+		s.UpdateProperties()
+	})
+}
+
+// ClearProperties clears the value of the "properties" field.
+func (u *RuleFiringUpsertBulk) ClearProperties() *RuleFiringUpsertBulk {
+	return u.Update(func(s *RuleFiringUpsert) {
+		s.ClearProperties()
 	})
 }
 

@@ -13,7 +13,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/rulefiring"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -24,11 +23,11 @@ func fireAndRun(t *testing.T, env *testhelper.TestEnv, contactID int64, action, 
 	t.Helper()
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
-	m := rules.New(env.Bus)
+	m := rules.New(env.Cipher, env.Bus)
 	fired, err := m.Evaluate(ctx, s, rules.Event{ContactID: contactID, Action: action, SourceID: sourceID, RecordedAt: time.Now()})
 	require.NoError(t, err)
 	require.Len(t, fired, 1)
-	require.NoError(t, m.RunActions(ctx, s, fired[0].ID, jobs.RuleActionRunners(newMod(env, nil), env.Bus)))
+	require.NoError(t, m.RunActions(ctx, s, fired[0].ID, ruleRunners(env, nil)))
 	return env.DB.RuleFiring.GetX(ctx, fired[0].ID)
 }
 
@@ -94,7 +93,7 @@ func TestRunningAFinishedFiringAgainChangesNothing(t *testing.T) {
 	f := fireAndRun(t, env, fixtures.ContactBobID, "rule_click", "evt-again")
 	env.DB.Tag.Delete().Where(tag.Name("rule-clicked")).ExecX(ctx)
 
-	err := rules.New(env.Bus).RunActions(ctx, s, f.ID, jobs.RuleActionRunners(newMod(env, nil), env.Bus))
+	err := rules.New(env.Cipher, env.Bus).RunActions(ctx, s, f.ID, ruleRunners(env, nil))
 
 	require.NoError(t, err)
 	assert.Empty(t, tagsOf(t, env, fixtures.ContactBobID), "the Action did not run a second time")
@@ -106,7 +105,7 @@ func TestRunActionsOfAFiringThatIsGoneDoesNothing(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 	env.DB.RuleFiring.Delete().Where(rulefiring.ID(fixtures.RuleFiringPendingID)).ExecX(context.Background())
 
-	err := rules.New(env.Bus).RunActions(context.Background(), s, fixtures.RuleFiringPendingID, jobs.RuleActionRunners(newMod(env, nil), env.Bus))
+	err := rules.New(env.Cipher, env.Bus).RunActions(context.Background(), s, fixtures.RuleFiringPendingID, ruleRunners(env, nil))
 
 	assert.NoError(t, err)
 }

@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/tags"
+	"github.com/getsphericon/sphericon/internal/webhook"
 )
 
 // EvaluateRulesArgs is the evaluation of one Event against the Workspace's Rules (ADR 0054): the
@@ -97,11 +98,12 @@ func (w *RunRuleActionsWorker) Work(ctx context.Context, job *river.Job[rules.Ac
 
 // RuleActionRunners are the Runners of the Actions a Rule can have. Each reuses the module that
 // already does the thing for an Automation step; internal/rules imports none of them.
-func RuleActionRunners(mod *outbound.Module, bus *events.Bus) rules.ActionRunners {
+func RuleActionRunners(mod *outbound.Module, ruleMod *rules.Module, bus *events.Bus, client webhook.Doer) rules.ActionRunners {
 	return rules.ActionRunners{
 		rules.ActionApplyTag:  tagAction{mod: mod, apply: true},
 		rules.ActionRemoveTag: tagAction{mod: mod},
 		rules.ActionEnroll:    enrollAction{bus: bus},
+		rules.ActionHTTP:      httpAction{mod: ruleMod, client: client, wait: pause},
 	}
 }
 

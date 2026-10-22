@@ -32724,12 +32724,65 @@ func (s *SiteRuleAction) encodeFields(e *jx.Encoder) {
 			s.AutomationId.Encode(e)
 		}
 	}
+	{
+		if s.ID.Set {
+			e.FieldStart("id")
+			s.ID.Encode(e)
+		}
+	}
+	{
+		if s.URL.Set {
+			e.FieldStart("url")
+			s.URL.Encode(e)
+		}
+	}
+	{
+		if s.Headers != nil {
+			e.FieldStart("headers")
+			e.ArrStart()
+			for _, elem := range s.Headers {
+				elem.Encode(e)
+			}
+			e.ArrEnd()
+		}
+	}
+	{
+		if s.Body.Set {
+			e.FieldStart("body")
+			s.Body.Encode(e)
+		}
+	}
+	{
+		if s.Secret.Set {
+			e.FieldStart("secret")
+			s.Secret.Encode(e)
+		}
+	}
+	{
+		if s.ClearSecret.Set {
+			e.FieldStart("clearSecret")
+			s.ClearSecret.Encode(e)
+		}
+	}
+	{
+		if s.HasSecret.Set {
+			e.FieldStart("hasSecret")
+			s.HasSecret.Encode(e)
+		}
+	}
 }
 
-var jsonFieldsNameOfSiteRuleAction = [3]string{
+var jsonFieldsNameOfSiteRuleAction = [10]string{
 	0: "type",
 	1: "tag",
 	2: "automationId",
+	3: "id",
+	4: "url",
+	5: "headers",
+	6: "body",
+	7: "secret",
+	8: "clearSecret",
+	9: "hasSecret",
 }
 
 // Decode decodes SiteRuleAction from json.
@@ -32737,7 +32790,7 @@ func (s *SiteRuleAction) Decode(d *jx.Decoder) error {
 	if s == nil {
 		return errors.New("invalid: unable to decode SiteRuleAction to nil")
 	}
-	var requiredBitSet [1]uint8
+	var requiredBitSet [2]uint8
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
@@ -32771,6 +32824,83 @@ func (s *SiteRuleAction) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"automationId\"")
 			}
+		case "id":
+			if err := func() error {
+				s.ID.Reset()
+				if err := s.ID.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"id\"")
+			}
+		case "url":
+			if err := func() error {
+				s.URL.Reset()
+				if err := s.URL.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"url\"")
+			}
+		case "headers":
+			if err := func() error {
+				s.Headers = make([]SiteAutomationHttpHeader, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem SiteAutomationHttpHeader
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.Headers = append(s.Headers, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"headers\"")
+			}
+		case "body":
+			if err := func() error {
+				s.Body.Reset()
+				if err := s.Body.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"body\"")
+			}
+		case "secret":
+			if err := func() error {
+				s.Secret.Reset()
+				if err := s.Secret.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"secret\"")
+			}
+		case "clearSecret":
+			if err := func() error {
+				s.ClearSecret.Reset()
+				if err := s.ClearSecret.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"clearSecret\"")
+			}
+		case "hasSecret":
+			if err := func() error {
+				s.HasSecret.Reset()
+				if err := s.HasSecret.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"hasSecret\"")
+			}
 		default:
 			return d.Skip()
 		}
@@ -32780,8 +32910,9 @@ func (s *SiteRuleAction) Decode(d *jx.Decoder) error {
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
-	for i, mask := range [1]uint8{
+	for i, mask := range [2]uint8{
 		0b00000001,
+		0b00000000,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -33017,6 +33148,8 @@ func (s *SiteRuleActionType) Decode(d *jx.Decoder) error {
 		*s = SiteRuleActionTypeRemoveTag
 	case SiteRuleActionTypeEnrollAutomation:
 		*s = SiteRuleActionTypeEnrollAutomation
+	case SiteRuleActionTypeHTTP:
+		*s = SiteRuleActionTypeHTTP
 	default:
 		*s = SiteRuleActionType(v)
 	}

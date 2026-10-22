@@ -15066,9 +15066,40 @@
           "tag": {
             "type": "string",
             "description": "Tag name to apply to or remove from the Contact (apply_tag and remove_tag)"
+          },
+          "id": {
+            "type": "string",
+            "description": "Action id (http actions). Assigned on save; send it back on edit so the action keeps its secrets."
+          },
+          "url": {
+            "type": "string",
+            "description": "URL to POST to (http actions). A secret: never returned. Omit it when editing to keep the stored URL. Up to 2 KiB, http or https."
+          },
+          "headers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AutomationHttpHeader"
+            },
+            "description": "Up to 5 request headers (http actions). On read, only the names are returned."
+          },
+          "body": {
+            "type": "string",
+            "description": "Liquid JSON request body (http actions): Contact bindings plus `event.action` and `event.properties`, strings JSON-escaped, up to 64 KiB, must render to valid JSON"
+          },
+          "secret": {
+            "type": "string",
+            "description": "Signing secret (http actions): when set, the request is signed with Standard Webhooks. Never returned. Omit it when editing to keep the stored secret."
+          },
+          "clearSecret": {
+            "type": "boolean",
+            "description": "Remove the signing secret on save (http actions)"
+          },
+          "hasSecret": {
+            "type": "boolean",
+            "description": "Whether a signing secret is stored (http actions, read only)"
           }
         },
-        "description": "One Action of a Rule, run in order when the Rule fires. A flat shape: tag actions carry the tag name."
+        "description": "One Action of a Rule, run in order when the Rule fires. A flat shape: tag actions carry the tag name, http actions the call."
       },
       "RuleActionResult": {
         "type": "object",
@@ -15104,7 +15135,7 @@
       },
       "RuleActionType": {
         "type": "string",
-        "enum": ["apply_tag", "remove_tag"],
+        "enum": ["apply_tag", "remove_tag", "http"],
         "description": "Kind of Rule action"
       },
       "RuleFiringResource": {

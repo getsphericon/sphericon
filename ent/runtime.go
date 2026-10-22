@@ -800,7 +800,7 @@ func init() {
 	// rulefiring.DefaultActions holds the default value on creation for the actions field.
 	rulefiring.DefaultActions = rulefiringDescActions.Default.(string)
 	// rulefiringDescResults is the schema descriptor for results field.
-	rulefiringDescResults := rulefiringFields[6].Descriptor()
+	rulefiringDescResults := rulefiringFields[7].Descriptor()
 	// rulefiring.DefaultResults holds the default value on creation for the results field.
 	rulefiring.DefaultResults = rulefiringDescResults.Default.(string)
 	ruletriggerMixin := schema.RuleTrigger{}.Mixin()

@@ -22,6 +22,7 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/dkimstate"
+	"github.com/getsphericon/sphericon/internal/httpcall"
 	"github.com/getsphericon/sphericon/internal/joindomains"
 	"github.com/getsphericon/sphericon/internal/linkclicks"
 	"github.com/getsphericon/sphericon/internal/rules"
@@ -779,6 +780,15 @@ func ruleActions(stored string) []siteapi.SiteRuleAction {
 		if a.AutomationID != 0 {
 			out.AutomationId = siteapi.NewOptEntityId(siteapi.EntityId(a.AutomationID))
 		}
+		if a.Type == rules.ActionHTTP {
+			// Masked: the URL, header values and signing secret never leave the server.
+			out.ID = ruleOptString(a.ID)
+			out.Body = ruleOptString(a.Body)
+			out.HasSecret = siteapi.NewOptBool(a.Secret != "")
+			out.Headers = lo.Map(a.Headers, func(h httpcall.Header, _ int) siteapi.SiteAutomationHttpHeader {
+				return siteapi.SiteAutomationHttpHeader{Name: h.Name}
+			})
+		}
 		return out
 	})
 }
@@ -786,7 +796,14 @@ func ruleActions(stored string) []siteapi.SiteRuleAction {
 // RuleActions converts the typed Actions DTO to the Rule module's Actions.
 func RuleActions(actions []siteapi.SiteRuleAction) []rules.Action {
 	return lo.Map(actions, func(a siteapi.SiteRuleAction, _ int) rules.Action {
-		return rules.Action{Type: string(a.Type), Tag: a.Tag.Or(""), AutomationID: int64(a.AutomationId.Or(0))}
+		return rules.Action{
+			Type: string(a.Type), Tag: a.Tag.Or(""), AutomationID: int64(a.AutomationId.Or(0)),
+			ID: a.ID.Or(""), URL: a.URL.Or(""), Body: a.Body.Or(""),
+			Headers: lo.Map(a.Headers, func(h siteapi.SiteAutomationHttpHeader, _ int) httpcall.Header {
+				return httpcall.Header{Name: h.Name, Value: h.Value.Or("")}
+			}),
+			Secret: a.Secret.Or(""), ClearSecret: a.ClearSecret.Or(false),
+		}
 	})
 }
 

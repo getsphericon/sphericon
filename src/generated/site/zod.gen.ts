@@ -1015,16 +1015,24 @@ export const zSiteRuleActionStatus = z.enum([
 export const zSiteRuleActionType = z.enum([
   'apply_tag',
   'remove_tag',
-  'enroll_automation'
+  'enroll_automation',
+  'http'
 ]);
 
 /**
- * One Action of a Rule, run in order when the Rule fires. A flat shape: tag actions carry the tag name.
+ * One Action of a Rule, run in order when the Rule fires. A flat shape: tag actions carry the tag name, http actions the call.
  */
 export const zSiteRuleAction = z.object({
   type: zSiteRuleActionType,
   tag: z.exactOptional(z.string()),
-  automationId: z.exactOptional(zEntityId)
+  automationId: z.exactOptional(zEntityId),
+  id: z.exactOptional(z.string()),
+  url: z.exactOptional(z.string()),
+  headers: z.exactOptional(z.array(zSiteAutomationHttpHeader)),
+  body: z.exactOptional(z.string()),
+  secret: z.exactOptional(z.string()),
+  clearSecret: z.exactOptional(z.boolean()),
+  hasSecret: z.exactOptional(z.boolean())
 });
 
 /**

@@ -416,7 +416,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	sendingDomainsModule := sendingdomains.New(bus, cipher, inline, cfg.TrackingCNAMETarget)
 	joinDomainsModule := joindomains.New(client, bus, stubTXT, st.now, accounts.OwnerNotifier(client, systemMail))
 	automationsModule := automations.New(cipher, bus)
-	rulesModule := rules.New(bus)
+	rulesModule := rules.New(cipher, bus)
 	broadcastsModule := broadcasts.New(bus)
 	acc := accounts.New(client, bus)
 	external, err := server.NewExternalAPI(client, apiexternal.Deps{

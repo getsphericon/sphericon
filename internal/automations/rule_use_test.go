@@ -34,7 +34,7 @@ func TestAnAutomationAnActiveRuleEnrollsInIsNotRemoved(t *testing.T) {
 	_, err := m.Get(ctx, s, fixtures.AutomationJobsWaitFirstID)
 	require.NoError(t, err)
 
-	_, err = rules.New(env.Bus).Deactivate(ctx, s, fixtures.RuleEnrollWaitFirstID)
+	_, err = rules.New(env.Cipher, env.Bus).Deactivate(ctx, s, fixtures.RuleEnrollWaitFirstID)
 	require.NoError(t, err)
 	require.NoError(t, m.Delete(ctx, s, fixtures.AutomationJobsWaitFirstID), "a draft Rule holds nothing")
 }

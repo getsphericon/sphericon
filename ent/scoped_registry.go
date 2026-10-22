@@ -1412,6 +1412,9 @@ func ScopedEntities() []ScopedEntity {
 				b.SetAction(src.Action)
 				b.SetSourceID(src.SourceID)
 				b.SetActions(src.Actions)
+				if src.Properties != nil {
+					b.SetProperties(*src.Properties)
+				}
 				b.SetResults(src.Results)
 				if src.CompletedAt != nil {
 					b.SetCompletedAt(*src.CompletedAt)

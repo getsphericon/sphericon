@@ -14896,7 +14896,7 @@ func (s *SiteResetPasswordInput) SetPassword(val string) {
 }
 
 // One Action of a Rule, run in order when the Rule fires. A flat shape: tag actions carry the tag
-// name.
+// name, http actions the call.
 // Ref: #/components/schemas/SiteRuleAction
 type SiteRuleAction struct {
 	// Action kind.
@@ -14905,6 +14905,23 @@ type SiteRuleAction struct {
 	Tag OptString `json:"tag"`
 	// Automation to enroll the Contact in, once ever (enroll_automation).
 	AutomationId OptEntityId `json:"automationId"`
+	// Action id (http actions). Assigned on save; send it back on edit so the action keeps its secrets.
+	ID OptString `json:"id"`
+	// URL to POST to (http actions). A secret: never returned. Omit it when editing to keep the stored
+	// URL. Up to 2 KiB, http or https.
+	URL OptString `json:"url"`
+	// Up to 5 request headers (http actions). On read, only the names are returned.
+	Headers []SiteAutomationHttpHeader `json:"headers"`
+	// Liquid JSON request body (http actions): Contact bindings plus `event.action` and
+	// `event.properties`, strings JSON-escaped, up to 64 KiB, must render to valid JSON.
+	Body OptString `json:"body"`
+	// Signing secret (http actions): when set, the request is signed with Standard Webhooks. Never
+	// returned. Omit it when editing to keep the stored secret.
+	Secret OptString `json:"secret"`
+	// Remove the signing secret on save (http actions).
+	ClearSecret OptBool `json:"clearSecret"`
+	// Whether a signing secret is stored (http actions, read only).
+	HasSecret OptBool `json:"hasSecret"`
 }
 
 // GetType returns the value of Type.
@@ -14922,6 +14939,41 @@ func (s *SiteRuleAction) GetAutomationId() OptEntityId {
 	return s.AutomationId
 }
 
+// GetID returns the value of ID.
+func (s *SiteRuleAction) GetID() OptString {
+	return s.ID
+}
+
+// GetURL returns the value of URL.
+func (s *SiteRuleAction) GetURL() OptString {
+	return s.URL
+}
+
+// GetHeaders returns the value of Headers.
+func (s *SiteRuleAction) GetHeaders() []SiteAutomationHttpHeader {
+	return s.Headers
+}
+
+// GetBody returns the value of Body.
+func (s *SiteRuleAction) GetBody() OptString {
+	return s.Body
+}
+
+// GetSecret returns the value of Secret.
+func (s *SiteRuleAction) GetSecret() OptString {
+	return s.Secret
+}
+
+// GetClearSecret returns the value of ClearSecret.
+func (s *SiteRuleAction) GetClearSecret() OptBool {
+	return s.ClearSecret
+}
+
+// GetHasSecret returns the value of HasSecret.
+func (s *SiteRuleAction) GetHasSecret() OptBool {
+	return s.HasSecret
+}
+
 // SetType sets the value of Type.
 func (s *SiteRuleAction) SetType(val SiteRuleActionType) {
 	s.Type = val
@@ -14935,6 +14987,41 @@ func (s *SiteRuleAction) SetTag(val OptString) {
 // SetAutomationId sets the value of AutomationId.
 func (s *SiteRuleAction) SetAutomationId(val OptEntityId) {
 	s.AutomationId = val
+}
+
+// SetID sets the value of ID.
+func (s *SiteRuleAction) SetID(val OptString) {
+	s.ID = val
+}
+
+// SetURL sets the value of URL.
+func (s *SiteRuleAction) SetURL(val OptString) {
+	s.URL = val
+}
+
+// SetHeaders sets the value of Headers.
+func (s *SiteRuleAction) SetHeaders(val []SiteAutomationHttpHeader) {
+	s.Headers = val
+}
+
+// SetBody sets the value of Body.
+func (s *SiteRuleAction) SetBody(val OptString) {
+	s.Body = val
+}
+
+// SetSecret sets the value of Secret.
+func (s *SiteRuleAction) SetSecret(val OptString) {
+	s.Secret = val
+}
+
+// SetClearSecret sets the value of ClearSecret.
+func (s *SiteRuleAction) SetClearSecret(val OptBool) {
+	s.ClearSecret = val
+}
+
+// SetHasSecret sets the value of HasSecret.
+func (s *SiteRuleAction) SetHasSecret(val OptBool) {
+	s.HasSecret = val
 }
 
 // What one Action did when a Rule fired.
@@ -15036,6 +15123,7 @@ const (
 	SiteRuleActionTypeApplyTag         SiteRuleActionType = "apply_tag"
 	SiteRuleActionTypeRemoveTag        SiteRuleActionType = "remove_tag"
 	SiteRuleActionTypeEnrollAutomation SiteRuleActionType = "enroll_automation"
+	SiteRuleActionTypeHTTP             SiteRuleActionType = "http"
 )
 
 // AllValues returns all SiteRuleActionType values.
@@ -15044,6 +15132,7 @@ func (SiteRuleActionType) AllValues() []SiteRuleActionType {
 		SiteRuleActionTypeApplyTag,
 		SiteRuleActionTypeRemoveTag,
 		SiteRuleActionTypeEnrollAutomation,
+		SiteRuleActionTypeHTTP,
 	}
 }
 
@@ -15055,6 +15144,8 @@ func (s SiteRuleActionType) MarshalText() ([]byte, error) {
 	case SiteRuleActionTypeRemoveTag:
 		return []byte(s), nil
 	case SiteRuleActionTypeEnrollAutomation:
+		return []byte(s), nil
+	case SiteRuleActionTypeHTTP:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -15072,6 +15163,9 @@ func (s *SiteRuleActionType) UnmarshalText(data []byte) error {
 		return nil
 	case SiteRuleActionTypeEnrollAutomation:
 		*s = SiteRuleActionTypeEnrollAutomation
+		return nil
+	case SiteRuleActionTypeHTTP:
+		*s = SiteRuleActionTypeHTTP
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
