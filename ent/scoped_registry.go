@@ -1630,7 +1630,9 @@ func ScopedEntities() []ScopedEntity {
 				b.SetPeriodStart(src.PeriodStart)
 				b.SetMetric(src.Metric)
 				b.SetValue(src.Value)
-				b.SetFinal(src.Final)
+				if src.FinalizedAt != nil {
+					b.SetFinalizedAt(*src.FinalizedAt)
+				}
 				b.SetComputedAt(src.ComputedAt)
 				created, err := b.Save(ctx)
 				if err != nil {

@@ -38095,7 +38095,7 @@ type UsageMutation struct {
 	metric           *string
 	value            *int64
 	addvalue         *int64
-	final            *bool
+	finalized_at     *time.Time
 	computed_at      *time.Time
 	clearedFields    map[string]struct{}
 	workspace        *int64
@@ -38445,40 +38445,53 @@ func (m *UsageMutation) ResetValue() {
 	m.addvalue = nil
 }
 
-// SetFinal sets the "final" field.
-func (m *UsageMutation) SetFinal(b bool) {
-	m.final = &b
+// SetFinalizedAt sets the "finalized_at" field.
+func (m *UsageMutation) SetFinalizedAt(t time.Time) {
+	m.finalized_at = &t
 }
 
-// Final returns the value of the "final" field in the mutation.
-func (m *UsageMutation) Final() (r bool, exists bool) {
-	v := m.final
+// FinalizedAt returns the value of the "finalized_at" field in the mutation.
+func (m *UsageMutation) FinalizedAt() (r time.Time, exists bool) {
+	v := m.finalized_at
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldFinal returns the old "final" field's value of the Usage entity.
+// OldFinalizedAt returns the old "finalized_at" field's value of the Usage entity.
 // If the Usage object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UsageMutation) OldFinal(ctx context.Context) (v bool, err error) {
+func (m *UsageMutation) OldFinalizedAt(ctx context.Context) (v *time.Time, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldFinal is only allowed on UpdateOne operations")
+		return v, errors.New("OldFinalizedAt is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldFinal requires an ID field in the mutation")
+		return v, errors.New("OldFinalizedAt requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldFinal: %w", err)
+		return v, fmt.Errorf("querying old value for OldFinalizedAt: %w", err)
 	}
-	return oldValue.Final, nil
+	return oldValue.FinalizedAt, nil
 }
 
-// ResetFinal resets all changes to the "final" field.
-func (m *UsageMutation) ResetFinal() {
-	m.final = nil
+// ClearFinalizedAt clears the value of the "finalized_at" field.
+func (m *UsageMutation) ClearFinalizedAt() {
+	m.finalized_at = nil
+	m.clearedFields[usage.FieldFinalizedAt] = struct{}{}
+}
+
+// FinalizedAtCleared returns if the "finalized_at" field was cleared in this mutation.
+func (m *UsageMutation) FinalizedAtCleared() bool {
+	_, ok := m.clearedFields[usage.FieldFinalizedAt]
+	return ok
+}
+
+// ResetFinalizedAt resets all changes to the "finalized_at" field.
+func (m *UsageMutation) ResetFinalizedAt() {
+	m.finalized_at = nil
+	delete(m.clearedFields, usage.FieldFinalizedAt)
 }
 
 // SetComputedAt sets the "computed_at" field.
@@ -38597,8 +38610,8 @@ func (m *UsageMutation) Fields() []string {
 	if m.value != nil {
 		fields = append(fields, usage.FieldValue)
 	}
-	if m.final != nil {
-		fields = append(fields, usage.FieldFinal)
+	if m.finalized_at != nil {
+		fields = append(fields, usage.FieldFinalizedAt)
 	}
 	if m.computed_at != nil {
 		fields = append(fields, usage.FieldComputedAt)
@@ -38623,8 +38636,8 @@ func (m *UsageMutation) Field(name string) (ent.Value, bool) {
 		return m.Metric()
 	case usage.FieldValue:
 		return m.Value()
-	case usage.FieldFinal:
-		return m.Final()
+	case usage.FieldFinalizedAt:
+		return m.FinalizedAt()
 	case usage.FieldComputedAt:
 		return m.ComputedAt()
 	}
@@ -38648,8 +38661,8 @@ func (m *UsageMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldMetric(ctx)
 	case usage.FieldValue:
 		return m.OldValue(ctx)
-	case usage.FieldFinal:
-		return m.OldFinal(ctx)
+	case usage.FieldFinalizedAt:
+		return m.OldFinalizedAt(ctx)
 	case usage.FieldComputedAt:
 		return m.OldComputedAt(ctx)
 	}
@@ -38703,12 +38716,12 @@ func (m *UsageMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetValue(v)
 		return nil
-	case usage.FieldFinal:
-		v, ok := value.(bool)
+	case usage.FieldFinalizedAt:
+		v, ok := value.(time.Time)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetFinal(v)
+		m.SetFinalizedAt(v)
 		return nil
 	case usage.FieldComputedAt:
 		v, ok := value.(time.Time)
@@ -38761,7 +38774,11 @@ func (m *UsageMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *UsageMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(usage.FieldFinalizedAt) {
+		fields = append(fields, usage.FieldFinalizedAt)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -38774,6 +38791,11 @@ func (m *UsageMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *UsageMutation) ClearField(name string) error {
+	switch name {
+	case usage.FieldFinalizedAt:
+		m.ClearFinalizedAt()
+		return nil
+	}
 	return fmt.Errorf("unknown Usage nullable field %s", name)
 }
 
@@ -38799,8 +38821,8 @@ func (m *UsageMutation) ResetField(name string) error {
 	case usage.FieldValue:
 		m.ResetValue()
 		return nil
-	case usage.FieldFinal:
-		m.ResetFinal()
+	case usage.FieldFinalizedAt:
+		m.ResetFinalizedAt()
 		return nil
 	case usage.FieldComputedAt:
 		m.ResetComputedAt()

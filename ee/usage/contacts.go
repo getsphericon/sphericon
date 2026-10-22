@@ -161,7 +161,7 @@ func raise(ctx context.Context, c *ent.Client, now time.Time, workspaceIDs ...in
 		// A growing import finds the row and raises it: one statement. Only when nothing
 		// was raised (the row is absent, or already at least n) is the row inserted.
 		raised, err := s.Usage().Update().
-			Where(entusage.PeriodStart(period), entusage.Metric(string(Contacts)), entusage.Final(false), entusage.ValueLT(n)).
+			Where(entusage.PeriodStart(period), entusage.Metric(string(Contacts)), entusage.FinalizedAtIsNil(), entusage.ValueLT(n)).
 			SetValue(n).SetComputedAt(now).
 			Save(ctx)
 		if err != nil {

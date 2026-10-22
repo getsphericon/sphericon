@@ -83,16 +83,16 @@ func (_c *UsageCreate) SetNillableValue(v *int64) *UsageCreate {
 	return _c
 }
 
-// SetFinal sets the "final" field.
-func (_c *UsageCreate) SetFinal(v bool) *UsageCreate {
-	_c.mutation.SetFinal(v)
+// SetFinalizedAt sets the "finalized_at" field.
+func (_c *UsageCreate) SetFinalizedAt(v time.Time) *UsageCreate {
+	_c.mutation.SetFinalizedAt(v)
 	return _c
 }
 
-// SetNillableFinal sets the "final" field if the given value is not nil.
-func (_c *UsageCreate) SetNillableFinal(v *bool) *UsageCreate {
+// SetNillableFinalizedAt sets the "finalized_at" field if the given value is not nil.
+func (_c *UsageCreate) SetNillableFinalizedAt(v *time.Time) *UsageCreate {
 	if v != nil {
-		_c.SetFinal(*v)
+		_c.SetFinalizedAt(*v)
 	}
 	return _c
 }
@@ -161,10 +161,6 @@ func (_c *UsageCreate) defaults() {
 		v := usage.DefaultValue
 		_c.mutation.SetValue(v)
 	}
-	if _, ok := _c.mutation.Final(); !ok {
-		v := usage.DefaultFinal
-		_c.mutation.SetFinal(v)
-	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -196,9 +192,6 @@ func (_c *UsageCreate) check() error {
 		if err := usage.ValueValidator(v); err != nil {
 			return &ValidationError{Name: "value", err: fmt.Errorf(`ent: validator failed for field "Usage.value": %w`, err)}
 		}
-	}
-	if _, ok := _c.mutation.Final(); !ok {
-		return &ValidationError{Name: "final", err: errors.New(`ent: missing required field "Usage.final"`)}
 	}
 	if _, ok := _c.mutation.ComputedAt(); !ok {
 		return &ValidationError{Name: "computed_at", err: errors.New(`ent: missing required field "Usage.computed_at"`)}
@@ -259,9 +252,9 @@ func (_c *UsageCreate) createSpec() (*Usage, *sqlgraph.CreateSpec) {
 		_spec.SetField(usage.FieldValue, field.TypeInt64, value)
 		_node.Value = value
 	}
-	if value, ok := _c.mutation.Final(); ok {
-		_spec.SetField(usage.FieldFinal, field.TypeBool, value)
-		_node.Final = value
+	if value, ok := _c.mutation.FinalizedAt(); ok {
+		_spec.SetField(usage.FieldFinalizedAt, field.TypeTime, value)
+		_node.FinalizedAt = &value
 	}
 	if value, ok := _c.mutation.ComputedAt(); ok {
 		_spec.SetField(usage.FieldComputedAt, field.TypeTime, value)
@@ -378,15 +371,21 @@ func (u *UsageUpsert) AddValue(v int64) *UsageUpsert {
 	return u
 }
 
-// SetFinal sets the "final" field.
-func (u *UsageUpsert) SetFinal(v bool) *UsageUpsert {
-	u.Set(usage.FieldFinal, v)
+// SetFinalizedAt sets the "finalized_at" field.
+func (u *UsageUpsert) SetFinalizedAt(v time.Time) *UsageUpsert {
+	u.Set(usage.FieldFinalizedAt, v)
 	return u
 }
 
-// UpdateFinal sets the "final" field to the value that was provided on create.
-func (u *UsageUpsert) UpdateFinal() *UsageUpsert {
-	u.SetExcluded(usage.FieldFinal)
+// UpdateFinalizedAt sets the "finalized_at" field to the value that was provided on create.
+func (u *UsageUpsert) UpdateFinalizedAt() *UsageUpsert {
+	u.SetExcluded(usage.FieldFinalizedAt)
+	return u
+}
+
+// ClearFinalizedAt clears the value of the "finalized_at" field.
+func (u *UsageUpsert) ClearFinalizedAt() *UsageUpsert {
+	u.SetNull(usage.FieldFinalizedAt)
 	return u
 }
 
@@ -508,17 +507,24 @@ func (u *UsageUpsertOne) UpdateValue() *UsageUpsertOne {
 	})
 }
 
-// SetFinal sets the "final" field.
-func (u *UsageUpsertOne) SetFinal(v bool) *UsageUpsertOne {
+// SetFinalizedAt sets the "finalized_at" field.
+func (u *UsageUpsertOne) SetFinalizedAt(v time.Time) *UsageUpsertOne {
 	return u.Update(func(s *UsageUpsert) {
-		s.SetFinal(v)
+		s.SetFinalizedAt(v)
 	})
 }
 
-// UpdateFinal sets the "final" field to the value that was provided on create.
-func (u *UsageUpsertOne) UpdateFinal() *UsageUpsertOne {
+// UpdateFinalizedAt sets the "finalized_at" field to the value that was provided on create.
+func (u *UsageUpsertOne) UpdateFinalizedAt() *UsageUpsertOne {
 	return u.Update(func(s *UsageUpsert) {
-		s.UpdateFinal()
+		s.UpdateFinalizedAt()
+	})
+}
+
+// ClearFinalizedAt clears the value of the "finalized_at" field.
+func (u *UsageUpsertOne) ClearFinalizedAt() *UsageUpsertOne {
+	return u.Update(func(s *UsageUpsert) {
+		s.ClearFinalizedAt()
 	})
 }
 
@@ -808,17 +814,24 @@ func (u *UsageUpsertBulk) UpdateValue() *UsageUpsertBulk {
 	})
 }
 
-// SetFinal sets the "final" field.
-func (u *UsageUpsertBulk) SetFinal(v bool) *UsageUpsertBulk {
+// SetFinalizedAt sets the "finalized_at" field.
+func (u *UsageUpsertBulk) SetFinalizedAt(v time.Time) *UsageUpsertBulk {
 	return u.Update(func(s *UsageUpsert) {
-		s.SetFinal(v)
+		s.SetFinalizedAt(v)
 	})
 }
 
-// UpdateFinal sets the "final" field to the value that was provided on create.
-func (u *UsageUpsertBulk) UpdateFinal() *UsageUpsertBulk {
+// UpdateFinalizedAt sets the "finalized_at" field to the value that was provided on create.
+func (u *UsageUpsertBulk) UpdateFinalizedAt() *UsageUpsertBulk {
 	return u.Update(func(s *UsageUpsert) {
-		s.UpdateFinal()
+		s.UpdateFinalizedAt()
+	})
+}
+
+// ClearFinalizedAt clears the value of the "finalized_at" field.
+func (u *UsageUpsertBulk) ClearFinalizedAt() *UsageUpsertBulk {
+	return u.Update(func(s *UsageUpsert) {
+		s.ClearFinalizedAt()
 	})
 }
 

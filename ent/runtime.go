@@ -973,10 +973,6 @@ func init() {
 	usage.DefaultValue = usageDescValue.Default.(int64)
 	// usage.ValueValidator is a validator for the "value" field. It is called by the builders before save.
 	usage.ValueValidator = usageDescValue.Validators[0].(func(int64) error)
-	// usageDescFinal is the schema descriptor for final field.
-	usageDescFinal := usageFields[4].Descriptor()
-	// usage.DefaultFinal holds the default value on creation for the final field.
-	usage.DefaultFinal = usageDescFinal.Default.(bool)
 	userMixin := schema.User{}.Mixin()
 	userMixinFields0 := userMixin[0].Fields()
 	_ = userMixinFields0

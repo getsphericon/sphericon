@@ -1650,7 +1650,7 @@ var (
 		{Name: "period_start", Type: field.TypeTime},
 		{Name: "metric", Type: field.TypeString},
 		{Name: "value", Type: field.TypeInt64, Default: 0},
-		{Name: "final", Type: field.TypeBool, Default: false},
+		{Name: "finalized_at", Type: field.TypeTime, Nullable: true},
 		{Name: "computed_at", Type: field.TypeTime},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}

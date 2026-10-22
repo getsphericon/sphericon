@@ -26,8 +26,8 @@ const (
 	FieldMetric = "metric"
 	// FieldValue holds the string denoting the value field in the database.
 	FieldValue = "value"
-	// FieldFinal holds the string denoting the final field in the database.
-	FieldFinal = "final"
+	// FieldFinalizedAt holds the string denoting the finalized_at field in the database.
+	FieldFinalizedAt = "finalized_at"
 	// FieldComputedAt holds the string denoting the computed_at field in the database.
 	FieldComputedAt = "computed_at"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
@@ -52,7 +52,7 @@ var Columns = []string{
 	FieldPeriodStart,
 	FieldMetric,
 	FieldValue,
-	FieldFinal,
+	FieldFinalizedAt,
 	FieldComputedAt,
 }
 
@@ -79,8 +79,6 @@ var (
 	DefaultValue int64
 	// ValueValidator is a validator for the "value" field. It is called by the builders before save.
 	ValueValidator func(int64) error
-	// DefaultFinal holds the default value on creation for the "final" field.
-	DefaultFinal bool
 )
 
 // OrderOption defines the ordering options for the Usage queries.
@@ -121,9 +119,9 @@ func ByValue(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldValue, opts...).ToFunc()
 }
 
-// ByFinal orders the results by the final field.
-func ByFinal(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldFinal, opts...).ToFunc()
+// ByFinalizedAt orders the results by the finalized_at field.
+func ByFinalizedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldFinalizedAt, opts...).ToFunc()
 }
 
 // ByComputedAt orders the results by the computed_at field.

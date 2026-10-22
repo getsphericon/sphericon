@@ -10,8 +10,8 @@ import (
 
 // Usage is one materialized figure of a Workspace: the value of one metric over one
 // Usage period (GLOSSARY, ADR 0009). While the period is open the row is its Live
-// usage (final = false, refreshed by the usage worker); at period close the same row
-// becomes the Usage snapshot (final = true) and never changes again. Only ee/usage
+// usage (finalized_at unset, refreshed by the usage worker); at period close the same row
+// becomes the Usage snapshot (finalized_at set) and never changes again. Only ee/usage
 // writes and reads it. A new metric needs a Metric constant in ee/usage and no schema
 // change: the metric is a plain string, one row per (Workspace, period, metric).
 type Usage struct {
@@ -43,9 +43,11 @@ func (Usage) Fields() []ent.Field {
 		field.Int64("value").
 			NonNegative().
 			Default(0),
-		// True once the period closed: the row is a Usage snapshot and is immutable.
-		field.Bool("final").
-			Default(false),
+		// The moment the period closed and the row became a Usage snapshot, which is
+		// immutable; nil while the row is Live usage.
+		field.Time("finalized_at").
+			Optional().
+			Nillable(),
 		// When the value was last computed.
 		field.Time("computed_at"),
 	}

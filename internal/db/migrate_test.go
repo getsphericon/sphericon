@@ -254,6 +254,35 @@ func TestMigrateCarriesTheWebhookEndpointFlagIntoDisabledAt(t *testing.T) {
 	assert.Zero(t, testhelper.ColumnsOf(t, sqlDB, "webhook_endpoints", "enabled"), "the flag is gone")
 }
 
+// Replacing the Usage flag by finalized_at keeps what the flag said: a final row stays final, with the
+// moment it was last computed, and Live usage stays unset.
+func TestMigrateCarriesTheUsageFlagIntoFinalizedAt(t *testing.T) {
+	const replacing = "20261022115603_usage_finalized_at.sql"
+	sqlDB := openEmpty(t)
+	before := migrationsWhere(t, func(name string) bool { return name < replacing })
+	all := migrationsWhere(t, func(string) bool { return true })
+	_, err := db.MigrateFS(t.Context(), sqlDB, before)
+	require.NoError(t, err)
+	testhelper.LoadLegacyFixtures(t, sqlDB, legacyFixtures(replacing))
+
+	_, err = db.MigrateFS(t.Context(), sqlDB, all)
+	require.NoError(t, err)
+
+	client := db.NewEntClient(sqlDB)
+	t.Cleanup(func() { _ = client.Close() })
+	rows, err := client.Usage.Query().All(t.Context())
+	require.NoError(t, err)
+	finalizedAt := map[string]string{}
+	for _, r := range rows {
+		finalizedAt[r.PeriodStart.UTC().Format("2006-01")] = lo.FromPtr(r.FinalizedAt).UTC().Format("2006-01-02 15:04")
+	}
+	assert.Equal(t, map[string]string{
+		"2025-12": "2026-01-01 00:05",
+		"2026-01": "0001-01-01 00:00",
+	}, finalizedAt, "the closed period carries its computed moment, the open one none")
+	assert.Zero(t, testhelper.ColumnsOf(t, sqlDB, "usages", "final"), "the flag is gone")
+}
+
 // Dropping automations.definition refuses an Instance whose Automations have not all been given a
 // version yet (the river job backfill_automation_versions): the steps would be lost (ADR 0049).
 func TestMigrateRefusesToDropTheDefinitionBeforeTheBackfill(t *testing.T) {

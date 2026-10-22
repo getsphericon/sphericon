@@ -85,9 +85,9 @@ func Value(v int64) predicate.Usage {
 	return predicate.Usage(sql.FieldEQ(FieldValue, v))
 }
 
-// Final applies equality check predicate on the "final" field. It's identical to FinalEQ.
-func Final(v bool) predicate.Usage {
-	return predicate.Usage(sql.FieldEQ(FieldFinal, v))
+// FinalizedAt applies equality check predicate on the "finalized_at" field. It's identical to FinalizedAtEQ.
+func FinalizedAt(v time.Time) predicate.Usage {
+	return predicate.Usage(sql.FieldEQ(FieldFinalizedAt, v))
 }
 
 // ComputedAt applies equality check predicate on the "computed_at" field. It's identical to ComputedAtEQ.
@@ -340,14 +340,54 @@ func ValueLTE(v int64) predicate.Usage {
 	return predicate.Usage(sql.FieldLTE(FieldValue, v))
 }
 
-// FinalEQ applies the EQ predicate on the "final" field.
-func FinalEQ(v bool) predicate.Usage {
-	return predicate.Usage(sql.FieldEQ(FieldFinal, v))
+// FinalizedAtEQ applies the EQ predicate on the "finalized_at" field.
+func FinalizedAtEQ(v time.Time) predicate.Usage {
+	return predicate.Usage(sql.FieldEQ(FieldFinalizedAt, v))
 }
 
-// FinalNEQ applies the NEQ predicate on the "final" field.
-func FinalNEQ(v bool) predicate.Usage {
-	return predicate.Usage(sql.FieldNEQ(FieldFinal, v))
+// FinalizedAtNEQ applies the NEQ predicate on the "finalized_at" field.
+func FinalizedAtNEQ(v time.Time) predicate.Usage {
+	return predicate.Usage(sql.FieldNEQ(FieldFinalizedAt, v))
+}
+
+// FinalizedAtIn applies the In predicate on the "finalized_at" field.
+func FinalizedAtIn(vs ...time.Time) predicate.Usage {
+	return predicate.Usage(sql.FieldIn(FieldFinalizedAt, vs...))
+}
+
+// FinalizedAtNotIn applies the NotIn predicate on the "finalized_at" field.
+func FinalizedAtNotIn(vs ...time.Time) predicate.Usage {
+	return predicate.Usage(sql.FieldNotIn(FieldFinalizedAt, vs...))
+}
+
+// FinalizedAtGT applies the GT predicate on the "finalized_at" field.
+func FinalizedAtGT(v time.Time) predicate.Usage {
+	return predicate.Usage(sql.FieldGT(FieldFinalizedAt, v))
+}
+
+// FinalizedAtGTE applies the GTE predicate on the "finalized_at" field.
+func FinalizedAtGTE(v time.Time) predicate.Usage {
+	return predicate.Usage(sql.FieldGTE(FieldFinalizedAt, v))
+}
+
+// FinalizedAtLT applies the LT predicate on the "finalized_at" field.
+func FinalizedAtLT(v time.Time) predicate.Usage {
+	return predicate.Usage(sql.FieldLT(FieldFinalizedAt, v))
+}
+
+// FinalizedAtLTE applies the LTE predicate on the "finalized_at" field.
+func FinalizedAtLTE(v time.Time) predicate.Usage {
+	return predicate.Usage(sql.FieldLTE(FieldFinalizedAt, v))
+}
+
+// FinalizedAtIsNil applies the IsNil predicate on the "finalized_at" field.
+func FinalizedAtIsNil() predicate.Usage {
+	return predicate.Usage(sql.FieldIsNull(FieldFinalizedAt))
+}
+
+// FinalizedAtNotNil applies the NotNil predicate on the "finalized_at" field.
+func FinalizedAtNotNil() predicate.Usage {
+	return predicate.Usage(sql.FieldNotNull(FieldFinalizedAt))
 }
 
 // ComputedAtEQ applies the EQ predicate on the "computed_at" field.

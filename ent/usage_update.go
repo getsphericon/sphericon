@@ -71,17 +71,23 @@ func (_u *UsageUpdate) AddValue(v int64) *UsageUpdate {
 	return _u
 }
 
-// SetFinal sets the "final" field.
-func (_u *UsageUpdate) SetFinal(v bool) *UsageUpdate {
-	_u.mutation.SetFinal(v)
+// SetFinalizedAt sets the "finalized_at" field.
+func (_u *UsageUpdate) SetFinalizedAt(v time.Time) *UsageUpdate {
+	_u.mutation.SetFinalizedAt(v)
 	return _u
 }
 
-// SetNillableFinal sets the "final" field if the given value is not nil.
-func (_u *UsageUpdate) SetNillableFinal(v *bool) *UsageUpdate {
+// SetNillableFinalizedAt sets the "finalized_at" field if the given value is not nil.
+func (_u *UsageUpdate) SetNillableFinalizedAt(v *time.Time) *UsageUpdate {
 	if v != nil {
-		_u.SetFinal(*v)
+		_u.SetFinalizedAt(*v)
 	}
+	return _u
+}
+
+// ClearFinalizedAt clears the value of the "finalized_at" field.
+func (_u *UsageUpdate) ClearFinalizedAt() *UsageUpdate {
+	_u.mutation.ClearFinalizedAt()
 	return _u
 }
 
@@ -191,8 +197,11 @@ func (_u *UsageUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.AddedValue(); ok {
 		_spec.AddField(usage.FieldValue, field.TypeInt64, value)
 	}
-	if value, ok := _u.mutation.Final(); ok {
-		_spec.SetField(usage.FieldFinal, field.TypeBool, value)
+	if value, ok := _u.mutation.FinalizedAt(); ok {
+		_spec.SetField(usage.FieldFinalizedAt, field.TypeTime, value)
+	}
+	if _u.mutation.FinalizedAtCleared() {
+		_spec.ClearField(usage.FieldFinalizedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.ComputedAt(); ok {
 		_spec.SetField(usage.FieldComputedAt, field.TypeTime, value)
@@ -289,17 +298,23 @@ func (_u *UsageUpdateOne) AddValue(v int64) *UsageUpdateOne {
 	return _u
 }
 
-// SetFinal sets the "final" field.
-func (_u *UsageUpdateOne) SetFinal(v bool) *UsageUpdateOne {
-	_u.mutation.SetFinal(v)
+// SetFinalizedAt sets the "finalized_at" field.
+func (_u *UsageUpdateOne) SetFinalizedAt(v time.Time) *UsageUpdateOne {
+	_u.mutation.SetFinalizedAt(v)
 	return _u
 }
 
-// SetNillableFinal sets the "final" field if the given value is not nil.
-func (_u *UsageUpdateOne) SetNillableFinal(v *bool) *UsageUpdateOne {
+// SetNillableFinalizedAt sets the "finalized_at" field if the given value is not nil.
+func (_u *UsageUpdateOne) SetNillableFinalizedAt(v *time.Time) *UsageUpdateOne {
 	if v != nil {
-		_u.SetFinal(*v)
+		_u.SetFinalizedAt(*v)
 	}
+	return _u
+}
+
+// ClearFinalizedAt clears the value of the "finalized_at" field.
+func (_u *UsageUpdateOne) ClearFinalizedAt() *UsageUpdateOne {
+	_u.mutation.ClearFinalizedAt()
 	return _u
 }
 
@@ -439,8 +454,11 @@ func (_u *UsageUpdateOne) sqlSave(ctx context.Context) (_node *Usage, err error)
 	if value, ok := _u.mutation.AddedValue(); ok {
 		_spec.AddField(usage.FieldValue, field.TypeInt64, value)
 	}
-	if value, ok := _u.mutation.Final(); ok {
-		_spec.SetField(usage.FieldFinal, field.TypeBool, value)
+	if value, ok := _u.mutation.FinalizedAt(); ok {
+		_spec.SetField(usage.FieldFinalizedAt, field.TypeTime, value)
+	}
+	if _u.mutation.FinalizedAtCleared() {
+		_spec.ClearField(usage.FieldFinalizedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.ComputedAt(); ok {
 		_spec.SetField(usage.FieldComputedAt, field.TypeTime, value)
