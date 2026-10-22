@@ -1054,6 +1054,15 @@ func (UnimplementedHandler) SiteSecondFactorStartEnrollment(ctx context.Context,
 	return r, ht.ErrNotImplemented
 }
 
+// SiteSegmentContactsList implements SiteSegmentContacts_list operation.
+//
+// List the contacts a segment matches right now, evaluated live, ascending by id.
+//
+// GET /workspaces/{workspaceId}/segments/{segmentId}/contacts
+func (UnimplementedHandler) SiteSegmentContactsList(ctx context.Context, params SiteSegmentContactsListParams) (r SiteSegmentContactsListRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteSegmentsArchive implements SiteSegments_archive operation.
 //
 // Archive a resource: it leaves the list and new work, keeps its history, and can be restored. Refused

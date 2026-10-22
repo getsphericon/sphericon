@@ -138,3 +138,15 @@ interface SiteSegments
     | NotFoundProblem
     | UnprocessableEntityProblem;
 }
+
+@route("/workspaces/{workspaceId}/segments/{segmentId}/contacts")
+@tag("Site Segments")
+namespace SiteSegmentContacts {
+  /** List the contacts a segment matches right now, evaluated live, ascending by id */
+  @get
+  op list(
+    @path workspaceId: WorkspaceId,
+    @path segmentId: EntityId,
+    ...PageQuery,
+  ): Page<SiteContactResource> | BadRequestProblem | NotFoundProblem;
+}

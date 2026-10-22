@@ -1,4 +1,5 @@
 import { Group, Menu, Stack, Switch, Title } from '@mantine/core'
+import { useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -13,12 +14,14 @@ import {
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as segmentsEditRoute } from '../../routes/workspaces/$workspaceId/segments/$segmentId/edit.tsx'
+import { Route as segmentsDetailRoute } from '../../routes/workspaces/$workspaceId/segments/$segmentId/index.tsx'
 import { Route as segmentsRoute } from '../../routes/workspaces/$workspaceId/segments/index.tsx'
 import { Route as segmentsCreateRoute } from '../../routes/workspaces/$workspaceId/segments/new.tsx'
 
 export function SegmentsListPage() {
   const { t } = useTranslation()
   const { workspaceId } = segmentsRoute.useParams()
+  const navigate = useNavigate()
 
   const archiveSegment = useResourceMutation({
     mutation: siteSegmentsArchiveMutation(),
@@ -57,6 +60,12 @@ export function SegmentsListPage() {
         loadErrorTitle={t(($) => $.alerts.segmentLoadErrorTitle)}
         noRecordsText={t(($) => $.segments.noRecords)}
         emptyState={t(($) => $.segments.emptyState)}
+        onRowClick={(record) =>
+          void navigate({
+            to: segmentsDetailRoute.to,
+            params: { workspaceId, segmentId: record.id },
+          })
+        }
         columns={[
           { accessor: 'name', title: t(($) => $.segments.nameLabel) },
           {
@@ -65,6 +74,12 @@ export function SegmentsListPage() {
             render: (record) => (
               <Group justify="flex-end">
                 <RowActionsMenu>
+                  <MenuItemLink
+                    to={segmentsDetailRoute.to}
+                    params={{ workspaceId, segmentId: record.id }}
+                  >
+                    {t(($) => $.actions.view)}
+                  </MenuItemLink>
                   <MenuItemLink
                     to={segmentsEditRoute.to}
                     params={{ workspaceId, segmentId: record.id }}

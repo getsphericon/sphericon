@@ -156,6 +156,14 @@ export default interface Resources {
       "emailNodeDescription": "Send an email to the contact.",
       "emailSubjectLabel": "Subject",
       "emptyState": "Create your first automation.",
+      "enrolledAt": "Enrolled at",
+      "enrollmentStatus": {
+        "active": "In progress",
+        "completed": "Completed",
+        "exited": "Exited",
+        "failed": "Failed"
+      },
+      "enrollmentsTitle": "Enrollments",
       "failedEnrollmentContact": "Contact",
       "failedEnrollmentReason": "Reason",
       "failedEnrollmentResponse": "Response",
@@ -182,6 +190,7 @@ export default interface Resources {
       "leaveTitle": "Leave without saving?",
       "messageDone": "Done",
       "nameLabel": "Name",
+      "noEnrollments": "No contacts enrolled yet",
       "noRecords": "No automations yet",
       "removeTagNodeDescription": "Take a tag off the contact.",
       "showArchived": "Show archived",
@@ -489,6 +498,7 @@ export default interface Resources {
       "noRecords": "No contacts yet",
       "searchPlaceholder": "Search by email",
       "statusFilter": "Filter by status",
+      "tagsTitle": "Tags",
       "updatedAt": "Updated at"
     },
     "createWorkspace": {
@@ -860,7 +870,9 @@ export default interface Resources {
       "definitionLabel": "Definition",
       "editTitle": "Edit segment",
       "emptyState": "Create your first segment.",
+      "matchingContacts": "Matching contacts",
       "nameLabel": "Name",
+      "noMatchingContacts": "No contacts match this segment",
       "noRecords": "No segments yet",
       "previewButton": "Preview audience",
       "previewCount": "{{count}} matching contacts" | "{{count}} matching contact" | "{{count}} matching contacts",

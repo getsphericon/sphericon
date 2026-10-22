@@ -743,6 +743,12 @@ type Handler interface {
 	//
 	// POST /me/second-factor/enrollment
 	SiteSecondFactorStartEnrollment(ctx context.Context, req *SiteSecondFactorStartInput) (SiteSecondFactorStartEnrollmentRes, error)
+	// SiteSegmentContactsList implements SiteSegmentContacts_list operation.
+	//
+	// List the contacts a segment matches right now, evaluated live, ascending by id.
+	//
+	// GET /workspaces/{workspaceId}/segments/{segmentId}/contacts
+	SiteSegmentContactsList(ctx context.Context, params SiteSegmentContactsListParams) (SiteSegmentContactsListRes, error)
 	// SiteSegmentsArchive implements SiteSegments_archive operation.
 	//
 	// Archive a resource: it leaves the list and new work, keeps its history, and can be restored. Refused

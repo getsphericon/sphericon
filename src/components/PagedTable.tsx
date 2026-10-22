@@ -26,6 +26,8 @@ interface PagedTableProps<TPage extends Page, TError extends ApiErrorLike, TKey 
   noRecordsText: string
   // The EmptyState description shown while the list is empty, under the noRecordsText title.
   emptyState?: ReactNode
+  // Opens the clicked row; the rows then highlight on hover.
+  onRowClick?: (record: TPage['items'][number]) => void
 }
 
 // A server-paged mantine-datatable over a generated list query: owns the page, the load
@@ -37,6 +39,7 @@ export function PagedTable<TPage extends Page, TError extends ApiErrorLike, TKey
   loadErrorTitle,
   noRecordsText,
   emptyState,
+  onRowClick,
 }: PagedTableProps<TPage, TError, TKey>) {
   const [page, pageHandlers] = useCounter(1, { min: 1 })
   const list = useQuery(options({ page, pageSize }))
@@ -53,6 +56,9 @@ export function PagedTable<TPage extends Page, TError extends ApiErrorLike, TKey
       <DataTable<TPage['items'][number]>
         minHeight={list.data?.items.length ? 0 : 200}
         withTableBorder
+        {...(onRowClick
+          ? { highlightOnHover: true, onRowClick: ({ record }) => onRowClick(record) }
+          : {})}
         records={list.data?.items ?? []}
         columns={columns}
         totalRecords={totalItems}

@@ -65,6 +65,12 @@ export function ContactsListPage() {
         loadErrorTitle={t(($) => $.alerts.loadErrorTitle)}
         noRecordsText={t(($) => $.contacts.noRecords)}
         emptyState={t(($) => $.contacts.emptyState)}
+        onRowClick={(record) =>
+          void navigate({
+            to: contactsDetailRoute.to,
+            params: { workspaceId, contactId: record.id },
+          })
+        }
         columns={[
           { accessor: 'email', title: t(($) => $.table.email) },
           { accessor: 'firstName', title: t(($) => $.table.firstName) },

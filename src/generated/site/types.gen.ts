@@ -9208,6 +9208,68 @@ export type SiteSegmentsUnarchiveResponses = {
 
 export type SiteSegmentsUnarchiveResponse = SiteSegmentsUnarchiveResponses[keyof SiteSegmentsUnarchiveResponses];
 
+export type SiteSegmentContactsListData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+    segmentId: EntityId;
+  };
+  query?: {
+    /**
+     * Page number (1-based)
+     */
+    page?: number;
+    /**
+     * Page size
+     */
+    pageSize?: number;
+  };
+  url: '/workspaces/{workspaceId}/segments/{segmentId}/contacts';
+};
+
+export type SiteSegmentContactsListErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteSegmentContactsListError = SiteSegmentContactsListErrors[keyof SiteSegmentContactsListErrors];
+
+export type SiteSegmentContactsListResponses = {
+  /**
+   * Paginated response
+   */
+  200: {
+    /**
+     * List of items
+     */
+    items: Array<SiteContactResource>;
+    /**
+     * Page number (1-based)
+     */
+    page: number;
+    /**
+     * Page size
+     */
+    pageSize: number;
+    /**
+     * Total number of elements
+     */
+    totalItems: number;
+    /**
+     * Total number of pages
+     */
+    totalPages: number;
+  };
+};
+
+export type SiteSegmentContactsListResponse = SiteSegmentContactsListResponses[keyof SiteSegmentContactsListResponses];
+
 export type SiteSendingDomainsListData = {
   body?: never;
   path: {

@@ -2,6 +2,7 @@ import {
   EmptyState,
   Button,
   Card,
+  Badge,
   Group,
   Loader,
   SimpleGrid,
@@ -177,6 +178,19 @@ export function ContactDetailPage() {
         <Field label={t(($) => $.activity.createdAt)} value={formatDateTime(contact.createdAt)} />
         <Field label={t(($) => $.contacts.updatedAt)} value={formatDateTime(contact.updatedAt)} />
       </SimpleGrid>
+
+      {contact.tags.length > 0 ? (
+        <>
+          <Title order={5}>{t(($) => $.contacts.tagsTitle)}</Title>
+          <Group gap="xs">
+            {contact.tags.map((tag) => (
+              <Badge key={tag} variant="light">
+                {tag}
+              </Badge>
+            ))}
+          </Group>
+        </>
+      ) : null}
 
       {customFields.length > 0 ? (
         <>

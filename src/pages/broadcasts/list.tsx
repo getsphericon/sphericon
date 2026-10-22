@@ -1,4 +1,5 @@
 import { Badge, Group, Menu, Stack, Switch, Title } from '@mantine/core'
+import { useNavigate } from '@tanstack/react-router'
 import type { TFunction } from 'i18next'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -41,6 +42,7 @@ function StatusBadge({ t, status }: { t: TFunction; status: SiteBroadcastStatus 
 export function BroadcastsListPage() {
   const { t } = useTranslation()
   const { workspaceId } = broadcastsRoute.useParams()
+  const navigate = useNavigate()
 
   const deleteBroadcast = useDeleteResource({
     mutation: siteBroadcastsDeleteMutation(),
@@ -87,6 +89,12 @@ export function BroadcastsListPage() {
         loadErrorTitle={t(($) => $.alerts.broadcastLoadErrorTitle)}
         noRecordsText={t(($) => $.broadcasts.noRecords)}
         emptyState={t(($) => $.broadcasts.emptyState)}
+        onRowClick={(record) =>
+          void navigate({
+            to: broadcastsReportRoute.to,
+            params: { workspaceId, broadcastId: record.id },
+          })
+        }
         columns={[
           { accessor: 'name', title: t(($) => $.broadcasts.nameLabel) },
           {

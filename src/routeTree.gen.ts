@@ -59,11 +59,13 @@ import { Route as WorkspacesWorkspaceIdTagsIndexRouteImport } from './routes/wor
 import { Route as WorkspacesWorkspaceIdTemplatesIndexRouteImport } from './routes/workspaces/$workspaceId/templates/index'
 import { Route as WorkspacesWorkspaceIdTemplatesNewRouteImport } from './routes/workspaces/$workspaceId/templates/new'
 import { Route as WorkspacesWorkspaceIdTransactionalEmailsIndexRouteImport } from './routes/workspaces/$workspaceId/transactional-emails/index'
+import { Route as WorkspacesWorkspaceIdAutomationsAutomationIdIndexRouteImport } from './routes/workspaces/$workspaceId/automations/$automationId/index'
 import { Route as WorkspacesWorkspaceIdAutomationsAutomationIdEditRouteImport } from './routes/workspaces/$workspaceId/automations/$automationId/edit'
 import { Route as WorkspacesWorkspaceIdBroadcastsBroadcastIdEditRouteImport } from './routes/workspaces/$workspaceId/broadcasts/$broadcastId/edit'
 import { Route as WorkspacesWorkspaceIdBroadcastsBroadcastIdReportRouteImport } from './routes/workspaces/$workspaceId/broadcasts/$broadcastId/report'
 import { Route as WorkspacesWorkspaceIdContactsContactIdIndexRouteImport } from './routes/workspaces/$workspaceId/contacts/$contactId/index'
 import { Route as WorkspacesWorkspaceIdContactsContactIdEditRouteImport } from './routes/workspaces/$workspaceId/contacts/$contactId/edit'
+import { Route as WorkspacesWorkspaceIdSegmentsSegmentIdIndexRouteImport } from './routes/workspaces/$workspaceId/segments/$segmentId/index'
 import { Route as WorkspacesWorkspaceIdSegmentsSegmentIdEditRouteImport } from './routes/workspaces/$workspaceId/segments/$segmentId/edit'
 import { Route as WorkspacesWorkspaceIdTemplatesTemplateIdEditRouteImport } from './routes/workspaces/$workspaceId/templates/$templateId/edit'
 
@@ -343,6 +345,12 @@ const WorkspacesWorkspaceIdTransactionalEmailsIndexRoute =
     path: '/transactional-emails/',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
   } as any)
+const WorkspacesWorkspaceIdAutomationsAutomationIdIndexRoute =
+  WorkspacesWorkspaceIdAutomationsAutomationIdIndexRouteImport.update({
+    id: '/automations/$automationId/',
+    path: '/automations/$automationId/',
+    getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
+  } as any)
 const WorkspacesWorkspaceIdAutomationsAutomationIdEditRoute =
   WorkspacesWorkspaceIdAutomationsAutomationIdEditRouteImport.update({
     id: '/automations/$automationId/edit',
@@ -371,6 +379,12 @@ const WorkspacesWorkspaceIdContactsContactIdEditRoute =
   WorkspacesWorkspaceIdContactsContactIdEditRouteImport.update({
     id: '/contacts/$contactId/edit',
     path: '/contacts/$contactId/edit',
+    getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
+  } as any)
+const WorkspacesWorkspaceIdSegmentsSegmentIdIndexRoute =
+  WorkspacesWorkspaceIdSegmentsSegmentIdIndexRouteImport.update({
+    id: '/segments/$segmentId/',
+    path: '/segments/$segmentId/',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
   } as any)
 const WorkspacesWorkspaceIdSegmentsSegmentIdEditRoute =
@@ -442,7 +456,9 @@ export interface FileRoutesByFullPath {
   '/workspaces/$workspaceId/contacts/$contactId/edit': typeof WorkspacesWorkspaceIdContactsContactIdEditRoute
   '/workspaces/$workspaceId/segments/$segmentId/edit': typeof WorkspacesWorkspaceIdSegmentsSegmentIdEditRoute
   '/workspaces/$workspaceId/templates/$templateId/edit': typeof WorkspacesWorkspaceIdTemplatesTemplateIdEditRoute
+  '/workspaces/$workspaceId/automations/$automationId/': typeof WorkspacesWorkspaceIdAutomationsAutomationIdIndexRoute
   '/workspaces/$workspaceId/contacts/$contactId/': typeof WorkspacesWorkspaceIdContactsContactIdIndexRoute
+  '/workspaces/$workspaceId/segments/$segmentId/': typeof WorkspacesWorkspaceIdSegmentsSegmentIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -496,7 +512,9 @@ export interface FileRoutesByTo {
   '/workspaces/$workspaceId/contacts/$contactId/edit': typeof WorkspacesWorkspaceIdContactsContactIdEditRoute
   '/workspaces/$workspaceId/segments/$segmentId/edit': typeof WorkspacesWorkspaceIdSegmentsSegmentIdEditRoute
   '/workspaces/$workspaceId/templates/$templateId/edit': typeof WorkspacesWorkspaceIdTemplatesTemplateIdEditRoute
+  '/workspaces/$workspaceId/automations/$automationId': typeof WorkspacesWorkspaceIdAutomationsAutomationIdIndexRoute
   '/workspaces/$workspaceId/contacts/$contactId': typeof WorkspacesWorkspaceIdContactsContactIdIndexRoute
+  '/workspaces/$workspaceId/segments/$segmentId': typeof WorkspacesWorkspaceIdSegmentsSegmentIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -556,7 +574,9 @@ export interface FileRoutesById {
   '/workspaces/$workspaceId/contacts/$contactId/edit': typeof WorkspacesWorkspaceIdContactsContactIdEditRoute
   '/workspaces/$workspaceId/segments/$segmentId/edit': typeof WorkspacesWorkspaceIdSegmentsSegmentIdEditRoute
   '/workspaces/$workspaceId/templates/$templateId/edit': typeof WorkspacesWorkspaceIdTemplatesTemplateIdEditRoute
+  '/workspaces/$workspaceId/automations/$automationId/': typeof WorkspacesWorkspaceIdAutomationsAutomationIdIndexRoute
   '/workspaces/$workspaceId/contacts/$contactId/': typeof WorkspacesWorkspaceIdContactsContactIdIndexRoute
+  '/workspaces/$workspaceId/segments/$segmentId/': typeof WorkspacesWorkspaceIdSegmentsSegmentIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -616,7 +636,9 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/contacts/$contactId/edit'
     | '/workspaces/$workspaceId/segments/$segmentId/edit'
     | '/workspaces/$workspaceId/templates/$templateId/edit'
+    | '/workspaces/$workspaceId/automations/$automationId/'
     | '/workspaces/$workspaceId/contacts/$contactId/'
+    | '/workspaces/$workspaceId/segments/$segmentId/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -670,7 +692,9 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/contacts/$contactId/edit'
     | '/workspaces/$workspaceId/segments/$segmentId/edit'
     | '/workspaces/$workspaceId/templates/$templateId/edit'
+    | '/workspaces/$workspaceId/automations/$automationId'
     | '/workspaces/$workspaceId/contacts/$contactId'
+    | '/workspaces/$workspaceId/segments/$segmentId'
   id:
     | '__root__'
     | '/'
@@ -729,7 +753,9 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/contacts/$contactId/edit'
     | '/workspaces/$workspaceId/segments/$segmentId/edit'
     | '/workspaces/$workspaceId/templates/$templateId/edit'
+    | '/workspaces/$workspaceId/automations/$automationId/'
     | '/workspaces/$workspaceId/contacts/$contactId/'
+    | '/workspaces/$workspaceId/segments/$segmentId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1104,6 +1130,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspacesWorkspaceIdTransactionalEmailsIndexRouteImport
       parentRoute: typeof WorkspacesWorkspaceIdRouteRoute
     }
+    '/workspaces/$workspaceId/automations/$automationId/': {
+      id: '/workspaces/$workspaceId/automations/$automationId/'
+      path: '/automations/$automationId'
+      fullPath: '/workspaces/$workspaceId/automations/$automationId/'
+      preLoaderRoute: typeof WorkspacesWorkspaceIdAutomationsAutomationIdIndexRouteImport
+      parentRoute: typeof WorkspacesWorkspaceIdRouteRoute
+    }
     '/workspaces/$workspaceId/automations/$automationId/edit': {
       id: '/workspaces/$workspaceId/automations/$automationId/edit'
       path: '/automations/$automationId/edit'
@@ -1137,6 +1170,13 @@ declare module '@tanstack/react-router' {
       path: '/contacts/$contactId/edit'
       fullPath: '/workspaces/$workspaceId/contacts/$contactId/edit'
       preLoaderRoute: typeof WorkspacesWorkspaceIdContactsContactIdEditRouteImport
+      parentRoute: typeof WorkspacesWorkspaceIdRouteRoute
+    }
+    '/workspaces/$workspaceId/segments/$segmentId/': {
+      id: '/workspaces/$workspaceId/segments/$segmentId/'
+      path: '/segments/$segmentId'
+      fullPath: '/workspaces/$workspaceId/segments/$segmentId/'
+      preLoaderRoute: typeof WorkspacesWorkspaceIdSegmentsSegmentIdIndexRouteImport
       parentRoute: typeof WorkspacesWorkspaceIdRouteRoute
     }
     '/workspaces/$workspaceId/segments/$segmentId/edit': {
@@ -1262,7 +1302,9 @@ interface WorkspacesWorkspaceIdRouteRouteChildren {
   WorkspacesWorkspaceIdContactsContactIdEditRoute: typeof WorkspacesWorkspaceIdContactsContactIdEditRoute
   WorkspacesWorkspaceIdSegmentsSegmentIdEditRoute: typeof WorkspacesWorkspaceIdSegmentsSegmentIdEditRoute
   WorkspacesWorkspaceIdTemplatesTemplateIdEditRoute: typeof WorkspacesWorkspaceIdTemplatesTemplateIdEditRoute
+  WorkspacesWorkspaceIdAutomationsAutomationIdIndexRoute: typeof WorkspacesWorkspaceIdAutomationsAutomationIdIndexRoute
   WorkspacesWorkspaceIdContactsContactIdIndexRoute: typeof WorkspacesWorkspaceIdContactsContactIdIndexRoute
+  WorkspacesWorkspaceIdSegmentsSegmentIdIndexRoute: typeof WorkspacesWorkspaceIdSegmentsSegmentIdIndexRoute
 }
 
 const WorkspacesWorkspaceIdRouteRouteChildren: WorkspacesWorkspaceIdRouteRouteChildren =
@@ -1308,8 +1350,12 @@ const WorkspacesWorkspaceIdRouteRouteChildren: WorkspacesWorkspaceIdRouteRouteCh
       WorkspacesWorkspaceIdSegmentsSegmentIdEditRoute,
     WorkspacesWorkspaceIdTemplatesTemplateIdEditRoute:
       WorkspacesWorkspaceIdTemplatesTemplateIdEditRoute,
+    WorkspacesWorkspaceIdAutomationsAutomationIdIndexRoute:
+      WorkspacesWorkspaceIdAutomationsAutomationIdIndexRoute,
     WorkspacesWorkspaceIdContactsContactIdIndexRoute:
       WorkspacesWorkspaceIdContactsContactIdIndexRoute,
+    WorkspacesWorkspaceIdSegmentsSegmentIdIndexRoute:
+      WorkspacesWorkspaceIdSegmentsSegmentIdIndexRoute,
   }
 
 const WorkspacesWorkspaceIdRouteRouteWithChildren =

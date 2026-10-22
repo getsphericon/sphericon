@@ -108,6 +108,7 @@ const (
 	SiteSecondFactorGetStatusOperation                OperationName = "SiteSecondFactorGetStatus"
 	SiteSecondFactorRegenerateRecoveryCodesOperation  OperationName = "SiteSecondFactorRegenerateRecoveryCodes"
 	SiteSecondFactorStartEnrollmentOperation          OperationName = "SiteSecondFactorStartEnrollment"
+	SiteSegmentContactsListOperation                  OperationName = "SiteSegmentContactsList"
 	SiteSegmentsArchiveOperation                      OperationName = "SiteSegmentsArchive"
 	SiteSegmentsCreateOperation                       OperationName = "SiteSegmentsCreate"
 	SiteSegmentsGetOperation                          OperationName = "SiteSegmentsGet"

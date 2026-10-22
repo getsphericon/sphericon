@@ -3581,6 +3581,27 @@ export const zSiteWorkspacesSetSecondFactorRequirementPath = z.object({
  */
 export const zSiteWorkspacesSetSecondFactorRequirementResponse = zSiteWorkspaceResource;
 
+export const zSiteSegmentContactsListPath = z.object({
+  workspaceId: zWorkspaceId,
+  segmentId: zEntityId
+});
+
+export const zSiteSegmentContactsListQuery = z.object({
+  page: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
+  pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(25)
+});
+
+/**
+ * Paginated response
+ */
+export const zSiteSegmentContactsListResponse = z.object({
+  items: z.array(zSiteContactResource),
+  page: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  totalItems: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  totalPages: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
 export const zSiteSendingDomainsListPath = z.object({
   workspaceId: zWorkspaceId
 });

@@ -381,6 +381,10 @@ type SiteSecondFactorStartEnrollmentRes interface {
 	siteSecondFactorStartEnrollmentRes()
 }
 
+type SiteSegmentContactsListRes interface {
+	siteSegmentContactsListRes()
+}
+
 type SiteSegmentsArchiveRes interface {
 	siteSegmentsArchiveRes()
 }

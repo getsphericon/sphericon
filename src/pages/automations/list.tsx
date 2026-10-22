@@ -1,4 +1,5 @@
 import { Badge, Group, Menu, Stack, Switch, Title } from '@mantine/core'
+import { useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -17,12 +18,14 @@ import {
 import { useDeleteResource } from '../../hooks/useDeleteResource.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
+import { Route as automationsDetailRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/index.tsx'
 import { Route as automationsRoute } from '../../routes/workspaces/$workspaceId/automations/index.tsx'
 import { Route as automationsCreateRoute } from '../../routes/workspaces/$workspaceId/automations/new.tsx'
 
 export function AutomationsListPage() {
   const { t } = useTranslation()
   const { workspaceId } = automationsRoute.useParams()
+  const navigate = useNavigate()
 
   const listQueryKey = siteAutomationsListQueryKey({ path: { workspaceId } })
 
@@ -87,6 +90,12 @@ export function AutomationsListPage() {
         loadErrorTitle={t(($) => $.alerts.automationLoadErrorTitle)}
         noRecordsText={t(($) => $.automations.noRecords)}
         emptyState={t(($) => $.automations.emptyState)}
+        onRowClick={(record) =>
+          void navigate({
+            to: automationsDetailRoute.to,
+            params: { workspaceId, automationId: record.id },
+          })
+        }
         columns={[
           { accessor: 'name', title: t(($) => $.automations.nameLabel) },
           { accessor: 'triggerEvent', title: t(($) => $.automations.triggerColumn) },
@@ -117,6 +126,13 @@ export function AutomationsListPage() {
                     </Menu.Item>
                   ) : (
                     [
+                      <MenuItemLink
+                        key="view"
+                        to={automationsDetailRoute.to}
+                        params={{ workspaceId, automationId: record.id }}
+                      >
+                        {t(($) => $.actions.view)}
+                      </MenuItemLink>,
                       record.status === 'active' ? (
                         <Menu.Item
                           key="toggle"

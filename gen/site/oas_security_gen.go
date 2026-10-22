@@ -118,6 +118,7 @@ var operationRolesApiKeyAuth = map[string][]string{
 	SiteSecondFactorGetStatusOperation:                []string{},
 	SiteSecondFactorRegenerateRecoveryCodesOperation:  []string{},
 	SiteSecondFactorStartEnrollmentOperation:          []string{},
+	SiteSegmentContactsListOperation:                  []string{},
 	SiteSegmentsArchiveOperation:                      []string{},
 	SiteSegmentsCreateOperation:                       []string{},
 	SiteSegmentsGetOperation:                          []string{},

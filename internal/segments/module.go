@@ -7,7 +7,9 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcast"
+	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/segment"
+	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/pagination"
@@ -112,6 +114,33 @@ func (s *Module) Count(ctx context.Context, ws *ent.Scoped, id int64) (int, erro
 		def = *seg.Definition
 	}
 	return s.Preview(ctx, ws, def)
+}
+
+// Contacts returns one page of the Contacts a stored Segment matches, evaluated live, ascending by id.
+func (s *Module) Contacts(ctx context.Context, ws *ent.Scoped, id int64, p pagination.Params) (pagination.Page[*ent.Contact], error) {
+	seg, err := ws.Segment().Get(ctx, id)
+	if ent.IsNotFound(err) {
+		return pagination.Page[*ent.Contact]{}, ErrNotFound
+	}
+	if err != nil {
+		return pagination.Page[*ent.Contact]{}, err
+	}
+	def := ""
+	if seg.Definition != nil {
+		def = *seg.Definition
+	}
+	pred, err := ContactPredicate(ctx, ws, def)
+	if err != nil {
+		return pagination.Page[*ent.Contact]{}, fmt.Errorf("%w: %s", ErrInvalidDefinition, err.Error())
+	}
+	rows := func() *ent.ContactQuery {
+		return ws.Contact().Query().Where(pred).WithTags(func(q *ent.TagQuery) { q.Order(ent.Asc(tag.FieldName)) })
+	}
+	return pagination.List(ctx, p,
+		func(ctx context.Context) (int, error) { return rows().Count(ctx) },
+		func(ctx context.Context, limit, offset int) ([]*ent.Contact, error) {
+			return rows().Order(ent.Asc(contact.FieldID)).Limit(limit).Offset(offset).All(ctx)
+		})
 }
 
 // List returns one page of the Workspace's Segments, ascending by id: the kept ones, or with

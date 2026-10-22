@@ -218,3 +218,34 @@ func (h *Handlers) SiteSegmentsPreview(ctx context.Context, req *siteapi.SitePre
 	}
 	return &siteapi.SitePreviewSegmentResult{Count: int32(count)}, nil
 }
+
+// SiteSegmentContactsList lists the Contacts a Segment matches right now: its rule alone,
+// like the Segment's count; Send-eligibility is subtracted only at send (ADR 0001).
+func (h *Handlers) SiteSegmentContactsList(ctx context.Context, params siteapi.SiteSegmentContactsListParams) (siteapi.SiteSegmentContactsListRes, error) {
+	ws, err := h.scopedFor(ctx, params.WorkspaceId)
+	if ent.IsNotFound(err) {
+		v := siteapi.SiteSegmentContactsListNotFound(problem(http.StatusNotFound, "workspace not found"))
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	page, err := h.segments.Contacts(ctx, ws, int64(params.SegmentId), pagination.ParamsOf(params.Page, params.PageSize))
+	if errors.Is(err, segments.ErrNotFound) {
+		v := siteapi.SiteSegmentContactsListNotFound(problem(http.StatusNotFound, "segment not found"))
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &siteapi.SiteSegmentContactsListOK{
+		Items: lo.Map(page.Items, func(c *ent.Contact, _ int) siteapi.SiteContactResource {
+			return mapper.ContactToResource(c)
+		}),
+		Page:       int32(page.Page),
+		PageSize:   int32(page.PageSize),
+		TotalItems: int32(page.TotalItems),
+		TotalPages: int32(page.TotalPages),
+	}, nil
+}
