@@ -108,3 +108,20 @@ test('shows an error alert when the broadcast fails to load', async () => {
 
   await expect.element(screen.getByText('Failed to load broadcasts')).toBeInTheDocument()
 })
+
+test('shows how far a sending broadcast has got', async () => {
+  worker.use(
+    handleSiteBroadcastsGet(() =>
+      HttpResponse.json({
+        ...BROADCAST,
+        status: 'sending',
+        progress: { processedCount: 120, remainingCount: 80 },
+      }),
+    ),
+    handleSiteBroadcastLinksList(() => HttpResponse.json({ items: [] })),
+  )
+
+  const { screen } = await renderWithRouter(<BroadcastReportPage />, REPORT_ROUTE)
+
+  await expect.element(screen.getByText('Sent 120 of 200')).toBeInTheDocument()
+})
