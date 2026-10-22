@@ -1012,14 +1012,19 @@ export const zSiteRuleActionStatus = z.enum([
 /**
  * Kind of Rule action
  */
-export const zSiteRuleActionType = z.enum(['apply_tag', 'remove_tag']);
+export const zSiteRuleActionType = z.enum([
+  'apply_tag',
+  'remove_tag',
+  'enroll_automation'
+]);
 
 /**
  * One Action of a Rule, run in order when the Rule fires. A flat shape: tag actions carry the tag name.
  */
 export const zSiteRuleAction = z.object({
   type: zSiteRuleActionType,
-  tag: z.exactOptional(z.string())
+  tag: z.exactOptional(z.string()),
+  automationId: z.exactOptional(zEntityId)
 });
 
 /**
@@ -2150,6 +2155,7 @@ export const zUsedByKind = z.enum([
   'broadcast',
   'automation',
   'segment',
+  'rule',
   'enrollment'
 ]);
 

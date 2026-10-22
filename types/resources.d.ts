@@ -829,10 +829,12 @@ export default interface Resources {
       "title": "Set a new password"
     },
     "rules": {
+      "actionAutomationLabel": "Automation",
       "actionRemove": "Remove action",
       "actionTagLabel": "Tag",
       "actionType": {
         "apply_tag": "Apply tag",
+        "enroll_automation": "Enroll in automation",
         "remove_tag": "Remove tag"
       },
       "actionTypeLabel": "Action",
@@ -1471,6 +1473,7 @@ export default interface Resources {
       "automation": "Automation",
       "broadcast": "Broadcast",
       "enrollment": "Enrollment",
+      "rule": "Rule",
       "segment": "Segment"
     },
     "userMenu": {

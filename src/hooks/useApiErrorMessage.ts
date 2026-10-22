@@ -19,6 +19,7 @@ export function useApiErrorMessage() {
     if (usedBy) {
       const kinds = {
         broadcast: t(($) => $.usedByKind.broadcast),
+        rule: t(($) => $.usedByKind.rule),
         automation: t(($) => $.usedByKind.automation),
         segment: t(($) => $.usedByKind.segment),
         enrollment: t(($) => $.usedByKind.enrollment),

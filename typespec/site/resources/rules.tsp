@@ -14,6 +14,7 @@ enum SiteRuleStatus {
 enum SiteRuleActionType {
   apply_tag,
   remove_tag,
+  enroll_automation,
 }
 
 /** One Action of a Rule, run in order when the Rule fires. A flat shape: tag actions carry the tag name. */
@@ -23,6 +24,9 @@ model SiteRuleAction {
 
   /** Tag name to apply to or remove from the Contact (apply_tag and remove_tag) */
   tag?: string;
+
+  /** Automation to enroll the Contact in, once ever (enroll_automation) */
+  automationId?: EntityId;
 }
 
 /** How one Action of a Firing ended */

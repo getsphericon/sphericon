@@ -36688,6 +36688,8 @@ func (s *UsedByKind) Decode(d *jx.Decoder) error {
 		*s = UsedByKindAutomation
 	case UsedByKindSegment:
 		*s = UsedByKindSegment
+	case UsedByKindRule:
+		*s = UsedByKindRule
 	case UsedByKindEnrollment:
 		*s = UsedByKindEnrollment
 	default:

@@ -1311,6 +1311,22 @@ const (
 	RuleDraftID = 102
 	// RuleDraftName is from fixtures/rules.
 	RuleDraftName = "Draft rule"
+	// RuleEnrollDraftAutomationID is from fixtures/rules.
+	RuleEnrollDraftAutomationID = 107
+	// RuleEnrollDraftAutomationName is from fixtures/rules.
+	RuleEnrollDraftAutomationName = "Enroll in a draft automation"
+	// RuleEnrollGreetingID is from fixtures/rules.
+	RuleEnrollGreetingID = 106
+	// RuleEnrollGreetingName is from fixtures/rules.
+	RuleEnrollGreetingName = "Enroll in the greeting"
+	// RuleEnrollSingleEmailID is from fixtures/rules.
+	RuleEnrollSingleEmailID = 108
+	// RuleEnrollSingleEmailName is from fixtures/rules.
+	RuleEnrollSingleEmailName = "Enroll in the single-email automation"
+	// RuleEnrollWaitFirstID is from fixtures/rules.
+	RuleEnrollWaitFirstID = 109
+	// RuleEnrollWaitFirstName is from fixtures/rules.
+	RuleEnrollWaitFirstName = "Enroll in the wait-first automation"
 	// RuleFailThenTagID is from fixtures/rules.
 	RuleFailThenTagID = 104
 	// RuleFailThenTagName is from fixtures/rules.

@@ -23,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/secrets"
 )
 
@@ -420,6 +421,9 @@ func (m *Module) saveSteps(ctx context.Context, s *ent.Scoped, automationID int6
 // Delete purges an Automation that has no Enrollments, with its versions (ADR 0049). One with
 // any Enrollment is history and is archived instead: an *inuse.Error carrying their count.
 func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
+	if err := refuseWhileEnrolledByRules(ctx, s, id); err != nil {
+		return err
+	}
 	n, err := s.Automation().Purge().Where(automation.ID(id), automation.Not(automation.HasRuns())).Exec(ctx)
 	if err != nil {
 		return err
@@ -448,6 +452,9 @@ func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) error {
 	}
 	if a.DiscardedAt != nil {
 		return nil
+	}
+	if err := refuseWhileEnrolledByRules(ctx, s, id); err != nil {
+		return err
 	}
 	active, err := s.AutomationRun().Query().
 		Where(automationrun.AutomationID(id), automationrun.StatusEQ(automationrun.StatusActive)).
@@ -495,4 +502,14 @@ func notFound(err error) error {
 		return ErrNotFound
 	}
 	return err
+}
+
+// refuseWhileEnrolledByRules refuses the removal of an Automation an active Rule enrolls Contacts
+// in (ADR 0049, ADR 0054): the *inuse.Error names the Rules.
+func refuseWhileEnrolledByRules(ctx context.Context, s *ent.Scoped, id int64) error {
+	using, err := rules.EnrollingInto(ctx, s, id)
+	if err != nil || len(using) == 0 {
+		return err
+	}
+	return &inuse.Error{What: inuse.SubjectAutomation, Users: inuse.Rules(using)}
 }

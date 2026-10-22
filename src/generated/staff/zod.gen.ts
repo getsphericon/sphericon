@@ -310,6 +310,7 @@ export const zUsedByKind = z.enum([
   'broadcast',
   'automation',
   'segment',
+  'rule',
   'enrollment'
 ]);
 

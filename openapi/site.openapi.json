@@ -15358,6 +15358,14 @@
           "tag": {
             "type": "string",
             "description": "Tag name to apply to or remove from the Contact (apply_tag and remove_tag)"
+          },
+          "automationId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Automation to enroll the Contact in, once ever (enroll_automation)"
           }
         },
         "description": "One Action of a Rule, run in order when the Rule fires. A flat shape: tag actions carry the tag name."
@@ -15396,7 +15404,7 @@
       },
       "SiteRuleActionType": {
         "type": "string",
-        "enum": ["apply_tag", "remove_tag"],
+        "enum": ["apply_tag", "remove_tag", "enroll_automation"],
         "description": "Kind of Rule action"
       },
       "SiteRuleFiringResource": {
@@ -17259,7 +17267,7 @@
       },
       "UsedByKind": {
         "type": "string",
-        "enum": ["broadcast", "automation", "segment", "enrollment"],
+        "enum": ["broadcast", "automation", "segment", "rule", "enrollment"],
         "description": "What kind of row a refused removal names as a user of the row (ADR 0049). One value per kind\nof live user a removal can find, so a client branches on it without parsing text."
       },
       "WorkspaceId": {

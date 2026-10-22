@@ -14902,6 +14902,8 @@ type SiteRuleAction struct {
 	Type SiteRuleActionType `json:"type"`
 	// Tag name to apply to or remove from the Contact (apply_tag and remove_tag).
 	Tag OptString `json:"tag"`
+	// Automation to enroll the Contact in, once ever (enroll_automation).
+	AutomationId OptEntityId `json:"automationId"`
 }
 
 // GetType returns the value of Type.
@@ -14914,6 +14916,11 @@ func (s *SiteRuleAction) GetTag() OptString {
 	return s.Tag
 }
 
+// GetAutomationId returns the value of AutomationId.
+func (s *SiteRuleAction) GetAutomationId() OptEntityId {
+	return s.AutomationId
+}
+
 // SetType sets the value of Type.
 func (s *SiteRuleAction) SetType(val SiteRuleActionType) {
 	s.Type = val
@@ -14922,6 +14929,11 @@ func (s *SiteRuleAction) SetType(val SiteRuleActionType) {
 // SetTag sets the value of Tag.
 func (s *SiteRuleAction) SetTag(val OptString) {
 	s.Tag = val
+}
+
+// SetAutomationId sets the value of AutomationId.
+func (s *SiteRuleAction) SetAutomationId(val OptEntityId) {
+	s.AutomationId = val
 }
 
 // What one Action did when a Rule fired.
@@ -15020,8 +15032,9 @@ func (s *SiteRuleActionStatus) UnmarshalText(data []byte) error {
 type SiteRuleActionType string
 
 const (
-	SiteRuleActionTypeApplyTag  SiteRuleActionType = "apply_tag"
-	SiteRuleActionTypeRemoveTag SiteRuleActionType = "remove_tag"
+	SiteRuleActionTypeApplyTag         SiteRuleActionType = "apply_tag"
+	SiteRuleActionTypeRemoveTag        SiteRuleActionType = "remove_tag"
+	SiteRuleActionTypeEnrollAutomation SiteRuleActionType = "enroll_automation"
 )
 
 // AllValues returns all SiteRuleActionType values.
@@ -15029,6 +15042,7 @@ func (SiteRuleActionType) AllValues() []SiteRuleActionType {
 	return []SiteRuleActionType{
 		SiteRuleActionTypeApplyTag,
 		SiteRuleActionTypeRemoveTag,
+		SiteRuleActionTypeEnrollAutomation,
 	}
 }
 
@@ -15038,6 +15052,8 @@ func (s SiteRuleActionType) MarshalText() ([]byte, error) {
 	case SiteRuleActionTypeApplyTag:
 		return []byte(s), nil
 	case SiteRuleActionTypeRemoveTag:
+		return []byte(s), nil
+	case SiteRuleActionTypeEnrollAutomation:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -15052,6 +15068,9 @@ func (s *SiteRuleActionType) UnmarshalText(data []byte) error {
 		return nil
 	case SiteRuleActionTypeRemoveTag:
 		*s = SiteRuleActionTypeRemoveTag
+		return nil
+	case SiteRuleActionTypeEnrollAutomation:
+		*s = SiteRuleActionTypeEnrollAutomation
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -20425,6 +20444,7 @@ const (
 	UsedByKindBroadcast  UsedByKind = "broadcast"
 	UsedByKindAutomation UsedByKind = "automation"
 	UsedByKindSegment    UsedByKind = "segment"
+	UsedByKindRule       UsedByKind = "rule"
 	UsedByKindEnrollment UsedByKind = "enrollment"
 )
 
@@ -20434,6 +20454,7 @@ func (UsedByKind) AllValues() []UsedByKind {
 		UsedByKindBroadcast,
 		UsedByKindAutomation,
 		UsedByKindSegment,
+		UsedByKindRule,
 		UsedByKindEnrollment,
 	}
 }
@@ -20446,6 +20467,8 @@ func (s UsedByKind) MarshalText() ([]byte, error) {
 	case UsedByKindAutomation:
 		return []byte(s), nil
 	case UsedByKindSegment:
+		return []byte(s), nil
+	case UsedByKindRule:
 		return []byte(s), nil
 	case UsedByKindEnrollment:
 		return []byte(s), nil
@@ -20465,6 +20488,9 @@ func (s *UsedByKind) UnmarshalText(data []byte) error {
 		return nil
 	case UsedByKindSegment:
 		*s = UsedByKindSegment
+		return nil
+	case UsedByKindRule:
+		*s = UsedByKindRule
 		return nil
 	case UsedByKindEnrollment:
 		*s = UsedByKindEnrollment

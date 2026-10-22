@@ -837,12 +837,14 @@
     "title": "Set a new password"
   },
   "rules": {
+    "actionAutomationLabel": "Automation",
     "actionRemove": "Remove action",
     "actionsHint": "Run in order each time the rule fires.",
     "actionsLabel": "Actions",
     "actionTagLabel": "Tag",
     "actionType": {
       "apply_tag": "Apply tag",
+      "enroll_automation": "Enroll in automation",
       "remove_tag": "Remove tag"
     },
     "actionTypeLabel": "Action",
@@ -1484,6 +1486,7 @@
     "automation": "Automation",
     "broadcast": "Broadcast",
     "enrollment": "Enrollment",
+    "rule": "Rule",
     "segment": "Segment"
   },
   "userMenu": {

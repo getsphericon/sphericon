@@ -6419,6 +6419,8 @@ func (s UsedByKind) Validate() error {
 		return nil
 	case "segment":
 		return nil
+	case "rule":
+		return nil
 	case "enrollment":
 		return nil
 	default:

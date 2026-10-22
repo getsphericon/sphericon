@@ -3220,6 +3220,10 @@ export type SiteRuleAction = {
    * Tag name to apply to or remove from the Contact (apply_tag and remove_tag)
    */
   tag?: string;
+  /**
+   * Automation to enroll the Contact in, once ever (enroll_automation)
+   */
+  automationId?: EntityId;
 };
 
 /**
@@ -3257,7 +3261,11 @@ export type SiteRuleActionStatus = typeof SiteRuleActionStatus[keyof typeof Site
 /**
  * Kind of Rule action
  */
-export const SiteRuleActionType = { APPLY_TAG: 'apply_tag', REMOVE_TAG: 'remove_tag' } as const;
+export const SiteRuleActionType = {
+  APPLY_TAG: 'apply_tag',
+  REMOVE_TAG: 'remove_tag',
+  ENROLL_AUTOMATION: 'enroll_automation'
+} as const;
 
 /**
  * Kind of Rule action
@@ -4632,6 +4640,7 @@ export const UsedByKind = {
   BROADCAST: 'broadcast',
   AUTOMATION: 'automation',
   SEGMENT: 'segment',
+  RULE: 'rule',
   ENROLLMENT: 'enrollment'
 } as const;
 

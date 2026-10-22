@@ -24,6 +24,8 @@ const (
 	Automation Kind = "automation"
 	// Segment is a Segment whose rule names the row.
 	Segment Kind = "segment"
+	// Rule is an active Rule with an Action that uses the row.
+	Rule Kind = "rule"
 	// Enrollment stands for the Enrollments of an Automation: one User naming the
 	// Automation, with their Count.
 	Enrollment Kind = "enrollment"
@@ -60,6 +62,13 @@ func Enrollments(automationID int64, name string, count int) User {
 func Broadcasts(rows []*ent.Broadcast) []User {
 	return lo.Map(rows, func(b *ent.Broadcast, _ int) User {
 		return User{Kind: Broadcast, ID: b.ID, Name: b.Name}
+	})
+}
+
+// Rules maps Rules to their Users, in the order given.
+func Rules(rows []*ent.Rule) []User {
+	return lo.Map(rows, func(r *ent.Rule, _ int) User {
+		return User{Kind: Rule, ID: r.ID, Name: r.Name}
 	})
 }
 
