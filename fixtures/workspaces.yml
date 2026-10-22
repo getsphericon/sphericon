@@ -35,7 +35,7 @@
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 # Fifth tenant (Hooli) - already suspended by a Staff member (op-fixture) since 2026-02-01, the
-# state Workspace suspension tests start from (ADR 0007, ADR 0026). No members or other rows.
+# state Workspace suspension tests start from (ADR 0007, ADR 0026). It has no members; its only rows are the audit log the export test pages through and a stale unverified member.
 - id: 5 # fixture: Hooli
   name: Hooli
   public_id: HooliWs5
