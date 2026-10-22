@@ -1,10 +1,11 @@
-import { Badge, Group, Menu, Stack, Switch, Title } from '@mantine/core'
+import { Badge, Button, Group, Menu, Stack, Switch, Title } from '@mantine/core'
+import { useDisclosure } from '@mantine/hooks'
 import { useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { PagedTable } from '../../components/PagedTable.tsx'
-import { ButtonLink, MenuItemLink } from '../../components/RouterLink.tsx'
+import { MenuItemLink } from '../../components/RouterLink.tsx'
 import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
 import {
   siteAutomationsActivateMutation,
@@ -20,7 +21,7 @@ import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
 import { Route as automationsDetailRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/index.tsx'
 import { Route as automationsRoute } from '../../routes/workspaces/$workspaceId/automations/index.tsx'
-import { Route as automationsCreateRoute } from '../../routes/workspaces/$workspaceId/automations/new.tsx'
+import { AutomationCreateModal } from './create.tsx'
 
 export function AutomationsListPage() {
   const { t } = useTranslation()
@@ -66,14 +67,14 @@ export function AutomationsListPage() {
   })
 
   const [archived, setArchived] = useState(false)
+  const [createOpened, { open: openCreate, close: closeCreate }] = useDisclosure(false)
 
   return (
     <Stack>
+      <AutomationCreateModal opened={createOpened} onClose={closeCreate} />
       <Group justify="space-between" align="center">
         <Title order={2}>{t(($) => $.nav.automations)}</Title>
-        <ButtonLink to={automationsCreateRoute.to} params={{ workspaceId }}>
-          {t(($) => $.automations.addAutomation)}
-        </ButtonLink>
+        <Button onClick={openCreate}>{t(($) => $.automations.addAutomation)}</Button>
       </Group>
 
       <Switch

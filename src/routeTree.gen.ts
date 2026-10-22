@@ -40,7 +40,6 @@ import { Route as WorkspacesWorkspaceIdBrandKitRouteImport } from './routes/work
 import { Route as WorkspacesWorkspaceIdSettingsRouteRouteImport } from './routes/workspaces/$workspaceId/settings/route'
 import { Route as ConsoleAuthedWorkspacesWorkspaceIdRouteImport } from './routes/console/_authed/workspaces.$workspaceId'
 import { Route as WorkspacesWorkspaceIdAutomationsIndexRouteImport } from './routes/workspaces/$workspaceId/automations/index'
-import { Route as WorkspacesWorkspaceIdAutomationsNewRouteImport } from './routes/workspaces/$workspaceId/automations/new'
 import { Route as WorkspacesWorkspaceIdBroadcastsIndexRouteImport } from './routes/workspaces/$workspaceId/broadcasts/index'
 import { Route as WorkspacesWorkspaceIdBroadcastsNewRouteImport } from './routes/workspaces/$workspaceId/broadcasts/new'
 import { Route as WorkspacesWorkspaceIdContactsIndexRouteImport } from './routes/workspaces/$workspaceId/contacts/index'
@@ -229,12 +228,6 @@ const WorkspacesWorkspaceIdAutomationsIndexRoute =
   WorkspacesWorkspaceIdAutomationsIndexRouteImport.update({
     id: '/automations/',
     path: '/automations/',
-    getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
-  } as any)
-const WorkspacesWorkspaceIdAutomationsNewRoute =
-  WorkspacesWorkspaceIdAutomationsNewRouteImport.update({
-    id: '/automations/new',
-    path: '/automations/new',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
   } as any)
 const WorkspacesWorkspaceIdBroadcastsIndexRoute =
@@ -430,7 +423,6 @@ export interface FileRoutesByFullPath {
   '/console/': typeof ConsoleAuthedIndexRoute
   '/workspaces/$workspaceId/': typeof WorkspacesWorkspaceIdIndexRoute
   '/console/workspaces/$workspaceId': typeof ConsoleAuthedWorkspacesWorkspaceIdRoute
-  '/workspaces/$workspaceId/automations/new': typeof WorkspacesWorkspaceIdAutomationsNewRoute
   '/workspaces/$workspaceId/broadcasts/new': typeof WorkspacesWorkspaceIdBroadcastsNewRoute
   '/workspaces/$workspaceId/segments/new': typeof WorkspacesWorkspaceIdSegmentsNewRoute
   '/workspaces/$workspaceId/settings/audit-log': typeof WorkspacesWorkspaceIdSettingsAuditLogRoute
@@ -486,7 +478,6 @@ export interface FileRoutesByTo {
   '/workspaces/$workspaceId/brand-kit': typeof WorkspacesWorkspaceIdBrandKitRoute
   '/workspaces/$workspaceId': typeof WorkspacesWorkspaceIdIndexRoute
   '/console/workspaces/$workspaceId': typeof ConsoleAuthedWorkspacesWorkspaceIdRoute
-  '/workspaces/$workspaceId/automations/new': typeof WorkspacesWorkspaceIdAutomationsNewRoute
   '/workspaces/$workspaceId/broadcasts/new': typeof WorkspacesWorkspaceIdBroadcastsNewRoute
   '/workspaces/$workspaceId/segments/new': typeof WorkspacesWorkspaceIdSegmentsNewRoute
   '/workspaces/$workspaceId/settings/audit-log': typeof WorkspacesWorkspaceIdSettingsAuditLogRoute
@@ -548,7 +539,6 @@ export interface FileRoutesById {
   '/console/_authed/': typeof ConsoleAuthedIndexRoute
   '/workspaces/$workspaceId/': typeof WorkspacesWorkspaceIdIndexRoute
   '/console/_authed/workspaces/$workspaceId': typeof ConsoleAuthedWorkspacesWorkspaceIdRoute
-  '/workspaces/$workspaceId/automations/new': typeof WorkspacesWorkspaceIdAutomationsNewRoute
   '/workspaces/$workspaceId/broadcasts/new': typeof WorkspacesWorkspaceIdBroadcastsNewRoute
   '/workspaces/$workspaceId/segments/new': typeof WorkspacesWorkspaceIdSegmentsNewRoute
   '/workspaces/$workspaceId/settings/audit-log': typeof WorkspacesWorkspaceIdSettingsAuditLogRoute
@@ -610,7 +600,6 @@ export interface FileRouteTypes {
     | '/console/'
     | '/workspaces/$workspaceId/'
     | '/console/workspaces/$workspaceId'
-    | '/workspaces/$workspaceId/automations/new'
     | '/workspaces/$workspaceId/broadcasts/new'
     | '/workspaces/$workspaceId/segments/new'
     | '/workspaces/$workspaceId/settings/audit-log'
@@ -666,7 +655,6 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/brand-kit'
     | '/workspaces/$workspaceId'
     | '/console/workspaces/$workspaceId'
-    | '/workspaces/$workspaceId/automations/new'
     | '/workspaces/$workspaceId/broadcasts/new'
     | '/workspaces/$workspaceId/segments/new'
     | '/workspaces/$workspaceId/settings/audit-log'
@@ -727,7 +715,6 @@ export interface FileRouteTypes {
     | '/console/_authed/'
     | '/workspaces/$workspaceId/'
     | '/console/_authed/workspaces/$workspaceId'
-    | '/workspaces/$workspaceId/automations/new'
     | '/workspaces/$workspaceId/broadcasts/new'
     | '/workspaces/$workspaceId/segments/new'
     | '/workspaces/$workspaceId/settings/audit-log'
@@ -995,13 +982,6 @@ declare module '@tanstack/react-router' {
       path: '/automations'
       fullPath: '/workspaces/$workspaceId/automations/'
       preLoaderRoute: typeof WorkspacesWorkspaceIdAutomationsIndexRouteImport
-      parentRoute: typeof WorkspacesWorkspaceIdRouteRoute
-    }
-    '/workspaces/$workspaceId/automations/new': {
-      id: '/workspaces/$workspaceId/automations/new'
-      path: '/automations/new'
-      fullPath: '/workspaces/$workspaceId/automations/new'
-      preLoaderRoute: typeof WorkspacesWorkspaceIdAutomationsNewRouteImport
       parentRoute: typeof WorkspacesWorkspaceIdRouteRoute
     }
     '/workspaces/$workspaceId/broadcasts/': {
@@ -1284,7 +1264,6 @@ interface WorkspacesWorkspaceIdRouteRouteChildren {
   WorkspacesWorkspaceIdAnalyticsRoute: typeof WorkspacesWorkspaceIdAnalyticsRoute
   WorkspacesWorkspaceIdBrandKitRoute: typeof WorkspacesWorkspaceIdBrandKitRoute
   WorkspacesWorkspaceIdIndexRoute: typeof WorkspacesWorkspaceIdIndexRoute
-  WorkspacesWorkspaceIdAutomationsNewRoute: typeof WorkspacesWorkspaceIdAutomationsNewRoute
   WorkspacesWorkspaceIdBroadcastsNewRoute: typeof WorkspacesWorkspaceIdBroadcastsNewRoute
   WorkspacesWorkspaceIdSegmentsNewRoute: typeof WorkspacesWorkspaceIdSegmentsNewRoute
   WorkspacesWorkspaceIdTemplatesNewRoute: typeof WorkspacesWorkspaceIdTemplatesNewRoute
@@ -1315,8 +1294,6 @@ const WorkspacesWorkspaceIdRouteRouteChildren: WorkspacesWorkspaceIdRouteRouteCh
     WorkspacesWorkspaceIdAnalyticsRoute: WorkspacesWorkspaceIdAnalyticsRoute,
     WorkspacesWorkspaceIdBrandKitRoute: WorkspacesWorkspaceIdBrandKitRoute,
     WorkspacesWorkspaceIdIndexRoute: WorkspacesWorkspaceIdIndexRoute,
-    WorkspacesWorkspaceIdAutomationsNewRoute:
-      WorkspacesWorkspaceIdAutomationsNewRoute,
     WorkspacesWorkspaceIdBroadcastsNewRoute:
       WorkspacesWorkspaceIdBroadcastsNewRoute,
     WorkspacesWorkspaceIdSegmentsNewRoute:

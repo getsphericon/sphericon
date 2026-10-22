@@ -68,7 +68,7 @@ test('shows an error alert when the list fails to load', async () => {
   await expect.element(screen.getByText('Failed to load automations').first()).toBeInTheDocument()
 })
 
-test('New automation and Edit link to the create and edit pages', async () => {
+test('New automation opens the create modal and Edit links to the edit page', async () => {
   worker.use(
     handleSiteAutomationsList(() => HttpResponse.json({ items: [WELCOME], totalItems: 1 })),
   )
@@ -76,9 +76,9 @@ test('New automation and Edit link to the create and edit pages', async () => {
   const { screen } = await renderWithRouter(<AutomationsListPage />, LIST_ROUTE)
   await expect.element(screen.getByText('Welcome flow')).toBeInTheDocument()
 
-  await expect
-    .element(screen.getByRole('link', { name: 'New automation' }))
-    .toHaveAttribute('href', '/workspaces/TestWs01/automations/new')
+  await screen.getByRole('button', { name: 'New automation' }).click()
+  await expect.element(screen.getByRole('dialog')).toBeInTheDocument()
+  await screen.getByRole('button', { name: 'Cancel' }).click()
   await screen.getByRole('button', { name: 'More actions' }).first().click()
   await expect
     .element(screen.getByRole('menuitem', { name: 'Edit' }))

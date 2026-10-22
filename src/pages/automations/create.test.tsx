@@ -1,17 +1,17 @@
 import { HttpResponse } from 'msw'
-import { expect, test } from 'vitest'
+import { expect, test, vi } from 'vitest'
 
 import { handleSiteAutomationsCreate } from '../../generated/site/msw.gen.ts'
 import { Route as automationsRoute } from '../../routes/workspaces/$workspaceId/automations/index.tsx'
-import { Route as automationsCreateRoute } from '../../routes/workspaces/$workspaceId/automations/new.tsx'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
-import { AutomationCreatePage } from './create.tsx'
+import { AutomationCreateModal } from './create.tsx'
 
 const WORKSPACE_ID = { workspaceId: 'TestWs01' }
-const CREATE_ROUTE = routeMount(automationsCreateRoute, WORKSPACE_ID)
+const CREATE_ROUTE = routeMount(automationsRoute, WORKSPACE_ID)
+const onClose = vi.fn<() => void>()
 const NOW = '2026-01-01T00:00:00Z'
 
 test('creating an automation sends the trimmed name and the default trigger, then opens the builder', async () => {
@@ -34,7 +34,10 @@ test('creating an automation sends the trimmed name and the default trigger, the
     }),
   )
 
-  const { screen, navigate } = await renderWithRouter(<AutomationCreatePage />, CREATE_ROUTE)
+  const { screen, navigate } = await renderWithRouter(
+    <AutomationCreateModal opened onClose={onClose} />,
+    CREATE_ROUTE,
+  )
   await expect.element(screen.getByText('New automation')).toBeInTheDocument()
 
   await screen.getByLabelText('Name', { exact: false }).fill('  Welcome  ')
@@ -51,7 +54,10 @@ test('creating an automation sends the trimmed name and the default trigger, the
 test('a refused create shows an error toast', async () => {
   worker.use(handleSiteAutomationsCreate(() => problem(500)))
 
-  const { screen } = await renderWithRouter(<AutomationCreatePage />, CREATE_ROUTE)
+  const { screen } = await renderWithRouter(
+    <AutomationCreateModal opened onClose={onClose} />,
+    CREATE_ROUTE,
+  )
 
   await screen.getByLabelText('Name', { exact: false }).fill('Opens')
   await screen.getByRole('button', { name: 'Continue' }).click()
@@ -59,10 +65,13 @@ test('a refused create shows an error toast', async () => {
   await expect.element(screen.getByText('Failed to save automation')).toBeInTheDocument()
 })
 
-test('Cancel links back to the list', async () => {
-  const { screen } = await renderWithRouter(<AutomationCreatePage />, CREATE_ROUTE)
+test('Cancel closes the modal', async () => {
+  const { screen } = await renderWithRouter(
+    <AutomationCreateModal opened onClose={onClose} />,
+    CREATE_ROUTE,
+  )
 
-  await expect
-    .element(screen.getByRole('link', { name: 'Cancel' }))
-    .toHaveAttribute('href', routeMount(automationsRoute, { workspaceId: 'TestWs01' }).initialPath)
+  await screen.getByRole('button', { name: 'Cancel' }).click()
+
+  expect(onClose).toHaveBeenCalledOnce()
 })

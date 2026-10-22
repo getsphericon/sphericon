@@ -629,7 +629,28 @@ export default interface Resources {
       "label": "Message",
       "placeholder": "Write your message, or type / to add a heading, list, button or image",
       "sourceHint": "This message was written as HTML, so it opens as source. Saving keeps it as HTML.",
-      "sourceLabel": "Body"
+      "sourceLabel": "Body",
+      "toolbar": {
+        "alignCenter": "Align center",
+        "alignLeft": "Align left",
+        "alignRight": "Align right",
+        "bold": "Bold",
+        "bulletList": "Bulleted list",
+        "heading1": "Heading 1",
+        "heading2": "Heading 2",
+        "italic": "Italic",
+        "label": "Formatting",
+        "link": "Link",
+        "linkApply": "Apply link",
+        "linkRemove": "Remove link",
+        "linkUrl": "Link address",
+        "orderedList": "Numbered list",
+        "quote": "Quote",
+        "redo": "Redo",
+        "strike": "Strikethrough",
+        "underline": "Underline",
+        "undo": "Undo"
+      }
     },
     "nav": {
       "activity": "Activity",
