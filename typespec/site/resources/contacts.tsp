@@ -34,6 +34,9 @@ model SiteContactResource {
   /** Typed custom field values keyed by the field's machine key */
   customFields?: Record<unknown> | null;
 
+  /** The labels the contact carries, ordered by name */
+  tags: string[];
+
   /** Creation timestamp */
   createdAt: Timestamp;
 
@@ -63,6 +66,9 @@ model SiteCreateContactInput {
 
   /** Typed custom field values keyed by the field's machine key */
   customFields?: Record<unknown> | null;
+
+  /** Tags to give the contact, created on first use */
+  tags?: string[];
 }
 
 /** Site request body for updating a contact */
@@ -87,6 +93,9 @@ model SiteUpdateContactInput {
 
   /** Typed custom field values keyed by the field's machine key */
   customFields?: Record<unknown> | null;
+
+  /** The contact's complete tag set when given: tags not listed are removed from it, an absent key keeps them */
+  tags?: string[];
 }
 
 /** Attachment download of everything held about one contact (subject access, GDPR Art. 15/20): the ContactExportDocument JSON, streamed */

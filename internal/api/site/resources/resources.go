@@ -65,9 +65,12 @@ import (
 // goverter:extend optMembershipSource
 // goverter:extend optTrackingReason
 // goverter:extend timestampOf
+// goverter:extend tagNames
 // goverter:extend auditDiff
 // goverter:extend optWebhookDisabledReason
 type Converter interface {
+	// The contact is read with its tags loaded (`WithTags`).
+	// goverter:map Edges.Tags Tags
 	ContactToResource(source *ent.Contact) siteapi.SiteContactResource
 	// The contract names the discarded state \"archived\" (ADR 0049).
 	// goverter:map DiscardedAt ArchivedAt
@@ -587,6 +590,11 @@ func optTrackingReason(v *sendingdomain.TrackingReason) siteapi.OptSiteTrackingR
 		return siteapi.OptSiteTrackingReason{}
 	}
 	return siteapi.NewOptSiteTrackingReason(siteapi.SiteTrackingReason(*v))
+}
+
+// tagNames lists the names of a contact's loaded tags, in the order they were read.
+func tagNames(tags []*ent.Tag) []string {
+	return lo.Map(tags, func(t *ent.Tag, _ int) string { return t.Name })
 }
 
 // timestampOf renders a time the schema keeps nullable but the contract always shows.

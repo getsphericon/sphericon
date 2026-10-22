@@ -118,3 +118,39 @@ func TestSiteContactsListFiltersByEmail(t *testing.T) {
 	assert.Empty(t, emails("nobody"), "a miss")
 	assert.Empty(t, emails("pat@globex.test"), "another Workspace's contact is never returned")
 }
+
+// Tags ride on the contact: create gives them, an update with `tags` replaces the set, an
+// absent key keeps it, and every read shows them ordered by name.
+func TestSiteContactsCarryTheirTags(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	ctx := context.Background()
+
+	res, err := c.SiteContactsCreate(ctx, &siteapi.SiteCreateContactInput{
+		Email: siteapi.NewOptNilEmailAddress("tagged@example.com"),
+		Tags:  []string{"zeta", "alpha"},
+	}, siteapi.SiteContactsCreateParams{WorkspaceId: fixtures.AcmePublicID})
+	require.NoError(t, err)
+	created, ok := res.(*siteapi.SiteContactResource)
+	require.Truef(t, ok, "got %T", res)
+	assert.Equal(t, []string{"alpha", "zeta"}, created.Tags)
+
+	params := siteapi.SiteContactsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: created.ID}
+	updated, err := c.SiteContactsUpdate(ctx, &siteapi.SiteUpdateContactInput{FirstName: nullString()}, params)
+	require.NoError(t, err)
+	kept, ok := updated.(*siteapi.SiteContactResource)
+	require.Truef(t, ok, "got %T", updated)
+	assert.Equal(t, []string{"alpha", "zeta"}, kept.Tags, "an absent tags key keeps the set")
+
+	updated, err = c.SiteContactsUpdate(ctx, &siteapi.SiteUpdateContactInput{Tags: []string{"beta"}}, params)
+	require.NoError(t, err)
+	replaced, ok := updated.(*siteapi.SiteContactResource)
+	require.Truef(t, ok, "got %T", updated)
+	assert.Equal(t, []string{"beta"}, replaced.Tags)
+
+	fetched, err := c.SiteContactsGet(ctx, siteapi.SiteContactsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: created.ID})
+	require.NoError(t, err)
+	got, ok := fetched.(*siteapi.SiteContactResource)
+	require.Truef(t, ok, "got %T", fetched)
+	assert.Equal(t, []string{"beta"}, got.Tags)
+}

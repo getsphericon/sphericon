@@ -1402,6 +1402,10 @@ export type SiteContactResource = {
     [key: string]: unknown;
   } | null;
   /**
+   * The labels the contact carries, ordered by name
+   */
+  tags: Array<string>;
+  /**
    * Creation timestamp
    */
   createdAt: Timestamp;
@@ -1495,6 +1499,10 @@ export type SiteCreateContactInput = {
   customFields?: {
     [key: string]: unknown;
   } | null;
+  /**
+   * Tags to give the contact, created on first use
+   */
+  tags?: Array<string>;
 };
 
 /**
@@ -3793,6 +3801,10 @@ export type SiteUpdateContactInput = {
   customFields?: {
     [key: string]: unknown;
   } | null;
+  /**
+   * The contact's complete tag set when given: tags not listed are removed from it, an absent key keeps them
+   */
+  tags?: Array<string>;
 };
 
 /**

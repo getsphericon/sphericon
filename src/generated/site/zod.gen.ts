@@ -1335,7 +1335,8 @@ export const zSiteCreateContactInput = z.object({
   firstName: z.exactOptional(z.string().nullable()),
   lastName: z.exactOptional(z.string().nullable()),
   timeZone: z.exactOptional(zTimeZoneName.nullable()),
-  customFields: z.exactOptional(z.record(z.string(), z.unknown()).nullable())
+  customFields: z.exactOptional(z.record(z.string(), z.unknown()).nullable()),
+  tags: z.exactOptional(z.array(z.string()))
 });
 
 /**
@@ -1348,7 +1349,8 @@ export const zSiteUpdateContactInput = z.object({
   firstName: z.exactOptional(z.string().nullable()),
   lastName: z.exactOptional(z.string().nullable()),
   timeZone: z.exactOptional(zTimeZoneName.nullable()),
-  customFields: z.exactOptional(z.record(z.string(), z.unknown()).nullable())
+  customFields: z.exactOptional(z.record(z.string(), z.unknown()).nullable()),
+  tags: z.exactOptional(z.array(z.string()))
 });
 
 export const zTimestamp = z.iso.datetime();
@@ -1620,6 +1622,7 @@ export const zSiteContactResource = z.object({
   lastName: z.exactOptional(z.string().nullable()),
   timeZone: z.exactOptional(zTimeZoneName.nullable()),
   customFields: z.exactOptional(z.record(z.string(), z.unknown()).nullable()),
+  tags: z.array(z.string()),
   createdAt: zTimestamp,
   updatedAt: zTimestamp
 });

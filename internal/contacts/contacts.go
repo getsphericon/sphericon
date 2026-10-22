@@ -28,6 +28,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/pagination"
@@ -417,7 +418,7 @@ type Filter struct {
 // List returns one page of the Workspace's Contacts, ascending by id, narrowed by f.
 func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params, f Filter) (pagination.Page[*ent.Contact], error) {
 	query := func() *ent.ContactQuery {
-		q := s.Contact().Query()
+		q := s.Contact().Query().WithTags(func(q *ent.TagQuery) { q.Order(ent.Asc(tag.FieldName)) })
 		if f.EmailContains != "" {
 			q = q.Where(contact.EmailContainsFold(f.EmailContains))
 		}

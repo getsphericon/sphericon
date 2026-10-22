@@ -131,6 +131,26 @@ func TestRemoveDetachesAndKeepsTheTag(t *testing.T) {
 	require.ErrorIs(t, m.Remove(ctx, globex, fixtures.ContactCarolID, fixtures.TagVipName), tags.ErrContactNotFound)
 }
 
+func TestSetMakesTheNamedTagsTheContactsCompleteSet(t *testing.T) {
+	env := testhelper.Setup(t)
+	acme := env.DB.Scoped(fixtures.AcmeID)
+	m := tags.New()
+	ctx := context.Background()
+
+	// Alice has vip and newsletter: keep vip, drop newsletter, create a new tag; blank and repeated names change nothing.
+	require.NoError(t, m.Set(ctx, acme, fixtures.ContactAliceID, []string{fixtures.TagVipName, " fresh ", "fresh", " "}))
+	got, err := m.ForContact(ctx, acme, fixtures.ContactAliceID)
+	require.NoError(t, err)
+	assert.Equal(t, []string{"fresh", fixtures.TagVipName}, names(got))
+
+	require.NoError(t, m.Set(ctx, acme, fixtures.ContactAliceID, []string{}))
+	got, err = m.ForContact(ctx, acme, fixtures.ContactAliceID)
+	require.NoError(t, err)
+	assert.Empty(t, got)
+
+	require.ErrorIs(t, m.Set(ctx, acme, 999999, []string{"x"}), tags.ErrContactNotFound)
+}
+
 func TestForeignContactIsRefusedOnEveryOperation(t *testing.T) {
 	env := testhelper.Setup(t)
 	acme, globex := env.DB.Scoped(fixtures.AcmeID), env.DB.Scoped(fixtures.GlobexID)

@@ -1301,6 +1301,7 @@ export default interface Resources {
       "phone": "Phone",
       "status": "Status",
       "subjectId": "Subject ID",
+      "tags": "Tags",
       "timeZone": "Time zone"
     },
     "tags": {

@@ -1,7 +1,7 @@
 import { HttpResponse } from 'msw'
 import { expect, test, vi } from 'vitest'
 
-import { handleSiteContactsList } from '../../generated/site/msw.gen.ts'
+import { handleSiteContactsList, handleSiteTagsList } from '../../generated/site/msw.gen.ts'
 import { Route as contactsRoute } from '../../routes/workspaces/$workspaceId/contacts/index.tsx'
 import { page, TIMESTAMPS } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
@@ -17,9 +17,10 @@ const ALICE = {
   email: 'alice@example.com',
   firstName: 'Alice',
   lastName: 'Smith',
+  tags: [],
   ...TIMESTAMPS,
 }
-const BOB = { id: '2', email: 'bob@example.com', ...TIMESTAMPS }
+const BOB = { id: '2', email: 'bob@example.com', tags: [], ...TIMESTAMPS }
 
 test('lists the workspace contacts', async () => {
   worker.use(handleSiteContactsList({ body: page([ALICE, BOB], 2) }))
@@ -48,7 +49,10 @@ test('shows an error alert when the list fails to load', async () => {
 })
 
 test('Add contact opens the create form in a modal', async () => {
-  worker.use(handleSiteContactsList({ body: page([], 0) }))
+  worker.use(
+    handleSiteContactsList({ body: page([], 0) }),
+    handleSiteTagsList({ body: page([], 0) }),
+  )
 
   const { screen } = await renderWithRouter(<ContactsListPage />, LIST_ROUTE)
   await screen.getByRole('button', { name: 'Add contact' }).click()

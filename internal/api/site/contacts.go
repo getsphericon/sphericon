@@ -9,6 +9,8 @@ import (
 	"net/http"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/tag"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/contacts"
@@ -61,7 +63,10 @@ func (h *Handlers) SiteContactsCreate(ctx context.Context, req *siteapi.SiteCrea
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.ContactToResource(c)
+	res, err := h.contactResource(ctx, scoped, c.ID, req.Tags)
+	if err != nil {
+		return nil, err
+	}
 	return &res, nil
 }
 
@@ -75,8 +80,7 @@ func (h *Handlers) SiteContactsGet(ctx context.Context, params siteapi.SiteConta
 		return nil, err
 	}
 
-	id := int64(params.ID)
-	c, err := scoped.Contact().Get(ctx, id)
+	res, err := h.contactResource(ctx, scoped, int64(params.ID), nil)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteContactsGetNotFound(problem(http.StatusNotFound, "contact not found"))
 		return &v, nil
@@ -84,7 +88,6 @@ func (h *Handlers) SiteContactsGet(ctx context.Context, params siteapi.SiteConta
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.ContactToResource(c)
 	return &res, nil
 }
 
@@ -111,7 +114,10 @@ func (h *Handlers) SiteContactsUpdate(ctx context.Context, req *siteapi.SiteUpda
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.ContactToResource(c)
+	res, err := h.contactResource(ctx, scoped, c.ID, req.Tags)
+	if err != nil {
+		return nil, err
+	}
 	return &res, nil
 }
 
@@ -162,6 +168,21 @@ func problemWithErrors(code int, detail string, errors map[string][]string) site
 // conflictProblem renders a contacts.ConflictError, with the field-level error.
 func conflictProblem(c *contacts.ConflictError) siteapi.ProblemDetails {
 	return problemWithErrors(http.StatusConflict, c.Message(), map[string][]string{c.Field: {c.Message()}})
+}
+
+// contactResource reads the contact with its tags. A non-nil setTags first makes it the
+// contact's complete tag set (an absent key in the request is nil and keeps the tags).
+func (h *Handlers) contactResource(ctx context.Context, s *ent.Scoped, id int64, setTags []string) (siteapi.SiteContactResource, error) {
+	if setTags != nil {
+		if err := h.tags.Set(ctx, s, id, setTags); err != nil {
+			return siteapi.SiteContactResource{}, err
+		}
+	}
+	c, err := s.Contact().Query().Where(contact.ID(id)).WithTags(func(q *ent.TagQuery) { q.Order(ent.Asc(tag.FieldName)) }).Only(ctx)
+	if err != nil {
+		return siteapi.SiteContactResource{}, err
+	}
+	return mapper.ContactToResource(c), nil
 }
 
 func createContactAttributes(req *siteapi.SiteCreateContactInput) contacts.Attributes {

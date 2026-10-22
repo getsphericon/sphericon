@@ -12188,7 +12188,7 @@
       },
       "SiteContactResource": {
         "type": "object",
-        "required": ["id", "createdAt", "updatedAt"],
+        "required": ["id", "tags", "createdAt", "updatedAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -12243,6 +12243,13 @@
             "additionalProperties": {},
             "nullable": true,
             "description": "Typed custom field values keyed by the field's machine key"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The labels the contact carries, ordered by name"
           },
           "createdAt": {
             "allOf": [
@@ -12389,6 +12396,13 @@
             "additionalProperties": {},
             "nullable": true,
             "description": "Typed custom field values keyed by the field's machine key"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Tags to give the contact, created on first use"
           }
         },
         "description": "Site request body for creating a contact"
@@ -15461,6 +15475,13 @@
             "additionalProperties": {},
             "nullable": true,
             "description": "Typed custom field values keyed by the field's machine key"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The contact's complete tag set when given: tags not listed are removed from it, an absent key keeps them"
           }
         },
         "description": "Site request body for updating a contact"

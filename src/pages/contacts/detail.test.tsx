@@ -47,6 +47,7 @@ const ADA: SiteContactResource = {
   firstName: 'Ada',
   lastName: 'Lovelace',
   customFields: { plan: 'pro', seats: 3, flags: { beta: true }, nothing: null },
+  tags: [],
   createdAt: NOW,
   updatedAt: NOW,
 }
@@ -94,7 +95,7 @@ test('lists the contact events and filters them by contact id', async () => {
 test('falls back to the subject id as the title when there is no email', async () => {
   worker.use(
     handleSiteContactsGet({
-      body: { id: '9', subjectId: 'anon-1', createdAt: NOW, updatedAt: NOW },
+      body: { id: '9', subjectId: 'anon-1', tags: [], createdAt: NOW, updatedAt: NOW },
     }),
     NO_EVENTS,
   )

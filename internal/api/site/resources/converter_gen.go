@@ -130,6 +130,7 @@ func (c *ConverterImpl) ContactToResource(source *ent.Contact) site.SiteContactR
 		siteapiSiteContactResource.LastName = optNilString((*source).LastName)
 		siteapiSiteContactResource.TimeZone = optNilTimeZone((*source).TimeZone)
 		siteapiSiteContactResource.CustomFields = contactCustomFields((*source).CustomFields)
+		siteapiSiteContactResource.Tags = tagNames((*source).Edges.Tags)
 		siteapiSiteContactResource.CreatedAt = timestamp((*source).CreatedAt)
 		siteapiSiteContactResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}

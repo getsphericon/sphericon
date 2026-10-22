@@ -11,6 +11,8 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/samber/lo"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/tag"
@@ -84,6 +86,32 @@ func (m *Module) Apply(ctx context.Context, s *ent.Scoped, contactID int64, name
 		return nil, err
 	}
 	return t, nil
+}
+
+// Set makes the named Tags the Contact's complete set: it applies the missing ones
+// (creating them on first use) and removes the rest. Blank and repeated names are
+// dropped, so a form's empty chip changes nothing.
+func (m *Module) Set(ctx context.Context, s *ent.Scoped, contactID int64, names []string) error {
+	want := lo.Uniq(lo.FilterMap(names, func(n string, _ int) (string, bool) {
+		n = strings.TrimSpace(n)
+		return n, n != ""
+	}))
+	have, err := m.ForContact(ctx, s, contactID)
+	if err != nil {
+		return err
+	}
+	haveNames := lo.Map(have, func(t *ent.Tag, _ int) string { return t.Name })
+	for _, name := range lo.Without(want, haveNames...) {
+		if _, err := m.Apply(ctx, s, contactID, name); err != nil {
+			return err
+		}
+	}
+	for _, name := range lo.Without(haveNames, want...) {
+		if err := m.Remove(ctx, s, contactID, name); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Remove takes the named Tag off the Contact. It is idempotent: a Tag the Contact

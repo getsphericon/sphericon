@@ -1,3 +1,5 @@
+import * as z from 'zod'
+
 import {
   siteContactsCreateMutation,
   siteContactsGetOptions,
@@ -10,16 +12,21 @@ import { defineResource } from '../../resources/defineResource.tsx'
 import { resourceFormSchema } from '../../resources/resourceFormSchema.ts'
 import { Route as contactsEditRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/edit.tsx'
 import { ContactForm } from './ContactForm.tsx'
+import { tagsCodec } from './tags.ts'
 
-// Contact custom fields are not edited here, so they never round-trip into the payload.
+// Contact custom fields are not edited here, so they never round-trip into the payload. The
+// subject id is set by the tracker and the API, never typed by hand, so the form leaves it out.
+
 const contactSchema = resourceFormSchema(
-  zSiteUpdateContactInput.pick({
-    subjectId: true,
-    email: true,
-    phone: true,
-    firstName: true,
-    lastName: true,
-    timeZone: true,
+  z.object({
+    ...zSiteUpdateContactInput.pick({
+      email: true,
+      phone: true,
+      firstName: true,
+      lastName: true,
+      timeZone: true,
+    }).shape,
+    tags: tagsCodec.default([]),
   }),
 )
 

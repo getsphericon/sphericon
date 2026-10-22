@@ -7853,6 +7853,8 @@ type SiteContactResource struct {
 	TimeZone OptNilTimeZoneName `json:"timeZone"`
 	// Typed custom field values keyed by the field's machine key.
 	CustomFields OptNilSiteContactResourceCustomFields `json:"customFields"`
+	// The labels the contact carries, ordered by name.
+	Tags []string `json:"tags"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -7897,6 +7899,11 @@ func (s *SiteContactResource) GetTimeZone() OptNilTimeZoneName {
 // GetCustomFields returns the value of CustomFields.
 func (s *SiteContactResource) GetCustomFields() OptNilSiteContactResourceCustomFields {
 	return s.CustomFields
+}
+
+// GetTags returns the value of Tags.
+func (s *SiteContactResource) GetTags() []string {
+	return s.Tags
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -7947,6 +7954,11 @@ func (s *SiteContactResource) SetTimeZone(val OptNilTimeZoneName) {
 // SetCustomFields sets the value of CustomFields.
 func (s *SiteContactResource) SetCustomFields(val OptNilSiteContactResourceCustomFields) {
 	s.CustomFields = val
+}
+
+// SetTags sets the value of Tags.
+func (s *SiteContactResource) SetTags(val []string) {
+	s.Tags = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.
@@ -8355,6 +8367,8 @@ type SiteCreateContactInput struct {
 	TimeZone OptNilTimeZoneName `json:"timeZone"`
 	// Typed custom field values keyed by the field's machine key.
 	CustomFields OptNilSiteCreateContactInputCustomFields `json:"customFields"`
+	// Tags to give the contact, created on first use.
+	Tags []string `json:"tags"`
 }
 
 // GetSubjectId returns the value of SubjectId.
@@ -8392,6 +8406,11 @@ func (s *SiteCreateContactInput) GetCustomFields() OptNilSiteCreateContactInputC
 	return s.CustomFields
 }
 
+// GetTags returns the value of Tags.
+func (s *SiteCreateContactInput) GetTags() []string {
+	return s.Tags
+}
+
 // SetSubjectId sets the value of SubjectId.
 func (s *SiteCreateContactInput) SetSubjectId(val OptNilString) {
 	s.SubjectId = val
@@ -8425,6 +8444,11 @@ func (s *SiteCreateContactInput) SetTimeZone(val OptNilTimeZoneName) {
 // SetCustomFields sets the value of CustomFields.
 func (s *SiteCreateContactInput) SetCustomFields(val OptNilSiteCreateContactInputCustomFields) {
 	s.CustomFields = val
+}
+
+// SetTags sets the value of Tags.
+func (s *SiteCreateContactInput) SetTags(val []string) {
+	s.Tags = val
 }
 
 // Typed custom field values keyed by the field's machine key.
@@ -17238,6 +17262,9 @@ type SiteUpdateContactInput struct {
 	TimeZone OptNilTimeZoneName `json:"timeZone"`
 	// Typed custom field values keyed by the field's machine key.
 	CustomFields OptNilSiteUpdateContactInputCustomFields `json:"customFields"`
+	// The contact's complete tag set when given: tags not listed are removed from it, an absent key keeps
+	// them.
+	Tags []string `json:"tags"`
 }
 
 // GetSubjectId returns the value of SubjectId.
@@ -17275,6 +17302,11 @@ func (s *SiteUpdateContactInput) GetCustomFields() OptNilSiteUpdateContactInputC
 	return s.CustomFields
 }
 
+// GetTags returns the value of Tags.
+func (s *SiteUpdateContactInput) GetTags() []string {
+	return s.Tags
+}
+
 // SetSubjectId sets the value of SubjectId.
 func (s *SiteUpdateContactInput) SetSubjectId(val OptNilString) {
 	s.SubjectId = val
@@ -17308,6 +17340,11 @@ func (s *SiteUpdateContactInput) SetTimeZone(val OptNilTimeZoneName) {
 // SetCustomFields sets the value of CustomFields.
 func (s *SiteUpdateContactInput) SetCustomFields(val OptNilSiteUpdateContactInputCustomFields) {
 	s.CustomFields = val
+}
+
+// SetTags sets the value of Tags.
+func (s *SiteUpdateContactInput) SetTags(val []string) {
+	s.Tags = val
 }
 
 // Typed custom field values keyed by the field's machine key.

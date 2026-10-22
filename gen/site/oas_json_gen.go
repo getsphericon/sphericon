@@ -13870,6 +13870,14 @@ func (s *SiteContactResource) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		e.FieldStart("tags")
+		e.ArrStart()
+		for _, elem := range s.Tags {
+			e.Str(elem)
+		}
+		e.ArrEnd()
+	}
+	{
 		e.FieldStart("createdAt")
 		s.CreatedAt.Encode(e)
 	}
@@ -13879,17 +13887,18 @@ func (s *SiteContactResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteContactResource = [10]string{
-	0: "id",
-	1: "subjectId",
-	2: "email",
-	3: "phone",
-	4: "firstName",
-	5: "lastName",
-	6: "timeZone",
-	7: "customFields",
-	8: "createdAt",
-	9: "updatedAt",
+var jsonFieldsNameOfSiteContactResource = [11]string{
+	0:  "id",
+	1:  "subjectId",
+	2:  "email",
+	3:  "phone",
+	4:  "firstName",
+	5:  "lastName",
+	6:  "timeZone",
+	7:  "customFields",
+	8:  "tags",
+	9:  "createdAt",
+	10: "updatedAt",
 }
 
 // Decode decodes SiteContactResource from json.
@@ -13981,8 +13990,28 @@ func (s *SiteContactResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"customFields\"")
 			}
-		case "createdAt":
+		case "tags":
 			requiredBitSet[1] |= 1 << 0
+			if err := func() error {
+				s.Tags = make([]string, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem string
+					v, err := d.Str()
+					elem = string(v)
+					if err != nil {
+						return err
+					}
+					s.Tags = append(s.Tags, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"tags\"")
+			}
+		case "createdAt":
+			requiredBitSet[1] |= 1 << 1
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -13992,7 +14021,7 @@ func (s *SiteContactResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"createdAt\"")
 			}
 		case "updatedAt":
-			requiredBitSet[1] |= 1 << 1
+			requiredBitSet[1] |= 1 << 2
 			if err := func() error {
 				if err := s.UpdatedAt.Decode(d); err != nil {
 					return err
@@ -14012,7 +14041,7 @@ func (s *SiteContactResource) Decode(d *jx.Decoder) error {
 	var failures []validate.FieldError
 	for i, mask := range [2]uint8{
 		0b00000001,
-		0b00000011,
+		0b00000111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -15629,9 +15658,19 @@ func (s *SiteCreateContactInput) encodeFields(e *jx.Encoder) {
 			s.CustomFields.Encode(e)
 		}
 	}
+	{
+		if s.Tags != nil {
+			e.FieldStart("tags")
+			e.ArrStart()
+			for _, elem := range s.Tags {
+				e.Str(elem)
+			}
+			e.ArrEnd()
+		}
+	}
 }
 
-var jsonFieldsNameOfSiteCreateContactInput = [7]string{
+var jsonFieldsNameOfSiteCreateContactInput = [8]string{
 	0: "subjectId",
 	1: "email",
 	2: "phone",
@@ -15639,6 +15678,7 @@ var jsonFieldsNameOfSiteCreateContactInput = [7]string{
 	4: "lastName",
 	5: "timeZone",
 	6: "customFields",
+	7: "tags",
 }
 
 // Decode decodes SiteCreateContactInput from json.
@@ -15718,6 +15758,25 @@ func (s *SiteCreateContactInput) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"customFields\"")
+			}
+		case "tags":
+			if err := func() error {
+				s.Tags = make([]string, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem string
+					v, err := d.Str()
+					elem = string(v)
+					if err != nil {
+						return err
+					}
+					s.Tags = append(s.Tags, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"tags\"")
 			}
 		default:
 			return d.Skip()
@@ -41247,9 +41306,19 @@ func (s *SiteUpdateContactInput) encodeFields(e *jx.Encoder) {
 			s.CustomFields.Encode(e)
 		}
 	}
+	{
+		if s.Tags != nil {
+			e.FieldStart("tags")
+			e.ArrStart()
+			for _, elem := range s.Tags {
+				e.Str(elem)
+			}
+			e.ArrEnd()
+		}
+	}
 }
 
-var jsonFieldsNameOfSiteUpdateContactInput = [7]string{
+var jsonFieldsNameOfSiteUpdateContactInput = [8]string{
 	0: "subjectId",
 	1: "email",
 	2: "phone",
@@ -41257,6 +41326,7 @@ var jsonFieldsNameOfSiteUpdateContactInput = [7]string{
 	4: "lastName",
 	5: "timeZone",
 	6: "customFields",
+	7: "tags",
 }
 
 // Decode decodes SiteUpdateContactInput from json.
@@ -41336,6 +41406,25 @@ func (s *SiteUpdateContactInput) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"customFields\"")
+			}
+		case "tags":
+			if err := func() error {
+				s.Tags = make([]string, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem string
+					v, err := d.Str()
+					elem = string(v)
+					if err != nil {
+						return err
+					}
+					s.Tags = append(s.Tags, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"tags\"")
 			}
 		default:
 			return d.Skip()
