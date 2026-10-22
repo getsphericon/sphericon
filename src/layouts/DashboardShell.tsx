@@ -1,4 +1,4 @@
-import { AppShell, Burger, Button, Group, ScrollArea, Title } from '@mantine/core'
+import { AppShell, Box, Burger, Button, Group, ScrollArea, Title } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { IconBook } from '@tabler/icons-react'
 import { Outlet, useLocation } from '@tanstack/react-router'
@@ -68,9 +68,9 @@ export function DashboardShell({
         </Group>
       </AppShell.Header>
 
-      <AppShell.Navbar p="md">
+      <AppShell.Navbar>
         <AppShell.Section grow component={ScrollArea}>
-          {sidebar}
+          <Box p="md">{sidebar}</Box>
         </AppShell.Section>
       </AppShell.Navbar>
 
