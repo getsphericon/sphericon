@@ -69,8 +69,7 @@ An immutable, append-only record that something happened (an `action`, optional 
 at a time). Attached to a Contact by **stable identity resolved at ingest** — not by email —
 and carries denormalized identity snapshot fields for debugging. The link is a nullable
 foreign key that is set to null when the Contact is deleted: an Event outlives the mutable
-Contact, it never blocks or follows its deletion. The raw material behind behavioral segmentation. sphericon's own delivery and
-delivery and engagement facts (`email.sent`, `email.delivered`, `email.delayed`, `email.dropped`, `email.bounced`,
+Contact, it never blocks or follows its deletion. The raw material behind behavioral segmentation. sphericon's own delivery and engagement facts (`email.sent`, `email.delivered`, `email.delayed`, `email.dropped`, `email.bounced`,
 `email.complained`, `email.opened`, `email.clicked`, `email.unsubscribed`) are Events too — reserved,
 system-generated actions — so engagement is segmentable through the very same machinery as
 customer-tracked actions, with no parallel event stream.
@@ -220,7 +219,8 @@ time. It holds no delivery state of its own: its send ends in exactly one Outbou
 (sent / skipped / failed), and it is _pending_ until then. It is also the home of a denormalized
 **rollup** of engagement (opened / clicked / unsubscribed, each set once) for per-broadcast
 stats; opens and clicks are also the `email.opened` / `email.clicked` Events, which are the
-source of truth, so the rollup is a convenience view. A Broadcast's figures (recipients, sent,
+source of truth, so the rollup is a convenience view. Delivery figures (delivered, bounced, complained) are read from
+the Outbound message's delivery result, never counted from Events. A Broadcast's figures (recipients, sent,
 skipped, failed, pending, opened, clicked, unsubscribed) are derived from its recipients and
 their messages and never stored, so they are live while it sends. Contrast Segment, which is a
 live query and never materialized.
@@ -249,8 +249,10 @@ _Avoid_: No-reply sender, platform mailer
 
 **Outbound message**:
 The durable record of one Outbound send — which surface and which of its records it belongs to,
-the Sending source (none for Transactional), the Sending domain, the provider's message id, and
-the outcome. Claimed before the provider is called, under a per-logical-send idempotency key, so a
+the Sending source (none for Transactional), the Sending domain, the provider's message id, the
+outcome, and the delivery result: the first Delivery notice of each kind that arrives stamps it once
+(delivered, bounced, complained), and a stamp is never removed, so reports of old sends do not shrink
+when Events expire. Claimed before the provider is called, under a per-logical-send idempotency key, so a
 retry never sends twice. Holds provenance and outcome, never rendered content. A Broadcast
 recipient points at its Outbound message; it does not replace it.
 _Avoid_: Send log, delivery row, email record
@@ -433,17 +435,15 @@ rejected (a bounce) or spam-foldered by bulk-sender policy.
 _Avoid_: From domain, verified domain, sender identity, SPF domain
 
 **Complaint rate**:
-The reputation-monitoring ratio `complaints / (sent − hard bounces)`, per (Workspace, **Sending
-domain**), over a trailing time window. The denominator subtracts hard bounces as a cheap proxy
-for _delivered_ (mailbox providers judge complaint rate over delivered mail, but sphericon only
-records `email.sent` = accepted-by-provider — see **Sent**; a plain `/sent` denominator
-understates, worst for the abusive senders that matter most). A **flow rate**: each event counts
-by its own `occurred_at`, never linked back to the originating send, so it is always current and
-needs no send↔feedback correlation. Derived from the `email.complained` / `email.sent` /
-permanent `email.bounced` Events (source of truth), **not** a stored status — a core, user-facing
-number computed live; the automated-suspension _thresholds_ that read it are EE (ADR 0007). Always
-exposed as the triple `(numerator, denominator, rate)`; the rate is **undefined** below a volume
-floor, never a scary ratio off a handful of sends.
+The reputation-monitoring ratio `complaints / delivered`, per (Workspace, **Sending domain**), over a
+trailing time window, where `delivered` is the count of `email.delivered` Events (mailbox providers
+judge complaint rate over delivered mail). A **flow rate**: each event counts by its own
+`occurred_at`, so it is always current and never needs a Delivery notice to be linked back to its
+send. Derived from the `email.complained` / `email.delivered` Events (source of truth), **not** a
+stored status — a core, user-facing number computed live; the automated-suspension _thresholds_ that
+read it are EE (ADR 0007). Always exposed as the triple `(numerator, denominator, rate)`; the rate is
+**undefined** below a volume floor, never a scary ratio off a handful of sends, and so for a Preset
+that reports no delivery.
 _Avoid_: Spam score, sender score, reputation score (we expose honest ratios, not a black-box score)
 
 **Bounce rate**:
@@ -451,9 +451,8 @@ The sibling reputation ratio `permanent_bounces / sent`, same (Workspace, Sendin
 and trailing-window flow semantics as **Complaint rate**. Only **permanent** (hard) bounces —
 the same ones that suppress and that mailbox providers penalize — count in the numerator;
 **transient** (soft) bounces are excluded from the headline (at most a secondary counter), so
-the metric measures list hygiene, not temporary blips. One hard bounce is thus used three
-coherent ways: it suppresses (Suppression), it subtracts from the Complaint-rate denominator,
-and it is the Bounce-rate numerator.
+the metric measures list hygiene, not temporary blips. One hard bounce is thus used two
+coherent ways: it suppresses (Suppression) and it is the Bounce-rate numerator.
 _Avoid_: Delivery-failure rate (that would fold in transient bounces)
 
 **Engagement rates**:
@@ -571,7 +570,8 @@ An open or click made by software rather than the recipient: a mail client's pri
 Mail Privacy Protection), a security scanner or a link prefetcher. It is still recorded as an
 `email.opened` / `email.clicked` Event, flagged `machine`, but it never counts toward open or click
 figures, never sets a Broadcast recipient's rollup and never starts an Automation. Detected from
-the request's user-agent and source address, neither of which is stored.
+the request's user-agent and source address, neither of which is stored. Detection is a partial
+signal, not proof: a proxy that hides itself is not caught.
 _Avoid_: Bot open, false open
 
 **User**:
