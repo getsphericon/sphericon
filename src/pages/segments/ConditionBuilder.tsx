@@ -11,34 +11,34 @@ import {
   siteEventsActionsOptions,
   siteSegmentsPreviewMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import { SiteSegmentOperator } from '../../generated/site/types.gen.ts'
-import type { SiteSegmentRuleGroup } from '../../generated/site/types.gen.ts'
-import { toGroup, toQuery } from './rules.ts'
+import { SiteConditionOperator } from '../../generated/site/types.gen.ts'
+import type { SiteConditionGroup } from '../../generated/site/types.gen.ts'
+import { toGroup, toQuery } from './condition.ts'
 
 // What the backend segment engine compiles for each kind of field.
 const textOperators: Operator[] = [
-  { name: SiteSegmentOperator.EQ, label: 'is' },
-  { name: SiteSegmentOperator.NEQ, label: 'is not' },
-  { name: SiteSegmentOperator.CONTAINS, label: 'contains' },
-  { name: SiteSegmentOperator.BEGINS_WITH, label: 'begins with' },
-  { name: SiteSegmentOperator.NULL, label: 'is empty' },
-  { name: SiteSegmentOperator.NOT_NULL, label: 'is set' },
+  { name: SiteConditionOperator.EQ, label: 'is' },
+  { name: SiteConditionOperator.NEQ, label: 'is not' },
+  { name: SiteConditionOperator.CONTAINS, label: 'contains' },
+  { name: SiteConditionOperator.BEGINS_WITH, label: 'begins with' },
+  { name: SiteConditionOperator.NULL, label: 'is empty' },
+  { name: SiteConditionOperator.NOT_NULL, label: 'is set' },
 ]
 
 // A custom field is a key of a JSON column: it can be compared, or tested for membership
 // of an array, but not for a prefix or for being empty.
 const customFieldOperators: Operator[] = [
-  { name: SiteSegmentOperator.EQ, label: 'is' },
-  { name: SiteSegmentOperator.NEQ, label: 'is not' },
-  { name: SiteSegmentOperator.CONTAINS, label: 'contains' },
-  { name: SiteSegmentOperator.NOT_NULL, label: 'is set' },
+  { name: SiteConditionOperator.EQ, label: 'is' },
+  { name: SiteConditionOperator.NEQ, label: 'is not' },
+  { name: SiteConditionOperator.CONTAINS, label: 'contains' },
+  { name: SiteConditionOperator.NOT_NULL, label: 'is set' },
 ]
 
 // Event conditions get their own operator set (per-field overrides the global one).
 // The value is a day window: blank = ever.
 const eventOperators: Operator[] = [
-  { name: SiteSegmentOperator.PERFORMED, label: 'performed in last (days)' },
-  { name: SiteSegmentOperator.NOT_PERFORMED, label: 'not performed in last (days)' },
+  { name: SiteConditionOperator.PERFORMED, label: 'performed in last (days)' },
+  { name: SiteConditionOperator.NOT_PERFORMED, label: 'not performed in last (days)' },
 ]
 
 const contactFields: Field[] = [
@@ -50,16 +50,16 @@ const contactFields: Field[] = [
   { name: 'time_zone', label: 'Time zone' },
 ]
 
-interface SegmentRuleBuilderProps {
+interface ConditionBuilderProps {
   workspaceId: string
-  value: SiteSegmentRuleGroup
-  onChange: (group: SiteSegmentRuleGroup) => void
+  value: SiteConditionGroup
+  onChange: (group: SiteConditionGroup) => void
 }
 
-// SegmentRuleBuilder is the visual rule editor (react-querybuilder + the official
+// ConditionBuilder is the visual Condition editor (react-querybuilder + the official
 // Mantine compat package — no hand-rolled condition rows, no custom CSS). It edits the
 // API's typed rule group and offers a live preview of how many active contacts match.
-export function SegmentRuleBuilder({ workspaceId, value, onChange }: SegmentRuleBuilderProps) {
+export function ConditionBuilder({ workspaceId, value, onChange }: ConditionBuilderProps) {
   const { t } = useTranslation()
   const query = useMemo(() => toQuery(value), [value])
   const preview = useMutation(siteSegmentsPreviewMutation())
@@ -81,7 +81,7 @@ export function SegmentRuleBuilder({ workspaceId, value, onChange }: SegmentRule
       name: `event:${action}`,
       label: `Did "${action}"`,
       operators: eventOperators,
-      defaultOperator: SiteSegmentOperator.PERFORMED,
+      defaultOperator: SiteConditionOperator.PERFORMED,
       inputType: 'number',
     }))
     return [...contactFields, ...customFields, ...eventFields]
@@ -103,7 +103,7 @@ export function SegmentRuleBuilder({ workspaceId, value, onChange }: SegmentRule
           variant="light"
           size="compact-sm"
           loading={preview.isPending}
-          onClick={() => preview.mutate({ path: { workspaceId }, body: { definition: value } })}
+          onClick={() => preview.mutate({ path: { workspaceId }, body: { condition: value } })}
         >
           {t(($) => $.segments.previewButton)}
         </Button>

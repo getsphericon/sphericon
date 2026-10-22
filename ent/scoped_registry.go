@@ -1346,8 +1346,8 @@ func ScopedEntities() []ScopedEntity {
 					b.SetDiscardedAt(*src.DiscardedAt)
 				}
 				b.SetName(src.Name)
-				if src.Definition != nil {
-					b.SetDefinition(*src.Definition)
+				if src.Condition != nil {
+					b.SetCondition(*src.Condition)
 				}
 				created, err := b.Save(ctx)
 				if err != nil {

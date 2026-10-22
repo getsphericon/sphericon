@@ -28,8 +28,8 @@ type Segment struct {
 	DiscardedAt *time.Time `json:"discarded_at,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
-	// Definition holds the value of the "definition" field.
-	Definition *string `json:"definition,omitempty"`
+	// Condition holds the value of the "condition" field.
+	Condition *string `json:"condition,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the SegmentQuery when eager-loading is set.
 	Edges        SegmentEdges `json:"edges"`
@@ -63,7 +63,7 @@ func (*Segment) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case segment.FieldID, segment.FieldWorkspaceID:
 			values[i] = new(sql.NullInt64)
-		case segment.FieldName, segment.FieldDefinition:
+		case segment.FieldName, segment.FieldCondition:
 			values[i] = new(sql.NullString)
 		case segment.FieldCreatedAt, segment.FieldUpdatedAt, segment.FieldDiscardedAt:
 			values[i] = new(sql.NullTime)
@@ -119,12 +119,12 @@ func (_m *Segment) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Name = value.String
 			}
-		case segment.FieldDefinition:
+		case segment.FieldCondition:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field definition", values[i])
+				return fmt.Errorf("unexpected type %T for field condition", values[i])
 			} else if value.Valid {
-				_m.Definition = new(string)
-				*_m.Definition = value.String
+				_m.Condition = new(string)
+				*_m.Condition = value.String
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -184,8 +184,8 @@ func (_m *Segment) String() string {
 	builder.WriteString("name=")
 	builder.WriteString(_m.Name)
 	builder.WriteString(", ")
-	if v := _m.Definition; v != nil {
-		builder.WriteString("definition=")
+	if v := _m.Condition; v != nil {
+		builder.WriteString("condition=")
 		builder.WriteString(*v)
 	}
 	builder.WriteByte(')')

@@ -9,9 +9,9 @@ import (
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/event"
 	collectapi "github.com/getsphericon/sphericon/gen/collect"
+	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/segments"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/go-faster/jx"
 	"github.com/stretchr/testify/assert"
@@ -149,7 +149,7 @@ func TestCollectIdentifyStitchesAnonymousEvents(t *testing.T) {
 
 	// End-to-end: the stitched event makes the Contact match an event-condition
 	// segment (which joins Contact↔Event on contact_id, per ADR 0002).
-	pred, err := segments.ContactPredicate(ctx, env.DB.Scoped(fixtures.AcmeID),
+	pred, err := condition.ContactPredicate(ctx, env.DB.Scoped(fixtures.AcmeID),
 		`{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"event:page_view","operator":"performed","value":""}]}`,
 	)
 	require.NoError(t, err)

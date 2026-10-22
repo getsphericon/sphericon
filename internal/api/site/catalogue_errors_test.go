@@ -137,10 +137,10 @@ func TestSiteSegmentsErrorBranches(t *testing.T) {
 	known := idStr(fixtures.SegmentProPlanID)
 	missing := idStr(99999)
 
-	r1, err := c.SiteSegmentsCreate(ctx, &siteapi.SiteCreateSegmentInput{Name: "x", Definition: testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[]}`)}, siteapi.SiteSegmentsCreateParams{WorkspaceId: foreign})
+	r1, err := c.SiteSegmentsCreate(ctx, &siteapi.SiteCreateSegmentInput{Name: "x", Condition: testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[]}`)}, siteapi.SiteSegmentsCreateParams{WorkspaceId: foreign})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSegmentsCreateNotFound{}, r1)
-	r2, err := c.SiteSegmentsCreate(ctx, &siteapi.SiteCreateSegmentInput{Name: "x", Definition: testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`)}, siteapi.SiteSegmentsCreateParams{WorkspaceId: acme})
+	r2, err := c.SiteSegmentsCreate(ctx, &siteapi.SiteCreateSegmentInput{Name: "x", Condition: testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`)}, siteapi.SiteSegmentsCreateParams{WorkspaceId: acme})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSegmentsCreateUnprocessableEntity{}, r2)
 
@@ -163,7 +163,7 @@ func TestSiteSegmentsErrorBranches(t *testing.T) {
 	u3, err := c.SiteSegmentsUpdate(ctx, rename, siteapi.SiteSegmentsUpdateParams{WorkspaceId: acme, ID: missing})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSegmentsUpdateNotFound{}, u3)
-	u4, err := c.SiteSegmentsUpdate(ctx, &siteapi.SiteUpdateSegmentInput{Definition: siteapi.NewOptSiteSegmentRuleGroup(testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`))}, siteapi.SiteSegmentsUpdateParams{WorkspaceId: acme, ID: known})
+	u4, err := c.SiteSegmentsUpdate(ctx, &siteapi.SiteUpdateSegmentInput{Condition: siteapi.NewOptSiteConditionGroup(testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`))}, siteapi.SiteSegmentsUpdateParams{WorkspaceId: acme, ID: known})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSegmentsUpdateUnprocessableEntity{}, u4)
 	u5, err := c.SiteSegmentsUpdate(ctx, rename, siteapi.SiteSegmentsUpdateParams{WorkspaceId: acme, ID: known})

@@ -30,7 +30,7 @@ func (Segment) Fields() []ent.Field {
 			Immutable(),
 		field.String("name").
 			NotEmpty(),
-		field.String("definition").
+		field.String("condition").
 			Optional().
 			Nillable(),
 	}

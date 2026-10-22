@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/tag"
+	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/pagination"
@@ -17,9 +18,9 @@ import (
 
 // Domain errors returned by Module. Callers match with errors.Is.
 var (
-	// ErrInvalidDefinition: the rule definition does not parse or does not fit the
+	// ErrInvalidCondition: the condition does not parse or does not fit the
 	// Contact schema. The wrapped message is safe to show to the author.
-	ErrInvalidDefinition = errors.New("segments: invalid definition")
+	ErrInvalidCondition = errors.New("segments: invalid condition")
 	// ErrNotFound: no such Segment in this Workspace.
 	ErrNotFound = errors.New("segments: segment not found")
 )
@@ -36,54 +37,54 @@ type Module struct {
 // Workspace's scoped client (ADR 0017); the bus runs the archive in one transaction.
 func New(bus *events.Bus) *Module { return &Module{bus: bus} }
 
-// CreateInput is a new Segment. A nil or empty Definition means "no rules yet".
+// CreateInput is a new Segment. A nil or empty Condition means "no rules yet".
 type CreateInput struct {
-	Name       string
-	Definition *string
+	Name      string
+	Condition *string
 }
 
 // UpdateInput changes a Segment; nil fields are left as they are.
 type UpdateInput struct {
-	Name       *string
-	Definition *string
+	Name      *string
+	Condition *string
 }
 
-// Validate checks a definition against the Contact attributes and the Workspace's Custom
-// field catalogue. An empty definition is valid. This is the single rule set behind
+// Validate checks a condition against the Contact attributes and the Workspace's Custom
+// field catalogue. An empty condition is valid. This is the single rule set behind
 // Create, Update, Preview and Count.
-func (s *Module) Validate(ctx context.Context, ws *ent.Scoped, def string) error {
-	if def == "" {
+func (s *Module) Validate(ctx context.Context, ws *ent.Scoped, cond string) error {
+	if cond == "" {
 		return nil
 	}
-	if _, err := ContactPredicate(ctx, ws, def); err != nil {
-		return fmt.Errorf("%w: %s", ErrInvalidDefinition, err.Error())
+	if _, err := condition.ContactPredicate(ctx, ws, cond); err != nil {
+		return fmt.Errorf("%w: %s", ErrInvalidCondition, err.Error())
 	}
 	return nil
 }
 
-// Create validates the definition and stores the Segment.
+// Create validates the condition and stores the Segment.
 func (s *Module) Create(ctx context.Context, ws *ent.Scoped, in CreateInput) (*ent.Segment, error) {
-	if in.Definition != nil {
-		if err := s.Validate(ctx, ws, *in.Definition); err != nil {
+	if in.Condition != nil {
+		if err := s.Validate(ctx, ws, *in.Condition); err != nil {
 			return nil, err
 		}
 	}
 	return ws.Segment().Create().
 		SetName(in.Name).
-		SetNillableDefinition(in.Definition).
+		SetNillableCondition(in.Condition).
 		Save(ctx)
 }
 
-// Update validates a changed definition exactly as Create does, then applies the change.
+// Update validates a changed condition exactly as Create does, then applies the change.
 func (s *Module) Update(ctx context.Context, ws *ent.Scoped, id int64, in UpdateInput) (*ent.Segment, error) {
-	if in.Definition != nil {
-		if err := s.Validate(ctx, ws, *in.Definition); err != nil {
+	if in.Condition != nil {
+		if err := s.Validate(ctx, ws, *in.Condition); err != nil {
 			return nil, err
 		}
 	}
 	q := ws.Segment().UpdateOneID(id).
 		SetNillableName(in.Name).
-		SetNillableDefinition(in.Definition)
+		SetNillableCondition(in.Condition)
 	seg, err := q.Save(ctx)
 	if ent.IsNotFound(err) {
 		return nil, ErrNotFound
@@ -91,11 +92,11 @@ func (s *Module) Update(ctx context.Context, ws *ent.Scoped, id int64, in Update
 	return seg, err
 }
 
-// Preview counts the Contacts in the Workspace that match an unsaved definition.
-func (s *Module) Preview(ctx context.Context, ws *ent.Scoped, def string) (int, error) {
-	pred, err := ContactPredicate(ctx, ws, def)
+// Preview counts the Contacts in the Workspace that match an unsaved condition.
+func (s *Module) Preview(ctx context.Context, ws *ent.Scoped, cond string) (int, error) {
+	pred, err := condition.ContactPredicate(ctx, ws, cond)
 	if err != nil {
-		return 0, fmt.Errorf("%w: %s", ErrInvalidDefinition, err.Error())
+		return 0, fmt.Errorf("%w: %s", ErrInvalidCondition, err.Error())
 	}
 	return ws.Contact().Query().Where(pred).Count(ctx)
 }
@@ -109,11 +110,11 @@ func (s *Module) Count(ctx context.Context, ws *ent.Scoped, id int64) (int, erro
 	if err != nil {
 		return 0, err
 	}
-	def := ""
-	if seg.Definition != nil {
-		def = *seg.Definition
+	cond := ""
+	if seg.Condition != nil {
+		cond = *seg.Condition
 	}
-	return s.Preview(ctx, ws, def)
+	return s.Preview(ctx, ws, cond)
 }
 
 // Contacts returns one page of the Contacts a stored Segment matches, evaluated live, ascending by id.
@@ -125,13 +126,13 @@ func (s *Module) Contacts(ctx context.Context, ws *ent.Scoped, id int64, p pagin
 	if err != nil {
 		return pagination.Page[*ent.Contact]{}, err
 	}
-	def := ""
-	if seg.Definition != nil {
-		def = *seg.Definition
+	cond := ""
+	if seg.Condition != nil {
+		cond = *seg.Condition
 	}
-	pred, err := ContactPredicate(ctx, ws, def)
+	pred, err := condition.ContactPredicate(ctx, ws, cond)
 	if err != nil {
-		return pagination.Page[*ent.Contact]{}, fmt.Errorf("%w: %s", ErrInvalidDefinition, err.Error())
+		return pagination.Page[*ent.Contact]{}, fmt.Errorf("%w: %s", ErrInvalidCondition, err.Error())
 	}
 	rows := func() *ent.ContactQuery {
 		return ws.Contact().Query().Where(pred).WithTags(func(q *ent.TagQuery) { q.Order(ent.Asc(tag.FieldName)) })

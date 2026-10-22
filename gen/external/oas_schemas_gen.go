@@ -2282,6 +2282,406 @@ type BroadcastsUpdateUnprocessableEntity ProblemDetails
 
 func (*BroadcastsUpdateUnprocessableEntity) broadcastsUpdateRes() {}
 
+// How a condition group combines its entries.
+// Ref: #/components/schemas/ConditionCombinator
+type ConditionCombinator string
+
+const (
+	ConditionCombinatorAnd ConditionCombinator = "and"
+	ConditionCombinatorOr  ConditionCombinator = "or"
+)
+
+// AllValues returns all ConditionCombinator values.
+func (ConditionCombinator) AllValues() []ConditionCombinator {
+	return []ConditionCombinator{
+		ConditionCombinatorAnd,
+		ConditionCombinatorOr,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ConditionCombinator) MarshalText() ([]byte, error) {
+	switch s {
+	case ConditionCombinatorAnd:
+		return []byte(s), nil
+	case ConditionCombinatorOr:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ConditionCombinator) UnmarshalText(data []byte) error {
+	switch ConditionCombinator(data) {
+	case ConditionCombinatorAnd:
+		*s = ConditionCombinatorAnd
+		return nil
+	case ConditionCombinatorOr:
+		*s = ConditionCombinatorOr
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A group of tests combined with and/or, optionally negated. An empty group matches every contact (an
+// empty negated group matches none).
+// Ref: #/components/schemas/ConditionGroup
+type ConditionGroup struct {
+	Kind ConditionGroupKind `json:"kind"`
+	// How the entries combine.
+	Combinator ConditionCombinator `json:"combinator"`
+	// Negate the whole group.
+	Not OptBool `json:"not"`
+	// The group's leaves and nested groups.
+	Rules []ConditionNode `json:"rules"`
+}
+
+// GetKind returns the value of Kind.
+func (s *ConditionGroup) GetKind() ConditionGroupKind {
+	return s.Kind
+}
+
+// GetCombinator returns the value of Combinator.
+func (s *ConditionGroup) GetCombinator() ConditionCombinator {
+	return s.Combinator
+}
+
+// GetNot returns the value of Not.
+func (s *ConditionGroup) GetNot() OptBool {
+	return s.Not
+}
+
+// GetRules returns the value of Rules.
+func (s *ConditionGroup) GetRules() []ConditionNode {
+	return s.Rules
+}
+
+// SetKind sets the value of Kind.
+func (s *ConditionGroup) SetKind(val ConditionGroupKind) {
+	s.Kind = val
+}
+
+// SetCombinator sets the value of Combinator.
+func (s *ConditionGroup) SetCombinator(val ConditionCombinator) {
+	s.Combinator = val
+}
+
+// SetNot sets the value of Not.
+func (s *ConditionGroup) SetNot(val OptBool) {
+	s.Not = val
+}
+
+// SetRules sets the value of Rules.
+func (s *ConditionGroup) SetRules(val []ConditionNode) {
+	s.Rules = val
+}
+
+type ConditionGroupKind string
+
+const (
+	ConditionGroupKindGroup ConditionGroupKind = "group"
+)
+
+// AllValues returns all ConditionGroupKind values.
+func (ConditionGroupKind) AllValues() []ConditionGroupKind {
+	return []ConditionGroupKind{
+		ConditionGroupKindGroup,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ConditionGroupKind) MarshalText() ([]byte, error) {
+	switch s {
+	case ConditionGroupKindGroup:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ConditionGroupKind) UnmarshalText(data []byte) error {
+	switch ConditionGroupKind(data) {
+	case ConditionGroupKindGroup:
+		*s = ConditionGroupKindGroup
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// One test of a condition: a field, an operator and a value.
+// Ref: #/components/schemas/ConditionLeaf
+type ConditionLeaf struct {
+	Kind ConditionLeafKind `json:"kind"`
+	// What it tests: a contact attribute (email, phone, subject_id, first_name, last_name, time_zone),
+	// "tag", "custom:" for a custom field of the workspace, or "event:".
+	Field string `json:"field"`
+	// How the field is tested.
+	Operator ConditionOperator `json:"operator"`
+	// The value to test against: a tag name, a day window for events ("" = ever), blank for null and
+	// notNull.
+	Value OptString `json:"value"`
+}
+
+// GetKind returns the value of Kind.
+func (s *ConditionLeaf) GetKind() ConditionLeafKind {
+	return s.Kind
+}
+
+// GetField returns the value of Field.
+func (s *ConditionLeaf) GetField() string {
+	return s.Field
+}
+
+// GetOperator returns the value of Operator.
+func (s *ConditionLeaf) GetOperator() ConditionOperator {
+	return s.Operator
+}
+
+// GetValue returns the value of Value.
+func (s *ConditionLeaf) GetValue() OptString {
+	return s.Value
+}
+
+// SetKind sets the value of Kind.
+func (s *ConditionLeaf) SetKind(val ConditionLeafKind) {
+	s.Kind = val
+}
+
+// SetField sets the value of Field.
+func (s *ConditionLeaf) SetField(val string) {
+	s.Field = val
+}
+
+// SetOperator sets the value of Operator.
+func (s *ConditionLeaf) SetOperator(val ConditionOperator) {
+	s.Operator = val
+}
+
+// SetValue sets the value of Value.
+func (s *ConditionLeaf) SetValue(val OptString) {
+	s.Value = val
+}
+
+type ConditionLeafKind string
+
+const (
+	ConditionLeafKindRule ConditionLeafKind = "rule"
+)
+
+// AllValues returns all ConditionLeafKind values.
+func (ConditionLeafKind) AllValues() []ConditionLeafKind {
+	return []ConditionLeafKind{
+		ConditionLeafKindRule,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ConditionLeafKind) MarshalText() ([]byte, error) {
+	switch s {
+	case ConditionLeafKindRule:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ConditionLeafKind) UnmarshalText(data []byte) error {
+	switch ConditionLeafKind(data) {
+	case ConditionLeafKindRule:
+		*s = ConditionLeafKindRule
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A leaf or a nested group inside a condition group, discriminated by `kind`.
+// Ref: #/components/schemas/ConditionNode
+type ConditionNode struct {
+	OneOf ConditionNodeSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *ConditionNode) GetOneOf() ConditionNodeSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *ConditionNode) SetOneOf(val ConditionNodeSum) {
+	s.OneOf = val
+}
+
+// ConditionNodeSum represents sum type.
+type ConditionNodeSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type           ConditionNodeSumType
+	ConditionLeaf  ConditionLeaf
+	ConditionGroup ConditionGroup
+}
+
+// ConditionNodeSumType is oneOf type of ConditionNodeSum.
+type ConditionNodeSumType string
+
+// Possible values for ConditionNodeSumType.
+const (
+	ConditionLeafConditionNodeSum  ConditionNodeSumType = "rule"
+	ConditionGroupConditionNodeSum ConditionNodeSumType = "group"
+)
+
+// IsConditionLeaf reports whether ConditionNodeSum is ConditionLeaf.
+func (s ConditionNodeSum) IsConditionLeaf() bool { return s.Type == ConditionLeafConditionNodeSum }
+
+// IsConditionGroup reports whether ConditionNodeSum is ConditionGroup.
+func (s ConditionNodeSum) IsConditionGroup() bool { return s.Type == ConditionGroupConditionNodeSum }
+
+// SetConditionLeaf sets ConditionNodeSum to ConditionLeaf.
+func (s *ConditionNodeSum) SetConditionLeaf(v ConditionLeaf) {
+	s.Type = ConditionLeafConditionNodeSum
+	s.ConditionLeaf = v
+}
+
+// GetConditionLeaf returns ConditionLeaf and true boolean if ConditionNodeSum is ConditionLeaf.
+func (s ConditionNodeSum) GetConditionLeaf() (v ConditionLeaf, ok bool) {
+	if !s.IsConditionLeaf() {
+		return v, false
+	}
+	return s.ConditionLeaf, true
+}
+
+// NewConditionLeafConditionNodeSum returns new ConditionNodeSum from ConditionLeaf.
+func NewConditionLeafConditionNodeSum(v ConditionLeaf) ConditionNodeSum {
+	var s ConditionNodeSum
+	s.SetConditionLeaf(v)
+	return s
+}
+
+// SetConditionGroup sets ConditionNodeSum to ConditionGroup.
+func (s *ConditionNodeSum) SetConditionGroup(v ConditionGroup) {
+	s.Type = ConditionGroupConditionNodeSum
+	s.ConditionGroup = v
+}
+
+// GetConditionGroup returns ConditionGroup and true boolean if ConditionNodeSum is ConditionGroup.
+func (s ConditionNodeSum) GetConditionGroup() (v ConditionGroup, ok bool) {
+	if !s.IsConditionGroup() {
+		return v, false
+	}
+	return s.ConditionGroup, true
+}
+
+// NewConditionGroupConditionNodeSum returns new ConditionNodeSum from ConditionGroup.
+func NewConditionGroupConditionNodeSum(v ConditionGroup) ConditionNodeSum {
+	var s ConditionNodeSum
+	s.SetConditionGroup(v)
+	return s
+}
+
+// What a condition leaf tests. A text attribute takes eq, neq, contains, beginsWith, null and notNull;
+// a custom field takes eq, neq, contains and notNull; an event takes performed and notPerformed; the
+// tag field takes has and doesNotHave.
+// Ref: #/components/schemas/ConditionOperator
+type ConditionOperator string
+
+const (
+	ConditionOperatorEq           ConditionOperator = "eq"
+	ConditionOperatorNeq          ConditionOperator = "neq"
+	ConditionOperatorContains     ConditionOperator = "contains"
+	ConditionOperatorBeginsWith   ConditionOperator = "beginsWith"
+	ConditionOperatorNull         ConditionOperator = "null"
+	ConditionOperatorNotNull      ConditionOperator = "notNull"
+	ConditionOperatorPerformed    ConditionOperator = "performed"
+	ConditionOperatorNotPerformed ConditionOperator = "notPerformed"
+	ConditionOperatorHas          ConditionOperator = "has"
+	ConditionOperatorDoesNotHave  ConditionOperator = "doesNotHave"
+)
+
+// AllValues returns all ConditionOperator values.
+func (ConditionOperator) AllValues() []ConditionOperator {
+	return []ConditionOperator{
+		ConditionOperatorEq,
+		ConditionOperatorNeq,
+		ConditionOperatorContains,
+		ConditionOperatorBeginsWith,
+		ConditionOperatorNull,
+		ConditionOperatorNotNull,
+		ConditionOperatorPerformed,
+		ConditionOperatorNotPerformed,
+		ConditionOperatorHas,
+		ConditionOperatorDoesNotHave,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ConditionOperator) MarshalText() ([]byte, error) {
+	switch s {
+	case ConditionOperatorEq:
+		return []byte(s), nil
+	case ConditionOperatorNeq:
+		return []byte(s), nil
+	case ConditionOperatorContains:
+		return []byte(s), nil
+	case ConditionOperatorBeginsWith:
+		return []byte(s), nil
+	case ConditionOperatorNull:
+		return []byte(s), nil
+	case ConditionOperatorNotNull:
+		return []byte(s), nil
+	case ConditionOperatorPerformed:
+		return []byte(s), nil
+	case ConditionOperatorNotPerformed:
+		return []byte(s), nil
+	case ConditionOperatorHas:
+		return []byte(s), nil
+	case ConditionOperatorDoesNotHave:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ConditionOperator) UnmarshalText(data []byte) error {
+	switch ConditionOperator(data) {
+	case ConditionOperatorEq:
+		*s = ConditionOperatorEq
+		return nil
+	case ConditionOperatorNeq:
+		*s = ConditionOperatorNeq
+		return nil
+	case ConditionOperatorContains:
+		*s = ConditionOperatorContains
+		return nil
+	case ConditionOperatorBeginsWith:
+		*s = ConditionOperatorBeginsWith
+		return nil
+	case ConditionOperatorNull:
+		*s = ConditionOperatorNull
+		return nil
+	case ConditionOperatorNotNull:
+		*s = ConditionOperatorNotNull
+		return nil
+	case ConditionOperatorPerformed:
+		*s = ConditionOperatorPerformed
+		return nil
+	case ConditionOperatorNotPerformed:
+		*s = ConditionOperatorNotPerformed
+		return nil
+	case ConditionOperatorHas:
+		*s = ConditionOperatorHas
+		return nil
+	case ConditionOperatorDoesNotHave:
+		*s = ConditionOperatorDoesNotHave
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // Per-item result of a contacts batch, in request order.
 // Ref: #/components/schemas/ContactBatchItemResult
 type ContactBatchItemResult struct {
@@ -4184,8 +4584,8 @@ func (s *CreateIntegrationInputParams) init() CreateIntegrationInputParams {
 type CreateSegmentInput struct {
 	// Segment name.
 	Name string `json:"name"`
-	// Segment definition: the rule group; an empty group matches all contacts.
-	Definition SegmentRuleGroup `json:"definition"`
+	// Segment condition: the tree of tests; an empty group matches all contacts.
+	Condition ConditionGroup `json:"condition"`
 }
 
 // GetName returns the value of Name.
@@ -4193,9 +4593,9 @@ func (s *CreateSegmentInput) GetName() string {
 	return s.Name
 }
 
-// GetDefinition returns the value of Definition.
-func (s *CreateSegmentInput) GetDefinition() SegmentRuleGroup {
-	return s.Definition
+// GetCondition returns the value of Condition.
+func (s *CreateSegmentInput) GetCondition() ConditionGroup {
+	return s.Condition
 }
 
 // SetName sets the value of Name.
@@ -4203,9 +4603,9 @@ func (s *CreateSegmentInput) SetName(val string) {
 	s.Name = val
 }
 
-// SetDefinition sets the value of Definition.
-func (s *CreateSegmentInput) SetDefinition(val SegmentRuleGroup) {
-	s.Definition = val
+// SetCondition sets the value of Condition.
+func (s *CreateSegmentInput) SetCondition(val ConditionGroup) {
+	s.Condition = val
 }
 
 // Add a Sending domain; mints the DKIM keypair and returns the DNS records to publish.
@@ -4399,7 +4799,7 @@ func (s *CreateWebhookInput) SetEnabled(val OptBool) {
 type CustomFieldResource struct {
 	// Unique identifier.
 	ID EntityId `json:"id"`
-	// Machine key, how values are addressed in custom fields and segment rules.
+	// Machine key, how values are addressed in custom fields and segment conditions.
 	Key string `json:"key"`
 	// Display name.
 	Name string `json:"name"`
@@ -7393,6 +7793,52 @@ func (o OptBool) Or(d bool) bool {
 	return d
 }
 
+// NewOptConditionGroup returns new OptConditionGroup with value set to v.
+func NewOptConditionGroup(v ConditionGroup) OptConditionGroup {
+	return OptConditionGroup{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptConditionGroup is optional ConditionGroup.
+type OptConditionGroup struct {
+	Value ConditionGroup
+	Set   bool
+}
+
+// IsSet returns true if OptConditionGroup was set.
+func (o OptConditionGroup) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptConditionGroup) Reset() {
+	var v ConditionGroup
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptConditionGroup) SetTo(v ConditionGroup) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptConditionGroup) Get() (v ConditionGroup, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptConditionGroup) Or(d ConditionGroup) ConditionGroup {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptCreateBroadcastInputDoc returns new OptCreateBroadcastInputDoc with value set to v.
 func NewOptCreateBroadcastInputDoc(v CreateBroadcastInputDoc) OptCreateBroadcastInputDoc {
 	return OptCreateBroadcastInputDoc{
@@ -9307,52 +9753,6 @@ func (o OptProblemDetailsFields) Or(d ProblemDetailsFields) ProblemDetailsFields
 	return d
 }
 
-// NewOptSegmentRuleGroup returns new OptSegmentRuleGroup with value set to v.
-func NewOptSegmentRuleGroup(v SegmentRuleGroup) OptSegmentRuleGroup {
-	return OptSegmentRuleGroup{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptSegmentRuleGroup is optional SegmentRuleGroup.
-type OptSegmentRuleGroup struct {
-	Value SegmentRuleGroup
-	Set   bool
-}
-
-// IsSet returns true if OptSegmentRuleGroup was set.
-func (o OptSegmentRuleGroup) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptSegmentRuleGroup) Reset() {
-	var v SegmentRuleGroup
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptSegmentRuleGroup) SetTo(v SegmentRuleGroup) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptSegmentRuleGroup) Get() (v SegmentRuleGroup, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptSegmentRuleGroup) Or(d SegmentRuleGroup) SegmentRuleGroup {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
 // NewOptSendTransactionalEmailInputVariables returns new OptSendTransactionalEmailInputVariables with value set to v.
 func NewOptSendTransactionalEmailInputVariables(v SendTransactionalEmailInputVariables) OptSendTransactionalEmailInputVariables {
 	return OptSendTransactionalEmailInputVariables{
@@ -9980,27 +10380,27 @@ func (s *PresetsListOK) SetTotalPages(val int32) {
 
 func (*PresetsListOK) presetsListRes() {}
 
-// Request body for previewing a rule definition's audience.
+// Request body for previewing a condition's audience.
 // Ref: #/components/schemas/PreviewSegmentInput
 type PreviewSegmentInput struct {
-	// Rule definition; absent means all contacts.
-	Definition OptSegmentRuleGroup `json:"definition"`
+	// Condition; absent means all contacts.
+	Condition OptConditionGroup `json:"condition"`
 }
 
-// GetDefinition returns the value of Definition.
-func (s *PreviewSegmentInput) GetDefinition() OptSegmentRuleGroup {
-	return s.Definition
+// GetCondition returns the value of Condition.
+func (s *PreviewSegmentInput) GetCondition() OptConditionGroup {
+	return s.Condition
 }
 
-// SetDefinition sets the value of Definition.
-func (s *PreviewSegmentInput) SetDefinition(val OptSegmentRuleGroup) {
-	s.Definition = val
+// SetCondition sets the value of Condition.
+func (s *PreviewSegmentInput) SetCondition(val OptConditionGroup) {
+	s.Condition = val
 }
 
 // Result of a segment preview.
 // Ref: #/components/schemas/PreviewSegmentResult
 type PreviewSegmentResult struct {
-	// Number of contacts matching the rule.
+	// Number of contacts matching the condition.
 	Count int32 `json:"count"`
 }
 
@@ -10572,150 +10972,6 @@ func (s *ScheduleBroadcastInput) SetScheduledAt(val Timestamp) {
 	s.ScheduledAt = val
 }
 
-// How a segment group combines its rules.
-// Ref: #/components/schemas/SegmentCombinator
-type SegmentCombinator string
-
-const (
-	SegmentCombinatorAnd SegmentCombinator = "and"
-	SegmentCombinatorOr  SegmentCombinator = "or"
-)
-
-// AllValues returns all SegmentCombinator values.
-func (SegmentCombinator) AllValues() []SegmentCombinator {
-	return []SegmentCombinator{
-		SegmentCombinatorAnd,
-		SegmentCombinatorOr,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SegmentCombinator) MarshalText() ([]byte, error) {
-	switch s {
-	case SegmentCombinatorAnd:
-		return []byte(s), nil
-	case SegmentCombinatorOr:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SegmentCombinator) UnmarshalText(data []byte) error {
-	switch SegmentCombinator(data) {
-	case SegmentCombinatorAnd:
-		*s = SegmentCombinatorAnd
-		return nil
-	case SegmentCombinatorOr:
-		*s = SegmentCombinatorOr
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-// What a segment rule tests. A text attribute takes eq, neq, contains, beginsWith, null and notNull; a
-// custom field takes eq, neq, contains and notNull; an event takes performed and notPerformed; the tag
-// field takes has and doesNotHave.
-// Ref: #/components/schemas/SegmentOperator
-type SegmentOperator string
-
-const (
-	SegmentOperatorEq           SegmentOperator = "eq"
-	SegmentOperatorNeq          SegmentOperator = "neq"
-	SegmentOperatorContains     SegmentOperator = "contains"
-	SegmentOperatorBeginsWith   SegmentOperator = "beginsWith"
-	SegmentOperatorNull         SegmentOperator = "null"
-	SegmentOperatorNotNull      SegmentOperator = "notNull"
-	SegmentOperatorPerformed    SegmentOperator = "performed"
-	SegmentOperatorNotPerformed SegmentOperator = "notPerformed"
-	SegmentOperatorHas          SegmentOperator = "has"
-	SegmentOperatorDoesNotHave  SegmentOperator = "doesNotHave"
-)
-
-// AllValues returns all SegmentOperator values.
-func (SegmentOperator) AllValues() []SegmentOperator {
-	return []SegmentOperator{
-		SegmentOperatorEq,
-		SegmentOperatorNeq,
-		SegmentOperatorContains,
-		SegmentOperatorBeginsWith,
-		SegmentOperatorNull,
-		SegmentOperatorNotNull,
-		SegmentOperatorPerformed,
-		SegmentOperatorNotPerformed,
-		SegmentOperatorHas,
-		SegmentOperatorDoesNotHave,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SegmentOperator) MarshalText() ([]byte, error) {
-	switch s {
-	case SegmentOperatorEq:
-		return []byte(s), nil
-	case SegmentOperatorNeq:
-		return []byte(s), nil
-	case SegmentOperatorContains:
-		return []byte(s), nil
-	case SegmentOperatorBeginsWith:
-		return []byte(s), nil
-	case SegmentOperatorNull:
-		return []byte(s), nil
-	case SegmentOperatorNotNull:
-		return []byte(s), nil
-	case SegmentOperatorPerformed:
-		return []byte(s), nil
-	case SegmentOperatorNotPerformed:
-		return []byte(s), nil
-	case SegmentOperatorHas:
-		return []byte(s), nil
-	case SegmentOperatorDoesNotHave:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SegmentOperator) UnmarshalText(data []byte) error {
-	switch SegmentOperator(data) {
-	case SegmentOperatorEq:
-		*s = SegmentOperatorEq
-		return nil
-	case SegmentOperatorNeq:
-		*s = SegmentOperatorNeq
-		return nil
-	case SegmentOperatorContains:
-		*s = SegmentOperatorContains
-		return nil
-	case SegmentOperatorBeginsWith:
-		*s = SegmentOperatorBeginsWith
-		return nil
-	case SegmentOperatorNull:
-		*s = SegmentOperatorNull
-		return nil
-	case SegmentOperatorNotNull:
-		*s = SegmentOperatorNotNull
-		return nil
-	case SegmentOperatorPerformed:
-		*s = SegmentOperatorPerformed
-		return nil
-	case SegmentOperatorNotPerformed:
-		*s = SegmentOperatorNotPerformed
-		return nil
-	case SegmentOperatorHas:
-		*s = SegmentOperatorHas
-		return nil
-	case SegmentOperatorDoesNotHave:
-		*s = SegmentOperatorDoesNotHave
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
 // Segment resource.
 // Ref: #/components/schemas/SegmentResource
 type SegmentResource struct {
@@ -10723,8 +10979,8 @@ type SegmentResource struct {
 	ID EntityId `json:"id"`
 	// Segment name.
 	Name string `json:"name"`
-	// Segment definition: the rule group; an empty group matches all contacts.
-	Definition OptSegmentRuleGroup `json:"definition"`
+	// Segment condition: the tree of tests; an empty group matches all contacts.
+	Condition OptConditionGroup `json:"condition"`
 	// When the segment was archived; null while it is kept.
 	ArchivedAt OptNilTimestamp `json:"archivedAt"`
 	// Creation timestamp.
@@ -10743,9 +10999,9 @@ func (s *SegmentResource) GetName() string {
 	return s.Name
 }
 
-// GetDefinition returns the value of Definition.
-func (s *SegmentResource) GetDefinition() OptSegmentRuleGroup {
-	return s.Definition
+// GetCondition returns the value of Condition.
+func (s *SegmentResource) GetCondition() OptConditionGroup {
+	return s.Condition
 }
 
 // GetArchivedAt returns the value of ArchivedAt.
@@ -10773,9 +11029,9 @@ func (s *SegmentResource) SetName(val string) {
 	s.Name = val
 }
 
-// SetDefinition sets the value of Definition.
-func (s *SegmentResource) SetDefinition(val OptSegmentRuleGroup) {
-	s.Definition = val
+// SetCondition sets the value of Condition.
+func (s *SegmentResource) SetCondition(val OptConditionGroup) {
+	s.Condition = val
 }
 
 // SetArchivedAt sets the value of ArchivedAt.
@@ -10798,264 +11054,6 @@ func (*SegmentResource) segmentsCreateRes()    {}
 func (*SegmentResource) segmentsGetRes()       {}
 func (*SegmentResource) segmentsUnarchiveRes() {}
 func (*SegmentResource) segmentsUpdateRes()    {}
-
-// One condition of a segment: a field, an operator and a value.
-// Ref: #/components/schemas/SegmentRule
-type SegmentRule struct {
-	Kind SegmentRuleKind `json:"kind"`
-	// What it tests: a contact attribute (email, phone, subject_id, first_name, last_name, time_zone),
-	// "tag", "custom:" for a custom field of the workspace, or "event:".
-	Field string `json:"field"`
-	// How the field is tested.
-	Operator SegmentOperator `json:"operator"`
-	// The value to test against: a tag name, a day window for events ("" = ever), blank for null and
-	// notNull.
-	Value OptString `json:"value"`
-}
-
-// GetKind returns the value of Kind.
-func (s *SegmentRule) GetKind() SegmentRuleKind {
-	return s.Kind
-}
-
-// GetField returns the value of Field.
-func (s *SegmentRule) GetField() string {
-	return s.Field
-}
-
-// GetOperator returns the value of Operator.
-func (s *SegmentRule) GetOperator() SegmentOperator {
-	return s.Operator
-}
-
-// GetValue returns the value of Value.
-func (s *SegmentRule) GetValue() OptString {
-	return s.Value
-}
-
-// SetKind sets the value of Kind.
-func (s *SegmentRule) SetKind(val SegmentRuleKind) {
-	s.Kind = val
-}
-
-// SetField sets the value of Field.
-func (s *SegmentRule) SetField(val string) {
-	s.Field = val
-}
-
-// SetOperator sets the value of Operator.
-func (s *SegmentRule) SetOperator(val SegmentOperator) {
-	s.Operator = val
-}
-
-// SetValue sets the value of Value.
-func (s *SegmentRule) SetValue(val OptString) {
-	s.Value = val
-}
-
-// A group of rules combined with and/or, optionally negated. An empty group matches every contact (an
-// empty negated group matches none).
-// Ref: #/components/schemas/SegmentRuleGroup
-type SegmentRuleGroup struct {
-	Kind SegmentRuleGroupKind `json:"kind"`
-	// How the rules combine.
-	Combinator SegmentCombinator `json:"combinator"`
-	// Negate the whole group.
-	Not OptBool `json:"not"`
-	// The group's rules and nested groups.
-	Rules []SegmentRuleNode `json:"rules"`
-}
-
-// GetKind returns the value of Kind.
-func (s *SegmentRuleGroup) GetKind() SegmentRuleGroupKind {
-	return s.Kind
-}
-
-// GetCombinator returns the value of Combinator.
-func (s *SegmentRuleGroup) GetCombinator() SegmentCombinator {
-	return s.Combinator
-}
-
-// GetNot returns the value of Not.
-func (s *SegmentRuleGroup) GetNot() OptBool {
-	return s.Not
-}
-
-// GetRules returns the value of Rules.
-func (s *SegmentRuleGroup) GetRules() []SegmentRuleNode {
-	return s.Rules
-}
-
-// SetKind sets the value of Kind.
-func (s *SegmentRuleGroup) SetKind(val SegmentRuleGroupKind) {
-	s.Kind = val
-}
-
-// SetCombinator sets the value of Combinator.
-func (s *SegmentRuleGroup) SetCombinator(val SegmentCombinator) {
-	s.Combinator = val
-}
-
-// SetNot sets the value of Not.
-func (s *SegmentRuleGroup) SetNot(val OptBool) {
-	s.Not = val
-}
-
-// SetRules sets the value of Rules.
-func (s *SegmentRuleGroup) SetRules(val []SegmentRuleNode) {
-	s.Rules = val
-}
-
-type SegmentRuleGroupKind string
-
-const (
-	SegmentRuleGroupKindGroup SegmentRuleGroupKind = "group"
-)
-
-// AllValues returns all SegmentRuleGroupKind values.
-func (SegmentRuleGroupKind) AllValues() []SegmentRuleGroupKind {
-	return []SegmentRuleGroupKind{
-		SegmentRuleGroupKindGroup,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SegmentRuleGroupKind) MarshalText() ([]byte, error) {
-	switch s {
-	case SegmentRuleGroupKindGroup:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SegmentRuleGroupKind) UnmarshalText(data []byte) error {
-	switch SegmentRuleGroupKind(data) {
-	case SegmentRuleGroupKindGroup:
-		*s = SegmentRuleGroupKindGroup
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-type SegmentRuleKind string
-
-const (
-	SegmentRuleKindRule SegmentRuleKind = "rule"
-)
-
-// AllValues returns all SegmentRuleKind values.
-func (SegmentRuleKind) AllValues() []SegmentRuleKind {
-	return []SegmentRuleKind{
-		SegmentRuleKindRule,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SegmentRuleKind) MarshalText() ([]byte, error) {
-	switch s {
-	case SegmentRuleKindRule:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SegmentRuleKind) UnmarshalText(data []byte) error {
-	switch SegmentRuleKind(data) {
-	case SegmentRuleKindRule:
-		*s = SegmentRuleKindRule
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-// A rule or a nested group inside a segment group, discriminated by `kind`.
-// Ref: #/components/schemas/SegmentRuleNode
-type SegmentRuleNode struct {
-	OneOf SegmentRuleNodeSum
-}
-
-// GetOneOf returns the value of OneOf.
-func (s *SegmentRuleNode) GetOneOf() SegmentRuleNodeSum {
-	return s.OneOf
-}
-
-// SetOneOf sets the value of OneOf.
-func (s *SegmentRuleNode) SetOneOf(val SegmentRuleNodeSum) {
-	s.OneOf = val
-}
-
-// SegmentRuleNodeSum represents sum type.
-type SegmentRuleNodeSum struct {
-	// Type selects the active sum variant, switch on this field.
-	Type             SegmentRuleNodeSumType
-	SegmentRule      SegmentRule
-	SegmentRuleGroup SegmentRuleGroup
-}
-
-// SegmentRuleNodeSumType is oneOf type of SegmentRuleNodeSum.
-type SegmentRuleNodeSumType string
-
-// Possible values for SegmentRuleNodeSumType.
-const (
-	SegmentRuleSegmentRuleNodeSum      SegmentRuleNodeSumType = "rule"
-	SegmentRuleGroupSegmentRuleNodeSum SegmentRuleNodeSumType = "group"
-)
-
-// IsSegmentRule reports whether SegmentRuleNodeSum is SegmentRule.
-func (s SegmentRuleNodeSum) IsSegmentRule() bool { return s.Type == SegmentRuleSegmentRuleNodeSum }
-
-// IsSegmentRuleGroup reports whether SegmentRuleNodeSum is SegmentRuleGroup.
-func (s SegmentRuleNodeSum) IsSegmentRuleGroup() bool {
-	return s.Type == SegmentRuleGroupSegmentRuleNodeSum
-}
-
-// SetSegmentRule sets SegmentRuleNodeSum to SegmentRule.
-func (s *SegmentRuleNodeSum) SetSegmentRule(v SegmentRule) {
-	s.Type = SegmentRuleSegmentRuleNodeSum
-	s.SegmentRule = v
-}
-
-// GetSegmentRule returns SegmentRule and true boolean if SegmentRuleNodeSum is SegmentRule.
-func (s SegmentRuleNodeSum) GetSegmentRule() (v SegmentRule, ok bool) {
-	if !s.IsSegmentRule() {
-		return v, false
-	}
-	return s.SegmentRule, true
-}
-
-// NewSegmentRuleSegmentRuleNodeSum returns new SegmentRuleNodeSum from SegmentRule.
-func NewSegmentRuleSegmentRuleNodeSum(v SegmentRule) SegmentRuleNodeSum {
-	var s SegmentRuleNodeSum
-	s.SetSegmentRule(v)
-	return s
-}
-
-// SetSegmentRuleGroup sets SegmentRuleNodeSum to SegmentRuleGroup.
-func (s *SegmentRuleNodeSum) SetSegmentRuleGroup(v SegmentRuleGroup) {
-	s.Type = SegmentRuleGroupSegmentRuleNodeSum
-	s.SegmentRuleGroup = v
-}
-
-// GetSegmentRuleGroup returns SegmentRuleGroup and true boolean if SegmentRuleNodeSum is SegmentRuleGroup.
-func (s SegmentRuleNodeSum) GetSegmentRuleGroup() (v SegmentRuleGroup, ok bool) {
-	if !s.IsSegmentRuleGroup() {
-		return v, false
-	}
-	return s.SegmentRuleGroup, true
-}
-
-// NewSegmentRuleGroupSegmentRuleNodeSum returns new SegmentRuleNodeSum from SegmentRuleGroup.
-func NewSegmentRuleGroupSegmentRuleNodeSum(v SegmentRuleGroup) SegmentRuleNodeSum {
-	var s SegmentRuleNodeSum
-	s.SetSegmentRuleGroup(v)
-	return s
-}
 
 type SegmentsArchiveBadRequest ProblemDetails
 
@@ -13793,8 +13791,8 @@ func (s *UpdateIntegrationInputParams) init() UpdateIntegrationInputParams {
 type UpdateSegmentInput struct {
 	// Segment name.
 	Name OptString `json:"name"`
-	// Segment definition: the rule group; an empty group matches all contacts.
-	Definition OptSegmentRuleGroup `json:"definition"`
+	// Segment condition: the tree of tests; an empty group matches all contacts.
+	Condition OptConditionGroup `json:"condition"`
 }
 
 // GetName returns the value of Name.
@@ -13802,9 +13800,9 @@ func (s *UpdateSegmentInput) GetName() OptString {
 	return s.Name
 }
 
-// GetDefinition returns the value of Definition.
-func (s *UpdateSegmentInput) GetDefinition() OptSegmentRuleGroup {
-	return s.Definition
+// GetCondition returns the value of Condition.
+func (s *UpdateSegmentInput) GetCondition() OptConditionGroup {
+	return s.Condition
 }
 
 // SetName sets the value of Name.
@@ -13812,9 +13810,9 @@ func (s *UpdateSegmentInput) SetName(val OptString) {
 	s.Name = val
 }
 
-// SetDefinition sets the value of Definition.
-func (s *UpdateSegmentInput) SetDefinition(val OptSegmentRuleGroup) {
-	s.Definition = val
+// SetCondition sets the value of Condition.
+func (s *UpdateSegmentInput) SetCondition(val OptConditionGroup) {
+	s.Condition = val
 }
 
 // Change a Sending domain. The domain name is immutable; changing the selector moves the DKIM record,

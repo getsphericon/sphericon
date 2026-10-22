@@ -1,5 +1,6 @@
-// Package segments compiles a Segment's rule query (the typed tree of the API contract,
-// ADR 0029) into a Contact predicate: a group {kind: "group", combinator: and|or, not,
+// Package condition is the Condition: the typed tree of tests on a Contact (the API
+// contract's tree, ADR 0029, ADR 0054), its validation and its compiler to a Contact
+// predicate. A Segment is a named Condition and a Rule holds one. A group {kind: "group", combinator: and|or, not,
 // rules[]} whose entries are nested groups or leaves {kind: "rule", field, operator,
 // value}, told apart by `kind`.
 //
@@ -9,13 +10,12 @@
 // custom_fields JSON column, which no generated predicate covers; it is addressed
 // with ent's JSON predicates (sqljson) after the key is checked. A leaf may only name a core attribute, a
 // Tag, an Event action, or a Custom field of the Workspace's catalogue (ADR 0006).
-package segments
+package condition
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/samber/lo"
 	"strconv"
 	"strings"
 	"time"
@@ -27,7 +27,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/predicate"
-	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/internal/events"
 )
@@ -49,7 +48,7 @@ const (
 )
 
 // Group is a group of the rule tree. Each rules[] entry is decoded lazily because it
-// is either a nested Group or a leaf Rule, as its `kind` says.
+// is either a nested Group or a Leaf, as its `kind` says.
 type Group struct {
 	Kind       string            `json:"kind"`
 	Combinator string            `json:"combinator"`
@@ -57,8 +56,8 @@ type Group struct {
 	Rules      []json.RawMessage `json:"rules"`
 }
 
-// Rule is a leaf rule of the tree.
-type Rule struct {
+// Leaf is one test of the tree: a field, an operator and a value.
+type Leaf struct {
 	Kind     string `json:"kind"`
 	Field    string `json:"field"`
 	Operator string `json:"operator"`
@@ -81,7 +80,7 @@ var textFields = map[string]textField{
 	"time_zone":  {contact.TimeZoneEQ, contact.TimeZoneNEQ, contact.TimeZoneContainsFold, contact.TimeZoneHasPrefix, contact.TimeZoneIsNil(), contact.TimeZoneNotNil()},
 }
 
-// Parse decodes a definition string into a Group. A blank definition is a valid
+// Parse decodes a stored condition into a Group. A blank condition is a valid
 // "match everyone" group.
 func Parse(def string) (Group, error) {
 	if strings.TrimSpace(def) == "" {
@@ -89,12 +88,12 @@ func Parse(def string) (Group, error) {
 	}
 	var g Group
 	if err := json.Unmarshal([]byte(def), &g); err != nil {
-		return g, fmt.Errorf("invalid segment definition: %w", err)
+		return g, fmt.Errorf("invalid condition: %w", err)
 	}
 	return g, nil
 }
 
-// ContactPredicate parses a stored definition and compiles it for the Workspace of s.
+// ContactPredicate parses a stored condition and compiles it for the Workspace of s.
 func ContactPredicate(ctx context.Context, s *ent.Scoped, def string) (predicate.Contact, error) {
 	g, err := Parse(def)
 	if err != nil {
@@ -103,7 +102,7 @@ func ContactPredicate(ctx context.Context, s *ent.Scoped, def string) (predicate
 	return Compile(ctx, s, g)
 }
 
-// Compile turns a definition group into a Contact predicate. An empty rule set
+// Compile turns a condition group into a Contact predicate. An empty rule set
 // matches everyone (an empty negated group matches no one) — deliberate, so an
 // empty rule is never a silent "nobody".
 func Compile(ctx context.Context, s *ent.Scoped, g Group) (predicate.Contact, error) {
@@ -168,7 +167,7 @@ func (c *compiler) entry(raw json.RawMessage) (predicate.Contact, error) {
 		}
 		return c.group(g)
 	case kindRule:
-		var r Rule
+		var r Leaf
 		if err := json.Unmarshal(raw, &r); err != nil {
 			return nil, fmt.Errorf("malformed rule: %w", err)
 		}
@@ -178,7 +177,7 @@ func (c *compiler) entry(raw json.RawMessage) (predicate.Contact, error) {
 	}
 }
 
-func (c *compiler) rule(r Rule) (predicate.Contact, error) {
+func (c *compiler) rule(r Leaf) (predicate.Contact, error) {
 	switch {
 	case strings.HasPrefix(r.Field, eventFieldPrefix):
 		action := strings.TrimPrefix(r.Field, eventFieldPrefix)
@@ -338,27 +337,27 @@ func (c *compiler) requireCustomField(key string) error {
 	return nil
 }
 
-// Encode stores a rule group given as an API DTO. The API's typed tree is the stored
-// shape: a definition is saved as its JSON, and ContactPredicate reads it back.
+// Encode stores a condition given as an API DTO. The API's typed tree is the stored
+// shape: a condition is saved as its JSON, and ContactPredicate reads it back.
 func Encode(group json.Marshaler) (string, error) {
 	b, err := group.MarshalJSON()
 	if err != nil {
-		return "", fmt.Errorf("encode segment definition: %w", err)
+		return "", fmt.Errorf("encode condition: %w", err)
 	}
 	return string(b), nil
 }
 
-// Decode loads a stored definition into an API DTO.
+// Decode loads a stored condition into an API DTO.
 func Decode(def string, into json.Unmarshaler) error {
 	if err := into.UnmarshalJSON([]byte(def)); err != nil {
-		return fmt.Errorf("decode segment definition: %w", err)
+		return fmt.Errorf("decode condition: %w", err)
 	}
 	return nil
 }
 
-// namesTag reports whether any rule of the group, at any depth, targets the Tag called name.
-// A malformed definition names nothing.
-func (g Group) namesTag(name string) bool {
+// NamesTag reports whether any rule of the group, at any depth, targets the Tag called name.
+// A malformed condition names nothing.
+func (g Group) NamesTag(name string) bool {
 	for _, raw := range g.Rules {
 		var probe struct {
 			Kind string `json:"kind"`
@@ -369,32 +368,15 @@ func (g Group) namesTag(name string) bool {
 		switch probe.Kind {
 		case kindGroup:
 			var sub Group
-			if json.Unmarshal(raw, &sub) == nil && sub.namesTag(name) {
+			if json.Unmarshal(raw, &sub) == nil && sub.NamesTag(name) {
 				return true
 			}
 		case kindRule:
-			var r Rule
+			var r Leaf
 			if json.Unmarshal(raw, &r) == nil && r.Field == tagField && strings.TrimSpace(r.Value) == name {
 				return true
 			}
 		}
 	}
 	return false
-}
-
-// UsingTag returns the Workspace's Segments whose rule names the Tag by its name, in id order.
-// Archived ones count: restoring one must not leave it naming a missing Tag. A Segment rule keeps the name, not an id, so deleting the Tag would leave it matching nothing.
-func UsingTag(ctx context.Context, s *ent.Scoped, name string) ([]*ent.Segment, error) {
-	all, err := s.Segment().QueryWithDiscarded().Order(ent.Asc(segment.FieldID)).All(ctx)
-	if err != nil {
-		return nil, err
-	}
-	var using []*ent.Segment
-	for _, seg := range all {
-		g, err := Parse(lo.FromPtr(seg.Definition))
-		if err == nil && g.namesTag(name) {
-			using = append(using, seg)
-		}
-	}
-	return using, nil
 }

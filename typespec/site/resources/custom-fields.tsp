@@ -22,7 +22,7 @@ model SiteCustomFieldResource {
   @key
   id: EntityId;
 
-  /** Machine key — how values are addressed in custom fields and segment rules */
+  /** Machine key — how values are addressed in custom fields and segment conditions */
   key: string;
 
   /** Display name (renameable) */

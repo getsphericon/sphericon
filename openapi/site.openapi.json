@@ -12554,6 +12554,103 @@
         "enum": ["draft", "scheduled", "sending", "sent", "failed"],
         "description": "Broadcast lifecycle status"
       },
+      "SiteConditionCombinator": {
+        "type": "string",
+        "enum": ["and", "or"],
+        "description": "How a condition group combines its entries"
+      },
+      "SiteConditionGroup": {
+        "type": "object",
+        "required": ["kind", "combinator", "rules"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["group"]
+          },
+          "combinator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteConditionCombinator"
+              }
+            ],
+            "description": "How the entries combine"
+          },
+          "not": {
+            "type": "boolean",
+            "description": "Negate the whole group"
+          },
+          "rules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteConditionNode"
+            },
+            "description": "The group's leaves and nested groups"
+          }
+        },
+        "description": "A group of tests combined with and/or, optionally negated. An empty group matches every\ncontact (an empty negated group matches none)."
+      },
+      "SiteConditionLeaf": {
+        "type": "object",
+        "required": ["kind", "field", "operator"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["rule"]
+          },
+          "field": {
+            "type": "string",
+            "description": "What it tests: a contact attribute (email, phone, subject_id, first_name, last_name,\ntime_zone), \"tag\", \"custom:<key>\" for a custom field of the workspace, or \"event:<action>\""
+          },
+          "operator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteConditionOperator"
+              }
+            ],
+            "description": "How the field is tested"
+          },
+          "value": {
+            "type": "string",
+            "description": "The value to test against: a tag name, a day window for events (\"\" = ever), blank for\nnull and notNull"
+          }
+        },
+        "description": "One test of a condition: a field, an operator and a value"
+      },
+      "SiteConditionNode": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/SiteConditionLeaf"
+          },
+          {
+            "$ref": "#/components/schemas/SiteConditionGroup"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "rule": "#/components/schemas/SiteConditionLeaf",
+            "group": "#/components/schemas/SiteConditionGroup"
+          }
+        },
+        "description": "A leaf or a nested group inside a condition group, discriminated by `kind`."
+      },
+      "SiteConditionOperator": {
+        "type": "string",
+        "enum": [
+          "eq",
+          "neq",
+          "contains",
+          "beginsWith",
+          "null",
+          "notNull",
+          "performed",
+          "notPerformed",
+          "has",
+          "doesNotHave"
+        ],
+        "description": "What a condition leaf tests. A text attribute takes eq, neq, contains, beginsWith, null and\nnotNull; a custom field takes eq, neq, contains and notNull; an event takes performed and\nnotPerformed; the tag field takes has and doesNotHave."
+      },
       "SiteConfirmEmailChangeInput": {
         "type": "object",
         "required": ["token"],
@@ -12915,19 +13012,19 @@
       },
       "SiteCreateSegmentInput": {
         "type": "object",
-        "required": ["name", "definition"],
+        "required": ["name", "condition"],
         "properties": {
           "name": {
             "type": "string",
             "description": "Segment name"
           },
-          "definition": {
+          "condition": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/SiteSegmentRuleGroup"
+                "$ref": "#/components/schemas/SiteConditionGroup"
               }
             ],
-            "description": "Segment definition: the rule group; an empty group matches all contacts"
+            "description": "Segment condition: the tree of tests; an empty group matches all contacts"
           }
         },
         "description": "Site request body for creating a segment"
@@ -13048,7 +13145,7 @@
           },
           "key": {
             "type": "string",
-            "description": "Machine key — how values are addressed in custom fields and segment rules"
+            "description": "Machine key — how values are addressed in custom fields and segment conditions"
           },
           "name": {
             "type": "string",
@@ -14648,16 +14745,16 @@
       "SitePreviewSegmentInput": {
         "type": "object",
         "properties": {
-          "definition": {
+          "condition": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/SiteSegmentRuleGroup"
+                "$ref": "#/components/schemas/SiteConditionGroup"
               }
             ],
-            "description": "Rule definition; absent means all contacts"
+            "description": "Condition; absent means all contacts"
           }
         },
-        "description": "Request body for previewing a rule definition's audience"
+        "description": "Request body for previewing a condition's audience"
       },
       "SitePreviewSegmentResult": {
         "type": "object",
@@ -14666,7 +14763,7 @@
           "count": {
             "type": "integer",
             "format": "int32",
-            "description": "Number of active contacts matching the rule"
+            "description": "Number of active contacts matching the condition"
           }
         },
         "description": "Result of a segment preview: how many deliverable contacts match"
@@ -14912,27 +15009,6 @@
         },
         "description": "The authenticated User's Second factor (ADR 0020). Recovery codes are never\nreadable here: only how many are left."
       },
-      "SiteSegmentCombinator": {
-        "type": "string",
-        "enum": ["and", "or"],
-        "description": "How a segment group combines its rules"
-      },
-      "SiteSegmentOperator": {
-        "type": "string",
-        "enum": [
-          "eq",
-          "neq",
-          "contains",
-          "beginsWith",
-          "null",
-          "notNull",
-          "performed",
-          "notPerformed",
-          "has",
-          "doesNotHave"
-        ],
-        "description": "What a segment rule tests. A text attribute takes eq, neq, contains, beginsWith, null and\nnotNull; a custom field takes eq, neq, contains and notNull; an event takes performed and\nnotPerformed; the tag field takes has and doesNotHave."
-      },
       "SiteSegmentResource": {
         "type": "object",
         "required": ["id", "name", "createdAt", "updatedAt"],
@@ -14949,13 +15025,13 @@
             "type": "string",
             "description": "Segment name"
           },
-          "definition": {
+          "condition": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/SiteSegmentRuleGroup"
+                "$ref": "#/components/schemas/SiteConditionGroup"
               }
             ],
-            "description": "Segment definition: the rule group; an empty group matches all contacts"
+            "description": "Segment condition: the tree of tests; an empty group matches all contacts"
           },
           "archivedAt": {
             "type": "string",
@@ -14985,82 +15061,6 @@
           }
         },
         "description": "Segment resource used by the site UI"
-      },
-      "SiteSegmentRule": {
-        "type": "object",
-        "required": ["kind", "field", "operator"],
-        "properties": {
-          "kind": {
-            "type": "string",
-            "enum": ["rule"]
-          },
-          "field": {
-            "type": "string",
-            "description": "What it tests: a contact attribute (email, phone, subject_id, first_name, last_name,\ntime_zone), \"tag\", \"custom:<key>\" for a custom field of the workspace, or \"event:<action>\""
-          },
-          "operator": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/SiteSegmentOperator"
-              }
-            ],
-            "description": "How the field is tested"
-          },
-          "value": {
-            "type": "string",
-            "description": "The value to test against: a tag name, a day window for events (\"\" = ever), blank for\nnull and notNull"
-          }
-        },
-        "description": "One condition of a segment: a field, an operator and a value"
-      },
-      "SiteSegmentRuleGroup": {
-        "type": "object",
-        "required": ["kind", "combinator", "rules"],
-        "properties": {
-          "kind": {
-            "type": "string",
-            "enum": ["group"]
-          },
-          "combinator": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/SiteSegmentCombinator"
-              }
-            ],
-            "description": "How the rules combine"
-          },
-          "not": {
-            "type": "boolean",
-            "description": "Negate the whole group"
-          },
-          "rules": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/SiteSegmentRuleNode"
-            },
-            "description": "The group's rules and nested groups"
-          }
-        },
-        "description": "A group of rules combined with and/or, optionally negated. An empty group matches every\ncontact (an empty negated group matches none)."
-      },
-      "SiteSegmentRuleNode": {
-        "type": "object",
-        "oneOf": [
-          {
-            "$ref": "#/components/schemas/SiteSegmentRule"
-          },
-          {
-            "$ref": "#/components/schemas/SiteSegmentRuleGroup"
-          }
-        ],
-        "discriminator": {
-          "propertyName": "kind",
-          "mapping": {
-            "rule": "#/components/schemas/SiteSegmentRule",
-            "group": "#/components/schemas/SiteSegmentRuleGroup"
-          }
-        },
-        "description": "A rule or a nested group inside a segment group, discriminated by `kind`."
       },
       "SiteSendLimitSource": {
         "type": "string",
@@ -16050,13 +16050,13 @@
             "type": "string",
             "description": "Segment name"
           },
-          "definition": {
+          "condition": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/SiteSegmentRuleGroup"
+                "$ref": "#/components/schemas/SiteConditionGroup"
               }
             ],
-            "description": "Segment definition: the rule group; an empty group matches all contacts"
+            "description": "Segment condition: the tree of tests; an empty group matches all contacts"
           }
         },
         "description": "Site request body for updating a segment"

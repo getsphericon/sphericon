@@ -24,8 +24,8 @@ const (
 	FieldDiscardedAt = "discarded_at"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
-	// FieldDefinition holds the string denoting the definition field in the database.
-	FieldDefinition = "definition"
+	// FieldCondition holds the string denoting the condition field in the database.
+	FieldCondition = "condition"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
 	EdgeWorkspace = "workspace"
 	// Table holds the table name of the segment in the database.
@@ -47,7 +47,7 @@ var Columns = []string{
 	FieldWorkspaceID,
 	FieldDiscardedAt,
 	FieldName,
-	FieldDefinition,
+	FieldCondition,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -104,9 +104,9 @@ func ByName(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldName, opts...).ToFunc()
 }
 
-// ByDefinition orders the results by the definition field.
-func ByDefinition(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldDefinition, opts...).ToFunc()
+// ByCondition orders the results by the condition field.
+func ByCondition(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCondition, opts...).ToFunc()
 }
 
 // ByWorkspaceField orders the results by workspace field.

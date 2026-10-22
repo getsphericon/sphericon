@@ -390,6 +390,39 @@ export const zSiteBroadcastStatus = z.enum([
 ]);
 
 /**
+ * How a condition group combines its entries
+ */
+export const zSiteConditionCombinator = z.enum(['and', 'or']);
+
+/**
+ * What a condition leaf tests. A text attribute takes eq, neq, contains, beginsWith, null and
+ * notNull; a custom field takes eq, neq, contains and notNull; an event takes performed and
+ * notPerformed; the tag field takes has and doesNotHave.
+ */
+export const zSiteConditionOperator = z.enum([
+  'eq',
+  'neq',
+  'contains',
+  'beginsWith',
+  'null',
+  'notNull',
+  'performed',
+  'notPerformed',
+  'has',
+  'doesNotHave'
+]);
+
+/**
+ * One test of a condition: a field, an operator and a value
+ */
+export const zSiteConditionLeaf = z.object({
+  kind: z.enum(['rule']),
+  field: z.string(),
+  operator: zSiteConditionOperator,
+  value: z.exactOptional(z.string())
+});
+
+/**
  * Confirm a requested email change using the token sent to the new address
  */
 export const zSiteConfirmEmailChangeInput = z.object({
@@ -1032,39 +1065,6 @@ export const zSiteSecondFactorStatus = z.object({
   recoveryCodesRemaining: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   passwordSet: z.boolean(),
   identityProofFresh: z.boolean()
-});
-
-/**
- * How a segment group combines its rules
- */
-export const zSiteSegmentCombinator = z.enum(['and', 'or']);
-
-/**
- * What a segment rule tests. A text attribute takes eq, neq, contains, beginsWith, null and
- * notNull; a custom field takes eq, neq, contains and notNull; an event takes performed and
- * notPerformed; the tag field takes has and doesNotHave.
- */
-export const zSiteSegmentOperator = z.enum([
-  'eq',
-  'neq',
-  'contains',
-  'beginsWith',
-  'null',
-  'notNull',
-  'performed',
-  'notPerformed',
-  'has',
-  'doesNotHave'
-]);
-
-/**
- * One condition of a segment: a field, an operator and a value
- */
-export const zSiteSegmentRule = z.object({
-  kind: z.enum(['rule']),
-  field: z.string(),
-  operator: zSiteSegmentOperator,
-  value: z.exactOptional(z.string())
 });
 
 /**
@@ -2219,18 +2219,37 @@ export const zSiteWorkspaceResource = z.object({
 });
 
 /**
+ * A group of tests combined with and/or, optionally negated. An empty group matches every
+ * contact (an empty negated group matches none).
+ */
+export const zSiteConditionGroup = z.object({
+  kind: z.enum(['group']),
+  combinator: zSiteConditionCombinator,
+  not: z.exactOptional(z.boolean()),
+  rules: z.array(z.lazy((): any => zSiteConditionNode))
+});
+
+/**
+ * A leaf or a nested group inside a condition group, discriminated by `kind`.
+ */
+export const zSiteConditionNode = z.discriminatedUnion('kind', [
+  zSiteConditionLeaf.extend({ kind: z.literal('rule') }),
+  zSiteConditionGroup.extend({ kind: z.literal('group') })
+]);
+
+/**
  * Site request body for creating a segment
  */
 export const zSiteCreateSegmentInput = z.object({
   name: z.string(),
-  definition: z.lazy((): any => zSiteSegmentRuleGroup)
+  condition: zSiteConditionGroup
 });
 
 /**
- * Request body for previewing a rule definition's audience
+ * Request body for previewing a condition's audience
  */
 export const zSitePreviewSegmentInput = z.object({
-  definition: z.exactOptional(z.lazy((): any => zSiteSegmentRuleGroup))
+  condition: z.exactOptional(zSiteConditionGroup)
 });
 
 /**
@@ -2239,37 +2258,18 @@ export const zSitePreviewSegmentInput = z.object({
 export const zSiteSegmentResource = z.object({
   id: zEntityId,
   name: z.string(),
-  definition: z.exactOptional(z.lazy((): any => zSiteSegmentRuleGroup)),
+  condition: z.exactOptional(zSiteConditionGroup),
   archivedAt: z.exactOptional(zTimestamp.nullable()),
   createdAt: zTimestamp,
   updatedAt: zTimestamp
 });
 
 /**
- * A group of rules combined with and/or, optionally negated. An empty group matches every
- * contact (an empty negated group matches none).
- */
-export const zSiteSegmentRuleGroup = z.object({
-  kind: z.enum(['group']),
-  combinator: zSiteSegmentCombinator,
-  not: z.exactOptional(z.boolean()),
-  rules: z.array(z.lazy((): any => zSiteSegmentRuleNode))
-});
-
-/**
- * A rule or a nested group inside a segment group, discriminated by `kind`.
- */
-export const zSiteSegmentRuleNode = z.discriminatedUnion('kind', [
-  zSiteSegmentRule.extend({ kind: z.literal('rule') }),
-  zSiteSegmentRuleGroup.extend({ kind: z.literal('group') })
-]);
-
-/**
  * Site request body for updating a segment
  */
 export const zSiteUpdateSegmentInput = z.object({
   name: z.exactOptional(z.string()),
-  definition: z.exactOptional(zSiteSegmentRuleGroup)
+  condition: z.exactOptional(zSiteConditionGroup)
 });
 
 /**

@@ -17,7 +17,7 @@ model CustomFieldResource {
   /** Unique identifier */
   id: EntityId;
 
-  /** Machine key, how values are addressed in custom fields and segment rules */
+  /** Machine key, how values are addressed in custom fields and segment conditions */
   @extension("x-untrusted", true)
   key: string;
 

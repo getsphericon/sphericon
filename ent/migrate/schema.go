@@ -1357,7 +1357,7 @@ var (
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "discarded_at", Type: field.TypeTime, Nullable: true},
 		{Name: "name", Type: field.TypeString},
-		{Name: "definition", Type: field.TypeString, Nullable: true},
+		{Name: "condition", Type: field.TypeString, Nullable: true},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
 	// SegmentsTable holds the schema information for the "segments" table.

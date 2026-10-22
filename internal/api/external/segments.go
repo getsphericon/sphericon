@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/pagination"
@@ -44,15 +45,15 @@ func (h *Handlers) SegmentsCreate(ctx context.Context, req *externalapi.CreateSe
 	}
 
 	ws := auth.TokenScoped(ctx)
-	def, err := segments.Encode(&req.Definition)
+	def, err := condition.Encode(&req.Condition)
 	if err != nil {
 		return nil, err
 	}
 	s, err := h.segments.Create(ctx, ws, segments.CreateInput{
-		Name:       req.Name,
-		Definition: &def,
+		Name:      req.Name,
+		Condition: &def,
 	})
-	if errors.Is(err, segments.ErrInvalidDefinition) {
+	if errors.Is(err, segments.ErrInvalidCondition) {
 		res := externalapi.SegmentsCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
 		return &res, nil
 	}
@@ -92,15 +93,15 @@ func (h *Handlers) SegmentsUpdate(ctx context.Context, req *externalapi.UpdateSe
 	ws := auth.TokenScoped(ctx)
 	id := int64(params.ID)
 	in := segments.UpdateInput{Name: convert.StringPtr(req.Name)}
-	if group, ok := req.Definition.Get(); ok {
-		def, err := segments.Encode(&group)
+	if group, ok := req.Condition.Get(); ok {
+		def, err := condition.Encode(&group)
 		if err != nil {
 			return nil, err
 		}
-		in.Definition = &def
+		in.Condition = &def
 	}
 	s, err := h.segments.Update(ctx, ws, id, in)
-	if errors.Is(err, segments.ErrInvalidDefinition) {
+	if errors.Is(err, segments.ErrInvalidCondition) {
 		res := externalapi.SegmentsUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
 		return &res, nil
 	}
@@ -177,14 +178,14 @@ func (h *Handlers) SegmentsPreview(ctx context.Context, req *externalapi.Preview
 
 	ws := auth.TokenScoped(ctx)
 	def := ""
-	if group, ok := req.Definition.Get(); ok {
+	if group, ok := req.Condition.Get(); ok {
 		var err error
-		if def, err = segments.Encode(&group); err != nil {
+		if def, err = condition.Encode(&group); err != nil {
 			return nil, err
 		}
 	}
 	count, err := h.segments.Preview(ctx, ws, def)
-	if errors.Is(err, segments.ErrInvalidDefinition) {
+	if errors.Is(err, segments.ErrInvalidCondition) {
 		res := externalapi.SegmentsPreviewUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
 		return &res, nil
 	}

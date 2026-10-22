@@ -1502,6 +1502,91 @@ export const SiteBroadcastStatus = {
 export type SiteBroadcastStatus = typeof SiteBroadcastStatus[keyof typeof SiteBroadcastStatus];
 
 /**
+ * How a condition group combines its entries
+ */
+export const SiteConditionCombinator = { AND: 'and', OR: 'or' } as const;
+
+/**
+ * How a condition group combines its entries
+ */
+export type SiteConditionCombinator = typeof SiteConditionCombinator[keyof typeof SiteConditionCombinator];
+
+/**
+ * A group of tests combined with and/or, optionally negated. An empty group matches every
+ * contact (an empty negated group matches none).
+ */
+export type SiteConditionGroup = {
+  kind: 'group';
+  /**
+   * How the entries combine
+   */
+  combinator: SiteConditionCombinator;
+  /**
+   * Negate the whole group
+   */
+  not?: boolean;
+  /**
+   * The group's leaves and nested groups
+   */
+  rules: Array<SiteConditionNode>;
+};
+
+/**
+ * One test of a condition: a field, an operator and a value
+ */
+export type SiteConditionLeaf = {
+  kind: 'rule';
+  /**
+   * What it tests: a contact attribute (email, phone, subject_id, first_name, last_name,
+   * time_zone), "tag", "custom:<key>" for a custom field of the workspace, or "event:<action>"
+   */
+  field: string;
+  /**
+   * How the field is tested
+   */
+  operator: SiteConditionOperator;
+  /**
+   * The value to test against: a tag name, a day window for events ("" = ever), blank for
+   * null and notNull
+   */
+  value?: string;
+};
+
+/**
+ * A leaf or a nested group inside a condition group, discriminated by `kind`.
+ */
+export type SiteConditionNode = ({
+  kind: 'rule';
+} & SiteConditionLeaf) | ({
+  kind: 'group';
+} & SiteConditionGroup);
+
+/**
+ * What a condition leaf tests. A text attribute takes eq, neq, contains, beginsWith, null and
+ * notNull; a custom field takes eq, neq, contains and notNull; an event takes performed and
+ * notPerformed; the tag field takes has and doesNotHave.
+ */
+export const SiteConditionOperator = {
+  EQ: 'eq',
+  NEQ: 'neq',
+  CONTAINS: 'contains',
+  BEGINS_WITH: 'beginsWith',
+  NULL: 'null',
+  NOT_NULL: 'notNull',
+  PERFORMED: 'performed',
+  NOT_PERFORMED: 'notPerformed',
+  HAS: 'has',
+  DOES_NOT_HAVE: 'doesNotHave'
+} as const;
+
+/**
+ * What a condition leaf tests. A text attribute takes eq, neq, contains, beginsWith, null and
+ * notNull; a custom field takes eq, neq, contains and notNull; an event takes performed and
+ * notPerformed; the tag field takes has and doesNotHave.
+ */
+export type SiteConditionOperator = typeof SiteConditionOperator[keyof typeof SiteConditionOperator];
+
+/**
  * Confirm a requested email change using the token sent to the new address
  */
 export type SiteConfirmEmailChangeInput = {
@@ -1749,9 +1834,9 @@ export type SiteCreateSegmentInput = {
    */
   name: string;
   /**
-   * Segment definition: the rule group; an empty group matches all contacts
+   * Segment condition: the tree of tests; an empty group matches all contacts
    */
-  definition: SiteSegmentRuleGroup;
+  condition: SiteConditionGroup;
 };
 
 /**
@@ -1828,7 +1913,7 @@ export type SiteCustomFieldResource = {
    */
   id: EntityId;
   /**
-   * Machine key — how values are addressed in custom fields and segment rules
+   * Machine key — how values are addressed in custom fields and segment conditions
    */
   key: string;
   /**
@@ -3035,13 +3120,13 @@ export type SitePresetResource = {
 };
 
 /**
- * Request body for previewing a rule definition's audience
+ * Request body for previewing a condition's audience
  */
 export type SitePreviewSegmentInput = {
   /**
-   * Rule definition; absent means all contacts
+   * Condition; absent means all contacts
    */
-  definition?: SiteSegmentRuleGroup;
+  condition?: SiteConditionGroup;
 };
 
 /**
@@ -3049,7 +3134,7 @@ export type SitePreviewSegmentInput = {
  */
 export type SitePreviewSegmentResult = {
   /**
-   * Number of active contacts matching the rule
+   * Number of active contacts matching the condition
    */
   count: number;
 };
@@ -3259,41 +3344,6 @@ export type SiteSecondFactorStatus = {
 };
 
 /**
- * How a segment group combines its rules
- */
-export const SiteSegmentCombinator = { AND: 'and', OR: 'or' } as const;
-
-/**
- * How a segment group combines its rules
- */
-export type SiteSegmentCombinator = typeof SiteSegmentCombinator[keyof typeof SiteSegmentCombinator];
-
-/**
- * What a segment rule tests. A text attribute takes eq, neq, contains, beginsWith, null and
- * notNull; a custom field takes eq, neq, contains and notNull; an event takes performed and
- * notPerformed; the tag field takes has and doesNotHave.
- */
-export const SiteSegmentOperator = {
-  EQ: 'eq',
-  NEQ: 'neq',
-  CONTAINS: 'contains',
-  BEGINS_WITH: 'beginsWith',
-  NULL: 'null',
-  NOT_NULL: 'notNull',
-  PERFORMED: 'performed',
-  NOT_PERFORMED: 'notPerformed',
-  HAS: 'has',
-  DOES_NOT_HAVE: 'doesNotHave'
-} as const;
-
-/**
- * What a segment rule tests. A text attribute takes eq, neq, contains, beginsWith, null and
- * notNull; a custom field takes eq, neq, contains and notNull; an event takes performed and
- * notPerformed; the tag field takes has and doesNotHave.
- */
-export type SiteSegmentOperator = typeof SiteSegmentOperator[keyof typeof SiteSegmentOperator];
-
-/**
  * Segment resource used by the site UI
  */
 export type SiteSegmentResource = {
@@ -3306,9 +3356,9 @@ export type SiteSegmentResource = {
    */
   name: string;
   /**
-   * Segment definition: the rule group; an empty group matches all contacts
+   * Segment condition: the tree of tests; an empty group matches all contacts
    */
-  definition?: SiteSegmentRuleGroup;
+  condition?: SiteConditionGroup;
   /**
    * When the segment was archived; null while it is kept
    */
@@ -3322,56 +3372,6 @@ export type SiteSegmentResource = {
    */
   updatedAt: Timestamp;
 };
-
-/**
- * One condition of a segment: a field, an operator and a value
- */
-export type SiteSegmentRule = {
-  kind: 'rule';
-  /**
-   * What it tests: a contact attribute (email, phone, subject_id, first_name, last_name,
-   * time_zone), "tag", "custom:<key>" for a custom field of the workspace, or "event:<action>"
-   */
-  field: string;
-  /**
-   * How the field is tested
-   */
-  operator: SiteSegmentOperator;
-  /**
-   * The value to test against: a tag name, a day window for events ("" = ever), blank for
-   * null and notNull
-   */
-  value?: string;
-};
-
-/**
- * A group of rules combined with and/or, optionally negated. An empty group matches every
- * contact (an empty negated group matches none).
- */
-export type SiteSegmentRuleGroup = {
-  kind: 'group';
-  /**
-   * How the rules combine
-   */
-  combinator: SiteSegmentCombinator;
-  /**
-   * Negate the whole group
-   */
-  not?: boolean;
-  /**
-   * The group's rules and nested groups
-   */
-  rules: Array<SiteSegmentRuleNode>;
-};
-
-/**
- * A rule or a nested group inside a segment group, discriminated by `kind`.
- */
-export type SiteSegmentRuleNode = ({
-  kind: 'rule';
-} & SiteSegmentRule) | ({
-  kind: 'group';
-} & SiteSegmentRuleGroup);
 
 /**
  * Where an effective Send rate limit comes from
@@ -4082,9 +4082,9 @@ export type SiteUpdateSegmentInput = {
    */
   name?: string;
   /**
-   * Segment definition: the rule group; an empty group matches all contacts
+   * Segment condition: the tree of tests; an empty group matches all contacts
    */
-  definition?: SiteSegmentRuleGroup;
+  condition?: SiteConditionGroup;
 };
 
 /**

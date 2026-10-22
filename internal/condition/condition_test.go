@@ -1,4 +1,4 @@
-package segments_test
+package condition_test
 
 import (
 	"context"
@@ -7,34 +7,35 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/segments"
 	"github.com/getsphericon/sphericon/internal/tags"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-// validate runs the Module's rule set for the Acme Workspace.
+// validate compiles a condition for the Acme Workspace.
 func validate(t *testing.T, env *testhelper.TestEnv, def string) error {
 	t.Helper()
-	return segments.New(env.Bus).Validate(context.Background(), env.DB.Scoped(fixtures.AcmeID), def)
+	_, err := condition.ContactPredicate(context.Background(), env.DB.Scoped(fixtures.AcmeID), def)
+	return err
 }
 
 // emailsIn returns, in email order, the emails of the Workspace's Contacts matching g.
-func emailsIn(t *testing.T, env *testhelper.TestEnv, ws int64, g segments.Group) []string {
+func emailsIn(t *testing.T, env *testhelper.TestEnv, ws int64, g condition.Group) []string {
 	t.Helper()
 	ctx := context.Background()
 	s := env.DB.Scoped(ws)
-	p, err := segments.Compile(ctx, s, g)
+	p, err := condition.Compile(ctx, s, g)
 	require.NoError(t, err)
 	emails, err := s.Contact().Query().Where(predicate.Contact(p)).Order(contact.ByEmail()).Select(contact.FieldEmail).Strings(ctx)
 	require.NoError(t, err)
 	return emails
 }
 
-func rule(field, op, value string) segments.Rule {
-	return segments.Rule{Kind: "rule", Field: field, Operator: op, Value: value}
+func rule(field, op, value string) condition.Leaf {
+	return condition.Leaf{Kind: "rule", Field: field, Operator: op, Value: value}
 }
 
 // marshal encodes leaf rules (or nested groups) into the raw rules[] entries.
@@ -53,41 +54,41 @@ func marshal(entries ...any) []json.RawMessage {
 func TestCompileEvaluatesAgainstContacts(t *testing.T) {
 	env := testhelper.Setup(t)
 	const ann, bob, cara = fixtures.MassiveAnnEmail, fixtures.MassiveBobEmail, fixtures.MassiveCaraEmail
-	match := func(g segments.Group) []string { return emailsIn(t, env, fixtures.MassiveID, g) }
+	match := func(g condition.Group) []string { return emailsIn(t, env, fixtures.MassiveID, g) }
 
 	// Empty group matches everyone.
-	assert.Equal(t, []string{ann, bob, cara}, match(segments.Group{Kind: "group", Combinator: "and"}))
+	assert.Equal(t, []string{ann, bob, cara}, match(condition.Group{Kind: "group", Combinator: "and"}))
 
 	// custom:plan = pro -> Ann + Cara
-	assert.Equal(t, []string{ann, cara}, match(segments.Group{Kind: "group", Combinator: "and", Rules: marshal(rule("custom:plan", "eq", "pro"))}))
+	assert.Equal(t, []string{ann, cara}, match(condition.Group{Kind: "group", Combinator: "and", Rules: marshal(rule("custom:plan", "eq", "pro"))}))
 
 	// and: first_name=Ann AND plan=pro -> just Ann
-	assert.Equal(t, []string{ann}, match(segments.Group{
+	assert.Equal(t, []string{ann}, match(condition.Group{
 		Kind:       "group",
 		Combinator: "and",
 		Rules:      marshal(rule("first_name", "eq", "Ann"), rule("custom:plan", "eq", "pro")),
 	}))
 
 	// or: first_name=Ann OR first_name=Bob
-	assert.Equal(t, []string{ann, bob}, match(segments.Group{
+	assert.Equal(t, []string{ann, bob}, match(condition.Group{
 		Kind:       "group",
 		Combinator: "or",
 		Rules:      marshal(rule("first_name", "eq", "Ann"), rule("first_name", "eq", "Bob")),
 	}))
 
 	// custom:plan notNull -> all have it
-	assert.Equal(t, []string{ann, bob, cara}, match(segments.Group{Kind: "group", Combinator: "and", Rules: marshal(rule("custom:plan", "notNull", ""))}))
+	assert.Equal(t, []string{ann, bob, cara}, match(condition.Group{Kind: "group", Combinator: "and", Rules: marshal(rule("custom:plan", "notNull", ""))}))
 
 	// not: NOT(plan=pro) -> only Bob (free)
-	assert.Equal(t, []string{bob}, match(segments.Group{Kind: "group", Combinator: "and", Not: true, Rules: marshal(rule("custom:plan", "eq", "pro"))}))
+	assert.Equal(t, []string{bob}, match(condition.Group{Kind: "group", Combinator: "and", Not: true, Rules: marshal(rule("custom:plan", "eq", "pro"))}))
 }
 
 func TestEventConditions(t *testing.T) {
 	env := testhelper.Setup(t)
 	const ann, bob, cara = fixtures.MassiveAnnEmail, fixtures.MassiveBobEmail, fixtures.MassiveCaraEmail
-	match := func(g segments.Group) []string { return emailsIn(t, env, fixtures.MassiveID, g) }
-	event := func(action, op, value string) segments.Group {
-		return segments.Group{Kind: "group", Combinator: "and", Rules: marshal(rule("event:"+action, op, value))}
+	match := func(g condition.Group) []string { return emailsIn(t, env, fixtures.MassiveID, g) }
+	event := func(action, op, value string) condition.Group {
+		return condition.Group{Kind: "group", Combinator: "and", Rules: marshal(rule("event:"+action, op, value))}
 	}
 
 	// Ann did page_view 2 days ago and purchase 40 days ago.
@@ -111,8 +112,8 @@ func TestTagConditions(t *testing.T) {
 	ctx := context.Background()
 
 	// The anchor contacts 1-3 are the only ones the fixtures tag.
-	count := func(g segments.Group) int {
-		p, err := segments.Compile(ctx, env.DB.Scoped(fixtures.AcmeID), g)
+	count := func(g condition.Group) int {
+		p, err := condition.Compile(ctx, env.DB.Scoped(fixtures.AcmeID), g)
 		require.NoError(t, err)
 		n, err := env.DB.Contact.Query().
 			Where(contact.WorkspaceID(fixtures.AcmeID), contact.IDIn(fixtures.ContactAliceID, fixtures.ContactBobID, fixtures.ContactCarolID), predicate.Contact(p)).
@@ -120,18 +121,18 @@ func TestTagConditions(t *testing.T) {
 		require.NoError(t, err)
 		return n
 	}
-	has := func(name string) segments.Group {
-		return segments.Group{Kind: "group", Combinator: "and", Rules: marshal(rule("tag", "has", name))}
+	has := func(name string) condition.Group {
+		return condition.Group{Kind: "group", Combinator: "and", Rules: marshal(rule("tag", "has", name))}
 	}
 
 	assert.Equal(t, 2, count(has("vip")))
 	assert.Equal(t, 1, count(has("newsletter")))
 	assert.Equal(t, 0, count(has("unused")), "an existing Tag nobody has matches no one")
 	assert.Equal(t, 0, count(has("never-created")))
-	assert.Equal(t, 1, count(segments.Group{Kind: "group", Combinator: "and", Rules: marshal(rule("tag", "doesNotHave", "vip"))}), "contact 2")
+	assert.Equal(t, 1, count(condition.Group{Kind: "group", Combinator: "and", Rules: marshal(rule("tag", "doesNotHave", "vip"))}), "contact 2")
 
 	// Composes with other rules: vip AND newsletter -> contact 1 only.
-	assert.Equal(t, 1, count(segments.Group{
+	assert.Equal(t, 1, count(condition.Group{
 		Kind:       "group",
 		Combinator: "and",
 		Rules:      marshal(rule("tag", "has", "vip"), rule("tag", "has", "newsletter")),
@@ -151,7 +152,7 @@ func TestTagConditions(t *testing.T) {
 
 func TestParseAndValidate(t *testing.T) {
 	env := testhelper.Setup(t)
-	g, err := segments.Parse("")
+	g, err := condition.Parse("")
 	require.NoError(t, err)
 	assert.Equal(t, "and", g.Combinator)
 

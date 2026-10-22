@@ -900,8 +900,9 @@ export default interface Resources {
     },
     "segments": {
       "addSegment": "Add segment",
+      "conditionHint": "The tests that select matching contacts.",
+      "conditionLabel": "Condition",
       "createTitle": "New segment",
-      "definitionHint": "For rule segments, the expression that selects matching contacts.",
       "definitionLabel": "Definition",
       "editTitle": "Edit segment",
       "emptyState": "Create your first segment.",
@@ -911,7 +912,6 @@ export default interface Resources {
       "noRecords": "No segments yet",
       "previewButton": "Preview audience",
       "previewCount": "{{count}} matching contacts" | "{{count}} matching contact" | "{{count}} matching contacts",
-      "rulesLabel": "Rules",
       "showArchived": "Show archived"
     },
     "settings": {

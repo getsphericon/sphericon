@@ -1983,6 +1983,198 @@ func (s *SiteBroadcastsUpdateUnprocessableEntity) Validate() error {
 	return nil
 }
 
+func (s SiteConditionCombinator) Validate() error {
+	switch s {
+	case "and":
+		return nil
+	case "or":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *SiteConditionGroup) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Kind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "kind",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Combinator.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "combinator",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if s.Rules == nil {
+			return errors.New("nil is invalid value")
+		}
+		var failures []validate.FieldError
+		for i, elem := range s.Rules {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "rules",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s SiteConditionGroupKind) Validate() error {
+	switch s {
+	case "group":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *SiteConditionLeaf) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Kind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "kind",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Operator.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "operator",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s SiteConditionLeafKind) Validate() error {
+	switch s {
+	case "rule":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *SiteConditionNode) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.OneOf.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "OneOf",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s SiteConditionNodeSum) Validate() error {
+	switch s.Type {
+	case SiteConditionLeafSiteConditionNodeSum:
+		if err := s.SiteConditionLeaf.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case SiteConditionGroupSiteConditionNodeSum:
+		if err := s.SiteConditionGroup.Validate(); err != nil {
+			return err
+		}
+		return nil
+	default:
+		return errors.Errorf("invalid type %q", s.Type)
+	}
+}
+
+func (s SiteConditionOperator) Validate() error {
+	switch s {
+	case "eq":
+		return nil
+	case "neq":
+		return nil
+	case "contains":
+		return nil
+	case "beginsWith":
+		return nil
+	case "null":
+		return nil
+	case "notNull":
+		return nil
+	case "performed":
+		return nil
+	case "notPerformed":
+		return nil
+	case "has":
+		return nil
+	case "doesNotHave":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s *SiteContactResource) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -2468,13 +2660,13 @@ func (s *SiteCreateSegmentInput) Validate() error {
 
 	var failures []validate.FieldError
 	if err := func() error {
-		if err := s.Definition.Validate(); err != nil {
+		if err := s.Condition.Validate(); err != nil {
 			return err
 		}
 		return nil
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
-			Name:  "definition",
+			Name:  "condition",
 			Error: err,
 		})
 	}
@@ -5136,7 +5328,7 @@ func (s *SitePreviewSegmentInput) Validate() error {
 
 	var failures []validate.FieldError
 	if err := func() error {
-		if value, ok := s.Definition.Get(); ok {
+		if value, ok := s.Condition.Get(); ok {
 			if err := func() error {
 				if err := value.Validate(); err != nil {
 					return err
@@ -5149,7 +5341,7 @@ func (s *SitePreviewSegmentInput) Validate() error {
 		return nil
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
-			Name:  "definition",
+			Name:  "condition",
 			Error: err,
 		})
 	}
@@ -5458,17 +5650,6 @@ func (s *SiteSecondFactorStartEnrollmentForbidden) Validate() error {
 	return nil
 }
 
-func (s SiteSegmentCombinator) Validate() error {
-	switch s {
-	case "and":
-		return nil
-	case "or":
-		return nil
-	default:
-		return errors.Errorf("invalid value: %v", s)
-	}
-}
-
 func (s *SiteSegmentContactsListBadRequest) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -5525,33 +5706,6 @@ func (s *SiteSegmentContactsListOK) Validate() error {
 	return nil
 }
 
-func (s SiteSegmentOperator) Validate() error {
-	switch s {
-	case "eq":
-		return nil
-	case "neq":
-		return nil
-	case "contains":
-		return nil
-	case "beginsWith":
-		return nil
-	case "null":
-		return nil
-	case "notNull":
-		return nil
-	case "performed":
-		return nil
-	case "notPerformed":
-		return nil
-	case "has":
-		return nil
-	case "doesNotHave":
-		return nil
-	default:
-		return errors.Errorf("invalid value: %v", s)
-	}
-}
-
 func (s *SiteSegmentResource) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -5559,7 +5713,7 @@ func (s *SiteSegmentResource) Validate() error {
 
 	var failures []validate.FieldError
 	if err := func() error {
-		if value, ok := s.Definition.Get(); ok {
+		if value, ok := s.Condition.Get(); ok {
 			if err := func() error {
 				if err := value.Validate(); err != nil {
 					return err
@@ -5572,7 +5726,7 @@ func (s *SiteSegmentResource) Validate() error {
 		return nil
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
-			Name:  "definition",
+			Name:  "condition",
 			Error: err,
 		})
 	}
@@ -5580,160 +5734,6 @@ func (s *SiteSegmentResource) Validate() error {
 		return &validate.Error{Fields: failures}
 	}
 	return nil
-}
-
-func (s *SiteSegmentRule) Validate() error {
-	if s == nil {
-		return validate.ErrNilPointer
-	}
-
-	var failures []validate.FieldError
-	if err := func() error {
-		if err := s.Kind.Validate(); err != nil {
-			return err
-		}
-		return nil
-	}(); err != nil {
-		failures = append(failures, validate.FieldError{
-			Name:  "kind",
-			Error: err,
-		})
-	}
-	if err := func() error {
-		if err := s.Operator.Validate(); err != nil {
-			return err
-		}
-		return nil
-	}(); err != nil {
-		failures = append(failures, validate.FieldError{
-			Name:  "operator",
-			Error: err,
-		})
-	}
-	if len(failures) > 0 {
-		return &validate.Error{Fields: failures}
-	}
-	return nil
-}
-
-func (s *SiteSegmentRuleGroup) Validate() error {
-	if s == nil {
-		return validate.ErrNilPointer
-	}
-
-	var failures []validate.FieldError
-	if err := func() error {
-		if err := s.Kind.Validate(); err != nil {
-			return err
-		}
-		return nil
-	}(); err != nil {
-		failures = append(failures, validate.FieldError{
-			Name:  "kind",
-			Error: err,
-		})
-	}
-	if err := func() error {
-		if err := s.Combinator.Validate(); err != nil {
-			return err
-		}
-		return nil
-	}(); err != nil {
-		failures = append(failures, validate.FieldError{
-			Name:  "combinator",
-			Error: err,
-		})
-	}
-	if err := func() error {
-		if s.Rules == nil {
-			return errors.New("nil is invalid value")
-		}
-		var failures []validate.FieldError
-		for i, elem := range s.Rules {
-			if err := func() error {
-				if err := elem.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				failures = append(failures, validate.FieldError{
-					Name:  fmt.Sprintf("[%d]", i),
-					Error: err,
-				})
-			}
-		}
-		if len(failures) > 0 {
-			return &validate.Error{Fields: failures}
-		}
-		return nil
-	}(); err != nil {
-		failures = append(failures, validate.FieldError{
-			Name:  "rules",
-			Error: err,
-		})
-	}
-	if len(failures) > 0 {
-		return &validate.Error{Fields: failures}
-	}
-	return nil
-}
-
-func (s SiteSegmentRuleGroupKind) Validate() error {
-	switch s {
-	case "group":
-		return nil
-	default:
-		return errors.Errorf("invalid value: %v", s)
-	}
-}
-
-func (s SiteSegmentRuleKind) Validate() error {
-	switch s {
-	case "rule":
-		return nil
-	default:
-		return errors.Errorf("invalid value: %v", s)
-	}
-}
-
-func (s *SiteSegmentRuleNode) Validate() error {
-	if s == nil {
-		return validate.ErrNilPointer
-	}
-
-	var failures []validate.FieldError
-	if err := func() error {
-		if err := s.OneOf.Validate(); err != nil {
-			return err
-		}
-		return nil
-	}(); err != nil {
-		failures = append(failures, validate.FieldError{
-			Name:  "OneOf",
-			Error: err,
-		})
-	}
-	if len(failures) > 0 {
-		return &validate.Error{Fields: failures}
-	}
-	return nil
-}
-
-func (s SiteSegmentRuleNodeSum) Validate() error {
-	switch s.Type {
-	case SiteSegmentRuleSiteSegmentRuleNodeSum:
-		if err := s.SiteSegmentRule.Validate(); err != nil {
-			return err
-		}
-		return nil
-	case SiteSegmentRuleGroupSiteSegmentRuleNodeSum:
-		if err := s.SiteSegmentRuleGroup.Validate(); err != nil {
-			return err
-		}
-		return nil
-	default:
-		return errors.Errorf("invalid type %q", s.Type)
-	}
 }
 
 func (s *SiteSegmentsArchiveBadRequest) Validate() error {
@@ -7546,7 +7546,7 @@ func (s *SiteUpdateSegmentInput) Validate() error {
 
 	var failures []validate.FieldError
 	if err := func() error {
-		if value, ok := s.Definition.Get(); ok {
+		if value, ok := s.Condition.Get(); ok {
 			if err := func() error {
 				if err := value.Validate(); err != nil {
 					return err
@@ -7559,7 +7559,7 @@ func (s *SiteUpdateSegmentInput) Validate() error {
 		return nil
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
-			Name:  "definition",
+			Name:  "condition",
 			Error: err,
 		})
 	}

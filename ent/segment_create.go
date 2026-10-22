@@ -77,16 +77,16 @@ func (_c *SegmentCreate) SetName(v string) *SegmentCreate {
 	return _c
 }
 
-// SetDefinition sets the "definition" field.
-func (_c *SegmentCreate) SetDefinition(v string) *SegmentCreate {
-	_c.mutation.SetDefinition(v)
+// SetCondition sets the "condition" field.
+func (_c *SegmentCreate) SetCondition(v string) *SegmentCreate {
+	_c.mutation.SetCondition(v)
 	return _c
 }
 
-// SetNillableDefinition sets the "definition" field if the given value is not nil.
-func (_c *SegmentCreate) SetNillableDefinition(v *string) *SegmentCreate {
+// SetNillableCondition sets the "condition" field if the given value is not nil.
+func (_c *SegmentCreate) SetNillableCondition(v *string) *SegmentCreate {
 	if v != nil {
-		_c.SetDefinition(*v)
+		_c.SetCondition(*v)
 	}
 	return _c
 }
@@ -218,9 +218,9 @@ func (_c *SegmentCreate) createSpec() (*Segment, *sqlgraph.CreateSpec) {
 		_spec.SetField(segment.FieldName, field.TypeString, value)
 		_node.Name = value
 	}
-	if value, ok := _c.mutation.Definition(); ok {
-		_spec.SetField(segment.FieldDefinition, field.TypeString, value)
-		_node.Definition = &value
+	if value, ok := _c.mutation.Condition(); ok {
+		_spec.SetField(segment.FieldCondition, field.TypeString, value)
+		_node.Condition = &value
 	}
 	if nodes := _c.mutation.WorkspaceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -345,21 +345,21 @@ func (u *SegmentUpsert) UpdateName() *SegmentUpsert {
 	return u
 }
 
-// SetDefinition sets the "definition" field.
-func (u *SegmentUpsert) SetDefinition(v string) *SegmentUpsert {
-	u.Set(segment.FieldDefinition, v)
+// SetCondition sets the "condition" field.
+func (u *SegmentUpsert) SetCondition(v string) *SegmentUpsert {
+	u.Set(segment.FieldCondition, v)
 	return u
 }
 
-// UpdateDefinition sets the "definition" field to the value that was provided on create.
-func (u *SegmentUpsert) UpdateDefinition() *SegmentUpsert {
-	u.SetExcluded(segment.FieldDefinition)
+// UpdateCondition sets the "condition" field to the value that was provided on create.
+func (u *SegmentUpsert) UpdateCondition() *SegmentUpsert {
+	u.SetExcluded(segment.FieldCondition)
 	return u
 }
 
-// ClearDefinition clears the value of the "definition" field.
-func (u *SegmentUpsert) ClearDefinition() *SegmentUpsert {
-	u.SetNull(segment.FieldDefinition)
+// ClearCondition clears the value of the "condition" field.
+func (u *SegmentUpsert) ClearCondition() *SegmentUpsert {
+	u.SetNull(segment.FieldCondition)
 	return u
 }
 
@@ -477,24 +477,24 @@ func (u *SegmentUpsertOne) UpdateName() *SegmentUpsertOne {
 	})
 }
 
-// SetDefinition sets the "definition" field.
-func (u *SegmentUpsertOne) SetDefinition(v string) *SegmentUpsertOne {
+// SetCondition sets the "condition" field.
+func (u *SegmentUpsertOne) SetCondition(v string) *SegmentUpsertOne {
 	return u.Update(func(s *SegmentUpsert) {
-		s.SetDefinition(v)
+		s.SetCondition(v)
 	})
 }
 
-// UpdateDefinition sets the "definition" field to the value that was provided on create.
-func (u *SegmentUpsertOne) UpdateDefinition() *SegmentUpsertOne {
+// UpdateCondition sets the "condition" field to the value that was provided on create.
+func (u *SegmentUpsertOne) UpdateCondition() *SegmentUpsertOne {
 	return u.Update(func(s *SegmentUpsert) {
-		s.UpdateDefinition()
+		s.UpdateCondition()
 	})
 }
 
-// ClearDefinition clears the value of the "definition" field.
-func (u *SegmentUpsertOne) ClearDefinition() *SegmentUpsertOne {
+// ClearCondition clears the value of the "condition" field.
+func (u *SegmentUpsertOne) ClearCondition() *SegmentUpsertOne {
 	return u.Update(func(s *SegmentUpsert) {
-		s.ClearDefinition()
+		s.ClearCondition()
 	})
 }
 
@@ -778,24 +778,24 @@ func (u *SegmentUpsertBulk) UpdateName() *SegmentUpsertBulk {
 	})
 }
 
-// SetDefinition sets the "definition" field.
-func (u *SegmentUpsertBulk) SetDefinition(v string) *SegmentUpsertBulk {
+// SetCondition sets the "condition" field.
+func (u *SegmentUpsertBulk) SetCondition(v string) *SegmentUpsertBulk {
 	return u.Update(func(s *SegmentUpsert) {
-		s.SetDefinition(v)
+		s.SetCondition(v)
 	})
 }
 
-// UpdateDefinition sets the "definition" field to the value that was provided on create.
-func (u *SegmentUpsertBulk) UpdateDefinition() *SegmentUpsertBulk {
+// UpdateCondition sets the "condition" field to the value that was provided on create.
+func (u *SegmentUpsertBulk) UpdateCondition() *SegmentUpsertBulk {
 	return u.Update(func(s *SegmentUpsert) {
-		s.UpdateDefinition()
+		s.UpdateCondition()
 	})
 }
 
-// ClearDefinition clears the value of the "definition" field.
-func (u *SegmentUpsertBulk) ClearDefinition() *SegmentUpsertBulk {
+// ClearCondition clears the value of the "condition" field.
+func (u *SegmentUpsertBulk) ClearCondition() *SegmentUpsertBulk {
 	return u.Update(func(s *SegmentUpsert) {
-		s.ClearDefinition()
+		s.ClearCondition()
 	})
 }
 

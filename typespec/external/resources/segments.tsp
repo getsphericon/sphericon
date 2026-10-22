@@ -4,16 +4,16 @@ using TypeSpec.Rest.Resource;
 
 namespace Sphericon;
 
-/** How a segment group combines its rules */
-enum SegmentCombinator {
+/** How a condition group combines its entries */
+enum ConditionCombinator {
   and,
   or,
 }
 
-/** What a segment rule tests. A text attribute takes eq, neq, contains, beginsWith, null and
+/** What a condition leaf tests. A text attribute takes eq, neq, contains, beginsWith, null and
  * notNull; a custom field takes eq, neq, contains and notNull; an event takes performed and
  * notPerformed; the tag field takes has and doesNotHave. */
-enum SegmentOperator {
+enum ConditionOperator {
   eq,
   neq,
   contains,
@@ -26,8 +26,8 @@ enum SegmentOperator {
   doesNotHave,
 }
 
-/** One condition of a segment: a field, an operator and a value */
-model SegmentRule {
+/** One test of a condition: a field, an operator and a value */
+model ConditionLeaf {
   kind: "rule";
 
   /** What it tests: a contact attribute (email, phone, subject_id, first_name, last_name,
@@ -35,33 +35,33 @@ model SegmentRule {
   field: string;
 
   /** How the field is tested */
-  operator: SegmentOperator;
+  operator: ConditionOperator;
 
   /** The value to test against: a tag name, a day window for events ("" = ever), blank for
    * null and notNull */
   value?: string;
 }
 
-/** A rule or a nested group inside a segment group, discriminated by `kind`. */
+/** A leaf or a nested group inside a condition group, discriminated by `kind`. */
 @discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
-union SegmentRuleNode {
-  rule: SegmentRule,
-  group: SegmentRuleGroup,
+union ConditionNode {
+  rule: ConditionLeaf,
+  group: ConditionGroup,
 }
 
-/** A group of rules combined with and/or, optionally negated. An empty group matches every
+/** A group of tests combined with and/or, optionally negated. An empty group matches every
  * contact (an empty negated group matches none). */
-model SegmentRuleGroup {
+model ConditionGroup {
   kind: "group";
 
-  /** How the rules combine */
-  combinator: SegmentCombinator;
+  /** How the entries combine */
+  combinator: ConditionCombinator;
 
   /** Negate the whole group */
   not?: boolean;
 
-  /** The group's rules and nested groups */
-  rules: SegmentRuleNode[];
+  /** The group's leaves and nested groups */
+  rules: ConditionNode[];
 }
 
 /** Segment resource */
@@ -75,8 +75,8 @@ model SegmentResource {
   /** Segment name */
   name: string;
 
-  /** Segment definition: the rule group; an empty group matches all contacts */
-  definition?: SegmentRuleGroup;
+  /** Segment condition: the tree of tests; an empty group matches all contacts */
+  condition?: ConditionGroup;
 
   /** When the segment was archived; null while it is kept */
   archivedAt?: Timestamp | null;
@@ -93,8 +93,8 @@ model CreateSegmentInput {
   /** Segment name */
   name: string;
 
-  /** Segment definition: the rule group; an empty group matches all contacts */
-  definition: SegmentRuleGroup;
+  /** Segment condition: the tree of tests; an empty group matches all contacts */
+  condition: ConditionGroup;
 }
 
 /** Request body for updating a segment */
@@ -102,19 +102,19 @@ model UpdateSegmentInput {
   /** Segment name */
   name?: string;
 
-  /** Segment definition: the rule group; an empty group matches all contacts */
-  definition?: SegmentRuleGroup;
+  /** Segment condition: the tree of tests; an empty group matches all contacts */
+  condition?: ConditionGroup;
 }
 
-/** Request body for previewing a rule definition's audience */
+/** Request body for previewing a condition's audience */
 model PreviewSegmentInput {
-  /** Rule definition; absent means all contacts */
-  definition?: SegmentRuleGroup;
+  /** Condition; absent means all contacts */
+  condition?: ConditionGroup;
 }
 
 /** Result of a segment preview */
 model PreviewSegmentResult {
-  /** Number of contacts matching the rule */
+  /** Number of contacts matching the condition */
   count: int32;
 }
 

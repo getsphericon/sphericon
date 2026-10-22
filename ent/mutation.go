@@ -31452,7 +31452,7 @@ type SegmentMutation struct {
 	updated_at       *time.Time
 	discarded_at     *time.Time
 	name             *string
-	definition       *string
+	condition        *string
 	clearedFields    map[string]struct{}
 	workspace        *int64
 	clearedworkspace bool
@@ -31758,53 +31758,53 @@ func (m *SegmentMutation) ResetName() {
 	m.name = nil
 }
 
-// SetDefinition sets the "definition" field.
-func (m *SegmentMutation) SetDefinition(s string) {
-	m.definition = &s
+// SetCondition sets the "condition" field.
+func (m *SegmentMutation) SetCondition(s string) {
+	m.condition = &s
 }
 
-// Definition returns the value of the "definition" field in the mutation.
-func (m *SegmentMutation) Definition() (r string, exists bool) {
-	v := m.definition
+// Condition returns the value of the "condition" field in the mutation.
+func (m *SegmentMutation) Condition() (r string, exists bool) {
+	v := m.condition
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldDefinition returns the old "definition" field's value of the Segment entity.
+// OldCondition returns the old "condition" field's value of the Segment entity.
 // If the Segment object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *SegmentMutation) OldDefinition(ctx context.Context) (v *string, err error) {
+func (m *SegmentMutation) OldCondition(ctx context.Context) (v *string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldDefinition is only allowed on UpdateOne operations")
+		return v, errors.New("OldCondition is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldDefinition requires an ID field in the mutation")
+		return v, errors.New("OldCondition requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldDefinition: %w", err)
+		return v, fmt.Errorf("querying old value for OldCondition: %w", err)
 	}
-	return oldValue.Definition, nil
+	return oldValue.Condition, nil
 }
 
-// ClearDefinition clears the value of the "definition" field.
-func (m *SegmentMutation) ClearDefinition() {
-	m.definition = nil
-	m.clearedFields[segment.FieldDefinition] = struct{}{}
+// ClearCondition clears the value of the "condition" field.
+func (m *SegmentMutation) ClearCondition() {
+	m.condition = nil
+	m.clearedFields[segment.FieldCondition] = struct{}{}
 }
 
-// DefinitionCleared returns if the "definition" field was cleared in this mutation.
-func (m *SegmentMutation) DefinitionCleared() bool {
-	_, ok := m.clearedFields[segment.FieldDefinition]
+// ConditionCleared returns if the "condition" field was cleared in this mutation.
+func (m *SegmentMutation) ConditionCleared() bool {
+	_, ok := m.clearedFields[segment.FieldCondition]
 	return ok
 }
 
-// ResetDefinition resets all changes to the "definition" field.
-func (m *SegmentMutation) ResetDefinition() {
-	m.definition = nil
-	delete(m.clearedFields, segment.FieldDefinition)
+// ResetCondition resets all changes to the "condition" field.
+func (m *SegmentMutation) ResetCondition() {
+	m.condition = nil
+	delete(m.clearedFields, segment.FieldCondition)
 }
 
 // ClearWorkspace clears the "workspace" edge to the Workspace entity.
@@ -31884,8 +31884,8 @@ func (m *SegmentMutation) Fields() []string {
 	if m.name != nil {
 		fields = append(fields, segment.FieldName)
 	}
-	if m.definition != nil {
-		fields = append(fields, segment.FieldDefinition)
+	if m.condition != nil {
+		fields = append(fields, segment.FieldCondition)
 	}
 	return fields
 }
@@ -31905,8 +31905,8 @@ func (m *SegmentMutation) Field(name string) (ent.Value, bool) {
 		return m.DiscardedAt()
 	case segment.FieldName:
 		return m.Name()
-	case segment.FieldDefinition:
-		return m.Definition()
+	case segment.FieldCondition:
+		return m.Condition()
 	}
 	return nil, false
 }
@@ -31926,8 +31926,8 @@ func (m *SegmentMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldDiscardedAt(ctx)
 	case segment.FieldName:
 		return m.OldName(ctx)
-	case segment.FieldDefinition:
-		return m.OldDefinition(ctx)
+	case segment.FieldCondition:
+		return m.OldCondition(ctx)
 	}
 	return nil, fmt.Errorf("unknown Segment field %s", name)
 }
@@ -31972,12 +31972,12 @@ func (m *SegmentMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetName(v)
 		return nil
-	case segment.FieldDefinition:
+	case segment.FieldCondition:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetDefinition(v)
+		m.SetCondition(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Segment field %s", name)
@@ -32015,8 +32015,8 @@ func (m *SegmentMutation) ClearedFields() []string {
 	if m.FieldCleared(segment.FieldDiscardedAt) {
 		fields = append(fields, segment.FieldDiscardedAt)
 	}
-	if m.FieldCleared(segment.FieldDefinition) {
-		fields = append(fields, segment.FieldDefinition)
+	if m.FieldCleared(segment.FieldCondition) {
+		fields = append(fields, segment.FieldCondition)
 	}
 	return fields
 }
@@ -32035,8 +32035,8 @@ func (m *SegmentMutation) ClearField(name string) error {
 	case segment.FieldDiscardedAt:
 		m.ClearDiscardedAt()
 		return nil
-	case segment.FieldDefinition:
-		m.ClearDefinition()
+	case segment.FieldCondition:
+		m.ClearCondition()
 		return nil
 	}
 	return fmt.Errorf("unknown Segment nullable field %s", name)
@@ -32061,8 +32061,8 @@ func (m *SegmentMutation) ResetField(name string) error {
 	case segment.FieldName:
 		m.ResetName()
 		return nil
-	case segment.FieldDefinition:
-		m.ResetDefinition()
+	case segment.FieldCondition:
+		m.ResetCondition()
 		return nil
 	}
 	return fmt.Errorf("unknown Segment field %s", name)

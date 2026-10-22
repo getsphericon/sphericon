@@ -1,7 +1,7 @@
 import * as z from 'zod'
 
 // Form state is raw strings, keyed by the edited field names. A structured field (a Segment's
-// rule group) is held as its JSON text and decoded by a codec on the field's own schema.
+// Condition) is held as its JSON text and decoded by a codec on the field's own schema.
 export type FormValues = Record<string, string>
 
 // What the form layer hands to the API schema: a string, or the API's "no value" markers.
