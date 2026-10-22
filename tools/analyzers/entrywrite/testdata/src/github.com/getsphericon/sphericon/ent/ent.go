@@ -9,6 +9,10 @@ func (c *TagCreate) SetName(string) *TagCreate { return c }
 
 func (*TagCreate) Save(context.Context) error { return nil }
 
+func (c *TagCreate) OnConflictColumns(...string) *TagCreate { return c }
+
+func (c *TagCreate) OnConflict() *TagCreate { return c }
+
 type TagUpdate struct{}
 
 func (*TagUpdate) Exec(context.Context) error { return nil }

@@ -3,13 +3,12 @@
 // (the raw client's, a transaction's or a scoped wrapper's) in a `_test.go` file must carry a comment
 // `// test writes: <why the write is the subject>` on the line above the statement that holds it, or
 // trailing on its line. Generated mocks (`*_gen_test.go`) are not checked. The end-to-end suite sits
-// behind the `e2e` build tag, which the lint run does not set, so it is not read here.
+// behind the `e2e` build tag, which the lint run sets (`.golangci.yml`), so it is read here.
 package testwrites
 
 import (
 	"go/ast"
 	"go/token"
-	"go/types"
 	"slices"
 	"strings"
 
@@ -17,12 +16,11 @@ import (
 	"golang.org/x/tools/go/analysis/passes/inspect"
 	"golang.org/x/tools/go/ast/inspector"
 
+	"github.com/getsphericon/sphericon/tools/analyzers/entx"
 	"github.com/getsphericon/sphericon/tools/analyzers/rule"
 )
 
 const marker = "test writes:"
-
-const entPath = "github.com/getsphericon/sphericon/ent"
 
 var fix = "add a fixture row (see internal/AGENTS.md); if creating it is the operation under test, write `// " +
 	marker + " <reason>` on the line above"
@@ -67,16 +65,8 @@ func isCreate(pass *analysis.Pass, call *ast.CallExpr) bool {
 	if !ok || !creators[sel.Sel.Name] {
 		return false
 	}
-	fn, ok := pass.TypesInfo.Uses[sel.Sel].(*types.Func)
-	if !ok || fn.Signature().Recv() == nil {
-		return false
-	}
-	recv := fn.Signature().Recv().Type()
-	if p, ok := recv.(*types.Pointer); ok {
-		recv = p.Elem()
-	}
-	named, ok := recv.(*types.Named)
-	return ok && named.Obj().Pkg() != nil && named.Obj().Pkg().Path() == entPath
+	_, _, ok = entx.Method(pass.TypesInfo, sel)
+	return ok
 }
 
 // hasReason finds a `test writes: <reason>` comment on the call's line, or ending on the line above

@@ -17,10 +17,9 @@ import (
 	"golang.org/x/tools/go/analysis/passes/inspect"
 	"golang.org/x/tools/go/ast/inspector"
 
+	"github.com/getsphericon/sphericon/tools/analyzers/entx"
 	"github.com/getsphericon/sphericon/tools/analyzers/rule"
 )
-
-const entPath = "github.com/getsphericon/sphericon/ent"
 
 // moments lists, by entity, the builder methods that move a state moment.
 var moments = map[string]map[string]bool{
@@ -73,15 +72,7 @@ func run(pass *analysis.Pass) (any, error) {
 
 // movesMoment reports whether sel is a listed method of an ent update builder.
 func movesMoment(pass *analysis.Pass, sel *ast.SelectorExpr) bool {
-	fn, ok := pass.TypesInfo.Uses[sel.Sel].(*types.Func)
-	if !ok || fn.Pkg() == nil || fn.Pkg().Path() != entPath || fn.Signature().Recv() == nil {
-		return false
-	}
-	recv := fn.Signature().Recv().Type()
-	if p, ok := recv.(*types.Pointer); ok {
-		recv = p.Elem()
-	}
-	named, ok := recv.(*types.Named)
+	_, named, ok := entx.Method(pass.TypesInfo, sel)
 	if !ok {
 		return false
 	}

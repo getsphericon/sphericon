@@ -7,5 +7,5 @@ import (
 )
 
 func tool(ctx context.Context, s *ent.Scoped) error {
-	return s.Tag().Create().Save(ctx) // want `^rule 5: .*\(Create\)`
+	return s.Tag().Create().Save(ctx) // want `^rule 5: .*\(Create on Tag\)`
 }
