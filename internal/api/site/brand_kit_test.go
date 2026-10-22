@@ -8,6 +8,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -70,12 +72,12 @@ func TestSiteBrandKitFirstSaveMakesTheStarterTemplatesAndLaterSavesDoNot(t *test
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.VandelayID)
 	before := s.EmailTemplate().Query().CountX(ctx)
+	lastBefore := s.EmailTemplate().Query().Order(ent.Desc(emailtemplate.FieldID)).FirstX(ctx).ID
 
 	saveBrandKit(t, c, fixtures.VandelayPublicID, brandKitInput())
 
-	all := s.EmailTemplate().Query().AllX(ctx)
-	require.Len(t, all, before+4)
-	starters := all[before:]
+	starters := s.EmailTemplate().Query().Where(emailtemplate.IDGT(lastBefore)).Order(ent.Asc(emailtemplate.FieldID)).AllX(ctx)
+	require.Len(t, starters, 4)
 	var names []string
 	for _, tpl := range starters {
 		names = append(names, tpl.Name)
@@ -93,7 +95,7 @@ func TestSiteBrandKitFirstSaveMakesTheStarterTemplatesAndLaterSavesDoNot(t *test
 
 	assert.Equal(t, before+4, s.EmailTemplate().Query().CountX(ctx), "a later save makes no Template")
 	assert.Equal(t, "#00aa00", getBrandKit(t, c, fixtures.VandelayPublicID).AccentColor)
-	for _, tpl := range s.EmailTemplate().Query().AllX(ctx)[before:] {
+	for _, tpl := range s.EmailTemplate().Query().Where(emailtemplate.IDGT(lastBefore)).AllX(ctx) {
 		assert.NotContains(t, tpl.Body, "#00aa00", "the starters keep the brand they were made in")
 	}
 }
@@ -258,13 +260,13 @@ func TestSiteBrandKitFooterIsWrittenAsTextNotMarkup(t *testing.T) {
 	c := env.SiteActor(t, fixtures.VandelayOwnerArtEmail)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.VandelayID)
-	before := s.EmailTemplate().Query().CountX(ctx)
+	lastBefore := s.EmailTemplate().Query().Order(ent.Desc(emailtemplate.FieldID)).FirstX(ctx).ID
 
 	in := brandKitInput()
 	in.FooterText = `<img src=x onerror=alert(1)> & co`
 	saveBrandKit(t, c, fixtures.VandelayPublicID, in)
 
-	for _, tpl := range s.EmailTemplate().Query().AllX(ctx)[before:] {
+	for _, tpl := range s.EmailTemplate().Query().Where(emailtemplate.IDGT(lastBefore)).AllX(ctx) {
 		assert.NotContains(t, tpl.Body, "<img src=x", tpl.Name)
 		assert.Contains(t, tpl.Body, "&lt;img src=x onerror=alert(1)&gt;", tpl.Name)
 	}
