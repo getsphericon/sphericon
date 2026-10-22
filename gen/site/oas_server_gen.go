@@ -752,6 +752,13 @@ type Handler interface {
 	//
 	// DELETE /workspaces/{workspaceId}/rules/{id}
 	SiteRulesDelete(ctx context.Context, params SiteRulesDeleteParams) (SiteRulesDeleteRes, error)
+	// SiteRulesDryRun implements SiteRules_dryRun operation.
+	//
+	// Dry-run a Rule on a stored Event: whether it would fire and which Actions would run. Writes and runs
+	// nothing.
+	//
+	// POST /workspaces/{workspaceId}/rules/{id}/dry-run
+	SiteRulesDryRun(ctx context.Context, req *SiteDryRunRuleInput, params SiteRulesDryRunParams) (SiteRulesDryRunRes, error)
 	// SiteRulesGet implements SiteRules_get operation.
 	//
 	// Get a resource by ID for the site UI.

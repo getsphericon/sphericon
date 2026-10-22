@@ -4856,6 +4856,41 @@
   occurred_at: '{{daysAgo 1}}'
   created_at: '{{daysAgo 1}}'
 
+# Stored Events the Rule dry run reads (ids 9100+): Liam clicked and did a vip action, an
+# anonymous click, and two clicks of rule_url that differ by the property a Rule tests.
+- id: 9100 # fixture: EventRuleClickLiam
+  contact_id: 100
+  action: rule_click
+  properties: '{"url":"https://x.test/pricing"}'
+  workspace_id: 1
+  occurred_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+- id: 9101 # fixture: EventRuleVipLiam
+  contact_id: 100
+  action: rule_vip
+  workspace_id: 1
+  occurred_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+- id: 9102 # fixture: EventRuleClickAnonymous
+  action: rule_click
+  workspace_id: 1
+  occurred_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+- id: 9103 # fixture: EventRuleUrlPricing
+  contact_id: 100
+  action: rule_url
+  properties: '{"url":"https://x.test/pricing"}'
+  workspace_id: 1
+  occurred_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+- id: 9104 # fixture: EventRuleUrlDocs
+  contact_id: 100
+  action: rule_url
+  properties: '{"url":"https://x.test/docs"}'
+  workspace_id: 1
+  occurred_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+
 # The export of ContactExportHeavy (5703) streams 1200 Events across the keyset pages.
 # {{range $i := seq 58000 59199}}
 - id: '{{$i}}'

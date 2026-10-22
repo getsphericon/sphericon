@@ -135,6 +135,38 @@ model SiteUpdateRuleInput {
   actions?: SiteRuleAction[];
 }
 
+/** Site request body for dry-running a Rule on a stored Event */
+model SiteDryRunRuleInput {
+  /** The stored Event to try the Rule on */
+  eventId: EntityId;
+}
+
+/** Whether a stored Event would fire a Rule, and if not, why */
+enum SiteRuleDryRunOutcome {
+  would_fire,
+  not_triggered,
+  no_contact,
+  condition_not_met,
+}
+
+/** One Action a Rule would run, described without running it */
+model SiteRuleDryRunAction {
+  /** The Action's kind */
+  type: string;
+
+  /** One line saying what the Action would do */
+  summary: string;
+}
+
+/** What a stored Event would do to a Rule. Nothing was written or run. */
+model SiteRuleDryRunResource {
+  /** Whether the Rule would fire and, if not, why */
+  outcome: SiteRuleDryRunOutcome;
+
+  /** The Actions that would run, in order; empty unless the Rule would fire */
+  actions: SiteRuleDryRunAction[];
+}
+
 @tag("Site Rules")
 interface SiteRules
   extends WorkspaceCrud<
@@ -172,6 +204,14 @@ interface SiteRules
     | BadRequestProblem
     | NotFoundProblem
     | UnprocessableEntityProblem;
+
+  /** Dry-run a Rule on a stored Event: whether it would fire and which Actions would run. Writes and runs nothing. */
+  @action("dry-run")
+  @autoRoute
+  dryRun(
+    ...ResourceParameters<SiteRuleResource>,
+    @body body: SiteDryRunRuleInput,
+  ): SiteRuleDryRunResource | BadRequestProblem | NotFoundProblem;
 
   /** Deactivate a Rule: it stops firing */
   @action("deactivate")

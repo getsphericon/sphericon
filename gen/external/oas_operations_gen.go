@@ -71,6 +71,7 @@ const (
 	RulesCreateOperation               OperationName = "RulesCreate"
 	RulesDeactivateOperation           OperationName = "RulesDeactivate"
 	RulesDeleteOperation               OperationName = "RulesDelete"
+	RulesDryRunOperation               OperationName = "RulesDryRun"
 	RulesGetOperation                  OperationName = "RulesGet"
 	RulesListOperation                 OperationName = "RulesList"
 	RulesUnarchiveOperation            OperationName = "RulesUnarchive"

@@ -181,6 +181,8 @@ type Converter interface {
 	// goverter:map SourceID EventSourceId
 	RuleFiringToResource(source *ent.RuleFiring) siteapi.SiteRuleFiringResource
 
+	RuleDryRunToResource(source rules.DryRun) siteapi.SiteRuleDryRunResource
+
 	// goverter:map . Failure | enrollmentFailure
 	EnrollmentToResource(source *ent.AutomationRun) siteapi.SiteEnrollmentResource
 

@@ -2160,6 +2160,16 @@ export type SiteDryRunHttpStepResult = {
 };
 
 /**
+ * Site request body for dry-running a Rule on a stored Event
+ */
+export type SiteDryRunRuleInput = {
+  /**
+   * The stored Event to try the Rule on
+   */
+  eventId: EntityId;
+};
+
+/**
  * Request a change of the login email. The new address must be confirmed via a
  * link sent to it before the change takes effect.
  */
@@ -3300,6 +3310,49 @@ export const SiteRuleActionType = {
  * Kind of Rule action
  */
 export type SiteRuleActionType = typeof SiteRuleActionType[keyof typeof SiteRuleActionType];
+
+/**
+ * One Action a Rule would run, described without running it
+ */
+export type SiteRuleDryRunAction = {
+  /**
+   * The Action's kind
+   */
+  type: string;
+  /**
+   * One line saying what the Action would do
+   */
+  summary: string;
+};
+
+/**
+ * Whether a stored Event would fire a Rule, and if not, why
+ */
+export const SiteRuleDryRunOutcome = {
+  WOULD_FIRE: 'would_fire',
+  NOT_TRIGGERED: 'not_triggered',
+  NO_CONTACT: 'no_contact',
+  CONDITION_NOT_MET: 'condition_not_met'
+} as const;
+
+/**
+ * Whether a stored Event would fire a Rule, and if not, why
+ */
+export type SiteRuleDryRunOutcome = typeof SiteRuleDryRunOutcome[keyof typeof SiteRuleDryRunOutcome];
+
+/**
+ * What a stored Event would do to a Rule. Nothing was written or run.
+ */
+export type SiteRuleDryRunResource = {
+  /**
+   * Whether the Rule would fire and, if not, why
+   */
+  outcome: SiteRuleDryRunOutcome;
+  /**
+   * The Actions that would run, in order; empty unless the Rule would fire
+   */
+  actions: Array<SiteRuleDryRunAction>;
+};
 
 /**
  * One execution of a Rule for one Event, with what each Action did. Erased with the Contact.
@@ -9742,6 +9795,45 @@ export type SiteRulesDeactivateResponses = {
 };
 
 export type SiteRulesDeactivateResponse = SiteRulesDeactivateResponses[keyof SiteRulesDeactivateResponses];
+
+export type SiteRulesDryRunData = {
+  body: SiteDryRunRuleInput;
+  path: {
+    /**
+     * The Workspace id: its short opaque public address and the route key for nested
+     * workspace resources (ADR 0043)
+     */
+    workspaceId: WorkspaceId;
+    /**
+     * Unique identifier
+     */
+    id: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/rules/{id}/dry-run';
+};
+
+export type SiteRulesDryRunErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteRulesDryRunError = SiteRulesDryRunErrors[keyof SiteRulesDryRunErrors];
+
+export type SiteRulesDryRunResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteRuleDryRunResource;
+};
+
+export type SiteRulesDryRunResponse = SiteRulesDryRunResponses[keyof SiteRulesDryRunResponses];
 
 export type SiteRulesUnarchiveData = {
   body?: never;

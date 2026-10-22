@@ -98,6 +98,7 @@ var operationRolesBearerAuth = map[string][]string{
 	RulesCreateOperation:               []string{},
 	RulesDeactivateOperation:           []string{},
 	RulesDeleteOperation:               []string{},
+	RulesDryRunOperation:               []string{},
 	RulesGetOperation:                  []string{},
 	RulesListOperation:                 []string{},
 	RulesUnarchiveOperation:            []string{},

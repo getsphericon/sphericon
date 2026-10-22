@@ -9,6 +9,7 @@ import (
 	auditapi "github.com/getsphericon/sphericon/internal/auditapi"
 	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
 	integrations "github.com/getsphericon/sphericon/internal/integrations"
+	rules "github.com/getsphericon/sphericon/internal/rules"
 	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
 	sendlimit "github.com/getsphericon/sphericon/internal/sendlimit"
 )
@@ -259,6 +260,17 @@ func (c *ConverterImpl) OutboundMessageToExport(source *ent.OutboundMessage) ext
 	}
 	return externalapiContactExportOutboundMessage
 }
+func (c *ConverterImpl) RuleDryRunToResource(source rules.DryRun) external.RuleDryRunResource {
+	var externalapiRuleDryRunResource external.RuleDryRunResource
+	externalapiRuleDryRunResource.Outcome = external.RuleDryRunOutcome(source.Outcome)
+	if source.Actions != nil {
+		externalapiRuleDryRunResource.Actions = make([]external.RuleDryRunAction, len(source.Actions))
+		for i := 0; i < len(source.Actions); i++ {
+			externalapiRuleDryRunResource.Actions[i] = c.rulesPlannedActionToExternalapiRuleDryRunAction(source.Actions[i])
+		}
+	}
+	return externalapiRuleDryRunResource
+}
 func (c *ConverterImpl) RuleFiringToResource(source *ent.RuleFiring) external.RuleFiringResource {
 	var externalapiRuleFiringResource external.RuleFiringResource
 	if source != nil {
@@ -446,6 +458,12 @@ func (c *ConverterImpl) WebhookToResource(source *ent.WebhookEndpoint) external.
 		externalapiWebhookResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
 	return externalapiWebhookResource
+}
+func (c *ConverterImpl) rulesPlannedActionToExternalapiRuleDryRunAction(source rules.PlannedAction) external.RuleDryRunAction {
+	var externalapiRuleDryRunAction external.RuleDryRunAction
+	externalapiRuleDryRunAction.Type = source.Type
+	externalapiRuleDryRunAction.Summary = source.Summary
+	return externalapiRuleDryRunAction
 }
 func (c *ConverterImpl) sendlimitValueToExternalapiSendLimitValue(source sendlimit.Value) external.SendLimitValue {
 	var externalapiSendLimitValue external.SendLimitValue

@@ -6,6 +6,8 @@ import {
   handleSiteAutomationsList,
   handleSiteCustomFieldsList,
   handleSiteEventsActions,
+  handleSiteEventsList,
+  handleSiteRulesDryRun,
   handleSiteRulesCreate,
   handleSiteRulesGet,
   handleSiteRulesUpdate,
@@ -48,6 +50,7 @@ function serveCatalogue() {
   worker.use(
     handleSiteEventsActions({ body: { actions: ['signed_up', 'purchased'] } }),
     handleSiteCustomFieldsList({ body: page([], 0) }),
+    handleSiteEventsList({ body: page([], 0) }),
   )
 }
 
@@ -176,4 +179,34 @@ test('an enroll action picks one of the automations and saves it', async () => {
         actions: [{ type: 'enroll_automation', automationId: '6' }],
       },
     ])
+})
+
+test('trying the rule on a recorded event shows whether it would fire and which actions would run', async () => {
+  const bodies: unknown[] = []
+  serveCatalogue()
+  worker.use(
+    handleSiteRulesGet({ body: STORED }),
+    handleSiteEventsList({
+      body: page(
+        [{ id: '55', subjectId: 's', action: 'signed_up', createdAt: '2026-01-02T00:00:00Z' }],
+        1,
+      ),
+    }),
+    handleSiteRulesDryRun(async ({ request }) => {
+      bodies.push(await request.json())
+      return HttpResponse.json({
+        outcome: 'would_fire',
+        actions: [{ type: 'apply_tag', summary: 'Apply tag "new"' }],
+      })
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<RuleEditPage />, EDIT_ROUTE)
+  await screen.getByRole('combobox', { name: 'Event' }).click()
+  await screen.getByRole('option', { name: /signed_up/ }).click()
+  await screen.getByRole('button', { name: 'Try the rule' }).click()
+
+  await expect.poll(() => bodies).toEqual([{ eventId: '55' }])
+  await expect.element(screen.getByText('Would fire. These actions would run:')).toBeInTheDocument()
+  await expect.element(screen.getByText('Apply tag "new"')).toBeInTheDocument()
 })

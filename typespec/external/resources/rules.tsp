@@ -132,6 +132,38 @@ model UpdateRuleInput {
   actions?: RuleAction[];
 }
 
+/** Request body for dry-running a Rule on a stored Event */
+model DryRunRuleInput {
+  /** The stored Event to try the Rule on */
+  eventId: EntityId;
+}
+
+/** Whether a stored Event would fire a Rule, and if not, why */
+enum RuleDryRunOutcome {
+  would_fire,
+  not_triggered,
+  no_contact,
+  condition_not_met,
+}
+
+/** One Action a Rule would run, described without running it */
+model RuleDryRunAction {
+  /** The Action's kind */
+  type: string;
+
+  /** One line saying what the Action would do */
+  summary: string;
+}
+
+/** What a stored Event would do to a Rule. Nothing was written or run. */
+model RuleDryRunResource {
+  /** Whether the Rule would fire and, if not, why */
+  outcome: RuleDryRunOutcome;
+
+  /** The Actions that would run, in order; empty unless the Rule would fire */
+  actions: RuleDryRunAction[];
+}
+
 /**
  * Delete removes a Rule that has no Firings for good; one with Firings is history and is
  * archived instead (ADR 0049), so a delete of it is a 409 whose `usedBy` carries their count.
@@ -176,6 +208,16 @@ interface Rules
     | TooManyRequestsProblem
     | NotFoundProblem
     | UnprocessableEntityProblem;
+
+  /** Dry-run a Rule on a stored Event: whether it would fire and which Actions would run. Writes and runs nothing. Needs the automations:read scope. */
+  @action("dry-run")
+  @autoRoute
+  dryRun(...ResourceParameters<RuleResource>, @body body: DryRunRuleInput):
+    | RuleDryRunResource
+    | BadRequestProblem
+    | UnauthorizedProblem
+    | TooManyRequestsProblem
+    | NotFoundProblem;
 
   /** Deactivate a Rule: it stops firing. Needs the automations:activate scope. */
   @action("deactivate")

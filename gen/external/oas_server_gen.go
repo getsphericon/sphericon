@@ -426,6 +426,13 @@ type Handler interface {
 	//
 	// DELETE /rules/{id}
 	RulesDelete(ctx context.Context, params RulesDeleteParams) (RulesDeleteRes, error)
+	// RulesDryRun implements Rules_dryRun operation.
+	//
+	// Dry-run a Rule on a stored Event: whether it would fire and which Actions would run. Writes and runs
+	// nothing. Needs the automations:read scope.
+	//
+	// POST /rules/{id}/dry-run
+	RulesDryRun(ctx context.Context, req *DryRunRuleInput, params RulesDryRunParams) (RulesDryRunRes, error)
 	// RulesGet implements Rules_get operation.
 	//
 	// Get a resource by ID.

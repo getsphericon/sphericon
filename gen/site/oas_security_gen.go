@@ -121,6 +121,7 @@ var operationRolesApiKeyAuth = map[string][]string{
 	SiteRulesCreateOperation:                          []string{},
 	SiteRulesDeactivateOperation:                      []string{},
 	SiteRulesDeleteOperation:                          []string{},
+	SiteRulesDryRunOperation:                          []string{},
 	SiteRulesGetOperation:                             []string{},
 	SiteRulesListOperation:                            []string{},
 	SiteRulesUnarchiveOperation:                       []string{},

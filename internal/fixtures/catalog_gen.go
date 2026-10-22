@@ -685,6 +685,26 @@ const (
 	EventRecentAnalyticalEmail = "old310@example.com"
 	// EventRecentAnalyticalID is from fixtures/events.
 	EventRecentAnalyticalID = 310
+	// EventRuleClickAnonymousAction is from fixtures/events.
+	EventRuleClickAnonymousAction = "rule_click"
+	// EventRuleClickAnonymousID is from fixtures/events.
+	EventRuleClickAnonymousID = 9102
+	// EventRuleClickLiamAction is from fixtures/events.
+	EventRuleClickLiamAction = "rule_click"
+	// EventRuleClickLiamID is from fixtures/events.
+	EventRuleClickLiamID = 9100
+	// EventRuleUrlDocsAction is from fixtures/events.
+	EventRuleUrlDocsAction = "rule_url"
+	// EventRuleUrlDocsID is from fixtures/events.
+	EventRuleUrlDocsID = 9104
+	// EventRuleUrlPricingAction is from fixtures/events.
+	EventRuleUrlPricingAction = "rule_url"
+	// EventRuleUrlPricingID is from fixtures/events.
+	EventRuleUrlPricingID = 9103
+	// EventRuleVipLiamAction is from fixtures/events.
+	EventRuleVipLiamAction = "rule_vip"
+	// EventRuleVipLiamID is from fixtures/events.
+	EventRuleVipLiamID = 9101
 	// EventTieFirstAction is from fixtures/events.
 	EventTieFirstAction = "tie_probe"
 	// EventTieFirstEmail is from fixtures/events.
@@ -1371,6 +1391,10 @@ const (
 	RuleTagClickedID = 100
 	// RuleTagClickedName is from fixtures/rules.
 	RuleTagClickedName = "Tag a Contact who clicked"
+	// RuleUrlPricingID is from fixtures/rules.
+	RuleUrlPricingID = 110
+	// RuleUrlPricingName is from fixtures/rules.
+	RuleUrlPricingName = "Tag a pricing visit"
 	// RuleVipOnlyID is from fixtures/rules.
 	RuleVipOnlyID = 101
 	// RuleVipOnlyName is from fixtures/rules.

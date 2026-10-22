@@ -5195,6 +5195,23 @@ func (s *DryRunHttpStepResult) SetDetail(val OptString) {
 
 func (*DryRunHttpStepResult) automationsDryRunHttpStepRes() {}
 
+// Request body for dry-running a Rule on a stored Event.
+// Ref: #/components/schemas/DryRunRuleInput
+type DryRunRuleInput struct {
+	// The stored Event to try the Rule on.
+	EventId EntityId `json:"eventId"`
+}
+
+// GetEventId returns the value of EventId.
+func (s *DryRunRuleInput) GetEventId() EntityId {
+	return s.EventId
+}
+
+// SetEventId sets the value of EventId.
+func (s *DryRunRuleInput) SetEventId(val EntityId) {
+	s.EventId = val
+}
+
 type EmailAddress string
 
 type EmailLintLintBadRequest ProblemDetails
@@ -10871,6 +10888,7 @@ func (*ProblemDetailsHeaders) rulesArchiveRes()              {}
 func (*ProblemDetailsHeaders) rulesCreateRes()               {}
 func (*ProblemDetailsHeaders) rulesDeactivateRes()           {}
 func (*ProblemDetailsHeaders) rulesDeleteRes()               {}
+func (*ProblemDetailsHeaders) rulesDryRunRes()               {}
 func (*ProblemDetailsHeaders) rulesGetRes()                  {}
 func (*ProblemDetailsHeaders) rulesListRes()                 {}
 func (*ProblemDetailsHeaders) rulesUnarchiveRes()            {}
@@ -11276,6 +11294,123 @@ func (s *RuleActionType) UnmarshalText(data []byte) error {
 		return errors.Errorf("invalid value: %q", data)
 	}
 }
+
+// One Action a Rule would run, described without running it.
+// Ref: #/components/schemas/RuleDryRunAction
+type RuleDryRunAction struct {
+	// The Action's kind.
+	Type string `json:"type"`
+	// One line saying what the Action would do.
+	Summary string `json:"summary"`
+}
+
+// GetType returns the value of Type.
+func (s *RuleDryRunAction) GetType() string {
+	return s.Type
+}
+
+// GetSummary returns the value of Summary.
+func (s *RuleDryRunAction) GetSummary() string {
+	return s.Summary
+}
+
+// SetType sets the value of Type.
+func (s *RuleDryRunAction) SetType(val string) {
+	s.Type = val
+}
+
+// SetSummary sets the value of Summary.
+func (s *RuleDryRunAction) SetSummary(val string) {
+	s.Summary = val
+}
+
+// Whether a stored Event would fire a Rule, and if not, why.
+// Ref: #/components/schemas/RuleDryRunOutcome
+type RuleDryRunOutcome string
+
+const (
+	RuleDryRunOutcomeWouldFire       RuleDryRunOutcome = "would_fire"
+	RuleDryRunOutcomeNotTriggered    RuleDryRunOutcome = "not_triggered"
+	RuleDryRunOutcomeNoContact       RuleDryRunOutcome = "no_contact"
+	RuleDryRunOutcomeConditionNotMet RuleDryRunOutcome = "condition_not_met"
+)
+
+// AllValues returns all RuleDryRunOutcome values.
+func (RuleDryRunOutcome) AllValues() []RuleDryRunOutcome {
+	return []RuleDryRunOutcome{
+		RuleDryRunOutcomeWouldFire,
+		RuleDryRunOutcomeNotTriggered,
+		RuleDryRunOutcomeNoContact,
+		RuleDryRunOutcomeConditionNotMet,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s RuleDryRunOutcome) MarshalText() ([]byte, error) {
+	switch s {
+	case RuleDryRunOutcomeWouldFire:
+		return []byte(s), nil
+	case RuleDryRunOutcomeNotTriggered:
+		return []byte(s), nil
+	case RuleDryRunOutcomeNoContact:
+		return []byte(s), nil
+	case RuleDryRunOutcomeConditionNotMet:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *RuleDryRunOutcome) UnmarshalText(data []byte) error {
+	switch RuleDryRunOutcome(data) {
+	case RuleDryRunOutcomeWouldFire:
+		*s = RuleDryRunOutcomeWouldFire
+		return nil
+	case RuleDryRunOutcomeNotTriggered:
+		*s = RuleDryRunOutcomeNotTriggered
+		return nil
+	case RuleDryRunOutcomeNoContact:
+		*s = RuleDryRunOutcomeNoContact
+		return nil
+	case RuleDryRunOutcomeConditionNotMet:
+		*s = RuleDryRunOutcomeConditionNotMet
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// What a stored Event would do to a Rule. Nothing was written or run.
+// Ref: #/components/schemas/RuleDryRunResource
+type RuleDryRunResource struct {
+	// Whether the Rule would fire and, if not, why.
+	Outcome RuleDryRunOutcome `json:"outcome"`
+	// The Actions that would run, in order; empty unless the Rule would fire.
+	Actions []RuleDryRunAction `json:"actions"`
+}
+
+// GetOutcome returns the value of Outcome.
+func (s *RuleDryRunResource) GetOutcome() RuleDryRunOutcome {
+	return s.Outcome
+}
+
+// GetActions returns the value of Actions.
+func (s *RuleDryRunResource) GetActions() []RuleDryRunAction {
+	return s.Actions
+}
+
+// SetOutcome sets the value of Outcome.
+func (s *RuleDryRunResource) SetOutcome(val RuleDryRunOutcome) {
+	s.Outcome = val
+}
+
+// SetActions sets the value of Actions.
+func (s *RuleDryRunResource) SetActions(val []RuleDryRunAction) {
+	s.Actions = val
+}
+
+func (*RuleDryRunResource) rulesDryRunRes() {}
 
 // One execution of a Rule for one Event, with what each Action did. Erased with the Contact.
 // Ref: #/components/schemas/RuleFiringResource
@@ -11706,6 +11841,18 @@ func (*RulesDeleteUnauthorized) rulesDeleteRes() {}
 type RulesDeleteUnprocessableEntity ProblemDetails
 
 func (*RulesDeleteUnprocessableEntity) rulesDeleteRes() {}
+
+type RulesDryRunBadRequest ProblemDetails
+
+func (*RulesDryRunBadRequest) rulesDryRunRes() {}
+
+type RulesDryRunNotFound ProblemDetails
+
+func (*RulesDryRunNotFound) rulesDryRunRes() {}
+
+type RulesDryRunUnauthorized ProblemDetails
+
+func (*RulesDryRunUnauthorized) rulesDryRunRes() {}
 
 type RulesGetBadRequest ProblemDetails
 

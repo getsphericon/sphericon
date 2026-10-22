@@ -233,6 +233,28 @@ func (h *Handlers) RulesDeactivate(ctx context.Context, params externalapi.Rules
 	return &res, nil
 }
 
+// RulesDryRun reports what a stored Event would do to the Rule. It writes and runs nothing, so
+// reading scope is enough.
+func (h *Handlers) RulesDryRun(ctx context.Context, req *externalapi.DryRunRuleInput, params externalapi.RulesDryRunParams) (externalapi.RulesDryRunRes, error) {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeAutomationsRead) {
+		res := externalapi.RulesDryRunUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
+		return &res, nil
+	}
+	dry, err := h.rules.DryRun(ctx, auth.TokenScoped(ctx), int64(params.ID), int64(req.EventId))
+	switch {
+	case errors.Is(err, rules.ErrNotFound):
+		res := externalapi.RulesDryRunNotFound(problem(http.StatusNotFound, "rule not found"))
+		return &res, nil
+	case errors.Is(err, rules.ErrEventNotFound):
+		res := externalapi.RulesDryRunNotFound(problem(http.StatusNotFound, "event not found"))
+		return &res, nil
+	case err != nil:
+		return nil, err
+	}
+	res := mapper.RuleDryRunToResource(dry)
+	return &res, nil
+}
+
 // RuleFiringsList lists a Rule's Firings, newest first.
 func (h *Handlers) RuleFiringsList(ctx context.Context, params externalapi.RuleFiringsListParams) (externalapi.RuleFiringsListRes, error) {
 	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeAutomationsRead) {

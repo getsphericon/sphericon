@@ -87,6 +87,14 @@
     created_at: '{{daysAgo 40}}',
     updated_at: '{{daysAgo 40}}',
   }
+- {
+    id: 111,
+    rule_id: 110,
+    action: rule_url,
+    workspace_id: 1,
+    created_at: '{{daysAgo 40}}',
+    updated_at: '{{daysAgo 40}}',
+  }
 # Globex reacts to the same action as RuleTagClicked: an Event of one Workspace never fires the other's.
 - {
     id: 900,

@@ -261,6 +261,10 @@ type RulesDeleteRes interface {
 	rulesDeleteRes()
 }
 
+type RulesDryRunRes interface {
+	rulesDryRunRes()
+}
+
 type RulesGetRes interface {
 	rulesGetRes()
 }

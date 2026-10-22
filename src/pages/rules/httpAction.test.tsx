@@ -4,6 +4,7 @@ import { expect, test } from 'vitest'
 import {
   handleSiteCustomFieldsList,
   handleSiteEventsActions,
+  handleSiteEventsList,
   handleSiteRulesGet,
   handleSiteRulesUpdate,
 } from '../../generated/site/msw.gen.ts'
@@ -40,6 +41,7 @@ test('editing an http action keeps its id and sends no URL or header value it wa
   worker.use(
     handleSiteEventsActions({ body: { actions: ['signed_up'] } }),
     handleSiteCustomFieldsList({ body: page([], 0) }),
+    handleSiteEventsList({ body: page([], 0) }),
     handleSiteRulesGet({ body: STORED }),
     handleSiteRulesUpdate(async ({ request }) => {
       bodies.push(await request.json())
