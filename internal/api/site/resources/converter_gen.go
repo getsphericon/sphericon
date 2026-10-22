@@ -10,6 +10,7 @@ import (
 	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
 	integrations "github.com/getsphericon/sphericon/internal/integrations"
 	linkclicks "github.com/getsphericon/sphericon/internal/linkclicks"
+	rules "github.com/getsphericon/sphericon/internal/rules"
 	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
 	sendlimit "github.com/getsphericon/sphericon/internal/sendlimit"
 )
@@ -350,6 +351,17 @@ func (c *ConverterImpl) PasskeyToResource(source *ent.Passkey) site.SitePasskey 
 	}
 	return siteapiSitePasskey
 }
+func (c *ConverterImpl) RuleDryRunToResource(source rules.DryRun) site.SiteRuleDryRunResource {
+	var siteapiSiteRuleDryRunResource site.SiteRuleDryRunResource
+	siteapiSiteRuleDryRunResource.Outcome = site.SiteRuleDryRunOutcome(source.Outcome)
+	if source.Actions != nil {
+		siteapiSiteRuleDryRunResource.Actions = make([]site.SiteRuleDryRunAction, len(source.Actions))
+		for i := 0; i < len(source.Actions); i++ {
+			siteapiSiteRuleDryRunResource.Actions[i] = c.rulesPlannedActionToSiteapiSiteRuleDryRunAction(source.Actions[i])
+		}
+	}
+	return siteapiSiteRuleDryRunResource
+}
 func (c *ConverterImpl) RuleFiringToResource(source *ent.RuleFiring) site.SiteRuleFiringResource {
 	var siteapiSiteRuleFiringResource site.SiteRuleFiringResource
 	if source != nil {
@@ -598,6 +610,12 @@ func (c *ConverterImpl) linkclicksClicksToSiteapiSiteLinkClicks(source linkclick
 	siteapiSiteLinkClicks.URL = source.URL
 	siteapiSiteLinkClicks.Clicks = count(source.Clicks)
 	return siteapiSiteLinkClicks
+}
+func (c *ConverterImpl) rulesPlannedActionToSiteapiSiteRuleDryRunAction(source rules.PlannedAction) site.SiteRuleDryRunAction {
+	var siteapiSiteRuleDryRunAction site.SiteRuleDryRunAction
+	siteapiSiteRuleDryRunAction.Type = source.Type
+	siteapiSiteRuleDryRunAction.Summary = source.Summary
+	return siteapiSiteRuleDryRunAction
 }
 func (c *ConverterImpl) sendlimitValueToSiteapiSiteSendLimitValue(source sendlimit.Value) site.SiteSendLimitValue {
 	var siteapiSiteSendLimitValue site.SiteSendLimitValue

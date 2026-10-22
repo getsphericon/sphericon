@@ -149,7 +149,7 @@ func TestAMachineOpenOrClickIsNoMatchOfASegmentCondition(t *testing.T) {
 		def := `{"kind":"group","combinator":"and","rules":[` + alice +
 			`,{"kind":"rule","field":"event:` + action + `","operator":"performed","value":""}]}`
 		out, err := c.SiteSegmentsPreview(t.Context(), &siteapi.SitePreviewSegmentInput{
-			Definition: siteapi.NewOptSiteSegmentRuleGroup(testhelper.SiteRuleGroup(t, def)),
+			Condition: siteapi.NewOptSiteConditionGroup(testhelper.SiteRuleGroup(t, def)),
 		}, siteapi.SiteSegmentsPreviewParams{WorkspaceId: fixtures.AcmePublicID})
 		require.NoError(t, err)
 		res, ok := out.(*siteapi.SitePreviewSegmentResult)
