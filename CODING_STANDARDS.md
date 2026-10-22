@@ -47,10 +47,20 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   or a scoped wrapper) in a `_test.go` file, `e2e/` included (the lint run sets the `e2e` tag), needs
   `// test writes: <why the write is the operation under test>` on the line above its statement or trailing on
   its line; an empty reason is still a finding, there is no baseline file, and `*_gen_test.go` mocks are skipped.
-  The operation under test is the write itself: the scoped wrapper's own behavior, a transaction commit or
-  rollback through the bus, a hook that fires on the write, a race simulated inside a hook. Any other test takes
-  its rows from `fixtures/` (add a row, `internal/AGENTS.md`). Test-support code outside `_test.go` files
+  What counts as the operation under test is rule 10; any other test takes its rows from `fixtures/`
+  (add a row, `internal/AGENTS.md`). Test-support code outside `_test.go` files
   (`internal/testhelper`) is the fixture tooling and is not read.
+- **Rule 5, `entrywrite`.** An entry point does not write through ent: a call that starts a mutation
+  (`Create`, `CreateBulk`, `Update`, `UpdateOne`, `UpdateOneID`, `Delete`, `DeleteOne`, `DeleteOneID`) or an
+  upsert (`OnConflict`, `OnConflictColumns`, `OnConflictColumnsWhere`) on a type of the `ent` package (the raw
+  client, a transaction, the scoped client and its wrappers) is a finding; reads are allowed, test files are
+  not read. The closed list of entry points is `entryPoints` in `tools/analyzers/entrywrite`: the site,
+  external and collect handlers, `internal/mcpserver`, `internal/jobs` and `internal/server`. `ee/staff` holds
+  the Staff handlers and their domain module in one package, so only the methods of its handler types
+  (`Handlers`, `ServiceHandlers`, `SecurityHandler`, `ServiceSecurityHandler`, `Surface`, `ServiceSurface`) are
+  checked and `*Module` is the domain module; a new handler type there is added to `mixedPackages`. The write
+  goes into the domain module that owns the entity (the raw-client packages of `AGENTS.md`), which the entry
+  point calls. The helpers the analyzers share about the generated package are in `tools/analyzers/entx`.
 - **Adding an analyzer.** (1) Create `tools/analyzers/<name>/` with `Analyzer` (see `noprint`) and report
   through `rule.Message`. (2) Write `<name>_test.go` with `analysistest.Run` and a test data package per
   case under `testdata/src/` (a `bad` package whose violating lines carry `// want` with the message

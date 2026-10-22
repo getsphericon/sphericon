@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ee/staff"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/hook"
+	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/trackinghostchange"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -160,6 +161,24 @@ func TestEraseDueRemovesRowsWrittenWhileItDeletes(t *testing.T) {
 	}
 	ws := env.DB.Workspace.GetX(t.Context(), fixtures.UmbrellaID)
 	assert.NotNil(t, ws.ErasedAt)
+}
+
+// Initech's sent Broadcast is referenced by Outbound messages (RESTRICT), so the erase removes the
+// messages before the Broadcast; the other Workspaces keep theirs.
+func TestEraseRemovesABroadcastThatHasSentOutboundMessages(t *testing.T) {
+	env := testhelper.Setup(t)
+	env.DB.Workspace.UpdateOneID(fixtures.InitechID).SetDiscardedAt(now.Add(-workspacedeletion.DeletionWindow - time.Hour)).ExecX(t.Context())
+	sent := env.DB.Scoped(fixtures.InitechID).OutboundMessage().Query().Where(outboundmessage.BroadcastID(fixtures.BroadcastInitechID)).CountX(t.Context())
+	require.NotZero(t, sent)
+	acmeBefore := rowsOf(t, env, fixtures.AcmeID)
+
+	runErase(t, env)
+
+	initech := rowsOf(t, env, fixtures.InitechID)
+	acmeAfter := rowsOf(t, env, fixtures.AcmeID)
+	assert.Zero(t, initech["Broadcast"])
+	assert.Zero(t, initech["OutboundMessage"])
+	assert.Equal(t, acmeBefore, acmeAfter)
 }
 
 func TestASecondEraseRunChangesNothing(t *testing.T) {

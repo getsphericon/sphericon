@@ -260,8 +260,7 @@ Rules for writing tests (what to assert, no direct SQL, no manual cleanup) are i
   `accounts.Attempts.For(kind)`, a `Counter` bound to one `Kind` (`KindLogin`, `KindStaffLogin`),
   which satisfies `login.Throttle`. Handlers switch on the per-step outcomes (`login.Outcome`,
   `login.SecondOutcome`).
-- **Resource DTOs come from goverter, not from struct literals.** A handler never builds a
-  `*Resource` by hand from an ent row or a module's read model: add a method to the surface's
+- **Resource DTOs come from goverter, not from struct literals (review rule 1, analyzer `handmapper`).** Add a method to the surface's
   `Converter` (`internal/api/{site,external}/resources`, `ee/staff/resources`) with
   `goverter:map` / `extend` helpers, and attach in the handler only what the mapper cannot see
   (marked `goverter:ignore` with the reason). Hand-built values are limited to response wrappers
@@ -334,7 +333,7 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
   `internal/consent` (signed unsubscribe/confirm tokens: the Workspace comes from the token,
   so it works on the bus's raw transaction client and scopes from the token's Workspace),
   `internal/oauthserver`, `internal/secondfactor` (a User's TOTP Second factor and Recovery
-  codes, ADR 0020: they belong to the User, not a Workspace), `internal/rekey` (`sphericon encryption-key reencrypt`: it rewrites the stored ciphertext of every Workspace, User and Staff member row under the primary key, by id and compare-and-swap), `internal/doctor` (`sphericon doctor`, read-only: it lists every Workspace's Sending domains and the origin of the newest sent mail, and reads the Postgres version), `internal/instance` (the Instance state row
+  codes, ADR 0020: they belong to the User, not a Workspace), `internal/refsettle` (settles the rows whose reference points at a row that is gone and validates the foreign keys a migration added `NOT VALID`, ADR 0033: the heavy data work runs as a river job, in `internal/jobs/ref_settle.go`, which only calls it), `internal/rekey` (`sphericon encryption-key reencrypt`: it rewrites the stored ciphertext of every Workspace, User and Staff member row under the primary key, by id and compare-and-swap), `internal/doctor` (`sphericon doctor`, read-only: it lists every Workspace's Sending domains and the origin of the newest sent mail, and reads the Postgres version), `internal/instance` (the Instance state row
   that no Workspace owns, and who decides about it: the Owners of the oldest Workspace, ADR 0032), `internal/joindomains` (Join
   domains: a domain is verified by one Workspace across the Instance, so the lookup of the verified row
   by domain runs before any scope exists, and handing a domain over to the Workspace that now proves it
@@ -409,6 +408,10 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
   `internal/liveuse` finds the live work (today the active email Automations) for the modules that
   cannot import `internal/automations`. Both are leaves that hold no raw `*ent.Client`: `liveuse`
   takes a `*ent.Scoped`, `inuse` only maps rows to users.
+- **Owner notices**: a module that tells the Owners of a Workspace something (Join domains, Sending domains,
+  webhooks, suspension, the abuse detector) takes an `ownernotice.Notify` (`internal/ownernotice`, a leaf, so
+  that modules `accounts` imports can share it) and calls `Tell` or `TellBestEffort`; `accounts.OwnerNotifier`
+  builds the one that mails the Owners through the system sender.
 - **Async**: `internal/pubsub` (watermill over Postgres) — handlers registered in
   `pubsub.RegisterHandlers`, router run in a goroutine from `cmd/server/main.go`.
   `internal/jobs` uses river (Postgres-backed queue, `database/sql` driver, polling). A job that must

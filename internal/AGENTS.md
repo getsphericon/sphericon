@@ -22,8 +22,7 @@ state of the same test), loaded with `testhelper.LoadLegacyFixtures(t, sqlDB, di
 loader and templating as `fixtures/`, but no sequence reset, no catalog (they are not in
 `fixtures/`, so `fixturegen` ignores them) and no raw `INSERT`.
 
-**Build test scenarios on the committed fixtures — don't fabricate the primary
-entities inline.** Reference fixture rows through the catalog constants below
+**Build test scenarios on the committed fixtures (review rules 10 and 11).** Reference fixture rows through the catalog constants below
 (`fixtures.BroadcastDraftID`, `fixtures.ContactAliceID`, `fixtures.SegmentActiveID`, …),
 never bare id literals (a deliberately missing id such as `999999` is fine). Query counts
 that vary with the dataset dynamically instead of hardcoding them. If a
@@ -34,7 +33,6 @@ it is how a test puts a row into the state it needs at a chosen moment: the fixt
 and the pending Outbound message are lapsed and stale, and `env.ExtendHold`, `env.ClaimOutbound`,
 `env.ClaimRecipient`, `env.PlaceRecipient` (parked recipients), `env.SuppressDestination` and
 `env.UnsubscribeFromBroadcasts` (the lifted Suppression and a per-Automation opt-out) move them.
-A test creates rows itself only when creating them is the operation under test.
 
 ## Fixture catalog
 

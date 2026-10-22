@@ -13,8 +13,8 @@ or `AGENTS.md`.
 - A rule that needs Go types is checked by an analyzer of our own; one that needs only syntax, by an
   ast-grep rule. Which rules have a check, and how to add one, is in "Project checks" of
   `CODING_STANDARDS.md`: this file does not list them.
-- A rule that code cannot check is the third axis of the `code-review` skill, which reads this file
-  and checks the diff against it. A rule with a check is still reviewed: a check finds the form, a
+- A rule that code cannot check is left to the reviewer, who reads this catalog through the Standards
+  axis of the `code-review` skill (`CODING_STANDARDS.md` and `AGENTS.md` both point here). A rule with a check is still reviewed: a check finds the form, a
   reviewer finds the intent.
 - Every check's message names the rule number and says how to fix the violation.
 
@@ -84,13 +84,16 @@ or `AGENTS.md`.
     out, not the behavior of a library, how long something takes, how much memory it uses, a timeout
     firing on the wall clock, a runtime limit, or the machine and the process around the code. A
     test with only a library or component as its subject is deleted and none is added.
-13. **A test has no branching.** No `if`, `switch`, `select` or loop over cases that chooses what to
-    check, in a test body or its subtest closures: a branch lets a wrong run take the path that
-    checks nothing. State the expectation on a value read beforehand; keep a table's rows as data
-    (split a table whose rows need different assertions, give a row its expected value rather than a
-    flag); logic that must branch goes into a named helper.
 
 ## Process
 
 13. **Fix the cause, not the symptom, whatever the size of the rework.** Change the contract, schema,
     module and callers instead of patching where the problem showed up.
+
+## Test bodies
+
+14. **A test has no branching.** No `if`, `switch`, `select` or loop over cases that chooses what to
+    check, in a test body or its subtest closures: a branch lets a wrong run take the path that
+    checks nothing. State the expectation on a value read beforehand; keep a table's rows as data
+    (split a table whose rows need different assertions, give a row its expected value rather than a
+    flag); logic that must branch goes into a named helper.
