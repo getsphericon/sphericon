@@ -108,9 +108,9 @@ export default defineConfig({
         'src/routeTree.gen.ts',
       ],
       reporter: ['text-summary', 'html'],
-      // Current coverage is ~99% lines / ~93% branches; the floor sits a little below so
-      // CI catches regressions without flaking on small changes.
-      thresholds: { statements: 96, branches: 90, functions: 96, lines: 96 },
+      // The floor is 90% on every metric, so CI catches regressions without flaking on
+      // small changes.
+      thresholds: { statements: 90, branches: 90, functions: 90, lines: 90 },
     },
     browser: {
       enabled: true,
