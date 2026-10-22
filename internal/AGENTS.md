@@ -53,6 +53,25 @@ It emits `<Name>ID` plus one constant per catalogued column the row carries (the
 list is `catalogColumns` in `internal/fixtures/fixturegen/fixturegen.go`); unannotated
 rows get nothing. It fails on a duplicate name or an annotation that matches no row.
 
+### Generated volume
+
+A shape that needs many rows (traffic for a rate, a long list) is a template loop inside the
+table's one file, written as comments so the file stays valid YAML for the formatter:
+
+```yaml
+# {{range $i := seq 30000 30039}}
+- id: '{{$i}}'
+  email: 'sent-{{$i}}@example.com'
+# {{end}}
+```
+
+`seq from to` includes both ends. The loop renders before the file is parsed, so it loads in the
+same `Load` as the other rows; loading a table a second time would wipe the first (the loader
+deletes every table of its files first), so volume never comes from a second loader. The generator
+reads a loop body once and refuses a `# fixture:` name inside one. Every row is one INSERT at the
+start of every test process, so keep the volume small and scale the code under test's thresholds
+down in the test (see `ee/abuse/detector_test.go`, whose scenarios are day offsets in `events.yml`).
+
 ### Credentials and anchor identities
 
 Anchor credentials state their plaintext in the fixture and are hashed at load time by

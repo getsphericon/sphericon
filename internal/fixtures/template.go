@@ -43,11 +43,22 @@ func TemplateFuncs(cipher *secrets.Cipher, now time.Time) template.FuncMap {
 	at := func(d time.Duration) string { return base.Add(d).Format(timeLayout) }
 	day := 24 * time.Hour
 	return template.FuncMap{
-		"now":       func() string { return base.Format(timeLayout) },
-		"daysAgo":   func(n int) string { return at(-time.Duration(n) * day) },
-		"daysAhead": func(n int) string { return at(time.Duration(n) * day) },
-		"hoursAgo":  func(n int) string { return at(-time.Duration(n) * time.Hour) },
-		"encrypt":   func(s string) (string, error) { return cipher.Encrypt([]byte(s)) },
+		"now":        func() string { return base.Format(timeLayout) },
+		"daysAgo":    func(n int) string { return at(-time.Duration(n) * day) },
+		"daysAhead":  func(n int) string { return at(time.Duration(n) * day) },
+		"hoursAgo":   func(n int) string { return at(-time.Duration(n) * time.Hour) },
+		"hoursAhead": func(n int) string { return at(time.Duration(n) * time.Hour) },
+		// seq repeats a row: {{range $i := seq 100 199}} runs for 100 through 199, both included.
+		// The loop renders inside one file, so one Load inserts it with the rest (a second Load of
+		// the same table would wipe the first). The generator names a loop body's rows once.
+		"seq": func(from, to int) []int {
+			out := make([]int, 0, max(to-from+1, 0))
+			for i := from; i <= to; i++ {
+				out = append(out, i)
+			}
+			return out
+		},
+		"encrypt": func(s string) (string, error) { return cipher.Encrypt([]byte(s)) },
 		// Invitation tokens are stored only as a SHA-256 hash; fixtures express the
 		// raw token and hash it at load time so tests can present the raw value.
 		"inviteHash": accounts.HashInviteToken,
