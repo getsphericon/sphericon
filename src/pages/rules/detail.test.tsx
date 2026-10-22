@@ -5,6 +5,7 @@ import {
   handleSiteRuleFiringsList,
   handleSiteRulesActivate,
   handleSiteRulesGet,
+  handleSiteRulesUnarchive,
 } from '../../generated/site/msw.gen.ts'
 import type { SiteRuleFiringResource, SiteRuleResource } from '../../generated/site/types.gen.ts'
 import { Route as rulesDetailRoute } from '../../routes/workspaces/$workspaceId/rules/$ruleId/index.tsx'
@@ -108,4 +109,23 @@ test('shows an error alert when the rule cannot be loaded', async () => {
 
   await expect.element(screen.getByText('Failed to load rules')).toBeVisible()
   await expect.element(screen.getByText('rule not found')).toBeVisible()
+})
+
+test('an archived rule offers Restore instead of Activate and Edit', async () => {
+  const restored: string[] = []
+  worker.use(
+    handleSiteRulesGet({ body: { ...RULE, archivedAt: TIMESTAMPS.updatedAt } }),
+    handleSiteRuleFiringsList({ body: page([], 0) }),
+    handleSiteRulesUnarchive(({ params }) => {
+      restored.push(params.id)
+      return HttpResponse.json(RULE)
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<RuleDetailPage />, DETAIL_ROUTE)
+  await expect.element(screen.getByRole('button', { name: 'Activate' })).not.toBeInTheDocument()
+  await screen.getByRole('button', { name: 'Restore' }).click()
+
+  await expect.poll(() => restored).toEqual(['7'])
+  await expect.element(screen.getByText('Rule restored')).toBeInTheDocument()
 })

@@ -1,5 +1,6 @@
-import { Badge, Group, Menu, Stack, Title } from '@mantine/core'
+import { Badge, Group, Menu, Stack, Switch, Title } from '@mantine/core'
 import { useNavigate } from '@tanstack/react-router'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { PagedTable } from '../../components/PagedTable.tsx'
@@ -7,10 +8,14 @@ import { ButtonLink, MenuItemLink } from '../../components/RouterLink.tsx'
 import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
 import {
   siteRulesActivateMutation,
+  siteRulesArchiveMutation,
   siteRulesDeactivateMutation,
+  siteRulesDeleteMutation,
   siteRulesListOptions,
   siteRulesListQueryKey,
+  siteRulesUnarchiveMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
+import { useDeleteResource } from '../../hooks/useDeleteResource.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as rulesEditRoute } from '../../routes/workspaces/$workspaceId/rules/$ruleId/edit.tsx'
 import { Route as rulesDetailRoute } from '../../routes/workspaces/$workspaceId/rules/$ruleId/index.tsx'
@@ -36,6 +41,27 @@ export function RulesListPage() {
     errorTitle: t(($) => $.alerts.ruleStatusErrorTitle),
   })
 
+  const archive = useResourceMutation({
+    mutation: siteRulesArchiveMutation(),
+    invalidate: [listQueryKey],
+    successMessage: t(($) => $.notifications.ruleArchived),
+    errorTitle: t(($) => $.alerts.ruleArchiveErrorTitle),
+  })
+  const restore = useResourceMutation({
+    mutation: siteRulesUnarchiveMutation(),
+    invalidate: [listQueryKey],
+    successMessage: t(($) => $.notifications.ruleRestored),
+    errorTitle: t(($) => $.alerts.ruleRestoreErrorTitle),
+  })
+  const deleteRule = useDeleteResource({
+    mutation: siteRulesDeleteMutation(),
+    workspaceId,
+    listQueryKey,
+    successMessage: t(($) => $.notifications.ruleDeleted),
+    errorTitle: t(($) => $.alerts.ruleDeleteErrorTitle),
+  })
+  const [archived, setArchived] = useState(false)
+
   return (
     <Stack>
       <Group justify="space-between" align="center">
@@ -45,8 +71,17 @@ export function RulesListPage() {
         </ButtonLink>
       </Group>
 
+      <Switch
+        label={t(($) => $.rules.showArchived)}
+        checked={archived}
+        onChange={(event) => setArchived(event.currentTarget.checked)}
+      />
+
       <PagedTable
-        options={(query) => siteRulesListOptions({ path: { workspaceId }, query })}
+        key={String(archived)}
+        options={(query) =>
+          siteRulesListOptions({ path: { workspaceId }, query: { ...query, archived } })
+        }
         loadErrorTitle={t(($) => $.alerts.ruleLoadErrorTitle)}
         noRecordsText={t(($) => $.rules.noRecords)}
         emptyState={t(($) => $.rules.emptyState)}
@@ -77,28 +112,57 @@ export function RulesListPage() {
             render: (record) => (
               <Group justify="flex-end">
                 <RowActionsMenu>
-                  <MenuItemLink
-                    to={rulesDetailRoute.to}
-                    params={{ workspaceId, ruleId: record.id }}
-                  >
-                    {t(($) => $.actions.view)}
-                  </MenuItemLink>
-                  {record.status === 'active' ? (
+                  {record.archivedAt ? (
                     <Menu.Item
-                      onClick={() => deactivate.mutate({ path: { workspaceId, id: record.id } })}
+                      onClick={() => restore.mutate({ path: { workspaceId, id: record.id } })}
                     >
-                      {t(($) => $.rules.deactivate)}
+                      {t(($) => $.actions.unarchive)}
                     </Menu.Item>
                   ) : (
-                    <Menu.Item
-                      onClick={() => activate.mutate({ path: { workspaceId, id: record.id } })}
-                    >
-                      {t(($) => $.rules.activate)}
-                    </Menu.Item>
+                    [
+                      <MenuItemLink
+                        key="view"
+                        to={rulesDetailRoute.to}
+                        params={{ workspaceId, ruleId: record.id }}
+                      >
+                        {t(($) => $.actions.view)}
+                      </MenuItemLink>,
+                      record.status === 'active' ? (
+                        <Menu.Item
+                          key="toggle"
+                          onClick={() =>
+                            deactivate.mutate({ path: { workspaceId, id: record.id } })
+                          }
+                        >
+                          {t(($) => $.rules.deactivate)}
+                        </Menu.Item>
+                      ) : (
+                        <Menu.Item
+                          key="toggle"
+                          onClick={() => activate.mutate({ path: { workspaceId, id: record.id } })}
+                        >
+                          {t(($) => $.rules.activate)}
+                        </Menu.Item>
+                      ),
+                      <MenuItemLink
+                        key="edit"
+                        to={rulesEditRoute.to}
+                        params={{ workspaceId, ruleId: record.id }}
+                      >
+                        {t(($) => $.actions.edit)}
+                      </MenuItemLink>,
+                      <Menu.Item
+                        key="archive"
+                        color="red"
+                        onClick={() => archive.mutate({ path: { workspaceId, id: record.id } })}
+                      >
+                        {t(($) => $.actions.archive)}
+                      </Menu.Item>,
+                      <Menu.Item key="delete" color="red" onClick={() => deleteRule(record.id)}>
+                        {t(($) => $.actions.delete)}
+                      </Menu.Item>,
+                    ]
                   )}
-                  <MenuItemLink to={rulesEditRoute.to} params={{ workspaceId, ruleId: record.id }}>
-                    {t(($) => $.actions.edit)}
-                  </MenuItemLink>
                 </RowActionsMenu>
               </Group>
             ),
