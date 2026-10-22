@@ -58,7 +58,7 @@ func TestEffectiveOfTakesTheLowestOfManualAndProviderValues(t *testing.T) {
 
 func TestEffectiveOfReportsAnUnavailableProviderQuota(t *testing.T) {
 	assert.False(t, sendlimit.EffectiveOf(&ent.Integration{}).ProviderQuotaUnavailable)
-	assert.True(t, sendlimit.EffectiveOf(&ent.Integration{ProviderQuotaUnavailable: true}).ProviderQuotaUnavailable)
+	assert.True(t, sendlimit.EffectiveOf(&ent.Integration{ProviderQuotaFailedAt: new(time.Now())}).ProviderQuotaUnavailable)
 }
 
 func TestUsageCountsSentMessagesPerIntegrationOverTheLastDay(t *testing.T) {

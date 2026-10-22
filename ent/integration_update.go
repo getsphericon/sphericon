@@ -337,17 +337,23 @@ func (_u *IntegrationUpdate) ClearProviderQuotaCheckedAt() *IntegrationUpdate {
 	return _u
 }
 
-// SetProviderQuotaUnavailable sets the "provider_quota_unavailable" field.
-func (_u *IntegrationUpdate) SetProviderQuotaUnavailable(v bool) *IntegrationUpdate {
-	_u.mutation.SetProviderQuotaUnavailable(v)
+// SetProviderQuotaFailedAt sets the "provider_quota_failed_at" field.
+func (_u *IntegrationUpdate) SetProviderQuotaFailedAt(v time.Time) *IntegrationUpdate {
+	_u.mutation.SetProviderQuotaFailedAt(v)
 	return _u
 }
 
-// SetNillableProviderQuotaUnavailable sets the "provider_quota_unavailable" field if the given value is not nil.
-func (_u *IntegrationUpdate) SetNillableProviderQuotaUnavailable(v *bool) *IntegrationUpdate {
+// SetNillableProviderQuotaFailedAt sets the "provider_quota_failed_at" field if the given value is not nil.
+func (_u *IntegrationUpdate) SetNillableProviderQuotaFailedAt(v *time.Time) *IntegrationUpdate {
 	if v != nil {
-		_u.SetProviderQuotaUnavailable(*v)
+		_u.SetProviderQuotaFailedAt(*v)
 	}
+	return _u
+}
+
+// ClearProviderQuotaFailedAt clears the value of the "provider_quota_failed_at" field.
+func (_u *IntegrationUpdate) ClearProviderQuotaFailedAt() *IntegrationUpdate {
+	_u.mutation.ClearProviderQuotaFailedAt()
 	return _u
 }
 
@@ -573,8 +579,11 @@ func (_u *IntegrationUpdate) sqlSave(ctx context.Context) (_node int, err error)
 	if _u.mutation.ProviderQuotaCheckedAtCleared() {
 		_spec.ClearField(integration.FieldProviderQuotaCheckedAt, field.TypeTime)
 	}
-	if value, ok := _u.mutation.ProviderQuotaUnavailable(); ok {
-		_spec.SetField(integration.FieldProviderQuotaUnavailable, field.TypeBool, value)
+	if value, ok := _u.mutation.ProviderQuotaFailedAt(); ok {
+		_spec.SetField(integration.FieldProviderQuotaFailedAt, field.TypeTime, value)
+	}
+	if _u.mutation.ProviderQuotaFailedAtCleared() {
+		_spec.ClearField(integration.FieldProviderQuotaFailedAt, field.TypeTime)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -962,17 +971,23 @@ func (_u *IntegrationUpdateOne) ClearProviderQuotaCheckedAt() *IntegrationUpdate
 	return _u
 }
 
-// SetProviderQuotaUnavailable sets the "provider_quota_unavailable" field.
-func (_u *IntegrationUpdateOne) SetProviderQuotaUnavailable(v bool) *IntegrationUpdateOne {
-	_u.mutation.SetProviderQuotaUnavailable(v)
+// SetProviderQuotaFailedAt sets the "provider_quota_failed_at" field.
+func (_u *IntegrationUpdateOne) SetProviderQuotaFailedAt(v time.Time) *IntegrationUpdateOne {
+	_u.mutation.SetProviderQuotaFailedAt(v)
 	return _u
 }
 
-// SetNillableProviderQuotaUnavailable sets the "provider_quota_unavailable" field if the given value is not nil.
-func (_u *IntegrationUpdateOne) SetNillableProviderQuotaUnavailable(v *bool) *IntegrationUpdateOne {
+// SetNillableProviderQuotaFailedAt sets the "provider_quota_failed_at" field if the given value is not nil.
+func (_u *IntegrationUpdateOne) SetNillableProviderQuotaFailedAt(v *time.Time) *IntegrationUpdateOne {
 	if v != nil {
-		_u.SetProviderQuotaUnavailable(*v)
+		_u.SetProviderQuotaFailedAt(*v)
 	}
+	return _u
+}
+
+// ClearProviderQuotaFailedAt clears the value of the "provider_quota_failed_at" field.
+func (_u *IntegrationUpdateOne) ClearProviderQuotaFailedAt() *IntegrationUpdateOne {
+	_u.mutation.ClearProviderQuotaFailedAt()
 	return _u
 }
 
@@ -1228,8 +1243,11 @@ func (_u *IntegrationUpdateOne) sqlSave(ctx context.Context) (_node *Integration
 	if _u.mutation.ProviderQuotaCheckedAtCleared() {
 		_spec.ClearField(integration.FieldProviderQuotaCheckedAt, field.TypeTime)
 	}
-	if value, ok := _u.mutation.ProviderQuotaUnavailable(); ok {
-		_spec.SetField(integration.FieldProviderQuotaUnavailable, field.TypeBool, value)
+	if value, ok := _u.mutation.ProviderQuotaFailedAt(); ok {
+		_spec.SetField(integration.FieldProviderQuotaFailedAt, field.TypeTime, value)
+	}
+	if _u.mutation.ProviderQuotaFailedAtCleared() {
+		_spec.ClearField(integration.FieldProviderQuotaFailedAt, field.TypeTime)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{

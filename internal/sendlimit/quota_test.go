@@ -43,7 +43,7 @@ func TestRefreshQuotaStoresTheProviderValuesAndFeedsTheCeiling(t *testing.T) {
 	row := reload(t, s, fixtures.IntegrationAcmeSesID)
 	assert.Equal(t, new(14), row.ProviderMaxPerSecond)
 	assert.Equal(t, new(50000), row.ProviderMaxPerDay)
-	assert.False(t, row.ProviderQuotaUnavailable)
+	assert.Nil(t, row.ProviderQuotaFailedAt)
 	assert.NotNil(t, row.ProviderQuotaCheckedAt)
 	eff := sendlimit.EffectiveOf(row)
 	assert.Equal(t, sendlimit.Value{Limit: new(14), Source: sendlimit.SourceProvider}, eff.PerSecond)
@@ -65,12 +65,28 @@ func TestRefreshQuotaFailureKeepsManualOrUnlimitedAndRecordsAWarning(t *testing.
 	require.NoError(t, err, "a failed lookup is recorded, never returned: it must not fail a save or a job")
 
 	row := reload(t, s, fixtures.IntegrationAcmeSesID)
-	assert.True(t, row.ProviderQuotaUnavailable)
+	assert.NotNil(t, row.ProviderQuotaFailedAt)
 	assert.NotNil(t, row.ProviderQuotaCheckedAt, "a failed lookup still counts as a check")
 	eff := sendlimit.EffectiveOf(row)
 	assert.True(t, eff.ProviderQuotaUnavailable)
 	assert.Equal(t, sendlimit.Value{Limit: new(1000), Source: sendlimit.SourceManual}, eff.PerDay)
 	assert.Equal(t, sendlimit.Value{}, eff.PerSecond, "no manual value and no provider value is unlimited")
+}
+
+func TestRefreshQuotaKeepsTheMomentOfTheFirstFailure(t *testing.T) {
+	env := testhelper.Setup(t)
+	s := env.DB.Scoped(fixtures.AcmeID)
+	ses := &testhelper.FakeSES{}
+	ses.SetQuotaErr(errors.New("AccessDenied"))
+	cipher, catalog := envCipher(t), ses.Catalog()
+	require.NoError(t, sendlimit.RefreshQuota(t.Context(), s, cipher, catalog, reload(t, s, fixtures.IntegrationAcmeSesID)))
+	first := reload(t, s, fixtures.IntegrationAcmeSesID)
+
+	require.NoError(t, sendlimit.RefreshQuota(t.Context(), s, cipher, catalog, first))
+
+	second := reload(t, s, fixtures.IntegrationAcmeSesID)
+	assert.Equal(t, first.ProviderQuotaFailedAt, second.ProviderQuotaFailedAt, "a further failure keeps the first moment")
+	assert.True(t, second.ProviderQuotaCheckedAt.After(*first.ProviderQuotaCheckedAt), "the last check still moves")
 }
 
 func TestRefreshQuotaSuccessAfterFailureClearsTheWarning(t *testing.T) {
@@ -81,13 +97,13 @@ func TestRefreshQuotaSuccessAfterFailureClearsTheWarning(t *testing.T) {
 	cipher, catalog := envCipher(t), ses.Catalog()
 
 	require.NoError(t, sendlimit.RefreshQuota(t.Context(), s, cipher, catalog, reload(t, s, fixtures.IntegrationAcmeSesID)))
-	require.True(t, reload(t, s, fixtures.IntegrationAcmeSesID).ProviderQuotaUnavailable)
+	require.NotNil(t, reload(t, s, fixtures.IntegrationAcmeSesID).ProviderQuotaFailedAt)
 
 	ses.SetQuota(messaging.Quota{PerSecond: new(1)})
 	require.NoError(t, sendlimit.RefreshQuota(t.Context(), s, cipher, catalog, reload(t, s, fixtures.IntegrationAcmeSesID)))
 
 	row := reload(t, s, fixtures.IntegrationAcmeSesID)
-	assert.False(t, row.ProviderQuotaUnavailable)
+	assert.Nil(t, row.ProviderQuotaFailedAt)
 	assert.Equal(t, new(1), row.ProviderMaxPerSecond)
 	assert.Nil(t, row.ProviderMaxPerDay)
 }
@@ -104,7 +120,7 @@ func TestRefreshQuotaFailureKeepsTheLastKnownProviderValues(t *testing.T) {
 	require.NoError(t, sendlimit.RefreshQuota(t.Context(), s, cipher, catalog, reload(t, s, fixtures.IntegrationAcmeSesID)))
 
 	row := reload(t, s, fixtures.IntegrationAcmeSesID)
-	assert.True(t, row.ProviderQuotaUnavailable)
+	assert.NotNil(t, row.ProviderQuotaFailedAt)
 	assert.Equal(t, new(14), row.ProviderMaxPerSecond, "a transient blip must not lift a ceiling that was known")
 }
 
@@ -116,7 +132,7 @@ func TestRefreshQuotaIgnoresProvidersThatCannotReportOne(t *testing.T) {
 	require.NoError(t, sendlimit.RefreshQuota(t.Context(), s, envCipher(t), ses.Catalog(), reload(t, s, fixtures.IntegrationAcmeDefaultID)))
 
 	row := reload(t, s, fixtures.IntegrationAcmeDefaultID)
-	assert.False(t, row.ProviderQuotaUnavailable, "SMTP has no quota to be unavailable")
+	assert.Nil(t, row.ProviderQuotaFailedAt, "SMTP has no quota to fail")
 	assert.Nil(t, row.ProviderQuotaCheckedAt)
 }
 

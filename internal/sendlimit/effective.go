@@ -32,7 +32,8 @@ type Effective struct {
 	PerSecond Value
 	PerDay    Value
 
-	// ProviderQuotaUnavailable is set when the last provider quota lookup failed, so
+	// ProviderQuotaUnavailable is set while the provider quota lookup fails (the
+	// Integration's provider_quota_failed_at is set), so
 	// the ceilings above rest on the manual value alone (or on none).
 	ProviderQuotaUnavailable bool
 }
@@ -43,7 +44,7 @@ func EffectiveOf(integ *ent.Integration) Effective {
 	return Effective{
 		PerSecond:                lowest(integ.MaxPerSecond, integ.ProviderMaxPerSecond),
 		PerDay:                   lowest(integ.MaxPerDay, integ.ProviderMaxPerDay),
-		ProviderQuotaUnavailable: integ.ProviderQuotaUnavailable,
+		ProviderQuotaUnavailable: integ.ProviderQuotaFailedAt != nil,
 	}
 }
 

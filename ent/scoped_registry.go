@@ -1019,7 +1019,9 @@ func ScopedEntities() []ScopedEntity {
 				if src.ProviderQuotaCheckedAt != nil {
 					b.SetProviderQuotaCheckedAt(*src.ProviderQuotaCheckedAt)
 				}
-				b.SetProviderQuotaUnavailable(src.ProviderQuotaUnavailable)
+				if src.ProviderQuotaFailedAt != nil {
+					b.SetProviderQuotaFailedAt(*src.ProviderQuotaFailedAt)
+				}
 				created, err := b.Save(ctx)
 				if err != nil {
 					return 0, err

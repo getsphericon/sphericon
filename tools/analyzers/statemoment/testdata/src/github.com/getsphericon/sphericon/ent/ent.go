@@ -55,6 +55,14 @@ func (x *UsageUpdateOne) Where(...Predicate) *UsageUpdateOne                { re
 func (x *UsageUpdateOne) SetFinalizedAt(time.Time) *UsageUpdateOne          { return x }
 func (x *UsageUpdateOne) SetNillableFinalizedAt(*time.Time) *UsageUpdateOne { return x }
 
+type IntegrationUpdate struct{}
+
+func (x *IntegrationUpdate) Where(...Predicate) *IntegrationUpdate { return x }
+func (x *IntegrationUpdate) SetProviderQuotaFailedAt(time.Time) *IntegrationUpdate {
+	return x
+}
+func (x *IntegrationUpdate) ClearProviderQuotaFailedAt() *IntegrationUpdate { return x }
+
 type TagUpdateOne struct{}
 
 func (x *TagUpdateOne) SetVerifiedAt(time.Time) *TagUpdateOne { return x }
@@ -68,5 +76,6 @@ func (*Client) ScopedSendingDomain() *SendingDomainScopedUpdateOne {
 func (*Client) WebhookEndpoint() *WebhookEndpointUpdate { return &WebhookEndpointUpdate{} }
 func (*Client) JoinDomain() *JoinDomainUpdateOne        { return &JoinDomainUpdateOne{} }
 func (*Client) Usage() *UsageUpdateOne                  { return &UsageUpdateOne{} }
+func (*Client) Integration() *IntegrationUpdate         { return &IntegrationUpdate{} }
 func (*Client) Tag() *TagUpdateOne                      { return &TagUpdateOne{} }
 func (*Client) NewSendingDomain() *SendingDomainCreate  { return &SendingDomainCreate{} }

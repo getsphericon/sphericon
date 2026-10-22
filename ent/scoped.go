@@ -14243,15 +14243,15 @@ func (x *IntegrationScopedCreate) SetNillableProviderQuotaCheckedAt(v *time.Time
 	return x
 }
 
-// SetProviderQuotaUnavailable sets the "provider_quota_unavailable" field.
-func (x *IntegrationScopedCreate) SetProviderQuotaUnavailable(v bool) *IntegrationScopedCreate {
-	x.b.SetProviderQuotaUnavailable(v)
+// SetProviderQuotaFailedAt sets the "provider_quota_failed_at" field.
+func (x *IntegrationScopedCreate) SetProviderQuotaFailedAt(v time.Time) *IntegrationScopedCreate {
+	x.b.SetProviderQuotaFailedAt(v)
 	return x
 }
 
-// SetNillableProviderQuotaUnavailable sets the "provider_quota_unavailable" field if the given value is not nil.
-func (x *IntegrationScopedCreate) SetNillableProviderQuotaUnavailable(v *bool) *IntegrationScopedCreate {
-	x.b.SetNillableProviderQuotaUnavailable(v)
+// SetNillableProviderQuotaFailedAt sets the "provider_quota_failed_at" field if the given value is not nil.
+func (x *IntegrationScopedCreate) SetNillableProviderQuotaFailedAt(v *time.Time) *IntegrationScopedCreate {
+	x.b.SetNillableProviderQuotaFailedAt(v)
 	return x
 }
 
@@ -14637,15 +14637,21 @@ func (u *IntegrationScopedUpsert) ClearProviderQuotaCheckedAt() *IntegrationScop
 	return u
 }
 
-// SetProviderQuotaUnavailable sets the "provider_quota_unavailable" field.
-func (u *IntegrationScopedUpsert) SetProviderQuotaUnavailable(v bool) *IntegrationScopedUpsert {
-	u.u.Set(integration.FieldProviderQuotaUnavailable, v)
+// SetProviderQuotaFailedAt sets the "provider_quota_failed_at" field.
+func (u *IntegrationScopedUpsert) SetProviderQuotaFailedAt(v time.Time) *IntegrationScopedUpsert {
+	u.u.Set(integration.FieldProviderQuotaFailedAt, v)
 	return u
 }
 
-// UpdateProviderQuotaUnavailable sets the "provider_quota_unavailable" field to the value that was provided on create.
-func (u *IntegrationScopedUpsert) UpdateProviderQuotaUnavailable() *IntegrationScopedUpsert {
-	u.u.SetExcluded(integration.FieldProviderQuotaUnavailable)
+// UpdateProviderQuotaFailedAt sets the "provider_quota_failed_at" field to the value that was provided on create.
+func (u *IntegrationScopedUpsert) UpdateProviderQuotaFailedAt() *IntegrationScopedUpsert {
+	u.u.SetExcluded(integration.FieldProviderQuotaFailedAt)
+	return u
+}
+
+// ClearProviderQuotaFailedAt clears the value of the "provider_quota_failed_at" field.
+func (u *IntegrationScopedUpsert) ClearProviderQuotaFailedAt() *IntegrationScopedUpsert {
+	u.u.SetNull(integration.FieldProviderQuotaFailedAt)
 	return u
 }
 
@@ -15085,15 +15091,21 @@ func (x *IntegrationScopedUpdateOne) ClearProviderQuotaCheckedAt() *IntegrationS
 	return x
 }
 
-// SetProviderQuotaUnavailable sets the "provider_quota_unavailable" field.
-func (x *IntegrationScopedUpdateOne) SetProviderQuotaUnavailable(v bool) *IntegrationScopedUpdateOne {
-	x.b.SetProviderQuotaUnavailable(v)
+// SetProviderQuotaFailedAt sets the "provider_quota_failed_at" field.
+func (x *IntegrationScopedUpdateOne) SetProviderQuotaFailedAt(v time.Time) *IntegrationScopedUpdateOne {
+	x.b.SetProviderQuotaFailedAt(v)
 	return x
 }
 
-// SetNillableProviderQuotaUnavailable sets the "provider_quota_unavailable" field if the given value is not nil.
-func (x *IntegrationScopedUpdateOne) SetNillableProviderQuotaUnavailable(v *bool) *IntegrationScopedUpdateOne {
-	x.b.SetNillableProviderQuotaUnavailable(v)
+// SetNillableProviderQuotaFailedAt sets the "provider_quota_failed_at" field if the given value is not nil.
+func (x *IntegrationScopedUpdateOne) SetNillableProviderQuotaFailedAt(v *time.Time) *IntegrationScopedUpdateOne {
+	x.b.SetNillableProviderQuotaFailedAt(v)
+	return x
+}
+
+// ClearProviderQuotaFailedAt clears the value of the "provider_quota_failed_at" field.
+func (x *IntegrationScopedUpdateOne) ClearProviderQuotaFailedAt() *IntegrationScopedUpdateOne {
+	x.b.ClearProviderQuotaFailedAt()
 	return x
 }
 
@@ -15454,15 +15466,21 @@ func (x *IntegrationScopedUpdate) ClearProviderQuotaCheckedAt() *IntegrationScop
 	return x
 }
 
-// SetProviderQuotaUnavailable sets the "provider_quota_unavailable" field.
-func (x *IntegrationScopedUpdate) SetProviderQuotaUnavailable(v bool) *IntegrationScopedUpdate {
-	x.b.SetProviderQuotaUnavailable(v)
+// SetProviderQuotaFailedAt sets the "provider_quota_failed_at" field.
+func (x *IntegrationScopedUpdate) SetProviderQuotaFailedAt(v time.Time) *IntegrationScopedUpdate {
+	x.b.SetProviderQuotaFailedAt(v)
 	return x
 }
 
-// SetNillableProviderQuotaUnavailable sets the "provider_quota_unavailable" field if the given value is not nil.
-func (x *IntegrationScopedUpdate) SetNillableProviderQuotaUnavailable(v *bool) *IntegrationScopedUpdate {
-	x.b.SetNillableProviderQuotaUnavailable(v)
+// SetNillableProviderQuotaFailedAt sets the "provider_quota_failed_at" field if the given value is not nil.
+func (x *IntegrationScopedUpdate) SetNillableProviderQuotaFailedAt(v *time.Time) *IntegrationScopedUpdate {
+	x.b.SetNillableProviderQuotaFailedAt(v)
+	return x
+}
+
+// ClearProviderQuotaFailedAt clears the value of the "provider_quota_failed_at" field.
+func (x *IntegrationScopedUpdate) ClearProviderQuotaFailedAt() *IntegrationScopedUpdate {
+	x.b.ClearProviderQuotaFailedAt()
 	return x
 }
 

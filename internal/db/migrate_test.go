@@ -283,6 +283,37 @@ func TestMigrateCarriesTheUsageFlagIntoFinalizedAt(t *testing.T) {
 	assert.Zero(t, testhelper.ColumnsOf(t, sqlDB, "usages", "final"), "the flag is gone")
 }
 
+// Replacing the Integration quota flag by provider_quota_failed_at keeps what the flag said: a
+// healthy Integration stays unset, a failing one gets its last check as the moment (or its last update
+// when it has no check).
+func TestMigrateCarriesTheIntegrationQuotaFlagIntoFailedAt(t *testing.T) {
+	const replacing = "20261022120110_integration_quota_failed_at.sql"
+	sqlDB := openEmpty(t)
+	before := migrationsWhere(t, func(name string) bool { return name < replacing })
+	all := migrationsWhere(t, func(string) bool { return true })
+	_, err := db.MigrateFS(t.Context(), sqlDB, before)
+	require.NoError(t, err)
+	testhelper.LoadLegacyFixtures(t, sqlDB, legacyFixtures(replacing))
+
+	_, err = db.MigrateFS(t.Context(), sqlDB, all)
+	require.NoError(t, err)
+
+	client := db.NewEntClient(sqlDB)
+	t.Cleanup(func() { _ = client.Close() })
+	rows, err := client.Integration.Query().All(t.Context())
+	require.NoError(t, err)
+	failedAt := map[string]string{}
+	for _, r := range rows {
+		failedAt[r.Name] = lo.FromPtr(r.ProviderQuotaFailedAt).UTC().Format("2006-01-02 15:04")
+	}
+	assert.Equal(t, map[string]string{
+		"ok":        "0001-01-01 00:00",
+		"checked":   "2026-02-02 10:00",
+		"unchecked": "2026-01-03 10:00",
+	}, failedAt)
+	assert.Zero(t, testhelper.ColumnsOf(t, sqlDB, "integrations", "provider_quota_unavailable"), "the flag is gone")
+}
+
 // Dropping automations.definition refuses an Instance whose Automations have not all been given a
 // version yet (the river job backfill_automation_versions): the steps would be lost (ADR 0049).
 func TestMigrateRefusesToDropTheDefinitionBeforeTheBackfill(t *testing.T) {

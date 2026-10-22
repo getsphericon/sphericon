@@ -236,16 +236,16 @@ func (_c *IntegrationCreate) SetNillableProviderQuotaCheckedAt(v *time.Time) *In
 	return _c
 }
 
-// SetProviderQuotaUnavailable sets the "provider_quota_unavailable" field.
-func (_c *IntegrationCreate) SetProviderQuotaUnavailable(v bool) *IntegrationCreate {
-	_c.mutation.SetProviderQuotaUnavailable(v)
+// SetProviderQuotaFailedAt sets the "provider_quota_failed_at" field.
+func (_c *IntegrationCreate) SetProviderQuotaFailedAt(v time.Time) *IntegrationCreate {
+	_c.mutation.SetProviderQuotaFailedAt(v)
 	return _c
 }
 
-// SetNillableProviderQuotaUnavailable sets the "provider_quota_unavailable" field if the given value is not nil.
-func (_c *IntegrationCreate) SetNillableProviderQuotaUnavailable(v *bool) *IntegrationCreate {
+// SetNillableProviderQuotaFailedAt sets the "provider_quota_failed_at" field if the given value is not nil.
+func (_c *IntegrationCreate) SetNillableProviderQuotaFailedAt(v *time.Time) *IntegrationCreate {
 	if v != nil {
-		_c.SetProviderQuotaUnavailable(*v)
+		_c.SetProviderQuotaFailedAt(*v)
 	}
 	return _c
 }
@@ -335,10 +335,6 @@ func (_c *IntegrationCreate) defaults() {
 		v := integration.DefaultIsDefault
 		_c.mutation.SetIsDefault(v)
 	}
-	if _, ok := _c.mutation.ProviderQuotaUnavailable(); !ok {
-		v := integration.DefaultProviderQuotaUnavailable
-		_c.mutation.SetProviderQuotaUnavailable(v)
-	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -407,9 +403,6 @@ func (_c *IntegrationCreate) check() error {
 		if err := integration.MaxPerDayValidator(v); err != nil {
 			return &ValidationError{Name: "max_per_day", err: fmt.Errorf(`ent: validator failed for field "Integration.max_per_day": %w`, err)}
 		}
-	}
-	if _, ok := _c.mutation.ProviderQuotaUnavailable(); !ok {
-		return &ValidationError{Name: "provider_quota_unavailable", err: errors.New(`ent: missing required field "Integration.provider_quota_unavailable"`)}
 	}
 	if len(_c.mutation.WorkspaceIDs()) == 0 {
 		return &ValidationError{Name: "workspace", err: errors.New(`ent: missing required edge "Integration.workspace"`)}
@@ -515,9 +508,9 @@ func (_c *IntegrationCreate) createSpec() (*Integration, *sqlgraph.CreateSpec) {
 		_spec.SetField(integration.FieldProviderQuotaCheckedAt, field.TypeTime, value)
 		_node.ProviderQuotaCheckedAt = &value
 	}
-	if value, ok := _c.mutation.ProviderQuotaUnavailable(); ok {
-		_spec.SetField(integration.FieldProviderQuotaUnavailable, field.TypeBool, value)
-		_node.ProviderQuotaUnavailable = value
+	if value, ok := _c.mutation.ProviderQuotaFailedAt(); ok {
+		_spec.SetField(integration.FieldProviderQuotaFailedAt, field.TypeTime, value)
+		_node.ProviderQuotaFailedAt = &value
 	}
 	if nodes := _c.mutation.WorkspaceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -880,15 +873,21 @@ func (u *IntegrationUpsert) ClearProviderQuotaCheckedAt() *IntegrationUpsert {
 	return u
 }
 
-// SetProviderQuotaUnavailable sets the "provider_quota_unavailable" field.
-func (u *IntegrationUpsert) SetProviderQuotaUnavailable(v bool) *IntegrationUpsert {
-	u.Set(integration.FieldProviderQuotaUnavailable, v)
+// SetProviderQuotaFailedAt sets the "provider_quota_failed_at" field.
+func (u *IntegrationUpsert) SetProviderQuotaFailedAt(v time.Time) *IntegrationUpsert {
+	u.Set(integration.FieldProviderQuotaFailedAt, v)
 	return u
 }
 
-// UpdateProviderQuotaUnavailable sets the "provider_quota_unavailable" field to the value that was provided on create.
-func (u *IntegrationUpsert) UpdateProviderQuotaUnavailable() *IntegrationUpsert {
-	u.SetExcluded(integration.FieldProviderQuotaUnavailable)
+// UpdateProviderQuotaFailedAt sets the "provider_quota_failed_at" field to the value that was provided on create.
+func (u *IntegrationUpsert) UpdateProviderQuotaFailedAt() *IntegrationUpsert {
+	u.SetExcluded(integration.FieldProviderQuotaFailedAt)
+	return u
+}
+
+// ClearProviderQuotaFailedAt clears the value of the "provider_quota_failed_at" field.
+func (u *IntegrationUpsert) ClearProviderQuotaFailedAt() *IntegrationUpsert {
+	u.SetNull(integration.FieldProviderQuotaFailedAt)
 	return u
 }
 
@@ -1265,17 +1264,24 @@ func (u *IntegrationUpsertOne) ClearProviderQuotaCheckedAt() *IntegrationUpsertO
 	})
 }
 
-// SetProviderQuotaUnavailable sets the "provider_quota_unavailable" field.
-func (u *IntegrationUpsertOne) SetProviderQuotaUnavailable(v bool) *IntegrationUpsertOne {
+// SetProviderQuotaFailedAt sets the "provider_quota_failed_at" field.
+func (u *IntegrationUpsertOne) SetProviderQuotaFailedAt(v time.Time) *IntegrationUpsertOne {
 	return u.Update(func(s *IntegrationUpsert) {
-		s.SetProviderQuotaUnavailable(v)
+		s.SetProviderQuotaFailedAt(v)
 	})
 }
 
-// UpdateProviderQuotaUnavailable sets the "provider_quota_unavailable" field to the value that was provided on create.
-func (u *IntegrationUpsertOne) UpdateProviderQuotaUnavailable() *IntegrationUpsertOne {
+// UpdateProviderQuotaFailedAt sets the "provider_quota_failed_at" field to the value that was provided on create.
+func (u *IntegrationUpsertOne) UpdateProviderQuotaFailedAt() *IntegrationUpsertOne {
 	return u.Update(func(s *IntegrationUpsert) {
-		s.UpdateProviderQuotaUnavailable()
+		s.UpdateProviderQuotaFailedAt()
+	})
+}
+
+// ClearProviderQuotaFailedAt clears the value of the "provider_quota_failed_at" field.
+func (u *IntegrationUpsertOne) ClearProviderQuotaFailedAt() *IntegrationUpsertOne {
+	return u.Update(func(s *IntegrationUpsert) {
+		s.ClearProviderQuotaFailedAt()
 	})
 }
 
@@ -1818,17 +1824,24 @@ func (u *IntegrationUpsertBulk) ClearProviderQuotaCheckedAt() *IntegrationUpsert
 	})
 }
 
-// SetProviderQuotaUnavailable sets the "provider_quota_unavailable" field.
-func (u *IntegrationUpsertBulk) SetProviderQuotaUnavailable(v bool) *IntegrationUpsertBulk {
+// SetProviderQuotaFailedAt sets the "provider_quota_failed_at" field.
+func (u *IntegrationUpsertBulk) SetProviderQuotaFailedAt(v time.Time) *IntegrationUpsertBulk {
 	return u.Update(func(s *IntegrationUpsert) {
-		s.SetProviderQuotaUnavailable(v)
+		s.SetProviderQuotaFailedAt(v)
 	})
 }
 
-// UpdateProviderQuotaUnavailable sets the "provider_quota_unavailable" field to the value that was provided on create.
-func (u *IntegrationUpsertBulk) UpdateProviderQuotaUnavailable() *IntegrationUpsertBulk {
+// UpdateProviderQuotaFailedAt sets the "provider_quota_failed_at" field to the value that was provided on create.
+func (u *IntegrationUpsertBulk) UpdateProviderQuotaFailedAt() *IntegrationUpsertBulk {
 	return u.Update(func(s *IntegrationUpsert) {
-		s.UpdateProviderQuotaUnavailable()
+		s.UpdateProviderQuotaFailedAt()
+	})
+}
+
+// ClearProviderQuotaFailedAt clears the value of the "provider_quota_failed_at" field.
+func (u *IntegrationUpsertBulk) ClearProviderQuotaFailedAt() *IntegrationUpsertBulk {
+	return u.Update(func(s *IntegrationUpsert) {
+		s.ClearProviderQuotaFailedAt()
 	})
 }
 

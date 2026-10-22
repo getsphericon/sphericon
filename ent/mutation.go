@@ -17589,7 +17589,7 @@ type IntegrationMutation struct {
 	provider_max_per_day       *int
 	addprovider_max_per_day    *int
 	provider_quota_checked_at  *time.Time
-	provider_quota_unavailable *bool
+	provider_quota_failed_at   *time.Time
 	clearedFields              map[string]struct{}
 	workspace                  *int64
 	clearedworkspace           bool
@@ -18540,40 +18540,53 @@ func (m *IntegrationMutation) ResetProviderQuotaCheckedAt() {
 	delete(m.clearedFields, integration.FieldProviderQuotaCheckedAt)
 }
 
-// SetProviderQuotaUnavailable sets the "provider_quota_unavailable" field.
-func (m *IntegrationMutation) SetProviderQuotaUnavailable(b bool) {
-	m.provider_quota_unavailable = &b
+// SetProviderQuotaFailedAt sets the "provider_quota_failed_at" field.
+func (m *IntegrationMutation) SetProviderQuotaFailedAt(t time.Time) {
+	m.provider_quota_failed_at = &t
 }
 
-// ProviderQuotaUnavailable returns the value of the "provider_quota_unavailable" field in the mutation.
-func (m *IntegrationMutation) ProviderQuotaUnavailable() (r bool, exists bool) {
-	v := m.provider_quota_unavailable
+// ProviderQuotaFailedAt returns the value of the "provider_quota_failed_at" field in the mutation.
+func (m *IntegrationMutation) ProviderQuotaFailedAt() (r time.Time, exists bool) {
+	v := m.provider_quota_failed_at
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldProviderQuotaUnavailable returns the old "provider_quota_unavailable" field's value of the Integration entity.
+// OldProviderQuotaFailedAt returns the old "provider_quota_failed_at" field's value of the Integration entity.
 // If the Integration object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *IntegrationMutation) OldProviderQuotaUnavailable(ctx context.Context) (v bool, err error) {
+func (m *IntegrationMutation) OldProviderQuotaFailedAt(ctx context.Context) (v *time.Time, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldProviderQuotaUnavailable is only allowed on UpdateOne operations")
+		return v, errors.New("OldProviderQuotaFailedAt is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldProviderQuotaUnavailable requires an ID field in the mutation")
+		return v, errors.New("OldProviderQuotaFailedAt requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldProviderQuotaUnavailable: %w", err)
+		return v, fmt.Errorf("querying old value for OldProviderQuotaFailedAt: %w", err)
 	}
-	return oldValue.ProviderQuotaUnavailable, nil
+	return oldValue.ProviderQuotaFailedAt, nil
 }
 
-// ResetProviderQuotaUnavailable resets all changes to the "provider_quota_unavailable" field.
-func (m *IntegrationMutation) ResetProviderQuotaUnavailable() {
-	m.provider_quota_unavailable = nil
+// ClearProviderQuotaFailedAt clears the value of the "provider_quota_failed_at" field.
+func (m *IntegrationMutation) ClearProviderQuotaFailedAt() {
+	m.provider_quota_failed_at = nil
+	m.clearedFields[integration.FieldProviderQuotaFailedAt] = struct{}{}
+}
+
+// ProviderQuotaFailedAtCleared returns if the "provider_quota_failed_at" field was cleared in this mutation.
+func (m *IntegrationMutation) ProviderQuotaFailedAtCleared() bool {
+	_, ok := m.clearedFields[integration.FieldProviderQuotaFailedAt]
+	return ok
+}
+
+// ResetProviderQuotaFailedAt resets all changes to the "provider_quota_failed_at" field.
+func (m *IntegrationMutation) ResetProviderQuotaFailedAt() {
+	m.provider_quota_failed_at = nil
+	delete(m.clearedFields, integration.FieldProviderQuotaFailedAt)
 }
 
 // ClearWorkspace clears the "workspace" edge to the Workspace entity.
@@ -18731,8 +18744,8 @@ func (m *IntegrationMutation) Fields() []string {
 	if m.provider_quota_checked_at != nil {
 		fields = append(fields, integration.FieldProviderQuotaCheckedAt)
 	}
-	if m.provider_quota_unavailable != nil {
-		fields = append(fields, integration.FieldProviderQuotaUnavailable)
+	if m.provider_quota_failed_at != nil {
+		fields = append(fields, integration.FieldProviderQuotaFailedAt)
 	}
 	return fields
 }
@@ -18778,8 +18791,8 @@ func (m *IntegrationMutation) Field(name string) (ent.Value, bool) {
 		return m.ProviderMaxPerDay()
 	case integration.FieldProviderQuotaCheckedAt:
 		return m.ProviderQuotaCheckedAt()
-	case integration.FieldProviderQuotaUnavailable:
-		return m.ProviderQuotaUnavailable()
+	case integration.FieldProviderQuotaFailedAt:
+		return m.ProviderQuotaFailedAt()
 	}
 	return nil, false
 }
@@ -18825,8 +18838,8 @@ func (m *IntegrationMutation) OldField(ctx context.Context, name string) (ent.Va
 		return m.OldProviderMaxPerDay(ctx)
 	case integration.FieldProviderQuotaCheckedAt:
 		return m.OldProviderQuotaCheckedAt(ctx)
-	case integration.FieldProviderQuotaUnavailable:
-		return m.OldProviderQuotaUnavailable(ctx)
+	case integration.FieldProviderQuotaFailedAt:
+		return m.OldProviderQuotaFailedAt(ctx)
 	}
 	return nil, fmt.Errorf("unknown Integration field %s", name)
 }
@@ -18962,12 +18975,12 @@ func (m *IntegrationMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetProviderQuotaCheckedAt(v)
 		return nil
-	case integration.FieldProviderQuotaUnavailable:
-		v, ok := value.(bool)
+	case integration.FieldProviderQuotaFailedAt:
+		v, ok := value.(time.Time)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetProviderQuotaUnavailable(v)
+		m.SetProviderQuotaFailedAt(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Integration field %s", name)
@@ -19074,6 +19087,9 @@ func (m *IntegrationMutation) ClearedFields() []string {
 	if m.FieldCleared(integration.FieldProviderQuotaCheckedAt) {
 		fields = append(fields, integration.FieldProviderQuotaCheckedAt)
 	}
+	if m.FieldCleared(integration.FieldProviderQuotaFailedAt) {
+		fields = append(fields, integration.FieldProviderQuotaFailedAt)
+	}
 	return fields
 }
 
@@ -19111,6 +19127,9 @@ func (m *IntegrationMutation) ClearField(name string) error {
 		return nil
 	case integration.FieldProviderQuotaCheckedAt:
 		m.ClearProviderQuotaCheckedAt()
+		return nil
+	case integration.FieldProviderQuotaFailedAt:
+		m.ClearProviderQuotaFailedAt()
 		return nil
 	}
 	return fmt.Errorf("unknown Integration nullable field %s", name)
@@ -19174,8 +19193,8 @@ func (m *IntegrationMutation) ResetField(name string) error {
 	case integration.FieldProviderQuotaCheckedAt:
 		m.ResetProviderQuotaCheckedAt()
 		return nil
-	case integration.FieldProviderQuotaUnavailable:
-		m.ResetProviderQuotaUnavailable()
+	case integration.FieldProviderQuotaFailedAt:
+		m.ResetProviderQuotaFailedAt()
 		return nil
 	}
 	return fmt.Errorf("unknown Integration field %s", name)
