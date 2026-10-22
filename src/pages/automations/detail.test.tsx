@@ -1,6 +1,7 @@
 import { expect, test } from 'vitest'
 
 import {
+  handleSiteAutomationReportsGet,
   handleSiteAutomationsGet,
   handleSiteEnrollmentsList,
 } from '../../generated/site/msw.gen.ts'
@@ -25,6 +26,9 @@ test('shows the automation and the contacts enrolled in it', async () => {
         ...TIMESTAMPS,
       },
     }),
+    handleSiteAutomationReportsGet({
+      body: { opens: 0, clicks: 0, delivered: 0, bounced: 0, complained: 0, links: [] },
+    }),
     handleSiteEnrollmentsList({
       body: page(
         [
@@ -47,4 +51,46 @@ test('shows the automation and the contacts enrolled in it', async () => {
   await expect.element(screen.getByText('Welcome series')).toBeInTheDocument()
   await expect.element(screen.getByText('42')).toBeInTheDocument()
   await expect.element(screen.getByText('Completed')).toBeInTheDocument()
+})
+
+test('shows the opens, the clicks and the clicked links of the automation', async () => {
+  worker.use(
+    handleSiteAutomationsGet({
+      body: {
+        id: '1',
+        name: 'Welcome series',
+        status: 'active',
+        triggerEvent: 'contact.created',
+        steps: [],
+        ...TIMESTAMPS,
+      },
+    }),
+    handleSiteAutomationReportsGet({
+      body: {
+        opens: 12,
+        clicks: 9,
+        delivered: 31,
+        bounced: 4,
+        complained: 5,
+        links: [
+          { url: 'https://dest.test/a', clicks: 7 },
+          { url: 'https://dest.test/b', clicks: 2 },
+        ],
+      },
+    }),
+    handleSiteEnrollmentsList({ body: page([], 0) }),
+  )
+
+  const { screen } = await renderWithRouter(<AutomationDetailPage />, MOUNT)
+
+  await expect.element(screen.getByText('Opens', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('12', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('Delivered', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('31', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('Bounced', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('4', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('Complained', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('5', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('https://dest.test/a')).toBeInTheDocument()
+  await expect.element(screen.getByText('https://dest.test/b')).toBeInTheDocument()
 })

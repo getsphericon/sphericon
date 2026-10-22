@@ -269,9 +269,9 @@ type Request struct {
 	FromEmail string
 	FromName  string
 
-	// TrackID, when non-zero, turns on open/click tracking for this message
-	// (the Broadcast recipient id the tracking token encodes).
-	TrackID int64
+	// Track turns on open/click tracking for this message: the tracking token names the
+	// Outbound message (ADR 0053).
+	Track bool
 
 	Ref Ref
 }
@@ -348,7 +348,7 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 		return m.finish(ctx, s, msg, outboundmessage.StatusSkipped, Skipped, dec.Reason)
 	}
 
-	built, err := m.compose(ctx, s, g.domain, req, dest, ws)
+	built, err := m.compose(ctx, s, g.domain, req, msg.ID, dest, ws)
 	if err != nil {
 		return m.finish(ctx, s, msg, outboundmessage.StatusFailed, Failed, err.Error())
 	}
@@ -580,14 +580,14 @@ type composed struct {
 // compose renders the content for one recipient and, for a marketing send, layers
 // on the unsubscribe footer, the open/click tracking and the one-click header. Any
 // error here is deterministic for this message, so the caller records it as Failed.
-func (m *Module) compose(ctx context.Context, s *ent.Scoped, domain string, req Request, dest string, ws *ent.Workspace) (composed, error) {
+func (m *Module) compose(ctx context.Context, s *ent.Scoped, domain string, req Request, messageID int64, dest string, ws *ent.Workspace) (composed, error) {
 	email, err := emailrender.RenderEmail(req.Subject, req.Body, Bindings(req.Contact, req.Variables))
 	if err != nil {
 		return composed{}, err
 	}
 	out := composed{msg: messaging.EmailMessage{Subject: email.Subject, HTML: email.HTML, Text: email.Text}}
-	if req.Source == "" {
-		return out, nil // Transactional: no unsubscribe, no tracking
+	if req.Source == "" && !req.Track {
+		return out, nil // Transactional, untracked: no unsubscribe, no tracking
 	}
 
 	// One choice per message: every link and the List-Unsubscribe URL share one host.
@@ -601,6 +601,15 @@ func (m *Module) compose(ctx context.Context, s *ent.Scoped, domain string, req 
 			tr = tr.OnHost(host)
 		}
 	}
+	if req.Source == "" {
+		// A tracked Transactional send: pixel and rewritten links, no footer, no header (ADR 0053).
+		html, err := tr.Instrument(email.HTML, messageID)
+		if err != nil {
+			return composed{}, fmt.Errorf("tracking rewrite: %w", err)
+		}
+		out.msg.HTML = html
+		return out, nil
+	}
 
 	contactID := req.ContactID
 	if req.Contact != nil {
@@ -613,10 +622,10 @@ func (m *Module) compose(ctx context.Context, s *ent.Scoped, domain string, req 
 		ContactID:   contactID,
 		BroadcastID: req.Ref.BroadcastID,
 	}
-	if req.TrackID != 0 {
+	if req.Track {
 		// Click/open tracking is layered on after rendering so re-parsing the HTML
 		// cannot mangle the pixel or links; Rewrite also appends the footer.
-		html, err := tr.Rewrite(email.HTML, req.TrackID, unsub, ws.PostalAddress)
+		html, err := tr.Rewrite(email.HTML, messageID, unsub, ws.PostalAddress)
 		if err != nil {
 			return composed{}, fmt.Errorf("tracking rewrite: %w", err)
 		}
@@ -801,7 +810,7 @@ func (m *Module) SendTest(ctx context.Context, s *ent.Scoped, req TestRequest) (
 
 // composeTest renders a Test send's content for to: no unsubscribe, no tracking.
 func (m *Module) composeTest(ctx context.Context, s *ent.Scoped, ws *ent.Workspace, domain string, req TestRequest, to string) (messaging.EmailMessage, error) {
-	built, err := m.compose(ctx, s, domain, Request{Subject: req.Subject, Body: req.Body, Variables: req.Variables}, to, ws)
+	built, err := m.compose(ctx, s, domain, Request{Subject: req.Subject, Body: req.Body, Variables: req.Variables}, 0, to, ws)
 	return built.msg, err
 }
 

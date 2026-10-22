@@ -25,6 +25,9 @@ var (
 		fixtures.EventOldAnalyticalID,
 		fixtures.EventOldAnalyticalSentID,
 		fixtures.EventOldAnalyticalTransientBounceID,
+		fixtures.EventOldDeliveredID,
+		fixtures.EventOldDelayedID,
+		fixtures.EventOldDroppedID,
 	}
 	// Fixture Events 500 days old that are evidentiary and must stay.
 	evidentiary = []int64{

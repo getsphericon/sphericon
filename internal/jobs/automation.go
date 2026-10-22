@@ -23,6 +23,8 @@ type EvaluateTriggerArgs struct {
 	WorkspaceID int64  `json:"workspace_id"`
 	ContactID   int64  `json:"contact_id"`
 	Action      string `json:"action"`
+	// SourceAutomationID is the Automation whose email the Event came from, 0 for any other Event.
+	SourceAutomationID int64 `json:"source_automation_id,omitempty"`
 }
 
 func (EvaluateTriggerArgs) Kind() string { return jobkind.EvaluateTrigger.Kind }
@@ -45,7 +47,7 @@ func (w *EvaluateTriggerWorker) Work(ctx context.Context, job *river.Job[Evaluat
 	if c.WorkspaceID != job.Args.WorkspaceID {
 		return nil // stale or forged job args; never enroll across Workspaces
 	}
-	runIDs, err := EvaluateTrigger(ctx, w.ent.Scoped(c.WorkspaceID), c.ID, job.Args.Action)
+	runIDs, err := EvaluateTrigger(ctx, w.ent.Scoped(c.WorkspaceID), c.ID, job.Args.Action, job.Args.SourceAutomationID)
 	if err != nil {
 		return err
 	}
@@ -61,8 +63,10 @@ func (w *EvaluateTriggerWorker) Work(ctx context.Context, job *river.Job[Evaluat
 // EvaluateTrigger enrolls a contact into every active automation in the workspace
 // whose trigger_event matches action, creating one AutomationRun each (enroll-
 // once-ever via the unique index). Returns the new run IDs to advance. Pure (no
-// queue) so it can be tested directly.
-func EvaluateTrigger(ctx context.Context, s *ent.Scoped, contactID int64, action string) ([]int64, error) {
+// queue) so it can be tested directly. An Event from an Automation's own email (sourceAutomationID)
+// never enrolls the Contact into that Automation, so an open-triggered Automation cannot feed itself
+// (ADR 0053).
+func EvaluateTrigger(ctx context.Context, s *ent.Scoped, contactID int64, action string, sourceAutomationID int64) ([]int64, error) {
 	autos, err := s.Automation().Query().
 		Where(
 			automation.StatusEQ(automation.StatusActive),
@@ -75,6 +79,9 @@ func EvaluateTrigger(ctx context.Context, s *ent.Scoped, contactID int64, action
 
 	var runIDs []int64
 	for _, a := range autos {
+		if a.ID == sourceAutomationID {
+			continue
+		}
 		runID, enrolled, err := automations.Enroll(ctx, s, a.ID, contactID)
 		if err != nil {
 			return nil, err

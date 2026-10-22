@@ -1610,6 +1610,12 @@ type BroadcastReport struct {
 	ClickedCount int32 `json:"clickedCount"`
 	// Recipients that unsubscribed via this broadcast.
 	UnsubscribedCount int32 `json:"unsubscribedCount"`
+	// Messages the provider reported delivered, read from the delivery result stamped on each message.
+	DeliveredCount int32 `json:"deliveredCount"`
+	// Messages the provider reported bounced, read from the delivery result stamped on each message.
+	BouncedCount int32 `json:"bouncedCount"`
+	// Messages a recipient complained about, read from the delivery result stamped on each message.
+	ComplainedCount int32 `json:"complainedCount"`
 	// Unique opens ÷ messages sent (0-1).
 	OpenRate float32 `json:"openRate"`
 	// Unique clicks ÷ messages sent (0-1).
@@ -1659,6 +1665,21 @@ func (s *BroadcastReport) GetClickedCount() int32 {
 // GetUnsubscribedCount returns the value of UnsubscribedCount.
 func (s *BroadcastReport) GetUnsubscribedCount() int32 {
 	return s.UnsubscribedCount
+}
+
+// GetDeliveredCount returns the value of DeliveredCount.
+func (s *BroadcastReport) GetDeliveredCount() int32 {
+	return s.DeliveredCount
+}
+
+// GetBouncedCount returns the value of BouncedCount.
+func (s *BroadcastReport) GetBouncedCount() int32 {
+	return s.BouncedCount
+}
+
+// GetComplainedCount returns the value of ComplainedCount.
+func (s *BroadcastReport) GetComplainedCount() int32 {
+	return s.ComplainedCount
 }
 
 // GetOpenRate returns the value of OpenRate.
@@ -1714,6 +1735,21 @@ func (s *BroadcastReport) SetClickedCount(val int32) {
 // SetUnsubscribedCount sets the value of UnsubscribedCount.
 func (s *BroadcastReport) SetUnsubscribedCount(val int32) {
 	s.UnsubscribedCount = val
+}
+
+// SetDeliveredCount sets the value of DeliveredCount.
+func (s *BroadcastReport) SetDeliveredCount(val int32) {
+	s.DeliveredCount = val
+}
+
+// SetBouncedCount sets the value of BouncedCount.
+func (s *BroadcastReport) SetBouncedCount(val int32) {
+	s.BouncedCount = val
+}
+
+// SetComplainedCount sets the value of ComplainedCount.
+func (s *BroadcastReport) SetComplainedCount(val int32) {
+	s.ComplainedCount = val
 }
 
 // SetOpenRate sets the value of OpenRate.
@@ -2921,6 +2957,12 @@ type ContactExportOutboundMessage struct {
 	ClaimedAt Timestamp `json:"claimedAt"`
 	// When the message was sent.
 	SentAt OptNilTimestamp `json:"sentAt"`
+	// When the provider first reported the message delivered.
+	DeliveredAt OptNilTimestamp `json:"deliveredAt"`
+	// When the provider first reported the message bounced.
+	BouncedAt OptNilTimestamp `json:"bouncedAt"`
+	// When the provider first reported a spam complaint about the message.
+	ComplainedAt OptNilTimestamp `json:"complainedAt"`
 	// Broadcast that produced the message.
 	BroadcastId OptNilEntityId `json:"broadcastId"`
 	// Automation that produced the message.
@@ -2986,6 +3028,21 @@ func (s *ContactExportOutboundMessage) GetClaimedAt() Timestamp {
 // GetSentAt returns the value of SentAt.
 func (s *ContactExportOutboundMessage) GetSentAt() OptNilTimestamp {
 	return s.SentAt
+}
+
+// GetDeliveredAt returns the value of DeliveredAt.
+func (s *ContactExportOutboundMessage) GetDeliveredAt() OptNilTimestamp {
+	return s.DeliveredAt
+}
+
+// GetBouncedAt returns the value of BouncedAt.
+func (s *ContactExportOutboundMessage) GetBouncedAt() OptNilTimestamp {
+	return s.BouncedAt
+}
+
+// GetComplainedAt returns the value of ComplainedAt.
+func (s *ContactExportOutboundMessage) GetComplainedAt() OptNilTimestamp {
+	return s.ComplainedAt
 }
 
 // GetBroadcastId returns the value of BroadcastId.
@@ -3066,6 +3123,21 @@ func (s *ContactExportOutboundMessage) SetClaimedAt(val Timestamp) {
 // SetSentAt sets the value of SentAt.
 func (s *ContactExportOutboundMessage) SetSentAt(val OptNilTimestamp) {
 	s.SentAt = val
+}
+
+// SetDeliveredAt sets the value of DeliveredAt.
+func (s *ContactExportOutboundMessage) SetDeliveredAt(val OptNilTimestamp) {
+	s.DeliveredAt = val
+}
+
+// SetBouncedAt sets the value of BouncedAt.
+func (s *ContactExportOutboundMessage) SetBouncedAt(val OptNilTimestamp) {
+	s.BouncedAt = val
+}
+
+// SetComplainedAt sets the value of ComplainedAt.
+func (s *ContactExportOutboundMessage) SetComplainedAt(val OptNilTimestamp) {
+	s.ComplainedAt = val
 }
 
 // SetBroadcastId sets the value of BroadcastId.
@@ -11316,6 +11388,10 @@ type SendTransactionalEmailInput struct {
 	Destination EmailAddress `json:"destination"`
 	// Per-call variables merged into the template's subject and body (Liquid `{{ }}`).
 	Variables OptSendTransactionalEmailInputVariables `json:"variables"`
+	// Track opens and clicks of this message (default false). The email then carries an open pixel and its
+	// links are rewritten; it stays transactional: no unsubscribe link, the same eligibility and
+	// Suppression. Events attach to the Contact the address resolves to, else are kept by address.
+	Track OptBool `json:"track"`
 }
 
 // GetTemplateId returns the value of TemplateId.
@@ -11333,6 +11409,11 @@ func (s *SendTransactionalEmailInput) GetVariables() OptSendTransactionalEmailIn
 	return s.Variables
 }
 
+// GetTrack returns the value of Track.
+func (s *SendTransactionalEmailInput) GetTrack() OptBool {
+	return s.Track
+}
+
 // SetTemplateId sets the value of TemplateId.
 func (s *SendTransactionalEmailInput) SetTemplateId(val EntityId) {
 	s.TemplateId = val
@@ -11346,6 +11427,11 @@ func (s *SendTransactionalEmailInput) SetDestination(val EmailAddress) {
 // SetVariables sets the value of Variables.
 func (s *SendTransactionalEmailInput) SetVariables(val OptSendTransactionalEmailInputVariables) {
 	s.Variables = val
+}
+
+// SetTrack sets the value of Track.
+func (s *SendTransactionalEmailInput) SetTrack(val OptBool) {
+	s.Track = val
 }
 
 // Per-call variables merged into the template's subject and body (Liquid `{{ }}`).
@@ -11478,7 +11564,8 @@ type SendingDomainRatesListUnauthorized ProblemDetails
 func (*SendingDomainRatesListUnauthorized) sendingDomainRatesListRes() {}
 
 // Complaint and bounce rates of one Sending domain over a trailing window (ADR 0011). Complaint rate
-// is complaints / (sent - hard bounces); bounce rate is hard bounces / sent.
+// is complaints / delivered (ADR 0053), undefined with no delivery notice in the window; bounce rate
+// is hard bounces / sent.
 // Ref: #/components/schemas/SendingDomainRatesResource
 type SendingDomainRatesResource struct {
 	// Sending domain id.
@@ -11487,7 +11574,7 @@ type SendingDomainRatesResource struct {
 	Domain string `json:"domain"`
 	// Trailing window the rates cover, in days.
 	WindowDays int32 `json:"windowDays"`
-	// Complaints over delivered-ish sends (sent minus hard bounces).
+	// Complaints over delivered mail; the rate is null when nothing was delivered in the window.
 	ComplaintRate RateTriple `json:"complaintRate"`
 	// Hard bounces over sent.
 	BounceRate RateTriple `json:"bounceRate"`

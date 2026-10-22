@@ -42,6 +42,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboxoffset"
 	"github.com/getsphericon/sphericon/ent/passkey"
 	"github.com/getsphericon/sphericon/ent/passkeychallenge"
+	"github.com/getsphericon/sphericon/ent/privaterelayrange"
 	"github.com/getsphericon/sphericon/ent/recoverycode"
 	"github.com/getsphericon/sphericon/ent/riverjob"
 	"github.com/getsphericon/sphericon/ent/schemastate"
@@ -150,6 +151,7 @@ func checkColumn(t, c string) error {
 			outboxoffset.Table:       outboxoffset.ValidColumn,
 			passkey.Table:            passkey.ValidColumn,
 			passkeychallenge.Table:   passkeychallenge.ValidColumn,
+			privaterelayrange.Table:  privaterelayrange.ValidColumn,
 			recoverycode.Table:       recoverycode.ValidColumn,
 			riverjob.Table:           riverjob.ValidColumn,
 			schemastate.Table:        schemastate.ValidColumn,

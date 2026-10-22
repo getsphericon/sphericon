@@ -36,6 +36,9 @@ const (
 	NameContactCreated     = "contact.created"
 	NameContactErased      = "contact.erased"
 	NameEmailSent          = "email.sent"
+	NameEmailDelivered     = "email.delivered"
+	NameEmailDelayed       = "email.delayed"
+	NameEmailDropped       = "email.dropped"
 	NameEmailOpened        = "email.opened"
 	NameEmailClicked       = "email.clicked"
 	NameEmailUnsubscribed  = "email.unsubscribed"
@@ -91,7 +94,7 @@ func CheckAction(action string) error {
 	return nil
 }
 
-// Bounce kinds carried by EmailDeliveryFailure; what each means for Suppression is the
+// Bounce kinds carried by EmailDelivery; what each means for Suppression is the
 // suppression module's rule.
 const (
 	BounceKindPermanent = suppression.BounceKindPermanent
@@ -129,6 +132,12 @@ type Projection struct {
 	// VisitorID is the anonymous device (→ events.visitor_id), kept so an anonymous
 	// event can be stitched onto a Contact at Identify. "" ⇒ unset.
 	VisitorID string
+	// AutomationID is the Automation whose email the Event came from, 0 for any other Event. An
+	// Automation never starts from an Event of its own email (ADR 0053).
+	AutomationID int64
+	// Machine marks an open or click made by software (ADR 0053). It is recorded, but starts no
+	// Automation.
+	Machine bool
 }
 
 // DomainEvent is a typed, producer-side domain event. Implementations are
@@ -171,8 +180,11 @@ var registry = map[string]func() DomainEvent{
 	NameEmailOpened:           func() DomainEvent { return &EmailEngagement{} },
 	NameEmailClicked:          func() DomainEvent { return &EmailEngagement{} },
 	NameEmailUnsubscribed:     func() DomainEvent { return &EmailEngagement{} },
-	NameEmailBounced:          func() DomainEvent { return &EmailDeliveryFailure{} },
-	NameEmailComplained:       func() DomainEvent { return &EmailDeliveryFailure{} },
+	NameEmailDelivered:        func() DomainEvent { return &EmailDelivery{} },
+	NameEmailDelayed:          func() DomainEvent { return &EmailDelivery{} },
+	NameEmailDropped:          func() DomainEvent { return &EmailDelivery{} },
+	NameEmailBounced:          func() DomainEvent { return &EmailDelivery{} },
+	NameEmailComplained:       func() DomainEvent { return &EmailDelivery{} },
 	NameMarketingConfirmed:    func() DomainEvent { return &MarketingConfirmed{} },
 	NameCollected:             func() DomainEvent { return &CollectedEvent{} },
 	NameAuditEntry:            func() DomainEvent { return &AuditEntry{} },
@@ -255,6 +267,9 @@ type EmailEngagement struct {
 	BroadcastID int64  `json:"broadcastId"`
 	URL         string `json:"url,omitempty"`
 	DedupID     string `json:"dedupId,omitempty"`
+	// Machine is set on an open or click made by software (ADR 0053): it stays in the Event log
+	// but counts toward no figure, sets no rollup and starts no Automation.
+	Machine bool `json:"machine,omitempty"`
 
 	// The envelope an Outbound send stamps on email.sent (ADR 0015, ADR 0011):
 	// which surface sent it, under which Sending source and Sending domain, and the
@@ -297,17 +312,21 @@ func (e *EmailEngagement) Project() Projection {
 	if e.OutboundMessageID != 0 {
 		props["outboundMessageId"] = e.OutboundMessageID
 	}
-	return Projection{Subject: e.Email, Action: e.Action, Email: e.Email, Properties: props, ContactID: e.ContactID}
+	if e.Machine {
+		props[MachineProperty] = true
+	}
+	return Projection{Subject: e.Email, Action: e.Action, Email: e.Email, Properties: props, ContactID: e.ContactID, AutomationID: e.AutomationID, Machine: e.Machine}
 }
 
-// EmailDeliveryFailure is emitted when a provider reports a bounce or a spam
-// complaint for one of our sends (ingested from a provider webhook, e.g. SES via
-// SNS). Action is the specific name. BounceKind distinguishes a permanent (hard)
-// bounce from a transient (soft) one and is empty for complaints; only permanent
-// bounces and complaints suppress the address. ContactID is 0 when the address
-// has no contact in the workspace.
-type EmailDeliveryFailure struct {
-	Action      string `json:"action"` // email.bounced|email.complained
+// EmailDelivery is emitted when a provider reports what became of one of our sends: a
+// Delivery notice (ADR 0053) ingested from a provider callback, e.g. SES via SNS. Action is
+// the specific name. BounceKind distinguishes a permanent (hard) bounce from a transient
+// (soft) one and is empty for the other kinds; only permanent bounces and complaints
+// suppress the address. ContactID is 0 when the address has no contact in the workspace;
+// OutboundMessageID is 0 when the notice named no message or none matched, and the Event then
+// stays at the level of the address.
+type EmailDelivery struct {
+	Action      string `json:"action"` // email.delivered|email.delayed|email.dropped|email.bounced|email.complained
 	WorkspaceID int64  `json:"workspaceId"`
 	ContactID   int64  `json:"contactId,omitempty"`
 	Email       string `json:"email"`
@@ -316,25 +335,50 @@ type EmailDeliveryFailure struct {
 	// SendingDomain is the domain the failed message was sent from (ADR 0011), so the
 	// complaint/bounce rate can be grained per Sending domain.
 	SendingDomain string `json:"sendingDomain,omitempty"`
+	// Reason is the provider's short explanation of a bounce, delay or drop, at most
+	// 500 characters.
+	Reason string `json:"reason,omitempty"`
+	// ProviderMessageID is the id the notice named, kept even when no Outbound message
+	// matched it.
+	ProviderMessageID string `json:"providerMessageId,omitempty"`
+	// The Outbound message the notice was linked to, and where that message came from.
+	OutboundMessageID int64  `json:"outboundMessageId,omitempty"`
+	Surface           string `json:"surface,omitempty"`
+	SendingSource     string `json:"sendingSource,omitempty"`
+	BroadcastID       int64  `json:"broadcastId,omitempty"`
+	AutomationID      int64  `json:"automationId,omitempty"`
 	// DedupID is the stable upstream id (e.g. SNS messageId + recipient) used as
 	// the envelope id so a redelivered provider notification dedupes at persist.
 	DedupID string `json:"dedupId,omitempty"`
 }
 
-func (e *EmailDeliveryFailure) EventName() string { return e.Action }
-func (*EmailDeliveryFailure) EventVersion() int   { return 1 }
-func (e *EmailDeliveryFailure) Workspace() int64  { return e.WorkspaceID }
-func (e *EmailDeliveryFailure) EventID() string   { return e.DedupID }
-func (e *EmailDeliveryFailure) Project() Projection {
+func (e *EmailDelivery) EventName() string { return e.Action }
+func (*EmailDelivery) EventVersion() int   { return 1 }
+func (e *EmailDelivery) Workspace() int64  { return e.WorkspaceID }
+func (e *EmailDelivery) EventID() string   { return e.DedupID }
+func (e *EmailDelivery) Project() Projection {
 	props := map[string]any{}
-	if e.BounceKind != "" {
-		props["bounceKind"] = e.BounceKind
+	for k, v := range map[string]string{
+		"bounceKind":        e.BounceKind,
+		"provider":          e.Provider,
+		"sendingDomain":     e.SendingDomain,
+		"reason":            e.Reason,
+		"providerMessageId": e.ProviderMessageID,
+		"surface":           e.Surface,
+		"sendingSource":     e.SendingSource,
+	} {
+		if v != "" {
+			props[k] = v
+		}
 	}
-	if e.Provider != "" {
-		props["provider"] = e.Provider
-	}
-	if e.SendingDomain != "" {
-		props["sendingDomain"] = e.SendingDomain
+	for k, v := range map[string]int64{
+		"outboundMessageId": e.OutboundMessageID,
+		"broadcastId":       e.BroadcastID,
+		"automationId":      e.AutomationID,
+	} {
+		if v != 0 {
+			props[k] = v
+		}
 	}
 	return Projection{Subject: e.Email, Action: e.Action, Email: e.Email, Properties: props, ContactID: e.ContactID}
 }

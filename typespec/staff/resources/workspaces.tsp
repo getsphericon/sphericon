@@ -110,7 +110,7 @@ model StaffDomainRates {
   /** The domain the rates are for */
   domain: string;
 
-  /** Complaints over sent minus hard bounces */
+  /** Complaints over delivered mail; the rate is null when nothing was delivered in the window */
   complaintRate: StaffRate;
 
   /** Hard bounces over sent */

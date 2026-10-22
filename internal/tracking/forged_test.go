@@ -28,9 +28,9 @@ func newTracker() *tracking.Tracker { return tracking.New(forgeSecret, "https://
 func TestDecodeRejectsMalformedClaims(t *testing.T) {
 	tr := newTracker()
 	for name, claims := range map[string]jwt.MapClaims{
-		"missing rid": {},
-		"numeric rid": {"rid": 5},
-		"non-int rid": {"rid": "five"},
+		"missing mid": {},
+		"numeric mid": {"mid": 5},
+		"non-int mid": {"mid": "five"},
 	} {
 		t.Run(name, func(t *testing.T) {
 			_, err := tr.Decode(signed(t, claims))

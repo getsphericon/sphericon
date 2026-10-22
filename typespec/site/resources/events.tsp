@@ -57,6 +57,9 @@ namespace SiteEvents {
 
     /** Filter by the email associated with the event */
     @query email?: string,
+
+    /** List the opens and clicks made by software (machine engagement) too; omitted, they are left out */
+    @query includeMachine?: boolean,
   ): Page<SiteEventResource> | NotFoundProblem;
 
   /** Distinct event actions in the workspace, sorted — powers the segment builder */

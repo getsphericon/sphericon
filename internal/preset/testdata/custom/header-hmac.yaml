@@ -27,7 +27,7 @@ tests:
         X-Timestamp: '1767225600'
         X-Signature: sha256=d2f238fdfc91fc3849bd4e0a7c202f1a023d7685b34061fd654fc88f7512256f
       body: '{"events":[]}'
-    expect: { failures: [] }
+    expect: { notices: [] }
   - name: a signature over another body is refused
     now: '2026-01-01T00:00:00Z'
     params: *params

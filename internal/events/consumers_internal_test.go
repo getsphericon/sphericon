@@ -51,7 +51,7 @@ func TestEventsReportTheirEnvelopeMetadata(t *testing.T) {
 	for _, ev := range []DomainEvent{
 		&ContactCreated{WorkspaceID: 7},
 		&EmailEngagement{Action: NameEmailOpened, WorkspaceID: 7},
-		&EmailDeliveryFailure{Action: NameEmailBounced, WorkspaceID: 7},
+		&EmailDelivery{Action: NameEmailBounced, WorkspaceID: 7},
 		&MarketingConfirmed{WorkspaceID: 7},
 		&CollectedEvent{WorkspaceID: 7, Action: "page_view"},
 	} {

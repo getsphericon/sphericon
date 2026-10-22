@@ -104,7 +104,8 @@ func TestExternalContactsEraseRemovesThePersonsData(t *testing.T) {
 	for _, id := range []int64{
 		fixtures.EventErasableSentID, fixtures.EventErasableOpenedID, fixtures.EventErasableClickedID,
 		fixtures.EventErasableBouncedID, fixtures.EventErasableComplainedID, fixtures.EventErasableUnsubscribedID,
-		fixtures.EventErasableCreatedID,
+		fixtures.EventErasableCreatedID, fixtures.EventErasableDeliveredID, fixtures.EventErasableDelayedID,
+		fixtures.EventErasableDroppedID,
 	} {
 		e := eventByID(t, env, id)
 		assert.Nilf(t, e.ContactID, "event %d contact_id", id)
@@ -214,7 +215,7 @@ func TestExternalContactsEraseDoesNotMoveRatesOrMetering(t *testing.T) {
 
 	assert.Equal(t, ratesBefore, ratesOf(), "complaint and bounce rates")
 	countsAfter := countsOf()
-	for _, action := range []string{"email.sent", "email.opened", "email.clicked", "email.bounced", "email.complained", "email.unsubscribed", "contact.created"} {
+	for _, action := range []string{"email.sent", "email.opened", "email.clicked", "email.delivered", "email.delayed", "email.dropped", "email.bounced", "email.complained", "email.unsubscribed", "contact.created"} {
 		assert.Equalf(t, countsBefore[action], countsAfter[action], "%s count", action)
 	}
 }

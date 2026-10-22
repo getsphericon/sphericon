@@ -252,7 +252,7 @@ func TestBelowTheVolumeFloorTheRatesAreUndefinedButTheCountsShow(t *testing.T) {
 
 	mail := domainRates(t, d, fixtures.SendingDomainSoylentDomain)
 	assert.EqualValues(t, 1, mail.ComplaintRate.Numerator)
-	assert.EqualValues(t, 7, mail.ComplaintRate.Denominator, "complaints are over sent minus hard bounces")
+	assert.EqualValues(t, 6, mail.ComplaintRate.Denominator, "complaints are over delivered")
 	assert.True(t, mail.ComplaintRate.Rate.Null, "8 sent is below the floor")
 	assert.EqualValues(t, 1, mail.BounceRate.Numerator, "a soft bounce is not counted")
 	assert.EqualValues(t, 8, mail.BounceRate.Denominator)
@@ -284,7 +284,7 @@ func TestAtOrAboveTheVolumeFloorTheRatesAreDefined(t *testing.T) {
 	assert.EqualValues(t, 8, d.VolumeFloor)
 	mail := domainRates(t, d, fixtures.SendingDomainSoylentDomain)
 	require.False(t, mail.ComplaintRate.Rate.Null)
-	assert.InDelta(t, 1.0/7.0, mail.ComplaintRate.Rate.Value, 1e-9)
+	assert.InDelta(t, 1.0/6.0, mail.ComplaintRate.Rate.Value, 1e-9)
 	require.False(t, mail.BounceRate.Rate.Null)
 	assert.InDelta(t, 1.0/8.0, mail.BounceRate.Rate.Value, 1e-9)
 

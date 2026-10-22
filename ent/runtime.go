@@ -32,6 +32,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/passkey"
 	"github.com/getsphericon/sphericon/ent/passkeychallenge"
+	"github.com/getsphericon/sphericon/ent/privaterelayrange"
 	"github.com/getsphericon/sphericon/ent/recoverycode"
 	"github.com/getsphericon/sphericon/ent/schema"
 	"github.com/getsphericon/sphericon/ent/schemastate"
@@ -707,6 +708,25 @@ func init() {
 	passkeychallengeDescChallenge := passkeychallengeFields[1].Descriptor()
 	// passkeychallenge.ChallengeValidator is a validator for the "challenge" field. It is called by the builders before save.
 	passkeychallenge.ChallengeValidator = passkeychallengeDescChallenge.Validators[0].(func(string) error)
+	privaterelayrangeMixin := schema.PrivateRelayRange{}.Mixin()
+	privaterelayrangeMixinFields0 := privaterelayrangeMixin[0].Fields()
+	_ = privaterelayrangeMixinFields0
+	privaterelayrangeFields := schema.PrivateRelayRange{}.Fields()
+	_ = privaterelayrangeFields
+	// privaterelayrangeDescCreatedAt is the schema descriptor for created_at field.
+	privaterelayrangeDescCreatedAt := privaterelayrangeMixinFields0[0].Descriptor()
+	// privaterelayrange.DefaultCreatedAt holds the default value on creation for the created_at field.
+	privaterelayrange.DefaultCreatedAt = privaterelayrangeDescCreatedAt.Default.(func() time.Time)
+	// privaterelayrangeDescUpdatedAt is the schema descriptor for updated_at field.
+	privaterelayrangeDescUpdatedAt := privaterelayrangeMixinFields0[1].Descriptor()
+	// privaterelayrange.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	privaterelayrange.DefaultUpdatedAt = privaterelayrangeDescUpdatedAt.Default.(func() time.Time)
+	// privaterelayrange.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	privaterelayrange.UpdateDefaultUpdatedAt = privaterelayrangeDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// privaterelayrangeDescCidr is the schema descriptor for cidr field.
+	privaterelayrangeDescCidr := privaterelayrangeFields[1].Descriptor()
+	// privaterelayrange.CidrValidator is a validator for the "cidr" field. It is called by the builders before save.
+	privaterelayrange.CidrValidator = privaterelayrangeDescCidr.Validators[0].(func(string) error)
 	recoverycodeMixin := schema.RecoveryCode{}.Mixin()
 	recoverycodeMixinFields0 := recoverycodeMixin[0].Fields()
 	_ = recoverycodeMixinFields0

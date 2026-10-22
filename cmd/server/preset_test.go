@@ -64,14 +64,14 @@ func TestPresetTestRunsABuiltInByName(t *testing.T) {
 
 	require.NoError(t, execute(nil, &out, "preset", "test", "generic"))
 
-	assert.Contains(t, out.String(), "PASS a signed failure becomes a Delivery failure")
+	assert.Contains(t, out.String(), "PASS a signed notice becomes a Delivery notice")
 }
 
 func TestPresetTestFailsAndNamesTheCaseThatDisagrees(t *testing.T) {
 	data, err := os.ReadFile(headerHMACPreset)
 	require.NoError(t, err)
 	broken := filepath.Join(t.TempDir(), "broken.yaml")
-	edited := bytes.Replace(data, []byte("expect: { refused: unauthentic }"), []byte("expect: { failures: [] }"), 1)
+	edited := bytes.Replace(data, []byte("expect: { refused: unauthentic }"), []byte("expect: { notices: [] }"), 1)
 	require.NoError(t, os.WriteFile(broken, edited, 0o600))
 	var out bytes.Buffer
 
@@ -91,7 +91,7 @@ func TestPresetTestReportsAFileThatDoesNotLoad(t *testing.T) {
 	require.ErrorContains(t, err, "bad.yaml")
 }
 
-func TestPresetTestPayloadPrintsTheDeliveryFailures(t *testing.T) {
+func TestPresetTestPayloadPrintsTheDeliveryNotices(t *testing.T) {
 	var out bytes.Buffer
 	args := genericArgs(samplePayload(t, genericPayload), "--header", "webhook-signature=v1,iasTRX51zsWZMikELc3A1LcI3NQUrVXBpWWg+/Hp82I=")
 

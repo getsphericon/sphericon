@@ -216,6 +216,48 @@ func (_c *OutboundMessageCreate) SetNillableSentAt(v *time.Time) *OutboundMessag
 	return _c
 }
 
+// SetDeliveredAt sets the "delivered_at" field.
+func (_c *OutboundMessageCreate) SetDeliveredAt(v time.Time) *OutboundMessageCreate {
+	_c.mutation.SetDeliveredAt(v)
+	return _c
+}
+
+// SetNillableDeliveredAt sets the "delivered_at" field if the given value is not nil.
+func (_c *OutboundMessageCreate) SetNillableDeliveredAt(v *time.Time) *OutboundMessageCreate {
+	if v != nil {
+		_c.SetDeliveredAt(*v)
+	}
+	return _c
+}
+
+// SetBouncedAt sets the "bounced_at" field.
+func (_c *OutboundMessageCreate) SetBouncedAt(v time.Time) *OutboundMessageCreate {
+	_c.mutation.SetBouncedAt(v)
+	return _c
+}
+
+// SetNillableBouncedAt sets the "bounced_at" field if the given value is not nil.
+func (_c *OutboundMessageCreate) SetNillableBouncedAt(v *time.Time) *OutboundMessageCreate {
+	if v != nil {
+		_c.SetBouncedAt(*v)
+	}
+	return _c
+}
+
+// SetComplainedAt sets the "complained_at" field.
+func (_c *OutboundMessageCreate) SetComplainedAt(v time.Time) *OutboundMessageCreate {
+	_c.mutation.SetComplainedAt(v)
+	return _c
+}
+
+// SetNillableComplainedAt sets the "complained_at" field if the given value is not nil.
+func (_c *OutboundMessageCreate) SetNillableComplainedAt(v *time.Time) *OutboundMessageCreate {
+	if v != nil {
+		_c.SetComplainedAt(*v)
+	}
+	return _c
+}
+
 // SetBroadcastID sets the "broadcast_id" field.
 func (_c *OutboundMessageCreate) SetBroadcastID(v int64) *OutboundMessageCreate {
 	_c.mutation.SetBroadcastID(v)
@@ -564,6 +606,18 @@ func (_c *OutboundMessageCreate) createSpec() (*OutboundMessage, *sqlgraph.Creat
 	if value, ok := _c.mutation.SentAt(); ok {
 		_spec.SetField(outboundmessage.FieldSentAt, field.TypeTime, value)
 		_node.SentAt = &value
+	}
+	if value, ok := _c.mutation.DeliveredAt(); ok {
+		_spec.SetField(outboundmessage.FieldDeliveredAt, field.TypeTime, value)
+		_node.DeliveredAt = &value
+	}
+	if value, ok := _c.mutation.BouncedAt(); ok {
+		_spec.SetField(outboundmessage.FieldBouncedAt, field.TypeTime, value)
+		_node.BouncedAt = &value
+	}
+	if value, ok := _c.mutation.ComplainedAt(); ok {
+		_spec.SetField(outboundmessage.FieldComplainedAt, field.TypeTime, value)
+		_node.ComplainedAt = &value
 	}
 	if value, ok := _c.mutation.AutomationStep(); ok {
 		_spec.SetField(outboundmessage.FieldAutomationStep, field.TypeInt, value)
@@ -944,6 +998,60 @@ func (u *OutboundMessageUpsert) UpdateSentAt() *OutboundMessageUpsert {
 // ClearSentAt clears the value of the "sent_at" field.
 func (u *OutboundMessageUpsert) ClearSentAt() *OutboundMessageUpsert {
 	u.SetNull(outboundmessage.FieldSentAt)
+	return u
+}
+
+// SetDeliveredAt sets the "delivered_at" field.
+func (u *OutboundMessageUpsert) SetDeliveredAt(v time.Time) *OutboundMessageUpsert {
+	u.Set(outboundmessage.FieldDeliveredAt, v)
+	return u
+}
+
+// UpdateDeliveredAt sets the "delivered_at" field to the value that was provided on create.
+func (u *OutboundMessageUpsert) UpdateDeliveredAt() *OutboundMessageUpsert {
+	u.SetExcluded(outboundmessage.FieldDeliveredAt)
+	return u
+}
+
+// ClearDeliveredAt clears the value of the "delivered_at" field.
+func (u *OutboundMessageUpsert) ClearDeliveredAt() *OutboundMessageUpsert {
+	u.SetNull(outboundmessage.FieldDeliveredAt)
+	return u
+}
+
+// SetBouncedAt sets the "bounced_at" field.
+func (u *OutboundMessageUpsert) SetBouncedAt(v time.Time) *OutboundMessageUpsert {
+	u.Set(outboundmessage.FieldBouncedAt, v)
+	return u
+}
+
+// UpdateBouncedAt sets the "bounced_at" field to the value that was provided on create.
+func (u *OutboundMessageUpsert) UpdateBouncedAt() *OutboundMessageUpsert {
+	u.SetExcluded(outboundmessage.FieldBouncedAt)
+	return u
+}
+
+// ClearBouncedAt clears the value of the "bounced_at" field.
+func (u *OutboundMessageUpsert) ClearBouncedAt() *OutboundMessageUpsert {
+	u.SetNull(outboundmessage.FieldBouncedAt)
+	return u
+}
+
+// SetComplainedAt sets the "complained_at" field.
+func (u *OutboundMessageUpsert) SetComplainedAt(v time.Time) *OutboundMessageUpsert {
+	u.Set(outboundmessage.FieldComplainedAt, v)
+	return u
+}
+
+// UpdateComplainedAt sets the "complained_at" field to the value that was provided on create.
+func (u *OutboundMessageUpsert) UpdateComplainedAt() *OutboundMessageUpsert {
+	u.SetExcluded(outboundmessage.FieldComplainedAt)
+	return u
+}
+
+// ClearComplainedAt clears the value of the "complained_at" field.
+func (u *OutboundMessageUpsert) ClearComplainedAt() *OutboundMessageUpsert {
+	u.SetNull(outboundmessage.FieldComplainedAt)
 	return u
 }
 
@@ -1353,6 +1461,69 @@ func (u *OutboundMessageUpsertOne) UpdateSentAt() *OutboundMessageUpsertOne {
 func (u *OutboundMessageUpsertOne) ClearSentAt() *OutboundMessageUpsertOne {
 	return u.Update(func(s *OutboundMessageUpsert) {
 		s.ClearSentAt()
+	})
+}
+
+// SetDeliveredAt sets the "delivered_at" field.
+func (u *OutboundMessageUpsertOne) SetDeliveredAt(v time.Time) *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.SetDeliveredAt(v)
+	})
+}
+
+// UpdateDeliveredAt sets the "delivered_at" field to the value that was provided on create.
+func (u *OutboundMessageUpsertOne) UpdateDeliveredAt() *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.UpdateDeliveredAt()
+	})
+}
+
+// ClearDeliveredAt clears the value of the "delivered_at" field.
+func (u *OutboundMessageUpsertOne) ClearDeliveredAt() *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.ClearDeliveredAt()
+	})
+}
+
+// SetBouncedAt sets the "bounced_at" field.
+func (u *OutboundMessageUpsertOne) SetBouncedAt(v time.Time) *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.SetBouncedAt(v)
+	})
+}
+
+// UpdateBouncedAt sets the "bounced_at" field to the value that was provided on create.
+func (u *OutboundMessageUpsertOne) UpdateBouncedAt() *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.UpdateBouncedAt()
+	})
+}
+
+// ClearBouncedAt clears the value of the "bounced_at" field.
+func (u *OutboundMessageUpsertOne) ClearBouncedAt() *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.ClearBouncedAt()
+	})
+}
+
+// SetComplainedAt sets the "complained_at" field.
+func (u *OutboundMessageUpsertOne) SetComplainedAt(v time.Time) *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.SetComplainedAt(v)
+	})
+}
+
+// UpdateComplainedAt sets the "complained_at" field to the value that was provided on create.
+func (u *OutboundMessageUpsertOne) UpdateComplainedAt() *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.UpdateComplainedAt()
+	})
+}
+
+// ClearComplainedAt clears the value of the "complained_at" field.
+func (u *OutboundMessageUpsertOne) ClearComplainedAt() *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.ClearComplainedAt()
 	})
 }
 
@@ -1950,6 +2121,69 @@ func (u *OutboundMessageUpsertBulk) UpdateSentAt() *OutboundMessageUpsertBulk {
 func (u *OutboundMessageUpsertBulk) ClearSentAt() *OutboundMessageUpsertBulk {
 	return u.Update(func(s *OutboundMessageUpsert) {
 		s.ClearSentAt()
+	})
+}
+
+// SetDeliveredAt sets the "delivered_at" field.
+func (u *OutboundMessageUpsertBulk) SetDeliveredAt(v time.Time) *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.SetDeliveredAt(v)
+	})
+}
+
+// UpdateDeliveredAt sets the "delivered_at" field to the value that was provided on create.
+func (u *OutboundMessageUpsertBulk) UpdateDeliveredAt() *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.UpdateDeliveredAt()
+	})
+}
+
+// ClearDeliveredAt clears the value of the "delivered_at" field.
+func (u *OutboundMessageUpsertBulk) ClearDeliveredAt() *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.ClearDeliveredAt()
+	})
+}
+
+// SetBouncedAt sets the "bounced_at" field.
+func (u *OutboundMessageUpsertBulk) SetBouncedAt(v time.Time) *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.SetBouncedAt(v)
+	})
+}
+
+// UpdateBouncedAt sets the "bounced_at" field to the value that was provided on create.
+func (u *OutboundMessageUpsertBulk) UpdateBouncedAt() *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.UpdateBouncedAt()
+	})
+}
+
+// ClearBouncedAt clears the value of the "bounced_at" field.
+func (u *OutboundMessageUpsertBulk) ClearBouncedAt() *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.ClearBouncedAt()
+	})
+}
+
+// SetComplainedAt sets the "complained_at" field.
+func (u *OutboundMessageUpsertBulk) SetComplainedAt(v time.Time) *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.SetComplainedAt(v)
+	})
+}
+
+// UpdateComplainedAt sets the "complained_at" field to the value that was provided on create.
+func (u *OutboundMessageUpsertBulk) UpdateComplainedAt() *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.UpdateComplainedAt()
+	})
+}
+
+// ClearComplainedAt clears the value of the "complained_at" field.
+func (u *OutboundMessageUpsertBulk) ClearComplainedAt() *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.ClearComplainedAt()
 	})
 }
 

@@ -1,7 +1,7 @@
 {
   "Message": "{\"eventType\":\"Complaint\",\"mail\":{\"source\":\"hello@codebasics.dev\"},\"complaint\":{\"complainedRecipients\":[{\"emailAddress\":\" Stranger@Example.com \"},{\"emailAddress\":\"  \"}]}}",
   "MessageId": "sns-msg-3",
-  "Signature": "rS/m7td4Psz68u7a2wbe5S+2vBJZRAGFeGA+GFMdn8hWBAykP4v3N/FprSa/dBgU1RCLVtyl+Ptv/VhRbzim57p+tQEjsUL+ni2JXSbrek6ZjDOihI2XAVf1jO29eUsPkpLDYnuw3miyExU2oTR1IMklyqOoDG1GSguKy6hibvj7GnK3v55KAnWcXunzP4o1E2L3xS7p4fVaSGhcXDdeYw55GDFVY8YwDzHDc0h5sWZTB4fPzdRZ7HNBtHoXj/Zself9TkQfwCHqVTZb1PzyWgNUjHd30D5FuYrAXJNdILLgJHgYGFFiX/kCbFdkFlhUeUsrhjl8tlffZXB8Y+laUg==",
+  "Signature": "l6lAlDFXQADOt9Tn+HHIwXRhQeGPtahFQTTkw6r92LMOLuRyvK5sSxBBNnW2+BiDRMyk03wiMII77hWPOrFsw2EMOSaCAiNQvLl17RBKCEJOnxMe+ZTi0jO5+24TgoZWq1/3qjsoGeA5tM3meXFhRi9doTdVCZ5kr3tMqeKMylMP5W36qkUVrrGnjpBo8fyuyY2q3+u2/5M6rO9bYw4+KgdjloPKwwoyD3pfSrkn4FjZWWhSJNVLDT4ZN9eFUpwCCaYZ+XvbnelUhhXFSnHXXAHWXZ3EzXNILLDQF9puoGe2pMXTGov6wZQOfBhsVZJeavaV4QSIatCbaqBW2OVZSQ==",
   "SignatureVersion": "2",
   "SigningCertURL": "https://sns.eu-west-1.amazonaws.com/SimpleNotificationService-sphericon-test.pem",
   "Timestamp": "2026-01-01T00:00:00.000Z",

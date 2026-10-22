@@ -152,6 +152,15 @@ model BroadcastReport {
   /** Recipients that unsubscribed via this broadcast */
   unsubscribedCount: int32;
 
+  /** Messages the provider reported delivered, read from the delivery result stamped on each message */
+  deliveredCount: int32;
+
+  /** Messages the provider reported bounced, read from the delivery result stamped on each message */
+  bouncedCount: int32;
+
+  /** Messages a recipient complained about, read from the delivery result stamped on each message */
+  complainedCount: int32;
+
   /** Unique opens ÷ messages sent (0-1) */
   openRate: float32;
 

@@ -115,6 +115,21 @@ func SentAt(v time.Time) predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldEQ(FieldSentAt, v))
 }
 
+// DeliveredAt applies equality check predicate on the "delivered_at" field. It's identical to DeliveredAtEQ.
+func DeliveredAt(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldEQ(FieldDeliveredAt, v))
+}
+
+// BouncedAt applies equality check predicate on the "bounced_at" field. It's identical to BouncedAtEQ.
+func BouncedAt(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldEQ(FieldBouncedAt, v))
+}
+
+// ComplainedAt applies equality check predicate on the "complained_at" field. It's identical to ComplainedAtEQ.
+func ComplainedAt(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldEQ(FieldComplainedAt, v))
+}
+
 // BroadcastID applies equality check predicate on the "broadcast_id" field. It's identical to BroadcastIDEQ.
 func BroadcastID(v int64) predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldEQ(FieldBroadcastID, v))
@@ -873,6 +888,156 @@ func SentAtIsNil() predicate.OutboundMessage {
 // SentAtNotNil applies the NotNil predicate on the "sent_at" field.
 func SentAtNotNil() predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldNotNull(FieldSentAt))
+}
+
+// DeliveredAtEQ applies the EQ predicate on the "delivered_at" field.
+func DeliveredAtEQ(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldEQ(FieldDeliveredAt, v))
+}
+
+// DeliveredAtNEQ applies the NEQ predicate on the "delivered_at" field.
+func DeliveredAtNEQ(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNEQ(FieldDeliveredAt, v))
+}
+
+// DeliveredAtIn applies the In predicate on the "delivered_at" field.
+func DeliveredAtIn(vs ...time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldIn(FieldDeliveredAt, vs...))
+}
+
+// DeliveredAtNotIn applies the NotIn predicate on the "delivered_at" field.
+func DeliveredAtNotIn(vs ...time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNotIn(FieldDeliveredAt, vs...))
+}
+
+// DeliveredAtGT applies the GT predicate on the "delivered_at" field.
+func DeliveredAtGT(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldGT(FieldDeliveredAt, v))
+}
+
+// DeliveredAtGTE applies the GTE predicate on the "delivered_at" field.
+func DeliveredAtGTE(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldGTE(FieldDeliveredAt, v))
+}
+
+// DeliveredAtLT applies the LT predicate on the "delivered_at" field.
+func DeliveredAtLT(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldLT(FieldDeliveredAt, v))
+}
+
+// DeliveredAtLTE applies the LTE predicate on the "delivered_at" field.
+func DeliveredAtLTE(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldLTE(FieldDeliveredAt, v))
+}
+
+// DeliveredAtIsNil applies the IsNil predicate on the "delivered_at" field.
+func DeliveredAtIsNil() predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldIsNull(FieldDeliveredAt))
+}
+
+// DeliveredAtNotNil applies the NotNil predicate on the "delivered_at" field.
+func DeliveredAtNotNil() predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNotNull(FieldDeliveredAt))
+}
+
+// BouncedAtEQ applies the EQ predicate on the "bounced_at" field.
+func BouncedAtEQ(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldEQ(FieldBouncedAt, v))
+}
+
+// BouncedAtNEQ applies the NEQ predicate on the "bounced_at" field.
+func BouncedAtNEQ(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNEQ(FieldBouncedAt, v))
+}
+
+// BouncedAtIn applies the In predicate on the "bounced_at" field.
+func BouncedAtIn(vs ...time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldIn(FieldBouncedAt, vs...))
+}
+
+// BouncedAtNotIn applies the NotIn predicate on the "bounced_at" field.
+func BouncedAtNotIn(vs ...time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNotIn(FieldBouncedAt, vs...))
+}
+
+// BouncedAtGT applies the GT predicate on the "bounced_at" field.
+func BouncedAtGT(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldGT(FieldBouncedAt, v))
+}
+
+// BouncedAtGTE applies the GTE predicate on the "bounced_at" field.
+func BouncedAtGTE(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldGTE(FieldBouncedAt, v))
+}
+
+// BouncedAtLT applies the LT predicate on the "bounced_at" field.
+func BouncedAtLT(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldLT(FieldBouncedAt, v))
+}
+
+// BouncedAtLTE applies the LTE predicate on the "bounced_at" field.
+func BouncedAtLTE(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldLTE(FieldBouncedAt, v))
+}
+
+// BouncedAtIsNil applies the IsNil predicate on the "bounced_at" field.
+func BouncedAtIsNil() predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldIsNull(FieldBouncedAt))
+}
+
+// BouncedAtNotNil applies the NotNil predicate on the "bounced_at" field.
+func BouncedAtNotNil() predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNotNull(FieldBouncedAt))
+}
+
+// ComplainedAtEQ applies the EQ predicate on the "complained_at" field.
+func ComplainedAtEQ(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldEQ(FieldComplainedAt, v))
+}
+
+// ComplainedAtNEQ applies the NEQ predicate on the "complained_at" field.
+func ComplainedAtNEQ(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNEQ(FieldComplainedAt, v))
+}
+
+// ComplainedAtIn applies the In predicate on the "complained_at" field.
+func ComplainedAtIn(vs ...time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldIn(FieldComplainedAt, vs...))
+}
+
+// ComplainedAtNotIn applies the NotIn predicate on the "complained_at" field.
+func ComplainedAtNotIn(vs ...time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNotIn(FieldComplainedAt, vs...))
+}
+
+// ComplainedAtGT applies the GT predicate on the "complained_at" field.
+func ComplainedAtGT(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldGT(FieldComplainedAt, v))
+}
+
+// ComplainedAtGTE applies the GTE predicate on the "complained_at" field.
+func ComplainedAtGTE(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldGTE(FieldComplainedAt, v))
+}
+
+// ComplainedAtLT applies the LT predicate on the "complained_at" field.
+func ComplainedAtLT(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldLT(FieldComplainedAt, v))
+}
+
+// ComplainedAtLTE applies the LTE predicate on the "complained_at" field.
+func ComplainedAtLTE(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldLTE(FieldComplainedAt, v))
+}
+
+// ComplainedAtIsNil applies the IsNil predicate on the "complained_at" field.
+func ComplainedAtIsNil() predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldIsNull(FieldComplainedAt))
+}
+
+// ComplainedAtNotNil applies the NotNil predicate on the "complained_at" field.
+func ComplainedAtNotNil() predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNotNull(FieldComplainedAt))
 }
 
 // BroadcastIDEQ applies the EQ predicate on the "broadcast_id" field.

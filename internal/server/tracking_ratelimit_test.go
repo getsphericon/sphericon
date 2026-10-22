@@ -37,16 +37,16 @@ func trackingGet(t *testing.T, env *testhelper.TestEnv, path string) *httptest.R
 	return rec
 }
 
-func trackingToken(t *testing.T, env *testhelper.TestEnv, recipientID int64) string {
+func trackingToken(t *testing.T, env *testhelper.TestEnv, messageID int64) string {
 	t.Helper()
-	token, err := env.Tracker.Token(recipientID)
+	token, err := env.Tracker.Token(messageID)
 	require.NoError(t, err)
 	return token
 }
 
-func clickPath(t *testing.T, env *testhelper.TestEnv, recipientID int64) string {
+func clickPath(t *testing.T, env *testhelper.TestEnv, messageID int64) string {
 	t.Helper()
-	link, err := env.Tracker.ClickURL(recipientID, clickDest)
+	link, err := env.Tracker.ClickURL(messageID, clickDest)
 	require.NoError(t, err)
 	_, token, _ := strings.Cut(link, "/e/c/")
 	return "/e/c/" + token
@@ -54,7 +54,7 @@ func clickPath(t *testing.T, env *testhelper.TestEnv, recipientID int64) string 
 
 func TestAClickRedirectsOnlyToTheDestinationItsTokenSigns(t *testing.T) {
 	env := testhelper.Setup(t)
-	recipient := trackingToken(t, env, fixtures.BroadcastRecipientUnengagedFirstID)
+	recipient := trackingToken(t, env, fixtures.OutboundMessageUnengagedFirstID)
 
 	// The recipient token also rides the open pixel: with a destination of the caller's
 	// choosing it is no click link.
@@ -63,7 +63,7 @@ func TestAClickRedirectsOnlyToTheDestinationItsTokenSigns(t *testing.T) {
 	assert.Empty(t, rec.Header().Get("Location"))
 
 	// A parameter next to a click token does not replace the signed destination.
-	signed := clickPath(t, env, fixtures.BroadcastRecipientUnengagedFirstID)
+	signed := clickPath(t, env, fixtures.OutboundMessageUnengagedFirstID)
 	rec = trackingGet(t, env, signed+"?u="+url.QueryEscape("https://evil.test/"))
 	assert.Equal(t, http.StatusFound, rec.Code)
 	assert.Equal(t, clickDest, rec.Header().Get("Location"))
@@ -72,9 +72,9 @@ func TestAClickRedirectsOnlyToTheDestinationItsTokenSigns(t *testing.T) {
 func TestOverTheTrackingGuardAClickStillRedirectsButIsNotRecorded(t *testing.T) {
 	env := testhelper.Setup(t, withTrackingLimit(1))
 
-	first := trackingGet(t, env, clickPath(t, env, fixtures.BroadcastRecipientUnengagedFirstID))
+	first := trackingGet(t, env, clickPath(t, env, fixtures.OutboundMessageUnengagedFirstID))
 	require.Equal(t, http.StatusFound, first.Code)
-	rec := trackingGet(t, env, clickPath(t, env, fixtures.BroadcastRecipientUnengagedSecondID))
+	rec := trackingGet(t, env, clickPath(t, env, fixtures.OutboundMessageUnengagedSecondID))
 
 	assert.Equal(t, http.StatusFound, rec.Code)
 	assert.Equal(t, clickDest, rec.Header().Get("Location"))
@@ -84,8 +84,8 @@ func TestOverTheTrackingGuardAClickStillRedirectsButIsNotRecorded(t *testing.T) 
 
 func TestOverTheTrackingGuardAnOpenStillReturnsThePixelButIsNotRecorded(t *testing.T) {
 	env := testhelper.Setup(t, withTrackingLimit(1))
-	first := trackingToken(t, env, fixtures.BroadcastRecipientUnengagedFirstID)
-	second := trackingToken(t, env, fixtures.BroadcastRecipientUnengagedSecondID)
+	first := trackingToken(t, env, fixtures.OutboundMessageUnengagedFirstID)
+	second := trackingToken(t, env, fixtures.OutboundMessageUnengagedSecondID)
 
 	require.Equal(t, http.StatusOK, trackingGet(t, env, "/e/o/"+first).Code)
 	rec := trackingGet(t, env, "/e/o/"+second)
@@ -99,11 +99,11 @@ func TestOverTheTrackingGuardAnOpenStillReturnsThePixelButIsNotRecorded(t *testi
 
 func TestBelowTheTrackingGuardEngagementsAreRecorded(t *testing.T) {
 	env := testhelper.Setup(t, withTrackingLimit(5))
-	first := trackingToken(t, env, fixtures.BroadcastRecipientUnengagedFirstID)
+	first := trackingToken(t, env, fixtures.OutboundMessageUnengagedFirstID)
 
 	opened := trackingGet(t, env, "/e/o/"+first)
 	require.Equal(t, http.StatusOK, opened.Code)
-	clicked := trackingGet(t, env, clickPath(t, env, fixtures.BroadcastRecipientUnengagedSecondID))
+	clicked := trackingGet(t, env, clickPath(t, env, fixtures.OutboundMessageUnengagedSecondID))
 	require.Equal(t, http.StatusFound, clicked.Code)
 
 	assert.NotNil(t, env.DB.BroadcastRecipient.GetX(t.Context(), fixtures.BroadcastRecipientUnengagedFirstID).OpenedAt)
@@ -135,8 +135,8 @@ func TestASkippedRecordingIsCountedUnderTheTrackingPolicy(t *testing.T) {
 	})
 
 	env := testhelper.Setup(t, withTrackingLimit(1))
-	first := trackingToken(t, env, fixtures.BroadcastRecipientUnengagedFirstID)
-	second := trackingToken(t, env, fixtures.BroadcastRecipientUnengagedSecondID)
+	first := trackingToken(t, env, fixtures.OutboundMessageUnengagedFirstID)
+	second := trackingToken(t, env, fixtures.OutboundMessageUnengagedSecondID)
 	trackingGet(t, env, "/e/o/"+first)
 	trackingGet(t, env, "/e/o/"+second)
 
@@ -148,8 +148,11 @@ func TestASkippedRecordingIsCountedUnderTheTrackingPolicy(t *testing.T) {
 
 func TestAZeroTrackingLimitRecordsEverything(t *testing.T) {
 	env := testhelper.Setup(t, withTrackingLimit(0))
-	for _, id := range []int64{fixtures.BroadcastRecipientUnengagedFirstID, fixtures.BroadcastRecipientUnengagedSecondID} {
-		require.Equal(t, http.StatusOK, trackingGet(t, env, "/e/o/"+trackingToken(t, env, id)).Code)
-		assert.NotNil(t, env.DB.BroadcastRecipient.GetX(t.Context(), id).OpenedAt)
+	for message, recipient := range map[int64]int64{
+		fixtures.OutboundMessageUnengagedFirstID:  fixtures.BroadcastRecipientUnengagedFirstID,
+		fixtures.OutboundMessageUnengagedSecondID: fixtures.BroadcastRecipientUnengagedSecondID,
+	} {
+		require.Equal(t, http.StatusOK, trackingGet(t, env, "/e/o/"+trackingToken(t, env, message)).Code)
+		assert.NotNil(t, env.DB.BroadcastRecipient.GetX(t.Context(), recipient).OpenedAt)
 	}
 }

@@ -1,5 +1,6 @@
-// Package reputation computes the deliverability rates of ADR 0011: complaint and
-// bounce rate per (Workspace, Sending domain) over a trailing window.
+// Package reputation computes the deliverability rates of ADR 0011: complaint rate (over
+// delivered mail since ADR 0053) and bounce rate (over sent) per (Workspace, Sending domain)
+// over a trailing window.
 //
 // The rates are flow rates by each Event's own timestamp, computed by a live windowed
 // query over events (no rollup table). Each is exposed as the (numerator, denominator,
@@ -38,7 +39,8 @@ func newRate(numerator, denominator int) Rate {
 // DomainRates are the rates of one Sending domain.
 type DomainRates struct {
 	Domain *ent.SendingDomain
-	// Complaint is complaints / (sent - hard bounces): a hard bounce was never delivered.
+	// Complaint is complaints / delivered (ADR 0053): undefined with no email.delivered Event in
+	// the window, as for a Preset that reports no delivery.
 	Complaint Rate
 	// Bounce is hard bounces / sent. Soft (transient) bounces are not counted.
 	Bounce Rate
@@ -89,13 +91,17 @@ func (m *Module) Rates(ctx context.Context, s *ent.Scoped, w Window) ([]DomainRa
 		if err != nil {
 			return nil, err
 		}
+		delivered, err := count(events.NameEmailDelivered)
+		if err != nil {
+			return nil, err
+		}
 		complaints, err := count(events.NameEmailComplained)
 		if err != nil {
 			return nil, err
 		}
 		out = append(out, DomainRates{
 			Domain:    d,
-			Complaint: newRate(complaints, sent-hard),
+			Complaint: newRate(complaints, delivered),
 			Bounce:    newRate(hard, sent),
 		})
 	}

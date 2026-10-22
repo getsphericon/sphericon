@@ -131,6 +131,12 @@ const (
 	AutomationNotifySlackName = "Notify Slack on signup"
 	// AutomationNotifySlackVersionID is from fixtures/automation_versions.
 	AutomationNotifySlackVersionID = 105
+	// AutomationOnOpenID is from fixtures/automations.
+	AutomationOnOpenID = 5570
+	// AutomationOnOpenName is from fixtures/automations.
+	AutomationOnOpenName = "On open"
+	// AutomationOnOpenVersionID is from fixtures/automation_versions.
+	AutomationOnOpenVersionID = 5570
 	// AutomationOnboardingDripID is from fixtures/automations.
 	AutomationOnboardingDripID = 106
 	// AutomationOnboardingDripName is from fixtures/automations.
@@ -565,6 +571,24 @@ const (
 	EventErasableCustomEmail = "erin@initech.test"
 	// EventErasableCustomID is from fixtures/events.
 	EventErasableCustomID = 950
+	// EventErasableDelayedAction is from fixtures/events.
+	EventErasableDelayedAction = "email.delayed"
+	// EventErasableDelayedEmail is from fixtures/events.
+	EventErasableDelayedEmail = "erin@initech.test"
+	// EventErasableDelayedID is from fixtures/events.
+	EventErasableDelayedID = 961
+	// EventErasableDeliveredAction is from fixtures/events.
+	EventErasableDeliveredAction = "email.delivered"
+	// EventErasableDeliveredEmail is from fixtures/events.
+	EventErasableDeliveredEmail = "erin@initech.test"
+	// EventErasableDeliveredID is from fixtures/events.
+	EventErasableDeliveredID = 960
+	// EventErasableDroppedAction is from fixtures/events.
+	EventErasableDroppedAction = "email.dropped"
+	// EventErasableDroppedEmail is from fixtures/events.
+	EventErasableDroppedEmail = "erin@initech.test"
+	// EventErasableDroppedID is from fixtures/events.
+	EventErasableDroppedID = 962
 	// EventErasableOpenedAction is from fixtures/events.
 	EventErasableOpenedAction = "email.opened"
 	// EventErasableOpenedEmail is from fixtures/events.
@@ -625,6 +649,24 @@ const (
 	EventOldConfirmedEmail = "old303@example.com"
 	// EventOldConfirmedID is from fixtures/events.
 	EventOldConfirmedID = 303
+	// EventOldDelayedAction is from fixtures/events.
+	EventOldDelayedAction = "email.delayed"
+	// EventOldDelayedEmail is from fixtures/events.
+	EventOldDelayedEmail = "old308@example.com"
+	// EventOldDelayedID is from fixtures/events.
+	EventOldDelayedID = 308
+	// EventOldDeliveredAction is from fixtures/events.
+	EventOldDeliveredAction = "email.delivered"
+	// EventOldDeliveredEmail is from fixtures/events.
+	EventOldDeliveredEmail = "old307@example.com"
+	// EventOldDeliveredID is from fixtures/events.
+	EventOldDeliveredID = 307
+	// EventOldDroppedAction is from fixtures/events.
+	EventOldDroppedAction = "email.dropped"
+	// EventOldDroppedEmail is from fixtures/events.
+	EventOldDroppedEmail = "old309@example.com"
+	// EventOldDroppedID is from fixtures/events.
+	EventOldDroppedID = 309
 	// EventOldPermanentBounceAction is from fixtures/events.
 	EventOldPermanentBounceAction = "email.bounced"
 	// EventOldPermanentBounceEmail is from fixtures/events.
@@ -1067,6 +1109,18 @@ const (
 	OscorpName = "Oscorp"
 	// OscorpPublicID is from fixtures/workspaces.
 	OscorpPublicID = "OscorW57"
+	// OutboundMessageAutomationComplainedDestination is from fixtures/outbound_messages.
+	OutboundMessageAutomationComplainedDestination = "bob.automation@example.com"
+	// OutboundMessageAutomationComplainedID is from fixtures/outbound_messages.
+	OutboundMessageAutomationComplainedID = 5703
+	// OutboundMessageAutomationOnOpenDestination is from fixtures/outbound_messages.
+	OutboundMessageAutomationOnOpenDestination = "alice.automation@example.com"
+	// OutboundMessageAutomationOnOpenID is from fixtures/outbound_messages.
+	OutboundMessageAutomationOnOpenID = 5702
+	// OutboundMessageAutomationTrackedDestination is from fixtures/outbound_messages.
+	OutboundMessageAutomationTrackedDestination = "alice.automation@example.com"
+	// OutboundMessageAutomationTrackedID is from fixtures/outbound_messages.
+	OutboundMessageAutomationTrackedID = 5701
 	// OutboundMessageBystanderDestination is from fixtures/outbound_messages.
 	OutboundMessageBystanderDestination = "ben@initech.test"
 	// OutboundMessageBystanderID is from fixtures/outbound_messages.
@@ -1087,6 +1141,8 @@ const (
 	OutboundMessageGlobexDestination = "pat@globex.test"
 	// OutboundMessageGlobexID is from fixtures/outbound_messages.
 	OutboundMessageGlobexID = 900
+	// OutboundMessageMailgunAliceID is from fixtures/outbound_messages.
+	OutboundMessageMailgunAliceID = 812
 	// OutboundMessageMovedOriginDestination is from fixtures/outbound_messages.
 	OutboundMessageMovedOriginDestination = "moved@initech.test"
 	// OutboundMessageMovedOriginID is from fixtures/outbound_messages.
@@ -1095,6 +1151,10 @@ const (
 	OutboundMessageParkedClaimDestination = "bob@example.com"
 	// OutboundMessageParkedClaimID is from fixtures/outbound_messages.
 	OutboundMessageParkedClaimID = 5711
+	// OutboundMessagePostmarkAliceID is from fixtures/outbound_messages.
+	OutboundMessagePostmarkAliceID = 811
+	// OutboundMessageSesAliceID is from fixtures/outbound_messages.
+	OutboundMessageSesAliceID = 810
 	// OutboundMessageStaleClaimDestination is from fixtures/outbound_messages.
 	OutboundMessageStaleClaimDestination = "lease.demo@codebasics.dev"
 	// OutboundMessageStaleClaimID is from fixtures/outbound_messages.
@@ -1103,6 +1163,14 @@ const (
 	OutboundMessageStrangerDestination = "stranger@initech.test"
 	// OutboundMessageStrangerID is from fixtures/outbound_messages.
 	OutboundMessageStrangerID = 303
+	// OutboundMessageTrackingSampleDestination is from fixtures/outbound_messages.
+	OutboundMessageTrackingSampleDestination = "alice.tracking@example.com"
+	// OutboundMessageTrackingSampleID is from fixtures/outbound_messages.
+	OutboundMessageTrackingSampleID = 5700
+	// OutboundMessageUnengagedFirstID is from fixtures/outbound_messages.
+	OutboundMessageUnengagedFirstID = 11005
+	// OutboundMessageUnengagedSecondID is from fixtures/outbound_messages.
+	OutboundMessageUnengagedSecondID = 11006
 	// OutboundMessageWelcomeDestination is from fixtures/outbound_messages.
 	OutboundMessageWelcomeDestination = "liam.python@codebasics.dev"
 	// OutboundMessageWelcomeID is from fixtures/outbound_messages.
@@ -1205,6 +1273,10 @@ const (
 	PiedPiperName = "Pied Piper"
 	// PiedPiperPublicID is from fixtures/workspaces.
 	PiedPiperPublicID = "PiperW10"
+	// PrivateRelayRangeID is from fixtures/private_relay_ranges.
+	PrivateRelayRangeID = 1
+	// PrivateRelayRangeV6ID is from fixtures/private_relay_ranges.
+	PrivateRelayRangeV6ID = 2
 	// ProviderOnlyOwnerPruEmail is from fixtures/users.
 	ProviderOnlyOwnerPruEmail = "pru@cyberdyne.test"
 	// ProviderOnlyOwnerPruID is from fixtures/users.
@@ -1569,6 +1641,12 @@ const (
 	TemplateWelcomeName = "Welcome"
 	// TemplateWelcomeSubject is from fixtures/email_templates.
 	TemplateWelcomeSubject = "Welcome to CodeBasics 👋"
+	// TemplateWithLinkID is from fixtures/email_templates.
+	TemplateWithLinkID = 5702
+	// TemplateWithLinkName is from fixtures/email_templates.
+	TemplateWithLinkName = "Order link"
+	// TemplateWithLinkSubject is from fixtures/email_templates.
+	TemplateWithLinkSubject = "Your order"
 	// TemplateWithVariablesID is from fixtures/email_templates.
 	TemplateWithVariablesID = 5700
 	// TemplateWithVariablesName is from fixtures/email_templates.

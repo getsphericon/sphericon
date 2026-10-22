@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=../preset.schema.json
 version: 1
 name: generic
-description: A body already in the Delivery failure shape, signed with Standard Webhooks.
+description: A body already in the Delivery notice shape, signed with Standard Webhooks.
 params:
   type: object
   required: [secret]
@@ -15,11 +15,11 @@ params:
 verify:
   kind: standard_webhooks
   secret: secret
-# The body is one Delivery failure or an array of them.
+# The body is one Delivery notice or an array of them.
 transform: |
   .body | if type == "array" then . else [.] end
 tests:
-  - name: a signed failure becomes a Delivery failure
+  - name: a signed notice becomes a Delivery notice
     now: '2026-01-01T00:00:00Z'
     params:
       secret: whsec_c3BoZXJpY29uLXRlc3Qtc2VjcmV0LTAxMjM0NTY3ODk=
@@ -30,7 +30,7 @@ tests:
         webhook-signature: v1,iasTRX51zsWZMikELc3A1LcI3NQUrVXBpWWg+/Hp82I=
       body: '{"id":"evt_1","destination":"Alice@Example.com","kind":"bounce","permanent":true,"sending_domain":"News.Example.com"}'
     expect:
-      failures:
+      notices:
         - id: evt_1
           destination: alice@example.com
           kind: bounce

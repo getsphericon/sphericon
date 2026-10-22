@@ -221,6 +221,16 @@ func (UnimplementedHandler) SiteAuthVerifyEmail(ctx context.Context, req *SiteVe
 	return r, ht.ErrNotImplemented
 }
 
+// SiteAutomationReportsGet implements SiteAutomationReports_get operation.
+//
+// The opens and clicks of an automation's emails, with a count per clicked link. They come from the
+// `email.opened` and `email.clicked` Events, so they cover the Event retention window.
+//
+// GET /workspaces/{workspaceId}/automations/{automationId}/report
+func (UnimplementedHandler) SiteAutomationReportsGet(ctx context.Context, params SiteAutomationReportsGetParams) (r SiteAutomationReportsGetRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteAutomationsActivate implements SiteAutomations_activate operation.
 //
 // Activate an automation (starts enrolling contacts).
@@ -340,6 +350,17 @@ func (UnimplementedHandler) SiteBrandKitRecreateStarterTemplates(ctx context.Con
 //
 // PUT /workspaces/{workspaceId}/brand-kit
 func (UnimplementedHandler) SiteBrandKitSave(ctx context.Context, req *SiteSaveBrandKitInput, params SiteBrandKitSaveParams) (r SiteBrandKitSaveRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteBroadcastLinksList implements SiteBroadcastLinks_list operation.
+//
+// The links of a broadcast that were clicked, with a count each, most clicked first. The counts come
+// from the `email.clicked` Events, so they cover the Event retention window; the unique click figure
+// in the broadcast's stats does not.
+//
+// GET /workspaces/{workspaceId}/broadcasts/{broadcastId}/links
+func (UnimplementedHandler) SiteBroadcastLinksList(ctx context.Context, params SiteBroadcastLinksListParams) (r SiteBroadcastLinksListRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

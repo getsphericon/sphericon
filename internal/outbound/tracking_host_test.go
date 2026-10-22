@@ -29,7 +29,7 @@ func sendFrom(t *testing.T, env *testhelper.TestEnv, m *outbound.Module, key, do
 		Subject:     "News",
 		Body:        linkHTML,
 		FromEmail:   "news@" + domain,
-		TrackID:     1,
+		Track:       true,
 	})
 	require.NoError(t, err)
 	require.Equal(t, outbound.Sent, res.Outcome)

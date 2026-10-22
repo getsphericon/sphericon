@@ -9,6 +9,7 @@ import (
 	auditapi "github.com/getsphericon/sphericon/internal/auditapi"
 	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
 	integrations "github.com/getsphericon/sphericon/internal/integrations"
+	linkclicks "github.com/getsphericon/sphericon/internal/linkclicks"
 	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
 	sendlimit "github.com/getsphericon/sphericon/internal/sendlimit"
 )
@@ -279,6 +280,16 @@ func (c *ConverterImpl) JoinDomainToResource(source *ent.JoinDomain) site.SiteJo
 	}
 	return siteapiSiteJoinDomainResource
 }
+func (c *ConverterImpl) LinkClicksToResource(source []linkclicks.Clicks) []site.SiteLinkClicks {
+	var siteapiSiteLinkClicksList []site.SiteLinkClicks
+	if source != nil {
+		siteapiSiteLinkClicksList = make([]site.SiteLinkClicks, len(source))
+		for i := 0; i < len(source); i++ {
+			siteapiSiteLinkClicksList[i] = c.linkclicksClicksToSiteapiSiteLinkClicks(source[i])
+		}
+	}
+	return siteapiSiteLinkClicksList
+}
 func (c *ConverterImpl) MembershipToResource(source *ent.Membership) site.SiteMembershipResource {
 	var siteapiSiteMembershipResource site.SiteMembershipResource
 	if source != nil {
@@ -318,6 +329,9 @@ func (c *ConverterImpl) OutboundMessageToExport(source *ent.OutboundMessage) sit
 		siteapiContactExportOutboundMessage.Reason = optNilString((*source).Reason)
 		siteapiContactExportOutboundMessage.ClaimedAt = timestamp((*source).ClaimedAt)
 		siteapiContactExportOutboundMessage.SentAt = optNilTimestamp((*source).SentAt)
+		siteapiContactExportOutboundMessage.DeliveredAt = optNilTimestamp((*source).DeliveredAt)
+		siteapiContactExportOutboundMessage.BouncedAt = optNilTimestamp((*source).BouncedAt)
+		siteapiContactExportOutboundMessage.ComplainedAt = optNilTimestamp((*source).ComplainedAt)
 		siteapiContactExportOutboundMessage.BroadcastId = optNilEntityID((*source).BroadcastID)
 		siteapiContactExportOutboundMessage.AutomationId = optNilEntityID((*source).AutomationID)
 		siteapiContactExportOutboundMessage.AutomationStep = optNilInt32((*source).AutomationStep)
@@ -548,6 +562,12 @@ func (c *ConverterImpl) WorkspaceToResource(source *ent.Workspace) site.SiteWork
 		siteapiSiteWorkspaceResource.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return siteapiSiteWorkspaceResource
+}
+func (c *ConverterImpl) linkclicksClicksToSiteapiSiteLinkClicks(source linkclicks.Clicks) site.SiteLinkClicks {
+	var siteapiSiteLinkClicks site.SiteLinkClicks
+	siteapiSiteLinkClicks.URL = source.URL
+	siteapiSiteLinkClicks.Clicks = count(source.Clicks)
+	return siteapiSiteLinkClicks
 }
 func (c *ConverterImpl) sendlimitValueToSiteapiSiteSendLimitValue(source sendlimit.Value) site.SiteSendLimitValue {
 	var siteapiSiteSendLimitValue site.SiteSendLimitValue

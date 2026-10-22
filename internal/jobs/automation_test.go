@@ -11,6 +11,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/tag"
+	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/outbound"
@@ -44,7 +45,7 @@ func triggerOf(t *testing.T, env *testhelper.TestEnv, automationID int64) string
 // enrollVia enrolls the Contact through the Automation's own trigger and returns its one run.
 func enrollVia(t *testing.T, env *testhelper.TestEnv, automationID, contactID int64) int64 {
 	t.Helper()
-	runIDs, err := jobs.EvaluateTrigger(context.Background(), env.DB.Scoped(fixtures.AcmeID), contactID, triggerOf(t, env, automationID))
+	runIDs, err := jobs.EvaluateTrigger(context.Background(), env.DB.Scoped(fixtures.AcmeID), contactID, triggerOf(t, env, automationID), 0)
 	require.NoError(t, err)
 	require.Len(t, runIDs, 1)
 	return runIDs[0]
@@ -57,7 +58,7 @@ func TestAutomationEnrollAndRun(t *testing.T) {
 	runID := enrollVia(t, env, fixtures.AutomationJobsGreetingID, alice.ID)
 
 	// Enroll-once: a second matching event creates no new run.
-	again, err := jobs.EvaluateTrigger(ctx, env.DB.Scoped(fixtures.AcmeID), alice.ID, triggerOf(t, env, fixtures.AutomationJobsGreetingID))
+	again, err := jobs.EvaluateTrigger(ctx, env.DB.Scoped(fixtures.AcmeID), alice.ID, triggerOf(t, env, fixtures.AutomationJobsGreetingID), 0)
 	require.NoError(t, err)
 	assert.Empty(t, again)
 
@@ -143,7 +144,7 @@ func TestAutomationInactiveDoesNotEnroll(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	runIDs, err := jobs.EvaluateTrigger(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID, triggerOf(t, env, fixtures.AutomationWinBackID))
+	runIDs, err := jobs.EvaluateTrigger(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID, triggerOf(t, env, fixtures.AutomationWinBackID), 0)
 	require.NoError(t, err)
 	assert.Empty(t, runIDs, "the win-back automation is a draft")
 }
@@ -290,4 +291,21 @@ func TestAutomationEnrollmentFinishesOnItsOwnVersionAfterAnEdit(t *testing.T) {
 	assert.Equal(t, "New steps", fs.sent[1].Subject, "the Enrollment begun after the edit used the new steps")
 	assert.Equal(t, automationrun.StatusCompleted, env.DB.AutomationRun.GetX(ctx, early).Status)
 	assert.NotEqual(t, env.DB.AutomationRun.GetX(ctx, early).VersionID, env.DB.AutomationRun.GetX(ctx, late).VersionID)
+}
+
+// An Event from an Automation's own email never enrolls the Contact into that Automation, so an
+// `email.opened` Automation cannot be fed by the mail it sends; another Automation on the same
+// trigger still enrolls (ADR 0053).
+func TestAnAutomationIsNotStartedByItsOwnEmail(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	acme := env.DB.Scoped(fixtures.AcmeID)
+
+	own, err := jobs.EvaluateTrigger(ctx, acme, fixtures.ContactAliceID, events.NameEmailOpened, fixtures.AutomationOnOpenID)
+	require.NoError(t, err)
+	assert.Empty(t, own, "the open of its own email enrolls nobody")
+
+	other, err := jobs.EvaluateTrigger(ctx, acme, fixtures.ContactAliceID, events.NameEmailOpened, fixtures.AutomationWelcomeSeriesID)
+	require.NoError(t, err)
+	assert.Len(t, other, 1, "the open of another Automation's email starts On open")
 }

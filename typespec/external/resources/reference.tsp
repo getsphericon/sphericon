@@ -106,7 +106,8 @@ model RateTriple {
 
 /**
  * Complaint and bounce rates of one Sending domain over a trailing window (ADR 0011).
- * Complaint rate is complaints / (sent - hard bounces); bounce rate is hard bounces / sent.
+ * Complaint rate is complaints / delivered (ADR 0053), undefined with no delivery notice in the
+ * window; bounce rate is hard bounces / sent.
  */
 model SendingDomainRatesResource {
   /** Sending domain id */
@@ -118,7 +119,7 @@ model SendingDomainRatesResource {
   /** Trailing window the rates cover, in days */
   windowDays: int32;
 
-  /** Complaints over delivered-ish sends (sent minus hard bounces) */
+  /** Complaints over delivered mail; the rate is null when nothing was delivered in the window */
   complaintRate: RateTriple;
 
   /** Hard bounces over sent */

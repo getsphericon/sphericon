@@ -174,6 +174,9 @@ type Filter struct {
 	// Email matches case-insensitively: Contact emails are stored as entered, but collect
 	// ingestion lowercases Event emails, so an exact match would miss tracked Events.
 	Email string
+	// IncludeMachine lists the opens and clicks made by software too (ADR 0053); by default
+	// they stay in the log and out of the page.
+	IncludeMachine bool
 }
 
 // List returns one page of the workspace's Events matching f, newest first (id breaks ties).
@@ -187,6 +190,11 @@ func (m *Module) List(ctx context.Context, s *ent.Scoped, f Filter, p pagination
 	}
 	if f.Email != "" {
 		q = q.Where(event.EmailEqualFold(f.Email))
+	}
+	if !f.IncludeMachine {
+		// The flag belongs to opens and clicks only: a customer's own Event may carry a
+		// property of that name.
+		q = q.Where(event.Or(event.ActionNotIn(events.NameEmailOpened, events.NameEmailClicked), events.HumanOnly))
 	}
 	return pagination.List(ctx, p, q.Count, func(ctx context.Context, limit, offset int) ([]*ent.Event, error) {
 		return q.Clone().Order(ent.Desc(event.FieldCreatedAt), ent.Desc(event.FieldID)).

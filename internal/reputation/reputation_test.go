@@ -26,7 +26,7 @@ func byDomain(t *testing.T, rates []reputation.DomainRates) map[string]reputatio
 }
 
 // Fixtures (events.yml): in the trailing 7 days mail.acme.com has 8 sent, 1 hard
-// bounce (a soft one is excluded) and 1 complaint; older events fall outside.
+// bounce (a soft one is excluded), 6 delivered and 1 complaint; older events fall outside.
 func TestRatesOverTheTrailingWindow(t *testing.T) {
 	env := testhelper.Setup(t)
 	rates, err := reputation.New().Rates(context.Background(), env.DB.Scoped(fixtures.AcmeID), reputation.Trailing(7*day))
@@ -34,13 +34,30 @@ func TestRatesOverTheTrailingWindow(t *testing.T) {
 
 	mail := byDomain(t, rates)["mail.acme.com"]
 	assert.Equal(t, 1, mail.Complaint.Numerator)
-	assert.Equal(t, 7, mail.Complaint.Denominator, "complaints are over sent minus hard bounces")
+	assert.Equal(t, 6, mail.Complaint.Denominator, "complaints are over delivered, not sent")
 	require.NotNil(t, mail.Complaint.Rate)
-	assert.InDelta(t, 1.0/7.0, *mail.Complaint.Rate, 1e-9)
+	assert.InDelta(t, 1.0/6.0, *mail.Complaint.Rate, 1e-9)
 	assert.Equal(t, 1, mail.Bounce.Numerator)
 	assert.Equal(t, 8, mail.Bounce.Denominator)
 	require.NotNil(t, mail.Bounce.Rate)
 	assert.InDelta(t, 1.0/8.0, *mail.Bounce.Rate, 1e-9)
+}
+
+// A complaint with no delivery notice in the window has no denominator: the Complaint rate is
+// undefined, never infinite, while the Bounce rate (over sent) is unaffected.
+func TestComplaintRateIsUndefinedWithoutDeliveryNotices(t *testing.T) {
+	env := testhelper.Setup(t)
+	w := reputation.Window{Since: time.Now().Add(-39*day - 12*time.Hour), Until: time.Now().Add(-39*day + 12*time.Hour)}
+	rates, err := reputation.New().Rates(context.Background(), env.DB.Scoped(fixtures.VandelayID), w)
+	require.NoError(t, err)
+
+	mail := byDomain(t, rates)["mail.vandelay.test"]
+	assert.Equal(t, 10, mail.Complaint.Numerator)
+	assert.Zero(t, mail.Complaint.Denominator)
+	assert.Nil(t, mail.Complaint.Rate)
+	assert.Equal(t, 40, mail.Bounce.Denominator)
+	require.NotNil(t, mail.Bounce.Rate)
+	assert.Zero(t, *mail.Bounce.Rate)
 }
 
 func TestRatesListsEveryDomainOrderedByIDWithUndefinedRatesForNoTraffic(t *testing.T) {
@@ -113,7 +130,7 @@ func TestRatesReportsQueryErrors(t *testing.T) {
 // A failure while counting a later domain's events aborts the whole read.
 func TestRatesReportsCountErrors(t *testing.T) {
 	env := testhelper.Setup(t)
-	for _, n := range []int{1, 2, 3} {
+	for _, n := range []int{1, 2, 3, 4} {
 		queries := 0
 		client := env.DB
 		client.Event.Intercept(ent.InterceptFunc(func(next ent.Querier) ent.Querier {

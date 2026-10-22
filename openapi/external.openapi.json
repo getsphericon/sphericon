@@ -10950,6 +10950,9 @@
           "openedCount",
           "clickedCount",
           "unsubscribedCount",
+          "deliveredCount",
+          "bouncedCount",
+          "complainedCount",
           "openRate",
           "clickRate"
         ],
@@ -11001,6 +11004,21 @@
             "type": "integer",
             "format": "int32",
             "description": "Recipients that unsubscribed via this broadcast"
+          },
+          "deliveredCount": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Messages the provider reported delivered, read from the delivery result stamped on each message"
+          },
+          "bouncedCount": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Messages the provider reported bounced, read from the delivery result stamped on each message"
+          },
+          "complainedCount": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Messages a recipient complained about, read from the delivery result stamped on each message"
           },
           "openRate": {
             "type": "number",
@@ -11563,6 +11581,36 @@
             ],
             "nullable": true,
             "description": "When the message was sent"
+          },
+          "deliveredAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the provider first reported the message delivered"
+          },
+          "bouncedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the provider first reported the message bounced"
+          },
+          "complainedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the provider first reported a spam complaint about the message"
           },
           "broadcastId": {
             "type": "string",
@@ -12956,6 +13004,9 @@
           "provider_message_id",
           "claimed_at",
           "sent_at",
+          "delivered_at",
+          "bounced_at",
+          "complained_at",
           "created_at",
           "updated_at"
         ],
@@ -13088,6 +13139,36 @@
             ],
             "nullable": true,
             "description": "When the provider accepted the message"
+          },
+          "delivered_at": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the provider first reported the message delivered"
+          },
+          "bounced_at": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the provider first reported the message bounced"
+          },
+          "complained_at": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the provider first reported a spam complaint about the message"
           },
           "created_at": {
             "allOf": [
@@ -13989,6 +14070,11 @@
             "type": "object",
             "additionalProperties": {},
             "description": "Per-call variables merged into the template's subject and body (Liquid `{{ }}`)"
+          },
+          "track": {
+            "type": "boolean",
+            "description": "Track opens and clicks of this message (default false). The email then carries an open\npixel and its links are rewritten; it stays transactional: no unsubscribe link, the same\neligibility and Suppression. Events attach to the Contact the address resolves to, else\nare kept by address.",
+            "default": false
           }
         },
         "description": "Send a single transactional email by rendering a referenced template."
@@ -14047,7 +14133,7 @@
                 "$ref": "#/components/schemas/RateTriple"
               }
             ],
-            "description": "Complaints over delivered-ish sends (sent minus hard bounces)"
+            "description": "Complaints over delivered mail; the rate is null when nothing was delivered in the window"
           },
           "bounceRate": {
             "allOf": [
@@ -14058,7 +14144,7 @@
             "description": "Hard bounces over sent"
           }
         },
-        "description": "Complaint and bounce rates of one Sending domain over a trailing window (ADR 0011).\nComplaint rate is complaints / (sent - hard bounces); bounce rate is hard bounces / sent."
+        "description": "Complaint and bounce rates of one Sending domain over a trailing window (ADR 0011).\nComplaint rate is complaints / delivered (ADR 0053), undefined with no delivery notice in the\nwindow; bounce rate is hard bounces / sent."
       },
       "SendingDomainResource": {
         "type": "object",

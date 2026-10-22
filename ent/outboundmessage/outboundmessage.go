@@ -45,6 +45,12 @@ const (
 	FieldClaimedAt = "claimed_at"
 	// FieldSentAt holds the string denoting the sent_at field in the database.
 	FieldSentAt = "sent_at"
+	// FieldDeliveredAt holds the string denoting the delivered_at field in the database.
+	FieldDeliveredAt = "delivered_at"
+	// FieldBouncedAt holds the string denoting the bounced_at field in the database.
+	FieldBouncedAt = "bounced_at"
+	// FieldComplainedAt holds the string denoting the complained_at field in the database.
+	FieldComplainedAt = "complained_at"
 	// FieldBroadcastID holds the string denoting the broadcast_id field in the database.
 	FieldBroadcastID = "broadcast_id"
 	// FieldBroadcastRecipientID holds the string denoting the broadcast_recipient_id field in the database.
@@ -155,6 +161,9 @@ var Columns = []string{
 	FieldReason,
 	FieldClaimedAt,
 	FieldSentAt,
+	FieldDeliveredAt,
+	FieldBouncedAt,
+	FieldComplainedAt,
 	FieldBroadcastID,
 	FieldBroadcastRecipientID,
 	FieldAutomationID,
@@ -346,6 +355,21 @@ func ByClaimedAt(opts ...sql.OrderTermOption) OrderOption {
 // BySentAt orders the results by the sent_at field.
 func BySentAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSentAt, opts...).ToFunc()
+}
+
+// ByDeliveredAt orders the results by the delivered_at field.
+func ByDeliveredAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDeliveredAt, opts...).ToFunc()
+}
+
+// ByBouncedAt orders the results by the bounced_at field.
+func ByBouncedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldBouncedAt, opts...).ToFunc()
+}
+
+// ByComplainedAt orders the results by the complained_at field.
+func ByComplainedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldComplainedAt, opts...).ToFunc()
 }
 
 // ByBroadcastID orders the results by the broadcast_id field.

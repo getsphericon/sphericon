@@ -23,7 +23,7 @@ import (
 // automations subscriber delegates to it, keeping durable execution in river
 // (the implementation enqueues an EvaluateTrigger job).
 type Enroller interface {
-	OnEvent(ctx context.Context, workspaceID, contactID int64, action string) error
+	OnEvent(ctx context.Context, workspaceID, contactID int64, action string, sourceAutomationID int64) error
 }
 
 // WebhookDispatcher fans an event out to the workspace's matching webhook
@@ -261,9 +261,12 @@ func automationsConsumer(enroller Enroller) message.NoPublishHandlerFunc {
 		if p.ContactID == 0 {
 			return nil // no contact to enroll (e.g. an anonymous collected event)
 		}
+		if p.Machine {
+			return nil // software opened or clicked: nobody is enrolled by a scanner (ADR 0053)
+		}
 		// Enroll on the semantic action so a trigger can be "contact.created" or a
 		// customer action like "page_view".
-		return enroller.OnEvent(msg.Context(), env.WorkspaceID, p.ContactID, p.Action)
+		return enroller.OnEvent(msg.Context(), env.WorkspaceID, p.ContactID, p.Action, p.AutomationID)
 	}
 }
 
@@ -380,13 +383,18 @@ func Persist(ctx context.Context, client *ent.Client, env Envelope) error {
 // the send-outcome counter. Counting here, at the one place a duplicate is
 // detected, keeps SNS redeliveries from counting twice.
 func recordProviderOutcome(ctx context.Context, ev DomainEvent) {
-	f, ok := ev.(*EmailDeliveryFailure)
+	f, ok := ev.(*EmailDelivery)
 	if !ok || f.Provider == "" {
 		return
 	}
-	status := messaging.SendBounce
-	if f.Action == NameEmailComplained {
+	var status messaging.SendStatus
+	switch f.Action {
+	case NameEmailBounced:
+		status = messaging.SendBounce
+	case NameEmailComplained:
 		status = messaging.SendComplaint
+	default:
+		return
 	}
 	// Provider is the Preset's name (ADR 0037), or "ses" for the SES adapter.
 	messaging.RecordSendOutcome(ctx, messaging.Provider(f.Provider), status)

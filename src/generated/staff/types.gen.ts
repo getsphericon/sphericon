@@ -405,7 +405,7 @@ export type StaffDomainRates = {
    */
   domain: string;
   /**
-   * Complaints over sent minus hard bounces
+   * Complaints over delivered mail; the rate is null when nothing was delivered in the window
    */
   complaintRate: StaffRate;
   /**

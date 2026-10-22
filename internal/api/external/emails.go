@@ -73,6 +73,7 @@ func (h *Handlers) EmailsSend(ctx context.Context, req *externalapi.SendTransact
 		Subject:     tmpl.Subject,
 		Body:        tmpl.Body,
 		Variables:   vars,
+		Track:       req.Track.Or(false),
 	}))
 	if errors.Is(err, outbound.ErrInProgress) {
 		r := externalapi.EmailsSendConflict(problem(http.StatusConflict, "a send with this Idempotency-Key is already in progress"))

@@ -35,6 +35,9 @@ type MessageRow struct {
 	ProviderMessageID *string    `json:"provider_message_id"`
 	ClaimedAt         time.Time  `json:"claimed_at"`
 	SentAt            *time.Time `json:"sent_at"`
+	DeliveredAt       *time.Time `json:"delivered_at"`
+	BouncedAt         *time.Time `json:"bounced_at"`
+	ComplainedAt      *time.Time `json:"complained_at"`
 	CreatedAt         time.Time  `json:"created_at"`
 	UpdatedAt         time.Time  `json:"updated_at"`
 }
@@ -62,6 +65,9 @@ func messageRow(m *ent.OutboundMessage) MessageRow {
 		ProviderMessageID: m.ProviderMessageID,
 		ClaimedAt:         m.ClaimedAt.UTC(),
 		SentAt:            utc(m.SentAt),
+		DeliveredAt:       utc(m.DeliveredAt),
+		BouncedAt:         utc(m.BouncedAt),
+		ComplainedAt:      utc(m.ComplainedAt),
 		CreatedAt:         m.CreatedAt.UTC(),
 		UpdatedAt:         m.UpdatedAt.UTC(),
 	}

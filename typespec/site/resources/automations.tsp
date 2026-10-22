@@ -214,3 +214,38 @@ interface SiteAutomations
     | NotFoundProblem
     | UnprocessableEntityProblem;
 }
+
+/** An automation's engagement figures */
+model SiteAutomationReport {
+  /** Opens recorded on the automation's emails, every open counted; bounded by Event retention */
+  opens: int32;
+
+  /** Clicks recorded on the automation's emails, every click counted; bounded by Event retention */
+  clicks: int32;
+
+  /** Messages the provider reported delivered, read from the delivery result stamped on each message; not bounded by Event retention */
+  delivered: int32;
+
+  /** Messages the provider reported bounced, read from the delivery result stamped on each message; not bounded by Event retention */
+  bounced: int32;
+
+  /** Messages a recipient complained about, read from the delivery result stamped on each message; not bounded by Event retention */
+  complained: int32;
+
+  /** One entry per clicked link, most clicked first */
+  links: SiteLinkClicks[];
+}
+
+@route("/workspaces/{workspaceId}/automations/{automationId}/report")
+@tag("Site Automations")
+namespace SiteAutomationReports {
+  /**
+   * The opens and clicks of an automation's emails, with a count per clicked link. They come from
+   * the `email.opened` and `email.clicked` Events, so they cover the Event retention window.
+   */
+  @get
+  op get(@path workspaceId: WorkspaceId, @path automationId: EntityId):
+    | SiteAutomationReport
+    | BadRequestProblem
+    | NotFoundProblem;
+}

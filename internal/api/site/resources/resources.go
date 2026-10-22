@@ -22,6 +22,7 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/dkimstate"
 	"github.com/getsphericon/sphericon/internal/joindomains"
+	"github.com/getsphericon/sphericon/internal/linkclicks"
 	"github.com/getsphericon/sphericon/internal/segments"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/sendlimit"
@@ -100,6 +101,7 @@ type Converter interface {
 	// goverter:map PublicID ID
 	WorkspaceToResource(source *ent.Workspace) siteapi.SiteWorkspaceResource
 	EventToResource(source *ent.Event) siteapi.SiteEventResource
+	LinkClicksToResource(source []linkclicks.Clicks) []siteapi.SiteLinkClicks
 
 	// The delivery figures are derived from the Broadcast's recipients and their Outbound
 	// messages, which the mapper cannot see: the handler attaches them (BroadcastStats).
@@ -376,6 +378,9 @@ func BroadcastStats(st broadcasts.Stats) siteapi.SiteBroadcastStats {
 		ClickedCount:      int32(st.Clicked),
 		UnsubscribedCount: int32(st.Unsubscribed),
 		FailedCount:       int32(st.Failed),
+		DeliveredCount:    int32(st.Delivered),
+		BouncedCount:      int32(st.Bounced),
+		ComplainedCount:   int32(st.Complained),
 		DeliveryRate:      broadcasts.Ratio(st.Sent, st.Recipients),
 		OpenRate:          broadcasts.Ratio(st.Opened, st.Sent),
 		ClickRate:         broadcasts.Ratio(st.Clicked, st.Sent),

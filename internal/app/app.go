@@ -44,6 +44,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/joindomains"
+	"github.com/getsphericon/sphericon/internal/machine"
 	"github.com/getsphericon/sphericon/internal/mcpserver"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/messaging/registry"
@@ -993,7 +994,11 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		jc, err := jobs.NewClient(pool.DB, client.Client, sender.Module, cipher, bus.Bus, sys.EmailSender, lookup.TXTLookup, trackingVerifier(cfg, bus.Bus), catalog, cfg.AppURL, cfg.OutboundAllow,
+		detector, err := do.Invoke[*machine.Detector](i)
+		if err != nil {
+			return nil, err
+		}
+		jc, err := jobs.NewClient(pool.DB, client.Client, sender.Module, cipher, bus.Bus, sys.EmailSender, lookup.TXTLookup, trackingVerifier(cfg, bus.Bus), catalog, cfg.AppURL, cfg.OutboundAllow, detector,
 			jobs.Retention{OutboxFloor: cfg.OutboxFloor, Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention},
 			edition.Jobs(bus.Bus, sys.EmailSender), edition.ExportJobs(cfg.EventsRetention), inst.Jobs(), reporter.Jobs())
 		if err != nil {
@@ -1010,6 +1015,16 @@ func register(injector do.Injector, env string, o options) {
 			return nil, err
 		}
 		return tracking.New(cfg.JWTSecret, cfg.AppURL, cfg.JWTVerifySecrets()...), nil
+	})
+
+	// Machine engagement (ADR 0053): the detector tracking judges hits by and the refresh job
+	// keeps current, over Apple's published Private Relay list.
+	do.Provide(injector, func(i do.Injector) (*machine.Detector, error) {
+		client, err := do.Invoke[*entClient](i)
+		if err != nil {
+			return nil, err
+		}
+		return machine.New(client.Client, machine.NewHTTPSource()), nil
 	})
 
 	do.Provide(injector, func(i do.Injector) (*outboundModule, error) {
@@ -1417,6 +1432,10 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
+		detector, err := do.Invoke[*machine.Detector](i)
+		if err != nil {
+			return nil, err
+		}
 
 		edition, err := do.Invoke[*ee.Edition](i)
 		if err != nil {
@@ -1435,7 +1454,7 @@ func register(injector do.Injector, env string, o options) {
 			return nil, err
 		}
 
-		return server.New(cfg, database.DB, client.Client, site, external.Handler, mcp.Handler, staffAPI)
+		return server.New(cfg, database.DB, client.Client, site, detector, external.Handler, mcp.Handler, staffAPI)
 	})
 }
 

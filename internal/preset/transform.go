@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/mail"
 	"reflect"
+	"slices"
 	"strconv"
 	"strings"
 	"unicode/utf8"
@@ -85,7 +86,7 @@ func forbiddenCall(v reflect.Value) (string, bool) {
 }
 
 // run evaluates the transform under the timeout and validates what comes out.
-func (p *Preset) run(ctx context.Context, body any, header http.Header) ([]DeliveryFailure, error) {
+func (p *Preset) run(ctx context.Context, body any, header http.Header) ([]DeliveryNotice, error) {
 	ctx, cancel := context.WithTimeout(ctx, TransformTimeout)
 	defer cancel()
 
@@ -112,66 +113,68 @@ func (p *Preset) run(ctx context.Context, body any, header http.Header) ([]Deliv
 	if count == 0 {
 		return nil, fmt.Errorf("%w: the program produced no result", ErrTransformFailed)
 	}
-	return validateFailures(out)
+	return validateNotices(out)
 }
 
-// rawFailure is the program's output element, decoded strictly: a closed shape.
-type rawFailure struct {
+// rawNotice is the program's output element, decoded strictly: a closed shape.
+type rawNotice struct {
 	ID            string  `json:"id"`
 	Destination   string  `json:"destination"`
 	Kind          string  `json:"kind"`
 	Permanent     *bool   `json:"permanent"`
 	SendingDomain *string `json:"sending_domain"`
+	MessageID     *string `json:"message_id"`
+	Reason        *string `json:"reason"`
 }
 
-// validateFailures never trusts the program's shape: a list of at most MaxFailures
+// validateNotices never trusts the program's shape: a list of at most MaxNotices
 // objects, each a closed kind, a parsed address, bounded strings.
-func validateFailures(out any) ([]DeliveryFailure, error) {
+func validateNotices(out any) ([]DeliveryNotice, error) {
 	list, ok := out.([]any)
 	if !ok {
 		return nil, fmt.Errorf("%w: the result is not an array", ErrTransformFailed)
 	}
-	if len(list) > MaxFailures {
-		return nil, fmt.Errorf("%w: %d failures, the limit is %d", ErrTransformFailed, len(list), MaxFailures)
+	if len(list) > MaxNotices {
+		return nil, fmt.Errorf("%w: %d notices, the limit is %d", ErrTransformFailed, len(list), MaxNotices)
 	}
-	failures := make([]DeliveryFailure, 0, len(list))
+	notices := make([]DeliveryNotice, 0, len(list))
 	for i, item := range list {
-		f, err := validateFailure(item)
+		f, err := validateNotice(item)
 		if err != nil {
-			return nil, fmt.Errorf("%w: failure %d: %w", ErrTransformFailed, i, err)
+			return nil, fmt.Errorf("%w: notice %d: %w", ErrTransformFailed, i, err)
 		}
-		failures = append(failures, f)
+		notices = append(notices, f)
 	}
-	return failures, nil
+	return notices, nil
 }
 
-func validateFailure(item any) (DeliveryFailure, error) {
+func validateNotice(item any) (DeliveryNotice, error) {
 	raw, err := json.Marshal(item)
 	if err != nil {
-		return DeliveryFailure{}, err
+		return DeliveryNotice{}, err
 	}
 	dec := json.NewDecoder(bytes.NewReader(raw))
 	dec.DisallowUnknownFields()
-	var r rawFailure
+	var r rawNotice
 	if err := dec.Decode(&r); err != nil {
-		return DeliveryFailure{}, err
+		return DeliveryNotice{}, err
 	}
 
 	if r.ID == "" || len(r.ID) > maxIDBytes || !utf8.ValidString(r.ID) {
-		return DeliveryFailure{}, errors.New("id must be a non-empty string of at most 255 bytes")
+		return DeliveryNotice{}, errors.New("id must be a non-empty string of at most 255 bytes")
 	}
 	kind := Kind(r.Kind)
-	if kind != Bounce && kind != Complaint {
-		return DeliveryFailure{}, fmt.Errorf("kind %q is neither bounce nor complaint", r.Kind)
+	if !slices.Contains([]Kind{Bounce, Complaint, Delivery, Delay, Drop}, kind) {
+		return DeliveryNotice{}, fmt.Errorf("kind %q is not bounce, complaint, delivery, delay or drop", r.Kind)
 	}
 	if len(r.Destination) > maxAddrBytes {
-		return DeliveryFailure{}, errors.New("destination is too long")
+		return DeliveryNotice{}, errors.New("destination is too long")
 	}
 	addr, err := mail.ParseAddress(r.Destination)
 	if err != nil {
-		return DeliveryFailure{}, fmt.Errorf("destination is not an address: %w", err)
+		return DeliveryNotice{}, fmt.Errorf("destination is not an address: %w", err)
 	}
-	f := DeliveryFailure{
+	f := DeliveryNotice{
 		ID:          r.ID,
 		Destination: strings.ToLower(strings.TrimSpace(addr.Address)),
 		Kind:        kind,
@@ -180,11 +183,31 @@ func validateFailure(item any) (DeliveryFailure, error) {
 	if r.SendingDomain != nil && *r.SendingDomain != "" {
 		domain := strings.ToLower(strings.TrimSpace(*r.SendingDomain))
 		if len(domain) > maxDomainBytes || !validDomain(domain) {
-			return DeliveryFailure{}, errors.New("sending_domain is not a domain")
+			return DeliveryNotice{}, errors.New("sending_domain is not a domain")
 		}
 		f.SendingDomain = domain
 	}
+	if r.MessageID != nil && *r.MessageID != "" {
+		if len(*r.MessageID) > maxIDBytes || !utf8.ValidString(*r.MessageID) {
+			return DeliveryNotice{}, errors.New("message_id must be a string of at most 255 bytes")
+		}
+		f.MessageID = *r.MessageID
+	}
+	if r.Reason != nil {
+		if !utf8.ValidString(*r.Reason) {
+			return DeliveryNotice{}, errors.New("reason is not valid UTF-8")
+		}
+		f.Reason = truncateChars(strings.TrimSpace(*r.Reason), MaxReasonChars)
+	}
 	return f, nil
+}
+
+// truncateChars cuts s to at most n characters.
+func truncateChars(s string, n int) string {
+	if utf8.RuneCountInString(s) <= n {
+		return s
+	}
+	return string([]rune(s)[:n])
 }
 
 func validDomain(d string) bool {

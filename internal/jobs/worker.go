@@ -21,6 +21,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domainverify"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/joindomains"
+	"github.com/getsphericon/sphericon/internal/machine"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/refsettle"
@@ -74,7 +75,7 @@ type Retention struct {
 // webhook deliveries (ADR 0039). The instance-wide outbox and Event prunes
 // run on entClient, the raw client; retention carries the prune settings. ext plugs in the
 // Enterprise Edition's workers and periodic jobs.
-func NewClient(riverDB *sql.DB, entClient *ent.Client, mod *outbound.Module, cipher *secrets.Cipher, bus *events.Bus, systemSender messaging.EmailSender, lookup sending.TXTLookup, tracking *trackingdomain.Verifier, catalog *messaging.Catalog, appURL string, outboundAllow webhook.Allowlist, retention Retention, ext ...Extension) (*Client, error) {
+func NewClient(riverDB *sql.DB, entClient *ent.Client, mod *outbound.Module, cipher *secrets.Cipher, bus *events.Bus, systemSender messaging.EmailSender, lookup sending.TXTLookup, tracking *trackingdomain.Verifier, catalog *messaging.Catalog, appURL string, outboundAllow webhook.Allowlist, ranges *machine.Detector, retention Retention, ext ...Extension) (*Client, error) {
 	workers := river.NewWorkers()
 	river.AddWorker(workers, &SendBroadcastWorker{ent: entClient, del: broadcasts.NewDelivery(mod)})
 	river.AddWorker(workers, &SendRecipientWorker{ent: entClient, del: broadcasts.NewDelivery(mod)})
@@ -117,6 +118,7 @@ func NewClient(riverDB *sql.DB, entClient *ent.Client, mod *outbound.Module, cip
 	river.AddWorker(workers, &RefreshIntegrationQuotaWorker{ent: entClient, cipher: cipher, catalog: catalog})
 	river.AddWorker(workers, &PurgeAuthAttemptsWorker{ent: entClient})
 	river.AddWorker(workers, &PruneOutboxWorker{ent: entClient, floor: retention.OutboxFloor})
+	river.AddWorker(workers, &RefreshPrivateRelayWorker{ranges: ranges})
 	river.AddWorker(workers, &PruneEventsWorker{ent: entClient, retention: retention.Events})
 	river.AddWorker(workers, &PruneUnverifiedUsersWorker{accounts: accounts.New(entClient, bus), retention: retention.UnverifiedUsers})
 	river.AddWorker(workers, &PrunePasskeyChallengesWorker{ent: entClient, now: time.Now})
@@ -229,6 +231,14 @@ func newRiverConfig(workers *river.Workers, logger *slog.Logger, extra ...*river
 				},
 				&river.PeriodicJobOpts{RunOnStart: true},
 			),
+			// Refresh the iCloud Private Relay egress ranges machine detection reads (ADR 0053).
+			river.NewPeriodicJob(
+				river.PeriodicInterval(privateRelayRefreshInterval),
+				func() (river.JobArgs, *river.InsertOpts) {
+					return RefreshPrivateRelayArgs{}, nil
+				},
+				&river.PeriodicJobOpts{RunOnStart: true},
+			),
 			// Delete expired analytical Events daily at 03:00 UTC (ADR 0019).
 			river.NewPeriodicJob(
 				dailyAtUTC{hour: eventsRetentionHourUTC},
@@ -313,11 +323,12 @@ func (c *Client) EnqueueSendingDomainVerify(ctx context.Context, sendingDomainID
 // It is the trigger seam injected into the event-recording paths; a no-op
 // implementation keeps tests inert (no river runtime, writes roll back with the
 // tx). Fire-and-forget: enrollment is best-effort and must never block the write.
-func (c *Client) OnEvent(ctx context.Context, workspaceID, contactID int64, action string) error {
+func (c *Client) OnEvent(ctx context.Context, workspaceID, contactID int64, action string, sourceAutomationID int64) error {
 	_, err := c.river.Insert(ctx, EvaluateTriggerArgs{
-		WorkspaceID: workspaceID,
-		ContactID:   contactID,
-		Action:      action,
+		WorkspaceID:        workspaceID,
+		ContactID:          contactID,
+		Action:             action,
+		SourceAutomationID: sourceAutomationID,
 	}, nil)
 	return err
 }

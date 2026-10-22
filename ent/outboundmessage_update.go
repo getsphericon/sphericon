@@ -239,6 +239,66 @@ func (_u *OutboundMessageUpdate) ClearSentAt() *OutboundMessageUpdate {
 	return _u
 }
 
+// SetDeliveredAt sets the "delivered_at" field.
+func (_u *OutboundMessageUpdate) SetDeliveredAt(v time.Time) *OutboundMessageUpdate {
+	_u.mutation.SetDeliveredAt(v)
+	return _u
+}
+
+// SetNillableDeliveredAt sets the "delivered_at" field if the given value is not nil.
+func (_u *OutboundMessageUpdate) SetNillableDeliveredAt(v *time.Time) *OutboundMessageUpdate {
+	if v != nil {
+		_u.SetDeliveredAt(*v)
+	}
+	return _u
+}
+
+// ClearDeliveredAt clears the value of the "delivered_at" field.
+func (_u *OutboundMessageUpdate) ClearDeliveredAt() *OutboundMessageUpdate {
+	_u.mutation.ClearDeliveredAt()
+	return _u
+}
+
+// SetBouncedAt sets the "bounced_at" field.
+func (_u *OutboundMessageUpdate) SetBouncedAt(v time.Time) *OutboundMessageUpdate {
+	_u.mutation.SetBouncedAt(v)
+	return _u
+}
+
+// SetNillableBouncedAt sets the "bounced_at" field if the given value is not nil.
+func (_u *OutboundMessageUpdate) SetNillableBouncedAt(v *time.Time) *OutboundMessageUpdate {
+	if v != nil {
+		_u.SetBouncedAt(*v)
+	}
+	return _u
+}
+
+// ClearBouncedAt clears the value of the "bounced_at" field.
+func (_u *OutboundMessageUpdate) ClearBouncedAt() *OutboundMessageUpdate {
+	_u.mutation.ClearBouncedAt()
+	return _u
+}
+
+// SetComplainedAt sets the "complained_at" field.
+func (_u *OutboundMessageUpdate) SetComplainedAt(v time.Time) *OutboundMessageUpdate {
+	_u.mutation.SetComplainedAt(v)
+	return _u
+}
+
+// SetNillableComplainedAt sets the "complained_at" field if the given value is not nil.
+func (_u *OutboundMessageUpdate) SetNillableComplainedAt(v *time.Time) *OutboundMessageUpdate {
+	if v != nil {
+		_u.SetComplainedAt(*v)
+	}
+	return _u
+}
+
+// ClearComplainedAt clears the value of the "complained_at" field.
+func (_u *OutboundMessageUpdate) ClearComplainedAt() *OutboundMessageUpdate {
+	_u.mutation.ClearComplainedAt()
+	return _u
+}
+
 // SetBroadcastID sets the "broadcast_id" field.
 func (_u *OutboundMessageUpdate) SetBroadcastID(v int64) *OutboundMessageUpdate {
 	_u.mutation.SetBroadcastID(v)
@@ -598,6 +658,24 @@ func (_u *OutboundMessageUpdate) sqlSave(ctx context.Context) (_node int, err er
 	}
 	if _u.mutation.SentAtCleared() {
 		_spec.ClearField(outboundmessage.FieldSentAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.DeliveredAt(); ok {
+		_spec.SetField(outboundmessage.FieldDeliveredAt, field.TypeTime, value)
+	}
+	if _u.mutation.DeliveredAtCleared() {
+		_spec.ClearField(outboundmessage.FieldDeliveredAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.BouncedAt(); ok {
+		_spec.SetField(outboundmessage.FieldBouncedAt, field.TypeTime, value)
+	}
+	if _u.mutation.BouncedAtCleared() {
+		_spec.ClearField(outboundmessage.FieldBouncedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.ComplainedAt(); ok {
+		_spec.SetField(outboundmessage.FieldComplainedAt, field.TypeTime, value)
+	}
+	if _u.mutation.ComplainedAtCleared() {
+		_spec.ClearField(outboundmessage.FieldComplainedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.AutomationStep(); ok {
 		_spec.SetField(outboundmessage.FieldAutomationStep, field.TypeInt, value)
@@ -1067,6 +1145,66 @@ func (_u *OutboundMessageUpdateOne) ClearSentAt() *OutboundMessageUpdateOne {
 	return _u
 }
 
+// SetDeliveredAt sets the "delivered_at" field.
+func (_u *OutboundMessageUpdateOne) SetDeliveredAt(v time.Time) *OutboundMessageUpdateOne {
+	_u.mutation.SetDeliveredAt(v)
+	return _u
+}
+
+// SetNillableDeliveredAt sets the "delivered_at" field if the given value is not nil.
+func (_u *OutboundMessageUpdateOne) SetNillableDeliveredAt(v *time.Time) *OutboundMessageUpdateOne {
+	if v != nil {
+		_u.SetDeliveredAt(*v)
+	}
+	return _u
+}
+
+// ClearDeliveredAt clears the value of the "delivered_at" field.
+func (_u *OutboundMessageUpdateOne) ClearDeliveredAt() *OutboundMessageUpdateOne {
+	_u.mutation.ClearDeliveredAt()
+	return _u
+}
+
+// SetBouncedAt sets the "bounced_at" field.
+func (_u *OutboundMessageUpdateOne) SetBouncedAt(v time.Time) *OutboundMessageUpdateOne {
+	_u.mutation.SetBouncedAt(v)
+	return _u
+}
+
+// SetNillableBouncedAt sets the "bounced_at" field if the given value is not nil.
+func (_u *OutboundMessageUpdateOne) SetNillableBouncedAt(v *time.Time) *OutboundMessageUpdateOne {
+	if v != nil {
+		_u.SetBouncedAt(*v)
+	}
+	return _u
+}
+
+// ClearBouncedAt clears the value of the "bounced_at" field.
+func (_u *OutboundMessageUpdateOne) ClearBouncedAt() *OutboundMessageUpdateOne {
+	_u.mutation.ClearBouncedAt()
+	return _u
+}
+
+// SetComplainedAt sets the "complained_at" field.
+func (_u *OutboundMessageUpdateOne) SetComplainedAt(v time.Time) *OutboundMessageUpdateOne {
+	_u.mutation.SetComplainedAt(v)
+	return _u
+}
+
+// SetNillableComplainedAt sets the "complained_at" field if the given value is not nil.
+func (_u *OutboundMessageUpdateOne) SetNillableComplainedAt(v *time.Time) *OutboundMessageUpdateOne {
+	if v != nil {
+		_u.SetComplainedAt(*v)
+	}
+	return _u
+}
+
+// ClearComplainedAt clears the value of the "complained_at" field.
+func (_u *OutboundMessageUpdateOne) ClearComplainedAt() *OutboundMessageUpdateOne {
+	_u.mutation.ClearComplainedAt()
+	return _u
+}
+
 // SetBroadcastID sets the "broadcast_id" field.
 func (_u *OutboundMessageUpdateOne) SetBroadcastID(v int64) *OutboundMessageUpdateOne {
 	_u.mutation.SetBroadcastID(v)
@@ -1456,6 +1594,24 @@ func (_u *OutboundMessageUpdateOne) sqlSave(ctx context.Context) (_node *Outboun
 	}
 	if _u.mutation.SentAtCleared() {
 		_spec.ClearField(outboundmessage.FieldSentAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.DeliveredAt(); ok {
+		_spec.SetField(outboundmessage.FieldDeliveredAt, field.TypeTime, value)
+	}
+	if _u.mutation.DeliveredAtCleared() {
+		_spec.ClearField(outboundmessage.FieldDeliveredAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.BouncedAt(); ok {
+		_spec.SetField(outboundmessage.FieldBouncedAt, field.TypeTime, value)
+	}
+	if _u.mutation.BouncedAtCleared() {
+		_spec.ClearField(outboundmessage.FieldBouncedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.ComplainedAt(); ok {
+		_spec.SetField(outboundmessage.FieldComplainedAt, field.TypeTime, value)
+	}
+	if _u.mutation.ComplainedAtCleared() {
+		_spec.ClearField(outboundmessage.FieldComplainedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.AutomationStep(); ok {
 		_spec.SetField(outboundmessage.FieldAutomationStep, field.TypeInt, value)

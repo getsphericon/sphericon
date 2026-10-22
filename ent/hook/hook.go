@@ -369,6 +369,18 @@ func (f PasskeyChallengeFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.V
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.PasskeyChallengeMutation", m)
 }
 
+// The PrivateRelayRangeFunc type is an adapter to allow the use of ordinary
+// function as PrivateRelayRange mutator.
+type PrivateRelayRangeFunc func(context.Context, *ent.PrivateRelayRangeMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f PrivateRelayRangeFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.PrivateRelayRangeMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.PrivateRelayRangeMutation", m)
+}
+
 // The RecoveryCodeFunc type is an adapter to allow the use of ordinary
 // function as RecoveryCode mutator.
 type RecoveryCodeFunc func(context.Context, *ent.RecoveryCodeMutation) (ent.Value, error)

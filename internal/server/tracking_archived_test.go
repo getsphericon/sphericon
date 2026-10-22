@@ -27,7 +27,7 @@ func TestTrackingKeepsRecordingForAnArchivedBroadcast(t *testing.T) {
 	b := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastSentUntrackedID)
 	rec := env.DB.BroadcastRecipient.GetX(ctx, fixtures.BroadcastRecipientUntrackedID)
 	require.NoError(t, env.DB.Scoped(fixtures.AcmeID).Broadcast().Discard(ctx, b.ID))
-	token, err := tr.Token(rec.ID)
+	token, err := tr.Token(fixtures.OutboundMessageTrackingSampleID)
 	require.NoError(t, err)
 
 	req := httptest.NewRequestWithContext(ctx, http.MethodGet, "/e/o/"+token, nil)

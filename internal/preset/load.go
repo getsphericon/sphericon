@@ -50,8 +50,8 @@ type testCase struct {
 		Body    string            `json:"body"`
 	} `json:"request"`
 	Expect struct {
-		Failures *[]DeliveryFailure `json:"failures"`
-		Action   *struct {
+		Notices *[]DeliveryNotice `json:"notices"`
+		Action  *struct {
 			Kind ActionKind `json:"kind"`
 			URL  string     `json:"url"`
 		} `json:"action"`
@@ -302,7 +302,7 @@ type CaseResult struct {
 }
 
 // RunTests runs each case the Preset carries: it posts the case's request with its
-// params and clock and expects the Delivery failures, or the refusal, it names.
+// params and clock and expects the Delivery notices, or the refusal, it names.
 func (p *Preset) RunTests(ctx context.Context) []CaseResult {
 	results := make([]CaseResult, 0, len(p.tests))
 	for _, c := range p.tests {
@@ -333,22 +333,22 @@ func (p *Preset) runCase(ctx context.Context, c testCase) error {
 	}
 	res, err := p.Handle(ctx, Request{Header: header, Body: []byte(c.Request.Body)}, Params(c.Params), now)
 
-	if c.Expect.Failures == nil {
+	if c.Expect.Notices == nil {
 		want := map[string]error{
 			"unauthentic":      ErrUnauthentic,
 			"malformed":        ErrMalformed,
 			"transform_failed": ErrTransformFailed,
 		}[c.Expect.Refused]
 		if !errors.Is(err, want) {
-			return fmt.Errorf("expected a refusal %q, got failures %v and error %w", c.Expect.Refused, res.Failures, err)
+			return fmt.Errorf("expected a refusal %q, got notices %v and error %w", c.Expect.Refused, res.Notices, err)
 		}
 		return nil
 	}
 	if err != nil {
-		return fmt.Errorf("expected failures, got an error: %w", err)
+		return fmt.Errorf("expected notices, got an error: %w", err)
 	}
-	if !slices.Equal(res.Failures, *c.Expect.Failures) && (len(res.Failures) != 0 || len(*c.Expect.Failures) != 0) {
-		return fmt.Errorf("expected failures %v, got %v", *c.Expect.Failures, res.Failures)
+	if !slices.Equal(res.Notices, *c.Expect.Notices) && (len(res.Notices) != 0 || len(*c.Expect.Notices) != 0) {
+		return fmt.Errorf("expected notices %v, got %v", *c.Expect.Notices, res.Notices)
 	}
 	switch want := c.Expect.Action; {
 	case want == nil && res.Action != nil:

@@ -162,6 +162,13 @@ type Handler interface {
 	//
 	// POST /auth/verify-email
 	SiteAuthVerifyEmail(ctx context.Context, req *SiteVerifyEmailInput, params SiteAuthVerifyEmailParams) (SiteAuthVerifyEmailRes, error)
+	// SiteAutomationReportsGet implements SiteAutomationReports_get operation.
+	//
+	// The opens and clicks of an automation's emails, with a count per clicked link. They come from the
+	// `email.opened` and `email.clicked` Events, so they cover the Event retention window.
+	//
+	// GET /workspaces/{workspaceId}/automations/{automationId}/report
+	SiteAutomationReportsGet(ctx context.Context, params SiteAutomationReportsGetParams) (SiteAutomationReportsGetRes, error)
 	// SiteAutomationsActivate implements SiteAutomations_activate operation.
 	//
 	// Activate an automation (starts enrolling contacts).
@@ -245,6 +252,14 @@ type Handler interface {
 	//
 	// PUT /workspaces/{workspaceId}/brand-kit
 	SiteBrandKitSave(ctx context.Context, req *SiteSaveBrandKitInput, params SiteBrandKitSaveParams) (SiteBrandKitSaveRes, error)
+	// SiteBroadcastLinksList implements SiteBroadcastLinks_list operation.
+	//
+	// The links of a broadcast that were clicked, with a count each, most clicked first. The counts come
+	// from the `email.clicked` Events, so they cover the Event retention window; the unique click figure
+	// in the broadcast's stats does not.
+	//
+	// GET /workspaces/{workspaceId}/broadcasts/{broadcastId}/links
+	SiteBroadcastLinksList(ctx context.Context, params SiteBroadcastLinksListParams) (SiteBroadcastLinksListRes, error)
 	// SiteBroadcastsArchive implements SiteBroadcasts_archive operation.
 	//
 	// Archive a sent or failed broadcast: it leaves the list, keeps its report, tracking and figures, and

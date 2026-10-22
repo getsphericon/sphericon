@@ -1663,7 +1663,7 @@ type StaffDomainRates struct {
 	SendingDomainId EntityId `json:"sendingDomainId"`
 	// The domain the rates are for.
 	Domain string `json:"domain"`
-	// Complaints over sent minus hard bounces.
+	// Complaints over delivered mail; the rate is null when nothing was delivered in the window.
 	ComplaintRate StaffRate `json:"complaintRate"`
 	// Hard bounces over sent.
 	BounceRate StaffRate `json:"bounceRate"`

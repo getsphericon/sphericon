@@ -9,10 +9,12 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
+	"github.com/getsphericon/sphericon/internal/clientip"
 	"github.com/getsphericon/sphericon/internal/consent"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/logging"
+	"github.com/getsphericon/sphericon/internal/machine"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
 	"github.com/getsphericon/sphericon/internal/tracking"
 	"github.com/samber/lo"
@@ -44,20 +46,20 @@ var pixelGIF, _ = base64.StdEncoding.DecodeString(
 // open still returns the pixel and a click still redirects, only the recording is
 // skipped. Unsubscribe is not rate limited at all; its signed token protects it.
 //
-// The token is a signed per-recipient JWT. Opens always return the pixel (even
+// The token is a signed JWT naming one Outbound message. Opens always return the pixel (even
 // on a bad token) so we never leak token validity through the image.
-func trackingHandler(client *ent.Client, bus *events.Bus, tracker *tracking.Tracker, limiter *ratelimit.Limiter, appURL string) http.Handler {
+func trackingHandler(client *ent.Client, bus *events.Bus, tracker *tracking.Tracker, limiter *ratelimit.Limiter, detector *machine.Detector, appURL string) http.Handler {
 	mux := http.NewServeMux()
 	appURL = strings.TrimRight(appURL, "/")
 
 	mux.HandleFunc("GET /e/o/{token}", func(w http.ResponseWriter, r *http.Request) {
-		rid, err := tracker.Decode(r.PathValue("token"))
-		if err == nil && !recipientOnHost(r, client, rid) {
+		mid, err := tracker.Decode(r.PathValue("token"))
+		if err == nil && !messageOnHost(r, client, mid) {
 			http.NotFound(w, r)
 			return
 		}
 		if err == nil && limiter.RecordsTracking(r) {
-			recordOpen(r.Context(), client, bus, rid)
+			recordOpen(r.Context(), client, bus, mid, isMachine(r, detector))
 		}
 		w.Header().Set("Content-Type", "image/gif")
 		w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate")
@@ -65,17 +67,17 @@ func trackingHandler(client *ent.Client, bus *events.Bus, tracker *tracking.Trac
 	})
 
 	mux.HandleFunc("GET /e/c/{token}", func(w http.ResponseWriter, r *http.Request) {
-		rid, dest, err := tracker.DecodeClick(r.PathValue("token"))
+		mid, dest, err := tracker.DecodeClick(r.PathValue("token"))
 		if err != nil {
 			http.Error(w, "invalid token", http.StatusBadRequest)
 			return
 		}
-		if !recipientOnHost(r, client, rid) {
+		if !messageOnHost(r, client, mid) {
 			http.NotFound(w, r)
 			return
 		}
 		if limiter.RecordsTracking(r) {
-			recordClick(r.Context(), client, bus, rid, dest)
+			recordClick(r.Context(), client, bus, mid, dest, isMachine(r, detector))
 		}
 		http.Redirect(w, r, dest, http.StatusFound)
 	})
@@ -149,15 +151,15 @@ func workspaceOnHost(r *http.Request, workspaceID int64) bool {
 	return !ok || h.workspaceID == workspaceID
 }
 
-// recipientOnHost is workspaceOnHost for a recipient token, which carries no Workspace:
-// it is read off the recipient row, and only when the request came in on a Tracking host.
-func recipientOnHost(r *http.Request, client *ent.Client, recipientID int64) bool {
+// messageOnHost is workspaceOnHost for an open or click token, which carries no Workspace:
+// it is read off the Outbound message row, and only when the request came in on a Tracking host.
+func messageOnHost(r *http.Request, client *ent.Client, messageID int64) bool {
 	h, ok := trackingHostFrom(r.Context())
 	if !ok {
 		return true
 	}
-	rec, err := client.BroadcastRecipient.Get(r.Context(), recipientID)
-	return err == nil && rec.WorkspaceID == h.workspaceID
+	msg, err := client.OutboundMessage.Get(r.Context(), messageID)
+	return err == nil && msg.WorkspaceID == h.workspaceID
 }
 
 // confirmRedirect is the absolute SPA confirmation URL (on the Instance's own host, so
@@ -182,60 +184,99 @@ func confirmRedirect(tracker *tracking.Tracker, appURL, tokenStr string, target 
 	return base + "&all=" + url.QueryEscape(allURL)
 }
 
-// The record* helpers commit the state change and publish the engagement event in
-// one transaction (transactional outbox). The state write is a conditional UPDATE
-// (… WHERE opened_at IS NULL, etc., in the broadcasts module) and the publish is gated
-// on its rows-affected, so concurrent or redelivered hits are counted exactly once
-// (no double-count race). The persist subscriber writes the Event log row and the
-// automations subscriber enrolls the contact — both off the bus. Automation emails
-// are sent untracked, so they emit no open/click events (no loop).
+// A machine hit (ADR 0053) is still an Event, flagged, but it sets no rollup stamp, so it reaches
+// no figure.
+//
+// The record* helpers commit the rollup stamp and publish the engagement event in one
+// transaction (transactional outbox). Every hit is an Event of its own, with its URL for a
+// click (ADR 0053): a repeated open or a second click is a real engagement, not a duplicate.
+// What is counted once is the Broadcast recipient's rollup, a conditional UPDATE
+// (... WHERE opened_at IS NULL, in the broadcasts module) that backs the unique figures. The
+// persist subscriber writes the Event log row and the automations subscriber enrolls the
+// contact, both off the bus.
 
-func recordOpen(ctx context.Context, client *ent.Client, bus *events.Bus, recipientID int64) {
-	rec, err := client.BroadcastRecipient.Get(ctx, recipientID)
+// engaged is the Outbound message a tracking token names, with the Contact it went to when
+// there is one. A Transactional send to an address with no Contact is kept by address.
+type engaged struct {
+	msg     *ent.OutboundMessage
+	contact *ent.Contact // nil: the message has no Contact
+	email   string
+	scope   *ent.Scoped
+}
+
+// loadEngaged resolves a token's message to its Workspace scope and Contact. A message whose
+// Contact is gone (erased) records nothing, and neither does one whose address was cleared.
+func loadEngaged(ctx context.Context, client *ent.Client, messageID int64) (engaged, bool) {
+	msg, err := client.OutboundMessage.Get(ctx, messageID)
 	if err != nil {
-		return
+		return engaged{}, false
 	}
-	s := client.Scoped(rec.WorkspaceID) // the Workspace comes from the recipient row the token names
-	c, err := s.Contact().Get(ctx, rec.ContactID)
-	if err != nil {
-		return
-	}
-	err = bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
-		first, err := broadcasts.RecordOpen(ctx, ts, rec.ID)
-		if err != nil || !first {
-			return err // not first: already counted, nothing to publish
+	s := client.Scoped(msg.WorkspaceID) // the Workspace comes from the message row the token names
+	if msg.ContactID == nil {
+		if msg.Destination == "" {
+			return engaged{}, false
 		}
-		return pub.Publish(ctx, &events.EmailEngagement{
-			Action: events.NameEmailOpened, WorkspaceID: rec.WorkspaceID, ContactID: rec.ContactID,
-			Email: lo.FromPtr(c.Email), BroadcastID: rec.BroadcastID,
-		})
-	})
+		return engaged{msg: msg, email: msg.Destination, scope: s}, true
+	}
+	c, err := s.Contact().Get(ctx, *msg.ContactID)
 	if err != nil {
-		logging.FromContext(ctx).Error("tracking: record open failed", "recipient_id", recipientID, "err", err)
+		return engaged{}, false
+	}
+	return engaged{msg: msg, contact: c, email: lo.FromPtr(c.Email), scope: s}, true
+}
+
+func (e engaged) engagement(action, dest string, software bool) *events.EmailEngagement {
+	var contactID int64 // 0: kept by address
+	if e.contact != nil {
+		contactID = e.contact.ID
+	}
+	return &events.EmailEngagement{
+		Action: action, WorkspaceID: e.msg.WorkspaceID, ContactID: contactID,
+		Email: e.email, BroadcastID: lo.FromPtr(e.msg.BroadcastID), URL: dest,
+		AutomationID:      lo.FromPtr(e.msg.AutomationID),
+		OutboundMessageID: e.msg.ID,
+		Machine:           software,
 	}
 }
 
-func recordClick(ctx context.Context, client *ent.Client, bus *events.Bus, recipientID int64, dest string) {
-	rec, err := client.BroadcastRecipient.Get(ctx, recipientID)
-	if err != nil {
+// isMachine judges a hit from its user-agent and client address (ADR 0053). Both are read for the
+// verdict and dropped: neither reaches the Event or the log.
+func isMachine(r *http.Request, detector *machine.Detector) bool {
+	return detector.IsMachine(r.Context(), clientip.UserAgentFromContext(r.Context()), clientip.FromContext(r.Context()))
+}
+
+func recordOpen(ctx context.Context, client *ent.Client, bus *events.Bus, messageID int64, software bool) {
+	e, ok := loadEngaged(ctx, client, messageID)
+	if !ok {
 		return
 	}
-	s := client.Scoped(rec.WorkspaceID)
-	c, err := s.Contact().Get(ctx, rec.ContactID)
-	if err != nil {
-		return
-	}
-	err = bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
-		first, err := broadcasts.RecordClick(ctx, ts, rec.ID)
-		if err != nil || !first {
-			return err
+	err := bus.WithinScopedTx(ctx, e.scope, func(ts *ent.Scoped, pub events.Publisher) error {
+		if e.msg.BroadcastRecipientID != nil && !software {
+			if _, err := broadcasts.RecordOpen(ctx, ts, *e.msg.BroadcastRecipientID); err != nil {
+				return err
+			}
 		}
-		return pub.Publish(ctx, &events.EmailEngagement{
-			Action: events.NameEmailClicked, WorkspaceID: rec.WorkspaceID, ContactID: rec.ContactID,
-			Email: lo.FromPtr(c.Email), BroadcastID: rec.BroadcastID, URL: dest,
-		})
+		return pub.Publish(ctx, e.engagement(events.NameEmailOpened, "", software))
 	})
 	if err != nil {
-		logging.FromContext(ctx).Error("tracking: record click failed", "recipient_id", recipientID, "err", err)
+		logging.FromContext(ctx).Error("tracking: record open failed", "message_id", messageID, "err", err)
+	}
+}
+
+func recordClick(ctx context.Context, client *ent.Client, bus *events.Bus, messageID int64, dest string, software bool) {
+	e, ok := loadEngaged(ctx, client, messageID)
+	if !ok {
+		return
+	}
+	err := bus.WithinScopedTx(ctx, e.scope, func(ts *ent.Scoped, pub events.Publisher) error {
+		if e.msg.BroadcastRecipientID != nil && !software {
+			if _, err := broadcasts.RecordClick(ctx, ts, *e.msg.BroadcastRecipientID); err != nil {
+				return err
+			}
+		}
+		return pub.Publish(ctx, e.engagement(events.NameEmailClicked, dest, software))
+	})
+	if err != nil {
+		logging.FromContext(ctx).Error("tracking: record click failed", "message_id", messageID, "err", err)
 	}
 }

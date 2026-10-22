@@ -9,6 +9,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/internal/aggregates"
 )
 
 // Stats is a Broadcast's delivery figures. They are never stored: the audience is its
@@ -25,6 +26,9 @@ type Stats struct {
 	Pending int
 	// Opened, Clicked and Unsubscribed count the recipients with that engagement.
 	Opened, Clicked, Unsubscribed int
+	// Delivered, Bounced and Complained count the messages whose delivery result is stamped
+	// (ADR 0053). They are read from the stamps, never from Events, so they outlive retention.
+	Delivered, Bounced, Complained int
 }
 
 // Processed counts the recipients whose send has ended.
@@ -75,9 +79,9 @@ func StatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (map[int64]Stats,
 		GroupBy(broadcastrecipient.FieldBroadcastID).
 		Aggregate(
 			ent.As(ent.Count(), "total"),
-			nonNull(broadcastrecipient.FieldOpenedAt, "opened"),
-			nonNull(broadcastrecipient.FieldClickedAt, "clicked"),
-			nonNull(broadcastrecipient.FieldUnsubscribedAt, "unsubscribed"),
+			aggregates.CountSet(broadcastrecipient.FieldOpenedAt, "opened"),
+			aggregates.CountSet(broadcastrecipient.FieldClickedAt, "clicked"),
+			aggregates.CountSet(broadcastrecipient.FieldUnsubscribedAt, "unsubscribed"),
 		).
 		Scan(ctx, &recipients); err != nil {
 		return nil, err
@@ -92,16 +96,27 @@ func StatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (map[int64]Stats,
 		BroadcastID int64                  `json:"broadcast_id"`
 		Status      outboundmessage.Status `json:"status"`
 		Count       int                    `json:"count"`
+		Delivered   int                    `json:"delivered"`
+		Bounced     int                    `json:"bounced"`
+		Complained  int                    `json:"complained"`
 	}
 	if err := s.OutboundMessage().Query().
 		Where(outboundmessage.BroadcastIDIn(ids...)).
 		GroupBy(outboundmessage.FieldBroadcastID, outboundmessage.FieldStatus).
-		Aggregate(ent.Count()).
+		Aggregate(
+			ent.As(ent.Count(), "count"),
+			aggregates.CountSet(outboundmessage.FieldDeliveredAt, "delivered"),
+			aggregates.CountSet(outboundmessage.FieldBouncedAt, "bounced"),
+			aggregates.CountSet(outboundmessage.FieldComplainedAt, "complained"),
+		).
 		Scan(ctx, &messages); err != nil {
 		return nil, err
 	}
 	for _, m := range messages {
 		st := out[m.BroadcastID]
+		st.Delivered += m.Delivered
+		st.Bounced += m.Bounced
+		st.Complained += m.Complained
 		switch m.Status {
 		case outboundmessage.StatusSent:
 			st.Sent = m.Count
@@ -119,11 +134,4 @@ func StatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (map[int64]Stats,
 		out[id] = st
 	}
 	return out, nil
-}
-
-// nonNull counts the rows whose column is set, under alias.
-func nonNull(column, alias string) ent.AggregateFunc {
-	return func(sel *sql.Selector) string {
-		return sql.As(sql.Count(sel.C(column)), alias)
-	}
 }

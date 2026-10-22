@@ -61,6 +61,10 @@ type SiteAuthVerifyEmailRes interface {
 	siteAuthVerifyEmailRes()
 }
 
+type SiteAutomationReportsGetRes interface {
+	siteAutomationReportsGetRes()
+}
+
 type SiteAutomationsActivateRes interface {
 	siteAutomationsActivateRes()
 }
@@ -111,6 +115,10 @@ type SiteBrandKitRecreateStarterTemplatesRes interface {
 
 type SiteBrandKitSaveRes interface {
 	siteBrandKitSaveRes()
+}
+
+type SiteBroadcastLinksListRes interface {
+	siteBroadcastLinksListRes()
 }
 
 type SiteBroadcastsArchiveRes interface {

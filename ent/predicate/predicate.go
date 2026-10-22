@@ -96,6 +96,9 @@ type Passkey func(*sql.Selector)
 // PasskeyChallenge is the predicate function for passkeychallenge builders.
 type PasskeyChallenge func(*sql.Selector)
 
+// PrivateRelayRange is the predicate function for privaterelayrange builders.
+type PrivateRelayRange func(*sql.Selector)
+
 // RecoveryCode is the predicate function for recoverycode builders.
 type RecoveryCode func(*sql.Selector)
 

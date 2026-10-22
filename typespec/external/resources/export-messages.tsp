@@ -64,6 +64,15 @@ model ExportMessageRow {
   /** When the provider accepted the message */
   sent_at: Timestamp | null;
 
+  /** When the provider first reported the message delivered */
+  delivered_at: Timestamp | null;
+
+  /** When the provider first reported the message bounced */
+  bounced_at: Timestamp | null;
+
+  /** When the provider first reported a spam complaint about the message */
+  complained_at: Timestamp | null;
+
   /** Creation timestamp */
   created_at: Timestamp;
 

@@ -1,0 +1,7 @@
+# iCloud Private Relay egress ranges (ADR 0053), taken from the documentation blocks of RFC 5737
+# and RFC 3849 so no fixture address belongs to a real network. A request from inside one is
+# machine engagement.
+- id: 1 # fixture: PrivateRelayRange
+  cidr: 198.51.100.0/24
+- id: 2 # fixture: PrivateRelayRangeV6
+  cidr: '2001:db8:1::/48'

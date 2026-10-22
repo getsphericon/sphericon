@@ -21,8 +21,9 @@ func TestStatsOfReadsEachBroadcastsRows(t *testing.T) {
 	got, err := broadcasts.StatsOf(d.ctx, d.s, fixtures.BroadcastSentID, fixtures.BroadcastDraftID, fixtures.BroadcastFailedID)
 	require.NoError(t, err)
 
-	// Fixtures: 11 recipients, all sent, 5 opened and 2 clicked.
-	assert.Equal(t, broadcasts.Stats{Recipients: 11, Sent: 11, Opened: 5, Clicked: 2}, got[fixtures.BroadcastSentID])
+	// Fixtures: 11 recipients, all sent, 5 opened and 2 clicked; the delivery result is stamped
+	// on three messages (3 delivered, 1 bounced, 1 complained).
+	assert.Equal(t, broadcasts.Stats{Recipients: 11, Sent: 11, Opened: 5, Clicked: 2, Delivered: 3, Bounced: 1, Complained: 1}, got[fixtures.BroadcastSentID])
 	assert.Equal(t, broadcasts.Stats{Recipients: 5, Failed: 3, Skipped: 2}, got[fixtures.BroadcastFailedID])
 	assert.Zero(t, got[fixtures.BroadcastDraftID])
 }

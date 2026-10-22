@@ -185,7 +185,7 @@ func TestExternalEmailsSendRecordsTrace(t *testing.T) {
 	require.IsType(t, &externalapi.SendTransactionalEmailResponse{}, res)
 
 	rec, err := env.DB.OutboundMessage.Query().
-		Where(outboundmessage.WorkspaceID(fixtures.AcmeID), outboundmessage.Destination(fixtures.ContactAliceEmail)).Only(ctx)
+		Where(outboundmessage.WorkspaceID(fixtures.AcmeID), outboundmessage.KindEQ(outboundmessage.KindTransactional), outboundmessage.Destination(fixtures.ContactAliceEmail)).Only(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, outboundmessage.StatusSent, rec.Status)
 	assert.Equal(t, outboundmessage.KindTransactional, rec.Kind)

@@ -46,11 +46,11 @@ func postSNS(t *testing.T, env *testhelper.TestEnv, key, body string) *httptest.
 }
 
 // outboxEvents returns the published delivery-failure events for an address.
-func outboxEvents(t *testing.T, env *testhelper.TestEnv, email string) []events.EmailDeliveryFailure {
+func outboxEvents(t *testing.T, env *testhelper.TestEnv, email string) []events.EmailDelivery {
 	t.Helper()
-	var out []events.EmailDeliveryFailure
-	for _, ev := range env.OutboxEvents(t, events.NameEmailBounced, events.NameEmailComplained) {
-		f, ok := ev.(*events.EmailDeliveryFailure)
+	var out []events.EmailDelivery
+	for _, ev := range env.OutboxEvents(t, deliveryNames...) {
+		f, ok := ev.(*events.EmailDelivery)
 		require.Truef(t, ok, "got %T", ev)
 		if f.Email == email {
 			out = append(out, *f)
@@ -62,7 +62,7 @@ func outboxEvents(t *testing.T, env *testhelper.TestEnv, email string) []events.
 // persistOutbox plays the persist consumer over everything published so far.
 func persistOutbox(t *testing.T, env *testhelper.TestEnv) {
 	t.Helper()
-	for _, envelope := range env.OutboxEnvelopes(t, events.NameEmailBounced, events.NameEmailComplained) {
+	for _, envelope := range env.OutboxEnvelopes(t, deliveryNames...) {
 		require.NoError(t, events.Persist(t.Context(), env.DB, envelope))
 	}
 }

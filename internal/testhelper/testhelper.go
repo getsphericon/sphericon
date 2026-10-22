@@ -49,6 +49,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/joindomains"
+	"github.com/getsphericon/sphericon/internal/machine"
 	"github.com/getsphericon/sphericon/internal/mcpserver"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/oauthserver"
@@ -175,6 +176,11 @@ type TestEnv struct {
 
 	// SES scripts the send quota every "ses" Integration reports.
 	SES *FakeSES
+
+	// Machine is the detector the tracking endpoints judge hits by, fed by PrivateRelay, the
+	// scripted source of the published Private Relay list: Refresh replaces the stored ranges.
+	Machine      *machine.Detector
+	PrivateRelay *FakeRelayRanges
 
 	// Confirmations records the subscription URLs a Preset's confirm action fetched.
 	Confirmations *Confirmations
@@ -435,6 +441,8 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	require.NoError(t, err, "build release source")
 	lapsedAt, _ := edition.LicenseLapsedAt()
 	inst := instance.New(client, instance.EnvironmentOf(&cfg), instance.HostOf(&cfg, st.version, lapsedAt), st.now, instance.WithReleaseSource(source))
+	relay := &FakeRelayRanges{}
+	detector := machine.New(client, relay)
 	handler, err := server.New(&cfg, txDB, client, apisite.Deps{
 		Deletion:    workspacedeletion.New(client, bus),
 		AccountLink: accountLink, Holds: edition.Holds(), AbuseWatch: edition.AbuseWatch(), SupportEmail: cfg.SupportEmail, MCPURL: cfg.MCPOrigin(),
@@ -449,7 +457,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		Clock:                    st.now,
 		RequireEmailVerification: cfg.RequireEmailVerification, SignupOpen: cfg.SignupOpen,
 		Signin: signin.FromConfig(&cfg, st.now, st.signinOpts...),
-	}, external, mcpHandler, staffHandler)
+	}, detector, external, mcpHandler, staffHandler)
 	require.NoError(t, err, "build server")
 	internalHandler, err := server.NewInternal(&cfg, client, edition.Service(bus))
 	require.NoError(t, err, "build internal handler")
@@ -457,7 +465,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	return &TestEnv{
 		sender:   sender,
 		Instance: inst, AppURL: cfg.AppURL, DB: client, SQLDB: txDB, Bus: bus, Server: handler, Internal: internalHandler, Tracker: tracker, Cipher: cipher, Integrations: integrationsModule, jwtSecret: baseCfg.JWTSecret, edition: edition, Holds: edition.Holds(), now: st.now, sessionTTL: cfg.SessionTTL,
-		SystemMail: systemMail, CustomerMail: customerMail, SES: fakeSES, Confirmations: confirmations, SecondFactor: secondFactor, StaffMembers: edition.StaffMembers,
+		SystemMail: systemMail, CustomerMail: customerMail, SES: fakeSES, Machine: detector, PrivateRelay: relay, Confirmations: confirmations, SecondFactor: secondFactor, StaffMembers: edition.StaffMembers,
 	}
 }
 

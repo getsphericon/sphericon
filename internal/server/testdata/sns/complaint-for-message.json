@@ -1,0 +1,10 @@
+{
+  "Message": "{\"notificationType\":\"Complaint\",\"mail\":{\"source\":\"hello@codebasics.dev\",\"messageId\":\"ses-msg-alice-1\"},\"complaint\":{\"complainedRecipients\":[{\"emailAddress\":\"alice@example.com\"}]}}",
+  "MessageId": "sns-msg-24",
+  "Signature": "g4Ap6TGLsREfPP4O2SPLnpNJ1SG6wpBPymEwQikDzZRUssh/tGbRMIZVlbNEuinHPbjwBMnJBwmS21qWwxFK/Z65Gkk5LWT6CNRejtC9BFo30h1h3PyARdz4I3fLsxytj4Vg4UcKQZpLHAnHcuyfhLF2eTrQFaidkLqYKsHfdElZWKNNh5o9hr72SKvFbtxYAaIraXwJw01XRTpprgGMofm8OocybBIy5dtjTf7aLWucjWlfoQidamBAtjHyduE+HpQ3v25UPwMPa8anoAK/CnSzv+fVaiM3IqQzgfK30T1qf4yUT0gqSU13Mv9fH7SiOrb6Pptz7+jaGSZmyhgPkQ==",
+  "SignatureVersion": "2",
+  "SigningCertURL": "https://sns.eu-west-1.amazonaws.com/SimpleNotificationService-sphericon-test.pem",
+  "Timestamp": "2026-01-01T00:00:00.000Z",
+  "TopicArn": "arn:aws:sns:eu-west-1:123456789012:acme-ses-events",
+  "Type": "Notification"
+}

@@ -124,3 +124,31 @@ func TestSiteHTTPStepRefusedAtSaveIsUnprocessable(t *testing.T) {
 	require.NoError(t, err)
 	assert.IsType(t, new(siteapi.SiteAutomationsCreateUnprocessableEntity), res)
 }
+
+func TestSiteAutomationRefusesInfrastructureEventsAsTrigger(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	ctx := context.Background()
+	params := siteapi.SiteAutomationsCreateParams{WorkspaceId: fixtures.AcmePublicID}
+
+	for _, trigger := range []string{"email.delivered", "email.delayed", "email.dropped", "email.bounced", "email.complained", "email.sent"} {
+		res, err := c.SiteAutomationsCreate(ctx, &siteapi.SiteCreateAutomationInput{Name: "From " + trigger, TriggerEvent: trigger}, params)
+		require.NoError(t, err)
+		assert.IsType(t, new(siteapi.SiteAutomationsCreateUnprocessableEntity), res, trigger)
+	}
+
+	for _, trigger := range []string{"email.opened", "email.clicked", "email.unsubscribed"} {
+		res, err := c.SiteAutomationsCreate(ctx, &siteapi.SiteCreateAutomationInput{Name: "From " + trigger, TriggerEvent: trigger}, params)
+		require.NoError(t, err)
+		assert.IsType(t, new(siteapi.SiteAutomationResource), res, trigger)
+	}
+
+	made, err := c.SiteAutomationsCreate(ctx, &siteapi.SiteCreateAutomationInput{Name: "Plain", TriggerEvent: "signup"}, params)
+	require.NoError(t, err)
+	created, ok := made.(*siteapi.SiteAutomationResource)
+	require.Truef(t, ok, "got %T", made)
+	updated, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{TriggerEvent: siteapi.NewOptString("email.bounced")},
+		siteapi.SiteAutomationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: created.ID})
+	require.NoError(t, err)
+	assert.IsType(t, new(siteapi.SiteAutomationsUpdateUnprocessableEntity), updated)
+}

@@ -272,6 +272,50 @@
   workspace_id: 3
   created_at: '2026-01-03 00:00:00'
   updated_at: '2026-01-03 00:00:00'
+# A send whose provider message id is an SES id, so SES Delivery notices link to it (ADR 0053).
+- id: 810 # fixture: OutboundMessageSesAlice
+  kind: transactional
+  idempotency_key: 'transactional:ses-alice-810'
+  channel: email
+  contact_id: 1
+  template_id: 1
+  status: sent
+  sending_domain: codebasics.dev
+  provider_message_id: 'ses-msg-alice-1'
+  sent_at: '{{daysAgo 1}}'
+  claimed_at: '{{daysAgo 1}}'
+  workspace_id: 1
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+# Sends whose provider message ids Postmark and Mailgun Delivery notices name (ADR 0053).
+- id: 811 # fixture: OutboundMessagePostmarkAlice
+  kind: transactional
+  idempotency_key: 'transactional:postmark-alice-811'
+  channel: email
+  contact_id: 1
+  template_id: 1
+  status: sent
+  sending_domain: codebasics.dev
+  provider_message_id: 'pm-msg-alice-1'
+  sent_at: '{{daysAgo 1}}'
+  claimed_at: '{{daysAgo 1}}'
+  workspace_id: 1
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 812 # fixture: OutboundMessageMailgunAlice
+  kind: transactional
+  idempotency_key: 'transactional:mailgun-alice-812'
+  channel: email
+  contact_id: 1
+  template_id: 1
+  status: sent
+  sending_domain: codebasics.dev
+  provider_message_id: '<mg-msg-alice-1@codebasics.dev>'
+  sent_at: '{{daysAgo 1}}'
+  claimed_at: '{{daysAgo 1}}'
+  workspace_id: 1
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
 # Export subject: one send linked to contact 800, one transactional send to the
 # same destination with no Contact.
 - id: 800
@@ -342,6 +386,7 @@
   claimed_at: '{{daysAgo 3}}'
   broadcast_id: 200
   broadcast_recipient_id: 1000
+  delivered_at: '{{daysAgo 3}}'
   workspace_id: 1
   created_at: '{{daysAgo 3}}'
   updated_at: '{{daysAgo 2}}'
@@ -356,6 +401,8 @@
   claimed_at: '{{daysAgo 3}}'
   broadcast_id: 200
   broadcast_recipient_id: 1001
+  delivered_at: '{{daysAgo 3}}'
+  complained_at: '{{daysAgo 2}}'
   workspace_id: 1
   created_at: '{{daysAgo 3}}'
   updated_at: '{{daysAgo 2}}'
@@ -370,6 +417,8 @@
   claimed_at: '{{daysAgo 3}}'
   broadcast_id: 200
   broadcast_recipient_id: 1002
+  delivered_at: '{{daysAgo 3}}'
+  bounced_at: '{{daysAgo 3}}'
   workspace_id: 1
   created_at: '{{daysAgo 3}}'
   updated_at: '{{daysAgo 2}}'
@@ -401,7 +450,7 @@
   workspace_id: 1
   created_at: '{{daysAgo 3}}'
   updated_at: '{{daysAgo 2}}'
-- id: 11005
+- id: 11005 # fixture: OutboundMessageUnengagedFirst
   kind: broadcast
   idempotency_key: 'broadcast:1005'
   channel: email
@@ -415,7 +464,7 @@
   workspace_id: 1
   created_at: '{{daysAgo 3}}'
   updated_at: '{{daysAgo 3}}'
-- id: 11006
+- id: 11006 # fixture: OutboundMessageUnengagedSecond
   kind: broadcast
   idempotency_key: 'broadcast:1006'
   channel: email
@@ -4267,3 +4316,67 @@
   workspace_id: 5800
   created_at: '{{monthAgo 19 1 0 1}}'
   updated_at: '{{monthAgo 19 1 0 1}}'
+# Alice's message of the tracking-sample Broadcast (5700): the tracking token names this row. Sent
+# outside the analytics windows, so the dashboard figures stay those of the other fixtures.
+- id: 5700 # fixture: OutboundMessageTrackingSample
+  kind: broadcast
+  idempotency_key: 'broadcast:5700'
+  channel: email
+  destination: alice.tracking@example.com
+  contact_id: 1
+  sending_source: broadcasts
+  status: sent
+  sent_at: '{{daysAgo 400}}'
+  claimed_at: '{{daysAgo 400}}'
+  broadcast_id: 5700
+  broadcast_recipient_id: 5700
+  workspace_id: 1
+  created_at: '{{daysAgo 400}}'
+  updated_at: '{{daysAgo 400}}'
+# Alice's emails of two Automations, sent outside the analytics windows, tracked like a Broadcast's (ADR 0053): one of the Welcome series
+# (it starts on `signup`) and one of the On open Automation, whose own open must not enroll it.
+- id: 5701 # fixture: OutboundMessageAutomationTracked
+  kind: automation
+  idempotency_key: 'automation:5701:0'
+  channel: email
+  destination: alice.automation@example.com
+  contact_id: 1
+  status: sent
+  sent_at: '{{daysAgo 400}}'
+  claimed_at: '{{daysAgo 400}}'
+  automation_id: 100
+  delivered_at: '{{daysAgo 400}}'
+  bounced_at: '{{daysAgo 400}}'
+  workspace_id: 1
+  created_at: '{{daysAgo 400}}'
+  updated_at: '{{daysAgo 400}}'
+- id: 5702 # fixture: OutboundMessageAutomationOnOpen
+  kind: automation
+  idempotency_key: 'automation:5702:0'
+  channel: email
+  destination: alice.automation@example.com
+  contact_id: 1
+  status: sent
+  sent_at: '{{daysAgo 400}}'
+  claimed_at: '{{daysAgo 400}}'
+  automation_id: 5570
+  workspace_id: 1
+  created_at: '{{daysAgo 400}}'
+  updated_at: '{{daysAgo 400}}'
+# A second email of the Welcome series, delivered and then complained about, so the Automation
+# report has more than one stamped message (ADR 0053).
+- id: 5703 # fixture: OutboundMessageAutomationComplained
+  kind: automation
+  idempotency_key: 'automation:5703:0'
+  channel: email
+  destination: bob.automation@example.com
+  contact_id: 2
+  status: sent
+  sent_at: '{{daysAgo 400}}'
+  claimed_at: '{{daysAgo 400}}'
+  delivered_at: '{{daysAgo 400}}'
+  complained_at: '{{daysAgo 399}}'
+  automation_id: 100
+  workspace_id: 1
+  created_at: '{{daysAgo 400}}'
+  updated_at: '{{daysAgo 400}}'

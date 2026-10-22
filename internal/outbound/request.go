@@ -29,7 +29,7 @@ func BroadcastRecipient(b *ent.Broadcast, rec *ent.BroadcastRecipient, c *ent.Co
 		Source:      eligibility.SourceBroadcasts,
 		Subject:     b.Subject,
 		Body:        b.Body,
-		TrackID:     rec.ID,
+		Track:       true,
 		Ref:         Ref{BroadcastID: b.ID, BroadcastRecipient: rec.ID},
 	}
 	if b.FromEmail != nil {
@@ -53,6 +53,7 @@ func AutomationStep(a *ent.Automation, run *ent.AutomationRun, step int, c *ent.
 		Source:      eligibility.AutomationSource(a.ID),
 		Subject:     subject,
 		Body:        body,
+		Track:       true,
 		Ref:         Ref{AutomationID: a.ID, AutomationRunID: run.ID, AutomationStep: &step},
 	}
 }
@@ -68,6 +69,8 @@ type TransactionalMessage struct {
 	Subject     string
 	Body        string
 	Variables   map[string]any
+	// Track opts the send into open and click tracking; it stays Transactional (ADR 0053).
+	Track bool
 }
 
 // Transactional is the Request for a Transactional message (no unsubscribe Source).
@@ -84,6 +87,7 @@ func Transactional(m TransactionalMessage) Request {
 		Subject:     m.Subject,
 		Body:        m.Body,
 		Variables:   m.Variables,
+		Track:       m.Track,
 		Ref:         Ref{TemplateID: m.TemplateID},
 	}
 }

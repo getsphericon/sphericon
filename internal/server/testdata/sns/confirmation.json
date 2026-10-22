@@ -1,7 +1,7 @@
 {
   "Message": "You have chosen to subscribe to the topic arn:aws:sns:eu-west-1:123456789012:acme-ses-events",
   "MessageId": "sns-msg-7",
-  "Signature": "RBMWxlFmkIczMQzu1tUiVbAEaFb814jsD6vjFHNu9G5tvDRitw+IeItrNUH+JP0qlokvLht/+9GaeMXVRijAarHGhCWc6alPZa4NbxgjccKVxpW9cLiYm8CoNAWyhfghihGq1PKp0LcHiV+1CsFKTTEo4NB7FA53YbZ3qm0L6MFtRz44DtnjzkAX0qqZGxzht8shitxm4T/UR4Pd5cJAE9qR+f6YdbqoI4rfBvhthXKOvhlRtOcPcJIQhXN3CgrFI5VexkdAwEfqqfrS4cFBhpzkfH5PYUAQrwVCIjnvwWtL7RrtRIERWaYuPFDokz/yPXHj1CKEd2BVVtxxTE61fw==",
+  "Signature": "NXWunCR6qiUSbEgCDBnxxMtmtfwZGdGgKGOxJ+70NOZPFsDs0K4XEvC3l6eSfNSMcIzjCgaOa68YLSBw3nhCCtjJ/lvvusL4hSJWjfG4hgY3ns9fLpz4YjYqUYrUpGzJ98wP4nmilNO3eijunaarw/VyLsL1x5VJZCywfAW/ks8BjsKV2Cgi0Wp20ZRhxdKstiPopfGQGoyG3wlJgd2cpAbwMxxTaXvpVpMvMRaGFvtKer7c6s2oNVPdBFl0DuVKNqGv5g8koU1YZdAoV4Bn+h99g/KbKzgBZy1Fmowp71KSP1DePMsGBNmkYUZ/D9Vjv2AJb02xIVAwIS4YJnxhCg==",
   "SignatureVersion": "2",
   "SigningCertURL": "https://sns.eu-west-1.amazonaws.com/SimpleNotificationService-sphericon-test.pem",
   "SubscribeURL": "https://sns.eu-west-1.amazonaws.com/?Action=ConfirmSubscription\u0026TopicArn=arn:aws:sns:eu-west-1:123456789012:acme-ses-events\u0026Token=abc",
