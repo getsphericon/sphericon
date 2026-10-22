@@ -401,6 +401,13 @@ type Handler interface {
 	//
 	// POST /rules/{id}/activate
 	RulesActivate(ctx context.Context, params RulesActivateParams) (RulesActivateRes, error)
+	// RulesArchive implements Rules_archive operation.
+	//
+	// Archive a Rule: it leaves the list and acts on nothing (an active one is deactivated), and keeps its
+	// Firings. It can be restored, as a draft.
+	//
+	// POST /rules/{id}/archive
+	RulesArchive(ctx context.Context, params RulesArchiveParams) (RulesArchiveRes, error)
 	// RulesCreate implements Rules_create operation.
 	//
 	// Create a resource.
@@ -413,6 +420,12 @@ type Handler interface {
 	//
 	// POST /rules/{id}/deactivate
 	RulesDeactivate(ctx context.Context, params RulesDeactivateParams) (RulesDeactivateRes, error)
+	// RulesDelete implements Rules_delete operation.
+	//
+	// Delete a resource.
+	//
+	// DELETE /rules/{id}
+	RulesDelete(ctx context.Context, params RulesDeleteParams) (RulesDeleteRes, error)
 	// RulesGet implements Rules_get operation.
 	//
 	// Get a resource by ID.
@@ -425,6 +438,12 @@ type Handler interface {
 	//
 	// GET /rules
 	RulesList(ctx context.Context, params RulesListParams) (RulesListRes, error)
+	// RulesUnarchive implements Rules_unarchive operation.
+	//
+	// Restore an archived Rule to the list, as a draft.
+	//
+	// POST /rules/{id}/unarchive
+	RulesUnarchive(ctx context.Context, params RulesUnarchiveParams) (RulesUnarchiveRes, error)
 	// RulesUpdate implements Rules_update operation.
 	//
 	// Update a resource.

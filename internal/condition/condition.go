@@ -384,6 +384,21 @@ func Decode(def string, into json.Unmarshaler) error {
 	return nil
 }
 
+// Size counts the nodes of the group: itself and every nested group and rule, at any depth. A
+// malformed entry counts as one node.
+func (g Group) Size() int {
+	n := 1
+	for _, raw := range g.Rules {
+		var sub Group
+		if json.Unmarshal(raw, &sub) == nil && sub.Kind == kindGroup {
+			n += sub.Size()
+			continue
+		}
+		n++
+	}
+	return n
+}
+
 // NamesTag reports whether any rule of the group, at any depth, targets the Tag called name.
 // A malformed condition names nothing.
 func (g Group) NamesTag(name string) bool {

@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/api/external/resources"
 	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/convert"
+	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/rules"
 )
@@ -27,7 +28,7 @@ func (h *Handlers) RulesList(ctx context.Context, params externalapi.RulesListPa
 		return &res, nil
 	}
 
-	page, err := h.rules.List(ctx, auth.TokenScoped(ctx), pagination.ParamsOf(params.Page, params.PageSize))
+	page, err := h.rules.List(ctx, auth.TokenScoped(ctx), pagination.ParamsOf(params.Page, params.PageSize), params.Archived.Or(false))
 	if err != nil {
 		return nil, err
 	}
@@ -118,6 +119,75 @@ func (h *Handlers) RulesUpdate(ctx context.Context, req *externalapi.UpdateRuleI
 		res := externalapi.RulesUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
 		return &res, nil
 	case err != nil:
+		return nil, err
+	}
+	res := mapper.RuleToResource(r)
+	return &res, nil
+}
+
+// RulesDelete purges a Rule that has no Firings; one with Firings is archived instead (409).
+func (h *Handlers) RulesDelete(ctx context.Context, params externalapi.RulesDeleteParams) (externalapi.RulesDeleteRes, error) {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeAutomationsWrite) {
+		res := externalapi.RulesDeleteUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
+		return &res, nil
+	}
+	err := h.rules.Delete(ctx, auth.TokenScoped(ctx), int64(params.ID))
+	if refused, ok := inuse.As(err); ok {
+		res := inUseProblem(refused)
+		return &res, nil
+	}
+	switch {
+	case errors.Is(err, rules.ErrNotFound):
+		res := externalapi.RulesDeleteNotFound(problem(http.StatusNotFound, "rule not found"))
+		return &res, nil
+	case err != nil:
+		return nil, err
+	}
+	return &externalapi.RulesDeleteNoContent{}, nil
+}
+
+// RulesArchive archives a Rule (ADR 0049): it acts on nothing and keeps its Firings.
+func (h *Handlers) RulesArchive(ctx context.Context, params externalapi.RulesArchiveParams) (externalapi.RulesArchiveRes, error) {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeAutomationsWrite) {
+		res := externalapi.RulesArchiveUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
+		return &res, nil
+	}
+	ws := auth.TokenScoped(ctx)
+	id := int64(params.ID)
+	err := h.rules.Archive(ctx, ws, id)
+	if errors.Is(err, rules.ErrNotFound) {
+		res := externalapi.RulesArchiveNotFound(problem(http.StatusNotFound, "rule not found"))
+		return &res, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	r, err := h.rules.Get(ctx, ws, id)
+	if err != nil {
+		return nil, err
+	}
+	res := mapper.RuleToResource(r)
+	return &res, nil
+}
+
+// RulesUnarchive restores an archived Rule, as a draft.
+func (h *Handlers) RulesUnarchive(ctx context.Context, params externalapi.RulesUnarchiveParams) (externalapi.RulesUnarchiveRes, error) {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeAutomationsWrite) {
+		res := externalapi.RulesUnarchiveUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
+		return &res, nil
+	}
+	ws := auth.TokenScoped(ctx)
+	id := int64(params.ID)
+	err := h.rules.Unarchive(ctx, ws, id)
+	if errors.Is(err, rules.ErrNotFound) {
+		res := externalapi.RulesUnarchiveNotFound(problem(http.StatusNotFound, "rule not found"))
+		return &res, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	r, err := h.rules.Get(ctx, ws, id)
+	if err != nil {
 		return nil, err
 	}
 	res := mapper.RuleToResource(r)

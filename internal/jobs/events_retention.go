@@ -55,5 +55,12 @@ func (w *PruneEventsWorker) Work(ctx context.Context, _ *river.Job[PruneEventsAr
 	if deleted > 0 {
 		slog.InfoContext(ctx, "expired events pruned", "deleted", deleted)
 	}
+	firings, err := events.PruneRuleFirings(ctx, w.ent, w.retention, eventsRetentionBatch)
+	if err != nil {
+		return err
+	}
+	if firings > 0 {
+		slog.InfoContext(ctx, "expired rule firings pruned", "deleted", firings)
+	}
 	return nil
 }

@@ -245,6 +245,10 @@ type RulesActivateRes interface {
 	rulesActivateRes()
 }
 
+type RulesArchiveRes interface {
+	rulesArchiveRes()
+}
+
 type RulesCreateRes interface {
 	rulesCreateRes()
 }
@@ -253,12 +257,20 @@ type RulesDeactivateRes interface {
 	rulesDeactivateRes()
 }
 
+type RulesDeleteRes interface {
+	rulesDeleteRes()
+}
+
 type RulesGetRes interface {
 	rulesGetRes()
 }
 
 type RulesListRes interface {
 	rulesListRes()
+}
+
+type RulesUnarchiveRes interface {
+	rulesUnarchiveRes()
 }
 
 type RulesUpdateRes interface {

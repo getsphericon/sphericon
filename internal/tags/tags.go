@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/inuse"
+	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/segments"
 )
 
@@ -158,6 +159,11 @@ func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
 	for _, a := range autos {
 		users = append(users, inuse.User{Kind: inuse.Automation, ID: a.ID, Name: a.Name})
 	}
+	live, err := rules.UsingTag(ctx, s, t.Name)
+	if err != nil {
+		return err
+	}
+	users = append(users, inuse.Rules(live)...)
 	if len(users) > 0 {
 		return &inuse.Error{What: inuse.SubjectTag, Users: users}
 	}

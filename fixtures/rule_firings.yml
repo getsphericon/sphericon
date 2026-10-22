@@ -58,3 +58,17 @@
   workspace_id: 3
   created_at: '{{daysAgo 2}}'
   updated_at: '{{daysAgo 2}}'
+
+# A Firing past the 400-day analytical window (ADR 0019), of RuleVipOnly: the retention prune
+# removes it. Its recent counterpart is RuleFiringDone.
+- id: 102 # fixture: RuleFiringExpired
+  rule_id: 101
+  contact_id: 1
+  action: rule_vip
+  source_id: 'fixture:rule-firing-expired'
+  actions: '[{"type":"apply_tag","tag":"rule-vip-seen"}]'
+  results: '[{"type":"apply_tag","status":"succeeded"}]'
+  completed_at: '{{daysAgo 500}}'
+  workspace_id: 1
+  created_at: '{{daysAgo 500}}'
+  updated_at: '{{daysAgo 500}}'

@@ -29,7 +29,17 @@ import (
 	"github.com/getsphericon/sphericon/ent/ruletrigger"
 	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/pagination"
+)
+
+// The fixed caps on a Rule (ADR 0054). There is none on the number of Rules.
+const (
+	// MaxActions is how many Actions one Rule may run.
+	MaxActions = 20
+	// MaxConditionNodes is how many nodes (groups and rules, nested ones included) a Condition
+	// may have.
+	MaxConditionNodes = 50
 )
 
 // The Action types. Each has a Runner (ActionRunners) that does it.
@@ -215,13 +225,94 @@ func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.Rule, e
 	return r, err
 }
 
-// List returns one page of the Workspace's kept Rules, newest first.
-func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params) (pagination.Page[*ent.Rule], error) {
+// List returns one page of the Workspace's Rules, newest first: the kept ones, or with
+// archived the archived ones.
+func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params, archived bool) (pagination.Page[*ent.Rule], error) {
+	rows := func() *ent.RuleQuery {
+		if archived {
+			return s.Rule().QueryDiscarded()
+		}
+		return s.Rule().Query()
+	}
 	return pagination.List(ctx, p,
-		func(ctx context.Context) (int, error) { return s.Rule().Query().Count(ctx) },
+		func(ctx context.Context) (int, error) { return rows().Count(ctx) },
 		func(ctx context.Context, limit, offset int) ([]*ent.Rule, error) {
-			return s.Rule().Query().WithTriggers(byAction).Order(ent.Desc(rule.FieldID)).Limit(limit).Offset(offset).All(ctx)
+			return rows().WithTriggers(byAction).Order(ent.Desc(rule.FieldID)).Limit(limit).Offset(offset).All(ctx)
 		})
+}
+
+// Archive discards a Rule (ADR 0049): it leaves the lists and acts on nothing, and its Firings
+// stay. Archiving also deactivates it, so restoring it brings back a draft that cannot start
+// firing before its author activates it again. Archiving an archived Rule changes nothing.
+func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) error {
+	r, err := m.Get(ctx, s, id)
+	if err != nil {
+		return err
+	}
+	if r.DiscardedAt != nil {
+		return nil
+	}
+	return m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+		if r.Status == rule.StatusActive {
+			if err := ts.Rule().UpdateOneID(id).SetStatus(rule.StatusDraft).Exec(ctx); err != nil {
+				return err
+			}
+		}
+		return notFound(ts.Rule().Discard(ctx, id))
+	})
+}
+
+// Unarchive brings an archived Rule back to the lists, as a draft. Restoring one that is not
+// archived changes nothing.
+func (m *Module) Unarchive(ctx context.Context, s *ent.Scoped, id int64) error {
+	return notFound(s.Rule().Restore(ctx, id))
+}
+
+// Delete purges a Rule that has no Firings (ADR 0049). One with any Firing is history and is
+// archived instead: an *inuse.Error carrying their count.
+func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
+	n, err := s.Rule().Purge().Where(rule.ID(id), rule.Not(rule.HasFirings())).Exec(ctx)
+	if err != nil {
+		return err
+	}
+	if n > 0 {
+		return nil
+	}
+	r, err := m.Get(ctx, s, id)
+	if err != nil {
+		return err
+	}
+	firings, err := s.RuleFiring().Query().Where(rulefiring.RuleID(id)).Count(ctx)
+	if err != nil {
+		return err
+	}
+	return &inuse.Error{What: inuse.SubjectRule, Users: []inuse.User{inuse.Firings(id, r.Name, firings)}}
+}
+
+// UsingTag returns the Workspace's active Rules, in id order, that name the Tag by its name: in
+// a Condition leaf or in a tag Action. A draft or an archived Rule acts on nothing, so it does
+// not hold the Tag.
+func UsingTag(ctx context.Context, s *ent.Scoped, name string) ([]*ent.Rule, error) {
+	active, err := s.Rule().Query().Where(rule.StatusEQ(rule.StatusActive)).Order(ent.Asc(rule.FieldID)).All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return lo.Filter(active, func(r *ent.Rule, _ int) bool {
+		if g, err := condition.Parse(lo.FromPtr(r.Condition)); err == nil && g.NamesTag(name) {
+			return true
+		}
+		actions, err := DecodeActions(r.Actions)
+		return err == nil && slices.ContainsFunc(actions, func(a Action) bool {
+			return (a.Type == ActionApplyTag || a.Type == ActionRemoveTag) && a.Tag == name
+		})
+	}), nil
+}
+
+func notFound(err error) error {
+	if ent.IsNotFound(err) {
+		return ErrNotFound
+	}
+	return err
 }
 
 // Activate makes a Rule react to the Events recorded from now on (it never replays history).
@@ -231,6 +322,9 @@ func (m *Module) Activate(ctx context.Context, s *ent.Scoped, id int64) (*ent.Ru
 	r, err := m.Get(ctx, s, id)
 	if err != nil {
 		return nil, err
+	}
+	if r.DiscardedAt != nil {
+		return nil, ErrNotFound // an archived Rule acts on nothing: restore it first
 	}
 	actions, err := DecodeActions(r.Actions)
 	if err != nil {
@@ -251,11 +345,15 @@ func (m *Module) Activate(ctx context.Context, s *ent.Scoped, id int64) (*ent.Ru
 
 // Deactivate stops a Rule from firing. Deactivating a draft leaves it as it is.
 func (m *Module) Deactivate(ctx context.Context, s *ent.Scoped, id int64) (*ent.Rule, error) {
-	if _, err := s.Rule().Update().
+	n, err := s.Rule().Update().
 		Where(rule.ID(id), rule.DiscardedAtIsNil()).
 		SetStatus(rule.StatusDraft).
-		Save(ctx); err != nil {
+		Save(ctx)
+	if err != nil {
 		return nil, err
+	}
+	if n == 0 {
+		return nil, ErrNotFound
 	}
 	return m.Get(ctx, s, id)
 }
@@ -330,6 +428,9 @@ func (m *Module) validateCondition(ctx context.Context, s *ent.Scoped, cond *str
 	if cond == nil || *cond == "" {
 		return nil
 	}
+	if g, err := condition.Parse(*cond); err == nil && g.Size() > MaxConditionNodes {
+		return fmt.Errorf("%w: a Condition has at most %d groups and rules, this one has %d", ErrInvalid, MaxConditionNodes, g.Size())
+	}
 	if _, err := condition.RulePredicate(ctx, s, *cond, nil); err != nil {
 		return fmt.Errorf("%w: %s", ErrInvalid, err.Error())
 	}
@@ -339,6 +440,9 @@ func (m *Module) validateCondition(ctx context.Context, s *ent.Scoped, cond *str
 // encodeActions validates the Actions and returns the stored JSON, dropping the fields that do
 // not belong to each type.
 func encodeActions(actions []Action) (string, error) {
+	if len(actions) > MaxActions {
+		return "", fmt.Errorf("%w: a Rule runs at most %d Actions, this one has %d", ErrInvalid, MaxActions, len(actions))
+	}
 	stored := make([]Action, 0, len(actions))
 	for i, a := range actions {
 		switch a.Type {

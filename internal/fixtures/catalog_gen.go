@@ -1343,6 +1343,10 @@ const (
 	RuleFiringErasableAction = "rule_initech"
 	// RuleFiringErasableID is from fixtures/rule_firings.
 	RuleFiringErasableID = 300
+	// RuleFiringExpiredAction is from fixtures/rule_firings.
+	RuleFiringExpiredAction = "rule_vip"
+	// RuleFiringExpiredID is from fixtures/rule_firings.
+	RuleFiringExpiredID = 102
 	// RuleFiringGlobexAction is from fixtures/rule_firings.
 	RuleFiringGlobexAction = "rule_click"
 	// RuleFiringGlobexID is from fixtures/rule_firings.

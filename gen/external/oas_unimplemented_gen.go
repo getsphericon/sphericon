@@ -589,6 +589,16 @@ func (UnimplementedHandler) RulesActivate(ctx context.Context, params RulesActiv
 	return r, ht.ErrNotImplemented
 }
 
+// RulesArchive implements Rules_archive operation.
+//
+// Archive a Rule: it leaves the list and acts on nothing (an active one is deactivated), and keeps its
+// Firings. It can be restored, as a draft.
+//
+// POST /rules/{id}/archive
+func (UnimplementedHandler) RulesArchive(ctx context.Context, params RulesArchiveParams) (r RulesArchiveRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // RulesCreate implements Rules_create operation.
 //
 // Create a resource.
@@ -607,6 +617,15 @@ func (UnimplementedHandler) RulesDeactivate(ctx context.Context, params RulesDea
 	return r, ht.ErrNotImplemented
 }
 
+// RulesDelete implements Rules_delete operation.
+//
+// Delete a resource.
+//
+// DELETE /rules/{id}
+func (UnimplementedHandler) RulesDelete(ctx context.Context, params RulesDeleteParams) (r RulesDeleteRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // RulesGet implements Rules_get operation.
 //
 // Get a resource by ID.
@@ -622,6 +641,15 @@ func (UnimplementedHandler) RulesGet(ctx context.Context, params RulesGetParams)
 //
 // GET /rules
 func (UnimplementedHandler) RulesList(ctx context.Context, params RulesListParams) (r RulesListRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// RulesUnarchive implements Rules_unarchive operation.
+//
+// Restore an archived Rule to the list, as a draft.
+//
+// POST /rules/{id}/unarchive
+func (UnimplementedHandler) RulesUnarchive(ctx context.Context, params RulesUnarchiveParams) (r RulesUnarchiveRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/api/site/resources"
 	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/convert"
+	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/rules"
 )
@@ -26,7 +27,7 @@ func (h *Handlers) SiteRulesList(ctx context.Context, params siteapi.SiteRulesLi
 		return nil, err
 	}
 
-	page, err := h.rules.List(ctx, ws, pagination.ParamsOf(params.Page, params.PageSize))
+	page, err := h.rules.List(ctx, ws, pagination.ParamsOf(params.Page, params.PageSize), params.Archived.Or(false))
 	if err != nil {
 		return nil, err
 	}
@@ -130,6 +131,88 @@ func (h *Handlers) SiteRulesUpdate(ctx context.Context, req *siteapi.SiteUpdateR
 		v := siteapi.SiteRulesUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
 		return &v, nil
 	case err != nil:
+		return nil, err
+	}
+	res := mapper.RuleToResource(r)
+	return &res, nil
+}
+
+// SiteRulesDelete purges a Rule that has no Firings; one with Firings is archived instead (409).
+func (h *Handlers) SiteRulesDelete(ctx context.Context, params siteapi.SiteRulesDeleteParams) (siteapi.SiteRulesDeleteRes, error) {
+	ws, err := h.scopedFor(ctx, params.WorkspaceId)
+	if ent.IsNotFound(err) {
+		v := siteapi.SiteRulesDeleteNotFound(problem(http.StatusNotFound, "workspace not found"))
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	err = h.rules.Delete(ctx, ws, int64(params.ID))
+	if refused, ok := inuse.As(err); ok {
+		v := inUseProblem(refused)
+		return &v, nil
+	}
+	switch {
+	case errors.Is(err, rules.ErrNotFound):
+		v := siteapi.SiteRulesDeleteNotFound(problem(http.StatusNotFound, "rule not found"))
+		return &v, nil
+	case err != nil:
+		return nil, err
+	}
+	return &siteapi.SiteRulesDeleteNoContent{}, nil
+}
+
+// SiteRulesArchive archives a Rule (ADR 0049): it acts on nothing and keeps its Firings.
+func (h *Handlers) SiteRulesArchive(ctx context.Context, params siteapi.SiteRulesArchiveParams) (siteapi.SiteRulesArchiveRes, error) {
+	ws, err := h.scopedFor(ctx, params.WorkspaceId)
+	if ent.IsNotFound(err) {
+		v := siteapi.SiteRulesArchiveNotFound(problem(http.StatusNotFound, "workspace not found"))
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	id := int64(params.ID)
+	err = h.rules.Archive(ctx, ws, id)
+	if errors.Is(err, rules.ErrNotFound) {
+		v := siteapi.SiteRulesArchiveNotFound(problem(http.StatusNotFound, "rule not found"))
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	r, err := h.rules.Get(ctx, ws, id)
+	if err != nil {
+		return nil, err
+	}
+	res := mapper.RuleToResource(r)
+	return &res, nil
+}
+
+// SiteRulesUnarchive restores an archived Rule to the list, as a draft.
+func (h *Handlers) SiteRulesUnarchive(ctx context.Context, params siteapi.SiteRulesUnarchiveParams) (siteapi.SiteRulesUnarchiveRes, error) {
+	ws, err := h.scopedFor(ctx, params.WorkspaceId)
+	if ent.IsNotFound(err) {
+		v := siteapi.SiteRulesUnarchiveNotFound(problem(http.StatusNotFound, "workspace not found"))
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	id := int64(params.ID)
+	err = h.rules.Unarchive(ctx, ws, id)
+	if errors.Is(err, rules.ErrNotFound) {
+		v := siteapi.SiteRulesUnarchiveNotFound(problem(http.StatusNotFound, "rule not found"))
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	r, err := h.rules.Get(ctx, ws, id)
+	if err != nil {
 		return nil, err
 	}
 	res := mapper.RuleToResource(r)

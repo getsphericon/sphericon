@@ -741,7 +741,10 @@
     "testSent": "Test email sent",
     "usedByEnrollments": "{{count}} enrollments of \"{{name}}\"",
     "usedByEnrollments_one": "{{count}} enrollment of \"{{name}}\"",
-    "usedByEnrollments_other": "{{count}} enrollments of \"{{name}}\""
+    "usedByEnrollments_other": "{{count}} enrollments of \"{{name}}\"",
+    "usedByFirings": "{{count}} firings of \"{{name}}\"",
+    "usedByFirings_one": "{{count}} firing of \"{{name}}\"",
+    "usedByFirings_other": "{{count}} firings of \"{{name}}\""
   },
   "oauthConsent": {
     "allow": "Allow access",
@@ -1486,6 +1489,7 @@
     "automation": "Automation",
     "broadcast": "Broadcast",
     "enrollment": "Enrollment",
+    "firing": "Firing",
     "rule": "Rule",
     "segment": "Segment"
   },

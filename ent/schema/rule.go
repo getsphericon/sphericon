@@ -22,6 +22,7 @@ type Rule struct {
 func (Rule) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		TableWithEnumChecks("rules", Rule{}.Fields()),
+		Audited{Action: "rule", NameField: "name"},
 	}
 }
 
@@ -51,8 +52,11 @@ func (Rule) Fields() []ent.Field {
 			Optional().
 			Nillable(),
 		// JSON array of Actions, run in order: [{"type":"apply_tag","tag":"clicked"}].
+		// Sensitive: a later Action kind (an HTTP call) holds a URL and a signing secret, which
+		// must never reach an Audit diff; the entry records only that the Actions changed.
 		field.String("actions").
-			Default("[]"),
+			Default("[]").
+			Annotations(Sensitive{}),
 	}
 }
 
@@ -188,5 +192,7 @@ func (RuleFiring) Indexes() []ent.Index {
 		// The contact foreign key's index: deleting a Contact finds its Firings by it.
 		index.Fields("contact_id").
 			StorageKey("rule_firings_contact_id"),
+		// The retention prune (ADR 0019) selects the Firings older than the window.
+		index.Fields("created_at"),
 	}
 }

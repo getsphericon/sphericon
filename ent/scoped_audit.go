@@ -685,6 +685,58 @@ func (b *JoinDomainCreateBulk) auditRebind(c *Client) {
 	}
 }
 
+// RuleAuditSensitive lists the Rule fields whose values never reach the Audit log.
+var RuleAuditSensitive = map[string]bool{
+	"actions": true,
+}
+
+// auditFields maps every audited field of the Rule to its value.
+func (e *Rule) auditFields() map[string]any {
+	return map[string]any{
+		"discarded_at": derefAudit(e.DiscardedAt),
+		"name":         e.Name,
+		"status":       e.Status,
+		"activated_at": derefAudit(e.ActivatedAt),
+		"condition":    derefAudit(e.Condition),
+		"actions":      e.Actions,
+	}
+}
+
+// auditChangeRule describes a Rule create (before is nil), update or delete
+// (after is nil).
+func auditChangeRule(verb string, before, after *Rule) AuditChange {
+	var b, a map[string]any
+	target := before
+	if before != nil {
+		b = before.auditFields()
+	}
+	if after != nil {
+		a = after.auditFields()
+		target = after
+	}
+	change := AuditChange{
+		Action:     "rule." + verb,
+		TargetType: "rule",
+		TargetID:   auditID(target.ID),
+		Diff:       AuditDiff(b, a, RuleAuditSensitive),
+	}
+	change.TargetName = fmt.Sprint(derefAudit(target.Name))
+	return change
+}
+
+// auditRebind points the builders at the client of the transaction that carries the
+// entry, so the mutation and the entry commit together.
+func (b *RuleCreate) auditRebind(c *Client)    { b.config, b.mutation.config = c.config, c.config }
+func (b *RuleUpdateOne) auditRebind(c *Client) { b.config, b.mutation.config = c.config, c.config }
+func (b *RuleUpdate) auditRebind(c *Client)    { b.config, b.mutation.config = c.config, c.config }
+func (b *RuleDelete) auditRebind(c *Client)    { b.config, b.mutation.config = c.config, c.config }
+func (b *RuleCreateBulk) auditRebind(c *Client) {
+	b.config = c.config
+	for _, x := range b.builders {
+		x.auditRebind(c)
+	}
+}
+
 // SegmentAuditSensitive lists the Segment fields whose values never reach the Audit log.
 var SegmentAuditSensitive = map[string]bool{}
 

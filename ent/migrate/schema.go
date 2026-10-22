@@ -1420,6 +1420,11 @@ var (
 				Unique:  false,
 				Columns: []*schema.Column{RuleFiringsColumns[9]},
 			},
+			{
+				Name:    "rulefiring_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{RuleFiringsColumns[1]},
+			},
 		},
 	}
 	// RuleTriggersColumns holds the columns for the "rule_triggers" table.

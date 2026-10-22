@@ -663,7 +663,7 @@
       },
       "UsedByKind": {
         "type": "string",
-        "enum": ["broadcast", "automation", "segment", "rule", "enrollment"],
+        "enum": ["broadcast", "automation", "segment", "rule", "enrollment", "firing"],
         "description": "What kind of row a refused removal names as a user of the row (ADR 0049). One value per kind\nof live user a removal can find, so a client branches on it without parsing text."
       },
       "WorkspaceId": {

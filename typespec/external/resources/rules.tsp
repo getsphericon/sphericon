@@ -110,9 +110,40 @@ model UpdateRuleInput {
   actions?: RuleAction[];
 }
 
+/**
+ * Delete removes a Rule that has no Firings for good; one with Firings is history and is
+ * archived instead (ADR 0049), so a delete of it is a 409 whose `usedBy` carries their count.
+ */
 @tag("Rules")
 interface Rules
-  extends ExternalCrudKept<RuleResource, CreateRuleInput, UpdateRuleInput> {
+  extends ExternalCrud<
+      RuleResource,
+      CreateRuleInput,
+      UpdateRuleInput,
+      never,
+      InUseProblem,
+      ArchivedFilter
+    > {
+  /** Archive a Rule: it leaves the list and acts on nothing (an active one is deactivated), and keeps its Firings. It can be restored, as a draft. */
+  @action("archive")
+  @autoRoute
+  archive(...ResourceParameters<RuleResource>):
+    | RuleResource
+    | BadRequestProblem
+    | UnauthorizedProblem
+    | TooManyRequestsProblem
+    | NotFoundProblem;
+
+  /** Restore an archived Rule to the list, as a draft */
+  @action("unarchive")
+  @autoRoute
+  unarchive(...ResourceParameters<RuleResource>):
+    | RuleResource
+    | BadRequestProblem
+    | UnauthorizedProblem
+    | TooManyRequestsProblem
+    | NotFoundProblem;
+
   /** Activate a Rule: it reacts to Events recorded from now on, never to past ones. Needs the automations:activate scope. */
   @action("activate")
   @autoRoute
