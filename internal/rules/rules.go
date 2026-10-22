@@ -277,18 +277,20 @@ func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params, a
 // stay. Archiving also deactivates it, so restoring it brings back a draft that cannot start
 // firing before its author activates it again. Archiving an archived Rule changes nothing.
 func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) error {
-	r, err := m.Get(ctx, s, id)
-	if err != nil {
-		return err
-	}
-	if r.DiscardedAt != nil {
-		return nil
-	}
 	return m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
-		if r.Status == rule.StatusActive {
-			if err := ts.Rule().UpdateOneID(id).SetStatus(rule.StatusDraft).Exec(ctx); err != nil {
-				return err
-			}
+		// The write that deactivates also locks the row, so a concurrent Activate (which only
+		// moves a kept draft) waits for the commit and then finds the Rule archived: no Rule is
+		// ever archived and active. It matches no row for an archived or a missing Rule.
+		n, err := ts.Rule().Update().
+			Where(rule.ID(id), rule.DiscardedAtIsNil()).
+			SetStatus(rule.StatusDraft).
+			Save(ctx)
+		if err != nil {
+			return err
+		}
+		if n == 0 {
+			_, err := m.Get(ctx, ts, id) // archived already: nothing to do; missing: ErrNotFound
+			return err
 		}
 		return notFound(ts.Rule().Discard(ctx, id))
 	})

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/samber/lo"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/rule"
+	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/inuse"
@@ -64,6 +66,38 @@ func TestArchiveOfAnotherWorkspacesRuleIsNotFound(t *testing.T) {
 	env := testhelper.Setup(t)
 
 	assert.ErrorIs(t, rules.New(env.Cipher, env.Bus).Archive(context.Background(), acme(env), fixtures.RuleGlobexID), rules.ErrNotFound)
+}
+
+func TestArchivingAnArchivedRuleChangesNothing(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	m := rules.New(env.Cipher, env.Bus)
+	require.NoError(t, m.Archive(ctx, acme(env), fixtures.RuleDraftID))
+
+	require.NoError(t, m.Archive(ctx, acme(env), fixtures.RuleDraftID))
+
+	got, err := m.Get(ctx, acme(env), fixtures.RuleDraftID)
+	require.NoError(t, err)
+	assert.NotNil(t, got.DiscardedAt)
+}
+
+// Activating and archiving a Rule at the same moment leave it archived and a draft, or active
+// and kept; never archived and active (an archived Rule must act on nothing).
+func TestActivatingAndArchivingARuleAtOnceNeverLeaveItArchivedAndActive(t *testing.T) {
+	sqlDB := testhelper.RealDB(t)
+	sqlDB.SetMaxOpenConns(8)
+	client := db.NewEntClient(sqlDB)
+	m := rules.New(nil, events.New(sqlDB))
+	s := client.Scoped(fixtures.AcmeID)
+
+	var wg sync.WaitGroup
+	wg.Go(func() { _, _ = m.Activate(t.Context(), s, fixtures.RuleDraftID) })
+	wg.Go(func() { _ = m.Archive(t.Context(), s, fixtures.RuleDraftID) })
+	wg.Wait()
+
+	got, err := m.Get(t.Context(), s, fixtures.RuleDraftID)
+	require.NoError(t, err)
+	assert.False(t, got.DiscardedAt != nil && got.Status == rule.StatusActive, "archived and active")
 }
 
 func TestDeletePurgesARuleWithNoFirings(t *testing.T) {
