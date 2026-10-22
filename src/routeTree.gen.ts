@@ -44,6 +44,8 @@ import { Route as WorkspacesWorkspaceIdBroadcastsIndexRouteImport } from './rout
 import { Route as WorkspacesWorkspaceIdBroadcastsNewRouteImport } from './routes/workspaces/$workspaceId/broadcasts/new'
 import { Route as WorkspacesWorkspaceIdContactsIndexRouteImport } from './routes/workspaces/$workspaceId/contacts/index'
 import { Route as WorkspacesWorkspaceIdCustomFieldsIndexRouteImport } from './routes/workspaces/$workspaceId/custom-fields/index'
+import { Route as WorkspacesWorkspaceIdRulesIndexRouteImport } from './routes/workspaces/$workspaceId/rules/index'
+import { Route as WorkspacesWorkspaceIdRulesNewRouteImport } from './routes/workspaces/$workspaceId/rules/new'
 import { Route as WorkspacesWorkspaceIdSegmentsIndexRouteImport } from './routes/workspaces/$workspaceId/segments/index'
 import { Route as WorkspacesWorkspaceIdSegmentsNewRouteImport } from './routes/workspaces/$workspaceId/segments/new'
 import { Route as WorkspacesWorkspaceIdSettingsIndexRouteImport } from './routes/workspaces/$workspaceId/settings/index'
@@ -64,6 +66,8 @@ import { Route as WorkspacesWorkspaceIdBroadcastsBroadcastIdEditRouteImport } fr
 import { Route as WorkspacesWorkspaceIdBroadcastsBroadcastIdReportRouteImport } from './routes/workspaces/$workspaceId/broadcasts/$broadcastId/report'
 import { Route as WorkspacesWorkspaceIdContactsContactIdIndexRouteImport } from './routes/workspaces/$workspaceId/contacts/$contactId/index'
 import { Route as WorkspacesWorkspaceIdContactsContactIdEditRouteImport } from './routes/workspaces/$workspaceId/contacts/$contactId/edit'
+import { Route as WorkspacesWorkspaceIdRulesRuleIdIndexRouteImport } from './routes/workspaces/$workspaceId/rules/$ruleId/index'
+import { Route as WorkspacesWorkspaceIdRulesRuleIdEditRouteImport } from './routes/workspaces/$workspaceId/rules/$ruleId/edit'
 import { Route as WorkspacesWorkspaceIdSegmentsSegmentIdIndexRouteImport } from './routes/workspaces/$workspaceId/segments/$segmentId/index'
 import { Route as WorkspacesWorkspaceIdSegmentsSegmentIdEditRouteImport } from './routes/workspaces/$workspaceId/segments/$segmentId/edit'
 import { Route as WorkspacesWorkspaceIdTemplatesTemplateIdEditRouteImport } from './routes/workspaces/$workspaceId/templates/$templateId/edit'
@@ -254,6 +258,18 @@ const WorkspacesWorkspaceIdCustomFieldsIndexRoute =
     path: '/custom-fields/',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
   } as any)
+const WorkspacesWorkspaceIdRulesIndexRoute =
+  WorkspacesWorkspaceIdRulesIndexRouteImport.update({
+    id: '/rules/',
+    path: '/rules/',
+    getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
+  } as any)
+const WorkspacesWorkspaceIdRulesNewRoute =
+  WorkspacesWorkspaceIdRulesNewRouteImport.update({
+    id: '/rules/new',
+    path: '/rules/new',
+    getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
+  } as any)
 const WorkspacesWorkspaceIdSegmentsIndexRoute =
   WorkspacesWorkspaceIdSegmentsIndexRouteImport.update({
     id: '/segments/',
@@ -374,6 +390,18 @@ const WorkspacesWorkspaceIdContactsContactIdEditRoute =
     path: '/contacts/$contactId/edit',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
   } as any)
+const WorkspacesWorkspaceIdRulesRuleIdIndexRoute =
+  WorkspacesWorkspaceIdRulesRuleIdIndexRouteImport.update({
+    id: '/rules/$ruleId/',
+    path: '/rules/$ruleId/',
+    getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
+  } as any)
+const WorkspacesWorkspaceIdRulesRuleIdEditRoute =
+  WorkspacesWorkspaceIdRulesRuleIdEditRouteImport.update({
+    id: '/rules/$ruleId/edit',
+    path: '/rules/$ruleId/edit',
+    getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
+  } as any)
 const WorkspacesWorkspaceIdSegmentsSegmentIdIndexRoute =
   WorkspacesWorkspaceIdSegmentsSegmentIdIndexRouteImport.update({
     id: '/segments/$segmentId/',
@@ -424,6 +452,7 @@ export interface FileRoutesByFullPath {
   '/workspaces/$workspaceId/': typeof WorkspacesWorkspaceIdIndexRoute
   '/console/workspaces/$workspaceId': typeof ConsoleAuthedWorkspacesWorkspaceIdRoute
   '/workspaces/$workspaceId/broadcasts/new': typeof WorkspacesWorkspaceIdBroadcastsNewRoute
+  '/workspaces/$workspaceId/rules/new': typeof WorkspacesWorkspaceIdRulesNewRoute
   '/workspaces/$workspaceId/segments/new': typeof WorkspacesWorkspaceIdSegmentsNewRoute
   '/workspaces/$workspaceId/settings/audit-log': typeof WorkspacesWorkspaceIdSettingsAuditLogRoute
   '/workspaces/$workspaceId/settings/developers': typeof WorkspacesWorkspaceIdSettingsDevelopersRoute
@@ -437,6 +466,7 @@ export interface FileRoutesByFullPath {
   '/workspaces/$workspaceId/broadcasts/': typeof WorkspacesWorkspaceIdBroadcastsIndexRoute
   '/workspaces/$workspaceId/contacts/': typeof WorkspacesWorkspaceIdContactsIndexRoute
   '/workspaces/$workspaceId/custom-fields/': typeof WorkspacesWorkspaceIdCustomFieldsIndexRoute
+  '/workspaces/$workspaceId/rules/': typeof WorkspacesWorkspaceIdRulesIndexRoute
   '/workspaces/$workspaceId/segments/': typeof WorkspacesWorkspaceIdSegmentsIndexRoute
   '/workspaces/$workspaceId/settings/': typeof WorkspacesWorkspaceIdSettingsIndexRoute
   '/workspaces/$workspaceId/tags/': typeof WorkspacesWorkspaceIdTagsIndexRoute
@@ -446,10 +476,12 @@ export interface FileRoutesByFullPath {
   '/workspaces/$workspaceId/broadcasts/$broadcastId/edit': typeof WorkspacesWorkspaceIdBroadcastsBroadcastIdEditRoute
   '/workspaces/$workspaceId/broadcasts/$broadcastId/report': typeof WorkspacesWorkspaceIdBroadcastsBroadcastIdReportRoute
   '/workspaces/$workspaceId/contacts/$contactId/edit': typeof WorkspacesWorkspaceIdContactsContactIdEditRoute
+  '/workspaces/$workspaceId/rules/$ruleId/edit': typeof WorkspacesWorkspaceIdRulesRuleIdEditRoute
   '/workspaces/$workspaceId/segments/$segmentId/edit': typeof WorkspacesWorkspaceIdSegmentsSegmentIdEditRoute
   '/workspaces/$workspaceId/templates/$templateId/edit': typeof WorkspacesWorkspaceIdTemplatesTemplateIdEditRoute
   '/workspaces/$workspaceId/automations/$automationId/': typeof WorkspacesWorkspaceIdAutomationsAutomationIdIndexRoute
   '/workspaces/$workspaceId/contacts/$contactId/': typeof WorkspacesWorkspaceIdContactsContactIdIndexRoute
+  '/workspaces/$workspaceId/rules/$ruleId/': typeof WorkspacesWorkspaceIdRulesRuleIdIndexRoute
   '/workspaces/$workspaceId/segments/$segmentId/': typeof WorkspacesWorkspaceIdSegmentsSegmentIdIndexRoute
 }
 export interface FileRoutesByTo {
@@ -479,6 +511,7 @@ export interface FileRoutesByTo {
   '/workspaces/$workspaceId': typeof WorkspacesWorkspaceIdIndexRoute
   '/console/workspaces/$workspaceId': typeof ConsoleAuthedWorkspacesWorkspaceIdRoute
   '/workspaces/$workspaceId/broadcasts/new': typeof WorkspacesWorkspaceIdBroadcastsNewRoute
+  '/workspaces/$workspaceId/rules/new': typeof WorkspacesWorkspaceIdRulesNewRoute
   '/workspaces/$workspaceId/segments/new': typeof WorkspacesWorkspaceIdSegmentsNewRoute
   '/workspaces/$workspaceId/settings/audit-log': typeof WorkspacesWorkspaceIdSettingsAuditLogRoute
   '/workspaces/$workspaceId/settings/developers': typeof WorkspacesWorkspaceIdSettingsDevelopersRoute
@@ -492,6 +525,7 @@ export interface FileRoutesByTo {
   '/workspaces/$workspaceId/broadcasts': typeof WorkspacesWorkspaceIdBroadcastsIndexRoute
   '/workspaces/$workspaceId/contacts': typeof WorkspacesWorkspaceIdContactsIndexRoute
   '/workspaces/$workspaceId/custom-fields': typeof WorkspacesWorkspaceIdCustomFieldsIndexRoute
+  '/workspaces/$workspaceId/rules': typeof WorkspacesWorkspaceIdRulesIndexRoute
   '/workspaces/$workspaceId/segments': typeof WorkspacesWorkspaceIdSegmentsIndexRoute
   '/workspaces/$workspaceId/settings': typeof WorkspacesWorkspaceIdSettingsIndexRoute
   '/workspaces/$workspaceId/tags': typeof WorkspacesWorkspaceIdTagsIndexRoute
@@ -501,10 +535,12 @@ export interface FileRoutesByTo {
   '/workspaces/$workspaceId/broadcasts/$broadcastId/edit': typeof WorkspacesWorkspaceIdBroadcastsBroadcastIdEditRoute
   '/workspaces/$workspaceId/broadcasts/$broadcastId/report': typeof WorkspacesWorkspaceIdBroadcastsBroadcastIdReportRoute
   '/workspaces/$workspaceId/contacts/$contactId/edit': typeof WorkspacesWorkspaceIdContactsContactIdEditRoute
+  '/workspaces/$workspaceId/rules/$ruleId/edit': typeof WorkspacesWorkspaceIdRulesRuleIdEditRoute
   '/workspaces/$workspaceId/segments/$segmentId/edit': typeof WorkspacesWorkspaceIdSegmentsSegmentIdEditRoute
   '/workspaces/$workspaceId/templates/$templateId/edit': typeof WorkspacesWorkspaceIdTemplatesTemplateIdEditRoute
   '/workspaces/$workspaceId/automations/$automationId': typeof WorkspacesWorkspaceIdAutomationsAutomationIdIndexRoute
   '/workspaces/$workspaceId/contacts/$contactId': typeof WorkspacesWorkspaceIdContactsContactIdIndexRoute
+  '/workspaces/$workspaceId/rules/$ruleId': typeof WorkspacesWorkspaceIdRulesRuleIdIndexRoute
   '/workspaces/$workspaceId/segments/$segmentId': typeof WorkspacesWorkspaceIdSegmentsSegmentIdIndexRoute
 }
 export interface FileRoutesById {
@@ -540,6 +576,7 @@ export interface FileRoutesById {
   '/workspaces/$workspaceId/': typeof WorkspacesWorkspaceIdIndexRoute
   '/console/_authed/workspaces/$workspaceId': typeof ConsoleAuthedWorkspacesWorkspaceIdRoute
   '/workspaces/$workspaceId/broadcasts/new': typeof WorkspacesWorkspaceIdBroadcastsNewRoute
+  '/workspaces/$workspaceId/rules/new': typeof WorkspacesWorkspaceIdRulesNewRoute
   '/workspaces/$workspaceId/segments/new': typeof WorkspacesWorkspaceIdSegmentsNewRoute
   '/workspaces/$workspaceId/settings/audit-log': typeof WorkspacesWorkspaceIdSettingsAuditLogRoute
   '/workspaces/$workspaceId/settings/developers': typeof WorkspacesWorkspaceIdSettingsDevelopersRoute
@@ -553,6 +590,7 @@ export interface FileRoutesById {
   '/workspaces/$workspaceId/broadcasts/': typeof WorkspacesWorkspaceIdBroadcastsIndexRoute
   '/workspaces/$workspaceId/contacts/': typeof WorkspacesWorkspaceIdContactsIndexRoute
   '/workspaces/$workspaceId/custom-fields/': typeof WorkspacesWorkspaceIdCustomFieldsIndexRoute
+  '/workspaces/$workspaceId/rules/': typeof WorkspacesWorkspaceIdRulesIndexRoute
   '/workspaces/$workspaceId/segments/': typeof WorkspacesWorkspaceIdSegmentsIndexRoute
   '/workspaces/$workspaceId/settings/': typeof WorkspacesWorkspaceIdSettingsIndexRoute
   '/workspaces/$workspaceId/tags/': typeof WorkspacesWorkspaceIdTagsIndexRoute
@@ -562,10 +600,12 @@ export interface FileRoutesById {
   '/workspaces/$workspaceId/broadcasts/$broadcastId/edit': typeof WorkspacesWorkspaceIdBroadcastsBroadcastIdEditRoute
   '/workspaces/$workspaceId/broadcasts/$broadcastId/report': typeof WorkspacesWorkspaceIdBroadcastsBroadcastIdReportRoute
   '/workspaces/$workspaceId/contacts/$contactId/edit': typeof WorkspacesWorkspaceIdContactsContactIdEditRoute
+  '/workspaces/$workspaceId/rules/$ruleId/edit': typeof WorkspacesWorkspaceIdRulesRuleIdEditRoute
   '/workspaces/$workspaceId/segments/$segmentId/edit': typeof WorkspacesWorkspaceIdSegmentsSegmentIdEditRoute
   '/workspaces/$workspaceId/templates/$templateId/edit': typeof WorkspacesWorkspaceIdTemplatesTemplateIdEditRoute
   '/workspaces/$workspaceId/automations/$automationId/': typeof WorkspacesWorkspaceIdAutomationsAutomationIdIndexRoute
   '/workspaces/$workspaceId/contacts/$contactId/': typeof WorkspacesWorkspaceIdContactsContactIdIndexRoute
+  '/workspaces/$workspaceId/rules/$ruleId/': typeof WorkspacesWorkspaceIdRulesRuleIdIndexRoute
   '/workspaces/$workspaceId/segments/$segmentId/': typeof WorkspacesWorkspaceIdSegmentsSegmentIdIndexRoute
 }
 export interface FileRouteTypes {
@@ -601,6 +641,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/'
     | '/console/workspaces/$workspaceId'
     | '/workspaces/$workspaceId/broadcasts/new'
+    | '/workspaces/$workspaceId/rules/new'
     | '/workspaces/$workspaceId/segments/new'
     | '/workspaces/$workspaceId/settings/audit-log'
     | '/workspaces/$workspaceId/settings/developers'
@@ -614,6 +655,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/broadcasts/'
     | '/workspaces/$workspaceId/contacts/'
     | '/workspaces/$workspaceId/custom-fields/'
+    | '/workspaces/$workspaceId/rules/'
     | '/workspaces/$workspaceId/segments/'
     | '/workspaces/$workspaceId/settings/'
     | '/workspaces/$workspaceId/tags/'
@@ -623,10 +665,12 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/broadcasts/$broadcastId/edit'
     | '/workspaces/$workspaceId/broadcasts/$broadcastId/report'
     | '/workspaces/$workspaceId/contacts/$contactId/edit'
+    | '/workspaces/$workspaceId/rules/$ruleId/edit'
     | '/workspaces/$workspaceId/segments/$segmentId/edit'
     | '/workspaces/$workspaceId/templates/$templateId/edit'
     | '/workspaces/$workspaceId/automations/$automationId/'
     | '/workspaces/$workspaceId/contacts/$contactId/'
+    | '/workspaces/$workspaceId/rules/$ruleId/'
     | '/workspaces/$workspaceId/segments/$segmentId/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -656,6 +700,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId'
     | '/console/workspaces/$workspaceId'
     | '/workspaces/$workspaceId/broadcasts/new'
+    | '/workspaces/$workspaceId/rules/new'
     | '/workspaces/$workspaceId/segments/new'
     | '/workspaces/$workspaceId/settings/audit-log'
     | '/workspaces/$workspaceId/settings/developers'
@@ -669,6 +714,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/broadcasts'
     | '/workspaces/$workspaceId/contacts'
     | '/workspaces/$workspaceId/custom-fields'
+    | '/workspaces/$workspaceId/rules'
     | '/workspaces/$workspaceId/segments'
     | '/workspaces/$workspaceId/settings'
     | '/workspaces/$workspaceId/tags'
@@ -678,10 +724,12 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/broadcasts/$broadcastId/edit'
     | '/workspaces/$workspaceId/broadcasts/$broadcastId/report'
     | '/workspaces/$workspaceId/contacts/$contactId/edit'
+    | '/workspaces/$workspaceId/rules/$ruleId/edit'
     | '/workspaces/$workspaceId/segments/$segmentId/edit'
     | '/workspaces/$workspaceId/templates/$templateId/edit'
     | '/workspaces/$workspaceId/automations/$automationId'
     | '/workspaces/$workspaceId/contacts/$contactId'
+    | '/workspaces/$workspaceId/rules/$ruleId'
     | '/workspaces/$workspaceId/segments/$segmentId'
   id:
     | '__root__'
@@ -716,6 +764,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/'
     | '/console/_authed/workspaces/$workspaceId'
     | '/workspaces/$workspaceId/broadcasts/new'
+    | '/workspaces/$workspaceId/rules/new'
     | '/workspaces/$workspaceId/segments/new'
     | '/workspaces/$workspaceId/settings/audit-log'
     | '/workspaces/$workspaceId/settings/developers'
@@ -729,6 +778,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/broadcasts/'
     | '/workspaces/$workspaceId/contacts/'
     | '/workspaces/$workspaceId/custom-fields/'
+    | '/workspaces/$workspaceId/rules/'
     | '/workspaces/$workspaceId/segments/'
     | '/workspaces/$workspaceId/settings/'
     | '/workspaces/$workspaceId/tags/'
@@ -738,10 +788,12 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/broadcasts/$broadcastId/edit'
     | '/workspaces/$workspaceId/broadcasts/$broadcastId/report'
     | '/workspaces/$workspaceId/contacts/$contactId/edit'
+    | '/workspaces/$workspaceId/rules/$ruleId/edit'
     | '/workspaces/$workspaceId/segments/$segmentId/edit'
     | '/workspaces/$workspaceId/templates/$templateId/edit'
     | '/workspaces/$workspaceId/automations/$automationId/'
     | '/workspaces/$workspaceId/contacts/$contactId/'
+    | '/workspaces/$workspaceId/rules/$ruleId/'
     | '/workspaces/$workspaceId/segments/$segmentId/'
   fileRoutesById: FileRoutesById
 }
@@ -1012,6 +1064,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspacesWorkspaceIdCustomFieldsIndexRouteImport
       parentRoute: typeof WorkspacesWorkspaceIdRouteRoute
     }
+    '/workspaces/$workspaceId/rules/': {
+      id: '/workspaces/$workspaceId/rules/'
+      path: '/rules'
+      fullPath: '/workspaces/$workspaceId/rules/'
+      preLoaderRoute: typeof WorkspacesWorkspaceIdRulesIndexRouteImport
+      parentRoute: typeof WorkspacesWorkspaceIdRouteRoute
+    }
+    '/workspaces/$workspaceId/rules/new': {
+      id: '/workspaces/$workspaceId/rules/new'
+      path: '/rules/new'
+      fullPath: '/workspaces/$workspaceId/rules/new'
+      preLoaderRoute: typeof WorkspacesWorkspaceIdRulesNewRouteImport
+      parentRoute: typeof WorkspacesWorkspaceIdRouteRoute
+    }
     '/workspaces/$workspaceId/segments/': {
       id: '/workspaces/$workspaceId/segments/'
       path: '/segments'
@@ -1152,6 +1218,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspacesWorkspaceIdContactsContactIdEditRouteImport
       parentRoute: typeof WorkspacesWorkspaceIdRouteRoute
     }
+    '/workspaces/$workspaceId/rules/$ruleId/': {
+      id: '/workspaces/$workspaceId/rules/$ruleId/'
+      path: '/rules/$ruleId'
+      fullPath: '/workspaces/$workspaceId/rules/$ruleId/'
+      preLoaderRoute: typeof WorkspacesWorkspaceIdRulesRuleIdIndexRouteImport
+      parentRoute: typeof WorkspacesWorkspaceIdRouteRoute
+    }
+    '/workspaces/$workspaceId/rules/$ruleId/edit': {
+      id: '/workspaces/$workspaceId/rules/$ruleId/edit'
+      path: '/rules/$ruleId/edit'
+      fullPath: '/workspaces/$workspaceId/rules/$ruleId/edit'
+      preLoaderRoute: typeof WorkspacesWorkspaceIdRulesRuleIdEditRouteImport
+      parentRoute: typeof WorkspacesWorkspaceIdRouteRoute
+    }
     '/workspaces/$workspaceId/segments/$segmentId/': {
       id: '/workspaces/$workspaceId/segments/$segmentId/'
       path: '/segments/$segmentId'
@@ -1265,12 +1345,14 @@ interface WorkspacesWorkspaceIdRouteRouteChildren {
   WorkspacesWorkspaceIdBrandKitRoute: typeof WorkspacesWorkspaceIdBrandKitRoute
   WorkspacesWorkspaceIdIndexRoute: typeof WorkspacesWorkspaceIdIndexRoute
   WorkspacesWorkspaceIdBroadcastsNewRoute: typeof WorkspacesWorkspaceIdBroadcastsNewRoute
+  WorkspacesWorkspaceIdRulesNewRoute: typeof WorkspacesWorkspaceIdRulesNewRoute
   WorkspacesWorkspaceIdSegmentsNewRoute: typeof WorkspacesWorkspaceIdSegmentsNewRoute
   WorkspacesWorkspaceIdTemplatesNewRoute: typeof WorkspacesWorkspaceIdTemplatesNewRoute
   WorkspacesWorkspaceIdAutomationsIndexRoute: typeof WorkspacesWorkspaceIdAutomationsIndexRoute
   WorkspacesWorkspaceIdBroadcastsIndexRoute: typeof WorkspacesWorkspaceIdBroadcastsIndexRoute
   WorkspacesWorkspaceIdContactsIndexRoute: typeof WorkspacesWorkspaceIdContactsIndexRoute
   WorkspacesWorkspaceIdCustomFieldsIndexRoute: typeof WorkspacesWorkspaceIdCustomFieldsIndexRoute
+  WorkspacesWorkspaceIdRulesIndexRoute: typeof WorkspacesWorkspaceIdRulesIndexRoute
   WorkspacesWorkspaceIdSegmentsIndexRoute: typeof WorkspacesWorkspaceIdSegmentsIndexRoute
   WorkspacesWorkspaceIdTagsIndexRoute: typeof WorkspacesWorkspaceIdTagsIndexRoute
   WorkspacesWorkspaceIdTemplatesIndexRoute: typeof WorkspacesWorkspaceIdTemplatesIndexRoute
@@ -1279,10 +1361,12 @@ interface WorkspacesWorkspaceIdRouteRouteChildren {
   WorkspacesWorkspaceIdBroadcastsBroadcastIdEditRoute: typeof WorkspacesWorkspaceIdBroadcastsBroadcastIdEditRoute
   WorkspacesWorkspaceIdBroadcastsBroadcastIdReportRoute: typeof WorkspacesWorkspaceIdBroadcastsBroadcastIdReportRoute
   WorkspacesWorkspaceIdContactsContactIdEditRoute: typeof WorkspacesWorkspaceIdContactsContactIdEditRoute
+  WorkspacesWorkspaceIdRulesRuleIdEditRoute: typeof WorkspacesWorkspaceIdRulesRuleIdEditRoute
   WorkspacesWorkspaceIdSegmentsSegmentIdEditRoute: typeof WorkspacesWorkspaceIdSegmentsSegmentIdEditRoute
   WorkspacesWorkspaceIdTemplatesTemplateIdEditRoute: typeof WorkspacesWorkspaceIdTemplatesTemplateIdEditRoute
   WorkspacesWorkspaceIdAutomationsAutomationIdIndexRoute: typeof WorkspacesWorkspaceIdAutomationsAutomationIdIndexRoute
   WorkspacesWorkspaceIdContactsContactIdIndexRoute: typeof WorkspacesWorkspaceIdContactsContactIdIndexRoute
+  WorkspacesWorkspaceIdRulesRuleIdIndexRoute: typeof WorkspacesWorkspaceIdRulesRuleIdIndexRoute
   WorkspacesWorkspaceIdSegmentsSegmentIdIndexRoute: typeof WorkspacesWorkspaceIdSegmentsSegmentIdIndexRoute
 }
 
@@ -1296,6 +1380,7 @@ const WorkspacesWorkspaceIdRouteRouteChildren: WorkspacesWorkspaceIdRouteRouteCh
     WorkspacesWorkspaceIdIndexRoute: WorkspacesWorkspaceIdIndexRoute,
     WorkspacesWorkspaceIdBroadcastsNewRoute:
       WorkspacesWorkspaceIdBroadcastsNewRoute,
+    WorkspacesWorkspaceIdRulesNewRoute: WorkspacesWorkspaceIdRulesNewRoute,
     WorkspacesWorkspaceIdSegmentsNewRoute:
       WorkspacesWorkspaceIdSegmentsNewRoute,
     WorkspacesWorkspaceIdTemplatesNewRoute:
@@ -1308,6 +1393,7 @@ const WorkspacesWorkspaceIdRouteRouteChildren: WorkspacesWorkspaceIdRouteRouteCh
       WorkspacesWorkspaceIdContactsIndexRoute,
     WorkspacesWorkspaceIdCustomFieldsIndexRoute:
       WorkspacesWorkspaceIdCustomFieldsIndexRoute,
+    WorkspacesWorkspaceIdRulesIndexRoute: WorkspacesWorkspaceIdRulesIndexRoute,
     WorkspacesWorkspaceIdSegmentsIndexRoute:
       WorkspacesWorkspaceIdSegmentsIndexRoute,
     WorkspacesWorkspaceIdTagsIndexRoute: WorkspacesWorkspaceIdTagsIndexRoute,
@@ -1323,6 +1409,8 @@ const WorkspacesWorkspaceIdRouteRouteChildren: WorkspacesWorkspaceIdRouteRouteCh
       WorkspacesWorkspaceIdBroadcastsBroadcastIdReportRoute,
     WorkspacesWorkspaceIdContactsContactIdEditRoute:
       WorkspacesWorkspaceIdContactsContactIdEditRoute,
+    WorkspacesWorkspaceIdRulesRuleIdEditRoute:
+      WorkspacesWorkspaceIdRulesRuleIdEditRoute,
     WorkspacesWorkspaceIdSegmentsSegmentIdEditRoute:
       WorkspacesWorkspaceIdSegmentsSegmentIdEditRoute,
     WorkspacesWorkspaceIdTemplatesTemplateIdEditRoute:
@@ -1331,6 +1419,8 @@ const WorkspacesWorkspaceIdRouteRouteChildren: WorkspacesWorkspaceIdRouteRouteCh
       WorkspacesWorkspaceIdAutomationsAutomationIdIndexRoute,
     WorkspacesWorkspaceIdContactsContactIdIndexRoute:
       WorkspacesWorkspaceIdContactsContactIdIndexRoute,
+    WorkspacesWorkspaceIdRulesRuleIdIndexRoute:
+      WorkspacesWorkspaceIdRulesRuleIdIndexRoute,
     WorkspacesWorkspaceIdSegmentsSegmentIdIndexRoute:
       WorkspacesWorkspaceIdSegmentsSegmentIdIndexRoute,
   }
