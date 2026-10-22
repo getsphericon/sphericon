@@ -13,6 +13,7 @@ import {
   IconUsers,
   IconUsersGroup,
 } from '@tabler/icons-react'
+import { useMatchRoute } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -34,6 +35,7 @@ import { NavLinkLink } from './RouterLink.tsx'
 // state drives the highlight: Mantine styles `aria-current="page"`, which the router sets.
 export function AppNavbar({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
+  const matchRoute = useMatchRoute()
 
   const link = ({
     route,
@@ -56,7 +58,7 @@ export function AppNavbar({ workspaceId }: { workspaceId: string }) {
     />
   )
 
-  // Email-only sections live under one group, open by default: the other channels (SMS, loyalty,
+  // Email-only sections live under one group, closed by default (open when one of its pages is being viewed): the other channels (SMS, loyalty,
   // forms, bots) get groups of their own beside it. Automations stay outside: they will span
   // channels.
   const emails = [
@@ -88,7 +90,13 @@ export function AppNavbar({ workspaceId }: { workspaceId: string }) {
         label: t(($) => $.nav.segments),
         icon: <IconUsersGroup size={18} />,
       })}
-      <NavLink label={t(($) => $.nav.emails)} leftSection={<IconMail size={18} />} defaultOpened>
+      <NavLink
+        label={t(($) => $.nav.emails)}
+        leftSection={<IconMail size={18} />}
+        defaultOpened={emails.some((item) =>
+          matchRoute({ to: item.route.to, params: { workspaceId }, fuzzy: true }),
+        )}
+      >
         {emails.map((item) => link(item))}
       </NavLink>
       {link({

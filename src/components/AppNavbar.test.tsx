@@ -19,18 +19,31 @@ const SECTIONS = [
   ['Overview', overviewRoute],
   ['Contacts', contactsRoute],
   ['Segments', segmentsRoute],
-  ['Broadcasts', broadcastsRoute],
-  ['Templates', templatesRoute],
   ['Automations', automationsRoute],
-  ['Transactional emails', transactionalEmailsRoute],
-  ['Brand kit', brandKitRoute],
   ['Analytics', analyticsRoute],
   ['Activity', activityRoute],
   ['Settings', settingsRoute],
 ] as const
 
+// Under the Emails group, which is closed until one of its pages is viewed.
+const EMAIL_SECTIONS = [
+  ['Broadcasts', broadcastsRoute],
+  ['Templates', templatesRoute],
+  ['Transactional emails', transactionalEmailsRoute],
+  ['Brand kit', brandKitRoute],
+] as const
+
 test.each(SECTIONS)('%s links to its workspace-scoped route', async (label, target) => {
   const { screen } = await renderWithRouter(<AppNavbar workspaceId="AcmeWs01" />)
+
+  await expect
+    .element(screen.getByRole('link', { name: label, exact: true }))
+    .toHaveAttribute('href', routeMount(target, { workspaceId: 'AcmeWs01' }).initialPath)
+})
+
+test.each(EMAIL_SECTIONS)('%s links to its workspace-scoped route', async (label, target) => {
+  const { screen } = await renderWithRouter(<AppNavbar workspaceId="AcmeWs01" />)
+  await screen.getByText('Emails', { exact: true }).click()
 
   await expect
     .element(screen.getByRole('link', { name: label, exact: true }))
@@ -51,9 +64,20 @@ test('only the section being viewed is current, the overview not on a page under
     .not.toHaveAttribute('aria-current')
 })
 
-test('the email sections sit under one open group', async () => {
+test('the email sections sit under one group, closed until one of them is viewed', async () => {
   const { screen } = await renderWithRouter(<AppNavbar workspaceId="AcmeWs01" />)
 
   await expect.element(screen.getByText('Emails', { exact: true })).toBeVisible()
+  await expect
+    .element(screen.getByRole('link', { name: 'Broadcasts', exact: true }))
+    .not.toBeInTheDocument()
+})
+
+test('the email group is open on one of its pages', async () => {
+  const { screen } = await renderWithRouter(
+    <AppNavbar workspaceId="AcmeWs01" />,
+    routeMount(transactionalEmailsRoute, { workspaceId: 'AcmeWs01' }),
+  )
+
   await expect.element(screen.getByRole('link', { name: 'Broadcasts', exact: true })).toBeVisible()
 })
