@@ -4,15 +4,21 @@
 # which just wraps the prebuilt binary.
 
 # --- Stage 1: frontend (SPA + tracker bundle) ---
-FROM node:26-alpine AS frontend
-RUN npm install -g pnpm@11
+FROM node:26.12.1-alpine3.24@sha256:40cd011b55415bc894e45b02fdd5a5dfde056921b7d23a64c74f80497af48797 AS frontend
+
+RUN npm install -g pnpm@12.10.1
 WORKDIR /src
-COPY . .
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+COPY packages/analytics/package.json packages/analytics/
+COPY packages/emaildoc/package.json packages/emaildoc/
+
 RUN pnpm install --frozen-lockfile
+COPY . .
 RUN pnpm build:tracker && pnpm build
 
 # --- Stage 2: Go binary with embedded assets ---
-FROM golang:1.27-alpine AS gobuild
+FROM golang:1.27.3-alpine3.24@sha256:d530cf60723abf1ffae0cd16bb546b379ec0550d2f3815e5b16ed69dbc00fba4 AS gobuild
+
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
@@ -29,7 +35,7 @@ RUN cp CHANGELOG.md internal/changelog/CHANGELOG.md \
     -o /sphericon ./cmd/server
 
 # --- Stage 3: runtime ---
-FROM alpine:3.24
+FROM alpine:3.24@sha256:71e9b7bae160ba167fa17414401b94cbcdaf3c32feeab9298bd794a2a0614c35
 RUN apk add --no-cache ca-certificates tzdata \
     && adduser -D -H -u 10001 sphericon
 COPY --from=gobuild /sphericon /usr/local/bin/sphericon
