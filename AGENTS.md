@@ -70,7 +70,7 @@ Postgres depend on `db:up` (below) instead of a `db` daemon of their own.
 ```sh
 mise run setup          # deps, db:up, migrate, seed, worktrees:gc
 mise run db:up          # ensure the one shared Postgres runs and this checkout's databases exist
-mise run dev            # db:up, then mise daemons start caddy — full dev stack (https://sphericon.localhost; a linked worktree has its own URL, see "Dev environment")
+mise run dev            # db:migrate (db:up first), then mise daemons start caddy — full dev stack (https://sphericon.localhost; a linked worktree has its own URL, see "Dev environment")
 mise run dev:down       # stop this checkout's dev stack (never the shared Postgres)
 mise run dev:restart    # dev:down, then dev
 mise run test           # creates the test DB, then `go test ./...` (packages in parallel)

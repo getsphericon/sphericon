@@ -20,8 +20,8 @@ depends = ["install", "db:seed"]
 run = [{ task = "worktrees:gc --apply" }]
 
 [dev]
-description = "Start the whole dev stack (https://sphericon.localhost in the primary checkout, `mise env | grep SPHERICON_APP_URL` elsewhere)"
-depends = ["db:up"]
+description = "Migrate, then start the whole dev stack (https://sphericon.localhost in the primary checkout, `mise env | grep SPHERICON_APP_URL` elsewhere)"
+depends = ["db:migrate"]
 run = "mise daemons start caddy"
 
 ["dev:down"]
