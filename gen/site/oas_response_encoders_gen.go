@@ -5526,6 +5526,49 @@ func encodeSiteRulesActivateResponse(response SiteRulesActivateRes, w http.Respo
 	}
 }
 
+func encodeSiteRulesArchiveResponse(response SiteRulesArchiveRes, w http.ResponseWriter, span trace.Span) error {
+	switch response := response.(type) {
+	case *SiteRuleResource:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(200)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteRulesArchiveBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteRulesArchiveNotFound:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(404)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
+}
+
 func encodeSiteRulesCreateResponse(response SiteRulesCreateRes, w http.ResponseWriter, span trace.Span) error {
 	switch response := response.(type) {
 	case *SiteRuleResource:
@@ -5598,6 +5641,54 @@ func encodeSiteRulesDeactivateResponse(response SiteRulesDeactivateRes, w http.R
 	case *SiteRulesDeactivateNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
+}
+
+func encodeSiteRulesDeleteResponse(response SiteRulesDeleteRes, w http.ResponseWriter, span trace.Span) error {
+	switch response := response.(type) {
+	case *SiteRulesDeleteNoContent:
+		w.WriteHeader(204)
+
+		return nil
+
+	case *SiteRulesDeleteBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteRulesDeleteNotFound:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(404)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *InUseProblemDetails:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(409)
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -5696,6 +5787,49 @@ func encodeSiteRulesListResponse(response SiteRulesListRes, w http.ResponseWrite
 	case *SiteRulesListUnprocessableEntity:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(422)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
+}
+
+func encodeSiteRulesUnarchiveResponse(response SiteRulesUnarchiveRes, w http.ResponseWriter, span trace.Span) error {
+	switch response := response.(type) {
+	case *SiteRuleResource:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(200)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteRulesUnarchiveBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteRulesUnarchiveNotFound:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(404)
 
 		e := new(jx.Encoder)
 		response.Encode(e)

@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/ent/rulefiring"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
@@ -95,4 +96,37 @@ func TestPruneEventsDeletesInBoundedBatches(t *testing.T) {
 	assert.GreaterOrEqual(t, deleted, int64(len(expiring)))
 	assert.Zero(t, presentEvents(t, env, expiring))
 	assert.Equal(t, len(evidentiary), presentEvents(t, env, evidentiary))
+}
+
+func firingPresent(t *testing.T, env *testhelper.TestEnv, id int64) bool {
+	t.Helper()
+	return env.DB.RuleFiring.Query().Where(rulefiring.ID(id)).ExistX(context.Background())
+}
+
+// Firings expire with the analytical window (ADR 0019): the same job, the same cutoff.
+func TestPruneEventsDeletesRuleFiringsPastTheWindowOnly(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	pruneEvents(t, env, eventsRetention)
+
+	assert.False(t, firingPresent(t, env, fixtures.RuleFiringExpiredID), "a Firing past the window is deleted")
+	assert.True(t, firingPresent(t, env, fixtures.RuleFiringDoneID), "a younger Firing is kept")
+}
+
+func TestPruneEventsKeepsRuleFiringsWhenRetentionIsZero(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	pruneEvents(t, env, 0)
+
+	assert.True(t, firingPresent(t, env, fixtures.RuleFiringExpiredID))
+}
+
+func TestPruneRuleFiringsDeletesInBoundedBatches(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	deleted, err := events.PruneRuleFirings(context.Background(), env.DB, eventsRetention, 1)
+
+	require.NoError(t, err)
+	assert.Equal(t, int64(1), deleted)
+	assert.False(t, firingPresent(t, env, fixtures.RuleFiringExpiredID))
 }

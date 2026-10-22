@@ -748,7 +748,8 @@ export const UsedByKind = {
   AUTOMATION: 'automation',
   SEGMENT: 'segment',
   RULE: 'rule',
-  ENROLLMENT: 'enrollment'
+  ENROLLMENT: 'enrollment',
+  FIRING: 'firing'
 } as const;
 
 /**

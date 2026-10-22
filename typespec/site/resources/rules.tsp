@@ -115,11 +115,33 @@ model SiteUpdateRuleInput {
 
 @tag("Site Rules")
 interface SiteRules
-  extends WorkspaceCrudKept<
+  extends WorkspaceCrud<
       SiteRuleResource,
       SiteCreateRuleInput,
-      SiteUpdateRuleInput
+      SiteUpdateRuleInput,
+      never,
+      InUseProblem,
+      ArchivedFilter
     > {
+  /**
+   * Archive a Rule: it leaves the list and acts on nothing (an active one is deactivated), and
+   * keeps its Firings. It can be restored, as a draft.
+   */
+  @action("archive")
+  @autoRoute
+  archive(...ResourceParameters<SiteRuleResource>):
+    | SiteRuleResource
+    | BadRequestProblem
+    | NotFoundProblem;
+
+  /** Restore an archived Rule to the list, as a draft */
+  @action("unarchive")
+  @autoRoute
+  unarchive(...ResourceParameters<SiteRuleResource>):
+    | SiteRuleResource
+    | BadRequestProblem
+    | NotFoundProblem;
+
   /** Activate a Rule: it reacts to Events recorded from now on, never to past ones */
   @action("activate")
   @autoRoute

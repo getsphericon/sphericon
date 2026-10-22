@@ -727,6 +727,13 @@ type Handler interface {
 	//
 	// POST /workspaces/{workspaceId}/rules/{id}/activate
 	SiteRulesActivate(ctx context.Context, params SiteRulesActivateParams) (SiteRulesActivateRes, error)
+	// SiteRulesArchive implements SiteRules_archive operation.
+	//
+	// Archive a Rule: it leaves the list and acts on nothing (an active one is deactivated), and keeps its
+	// Firings. It can be restored, as a draft.
+	//
+	// POST /workspaces/{workspaceId}/rules/{id}/archive
+	SiteRulesArchive(ctx context.Context, params SiteRulesArchiveParams) (SiteRulesArchiveRes, error)
 	// SiteRulesCreate implements SiteRules_create operation.
 	//
 	// Create a resource from the site UI.
@@ -739,6 +746,12 @@ type Handler interface {
 	//
 	// POST /workspaces/{workspaceId}/rules/{id}/deactivate
 	SiteRulesDeactivate(ctx context.Context, params SiteRulesDeactivateParams) (SiteRulesDeactivateRes, error)
+	// SiteRulesDelete implements SiteRules_delete operation.
+	//
+	// Delete a resource from the site UI.
+	//
+	// DELETE /workspaces/{workspaceId}/rules/{id}
+	SiteRulesDelete(ctx context.Context, params SiteRulesDeleteParams) (SiteRulesDeleteRes, error)
 	// SiteRulesGet implements SiteRules_get operation.
 	//
 	// Get a resource by ID for the site UI.
@@ -751,6 +764,12 @@ type Handler interface {
 	//
 	// GET /workspaces/{workspaceId}/rules
 	SiteRulesList(ctx context.Context, params SiteRulesListParams) (SiteRulesListRes, error)
+	// SiteRulesUnarchive implements SiteRules_unarchive operation.
+	//
+	// Restore an archived Rule to the list, as a draft.
+	//
+	// POST /workspaces/{workspaceId}/rules/{id}/unarchive
+	SiteRulesUnarchive(ctx context.Context, params SiteRulesUnarchiveParams) (SiteRulesUnarchiveRes, error)
 	// SiteRulesUpdate implements SiteRules_update operation.
 	//
 	// Update a resource from the site UI.

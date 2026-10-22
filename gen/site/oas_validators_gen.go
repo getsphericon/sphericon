@@ -5859,6 +5859,22 @@ func (s *SiteRulesActivateUnprocessableEntity) Validate() error {
 	return nil
 }
 
+func (s *SiteRulesArchiveBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteRulesArchiveNotFound) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *SiteRulesCreateNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -5884,6 +5900,22 @@ func (s *SiteRulesDeactivateBadRequest) Validate() error {
 }
 
 func (s *SiteRulesDeactivateNotFound) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteRulesDeleteBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteRulesDeleteNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -5964,6 +5996,22 @@ func (s *SiteRulesListOK) Validate() error {
 }
 
 func (s *SiteRulesListUnprocessableEntity) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteRulesUnarchiveBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteRulesUnarchiveNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -8866,6 +8914,8 @@ func (s UsedByKind) Validate() error {
 	case "rule":
 		return nil
 	case "enrollment":
+		return nil
+	case "firing":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)

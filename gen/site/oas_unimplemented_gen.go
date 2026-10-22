@@ -1035,6 +1035,16 @@ func (UnimplementedHandler) SiteRulesActivate(ctx context.Context, params SiteRu
 	return r, ht.ErrNotImplemented
 }
 
+// SiteRulesArchive implements SiteRules_archive operation.
+//
+// Archive a Rule: it leaves the list and acts on nothing (an active one is deactivated), and keeps its
+// Firings. It can be restored, as a draft.
+//
+// POST /workspaces/{workspaceId}/rules/{id}/archive
+func (UnimplementedHandler) SiteRulesArchive(ctx context.Context, params SiteRulesArchiveParams) (r SiteRulesArchiveRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteRulesCreate implements SiteRules_create operation.
 //
 // Create a resource from the site UI.
@@ -1053,6 +1063,15 @@ func (UnimplementedHandler) SiteRulesDeactivate(ctx context.Context, params Site
 	return r, ht.ErrNotImplemented
 }
 
+// SiteRulesDelete implements SiteRules_delete operation.
+//
+// Delete a resource from the site UI.
+//
+// DELETE /workspaces/{workspaceId}/rules/{id}
+func (UnimplementedHandler) SiteRulesDelete(ctx context.Context, params SiteRulesDeleteParams) (r SiteRulesDeleteRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteRulesGet implements SiteRules_get operation.
 //
 // Get a resource by ID for the site UI.
@@ -1068,6 +1087,15 @@ func (UnimplementedHandler) SiteRulesGet(ctx context.Context, params SiteRulesGe
 //
 // GET /workspaces/{workspaceId}/rules
 func (UnimplementedHandler) SiteRulesList(ctx context.Context, params SiteRulesListParams) (r SiteRulesListRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteRulesUnarchive implements SiteRules_unarchive operation.
+//
+// Restore an archived Rule to the list, as a draft.
+//
+// POST /workspaces/{workspaceId}/rules/{id}/unarchive
+func (UnimplementedHandler) SiteRulesUnarchive(ctx context.Context, params SiteRulesUnarchiveParams) (r SiteRulesUnarchiveRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

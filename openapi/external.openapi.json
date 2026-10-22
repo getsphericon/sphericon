@@ -6762,6 +6762,9 @@
           },
           {
             "$ref": "#/components/parameters/PageQuery.pageSize"
+          },
+          {
+            "$ref": "#/components/parameters/ArchivedFilter"
           }
         ],
         "responses": {
@@ -7198,6 +7201,115 @@
             }
           }
         }
+      },
+      "delete": {
+        "operationId": "Rules_delete",
+        "description": "Delete a resource",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RuleResourceKey"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "There is no content to send for this request, but the headers may be useful."
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "RFC 7807 conflict response for a removal refused because live work still uses the row\n(ADR 0049): 409 with `usedBy` naming the users. Every refused removal of a Segment, Tag,\nIntegration, Sending domain or Automation answers it.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InUseProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Rules"]
       }
     },
     "/rules/{id}/activate": {
@@ -7311,10 +7423,206 @@
         }
       }
     },
+    "/rules/{id}/archive": {
+      "post": {
+        "operationId": "Rules_archive",
+        "description": "Archive a Rule: it leaves the list and acts on nothing (an active one is deactivated), and keeps its Firings. It can be restored, as a draft.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RuleResourceKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RuleResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Rules"]
+      }
+    },
     "/rules/{id}/deactivate": {
       "post": {
         "operationId": "Rules_deactivate",
         "description": "Deactivate a Rule: it stops firing. Needs the automations:activate scope.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RuleResourceKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RuleResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Rules"]
+      }
+    },
+    "/rules/{id}/unarchive": {
+      "post": {
+        "operationId": "Rules_unarchive",
+        "description": "Restore an archived Rule to the list, as a draft",
         "parameters": [
           {
             "$ref": "#/components/parameters/RuleResourceKey"
@@ -16113,7 +16421,7 @@
       },
       "UsedByKind": {
         "type": "string",
-        "enum": ["broadcast", "automation", "segment", "rule", "enrollment"],
+        "enum": ["broadcast", "automation", "segment", "rule", "enrollment", "firing"],
         "description": "What kind of row a refused removal names as a user of the row (ADR 0049). One value per kind\nof live user a removal can find, so a client branches on it without parsing text."
       },
       "Versions": {

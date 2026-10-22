@@ -1624,6 +1624,7 @@ func (s *InUseProblemDetails) SetUsedBy(val []UsedBy) {
 func (*InUseProblemDetails) siteAutomationsArchiveRes()    {}
 func (*InUseProblemDetails) siteAutomationsDeleteRes()     {}
 func (*InUseProblemDetails) siteIntegrationsArchiveRes()   {}
+func (*InUseProblemDetails) siteRulesDeleteRes()           {}
 func (*InUseProblemDetails) siteSegmentsArchiveRes()       {}
 func (*InUseProblemDetails) siteSendingDomainsArchiveRes() {}
 func (*InUseProblemDetails) siteTagsDeleteRes()            {}
@@ -15378,9 +15379,11 @@ func (s *SiteRuleResource) SetUpdatedAt(val Timestamp) {
 }
 
 func (*SiteRuleResource) siteRulesActivateRes()   {}
+func (*SiteRuleResource) siteRulesArchiveRes()    {}
 func (*SiteRuleResource) siteRulesCreateRes()     {}
 func (*SiteRuleResource) siteRulesDeactivateRes() {}
 func (*SiteRuleResource) siteRulesGetRes()        {}
+func (*SiteRuleResource) siteRulesUnarchiveRes()  {}
 func (*SiteRuleResource) siteRulesUpdateRes()     {}
 
 // Rule lifecycle status.
@@ -15438,6 +15441,14 @@ type SiteRulesActivateUnprocessableEntity ProblemDetails
 
 func (*SiteRulesActivateUnprocessableEntity) siteRulesActivateRes() {}
 
+type SiteRulesArchiveBadRequest ProblemDetails
+
+func (*SiteRulesArchiveBadRequest) siteRulesArchiveRes() {}
+
+type SiteRulesArchiveNotFound ProblemDetails
+
+func (*SiteRulesArchiveNotFound) siteRulesArchiveRes() {}
+
 type SiteRulesCreateNotFound ProblemDetails
 
 func (*SiteRulesCreateNotFound) siteRulesCreateRes() {}
@@ -15453,6 +15464,19 @@ func (*SiteRulesDeactivateBadRequest) siteRulesDeactivateRes() {}
 type SiteRulesDeactivateNotFound ProblemDetails
 
 func (*SiteRulesDeactivateNotFound) siteRulesDeactivateRes() {}
+
+type SiteRulesDeleteBadRequest ProblemDetails
+
+func (*SiteRulesDeleteBadRequest) siteRulesDeleteRes() {}
+
+// SiteRulesDeleteNoContent is response for SiteRulesDelete operation.
+type SiteRulesDeleteNoContent struct{}
+
+func (*SiteRulesDeleteNoContent) siteRulesDeleteRes() {}
+
+type SiteRulesDeleteNotFound ProblemDetails
+
+func (*SiteRulesDeleteNotFound) siteRulesDeleteRes() {}
 
 type SiteRulesGetBadRequest ProblemDetails
 
@@ -15539,6 +15563,14 @@ func (*SiteRulesListOK) siteRulesListRes() {}
 type SiteRulesListUnprocessableEntity ProblemDetails
 
 func (*SiteRulesListUnprocessableEntity) siteRulesListRes() {}
+
+type SiteRulesUnarchiveBadRequest ProblemDetails
+
+func (*SiteRulesUnarchiveBadRequest) siteRulesUnarchiveRes() {}
+
+type SiteRulesUnarchiveNotFound ProblemDetails
+
+func (*SiteRulesUnarchiveNotFound) siteRulesUnarchiveRes() {}
 
 type SiteRulesUpdateBadRequest ProblemDetails
 
@@ -20446,6 +20478,7 @@ const (
 	UsedByKindSegment    UsedByKind = "segment"
 	UsedByKindRule       UsedByKind = "rule"
 	UsedByKindEnrollment UsedByKind = "enrollment"
+	UsedByKindFiring     UsedByKind = "firing"
 )
 
 // AllValues returns all UsedByKind values.
@@ -20456,6 +20489,7 @@ func (UsedByKind) AllValues() []UsedByKind {
 		UsedByKindSegment,
 		UsedByKindRule,
 		UsedByKindEnrollment,
+		UsedByKindFiring,
 	}
 }
 
@@ -20471,6 +20505,8 @@ func (s UsedByKind) MarshalText() ([]byte, error) {
 	case UsedByKindRule:
 		return []byte(s), nil
 	case UsedByKindEnrollment:
+		return []byte(s), nil
+	case UsedByKindFiring:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -20494,6 +20530,9 @@ func (s *UsedByKind) UnmarshalText(data []byte) error {
 		return nil
 	case UsedByKindEnrollment:
 		*s = UsedByKindEnrollment
+		return nil
+	case UsedByKindFiring:
+		*s = UsedByKindFiring
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)

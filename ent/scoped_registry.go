@@ -1318,7 +1318,7 @@ func ScopedEntities() []ScopedEntity {
 		},
 		{
 			Name:    "Rule",
-			Audited: false,
+			Audited: true,
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Rule.Query().Where(rule.WorkspaceID(ws)).Order(Asc(rule.FieldID)).IDs(ctx)
 			},

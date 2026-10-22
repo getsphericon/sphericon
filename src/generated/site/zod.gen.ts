@@ -2156,7 +2156,8 @@ export const zUsedByKind = z.enum([
   'automation',
   'segment',
   'rule',
-  'enrollment'
+  'enrollment',
+  'firing'
 ]);
 
 /**
@@ -3840,6 +3841,16 @@ export const zSiteWorkspacesRestorePath = z.object({
  */
 export const zSiteWorkspacesRestoreResponse = zSiteWorkspaceResource;
 
+export const zSiteRulesDeletePath = z.object({
+  workspaceId: zWorkspaceId,
+  id: zEntityId
+});
+
+/**
+ * There is no content to send for this request, but the headers may be useful.
+ */
+export const zSiteRulesDeleteResponse = z.void();
+
 export const zSiteRuleFiringsListPath = z.object({
   workspaceId: zWorkspaceId,
   ruleId: zEntityId
@@ -4250,7 +4261,8 @@ export const zSiteRulesListPath = z.object({
 
 export const zSiteRulesListQuery = z.object({
   page: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
-  pageSize: z.int().gte(1).lte(100).optional().default(25)
+  pageSize: z.int().gte(1).lte(100).optional().default(25),
+  archived: z.exactOptional(z.boolean())
 });
 
 /**
@@ -4307,6 +4319,16 @@ export const zSiteRulesActivatePath = z.object({
  */
 export const zSiteRulesActivateResponse = zSiteRuleResource;
 
+export const zSiteRulesArchivePath = z.object({
+  workspaceId: zWorkspaceId,
+  id: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteRulesArchiveResponse = zSiteRuleResource;
+
 export const zSiteRulesDeactivatePath = z.object({
   workspaceId: zWorkspaceId,
   id: zEntityId
@@ -4316,6 +4338,16 @@ export const zSiteRulesDeactivatePath = z.object({
  * The request has succeeded.
  */
 export const zSiteRulesDeactivateResponse = zSiteRuleResource;
+
+export const zSiteRulesUnarchivePath = z.object({
+  workspaceId: zWorkspaceId,
+  id: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteRulesUnarchiveResponse = zSiteRuleResource;
 
 export const zSiteSegmentsListPath = z.object({
   workspaceId: zWorkspaceId

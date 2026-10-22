@@ -42,7 +42,11 @@ func TestSiteTagDeleteRefusedWhileARuleOrAStepNamesIt(t *testing.T) {
 	require.NoError(t, err)
 	refused, ok = byStep.(*siteapi.InUseProblemDetails)
 	require.Truef(t, ok, "got %T", byStep)
-	assert.Equal(t, map[siteapi.UsedByKind][]string{siteapi.UsedByKindAutomation: {fixtures.AutomationTagOnEngagementName}}, usedBy(refused))
+	assert.Equal(t, map[siteapi.UsedByKind][]string{
+		siteapi.UsedByKindAutomation: {fixtures.AutomationTagOnEngagementName},
+		// An active Rule names the Tag in its Condition (RuleVipOnly) or in an Action (RuleMultiTrigger).
+		siteapi.UsedByKindRule: {fixtures.RuleVipOnlyName, fixtures.RuleMultiTriggerName},
+	}, usedBy(refused))
 
 	_, err = env.DB.Scoped(fixtures.AcmeID).Tag().Get(ctx, fixtures.TagVipID)
 	require.NoError(t, err)

@@ -6544,6 +6544,7 @@ func (s *InUseProblemDetails) SetUsedBy(val []UsedBy) {
 func (*InUseProblemDetails) automationsArchiveRes()    {}
 func (*InUseProblemDetails) automationsDeleteRes()     {}
 func (*InUseProblemDetails) integrationsArchiveRes()   {}
+func (*InUseProblemDetails) rulesDeleteRes()           {}
 func (*InUseProblemDetails) segmentsArchiveRes()       {}
 func (*InUseProblemDetails) sendingDomainsArchiveRes() {}
 func (*InUseProblemDetails) tagsDeleteRes()            {}
@@ -10866,10 +10867,13 @@ func (*ProblemDetailsHeaders) integrationsUpdateRes()        {}
 func (*ProblemDetailsHeaders) presetsListRes()               {}
 func (*ProblemDetailsHeaders) ruleFiringsListRes()           {}
 func (*ProblemDetailsHeaders) rulesActivateRes()             {}
+func (*ProblemDetailsHeaders) rulesArchiveRes()              {}
 func (*ProblemDetailsHeaders) rulesCreateRes()               {}
 func (*ProblemDetailsHeaders) rulesDeactivateRes()           {}
+func (*ProblemDetailsHeaders) rulesDeleteRes()               {}
 func (*ProblemDetailsHeaders) rulesGetRes()                  {}
 func (*ProblemDetailsHeaders) rulesListRes()                 {}
+func (*ProblemDetailsHeaders) rulesUnarchiveRes()            {}
 func (*ProblemDetailsHeaders) rulesUpdateRes()               {}
 func (*ProblemDetailsHeaders) segmentsArchiveRes()           {}
 func (*ProblemDetailsHeaders) segmentsCreateRes()            {}
@@ -11486,9 +11490,11 @@ func (s *RuleResource) SetUpdatedAt(val Timestamp) {
 }
 
 func (*RuleResource) rulesActivateRes()   {}
+func (*RuleResource) rulesArchiveRes()    {}
 func (*RuleResource) rulesCreateRes()     {}
 func (*RuleResource) rulesDeactivateRes() {}
 func (*RuleResource) rulesGetRes()        {}
+func (*RuleResource) rulesUnarchiveRes()  {}
 func (*RuleResource) rulesUpdateRes()     {}
 
 // Rule lifecycle status.
@@ -11550,6 +11556,18 @@ type RulesActivateUnprocessableEntity ProblemDetails
 
 func (*RulesActivateUnprocessableEntity) rulesActivateRes() {}
 
+type RulesArchiveBadRequest ProblemDetails
+
+func (*RulesArchiveBadRequest) rulesArchiveRes() {}
+
+type RulesArchiveNotFound ProblemDetails
+
+func (*RulesArchiveNotFound) rulesArchiveRes() {}
+
+type RulesArchiveUnauthorized ProblemDetails
+
+func (*RulesArchiveUnauthorized) rulesArchiveRes() {}
+
 type RulesCreateBadRequest ProblemDetails
 
 func (*RulesCreateBadRequest) rulesCreateRes() {}
@@ -11573,6 +11591,27 @@ func (*RulesDeactivateNotFound) rulesDeactivateRes() {}
 type RulesDeactivateUnauthorized ProblemDetails
 
 func (*RulesDeactivateUnauthorized) rulesDeactivateRes() {}
+
+type RulesDeleteBadRequest ProblemDetails
+
+func (*RulesDeleteBadRequest) rulesDeleteRes() {}
+
+// RulesDeleteNoContent is response for RulesDelete operation.
+type RulesDeleteNoContent struct{}
+
+func (*RulesDeleteNoContent) rulesDeleteRes() {}
+
+type RulesDeleteNotFound ProblemDetails
+
+func (*RulesDeleteNotFound) rulesDeleteRes() {}
+
+type RulesDeleteUnauthorized ProblemDetails
+
+func (*RulesDeleteUnauthorized) rulesDeleteRes() {}
+
+type RulesDeleteUnprocessableEntity ProblemDetails
+
+func (*RulesDeleteUnprocessableEntity) rulesDeleteRes() {}
 
 type RulesGetBadRequest ProblemDetails
 
@@ -11663,6 +11702,18 @@ func (*RulesListUnauthorized) rulesListRes() {}
 type RulesListUnprocessableEntity ProblemDetails
 
 func (*RulesListUnprocessableEntity) rulesListRes() {}
+
+type RulesUnarchiveBadRequest ProblemDetails
+
+func (*RulesUnarchiveBadRequest) rulesUnarchiveRes() {}
+
+type RulesUnarchiveNotFound ProblemDetails
+
+func (*RulesUnarchiveNotFound) rulesUnarchiveRes() {}
+
+type RulesUnarchiveUnauthorized ProblemDetails
+
+func (*RulesUnarchiveUnauthorized) rulesUnarchiveRes() {}
 
 type RulesUpdateBadRequest ProblemDetails
 
@@ -14921,6 +14972,7 @@ const (
 	UsedByKindSegment    UsedByKind = "segment"
 	UsedByKindRule       UsedByKind = "rule"
 	UsedByKindEnrollment UsedByKind = "enrollment"
+	UsedByKindFiring     UsedByKind = "firing"
 )
 
 // AllValues returns all UsedByKind values.
@@ -14931,6 +14983,7 @@ func (UsedByKind) AllValues() []UsedByKind {
 		UsedByKindSegment,
 		UsedByKindRule,
 		UsedByKindEnrollment,
+		UsedByKindFiring,
 	}
 }
 
@@ -14946,6 +14999,8 @@ func (s UsedByKind) MarshalText() ([]byte, error) {
 	case UsedByKindRule:
 		return []byte(s), nil
 	case UsedByKindEnrollment:
+		return []byte(s), nil
+	case UsedByKindFiring:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -14969,6 +15024,9 @@ func (s *UsedByKind) UnmarshalText(data []byte) error {
 		return nil
 	case UsedByKindEnrollment:
 		*s = UsedByKindEnrollment
+		return nil
+	case UsedByKindFiring:
+		*s = UsedByKindFiring
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)

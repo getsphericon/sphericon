@@ -22,9 +22,14 @@ func TestExternalDeletesRefusedWhileLiveWorkUsesTheRow(t *testing.T) {
 	require.NoError(t, err)
 	refused, ok := tag.(*externalapi.InUseProblemDetails)
 	require.Truef(t, ok, "got %T", tag)
-	require.Len(t, refused.UsedBy, 1)
-	assert.Equal(t, externalapi.UsedByKindAutomation, refused.UsedBy[0].Kind)
-	assert.Equal(t, fixtures.AutomationTagOnEngagementName, refused.UsedBy[0].Name)
+	names := map[externalapi.UsedByKind][]string{}
+	for _, u := range refused.UsedBy {
+		names[u.Kind] = append(names[u.Kind], u.Name)
+	}
+	assert.Equal(t, map[externalapi.UsedByKind][]string{
+		externalapi.UsedByKindAutomation: {fixtures.AutomationTagOnEngagementName},
+		externalapi.UsedByKindRule:       {fixtures.RuleVipOnlyName, fixtures.RuleMultiTriggerName},
+	}, names)
 
 	integration, err := c.IntegrationsArchive(ctx, externalapi.IntegrationsArchiveParams{ID: externalapi.EntityId(1)})
 	require.NoError(t, err)

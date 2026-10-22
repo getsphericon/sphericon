@@ -381,6 +381,10 @@ type SiteRulesActivateRes interface {
 	siteRulesActivateRes()
 }
 
+type SiteRulesArchiveRes interface {
+	siteRulesArchiveRes()
+}
+
 type SiteRulesCreateRes interface {
 	siteRulesCreateRes()
 }
@@ -389,12 +393,20 @@ type SiteRulesDeactivateRes interface {
 	siteRulesDeactivateRes()
 }
 
+type SiteRulesDeleteRes interface {
+	siteRulesDeleteRes()
+}
+
 type SiteRulesGetRes interface {
 	siteRulesGetRes()
 }
 
 type SiteRulesListRes interface {
 	siteRulesListRes()
+}
+
+type SiteRulesUnarchiveRes interface {
+	siteRulesUnarchiveRes()
 }
 
 type SiteRulesUpdateRes interface {

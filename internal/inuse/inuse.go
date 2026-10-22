@@ -24,11 +24,13 @@ const (
 	Automation Kind = "automation"
 	// Segment is a Segment whose rule names the row.
 	Segment Kind = "segment"
-	// Rule is an active Rule with an Action that uses the row.
+	// Rule is an active Rule that uses the row: through a Condition leaf or an Action.
 	Rule Kind = "rule"
 	// Enrollment stands for the Enrollments of an Automation: one User naming the
 	// Automation, with their Count.
 	Enrollment Kind = "enrollment"
+	// Firing stands for the Firings of a Rule: one User naming the Rule, with their Count.
+	Firing Kind = "firing"
 )
 
 // Subject is the row a refused removal was for.
@@ -41,6 +43,7 @@ const (
 	SubjectIntegration   Subject = "integration"
 	SubjectSendingDomain Subject = "sending domain"
 	SubjectAutomation    Subject = "automation"
+	SubjectRule          Subject = "rule"
 )
 
 // User is one row that uses the row a removal was refused for.
@@ -48,7 +51,7 @@ type User struct {
 	Kind Kind
 	ID   int64
 	Name string
-	// Count is how many rows an Enrollment User stands for; every other kind is one row and
+	// Count is how many rows an Enrollment or Firing User stands for; every other kind is one row and
 	// leaves it zero.
 	Count int
 }
@@ -56,6 +59,11 @@ type User struct {
 // Enrollments is the User that stands for count Enrollments of the Automation.
 func Enrollments(automationID int64, name string, count int) User {
 	return User{Kind: Enrollment, ID: automationID, Name: name, Count: count}
+}
+
+// Firings is the User that stands for count Firings of the Rule.
+func Firings(ruleID int64, name string, count int) User {
+	return User{Kind: Firing, ID: ruleID, Name: name, Count: count}
 }
 
 // Broadcasts maps Broadcasts to their Users, in the order given.
@@ -83,8 +91,9 @@ func (e *Error) Error() string {
 	names := make([]string, len(e.Users))
 	for i, u := range e.Users {
 		names[i] = fmt.Sprintf("%s %q", u.Kind, u.Name)
-		if u.Kind == Enrollment {
-			names[i] = fmt.Sprintf("%d %s of %q", u.Count, lo.Ternary(u.Count == 1, "enrollment", "enrollments"), u.Name)
+		if u.Kind == Enrollment || u.Kind == Firing {
+			// A counted User: "2 firings of "name"".
+			names[i] = fmt.Sprintf("%d %s of %q", u.Count, lo.Ternary(u.Count == 1, string(u.Kind), string(u.Kind)+"s"), u.Name)
 		}
 	}
 	return fmt.Sprintf("%s is in use by %s", e.What, strings.Join(names, ", "))
