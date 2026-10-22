@@ -49,7 +49,7 @@ A named, workspace-scoped label applied to Contacts — by hand, by import, by a
 step, or through the API. Carries presence only (a Contact has the Tag or does not), no type
 and no value; that is what separates it from a Custom field. Auto-created on first use, like
 a Custom field. A Tag is an attribute, never a target set: "send to everyone tagged X" is
-always a Segment with a has-Tag rule, so Tag does not reintroduce the rejected List model.
+always a Segment with a has-Tag Condition, so Tag does not reintroduce the rejected List model.
 _Avoid_: Label, list, group, category
 
 **Visitor**:
@@ -121,12 +121,27 @@ deliveries, customer-tracked actions) are deleted once older than the instance's
 so segment conditions cannot look back past it.
 _Avoid_: TTL, expiry, purge, archive
 
+**Condition**:
+A tree of tests (a combinator over nested groups) on a Contact's fields, custom fields, Tags and
+past Events, and, when a Rule evaluates it, on the triggering Event's own properties. Evaluated
+live against current data, never materialized. One shared grammar: a Segment is a named Condition
+and a Rule holds one.
+_Avoid_: Filter, query, predicate, rule (a Rule is something else)
+
 **Segment**:
-A named, reusable definition of "which contacts match these conditions" — the one
-targeting primitive. Stores a rule query (combinator + nested rules over contact fields,
-custom fields, tags, and events), evaluated live: membership is never materialized and shifts as
-data changes. There is no other segment kind; a segment is always a rule.
+A named, reusable Condition: "which contacts match these conditions", the one targeting
+primitive. Membership is never materialized and shifts as data changes. There is no other
+segment kind; a segment is always a Condition.
 _Avoid_: List, audience, group, filter, snapshot
+
+**Rule**:
+A workspace-scoped, stateless reaction: when any of its **Trigger events** is recorded for a
+Contact and the Rule's Condition holds for that Contact and Event, its Actions run at once, in
+order. No delay, no Enrollment and no email step; those belong to an Automation. Fires on every
+matching Event, only going forward, and at most once per Event (a **Firing** records what ran).
+An Event with no Contact, a machine Event, and an Event caused by a Rule's own Action trigger no
+Rule. Actions today: apply Tag, remove Tag, HTTP call, enroll in an Automation.
+_Avoid_: Workflow, flow, hook, automation (an Automation is sequential and stateful)
 
 ### Send-eligibility
 
@@ -325,7 +340,7 @@ _Avoid_: Revision, snapshot, draft
 The single Event action that enrolls a Contact into an Automation (e.g. "contact.created", a
 custom event). Not a separate entity — one Trigger per Automation. Matched by the Event's
 resolved identity, not by email.
-_Avoid_: Hook, rule, entry condition
+_Avoid_: Hook, entry condition
 
 **Enrollment**:
 One Contact's membership-and-progress in one Automation — enrolled at most once ever
