@@ -11,6 +11,8 @@ import "context"
 // contract (PageQuery) declares the same defaults and the page size maximum, which ogen
 // enforces before a handler runs.
 const DefaultPage = 1
+
+// contract-copy: fallback for module callers that have no request; the contract declares the same default
 const DefaultPageSize = 25
 
 type Page[T any] struct {

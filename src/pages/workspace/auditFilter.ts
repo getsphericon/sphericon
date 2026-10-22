@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import { zSiteAuditActorKind } from '../../generated/site/zod.gen.ts'
+
 // The Audit log filter lives in the settings route's search, so a Change history link
 // (and a reload) opens the log already narrowed. Every field is optional text; `from`
 // and `to` are calendar dates (YYYY-MM-DD).
@@ -9,7 +11,7 @@ const optionalText = z.coerce.string().optional().catch(undefined)
 export const auditFilterSchema = z.object({
   from: optionalText,
   to: optionalText,
-  actorKind: z.enum(['user', 'api_token', 'staff', 'system']).optional().catch(undefined),
+  actorKind: zSiteAuditActorKind.optional().catch(undefined),
   actorId: optionalText,
   action: optionalText,
   targetType: optionalText,

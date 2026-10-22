@@ -10,11 +10,12 @@ import { useTranslation } from 'react-i18next'
 import { ApiErrorAlert } from '../components/ApiErrorAlert.tsx'
 import { staffWorkspacesListOptions } from '../generated/staff/@tanstack/react-query.gen.ts'
 import type { StaffWorkspaceReview } from '../generated/staff/types.gen.ts'
+import { zStaffWorkspaceReview } from '../generated/staff/zod.gen.ts'
 import { Route as consoleWorkspaceRoute } from '../routes/console/_authed/workspaces.$workspaceId.tsx'
 import { formatDateTime } from '../utils/datetime.ts'
 
 const PAGE_SIZE = 25
-const REVIEWS: StaffWorkspaceReview[] = ['warned', 'systemFrozen', 'deleted']
+const REVIEWS = zStaffWorkspaceReview.options
 
 // The Workspace list: every tenant's metadata (never its Contacts, content or
 // Events), searchable by id or name, a row opens the Workspace.

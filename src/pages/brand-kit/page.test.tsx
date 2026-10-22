@@ -9,6 +9,7 @@ import {
 } from '../../generated/site/msw.gen.ts'
 import type { SiteBrandKitResource, SiteWorkspaceResource } from '../../generated/site/types.gen.ts'
 import { Route as brandKitRoute } from '../../routes/workspaces/$workspaceId/brand-kit.tsx'
+import { zSiteInvitableRole } from '../../generated/site/zod.gen.ts'
 import { hex } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
@@ -113,7 +114,7 @@ test('a saved kit is recreated into starter templates only after a confirmation'
   await expect.poll(() => recreated).toBe(1)
 })
 
-test.each(['member', 'admin'] as const)(
+test.each(zSiteInvitableRole.options)(
   '%s sees the Brand kit but cannot change it',
   async (role) => {
     worker.use(handleSiteBrandKitGet({ body: KIT }))

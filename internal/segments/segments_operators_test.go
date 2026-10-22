@@ -109,6 +109,7 @@ func TestCustomFieldKeyIsABoundArgument(t *testing.T) {
 	// ingest created, and it only ever reaches the query as one quoted literal.
 	payload := "x' IS NOT NULL AND (SELECT count(*) FROM users)>0 AND 'a"
 	declare(t, env, payload)
+	// contract-copy: four representative operators for the injection probe, not the operator list
 	for _, op := range []string{"eq", "neq", "contains", "notNull"} {
 		assert.Empty(t, opsEmails(t, env, opsGroup(rule("custom:"+payload, op, "a"))), op)
 	}

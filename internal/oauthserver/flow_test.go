@@ -192,7 +192,8 @@ func TestSendClassScopesNeedAnExplicitOptIn(t *testing.T) {
 
 	for allowSend, want := range map[bool][]string{
 		false: {"contacts:read"},
-		true:  {"contacts:read", "emails:send", "broadcasts:send", "automations:activate", "mcp:send"},
+		// contract-copy: the expected wire scopes of the issued token, an independent source of truth
+		true: {"contacts:read", "emails:send", "broadcasts:send", "automations:activate", "mcp:send"},
 	} {
 		back := consent(t, env, approval(scope, allowSend))
 		rec := exchange(t, env, tokenForm(back.Query().Get("code")))
@@ -391,6 +392,7 @@ func TestDefaultGrantCoversTheAuthoringScopes(t *testing.T) {
 	require.NoError(t, err)
 	got, ok := res.(*siteapi.SiteOAuthAuthorizationRequest)
 	require.Truef(t, ok, "got %T", res)
+	// contract-copy: the authoring scopes the shipped playbooks use, a chosen subset of the contract's list
 	assert.Subset(t, got.Scopes, []siteapi.GrantableScope{
 		"contacts:read", "contacts:write", "events:read", "events:write",
 		"segments:read", "segments:write", "broadcasts:read", "broadcasts:write",

@@ -386,6 +386,7 @@ depends = [
   "check:security",
   "check:ast",
   "check:openapi",
+  "check:copies",
   "check:typos",
   "check:adr",
   "check:helm",
@@ -484,6 +485,10 @@ run = "go tool govulncheck ./..."
 ["check:ast"]
 description = "Project-specific syntax rules (sgconfig.yml, ast-grep/): tests, then scan"
 run = ["ast-grep test", "ast-grep scan"]
+
+["check:copies"]
+description = "Rule 6: no hand-written copy of a TypeSpec enum, limit or scope in Go, TypeScript or fixtures (cmd/contractcopy reads openapi/*.openapi.json; a value that only looks like a contract value carries `// contract-copy: <reason>`)"
+run = "go run ./cmd/contractcopy"
 
 ["check:typos"]
 description = "Spelling in code, docs and comments (_typos.toml)"

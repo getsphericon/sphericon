@@ -255,6 +255,7 @@ func (m *Module) RecordImport(ctx context.Context, s *ent.Scoped, sum ImportSumm
 			Actor:       s.Actor(),
 			Action:      events.ActionContactImport,
 			TargetType:  "contact",
+			// contract-copy: audit diff keys, a shape of their own, not the contract's status enum
 			Diff: map[string]any{
 				"created": sum.Created,
 				"updated": sum.Updated,

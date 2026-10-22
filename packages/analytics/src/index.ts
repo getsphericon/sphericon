@@ -7,6 +7,7 @@ import type {
 const VISITOR_COOKIE_NAME = 'om_vid'
 const FLUSH_DELAY_MS = 200
 const QUEUE_KEY = 'om_q'
+// contract-copy: the tracker's offline queue size, client behaviour no API declares
 const MAX_QUEUE = 100
 const RETRY_BASE_MS = 1000
 const RETRY_MAX_MS = 60_000

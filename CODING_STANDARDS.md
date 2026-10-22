@@ -33,6 +33,15 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   must map through a goverter converter (it calls a `...Converter`/`...ConverterImpl` method, directly or
   through a package function that does) or be registered in the converter (`goverter:extend`, or named in
   a `goverter:map ... | helper` line). Add the mapping to the surface's `Converter` instead; test files are not checked.
+- **Rule 6, `check:copies` (`cmd/contractcopy`, in `check`).** It reads the generated `openapi/*.openapi.json`
+  and fails on a hand-written copy of its values: a Go list, `case` list or TypeScript array or union of
+  literals that restates an enum (all of its values, or three or more that are a quarter of a larger one),
+  a Go or TypeScript `Max*`/`Min*`/`Default*` constant equal to a declared length, range or default, and a
+  fixture scope (`fixtures/*.yml`, which cannot import Go) the contract does not declare. A value that only
+  looks like a contract value (an OAuth limit, a secret floor) carries `// contract-copy: <reason>` on its
+  line or the line above; a marker without a reason is still a finding, and there is no baseline file. Typed
+  Go `const` blocks are domain vocabulary and are not read. Tests use the generated constants
+  (`externalapi.ApiTokenScope…`) or the generated zod (`zSiteMembershipRole.options`), not string lists.
 - **Adding an analyzer.** (1) Create `tools/analyzers/<name>/` with `Analyzer` (see `noprint`) and report
   through `rule.Message`. (2) Write `<name>_test.go` with `analysistest.Run` and a test data package per
   case under `testdata/src/` (a `bad` package whose violating lines carry `// want` with the message
