@@ -5,6 +5,8 @@ import (
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
 	"io/fs"
+	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 	"testing/fstest"
@@ -96,7 +98,7 @@ func TestMigrateGivesExistingWorkspacesAnIdAndEndsRequired(t *testing.T) {
 	before := migrationsWhere(t, func(name string) bool { return name < "20261020030001" })
 	_, err := db.MigrateFS(t.Context(), sqlDB, before)
 	require.NoError(t, err)
-	testhelper.InsertLegacyWorkspaces(t, sqlDB, "one", "two", "three")
+	testhelper.LoadLegacyFixtures(t, sqlDB, legacyFixtures("20261020030001_workspace_public_id.sql"))
 
 	_, err = db.Migrate(t.Context(), sqlDB)
 	require.NoError(t, err)
@@ -127,10 +129,16 @@ func TestMigrateRefusesToDropTheSlugBeforeEveryWorkspaceHasAnId(t *testing.T) {
 	before := migrationsWhere(t, func(name string) bool { return name < "20261020030002" })
 	_, err := db.MigrateFS(t.Context(), sqlDB, before)
 	require.NoError(t, err)
-	testhelper.InsertLegacyWorkspaces(t, sqlDB, "one")
+	testhelper.LoadLegacyFixtures(t, sqlDB, legacyFixtures("20261020030001_workspace_public_id.sql"))
 
 	_, err = db.MigrateFS(t.Context(), sqlDB, skipping)
 	require.ErrorContains(t, err, "workspaces.slug cannot be dropped")
+}
+
+// legacyFixtures is the directory of the fixtures that belong to one migration: the rows of the schema
+// just before it, which the ent client cannot write (see testhelper.LoadLegacyFixtures).
+func legacyFixtures(migration string, parts ...string) string {
+	return filepath.Join(append([]string{"testdata", "legacy", strings.TrimSuffix(migration, ".sql")}, parts...)...)
 }
 
 // migrationsWhere is the embedded migrations whose file name satisfies keep.
@@ -161,12 +169,12 @@ func TestMigrateRefusesToDropARecipientOutcomeThatHasNoOutboundMessage(t *testin
 	all := migrationsWhere(t, func(name string) bool { return name <= dropping })
 	_, err := db.MigrateFS(t.Context(), sqlDB, before)
 	require.NoError(t, err)
-	testhelper.InsertDecidedRecipientWithoutMessage(t, sqlDB)
+	testhelper.LoadLegacyFixtures(t, sqlDB, legacyFixtures(dropping, "decided"))
 
 	_, err = db.MigrateFS(t.Context(), sqlDB, all)
 	require.ErrorContains(t, err, "would lose their outcome")
 
-	testhelper.InsertSentMessageForRecipient(t, sqlDB)
+	testhelper.LoadLegacyFixtures(t, sqlDB, legacyFixtures(dropping, "sent_message"))
 	_, err = db.MigrateFS(t.Context(), sqlDB, all)
 	require.NoError(t, err)
 
@@ -184,16 +192,24 @@ func TestMigrateCarriesTheSendingDomainFlagIntoMoments(t *testing.T) {
 	all := migrationsWhere(t, func(string) bool { return true })
 	_, err := db.MigrateFS(t.Context(), sqlDB, before)
 	require.NoError(t, err)
-	testhelper.InsertLegacySendingDomains(t, sqlDB)
+	testhelper.LoadLegacyFixtures(t, sqlDB, legacyFixtures(replacing))
 
 	_, err = db.MigrateFS(t.Context(), sqlDB, all)
 	require.NoError(t, err)
 
+	client := db.NewEntClient(sqlDB)
+	t.Cleanup(func() { _ = client.Close() })
+	domains, err := client.SendingDomain.Query().All(t.Context())
+	require.NoError(t, err)
+	moments := map[string][2]bool{}
+	for _, d := range domains {
+		moments[d.Domain] = [2]bool{d.VerifiedAt != nil, d.VerificationLostAt != nil}
+	}
 	assert.Equal(t, map[string][2]bool{
 		"live.test":  {true, false},
 		"lost.test":  {true, true},
 		"never.test": {false, false},
-	}, testhelper.SendingDomainMoments(t, sqlDB))
+	}, moments)
 	assert.Zero(t, testhelper.ColumnsOf(t, sqlDB, "sending_domains", "verified"), "the flag is gone")
 }
 
@@ -204,7 +220,7 @@ func TestMigrateRefusesToDropTheDefinitionBeforeTheBackfill(t *testing.T) {
 	legacy := migrationsWhere(t, func(name string) bool { return name < "20261020210001" })
 	_, err := db.MigrateFS(t.Context(), sqlDB, legacy)
 	require.NoError(t, err)
-	testhelper.InsertLegacyAutomations(t, sqlDB)
+	testhelper.LoadLegacyFixtures(t, sqlDB, legacyFixtures("20261020210003_drop_automation_definition.sql"))
 	all := migrationsWhere(t, func(string) bool { return true })
 	beforeDrop := migrationsWhere(t, func(name string) bool { return name < "20261020210003" })
 	_, err = db.MigrateFS(t.Context(), sqlDB, beforeDrop)
@@ -232,7 +248,7 @@ func TestBackfillGivesEveryAutomationVersionOneAndMovesItsEnrollments(t *testing
 	legacy := migrationsWhere(t, func(name string) bool { return name < "20261020210001" })
 	_, err := db.MigrateFS(t.Context(), sqlDB, legacy)
 	require.NoError(t, err)
-	testhelper.InsertLegacyAutomations(t, sqlDB)
+	testhelper.LoadLegacyFixtures(t, sqlDB, legacyFixtures("20261020210003_drop_automation_definition.sql"))
 	all := migrationsWhere(t, func(string) bool { return true })
 	beforeDrop := migrationsWhere(t, func(name string) bool { return name < "20261020210003" })
 	_, err = db.MigrateFS(t.Context(), sqlDB, beforeDrop)

@@ -1,0 +1,15 @@
+# Recipient 1 was decided as sent and has no Outbound message; recipient 2 is still pending.
+- id: 1
+  broadcast_id: 1
+  contact_id: 1
+  status: sent
+  workspace_id: 1
+  created_at: '{{now}}'
+  updated_at: '{{now}}'
+- id: 2
+  broadcast_id: 1
+  contact_id: 2
+  status: pending
+  workspace_id: 1
+  created_at: '{{now}}'
+  updated_at: '{{now}}'

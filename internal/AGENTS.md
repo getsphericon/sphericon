@@ -15,6 +15,13 @@ template built once per schema or fixture change and drops it when the test ends
 cleans up by hand or resets state at its start. The test role is a superuser (the fixture
 loader disables foreign-key triggers), as on the shared test database.
 
+**Migration tests take their old-schema data from fixtures too.** The rows of the schema just
+before one migration (columns the ent client no longer has) are YAML files in
+`internal/db/testdata/legacy/<migration file name without .sql>/` (a subdirectory per extra
+state of the same test), loaded with `testhelper.LoadLegacyFixtures(t, sqlDB, dir)`: the same
+loader and templating as `fixtures/`, but no sequence reset, no catalog (they are not in
+`fixtures/`, so `fixturegen` ignores them) and no raw `INSERT`.
+
 **Build test scenarios on the committed fixtures — don't fabricate the primary
 entities inline.** Reference fixture rows through the catalog constants below
 (`fixtures.BroadcastDraftID`, `fixtures.ContactAliceID`, `fixtures.SegmentActiveID`, …),

@@ -569,6 +569,14 @@ func migrateSchema(ctx context.Context, sqlDB *sql.DB) error {
 // templating for relative dates, which must be relative to now, not to when a template was
 // built.
 func loadFixtures(ctx context.Context, sqlDB *sql.DB, cfg *config.Config, projectRoot string) error {
+	// ResetSequencesTo keeps the explicit fixture ids clear of app-inserted rows.
+	return loadFixtureDir(ctx, sqlDB, cfg, filepath.Join(projectRoot, "fixtures"), testfixtures.ResetSequencesTo(100000))
+}
+
+// loadFixtureDir loads the YAML files of one directory through the fixture library, with its
+// templating (relative dates, load-time encryption); the caller's option says what happens to
+// the sequences afterwards.
+func loadFixtureDir(ctx context.Context, sqlDB *sql.DB, cfg *config.Config, dir string, sequences func(*testfixtures.Loader) error) error {
 	cipher, err := secrets.NewCipher(cfg.EncryptionKey)
 	if err != nil {
 		return err
@@ -591,9 +599,8 @@ func loadFixtures(ctx context.Context, sqlDB *sql.DB, cfg *config.Config, projec
 		// for relative dates and load-time encryption (internal/fixtures).
 		testfixtures.Template(),
 		testfixtures.TemplateFuncs(fixtures.TemplateFuncs(cipher, now)),
-		testfixtures.Directory(filepath.Join(projectRoot, "fixtures")),
-		// ResetSequencesTo keeps the explicit fixture ids clear of app-inserted rows.
-		testfixtures.ResetSequencesTo(100000),
+		testfixtures.Directory(dir),
+		sequences,
 	)
 	if err != nil {
 		return err
