@@ -974,7 +974,8 @@
     "previewCount": "{{count}} matching contacts",
     "previewCount_one": "{{count}} matching contact",
     "previewCount_other": "{{count}} matching contacts",
-    "showArchived": "Show archived"
+    "showArchived": "Show archived",
+    "triggerKeyLabel": "Event property name"
   },
   "settings": {
     "apiKeysTitle": "API keys",

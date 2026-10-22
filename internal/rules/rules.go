@@ -311,13 +311,14 @@ func saveTriggers(ctx context.Context, s *ent.Scoped, ruleID int64, actions []st
 	return s.RuleTrigger().CreateBulk(creates...).Exec(ctx)
 }
 
-// validateCondition checks a Condition exactly as a Segment's is checked: it parses, and every
-// leaf names a Contact attribute, a Tag, an Event action or a custom field the Workspace has.
+// validateCondition checks a Condition as a Segment's is checked: it parses, and every leaf names
+// a Contact attribute, a Tag, an Event action or a custom field the Workspace has. A Rule's
+// Condition may also test the triggering Event's properties ("trigger:<key>", any key).
 func (m *Module) validateCondition(ctx context.Context, s *ent.Scoped, cond *string) error {
 	if cond == nil || *cond == "" {
 		return nil
 	}
-	if _, err := condition.ContactPredicate(ctx, s, *cond); err != nil {
+	if _, err := condition.RulePredicate(ctx, s, *cond, nil); err != nil {
 		return fmt.Errorf("%w: %s", ErrInvalid, err.Error())
 	}
 	return nil
@@ -419,7 +420,7 @@ func (m *Module) Evaluate(ctx context.Context, s *ent.Scoped, ev Event) ([]*ent.
 func (m *Module) holds(ctx context.Context, s *ent.Scoped, r *ent.Rule, ev Event) (bool, error) {
 	match := contact.ID(ev.ContactID)
 	if r.Condition != nil && *r.Condition != "" {
-		pred, err := condition.ContactPredicate(ctx, s, *r.Condition)
+		pred, err := condition.RulePredicate(ctx, s, *r.Condition, ev.Properties)
 		if err != nil {
 			return false, nil
 		}

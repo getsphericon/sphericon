@@ -90,6 +90,7 @@ export function RuleForm({ form, isPending, onSubmit }: ResourceFormProps<RulePa
         >
           <ConditionBuilder
             workspaceId={workspaceId}
+            triggerLeaves
             value={condition}
             onChange={(next) => form.setFieldValue('condition', z.encode(conditionCodec, next))}
           />
