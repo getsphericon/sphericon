@@ -59,8 +59,9 @@ test('Edit links to the template edit page', async () => {
   const { screen } = await renderWithRouter(<TemplatesListPage />, LIST_ROUTE)
   await expect.element(screen.getByText('Welcome')).toBeInTheDocument()
 
+  await screen.getByRole('button', { name: 'More actions' }).first().click()
   await expect
-    .element(screen.getByRole('link', { name: 'Edit' }))
+    .element(screen.getByRole('menuitem', { name: 'Edit' }))
     .toHaveAttribute('href', '/workspaces/TestWs01/templates/1/edit')
 })
 
@@ -84,7 +85,8 @@ test('deleting a template asks for confirmation, deletes it and refreshes the li
   const { screen } = await renderWithRouter(<TemplatesListPage />, LIST_ROUTE)
   await expect.element(screen.getByText('Welcome')).toBeInTheDocument()
 
-  await screen.getByRole('button', { name: 'Delete' }).first().click()
+  await screen.getByRole('button', { name: 'More actions' }).first().click()
+  await screen.getByRole('menuitem', { name: 'Delete' }).click()
   expect(deleted).toEqual([])
   await screen.getByRole('dialog').getByRole('button', { name: 'Delete' }).click()
 

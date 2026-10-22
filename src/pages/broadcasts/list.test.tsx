@@ -80,14 +80,17 @@ test('Report and Edit link with the broadcast id; Edit is only enabled for draft
   const { screen } = await renderWithRouter(<BroadcastsListPage />, LIST_ROUTE)
   await expect.element(screen.getByText('Spring launch')).toBeInTheDocument()
 
+  await screen.getByRole('button', { name: 'More actions' }).nth(1).click()
   await expect
-    .element(screen.getByRole('link', { name: 'Edit' }).nth(1))
+    .element(screen.getByRole('menuitem', { name: 'Edit' }))
     .toHaveAttribute('data-disabled')
+  await screen.getByRole('button', { name: 'More actions' }).nth(1).click()
+  await screen.getByRole('button', { name: 'More actions' }).first().click()
   await expect
-    .element(screen.getByRole('link', { name: 'Report' }).first())
+    .element(screen.getByRole('menuitem', { name: 'Report' }))
     .toHaveAttribute('href', '/workspaces/TestWs01/broadcasts/1/report')
   await expect
-    .element(screen.getByRole('link', { name: 'Edit' }).first())
+    .element(screen.getByRole('menuitem', { name: 'Edit' }))
     .toHaveAttribute('href', '/workspaces/TestWs01/broadcasts/1/edit')
 })
 
@@ -111,7 +114,8 @@ test('deleting a broadcast asks for confirmation, deletes it and refreshes the l
   const { screen } = await renderWithRouter(<BroadcastsListPage />, LIST_ROUTE)
   await expect.element(screen.getByText('Spring launch')).toBeInTheDocument()
 
-  await screen.getByRole('button', { name: 'Delete' }).first().click()
+  await screen.getByRole('button', { name: 'More actions' }).first().click()
+  await screen.getByRole('menuitem', { name: 'Delete' }).click()
   expect(deleted).toEqual([])
   await screen.getByRole('dialog').getByRole('button', { name: 'Delete' }).click()
 
@@ -144,7 +148,8 @@ test('a failed delete shows the error toast and keeps the broadcast', async () =
   )
 
   const { screen } = await renderWithRouter(<BroadcastsListPage />, LIST_ROUTE)
-  await screen.getByRole('button', { name: 'Delete' }).first().click()
+  await screen.getByRole('button', { name: 'More actions' }).first().click()
+  await screen.getByRole('menuitem', { name: 'Delete' }).click()
   await screen.getByRole('dialog').getByRole('button', { name: 'Delete' }).click()
 
   await expect.element(screen.getByText('Failed to delete broadcast')).toBeInTheDocument()
@@ -179,7 +184,8 @@ test('the archived view lists archived broadcasts and restores one', async () =>
   await screen.getByRole('switch', { name: 'Show archived' }).click()
   await expect.poll(() => flags).toEqual(['false', 'true'])
 
-  await screen.getByRole('button', { name: 'Restore' }).click()
+  await screen.getByRole('button', { name: 'More actions' }).first().click()
+  await screen.getByRole('menuitem', { name: 'Restore' }).click()
 
   await expect.poll(() => restored).toEqual(['3'])
   await expect.element(screen.getByText('Broadcast restored')).toBeInTheDocument()
@@ -200,7 +206,8 @@ test('archiving a sent broadcast calls archive and refreshes the list', async ()
   )
 
   const { screen } = await renderWithRouter(<BroadcastsListPage />, LIST_ROUTE)
-  await screen.getByRole('button', { name: 'Archive' }).click()
+  await screen.getByRole('button', { name: 'More actions' }).first().click()
+  await screen.getByRole('menuitem', { name: 'Archive' }).click()
 
   await expect.poll(() => archived).toEqual(['3'])
   await expect.element(screen.getByText('Broadcast archived')).toBeInTheDocument()

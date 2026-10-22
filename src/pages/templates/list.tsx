@@ -1,8 +1,9 @@
-import { Button, Group, Stack, Title } from '@mantine/core'
+import { Group, Menu, Stack, Title } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
 
 import { PagedTable } from '../../components/PagedTable.tsx'
-import { ButtonLink } from '../../components/RouterLink.tsx'
+import { ButtonLink, MenuItemLink } from '../../components/RouterLink.tsx'
+import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
 import {
   siteTemplatesDeleteMutation,
   siteTemplatesListOptions,
@@ -46,22 +47,18 @@ export function TemplatesListPage() {
             accessor: 'actions',
             title: t(($) => $.table.actions),
             render: (record) => (
-              <Group gap="xs">
-                <ButtonLink
-                  size="compact-sm"
-                  to={templatesEditRoute.to}
-                  params={{ workspaceId, templateId: record.id }}
-                >
-                  {t(($) => $.actions.edit)}
-                </ButtonLink>
-                <Button
-                  size="compact-sm"
-                  color="red"
-                  variant="light"
-                  onClick={() => deleteTemplate(record.id)}
-                >
-                  {t(($) => $.actions.delete)}
-                </Button>
+              <Group justify="flex-end">
+                <RowActionsMenu>
+                  <MenuItemLink
+                    to={templatesEditRoute.to}
+                    params={{ workspaceId, templateId: record.id }}
+                  >
+                    {t(($) => $.actions.edit)}
+                  </MenuItemLink>
+                  <Menu.Item color="red" onClick={() => deleteTemplate(record.id)}>
+                    {t(($) => $.actions.delete)}
+                  </Menu.Item>
+                </RowActionsMenu>
               </Group>
             ),
           },

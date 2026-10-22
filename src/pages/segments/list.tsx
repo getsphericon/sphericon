@@ -1,9 +1,10 @@
-import { Button, Group, Stack, Switch, Title } from '@mantine/core'
+import { Group, Menu, Stack, Switch, Title } from '@mantine/core'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { PagedTable } from '../../components/PagedTable.tsx'
-import { ButtonLink } from '../../components/RouterLink.tsx'
+import { ButtonLink, MenuItemLink } from '../../components/RouterLink.tsx'
+import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
 import {
   siteSegmentsArchiveMutation,
   siteSegmentsListOptions,
@@ -62,32 +63,33 @@ export function SegmentsListPage() {
             accessor: 'actions',
             title: t(($) => $.table.actions),
             render: (record) => (
-              <Group gap="xs">
-                <ButtonLink
-                  size="compact-sm"
-                  to={segmentsEditRoute.to}
-                  params={{ workspaceId, segmentId: record.id }}
-                >
-                  {t(($) => $.actions.edit)}
-                </ButtonLink>
-                {record.archivedAt ? (
-                  <Button
-                    size="compact-sm"
-                    variant="light"
-                    onClick={() => restoreSegment.mutate({ path: { workspaceId, id: record.id } })}
+              <Group justify="flex-end">
+                <RowActionsMenu>
+                  <MenuItemLink
+                    to={segmentsEditRoute.to}
+                    params={{ workspaceId, segmentId: record.id }}
                   >
-                    {t(($) => $.actions.unarchive)}
-                  </Button>
-                ) : (
-                  <Button
-                    size="compact-sm"
-                    color="red"
-                    variant="light"
-                    onClick={() => archiveSegment.mutate({ path: { workspaceId, id: record.id } })}
-                  >
-                    {t(($) => $.actions.archive)}
-                  </Button>
-                )}
+                    {t(($) => $.actions.edit)}
+                  </MenuItemLink>
+                  {record.archivedAt ? (
+                    <Menu.Item
+                      onClick={() =>
+                        restoreSegment.mutate({ path: { workspaceId, id: record.id } })
+                      }
+                    >
+                      {t(($) => $.actions.unarchive)}
+                    </Menu.Item>
+                  ) : (
+                    <Menu.Item
+                      color="red"
+                      onClick={() =>
+                        archiveSegment.mutate({ path: { workspaceId, id: record.id } })
+                      }
+                    >
+                      {t(($) => $.actions.archive)}
+                    </Menu.Item>
+                  )}
+                </RowActionsMenu>
               </Group>
             ),
           },

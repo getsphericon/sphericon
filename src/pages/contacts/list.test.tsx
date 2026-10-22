@@ -67,9 +67,10 @@ test('offers view and edit per contact, and no delete', async () => {
   const { screen } = await renderWithRouter(<ContactsListPage />, LIST_ROUTE)
   await expect.element(screen.getByText('alice@example.com')).toBeInTheDocument()
 
-  await expect.element(screen.getByRole('link', { name: 'View' })).toBeInTheDocument()
-  await expect.element(screen.getByRole('link', { name: 'Edit' })).toBeInTheDocument()
-  await expect.element(screen.getByRole('button', { name: 'Delete' })).not.toBeInTheDocument()
+  await screen.getByRole('button', { name: 'More actions' }).first().click()
+  await expect.element(screen.getByRole('menuitem', { name: 'View' })).toBeInTheDocument()
+  await expect.element(screen.getByRole('menuitem', { name: 'Edit' })).toBeInTheDocument()
+  await expect.element(screen.getByRole('menuitem', { name: 'Delete' })).not.toBeInTheDocument()
 })
 
 test('changing the page requests page 2 of the contacts', async () => {

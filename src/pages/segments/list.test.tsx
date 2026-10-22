@@ -61,8 +61,9 @@ test('Edit links to the segment edit page', async () => {
   const { screen } = await renderWithRouter(<SegmentsListPage />, LIST_ROUTE)
   await expect.element(screen.getByText('VIP customers')).toBeInTheDocument()
 
+  await screen.getByRole('button', { name: 'More actions' }).first().click()
   await expect
-    .element(screen.getByRole('link', { name: 'Edit' }))
+    .element(screen.getByRole('menuitem', { name: 'Edit' }))
     .toHaveAttribute('href', '/workspaces/TestWs01/segments/1/edit')
 })
 
@@ -86,7 +87,8 @@ test('archiving a segment calls archive and refreshes the list', async () => {
   const { screen } = await renderWithRouter(<SegmentsListPage />, LIST_ROUTE)
   await expect.element(screen.getByText('VIP customers')).toBeInTheDocument()
 
-  await screen.getByRole('button', { name: 'Archive' }).first().click()
+  await screen.getByRole('button', { name: 'More actions' }).first().click()
+  await screen.getByRole('menuitem', { name: 'Archive' }).click()
 
   await expect.poll(() => archived).toEqual(['1'])
   await expect.element(screen.getByText('Segment archived')).toBeInTheDocument()
@@ -107,7 +109,8 @@ test('a segment a live broadcast uses is not archived and the broadcast is named
   const { screen } = await renderWithRouter(<SegmentsListPage />, LIST_ROUTE)
   await expect.element(screen.getByText('VIP customers')).toBeInTheDocument()
 
-  await screen.getByRole('button', { name: 'Archive' }).first().click()
+  await screen.getByRole('button', { name: 'More actions' }).first().click()
+  await screen.getByRole('menuitem', { name: 'Archive' }).click()
 
   await expect.element(screen.getByText('Failed to archive segment')).toBeInTheDocument()
   await expect.element(screen.getByText(/Broadcast "Summer sale teaser"/)).toBeInTheDocument()
@@ -135,7 +138,8 @@ test('the archived view lists archived segments and restores one', async () => {
   await screen.getByRole('switch', { name: 'Show archived' }).click()
   await expect.poll(() => flags).toEqual(['false', 'true'])
 
-  await screen.getByRole('button', { name: 'Restore' }).click()
+  await screen.getByRole('button', { name: 'More actions' }).first().click()
+  await screen.getByRole('menuitem', { name: 'Restore' }).click()
 
   await expect.poll(() => restored).toEqual(['1'])
   await expect.element(screen.getByText('Segment restored')).toBeInTheDocument()

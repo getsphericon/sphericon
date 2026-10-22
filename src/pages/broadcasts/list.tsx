@@ -1,10 +1,11 @@
-import { Badge, Button, Group, Stack, Switch, Title } from '@mantine/core'
+import { Badge, Group, Menu, Stack, Switch, Title } from '@mantine/core'
 import type { TFunction } from 'i18next'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { PagedTable } from '../../components/PagedTable.tsx'
-import { ButtonLink } from '../../components/RouterLink.tsx'
+import { ButtonLink, MenuItemLink } from '../../components/RouterLink.tsx'
+import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
 import {
   siteBroadcastsArchiveMutation,
   siteBroadcastsDeleteMutation,
@@ -112,56 +113,46 @@ export function BroadcastsListPage() {
             accessor: 'actions',
             title: t(($) => $.table.actions),
             render: (record) => (
-              <Group gap="xs">
-                <ButtonLink
-                  size="compact-sm"
-                  variant="light"
-                  to={broadcastsReportRoute.to}
-                  params={{ workspaceId, broadcastId: record.id }}
-                >
-                  {t(($) => $.broadcasts.report)}
-                </ButtonLink>
-                <ButtonLink
-                  size="compact-sm"
-                  disabled={record.status !== 'draft'}
-                  to={broadcastsEditRoute.to}
-                  params={{ workspaceId, broadcastId: record.id }}
-                >
-                  {t(($) => $.actions.edit)}
-                </ButtonLink>
-                {record.status === 'draft' && (
-                  <Button
-                    size="compact-sm"
-                    color="red"
-                    variant="light"
-                    onClick={() => deleteBroadcast(record.id)}
+              <Group justify="flex-end">
+                <RowActionsMenu>
+                  <MenuItemLink
+                    to={broadcastsReportRoute.to}
+                    params={{ workspaceId, broadcastId: record.id }}
                   >
-                    {t(($) => $.actions.delete)}
-                  </Button>
-                )}
-                {(record.status === 'sent' || record.status === 'failed') &&
-                  (record.archivedAt ? (
-                    <Button
-                      size="compact-sm"
-                      variant="light"
-                      onClick={() =>
-                        restoreBroadcast.mutate({ path: { workspaceId, id: record.id } })
-                      }
-                    >
-                      {t(($) => $.actions.unarchive)}
-                    </Button>
-                  ) : (
-                    <Button
-                      size="compact-sm"
-                      color="red"
-                      variant="light"
-                      onClick={() =>
-                        archiveBroadcast.mutate({ path: { workspaceId, id: record.id } })
-                      }
-                    >
-                      {t(($) => $.actions.archive)}
-                    </Button>
-                  ))}
+                    {t(($) => $.broadcasts.report)}
+                  </MenuItemLink>
+                  <MenuItemLink
+                    disabled={record.status !== 'draft'}
+                    to={broadcastsEditRoute.to}
+                    params={{ workspaceId, broadcastId: record.id }}
+                  >
+                    {t(($) => $.actions.edit)}
+                  </MenuItemLink>
+                  {record.status === 'draft' && (
+                    <Menu.Item color="red" onClick={() => deleteBroadcast(record.id)}>
+                      {t(($) => $.actions.delete)}
+                    </Menu.Item>
+                  )}
+                  {(record.status === 'sent' || record.status === 'failed') &&
+                    (record.archivedAt ? (
+                      <Menu.Item
+                        onClick={() =>
+                          restoreBroadcast.mutate({ path: { workspaceId, id: record.id } })
+                        }
+                      >
+                        {t(($) => $.actions.unarchive)}
+                      </Menu.Item>
+                    ) : (
+                      <Menu.Item
+                        color="red"
+                        onClick={() =>
+                          archiveBroadcast.mutate({ path: { workspaceId, id: record.id } })
+                        }
+                      >
+                        {t(($) => $.actions.archive)}
+                      </Menu.Item>
+                    ))}
+                </RowActionsMenu>
               </Group>
             ),
           },

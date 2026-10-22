@@ -1,12 +1,13 @@
-import { Button, Group, Stack, TextInput, Title, Tooltip } from '@mantine/core'
+import { Button, Group, Stack, TextInput, Title } from '@mantine/core'
 import { useDebouncedCallback, useDisclosure } from '@mantine/hooks'
-import { IconEye, IconPencil, IconSearch } from '@tabler/icons-react'
+import { IconSearch } from '@tabler/icons-react'
 import { useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { PagedTable } from '../../components/PagedTable.tsx'
-import { ActionIconLink } from '../../components/RouterLink.tsx'
+import { MenuItemLink } from '../../components/RouterLink.tsx'
+import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
 import { siteContactsListOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { Route as contactsEditRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/edit.tsx'
 import { Route as contactsDetailRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/index.tsx'
@@ -73,27 +74,21 @@ export function ContactsListPage() {
             accessor: 'actions',
             title: t(($) => $.table.actions),
             render: (record) => (
-              <Group gap="xs" wrap="nowrap">
-                <Tooltip label={t(($) => $.actions.view)}>
-                  <ActionIconLink
-                    variant="light"
+              <Group justify="flex-end">
+                <RowActionsMenu>
+                  <MenuItemLink
                     to={contactsDetailRoute.to}
                     params={{ workspaceId, contactId: record.id }}
-                    aria-label={t(($) => $.actions.view)}
                   >
-                    <IconEye size={16} />
-                  </ActionIconLink>
-                </Tooltip>
-                <Tooltip label={t(($) => $.actions.edit)}>
-                  <ActionIconLink
-                    variant="light"
+                    {t(($) => $.actions.view)}
+                  </MenuItemLink>
+                  <MenuItemLink
                     to={contactsEditRoute.to}
                     params={{ workspaceId, contactId: record.id }}
-                    aria-label={t(($) => $.actions.edit)}
                   >
-                    <IconPencil size={16} />
-                  </ActionIconLink>
-                </Tooltip>
+                    {t(($) => $.actions.edit)}
+                  </MenuItemLink>
+                </RowActionsMenu>
               </Group>
             ),
           },

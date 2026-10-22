@@ -1,9 +1,10 @@
-import { Badge, Button, Group, Stack, Switch, Title } from '@mantine/core'
+import { Badge, Group, Menu, Stack, Switch, Title } from '@mantine/core'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { PagedTable } from '../../components/PagedTable.tsx'
-import { ButtonLink } from '../../components/RouterLink.tsx'
+import { ButtonLink, MenuItemLink } from '../../components/RouterLink.tsx'
+import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
 import {
   siteAutomationsActivateMutation,
   siteAutomationsArchiveMutation,
@@ -104,71 +105,63 @@ export function AutomationsListPage() {
             accessor: 'actions',
             title: t(($) => $.table.actions),
             render: (record) => (
-              <Group gap="xs">
-                {record.archivedAt ? (
-                  <Button
-                    size="compact-sm"
-                    variant="light"
-                    loading={restoreMutation.isPending}
-                    onClick={() => restoreMutation.mutate({ path: { workspaceId, id: record.id } })}
-                  >
-                    {t(($) => $.actions.unarchive)}
-                  </Button>
-                ) : (
-                  <>
-                    {record.status === 'active' ? (
-                      <Button
-                        size="compact-sm"
-                        variant="light"
-                        color="orange"
-                        loading={deactivateMutation.isPending}
-                        onClick={() =>
-                          deactivateMutation.mutate({ path: { workspaceId, id: record.id } })
-                        }
-                      >
-                        {t(($) => $.automations.deactivate)}
-                      </Button>
-                    ) : (
-                      <Button
-                        size="compact-sm"
-                        variant="light"
-                        color="teal"
-                        loading={activateMutation.isPending}
-                        onClick={() =>
-                          activateMutation.mutate({ path: { workspaceId, id: record.id } })
-                        }
-                      >
-                        {t(($) => $.automations.activate)}
-                      </Button>
-                    )}
-                    <ButtonLink
-                      size="compact-sm"
-                      to={automationsEditRoute.to}
-                      params={{ workspaceId, automationId: record.id }}
-                    >
-                      {t(($) => $.actions.edit)}
-                    </ButtonLink>
-                    <Button
-                      size="compact-sm"
-                      color="red"
-                      variant="light"
-                      loading={archiveMutation.isPending}
+              <Group justify="flex-end">
+                <RowActionsMenu>
+                  {record.archivedAt ? (
+                    <Menu.Item
                       onClick={() =>
-                        archiveMutation.mutate({ path: { workspaceId, id: record.id } })
+                        restoreMutation.mutate({ path: { workspaceId, id: record.id } })
                       }
                     >
-                      {t(($) => $.actions.archive)}
-                    </Button>
-                    <Button
-                      size="compact-sm"
-                      color="red"
-                      variant="light"
-                      onClick={() => deleteAutomation(record.id)}
-                    >
-                      {t(($) => $.actions.delete)}
-                    </Button>
-                  </>
-                )}
+                      {t(($) => $.actions.unarchive)}
+                    </Menu.Item>
+                  ) : (
+                    [
+                      record.status === 'active' ? (
+                        <Menu.Item
+                          key="toggle"
+                          onClick={() =>
+                            deactivateMutation.mutate({ path: { workspaceId, id: record.id } })
+                          }
+                        >
+                          {t(($) => $.automations.deactivate)}
+                        </Menu.Item>
+                      ) : (
+                        <Menu.Item
+                          key="toggle"
+                          onClick={() =>
+                            activateMutation.mutate({ path: { workspaceId, id: record.id } })
+                          }
+                        >
+                          {t(($) => $.automations.activate)}
+                        </Menu.Item>
+                      ),
+                      <MenuItemLink
+                        key="edit"
+                        to={automationsEditRoute.to}
+                        params={{ workspaceId, automationId: record.id }}
+                      >
+                        {t(($) => $.actions.edit)}
+                      </MenuItemLink>,
+                      <Menu.Item
+                        key="archive"
+                        color="red"
+                        onClick={() =>
+                          archiveMutation.mutate({ path: { workspaceId, id: record.id } })
+                        }
+                      >
+                        {t(($) => $.actions.archive)}
+                      </Menu.Item>,
+                      <Menu.Item
+                        key="delete"
+                        color="red"
+                        onClick={() => deleteAutomation(record.id)}
+                      >
+                        {t(($) => $.actions.delete)}
+                      </Menu.Item>,
+                    ]
+                  )}
+                </RowActionsMenu>
               </Group>
             ),
           },

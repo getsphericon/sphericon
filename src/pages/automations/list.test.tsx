@@ -79,8 +79,9 @@ test('New automation and Edit link to the create and edit pages', async () => {
   await expect
     .element(screen.getByRole('link', { name: 'New automation' }))
     .toHaveAttribute('href', '/workspaces/TestWs01/automations/new')
+  await screen.getByRole('button', { name: 'More actions' }).first().click()
   await expect
-    .element(screen.getByRole('link', { name: 'Edit' }))
+    .element(screen.getByRole('menuitem', { name: 'Edit' }))
     .toHaveAttribute('href', '/workspaces/TestWs01/automations/1/edit')
 })
 
@@ -99,7 +100,8 @@ test('activating a draft automation calls the API and refreshes the list', async
   )
 
   const { screen } = await renderWithRouter(<AutomationsListPage />, LIST_ROUTE)
-  await screen.getByRole('button', { name: 'Activate' }).click()
+  await screen.getByRole('button', { name: 'More actions' }).first().click()
+  await screen.getByRole('menuitem', { name: 'Activate' }).click()
 
   await expect.poll(() => activated).toEqual(['2'])
   await expect.element(screen.getByText('Automation activated')).toBeInTheDocument()
@@ -117,7 +119,8 @@ test('deactivating an active automation calls the API', async () => {
   )
 
   const { screen } = await renderWithRouter(<AutomationsListPage />, LIST_ROUTE)
-  await screen.getByRole('button', { name: 'Deactivate' }).click()
+  await screen.getByRole('button', { name: 'More actions' }).first().click()
+  await screen.getByRole('menuitem', { name: 'Deactivate' }).click()
 
   await expect.poll(() => deactivated).toEqual(['1'])
   await expect.element(screen.getByText('Automation deactivated')).toBeInTheDocument()
@@ -136,7 +139,8 @@ test('deleting an automation asks for confirmation first', async () => {
   const { screen } = await renderWithRouter(<AutomationsListPage />, LIST_ROUTE)
   await expect.element(screen.getByText('Welcome flow')).toBeInTheDocument()
 
-  await screen.getByRole('button', { name: 'Delete' }).click()
+  await screen.getByRole('button', { name: 'More actions' }).first().click()
+  await screen.getByRole('menuitem', { name: 'Delete' }).click()
   expect(deleted).toEqual([])
   await screen.getByRole('dialog').getByRole('button', { name: 'Delete' }).click()
 
@@ -162,7 +166,8 @@ test('the archived view lists archived automations and restores one', async () =
   await screen.getByRole('switch', { name: 'Show archived' }).click()
   await expect.poll(() => flags).toEqual(['false', 'true'])
 
-  await screen.getByRole('button', { name: 'Restore' }).click()
+  await screen.getByRole('button', { name: 'More actions' }).first().click()
+  await screen.getByRole('menuitem', { name: 'Restore' }).click()
 
   await expect.poll(() => restored).toEqual(['2'])
   await expect.element(screen.getByText('Automation restored')).toBeInTheDocument()
@@ -183,7 +188,8 @@ test('archiving an automation calls archive and refreshes the list', async () =>
   )
 
   const { screen } = await renderWithRouter(<AutomationsListPage />, LIST_ROUTE)
-  await screen.getByRole('button', { name: 'Archive' }).click()
+  await screen.getByRole('button', { name: 'More actions' }).first().click()
+  await screen.getByRole('menuitem', { name: 'Archive' }).click()
 
   await expect.poll(() => archived).toEqual(['2'])
   await expect.element(screen.getByText('Automation archived')).toBeInTheDocument()
@@ -199,7 +205,8 @@ test('an automation with active enrollments is not archived and their count is s
   )
 
   const { screen } = await renderWithRouter(<AutomationsListPage />, LIST_ROUTE)
-  await screen.getByRole('button', { name: 'Archive' }).click()
+  await screen.getByRole('button', { name: 'More actions' }).first().click()
+  await screen.getByRole('menuitem', { name: 'Archive' }).click()
 
   await expect.element(screen.getByText(/3 enrollments of "Welcome flow"/)).toBeInTheDocument()
 })
