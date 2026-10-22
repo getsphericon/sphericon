@@ -65,8 +65,9 @@ func (Rule) Edges() []ent.Edge {
 		// The Trigger events die with their Rule.
 		edge.To("triggers", RuleTrigger.Type).
 			Annotations(entsql.OnDelete(entsql.Cascade)),
-		// Purging a Rule (only one with no Firings) purges nothing else; a Rule with Firings
-		// is discarded and its Firings stay readable.
+		// A Firing dies with its Rule's row (the key cascades, for the Workspace's erasure).
+		// Rules.Delete purges only a Rule with no Firings, so in use the cascade removes
+		// nothing: a Rule with Firings is archived and its Firings stay readable.
 		edge.To("firings", RuleFiring.Type).
 			Annotations(entsql.OnDelete(entsql.Cascade)),
 	}

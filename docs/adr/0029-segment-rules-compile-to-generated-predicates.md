@@ -2,11 +2,11 @@
 status: accepted
 ---
 
-# Segment rules compile to generated ent predicates; an Event links to its Contact by a nullable FK
+# A Segment's Condition compiles to generated ent predicates; an Event links to its Contact by a nullable FK
 
-A Segment's rule query is compiled into ent's generated predicates (`contact.EmailEQ`,
+A Segment's Condition is compiled into ent's generated predicates (`contact.EmailEQ`,
 `contact.HasTagsWith`, `contact.HasEventsWith`), not into SQL assembled from table and column
-names. The compiler takes the Workspace's scoped client, so a rule can only name what that
+names. The compiler takes the Workspace's scoped client, so a Condition can only name what that
 Workspace has: a core attribute, a Tag, an Event action, or a Custom field of its catalogue
 ([[0006-custom-fields-not-traits]]).
 
@@ -19,7 +19,7 @@ foreign key to Contact: nullable (anonymous Events before Identify have none) an
 `ON DELETE SET NULL` (an Event outlives its Contact, so deleting one only unlinks them). This
 replaces the earlier "plain column, never an FK" rule.
 
-The API carries the rule tree as a typed, recursive schema (a group of rules and nested groups,
+The API carries the Condition as a typed, recursive schema (a group of rules and nested groups,
 told apart by `kind`; operators and combinators are enums), not as JSON inside a string. The
 stored definition is that tree's JSON, so the contract, the stored shape and the compiler read
 one format.
@@ -27,7 +27,7 @@ one format.
 ## Considered options
 
 - **Keep the SQL builder behind a column-name schema.** Rejected: it is hand-built SQL with the
-  names as strings, it cannot know the Workspace's catalogue, and it let a rule's JSON key reach
+  names as strings, it cannot know the Workspace's catalogue, and it let a Condition's JSON key reach
   the query text (ent writes a Postgres JSON path key unescaped).
 - **Keep Events FK-free and write one correlated `EXISTS` by hand.** Rejected: it is the last
   hand-built piece, and the FK costs little: a primary-key lookup per insert and an indexed
