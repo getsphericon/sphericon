@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
@@ -20,16 +19,9 @@ func TestAutomationApplyTagIsAuditedUnderSystem(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	c, err := env.DB.Contact.Create().SetWorkspaceID(fixtures.AcmeID).SetEmail("sys@test.dev").Save(ctx)
-	require.NoError(t, err)
-	_, err = testhelper.AutomationWithSteps(ctx, env.DB, env.DB.Automation.Create().SetWorkspaceID(fixtures.AcmeID).
-		SetName("Tagger").SetTriggerEvent("contact.created").SetStatus(automation.StatusActive), `[{"type":"apply_tag","tag":"system-made"}]`)
-	require.NoError(t, err)
-	runIDs, err := jobs.EvaluateTrigger(ctx, env.DB.Scoped(fixtures.AcmeID), c.ID, "contact.created")
-	require.NoError(t, err)
-	require.Len(t, runIDs, 1)
+	runID := enrollVia(t, env, fixtures.AutomationJobsSystemTagID, fixtures.ContactAliceID)
 
-	_, err = jobs.RunStep(ctx, env.DB, noFence, newMod(env, resolvingTo(&fakeSender{})), runIDs[0])
+	_, err := jobs.RunStep(ctx, env.DB, noFence, newMod(env, resolvingTo(&fakeSender{})), runID)
 	require.NoError(t, err)
 
 	got := env.OutboxEvents(t, events.NameAuditEntry)

@@ -79,6 +79,52 @@ const (
 	AutomationInitechName = "Initech onboarding"
 	// AutomationInitechVersionID is from fixtures/automation_versions.
 	AutomationInitechVersionID = 300
+	// AutomationJobsBranchesID is from fixtures/automations.
+	AutomationJobsBranchesID = 5563
+	// AutomationJobsBranchesName is from fixtures/automations.
+	AutomationJobsBranchesName = "Jobs step outcomes"
+	// AutomationJobsBrokenTemplateVersionID is from fixtures/automation_versions.
+	AutomationJobsBrokenTemplateVersionID = 55634
+	// AutomationJobsEditableID is from fixtures/automations.
+	AutomationJobsEditableID = 5564
+	// AutomationJobsEditableName is from fixtures/automations.
+	AutomationJobsEditableName = "Jobs editable"
+	// AutomationJobsEditableVersionID is from fixtures/automation_versions.
+	AutomationJobsEditableVersionID = 5564
+	// AutomationJobsEmptyVersionID is from fixtures/automation_versions.
+	AutomationJobsEmptyVersionID = 55633
+	// AutomationJobsGreetingDraftID is from fixtures/automations.
+	AutomationJobsGreetingDraftID = 5566
+	// AutomationJobsGreetingDraftName is from fixtures/automations.
+	AutomationJobsGreetingDraftName = "Jobs greeting draft"
+	// AutomationJobsGreetingID is from fixtures/automations.
+	AutomationJobsGreetingID = 5560
+	// AutomationJobsGreetingName is from fixtures/automations.
+	AutomationJobsGreetingName = "Jobs greeting"
+	// AutomationJobsGreetingVersionID is from fixtures/automation_versions.
+	AutomationJobsGreetingVersionID = 5560
+	// AutomationJobsSingleEmailID is from fixtures/automations.
+	AutomationJobsSingleEmailID = 5561
+	// AutomationJobsSingleEmailName is from fixtures/automations.
+	AutomationJobsSingleEmailName = "Jobs single email"
+	// AutomationJobsSingleEmailVersionID is from fixtures/automation_versions.
+	AutomationJobsSingleEmailVersionID = 5561
+	// AutomationJobsSystemTagID is from fixtures/automations.
+	AutomationJobsSystemTagID = 5565
+	// AutomationJobsSystemTagName is from fixtures/automations.
+	AutomationJobsSystemTagName = "Jobs system tag"
+	// AutomationJobsSystemTagVersionID is from fixtures/automation_versions.
+	AutomationJobsSystemTagVersionID = 5565
+	// AutomationJobsUndecodableVersionID is from fixtures/automation_versions.
+	AutomationJobsUndecodableVersionID = 5563
+	// AutomationJobsUnknownStepVersionID is from fixtures/automation_versions.
+	AutomationJobsUnknownStepVersionID = 55632
+	// AutomationJobsWaitFirstID is from fixtures/automations.
+	AutomationJobsWaitFirstID = 5562
+	// AutomationJobsWaitFirstName is from fixtures/automations.
+	AutomationJobsWaitFirstName = "Jobs wait first"
+	// AutomationJobsWaitFirstVersionID is from fixtures/automation_versions.
+	AutomationJobsWaitFirstVersionID = 5562
 	// AutomationNotifySlackID is from fixtures/automations.
 	AutomationNotifySlackID = 105
 	// AutomationNotifySlackName is from fixtures/automations.
@@ -103,6 +149,24 @@ const (
 	AutomationRunErasableID = 3000
 	// AutomationRunHTTPFailedID is from fixtures/automation_runs.
 	AutomationRunHTTPFailedID = 1101
+	// AutomationRunJobsBrokenTemplateID is from fixtures/automation_runs.
+	AutomationRunJobsBrokenTemplateID = 5568
+	// AutomationRunJobsEmptyStepsID is from fixtures/automation_runs.
+	AutomationRunJobsEmptyStepsID = 5567
+	// AutomationRunJobsExitedOnEmailID is from fixtures/automation_runs.
+	AutomationRunJobsExitedOnEmailID = 5562
+	// AutomationRunJobsExitedOnTagID is from fixtures/automation_runs.
+	AutomationRunJobsExitedOnTagID = 5563
+	// AutomationRunJobsExitedOnWaitID is from fixtures/automation_runs.
+	AutomationRunJobsExitedOnWaitID = 5564
+	// AutomationRunJobsNoEmailID is from fixtures/automation_runs.
+	AutomationRunJobsNoEmailID = 5560
+	// AutomationRunJobsPendingID is from fixtures/automation_runs.
+	AutomationRunJobsPendingID = 5561
+	// AutomationRunJobsUndecodableID is from fixtures/automation_runs.
+	AutomationRunJobsUndecodableID = 5565
+	// AutomationRunJobsUnknownStepID is from fixtures/automation_runs.
+	AutomationRunJobsUnknownStepID = 5566
 	// AutomationRunOnboardingOnVersion1ID is from fixtures/automation_runs.
 	AutomationRunOnboardingOnVersion1ID = 1200
 	// AutomationRunOnboardingOnVersion2ID is from fixtures/automation_runs.
@@ -291,6 +355,10 @@ const (
 	ContactBobEmail = "bob@example.com"
 	// ContactBobID is from fixtures/contacts.
 	ContactBobID = 2
+	// ContactBouncedEmail is from fixtures/contacts.
+	ContactBouncedEmail = "ethan.data@codebasics.dev"
+	// ContactBouncedID is from fixtures/contacts.
+	ContactBouncedID = 104
 	// ContactBystanderEmail is from fixtures/contacts.
 	ContactBystanderEmail = "ben@initech.test"
 	// ContactBystanderID is from fixtures/contacts.
@@ -299,6 +367,10 @@ const (
 	ContactCarolEmail = "carol@example.com"
 	// ContactCarolID is from fixtures/contacts.
 	ContactCarolID = 3
+	// ContactComplainedEmail is from fixtures/contacts.
+	ContactComplainedEmail = "mia.data@codebasics.dev"
+	// ContactComplainedID is from fixtures/contacts.
+	ContactComplainedID = 109
 	// ContactErasableEmail is from fixtures/contacts.
 	ContactErasableEmail = "erin@initech.test"
 	// ContactErasableID is from fixtures/contacts.
@@ -315,6 +387,8 @@ const (
 	ContactHoldDemoEmail = "hold.demo@codebasics.dev"
 	// ContactHoldDemoID is from fixtures/contacts.
 	ContactHoldDemoID = 130
+	// ContactJobsNoEmailID is from fixtures/contacts.
+	ContactJobsNoEmailID = 5560
 	// ContactLiamEmail is from fixtures/contacts.
 	ContactLiamEmail = "liam.python@codebasics.dev"
 	// ContactLiamID is from fixtures/contacts.
@@ -327,6 +401,14 @@ const (
 	ContactNoahEmail = "noah.js@codebasics.dev"
 	// ContactNoahID is from fixtures/contacts.
 	ContactNoahID = 102
+	// ContactOptedOutOfWelcomeEmail is from fixtures/contacts.
+	ContactOptedOutOfWelcomeEmail = "leo.devops@codebasics.dev"
+	// ContactOptedOutOfWelcomeID is from fixtures/contacts.
+	ContactOptedOutOfWelcomeID = 128
+	// ContactUnsubscribedEverythingEmail is from fixtures/contacts.
+	ContactUnsubscribedEverythingEmail = "scarlett.sql@codebasics.dev"
+	// ContactUnsubscribedEverythingID is from fixtures/contacts.
+	ContactUnsubscribedEverythingID = 121
 	// ContractTokenID is from fixtures/api_tokens.
 	ContractTokenID = 103
 	// ContractTokenName is from fixtures/api_tokens.

@@ -25,7 +25,6 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
@@ -547,17 +546,14 @@ func TestEvaluateTriggerAndRunStepWorkers(t *testing.T) {
 	e := newRiverEnv(t)
 	ctx := e.workCtx()
 
-	c, err := e.DB.Contact.Create().SetWorkspaceID(fixtures.AcmeID).SetEmail("wk@test.dev").SetFirstName("Wk").Save(ctx)
-	require.NoError(t, err)
-	_, err = testhelper.AutomationWithSteps(ctx, e.DB, e.DB.Automation.Create().SetWorkspaceID(fixtures.AcmeID).
-		SetName("Flow").SetTriggerEvent("worker.test").SetStatus(automation.StatusActive), "["+emailStep+`,{"type":"wait","seconds":3600},`+emailStep+"]")
-	require.NoError(t, err)
+	c := e.DB.Contact.GetX(ctx, fixtures.ContactLiamID)
+	trigger := triggerOf(t, e.TestEnv, fixtures.AutomationJobsGreetingID)
 
 	require.NoError(t, jobs.NewEvaluateTriggerWorker(e.DB).Work(ctx, job(jobs.EvaluateTriggerArgs{
-		WorkspaceID: fixtures.AcmeID, ContactID: c.ID, Action: "worker.test",
+		WorkspaceID: fixtures.AcmeID, ContactID: c.ID, Action: trigger,
 	})))
 	require.Equal(t, []string{"automation_run_step"}, e.queued(t))
-	run := e.DB.AutomationRun.Query().Where(automationrun.ContactID(c.ID)).OnlyX(ctx)
+	run := e.DB.AutomationRun.Query().Where(automationrun.AutomationID(fixtures.AutomationJobsGreetingID), automationrun.ContactID(c.ID)).OnlyX(ctx)
 
 	// Step 1 sends and schedules the next step; the wait step schedules a delayed
 	// one; the last step finishes the run without queueing more.

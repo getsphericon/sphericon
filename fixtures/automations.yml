@@ -104,6 +104,66 @@
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-03 00:00:00'
 
+# The automations of the job tests (internal/jobs): triggers unique to them, never "contact.created",
+# so a Contact created elsewhere enrolls nowhere. Steps in automation_versions.yml.
+# Email, wait, email: the greeting merges the first name.
+- id: 5560 # fixture: AutomationJobsGreeting
+  name: Jobs greeting
+  status: active
+  trigger_event: job_greeting
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+# One email step.
+- id: 5561 # fixture: AutomationJobsSingleEmail
+  name: Jobs single email
+  status: active
+  trigger_event: job_single_email
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+# A wait, then an email.
+- id: 5562 # fixture: AutomationJobsWaitFirst
+  name: Jobs wait first
+  status: active
+  trigger_event: job_wait_first
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+# Four versions that each end a step differently (undecodable, unknown step, no steps, a template that
+# cannot render); an Enrollment per version in automation_runs.yml.
+- id: 5563 # fixture: AutomationJobsBranches
+  name: Jobs step outcomes
+  status: active
+  trigger_event: job_branches
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+# A wait, then an email the test rewords while an Enrollment stands on it.
+- id: 5564 # fixture: AutomationJobsEditable
+  name: Jobs editable
+  status: active
+  trigger_event: job_editable
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+# Applies a tag no fixture has, so the step creates it.
+- id: 5565 # fixture: AutomationJobsSystemTag
+  name: Jobs system tag
+  status: active
+  trigger_event: job_system_tag
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+# A draft on the greeting's trigger: it never enrolls anyone.
+- id: 5566 # fixture: AutomationJobsGreetingDraft
+  name: Jobs greeting draft
+  status: draft
+  trigger_event: job_greeting
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+
 # --- Brightpath (workspace 20): demo workspace behind the screenshots on getsphericon.com ---
 - id: 20001
   name: 'Welcome series'
