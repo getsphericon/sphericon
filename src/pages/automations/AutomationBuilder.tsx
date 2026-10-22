@@ -1,8 +1,9 @@
 import { Box, Button, Group, Modal, Paper, TextInput, useComputedColorScheme } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useWorkflowBuilderActions, WorkflowBuilder } from '@workflowbuilder/sdk'
+import { useStore, useWorkflowBuilderActions, WorkflowBuilder } from '@workflowbuilder/sdk'
 import type {
+  DidSaveStatus,
   IntegrationDataFormat,
   OnSaveExternal,
   WorkflowBuilderIsValidConnection,
@@ -23,6 +24,7 @@ import { i18n } from '../../i18n.ts'
 import { Route as automationsRoute } from '../../routes/workspaces/$workspaceId/automations/index.tsx'
 import { getApiErrorMessage } from '../../utils/apiErrors.ts'
 import { graphToSteps, stepsToGraph } from './definition.ts'
+import type { AutomationGraph } from './definition.ts'
 import { FailedEnrollments } from './FailedEnrollments.tsx'
 import { messageRenderer } from './MessageControl.tsx'
 import { useAutomationNodeTypes } from './nodes.tsx'
@@ -79,21 +81,27 @@ function ThemeSync() {
 }
 
 // The bar floating over the canvas replaces the SDK's own top bar: the way back, the
-// automation's name, the failed Enrollments and the Save that drives onDataSave. It sits inside
+// automation's name, the failed Enrollments and the Save that persists the canvas. It sits inside
 // <WorkflowBuilder.Root> to reach the save action, and under the SDK's i18next instance, which
 // does not hold the app's strings, so it is bound back to the app's instance.
 function BuilderBar({
   form,
   workspaceId,
   automationId,
+  onSave,
 }: {
   form: AutomationNameForm
   workspaceId: string
   automationId: string
+  onSave: (graph: AutomationGraph) => Promise<DidSaveStatus>
 }) {
   const { t } = useTranslation()
-  const { save } = useWorkflowBuilderActions()
-  const saveMutation = useMutation({ mutationFn: save })
+  const saveMutation = useMutation({
+    mutationFn: () => {
+      const { nodes, edges } = useStore.getState()
+      return onSave({ nodes, edges })
+    },
+  })
 
   return (
     <Paper withBorder shadow="sm" p="xs" pos="absolute" top={16} left={16} right={16}>
@@ -169,12 +177,9 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
     },
   })
 
-  const onDataSave = useCallback<OnSaveExternal>(
-    async (data: IntegrationDataFormat) => {
-      const { triggerEvent, steps, dropped } = graphToSteps({
-        nodes: data.nodes,
-        edges: data.edges,
-      })
+  const saveGraph = useCallback(
+    async (graph: AutomationGraph): Promise<DidSaveStatus> => {
+      const { triggerEvent, steps, dropped } = graphToSteps(graph)
       if (triggerEvent === null) {
         notify({
           color: 'red',
@@ -221,6 +226,13 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
     [workspaceId, automation.id, form, updateMutation, notify, t],
   )
 
+  // The SDK's own save (its shortcut) answers with its success snackbar whatever this returns, so
+  // the bar saves through `saveGraph` itself and only the app's toasts show.
+  const onDataSave = useCallback<OnSaveExternal>(
+    (data: IntegrationDataFormat) => saveGraph({ nodes: data.nodes, edges: data.edges }),
+    [saveGraph],
+  )
+
   const integration = useMemo(() => ({ strategy: 'props' as const, onDataSave }), [onDataSave])
 
   // The SDK's canvas fills the viewport (100vw by 100vh), so the editor is a full-screen layer
@@ -259,7 +271,12 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
           <Box pos="relative" w="100vw" h="100vh">
             <WorkflowBuilder.Canvas />
             <I18nextProvider i18n={i18n}>
-              <BuilderBar form={form} workspaceId={workspaceId} automationId={automation.id} />
+              <BuilderBar
+                form={form}
+                workspaceId={workspaceId}
+                automationId={automation.id}
+                onSave={saveGraph}
+              />
             </I18nextProvider>
             <Box pos="absolute" top={88} left={16}>
               <WorkflowBuilder.Palette />
