@@ -53,8 +53,10 @@ import { SendLimitStatus } from './SendLimitStatus.tsx'
 type ProviderKind = SiteIntegrationProvider
 
 // What the first step offers: SES-compatible services speak the SES API at an endpoint of their own.
+// contract-copy: the first step's tiles, a UI choice that adds sesCompatible to the provider enum
 type Tile = 'ses' | 'sesCompatible' | 'smtp'
 
+// contract-copy: the same tiles in display order
 const TILES: Tile[] = ['ses', 'sesCompatible', 'smtp']
 
 // Flat form state; the provider-specific config object is assembled on submit

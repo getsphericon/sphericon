@@ -3,21 +3,21 @@ import { Checkbox, Input, ScrollArea, Stack } from '@mantine/core'
 // ScopePicker offers api token scopes ("resource:action") grouped by resource: a checkbox per
 // resource that selects or clears all its actions, with the actions nested under it. The list
 // scrolls on its own, so the form's button stays in view.
-export function ScopePicker({
+export function ScopePicker<Scope extends string>({
   label,
   options,
   value,
   onChange,
 }: {
   label: string
-  options: string[]
-  value: string[]
-  onChange: (scopes: string[]) => void
+  options: readonly Scope[]
+  value: Scope[]
+  onChange: (scopes: Scope[]) => void
 }) {
   const groups = Object.entries(Object.groupBy(options, (scope) => scope.split(':')[0] ?? scope))
   const selected = new Set(value)
 
-  const toggle = (scopes: string[], on: boolean) => {
+  const toggle = (scopes: Scope[], on: boolean) => {
     const next = new Set(selected)
     for (const scope of scopes) {
       if (on) {

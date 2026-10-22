@@ -8,8 +8,8 @@ import {
   handleSiteWorkspacesList,
 } from '../../generated/site/msw.gen.ts'
 import type { SiteBrandKitResource, SiteWorkspaceResource } from '../../generated/site/types.gen.ts'
-import { Route as brandKitRoute } from '../../routes/workspaces/$workspaceId/brand-kit.tsx'
 import { zSiteInvitableRole } from '../../generated/site/zod.gen.ts'
+import { Route as brandKitRoute } from '../../routes/workspaces/$workspaceId/brand-kit.tsx'
 import { hex } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'

@@ -3694,8 +3694,8 @@ export const zSiteSegmentContactsListPath = z.object({
 });
 
 export const zSiteSegmentContactsListQuery = z.object({
-  page: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
-  pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(25)
+  page: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
+  pageSize: z.int().gte(1).lte(100).optional().default(25)
 });
 
 /**
