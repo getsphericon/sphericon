@@ -2185,7 +2185,8 @@ func init() {
 		Table: "invitations",
 	}
 	InvitationsTable.Annotation.Checks = map[string]string{
-		"invitations_role_check": "role IN ('admin', 'member')",
+		"invitations_email_lower": "email = lower(email)",
+		"invitations_role_check":  "role IN ('admin', 'member')",
 	}
 	JoinDomainsTable.ForeignKeys[0].RefTable = WorkspacesTable
 	JoinDomainsTable.Annotation = &entsql.Annotation{
@@ -2321,6 +2322,9 @@ func init() {
 	}
 	UsersTable.Annotation = &entsql.Annotation{
 		Table: "users",
+	}
+	UsersTable.Annotation.Checks = map[string]string{
+		"users_email_lower": "email = lower(email)",
 	}
 	UserIdentitiesTable.ForeignKeys[0].RefTable = UsersTable
 	UserIdentitiesTable.Annotation = &entsql.Annotation{

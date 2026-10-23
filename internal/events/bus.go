@@ -14,6 +14,7 @@ import (
 	watermillsql "github.com/ThreeDotsLabs/watermill-sql/v4/pkg/sql"
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/emailcase"
 	"github.com/getsphericon/sphericon/internal/trackinghostlog"
 	"github.com/getsphericon/sphericon/internal/workspacefeed"
 	"github.com/oklog/ulid/v2"
@@ -86,7 +87,7 @@ func (b *Bus) within(ctx context.Context, fn func(tx *ent.Client, pub *txPublish
 
 	// ent client bound to the same *sql.Tx the outbox publisher uses.
 	txClient := ent.NewClient(ent.Driver(newTxDriver(sqlTx)))
-	txClient.Use(workspacefeed.Hook, trackinghostlog.Hook)
+	txClient.Use(emailcase.Hook, workspacefeed.Hook, trackinghostlog.Hook)
 	txClient.Use(b.hooks...)
 
 	// watermill-sql forbids AutoInitializeSchema on a tx handle (a CREATE TABLE

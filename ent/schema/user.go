@@ -13,8 +13,9 @@ type User struct {
 }
 
 func (User) Annotations() []schema.Annotation {
+	name, expr := LowerEmailCheck("users")
 	return []schema.Annotation{
-		entsql.Annotation{Table: "users"},
+		entsql.Annotation{Table: "users", Checks: map[string]string{name: expr}},
 	}
 }
 

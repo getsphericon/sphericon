@@ -611,7 +611,7 @@ func (a *App) ResetSecondFactor(ctx context.Context, email string) (bool, error)
 	if err != nil {
 		return false, err
 	}
-	id, err := client.User.Query().Where(user.Email(email)).OnlyID(ctx)
+	id, err := client.User.Query().Where(user.Email(accounts.NormalizeEmail(email))).OnlyID(ctx)
 	if err != nil {
 		return false, fmt.Errorf("user %q: %w", email, err)
 	}

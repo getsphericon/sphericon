@@ -293,21 +293,22 @@ func (a *Accounts) User(ctx context.Context, id int64) (*ent.User, error) {
 	return a.ent.User.Get(ctx, id)
 }
 
-// UserByEmail loads a User by login email (an ent NotFound error when none).
+// UserByEmail loads a User by login email, whatever its case (an ent NotFound error when none):
+// a stored email is lower-cased (ent/schema LowerEmail).
 func (a *Accounts) UserByEmail(ctx context.Context, email string) (*ent.User, error) {
-	return a.ent.User.Query().Where(user.Email(email)).Only(ctx)
+	return a.ent.User.Query().Where(user.Email(NormalizeEmail(email))).Only(ctx)
 }
 
 // UserByLoginAddress loads a User by a normalized login address, ignoring case (an ent
 // NotFound error when none): the sign-in address is lower-cased once by the login module,
-// while a stored email keeps the case it was registered with.
+// and a stored email is lower-cased on write (ent/schema LowerEmail).
 func (a *Accounts) UserByLoginAddress(ctx context.Context, address string) (*ent.User, error) {
 	return a.ent.User.Query().Where(user.EmailEqualFold(address)).Order(ent.Asc(user.FieldID)).First(ctx)
 }
 
-// EmailTaken reports whether an account already uses the login email.
+// EmailTaken reports whether an account already uses the login email, whatever its case.
 func (a *Accounts) EmailTaken(ctx context.Context, email string) (bool, error) {
-	return a.ent.User.Query().Where(user.Email(email)).Exist(ctx)
+	return a.ent.User.Query().Where(user.Email(NormalizeEmail(email))).Exist(ctx)
 }
 
 // Register creates an Unverified User (ADR 0030): a name, an email and the password hash
@@ -793,7 +794,7 @@ type InviteInput struct {
 // when the address already has a Membership in the Workspace. Delivery is the
 // caller's concern.
 func (a *Accounts) Invite(ctx context.Context, s *ent.Scoped, actor events.Actor, in InviteInput) (*ent.Invitation, string, error) {
-	email := strings.TrimSpace(in.Email)
+	email := NormalizeEmail(in.Email)
 	if email == "" {
 		return nil, "", ErrEmailEmpty
 	}
