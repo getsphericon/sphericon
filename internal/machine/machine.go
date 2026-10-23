@@ -62,7 +62,7 @@ func NewHTTPSource() HTTPSource {
 
 // Fetch implements Source.
 func (s HTTPSource) Fetch(ctx context.Context) (io.ReadCloser, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, s.URL, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, s.URL, http.NoBody)
 	if err != nil {
 		return nil, err
 	}

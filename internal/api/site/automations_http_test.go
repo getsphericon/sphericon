@@ -80,7 +80,8 @@ func sealedValues(t *testing.T, env *testhelper.TestEnv, id int64) []string {
 	t.Helper()
 	steps, err := automations.Decode(testhelper.LatestSteps(context.Background(), t, env.DB, id))
 	require.NoError(t, err)
-	out := []string{steps[0].URL, steps[0].Secret}
+	out := make([]string, 0, 2+len(steps[0].Headers))
+	out = append(out, steps[0].URL, steps[0].Secret)
 	for _, h := range steps[0].Headers {
 		out = append(out, h.Value)
 	}

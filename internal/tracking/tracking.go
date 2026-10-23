@@ -72,6 +72,7 @@ type UnsubTarget struct {
 // they never pass through float64 and lose precision above 2^53.
 type messageClaims struct {
 	jwt.RegisteredClaims
+
 	MessageID int64 `json:"mid,string"`
 }
 
@@ -79,12 +80,14 @@ type messageClaims struct {
 // cannot be pointed anywhere the sender did not put it.
 type clickClaims struct {
 	jwt.RegisteredClaims
+
 	MessageID   int64  `json:"mid,string"`
 	Destination string `json:"dest"`
 }
 
 type unsubClaims struct {
 	jwt.RegisteredClaims
+
 	Source      string `json:"src"`
 	Destination string `json:"dest"`
 	WorkspaceID int64  `json:"ws,string"`
@@ -94,6 +97,7 @@ type unsubClaims struct {
 
 type confirmClaims struct {
 	jwt.RegisteredClaims
+
 	Destination string `json:"dest"`
 	WorkspaceID int64  `json:"ws,string"`
 	ContactID   int64  `json:"cid,string"`

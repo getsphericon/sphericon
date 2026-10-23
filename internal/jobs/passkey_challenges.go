@@ -24,6 +24,7 @@ func (PrunePasskeyChallengesArgs) Kind() string { return "passkey_challenges_pru
 // belongs to no User, so it works on the raw client.
 type PrunePasskeyChallengesWorker struct {
 	river.WorkerDefaults[PrunePasskeyChallengesArgs]
+
 	ent *ent.Client
 	now func() time.Time
 }

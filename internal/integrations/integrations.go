@@ -389,12 +389,12 @@ func liveUsers(ctx context.Context, s *ent.Scoped, row *ent.Integration) ([]inus
 	return append(users, sending...), nil
 }
 
-func applyLimit[T any](l Limit, set func(int) T, clear func() T) {
+func applyLimit[T any](l Limit, set func(int) T, unset func() T) {
 	switch {
 	case l.Value != nil:
 		set(*l.Value)
 	case l.Set:
-		clear()
+		unset()
 	}
 }
 

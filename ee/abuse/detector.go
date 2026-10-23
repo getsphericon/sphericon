@@ -33,6 +33,7 @@ type Config struct {
 // control: like a job entry point it lists Workspaces, then scopes to each one.
 type Detector struct {
 	*Watch
+
 	client  *ent.Client
 	bus     *events.Bus
 	sender  messaging.EmailSender
@@ -158,6 +159,7 @@ func (PassArgs) Kind() string { return "ee_abuse_detector" }
 // Worker runs Run on the periodic tick.
 type Worker struct {
 	river.WorkerDefaults[PassArgs]
+
 	detector *Detector
 }
 

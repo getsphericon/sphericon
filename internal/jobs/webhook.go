@@ -29,6 +29,7 @@ func (DeliverWebhookArgs) Kind() string { return jobkind.DeliverWebhook.Kind }
 
 type DeliverWebhookWorker struct {
 	river.WorkerDefaults[DeliverWebhookArgs]
+
 	ent    *ent.Client
 	cipher *secrets.Cipher
 	client webhook.Doer

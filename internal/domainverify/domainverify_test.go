@@ -347,11 +347,11 @@ func TestShortcutTXTLookup_answersOnlyTheShortcutDomainItself(t *testing.T) {
 	pending, err := env.DB.JoinDomain.Get(t.Context(), fixtures.JoinDomainPendingID)
 	require.NoError(t, err)
 	var asked []string
-	real := func(_ context.Context, name string) ([]string, error) {
+	upstream := func(_ context.Context, name string) ([]string, error) {
 		asked = append(asked, name)
 		return []string{"real"}, nil
 	}
-	lookup := domainverify.ShortcutTXTLookup(env.DB, real)
+	lookup := domainverify.ShortcutTXTLookup(env.DB, upstream)
 
 	for _, name := range []string{
 		"_sphericon-join." + pending.Domain + ".",

@@ -196,9 +196,9 @@ func TestHoldsOfAnUnknownWorkspaceAreNotFound(t *testing.T) {
 	}, serviceapi.ServiceHoldsSetParams{WorkspaceId: "NoSuchId", Key: "k"})
 	require.NoError(t, err)
 	assert.IsType(t, &serviceapi.ServiceHoldsSetNotFound{}, set)
-	clear, err := c.ServiceHoldsClear(t.Context(), serviceapi.ServiceHoldsClearParams{WorkspaceId: "NoSuchId", Key: "k"})
+	cleared, err := c.ServiceHoldsClear(t.Context(), serviceapi.ServiceHoldsClearParams{WorkspaceId: "NoSuchId", Key: "k"})
 	require.NoError(t, err)
-	assert.IsType(t, &serviceapi.ServiceHoldsClearNotFound{}, clear)
+	assert.IsType(t, &serviceapi.ServiceHoldsClearNotFound{}, cleared)
 }
 
 func TestHoldsNeedTheWriteHoldsScope(t *testing.T) {
@@ -233,7 +233,7 @@ func TestEveryChangingSetRenewalAndClearIsRecordedUnderTheCredentialsName(t *tes
 	entries := h.env.DB.Scoped(fixtures.AcmeID).AuditEntry().Query().
 		Where(auditentry.TargetName("audited")).Order(auditentry.ByID()).AllX(t.Context())
 
-	var actions []string
+	actions := make([]string, 0, len(entries))
 	for _, e := range entries {
 		actions = append(actions, e.Action)
 		assert.Equal(t, fixtures.ServiceCredentialPrimaryName, *e.ActorName)

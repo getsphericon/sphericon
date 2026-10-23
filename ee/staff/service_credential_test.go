@@ -80,7 +80,7 @@ func TestTheServiceEndpointsAreServedOverRealHTTPOnTheInternalHandler(t *testing
 	srv := httptest.NewServer(h.env.Internal)
 	t.Cleanup(srv.Close)
 
-	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, srv.URL+"/service/identity", nil)
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, srv.URL+"/service/identity", http.NoBody)
 	require.NoError(t, err)
 	req.Header.Set("Authorization", "Bearer "+primary)
 	res, err := srv.Client().Do(req)

@@ -88,7 +88,7 @@ type DeliveryNotice struct {
 // ActionKind is something the caller performs for the engine.
 type ActionKind string
 
-// ActionConfirm: fetch URL to confirm a subscription (SNS).
+// ActionConfirm means fetch URL to confirm a subscription (SNS).
 const ActionConfirm ActionKind = "confirm"
 
 // Action is a side effect the engine asks of its caller, which performs it through the

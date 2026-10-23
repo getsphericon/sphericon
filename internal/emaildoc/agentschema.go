@@ -82,7 +82,7 @@ func AgentSchema() AgentDescription {
 func agentType(name string, t SchemaType) AgentType {
 	attrs := make(map[string]AgentAttr, len(t.Attrs))
 	for _, attr := range slices.Sorted(maps.Keys(t.Attrs)) {
-		def, _ := json.Marshal(t.Attrs[attr])
+		def := mustMarshal(t.Attrs[attr])
 		a := agentAttrRule(name, attr)
 		a.Default = def
 		attrs[attr] = a

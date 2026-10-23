@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	"io"
 	"strings"
 	"text/tabwriter"
 	"time"
+
+	serviceapi "github.com/getsphericon/sphericon/gen/service"
 
 	"github.com/urfave/cli/v3"
 
@@ -196,7 +197,7 @@ func serviceCredentialError(err error, id int64) error {
 	case errors.Is(err, staff.ErrNotLicensed):
 		return errors.New(noLicense)
 	case errors.Is(err, staff.ErrInvalidScope):
-		return fmt.Errorf("a service credential needs one or more known scopes (usage:read, workspaces:read, domains:read, holds:write)")
+		return errors.New("a service credential needs one or more known scopes (usage:read, workspaces:read, domains:read, holds:write)")
 	case errors.Is(err, staff.ErrInvalidCredential):
 		return errors.New("a service credential needs a name and an expiry in the future")
 	case errors.Is(err, staff.ErrCredentialNotFound):

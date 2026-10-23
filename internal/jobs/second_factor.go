@@ -34,6 +34,7 @@ func (NotifySecondFactorRequiredArgs) Kind() string { return "second_factor_requ
 // NotifySecondFactorRequiredWorker sends that email via the system (platform) sender.
 type NotifySecondFactorRequiredWorker struct {
 	river.WorkerDefaults[NotifySecondFactorRequiredArgs]
+
 	ent    *ent.Client
 	sender messaging.EmailSender
 	appURL string
@@ -50,7 +51,7 @@ func (w *NotifySecondFactorRequiredWorker) Work(ctx context.Context, job *river.
 // Pure (no queue) so it runs identically under the river worker and the inline adapter.
 func NotifySecondFactorRequired(ctx context.Context, client *ent.Client, sender messaging.EmailSender, appURL string, workspaceID int64) error {
 	if sender == nil {
-		return fmt.Errorf("notify second factor required: no system email sender configured")
+		return errors.New("notify second factor required: no system email sender configured")
 	}
 	members, err := client.Scoped(workspaceID).Membership().Query().WithUser().WithWorkspace().All(ctx)
 	if err != nil {
@@ -105,6 +106,7 @@ func (RemindSecondFactorArgs) Kind() string { return "second_factor_remind" }
 // RemindSecondFactorWorker runs the reminder sweep on the wall clock.
 type RemindSecondFactorWorker struct {
 	river.WorkerDefaults[RemindSecondFactorArgs]
+
 	ent    *ent.Client
 	sender messaging.EmailSender
 	appURL string
@@ -118,7 +120,7 @@ func (w *RemindSecondFactorWorker) Work(ctx context.Context, _ *river.Job[Remind
 // module claims for this tick (secondfactor.RemindDeadlines).
 func RemindSecondFactorDeadlines(ctx context.Context, client *ent.Client, sender messaging.EmailSender, appURL string, now time.Time) error {
 	if sender == nil {
-		return fmt.Errorf("remind second factor: no system email sender configured")
+		return errors.New("remind second factor: no system email sender configured")
 	}
 	return secondfactor.RemindDeadlines(ctx, client, now, func(ctx context.Context, m *ent.Membership, deadline time.Time) error {
 		return sendSecondFactorMail(ctx, sender, appURL, "email.second_factor_reminder", m, deadline)

@@ -56,9 +56,9 @@ func signedPost(t *testing.T, env *testhelper.TestEnv, key, secret, id, body str
 	sig, err := wh.Sign(id, hookClock, []byte(body))
 	require.NoError(t, err)
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/hooks/"+key, strings.NewReader(body))
-	req.Header.Set("webhook-id", id)
-	req.Header.Set("webhook-timestamp", strconv.FormatInt(hookClock.Unix(), 10))
-	req.Header.Set("webhook-signature", sig)
+	req.Header.Set("Webhook-Id", id)
+	req.Header.Set("Webhook-Timestamp", strconv.FormatInt(hookClock.Unix(), 10))
+	req.Header.Set("Webhook-Signature", sig)
 	rec := httptest.NewRecorder()
 	env.Server.ServeHTTP(rec, req)
 	return rec
@@ -317,15 +317,14 @@ func TestChoosingAPresetAgainNeedsItsParamsInFull(t *testing.T) {
 	assert.Equal(t, http.StatusOK, signedPost(t, env, key, secretA, "msg_2", failureBody("evt_1", "a@example.com", true)).Code)
 
 	// Both changes of the Preset are in the Audit log, the secret in neither.
-	var audit []*events.AuditEntry
-	for _, ev := range env.OutboxEvents(t, events.NameAuditEntry) {
+	audit := lo.Map(env.OutboxEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) *events.AuditEntry {
 		e, ok := ev.(*events.AuditEntry)
 		require.Truef(t, ok, "got %T", ev)
-		audit = append(audit, e)
 		raw, err := json.Marshal(e)
 		require.NoError(t, err)
 		assert.NotContains(t, string(raw), secretA)
-	}
+		return e
+	})
 	presetChanges := lo.Filter(audit, func(e *events.AuditEntry, _ int) bool { return e.Diff["preset"] != nil })
 	assert.Len(t, presetChanges, 2)
 }

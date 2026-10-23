@@ -47,6 +47,7 @@ type Licensing interface{ Licensed() bool }
 // Endpoint is a Webhook endpoint with its signing secret decrypted.
 type Endpoint struct {
 	*ent.WebhookEndpoint
+
 	Secret string
 }
 
@@ -91,7 +92,7 @@ type TestResult struct {
 	Kind      webhook.ErrorKind
 }
 
-// ErrInvalidEventType: the event type to send a sample of is blank or too long.
+// ErrInvalidEventType means the event type to send a sample of is blank or too long.
 var ErrInvalidEventType = errors.New("webhooks: the event type must be 1 to 100 characters")
 
 // RegenerateSecret replaces the signing secret at once: the old one stops verifying
@@ -192,6 +193,7 @@ func urlName(raw string) string {
 // statusRecorder remembers the status of the last response so a 2xx can be reported.
 type statusRecorder struct {
 	webhook.Doer
+
 	status int
 }
 

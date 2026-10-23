@@ -12,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"maps"
 	"net/http"
 	"net/http/httptest"
@@ -172,11 +173,14 @@ func requireToken(auth Authenticator, metadataURL string, next http.Handler) htt
 func writeProblem(w http.ResponseWriter, code int, detail string) {
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(code)
-	_ = json.NewEncoder(w).Encode(map[string]any{
+	problem := map[string]any{
 		"status": code,
 		"title":  http.StatusText(code),
 		"detail": detail,
-	})
+	}
+	if err := json.NewEncoder(w).Encode(problem); err != nil {
+		slog.Warn("write problem response", "error", err)
+	}
 }
 
 // handler dispatches a tool call to the /api handler as the caller.

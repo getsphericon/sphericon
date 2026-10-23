@@ -22,6 +22,7 @@ func (SendReportArgs) Kind() string { return "telemetry_report" }
 // again.
 type sendReportWorker struct {
 	river.WorkerDefaults[SendReportArgs]
+
 	s *Sender
 }
 

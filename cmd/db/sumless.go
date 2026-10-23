@@ -40,6 +40,7 @@ func (d sumlessDir) WriteFile(name string, b []byte) error {
 // memFile is a read-only fs.File over bytes held in memory.
 type memFile struct {
 	*strings.Reader
+
 	name string
 	size int64
 }

@@ -258,7 +258,8 @@ func newTokenService(secret string) *gptoken.Service {
 }
 
 func newVerifier(primary string, secondary []string) verifier {
-	v := verifier{newTokenService(primary)}
+	v := make(verifier, 0, 1+len(secondary))
+	v = append(v, newTokenService(primary))
 	for _, secret := range secondary {
 		v = append(v, newTokenService(secret))
 	}

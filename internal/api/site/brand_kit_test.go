@@ -78,7 +78,7 @@ func TestSiteBrandKitFirstSaveMakesTheStarterTemplatesAndLaterSavesDoNot(t *test
 
 	starters := s.EmailTemplate().Query().Where(emailtemplate.IDGT(lastBefore)).Order(ent.Asc(emailtemplate.FieldID)).AllX(ctx)
 	require.Len(t, starters, 4)
-	var names []string
+	names := make([]string, 0, len(starters))
 	for _, tpl := range starters {
 		names = append(names, tpl.Name)
 		assert.NotEmpty(t, tpl.Doc, "%s is written as a document", tpl.Name)

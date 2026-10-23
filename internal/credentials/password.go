@@ -14,22 +14,24 @@ import (
 // verified on every request, where argon2id's memory cost is prohibitive; see
 // HashTokenSecret/VerifyTokenSecret.
 var (
-	passwordHasher  *argon2.Hasher
-	passwordDecoder *crypt.Decoder
+	passwordHasher  = newPasswordHasher()
+	passwordDecoder = newPasswordDecoder()
 )
 
-func init() {
+func newPasswordHasher() *argon2.Hasher {
 	h, err := argon2.New(argon2.WithProfileRFC9106LowMemory())
 	if err != nil {
 		panic(fmt.Sprintf("service: argon2 hasher: %v", err))
 	}
-	passwordHasher = h
+	return h
+}
 
+func newPasswordDecoder() *crypt.Decoder {
 	d := crypt.NewDecoder()
 	if err := argon2.RegisterDecoderArgon2id(d); err != nil {
 		panic(fmt.Sprintf("service: argon2 decoder: %v", err))
 	}
-	passwordDecoder = d
+	return d
 }
 
 // HashPassword returns a PHC-encoded argon2id hash of the given password.

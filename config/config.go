@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"maps"
 	"net"
@@ -378,7 +379,7 @@ type environment struct {
 func loadVars(envName string) (map[string]string, error) {
 	_, file, _, ok := runtime.Caller(0)
 	if !ok {
-		return nil, fmt.Errorf("locate the config package's source to find the .env files")
+		return nil, errors.New("locate the config package's source to find the .env files")
 	}
 	rootDir := filepath.Join(filepath.Dir(file), "..")
 
@@ -707,7 +708,7 @@ func (c *Config) validate(envName string) error {
 	}
 	if c.JWTSecretSecondary != "" {
 		if c.JWTSecretSecondary == c.JWTSecret {
-			return fmt.Errorf("SPHERICON_JWT_SECRET_SECONDARY must differ from SPHERICON_JWT_SECRET")
+			return errors.New("SPHERICON_JWT_SECRET_SECONDARY must differ from SPHERICON_JWT_SECRET")
 		}
 		if !isDevEnv(envName) && !isE2E(envName) {
 			if err := ValidateJWTSecret(c.JWTSecretSecondary); err != nil {
@@ -716,34 +717,34 @@ func (c *Config) validate(envName string) error {
 		}
 	}
 	if c.SessionTTL <= 0 {
-		return fmt.Errorf("SPHERICON_SESSION_TTL must be positive")
+		return errors.New("SPHERICON_SESSION_TTL must be positive")
 	}
 	if c.StaffSessionTTL <= 0 {
-		return fmt.Errorf("SPHERICON_STAFF_SESSION_TTL must be positive")
+		return errors.New("SPHERICON_STAFF_SESSION_TTL must be positive")
 	}
 	if c.StaffHoldMaxExpiry <= 0 {
-		return fmt.Errorf("SPHERICON_STAFF_HOLD_MAX_EXPIRY must be positive")
+		return errors.New("SPHERICON_STAFF_HOLD_MAX_EXPIRY must be positive")
 	}
 	if c.AbuseVolumeFloor <= 0 {
-		return fmt.Errorf("SPHERICON_ABUSE_VOLUME_FLOOR must be positive")
+		return errors.New("SPHERICON_ABUSE_VOLUME_FLOOR must be positive")
 	}
 	if !(0 < c.AbuseWarnComplaintPercent && c.AbuseWarnComplaintPercent < c.AbuseFreezeComplaintPercent && c.AbuseFreezeComplaintPercent <= 100) {
-		return fmt.Errorf("SPHERICON_ABUSE_WARN_COMPLAINT_PERCENT must be above 0 and below SPHERICON_ABUSE_FREEZE_COMPLAINT_PERCENT, which is at most 100")
+		return errors.New("SPHERICON_ABUSE_WARN_COMPLAINT_PERCENT must be above 0 and below SPHERICON_ABUSE_FREEZE_COMPLAINT_PERCENT, which is at most 100")
 	}
 	if !(0 < c.AbuseWarnBouncePercent && c.AbuseWarnBouncePercent < c.AbuseFreezeBouncePercent && c.AbuseFreezeBouncePercent <= 100) {
-		return fmt.Errorf("SPHERICON_ABUSE_WARN_BOUNCE_PERCENT must be above 0 and below SPHERICON_ABUSE_FREEZE_BOUNCE_PERCENT, which is at most 100")
+		return errors.New("SPHERICON_ABUSE_WARN_BOUNCE_PERCENT must be above 0 and below SPHERICON_ABUSE_FREEZE_BOUNCE_PERCENT, which is at most 100")
 	}
 	if (c.AccountLinkURL == "") != (c.AccountLinkSigningKey == "") {
-		return fmt.Errorf("SPHERICON_ACCOUNT_LINK_URL and SPHERICON_ACCOUNT_LINK_SIGNING_KEY must be set together")
+		return errors.New("SPHERICON_ACCOUNT_LINK_URL and SPHERICON_ACCOUNT_LINK_SIGNING_KEY must be set together")
 	}
 	if c.BodyLimits.Default <= 0 {
-		return fmt.Errorf("SPHERICON_MAX_BODY_BYTES must be positive")
+		return errors.New("SPHERICON_MAX_BODY_BYTES must be positive")
 	}
 	if c.BodyLimits.Collect <= 0 {
-		return fmt.Errorf("SPHERICON_COLLECT_MAX_BODY_BYTES must be positive")
+		return errors.New("SPHERICON_COLLECT_MAX_BODY_BYTES must be positive")
 	}
 	if c.BodyLimits.CollectEvent <= 0 {
-		return fmt.Errorf("SPHERICON_COLLECT_MAX_EVENT_BYTES must be positive")
+		return errors.New("SPHERICON_COLLECT_MAX_EVENT_BYTES must be positive")
 	}
 	for name, limit := range map[string]int{
 		"SPHERICON_RATE_LIMIT_HUMAN_PER_MINUTE":       c.RateLimits.Human,
@@ -756,52 +757,52 @@ func (c *Config) validate(envName string) error {
 		}
 	}
 	if c.RateLimits.Tracking < 0 {
-		return fmt.Errorf("SPHERICON_RATE_LIMIT_TRACKING_PER_MINUTE must not be negative (0 disables)")
+		return errors.New("SPHERICON_RATE_LIMIT_TRACKING_PER_MINUTE must not be negative (0 disables)")
 	}
 	if c.RateLimits.LoginFailures < 0 {
-		return fmt.Errorf("SPHERICON_RATE_LIMIT_LOGIN_FAILURES must not be negative (0 disables)")
+		return errors.New("SPHERICON_RATE_LIMIT_LOGIN_FAILURES must not be negative (0 disables)")
 	}
 	if c.RateLimits.LoginIP < 0 {
-		return fmt.Errorf("SPHERICON_RATE_LIMIT_LOGIN_IP_PER_MINUTE must not be negative (0 disables)")
+		return errors.New("SPHERICON_RATE_LIMIT_LOGIN_IP_PER_MINUTE must not be negative (0 disables)")
 	}
 	if c.RateLimits.Collect < 0 {
-		return fmt.Errorf("SPHERICON_RATE_LIMIT_COLLECT_PER_MINUTE must not be negative (0 disables)")
+		return errors.New("SPHERICON_RATE_LIMIT_COLLECT_PER_MINUTE must not be negative (0 disables)")
 	}
 	if c.RateLimits.CollectIP < 0 {
-		return fmt.Errorf("SPHERICON_RATE_LIMIT_COLLECT_IP_PER_MINUTE must not be negative (0 disables)")
+		return errors.New("SPHERICON_RATE_LIMIT_COLLECT_IP_PER_MINUTE must not be negative (0 disables)")
 	}
 	if c.RateLimits.ServicePerMinute < 0 {
-		return fmt.Errorf("SPHERICON_RATE_LIMIT_SERVICE_PER_MINUTE must not be negative (0 disables)")
+		return errors.New("SPHERICON_RATE_LIMIT_SERVICE_PER_MINUTE must not be negative (0 disables)")
 	}
 	if c.RateLimits.ForgotAddress < 0 {
-		return fmt.Errorf("SPHERICON_RATE_LIMIT_FORGOT_PASSWORD_PER_ADDRESS_PER_HOUR must not be negative (0 disables)")
+		return errors.New("SPHERICON_RATE_LIMIT_FORGOT_PASSWORD_PER_ADDRESS_PER_HOUR must not be negative (0 disables)")
 	}
 	if c.RateLimits.ForgotIP < 0 {
-		return fmt.Errorf("SPHERICON_RATE_LIMIT_FORGOT_PASSWORD_IP_PER_HOUR must not be negative (0 disables)")
+		return errors.New("SPHERICON_RATE_LIMIT_FORGOT_PASSWORD_IP_PER_HOUR must not be negative (0 disables)")
 	}
 	if c.OutboxFloor < 0 {
-		return fmt.Errorf("SPHERICON_OUTBOX_RETENTION_FLOOR_DAYS must not be negative")
+		return errors.New("SPHERICON_OUTBOX_RETENTION_FLOOR_DAYS must not be negative")
 	}
 	if c.EventsRetention < 0 {
-		return fmt.Errorf("SPHERICON_EVENTS_RETENTION_DAYS must not be negative")
+		return errors.New("SPHERICON_EVENTS_RETENTION_DAYS must not be negative")
 	}
 	if c.EventLiveWindow < time.Hour {
-		return fmt.Errorf("SPHERICON_EVENT_LIVE_WINDOW_HOURS must be at least 1")
+		return errors.New("SPHERICON_EVENT_LIVE_WINDOW_HOURS must be at least 1")
 	}
 	if c.UnverifiedUserRetention < 0 {
-		return fmt.Errorf("SPHERICON_UNVERIFIED_USER_RETENTION_DAYS must not be negative")
+		return errors.New("SPHERICON_UNVERIFIED_USER_RETENTION_DAYS must not be negative")
 	}
 	if c.DBPool.MaxOpenConns <= 0 {
-		return fmt.Errorf("SPHERICON_DB_MAX_OPEN_CONNS must be positive")
+		return errors.New("SPHERICON_DB_MAX_OPEN_CONNS must be positive")
 	}
 	if c.DBPool.MaxIdleConns < 0 || c.DBPool.MaxIdleConns > c.DBPool.MaxOpenConns {
-		return fmt.Errorf("SPHERICON_DB_MAX_IDLE_CONNS must be between 0 and SPHERICON_DB_MAX_OPEN_CONNS")
+		return errors.New("SPHERICON_DB_MAX_IDLE_CONNS must be between 0 and SPHERICON_DB_MAX_OPEN_CONNS")
 	}
 	if c.DBPool.ConnMaxLifetime <= 0 {
-		return fmt.Errorf("SPHERICON_DB_CONN_MAX_LIFETIME must be positive")
+		return errors.New("SPHERICON_DB_CONN_MAX_LIFETIME must be positive")
 	}
 	if c.DBPool.RiverMaxConns <= 0 {
-		return fmt.Errorf("SPHERICON_RIVER_DB_MAX_CONNS must be positive")
+		return errors.New("SPHERICON_RIVER_DB_MAX_CONNS must be positive")
 	}
 	if err := c.validateMetricsAddr(); err != nil {
 		return err
@@ -864,7 +865,7 @@ var placeholderSecretMarkers = []string{"change-me", "changeme", "change-in-prod
 // doctor` applies it everywhere.
 func ValidateJWTSecret(secret string) error {
 	if secret == "" {
-		return fmt.Errorf("SPHERICON_JWT_SECRET is required outside development")
+		return errors.New("SPHERICON_JWT_SECRET is required outside development")
 	}
 	if len(secret) < minJWTSecretLength {
 		return fmt.Errorf("SPHERICON_JWT_SECRET must be at least %d characters outside development (e.g. `openssl rand -hex 32`)", minJWTSecretLength)
@@ -872,7 +873,7 @@ func ValidateJWTSecret(secret string) error {
 	lower := strings.ToLower(secret)
 	for _, m := range placeholderSecretMarkers {
 		if strings.Contains(lower, m) {
-			return fmt.Errorf("SPHERICON_JWT_SECRET looks like a placeholder; generate one with `openssl rand -hex 32`")
+			return errors.New("SPHERICON_JWT_SECRET looks like a placeholder; generate one with `openssl rand -hex 32`")
 		}
 	}
 	return nil

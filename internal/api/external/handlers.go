@@ -31,6 +31,7 @@ var mapper = &resources.ConverterImpl{}
 
 type Handlers struct {
 	externalapi.UnimplementedHandler
+
 	accounts       *accounts.Accounts
 	bus            *events.Bus
 	eventlog       *eventlog.Module

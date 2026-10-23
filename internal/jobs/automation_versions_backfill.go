@@ -32,6 +32,7 @@ func (BackfillAutomationVersionsArgs) Kind() string { return "backfill_automatio
 // rows, so it holds the raw ent client.
 type BackfillAutomationVersionsWorker struct {
 	river.WorkerDefaults[BackfillAutomationVersionsArgs]
+
 	ent *ent.Client
 }
 

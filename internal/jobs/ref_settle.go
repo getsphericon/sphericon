@@ -28,6 +28,7 @@ func (ClearOutboundMessageRefsArgs) Kind() string { return "clear_outbound_messa
 // refSettleWorker runs one settle step of internal/refsettle, which owns the work.
 type refSettleWorker[A river.JobArgs] struct {
 	river.WorkerDefaults[A]
+
 	settle  func(ctx context.Context, batch int) (int, error)
 	message string
 }

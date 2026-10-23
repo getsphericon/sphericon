@@ -78,7 +78,7 @@ func suspended(t *testing.T, env *testhelper.TestEnv, ws int64) bool {
 }
 
 func recipients(env *testhelper.TestEnv) []string {
-	var to []string
+	to := make([]string, 0, len(env.SystemMail.Messages()))
 	for _, m := range env.SystemMail.Messages() {
 		to = append(to, m.To)
 	}
@@ -228,7 +228,7 @@ func TestAFreezeIsAuditedAsTheSystemAndSendsNoWarning(t *testing.T) {
 	entries := env.DB.Scoped(fixtures.VandelayID).AuditEntry().Query().
 		Where(auditentry.Action(events.ActionWorkspaceSuspend)).AllX(t.Context())
 	require.Len(t, entries, 1)
-	assert.Equal(t, string(events.ActorSystem), string(entries[0].ActorKind))
+	assert.Equal(t, string(events.ActorSystem), entries[0].ActorKind)
 	for _, m := range env.SystemMail.Messages() {
 		assert.Contains(t, m.Subject, "suspended", "a direct freeze mails the freeze notice only")
 	}

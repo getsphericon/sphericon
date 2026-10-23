@@ -2,7 +2,7 @@ package jobs
 
 import (
 	"context"
-	"fmt"
+	"errors"
 
 	"github.com/riverqueue/river"
 
@@ -21,6 +21,7 @@ func (SendWelcomeArgs) Kind() string { return "send_welcome" }
 // SendWelcomeWorker sends the welcome email via the system (platform) sender.
 type SendWelcomeWorker struct {
 	river.WorkerDefaults[SendWelcomeArgs]
+
 	sender messaging.EmailSender
 }
 
@@ -33,7 +34,7 @@ func (w *SendWelcomeWorker) Work(ctx context.Context, job *river.Job[SendWelcome
 // identically under the river worker and the inline adapter.
 func SendWelcome(ctx context.Context, sender messaging.EmailSender, email, name string) error {
 	if sender == nil {
-		return fmt.Errorf("send welcome: no system email sender configured")
+		return errors.New("send welcome: no system email sender configured")
 	}
 	greeting := name
 	if greeting == "" {

@@ -43,7 +43,7 @@ func anchorBearer() string {
 
 func remaining(t *testing.T, rec *httptest.ResponseRecorder) int {
 	t.Helper()
-	n, err := strconv.Atoi(rec.Header().Get("X-RateLimit-Remaining"))
+	n, err := strconv.Atoi(rec.Header().Get("X-Ratelimit-Remaining"))
 	require.NoError(t, err, "X-RateLimit-Remaining")
 	return n
 }
@@ -60,8 +60,8 @@ func TestAPIAnswers429OverTheSteadyWindow(t *testing.T) {
 	assert.Equal(t, "application/problem+json", rec.Header().Get("Content-Type"))
 	assert.Contains(t, rec.Body.String(), `"status":429`)
 	assert.Equal(t, "60", rec.Header().Get("Retry-After"))
-	assert.Equal(t, strconv.Itoa(limit), rec.Header().Get("X-RateLimit-Limit"))
-	assert.Equal(t, "0", rec.Header().Get("X-RateLimit-Remaining"))
+	assert.Equal(t, strconv.Itoa(limit), rec.Header().Get("X-Ratelimit-Limit"))
+	assert.Equal(t, "0", rec.Header().Get("X-Ratelimit-Remaining"))
 }
 
 func TestAPIAnswers429OverTheBurstWindow(t *testing.T) {
@@ -79,9 +79,9 @@ func TestSuccessfulResponsesCarryTheRateLimitHeaders(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithRateLimits(config.RateLimits{APIBurst: 20, APIPerMinute: 600}))
 	rec := getAPI(t, env, anchorBearer(), nil)
 	require.Equal(t, http.StatusOK, rec.Code)
-	assert.Equal(t, "600", rec.Header().Get("X-RateLimit-Limit"))
-	assert.Equal(t, "599", rec.Header().Get("X-RateLimit-Remaining"))
-	assert.NotEmpty(t, rec.Header().Get("X-RateLimit-Reset"))
+	assert.Equal(t, "600", rec.Header().Get("X-Ratelimit-Limit"))
+	assert.Equal(t, "599", rec.Header().Get("X-Ratelimit-Remaining"))
+	assert.NotEmpty(t, rec.Header().Get("X-Ratelimit-Reset"))
 	assert.Empty(t, rec.Header().Get("Retry-After"))
 }
 
@@ -155,9 +155,9 @@ func TestFailedBearerAuthenticationsArePerIPLimitedAndSuccessesAreNotCounted(t *
 	rec := getAPI(t, env, badBearer, from(guesserAddr))
 	require.Equal(t, http.StatusTooManyRequests, rec.Code)
 	assert.NotEmpty(t, rec.Header().Get("Retry-After"))
-	assert.NotEmpty(t, rec.Header().Get("X-RateLimit-Limit"), "the contract requires the whole header set on a 429")
-	assert.NotEmpty(t, rec.Header().Get("X-RateLimit-Remaining"))
-	assert.NotEmpty(t, rec.Header().Get("X-RateLimit-Reset"))
+	assert.NotEmpty(t, rec.Header().Get("X-Ratelimit-Limit"), "the contract requires the whole header set on a 429")
+	assert.NotEmpty(t, rec.Header().Get("X-Ratelimit-Remaining"))
+	assert.NotEmpty(t, rec.Header().Get("X-Ratelimit-Reset"))
 
 	// The guesser is cut off even with a good token; another address is not.
 	assert.Equal(t, http.StatusTooManyRequests, getAPI(t, env, anchorBearer(), from(guesserAddr)).Code)
@@ -187,7 +187,7 @@ func TestAZeroAPILimitNeverThrottles(t *testing.T) {
 	for range 50 {
 		require.Equal(t, http.StatusOK, getAPI(t, env, anchorBearer(), nil).Code)
 	}
-	assert.Empty(t, getAPI(t, env, anchorBearer(), nil).Header().Get("X-RateLimit-Limit"))
+	assert.Empty(t, getAPI(t, env, anchorBearer(), nil).Header().Get("X-Ratelimit-Limit"))
 }
 
 // The generated external client types the 429, so a caller needs no string matching.

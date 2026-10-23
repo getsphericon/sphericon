@@ -223,7 +223,7 @@ func TestAnInvitationSentByTheDeletedUserStaysValidWithoutASenderAndCanBeRevoked
 	assert.True(t, sent.InvitedByEmail.Null || !sent.InvitedByEmail.Set, "no sender is shown")
 
 	revoked, err := john.SiteInvitationsDelete(t.Context(), siteapi.SiteInvitationsDeleteParams{
-		WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(sent.ID),
+		WorkspaceId: fixtures.AcmePublicID, ID: sent.ID,
 	})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteInvitationsDeleteNoContent{}, revoked)

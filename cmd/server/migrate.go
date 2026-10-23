@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"strconv"
 	"time"
 
 	"github.com/urfave/cli/v3"
@@ -146,5 +147,5 @@ func versionLabel(v int64) string {
 	if v == 0 {
 		return "empty"
 	}
-	return fmt.Sprintf("%d", v)
+	return strconv.FormatInt(v, 10)
 }

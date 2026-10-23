@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"net"
 	"net/http"
 	"net/url"
@@ -46,6 +47,7 @@ func ResourceMetadataURL(mcpOrigin string) string {
 // Server mounts the OAuth protocol endpoints.
 type Server struct {
 	*Service
+
 	issuer   string
 	resource string
 }
@@ -78,6 +80,7 @@ func (s *Server) Mount(mux *http.ServeMux) {
 func (s *Server) authServerMetadata(w http.ResponseWriter, _ *http.Request) {
 	meta := struct {
 		oauthex.AuthServerMeta
+
 		CodeChallengeMethodsSupported     []string `json:"code_challenge_methods_supported"`
 		ClientIDMetadataDocumentSupported bool     `json:"client_id_metadata_document_supported"`
 	}{
@@ -232,7 +235,9 @@ func writeJSON(w http.ResponseWriter, code int, body any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", "no-store")
 	w.WriteHeader(code)
-	_ = json.NewEncoder(w).Encode(body)
+	if err := json.NewEncoder(w).Encode(body); err != nil {
+		slog.Warn("write json response", "error", err)
+	}
 }
 
 // writeOAuthError renders an RFC 6749 section 5.2 error response.

@@ -105,7 +105,8 @@ func (p *Preset) run(ctx context.Context, body any, header http.Header) ([]Deliv
 			}
 			return nil, fmt.Errorf("%w: %w", ErrTransformFailed, err)
 		}
-		if count++; count > 1 {
+		count++
+		if count > 1 {
 			return nil, fmt.Errorf("%w: the program produced more than one result", ErrTransformFailed)
 		}
 		out = v

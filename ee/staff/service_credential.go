@@ -3,9 +3,9 @@ package staff
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -198,7 +198,7 @@ func (m *Module) AuthenticateService(ctx context.Context, value string) (*ent.Se
 // (ADR 0022): kind `service`, named as the Staff member named the credential. A Workspace's
 // own team reads it as "Sphericon staff".
 func ServiceActor(c *ent.ServiceCredential) events.Actor {
-	return events.Actor{Kind: events.ActorService, ID: fmt.Sprint(c.ID), Name: c.Name}
+	return events.Actor{Kind: events.ActorService, ID: strconv.FormatInt(c.ID, 10), Name: c.Name}
 }
 
 func normalizeScopes(in []serviceapi.ServiceScope) ([]serviceapi.ServiceScope, error) {

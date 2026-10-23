@@ -7,7 +7,7 @@ import (
 	"entgo.io/ent/schema/field"
 )
 
-// Staff member is a platform staff identity (ADR 0008, ADR 0026), separate from User: it
+// StaffMember is a platform staff identity (ADR 0008, ADR 0026), separate from User: it
 // has no Membership and no Workspace edge, so the scoped client does not cover it and
 // no Workspace-scoped code can return one. It is created only by the CLI and is read
 // and written only from ee/staff.

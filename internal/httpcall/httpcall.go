@@ -24,7 +24,7 @@ const (
 	MaxHeaders   = 5
 )
 
-// ErrInvalidBody: the body did not render to valid JSON within the size limit.
+// ErrInvalidBody means the body did not render to valid JSON within the size limit.
 var ErrInvalidBody = errors.New("automations: body does not render to valid JSON")
 
 // InvalidError is a call that does not fit the rules of a call. Its text is safe to show to the author.
@@ -97,7 +97,10 @@ func escapeBindings(b map[string]any) map[string]any {
 func escapeValue(v any) any {
 	switch t := v.(type) {
 	case string:
-		quoted, _ := json.Marshal(t)
+		quoted, err := json.Marshal(t)
+		if err != nil {
+			panic("httpcall: a string always marshals: " + err.Error())
+		}
 		return string(quoted[1 : len(quoted)-1])
 	case map[string]any:
 		return escapeBindings(t)

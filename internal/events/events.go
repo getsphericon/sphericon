@@ -80,7 +80,8 @@ func (r *RejectionError) Error() string { return r.Reason }
 // AsRejection reports whether err is a RejectionError, and which.
 func AsRejection(err error) (*RejectionError, bool) {
 	var r *RejectionError
-	return r, errors.As(err, &r)
+	ok := errors.As(err, &r)
+	return r, ok
 }
 
 // CheckAction refuses an action that is empty or reserved for the system.

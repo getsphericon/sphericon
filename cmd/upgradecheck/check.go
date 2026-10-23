@@ -31,7 +31,7 @@ func IsBreaking(message string) bool {
 // The line may follow the marker directly or start a later line of the footer.
 func hasUpgrade(message string) bool {
 	loc := breakingFooter.FindStringIndex(message)
-	return loc != nil && upgradeLine.MatchString(message[loc[1]:])
+	return len(loc) == 2 && upgradeLine.MatchString(message[loc[1]:])
 }
 
 // CheckBreaking fails when the title or a commit is breaking and neither a commit message nor

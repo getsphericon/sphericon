@@ -31,6 +31,7 @@ func (EvaluateTriggerArgs) Kind() string { return jobkind.EvaluateTrigger.Kind }
 
 type EvaluateTriggerWorker struct {
 	river.WorkerDefaults[EvaluateTriggerArgs]
+
 	ent *ent.Client
 }
 
@@ -104,6 +105,7 @@ func (RunStepArgs) Kind() string { return jobkind.RunStep.Kind }
 
 type RunStepWorker struct {
 	river.WorkerDefaults[RunStepArgs]
+
 	ent   *ent.Client
 	mod   *outbound.Module
 	fence automations.Fencer
@@ -203,7 +205,7 @@ func RunStep(ctx context.Context, client *ent.Client, fence automations.Fencer, 
 		if err != nil {
 			return StepResult{}, err
 		}
-		return afterMove(automations.Advance(ctx, scoped, run.ID, run.CurrentStep+1, nil), StepResult{}) // continue immediately
+		return afterMove(automations.Advance(ctx, scoped, run.ID, run.CurrentStep+1, nil), StepResult{}) // carry on at once
 
 	case automations.StepHTTP:
 		// The call runs on its own queue (ADR 0039); this job's work ends here.
@@ -245,7 +247,7 @@ func RunStep(ctx context.Context, client *ent.Client, fence automations.Fencer, 
 		case outbound.Sent:
 			// Advance past the email step. A crash between the send and this write
 			// replays the recorded Sent on retry, so the step never sends twice.
-			return afterMove(automations.Advance(ctx, scoped, run.ID, step+1, nil), StepResult{}) // continue immediately
+			return afterMove(automations.Advance(ctx, scoped, run.ID, step+1, nil), StepResult{}) // carry on at once
 		case outbound.Skipped:
 			// An ineligible destination (suppressed, or unsubscribed from this
 			// automation / from everything) exits the enrollment — a run never

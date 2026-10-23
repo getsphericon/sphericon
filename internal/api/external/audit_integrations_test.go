@@ -30,17 +30,15 @@ func tokenActor(t *testing.T, env *testhelper.TestEnv) events.Actor {
 // assertTokenAudited checks the outbox holds exactly the wanted actions, in order, for one
 // target: every entry is attributed to the token, and no secret (nor any sealed value the
 // row held) reaches an entry; a sensitive field appears in a diff only as "changed".
-func assertTokenAudited(t *testing.T, env *testhelper.TestEnv, targetID externalapi.EntityId, targetName string, wantActions, sensitiveFields, secrets []string) []*events.AuditEntry {
+func assertTokenAudited(t *testing.T, env *testhelper.TestEnv, targetID externalapi.EntityId, targetName string, wantActions, sensitiveFields, secrets []string) {
 	t.Helper()
 	got := env.OutboxEvents(t, events.NameAuditEntry)
 	require.Len(t, got, len(wantActions))
 	actor := tokenActor(t, env)
-	entries := make([]*events.AuditEntry, 0, len(got))
 	actions := make([]string, 0, len(got))
 	for _, ev := range got {
 		e, ok := ev.(*events.AuditEntry)
 		require.Truef(t, ok, "got %T", ev)
-		entries = append(entries, e)
 		actions = append(actions, e.Action)
 		assert.Equal(t, actor, e.Actor)
 		assert.Equal(t, strconv.FormatInt(int64(targetID), 10), e.TargetID)
@@ -57,7 +55,6 @@ func assertTokenAudited(t *testing.T, env *testhelper.TestEnv, targetID external
 		}
 	}
 	assert.Equal(t, wantActions, actions)
-	return entries
 }
 
 // Integration writes through /api are audited under the token, and the credentials never

@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// Channel identifiers. Email is the only built channel; sms is reserved.
+// ChannelEmail identifies the email channel, the only built one; sms is reserved.
 const ChannelEmail = "email"
 
 // Sending sources — the unit a destination unsubscribes from. A source is

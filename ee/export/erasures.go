@@ -77,6 +77,7 @@ func (PruneArgs) Kind() string { return "ee_export_prune" }
 // Worker runs Prune on the periodic tick, over the instance's Event retention window.
 type Worker struct {
 	river.WorkerDefaults[PruneArgs]
+
 	client    *ent.Client
 	lic       *licensekey.License
 	retention time.Duration

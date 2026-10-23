@@ -70,7 +70,7 @@ func (env *TestEnv) JobsOf(t *testing.T, kind string) []map[string]any {
 	t.Helper()
 	res, err := env.riverClient(t).JobList(t.Context(), river.NewJobListParams().Kinds(kind).OrderBy(river.JobListOrderByID, river.SortOrderAsc).First(maxQueuedJobs))
 	require.NoError(t, err)
-	var out []map[string]any
+	out := make([]map[string]any, 0, len(res.Jobs))
 	for _, job := range res.Jobs {
 		var args map[string]any
 		require.NoError(t, json.Unmarshal(job.EncodedArgs, &args))

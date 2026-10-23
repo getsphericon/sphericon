@@ -47,8 +47,8 @@ func TestSendSetsDeliveryHeaders(t *testing.T) {
 	err := webhook.Send(t.Context(), webhook.NewClientAllowing(2*time.Second, allow), srv.URL, testSecret, "contact.created", "evt_42", []byte(`{}`))
 	require.NoError(t, err)
 	assert.Equal(t, "application/json", got.Get("Content-Type"))
-	assert.Equal(t, "evt_42", got.Get("webhook-id"))
+	assert.Equal(t, "evt_42", got.Get("Webhook-Id"))
 	assert.Equal(t, "contact.created", got.Get(webhook.EventHeader))
-	assert.NotEmpty(t, got.Get("webhook-timestamp"))
-	assert.NotEmpty(t, got.Get("webhook-signature"))
+	assert.NotEmpty(t, got.Get("Webhook-Timestamp"))
+	assert.NotEmpty(t, got.Get("Webhook-Signature"))
 }

@@ -17,6 +17,7 @@ package authtoken
 import (
 	"crypto/hmac"
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"time"
 
@@ -53,6 +54,7 @@ const (
 // string claims under one key.
 type claims struct {
 	jwt.RegisteredClaims
+
 	UserID  int64             `json:"uid,string"`
 	Purpose Purpose           `json:"prp"`
 	Extra   map[string]string `json:"x,omitempty"`
@@ -105,13 +107,13 @@ func (s *Signer) Parse(token string, purpose Purpose, bindingFor func(userID int
 	_, err := jwt.ParseWithClaims(token, &c, func(tok *jwt.Token) (any, error) {
 		cl, ok := tok.Claims.(*claims)
 		if !ok {
-			return nil, fmt.Errorf("authtoken: unexpected claims type")
+			return nil, errors.New("authtoken: unexpected claims type")
 		}
 		if cl.Purpose != purpose {
-			return nil, fmt.Errorf("authtoken: purpose mismatch")
+			return nil, errors.New("authtoken: purpose mismatch")
 		}
 		if cl.UserID == 0 {
-			return nil, fmt.Errorf("authtoken: missing uid claim")
+			return nil, errors.New("authtoken: missing uid claim")
 		}
 		binding, err := bindingFor(cl.UserID)
 		if err != nil {

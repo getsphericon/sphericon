@@ -141,7 +141,7 @@ func (c *Contract) collect(node any, seen map[string]bool) {
 
 // copiesEnum reports whether the literals restate a contract enum: all of its values, or three or
 // more that are at least a quarter of a larger one (a pair of values shared by chance is not a copy).
-func (c Contract) copiesEnum(values []string) bool {
+func (c *Contract) copiesEnum(values []string) bool {
 	set := map[string]bool{}
 	for _, l := range values {
 		set[l] = true
@@ -162,7 +162,7 @@ func (c Contract) copiesEnum(values []string) bool {
 
 // scopes is every value of an enum that looks like a token scope (`resource:action`), used to
 // validate fixture data, which cannot import the generated type.
-func (c Contract) scopes() map[string]bool {
+func (c *Contract) scopes() map[string]bool {
 	out := map[string]bool{}
 	for _, e := range c.Enums {
 		if slices.ContainsFunc(e, func(v string) bool { return strings.Contains(v, ":") }) {

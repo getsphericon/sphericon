@@ -58,7 +58,6 @@ type delivery struct {
 	out *outbound.Module
 	del *broadcasts.Delivery
 	s   *ent.Scoped
-	ctx context.Context
 }
 
 func newDelivery(t *testing.T) *delivery {
@@ -68,7 +67,7 @@ func newDelivery(t *testing.T) *delivery {
 	res := &provider{sender: box}
 	out := outbound.New(env.Bus, env.Holds, res, tracking.New("test-secret", "http://local"))
 	return &delivery{
-		t: t, env: env, box: box, res: res, ctx: context.Background(),
+		t: t, env: env, box: box, res: res,
 		out: out, del: broadcasts.NewDelivery(out),
 		s: env.DB.Scoped(fixtures.AcmeID),
 	}
@@ -76,20 +75,20 @@ func newDelivery(t *testing.T) *delivery {
 
 // recipient adds a pending recipient row for a Contact to the sending Broadcast.
 func (d *delivery) recipient(contactID int64) int64 {
-	return d.env.PlaceRecipient(d.ctx, fixtures.BroadcastSendingID, contactID)
+	return d.env.PlaceRecipient(d.t.Context(), fixtures.BroadcastSendingID, contactID)
 }
 
 func (d *delivery) recipientRow(id int64) *ent.BroadcastRecipient {
-	return d.env.DB.BroadcastRecipient.GetX(d.ctx, id)
+	return d.env.DB.BroadcastRecipient.GetX(d.t.Context(), id)
 }
 
 func (d *delivery) broadcastRow() *ent.Broadcast {
-	return d.env.DB.Broadcast.GetX(d.ctx, fixtures.BroadcastSendingID)
+	return d.env.DB.Broadcast.GetX(d.t.Context(), fixtures.BroadcastSendingID)
 }
 
 // stats is the sending Broadcast's delivery figures, read from its rows.
 func (d *delivery) stats() broadcasts.Stats {
-	figures, err := broadcasts.StatsOf(d.ctx, d.s, fixtures.BroadcastSendingID)
+	figures, err := broadcasts.StatsOf(d.t.Context(), d.s, fixtures.BroadcastSendingID)
 	require.NoError(d.t, err)
 	return figures[fixtures.BroadcastSendingID]
 }
@@ -97,27 +96,27 @@ func (d *delivery) stats() broadcasts.Stats {
 // pending reports whether the recipient's send has not ended.
 func (d *delivery) pending(recipientID int64) bool {
 	return d.env.DB.BroadcastRecipient.Query().
-		Where(broadcastrecipient.ID(recipientID), broadcasts.Pending()).ExistX(d.ctx)
+		Where(broadcastrecipient.ID(recipientID), broadcasts.Pending()).ExistX(d.t.Context())
 }
 
 // messageOf is the one Outbound message of a recipient's send.
 func (d *delivery) messageOf(recipientID int64) *ent.OutboundMessage {
 	return d.env.DB.OutboundMessage.Query().
-		Where(outboundmessage.BroadcastRecipientID(recipientID)).OnlyX(d.ctx)
+		Where(outboundmessage.BroadcastRecipientID(recipientID)).OnlyX(d.t.Context())
 }
 
 // claim moves the claim of a placed recipient's pending Outbound message (only Bob's has one) to
 // `age` ago: another attempt's claim, live while younger than the lease.
 func (d *delivery) claim(recipientID int64, age time.Duration) {
-	d.env.ClaimRecipient(d.ctx, recipientID, age)
+	d.env.ClaimRecipient(d.t.Context(), recipientID, age)
 }
 
 func TestSentRecipientIsRecordedAndSettlesTheBroadcast(t *testing.T) {
 	d := newDelivery(t)
 	id := d.recipient(fixtures.ContactAliceID)
-	d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastSendingID).SetHoldReason(holds.ReasonSuspended).ExecX(d.ctx)
+	d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastSendingID).SetHoldReason(holds.ReasonSuspended).ExecX(d.t.Context())
 
-	require.NoError(t, d.del.SendRecipient(d.ctx, d.s, id))
+	require.NoError(t, d.del.SendRecipient(d.t.Context(), d.s, id))
 
 	msg := d.messageOf(id)
 	assert.Equal(t, outboundmessage.StatusSent, msg.Status)
@@ -133,18 +132,18 @@ func TestSendRecipientIsIdempotent(t *testing.T) {
 	d := newDelivery(t)
 	id := d.recipient(fixtures.ContactAliceID)
 
-	require.NoError(t, d.del.SendRecipient(d.ctx, d.s, id))
-	require.NoError(t, d.del.SendRecipient(d.ctx, d.s, id))
+	require.NoError(t, d.del.SendRecipient(d.t.Context(), d.s, id))
+	require.NoError(t, d.del.SendRecipient(d.t.Context(), d.s, id))
 
 	assert.Len(t, d.box.sent, 1)
 }
 
 func TestRecipientWithoutEmailFailsWithAReason(t *testing.T) {
 	d := newDelivery(t)
-	d.env.DB.Contact.UpdateOneID(fixtures.ContactAliceID).ClearEmail().ExecX(d.ctx)
+	d.env.DB.Contact.UpdateOneID(fixtures.ContactAliceID).ClearEmail().ExecX(d.t.Context())
 	id := d.recipient(fixtures.ContactAliceID)
 
-	require.NoError(t, d.del.SendRecipient(d.ctx, d.s, id))
+	require.NoError(t, d.del.SendRecipient(d.t.Context(), d.s, id))
 
 	assert.Equal(t, broadcasts.Stats{Recipients: 1, Failed: 1}, d.stats())
 	assert.Empty(t, d.box.sent)
@@ -158,10 +157,10 @@ func TestRecipientWithoutEmailFailsWithAReason(t *testing.T) {
 func TestSuppressedRecipientIsSkippedNotFailed(t *testing.T) {
 	d := newDelivery(t)
 	id := d.recipient(fixtures.ContactAliceID)
-	alice := d.env.DB.Contact.GetX(d.ctx, fixtures.ContactAliceID)
-	d.env.SuppressDestination(d.ctx, *alice.Email)
+	alice := d.env.DB.Contact.GetX(d.t.Context(), fixtures.ContactAliceID)
+	d.env.SuppressDestination(d.t.Context(), *alice.Email)
 
-	require.NoError(t, d.del.SendRecipient(d.ctx, d.s, id))
+	require.NoError(t, d.del.SendRecipient(d.t.Context(), d.s, id))
 
 	assert.Equal(t, outboundmessage.StatusSkipped, d.messageOf(id).Status)
 	assert.Equal(t, broadcasts.Stats{Recipients: 1, Skipped: 1}, d.stats())
@@ -171,9 +170,9 @@ func TestSuppressedRecipientIsSkippedNotFailed(t *testing.T) {
 func TestRecipientThatCannotRenderFails(t *testing.T) {
 	d := newDelivery(t)
 	id := d.recipient(fixtures.ContactAliceID)
-	d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastSendingID).SetSubject("{% if %}broken").ExecX(d.ctx)
+	d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastSendingID).SetSubject("{% if %}broken").ExecX(d.t.Context())
 
-	require.NoError(t, d.del.SendRecipient(d.ctx, d.s, id))
+	require.NoError(t, d.del.SendRecipient(d.t.Context(), d.s, id))
 
 	msg := d.messageOf(id)
 	assert.Equal(t, outboundmessage.StatusFailed, msg.Status)
@@ -183,9 +182,9 @@ func TestRecipientThatCannotRenderFails(t *testing.T) {
 func TestHeldRecipientStaysPendingAndRecordsTheHold(t *testing.T) {
 	d := newDelivery(t)
 	id := d.recipient(fixtures.ContactAliceID)
-	d.env.SuspendWorkspace(d.ctx, fixtures.AcmeID, fixedNow)
+	d.env.SuspendWorkspace(d.t.Context(), fixtures.AcmeID, fixedNow)
 
-	err := d.del.SendRecipient(d.ctx, d.s, id)
+	err := d.del.SendRecipient(d.t.Context(), d.s, id)
 
 	var held *broadcasts.HeldError
 	require.ErrorAs(t, err, &held)
@@ -200,10 +199,10 @@ func TestHeldRecipientStaysPendingAndRecordsTheHold(t *testing.T) {
 
 func TestDeferredRecipientStaysPendingAndSleeps(t *testing.T) {
 	d := newDelivery(t)
-	d.env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(1).ExecX(d.ctx)
+	d.env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(1).ExecX(d.t.Context())
 	// Transactional traffic spends the Integration's capacity and is itself never slowed.
 	for _, key := range []string{"tx:1", "tx:2", "tx:3"} {
-		res, err := d.out.Send(d.ctx, d.s, outbound.Request{
+		res, err := d.out.Send(d.t.Context(), d.s, outbound.Request{
 			Kind: outboundmessage.KindTransactional, Key: key, Destination: "a@example.com",
 			Subject: "Receipt", Body: "<p>Hi</p>",
 		})
@@ -212,7 +211,7 @@ func TestDeferredRecipientStaysPendingAndSleeps(t *testing.T) {
 	}
 	second := d.recipient(fixtures.ContactAliceID)
 
-	err := d.del.SendRecipient(d.ctx, d.s, second)
+	err := d.del.SendRecipient(d.t.Context(), d.s, second)
 
 	var deferred *broadcasts.DeferredError
 	require.ErrorAs(t, err, &deferred)
@@ -225,14 +224,14 @@ func TestDeferredRecipientStaysPendingAndSleeps(t *testing.T) {
 
 func TestUnknownRecipientIsNothingToSend(t *testing.T) {
 	d := newDelivery(t)
-	require.NoError(t, d.del.SendRecipient(d.ctx, d.s, 424242))
+	require.NoError(t, d.del.SendRecipient(d.t.Context(), d.s, 424242))
 }
 
 func TestGiveUpFailsTheRecipientWithTheCauseAndSettlesTheBroadcast(t *testing.T) {
 	d := newDelivery(t)
 	id := d.recipient(fixtures.ContactAliceID)
 
-	require.NoError(t, d.del.GiveUp(d.ctx, d.s, id, errors.New("smtp unavailable")))
+	require.NoError(t, d.del.GiveUp(d.t.Context(), d.s, id, errors.New("smtp unavailable")))
 
 	assert.Equal(t, broadcast.StatusSent, d.broadcastRow().Status)
 	assert.Equal(t, broadcasts.Stats{Recipients: 1, Failed: 1}, d.stats())
@@ -249,7 +248,7 @@ func TestGiveUpWaitsOutALiveClaim(t *testing.T) {
 	id := d.recipient(fixtures.ContactBobID)
 	d.claim(id, 0)
 
-	err := d.del.GiveUp(d.ctx, d.s, id, errors.New("smtp unavailable"))
+	err := d.del.GiveUp(d.t.Context(), d.s, id, errors.New("smtp unavailable"))
 
 	require.ErrorIs(t, err, outbound.ErrInProgress)
 	assert.True(t, d.pending(id))
@@ -262,7 +261,7 @@ func TestGiveUpFailsAnExpiredClaim(t *testing.T) {
 	id := d.recipient(fixtures.ContactBobID)
 	d.claim(id, time.Hour)
 
-	require.NoError(t, d.del.GiveUp(d.ctx, d.s, id, errors.New("smtp unavailable")))
+	require.NoError(t, d.del.GiveUp(d.t.Context(), d.s, id, errors.New("smtp unavailable")))
 
 	assert.False(t, d.pending(id))
 	assert.Equal(t, outboundmessage.StatusFailed, d.messageOf(id).Status)
@@ -275,12 +274,12 @@ func TestGiveUpAfterTheMailLeftKeepsTheRecipientSent(t *testing.T) {
 	id := d.recipient(fixtures.ContactAliceID)
 	b := d.broadcastRow()
 	rec := d.recipientRow(id)
-	c := d.env.DB.Contact.GetX(d.ctx, fixtures.ContactAliceID)
-	res, err := d.out.Send(d.ctx, d.s, outbound.BroadcastRecipient(b, rec, c))
+	c := d.env.DB.Contact.GetX(d.t.Context(), fixtures.ContactAliceID)
+	res, err := d.out.Send(d.t.Context(), d.s, outbound.BroadcastRecipient(b, rec, c))
 	require.NoError(t, err)
 	require.Equal(t, outbound.Sent, res.Outcome)
 
-	require.NoError(t, d.del.GiveUp(d.ctx, d.s, id, errors.New("late failure")))
+	require.NoError(t, d.del.GiveUp(d.t.Context(), d.s, id, errors.New("late failure")))
 
 	assert.False(t, d.pending(id))
 	assert.Equal(t, outboundmessage.StatusSent, d.messageOf(id).Status)
@@ -292,9 +291,9 @@ func TestGiveUpAfterTheMailLeftKeepsTheRecipientSent(t *testing.T) {
 func TestAGiveUpAfterTheSendKeepsItsOutcome(t *testing.T) {
 	d := newDelivery(t)
 	id := d.recipient(fixtures.ContactAliceID)
-	require.NoError(t, d.del.SendRecipient(d.ctx, d.s, id))
+	require.NoError(t, d.del.SendRecipient(d.t.Context(), d.s, id))
 
-	require.NoError(t, d.del.GiveUp(d.ctx, d.s, id, errors.New("late")))
+	require.NoError(t, d.del.GiveUp(d.t.Context(), d.s, id, errors.New("late")))
 
 	assert.Equal(t, outboundmessage.StatusSent, d.messageOf(id).Status)
 	assert.Equal(t, broadcasts.Stats{Recipients: 1, Sent: 1}, d.stats())

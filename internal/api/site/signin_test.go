@@ -55,7 +55,7 @@ func startSignin(t *testing.T, b *testhelper.RedirectBrowser, returnTo string) s
 }
 
 // signInWith runs the whole round trip for who and returns the callback's answer.
-func signInWith(t *testing.T, env *testhelper.TestEnv, fake *testhelper.FakeSignin, b *testhelper.RedirectBrowser, who testhelper.SigninIdentity, returnTo string) testhelper.Reply {
+func signInWith(t *testing.T, fake *testhelper.FakeSignin, b *testhelper.RedirectBrowser, who testhelper.SigninIdentity, returnTo string) testhelper.Reply {
 	t.Helper()
 	authURL := startSignin(t, b, returnTo)
 	return b.Get(t, fake.Authorize(t, authURL, who))
@@ -83,7 +83,7 @@ func TestSigninANewPersonIsSignedUpVerifiedWithNoMail(t *testing.T) {
 	b := env.NewRedirectBrowser(t)
 	before := len(env.SystemMail.Messages())
 
-	resp := signInWith(t, env, fake, b, newcomer, "")
+	resp := signInWith(t, fake, b, newcomer, "")
 
 	assert.Equal(t, http.StatusFound, resp.StatusCode)
 	assert.Equal(t, "/", resp.Header.Get("Location"))
@@ -105,7 +105,7 @@ func TestSigninWithoutANameUsesTheLocalPartOfTheEmail(t *testing.T) {
 	who := newcomer
 	who.Name = ""
 
-	signInWith(t, env, fake, env.NewRedirectBrowser(t), who, "")
+	signInWith(t, fake, env.NewRedirectBrowser(t), who, "")
 
 	u, err := env.DB.User.Query().Where(entuser.Email(newcomer.Email)).Only(t.Context())
 	require.NoError(t, err)
@@ -114,14 +114,14 @@ func TestSigninWithoutANameUsesTheLocalPartOfTheEmail(t *testing.T) {
 
 func TestSigninTheSamePersonSignsInAgainBySubjectAlsoAfterChangingTheEmail(t *testing.T) {
 	env, fake := signinEnv(t)
-	signInWith(t, env, fake, env.NewRedirectBrowser(t), newcomer, "")
+	signInWith(t, fake, env.NewRedirectBrowser(t), newcomer, "")
 	first, err := env.DB.User.Query().Where(entuser.Email(newcomer.Email)).Only(t.Context())
 	require.NoError(t, err)
 	moved := newcomer
 	moved.Email = "nina.new@gmail.com"
 	again := env.NewRedirectBrowser(t)
 
-	resp := signInWith(t, env, fake, again, moved, "")
+	resp := signInWith(t, fake, again, moved, "")
 
 	assert.Equal(t, "/", resp.Header.Get("Location"))
 	assert.Equal(t, http.StatusOK, meStatus(t, again))
@@ -138,7 +138,7 @@ func TestSigninALinkedIdentityOfAFixtureUserSignsIn(t *testing.T) {
 	b := env.NewRedirectBrowser(t)
 	maryNow := testhelper.SigninIdentity{Subject: fixtures.MaryGoogleIdentitySubject, Email: "mary@elsewhere.test", EmailVerified: false}
 
-	resp := signInWith(t, env, fake, b, maryNow, "")
+	resp := signInWith(t, fake, b, maryNow, "")
 
 	assert.Equal(t, "/", resp.Header.Get("Location"), "the subject alone is enough, whatever the provider says of the email")
 	assert.Equal(t, http.StatusOK, meStatus(t, b))
@@ -159,7 +159,7 @@ func TestSigninRefusesWhatTheProviderDoesNotProve(t *testing.T) {
 			env, fake := signinEnv(t)
 			b := env.NewRedirectBrowser(t)
 
-			resp := signInWith(t, env, fake, b, tc.who, "")
+			resp := signInWith(t, fake, b, tc.who, "")
 
 			assert.Equal(t, tc.code, refusalCode(t, resp, loginErrorPath))
 			assert.Equal(t, http.StatusUnauthorized, meStatus(t, b), "no session started")
@@ -171,7 +171,7 @@ func TestSigninAcceptsAVerifiedAddressOfAHostedDomain(t *testing.T) {
 	env, fake := signinEnv(t)
 	b := env.NewRedirectBrowser(t)
 
-	resp := signInWith(t, env, fake, b, testhelper.SigninIdentity{Subject: "s5", Email: "a@corp.test", EmailVerified: true, HostedDomain: "corp.test"}, "")
+	resp := signInWith(t, fake, b, testhelper.SigninIdentity{Subject: "s5", Email: "a@corp.test", EmailVerified: true, HostedDomain: "corp.test"}, "")
 
 	assert.Equal(t, "/", resp.Header.Get("Location"))
 }
@@ -245,7 +245,7 @@ func TestSigninStartKeepsTheFlowInAHttpOnlyLaxCookieScopedToTheSigninPrefix(t *t
 func TestSigninReturnToARelativePathIsHonoured(t *testing.T) {
 	env, fake := signinEnv(t)
 
-	resp := signInWith(t, env, fake, env.NewRedirectBrowser(t), newcomer, "/w/abc/contacts?tab=1")
+	resp := signInWith(t, fake, env.NewRedirectBrowser(t), newcomer, "/w/abc/contacts?tab=1")
 
 	assert.Equal(t, "/w/abc/contacts?tab=1", resp.Header.Get("Location"))
 }
@@ -255,7 +255,7 @@ func TestSigninReturnToAnAbsoluteOrForeignUrlIsIgnored(t *testing.T) {
 		t.Run(target, func(t *testing.T) {
 			env, fake := signinEnv(t)
 
-			resp := signInWith(t, env, fake, env.NewRedirectBrowser(t), newcomer, target)
+			resp := signInWith(t, fake, env.NewRedirectBrowser(t), newcomer, target)
 
 			assert.Equal(t, "/", resp.Header.Get("Location"))
 		})
@@ -281,8 +281,8 @@ func TestSigninACallbackForAProviderThatIsNotEnabledLandsOnLogin(t *testing.T) {
 func TestSigninClosedSignupRefusesANewPersonButNotAKnownOne(t *testing.T) {
 	env, fake := signinEnv(t, testhelper.WithConfig(func(c *config.Config) { c.SignupOpen = false }))
 
-	refused := signInWith(t, env, fake, env.NewRedirectBrowser(t), newcomer, "")
-	allowed := signInWith(t, env, fake, env.NewRedirectBrowser(t), mary, "")
+	refused := signInWith(t, fake, env.NewRedirectBrowser(t), newcomer, "")
+	allowed := signInWith(t, fake, env.NewRedirectBrowser(t), mary, "")
 
 	assert.Equal(t, signin.ReasonSignupClosed, refusalCode(t, refused, loginErrorPath))
 	assert.Equal(t, "/", allowed.Header.Get("Location"))
@@ -322,7 +322,7 @@ func TestSigninAUserWithASecondFactorGetsAChallengeAndNoSession(t *testing.T) {
 	env, fake := signinEnv(t)
 	b := env.NewRedirectBrowser(t)
 
-	resp := signInWith(t, env, fake, b, samIdentity, "")
+	resp := signInWith(t, fake, b, samIdentity, "")
 
 	challengeOf(t, resp)
 	assert.Nil(t, sessionCookie(&http.Response{Header: resp.Header}), "no session cookie before the code")
@@ -331,7 +331,7 @@ func TestSigninAUserWithASecondFactorGetsAChallengeAndNoSession(t *testing.T) {
 
 func TestSigninTheChallengeIsFinishedWithATOTPCode(t *testing.T) {
 	env, fake, clock := signinEnvOnClock(t)
-	challenge := challengeOf(t, signInWith(t, env, fake, env.NewRedirectBrowser(t), samIdentity, ""))
+	challenge := challengeOf(t, signInWith(t, fake, env.NewRedirectBrowser(t), samIdentity, ""))
 
 	rec := secondStepStatus(t, env, challenge, samTOTP(t, clock))
 
@@ -344,7 +344,7 @@ func TestSigninTheChallengeIsFinishedWithATOTPCode(t *testing.T) {
 func TestSigninTheChallengeKeepsTheReturnAddress(t *testing.T) {
 	env, fake := signinEnv(t)
 
-	resp := signInWith(t, env, fake, env.NewRedirectBrowser(t), samIdentity, "/w/abc/contacts")
+	resp := signInWith(t, fake, env.NewRedirectBrowser(t), samIdentity, "/w/abc/contacts")
 
 	challengeOf(t, resp)
 	u, err := url.Parse(resp.Header.Get("Location"))
@@ -354,7 +354,7 @@ func TestSigninTheChallengeKeepsTheReturnAddress(t *testing.T) {
 
 func TestSigninTheChallengeIsFinishedWithARecoveryCode(t *testing.T) {
 	env, fake := signinEnv(t)
-	challenge := challengeOf(t, signInWith(t, env, fake, env.NewRedirectBrowser(t), samIdentity, ""))
+	challenge := challengeOf(t, signInWith(t, fake, env.NewRedirectBrowser(t), samIdentity, ""))
 
 	rec := secondStepStatus(t, env, challenge, fixtures.SecondFactorSamRecoveryCode)
 
@@ -364,7 +364,7 @@ func TestSigninTheChallengeIsFinishedWithARecoveryCode(t *testing.T) {
 
 func TestSigninWrongCodesAfterAProviderLoginAreThrottled(t *testing.T) {
 	env, fake, clock := signinEnvOnClock(t, testhelper.WithRateLimits(config.RateLimits{LoginFailures: 3}))
-	challenge := challengeOf(t, signInWith(t, env, fake, env.NewRedirectBrowser(t), samIdentity, ""))
+	challenge := challengeOf(t, signInWith(t, fake, env.NewRedirectBrowser(t), samIdentity, ""))
 	for range 3 {
 		require.Equal(t, http.StatusUnauthorized, secondStepStatus(t, env, challenge, "000000").Code)
 	}
@@ -376,7 +376,7 @@ func TestSigninWrongCodesAfterAProviderLoginAreThrottled(t *testing.T) {
 
 func TestSigninAPasswordlessUserIsAnsweredLikeAWrongPassword(t *testing.T) {
 	env, fake := signinEnv(t)
-	signInWith(t, env, fake, env.NewRedirectBrowser(t), newcomer, "")
+	signInWith(t, fake, env.NewRedirectBrowser(t), newcomer, "")
 
 	passwordless := postLogin(t, env, newcomer.Email, "any password at all")
 	unknown := postLogin(t, env, "nobody@gmail.com", "any password at all")

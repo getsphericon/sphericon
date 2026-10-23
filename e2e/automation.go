@@ -103,18 +103,18 @@ type HTTPAutomation struct {
 func (w *Workspace) ActivateHTTPAutomation(a HTTPAutomation) {
 	w.t.Helper()
 	ctx := w.t.Context()
-	http := externalapi.AutomationStep{
+	httpStep := externalapi.AutomationStep{
 		Type: externalapi.AutomationStepTypeHTTP,
 		URL:  externalapi.NewOptString(a.Hook.URL),
 		Body: externalapi.NewOptString(a.Body),
 	}
 	if a.Hook.Secret != "" {
-		http.Secret = externalapi.NewOptString(a.Hook.Secret)
+		httpStep.Secret = externalapi.NewOptString(a.Hook.Secret)
 	}
 	res, err := w.api.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
 		Name:         "e2e http automation " + uniq(),
 		TriggerEvent: a.TriggerEvent,
-		Steps: []externalapi.AutomationStep{http, {
+		Steps: []externalapi.AutomationStep{httpStep, {
 			Type:    externalapi.AutomationStepTypeEmail,
 			Subject: externalapi.NewOptString(a.Subject),
 			Body:    externalapi.NewOptString(a.EmailBody),
@@ -153,7 +153,7 @@ func (w *Workspace) OpenMail(msg Message) {
 	w.t.Helper()
 	m := openPixel.FindStringSubmatch(msg.HTML)
 	require.NotNil(w.t, m, "the email %q carries an open pixel", msg.Subject)
-	req, err := http.NewRequestWithContext(w.t.Context(), http.MethodGet, m[1], nil)
+	req, err := http.NewRequestWithContext(w.t.Context(), http.MethodGet, m[1], http.NoBody)
 	require.NoError(w.t, err)
 	// A person's mail client, not Go's default agent: that one is machine engagement (ADR 0053).
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15")

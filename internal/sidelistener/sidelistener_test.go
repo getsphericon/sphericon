@@ -20,7 +20,7 @@ func TestServerBindsServesAndStops(t *testing.T) {
 	served := make(chan error, 1)
 	go func() { served <- s.Serve() }()
 
-	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://"+s.Addr()+"/service/ping", nil)
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://"+s.Addr()+"/service/ping", http.NoBody)
 	require.NoError(t, err)
 	res, err := http.DefaultClient.Do(req)
 	require.NoError(t, err)

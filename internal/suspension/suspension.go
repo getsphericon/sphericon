@@ -26,7 +26,7 @@ var (
 	CLI    = Actor{Kind: workspace.SuspendedByKindCli}
 )
 
-// Staff member is the platform Staff member with this id.
+// StaffMember is the platform Staff member with this id.
 func StaffMember(id string) Actor {
 	return Actor{Kind: workspace.SuspendedByKindStaff, ID: strings.TrimSpace(id)}
 }

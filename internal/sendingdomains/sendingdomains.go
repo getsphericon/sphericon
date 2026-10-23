@@ -293,11 +293,11 @@ func (m *Module) liveUsers(ctx context.Context, s *ent.Scoped, domain string) ([
 	if configured != domain {
 		return users, nil
 	}
-	sending, err := liveuse.EmailAutomations(ctx, s)
+	automations, err := liveuse.EmailAutomations(ctx, s)
 	if err != nil {
 		return nil, err
 	}
-	return append(users, sending...), nil
+	return append(users, automations...), nil
 }
 
 // configuredFromDomain is the domain of the From address the Workspace's default email

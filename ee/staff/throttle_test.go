@@ -47,7 +47,7 @@ func requireThrottled(t *testing.T, rec *httptest.ResponseRecorder) {
 	t.Helper()
 	require.Equal(t, http.StatusTooManyRequests, rec.Code, rec.Body.String())
 	assert.Equal(t, "1", rec.Header().Get("Retry-After"))
-	assert.Equal(t, "0", rec.Header().Get("X-RateLimit-Remaining"))
+	assert.Equal(t, "0", rec.Header().Get("X-Ratelimit-Remaining"))
 	assert.Equal(t, "application/problem+json", rec.Header().Get("Content-Type"))
 	assert.Empty(t, rec.Header().Get("Set-Cookie"))
 }

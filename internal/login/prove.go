@@ -21,9 +21,10 @@ const (
 
 // ProofResult is the one answer of Prove.
 type ProofResult struct {
-	Proof Proof
 	// Delay is set for ProofThrottled.
 	Delay
+
+	Proof Proof
 }
 
 // Prove is the one path every password-gated action takes (second-factor enrol, disable

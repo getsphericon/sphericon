@@ -40,7 +40,7 @@ func TestAddIsIdempotentAndKeepsTheFirstReason(t *testing.T) {
 	got, err := suppression.AddManual(ctx, s, fixtures.SuppressionGhostBounceDestination)
 	require.NoError(t, err)
 	assert.Equal(t, entsuppression.ReasonBounce, got.Reason)
-	assert.Equal(t, int64(fixtures.SuppressionGhostBounceID), int64(got.ID))
+	assert.Equal(t, int64(fixtures.SuppressionGhostBounceID), got.ID)
 }
 
 func TestAddRefusesABlankDestination(t *testing.T) {

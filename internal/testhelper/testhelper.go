@@ -72,8 +72,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/webhooks"
 	"github.com/getsphericon/sphericon/internal/workspacedeletion"
 	"github.com/go-testfixtures/testfixtures/v3"
+	// The pgx driver behind database/sql.
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/mokevnin/dbcleaner"
+	// The Postgres cleaner of dbcleaner.
 	_ "github.com/mokevnin/dbcleaner/postgres"
 	ht "github.com/ogen-go/ogen/http"
 	"github.com/stretchr/testify/require"
@@ -195,11 +197,11 @@ type TestEnv struct {
 	StaffMembers *staff.Module
 }
 
-// Option tunes the server a test builds with Setup.
 // TrackingCNAMETarget is the edge host the test instance names for Tracking domain CNAMEs
 // (SPHERICON_TRACKING_CNAME_TARGET); WithConfig clears it to test the feature off.
 const TrackingCNAMETarget = "edge.sphericon.test"
 
+// Option tunes the server a test builds with Setup.
 type Option func(*setup)
 
 // setup is what the options edit: a private copy of the test config, the clock the
@@ -474,7 +476,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 // CoreHolds is the holds module of an instance that ignores Staff holds (no `staff` license),
 // for a test under testing/synctest: fake time starts in 2000, before the real-clock expiry
 // of the fixture holds, which would read active there.
-func (e *TestEnv) CoreHolds() *holds.Holds {
+func (env *TestEnv) CoreHolds() *holds.Holds {
 	return holds.New(func() bool { return false }, time.Now)
 }
 
@@ -615,8 +617,5 @@ func loadFixtureDir(ctx context.Context, sqlDB *sql.DB, cfg *config.Config, dir 
 	if err != nil {
 		return err
 	}
-	if err := loader.Load(); err != nil {
-		return err
-	}
-	return nil
+	return loader.Load()
 }

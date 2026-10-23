@@ -125,7 +125,7 @@ func (v *Verifier) store(ctx context.Context, s *ent.Scoped, row *ent.SendingDom
 // probe reports whether https://host/ProbePath answers 200 with the host's ProbeValue.
 // Any failure, an error, another status or another body, is a failed probe.
 func (v *Verifier) probe(ctx context.Context, host string) bool {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://"+host+ProbePath, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://"+host+ProbePath, http.NoBody)
 	if err != nil {
 		return false
 	}

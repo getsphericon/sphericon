@@ -483,8 +483,8 @@ func TestEligibilityFailureReleasesTheClaimAndFailsClosed(t *testing.T) {
 	logs := captureLog(t)
 
 	// The eligibility rule runs through the Workspace's Suppression query.
-	env.DB.Suppression.Intercept(ent.InterceptFunc(func(next ent.Querier) ent.Querier {
-		return ent.QuerierFunc(func(ctx context.Context, q ent.Query) (ent.Value, error) {
+	env.DB.Suppression.Intercept(ent.InterceptFunc(func(_ ent.Querier) ent.Querier {
+		return ent.QuerierFunc(func(_ context.Context, _ ent.Query) (ent.Value, error) {
 			return nil, errors.New("rule store unavailable")
 		})
 	}))
@@ -558,6 +558,7 @@ func TestAStaleClaimTokenCannotWriteFailed(t *testing.T) {
 // over while it runs.
 type takeoverSender struct {
 	messaging.EmailSender
+
 	takeOver func(context.Context)
 }
 

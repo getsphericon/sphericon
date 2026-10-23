@@ -414,6 +414,7 @@ func TestSendTestSkipsEligibilityAndRecordsNothingButHonorsTheFreeze(t *testing.
 // attempt holds its claim — the window in which a slow attempt can outlive its lease.
 type reentrantSender struct {
 	messaging.EmailSender
+
 	onSend func()
 }
 

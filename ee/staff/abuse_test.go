@@ -53,7 +53,7 @@ func TestAnStaffExemptsAndUnexemptsAWorkspaceAndBothAreAudited(t *testing.T) {
 		Where(auditentry.ActionIn(events.ActionWorkspaceAbuseExempt, events.ActionWorkspaceAbuseUnexempt)).AllX(t.Context())
 	assert.Len(t, entries, 2)
 	for _, e := range entries {
-		assert.Equal(t, string(events.ActorStaff), string(e.ActorKind))
+		assert.Equal(t, string(events.ActorStaff), e.ActorKind)
 	}
 }
 

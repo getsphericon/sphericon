@@ -147,7 +147,7 @@ func TestSpecProjectionListsToolsWithAnnotationsAndSchemas(t *testing.T) {
 	}
 	assert.ElementsMatch(t, []string{"things_get", "things_patch", "things_put", "things_delete", "bulk_create", "custom_name"},
 		func() []string {
-			var n []string
+			n := make([]string, 0, len(byName))
 			for k := range byName {
 				n = append(n, k)
 			}

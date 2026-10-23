@@ -38,10 +38,10 @@ func (h *Handlers) EventsCreate(ctx context.Context, req *externalapi.RecordEven
 	return &externalapi.EventsCreateNoContent{}, nil
 }
 
-func eventInputs(events []externalapi.EventInput, backfill bool) ([]eventlog.Input, error) {
-	inputs := make([]eventlog.Input, len(events))
-	for i := range events {
-		e := &events[i]
+func eventInputs(items []externalapi.EventInput, backfill bool) ([]eventlog.Input, error) {
+	inputs := make([]eventlog.Input, len(items))
+	for i := range items {
+		e := &items[i]
 		in := eventlog.Input{
 			SubjectID: e.SubjectId,
 			Email:     convert.StringPtr(e.Email),

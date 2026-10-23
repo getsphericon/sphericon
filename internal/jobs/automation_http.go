@@ -39,6 +39,7 @@ func (RunHTTPStepArgs) InsertOpts() river.InsertOpts {
 // it `failed` with the reason when the retries are spent.
 type RunHTTPStepWorker struct {
 	river.WorkerDefaults[RunHTTPStepArgs]
+
 	ent    *ent.Client
 	mod    *automations.Module
 	client webhook.Doer

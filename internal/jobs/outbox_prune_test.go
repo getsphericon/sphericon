@@ -7,6 +7,7 @@ import (
 
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/rivertype"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -59,11 +60,7 @@ func prune(t *testing.T, env *testhelper.TestEnv) {
 
 func remainingOffsets(t *testing.T, env *testhelper.TestEnv) []int64 {
 	t.Helper()
-	var out []int64
-	for _, r := range env.OutboxRows(t) {
-		out = append(out, r.Offset)
-	}
-	return out
+	return lo.Map(env.OutboxRows(t), func(r testhelper.OutboxRow, _ int) int64 { return r.Offset })
 }
 
 func TestPruneOutboxDeletesRowsBelowLowestCursorPastFloor(t *testing.T) {

@@ -33,6 +33,7 @@ func (PruneArgs) Kind() string { return "ee_retention_prune" }
 // Worker runs Prune on the periodic tick.
 type Worker struct {
 	river.WorkerDefaults[PruneArgs]
+
 	client *ent.Client
 	lic    *licensekey.License
 }

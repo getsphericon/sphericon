@@ -53,6 +53,7 @@ func RecordSendOutcome(ctx context.Context, provider Provider, status SendStatus
 // around Send.
 type instrumentedSender struct {
 	EmailSender
+
 	provider Provider
 }
 

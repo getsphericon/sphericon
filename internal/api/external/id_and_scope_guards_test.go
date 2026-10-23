@@ -7,6 +7,7 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -114,11 +115,7 @@ func idGuardCases() []guardCase {
 }
 
 func allScopes() []string {
-	var out []string
-	for _, s := range externalapi.ApiTokenScope("").AllValues() {
-		out = append(out, string(s))
-	}
-	return out
+	return lo.Map(externalapi.ApiTokenScope("").AllValues(), func(s externalapi.ApiTokenScope, _ int) string { return string(s) })
 }
 
 // An id that is not an int64 is refused by the contract (a 400 problem) before any

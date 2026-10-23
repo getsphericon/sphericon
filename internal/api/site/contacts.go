@@ -159,9 +159,9 @@ func problem(code int, detail string) siteapi.ProblemDetails {
 }
 
 // problemWithErrors builds a ProblemDetails with field-level validation errors.
-func problemWithErrors(code int, detail string, errors map[string][]string) siteapi.ProblemDetails {
+func problemWithErrors(code int, detail string, fieldErrors map[string][]string) siteapi.ProblemDetails {
 	p := problem(code, detail)
-	p.Errors = siteapi.NewOptProblemDetailsErrors(siteapi.ProblemDetailsErrors(errors))
+	p.Errors = siteapi.NewOptProblemDetailsErrors(siteapi.ProblemDetailsErrors(fieldErrors))
 	return p
 }
 

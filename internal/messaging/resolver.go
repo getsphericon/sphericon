@@ -2,6 +2,7 @@ package messaging
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -11,7 +12,7 @@ import (
 
 // ErrNoProvider is returned when a workspace has no enabled default provider for
 // the requested channel.
-var ErrNoProvider = fmt.Errorf("no default provider configured")
+var ErrNoProvider = errors.New("no default provider configured")
 
 // Resolver turns a workspace's stored integration into a live sender. It is the
 // only in-scope consumer of the catalog's Build path; the marketing send engine

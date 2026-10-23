@@ -60,7 +60,7 @@ func TestLoginAnswers429AfterTheConfiguredFailuresEvenWithTheRightPassword(t *te
 		rec := login(t, env, fixtures.OwnerJohnEmail, password)
 		require.Equal(t, http.StatusTooManyRequests, rec.Code, name)
 		assert.Equal(t, "1", rec.Header().Get("Retry-After"), name)
-		assert.Equal(t, "0", rec.Header().Get("X-RateLimit-Remaining"))
+		assert.Equal(t, "0", rec.Header().Get("X-Ratelimit-Remaining"))
 		assert.Equal(t, "application/problem+json", rec.Header().Get("Content-Type"))
 		var body struct {
 			Status     int `json:"status"`

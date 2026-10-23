@@ -193,15 +193,15 @@ const ShortcutDomain = "getsphericon.io"
 
 // ShortcutTXTLookup is the resolver of a development Instance: the proof records of
 // ShortcutDomain are answered from what we stored for it (see DevTXTLookup), every other
-// name goes to real. Production uses real alone: this trust must never be wired outside a
+// name goes to upstream. Production uses upstream alone: this trust must never be wired outside a
 // dev env.
-func ShortcutTXTLookup(client *ent.Client, real sending.TXTLookup) sending.TXTLookup {
+func ShortcutTXTLookup(client *ent.Client, upstream sending.TXTLookup) sending.TXTLookup {
 	dev := DevTXTLookup(client)
 	return func(ctx context.Context, name string) ([]string, error) {
 		if domain, ok := recordDomain(name); ok && domain == ShortcutDomain {
 			return dev(ctx, name)
 		}
-		return real(ctx, name)
+		return upstream(ctx, name)
 	}
 }
 

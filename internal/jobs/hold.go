@@ -17,13 +17,15 @@ const inProgressRetryDelay = 30 * time.Second
 // asDeferred returns the DeferredError in err's chain, if any.
 func asDeferred(err error) (*broadcasts.DeferredError, bool) {
 	var d *broadcasts.DeferredError
-	return d, errors.As(err, &d)
+	ok := errors.As(err, &d)
+	return d, ok
 }
 
 // asHeld returns the HeldError in err's chain, if any.
 func asHeld(err error) (*broadcasts.HeldError, bool) {
 	var h *broadcasts.HeldError
-	return h, errors.As(err, &h)
+	ok := errors.As(err, &h)
+	return h, ok
 }
 
 // snoozeIfDeferrable converts a deferrable error into the River snooze for the job

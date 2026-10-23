@@ -186,7 +186,7 @@ func codesOf(tb testing.TB, v any) []string {
 	tb.Helper()
 	findings, isList := v.([]any)
 	require.True(tb, isList, "the findings are a list")
-	var codes []string
+	codes := make([]string, 0, len(findings))
 	for _, f := range findings {
 		finding, isFinding := f.(map[string]any)
 		require.True(tb, isFinding, "a finding is an object")

@@ -21,13 +21,11 @@ import (
 // outboxCollected decodes every CollectedEvent on the domain-event outbox.
 func outboxCollected(t *testing.T, env *testhelper.TestEnv) []*events.CollectedEvent {
 	t.Helper()
-	var out []*events.CollectedEvent
-	for _, ev := range env.OutboxEvents(t, events.NameCollected) {
+	return lo.Map(env.OutboxEvents(t, events.NameCollected), func(ev events.DomainEvent, _ int) *events.CollectedEvent {
 		ce, ok := ev.(*events.CollectedEvent)
 		require.Truef(t, ok, "got %T", ev)
-		out = append(out, ce)
-	}
-	return out
+		return ce
+	})
 }
 
 func TestIdentifyCreatesTheContactBindsTheDeviceAndStitchesEarlierEvents(t *testing.T) {

@@ -233,7 +233,7 @@ func TestRefreshSkipsAWorkspaceInItsDeletionWindow(t *testing.T) {
 
 	page, err := usage.List(t.Context(), env.DB, month(7), pagination.Params{Page: 1, PageSize: 25})
 	require.NoError(t, err)
-	var ids []int64
+	ids := make([]int64, 0, len(page.Items))
 	for _, w := range page.Items {
 		ids = append(ids, w.WorkspaceID)
 	}

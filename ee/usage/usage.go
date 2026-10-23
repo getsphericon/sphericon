@@ -260,6 +260,7 @@ func (Args) Kind() string { return "ee_usage_refresh" }
 // Worker runs Refresh on the periodic tick.
 type Worker struct {
 	river.WorkerDefaults[Args]
+
 	client *ent.Client
 	lic    *licensekey.License
 }

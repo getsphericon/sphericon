@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -248,7 +249,7 @@ func TestStopShutsDownTheMetricsServer(t *testing.T) {
 func TestSuspendAndUnsuspendWorkspace(t *testing.T) {
 	sink := newSMTPSink(t)
 	t.Setenv("SPHERICON_SMTP_HOST", "127.0.0.1")
-	t.Setenv("SPHERICON_SMTP_PORT", fmt.Sprint(sink.port))
+	t.Setenv("SPHERICON_SMTP_PORT", strconv.Itoa(sink.port))
 	t.Setenv("SPHERICON_SMTP_USER", "")
 	t.Setenv("SPHERICON_SMTP_PASS", "")
 	baseline(t)
@@ -296,7 +297,7 @@ func TestSuspendWorkspaceKeepsTheSuspensionWhenTheNoticeFails(t *testing.T) {
 	port := ln.Addr().(*net.TCPAddr).Port
 	require.NoError(t, ln.Close())
 	t.Setenv("SPHERICON_SMTP_HOST", "127.0.0.1")
-	t.Setenv("SPHERICON_SMTP_PORT", fmt.Sprint(port))
+	t.Setenv("SPHERICON_SMTP_PORT", strconv.Itoa(port))
 	baseline(t)
 	a, err := NewCommandApp("test")
 	require.NoError(t, err)
@@ -352,7 +353,7 @@ func TestResetSecondFactorByEmail(t *testing.T) {
 
 	envelopes, err := testhelper.OutboxEnvelopesOn(ctx, client, events.NameAuditEntry)
 	require.NoError(t, err)
-	var workspaces []int64
+	workspaces := make([]int64, 0, len(envelopes))
 	for _, e := range envelopes {
 		ev, err := events.Decode(e)
 		require.NoError(t, err)

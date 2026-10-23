@@ -45,7 +45,7 @@ type HoldChange = holds.Change
 //
 // The service endpoints scope over the one Workspace the call names, after its row is
 // loaded (AGENTS.md, Workspace scoping, list item 7).
-func (m *Module) SetHold(ctx context.Context, bus *events.Bus, cred *ent.ServiceCredential, workspaceID string, key string, in HoldInput) (HoldChange, error) {
+func (m *Module) SetHold(ctx context.Context, bus *events.Bus, cred *ent.ServiceCredential, workspaceID, key string, in HoldInput) (HoldChange, error) {
 	if err := m.licensed(); err != nil {
 		return HoldChange{}, err
 	}
@@ -70,7 +70,7 @@ func (m *Module) SetHold(ctx context.Context, bus *events.Bus, cred *ent.Service
 
 // ClearHold removes the hold under key. Clearing a missing hold succeeds. It is recorded
 // in the Audit log under the credential's name. ent.IsNotFound for an unknown Workspace.
-func (m *Module) ClearHold(ctx context.Context, bus *events.Bus, cred *ent.ServiceCredential, workspaceID string, key string) (HoldChange, error) {
+func (m *Module) ClearHold(ctx context.Context, bus *events.Bus, cred *ent.ServiceCredential, workspaceID, key string) (HoldChange, error) {
 	if err := m.licensed(); err != nil {
 		return HoldChange{}, err
 	}

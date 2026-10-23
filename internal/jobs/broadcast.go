@@ -39,6 +39,7 @@ func (SendRecipientArgs) Kind() string { return jobkind.SendRecipient.Kind }
 // in one job under the default 1-minute JobTimeout.
 type SendBroadcastWorker struct {
 	river.WorkerDefaults[broadcasts.SendArgs]
+
 	ent *ent.Client
 	del *broadcasts.Delivery
 }
@@ -99,6 +100,7 @@ func (r riverSends) Schedule(ctx context.Context, broadcastID int64, sends []bro
 // rest of the audience.
 type SendRecipientWorker struct {
 	river.WorkerDefaults[SendRecipientArgs]
+
 	ent *ent.Client
 	del *broadcasts.Delivery
 }

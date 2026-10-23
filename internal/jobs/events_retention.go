@@ -43,6 +43,7 @@ func (PruneEventsArgs) Kind() string { return "events_retention" }
 // the raw ent client; a zero retention disables it.
 type PruneEventsWorker struct {
 	river.WorkerDefaults[PruneEventsArgs]
+
 	ent       *ent.Client
 	retention time.Duration
 }

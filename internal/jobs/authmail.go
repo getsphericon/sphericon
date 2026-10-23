@@ -2,6 +2,7 @@ package jobs
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/url"
 	"strings"
@@ -67,6 +68,7 @@ func (SendAuthMailArgs) Kind() string { return "send_auth_mail" }
 // SendAuthMailWorker sends account emails via the system (platform) sender.
 type SendAuthMailWorker struct {
 	river.WorkerDefaults[SendAuthMailArgs]
+
 	sender messaging.EmailSender
 	appURL string
 }
@@ -81,7 +83,7 @@ func (w *SendAuthMailWorker) Work(ctx context.Context, job *river.Job[SendAuthMa
 // identically under the river worker and the inline adapter.
 func SendAuthMail(ctx context.Context, sender messaging.EmailSender, appURL string, args SendAuthMailArgs) error {
 	if sender == nil {
-		return fmt.Errorf("send auth mail: no system email sender configured")
+		return errors.New("send auth mail: no system email sender configured")
 	}
 	msg, err := buildAuthMail(appURL, args)
 	if err != nil || args.Discard {

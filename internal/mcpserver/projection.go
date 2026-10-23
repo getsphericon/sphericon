@@ -2,6 +2,7 @@ package mcpserver
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"maps"
 	"net/http"
@@ -132,7 +133,7 @@ func buildOperation(name, method, path string, raw, schemas, parameters map[stri
 		media, _ := content["application/json"].(map[string]any)
 		schema, _ := media["schema"].(map[string]any)
 		if schema == nil {
-			return nil, fmt.Errorf("request body is not application/json")
+			return nil, errors.New("request body is not application/json")
 		}
 		op.hasBody = true
 		resolved := schema
@@ -270,7 +271,7 @@ func rewrite(v any) any {
 
 // collectDefs returns the component schemas transitively referenced by the tool's
 // input schema, rewritten for `$defs`.
-func collectDefs(input map[string]any, schemas map[string]any) map[string]any {
+func collectDefs(input, schemas map[string]any) map[string]any {
 	defs := map[string]any{}
 	var visit func(v any)
 	visit = func(v any) {

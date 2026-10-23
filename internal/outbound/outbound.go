@@ -143,6 +143,10 @@ var ErrNoTracker = errors.New("outbound: marketing send requires an unsubscribe 
 
 // Result is the outcome of a Send.
 type Result struct {
+	// Refusal is, for a Deferral, how long until capacity returns (Wait) and, for a Test
+	// send Deferred by the System sender's caps, the cap that was hit (Limit).
+	ratelimit.Refusal
+
 	Outcome Outcome
 	// Reason explains Skipped (eligibility reason), Failed (cause) and Held (hold).
 	Reason string
@@ -152,9 +156,6 @@ type Result struct {
 	Replayed bool
 	// From is, for a Test send that was Sent, the From address it went out from.
 	From string
-	// Refusal is, for a Deferral, how long until capacity returns (Wait) and, for a Test
-	// send Deferred by the System sender's caps, the cap that was hit (Limit).
-	ratelimit.Refusal
 }
 
 // Senders resolves a Workspace's email provider adapter (its default Integration).
@@ -223,8 +224,8 @@ func (m *Module) AsSystem(s *ent.Scoped) *ent.Scoped {
 }
 
 // New builds the module. tracker may be nil only if no marketing Request is sent.
-func New(bus *events.Bus, holds *holds.Holds, senders Senders, tracker *tracking.Tracker, opts ...Option) *Module {
-	m := &Module{bus: bus, holds: holds, senders: senders, tracker: tracker, lease: DefaultLease}
+func New(bus *events.Bus, hs *holds.Holds, senders Senders, tracker *tracking.Tracker, opts ...Option) *Module {
+	m := &Module{bus: bus, holds: hs, senders: senders, tracker: tracker, lease: DefaultLease}
 	for _, o := range opts {
 		o(m)
 	}
@@ -737,6 +738,7 @@ const TestSubjectPrefix = "[Test] "
 // Detail, "" when the message was sent and otherwise why it was not.
 type TestReport struct {
 	Result
+
 	Detail string
 }
 
@@ -814,7 +816,7 @@ func (m *Module) composeTest(ctx context.Context, s *ent.Scoped, ws *ent.Workspa
 	return built.msg, err
 }
 
-// sendTestMessage sends a rendered Test message from from and reports it Sent. No Outbound
+// sendTestMessage sends a rendered Test message from the address from and reports it Sent. No Outbound
 // message is recorded.
 func sendTestMessage(ctx context.Context, sender messaging.EmailSender, msg messaging.EmailMessage, from, name, to string) (Result, error) {
 	msg.From, msg.FromName, msg.To = from, name, to

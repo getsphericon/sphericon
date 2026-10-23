@@ -54,13 +54,13 @@ func validate(raw []byte, allowPrivate bool) error {
 	}
 	switch {
 	case cfg.Host == "":
-		return fmt.Errorf("smtp: host is required")
+		return errors.New("smtp: host is required")
 	case cfg.Port <= 0:
-		return fmt.Errorf("smtp: port must be positive")
+		return errors.New("smtp: port must be positive")
 	case cfg.From == "":
-		return fmt.Errorf("smtp: from is required")
+		return errors.New("smtp: from is required")
 	case !allowPrivate && !slices.Contains(mailPorts, cfg.Port):
-		return fmt.Errorf("smtp: port must be one of 25, 465, 587, 2525")
+		return errors.New("smtp: port must be one of 25, 465, 587, 2525")
 	}
 	return nil
 }

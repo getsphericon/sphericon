@@ -141,11 +141,11 @@ func LintFiles(paths []string) ([]Finding, error) {
 // squawk lints the files and returns their findings. It exits non-zero when it reports a finding,
 // with the report on stdout: the report is the verdict, so an exit error with a report is not a
 // failure to run.
-func squawk(flag string, files []string) ([]Finding, error) {
+func squawk(flagName string, files []string) ([]Finding, error) {
 	if len(files) == 0 {
 		return nil, nil
 	}
-	report, err := output("squawk", append([]string{"--reporter", "json", flag}, files...)...)
+	report, err := output("squawk", append([]string{"--reporter", "json", flagName}, files...)...)
 	var exit *exec.ExitError
 	if err != nil && (!errors.As(err, &exit) || !strings.HasPrefix(strings.TrimSpace(report), "[")) {
 		return nil, err

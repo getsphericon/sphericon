@@ -52,6 +52,7 @@ func settled(ch <-chan struct{}) bool {
 // blockingSender holds every send in flight until released, and tells when it is.
 type blockingSender struct {
 	fakeSender
+
 	started chan struct{}
 	gate    chan struct{}
 	release func()

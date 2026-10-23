@@ -23,6 +23,7 @@ func (EraseWorkspacesArgs) Kind() string { return "workspace_erasure" }
 // EraseWorkspacesWorker triggers the Workspace deletion module's erase with the clock.
 type EraseWorkspacesWorker struct {
 	river.WorkerDefaults[EraseWorkspacesArgs]
+
 	deletion *workspacedeletion.Module
 	now      func() time.Time
 }

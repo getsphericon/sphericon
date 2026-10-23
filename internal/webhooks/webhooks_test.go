@@ -67,7 +67,7 @@ func TestCreateReturnsTheEndpointWithItsDecryptedStandardWebhooksSecret(t *testi
 
 	stored, err := acme.WebhookEndpoint().Get(ctx, got.ID)
 	require.NoError(t, err)
-	assert.NotContains(t, string(stored.SecretEncrypted), got.Secret, "stored sealed")
+	assert.NotContains(t, stored.SecretEncrypted, got.Secret, "stored sealed")
 
 	again, err := module(env, license(true)).Get(ctx, acme, got.ID)
 	require.NoError(t, err)

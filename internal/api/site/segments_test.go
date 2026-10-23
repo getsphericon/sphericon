@@ -75,7 +75,7 @@ func TestSiteSegmentsScopedToWorkspace(t *testing.T) {
 // format, which the typed client cannot show (it drops unknown fields).
 type bodyCapture struct {
 	inner interface {
-		Do(*http.Request) (*http.Response, error)
+		Do(req *http.Request) (*http.Response, error)
 	}
 	bodies []string
 }

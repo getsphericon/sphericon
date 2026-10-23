@@ -26,6 +26,7 @@ func (RefreshSendQuotasArgs) Kind() string { return "send_quota_refresh" }
 
 type RefreshSendQuotasWorker struct {
 	river.WorkerDefaults[RefreshSendQuotasArgs]
+
 	ent *ent.Client
 }
 
@@ -64,6 +65,7 @@ func (RefreshIntegrationQuotaArgs) Kind() string { return "integration_quota_ref
 
 type RefreshIntegrationQuotaWorker struct {
 	river.WorkerDefaults[RefreshIntegrationQuotaArgs]
+
 	ent     *ent.Client
 	cipher  *secrets.Cipher
 	catalog *messaging.Catalog

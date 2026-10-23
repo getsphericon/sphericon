@@ -87,26 +87,26 @@ type boundedCerts struct {
 	entries map[string]cachedCert
 }
 
-func (c *boundedCerts) get(url string, now time.Time) (*x509.Certificate, bool) {
+func (c *boundedCerts) get(certURL string, now time.Time) (*x509.Certificate, bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	e, ok := c.entries[url]
+	e, ok := c.entries[certURL]
 	if !ok || now.Sub(e.fetched) > c.ttl {
 		return nil, false
 	}
 	return e.cert, true
 }
 
-func (c *boundedCerts) put(url string, cert *x509.Certificate, now time.Time) {
+func (c *boundedCerts) put(certURL string, cert *x509.Certificate, now time.Time) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	if _, ok := c.entries[url]; !ok && len(c.entries) >= c.max {
+	if _, ok := c.entries[certURL]; !ok && len(c.entries) >= c.max {
 		for k := range c.entries { // evict any one: the cache holds a few entries
 			delete(c.entries, k)
 			break
 		}
 	}
-	c.entries[url] = cachedCert{cert: cert, fetched: now}
+	c.entries[certURL] = cachedCert{cert: cert, fetched: now}
 }
 
 func fetchSNSCertificate(ctx context.Context, certURL string) (*x509.Certificate, error) {
@@ -122,7 +122,7 @@ func fetchSNSCertificate(ctx context.Context, certURL string) (*x509.Certificate
 }
 
 func downloadSNSCertificate(ctx context.Context, certURL string) (*x509.Certificate, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, certURL, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, certURL, http.NoBody)
 	if err != nil {
 		return nil, err
 	}
@@ -141,16 +141,16 @@ func downloadSNSCertificate(ctx context.Context, certURL string) (*x509.Certific
 	return parseCertificate(data)
 }
 
-// awsURL accepts an https URL on an SNS host.
-func awsURL(raw string) (*url.URL, error) {
+// checkAWSURL accepts an https URL on an SNS host.
+func checkAWSURL(raw string) error {
 	u, err := url.Parse(raw)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if u.Scheme != "https" || !snsHost.MatchString(u.Host) {
-		return nil, fmt.Errorf("%q is not an https URL on an SNS host", raw)
+		return fmt.Errorf("%q is not an https URL on an SNS host", raw)
 	}
-	return u, nil
+	return nil
 }
 
 type snsVerifier struct {
@@ -251,7 +251,7 @@ func (s *snsVerifier) verify(ctx context.Context, _ Request, body any, params Pa
 	if p.TopicArn != topic {
 		return errors.New("the message is from another SNS topic")
 	}
-	if _, err := awsURL(p.SigningCertURL); err != nil {
+	if err := checkAWSURL(p.SigningCertURL); err != nil {
 		return fmt.Errorf("signing certificate: %w", err)
 	}
 	// A certificate we cannot get says nothing about the request: ours to retry.
@@ -267,7 +267,7 @@ func (s *snsVerifier) verify(ctx context.Context, _ Request, body any, params Pa
 		return fmt.Errorf("signature does not match: %w", err)
 	}
 	if p.Type == "SubscriptionConfirmation" {
-		if _, err := awsURL(p.SubscribeURL); err != nil {
+		if err := checkAWSURL(p.SubscribeURL); err != nil {
 			return fmt.Errorf("SubscribeURL: %w", err)
 		}
 	}

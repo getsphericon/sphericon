@@ -17,9 +17,9 @@ func (w world) input() holds.Input {
 func TestSettingAHoldTwiceChangesNothingTheSecondTime(t *testing.T) {
 	w := newWorld(t)
 
-	first, err := holds.Set(w.ctx, w.s, "review", "service-a", w.input())
+	first, err := holds.Set(w.t.Context(), w.s, "review", "service-a", w.input())
 	require.NoError(t, err)
-	second, err := holds.Set(w.ctx, w.s, "review", "service-a", w.input())
+	second, err := holds.Set(w.t.Context(), w.s, "review", "service-a", w.input())
 	require.NoError(t, err)
 
 	assert.True(t, first.Changed)
@@ -29,12 +29,12 @@ func TestSettingAHoldTwiceChangesNothingTheSecondTime(t *testing.T) {
 
 func TestSettingAHoldWithNewTermsRenewsTheSameRow(t *testing.T) {
 	w := newWorld(t)
-	first, err := holds.Set(w.ctx, w.s, "review", "service-a", w.input())
+	first, err := holds.Set(w.t.Context(), w.s, "review", "service-a", w.input())
 	require.NoError(t, err)
 	renewed := w.input()
 	renewed.Message = "still held"
 
-	second, err := holds.Set(w.ctx, w.s, "review", "service-b", renewed)
+	second, err := holds.Set(w.t.Context(), w.s, "review", "service-b", renewed)
 	require.NoError(t, err)
 
 	assert.True(t, second.Changed)
@@ -45,12 +45,12 @@ func TestSettingAHoldWithNewTermsRenewsTheSameRow(t *testing.T) {
 
 func TestClearingAHoldRemovesItAndClearingAMissingOneSucceeds(t *testing.T) {
 	w := newWorld(t)
-	_, err := holds.Set(w.ctx, w.s, "review", "service-a", w.input())
+	_, err := holds.Set(w.t.Context(), w.s, "review", "service-a", w.input())
 	require.NoError(t, err)
 
-	cleared, err := holds.Clear(w.ctx, w.s, "review")
+	cleared, err := holds.Clear(w.t.Context(), w.s, "review")
 	require.NoError(t, err)
-	again, err := holds.Clear(w.ctx, w.s, "review")
+	again, err := holds.Clear(w.t.Context(), w.s, "review")
 	require.NoError(t, err)
 
 	assert.True(t, cleared.Changed)

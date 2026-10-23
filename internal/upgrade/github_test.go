@@ -29,7 +29,7 @@ func githubFake(t *testing.T, dir string, releases ...fakeRelease) *upgrade.GitH
 	t.Helper()
 	mux := http.NewServeMux()
 	body := func(r fakeRelease) map[string]any {
-		var assets []map[string]any
+		assets := make([]map[string]any, 0, 2)
 		for _, name := range []string{"sphericon_" + strings.TrimPrefix(r.Tag, "v") + "_linux_arm64.tar.gz", "checksums.txt"} {
 			assets = append(assets, map[string]any{"name": name, "id": assetID(name)})
 		}
@@ -54,7 +54,7 @@ func githubFake(t *testing.T, dir string, releases ...fakeRelease) *upgrade.GitH
 		http.NotFound(w, req)
 	})
 	mux.HandleFunc("GET /repos/"+repo+"/releases", func(w http.ResponseWriter, _ *http.Request) {
-		var all []map[string]any
+		all := make([]map[string]any, 0, len(releases))
 		for _, r := range releases {
 			all = append(all, body(r))
 		}
@@ -90,7 +90,7 @@ func files(t *testing.T, dir string) []string {
 	t.Helper()
 	entries, err := os.ReadDir(dir)
 	require.NoError(t, err)
-	var out []string
+	out := make([]string, 0, len(entries))
 	for _, e := range entries {
 		out = append(out, e.Name())
 	}

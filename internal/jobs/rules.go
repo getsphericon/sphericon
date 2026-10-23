@@ -49,6 +49,7 @@ func (c *Client) OnRuleEvent(ctx context.Context, ev events.RuleEvent) error {
 // Firing and queues its Actions job for every Rule that fires.
 type EvaluateRulesWorker struct {
 	river.WorkerDefaults[EvaluateRulesArgs]
+
 	ent *ent.Client
 	mod *rules.Module
 }
@@ -79,6 +80,7 @@ func (w *EvaluateRulesWorker) Work(ctx context.Context, job *river.Job[EvaluateR
 // RunRuleActionsWorker runs a Firing's Actions, each through the Runner of its type.
 type RunRuleActionsWorker struct {
 	river.WorkerDefaults[rules.ActionsArgs]
+
 	ent     *ent.Client
 	mod     *rules.Module
 	runners rules.ActionRunners

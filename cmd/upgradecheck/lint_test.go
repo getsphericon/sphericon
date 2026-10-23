@@ -19,7 +19,7 @@ func lint(t *testing.T, migrations map[string]string) []Finding {
 func lintWithDown(t *testing.T, migrations map[string]string, down string) []Finding {
 	t.Helper()
 	dir := t.TempDir()
-	var paths []string
+	paths := make([]string, 0, len(migrations))
 	for name, sql := range migrations {
 		path := filepath.Join(dir, name)
 		require.NoError(t, os.WriteFile(path, []byte("-- +goose Up\n"+sql+"\n-- +goose Down\n"+down), 0o600))

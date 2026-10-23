@@ -65,6 +65,7 @@ func TestSetupPullOnly(t *testing.T) {
 	assert.Regexp(t, `sphericon_build_info\{[^}]*version="v1"[^}]*\} 1`, body)
 
 	_, span := otel.Tracer("test").Start(context.Background(), "work")
+	defer span.End()
 	assert.False(t, span.SpanContext().IsValid(), "the tracer provider is a no-op without a config file")
 	assert.Contains(t, otel.GetTextMapPropagator().Fields(), "traceparent")
 

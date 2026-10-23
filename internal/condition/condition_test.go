@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/getsphericon/sphericon/ent/contact"
-	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/tags"
@@ -29,7 +28,7 @@ func emailsIn(t *testing.T, env *testhelper.TestEnv, ws int64, g condition.Group
 	s := env.DB.Scoped(ws)
 	p, err := condition.Compile(ctx, s, g)
 	require.NoError(t, err)
-	emails, err := s.Contact().Query().Where(predicate.Contact(p)).Order(contact.ByEmail()).Select(contact.FieldEmail).Strings(ctx)
+	emails, err := s.Contact().Query().Where(p).Order(contact.ByEmail()).Select(contact.FieldEmail).Strings(ctx)
 	require.NoError(t, err)
 	return emails
 }
@@ -116,7 +115,7 @@ func TestTagConditions(t *testing.T) {
 		p, err := condition.Compile(ctx, env.DB.Scoped(fixtures.AcmeID), g)
 		require.NoError(t, err)
 		n, err := env.DB.Contact.Query().
-			Where(contact.WorkspaceID(fixtures.AcmeID), contact.IDIn(fixtures.ContactAliceID, fixtures.ContactBobID, fixtures.ContactCarolID), predicate.Contact(p)).
+			Where(contact.WorkspaceID(fixtures.AcmeID), contact.IDIn(fixtures.ContactAliceID, fixtures.ContactBobID, fixtures.ContactCarolID), p).
 			Count(ctx)
 		require.NoError(t, err)
 		return n

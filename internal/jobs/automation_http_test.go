@@ -84,6 +84,7 @@ func (r *hookReceiver) received() []hookCall {
 // are an HTTP step to the receiver and a tag step after it.
 type httpStepHarness struct {
 	*riverEnv
+
 	rcv   *hookReceiver
 	clock time.Time
 }

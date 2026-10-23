@@ -123,8 +123,8 @@ func dropDatabase(ctx context.Context, adminDB *sql.DB, dbName string) error {
 }
 
 // requireDiffDatabase fails with the task that creates the diff database when it is not there.
-func requireDiffDatabase(ctx context.Context, url string) error {
-	db, err := sql.Open("pgx", url)
+func requireDiffDatabase(ctx context.Context, dsn string) error {
+	db, err := sql.Open("pgx", dsn)
 	if err != nil {
 		return fmt.Errorf("open the diff database: %w", err)
 	}

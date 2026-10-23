@@ -241,6 +241,6 @@ func TestServiceDecideRecordsOnlyWellFormedApprovals(t *testing.T) {
 }
 
 // newService is the authorization server's service with the production metadata fetcher.
-func newService(db *ent.Client) *oauthserver.Service {
-	return oauthserver.NewService(db, oauthserver.NewFetcher(webhook.Allowlist{}))
+func newService(client *ent.Client) *oauthserver.Service {
+	return oauthserver.NewService(client, oauthserver.NewFetcher(webhook.Allowlist{}))
 }

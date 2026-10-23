@@ -661,7 +661,7 @@ func (a *Accounts) AcceptInvitation(ctx context.Context, inv *ent.Invitation, na
 			return uerr
 		}
 		provedByInvitation := false
-		provenNow := false
+		var provenNow bool
 		if uerr == nil && u.EmailVerifiedAt != nil {
 			// A Verified User's own session is the proof of the address (ADR 0030).
 			if sessionEmail == "" {

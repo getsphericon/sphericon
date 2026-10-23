@@ -190,30 +190,31 @@ var (
 // (negatives first, the positive confirmation gate last so the negatives always
 // dominate). source "" is a transactional send.
 func layers(r ref, channel, source string) []layer {
-	out := []layer{{
+	suppressed := layer{
 		reason: ReasonSuppressed,
 		blocks: sql.Exists(match(r, suppressions, channel)),
-	}}
-	if source == "" {
-		return out
 	}
-	return append(out,
-		layer{
+	if source == "" {
+		return []layer{suppressed}
+	}
+	return []layer{
+		suppressed,
+		{
 			reason: ReasonUnsubscribedEverything,
 			blocks: sql.Exists(match(r, unsubscribes, channel, unsubscribe.FieldSendingSource, SourceEverything)),
 		},
-		layer{
+		{
 			reason: ReasonUnsubscribedSource,
 			blocks: sql.Exists(match(r, unsubscribes, channel, unsubscribe.FieldSendingSource, source)),
 		},
-		layer{
+		{
 			reason: ReasonUnconfirmed,
 			// Only when the workspace has confirmed opt-in on (ADR 0013): the flag is
 			// read in SQL so the default single-opt-in path never touches the
 			// confirmation store and no caller can forget to pass it.
 			blocks: sql.And(requireConfirmed(r), sql.NotExists(match(r, confirmations, channel))),
 		},
-	)
+	}
 }
 
 // match builds SELECT id FROM store WHERE workspace/destination/channel equal the

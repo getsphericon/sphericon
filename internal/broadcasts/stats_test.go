@@ -18,7 +18,7 @@ import (
 func TestStatsOfReadsEachBroadcastsRows(t *testing.T) {
 	d := newDelivery(t)
 
-	got, err := broadcasts.StatsOf(d.ctx, d.s, fixtures.BroadcastSentID, fixtures.BroadcastDraftID, fixtures.BroadcastFailedID)
+	got, err := broadcasts.StatsOf(d.t.Context(), d.s, fixtures.BroadcastSentID, fixtures.BroadcastDraftID, fixtures.BroadcastFailedID)
 	require.NoError(t, err)
 
 	// Fixtures: 11 recipients, all sent, 5 opened and 2 clicked; the delivery result is stamped
@@ -31,7 +31,7 @@ func TestStatsOfReadsEachBroadcastsRows(t *testing.T) {
 func TestStatsOfNoBroadcastsIsEmpty(t *testing.T) {
 	d := newDelivery(t)
 
-	got, err := broadcasts.StatsOf(d.ctx, d.s)
+	got, err := broadcasts.StatsOf(d.t.Context(), d.s)
 
 	require.NoError(t, err)
 	assert.Empty(t, got)
@@ -44,7 +44,7 @@ func TestFiguresAreLiveWhileSending(t *testing.T) {
 	first := d.recipient(fixtures.ContactAliceID)
 	d.recipient(fixtures.ContactBobID)
 
-	require.NoError(t, d.del.SendRecipient(d.ctx, d.s, first))
+	require.NoError(t, d.del.SendRecipient(d.t.Context(), d.s, first))
 
 	assert.Equal(t, broadcasts.Stats{Recipients: 2, Sent: 1, Pending: 1}, d.stats())
 	assert.Equal(t, 1, d.stats().Processed())
@@ -58,11 +58,11 @@ func TestPendingMatchesRecipientsWhoseSendHasNotEnded(t *testing.T) {
 	claimed := d.recipient(fixtures.ContactBobID)
 	d.claim(claimed, 0)
 	sent := d.recipient(fixtures.ContactCarolID)
-	require.NoError(t, d.del.SendRecipient(d.ctx, d.s, sent))
+	require.NoError(t, d.del.SendRecipient(d.t.Context(), d.s, sent))
 
 	ids, err := d.s.BroadcastRecipient().Query().
 		Where(broadcastrecipient.BroadcastID(fixtures.BroadcastSendingID), broadcasts.Pending()).
-		IDs(d.ctx)
+		IDs(d.t.Context())
 
 	require.NoError(t, err)
 	assert.ElementsMatch(t, []int64{unsent, claimed}, ids)
@@ -74,11 +74,11 @@ func TestBroadcastSettlesOnlyWhenNoSendIsPending(t *testing.T) {
 	second := d.recipient(fixtures.ContactBobID)
 	d.claim(second, 0)
 
-	require.NoError(t, d.del.SendRecipient(d.ctx, d.s, first))
+	require.NoError(t, d.del.SendRecipient(d.t.Context(), d.s, first))
 	assert.Equal(t, broadcast.StatusSending, d.broadcastRow().Status, "a claimed send is still pending")
 
-	d.env.DB.OutboundMessage.Update().Where(outboundmessage.BroadcastRecipientID(second)).SetStatus(outboundmessage.StatusSent).ExecX(d.ctx) // the claimed send ends
-	require.NoError(t, broadcasts.Finalize(d.ctx, d.s, fixtures.BroadcastSendingID))
+	d.env.DB.OutboundMessage.Update().Where(outboundmessage.BroadcastRecipientID(second)).SetStatus(outboundmessage.StatusSent).ExecX(d.t.Context()) // the claimed send ends
+	require.NoError(t, broadcasts.Finalize(d.t.Context(), d.s, fixtures.BroadcastSendingID))
 	assert.Equal(t, broadcast.StatusSent, d.broadcastRow().Status)
 	assert.NotNil(t, d.broadcastRow().SentAt)
 }
@@ -90,10 +90,10 @@ func TestEngagementIsRecordedOnce(t *testing.T) {
 	id := d.recipient(fixtures.ContactAliceID)
 
 	for name, record := range map[string]func() (bool, error){
-		"open":  func() (bool, error) { return broadcasts.RecordOpen(d.ctx, d.s, id) },
-		"click": func() (bool, error) { return broadcasts.RecordClick(d.ctx, d.s, id) },
+		"open":  func() (bool, error) { return broadcasts.RecordOpen(d.t.Context(), d.s, id) },
+		"click": func() (bool, error) { return broadcasts.RecordClick(d.t.Context(), d.s, id) },
 		"unsubscribe": func() (bool, error) {
-			return broadcasts.RecordUnsubscribe(d.ctx, d.s, fixtures.BroadcastSendingID, fixtures.ContactAliceID)
+			return broadcasts.RecordUnsubscribe(d.t.Context(), d.s, fixtures.BroadcastSendingID, fixtures.ContactAliceID)
 		},
 	} {
 		first, err := record()
@@ -110,11 +110,11 @@ func TestEngagementIsRecordedOnce(t *testing.T) {
 func TestEngagementOfAnUnknownRecipientIsNothing(t *testing.T) {
 	d := newDelivery(t)
 
-	recorded, err := broadcasts.RecordOpen(d.ctx, d.s, 424242)
+	recorded, err := broadcasts.RecordOpen(d.t.Context(), d.s, 424242)
 	require.NoError(t, err)
 	assert.False(t, recorded)
 
-	recorded, err = broadcasts.RecordUnsubscribe(d.ctx, d.s, fixtures.BroadcastSendingID, fixtures.ContactAliceID)
+	recorded, err = broadcasts.RecordUnsubscribe(d.t.Context(), d.s, fixtures.BroadcastSendingID, fixtures.ContactAliceID)
 	require.NoError(t, err)
 	assert.False(t, recorded, "a Contact that is not a recipient of the Broadcast matches nothing")
 }

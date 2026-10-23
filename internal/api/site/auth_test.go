@@ -79,8 +79,8 @@ func TestSiteLoginAnswersUnknownEmailAndWrongPasswordIdentically(t *testing.T) {
 		assert.Equal(t, wrong.Code, rec.Code, name)
 		assert.Equal(t, wrong.Body.String(), rec.Body.String(), name)
 		w, u := wrong.Header().Clone(), rec.Header().Clone()
-		w.Del("X-Request-Id")
-		u.Del("X-Request-Id")
+		w.Del("X-Request-ID")
+		u.Del("X-Request-ID")
 		assert.Equal(t, w, u, name)
 		assert.Empty(t, rec.Result().Cookies(), name)
 	}

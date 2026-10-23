@@ -71,7 +71,7 @@ func (s setup) installed(t *testing.T) []string {
 }
 
 func versions(rs []upgrade.Result) []string {
-	var out []string
+	out := make([]string, 0, len(rs))
 	for _, r := range rs {
 		out = append(out, r.Version)
 	}
@@ -183,6 +183,7 @@ func TestWalkShowsTheNotesOfEveryReleaseAndWaitsForYesBeforeChangingAnything(t *
 // onceSource lets the target's archive be fetched one time only.
 type onceSource struct {
 	upgrade.Source
+
 	target string
 	used   bool
 }

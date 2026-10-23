@@ -28,6 +28,7 @@ func (PruneUnverifiedUsersArgs) Kind() string { return "unverified_users_prune" 
 // retention disables it.
 type PruneUnverifiedUsersWorker struct {
 	river.WorkerDefaults[PruneUnverifiedUsersArgs]
+
 	accounts  *accounts.Accounts
 	retention time.Duration
 }

@@ -3,6 +3,7 @@ package automations_test
 import (
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -21,11 +22,7 @@ func cancelFor(t *testing.T, env *testhelper.TestEnv, contactID int64) error {
 
 func runIDsOf(t *testing.T, env *testhelper.TestEnv, kind string) []any {
 	t.Helper()
-	var ids []any
-	for _, args := range env.JobsOf(t, kind) {
-		ids = append(ids, args["run_id"])
-	}
-	return ids
+	return lo.Map(env.JobsOf(t, kind), func(args map[string]any, _ int) any { return args["run_id"] })
 }
 
 func TestCancelPendingRemovesTheContactsQueuedCallsAndKeepsOthers(t *testing.T) {

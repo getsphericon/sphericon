@@ -24,6 +24,7 @@ func (RefreshPrivateRelayArgs) Kind() string { return "private_relay_refresh" }
 // returns the error, so river retries with its backoff, and the previous ranges stay in place.
 type RefreshPrivateRelayWorker struct {
 	river.WorkerDefaults[RefreshPrivateRelayArgs]
+
 	ranges *machine.Detector
 }
 

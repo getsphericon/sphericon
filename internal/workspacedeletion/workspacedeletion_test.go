@@ -38,7 +38,7 @@ func initech(t *testing.T, env *testhelper.TestEnv) *ent.Workspace {
 	return env.DB.Workspace.GetX(t.Context(), fixtures.InitechID)
 }
 
-func erase(t *testing.T, env *testhelper.TestEnv, m *workspacedeletion.Module) error {
+func erase(t *testing.T, env *testhelper.TestEnv) error {
 	t.Helper()
 	return env.Bus.WithinTx(t.Context(), func(tx *ent.Client, _ events.Publisher) error {
 		return workspacedeletion.Tombstone(t.Context(), tx, fixtures.InitechID, now)
@@ -85,9 +85,9 @@ func TestRestoreAfterErasureFindsNoOwner(t *testing.T) {
 
 // The machine itself refuses a restore of an erased row, whatever the caller could see.
 func TestTheMachineRefusesRestoringAnErasedWorkspace(t *testing.T) {
-	env, m := setup(t)
+	env, _ := setup(t)
 	deletedAgo(t, env, workspacedeletion.DeletionWindow+time.Hour)
-	require.NoError(t, erase(t, env, m))
+	require.NoError(t, erase(t, env))
 	machine := workspacedeletion.Machine(workspacedeletion.Storage(env.DB, fixtures.InitechID, now))
 
 	err := machine.FireCtx(t.Context(), workspacedeletion.TriggerRestore)
@@ -99,10 +99,10 @@ func TestTheMachineRefusesRestoringAnErasedWorkspace(t *testing.T) {
 }
 
 func TestEraseOfAWorkspaceThatIsNotDeletedIsRefused(t *testing.T) {
-	env, m := setup(t)
+	env, _ := setup(t)
 	before := initech(t, env)
 
-	require.ErrorIs(t, erase(t, env, m), lifecycle.ErrInvalidTransition)
+	require.ErrorIs(t, erase(t, env), lifecycle.ErrInvalidTransition)
 
 	got := initech(t, env)
 	assert.Nil(t, got.ErasedAt)
@@ -111,11 +111,11 @@ func TestEraseOfAWorkspaceThatIsNotDeletedIsRefused(t *testing.T) {
 }
 
 func TestEraseLeavesATombstone(t *testing.T) {
-	env, m := setup(t)
+	env, _ := setup(t)
 	before := initech(t, env)
 	deletedAgo(t, env, workspacedeletion.DeletionWindow+time.Hour)
 
-	require.NoError(t, erase(t, env, m))
+	require.NoError(t, erase(t, env))
 
 	got := initech(t, env)
 	require.NotNil(t, got.ErasedAt)
@@ -126,11 +126,11 @@ func TestEraseLeavesATombstone(t *testing.T) {
 }
 
 func TestEraseTwiceIsRefused(t *testing.T) {
-	env, m := setup(t)
+	env, _ := setup(t)
 	deletedAgo(t, env, workspacedeletion.DeletionWindow+time.Hour)
-	require.NoError(t, erase(t, env, m))
+	require.NoError(t, erase(t, env))
 
-	require.ErrorIs(t, erase(t, env, m), lifecycle.ErrInvalidTransition)
+	require.ErrorIs(t, erase(t, env), lifecycle.ErrInvalidTransition)
 }
 
 func TestDeletingTwiceKeepsTheFirstDeletionTime(t *testing.T) {

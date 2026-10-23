@@ -177,7 +177,7 @@ func TestSiteWorkspacesCreateAllowsTwoWorkspacesWithOneName(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	var ids []siteapi.WorkspaceId
+	ids := make([]siteapi.WorkspaceId, 0, 2)
 	for range 2 {
 		res, err := c.SiteWorkspacesCreate(t.Context(), &siteapi.SiteCreateWorkspaceInput{Name: "Acme"})
 		require.NoError(t, err)

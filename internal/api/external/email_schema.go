@@ -17,7 +17,7 @@ import (
 // right to read Templates.
 func (h *Handlers) EmailSchemaGet(ctx context.Context) (externalapi.EmailSchemaGetRes, error) {
 	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeTemplatesRead) {
-		res := externalapi.ProblemDetails(problem(http.StatusUnauthorized, "insufficient scope"))
+		res := problem(http.StatusUnauthorized, "insufficient scope")
 		return &res, nil
 	}
 	schema := emaildoc.AgentSchema()

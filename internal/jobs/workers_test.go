@@ -54,6 +54,7 @@ import (
 // clears river_job before and after.
 type riverEnv struct {
 	*testhelper.TestEnv
+
 	pool   *sql.DB
 	client *jobs.Client
 	cipher *secrets.Cipher

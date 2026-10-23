@@ -25,13 +25,11 @@ var johnActor = events.Actor{Kind: events.ActorUser, ID: strconv.Itoa(fixtures.O
 // auditEntries decodes the Audit entries published so far in this test's transaction.
 func auditEntries(t *testing.T, env *testhelper.TestEnv) []*events.AuditEntry {
 	t.Helper()
-	var out []*events.AuditEntry
-	for _, ev := range env.OutboxEvents(t, events.NameAuditEntry) {
+	return lo.Map(env.OutboxEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) *events.AuditEntry {
 		entry, ok := ev.(*events.AuditEntry)
 		require.True(t, ok)
-		out = append(out, entry)
-	}
-	return out
+		return entry
+	})
 }
 
 func diffJSON(t *testing.T, e *events.AuditEntry) string {
@@ -58,7 +56,7 @@ func TestAuditedTagWritesRecordActorActionAndDiff(t *testing.T) {
 	require.Len(t, got, 3)
 	for _, e := range got {
 		assert.Equal(t, johnActor, e.Actor)
-		assert.Equal(t, int64(acme), e.WorkspaceID)
+		assert.Equal(t, acme, e.WorkspaceID)
 		assert.Equal(t, "tag", e.TargetType)
 		assert.Equal(t, strconv.FormatInt(created.ID, 10), e.TargetID)
 	}
@@ -88,10 +86,7 @@ func TestAuditedBulkWritesRecordOneEntryPerRow(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 2, n)
 
-	var actions []string
-	for _, e := range auditEntries(t, env) {
-		actions = append(actions, e.Action+":"+e.TargetName)
-	}
+	actions := lo.Map(auditEntries(t, env), func(e *events.AuditEntry, _ int) string { return e.Action + ":" + e.TargetName })
 	assert.ElementsMatch(t, []string{
 		"tag.create:bulk-a", "tag.create:bulk-b", "tag.update:bulk-c", "tag.delete:bulk-c", "tag.delete:bulk-b",
 	}, actions)

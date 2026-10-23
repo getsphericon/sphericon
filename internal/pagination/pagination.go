@@ -12,7 +12,8 @@ import "context"
 // enforces before a handler runs.
 const DefaultPage = 1
 
-// contract-copy: fallback for module callers that have no request; the contract declares the same default
+// DefaultPageSize is the fallback for module callers that have no request.
+// contract-copy: the contract declares the same default
 const DefaultPageSize = 25
 
 type Page[T any] struct {

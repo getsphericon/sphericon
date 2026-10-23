@@ -2,6 +2,7 @@ package jobs
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/riverqueue/river"
@@ -24,6 +25,7 @@ func (SendMemberInviteArgs) Kind() string { return "send_member_invite" }
 // SendMemberInviteWorker sends the invite email via the system (platform) sender.
 type SendMemberInviteWorker struct {
 	river.WorkerDefaults[SendMemberInviteArgs]
+
 	sender messaging.EmailSender
 }
 
@@ -36,7 +38,7 @@ func (w *SendMemberInviteWorker) Work(ctx context.Context, job *river.Job[SendMe
 // adapter.
 func SendMemberInvite(ctx context.Context, sender messaging.EmailSender, args SendMemberInviteArgs) error {
 	if sender == nil {
-		return fmt.Errorf("send member invite: no system email sender configured")
+		return errors.New("send member invite: no system email sender configured")
 	}
 	who := args.InviterName
 	if who == "" {

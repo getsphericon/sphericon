@@ -15,7 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/events"
 )
 
-// ErrPasskeyUnknown: the response names no credential: it is malformed, or its credential id
+// ErrPasskeyUnknown means the response names no credential: it is malformed, or its credential id
 // was never registered (or was removed).
 var ErrPasskeyUnknown = errors.New("secondfactor: passkey credential unknown")
 
@@ -122,7 +122,7 @@ func (p *Passkeys) finishAssertion(ctx context.Context, u *ent.User, purpose cer
 	if err != nil {
 		return err
 	}
-	if purpose == PurposeCheck && (claims.UID != u.ID || claims.Epoch != int64(u.SessionEpoch)) {
+	if purpose == PurposeCheck && (claims.UID != u.ID || claims.Epoch != u.SessionEpoch) {
 		return ErrCeremony
 	}
 	parsed, err := protocol.ParseCredentialRequestResponseBytes(response)
@@ -134,7 +134,7 @@ func (p *Passkeys) finishAssertion(ctx context.Context, u *ent.User, purpose cer
 		if err != nil {
 			return err
 		}
-		handler := func(rawID, handle []byte) (webauthn.User, error) {
+		handler := func(_, handle []byte) (webauthn.User, error) {
 			owner, ok := UserIDOfHandle(handle)
 			if !ok || owner != u.ID {
 				return nil, ErrPasskeyUnknown
@@ -203,6 +203,7 @@ func credentialsOf(rows []*ent.Passkey) []webauthn.Credential {
 // waCredentials is a User as the library sees them at login: with the credentials they hold.
 type waCredentials struct {
 	waUser
+
 	credentials []webauthn.Credential
 }
 

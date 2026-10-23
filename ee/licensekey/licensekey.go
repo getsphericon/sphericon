@@ -66,8 +66,9 @@ func (l *License) Has(f Feature) bool {
 }
 
 type claims struct {
-	Features []Feature `json:"features"`
 	jwt.RegisteredClaims
+
+	Features []Feature `json:"features"`
 }
 
 // Parse verifies key against pub at time now. An empty key is not an error: it is the

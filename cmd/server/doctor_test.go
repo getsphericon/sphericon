@@ -60,7 +60,10 @@ func TestDoctorExitsWithFailureAndPrintsTheReport(t *testing.T) {
 	require.ErrorIs(t, runDeps(doctorDeps(nil), &js, "doctor", "--json"), errChecksFailed)
 	var report struct {
 		OK     bool `json:"ok"`
-		Checks []struct{ Name, Status string }
+		Checks []struct {
+			Name   string `json:"name"`
+			Status string `json:"status"`
+		} `json:"checks"`
 	}
 	require.NoError(t, json.Unmarshal(js.Bytes(), &report), "stdout is the JSON report and nothing else")
 	assert.False(t, report.OK)

@@ -16,6 +16,7 @@ package ratelimit
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
 	"math"
 	"net/http"
 	"strconv"
@@ -123,9 +124,9 @@ func (p *Policy) Blocked(w http.ResponseWriter, r *http.Request, key string) err
 	if err == nil && ok && rate < float64(p.limit) {
 		return nil
 	}
-	w.Header().Set("X-RateLimit-Limit", strconv.Itoa(p.limit))
-	w.Header().Set("X-RateLimit-Remaining", "0")
-	w.Header().Set("X-RateLimit-Reset", strconv.FormatInt(time.Now().Add(p.window).Unix(), 10))
+	w.Header().Set("X-Ratelimit-Limit", strconv.Itoa(p.limit))
+	w.Header().Set("X-Ratelimit-Remaining", "0")
+	w.Header().Set("X-Ratelimit-Reset", strconv.FormatInt(time.Now().Add(p.window).Unix(), 10))
 	w.Header().Set("Retry-After", strconv.Itoa(int(p.window.Seconds())))
 	Rejected(r.Context(), p.name)
 	return &LimitedError{Policy: p.name}
@@ -176,7 +177,9 @@ func WriteProblem(w http.ResponseWriter) {
 	if secs, err := strconv.Atoi(w.Header().Get("Retry-After")); err == nil {
 		body["retryAfter"] = secs
 	}
-	_ = json.NewEncoder(w).Encode(body)
+	if err := json.NewEncoder(w).Encode(body); err != nil {
+		slog.Warn("write json response", "error", err)
+	}
 }
 
 // Limiter holds every policy built from the configured limits.
@@ -300,9 +303,9 @@ func (e *Exchange) Delay(ctx context.Context, policy string, limit int, wait tim
 	if e != nil {
 		h := e.w.Header()
 		h.Set("Retry-After", strconv.Itoa(int(math.Ceil(wait.Seconds()))))
-		h.Set("X-RateLimit-Limit", strconv.Itoa(limit))
-		h.Set("X-RateLimit-Remaining", "0")
-		h.Set("X-RateLimit-Reset", strconv.FormatInt(now.Add(wait).Unix(), 10))
+		h.Set("X-Ratelimit-Limit", strconv.Itoa(limit))
+		h.Set("X-Ratelimit-Remaining", "0")
+		h.Set("X-Ratelimit-Reset", strconv.FormatInt(now.Add(wait).Unix(), 10))
 	}
 	Rejected(ctx, policy)
 	return &LimitedError{Policy: policy}

@@ -304,7 +304,7 @@ func TestStandardMCPClientConnectsThroughOAuth(t *testing.T) {
 		// The user's browser: follow /oauth/authorize to the consent screen, then
 		// approve as the signed-in owner and collect the code from the redirect.
 		AuthorizationCodeFetcher: func(ctx context.Context, args *auth.AuthorizationArgs) (*auth.AuthorizationResult, error) {
-			req, err := http.NewRequestWithContext(ctx, http.MethodGet, args.URL, nil)
+			req, err := http.NewRequestWithContext(ctx, http.MethodGet, args.URL, http.NoBody)
 			if err != nil {
 				return nil, err
 			}

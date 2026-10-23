@@ -2,7 +2,7 @@ package events
 
 import (
 	"context"
-	"fmt"
+	"strconv"
 	"strings"
 
 	"entgo.io/ent/dialect/sql"
@@ -44,7 +44,7 @@ func (p *txPublisher) PurgeOutbox(ctx context.Context, workspaceID, contactID in
 	// Contact carry contactId 0 or none, so 0 must never match.
 	id := ""
 	if contactID != 0 {
-		id = fmt.Sprint(contactID)
+		id = strconv.FormatInt(contactID, 10)
 	}
 	_, err := p.client.OutboxMessage.Delete().Where(outboxNamesSubject(workspaceID, id, lowered)).Exec(ctx)
 	return err
@@ -109,7 +109,7 @@ func (p *txPublisher) PurgeWebhookJobs(ctx context.Context, workspaceID, contact
 	}
 	id := ""
 	if contactID != 0 {
-		id = fmt.Sprint(contactID)
+		id = strconv.FormatInt(contactID, 10)
 	}
 	lowered := lowerAll(destinations)
 	// DeliverWebhookArgs.Body is []byte, so river stores it as a base64 JSON string; it

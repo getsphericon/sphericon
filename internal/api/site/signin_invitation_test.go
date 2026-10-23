@@ -33,7 +33,7 @@ func inviteAdminToAcme(t *testing.T, env *testhelper.TestEnv, email string) stri
 
 // signInToAccept is the round trip of a person who follows an Invitation link and chooses the
 // provider: `start` carries the link's token.
-func signInToAccept(t *testing.T, env *testhelper.TestEnv, fake *testhelper.FakeSignin, b *testhelper.RedirectBrowser, who testhelper.SigninIdentity, token string) testhelper.Reply {
+func signInToAccept(t *testing.T, fake *testhelper.FakeSignin, b *testhelper.RedirectBrowser, who testhelper.SigninIdentity, token string) testhelper.Reply {
 	t.Helper()
 	resp := b.Get(t, signinStartPath+"?"+url.Values{"invitation": {token}}.Encode())
 	require.Equal(t, http.StatusFound, resp.StatusCode)
@@ -62,7 +62,7 @@ func TestSigninAnInvitationIsAcceptedWithTheMatchingProviderEmailWithTheInvitedR
 	token := inviteAdminToAcme(t, env, newcomer.Email)
 	b := env.NewRedirectBrowser(t)
 
-	resp := signInToAccept(t, env, fake, b, newcomer, token)
+	resp := signInToAccept(t, fake, b, newcomer, token)
 
 	assert.Equal(t, "/", resp.Header.Get("Location"))
 	assert.Equal(t, http.StatusOK, meStatus(t, b))
@@ -79,7 +79,7 @@ func TestSigninAnInvitationMatchesTheAddressWhateverItsCase(t *testing.T) {
 	env, fake := signinEnv(t)
 	token := inviteAdminToAcme(t, env, "Nina@Gmail.com")
 
-	resp := signInToAccept(t, env, fake, env.NewRedirectBrowser(t), newcomer, token)
+	resp := signInToAccept(t, fake, env.NewRedirectBrowser(t), newcomer, token)
 
 	assert.Equal(t, "/", resp.Header.Get("Location"))
 	assert.Equal(t, "admin", acmeRoleOf(t, env, newcomer.Email))
@@ -90,8 +90,8 @@ func TestSigninAnInvitationOpensAClosedRegistrationForItsAddress(t *testing.T) {
 	token := inviteAdminToAcme(t, env, newcomer.Email)
 	other := testhelper.SigninIdentity{Subject: "google-subject-of-olga", Email: "olga@gmail.com", EmailVerified: true}
 
-	refused := signInWith(t, env, fake, env.NewRedirectBrowser(t), other, "")
-	accepted := signInToAccept(t, env, fake, env.NewRedirectBrowser(t), newcomer, token)
+	refused := signInWith(t, fake, env.NewRedirectBrowser(t), other, "")
+	accepted := signInToAccept(t, fake, env.NewRedirectBrowser(t), newcomer, token)
 
 	assert.Equal(t, signin.ReasonSignupClosed, refusalCode(t, refused, loginErrorPath), "without an Invitation registration stays closed")
 	assert.Equal(t, "/", accepted.Header.Get("Location"))
@@ -104,7 +104,7 @@ func TestSigninAnInvitationOfAVerifiedUserIsAcceptedThroughTheirProvider(t *test
 	oscar := testhelper.SigninIdentity{Subject: "google-subject-of-oscar", Email: fixtures.OutsiderOscarEmail, EmailVerified: true, HostedDomain: "nowhere.test"}
 	b := env.NewRedirectBrowser(t)
 
-	resp := signInToAccept(t, env, fake, b, oscar, token)
+	resp := signInToAccept(t, fake, b, oscar, token)
 
 	assert.Equal(t, "/", resp.Header.Get("Location"))
 	assert.Equal(t, http.StatusOK, meStatus(t, b))
@@ -116,7 +116,7 @@ func TestSigninAnInvitationForAnotherAddressIsRefusedAndCreatesNothing(t *testin
 	token := inviteAdminToAcme(t, env, "invited@example.com")
 	b := env.NewRedirectBrowser(t)
 
-	resp := signInToAccept(t, env, fake, b, newcomer, token)
+	resp := signInToAccept(t, fake, b, newcomer, token)
 
 	require.Equal(t, http.StatusFound, resp.StatusCode)
 	u, err := url.Parse(resp.Header.Get("Location"))
@@ -135,7 +135,7 @@ func TestSigninAnInvitationIsRefusedForALinkedIdentityOfAnotherAccount(t *testin
 	mary := testhelper.SigninIdentity{Subject: fixtures.MaryGoogleIdentitySubject, Email: fixtures.OutsiderOscarEmail, EmailVerified: true, HostedDomain: "nowhere.test"}
 	b := env.NewRedirectBrowser(t)
 
-	resp := signInToAccept(t, env, fake, b, mary, token)
+	resp := signInToAccept(t, fake, b, mary, token)
 
 	require.Equal(t, http.StatusFound, resp.StatusCode)
 	assert.Contains(t, resp.Header.Get("Location"), "error="+string(signin.ReasonInvitationEmailMismatch))
@@ -152,7 +152,7 @@ func TestSigninAnUnprovenEmailCannotAcceptAnInvitation(t *testing.T) {
 	unverified := newcomer
 	unverified.EmailVerified = false
 
-	resp := signInToAccept(t, env, fake, env.NewRedirectBrowser(t), unverified, token)
+	resp := signInToAccept(t, fake, env.NewRedirectBrowser(t), unverified, token)
 
 	assert.Contains(t, resp.Header.Get("Location"), "error=email_unverified")
 	assert.Zero(t, usersWithEmail(t, env, newcomer.Email))
@@ -163,7 +163,7 @@ func TestSigninAnInvitationThatIsNotPendingIsRefusedAndCreatesNothing(t *testing
 	env, fake := signinEnv(t)
 	b := env.NewRedirectBrowser(t)
 
-	resp := signInToAccept(t, env, fake, b, newcomer, "not-a-token")
+	resp := signInToAccept(t, fake, b, newcomer, "not-a-token")
 
 	require.Equal(t, http.StatusFound, resp.StatusCode)
 	assert.Contains(t, resp.Header.Get("Location"), "error=invitation_invalid")

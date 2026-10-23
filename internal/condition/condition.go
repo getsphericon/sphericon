@@ -15,6 +15,7 @@ package condition
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -109,7 +110,7 @@ func ContactPredicate(ctx context.Context, s *ent.Scoped, def string) (predicate
 // matches everyone (an empty negated group matches no one) — deliberate, so an
 // empty rule is never a silent "nobody". A "trigger:" leaf is refused: only a Rule has an Event.
 func Compile(ctx context.Context, s *ent.Scoped, g Group) (predicate.Contact, error) {
-	return (&compiler{ctx: ctx, s: s, now: time.Now()}).group(g)
+	return (&compiler{s: s, now: time.Now()}).group(ctx, g)
 }
 
 // RulePredicate parses a Rule's stored condition and compiles it for the Workspace of s, with
@@ -122,13 +123,12 @@ func RulePredicate(ctx context.Context, s *ent.Scoped, def string, props map[str
 	if err != nil {
 		return nil, err
 	}
-	return (&compiler{ctx: ctx, s: s, now: time.Now(), trigger: &props}).group(g)
+	return (&compiler{s: s, now: time.Now(), trigger: &props}).group(ctx, g)
 }
 
 // compiler holds what one compilation needs: the Workspace's Custom field keys are
 // loaded the first time a rule names one.
 type compiler struct {
-	ctx  context.Context
 	s    *ent.Scoped
 	now  time.Time
 	keys map[string]struct{}
@@ -137,7 +137,7 @@ type compiler struct {
 	trigger *map[string]any
 }
 
-func (c *compiler) group(g Group) (predicate.Contact, error) {
+func (c *compiler) group(ctx context.Context, g Group) (predicate.Contact, error) {
 	if g.Kind != kindGroup {
 		return nil, fmt.Errorf("unknown group kind %q", g.Kind)
 	}
@@ -146,7 +146,7 @@ func (c *compiler) group(g Group) (predicate.Contact, error) {
 	}
 	preds := make([]predicate.Contact, 0, len(g.Rules))
 	for i, raw := range g.Rules {
-		p, err := c.entry(raw)
+		p, err := c.entry(ctx, raw)
 		if err != nil {
 			return nil, fmt.Errorf("rule %d: %w", i, err)
 		}
@@ -171,7 +171,7 @@ func (c *compiler) group(g Group) (predicate.Contact, error) {
 }
 
 // entry decodes a rules[] entry by its `kind`: a nested group or a leaf rule.
-func (c *compiler) entry(raw json.RawMessage) (predicate.Contact, error) {
+func (c *compiler) entry(ctx context.Context, raw json.RawMessage) (predicate.Contact, error) {
 	var probe struct {
 		Kind string `json:"kind"`
 	}
@@ -184,19 +184,19 @@ func (c *compiler) entry(raw json.RawMessage) (predicate.Contact, error) {
 		if err := json.Unmarshal(raw, &g); err != nil {
 			return nil, fmt.Errorf("malformed group: %w", err)
 		}
-		return c.group(g)
+		return c.group(ctx, g)
 	case kindRule:
 		var r Leaf
 		if err := json.Unmarshal(raw, &r); err != nil {
 			return nil, fmt.Errorf("malformed rule: %w", err)
 		}
-		return c.rule(r)
+		return c.rule(ctx, r)
 	default:
 		return nil, fmt.Errorf("unknown rule kind %q", probe.Kind)
 	}
 }
 
-func (c *compiler) rule(r Leaf) (predicate.Contact, error) {
+func (c *compiler) rule(ctx context.Context, r Leaf) (predicate.Contact, error) {
 	switch {
 	case strings.HasPrefix(r.Field, eventFieldPrefix):
 		action := strings.TrimPrefix(r.Field, eventFieldPrefix)
@@ -207,7 +207,7 @@ func (c *compiler) rule(r Leaf) (predicate.Contact, error) {
 	case r.Field == tagField:
 		return tagRule(r.Operator, r.Value)
 	case strings.HasPrefix(r.Field, customFieldPrefix):
-		return c.custom(strings.TrimPrefix(r.Field, customFieldPrefix), r.Operator, r.Value)
+		return c.custom(ctx, strings.TrimPrefix(r.Field, customFieldPrefix), r.Operator, r.Value)
 	case strings.HasPrefix(r.Field, triggerFieldPrefix):
 		return c.triggerRule(strings.TrimPrefix(r.Field, triggerFieldPrefix), r.Operator, r.Value)
 	}
@@ -292,7 +292,7 @@ func tagRule(op, value string) (predicate.Contact, error) {
 	}
 	name := strings.TrimSpace(value)
 	if name == "" {
-		return nil, fmt.Errorf("tag name is required")
+		return nil, errors.New("tag name is required")
 	}
 
 	p := contact.HasTagsWith(tag.Name(name))
@@ -305,11 +305,11 @@ func tagRule(op, value string) (predicate.Contact, error) {
 // custom is a condition on one Custom field. The key must be in the Workspace's
 // catalogue (ADR 0006), and it is addressed with ent's JSON predicates (sqljson), since no
 // generated predicate addresses a key of the custom_fields JSON column.
-func (c *compiler) custom(key, op, value string) (predicate.Contact, error) {
+func (c *compiler) custom(ctx context.Context, key, op, value string) (predicate.Contact, error) {
 	if key == "" {
 		return nil, fmt.Errorf("unknown field %q", customFieldPrefix)
 	}
-	if err := c.requireCustomField(key); err != nil {
+	if err := c.requireCustomField(ctx, key); err != nil {
 		return nil, err
 	}
 
@@ -349,9 +349,9 @@ func isIndexKey(key string) bool {
 }
 
 // requireCustomField checks key against the Workspace's Custom field catalogue.
-func (c *compiler) requireCustomField(key string) error {
+func (c *compiler) requireCustomField(ctx context.Context, key string) error {
 	if c.keys == nil {
-		fields, err := c.s.CustomField().Query().All(c.ctx)
+		fields, err := c.s.CustomField().Query().All(ctx)
 		if err != nil {
 			return fmt.Errorf("load custom fields: %w", err)
 		}

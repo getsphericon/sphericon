@@ -39,14 +39,14 @@ func newReauthEnv(t *testing.T) *reauthEnv {
 // signIn is a provider sign-in of who, returning the session cookie the callback set.
 func (r *reauthEnv) signIn(t *testing.T, who testhelper.SigninIdentity) string {
 	t.Helper()
-	resp := signInWith(t, r.env, r.fake, r.env.NewRedirectBrowser(t), who, "")
+	resp := signInWith(t, r.fake, r.env.NewRedirectBrowser(t), who, "")
 	cookie := sessionCookie(&http.Response{Header: resp.Header})
 	require.NotNil(t, cookie, "the callback started a session")
 	return cookie.Value
 }
 
 // call sends a request under the session and returns the answer and the reissued session.
-func (r *reauthEnv) call(t *testing.T, method, path, session, body string) (code int, next string, raw string) {
+func (r *reauthEnv) call(t *testing.T, method, path, session, body string) (code int, next, raw string) {
 	t.Helper()
 	rec := sendWithSession(t, r.env, method, path, session, body)
 	return rec.Code, reissued(t, rec), rec.Body.String()
@@ -60,7 +60,7 @@ func (r *reauthEnv) totp(t *testing.T, secret string) string {
 }
 
 // enroll enrolls the session's User with no password and returns the reissued session.
-func (r *reauthEnv) enroll(t *testing.T, session string) (next string, recoveryCodes []string, secret string) {
+func (r *reauthEnv) enroll(t *testing.T, session string) (next, secret string) {
 	t.Helper()
 	code, _, raw := r.call(t, http.MethodPost, enrollmentPath, session, `{}`)
 	require.Equal(t, http.StatusOK, code, raw)
@@ -68,16 +68,14 @@ func (r *reauthEnv) enroll(t *testing.T, session string) (next string, recoveryC
 	require.NoError(t, json.Unmarshal([]byte(raw), &e))
 	code, next, raw = r.call(t, http.MethodPost, confirmPath, session, `{"code":"`+r.totp(t, e.Secret)+`"}`)
 	require.Equal(t, http.StatusOK, code, raw)
-	var res recoveryCodesRes
-	require.NoError(t, json.Unmarshal([]byte(raw), &res))
-	return next, res.Codes, e.Secret
+	return next, e.Secret
 }
 
 func TestReauthAPasswordlessUserWithAFreshProviderLoginEnrollsRegeneratesAndDisables(t *testing.T) {
 	r := newReauthEnv(t)
 	session := r.signIn(t, newcomer)
 
-	session, _, secret := r.enroll(t, session)
+	session, secret := r.enroll(t, session)
 
 	code, session, raw := r.call(t, http.MethodPost, regeneratePath, session, `{}`)
 	require.Equal(t, http.StatusOK, code, raw)
@@ -140,8 +138,8 @@ func TestReauthAUserWithAPasswordStillProvesThePassword(t *testing.T) {
 
 func TestReauthTheProofSurvivesTheChallengeOfASecondFactor(t *testing.T) {
 	r := newReauthEnv(t)
-	_, _, secret := r.enroll(t, r.signIn(t, newcomer))
-	challenge := challengeOf(t, signInWith(t, r.env, r.fake, r.env.NewRedirectBrowser(t), newcomer, ""))
+	_, secret := r.enroll(t, r.signIn(t, newcomer))
+	challenge := challengeOf(t, signInWith(t, r.fake, r.env.NewRedirectBrowser(t), newcomer, ""))
 	r.clock.t = r.clock.t.Add(time.Minute) // the enrollment's code is spent: the next one is of the next step
 
 	rec := secondStepStatus(t, r.env, challenge, r.totp(t, secret))
@@ -178,7 +176,7 @@ func TestReauthTheStatusTellsWhetherAProviderLoginIsNeeded(t *testing.T) {
 func TestReauthLinkingANewProviderAccountDoesNotRefreshTheProof(t *testing.T) {
 	r := newReauthEnv(t)
 	b := r.env.NewRedirectBrowser(t)
-	signInWith(t, r.env, r.fake, b, newcomer, "")
+	signInWith(t, r.fake, b, newcomer, "")
 	r.clock.t = r.clock.t.Add(time.Hour) // the login's proof has expired
 	attacker := testhelper.SigninIdentity{Subject: "google-subject-of-the-attacker", Email: "attacker@gmail.test", EmailVerified: true}
 
@@ -193,7 +191,7 @@ func TestReauthLinkingANewProviderAccountDoesNotRefreshTheProof(t *testing.T) {
 func TestReauthLinkingAnAlreadyLinkedProviderAccountRefreshesTheProof(t *testing.T) {
 	r := newReauthEnv(t)
 	b := r.env.NewRedirectBrowser(t)
-	signInWith(t, r.env, r.fake, b, newcomer, "")
+	signInWith(t, r.fake, b, newcomer, "")
 	r.clock.t = r.clock.t.Add(time.Hour)
 
 	resp := link(t, r.fake, b, newcomer)

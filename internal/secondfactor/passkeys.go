@@ -318,6 +318,7 @@ func PruneSpentChallenges(ctx context.Context, client *ent.Client, cutoff time.T
 // begun for (0 for a usernameless login), and that User's session epoch at `begin`.
 type ceremonyClaims struct {
 	jwt.RegisteredClaims
+
 	Purpose ceremonyPurpose `json:"p"`
 	UID     int64           `json:"u,omitempty"`
 	Epoch   int64           `json:"e,omitempty"`
@@ -336,7 +337,7 @@ func (p *Passkeys) seal(purpose ceremonyPurpose, u *ent.User, session *webauthn.
 		Session:   raw,
 	}
 	if u != nil {
-		c.UID, c.Epoch = u.ID, int64(u.SessionEpoch)
+		c.UID, c.Epoch = u.ID, u.SessionEpoch
 	}
 	return jwt.NewWithClaims(jwt.SigningMethodHS256, &c).SignedString(p.key)
 }

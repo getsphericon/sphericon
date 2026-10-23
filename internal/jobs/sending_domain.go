@@ -25,6 +25,7 @@ func (VerifySendingDomainArgs) Kind() string { return "sending_domain_verify" }
 
 type VerifySendingDomainWorker struct {
 	river.WorkerDefaults[VerifySendingDomainArgs]
+
 	mod *domainverify.Module
 }
 
@@ -40,12 +41,13 @@ func (RecheckSendingDomainsArgs) Kind() string { return "sending_domain_recheck"
 
 type RecheckSendingDomainsWorker struct {
 	river.WorkerDefaults[RecheckSendingDomainsArgs]
+
 	mod *domainverify.Module
 }
 
 // Work fans the periodic tick out into one VerifySendingDomain job per due domain, giving each
 // check its own isolation and retry and reusing the path of the "Verify" button.
-func (w *RecheckSendingDomainsWorker) Work(ctx context.Context, job *river.Job[RecheckSendingDomainsArgs]) error {
+func (w *RecheckSendingDomainsWorker) Work(ctx context.Context, _ *river.Job[RecheckSendingDomainsArgs]) error {
 	ids, err := w.mod.Due(ctx, recheckBatchSize)
 	if err != nil {
 		return err
@@ -69,6 +71,7 @@ func (VerifyTrackingDomainArgs) Kind() string { return "tracking_domain_verify" 
 
 type VerifyTrackingDomainWorker struct {
 	river.WorkerDefaults[VerifyTrackingDomainArgs]
+
 	mod *domainverify.Module
 }
 
@@ -82,11 +85,12 @@ func (RecheckTrackingDomainsArgs) Kind() string { return "tracking_domain_rechec
 
 type RecheckTrackingDomainsWorker struct {
 	river.WorkerDefaults[RecheckTrackingDomainsArgs]
+
 	mod *domainverify.Module
 }
 
 // Work fans the tick out into one VerifyTrackingDomain job per due Sending domain.
-func (w *RecheckTrackingDomainsWorker) Work(ctx context.Context, job *river.Job[RecheckTrackingDomainsArgs]) error {
+func (w *RecheckTrackingDomainsWorker) Work(ctx context.Context, _ *river.Job[RecheckTrackingDomainsArgs]) error {
 	ids, err := w.mod.TrackingDue(ctx)
 	if err != nil {
 		return err
@@ -110,6 +114,7 @@ func (VerifyJoinDomainArgs) Kind() string { return "join_domain_verify" }
 
 type VerifyJoinDomainWorker struct {
 	river.WorkerDefaults[VerifyJoinDomainArgs]
+
 	mod *joindomains.Module
 }
 
@@ -125,12 +130,13 @@ func (RecheckJoinDomainsArgs) Kind() string { return "join_domain_recheck" }
 
 type RecheckJoinDomainsWorker struct {
 	river.WorkerDefaults[RecheckJoinDomainsArgs]
+
 	mod *joindomains.Module
 }
 
 // Work fans the tick out into one VerifyJoinDomain job per due domain, up to
 // recheckBatchSize, least-recently-checked first.
-func (w *RecheckJoinDomainsWorker) Work(ctx context.Context, job *river.Job[RecheckJoinDomainsArgs]) error {
+func (w *RecheckJoinDomainsWorker) Work(ctx context.Context, _ *river.Job[RecheckJoinDomainsArgs]) error {
 	ids, err := w.mod.Due(ctx, recheckBatchSize)
 	if err != nil {
 		return err

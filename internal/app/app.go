@@ -75,6 +75,7 @@ import (
 	"github.com/samber/do/v2"
 	"go.opentelemetry.io/otel/metric"
 
+	// The pgx driver behind database/sql.
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
@@ -179,6 +180,7 @@ type dkimLookup struct {
 // client and pubsub use, so job workers cannot starve the API).
 type riverPool struct {
 	*sql.DB
+
 	metrics metric.Registration
 }
 
@@ -220,7 +222,7 @@ type options struct {
 	e2eDKIMLookup bool
 }
 
-// ErrE2EOnly: an end-to-end-only option was passed to an app that is not the e2e profile.
+// ErrE2EOnly means an end-to-end-only option was passed to an app that is not the e2e profile.
 var ErrE2EOnly = errors.New("app: option is only valid in the " + config.EnvE2E + " environment")
 
 // WithE2EDKIMLookup swaps the DKIM DNS lookup for the development one, which echoes a
@@ -347,11 +349,28 @@ func New(env string, opts ...Option) (*App, error) {
 	}, nil
 }
 
-// ErrNotServable: Start was called on an app that has no servers (the command app).
+// ErrNotServable means Start was called on an app that has no servers (the command app).
 var ErrNotServable = errors.New("app: this app has no servers to start")
 
-// ErrAlreadyStarted: Start was called a second time; an App starts once.
+// ErrAlreadyStarted means Start was called a second time; an App starts once.
 var ErrAlreadyStarted = errors.New("app: already started")
+
+// NewCommandApp builds the minimal app the commands need (config, database,
+// ent client, system sender) without the HTTP server, the event router or the job
+// workers. Providers are lazy, so only what a command invokes is ever constructed;
+// that keeps `sphericon workspace …` quick to start and to shut down.
+func NewCommandApp(env string) (*App, error) {
+	injector := do.New()
+	register(injector, env, options{})
+
+	cfg, err := do.Invoke[*config.Config](injector)
+	if err != nil {
+		_ = injector.Shutdown()
+		return nil, err
+	}
+	i18n.Configure(cfg.Locale)
+	return &App{Config: cfg, injector: injector}, nil
+}
 
 // Start brings the application up and returns without blocking: it binds the metrics
 // listener, starts the domain-event router and the job queue, then serves the public
@@ -519,23 +538,6 @@ func (a *App) stop(ctx context.Context) error {
 		}
 	}
 	return errors.Join(errs...)
-}
-
-// NewCommandApp builds the minimal app the commands need (config, database,
-// ent client, system sender) without the HTTP server, the event router or the job
-// workers. Providers are lazy, so only what a command invokes is ever constructed;
-// that keeps `sphericon workspace …` quick to start and to shut down.
-func NewCommandApp(env string) (*App, error) {
-	injector := do.New()
-	register(injector, env, options{})
-
-	cfg, err := do.Invoke[*config.Config](injector)
-	if err != nil {
-		_ = injector.Shutdown()
-		return nil, err
-	}
-	i18n.Configure(cfg.Locale)
-	return &App{Config: cfg, injector: injector}, nil
 }
 
 // runEvents runs the domain-event router (persist/automations/webhooks

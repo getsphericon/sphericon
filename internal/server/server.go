@@ -288,7 +288,9 @@ func problemErrorHandler(ctx context.Context, w http.ResponseWriter, r *http.Req
 	} else if dbg := debugProblem(r, w, err.Error(), ""); dbg != nil {
 		prob["debug"] = dbg
 	}
-	_ = json.NewEncoder(w).Encode(prob)
+	if err := json.NewEncoder(w).Encode(prob); err != nil {
+		slog.Warn("write json response", "error", err)
+	}
 }
 
 // problemError is an error a handler returns that carries the problem it is
@@ -325,7 +327,9 @@ func writeCodedProblemWith(w http.ResponseWriter, status int, code, detail strin
 	if dbg != nil {
 		prob["debug"] = dbg
 	}
-	_ = json.NewEncoder(w).Encode(prob)
+	if err := json.NewEncoder(w).Encode(prob); err != nil {
+		slog.Warn("write json response", "error", err)
+	}
 }
 
 // --- cross-cutting net/http middleware ---
@@ -371,7 +375,7 @@ func recoverer(next http.Handler) http.Handler {
 			if rec := recover(); rec != nil {
 				// recoverer is outermost, so requestID has only put the id on the
 				// shared response headers, not in this request's context.
-				if id := w.Header().Get("X-Request-Id"); id != "" {
+				if id := w.Header().Get("X-Request-ID"); id != "" {
 					logger = logger.With("request_id", id)
 				}
 				stack := string(debug.Stack())
@@ -416,11 +420,11 @@ func bodyLimit(limits config.BodyLimits) func(http.Handler) http.Handler {
 
 func requestID(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		id := r.Header.Get("X-Request-Id")
+		id := r.Header.Get("X-Request-ID")
 		if id == "" {
 			id = ulid.Make().String()
 		}
-		w.Header().Set("X-Request-Id", id)
+		w.Header().Set("X-Request-ID", id)
 		// Carry the id in context so request-scoped logs (via logging.FromContext)
 		// correlate back to this request.
 		next.ServeHTTP(w, r.WithContext(logging.WithRequestID(r.Context(), id)))

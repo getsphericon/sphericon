@@ -125,11 +125,9 @@ func TestUnsubscribeEverythingInvalidatesConfirmation(t *testing.T) {
 	require.NoError(t, err)
 	tr := tracking.New(cfg.JWTSecret, cfg.AppURL)
 
-	post := func(path string) *httptest.ResponseRecorder {
+	post := func(path string) {
 		req := httptest.NewRequestWithContext(ctx, http.MethodPost, path, nil)
-		w := httptest.NewRecorder()
-		env.Server.ServeHTTP(w, req)
-		return w
+		env.Server.ServeHTTP(httptest.NewRecorder(), req)
 	}
 
 	c := env.DB.Contact.GetX(ctx, fixtures.ContactLiamID)

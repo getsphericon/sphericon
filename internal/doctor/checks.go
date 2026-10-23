@@ -139,7 +139,7 @@ func checkAppURL(ctx context.Context, r *Report, in Input) {
 			"Put the Instance behind an https reverse proxy and set SPHERICON_APP_URL to the https origin.")
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String()+"/healthz", nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String()+"/healthz", http.NoBody)
 	if err == nil {
 		var resp *http.Response
 		if resp, err = in.HTTP.Do(req); err == nil {

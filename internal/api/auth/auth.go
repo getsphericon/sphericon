@@ -233,11 +233,12 @@ func (h *CollectSecurityHandler) workspaceByKey(ctx context.Context, key string)
 
 // SiteAuth holds the authenticated dashboard user resolved from the JWT cookie.
 type SiteAuth struct {
-	UserID int64
-	Email  string
 	// Session is how the session began: its Method and, for a Sign-in provider login (ADR 0048),
 	// the time of that login.
 	Session
+
+	UserID int64
+	Email  string
 }
 
 var siteAuthKey = struct{ name string }{"siteAuth"}

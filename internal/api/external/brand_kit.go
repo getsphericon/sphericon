@@ -12,7 +12,7 @@ import (
 // needs only the right to read Templates; the Brand kit is never written over /api.
 func (h *Handlers) BrandKitGet(ctx context.Context) (externalapi.BrandKitGetRes, error) {
 	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeTemplatesRead) {
-		res := externalapi.ProblemDetails(problem(http.StatusUnauthorized, "insufficient scope"))
+		res := problem(http.StatusUnauthorized, "insufficient scope")
 		return &res, nil
 	}
 	kit, err := h.brandKit.Get(ctx, auth.TokenScoped(ctx))

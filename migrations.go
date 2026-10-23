@@ -1,9 +1,10 @@
-// Package sphericon is the module-root package. It exists only to embed the
+// This file exists only to embed the
 // goose migration files (which live in ./migrations at the repo
 // root) so the single binary can apply them itself (goose), with no migration
 // tool on the host. The embed directive must live at or above the migrations directory in
 // the source tree — go:embed cannot reference parent paths — hence this file
 // sits at the module root.
+
 package sphericon
 
 import "embed"

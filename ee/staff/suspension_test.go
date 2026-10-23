@@ -18,7 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/outbound"
 )
 
-func (h *harness) suspend(t *testing.T, c *staffapi.Client, id string, reason string) staffapi.StaffWorkspacesSuspendRes {
+func (h *harness) suspend(t *testing.T, c *staffapi.Client, id, reason string) staffapi.StaffWorkspacesSuspendRes {
 	t.Helper()
 	res, err := c.StaffWorkspacesSuspend(t.Context(), &staffapi.StaffSuspendInput{Reason: reason},
 		staffapi.StaffWorkspacesSuspendParams{WorkspaceId: staffapi.WorkspaceId(id)})

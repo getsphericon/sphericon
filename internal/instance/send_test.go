@@ -22,6 +22,7 @@ import (
 // receiver is a fake telemetry receiver: it keeps every body it was sent.
 type receiver struct {
 	*httptest.Server
+
 	mu     sync.Mutex
 	bodies [][]byte
 }

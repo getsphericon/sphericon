@@ -11,6 +11,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -41,7 +42,7 @@ type Link struct {
 func New(address, seed, issuer string) (*Link, error) {
 	u, err := url.Parse(address)
 	if err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" {
-		return nil, fmt.Errorf("SPHERICON_ACCOUNT_LINK_URL must be an absolute http(s) URL")
+		return nil, errors.New("SPHERICON_ACCOUNT_LINK_URL must be an absolute http(s) URL")
 	}
 	raw, err := base64.StdEncoding.DecodeString(seed)
 	if err != nil || len(raw) != ed25519.SeedSize {

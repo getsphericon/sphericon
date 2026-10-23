@@ -127,7 +127,7 @@ func Stream(ctx context.Context, s *ent.Scoped, m Mapper, w io.Writer, c *ent.Co
 	// Events are matched by contact_id and by the Contact's visitor ids (ADR 0021);
 	// an empty visitor list matches nothing.
 	sw.raw(`,"events":`)
-	err = streamPages(ctx, sw, func(after int64) ([]*ent.Event, error) {
+	err = streamPages(sw, func(after int64) ([]*ent.Event, error) {
 		return s.Event().Query().
 			Where(event.Or(event.ContactID(c.ID), event.VisitorIDIn(visitorIDs...)), event.IDGT(after)).
 			Order(ent.Asc(event.FieldID)).Limit(pageSize).All(ctx)
@@ -137,7 +137,7 @@ func Stream(ctx context.Context, s *ent.Scoped, m Mapper, w io.Writer, c *ent.Co
 	}
 
 	sw.raw(`,"outboundMessages":`)
-	err = streamPages(ctx, sw, func(after int64) ([]*ent.OutboundMessage, error) {
+	err = streamPages(sw, func(after int64) ([]*ent.OutboundMessage, error) {
 		return s.OutboundMessage().Query().
 			Where(outboundmessage.Or(outboundmessage.ContactID(c.ID), outboundmessage.DestinationIn(destinations...)), outboundmessage.IDGT(after)).
 			Order(ent.Asc(outboundmessage.FieldID)).Limit(pageSize).All(ctx)
@@ -147,7 +147,7 @@ func Stream(ctx context.Context, s *ent.Scoped, m Mapper, w io.Writer, c *ent.Co
 	}
 
 	sw.raw(`,"broadcastRecipients":`)
-	err = streamPages(ctx, sw, func(after int64) ([]*ent.BroadcastRecipient, error) {
+	err = streamPages(sw, func(after int64) ([]*ent.BroadcastRecipient, error) {
 		return s.BroadcastRecipient().Query().
 			Where(broadcastrecipient.ContactID(c.ID), broadcastrecipient.IDGT(after)).
 			Order(ent.Asc(broadcastrecipient.FieldID)).Limit(pageSize).All(ctx)
@@ -167,7 +167,7 @@ func Open(ctx context.Context, s *ent.Scoped, m Mapper, c *ent.Contact) io.Reade
 	go func() { pw.CloseWithError(Stream(ctx, s, m, pw, c)) }()
 	go func() {
 		<-ctx.Done()
-		pr.CloseWithError(ctx.Err())
+		_ = pr.CloseWithError(ctx.Err())
 	}()
 	return pr
 }
@@ -184,20 +184,20 @@ func Filename(c *ent.Contact) string {
 // surface it serves. Stored rows are never encoded directly: the contract, not
 // the ent JSON tags, decides what a person sees.
 type Mapper interface {
-	Contact(*ent.Contact) json.Marshaler
-	Tag(*ent.Tag) json.Marshaler
-	Visitor(*ent.Visitor) json.Marshaler
-	Event(*ent.Event) json.Marshaler
-	Unsubscribe(*ent.Unsubscribe) json.Marshaler
-	Suppression(*ent.Suppression) json.Marshaler
-	Confirmation(*ent.Confirmation) json.Marshaler
-	OutboundMessage(*ent.OutboundMessage) json.Marshaler
-	BroadcastRecipient(*ent.BroadcastRecipient) json.Marshaler
+	Contact(row *ent.Contact) json.Marshaler
+	Tag(row *ent.Tag) json.Marshaler
+	Visitor(row *ent.Visitor) json.Marshaler
+	Event(row *ent.Event) json.Marshaler
+	Unsubscribe(row *ent.Unsubscribe) json.Marshaler
+	Suppression(row *ent.Suppression) json.Marshaler
+	Confirmation(row *ent.Confirmation) json.Marshaler
+	OutboundMessage(row *ent.OutboundMessage) json.Marshaler
+	BroadcastRecipient(row *ent.BroadcastRecipient) json.Marshaler
 }
 
 // streamPages writes a JSON array whose elements are read page by page, ordered
 // by ascending id, so at most one page is in memory.
-func streamPages[T any](ctx context.Context, sw *streamWriter, page func(after int64) ([]T, error), id func(T) int64, project func(T) json.Marshaler) error {
+func streamPages[T any](sw *streamWriter, page func(after int64) ([]T, error), id func(T) int64, project func(T) json.Marshaler) error {
 	sw.raw(`[`)
 	var after int64
 	first := true

@@ -18,6 +18,7 @@ func (PurgeAuthAttemptsArgs) Kind() string { return "auth_attempts_purge" }
 
 type PurgeAuthAttemptsWorker struct {
 	river.WorkerDefaults[PurgeAuthAttemptsArgs]
+
 	ent *ent.Client
 }
 

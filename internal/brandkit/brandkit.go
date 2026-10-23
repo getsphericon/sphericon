@@ -15,7 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/templates"
 )
 
-// ErrNotSaved: the Workspace has no saved Brand kit, so there is nothing to make starter
+// ErrNotSaved means the Workspace has no saved Brand kit, so there is nothing to make starter
 // Templates from.
 var ErrNotSaved = errors.New("brandkit: the Brand kit is not saved yet")
 

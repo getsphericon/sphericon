@@ -3,8 +3,10 @@ package external_test
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -87,7 +89,7 @@ func TestExternalContactsEraseClearsOutboxAndJobArguments(t *testing.T) {
 
 	left := env.Outbox(t, events.NameEmailSent, events.NameContactCreated)
 	require.Len(t, left, 1, "only the bystander's envelope is left")
-	assert.Equal(t, fmt.Sprint(bystanderID), fmt.Sprint(left[0].Data["contactId"]))
+	assert.Equal(t, strconv.FormatInt(bystanderID, 10), fmt.Sprint(left[0].Data["contactId"]))
 
 	evaluate := env.JobsOf(t, jobs.EvaluateTriggerArgs{}.Kind())
 	require.Len(t, evaluate, 1)
@@ -118,10 +120,9 @@ func TestExternalContactsEraseClearsQueuedWebhookDeliveries(t *testing.T) {
 
 	eraseErasable(t, env)
 
-	var left []string
-	for _, args := range env.JobsOf(t, jobkind.DeliverWebhook.Kind) {
-		left = append(left, fmt.Sprint(args["delivery_id"]))
-	}
+	left := lo.Map(env.JobsOf(t, jobkind.DeliverWebhook.Kind), func(args map[string]any, _ int) string {
+		return fmt.Sprint(args["delivery_id"])
+	})
 	assert.ElementsMatch(t, []string{"bystander", "nobody", "other-tenant"}, left)
 }
 
@@ -140,10 +141,9 @@ func TestExternalContactsEraseClearsQueuedHTTPStepCallsAndFailureExcerpts(t *tes
 
 	eraseErasable(t, env)
 
-	var left []int64
-	for _, args := range env.JobsOf(t, jobkind.HTTPStep.Kind) {
-		left = append(left, int64(args["run_id"].(float64)))
-	}
+	left := lo.Map(env.JobsOf(t, jobkind.HTTPStep.Kind), func(args map[string]any, _ int) int64 {
+		return int64(args["run_id"].(float64))
+	})
 	assert.ElementsMatch(t, []int64{fixtures.AutomationRunBystanderHTTPFailedID, fixtures.AutomationRunHTTPFailedID}, left)
 
 	// The failure excerpt lives on the run: it goes with the Enrollment, others keep theirs.

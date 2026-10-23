@@ -161,7 +161,7 @@ const deleteUserLinkTTL = time.Hour
 
 // deletionLinkBinding keys the deletion token to the User's session epoch, so signing out
 // everywhere (or any other epoch bump) kills a link already mailed.
-func deletionLinkBinding(u *ent.User) string { return strconv.FormatInt(int64(u.SessionEpoch), 10) }
+func deletionLinkBinding(u *ent.User) string { return strconv.FormatInt(u.SessionEpoch, 10) }
 
 // holdsDeletionLink reports whether raw is a live deletion link issued to u.
 func (h *Handlers) holdsDeletionLink(raw string, u *ent.User) bool {

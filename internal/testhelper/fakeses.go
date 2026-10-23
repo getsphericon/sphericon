@@ -72,6 +72,7 @@ func (plainSender) Send(context.Context, messaging.EmailMessage) (messaging.Rece
 // quotaSender is the real SES sender with its quota lookup answered by the fake.
 type quotaSender struct {
 	messaging.EmailSender
+
 	fake *FakeSES
 }
 
@@ -81,8 +82,8 @@ func (s quotaSender) SendQuota(ctx context.Context) (messaging.Quota, error) {
 
 // catalogWith is the built-in catalog with SES's quota lookup answered by fake.
 func catalogWith(fake *FakeSES) *messaging.Catalog {
-	real := ses.Descriptor()
-	real.Build = func(config []byte, signer messaging.Signer) (any, error) {
+	descriptor := ses.Descriptor()
+	descriptor.Build = func(config []byte, signer messaging.Signer) (any, error) {
 		built, err := ses.Descriptor().Build(config, signer)
 		if err != nil {
 			return nil, err
@@ -93,5 +94,5 @@ func catalogWith(fake *FakeSES) *messaging.Catalog {
 		}
 		return quotaSender{EmailSender: sender, fake: fake}, nil
 	}
-	return messaging.NewCatalog(smtp.Descriptor(), real)
+	return messaging.NewCatalog(smtp.Descriptor(), descriptor)
 }

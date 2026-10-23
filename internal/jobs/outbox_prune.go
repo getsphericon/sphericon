@@ -30,6 +30,7 @@ func (PruneOutboxArgs) Kind() string { return "outbox_prune" }
 // not Workspace-scoped), so it holds the raw ent client.
 type PruneOutboxWorker struct {
 	river.WorkerDefaults[PruneOutboxArgs]
+
 	ent   *ent.Client
 	floor time.Duration
 }

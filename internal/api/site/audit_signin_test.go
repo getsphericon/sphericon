@@ -58,7 +58,7 @@ func TestAuditPasswordLoginNamesThePasswordAsTheMethod(t *testing.T) {
 
 func TestAuditProviderLoginBehindASecondFactorIsRecordedWithTheProvider(t *testing.T) {
 	env, fake, clock := signinEnvOnClock(t)
-	resp := signInWith(t, env, fake, env.NewRedirectBrowser(t), samIdentity, "")
+	resp := signInWith(t, fake, env.NewRedirectBrowser(t), samIdentity, "")
 	challenge := challengeOf(t, resp)
 	require.Empty(t, entriesNamed(t, env, fixtures.OwnerJaneEmail, fixtures.GlobexPublicID, events.ActionUserLogin), "the challenge alone is not a login")
 

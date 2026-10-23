@@ -135,7 +135,7 @@ func TestMCPInvalidAndHostileDocumentsAreRefusedAndStoreNothing(t *testing.T) {
 
 // replaceText swaps old for new in the first text node that contains it, depth first.
 func replaceText(node map[string]any, old, replacement string) bool {
-	if s, ok := node["text"].(string); ok && len(old) > 0 {
+	if s, ok := node["text"].(string); ok && old != "" {
 		for i := 0; i+len(old) <= len(s); i++ {
 			if s[i:i+len(old)] == old {
 				node["text"] = s[:i] + replacement + s[i+len(old):]

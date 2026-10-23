@@ -50,7 +50,7 @@ func (TrackingHostChange) Fields() []ent.Field {
 	}
 }
 
-// The creation time is when the change was recorded.
+// Mixin gives the change a creation time: when the change was recorded.
 func (TrackingHostChange) Mixin() []ent.Mixin {
 	return []ent.Mixin{TimeMixin{}}
 }

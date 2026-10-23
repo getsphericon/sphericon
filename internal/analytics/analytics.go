@@ -42,7 +42,7 @@ type Overview struct {
 	Series      []Point
 }
 
-// Contacts: Unsubscribed is "globally non-mailable" (ADR 0001), Active the remainder.
+// Contacts is the contact breakdown: Unsubscribed is "globally non-mailable" (ADR 0001), Active the remainder.
 type Contacts struct {
 	Total, Active, Unsubscribed, NewInWindow int
 }

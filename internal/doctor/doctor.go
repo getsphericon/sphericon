@@ -61,9 +61,9 @@ type Report struct {
 }
 
 // Failed reports whether any check failed; warnings do not count.
-func (r Report) Failed() bool { return r.count(Fail) > 0 }
+func (r *Report) Failed() bool { return r.count(Fail) > 0 }
 
-func (r Report) count(status Status) int {
+func (r *Report) count(status Status) int {
 	n := 0
 	for _, c := range r.Checks {
 		if c.Status == status {
@@ -123,7 +123,7 @@ func Run(ctx context.Context, in Input) Report {
 }
 
 // WriteText prints the report for a person: one line per check, the fix indented under it.
-func (r Report) WriteText(w io.Writer) {
+func (r *Report) WriteText(w io.Writer) {
 	tags := map[Status]string{Pass: "[ ok ]", Warn: "[warn]", Fail: "[FAIL]", Skip: "[skip]"}
 	for _, c := range r.Checks {
 		_, _ = fmt.Fprintf(w, "%s %s: %s\n", tags[c.Status], c.Name, c.Detail)
@@ -136,11 +136,12 @@ func (r Report) WriteText(w io.Writer) {
 }
 
 // WriteJSON prints the report for a monitor: {"ok": bool, "checks": [...]}.
-func (r Report) WriteJSON(w io.Writer) error {
+func (r *Report) WriteJSON(w io.Writer) error {
 	return json.NewEncoder(w).Encode(struct {
-		OK bool `json:"ok"`
 		Report
-	}{OK: !r.Failed(), Report: r})
+
+		OK bool `json:"ok"`
+	}{OK: !r.Failed(), Report: *r})
 }
 
 // Redactor wraps w so that none of the secrets reaches it: every occurrence becomes

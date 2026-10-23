@@ -12,6 +12,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/url"
 	"time"
@@ -69,11 +70,11 @@ func validate(raw []byte) error {
 	}
 	switch {
 	case cfg.Region == "":
-		return fmt.Errorf("ses: region is required")
+		return errors.New("ses: region is required")
 	case cfg.AccessKeyID == "":
-		return fmt.Errorf("ses: accessKeyId is required")
+		return errors.New("ses: accessKeyId is required")
 	case cfg.From == "":
-		return fmt.Errorf("ses: from is required")
+		return errors.New("ses: from is required")
 	}
 	return validEndpoint(cfg.Endpoint)
 }
@@ -86,7 +87,7 @@ func validEndpoint(endpoint string) error {
 	}
 	u, err := url.Parse(endpoint)
 	if err != nil || u.Scheme != "https" || u.Hostname() == "" {
-		return fmt.Errorf("ses: endpoint must be an https URL")
+		return errors.New("ses: endpoint must be an https URL")
 	}
 	return nil
 }

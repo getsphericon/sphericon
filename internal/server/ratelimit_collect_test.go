@@ -36,7 +36,7 @@ func postCollect(t *testing.T, env *testhelper.TestEnv, c collectReq) *httptest.
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, c.path, strings.NewReader(c.body))
 	req.Header.Set("Content-Type", "application/json")
 	if c.key != "" {
-		req.Header.Set("x-collect-key", c.key)
+		req.Header.Set("X-Collect-Key", c.key)
 	}
 	if c.ip != "" {
 		req.Header.Set("X-Forwarded-For", c.ip)
@@ -60,8 +60,8 @@ func TestCollectAnswers429OverTheWorkspaceLimitAndAnotherWorkspaceIsUnaffected(t
 	require.Equal(t, http.StatusTooManyRequests, rec.Code)
 	assert.Equal(t, "application/problem+json", rec.Header().Get("Content-Type"))
 	assert.Equal(t, "60", rec.Header().Get("Retry-After"))
-	assert.Equal(t, "3", rec.Header().Get("X-RateLimit-Limit"))
-	assert.Equal(t, "0", rec.Header().Get("X-RateLimit-Remaining"))
+	assert.Equal(t, "3", rec.Header().Get("X-Ratelimit-Limit"))
+	assert.Equal(t, "0", rec.Header().Get("X-Ratelimit-Remaining"))
 
 	assert.Equal(t, http.StatusNoContent, postCollect(t, env, collectReq{key: fixtures.GlobexCollectKey}).Code)
 }

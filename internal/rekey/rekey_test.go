@@ -132,7 +132,8 @@ func TestRotateReencryptAndRetireLeaveEveryStoredSecretReadable(t *testing.T) {
 		require.NoError(t, err)
 		httpSteps := lo.Filter(steps, func(s automations.Step, _ int) bool { return s.Type == automations.StepHTTP })
 		for _, s := range httpSteps {
-			fields := []string{s.URL, s.Secret}
+			fields := make([]string, 0, 2+len(s.Headers))
+			fields = append(fields, s.URL, s.Secret)
 			for _, h := range s.Headers {
 				fields = append(fields, h.Value)
 			}

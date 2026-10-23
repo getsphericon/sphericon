@@ -60,9 +60,9 @@ func TestHumanEndpointsAnswer429OverTheLimit(t *testing.T) {
 			assert.Equal(t, "application/problem+json", rec.Header().Get("Content-Type"))
 			assert.Contains(t, rec.Body.String(), `"status":429`)
 			assert.Equal(t, "60", rec.Header().Get("Retry-After"))
-			assert.Equal(t, strconv.Itoa(humanLimit), rec.Header().Get("X-RateLimit-Limit"))
-			assert.Equal(t, "0", rec.Header().Get("X-RateLimit-Remaining"))
-			assert.NotEmpty(t, rec.Header().Get("X-RateLimit-Reset"))
+			assert.Equal(t, strconv.Itoa(humanLimit), rec.Header().Get("X-Ratelimit-Limit"))
+			assert.Equal(t, "0", rec.Header().Get("X-Ratelimit-Remaining"))
+			assert.NotEmpty(t, rec.Header().Get("X-Ratelimit-Reset"))
 		})
 	}
 }

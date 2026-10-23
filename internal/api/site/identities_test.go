@@ -40,7 +40,7 @@ type linkedIdentities struct {
 func signedIn(t *testing.T, env *testhelper.TestEnv, fake *testhelper.FakeSignin, who testhelper.SigninIdentity) *testhelper.RedirectBrowser {
 	t.Helper()
 	b := env.NewRedirectBrowser(t)
-	signInWith(t, env, fake, b, who, "")
+	signInWith(t, fake, b, who, "")
 	require.Equal(t, http.StatusOK, meStatus(t, b))
 	return b
 }
@@ -106,7 +106,7 @@ func TestIdentitiesAProviderWithAnotherEmailCanBeLinked(t *testing.T) {
 	require.NoError(t, err)
 	assert.False(t, elsewhere, "no account was made for the other address")
 	signedInAgain := env.NewRedirectBrowser(t)
-	signInWith(t, env, fake, signedInAgain, maryAtWork, "")
+	signInWith(t, fake, signedInAgain, maryAtWork, "")
 	assert.Equal(t, http.StatusOK, meStatus(t, signedInAgain), "the linked account signs in to the same User")
 	signedInUser, err := env.DB.UserIdentity.Query().Where(useridentity.Subject(maryAtWork.Subject)).QueryUser().Only(t.Context())
 	require.NoError(t, err)

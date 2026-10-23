@@ -112,10 +112,11 @@ type PasskeyAssertion struct {
 // PasskeyResult is the one answer of the Passkey step. Principal is set for
 // PasskeyAuthenticated.
 type PasskeyResult[P any] struct {
-	Outcome   PasskeyOutcome
-	Principal P
 	// Delay is set for a PasskeyThrottled result.
 	Delay
+
+	Outcome   PasskeyOutcome
+	Principal P
 }
 
 // Pending is a challenge the adapter parsed: the account it was minted for, the address
@@ -143,10 +144,11 @@ type Delay struct {
 // Result is the one answer of the password step. Principal is set for Gated,
 // SecondFactor and Authenticated.
 type Result[P any] struct {
-	Outcome   Outcome
-	Principal P
 	// Delay is set for a Throttled result.
 	Delay
+
+	Outcome   Outcome
+	Principal P
 	// Challenge is the second step's token, for a SecondFactor result.
 	Challenge string
 }
@@ -154,10 +156,11 @@ type Result[P any] struct {
 // SecondResult is the one answer of the second step. Principal, Method and
 // ProviderLoginAt (the last two come from the challenge) are set for SecondAuthenticated.
 type SecondResult[P any] struct {
-	Outcome   SecondOutcome
-	Principal P
 	// Delay is set for a SecondThrottled result.
 	Delay
+
+	Outcome         SecondOutcome
+	Principal       P
 	Method          string
 	ProviderLoginAt time.Time
 }

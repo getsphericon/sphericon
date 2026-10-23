@@ -22,7 +22,7 @@ var (
 	urlSchemes = []string{"http", "https", "mailto", "tel"}
 
 	schemePrefix  = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9+.-]*:`)
-	sizeValue     = regexp.MustCompile(`^(auto|[0-9]+(\.[0-9]+)?(px|%)?)$`)
+	sizeValue     = regexp.MustCompile(`^(auto|\d+(\.\d+)?(px|%)?)$`)
 	liquidValue   = regexp.MustCompile(`^\{\{[^{}]+\}\}`)
 	liquidTags    = regexp.MustCompile(`\{\{[^{}]*\}\}|\{%[^{}]*%\}`)
 	unsafeStyle   = regexp.MustCompile(`(?i)javascript:|vbscript:|expression\s*\(|behavior\s*:|-moz-binding|@import|<|\\`)
@@ -139,7 +139,7 @@ func checkAttrNames(attrs map[string]any, def SchemaType, where, kind string) er
 	return nil
 }
 
-func checkNodeAttrs(name string, attrs map[string]any, node map[string]any, where string) error {
+func checkNodeAttrs(name string, attrs, node map[string]any, where string) error {
 	for _, attr := range []string{"alignment", "align"} {
 		if v, ok := attrs[attr]; ok && v != nil {
 			if s, isString := v.(string); !isString || !slices.Contains(alignments, s) {
@@ -174,7 +174,7 @@ func checkNodeAttrs(name string, attrs map[string]any, node map[string]any, wher
 	return nil
 }
 
-func checkButton(attrs map[string]any, node map[string]any, where string) error {
+func checkButton(attrs, node map[string]any, where string) error {
 	href, _ := attrs["href"].(string)
 	if href == "" || href == "#" {
 		return invalidf("%s: a button needs attrs.href, the address it opens, like {\"type\":\"button\",\"attrs\":{\"href\":\"https://example.com\"},\"content\":[{\"type\":\"text\",\"text\":\"Label\"}]}. Its label is text in \"content\", not an attribute.", where)

@@ -83,7 +83,9 @@ func newFakeInbox(t *testing.T) (*Inbox, *fakeMailpit) {
 		_ = json.NewEncoder(w).Encode(map[string]any{"messages": f.rows("")})
 	})
 	mux.HandleFunc("DELETE /api/v1/messages", func(w http.ResponseWriter, r *http.Request) {
-		var body struct{ IDs []string }
+		var body struct {
+			IDs []string `json:"IDs"`
+		}
 		_ = json.NewDecoder(r.Body).Decode(&body)
 		f.mu.Lock()
 		f.deleted = append(f.deleted, body.IDs...)

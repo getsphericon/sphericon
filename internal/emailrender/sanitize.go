@@ -261,7 +261,7 @@ var (
 	cssComment = regexp.MustCompile(`(?s)/\*.*?\*/`)
 	cssURLArg  = regexp.MustCompile(`(?i)url\(([^)]*)\)`)
 	cssBanned  = []string{"@import", "expression", "javascript:", "vbscript:", "behavior", "binding", "data:", "<"}
-	blankChars = regexp.MustCompile(`[\s\x00-\x1f]+`)
+	blankChars = regexp.MustCompile(`[\x00-\x20]+`)
 )
 
 // safeCSS reports whether the CSS of a style block may be kept. It is a denylist, not a

@@ -3,6 +3,7 @@ package site_test
 import (
 	"context"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -92,14 +93,15 @@ func TestSiteRulesRefuseTooManyActionsAndAnOversizedCondition(t *testing.T) {
 	assert.Contains(t, refused.Detail.Or(""), "at most 20 Actions")
 
 	leaf := `{"kind":"rule","field":"tag","operator":"has","value":"vip"}`
-	body := `{"kind":"group","combinator":"and","rules":[`
+	var body strings.Builder
+	body.WriteString(`{"kind":"group","combinator":"and","rules":[`)
 	for i := 0; i <= rules.MaxConditionNodes; i++ {
-		body += leaf + ","
+		body.WriteString(leaf + ",")
 	}
-	body += leaf + `]}`
+	body.WriteString(leaf + `]}`)
 	bigCondition, err := c.SiteRulesCreate(ctx, &siteapi.SiteCreateRuleInput{
 		Name: "wide", TriggerEvents: []string{"a"},
-		Condition: siteapi.NewOptSiteConditionGroup(testhelper.SiteRuleGroup(t, body)),
+		Condition: siteapi.NewOptSiteConditionGroup(testhelper.SiteRuleGroup(t, body.String())),
 	}, siteapi.SiteRulesCreateParams{WorkspaceId: ws})
 	require.NoError(t, err)
 	refusedCondition, ok := bigCondition.(*siteapi.SiteRulesCreateUnprocessableEntity)

@@ -59,10 +59,10 @@ func (r Result) Retry(backlog int) Retry {
 func deferralRetry(wait time.Duration, backlog int, jitter float64) Retry {
 	// The product saturates at the ceiling instead of overflowing int64: a long wait
 	// behind a large backlog would otherwise wrap negative and wake the job after the floor.
-	ahead := time.Duration(1 + backlog)
+	ahead := int64(1 + backlog)
 	base := deferralCeiling
-	if wait <= deferralCeiling/ahead {
-		base = min(max(wait*ahead, deferralFloor), deferralCeiling)
+	if int64(wait) <= int64(deferralCeiling)/ahead {
+		base = min(max(time.Duration(int64(wait)*ahead), deferralFloor), deferralCeiling)
 	}
 	return Retry{Wanted: true, After: base + time.Duration(float64(base)*deferralJitter*jitter)}
 }

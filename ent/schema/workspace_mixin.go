@@ -13,6 +13,7 @@ import (
 // workspace_id stay in their schemas.
 type WorkspaceMixin struct {
 	mixin.Schema
+
 	Ref string
 }
 

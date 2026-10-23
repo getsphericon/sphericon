@@ -102,6 +102,7 @@ func (ReleaseCheckArgs) Kind() string { return "release_check" }
 // releaseCheckWorker runs the Release check.
 type releaseCheckWorker struct {
 	river.WorkerDefaults[ReleaseCheckArgs]
+
 	m *Module
 }
 

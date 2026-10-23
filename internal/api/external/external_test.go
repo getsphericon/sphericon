@@ -27,8 +27,8 @@ type collectedRow struct {
 // txdb), so the outbox is where the assertions land.
 func outboxCollected(t *testing.T, env *testhelper.TestEnv) []collectedRow {
 	t.Helper()
-	var out []collectedRow
 	envelopes := env.OutboxEnvelopes(t)
+	out := make([]collectedRow, 0, len(envelopes))
 	for i := range envelopes {
 		envlp := &envelopes[i]
 		require.Equal(t, events.NameCollected, envlp.Name)

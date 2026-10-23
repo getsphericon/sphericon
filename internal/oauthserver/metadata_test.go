@@ -25,6 +25,7 @@ const metadataRedirectURI = "https://claude.example/callback"
 // client_id URL and returns the body.
 type metadataServer struct {
 	*httptest.Server
+
 	ClientID string
 }
 
@@ -42,11 +43,16 @@ func newMetadataServer(t *testing.T, cacheControl string, document func(clientID
 	return m
 }
 
-func goodDocument(clientID string) string {
-	body, _ := json.Marshal(map[string]any{
-		"client_id": clientID, "client_name": "Claude", "redirect_uris": []string{metadataRedirectURI},
-	})
-	return string(body)
+func goodDocument(t *testing.T) func(clientID string) string {
+	t.Helper()
+	return func(clientID string) string {
+		t.Helper()
+		body, err := json.Marshal(map[string]any{
+			"client_id": clientID, "client_name": "Claude", "redirect_uris": []string{metadataRedirectURI},
+		})
+		require.NoError(t, err)
+		return string(body)
+	}
 }
 
 func setupWithFetcher(t *testing.T, m *metadataServer) *testhelper.TestEnv {
@@ -69,7 +75,7 @@ func TestAuthorizationServerAdvertisesMetadataDocumentSupport(t *testing.T) {
 }
 
 func TestMetadataDocumentClientCompletesTheAuthorizationCodeFlow(t *testing.T) {
-	m := newMetadataServer(t, "", goodDocument)
+	m := newMetadataServer(t, "", goodDocument(t))
 	env := setupWithFetcher(t, m)
 
 	rec := metadataAuthorize(t, env, m.ClientID, metadataRedirectURI)
@@ -99,7 +105,7 @@ func TestMetadataDocumentClientCompletesTheAuthorizationCodeFlow(t *testing.T) {
 func TestMetadataDocumentClientIsRefusedWhenTheDocumentIsWrong(t *testing.T) {
 	for name, doc := range map[string]func(string) string{
 		"client_id differs from the URL": func(string) string {
-			return goodDocument("https://other.example/client.json")
+			return goodDocument(t)("https://other.example/client.json")
 		},
 		"no redirect uris": func(id string) string { return `{"client_id":"` + id + `"}` },
 		"unsafe redirect uri": func(id string) string {
@@ -129,7 +135,7 @@ func TestMetadataDocumentClientIsRefusedWhenTheDocumentIsWrong(t *testing.T) {
 }
 
 func TestMetadataDocumentClientIsRefusedForAnUnlistedRedirectURI(t *testing.T) {
-	m := newMetadataServer(t, "", goodDocument)
+	m := newMetadataServer(t, "", goodDocument(t))
 	env := setupWithFetcher(t, m)
 
 	rec := metadataAuthorize(t, env, m.ClientID, "https://evil.example/cb")
@@ -139,7 +145,7 @@ func TestMetadataDocumentClientIsRefusedForAnUnlistedRedirectURI(t *testing.T) {
 }
 
 func TestMetadataDocumentClientIsRefusedForUnsafeURLs(t *testing.T) {
-	m := newMetadataServer(t, "", goodDocument)
+	m := newMetadataServer(t, "", goodDocument(t))
 	// The production fetcher: the document lives on a loopback address.
 	env := testhelper.Setup(t)
 
@@ -165,7 +171,7 @@ func TestMetadataDocumentClientIsRefusedForUnsafeURLs(t *testing.T) {
 }
 
 func TestConsentScreenRefusesAMetadataClientWithAWrongDocument(t *testing.T) {
-	m := newMetadataServer(t, "", func(string) string { return goodDocument("https://other.example/client.json") })
+	m := newMetadataServer(t, "", func(string) string { return goodDocument(t)("https://other.example/client.json") })
 	env := setupWithFetcher(t, m)
 	actor := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
@@ -194,7 +200,7 @@ func TestMetadataDocumentIsCachedByHTTPHeaders(t *testing.T) {
 		"no-store": {"no-store", -time.Minute, time.Second},
 	} {
 		t.Run(name, func(t *testing.T) {
-			m := newMetadataServer(t, tc.cacheControl, goodDocument)
+			m := newMetadataServer(t, tc.cacheControl, goodDocument(t))
 			env := setupWithFetcher(t, m)
 
 			rec := metadataAuthorize(t, env, m.ClientID, metadataRedirectURI)

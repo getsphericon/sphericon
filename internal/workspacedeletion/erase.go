@@ -143,14 +143,14 @@ type eraseStep struct {
 
 // rowQuery is the scoped Query builder of one entity: the part an erase step needs.
 type rowQuery[Q any] interface {
-	Limit(int) Q
-	IDs(context.Context) ([]int64, error)
+	Limit(limit int) Q
+	IDs(ctx context.Context) ([]int64, error)
 }
 
 // rowDelete is the scoped Delete builder of one entity, filtered by its id predicate P.
 type rowDelete[D, P any] interface {
-	Where(...P) D
-	Exec(context.Context) (int, error)
+	Where(predicates ...P) D
+	Exec(ctx context.Context) (int, error)
 }
 
 // scopedTable is one entity's scoped wrapper (`s.AuditEntry()`).

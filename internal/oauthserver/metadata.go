@@ -120,7 +120,7 @@ func validMetadataURL(raw string) error {
 func (s *Service) fetchMetadata(ctx context.Context, clientID string) (*metadataDocument, time.Duration, error) {
 	ctx, cancel := context.WithTimeout(ctx, metadataFetchTimeout)
 	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, clientID, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, clientID, http.NoBody)
 	if err != nil {
 		return nil, 0, fmt.Errorf("%w: client_id is not a valid URL", ErrInvalidRequest)
 	}

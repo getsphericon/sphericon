@@ -50,7 +50,7 @@ func newSESAPIWithErrorType(t *testing.T, status int, errorType, body string) *s
 		api.auth = r.Header.Get("Authorization")
 		w.Header().Set("Content-Type", "application/json")
 		if errorType != "" {
-			w.Header().Set("X-Amzn-ErrorType", errorType)
+			w.Header().Set("X-Amzn-Errortype", errorType)
 		}
 		w.WriteHeader(status)
 		_, _ = io.WriteString(w, body)

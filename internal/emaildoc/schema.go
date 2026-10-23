@@ -78,7 +78,7 @@ func writeTypes(b *strings.Builder, types map[string]SchemaType) {
 		if len(t.Attrs) > 0 {
 			attrs := make([]string, 0, len(t.Attrs))
 			for _, attr := range sortedKeys(t.Attrs) {
-				def, _ := json.Marshal(t.Attrs[attr])
+				def := mustMarshal(t.Attrs[attr])
 				attrs = append(attrs, attr+"="+string(def))
 			}
 			fmt.Fprintf(b, "; attrs %s", strings.Join(attrs, ", "))
@@ -94,4 +94,14 @@ func sortedKeys[V any](m map[string]V) []string {
 	}
 	slices.Sort(keys)
 	return keys
+}
+
+// mustMarshal encodes a default value that was itself decoded from JSON (the bundle's schema), so
+// it always encodes.
+func mustMarshal(v any) []byte {
+	b, err := json.Marshal(v)
+	if err != nil {
+		panic("emaildoc: a decoded JSON value always marshals: " + err.Error())
+	}
+	return b
 }

@@ -34,7 +34,7 @@ var (
 // handed to Bus.WithinTx writes into the same transaction as the state change,
 // so the event is published iff the state commits (transactional outbox).
 type Publisher interface {
-	Publish(ctx context.Context, ev DomainEvent) error
+	Publish(_ context.Context, ev DomainEvent) error
 }
 
 // Bus is the producer-side entry point. It owns the database pool and opens a
@@ -164,7 +164,7 @@ type txPublisher struct {
 	client *ent.Client
 }
 
-func (p *txPublisher) Publish(ctx context.Context, ev DomainEvent) error {
+func (p *txPublisher) Publish(_ context.Context, ev DomainEvent) error {
 	data, err := json.Marshal(ev)
 	if err != nil {
 		return fmt.Errorf("marshal event: %w", err)

@@ -110,7 +110,7 @@ func TestExternalBroadcastAudienceIsASegmentOrEveryone(t *testing.T) {
 	b := set.(*externalapi.BroadcastResource)
 	id, ok := b.SegmentId.Get()
 	require.True(t, ok)
-	assert.Equal(t, externalapi.EntityId(proSegment), id)
+	assert.Equal(t, proSegment, id)
 	assert.Equal(t, externalapi.BroadcastStatusDraft, b.Status, "audience never sends or schedules")
 
 	cleared, err := c.BroadcastsSetAudience(ctx, &externalapi.SetBroadcastAudienceInput{SegmentId: externalapi.NilEntityId{Null: true}},

@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"net/url"
 	"os/exec"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -43,13 +44,13 @@ type Mailpit struct {
 	poll time.Duration
 }
 
-// URL is the base URL of the Mailpit web UI and HTTP API.
-func (m *Mailpit) URL() string { return m.base }
-
 // NewMailpit builds a client for the Mailpit HTTP API at base ("http://127.0.0.1:8025").
 func NewMailpit(base string) *Mailpit {
 	return &Mailpit{base: strings.TrimRight(base, "/"), hc: &http.Client{Timeout: 10 * time.Second}, poll: 100 * time.Millisecond}
 }
+
+// URL is the base URL of the Mailpit web UI and HTTP API.
+func (m *Mailpit) URL() string { return m.base }
 
 type apiAddress struct{ Name, Address string }
 
@@ -63,7 +64,7 @@ func addresses(in []apiAddress) []Address {
 	return out
 }
 
-func (m *Mailpit) do(ctx context.Context, method, path string, body any, out any) error {
+func (m *Mailpit) do(ctx context.Context, method, path string, body, out any) error {
 	var rd io.Reader
 	if body != nil {
 		b, err := json.Marshal(body)
@@ -96,7 +97,7 @@ func (m *Mailpit) do(ctx context.Context, method, path string, body any, out any
 
 // list returns the newest inbox rows (Mailpit pages at 50 by default; limit raises it).
 func (m *Mailpit) list(ctx context.Context, limit int) ([]summary, error) {
-	return m.summaries(ctx, "/api/v1/messages", url.Values{"limit": {fmt.Sprint(limit)}})
+	return m.summaries(ctx, "/api/v1/messages", url.Values{"limit": {strconv.Itoa(limit)}})
 }
 
 // search returns the inbox rows matching a Mailpit search query (e.g. `to:a@b.test`).

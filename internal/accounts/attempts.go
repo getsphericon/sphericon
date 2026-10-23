@@ -26,7 +26,7 @@ const (
 	KindPasswordReset = authattempt.KindPasswordReset
 	KindRegister      = authattempt.KindRegister
 	KindEmailChange   = authattempt.KindEmailChange
-	// The caps on a Test send from the System sender (ADR 0041), keyed by a User or Workspace
+	// KindTestSendUser caps a Test send from the System sender (ADR 0041), keyed by a User or Workspace
 	// id rather than an address (see counterKey).
 	KindTestSendUser      = authattempt.KindTestSendUser
 	KindTestSendWorkspace = authattempt.KindTestSendWorkspace

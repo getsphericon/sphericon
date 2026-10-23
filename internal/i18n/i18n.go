@@ -26,24 +26,24 @@ var localesFS embed.FS
 var supported = []string{"en"}
 
 var (
-	bundle *goi18n.Bundle
+	bundle = newBundle()
 	mu     sync.RWMutex
-	active *goi18n.Localizer
+	// active is English until Configure runs. This keeps tests (which never set
+	// SPHERICON_APP_LOCALE) asserting the English strings, and makes T safe before boot.
+	active = goi18n.NewLocalizer(bundle, "en")
 )
 
-func init() {
-	bundle = goi18n.NewBundle(language.English)
-	bundle.RegisterUnmarshalFunc("json", json.Unmarshal)
+func newBundle() *goi18n.Bundle {
+	b := goi18n.NewBundle(language.English)
+	b.RegisterUnmarshalFunc("json", json.Unmarshal)
 	for _, l := range supported {
 		// en is both the default and the fallback, so every catalog must load;
 		// a missing/broken embedded file is a build-time bug, not a runtime one.
-		if _, err := bundle.LoadMessageFileFS(localesFS, "locales/"+l+".json"); err != nil {
+		if _, err := b.LoadMessageFileFS(localesFS, "locales/"+l+".json"); err != nil {
 			panic("i18n: load catalog " + l + ": " + err.Error())
 		}
 	}
-	// Default to English until Configure runs. This keeps tests (which never set
-	// SPHERICON_APP_LOCALE) asserting the English strings, and makes T safe before boot.
-	active = goi18n.NewLocalizer(bundle, "en")
+	return b
 }
 
 // Supported returns the locales the binary ships with (copy; safe to mutate).

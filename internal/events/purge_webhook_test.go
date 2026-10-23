@@ -96,7 +96,7 @@ func TestPurgeWebhookJobsMatchesTheBodyDispatchBuilds(t *testing.T) {
 	assert.EqualValues(t, fixtures.ContactBystanderID, payload.Data.ContactID)
 	assert.Equal(t, fixtures.ContactBystanderEmail, payload.Data.Email)
 
-	var names []string
+	names := make([]string, 0, 7)
 	for _, d := range []struct {
 		endpoint int64
 		id       string

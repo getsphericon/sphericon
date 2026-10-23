@@ -56,7 +56,7 @@ func updateReceivers(t *testing.T) (entities, others []string) {
 		if e.IsDir() || !strings.HasSuffix(name, ".go") || strings.HasSuffix(name, "_test.go") {
 			continue
 		}
-		f, err := parser.ParseFile(fset, filepath.Join("../../ent", name), nil, 0)
+		f, err := parser.ParseFile(fset, filepath.Join("..", "..", "ent", name), nil, 0)
 		require.NoError(t, err)
 		files = append(files, f)
 	}

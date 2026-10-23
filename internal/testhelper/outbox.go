@@ -48,8 +48,8 @@ func (env *TestEnv) DeliverToEE(t *testing.T) {
 // OutboxEvents is OutboxEnvelopes decoded into their typed events.
 func (env *TestEnv) OutboxEvents(t *testing.T, names ...string) []events.DomainEvent {
 	t.Helper()
-	var out []events.DomainEvent
 	envelopes := env.OutboxEnvelopes(t, names...)
+	out := make([]events.DomainEvent, 0, len(envelopes))
 	for i := range envelopes {
 		ev, err := events.Decode(envelopes[i])
 		require.NoError(t, err)
@@ -69,8 +69,8 @@ type OutboxMessage struct {
 // optionally only those of the given event names.
 func (env *TestEnv) Outbox(t *testing.T, names ...string) []OutboxMessage {
 	t.Helper()
-	var out []OutboxMessage
 	envelopes := env.OutboxEnvelopes(t, names...)
+	out := make([]OutboxMessage, 0, len(envelopes))
 	for i := range envelopes {
 		e := &envelopes[i]
 		dec := json.NewDecoder(bytes.NewReader(e.Data))

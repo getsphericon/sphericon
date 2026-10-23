@@ -60,7 +60,7 @@ func publicKeyTXT(pub *rsa.PublicKey) (string, error) {
 func PublicKeyFromPrivatePEM(privPEM []byte) (string, error) {
 	block, _ := pem.Decode(privPEM)
 	if block == nil {
-		return "", fmt.Errorf("no PEM block in private key")
+		return "", errors.New("no PEM block in private key")
 	}
 	key, err := x509.ParsePKCS8PrivateKey(block.Bytes)
 	if err != nil {
@@ -68,7 +68,7 @@ func PublicKeyFromPrivatePEM(privPEM []byte) (string, error) {
 	}
 	rsaKey, ok := key.(*rsa.PrivateKey)
 	if !ok {
-		return "", fmt.Errorf("private key is not RSA")
+		return "", errors.New("private key is not RSA")
 	}
 	return publicKeyTXT(&rsaKey.PublicKey)
 }
@@ -116,7 +116,7 @@ func VerifyDKIM(ctx context.Context, lookup TXTLookup, selector, domain, expecte
 
 	want := dkimPublicPart(expectedPubTXT)
 	if want == "" {
-		return false, fmt.Errorf("expected public key is empty")
+		return false, errors.New("expected public key is empty")
 	}
 	return slices.ContainsFunc(records, func(rec string) bool {
 		return dkimPublicPart(rec) == want

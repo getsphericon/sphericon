@@ -114,10 +114,7 @@ func TestExternalEventsBatchSubmitMixedItems(t *testing.T) {
 		assert.NotEmpty(t, r.Error.Or(""))
 	}
 
-	var actions []string
-	for _, r := range outboxCollected(t, env) {
-		actions = append(actions, r.event.Action)
-	}
+	actions := lo.Map(outboxCollected(t, env), func(r collectedRow, _ int) string { return r.event.Action })
 	assert.ElementsMatch(t, []string{"batch_a", "batch_d"}, actions, "only the valid items were published")
 }
 

@@ -61,7 +61,7 @@ func TestSigninAProvenUserIsLinkedSilentlyAndKeepsThePassword(t *testing.T) {
 	require.NotNil(t, patSession)
 	b := env.NewRedirectBrowser(t)
 
-	resp := signInWith(t, env, fake, b, patWithGoogle, "")
+	resp := signInWith(t, fake, b, patWithGoogle, "")
 
 	assert.Equal(t, "/", resp.Header.Get("Location"))
 	assert.Equal(t, http.StatusOK, meStatus(t, b), "the person is in")
@@ -81,7 +81,7 @@ func TestSigninLinkingNoticesTheOwnerByMail(t *testing.T) {
 	registerAndVerify(t, env, "Pat", patEmail, patPassword)
 	before := len(env.SystemMail.Messages())
 
-	signInWith(t, env, fake, env.NewRedirectBrowser(t), patWithGoogle, "")
+	signInWith(t, fake, env.NewRedirectBrowser(t), patWithGoogle, "")
 
 	messages := env.SystemMail.Messages()
 	require.Len(t, messages, before+1)
@@ -95,8 +95,8 @@ func TestSigninAKnownIdentityOrANewPersonSendsNoLinkNotice(t *testing.T) {
 	env, fake := signinEnv(t)
 	before := len(env.SystemMail.Messages())
 
-	signInWith(t, env, fake, env.NewRedirectBrowser(t), newcomer, "")
-	signInWith(t, env, fake, env.NewRedirectBrowser(t), newcomer, "")
+	signInWith(t, fake, env.NewRedirectBrowser(t), newcomer, "")
+	signInWith(t, fake, env.NewRedirectBrowser(t), newcomer, "")
 
 	assert.Len(t, env.SystemMail.Messages(), before)
 }
@@ -108,7 +108,7 @@ func TestSigninTheNotMeLinkUnlinksTheIdentityAndEndsEverySession(t *testing.T) {
 	patSession := sessionCookie(postLogin(t, env, patEmail, patPassword).Result())
 	require.NotNil(t, patSession)
 	linked := env.NewRedirectBrowser(t)
-	signInWith(t, env, fake, linked, patWithGoogle, "")
+	signInWith(t, fake, linked, patWithGoogle, "")
 	token := notMeLink(t, env)
 
 	res, err := env.SiteAnonymous(t).SiteAuthSigninNotMe(t.Context(), &siteapi.SiteSigninNotMeInput{Token: token})
@@ -124,13 +124,13 @@ func TestSigninTheNotMeLinkUnlinksTheIdentityAndEndsEverySession(t *testing.T) {
 func TestSigninTheNotMeLinkWorksOnce(t *testing.T) {
 	env, fake := signinEnv(t)
 	registerAndVerify(t, env, "Pat", patEmail, patPassword)
-	signInWith(t, env, fake, env.NewRedirectBrowser(t), patWithGoogle, "")
+	signInWith(t, fake, env.NewRedirectBrowser(t), patWithGoogle, "")
 	token := notMeLink(t, env)
 	anonymous := env.SiteAnonymous(t)
 	_, err := anonymous.SiteAuthSigninNotMe(t.Context(), &siteapi.SiteSigninNotMeInput{Token: token})
 	require.NoError(t, err)
 	b := env.NewRedirectBrowser(t)
-	signed := signInWith(t, env, fake, b, patWithGoogle, "")
+	signed := signInWith(t, fake, b, patWithGoogle, "")
 	require.Equal(t, "/", signed.Header.Get("Location"))
 
 	replay, err := anonymous.SiteAuthSigninNotMe(t.Context(), &siteapi.SiteSigninNotMeInput{Token: token})
@@ -157,7 +157,7 @@ func TestSigninLinkingAnUnprovenAddressClearsThePasswordAndEndsTheSessions(t *te
 	require.NotNil(t, oldSession)
 	b := env.NewRedirectBrowser(t)
 
-	resp := signInWith(t, env, fake, b, johnWithGoogle, "")
+	resp := signInWith(t, fake, b, johnWithGoogle, "")
 
 	assert.Equal(t, "/", resp.Header.Get("Location"))
 	assert.Equal(t, http.StatusOK, meStatus(t, b), "the provider's proof signs in")
@@ -173,14 +173,14 @@ func TestSigninLinkingAnUnprovenAddressClearsThePasswordAndEndsTheSessions(t *te
 func TestSigninLinkingAnUnprovenAddressNoticesTheOwnerToo(t *testing.T) {
 	env, fake := signinEnv(t)
 
-	signInWith(t, env, fake, env.NewRedirectBrowser(t), johnWithGoogle, "")
+	signInWith(t, fake, env.NewRedirectBrowser(t), johnWithGoogle, "")
 
 	assert.NotEmpty(t, notMeLink(t, env))
 }
 
 func TestSigninTheNotMeLinkOfAnUnprovenTakeoverLeavesNoWayInButTheReset(t *testing.T) {
 	env, fake := signinEnv(t)
-	signInWith(t, env, fake, env.NewRedirectBrowser(t), johnWithGoogle, "")
+	signInWith(t, fake, env.NewRedirectBrowser(t), johnWithGoogle, "")
 	token := notMeLink(t, env)
 
 	res, err := env.SiteAnonymous(t).SiteAuthSigninNotMe(t.Context(), &siteapi.SiteSigninNotMeInput{Token: token})
@@ -203,8 +203,8 @@ func TestSigninTheVisitorSeesTheSameWhetherOrNotTheAddressExisted(t *testing.T) 
 	existing := env.NewRedirectBrowser(t)
 	fresh := env.NewRedirectBrowser(t)
 
-	linked := signInWith(t, env, fake, existing, patWithGoogle, "/w/abc/contacts")
-	created := signInWith(t, env, fake, fresh, newcomer, "/w/abc/contacts")
+	linked := signInWith(t, fake, existing, patWithGoogle, "/w/abc/contacts")
+	created := signInWith(t, fake, fresh, newcomer, "/w/abc/contacts")
 
 	assert.Equal(t, created.StatusCode, linked.StatusCode)
 	assert.Equal(t, created.Header.Get("Location"), linked.Header.Get("Location"))
@@ -220,7 +220,7 @@ func TestSigninAnUnverifiedUserIsTakenOverAndItsPendingPasswordRejected(t *testi
 	victim := testhelper.SigninIdentity{Subject: "google-subject-of-victim", Email: "victim@gmail.com", EmailVerified: true, Name: "Victim"}
 	b := env.NewRedirectBrowser(t)
 
-	resp := signInWith(t, env, fake, b, victim, "")
+	resp := signInWith(t, fake, b, victim, "")
 
 	assert.Equal(t, "/", resp.Header.Get("Location"))
 	assert.Equal(t, http.StatusOK, meStatus(t, b))
@@ -242,7 +242,7 @@ func TestSigninATakenOverRegistrationKeepsThePendingInvitation(t *testing.T) {
 	token := inviteToAcme(t, env, "victim@gmail.com")
 	victim := testhelper.SigninIdentity{Subject: "google-subject-of-victim", Email: "victim@gmail.com", EmailVerified: true, Name: "Victim"}
 	b := env.NewRedirectBrowser(t)
-	signInWith(t, env, fake, b, victim, "")
+	signInWith(t, fake, b, victim, "")
 
 	lookup, err := env.SiteAnonymous(t).SitePublicInvitationsLookup(t.Context(), siteapi.SitePublicInvitationsLookupParams{Token: token})
 
@@ -257,7 +257,7 @@ func TestSigninATakeoverOfAnUnverifiedAddressSendsNoNotice(t *testing.T) {
 	registerPending(t, env, "Squatter", "victim@gmail.com", "squatter-password-1")
 	before := len(env.SystemMail.Messages())
 
-	signInWith(t, env, fake, env.NewRedirectBrowser(t), testhelper.SigninIdentity{Subject: "google-subject-of-victim", Email: "victim@gmail.com", EmailVerified: true, Name: "Victim"}, "")
+	signInWith(t, fake, env.NewRedirectBrowser(t), testhelper.SigninIdentity{Subject: "google-subject-of-victim", Email: "victim@gmail.com", EmailVerified: true, Name: "Victim"}, "")
 
 	assert.Len(t, env.SystemMail.Messages(), before, "the address's owner is the one signing in")
 }
@@ -266,7 +266,7 @@ func TestSigninALinkedUserWithASecondFactorStillGetsTheChallenge(t *testing.T) {
 	env, fake := signinEnv(t)
 	sam := testhelper.SigninIdentity{Subject: "another-google-account-of-sam", Email: fixtures.SecondFactorSamEmail, EmailVerified: true, HostedDomain: "globex.test"}
 
-	resp := signInWith(t, env, fake, env.NewRedirectBrowser(t), sam, "")
+	resp := signInWith(t, fake, env.NewRedirectBrowser(t), sam, "")
 
 	challengeOf(t, resp)
 }
@@ -332,7 +332,7 @@ func TestTheAddressIsProvenByEveryLinkItIsMailedTo(t *testing.T) {
 
 func TestAuditASilentLinkAndItsNotMeUndoNameOnlyTheProvider(t *testing.T) {
 	env, fake := signinEnv(t)
-	signInWith(t, env, fake, env.NewRedirectBrowser(t), johnWithGoogle, "")
+	signInWith(t, fake, env.NewRedirectBrowser(t), johnWithGoogle, "")
 
 	linked := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, events.ActionUserIdentityLink)
 

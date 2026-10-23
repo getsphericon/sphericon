@@ -6,7 +6,6 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
-	"fmt"
 	"sync"
 	"testing"
 
@@ -153,7 +152,7 @@ func ok[T any](tb testing.TB, step string, res any, err error) *T {
 }
 
 // String names the Workspace in failures.
-func (w *Workspace) String() string { return fmt.Sprintf("e2e workspace %s", w.Domain) }
+func (w *Workspace) String() string { return "e2e workspace " + w.Domain }
 
 // AddOwner makes a second owner of the Workspace and returns the Membership ids of all
 // its owners (the founder first).

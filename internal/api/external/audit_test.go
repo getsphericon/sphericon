@@ -55,7 +55,7 @@ func TestExternalAuditListPaginatesByCursor(t *testing.T) {
 	ctx := context.Background()
 	c := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.GlobexID, "audit:read"))
 
-	var seen []int64
+	seen := make([]int64, 0, 6)
 	params := externalapi.AuditEntriesListParams{Limit: externalapi.NewOptInt32(2)}
 	var last *externalapi.AuditEntryList
 	for range 3 {

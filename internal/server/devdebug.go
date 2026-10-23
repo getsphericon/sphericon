@@ -37,7 +37,7 @@ func debugProblem(r *http.Request, w http.ResponseWriter, cause, stack string) *
 	return &problemDebug{
 		Error:     cause,
 		Stack:     stack,
-		RequestID: w.Header().Get("X-Request-Id"),
+		RequestID: w.Header().Get("X-Request-ID"),
 		Method:    r.Method,
 		Path:      r.URL.Path,
 	}

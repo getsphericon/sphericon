@@ -46,26 +46,26 @@ type Actor = ent.Actor
 // ExplicitAuditActions, so adding an explicit path means listing it here.
 const (
 	ActionMembershipUpdate = "membership.update"
-	// A Membership was removed: by an Owner or Admin, or by the User leaving (ADR 0050).
+	// ActionMembershipDelete: a Membership was removed: by an Owner or Admin, or by the User leaving (ADR 0050).
 	ActionMembershipDelete = "membership.delete"
-	// A User became a member because they proved an address on a Join domain (ADR 0051); the
+	// ActionMembershipDomainJoin: a User became a member because they proved an address on a Join domain (ADR 0051); the
 	// actor is the system and the diff names the domain.
 	ActionMembershipDomainJoin = "membership.domain_join"
 	ActionInvitationCreate     = "invitation.create"
 	ActionInvitationAccept     = "invitation.accept"
 	ActionInvitationRevoke     = "invitation.revoke"
-	// A successful sign-in; its diff names the method: "password" or a Sign-in provider (ADR 0048).
+	// ActionUserLogin: a successful sign-in; its diff names the method: "password" or a Sign-in provider (ADR 0048).
 	ActionUserLogin = "user.login"
-	// A Sign-in provider account was linked to, or unlinked from, the User (ADR 0048); the
+	// ActionUserIdentityLink: a Sign-in provider account was linked to, or unlinked from, the User (ADR 0048); the
 	// diff names the provider and never the subject.
 	ActionUserIdentityLink   = "user.identity_link"
 	ActionUserIdentityUnlink = "user.identity_unlink"
-	// The User proved its email by the emailed link and set its password (ADR 0030).
+	// ActionUserEmailVerify: the User proved its email by the emailed link and set its password (ADR 0030).
 	ActionUserEmailVerify    = "user.email_verify"
 	ActionUserPasswordChange = "user.password_change"
-	// "Sign out everywhere": every session of the User ends (ADR 0020).
+	// ActionUserSignOutEverywhere: "Sign out everywhere", every session of the User ends (ADR 0020).
 	ActionUserSignOutEverywhere = "user.sign_out_everywhere"
-	// The Second factor (ADR 0020).
+	// ActionUserSecondFactorEnroll starts the Second factor group (ADR 0020).
 	ActionUserSecondFactorEnroll      = "user.second_factor_enroll"
 	ActionUserSecondFactorDisable     = "user.second_factor_disable"
 	ActionUserSecondFactorReset       = "user.second_factor_reset"
@@ -81,7 +81,7 @@ const (
 	ActionWorkspaceAbuseUnexempt      = "workspace.abuse_unexempt"
 	ActionContactImport               = "contact.import"
 	ActionAuditLogExport              = "audit_log.export"
-	// A sample event was sent to a Webhook endpoint (ADR 0039): no row changes.
+	// ActionWebhookEndpointTest: a sample event was sent to a Webhook endpoint (ADR 0039): no row changes.
 	ActionWebhookEndpointTest = "webhook_endpoint.test"
 )
 

@@ -53,6 +53,7 @@ func NewFlowCodec(secret string, now func() time.Time) *FlowCodec {
 
 type flowClaims struct {
 	jwt.RegisteredClaims
+
 	Provider string `json:"p"`
 	State    string `json:"s"`
 	Verifier string `json:"v"`

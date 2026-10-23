@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -34,7 +35,7 @@ func workspaceCommand(d deps) *cli.Command {
 				id := cmd.StringArg("id")
 				reason := strings.TrimSpace(strings.Join(cmd.StringArgs("reason"), " "))
 				if reason == "" {
-					return fmt.Errorf("a reason is required: the owner is told why")
+					return errors.New("a reason is required: the owner is told why")
 				}
 				changed, err := ops.SuspendWorkspace(ctx, id, suspension.CLI, reason)
 				if err != nil {

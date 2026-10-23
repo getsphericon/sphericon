@@ -47,7 +47,7 @@ func HTTPGet(t *testing.T, url string) (int, string) {
 // TryHTTPGet is HTTPGet without test assertions, safe to call from a polling
 // goroutine such as require.Eventually.
 func TryHTTPGet(ctx context.Context, url string) (int, string, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
 	if err != nil {
 		return 0, "", err
 	}

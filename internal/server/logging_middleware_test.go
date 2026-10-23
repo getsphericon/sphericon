@@ -28,12 +28,12 @@ func TestRecovererLogsPanicWithRequestID(t *testing.T) {
 	handler := chi.Chain(recoverer, requestID).Handler(boom)
 
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/explode", nil)
-	req.Header.Set("X-Request-Id", "req-abc")
+	req.Header.Set("X-Request-ID", "req-abc")
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, req)
 
 	require.Equalf(t, http.StatusInternalServerError, rec.Code, "status = %d, want 500", rec.Code)
-	got := rec.Header().Get("X-Request-Id")
+	got := rec.Header().Get("X-Request-ID")
 	require.Equalf(t, "req-abc", got, "X-Request-Id header = %q, want req-abc", got)
 
 	var line map[string]any

@@ -198,15 +198,15 @@ var outboundMessageRefs = []ref{
 }
 
 // outboundRef is the reference of an Outbound message that is set (`set`), names a row that exists
-// (`exists`) and is cleared by `clear`.
-func outboundRef(constraint string, set, exists predicate.OutboundMessage, clear func(*ent.OutboundMessageUpdate) *ent.OutboundMessageUpdate) ref {
+// (`exists`) and is cleared by `unset`.
+func outboundRef(constraint string, set, exists predicate.OutboundMessage, unset func(*ent.OutboundMessageUpdate) *ent.OutboundMessageUpdate) ref {
 	return ref{
 		table: "outbound_messages", constraint: constraint,
 		find: func(ctx context.Context, c *ent.Client, limit int) ([]int64, error) {
 			return c.OutboundMessage.Query().Where(set, outboundmessage.Not(exists)).Limit(limit).IDs(ctx)
 		},
 		settle: func(ctx context.Context, c *ent.Client, ids []int64) (int, error) {
-			return clear(c.OutboundMessage.Update().Where(outboundmessage.IDIn(ids...))).Save(ctx)
+			return unset(c.OutboundMessage.Update().Where(outboundmessage.IDIn(ids...))).Save(ctx)
 		},
 	}
 }

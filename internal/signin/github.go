@@ -3,6 +3,7 @@ package signin
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -43,7 +44,7 @@ func githubProfile(ctx context.Context, x Exchange) (Profile, error) {
 		return Profile{}, err
 	}
 	if account.ID == 0 {
-		return Profile{}, fmt.Errorf("github account: no id")
+		return Profile{}, errors.New("github account: no id")
 	}
 	var emails []struct {
 		Email    string `json:"email"`
@@ -68,12 +69,12 @@ func githubProfile(ctx context.Context, x Exchange) (Profile, error) {
 
 // githubGet reads one JSON document of GitHub's API with the flow's bearer-authenticated client.
 func githubGet(ctx context.Context, x Exchange, path string, into any) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, x.APIURL+path, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, x.APIURL+path, http.NoBody)
 	if err != nil {
 		return err
 	}
 	req.Header.Set("Accept", "application/vnd.github+json")
-	req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
+	req.Header.Set("X-Github-Api-Version", "2022-11-28")
 	req.Header.Set("User-Agent", "sphericon")
 	resp, err := x.HTTP.Do(req)
 	if err != nil {
