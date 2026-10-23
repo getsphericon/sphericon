@@ -285,9 +285,12 @@ export default function VisualEditor({ initial, onChange, variables, theme }: Vi
         </Menu>
       </Group>
       {tiptap ? <EditorToolbar editor={tiptap} /> : null}
-      {/* The editor draws only the message, which is white in the basic theme, so the page gives it a
-          frame: a white sheet with a minimum height, dark default text (the editor inherits the app's
-          light text in the dark scheme), and a click anywhere on it puts the caret at the end. */}
+      {/* The sheet is white and its text black in both app schemes, on purpose: it is a preview of the
+          email, and the email does not follow the app's scheme. The editor's basic theme sets no
+          colors of its own, so without this the message would turn dark in the dark scheme while
+          the recipient sees it on white. A Brand kit's colors are explicit in the document and
+          win over these. The frame also has a minimum height, and a click anywhere on it puts
+          the caret at the end. */}
       <Paper
         withBorder
         p="md"

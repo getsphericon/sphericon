@@ -7,8 +7,8 @@ import { Route as overviewRoute } from './index.tsx'
 
 export const Route = createFileRoute('/workspaces/$workspaceId')({
   // Authenticates and verifies the Workspace id is one the user belongs to.
-  beforeLoad: async ({ context, params }) => {
-    const workspaces = await requireWorkspaces(context.queryClient)
+  beforeLoad: async ({ context, params, location }) => {
+    const workspaces = await requireWorkspaces(context.queryClient, location.href)
     if (!workspaces.some((w) => w.id === params.workspaceId)) {
       const [fallback] = workspaces
       if (!fallback) {

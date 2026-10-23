@@ -65,11 +65,7 @@ function StaffMenu() {
         </UnstyledButton>
       </Menu.Target>
       <Menu.Dropdown>
-        <Menu.Item
-          color="red"
-          leftSection={<IconLogout size={16} />}
-          onClick={() => logoutMutation.mutate({})}
-        >
+        <Menu.Item leftSection={<IconLogout size={16} />} onClick={() => logoutMutation.mutate({})}>
           {t(($) => $.console.menu.logout)}
         </Menu.Item>
       </Menu.Dropdown>

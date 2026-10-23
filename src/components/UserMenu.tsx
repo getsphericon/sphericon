@@ -126,11 +126,7 @@ export function UserMenu({
         ) : null}
         <DeletedWorkspacesMenuSection />
         <Menu.Divider />
-        <Menu.Item
-          color="red"
-          leftSection={<IconLogout size={16} />}
-          onClick={() => logoutMutation.mutate({})}
-        >
+        <Menu.Item leftSection={<IconLogout size={16} />} onClick={() => logoutMutation.mutate({})}>
           {t(($) => $.userMenu.logout)}
         </Menu.Item>
       </Menu.Dropdown>
