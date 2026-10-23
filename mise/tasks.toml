@@ -22,7 +22,7 @@ run = [{ task = "worktrees:gc --apply" }]
 [dev]
 description = "Migrate, then start the whole dev stack (https://sphericon.localhost in the primary checkout, `mise env | grep SPHERICON_APP_URL` elsewhere)"
 depends = ["db:migrate"]
-run = "mise daemons start caddy"
+run = ["mise/scripts/check-dev-ports.sh", "mise daemons start caddy"]
 
 ["dev:down"]
 description = "Stop this checkout's dev stack (never the shared Postgres: `mise -C <primary checkout> daemons stop db` stops it for everyone)"
