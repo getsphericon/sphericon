@@ -31,8 +31,9 @@ func PasswordNotBlank(s string) bool {
 // brackets, a local part of 64 and a domain label of 63.
 const (
 	maxAddressLength = 254
-	maxLocalLength   = 64
-	maxLabelLength   = 63
+	// contract-copy: RFC 5321's local-part limit, not a limit of the contract
+	maxLocalLength = 64
+	maxLabelLength = 63
 )
 
 // AccountEmail reports whether s is an address a person can receive the account's mail at (the
