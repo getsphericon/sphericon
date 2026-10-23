@@ -7,7 +7,6 @@ import {
   Code,
   CopyButton,
   Group,
-  Loader,
   Menu,
   Modal,
   Stack,
@@ -22,6 +21,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
 import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
+import { TableSkeleton } from '../../components/Skeletons.tsx'
 import {
   siteDomainJoinGetOptions,
   siteDomainJoinGetQueryKey,
@@ -197,7 +197,7 @@ export function JoinDomainsSection({ workspaceId }: { workspaceId: string }) {
         {domainsQuery.isError ? (
           <Alert color="red" title={t(($) => $.joinDomains.loadError)} />
         ) : null}
-        {domainsQuery.isLoading ? <Loader /> : null}
+        {domainsQuery.isLoading ? <TableSkeleton /> : null}
         {domainsQuery.isSuccess && domains.length === 0 ? (
           <Text size="sm">{t(($) => $.joinDomains.empty)}</Text>
         ) : null}

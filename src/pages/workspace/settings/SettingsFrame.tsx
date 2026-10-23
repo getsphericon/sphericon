@@ -1,8 +1,9 @@
-import { Alert, Loader, Stack, Title } from '@mantine/core'
+import { Alert, Stack, Title } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { BlockSkeleton } from '../../../components/Skeletons.tsx'
 import { siteWorkspacesListOptions } from '../../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteWorkspaceResource } from '../../../generated/site/types.gen.ts'
 
@@ -31,7 +32,7 @@ export function SettingsFrame({
         </Alert>
       ) : null}
 
-      {workspacesQuery.isLoading ? <Loader /> : null}
+      {workspacesQuery.isLoading ? <BlockSkeleton /> : null}
 
       {workspace ? children(workspace) : null}
     </Stack>

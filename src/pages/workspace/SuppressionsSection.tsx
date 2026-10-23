@@ -5,7 +5,6 @@ import {
   Badge,
   Button,
   Group,
-  Loader,
   Menu,
   Modal,
   Stack,
@@ -21,6 +20,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
+import { TableSkeleton } from '../../components/Skeletons.tsx'
 import {
   siteSuppressionsCreateMutation,
   siteSuppressionsDeleteMutation,
@@ -116,7 +116,7 @@ export function SuppressionsSection({ workspaceId }: { workspaceId: string }) {
         </Alert>
       ) : null}
 
-      {suppressionsQuery.isLoading ? <Loader /> : null}
+      {suppressionsQuery.isLoading ? <TableSkeleton /> : null}
 
       <DataTable
         minHeight={records.length === 0 ? 200 : 0}

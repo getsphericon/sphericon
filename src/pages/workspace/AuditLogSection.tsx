@@ -7,7 +7,6 @@ import {
   Button,
   Code,
   Group,
-  Loader,
   NumberInput,
   Select,
   SimpleGrid,
@@ -24,6 +23,7 @@ import { Fragment, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ButtonLink } from '../../components/RouterLink.tsx'
+import { BlockSkeleton } from '../../components/Skeletons.tsx'
 import {
   siteAuditExportOptions,
   siteAuditGetRetentionOptions,
@@ -187,7 +187,7 @@ function AuditPage({
   )
 
   if (query.isLoading) {
-    return <Loader size="sm" />
+    return <BlockSkeleton />
   }
   if (isHidden(query.error)) {
     return null

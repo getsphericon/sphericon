@@ -1,10 +1,11 @@
-import { Badge, Group, Loader, SimpleGrid, Stack, Text, Title } from '@mantine/core'
+import { Badge, Group, SimpleGrid, Stack, Text, Title } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
 import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 
 import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
 import { LinkClickTable } from '../../components/LinkClickTable.tsx'
+import { PageSkeleton } from '../../components/Skeletons.tsx'
 import { StatCard } from '../../components/StatCard.tsx'
 import {
   siteBroadcastLinksListOptions,
@@ -67,7 +68,7 @@ export function BroadcastReportPage() {
   const getQuery = useQuery(siteBroadcastsGetOptions({ path: { workspaceId, id: broadcastId } }))
 
   if (getQuery.isLoading) {
-    return <Loader />
+    return <PageSkeleton />
   }
 
   if (getQuery.isError || !getQuery.data) {

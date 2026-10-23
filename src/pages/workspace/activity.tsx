@@ -1,4 +1,4 @@
-import { EmptyState, Alert, Group, Loader, Stack, Switch, TextInput, Title } from '@mantine/core'
+import { EmptyState, Alert, Group, Stack, Switch, TextInput, Title } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { useQuery } from '@tanstack/react-query'
 import { DataTable } from 'mantine-datatable'
@@ -6,6 +6,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { DetailedEventRowDetails } from '../../components/EventRowDetails.tsx'
+import { TableSkeleton } from '../../components/Skeletons.tsx'
 import { siteEventsListOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
 import { formatDateTime } from '../../utils/datetime.ts'
@@ -71,7 +72,7 @@ export function ActivityPage() {
         </Alert>
       ) : null}
 
-      {eventsQuery.isLoading ? <Loader /> : null}
+      {eventsQuery.isLoading ? <TableSkeleton /> : null}
 
       <DataTable
         minHeight={records.length === 0 ? 200 : 0}

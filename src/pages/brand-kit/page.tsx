@@ -3,7 +3,6 @@ import {
   Button,
   ColorInput,
   Group,
-  Loader,
   NumberInput,
   SimpleGrid,
   Stack,
@@ -17,6 +16,7 @@ import { modals } from '@mantine/modals'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
+import { BlockSkeleton } from '../../components/Skeletons.tsx'
 import {
   siteBrandKitGetOptions,
   siteBrandKitGetQueryKey,
@@ -223,7 +223,7 @@ export function BrandKitPage() {
           {t(($) => $.brandKit.loadErrorTitle)}
         </Alert>
       ) : null}
-      {kitQuery.isLoading || workspacesQuery.isLoading ? <Loader size="sm" /> : null}
+      {kitQuery.isLoading || workspacesQuery.isLoading ? <BlockSkeleton /> : null}
       {kitQuery.data && workspace ? (
         <BrandKitForm
           key={kitQuery.data.updatedAt ?? 'unsaved'}

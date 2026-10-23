@@ -4,7 +4,6 @@ import {
   Card,
   Badge,
   Group,
-  Loader,
   SimpleGrid,
   Stack,
   Switch,
@@ -20,6 +19,7 @@ import { useTranslation } from 'react-i18next'
 import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
 import { EventRowDetails } from '../../components/EventRowDetails.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
+import { PageSkeleton } from '../../components/Skeletons.tsx'
 import {
   siteContactsDeleteMutation,
   siteContactsGetOptions,
@@ -197,7 +197,7 @@ export function ContactDetailPage() {
   const contact = contactQuery.data
 
   if (contactQuery.isLoading) {
-    return <Loader />
+    return <PageSkeleton />
   }
 
   if (contactQuery.isError || !contact) {

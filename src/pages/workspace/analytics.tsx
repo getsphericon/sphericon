@@ -1,19 +1,11 @@
 import { AreaChart, DonutChart } from '@mantine/charts'
-import {
-  Alert,
-  EmptyState,
-  Loader,
-  SegmentedControl,
-  SimpleGrid,
-  Stack,
-  Text,
-  Title,
-} from '@mantine/core'
+import { Alert, EmptyState, SegmentedControl, SimpleGrid, Stack, Text, Title } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
+import { BlockSkeleton } from '../../components/Skeletons.tsx'
 import { StatCard } from '../../components/StatCard.tsx'
 import { siteAnalyticsOverviewOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteAnalyticsRange } from '../../generated/site/types.gen.ts'
@@ -43,7 +35,7 @@ export function AnalyticsPage() {
         data={RANGES.map((r) => ({ value: r, label: t(($) => $.analytics.range[r]) }))}
       />
 
-      {analyticsQuery.isLoading && <Loader />}
+      {analyticsQuery.isLoading && <BlockSkeleton />}
 
       {analyticsQuery.isError && (
         <ApiErrorAlert

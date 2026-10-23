@@ -1,14 +1,4 @@
-import {
-  Alert,
-  Button,
-  Group,
-  Loader,
-  PasswordInput,
-  Stack,
-  Text,
-  TextInput,
-  Title,
-} from '@mantine/core'
+import { Alert, Button, Group, PasswordInput, Stack, Text, TextInput, Title } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { startRegistration } from '@simplewebauthn/browser'
 import { useQuery } from '@tanstack/react-query'
@@ -29,6 +19,7 @@ import type { SitePasskey } from '../generated/site/types.gen.ts'
 import { zPasskeyName } from '../generated/site/zod.gen.ts'
 import { useResourceMutation } from '../hooks/useResourceMutation.ts'
 import { IdentityProof } from './IdentityProof.tsx'
+import { BlockSkeleton } from './Skeletons.tsx'
 
 interface AddPasskey {
   name: string
@@ -81,7 +72,7 @@ export function Passkeys({ returnTo }: { returnTo: string }) {
     <Stack>
       <Title order={4}>{t(($) => $.security.passkeys.title)}</Title>
       {passkeys.isError ? <Alert color="red" title={t(($) => $.security.loadErrorTitle)} /> : null}
-      {passkeys.isLoading ? <Loader /> : null}
+      {passkeys.isLoading ? <BlockSkeleton /> : null}
       {data && data.items.length === 0 ? (
         <Text size="sm" c="dimmed">
           {t(($) => $.security.passkeys.empty)}

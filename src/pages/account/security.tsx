@@ -7,7 +7,6 @@ import {
   Divider,
   Group,
   Image,
-  Loader,
   PasswordInput,
   SimpleGrid,
   Stack,
@@ -24,6 +23,7 @@ import { useTranslation } from 'react-i18next'
 import { IdentityProof } from '../../components/IdentityProof.tsx'
 import { LinkedIdentities } from '../../components/LinkedIdentities.tsx'
 import { Passkeys } from '../../components/Passkeys.tsx'
+import { BlockSkeleton } from '../../components/Skeletons.tsx'
 import {
   siteSecondFactorConfirmEnrollmentMutation,
   siteSecondFactorDisableMutation,
@@ -323,7 +323,7 @@ export function SecurityPage() {
       {statusQuery.isError ? (
         <Alert color="red" title={t(($) => $.security.loadErrorTitle)} />
       ) : null}
-      {statusQuery.isLoading ? <Loader /> : null}
+      {statusQuery.isLoading ? <BlockSkeleton /> : null}
 
       {codes ? <RecoveryCodes codes={codes} onDone={() => setCodes(null)} /> : null}
 

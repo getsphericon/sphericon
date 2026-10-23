@@ -1,10 +1,11 @@
-import { Badge, Button, Group, Loader, Stack, Text, Title } from '@mantine/core'
+import { Badge, Button, Group, Stack, Text, Title } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
 import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
 import { PagedTable } from '../../components/PagedTable.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
+import { PageSkeleton } from '../../components/Skeletons.tsx'
 import {
   siteRuleFiringsListOptions,
   siteRulesActivateMutation,
@@ -59,7 +60,7 @@ export function RuleDetailPage() {
   })
 
   if (ruleQuery.isLoading) {
-    return <Loader />
+    return <PageSkeleton />
   }
   if (ruleQuery.isError || !ruleQuery.data) {
     return (

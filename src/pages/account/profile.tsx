@@ -4,7 +4,6 @@ import {
   Button,
   Divider,
   Group,
-  Loader,
   PasswordInput,
   Stack,
   Text,
@@ -17,6 +16,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
+import { BlockSkeleton } from '../../components/Skeletons.tsx'
 import {
   siteSecondFactorGetStatusOptions,
   siteUserDeleteUserLinkMutation,
@@ -264,7 +264,7 @@ export function ProfilePage() {
         </Alert>
       ) : null}
 
-      {meQuery.isLoading ? <Loader /> : null}
+      {meQuery.isLoading ? <BlockSkeleton /> : null}
 
       {meQuery.data ? (
         <Stack>

@@ -6,7 +6,6 @@ import {
   Button,
   CopyButton,
   Group,
-  Loader,
   Menu,
   Modal,
   MultiSelect,
@@ -25,6 +24,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
+import { TableSkeleton } from '../../components/Skeletons.tsx'
 import {
   siteWebhooksCreateMutation,
   siteWebhooksDeleteMutation,
@@ -239,7 +239,7 @@ export function WebhooksSection({ workspaceId }: { workspaceId: string }) {
         </Alert>
       ) : null}
 
-      {webhooksQuery.isLoading ? <Loader /> : null}
+      {webhooksQuery.isLoading ? <TableSkeleton /> : null}
 
       <DataTable
         minHeight={records.length === 0 ? 200 : 0}

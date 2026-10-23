@@ -1,8 +1,8 @@
-import { Loader } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
 import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
+import { PageSkeleton } from '../../components/Skeletons.tsx'
 import { siteAutomationsGetOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
 import { AutomationBuilder } from './AutomationBuilder.tsx'
@@ -14,7 +14,7 @@ export function AutomationEditPage() {
   const getQuery = useQuery(siteAutomationsGetOptions({ path: { workspaceId, id: automationId } }))
 
   if (getQuery.isLoading) {
-    return <Loader />
+    return <PageSkeleton />
   }
 
   if (getQuery.isError || !getQuery.data) {

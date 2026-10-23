@@ -1,4 +1,4 @@
-import { Badge, Group, Loader, Stack, Title } from '@mantine/core'
+import { Badge, Group, Stack, Title } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
 import { PagedTable } from '../../components/PagedTable.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
+import { PageSkeleton } from '../../components/Skeletons.tsx'
 import {
   siteAutomationsGetOptions,
   siteEnrollmentsListOptions,
@@ -24,7 +25,7 @@ export function AutomationDetailPage() {
   const getQuery = useQuery(siteAutomationsGetOptions({ path: { workspaceId, id: automationId } }))
 
   if (getQuery.isLoading) {
-    return <Loader />
+    return <PageSkeleton />
   }
 
   if (getQuery.isError || !getQuery.data) {

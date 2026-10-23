@@ -1,9 +1,10 @@
-import { Button, Card, EmptyState, Loader, Stack, Table, Title } from '@mantine/core'
+import { Button, Card, EmptyState, Stack, Table, Title } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ApiErrorAlert } from '../components/ApiErrorAlert.tsx'
+import { BlockSkeleton } from '../components/Skeletons.tsx'
 import { staffWorkspaceAuditListOptions } from '../generated/staff/@tanstack/react-query.gen.ts'
 import type { StaffAuditEntryResource } from '../generated/staff/types.gen.ts'
 import { formatDateTime } from '../utils/datetime.ts'
@@ -49,7 +50,7 @@ function AuditPage({
   )
 
   if (query.isLoading) {
-    return <Loader size="sm" />
+    return <BlockSkeleton />
   }
   if (query.isError) {
     return (

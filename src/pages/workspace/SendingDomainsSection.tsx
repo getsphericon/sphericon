@@ -7,7 +7,6 @@ import {
   Code,
   CopyButton,
   Group,
-  Loader,
   Menu,
   Modal,
   Stack,
@@ -26,6 +25,7 @@ import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
+import { TableSkeleton } from '../../components/Skeletons.tsx'
 import {
   siteSendingDomainsArchiveMutation,
   siteSendingDomainsCreateMutation,
@@ -272,7 +272,7 @@ export function SendingDomainsSection({
         </Alert>
       ) : null}
 
-      {domainsQuery.isLoading ? <Loader /> : null}
+      {domainsQuery.isLoading ? <TableSkeleton /> : null}
 
       <DataTable
         minHeight={records.length === 0 ? 200 : 0}

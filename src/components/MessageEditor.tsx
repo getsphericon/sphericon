@@ -1,4 +1,4 @@
-import { Input, Loader, Textarea } from '@mantine/core'
+import { Input, Textarea } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
 import { lazy, Suspense, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -7,6 +7,7 @@ import { siteBrandKitGetOptions } from '../generated/site/@tanstack/react-query.
 import { Route as workspaceRoute } from '../routes/workspaces/$workspaceId/route.tsx'
 import { brandTheme } from '../utils/brandTheme.ts'
 import type { MessageDoc } from '../utils/messageDoc.ts'
+import { BlockSkeleton } from './Skeletons.tsx'
 
 // The editor's code is its own chunk: it loads when a message is first edited visually.
 const VisualEditor = lazy(async () =>
@@ -72,9 +73,9 @@ export function MessageEditor({
   return (
     <Input.Wrapper label={t(($) => $.messageEditor.label)}>
       {brandKit.isLoading ? (
-        <Loader size="sm" />
+        <BlockSkeleton />
       ) : (
-        <Suspense fallback={<Loader size="sm" />}>
+        <Suspense fallback={<BlockSkeleton />}>
           <VisualEditor
             initial={initial}
             variables={variables}

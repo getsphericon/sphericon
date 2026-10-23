@@ -1,4 +1,4 @@
-import { Alert, Button, Group, Loader, Stack, Text, Title } from '@mantine/core'
+import { Alert, Button, Group, Stack, Text, Title } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
 import { useSearch } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
@@ -13,6 +13,7 @@ import { client } from '../generated/site/client.gen.ts'
 import type { SiteIdentitiesLinkData } from '../generated/site/types.gen.ts'
 import { zSiteSigninError } from '../generated/site/zod.gen.ts'
 import { useResourceMutation } from '../hooks/useResourceMutation.ts'
+import { BlockSkeleton } from './Skeletons.tsx'
 
 // The URL that starts linking a provider account to the signed-in User. The browser navigates
 // there and the server redirects on to the provider, so the URL is built from the contract.
@@ -57,7 +58,7 @@ export function LinkedIdentities() {
       {identities.isError ? (
         <Alert color="red" title={t(($) => $.security.loadErrorTitle)} />
       ) : null}
-      {identities.isLoading ? <Loader /> : null}
+      {identities.isLoading ? <BlockSkeleton /> : null}
       {identities.isSuccess && items.length === 0 ? (
         <Text size="sm" c="dimmed">
           {t(($) => $.signin.linked.empty)}

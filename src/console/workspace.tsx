@@ -1,4 +1,4 @@
-import { Badge, Card, Group, Loader, Stack, Text, Title } from '@mantine/core'
+import { Badge, Card, Group, Stack, Text, Title } from '@mantine/core'
 import { IconArrowLeft } from '@tabler/icons-react'
 import { useQuery } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 
 import { ApiErrorAlert } from '../components/ApiErrorAlert.tsx'
 import { ButtonLink } from '../components/RouterLink.tsx'
+import { BlockSkeleton } from '../components/Skeletons.tsx'
 import { staffWorkspacesGetOptions } from '../generated/staff/@tanstack/react-query.gen.ts'
 import type { StaffAbuse, StaffSuspension } from '../generated/staff/types.gen.ts'
 import { Route as consoleHomeRoute } from '../routes/console/_authed/index.tsx'
@@ -144,7 +145,7 @@ export function ConsoleWorkspacePage() {
           {t(($) => $.console.workspace.back)}
         </ButtonLink>
       </Group>
-      {workspaceQuery.isLoading ? <Loader /> : null}
+      {workspaceQuery.isLoading ? <BlockSkeleton /> : null}
       {workspaceQuery.isError ? (
         <ApiErrorAlert
           error={workspaceQuery.error}

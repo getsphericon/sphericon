@@ -1,4 +1,4 @@
-import { EmptyState, Loader, Stack } from '@mantine/core'
+import { EmptyState, Stack } from '@mantine/core'
 import { useCounter } from '@mantine/hooks'
 import { useQuery } from '@tanstack/react-query'
 import type { QueryKey, UseQueryOptions } from '@tanstack/react-query'
@@ -8,6 +8,7 @@ import type { ReactNode } from 'react'
 
 import type { ApiErrorLike } from '../utils/apiErrors.ts'
 import { ApiErrorAlert } from './ApiErrorAlert.tsx'
+import { TableSkeleton } from './Skeletons.tsx'
 
 interface Page {
   items: object[]
@@ -51,7 +52,7 @@ export function PagedTable<TPage extends Page, TError extends ApiErrorLike, TKey
         <ApiErrorAlert error={list.error} title={loadErrorTitle} fallback={loadErrorTitle} />
       ) : null}
 
-      {list.isLoading ? <Loader /> : null}
+      {list.isLoading ? <TableSkeleton /> : null}
 
       <DataTable<TPage['items'][number]>
         minHeight={list.data?.items.length ? 0 : 200}

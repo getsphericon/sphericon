@@ -7,7 +7,6 @@ import {
   Code,
   CopyButton,
   Group,
-  Loader,
   Menu,
   Modal,
   Select,
@@ -24,6 +23,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
+import { TableSkeleton } from '../../components/Skeletons.tsx'
 import {
   siteInvitationsCreateMutation,
   siteInvitationsDeleteMutation,
@@ -139,7 +139,7 @@ export function MembersSection({ workspaceId }: { workspaceId: string }) {
         </Alert>
       ) : null}
 
-      {membersQuery.isLoading ? <Loader /> : null}
+      {membersQuery.isLoading ? <TableSkeleton /> : null}
 
       <Tabs defaultValue="members" keepMounted={false}>
         <Tabs.List mb="md">

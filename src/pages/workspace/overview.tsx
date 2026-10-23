@@ -1,8 +1,9 @@
-import { Loader, Stack } from '@mantine/core'
+import { Stack } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
 import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
+import { BlockSkeleton } from '../../components/Skeletons.tsx'
 import { siteSetupChecklistGetOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { Route as overviewRoute } from '../../routes/workspaces/$workspaceId/index.tsx'
 import { SetupChecklist } from './SetupChecklist.tsx'
@@ -18,7 +19,7 @@ export function OverviewPage() {
 
   return (
     <Stack>
-      {checklistQuery.isLoading && <Loader />}
+      {checklistQuery.isLoading && <BlockSkeleton />}
 
       {checklistQuery.isError && (
         <ApiErrorAlert

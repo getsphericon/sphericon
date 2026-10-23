@@ -1,4 +1,4 @@
-import { Loader, Modal, Stack, Title } from '@mantine/core'
+import { Modal, Stack, Title } from '@mantine/core'
 import { schemaResolver, useForm } from '@mantine/form'
 import { useQuery } from '@tanstack/react-query'
 import type { QueryKey, UseMutationOptions, UseQueryOptions } from '@tanstack/react-query'
@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next'
 import type * as z from 'zod'
 
 import { ApiErrorAlert } from '../components/ApiErrorAlert.tsx'
+import { PageSkeleton } from '../components/Skeletons.tsx'
 import { useResourceMutation } from '../hooks/useResourceMutation.ts'
 import { Route as workspaceRoute } from '../routes/workspaces/$workspaceId/route.tsx'
 import type { ApiErrorLike } from '../utils/apiErrors.ts'
@@ -230,7 +231,7 @@ export function defineResource<
     const query = useQuery(resource.getOptions({ path: { workspaceId, id } }))
 
     if (query.isLoading) {
-      return <Loader />
+      return <PageSkeleton />
     }
     if (query.isError || !query.data) {
       return (

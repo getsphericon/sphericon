@@ -6,7 +6,6 @@ import {
   Checkbox,
   Collapse,
   Group,
-  Loader,
   Menu,
   Modal,
   NumberInput,
@@ -28,6 +27,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
+import { TableSkeleton } from '../../components/Skeletons.tsx'
 import {
   siteIntegrationsCreateMutation,
   siteIntegrationsArchiveMutation,
@@ -233,7 +233,7 @@ export function IntegrationsSection({ workspaceId }: { workspaceId: string }) {
         </Alert>
       ) : null}
 
-      {integrationsQuery.isLoading ? <Loader /> : null}
+      {integrationsQuery.isLoading ? <TableSkeleton /> : null}
 
       {unlimited.map((record) => (
         <Alert
