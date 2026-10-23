@@ -6,6 +6,7 @@ import (
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -30,7 +31,7 @@ func TestSiteSegmentContactsListReturnsOnlyMatchingContacts(t *testing.T) {
 	})
 	assert.Contains(t, emails, fixtures.ContactLiamEmail)
 	assert.NotContains(t, emails, fixtures.ContactNoahEmail, "a contact on another plan is outside the segment")
-	assert.Equal(t, int32(len(res.Items)), res.TotalItems)
+	assert.Equal(t, narrow.Int32(len(res.Items)), res.TotalItems)
 }
 
 func TestSiteSegmentContactsListUnknownSegmentIsNotFound(t *testing.T) {

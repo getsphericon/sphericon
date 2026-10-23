@@ -8,6 +8,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/suppression"
 )
@@ -33,10 +34,10 @@ func (h *Handlers) SiteSuppressionsList(ctx context.Context, params siteapi.Site
 	}
 	return &siteapi.SiteSuppressionsListOK{
 		Items:      resources,
-		Page:       int32(page.Page),
-		PageSize:   int32(page.PageSize),
-		TotalItems: int32(page.TotalItems),
-		TotalPages: int32(page.TotalPages),
+		Page:       narrow.Int32(page.Page),
+		PageSize:   narrow.Int32(page.PageSize),
+		TotalItems: narrow.Int32(page.TotalItems),
+		TotalPages: narrow.Int32(page.TotalPages),
 	}, nil
 }
 

@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"net"
 	"net/url"
 	"time"
@@ -126,7 +127,7 @@ func (p *Passkeys) Available() bool { return p.wa != nil }
 // specification asks, and derived from the id so no column holds it. It carries no personal
 // data. Changing it would orphan every registered Passkey.
 func UserHandle(userID int64) []byte {
-	return binary.BigEndian.AppendUint64(nil, uint64(userID))
+	return binary.BigEndian.AppendUint64(nil, uint64(max(userID, 0)))
 }
 
 // UserIDOfHandle is the User a handle names; false for a handle UserHandle never produced.
@@ -134,7 +135,11 @@ func UserIDOfHandle(handle []byte) (int64, bool) {
 	if len(handle) != 8 {
 		return 0, false
 	}
-	return int64(binary.BigEndian.Uint64(handle)), true
+	id := binary.BigEndian.Uint64(handle)
+	if id > math.MaxInt64 {
+		return 0, false
+	}
+	return int64(id), true
 }
 
 // List returns the User's Passkeys, oldest first.

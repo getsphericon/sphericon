@@ -7,6 +7,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/narrow"
 )
 
 // SiteCustomFieldsList returns the workspace's Custom field definitions — the typed,
@@ -37,8 +38,8 @@ func (h *Handlers) SiteCustomFieldsList(ctx context.Context, params siteapi.Site
 	return &siteapi.SiteCustomFieldsListOK{
 		Items:      resources,
 		Page:       1,
-		PageSize:   int32(len(resources)),
-		TotalItems: int32(len(resources)),
+		PageSize:   narrow.Int32(len(resources)),
+		TotalItems: narrow.Int32(len(resources)),
 		TotalPages: 1,
 	}, nil
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/inuse"
+	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 )
@@ -51,10 +52,10 @@ func (h *Handlers) SiteSendingDomainsList(ctx context.Context, params siteapi.Si
 		Items: lo.Map(page.Items, func(d *ent.SendingDomain, _ int) siteapi.SiteSendingDomainResource {
 			return h.sendingDomainResource(d)
 		}),
-		Page:       int32(page.Page),
-		PageSize:   int32(page.PageSize),
-		TotalItems: int32(page.TotalItems),
-		TotalPages: int32(page.TotalPages),
+		Page:       narrow.Int32(page.Page),
+		PageSize:   narrow.Int32(page.PageSize),
+		TotalItems: narrow.Int32(page.TotalItems),
+		TotalPages: narrow.Int32(page.TotalPages),
 	}, nil
 }
 

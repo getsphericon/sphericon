@@ -6,6 +6,7 @@ import (
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/erasure"
+	"github.com/getsphericon/sphericon/internal/narrow"
 )
 
 // SiteContactsLookup answers a Privacy request's first question (ADR 0021): what the
@@ -36,9 +37,9 @@ func (h *Handlers) SiteContactsLookup(ctx context.Context, params siteapi.SiteCo
 	}
 	return &siteapi.SiteContactHoldings{
 		ContactHeld:     held.ContactHeld,
-		Events:          int32(held.Events),
-		DeliveryRecords: int32(held.DeliveryRecords),
-		Unsubscribes:    int32(held.Unsubscribes),
-		Suppressions:    int32(held.Suppressions),
+		Events:          narrow.Int32(held.Events),
+		DeliveryRecords: narrow.Int32(held.DeliveryRecords),
+		Unsubscribes:    narrow.Int32(held.Unsubscribes),
+		Suppressions:    narrow.Int32(held.Suppressions),
 	}, nil
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/passkey"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/narrow"
 )
 
 // ErrPasskeyUnknown means the response names no credential: it is malformed, or its credential id
@@ -194,7 +195,7 @@ func credentialsOf(rows []*ent.Passkey) []webauthn.Credential {
 				BackupEligible: r.BackupEligible,
 				BackupState:    r.BackupState,
 			},
-			Authenticator: webauthn.Authenticator{AAGUID: r.Aaguid, SignCount: uint32(r.SignCount)},
+			Authenticator: webauthn.Authenticator{AAGUID: r.Aaguid, SignCount: narrow.Uint32(r.SignCount)},
 		}
 	}
 	return out

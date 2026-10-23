@@ -9,6 +9,7 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/convert"
+	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/webhooks"
 	"github.com/samber/lo"
@@ -49,10 +50,10 @@ func (h *Handlers) WebhooksList(ctx context.Context, params externalapi.Webhooks
 	}
 	return &externalapi.WebhooksListOK{
 		Items:      lo.Map(page.Items, func(e webhooks.Endpoint, _ int) externalapi.WebhookResource { return webhookResource(e) }),
-		Page:       int32(page.Page),
-		PageSize:   int32(page.PageSize),
-		TotalItems: int32(page.TotalItems),
-		TotalPages: int32(page.TotalPages),
+		Page:       narrow.Int32(page.Page),
+		PageSize:   narrow.Int32(page.PageSize),
+		TotalItems: narrow.Int32(page.TotalItems),
+		TotalPages: narrow.Int32(page.TotalPages),
 	}, nil
 }
 

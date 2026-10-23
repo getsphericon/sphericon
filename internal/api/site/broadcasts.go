@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
@@ -45,8 +46,8 @@ func broadcastResource(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (si
 		return res, err
 	}
 	progress := siteapi.SiteBroadcastProgress{
-		ProcessedCount: int32(p.Processed),
-		RemainingCount: int32(p.Remaining),
+		ProcessedCount: narrow.Int32(p.Processed),
+		RemainingCount: narrow.Int32(p.Remaining),
 	}
 	if p.EstimatedCompletion != nil {
 		progress.EstimatedCompletionAt = siteapi.NewOptNilTimestamp(siteapi.Timestamp(*p.EstimatedCompletion))
@@ -82,10 +83,10 @@ func (h *Handlers) SiteBroadcastsList(ctx context.Context, params siteapi.SiteBr
 			res.Stats = resources.BroadcastStats(figures[b.ID])
 			return res
 		}),
-		Page:       int32(page.Page),
-		PageSize:   int32(page.PageSize),
-		TotalItems: int32(page.TotalItems),
-		TotalPages: int32(page.TotalPages),
+		Page:       narrow.Int32(page.Page),
+		PageSize:   narrow.Int32(page.PageSize),
+		TotalItems: narrow.Int32(page.TotalItems),
+		TotalPages: narrow.Int32(page.TotalPages),
 	}, nil
 }
 

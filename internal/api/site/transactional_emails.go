@@ -7,6 +7,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
@@ -50,9 +51,9 @@ func (h *Handlers) SiteTransactionalEmailsList(ctx context.Context, params sitea
 	}
 	return &siteapi.SiteTransactionalEmailsListOK{
 		Items:      res,
-		Page:       int32(page),
-		PageSize:   int32(pageSize),
-		TotalItems: int32(total),
-		TotalPages: int32(pagination.TotalPages(total, pageSize)),
+		Page:       narrow.Int32(page),
+		PageSize:   narrow.Int32(pageSize),
+		TotalItems: narrow.Int32(total),
+		TotalPages: narrow.Int32(pagination.TotalPages(total, pageSize)),
 	}, nil
 }

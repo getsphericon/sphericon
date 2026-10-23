@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/integration"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -60,8 +61,8 @@ func TestExternalIntegrationsListIsPaginatedAndWorkspaceScoped(t *testing.T) {
 	assert.Len(t, list.Items, 1)
 	total, err := env.DB.Scoped(fixtures.AcmeID).Integration().Query().Count(ctx)
 	require.NoError(t, err)
-	assert.Equal(t, int32(total), list.TotalItems)
-	assert.Equal(t, int32(total), list.TotalPages, "one Integration a page")
+	assert.Equal(t, narrow.Int32(total), list.TotalItems)
+	assert.Equal(t, narrow.Int32(total), list.TotalPages, "one Integration a page")
 
 	all, err := c.IntegrationsList(ctx, externalapi.IntegrationsListParams{})
 	require.NoError(t, err)

@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/inuse"
+	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/tags"
 )
@@ -30,10 +31,10 @@ func (h *Handlers) TagsList(ctx context.Context, params externalapi.TagsListPara
 	page := tagsPage(all, params.Page, params.PageSize)
 	return &externalapi.TagsListOK{
 		Items:      page.Items,
-		Page:       int32(page.Page),
-		PageSize:   int32(page.PageSize),
-		TotalItems: int32(page.TotalItems),
-		TotalPages: int32(page.TotalPages),
+		Page:       narrow.Int32(page.Page),
+		PageSize:   narrow.Int32(page.PageSize),
+		TotalItems: narrow.Int32(page.TotalItems),
+		TotalPages: narrow.Int32(page.TotalPages),
 	}, nil
 }
 
@@ -56,10 +57,10 @@ func (h *Handlers) TagsListForContact(ctx context.Context, params externalapi.Ta
 	page := tagsPage(mine, params.Page, params.PageSize)
 	return &externalapi.TagsListForContactOK{
 		Items:      page.Items,
-		Page:       int32(page.Page),
-		PageSize:   int32(page.PageSize),
-		TotalItems: int32(page.TotalItems),
-		TotalPages: int32(page.TotalPages),
+		Page:       narrow.Int32(page.Page),
+		PageSize:   narrow.Int32(page.PageSize),
+		TotalItems: narrow.Int32(page.TotalItems),
+		TotalPages: narrow.Int32(page.TotalPages),
 	}, nil
 }
 

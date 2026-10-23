@@ -8,6 +8,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/webhooks"
 )
 
@@ -53,7 +54,7 @@ func (h *Handlers) WebhooksTest(ctx context.Context, req *externalapi.TestWebhoo
 	}
 	out := externalapi.WebhookTestResult{Delivered: res.Delivered}
 	if res.Status != 0 {
-		out.Status = externalapi.NewOptInt32(int32(res.Status))
+		out.Status = externalapi.NewOptInt32(narrow.Int32(res.Status))
 	}
 	if res.Kind != "" {
 		out.Kind = externalapi.NewOptWebhookErrorKind(externalapi.WebhookErrorKind(res.Kind))

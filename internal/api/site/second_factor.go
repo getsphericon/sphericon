@@ -9,6 +9,7 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/secondfactor"
 )
 
@@ -28,7 +29,7 @@ func (h *Handlers) SiteSecondFactorGetStatus(ctx context.Context) (*siteapi.Site
 		return nil, err
 	}
 	return &siteapi.SiteSecondFactorStatus{
-		Enabled: st.Enabled, Pending: st.Pending, RecoveryCodesRemaining: int32(st.RecoveryCodesRemaining),
+		Enabled: st.Enabled, Pending: st.Pending, RecoveryCodesRemaining: narrow.Int32(st.RecoveryCodesRemaining),
 		PasswordSet: u.PasswordHash != "", IdentityProofFresh: u.PasswordHash == "" && h.identityProofFresh(ctx),
 	}, nil
 }

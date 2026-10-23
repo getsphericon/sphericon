@@ -6,6 +6,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
 	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/signupsurvey"
 )
 
@@ -36,7 +37,7 @@ func (h *Handlers) StaffSignupSurveyCounts(ctx context.Context) (staffapi.StaffS
 		return nil, err
 	}
 	return &staffapi.StaffSignupSurveyCounts{
-		Responses: int32(c.Responses),
+		Responses: narrow.Int32(c.Responses),
 		Role: choiceCounts(c.Role, func(choice string, n int32) staffapi.StaffSignupRoleCount {
 			return staffapi.StaffSignupRoleCount{Choice: staffapi.StaffSignupRole(choice), Count: n}
 		}),
@@ -59,7 +60,7 @@ func (h *Handlers) StaffSignupSurveyCounts(ctx context.Context) (staffapi.StaffS
 func choiceCounts[T any](t signupsurvey.Tally, build func(choice string, count int32) T) []T {
 	out := make([]T, len(t.Choices))
 	for i, c := range t.Choices {
-		out[i] = build(c.Choice, int32(c.Count))
+		out[i] = build(c.Choice, narrow.Int32(c.Count))
 	}
 	return out
 }
@@ -67,7 +68,7 @@ func choiceCounts[T any](t signupsurvey.Tally, build func(choice string, count i
 func otherTexts(t signupsurvey.Tally) []staffapi.StaffSignupOtherTextCount {
 	out := make([]staffapi.StaffSignupOtherTextCount, len(t.Others))
 	for i, o := range t.Others {
-		out[i] = staffapi.StaffSignupOtherTextCount{Text: o.Text, Count: int32(o.Count)}
+		out[i] = staffapi.StaffSignupOtherTextCount{Text: o.Text, Count: narrow.Int32(o.Count)}
 	}
 	return out
 }

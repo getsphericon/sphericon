@@ -11,6 +11,7 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/auditapi"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/narrow"
 )
 
 // SiteAuditList shows the Workspace's Audit log, newest first. Owner and admin only;
@@ -210,7 +211,7 @@ func retentionResource(days *int) *siteapi.SiteAuditRetention {
 	if days == nil {
 		res.RetentionDays.Null = true
 	} else {
-		res.RetentionDays.SetTo(siteapi.RetentionDays(*days))
+		res.RetentionDays.SetTo(siteapi.RetentionDays(narrow.Int32(*days)))
 	}
 	return res
 }

@@ -17,6 +17,7 @@ import (
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
 	"github.com/getsphericon/sphericon/internal/auditapi"
+	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/reputation"
 )
 
@@ -198,7 +199,7 @@ func nilFloat64(v *float64) staffapi.NilFloat64 {
 }
 
 // count narrows a count to the contract's int32.
-func count(n int) int32 { return int32(n) }
+func count(n int) int32 { return narrow.Int32(n) }
 
 func optNilSource(v *signupsurveyresponse.HeardFrom) staffapi.OptNilStaffSignupSource {
 	if v == nil {
@@ -207,4 +208,4 @@ func optNilSource(v *signupsurveyresponse.HeardFrom) staffapi.OptNilStaffSignupS
 	return staffapi.NewOptNilStaffSignupSource(staffapi.StaffSignupSource(*v))
 }
 
-func windowHours(d time.Duration) int32 { return int32(d / time.Hour) }
+func windowHours(d time.Duration) int32 { return narrow.Int32(d / time.Hour) }

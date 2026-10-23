@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/eventlog"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/integrations"
+	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/reputation"
 	"github.com/getsphericon/sphericon/internal/rules"
@@ -111,7 +112,7 @@ var _ externalapi.Handler = (*Handlers)(nil)
 // problem builds a ProblemDetails value for the given status code and detail.
 func problem(code int, detail string) externalapi.ProblemDetails {
 	return externalapi.ProblemDetails{
-		Status: externalapi.NewOptInt32(int32(code)),
+		Status: externalapi.NewOptInt32(narrow.Int32(code)),
 		Title:  externalapi.NewOptString(http.StatusText(code)),
 		Detail: externalapi.NewOptString(detail),
 	}

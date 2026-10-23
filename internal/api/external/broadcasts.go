@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/emailrender"
+	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
@@ -36,10 +37,10 @@ func (h *Handlers) BroadcastsList(ctx context.Context, params externalapi.Broadc
 	}
 	return &externalapi.BroadcastsListOK{
 		Items:      lo.Map(page.Items, func(b *ent.Broadcast, _ int) externalapi.BroadcastResource { return mapper.BroadcastToResource(b) }),
-		Page:       int32(page.Page),
-		PageSize:   int32(page.PageSize),
-		TotalItems: int32(page.TotalItems),
-		TotalPages: int32(page.TotalPages),
+		Page:       narrow.Int32(page.Page),
+		PageSize:   narrow.Int32(page.PageSize),
+		TotalItems: narrow.Int32(page.TotalItems),
+		TotalPages: narrow.Int32(page.TotalPages),
 	}, nil
 }
 
@@ -304,16 +305,16 @@ func (h *Handlers) BroadcastsReport(ctx context.Context, params externalapi.Broa
 	return &externalapi.BroadcastReport{
 		Status:            externalapi.BroadcastStatus(r.Status),
 		HoldReason:        optNilString(r.HoldReason),
-		RecipientsTotal:   int32(r.Recipients),
-		SentCount:         int32(r.Sent),
-		SkippedCount:      int32(r.Skipped),
-		FailedCount:       int32(r.Failed),
-		OpenedCount:       int32(r.Opened),
-		ClickedCount:      int32(r.Clicked),
-		UnsubscribedCount: int32(r.Unsubscribed),
-		DeliveredCount:    int32(r.Delivered),
-		BouncedCount:      int32(r.Bounced),
-		ComplainedCount:   int32(r.Complained),
+		RecipientsTotal:   narrow.Int32(r.Recipients),
+		SentCount:         narrow.Int32(r.Sent),
+		SkippedCount:      narrow.Int32(r.Skipped),
+		FailedCount:       narrow.Int32(r.Failed),
+		OpenedCount:       narrow.Int32(r.Opened),
+		ClickedCount:      narrow.Int32(r.Clicked),
+		UnsubscribedCount: narrow.Int32(r.Unsubscribed),
+		DeliveredCount:    narrow.Int32(r.Delivered),
+		BouncedCount:      narrow.Int32(r.Bounced),
+		ComplainedCount:   narrow.Int32(r.Complained),
 		OpenRate:          r.OpenRate,
 		ClickRate:         r.ClickRate,
 	}, nil

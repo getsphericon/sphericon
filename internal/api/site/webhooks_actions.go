@@ -8,6 +8,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/webhooks"
 )
 
@@ -69,7 +70,7 @@ func (h *Handlers) SiteWebhooksTest(ctx context.Context, req *siteapi.SiteTestWe
 	}
 	out := siteapi.SiteWebhookTestResult{Delivered: res.Delivered}
 	if res.Status != 0 {
-		out.Status = siteapi.NewOptInt32(int32(res.Status))
+		out.Status = siteapi.NewOptInt32(narrow.Int32(res.Status))
 	}
 	if res.Kind != "" {
 		out.Kind = siteapi.NewOptSiteWebhookErrorKind(siteapi.SiteWebhookErrorKind(res.Kind))

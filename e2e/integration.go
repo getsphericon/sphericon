@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/narrow"
 )
 
 // CreateMailpitIntegration creates the default SMTP Integration pointing at the
@@ -17,7 +18,7 @@ func (w *Workspace) CreateMailpitIntegration() {
 	cfg := externalapi.SmtpConfigInput{
 		Kind:     externalapi.SmtpConfigInputKindSMTP,
 		Host:     w.env.mailpit.SMTPHost,
-		Port:     int32(w.env.mailpit.SMTPPort),
+		Port:     narrow.Int32(w.env.mailpit.SMTPPort),
 		From:     externalapi.EmailAddress(w.FromEmail),
 		FromName: externalapi.NewOptNilString(w.FromName),
 	}

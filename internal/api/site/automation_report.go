@@ -8,6 +8,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/automations"
+	"github.com/getsphericon/sphericon/internal/narrow"
 )
 
 func (h *Handlers) SiteAutomationReportsGet(ctx context.Context, params siteapi.SiteAutomationReportsGetParams) (siteapi.SiteAutomationReportsGetRes, error) {
@@ -28,11 +29,11 @@ func (h *Handlers) SiteAutomationReportsGet(ctx context.Context, params siteapi.
 		return nil, err
 	}
 	return &siteapi.SiteAutomationReport{
-		Opens:      int32(report.Opens),
-		Clicks:     int32(report.Clicks),
-		Delivered:  int32(report.Delivered),
-		Bounced:    int32(report.Bounced),
-		Complained: int32(report.Complained),
+		Opens:      narrow.Int32(report.Opens),
+		Clicks:     narrow.Int32(report.Clicks),
+		Delivered:  narrow.Int32(report.Delivered),
+		Bounced:    narrow.Int32(report.Bounced),
+		Complained: narrow.Int32(report.Complained),
 		Links:      mapper.LinkClicksToResource(report.Links),
 	}, nil
 }

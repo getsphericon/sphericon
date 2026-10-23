@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/inuse"
+	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/segments"
 )
@@ -35,10 +36,10 @@ func (h *Handlers) SiteSegmentsList(ctx context.Context, params siteapi.SiteSegm
 		Items: lo.Map(page.Items, func(s *ent.Segment, _ int) siteapi.SiteSegmentResource {
 			return mapper.SegmentToResource(s)
 		}),
-		Page:       int32(page.Page),
-		PageSize:   int32(page.PageSize),
-		TotalItems: int32(page.TotalItems),
-		TotalPages: int32(page.TotalPages),
+		Page:       narrow.Int32(page.Page),
+		PageSize:   narrow.Int32(page.PageSize),
+		TotalItems: narrow.Int32(page.TotalItems),
+		TotalPages: narrow.Int32(page.TotalPages),
 	}, nil
 }
 
@@ -217,7 +218,7 @@ func (h *Handlers) SiteSegmentsPreview(ctx context.Context, req *siteapi.SitePre
 	if err != nil {
 		return nil, err
 	}
-	return &siteapi.SitePreviewSegmentResult{Count: int32(count)}, nil
+	return &siteapi.SitePreviewSegmentResult{Count: narrow.Int32(count)}, nil
 }
 
 // SiteSegmentContactsList lists the Contacts a Segment matches right now: its rule alone,
@@ -244,9 +245,9 @@ func (h *Handlers) SiteSegmentContactsList(ctx context.Context, params siteapi.S
 		Items: lo.Map(page.Items, func(c *ent.Contact, _ int) siteapi.SiteContactResource {
 			return mapper.ContactToResource(c)
 		}),
-		Page:       int32(page.Page),
-		PageSize:   int32(page.PageSize),
-		TotalItems: int32(page.TotalItems),
-		TotalPages: int32(page.TotalPages),
+		Page:       narrow.Int32(page.Page),
+		PageSize:   narrow.Int32(page.PageSize),
+		TotalItems: narrow.Int32(page.TotalItems),
+		TotalPages: narrow.Int32(page.TotalPages),
 	}, nil
 }

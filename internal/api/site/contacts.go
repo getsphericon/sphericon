@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/erasure"
+	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
@@ -38,10 +39,10 @@ func (h *Handlers) SiteContactsList(ctx context.Context, params siteapi.SiteCont
 		Items: lo.Map(page.Items, func(c *ent.Contact, _ int) siteapi.SiteContactResource {
 			return mapper.ContactToResource(c)
 		}),
-		Page:       int32(page.Page),
-		PageSize:   int32(page.PageSize),
-		TotalItems: int32(page.TotalItems),
-		TotalPages: int32(page.TotalPages),
+		Page:       narrow.Int32(page.Page),
+		PageSize:   narrow.Int32(page.PageSize),
+		TotalItems: narrow.Int32(page.TotalItems),
+		TotalPages: narrow.Int32(page.TotalPages),
 	}, nil
 }
 
@@ -152,7 +153,7 @@ func (h *Handlers) SiteContactsDelete(ctx context.Context, params siteapi.SiteCo
 // problem builds a ProblemDetails with status, title and detail.
 func problem(code int, detail string) siteapi.ProblemDetails {
 	return siteapi.ProblemDetails{
-		Status: siteapi.NewOptInt32(int32(code)),
+		Status: siteapi.NewOptInt32(narrow.Int32(code)),
 		Title:  siteapi.NewOptString(http.StatusText(code)),
 		Detail: siteapi.NewOptString(detail),
 	}

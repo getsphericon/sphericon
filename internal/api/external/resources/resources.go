@@ -20,6 +20,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/dkimstate"
 	"github.com/getsphericon/sphericon/internal/httpcall"
 	"github.com/getsphericon/sphericon/internal/integrations"
+	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/sendlimit"
@@ -40,7 +41,7 @@ func automationSteps(a *ent.Automation) []externalapi.AutomationStep {
 		step := externalapi.AutomationStep{Type: externalapi.AutomationStepType(s.Type)}
 		switch s.Type {
 		case automations.StepWait:
-			step.Seconds = externalapi.NewOptInt32(int32(s.Seconds))
+			step.Seconds = externalapi.NewOptInt32(narrow.Int32(s.Seconds))
 		case automations.StepApplyTag, automations.StepRemoveTag:
 			step.Tag = externalapi.NewOptString(s.Tag)
 		case automations.StepHTTP:
@@ -252,7 +253,7 @@ func sendLimitWarning(w sendlimit.Warning) externalapi.SendLimitWarning {
 }
 
 // count narrows a message count to the contract's int32.
-func count(n int) int32 { return int32(n) }
+func count(n int) int32 { return narrow.Int32(n) }
 
 // nilString renders an optional value: null when there is none.
 func nilString(v *string) externalapi.NilString {
@@ -267,7 +268,7 @@ func nilInt32(v *int) externalapi.NilInt32 {
 	if v == nil {
 		return externalapi.NilInt32{Null: true}
 	}
-	return externalapi.NewNilInt32(int32(*v))
+	return externalapi.NewNilInt32(narrow.Int32(*v))
 }
 
 // sendLimitSource is null exactly when the window has no limit (its source is empty).
@@ -282,7 +283,7 @@ func optNilInt32(v *int) externalapi.OptNilInt32 {
 	if v == nil {
 		return externalapi.OptNilInt32{}
 	}
-	return externalapi.NewOptNilInt32(int32(*v))
+	return externalapi.NewOptNilInt32(narrow.Int32(*v))
 }
 
 // exportJSON renders a stored JSON object (custom fields, event properties).
@@ -397,7 +398,7 @@ func optInt32(v *int) externalapi.OptInt32 {
 	if v == nil {
 		return externalapi.OptInt32{}
 	}
-	return externalapi.NewOptInt32(int32(*v))
+	return externalapi.NewOptInt32(narrow.Int32(*v))
 }
 
 func optString(v *string) externalapi.OptString {
@@ -471,7 +472,7 @@ func webhookFailure(e ent.WebhookEndpoint) externalapi.OptWebhookFailure {
 		return externalapi.OptWebhookFailure{}
 	}
 	return externalapi.NewOptWebhookFailure(externalapi.WebhookFailure{
-		ConsecutiveFailures: int32(*e.ConsecutiveFailures),
+		ConsecutiveFailures: narrow.Int32(*e.ConsecutiveFailures),
 		Since:               externalapi.Timestamp(*e.FailingSince),
 		LastFailureAt:       externalapi.Timestamp(*e.LastFailureAt),
 		Kind:                externalapi.WebhookErrorKind(*e.LastErrorKind),

@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/inuse"
+	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/sendlimit"
 )
@@ -45,10 +46,10 @@ func (h *Handlers) IntegrationsList(ctx context.Context, params externalapi.Inte
 	}
 	return &externalapi.IntegrationsListOK{
 		Items:      items,
-		Page:       int32(page.Page),
-		PageSize:   int32(page.PageSize),
-		TotalItems: int32(page.TotalItems),
-		TotalPages: int32(page.TotalPages),
+		Page:       narrow.Int32(page.Page),
+		PageSize:   narrow.Int32(page.PageSize),
+		TotalItems: narrow.Int32(page.TotalItems),
+		TotalPages: narrow.Int32(page.TotalPages),
 	}, nil
 }
 
@@ -211,7 +212,7 @@ func (h *Handlers) PresetsList(ctx context.Context) (externalapi.PresetsListRes,
 		})
 	}
 	return &externalapi.PresetsListOK{
-		Items: items, Page: 1, PageSize: int32(len(items)), TotalItems: int32(len(items)), TotalPages: 1,
+		Items: items, Page: 1, PageSize: narrow.Int32(len(items)), TotalItems: narrow.Int32(len(items)), TotalPages: 1,
 	}, nil
 }
 

@@ -9,6 +9,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/customfield"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/reputation"
 )
 
@@ -31,8 +32,8 @@ func (h *Handlers) CustomFieldsList(ctx context.Context) (externalapi.CustomFiel
 	return &externalapi.CustomFieldsListOK{
 		Items:      resources,
 		Page:       1,
-		PageSize:   int32(len(resources)),
-		TotalItems: int32(len(resources)),
+		PageSize:   narrow.Int32(len(resources)),
+		TotalItems: narrow.Int32(len(resources)),
 		TotalPages: 1,
 	}, nil
 }
@@ -63,14 +64,14 @@ func (h *Handlers) SendingDomainRatesList(ctx context.Context, params externalap
 	return &externalapi.SendingDomainRatesListOK{
 		Items:      items,
 		Page:       1,
-		PageSize:   int32(len(items)),
-		TotalItems: int32(len(items)),
+		PageSize:   narrow.Int32(len(items)),
+		TotalItems: narrow.Int32(len(items)),
 		TotalPages: 1,
 	}, nil
 }
 
 func rateTriple(r reputation.Rate) externalapi.RateTriple {
-	out := externalapi.RateTriple{Numerator: int32(r.Numerator), Denominator: int32(r.Denominator)}
+	out := externalapi.RateTriple{Numerator: narrow.Int32(r.Numerator), Denominator: narrow.Int32(r.Denominator)}
 	if r.Rate == nil {
 		out.Rate = externalapi.NilFloat64{Null: true}
 	} else {

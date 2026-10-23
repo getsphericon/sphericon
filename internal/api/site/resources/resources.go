@@ -25,6 +25,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/httpcall"
 	"github.com/getsphericon/sphericon/internal/joindomains"
 	"github.com/getsphericon/sphericon/internal/linkclicks"
+	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/sendlimit"
@@ -280,7 +281,7 @@ func sendLimitWarning(w sendlimit.Warning) siteapi.SiteSendLimitWarning {
 }
 
 // count narrows a message count to the contract's int32.
-func count(n int) int32 { return int32(n) }
+func count(n int) int32 { return narrow.Int32(n) }
 
 // nilString renders an optional value: null when there is none.
 func nilString(v *string) siteapi.NilString {
@@ -295,7 +296,7 @@ func nilInt32(v *int) siteapi.NilInt32 {
 	if v == nil {
 		return siteapi.NilInt32{Null: true}
 	}
-	return siteapi.NewNilInt32(int32(*v))
+	return siteapi.NewNilInt32(narrow.Int32(*v))
 }
 
 // sendLimitSource is null exactly when the window has no limit (its source is empty).
@@ -310,7 +311,7 @@ func optNilInt32(v *int) siteapi.OptNilInt32 {
 	if v == nil {
 		return siteapi.OptNilInt32{}
 	}
-	return siteapi.NewOptNilInt32(int32(*v))
+	return siteapi.NewOptNilInt32(narrow.Int32(*v))
 }
 
 // exportJSON renders a stored JSON object (custom fields, event properties).
@@ -392,15 +393,15 @@ func optNilEntityID(v *int64) siteapi.OptNilEntityId {
 // derived engagement rates. Rates are ratios in [0,1]; a zero denominator yields 0.
 func BroadcastStats(st broadcasts.Stats) siteapi.SiteBroadcastStats {
 	return siteapi.SiteBroadcastStats{
-		RecipientsTotal:   int32(st.Recipients),
-		SentCount:         int32(st.Sent),
-		OpenedCount:       int32(st.Opened),
-		ClickedCount:      int32(st.Clicked),
-		UnsubscribedCount: int32(st.Unsubscribed),
-		FailedCount:       int32(st.Failed),
-		DeliveredCount:    int32(st.Delivered),
-		BouncedCount:      int32(st.Bounced),
-		ComplainedCount:   int32(st.Complained),
+		RecipientsTotal:   narrow.Int32(st.Recipients),
+		SentCount:         narrow.Int32(st.Sent),
+		OpenedCount:       narrow.Int32(st.Opened),
+		ClickedCount:      narrow.Int32(st.Clicked),
+		UnsubscribedCount: narrow.Int32(st.Unsubscribed),
+		FailedCount:       narrow.Int32(st.Failed),
+		DeliveredCount:    narrow.Int32(st.Delivered),
+		BouncedCount:      narrow.Int32(st.Bounced),
+		ComplainedCount:   narrow.Int32(st.Complained),
 		DeliveryRate:      broadcasts.Ratio(st.Sent, st.Recipients),
 		OpenRate:          broadcasts.Ratio(st.Opened, st.Sent),
 		ClickRate:         broadcasts.Ratio(st.Clicked, st.Sent),
@@ -501,7 +502,7 @@ func automationSteps(a *ent.Automation) []siteapi.SiteAutomationStep {
 		step := siteapi.SiteAutomationStep{Type: siteapi.SiteAutomationStepType(s.Type)}
 		switch s.Type {
 		case automations.StepWait:
-			step.Seconds = siteapi.NewOptInt32(int32(s.Seconds))
+			step.Seconds = siteapi.NewOptInt32(narrow.Int32(s.Seconds))
 		case automations.StepApplyTag, automations.StepRemoveTag:
 			step.Tag = siteapi.NewOptString(s.Tag)
 		case automations.StepHTTP:
@@ -608,7 +609,7 @@ func optInt32(v *int) siteapi.OptInt32 {
 	if v == nil {
 		return siteapi.OptInt32{}
 	}
-	return siteapi.NewOptInt32(int32(*v))
+	return siteapi.NewOptInt32(narrow.Int32(*v))
 }
 
 func optString(v *string) siteapi.OptString {
@@ -726,7 +727,7 @@ func webhookFailure(e ent.WebhookEndpoint) siteapi.OptSiteWebhookFailure {
 		return siteapi.OptSiteWebhookFailure{}
 	}
 	return siteapi.NewOptSiteWebhookFailure(siteapi.SiteWebhookFailure{
-		ConsecutiveFailures: int32(*e.ConsecutiveFailures),
+		ConsecutiveFailures: narrow.Int32(*e.ConsecutiveFailures),
 		Since:               siteapi.Timestamp(*e.FailingSince),
 		LastFailureAt:       siteapi.Timestamp(*e.LastFailureAt),
 		Kind:                siteapi.SiteWebhookErrorKind(*e.LastErrorKind),

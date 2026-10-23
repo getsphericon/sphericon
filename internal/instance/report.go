@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/visitor"
 	telemetryapi "github.com/getsphericon/sphericon/gen/telemetry"
 	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/postgres"
 	"github.com/getsphericon/sphericon/internal/upgrade"
 )
@@ -131,9 +132,9 @@ func BuildReport(ctx context.Context, client *ent.Client, host Host, now time.Ti
 		Os:                 host.OS,
 		Arch:               host.Arch,
 		DeployShape:        host.DeployShape,
-		PostgresMajor:      int32(major),
+		PostgresMajor:      narrow.Int32(major),
 		Locale:             host.Locale,
-		InstanceAgeDays:    max(0, int32(now.Sub(row.CreatedAt)/(24*time.Hour))),
+		InstanceAgeDays:    max(0, narrow.Int32(now.Sub(row.CreatedAt)/(24*time.Hour))),
 		Workspaces:         bucket(workspaces),
 		Contacts:           bucket(contacts),
 		EmailsSent30d:      bucket(emails),

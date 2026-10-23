@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/inuse"
+	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/rules"
 )
@@ -34,10 +35,10 @@ func (h *Handlers) RulesList(ctx context.Context, params externalapi.RulesListPa
 	}
 	return &externalapi.RulesListOK{
 		Items:      lo.Map(page.Items, func(r *ent.Rule, _ int) externalapi.RuleResource { return mapper.RuleToResource(r) }),
-		Page:       int32(page.Page),
-		PageSize:   int32(page.PageSize),
-		TotalItems: int32(page.TotalItems),
-		TotalPages: int32(page.TotalPages),
+		Page:       narrow.Int32(page.Page),
+		PageSize:   narrow.Int32(page.PageSize),
+		TotalItems: narrow.Int32(page.TotalItems),
+		TotalPages: narrow.Int32(page.TotalPages),
 	}, nil
 }
 
@@ -269,10 +270,10 @@ func (h *Handlers) RuleFiringsList(ctx context.Context, params externalapi.RuleF
 		Items: lo.Map(page.Items, func(f *ent.RuleFiring, _ int) externalapi.RuleFiringResource {
 			return mapper.RuleFiringToResource(f)
 		}),
-		Page:       int32(page.Page),
-		PageSize:   int32(page.PageSize),
-		TotalItems: int32(page.TotalItems),
-		TotalPages: int32(page.TotalPages),
+		Page:       narrow.Int32(page.Page),
+		PageSize:   narrow.Int32(page.PageSize),
+		TotalItems: narrow.Int32(page.TotalItems),
+		TotalPages: narrow.Int32(page.TotalPages),
 	}, nil
 }
 

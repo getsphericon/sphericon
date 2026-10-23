@@ -7,6 +7,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/analytics"
+	"github.com/getsphericon/sphericon/internal/narrow"
 )
 
 // analyticsWindow maps the selectable range to the module's window; 30d is the
@@ -45,20 +46,20 @@ func (h *Handlers) SiteAnalyticsOverview(ctx context.Context, params siteapi.Sit
 	}
 	series := make([]siteapi.SiteAnalyticsPoint, len(ov.Series))
 	for i, p := range ov.Series {
-		series[i] = siteapi.SiteAnalyticsPoint{Date: p.Date, Sent: int32(p.Sent), Opened: int32(p.Opened), Clicked: int32(p.Clicked)}
+		series[i] = siteapi.SiteAnalyticsPoint{Date: p.Date, Sent: narrow.Int32(p.Sent), Opened: narrow.Int32(p.Opened), Clicked: narrow.Int32(p.Clicked)}
 	}
 	return &siteapi.SiteAnalyticsOverview{
 		Contacts: siteapi.SiteAnalyticsContacts{
-			Total: int32(ov.Contacts.Total), Active: int32(ov.Contacts.Active),
-			Unsubscribed: int32(ov.Contacts.Unsubscribed), NewInRange: int32(ov.Contacts.NewInWindow),
+			Total: narrow.Int32(ov.Contacts.Total), Active: narrow.Int32(ov.Contacts.Active),
+			Unsubscribed: narrow.Int32(ov.Contacts.Unsubscribed), NewInRange: narrow.Int32(ov.Contacts.NewInWindow),
 		},
 		Email: siteapi.SiteAnalyticsEmail{
-			SentCount: int32(ov.Email.Sent), OpenedCount: int32(ov.Email.Opened), ClickedCount: int32(ov.Email.Clicked),
+			SentCount: narrow.Int32(ov.Email.Sent), OpenedCount: narrow.Int32(ov.Email.Opened), ClickedCount: narrow.Int32(ov.Email.Clicked),
 			OpenRate: ov.Email.OpenRate, ClickRate: ov.Email.ClickRate, ClickToOpenRate: ov.Email.ClickToOpenRate,
 		},
 		Automations: siteapi.SiteAnalyticsAutomations{
-			Total: int32(ov.Automations.Total), Active: int32(ov.Automations.Active),
-			RunsActive: int32(ov.Automations.RunsActive), RunsCompleted: int32(ov.Automations.RunsCompleted),
+			Total: narrow.Int32(ov.Automations.Total), Active: narrow.Int32(ov.Automations.Active),
+			RunsActive: narrow.Int32(ov.Automations.RunsActive), RunsCompleted: narrow.Int32(ov.Automations.RunsCompleted),
 		},
 		Timeseries:   series,
 		AbuseWarning: warning,
