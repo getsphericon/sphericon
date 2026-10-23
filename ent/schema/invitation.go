@@ -17,9 +17,10 @@ type Invitation struct {
 }
 
 func (Invitation) Annotations() []schema.Annotation {
-	return []schema.Annotation{
-		TableWithEnumChecks("invitations", Invitation{}.Fields()),
-	}
+	table := TableWithEnumChecks("invitations", Invitation{}.Fields())
+	name, expr := LowerEmailCheck("invitations")
+	table.Checks[name] = expr
+	return []schema.Annotation{table}
 }
 
 func (Invitation) Mixin() []ent.Mixin {

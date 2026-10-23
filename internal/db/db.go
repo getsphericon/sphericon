@@ -6,6 +6,7 @@ import (
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/emailcase"
 	"github.com/getsphericon/sphericon/internal/trackinghostlog"
 	"github.com/getsphericon/sphericon/internal/workspacefeed"
 )
@@ -15,7 +16,7 @@ import (
 func NewEntClient(sqlDB *sql.DB) *ent.Client {
 	drv := entsql.OpenDB(dialect.Postgres, sqlDB)
 	c := ent.NewClient(ent.Driver(drv))
-	c.Use(workspacefeed.Guard, trackinghostlog.Guard)
+	c.Use(emailcase.Hook, workspacefeed.Guard, trackinghostlog.Guard)
 	return c
 }
 
@@ -25,6 +26,6 @@ func NewEntClient(sqlDB *sql.DB) *ent.Client {
 func NewEntClientOnTx(sqlDB *sql.DB) *ent.Client {
 	drv := entsql.OpenDB(dialect.Postgres, sqlDB)
 	c := ent.NewClient(ent.Driver(drv))
-	c.Use(workspacefeed.Hook, trackinghostlog.Hook)
+	c.Use(emailcase.Hook, workspacefeed.Hook, trackinghostlog.Hook)
 	return c
 }
