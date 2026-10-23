@@ -5568,6 +5568,7 @@ func (s *ProblemDetails) SetDebug(val OptProblemDebug) {
 }
 
 func (*ProblemDetails) siteAnalyticsClicksByLinkRes()          {}
+func (*ProblemDetails) siteAnalyticsEventsRes()                {}
 func (*ProblemDetails) siteAnalyticsNewPeopleRes()             {}
 func (*ProblemDetails) siteAnalyticsOpensByHourRes()           {}
 func (*ProblemDetails) siteAnalyticsOverviewRes()              {}
@@ -6152,6 +6153,79 @@ func (s *SiteAnalyticsEmail) SetClickRate(val float32) {
 func (s *SiteAnalyticsEmail) SetClickToOpenRate(val float32) {
 	s.ClickToOpenRate = val
 }
+
+// One action of the Events report.
+// Ref: #/components/schemas/SiteAnalyticsEventAction
+type SiteAnalyticsEventAction struct {
+	// The Event action, reserved `email.*` or tracked by the customer.
+	Action string `json:"action"`
+	// How many times it happened in the range.
+	Count int32 `json:"count"`
+	// How many distinct Contacts it happened to; anonymous Events count in `count` only.
+	Contacts int32 `json:"contacts"`
+	// When it last happened in the range.
+	LastAt Timestamp `json:"lastAt"`
+}
+
+// GetAction returns the value of Action.
+func (s *SiteAnalyticsEventAction) GetAction() string {
+	return s.Action
+}
+
+// GetCount returns the value of Count.
+func (s *SiteAnalyticsEventAction) GetCount() int32 {
+	return s.Count
+}
+
+// GetContacts returns the value of Contacts.
+func (s *SiteAnalyticsEventAction) GetContacts() int32 {
+	return s.Contacts
+}
+
+// GetLastAt returns the value of LastAt.
+func (s *SiteAnalyticsEventAction) GetLastAt() Timestamp {
+	return s.LastAt
+}
+
+// SetAction sets the value of Action.
+func (s *SiteAnalyticsEventAction) SetAction(val string) {
+	s.Action = val
+}
+
+// SetCount sets the value of Count.
+func (s *SiteAnalyticsEventAction) SetCount(val int32) {
+	s.Count = val
+}
+
+// SetContacts sets the value of Contacts.
+func (s *SiteAnalyticsEventAction) SetContacts(val int32) {
+	s.Contacts = val
+}
+
+// SetLastAt sets the value of LastAt.
+func (s *SiteAnalyticsEventAction) SetLastAt(val Timestamp) {
+	s.LastAt = val
+}
+
+// The Events report: each action in the range, most frequent first. Machine opens and clicks are left
+// out.
+// Ref: #/components/schemas/SiteAnalyticsEvents
+type SiteAnalyticsEvents struct {
+	// One row per action.
+	Actions []SiteAnalyticsEventAction `json:"actions"`
+}
+
+// GetActions returns the value of Actions.
+func (s *SiteAnalyticsEvents) GetActions() []SiteAnalyticsEventAction {
+	return s.Actions
+}
+
+// SetActions sets the value of Actions.
+func (s *SiteAnalyticsEvents) SetActions(val []SiteAnalyticsEventAction) {
+	s.Actions = val
+}
+
+func (*SiteAnalyticsEvents) siteAnalyticsEventsRes() {}
 
 // One clicked link with its clicks in the range, split by the Broadcast or Automation that carried it.
 // Ref: #/components/schemas/SiteAnalyticsLink

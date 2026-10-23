@@ -67,6 +67,29 @@ func (h *Handlers) SiteAnalyticsOverview(ctx context.Context, params siteapi.Sit
 	}, nil
 }
 
+// SiteAnalyticsEvents maps the analytics module's Events report onto the DTO.
+func (h *Handlers) SiteAnalyticsEvents(ctx context.Context, params siteapi.SiteAnalyticsEventsParams) (siteapi.SiteAnalyticsEventsRes, error) {
+	s, err := h.scopedFor(ctx, params.WorkspaceId)
+	if ent.IsNotFound(err) {
+		v := problem(http.StatusNotFound, "workspace not found")
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	rows, err := h.analytics.Events(ctx, s, analyticsWindow(params.Range))
+	if err != nil {
+		return nil, err
+	}
+	actions := make([]siteapi.SiteAnalyticsEventAction, len(rows))
+	for i, r := range rows {
+		actions[i] = siteapi.SiteAnalyticsEventAction{
+			Action: r.Action, Count: narrow.Int32(r.Count), Contacts: narrow.Int32(r.Contacts), LastAt: siteapi.Timestamp(r.LastAt),
+		}
+	}
+	return &siteapi.SiteAnalyticsEvents{Actions: actions}, nil
+}
+
 // abuseWarning is the Workspace's place in the abuse detector's warning tier, computed
 // live (ADR 0026); unset without the detector.
 func (h *Handlers) abuseWarning(ctx context.Context, s *ent.Scoped) (siteapi.OptNilSiteAbuseWarning, error) {

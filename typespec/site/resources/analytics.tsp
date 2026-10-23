@@ -235,6 +235,28 @@ model SiteAnalyticsOpensByHour {
   total: int32;
 }
 
+/** One action of the Events report */
+model SiteAnalyticsEventAction {
+  /** The Event action, reserved `email.*` or tracked by the customer */
+  action: string;
+
+  /** How many times it happened in the range */
+  count: int32;
+
+  /** How many distinct Contacts it happened to; anonymous Events count in `count` only */
+  contacts: int32;
+
+  /** When it last happened in the range */
+  lastAt: Timestamp;
+}
+
+/** The Events report: each action in the range, most frequent first. Machine opens and
+ * clicks are left out. */
+model SiteAnalyticsEvents {
+  /** One row per action */
+  actions: SiteAnalyticsEventAction[];
+}
+
 // Not a CRUD resource — a single workspace-scoped aggregate with no key, so it
 // keeps an explicit nested route rather than @parentResource/@autoRoute.
 @route("/workspaces/{workspaceId}/analytics")
@@ -289,4 +311,14 @@ namespace SiteAnalytics {
     /** Window to aggregate over (defaults to 30d) */
     @query range?: SiteAnalyticsRange,
   ): SiteAnalyticsOpensByHour | NotFoundProblem;
+
+  /** Events in the range, grouped by action */
+  @get
+  @route("/events")
+  op events(
+    @path workspaceId: WorkspaceId,
+
+    /** Window to report over (defaults to 30d) */
+    @query range?: SiteAnalyticsRange,
+  ): SiteAnalyticsEvents | NotFoundProblem;
 }

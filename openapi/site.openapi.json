@@ -3468,6 +3468,55 @@
         "tags": ["Site Analytics"]
       }
     },
+    "/workspaces/{workspaceId}/analytics/events": {
+      "get": {
+        "operationId": "SiteAnalytics_events",
+        "description": "Events in the range, grouped by action",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          },
+          {
+            "name": "range",
+            "in": "query",
+            "required": false,
+            "description": "Window to report over (defaults to 30d)",
+            "schema": {
+              "$ref": "#/components/schemas/SiteAnalyticsRange"
+            },
+            "explode": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteAnalyticsEvents"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Analytics"]
+      }
+    },
     "/workspaces/{workspaceId}/analytics/new-people": {
       "get": {
         "operationId": "SiteAnalytics_newPeople",
@@ -12826,6 +12875,49 @@
           }
         },
         "description": "Email engagement for the messages sent in the selected range (the send\ncohort), from delivery logs. Opens/clicks are counted among that cohort, so\nthe counts reconcile and the rates stay in [0,1]."
+      },
+      "SiteAnalyticsEventAction": {
+        "type": "object",
+        "required": ["action", "count", "contacts", "lastAt"],
+        "properties": {
+          "action": {
+            "type": "string",
+            "description": "The Event action, reserved `email.*` or tracked by the customer"
+          },
+          "count": {
+            "type": "integer",
+            "format": "int32",
+            "description": "How many times it happened in the range"
+          },
+          "contacts": {
+            "type": "integer",
+            "format": "int32",
+            "description": "How many distinct Contacts it happened to; anonymous Events count in `count` only"
+          },
+          "lastAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When it last happened in the range"
+          }
+        },
+        "description": "One action of the Events report"
+      },
+      "SiteAnalyticsEvents": {
+        "type": "object",
+        "required": ["actions"],
+        "properties": {
+          "actions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteAnalyticsEventAction"
+            },
+            "description": "One row per action"
+          }
+        },
+        "description": "The Events report: each action in the range, most frequent first. Machine opens and\nclicks are left out."
       },
       "SiteAnalyticsLink": {
         "type": "object",

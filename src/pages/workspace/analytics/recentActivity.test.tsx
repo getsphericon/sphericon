@@ -1,9 +1,13 @@
 import { expect, test } from 'vitest'
 
 import { handleSiteEventsList } from '../../../generated/site/msw.gen.ts'
+import { Route as recentActivityRoute } from '../../../routes/workspaces/$workspaceId/analytics/recent-activity.tsx'
 import { renderWithRouter } from '../../../test/renderWithRouter.tsx'
+import { routeMount } from '../../../test/routeMount.ts'
 import { worker } from '../../../test/worker.ts'
 import { RecentActivityPage } from './recentActivity.tsx'
+
+const mount = routeMount(recentActivityRoute, { workspaceId: 'TestWs01' })
 
 const eventsPage = () =>
   handleSiteEventsList({
@@ -29,7 +33,7 @@ const eventsPage = () =>
 test('renders the event feed with a live toggle and action filter', async () => {
   worker.use(eventsPage())
 
-  const { screen } = await renderWithRouter(<RecentActivityPage />)
+  const { screen } = await renderWithRouter(<RecentActivityPage />, mount)
 
   await expect.element(screen.getByText('purchase')).toBeInTheDocument()
   await expect.element(screen.getByText('bob@example.com')).toBeInTheDocument()
@@ -41,7 +45,7 @@ test('renders the event feed with a live toggle and action filter', async () => 
 test('expands a row to reveal the full event properties', async () => {
   worker.use(eventsPage())
 
-  const { screen } = await renderWithRouter(<RecentActivityPage />)
+  const { screen } = await renderWithRouter(<RecentActivityPage />, mount)
 
   await screen.getByText('purchase').click()
 

@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next'
 import { DetailedEventRowDetails } from '../../../components/EventRowDetails.tsx'
 import { TableSkeleton } from '../../../components/Skeletons.tsx'
 import { siteEventsListOptions } from '../../../generated/site/@tanstack/react-query.gen.ts'
+import { Route as recentActivityRoute } from '../../../routes/workspaces/$workspaceId/analytics/recent-activity.tsx'
 import { Route as workspaceRoute } from '../../../routes/workspaces/$workspaceId/route.tsx'
 import { formatDateTime } from '../../../utils/datetime.ts'
 
@@ -22,7 +23,9 @@ export function RecentActivityPage() {
   const { workspaceId } = workspaceRoute.useParams()
   const [page, setPage] = useState(1)
   const [live, setLive] = useState(true)
-  const [actionFilter, setActionFilter] = useState('')
+  // The `action` search param (a link from the Events report) seeds the filter.
+  const { action: linkedAction } = recentActivityRoute.useSearch()
+  const [actionFilter, setActionFilter] = useState(linkedAction ?? '')
   const [debouncedAction] = useDebouncedValue(actionFilter.trim(), 300)
 
   // Reset to the first page whenever the action filter changes (derived during

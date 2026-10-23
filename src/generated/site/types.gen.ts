@@ -875,6 +875,39 @@ export type SiteAnalyticsEmail = {
 };
 
 /**
+ * One action of the Events report
+ */
+export type SiteAnalyticsEventAction = {
+  /**
+   * The Event action, reserved `email.*` or tracked by the customer
+   */
+  action: string;
+  /**
+   * How many times it happened in the range
+   */
+  count: number;
+  /**
+   * How many distinct Contacts it happened to; anonymous Events count in `count` only
+   */
+  contacts: number;
+  /**
+   * When it last happened in the range
+   */
+  lastAt: Timestamp;
+};
+
+/**
+ * The Events report: each action in the range, most frequent first. Machine opens and
+ * clicks are left out.
+ */
+export type SiteAnalyticsEvents = {
+  /**
+   * One row per action
+   */
+  actions: Array<SiteAnalyticsEventAction>;
+};
+
+/**
  * One clicked link with its clicks in the range, split by the Broadcast or Automation that carried it
  */
 export type SiteAnalyticsLink = {
@@ -6877,6 +6910,38 @@ export type SiteAnalyticsClicksByLinkResponses = {
 };
 
 export type SiteAnalyticsClicksByLinkResponse = SiteAnalyticsClicksByLinkResponses[keyof SiteAnalyticsClicksByLinkResponses];
+
+export type SiteAnalyticsEventsData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: {
+    /**
+     * Window to report over (defaults to 30d)
+     */
+    range?: SiteAnalyticsRange;
+  };
+  url: '/workspaces/{workspaceId}/analytics/events';
+};
+
+export type SiteAnalyticsEventsErrors = {
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteAnalyticsEventsError = SiteAnalyticsEventsErrors[keyof SiteAnalyticsEventsErrors];
+
+export type SiteAnalyticsEventsResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteAnalyticsEvents;
+};
+
+export type SiteAnalyticsEventsResponse = SiteAnalyticsEventsResponses[keyof SiteAnalyticsEventsResponses];
 
 export type SiteAnalyticsNewPeopleData = {
   body?: never;

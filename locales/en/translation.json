@@ -134,12 +134,21 @@
       "rangeNote": "Aggregated over the selected window, from delivery logs.",
       "sent": "Sent"
     },
+    "events": {
+      "action": "Action",
+      "contacts": "Contacts",
+      "count": "Times",
+      "empty": "No events in this window",
+      "lastAt": "Last occurrence",
+      "loadError": "Failed to load events"
+    },
     "loadError": "Failed to load analytics",
     "nav": {
       "audience": "Audience",
       "clicksByLink": "Clicks by link",
       "email": "Email",
       "emailMetrics": "Email metrics",
+      "events": "Events",
       "newPeople": "New people",
       "opensByHour": "Opens by hour",
       "recentActivity": "Recent activity",

@@ -3,6 +3,7 @@ import { expect, test } from 'vitest'
 
 import { Route as clicksByLinkRoute } from '../routes/workspaces/$workspaceId/analytics/clicks-by-link.tsx'
 import { Route as emailMetricsRoute } from '../routes/workspaces/$workspaceId/analytics/email-metrics.tsx'
+import { Route as eventsRoute } from '../routes/workspaces/$workspaceId/analytics/events.tsx'
 import { Route as newPeopleRoute } from '../routes/workspaces/$workspaceId/analytics/new-people.tsx'
 import { Route as opensByHourRoute } from '../routes/workspaces/$workspaceId/analytics/opens-by-hour.tsx'
 import { Route as recentActivityRoute } from '../routes/workspaces/$workspaceId/analytics/recent-activity.tsx'
@@ -37,6 +38,9 @@ test('the menu lists the reports under their groups, each on its own URL', async
   await expect
     .element(screen.getByRole('link', { name: 'Clicks by link' }))
     .toHaveAttribute('href', `${reportPath(clicksByLinkRoute)}?range=30d`)
+  await expect
+    .element(screen.getByRole('link', { name: 'Events' }))
+    .toHaveAttribute('href', `${reportPath(eventsRoute)}?range=30d`)
   await expect
     .element(screen.getByRole('link', { name: 'Recent activity' }))
     .toHaveAttribute('href', `${reportPath(recentActivityRoute)}?range=30d`)

@@ -7,9 +7,48 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// The Events report needs a session, is refused for a foreign Workspace and is open to every
+// role (its rules are tested in internal/analytics).
+func TestSiteAnalyticsEventsRequireAuth(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteAnonymous(t)
+
+	_, err := c.SiteAnalyticsEvents(context.Background(), siteapi.SiteAnalyticsEventsParams{WorkspaceId: fixtures.AcmePublicID})
+	require.Error(t, err)
+}
+
+func TestSiteAnalyticsEventsRequireOwnedWorkspace(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+
+	out, err := c.SiteAnalyticsEvents(context.Background(), siteapi.SiteAnalyticsEventsParams{WorkspaceId: "NoSuchWs"})
+	require.NoError(t, err)
+	assert.IsType(t, &siteapi.ProblemDetails{}, out)
+}
+
+func TestSiteAnalyticsEventsAreVisibleToEveryRole(t *testing.T) {
+	env := testhelper.Setup(t)
+	for _, email := range []string{fixtures.OwnerJohnEmail, fixtures.AdminAliceEmail, fixtures.MemberMaryEmail} {
+		c := env.SiteActor(t, email)
+		res, err := c.SiteAnalyticsEvents(context.Background(), siteapi.SiteAnalyticsEventsParams{
+			WorkspaceId: fixtures.AcmePublicID,
+			Range:       siteapi.NewOptSiteAnalyticsRange(siteapi.SiteAnalyticsRange7d),
+		})
+		require.NoError(t, err, email)
+		report, ok := res.(*siteapi.SiteAnalyticsEvents)
+		require.Truef(t, ok, "%s: got %T", email, res)
+
+		view, found := lo.Find(report.Actions, func(a siteapi.SiteAnalyticsEventAction) bool { return a.Action == "report_view" })
+		require.True(t, found, email)
+		assert.Equal(t, int32(4), view.Count, email)
+		assert.Equal(t, int32(2), view.Contacts, email)
+	}
+}
 
 // The analytics overview requires a valid JWT cookie like the rest of the site API.
 func TestSiteAnalyticsRequireAuth(t *testing.T) {

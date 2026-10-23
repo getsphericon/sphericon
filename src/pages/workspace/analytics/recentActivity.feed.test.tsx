@@ -65,6 +65,18 @@ test('filtering by action refetches with the action and resets to page one', asy
   await expect.poll(() => queries.at(-1)).toEqual({ page: '1', action: 'purchase' })
 })
 
+test('the action search param is the starting filter', async () => {
+  const queries: Query[] = []
+  serveEvents(queries)
+  const { screen } = await renderWithRouter(<RecentActivityPage />, {
+    ...mount,
+    initialPath: `${mount.initialPath}?action=purchase`,
+  })
+
+  await expect.element(screen.getByPlaceholder('Filter by action')).toHaveValue('purchase')
+  await expect.poll(() => queries.at(-1)).toEqual({ page: '1', action: 'purchase' })
+})
+
 test('shows an error alert when the feed fails to load', async () => {
   worker.use(handleSiteEventsList(() => problem(500)))
   const { screen } = await renderWithRouter(<RecentActivityPage />, mount)

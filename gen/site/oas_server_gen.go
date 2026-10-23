@@ -14,6 +14,12 @@ type Handler interface {
 	//
 	// GET /workspaces/{workspaceId}/analytics/clicks-by-link
 	SiteAnalyticsClicksByLink(ctx context.Context, params SiteAnalyticsClicksByLinkParams) (SiteAnalyticsClicksByLinkRes, error)
+	// SiteAnalyticsEvents implements SiteAnalytics_events operation.
+	//
+	// Events in the range, grouped by action.
+	//
+	// GET /workspaces/{workspaceId}/analytics/events
+	SiteAnalyticsEvents(ctx context.Context, params SiteAnalyticsEventsParams) (SiteAnalyticsEventsRes, error)
 	// SiteAnalyticsNewPeople implements SiteAnalytics_newPeople operation.
 	//
 	// New people report: Contacts created per Report day, split by Contact source.

@@ -1883,6 +1883,24 @@ export const zSiteAccountLinkResource = z.object({
 });
 
 /**
+ * One action of the Events report
+ */
+export const zSiteAnalyticsEventAction = z.object({
+  action: z.string(),
+  count: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  contacts: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  lastAt: zTimestamp
+});
+
+/**
+ * The Events report: each action in the range, most frequent first. Machine opens and
+ * clicks are left out.
+ */
+export const zSiteAnalyticsEvents = z.object({
+  actions: z.array(zSiteAnalyticsEventAction)
+});
+
+/**
  * A workspace API token (secret shown only once, at creation)
  */
 export const zSiteApiTokenResource = z.object({
@@ -3253,6 +3271,19 @@ export const zSiteAnalyticsClicksByLinkQuery = z.object({
  * The request has succeeded.
  */
 export const zSiteAnalyticsClicksByLinkResponse = zSiteAnalyticsClicksByLink;
+
+export const zSiteAnalyticsEventsPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+export const zSiteAnalyticsEventsQuery = z.object({
+  range: z.exactOptional(zSiteAnalyticsRange)
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteAnalyticsEventsResponse = zSiteAnalyticsEvents;
 
 export const zSiteAnalyticsNewPeoplePath = z.object({
   workspaceId: zWorkspaceId

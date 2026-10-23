@@ -5,6 +5,10 @@ type SiteAnalyticsClicksByLinkRes interface {
 	siteAnalyticsClicksByLinkRes()
 }
 
+type SiteAnalyticsEventsRes interface {
+	siteAnalyticsEventsRes()
+}
+
 type SiteAnalyticsNewPeopleRes interface {
 	siteAnalyticsNewPeopleRes()
 }

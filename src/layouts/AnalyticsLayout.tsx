@@ -7,6 +7,7 @@ import { zSiteAnalyticsRange } from '../generated/site/zod.gen.ts'
 import { useAnalyticsRange } from '../hooks/useAnalyticsRange.ts'
 import { Route as clicksByLinkRoute } from '../routes/workspaces/$workspaceId/analytics/clicks-by-link.tsx'
 import { Route as emailMetricsRoute } from '../routes/workspaces/$workspaceId/analytics/email-metrics.tsx'
+import { Route as eventsRoute } from '../routes/workspaces/$workspaceId/analytics/events.tsx'
 import { Route as newPeopleRoute } from '../routes/workspaces/$workspaceId/analytics/new-people.tsx'
 import { Route as opensByHourRoute } from '../routes/workspaces/$workspaceId/analytics/opens-by-hour.tsx'
 import { Route as recentActivityRoute } from '../routes/workspaces/$workspaceId/analytics/recent-activity.tsx'
@@ -42,7 +43,10 @@ export function AnalyticsLayout() {
     },
     {
       label: t(($) => $.analytics.nav.tracking),
-      items: [{ route: recentActivityRoute, label: t(($) => $.analytics.nav.recentActivity) }],
+      items: [
+        { route: eventsRoute, label: t(($) => $.analytics.nav.events) },
+        { route: recentActivityRoute, label: t(($) => $.analytics.nav.recentActivity) },
+      ],
     },
   ]
 

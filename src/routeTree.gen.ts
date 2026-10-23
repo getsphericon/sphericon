@@ -42,6 +42,7 @@ import { Route as ConsoleAuthedWorkspacesWorkspaceIdRouteImport } from './routes
 import { Route as WorkspacesWorkspaceIdAnalyticsIndexRouteImport } from './routes/workspaces/$workspaceId/analytics/index'
 import { Route as WorkspacesWorkspaceIdAnalyticsClicksByLinkRouteImport } from './routes/workspaces/$workspaceId/analytics/clicks-by-link'
 import { Route as WorkspacesWorkspaceIdAnalyticsEmailMetricsRouteImport } from './routes/workspaces/$workspaceId/analytics/email-metrics'
+import { Route as WorkspacesWorkspaceIdAnalyticsEventsRouteImport } from './routes/workspaces/$workspaceId/analytics/events'
 import { Route as WorkspacesWorkspaceIdAnalyticsNewPeopleRouteImport } from './routes/workspaces/$workspaceId/analytics/new-people'
 import { Route as WorkspacesWorkspaceIdAnalyticsOpensByHourRouteImport } from './routes/workspaces/$workspaceId/analytics/opens-by-hour'
 import { Route as WorkspacesWorkspaceIdAnalyticsRecentActivityRouteImport } from './routes/workspaces/$workspaceId/analytics/recent-activity'
@@ -294,6 +295,16 @@ const WorkspacesWorkspaceIdAnalyticsEmailMetricsRoute =
     getParentRoute: () => WorkspacesWorkspaceIdAnalyticsRouteRoute,
   } as any).lazy(() =>
     import('./routes/workspaces/$workspaceId/analytics/email-metrics.lazy').then(
+      (d) => d.Route,
+    ),
+  )
+const WorkspacesWorkspaceIdAnalyticsEventsRoute =
+  WorkspacesWorkspaceIdAnalyticsEventsRouteImport.update({
+    id: '/events',
+    path: '/events',
+    getParentRoute: () => WorkspacesWorkspaceIdAnalyticsRouteRoute,
+  } as any).lazy(() =>
+    import('./routes/workspaces/$workspaceId/analytics/events.lazy').then(
       (d) => d.Route,
     ),
   )
@@ -700,6 +711,7 @@ export interface FileRoutesByFullPath {
   '/console/workspaces/$workspaceId': typeof ConsoleAuthedWorkspacesWorkspaceIdRoute
   '/workspaces/$workspaceId/analytics/clicks-by-link': typeof WorkspacesWorkspaceIdAnalyticsClicksByLinkRoute
   '/workspaces/$workspaceId/analytics/email-metrics': typeof WorkspacesWorkspaceIdAnalyticsEmailMetricsRoute
+  '/workspaces/$workspaceId/analytics/events': typeof WorkspacesWorkspaceIdAnalyticsEventsRoute
   '/workspaces/$workspaceId/analytics/new-people': typeof WorkspacesWorkspaceIdAnalyticsNewPeopleRoute
   '/workspaces/$workspaceId/analytics/opens-by-hour': typeof WorkspacesWorkspaceIdAnalyticsOpensByHourRoute
   '/workspaces/$workspaceId/analytics/recent-activity': typeof WorkspacesWorkspaceIdAnalyticsRecentActivityRoute
@@ -766,6 +778,7 @@ export interface FileRoutesByTo {
   '/console/workspaces/$workspaceId': typeof ConsoleAuthedWorkspacesWorkspaceIdRoute
   '/workspaces/$workspaceId/analytics/clicks-by-link': typeof WorkspacesWorkspaceIdAnalyticsClicksByLinkRoute
   '/workspaces/$workspaceId/analytics/email-metrics': typeof WorkspacesWorkspaceIdAnalyticsEmailMetricsRoute
+  '/workspaces/$workspaceId/analytics/events': typeof WorkspacesWorkspaceIdAnalyticsEventsRoute
   '/workspaces/$workspaceId/analytics/new-people': typeof WorkspacesWorkspaceIdAnalyticsNewPeopleRoute
   '/workspaces/$workspaceId/analytics/opens-by-hour': typeof WorkspacesWorkspaceIdAnalyticsOpensByHourRoute
   '/workspaces/$workspaceId/analytics/recent-activity': typeof WorkspacesWorkspaceIdAnalyticsRecentActivityRoute
@@ -839,6 +852,7 @@ export interface FileRoutesById {
   '/console/_authed/workspaces/$workspaceId': typeof ConsoleAuthedWorkspacesWorkspaceIdRoute
   '/workspaces/$workspaceId/analytics/clicks-by-link': typeof WorkspacesWorkspaceIdAnalyticsClicksByLinkRoute
   '/workspaces/$workspaceId/analytics/email-metrics': typeof WorkspacesWorkspaceIdAnalyticsEmailMetricsRoute
+  '/workspaces/$workspaceId/analytics/events': typeof WorkspacesWorkspaceIdAnalyticsEventsRoute
   '/workspaces/$workspaceId/analytics/new-people': typeof WorkspacesWorkspaceIdAnalyticsNewPeopleRoute
   '/workspaces/$workspaceId/analytics/opens-by-hour': typeof WorkspacesWorkspaceIdAnalyticsOpensByHourRoute
   '/workspaces/$workspaceId/analytics/recent-activity': typeof WorkspacesWorkspaceIdAnalyticsRecentActivityRoute
@@ -912,6 +926,7 @@ export interface FileRouteTypes {
     | '/console/workspaces/$workspaceId'
     | '/workspaces/$workspaceId/analytics/clicks-by-link'
     | '/workspaces/$workspaceId/analytics/email-metrics'
+    | '/workspaces/$workspaceId/analytics/events'
     | '/workspaces/$workspaceId/analytics/new-people'
     | '/workspaces/$workspaceId/analytics/opens-by-hour'
     | '/workspaces/$workspaceId/analytics/recent-activity'
@@ -978,6 +993,7 @@ export interface FileRouteTypes {
     | '/console/workspaces/$workspaceId'
     | '/workspaces/$workspaceId/analytics/clicks-by-link'
     | '/workspaces/$workspaceId/analytics/email-metrics'
+    | '/workspaces/$workspaceId/analytics/events'
     | '/workspaces/$workspaceId/analytics/new-people'
     | '/workspaces/$workspaceId/analytics/opens-by-hour'
     | '/workspaces/$workspaceId/analytics/recent-activity'
@@ -1050,6 +1066,7 @@ export interface FileRouteTypes {
     | '/console/_authed/workspaces/$workspaceId'
     | '/workspaces/$workspaceId/analytics/clicks-by-link'
     | '/workspaces/$workspaceId/analytics/email-metrics'
+    | '/workspaces/$workspaceId/analytics/events'
     | '/workspaces/$workspaceId/analytics/new-people'
     | '/workspaces/$workspaceId/analytics/opens-by-hour'
     | '/workspaces/$workspaceId/analytics/recent-activity'
@@ -1342,6 +1359,13 @@ declare module '@tanstack/react-router' {
       path: '/email-metrics'
       fullPath: '/workspaces/$workspaceId/analytics/email-metrics'
       preLoaderRoute: typeof WorkspacesWorkspaceIdAnalyticsEmailMetricsRouteImport
+      parentRoute: typeof WorkspacesWorkspaceIdAnalyticsRouteRoute
+    }
+    '/workspaces/$workspaceId/analytics/events': {
+      id: '/workspaces/$workspaceId/analytics/events'
+      path: '/events'
+      fullPath: '/workspaces/$workspaceId/analytics/events'
+      preLoaderRoute: typeof WorkspacesWorkspaceIdAnalyticsEventsRouteImport
       parentRoute: typeof WorkspacesWorkspaceIdAnalyticsRouteRoute
     }
     '/workspaces/$workspaceId/analytics/new-people': {
@@ -1655,6 +1679,7 @@ const ConsoleRouteRouteWithChildren = ConsoleRouteRoute._addFileChildren(
 interface WorkspacesWorkspaceIdAnalyticsRouteRouteChildren {
   WorkspacesWorkspaceIdAnalyticsClicksByLinkRoute: typeof WorkspacesWorkspaceIdAnalyticsClicksByLinkRoute
   WorkspacesWorkspaceIdAnalyticsEmailMetricsRoute: typeof WorkspacesWorkspaceIdAnalyticsEmailMetricsRoute
+  WorkspacesWorkspaceIdAnalyticsEventsRoute: typeof WorkspacesWorkspaceIdAnalyticsEventsRoute
   WorkspacesWorkspaceIdAnalyticsNewPeopleRoute: typeof WorkspacesWorkspaceIdAnalyticsNewPeopleRoute
   WorkspacesWorkspaceIdAnalyticsOpensByHourRoute: typeof WorkspacesWorkspaceIdAnalyticsOpensByHourRoute
   WorkspacesWorkspaceIdAnalyticsRecentActivityRoute: typeof WorkspacesWorkspaceIdAnalyticsRecentActivityRoute
@@ -1668,6 +1693,8 @@ const WorkspacesWorkspaceIdAnalyticsRouteRouteChildren: WorkspacesWorkspaceIdAna
       WorkspacesWorkspaceIdAnalyticsClicksByLinkRoute,
     WorkspacesWorkspaceIdAnalyticsEmailMetricsRoute:
       WorkspacesWorkspaceIdAnalyticsEmailMetricsRoute,
+    WorkspacesWorkspaceIdAnalyticsEventsRoute:
+      WorkspacesWorkspaceIdAnalyticsEventsRoute,
     WorkspacesWorkspaceIdAnalyticsNewPeopleRoute:
       WorkspacesWorkspaceIdAnalyticsNewPeopleRoute,
     WorkspacesWorkspaceIdAnalyticsOpensByHourRoute:

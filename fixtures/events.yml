@@ -4957,6 +4957,71 @@
   workspace_id: 61
   occurred_at: '2026-03-08 15:00:00+00'
   created_at: '2026-03-08 15:00:00+00'
+# Events report (#626), Acme only. `report_view`: four Events, two Contacts (Liam, Emma) and one
+# anonymous, last seen one day ago. `report_backfill` happened 20 days ago but was recorded one day
+# ago (the window follows occurred_at, ADR 0044); `report_unstamped` has no occurred_at, so its
+# creation time (2 days ago) is its moment; `report_old` is only in the 90-day window. Acme has no
+# other email.opened, so the two human opens (one Contact) and the machine one are the whole action.
+- id: 5600
+  contact_id: 100
+  action: report_view
+  workspace_id: 1
+  occurred_at: '{{daysAgo 3}}'
+  created_at: '{{daysAgo 3}}'
+- id: 5601
+  contact_id: 101
+  action: report_view
+  workspace_id: 1
+  occurred_at: '{{daysAgo 2}}'
+  created_at: '{{daysAgo 2}}'
+- id: 5602
+  contact_id: 100
+  action: report_view
+  workspace_id: 1
+  occurred_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+- id: 5603
+  visitor_id: anon-report-1
+  action: report_view
+  workspace_id: 1
+  occurred_at: '{{daysAgo 5}}'
+  created_at: '{{daysAgo 5}}'
+- id: 5604
+  contact_id: 100
+  action: report_backfill
+  workspace_id: 1
+  occurred_at: '{{daysAgo 20}}'
+  created_at: '{{daysAgo 1}}'
+- id: 5605
+  contact_id: 101
+  action: report_unstamped
+  workspace_id: 1
+  created_at: '{{daysAgo 2}}'
+- id: 5606
+  contact_id: 100
+  action: report_old
+  workspace_id: 1
+  occurred_at: '{{daysAgo 60}}'
+  created_at: '{{daysAgo 60}}'
+- id: 5607
+  contact_id: 100
+  action: email.opened
+  workspace_id: 1
+  occurred_at: '{{daysAgo 2}}'
+  created_at: '{{daysAgo 2}}'
+- id: 5608
+  contact_id: 100
+  action: email.opened
+  workspace_id: 1
+  occurred_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+- id: 5609
+  contact_id: 101
+  action: email.opened
+  properties: '{"machine":true}'
+  workspace_id: 1
+  occurred_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
 
 # The export of ContactExportHeavy (5703) streams 1200 Events across the keyset pages.
 # {{range $i := seq 58000 59199}}

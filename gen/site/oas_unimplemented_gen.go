@@ -22,6 +22,15 @@ func (UnimplementedHandler) SiteAnalyticsClicksByLink(ctx context.Context, param
 	return r, ht.ErrNotImplemented
 }
 
+// SiteAnalyticsEvents implements SiteAnalytics_events operation.
+//
+// Events in the range, grouped by action.
+//
+// GET /workspaces/{workspaceId}/analytics/events
+func (UnimplementedHandler) SiteAnalyticsEvents(ctx context.Context, params SiteAnalyticsEventsParams) (r SiteAnalyticsEventsRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteAnalyticsNewPeople implements SiteAnalytics_newPeople operation.
 //
 // New people report: Contacts created per Report day, split by Contact source.
