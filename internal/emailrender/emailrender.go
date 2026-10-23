@@ -12,10 +12,14 @@ package emailrender
 import (
 	"errors"
 	"fmt"
+	"regexp"
+	"slices"
+	"strings"
 
 	"github.com/k3a/html2text"
 	"github.com/osteele/liquid"
 	"github.com/osteele/liquid/render"
+	"golang.org/x/net/html"
 )
 
 // ErrInvalidContent is what Lint fails with: the subject or body cannot render, so
@@ -71,8 +75,8 @@ func RenderEmail(subject, body string, bindings map[string]any) (Email, error) {
 	if err != nil {
 		return Email{}, err
 	}
-	html := sanitizeRendered(rendered)
-	return Email{Subject: renderedSubject, HTML: html, Text: HTMLToText(html)}, nil
+	body = sanitizeRendered(rendered)
+	return Email{Subject: renderedSubject, HTML: body, Text: HTMLToText(body)}, nil
 }
 
 // renderBoth runs Liquid over the subject (plain text) and the body (HTML-escaped values),
@@ -102,8 +106,44 @@ func Render(tmpl string, bindings map[string]any) (string, error) {
 
 // HTMLToText derives a plain-text representation of an HTML body for the
 // text/plain MIME part.
-func HTMLToText(html string) string {
-	return html2text.HTML2Text(html)
+func HTMLToText(markup string) string {
+	return html2text.HTML2Text(markup)
+}
+
+// FinalHTMLToText derives the text/plain part of a send from its final per-recipient HTML
+// (ADR 0056): tracking and the unsubscribe footer are already in it, so a link reads as its
+// text followed by the URL it carries and the footer's unsubscribe link and postal address
+// appear as they do in the HTML. Elements hidden with display:none (the open pixel, a
+// preheader) and the style, script and head content are left out.
+func FinalHTMLToText(finalHTML string) string {
+	doc, err := html.Parse(strings.NewReader(finalHTML))
+	if err != nil {
+		return html2text.HTML2Text(finalHTML)
+	}
+	dropHidden(doc)
+	var sb strings.Builder
+	if err := html.Render(&sb, doc); err != nil {
+		return html2text.HTML2Text(finalHTML)
+	}
+	return html2text.HTML2TextWithOptions(sb.String(), html2text.WithLinksInnerText())
+}
+
+// hiddenStyle matches an inline style that takes an element out of the display.
+var hiddenStyle = regexp.MustCompile(`(?i)(^|;)\s*display\s*:\s*none\s*(!important\s*)?(;|$)`)
+
+// dropHidden removes, in place, every element whose inline style hides it.
+func dropHidden(n *html.Node) {
+	for c := n.FirstChild; c != nil; {
+		next := c.NextSibling
+		if c.Type == html.ElementNode && slices.ContainsFunc(c.Attr, func(a html.Attribute) bool {
+			return a.Key == "style" && hiddenStyle.MatchString(a.Val)
+		}) {
+			n.RemoveChild(c)
+		} else {
+			dropHidden(c)
+		}
+		c = next
+	}
 }
 
 // PrepareFields is what every save path calls (site API, external API and MCP all reach

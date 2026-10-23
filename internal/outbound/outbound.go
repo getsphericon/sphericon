@@ -630,6 +630,7 @@ func (m *Module) compose(ctx context.Context, s *ent.Scoped, domain string, req 
 			return composed{}, contentError{fmt.Errorf("tracking rewrite: %w", err)}
 		}
 		out.msg.HTML = html
+		out.msg.Text = emailrender.FinalHTMLToText(html)
 		return out, nil
 	}
 
@@ -659,6 +660,8 @@ func (m *Module) compose(ctx context.Context, s *ent.Scoped, domain string, req 
 		}
 		out.msg.HTML = email.HTML + footer
 	}
+	// The text part says what the HTML says, tracked links and footer included (ADR 0056).
+	out.msg.Text = emailrender.FinalHTMLToText(out.msg.HTML)
 	// RFC 8058 one-click header: the same source-scoped token the footer carries
 	// (ADR 0012); the provider adapter covers it with the DKIM signature.
 	url, err := tr.UnsubscribeURL(unsub)

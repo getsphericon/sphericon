@@ -3,6 +3,7 @@
 package e2e
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -36,6 +37,27 @@ func TestBroadcastToImportedContactsIsDelivered(t *testing.T) {
 	require.NotEmpty(t, unsub, "a Broadcast carries List-Unsubscribe")
 	assert.Contains(t, unsub, env.BaseURL, "the unsubscribe link points at the server under test")
 	assert.Equal(t, "List-Unsubscribe=One-Click", msg.Header("List-Unsubscribe-Post"))
+}
+
+// A reader of the text/plain part gets the same message as the HTML one (ADR 0056): the tracked
+// link and the unsubscribe link, once, and none of the markup.
+func TestBroadcastTextPartCarriesTrackedLinkAndUnsubscribe(t *testing.T) {
+	t.Parallel()
+	w := env.NewWorkspace(t).Ready()
+	to := w.NewRecipient()
+
+	w.ImportContacts(to)
+	w.SendBroadcast(Broadcast{
+		Subject: "Text part " + uniq(),
+		Body:    HTML(`Welcome aboard <a href="https://example.com/start">Get started</a>`),
+	})
+	msg := w.Inbox.Wait(Match{To: to})
+
+	assert.Contains(t, msg.Text, env.BaseURL+"/e/c/", "the link is the tracked one")
+	assert.NotContains(t, msg.Text, "https://example.com/start")
+	assert.NotContains(t, msg.Text, "/e/o/", "no open pixel")
+	require.NotEmpty(t, msg.UnsubscribeURL())
+	assert.Equal(t, 1, strings.Count(msg.Text, msg.UnsubscribeURL()), "the unsubscribe link, once")
 }
 
 // Hostile content reaches the Inbox sanitized (ADR 0040): the saved body loses script,
