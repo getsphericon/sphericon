@@ -225,6 +225,14 @@ const (
 	BrandKitGlobexID = 900
 	// BrandKitInitechID is from fixtures/brand_kits.
 	BrandKitInitechID = 300
+	// BrightpathDevMcpTokenID is from fixtures/api_tokens.
+	BrightpathDevMcpTokenID = 20006
+	// BrightpathDevMcpTokenName is from fixtures/api_tokens.
+	BrightpathDevMcpTokenName = "Dev MCP"
+	// BrightpathDevMcpTokenPrefix is from fixtures/api_tokens.
+	BrightpathDevMcpTokenPrefix = "devmcp000001"
+	// BrightpathDevMcpTokenSecret is from fixtures/api_tokens.
+	BrightpathDevMcpTokenSecret = "dev-mcp-token-secret"
 	// BroadcastArchivedID is from fixtures/broadcasts.
 	BroadcastArchivedID = 107
 	// BroadcastArchivedName is from fixtures/broadcasts.

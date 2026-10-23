@@ -31,8 +31,16 @@
 	import backend_down
 
 	# API → Go backend
-	@api path /site* /staff* /collect* /auth* /avatar* /api* /mcp* /.well-known/* /oauth/authorize /oauth/token /oauth/register
+	@api path /site* /staff* /collect* /auth* /avatar* /api* /.well-known/* /oauth/authorize /oauth/token /oauth/register
 	reverse_proxy @api localhost:{$BACKEND_PORT}
+
+	# MCP: the SDK refuses a non-loopback Host on a loopback listener (DNS rebinding guard), and
+	# the dev backend is one, so /mcp reaches it with the upstream's own host. The Bearer token
+	# is what authenticates; nothing on this path reads the original Host.
+	@mcp path /mcp*
+	reverse_proxy @mcp localhost:{$BACKEND_PORT} {
+		header_up Host {upstream_hostport}
+	}
 
 	# Everything else → Vite dev server (includes HMR websocket upgrade)
 	reverse_proxy localhost:{$FRONTEND_PORT}

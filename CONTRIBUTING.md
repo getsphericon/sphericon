@@ -112,6 +112,23 @@ it, because fixtures also load in tests: change the Integration's port in its se
 Brightpath's Sending domains have no serving Tracking domain in dev, so links in dev mail use
 the app URL.
 
+### MCP client
+
+Connect Claude Code to Brightpath through the dev stack's MCP endpoint, `/mcp` on the app origin.
+The fixtures carry a token for it, **Dev MCP**, with a known secret. It reads and writes Contacts,
+Segments, Broadcasts and Templates and has no `mcp:send`, so the send tools are not listed. With
+the stack running (`mise run dev`) and Caddy trusted (`caddy trust`):
+
+```sh
+claude mcp add --transport http sphericon https://sphericon.localhost/mcp \
+  --header "Authorization: Bearer omtk_devmcp000001_dev-mcp-token-secret"
+```
+
+In a linked worktree use its origin instead (`mise env | grep SPHERICON_APP_URL`), plus `/mcp`.
+Then `/mcp` in Claude Code shows `sphericon` connected, and "list the Brightpath contacts" calls
+`contacts_list`; "create a contact dev@brightpath.example" calls `contacts_create`. `mise run
+db:seed` removes what you wrote.
+
 The Staff console is at `https://sphericon.localhost/console` (Enterprise, license feature
 `staff`: without a license key it answers 404). Sign-in needs a password and a TOTP code:
 

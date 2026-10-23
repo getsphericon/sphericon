@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/getsphericon/sphericon/ent/broadcast"
+	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -463,4 +464,25 @@ func TestMCPEmailsSendAcceptsTrack(t *testing.T) {
 	require.Len(t, msgs, 1)
 	assert.Contains(t, msgs[0].HTML, "/e/o/")
 	assert.Contains(t, msgs[0].HTML, "/e/c/")
+}
+
+// The dev token CONTRIBUTING.md gives an MCP client: it reads and writes Brightpath, and
+// lists no send tool.
+func TestMCPDevTokenReadsAndWritesBrightpath(t *testing.T) {
+	env := testhelper.Setup(t)
+	s := env.MCPClient(t, credentials.TokenValue(fixtures.BrightpathDevMcpTokenPrefix, fixtures.BrightpathDevMcpTokenSecret))
+
+	names := toolNames(listedTools(t, s))
+	assert.Contains(t, names, "contacts_create")
+	for _, name := range sendTools {
+		assert.NotContains(t, names, name)
+	}
+
+	read := call(t, s, "contacts_list", map[string]any{})
+	require.False(t, read.IsError, text(t, read))
+	assert.Contains(t, text(t, read), "sofia.marino@northwind.example")
+
+	write := call(t, s, "contacts_create", map[string]any{"email": "dev.mcp@brightpath.example"})
+	require.False(t, write.IsError, text(t, write))
+	assert.Contains(t, text(t, write), "dev.mcp@brightpath.example")
 }
