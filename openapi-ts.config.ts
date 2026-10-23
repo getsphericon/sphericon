@@ -61,7 +61,22 @@ const surface = (name: 'site' | 'staff'): UserConfig => ({
   ],
 })
 
+// The external API client for Node servers: types, fetch client and SDK (no zod, no react-query).
+const externalSdk: UserConfig = {
+  input: './openapi/external.openapi.json',
+  output: { header, importFileExtension: '.ts', path: './packages/node/src/generated/external' },
+  plugins: [
+    {
+      enums: 'javascript',
+      name: '@hey-api/typescript',
+    },
+    '@hey-api/client-fetch',
+    '@hey-api/sdk',
+  ],
+}
+
 export default defineConfig([
+  externalSdk,
   surface('site'),
   surface('staff'),
   // Collect ingestion contract — types only. The tracker is a tiny standalone

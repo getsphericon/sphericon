@@ -18,13 +18,13 @@ every caller (regenerate afterwards), rather than layering the new design over t
 
 API contracts are **one-directional**: TypeSpec → OpenAPI → generated Go + TS. Never
 hand-edit anything under `openapi/`, `gen/`, `ent/` (except `ent/schema/`),
-`src/generated/` / `packages/analytics/src/generated/`, `src/routeTree.gen.ts`, or the `*_gen.go` files in the
+`src/generated/` / `packages/analytics/src/generated/` / `packages/node/src/generated/`, `src/routeTree.gen.ts`, or the `*_gen.go` files in the
 `internal/api/{site,external}/resources` packages, `ee/staff/resources`, `ee/staff/service_scopes_gen.go` and `internal/fixtures/catalog_gen.go`, or any `*_gen_test.go` mock, or `internal/emaildoc/assets/` (the document renderer bundle and schema listing) — regenerate instead.
 
 ```
 typespec/{site,external,collect,staff,service,telemetry}   ──tsp compile──▶  openapi/*.openapi.json
   openapi/site      ──ogen──▶ gen/site       (Go server)   ──openapi-ts──▶ src/generated/site (TS client + react-query + zod)
-  openapi/external  ──ogen──▶ gen/external    (Go server)
+  openapi/external  ──ogen──▶ gen/external    (Go server)  ──openapi-ts──▶ packages/node/src/generated/external (TS client + SDK, `@sphericon/node`, private)
   openapi/collect   ──ogen──▶ gen/collect     (Go server)  ──openapi-ts──▶ packages/analytics/src/generated/collect (types only)
   openapi/staff  ──ogen──▶ gen/staff    (Go server)  ──openapi-ts──▶ src/generated/staff (TS client + react-query + zod)
   openapi/service   ──ogen──▶ gen/service     (Go server, internal listener only, with the `staff` license)
