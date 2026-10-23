@@ -2,11 +2,13 @@ package outbound_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -81,4 +83,56 @@ func TestEachSendingDomainGetsItsOwnHost(t *testing.T) {
 
 	assert.Contains(t, serving.ListUnsubscribeURL, "https://track."+fixtures.SendingDomainTrackingServingDomain+"/")
 	assert.Contains(t, other.ListUnsubscribeURL, "http://local/")
+}
+
+// A tracking host that cannot be read says nothing about the message: the send is retried, not recorded
+// as Failed for good.
+func TestTrackingHostLookupErrorIsRetriedNotFailed(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	m := tracked(env, outbound.WithTrackingDomains())
+	scoped := env.DB.Scoped(fixtures.UmbrellaID)
+	lookup := errors.New("connection reset")
+
+	// The host lookup is the last Sending domain query of a tracked send: count them on a first send,
+	// then fail that last one.
+	var count, failAt int
+	env.DB.SendingDomain.Intercept(ent.InterceptFunc(func(next ent.Querier) ent.Querier {
+		return ent.QuerierFunc(func(ctx context.Context, q ent.Query) (ent.Value, error) {
+			count++
+			if count == failAt {
+				return nil, lookup
+			}
+			return next.Query(ctx, q)
+		})
+	}))
+	send := func(key string) (outbound.Result, error) {
+		return m.Send(ctx, scoped, outbound.Request{
+			Kind:        outboundmessage.KindBroadcast,
+			Key:         key,
+			Destination: "reader@example.com",
+			Source:      eligibility.SourceBroadcasts,
+			Subject:     "News",
+			Body:        linkHTML,
+			FromEmail:   "news@" + fixtures.SendingDomainTrackingServingDomain,
+			Track:       true,
+		})
+	}
+	first, err := send("th:count")
+	require.NoError(t, err)
+	require.Equal(t, outbound.Sent, first.Outcome)
+	failAt, count = count, 0
+
+	res, err := send("th:lookup")
+	require.ErrorIs(t, err, lookup)
+	require.ErrorContains(t, err, "tracking host", "it is the host lookup that failed")
+	assert.NotEqual(t, outbound.Failed, res.Outcome)
+	row := env.DB.OutboundMessage.Query().Where(outboundmessage.IdempotencyKeyContains("th:lookup")).OnlyX(ctx)
+	assert.Equal(t, outboundmessage.StatusPending, row.Status, "the claim stays open for the retry")
+
+	failAt = 0
+	retried, err := send("th:lookup")
+	require.NoError(t, err)
+	assert.Equal(t, outbound.Sent, retried.Outcome)
+	assert.Len(t, env.CustomerMail.Messages(), 2)
 }

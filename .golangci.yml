@@ -380,11 +380,11 @@ linters:
       # nilerr: each file named here has a function that turns an error into the answer its result
       # type carries, and nil is what that answer is: the typed 4xx response of an ogen handler for
       # what the client sent (a cursor, the variables of a message, a link token, the state of a
-      # sign-in flow), an MCP tool result for arguments that are not JSON, an outbound.Result outcome,
+      # sign-in flow), an MCP tool result for arguments that are not JSON,
       # a rules.Result, an ignored delivery outcome, a Condition that no longer compiles. Each was read:
       # the handlers whose error was not the client's (the Automation switch, the link tokens whose
       # lookup failed) return it now. A new handler file is checked.
-      - path: ^(internal/api/external/(audit|emails)\.go|internal/api/site/(audit|auth_recovery|auth_signin|auth_signin_notme|consent)\.go|internal/mcpserver/mcpserver\.go|internal/outbound/outbound\.go|internal/jobs/rules_http\.go|internal/rules/rules\.go|internal/webhooks/delivery\.go)$
+      - path: ^(internal/api/external/(audit|emails)\.go|internal/api/site/(audit|auth_recovery|auth_signin|auth_signin_notme|consent)\.go|internal/mcpserver/mcpserver\.go|internal/jobs/rules_http\.go|internal/rules/rules\.go|internal/webhooks/delivery\.go)$
         linters:
           - nilerr
       # Test data is spelled out in each test: a name or an address that five tests share is the

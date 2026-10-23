@@ -351,6 +351,12 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 
 	built, err := m.compose(ctx, s, g.domain, req, msg.ID, dest, ws)
 	if err != nil {
+		if !isContentError(err) {
+			// The storage behind the content failed, not the content: retry rather than record a
+			// message that could have been sent as Failed for good.
+			m.release(ctx, s, msg)
+			return Result{}, err
+		}
 		return m.finish(ctx, s, msg, outboundmessage.StatusFailed, Failed, err.Error())
 	}
 	built.msg.From, built.msg.FromName = g.from, g.fromName
@@ -578,13 +584,28 @@ type composed struct {
 	msg messaging.EmailMessage
 }
 
+// contentError marks a compose failure that comes from the message itself (a template that does
+// not render, a link that cannot be rewritten): it is the same on every attempt, so the send ends
+// as Failed. Any other compose error is a failure of what the compose reads (the tracking host
+// lookup), which a retry may get past.
+type contentError struct{ err error }
+
+func (e contentError) Error() string { return e.err.Error() }
+func (e contentError) Unwrap() error { return e.err }
+
+func isContentError(err error) bool {
+	var ce contentError
+	return errors.As(err, &ce)
+}
+
 // compose renders the content for one recipient and, for a marketing send, layers
-// on the unsubscribe footer, the open/click tracking and the one-click header. Any
-// error here is deterministic for this message, so the caller records it as Failed.
+// on the unsubscribe footer, the open/click tracking and the one-click header. A
+// contentError is deterministic for this message, so the caller records it as Failed;
+// any other error is not the message's and is returned to be retried.
 func (m *Module) compose(ctx context.Context, s *ent.Scoped, domain string, req Request, messageID int64, dest string, ws *ent.Workspace) (composed, error) {
 	email, err := emailrender.RenderEmail(req.Subject, req.Body, Bindings(req.Contact, req.Variables))
 	if err != nil {
-		return composed{}, err
+		return composed{}, contentError{err}
 	}
 	out := composed{msg: messaging.EmailMessage{Subject: email.Subject, HTML: email.HTML, Text: email.Text}}
 	if req.Source == "" && !req.Track {
@@ -606,7 +627,7 @@ func (m *Module) compose(ctx context.Context, s *ent.Scoped, domain string, req 
 		// A tracked Transactional send: pixel and rewritten links, no footer, no header (ADR 0053).
 		html, err := tr.Instrument(email.HTML, messageID)
 		if err != nil {
-			return composed{}, fmt.Errorf("tracking rewrite: %w", err)
+			return composed{}, contentError{fmt.Errorf("tracking rewrite: %w", err)}
 		}
 		out.msg.HTML = html
 		return out, nil
@@ -628,13 +649,13 @@ func (m *Module) compose(ctx context.Context, s *ent.Scoped, domain string, req 
 		// cannot mangle the pixel or links; Rewrite also appends the footer.
 		html, err := tr.Rewrite(email.HTML, messageID, unsub, ws.PostalAddress)
 		if err != nil {
-			return composed{}, fmt.Errorf("tracking rewrite: %w", err)
+			return composed{}, contentError{fmt.Errorf("tracking rewrite: %w", err)}
 		}
 		out.msg.HTML = html
 	} else {
 		footer, err := tr.UnsubscribeFooter(unsub, ws.PostalAddress)
 		if err != nil {
-			return composed{}, fmt.Errorf("unsubscribe footer: %w", err)
+			return composed{}, contentError{fmt.Errorf("unsubscribe footer: %w", err)}
 		}
 		out.msg.HTML = email.HTML + footer
 	}
@@ -642,7 +663,7 @@ func (m *Module) compose(ctx context.Context, s *ent.Scoped, domain string, req 
 	// (ADR 0012); the provider adapter covers it with the DKIM signature.
 	url, err := tr.UnsubscribeURL(unsub)
 	if err != nil {
-		return composed{}, fmt.Errorf("unsubscribe url: %w", err)
+		return composed{}, contentError{fmt.Errorf("unsubscribe url: %w", err)}
 	}
 	out.msg.ListUnsubscribeURL = url
 	return out, nil
@@ -805,9 +826,18 @@ func (m *Module) SendTest(ctx context.Context, s *ent.Scoped, req TestRequest) (
 	to := suppression.NormalizeDestination(req.To)
 	msg, err := m.composeTest(ctx, s, ws, g.domain, req, to)
 	if err != nil {
-		return Result{Outcome: Failed, Reason: err.Error()}, nil
+		return failedContent(err)
 	}
 	return sendTestMessage(ctx, g.sender, msg, g.from, g.fromName, to)
+}
+
+// failedContent is a Test send whose compose failed: a content error is the Failed result, any other
+// is returned as the error it is.
+func failedContent(err error) (Result, error) {
+	if isContentError(err) {
+		return Result{Outcome: Failed, Reason: err.Error()}, nil
+	}
+	return Result{}, err
 }
 
 // composeTest renders a Test send's content for to: no unsubscribe, no tracking.
@@ -848,7 +878,7 @@ func (m *Module) sendTestFromSystem(ctx context.Context, s *ent.Scoped, ws *ent.
 	// Render before taking a slot: content that cannot render never costs the budget.
 	msg, err := m.composeTest(ctx, s, ws, "", req, to)
 	if err != nil {
-		return Result{Outcome: Failed, Reason: err.Error()}, nil
+		return failedContent(err)
 	}
 	// A System sender that names no From cannot send: refuse before a slot is taken.
 	from, name := effectiveFrom(m.system, "", "")
