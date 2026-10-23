@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"slices"
+	"strconv"
 	"strings"
 
 	"ariga.io/atlas/sql/sqltool"
@@ -100,25 +101,45 @@ func admin(ctx context.Context, fn func(ctx context.Context, adminDB *sql.DB, db
 	return fn(ctx, adminDB, dbName)
 }
 
+// quoteIdent has the server quote a database name, so no escaping of our own stands between a
+// name from DATABASE_URL and the CREATE or DROP DATABASE that takes it: those commands accept an
+// identifier and not a bound parameter.
+func quoteIdent(ctx context.Context, adminDB *sql.DB, name string) (string, error) {
+	var quoted string
+	// raw sql: quote_ident is the server's own identifier quoting; ent has no such function.
+	if err := adminDB.QueryRowContext(ctx, "SELECT quote_ident($1)", name).Scan(&quoted); err != nil {
+		return "", fmt.Errorf("quote database name: %w", err)
+	}
+	return quoted, nil
+}
+
 func createDatabase(ctx context.Context, adminDB *sql.DB, dbName string) error {
+	ident, err := quoteIdent(ctx, adminDB, dbName)
+	if err != nil {
+		return err
+	}
 	// raw sql: CREATE DATABASE is a server command with an identifier, not a table operation.
-	if _, err := adminDB.ExecContext(ctx, `CREATE DATABASE "`+dbName+`"`); err != nil {
+	if _, err := adminDB.ExecContext(ctx, "CREATE DATABASE "+ident); err != nil {
 		if pgErr := new(pgconn.PgError); errors.As(err, &pgErr) && pgErr.Code == "42P04" {
-			log.Printf("database %q already exists, skipping", dbName)
+			log.Printf("database %s already exists, skipping", strconv.Quote(dbName))
 			return nil
 		}
 		return fmt.Errorf("create database: %w", err)
 	}
-	log.Printf("database %q created", dbName)
+	log.Printf("database %s created", strconv.Quote(dbName))
 	return nil
 }
 
 func dropDatabase(ctx context.Context, adminDB *sql.DB, dbName string) error {
+	ident, err := quoteIdent(ctx, adminDB, dbName)
+	if err != nil {
+		return err
+	}
 	// raw sql: DROP DATABASE is a server command with an identifier, not a table operation.
-	if _, err := adminDB.ExecContext(ctx, `DROP DATABASE IF EXISTS "`+dbName+`"`); err != nil {
+	if _, err := adminDB.ExecContext(ctx, "DROP DATABASE IF EXISTS "+ident); err != nil {
 		return fmt.Errorf("drop database: %w", err)
 	}
-	log.Printf("database %q dropped", dbName)
+	log.Printf("database %s dropped", strconv.Quote(dbName))
 	return nil
 }
 
