@@ -78,3 +78,27 @@ func TestUntrackedMarketingTextPartCarriesUnsubscribeAndAddress(t *testing.T) {
 	assert.Equal(t, 1, strings.Count(msg.Text, "http://local/e/u/"), "the unsubscribe link, once")
 	assert.Equal(t, 1, strings.Count(msg.Text, "Raccoon City"), "the postal address, once")
 }
+
+func transactionalRequest(key string, track bool) outbound.Request {
+	return outbound.Request{Kind: outboundmessage.KindTransactional, Key: key, Track: track}
+}
+
+func TestTrackedTransactionalTextPartCarriesTrackedLinksAndNoFooter(t *testing.T) {
+	env := testhelper.Setup(t)
+	msg := sendUmbrella(t, env, transactionalRequest("tp:tx-tracked", true))
+
+	requireCleanText(t, msg.Text)
+	assert.Contains(t, msg.Text, "Offer")
+	assert.Contains(t, msg.Text, "http://local/e/c/", "the tracked URL")
+	assert.NotContains(t, msg.Text, "https://example.com/offer", "not the raw URL")
+	assert.NotContains(t, msg.Text, "/e/u/", "no unsubscribe link")
+	assert.NotContains(t, msg.Text, "Raccoon City", "no postal address")
+	assert.Empty(t, msg.ListUnsubscribeURL)
+}
+
+func TestUntrackedTransactionalTextPartIsUnchanged(t *testing.T) {
+	env := testhelper.Setup(t)
+	msg := sendUmbrella(t, env, transactionalRequest("tp:tx-untracked", false))
+
+	assert.Equal(t, "Hidden preview words\r\n\r\nHi Grace\r\n\r\nhttps://example.com/offer", msg.Text)
+}
