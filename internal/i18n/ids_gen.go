@@ -169,6 +169,7 @@ var (
 	ErrorsLoginChallengeInvalid                 = ID{key: "errors.login_challenge_invalid"}
 	ErrorsMemberNotFound                        = ID{key: "errors.member_not_found"}
 	ErrorsNameEmpty                             = ID{key: "errors.name_empty"}
+	ErrorsNameInvalid                           = ID{key: "errors.name_invalid"}
 	ErrorsNameRequired                          = ID{key: "errors.name_required"}
 	ErrorsNewEmailMustDiffer                    = ID{key: "errors.new_email_must_differ"}
 	ErrorsNewEmailRequired                      = ID{key: "errors.new_email_required"}

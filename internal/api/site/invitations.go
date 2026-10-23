@@ -107,6 +107,7 @@ func (h *Handlers) SitePublicInvitationsLookup(ctx context.Context, params sitea
 
 // acceptForm is what SitePublicInvitationsAccept checks beyond the contract.
 type acceptForm struct {
+	Name     string `json:"name" validate:"omitempty,display_name"`
 	Password string `json:"password" validate:"omitempty,password_not_blank,password_length"`
 }
 
@@ -127,15 +128,16 @@ func (h *Handlers) SitePublicInvitationsAccept(ctx context.Context, req *siteapi
 		sessionEmail = a.Email
 	}
 	name, _ := req.Name.Get()
+	name = strings.TrimSpace(name)
 	password, _ := req.Password.Get()
 	// Whether a name and a password are needed at all is the transaction's to say (a Verified
-	// User's address needs neither); one that is sent must pass the password rule.
-	if err := validation.Form(acceptForm{Password: password}); err != nil {
+	// User's address needs neither); one that is sent must pass its rule.
+	if err := validation.Form(acceptForm{Name: name, Password: password}); err != nil {
 		return nil, err
 	}
 
 	err = h.accounts.AcceptInvitation(ctx, inv, accounts.InvitationAcceptance{
-		Name: strings.TrimSpace(name), Password: password, SignupItems: inputs.SignupAnswers(req.SignupItems), SessionEmail: sessionEmail,
+		Name: name, Password: password, SignupItems: inputs.SignupAnswers(req.SignupItems), SessionEmail: sessionEmail,
 	})
 	if err != nil {
 		return nil, err

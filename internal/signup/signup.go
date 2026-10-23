@@ -135,7 +135,7 @@ func New(cfg Config) *Module { return &Module{cfg: cfg} }
 
 // form is what a Sign-up checks beyond the contract, the name and email already trimmed.
 type form struct {
-	Name     string `json:"name" validate:"required"`
+	Name     string `json:"name" validate:"required,display_name"`
 	Email    string `json:"email" validate:"required,account_email"`
 	Password string `json:"password" validate:"required,password_not_blank,password_length"`
 }
