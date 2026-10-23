@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"sync"
 	"testing"
 
 	"github.com/peterldowns/pgtestdb"
@@ -42,13 +43,27 @@ func EmptyDBURL(t *testing.T) string {
 	return pgtestdb.Custom(t, serverConfig(t), emptyMigrator{}).URL()
 }
 
-// serverConfig points pgtestdb at the test server from the same DATABASE_URL the
-// application reads in the test environment.
+// sharedDatabaseURL is the test database every process and every checkout run shares, as
+// DATABASE_URL names it before initBaseline points the process at its own leased database.
+// It is read once, so it never depends on whether a test in the process has called Setup yet.
+var sharedDatabaseURL = sync.OnceValues(func() (string, error) {
+	cfg, err := config.Load("test")
+	if err != nil {
+		return "", err
+	}
+	return cfg.DatabaseURL, nil
+})
+
+// serverConfig points pgtestdb at the shared test database. It must not be the process's
+// own database (the `_w<i>` one DATABASE_URL names once Setup has run): pgtestdb serializes
+// the creation of a template with a Postgres advisory lock, and advisory locks are scoped to
+// one database, so processes connected to different databases never excluded each other, and
+// one dropped the template another was still building or cloning.
 func serverConfig(t *testing.T) pgtestdb.Config {
 	t.Helper()
-	cfg, err := config.Load("test")
+	dsn, err := sharedDatabaseURL()
 	require.NoError(t, err)
-	u, err := url.Parse(cfg.DatabaseURL)
+	u, err := url.Parse(dsn)
 	require.NoError(t, err)
 	password, _ := u.User.Password()
 	return pgtestdb.Config{

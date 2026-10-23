@@ -108,6 +108,11 @@ func initBaseline() {
 			errLoad = err
 			return
 		}
+		// Read the shared URL before DATABASE_URL is pointed at this process's own database.
+		if _, err := sharedDatabaseURL(); err != nil {
+			errLoad = err
+			return
+		}
 		version, err := schemaHash()
 		if err != nil {
 			errLoad = err
