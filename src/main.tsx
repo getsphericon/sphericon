@@ -12,6 +12,7 @@ import { client } from './generated/site/client.gen.ts'
 import { client as staffClient } from './generated/staff/client.gen.ts'
 import { i18n } from './i18n.ts'
 import { createAppRouter } from './router.ts'
+import { theme } from './theme.ts'
 
 client.setConfig({ baseUrl: '/site' })
 staffClient.setConfig({ baseUrl: '/staff' })
@@ -37,6 +38,7 @@ function Root() {
     <QueryClientProvider client={queryClient}>
       <I18nextProvider i18n={i18n}>
         <MantineProvider
+          theme={theme}
           defaultColorScheme="auto"
           cssVariablesResolver={editorCssVariablesResolver}
         >

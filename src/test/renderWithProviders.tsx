@@ -5,6 +5,7 @@ import type { ReactNode } from 'react'
 import { render } from 'vitest-browser-react'
 
 import { NotificationsProvider } from '../components/NotificationsProvider.tsx'
+import { theme } from '../theme.ts'
 import { trackQueryClient } from './queryClients.ts'
 
 // Mirrors the provider stack from src/main.tsx so components render the same way
@@ -29,7 +30,7 @@ export function renderWithProviders(ui: ReactNode) {
   function Wrapper({ children }: { children: ReactNode }) {
     return (
       <QueryClientProvider client={queryClient}>
-        <MantineProvider env="test">
+        <MantineProvider theme={theme} env="test">
           <ModalsProvider>
             <NotificationsProvider>{children}</NotificationsProvider>
           </ModalsProvider>

@@ -3,6 +3,7 @@ import { expect, test } from 'vitest'
 
 import {
   handleSiteWorkspacesDelete,
+  handleSiteWorkspacesLeave,
   handleSiteWorkspacesList,
   handleSiteWorkspacesUpdate,
 } from '../../../generated/site/msw.gen.ts'
@@ -95,11 +96,55 @@ test('an owner deletes the workspace only after typing its name', async () => {
   await expect.poll(() => navigate.mock.calls).toContainEqual([{ to: '/' }])
 })
 
-test('an admin sees no danger section', async () => {
+test('an admin can leave but not delete the workspace', async () => {
   worker.use(handleSiteWorkspacesList({ body: [{ ...workspace, role: 'admin' as const }] }))
 
   const { screen } = await renderWithRouter(<GeneralPage />, GENERAL_ROUTE)
 
-  await expect.element(screen.getByLabelText(/^Workspace name/)).toBeEnabled()
-  expect(screen.container.textContent).not.toContain('Danger zone')
+  await expect.element(screen.getByRole('button', { name: 'Leave workspace' })).toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('button', { name: 'Delete workspace' }))
+    .not.toBeInTheDocument()
+})
+
+test('leaves the workspace after confirmation', async () => {
+  let left = false
+  worker.use(
+    handleSiteWorkspacesList({ body: [{ ...workspace, role: 'member' as const }] }),
+    handleSiteWorkspacesLeave(() => {
+      left = true
+      return new HttpResponse(null, { status: 204 })
+    }),
+  )
+  const { screen, navigate } = await renderWithRouter(<GeneralPage />, GENERAL_ROUTE)
+
+  await screen.getByRole('button', { name: 'Leave workspace' }).click()
+  await screen.getByRole('dialog').getByRole('button', { name: 'Leave' }).click()
+
+  await expect.poll(() => left).toBe(true)
+  // The index route picks the next Workspace, or the create screen when none is left.
+  await expect.poll(() => navigate.mock.calls).toContainEqual([{ to: '/' }])
+})
+
+test('keeps the workspace and says why when the only owner tries to leave', async () => {
+  worker.use(
+    handleSiteWorkspacesList({ body: [workspace] }),
+    handleSiteWorkspacesLeave(() =>
+      HttpResponse.json(
+        {
+          title: 'cannot leave as the only owner',
+          detail:
+            'you are the only owner: make another member an owner or delete the workspace first',
+          status: 422,
+        },
+        { status: 422, headers: { 'content-type': 'application/problem+json' } },
+      ),
+    ),
+  )
+  const { screen } = await renderWithRouter(<GeneralPage />, GENERAL_ROUTE)
+
+  await screen.getByRole('button', { name: 'Leave workspace' }).click()
+  await screen.getByRole('dialog').getByRole('button', { name: 'Leave' }).click()
+
+  await expect.element(screen.getByText(/make another member an owner/)).toBeInTheDocument()
 })

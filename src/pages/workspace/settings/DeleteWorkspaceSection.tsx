@@ -1,4 +1,4 @@
-import { Alert, Button, Group, Modal, Stack, Text, TextInput, Title } from '@mantine/core'
+import { Alert, Button, Group, Modal, Stack, Text, TextInput } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
@@ -13,7 +13,7 @@ import type { SiteWorkspaceResource } from '../../../generated/site/types.gen.ts
 import { useResourceMutation } from '../../../hooks/useResourceMutation.ts'
 import { Route as indexRoute } from '../../../routes/index.tsx'
 
-// DeleteWorkspaceSection is the danger section of the settings (ADR 0043): an Owner
+// DeleteWorkspaceSection is the delete part of the danger zone (ADR 0043): an Owner
 // deletes the Workspace by typing its name. Deletion is soft, so the copy says how long
 // it can be restored. The server checks the typed name again.
 export function DeleteWorkspaceSection({ workspace }: { workspace: SiteWorkspaceResource }) {
@@ -37,13 +37,12 @@ export function DeleteWorkspaceSection({ workspace }: { workspace: SiteWorkspace
   }
 
   return (
-    <Stack maw={420}>
-      <Title order={3}>{t(($) => $.settings.danger.title)}</Title>
+    <Stack gap="xs">
       <Text size="sm" c="dimmed">
         {t(($) => $.settings.danger.description)}
       </Text>
       <Group>
-        <Button color="red" variant="light" onClick={open}>
+        <Button color="red" variant="outline" onClick={open}>
           {t(($) => $.settings.danger.deleteButton)}
         </Button>
       </Group>
