@@ -28,7 +28,7 @@ minimumReleaseAgeExclude:
   - '@tanstack/query-core@5.101.1 || 5.101.2 || 5.104.4 || 5.104.5'
   - '@tanstack/react-query@5.101.1 || 5.101.2 || 5.104.4 || 5.104.5'
   - '@vitejs/plugin-react@6.0.3'
-  - i18next@26.3.2 || 26.5.2 || 26.5.3 || 26.5.4
+  - i18next@26.3.2 || 26.5.2 || 26.5.3 || 26.5.4 || 26.5.6
   - playwright-core@1.61.1
   - playwright@1.61.1
   - vite@8.1.0 || 8.3.4 || 8.3.5
@@ -50,7 +50,7 @@ minimumReleaseAgeExclude:
   - '@mantine/modals@9.7.3'
   - '@mantine/notifications@9.7.3'
   - '@mantine/store@9.7.3'
-  - react-i18next@17.1.0
+  - react-i18next@17.1.0 || 17.1.4
   - '@oxfmt/binding-android-arm-eabi@0.74.0'
   - '@oxfmt/binding-android-arm64@0.74.0'
   - '@oxfmt/binding-darwin-arm64@0.74.0'
@@ -91,6 +91,20 @@ minimumReleaseAgeExclude:
   - '@oxlint/binding-win32-x64-msvc@1.89.0'
   - oxfmt@0.74.0
   - oxlint@1.89.0
+  - '@oxlint-tsgolint/darwin-arm64@7.0.2005'
+  - '@oxlint-tsgolint/darwin-x64@7.0.2005'
+  - '@oxlint-tsgolint/linux-arm64@7.0.2005'
+  - '@oxlint-tsgolint/linux-x64@7.0.2005'
+  - '@oxlint-tsgolint/win32-arm64@7.0.2005'
+  - '@oxlint-tsgolint/win32-x64@7.0.2005'
+  - '@size-limit/file@14.3.0'
+  - '@tanstack/react-router@1.170.46'
+  - '@tanstack/router-cli@1.167.46'
+  - '@tanstack/router-core@1.171.39'
+  - '@tanstack/router-generator@1.167.46'
+  - '@tanstack/router-plugin@1.168.48'
+  - oxlint-tsgolint@7.0.2005
+  - size-limit@14.3.0
 # Transitive dependencies of the build tooling that an advisory has fixed; pnpm picks the fixed
 # release whichever package asks for them.
 overrides:
