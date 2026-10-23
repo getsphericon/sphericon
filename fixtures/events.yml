@@ -4967,3 +4967,42 @@
   occurred_at: '{{daysAgo 10}}'
   created_at: '{{daysAgo 10}}'
 # {{end}}
+
+# Clicks by link (the Workspace-wide report): Broadcast 200 carries the pricing link twice and the docs
+# link once (twenty days ago, outside the 7-day window), Automation 102 carries pricing once, and a
+# machine click on pricing (ADR 0053) is in no count.
+- id: 9320 # fixture: EventLinkClickBroadcastPricing
+  contact_id: 100
+  action: email.clicked
+  properties: '{"broadcastId":200,"url":"https://codebasics.dev/pricing"}'
+  workspace_id: 1
+  occurred_at: '{{daysAgo 2}}'
+  created_at: '{{daysAgo 2}}'
+- id: 9321
+  contact_id: 101
+  action: email.clicked
+  properties: '{"broadcastId":200,"url":"https://codebasics.dev/pricing"}'
+  workspace_id: 1
+  occurred_at: '{{daysAgo 2}}'
+  created_at: '{{daysAgo 2}}'
+- id: 9322
+  contact_id: 100
+  action: email.clicked
+  properties: '{"broadcastId":200,"url":"https://codebasics.dev/docs"}'
+  workspace_id: 1
+  occurred_at: '{{daysAgo 20}}'
+  created_at: '{{daysAgo 20}}'
+- id: 9323 # fixture: EventLinkClickMachine
+  contact_id: 100
+  action: email.clicked
+  properties: '{"broadcastId":200,"url":"https://codebasics.dev/pricing","machine":true}'
+  workspace_id: 1
+  occurred_at: '{{daysAgo 2}}'
+  created_at: '{{daysAgo 2}}'
+- id: 9324
+  contact_id: 101
+  action: email.clicked
+  properties: '{"automationId":102,"url":"https://codebasics.dev/pricing"}'
+  workspace_id: 1
+  occurred_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'

@@ -3,6 +3,7 @@ package site
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
@@ -106,4 +107,32 @@ func (h *Handlers) SiteAnalyticsSubscribedPeople(ctx context.Context, params sit
 		}
 	}
 	return &siteapi.SiteAnalyticsSubscribedPeople{Current: narrow.Int32(report.Current), Series: series}, nil
+}
+
+// SiteAnalyticsClicksByLink maps the analytics module's Clicks by link report onto the DTO.
+func (h *Handlers) SiteAnalyticsClicksByLink(ctx context.Context, params siteapi.SiteAnalyticsClicksByLinkParams) (siteapi.SiteAnalyticsClicksByLinkRes, error) {
+	s, err := h.scopedFor(ctx, params.WorkspaceId)
+	if ent.IsNotFound(err) {
+		v := problem(http.StatusNotFound, "workspace not found")
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	links, err := h.analytics.ClicksByLink(ctx, s, analyticsWindow(params.Range))
+	if err != nil {
+		return nil, err
+	}
+	out := make([]siteapi.SiteAnalyticsLink, len(links))
+	for i, l := range links {
+		owners := make([]siteapi.SiteAnalyticsLinkOwner, len(l.Owners))
+		for j, o := range l.Owners {
+			owners[j] = siteapi.SiteAnalyticsLinkOwner{
+				Kind: siteapi.SiteAnalyticsOwnerKind(o.Kind), ID: siteapi.EntityId(o.ID), Name: o.Name, Clicks: narrow.Int32(o.Clicks),
+			}
+		}
+		out[i] = siteapi.SiteAnalyticsLink{URL: l.URL, Clicks: narrow.Int32(l.Clicks), Owners: owners}
+	}
+	retentionDays := int(h.eventsRetention / (24 * time.Hour))
+	return &siteapi.SiteAnalyticsClicksByLink{Links: out, EventsRetentionDays: narrow.Int32(retentionDays)}, nil
 }

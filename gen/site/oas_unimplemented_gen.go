@@ -13,6 +13,15 @@ type UnimplementedHandler struct{}
 
 var _ Handler = UnimplementedHandler{}
 
+// SiteAnalyticsClicksByLink implements SiteAnalytics_clicksByLink operation.
+//
+// Clicks by link over the whole workspace, split by the Broadcast or Automation that carried each link.
+//
+// GET /workspaces/{workspaceId}/analytics/clicks-by-link
+func (UnimplementedHandler) SiteAnalyticsClicksByLink(ctx context.Context, params SiteAnalyticsClicksByLinkParams) (r SiteAnalyticsClicksByLinkRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteAnalyticsNewPeople implements SiteAnalytics_newPeople operation.
 //
 // New people report: Contacts created per Report day, split by Contact source.

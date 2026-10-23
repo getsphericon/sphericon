@@ -108,6 +108,17 @@ export default interface Resources {
         "runsCompleted": "Completed runs",
         "total": "Total"
       },
+      "clicksByLink": {
+        "automation": "Automation",
+        "broadcast": "Broadcast",
+        "carriedBy": "Sent in",
+        "clicks": "Clicks",
+        "empty": "No links were clicked in this window",
+        "hint": "Every human click counts, so a link clicked twice by one person shows twice. Link scanners and other software are left out.",
+        "ownerClicks": "{{kind}}: {{clicks}}",
+        "retentionNote": "Clicks are kept for {{days}} days on this instance, so this window counts only the last {{days}} days.",
+        "url": "Link"
+      },
       "contacts": {
         "active": "Active",
         "empty": "No contacts yet",
@@ -128,6 +139,7 @@ export default interface Resources {
       "loadError": "Failed to load analytics",
       "nav": {
         "audience": "Audience",
+        "clicksByLink": "Clicks by link",
         "email": "Email",
         "emailMetrics": "Email metrics",
         "newPeople": "New people",

@@ -171,6 +171,50 @@ model SiteAnalyticsSubscribedPeople {
   series: SiteAnalyticsSubscribedPoint[];
 }
 
+/** What carried a clicked link: a Broadcast or an Automation */
+enum SiteAnalyticsOwnerKind {
+  broadcast,
+  automation,
+}
+
+/** The clicks of one link in the emails of one Broadcast or Automation */
+model SiteAnalyticsLinkOwner {
+  /** Whether the Broadcast report or the Automation report is the one to open */
+  kind: SiteAnalyticsOwnerKind;
+
+  /** The Broadcast's or Automation's id */
+  id: EntityId;
+
+  /** The Broadcast's or Automation's name */
+  name: string;
+
+  /** Human clicks on the link in its emails during the range */
+  clicks: int32;
+}
+
+/** One clicked link with its clicks in the range, split by the Broadcast or Automation that carried it */
+model SiteAnalyticsLink {
+  /** The link's destination URL */
+  url: string;
+
+  /** Human clicks on the link during the range (every click counted, not unique per contact) */
+  clicks: int32;
+
+  /** Where the clicks came from, most clicked first */
+  owners: SiteAnalyticsLinkOwner[];
+}
+
+/** The Clicks by link report */
+model SiteAnalyticsClicksByLink {
+  /** Each link with clicks in the range, most clicked first; machine clicks are left out */
+  links: SiteAnalyticsLink[];
+
+  /** The configured Event retention in days (SPHERICON_EVENTS_RETENTION_DAYS); 0 means Events
+   * are kept forever. Clicks are Events, so a range longer than this is counted only over the
+   * retained days. */
+  eventsRetentionDays: int32;
+}
+
 // Not a CRUD resource — a single workspace-scoped aggregate with no key, so it
 // keeps an explicit nested route rather than @parentResource/@autoRoute.
 @route("/workspaces/{workspaceId}/analytics")
@@ -205,4 +249,14 @@ namespace SiteAnalytics {
     /** Window to report over (defaults to 30d) */
     @query range?: SiteAnalyticsRange,
   ): SiteAnalyticsSubscribedPeople | NotFoundProblem;
+
+  /** Clicks by link over the whole workspace, split by the Broadcast or Automation that carried each link */
+  @get
+  @route("/clicks-by-link")
+  op clicksByLink(
+    @path workspaceId: WorkspaceId,
+
+    /** Window to aggregate over (defaults to 30d) */
+    @query range?: SiteAnalyticsRange,
+  ): SiteAnalyticsClicksByLink | NotFoundProblem;
 }

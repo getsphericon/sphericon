@@ -85,3 +85,35 @@ func TestSubscribedPeopleMapsTheModule(t *testing.T) {
 		assert.Equal(t, p.Subscribed-p.Unsubscribed, p.Net)
 	}
 }
+
+func TestSiteAnalyticsClicksByLinkRequireAuth(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteAnonymous(t)
+
+	_, err := c.SiteAnalyticsClicksByLink(context.Background(), siteapi.SiteAnalyticsClicksByLinkParams{WorkspaceId: fixtures.AcmePublicID})
+	require.Error(t, err)
+}
+
+// Every Membership role reads the report; the handler maps the module's links with their
+// owners and the configured Event retention in days (rules are tested in internal/analytics).
+func TestSiteAnalyticsClicksByLinkIsReadByAMemberAndCarriesTheRetention(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.MemberMaryEmail)
+
+	res, err := c.SiteAnalyticsClicksByLink(context.Background(), siteapi.SiteAnalyticsClicksByLinkParams{
+		WorkspaceId: fixtures.AcmePublicID,
+		Range:       siteapi.NewOptSiteAnalyticsRange(siteapi.SiteAnalyticsRange7d),
+	})
+	require.NoError(t, err)
+	report, ok := res.(*siteapi.SiteAnalyticsClicksByLink)
+	require.Truef(t, ok, "got %T", res)
+
+	require.Len(t, report.Links, 1)
+	assert.Equal(t, "https://codebasics.dev/pricing", report.Links[0].URL)
+	assert.Equal(t, int32(3), report.Links[0].Clicks)
+	assert.Equal(t, []siteapi.SiteAnalyticsLinkOwner{
+		{Kind: siteapi.SiteAnalyticsOwnerKindBroadcast, ID: siteapi.EntityId(fixtures.BroadcastSentID), Name: "Python crash course is here", Clicks: 2},
+		{Kind: siteapi.SiteAnalyticsOwnerKindAutomation, ID: siteapi.EntityId(fixtures.AutomationWinBackID), Name: "Win-back lapsed learners", Clicks: 1},
+	}, report.Links[0].Owners)
+	assert.Equal(t, int32(400), report.EventsRetentionDays, "the default SPHERICON_EVENTS_RETENTION_DAYS")
+}

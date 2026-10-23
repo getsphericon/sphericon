@@ -245,6 +245,38 @@ export const zSiteAnalyticsEmail = z.object({
 });
 
 /**
+ * What carried a clicked link: a Broadcast or an Automation
+ */
+export const zSiteAnalyticsOwnerKind = z.enum(['broadcast', 'automation']);
+
+/**
+ * The clicks of one link in the emails of one Broadcast or Automation
+ */
+export const zSiteAnalyticsLinkOwner = z.object({
+  kind: zSiteAnalyticsOwnerKind,
+  id: zEntityId,
+  name: z.string(),
+  clicks: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
+ * One clicked link with its clicks in the range, split by the Broadcast or Automation that carried it
+ */
+export const zSiteAnalyticsLink = z.object({
+  url: z.string(),
+  clicks: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  owners: z.array(zSiteAnalyticsLinkOwner)
+});
+
+/**
+ * The Clicks by link report
+ */
+export const zSiteAnalyticsClicksByLink = z.object({
+  links: z.array(zSiteAnalyticsLink),
+  eventsRetentionDays: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
  * One UTC send-day of the cohort, zero-filled across the range. Opened/clicked
  * count the messages sent that day that were later opened/clicked.
  */
@@ -3191,6 +3223,19 @@ export const zSiteWorkspacesAccountLinkPath = z.object({
  * The request has succeeded.
  */
 export const zSiteWorkspacesAccountLinkResponse = zSiteAccountLinkResource;
+
+export const zSiteAnalyticsClicksByLinkPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+export const zSiteAnalyticsClicksByLinkQuery = z.object({
+  range: z.exactOptional(zSiteAnalyticsRange)
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteAnalyticsClicksByLinkResponse = zSiteAnalyticsClicksByLink;
 
 export const zSiteAnalyticsNewPeoplePath = z.object({
   workspaceId: zWorkspaceId

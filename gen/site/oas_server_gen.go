@@ -8,6 +8,12 @@ import (
 
 // Handler handles operations described by OpenAPI v3 specification.
 type Handler interface {
+	// SiteAnalyticsClicksByLink implements SiteAnalytics_clicksByLink operation.
+	//
+	// Clicks by link over the whole workspace, split by the Broadcast or Automation that carried each link.
+	//
+	// GET /workspaces/{workspaceId}/analytics/clicks-by-link
+	SiteAnalyticsClicksByLink(ctx context.Context, params SiteAnalyticsClicksByLinkParams) (SiteAnalyticsClicksByLinkRes, error)
 	// SiteAnalyticsNewPeople implements SiteAnalytics_newPeople operation.
 	//
 	// New people report: Contacts created per Report day, split by Contact source.

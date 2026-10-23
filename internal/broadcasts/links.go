@@ -19,7 +19,7 @@ func (m *Module) LinkClicksOf(ctx context.Context, s *ent.Scoped, id int64) ([]l
 	if _, err := m.Get(ctx, s, id); err != nil {
 		return nil, err
 	}
-	return linkclicks.ByLink(ctx, s, func(sel *sql.Selector) {
+	return linkclicks.ByLink(ctx, s, linkclicks.Between{}, func(sel *sql.Selector) {
 		sel.Where(sqljson.ValueEQ(event.FieldProperties, id, sqljson.Path("broadcastId")))
 	})
 }

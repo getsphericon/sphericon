@@ -93,43 +93,44 @@ type SystemMailEnqueuer interface {
 }
 
 type Handlers struct {
-	accounts       *accounts.Accounts
-	deletion       *workspacedeletion.Module
-	attempts       *accounts.Attempts
-	bus            *events.Bus
-	webhooks       *webhooks.Module
-	broadcasts     *broadcasts.Module
-	welcome        WelcomeEnqueuer
-	sysmail        SystemMailEnqueuer
-	sendingDomains *sendingdomains.Module
-	joinDomains    *joindomains.Module
-	integrations   *integrations.Module
-	tokens         *authtoken.Signer
-	tracker        *tracking.Tracker
-	appURL         string
-	outbound       *outbound.Module
-	segments       *segments.Module
-	eventlog       *eventlog.Module
-	contacts       *contacts.Module
-	erasure        *erasure.Module
-	tags           *tags.Module
-	templates      *templates.Module
-	brandKit       *brandkit.Module
-	automations    *automations.Module
-	rules          *rules.Module
-	oauth          *oauthserver.Service
-	audit          AuditLog
-	abuseWatch     AbuseWatch
-	supportEmail   string
-	analytics      *analytics.Module
-	sessions       *auth.Sessions
-	secondFactor   *secondfactor.Module
-	passkeys       *secondfactor.Passkeys
-	now            func() time.Time
-	accountLink    *accountlink.Link
-	instance       *instance.Module
-	holds          *holds.Holds
-	mcpURL         string
+	accounts        *accounts.Accounts
+	deletion        *workspacedeletion.Module
+	attempts        *accounts.Attempts
+	bus             *events.Bus
+	webhooks        *webhooks.Module
+	broadcasts      *broadcasts.Module
+	welcome         WelcomeEnqueuer
+	sysmail         SystemMailEnqueuer
+	sendingDomains  *sendingdomains.Module
+	joinDomains     *joindomains.Module
+	integrations    *integrations.Module
+	tokens          *authtoken.Signer
+	tracker         *tracking.Tracker
+	appURL          string
+	outbound        *outbound.Module
+	segments        *segments.Module
+	eventlog        *eventlog.Module
+	contacts        *contacts.Module
+	erasure         *erasure.Module
+	tags            *tags.Module
+	templates       *templates.Module
+	brandKit        *brandkit.Module
+	automations     *automations.Module
+	rules           *rules.Module
+	oauth           *oauthserver.Service
+	audit           AuditLog
+	abuseWatch      AbuseWatch
+	supportEmail    string
+	analytics       *analytics.Module
+	sessions        *auth.Sessions
+	secondFactor    *secondfactor.Module
+	passkeys        *secondfactor.Passkeys
+	now             func() time.Time
+	accountLink     *accountlink.Link
+	instance        *instance.Module
+	holds           *holds.Holds
+	mcpURL          string
+	eventsRetention time.Duration
 	// requireVerification is the email verification gate (ADR 0030): off only on an
 	// install that set SPHERICON_REQUIRE_EMAIL_VERIFICATION=false.
 	requireVerification bool
@@ -216,8 +217,10 @@ type Deps struct {
 	// SupportEmail is where a suspended Workspace's owner appeals (SPHERICON_SUPPORT_EMAIL).
 	SupportEmail string
 	// MCPURL is the public origin of the MCP endpoint (config.MCPOrigin).
-	MCPURL    string
-	Analytics *analytics.Module
+	MCPURL string
+	// EventsRetention is the configured Event retention (config.EventsRetention); 0 keeps Events forever.
+	EventsRetention time.Duration
+	Analytics       *analytics.Module
 	// Sessions issues the session cookie on login (ADR 0020). The composition
 	// root (server.New) builds it from the instance secret and SPHERICON_SESSION_TTL.
 	Sessions *auth.Sessions
@@ -258,7 +261,7 @@ func NewHandlers(d Deps) *Handlers {
 		segments: d.Segments, eventlog: d.EventLog, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, templates: d.Templates, brandKit: d.BrandKit,
 		automations: d.Automations, rules: d.Rules, broadcasts: d.Broadcasts, welcome: d.Welcome,
 		sysmail: d.SysMail, sendingDomains: d.SendingDomains, joinDomains: d.JoinDomains, integrations: d.Integrations, tokens: d.Tokens, tracker: d.Tracker, appURL: d.AppURL,
-		oauth: d.OAuth, audit: d.Audit, abuseWatch: d.AbuseWatch, supportEmail: d.SupportEmail, mcpURL: d.MCPURL, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, passkeys: d.Passkeys, now: now, instance: d.Instance, accountLink: d.AccountLink, holds: d.Holds, requireVerification: d.RequireEmailVerification, signupOpen: d.SignupOpen, signupSurvey: d.SignupSurvey,
+		oauth: d.OAuth, audit: d.Audit, abuseWatch: d.AbuseWatch, supportEmail: d.SupportEmail, mcpURL: d.MCPURL, eventsRetention: d.EventsRetention, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, passkeys: d.Passkeys, now: now, instance: d.Instance, accountLink: d.AccountLink, holds: d.Holds, requireVerification: d.RequireEmailVerification, signupOpen: d.SignupOpen, signupSurvey: d.SignupSurvey,
 		signin:     d.Signin,
 		challenges: d.Tokens.WithClock(d.Clock),
 	}

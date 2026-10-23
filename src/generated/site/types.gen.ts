@@ -805,6 +805,22 @@ export type SiteAnalyticsAutomations = {
 };
 
 /**
+ * The Clicks by link report
+ */
+export type SiteAnalyticsClicksByLink = {
+  /**
+   * Each link with clicks in the range, most clicked first; machine clicks are left out
+   */
+  links: Array<SiteAnalyticsLink>;
+  /**
+   * The configured Event retention in days (SPHERICON_EVENTS_RETENTION_DAYS); 0 means Events
+   * are kept forever. Clicks are Events, so a range longer than this is counted only over the
+   * retained days.
+   */
+  eventsRetentionDays: number;
+};
+
+/**
  * Current contact counts (point-in-time snapshot, not range-scoped)
  */
 export type SiteAnalyticsContacts = {
@@ -859,6 +875,46 @@ export type SiteAnalyticsEmail = {
 };
 
 /**
+ * One clicked link with its clicks in the range, split by the Broadcast or Automation that carried it
+ */
+export type SiteAnalyticsLink = {
+  /**
+   * The link's destination URL
+   */
+  url: string;
+  /**
+   * Human clicks on the link during the range (every click counted, not unique per contact)
+   */
+  clicks: number;
+  /**
+   * Where the clicks came from, most clicked first
+   */
+  owners: Array<SiteAnalyticsLinkOwner>;
+};
+
+/**
+ * The clicks of one link in the emails of one Broadcast or Automation
+ */
+export type SiteAnalyticsLinkOwner = {
+  /**
+   * Whether the Broadcast report or the Automation report is the one to open
+   */
+  kind: SiteAnalyticsOwnerKind;
+  /**
+   * The Broadcast's or Automation's id
+   */
+  id: EntityId;
+  /**
+   * The Broadcast's or Automation's name
+   */
+  name: string;
+  /**
+   * Human clicks on the link in its emails during the range
+   */
+  clicks: number;
+};
+
+/**
  * Workspace analytics overview powering the dashboard
  */
 export type SiteAnalyticsOverview = {
@@ -875,6 +931,16 @@ export type SiteAnalyticsOverview = {
    */
   abuseWarning?: SiteAbuseWarning | null;
 };
+
+/**
+ * What carried a clicked link: a Broadcast or an Automation
+ */
+export const SiteAnalyticsOwnerKind = { BROADCAST: 'broadcast', AUTOMATION: 'automation' } as const;
+
+/**
+ * What carried a clicked link: a Broadcast or an Automation
+ */
+export type SiteAnalyticsOwnerKind = typeof SiteAnalyticsOwnerKind[keyof typeof SiteAnalyticsOwnerKind];
 
 /**
  * One UTC send-day of the cohort, zero-filled across the range. Opened/clicked
@@ -6750,6 +6816,38 @@ export type SiteWorkspacesAccountLinkResponses = {
 };
 
 export type SiteWorkspacesAccountLinkResponse = SiteWorkspacesAccountLinkResponses[keyof SiteWorkspacesAccountLinkResponses];
+
+export type SiteAnalyticsClicksByLinkData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: {
+    /**
+     * Window to aggregate over (defaults to 30d)
+     */
+    range?: SiteAnalyticsRange;
+  };
+  url: '/workspaces/{workspaceId}/analytics/clicks-by-link';
+};
+
+export type SiteAnalyticsClicksByLinkErrors = {
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteAnalyticsClicksByLinkError = SiteAnalyticsClicksByLinkErrors[keyof SiteAnalyticsClicksByLinkErrors];
+
+export type SiteAnalyticsClicksByLinkResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteAnalyticsClicksByLink;
+};
+
+export type SiteAnalyticsClicksByLinkResponse = SiteAnalyticsClicksByLinkResponses[keyof SiteAnalyticsClicksByLinkResponses];
 
 export type SiteAnalyticsNewPeopleData = {
   body?: never;

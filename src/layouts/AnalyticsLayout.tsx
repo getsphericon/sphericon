@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { NavLinkLink } from '../components/RouterLink.tsx'
 import { zSiteAnalyticsRange } from '../generated/site/zod.gen.ts'
 import { useAnalyticsRange } from '../hooks/useAnalyticsRange.ts'
+import { Route as clicksByLinkRoute } from '../routes/workspaces/$workspaceId/analytics/clicks-by-link.tsx'
 import { Route as emailMetricsRoute } from '../routes/workspaces/$workspaceId/analytics/email-metrics.tsx'
 import { Route as newPeopleRoute } from '../routes/workspaces/$workspaceId/analytics/new-people.tsx'
 import { Route as recentActivityRoute } from '../routes/workspaces/$workspaceId/analytics/recent-activity.tsx'
@@ -32,7 +33,10 @@ export function AnalyticsLayout() {
     },
     {
       label: t(($) => $.analytics.nav.email),
-      items: [{ route: emailMetricsRoute, label: t(($) => $.analytics.nav.emailMetrics) }],
+      items: [
+        { route: emailMetricsRoute, label: t(($) => $.analytics.nav.emailMetrics) },
+        { route: clicksByLinkRoute, label: t(($) => $.analytics.nav.clicksByLink) },
+      ],
     },
     {
       label: t(($) => $.analytics.nav.tracking),

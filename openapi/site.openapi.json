@@ -3419,6 +3419,55 @@
         "tags": ["Site Workspaces"]
       }
     },
+    "/workspaces/{workspaceId}/analytics/clicks-by-link": {
+      "get": {
+        "operationId": "SiteAnalytics_clicksByLink",
+        "description": "Clicks by link over the whole workspace, split by the Broadcast or Automation that carried each link",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          },
+          {
+            "name": "range",
+            "in": "query",
+            "required": false,
+            "description": "Window to aggregate over (defaults to 30d)",
+            "schema": {
+              "$ref": "#/components/schemas/SiteAnalyticsRange"
+            },
+            "explode": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteAnalyticsClicksByLink"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Analytics"]
+      }
+    },
     "/workspaces/{workspaceId}/analytics/new-people": {
       "get": {
         "operationId": "SiteAnalytics_newPeople",
@@ -12639,6 +12688,25 @@
         },
         "description": "Automation counts (point-in-time snapshot)"
       },
+      "SiteAnalyticsClicksByLink": {
+        "type": "object",
+        "required": ["links", "eventsRetentionDays"],
+        "properties": {
+          "links": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteAnalyticsLink"
+            },
+            "description": "Each link with clicks in the range, most clicked first; machine clicks are left out"
+          },
+          "eventsRetentionDays": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The configured Event retention in days (SPHERICON_EVENTS_RETENTION_DAYS); 0 means Events\nare kept forever. Clicks are Events, so a range longer than this is counted only over the\nretained days."
+          }
+        },
+        "description": "The Clicks by link report"
+      },
       "SiteAnalyticsContacts": {
         "type": "object",
         "required": ["total", "active", "unsubscribed", "newInRange"],
@@ -12710,6 +12778,61 @@
         },
         "description": "Email engagement for the messages sent in the selected range (the send\ncohort), from delivery logs. Opens/clicks are counted among that cohort, so\nthe counts reconcile and the rates stay in [0,1]."
       },
+      "SiteAnalyticsLink": {
+        "type": "object",
+        "required": ["url", "clicks", "owners"],
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "The link's destination URL"
+          },
+          "clicks": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Human clicks on the link during the range (every click counted, not unique per contact)"
+          },
+          "owners": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteAnalyticsLinkOwner"
+            },
+            "description": "Where the clicks came from, most clicked first"
+          }
+        },
+        "description": "One clicked link with its clicks in the range, split by the Broadcast or Automation that carried it"
+      },
+      "SiteAnalyticsLinkOwner": {
+        "type": "object",
+        "required": ["kind", "id", "name", "clicks"],
+        "properties": {
+          "kind": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteAnalyticsOwnerKind"
+              }
+            ],
+            "description": "Whether the Broadcast report or the Automation report is the one to open"
+          },
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "The Broadcast's or Automation's id"
+          },
+          "name": {
+            "type": "string",
+            "description": "The Broadcast's or Automation's name"
+          },
+          "clicks": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Human clicks on the link in its emails during the range"
+          }
+        },
+        "description": "The clicks of one link in the emails of one Broadcast or Automation"
+      },
       "SiteAnalyticsOverview": {
         "type": "object",
         "required": ["contacts", "email", "automations", "timeseries"],
@@ -12742,6 +12865,11 @@
           }
         },
         "description": "Workspace analytics overview powering the dashboard"
+      },
+      "SiteAnalyticsOwnerKind": {
+        "type": "string",
+        "enum": ["broadcast", "automation"],
+        "description": "What carried a clicked link: a Broadcast or an Automation"
       },
       "SiteAnalyticsPoint": {
         "type": "object",

@@ -697,6 +697,14 @@ const (
 	EventGothamUnsubscribedOnThe8thEmail = "e@gotham.test"
 	// EventGothamUnsubscribedOnThe8thID is from fixtures/events.
 	EventGothamUnsubscribedOnThe8thID = 9304
+	// EventLinkClickBroadcastPricingAction is from fixtures/events.
+	EventLinkClickBroadcastPricingAction = "email.clicked"
+	// EventLinkClickBroadcastPricingID is from fixtures/events.
+	EventLinkClickBroadcastPricingID = 9320
+	// EventLinkClickMachineAction is from fixtures/events.
+	EventLinkClickMachineAction = "email.clicked"
+	// EventLinkClickMachineID is from fixtures/events.
+	EventLinkClickMachineID = 9323
 	// EventOldAnalyticalAction is from fixtures/events.
 	EventOldAnalyticalAction = "page_view"
 	// EventOldAnalyticalEmail is from fixtures/events.

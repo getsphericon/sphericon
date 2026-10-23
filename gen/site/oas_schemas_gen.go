@@ -5567,6 +5567,7 @@ func (s *ProblemDetails) SetDebug(val OptProblemDebug) {
 	s.Debug = val
 }
 
+func (*ProblemDetails) siteAnalyticsClicksByLinkRes()          {}
 func (*ProblemDetails) siteAnalyticsNewPeopleRes()             {}
 func (*ProblemDetails) siteAnalyticsOverviewRes()              {}
 func (*ProblemDetails) siteAnalyticsSubscribedPeopleRes()      {}
@@ -5988,6 +5989,38 @@ func (s *SiteAnalyticsAutomations) SetRunsCompleted(val int32) {
 	s.RunsCompleted = val
 }
 
+// The Clicks by link report.
+// Ref: #/components/schemas/SiteAnalyticsClicksByLink
+type SiteAnalyticsClicksByLink struct {
+	// Each link with clicks in the range, most clicked first; machine clicks are left out.
+	Links []SiteAnalyticsLink `json:"links"`
+	// The configured Event retention in days (SPHERICON_EVENTS_RETENTION_DAYS); 0 means Events are kept
+	// forever. Clicks are Events, so a range longer than this is counted only over the retained days.
+	EventsRetentionDays int32 `json:"eventsRetentionDays"`
+}
+
+// GetLinks returns the value of Links.
+func (s *SiteAnalyticsClicksByLink) GetLinks() []SiteAnalyticsLink {
+	return s.Links
+}
+
+// GetEventsRetentionDays returns the value of EventsRetentionDays.
+func (s *SiteAnalyticsClicksByLink) GetEventsRetentionDays() int32 {
+	return s.EventsRetentionDays
+}
+
+// SetLinks sets the value of Links.
+func (s *SiteAnalyticsClicksByLink) SetLinks(val []SiteAnalyticsLink) {
+	s.Links = val
+}
+
+// SetEventsRetentionDays sets the value of EventsRetentionDays.
+func (s *SiteAnalyticsClicksByLink) SetEventsRetentionDays(val int32) {
+	s.EventsRetentionDays = val
+}
+
+func (*SiteAnalyticsClicksByLink) siteAnalyticsClicksByLinkRes() {}
+
 // Current contact counts (point-in-time snapshot, not range-scoped).
 // Ref: #/components/schemas/SiteAnalyticsContacts
 type SiteAnalyticsContacts struct {
@@ -6119,6 +6152,100 @@ func (s *SiteAnalyticsEmail) SetClickToOpenRate(val float32) {
 	s.ClickToOpenRate = val
 }
 
+// One clicked link with its clicks in the range, split by the Broadcast or Automation that carried it.
+// Ref: #/components/schemas/SiteAnalyticsLink
+type SiteAnalyticsLink struct {
+	// The link's destination URL.
+	URL string `json:"url"`
+	// Human clicks on the link during the range (every click counted, not unique per contact).
+	Clicks int32 `json:"clicks"`
+	// Where the clicks came from, most clicked first.
+	Owners []SiteAnalyticsLinkOwner `json:"owners"`
+}
+
+// GetURL returns the value of URL.
+func (s *SiteAnalyticsLink) GetURL() string {
+	return s.URL
+}
+
+// GetClicks returns the value of Clicks.
+func (s *SiteAnalyticsLink) GetClicks() int32 {
+	return s.Clicks
+}
+
+// GetOwners returns the value of Owners.
+func (s *SiteAnalyticsLink) GetOwners() []SiteAnalyticsLinkOwner {
+	return s.Owners
+}
+
+// SetURL sets the value of URL.
+func (s *SiteAnalyticsLink) SetURL(val string) {
+	s.URL = val
+}
+
+// SetClicks sets the value of Clicks.
+func (s *SiteAnalyticsLink) SetClicks(val int32) {
+	s.Clicks = val
+}
+
+// SetOwners sets the value of Owners.
+func (s *SiteAnalyticsLink) SetOwners(val []SiteAnalyticsLinkOwner) {
+	s.Owners = val
+}
+
+// The clicks of one link in the emails of one Broadcast or Automation.
+// Ref: #/components/schemas/SiteAnalyticsLinkOwner
+type SiteAnalyticsLinkOwner struct {
+	// Whether the Broadcast report or the Automation report is the one to open.
+	Kind SiteAnalyticsOwnerKind `json:"kind"`
+	// The Broadcast's or Automation's id.
+	ID EntityId `json:"id"`
+	// The Broadcast's or Automation's name.
+	Name string `json:"name"`
+	// Human clicks on the link in its emails during the range.
+	Clicks int32 `json:"clicks"`
+}
+
+// GetKind returns the value of Kind.
+func (s *SiteAnalyticsLinkOwner) GetKind() SiteAnalyticsOwnerKind {
+	return s.Kind
+}
+
+// GetID returns the value of ID.
+func (s *SiteAnalyticsLinkOwner) GetID() EntityId {
+	return s.ID
+}
+
+// GetName returns the value of Name.
+func (s *SiteAnalyticsLinkOwner) GetName() string {
+	return s.Name
+}
+
+// GetClicks returns the value of Clicks.
+func (s *SiteAnalyticsLinkOwner) GetClicks() int32 {
+	return s.Clicks
+}
+
+// SetKind sets the value of Kind.
+func (s *SiteAnalyticsLinkOwner) SetKind(val SiteAnalyticsOwnerKind) {
+	s.Kind = val
+}
+
+// SetID sets the value of ID.
+func (s *SiteAnalyticsLinkOwner) SetID(val EntityId) {
+	s.ID = val
+}
+
+// SetName sets the value of Name.
+func (s *SiteAnalyticsLinkOwner) SetName(val string) {
+	s.Name = val
+}
+
+// SetClicks sets the value of Clicks.
+func (s *SiteAnalyticsLinkOwner) SetClicks(val int32) {
+	s.Clicks = val
+}
+
 // Workspace analytics overview powering the dashboard.
 // Ref: #/components/schemas/SiteAnalyticsOverview
 type SiteAnalyticsOverview struct {
@@ -6183,6 +6310,49 @@ func (s *SiteAnalyticsOverview) SetAbuseWarning(val OptNilSiteAbuseWarning) {
 }
 
 func (*SiteAnalyticsOverview) siteAnalyticsOverviewRes() {}
+
+// What carried a clicked link: a Broadcast or an Automation.
+// Ref: #/components/schemas/SiteAnalyticsOwnerKind
+type SiteAnalyticsOwnerKind string
+
+const (
+	SiteAnalyticsOwnerKindBroadcast  SiteAnalyticsOwnerKind = "broadcast"
+	SiteAnalyticsOwnerKindAutomation SiteAnalyticsOwnerKind = "automation"
+)
+
+// AllValues returns all SiteAnalyticsOwnerKind values.
+func (SiteAnalyticsOwnerKind) AllValues() []SiteAnalyticsOwnerKind {
+	return []SiteAnalyticsOwnerKind{
+		SiteAnalyticsOwnerKindBroadcast,
+		SiteAnalyticsOwnerKindAutomation,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteAnalyticsOwnerKind) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteAnalyticsOwnerKindBroadcast:
+		return []byte(s), nil
+	case SiteAnalyticsOwnerKindAutomation:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteAnalyticsOwnerKind) UnmarshalText(data []byte) error {
+	switch SiteAnalyticsOwnerKind(data) {
+	case SiteAnalyticsOwnerKindBroadcast:
+		*s = SiteAnalyticsOwnerKindBroadcast
+		return nil
+	case SiteAnalyticsOwnerKindAutomation:
+		*s = SiteAnalyticsOwnerKindAutomation
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
 
 // One UTC send-day of the cohort, zero-filled across the range. Opened/clicked count the messages sent
 // that day that were later opened/clicked.
