@@ -86,21 +86,31 @@ CI installs the same toolchain with `jdx/mise-action` and runs the same mise tas
 ### Dev accounts
 
 `mise run setup` seeds the dev database with the same `fixtures/*.yml` the tests use, so a
-fresh checkout already has a populated Workspace, **Acme** (`/w/acme`: contacts, events,
-broadcasts, automations, segments, templates, integrations). The other Workspaces (Globex,
-Initech, Umbrella, …) exist for isolation and edge-case tests and are mostly empty. These
-are development fixtures only; never reuse the credentials anywhere else.
+fresh checkout already has a populated Workspace, **Brightpath** (an online course school with
+contacts, events, broadcasts, automations, segments, templates and integrations). Acme and the
+other Workspaces (Globex, Initech, Umbrella, …) exist for isolation and edge-case tests. Brightpath's
+default Integration is SMTP to the dev Mailpit, so a broadcast or automation sent from it shows up
+in the Mailpit UI. These are development fixtures only; never reuse the credentials anywhere else.
 
 Sign in at `https://sphericon.localhost/login`:
 
-| Role   | Workspace | Email                   | Password   |
-| ------ | --------- | ----------------------- | ---------- |
-| owner  | Acme      | `info@getsphericon.com` | `password` |
-| admin  | Acme      | `alice@acme.test`       | `password` |
-| member | Acme      | `mary@acme.test`        | `password` |
-| owner  | Globex    | `jane@globex.test`      | `password` |
+| Role   | Workspace  | Email                     | Password   |
+| ------ | ---------- | ------------------------- | ---------- |
+| owner  | Brightpath | `maya@brightpath.example` | `password` |
+| admin  | Brightpath | `ana@brightpath.example`  | `password` |
+| member | Brightpath | `milo@brightpath.example` | `password` |
+| owner  | Acme       | `info@getsphericon.com`   | `password` |
+| admin  | Acme       | `alice@acme.test`         | `password` |
+| member | Acme       | `mary@acme.test`          | `password` |
+| owner  | Globex     | `jane@globex.test`        | `password` |
 
-Acme has all three roles, so one Workspace is enough for development. `sam@globex.test` / `password` has a TOTP Second factor, secret `JBSWY3DPEHPK3PXP`.
+Brightpath has all three roles, so one Workspace is enough for development. `sam@globex.test` / `password` has a TOTP Second factor, secret `JBSWY3DPEHPK3PXP`.
+
+Brightpath's Mailpit Integration sends to `127.0.0.1:1025`, the primary checkout's SMTP port. A
+linked worktree's Mailpit SMTP port is offset (`SPHERICON_SMTP_PORT`) and a fixture cannot follow
+it, because fixtures also load in tests: change the Integration's port in its settings there.
+Brightpath's Sending domains have no serving Tracking domain in dev, so links in dev mail use
+the app URL.
 
 The Staff console is at `https://sphericon.localhost/console` (Enterprise, license feature
 `staff`: without a license key it answers 404). Sign-in needs a password and a TOTP code:

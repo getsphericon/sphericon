@@ -94,3 +94,12 @@
   last_used_at: '{{hoursAgo 48}}'
   created_at: '{{hoursAgo 1440}}'
   updated_at: '{{hoursAgo 48}}'
+# The token the dev demo storefront's server uses: it writes events and Contacts, nothing else.
+- id: 20005
+  name: 'Demo site'
+  prefix: 'bp_demo_site001'
+  secret_hash: '{{bcryptHash "demo-token-secret"}}'
+  scopes: '["contacts:write","events:write"]'
+  workspace_id: 20
+  created_at: '{{hoursAgo 24}}'
+  updated_at: '{{hoursAgo 24}}'

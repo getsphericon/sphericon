@@ -153,6 +153,18 @@
   role: 'owner'
   created_at: '{{daysAgo 120}}'
   updated_at: '{{daysAgo 120}}'
+- id: 20001
+  user_id: 20001
+  workspace_id: 20
+  role: 'admin'
+  created_at: '{{daysAgo 118}}'
+  updated_at: '{{daysAgo 118}}'
+- id: 20002
+  user_id: 20002
+  workspace_id: 20
+  role: 'member'
+  created_at: '{{daysAgo 115}}'
+  updated_at: '{{daysAgo 115}}'
 
 # Pat (a Passkey, no Second factor) is a member of Globex.
 - id: 23 # fixture: GlobexPatMembership
