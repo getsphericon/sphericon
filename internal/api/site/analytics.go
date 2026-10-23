@@ -84,3 +84,26 @@ func (h *Handlers) abuseWarning(ctx context.Context, s *ent.Scoped) (siteapi.Opt
 		Domain: w.Domain, Metric: siteapi.SiteAbuseMetric(w.Metric), Rate: w.Rate,
 	}), nil
 }
+
+// SiteAnalyticsSubscribedPeople maps the Subscribed people report onto the DTO.
+func (h *Handlers) SiteAnalyticsSubscribedPeople(ctx context.Context, params siteapi.SiteAnalyticsSubscribedPeopleParams) (siteapi.SiteAnalyticsSubscribedPeopleRes, error) {
+	s, err := h.scopedFor(ctx, params.WorkspaceId)
+	if ent.IsNotFound(err) {
+		v := problem(http.StatusNotFound, "workspace not found")
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	report, err := h.analytics.SubscribedPeople(ctx, s, analyticsWindow(params.Range))
+	if err != nil {
+		return nil, err
+	}
+	series := make([]siteapi.SiteAnalyticsSubscribedPoint, len(report.Series))
+	for i, p := range report.Series {
+		series[i] = siteapi.SiteAnalyticsSubscribedPoint{
+			Date: p.Date, Subscribed: narrow.Int32(p.Subscribed), Unsubscribed: narrow.Int32(p.Unsubscribed), Net: narrow.Int32(p.Net),
+		}
+	}
+	return &siteapi.SiteAnalyticsSubscribedPeople{Current: narrow.Int32(report.Current), Series: series}, nil
+}

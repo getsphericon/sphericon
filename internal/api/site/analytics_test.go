@@ -56,3 +56,32 @@ func TestSiteAnalyticsOverviewMapsTheModule(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, res.(*siteapi.SiteAnalyticsOverview).Timeseries, 30, "30d is the default window")
 }
+
+func TestSubscribedPeopleRequiresAuth(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteAnonymous(t)
+
+	_, err := c.SiteAnalyticsSubscribedPeople(context.Background(), siteapi.SiteAnalyticsSubscribedPeopleParams{WorkspaceId: fixtures.AcmePublicID})
+	require.Error(t, err)
+}
+
+// The handler maps the module's report (rules are tested in internal/analytics).
+func TestSubscribedPeopleMapsTheModule(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	ctx := context.Background()
+
+	res, err := c.SiteAnalyticsSubscribedPeople(ctx, siteapi.SiteAnalyticsSubscribedPeopleParams{
+		WorkspaceId: fixtures.AcmePublicID,
+		Range:       siteapi.NewOptSiteAnalyticsRange(siteapi.SiteAnalyticsRange7d),
+	})
+	require.NoError(t, err)
+	report, ok := res.(*siteapi.SiteAnalyticsSubscribedPeople)
+	require.Truef(t, ok, "got %T", res)
+
+	assert.Len(t, report.Series, 7)
+	assert.Positive(t, report.Current)
+	for _, p := range report.Series {
+		assert.Equal(t, p.Subscribed-p.Unsubscribed, p.Net)
+	}
+}

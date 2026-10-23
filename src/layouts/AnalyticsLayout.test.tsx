@@ -5,6 +5,7 @@ import { Route as emailMetricsRoute } from '../routes/workspaces/$workspaceId/an
 import { Route as newPeopleRoute } from '../routes/workspaces/$workspaceId/analytics/new-people.tsx'
 import { Route as recentActivityRoute } from '../routes/workspaces/$workspaceId/analytics/recent-activity.tsx'
 import { Route as analyticsRoute } from '../routes/workspaces/$workspaceId/analytics/route.tsx'
+import { Route as subscribedPeopleRoute } from '../routes/workspaces/$workspaceId/analytics/subscribed-people.tsx'
 import { renderWithRouter } from '../test/renderWithRouter.tsx'
 import { routeMount } from '../test/routeMount.ts'
 import { AnalyticsLayout } from './AnalyticsLayout.tsx'
@@ -25,6 +26,9 @@ test('the menu lists the reports under their groups, each on its own URL', async
   await expect
     .element(screen.getByRole('link', { name: 'New people' }))
     .toHaveAttribute('href', `${reportPath(newPeopleRoute)}?range=30d`)
+  await expect
+    .element(screen.getByRole('link', { name: 'Subscribed people' }))
+    .toHaveAttribute('href', `${reportPath(subscribedPeopleRoute)}?range=30d`)
   await expect
     .element(screen.getByRole('link', { name: 'Email metrics' }))
     .toHaveAttribute('href', `${reportPath(emailMetricsRoute)}?range=30d`)

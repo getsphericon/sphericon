@@ -914,6 +914,43 @@ export const SiteAnalyticsRange = {
 export type SiteAnalyticsRange = typeof SiteAnalyticsRange[keyof typeof SiteAnalyticsRange];
 
 /**
+ * The Subscribed people report: the daily flow plus the current number, which is read from
+ * current state and is never reconstructed from the flow
+ */
+export type SiteAnalyticsSubscribedPeople = {
+  /**
+   * Contacts that are not globally opted out of email now
+   */
+  current: number;
+  /**
+   * Daily flow, oldest first, one point per Report day in the range
+   */
+  series: Array<SiteAnalyticsSubscribedPoint>;
+};
+
+/**
+ * One Report day of the Subscribed people report, zero-filled across the range
+ */
+export type SiteAnalyticsSubscribedPoint = {
+  /**
+   * Report day, YYYY-MM-DD in the Workspace time zone
+   */
+  date: string;
+  /**
+   * People who subscribed that day (marketing.confirmed events)
+   */
+  subscribed: number;
+  /**
+   * People who unsubscribed that day (email.unsubscribed events)
+   */
+  unsubscribed: number;
+  /**
+   * Subscribed minus unsubscribed; negative when more people left than joined
+   */
+  net: number;
+};
+
+/**
  * A workspace API token (secret shown only once, at creation)
  */
 export type SiteApiTokenResource = {
@@ -6777,6 +6814,38 @@ export type SiteAnalyticsOverviewResponses = {
 };
 
 export type SiteAnalyticsOverviewResponse = SiteAnalyticsOverviewResponses[keyof SiteAnalyticsOverviewResponses];
+
+export type SiteAnalyticsSubscribedPeopleData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: {
+    /**
+     * Window to report over (defaults to 30d)
+     */
+    range?: SiteAnalyticsRange;
+  };
+  url: '/workspaces/{workspaceId}/analytics/subscribed-people';
+};
+
+export type SiteAnalyticsSubscribedPeopleErrors = {
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteAnalyticsSubscribedPeopleError = SiteAnalyticsSubscribedPeopleErrors[keyof SiteAnalyticsSubscribedPeopleErrors];
+
+export type SiteAnalyticsSubscribedPeopleResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteAnalyticsSubscribedPeople;
+};
+
+export type SiteAnalyticsSubscribedPeopleResponse = SiteAnalyticsSubscribedPeopleResponses[keyof SiteAnalyticsSubscribedPeopleResponses];
 
 export type SiteAuditListData = {
   body?: never;

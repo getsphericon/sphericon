@@ -8,6 +8,7 @@ type OperationName = string
 const (
 	SiteAnalyticsNewPeopleOperation                   OperationName = "SiteAnalyticsNewPeople"
 	SiteAnalyticsOverviewOperation                    OperationName = "SiteAnalyticsOverview"
+	SiteAnalyticsSubscribedPeopleOperation            OperationName = "SiteAnalyticsSubscribedPeople"
 	SiteAuditExportOperation                          OperationName = "SiteAuditExport"
 	SiteAuditGetRetentionOperation                    OperationName = "SiteAuditGetRetention"
 	SiteAuditListOperation                            OperationName = "SiteAuditList"

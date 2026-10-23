@@ -20,6 +20,13 @@ type Handler interface {
 	//
 	// GET /workspaces/{workspaceId}/analytics/overview
 	SiteAnalyticsOverview(ctx context.Context, params SiteAnalyticsOverviewParams) (SiteAnalyticsOverviewRes, error)
+	// SiteAnalyticsSubscribedPeople implements SiteAnalytics_subscribedPeople operation.
+	//
+	// Subscribed people report: who subscribed and unsubscribed per Report day, and how many are
+	// subscribed now.
+	//
+	// GET /workspaces/{workspaceId}/analytics/subscribed-people
+	SiteAnalyticsSubscribedPeople(ctx context.Context, params SiteAnalyticsSubscribedPeopleParams) (SiteAnalyticsSubscribedPeopleRes, error)
 	// SiteAuditExport implements SiteAudit_export operation.
 	//
 	// Export the Audit log as CSV, newest first, narrowed by the same filter as the list (Enterprise;

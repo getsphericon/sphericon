@@ -36,6 +36,7 @@ func findAuthorization(h http.Header, prefix string) (string, bool) {
 var operationRolesApiKeyAuth = map[string][]string{
 	SiteAnalyticsNewPeopleOperation:                   []string{},
 	SiteAnalyticsOverviewOperation:                    []string{},
+	SiteAnalyticsSubscribedPeopleOperation:            []string{},
 	SiteAuditExportOperation:                          []string{},
 	SiteAuditGetRetentionOperation:                    []string{},
 	SiteAuditListOperation:                            []string{},

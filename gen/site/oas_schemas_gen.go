@@ -5569,6 +5569,7 @@ func (s *ProblemDetails) SetDebug(val OptProblemDebug) {
 
 func (*ProblemDetails) siteAnalyticsNewPeopleRes()             {}
 func (*ProblemDetails) siteAnalyticsOverviewRes()              {}
+func (*ProblemDetails) siteAnalyticsSubscribedPeopleRes()      {}
 func (*ProblemDetails) siteAuthConfirmEmailChangeRes()         {}
 func (*ProblemDetails) siteAuthSecondFactorRes()               {}
 func (*ProblemDetails) siteAuthSigninNotMeRes()                {}
@@ -6285,6 +6286,91 @@ func (s *SiteAnalyticsRange) UnmarshalText(data []byte) error {
 	default:
 		return errors.Errorf("invalid value: %q", data)
 	}
+}
+
+// The Subscribed people report: the daily flow plus the current number, which is read from current
+// state and is never reconstructed from the flow.
+// Ref: #/components/schemas/SiteAnalyticsSubscribedPeople
+type SiteAnalyticsSubscribedPeople struct {
+	// Contacts that are not globally opted out of email now.
+	Current int32 `json:"current"`
+	// Daily flow, oldest first, one point per Report day in the range.
+	Series []SiteAnalyticsSubscribedPoint `json:"series"`
+}
+
+// GetCurrent returns the value of Current.
+func (s *SiteAnalyticsSubscribedPeople) GetCurrent() int32 {
+	return s.Current
+}
+
+// GetSeries returns the value of Series.
+func (s *SiteAnalyticsSubscribedPeople) GetSeries() []SiteAnalyticsSubscribedPoint {
+	return s.Series
+}
+
+// SetCurrent sets the value of Current.
+func (s *SiteAnalyticsSubscribedPeople) SetCurrent(val int32) {
+	s.Current = val
+}
+
+// SetSeries sets the value of Series.
+func (s *SiteAnalyticsSubscribedPeople) SetSeries(val []SiteAnalyticsSubscribedPoint) {
+	s.Series = val
+}
+
+func (*SiteAnalyticsSubscribedPeople) siteAnalyticsSubscribedPeopleRes() {}
+
+// One Report day of the Subscribed people report, zero-filled across the range.
+// Ref: #/components/schemas/SiteAnalyticsSubscribedPoint
+type SiteAnalyticsSubscribedPoint struct {
+	// Report day, YYYY-MM-DD in the Workspace time zone.
+	Date string `json:"date"`
+	// People who subscribed that day (marketing.confirmed events).
+	Subscribed int32 `json:"subscribed"`
+	// People who unsubscribed that day (email.unsubscribed events).
+	Unsubscribed int32 `json:"unsubscribed"`
+	// Subscribed minus unsubscribed; negative when more people left than joined.
+	Net int32 `json:"net"`
+}
+
+// GetDate returns the value of Date.
+func (s *SiteAnalyticsSubscribedPoint) GetDate() string {
+	return s.Date
+}
+
+// GetSubscribed returns the value of Subscribed.
+func (s *SiteAnalyticsSubscribedPoint) GetSubscribed() int32 {
+	return s.Subscribed
+}
+
+// GetUnsubscribed returns the value of Unsubscribed.
+func (s *SiteAnalyticsSubscribedPoint) GetUnsubscribed() int32 {
+	return s.Unsubscribed
+}
+
+// GetNet returns the value of Net.
+func (s *SiteAnalyticsSubscribedPoint) GetNet() int32 {
+	return s.Net
+}
+
+// SetDate sets the value of Date.
+func (s *SiteAnalyticsSubscribedPoint) SetDate(val string) {
+	s.Date = val
+}
+
+// SetSubscribed sets the value of Subscribed.
+func (s *SiteAnalyticsSubscribedPoint) SetSubscribed(val int32) {
+	s.Subscribed = val
+}
+
+// SetUnsubscribed sets the value of Unsubscribed.
+func (s *SiteAnalyticsSubscribedPoint) SetUnsubscribed(val int32) {
+	s.Unsubscribed = val
+}
+
+// SetNet sets the value of Net.
+func (s *SiteAnalyticsSubscribedPoint) SetNet(val int32) {
+	s.Net = val
 }
 
 // A workspace API token (secret shown only once, at creation).

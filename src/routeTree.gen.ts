@@ -43,6 +43,7 @@ import { Route as WorkspacesWorkspaceIdAnalyticsIndexRouteImport } from './route
 import { Route as WorkspacesWorkspaceIdAnalyticsEmailMetricsRouteImport } from './routes/workspaces/$workspaceId/analytics/email-metrics'
 import { Route as WorkspacesWorkspaceIdAnalyticsNewPeopleRouteImport } from './routes/workspaces/$workspaceId/analytics/new-people'
 import { Route as WorkspacesWorkspaceIdAnalyticsRecentActivityRouteImport } from './routes/workspaces/$workspaceId/analytics/recent-activity'
+import { Route as WorkspacesWorkspaceIdAnalyticsSubscribedPeopleRouteImport } from './routes/workspaces/$workspaceId/analytics/subscribed-people'
 import { Route as WorkspacesWorkspaceIdAutomationsIndexRouteImport } from './routes/workspaces/$workspaceId/automations/index'
 import { Route as WorkspacesWorkspaceIdBroadcastsIndexRouteImport } from './routes/workspaces/$workspaceId/broadcasts/index'
 import { Route as WorkspacesWorkspaceIdBroadcastsNewRouteImport } from './routes/workspaces/$workspaceId/broadcasts/new'
@@ -301,6 +302,16 @@ const WorkspacesWorkspaceIdAnalyticsRecentActivityRoute =
     getParentRoute: () => WorkspacesWorkspaceIdAnalyticsRouteRoute,
   } as any).lazy(() =>
     import('./routes/workspaces/$workspaceId/analytics/recent-activity.lazy').then(
+      (d) => d.Route,
+    ),
+  )
+const WorkspacesWorkspaceIdAnalyticsSubscribedPeopleRoute =
+  WorkspacesWorkspaceIdAnalyticsSubscribedPeopleRouteImport.update({
+    id: '/subscribed-people',
+    path: '/subscribed-people',
+    getParentRoute: () => WorkspacesWorkspaceIdAnalyticsRouteRoute,
+  } as any).lazy(() =>
+    import('./routes/workspaces/$workspaceId/analytics/subscribed-people.lazy').then(
       (d) => d.Route,
     ),
   )
@@ -668,6 +679,7 @@ export interface FileRoutesByFullPath {
   '/workspaces/$workspaceId/analytics/email-metrics': typeof WorkspacesWorkspaceIdAnalyticsEmailMetricsRoute
   '/workspaces/$workspaceId/analytics/new-people': typeof WorkspacesWorkspaceIdAnalyticsNewPeopleRoute
   '/workspaces/$workspaceId/analytics/recent-activity': typeof WorkspacesWorkspaceIdAnalyticsRecentActivityRoute
+  '/workspaces/$workspaceId/analytics/subscribed-people': typeof WorkspacesWorkspaceIdAnalyticsSubscribedPeopleRoute
   '/workspaces/$workspaceId/broadcasts/new': typeof WorkspacesWorkspaceIdBroadcastsNewRoute
   '/workspaces/$workspaceId/rules/new': typeof WorkspacesWorkspaceIdRulesNewRoute
   '/workspaces/$workspaceId/segments/new': typeof WorkspacesWorkspaceIdSegmentsNewRoute
@@ -731,6 +743,7 @@ export interface FileRoutesByTo {
   '/workspaces/$workspaceId/analytics/email-metrics': typeof WorkspacesWorkspaceIdAnalyticsEmailMetricsRoute
   '/workspaces/$workspaceId/analytics/new-people': typeof WorkspacesWorkspaceIdAnalyticsNewPeopleRoute
   '/workspaces/$workspaceId/analytics/recent-activity': typeof WorkspacesWorkspaceIdAnalyticsRecentActivityRoute
+  '/workspaces/$workspaceId/analytics/subscribed-people': typeof WorkspacesWorkspaceIdAnalyticsSubscribedPeopleRoute
   '/workspaces/$workspaceId/broadcasts/new': typeof WorkspacesWorkspaceIdBroadcastsNewRoute
   '/workspaces/$workspaceId/rules/new': typeof WorkspacesWorkspaceIdRulesNewRoute
   '/workspaces/$workspaceId/segments/new': typeof WorkspacesWorkspaceIdSegmentsNewRoute
@@ -801,6 +814,7 @@ export interface FileRoutesById {
   '/workspaces/$workspaceId/analytics/email-metrics': typeof WorkspacesWorkspaceIdAnalyticsEmailMetricsRoute
   '/workspaces/$workspaceId/analytics/new-people': typeof WorkspacesWorkspaceIdAnalyticsNewPeopleRoute
   '/workspaces/$workspaceId/analytics/recent-activity': typeof WorkspacesWorkspaceIdAnalyticsRecentActivityRoute
+  '/workspaces/$workspaceId/analytics/subscribed-people': typeof WorkspacesWorkspaceIdAnalyticsSubscribedPeopleRoute
   '/workspaces/$workspaceId/broadcasts/new': typeof WorkspacesWorkspaceIdBroadcastsNewRoute
   '/workspaces/$workspaceId/rules/new': typeof WorkspacesWorkspaceIdRulesNewRoute
   '/workspaces/$workspaceId/segments/new': typeof WorkspacesWorkspaceIdSegmentsNewRoute
@@ -871,6 +885,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/analytics/email-metrics'
     | '/workspaces/$workspaceId/analytics/new-people'
     | '/workspaces/$workspaceId/analytics/recent-activity'
+    | '/workspaces/$workspaceId/analytics/subscribed-people'
     | '/workspaces/$workspaceId/broadcasts/new'
     | '/workspaces/$workspaceId/rules/new'
     | '/workspaces/$workspaceId/segments/new'
@@ -934,6 +949,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/analytics/email-metrics'
     | '/workspaces/$workspaceId/analytics/new-people'
     | '/workspaces/$workspaceId/analytics/recent-activity'
+    | '/workspaces/$workspaceId/analytics/subscribed-people'
     | '/workspaces/$workspaceId/broadcasts/new'
     | '/workspaces/$workspaceId/rules/new'
     | '/workspaces/$workspaceId/segments/new'
@@ -1003,6 +1019,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/analytics/email-metrics'
     | '/workspaces/$workspaceId/analytics/new-people'
     | '/workspaces/$workspaceId/analytics/recent-activity'
+    | '/workspaces/$workspaceId/analytics/subscribed-people'
     | '/workspaces/$workspaceId/broadcasts/new'
     | '/workspaces/$workspaceId/rules/new'
     | '/workspaces/$workspaceId/segments/new'
@@ -1300,6 +1317,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspacesWorkspaceIdAnalyticsRecentActivityRouteImport
       parentRoute: typeof WorkspacesWorkspaceIdAnalyticsRouteRoute
     }
+    '/workspaces/$workspaceId/analytics/subscribed-people': {
+      id: '/workspaces/$workspaceId/analytics/subscribed-people'
+      path: '/subscribed-people'
+      fullPath: '/workspaces/$workspaceId/analytics/subscribed-people'
+      preLoaderRoute: typeof WorkspacesWorkspaceIdAnalyticsSubscribedPeopleRouteImport
+      parentRoute: typeof WorkspacesWorkspaceIdAnalyticsRouteRoute
+    }
     '/workspaces/$workspaceId/automations/': {
       id: '/workspaces/$workspaceId/automations/'
       path: '/automations'
@@ -1584,6 +1608,7 @@ interface WorkspacesWorkspaceIdAnalyticsRouteRouteChildren {
   WorkspacesWorkspaceIdAnalyticsEmailMetricsRoute: typeof WorkspacesWorkspaceIdAnalyticsEmailMetricsRoute
   WorkspacesWorkspaceIdAnalyticsNewPeopleRoute: typeof WorkspacesWorkspaceIdAnalyticsNewPeopleRoute
   WorkspacesWorkspaceIdAnalyticsRecentActivityRoute: typeof WorkspacesWorkspaceIdAnalyticsRecentActivityRoute
+  WorkspacesWorkspaceIdAnalyticsSubscribedPeopleRoute: typeof WorkspacesWorkspaceIdAnalyticsSubscribedPeopleRoute
   WorkspacesWorkspaceIdAnalyticsIndexRoute: typeof WorkspacesWorkspaceIdAnalyticsIndexRoute
 }
 
@@ -1595,6 +1620,8 @@ const WorkspacesWorkspaceIdAnalyticsRouteRouteChildren: WorkspacesWorkspaceIdAna
       WorkspacesWorkspaceIdAnalyticsNewPeopleRoute,
     WorkspacesWorkspaceIdAnalyticsRecentActivityRoute:
       WorkspacesWorkspaceIdAnalyticsRecentActivityRoute,
+    WorkspacesWorkspaceIdAnalyticsSubscribedPeopleRoute:
+      WorkspacesWorkspaceIdAnalyticsSubscribedPeopleRoute,
     WorkspacesWorkspaceIdAnalyticsIndexRoute:
       WorkspacesWorkspaceIdAnalyticsIndexRoute,
   }

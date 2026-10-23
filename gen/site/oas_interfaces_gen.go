@@ -9,6 +9,10 @@ type SiteAnalyticsOverviewRes interface {
 	siteAnalyticsOverviewRes()
 }
 
+type SiteAnalyticsSubscribedPeopleRes interface {
+	siteAnalyticsSubscribedPeopleRes()
+}
+
 type SiteAuditExportRes interface {
 	siteAuditExportRes()
 }

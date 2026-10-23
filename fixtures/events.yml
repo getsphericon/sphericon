@@ -4899,6 +4899,65 @@
   occurred_at: '{{daysAgo 1}}'
   created_at: '{{daysAgo 1}}'
 
+# Subscribed people report (Gotham, America/New_York): fixed moments around the spring-forward change.
+- id: 9300 # fixture: EventGothamSubscribedLateOnThe7th
+  email: a@gotham.test
+  action: marketing.confirmed
+  workspace_id: 61
+  occurred_at: '2026-03-08 04:59:00+00' # 23:59 EST on 7 March
+  created_at: '2026-03-08 04:59:00+00'
+- id: 9301 # fixture: EventGothamSubscribedAtMidnightOnThe8th
+  email: b@gotham.test
+  action: marketing.confirmed
+  workspace_id: 61
+  occurred_at: '2026-03-08 05:00:00+00' # midnight EST on 8 March
+  created_at: '2026-03-08 05:00:00+00'
+- id: 9302 # fixture: EventGothamSubscribedLateOnThe8th
+  email: c@gotham.test
+  action: marketing.confirmed
+  workspace_id: 61
+  occurred_at: '2026-03-09 03:59:00+00' # 23:59 EDT on 8 March
+  created_at: '2026-03-09 03:59:00+00'
+- id: 9303 # fixture: EventGothamUnsubscribedAtMidnightOnThe9th
+  email: d@gotham.test
+  action: email.unsubscribed
+  workspace_id: 61
+  occurred_at: '2026-03-09 04:00:00+00' # midnight EDT on 9 March
+  created_at: '2026-03-09 04:00:00+00'
+- id: 9304 # fixture: EventGothamUnsubscribedOnThe8th
+  email: e@gotham.test
+  action: email.unsubscribed
+  workspace_id: 61
+  occurred_at: '2026-03-08 06:00:00+00' # 01:00 EST on 8 March
+  created_at: '2026-03-08 06:00:00+00'
+# No occurred_at: the creation time is the moment (10:00 EST on 6 March).
+- id: 9305 # fixture: EventGothamSubscribedWithoutOccurredAt
+  email: f@gotham.test
+  action: marketing.confirmed
+  workspace_id: 61
+  created_at: '2026-03-06 15:00:00+00'
+# Backfilled: it happened on 9 March but was recorded on 10 March, so it lands on the 9th.
+- id: 9306 # fixture: EventGothamSubscribedBackfilled
+  email: g@gotham.test
+  action: marketing.confirmed
+  workspace_id: 61
+  occurred_at: '2026-03-09 15:00:00+00'
+  created_at: '2026-03-10 09:00:00+00'
+# Before every window of the tests.
+- id: 9307 # fixture: EventGothamUnsubscribedLongAgo
+  email: h@gotham.test
+  action: email.unsubscribed
+  workspace_id: 61
+  occurred_at: '2026-02-01 12:00:00+00'
+  created_at: '2026-02-01 12:00:00+00'
+# A customer action: never a subscription change.
+- id: 9308 # fixture: EventGothamSignup
+  email: i@gotham.test
+  action: signup
+  workspace_id: 61
+  occurred_at: '2026-03-08 15:00:00+00'
+  created_at: '2026-03-08 15:00:00+00'
+
 # The export of ContactExportHeavy (5703) streams 1200 Events across the keyset pages.
 # {{range $i := seq 58000 59199}}
 - id: '{{$i}}'

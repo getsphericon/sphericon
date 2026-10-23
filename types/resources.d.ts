@@ -132,6 +132,7 @@ export default interface Resources {
         "emailMetrics": "Email metrics",
         "newPeople": "New people",
         "recentActivity": "Recent activity",
+        "subscribedPeople": "Subscribed people",
         "tracking": "Tracking"
       },
       "newPeople": {
@@ -159,6 +160,15 @@ export default interface Resources {
         "manual": "Manual",
         "tracker": "Tracker",
         "unknown": "Unknown"
+      },
+      "subscribedPeople": {
+        "current": "Subscribed now",
+        "day": "Day",
+        "empty": "Nobody subscribed or unsubscribed in this window",
+        "flow": "Subscriptions per day",
+        "net": "Net",
+        "subscribed": "Subscribed",
+        "unsubscribed": "Unsubscribed"
       }
     },
     "app": {

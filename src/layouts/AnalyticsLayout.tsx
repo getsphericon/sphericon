@@ -9,6 +9,7 @@ import { Route as emailMetricsRoute } from '../routes/workspaces/$workspaceId/an
 import { Route as newPeopleRoute } from '../routes/workspaces/$workspaceId/analytics/new-people.tsx'
 import { Route as recentActivityRoute } from '../routes/workspaces/$workspaceId/analytics/recent-activity.tsx'
 import { Route as analyticsRoute } from '../routes/workspaces/$workspaceId/analytics/route.tsx'
+import { Route as subscribedPeopleRoute } from '../routes/workspaces/$workspaceId/analytics/subscribed-people.tsx'
 
 const RANGES = zSiteAnalyticsRange.options
 
@@ -24,7 +25,10 @@ export function AnalyticsLayout() {
   const groups = [
     {
       label: t(($) => $.analytics.nav.audience),
-      items: [{ route: newPeopleRoute, label: t(($) => $.analytics.nav.newPeople) }],
+      items: [
+        { route: newPeopleRoute, label: t(($) => $.analytics.nav.newPeople) },
+        { route: subscribedPeopleRoute, label: t(($) => $.analytics.nav.subscribedPeople) },
+      ],
     },
     {
       label: t(($) => $.analytics.nav.email),

@@ -3517,6 +3517,55 @@
         "tags": ["Site Analytics"]
       }
     },
+    "/workspaces/{workspaceId}/analytics/subscribed-people": {
+      "get": {
+        "operationId": "SiteAnalytics_subscribedPeople",
+        "description": "Subscribed people report: who subscribed and unsubscribed per Report day, and how many are subscribed now",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          },
+          {
+            "name": "range",
+            "in": "query",
+            "required": false,
+            "description": "Window to report over (defaults to 30d)",
+            "schema": {
+              "$ref": "#/components/schemas/SiteAnalyticsRange"
+            },
+            "explode": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteAnalyticsSubscribedPeople"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Analytics"]
+      }
+    },
     "/workspaces/{workspaceId}/audit-entries": {
       "get": {
         "operationId": "SiteAudit_list",
@@ -12724,6 +12773,51 @@
         "type": "string",
         "enum": ["7d", "30d", "90d"],
         "description": "Selectable window for the analytics overview"
+      },
+      "SiteAnalyticsSubscribedPeople": {
+        "type": "object",
+        "required": ["current", "series"],
+        "properties": {
+          "current": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Contacts that are not globally opted out of email now"
+          },
+          "series": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteAnalyticsSubscribedPoint"
+            },
+            "description": "Daily flow, oldest first, one point per Report day in the range"
+          }
+        },
+        "description": "The Subscribed people report: the daily flow plus the current number, which is read from\ncurrent state and is never reconstructed from the flow"
+      },
+      "SiteAnalyticsSubscribedPoint": {
+        "type": "object",
+        "required": ["date", "subscribed", "unsubscribed", "net"],
+        "properties": {
+          "date": {
+            "type": "string",
+            "description": "Report day, YYYY-MM-DD in the Workspace time zone"
+          },
+          "subscribed": {
+            "type": "integer",
+            "format": "int32",
+            "description": "People who subscribed that day (marketing.confirmed events)"
+          },
+          "unsubscribed": {
+            "type": "integer",
+            "format": "int32",
+            "description": "People who unsubscribed that day (email.unsubscribed events)"
+          },
+          "net": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Subscribed minus unsubscribed; negative when more people left than joined"
+          }
+        },
+        "description": "One Report day of the Subscribed people report, zero-filled across the range"
       },
       "SiteApiTokenResource": {
         "type": "object",

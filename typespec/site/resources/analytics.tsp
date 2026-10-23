@@ -146,6 +146,31 @@ model SiteNewPeopleReport {
   timeseries: SiteNewPeoplePoint[];
 }
 
+/** One Report day of the Subscribed people report, zero-filled across the range */
+model SiteAnalyticsSubscribedPoint {
+  /** Report day, YYYY-MM-DD in the Workspace time zone */
+  date: string;
+
+  /** People who subscribed that day (marketing.confirmed events) */
+  subscribed: int32;
+
+  /** People who unsubscribed that day (email.unsubscribed events) */
+  unsubscribed: int32;
+
+  /** Subscribed minus unsubscribed; negative when more people left than joined */
+  net: int32;
+}
+
+/** The Subscribed people report: the daily flow plus the current number, which is read from
+ * current state and is never reconstructed from the flow */
+model SiteAnalyticsSubscribedPeople {
+  /** Contacts that are not globally opted out of email now */
+  current: int32;
+
+  /** Daily flow, oldest first, one point per Report day in the range */
+  series: SiteAnalyticsSubscribedPoint[];
+}
+
 // Not a CRUD resource — a single workspace-scoped aggregate with no key, so it
 // keeps an explicit nested route rather than @parentResource/@autoRoute.
 @route("/workspaces/{workspaceId}/analytics")
@@ -170,4 +195,14 @@ namespace SiteAnalytics {
     /** Window to aggregate over (defaults to 30d) */
     @query range?: SiteAnalyticsRange,
   ): SiteNewPeopleReport | NotFoundProblem;
+
+  /** Subscribed people report: who subscribed and unsubscribed per Report day, and how many are subscribed now */
+  @get
+  @route("/subscribed-people")
+  op subscribedPeople(
+    @path workspaceId: WorkspaceId,
+
+    /** Window to report over (defaults to 30d) */
+    @query range?: SiteAnalyticsRange,
+  ): SiteAnalyticsSubscribedPeople | NotFoundProblem;
 }

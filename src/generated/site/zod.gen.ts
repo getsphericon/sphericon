@@ -276,6 +276,25 @@ export const zSiteAnalyticsRange = z.enum([
 ]);
 
 /**
+ * One Report day of the Subscribed people report, zero-filled across the range
+ */
+export const zSiteAnalyticsSubscribedPoint = z.object({
+  date: z.string(),
+  subscribed: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  unsubscribed: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  net: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
+ * The Subscribed people report: the daily flow plus the current number, which is read from
+ * current state and is never reconstructed from the flow
+ */
+export const zSiteAnalyticsSubscribedPeople = z.object({
+  current: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  series: z.array(zSiteAnalyticsSubscribedPoint)
+});
+
+/**
  * Site request body for applying a tag to a contact
  */
 export const zSiteApplyTagInput = z.object({
@@ -3198,6 +3217,19 @@ export const zSiteAnalyticsOverviewQuery = z.object({
  * The request has succeeded.
  */
 export const zSiteAnalyticsOverviewResponse = zSiteAnalyticsOverview;
+
+export const zSiteAnalyticsSubscribedPeoplePath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+export const zSiteAnalyticsSubscribedPeopleQuery = z.object({
+  range: z.exactOptional(zSiteAnalyticsRange)
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteAnalyticsSubscribedPeopleResponse = zSiteAnalyticsSubscribedPeople;
 
 export const zSiteAuditListPath = z.object({
   workspaceId: zWorkspaceId
