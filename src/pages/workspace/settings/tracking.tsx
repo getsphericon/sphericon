@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 
 import { AnchorLink } from '../../../components/RouterLink.tsx'
 import { siteEventsListOptions } from '../../../generated/site/@tanstack/react-query.gen.ts'
-import { Route as activityRoute } from '../../../routes/workspaces/$workspaceId/activity.tsx'
+import { Route as recentActivityRoute } from '../../../routes/workspaces/$workspaceId/analytics/recent-activity.tsx'
 import { Route as trackingRoute } from '../../../routes/workspaces/$workspaceId/settings/tracking.tsx'
 import { SettingsFrame } from './SettingsFrame.tsx'
 
@@ -36,7 +36,7 @@ function InstallStatus({ workspaceId }: { workspaceId: string }) {
           {t(($) => $.settings.installStatusWaiting)}
         </Badge>
       )}
-      <AnchorLink to={activityRoute.to} params={{ workspaceId }} size="sm">
+      <AnchorLink to={recentActivityRoute.to} params={{ workspaceId }} size="sm">
         {t(($) => $.settings.viewActivity)}
       </AnchorLink>
     </Group>

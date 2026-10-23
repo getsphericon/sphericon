@@ -1,15 +1,17 @@
 import { HttpResponse } from 'msw'
 import { expect, test } from 'vitest'
 
-import { handleSiteAnalyticsOverview } from '../../generated/site/msw.gen.ts'
-import { Route as analyticsRoute } from '../../routes/workspaces/$workspaceId/analytics.tsx'
-import { problem } from '../../test/problem.ts'
-import { renderWithRouter } from '../../test/renderWithRouter.tsx'
-import { routeMount } from '../../test/routeMount.ts'
-import { worker } from '../../test/worker.ts'
-import { AnalyticsPage } from './analytics.tsx'
+import { handleSiteAnalyticsOverview } from '../../../generated/site/msw.gen.ts'
+import { Route as emailMetricsRoute } from '../../../routes/workspaces/$workspaceId/analytics/email-metrics.tsx'
+import { problem } from '../../../test/problem.ts'
+import { renderWithRouter } from '../../../test/renderWithRouter.tsx'
+import { routeMount } from '../../../test/routeMount.ts'
+import { worker } from '../../../test/worker.ts'
+import { EmailMetricsPage } from './emailMetrics.tsx'
 
-const mount = routeMount(analyticsRoute, { workspaceId: 'TestWs01' })
+// The test router does not run the section's search validation, so the window is spelled out.
+const base = routeMount(emailMetricsRoute, { workspaceId: 'TestWs01' })
+const mount = { ...base, initialPath: `${base.initialPath}?range=30d` }
 
 const overview = {
   contacts: { total: 42, active: 40, unsubscribed: 2, newInRange: 5 },
@@ -28,12 +30,12 @@ const overview = {
 test('shows the contacts count', async () => {
   worker.use(handleSiteAnalyticsOverview({ body: overview }))
 
-  const { screen } = await renderWithRouter(<AnalyticsPage />, mount)
+  const { screen } = await renderWithRouter(<EmailMetricsPage />, mount)
 
   await expect.element(screen.getByText('42', { exact: true })).toBeInTheDocument()
 })
 
-test('switching the range refetches the analytics for that window', async () => {
+test('reads the section window from the URL', async () => {
   const ranges: (string | null)[] = []
   worker.use(
     handleSiteAnalyticsOverview(({ request }) => {
@@ -41,17 +43,28 @@ test('switching the range refetches the analytics for that window', async () => 
       return HttpResponse.json(overview)
     }),
   )
-  const { screen } = await renderWithRouter(<AnalyticsPage />, mount)
+  await renderWithRouter(<EmailMetricsPage />, {
+    ...base,
+    initialPath: `${base.initialPath}?range=7d`,
+  })
 
-  await expect.poll(() => ranges).toEqual(['30d'])
-  await screen.getByText('Last 7 days').click()
+  await expect.poll(() => ranges).toEqual(['7d'])
+})
 
-  await expect.poll(() => ranges).toEqual(['30d', '7d'])
+test('a window without sent email shows the empty state instead of the chart', async () => {
+  worker.use(
+    handleSiteAnalyticsOverview({
+      body: { ...overview, email: { ...overview.email, sentCount: 0 } },
+    }),
+  )
+  const { screen } = await renderWithRouter(<EmailMetricsPage />, mount)
+
+  await expect.element(screen.getByText('No email sent in this window')).toBeInTheDocument()
 })
 
 test('shows an error alert when analytics fail to load', async () => {
   worker.use(handleSiteAnalyticsOverview(() => problem(500, { detail: 'boom' })))
-  const { screen } = await renderWithRouter(<AnalyticsPage />, mount)
+  const { screen } = await renderWithRouter(<EmailMetricsPage />, mount)
 
   await expect.element(screen.getByText('Failed to load analytics').first()).toBeInTheDocument()
   await expect.element(screen.getByText('boom')).toBeInTheDocument()
@@ -66,7 +79,7 @@ test('a workspace without contacts shows the empty hint instead of the chart', a
       },
     }),
   )
-  const { screen } = await renderWithRouter(<AnalyticsPage />, mount)
+  const { screen } = await renderWithRouter(<EmailMetricsPage />, mount)
 
   await expect.element(screen.getByText('No contacts yet')).toBeInTheDocument()
 })
@@ -81,7 +94,7 @@ test('a workspace in the warning tier sees which rate is over the limit', async 
     }),
   )
 
-  const { screen } = await renderWithRouter(<AnalyticsPage />, mount)
+  const { screen } = await renderWithRouter(<EmailMetricsPage />, mount)
 
   await expect
     .element(screen.getByText('Your sending reputation needs attention'))
@@ -94,7 +107,7 @@ test('a workspace in the warning tier sees which rate is over the limit', async 
 test('no warning shows no alert', async () => {
   worker.use(handleSiteAnalyticsOverview({ body: overview }))
 
-  const { screen } = await renderWithRouter(<AnalyticsPage />, mount)
+  const { screen } = await renderWithRouter(<EmailMetricsPage />, mount)
 
   await expect.element(screen.getByText('42', { exact: true })).toBeInTheDocument()
   await expect

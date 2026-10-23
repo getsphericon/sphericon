@@ -35,11 +35,13 @@ import { Route as WorkspacesWorkspaceIdRouteRouteImport } from './routes/workspa
 import { Route as WorkspacesNewRouteImport } from './routes/workspaces/new'
 import { Route as ConsoleAuthedIndexRouteImport } from './routes/console/_authed/index'
 import { Route as WorkspacesWorkspaceIdIndexRouteImport } from './routes/workspaces/$workspaceId/index'
-import { Route as WorkspacesWorkspaceIdActivityRouteImport } from './routes/workspaces/$workspaceId/activity'
-import { Route as WorkspacesWorkspaceIdAnalyticsRouteImport } from './routes/workspaces/$workspaceId/analytics'
+import { Route as WorkspacesWorkspaceIdAnalyticsRouteRouteImport } from './routes/workspaces/$workspaceId/analytics/route'
 import { Route as WorkspacesWorkspaceIdBrandKitRouteImport } from './routes/workspaces/$workspaceId/brand-kit'
 import { Route as WorkspacesWorkspaceIdSettingsRouteRouteImport } from './routes/workspaces/$workspaceId/settings/route'
 import { Route as ConsoleAuthedWorkspacesWorkspaceIdRouteImport } from './routes/console/_authed/workspaces.$workspaceId'
+import { Route as WorkspacesWorkspaceIdAnalyticsIndexRouteImport } from './routes/workspaces/$workspaceId/analytics/index'
+import { Route as WorkspacesWorkspaceIdAnalyticsEmailMetricsRouteImport } from './routes/workspaces/$workspaceId/analytics/email-metrics'
+import { Route as WorkspacesWorkspaceIdAnalyticsRecentActivityRouteImport } from './routes/workspaces/$workspaceId/analytics/recent-activity'
 import { Route as WorkspacesWorkspaceIdAutomationsIndexRouteImport } from './routes/workspaces/$workspaceId/automations/index'
 import { Route as WorkspacesWorkspaceIdBroadcastsIndexRouteImport } from './routes/workspaces/$workspaceId/broadcasts/index'
 import { Route as WorkspacesWorkspaceIdBroadcastsNewRouteImport } from './routes/workspaces/$workspaceId/broadcasts/new'
@@ -229,23 +231,13 @@ const WorkspacesWorkspaceIdIndexRoute =
   } as any).lazy(() =>
     import('./routes/workspaces/$workspaceId/index.lazy').then((d) => d.Route),
   )
-const WorkspacesWorkspaceIdActivityRoute =
-  WorkspacesWorkspaceIdActivityRouteImport.update({
-    id: '/activity',
-    path: '/activity',
-    getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
-  } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/activity.lazy').then(
-      (d) => d.Route,
-    ),
-  )
-const WorkspacesWorkspaceIdAnalyticsRoute =
-  WorkspacesWorkspaceIdAnalyticsRouteImport.update({
+const WorkspacesWorkspaceIdAnalyticsRouteRoute =
+  WorkspacesWorkspaceIdAnalyticsRouteRouteImport.update({
     id: '/analytics',
     path: '/analytics',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
   } as any).lazy(() =>
-    import('./routes/workspaces/$workspaceId/analytics.lazy').then(
+    import('./routes/workspaces/$workspaceId/analytics/route.lazy').then(
       (d) => d.Route,
     ),
   )
@@ -272,6 +264,32 @@ const ConsoleAuthedWorkspacesWorkspaceIdRoute =
     getParentRoute: () => ConsoleAuthedRouteRoute,
   } as any).lazy(() =>
     import('./routes/console/_authed/workspaces.$workspaceId.lazy').then(
+      (d) => d.Route,
+    ),
+  )
+const WorkspacesWorkspaceIdAnalyticsIndexRoute =
+  WorkspacesWorkspaceIdAnalyticsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => WorkspacesWorkspaceIdAnalyticsRouteRoute,
+  } as any)
+const WorkspacesWorkspaceIdAnalyticsEmailMetricsRoute =
+  WorkspacesWorkspaceIdAnalyticsEmailMetricsRouteImport.update({
+    id: '/email-metrics',
+    path: '/email-metrics',
+    getParentRoute: () => WorkspacesWorkspaceIdAnalyticsRouteRoute,
+  } as any).lazy(() =>
+    import('./routes/workspaces/$workspaceId/analytics/email-metrics.lazy').then(
+      (d) => d.Route,
+    ),
+  )
+const WorkspacesWorkspaceIdAnalyticsRecentActivityRoute =
+  WorkspacesWorkspaceIdAnalyticsRecentActivityRouteImport.update({
+    id: '/recent-activity',
+    path: '/recent-activity',
+    getParentRoute: () => WorkspacesWorkspaceIdAnalyticsRouteRoute,
+  } as any).lazy(() =>
+    import('./routes/workspaces/$workspaceId/analytics/recent-activity.lazy').then(
       (d) => d.Route,
     ),
   )
@@ -630,13 +648,14 @@ export interface FileRoutesByFullPath {
   '/oauth/consent': typeof OauthConsentRoute
   '/workspaces/new': typeof WorkspacesNewRoute
   '/account/': typeof AccountIndexRoute
+  '/workspaces/$workspaceId/analytics': typeof WorkspacesWorkspaceIdAnalyticsRouteRouteWithChildren
   '/workspaces/$workspaceId/settings': typeof WorkspacesWorkspaceIdSettingsRouteRouteWithChildren
-  '/workspaces/$workspaceId/activity': typeof WorkspacesWorkspaceIdActivityRoute
-  '/workspaces/$workspaceId/analytics': typeof WorkspacesWorkspaceIdAnalyticsRoute
   '/workspaces/$workspaceId/brand-kit': typeof WorkspacesWorkspaceIdBrandKitRoute
   '/console/': typeof ConsoleAuthedIndexRoute
   '/workspaces/$workspaceId/': typeof WorkspacesWorkspaceIdIndexRoute
   '/console/workspaces/$workspaceId': typeof ConsoleAuthedWorkspacesWorkspaceIdRoute
+  '/workspaces/$workspaceId/analytics/email-metrics': typeof WorkspacesWorkspaceIdAnalyticsEmailMetricsRoute
+  '/workspaces/$workspaceId/analytics/recent-activity': typeof WorkspacesWorkspaceIdAnalyticsRecentActivityRoute
   '/workspaces/$workspaceId/broadcasts/new': typeof WorkspacesWorkspaceIdBroadcastsNewRoute
   '/workspaces/$workspaceId/rules/new': typeof WorkspacesWorkspaceIdRulesNewRoute
   '/workspaces/$workspaceId/segments/new': typeof WorkspacesWorkspaceIdSegmentsNewRoute
@@ -649,6 +668,7 @@ export interface FileRoutesByFullPath {
   '/workspaces/$workspaceId/settings/tracking': typeof WorkspacesWorkspaceIdSettingsTrackingRoute
   '/workspaces/$workspaceId/settings/webhooks': typeof WorkspacesWorkspaceIdSettingsWebhooksRoute
   '/workspaces/$workspaceId/templates/new': typeof WorkspacesWorkspaceIdTemplatesNewRoute
+  '/workspaces/$workspaceId/analytics/': typeof WorkspacesWorkspaceIdAnalyticsIndexRoute
   '/workspaces/$workspaceId/automations/': typeof WorkspacesWorkspaceIdAutomationsIndexRoute
   '/workspaces/$workspaceId/broadcasts/': typeof WorkspacesWorkspaceIdBroadcastsIndexRoute
   '/workspaces/$workspaceId/contacts/': typeof WorkspacesWorkspaceIdContactsIndexRoute
@@ -693,11 +713,11 @@ export interface FileRoutesByTo {
   '/oauth/consent': typeof OauthConsentRoute
   '/workspaces/new': typeof WorkspacesNewRoute
   '/account': typeof AccountIndexRoute
-  '/workspaces/$workspaceId/activity': typeof WorkspacesWorkspaceIdActivityRoute
-  '/workspaces/$workspaceId/analytics': typeof WorkspacesWorkspaceIdAnalyticsRoute
   '/workspaces/$workspaceId/brand-kit': typeof WorkspacesWorkspaceIdBrandKitRoute
   '/workspaces/$workspaceId': typeof WorkspacesWorkspaceIdIndexRoute
   '/console/workspaces/$workspaceId': typeof ConsoleAuthedWorkspacesWorkspaceIdRoute
+  '/workspaces/$workspaceId/analytics/email-metrics': typeof WorkspacesWorkspaceIdAnalyticsEmailMetricsRoute
+  '/workspaces/$workspaceId/analytics/recent-activity': typeof WorkspacesWorkspaceIdAnalyticsRecentActivityRoute
   '/workspaces/$workspaceId/broadcasts/new': typeof WorkspacesWorkspaceIdBroadcastsNewRoute
   '/workspaces/$workspaceId/rules/new': typeof WorkspacesWorkspaceIdRulesNewRoute
   '/workspaces/$workspaceId/segments/new': typeof WorkspacesWorkspaceIdSegmentsNewRoute
@@ -710,6 +730,7 @@ export interface FileRoutesByTo {
   '/workspaces/$workspaceId/settings/tracking': typeof WorkspacesWorkspaceIdSettingsTrackingRoute
   '/workspaces/$workspaceId/settings/webhooks': typeof WorkspacesWorkspaceIdSettingsWebhooksRoute
   '/workspaces/$workspaceId/templates/new': typeof WorkspacesWorkspaceIdTemplatesNewRoute
+  '/workspaces/$workspaceId/analytics': typeof WorkspacesWorkspaceIdAnalyticsIndexRoute
   '/workspaces/$workspaceId/automations': typeof WorkspacesWorkspaceIdAutomationsIndexRoute
   '/workspaces/$workspaceId/broadcasts': typeof WorkspacesWorkspaceIdBroadcastsIndexRoute
   '/workspaces/$workspaceId/contacts': typeof WorkspacesWorkspaceIdContactsIndexRoute
@@ -758,13 +779,14 @@ export interface FileRoutesById {
   '/oauth/consent': typeof OauthConsentRoute
   '/workspaces/new': typeof WorkspacesNewRoute
   '/account/': typeof AccountIndexRoute
+  '/workspaces/$workspaceId/analytics': typeof WorkspacesWorkspaceIdAnalyticsRouteRouteWithChildren
   '/workspaces/$workspaceId/settings': typeof WorkspacesWorkspaceIdSettingsRouteRouteWithChildren
-  '/workspaces/$workspaceId/activity': typeof WorkspacesWorkspaceIdActivityRoute
-  '/workspaces/$workspaceId/analytics': typeof WorkspacesWorkspaceIdAnalyticsRoute
   '/workspaces/$workspaceId/brand-kit': typeof WorkspacesWorkspaceIdBrandKitRoute
   '/console/_authed/': typeof ConsoleAuthedIndexRoute
   '/workspaces/$workspaceId/': typeof WorkspacesWorkspaceIdIndexRoute
   '/console/_authed/workspaces/$workspaceId': typeof ConsoleAuthedWorkspacesWorkspaceIdRoute
+  '/workspaces/$workspaceId/analytics/email-metrics': typeof WorkspacesWorkspaceIdAnalyticsEmailMetricsRoute
+  '/workspaces/$workspaceId/analytics/recent-activity': typeof WorkspacesWorkspaceIdAnalyticsRecentActivityRoute
   '/workspaces/$workspaceId/broadcasts/new': typeof WorkspacesWorkspaceIdBroadcastsNewRoute
   '/workspaces/$workspaceId/rules/new': typeof WorkspacesWorkspaceIdRulesNewRoute
   '/workspaces/$workspaceId/segments/new': typeof WorkspacesWorkspaceIdSegmentsNewRoute
@@ -777,6 +799,7 @@ export interface FileRoutesById {
   '/workspaces/$workspaceId/settings/tracking': typeof WorkspacesWorkspaceIdSettingsTrackingRoute
   '/workspaces/$workspaceId/settings/webhooks': typeof WorkspacesWorkspaceIdSettingsWebhooksRoute
   '/workspaces/$workspaceId/templates/new': typeof WorkspacesWorkspaceIdTemplatesNewRoute
+  '/workspaces/$workspaceId/analytics/': typeof WorkspacesWorkspaceIdAnalyticsIndexRoute
   '/workspaces/$workspaceId/automations/': typeof WorkspacesWorkspaceIdAutomationsIndexRoute
   '/workspaces/$workspaceId/broadcasts/': typeof WorkspacesWorkspaceIdBroadcastsIndexRoute
   '/workspaces/$workspaceId/contacts/': typeof WorkspacesWorkspaceIdContactsIndexRoute
@@ -825,13 +848,14 @@ export interface FileRouteTypes {
     | '/oauth/consent'
     | '/workspaces/new'
     | '/account/'
-    | '/workspaces/$workspaceId/settings'
-    | '/workspaces/$workspaceId/activity'
     | '/workspaces/$workspaceId/analytics'
+    | '/workspaces/$workspaceId/settings'
     | '/workspaces/$workspaceId/brand-kit'
     | '/console/'
     | '/workspaces/$workspaceId/'
     | '/console/workspaces/$workspaceId'
+    | '/workspaces/$workspaceId/analytics/email-metrics'
+    | '/workspaces/$workspaceId/analytics/recent-activity'
     | '/workspaces/$workspaceId/broadcasts/new'
     | '/workspaces/$workspaceId/rules/new'
     | '/workspaces/$workspaceId/segments/new'
@@ -844,6 +868,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/settings/tracking'
     | '/workspaces/$workspaceId/settings/webhooks'
     | '/workspaces/$workspaceId/templates/new'
+    | '/workspaces/$workspaceId/analytics/'
     | '/workspaces/$workspaceId/automations/'
     | '/workspaces/$workspaceId/broadcasts/'
     | '/workspaces/$workspaceId/contacts/'
@@ -888,11 +913,11 @@ export interface FileRouteTypes {
     | '/oauth/consent'
     | '/workspaces/new'
     | '/account'
-    | '/workspaces/$workspaceId/activity'
-    | '/workspaces/$workspaceId/analytics'
     | '/workspaces/$workspaceId/brand-kit'
     | '/workspaces/$workspaceId'
     | '/console/workspaces/$workspaceId'
+    | '/workspaces/$workspaceId/analytics/email-metrics'
+    | '/workspaces/$workspaceId/analytics/recent-activity'
     | '/workspaces/$workspaceId/broadcasts/new'
     | '/workspaces/$workspaceId/rules/new'
     | '/workspaces/$workspaceId/segments/new'
@@ -905,6 +930,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/settings/tracking'
     | '/workspaces/$workspaceId/settings/webhooks'
     | '/workspaces/$workspaceId/templates/new'
+    | '/workspaces/$workspaceId/analytics'
     | '/workspaces/$workspaceId/automations'
     | '/workspaces/$workspaceId/broadcasts'
     | '/workspaces/$workspaceId/contacts'
@@ -952,13 +978,14 @@ export interface FileRouteTypes {
     | '/oauth/consent'
     | '/workspaces/new'
     | '/account/'
-    | '/workspaces/$workspaceId/settings'
-    | '/workspaces/$workspaceId/activity'
     | '/workspaces/$workspaceId/analytics'
+    | '/workspaces/$workspaceId/settings'
     | '/workspaces/$workspaceId/brand-kit'
     | '/console/_authed/'
     | '/workspaces/$workspaceId/'
     | '/console/_authed/workspaces/$workspaceId'
+    | '/workspaces/$workspaceId/analytics/email-metrics'
+    | '/workspaces/$workspaceId/analytics/recent-activity'
     | '/workspaces/$workspaceId/broadcasts/new'
     | '/workspaces/$workspaceId/rules/new'
     | '/workspaces/$workspaceId/segments/new'
@@ -971,6 +998,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/settings/tracking'
     | '/workspaces/$workspaceId/settings/webhooks'
     | '/workspaces/$workspaceId/templates/new'
+    | '/workspaces/$workspaceId/analytics/'
     | '/workspaces/$workspaceId/automations/'
     | '/workspaces/$workspaceId/broadcasts/'
     | '/workspaces/$workspaceId/contacts/'
@@ -1199,18 +1227,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspacesWorkspaceIdIndexRouteImport
       parentRoute: typeof WorkspacesWorkspaceIdRouteRoute
     }
-    '/workspaces/$workspaceId/activity': {
-      id: '/workspaces/$workspaceId/activity'
-      path: '/activity'
-      fullPath: '/workspaces/$workspaceId/activity'
-      preLoaderRoute: typeof WorkspacesWorkspaceIdActivityRouteImport
-      parentRoute: typeof WorkspacesWorkspaceIdRouteRoute
-    }
     '/workspaces/$workspaceId/analytics': {
       id: '/workspaces/$workspaceId/analytics'
       path: '/analytics'
       fullPath: '/workspaces/$workspaceId/analytics'
-      preLoaderRoute: typeof WorkspacesWorkspaceIdAnalyticsRouteImport
+      preLoaderRoute: typeof WorkspacesWorkspaceIdAnalyticsRouteRouteImport
       parentRoute: typeof WorkspacesWorkspaceIdRouteRoute
     }
     '/workspaces/$workspaceId/brand-kit': {
@@ -1233,6 +1254,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/console/workspaces/$workspaceId'
       preLoaderRoute: typeof ConsoleAuthedWorkspacesWorkspaceIdRouteImport
       parentRoute: typeof ConsoleAuthedRouteRoute
+    }
+    '/workspaces/$workspaceId/analytics/': {
+      id: '/workspaces/$workspaceId/analytics/'
+      path: '/'
+      fullPath: '/workspaces/$workspaceId/analytics/'
+      preLoaderRoute: typeof WorkspacesWorkspaceIdAnalyticsIndexRouteImport
+      parentRoute: typeof WorkspacesWorkspaceIdAnalyticsRouteRoute
+    }
+    '/workspaces/$workspaceId/analytics/email-metrics': {
+      id: '/workspaces/$workspaceId/analytics/email-metrics'
+      path: '/email-metrics'
+      fullPath: '/workspaces/$workspaceId/analytics/email-metrics'
+      preLoaderRoute: typeof WorkspacesWorkspaceIdAnalyticsEmailMetricsRouteImport
+      parentRoute: typeof WorkspacesWorkspaceIdAnalyticsRouteRoute
+    }
+    '/workspaces/$workspaceId/analytics/recent-activity': {
+      id: '/workspaces/$workspaceId/analytics/recent-activity'
+      path: '/recent-activity'
+      fullPath: '/workspaces/$workspaceId/analytics/recent-activity'
+      preLoaderRoute: typeof WorkspacesWorkspaceIdAnalyticsRecentActivityRouteImport
+      parentRoute: typeof WorkspacesWorkspaceIdAnalyticsRouteRoute
     }
     '/workspaces/$workspaceId/automations/': {
       id: '/workspaces/$workspaceId/automations/'
@@ -1514,6 +1556,27 @@ const ConsoleRouteRouteWithChildren = ConsoleRouteRoute._addFileChildren(
   ConsoleRouteRouteChildren,
 )
 
+interface WorkspacesWorkspaceIdAnalyticsRouteRouteChildren {
+  WorkspacesWorkspaceIdAnalyticsEmailMetricsRoute: typeof WorkspacesWorkspaceIdAnalyticsEmailMetricsRoute
+  WorkspacesWorkspaceIdAnalyticsRecentActivityRoute: typeof WorkspacesWorkspaceIdAnalyticsRecentActivityRoute
+  WorkspacesWorkspaceIdAnalyticsIndexRoute: typeof WorkspacesWorkspaceIdAnalyticsIndexRoute
+}
+
+const WorkspacesWorkspaceIdAnalyticsRouteRouteChildren: WorkspacesWorkspaceIdAnalyticsRouteRouteChildren =
+  {
+    WorkspacesWorkspaceIdAnalyticsEmailMetricsRoute:
+      WorkspacesWorkspaceIdAnalyticsEmailMetricsRoute,
+    WorkspacesWorkspaceIdAnalyticsRecentActivityRoute:
+      WorkspacesWorkspaceIdAnalyticsRecentActivityRoute,
+    WorkspacesWorkspaceIdAnalyticsIndexRoute:
+      WorkspacesWorkspaceIdAnalyticsIndexRoute,
+  }
+
+const WorkspacesWorkspaceIdAnalyticsRouteRouteWithChildren =
+  WorkspacesWorkspaceIdAnalyticsRouteRoute._addFileChildren(
+    WorkspacesWorkspaceIdAnalyticsRouteRouteChildren,
+  )
+
 interface WorkspacesWorkspaceIdSettingsRouteRouteChildren {
   WorkspacesWorkspaceIdSettingsApiKeysRoute: typeof WorkspacesWorkspaceIdSettingsApiKeysRoute
   WorkspacesWorkspaceIdSettingsAuditLogRoute: typeof WorkspacesWorkspaceIdSettingsAuditLogRoute
@@ -1554,9 +1617,8 @@ const WorkspacesWorkspaceIdSettingsRouteRouteWithChildren =
   )
 
 interface WorkspacesWorkspaceIdRouteRouteChildren {
+  WorkspacesWorkspaceIdAnalyticsRouteRoute: typeof WorkspacesWorkspaceIdAnalyticsRouteRouteWithChildren
   WorkspacesWorkspaceIdSettingsRouteRoute: typeof WorkspacesWorkspaceIdSettingsRouteRouteWithChildren
-  WorkspacesWorkspaceIdActivityRoute: typeof WorkspacesWorkspaceIdActivityRoute
-  WorkspacesWorkspaceIdAnalyticsRoute: typeof WorkspacesWorkspaceIdAnalyticsRoute
   WorkspacesWorkspaceIdBrandKitRoute: typeof WorkspacesWorkspaceIdBrandKitRoute
   WorkspacesWorkspaceIdIndexRoute: typeof WorkspacesWorkspaceIdIndexRoute
   WorkspacesWorkspaceIdBroadcastsNewRoute: typeof WorkspacesWorkspaceIdBroadcastsNewRoute
@@ -1587,10 +1649,10 @@ interface WorkspacesWorkspaceIdRouteRouteChildren {
 
 const WorkspacesWorkspaceIdRouteRouteChildren: WorkspacesWorkspaceIdRouteRouteChildren =
   {
+    WorkspacesWorkspaceIdAnalyticsRouteRoute:
+      WorkspacesWorkspaceIdAnalyticsRouteRouteWithChildren,
     WorkspacesWorkspaceIdSettingsRouteRoute:
       WorkspacesWorkspaceIdSettingsRouteRouteWithChildren,
-    WorkspacesWorkspaceIdActivityRoute: WorkspacesWorkspaceIdActivityRoute,
-    WorkspacesWorkspaceIdAnalyticsRoute: WorkspacesWorkspaceIdAnalyticsRoute,
     WorkspacesWorkspaceIdBrandKitRoute: WorkspacesWorkspaceIdBrandKitRoute,
     WorkspacesWorkspaceIdIndexRoute: WorkspacesWorkspaceIdIndexRoute,
     WorkspacesWorkspaceIdBroadcastsNewRoute:

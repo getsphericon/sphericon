@@ -1,7 +1,7 @@
 import { createLazyFileRoute } from '@tanstack/react-router'
 
-import { AnalyticsPage } from '../../../pages/workspace/analytics.tsx'
+import { AnalyticsLayout } from '../../../../layouts/AnalyticsLayout.tsx'
 
 export const Route = createLazyFileRoute('/workspaces/$workspaceId/analytics')({
-  component: AnalyticsPage,
+  component: AnalyticsLayout,
 })

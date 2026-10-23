@@ -49,7 +49,7 @@ export default interface Resources {
       "subject": "Subject",
       "subjectId": "Subject ID",
       "time": "Time",
-      "title": "Activity"
+      "title": "Recent activity"
     },
     "alerts": {
       "automationArchiveErrorTitle": "Failed to archive automation",
@@ -119,12 +119,20 @@ export default interface Resources {
         "clickRate": "Click rate",
         "clickToOpenRate": "Click-to-open",
         "clicked": "Clicked",
+        "empty": "No email sent in this window",
         "openRate": "Open rate",
         "opened": "Opened",
         "rangeNote": "Aggregated over the selected window, from delivery logs.",
         "sent": "Sent"
       },
       "loadError": "Failed to load analytics",
+      "nav": {
+        "audience": "Audience",
+        "email": "Email",
+        "emailMetrics": "Email metrics",
+        "recentActivity": "Recent activity",
+        "tracking": "Tracking"
+      },
       "range": {
         "30d": "Last 30 days",
         "7d": "Last 7 days",
@@ -675,7 +683,6 @@ export default interface Resources {
       }
     },
     "nav": {
-      "activity": "Activity",
       "analytics": "Analytics",
       "automations": "Automations",
       "banners": "Banners",

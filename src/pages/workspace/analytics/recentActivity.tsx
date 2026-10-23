@@ -5,19 +5,19 @@ import { DataTable } from 'mantine-datatable'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { DetailedEventRowDetails } from '../../components/EventRowDetails.tsx'
-import { TableSkeleton } from '../../components/Skeletons.tsx'
-import { siteEventsListOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
-import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
-import { formatDateTime } from '../../utils/datetime.ts'
+import { DetailedEventRowDetails } from '../../../components/EventRowDetails.tsx'
+import { TableSkeleton } from '../../../components/Skeletons.tsx'
+import { siteEventsListOptions } from '../../../generated/site/@tanstack/react-query.gen.ts'
+import { Route as workspaceRoute } from '../../../routes/workspaces/$workspaceId/route.tsx'
+import { formatDateTime } from '../../../utils/datetime.ts'
 
 const PAGE_SIZE = 25
 const LIVE_REFETCH_MS = 5000
 
-// ActivityPage is a read-only feed of the workspace's tracking events, most
+// RecentActivityPage is a read-only feed of the workspace's tracking events, most
 // recent first. Live mode polls so newly tracked events surface without a
 // manual reload — the primary way to verify that tracking works.
-export function ActivityPage() {
+export function RecentActivityPage() {
   const { t } = useTranslation()
   const { workspaceId } = workspaceRoute.useParams()
   const [page, setPage] = useState(1)

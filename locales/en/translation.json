@@ -47,7 +47,7 @@
     "subject": "Subject",
     "subjectId": "Subject ID",
     "time": "Time",
-    "title": "Activity"
+    "title": "Recent activity"
   },
   "alerts": {
     "automationArchiveErrorTitle": "Failed to archive automation",
@@ -117,12 +117,20 @@
       "clicked": "Clicked",
       "clickRate": "Click rate",
       "clickToOpenRate": "Click-to-open",
+      "empty": "No email sent in this window",
       "opened": "Opened",
       "openRate": "Open rate",
       "rangeNote": "Aggregated over the selected window, from delivery logs.",
       "sent": "Sent"
     },
     "loadError": "Failed to load analytics",
+    "nav": {
+      "audience": "Audience",
+      "email": "Email",
+      "emailMetrics": "Email metrics",
+      "recentActivity": "Recent activity",
+      "tracking": "Tracking"
+    },
     "range": {
       "30d": "Last 30 days",
       "7d": "Last 7 days",
@@ -677,7 +685,6 @@
     }
   },
   "nav": {
-    "activity": "Activity",
     "analytics": "Analytics",
     "automations": "Automations",
     "banners": "Banners",

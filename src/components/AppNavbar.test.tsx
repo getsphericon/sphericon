@@ -1,7 +1,6 @@
 import { expect, test } from 'vitest'
 
-import { Route as activityRoute } from '../routes/workspaces/$workspaceId/activity.tsx'
-import { Route as analyticsRoute } from '../routes/workspaces/$workspaceId/analytics.tsx'
+import { Route as analyticsRoute } from '../routes/workspaces/$workspaceId/analytics/route.tsx'
 import { Route as automationsRoute } from '../routes/workspaces/$workspaceId/automations/index.tsx'
 import { Route as brandKitRoute } from '../routes/workspaces/$workspaceId/brand-kit.tsx'
 import { Route as broadcastsRoute } from '../routes/workspaces/$workspaceId/broadcasts/index.tsx'
@@ -21,7 +20,6 @@ import { AppNavbar } from './AppNavbar.tsx'
 const SECTIONS = [
   ['Overview', overviewRoute],
   ['Analytics', analyticsRoute],
-  ['Activity', activityRoute],
   ['Settings', settingsRoute],
 ] as const
 

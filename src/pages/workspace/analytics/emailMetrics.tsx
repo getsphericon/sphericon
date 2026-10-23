@@ -1,25 +1,21 @@
 import { AreaChart, DonutChart } from '@mantine/charts'
-import { Alert, EmptyState, SegmentedControl, SimpleGrid, Stack, Text, Title } from '@mantine/core'
+import { Alert, EmptyState, SimpleGrid, Stack, Text, Title } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
-import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
-import { BlockSkeleton } from '../../components/Skeletons.tsx'
-import { StatCard } from '../../components/StatCard.tsx'
-import { siteAnalyticsOverviewOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
-import type { SiteAnalyticsRange } from '../../generated/site/types.gen.ts'
-import { zSiteAnalyticsRange } from '../../generated/site/zod.gen.ts'
-import { Route as analyticsRoute } from '../../routes/workspaces/$workspaceId/analytics.tsx'
-import { formatPercent } from '../../utils/percent.ts'
+import { ApiErrorAlert } from '../../../components/ApiErrorAlert.tsx'
+import { BlockSkeleton } from '../../../components/Skeletons.tsx'
+import { StatCard } from '../../../components/StatCard.tsx'
+import { siteAnalyticsOverviewOptions } from '../../../generated/site/@tanstack/react-query.gen.ts'
+import { useAnalyticsRange } from '../../../hooks/useAnalyticsRange.ts'
+import { Route as emailMetricsRoute } from '../../../routes/workspaces/$workspaceId/analytics/email-metrics.tsx'
+import { formatPercent } from '../../../utils/percent.ts'
 
-const RANGES = zSiteAnalyticsRange.options
-
-// AnalyticsPage is the workspace's analytics section: KPI cards and charts for a chosen range.
-export function AnalyticsPage() {
+// EmailMetricsPage is the Email metrics report: KPI cards and charts for the section's window.
+export function EmailMetricsPage() {
   const { t } = useTranslation()
-  const { workspaceId } = analyticsRoute.useParams()
-  const [range, setRange] = useState<SiteAnalyticsRange>('30d')
+  const { workspaceId } = emailMetricsRoute.useParams()
+  const range = useAnalyticsRange()
 
   const analyticsQuery = useQuery(
     siteAnalyticsOverviewOptions({ path: { workspaceId }, query: { range } }),
@@ -29,12 +25,6 @@ export function AnalyticsPage() {
 
   return (
     <Stack>
-      <SegmentedControl
-        value={range}
-        onChange={(v) => setRange(v)}
-        data={RANGES.map((r) => ({ value: r, label: t(($) => $.analytics.range[r]) }))}
-      />
-
       {analyticsQuery.isLoading && <BlockSkeleton />}
 
       {analyticsQuery.isError && (
@@ -91,18 +81,26 @@ export function AnalyticsPage() {
                 percent
               />
             </SimpleGrid>
-            <AreaChart
-              h={260}
-              data={analyticsQuery.data.timeseries}
-              dataKey="date"
-              withLegend
-              curveType="monotone"
-              series={[
-                { name: 'sent', label: t(($) => $.analytics.series.sent), color: 'blue.6' },
-                { name: 'opened', label: t(($) => $.analytics.series.opened), color: 'teal.6' },
-                { name: 'clicked', label: t(($) => $.analytics.series.clicked), color: 'grape.6' },
-              ]}
-            />
+            {analyticsQuery.data.email.sentCount === 0 ? (
+              <EmptyState title={t(($) => $.analytics.email.empty)} />
+            ) : (
+              <AreaChart
+                h={260}
+                data={analyticsQuery.data.timeseries}
+                dataKey="date"
+                withLegend
+                curveType="monotone"
+                series={[
+                  { name: 'sent', label: t(($) => $.analytics.series.sent), color: 'blue.6' },
+                  { name: 'opened', label: t(($) => $.analytics.series.opened), color: 'teal.6' },
+                  {
+                    name: 'clicked',
+                    label: t(($) => $.analytics.series.clicked),
+                    color: 'grape.6',
+                  },
+                ]}
+              />
+            )}
           </Stack>
 
           <SimpleGrid cols={{ base: 1, md: 2 }}>

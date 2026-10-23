@@ -1,6 +1,5 @@
 import { Badge, NavLink, Stack } from '@mantine/core'
 import {
-  IconActivity,
   IconBell,
   IconBolt,
   IconBrowser,
@@ -25,8 +24,7 @@ import { useMatchRoute } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { Route as activityRoute } from '../routes/workspaces/$workspaceId/activity.tsx'
-import { Route as analyticsRoute } from '../routes/workspaces/$workspaceId/analytics.tsx'
+import { Route as analyticsRoute } from '../routes/workspaces/$workspaceId/analytics/route.tsx'
 import { Route as automationsRoute } from '../routes/workspaces/$workspaceId/automations/index.tsx'
 import { Route as brandKitRoute } from '../routes/workspaces/$workspaceId/brand-kit.tsx'
 import { Route as broadcastsRoute } from '../routes/workspaces/$workspaceId/broadcasts/index.tsx'
@@ -156,11 +154,6 @@ export function AppNavbar({ workspaceId }: { workspaceId: string }) {
         route: analyticsRoute,
         label: t(($) => $.nav.analytics),
         icon: <IconChartBar size={18} />,
-      })}
-      {link({
-        route: activityRoute,
-        label: t(($) => $.nav.activity),
-        icon: <IconActivity size={18} />,
       })}
       {link({
         route: settingsRoute,

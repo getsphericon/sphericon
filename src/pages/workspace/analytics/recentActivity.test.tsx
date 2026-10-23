@@ -1,9 +1,9 @@
 import { expect, test } from 'vitest'
 
-import { handleSiteEventsList } from '../../generated/site/msw.gen.ts'
-import { renderWithRouter } from '../../test/renderWithRouter.tsx'
-import { worker } from '../../test/worker.ts'
-import { ActivityPage } from './activity.tsx'
+import { handleSiteEventsList } from '../../../generated/site/msw.gen.ts'
+import { renderWithRouter } from '../../../test/renderWithRouter.tsx'
+import { worker } from '../../../test/worker.ts'
+import { RecentActivityPage } from './recentActivity.tsx'
 
 const eventsPage = () =>
   handleSiteEventsList({
@@ -29,7 +29,7 @@ const eventsPage = () =>
 test('renders the event feed with a live toggle and action filter', async () => {
   worker.use(eventsPage())
 
-  const { screen } = await renderWithRouter(<ActivityPage />)
+  const { screen } = await renderWithRouter(<RecentActivityPage />)
 
   await expect.element(screen.getByText('purchase')).toBeInTheDocument()
   await expect.element(screen.getByText('bob@example.com')).toBeInTheDocument()
@@ -41,7 +41,7 @@ test('renders the event feed with a live toggle and action filter', async () => 
 test('expands a row to reveal the full event properties', async () => {
   worker.use(eventsPage())
 
-  const { screen } = await renderWithRouter(<ActivityPage />)
+  const { screen } = await renderWithRouter(<RecentActivityPage />)
 
   await screen.getByText('purchase').click()
 
