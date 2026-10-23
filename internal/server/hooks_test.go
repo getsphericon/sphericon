@@ -71,8 +71,9 @@ func failureBody(id, destination string, permanent bool) string {
 // applySuppression plays the suppression consumer over everything published so far.
 func applySuppression(t *testing.T, env *testhelper.TestEnv) {
 	t.Helper()
-	for _, envelope := range env.OutboxEnvelopes(t, deliveryNames...) {
-		require.NoError(t, events.Suppress(t.Context(), env.DB, envelope))
+	envelopes := env.OutboxEnvelopes(t, deliveryNames...)
+	for i := range envelopes {
+		require.NoError(t, events.Suppress(t.Context(), env.DB, envelopes[i]))
 	}
 }
 

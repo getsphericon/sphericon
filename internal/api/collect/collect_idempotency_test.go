@@ -26,8 +26,9 @@ func clientEvent(id, action string) collectapi.CollectEventInput {
 // router would (no router runs under txdb).
 func persistOutbox(t *testing.T, env *testhelper.TestEnv) {
 	t.Helper()
-	for _, e := range env.OutboxEnvelopes(t) {
-		require.NoError(t, events.Persist(t.Context(), env.DB, e))
+	envelopes := env.OutboxEnvelopes(t)
+	for i := range envelopes {
+		require.NoError(t, events.Persist(t.Context(), env.DB, envelopes[i]))
 	}
 }
 

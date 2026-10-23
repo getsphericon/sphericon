@@ -36,9 +36,11 @@ func (env *TestEnv) OutboxEnvelopes(t *testing.T, names ...string) []events.Enve
 // the whole outbox, so calling it twice exercises at-least-once redelivery.
 func (env *TestEnv) DeliverToEE(t *testing.T) {
 	t.Helper()
-	for _, e := range env.OutboxEnvelopes(t) {
+	envelopes := env.OutboxEnvelopes(t)
+	for i := range envelopes {
+		e := &envelopes[i]
 		for _, c := range env.edition.Consumers {
-			require.NoError(t, c.Handle(t.Context(), e), c.Name)
+			require.NoError(t, c.Handle(t.Context(), *e), c.Name)
 		}
 	}
 }
@@ -47,8 +49,9 @@ func (env *TestEnv) DeliverToEE(t *testing.T) {
 func (env *TestEnv) OutboxEvents(t *testing.T, names ...string) []events.DomainEvent {
 	t.Helper()
 	var out []events.DomainEvent
-	for _, e := range env.OutboxEnvelopes(t, names...) {
-		ev, err := events.Decode(e)
+	envelopes := env.OutboxEnvelopes(t, names...)
+	for i := range envelopes {
+		ev, err := events.Decode(envelopes[i])
 		require.NoError(t, err)
 		out = append(out, ev)
 	}
@@ -67,12 +70,14 @@ type OutboxMessage struct {
 func (env *TestEnv) Outbox(t *testing.T, names ...string) []OutboxMessage {
 	t.Helper()
 	var out []OutboxMessage
-	for _, e := range env.OutboxEnvelopes(t, names...) {
+	envelopes := env.OutboxEnvelopes(t, names...)
+	for i := range envelopes {
+		e := &envelopes[i]
 		dec := json.NewDecoder(bytes.NewReader(e.Data))
 		dec.UseNumber()
 		var data map[string]any
 		require.NoError(t, dec.Decode(&data))
-		out = append(out, OutboxMessage{Envelope: e, Data: data})
+		out = append(out, OutboxMessage{Envelope: *e, Data: data})
 	}
 	return out
 }
@@ -82,7 +87,9 @@ func (env *TestEnv) Outbox(t *testing.T, names ...string) []OutboxMessage {
 func (env *TestEnv) OutboxCount(t *testing.T, name string, match map[string]any) int {
 	t.Helper()
 	n := 0
-	for _, m := range env.Outbox(t, name) {
+	messages := env.Outbox(t, name)
+	for i := range messages {
+		m := &messages[i]
 		ok := true
 		for k, want := range match {
 			if fmt.Sprint(m.Data[k]) != fmt.Sprint(want) {
