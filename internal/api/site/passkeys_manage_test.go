@@ -178,7 +178,7 @@ func TestRemovingTheLastPasskeyWeakensTheActingSessionUnderTheRequirement(t *tes
 	status := func(session string) int {
 		rec := httptest.NewRecorder()
 		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, tags, nil)
-		req.AddCookie(&http.Cookie{Name: "JWT", Value: session})
+		req.AddCookie(testhelper.RequestCookie("JWT", session))
 		env.Server.ServeHTTP(rec, req)
 		return rec.Code
 	}

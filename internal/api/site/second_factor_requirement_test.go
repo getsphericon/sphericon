@@ -64,7 +64,8 @@ func siteGet(t *testing.T, env *testhelper.TestEnv, email, path string) (int, ma
 	t.Helper()
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, path, nil)
-	req.AddCookie(&http.Cookie{Name: "JWT", Value: env.SiteToken(t, email, nil)})
+	token := env.SiteToken(t, email, nil)
+	req.AddCookie(testhelper.RequestCookie("JWT", token))
 	env.Server.ServeHTTP(rec, req)
 	var body map[string]any
 	_ = json.Unmarshal(rec.Body.Bytes(), &body)
@@ -235,9 +236,10 @@ func TestAStrongSessionMeetsTheRequirementWithoutASecondFactor(t *testing.T) {
 	get := func(method apiauth.Method) int {
 		rec := httptest.NewRecorder()
 		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, path, nil)
-		req.AddCookie(&http.Cookie{Name: "JWT", Value: env.SiteToken(t, fixtures.UmbrellaOwnerRitaEmail, func(c *gptoken.Claims) {
+		token := env.SiteToken(t, fixtures.UmbrellaOwnerRitaEmail, func(c *gptoken.Claims) {
 			c.User.SetStrAttr(apiauth.ClaimMethod, string(method))
-		})})
+		})
+		req.AddCookie(testhelper.RequestCookie("JWT", token))
 		env.Server.ServeHTTP(rec, req)
 		return rec.Code
 	}
@@ -258,9 +260,10 @@ func TestTheGraceEndFollowsTheStrengthOfTheSession(t *testing.T) {
 	graceEnds := func(method apiauth.Method) any {
 		rec := httptest.NewRecorder()
 		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/site/workspaces", nil)
-		req.AddCookie(&http.Cookie{Name: "JWT", Value: env.SiteToken(t, fixtures.PasskeyPatEmail, func(c *gptoken.Claims) {
+		token := env.SiteToken(t, fixtures.PasskeyPatEmail, func(c *gptoken.Claims) {
 			c.User.SetStrAttr(apiauth.ClaimMethod, string(method))
-		})})
+		})
+		req.AddCookie(testhelper.RequestCookie("JWT", token))
 		env.Server.ServeHTTP(rec, req)
 		require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
 		var list []map[string]any

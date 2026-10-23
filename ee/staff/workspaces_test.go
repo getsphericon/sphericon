@@ -203,7 +203,7 @@ func TestTheWorkspaceEndpointsRequireAnStaffSession(t *testing.T) {
 
 	for _, path := range []string{"/staff/workspaces", "/staff/workspaces/" + fixtures.AcmePublicID} {
 		assert.Equal(t, http.StatusUnauthorized, get(t, h.env.Server, path).Code, path)
-		assert.Equal(t, http.StatusUnauthorized, get(t, h.env.Server, path, &http.Cookie{Name: "JWT", Value: userToken}).Code, path)
+		assert.Equal(t, http.StatusUnauthorized, get(t, h.env.Server, path, testhelper.RequestCookie("JWT", userToken)).Code, path)
 	}
 }
 

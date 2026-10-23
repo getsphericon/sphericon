@@ -28,7 +28,7 @@ func sendWithSession(t *testing.T, env *testhelper.TestEnv, method, path, sessio
 		req.Header.Set("Content-Type", "application/json")
 	}
 	if session != "" {
-		req.AddCookie(&http.Cookie{Name: "JWT", Value: session})
+		req.AddCookie(testhelper.RequestCookie("JWT", session))
 	}
 	env.Server.ServeHTTP(rec, req)
 	return rec

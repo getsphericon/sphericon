@@ -95,7 +95,7 @@ func TestTheWorkspaceAuditLogRequiresAnStaffSession(t *testing.T) {
 	path := "/staff/workspaces/" + fixtures.AcmePublicID + "/audit-entries"
 
 	assert.Equal(t, http.StatusUnauthorized, get(t, h.env.Server, path).Code)
-	assert.Equal(t, http.StatusUnauthorized, get(t, h.env.Server, path, &http.Cookie{Name: "JWT", Value: userToken}).Code)
+	assert.Equal(t, http.StatusUnauthorized, get(t, h.env.Server, path, testhelper.RequestCookie("JWT", userToken)).Code)
 }
 
 func TestTheWorkspaceAuditLogAnswers404WithoutTheStaffLicense(t *testing.T) {

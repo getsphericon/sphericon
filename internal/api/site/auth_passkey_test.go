@@ -27,7 +27,7 @@ func passkeyLoginCall(t *testing.T, env *testhelper.TestEnv, path, ceremony, bod
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, path, strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
-	req.AddCookie(&http.Cookie{Name: passkeyCeremonyCookie, Value: ceremony})
+	req.AddCookie(testhelper.RequestCookie(passkeyCeremonyCookie, ceremony))
 	env.Server.ServeHTTP(rec, req)
 	return rec
 }

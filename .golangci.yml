@@ -198,23 +198,13 @@ linters:
       # gosec stays on.
       excludes:
         - G101 # matches names ("token", "password") of constants and fields, not secrets
-        - G115 # counts and page numbers narrow to the contract's int32 fields (bounded values)
         - G117 # marshalling a secret field is how an Integration's config is sealed at rest
         - G122 # tests walk this repository's own tree, whose paths nobody else controls
-        - G124 # the Secure attribute follows the instance's URL scheme (plain http in dev)
         - G204 # the exec'd commands are operator tooling (upgrade, e2e), never request input
         - G302 # the upgrade command installs an executable binary
         - G304 # paths come from the operator's flags, config and repo tooling
         - G306 # written files are repository artifacts (migrations) and test executables
-        - G404 # math/rand only jitters retry delays
         - G505 # SNS signs messages with SHA-1 (SignatureVersion 1); the protocol fixes it
-        - G701 # CREATE/DROP DATABASE take an identifier that cannot be a bound parameter
-        - G703 # path taint analysis flags test fixtures' own temp paths
-        - G702 # same commands as G204, found by taint analysis
-        - G704 # taint analysis cannot see the validation done before the outbound request
-        - G705 # the tracking host probe answers text/plain
-        - G706 # the logged value is the database name given to the dev tooling
-        - G710 # redirect targets are validated or signed (tracking links, OAuth redirect URIs)
   exclusions:
     rules:
       # The SQL rule is for tests; production data access and testhelper itself talk SQL.
@@ -222,6 +212,52 @@ linters:
         linters:
           - forbidigo
         text: no direct SQL in tests
+      # gosec's taint rules (G702-G705, G710) and the cookie rule (G124) cannot see a check that
+      # is made before the sink. Each exclusion below names the files and the reason; every
+      # finding was read, and the ones that were defects are fixed in code.
+      #
+      # G124: the Secure attribute follows the instance's URL scheme (config.SecureCookies): a
+      # plain-http instance would never get a Secure cookie back. The rule wants a constant true.
+      - path: ^(ee/staff/session\.go|internal/api/auth/(session|passkey_ceremony|registration_browser|signin_flow)\.go)$
+        linters:
+          - gosec
+        text: G124
+      # G702: upgradecheck runs `git` (a constant) with arguments from its own command line; it is
+      # a CI tool and takes no request input.
+      - path: ^cmd/upgradecheck/main\.go$
+        linters:
+          - gosec
+        text: G702
+      # G703: tools and the OTEL_CONFIG_FILE setting read the file the operator names, and tests
+      # read and rewrite this repository's own files and temp directories.
+      - path: ^(cmd/upgradecheck/(main|immutable)\.go|internal/telemetry/telemetry\.go|.*_test\.go)$
+        linters:
+          - gosec
+        text: G703
+      # G704: the health check calls 127.0.0.1 and only the port comes from PORT; the OAuth client
+      # metadata fetch runs through an SSRF-hardened client (webhook.NewClientAllowing: private
+      # and loopback addresses refused at dial time, no redirects) after validMetadataURL.
+      - path: ^(cmd/server/healthcheck|internal/oauthserver/metadata)\.go$
+        linters:
+          - gosec
+        text: G704
+      # G705: the probe body is a hex HMAC (trackingdomain.ProbeValue) served as text/plain.
+      - path: ^internal/server/trackinghost\.go$
+        linters:
+          - gosec
+        text: G705
+      # G710: a click redirects to the destination of a signed token (tracker.DecodeClick) and
+      # the OAuth authorize endpoint redirects to a redirect_uri registered by the client (checked
+      # by Service.client) or to the Instance's own consent page.
+      - path: ^(internal/server/tracking|internal/oauthserver/http)\.go$
+        linters:
+          - gosec
+        text: G710
+      # G404: the jitter spreads retries; an attacker who predicts it gains nothing.
+      - path: ^internal/outbound/retry\.go$
+        linters:
+          - gosec
+        text: G404
       # `// goverter:map Field Field | helper` repeats the field name by design: source, then target.
       - source: goverter:map
         linters:

@@ -151,7 +151,7 @@ func TestResetClearsTheFactorAndEndsEverySession(t *testing.T) {
 
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequestWithContext(ctx, http.MethodGet, "/site/workspaces", nil)
-	req.AddCookie(&http.Cookie{Name: "JWT", Value: session})
+	req.AddCookie(testhelper.RequestCookie("JWT", session))
 	env.Server.ServeHTTP(rec, req)
 	assert.Equal(t, http.StatusUnauthorized, rec.Code)
 }

@@ -29,8 +29,8 @@ func passkeyCall(t *testing.T, env *testhelper.TestEnv, method, path, session, c
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequestWithContext(t.Context(), method, path, strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
-	req.AddCookie(&http.Cookie{Name: "JWT", Value: session})
-	req.AddCookie(&http.Cookie{Name: passkeyCeremonyCookie, Value: ceremony})
+	req.AddCookie(testhelper.RequestCookie("JWT", session))
+	req.AddCookie(testhelper.RequestCookie(passkeyCeremonyCookie, ceremony))
 	env.Server.ServeHTTP(rec, req)
 	return rec
 }

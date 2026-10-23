@@ -293,7 +293,7 @@ func TestAUserSessionNeverOpensTheStaffSurface(t *testing.T) {
 	userToken := h.env.SiteToken(t, fixtures.OwnerJohnEmail, nil)
 
 	requireProblem(t, h.me(t, userToken), http.StatusUnauthorized)
-	rec := get(t, h.env.Server, "/staff/me", &http.Cookie{Name: "JWT", Value: userToken})
+	rec := get(t, h.env.Server, "/staff/me", testhelper.RequestCookie("JWT", userToken))
 	assert.Equal(t, http.StatusUnauthorized, rec.Code)
 }
 
@@ -302,7 +302,7 @@ func TestAnStaffSessionNeverOpensSite(t *testing.T) {
 	token := h.session(t, fixtures.StaffEnrolledEmail, fixtures.StaffEnrolledPassword, fixtures.StaffEnrolledTotpSecret).Value
 
 	for _, name := range []string{"JWT", "STAFF_JWT"} {
-		rec := get(t, h.env.Server, "/site/workspaces", &http.Cookie{Name: name, Value: token})
+		rec := get(t, h.env.Server, "/site/workspaces", testhelper.RequestCookie(name, token))
 		assert.Equal(t, http.StatusUnauthorized, rec.Code, "cookie %s", name)
 	}
 }

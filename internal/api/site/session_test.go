@@ -28,7 +28,7 @@ func workspacesStatus(t *testing.T, env *testhelper.TestEnv, session string) int
 	t.Helper()
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/site/workspaces", nil)
-	req.AddCookie(&http.Cookie{Name: "JWT", Value: session})
+	req.AddCookie(testhelper.RequestCookie("JWT", session))
 	env.Server.ServeHTTP(rec, req)
 	return rec.Code
 }
