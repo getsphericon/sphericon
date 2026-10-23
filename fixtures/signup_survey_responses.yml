@@ -1,0 +1,31 @@
+# The Sign-up survey answers of SurveyAnsweredAnn: every question answered, the optional one with
+# an `other` text.
+- id: 1 # fixture: AnnSurveyResponse
+  user_id: 5600
+  role: developer
+  company_size: '11_50'
+  main_goal: migrating
+  heard_from: other
+  heard_from_other_text: A newsletter
+  created_at: '2026-01-02 00:00:00'
+  updated_at: '2026-01-02 00:00:00'
+# Bob skipped the optional question.
+- id: 2 # fixture: BobSurveyResponse
+  user_id: 5601
+  role: developer
+  company_size: '2_10'
+  main_goal: broadcasts
+  created_at: '2026-01-03 00:00:00'
+  updated_at: '2026-01-03 00:00:00'
+# Cara used the `other` text on every question that has one.
+- id: 3 # fixture: CaraSurveyResponse
+  user_id: 5602
+  role: other
+  role_other_text: Consultant
+  company_size: other
+  company_size_other_text: Just me and a cat
+  main_goal: migrating
+  heard_from: other
+  heard_from_other_text: A newsletter
+  created_at: '2026-01-04 00:00:00'
+  updated_at: '2026-01-04 00:00:00'

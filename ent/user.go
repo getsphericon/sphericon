@@ -9,6 +9,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"github.com/getsphericon/sphericon/ent/signupsurveyresponse"
 	"github.com/getsphericon/sphericon/ent/user"
 )
 
@@ -39,6 +40,8 @@ type User struct {
 	SecondFactorConfirmedAt *time.Time `json:"second_factor_confirmed_at,omitempty"`
 	// SecondFactorLastStep holds the value of the "second_factor_last_step" field.
 	SecondFactorLastStep int64 `json:"second_factor_last_step,omitempty"`
+	// SignupSurveyDueAt holds the value of the "signup_survey_due_at" field.
+	SignupSurveyDueAt *time.Time `json:"signup_survey_due_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the UserQuery when eager-loading is set.
 	Edges        UserEdges `json:"edges"`
@@ -57,9 +60,11 @@ type UserEdges struct {
 	Passkeys []*Passkey `json:"passkeys,omitempty"`
 	// Identities holds the value of the identities edge.
 	Identities []*UserIdentity `json:"identities,omitempty"`
+	// SignupSurveyResponse holds the value of the signup_survey_response edge.
+	SignupSurveyResponse *SignupSurveyResponse `json:"signup_survey_response,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [5]bool
+	loadedTypes [6]bool
 }
 
 // MembershipsOrErr returns the Memberships value or an error if the edge
@@ -107,6 +112,17 @@ func (e UserEdges) IdentitiesOrErr() ([]*UserIdentity, error) {
 	return nil, &NotLoadedError{edge: "identities"}
 }
 
+// SignupSurveyResponseOrErr returns the SignupSurveyResponse value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e UserEdges) SignupSurveyResponseOrErr() (*SignupSurveyResponse, error) {
+	if e.SignupSurveyResponse != nil {
+		return e.SignupSurveyResponse, nil
+	} else if e.loadedTypes[5] {
+		return nil, &NotFoundError{label: signupsurveyresponse.Label}
+	}
+	return nil, &NotLoadedError{edge: "signup_survey_response"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*User) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -116,7 +132,7 @@ func (*User) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case user.FieldName, user.FieldEmail, user.FieldPasswordHash, user.FieldSecondFactorSecretEncrypted:
 			values[i] = new(sql.NullString)
-		case user.FieldCreatedAt, user.FieldUpdatedAt, user.FieldEmailVerifiedAt, user.FieldEmailProvenAt, user.FieldSecondFactorConfirmedAt:
+		case user.FieldCreatedAt, user.FieldUpdatedAt, user.FieldEmailVerifiedAt, user.FieldEmailProvenAt, user.FieldSecondFactorConfirmedAt, user.FieldSignupSurveyDueAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -208,6 +224,13 @@ func (_m *User) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.SecondFactorLastStep = value.Int64
 			}
+		case user.FieldSignupSurveyDueAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field signup_survey_due_at", values[i])
+			} else if value.Valid {
+				_m.SignupSurveyDueAt = new(time.Time)
+				*_m.SignupSurveyDueAt = value.Time
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -244,6 +267,11 @@ func (_m *User) QueryPasskeys() *PasskeyQuery {
 // QueryIdentities queries the "identities" edge of the User entity.
 func (_m *User) QueryIdentities() *UserIdentityQuery {
 	return NewUserClient(_m.config).QueryIdentities(_m)
+}
+
+// QuerySignupSurveyResponse queries the "signup_survey_response" edge of the User entity.
+func (_m *User) QuerySignupSurveyResponse() *SignupSurveyResponseQuery {
+	return NewUserClient(_m.config).QuerySignupSurveyResponse(_m)
 }
 
 // Update returns a builder for updating this User.
@@ -305,6 +333,11 @@ func (_m *User) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("second_factor_last_step=")
 	builder.WriteString(fmt.Sprintf("%v", _m.SecondFactorLastStep))
+	builder.WriteString(", ")
+	if v := _m.SignupSurveyDueAt; v != nil {
+		builder.WriteString("signup_survey_due_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }

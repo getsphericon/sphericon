@@ -75,7 +75,7 @@ func (h *Handlers) SiteAuthRegister(ctx context.Context, req *siteapi.SiteRegist
 	replace := true
 	u, err := h.accounts.UserByEmail(ctx, email)
 	if ent.IsNotFound(err) {
-		u, err = h.accounts.Register(ctx, name, email, hash)
+		u, err = h.accounts.Register(ctx, name, email, hash, h.signupSurvey.Enabled())
 		replace = false
 		if db.IsUniqueViolation(err) {
 			// Two registrations of one new address raced: the loser finds the winner's row
@@ -130,7 +130,7 @@ func (h *Handlers) registerVerified(ctx context.Context, name, email, password s
 	if err != nil {
 		return nil, err
 	}
-	u, err := h.accounts.RegisterVerified(ctx, name, email, hash)
+	u, err := h.accounts.RegisterVerified(ctx, name, email, hash, h.signupSurvey.Enabled())
 	if db.IsUniqueViolation(err) {
 		return emailTaken(), nil
 	}

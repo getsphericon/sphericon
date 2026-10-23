@@ -923,6 +923,17 @@ type Handler interface {
 	//
 	// GET /workspaces/{workspaceId}/setup-checklist
 	SiteSetupChecklistGet(ctx context.Context, params SiteSetupChecklistGetParams) (SiteSetupChecklistGetRes, error)
+	// SiteSignupSurveySubmit implements SiteSignupSurvey_submit operation.
+	//
+	// Answer the Sign-up survey. It belongs to the User, so it takes no Workspace. The answers are stored
+	// and the User stops owing the survey in one transaction (204). 409 when the User does not owe the
+	// survey: it was answered already, or the User was never asked (the Instance has it off, or the User
+	// joined by an Invitation). 422 for a missing required answer, a value outside the lists, an
+	// `…Other` text over its length or without its `other` choice. Nothing is stored for a refused
+	// request.
+	//
+	// POST /me/signup-survey
+	SiteSignupSurveySubmit(ctx context.Context, req *SiteSignupSurveyInput) (SiteSignupSurveySubmitRes, error)
 	// SiteSuppressionsCreate implements SiteSuppressions_create operation.
 	//
 	// Manually suppress an address (reason = manual; idempotent per address).

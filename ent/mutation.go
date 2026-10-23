@@ -54,6 +54,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/sendlimiter"
 	"github.com/getsphericon/sphericon/ent/servicecredential"
+	"github.com/getsphericon/sphericon/ent/signupsurveyresponse"
 	"github.com/getsphericon/sphericon/ent/staffmember"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
@@ -76,58 +77,59 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypeApiToken           = "ApiToken"
-	TypeAuditEntry         = "AuditEntry"
-	TypeAuthAttempt        = "AuthAttempt"
-	TypeAutomation         = "Automation"
-	TypeAutomationRun      = "AutomationRun"
-	TypeAutomationVersion  = "AutomationVersion"
-	TypeBrandKit           = "BrandKit"
-	TypeBroadcast          = "Broadcast"
-	TypeBroadcastRecipient = "BroadcastRecipient"
-	TypeConfirmation       = "Confirmation"
-	TypeContact            = "Contact"
-	TypeContactTag         = "ContactTag"
-	TypeCustomField        = "CustomField"
-	TypeEmailTemplate      = "EmailTemplate"
-	TypeErasure            = "Erasure"
-	TypeEvent              = "Event"
-	TypeHold               = "Hold"
-	TypeInstanceState      = "InstanceState"
-	TypeIntegration        = "Integration"
-	TypeInvitation         = "Invitation"
-	TypeJoinDomain         = "JoinDomain"
-	TypeMembership         = "Membership"
-	TypeOAuthClient        = "OAuthClient"
-	TypeOAuthCode          = "OAuthCode"
-	TypeOAuthRefreshToken  = "OAuthRefreshToken"
-	TypeOutboundMessage    = "OutboundMessage"
-	TypeOutboxMessage      = "OutboxMessage"
-	TypeOutboxOffset       = "OutboxOffset"
-	TypePasskey            = "Passkey"
-	TypePasskeyChallenge   = "PasskeyChallenge"
-	TypePrivateRelayRange  = "PrivateRelayRange"
-	TypeRecoveryCode       = "RecoveryCode"
-	TypeRiverJob           = "RiverJob"
-	TypeRule               = "Rule"
-	TypeRuleFiring         = "RuleFiring"
-	TypeRuleTrigger        = "RuleTrigger"
-	TypeSchemaState        = "SchemaState"
-	TypeSegment            = "Segment"
-	TypeSendLimiter        = "SendLimiter"
-	TypeSendingDomain      = "SendingDomain"
-	TypeServiceCredential  = "ServiceCredential"
-	TypeStaffMember        = "StaffMember"
-	TypeSuppression        = "Suppression"
-	TypeTag                = "Tag"
-	TypeTrackingHostChange = "TrackingHostChange"
-	TypeUnsubscribe        = "Unsubscribe"
-	TypeUsage              = "Usage"
-	TypeUser               = "User"
-	TypeUserIdentity       = "UserIdentity"
-	TypeVisitor            = "Visitor"
-	TypeWebhookEndpoint    = "WebhookEndpoint"
-	TypeWorkspace          = "Workspace"
+	TypeApiToken             = "ApiToken"
+	TypeAuditEntry           = "AuditEntry"
+	TypeAuthAttempt          = "AuthAttempt"
+	TypeAutomation           = "Automation"
+	TypeAutomationRun        = "AutomationRun"
+	TypeAutomationVersion    = "AutomationVersion"
+	TypeBrandKit             = "BrandKit"
+	TypeBroadcast            = "Broadcast"
+	TypeBroadcastRecipient   = "BroadcastRecipient"
+	TypeConfirmation         = "Confirmation"
+	TypeContact              = "Contact"
+	TypeContactTag           = "ContactTag"
+	TypeCustomField          = "CustomField"
+	TypeEmailTemplate        = "EmailTemplate"
+	TypeErasure              = "Erasure"
+	TypeEvent                = "Event"
+	TypeHold                 = "Hold"
+	TypeInstanceState        = "InstanceState"
+	TypeIntegration          = "Integration"
+	TypeInvitation           = "Invitation"
+	TypeJoinDomain           = "JoinDomain"
+	TypeMembership           = "Membership"
+	TypeOAuthClient          = "OAuthClient"
+	TypeOAuthCode            = "OAuthCode"
+	TypeOAuthRefreshToken    = "OAuthRefreshToken"
+	TypeOutboundMessage      = "OutboundMessage"
+	TypeOutboxMessage        = "OutboxMessage"
+	TypeOutboxOffset         = "OutboxOffset"
+	TypePasskey              = "Passkey"
+	TypePasskeyChallenge     = "PasskeyChallenge"
+	TypePrivateRelayRange    = "PrivateRelayRange"
+	TypeRecoveryCode         = "RecoveryCode"
+	TypeRiverJob             = "RiverJob"
+	TypeRule                 = "Rule"
+	TypeRuleFiring           = "RuleFiring"
+	TypeRuleTrigger          = "RuleTrigger"
+	TypeSchemaState          = "SchemaState"
+	TypeSegment              = "Segment"
+	TypeSendLimiter          = "SendLimiter"
+	TypeSendingDomain        = "SendingDomain"
+	TypeServiceCredential    = "ServiceCredential"
+	TypeSignupSurveyResponse = "SignupSurveyResponse"
+	TypeStaffMember          = "StaffMember"
+	TypeSuppression          = "Suppression"
+	TypeTag                  = "Tag"
+	TypeTrackingHostChange   = "TrackingHostChange"
+	TypeUnsubscribe          = "Unsubscribe"
+	TypeUsage                = "Usage"
+	TypeUser                 = "User"
+	TypeUserIdentity         = "UserIdentity"
+	TypeVisitor              = "Visitor"
+	TypeWebhookEndpoint      = "WebhookEndpoint"
+	TypeWorkspace            = "Workspace"
 )
 
 // ApiTokenMutation represents an operation that mutates the ApiToken nodes in the graph.
@@ -37856,6 +37858,1033 @@ func (m *ServiceCredentialMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown ServiceCredential edge %s", name)
 }
 
+// SignupSurveyResponseMutation represents an operation that mutates the SignupSurveyResponse nodes in the graph.
+type SignupSurveyResponseMutation struct {
+	config
+	op                      Op
+	typ                     string
+	id                      *int64
+	created_at              *time.Time
+	updated_at              *time.Time
+	role                    *signupsurveyresponse.Role
+	role_other_text         *string
+	company_size            *signupsurveyresponse.CompanySize
+	company_size_other_text *string
+	main_goal               *signupsurveyresponse.MainGoal
+	main_goal_other_text    *string
+	heard_from              *signupsurveyresponse.HeardFrom
+	heard_from_other_text   *string
+	clearedFields           map[string]struct{}
+	user                    *int64
+	cleareduser             bool
+	done                    bool
+	oldValue                func(context.Context) (*SignupSurveyResponse, error)
+	predicates              []predicate.SignupSurveyResponse
+}
+
+var _ ent.Mutation = (*SignupSurveyResponseMutation)(nil)
+
+// signupsurveyresponseOption allows management of the mutation configuration using functional options.
+type signupsurveyresponseOption func(*SignupSurveyResponseMutation)
+
+// newSignupSurveyResponseMutation creates new mutation for the SignupSurveyResponse entity.
+func newSignupSurveyResponseMutation(c config, op Op, opts ...signupsurveyresponseOption) *SignupSurveyResponseMutation {
+	m := &SignupSurveyResponseMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeSignupSurveyResponse,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withSignupSurveyResponseID sets the ID field of the mutation.
+func withSignupSurveyResponseID(id int64) signupsurveyresponseOption {
+	return func(m *SignupSurveyResponseMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *SignupSurveyResponse
+		)
+		m.oldValue = func(ctx context.Context) (*SignupSurveyResponse, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().SignupSurveyResponse.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withSignupSurveyResponse sets the old SignupSurveyResponse of the mutation.
+func withSignupSurveyResponse(node *SignupSurveyResponse) signupsurveyresponseOption {
+	return func(m *SignupSurveyResponseMutation) {
+		m.oldValue = func(context.Context) (*SignupSurveyResponse, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m SignupSurveyResponseMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m SignupSurveyResponseMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of SignupSurveyResponse entities.
+func (m *SignupSurveyResponseMutation) SetID(id int64) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *SignupSurveyResponseMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *SignupSurveyResponseMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().SignupSurveyResponse.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *SignupSurveyResponseMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *SignupSurveyResponseMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the SignupSurveyResponse entity.
+// If the SignupSurveyResponse object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SignupSurveyResponseMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *SignupSurveyResponseMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *SignupSurveyResponseMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *SignupSurveyResponseMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the SignupSurveyResponse entity.
+// If the SignupSurveyResponse object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SignupSurveyResponseMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *SignupSurveyResponseMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetUserID sets the "user_id" field.
+func (m *SignupSurveyResponseMutation) SetUserID(i int64) {
+	m.user = &i
+}
+
+// UserID returns the value of the "user_id" field in the mutation.
+func (m *SignupSurveyResponseMutation) UserID() (r int64, exists bool) {
+	v := m.user
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserID returns the old "user_id" field's value of the SignupSurveyResponse entity.
+// If the SignupSurveyResponse object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SignupSurveyResponseMutation) OldUserID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserID: %w", err)
+	}
+	return oldValue.UserID, nil
+}
+
+// ResetUserID resets all changes to the "user_id" field.
+func (m *SignupSurveyResponseMutation) ResetUserID() {
+	m.user = nil
+}
+
+// SetRole sets the "role" field.
+func (m *SignupSurveyResponseMutation) SetRole(s signupsurveyresponse.Role) {
+	m.role = &s
+}
+
+// Role returns the value of the "role" field in the mutation.
+func (m *SignupSurveyResponseMutation) Role() (r signupsurveyresponse.Role, exists bool) {
+	v := m.role
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRole returns the old "role" field's value of the SignupSurveyResponse entity.
+// If the SignupSurveyResponse object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SignupSurveyResponseMutation) OldRole(ctx context.Context) (v signupsurveyresponse.Role, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRole is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRole requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRole: %w", err)
+	}
+	return oldValue.Role, nil
+}
+
+// ResetRole resets all changes to the "role" field.
+func (m *SignupSurveyResponseMutation) ResetRole() {
+	m.role = nil
+}
+
+// SetRoleOtherText sets the "role_other_text" field.
+func (m *SignupSurveyResponseMutation) SetRoleOtherText(s string) {
+	m.role_other_text = &s
+}
+
+// RoleOtherText returns the value of the "role_other_text" field in the mutation.
+func (m *SignupSurveyResponseMutation) RoleOtherText() (r string, exists bool) {
+	v := m.role_other_text
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRoleOtherText returns the old "role_other_text" field's value of the SignupSurveyResponse entity.
+// If the SignupSurveyResponse object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SignupSurveyResponseMutation) OldRoleOtherText(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRoleOtherText is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRoleOtherText requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRoleOtherText: %w", err)
+	}
+	return oldValue.RoleOtherText, nil
+}
+
+// ClearRoleOtherText clears the value of the "role_other_text" field.
+func (m *SignupSurveyResponseMutation) ClearRoleOtherText() {
+	m.role_other_text = nil
+	m.clearedFields[signupsurveyresponse.FieldRoleOtherText] = struct{}{}
+}
+
+// RoleOtherTextCleared returns if the "role_other_text" field was cleared in this mutation.
+func (m *SignupSurveyResponseMutation) RoleOtherTextCleared() bool {
+	_, ok := m.clearedFields[signupsurveyresponse.FieldRoleOtherText]
+	return ok
+}
+
+// ResetRoleOtherText resets all changes to the "role_other_text" field.
+func (m *SignupSurveyResponseMutation) ResetRoleOtherText() {
+	m.role_other_text = nil
+	delete(m.clearedFields, signupsurveyresponse.FieldRoleOtherText)
+}
+
+// SetCompanySize sets the "company_size" field.
+func (m *SignupSurveyResponseMutation) SetCompanySize(ss signupsurveyresponse.CompanySize) {
+	m.company_size = &ss
+}
+
+// CompanySize returns the value of the "company_size" field in the mutation.
+func (m *SignupSurveyResponseMutation) CompanySize() (r signupsurveyresponse.CompanySize, exists bool) {
+	v := m.company_size
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCompanySize returns the old "company_size" field's value of the SignupSurveyResponse entity.
+// If the SignupSurveyResponse object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SignupSurveyResponseMutation) OldCompanySize(ctx context.Context) (v signupsurveyresponse.CompanySize, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCompanySize is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCompanySize requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCompanySize: %w", err)
+	}
+	return oldValue.CompanySize, nil
+}
+
+// ResetCompanySize resets all changes to the "company_size" field.
+func (m *SignupSurveyResponseMutation) ResetCompanySize() {
+	m.company_size = nil
+}
+
+// SetCompanySizeOtherText sets the "company_size_other_text" field.
+func (m *SignupSurveyResponseMutation) SetCompanySizeOtherText(s string) {
+	m.company_size_other_text = &s
+}
+
+// CompanySizeOtherText returns the value of the "company_size_other_text" field in the mutation.
+func (m *SignupSurveyResponseMutation) CompanySizeOtherText() (r string, exists bool) {
+	v := m.company_size_other_text
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCompanySizeOtherText returns the old "company_size_other_text" field's value of the SignupSurveyResponse entity.
+// If the SignupSurveyResponse object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SignupSurveyResponseMutation) OldCompanySizeOtherText(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCompanySizeOtherText is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCompanySizeOtherText requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCompanySizeOtherText: %w", err)
+	}
+	return oldValue.CompanySizeOtherText, nil
+}
+
+// ClearCompanySizeOtherText clears the value of the "company_size_other_text" field.
+func (m *SignupSurveyResponseMutation) ClearCompanySizeOtherText() {
+	m.company_size_other_text = nil
+	m.clearedFields[signupsurveyresponse.FieldCompanySizeOtherText] = struct{}{}
+}
+
+// CompanySizeOtherTextCleared returns if the "company_size_other_text" field was cleared in this mutation.
+func (m *SignupSurveyResponseMutation) CompanySizeOtherTextCleared() bool {
+	_, ok := m.clearedFields[signupsurveyresponse.FieldCompanySizeOtherText]
+	return ok
+}
+
+// ResetCompanySizeOtherText resets all changes to the "company_size_other_text" field.
+func (m *SignupSurveyResponseMutation) ResetCompanySizeOtherText() {
+	m.company_size_other_text = nil
+	delete(m.clearedFields, signupsurveyresponse.FieldCompanySizeOtherText)
+}
+
+// SetMainGoal sets the "main_goal" field.
+func (m *SignupSurveyResponseMutation) SetMainGoal(sg signupsurveyresponse.MainGoal) {
+	m.main_goal = &sg
+}
+
+// MainGoal returns the value of the "main_goal" field in the mutation.
+func (m *SignupSurveyResponseMutation) MainGoal() (r signupsurveyresponse.MainGoal, exists bool) {
+	v := m.main_goal
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMainGoal returns the old "main_goal" field's value of the SignupSurveyResponse entity.
+// If the SignupSurveyResponse object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SignupSurveyResponseMutation) OldMainGoal(ctx context.Context) (v signupsurveyresponse.MainGoal, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMainGoal is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMainGoal requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMainGoal: %w", err)
+	}
+	return oldValue.MainGoal, nil
+}
+
+// ResetMainGoal resets all changes to the "main_goal" field.
+func (m *SignupSurveyResponseMutation) ResetMainGoal() {
+	m.main_goal = nil
+}
+
+// SetMainGoalOtherText sets the "main_goal_other_text" field.
+func (m *SignupSurveyResponseMutation) SetMainGoalOtherText(s string) {
+	m.main_goal_other_text = &s
+}
+
+// MainGoalOtherText returns the value of the "main_goal_other_text" field in the mutation.
+func (m *SignupSurveyResponseMutation) MainGoalOtherText() (r string, exists bool) {
+	v := m.main_goal_other_text
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMainGoalOtherText returns the old "main_goal_other_text" field's value of the SignupSurveyResponse entity.
+// If the SignupSurveyResponse object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SignupSurveyResponseMutation) OldMainGoalOtherText(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMainGoalOtherText is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMainGoalOtherText requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMainGoalOtherText: %w", err)
+	}
+	return oldValue.MainGoalOtherText, nil
+}
+
+// ClearMainGoalOtherText clears the value of the "main_goal_other_text" field.
+func (m *SignupSurveyResponseMutation) ClearMainGoalOtherText() {
+	m.main_goal_other_text = nil
+	m.clearedFields[signupsurveyresponse.FieldMainGoalOtherText] = struct{}{}
+}
+
+// MainGoalOtherTextCleared returns if the "main_goal_other_text" field was cleared in this mutation.
+func (m *SignupSurveyResponseMutation) MainGoalOtherTextCleared() bool {
+	_, ok := m.clearedFields[signupsurveyresponse.FieldMainGoalOtherText]
+	return ok
+}
+
+// ResetMainGoalOtherText resets all changes to the "main_goal_other_text" field.
+func (m *SignupSurveyResponseMutation) ResetMainGoalOtherText() {
+	m.main_goal_other_text = nil
+	delete(m.clearedFields, signupsurveyresponse.FieldMainGoalOtherText)
+}
+
+// SetHeardFrom sets the "heard_from" field.
+func (m *SignupSurveyResponseMutation) SetHeardFrom(sf signupsurveyresponse.HeardFrom) {
+	m.heard_from = &sf
+}
+
+// HeardFrom returns the value of the "heard_from" field in the mutation.
+func (m *SignupSurveyResponseMutation) HeardFrom() (r signupsurveyresponse.HeardFrom, exists bool) {
+	v := m.heard_from
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldHeardFrom returns the old "heard_from" field's value of the SignupSurveyResponse entity.
+// If the SignupSurveyResponse object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SignupSurveyResponseMutation) OldHeardFrom(ctx context.Context) (v *signupsurveyresponse.HeardFrom, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldHeardFrom is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldHeardFrom requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldHeardFrom: %w", err)
+	}
+	return oldValue.HeardFrom, nil
+}
+
+// ClearHeardFrom clears the value of the "heard_from" field.
+func (m *SignupSurveyResponseMutation) ClearHeardFrom() {
+	m.heard_from = nil
+	m.clearedFields[signupsurveyresponse.FieldHeardFrom] = struct{}{}
+}
+
+// HeardFromCleared returns if the "heard_from" field was cleared in this mutation.
+func (m *SignupSurveyResponseMutation) HeardFromCleared() bool {
+	_, ok := m.clearedFields[signupsurveyresponse.FieldHeardFrom]
+	return ok
+}
+
+// ResetHeardFrom resets all changes to the "heard_from" field.
+func (m *SignupSurveyResponseMutation) ResetHeardFrom() {
+	m.heard_from = nil
+	delete(m.clearedFields, signupsurveyresponse.FieldHeardFrom)
+}
+
+// SetHeardFromOtherText sets the "heard_from_other_text" field.
+func (m *SignupSurveyResponseMutation) SetHeardFromOtherText(s string) {
+	m.heard_from_other_text = &s
+}
+
+// HeardFromOtherText returns the value of the "heard_from_other_text" field in the mutation.
+func (m *SignupSurveyResponseMutation) HeardFromOtherText() (r string, exists bool) {
+	v := m.heard_from_other_text
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldHeardFromOtherText returns the old "heard_from_other_text" field's value of the SignupSurveyResponse entity.
+// If the SignupSurveyResponse object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SignupSurveyResponseMutation) OldHeardFromOtherText(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldHeardFromOtherText is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldHeardFromOtherText requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldHeardFromOtherText: %w", err)
+	}
+	return oldValue.HeardFromOtherText, nil
+}
+
+// ClearHeardFromOtherText clears the value of the "heard_from_other_text" field.
+func (m *SignupSurveyResponseMutation) ClearHeardFromOtherText() {
+	m.heard_from_other_text = nil
+	m.clearedFields[signupsurveyresponse.FieldHeardFromOtherText] = struct{}{}
+}
+
+// HeardFromOtherTextCleared returns if the "heard_from_other_text" field was cleared in this mutation.
+func (m *SignupSurveyResponseMutation) HeardFromOtherTextCleared() bool {
+	_, ok := m.clearedFields[signupsurveyresponse.FieldHeardFromOtherText]
+	return ok
+}
+
+// ResetHeardFromOtherText resets all changes to the "heard_from_other_text" field.
+func (m *SignupSurveyResponseMutation) ResetHeardFromOtherText() {
+	m.heard_from_other_text = nil
+	delete(m.clearedFields, signupsurveyresponse.FieldHeardFromOtherText)
+}
+
+// ClearUser clears the "user" edge to the User entity.
+func (m *SignupSurveyResponseMutation) ClearUser() {
+	m.cleareduser = true
+	m.clearedFields[signupsurveyresponse.FieldUserID] = struct{}{}
+}
+
+// UserCleared reports if the "user" edge to the User entity was cleared.
+func (m *SignupSurveyResponseMutation) UserCleared() bool {
+	return m.cleareduser
+}
+
+// UserIDs returns the "user" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// UserID instead. It exists only for internal usage by the builders.
+func (m *SignupSurveyResponseMutation) UserIDs() (ids []int64) {
+	if id := m.user; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetUser resets all changes to the "user" edge.
+func (m *SignupSurveyResponseMutation) ResetUser() {
+	m.user = nil
+	m.cleareduser = false
+}
+
+// Where appends a list predicates to the SignupSurveyResponseMutation builder.
+func (m *SignupSurveyResponseMutation) Where(ps ...predicate.SignupSurveyResponse) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the SignupSurveyResponseMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *SignupSurveyResponseMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.SignupSurveyResponse, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *SignupSurveyResponseMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *SignupSurveyResponseMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (SignupSurveyResponse).
+func (m *SignupSurveyResponseMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *SignupSurveyResponseMutation) Fields() []string {
+	fields := make([]string, 0, 11)
+	if m.created_at != nil {
+		fields = append(fields, signupsurveyresponse.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, signupsurveyresponse.FieldUpdatedAt)
+	}
+	if m.user != nil {
+		fields = append(fields, signupsurveyresponse.FieldUserID)
+	}
+	if m.role != nil {
+		fields = append(fields, signupsurveyresponse.FieldRole)
+	}
+	if m.role_other_text != nil {
+		fields = append(fields, signupsurveyresponse.FieldRoleOtherText)
+	}
+	if m.company_size != nil {
+		fields = append(fields, signupsurveyresponse.FieldCompanySize)
+	}
+	if m.company_size_other_text != nil {
+		fields = append(fields, signupsurveyresponse.FieldCompanySizeOtherText)
+	}
+	if m.main_goal != nil {
+		fields = append(fields, signupsurveyresponse.FieldMainGoal)
+	}
+	if m.main_goal_other_text != nil {
+		fields = append(fields, signupsurveyresponse.FieldMainGoalOtherText)
+	}
+	if m.heard_from != nil {
+		fields = append(fields, signupsurveyresponse.FieldHeardFrom)
+	}
+	if m.heard_from_other_text != nil {
+		fields = append(fields, signupsurveyresponse.FieldHeardFromOtherText)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *SignupSurveyResponseMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case signupsurveyresponse.FieldCreatedAt:
+		return m.CreatedAt()
+	case signupsurveyresponse.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case signupsurveyresponse.FieldUserID:
+		return m.UserID()
+	case signupsurveyresponse.FieldRole:
+		return m.Role()
+	case signupsurveyresponse.FieldRoleOtherText:
+		return m.RoleOtherText()
+	case signupsurveyresponse.FieldCompanySize:
+		return m.CompanySize()
+	case signupsurveyresponse.FieldCompanySizeOtherText:
+		return m.CompanySizeOtherText()
+	case signupsurveyresponse.FieldMainGoal:
+		return m.MainGoal()
+	case signupsurveyresponse.FieldMainGoalOtherText:
+		return m.MainGoalOtherText()
+	case signupsurveyresponse.FieldHeardFrom:
+		return m.HeardFrom()
+	case signupsurveyresponse.FieldHeardFromOtherText:
+		return m.HeardFromOtherText()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *SignupSurveyResponseMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case signupsurveyresponse.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case signupsurveyresponse.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case signupsurveyresponse.FieldUserID:
+		return m.OldUserID(ctx)
+	case signupsurveyresponse.FieldRole:
+		return m.OldRole(ctx)
+	case signupsurveyresponse.FieldRoleOtherText:
+		return m.OldRoleOtherText(ctx)
+	case signupsurveyresponse.FieldCompanySize:
+		return m.OldCompanySize(ctx)
+	case signupsurveyresponse.FieldCompanySizeOtherText:
+		return m.OldCompanySizeOtherText(ctx)
+	case signupsurveyresponse.FieldMainGoal:
+		return m.OldMainGoal(ctx)
+	case signupsurveyresponse.FieldMainGoalOtherText:
+		return m.OldMainGoalOtherText(ctx)
+	case signupsurveyresponse.FieldHeardFrom:
+		return m.OldHeardFrom(ctx)
+	case signupsurveyresponse.FieldHeardFromOtherText:
+		return m.OldHeardFromOtherText(ctx)
+	}
+	return nil, fmt.Errorf("unknown SignupSurveyResponse field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SignupSurveyResponseMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case signupsurveyresponse.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case signupsurveyresponse.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case signupsurveyresponse.FieldUserID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserID(v)
+		return nil
+	case signupsurveyresponse.FieldRole:
+		v, ok := value.(signupsurveyresponse.Role)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRole(v)
+		return nil
+	case signupsurveyresponse.FieldRoleOtherText:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRoleOtherText(v)
+		return nil
+	case signupsurveyresponse.FieldCompanySize:
+		v, ok := value.(signupsurveyresponse.CompanySize)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCompanySize(v)
+		return nil
+	case signupsurveyresponse.FieldCompanySizeOtherText:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCompanySizeOtherText(v)
+		return nil
+	case signupsurveyresponse.FieldMainGoal:
+		v, ok := value.(signupsurveyresponse.MainGoal)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMainGoal(v)
+		return nil
+	case signupsurveyresponse.FieldMainGoalOtherText:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMainGoalOtherText(v)
+		return nil
+	case signupsurveyresponse.FieldHeardFrom:
+		v, ok := value.(signupsurveyresponse.HeardFrom)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetHeardFrom(v)
+		return nil
+	case signupsurveyresponse.FieldHeardFromOtherText:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetHeardFromOtherText(v)
+		return nil
+	}
+	return fmt.Errorf("unknown SignupSurveyResponse field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *SignupSurveyResponseMutation) AddedFields() []string {
+	var fields []string
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *SignupSurveyResponseMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SignupSurveyResponseMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown SignupSurveyResponse numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *SignupSurveyResponseMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(signupsurveyresponse.FieldRoleOtherText) {
+		fields = append(fields, signupsurveyresponse.FieldRoleOtherText)
+	}
+	if m.FieldCleared(signupsurveyresponse.FieldCompanySizeOtherText) {
+		fields = append(fields, signupsurveyresponse.FieldCompanySizeOtherText)
+	}
+	if m.FieldCleared(signupsurveyresponse.FieldMainGoalOtherText) {
+		fields = append(fields, signupsurveyresponse.FieldMainGoalOtherText)
+	}
+	if m.FieldCleared(signupsurveyresponse.FieldHeardFrom) {
+		fields = append(fields, signupsurveyresponse.FieldHeardFrom)
+	}
+	if m.FieldCleared(signupsurveyresponse.FieldHeardFromOtherText) {
+		fields = append(fields, signupsurveyresponse.FieldHeardFromOtherText)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *SignupSurveyResponseMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *SignupSurveyResponseMutation) ClearField(name string) error {
+	switch name {
+	case signupsurveyresponse.FieldRoleOtherText:
+		m.ClearRoleOtherText()
+		return nil
+	case signupsurveyresponse.FieldCompanySizeOtherText:
+		m.ClearCompanySizeOtherText()
+		return nil
+	case signupsurveyresponse.FieldMainGoalOtherText:
+		m.ClearMainGoalOtherText()
+		return nil
+	case signupsurveyresponse.FieldHeardFrom:
+		m.ClearHeardFrom()
+		return nil
+	case signupsurveyresponse.FieldHeardFromOtherText:
+		m.ClearHeardFromOtherText()
+		return nil
+	}
+	return fmt.Errorf("unknown SignupSurveyResponse nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *SignupSurveyResponseMutation) ResetField(name string) error {
+	switch name {
+	case signupsurveyresponse.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case signupsurveyresponse.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case signupsurveyresponse.FieldUserID:
+		m.ResetUserID()
+		return nil
+	case signupsurveyresponse.FieldRole:
+		m.ResetRole()
+		return nil
+	case signupsurveyresponse.FieldRoleOtherText:
+		m.ResetRoleOtherText()
+		return nil
+	case signupsurveyresponse.FieldCompanySize:
+		m.ResetCompanySize()
+		return nil
+	case signupsurveyresponse.FieldCompanySizeOtherText:
+		m.ResetCompanySizeOtherText()
+		return nil
+	case signupsurveyresponse.FieldMainGoal:
+		m.ResetMainGoal()
+		return nil
+	case signupsurveyresponse.FieldMainGoalOtherText:
+		m.ResetMainGoalOtherText()
+		return nil
+	case signupsurveyresponse.FieldHeardFrom:
+		m.ResetHeardFrom()
+		return nil
+	case signupsurveyresponse.FieldHeardFromOtherText:
+		m.ResetHeardFromOtherText()
+		return nil
+	}
+	return fmt.Errorf("unknown SignupSurveyResponse field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *SignupSurveyResponseMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.user != nil {
+		edges = append(edges, signupsurveyresponse.EdgeUser)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *SignupSurveyResponseMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case signupsurveyresponse.EdgeUser:
+		if id := m.user; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *SignupSurveyResponseMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *SignupSurveyResponseMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *SignupSurveyResponseMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.cleareduser {
+		edges = append(edges, signupsurveyresponse.EdgeUser)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *SignupSurveyResponseMutation) EdgeCleared(name string) bool {
+	switch name {
+	case signupsurveyresponse.EdgeUser:
+		return m.cleareduser
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *SignupSurveyResponseMutation) ClearEdge(name string) error {
+	switch name {
+	case signupsurveyresponse.EdgeUser:
+		m.ClearUser()
+		return nil
+	}
+	return fmt.Errorf("unknown SignupSurveyResponse unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *SignupSurveyResponseMutation) ResetEdge(name string) error {
+	switch name {
+	case signupsurveyresponse.EdgeUser:
+		m.ResetUser()
+		return nil
+	}
+	return fmt.Errorf("unknown SignupSurveyResponse edge %s", name)
+}
+
 // StaffMemberMutation represents an operation that mutates the StaffMember nodes in the graph.
 type StaffMemberMutation struct {
 	config
@@ -42372,6 +43401,7 @@ type UserMutation struct {
 	second_factor_confirmed_at     *time.Time
 	second_factor_last_step        *int64
 	addsecond_factor_last_step     *int64
+	signup_survey_due_at           *time.Time
 	clearedFields                  map[string]struct{}
 	memberships                    map[int64]struct{}
 	removedmemberships             map[int64]struct{}
@@ -42388,6 +43418,8 @@ type UserMutation struct {
 	identities                     map[int64]struct{}
 	removedidentities              map[int64]struct{}
 	clearedidentities              bool
+	signup_survey_response         *int64
+	clearedsignup_survey_response  bool
 	done                           bool
 	oldValue                       func(context.Context) (*User, error)
 	predicates                     []predicate.User
@@ -42998,6 +44030,55 @@ func (m *UserMutation) ResetSecondFactorLastStep() {
 	m.addsecond_factor_last_step = nil
 }
 
+// SetSignupSurveyDueAt sets the "signup_survey_due_at" field.
+func (m *UserMutation) SetSignupSurveyDueAt(t time.Time) {
+	m.signup_survey_due_at = &t
+}
+
+// SignupSurveyDueAt returns the value of the "signup_survey_due_at" field in the mutation.
+func (m *UserMutation) SignupSurveyDueAt() (r time.Time, exists bool) {
+	v := m.signup_survey_due_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSignupSurveyDueAt returns the old "signup_survey_due_at" field's value of the User entity.
+// If the User object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserMutation) OldSignupSurveyDueAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSignupSurveyDueAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSignupSurveyDueAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSignupSurveyDueAt: %w", err)
+	}
+	return oldValue.SignupSurveyDueAt, nil
+}
+
+// ClearSignupSurveyDueAt clears the value of the "signup_survey_due_at" field.
+func (m *UserMutation) ClearSignupSurveyDueAt() {
+	m.signup_survey_due_at = nil
+	m.clearedFields[user.FieldSignupSurveyDueAt] = struct{}{}
+}
+
+// SignupSurveyDueAtCleared returns if the "signup_survey_due_at" field was cleared in this mutation.
+func (m *UserMutation) SignupSurveyDueAtCleared() bool {
+	_, ok := m.clearedFields[user.FieldSignupSurveyDueAt]
+	return ok
+}
+
+// ResetSignupSurveyDueAt resets all changes to the "signup_survey_due_at" field.
+func (m *UserMutation) ResetSignupSurveyDueAt() {
+	m.signup_survey_due_at = nil
+	delete(m.clearedFields, user.FieldSignupSurveyDueAt)
+}
+
 // AddMembershipIDs adds the "memberships" edge to the Membership entity by ids.
 func (m *UserMutation) AddMembershipIDs(ids ...int64) {
 	if m.memberships == nil {
@@ -43268,6 +44349,45 @@ func (m *UserMutation) ResetIdentities() {
 	m.removedidentities = nil
 }
 
+// SetSignupSurveyResponseID sets the "signup_survey_response" edge to the SignupSurveyResponse entity by id.
+func (m *UserMutation) SetSignupSurveyResponseID(id int64) {
+	m.signup_survey_response = &id
+}
+
+// ClearSignupSurveyResponse clears the "signup_survey_response" edge to the SignupSurveyResponse entity.
+func (m *UserMutation) ClearSignupSurveyResponse() {
+	m.clearedsignup_survey_response = true
+}
+
+// SignupSurveyResponseCleared reports if the "signup_survey_response" edge to the SignupSurveyResponse entity was cleared.
+func (m *UserMutation) SignupSurveyResponseCleared() bool {
+	return m.clearedsignup_survey_response
+}
+
+// SignupSurveyResponseID returns the "signup_survey_response" edge ID in the mutation.
+func (m *UserMutation) SignupSurveyResponseID() (id int64, exists bool) {
+	if m.signup_survey_response != nil {
+		return *m.signup_survey_response, true
+	}
+	return
+}
+
+// SignupSurveyResponseIDs returns the "signup_survey_response" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// SignupSurveyResponseID instead. It exists only for internal usage by the builders.
+func (m *UserMutation) SignupSurveyResponseIDs() (ids []int64) {
+	if id := m.signup_survey_response; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetSignupSurveyResponse resets all changes to the "signup_survey_response" edge.
+func (m *UserMutation) ResetSignupSurveyResponse() {
+	m.signup_survey_response = nil
+	m.clearedsignup_survey_response = false
+}
+
 // Where appends a list predicates to the UserMutation builder.
 func (m *UserMutation) Where(ps ...predicate.User) {
 	m.predicates = append(m.predicates, ps...)
@@ -43302,7 +44422,7 @@ func (m *UserMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UserMutation) Fields() []string {
-	fields := make([]string, 0, 11)
+	fields := make([]string, 0, 12)
 	if m.created_at != nil {
 		fields = append(fields, user.FieldCreatedAt)
 	}
@@ -43336,6 +44456,9 @@ func (m *UserMutation) Fields() []string {
 	if m.second_factor_last_step != nil {
 		fields = append(fields, user.FieldSecondFactorLastStep)
 	}
+	if m.signup_survey_due_at != nil {
+		fields = append(fields, user.FieldSignupSurveyDueAt)
+	}
 	return fields
 }
 
@@ -43366,6 +44489,8 @@ func (m *UserMutation) Field(name string) (ent.Value, bool) {
 		return m.SecondFactorConfirmedAt()
 	case user.FieldSecondFactorLastStep:
 		return m.SecondFactorLastStep()
+	case user.FieldSignupSurveyDueAt:
+		return m.SignupSurveyDueAt()
 	}
 	return nil, false
 }
@@ -43397,6 +44522,8 @@ func (m *UserMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldSecondFactorConfirmedAt(ctx)
 	case user.FieldSecondFactorLastStep:
 		return m.OldSecondFactorLastStep(ctx)
+	case user.FieldSignupSurveyDueAt:
+		return m.OldSignupSurveyDueAt(ctx)
 	}
 	return nil, fmt.Errorf("unknown User field %s", name)
 }
@@ -43483,6 +44610,13 @@ func (m *UserMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetSecondFactorLastStep(v)
 		return nil
+	case user.FieldSignupSurveyDueAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSignupSurveyDueAt(v)
+		return nil
 	}
 	return fmt.Errorf("unknown User field %s", name)
 }
@@ -43555,6 +44689,9 @@ func (m *UserMutation) ClearedFields() []string {
 	if m.FieldCleared(user.FieldSecondFactorConfirmedAt) {
 		fields = append(fields, user.FieldSecondFactorConfirmedAt)
 	}
+	if m.FieldCleared(user.FieldSignupSurveyDueAt) {
+		fields = append(fields, user.FieldSignupSurveyDueAt)
+	}
 	return fields
 }
 
@@ -43583,6 +44720,9 @@ func (m *UserMutation) ClearField(name string) error {
 		return nil
 	case user.FieldSecondFactorConfirmedAt:
 		m.ClearSecondFactorConfirmedAt()
+		return nil
+	case user.FieldSignupSurveyDueAt:
+		m.ClearSignupSurveyDueAt()
 		return nil
 	}
 	return fmt.Errorf("unknown User nullable field %s", name)
@@ -43625,13 +44765,16 @@ func (m *UserMutation) ResetField(name string) error {
 	case user.FieldSecondFactorLastStep:
 		m.ResetSecondFactorLastStep()
 		return nil
+	case user.FieldSignupSurveyDueAt:
+		m.ResetSignupSurveyDueAt()
+		return nil
 	}
 	return fmt.Errorf("unknown User field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UserMutation) AddedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.memberships != nil {
 		edges = append(edges, user.EdgeMemberships)
 	}
@@ -43646,6 +44789,9 @@ func (m *UserMutation) AddedEdges() []string {
 	}
 	if m.identities != nil {
 		edges = append(edges, user.EdgeIdentities)
+	}
+	if m.signup_survey_response != nil {
+		edges = append(edges, user.EdgeSignupSurveyResponse)
 	}
 	return edges
 }
@@ -43684,13 +44830,17 @@ func (m *UserMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgeSignupSurveyResponse:
+		if id := m.signup_survey_response; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UserMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.removedmemberships != nil {
 		edges = append(edges, user.EdgeMemberships)
 	}
@@ -43749,7 +44899,7 @@ func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UserMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.clearedmemberships {
 		edges = append(edges, user.EdgeMemberships)
 	}
@@ -43764,6 +44914,9 @@ func (m *UserMutation) ClearedEdges() []string {
 	}
 	if m.clearedidentities {
 		edges = append(edges, user.EdgeIdentities)
+	}
+	if m.clearedsignup_survey_response {
+		edges = append(edges, user.EdgeSignupSurveyResponse)
 	}
 	return edges
 }
@@ -43782,6 +44935,8 @@ func (m *UserMutation) EdgeCleared(name string) bool {
 		return m.clearedpasskeys
 	case user.EdgeIdentities:
 		return m.clearedidentities
+	case user.EdgeSignupSurveyResponse:
+		return m.clearedsignup_survey_response
 	}
 	return false
 }
@@ -43790,6 +44945,9 @@ func (m *UserMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *UserMutation) ClearEdge(name string) error {
 	switch name {
+	case user.EdgeSignupSurveyResponse:
+		m.ClearSignupSurveyResponse()
+		return nil
 	}
 	return fmt.Errorf("unknown User unique edge %s", name)
 }
@@ -43812,6 +44970,9 @@ func (m *UserMutation) ResetEdge(name string) error {
 		return nil
 	case user.EdgeIdentities:
 		m.ResetIdentities()
+		return nil
+	case user.EdgeSignupSurveyResponse:
+		m.ResetSignupSurveyResponse()
 		return nil
 	}
 	return fmt.Errorf("unknown User edge %s", name)

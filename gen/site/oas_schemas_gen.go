@@ -4630,6 +4630,52 @@ func (o OptSitePasskeyRequestOptionsUserVerification) Or(d SitePasskeyRequestOpt
 	return d
 }
 
+// NewOptSiteSignupSource returns new OptSiteSignupSource with value set to v.
+func NewOptSiteSignupSource(v SiteSignupSource) OptSiteSignupSource {
+	return OptSiteSignupSource{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSiteSignupSource is optional SiteSignupSource.
+type OptSiteSignupSource struct {
+	Value SiteSignupSource
+	Set   bool
+}
+
+// IsSet returns true if OptSiteSignupSource was set.
+func (o OptSiteSignupSource) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSiteSignupSource) Reset() {
+	var v SiteSignupSource
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSiteSignupSource) SetTo(v SiteSignupSource) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSiteSignupSource) Get() (v SiteSignupSource, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSiteSignupSource) Or(d SiteSignupSource) SiteSignupSource {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptSiteSuppressionChannel returns new OptSiteSuppressionChannel with value set to v.
 func NewOptSiteSuppressionChannel(v SiteSuppressionChannel) OptSiteSuppressionChannel {
 	return OptSiteSuppressionChannel{
@@ -5514,6 +5560,7 @@ func (*ProblemDetailsHeaders) siteSecondFactorConfirmEnrollmentRes()       {}
 func (*ProblemDetailsHeaders) siteSecondFactorDisableRes()                 {}
 func (*ProblemDetailsHeaders) siteSecondFactorRegenerateRecoveryCodesRes() {}
 func (*ProblemDetailsHeaders) siteSecondFactorStartEnrollmentRes()         {}
+func (*ProblemDetailsHeaders) siteSignupSurveySubmitRes()                  {}
 func (*ProblemDetailsHeaders) siteUserDeleteUserRes()                      {}
 func (*ProblemDetailsHeaders) siteUserEmailChangeRes()                     {}
 func (*ProblemDetailsHeaders) siteUserUpdateMeRes()                        {}
@@ -17459,6 +17506,392 @@ func (s *SiteSigninProviders) SetItems(val []SiteSigninProvider) {
 	s.Items = val
 }
 
+// How many people work at the User's company (second question).
+// Ref: #/components/schemas/SiteSignupCompanySize
+type SiteSignupCompanySize string
+
+const (
+	SiteSignupCompanySize1        SiteSignupCompanySize = "1"
+	SiteSignupCompanySize210      SiteSignupCompanySize = "2_10"
+	SiteSignupCompanySize1150     SiteSignupCompanySize = "11_50"
+	SiteSignupCompanySize51200    SiteSignupCompanySize = "51_200"
+	SiteSignupCompanySize2011000  SiteSignupCompanySize = "201_1000"
+	SiteSignupCompanySize1000Plus SiteSignupCompanySize = "1000_plus"
+	SiteSignupCompanySizeOther    SiteSignupCompanySize = "other"
+)
+
+// AllValues returns all SiteSignupCompanySize values.
+func (SiteSignupCompanySize) AllValues() []SiteSignupCompanySize {
+	return []SiteSignupCompanySize{
+		SiteSignupCompanySize1,
+		SiteSignupCompanySize210,
+		SiteSignupCompanySize1150,
+		SiteSignupCompanySize51200,
+		SiteSignupCompanySize2011000,
+		SiteSignupCompanySize1000Plus,
+		SiteSignupCompanySizeOther,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteSignupCompanySize) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteSignupCompanySize1:
+		return []byte(s), nil
+	case SiteSignupCompanySize210:
+		return []byte(s), nil
+	case SiteSignupCompanySize1150:
+		return []byte(s), nil
+	case SiteSignupCompanySize51200:
+		return []byte(s), nil
+	case SiteSignupCompanySize2011000:
+		return []byte(s), nil
+	case SiteSignupCompanySize1000Plus:
+		return []byte(s), nil
+	case SiteSignupCompanySizeOther:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteSignupCompanySize) UnmarshalText(data []byte) error {
+	switch SiteSignupCompanySize(data) {
+	case SiteSignupCompanySize1:
+		*s = SiteSignupCompanySize1
+		return nil
+	case SiteSignupCompanySize210:
+		*s = SiteSignupCompanySize210
+		return nil
+	case SiteSignupCompanySize1150:
+		*s = SiteSignupCompanySize1150
+		return nil
+	case SiteSignupCompanySize51200:
+		*s = SiteSignupCompanySize51200
+		return nil
+	case SiteSignupCompanySize2011000:
+		*s = SiteSignupCompanySize2011000
+		return nil
+	case SiteSignupCompanySize1000Plus:
+		*s = SiteSignupCompanySize1000Plus
+		return nil
+	case SiteSignupCompanySizeOther:
+		*s = SiteSignupCompanySizeOther
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// What the User mainly wants to do with the product (third question).
+// Ref: #/components/schemas/SiteSignupGoal
+type SiteSignupGoal string
+
+const (
+	SiteSignupGoalBroadcasts  SiteSignupGoal = "broadcasts"
+	SiteSignupGoalAutomations SiteSignupGoal = "automations"
+	SiteSignupGoalTracking    SiteSignupGoal = "tracking"
+	SiteSignupGoalMigrating   SiteSignupGoal = "migrating"
+	SiteSignupGoalOther       SiteSignupGoal = "other"
+)
+
+// AllValues returns all SiteSignupGoal values.
+func (SiteSignupGoal) AllValues() []SiteSignupGoal {
+	return []SiteSignupGoal{
+		SiteSignupGoalBroadcasts,
+		SiteSignupGoalAutomations,
+		SiteSignupGoalTracking,
+		SiteSignupGoalMigrating,
+		SiteSignupGoalOther,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteSignupGoal) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteSignupGoalBroadcasts:
+		return []byte(s), nil
+	case SiteSignupGoalAutomations:
+		return []byte(s), nil
+	case SiteSignupGoalTracking:
+		return []byte(s), nil
+	case SiteSignupGoalMigrating:
+		return []byte(s), nil
+	case SiteSignupGoalOther:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteSignupGoal) UnmarshalText(data []byte) error {
+	switch SiteSignupGoal(data) {
+	case SiteSignupGoalBroadcasts:
+		*s = SiteSignupGoalBroadcasts
+		return nil
+	case SiteSignupGoalAutomations:
+		*s = SiteSignupGoalAutomations
+		return nil
+	case SiteSignupGoalTracking:
+		*s = SiteSignupGoalTracking
+		return nil
+	case SiteSignupGoalMigrating:
+		*s = SiteSignupGoalMigrating
+		return nil
+	case SiteSignupGoalOther:
+		*s = SiteSignupGoalOther
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// What the User does (Sign-up survey, first question).
+// Ref: #/components/schemas/SiteSignupRole
+type SiteSignupRole string
+
+const (
+	SiteSignupRoleFounder   SiteSignupRole = "founder"
+	SiteSignupRoleMarketer  SiteSignupRole = "marketer"
+	SiteSignupRoleDeveloper SiteSignupRole = "developer"
+	SiteSignupRoleProduct   SiteSignupRole = "product"
+	SiteSignupRoleOther     SiteSignupRole = "other"
+)
+
+// AllValues returns all SiteSignupRole values.
+func (SiteSignupRole) AllValues() []SiteSignupRole {
+	return []SiteSignupRole{
+		SiteSignupRoleFounder,
+		SiteSignupRoleMarketer,
+		SiteSignupRoleDeveloper,
+		SiteSignupRoleProduct,
+		SiteSignupRoleOther,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteSignupRole) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteSignupRoleFounder:
+		return []byte(s), nil
+	case SiteSignupRoleMarketer:
+		return []byte(s), nil
+	case SiteSignupRoleDeveloper:
+		return []byte(s), nil
+	case SiteSignupRoleProduct:
+		return []byte(s), nil
+	case SiteSignupRoleOther:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteSignupRole) UnmarshalText(data []byte) error {
+	switch SiteSignupRole(data) {
+	case SiteSignupRoleFounder:
+		*s = SiteSignupRoleFounder
+		return nil
+	case SiteSignupRoleMarketer:
+		*s = SiteSignupRoleMarketer
+		return nil
+	case SiteSignupRoleDeveloper:
+		*s = SiteSignupRoleDeveloper
+		return nil
+	case SiteSignupRoleProduct:
+		*s = SiteSignupRoleProduct
+		return nil
+	case SiteSignupRoleOther:
+		*s = SiteSignupRoleOther
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Where the User heard about the product (fourth question, optional).
+// Ref: #/components/schemas/SiteSignupSource
+type SiteSignupSource string
+
+const (
+	SiteSignupSourceSearch         SiteSignupSource = "search"
+	SiteSignupSourceGithub         SiteSignupSource = "github"
+	SiteSignupSourceSocial         SiteSignupSource = "social"
+	SiteSignupSourceRecommendation SiteSignupSource = "recommendation"
+	SiteSignupSourceOther          SiteSignupSource = "other"
+)
+
+// AllValues returns all SiteSignupSource values.
+func (SiteSignupSource) AllValues() []SiteSignupSource {
+	return []SiteSignupSource{
+		SiteSignupSourceSearch,
+		SiteSignupSourceGithub,
+		SiteSignupSourceSocial,
+		SiteSignupSourceRecommendation,
+		SiteSignupSourceOther,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteSignupSource) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteSignupSourceSearch:
+		return []byte(s), nil
+	case SiteSignupSourceGithub:
+		return []byte(s), nil
+	case SiteSignupSourceSocial:
+		return []byte(s), nil
+	case SiteSignupSourceRecommendation:
+		return []byte(s), nil
+	case SiteSignupSourceOther:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteSignupSource) UnmarshalText(data []byte) error {
+	switch SiteSignupSource(data) {
+	case SiteSignupSourceSearch:
+		*s = SiteSignupSourceSearch
+		return nil
+	case SiteSignupSourceGithub:
+		*s = SiteSignupSourceGithub
+		return nil
+	case SiteSignupSourceSocial:
+		*s = SiteSignupSourceSocial
+		return nil
+	case SiteSignupSourceRecommendation:
+		*s = SiteSignupSourceRecommendation
+		return nil
+	case SiteSignupSourceOther:
+		*s = SiteSignupSourceOther
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// The answers to the Sign-up survey, sent once after its last screen. `role`, `companySize` and
+// `mainGoal` are required; `heardFrom` is optional. Each `…Other` text is allowed only with its
+// question's `other` choice.
+// Ref: #/components/schemas/SiteSignupSurveyInput
+type SiteSignupSurveyInput struct {
+	// What the User does.
+	Role SiteSignupRole `json:"role"`
+	// What the User does, when `role` is `other`.
+	RoleOther OptString `json:"roleOther"`
+	// How many people work at the User's company.
+	CompanySize SiteSignupCompanySize `json:"companySize"`
+	// The company size, when `companySize` is `other`.
+	CompanySizeOther OptString `json:"companySizeOther"`
+	// What the User mainly wants to do with the product.
+	MainGoal SiteSignupGoal `json:"mainGoal"`
+	// The main goal, when `mainGoal` is `other`.
+	MainGoalOther OptString `json:"mainGoalOther"`
+	// Where the User heard about the product.
+	HeardFrom OptSiteSignupSource `json:"heardFrom"`
+	// Where the User heard about the product, when `heardFrom` is `other`.
+	HeardFromOther OptString `json:"heardFromOther"`
+}
+
+// GetRole returns the value of Role.
+func (s *SiteSignupSurveyInput) GetRole() SiteSignupRole {
+	return s.Role
+}
+
+// GetRoleOther returns the value of RoleOther.
+func (s *SiteSignupSurveyInput) GetRoleOther() OptString {
+	return s.RoleOther
+}
+
+// GetCompanySize returns the value of CompanySize.
+func (s *SiteSignupSurveyInput) GetCompanySize() SiteSignupCompanySize {
+	return s.CompanySize
+}
+
+// GetCompanySizeOther returns the value of CompanySizeOther.
+func (s *SiteSignupSurveyInput) GetCompanySizeOther() OptString {
+	return s.CompanySizeOther
+}
+
+// GetMainGoal returns the value of MainGoal.
+func (s *SiteSignupSurveyInput) GetMainGoal() SiteSignupGoal {
+	return s.MainGoal
+}
+
+// GetMainGoalOther returns the value of MainGoalOther.
+func (s *SiteSignupSurveyInput) GetMainGoalOther() OptString {
+	return s.MainGoalOther
+}
+
+// GetHeardFrom returns the value of HeardFrom.
+func (s *SiteSignupSurveyInput) GetHeardFrom() OptSiteSignupSource {
+	return s.HeardFrom
+}
+
+// GetHeardFromOther returns the value of HeardFromOther.
+func (s *SiteSignupSurveyInput) GetHeardFromOther() OptString {
+	return s.HeardFromOther
+}
+
+// SetRole sets the value of Role.
+func (s *SiteSignupSurveyInput) SetRole(val SiteSignupRole) {
+	s.Role = val
+}
+
+// SetRoleOther sets the value of RoleOther.
+func (s *SiteSignupSurveyInput) SetRoleOther(val OptString) {
+	s.RoleOther = val
+}
+
+// SetCompanySize sets the value of CompanySize.
+func (s *SiteSignupSurveyInput) SetCompanySize(val SiteSignupCompanySize) {
+	s.CompanySize = val
+}
+
+// SetCompanySizeOther sets the value of CompanySizeOther.
+func (s *SiteSignupSurveyInput) SetCompanySizeOther(val OptString) {
+	s.CompanySizeOther = val
+}
+
+// SetMainGoal sets the value of MainGoal.
+func (s *SiteSignupSurveyInput) SetMainGoal(val SiteSignupGoal) {
+	s.MainGoal = val
+}
+
+// SetMainGoalOther sets the value of MainGoalOther.
+func (s *SiteSignupSurveyInput) SetMainGoalOther(val OptString) {
+	s.MainGoalOther = val
+}
+
+// SetHeardFrom sets the value of HeardFrom.
+func (s *SiteSignupSurveyInput) SetHeardFrom(val OptSiteSignupSource) {
+	s.HeardFrom = val
+}
+
+// SetHeardFromOther sets the value of HeardFromOther.
+func (s *SiteSignupSurveyInput) SetHeardFromOther(val OptString) {
+	s.HeardFromOther = val
+}
+
+type SiteSignupSurveySubmitConflict ProblemDetails
+
+func (*SiteSignupSurveySubmitConflict) siteSignupSurveySubmitRes() {}
+
+// SiteSignupSurveySubmitNoContent is response for SiteSignupSurveySubmit operation.
+type SiteSignupSurveySubmitNoContent struct{}
+
+func (*SiteSignupSurveySubmitNoContent) siteSignupSurveySubmitRes() {}
+
+type SiteSignupSurveySubmitUnprocessableEntity ProblemDetails
+
+func (*SiteSignupSurveySubmitUnprocessableEntity) siteSignupSurveySubmitRes() {}
+
 // SMTP config without the password.
 // Ref: #/components/schemas/SiteSmtpConfig
 type SiteSmtpConfig struct {
@@ -19660,6 +20093,10 @@ type SiteUserResource struct {
 	Email EmailAddress `json:"email"`
 	// Whether the user has confirmed ownership of their email.
 	EmailVerified bool `json:"emailVerified"`
+	// Whether the User owes the Sign-up survey: computed on the server, so the app reads this one field
+	// and never the Instance setting. True after a public sign-up on an Instance that asks, until the
+	// survey is answered.
+	SignupSurveyDue bool `json:"signupSurveyDue"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 }
@@ -19682,6 +20119,11 @@ func (s *SiteUserResource) GetEmail() EmailAddress {
 // GetEmailVerified returns the value of EmailVerified.
 func (s *SiteUserResource) GetEmailVerified() bool {
 	return s.EmailVerified
+}
+
+// GetSignupSurveyDue returns the value of SignupSurveyDue.
+func (s *SiteUserResource) GetSignupSurveyDue() bool {
+	return s.SignupSurveyDue
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -19707,6 +20149,11 @@ func (s *SiteUserResource) SetEmail(val EmailAddress) {
 // SetEmailVerified sets the value of EmailVerified.
 func (s *SiteUserResource) SetEmailVerified(val bool) {
 	s.EmailVerified = val
+}
+
+// SetSignupSurveyDue sets the value of SignupSurveyDue.
+func (s *SiteUserResource) SetSignupSurveyDue(val bool) {
+	s.SignupSurveyDue = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.

@@ -36,6 +36,18 @@ type Handler interface {
 	//
 	// GET /me
 	StaffMeGet(ctx context.Context) (StaffMeGetRes, error)
+	// StaffSignupSurveyCounts implements StaffSignupSurvey_counts operation.
+	//
+	// The Sign-up survey answers, counted per question. Read only.
+	//
+	// GET /signup-survey
+	StaffSignupSurveyCounts(ctx context.Context) (StaffSignupSurveyCountsRes, error)
+	// StaffSignupSurveyGet implements StaffSignupSurvey_get operation.
+	//
+	// One User's answers. 404 when the User is unknown or has not answered the survey.
+	//
+	// GET /signup-survey/users/{userId}
+	StaffSignupSurveyGet(ctx context.Context, params StaffSignupSurveyGetParams) (StaffSignupSurveyGetRes, error)
 	// StaffWorkspaceAuditList implements StaffWorkspaceAudit_list operation.
 	//
 	// One Workspace's Audit log, newest first. Empty when the instance has no Audit license, since nothing

@@ -493,6 +493,10 @@ type SiteSetupChecklistGetRes interface {
 	siteSetupChecklistGetRes()
 }
 
+type SiteSignupSurveySubmitRes interface {
+	siteSignupSurveySubmitRes()
+}
+
 type SiteSuppressionsCreateRes interface {
 	siteSuppressionsCreateRes()
 }

@@ -70,6 +70,7 @@
   "errors.invalid_credentials": "invalid email or password",
   "errors.login_challenge_invalid": "the sign-in step expired, sign in again",
   "errors.workspace_not_found": "workspace not found",
+  "errors.signup_survey_response_not_found": "no sign-up survey answers for this user",
   "errors.suspension_reason_required": "a reason is required to suspend a workspace",
   "errors.phone_exists": "phone already exists",
   "errors.subject_id_exists": "subject id already exists",

@@ -17,6 +17,14 @@ type StaffMeGetRes interface {
 	staffMeGetRes()
 }
 
+type StaffSignupSurveyCountsRes interface {
+	staffSignupSurveyCountsRes()
+}
+
+type StaffSignupSurveyGetRes interface {
+	staffSignupSurveyGetRes()
+}
+
 type StaffWorkspaceAuditListRes interface {
 	staffWorkspaceAuditListRes()
 }

@@ -4,8 +4,8 @@
 import { type InfiniteData, infiniteQueryOptions, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen.ts';
-import { type Options, staffAuthLogin, staffAuthLogout, staffAuthSecondFactor, staffMeGet, staffWorkspaceAuditList, staffWorkspacesExempt, staffWorkspacesGet, staffWorkspacesList, staffWorkspacesSuspend, staffWorkspacesUnexempt, staffWorkspacesUnsuspend } from '../sdk.gen.ts';
-import type { StaffAuthLoginData, StaffAuthLoginError, StaffAuthLoginResponse, StaffAuthLogoutData, StaffAuthLogoutError, StaffAuthLogoutResponse, StaffAuthSecondFactorData, StaffAuthSecondFactorError, StaffAuthSecondFactorResponse, StaffMeGetData, StaffMeGetError, StaffMeGetResponse, StaffWorkspaceAuditListData, StaffWorkspaceAuditListError, StaffWorkspaceAuditListResponse, StaffWorkspacesExemptData, StaffWorkspacesExemptError, StaffWorkspacesExemptResponse, StaffWorkspacesGetData, StaffWorkspacesGetError, StaffWorkspacesGetResponse, StaffWorkspacesListData, StaffWorkspacesListError, StaffWorkspacesListResponse, StaffWorkspacesSuspendData, StaffWorkspacesSuspendError, StaffWorkspacesSuspendResponse, StaffWorkspacesUnexemptData, StaffWorkspacesUnexemptError, StaffWorkspacesUnexemptResponse, StaffWorkspacesUnsuspendData, StaffWorkspacesUnsuspendError, StaffWorkspacesUnsuspendResponse } from '../types.gen.ts';
+import { type Options, staffAuthLogin, staffAuthLogout, staffAuthSecondFactor, staffMeGet, staffSignupSurveyCounts, staffSignupSurveyGet, staffWorkspaceAuditList, staffWorkspacesExempt, staffWorkspacesGet, staffWorkspacesList, staffWorkspacesSuspend, staffWorkspacesUnexempt, staffWorkspacesUnsuspend } from '../sdk.gen.ts';
+import type { StaffAuthLoginData, StaffAuthLoginError, StaffAuthLoginResponse, StaffAuthLogoutData, StaffAuthLogoutError, StaffAuthLogoutResponse, StaffAuthSecondFactorData, StaffAuthSecondFactorError, StaffAuthSecondFactorResponse, StaffMeGetData, StaffMeGetError, StaffMeGetResponse, StaffSignupSurveyCountsData, StaffSignupSurveyCountsError, StaffSignupSurveyCountsResponse, StaffSignupSurveyGetData, StaffSignupSurveyGetError, StaffSignupSurveyGetResponse, StaffWorkspaceAuditListData, StaffWorkspaceAuditListError, StaffWorkspaceAuditListResponse, StaffWorkspacesExemptData, StaffWorkspacesExemptError, StaffWorkspacesExemptResponse, StaffWorkspacesGetData, StaffWorkspacesGetError, StaffWorkspacesGetResponse, StaffWorkspacesListData, StaffWorkspacesListError, StaffWorkspacesListResponse, StaffWorkspacesSuspendData, StaffWorkspacesSuspendError, StaffWorkspacesSuspendResponse, StaffWorkspacesUnexemptData, StaffWorkspacesUnexemptError, StaffWorkspacesUnexemptResponse, StaffWorkspacesUnsuspendData, StaffWorkspacesUnsuspendError, StaffWorkspacesUnsuspendResponse } from '../types.gen.ts';
 
 /**
  * Check the password. Answers a challenge (or, at first login, a TOTP enrolment)
@@ -112,6 +112,42 @@ export const staffMeGetOptions = (options?: Options<StaffMeGetData>) => queryOpt
     return data;
   },
   queryKey: staffMeGetQueryKey(options)
+});
+
+export const staffSignupSurveyCountsQueryKey = (options?: Options<StaffSignupSurveyCountsData>) => createQueryKey('staffSignupSurveyCounts', options);
+
+/**
+ * The Sign-up survey answers, counted per question. Read only.
+ */
+export const staffSignupSurveyCountsOptions = (options?: Options<StaffSignupSurveyCountsData>) => queryOptions<StaffSignupSurveyCountsResponse, StaffSignupSurveyCountsError, StaffSignupSurveyCountsResponse, ReturnType<typeof staffSignupSurveyCountsQueryKey>>({
+  queryFn: async ({ queryKey, signal }) => {
+    const { data } = await staffSignupSurveyCounts({
+      ...options,
+      ...queryKey[0],
+      signal,
+      throwOnError: true
+    });
+    return data;
+  },
+  queryKey: staffSignupSurveyCountsQueryKey(options)
+});
+
+export const staffSignupSurveyGetQueryKey = (options: Options<StaffSignupSurveyGetData>) => createQueryKey('staffSignupSurveyGet', options);
+
+/**
+ * One User's answers. 404 when the User is unknown or has not answered the survey.
+ */
+export const staffSignupSurveyGetOptions = (options: Options<StaffSignupSurveyGetData>) => queryOptions<StaffSignupSurveyGetResponse, StaffSignupSurveyGetError, StaffSignupSurveyGetResponse, ReturnType<typeof staffSignupSurveyGetQueryKey>>({
+  queryFn: async ({ queryKey, signal }) => {
+    const { data } = await staffSignupSurveyGet({
+      ...options,
+      ...queryKey[0],
+      signal,
+      throwOnError: true
+    });
+    return data;
+  },
+  queryKey: staffSignupSurveyGetQueryKey(options)
 });
 
 export const staffWorkspacesListQueryKey = (options?: Options<StaffWorkspacesListData>) => createQueryKey('staffWorkspacesList', options);

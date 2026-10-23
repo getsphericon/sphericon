@@ -3896,6 +3896,112 @@ export type SiteSigninProviders = {
 };
 
 /**
+ * How many people work at the User's company (second question)
+ */
+export const SiteSignupCompanySize = {
+  1: '1',
+  '2_10': '2_10',
+  '11_50': '11_50',
+  '51_200': '51_200',
+  '201_1000': '201_1000',
+  '1000_PLUS': '1000_plus',
+  OTHER: 'other'
+} as const;
+
+/**
+ * How many people work at the User's company (second question)
+ */
+export type SiteSignupCompanySize = typeof SiteSignupCompanySize[keyof typeof SiteSignupCompanySize];
+
+/**
+ * What the User mainly wants to do with the product (third question)
+ */
+export const SiteSignupGoal = {
+  BROADCASTS: 'broadcasts',
+  AUTOMATIONS: 'automations',
+  TRACKING: 'tracking',
+  MIGRATING: 'migrating',
+  OTHER: 'other'
+} as const;
+
+/**
+ * What the User mainly wants to do with the product (third question)
+ */
+export type SiteSignupGoal = typeof SiteSignupGoal[keyof typeof SiteSignupGoal];
+
+/**
+ * What the User does (Sign-up survey, first question)
+ */
+export const SiteSignupRole = {
+  FOUNDER: 'founder',
+  MARKETER: 'marketer',
+  DEVELOPER: 'developer',
+  PRODUCT: 'product',
+  OTHER: 'other'
+} as const;
+
+/**
+ * What the User does (Sign-up survey, first question)
+ */
+export type SiteSignupRole = typeof SiteSignupRole[keyof typeof SiteSignupRole];
+
+/**
+ * Where the User heard about the product (fourth question, optional)
+ */
+export const SiteSignupSource = {
+  SEARCH: 'search',
+  GITHUB: 'github',
+  SOCIAL: 'social',
+  RECOMMENDATION: 'recommendation',
+  OTHER: 'other'
+} as const;
+
+/**
+ * Where the User heard about the product (fourth question, optional)
+ */
+export type SiteSignupSource = typeof SiteSignupSource[keyof typeof SiteSignupSource];
+
+/**
+ * The answers to the Sign-up survey, sent once after its last screen. `role`, `companySize`
+ * and `mainGoal` are required; `heardFrom` is optional. Each `…Other` text is allowed only
+ * with its question's `other` choice.
+ */
+export type SiteSignupSurveyInput = {
+  /**
+   * What the User does
+   */
+  role: SiteSignupRole;
+  /**
+   * What the User does, when `role` is `other`
+   */
+  roleOther?: string;
+  /**
+   * How many people work at the User's company
+   */
+  companySize: SiteSignupCompanySize;
+  /**
+   * The company size, when `companySize` is `other`
+   */
+  companySizeOther?: string;
+  /**
+   * What the User mainly wants to do with the product
+   */
+  mainGoal: SiteSignupGoal;
+  /**
+   * The main goal, when `mainGoal` is `other`
+   */
+  mainGoalOther?: string;
+  /**
+   * Where the User heard about the product
+   */
+  heardFrom?: SiteSignupSource;
+  /**
+   * Where the User heard about the product, when `heardFrom` is `other`
+   */
+  heardFromOther?: string;
+};
+
+/**
  * SMTP config without the password
  */
 export type SiteSmtpConfig = {
@@ -4412,6 +4518,12 @@ export type SiteUserResource = {
    * Whether the user has confirmed ownership of their email
    */
   emailVerified: boolean;
+  /**
+   * Whether the User owes the Sign-up survey: computed on the server, so the app reads this
+   * one field and never the Instance setting. True after a public sign-up on an Instance that
+   * asks, until the survey is answered.
+   */
+  signupSurveyDue: boolean;
   /**
    * Creation timestamp
    */
@@ -6258,6 +6370,39 @@ export type SiteUserSignOutEverywhereResponses = {
 };
 
 export type SiteUserSignOutEverywhereResponse = SiteUserSignOutEverywhereResponses[keyof SiteUserSignOutEverywhereResponses];
+
+export type SiteSignupSurveySubmitData = {
+  body: SiteSignupSurveyInput;
+  path?: never;
+  query?: never;
+  url: '/me/signup-survey';
+};
+
+export type SiteSignupSurveySubmitErrors = {
+  /**
+   * RFC 7807 conflict response
+   */
+  409: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+  /**
+   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
+   */
+  429: ProblemDetails;
+};
+
+export type SiteSignupSurveySubmitError = SiteSignupSurveySubmitErrors[keyof SiteSignupSurveySubmitErrors];
+
+export type SiteSignupSurveySubmitResponses = {
+  /**
+   * There is no content to send for this request, but the headers may be useful.
+   */
+  204: void;
+};
+
+export type SiteSignupSurveySubmitResponse = SiteSignupSurveySubmitResponses[keyof SiteSignupSurveySubmitResponses];
 
 export type SiteOAuthDescribeData = {
   body?: never;

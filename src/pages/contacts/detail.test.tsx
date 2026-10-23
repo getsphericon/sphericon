@@ -210,7 +210,14 @@ test('moving to another contact resets the events page to the first', async () =
 })
 
 function currentRoleRoutes(role: SiteMembershipRole) {
-  const me = { id: '5', name: 'Me', email: 'me@example.com', emailVerified: true, createdAt: NOW }
+  const me = {
+    id: '5',
+    name: 'Me',
+    email: 'me@example.com',
+    emailVerified: true,
+    signupSurveyDue: false,
+    createdAt: NOW,
+  }
   const membership = (userId: string, memberRole: SiteMembershipRole): SiteMembershipResource => ({
     id: `m${userId}`,
     userId,

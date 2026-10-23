@@ -43,6 +43,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/sendlimiter"
 	"github.com/getsphericon/sphericon/ent/servicecredential"
+	"github.com/getsphericon/sphericon/ent/signupsurveyresponse"
 	"github.com/getsphericon/sphericon/ent/staffmember"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
@@ -929,6 +930,37 @@ func init() {
 	servicecredentialDescScopes := servicecredentialFields[4].Descriptor()
 	// servicecredential.DefaultScopes holds the default value on creation for the scopes field.
 	servicecredential.DefaultScopes = servicecredentialDescScopes.Default.([]string)
+	signupsurveyresponseMixin := schema.SignupSurveyResponse{}.Mixin()
+	signupsurveyresponseMixinFields0 := signupsurveyresponseMixin[0].Fields()
+	_ = signupsurveyresponseMixinFields0
+	signupsurveyresponseFields := schema.SignupSurveyResponse{}.Fields()
+	_ = signupsurveyresponseFields
+	// signupsurveyresponseDescCreatedAt is the schema descriptor for created_at field.
+	signupsurveyresponseDescCreatedAt := signupsurveyresponseMixinFields0[0].Descriptor()
+	// signupsurveyresponse.DefaultCreatedAt holds the default value on creation for the created_at field.
+	signupsurveyresponse.DefaultCreatedAt = signupsurveyresponseDescCreatedAt.Default.(func() time.Time)
+	// signupsurveyresponseDescUpdatedAt is the schema descriptor for updated_at field.
+	signupsurveyresponseDescUpdatedAt := signupsurveyresponseMixinFields0[1].Descriptor()
+	// signupsurveyresponse.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	signupsurveyresponse.DefaultUpdatedAt = signupsurveyresponseDescUpdatedAt.Default.(func() time.Time)
+	// signupsurveyresponse.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	signupsurveyresponse.UpdateDefaultUpdatedAt = signupsurveyresponseDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// signupsurveyresponseDescRoleOtherText is the schema descriptor for role_other_text field.
+	signupsurveyresponseDescRoleOtherText := signupsurveyresponseFields[3].Descriptor()
+	// signupsurveyresponse.RoleOtherTextValidator is a validator for the "role_other_text" field. It is called by the builders before save.
+	signupsurveyresponse.RoleOtherTextValidator = signupsurveyresponseDescRoleOtherText.Validators[0].(func(string) error)
+	// signupsurveyresponseDescCompanySizeOtherText is the schema descriptor for company_size_other_text field.
+	signupsurveyresponseDescCompanySizeOtherText := signupsurveyresponseFields[5].Descriptor()
+	// signupsurveyresponse.CompanySizeOtherTextValidator is a validator for the "company_size_other_text" field. It is called by the builders before save.
+	signupsurveyresponse.CompanySizeOtherTextValidator = signupsurveyresponseDescCompanySizeOtherText.Validators[0].(func(string) error)
+	// signupsurveyresponseDescMainGoalOtherText is the schema descriptor for main_goal_other_text field.
+	signupsurveyresponseDescMainGoalOtherText := signupsurveyresponseFields[7].Descriptor()
+	// signupsurveyresponse.MainGoalOtherTextValidator is a validator for the "main_goal_other_text" field. It is called by the builders before save.
+	signupsurveyresponse.MainGoalOtherTextValidator = signupsurveyresponseDescMainGoalOtherText.Validators[0].(func(string) error)
+	// signupsurveyresponseDescHeardFromOtherText is the schema descriptor for heard_from_other_text field.
+	signupsurveyresponseDescHeardFromOtherText := signupsurveyresponseFields[9].Descriptor()
+	// signupsurveyresponse.HeardFromOtherTextValidator is a validator for the "heard_from_other_text" field. It is called by the builders before save.
+	signupsurveyresponse.HeardFromOtherTextValidator = signupsurveyresponseDescHeardFromOtherText.Validators[0].(func(string) error)
 	staffmemberMixin := schema.StaffMember{}.Mixin()
 	staffmemberMixinFields0 := staffmemberMixin[0].Fields()
 	_ = staffmemberMixinFields0

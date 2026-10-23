@@ -5102,6 +5102,39 @@ func (s *OptSitePasskeyRequestOptionsUserVerification) UnmarshalJSON(data []byte
 	return s.Decode(d)
 }
 
+// Encode encodes SiteSignupSource as json.
+func (o OptSiteSignupSource) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	e.Str(string(o.Value))
+}
+
+// Decode decodes SiteSignupSource from json.
+func (o *OptSiteSignupSource) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptSiteSignupSource to nil")
+	}
+	o.Set = true
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptSiteSignupSource) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptSiteSignupSource) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes SiteSuppressionChannel as json.
 func (o OptSiteSuppressionChannel) Encode(e *jx.Encoder) {
 	if !o.Set {
@@ -40800,6 +40833,479 @@ func (s *SiteSigninProviders) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes SiteSignupCompanySize as json.
+func (s SiteSignupCompanySize) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes SiteSignupCompanySize from json.
+func (s *SiteSignupCompanySize) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteSignupCompanySize to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch SiteSignupCompanySize(v) {
+	case SiteSignupCompanySize1:
+		*s = SiteSignupCompanySize1
+	case SiteSignupCompanySize210:
+		*s = SiteSignupCompanySize210
+	case SiteSignupCompanySize1150:
+		*s = SiteSignupCompanySize1150
+	case SiteSignupCompanySize51200:
+		*s = SiteSignupCompanySize51200
+	case SiteSignupCompanySize2011000:
+		*s = SiteSignupCompanySize2011000
+	case SiteSignupCompanySize1000Plus:
+		*s = SiteSignupCompanySize1000Plus
+	case SiteSignupCompanySizeOther:
+		*s = SiteSignupCompanySizeOther
+	default:
+		*s = SiteSignupCompanySize(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s SiteSignupCompanySize) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteSignupCompanySize) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SiteSignupGoal as json.
+func (s SiteSignupGoal) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes SiteSignupGoal from json.
+func (s *SiteSignupGoal) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteSignupGoal to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch SiteSignupGoal(v) {
+	case SiteSignupGoalBroadcasts:
+		*s = SiteSignupGoalBroadcasts
+	case SiteSignupGoalAutomations:
+		*s = SiteSignupGoalAutomations
+	case SiteSignupGoalTracking:
+		*s = SiteSignupGoalTracking
+	case SiteSignupGoalMigrating:
+		*s = SiteSignupGoalMigrating
+	case SiteSignupGoalOther:
+		*s = SiteSignupGoalOther
+	default:
+		*s = SiteSignupGoal(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s SiteSignupGoal) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteSignupGoal) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SiteSignupRole as json.
+func (s SiteSignupRole) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes SiteSignupRole from json.
+func (s *SiteSignupRole) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteSignupRole to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch SiteSignupRole(v) {
+	case SiteSignupRoleFounder:
+		*s = SiteSignupRoleFounder
+	case SiteSignupRoleMarketer:
+		*s = SiteSignupRoleMarketer
+	case SiteSignupRoleDeveloper:
+		*s = SiteSignupRoleDeveloper
+	case SiteSignupRoleProduct:
+		*s = SiteSignupRoleProduct
+	case SiteSignupRoleOther:
+		*s = SiteSignupRoleOther
+	default:
+		*s = SiteSignupRole(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s SiteSignupRole) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteSignupRole) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SiteSignupSource as json.
+func (s SiteSignupSource) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes SiteSignupSource from json.
+func (s *SiteSignupSource) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteSignupSource to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch SiteSignupSource(v) {
+	case SiteSignupSourceSearch:
+		*s = SiteSignupSourceSearch
+	case SiteSignupSourceGithub:
+		*s = SiteSignupSourceGithub
+	case SiteSignupSourceSocial:
+		*s = SiteSignupSourceSocial
+	case SiteSignupSourceRecommendation:
+		*s = SiteSignupSourceRecommendation
+	case SiteSignupSourceOther:
+		*s = SiteSignupSourceOther
+	default:
+		*s = SiteSignupSource(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s SiteSignupSource) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteSignupSource) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *SiteSignupSurveyInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SiteSignupSurveyInput) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("role")
+		s.Role.Encode(e)
+	}
+	{
+		if s.RoleOther.Set {
+			e.FieldStart("roleOther")
+			s.RoleOther.Encode(e)
+		}
+	}
+	{
+		e.FieldStart("companySize")
+		s.CompanySize.Encode(e)
+	}
+	{
+		if s.CompanySizeOther.Set {
+			e.FieldStart("companySizeOther")
+			s.CompanySizeOther.Encode(e)
+		}
+	}
+	{
+		e.FieldStart("mainGoal")
+		s.MainGoal.Encode(e)
+	}
+	{
+		if s.MainGoalOther.Set {
+			e.FieldStart("mainGoalOther")
+			s.MainGoalOther.Encode(e)
+		}
+	}
+	{
+		if s.HeardFrom.Set {
+			e.FieldStart("heardFrom")
+			s.HeardFrom.Encode(e)
+		}
+	}
+	{
+		if s.HeardFromOther.Set {
+			e.FieldStart("heardFromOther")
+			s.HeardFromOther.Encode(e)
+		}
+	}
+}
+
+var jsonFieldsNameOfSiteSignupSurveyInput = [8]string{
+	0: "role",
+	1: "roleOther",
+	2: "companySize",
+	3: "companySizeOther",
+	4: "mainGoal",
+	5: "mainGoalOther",
+	6: "heardFrom",
+	7: "heardFromOther",
+}
+
+// Decode decodes SiteSignupSurveyInput from json.
+func (s *SiteSignupSurveyInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteSignupSurveyInput to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "role":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Role.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"role\"")
+			}
+		case "roleOther":
+			if err := func() error {
+				s.RoleOther.Reset()
+				if err := s.RoleOther.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"roleOther\"")
+			}
+		case "companySize":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				if err := s.CompanySize.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"companySize\"")
+			}
+		case "companySizeOther":
+			if err := func() error {
+				s.CompanySizeOther.Reset()
+				if err := s.CompanySizeOther.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"companySizeOther\"")
+			}
+		case "mainGoal":
+			requiredBitSet[0] |= 1 << 4
+			if err := func() error {
+				if err := s.MainGoal.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"mainGoal\"")
+			}
+		case "mainGoalOther":
+			if err := func() error {
+				s.MainGoalOther.Reset()
+				if err := s.MainGoalOther.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"mainGoalOther\"")
+			}
+		case "heardFrom":
+			if err := func() error {
+				s.HeardFrom.Reset()
+				if err := s.HeardFrom.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"heardFrom\"")
+			}
+		case "heardFromOther":
+			if err := func() error {
+				s.HeardFromOther.Reset()
+				if err := s.HeardFromOther.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"heardFromOther\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SiteSignupSurveyInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00010101,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSiteSignupSurveyInput) {
+					name = jsonFieldsNameOfSiteSignupSurveyInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteSignupSurveyInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteSignupSurveyInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SiteSignupSurveySubmitConflict as json.
+func (s *SiteSignupSurveySubmitConflict) Encode(e *jx.Encoder) {
+	unwrapped := (*ProblemDetails)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes SiteSignupSurveySubmitConflict from json.
+func (s *SiteSignupSurveySubmitConflict) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteSignupSurveySubmitConflict to nil")
+	}
+	var unwrapped ProblemDetails
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = SiteSignupSurveySubmitConflict(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteSignupSurveySubmitConflict) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteSignupSurveySubmitConflict) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SiteSignupSurveySubmitUnprocessableEntity as json.
+func (s *SiteSignupSurveySubmitUnprocessableEntity) Encode(e *jx.Encoder) {
+	unwrapped := (*ProblemDetails)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes SiteSignupSurveySubmitUnprocessableEntity from json.
+func (s *SiteSignupSurveySubmitUnprocessableEntity) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteSignupSurveySubmitUnprocessableEntity to nil")
+	}
+	var unwrapped ProblemDetails
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = SiteSignupSurveySubmitUnprocessableEntity(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteSignupSurveySubmitUnprocessableEntity) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteSignupSurveySubmitUnprocessableEntity) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode implements json.Marshaler.
 func (s *SiteSmtpConfig) Encode(e *jx.Encoder) {
 	e.ObjStart()
@@ -47163,17 +47669,22 @@ func (s *SiteUserResource) encodeFields(e *jx.Encoder) {
 		e.Bool(s.EmailVerified)
 	}
 	{
+		e.FieldStart("signupSurveyDue")
+		e.Bool(s.SignupSurveyDue)
+	}
+	{
 		e.FieldStart("createdAt")
 		s.CreatedAt.Encode(e)
 	}
 }
 
-var jsonFieldsNameOfSiteUserResource = [5]string{
+var jsonFieldsNameOfSiteUserResource = [6]string{
 	0: "id",
 	1: "name",
 	2: "email",
 	3: "emailVerified",
-	4: "createdAt",
+	4: "signupSurveyDue",
+	5: "createdAt",
 }
 
 // Decode decodes SiteUserResource from json.
@@ -47229,8 +47740,20 @@ func (s *SiteUserResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"emailVerified\"")
 			}
-		case "createdAt":
+		case "signupSurveyDue":
 			requiredBitSet[0] |= 1 << 4
+			if err := func() error {
+				v, err := d.Bool()
+				s.SignupSurveyDue = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"signupSurveyDue\"")
+			}
+		case "createdAt":
+			requiredBitSet[0] |= 1 << 5
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -47249,7 +47772,7 @@ func (s *SiteUserResource) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00011111,
+		0b00111111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

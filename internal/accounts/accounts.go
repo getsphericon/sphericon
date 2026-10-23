@@ -314,9 +314,10 @@ func (a *Accounts) EmailTaken(ctx context.Context, email string) (bool, error) {
 // Register creates an Unverified User (ADR 0030): a name, an email and the password hash
 // from the registration form, no Membership. The password goes live only when the address
 // is verified from the Registration browser, or replaced on the link. The unique index on the email refuses a taken address (see
-// db.IsUniqueViolation).
-func (a *Accounts) Register(ctx context.Context, name, email, passwordHash string) (*ent.User, error) {
-	return a.ent.User.Create().SetName(name).SetEmail(email).SetPasswordHash(passwordHash).Save(ctx)
+// db.IsUniqueViolation). surveyDue marks the User as owing the Sign-up survey (the Instance asks it).
+func (a *Accounts) Register(ctx context.Context, name, email, passwordHash string, surveyDue bool) (*ent.User, error) {
+	return a.ent.User.Create().SetName(name).SetEmail(email).SetPasswordHash(passwordHash).
+		SetNillableSignupSurveyDueAt(surveyDueAt(surveyDue)).Save(ctx)
 }
 
 // ReplaceUnverifiedPassword is a repeated registration of an address (ADR 0030): it
@@ -390,14 +391,16 @@ func (a *Accounts) VerifyEmail(ctx context.Context, id int64, passwordHash *stri
 // RegisterVerified is registration on an install that does not require email
 // verification (ADR 0030): in one transaction it creates a User that is Verified at
 // once with its password, and the first Workspace (FirstWorkspaceName), exactly as VerifyEmail does. The
-// unique index on the email refuses a taken address (see db.IsUniqueViolation).
-func (a *Accounts) RegisterVerified(ctx context.Context, name, email, passwordHash string) (*ent.User, error) {
+// unique index on the email refuses a taken address (see db.IsUniqueViolation). surveyDue marks
+// the User as owing the Sign-up survey; create-owner, which is no public sign-up, passes false.
+func (a *Accounts) RegisterVerified(ctx context.Context, name, email, passwordHash string, surveyDue bool) (*ent.User, error) {
 	u, _, err := a.verified(ctx, noJoin, func(tx *ent.Client) (*ent.User, error) {
 		return tx.User.Create().
 			SetName(name).
 			SetEmail(email).
 			SetPasswordHash(passwordHash).
 			SetEmailVerifiedAt(time.Now()).
+			SetNillableSignupSurveyDueAt(surveyDueAt(surveyDue)).
 			Save(ctx)
 	})
 	return u, err
@@ -414,7 +417,7 @@ func (a *Accounts) CreateOwner(ctx context.Context, email, name string) (passwor
 	if err != nil {
 		return "", err
 	}
-	if _, err := a.RegisterVerified(ctx, name, email, hash); err != nil {
+	if _, err := a.RegisterVerified(ctx, name, email, hash, false); err != nil {
 		return "", err
 	}
 	return password, nil
@@ -697,6 +700,10 @@ func (a *Accounts) AcceptInvitation(ctx context.Context, inv *ent.Invitation, na
 					Save(ctx)
 			} else {
 				u, uerr = markVerified(ctx, tx, u.ID, name, &hash)
+				if uerr == nil {
+					// The registrant is an invitee now, not a public sign-up.
+					uerr = clearSurveyDue(ctx, tx, u.ID)
+				}
 			}
 			if uerr != nil {
 				return uerr

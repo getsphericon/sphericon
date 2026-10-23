@@ -14,6 +14,78 @@ import (
 	"github.com/ogen-go/ogen/validate"
 )
 
+// StaffSignupSurveyGetParams is parameters of StaffSignupSurvey_get operation.
+type StaffSignupSurveyGetParams struct {
+	UserId EntityId
+}
+
+func unpackStaffSignupSurveyGetParams(packed middleware.Parameters) (params StaffSignupSurveyGetParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "userId",
+			In:   "path",
+		}
+		params.UserId = packed[key].(EntityId)
+	}
+	return params
+}
+
+func decodeStaffSignupSurveyGetParams(args [1]string, argsEscaped bool, r *http.Request) (params StaffSignupSurveyGetParams, _ error) {
+	// Decode path: userId.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "userId",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotUserIdVal int64
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToStringInt64(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotUserIdVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.UserId = EntityId(paramsDotUserIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "userId",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
 // StaffWorkspaceAuditListParams is parameters of StaffWorkspaceAudit_list operation.
 type StaffWorkspaceAuditListParams struct {
 	WorkspaceId WorkspaceId

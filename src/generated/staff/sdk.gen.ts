@@ -5,8 +5,8 @@ import * as z from 'zod';
 
 import { client } from './client.gen.ts';
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client/index.ts';
-import type { StaffAuthLoginData, StaffAuthLoginErrors, StaffAuthLoginResponses, StaffAuthLogoutData, StaffAuthLogoutErrors, StaffAuthLogoutResponses, StaffAuthSecondFactorData, StaffAuthSecondFactorErrors, StaffAuthSecondFactorResponses, StaffMeGetData, StaffMeGetErrors, StaffMeGetResponses, StaffWorkspaceAuditListData, StaffWorkspaceAuditListErrors, StaffWorkspaceAuditListResponses, StaffWorkspacesExemptData, StaffWorkspacesExemptErrors, StaffWorkspacesExemptResponses, StaffWorkspacesGetData, StaffWorkspacesGetErrors, StaffWorkspacesGetResponses, StaffWorkspacesListData, StaffWorkspacesListErrors, StaffWorkspacesListResponses, StaffWorkspacesSuspendData, StaffWorkspacesSuspendErrors, StaffWorkspacesSuspendResponses, StaffWorkspacesUnexemptData, StaffWorkspacesUnexemptErrors, StaffWorkspacesUnexemptResponses, StaffWorkspacesUnsuspendData, StaffWorkspacesUnsuspendErrors, StaffWorkspacesUnsuspendResponses } from './types.gen.ts';
-import { zStaffAuthLoginBody, zStaffAuthSecondFactorBody, zStaffWorkspaceAuditListPath, zStaffWorkspaceAuditListQuery, zStaffWorkspacesExemptPath, zStaffWorkspacesGetPath, zStaffWorkspacesListQuery, zStaffWorkspacesSuspendBody, zStaffWorkspacesSuspendPath, zStaffWorkspacesUnexemptPath, zStaffWorkspacesUnsuspendPath } from './zod.gen.ts';
+import type { StaffAuthLoginData, StaffAuthLoginErrors, StaffAuthLoginResponses, StaffAuthLogoutData, StaffAuthLogoutErrors, StaffAuthLogoutResponses, StaffAuthSecondFactorData, StaffAuthSecondFactorErrors, StaffAuthSecondFactorResponses, StaffMeGetData, StaffMeGetErrors, StaffMeGetResponses, StaffSignupSurveyCountsData, StaffSignupSurveyCountsErrors, StaffSignupSurveyCountsResponses, StaffSignupSurveyGetData, StaffSignupSurveyGetErrors, StaffSignupSurveyGetResponses, StaffWorkspaceAuditListData, StaffWorkspaceAuditListErrors, StaffWorkspaceAuditListResponses, StaffWorkspacesExemptData, StaffWorkspacesExemptErrors, StaffWorkspacesExemptResponses, StaffWorkspacesGetData, StaffWorkspacesGetErrors, StaffWorkspacesGetResponses, StaffWorkspacesListData, StaffWorkspacesListErrors, StaffWorkspacesListResponses, StaffWorkspacesSuspendData, StaffWorkspacesSuspendErrors, StaffWorkspacesSuspendResponses, StaffWorkspacesUnexemptData, StaffWorkspacesUnexemptErrors, StaffWorkspacesUnexemptResponses, StaffWorkspacesUnsuspendData, StaffWorkspacesUnsuspendErrors, StaffWorkspacesUnsuspendResponses } from './types.gen.ts';
+import { zStaffAuthLoginBody, zStaffAuthSecondFactorBody, zStaffSignupSurveyGetPath, zStaffWorkspaceAuditListPath, zStaffWorkspaceAuditListQuery, zStaffWorkspacesExemptPath, zStaffWorkspacesGetPath, zStaffWorkspacesListQuery, zStaffWorkspacesSuspendBody, zStaffWorkspacesSuspendPath, zStaffWorkspacesUnexemptPath, zStaffWorkspacesUnsuspendPath } from './zod.gen.ts';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
   /**
@@ -94,6 +94,42 @@ export const staffMeGet = <ThrowOnError extends boolean = false>(options?: Optio
       type: 'apiKey'
     }],
   url: '/me',
+  ...options
+});
+
+/**
+ * The Sign-up survey answers, counted per question. Read only.
+ */
+export const staffSignupSurveyCounts = <ThrowOnError extends boolean = false>(options?: Options<StaffSignupSurveyCountsData, ThrowOnError>): RequestResult<StaffSignupSurveyCountsResponses, StaffSignupSurveyCountsErrors, ThrowOnError> => (options?.client ?? client).get<StaffSignupSurveyCountsResponses, StaffSignupSurveyCountsErrors, ThrowOnError>({
+  requestValidator: async (data) => await z.object({
+    body: z.never().optional(),
+    path: z.never().optional(),
+    query: z.never().optional()
+  }).parseAsync(data),
+  security: [{
+      in: 'cookie',
+      name: 'STAFF_JWT',
+      type: 'apiKey'
+    }],
+  url: '/signup-survey',
+  ...options
+});
+
+/**
+ * One User's answers. 404 when the User is unknown or has not answered the survey.
+ */
+export const staffSignupSurveyGet = <ThrowOnError extends boolean = false>(options: Options<StaffSignupSurveyGetData, ThrowOnError>): RequestResult<StaffSignupSurveyGetResponses, StaffSignupSurveyGetErrors, ThrowOnError> => (options.client ?? client).get<StaffSignupSurveyGetResponses, StaffSignupSurveyGetErrors, ThrowOnError>({
+  requestValidator: async (data) => await z.object({
+    body: z.never().optional(),
+    path: zStaffSignupSurveyGetPath,
+    query: z.never().optional()
+  }).parseAsync(data),
+  security: [{
+      in: 'cookie',
+      name: 'STAFF_JWT',
+      type: 'apiKey'
+    }],
+  url: '/signup-survey/users/{userId}',
   ...options
 });
 

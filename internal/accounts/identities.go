@@ -31,6 +31,9 @@ type ProviderLogin struct {
 	// It needs the provider's trusted email to be the invited address, and it opens a closed
 	// sign-up for that address, as accepting an Invitation by password does (ADR 0042).
 	Invitation *ent.Invitation
+	// SurveyDue marks a User this sign-in creates as owing the Sign-up survey (the Instance asks
+	// it). An Invitation sign-in never marks it, nor does a sign-in that creates nobody.
+	SurveyDue bool
 }
 
 // SigninRefusedError is a sign-in the decision refused; Reason is what the person is told.
@@ -75,6 +78,7 @@ func (a *Accounts) SignInWithIdentity(ctx context.Context, in ProviderLogin) (*P
 		return nil, &SigninRefusedError{Reason: signin.ReasonInvitationEmailMismatch}
 	}
 	in.SignupOpen = true
+	in.SurveyDue = false
 	signedIn, err := a.signIn(ctx, in)
 	if err != nil {
 		return nil, err
@@ -185,6 +189,7 @@ func (a *Accounts) createFromProvider(ctx context.Context, in ProviderLogin) (*e
 			SetEmail(email).
 			SetEmailVerifiedAt(now).
 			SetEmailProvenAt(now).
+			SetNillableSignupSurveyDueAt(surveyDueAt(in.SurveyDue)).
 			Save(ctx)
 		if err != nil {
 			return nil, err

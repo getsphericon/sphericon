@@ -81,6 +81,11 @@ func applyDomainJoin(ctx context.Context, tx *ent.Client, pub events.Publisher, 
 	if err != nil {
 		return nil, err
 	}
+	// A colleague admitted by their address is not a public sign-up: the Sign-up survey is never
+	// asked of them, whichever path set the marker before the address was proven.
+	if err := clearSurveyDue(ctx, tx, u.ID); err != nil {
+		return nil, err
+	}
 	diff := map[string]any{
 		"domain": map[string]any{"to": domain},
 		"role":   map[string]any{"to": string(joined.Role)},

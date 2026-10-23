@@ -558,6 +558,181 @@ export type StaffSecondFactorInput = {
 };
 
 /**
+ * How many people work at the User's company (second question)
+ */
+export const StaffSignupCompanySize = {
+  1: '1',
+  '2_10': '2_10',
+  '11_50': '11_50',
+  '51_200': '51_200',
+  '201_1000': '201_1000',
+  '1000_PLUS': '1000_plus',
+  OTHER: 'other'
+} as const;
+
+/**
+ * How many people work at the User's company (second question)
+ */
+export type StaffSignupCompanySize = typeof StaffSignupCompanySize[keyof typeof StaffSignupCompanySize];
+
+/**
+ * How many Users chose a company size
+ */
+export type StaffSignupCompanySizeCount = {
+  choice: StaffSignupCompanySize;
+  count: number;
+};
+
+/**
+ * What the User mainly wants to do with the product (third question)
+ */
+export const StaffSignupGoal = {
+  BROADCASTS: 'broadcasts',
+  AUTOMATIONS: 'automations',
+  TRACKING: 'tracking',
+  MIGRATING: 'migrating',
+  OTHER: 'other'
+} as const;
+
+/**
+ * What the User mainly wants to do with the product (third question)
+ */
+export type StaffSignupGoal = typeof StaffSignupGoal[keyof typeof StaffSignupGoal];
+
+/**
+ * How many Users chose a main goal
+ */
+export type StaffSignupGoalCount = {
+  choice: StaffSignupGoal;
+  count: number;
+};
+
+/**
+ * An `other` text and how many Users wrote it
+ */
+export type StaffSignupOtherTextCount = {
+  text: string;
+  count: number;
+};
+
+/**
+ * What the User does (Sign-up survey, first question)
+ */
+export const StaffSignupRole = {
+  FOUNDER: 'founder',
+  MARKETER: 'marketer',
+  DEVELOPER: 'developer',
+  PRODUCT: 'product',
+  OTHER: 'other'
+} as const;
+
+/**
+ * What the User does (Sign-up survey, first question)
+ */
+export type StaffSignupRole = typeof StaffSignupRole[keyof typeof StaffSignupRole];
+
+/**
+ * How many Users chose a role
+ */
+export type StaffSignupRoleCount = {
+  choice: StaffSignupRole;
+  count: number;
+};
+
+/**
+ * Where the User heard about the product (fourth question, optional)
+ */
+export const StaffSignupSource = {
+  SEARCH: 'search',
+  GITHUB: 'github',
+  SOCIAL: 'social',
+  RECOMMENDATION: 'recommendation',
+  OTHER: 'other'
+} as const;
+
+/**
+ * Where the User heard about the product (fourth question, optional)
+ */
+export type StaffSignupSource = typeof StaffSignupSource[keyof typeof StaffSignupSource];
+
+/**
+ * How many Users chose a source
+ */
+export type StaffSignupSourceCount = {
+  choice: StaffSignupSource;
+  count: number;
+};
+
+/**
+ * The Sign-up survey answers of every User who answered, counted per question. A choice nobody
+ * made is absent from its list; a question's `other` texts are listed with their counts, most
+ * frequent first.
+ */
+export type StaffSignupSurveyCounts = {
+  /**
+   * How many Users answered the survey
+   */
+  responses: number;
+  role: Array<StaffSignupRoleCount>;
+  roleOtherTexts: Array<StaffSignupOtherTextCount>;
+  companySize: Array<StaffSignupCompanySizeCount>;
+  companySizeOtherTexts: Array<StaffSignupOtherTextCount>;
+  mainGoal: Array<StaffSignupGoalCount>;
+  mainGoalOtherTexts: Array<StaffSignupOtherTextCount>;
+  /**
+   * Only the Users who answered the optional question are counted
+   */
+  heardFrom: Array<StaffSignupSourceCount>;
+  heardFromOtherTexts: Array<StaffSignupOtherTextCount>;
+};
+
+/**
+ * One User's answers to the Sign-up survey. A User who has not answered has none.
+ */
+export type StaffSignupSurveyResponseResource = {
+  /**
+   * The answering User's id
+   */
+  userId: EntityId;
+  /**
+   * What the User does
+   */
+  role: StaffSignupRole;
+  /**
+   * What the User does, when `role` is `other`
+   */
+  roleOtherText?: string | null;
+  /**
+   * How many people work at the User's company
+   */
+  companySize: StaffSignupCompanySize;
+  /**
+   * The company size, when `companySize` is `other`
+   */
+  companySizeOtherText?: string | null;
+  /**
+   * What the User mainly wants to do with the product
+   */
+  mainGoal: StaffSignupGoal;
+  /**
+   * The main goal, when `mainGoal` is `other`
+   */
+  mainGoalOtherText?: string | null;
+  /**
+   * Where the User heard about the product; absent when the optional question was skipped
+   */
+  heardFrom?: StaffSignupSource | null;
+  /**
+   * Where the User heard about the product, when `heardFrom` is `other`
+   */
+  heardFromOtherText?: string | null;
+  /**
+   * When the User answered
+   */
+  answeredAt: Timestamp;
+};
+
+/**
  * Why a Workspace is being suspended; the owner is told
  */
 export type StaffSuspendInput = {
@@ -892,6 +1067,62 @@ export type StaffMeGetResponses = {
 };
 
 export type StaffMeGetResponse = StaffMeGetResponses[keyof StaffMeGetResponses];
+
+export type StaffSignupSurveyCountsData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/signup-survey';
+};
+
+export type StaffSignupSurveyCountsErrors = {
+  /**
+   * RFC 7807 unauthorized response
+   */
+  401: ProblemDetails;
+};
+
+export type StaffSignupSurveyCountsError = StaffSignupSurveyCountsErrors[keyof StaffSignupSurveyCountsErrors];
+
+export type StaffSignupSurveyCountsResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: StaffSignupSurveyCounts;
+};
+
+export type StaffSignupSurveyCountsResponse = StaffSignupSurveyCountsResponses[keyof StaffSignupSurveyCountsResponses];
+
+export type StaffSignupSurveyGetData = {
+  body?: never;
+  path: {
+    userId: EntityId;
+  };
+  query?: never;
+  url: '/signup-survey/users/{userId}';
+};
+
+export type StaffSignupSurveyGetErrors = {
+  /**
+   * RFC 7807 unauthorized response
+   */
+  401: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type StaffSignupSurveyGetError = StaffSignupSurveyGetErrors[keyof StaffSignupSurveyGetErrors];
+
+export type StaffSignupSurveyGetResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: StaffSignupSurveyResponseResource;
+};
+
+export type StaffSignupSurveyGetResponse = StaffSignupSurveyGetResponses[keyof StaffSignupSurveyGetResponses];
 
 export type StaffWorkspacesListData = {
   body?: never;

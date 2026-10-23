@@ -136,6 +136,7 @@ const (
 	SiteSendingDomainsUnarchiveOperation              OperationName = "SiteSendingDomainsUnarchive"
 	SiteSendingDomainsVerifyOperation                 OperationName = "SiteSendingDomainsVerify"
 	SiteSetupChecklistGetOperation                    OperationName = "SiteSetupChecklistGet"
+	SiteSignupSurveySubmitOperation                   OperationName = "SiteSignupSurveySubmit"
 	SiteSuppressionsCreateOperation                   OperationName = "SiteSuppressionsCreate"
 	SiteSuppressionsDeleteOperation                   OperationName = "SiteSuppressionsDelete"
 	SiteSuppressionsListOperation                     OperationName = "SiteSuppressionsList"

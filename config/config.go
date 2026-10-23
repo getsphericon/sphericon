@@ -213,6 +213,11 @@ type Config struct {
 	// Invitation or `sphericon user create-owner`.
 	SignupOpen bool
 
+	// SignupSurvey asks a User who signed up the Sign-up survey once. Only an explicit
+	// SPHERICON_SIGNUP_SURVEY=true turns it on (as ADR 0030 and 0042); it also needs the
+	// `staff` license, and without it the survey stays off (signupsurvey.Enabled).
+	SignupSurvey bool
+
 	// Signin holds the credentials of the Sign-in providers the Instance enabled, by registry
 	// name (ADR 0048): SPHERICON_SIGNIN_<PROVIDER>_CLIENT_ID and _CLIENT_SECRET, both or
 	// neither (a half-configured provider stops the start). A provider not in the map is off.
@@ -350,6 +355,7 @@ type environment struct {
 	ReleaseCheck             bool   `env:"SPHERICON_RELEASE_CHECK" envDefault:"true"`
 	RequireEmailVerification string `env:"SPHERICON_REQUIRE_EMAIL_VERIFICATION"`
 	SignupOpen               string `env:"SPHERICON_SIGNUP_OPEN"`
+	SignupSurvey             string `env:"SPHERICON_SIGNUP_SURVEY"`
 
 	SigninGoogleClientID     string `env:"SPHERICON_SIGNIN_GOOGLE_CLIENT_ID"`
 	SigninGoogleClientSecret string `env:"SPHERICON_SIGNIN_GOOGLE_CLIENT_SECRET"`
@@ -538,6 +544,7 @@ func Load(envName string) (*Config, error) {
 
 		RequireEmailVerification: strings.TrimSpace(e.RequireEmailVerification) != "false",
 		SignupOpen:               !strings.EqualFold(strings.TrimSpace(e.SignupOpen), "false"),
+		SignupSurvey:             strings.EqualFold(strings.TrimSpace(e.SignupSurvey), "true"),
 		Signin:                   signin,
 		LogLevel:                 e.LogLevel,
 		LogFormat:                e.LogFormat,

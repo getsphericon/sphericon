@@ -16,6 +16,7 @@ const user = {
   name: 'John',
   email: 'info@getsphericon.com',
   emailVerified: true,
+  signupSurveyDue: false,
   createdAt: '2026-01-01T00:00:00Z',
 }
 

@@ -37,6 +37,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/segments"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/signin"
+	"github.com/getsphericon/sphericon/internal/signupsurvey"
 	"github.com/getsphericon/sphericon/internal/tags"
 	"github.com/getsphericon/sphericon/internal/templates"
 	"github.com/getsphericon/sphericon/internal/tracking"
@@ -131,6 +132,9 @@ type Handlers struct {
 	requireVerification bool
 	// signupOpen is false on an Instance that closed public sign-up (ADR 0042).
 	signupOpen bool
+	// signupSurvey is the Sign-up survey: whether a public sign-up marks its User as owing it,
+	// and the submit.
+	signupSurvey *signupsurvey.Module
 	// challenges signs the login challenge on the env clock (ADR 0020).
 	challenges *authtoken.Signer
 	// login is the password step of signing in (ADR 0020).
@@ -234,6 +238,8 @@ type Deps struct {
 	RequireEmailVerification bool
 	// SignupOpen is SPHERICON_SIGNUP_OPEN (ADR 0042): when false, register answers 403.
 	SignupOpen bool
+	// SignupSurvey is the Sign-up survey module (built with signupsurvey.Enabled).
+	SignupSurvey *signupsurvey.Module
 	// Signin is the Sign-in providers the Instance enabled (ADR 0048); none enabled when
 	// no provider is configured.
 	Signin *signin.Providers
@@ -249,7 +255,7 @@ func NewHandlers(d Deps) *Handlers {
 		segments: d.Segments, eventlog: d.EventLog, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, templates: d.Templates, brandKit: d.BrandKit,
 		automations: d.Automations, rules: d.Rules, broadcasts: d.Broadcasts, welcome: d.Welcome,
 		sysmail: d.SysMail, sendingDomains: d.SendingDomains, joinDomains: d.JoinDomains, integrations: d.Integrations, tokens: d.Tokens, tracker: d.Tracker, appURL: d.AppURL,
-		oauth: d.OAuth, audit: d.Audit, abuseWatch: d.AbuseWatch, supportEmail: d.SupportEmail, mcpURL: d.MCPURL, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, passkeys: d.Passkeys, now: now, instance: d.Instance, accountLink: d.AccountLink, holds: d.Holds, requireVerification: d.RequireEmailVerification, signupOpen: d.SignupOpen,
+		oauth: d.OAuth, audit: d.Audit, abuseWatch: d.AbuseWatch, supportEmail: d.SupportEmail, mcpURL: d.MCPURL, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, passkeys: d.Passkeys, now: now, instance: d.Instance, accountLink: d.AccountLink, holds: d.Holds, requireVerification: d.RequireEmailVerification, signupOpen: d.SignupOpen, signupSurvey: d.SignupSurvey,
 		signin:     d.Signin,
 		challenges: d.Tokens.WithClock(d.Clock),
 	}

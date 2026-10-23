@@ -84,6 +84,22 @@ func (c *StaffConverterImpl) RateToResource(source reputation.Rate) staff.StaffR
 	staffapiStaffRate.Rate = nilFloat64(source.Rate)
 	return staffapiStaffRate
 }
+func (c *StaffConverterImpl) SignupSurveyResponseToResource(source *ent.SignupSurveyResponse) staff.StaffSignupSurveyResponseResource {
+	var staffapiStaffSignupSurveyResponseResource staff.StaffSignupSurveyResponseResource
+	if source != nil {
+		staffapiStaffSignupSurveyResponseResource.UserId = staff.EntityId((*source).UserID)
+		staffapiStaffSignupSurveyResponseResource.Role = staff.StaffSignupRole((*source).Role)
+		staffapiStaffSignupSurveyResponseResource.RoleOtherText = nilableString((*source).RoleOtherText)
+		staffapiStaffSignupSurveyResponseResource.CompanySize = staff.StaffSignupCompanySize((*source).CompanySize)
+		staffapiStaffSignupSurveyResponseResource.CompanySizeOtherText = nilableString((*source).CompanySizeOtherText)
+		staffapiStaffSignupSurveyResponseResource.MainGoal = staff.StaffSignupGoal((*source).MainGoal)
+		staffapiStaffSignupSurveyResponseResource.MainGoalOtherText = nilableString((*source).MainGoalOtherText)
+		staffapiStaffSignupSurveyResponseResource.HeardFrom = optNilSource((*source).HeardFrom)
+		staffapiStaffSignupSurveyResponseResource.HeardFromOtherText = nilableString((*source).HeardFromOtherText)
+		staffapiStaffSignupSurveyResponseResource.AnsweredAt = staffTimestamp((*source).CreatedAt)
+	}
+	return staffapiStaffSignupSurveyResponseResource
+}
 func (c *StaffConverterImpl) StaffMemberToResource(source *ent.StaffMember) staff.StaffResource {
 	var staffapiStaffResource staff.StaffResource
 	if source != nil {

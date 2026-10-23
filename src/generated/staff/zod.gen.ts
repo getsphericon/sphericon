@@ -210,6 +210,109 @@ export const zStaffSecondFactorInput = z.object({
 });
 
 /**
+ * How many people work at the User's company (second question)
+ */
+export const zStaffSignupCompanySize = z.enum([
+  '1',
+  '2_10',
+  '11_50',
+  '51_200',
+  '201_1000',
+  '1000_plus',
+  'other'
+]);
+
+/**
+ * How many Users chose a company size
+ */
+export const zStaffSignupCompanySizeCount = z.object({
+  choice: zStaffSignupCompanySize,
+  count: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
+ * What the User mainly wants to do with the product (third question)
+ */
+export const zStaffSignupGoal = z.enum([
+  'broadcasts',
+  'automations',
+  'tracking',
+  'migrating',
+  'other'
+]);
+
+/**
+ * How many Users chose a main goal
+ */
+export const zStaffSignupGoalCount = z.object({
+  choice: zStaffSignupGoal,
+  count: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
+ * An `other` text and how many Users wrote it
+ */
+export const zStaffSignupOtherTextCount = z.object({
+  text: z.string(),
+  count: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
+ * What the User does (Sign-up survey, first question)
+ */
+export const zStaffSignupRole = z.enum([
+  'founder',
+  'marketer',
+  'developer',
+  'product',
+  'other'
+]);
+
+/**
+ * How many Users chose a role
+ */
+export const zStaffSignupRoleCount = z.object({
+  choice: zStaffSignupRole,
+  count: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
+ * Where the User heard about the product (fourth question, optional)
+ */
+export const zStaffSignupSource = z.enum([
+  'search',
+  'github',
+  'social',
+  'recommendation',
+  'other'
+]);
+
+/**
+ * How many Users chose a source
+ */
+export const zStaffSignupSourceCount = z.object({
+  choice: zStaffSignupSource,
+  count: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
+ * The Sign-up survey answers of every User who answered, counted per question. A choice nobody
+ * made is absent from its list; a question's `other` texts are listed with their counts, most
+ * frequent first.
+ */
+export const zStaffSignupSurveyCounts = z.object({
+  responses: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  role: z.array(zStaffSignupRoleCount),
+  roleOtherTexts: z.array(zStaffSignupOtherTextCount),
+  companySize: z.array(zStaffSignupCompanySizeCount),
+  companySizeOtherTexts: z.array(zStaffSignupOtherTextCount),
+  mainGoal: z.array(zStaffSignupGoalCount),
+  mainGoalOtherTexts: z.array(zStaffSignupOtherTextCount),
+  heardFrom: z.array(zStaffSignupSourceCount),
+  heardFromOtherTexts: z.array(zStaffSignupOtherTextCount)
+});
+
+/**
  * Why a Workspace is being suspended; the owner is told
  */
 export const zStaffSuspendInput = z.object({
@@ -291,6 +394,22 @@ export const zStaffHold = z.object({
   expiresAt: zTimestamp,
   setBy: z.string(),
   actionUrl: z.exactOptional(z.string().nullable())
+});
+
+/**
+ * One User's answers to the Sign-up survey. A User who has not answered has none.
+ */
+export const zStaffSignupSurveyResponseResource = z.object({
+  userId: zEntityId,
+  role: zStaffSignupRole,
+  roleOtherText: z.exactOptional(z.string().nullable()),
+  companySize: zStaffSignupCompanySize,
+  companySizeOtherText: z.exactOptional(z.string().nullable()),
+  mainGoal: zStaffSignupGoal,
+  mainGoalOtherText: z.exactOptional(z.string().nullable()),
+  heardFrom: z.exactOptional(zStaffSignupSource.nullable()),
+  heardFromOtherText: z.exactOptional(z.string().nullable()),
+  answeredAt: zTimestamp
 });
 
 /**
@@ -454,6 +573,20 @@ export const zStaffAuthSecondFactorResponse = zStaffResource;
  * The request has succeeded.
  */
 export const zStaffMeGetResponse = zStaffResource;
+
+/**
+ * The request has succeeded.
+ */
+export const zStaffSignupSurveyCountsResponse = zStaffSignupSurveyCounts;
+
+export const zStaffSignupSurveyGetPath = z.object({
+  userId: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zStaffSignupSurveyGetResponse = zStaffSignupSurveyResponseResource;
 
 export const zStaffWorkspacesListQuery = z.object({
   review: z.exactOptional(zStaffWorkspaceReview),

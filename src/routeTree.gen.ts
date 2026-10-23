@@ -19,6 +19,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SigninNotMeRouteImport } from './routes/signin-not-me'
+import { Route as SignupSurveyRouteImport } from './routes/signup-survey'
 import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as UnsubscribedRouteImport } from './routes/unsubscribed'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
@@ -129,6 +130,11 @@ const SigninNotMeRoute = SigninNotMeRouteImport.update({
   path: '/signin-not-me',
   getParentRoute: () => rootRouteImport,
 } as any).lazy(() => import('./routes/signin-not-me.lazy').then((d) => d.Route))
+const SignupSurveyRoute = SignupSurveyRouteImport.update({
+  id: '/signup-survey',
+  path: '/signup-survey',
+  getParentRoute: () => rootRouteImport,
+} as any).lazy(() => import('./routes/signup-survey.lazy').then((d) => d.Route))
 const UnsubscribeRoute = UnsubscribeRouteImport.update({
   id: '/unsubscribe',
   path: '/unsubscribe',
@@ -611,6 +617,7 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signin-not-me': typeof SigninNotMeRoute
+  '/signup-survey': typeof SignupSurveyRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/unsubscribed': typeof UnsubscribedRoute
   '/verify-email': typeof VerifyEmailRoute
@@ -674,6 +681,7 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signin-not-me': typeof SigninNotMeRoute
+  '/signup-survey': typeof SignupSurveyRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/unsubscribed': typeof UnsubscribedRoute
   '/verify-email': typeof VerifyEmailRoute
@@ -736,6 +744,7 @@ export interface FileRoutesById {
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signin-not-me': typeof SigninNotMeRoute
+  '/signup-survey': typeof SignupSurveyRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/unsubscribed': typeof UnsubscribedRoute
   '/verify-email': typeof VerifyEmailRoute
@@ -803,6 +812,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/signin-not-me'
+    | '/signup-survey'
     | '/unsubscribe'
     | '/unsubscribed'
     | '/verify-email'
@@ -866,6 +876,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/signin-not-me'
+    | '/signup-survey'
     | '/unsubscribe'
     | '/unsubscribed'
     | '/verify-email'
@@ -927,6 +938,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/signin-not-me'
+    | '/signup-survey'
     | '/unsubscribe'
     | '/unsubscribed'
     | '/verify-email'
@@ -993,6 +1005,7 @@ export interface RootRouteChildren {
   RegisterRoute: typeof RegisterRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SigninNotMeRoute: typeof SigninNotMeRoute
+  SignupSurveyRoute: typeof SignupSurveyRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
   UnsubscribedRoute: typeof UnsubscribedRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
@@ -1072,6 +1085,13 @@ declare module '@tanstack/react-router' {
       path: '/signin-not-me'
       fullPath: '/signin-not-me'
       preLoaderRoute: typeof SigninNotMeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup-survey': {
+      id: '/signup-survey'
+      path: '/signup-survey'
+      fullPath: '/signup-survey'
+      preLoaderRoute: typeof SignupSurveyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/unsubscribe': {
@@ -1636,6 +1656,7 @@ const rootRouteChildren: RootRouteChildren = {
   RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SigninNotMeRoute: SigninNotMeRoute,
+  SignupSurveyRoute: SignupSurveyRoute,
   UnsubscribeRoute: UnsubscribeRoute,
   UnsubscribedRoute: UnsubscribedRoute,
   VerifyEmailRoute: VerifyEmailRoute,

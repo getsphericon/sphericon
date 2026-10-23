@@ -146,6 +146,7 @@ var operationRolesApiKeyAuth = map[string][]string{
 	SiteSendingDomainsUnarchiveOperation:              []string{},
 	SiteSendingDomainsVerifyOperation:                 []string{},
 	SiteSetupChecklistGetOperation:                    []string{},
+	SiteSignupSurveySubmitOperation:                   []string{},
 	SiteSuppressionsCreateOperation:                   []string{},
 	SiteSuppressionsDeleteOperation:                   []string{},
 	SiteSuppressionsListOperation:                     []string{},

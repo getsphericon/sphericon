@@ -46,6 +46,7 @@ const ME = {
   name: 'Ann',
   email: 'ann@example.com',
   emailVerified: true,
+  signupSurveyDue: false,
   createdAt: '2026-01-01T00:00:00Z',
 }
 const me = () => handleSiteUserGetMe({ body: ME })

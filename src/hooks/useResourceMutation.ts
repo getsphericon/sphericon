@@ -23,6 +23,8 @@ interface ResourceMutationOptions<TData, TError, TVars, TCtx> {
   // Message shown instead of the API detail when the API answers 403 (the action
   // is role-gated and the caller lacks the role) — localized, unlike the detail.
   forbiddenMessage?: string
+  // Takes over a failure before the toast: true when it dealt with the error itself (no toast).
+  handleError?: (error: TError) => boolean | Promise<boolean>
   // Extra success work — navigation, form reset — run after invalidation.
   onDone?: (data: TData, variables: TVars) => void | Promise<void>
 }
@@ -36,6 +38,7 @@ export function useResourceMutation<TData, TError, TVars, TCtx>({
   successMessage,
   errorTitle,
   forbiddenMessage,
+  handleError,
   onDone,
 }: ResourceMutationOptions<TData, TError, TVars, TCtx>) {
   const { t } = useTranslation()
@@ -58,7 +61,10 @@ export function useResourceMutation<TData, TError, TVars, TCtx>({
       }
       await onDone?.(data, variables)
     },
-    onError: (error) => {
+    onError: async (error) => {
+      if (await handleError?.(error)) {
+        return
+      }
       notify({
         color: 'red',
         title: errorTitle,

@@ -70,6 +70,13 @@ func (User) Fields() []ent.Field {
 		// earlier one is refused, so each code works once.
 		field.Int64("second_factor_last_step").
 			Default(0),
+		// When a public sign-up (password or Sign-in provider) marked the User as owing the
+		// Sign-up survey, with the survey on. Nil is not due: an Invitation, create-owner,
+		// join-domain admission, a pre-existing User, or the survey already answered. The
+		// submit clears it in the transaction that creates the SignupSurveyResponse.
+		field.Time("signup_survey_due_at").
+			Optional().
+			Nillable(),
 	}
 }
 
@@ -82,6 +89,9 @@ func (User) Edges() []ent.Edge {
 		edge.To("passkeys", Passkey.Type).
 			Annotations(entsql.OnDelete(entsql.Cascade)),
 		edge.To("identities", UserIdentity.Type).
+			Annotations(entsql.OnDelete(entsql.Cascade)),
+		edge.To("signup_survey_response", SignupSurveyResponse.Type).
+			Unique().
 			Annotations(entsql.OnDelete(entsql.Cascade)),
 	}
 }

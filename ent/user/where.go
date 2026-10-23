@@ -110,6 +110,11 @@ func SecondFactorLastStep(v int64) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldSecondFactorLastStep, v))
 }
 
+// SignupSurveyDueAt applies equality check predicate on the "signup_survey_due_at" field. It's identical to SignupSurveyDueAtEQ.
+func SignupSurveyDueAt(v time.Time) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldSignupSurveyDueAt, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldCreatedAt, v))
@@ -700,6 +705,56 @@ func SecondFactorLastStepLTE(v int64) predicate.User {
 	return predicate.User(sql.FieldLTE(FieldSecondFactorLastStep, v))
 }
 
+// SignupSurveyDueAtEQ applies the EQ predicate on the "signup_survey_due_at" field.
+func SignupSurveyDueAtEQ(v time.Time) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldSignupSurveyDueAt, v))
+}
+
+// SignupSurveyDueAtNEQ applies the NEQ predicate on the "signup_survey_due_at" field.
+func SignupSurveyDueAtNEQ(v time.Time) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldSignupSurveyDueAt, v))
+}
+
+// SignupSurveyDueAtIn applies the In predicate on the "signup_survey_due_at" field.
+func SignupSurveyDueAtIn(vs ...time.Time) predicate.User {
+	return predicate.User(sql.FieldIn(FieldSignupSurveyDueAt, vs...))
+}
+
+// SignupSurveyDueAtNotIn applies the NotIn predicate on the "signup_survey_due_at" field.
+func SignupSurveyDueAtNotIn(vs ...time.Time) predicate.User {
+	return predicate.User(sql.FieldNotIn(FieldSignupSurveyDueAt, vs...))
+}
+
+// SignupSurveyDueAtGT applies the GT predicate on the "signup_survey_due_at" field.
+func SignupSurveyDueAtGT(v time.Time) predicate.User {
+	return predicate.User(sql.FieldGT(FieldSignupSurveyDueAt, v))
+}
+
+// SignupSurveyDueAtGTE applies the GTE predicate on the "signup_survey_due_at" field.
+func SignupSurveyDueAtGTE(v time.Time) predicate.User {
+	return predicate.User(sql.FieldGTE(FieldSignupSurveyDueAt, v))
+}
+
+// SignupSurveyDueAtLT applies the LT predicate on the "signup_survey_due_at" field.
+func SignupSurveyDueAtLT(v time.Time) predicate.User {
+	return predicate.User(sql.FieldLT(FieldSignupSurveyDueAt, v))
+}
+
+// SignupSurveyDueAtLTE applies the LTE predicate on the "signup_survey_due_at" field.
+func SignupSurveyDueAtLTE(v time.Time) predicate.User {
+	return predicate.User(sql.FieldLTE(FieldSignupSurveyDueAt, v))
+}
+
+// SignupSurveyDueAtIsNil applies the IsNil predicate on the "signup_survey_due_at" field.
+func SignupSurveyDueAtIsNil() predicate.User {
+	return predicate.User(sql.FieldIsNull(FieldSignupSurveyDueAt))
+}
+
+// SignupSurveyDueAtNotNil applies the NotNil predicate on the "signup_survey_due_at" field.
+func SignupSurveyDueAtNotNil() predicate.User {
+	return predicate.User(sql.FieldNotNull(FieldSignupSurveyDueAt))
+}
+
 // HasMemberships applies the HasEdge predicate on the "memberships" edge.
 func HasMemberships() predicate.User {
 	return predicate.User(func(s *sql.Selector) {
@@ -807,6 +862,29 @@ func HasIdentities() predicate.User {
 func HasIdentitiesWith(preds ...predicate.UserIdentity) predicate.User {
 	return predicate.User(func(s *sql.Selector) {
 		step := newIdentitiesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasSignupSurveyResponse applies the HasEdge predicate on the "signup_survey_response" edge.
+func HasSignupSurveyResponse() predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, SignupSurveyResponseTable, SignupSurveyResponseColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasSignupSurveyResponseWith applies the HasEdge predicate on the "signup_survey_response" edge with a given conditions (other predicates).
+func HasSignupSurveyResponseWith(preds ...predicate.SignupSurveyResponse) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := newSignupSurveyResponseStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)
