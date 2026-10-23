@@ -245,6 +245,23 @@ export const zSiteAnalyticsEmail = z.object({
 });
 
 /**
+ * Human opens of one weekday and hour of day in the Workspace time zone
+ */
+export const zSiteAnalyticsOpensCell = z.object({
+  weekday: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  hour: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  opens: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
+ * Opens by hour report: a cell for every weekday and hour, Monday 00:00 first; machine opens are left out
+ */
+export const zSiteAnalyticsOpensByHour = z.object({
+  cells: z.array(zSiteAnalyticsOpensCell),
+  total: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
  * What carried a clicked link: a Broadcast or an Automation
  */
 export const zSiteAnalyticsOwnerKind = z.enum(['broadcast', 'automation']);
@@ -3249,6 +3266,19 @@ export const zSiteAnalyticsNewPeopleQuery = z.object({
  * The request has succeeded.
  */
 export const zSiteAnalyticsNewPeopleResponse = zSiteNewPeopleReport;
+
+export const zSiteAnalyticsOpensByHourPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+export const zSiteAnalyticsOpensByHourQuery = z.object({
+  range: z.exactOptional(zSiteAnalyticsRange)
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteAnalyticsOpensByHourResponse = zSiteAnalyticsOpensByHour;
 
 export const zSiteAnalyticsOverviewPath = z.object({
   workspaceId: zWorkspaceId

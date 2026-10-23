@@ -814,6 +814,29 @@ func (s *SiteAnalyticsLinkOwner) Validate() error {
 	return nil
 }
 
+func (s *SiteAnalyticsOpensByHour) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if s.Cells == nil {
+			return errors.New("nil is invalid value")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "cells",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
 func (s *SiteAnalyticsOverview) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer

@@ -117,3 +117,30 @@ func TestSiteAnalyticsClicksByLinkIsReadByAMemberAndCarriesTheRetention(t *testi
 	}, report.Links[0].Owners)
 	assert.Equal(t, int32(400), report.EventsRetentionDays, "the default SPHERICON_EVENTS_RETENTION_DAYS")
 }
+
+// The Opens by hour report is open to every role, refused without a session, and reads the
+// Workspace time zone (cells are tested in internal/analytics).
+func TestSiteAnalyticsOpensByHourRequiresAuth(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteAnonymous(t)
+
+	_, err := c.SiteAnalyticsOpensByHour(context.Background(), siteapi.SiteAnalyticsOpensByHourParams{WorkspaceId: fixtures.AcmePublicID})
+	require.Error(t, err)
+}
+
+func TestSiteAnalyticsOpensByHourMapsTheModule(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+
+	res, err := c.SiteAnalyticsOpensByHour(context.Background(), siteapi.SiteAnalyticsOpensByHourParams{WorkspaceId: fixtures.AcmePublicID})
+	require.NoError(t, err)
+	report, ok := res.(*siteapi.SiteAnalyticsOpensByHour)
+	require.Truef(t, ok, "got %T", res)
+
+	assert.Len(t, report.Cells, 7*24)
+	var sum int32
+	for _, cell := range report.Cells {
+		sum += cell.Opens
+	}
+	assert.Equal(t, report.Total, sum)
+}

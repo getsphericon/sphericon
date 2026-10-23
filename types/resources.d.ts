@@ -143,6 +143,7 @@ export default interface Resources {
         "email": "Email",
         "emailMetrics": "Email metrics",
         "newPeople": "New people",
+        "opensByHour": "Opens by hour",
         "recentActivity": "Recent activity",
         "subscribedPeople": "Subscribed people",
         "tracking": "Tracking"
@@ -151,6 +152,20 @@ export default interface Resources {
         "empty": "No new people in this window",
         "note": "Contacts created per day in your workspace time zone, by how each one first came to exist.",
         "total": "New people"
+      },
+      "opensByHour": {
+        "cell": "{{day}} {{hour}}:00, {{count}} open" | "{{day}} {{hour}}:00, {{count}} opens",
+        "empty": "No opens in this window",
+        "note": "Human opens by hour of day in the workspace time zone. Opens by mail software that fetches images for the reader are left out.",
+        "weekdays": {
+          "friday": "Friday",
+          "monday": "Monday",
+          "saturday": "Saturday",
+          "sunday": "Sunday",
+          "thursday": "Thursday",
+          "tuesday": "Tuesday",
+          "wednesday": "Wednesday"
+        }
       },
       "range": {
         "30d": "Last 30 days",

@@ -8,6 +8,7 @@ import { useAnalyticsRange } from '../hooks/useAnalyticsRange.ts'
 import { Route as clicksByLinkRoute } from '../routes/workspaces/$workspaceId/analytics/clicks-by-link.tsx'
 import { Route as emailMetricsRoute } from '../routes/workspaces/$workspaceId/analytics/email-metrics.tsx'
 import { Route as newPeopleRoute } from '../routes/workspaces/$workspaceId/analytics/new-people.tsx'
+import { Route as opensByHourRoute } from '../routes/workspaces/$workspaceId/analytics/opens-by-hour.tsx'
 import { Route as recentActivityRoute } from '../routes/workspaces/$workspaceId/analytics/recent-activity.tsx'
 import { Route as analyticsRoute } from '../routes/workspaces/$workspaceId/analytics/route.tsx'
 import { Route as subscribedPeopleRoute } from '../routes/workspaces/$workspaceId/analytics/subscribed-people.tsx'
@@ -36,6 +37,7 @@ export function AnalyticsLayout() {
       items: [
         { route: emailMetricsRoute, label: t(($) => $.analytics.nav.emailMetrics) },
         { route: clicksByLinkRoute, label: t(($) => $.analytics.nav.clicksByLink) },
+        { route: opensByHourRoute, label: t(($) => $.analytics.nav.opensByHour) },
       ],
     },
     {

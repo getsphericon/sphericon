@@ -9,6 +9,10 @@ type SiteAnalyticsNewPeopleRes interface {
 	siteAnalyticsNewPeopleRes()
 }
 
+type SiteAnalyticsOpensByHourRes interface {
+	siteAnalyticsOpensByHourRes()
+}
+
 type SiteAnalyticsOverviewRes interface {
 	siteAnalyticsOverviewRes()
 }

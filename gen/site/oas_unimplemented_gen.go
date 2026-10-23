@@ -31,6 +31,15 @@ func (UnimplementedHandler) SiteAnalyticsNewPeople(ctx context.Context, params S
 	return r, ht.ErrNotImplemented
 }
 
+// SiteAnalyticsOpensByHour implements SiteAnalytics_opensByHour operation.
+//
+// Human opens by hour of day and day of week in the Workspace time zone.
+//
+// GET /workspaces/{workspaceId}/analytics/opens-by-hour
+func (UnimplementedHandler) SiteAnalyticsOpensByHour(ctx context.Context, params SiteAnalyticsOpensByHourParams) (r SiteAnalyticsOpensByHourRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteAnalyticsOverview implements SiteAnalytics_overview operation.
 //
 // Aggregate metrics for the workspace dashboard.

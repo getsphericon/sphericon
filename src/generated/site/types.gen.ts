@@ -915,6 +915,35 @@ export type SiteAnalyticsLinkOwner = {
 };
 
 /**
+ * Opens by hour report: a cell for every weekday and hour, Monday 00:00 first; machine opens are left out
+ */
+export type SiteAnalyticsOpensByHour = {
+  cells: Array<SiteAnalyticsOpensCell>;
+  /**
+   * Human opens in the range
+   */
+  total: number;
+};
+
+/**
+ * Human opens of one weekday and hour of day in the Workspace time zone
+ */
+export type SiteAnalyticsOpensCell = {
+  /**
+   * ISO weekday: 1 is Monday, 7 is Sunday
+   */
+  weekday: number;
+  /**
+   * Hour of day, 0-23
+   */
+  hour: number;
+  /**
+   * Human opens in that hour of that weekday within the range
+   */
+  opens: number;
+};
+
+/**
  * Workspace analytics overview powering the dashboard
  */
 export type SiteAnalyticsOverview = {
@@ -6880,6 +6909,38 @@ export type SiteAnalyticsNewPeopleResponses = {
 };
 
 export type SiteAnalyticsNewPeopleResponse = SiteAnalyticsNewPeopleResponses[keyof SiteAnalyticsNewPeopleResponses];
+
+export type SiteAnalyticsOpensByHourData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: {
+    /**
+     * Window to aggregate over (defaults to 30d)
+     */
+    range?: SiteAnalyticsRange;
+  };
+  url: '/workspaces/{workspaceId}/analytics/opens-by-hour';
+};
+
+export type SiteAnalyticsOpensByHourErrors = {
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteAnalyticsOpensByHourError = SiteAnalyticsOpensByHourErrors[keyof SiteAnalyticsOpensByHourErrors];
+
+export type SiteAnalyticsOpensByHourResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteAnalyticsOpensByHour;
+};
+
+export type SiteAnalyticsOpensByHourResponse = SiteAnalyticsOpensByHourResponses[keyof SiteAnalyticsOpensByHourResponses];
 
 export type SiteAnalyticsOverviewData = {
   body?: never;

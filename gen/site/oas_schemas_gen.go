@@ -5569,6 +5569,7 @@ func (s *ProblemDetails) SetDebug(val OptProblemDebug) {
 
 func (*ProblemDetails) siteAnalyticsClicksByLinkRes()          {}
 func (*ProblemDetails) siteAnalyticsNewPeopleRes()             {}
+func (*ProblemDetails) siteAnalyticsOpensByHourRes()           {}
 func (*ProblemDetails) siteAnalyticsOverviewRes()              {}
 func (*ProblemDetails) siteAnalyticsSubscribedPeopleRes()      {}
 func (*ProblemDetails) siteAuthConfirmEmailChangeRes()         {}
@@ -6244,6 +6245,78 @@ func (s *SiteAnalyticsLinkOwner) SetName(val string) {
 // SetClicks sets the value of Clicks.
 func (s *SiteAnalyticsLinkOwner) SetClicks(val int32) {
 	s.Clicks = val
+}
+
+// Opens by hour report: a cell for every weekday and hour, Monday 00:00 first; machine opens are left
+// out.
+// Ref: #/components/schemas/SiteAnalyticsOpensByHour
+type SiteAnalyticsOpensByHour struct {
+	Cells []SiteAnalyticsOpensCell `json:"cells"`
+	// Human opens in the range.
+	Total int32 `json:"total"`
+}
+
+// GetCells returns the value of Cells.
+func (s *SiteAnalyticsOpensByHour) GetCells() []SiteAnalyticsOpensCell {
+	return s.Cells
+}
+
+// GetTotal returns the value of Total.
+func (s *SiteAnalyticsOpensByHour) GetTotal() int32 {
+	return s.Total
+}
+
+// SetCells sets the value of Cells.
+func (s *SiteAnalyticsOpensByHour) SetCells(val []SiteAnalyticsOpensCell) {
+	s.Cells = val
+}
+
+// SetTotal sets the value of Total.
+func (s *SiteAnalyticsOpensByHour) SetTotal(val int32) {
+	s.Total = val
+}
+
+func (*SiteAnalyticsOpensByHour) siteAnalyticsOpensByHourRes() {}
+
+// Human opens of one weekday and hour of day in the Workspace time zone.
+// Ref: #/components/schemas/SiteAnalyticsOpensCell
+type SiteAnalyticsOpensCell struct {
+	// ISO weekday: 1 is Monday, 7 is Sunday.
+	Weekday int32 `json:"weekday"`
+	// Hour of day, 0-23.
+	Hour int32 `json:"hour"`
+	// Human opens in that hour of that weekday within the range.
+	Opens int32 `json:"opens"`
+}
+
+// GetWeekday returns the value of Weekday.
+func (s *SiteAnalyticsOpensCell) GetWeekday() int32 {
+	return s.Weekday
+}
+
+// GetHour returns the value of Hour.
+func (s *SiteAnalyticsOpensCell) GetHour() int32 {
+	return s.Hour
+}
+
+// GetOpens returns the value of Opens.
+func (s *SiteAnalyticsOpensCell) GetOpens() int32 {
+	return s.Opens
+}
+
+// SetWeekday sets the value of Weekday.
+func (s *SiteAnalyticsOpensCell) SetWeekday(val int32) {
+	s.Weekday = val
+}
+
+// SetHour sets the value of Hour.
+func (s *SiteAnalyticsOpensCell) SetHour(val int32) {
+	s.Hour = val
+}
+
+// SetOpens sets the value of Opens.
+func (s *SiteAnalyticsOpensCell) SetOpens(val int32) {
+	s.Opens = val
 }
 
 // Workspace analytics overview powering the dashboard.

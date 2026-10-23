@@ -3517,6 +3517,55 @@
         "tags": ["Site Analytics"]
       }
     },
+    "/workspaces/{workspaceId}/analytics/opens-by-hour": {
+      "get": {
+        "operationId": "SiteAnalytics_opensByHour",
+        "description": "Human opens by hour of day and day of week in the Workspace time zone",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          },
+          {
+            "name": "range",
+            "in": "query",
+            "required": false,
+            "description": "Window to aggregate over (defaults to 30d)",
+            "schema": {
+              "$ref": "#/components/schemas/SiteAnalyticsRange"
+            },
+            "explode": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteAnalyticsOpensByHour"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Analytics"]
+      }
+    },
     "/workspaces/{workspaceId}/analytics/overview": {
       "get": {
         "operationId": "SiteAnalytics_overview",
@@ -12832,6 +12881,46 @@
           }
         },
         "description": "The clicks of one link in the emails of one Broadcast or Automation"
+      },
+      "SiteAnalyticsOpensByHour": {
+        "type": "object",
+        "required": ["cells", "total"],
+        "properties": {
+          "cells": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteAnalyticsOpensCell"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Human opens in the range"
+          }
+        },
+        "description": "Opens by hour report: a cell for every weekday and hour, Monday 00:00 first; machine opens are left out"
+      },
+      "SiteAnalyticsOpensCell": {
+        "type": "object",
+        "required": ["weekday", "hour", "opens"],
+        "properties": {
+          "weekday": {
+            "type": "integer",
+            "format": "int32",
+            "description": "ISO weekday: 1 is Monday, 7 is Sunday"
+          },
+          "hour": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Hour of day, 0-23"
+          },
+          "opens": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Human opens in that hour of that weekday within the range"
+          }
+        },
+        "description": "Human opens of one weekday and hour of day in the Workspace time zone"
       },
       "SiteAnalyticsOverview": {
         "type": "object",

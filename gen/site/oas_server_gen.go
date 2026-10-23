@@ -20,6 +20,12 @@ type Handler interface {
 	//
 	// GET /workspaces/{workspaceId}/analytics/new-people
 	SiteAnalyticsNewPeople(ctx context.Context, params SiteAnalyticsNewPeopleParams) (SiteAnalyticsNewPeopleRes, error)
+	// SiteAnalyticsOpensByHour implements SiteAnalytics_opensByHour operation.
+	//
+	// Human opens by hour of day and day of week in the Workspace time zone.
+	//
+	// GET /workspaces/{workspaceId}/analytics/opens-by-hour
+	SiteAnalyticsOpensByHour(ctx context.Context, params SiteAnalyticsOpensByHourParams) (SiteAnalyticsOpensByHourRes, error)
 	// SiteAnalyticsOverview implements SiteAnalytics_overview operation.
 	//
 	// Aggregate metrics for the workspace dashboard.

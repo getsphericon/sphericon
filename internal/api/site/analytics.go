@@ -136,3 +136,24 @@ func (h *Handlers) SiteAnalyticsClicksByLink(ctx context.Context, params siteapi
 	retentionDays := int(h.eventsRetention / (24 * time.Hour))
 	return &siteapi.SiteAnalyticsClicksByLink{Links: out, EventsRetentionDays: narrow.Int32(retentionDays)}, nil
 }
+
+// SiteAnalyticsOpensByHour maps the analytics module's Opens by hour report onto the DTO.
+func (h *Handlers) SiteAnalyticsOpensByHour(ctx context.Context, params siteapi.SiteAnalyticsOpensByHourParams) (siteapi.SiteAnalyticsOpensByHourRes, error) {
+	s, err := h.scopedFor(ctx, params.WorkspaceId)
+	if ent.IsNotFound(err) {
+		v := problem(http.StatusNotFound, "workspace not found")
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	report, err := h.analytics.OpensByHour(ctx, s, analyticsWindow(params.Range))
+	if err != nil {
+		return nil, err
+	}
+	cells := make([]siteapi.SiteAnalyticsOpensCell, len(report.Cells))
+	for i, c := range report.Cells {
+		cells[i] = siteapi.SiteAnalyticsOpensCell{Weekday: narrow.Int32(c.Weekday), Hour: narrow.Int32(c.Hour), Opens: narrow.Int32(c.Opens)}
+	}
+	return &siteapi.SiteAnalyticsOpensByHour{Cells: cells, Total: narrow.Int32(report.Total)}, nil
+}

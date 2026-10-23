@@ -215,6 +215,26 @@ model SiteAnalyticsClicksByLink {
   eventsRetentionDays: int32;
 }
 
+/** Human opens of one weekday and hour of day in the Workspace time zone */
+model SiteAnalyticsOpensCell {
+  /** ISO weekday: 1 is Monday, 7 is Sunday */
+  weekday: int32;
+
+  /** Hour of day, 0-23 */
+  hour: int32;
+
+  /** Human opens in that hour of that weekday within the range */
+  opens: int32;
+}
+
+/** Opens by hour report: a cell for every weekday and hour, Monday 00:00 first; machine opens are left out */
+model SiteAnalyticsOpensByHour {
+  cells: SiteAnalyticsOpensCell[];
+
+  /** Human opens in the range */
+  total: int32;
+}
+
 // Not a CRUD resource — a single workspace-scoped aggregate with no key, so it
 // keeps an explicit nested route rather than @parentResource/@autoRoute.
 @route("/workspaces/{workspaceId}/analytics")
@@ -259,4 +279,14 @@ namespace SiteAnalytics {
     /** Window to aggregate over (defaults to 30d) */
     @query range?: SiteAnalyticsRange,
   ): SiteAnalyticsClicksByLink | NotFoundProblem;
+
+  /** Human opens by hour of day and day of week in the Workspace time zone */
+  @get
+  @route("/opens-by-hour")
+  op opensByHour(
+    @path workspaceId: WorkspaceId,
+
+    /** Window to aggregate over (defaults to 30d) */
+    @query range?: SiteAnalyticsRange,
+  ): SiteAnalyticsOpensByHour | NotFoundProblem;
 }

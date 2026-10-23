@@ -5006,3 +5006,38 @@
   workspace_id: 1
   occurred_at: '{{daysAgo 1}}'
   created_at: '{{daysAgo 1}}'
+# Gotham (workspace 61, America/New_York): opens at fixed moments for the Opens by hour report.
+# 2026-07-15 02:30Z and 02:50Z are Tuesday 22:30 and 22:50 EDT; 15:00Z is a machine open
+# (Apple Mail Privacy Protection) and 2026-01-10 14:00Z lies outside every window the tests use.
+- id: 20410
+  contact_id: 20049
+  email: edge1@gotham.example
+  action: email.opened
+  properties: '{"broadcastId":20009}'
+  workspace_id: 61
+  occurred_at: '2026-07-15 02:30:00+00'
+  created_at: '2026-07-15 02:30:00+00'
+- id: 20411
+  contact_id: 20050
+  email: edge2@gotham.example
+  action: email.opened
+  properties: '{"broadcastId":20009}'
+  workspace_id: 61
+  occurred_at: '2026-07-15 02:50:00+00'
+  created_at: '2026-07-15 02:50:00+00'
+- id: 20412
+  contact_id: 20051
+  email: edge3@gotham.example
+  action: email.opened
+  properties: '{"broadcastId":20009,"machine":true}'
+  workspace_id: 61
+  occurred_at: '2026-07-15 15:00:00+00'
+  created_at: '2026-07-15 15:00:00+00'
+- id: 20413
+  contact_id: 20052
+  email: edge4@gotham.example
+  action: email.opened
+  properties: '{"broadcastId":20009}'
+  workspace_id: 61
+  occurred_at: '2026-01-10 14:00:00+00'
+  created_at: '2026-01-10 14:00:00+00'

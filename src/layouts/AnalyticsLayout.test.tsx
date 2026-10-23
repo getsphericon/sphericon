@@ -4,6 +4,7 @@ import { expect, test } from 'vitest'
 import { Route as clicksByLinkRoute } from '../routes/workspaces/$workspaceId/analytics/clicks-by-link.tsx'
 import { Route as emailMetricsRoute } from '../routes/workspaces/$workspaceId/analytics/email-metrics.tsx'
 import { Route as newPeopleRoute } from '../routes/workspaces/$workspaceId/analytics/new-people.tsx'
+import { Route as opensByHourRoute } from '../routes/workspaces/$workspaceId/analytics/opens-by-hour.tsx'
 import { Route as recentActivityRoute } from '../routes/workspaces/$workspaceId/analytics/recent-activity.tsx'
 import { Route as analyticsRoute } from '../routes/workspaces/$workspaceId/analytics/route.tsx'
 import { Route as subscribedPeopleRoute } from '../routes/workspaces/$workspaceId/analytics/subscribed-people.tsx'
@@ -39,6 +40,14 @@ test('the menu lists the reports under their groups, each on its own URL', async
   await expect
     .element(screen.getByRole('link', { name: 'Recent activity' }))
     .toHaveAttribute('href', `${reportPath(recentActivityRoute)}?range=30d`)
+})
+
+test('Opens by hour is in the Email group, on its own URL', async () => {
+  const { screen } = await renderWithRouter(<AnalyticsLayout />, mount('30d'))
+
+  await expect
+    .element(screen.getByRole('link', { name: 'Opens by hour' }))
+    .toHaveAttribute('href', `${reportPath(opensByHourRoute)}?range=30d`)
 })
 
 test('the chosen window is carried to every report link', async () => {
