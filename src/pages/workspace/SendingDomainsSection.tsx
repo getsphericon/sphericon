@@ -247,10 +247,12 @@ export function SendingDomainsSection({
 
   return (
     <Box>
-      <Group justify="space-between" mb="xs">
+      <Group justify="space-between" mb="sm">
         <Title order={4}>{t(($) => $.settings.sendingDomains.title)}</Title>
         {canEdit ? (
-          <Button onClick={openAdd}>{t(($) => $.settings.sendingDomains.create)}</Button>
+          <Button size="xs" onClick={openAdd}>
+            {t(($) => $.settings.sendingDomains.create)}
+          </Button>
         ) : null}
       </Group>
       <Text c="dimmed" size="sm" mb="md">

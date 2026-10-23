@@ -15,7 +15,7 @@ export function EmailsPage() {
   return (
     <SettingsFrame workspaceId={workspaceId} title={t(($) => $.settings.nav.emails)}>
       {(workspace) => (
-        <Stack>
+        <Stack gap="xl">
           <IntegrationsSection workspaceId={workspace.id} />
           <SendingDomainsSection workspaceId={workspace.id} canEdit={canManage(workspace.role)} />
           <SuppressionsSection workspaceId={workspace.id} />

@@ -67,7 +67,7 @@ function TestEvent({ collectKey }: { collectKey: string }) {
       <Code block>{command}</Code>
       <CopyButton value={command}>
         {({ copied, copy }) => (
-          <Button mt="sm" variant="light" onClick={copy}>
+          <Button size="xs" mt="sm" variant="light" onClick={copy}>
             {copied ? t(($) => $.settings.copied) : t(($) => $.settings.copy)}
           </Button>
         )}
@@ -105,7 +105,7 @@ function TrackingSection({ collectKey, workspaceId }: { collectKey: string; work
       <Code block>{snippet}</Code>
       <CopyButton value={snippet}>
         {({ copied, copy }) => (
-          <Button mt="sm" variant="light" onClick={copy}>
+          <Button size="xs" mt="sm" variant="light" onClick={copy}>
             {copied ? t(($) => $.settings.copied) : t(($) => $.settings.copy)}
           </Button>
         )}
@@ -122,7 +122,7 @@ export function TrackingPage() {
   return (
     <SettingsFrame workspaceId={workspaceId} title={t(($) => $.settings.nav.tracking)}>
       {(workspace) => (
-        <Stack>
+        <Stack gap="xl">
           <TrackingSection collectKey={workspace.collectKey} workspaceId={workspace.id} />
           <TestEvent collectKey={workspace.collectKey} />
         </Stack>

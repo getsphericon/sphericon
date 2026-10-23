@@ -76,7 +76,7 @@ export function GeneralPage() {
   return (
     <SettingsFrame workspaceId={workspaceId} title={t(($) => $.settings.nav.general)}>
       {(workspace) => (
-        <Stack>
+        <Stack gap="xl">
           <GeneralSection workspace={workspace} />
           <DangerZoneSection workspace={workspace} />
         </Stack>

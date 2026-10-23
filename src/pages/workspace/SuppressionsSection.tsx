@@ -95,7 +95,9 @@ export function SuppressionsSection({ workspaceId }: { workspaceId: string }) {
     <Box>
       <Group justify="space-between" mb="sm">
         <Title order={4}>{t(($) => $.settings.suppressions.title)}</Title>
-        <Button onClick={openCreate}>{t(($) => $.settings.suppressions.create)}</Button>
+        <Button size="xs" onClick={openCreate}>
+          {t(($) => $.settings.suppressions.create)}
+        </Button>
       </Group>
 
       <Switch

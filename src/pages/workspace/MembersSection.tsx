@@ -128,7 +128,9 @@ export function MembersSection({ workspaceId }: { workspaceId: string }) {
     <Box>
       <Group justify="space-between" mb="sm">
         <Title order={4}>{t(($) => $.settings.members.title)}</Title>
-        <Button onClick={openInvite}>{t(($) => $.settings.members.invite)}</Button>
+        <Button size="xs" onClick={openInvite}>
+          {t(($) => $.settings.members.invite)}
+        </Button>
       </Group>
 
       {membersQuery.isError ? (

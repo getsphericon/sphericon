@@ -207,10 +207,12 @@ export function IntegrationsSection({ workspaceId }: { workspaceId: string }) {
 
   return (
     <Box>
-      <Group justify="space-between" mb="xs">
+      <Group justify="space-between" mb="sm">
         <Title order={4}>{t(($) => $.settings.integrations.title)}</Title>
         {canManageIntegrations ? (
-          <Button onClick={openCreate}>{t(($) => $.settings.integrations.create)}</Button>
+          <Button size="xs" onClick={openCreate}>
+            {t(($) => $.settings.integrations.create)}
+          </Button>
         ) : null}
       </Group>
       <Text c="dimmed" size="sm" mb="md">
