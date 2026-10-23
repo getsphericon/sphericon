@@ -60,7 +60,7 @@ committed to within the last two months, so none is dropped as unmaintained. Tel
    (`LISTMONK_ADMIN_USER`/`_PASSWORD` at install, optionally an API user), Zitadel (`FIRSTINSTANCE_*` env), Hatchet
    (`hatchet-admin quickstart`, `ADMIN_` seed variables) and Coder (first user through the login flow) all create the
    first administrator by a deliberate path. sphericon's first run is "open the app, register, create a workspace"
-   ([quickstart.md:30](../guide/quickstart.md)), `SiteAuthRegister` is open to anyone
+   (`quickstart.md:30`), `SiteAuthRegister` is open to anyone
    ([internal/api/site/auth.go:21](../../internal/api/site/auth.go)), and no switch to close sign-up was found in
    the env table or in `internal/` (section 7, gap 1).
 5. **sphericon is ahead of every project here on upgrade mechanics** (a floor recorded in the database, a Major walk,
@@ -338,19 +338,19 @@ sphericon's `licensekey.ProductionKey` is one public key (internal/app/app.go:76
   ([Dockerfile.release](../../Dockerfile.release)); a first-party OCI Helm chart with a pre-upgrade migrate Job, a
   `/readyz` probe, two replicas and a PDB
   ([charts/sphericon/templates/migrate-job.yaml](../../charts/sphericon/templates/migrate-job.yaml),
-  [self-hosting.md:255-274](../self-hosting.md)); a systemd unit in the docs ([self-hosting.md:155-199](../self-hosting.md)).
+  `self-hosting.md:255-274`); a systemd unit in the docs (`self-hosting.md:155-199`).
   **No compose file**: none is tracked (`git ls-files` finds none) and the self-hosting page has no compose section,
-  although [ROADMAP.md:224](../ROADMAP.md) says "compose ships `postgres:16`".
+  although `ROADMAP.md:224` says "compose ships `postgres:16`".
 - **Schema.** Embedded goose migrations, explicit by default: `sphericon migrate`, `migrate --status [--json]`; opt-in
   `SPHERICON_DB_AUTO_MIGRATE` under a session advisory lock with `SPHERICON_DB_MIGRATE_TIMEOUT`
-  ([self-hosting.md:95-122](../self-hosting.md), [ADR 0033](../adr/0033-upgrades-add-within-a-major-and-never-stop-a-running-instance.md)).
+  (`self-hosting.md:95-122`, [ADR 0033](../adr/0033-upgrades-add-within-a-major-and-never-stop-a-running-instance.md)).
   A `schema_state` row holds the Major and a floor; guard refusals name the version and a docs link
-  ([upgrading.md:"When it refuses"](../operations/upgrading.md)).
+  (`upgrading.md:"When it refuses"`).
 - **Upgrade.** `sphericon upgrade [--restart|--from|--version|--yes|--check]`, a Major walk, sha256-verified
   (releases not signed yet), embedded changelog with `Upgrade:` notes, `upgrade-notes --since`, Helm and Docker refusals
   naming the right command ([ADR 0034](../adr/0034-sphericon-upgrade-and-a-parseable-version.md),
-  [upgrading.md](../operations/upgrading.md)). Rollback is a restore, because migrations are forward-only.
-- **Config.** Env (and `.env`), one table of variables ([self-hosting.md:20-81](../self-hosting.md)); `sphericon genkey`
+  `upgrading.md`). Rollback is a restore, because migrations are forward-only.
+- **Config.** Env (and `.env`), one table of variables (`self-hosting.md:20-81`); `sphericon genkey`
   for the Tink keyset ([cmd/server/main.go:44-49](../../cmd/server/main.go)); no `_FILE` variants.
 - **License.** `SPHERICON_LICENSE_KEY`, an Ed25519 JWT with a `features` claim, verified offline against a compiled-in
   public key; empty is the core, a bad key fails boot
@@ -359,12 +359,12 @@ sphericon's `licensekey.ProductionKey` is one public key (internal/app/app.go:76
   features instead of failing boot; **the code still returns `ErrInvalid` for an expired key** (the doc comment on
   `ErrInvalid` at licensekey.go:40 lists "expired", and `Parse` has no special case), so the ADR is not implemented.
 - **First run.** Register in the UI, create a workspace; `SPHERICON_REQUIRE_EMAIL_VERIFICATION` defaults on
-  ([quickstart.md:30](../guide/quickstart.md), [self-hosting.md:57](../self-hosting.md)). `workspace`, `user`, `staff`,
+  (`quickstart.md:30`, `self-hosting.md:57`). `workspace`, `user`, `staff`,
   `service-credential` commands exist for recovery and the platform surface ([cmd/server/cli.go:62-72](../../cmd/server/cli.go)).
 - **Health, backup, HA.** `/healthz` (liveness), `/readyz` (DB ping); opt-in metrics listener (ADR 0018); backup is
   `pg_dump` plus the encryption key, PITR guidance and a restore drill
-  ([backup.md](../operations/backup.md), [self-hosting.md:240-253](../self-hosting.md)); scaling notes on connection
-  budgets and PgBouncer ([scaling.md](../operations/scaling.md)).
+  (`backup.md`, `self-hosting.md:240-253`); scaling notes on connection
+  budgets and PgBouncer (`scaling.md`).
 
 ## 4. Comparison table
 

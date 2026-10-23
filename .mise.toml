@@ -24,6 +24,7 @@ uv = "latest"
 "github:sbdchd/squawk" = "latest"
 zizmor = "latest"
 jq = "latest"
+lychee = "latest"
 shellcheck = "latest"
 
 # Install the git hooks (hk.pkl) once the toolchain is in place. `--mise` runs hk through

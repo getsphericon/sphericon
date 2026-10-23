@@ -424,7 +424,7 @@ Kept short on purpose (the scope moved to outbound hooks). Facts only.
   never retried by the sender). ADR 0035: an expired license key loads the core instead of failing boot (`docs/adr/0035-an-expired-license-key-falls-back-to-the-core.md`).
 - **Platform-to-instance direction (ADR 0026).** A platform service calls the `/service/*` endpoints with a Service credential `smsc_<prefix>_<secret>` (SHA-256 stored), limited to scopes (`usage:read`,
   `workspaces:read`, `holds:write`), created, rotated (a second credential, then revoke the old) and revoked only by CLI, served only on the internal listener, 404 on the public mux
-  ([docs/adr/0026-operator-console-and-abuse-detector.md#L40-L58](docs/adr/0026-operator-console-and-abuse-detector.md);
+  ([docs/adr/0026-operator-console-and-abuse-detector.md#L40-L58](../../docs/adr/0026-operator-console-and-abuse-detector.md);
   `ee/staff/service.go#L42-L54` maps each operation to scopes, an unlisted operation is refused to all; `internal/server/server.go#L176-L192` builds the internal handler with a nil handler when no `staff` license).
   This is a pull-style contract for usage and holds; it is not an outbound hook.
 
@@ -433,30 +433,30 @@ Kept short on purpose (the scope moved to outbound hooks). Facts only.
 All paths are at `ad4e5c2e`.
 
 - **Entity.** `WebhookEndpoint` (workspace-scoped through `WorkspaceMixin`): `url` (marked `Sensitive`, because it may carry a token), `secret_encrypted`, `event_types` (empty = all), `enabled`
-  ([ent/schema/webhook_endpoint.go#L13-L56](ent/schema/webhook_endpoint.go)). It is an audited entity (`Audited{Action: "webhook_endpoint", NameField: "url", NameIsURL: true}`), so changes land in the Audit log. No
+  ([ent/schema/webhook_endpoint.go#L13-L56](../../ent/schema/webhook_endpoint.go)). It is an audited entity (`Audited{Action: "webhook_endpoint", NameField: "url", NameIsURL: true}`), so changes land in the Audit log. No
   columns for failure counters, last delivery, disabled reason, custom headers or a name. Glossary: "Webhook endpoint (outbound)" signs each delivery (HMAC), outbound only (`GLOSSARY.md#L431-L435`).
 - **Module.** `internal/webhooks/webhooks.go`: create/update/get/list/delete under a `*ent.Scoped`; the secret is generated server-side as `whsec_` plus 24 random bytes (Standard Webhooks format), sealed with
-  `secrets.Cipher`, and returned decrypted ([L169-L177](internal/webhooks/webhooks.go)); `validURL` accepts absolute http(s) URLs only, with a note that network-level SSRF defences are in the delivery worker
-  ([L179-L184](internal/webhooks/webhooks.go)); selecting `audit.entry` needs an Enterprise license ([L78-L83](internal/webhooks/webhooks.go)). There is no way to rotate the secret: `UpdateInput` has URL, event types and
-  enabled only ([L52-L57](internal/webhooks/webhooks.go)). The site resource returns the secret; the external resource omits it (`typespec/external/resources/webhooks.tsp#L7`). The site TypeSpec doc string still says the secret verifies an
-  `X-sphericon-Signature` header ([typespec/site/resources/webhooks.tsp#L18](typespec/site/resources/webhooks.tsp)), while the code sends the `webhook-*` headers: documentation drift.
+  `secrets.Cipher`, and returned decrypted ([L169-L177](../../internal/webhooks/webhooks.go)); `validURL` accepts absolute http(s) URLs only, with a note that network-level SSRF defences are in the delivery worker
+  ([L179-L184](../../internal/webhooks/webhooks.go)); selecting `audit.entry` needs an Enterprise license ([L78-L83](../../internal/webhooks/webhooks.go)). There is no way to rotate the secret: `UpdateInput` has URL, event types and
+  enabled only ([L52-L57](../../internal/webhooks/webhooks.go)). The site resource returns the secret; the external resource omits it (`typespec/external/resources/webhooks.tsp#L7`). The site TypeSpec doc string still says the secret verifies an
+  `X-sphericon-Signature` header ([typespec/site/resources/webhooks.tsp#L18](../../typespec/site/resources/webhooks.tsp)), while the code sends the `webhook-*` headers: documentation drift.
 - **Fan-out.** The `webhooks` bus consumer decodes the envelope, picks the action name (or the bus name for an unprojected Audit entry, masking the staff identity), uses `DedupKey` as id when present, marshals the public
   `webhookPayload` (`id, type, occurredAt, workspaceId, subject, contactId, data`) and calls `Dispatch` with `client.Scoped(env.WorkspaceID)`
-  ([internal/events/subscriber.go#L201-L262](internal/events/subscriber.go)). `Dispatch` loads the workspace's enabled endpoints, filters by event name (`matchesEvent`, empty filter excludes unprojected events), and inserts one river job per
-  endpoint on queue `webhooks` with `MaxAttempts: 10` ([internal/jobs/webhook.go#L62-L93](internal/jobs/webhook.go)).
+  ([internal/events/subscriber.go#L201-L262](../../internal/events/subscriber.go)). `Dispatch` loads the workspace's enabled endpoints, filters by event name (`matchesEvent`, empty filter excludes unprojected events), and inserts one river job per
+  endpoint on queue `webhooks` with `MaxAttempts: 10` ([internal/jobs/webhook.go#L62-L93](../../internal/jobs/webhook.go)).
 - **Delivery.** `DeliverWebhookWorker.Work` loads the endpoint (raw client, a documented allowlist entry), drops silently when it is deleted or disabled, decrypts the secret and calls `webhook.Send`
-  ([internal/jobs/webhook.go#L35-L56](internal/jobs/webhook.go)). `Send` signs `webhook-id` (the delivery id), `webhook-timestamp` (per attempt), `webhook-signature` with the standard-webhooks library, adds `X-sphericon-Event`,
-  POSTs JSON, reads at most 64 KiB of the response and returns an error on non-2xx ([internal/webhook/client.go#L50-L85](internal/webhook/client.go)). The id is stable across retries so receivers can dedupe.
+  ([internal/jobs/webhook.go#L35-L56](../../internal/jobs/webhook.go)). `Send` signs `webhook-id` (the delivery id), `webhook-timestamp` (per attempt), `webhook-signature` with the standard-webhooks library, adds `X-sphericon-Event`,
+  POSTs JSON, reads at most 64 KiB of the response and returns an error on non-2xx ([internal/webhook/client.go#L50-L85](../../internal/webhook/client.go)). The id is stable across retries so receivers can dedupe.
 - **SSRF.** `NewClient` is `doyensec/safeurl`: resolved-IP check at dial (private, loopback, link-local, CGNAT, metadata), http(s) only, IPv6 on, redirects not followed
-  ([internal/webhook/client.go#L34-L48](internal/webhook/client.go)); safeurl's own list is in `safeurl@v0.2.5/ip.go` (includes 169.254/16 and 100.64/10, `ip.go#L16`, `#L26`). There is no operator allowlist, so a self-hoster cannot
+  ([internal/webhook/client.go#L34-L48](../../internal/webhook/client.go)); safeurl's own list is in `safeurl@v0.2.5/ip.go` (includes 169.254/16 and 100.64/10, `ip.go#L16`, `#L26`). There is no operator allowlist, so a self-hoster cannot
   point an endpoint at an internal service (such as a n8n or Node-RED container on the same network).
-- **Timeouts and concurrency.** 15 s per request ([internal/jobs/worker.go#L26-L27](internal/jobs/worker.go), client built at [L79-L83](internal/jobs/worker.go)); queue `webhooks` has `MaxWorkers: 5`
-  ([L136](internal/jobs/worker.go)), shared by every workspace and endpoint.
+- **Timeouts and concurrency.** 15 s per request ([internal/jobs/worker.go#L26-L27](../../internal/jobs/worker.go), client built at [L79-L83](../../internal/jobs/worker.go)); queue `webhooks` has `MaxWorkers: 5`
+  ([L136](../../internal/jobs/worker.go)), shared by every workspace and endpoint.
 - **Retry.** Not configured: river's default policy `attempt^4` seconds with jitter (`river@v0.49.0/internal/retrypolicy/default.go#L86-L89`); with 10 attempts the waits are 1, 16, 81, 256, 625, 1296, 2401, 4096 and 6561 s, about 4h15m
   in total by my arithmetic (exact off-by-one on the first wait and the jitter size were not checked). After the last attempt the job is discarded; the centralized `errorHandler` logs each error
-  ([internal/jobs/errorhandler.go#L19-L33](internal/jobs/errorhandler.go)). No state records that an endpoint is failing.
+  ([internal/jobs/errorhandler.go#L19-L33](../../internal/jobs/errorhandler.go)). No state records that an endpoint is failing.
 - **Erasure.** In-flight deliveries carry the body in the job args; `PurgeWebhookJobs` deletes queued deliveries for a contact's erasure
-  ([internal/events/purge.go#L34-L38](internal/events/purge.go), ADR 0021).
+  ([internal/events/purge.go#L34-L38](../../internal/events/purge.go), ADR 0021).
 - **Tests.** `internal/webhook/client_test.go` checks that the hardened client refuses loopback and that a standard-webhooks receiver verifies the signature and 2xx/non-2xx outcomes
   (L22-L68); `internal/jobs/workers_test.go#L265` runs the worker against a recording fake `Doer` and fixture endpoints (success, deleted, disabled, 500, transport error);
   `internal/events/subscriber_test.go#L65` and `audit_internal_test.go` cover the payload; `internal/webhooks/webhooks_test.go` covers the module. No end-to-end scenario in `e2e/` mentions webhooks

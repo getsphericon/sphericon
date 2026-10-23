@@ -96,7 +96,7 @@ when the pages read do not say; that is not a claim of absence.
   `duplicate-broadcast`, `remove-broadcast`, `compose-broadcast`, `update-broadcast`,
   `list-broadcast-clicked-links`, `list-broadcast-recipients`.
   <https://github.com/resend/resend-mcp> and the raw files under
-  <https://raw.githubusercontent.com/resend/resend-mcp/main/src/tools/> (accessed 2026-10-18)
+  <https://github.com/resend/resend-mcp/tree/main/src/tools> (accessed 2026-10-18)
 - **How the agent is constrained** (tool descriptions in `broadcasts.ts`): the documented
   workflow is `list-segments -> create-broadcast -> get-tiptap-json-content (include_schema: true)
   -> compose-broadcast -> send-broadcast`. `get-tiptap-json-content` returns the current document

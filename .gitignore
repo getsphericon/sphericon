@@ -75,6 +75,7 @@ npm-cache
 
 # local tool caches
 .cache/
+.lycheecache
 
 # build artifacts
 dist

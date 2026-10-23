@@ -63,3 +63,7 @@ bug source (and ideally SaaS-tier only).
 - **Feature-flag engines** (Unleash, go-feature-flag, open-feature) — plan/tier gating is a
   `workspace.plan` attribute + checks in our domain layer, not a flag engine. Revisit only if
   we need gradual rollouts / A-B kill-switches.
+- **A Markdown linter** (markdownlint-cli2, rumdl) — oxfmt already formats the Markdown, `check:adr`
+  guards the one structural rule that matters (ADR numbers) and `check:links` resolves links and
+  `#fragments`; the structure errors left (heading levels, duplicate headings) have not cost a
+  review. Revisit if a docs structure rule appears in review twice.

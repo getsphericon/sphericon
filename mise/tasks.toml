@@ -393,6 +393,7 @@ depends = [
   "check:adr",
   "check:helm",
   "check:shell",
+  "check:links",
 ]
 
 ["check:fe"]
@@ -560,6 +561,14 @@ run = [
 ["check:shell"]
 description = "shellcheck the scripts under mise/scripts/"
 run = "shellcheck -x --source-path=SCRIPTDIR mise/scripts/*.sh"
+
+["check:links"]
+description = "Links between the Markdown files of the repository and their #fragments resolve (lychee --offline, lychee.toml)"
+run = "lychee --config lychee.toml --offline --no-progress '**/*.md'"
+
+["check:links:remote"]
+description = "External links in the Markdown files answer (network: not part of check, a site can be down with no change on our side, so the nightly workflow runs it)"
+run = "lychee --config lychee.toml --no-progress '**/*.md'"
 
 ["check:security"]
 description = "Secrets and workflow linters"

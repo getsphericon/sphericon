@@ -1,7 +1,7 @@
 name: Nightly
 
-# Checks that do not need to run on every pull request: the Go coverage floor, the race detector, mutation testing, fuzzing, the contract fuzz, and
-# the dependency scan, whose answer changes with the advisory database rather
+# Checks that do not need to run on every pull request: the Go coverage floor, the race detector, mutation testing, fuzzing, the contract fuzz, the
+# external links of the Markdown files, and the dependency scan, whose answer changes with the advisory database rather
 # than with our code. One scheduled run covers them; `workflow_dispatch` runs
 # them on demand. A scheduled workflow only runs from the default branch.
 on:
@@ -132,3 +132,23 @@ jobs:
 
       - name: Check the Go and pnpm lockfiles against OSV
         run: mise run check:osv
+
+  # External links in the Markdown files: a site that is down or moves a page fails this with no
+  # change on our side, which is why it runs here and not on a pull request.
+  links:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup mise
+        uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
+
+      - name: Check external links
+        run: mise run check:links:remote
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
