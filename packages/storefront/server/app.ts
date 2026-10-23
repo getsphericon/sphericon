@@ -1,7 +1,7 @@
 import { contactsBatchUpsert, eventsCreate } from '@sphericon/node'
 import { Hono } from 'hono'
 
-import { COURSES } from '../src/courses.ts'
+import { COURSES, totalPrice } from '../src/courses.ts'
 import { ENROLL_PATH, enrollSchema } from './enroll.ts'
 
 // "Enroll" is a fake checkout: there is no payment provider, so the server only tells the
@@ -33,7 +33,7 @@ export function createApp(): Hono {
             email,
             subjectId,
             properties: {
-              amount: bought.reduce((sum, course) => sum + course.price, 0),
+              amount: totalPrice(bought),
               currency: 'USD',
               courses,
             },

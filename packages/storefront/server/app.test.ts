@@ -1,18 +1,33 @@
-import { contactsBatchUpsert, eventsCreate } from '@sphericon/node'
-import { beforeEach, expect, test, vi } from 'vitest'
+import { configure } from '@sphericon/node'
+import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 
 import { createApp } from './app.ts'
 
-vi.mock('@sphericon/node', () => ({
-  contactsBatchUpsert: vi.fn<() => Promise<{ data: object }>>(() => Promise.resolve({ data: {} })),
-  eventsCreate: vi.fn<() => Promise<{ data: undefined }>>(() =>
-    Promise.resolve({ data: undefined }),
-  ),
-}))
+interface Received {
+  path: string
+  authorization: string | null
+  body: unknown
+}
+
+// The outside boundary is the external API: the stub answers like it and keeps what it was sent.
+let received: Received[]
 
 beforeEach(() => {
-  vi.mocked(contactsBatchUpsert).mockClear()
-  vi.mocked(eventsCreate).mockClear()
+  received = []
+  configure({ baseUrl: 'https://api.test', token: 'demo-token' })
+  vi.stubGlobal('fetch', async (request: Request) => {
+    received.push({
+      path: new URL(request.url).pathname,
+      authorization: request.headers.get('authorization'),
+      body: await request.json(),
+    })
+
+    return Response.json({})
+  })
+})
+
+afterEach(() => {
+  vi.unstubAllGlobals()
 })
 
 test('Enroll upserts the Contact and records purchase with the email and subject id of the request', async () => {
@@ -27,27 +42,33 @@ test('Enroll upserts the Contact and records purchase with the email and subject
   })
 
   expect(response.status).toBe(200)
-  expect(contactsBatchUpsert).toHaveBeenCalledWith({
-    body: {
-      contacts: [{ email: 'maya.learner@example.com', subjectId: 'user:maya.learner@example.com' }],
+  expect(received).toEqual([
+    {
+      path: '/contacts/batch',
+      authorization: 'Bearer demo-token',
+      body: {
+        contacts: [
+          { email: 'maya.learner@example.com', subjectId: 'user:maya.learner@example.com' },
+        ],
+      },
     },
-    throwOnError: true,
-  })
-  expect(eventsCreate).toHaveBeenCalledWith({
-    body: {
-      events: [
-        {
-          action: 'purchase',
-          email: 'maya.learner@example.com',
-          subjectId: 'user:maya.learner@example.com',
-          properties: {
-            amount: 78,
-            currency: 'USD',
-            courses: ['git-in-a-day', 'sql-for-analysts'],
+    {
+      path: '/events',
+      authorization: 'Bearer demo-token',
+      body: {
+        events: [
+          {
+            action: 'purchase',
+            email: 'maya.learner@example.com',
+            subjectId: 'user:maya.learner@example.com',
+            properties: {
+              amount: 78,
+              currency: 'USD',
+              courses: ['git-in-a-day', 'sql-for-analysts'],
+            },
           },
-        },
-      ],
+        ],
+      },
     },
-    throwOnError: true,
-  })
+  ])
 })

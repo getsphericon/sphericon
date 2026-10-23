@@ -225,6 +225,10 @@ const (
 	BrandKitGlobexID = 900
 	// BrandKitInitechID is from fixtures/brand_kits.
 	BrandKitInitechID = 300
+	// BrightpathContactSofiaEmail is from fixtures/contacts.
+	BrightpathContactSofiaEmail = "sofia.marino@northwind.example"
+	// BrightpathContactSofiaID is from fixtures/contacts.
+	BrightpathContactSofiaID = 20001
 	// BrightpathDevMcpTokenID is from fixtures/api_tokens.
 	BrightpathDevMcpTokenID = 20006
 	// BrightpathDevMcpTokenName is from fixtures/api_tokens.

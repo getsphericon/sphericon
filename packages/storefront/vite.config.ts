@@ -1,6 +1,7 @@
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
+import { requiredEnv } from './server/env.ts'
 import { storefrontServer } from './server/plugin.ts'
 
 // The storefront is a customer site: it runs on its own origin (brightpath.localhost, or
@@ -12,15 +13,15 @@ export default defineConfig({
   envPrefix: 'DEMO_COLLECT_',
   server: {
     host: true,
-    port: Number(process.env.DEMO_PORT ?? 5373),
+    port: Number(requiredEnv('DEMO_PORT')),
     strictPort: true,
     // Agent worktrees are full repo copies; watching them triggers spurious reloads.
     watch: { ignored: ['**/.claude/worktrees/**'] },
     allowedHosts: ['.localhost'],
     hmr: {
       protocol: 'wss',
-      host: process.env.DEMO_HOST ?? 'brightpath.localhost',
-      clientPort: Number(process.env.CADDY_PORT ?? 443),
+      host: requiredEnv('DEMO_HOST'),
+      clientPort: Number(requiredEnv('CADDY_PORT')),
     },
   },
 })

@@ -109,8 +109,8 @@ Brightpath has all three roles, so one Workspace is enough for development. `sam
 Brightpath's Mailpit Integration sends to `127.0.0.1:1025`, the primary checkout's SMTP port. A
 linked worktree's Mailpit SMTP port is offset (`SPHERICON_SMTP_PORT`) and a fixture cannot follow
 it, because fixtures also load in tests: change the Integration's port in its settings there.
-Brightpath's Sending domains have no serving Tracking domain in dev, so links in dev mail use
-the app URL.
+Brightpath's Sending domains keep the default `pending` Tracking state in the fixtures, so no
+Tracking domain serves and links in dev mail use the app URL.
 
 ### MCP client
 

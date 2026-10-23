@@ -5,7 +5,6 @@
   "description": "Brightpath demo storefront: a customer site that sends events to the dev stack",
   "type": "module",
   "scripts": {
-    "build": "vite build",
     "dev": "vite"
   },
   "dependencies": {

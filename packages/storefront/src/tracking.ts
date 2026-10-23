@@ -37,14 +37,16 @@ export function subjectIdFor(email: string): string {
   return `user:${email}`
 }
 
-export async function signedUp(email: string): Promise<void> {
+export async function signUp(email: string): Promise<void> {
   await identify({ email, subjectId: subjectIdFor(email) })
   track('signup')
 }
 
 // "Enroll" identifies the person in the browser, then asks the storefront's server to record the
 // purchase: the server sends the same email and subject id, so front and back events share a Contact.
-export async function enrolled(email: string, courses: readonly string[]): Promise<void> {
+// A visitor who enrols without signing up first has no identity yet; `identify` gives the browser's
+// earlier page views and cart events one.
+export async function enroll(email: string, courses: readonly string[]): Promise<void> {
   const subjectId = subjectIdFor(email)
   await identify({ email, subjectId })
   const body: EnrollRequest = { email, subjectId, courses: [...courses] }

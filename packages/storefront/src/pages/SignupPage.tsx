@@ -1,17 +1,15 @@
-import { Alert, Button, Stack, TextInput, Title } from '@mantine/core'
+import { Alert, Title } from '@mantine/core'
 import { useState } from 'react'
-import type { SubmitEvent } from 'react'
 
-import { signedUp } from '../tracking.ts'
+import { EmailForm } from '../EmailForm.tsx'
+import { signUp } from '../tracking.ts'
 
 export function SignupPage() {
-  const [email, setEmail] = useState('')
-  const [done, setDone] = useState(false)
+  const [welcomed, setWelcomed] = useState<string | null>(null)
 
-  const submit = async (event: SubmitEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    await signedUp(email)
-    setDone(true)
+  const submit = async (email: string) => {
+    await signUp(email)
+    setWelcomed(email)
   }
 
   return (
@@ -19,23 +17,10 @@ export function SignupPage() {
       <Title order={1} mb="md">
         Create your account
       </Title>
-      {done ? (
-        <Alert color="green">Welcome to Brightpath, {email}.</Alert>
+      {welcomed === null ? (
+        <EmailForm submitLabel="Sign up" onSubmit={submit} />
       ) : (
-        <form onSubmit={(event) => void submit(event)}>
-          <Stack maw={400}>
-            <TextInput
-              label="Email"
-              type="email"
-              required
-              value={email}
-              onChange={(event) => {
-                setEmail(event.currentTarget.value)
-              }}
-            />
-            <Button type="submit">Sign up</Button>
-          </Stack>
-        </form>
+        <Alert color="green">Welcome to Brightpath, {welcomed}.</Alert>
       )}
     </>
   )

@@ -474,15 +474,14 @@ func TestMCPDevTokenReadsAndWritesBrightpath(t *testing.T) {
 
 	names := toolNames(listedTools(t, s))
 	assert.Contains(t, names, "contacts_create")
-	for _, name := range sendTools {
-		assert.NotContains(t, names, name)
-	}
+	assert.Empty(t, lo.Intersect(names, sendTools))
 
 	read := call(t, s, "contacts_list", map[string]any{})
 	require.False(t, read.IsError, text(t, read))
-	assert.Contains(t, text(t, read), "sofia.marino@northwind.example")
+	assert.Contains(t, text(t, read), fixtures.BrightpathContactSofiaEmail)
 
-	write := call(t, s, "contacts_create", map[string]any{"email": "dev.mcp@brightpath.example"})
+	created := "dev.mcp@brightpath.example"
+	write := call(t, s, "contacts_create", map[string]any{"email": created})
 	require.False(t, write.IsError, text(t, write))
-	assert.Contains(t, text(t, write), "dev.mcp@brightpath.example")
+	assert.Contains(t, text(t, write), created)
 }

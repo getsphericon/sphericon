@@ -11,7 +11,6 @@ WORKDIR /src
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY packages/analytics/package.json packages/analytics/
 COPY packages/emaildoc/package.json packages/emaildoc/
-COPY packages/storefront/package.json packages/storefront/
 
 RUN pnpm install --frozen-lockfile
 COPY . .

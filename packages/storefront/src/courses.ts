@@ -33,6 +33,11 @@ export const COURSES: readonly Course[] = [
   },
 ]
 
+// The one price sum: the cart shows it and the server records it with the purchase.
+export function totalPrice(courses: readonly Course[]): number {
+  return courses.reduce((sum, course) => sum + course.price, 0)
+}
+
 export interface Plan {
   slug: string
   title: string
