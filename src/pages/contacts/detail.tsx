@@ -60,15 +60,63 @@ function formatCustomValue(value: unknown): string {
   return JSON.stringify(value)
 }
 
-export function ContactDetailPage() {
+function ContactActions({ workspaceId, contactId }: { workspaceId: string; contactId: string }) {
   const { t } = useTranslation()
-  const { workspaceId, contactId } = contactsDetailRoute.useParams()
   const navigate = useNavigate()
   const confirm = useDeleteConfirmation()
   const role = useCurrentRole(workspaceId)
   // Erasure is irreversible, so it is offered to owners and admins only (the API
   // refuses everyone else with 403).
   const canErase = canManage(role)
+
+  const eraseMutation = useResourceMutation({
+    mutation: siteContactsDeleteMutation(),
+    invalidate: [siteContactsListQueryKey({ path: { workspaceId } })],
+    successMessage: t(($) => $.notifications.contactErased),
+    errorTitle: t(($) => $.alerts.eraseErrorTitle),
+    forbiddenMessage: t(($) => $.contacts.eraseForbidden),
+    onDone: async () => navigate({ to: contactsRoute.to, params: { workspaceId } }),
+  })
+
+  const exportMutation = useContactExport(workspaceId)
+
+  return (
+    <Group gap="xs">
+      <ButtonLink variant="default" to={contactsEditRoute.to} params={{ workspaceId, contactId }}>
+        {t(($) => $.actions.edit)}
+      </ButtonLink>
+      <Button
+        variant="default"
+        loading={exportMutation.isPending}
+        onClick={() => exportMutation.mutate({ id: contactId })}
+      >
+        {t(($) => $.contacts.export)}
+      </Button>
+      {canErase ? (
+        <Button
+          color="red"
+          variant="light"
+          onClick={() =>
+            confirm({
+              title: t(($) => $.contacts.eraseConfirmTitle),
+              description: t(($) => $.contacts.eraseConfirmDescription),
+              confirmLabel: t(($) => $.contacts.erase),
+              onConfirm: () => eraseMutation.mutate({ path: { workspaceId, id: contactId } }),
+            })
+          }
+        >
+          {t(($) => $.contacts.erase)}
+        </Button>
+      ) : null}
+      <ButtonLink variant="subtle" to={contactsRoute.to} params={{ workspaceId }}>
+        {t(($) => $.actions.back)}
+      </ButtonLink>
+    </Group>
+  )
+}
+
+function ContactEvents({ workspaceId, contactId }: { workspaceId: string; contactId: string }) {
+  const { t } = useTranslation()
   const [page, setPage] = useState(1)
   const [showMachine, setShowMachine] = useState(false)
 
@@ -81,10 +129,6 @@ export function ContactDetailPage() {
     setPage(1)
   }
 
-  const contactQuery = useQuery(siteContactsGetOptions({ path: { workspaceId, id: contactId } }))
-
-  const contact = contactQuery.data
-
   // Activity is keyed by the stable contact_id (ADR 0002): this also surfaces
   // anonymous events stitched onto the contact at Identify, which an email filter
   // would miss.
@@ -95,118 +139,13 @@ export function ContactDetailPage() {
     }),
   )
 
-  const eraseMutation = useResourceMutation({
-    mutation: siteContactsDeleteMutation(),
-    invalidate: [siteContactsListQueryKey({ path: { workspaceId } })],
-    successMessage: t(($) => $.notifications.contactErased),
-    errorTitle: t(($) => $.alerts.eraseErrorTitle),
-    forbiddenMessage: t(($) => $.contacts.eraseForbidden),
-    onDone: () => navigate({ to: contactsRoute.to, params: { workspaceId } }),
-  })
-
-  const exportMutation = useContactExport(workspaceId)
-
-  if (contactQuery.isLoading) {
-    return <Loader />
-  }
-
-  if (contactQuery.isError || !contact) {
-    return (
-      <ApiErrorAlert
-        error={contactQuery.error}
-        title={t(($) => $.alerts.contactLoadErrorTitle)}
-        fallback={t(($) => $.alerts.contactLoadErrorTitle)}
-      />
-    )
-  }
-
-  const fullName = [contact.firstName, contact.lastName].filter(Boolean).join(' ')
-  const customFields = Object.entries(contact.customFields ?? {})
   // A machine Event (an open or click made by software, ADR 0053) is left out by the API unless
   // `includeMachine` asks for it.
   const eventRecords = eventsQuery.data?.items ?? []
   const eventsTotal = eventsQuery.data?.totalItems ?? 0
 
   return (
-    <Stack>
-      <Group justify="space-between" align="flex-start" wrap="wrap">
-        <Stack gap={4}>
-          <Title order={4}>{contact.email ?? contact.subjectId ?? contact.phone ?? '—'}</Title>
-          {fullName ? <Text c="dimmed">{fullName}</Text> : null}
-        </Stack>
-        <Group gap="xs">
-          <ButtonLink
-            variant="default"
-            to={contactsEditRoute.to}
-            params={{ workspaceId, contactId }}
-          >
-            {t(($) => $.actions.edit)}
-          </ButtonLink>
-          <Button
-            variant="default"
-            loading={exportMutation.isPending}
-            onClick={() => exportMutation.mutate({ id: contactId })}
-          >
-            {t(($) => $.contacts.export)}
-          </Button>
-          {canErase ? (
-            <Button
-              color="red"
-              variant="light"
-              onClick={() =>
-                confirm({
-                  title: t(($) => $.contacts.eraseConfirmTitle),
-                  description: t(($) => $.contacts.eraseConfirmDescription),
-                  confirmLabel: t(($) => $.contacts.erase),
-                  onConfirm: () => eraseMutation.mutate({ path: { workspaceId, id: contactId } }),
-                })
-              }
-            >
-              {t(($) => $.contacts.erase)}
-            </Button>
-          ) : null}
-          <ButtonLink variant="subtle" to={contactsRoute.to} params={{ workspaceId }}>
-            {t(($) => $.actions.back)}
-          </ButtonLink>
-        </Group>
-      </Group>
-
-      <Title order={5}>{t(($) => $.contacts.detailsTitle)}</Title>
-      <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }}>
-        <Field label={t(($) => $.table.email)} value={contact.email ?? ''} />
-        <Field label={t(($) => $.table.subjectId)} value={contact.subjectId ?? ''} />
-        <Field label={t(($) => $.table.phone)} value={contact.phone ?? ''} />
-        <Field label={t(($) => $.table.firstName)} value={contact.firstName ?? ''} />
-        <Field label={t(($) => $.table.lastName)} value={contact.lastName ?? ''} />
-        <Field label={t(($) => $.table.timeZone)} value={contact.timeZone ?? ''} />
-        <Field label={t(($) => $.activity.createdAt)} value={formatDateTime(contact.createdAt)} />
-        <Field label={t(($) => $.contacts.updatedAt)} value={formatDateTime(contact.updatedAt)} />
-      </SimpleGrid>
-
-      {contact.tags.length > 0 ? (
-        <>
-          <Title order={5}>{t(($) => $.contacts.tagsTitle)}</Title>
-          <Group gap="xs">
-            {contact.tags.map((tag) => (
-              <Badge key={tag} variant="light">
-                {tag}
-              </Badge>
-            ))}
-          </Group>
-        </>
-      ) : null}
-
-      {customFields.length > 0 ? (
-        <>
-          <Title order={5}>{t(($) => $.contacts.customFields)}</Title>
-          <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }}>
-            {customFields.map(([key, value]) => (
-              <Field key={key} label={key} value={formatCustomValue(value)} />
-            ))}
-          </SimpleGrid>
-        </>
-      ) : null}
-
+    <>
       <Group justify="space-between">
         <Title order={5}>{t(($) => $.contacts.eventsTitle)}</Title>
         <Switch
@@ -246,6 +185,81 @@ export function ContactDetailPage() {
         fetching={eventsQuery.isFetching}
         emptyState={<EmptyState title={t(($) => $.activity.noRecords)} />}
       />
+    </>
+  )
+}
+
+export function ContactDetailPage() {
+  const { t } = useTranslation()
+  const { workspaceId, contactId } = contactsDetailRoute.useParams()
+  const contactQuery = useQuery(siteContactsGetOptions({ path: { workspaceId, id: contactId } }))
+
+  const contact = contactQuery.data
+
+  if (contactQuery.isLoading) {
+    return <Loader />
+  }
+
+  if (contactQuery.isError || !contact) {
+    return (
+      <ApiErrorAlert
+        error={contactQuery.error}
+        title={t(($) => $.alerts.contactLoadErrorTitle)}
+        fallback={t(($) => $.alerts.contactLoadErrorTitle)}
+      />
+    )
+  }
+
+  const fullName = [contact.firstName, contact.lastName].filter(Boolean).join(' ')
+  const customFields = Object.entries(contact.customFields ?? {})
+
+  return (
+    <Stack>
+      <Group justify="space-between" align="flex-start" wrap="wrap">
+        <Stack gap={4}>
+          <Title order={4}>{contact.email ?? contact.subjectId ?? contact.phone ?? '—'}</Title>
+          {fullName ? <Text c="dimmed">{fullName}</Text> : null}
+        </Stack>
+        <ContactActions workspaceId={workspaceId} contactId={contactId} />
+      </Group>
+
+      <Title order={5}>{t(($) => $.contacts.detailsTitle)}</Title>
+      <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }}>
+        <Field label={t(($) => $.table.email)} value={contact.email ?? ''} />
+        <Field label={t(($) => $.table.subjectId)} value={contact.subjectId ?? ''} />
+        <Field label={t(($) => $.table.phone)} value={contact.phone ?? ''} />
+        <Field label={t(($) => $.table.firstName)} value={contact.firstName ?? ''} />
+        <Field label={t(($) => $.table.lastName)} value={contact.lastName ?? ''} />
+        <Field label={t(($) => $.table.timeZone)} value={contact.timeZone ?? ''} />
+        <Field label={t(($) => $.activity.createdAt)} value={formatDateTime(contact.createdAt)} />
+        <Field label={t(($) => $.contacts.updatedAt)} value={formatDateTime(contact.updatedAt)} />
+      </SimpleGrid>
+
+      {contact.tags.length > 0 ? (
+        <>
+          <Title order={5}>{t(($) => $.contacts.tagsTitle)}</Title>
+          <Group gap="xs">
+            {contact.tags.map((tag) => (
+              <Badge key={tag} variant="light">
+                {tag}
+              </Badge>
+            ))}
+          </Group>
+        </>
+      ) : null}
+
+      {customFields.length > 0 ? (
+        <>
+          <Title order={5}>{t(($) => $.contacts.customFields)}</Title>
+          <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }}>
+            {customFields.map(([key, value]) => (
+              <Field key={key} label={key} value={formatCustomValue(value)} />
+            ))}
+          </SimpleGrid>
+        </>
+      ) : null}
+
+      <ContactEvents workspaceId={workspaceId} contactId={contactId} />
     </Stack>
   )
 }

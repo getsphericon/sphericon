@@ -55,7 +55,7 @@ function isApiFrame({ data }: { data: unknown }) {
   return pathname.startsWith('/site/') || pathname.startsWith('/staff/')
 }
 
-beforeAll(() =>
+beforeAll(async () =>
   worker.start({
     quiet: true,
     onUnhandledFrame: ({ frame, defaults }) => {

@@ -82,17 +82,19 @@ const AccountRouteRoute = AccountRouteRouteImport.update({
   id: '/account',
   path: '/account',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any).lazy(() => import('./routes/account/route.lazy').then((d) => d.Route))
 const ConfirmRoute = ConfirmRouteImport.update({
   id: '/confirm',
   path: '/confirm',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any).lazy(() => import('./routes/confirm.lazy').then((d) => d.Route))
 const ConfirmEmailChangeRoute = ConfirmEmailChangeRouteImport.update({
   id: '/confirm-email-change',
   path: '/confirm-email-change',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any).lazy(() =>
+  import('./routes/confirm-email-change.lazy').then((d) => d.Route),
+)
 const ConsoleRouteRoute = ConsoleRouteRouteImport.update({
   id: '/console',
   path: '/console',
@@ -102,121 +104,155 @@ const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
   id: '/forgot-password',
   path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any).lazy(() =>
+  import('./routes/forgot-password.lazy').then((d) => d.Route),
+)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any).lazy(() => import('./routes/login.lazy').then((d) => d.Route))
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any).lazy(() => import('./routes/register.lazy').then((d) => d.Route))
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any).lazy(() =>
+  import('./routes/reset-password.lazy').then((d) => d.Route),
+)
 const SigninNotMeRoute = SigninNotMeRouteImport.update({
   id: '/signin-not-me',
   path: '/signin-not-me',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any).lazy(() => import('./routes/signin-not-me.lazy').then((d) => d.Route))
 const UnsubscribeRoute = UnsubscribeRouteImport.update({
   id: '/unsubscribe',
   path: '/unsubscribe',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any).lazy(() => import('./routes/unsubscribe.lazy').then((d) => d.Route))
 const UnsubscribedRoute = UnsubscribedRouteImport.update({
   id: '/unsubscribed',
   path: '/unsubscribed',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any).lazy(() => import('./routes/unsubscribed.lazy').then((d) => d.Route))
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
   id: '/verify-email',
   path: '/verify-email',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any).lazy(() => import('./routes/verify-email.lazy').then((d) => d.Route))
 const AccountIndexRoute = AccountIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AccountRouteRoute,
-} as any)
+} as any).lazy(() => import('./routes/account/index.lazy').then((d) => d.Route))
 const AccountDeleteRoute = AccountDeleteRouteImport.update({
   id: '/delete',
   path: '/delete',
   getParentRoute: () => AccountRouteRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/account/delete.lazy').then((d) => d.Route),
+)
 const AccountInstanceRoute = AccountInstanceRouteImport.update({
   id: '/instance',
   path: '/instance',
   getParentRoute: () => AccountRouteRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/account/instance.lazy').then((d) => d.Route),
+)
 const AccountSecurityRoute = AccountSecurityRouteImport.update({
   id: '/security',
   path: '/security',
   getParentRoute: () => AccountRouteRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/account/security.lazy').then((d) => d.Route),
+)
 const ConsoleAuthedRouteRoute = ConsoleAuthedRouteRouteImport.update({
   id: '/_authed',
   getParentRoute: () => ConsoleRouteRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/console/_authed/route.lazy').then((d) => d.Route),
+)
 const ConsoleLoginRoute = ConsoleLoginRouteImport.update({
   id: '/login',
   path: '/login',
   getParentRoute: () => ConsoleRouteRoute,
-} as any)
+} as any).lazy(() => import('./routes/console/login.lazy').then((d) => d.Route))
 const InvitationsTokenRoute = InvitationsTokenRouteImport.update({
   id: '/invitations/$token',
   path: '/invitations/$token',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any).lazy(() =>
+  import('./routes/invitations/$token.lazy').then((d) => d.Route),
+)
 const OauthConsentRoute = OauthConsentRouteImport.update({
   id: '/oauth/consent',
   path: '/oauth/consent',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any).lazy(() => import('./routes/oauth/consent.lazy').then((d) => d.Route))
 const WorkspacesWorkspaceIdRouteRoute =
   WorkspacesWorkspaceIdRouteRouteImport.update({
     id: '/workspaces/$workspaceId',
     path: '/workspaces/$workspaceId',
     getParentRoute: () => rootRouteImport,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/workspaces/$workspaceId/route.lazy').then((d) => d.Route),
+  )
 const WorkspacesNewRoute = WorkspacesNewRouteImport.update({
   id: '/workspaces/new',
   path: '/workspaces/new',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any).lazy(() =>
+  import('./routes/workspaces/new.lazy').then((d) => d.Route),
+)
 const ConsoleAuthedIndexRoute = ConsoleAuthedIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => ConsoleAuthedRouteRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/console/_authed/index.lazy').then((d) => d.Route),
+)
 const WorkspacesWorkspaceIdIndexRoute =
   WorkspacesWorkspaceIdIndexRouteImport.update({
     id: '/',
     path: '/',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/workspaces/$workspaceId/index.lazy').then((d) => d.Route),
+  )
 const WorkspacesWorkspaceIdActivityRoute =
   WorkspacesWorkspaceIdActivityRouteImport.update({
     id: '/activity',
     path: '/activity',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/workspaces/$workspaceId/activity.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const WorkspacesWorkspaceIdAnalyticsRoute =
   WorkspacesWorkspaceIdAnalyticsRouteImport.update({
     id: '/analytics',
     path: '/analytics',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/workspaces/$workspaceId/analytics.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const WorkspacesWorkspaceIdBrandKitRoute =
   WorkspacesWorkspaceIdBrandKitRouteImport.update({
     id: '/brand-kit',
     path: '/brand-kit',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/workspaces/$workspaceId/brand-kit.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const WorkspacesWorkspaceIdSettingsRouteRoute =
   WorkspacesWorkspaceIdSettingsRouteRouteImport.update({
     id: '/settings',
@@ -228,205 +264,341 @@ const ConsoleAuthedWorkspacesWorkspaceIdRoute =
     id: '/workspaces/$workspaceId',
     path: '/workspaces/$workspaceId',
     getParentRoute: () => ConsoleAuthedRouteRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/console/_authed/workspaces.$workspaceId.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const WorkspacesWorkspaceIdAutomationsIndexRoute =
   WorkspacesWorkspaceIdAutomationsIndexRouteImport.update({
     id: '/automations/',
     path: '/automations/',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/workspaces/$workspaceId/automations/index.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const WorkspacesWorkspaceIdBroadcastsIndexRoute =
   WorkspacesWorkspaceIdBroadcastsIndexRouteImport.update({
     id: '/broadcasts/',
     path: '/broadcasts/',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/workspaces/$workspaceId/broadcasts/index.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const WorkspacesWorkspaceIdBroadcastsNewRoute =
   WorkspacesWorkspaceIdBroadcastsNewRouteImport.update({
     id: '/broadcasts/new',
     path: '/broadcasts/new',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/workspaces/$workspaceId/broadcasts/new.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const WorkspacesWorkspaceIdContactsIndexRoute =
   WorkspacesWorkspaceIdContactsIndexRouteImport.update({
     id: '/contacts/',
     path: '/contacts/',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/workspaces/$workspaceId/contacts/index.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const WorkspacesWorkspaceIdCustomFieldsIndexRoute =
   WorkspacesWorkspaceIdCustomFieldsIndexRouteImport.update({
     id: '/custom-fields/',
     path: '/custom-fields/',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/workspaces/$workspaceId/custom-fields/index.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const WorkspacesWorkspaceIdRulesIndexRoute =
   WorkspacesWorkspaceIdRulesIndexRouteImport.update({
     id: '/rules/',
     path: '/rules/',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/workspaces/$workspaceId/rules/index.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const WorkspacesWorkspaceIdRulesNewRoute =
   WorkspacesWorkspaceIdRulesNewRouteImport.update({
     id: '/rules/new',
     path: '/rules/new',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/workspaces/$workspaceId/rules/new.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const WorkspacesWorkspaceIdSegmentsIndexRoute =
   WorkspacesWorkspaceIdSegmentsIndexRouteImport.update({
     id: '/segments/',
     path: '/segments/',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/workspaces/$workspaceId/segments/index.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const WorkspacesWorkspaceIdSegmentsNewRoute =
   WorkspacesWorkspaceIdSegmentsNewRouteImport.update({
     id: '/segments/new',
     path: '/segments/new',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/workspaces/$workspaceId/segments/new.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const WorkspacesWorkspaceIdSettingsIndexRoute =
   WorkspacesWorkspaceIdSettingsIndexRouteImport.update({
     id: '/',
     path: '/',
     getParentRoute: () => WorkspacesWorkspaceIdSettingsRouteRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/workspaces/$workspaceId/settings/index.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const WorkspacesWorkspaceIdSettingsApiKeysRoute =
   WorkspacesWorkspaceIdSettingsApiKeysRouteImport.update({
     id: '/api-keys',
     path: '/api-keys',
     getParentRoute: () => WorkspacesWorkspaceIdSettingsRouteRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/workspaces/$workspaceId/settings/api-keys.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const WorkspacesWorkspaceIdSettingsAuditLogRoute =
   WorkspacesWorkspaceIdSettingsAuditLogRouteImport.update({
     id: '/audit-log',
     path: '/audit-log',
     getParentRoute: () => WorkspacesWorkspaceIdSettingsRouteRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/workspaces/$workspaceId/settings/audit-log.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const WorkspacesWorkspaceIdSettingsEmailsRoute =
   WorkspacesWorkspaceIdSettingsEmailsRouteImport.update({
     id: '/emails',
     path: '/emails',
     getParentRoute: () => WorkspacesWorkspaceIdSettingsRouteRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/workspaces/$workspaceId/settings/emails.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const WorkspacesWorkspaceIdSettingsMcpRoute =
   WorkspacesWorkspaceIdSettingsMcpRouteImport.update({
     id: '/mcp',
     path: '/mcp',
     getParentRoute: () => WorkspacesWorkspaceIdSettingsRouteRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/workspaces/$workspaceId/settings/mcp.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const WorkspacesWorkspaceIdSettingsPrivacyRoute =
   WorkspacesWorkspaceIdSettingsPrivacyRouteImport.update({
     id: '/privacy',
     path: '/privacy',
     getParentRoute: () => WorkspacesWorkspaceIdSettingsRouteRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/workspaces/$workspaceId/settings/privacy.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const WorkspacesWorkspaceIdSettingsTeamRoute =
   WorkspacesWorkspaceIdSettingsTeamRouteImport.update({
     id: '/team',
     path: '/team',
     getParentRoute: () => WorkspacesWorkspaceIdSettingsRouteRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/workspaces/$workspaceId/settings/team.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const WorkspacesWorkspaceIdSettingsTrackingRoute =
   WorkspacesWorkspaceIdSettingsTrackingRouteImport.update({
     id: '/tracking',
     path: '/tracking',
     getParentRoute: () => WorkspacesWorkspaceIdSettingsRouteRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/workspaces/$workspaceId/settings/tracking.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const WorkspacesWorkspaceIdSettingsWebhooksRoute =
   WorkspacesWorkspaceIdSettingsWebhooksRouteImport.update({
     id: '/webhooks',
     path: '/webhooks',
     getParentRoute: () => WorkspacesWorkspaceIdSettingsRouteRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/workspaces/$workspaceId/settings/webhooks.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const WorkspacesWorkspaceIdTagsIndexRoute =
   WorkspacesWorkspaceIdTagsIndexRouteImport.update({
     id: '/tags/',
     path: '/tags/',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/workspaces/$workspaceId/tags/index.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const WorkspacesWorkspaceIdTemplatesIndexRoute =
   WorkspacesWorkspaceIdTemplatesIndexRouteImport.update({
     id: '/templates/',
     path: '/templates/',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/workspaces/$workspaceId/templates/index.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const WorkspacesWorkspaceIdTemplatesNewRoute =
   WorkspacesWorkspaceIdTemplatesNewRouteImport.update({
     id: '/templates/new',
     path: '/templates/new',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/workspaces/$workspaceId/templates/new.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const WorkspacesWorkspaceIdTransactionalEmailsIndexRoute =
   WorkspacesWorkspaceIdTransactionalEmailsIndexRouteImport.update({
     id: '/transactional-emails/',
     path: '/transactional-emails/',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/workspaces/$workspaceId/transactional-emails/index.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const WorkspacesWorkspaceIdAutomationsAutomationIdIndexRoute =
   WorkspacesWorkspaceIdAutomationsAutomationIdIndexRouteImport.update({
     id: '/automations/$automationId/',
     path: '/automations/$automationId/',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/workspaces/$workspaceId/automations/$automationId/index.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const WorkspacesWorkspaceIdAutomationsAutomationIdEditRoute =
   WorkspacesWorkspaceIdAutomationsAutomationIdEditRouteImport.update({
     id: '/automations/$automationId/edit',
     path: '/automations/$automationId/edit',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/workspaces/$workspaceId/automations/$automationId/edit.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const WorkspacesWorkspaceIdBroadcastsBroadcastIdEditRoute =
   WorkspacesWorkspaceIdBroadcastsBroadcastIdEditRouteImport.update({
     id: '/broadcasts/$broadcastId/edit',
     path: '/broadcasts/$broadcastId/edit',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/workspaces/$workspaceId/broadcasts/$broadcastId/edit.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const WorkspacesWorkspaceIdBroadcastsBroadcastIdReportRoute =
   WorkspacesWorkspaceIdBroadcastsBroadcastIdReportRouteImport.update({
     id: '/broadcasts/$broadcastId/report',
     path: '/broadcasts/$broadcastId/report',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/workspaces/$workspaceId/broadcasts/$broadcastId/report.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const WorkspacesWorkspaceIdContactsContactIdIndexRoute =
   WorkspacesWorkspaceIdContactsContactIdIndexRouteImport.update({
     id: '/contacts/$contactId/',
     path: '/contacts/$contactId/',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/workspaces/$workspaceId/contacts/$contactId/index.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const WorkspacesWorkspaceIdContactsContactIdEditRoute =
   WorkspacesWorkspaceIdContactsContactIdEditRouteImport.update({
     id: '/contacts/$contactId/edit',
     path: '/contacts/$contactId/edit',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/workspaces/$workspaceId/contacts/$contactId/edit.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const WorkspacesWorkspaceIdRulesRuleIdIndexRoute =
   WorkspacesWorkspaceIdRulesRuleIdIndexRouteImport.update({
     id: '/rules/$ruleId/',
     path: '/rules/$ruleId/',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/workspaces/$workspaceId/rules/$ruleId/index.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const WorkspacesWorkspaceIdRulesRuleIdEditRoute =
   WorkspacesWorkspaceIdRulesRuleIdEditRouteImport.update({
     id: '/rules/$ruleId/edit',
     path: '/rules/$ruleId/edit',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/workspaces/$workspaceId/rules/$ruleId/edit.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const WorkspacesWorkspaceIdSegmentsSegmentIdIndexRoute =
   WorkspacesWorkspaceIdSegmentsSegmentIdIndexRouteImport.update({
     id: '/segments/$segmentId/',
     path: '/segments/$segmentId/',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/workspaces/$workspaceId/segments/$segmentId/index.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const WorkspacesWorkspaceIdSegmentsSegmentIdEditRoute =
   WorkspacesWorkspaceIdSegmentsSegmentIdEditRouteImport.update({
     id: '/segments/$segmentId/edit',
     path: '/segments/$segmentId/edit',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/workspaces/$workspaceId/segments/$segmentId/edit.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const WorkspacesWorkspaceIdTemplatesTemplateIdEditRoute =
   WorkspacesWorkspaceIdTemplatesTemplateIdEditRouteImport.update({
     id: '/templates/$templateId/edit',
     path: '/templates/$templateId/edit',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/workspaces/$workspaceId/templates/$templateId/edit.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute

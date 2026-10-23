@@ -9,7 +9,9 @@ import { brandTheme } from '../utils/brandTheme.ts'
 import type { MessageDoc } from '../utils/messageDoc.ts'
 
 // The editor's code is its own chunk: it loads when a message is first edited visually.
-const VisualEditor = lazy(() => import('./VisualEditor.tsx'))
+const VisualEditor = lazy(async () =>
+  import('./VisualEditor.tsx').then((m) => ({ default: m.VisualEditor })),
+)
 
 // The merge tags every send binds (outbound.Bindings): the Contact's core fields.
 const CONTACT_VARIABLES = ['first_name', 'last_name', 'email'] as const

@@ -23,7 +23,7 @@ export function useContactExport(workspaceId: string) {
   const { t } = useTranslation()
   const notify = useNotify()
   return useMutation({
-    mutationFn: (query: NonNullable<SiteContactsExportData['query']>) =>
+    mutationFn: async (query: NonNullable<SiteContactsExportData['query']>) =>
       siteContactsExport({ path: { workspaceId }, query, parseAs: 'json', throwOnError: true }),
     onSuccess: ({ data, response }) =>
       saveAs(

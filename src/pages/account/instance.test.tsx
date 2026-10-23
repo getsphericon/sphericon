@@ -8,7 +8,7 @@ import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
 import { InstancePage } from './instance.tsx'
 
-const renderPage = () => renderWithRouter(<InstancePage />, routeMount(instanceRoute))
+const renderPage = async () => renderWithRouter(<InstancePage />, routeMount(instanceRoute))
 
 test('an owner of the oldest workspace sees the usage report setting', async () => {
   worker.use(

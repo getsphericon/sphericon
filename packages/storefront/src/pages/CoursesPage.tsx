@@ -1,6 +1,6 @@
 import { Button, Card, SimpleGrid, Text, Title } from '@mantine/core'
 
-import { useCart } from '../cart.tsx'
+import { useCart } from '../cartContext.ts'
 import { COURSES } from '../courses.ts'
 import { addedToCart } from '../tracking.ts'
 

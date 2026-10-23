@@ -54,22 +54,22 @@ function serveSecurity(
     }
   worker.use(
     handleSiteSecondFactorGetStatus(() => HttpResponse.json(status)),
-    handleSiteSecondFactorStartEnrollment(({ request }) =>
+    handleSiteSecondFactorStartEnrollment(async ({ request }) =>
       serve('start', () => {
         status = { ...initial, enabled: false, pending: true, recoveryCodesRemaining: 0 }
         return HttpResponse.json(enrollment)
       })(request),
     ),
-    handleSiteSecondFactorConfirmEnrollment(({ request }) =>
+    handleSiteSecondFactorConfirmEnrollment(async ({ request }) =>
       serve('confirm', () => {
         status = { ...initial, enabled: true, pending: false, recoveryCodesRemaining: codes.length }
         return HttpResponse.json({ codes })
       })(request),
     ),
-    handleSiteSecondFactorRegenerateRecoveryCodes(({ request }) =>
+    handleSiteSecondFactorRegenerateRecoveryCodes(async ({ request }) =>
       serve('regenerate', () => HttpResponse.json({ codes }))(request),
     ),
-    handleSiteSecondFactorDisable(({ request }) =>
+    handleSiteSecondFactorDisable(async ({ request }) =>
       serve('disable', () => {
         status = { ...initial, enabled: false, pending: false, recoveryCodesRemaining: 0 }
         return new HttpResponse(null, { status: 204 })
@@ -92,7 +92,7 @@ const on: SiteSecondFactorStatus = {
   ...withPassword,
 }
 
-const renderPage = () => renderWithRouter(<SecurityPage />, routeMount(securityRoute))
+const renderPage = async () => renderWithRouter(<SecurityPage />, routeMount(securityRoute))
 
 test('enrolls an authenticator app and shows the recovery codes once', async () => {
   const calls: Call[] = []

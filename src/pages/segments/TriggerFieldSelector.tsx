@@ -3,10 +3,7 @@ import { MantineValueSelector } from '@react-querybuilder/mantine'
 import { useTranslation } from 'react-i18next'
 import type { FieldSelectorProps } from 'react-querybuilder'
 
-// A Rule's Condition can test a property of the triggering Event: the field is
-// "trigger:<key>", where the key is whatever the Event carries, so it is typed rather than
-// picked from a list.
-export const triggerFieldPrefix = 'trigger:'
+import { triggerFieldPrefix } from './triggerFieldPrefix.ts'
 
 // TriggerFieldSelector is the builder's field picker with a key input beside the "Event
 // property" choice: the picker holds the bare prefix, the input the key after it.

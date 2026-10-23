@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router'
 
-import { useCart } from './cart.tsx'
+import { useCart } from './cartContext.ts'
 import { pageViewed } from './tracking.ts'
 
 function NavButton({ to, children }: { to: string; children: ReactNode }) {

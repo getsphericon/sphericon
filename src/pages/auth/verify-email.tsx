@@ -38,7 +38,7 @@ export function VerifyEmailPage() {
     ...siteAuthVerifyEmailMutation(),
     // The session cookie is set by the answer, which also names the Workspace to open: the
     // one the User joined by its domain, else their first.
-    onSuccess: (result) =>
+    onSuccess: async (result) =>
       navigate({
         to: overviewRoute.to,
         params: { workspaceId: result.landingWorkspaceId },

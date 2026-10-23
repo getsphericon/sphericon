@@ -8,8 +8,9 @@ import {
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteIntegrationResource } from '../../generated/site/types.gen.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
-import { fromLimit, SendLimitFields, toLimit, useSendLimitValidators } from './SendLimitFields.tsx'
-import type { SendLimitValues } from './SendLimitFields.tsx'
+import { fromLimit, toLimit, useSendLimitValidators } from './sendLimit.ts'
+import type { SendLimitValues } from './sendLimit.ts'
+import { SendLimitFields } from './SendLimitFields.tsx'
 
 interface SendLimitModalProps {
   workspaceId: string

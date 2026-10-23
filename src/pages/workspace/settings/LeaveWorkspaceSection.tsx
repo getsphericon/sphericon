@@ -24,7 +24,7 @@ export function LeaveWorkspaceSection({ workspace }: { workspace: SiteWorkspaceR
     successMessage: t(($) => $.settings.danger.left),
     errorTitle: t(($) => $.settings.danger.leaveError),
     // The index route sends the User to another Workspace, or to the create screen.
-    onDone: () => navigate({ to: indexRoute.to }),
+    onDone: async () => navigate({ to: indexRoute.to }),
   })
 
   const onLeave = () =>

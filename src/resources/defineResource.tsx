@@ -126,7 +126,7 @@ export function defineResource<
       invalidate: [resource.listQueryKey({ path: { workspaceId } })],
       successMessage: texts.created,
       errorTitle: texts.saveErrorTitle,
-      onDone: (created) => navigate(resource.editTarget(created, { workspaceId })),
+      onDone: async (created) => navigate(resource.editTarget(created, { workspaceId })),
     })
 
     return (

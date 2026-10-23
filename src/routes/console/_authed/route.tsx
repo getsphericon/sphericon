@@ -1,6 +1,5 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
 
-import { ConsoleLayout } from '../../../console/layout.tsx'
 import { Route as consoleLoginRoute } from '../login.tsx'
 
 export const Route = createFileRoute('/console/_authed')({
@@ -14,5 +13,4 @@ export const Route = createFileRoute('/console/_authed')({
     }
     return { staff: data }
   },
-  component: ConsoleLayout,
 })

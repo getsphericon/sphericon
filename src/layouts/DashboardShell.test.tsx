@@ -25,14 +25,14 @@ const SECOND_PAGE = 'Second page'
 
 // A real in-memory router (renderWithRouter stubs navigation) so the shell sees a genuine
 // route change: the sidebar links to a second page, and the drawer must close when it opens.
-function mountShell() {
+async function mountShell() {
   const rootRoute = createRootRoute()
   const shellRoute = createRoute({
     getParentRoute: () => rootRoute,
     id: 'shell',
     component: () => (
       <DashboardShell
-        sidebar={<Link to={SECOND_PATH}>Go second</Link>}
+        sidebar={<Link to={SECOND_PATH}>{'Go second'}</Link>}
         headerRight={<span>{HEADER_SLOT}</span>}
         banner={<span>{BANNER_SLOT}</span>}
       />

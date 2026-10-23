@@ -246,7 +246,7 @@ function EditorToolbar({ editor }: { editor: Editor }) {
 
 // The only module that imports the editor, so MessageEditor loads it lazily and a page that
 // edits no message never pays for it.
-export default function VisualEditor({ initial, onChange, variables, theme }: VisualEditorProps) {
+export function VisualEditor({ initial, onChange, variables, theme }: VisualEditorProps) {
   const { t } = useTranslation()
   const editor = useRef<EmailEditorRef>(null)
   const [ready, setReady] = useState(false)

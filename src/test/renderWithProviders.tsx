@@ -23,7 +23,7 @@ function makeQueryClient() {
   })
 }
 
-export function renderWithProviders(ui: ReactNode) {
+export async function renderWithProviders(ui: ReactNode) {
   const queryClient = makeQueryClient()
   trackQueryClient(queryClient)
 

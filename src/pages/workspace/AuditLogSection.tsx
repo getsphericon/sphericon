@@ -265,7 +265,7 @@ function ExportButton({ workspaceId, filter }: { workspaceId: string; filter: Au
   const notify = useNotify()
   const queryClient = useQueryClient()
   const exportCsv = useMutation({
-    mutationFn: () =>
+    mutationFn: async () =>
       queryClient.query({
         ...siteAuditExportOptions({ path: { workspaceId }, query: auditQuery(filter) }),
         staleTime: 0,

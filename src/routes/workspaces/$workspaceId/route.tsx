@@ -1,7 +1,6 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
 
 import { requireWorkspaces } from '../../../guards.ts'
-import { WorkspaceLayout } from '../../../layouts/WorkspaceLayout.tsx'
 import { Route as newWorkspaceRoute } from '../new.tsx'
 import { Route as overviewRoute } from './index.tsx'
 
@@ -18,5 +17,4 @@ export const Route = createFileRoute('/workspaces/$workspaceId')({
     }
     return { workspaces }
   },
-  component: WorkspaceLayout,
 })

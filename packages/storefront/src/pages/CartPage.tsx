@@ -1,7 +1,7 @@
 import { Alert, Button, Group, Stack, Text, Title } from '@mantine/core'
 import { useState } from 'react'
 
-import { useCart } from '../cart.tsx'
+import { useCart } from '../cartContext.ts'
 import { totalPrice } from '../courses.ts'
 import { EmailForm } from '../EmailForm.tsx'
 import { enroll } from '../tracking.ts'

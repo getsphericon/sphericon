@@ -50,7 +50,7 @@ function serveProfile(
     }
   const json = () => HttpResponse.json(me)
   worker.use(
-    handleSiteUserGetMe(({ request }) => serve('get', json)(request)),
+    handleSiteUserGetMe(async ({ request }) => serve('get', json)(request)),
     handleSiteSecondFactorGetStatus({
       body: {
         enabled: false,
@@ -61,9 +61,9 @@ function serveProfile(
       },
     }),
     handleSiteWorkspacesListDeleted({ body: [] }),
-    handleSiteUserUpdateMe(({ request }) => serve('update', json)(request)),
-    handleSiteUserEmailChange(({ request }) => serve('emailChange', noContent)(request)),
-    handleSiteUserSignOutEverywhere(({ request }) =>
+    handleSiteUserUpdateMe(async ({ request }) => serve('update', json)(request)),
+    handleSiteUserEmailChange(async ({ request }) => serve('emailChange', noContent)(request)),
+    handleSiteUserSignOutEverywhere(async ({ request }) =>
       serve('signOutEverywhere', noContent)(request),
     ),
   )

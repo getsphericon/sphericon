@@ -1,5 +1,5 @@
 import { HttpResponse } from 'msw'
-import { expect, test } from 'vitest'
+import { expect, test, vi } from 'vitest'
 
 import {
   handleSiteAuthSigninProviders,
@@ -100,7 +100,9 @@ test('an accept failure shows the API error and stays on the page', async () => 
 })
 
 test('shows a loading state while the invitation is looked up', async () => {
-  worker.use(handleSitePublicInvitationsLookup(() => new Promise<Response>(() => {})))
+  worker.use(
+    handleSitePublicInvitationsLookup(async () => new Promise<Response>(vi.fn<() => void>())),
+  )
   const { screen } = await renderWithRouter(<AcceptInvitationPage />, MOUNT)
 
   await expect.element(screen.getByText('Loading invitation…')).toBeInTheDocument()

@@ -30,7 +30,7 @@ export function DeliveryBlock({ broadcast }: { broadcast: SiteBroadcastResource 
     siteBroadcastsListQueryKey({ path: { workspaceId } }),
     siteBroadcastsGetQueryKey({ path }),
   ]
-  const toReport = () =>
+  const toReport = async () =>
     navigate({ to: broadcastsReportRoute.to, params: { workspaceId, broadcastId: broadcast.id } })
 
   const sendMutation = useResourceMutation({

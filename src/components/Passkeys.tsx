@@ -56,7 +56,8 @@ export function Passkeys({ returnTo }: { returnTo: string }) {
   const form = useForm({ initialValues: { name: '', currentPassword: '' } })
   const add = useResourceMutation({
     mutation: {
-      mutationFn: (input: AddPasskey) => addPasskey(input, passkeys.data?.passwordSet === false),
+      mutationFn: async (input: AddPasskey) =>
+        addPasskey(input, passkeys.data?.passwordSet === false),
     },
     invalidate: [sitePasskeysListQueryKey()],
     successMessage: t(($) => $.security.passkeys.added),
@@ -153,7 +154,7 @@ function PasskeyRow({ passkey, passwordless, needsProvider, returnTo }: PasskeyR
   const removeForm = useForm({ initialValues: { currentPassword: '' } })
   const rename = useResourceMutation({
     mutation: {
-      mutationFn: (name: string) =>
+      mutationFn: async (name: string) =>
         sitePasskeysRename({ path: { id: passkey.id }, body: { name }, throwOnError: true }),
     },
     invalidate: [sitePasskeysListQueryKey()],
@@ -163,7 +164,7 @@ function PasskeyRow({ passkey, passwordless, needsProvider, returnTo }: PasskeyR
   })
   const remove = useResourceMutation({
     mutation: {
-      mutationFn: (currentPassword: string) =>
+      mutationFn: async (currentPassword: string) =>
         sitePasskeysRemove({
           path: { id: passkey.id },
           body: passwordless ? {} : { currentPassword },

@@ -1,5 +1,5 @@
 import { HttpResponse } from 'msw'
-import { expect, test } from 'vitest'
+import { expect, test, vi } from 'vitest'
 
 import {
   handleSiteOAuthDecide,
@@ -60,7 +60,7 @@ function mockConsentApi(onDecide: (body: unknown) => void) {
 }
 
 test('shows the client and its permissions, with sending off by default', async () => {
-  mockConsentApi(() => {})
+  mockConsentApi(vi.fn<() => void>())
   const { screen } = await renderWithRouter(<OAuthConsent request={request} />)
 
   await expect
@@ -84,7 +84,7 @@ test('names the host of a metadata-document client and warns about a localhost r
 })
 
 test('shows no host and no localhost warning for an ordinary registered client', async () => {
-  mockConsentApi(() => {})
+  mockConsentApi(vi.fn<() => void>())
   const { screen } = await renderWithRouter(<OAuthConsent request={request} />)
 
   await expect

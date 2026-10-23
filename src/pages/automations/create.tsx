@@ -10,7 +10,7 @@ import {
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
 import { Route as automationsRoute } from '../../routes/workspaces/$workspaceId/automations/index.tsx'
-import { DEFAULT_TRIGGER_EVENT } from './nodes.tsx'
+import { DEFAULT_TRIGGER_EVENT } from './nodes.ts'
 
 // Create captures only the name, then redirects into the visual builder (edit) where the
 // trigger and the steps are designed on the canvas — so the builder always has an id.
@@ -34,7 +34,7 @@ export function AutomationCreateModal({
     invalidate: [siteAutomationsListQueryKey({ path: { workspaceId } })],
     successMessage: t(($) => $.notifications.automationCreated),
     errorTitle: t(($) => $.alerts.automationSaveErrorTitle),
-    onDone: (created) =>
+    onDone: async (created) =>
       navigate({ to: automationsEditRoute.to, params: { workspaceId, automationId: created.id } }),
   })
 

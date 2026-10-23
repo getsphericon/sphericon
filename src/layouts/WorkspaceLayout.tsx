@@ -8,11 +8,7 @@ import { useTranslation } from 'react-i18next'
 import { AppNavbar } from '../components/AppNavbar.tsx'
 import { InstanceNotice } from '../components/InstanceNotice.tsx'
 import { LicenseBanner } from '../components/LicenseBanner.tsx'
-import {
-  SecondFactorBlocked,
-  SecondFactorGraceBanner,
-  secondFactorStanding,
-} from '../components/SecondFactorNotice.tsx'
+import { SecondFactorBlocked, SecondFactorGraceBanner } from '../components/SecondFactorNotice.tsx'
 import { SettingsNavbar } from '../components/SettingsNavbar.tsx'
 import { UpdateBanner } from '../components/UpdateBanner.tsx'
 import { UserMenu } from '../components/UserMenu.tsx'
@@ -23,6 +19,7 @@ import { Route as workspaceRoute } from '../routes/workspaces/$workspaceId/route
 import { Route as settingsRoute } from '../routes/workspaces/$workspaceId/settings/route.tsx'
 import { Route as newWorkspaceRoute } from '../routes/workspaces/new.tsx'
 import { isSecondFactorRequiredError } from '../utils/apiErrors.ts'
+import { secondFactorStanding } from '../utils/secondFactorStanding.ts'
 import { DashboardShell } from './DashboardShell.tsx'
 
 // The last option of the switcher is not a Workspace: choosing it opens the create screen.

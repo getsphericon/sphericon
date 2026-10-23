@@ -3,7 +3,7 @@ import { expect, test } from 'vitest'
 
 import { graphToSteps, stepsToGraph } from './definition.ts'
 import type { AutomationStep } from './definition.ts'
-import { automationSnapshot } from './LeaveGuard.tsx'
+import { automationSnapshot } from './leaveSnapshot.ts'
 
 const STEPS: AutomationStep[] = [
   { type: 'email', subject: 'Hello', body: '<p></p>' },

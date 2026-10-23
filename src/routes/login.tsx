@@ -2,7 +2,6 @@ import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
 
 import { zSiteSigninError } from '../generated/site/zod.gen.ts'
-import { LoginPage } from '../pages/auth/login.tsx'
 
 export const Route = createFileRoute('/login')({
   validateSearch: z.object({
@@ -18,5 +17,4 @@ export const Route = createFileRoute('/login')({
     // The Second factor challenge of a provider sign-in (set by the server's callback).
     challenge: z.string().optional().catch(undefined),
   }),
-  component: LoginPage,
 })

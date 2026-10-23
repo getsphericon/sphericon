@@ -77,8 +77,9 @@ export default defineConfig({
         // worktree's own slot in a linked one.
         port: Number(process.env.FRONTEND_PORT ?? 5173),
         strictPort: true,
-        // Agent worktrees are full repo copies; watching them triggers spurious reloads.
-        watch: { ignored: ['**/.claude/worktrees/**'] },
+        // Agent worktrees are full repo copies and `test:cover` rewrites coverage/ (HTML files
+        // Vite treats as pages): watching either triggers spurious full reloads.
+        watch: { ignored: ['**/.claude/worktrees/**', '**/coverage/**'] },
         // The primary checkout is sphericon.localhost, a linked worktree <dir>.sphericon.localhost.
         allowedHosts: ['.sphericon.localhost'],
         // HMR runs through Caddy's HTTPS origin, so the client connects over wss to the

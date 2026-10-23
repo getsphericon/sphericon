@@ -48,7 +48,7 @@ function EraseAction({
   const queryClient = useQueryClient()
   const confirm = useDeleteConfirmation()
   const apiErrorMessage = useApiErrorMessage()
-  const refreshLookup = () =>
+  const refreshLookup = async () =>
     queryClient.invalidateQueries({
       queryKey: siteContactsLookupQueryKey({ path: { workspaceId }, query: { email } }),
     })

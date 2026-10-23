@@ -1,15 +1,9 @@
-import { createContext, use, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 
+import { CartContext } from './cartContext.ts'
+import type { Cart } from './cartContext.ts'
 import type { Course } from './courses.ts'
-
-interface Cart {
-  items: readonly Course[]
-  add: (course: Course) => void
-  remove: (slug: string) => void
-}
-
-const CartContext = createContext<Cart | null>(null)
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<readonly Course[]>([])
@@ -29,13 +23,4 @@ export function CartProvider({ children }: { children: ReactNode }) {
   )
 
   return <CartContext value={value}>{children}</CartContext>
-}
-
-export function useCart(): Cart {
-  const cart = use(CartContext)
-  if (!cart) {
-    throw new Error('useCart needs a CartProvider')
-  }
-
-  return cart
 }

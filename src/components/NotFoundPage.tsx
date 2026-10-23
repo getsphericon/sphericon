@@ -11,7 +11,7 @@ export function NotFoundPage() {
   return (
     <Stack align="center" maw={420} mx="auto" mt={120} gap="xs" ta="center">
       <Text c="dimmed" fw={700} fz={64} lh={1}>
-        404
+        {'404'}
       </Text>
       <Title order={2}>{t(($) => $.notFound.title)}</Title>
       <Text c="dimmed">{t(($) => $.notFound.description)}</Text>

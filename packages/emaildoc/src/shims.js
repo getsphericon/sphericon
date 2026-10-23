@@ -146,7 +146,9 @@
               })
             )
           },
-          releaseLock() {},
+          releaseLock() {
+            // Nothing is locked: the shim reads from its own queue.
+          },
           cancel: () => Promise.resolve(),
         }
       }
@@ -178,7 +180,9 @@
           write: (chunk) => Promise.resolve(sink?.write?.(chunk)),
           close: () => Promise.resolve(sink?.close?.()),
           abort: (reason) => Promise.resolve(sink?.abort?.(reason)),
-          releaseLock() {},
+          releaseLock() {
+            // Nothing is locked: the shim writes straight to its sink.
+          },
         }
       }
     }

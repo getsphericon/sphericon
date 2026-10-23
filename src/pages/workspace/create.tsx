@@ -29,7 +29,8 @@ export function CreateWorkspacePage() {
     invalidate: [siteWorkspacesListQueryKey()],
     errorTitle: t(($) => $.createWorkspace.errorTitle),
     forbiddenMessage: t(($) => $.createWorkspace.verifyFirst),
-    onDone: (created) => navigate({ to: overviewRoute.to, params: { workspaceId: created.id } }),
+    onDone: async (created) =>
+      navigate({ to: overviewRoute.to, params: { workspaceId: created.id } }),
   })
 
   return (

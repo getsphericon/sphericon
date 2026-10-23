@@ -55,7 +55,7 @@ let fetchStub: FetchStub
 
 beforeEach(() => {
   vi.useFakeTimers()
-  fetchStub = vi.fn<typeof fetch>(() => Promise.resolve(new Response(null, { status: 202 })))
+  fetchStub = vi.fn<typeof fetch>(async () => Promise.resolve(new Response(null, { status: 202 })))
   vi.stubGlobal('fetch', fetchStub)
   clearVisitorCookie()
   delete window._omq

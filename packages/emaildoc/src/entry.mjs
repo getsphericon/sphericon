@@ -24,9 +24,9 @@ function parse(json) {
 // anything is exported (extensions/container.tsx); this does the same.
 function withContainer(doc) {
   const nodes = []
-  doc.forEach((node) => {
-    nodes.push(node)
-  })
+  for (let index = 0; index < doc.childCount; index += 1) {
+    nodes.push(doc.child(index))
+  }
   if (nodes.some((node) => node.type.name === 'container')) {
     return doc
   }

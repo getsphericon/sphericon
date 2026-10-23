@@ -28,7 +28,7 @@ export function DeleteWorkspaceSection({ workspace }: { workspace: SiteWorkspace
     successMessage: t(($) => $.settings.danger.deleted),
     errorTitle: t(($) => $.settings.danger.errorTitle),
     // The index route sends the User to another Workspace, or to the create screen.
-    onDone: () => navigate({ to: indexRoute.to }),
+    onDone: async () => navigate({ to: indexRoute.to }),
   })
 
   // Only an Owner deletes a Workspace.

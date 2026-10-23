@@ -2,7 +2,6 @@ import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
 
 import { requireWorkspaces } from '../../guards.ts'
-import { OAuthConsentPage } from '../../pages/oauth/consent.tsx'
 
 export const Route = createFileRoute('/oauth/consent')({
   // /oauth/authorize (Go) redirects the browser here with the MCP client's authorization
@@ -17,5 +16,4 @@ export const Route = createFileRoute('/oauth/consent')({
   beforeLoad: async ({ context, location }) => {
     await requireWorkspaces(context.queryClient, location.href)
   },
-  component: OAuthConsentPage,
 })

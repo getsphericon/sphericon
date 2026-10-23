@@ -1,7 +1,3 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { SegmentsListPage } from '../../../../pages/segments/list.tsx'
-
-export const Route = createFileRoute('/workspaces/$workspaceId/segments/')({
-  component: SegmentsListPage,
-})
+export const Route = createFileRoute('/workspaces/$workspaceId/segments/')()

@@ -19,7 +19,7 @@ import {
   TRIGGER_NODE_TYPE,
   WAIT_NODE_ICON,
   WAIT_NODE_TYPE,
-} from './nodes.tsx'
+} from './nodes.ts'
 
 // A step is the generated contract type (typed in TypeSpec; no hand-rolled
 // parse/serialize — the API carries steps as structured data, not a JSON string).

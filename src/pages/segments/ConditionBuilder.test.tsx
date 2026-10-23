@@ -38,7 +38,7 @@ test('sends the current rule to the audience preview', async () => {
     rules: [{ kind: 'rule', field: 'email', operator: 'contains', value: '@x' }],
   }
   const { screen } = await renderWithRouter(
-    <ConditionBuilder workspaceId="TestWs01" value={value} onChange={() => {}} />,
+    <ConditionBuilder workspaceId="TestWs01" value={value} onChange={vi.fn<() => void>()} />,
   )
 
   await screen.getByRole('button', { name: 'Preview audience' }).click()
@@ -56,7 +56,12 @@ test('a rule edits an Event property and has no audience preview', async () => {
     rules: [{ kind: 'rule', field: 'trigger:url', operator: 'contains', value: 'pricing' }],
   }
   const { screen } = await renderWithRouter(
-    <ConditionBuilder workspaceId="TestWs01" value={value} onChange={() => {}} triggerLeaves />,
+    <ConditionBuilder
+      workspaceId="TestWs01"
+      value={value}
+      onChange={vi.fn<() => void>()}
+      triggerLeaves
+    />,
   )
 
   await expect.element(screen.getByLabelText('Event property name')).toHaveValue('url')
@@ -73,7 +78,7 @@ test('a segment offers no Event property', async () => {
     rules: [{ kind: 'rule', field: 'email', operator: 'contains', value: '@x' }],
   }
   const { screen } = await renderWithRouter(
-    <ConditionBuilder workspaceId="TestWs01" value={value} onChange={() => {}} />,
+    <ConditionBuilder workspaceId="TestWs01" value={value} onChange={vi.fn<() => void>()} />,
   )
 
   await expect.element(screen.getByRole('button', { name: 'Preview audience' })).toBeInTheDocument()

@@ -3,8 +3,8 @@ import type { PaletteItem, UISchema, WBIcon } from '@workflowbuilder/sdk'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { MESSAGE_FORMAT } from './MessageControl.tsx'
-import { TRIGGER_EVENT_FORMAT } from './TriggerControl.tsx'
+import { MESSAGE_FORMAT } from './messageFormat.ts'
+import { TRIGGER_EVENT_FORMAT } from './triggerFormat.ts'
 
 // The palette `type` of each node, stored on `node.data.type` and used by the
 // graph ↔ definition converters to tell email steps from wait steps.

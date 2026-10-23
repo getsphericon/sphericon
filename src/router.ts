@@ -21,8 +21,10 @@ export function createAppRouter(queryClient: QueryClient) {
   })
 }
 
+export type AppRouter = ReturnType<typeof createAppRouter>
+
 declare module '@tanstack/react-router' {
   interface Register {
-    router: ReturnType<typeof createAppRouter>
+    router: AppRouter
   }
 }

@@ -1,7 +1,3 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { TemplateCreatePage } from '../../../../pages/templates/resource.tsx'
-
-export const Route = createFileRoute('/workspaces/$workspaceId/templates/new')({
-  component: TemplateCreatePage,
-})
+export const Route = createFileRoute('/workspaces/$workspaceId/templates/new')()

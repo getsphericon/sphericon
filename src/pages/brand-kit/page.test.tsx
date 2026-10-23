@@ -30,7 +30,7 @@ const workspace = (role: SiteWorkspaceResource['role']): SiteWorkspaceResource =
   createdAt: '2026-01-01T00:00:00Z',
 })
 
-const renderPage = (role: SiteWorkspaceResource['role']) => {
+const renderPage = async (role: SiteWorkspaceResource['role']) => {
   worker.use(handleSiteWorkspacesList({ body: [workspace(role)] }))
   return renderWithRouter(<BrandKitPage />, routeMount(brandKitRoute, { workspaceId: 'AcmeWs01' }))
 }

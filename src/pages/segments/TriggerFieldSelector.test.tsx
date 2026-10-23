@@ -49,7 +49,7 @@ test('a plain field has no key input', async () => {
     <ConditionBuilder
       workspaceId="TestWs01"
       value={withProperty('email')}
-      onChange={() => {}}
+      onChange={vi.fn<() => void>()}
       triggerLeaves
     />,
   )

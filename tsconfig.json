@@ -2,7 +2,7 @@
   "compilerOptions": {
     "module": "nodenext",
     "target": "esnext",
-    "types": ["node"],
+    "types": ["node", "vite/client"],
     "sourceMap": true,
     "declaration": true,
     "declarationMap": true,

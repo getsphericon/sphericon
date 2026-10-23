@@ -58,6 +58,13 @@ export default defineConfig({
     'typescript/no-import-type-side-effects': 'error',
     'typescript/consistent-type-definitions': 'error',
     'import/consistent-type-specifier-style': 'error',
+    'import/no-cycle': 'error',
+    'react/only-export-components': 'error',
+    'unicorn/no-array-reduce': 'error',
+    'unicorn/no-array-for-each': 'error',
+    'eslint/complexity': 'error',
+    'eslint/no-empty-function': 'error',
+    'react/jsx-filename-extension': ['error', { extensions: ['.tsx'] }],
     'eslint/eqeqeq': 'error',
     'eslint/no-eq-null': 'error',
     'eslint/curly': 'error',
@@ -118,6 +125,23 @@ export default defineConfig({
     {
       files: ['src/**', 'packages/**'],
       rules: { 'react-hooks/rules-of-hooks': 'error' },
+    },
+    // Application code has named exports and reads its settings through the config module; the tool
+    // configs at the repo root (vite, knip, oxlint, ...) must default-export and read process.env.
+    {
+      files: ['src/**', 'packages/*/src/**'],
+      rules: { 'import/no-default-export': 'error', 'node/no-process-env': 'error' },
+    },
+    // Type-aware, so only where there are types; the runtime shims in packages/emaildoc are untyped
+    // classic scripts, which is also why they cannot be asked to be modules.
+    {
+      files: ['**/*.ts', '**/*.tsx'],
+      rules: { 'typescript/promise-function-async': 'error', 'import/unambiguous': 'error' },
+    },
+    // Text shown to a person comes from the catalog; the punctuation joining translated pieces is not text.
+    {
+      files: ['src/**'],
+      rules: { 'react/jsx-no-literals': ['error', { allowedStrings: [':', '(', ')'] }] },
     },
   ],
   ignorePatterns: [

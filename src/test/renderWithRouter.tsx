@@ -7,7 +7,7 @@ import {
   RouterProvider,
 } from '@tanstack/react-router'
 import type { AnyRoute } from '@tanstack/react-router'
-import type { ReactNode } from 'react'
+import type { ReactElement } from 'react'
 import { vi } from 'vitest'
 import type { MockInstance } from 'vitest'
 
@@ -28,7 +28,7 @@ interface RenderWithRouterOptions {
 
 // Bare routes with the same ids as `route` and each of its ancestors, rendering `ui` at the
 // leaf. Guards and layouts are the app's business, not the page's.
-function mirroredTree(route: AnyRoute, ui: ReactNode) {
+function mirroredTree(route: AnyRoute, ui: ReactElement) {
   const chain: AnyRoute[] = []
   for (let r = route; !r.isRoot; r = r.options.getParentRoute()) {
     chain.unshift(r)
@@ -46,11 +46,14 @@ function mirroredTree(route: AnyRoute, ui: ReactNode) {
         : createRoute({ getParentRoute, id: options.id, component }),
     )
   }
-  const nested = routes.reduceRight((child, r) => r.addChildren([child]))
-  return root.addChildren([nested])
+  let nested: AnyRoute | undefined
+  for (const step of routes.toReversed()) {
+    nested = nested ? step.addChildren([nested]) : step
+  }
+  return root.addChildren(nested ? [nested] : [])
 }
 
-function flatTree(path: string, ui: ReactNode) {
+function flatTree(path: string, ui: ReactElement) {
   const root = createRootRoute()
   return root.addChildren([createRoute({ getParentRoute: () => root, path, component: () => ui })])
 }
@@ -60,7 +63,7 @@ function flatTree(path: string, ui: ReactNode) {
 // Navigation is not actually performed — `router.navigate` is replaced with a
 // spy the test can assert against (e.g. expect(navigate).toHaveBeenCalledWith).
 export async function renderWithRouter(
-  ui: ReactNode,
+  ui: ReactElement,
   {
     initialPath = '/workspaces/TestWs01',
     path = '/workspaces/$workspaceId',

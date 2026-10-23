@@ -113,12 +113,12 @@ export function LoginPage() {
       ),
     })
 
-  const signedIn = () =>
+  const signedIn = async () =>
     redirect ? router.history.push(redirect) : navigate({ to: indexRoute.to })
 
   const loginMutation = useMutation({
     ...siteAuthLoginMutation(),
-    onSuccess: (result: SiteLoginResult) => {
+    onSuccess: async (result: SiteLoginResult) => {
       if (result.outcome === 'challenge' && result.challenge) {
         setChallenge(result.challenge)
         return

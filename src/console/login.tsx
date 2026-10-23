@@ -66,7 +66,7 @@ export function ConsoleLoginPage() {
 
   const secondStepMutation = useMutation({
     ...staffAuthSecondFactorMutation(),
-    onSuccess: () => navigate({ to: consoleHomeRoute.to }),
+    onSuccess: async () => navigate({ to: consoleHomeRoute.to }),
     onError: (error) => {
       codeForm.setFieldValue('code', '')
       showError(error)

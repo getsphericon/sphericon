@@ -26,7 +26,8 @@ export function DeletedWorkspacesMenuSection() {
     invalidate: [siteWorkspacesListQueryKey(), siteWorkspacesListDeletedQueryKey()],
     successMessage: t(($) => $.userMenu.restored),
     errorTitle: t(($) => $.userMenu.restoreErrorTitle),
-    onDone: (restored) => navigate({ to: overviewRoute.to, params: { workspaceId: restored.id } }),
+    onDone: async (restored) =>
+      navigate({ to: overviewRoute.to, params: { workspaceId: restored.id } }),
   })
 
   const items = deleted.data ?? []

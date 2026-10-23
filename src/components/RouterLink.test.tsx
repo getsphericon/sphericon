@@ -6,7 +6,7 @@ import { ButtonLink } from './RouterLink.tsx'
 test('ButtonLink renders a real anchor to the typed route', async () => {
   const { screen } = await renderWithRouter(
     <ButtonLink to="/workspaces/$workspaceId" params={{ workspaceId: 'AcmeWs01' }}>
-      Go
+      {'Go'}
     </ButtonLink>,
   )
 

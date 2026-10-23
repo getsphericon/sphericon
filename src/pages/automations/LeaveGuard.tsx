@@ -4,13 +4,7 @@ import { useStore } from '@workflowbuilder/sdk'
 import { I18nextProvider, useTranslation } from 'react-i18next'
 
 import { i18n } from '../../i18n.ts'
-import { graphToSteps } from './definition.ts'
-import type { AutomationGraph } from './definition.ts'
-
-// What Save would send, as text: the editor is unsaved while this differs from the saved one.
-export function automationSnapshot(name: string, graph: AutomationGraph): string {
-  return JSON.stringify([name.trim(), graphToSteps(graph)])
-}
+import { automationSnapshot } from './leaveSnapshot.ts'
 
 function LeaveDialog({ dirty }: { dirty: boolean }) {
   const { t } = useTranslation()

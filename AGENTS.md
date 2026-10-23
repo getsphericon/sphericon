@@ -436,8 +436,11 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
 - The README mentions oRPC, but the site client is
   actually the generated `@hey-api/openapi-ts` fetch client + react-query hooks in
   `src/generated/site/` (consume these, don't hand-write fetch calls).
-- Routing is TanStack Router **file-based** with automatic code splitting: `src/routes/` holds only
-  thin route files (guards, search schemas, the page component), the pages themselves live in
+- Routing is TanStack Router **file-based**: `src/routes/` holds only thin route files. `foo.tsx` has the
+  guards and search schemas and never imports a page; the page component is bound in the sibling
+  `foo.lazy.tsx` (`createLazyFileRoute`). That keeps `import/no-cycle` clean (a page imports its
+  route's `Route`, the route never imports the page) and lets Fast Refresh update a page instead of
+  reloading the tab. The pages themselves live in
   `src/pages/`, and `src/router.ts` builds the router with the `QueryClient` in its context. A page
   reaches its route (`to`, `useParams`, `useSearch`) through the route file's `Route` export; never
   rebuild the tree by hand. Route guards read the workspaces list through `requireWorkspaces`

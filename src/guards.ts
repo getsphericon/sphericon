@@ -16,7 +16,9 @@ export async function requireWorkspaces(queryClient: QueryClient, returnTo?: str
       return await queryClient.query(options)
     }
     // Serve the cached list at once; a stale one is refreshed behind it.
-    void queryClient.query(options).catch(() => {})
+    void queryClient.query(options).catch(() => {
+      // A failed background refresh keeps the cached list; the next read retries.
+    })
     return cached
   } catch (error) {
     if (!hasErrorStatus(error, [401])) {

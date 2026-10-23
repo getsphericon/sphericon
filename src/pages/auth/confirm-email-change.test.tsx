@@ -1,5 +1,5 @@
 import { HttpResponse } from 'msw'
-import { expect, test } from 'vitest'
+import { expect, test, vi } from 'vitest'
 
 import { handleSiteAuthConfirmEmailChange } from '../../generated/site/msw.gen.ts'
 import { Route as confirmEmailChangeRoute } from '../../routes/confirm-email-change.tsx'
@@ -31,7 +31,7 @@ test('confirms the new email on mount and links to sign in', async () => {
 })
 
 test('shows a loading state while the request is in flight', async () => {
-  worker.use(handleSiteAuthConfirmEmailChange(() => new Promise<never>(() => {})))
+  worker.use(handleSiteAuthConfirmEmailChange(async () => new Promise<never>(vi.fn<() => void>())))
   const { screen } = await renderWithRouter(<ConfirmEmailChangePage />, MOUNT)
 
   await expect.element(screen.getByText('Confirming your new email…')).toBeInTheDocument()

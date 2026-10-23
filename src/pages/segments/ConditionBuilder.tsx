@@ -14,7 +14,8 @@ import {
 import { SiteConditionOperator } from '../../generated/site/types.gen.ts'
 import type { SiteConditionGroup } from '../../generated/site/types.gen.ts'
 import { toGroup, toQuery } from './condition.ts'
-import { TriggerFieldSelector, triggerFieldPrefix } from './TriggerFieldSelector.tsx'
+import { triggerFieldPrefix } from './triggerFieldPrefix.ts'
+import { TriggerFieldSelector } from './TriggerFieldSelector.tsx'
 
 // What the backend segment engine compiles for each kind of field.
 const textOperators: Operator[] = [

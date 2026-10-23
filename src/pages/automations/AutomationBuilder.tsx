@@ -33,10 +33,11 @@ import { getApiErrorMessage } from '../../utils/apiErrors.ts'
 import { graphToSteps, stepsToGraph } from './definition.ts'
 import type { AutomationGraph } from './definition.ts'
 import { FailedEnrollments } from './FailedEnrollments.tsx'
-import { automationSnapshot, LeaveGuard } from './LeaveGuard.tsx'
-import { messageRenderer } from './MessageControl.tsx'
-import { useAutomationNodeTypes } from './nodes.tsx'
-import { triggerRenderer } from './TriggerControl.tsx'
+import { LeaveGuard } from './LeaveGuard.tsx'
+import { automationSnapshot } from './leaveSnapshot.ts'
+import { messageRenderer } from './messageRenderer.ts'
+import { useAutomationNodeTypes } from './nodes.ts'
+import { triggerRenderer } from './triggerRenderer.ts'
 
 // Imported as a raw string (not auto-injected): the SDK sheet carries unlayered
 // global resets and .mantine-* overrides that would leak app-wide. We mount it
@@ -68,7 +69,11 @@ function QuietRestore() {
     const timers = [0, 100, 400].map((delay) =>
       setTimeout(() => closeSnackbar(RESTORED_SNACKBAR_KEY), delay),
     )
-    return () => timers.forEach((timer) => clearTimeout(timer))
+    return () => {
+      for (const timer of timers) {
+        clearTimeout(timer)
+      }
+    }
   }, [])
 
   return null
@@ -131,7 +136,7 @@ function BuilderBar({
 }) {
   const { t } = useTranslation()
   const saveMutation = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
       const { nodes, edges } = useStore.getState()
       return onSave({ nodes, edges })
     },
@@ -266,7 +271,7 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
   // The SDK's own save (its shortcut) answers with its success snackbar whatever this returns, so
   // the bar saves through `saveGraph` itself and only the app's toasts show.
   const onDataSave = useCallback<OnSaveExternal>(
-    (data: IntegrationDataFormat) => saveGraph({ nodes: data.nodes, edges: data.edges }),
+    async (data: IntegrationDataFormat) => saveGraph({ nodes: data.nodes, edges: data.edges }),
     [saveGraph],
   )
 

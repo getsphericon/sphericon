@@ -36,7 +36,7 @@ beforeEach(() => {
 test('lists who changed what, with the change', async () => {
   worker.use(handleSiteAuditList({ body: { items: [entry()] } }))
   const { screen } = await renderWithRouter(
-    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={() => {}} />,
+    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={vi.fn<() => void>()} />,
   )
 
   await expect.element(screen.getByText('Audit log')).toBeInTheDocument()
@@ -48,7 +48,7 @@ test('lists who changed what, with the change', async () => {
 test('expands an entry to its before/after diff', async () => {
   worker.use(handleSiteAuditList({ body: { items: [entry()] } }))
   const { screen } = await renderWithRouter(
-    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={() => {}} />,
+    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={vi.fn<() => void>()} />,
   )
 
   await expect.element(screen.getByText('admin', { exact: true })).not.toBeInTheDocument()
@@ -61,7 +61,7 @@ test('expands an entry to its before/after diff', async () => {
 test('shows a sensitive field as changed only', async () => {
   worker.use(handleSiteAuditList({ body: { items: [entry({ diff: { secret: 'changed' } })] } }))
   const { screen } = await renderWithRouter(
-    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={() => {}} />,
+    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={vi.fn<() => void>()} />,
   )
 
   await screen.getByRole('button', { name: 'Show changes' }).click()
@@ -86,7 +86,7 @@ test('sends the applied filter to the list and to the export', async () => {
     <AuditLogSection
       workspaceId={WORKSPACE_ID}
       filter={{ targetType: 'integration', targetId: '5', ip: '10.0.0.1' }}
-      onFilterChange={() => {}}
+      onFilterChange={vi.fn<() => void>()}
     />,
   )
 
@@ -128,7 +128,7 @@ test('says so when the filter matches nothing', async () => {
     <AuditLogSection
       workspaceId={WORKSPACE_ID}
       filter={{ ip: '1.2.3.4' }}
-      onFilterChange={() => {}}
+      onFilterChange={vi.fn<() => void>()}
     />,
   )
 
@@ -160,7 +160,7 @@ test('the change history link is not offered without the log', async () => {
 test('shows the empty state', async () => {
   worker.use(handleSiteAuditList({ body: { items: [] } }))
   const { screen } = await renderWithRouter(
-    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={() => {}} />,
+    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={vi.fn<() => void>()} />,
   )
 
   await expect.element(screen.getByText('No audited changes yet')).toBeInTheDocument()
@@ -169,7 +169,7 @@ test('shows the empty state', async () => {
 test('offers the next page while a cursor is returned', async () => {
   worker.use(handleSiteAuditList({ body: { items: [entry()], nextCursor: '2' } }))
   const { screen } = await renderWithRouter(
-    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={() => {}} />,
+    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={vi.fn<() => void>()} />,
   )
 
   await expect.element(screen.getByRole('button', { name: 'Load more' })).toBeInTheDocument()
@@ -189,7 +189,7 @@ test('loading more appends the next page below the first', async () => {
     }),
   )
   const { screen } = await renderWithRouter(
-    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={() => {}} />,
+    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={vi.fn<() => void>()} />,
   )
 
   await screen.getByRole('button', { name: 'Load more' }).click()
@@ -203,7 +203,7 @@ test('loading more appends the next page below the first', async () => {
 test.each([402, 403])('renders nothing when the API answers %i', async (status) => {
   worker.use(handleSiteAuditList(() => problem(status, { detail: 'refused' })))
   const { screen } = await renderWithRouter(
-    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={() => {}} />,
+    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={vi.fn<() => void>()} />,
   )
 
   await expect.element(screen.getByText('Audit log')).not.toBeInTheDocument()
@@ -221,7 +221,7 @@ test('exports the log as CSV through the generated client', async () => {
     }),
   )
   const { screen } = await renderWithRouter(
-    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={() => {}} />,
+    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={vi.fn<() => void>()} />,
   )
 
   await screen.getByRole('button', { name: 'Export CSV' }).click()
@@ -239,7 +239,7 @@ test('shows the retention window and saves a new one', async () => {
     }),
   )
   const { screen } = await renderWithRouter(
-    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={() => {}} />,
+    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={vi.fn<() => void>()} />,
   )
 
   const input = screen.getByLabelText('Keep the log for (days)')
@@ -260,7 +260,7 @@ test('an empty retention window keeps the log forever', async () => {
     }),
   )
   const { screen } = await renderWithRouter(
-    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={() => {}} />,
+    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={vi.fn<() => void>()} />,
   )
 
   await screen.getByLabelText('Keep the log for (days)').fill('')
@@ -275,7 +275,7 @@ test('a failed retention save is reported', async () => {
     handleSiteAuditSetRetention(() => problem(422, { detail: 'bad window' })),
   )
   const { screen } = await renderWithRouter(
-    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={() => {}} />,
+    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={vi.fn<() => void>()} />,
   )
 
   await screen.getByLabelText('Keep the log for (days)').fill('5')
@@ -293,7 +293,7 @@ test('the retention control is not offered without its license', async () => {
     }),
   )
   const { screen } = await renderWithRouter(
-    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={() => {}} />,
+    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={vi.fn<() => void>()} />,
   )
 
   await expect.element(screen.getByText('Audit log')).toBeInTheDocument()
@@ -318,7 +318,7 @@ test('a hold change is attributed to Sphericon staff', async () => {
     }),
   )
   const { screen } = await renderWithRouter(
-    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={() => {}} />,
+    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={vi.fn<() => void>()} />,
   )
 
   await expect.element(screen.getByRole('cell', { name: 'Sphericon staff' })).toBeInTheDocument()
@@ -346,7 +346,7 @@ test('an entry without a diff or a name falls back gracefully', async () => {
     }),
   )
   const { screen } = await renderWithRouter(
-    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={() => {}} />,
+    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={vi.fn<() => void>()} />,
   )
 
   await expect.element(screen.getByText('API token #7')).toBeInTheDocument()
@@ -361,7 +361,7 @@ test('names an API token actor by its name when it has one', async () => {
     }),
   )
   const { screen } = await renderWithRouter(
-    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={() => {}} />,
+    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={vi.fn<() => void>()} />,
   )
 
   await expect.element(screen.getByText('CI deploy', { exact: true })).toBeInTheDocument()
@@ -370,7 +370,7 @@ test('names an API token actor by its name when it has one', async () => {
 test('reports a failed load of the log', async () => {
   worker.use(handleSiteAuditList(() => problem(500)))
   const { screen } = await renderWithRouter(
-    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={() => {}} />,
+    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={vi.fn<() => void>()} />,
   )
 
   await expect.element(screen.getByText('Failed to load the audit log').first()).toBeInTheDocument()
