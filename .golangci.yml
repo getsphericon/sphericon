@@ -90,14 +90,9 @@ linters:
         - experimental
         - opinionated
       disabled-checks:
-        - exitAfterDefer
-        - appendAssign
+        # 197 findings across 40 packages: too many to fix in the change that enabled
+        # gocritic without a noisy, conflict-prone diff. Turning it on is a follow-up.
         - hugeParam
-      settings:
-        rangeValCopy:
-          sizeThreshold: 128
-        rangeExprCopy:
-          sizeThreshold: 512
     dogsled:
       max-blank-identifiers: 2
   exclusions:
