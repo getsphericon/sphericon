@@ -116,7 +116,7 @@ func (h *Handlers) SiteAuthRegister(ctx context.Context, req *siteapi.SiteRegist
 
 // registerForm is what SiteAuthRegister checks beyond the contract, the values already trimmed.
 type registerForm struct {
-	Name     string `json:"name" validate:"required"`
+	Name     string `json:"name" validate:"required,display_name"`
 	Email    string `json:"email" validate:"required,account_email"`
 	Password string `json:"password" validate:"required,password_not_blank,password_length"`
 }

@@ -61,6 +61,7 @@
   "errors.email_invalid": "enter an email address you can receive mail at, like name@example.com",
   "errors.password_length": "the password must be {{.Min}} to {{.Max}} characters long",
   "errors.password_blank": "the password must not be only spaces",
+  "errors.name_invalid": "the name must be at most {{.NameMax}} characters on one line, with no control characters",
   "errors.email_verification_required": "verify your email first: follow the link we sent to your address",
   "errors.signin_provider_unknown": "no such sign-in provider is enabled on this instance",
   "errors.linked_identity_not_found": "no such linked sign-in provider on your account",
