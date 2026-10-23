@@ -13,6 +13,15 @@ type UnimplementedHandler struct{}
 
 var _ Handler = UnimplementedHandler{}
 
+// SiteAnalyticsNewPeople implements SiteAnalytics_newPeople operation.
+//
+// New people report: Contacts created per Report day, split by Contact source.
+//
+// GET /workspaces/{workspaceId}/analytics/new-people
+func (UnimplementedHandler) SiteAnalyticsNewPeople(ctx context.Context, params SiteAnalyticsNewPeopleParams) (r SiteAnalyticsNewPeopleRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteAnalyticsOverview implements SiteAnalytics_overview operation.
 //
 // Aggregate metrics for the workspace dashboard.

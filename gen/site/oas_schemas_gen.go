@@ -442,6 +442,8 @@ type ContactExportContact struct {
 	TimeZone OptNilString `json:"timeZone"`
 	// Typed custom field values keyed by the field's machine key.
 	CustomFields OptNilContactExportJson `json:"customFields"`
+	// The door the contact came through; absent for a contact that predates the field.
+	Source OptNilContactExportSource `json:"source"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -486,6 +488,11 @@ func (s *ContactExportContact) GetTimeZone() OptNilString {
 // GetCustomFields returns the value of CustomFields.
 func (s *ContactExportContact) GetCustomFields() OptNilContactExportJson {
 	return s.CustomFields
+}
+
+// GetSource returns the value of Source.
+func (s *ContactExportContact) GetSource() OptNilContactExportSource {
+	return s.Source
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -536,6 +543,11 @@ func (s *ContactExportContact) SetTimeZone(val OptNilString) {
 // SetCustomFields sets the value of CustomFields.
 func (s *ContactExportContact) SetCustomFields(val OptNilContactExportJson) {
 	s.CustomFields = val
+}
+
+// SetSource sets the value of Source.
+func (s *ContactExportContact) SetSource(val OptNilContactExportSource) {
+	s.Source = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.
@@ -1059,6 +1071,56 @@ func (s *ContactExportOutboundMessage) SetTemplateId(val OptNilEntityId) {
 // SetCreatedAt sets the value of CreatedAt.
 func (s *ContactExportOutboundMessage) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
+}
+
+// How the contact first came to exist.
+// Ref: #/components/schemas/ContactExportSource
+type ContactExportSource string
+
+const (
+	ContactExportSourceManual  ContactExportSource = "manual"
+	ContactExportSourceAPI     ContactExportSource = "api"
+	ContactExportSourceTracker ContactExportSource = "tracker"
+)
+
+// AllValues returns all ContactExportSource values.
+func (ContactExportSource) AllValues() []ContactExportSource {
+	return []ContactExportSource{
+		ContactExportSourceManual,
+		ContactExportSourceAPI,
+		ContactExportSourceTracker,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ContactExportSource) MarshalText() ([]byte, error) {
+	switch s {
+	case ContactExportSourceManual:
+		return []byte(s), nil
+	case ContactExportSourceAPI:
+		return []byte(s), nil
+	case ContactExportSourceTracker:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ContactExportSource) UnmarshalText(data []byte) error {
+	switch ContactExportSource(data) {
+	case ContactExportSourceManual:
+		*s = ContactExportSourceManual
+		return nil
+	case ContactExportSourceAPI:
+		*s = ContactExportSourceAPI
+		return nil
+	case ContactExportSourceTracker:
+		*s = ContactExportSourceTracker
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
 }
 
 // A suppression of a channel destination.
@@ -2296,6 +2358,74 @@ func (o OptNilContactExportJson) Get() (v ContactExportJson, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptNilContactExportJson) Or(d ContactExportJson) ContactExportJson {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptNilContactExportSource returns new OptNilContactExportSource with value set to v.
+func NewOptNilContactExportSource(v ContactExportSource) OptNilContactExportSource {
+	return OptNilContactExportSource{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilContactExportSource is optional nullable ContactExportSource.
+type OptNilContactExportSource struct {
+	Value ContactExportSource
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilContactExportSource was set.
+func (o OptNilContactExportSource) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilContactExportSource) Reset() {
+	var v ContactExportSource
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilContactExportSource) SetTo(v ContactExportSource) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilContactExportSource) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilContactExportSource) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v ContactExportSource
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilContactExportSource) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilContactExportSource) Get() (v ContactExportSource, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilContactExportSource) Or(d ContactExportSource) ContactExportSource {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -5437,6 +5567,7 @@ func (s *ProblemDetails) SetDebug(val OptProblemDebug) {
 	s.Debug = val
 }
 
+func (*ProblemDetails) siteAnalyticsNewPeopleRes()             {}
 func (*ProblemDetails) siteAnalyticsOverviewRes()              {}
 func (*ProblemDetails) siteAuthConfirmEmailChangeRes()         {}
 func (*ProblemDetails) siteAuthSecondFactorRes()               {}
@@ -13272,6 +13403,103 @@ func (*SiteMembershipsUpdateNotFound) siteMembershipsUpdateRes() {}
 type SiteMembershipsUpdateUnprocessableEntity ProblemDetails
 
 func (*SiteMembershipsUpdateUnprocessableEntity) siteMembershipsUpdateRes() {}
+
+// One Report day of the New people report: the Contacts created that day by the door they came
+// through, zero-filled across the range.
+// Ref: #/components/schemas/SiteNewPeoplePoint
+type SiteNewPeoplePoint struct {
+	// Report day, YYYY-MM-DD in the Workspace time zone.
+	Date string `json:"date"`
+	// Contacts created by hand that day.
+	Manual int32 `json:"manual"`
+	// Contacts created through the API that day.
+	API int32 `json:"api"`
+	// Contacts created by the tracker that day.
+	Tracker int32 `json:"tracker"`
+	// Contacts that predate the Contact source.
+	Unknown int32 `json:"unknown"`
+}
+
+// GetDate returns the value of Date.
+func (s *SiteNewPeoplePoint) GetDate() string {
+	return s.Date
+}
+
+// GetManual returns the value of Manual.
+func (s *SiteNewPeoplePoint) GetManual() int32 {
+	return s.Manual
+}
+
+// GetAPI returns the value of API.
+func (s *SiteNewPeoplePoint) GetAPI() int32 {
+	return s.API
+}
+
+// GetTracker returns the value of Tracker.
+func (s *SiteNewPeoplePoint) GetTracker() int32 {
+	return s.Tracker
+}
+
+// GetUnknown returns the value of Unknown.
+func (s *SiteNewPeoplePoint) GetUnknown() int32 {
+	return s.Unknown
+}
+
+// SetDate sets the value of Date.
+func (s *SiteNewPeoplePoint) SetDate(val string) {
+	s.Date = val
+}
+
+// SetManual sets the value of Manual.
+func (s *SiteNewPeoplePoint) SetManual(val int32) {
+	s.Manual = val
+}
+
+// SetAPI sets the value of API.
+func (s *SiteNewPeoplePoint) SetAPI(val int32) {
+	s.API = val
+}
+
+// SetTracker sets the value of Tracker.
+func (s *SiteNewPeoplePoint) SetTracker(val int32) {
+	s.Tracker = val
+}
+
+// SetUnknown sets the value of Unknown.
+func (s *SiteNewPeoplePoint) SetUnknown(val int32) {
+	s.Unknown = val
+}
+
+// New people: Contacts created in the selected range, per Report day and by Contact source.
+// Ref: #/components/schemas/SiteNewPeopleReport
+type SiteNewPeopleReport struct {
+	// Contacts created within the range.
+	Total int32 `json:"total"`
+	// One point per Report day in the range, oldest first.
+	Timeseries []SiteNewPeoplePoint `json:"timeseries"`
+}
+
+// GetTotal returns the value of Total.
+func (s *SiteNewPeopleReport) GetTotal() int32 {
+	return s.Total
+}
+
+// GetTimeseries returns the value of Timeseries.
+func (s *SiteNewPeopleReport) GetTimeseries() []SiteNewPeoplePoint {
+	return s.Timeseries
+}
+
+// SetTotal sets the value of Total.
+func (s *SiteNewPeopleReport) SetTotal(val int32) {
+	s.Total = val
+}
+
+// SetTimeseries sets the value of Timeseries.
+func (s *SiteNewPeopleReport) SetTimeseries(val []SiteNewPeoplePoint) {
+	s.Timeseries = val
+}
+
+func (*SiteNewPeopleReport) siteAnalyticsNewPeopleRes() {}
 
 // What an MCP client (dynamically registered) is asking permission for, as validated by the
 // authorization server. Rendered on the consent screen.

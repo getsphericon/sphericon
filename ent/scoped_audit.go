@@ -361,6 +361,7 @@ var ContactAuditSensitive = map[string]bool{
 	"first_name":    true,
 	"last_name":     true,
 	"time_zone":     true,
+	"source":        true,
 	"custom_fields": true,
 }
 
@@ -373,6 +374,7 @@ func (e *Contact) auditFields() map[string]any {
 		"first_name":    derefAudit(e.FirstName),
 		"last_name":     derefAudit(e.LastName),
 		"time_zone":     derefAudit(e.TimeZone),
+		"source":        derefAudit(e.Source),
 		"custom_fields": e.CustomFields,
 	}
 }

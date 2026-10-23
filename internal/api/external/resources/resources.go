@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
@@ -100,6 +101,7 @@ func AutomationSteps(steps []externalapi.AutomationStep) []automations.Step {
 // goverter:useZeroValueOnPointerInconsistency
 // goverter:extend timestamp
 // goverter:extend optNilString
+// goverter:extend optNilContactSource
 // goverter:extend optNilEmailAddress
 // goverter:extend optNilTimeZone
 // goverter:extend optNilTimestamp
@@ -570,4 +572,11 @@ func ruleResults(stored string) []externalapi.RuleActionResult {
 			Detail: ruleOptString(r.Detail),
 		}
 	})
+}
+
+func optNilContactSource(v *contact.Source) externalapi.OptNilContactExportSource {
+	if v == nil {
+		return externalapi.OptNilContactExportSource{}
+	}
+	return externalapi.NewOptNilContactExportSource(externalapi.ContactExportSource(*v))
 }

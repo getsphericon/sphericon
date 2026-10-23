@@ -8,6 +8,12 @@ import (
 
 // Handler handles operations described by OpenAPI v3 specification.
 type Handler interface {
+	// SiteAnalyticsNewPeople implements SiteAnalytics_newPeople operation.
+	//
+	// New people report: Contacts created per Report day, split by Contact source.
+	//
+	// GET /workspaces/{workspaceId}/analytics/new-people
+	SiteAnalyticsNewPeople(ctx context.Context, params SiteAnalyticsNewPeopleParams) (SiteAnalyticsNewPeopleRes, error)
 	// SiteAnalyticsOverview implements SiteAnalytics_overview operation.
 	//
 	// Aggregate metrics for the workspace dashboard.

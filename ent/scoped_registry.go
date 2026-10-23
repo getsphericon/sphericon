@@ -682,6 +682,9 @@ func ScopedEntities() []ScopedEntity {
 				if src.TimeZone != nil {
 					b.SetTimeZone(*src.TimeZone)
 				}
+				if src.Source != nil {
+					b.SetSource(*src.Source)
+				}
 				if !reflect.ValueOf(src.CustomFields).IsZero() {
 					b.SetCustomFields(src.CustomFields)
 				}

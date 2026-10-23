@@ -15,7 +15,7 @@ type Contact struct {
 
 func (Contact) Annotations() []schema.Annotation {
 	return []schema.Annotation{
-		entsql.Annotation{Table: "contacts"},
+		TableWithEnumChecks("contacts", Contact{}.Fields()),
 		Audited{Action: "contact", NamesOnly: true},
 	}
 }
@@ -50,6 +50,13 @@ func (Contact) Fields() []ent.Field {
 		field.String("time_zone").
 			Optional().
 			Nillable(),
+		// How the Contact first came to exist (GLOSSARY: Contact source). Set once at
+		// creation and never rewritten; null for a Contact that predates the field.
+		field.Enum("source").
+			Values("manual", "api", "tracker").
+			Optional().
+			Nillable().
+			Immutable(),
 		// Typed Custom field values keyed by the field's machine key. The typed
 		// definitions live in CustomField; values are widened to any to carry
 		// number/bool/datetime, not only strings.

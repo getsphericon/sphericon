@@ -12662,6 +12662,15 @@
             "nullable": true,
             "description": "Typed custom field values keyed by the field's machine key"
           },
+          "source": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContactExportSource"
+              }
+            ],
+            "nullable": true,
+            "description": "The door the contact came through; absent for a contact that predates the field"
+          },
           "createdAt": {
             "allOf": [
               {
@@ -12980,6 +12989,11 @@
           }
         },
         "description": "Delivery metadata of one outbound message; the rendered message is not included"
+      },
+      "ContactExportSource": {
+        "type": "string",
+        "enum": ["manual", "api", "tracker"],
+        "description": "How the contact first came to exist"
       },
       "ContactExportSuppression": {
         "type": "object",

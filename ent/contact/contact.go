@@ -3,6 +3,7 @@
 package contact
 
 import (
+	"fmt"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -32,6 +33,8 @@ const (
 	FieldLastName = "last_name"
 	// FieldTimeZone holds the string denoting the time_zone field in the database.
 	FieldTimeZone = "time_zone"
+	// FieldSource holds the string denoting the source field in the database.
+	FieldSource = "source"
 	// FieldCustomFields holds the string denoting the custom_fields field in the database.
 	FieldCustomFields = "custom_fields"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
@@ -93,6 +96,7 @@ var Columns = []string{
 	FieldFirstName,
 	FieldLastName,
 	FieldTimeZone,
+	FieldSource,
 	FieldCustomFields,
 }
 
@@ -120,6 +124,30 @@ var (
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
 )
+
+// Source defines the type for the "source" enum field.
+type Source string
+
+// Source values.
+const (
+	SourceManual  Source = "manual"
+	SourceAPI     Source = "api"
+	SourceTracker Source = "tracker"
+)
+
+func (s Source) String() string {
+	return string(s)
+}
+
+// SourceValidator is a validator for the "source" field enum values. It is called by the builders before save.
+func SourceValidator(s Source) error {
+	switch s {
+	case SourceManual, SourceAPI, SourceTracker:
+		return nil
+	default:
+		return fmt.Errorf("contact: invalid enum value for source field: %q", s)
+	}
+}
 
 // OrderOption defines the ordering options for the Contact queries.
 type OrderOption func(*sql.Selector)
@@ -172,6 +200,11 @@ func ByLastName(opts ...sql.OrderTermOption) OrderOption {
 // ByTimeZone orders the results by the time_zone field.
 func ByTimeZone(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTimeZone, opts...).ToFunc()
+}
+
+// BySource orders the results by the source field.
+func BySource(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSource, opts...).ToFunc()
 }
 
 // ByWorkspaceField orders the results by workspace field.

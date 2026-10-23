@@ -45,6 +45,15 @@ export const zApiTokenScope = z.enum([
  */
 export const zContactExportJson = z.record(z.string(), z.unknown());
 
+/**
+ * How the contact first came to exist
+ */
+export const zContactExportSource = z.enum([
+  'manual',
+  'api',
+  'tracker'
+]);
+
 export const zEmailAddress = z.email().max(320);
 
 /**
@@ -762,6 +771,26 @@ export const zSiteMembershipSource = z.enum([
   'invitation',
   'domain'
 ]);
+
+/**
+ * One Report day of the New people report: the Contacts created that day by the door they
+ * came through, zero-filled across the range.
+ */
+export const zSiteNewPeoplePoint = z.object({
+  date: z.string(),
+  manual: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  api: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  tracker: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  unknown: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
+ * New people: Contacts created in the selected range, per Report day and by Contact source
+ */
+export const zSiteNewPeopleReport = z.object({
+  total: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  timeseries: z.array(zSiteNewPeoplePoint)
+});
 
 /**
  * What an MCP client (dynamically registered) is asking permission for, as
@@ -1670,6 +1699,7 @@ export const zContactExportContact = z.object({
   lastName: z.exactOptional(z.string().nullable()),
   timeZone: z.exactOptional(z.string().nullable()),
   customFields: z.exactOptional(zContactExportJson.nullable()),
+  source: z.exactOptional(zContactExportSource.nullable()),
   createdAt: zTimestamp,
   updatedAt: zTimestamp
 });
@@ -3142,6 +3172,19 @@ export const zSiteWorkspacesAccountLinkPath = z.object({
  * The request has succeeded.
  */
 export const zSiteWorkspacesAccountLinkResponse = zSiteAccountLinkResource;
+
+export const zSiteAnalyticsNewPeoplePath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+export const zSiteAnalyticsNewPeopleQuery = z.object({
+  range: z.exactOptional(zSiteAnalyticsRange)
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteAnalyticsNewPeopleResponse = zSiteNewPeopleReport;
 
 export const zSiteAnalyticsOverviewPath = z.object({
   workspaceId: zWorkspaceId

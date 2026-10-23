@@ -15,6 +15,154 @@ import (
 	"github.com/ogen-go/ogen/validate"
 )
 
+// SiteAnalyticsNewPeopleParams is parameters of SiteAnalytics_newPeople operation.
+type SiteAnalyticsNewPeopleParams struct {
+	WorkspaceId WorkspaceId
+	// Window to aggregate over (defaults to 30d).
+	Range OptSiteAnalyticsRange `json:",omitempty,omitzero"`
+}
+
+func unpackSiteAnalyticsNewPeopleParams(packed middleware.Parameters) (params SiteAnalyticsNewPeopleParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "workspaceId",
+			In:   "path",
+		}
+		params.WorkspaceId = packed[key].(WorkspaceId)
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "range",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.Range = v.(OptSiteAnalyticsRange)
+		}
+	}
+	return params
+}
+
+func decodeSiteAnalyticsNewPeopleParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteAnalyticsNewPeopleParams, _ error) {
+	q := uri.NewQueryDecoder(r.URL.Query())
+	// Decode path: workspaceId.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "workspaceId",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "workspaceId",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	// Decode query: range.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "range",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotRangeVal SiteAnalyticsRange
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotRangeVal = SiteAnalyticsRange(c)
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.Range.SetTo(paramsDotRangeVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+			if err := func() error {
+				if value, ok := params.Range.Get(); ok {
+					if err := func() error {
+						if err := value.Validate(); err != nil {
+							return err
+						}
+						return nil
+					}(); err != nil {
+						return err
+					}
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "range",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
 // SiteAnalyticsOverviewParams is parameters of SiteAnalytics_overview operation.
 type SiteAnalyticsOverviewParams struct {
 	WorkspaceId WorkspaceId

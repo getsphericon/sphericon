@@ -973,3 +973,34 @@
   workspace_id: 61
   created_at: '2026-01-02 00:00:00'
   updated_at: '2026-01-02 00:00:00'
+# Gotham (America/New_York) sign-ups around its midnights, for the New people report: the
+# first four straddle midnight EST on 7/8 March (05:00Z) and midnight EDT on 8/9 March (04:00Z).
+- id: 20100
+  email: signup-manual@gotham.example
+  source: manual
+  workspace_id: 61
+  created_at: '2026-03-08 04:59:00+00'
+  updated_at: '2026-03-08 04:59:00+00'
+- id: 20101
+  email: signup-api@gotham.example
+  source: api
+  workspace_id: 61
+  created_at: '2026-03-08 05:00:00+00'
+  updated_at: '2026-03-08 05:00:00+00'
+- id: 20102
+  email: signup-tracker@gotham.example
+  source: tracker
+  workspace_id: 61
+  created_at: '2026-03-09 03:59:00+00'
+  updated_at: '2026-03-09 03:59:00+00'
+- id: 20103
+  email: signup-unknown@gotham.example
+  workspace_id: 61
+  created_at: '2026-03-09 04:00:00+00'
+  updated_at: '2026-03-09 04:00:00+00'
+- id: 20104
+  email: signup-api-noon@gotham.example
+  source: api
+  workspace_id: 61
+  created_at: '2026-03-08 12:00:00+00'
+  updated_at: '2026-03-08 12:00:00+00'

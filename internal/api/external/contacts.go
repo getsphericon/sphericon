@@ -8,6 +8,7 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/contact"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/contacts"
@@ -46,7 +47,7 @@ func (h *Handlers) ContactsCreate(ctx context.Context, req *externalapi.CreateCo
 		return &res, nil
 	}
 
-	c, err := h.contacts.Create(ctx, auth.TokenScoped(ctx), createContactAttributes(req))
+	c, err := h.contacts.Create(ctx, auth.TokenScoped(ctx), contact.SourceAPI, createContactAttributes(req))
 	if conflict, ok := errors.AsType[*contacts.ConflictError](err); ok {
 		res := externalapi.ContactsCreateConflict(conflictProblem(conflict))
 		return &res, nil
@@ -185,7 +186,7 @@ func (h *Handlers) ContactsBatchUpsert(ctx context.Context, req *externalapi.Ups
 			items[i].CustomFields = convert.RawMap(v)
 		}
 	}
-	outcomes := h.contacts.UpsertBatch(ctx, auth.TokenScoped(ctx), items)
+	outcomes := h.contacts.UpsertBatch(ctx, auth.TokenScoped(ctx), contact.SourceAPI, items)
 
 	results := make([]externalapi.ContactBatchItemResult, len(outcomes))
 	for i, o := range outcomes {

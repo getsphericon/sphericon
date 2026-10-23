@@ -2,6 +2,7 @@ import type { AnyRoute } from '@tanstack/react-router'
 import { expect, test } from 'vitest'
 
 import { Route as emailMetricsRoute } from '../routes/workspaces/$workspaceId/analytics/email-metrics.tsx'
+import { Route as newPeopleRoute } from '../routes/workspaces/$workspaceId/analytics/new-people.tsx'
 import { Route as recentActivityRoute } from '../routes/workspaces/$workspaceId/analytics/recent-activity.tsx'
 import { Route as analyticsRoute } from '../routes/workspaces/$workspaceId/analytics/route.tsx'
 import { renderWithRouter } from '../test/renderWithRouter.tsx'
@@ -15,24 +16,21 @@ const mount = (range: string) => {
 
 const reportPath = (route: AnyRoute) => routeMount(route, { workspaceId: 'AcmeWs01' }).initialPath
 
-test('the menu lists the existing reports under their groups, each on its own URL', async () => {
+test('the menu lists the reports under their groups, each on its own URL', async () => {
   const { screen } = await renderWithRouter(<AnalyticsLayout />, mount('30d'))
 
+  await expect.element(screen.getByText('Audience', { exact: true })).toBeVisible()
   await expect.element(screen.getByText('Email', { exact: true })).toBeVisible()
   await expect.element(screen.getByText('Tracking', { exact: true })).toBeVisible()
+  await expect
+    .element(screen.getByRole('link', { name: 'New people' }))
+    .toHaveAttribute('href', `${reportPath(newPeopleRoute)}?range=30d`)
   await expect
     .element(screen.getByRole('link', { name: 'Email metrics' }))
     .toHaveAttribute('href', `${reportPath(emailMetricsRoute)}?range=30d`)
   await expect
     .element(screen.getByRole('link', { name: 'Recent activity' }))
     .toHaveAttribute('href', `${reportPath(recentActivityRoute)}?range=30d`)
-})
-
-test('a group without a report is not shown', async () => {
-  const { screen } = await renderWithRouter(<AnalyticsLayout />, mount('30d'))
-
-  await expect.element(screen.getByText('Email', { exact: true })).toBeVisible()
-  await expect.element(screen.getByText('Audience', { exact: true })).not.toBeInTheDocument()
 })
 
 test('the chosen window is carried to every report link', async () => {

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
@@ -46,6 +47,7 @@ import (
 // goverter:useZeroValueOnPointerInconsistency
 // goverter:extend timestamp
 // goverter:extend optNilString
+// goverter:extend optNilContactSource
 // goverter:extend omitEmpty
 // goverter:extend optNilEmailAddress
 // goverter:extend optNilEntityID
@@ -835,4 +837,11 @@ func ruleResults(stored string) []siteapi.SiteRuleActionResult {
 			Detail: ruleOptString(r.Detail),
 		}
 	})
+}
+
+func optNilContactSource(v *contact.Source) siteapi.OptNilContactExportSource {
+	if v == nil {
+		return siteapi.OptNilContactExportSource{}
+	}
+	return siteapi.NewOptNilContactExportSource(siteapi.ContactExportSource(*v))
 }

@@ -6,6 +6,7 @@ package siteapi
 type OperationName = string
 
 const (
+	SiteAnalyticsNewPeopleOperation                   OperationName = "SiteAnalyticsNewPeople"
 	SiteAnalyticsOverviewOperation                    OperationName = "SiteAnalyticsOverview"
 	SiteAuditExportOperation                          OperationName = "SiteAuditExport"
 	SiteAuditGetRetentionOperation                    OperationName = "SiteAuditGetRetention"

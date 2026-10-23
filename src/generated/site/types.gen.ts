@@ -140,6 +140,10 @@ export type ContactExportContact = {
    */
   customFields?: ContactExportJson | null;
   /**
+   * The door the contact came through; absent for a contact that predates the field
+   */
+  source?: ContactExportSource | null;
+  /**
    * Creation timestamp
    */
   createdAt: Timestamp;
@@ -327,6 +331,20 @@ export type ContactExportOutboundMessage = {
    */
   createdAt: Timestamp;
 };
+
+/**
+ * How the contact first came to exist
+ */
+export const ContactExportSource = {
+  MANUAL: 'manual',
+  API: 'api',
+  TRACKER: 'tracker'
+} as const;
+
+/**
+ * How the contact first came to exist
+ */
+export type ContactExportSource = typeof ContactExportSource[keyof typeof ContactExportSource];
 
 /**
  * A suppression of a channel destination
@@ -2805,6 +2823,47 @@ export const SiteMembershipSource = {
  * How a member got in
  */
 export type SiteMembershipSource = typeof SiteMembershipSource[keyof typeof SiteMembershipSource];
+
+/**
+ * One Report day of the New people report: the Contacts created that day by the door they
+ * came through, zero-filled across the range.
+ */
+export type SiteNewPeoplePoint = {
+  /**
+   * Report day, YYYY-MM-DD in the Workspace time zone
+   */
+  date: string;
+  /**
+   * Contacts created by hand that day
+   */
+  manual: number;
+  /**
+   * Contacts created through the API that day
+   */
+  api: number;
+  /**
+   * Contacts created by the tracker that day
+   */
+  tracker: number;
+  /**
+   * Contacts that predate the Contact source
+   */
+  unknown: number;
+};
+
+/**
+ * New people: Contacts created in the selected range, per Report day and by Contact source
+ */
+export type SiteNewPeopleReport = {
+  /**
+   * Contacts created within the range
+   */
+  total: number;
+  /**
+   * One point per Report day in the range, oldest first
+   */
+  timeseries: Array<SiteNewPeoplePoint>;
+};
 
 /**
  * What an MCP client (dynamically registered) is asking permission for, as
@@ -6654,6 +6713,38 @@ export type SiteWorkspacesAccountLinkResponses = {
 };
 
 export type SiteWorkspacesAccountLinkResponse = SiteWorkspacesAccountLinkResponses[keyof SiteWorkspacesAccountLinkResponses];
+
+export type SiteAnalyticsNewPeopleData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: {
+    /**
+     * Window to aggregate over (defaults to 30d)
+     */
+    range?: SiteAnalyticsRange;
+  };
+  url: '/workspaces/{workspaceId}/analytics/new-people';
+};
+
+export type SiteAnalyticsNewPeopleErrors = {
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteAnalyticsNewPeopleError = SiteAnalyticsNewPeopleErrors[keyof SiteAnalyticsNewPeopleErrors];
+
+export type SiteAnalyticsNewPeopleResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteNewPeopleReport;
+};
+
+export type SiteAnalyticsNewPeopleResponse = SiteAnalyticsNewPeopleResponses[keyof SiteAnalyticsNewPeopleResponses];
 
 export type SiteAnalyticsOverviewData = {
   body?: never;

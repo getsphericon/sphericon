@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/internal/contacts"
@@ -46,7 +47,7 @@ func Identify(ctx context.Context, bus *events.Bus, s *ent.Scoped, input Identif
 	}
 
 	return bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
-		res, err := contacts.UpsertIn(ctx, ts, pub, contacts.Attributes{
+		res, err := contacts.UpsertIn(ctx, ts, pub, contact.SourceTracker, contacts.Attributes{
 			SubjectID:    input.SubjectID,
 			Email:        input.Email,
 			Phone:        input.Phone,

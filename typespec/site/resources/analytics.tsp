@@ -116,6 +116,36 @@ model SiteAnalyticsOverview {
   abuseWarning?: SiteAbuseWarning | null;
 }
 
+/**
+ * One Report day of the New people report: the Contacts created that day by the door they
+ * came through, zero-filled across the range.
+ */
+model SiteNewPeoplePoint {
+  /** Report day, YYYY-MM-DD in the Workspace time zone */
+  date: string;
+
+  /** Contacts created by hand that day */
+  manual: int32;
+
+  /** Contacts created through the API that day */
+  api: int32;
+
+  /** Contacts created by the tracker that day */
+  tracker: int32;
+
+  /** Contacts that predate the Contact source */
+  `unknown`: int32;
+}
+
+/** New people: Contacts created in the selected range, per Report day and by Contact source */
+model SiteNewPeopleReport {
+  /** Contacts created within the range */
+  total: int32;
+
+  /** One point per Report day in the range, oldest first */
+  timeseries: SiteNewPeoplePoint[];
+}
+
 // Not a CRUD resource — a single workspace-scoped aggregate with no key, so it
 // keeps an explicit nested route rather than @parentResource/@autoRoute.
 @route("/workspaces/{workspaceId}/analytics")
@@ -130,4 +160,14 @@ namespace SiteAnalytics {
     /** Window to aggregate over (defaults to 30d) */
     @query range?: SiteAnalyticsRange,
   ): SiteAnalyticsOverview | NotFoundProblem;
+
+  /** New people report: Contacts created per Report day, split by Contact source */
+  @get
+  @route("/new-people")
+  op newPeople(
+    @path workspaceId: WorkspaceId,
+
+    /** Window to aggregate over (defaults to 30d) */
+    @query range?: SiteAnalyticsRange,
+  ): SiteNewPeopleReport | NotFoundProblem;
 }

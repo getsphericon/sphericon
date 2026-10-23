@@ -130,8 +130,14 @@ export default interface Resources {
         "audience": "Audience",
         "email": "Email",
         "emailMetrics": "Email metrics",
+        "newPeople": "New people",
         "recentActivity": "Recent activity",
         "tracking": "Tracking"
+      },
+      "newPeople": {
+        "empty": "No new people in this window",
+        "note": "Contacts created per day in your workspace time zone, by how each one first came to exist.",
+        "total": "New people"
       },
       "range": {
         "30d": "Last 30 days",
@@ -147,6 +153,12 @@ export default interface Resources {
         "clicked": "Clicked",
         "opened": "Opened",
         "sent": "Sent"
+      },
+      "sources": {
+        "api": "API",
+        "manual": "Manual",
+        "tracker": "Tracker",
+        "unknown": "Unknown"
       }
     },
     "app": {

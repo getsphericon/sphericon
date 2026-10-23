@@ -3419,6 +3419,55 @@
         "tags": ["Site Workspaces"]
       }
     },
+    "/workspaces/{workspaceId}/analytics/new-people": {
+      "get": {
+        "operationId": "SiteAnalytics_newPeople",
+        "description": "New people report: Contacts created per Report day, split by Contact source",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          },
+          {
+            "name": "range",
+            "in": "query",
+            "required": false,
+            "description": "Window to aggregate over (defaults to 30d)",
+            "schema": {
+              "$ref": "#/components/schemas/SiteAnalyticsRange"
+            },
+            "explode": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteNewPeopleReport"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Analytics"]
+      }
+    },
     "/workspaces/{workspaceId}/analytics/overview": {
       "get": {
         "operationId": "SiteAnalytics_overview",
@@ -11690,6 +11739,15 @@
             "nullable": true,
             "description": "Typed custom field values keyed by the field's machine key"
           },
+          "source": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContactExportSource"
+              }
+            ],
+            "nullable": true,
+            "description": "The door the contact came through; absent for a contact that predates the field"
+          },
           "createdAt": {
             "allOf": [
               {
@@ -12008,6 +12066,11 @@
           }
         },
         "description": "Delivery metadata of one outbound message; the rendered message is not included"
+      },
+      "ContactExportSource": {
+        "type": "string",
+        "enum": ["manual", "api", "tracker"],
+        "description": "How the contact first came to exist"
       },
       "ContactExportSuppression": {
         "type": "object",
@@ -15253,6 +15316,56 @@
         "type": "string",
         "enum": ["creator", "invitation", "domain"],
         "description": "How a member got in"
+      },
+      "SiteNewPeoplePoint": {
+        "type": "object",
+        "required": ["date", "manual", "api", "tracker", "unknown"],
+        "properties": {
+          "date": {
+            "type": "string",
+            "description": "Report day, YYYY-MM-DD in the Workspace time zone"
+          },
+          "manual": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Contacts created by hand that day"
+          },
+          "api": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Contacts created through the API that day"
+          },
+          "tracker": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Contacts created by the tracker that day"
+          },
+          "unknown": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Contacts that predate the Contact source"
+          }
+        },
+        "description": "One Report day of the New people report: the Contacts created that day by the door they\ncame through, zero-filled across the range."
+      },
+      "SiteNewPeopleReport": {
+        "type": "object",
+        "required": ["total", "timeseries"],
+        "properties": {
+          "total": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Contacts created within the range"
+          },
+          "timeseries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteNewPeoplePoint"
+            },
+            "description": "One point per Report day in the range, oldest first"
+          }
+        },
+        "description": "New people: Contacts created in the selected range, per Report day and by Contact source"
       },
       "SiteOAuthAuthorizationRequest": {
         "type": "object",

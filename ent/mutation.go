@@ -10657,6 +10657,7 @@ type ContactMutation struct {
 	first_name       *string
 	last_name        *string
 	time_zone        *string
+	source           *contact.Source
 	custom_fields    *map[string]interface{}
 	clearedFields    map[string]struct{}
 	workspace        *int64
@@ -11181,6 +11182,55 @@ func (m *ContactMutation) ResetTimeZone() {
 	delete(m.clearedFields, contact.FieldTimeZone)
 }
 
+// SetSource sets the "source" field.
+func (m *ContactMutation) SetSource(c contact.Source) {
+	m.source = &c
+}
+
+// Source returns the value of the "source" field in the mutation.
+func (m *ContactMutation) Source() (r contact.Source, exists bool) {
+	v := m.source
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSource returns the old "source" field's value of the Contact entity.
+// If the Contact object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactMutation) OldSource(ctx context.Context) (v *contact.Source, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSource is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSource requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSource: %w", err)
+	}
+	return oldValue.Source, nil
+}
+
+// ClearSource clears the value of the "source" field.
+func (m *ContactMutation) ClearSource() {
+	m.source = nil
+	m.clearedFields[contact.FieldSource] = struct{}{}
+}
+
+// SourceCleared returns if the "source" field was cleared in this mutation.
+func (m *ContactMutation) SourceCleared() bool {
+	_, ok := m.clearedFields[contact.FieldSource]
+	return ok
+}
+
+// ResetSource resets all changes to the "source" field.
+func (m *ContactMutation) ResetSource() {
+	m.source = nil
+	delete(m.clearedFields, contact.FieldSource)
+}
+
 // SetCustomFields sets the "custom_fields" field.
 func (m *ContactMutation) SetCustomFields(value map[string]interface{}) {
 	m.custom_fields = &value
@@ -11453,7 +11503,7 @@ func (m *ContactMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ContactMutation) Fields() []string {
-	fields := make([]string, 0, 10)
+	fields := make([]string, 0, 11)
 	if m.created_at != nil {
 		fields = append(fields, contact.FieldCreatedAt)
 	}
@@ -11480,6 +11530,9 @@ func (m *ContactMutation) Fields() []string {
 	}
 	if m.time_zone != nil {
 		fields = append(fields, contact.FieldTimeZone)
+	}
+	if m.source != nil {
+		fields = append(fields, contact.FieldSource)
 	}
 	if m.custom_fields != nil {
 		fields = append(fields, contact.FieldCustomFields)
@@ -11510,6 +11563,8 @@ func (m *ContactMutation) Field(name string) (ent.Value, bool) {
 		return m.LastName()
 	case contact.FieldTimeZone:
 		return m.TimeZone()
+	case contact.FieldSource:
+		return m.Source()
 	case contact.FieldCustomFields:
 		return m.CustomFields()
 	}
@@ -11539,6 +11594,8 @@ func (m *ContactMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldLastName(ctx)
 	case contact.FieldTimeZone:
 		return m.OldTimeZone(ctx)
+	case contact.FieldSource:
+		return m.OldSource(ctx)
 	case contact.FieldCustomFields:
 		return m.OldCustomFields(ctx)
 	}
@@ -11613,6 +11670,13 @@ func (m *ContactMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetTimeZone(v)
 		return nil
+	case contact.FieldSource:
+		v, ok := value.(contact.Source)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSource(v)
+		return nil
 	case contact.FieldCustomFields:
 		v, ok := value.(map[string]interface{})
 		if !ok {
@@ -11671,6 +11735,9 @@ func (m *ContactMutation) ClearedFields() []string {
 	if m.FieldCleared(contact.FieldTimeZone) {
 		fields = append(fields, contact.FieldTimeZone)
 	}
+	if m.FieldCleared(contact.FieldSource) {
+		fields = append(fields, contact.FieldSource)
+	}
 	if m.FieldCleared(contact.FieldCustomFields) {
 		fields = append(fields, contact.FieldCustomFields)
 	}
@@ -11705,6 +11772,9 @@ func (m *ContactMutation) ClearField(name string) error {
 		return nil
 	case contact.FieldTimeZone:
 		m.ClearTimeZone()
+		return nil
+	case contact.FieldSource:
+		m.ClearSource()
 		return nil
 	case contact.FieldCustomFields:
 		m.ClearCustomFields()
@@ -11743,6 +11813,9 @@ func (m *ContactMutation) ResetField(name string) error {
 		return nil
 	case contact.FieldTimeZone:
 		m.ResetTimeZone()
+		return nil
+	case contact.FieldSource:
+		m.ResetSource()
 		return nil
 	case contact.FieldCustomFields:
 		m.ResetCustomFields()

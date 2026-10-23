@@ -56,7 +56,7 @@ func (h *Handlers) SiteContactsCreate(ctx context.Context, req *siteapi.SiteCrea
 		return nil, err
 	}
 
-	c, err := h.contacts.Create(ctx, scoped, createContactAttributes(req))
+	c, err := h.contacts.Create(ctx, scoped, contact.SourceManual, createContactAttributes(req))
 	if conflict, ok := errors.AsType[*contacts.ConflictError](err); ok {
 		v := siteapi.SiteContactsCreateConflict(conflictProblem(conflict))
 		return &v, nil

@@ -98,9 +98,10 @@ type Module struct {
 // New builds the module.
 func New(bus *events.Bus) *Module { return &Module{bus: bus} }
 
-// Create makes a Contact and publishes contact.created in one transaction. An alias
-// key already taken in the Workspace yields a *ConflictError.
-func (m *Module) Create(ctx context.Context, s *ent.Scoped, attrs Attributes) (*ent.Contact, error) {
+// Create makes a Contact from the given door (its Contact source, kept for good) and
+// publishes contact.created in one transaction. An alias key already taken in the
+// Workspace yields a *ConflictError.
+func (m *Module) Create(ctx context.Context, s *ent.Scoped, src contact.Source, attrs Attributes) (*ent.Contact, error) {
 	attrs = attrs.normalized()
 	var c *ent.Contact
 	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
@@ -114,7 +115,8 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, attrs Attributes) (*
 			SetNillablePhone(attrs.Phone).
 			SetNillableFirstName(attrs.FirstName).
 			SetNillableLastName(attrs.LastName).
-			SetNillableTimeZone(attrs.TimeZone)
+			SetNillableTimeZone(attrs.TimeZone).
+			SetSource(src)
 		if len(typed) > 0 {
 			q = q.SetCustomFields(typed)
 		}
@@ -187,13 +189,14 @@ func (c Cleared) applyTo(q *ent.ContactScopedUpdateOne) {
 
 // Upsert resolves the Contact by any present alias key (subject_id, email, phone)
 // or creates one. An existing Contact is only enriched: missing attributes are
-// filled and Custom fields merged, never overwritten (identity is additive).
-// ErrIdentityRequired when no alias key is given.
-func (m *Module) Upsert(ctx context.Context, s *ent.Scoped, attrs Attributes) (Result, error) {
+// filled and Custom fields merged, never overwritten (identity is additive), and its
+// Contact source stays what it was: src only names the door of a Contact this call
+// creates. ErrIdentityRequired when no alias key is given.
+func (m *Module) Upsert(ctx context.Context, s *ent.Scoped, src contact.Source, attrs Attributes) (Result, error) {
 	var res Result
 	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
 		var err error
-		res, err = UpsertIn(ctx, ts, pub, attrs)
+		res, err = UpsertIn(ctx, ts, pub, src, attrs)
 		return err
 	})
 	if err != nil {
@@ -219,12 +222,12 @@ type BatchOutcome struct {
 // the entry cannot share their transaction: if recording it fails the failure is
 // logged and the committed outcomes are still returned, never a 500 for an import
 // that happened.
-func (m *Module) UpsertBatch(ctx context.Context, s *ent.Scoped, items []Attributes) []BatchOutcome {
+func (m *Module) UpsertBatch(ctx context.Context, s *ent.Scoped, src contact.Source, items []Attributes) []BatchOutcome {
 	rows := events.Unaudited(s)
 	out := make([]BatchOutcome, len(items))
 	var sum ImportSummary
 	for i, attrs := range items {
-		out[i].Result, out[i].Err = m.Upsert(ctx, rows, attrs)
+		out[i].Result, out[i].Err = m.Upsert(ctx, rows, src, attrs)
 		switch {
 		case out[i].Err != nil:
 			sum.Failed++
@@ -268,7 +271,7 @@ func (m *Module) RecordImport(ctx context.Context, s *ent.Scoped, sum ImportSumm
 // UpsertIn is Upsert inside a transaction the caller already owns (tx and pub come
 // from events.Bus.WithinScopedTx), for flows that bind more rows to the Contact atomically
 // — the tracker's Identify. It publishes contact.created when it creates.
-func UpsertIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, attrs Attributes) (Result, error) {
+func UpsertIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, src contact.Source, attrs Attributes) (Result, error) {
 	attrs = attrs.normalized()
 	if lo.FromPtr(attrs.SubjectID) == "" && attrs.Email == nil && attrs.Phone == nil {
 		return Result{}, ErrIdentityRequired
@@ -315,7 +318,8 @@ func UpsertIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, attrs At
 		SetNillablePhone(attrs.Phone).
 		SetNillableFirstName(attrs.FirstName).
 		SetNillableLastName(attrs.LastName).
-		SetNillableTimeZone(attrs.TimeZone)
+		SetNillableTimeZone(attrs.TimeZone).
+		SetSource(src)
 	if len(typed) > 0 {
 		q.SetCustomFields(typed)
 	}
