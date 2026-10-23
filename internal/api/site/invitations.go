@@ -170,6 +170,7 @@ func (h *Handlers) SitePublicInvitationsLookup(ctx context.Context, params sitea
 
 // acceptForm is what SitePublicInvitationsAccept checks beyond the contract.
 type acceptForm struct {
+	Name     string `json:"name" validate:"omitempty,display_name"`
 	Password string `json:"password" validate:"omitempty,password_not_blank,password_length"`
 }
 
@@ -194,10 +195,11 @@ func (h *Handlers) SitePublicInvitationsAccept(ctx context.Context, req *siteapi
 		sessionEmail = a.Email
 	}
 	name, _ := req.Name.Get()
+	name = strings.TrimSpace(name)
 	password, _ := req.Password.Get()
 	// Whether a name and a password are needed at all is the transaction's to say (a Verified
-	// User's address needs neither); one that is sent must pass the password rule.
-	fieldErrors, err := checkFields(acceptForm{Password: password})
+	// User's address needs neither); one that is sent must pass its rule.
+	fieldErrors, err := checkFields(acceptForm{Name: name, Password: password})
 	if err != nil {
 		return nil, err
 	}
@@ -206,7 +208,7 @@ func (h *Handlers) SitePublicInvitationsAccept(ctx context.Context, req *siteapi
 		return &v, nil
 	}
 
-	err = h.accounts.AcceptInvitation(ctx, inv, strings.TrimSpace(name), password, sessionEmail)
+	err = h.accounts.AcceptInvitation(ctx, inv, name, password, sessionEmail)
 	if errors.Is(err, accounts.ErrSignInRequired) || errors.Is(err, accounts.ErrAlreadyVerified) {
 		v := siteapi.SitePublicInvitationsAcceptUnauthorized(problem(http.StatusUnauthorized, "sign in to accept this invitation"))
 		return &v, nil

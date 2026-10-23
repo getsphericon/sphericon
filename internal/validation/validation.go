@@ -22,6 +22,7 @@ func newValidator() *validator.Validate {
 	v.RegisterTagNameFunc(jsonName)
 	for tag, ok := range map[string]func(string) bool{
 		"account_email":      AccountEmail,
+		"display_name":       DisplayName,
 		"password_length":    PasswordLength,
 		"password_not_blank": PasswordNotBlank,
 	} {
