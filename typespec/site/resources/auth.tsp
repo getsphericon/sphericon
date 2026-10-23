@@ -312,13 +312,15 @@ namespace SiteAuth {
     | AcceptedResponse
     | TooManyRequestsProblem;
 
-  /** Set a new password from a reset token */
+  /** Set a new password from a reset token. A password outside the length rule answers 422
+   * with the field error; an invalid or expired token answers 400. */
   @useAuth(NoAuth)
   @post
   @route("/reset-password")
   op resetPassword(@body body: SiteResetPasswordInput):
     | OkResponse
-    | BadRequestProblem;
+    | BadRequestProblem
+    | UnprocessableEntityProblem;
 
   /** Complete a registration from the verification link (the token is the
    * credential): stamps the Verified email, ends every earlier session, creates the
@@ -327,7 +329,8 @@ namespace SiteAuth {
    * the registration cookie the link was minted for, the password from registration
    * stays; otherwise the request must carry a password, which replaces it, and without
    * one the answer is 428 and nothing changes, the link stays valid (a mail scanner
-   * consumes nothing). A link is single use and scoped to the address it was sent to.
+   * consumes nothing); a password outside the length rule answers 422, and the link stays
+   * valid too. A link is single use and scoped to the address it was sent to.
    * Rate limited like registration. */
   @useAuth(NoAuth)
   @post
@@ -350,6 +353,7 @@ namespace SiteAuth {
       }
     | BadRequestProblem
     | PreconditionRequiredProblem
+    | UnprocessableEntityProblem
     | TooManyRequestsProblem;
 
   /** Send the verification link again to an Unverified User. Answers 202 the same

@@ -64,15 +64,24 @@ func (h *Handlers) SiteAuthForgotPassword(ctx context.Context, req *siteapi.Site
 	return &siteapi.SiteAuthForgotPasswordAccepted{}, nil
 }
 
+// passwordForm is a new password a handler sets, checked beyond the contract.
+type passwordForm struct {
+	Password string `json:"password" validate:"required,password_not_blank,password_length"`
+}
+
 // SiteAuthResetPassword sets a new password from a reset token.
 func (h *Handlers) SiteAuthResetPassword(ctx context.Context, req *siteapi.SiteResetPasswordInput) (siteapi.SiteAuthResetPasswordRes, error) {
-	if req.Password == "" {
-		v := problem(http.StatusBadRequest, i18n.T("errors.password_required", nil))
+	fieldErrors, err := checkFields(passwordForm{Password: req.Password})
+	if err != nil {
+		return nil, err
+	}
+	if fieldErrors != nil {
+		v := siteapi.SiteAuthResetPasswordUnprocessableEntity(fieldsProblem(fieldErrors))
 		return &v, nil
 	}
 	uid, _, err := h.tokens.Parse(req.Token, authtoken.PurposePasswordReset, h.passwordHashBinding(ctx))
 	if err != nil {
-		v := problem(http.StatusBadRequest, i18n.T("errors.reset_link_invalid", nil))
+		v := siteapi.SiteAuthResetPasswordBadRequest(problem(http.StatusBadRequest, i18n.T("errors.reset_link_invalid", nil)))
 		return &v, nil
 	}
 	hash, err := credentials.HashPassword(req.Password)
@@ -120,6 +129,15 @@ func (h *Handlers) SiteAuthVerifyEmail(ctx context.Context, req *siteapi.SiteVer
 		password := req.Password.Or("")
 		if password == "" {
 			v := siteapi.SiteAuthVerifyEmailPreconditionRequired(problem(http.StatusPreconditionRequired, i18n.T("errors.verify_password_needed", nil)))
+			return &v, nil
+		}
+		// A refused password changes nothing either: the link stays valid for a better one.
+		fieldErrors, ferr := checkFields(passwordForm{Password: password})
+		if ferr != nil {
+			return nil, ferr
+		}
+		if fieldErrors != nil {
+			v := siteapi.SiteAuthVerifyEmailUnprocessableEntity(fieldsProblem(fieldErrors))
 			return &v, nil
 		}
 		replacement, herr := credentials.HashPassword(password)

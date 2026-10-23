@@ -65,7 +65,9 @@ func TestSiteAuthRecoveryRejectsBadTokens(t *testing.T) {
 	t.Run("reset requires a password", func(t *testing.T) {
 		res, err := c.SiteAuthResetPassword(ctx, &siteapi.SiteResetPasswordInput{Token: "whatever", Password: ""})
 		require.NoError(t, err)
-		assert.IsType(t, &siteapi.ProblemDetails{}, res)
+		problem, ok := res.(*siteapi.SiteAuthResetPasswordUnprocessableEntity)
+		require.Truef(t, ok, "got %T", res)
+		assert.Contains(t, problem.Errors.Value, "password")
 	})
 
 	t.Run("verify rejects garbage", func(t *testing.T) {

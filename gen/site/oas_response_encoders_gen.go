@@ -796,9 +796,21 @@ func encodeSiteAuthResetPasswordResponse(response SiteAuthResetPasswordRes, w ht
 
 		return nil
 
-	case *ProblemDetails:
+	case *SiteAuthResetPasswordBadRequest:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteAuthResetPasswordUnprocessableEntity:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(422)
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -1091,6 +1103,18 @@ func encodeSiteAuthVerifyEmailResponse(response SiteAuthVerifyEmailRes, w http.R
 	case *SiteAuthVerifyEmailBadRequest:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteAuthVerifyEmailUnprocessableEntity:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(422)
 
 		e := new(jx.Encoder)
 		response.Encode(e)

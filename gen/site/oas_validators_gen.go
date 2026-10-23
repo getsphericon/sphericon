@@ -1045,6 +1045,22 @@ func (s *SiteAuthRegisterUnprocessableEntity) Validate() error {
 	return nil
 }
 
+func (s *SiteAuthResetPasswordBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteAuthResetPasswordUnprocessableEntity) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *SiteAuthVerifyEmailBadRequest) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -1054,6 +1070,14 @@ func (s *SiteAuthVerifyEmailBadRequest) Validate() error {
 }
 
 func (s *SiteAuthVerifyEmailPreconditionRequired) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteAuthVerifyEmailUnprocessableEntity) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err

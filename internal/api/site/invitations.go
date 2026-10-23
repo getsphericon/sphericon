@@ -42,6 +42,11 @@ func (h *Handlers) SiteInvitationsList(ctx context.Context, params siteapi.SiteI
 	return &items, nil
 }
 
+// inviteForm is what SiteInvitationsCreate checks beyond the contract, the address trimmed.
+type inviteForm struct {
+	Email string `json:"email" validate:"omitempty,account_email"`
+}
+
 // SiteInvitationsCreate invites an email address to the workspace. Owner/admin
 // only. The one-time accept link is returned (copy-link path) and an invite email
 // is sent best-effort — a missing/failed mailer must not fail the invite.
@@ -56,6 +61,17 @@ func (h *Handlers) SiteInvitationsCreate(ctx context.Context, req *siteapi.SiteC
 	}
 	if !accounts.CanManageMembers(callerRole) {
 		v := siteapi.SiteInvitationsCreateForbidden(problem(http.StatusForbidden, "insufficient role"))
+		return &v, nil
+	}
+
+	// An empty address is the accounts operation's refusal (ErrEmailEmpty); one that is sent
+	// must be an address the invitee can receive mail at.
+	fieldErrors, err := checkFields(inviteForm{Email: strings.TrimSpace(string(req.Email))})
+	if err != nil {
+		return nil, err
+	}
+	if fieldErrors != nil {
+		v := siteapi.SiteInvitationsCreateUnprocessableEntity(fieldsProblem(fieldErrors))
 		return &v, nil
 	}
 
@@ -152,6 +168,11 @@ func (h *Handlers) SitePublicInvitationsLookup(ctx context.Context, params sitea
 	}, nil
 }
 
+// acceptForm is what SitePublicInvitationsAccept checks beyond the contract.
+type acceptForm struct {
+	Password string `json:"password" validate:"omitempty,password_not_blank,password_length"`
+}
+
 // SitePublicInvitationsAccept turns an invite into a Membership: it attaches an
 // Verified User (their own session) or sets up the account (name + password), then
 // joins them to the workspace. Link possession authorizes an address with no Verified
@@ -174,6 +195,16 @@ func (h *Handlers) SitePublicInvitationsAccept(ctx context.Context, req *siteapi
 	}
 	name, _ := req.Name.Get()
 	password, _ := req.Password.Get()
+	// Whether a name and a password are needed at all is the transaction's to say (a Verified
+	// User's address needs neither); one that is sent must pass the password rule.
+	fieldErrors, err := checkFields(acceptForm{Password: password})
+	if err != nil {
+		return nil, err
+	}
+	if fieldErrors != nil {
+		v := siteapi.SitePublicInvitationsAcceptUnprocessableEntity(fieldsProblem(fieldErrors))
+		return &v, nil
+	}
 
 	err = h.accounts.AcceptInvitation(ctx, inv, strings.TrimSpace(name), password, sessionEmail)
 	if errors.Is(err, accounts.ErrSignInRequired) || errors.Is(err, accounts.ErrAlreadyVerified) {

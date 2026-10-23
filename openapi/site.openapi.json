@@ -684,7 +684,7 @@
     "/auth/reset-password": {
       "post": {
         "operationId": "SiteAuth_resetPassword",
-        "description": "Set a new password from a reset token",
+        "description": "Set a new password from a reset token. A password outside the length rule answers 422\nwith the field error; an invalid or expired token answers 400.",
         "parameters": [],
         "responses": {
           "200": {
@@ -692,6 +692,16 @@
           },
           "400": {
             "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1025,7 +1035,7 @@
     "/auth/verify-email": {
       "post": {
         "operationId": "SiteAuth_verifyEmail",
-        "description": "Complete a registration from the verification link (the token is the\ncredential): stamps the Verified email, ends every earlier session, creates the\nUser's first Workspace, sends the welcome email and starts the session (the cookie\nis issued after the epoch bump, as login does, ADR 0020). When the request carries\nthe registration cookie the link was minted for, the password from registration\nstays; otherwise the request must carry a password, which replaces it, and without\none the answer is 428 and nothing changes, the link stays valid (a mail scanner\nconsumes nothing). A link is single use and scoped to the address it was sent to.\nRate limited like registration.",
+        "description": "Complete a registration from the verification link (the token is the\ncredential): stamps the Verified email, ends every earlier session, creates the\nUser's first Workspace, sends the welcome email and starts the session (the cookie\nis issued after the epoch bump, as login does, ADR 0020). When the request carries\nthe registration cookie the link was minted for, the password from registration\nstays; otherwise the request must carry a password, which replaces it, and without\none the answer is 428 and nothing changes, the link stays valid (a mail scanner\nconsumes nothing); a password outside the length rule answers 422, and the link stays\nvalid too. A link is single use and scoped to the address it was sent to.\nRate limited like registration.",
         "parameters": [
           {
             "name": "REG",
@@ -1060,6 +1070,16 @@
           },
           "400": {
             "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
             "content": {
               "application/problem+json": {
                 "schema": {

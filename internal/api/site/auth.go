@@ -33,31 +33,21 @@ func (h *Handlers) SiteAuthRegister(ctx context.Context, req *siteapi.SiteRegist
 	name := strings.TrimSpace(req.Name)
 	email := strings.TrimSpace(string(req.Email))
 
-	// Required-field validation is hand-rolled here (and likewise in
+	// Required-field validation is done here (and likewise, by hand, in
 	// SiteTokensCreate, SiteWorkspacesUpdate, SiteUserUpdateMe) rather than
 	// declared as TypeSpec @minLength on the input models. ogen enforces spec
 	// constraints in the request decoder *before* the handler runs, which would
 	// collapse these into a generic 400 — untyped in the generated client,
 	// since these operations only declare 422 — and drop the per-field error
-	// map below. Hand-rolling also lets us TrimSpace and reject blank /
+	// map below. Checking here also lets us TrimSpace and reject blank /
 	// whitespace-only values, which @minLength(1) would accept. Keep it here.
 	password := req.Password.Or("")
-	if name == "" || email == "" || password == "" {
-		fieldErrors := map[string][]string{}
-		if name == "" {
-			fieldErrors["name"] = []string{i18n.T("errors.name_required", nil)}
-		}
-		if email == "" {
-			fieldErrors["email"] = []string{i18n.T("errors.email_required", nil)}
-		}
-		if password == "" {
-			fieldErrors["password"] = []string{i18n.T("errors.password_required", nil)}
-		}
-		v := siteapi.SiteAuthRegisterUnprocessableEntity(problemWithErrors(
-			http.StatusUnprocessableEntity,
-			i18n.T("errors.register_required", nil),
-			fieldErrors,
-		))
+	fieldErrors, err := checkFields(registerForm{Name: name, Email: email, Password: password})
+	if err != nil {
+		return nil, err
+	}
+	if fieldErrors != nil {
+		v := siteapi.SiteAuthRegisterUnprocessableEntity(fieldsProblem(fieldErrors))
 		return &v, nil
 	}
 
@@ -122,6 +112,13 @@ func (h *Handlers) SiteAuthRegister(ctx context.Context, req *siteapi.SiteRegist
 		_ = h.sysmail.EnqueueEmailVerification(ctx, u.Email, token, granted)
 	}
 	return &siteapi.SiteAuthRegisterAccepted{SetCookie: siteapi.NewOptString(cookie.String())}, nil
+}
+
+// registerForm is what SiteAuthRegister checks beyond the contract, the values already trimmed.
+type registerForm struct {
+	Name     string `json:"name" validate:"required"`
+	Email    string `json:"email" validate:"required,account_email"`
+	Password string `json:"password" validate:"required,password_not_blank,password_length"`
 }
 
 // registerVerified is registration with the gate off (ADR 0030): the password comes

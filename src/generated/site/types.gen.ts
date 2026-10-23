@@ -5287,6 +5287,10 @@ export type SiteAuthResetPasswordErrors = {
    * RFC 7807 bad request response
    */
   400: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
 };
 
 export type SiteAuthResetPasswordError = SiteAuthResetPasswordErrors[keyof SiteAuthResetPasswordErrors];
@@ -5429,6 +5433,10 @@ export type SiteAuthVerifyEmailErrors = {
    * RFC 7807 bad request response
    */
   400: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
   /**
    * RFC 7807 precondition required response: the request needs something it did not carry
    * (a verification link opened outside its Registration browser needs a password, ADR 0030)

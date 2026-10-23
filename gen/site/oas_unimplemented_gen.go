@@ -138,7 +138,8 @@ func (UnimplementedHandler) SiteAuthResendVerification(ctx context.Context, req 
 
 // SiteAuthResetPassword implements SiteAuth_resetPassword operation.
 //
-// Set a new password from a reset token.
+// Set a new password from a reset token. A password outside the length rule answers 422 with the field
+// error; an invalid or expired token answers 400.
 //
 // POST /auth/reset-password
 func (UnimplementedHandler) SiteAuthResetPassword(ctx context.Context, req *SiteResetPasswordInput) (r SiteAuthResetPasswordRes, _ error) {
@@ -213,8 +214,9 @@ func (UnimplementedHandler) SiteAuthSigninStart(ctx context.Context, params Site
 // email and starts the session (the cookie is issued after the epoch bump, as login does, ADR 0020).
 // When the request carries the registration cookie the link was minted for, the password from
 // registration stays; otherwise the request must carry a password, which replaces it, and without one
-// the answer is 428 and nothing changes, the link stays valid (a mail scanner consumes nothing). A
-// link is single use and scoped to the address it was sent to. Rate limited like registration.
+// the answer is 428 and nothing changes, the link stays valid (a mail scanner consumes nothing); a
+// password outside the length rule answers 422, and the link stays valid too. A link is single use and
+// scoped to the address it was sent to. Rate limited like registration.
 //
 // POST /auth/verify-email
 func (UnimplementedHandler) SiteAuthVerifyEmail(ctx context.Context, req *SiteVerifyEmailInput, params SiteAuthVerifyEmailParams) (r SiteAuthVerifyEmailRes, _ error) {

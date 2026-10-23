@@ -30,6 +30,11 @@ func (h *Handlers) SiteUserGetMe(ctx context.Context) (*siteapi.SiteUserResource
 	return mapper.UserToResource(u), nil
 }
 
+// newPasswordForm is the new password SiteUserUpdateMe sets, checked beyond the contract.
+type newPasswordForm struct {
+	NewPassword string `json:"newPassword" validate:"password_not_blank,password_length"`
+}
+
 // SiteUserUpdateMe updates the authenticated user's name and/or password. Email
 // is the login identity and is not editable here. Changing the password
 // requires the correct current password.
@@ -60,6 +65,15 @@ func (h *Handlers) SiteUserUpdateMe(ctx context.Context, req *siteapi.SiteUpdate
 	}
 
 	if newPassword, ok := req.NewPassword.Get(); ok && newPassword != "" {
+		// The rule is checked before the current password is: a refused one costs no hash.
+		fieldErrors, err := checkFields(newPasswordForm{NewPassword: newPassword})
+		if err != nil {
+			return nil, err
+		}
+		if fieldErrors != nil {
+			v := siteapi.SiteUserUpdateMeUnprocessableEntity(fieldsProblem(fieldErrors))
+			return &v, nil
+		}
 		currentPassword, _ := req.CurrentPassword.Get()
 		if currentPassword == "" {
 			v := siteapi.SiteUserUpdateMeUnprocessableEntity(problemWithErrors(
@@ -101,6 +115,11 @@ func (h *Handlers) SiteUserUpdateMe(ctx context.Context, req *siteapi.SiteUpdate
 	return res, nil
 }
 
+// emailChangeForm is what SiteUserEmailChange checks beyond the contract, the address trimmed.
+type emailChangeForm struct {
+	NewEmail string `json:"newEmail" validate:"required,account_email"`
+}
+
 // SiteUserEmailChange requests a change of the login email. It verifies the
 // current password, and emails a confirmation link to the NEW address (or, when that
 // address is Taken, a notice to its owner: the answer is the same) — the change only
@@ -117,12 +136,12 @@ func (h *Handlers) SiteUserEmailChange(ctx context.Context, req *siteapi.SiteEma
 	}
 
 	newEmail := strings.TrimSpace(string(req.NewEmail))
-	if newEmail == "" {
-		v := siteapi.SiteUserEmailChangeUnprocessableEntity(problemWithErrors(
-			http.StatusUnprocessableEntity,
-			i18n.T("errors.new_email_required", nil),
-			map[string][]string{"newEmail": {i18n.T("errors.new_email_required", nil)}},
-		))
+	fieldErrors, err := checkFields(emailChangeForm{NewEmail: newEmail})
+	if err != nil {
+		return nil, err
+	}
+	if fieldErrors != nil {
+		v := siteapi.SiteUserEmailChangeUnprocessableEntity(fieldsProblem(fieldErrors))
 		return &v, nil
 	}
 	if strings.EqualFold(newEmail, u.Email) {
