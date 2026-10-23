@@ -55,5 +55,4 @@ func TestSiteEventsListFiltersByContact(t *testing.T) {
 	want, err := env.DB.Event.Query().Where(event.WorkspaceID(fixtures.AcmeID), event.ContactID(fixtures.ContactAliceID)).Count(ctx)
 	require.NoError(t, err)
 	assert.EqualValues(t, want, page.TotalItems, "exactly alice's events")
-
 }

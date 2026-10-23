@@ -7,6 +7,7 @@
 package testwrites
 
 import (
+	"fmt"
 	"go/ast"
 	"go/token"
 	"slices"
@@ -36,12 +37,18 @@ var Analyzer = &analysis.Analyzer{
 var creators = map[string]bool{"Create": true, "CreateBulk": true}
 
 func run(pass *analysis.Pass) (any, error) {
-	insp := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
+	insp, ok := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
+	if !ok {
+		return nil, fmt.Errorf("%s: the inspect analyzer gave no *inspector.Inspector", pass.Analyzer.Name)
+	}
 	insp.WithStack([]ast.Node{(*ast.CallExpr)(nil)}, func(n ast.Node, push bool, stack []ast.Node) bool {
 		if !push {
 			return true
 		}
-		call := n.(*ast.CallExpr)
+		call, isNode := n.(*ast.CallExpr)
+		if !isNode {
+			return true
+		}
 		if !isCreate(pass, call) {
 			return true
 		}

@@ -29,10 +29,9 @@ func main() {
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
-
-	if err := newRoot(newDeps(env)).Run(ctx, os.Args); err != nil {
-		stop()
+	err := newRoot(newDeps(env)).Run(ctx, os.Args)
+	stop()
+	if err != nil {
 		if errors.Is(err, errNewerRelease) {
 			// `upgrade --check` found a newer release: it already said so on stdout (ADR 0034).
 			os.Exit(exitNewerRelease)

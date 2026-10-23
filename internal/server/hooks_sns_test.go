@@ -62,8 +62,9 @@ func outboxEvents(t *testing.T, env *testhelper.TestEnv, email string) []events.
 // persistOutbox plays the persist consumer over everything published so far.
 func persistOutbox(t *testing.T, env *testhelper.TestEnv) {
 	t.Helper()
-	for _, envelope := range env.OutboxEnvelopes(t, deliveryNames...) {
-		require.NoError(t, events.Persist(t.Context(), env.DB, envelope))
+	envelopes := env.OutboxEnvelopes(t, deliveryNames...)
+	for i := range envelopes {
+		require.NoError(t, events.Persist(t.Context(), env.DB, envelopes[i]))
 	}
 }
 

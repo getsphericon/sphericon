@@ -26,8 +26,9 @@ const (
 // published so far, as the router does not run under the test transaction.
 func persistEngagement(t *testing.T, env *testhelper.TestEnv) {
 	t.Helper()
-	for _, e := range env.OutboxEnvelopes(t, events.NameEmailOpened, events.NameEmailClicked) {
-		require.NoError(t, events.Persist(t.Context(), env.DB, e))
+	envelopes := env.OutboxEnvelopes(t, events.NameEmailOpened, events.NameEmailClicked)
+	for i := range envelopes {
+		require.NoError(t, events.Persist(t.Context(), env.DB, envelopes[i]))
 	}
 }
 

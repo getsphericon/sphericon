@@ -235,11 +235,12 @@ func mergeParams(p *preset.Preset, prev, in map[string]any) (stored, plain map[s
 		switch {
 		case given && incoming != "" && incoming != SecretMask:
 			plain[name] = incoming
-			if old != "" && old != incoming {
+			switch {
+			case old != "" && old != incoming:
 				stored[name] = []any{incoming, old}
-			} else if old == incoming {
+			case old == incoming:
 				stored[name] = prev[name]
-			} else {
+			default:
 				stored[name] = incoming
 			}
 		case given && incoming == "" && !isJSONString(in[name]):

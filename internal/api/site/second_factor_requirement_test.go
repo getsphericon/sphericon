@@ -50,9 +50,9 @@ func workspaceOf(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceI
 	t.Helper()
 	list, err := c.SiteWorkspacesList(t.Context())
 	require.NoError(t, err)
-	for _, w := range list {
-		if w.ID == workspaceID {
-			return w
+	for i := range list {
+		if list[i].ID == workspaceID {
+			return list[i]
 		}
 	}
 	require.Failf(t, "workspace not listed", "%s", workspaceID)

@@ -25,6 +25,19 @@ linters:
     - testifylint
     - thelper
     - usetesting
+    - whitespace
+    - dogsled
+    - forcetypeassert
+    - gocritic
+    - nolintlint
+    - copyloopvar
+    - asasalint
+    - bidichk
+    - iface
+    - sloglint
+    - makezero
+    - tparallel
+    - decorder
     # Our own go/analysis checks (tools/analyzers), built into .bin/custom-gcl by `mise run build:lint`.
     - sphericon
   settings:
@@ -68,6 +81,20 @@ linters:
               desc: monads fight Go idioms; use stdlib or samber/lo
             - pkg: html/template
               desc: no HTML in Go; pages are rendered by the SPA
+    gocritic:
+      enabled-tags:
+        - diagnostic
+        - style
+        - performance
+      disabled-tags:
+        - experimental
+        - opinionated
+      disabled-checks:
+        # 197 findings across 40 packages: too many to fix in the change that enabled
+        # gocritic without a noisy, conflict-prone diff. Turning it on is a follow-up.
+        - hugeParam
+    dogsled:
+      max-blank-identifiers: 2
   exclusions:
     rules:
       # The SQL rule is for tests; production data access and testhelper itself talk SQL.
@@ -75,3 +102,11 @@ linters:
         linters:
           - forbidigo
         text: no direct SQL in tests
+      # A failed assertion in a test panics, and the panic fails the test with its stack.
+      - path: _test\.go$
+        linters:
+          - forcetypeassert
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0

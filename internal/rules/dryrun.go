@@ -94,7 +94,8 @@ func (m *Module) DryRun(ctx context.Context, s *ent.Scoped, ruleID, eventID int6
 		return DryRun{}, err
 	}
 	planned := make([]PlannedAction, 0, len(actions))
-	for _, a := range actions {
+	for i := range actions {
+		a := &actions[i]
 		planned = append(planned, PlannedAction{Type: a.Type, Summary: a.Summary()})
 	}
 	return DryRun{Outcome: WouldFire, Actions: planned}, nil

@@ -40,7 +40,8 @@ func (h *Handlers) EventsCreate(ctx context.Context, req *externalapi.RecordEven
 
 func eventInputs(events []externalapi.EventInput, backfill bool) ([]eventlog.Input, error) {
 	inputs := make([]eventlog.Input, len(events))
-	for i, e := range events {
+	for i := range events {
+		e := &events[i]
 		in := eventlog.Input{
 			SubjectID: e.SubjectId,
 			Email:     convert.StringPtr(e.Email),

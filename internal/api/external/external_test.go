@@ -28,13 +28,15 @@ type collectedRow struct {
 func outboxCollected(t *testing.T, env *testhelper.TestEnv) []collectedRow {
 	t.Helper()
 	var out []collectedRow
-	for _, envlp := range env.OutboxEnvelopes(t) {
+	envelopes := env.OutboxEnvelopes(t)
+	for i := range envelopes {
+		envlp := &envelopes[i]
 		require.Equal(t, events.NameCollected, envlp.Name)
-		decoded, err := events.Decode(envlp)
+		decoded, err := events.Decode(*envlp)
 		require.NoError(t, err)
 		ce, ok := decoded.(*events.CollectedEvent)
 		require.Truef(t, ok, "got %T", decoded)
-		out = append(out, collectedRow{envelope: envlp, event: ce})
+		out = append(out, collectedRow{envelope: *envlp, event: ce})
 	}
 	return out
 }

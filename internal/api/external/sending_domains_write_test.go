@@ -182,8 +182,8 @@ func listedSendingDomainIDs(t *testing.T, c *externalapi.Client, archived bool) 
 	list, ok := res.(*externalapi.SendingDomainsListOK)
 	require.Truef(t, ok, "got %T", res)
 	ids := make([]externalapi.EntityId, len(list.Items))
-	for i, d := range list.Items {
-		ids[i] = d.ID
+	for i := range list.Items {
+		ids[i] = list.Items[i].ID
 	}
 	return ids
 }

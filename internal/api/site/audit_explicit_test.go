@@ -30,9 +30,10 @@ func entriesNamed(t *testing.T, env *testhelper.TestEnv, ownerEmail string, work
 	t.Helper()
 	env.DeliverToEE(t)
 	var out []siteapi.SiteAuditEntryResource
-	for _, e := range auditPage(t, env.SiteActor(t, ownerEmail), workspaceID).Items {
-		if e.Action == action {
-			out = append(out, e)
+	items := auditPage(t, env.SiteActor(t, ownerEmail), workspaceID).Items
+	for i := range items {
+		if items[i].Action == action {
+			out = append(out, items[i])
 		}
 	}
 	return out

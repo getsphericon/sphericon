@@ -36,7 +36,11 @@ func NewGitHub() (*GitHub, error) { return NewGitHubAt("") }
 
 // NewGitHubAt points at another API root (a test server, GitHub Enterprise); "" is api.github.com.
 func NewGitHubAt(baseURL string) (*GitHub, error) {
-	t := http.DefaultTransport.(*http.Transport).Clone()
+	def, ok := http.DefaultTransport.(*http.Transport)
+	if !ok {
+		return nil, fmt.Errorf("http.DefaultTransport is a %T, not an *http.Transport", http.DefaultTransport)
+	}
+	t := def.Clone()
 	// Read now, not through http.ProxyFromEnvironment, which caches the first read per process.
 	proxy := httpproxy.FromEnvironment().ProxyFunc()
 	t.Proxy = func(r *http.Request) (*url.URL, error) { return proxy(r.URL) }

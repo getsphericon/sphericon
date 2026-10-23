@@ -35,7 +35,8 @@ func automationSteps(a *ent.Automation) []externalapi.AutomationStep {
 		return nil
 	}
 	steps := make([]externalapi.AutomationStep, 0, len(stored))
-	for _, s := range stored {
+	for i := range stored {
+		s := &stored[i]
 		step := externalapi.AutomationStep{Type: externalapi.AutomationStepType(s.Type)}
 		switch s.Type {
 		case automations.StepWait:
@@ -66,7 +67,8 @@ func automationSteps(a *ent.Automation) []externalapi.AutomationStep {
 // AutomationSteps converts the typed steps DTO to the automations module's steps.
 func AutomationSteps(steps []externalapi.AutomationStep) []automations.Step {
 	out := make([]automations.Step, 0, len(steps))
-	for _, s := range steps {
+	for i := range steps {
+		s := &steps[i]
 		out = append(out, automations.Step{
 			Type:    string(s.Type),
 			Subject: s.Subject.Or(""),

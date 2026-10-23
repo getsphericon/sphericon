@@ -174,7 +174,9 @@ func New(creds map[string]config.SigninCredentials, appURL string, opts ...Optio
 		o.flows = NewFlowCodec(rand.Text()+rand.Text(), nil)
 	}
 	p := &Providers{http: o.http, flows: o.flows}
-	for _, entry := range catalog() {
+	entries := catalog()
+	for i := range entries {
+		entry := &entries[i]
 		c, ok := creds[entry.Name]
 		if !ok {
 			continue
@@ -183,7 +185,7 @@ func New(creds map[string]config.SigninCredentials, appURL string, opts ...Optio
 			entry.Endpoints = e
 		}
 		live := &provider{
-			entry: entry,
+			entry: *entry,
 			oauth: &oauth2.Config{
 				ClientID:     c.ClientID,
 				ClientSecret: c.ClientSecret,
@@ -310,9 +312,10 @@ func (p *Providers) Trust(name string, profile Profile) Reason {
 // DisplayName is what a person calls the provider: the catalog's name for it, or the registry
 // name for one this build no longer knows.
 func DisplayName(name string) string {
-	for _, e := range catalog() {
-		if e.Name == name {
-			return e.DisplayName
+	entries := catalog()
+	for i := range entries {
+		if entries[i].Name == name {
+			return entries[i].DisplayName
 		}
 	}
 	return name

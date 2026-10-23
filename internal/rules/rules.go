@@ -479,14 +479,16 @@ func (m *Module) encodeActions(actions, stored []Action) (string, error) {
 		return "", fmt.Errorf("%w: a Rule runs at most %d Actions, this one has %d", ErrInvalid, MaxActions, len(actions))
 	}
 	prev := map[string]Action{}
-	for _, p := range stored {
+	for i := range stored {
+		p := &stored[i]
 		if p.Type == ActionHTTP {
-			prev[p.ID] = p
+			prev[p.ID] = *p
 		}
 	}
 	out := make([]Action, 0, len(actions))
 	seen := map[string]bool{}
-	for i, a := range actions {
+	for i := range actions {
+		a := &actions[i]
 		switch a.Type {
 		case ActionApplyTag, ActionRemoveTag:
 			tag := strings.TrimSpace(a.Tag)
@@ -503,7 +505,7 @@ func (m *Module) encodeActions(actions, stored []Action) (string, error) {
 			if len(seen) >= MaxHTTPActionsPerRule {
 				return "", fmt.Errorf("%w: a Rule has at most %d http Actions", ErrInvalid, MaxHTTPActionsPerRule)
 			}
-			sealed, err := m.sealHTTP(a, prev)
+			sealed, err := m.sealHTTP(*a, prev)
 			if bad, ok := errors.AsType[httpcall.InvalidError](err); ok {
 				return "", fmt.Errorf("%w: action %d: %w", ErrInvalid, i+1, bad)
 			}
@@ -693,10 +695,12 @@ func (m *Module) RunActions(ctx context.Context, s *ent.Scoped, firingID int64, 
 	if err != nil {
 		return fmt.Errorf("firing %d results: %w", f.ID, err)
 	}
-	for _, a := range actions[min(len(results), len(actions)):] {
+	pending := actions[min(len(results), len(actions)):]
+	for i := range pending {
+		a := &pending[i]
 		res := Result{Type: a.Type, Status: Failed, Detail: "no runner for this action type"}
 		if runner, ok := runners[a.Type]; ok {
-			if res, err = runner.Run(ctx, s, ActionInput{Action: a, ContactID: f.ContactID, Firing: f}); err != nil {
+			if res, err = runner.Run(ctx, s, ActionInput{Action: *a, ContactID: f.ContactID, Firing: f}); err != nil {
 				return err
 			}
 			res.Type = a.Type
@@ -716,7 +720,8 @@ func (m *Module) RunActions(ctx context.Context, s *ent.Scoped, firingID int64, 
 // requireAutomations refuses an enroll Action whose Automation is not a kept Automation of the
 // Workspace (ErrInvalid).
 func requireAutomations(ctx context.Context, s *ent.Scoped, actions []Action) error {
-	for i, a := range actions {
+	for i := range actions {
+		a := &actions[i]
 		if a.Type != ActionEnroll {
 			continue
 		}

@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"time"
 
@@ -13,20 +14,27 @@ import (
 )
 
 func main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
+	log.Println("Fixtures loaded successfully")
+}
+
+func run() error {
 	cfg, err := config.Load("development")
 	if err != nil {
-		log.Fatalf("load config: %v", err)
+		return fmt.Errorf("load config: %w", err)
 	}
 
 	sqlDB, err := sql.Open("pgx", cfg.DatabaseURL)
 	if err != nil {
-		log.Fatalf("open database: %v", err)
+		return fmt.Errorf("open database: %w", err)
 	}
 	defer func() { _ = sqlDB.Close() }()
 
 	cipher, err := secrets.NewCipher(cfg.EncryptionKey)
 	if err != nil {
-		log.Fatalf("init cipher: %v", err)
+		return fmt.Errorf("init cipher: %w", err)
 	}
 
 	loader, err := testfixtures.New(
@@ -42,12 +50,11 @@ func main() {
 		testfixtures.ResetSequencesTo(100000),
 	)
 	if err != nil {
-		log.Fatalf("create fixtures loader: %v", err)
+		return fmt.Errorf("create fixtures loader: %w", err)
 	}
 
 	if err := loader.Load(); err != nil {
-		log.Fatalf("load fixtures: %v", err)
+		return fmt.Errorf("load fixtures: %w", err)
 	}
-
-	log.Println("Fixtures loaded successfully")
+	return nil
 }
