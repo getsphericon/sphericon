@@ -1,3 +1,5 @@
+// Package server composes the HTTP handler: the ogen servers of every surface, the public endpoints
+// (tracking links, hooks, health), the SPA and the middleware around them.
 package server
 
 import (

@@ -105,13 +105,13 @@ func agentAttrRule(typ, attr string) AgentAttr {
 		return AgentAttr{Type: "string", Allowed: orderedTypes, Rule: "optional; one of " + strings.Join(orderedTypes, ", ")}
 	case typ == "button" && attr == "href":
 		return AgentAttr{Type: "url", Rule: "required: the address the button opens, an absolute URL or a {{ variable }}"}
-	case typ == "image" && attr == "src":
+	case typ == nodeImage && attr == "src":
 		return AgentAttr{Type: "url", Rule: "required: the image's absolute https URL"}
-	case typ == "image" && attr == "alt":
+	case typ == nodeImage && attr == "alt":
 		return AgentAttr{Type: "string", Rule: "optional text, but write it: email_lint warns when it is missing"}
-	case typ == "image" && attr == "href":
+	case typ == nodeImage && attr == "href":
 		return AgentAttr{Type: "url", Rule: "optional; an absolute URL or a {{ variable }} the image links to"}
-	case typ == "image" && (attr == "width" || attr == "height"):
+	case typ == nodeImage && (attr == "width" || attr == "height"):
 		return AgentAttr{Type: "size", Rule: "\"auto\", a number of pixels or a size like \"50%\""}
 	case typ == "link" && attr == "href":
 		return AgentAttr{Type: "url", Rule: "required: the address the link opens, an absolute URL, a {{ variable }} or an #anchor"}

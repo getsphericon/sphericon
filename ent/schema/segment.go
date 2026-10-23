@@ -15,7 +15,7 @@ type Segment struct {
 func (Segment) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		entsql.Annotation{Table: "segments"},
-		Audited{Action: "segment", NameField: "name"},
+		Audited{Action: "segment", NameField: nameField},
 	}
 }
 
@@ -28,7 +28,7 @@ func (Segment) Fields() []ent.Field {
 		field.Int64("id").
 			StorageKey("id").
 			Immutable(),
-		field.String("name").
+		field.String(nameField).
 			NotEmpty(),
 		field.String("condition").
 			Optional().

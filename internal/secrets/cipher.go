@@ -123,7 +123,7 @@ func (c *Cipher) Current(value string) (bool, error) {
 
 // Rewrap returns value sealed under the primary key, and whether it had to change: a value that
 // is already current comes back as it is, so re-encrypting is idempotent.
-func (c *Cipher) Rewrap(value string) (string, bool, error) {
+func (c *Cipher) Rewrap(value string) (rewrapped string, changed bool, err error) {
 	current, err := c.Current(value)
 	if err != nil || current {
 		return value, false, err

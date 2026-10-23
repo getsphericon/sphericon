@@ -44,16 +44,7 @@ func scanGo(path string, c Contract) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	notes := map[int]bool{}
-	for _, cg := range file.Comments {
-		for _, cm := range cg.List {
-			if markerLine.MatchString(cm.Text) {
-				// a comment group's reason covers the line after its last line
-				notes[fset.Position(cm.End()).Line] = true
-				notes[fset.Position(cm.Pos()).Line] = true
-			}
-		}
-	}
+	notes := markerLines(fset, file)
 	var found []finding
 	flagSet := func(pos token.Pos, values []string, what string) {
 		line := fset.Position(pos).Line
@@ -64,45 +55,78 @@ func scanGo(path string, c Contract) ([]string, error) {
 	ast.Inspect(file, func(n ast.Node) bool {
 		switch n := n.(type) {
 		case *ast.CompositeLit:
-			var values []string
-			for _, e := range n.Elts {
-				if kv, ok := e.(*ast.KeyValueExpr); ok {
-					e = kv.Key
-				}
-				if s, ok := stringLit(e); ok {
-					values = append(values, s)
-				}
-			}
-			flagSet(n.Pos(), values, "a list of literals repeats a TypeSpec enum")
+			flagSet(n.Pos(), literalKeys(n.Elts), "a list of literals repeats a TypeSpec enum")
 		case *ast.CaseClause:
-			var values []string
-			for _, e := range n.List {
-				if s, ok := stringLit(e); ok {
-					values = append(values, s)
-				}
-			}
-			flagSet(n.Pos(), values, "a case list repeats a TypeSpec enum")
-		}
-		if vs, ok := n.(*ast.ValueSpec); ok {
-			for i, name := range vs.Names {
-				if i >= len(vs.Values) || !limitName.MatchString(name.Name) {
-					continue
-				}
-				lit, ok := vs.Values[i].(*ast.BasicLit)
-				if !ok || lit.Kind != token.INT {
-					continue
-				}
-				v, err := strconv.ParseInt(strings.ReplaceAll(lit.Value, "_", ""), 0, 64)
-				line := fset.Position(vs.Pos()).Line
-				if err == nil && c.Limits[v] && !documented(notes, line) {
-					found = append(found, finding{line, message(
-						fmt.Sprintf("%s = %d repeats a limit TypeSpec declares", name.Name, v))})
-				}
-			}
+			flagSet(n.Pos(), stringValues(n.List), "a case list repeats a TypeSpec enum")
+		case *ast.ValueSpec:
+			found = append(found, limitFindings(fset, n, c, notes)...)
 		}
 		return true
 	})
 	return format(path, found), nil
+}
+
+// markerLines are the lines a `contract-copy: <reason>` comment covers: its own and, for a
+// comment group, the line after its last line.
+func markerLines(fset *token.FileSet, file *ast.File) map[int]bool {
+	notes := map[int]bool{}
+	for _, cg := range file.Comments {
+		for _, cm := range cg.List {
+			if markerLine.MatchString(cm.Text) {
+				notes[fset.Position(cm.End()).Line] = true
+				notes[fset.Position(cm.Pos()).Line] = true
+			}
+		}
+	}
+	return notes
+}
+
+// literalKeys are the string literals a composite literal lists: its elements, or the keys of a
+// map's entries.
+func literalKeys(elts []ast.Expr) []string {
+	var values []string
+	for _, e := range elts {
+		if kv, ok := e.(*ast.KeyValueExpr); ok {
+			e = kv.Key
+		}
+		if s, ok := stringLit(e); ok {
+			values = append(values, s)
+		}
+	}
+	return values
+}
+
+// stringValues are the string literals among exprs.
+func stringValues(exprs []ast.Expr) []string {
+	var values []string
+	for _, e := range exprs {
+		if s, ok := stringLit(e); ok {
+			values = append(values, s)
+		}
+	}
+	return values
+}
+
+// limitFindings are the constants of a declaration named like a limit whose integer value
+// repeats one the contract declares.
+func limitFindings(fset *token.FileSet, vs *ast.ValueSpec, c Contract, notes map[int]bool) []finding {
+	var found []finding
+	for i, name := range vs.Names {
+		if i >= len(vs.Values) || !limitName.MatchString(name.Name) {
+			continue
+		}
+		lit, ok := vs.Values[i].(*ast.BasicLit)
+		if !ok || lit.Kind != token.INT {
+			continue
+		}
+		v, err := strconv.ParseInt(strings.ReplaceAll(lit.Value, "_", ""), 0, 64)
+		line := fset.Position(vs.Pos()).Line
+		if err == nil && c.Limits[v] && !documented(notes, line) {
+			found = append(found, finding{line, message(
+				fmt.Sprintf("%s = %d repeats a limit TypeSpec declares", name.Name, v))})
+		}
+	}
+	return found
 }
 
 func stringLit(e ast.Expr) (string, bool) {

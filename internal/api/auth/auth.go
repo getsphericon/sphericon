@@ -1,3 +1,5 @@
+// Package auth holds the security handlers of the API surfaces (session cookie, API token, collect
+// key), the session issuer and the cookies the sign-in flows set.
 package auth
 
 import (

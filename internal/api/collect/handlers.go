@@ -1,3 +1,5 @@
+// Package collect implements the /collect surface: tracking ingestion from customer sites,
+// authenticated by the collect key.
 package collect
 
 import (

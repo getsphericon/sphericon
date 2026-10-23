@@ -1,3 +1,5 @@
+// Package app composes the application: it registers every singleton in the dependency container
+// and starts and stops the servers, the event router and the job workers.
 package app
 
 import (
@@ -14,6 +16,9 @@ import (
 	"time"
 
 	"github.com/ThreeDotsLabs/watermill/message"
+	"github.com/samber/do/v2"
+	"go.opentelemetry.io/otel/metric"
+
 	sphericon "github.com/getsphericon/sphericon"
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ee"
@@ -33,6 +38,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/brandkit"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/buildinfo"
+	"github.com/getsphericon/sphericon/internal/cleanup"
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/domainverify"
@@ -73,8 +79,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/webhook"
 	"github.com/getsphericon/sphericon/internal/webhooks"
 	"github.com/getsphericon/sphericon/internal/workspacedeletion"
-	"github.com/samber/do/v2"
-	"go.opentelemetry.io/otel/metric"
 
 	// The pgx driver behind database/sql.
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -186,8 +190,8 @@ type riverPool struct {
 }
 
 func (p *riverPool) Shutdown() {
-	_ = p.metrics.Unregister()
-	_ = p.Close()
+	cleanup.Report("unregister the pool metrics", p.metrics.Unregister())
+	cleanup.Close(p, "the job queue pool")
 }
 
 // jobsClient is the river-backed async job queue (workers + enqueue API).
@@ -255,8 +259,7 @@ func New(env string, opts ...Option) (*App, error) {
 
 	cfg, err := do.Invoke[*config.Config](injector)
 	if err != nil {
-		_ = injector.Shutdown()
-		return nil, err
+		return nil, abort(injector, err)
 	}
 
 	// Set the process-wide locale for system emails and API validation messages
@@ -265,47 +268,39 @@ func New(env string, opts ...Option) (*App, error) {
 
 	handler, err := do.Invoke[http.Handler](injector)
 	if err != nil {
-		_ = injector.Shutdown()
-		return nil, err
+		return nil, abort(injector, err)
 	}
 
 	// The Presets load at start: a broken custom file stops it here, not on a callback.
 	if _, err := do.Invoke[*preset.Registry](injector); err != nil {
-		_ = injector.Shutdown()
-		return nil, err
+		return nil, abort(injector, err)
 	}
 
 	evRuntime, err := do.Invoke[*eventsRuntime](injector)
 	if err != nil {
-		_ = injector.Shutdown()
-		return nil, err
+		return nil, abort(injector, err)
 	}
 
 	jobsCli, err := do.Invoke[*jobsClient](injector)
 	if err != nil {
-		_ = injector.Shutdown()
-		return nil, err
+		return nil, abort(injector, err)
 	}
 
 	// Operational gauges (outbox lag, queue depth). They read on scrape through the
 	// shared pools and live for the process, so they are never unregistered.
 	client, err := do.Invoke[*entClient](injector)
 	if err != nil {
-		_ = injector.Shutdown()
-		return nil, err
+		return nil, abort(injector, err)
 	}
 	pool, err := do.Invoke[*riverPool](injector)
 	if err != nil {
-		_ = injector.Shutdown()
-		return nil, err
+		return nil, abort(injector, err)
 	}
 	if _, err := events.RegisterLagGauge(client.Client); err != nil {
-		_ = injector.Shutdown()
-		return nil, err
+		return nil, abort(injector, err)
 	}
 	if _, err := jobs.RegisterQueueMetrics(pool.DB); err != nil {
-		_ = injector.Shutdown()
-		return nil, err
+		return nil, abort(injector, err)
 	}
 
 	var metrics *telemetry.MetricsServer
@@ -320,8 +315,7 @@ func New(env string, opts ...Option) (*App, error) {
 	if cfg.InternalAddr != "" {
 		ih, err := do.Invoke[*internalHandler](injector)
 		if err != nil {
-			_ = injector.Shutdown()
-			return nil, err
+			return nil, abort(injector, err)
 		}
 		internal = sidelistener.New("internal", cfg.InternalAddr, ih.Handler, sidelistener.WithTimeouts(30*time.Second, 2*time.Minute))
 	}
@@ -366,11 +360,16 @@ func NewCommandApp(env string) (*App, error) {
 
 	cfg, err := do.Invoke[*config.Config](injector)
 	if err != nil {
-		_ = injector.Shutdown()
-		return nil, err
+		return nil, abort(injector, err)
 	}
 	i18n.Configure(cfg.Locale)
 	return &App{Config: cfg, injector: injector}, nil
+}
+
+// abort shuts a container down after a start that failed, and returns the error that failed it.
+func abort(injector do.Injector, err error) error {
+	cleanup.Shutdown(injector.Shutdown())
+	return err
 }
 
 // Start brings the application up and returns without blocking: it binds the metrics
@@ -724,7 +723,22 @@ func (a *App) Shutdown(ctx context.Context) *do.ShutdownReport {
 	return a.shutdownReport
 }
 
+// register provides every singleton of the container, grouped by what it wires.
 func register(injector do.Injector, env string, o options) {
+	registerStorage(injector, env, o)
+	registerMessaging(injector, o)
+	registerEvents(injector)
+	registerJobs(injector)
+	registerDelivery(injector)
+	registerAccounts(injector)
+	registerAudience(injector)
+	registerContent(injector)
+	registerSurfaces(injector)
+	registerHandler(injector)
+}
+
+// registerStorage provides the configuration, the Presets and the database.
+func registerStorage(injector do.Injector, env string, o options) {
 	do.Provide(injector, func(do.Injector) (*config.Config, error) {
 		cfg, err := config.Load(env)
 		if err != nil {
@@ -775,7 +789,10 @@ func register(injector do.Injector, env string, o options) {
 
 		return &entClient{Client: db.NewEntClient(database.DB)}, nil
 	})
+}
 
+// registerMessaging provides the email providers, the credential cipher and the senders.
+func registerMessaging(injector do.Injector, o options) {
 	// Shared, stateless singletons — provided once and injected, rather than
 	// rebuilt per consumer. The provider catalog (registry of email providers),
 	// the Tink cipher (credential encryption; fails fast at boot on a bad key),
@@ -841,7 +858,10 @@ func register(injector do.Injector, env string, o options) {
 		}
 		return &dkimLookup{TXTLookup: net.DefaultResolver.LookupTXT}, nil
 	})
+}
 
+// registerEvents provides the Enterprise Edition and the domain-event bus.
+func registerEvents(injector do.Injector) {
 	// The Enterprise Edition (ADR 0014): what the runtime license key switches on. An
 	// empty or expired key is the plain core (ADR 0035); a malformed or forged one fails boot.
 	do.Provide(injector, func(i do.Injector) (*ee.Edition, error) {
@@ -926,7 +946,10 @@ func register(injector do.Injector, env string, o options) {
 		bus.UseJobs(inserter)
 		return &eventsBus{Bus: bus}, nil
 	})
+}
 
+// registerJobs provides the job queue: its connection pool and its client.
+func registerJobs(injector do.Injector) {
 	do.Provide(injector, func(i do.Injector) (*riverPool, error) {
 		cfg, err := do.Invoke[*config.Config](i)
 		if err != nil {
@@ -942,7 +965,7 @@ func register(injector do.Injector, env string, o options) {
 		}
 		reg, err := db.RegisterPoolMetrics(database.DB, pool)
 		if err != nil {
-			_ = pool.Close()
+			cleanup.Close(pool, "the job queue pool")
 			return nil, err
 		}
 		return &riverPool{DB: pool, metrics: reg}, nil
@@ -1010,7 +1033,10 @@ func register(injector do.Injector, env string, o options) {
 		}
 		return &jobsClient{Client: jc}, nil
 	})
+}
 
+// registerDelivery provides the link tokens, machine detection and outbound send.
+func registerDelivery(injector do.Injector) {
 	// The signed-token authority for tracking, unsubscribe and confirmation links:
 	// one instance, so every surface mints and verifies with the same secret.
 	do.Provide(injector, func(i do.Injector) (*tracking.Tracker, error) {
@@ -1070,7 +1096,10 @@ func register(injector do.Injector, env string, o options) {
 		}
 		return &outboundModule{outbound.New(bus.Bus, edition.Holds(), resolver, tracker, opts...)}, nil
 	})
+}
 
+// registerAccounts provides Accounts, the Workspace and Instance modules and the second factor.
+func registerAccounts(injector do.Injector) {
 	// Accounts is the raw-client home of Users, Workspaces and Memberships (ADR 0017).
 	do.Provide(injector, func(i do.Injector) (*accounts.Accounts, error) {
 		client, err := do.Invoke[*entClient](i)
@@ -1162,7 +1191,10 @@ func register(injector do.Injector, env string, o options) {
 		}
 		return secondfactor.NewPasskeys(client.Client, bus.Bus, cfg.AppURL, cfg.JWTSecret, nil)
 	})
+}
 
+// registerAudience provides the domain modules of the audience and its integrations.
+func registerAudience(injector do.Injector) {
 	// Domain modules: each built once and shared by /site, /api and /mcp, so the
 	// surfaces cannot diverge on how a module is constructed.
 	do.Provide(injector, func(i do.Injector) (*segments.Module, error) {
@@ -1256,7 +1288,10 @@ func register(injector do.Injector, env string, o options) {
 		}
 		return joindomains.New(client.Client, bus.Bus, lookup.TXTLookup, time.Now, accounts.OwnerNotifier(client.Client, sys.EmailSender)), nil
 	})
+}
 
+// registerContent provides the domain modules of content, automation and sending.
+func registerContent(injector do.Injector) {
 	do.Provide(injector, func(do.Injector) (*templates.Module, error) {
 		return templates.New(), nil
 	})
@@ -1348,7 +1383,10 @@ func register(injector do.Injector, env string, o options) {
 		}
 		return broadcasts.New(bus.Bus), nil
 	})
+}
 
+// registerSurfaces provides the API surfaces.
+func registerSurfaces(injector do.Injector) {
 	do.Provide(injector, func(i do.Injector) (*authtoken.Signer, error) {
 		cfg, err := do.Invoke[*config.Config](i)
 		if err != nil {
@@ -1422,7 +1460,10 @@ func register(injector do.Injector, env string, o options) {
 		}
 		return &internalHandler{h}, nil
 	})
+}
 
+// registerHandler provides the handler every surface is mounted on.
+func registerHandler(injector do.Injector) {
 	do.Provide(injector, func(i do.Injector) (http.Handler, error) {
 		cfg, err := do.Invoke[*config.Config](i)
 		if err != nil {
@@ -1474,83 +1515,51 @@ func register(injector do.Injector, env string, o options) {
 	})
 }
 
+// resolver invokes singletons and keeps the first failure, so a function that collects many does not
+// repeat the error check after each: once one has failed the rest resolve to their zero value, and
+// err says why. Check err before using any of them.
+type resolver struct {
+	i   do.Injector
+	err error
+}
+
+func invoke[T any](r *resolver) T {
+	var zero T
+	if r.err != nil {
+		return zero
+	}
+	v, err := do.Invoke[T](r.i)
+	if err != nil {
+		r.err = err
+		return zero
+	}
+	return v
+}
+
 // externalDeps collects the shared singletons the /api handlers are built from.
 func externalDeps(i do.Injector) (apiexternal.Deps, error) {
-	cfg, err := do.Invoke[*config.Config](i)
-	if err != nil {
-		return apiexternal.Deps{}, err
-	}
-	acc, err := do.Invoke[*accounts.Accounts](i)
-	if err != nil {
-		return apiexternal.Deps{}, err
-	}
-	bus, err := do.Invoke[*eventsBus](i)
-	if err != nil {
-		return apiexternal.Deps{}, err
-	}
-	wh, err := do.Invoke[*webhooks.Module](i)
-	if err != nil {
-		return apiexternal.Deps{}, err
-	}
-	sender, err := do.Invoke[*outboundModule](i)
-	if err != nil {
-		return apiexternal.Deps{}, err
-	}
-	seg, err := do.Invoke[*segments.Module](i)
-	if err != nil {
-		return apiexternal.Deps{}, err
-	}
-	evlog, err := do.Invoke[*eventlog.Module](i)
-	if err != nil {
-		return apiexternal.Deps{}, err
-	}
-	con, err := do.Invoke[*contacts.Module](i)
-	if err != nil {
-		return apiexternal.Deps{}, err
-	}
-	er, err := do.Invoke[*erasure.Module](i)
-	if err != nil {
-		return apiexternal.Deps{}, err
-	}
-	tpl, err := do.Invoke[*templates.Module](i)
-	if err != nil {
-		return apiexternal.Deps{}, err
-	}
-	bk, err := do.Invoke[*brandkit.Module](i)
-	if err != nil {
-		return apiexternal.Deps{}, err
-	}
-	tg, err := do.Invoke[*tags.Module](i)
-	if err != nil {
-		return apiexternal.Deps{}, err
-	}
-	auto, err := do.Invoke[*automations.Module](i)
-	if err != nil {
-		return apiexternal.Deps{}, err
-	}
-	rl, err := do.Invoke[*rules.Module](i)
-	if err != nil {
-		return apiexternal.Deps{}, err
-	}
-	bc, err := do.Invoke[*broadcasts.Module](i)
-	if err != nil {
-		return apiexternal.Deps{}, err
-	}
-	rep, err := do.Invoke[*reputation.Module](i)
-	if err != nil {
-		return apiexternal.Deps{}, err
-	}
-	integ, err := do.Invoke[*integrations.Module](i)
-	if err != nil {
-		return apiexternal.Deps{}, err
-	}
-	sd, err := do.Invoke[*sendingdomains.Module](i)
-	if err != nil {
-		return apiexternal.Deps{}, err
-	}
-	edition, err := do.Invoke[*ee.Edition](i)
-	if err != nil {
-		return apiexternal.Deps{}, err
+	r := &resolver{i: i}
+	cfg := invoke[*config.Config](r)
+	acc := invoke[*accounts.Accounts](r)
+	bus := invoke[*eventsBus](r)
+	wh := invoke[*webhooks.Module](r)
+	sender := invoke[*outboundModule](r)
+	seg := invoke[*segments.Module](r)
+	evlog := invoke[*eventlog.Module](r)
+	con := invoke[*contacts.Module](r)
+	er := invoke[*erasure.Module](r)
+	tpl := invoke[*templates.Module](r)
+	bk := invoke[*brandkit.Module](r)
+	tg := invoke[*tags.Module](r)
+	auto := invoke[*automations.Module](r)
+	rl := invoke[*rules.Module](r)
+	bc := invoke[*broadcasts.Module](r)
+	rep := invoke[*reputation.Module](r)
+	integ := invoke[*integrations.Module](r)
+	sd := invoke[*sendingdomains.Module](r)
+	edition := invoke[*ee.Edition](r)
+	if r.err != nil {
+		return apiexternal.Deps{}, r.err
 	}
 	return apiexternal.Deps{
 		Accounts: acc, Bus: bus.Bus, Webhooks: wh, Outbound: sender.Module,
@@ -1561,126 +1570,43 @@ func externalDeps(i do.Injector) (apiexternal.Deps, error) {
 
 // siteDeps collects the shared singletons the /site handlers are built from.
 func siteDeps(i do.Injector) (apisite.Deps, error) {
-	cfg, err := do.Invoke[*config.Config](i)
-	if err != nil {
-		return apisite.Deps{}, err
-	}
-	client, err := do.Invoke[*entClient](i)
-	if err != nil {
-		return apisite.Deps{}, err
-	}
-	acc, err := do.Invoke[*accounts.Accounts](i)
-	if err != nil {
-		return apisite.Deps{}, err
-	}
-	bus, err := do.Invoke[*eventsBus](i)
-	if err != nil {
-		return apisite.Deps{}, err
-	}
-	wh, err := do.Invoke[*webhooks.Module](i)
-	if err != nil {
-		return apisite.Deps{}, err
-	}
-	sender, err := do.Invoke[*outboundModule](i)
-	if err != nil {
-		return apisite.Deps{}, err
-	}
-	seg, err := do.Invoke[*segments.Module](i)
-	if err != nil {
-		return apisite.Deps{}, err
-	}
-	evlog, err := do.Invoke[*eventlog.Module](i)
-	if err != nil {
-		return apisite.Deps{}, err
-	}
-	con, err := do.Invoke[*contacts.Module](i)
-	if err != nil {
-		return apisite.Deps{}, err
-	}
-	er, err := do.Invoke[*erasure.Module](i)
-	if err != nil {
-		return apisite.Deps{}, err
-	}
-	tpl, err := do.Invoke[*templates.Module](i)
-	if err != nil {
-		return apisite.Deps{}, err
-	}
-	bk, err := do.Invoke[*brandkit.Module](i)
-	if err != nil {
-		return apisite.Deps{}, err
-	}
-	tg, err := do.Invoke[*tags.Module](i)
-	if err != nil {
-		return apisite.Deps{}, err
-	}
-	auto, err := do.Invoke[*automations.Module](i)
-	if err != nil {
-		return apisite.Deps{}, err
-	}
-	rl, err := do.Invoke[*rules.Module](i)
-	if err != nil {
-		return apisite.Deps{}, err
-	}
-	bc, err := do.Invoke[*broadcasts.Module](i)
-	if err != nil {
-		return apisite.Deps{}, err
-	}
-	tokens, err := do.Invoke[*authtoken.Signer](i)
-	if err != nil {
-		return apisite.Deps{}, err
-	}
-	tracker, err := do.Invoke[*tracking.Tracker](i)
-	if err != nil {
-		return apisite.Deps{}, err
-	}
+	r := &resolver{i: i}
+	cfg := invoke[*config.Config](r)
+	client := invoke[*entClient](r)
+	acc := invoke[*accounts.Accounts](r)
+	bus := invoke[*eventsBus](r)
+	wh := invoke[*webhooks.Module](r)
+	sender := invoke[*outboundModule](r)
+	seg := invoke[*segments.Module](r)
+	evlog := invoke[*eventlog.Module](r)
+	con := invoke[*contacts.Module](r)
+	er := invoke[*erasure.Module](r)
+	tpl := invoke[*templates.Module](r)
+	bk := invoke[*brandkit.Module](r)
+	tg := invoke[*tags.Module](r)
+	auto := invoke[*automations.Module](r)
+	rl := invoke[*rules.Module](r)
+	bc := invoke[*broadcasts.Module](r)
+	tokens := invoke[*authtoken.Signer](r)
+	tracker := invoke[*tracking.Tracker](r)
 	// The river jobs client implements the remaining enqueue seams: welcome, the
 	// self-service account mail (reset/verify/change), and sending-domain DKIM
 	// verification.
-	jc, err := do.Invoke[*jobsClient](i)
-	if err != nil {
-		return apisite.Deps{}, err
-	}
-	edition, err := do.Invoke[*ee.Edition](i)
-	if err != nil {
-		return apisite.Deps{}, err
-	}
-	attempts, err := do.Invoke[*accounts.Attempts](i)
-	if err != nil {
-		return apisite.Deps{}, err
-	}
-	integ, err := do.Invoke[*integrations.Module](i)
-	if err != nil {
-		return apisite.Deps{}, err
-	}
-	sd, err := do.Invoke[*sendingdomains.Module](i)
-	if err != nil {
-		return apisite.Deps{}, err
-	}
-	jd, err := do.Invoke[*joindomains.Module](i)
-	if err != nil {
-		return apisite.Deps{}, err
-	}
-	sf, err := do.Invoke[*secondfactor.Module](i)
-	if err != nil {
-		return apisite.Deps{}, err
-	}
-	pk, err := do.Invoke[*secondfactor.Passkeys](i)
-	if err != nil {
-		return apisite.Deps{}, err
-	}
-	an, err := do.Invoke[*analytics.Module](i)
-	if err != nil {
-		return apisite.Deps{}, err
+	jc := invoke[*jobsClient](r)
+	edition := invoke[*ee.Edition](r)
+	attempts := invoke[*accounts.Attempts](r)
+	integ := invoke[*integrations.Module](r)
+	sd := invoke[*sendingdomains.Module](r)
+	jd := invoke[*joindomains.Module](r)
+	sf := invoke[*secondfactor.Module](r)
+	pk := invoke[*secondfactor.Passkeys](r)
+	an := invoke[*analytics.Module](r)
+	inst := invoke[*instance.Module](r)
+	deletion := invoke[*workspacedeletion.Module](r)
+	if r.err != nil {
+		return apisite.Deps{}, r.err
 	}
 	accountLink, _, err := accountlink.FromConfig(cfg)
-	if err != nil {
-		return apisite.Deps{}, err
-	}
-	inst, err := do.Invoke[*instance.Module](i)
-	if err != nil {
-		return apisite.Deps{}, err
-	}
-	deletion, err := do.Invoke[*workspacedeletion.Module](i)
 	if err != nil {
 		return apisite.Deps{}, err
 	}

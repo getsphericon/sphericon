@@ -128,7 +128,7 @@ func (a *Accounts) ChangeMembershipRole(ctx context.Context, s *ent.Scoped, acto
 			TargetType:  "membership",
 			TargetID:    strconv.FormatInt(target.ID, 10),
 			TargetName:  target.Edges.User.Name,
-			Diff:        map[string]any{"role": map[string]any{"from": string(target.Role), "to": string(desired)}},
+			Diff:        map[string]any{membership.FieldRole: events.Change(string(target.Role), string(desired))},
 		})
 	})
 	return updated, err
@@ -185,12 +185,12 @@ func leaveDoomedWorkspaceIn(ctx context.Context, ts *ent.Scoped, pub events.Publ
 
 // lockedSelf locks the Workspace's Owner rows, then loads User userID's own Membership with
 // its User, the count of Owners, and the User as the actor of the Audit entry.
-func lockedSelf(ctx context.Context, ts *ent.Scoped, userID int64) (*ent.Membership, int, events.Actor, error) {
-	target, owners, err := lockedTarget(ctx, ts, membership.UserID(userID))
+func lockedSelf(ctx context.Context, ts *ent.Scoped, userID int64) (target *ent.Membership, owners int, actor events.Actor, err error) {
+	target, owners, err = lockedTarget(ctx, ts, membership.UserID(userID))
 	if err != nil {
 		return nil, 0, events.Actor{}, err
 	}
-	actor := events.Actor{Kind: events.ActorUser, ID: strconv.FormatInt(userID, 10), Name: target.Edges.User.Name}
+	actor = events.Actor{Kind: events.ActorUser, ID: strconv.FormatInt(userID, 10), Name: target.Edges.User.Name}
 	return target, owners, actor, nil
 }
 
@@ -216,7 +216,7 @@ func deleteLocked(ctx context.Context, ts *ent.Scoped, pub events.Publisher, act
 		TargetType:  "membership",
 		TargetID:    strconv.FormatInt(target.ID, 10),
 		TargetName:  target.Edges.User.Name,
-		Diff:        map[string]any{"role": map[string]any{"from": string(target.Role), "to": nil}},
+		Diff:        map[string]any{membership.FieldRole: events.Change(string(target.Role), nil)},
 	})
 }
 

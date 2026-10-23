@@ -1,3 +1,5 @@
+// Package suspension owns what it means for a Workspace to be suspended, and the notice its Owners
+// get.
 package suspension
 
 import (
@@ -83,7 +85,7 @@ func SuspendWorkspace(ctx context.Context, bus *events.Bus, workspaceID int64, b
 		}
 		changed = true
 		return recordWorkspaceAudit(ctx, tx, pub, workspaceID, by, events.ActionWorkspaceSuspend,
-			map[string]any{"suspended": map[string]any{"from": false, "to": true}, "reason": map[string]any{"to": reason}})
+			map[string]any{"suspended": events.Change(false, true), "reason": events.Became(reason)})
 	})
 	if err != nil {
 		return false, fmt.Errorf("suspend workspace %d: %w", workspaceID, err)
@@ -115,7 +117,7 @@ func UnsuspendWorkspace(ctx context.Context, bus *events.Bus, workspaceID int64,
 		}
 		changed = true
 		return recordWorkspaceAudit(ctx, tx, pub, workspaceID, by, events.ActionWorkspaceUnsuspend,
-			map[string]any{"suspended": map[string]any{"from": true, "to": false}})
+			map[string]any{"suspended": events.Change(true, false)})
 	})
 	if err != nil {
 		return false, fmt.Errorf("unsuspend workspace %d: %w", workspaceID, err)
@@ -145,7 +147,7 @@ func SetAbuseExempt(ctx context.Context, bus *events.Bus, workspaceID int64, by 
 		}
 		changed = true
 		return recordWorkspaceAudit(ctx, tx, pub, workspaceID, by, action,
-			map[string]any{"abuse_exempt": map[string]any{"from": !exempt, "to": exempt}})
+			map[string]any{"abuse_exempt": events.Change(!exempt, exempt)})
 	})
 	if err != nil {
 		return false, fmt.Errorf("set abuse exemption of workspace %d: %w", workspaceID, err)

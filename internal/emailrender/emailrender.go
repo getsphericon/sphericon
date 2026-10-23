@@ -77,8 +77,8 @@ func RenderEmail(subject, body string, bindings map[string]any) (Email, error) {
 
 // renderBoth runs Liquid over the subject (plain text) and the body (HTML-escaped values),
 // before any sanitizing.
-func renderBoth(subject, body string, bindings map[string]any) (string, string, error) {
-	renderedSubject, err := Render(subject, bindings)
+func renderBoth(subject, body string, bindings map[string]any) (renderedSubject, renderedBody string, err error) {
+	renderedSubject, err = Render(subject, bindings)
 	if err != nil {
 		return "", "", fmt.Errorf("render subject: %w", err)
 	}

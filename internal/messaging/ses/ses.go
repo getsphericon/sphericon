@@ -115,7 +115,7 @@ type sender struct {
 }
 
 // DefaultFrom reports the integration's configured From (see messaging.DefaultFromer).
-func (s *sender) DefaultFrom() (string, string) { return s.cfg.From, s.cfg.FromName }
+func (s *sender) DefaultFrom() (address, name string) { return s.cfg.From, s.cfg.FromName }
 
 func (s *sender) Send(ctx context.Context, msg messaging.EmailMessage) (messaging.Receipt, error) {
 	msg.From = messaging.FirstNonEmpty(msg.From, s.cfg.From)

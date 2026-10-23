@@ -87,8 +87,8 @@ func applyDomainJoin(ctx context.Context, tx *ent.Client, pub events.Publisher, 
 		return nil, err
 	}
 	diff := map[string]any{
-		"domain": map[string]any{"to": domain},
-		"role":   map[string]any{"to": string(joined.Role)},
+		"domain":             events.Became(domain),
+		membership.FieldRole: events.Became(string(joined.Role)),
 	}
 	system := events.Actor{Kind: events.ActorSystem}
 	if err := RecordActionOnUserIn(ctx, pub, system, u, events.ActionMembershipDomainJoin, diff, ws.ID); err != nil {
@@ -123,9 +123,7 @@ func (a *Accounts) SetDomainJoin(ctx context.Context, s *ent.Scoped, actor event
 			TargetType:  workspace.Label,
 			TargetID:    strconv.FormatInt(before.ID, 10),
 			TargetName:  before.Name,
-			Diff: map[string]any{"domain_join_enabled": map[string]any{
-				"from": before.DomainJoinEnabled, "to": enabled,
-			}},
+			Diff:        map[string]any{"domain_join_enabled": events.Change(before.DomainJoinEnabled, enabled)},
 		})
 	})
 	return updated, err

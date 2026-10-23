@@ -126,10 +126,10 @@ func (a *Accounts) UpdateWorkspace(ctx context.Context, s *ent.Scoped, actor eve
 		}
 		diff := map[string]any{}
 		if before.Name != updated.Name {
-			diff["name"] = map[string]any{"from": before.Name, "to": updated.Name}
+			diff["name"] = events.Change(before.Name, updated.Name)
 		}
 		if before.PostalAddress != updated.PostalAddress {
-			diff["postal_address"] = map[string]any{"from": before.PostalAddress, "to": updated.PostalAddress}
+			diff["postal_address"] = events.Change(before.PostalAddress, updated.PostalAddress)
 		}
 		if len(diff) == 0 {
 			return nil
@@ -176,7 +176,7 @@ func (a *Accounts) SetAuditRetention(ctx context.Context, s *ent.Scoped, actor e
 			TargetType:  workspace.Label,
 			TargetID:    strconv.FormatInt(before.ID, 10),
 			TargetName:  before.Name,
-			Diff:        map[string]any{"retention_days": map[string]any{"from": before.RetentionDays, "to": days}},
+			Diff:        map[string]any{"retention_days": events.Change(before.RetentionDays, days)},
 		})
 	})
 }
@@ -213,9 +213,7 @@ func (a *Accounts) SetSecondFactorRequirement(ctx context.Context, s *ent.Scoped
 			TargetType:  workspace.Label,
 			TargetID:    strconv.FormatInt(before.ID, 10),
 			TargetName:  before.Name,
-			Diff: map[string]any{"second_factor_required_at": map[string]any{
-				"from": before.SecondFactorRequiredAt, "to": updated.SecondFactorRequiredAt,
-			}},
+			Diff:        map[string]any{"second_factor_required_at": events.Change(before.SecondFactorRequiredAt, updated.SecondFactorRequiredAt)},
 		})
 	})
 	return updated, switchedOn, err
@@ -659,104 +657,25 @@ func (a *Accounts) PendingInvitation(ctx context.Context, token string) (*ent.In
 func (a *Accounts) AcceptInvitation(ctx context.Context, inv *ent.Invitation, name, password, sessionEmail string) error {
 	role := membership.Role(inv.Role)
 	return a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		u, uerr := tx.User.Query().Where(user.EmailEqualFold(inv.Email)).Only(ctx)
-		if uerr != nil && !ent.IsNotFound(uerr) {
-			return uerr
-		}
-		provedByInvitation := false
-		var provenNow bool
-		if uerr == nil && u.EmailVerifiedAt != nil {
-			// A Verified User's own session is the proof of the address (ADR 0030).
-			if sessionEmail == "" {
-				return ErrSignInRequired
-			}
-			if !strings.EqualFold(sessionEmail, inv.Email) {
-				return ErrWrongAccount
-			}
-			// The invitation reached the address, and its owner's session accepted it.
-			// Only a stamp from empty is a proof (rows changed): an already proven address
-			// triggers nothing about domain join.
-			n, err := tx.User.Update().Where(user.ID(u.ID), user.EmailProvenAtIsNil()).SetEmailProvenAt(time.Now()).Save(ctx)
-			if err != nil {
-				return err
-			}
-			provenNow = n > 0
-		} else {
-			name = strings.TrimSpace(name)
-			if name == "" || password == "" {
-				return ErrCredentialsRequired
-			}
-			hash, herr := credentials.HashPassword(password)
-			if herr != nil {
-				return herr
-			}
-			if ent.IsNotFound(uerr) {
-				u, uerr = tx.User.Create().
-					SetName(name).
-					SetEmail(inv.Email).
-					SetPasswordHash(hash).
-					SetEmailVerifiedAt(time.Now()).
-					SetEmailProvenAt(time.Now()).
-					Save(ctx)
-			} else {
-				u, uerr = markVerified(ctx, tx, u.ID, name, &hash)
-				if uerr == nil {
-					// The registrant is an invitee now, not a public sign-up.
-					uerr = clearSurveyDue(ctx, tx, u.ID)
-				}
-			}
-			if uerr != nil {
-				return uerr
-			}
-			provedByInvitation = true
-			provenNow = true
+		u, proven, err := invitee(ctx, tx, inv, name, password, sessionEmail)
+		if err != nil {
+			return err
 		}
 
 		ts := tx.Scoped(inv.WorkspaceID)
 		actor := events.Actor{Kind: events.ActorUser, ID: strconv.FormatInt(u.ID, 10), Name: u.Name}
-		existing, merr := ts.Membership().Query().Where(membership.UserID(u.ID)).Only(ctx)
-		if merr != nil && !ent.IsNotFound(merr) {
-			return merr
-		}
-		if ent.IsNotFound(merr) {
-			// DO NOTHING rather than catching a unique violation, which would abort the
-			// transaction. A concurrent accept that inserted first leaves nothing to write
-			// (sql.ErrNoRows); its Membership is read back, so the rules below still apply.
-			cerr := ts.Membership().Create().
-				SetUserID(u.ID).
-				SetRole(role).
-				SetSource(membership.SourceInvitation).
-				OnConflictColumns(membership.FieldUserID, membership.FieldWorkspaceID).
-				DoNothing().
-				Exec(ctx)
-			if cerr != nil && !errors.Is(cerr, sql.ErrNoRows) {
-				return cerr
-			}
-			if errors.Is(cerr, sql.ErrNoRows) {
-				if existing, merr = ts.Membership().Query().Where(membership.UserID(u.ID)).Only(ctx); merr != nil {
-					return merr
-				}
-			}
+		existing, err := ensureMembership(ctx, ts, u, role)
+		if err != nil {
+			return err
 		}
 		if existing != nil && existing.Role == membership.RoleMember && role == membership.RoleAdmin {
 			// An explicit Invitation raises a member to admin; it never lowers a Role.
-			if err := ts.Membership().UpdateOneID(existing.ID).SetRole(membership.RoleAdmin).Exec(ctx); err != nil {
-				return err
-			}
-			if err := events.RecordAudit(ctx, pub, &events.AuditEntry{
-				WorkspaceID: inv.WorkspaceID,
-				Actor:       actor,
-				Action:      events.ActionMembershipUpdate,
-				TargetType:  membership.Label,
-				TargetID:    strconv.FormatInt(existing.ID, 10),
-				TargetName:  u.Email,
-				Diff:        map[string]any{"role": map[string]any{"from": string(existing.Role), "to": string(role)}},
-			}); err != nil {
+			if err := raiseToAdmin(ctx, ts, pub, inv, actor, u, existing); err != nil {
 				return err
 			}
 		}
 
-		if provenNow {
+		if proven.now {
 			// The address was proven now, so the domain-join step runs after the explicit
 			// Invitation's Membership (which then wins: a Workspace the Invitation names is
 			// not joined twice). Accepting an Invitation is untouched by the sign-up gate.
@@ -768,7 +687,7 @@ func (a *Accounts) AcceptInvitation(ctx context.Context, inv *ent.Invitation, na
 		if err := ts.Invitation().UpdateOneID(inv.ID).SetAcceptedAt(time.Now()).Exec(ctx); err != nil {
 			return err
 		}
-		if provedByInvitation {
+		if proven.byInvitation {
 			if err := RecordActionOnUserIn(ctx, pub, actor, u, events.ActionUserEmailVerify, nil, inv.WorkspaceID); err != nil {
 				return err
 			}
@@ -780,8 +699,115 @@ func (a *Accounts) AcceptInvitation(ctx context.Context, inv *ent.Invitation, na
 			TargetType:  invitation.Label,
 			TargetID:    strconv.FormatInt(inv.ID, 10),
 			TargetName:  inv.Email,
-			Diff:        map[string]any{"role": map[string]any{"to": string(inv.Role)}},
+			Diff:        map[string]any{invitation.FieldRole: events.Became(string(inv.Role))},
 		})
+	})
+}
+
+// acceptProof says how accepting an Invitation proved the address.
+type acceptProof struct {
+	// now is true when the address was proven by this acceptance (a stamp from empty).
+	now bool
+	// byInvitation is true when the Invitation link itself was the proof: the User was created or
+	// completed from it.
+	byInvitation bool
+}
+
+// invitee resolves the User an Invitation is accepted by: a Verified User by their own session,
+// any other address by the name and password the link's holder sets (ADR 0030).
+func invitee(ctx context.Context, tx *ent.Client, inv *ent.Invitation, name, password, sessionEmail string) (*ent.User, acceptProof, error) {
+	u, err := tx.User.Query().Where(user.EmailEqualFold(inv.Email)).Only(ctx)
+	if err != nil && !ent.IsNotFound(err) {
+		return nil, acceptProof{}, err
+	}
+	if err == nil && u.EmailVerifiedAt != nil {
+		now, err := proveByOwnSession(ctx, tx, u, inv.Email, sessionEmail)
+		return u, acceptProof{now: now}, err
+	}
+	name = strings.TrimSpace(name)
+	if name == "" || password == "" {
+		return nil, acceptProof{}, ErrCredentialsRequired
+	}
+	hash, herr := credentials.HashPassword(password)
+	if herr != nil {
+		return nil, acceptProof{}, herr
+	}
+	if ent.IsNotFound(err) {
+		u, err = tx.User.Create().
+			SetName(name).
+			SetEmail(inv.Email).
+			SetPasswordHash(hash).
+			SetEmailVerifiedAt(time.Now()).
+			SetEmailProvenAt(time.Now()).
+			Save(ctx)
+	} else {
+		u, err = markVerified(ctx, tx, u.ID, name, &hash)
+		if err == nil {
+			// The registrant is an invitee now, not a public sign-up.
+			err = clearSurveyDue(ctx, tx, u.ID)
+		}
+	}
+	if err != nil {
+		return nil, acceptProof{}, err
+	}
+	return u, acceptProof{now: true, byInvitation: true}, nil
+}
+
+// proveByOwnSession accepts for a Verified User: their own session is the proof of the address
+// (ADR 0030). The invitation reached the address, and its owner's session accepted it. Only a
+// stamp from empty is a proof (rows changed): an already proven address triggers nothing about
+// domain join.
+func proveByOwnSession(ctx context.Context, tx *ent.Client, u *ent.User, invitedEmail, sessionEmail string) (bool, error) {
+	if sessionEmail == "" {
+		return false, ErrSignInRequired
+	}
+	if !strings.EqualFold(sessionEmail, invitedEmail) {
+		return false, ErrWrongAccount
+	}
+	n, err := tx.User.Update().Where(user.ID(u.ID), user.EmailProvenAtIsNil()).SetEmailProvenAt(time.Now()).Save(ctx)
+	return n > 0, err
+}
+
+// ensureMembership returns the User's Membership in the scoped Workspace, creating it with role
+// when there is none.
+func ensureMembership(ctx context.Context, ts *ent.Scoped, u *ent.User, role membership.Role) (*ent.Membership, error) {
+	existing, err := ts.Membership().Query().Where(membership.UserID(u.ID)).Only(ctx)
+	if !ent.IsNotFound(err) {
+		return existing, err
+	}
+	// DO NOTHING rather than catching a unique violation, which would abort the
+	// transaction. A concurrent accept that inserted first leaves nothing to write
+	// (sql.ErrNoRows); its Membership is read back, so the rules below still apply.
+	err = ts.Membership().Create().
+		SetUserID(u.ID).
+		SetRole(role).
+		SetSource(membership.SourceInvitation).
+		OnConflictColumns(membership.FieldUserID, membership.FieldWorkspaceID).
+		DoNothing().
+		Exec(ctx)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return ts.Membership().Query().Where(membership.UserID(u.ID)).Only(ctx)
+	case err != nil:
+		return nil, err
+	}
+	// Created: nothing was there before, so no earlier Membership to compare with.
+	return nil, nil
+}
+
+// raiseToAdmin makes a member an admin and audits the change.
+func raiseToAdmin(ctx context.Context, ts *ent.Scoped, pub events.Publisher, inv *ent.Invitation, actor events.Actor, u *ent.User, existing *ent.Membership) error {
+	if err := ts.Membership().UpdateOneID(existing.ID).SetRole(membership.RoleAdmin).Exec(ctx); err != nil {
+		return err
+	}
+	return events.RecordAudit(ctx, pub, &events.AuditEntry{
+		WorkspaceID: inv.WorkspaceID,
+		Actor:       actor,
+		Action:      events.ActionMembershipUpdate,
+		TargetType:  membership.Label,
+		TargetID:    strconv.FormatInt(existing.ID, 10),
+		TargetName:  u.Email,
+		Diff:        map[string]any{membership.FieldRole: events.Change(string(existing.Role), string(membership.RoleAdmin))},
 	})
 }
 
@@ -848,7 +874,7 @@ func (a *Accounts) Invite(ctx context.Context, s *ent.Scoped, actor events.Actor
 			TargetType:  invitation.Label,
 			TargetID:    strconv.FormatInt(inv.ID, 10),
 			TargetName:  inv.Email,
-			Diff:        map[string]any{"role": map[string]any{"to": string(inv.Role)}},
+			Diff:        map[string]any{invitation.FieldRole: events.Became(string(inv.Role))},
 		})
 	})
 	if err != nil {

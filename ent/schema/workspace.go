@@ -1,3 +1,5 @@
+// Package schema holds the ent schemas: the tables, columns, constraints, indexes and mixins of the
+// data model, from which ent, the scoped client and the migrations are generated.
 package schema
 
 import (
@@ -30,7 +32,7 @@ func (Workspace) Fields() []ent.Field {
 			Immutable(),
 		// Free text, never empty while the Workspace lives (the handlers refuse an empty name);
 		// the erasure job blanks it on the tombstone (ADR 0043), so the schema allows it.
-		field.String("name"),
+		field.String(nameField),
 		// The Workspace id (ADR 0043): 8 random base62 characters, the Workspace's one public
 		// address. Assigned at creation, never changed, unique; internal/workspaceid makes it.
 		field.String("public_id").

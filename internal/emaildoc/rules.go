@@ -32,6 +32,9 @@ var (
 	controlsInURL = regexp.MustCompile(`[\x00-\x20\x7f]`)
 )
 
+// nodeImage is the type of the image node, which the rules and the schema listing both single out.
+const nodeImage = "image"
+
 // checkRules returns an *InvalidError for the first thing wrong with the document, or nil.
 func checkRules(root any) error {
 	object, ok := root.(map[string]any)
@@ -159,7 +162,7 @@ func checkNodeAttrs(name string, attrs, node map[string]any, where string) error
 		}
 	case "button":
 		return checkButton(attrs, node, where)
-	case "image":
+	case nodeImage:
 		return checkImage(attrs, where)
 	case "orderedList":
 		if v, ok := attrs["start"]; ok && v != nil && !wholeBetween(v, 1, 1<<30) {

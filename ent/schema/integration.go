@@ -21,7 +21,7 @@ type Integration struct {
 func (Integration) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		TableWithEnumChecks("integrations", Integration{}.Fields()),
-		Audited{Action: "integration", NameField: "name"},
+		Audited{Action: "integration", NameField: nameField},
 	}
 }
 
@@ -34,7 +34,7 @@ func (Integration) Fields() []ent.Field {
 		field.Int64("id").
 			StorageKey("id").
 			Immutable(),
-		field.String("name").
+		field.String(nameField).
 			NotEmpty(),
 		// Channel reserves "sms" now so the column/type is ready before any SMS
 		// provider exists.

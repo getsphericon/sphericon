@@ -20,7 +20,7 @@ type CustomField struct {
 func (CustomField) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		TableWithEnumChecks("custom_fields", CustomField{}.Fields()),
-		Audited{Action: "custom_field", NameField: "name"},
+		Audited{Action: "custom_field", NameField: nameField},
 	}
 }
 
@@ -37,7 +37,7 @@ func (CustomField) Fields() []ent.Field {
 		// rules. Stable; the display name is renameable independently.
 		field.String("key").
 			NotEmpty(),
-		field.String("name").
+		field.String(nameField).
 			NotEmpty(),
 		// Inferred on first sight; later values of a conflicting type widen to string
 		// (coercion is handled at ingest, not constrained here).

@@ -15,7 +15,7 @@ type ApiToken struct {
 func (ApiToken) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		entsql.Annotation{Table: "api_tokens"},
-		Audited{Action: "api_token", NameField: "name"},
+		Audited{Action: "api_token", NameField: nameField},
 	}
 }
 
@@ -28,7 +28,7 @@ func (ApiToken) Fields() []ent.Field {
 		field.Int64("id").
 			StorageKey("id").
 			Immutable(),
-		field.String("name").
+		field.String(nameField).
 			NotEmpty(),
 		field.String("prefix").
 			NotEmpty().

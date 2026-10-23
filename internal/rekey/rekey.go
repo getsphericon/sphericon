@@ -208,12 +208,11 @@ func (m *Module) sweeps() []sweep {
 
 // sealSteps rewraps the sealed fields of an Automation version's HTTP steps: the URL, the header
 // values and the signing secret, each sealed on its own (ADR 0039).
-func (m *Module) sealSteps(stored string) (string, bool, error) {
+func (m *Module) sealSteps(stored string) (sealed string, changed bool, err error) {
 	steps, err := automations.Decode(stored)
 	if err != nil {
 		return "", false, err
 	}
-	var changed bool
 	rewrap := func(v *string) error {
 		next, did, err := m.cipher.Rewrap(*v)
 		if err != nil || !did {

@@ -147,7 +147,7 @@ func (t *Tracker) clickToken(messageID int64, dest string) (string, error) {
 // DecodeClick validates a click token and returns the Outbound message id and the destination
 // it carries. An open token (pixel) has no destination and is refused, as is any
 // destination that is not an absolute http(s) URL.
-func (t *Tracker) DecodeClick(token string) (int64, string, error) {
+func (t *Tracker) DecodeClick(token string) (messageID int64, destination string, err error) {
 	var c clickClaims
 	if err := t.parse(token, &c); err != nil {
 		return 0, "", err

@@ -89,28 +89,73 @@ func project(spec []byte) ([]*operation, error) {
 	return ops, nil
 }
 
+// arguments collects the properties of one tool's input schema: the operation's parameters and the
+// fields of its body, which share one namespace.
+type arguments struct {
+	props    map[string]any
+	required []string
+}
+
+func (a *arguments) add(argument string, schema map[string]any, isRequired bool) error {
+	if _, dup := a.props[argument]; dup {
+		return fmt.Errorf("argument %q is declared twice (parameter and body field)", argument)
+	}
+	a.props[argument] = schema
+	if isRequired {
+		a.required = append(a.required, argument)
+	}
+	return nil
+}
+
+// inputSchema is the JSON schema of the arguments, with the definitions its properties refer to.
+func (a *arguments) inputSchema(schemas map[string]any) map[string]any {
+	slices.Sort(a.required)
+	input := map[string]any{"type": "object", "properties": a.props}
+	if len(a.required) > 0 {
+		input["required"] = a.required
+	}
+	input["additionalProperties"] = false
+	if defs := collectDefs(input, schemas); len(defs) > 0 {
+		input["$defs"] = defs
+	}
+	return input
+}
+
 func buildOperation(name, method, path string, raw, schemas, parameters map[string]any) (*operation, error) {
 	op := &operation{method: method, path: path, bodyFields: map[string]bool{}, response: responseSchema(raw, schemas)}
-	props := map[string]any{}
-	var required []string
-	add := func(argument string, schema map[string]any, isRequired bool) error {
-		if _, dup := props[argument]; dup {
-			return fmt.Errorf("argument %q is declared twice (parameter and body field)", argument)
+	args := &arguments{props: map[string]any{}}
+	if err := addParameters(op, args, raw, parameters); err != nil {
+		return nil, err
+	}
+	if body, ok := raw["requestBody"].(map[string]any); ok {
+		if err := addBody(op, args, body, schemas); err != nil {
+			return nil, err
 		}
-		props[argument] = schema
-		if isRequired {
-			required = append(required, argument)
-		}
-		return nil
 	}
 
+	desc, _ := raw["description"].(string)
+	if desc == "" {
+		desc, _ = raw["summary"].(string)
+	}
+	op.tool = &mcp.Tool{
+		Name:        name,
+		Description: desc,
+		InputSchema: args.inputSchema(schemas),
+		Annotations: annotationsFor(method),
+	}
+	return op, nil
+}
+
+// addParameters makes an argument of each parameter of the operation, resolving references into
+// the shared parameters.
+func addParameters(op *operation, args *arguments, raw, parameters map[string]any) error {
 	rawParams, _ := raw["parameters"].([]any)
 	for _, p := range rawParams {
 		param, _ := p.(map[string]any)
 		if ref, ok := param["$ref"].(string); ok {
 			resolved, ok := parameters[strings.TrimPrefix(ref, paramRefPrefix)].(map[string]any)
 			if !ok {
-				return nil, fmt.Errorf("unresolved parameter %s", ref)
+				return fmt.Errorf("unresolved parameter %s", ref)
 			}
 			param = resolved
 		}
@@ -122,69 +167,48 @@ func buildOperation(name, method, path string, raw, schemas, parameters map[stri
 			schema["description"] = desc
 		}
 		isRequired, _ := param["required"].(bool)
-		if err := add(pname, schema, isRequired || in == "path"); err != nil {
-			return nil, err
+		if err := args.add(pname, schema, isRequired || in == "path"); err != nil {
+			return err
 		}
 		op.params = append(op.params, parameter{name: pname, in: in})
 	}
+	return nil
+}
 
-	if body, ok := raw["requestBody"].(map[string]any); ok {
-		content, _ := body["content"].(map[string]any)
-		media, _ := content["application/json"].(map[string]any)
-		schema, _ := media["schema"].(map[string]any)
-		if schema == nil {
-			return nil, errors.New("request body is not application/json")
-		}
-		op.hasBody = true
-		resolved := schema
-		if ref, ok := schema["$ref"].(string); ok {
-			resolved, _ = schemas[strings.TrimPrefix(ref, schemaRefPrefix)].(map[string]any)
-		}
-		bodyProps, isObject := resolved["properties"].(map[string]any)
-		if !isObject {
-			op.bodyWhole = true
-			if err := add(bodyArgument, copySchema(schema), isRequiredBody(body)); err != nil {
-				return nil, err
-			}
-		} else {
-			bodyRequired, _ := resolved["required"].([]any)
-			requiredSet := map[string]bool{}
-			for _, r := range bodyRequired {
-				if s, ok := r.(string); ok {
-					requiredSet[s] = true
-				}
-			}
-			for _, field := range slices.Sorted(maps.Keys(bodyProps)) {
-				fieldSchema, _ := bodyProps[field].(map[string]any)
-				if err := add(field, copySchema(fieldSchema), requiredSet[field]); err != nil {
-					return nil, err
-				}
-				op.bodyFields[field] = true
-			}
+// addBody makes an argument of each field of a JSON request body, or one argument for a body that
+// is not an object.
+func addBody(op *operation, args *arguments, body, schemas map[string]any) error {
+	content, _ := body["content"].(map[string]any)
+	media, _ := content["application/json"].(map[string]any)
+	schema, _ := media["schema"].(map[string]any)
+	if schema == nil {
+		return errors.New("request body is not application/json")
+	}
+	op.hasBody = true
+	resolved := schema
+	if ref, ok := schema["$ref"].(string); ok {
+		resolved, _ = schemas[strings.TrimPrefix(ref, schemaRefPrefix)].(map[string]any)
+	}
+	bodyProps, isObject := resolved["properties"].(map[string]any)
+	if !isObject {
+		op.bodyWhole = true
+		return args.add(bodyArgument, copySchema(schema), isRequiredBody(body))
+	}
+	bodyRequired, _ := resolved["required"].([]any)
+	requiredSet := map[string]bool{}
+	for _, r := range bodyRequired {
+		if s, ok := r.(string); ok {
+			requiredSet[s] = true
 		}
 	}
-
-	slices.Sort(required)
-	input := map[string]any{"type": "object", "properties": props}
-	if len(required) > 0 {
-		input["required"] = required
+	for _, field := range slices.Sorted(maps.Keys(bodyProps)) {
+		fieldSchema, _ := bodyProps[field].(map[string]any)
+		if err := args.add(field, copySchema(fieldSchema), requiredSet[field]); err != nil {
+			return err
+		}
+		op.bodyFields[field] = true
 	}
-	input["additionalProperties"] = false
-	if defs := collectDefs(input, schemas); len(defs) > 0 {
-		input["$defs"] = defs
-	}
-
-	desc, _ := raw["description"].(string)
-	if desc == "" {
-		desc, _ = raw["summary"].(string)
-	}
-	op.tool = &mcp.Tool{
-		Name:        name,
-		Description: desc,
-		InputSchema: input,
-		Annotations: annotationsFor(method),
-	}
-	return op, nil
+	return nil
 }
 
 func isRequiredBody(body map[string]any) bool {

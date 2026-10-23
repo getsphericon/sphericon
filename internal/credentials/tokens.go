@@ -1,3 +1,5 @@
+// Package credentials generates, hashes and verifies the secrets the application issues or accepts:
+// passwords, API tokens, service credentials and recovery codes.
 package credentials
 
 import (

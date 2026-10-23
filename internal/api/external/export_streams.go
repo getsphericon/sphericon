@@ -16,7 +16,7 @@ import (
 // unlicensed instance answers 404 whatever the token is (the feature is absent, like
 // /staff), then the export:read scope (401, like the other scopes). It returns the status
 // of the refusal and its detail, or 0 when the request may proceed.
-func (h *Handlers) exportDenied(ctx context.Context) (int, string) {
+func (h *Handlers) exportDenied(ctx context.Context) (status int, detail string) {
 	if h.export == nil || !h.export.Licensed() {
 		return http.StatusNotFound, "not found"
 	}

@@ -24,7 +24,7 @@ type Page[T any] struct {
 	TotalPages int `json:"totalPages"`
 }
 
-func Normalize(page, pageSize *int32) (int, int) {
+func Normalize(page, pageSize *int32) (normalPage, normalPageSize int) {
 	p := DefaultPage
 	ps := DefaultPageSize
 	if page != nil && *page > 0 {

@@ -116,7 +116,7 @@ func (c *StaffConverterImpl) WorkspaceDetailToResource(source *ent.Workspace) st
 		staffapiStaffWorkspaceDetailResource.CreatedAt = staffTimestamp((*source).CreatedAt)
 		staffapiStaffWorkspaceDetailResource.DiscardedAt = optNilTimestamp((*source).DiscardedAt)
 		staffapiStaffWorkspaceDetailResource.ErasedAt = optNilTimestamp((*source).ErasedAt)
-		staffapiStaffWorkspaceDetailResource.Suspension = workspaceSuspension((*source))
+		staffapiStaffWorkspaceDetailResource.Suspension = workspaceSuspension(source)
 		staffapiStaffWorkspaceDetailResource.Exempt = (*source).AbuseExempt
 		staffapiStaffWorkspaceDetailResource.Warned = isSet((*source).AbuseWarningNotifiedAt)
 	}
@@ -130,7 +130,7 @@ func (c *StaffConverterImpl) WorkspaceToResource(source *ent.Workspace) staff.St
 		staffapiStaffWorkspaceResource.CreatedAt = staffTimestamp((*source).CreatedAt)
 		staffapiStaffWorkspaceResource.DiscardedAt = optNilTimestamp((*source).DiscardedAt)
 		staffapiStaffWorkspaceResource.ErasedAt = optNilTimestamp((*source).ErasedAt)
-		staffapiStaffWorkspaceResource.Suspension = workspaceSuspension((*source))
+		staffapiStaffWorkspaceResource.Suspension = workspaceSuspension(source)
 		staffapiStaffWorkspaceResource.Exempt = (*source).AbuseExempt
 		staffapiStaffWorkspaceResource.Warned = isSet((*source).AbuseWarningNotifiedAt)
 	}

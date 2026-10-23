@@ -58,7 +58,7 @@ func (Passkey) Fields() []ent.Field {
 			Optional().
 			Immutable(),
 		// What the User calls it, to tell their Passkeys apart.
-		field.String("name").
+		field.String(nameField).
 			NotEmpty(),
 		field.Time("last_used_at").
 			Optional().

@@ -28,7 +28,7 @@ func (User) Fields() []ent.Field {
 		field.Int64("id").
 			StorageKey("id").
 			Immutable(),
-		field.String("name").
+		field.String(nameField).
 			NotEmpty(),
 		field.String("email").
 			NotEmpty().

@@ -36,7 +36,7 @@ func (OAuthClient) Fields() []ent.Field {
 			Unique().
 			Immutable(),
 		// Self-declared by the (untrusted) client; shown on the consent screen as text.
-		field.String("name").
+		field.String(nameField).
 			NotEmpty(),
 		field.JSON("redirect_uris", []string{}),
 		// Set only for a Client ID Metadata Document client (client_id is its URL): the

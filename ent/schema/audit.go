@@ -38,3 +38,7 @@ type Sensitive struct{}
 func (Sensitive) Name() string { return "Sensitive" }
 
 var _ schema.Annotation = Sensitive{}
+
+// nameField is the column of the `name` that named entities declare and that Audited.NameField
+// snapshots.
+const nameField = "name"

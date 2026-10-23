@@ -20,7 +20,7 @@ type Tag struct {
 func (Tag) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		entsql.Annotation{Table: "tags"},
-		Audited{Action: "tag", NameField: "name"},
+		Audited{Action: "tag", NameField: nameField},
 	}
 }
 
@@ -35,7 +35,7 @@ func (Tag) Fields() []ent.Field {
 			Immutable(),
 		// The label itself; unique per workspace. It originates outside the workspace
 		// (imports, the API), so it is untrusted text (ADR 0016).
-		field.String("name").
+		field.String(nameField).
 			NotEmpty(),
 	}
 }
@@ -50,6 +50,6 @@ func (Tag) Edges() []ent.Edge {
 
 func (Tag) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("workspace_id", "name").Unique().StorageKey("tags_workspace_id_name"),
+		index.Fields("workspace_id", nameField).Unique().StorageKey("tags_workspace_id_name"),
 	}
 }

@@ -78,11 +78,8 @@ func (b brand) starter(key string, nodes ...node) Starter {
 	if b.kit.FooterText != "" {
 		content = append(content, b.rule(), b.footer())
 	}
-	doc := node{"type": "doc", "content": []node{{
-		"type":    "section",
-		"attrs":   node{"style": "background-color:" + b.kit.BackgroundColor},
-		"content": content,
-	}}}
+	section := element("section", styled("background-color:"+b.kit.BackgroundColor), content...)
+	doc := element("doc", nil, section)
 	raw, err := json.Marshal(doc)
 	if err != nil {
 		// A map of strings and numbers always marshals.
@@ -95,56 +92,56 @@ func (b brand) starter(key string, nodes ...node) Starter {
 	}
 }
 
+// element is a node of the given type; attrs and content are left out when empty.
+func element(typ string, attrs node, content ...node) node {
+	n := node{"type": typ}
+	if len(attrs) > 0 {
+		n["attrs"] = attrs
+	}
+	if len(content) > 0 {
+		n["content"] = content
+	}
+	return n
+}
+
+// styled is the attributes of a node that carries only an inline style.
+func styled(style string) node {
+	return node{"style": style}
+}
+
 func text(s string) node {
 	return node{"type": "text", "text": s}
 }
 
 func (b brand) heading(level int, s string) node {
-	return node{
-		"type": "heading",
-		"attrs": node{
-			"level": level,
-			"style": fmt.Sprintf("color:%s;font-family:%s", b.kit.TextColor, b.kit.HeadingFont),
-		},
-		"content": []node{text(s)},
+	attrs := node{
+		"level": level,
+		"style": fmt.Sprintf("color:%s;font-family:%s", b.kit.TextColor, b.kit.HeadingFont),
 	}
+	return element("heading", attrs, text(s))
 }
 
 func (b brand) paragraph(s string) node {
-	return node{
-		"type": "paragraph",
-		"attrs": node{
-			"style": fmt.Sprintf("color:%s;font-family:%s", b.kit.TextColor, b.kit.BodyFont),
-		},
-		"content": []node{text(s)},
-	}
+	return element("paragraph", styled(fmt.Sprintf("color:%s;font-family:%s", b.kit.TextColor, b.kit.BodyFont)), text(s))
 }
 
 func (b brand) footer() node {
-	return node{
-		"type": "paragraph",
-		"attrs": node{
-			"style": fmt.Sprintf("color:%s;font-family:%s;font-size:12px", b.kit.TextColor, b.kit.BodyFont),
-		},
-		"content": []node{text(b.kit.FooterText)},
-	}
+	style := fmt.Sprintf("color:%s;font-family:%s;font-size:12px", b.kit.TextColor, b.kit.BodyFont)
+	return element("paragraph", styled(style), text(b.kit.FooterText))
 }
 
 func (b brand) button(label string) node {
-	return node{
-		"type": "button",
-		"attrs": node{
-			"href":      "https://example.com",
-			"alignment": "left",
-			"style": fmt.Sprintf("background-color:%s;color:%s;border-radius:%dpx;font-family:%s",
-				b.kit.AccentColor, b.kit.ButtonTextColor, b.kit.ButtonRadius, b.kit.BodyFont),
-		},
-		"content": []node{text(label)},
+	attrs := node{
+		"href":      "https://example.com",
+		"alignment": "left",
+		"style": fmt.Sprintf("background-color:%s;color:%s;border-radius:%dpx;font-family:%s",
+			b.kit.AccentColor, b.kit.ButtonTextColor, b.kit.ButtonRadius, b.kit.BodyFont),
 	}
+	return element("button", attrs, text(label))
 }
 
 func (b brand) rule() node {
-	return node{"type": "horizontalRule"}
+	return element("horizontalRule", nil)
 }
 
 // logo is the kit's logo as an image, or nil when it has none.
@@ -152,8 +149,6 @@ func (b brand) logo() node {
 	if b.kit.LogoURL == "" {
 		return nil
 	}
-	return node{
-		"type":  "image",
-		"attrs": node{"src": b.kit.LogoURL, "alt": i18n.T("brandkit.logo_alt", nil), "alignment": "left", "width": "120", "height": "auto"},
-	}
+	attrs := node{"src": b.kit.LogoURL, "alt": i18n.T("brandkit.logo_alt", nil), "alignment": "left", "width": "120", "height": "auto"}
+	return element("image", attrs)
 }

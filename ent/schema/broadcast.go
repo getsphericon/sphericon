@@ -24,7 +24,7 @@ type Broadcast struct {
 func (Broadcast) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		broadcastTable(),
-		Audited{Action: "broadcast", NameField: "name"},
+		Audited{Action: "broadcast", NameField: nameField},
 	}
 }
 
@@ -37,7 +37,7 @@ func (Broadcast) Fields() []ent.Field {
 		field.Int64("id").
 			StorageKey("id").
 			Immutable(),
-		field.String("name").
+		field.String(nameField).
 			NotEmpty(),
 		field.String("subject").
 			Default(""),

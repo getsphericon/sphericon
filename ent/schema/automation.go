@@ -20,7 +20,7 @@ type Automation struct {
 func (Automation) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		TableWithEnumChecks("automations", Automation{}.Fields()),
-		Audited{Action: "automation", NameField: "name"},
+		Audited{Action: "automation", NameField: nameField},
 	}
 }
 
@@ -33,7 +33,7 @@ func (Automation) Fields() []ent.Field {
 		field.Int64("id").
 			StorageKey("id").
 			Immutable(),
-		field.String("name").
+		field.String(nameField).
 			NotEmpty(),
 		field.Enum("status").
 			Values("draft", "active").

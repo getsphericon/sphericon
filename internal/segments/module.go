@@ -1,3 +1,5 @@
+// Package segments is the Segment domain module: named Conditions on Contacts, with the rows they
+// select and the live work that uses them.
 package segments
 
 import (

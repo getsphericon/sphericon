@@ -243,29 +243,9 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		}
 		name = &n
 	}
-	var sealed *string
-	if in.Config != nil {
-		provider, _, plaintext, err := m.encode(*in.Config)
-		if err != nil {
-			return nil, err
-		}
-		if provider.String() != row.Provider.String() {
-			return nil, &ValidationError{Field: "config", Message: i18n.T("errors.integration_kind_mismatch", nil)}
-		}
-		// Secrets are redacted on read, so a partial edit re-sends blank secret fields:
-		// carry the stored secrets forward instead of overwriting them with nothing.
-		prev, err := m.cipher.Decrypt(row.ConfigEncrypted)
-		if err != nil {
-			return nil, err
-		}
-		if plaintext, err = mergeSecrets(provider, plaintext, prev); err != nil {
-			return nil, err
-		}
-		enc, err := m.cipher.Encrypt(plaintext)
-		if err != nil {
-			return nil, err
-		}
-		sealed = &enc
+	sealed, err := m.sealEditedConfig(row, in.Config)
+	if err != nil {
+		return nil, err
 	}
 
 	inb, err := m.sealInbound(row, inboundChange{preset: in.Preset, params: in.Params, retireSecrets: in.RetireSecrets})
@@ -288,27 +268,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 			}
 		}
 		upd := ts.Integration().UpdateOneID(row.ID)
-		if name != nil {
-			upd.SetName(*name)
-		}
-		if in.Enabled != nil {
-			upd.SetEnabled(*in.Enabled)
-		}
-		if sealed != nil {
-			upd.SetConfigEncrypted(*sealed)
-		}
-		if inb.apply {
-			if inb.preset == nil {
-				upd.ClearPreset().ClearParamsEncrypted()
-			} else {
-				upd.SetPreset(*inb.preset).SetParamsEncrypted(*inb.sealed)
-			}
-		}
-		applyLimit(in.MaxPerSecond, upd.SetMaxPerSecond, upd.ClearMaxPerSecond)
-		applyLimit(in.MaxPerDay, upd.SetMaxPerDay, upd.ClearMaxPerDay)
-		if in.IsDefault != nil {
-			upd.SetIsDefault(*in.IsDefault)
-		}
+		applyEdit(upd, in, name, sealed, inb)
 		var err error
 		updated, err = upd.Save(ctx)
 		return err
@@ -324,6 +284,60 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		m.discoverQuota(ctx, updated)
 	}
 	return updated, nil
+}
+
+// sealEditedConfig validates an edited provider config and seals it, nil when the edit sends
+// none. Secrets are redacted on read, so a partial edit re-sends blank secret fields: the stored
+// secrets are carried forward instead of being overwritten with nothing.
+func (m *Module) sealEditedConfig(row *ent.Integration, cfg *ConfigInput) (*string, error) {
+	if cfg == nil {
+		return nil, nil
+	}
+	provider, _, plaintext, err := m.encode(*cfg)
+	if err != nil {
+		return nil, err
+	}
+	if provider.String() != row.Provider.String() {
+		return nil, &ValidationError{Field: "config", Message: i18n.T("errors.integration_kind_mismatch", nil)}
+	}
+	prev, err := m.cipher.Decrypt(row.ConfigEncrypted)
+	if err != nil {
+		return nil, err
+	}
+	if plaintext, err = mergeSecrets(provider, plaintext, prev); err != nil {
+		return nil, err
+	}
+	enc, err := m.cipher.Encrypt(plaintext)
+	if err != nil {
+		return nil, err
+	}
+	return &enc, nil
+}
+
+// applyEdit sets on upd what an Update changes: the validated name, the sealed config, the inbound
+// side and the plain settings the edit names.
+func applyEdit(upd *ent.IntegrationScopedUpdateOne, in UpdateInput, name, sealed *string, inb inbound) {
+	if name != nil {
+		upd.SetName(*name)
+	}
+	if in.Enabled != nil {
+		upd.SetEnabled(*in.Enabled)
+	}
+	if sealed != nil {
+		upd.SetConfigEncrypted(*sealed)
+	}
+	if inb.apply {
+		if inb.preset == nil {
+			upd.ClearPreset().ClearParamsEncrypted()
+		} else {
+			upd.SetPreset(*inb.preset).SetParamsEncrypted(*inb.sealed)
+		}
+	}
+	applyLimit(in.MaxPerSecond, upd.SetMaxPerSecond, upd.ClearMaxPerSecond)
+	applyLimit(in.MaxPerDay, upd.SetMaxPerDay, upd.ClearMaxPerDay)
+	if in.IsDefault != nil {
+		upd.SetIsDefault(*in.IsDefault)
+	}
 }
 
 // Archive discards an Integration (ADR 0049), unless live work uses it: then it returns an

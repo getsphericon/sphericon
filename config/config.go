@@ -1,3 +1,5 @@
+// Package config loads and validates the Instance's configuration from the process environment,
+// with the .env files layered under it.
 package config
 
 import (
@@ -706,115 +708,99 @@ func (c *Config) SystemMailConfigured() bool {
 
 // validate enforces invariants that depend on the deployment environment.
 func (c *Config) validate(envName string) error {
-	// Outside development/test, an empty SPHERICON_JWT_SECRET silently signs auth tokens
-	// with an empty key — refuse to boot rather than ship that footgun.
-	if !isDevEnv(envName) && !isE2E(envName) {
-		if err := ValidateJWTSecret(c.JWTSecret); err != nil {
-			return err
-		}
+	if err := c.validateSecrets(envName); err != nil {
+		return err
 	}
-	if c.JWTSecretSecondary != "" {
-		if c.JWTSecretSecondary == c.JWTSecret {
-			return errors.New("SPHERICON_JWT_SECRET_SECONDARY must differ from SPHERICON_JWT_SECRET")
-		}
-		if !isDevEnv(envName) && !isE2E(envName) {
-			if err := ValidateJWTSecret(c.JWTSecretSecondary); err != nil {
-				return fmt.Errorf("SPHERICON_JWT_SECRET_SECONDARY: %w", err)
-			}
-		}
-	}
-	if c.SessionTTL <= 0 {
-		return errors.New("SPHERICON_SESSION_TTL must be positive")
-	}
-	if c.StaffSessionTTL <= 0 {
-		return errors.New("SPHERICON_STAFF_SESSION_TTL must be positive")
-	}
-	if c.StaffHoldMaxExpiry <= 0 {
-		return errors.New("SPHERICON_STAFF_HOLD_MAX_EXPIRY must be positive")
-	}
-	if c.AbuseVolumeFloor <= 0 {
-		return errors.New("SPHERICON_ABUSE_VOLUME_FLOOR must be positive")
-	}
-	if !(0 < c.AbuseWarnComplaintPercent && c.AbuseWarnComplaintPercent < c.AbuseFreezeComplaintPercent && c.AbuseFreezeComplaintPercent <= 100) {
-		return errors.New("SPHERICON_ABUSE_WARN_COMPLAINT_PERCENT must be above 0 and below SPHERICON_ABUSE_FREEZE_COMPLAINT_PERCENT, which is at most 100")
-	}
-	if !(0 < c.AbuseWarnBouncePercent && c.AbuseWarnBouncePercent < c.AbuseFreezeBouncePercent && c.AbuseFreezeBouncePercent <= 100) {
-		return errors.New("SPHERICON_ABUSE_WARN_BOUNCE_PERCENT must be above 0 and below SPHERICON_ABUSE_FREEZE_BOUNCE_PERCENT, which is at most 100")
-	}
-	if (c.AccountLinkURL == "") != (c.AccountLinkSigningKey == "") {
-		return errors.New("SPHERICON_ACCOUNT_LINK_URL and SPHERICON_ACCOUNT_LINK_SIGNING_KEY must be set together")
-	}
-	if c.BodyLimits.Default <= 0 {
-		return errors.New("SPHERICON_MAX_BODY_BYTES must be positive")
-	}
-	if c.BodyLimits.Collect <= 0 {
-		return errors.New("SPHERICON_COLLECT_MAX_BODY_BYTES must be positive")
-	}
-	if c.BodyLimits.CollectEvent <= 0 {
-		return errors.New("SPHERICON_COLLECT_MAX_EVENT_BYTES must be positive")
-	}
-	for name, limit := range map[string]int{
-		"SPHERICON_RATE_LIMIT_HUMAN_PER_MINUTE":       c.RateLimits.Human,
-		"SPHERICON_RATE_LIMIT_API_BURST_PER_SECOND":   c.RateLimits.APIBurst,
-		"SPHERICON_RATE_LIMIT_API_PER_MINUTE":         c.RateLimits.APIPerMinute,
-		"SPHERICON_RATE_LIMIT_FAILED_AUTH_PER_MINUTE": c.RateLimits.FailedAuth,
-	} {
-		if limit < 0 {
-			return fmt.Errorf("%s must not be negative (0 disables)", name)
-		}
-	}
-	if c.RateLimits.Tracking < 0 {
-		return errors.New("SPHERICON_RATE_LIMIT_TRACKING_PER_MINUTE must not be negative (0 disables)")
-	}
-	if c.RateLimits.LoginFailures < 0 {
-		return errors.New("SPHERICON_RATE_LIMIT_LOGIN_FAILURES must not be negative (0 disables)")
-	}
-	if c.RateLimits.LoginIP < 0 {
-		return errors.New("SPHERICON_RATE_LIMIT_LOGIN_IP_PER_MINUTE must not be negative (0 disables)")
-	}
-	if c.RateLimits.Collect < 0 {
-		return errors.New("SPHERICON_RATE_LIMIT_COLLECT_PER_MINUTE must not be negative (0 disables)")
-	}
-	if c.RateLimits.CollectIP < 0 {
-		return errors.New("SPHERICON_RATE_LIMIT_COLLECT_IP_PER_MINUTE must not be negative (0 disables)")
-	}
-	if c.RateLimits.ServicePerMinute < 0 {
-		return errors.New("SPHERICON_RATE_LIMIT_SERVICE_PER_MINUTE must not be negative (0 disables)")
-	}
-	if c.RateLimits.ForgotAddress < 0 {
-		return errors.New("SPHERICON_RATE_LIMIT_FORGOT_PASSWORD_PER_ADDRESS_PER_HOUR must not be negative (0 disables)")
-	}
-	if c.RateLimits.ForgotIP < 0 {
-		return errors.New("SPHERICON_RATE_LIMIT_FORGOT_PASSWORD_IP_PER_HOUR must not be negative (0 disables)")
-	}
-	if c.OutboxFloor < 0 {
-		return errors.New("SPHERICON_OUTBOX_RETENTION_FLOOR_DAYS must not be negative")
-	}
-	if c.EventsRetention < 0 {
-		return errors.New("SPHERICON_EVENTS_RETENTION_DAYS must not be negative")
-	}
-	if c.EventLiveWindow < time.Hour {
-		return errors.New("SPHERICON_EVENT_LIVE_WINDOW_HOURS must be at least 1")
-	}
-	if c.UnverifiedUserRetention < 0 {
-		return errors.New("SPHERICON_UNVERIFIED_USER_RETENTION_DAYS must not be negative")
-	}
-	if c.DBPool.MaxOpenConns <= 0 {
-		return errors.New("SPHERICON_DB_MAX_OPEN_CONNS must be positive")
-	}
-	if c.DBPool.MaxIdleConns < 0 || c.DBPool.MaxIdleConns > c.DBPool.MaxOpenConns {
-		return errors.New("SPHERICON_DB_MAX_IDLE_CONNS must be between 0 and SPHERICON_DB_MAX_OPEN_CONNS")
-	}
-	if c.DBPool.ConnMaxLifetime <= 0 {
-		return errors.New("SPHERICON_DB_CONN_MAX_LIFETIME must be positive")
-	}
-	if c.DBPool.RiverMaxConns <= 0 {
-		return errors.New("SPHERICON_RIVER_DB_MAX_CONNS must be positive")
+	if err := firstViolation(c.requirements()); err != nil {
+		return err
 	}
 	if err := c.validateMetricsAddr(); err != nil {
 		return err
 	}
 	return c.validateInternalAddr()
+}
+
+// validateSecrets refuses the signing secrets that would sign with a footgun. Outside
+// development/test, an empty SPHERICON_JWT_SECRET silently signs auth tokens with an empty key:
+// refuse to boot rather than ship that.
+func (c *Config) validateSecrets(envName string) error {
+	strict := !isDevEnv(envName) && !isE2E(envName)
+	if strict {
+		if err := ValidateJWTSecret(c.JWTSecret); err != nil {
+			return err
+		}
+	}
+	if c.JWTSecretSecondary == "" {
+		return nil
+	}
+	if c.JWTSecretSecondary == c.JWTSecret {
+		return errors.New("SPHERICON_JWT_SECRET_SECONDARY must differ from SPHERICON_JWT_SECRET")
+	}
+	if strict {
+		if err := ValidateJWTSecret(c.JWTSecretSecondary); err != nil {
+			return fmt.Errorf("SPHERICON_JWT_SECRET_SECONDARY: %w", err)
+		}
+	}
+	return nil
+}
+
+// requirement is one invariant of the configuration: ok says it holds, msg is the refusal when
+// it does not.
+type requirement struct {
+	ok  bool
+	msg string
+}
+
+// firstViolation is the refusal of the first requirement that does not hold, nil when all do.
+func firstViolation(rs []requirement) error {
+	for _, r := range rs {
+		if !r.ok {
+			return errors.New(r.msg)
+		}
+	}
+	return nil
+}
+
+// requirements lists the invariants of the settings that stand alone, in the order they are
+// reported.
+func (c *Config) requirements() []requirement {
+	const noNegative = " must not be negative (0 disables)"
+	rl := c.RateLimits
+	pool := c.DBPool
+	return []requirement{
+		{c.SessionTTL > 0, "SPHERICON_SESSION_TTL must be positive"},
+		{c.StaffSessionTTL > 0, "SPHERICON_STAFF_SESSION_TTL must be positive"},
+		{c.StaffHoldMaxExpiry > 0, "SPHERICON_STAFF_HOLD_MAX_EXPIRY must be positive"},
+		{c.AbuseVolumeFloor > 0, "SPHERICON_ABUSE_VOLUME_FLOOR must be positive"},
+		{0 < c.AbuseWarnComplaintPercent && c.AbuseWarnComplaintPercent < c.AbuseFreezeComplaintPercent && c.AbuseFreezeComplaintPercent <= 100,
+			"SPHERICON_ABUSE_WARN_COMPLAINT_PERCENT must be above 0 and below SPHERICON_ABUSE_FREEZE_COMPLAINT_PERCENT, which is at most 100"},
+		{0 < c.AbuseWarnBouncePercent && c.AbuseWarnBouncePercent < c.AbuseFreezeBouncePercent && c.AbuseFreezeBouncePercent <= 100,
+			"SPHERICON_ABUSE_WARN_BOUNCE_PERCENT must be above 0 and below SPHERICON_ABUSE_FREEZE_BOUNCE_PERCENT, which is at most 100"},
+		{(c.AccountLinkURL == "") == (c.AccountLinkSigningKey == ""), "SPHERICON_ACCOUNT_LINK_URL and SPHERICON_ACCOUNT_LINK_SIGNING_KEY must be set together"},
+		{c.BodyLimits.Default > 0, "SPHERICON_MAX_BODY_BYTES must be positive"},
+		{c.BodyLimits.Collect > 0, "SPHERICON_COLLECT_MAX_BODY_BYTES must be positive"},
+		{c.BodyLimits.CollectEvent > 0, "SPHERICON_COLLECT_MAX_EVENT_BYTES must be positive"},
+		{rl.Human >= 0, "SPHERICON_RATE_LIMIT_HUMAN_PER_MINUTE" + noNegative},
+		{rl.APIBurst >= 0, "SPHERICON_RATE_LIMIT_API_BURST_PER_SECOND" + noNegative},
+		{rl.APIPerMinute >= 0, "SPHERICON_RATE_LIMIT_API_PER_MINUTE" + noNegative},
+		{rl.FailedAuth >= 0, "SPHERICON_RATE_LIMIT_FAILED_AUTH_PER_MINUTE" + noNegative},
+		{rl.Tracking >= 0, "SPHERICON_RATE_LIMIT_TRACKING_PER_MINUTE" + noNegative},
+		{rl.LoginFailures >= 0, "SPHERICON_RATE_LIMIT_LOGIN_FAILURES" + noNegative},
+		{rl.LoginIP >= 0, "SPHERICON_RATE_LIMIT_LOGIN_IP_PER_MINUTE" + noNegative},
+		{rl.Collect >= 0, "SPHERICON_RATE_LIMIT_COLLECT_PER_MINUTE" + noNegative},
+		{rl.CollectIP >= 0, "SPHERICON_RATE_LIMIT_COLLECT_IP_PER_MINUTE" + noNegative},
+		{rl.ServicePerMinute >= 0, "SPHERICON_RATE_LIMIT_SERVICE_PER_MINUTE" + noNegative},
+		{rl.ForgotAddress >= 0, "SPHERICON_RATE_LIMIT_FORGOT_PASSWORD_PER_ADDRESS_PER_HOUR" + noNegative},
+		{rl.ForgotIP >= 0, "SPHERICON_RATE_LIMIT_FORGOT_PASSWORD_IP_PER_HOUR" + noNegative},
+		{c.OutboxFloor >= 0, "SPHERICON_OUTBOX_RETENTION_FLOOR_DAYS must not be negative"},
+		{c.EventsRetention >= 0, "SPHERICON_EVENTS_RETENTION_DAYS must not be negative"},
+		{c.EventLiveWindow >= time.Hour, "SPHERICON_EVENT_LIVE_WINDOW_HOURS must be at least 1"},
+		{c.UnverifiedUserRetention >= 0, "SPHERICON_UNVERIFIED_USER_RETENTION_DAYS must not be negative"},
+		{pool.MaxOpenConns > 0, "SPHERICON_DB_MAX_OPEN_CONNS must be positive"},
+		{pool.MaxIdleConns >= 0 && pool.MaxIdleConns <= pool.MaxOpenConns, "SPHERICON_DB_MAX_IDLE_CONNS must be between 0 and SPHERICON_DB_MAX_OPEN_CONNS"},
+		{pool.ConnMaxLifetime > 0, "SPHERICON_DB_CONN_MAX_LIFETIME must be positive"},
+		{pool.RiverMaxConns > 0, "SPHERICON_RIVER_DB_MAX_CONNS must be positive"},
+	}
 }
 
 // validateMetricsAddr rejects a malformed SPHERICON_METRICS_ADDR and one sharing the public

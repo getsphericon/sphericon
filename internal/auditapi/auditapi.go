@@ -101,7 +101,7 @@ func unchanged(v any) bool {
 	if !ok {
 		return false
 	}
-	from, hasFrom := change["from"]
-	to, hasTo := change["to"]
+	from, hasFrom := change[events.DiffFrom]
+	to, hasTo := change[events.DiffTo]
 	return hasFrom && hasTo && reflect.DeepEqual(from, to)
 }

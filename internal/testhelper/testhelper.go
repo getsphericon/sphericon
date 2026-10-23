@@ -1,3 +1,5 @@
+// Package testhelper is the test harness: it builds the application over a per-process database
+// with the committed fixtures loaded, and hands tests typed actors for each API surface.
 package testhelper
 
 import (
@@ -501,7 +503,9 @@ func (s *CapturingSender) SetErr(err error) {
 // DefaultFrom is the integration-configured sender the fixtures' default
 // integration uses; its domain (codebasics.dev) is a verified Sending domain, so
 // sends without an explicit From pass Outbound send's domain gate (ADR 0010).
-func (s *CapturingSender) DefaultFrom() (string, string) { return "hello@codebasics.dev", "CodeBasics" }
+func (s *CapturingSender) DefaultFrom() (address, name string) {
+	return "hello@codebasics.dev", "CodeBasics"
+}
 
 func (s *CapturingSender) Send(_ context.Context, msg messaging.EmailMessage) (messaging.Receipt, error) {
 	s.mu.Lock()
@@ -527,7 +531,7 @@ const SystemFrom = "noreply@sphericon.test"
 // where the capturing sender itself defaults to a Workspace's verified domain.
 type systemMailFrom struct{ *CapturingSender }
 
-func (systemMailFrom) DefaultFrom() (string, string) { return SystemFrom, "sphericon" }
+func (systemMailFrom) DefaultFrom() (address, name string) { return SystemFrom, "sphericon" }
 
 // fixedResolver returns the same capturing sender for any workspace, so inline
 // broadcast sends work without a configured integration.

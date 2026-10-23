@@ -1,3 +1,5 @@
+// Package external implements the /api surface: the public API, authenticated by a Workspace's
+// bearer API token.
 package external
 
 import (

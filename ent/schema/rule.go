@@ -22,7 +22,7 @@ type Rule struct {
 func (Rule) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		TableWithEnumChecks("rules", Rule{}.Fields()),
-		Audited{Action: "rule", NameField: "name"},
+		Audited{Action: "rule", NameField: nameField},
 	}
 }
 
@@ -35,7 +35,7 @@ func (Rule) Fields() []ent.Field {
 		field.Int64("id").
 			StorageKey("id").
 			Immutable(),
-		field.String("name").
+		field.String(nameField).
 			NotEmpty(),
 		// draft: acts on nothing; active: reacts to Events recorded after activated_at.
 		field.Enum("status").

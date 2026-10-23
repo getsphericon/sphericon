@@ -135,6 +135,25 @@ func IsUnprojected(name string) bool {
 	return unprojected
 }
 
+// The keys of one field's entry in an AuditEntry's Diff, the shape the scoped client's own
+// diffs have (ent/template/scoped_audit.tmpl).
+const (
+	// DiffFrom is the value before the change; absent when the field was not set.
+	DiffFrom = "from"
+	// DiffTo is the value after the change; absent when the field was removed.
+	DiffTo = "to"
+)
+
+// Change is the Diff entry of a field that went from one value to another.
+func Change(from, to any) map[string]any {
+	return map[string]any{DiffFrom: from, DiffTo: to}
+}
+
+// Became is the Diff entry of a field that was set where there was no value before.
+func Became(to any) map[string]any {
+	return map[string]any{DiffTo: to}
+}
+
 // AuditEntry is emitted in the transaction of the change it records; the envelope id
 // is the dedupe key, so at-least-once redelivery writes one row.
 type AuditEntry struct {

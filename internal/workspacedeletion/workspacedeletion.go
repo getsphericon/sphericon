@@ -165,7 +165,7 @@ func cycleTable(s lifecycle.Storage[State]) *stateless.StateMachine {
 
 // deletedDiff is the audit diff of the Workspace's deleted state changing.
 func deletedDiff(wasDeleted, isDeleted bool) map[string]any {
-	return map[string]any{"deleted": map[string]any{"from": wasDeleted, "to": isDeleted}}
+	return map[string]any{"deleted": events.Change(wasDeleted, isDeleted)}
 }
 
 // Delete deletes the scoped Workspace (ADR 0043): it sets discarded_at, which the send path

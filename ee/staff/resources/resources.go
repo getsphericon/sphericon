@@ -158,7 +158,7 @@ func breachRate(b abuse.Breach) float64 { return b.Rate() }
 func periodString(t time.Time) string { return t.Format(PeriodLayout) }
 
 // workspaceSuspension is the Workspace's suspension and who set it; absent unless it is suspended.
-func workspaceSuspension(w ent.Workspace) staffapi.OptNilStaffSuspension {
+func workspaceSuspension(w *ent.Workspace) staffapi.OptNilStaffSuspension {
 	if w.SuspendedAt == nil {
 		return staffapi.OptNilStaffSuspension{}
 	}

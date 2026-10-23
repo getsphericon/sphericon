@@ -59,7 +59,7 @@ type instrumentedSender struct {
 
 // DefaultFrom forwards the wrapped sender's DefaultFromer, which the decorator
 // would otherwise hide from the send path (see DefaultFromer).
-func (s instrumentedSender) DefaultFrom() (string, string) {
+func (s instrumentedSender) DefaultFrom() (address, name string) {
 	if d, ok := s.EmailSender.(DefaultFromer); ok {
 		return d.DefaultFrom()
 	}
