@@ -394,6 +394,13 @@ copy; a Transactional send renders a _referenced_ Template's content with per-ca
 The same value across surfaces — copied for marketing, referenced for transactional.
 _Avoid_: Email body, content block
 
+**Text part** (derived, never authored):
+The `text/plain` alternative a sent email carries beside its HTML, derived from the _final_
+HTML of that recipient (merge tags resolved, links already tracked, unsubscribe footer included)
+and never edited on its own. A message is always HTML: a "plain" letter is an ordinary message
+written without design, not a separate format or entity.
+_Avoid_: Plain-text email, text template, text version
+
 **Brand kit**:
 A Workspace's visual identity as data — colors, fonts, logo, button style and footer. It sets
 the palette the editor offers and what an agent is told to use. Its values are written into a
@@ -471,12 +478,24 @@ coherent ways: it suppresses (Suppression) and it is the Bounce-rate numerator.
 _Avoid_: Delivery-failure rate (that would fold in transient bounces)
 
 **Engagement rates**:
-The dashboard's open, click and click-to-open ratios over a chosen window (7, 30 or 90 UTC days).
+The open, click and click-to-open ratios of the analytics reports over a chosen window (7, 30 or 90 **Report days**).
 A **send cohort**: the denominator is the Broadcast recipients sent in the window, and opens and
 clicks are counted among that same cohort, so opened never exceeds sent and the rates stay within
 [0, 1]. Not the **Complaint rate** or **Bounce rate**: those are deliverability flow rates per
 Sending domain, counted from Events by their own time and never tied to a send.
 _Avoid_: Reputation, deliverability (those name the Sending-domain rates)
+
+**Workspace time zone**:
+The IANA time zone a Workspace reads its reports in (UTC until set). It decides where a **Report day**
+begins and ends and which hour an event falls in. Not a Contact's own time zone, which is about
+where that person is.
+_Avoid_: Locale, region
+
+**Report day**:
+A calendar day in the **Workspace time zone**: the one bucket every analytics report counts by, so
+the dashboard, the engagement rates and the hour-of-day report agree on what "today" and "9 a.m."
+mean. Not a UTC day unless the Workspace time zone is UTC.
+_Avoid_: UTC day
 
 **API token**:
 A workspace-scoped, **scoped** bearer credential for the external `/api` surface — a public
