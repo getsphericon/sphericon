@@ -49,13 +49,14 @@ import { Route as WorkspacesWorkspaceIdRulesNewRouteImport } from './routes/work
 import { Route as WorkspacesWorkspaceIdSegmentsIndexRouteImport } from './routes/workspaces/$workspaceId/segments/index'
 import { Route as WorkspacesWorkspaceIdSegmentsNewRouteImport } from './routes/workspaces/$workspaceId/segments/new'
 import { Route as WorkspacesWorkspaceIdSettingsIndexRouteImport } from './routes/workspaces/$workspaceId/settings/index'
+import { Route as WorkspacesWorkspaceIdSettingsApiKeysRouteImport } from './routes/workspaces/$workspaceId/settings/api-keys'
 import { Route as WorkspacesWorkspaceIdSettingsAuditLogRouteImport } from './routes/workspaces/$workspaceId/settings/audit-log'
-import { Route as WorkspacesWorkspaceIdSettingsDevelopersRouteImport } from './routes/workspaces/$workspaceId/settings/developers'
 import { Route as WorkspacesWorkspaceIdSettingsEmailsRouteImport } from './routes/workspaces/$workspaceId/settings/emails'
 import { Route as WorkspacesWorkspaceIdSettingsMcpRouteImport } from './routes/workspaces/$workspaceId/settings/mcp'
 import { Route as WorkspacesWorkspaceIdSettingsPrivacyRouteImport } from './routes/workspaces/$workspaceId/settings/privacy'
 import { Route as WorkspacesWorkspaceIdSettingsTeamRouteImport } from './routes/workspaces/$workspaceId/settings/team'
 import { Route as WorkspacesWorkspaceIdSettingsTrackingRouteImport } from './routes/workspaces/$workspaceId/settings/tracking'
+import { Route as WorkspacesWorkspaceIdSettingsWebhooksRouteImport } from './routes/workspaces/$workspaceId/settings/webhooks'
 import { Route as WorkspacesWorkspaceIdTagsIndexRouteImport } from './routes/workspaces/$workspaceId/tags/index'
 import { Route as WorkspacesWorkspaceIdTemplatesIndexRouteImport } from './routes/workspaces/$workspaceId/templates/index'
 import { Route as WorkspacesWorkspaceIdTemplatesNewRouteImport } from './routes/workspaces/$workspaceId/templates/new'
@@ -288,16 +289,16 @@ const WorkspacesWorkspaceIdSettingsIndexRoute =
     path: '/',
     getParentRoute: () => WorkspacesWorkspaceIdSettingsRouteRoute,
   } as any)
+const WorkspacesWorkspaceIdSettingsApiKeysRoute =
+  WorkspacesWorkspaceIdSettingsApiKeysRouteImport.update({
+    id: '/api-keys',
+    path: '/api-keys',
+    getParentRoute: () => WorkspacesWorkspaceIdSettingsRouteRoute,
+  } as any)
 const WorkspacesWorkspaceIdSettingsAuditLogRoute =
   WorkspacesWorkspaceIdSettingsAuditLogRouteImport.update({
     id: '/audit-log',
     path: '/audit-log',
-    getParentRoute: () => WorkspacesWorkspaceIdSettingsRouteRoute,
-  } as any)
-const WorkspacesWorkspaceIdSettingsDevelopersRoute =
-  WorkspacesWorkspaceIdSettingsDevelopersRouteImport.update({
-    id: '/developers',
-    path: '/developers',
     getParentRoute: () => WorkspacesWorkspaceIdSettingsRouteRoute,
   } as any)
 const WorkspacesWorkspaceIdSettingsEmailsRoute =
@@ -328,6 +329,12 @@ const WorkspacesWorkspaceIdSettingsTrackingRoute =
   WorkspacesWorkspaceIdSettingsTrackingRouteImport.update({
     id: '/tracking',
     path: '/tracking',
+    getParentRoute: () => WorkspacesWorkspaceIdSettingsRouteRoute,
+  } as any)
+const WorkspacesWorkspaceIdSettingsWebhooksRoute =
+  WorkspacesWorkspaceIdSettingsWebhooksRouteImport.update({
+    id: '/webhooks',
+    path: '/webhooks',
     getParentRoute: () => WorkspacesWorkspaceIdSettingsRouteRoute,
   } as any)
 const WorkspacesWorkspaceIdTagsIndexRoute =
@@ -454,13 +461,14 @@ export interface FileRoutesByFullPath {
   '/workspaces/$workspaceId/broadcasts/new': typeof WorkspacesWorkspaceIdBroadcastsNewRoute
   '/workspaces/$workspaceId/rules/new': typeof WorkspacesWorkspaceIdRulesNewRoute
   '/workspaces/$workspaceId/segments/new': typeof WorkspacesWorkspaceIdSegmentsNewRoute
+  '/workspaces/$workspaceId/settings/api-keys': typeof WorkspacesWorkspaceIdSettingsApiKeysRoute
   '/workspaces/$workspaceId/settings/audit-log': typeof WorkspacesWorkspaceIdSettingsAuditLogRoute
-  '/workspaces/$workspaceId/settings/developers': typeof WorkspacesWorkspaceIdSettingsDevelopersRoute
   '/workspaces/$workspaceId/settings/emails': typeof WorkspacesWorkspaceIdSettingsEmailsRoute
   '/workspaces/$workspaceId/settings/mcp': typeof WorkspacesWorkspaceIdSettingsMcpRoute
   '/workspaces/$workspaceId/settings/privacy': typeof WorkspacesWorkspaceIdSettingsPrivacyRoute
   '/workspaces/$workspaceId/settings/team': typeof WorkspacesWorkspaceIdSettingsTeamRoute
   '/workspaces/$workspaceId/settings/tracking': typeof WorkspacesWorkspaceIdSettingsTrackingRoute
+  '/workspaces/$workspaceId/settings/webhooks': typeof WorkspacesWorkspaceIdSettingsWebhooksRoute
   '/workspaces/$workspaceId/templates/new': typeof WorkspacesWorkspaceIdTemplatesNewRoute
   '/workspaces/$workspaceId/automations/': typeof WorkspacesWorkspaceIdAutomationsIndexRoute
   '/workspaces/$workspaceId/broadcasts/': typeof WorkspacesWorkspaceIdBroadcastsIndexRoute
@@ -513,13 +521,14 @@ export interface FileRoutesByTo {
   '/workspaces/$workspaceId/broadcasts/new': typeof WorkspacesWorkspaceIdBroadcastsNewRoute
   '/workspaces/$workspaceId/rules/new': typeof WorkspacesWorkspaceIdRulesNewRoute
   '/workspaces/$workspaceId/segments/new': typeof WorkspacesWorkspaceIdSegmentsNewRoute
+  '/workspaces/$workspaceId/settings/api-keys': typeof WorkspacesWorkspaceIdSettingsApiKeysRoute
   '/workspaces/$workspaceId/settings/audit-log': typeof WorkspacesWorkspaceIdSettingsAuditLogRoute
-  '/workspaces/$workspaceId/settings/developers': typeof WorkspacesWorkspaceIdSettingsDevelopersRoute
   '/workspaces/$workspaceId/settings/emails': typeof WorkspacesWorkspaceIdSettingsEmailsRoute
   '/workspaces/$workspaceId/settings/mcp': typeof WorkspacesWorkspaceIdSettingsMcpRoute
   '/workspaces/$workspaceId/settings/privacy': typeof WorkspacesWorkspaceIdSettingsPrivacyRoute
   '/workspaces/$workspaceId/settings/team': typeof WorkspacesWorkspaceIdSettingsTeamRoute
   '/workspaces/$workspaceId/settings/tracking': typeof WorkspacesWorkspaceIdSettingsTrackingRoute
+  '/workspaces/$workspaceId/settings/webhooks': typeof WorkspacesWorkspaceIdSettingsWebhooksRoute
   '/workspaces/$workspaceId/templates/new': typeof WorkspacesWorkspaceIdTemplatesNewRoute
   '/workspaces/$workspaceId/automations': typeof WorkspacesWorkspaceIdAutomationsIndexRoute
   '/workspaces/$workspaceId/broadcasts': typeof WorkspacesWorkspaceIdBroadcastsIndexRoute
@@ -578,13 +587,14 @@ export interface FileRoutesById {
   '/workspaces/$workspaceId/broadcasts/new': typeof WorkspacesWorkspaceIdBroadcastsNewRoute
   '/workspaces/$workspaceId/rules/new': typeof WorkspacesWorkspaceIdRulesNewRoute
   '/workspaces/$workspaceId/segments/new': typeof WorkspacesWorkspaceIdSegmentsNewRoute
+  '/workspaces/$workspaceId/settings/api-keys': typeof WorkspacesWorkspaceIdSettingsApiKeysRoute
   '/workspaces/$workspaceId/settings/audit-log': typeof WorkspacesWorkspaceIdSettingsAuditLogRoute
-  '/workspaces/$workspaceId/settings/developers': typeof WorkspacesWorkspaceIdSettingsDevelopersRoute
   '/workspaces/$workspaceId/settings/emails': typeof WorkspacesWorkspaceIdSettingsEmailsRoute
   '/workspaces/$workspaceId/settings/mcp': typeof WorkspacesWorkspaceIdSettingsMcpRoute
   '/workspaces/$workspaceId/settings/privacy': typeof WorkspacesWorkspaceIdSettingsPrivacyRoute
   '/workspaces/$workspaceId/settings/team': typeof WorkspacesWorkspaceIdSettingsTeamRoute
   '/workspaces/$workspaceId/settings/tracking': typeof WorkspacesWorkspaceIdSettingsTrackingRoute
+  '/workspaces/$workspaceId/settings/webhooks': typeof WorkspacesWorkspaceIdSettingsWebhooksRoute
   '/workspaces/$workspaceId/templates/new': typeof WorkspacesWorkspaceIdTemplatesNewRoute
   '/workspaces/$workspaceId/automations/': typeof WorkspacesWorkspaceIdAutomationsIndexRoute
   '/workspaces/$workspaceId/broadcasts/': typeof WorkspacesWorkspaceIdBroadcastsIndexRoute
@@ -643,13 +653,14 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/broadcasts/new'
     | '/workspaces/$workspaceId/rules/new'
     | '/workspaces/$workspaceId/segments/new'
+    | '/workspaces/$workspaceId/settings/api-keys'
     | '/workspaces/$workspaceId/settings/audit-log'
-    | '/workspaces/$workspaceId/settings/developers'
     | '/workspaces/$workspaceId/settings/emails'
     | '/workspaces/$workspaceId/settings/mcp'
     | '/workspaces/$workspaceId/settings/privacy'
     | '/workspaces/$workspaceId/settings/team'
     | '/workspaces/$workspaceId/settings/tracking'
+    | '/workspaces/$workspaceId/settings/webhooks'
     | '/workspaces/$workspaceId/templates/new'
     | '/workspaces/$workspaceId/automations/'
     | '/workspaces/$workspaceId/broadcasts/'
@@ -702,13 +713,14 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/broadcasts/new'
     | '/workspaces/$workspaceId/rules/new'
     | '/workspaces/$workspaceId/segments/new'
+    | '/workspaces/$workspaceId/settings/api-keys'
     | '/workspaces/$workspaceId/settings/audit-log'
-    | '/workspaces/$workspaceId/settings/developers'
     | '/workspaces/$workspaceId/settings/emails'
     | '/workspaces/$workspaceId/settings/mcp'
     | '/workspaces/$workspaceId/settings/privacy'
     | '/workspaces/$workspaceId/settings/team'
     | '/workspaces/$workspaceId/settings/tracking'
+    | '/workspaces/$workspaceId/settings/webhooks'
     | '/workspaces/$workspaceId/templates/new'
     | '/workspaces/$workspaceId/automations'
     | '/workspaces/$workspaceId/broadcasts'
@@ -766,13 +778,14 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/broadcasts/new'
     | '/workspaces/$workspaceId/rules/new'
     | '/workspaces/$workspaceId/segments/new'
+    | '/workspaces/$workspaceId/settings/api-keys'
     | '/workspaces/$workspaceId/settings/audit-log'
-    | '/workspaces/$workspaceId/settings/developers'
     | '/workspaces/$workspaceId/settings/emails'
     | '/workspaces/$workspaceId/settings/mcp'
     | '/workspaces/$workspaceId/settings/privacy'
     | '/workspaces/$workspaceId/settings/team'
     | '/workspaces/$workspaceId/settings/tracking'
+    | '/workspaces/$workspaceId/settings/webhooks'
     | '/workspaces/$workspaceId/templates/new'
     | '/workspaces/$workspaceId/automations/'
     | '/workspaces/$workspaceId/broadcasts/'
@@ -1099,18 +1112,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspacesWorkspaceIdSettingsIndexRouteImport
       parentRoute: typeof WorkspacesWorkspaceIdSettingsRouteRoute
     }
+    '/workspaces/$workspaceId/settings/api-keys': {
+      id: '/workspaces/$workspaceId/settings/api-keys'
+      path: '/api-keys'
+      fullPath: '/workspaces/$workspaceId/settings/api-keys'
+      preLoaderRoute: typeof WorkspacesWorkspaceIdSettingsApiKeysRouteImport
+      parentRoute: typeof WorkspacesWorkspaceIdSettingsRouteRoute
+    }
     '/workspaces/$workspaceId/settings/audit-log': {
       id: '/workspaces/$workspaceId/settings/audit-log'
       path: '/audit-log'
       fullPath: '/workspaces/$workspaceId/settings/audit-log'
       preLoaderRoute: typeof WorkspacesWorkspaceIdSettingsAuditLogRouteImport
-      parentRoute: typeof WorkspacesWorkspaceIdSettingsRouteRoute
-    }
-    '/workspaces/$workspaceId/settings/developers': {
-      id: '/workspaces/$workspaceId/settings/developers'
-      path: '/developers'
-      fullPath: '/workspaces/$workspaceId/settings/developers'
-      preLoaderRoute: typeof WorkspacesWorkspaceIdSettingsDevelopersRouteImport
       parentRoute: typeof WorkspacesWorkspaceIdSettingsRouteRoute
     }
     '/workspaces/$workspaceId/settings/emails': {
@@ -1146,6 +1159,13 @@ declare module '@tanstack/react-router' {
       path: '/tracking'
       fullPath: '/workspaces/$workspaceId/settings/tracking'
       preLoaderRoute: typeof WorkspacesWorkspaceIdSettingsTrackingRouteImport
+      parentRoute: typeof WorkspacesWorkspaceIdSettingsRouteRoute
+    }
+    '/workspaces/$workspaceId/settings/webhooks': {
+      id: '/workspaces/$workspaceId/settings/webhooks'
+      path: '/webhooks'
+      fullPath: '/workspaces/$workspaceId/settings/webhooks'
+      preLoaderRoute: typeof WorkspacesWorkspaceIdSettingsWebhooksRouteImport
       parentRoute: typeof WorkspacesWorkspaceIdSettingsRouteRoute
     }
     '/workspaces/$workspaceId/tags/': {
@@ -1303,22 +1323,23 @@ const ConsoleRouteRouteWithChildren = ConsoleRouteRoute._addFileChildren(
 )
 
 interface WorkspacesWorkspaceIdSettingsRouteRouteChildren {
+  WorkspacesWorkspaceIdSettingsApiKeysRoute: typeof WorkspacesWorkspaceIdSettingsApiKeysRoute
   WorkspacesWorkspaceIdSettingsAuditLogRoute: typeof WorkspacesWorkspaceIdSettingsAuditLogRoute
-  WorkspacesWorkspaceIdSettingsDevelopersRoute: typeof WorkspacesWorkspaceIdSettingsDevelopersRoute
   WorkspacesWorkspaceIdSettingsEmailsRoute: typeof WorkspacesWorkspaceIdSettingsEmailsRoute
   WorkspacesWorkspaceIdSettingsMcpRoute: typeof WorkspacesWorkspaceIdSettingsMcpRoute
   WorkspacesWorkspaceIdSettingsPrivacyRoute: typeof WorkspacesWorkspaceIdSettingsPrivacyRoute
   WorkspacesWorkspaceIdSettingsTeamRoute: typeof WorkspacesWorkspaceIdSettingsTeamRoute
   WorkspacesWorkspaceIdSettingsTrackingRoute: typeof WorkspacesWorkspaceIdSettingsTrackingRoute
+  WorkspacesWorkspaceIdSettingsWebhooksRoute: typeof WorkspacesWorkspaceIdSettingsWebhooksRoute
   WorkspacesWorkspaceIdSettingsIndexRoute: typeof WorkspacesWorkspaceIdSettingsIndexRoute
 }
 
 const WorkspacesWorkspaceIdSettingsRouteRouteChildren: WorkspacesWorkspaceIdSettingsRouteRouteChildren =
   {
+    WorkspacesWorkspaceIdSettingsApiKeysRoute:
+      WorkspacesWorkspaceIdSettingsApiKeysRoute,
     WorkspacesWorkspaceIdSettingsAuditLogRoute:
       WorkspacesWorkspaceIdSettingsAuditLogRoute,
-    WorkspacesWorkspaceIdSettingsDevelopersRoute:
-      WorkspacesWorkspaceIdSettingsDevelopersRoute,
     WorkspacesWorkspaceIdSettingsEmailsRoute:
       WorkspacesWorkspaceIdSettingsEmailsRoute,
     WorkspacesWorkspaceIdSettingsMcpRoute:
@@ -1329,6 +1350,8 @@ const WorkspacesWorkspaceIdSettingsRouteRouteChildren: WorkspacesWorkspaceIdSett
       WorkspacesWorkspaceIdSettingsTeamRoute,
     WorkspacesWorkspaceIdSettingsTrackingRoute:
       WorkspacesWorkspaceIdSettingsTrackingRoute,
+    WorkspacesWorkspaceIdSettingsWebhooksRoute:
+      WorkspacesWorkspaceIdSettingsWebhooksRoute,
     WorkspacesWorkspaceIdSettingsIndexRoute:
       WorkspacesWorkspaceIdSettingsIndexRoute,
   }

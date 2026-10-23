@@ -2,13 +2,14 @@ import { Stack } from '@mantine/core'
 import {
   IconArrowLeft,
   IconHistory,
-  IconCode,
+  IconKey,
   IconLock,
   IconMailForward,
   IconRadar,
   IconRobot,
   IconSettings,
   IconUsers,
+  IconWebhook,
 } from '@tabler/icons-react'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
@@ -16,14 +17,15 @@ import { useTranslation } from 'react-i18next'
 import { siteWorkspacesListOptions } from '../generated/site/@tanstack/react-query.gen.ts'
 import { canManage } from '../hooks/useCurrentRole.ts'
 import { Route as overviewRoute } from '../routes/workspaces/$workspaceId/index.tsx'
+import { Route as apiKeysRoute } from '../routes/workspaces/$workspaceId/settings/api-keys.tsx'
 import { Route as auditLogRoute } from '../routes/workspaces/$workspaceId/settings/audit-log.tsx'
-import { Route as developersRoute } from '../routes/workspaces/$workspaceId/settings/developers.tsx'
 import { Route as emailsRoute } from '../routes/workspaces/$workspaceId/settings/emails.tsx'
 import { Route as generalRoute } from '../routes/workspaces/$workspaceId/settings/index.tsx'
 import { Route as mcpRoute } from '../routes/workspaces/$workspaceId/settings/mcp.tsx'
 import { Route as privacyRoute } from '../routes/workspaces/$workspaceId/settings/privacy.tsx'
 import { Route as teamRoute } from '../routes/workspaces/$workspaceId/settings/team.tsx'
 import { Route as trackingRoute } from '../routes/workspaces/$workspaceId/settings/tracking.tsx'
+import { Route as webhooksRoute } from '../routes/workspaces/$workspaceId/settings/webhooks.tsx'
 import { NavLinkLink } from './RouterLink.tsx'
 
 // SettingsNavbar is the sidebar of the workspace settings area: a way back to the
@@ -66,18 +68,28 @@ export function SettingsNavbar({ workspaceId }: { workspaceId: string }) {
       exact: false,
     },
     {
-      route: developersRoute,
-      label: t(($) => $.settings.nav.developers),
-      icon: <IconCode size={18} />,
+      route: apiKeysRoute,
+      label: t(($) => $.settings.nav.apiKeys),
+      icon: <IconKey size={18} />,
       exact: false,
     },
+    // Webhooks and Privacy requests are for owners and admins; the API refuses everyone else.
+    ...(canManage(role)
+      ? [
+          {
+            route: webhooksRoute,
+            label: t(($) => $.settings.nav.webhooks),
+            icon: <IconWebhook size={18} />,
+            exact: false,
+          },
+        ]
+      : []),
     {
       route: mcpRoute,
       label: t(($) => $.settings.nav.mcp),
       icon: <IconRobot size={18} />,
       exact: false,
     },
-    // Privacy requests are for owners and admins; the API refuses everyone else.
     ...(canManage(role)
       ? [
           {

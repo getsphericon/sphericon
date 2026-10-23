@@ -3,14 +3,15 @@ import { beforeEach, expect, test } from 'vitest'
 import { handleSiteWorkspacesList } from '../generated/site/msw.gen.ts'
 import type { SiteMembershipRole } from '../generated/site/types.gen.ts'
 import { Route as overviewRoute } from '../routes/workspaces/$workspaceId/index.tsx'
+import { Route as apiKeysRoute } from '../routes/workspaces/$workspaceId/settings/api-keys.tsx'
 import { Route as auditLogRoute } from '../routes/workspaces/$workspaceId/settings/audit-log.tsx'
-import { Route as developersRoute } from '../routes/workspaces/$workspaceId/settings/developers.tsx'
 import { Route as emailsRoute } from '../routes/workspaces/$workspaceId/settings/emails.tsx'
 import { Route as generalRoute } from '../routes/workspaces/$workspaceId/settings/index.tsx'
 import { Route as mcpRoute } from '../routes/workspaces/$workspaceId/settings/mcp.tsx'
 import { Route as privacyRoute } from '../routes/workspaces/$workspaceId/settings/privacy.tsx'
 import { Route as teamRoute } from '../routes/workspaces/$workspaceId/settings/team.tsx'
 import { Route as trackingRoute } from '../routes/workspaces/$workspaceId/settings/tracking.tsx'
+import { Route as webhooksRoute } from '../routes/workspaces/$workspaceId/settings/webhooks.tsx'
 import { renderWithRouter } from '../test/renderWithRouter.tsx'
 import { routeMount } from '../test/routeMount.ts'
 import { worker } from '../test/worker.ts'
@@ -23,7 +24,8 @@ const LINKS = [
   ['Tracking', trackingRoute],
   ['Emails', emailsRoute],
   ['Audit log', auditLogRoute],
-  ['Developers', developersRoute],
+  ['API keys', apiKeysRoute],
+  ['Webhooks', webhooksRoute],
   ['AI agents (MCP)', mcpRoute],
   ['Privacy requests', privacyRoute],
 ] as const
@@ -66,7 +68,7 @@ test('General is not current on a page under settings', async () => {
     .not.toHaveAttribute('aria-current')
 })
 
-test('a plain member is not offered Privacy requests', async () => {
+test('a plain member is not offered Webhooks or Privacy requests', async () => {
   worker.use(handleSiteWorkspacesList({ body: [workspace('member')] }))
 
   const { screen } = await renderWithRouter(<SettingsNavbar workspaceId="AcmeWs01" />)
@@ -74,6 +76,9 @@ test('a plain member is not offered Privacy requests', async () => {
   await expect
     .element(screen.getByRole('link', { name: 'General', exact: true }))
     .toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('link', { name: 'Webhooks', exact: true }))
+    .not.toBeInTheDocument()
   await expect
     .element(screen.getByRole('link', { name: 'Privacy requests', exact: true }))
     .not.toBeInTheDocument()

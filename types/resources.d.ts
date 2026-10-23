@@ -1211,14 +1211,15 @@ export default interface Resources {
       },
       "nameLabel": "Workspace name",
       "nav": {
+        "apiKeys": "API keys",
         "auditLog": "Audit log",
-        "developers": "Developers",
         "emails": "Emails",
         "general": "General",
         "mcp": "AI agents (MCP)",
         "privacy": "Privacy requests",
         "team": "Team and security",
-        "tracking": "Tracking"
+        "tracking": "Tracking",
+        "webhooks": "Webhooks"
       },
       "postalAddressDescription": "Shown in the footer of every marketing email. US law (CAN-SPAM) requires a valid physical postal address.",
       "postalAddressLabel": "Postal address",

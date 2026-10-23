@@ -6,14 +6,13 @@ import {
   handleSiteUserGetMe,
   handleSiteTokensList,
   handleSiteTokensUpdate,
-  handleSiteWebhooksList,
   handleSiteWorkspacesList,
 } from '../../../generated/site/msw.gen.ts'
-import { Route as developersRoute } from '../../../routes/workspaces/$workspaceId/settings/developers.tsx'
+import { Route as apiKeysRoute } from '../../../routes/workspaces/$workspaceId/settings/api-keys.tsx'
 import { renderWithRouter } from '../../../test/renderWithRouter.tsx'
 import { routeMount } from '../../../test/routeMount.ts'
 import { worker } from '../../../test/worker.ts'
-import { DevelopersPage } from './developers.tsx'
+import { ApiKeysPage } from './api-keys.tsx'
 
 const workspace = {
   id: 'TestWs01',
@@ -28,7 +27,7 @@ const workspace = {
   createdAt: '2026-01-01T00:00:00Z',
 }
 
-test('shows the API keys and the webhooks of the workspace', async () => {
+test('shows the API keys of the workspace', async () => {
   worker.use(
     handleSiteWorkspacesList({ body: [workspace] }),
     handleSiteTokensList({ body: [] }),
@@ -53,54 +52,16 @@ test('shows the API keys and the webhooks of the workspace', async () => {
         },
       ],
     }),
-    handleSiteWebhooksList({
-      body: { items: [], page: 1, pageSize: 20, totalItems: 0, totalPages: 1 },
-    }),
   )
 
   const { screen } = await renderWithRouter(
-    <DevelopersPage />,
-    routeMount(developersRoute, { workspaceId: 'TestWs01' }),
+    <ApiKeysPage />,
+    routeMount(apiKeysRoute, { workspaceId: 'TestWs01' }),
   )
 
-  await expect.element(screen.getByRole('heading', { name: 'API keys' })).toBeInTheDocument()
-  await expect.element(screen.getByRole('heading', { name: 'Webhooks' })).toBeInTheDocument()
-})
-
-test('does not offer a member the webhooks, whose secrets only owners and admins read', async () => {
-  worker.use(
-    handleSiteWorkspacesList({ body: [{ ...workspace, role: 'member' as const }] }),
-    handleSiteTokensList({ body: [] }),
-    handleSiteUserGetMe({
-      body: {
-        id: '10',
-        name: 'Ann',
-        email: 'ann@acme.com',
-        emailVerified: true,
-        createdAt: '2026-01-01T00:00:00Z',
-      },
-    }),
-    handleSiteMembershipsList({
-      body: [
-        {
-          id: '1',
-          userId: '10',
-          email: 'ann@acme.com',
-          name: 'Ann',
-          role: 'member',
-          createdAt: '2026-01-01T00:00:00Z',
-        },
-      ],
-    }),
-  )
-
-  const { screen } = await renderWithRouter(
-    <DevelopersPage />,
-    routeMount(developersRoute, { workspaceId: 'TestWs01' }),
-  )
-
-  await expect.element(screen.getByRole('heading', { name: 'API keys' })).toBeInTheDocument()
-  await expect.element(screen.getByRole('heading', { name: 'Webhooks' })).not.toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('heading', { name: 'API keys', level: 4 }))
+    .toBeInTheDocument()
 })
 
 test('renames an API key from its row menu', async () => {
@@ -119,14 +80,11 @@ test('renames an API key from its row menu', async () => {
       renamed.push(await request.json())
       return HttpResponse.json({ ...token, name: 'Deploys' })
     }),
-    handleSiteWebhooksList({
-      body: { items: [], page: 1, pageSize: 20, totalItems: 0, totalPages: 1 },
-    }),
   )
 
   const { screen } = await renderWithRouter(
-    <DevelopersPage />,
-    routeMount(developersRoute, { workspaceId: 'TestWs01' }),
+    <ApiKeysPage />,
+    routeMount(apiKeysRoute, { workspaceId: 'TestWs01' }),
   )
 
   await screen.getByRole('button', { name: 'More actions' }).click()
