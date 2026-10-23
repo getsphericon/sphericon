@@ -26,7 +26,7 @@ run = "mise daemons start caddy"
 
 ["dev:down"]
 description = "Stop this checkout's dev stack (never the shared Postgres: `mise -C <primary checkout> daemons stop db` stops it for everyone)"
-run = "mise daemons stop caddy backend frontend mailpit"
+run = "mise daemons stop caddy backend frontend demo mailpit"
 
 ["dev:restart"]
 description = "Restart this checkout's dev stack (dev:down, then dev; the shared Postgres keeps running)"

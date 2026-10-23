@@ -1,0 +1,27 @@
+{
+  "name": "@sphericon/storefront",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Brightpath demo storefront: a customer site that sends events to the dev stack",
+  "type": "module",
+  "scripts": {
+    "dev": "vite"
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.1.5",
+    "@mantine/core": "^9.7.3",
+    "@sphericon/analytics": "workspace:*",
+    "@sphericon/node": "workspace:*",
+    "hono": "^4.13.13",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-router": "^8.5.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "vite": "^8.3.5"
+  }
+}

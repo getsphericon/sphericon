@@ -210,6 +210,20 @@
   created_at: '{{daysAgo 120}}'
   updated_at: '{{daysAgo 120}}'
   email_verified_at: '{{daysAgo 120}}'
+- id: 20001
+  name: 'Ana'
+  email: 'ana@brightpath.example'
+  password_hash: '{{argonHash "password"}}'
+  created_at: '{{daysAgo 118}}'
+  updated_at: '{{daysAgo 118}}'
+  email_verified_at: '{{daysAgo 118}}'
+- id: 20002
+  name: 'Milo'
+  email: 'milo@brightpath.example'
+  password_hash: '{{argonHash "password"}}'
+  created_at: '{{daysAgo 115}}'
+  updated_at: '{{daysAgo 115}}'
+  email_verified_at: '{{daysAgo 115}}'
 
 # Pat has a password and one Passkey (passkeys.yml), no Second factor and no Membership: the User
 # the Passkey tests sign in as (ADR 0052).

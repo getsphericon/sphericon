@@ -72,6 +72,17 @@ SPHERICON_JWT_SECRET = "dev-secret-change-in-production"
 SPHERICON_STAFF_JWT_SECRET = "dev-staff-secret-change-in-production"
 # Dev-only Tink keyset (same one the old .env.docker.sample shipped); never use in prod.
 SPHERICON_ENCRYPTION_KEY = "CIamsc4JEmQKWAowdHlwZS5nb29nbGVhcGlzLmNvbS9nb29nbGUuY3J5cHRvLnRpbmsuQWVzR2NtS2V5EiIaIIOWohIqGhyD2NeiOazlLrnrHqCirukTjCjD1iMFPqiEGAEQARiGprHOCSAB"
+# The demo storefront (packages/storefront) is a customer site on its own origin: brightpath.localhost
+# in the primary checkout, brightpath.<dir>.sphericon.localhost in a linked worktree. Its tracker
+# posts to the app origin (not the `api.` host, where Caddy rewrites /collect to /api/collect) with
+# the Brightpath collect key from the fixtures.
+DEMO_HOST = "{% if env.CADDY_PORT == '443' %}brightpath.localhost{% else %}brightpath.{{ env.APP_HOST }}{% endif %}"
+DEMO_COLLECT_URL = "{{ env.SPHERICON_APP_URL }}"
+DEMO_COLLECT_KEY = "omck_test_brightpath_collect_key"
+# The storefront's server calls the external API at the api. host with the "Demo site" token
+# (committed dev secret: fixtures/api_tokens.yml).
+DEMO_API_URL = "https://{{ env.API_HOST }}{% if env.CADDY_PORT != '443' %}:{{ env.CADDY_PORT }}{% endif %}"
+DEMO_API_TOKEN = "omtk_demosite0001_demo-token-secret"
 SPHERICON_SMTP_HOST = "127.0.0.1"
 SPHERICON_SMTP_PORT = "{{ env.MAILPIT_PORT | int - 8025 + 1025 }}"
 # One Postgres serves every checkout: the primary checkout's `db` daemon (below), started
@@ -132,11 +143,18 @@ port = { auto = true, base = 5173 }
 ready_cmd = "nc -z 127.0.0.1 $FRONTEND_PORT"
 proxy = false
 
+# The demo storefront. NODE_USE_SYSTEM_CA makes Node trust the certificate `caddy trust` installed.
+[daemons.demo]
+run = "NODE_USE_SYSTEM_CA=1 exec pnpm --filter @sphericon/storefront exec vite"
+port = { auto = true, base = 5373 }
+ready_cmd = "nc -z 127.0.0.1 $DEMO_PORT"
+proxy = false
+
 [daemons.caddy]
 run = "exec caddy run --config Caddyfile --adapter caddyfile"
 port = { auto = true, base = 443 }
 ready_cmd = "nc -z 127.0.0.1 $CADDY_PORT"
-depends = ["frontend", "backend"]
+depends = ["frontend", "backend", "demo"]
 proxy = false
 
 # Resources shipped by packslip tools (hk, pitchfork, ...): agent skills are linked

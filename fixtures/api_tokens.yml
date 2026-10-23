@@ -94,3 +94,24 @@
   last_used_at: '{{hoursAgo 48}}'
   created_at: '{{hoursAgo 1440}}'
   updated_at: '{{hoursAgo 48}}'
+# The token the dev demo storefront's server uses: it writes events and Contacts, nothing else.
+- id: 20005
+  name: 'Demo site'
+  prefix: 'demosite0001'
+  secret_hash: '{{bcryptHash "demo-token-secret"}}'
+  scopes: '["contacts:write","events:write"]'
+  workspace_id: 20
+  created_at: '{{hoursAgo 24}}'
+  updated_at: '{{hoursAgo 24}}'
+
+# The token a contributor gives an MCP client (CONTRIBUTING.md, Dev accounts): it reads and
+# writes Contacts, Segments, Broadcasts and Templates, and has no mcp:send, so no send tool.
+# The prefix is lowercase letters and digits only: ParseToken rejects an underscore in it.
+- id: 20006 # fixture: BrightpathDevMcpToken
+  name: 'Dev MCP'
+  prefix: 'devmcp000001'
+  secret_hash: '{{bcryptHash "dev-mcp-token-secret"}}'
+  scopes: '["contacts:read","contacts:write","segments:read","segments:write","broadcasts:read","broadcasts:write","templates:read","templates:write"]'
+  workspace_id: 20
+  created_at: '{{hoursAgo 24}}'
+  updated_at: '{{hoursAgo 24}}'

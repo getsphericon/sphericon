@@ -4,6 +4,7 @@ const config: KnipConfig = {
   ignore: [
     'src/generated/**',
     'packages/analytics/src/generated/**',
+    'packages/node/src/generated/**',
     'internal/server/assets/**',
     'internal/emaildoc/assets/**',
     // Violating and clean examples for cmd/contractcopy's own tests.

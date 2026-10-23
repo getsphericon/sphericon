@@ -86,21 +86,48 @@ CI installs the same toolchain with `jdx/mise-action` and runs the same mise tas
 ### Dev accounts
 
 `mise run setup` seeds the dev database with the same `fixtures/*.yml` the tests use, so a
-fresh checkout already has a populated Workspace, **Acme** (`/w/acme`: contacts, events,
-broadcasts, automations, segments, templates, integrations). The other Workspaces (Globex,
-Initech, Umbrella, …) exist for isolation and edge-case tests and are mostly empty. These
-are development fixtures only; never reuse the credentials anywhere else.
+fresh checkout already has a populated Workspace, **Brightpath** (an online course school with
+contacts, events, broadcasts, automations, segments, templates and integrations). Acme and the
+other Workspaces (Globex, Initech, Umbrella, …) exist for isolation and edge-case tests. Brightpath's
+default Integration is SMTP to the dev Mailpit, so a broadcast or automation sent from it shows up
+in the Mailpit UI. These are development fixtures only; never reuse the credentials anywhere else.
 
 Sign in at `https://sphericon.localhost/login`:
 
-| Role   | Workspace | Email                   | Password   |
-| ------ | --------- | ----------------------- | ---------- |
-| owner  | Acme      | `info@getsphericon.com` | `password` |
-| admin  | Acme      | `alice@acme.test`       | `password` |
-| member | Acme      | `mary@acme.test`        | `password` |
-| owner  | Globex    | `jane@globex.test`      | `password` |
+| Role   | Workspace  | Email                     | Password   |
+| ------ | ---------- | ------------------------- | ---------- |
+| owner  | Brightpath | `maya@brightpath.example` | `password` |
+| admin  | Brightpath | `ana@brightpath.example`  | `password` |
+| member | Brightpath | `milo@brightpath.example` | `password` |
+| owner  | Acme       | `info@getsphericon.com`   | `password` |
+| admin  | Acme       | `alice@acme.test`         | `password` |
+| member | Acme       | `mary@acme.test`          | `password` |
+| owner  | Globex     | `jane@globex.test`        | `password` |
 
-Acme has all three roles, so one Workspace is enough for development. `sam@globex.test` / `password` has a TOTP Second factor, secret `JBSWY3DPEHPK3PXP`.
+Brightpath has all three roles, so one Workspace is enough for development. `sam@globex.test` / `password` has a TOTP Second factor, secret `JBSWY3DPEHPK3PXP`.
+
+Brightpath's Mailpit Integration sends to `127.0.0.1:1025`, the primary checkout's SMTP port. A
+linked worktree's Mailpit SMTP port is offset (`SPHERICON_SMTP_PORT`) and a fixture cannot follow
+it, because fixtures also load in tests: change the Integration's port in its settings there.
+Brightpath's Sending domains keep the default `pending` Tracking state in the fixtures, so no
+Tracking domain serves and links in dev mail use the app URL.
+
+### MCP client
+
+Connect Claude Code to Brightpath through the dev stack's MCP endpoint, `/mcp` on the app origin.
+The fixtures carry a token for it, **Dev MCP**, with a known secret. It reads and writes Contacts,
+Segments, Broadcasts and Templates and has no `mcp:send`, so the send tools are not listed. With
+the stack running (`mise run dev`) and Caddy trusted (`caddy trust`):
+
+```sh
+claude mcp add --transport http sphericon https://sphericon.localhost/mcp \
+  --header "Authorization: Bearer omtk_devmcp000001_dev-mcp-token-secret"
+```
+
+In a linked worktree use its origin instead (`mise env | grep SPHERICON_APP_URL`), plus `/mcp`.
+Then `/mcp` in Claude Code shows `sphericon` connected, and "list the Brightpath contacts" calls
+`contacts_list`; "create a contact dev@brightpath.example" calls `contacts_create`. `mise run
+db:seed` removes what you wrote.
 
 The Staff console is at `https://sphericon.localhost/console` (Enterprise, license feature
 `staff`: without a license key it answers 404). Sign-in needs a password and a TOTP code:
@@ -155,6 +182,7 @@ Daemons:
 | caddy    | `:443`                | TLS + routing, see `Caddyfile`                                         |
 | frontend | `:5173` (Vite)        | proxied by Caddy                                                       |
 | backend  | `:3300`               | proxied by Caddy under `/site`, `/api`, `/collect`, `/auth`            |
+| demo     | `:5373` (Vite)        | Brightpath storefront on https://brightpath.localhost, sends events    |
 | db       | `127.0.0.1:15432`     | one mise `postgres` preset server for all checkouts (`mise run db:up`) |
 | mailpit  | http://localhost:8025 | captured outbound email (SMTP UI on `:1025`)                           |
 

@@ -166,7 +166,7 @@
   provider: smtp
   config_encrypted: '{{ encrypt "{\"host\":\"email-smtp.eu-west-1.amazonaws.com\",\"port\":587,\"from\":\"hello@mail.brightpath.example\",\"fromName\":\"Brightpath\"}" }}'
   enabled: true
-  is_default: true
+  is_default: false
   max_per_second: 14
   max_per_day: 50000
   workspace_id: 20
@@ -182,6 +182,20 @@
   is_default: false
   max_per_second: 10
   max_per_day: 25000
+  workspace_id: 20
+  created_at: '{{daysAgo 110}}'
+  updated_at: '{{daysAgo 110}}'
+# The default is the dev Mailpit, so a broadcast or automation sent from Brightpath arrives in
+# the Mailpit UI. 127.0.0.1 because the daemon runs on the host (a bare `mailpit` name does not
+# resolve there); 1025 is the primary checkout's SMTP port, a linked worktree's is offset.
+- id: 20003
+  ingest_key: omik_test_brightpath_20003
+  name: 'Mailpit (dev SMTP)'
+  channel: email
+  provider: smtp
+  config_encrypted: '{{ encrypt "{\"host\":\"127.0.0.1\",\"port\":1025,\"from\":\"hello@mail.brightpath.example\",\"fromName\":\"Brightpath\"}" }}'
+  enabled: true
+  is_default: true
   workspace_id: 20
   created_at: '{{daysAgo 110}}'
   updated_at: '{{daysAgo 110}}'

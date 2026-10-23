@@ -331,7 +331,7 @@
   updated_at: '{{daysAgo 8}}'
 
 # --- Brightpath (workspace 20): demo workspace behind the screenshots on getsphericon.com ---
-- id: 20001
+- id: 20001 # fixture: BrightpathContactSofia
   email: 'sofia.marino@northwind.example'
   first_name: 'Sofia'
   last_name: 'Marino'
