@@ -188,7 +188,8 @@ export const siteAuthResendVerification = <ThrowOnError extends boolean = false>
 });
 
 /**
- * Set a new password from a reset token
+ * Set a new password from a reset token. A password outside the length rule answers 422
+ * with the field error; an invalid or expired token answers 400.
  */
 export const siteAuthResetPassword = <ThrowOnError extends boolean = false>(options: Options<SiteAuthResetPasswordData, ThrowOnError>): RequestResult<SiteAuthResetPasswordResponses, SiteAuthResetPasswordErrors, ThrowOnError> => (options.client ?? client).post<SiteAuthResetPasswordResponses, SiteAuthResetPasswordErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({
@@ -304,7 +305,8 @@ export const siteAuthSigninStart = <ThrowOnError extends boolean = false>(option
  * the registration cookie the link was minted for, the password from registration
  * stays; otherwise the request must carry a password, which replaces it, and without
  * one the answer is 428 and nothing changes, the link stays valid (a mail scanner
- * consumes nothing). A link is single use and scoped to the address it was sent to.
+ * consumes nothing); a password outside the length rule answers 422, and the link stays
+ * valid too. A link is single use and scoped to the address it was sent to.
  * Rate limited like registration.
  */
 export const siteAuthVerifyEmail = <ThrowOnError extends boolean = false>(options: Options<SiteAuthVerifyEmailData, ThrowOnError>): RequestResult<SiteAuthVerifyEmailResponses, SiteAuthVerifyEmailErrors, ThrowOnError> => (options.client ?? client).post<SiteAuthVerifyEmailResponses, SiteAuthVerifyEmailErrors, ThrowOnError>({

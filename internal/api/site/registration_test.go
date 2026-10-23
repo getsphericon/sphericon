@@ -108,6 +108,34 @@ func TestRegisteringValidatesNameAndEmail(t *testing.T) {
 
 }
 
+// An address no one can receive mail at and a password outside its length are refused per
+// field, before any User or mail exists.
+func TestRegisteringRefusesAnUnreachableAddressAndAShortPassword(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	res := registerWithPassword(t, env, "Grace Hopper", "grace@example", "1")
+	problem, ok := res.(*siteapi.SiteAuthRegisterUnprocessableEntity)
+	require.Truef(t, ok, "got %T", res)
+	assert.Equal(t, siteapi.ProblemDetailsErrors{
+		"email":    {"enter an email address you can receive mail at, like name@example.com"},
+		"password": {"the password must be 8 to 256 characters long"},
+	}, problem.Errors.Value)
+	assert.Equal(t, "check the email and password", problem.Detail.Value, "the detail names only the failed fields")
+	exists, err := env.DB.User.Query().Where(entuser.Email("grace@example")).Exist(t.Context())
+	require.NoError(t, err)
+	assert.False(t, exists, "a rejected registration creates no user")
+	assert.Empty(t, env.SystemMail.Messages())
+}
+
+func TestARegistrationFailingEveryFieldNamesThemAllInItsDetail(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	res := registerWithPassword(t, env, " ", "grace@example", "")
+	problem, ok := res.(*siteapi.SiteAuthRegisterUnprocessableEntity)
+	require.Truef(t, ok, "got %T", res)
+	assert.Equal(t, "check the name, email and password", problem.Detail.Value)
+}
+
 func TestLoginRefusesAnUnverifiedUserWithATypedAnswerAndNoSession(t *testing.T) {
 	env := testhelper.Setup(t)
 	register(t, env, "Grace Hopper", "grace@example.com")

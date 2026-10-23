@@ -29,6 +29,7 @@ require (
 	github.com/go-faster/jx v1.2.0
 	github.com/go-jose/go-jose/v4 v4.1.6
 	github.com/go-pkgz/auth/v2 v2.3.1
+	github.com/go-playground/validator/v10 v10.30.5
 	github.com/go-testfixtures/testfixtures/v3 v3.19.0
 	github.com/go-webauthn/webauthn v0.18.2
 	github.com/golang-jwt/jwt/v5 v5.3.1
@@ -120,6 +121,7 @@ require (
 	github.com/dlclark/regexp2/v2 v2.9.1 // indirect
 	github.com/fatih/color v1.19.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.9.4 // indirect
+	github.com/gabriel-vasile/mimetype v1.4.15 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-crypt/x v0.4.17 // indirect
 	github.com/go-faster/yaml v0.4.6 // indirect
@@ -127,6 +129,8 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-openapi/inflect v1.0.1 // indirect
 	github.com/go-openapi/jsonpointer v1.0.2 // indirect
+	github.com/go-playground/locales v0.14.1 // indirect
+	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-sourcemap/sourcemap v2.1.4+incompatible // indirect
 	github.com/go-test/deep v1.0.8 // indirect
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
@@ -151,6 +155,7 @@ require (
 	github.com/jmattheis/goverter v1.9.4 // indirect
 	github.com/jonbaldie/go-mutesting/v2 v2.10.31 // indirect
 	github.com/klauspost/cpuid/v2 v2.4.1 // indirect
+	github.com/leodido/go-urn v1.5.0 // indirect
 	github.com/lib/pq v1.12.3 // indirect
 	github.com/lithammer/shortuuid/v3 v3.0.7 // indirect
 	github.com/matryer/moq v0.8.0 // indirect

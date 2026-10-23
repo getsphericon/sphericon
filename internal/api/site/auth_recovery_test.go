@@ -62,7 +62,7 @@ func TestForgotPasswordFullResetFlow(t *testing.T) {
 	// the password hash — has changed).
 	again, err := c.SiteAuthResetPassword(ctx, &siteapi.SiteResetPasswordInput{Token: token, Password: "another123"})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.ProblemDetails{}, again, "reset token must not be reusable")
+	assert.IsType(t, &siteapi.SiteAuthResetPasswordBadRequest{}, again, "reset token must not be reusable")
 }
 
 func TestForgotPasswordUnknownEmailIsSilent(t *testing.T) {
@@ -83,7 +83,7 @@ func TestResetPasswordRejectsInvalidToken(t *testing.T) {
 	res, err := c.SiteAuthResetPassword(context.Background(),
 		&siteapi.SiteResetPasswordInput{Token: "not-a-token", Password: "whatever123"})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.ProblemDetails{}, res)
+	assert.IsType(t, &siteapi.SiteAuthResetPasswordBadRequest{}, res)
 }
 
 func TestResetPasswordRejectsWrongPurposeToken(t *testing.T) {
@@ -96,7 +96,7 @@ func TestResetPasswordRejectsWrongPurposeToken(t *testing.T) {
 
 	res, err := pub.SiteAuthResetPassword(ctx, &siteapi.SiteResetPasswordInput{Token: verifyToken, Password: "whatever123"})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.ProblemDetails{}, res, "a verify token must not reset a password")
+	assert.IsType(t, &siteapi.SiteAuthResetPasswordBadRequest{}, res, "a verify token must not reset a password")
 }
 
 func TestEmailChangeRequiresCurrentPassword(t *testing.T) {

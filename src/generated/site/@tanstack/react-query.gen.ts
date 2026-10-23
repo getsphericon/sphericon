@@ -181,7 +181,8 @@ export const siteAuthResendVerificationMutation = (options?: Partial<Options<Sit
 };
 
 /**
- * Set a new password from a reset token
+ * Set a new password from a reset token. A password outside the length rule answers 422
+ * with the field error; an invalid or expired token answers 400.
  */
 export const siteAuthResetPasswordMutation = (options?: Partial<Options<SiteAuthResetPasswordData>>): UseMutationOptions<unknown, SiteAuthResetPasswordError, Options<SiteAuthResetPasswordData>> => {
   const mutationOptions: UseMutationOptions<unknown, SiteAuthResetPasswordError, Options<SiteAuthResetPasswordData>> = {
@@ -345,7 +346,8 @@ export const siteAuthSigninStartOptions = (options: Options<SiteAuthSigninStartD
  * the registration cookie the link was minted for, the password from registration
  * stays; otherwise the request must carry a password, which replaces it, and without
  * one the answer is 428 and nothing changes, the link stays valid (a mail scanner
- * consumes nothing). A link is single use and scoped to the address it was sent to.
+ * consumes nothing); a password outside the length rule answers 422, and the link stays
+ * valid too. A link is single use and scoped to the address it was sent to.
  * Rate limited like registration.
  */
 export const siteAuthVerifyEmailMutation = (options?: Partial<Options<SiteAuthVerifyEmailData>>): UseMutationOptions<SiteAuthVerifyEmailResponse, SiteAuthVerifyEmailError, Options<SiteAuthVerifyEmailData>> => {

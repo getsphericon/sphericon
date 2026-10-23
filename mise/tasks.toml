@@ -221,6 +221,8 @@ run = [
   "go test ./internal/emaildoc -run '^$' -fuzz '^FuzzPrepare' -fuzztime $FUZZTIME",
   "go test ./internal/preset -run '^$' -fuzz '^FuzzParse' -fuzztime $FUZZTIME",
   "go test ./ee/licensekey -run '^$' -fuzz '^FuzzParseOf' -fuzztime $FUZZTIME",
+  "go test ./internal/validation -run '^$' -fuzz '^FuzzAccountEmail$' -fuzztime $FUZZTIME",
+  "go test ./internal/validation -run '^$' -fuzz '^FuzzPassword$' -fuzztime $FUZZTIME",
 ]
 
 ["test:cover"]

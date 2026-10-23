@@ -5393,7 +5393,6 @@ func (s *ProblemDetails) SetDebug(val OptProblemDebug) {
 
 func (*ProblemDetails) siteAnalyticsOverviewRes()              {}
 func (*ProblemDetails) siteAuthConfirmEmailChangeRes()         {}
-func (*ProblemDetails) siteAuthResetPasswordRes()              {}
 func (*ProblemDetails) siteAuthSecondFactorRes()               {}
 func (*ProblemDetails) siteAuthSigninNotMeRes()                {}
 func (*ProblemDetails) siteAuthSigninStartRes()                {}
@@ -6721,10 +6720,18 @@ type SiteAuthResendVerificationAccepted struct{}
 
 func (*SiteAuthResendVerificationAccepted) siteAuthResendVerificationRes() {}
 
+type SiteAuthResetPasswordBadRequest ProblemDetails
+
+func (*SiteAuthResetPasswordBadRequest) siteAuthResetPasswordRes() {}
+
 // SiteAuthResetPasswordOK is response for SiteAuthResetPassword operation.
 type SiteAuthResetPasswordOK struct{}
 
 func (*SiteAuthResetPasswordOK) siteAuthResetPasswordRes() {}
+
+type SiteAuthResetPasswordUnprocessableEntity ProblemDetails
+
+func (*SiteAuthResetPasswordUnprocessableEntity) siteAuthResetPasswordRes() {}
 
 // SiteAuthSigninCallbackFound is response for SiteAuthSigninCallback operation.
 type SiteAuthSigninCallbackFound struct {
@@ -6792,6 +6799,10 @@ func (*SiteAuthVerifyEmailBadRequest) siteAuthVerifyEmailRes() {}
 type SiteAuthVerifyEmailPreconditionRequired ProblemDetails
 
 func (*SiteAuthVerifyEmailPreconditionRequired) siteAuthVerifyEmailRes() {}
+
+type SiteAuthVerifyEmailUnprocessableEntity ProblemDetails
+
+func (*SiteAuthVerifyEmailUnprocessableEntity) siteAuthVerifyEmailRes() {}
 
 // Closed error kind of an HTTP step's body.
 // Ref: #/components/schemas/SiteAutomationHttpErrorKind
