@@ -19,6 +19,7 @@ import (
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 
 	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/internal/cleanup"
 	"github.com/getsphericon/sphericon/internal/db"
 )
 
@@ -33,7 +34,7 @@ func TestConfigurePoolAppliesLimits(t *testing.T) {
 	cfg := testConfig(t)
 	sqlDB, err := sql.Open("pgx", cfg.DatabaseURL)
 	require.NoError(t, err)
-	t.Cleanup(func() { _ = sqlDB.Close() })
+	t.Cleanup(func() { cleanup.Close(sqlDB, "sqlDB") })
 
 	db.ConfigurePool(sqlDB, config.DBPool{MaxOpenConns: 7, MaxIdleConns: 3, ConnMaxLifetime: time.Minute, RiverMaxConns: 11})
 
@@ -44,7 +45,7 @@ func TestOpenRiverDBAppliesMaxConns(t *testing.T) {
 	cfg := testConfig(t)
 	riverDB, err := db.OpenRiverDB(cfg.DatabaseURL, config.DBPool{RiverMaxConns: 11, ConnMaxLifetime: time.Minute})
 	require.NoError(t, err)
-	t.Cleanup(func() { _ = riverDB.Close() })
+	t.Cleanup(func() { cleanup.Close(riverDB, "riverDB") })
 
 	assert.Equal(t, 11, riverDB.Stats().MaxOpenConnections)
 }
@@ -57,11 +58,11 @@ func TestPoolMetricsAppearInScrape(t *testing.T) {
 
 	sqlDB, err := sql.Open("pgx", cfg.DatabaseURL)
 	require.NoError(t, err)
-	t.Cleanup(func() { _ = sqlDB.Close() })
+	t.Cleanup(func() { cleanup.Close(sqlDB, "sqlDB") })
 	db.ConfigurePool(sqlDB, pool)
 	riverDB, err := db.OpenRiverDB(cfg.DatabaseURL, pool)
 	require.NoError(t, err)
-	t.Cleanup(func() { _ = riverDB.Close() })
+	t.Cleanup(func() { cleanup.Close(riverDB, "riverDB") })
 
 	reg := prometheus.NewRegistry()
 	reader, err := otelprom.New(otelprom.WithRegisterer(reg))
@@ -69,11 +70,11 @@ func TestPoolMetricsAppearInScrape(t *testing.T) {
 	mp := sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader))
 	prev := otel.GetMeterProvider()
 	otel.SetMeterProvider(mp)
-	t.Cleanup(func() { otel.SetMeterProvider(prev); _ = mp.Shutdown(context.Background()) })
+	t.Cleanup(func() { otel.SetMeterProvider(prev); cleanup.Report("shut mp down", mp.Shutdown(context.Background())) })
 
 	registration, err := db.RegisterPoolMetrics(sqlDB, riverDB)
 	require.NoError(t, err)
-	t.Cleanup(func() { _ = registration.Unregister() })
+	t.Cleanup(func() { cleanup.Report("unregister the gauge", registration.Unregister()) })
 
 	rec := httptest.NewRecorder()
 	promhttp.HandlerFor(reg, promhttp.HandlerOpts{}).ServeHTTP(rec, httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/metrics", nil))

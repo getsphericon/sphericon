@@ -29,7 +29,7 @@ func newSecondFactorEnv(t *testing.T) *secondFactorEnv {
 }
 
 // send sends a JSON site request under the session and decodes a JSON answer into out.
-func (s *secondFactorEnv) send(t *testing.T, method, path, session, body string, out any) (int, string) {
+func (s *secondFactorEnv) send(t *testing.T, method, path, session, body string, out any) (status int, raw string) {
 	t.Helper()
 	rec := sendWithSession(t, s.env, method, path, session, body)
 	if out != nil && rec.Code < 300 && rec.Body.Len() > 0 {
@@ -166,13 +166,13 @@ func uniq(xs []string) map[string]struct{} {
 	return m
 }
 
-func (s *secondFactorEnv) disable(t *testing.T, session, password, code string) (int, string) {
+func (s *secondFactorEnv) disable(t *testing.T, session, password, code string) (status int, raw string) {
 	t.Helper()
 	return s.send(t, http.MethodPost, "/site/me/second-factor/disable", session,
 		`{"currentPassword":"`+password+`","code":"`+code+`"}`, nil)
 }
 
-func (s *secondFactorEnv) regenerate(t *testing.T, session, password string) (int, []string, string) {
+func (s *secondFactorEnv) regenerate(t *testing.T, session, password string) (status int, codes []string, raw string) {
 	t.Helper()
 	var rc recoveryCodesRes
 	status, fresh := s.send(t, http.MethodPost, "/site/me/second-factor/recovery-codes", session,

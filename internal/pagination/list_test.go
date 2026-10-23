@@ -19,16 +19,16 @@ type opt struct {
 func (o opt) Get() (int32, bool) { return o.v, o.ok }
 
 // catalogue serves a fixed set of numbers through the two closures List takes.
-func catalogue(n int) (func(context.Context) (int, error), func(context.Context, int, int) ([]int, error)) {
-	count := func(context.Context) (int, error) { return n, nil }
-	fetch := func(_ context.Context, limit, offset int) ([]int, error) {
+func catalogue(n int) (count func(context.Context) (int, error), page func(context.Context, int, int) ([]int, error)) {
+	count = func(context.Context) (int, error) { return n, nil }
+	page = func(_ context.Context, limit, offset int) ([]int, error) {
 		out := []int{}
 		for i := offset; i < min(offset+limit, n); i++ {
 			out = append(out, i)
 		}
 		return out, nil
 	}
-	return count, fetch
+	return count, page
 }
 
 func TestParamsNormalizesOptionalPageParams(t *testing.T) {

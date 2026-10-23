@@ -59,17 +59,25 @@ func workspaceOf(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceI
 	return siteapi.SiteWorkspaceResource{}
 }
 
-// siteGet sends a GET as the fixture user and returns the status and decoded body.
-func siteGet(t *testing.T, env *testhelper.TestEnv, email, path string) (int, map[string]any) {
+// siteGet sends a GET as the fixture user and returns the status and the body.
+func siteGet(t *testing.T, env *testhelper.TestEnv, email, path string) (status int, body []byte) {
 	t.Helper()
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, path, nil)
 	token := env.SiteToken(t, email, nil)
 	req.AddCookie(testhelper.RequestCookie("JWT", token))
 	env.Server.ServeHTTP(rec, req)
-	var body map[string]any
-	_ = json.Unmarshal(rec.Body.Bytes(), &body)
-	return rec.Code, body
+	return rec.Code, rec.Body.Bytes()
+}
+
+// problemCode is the `code` of an RFC 7807 problem body.
+func problemCode(t *testing.T, body []byte) string {
+	t.Helper()
+	var problem struct {
+		Code string `json:"code"`
+	}
+	require.NoError(t, json.Unmarshal(body, &problem))
+	return problem.Code
 }
 
 func TestOwnerAndAdminSwitchTheRequirementAndAMemberCannot(t *testing.T) {
@@ -138,7 +146,8 @@ func TestAfterGraceTheRequiringWorkspaceAloneIsWithheld(t *testing.T) {
 
 	code, body := siteGet(t, env, fixtures.UmbrellaOwnerRitaEmail, "/site/workspaces/"+fixtures.UmbrellaPublicID+"/tags")
 	assert.Equal(t, http.StatusForbidden, code)
-	assert.Equal(t, "second_factor_required", body["code"])
+	problem := problemCode(t, body)
+	assert.Equal(t, "second_factor_required", problem)
 
 	for _, path := range []string{
 		"/site/workspaces/" + fixtures.InitechPublicID + "/tags",
@@ -161,7 +170,8 @@ func TestANewMembershipIsWithheldOnceItsOwnGraceEnds(t *testing.T) {
 	env := requirementEnv(t, ninaGraceEnds.Add(time.Hour))
 	code, body := siteGet(t, env, fixtures.UmbrellaMemberNinaEmail, "/site/workspaces/"+fixtures.UmbrellaPublicID+"/tags")
 	assert.Equal(t, http.StatusForbidden, code)
-	assert.Equal(t, "second_factor_required", body["code"])
+	problem := problemCode(t, body)
+	assert.Equal(t, "second_factor_required", problem)
 }
 
 func TestTurningTheRequirementOnEmailsEveryUserWithoutASecondFactor(t *testing.T) {

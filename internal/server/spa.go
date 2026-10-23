@@ -6,6 +6,8 @@ import (
 	"path"
 	"strconv"
 	"strings"
+
+	"github.com/getsphericon/sphericon/internal/cleanup"
 )
 
 // localeSentinel is the placeholder baked into index.html (see repo-root
@@ -59,7 +61,7 @@ func spaFileHandler(sub fs.FS, locale string, requireEmailVerification bool) htt
 		if name != "" && name != "index.html" {
 			if f, err := sub.Open(name); err == nil {
 				info, statErr := f.Stat()
-				_ = f.Close()
+				cleanup.Close(f, "file")
 				if statErr == nil && !info.IsDir() {
 					fileServer.ServeHTTP(w, r)
 					return

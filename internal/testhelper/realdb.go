@@ -12,9 +12,10 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/getsphericon/sphericon/config"
 	"github.com/peterldowns/pgtestdb"
 	"github.com/stretchr/testify/require"
+
+	"github.com/getsphericon/sphericon/config"
 )
 
 // RealDB is a database of the test's own on the test server, at the fixture state and
@@ -122,7 +123,10 @@ func hashTrees(root string, paths ...string) (string, error) {
 			if err != nil {
 				return err
 			}
-			name, _ := filepath.Rel(root, path)
+			name, err := filepath.Rel(root, path)
+			if err != nil {
+				return err
+			}
 			h.Write([]byte(name))
 			h.Write(data)
 			return nil

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -124,7 +125,9 @@ func (d *Delivery) retryLater(ctx context.Context, s *ent.Scoped, b *ent.Broadca
 	if res.Outcome == outbound.Held {
 		// Best effort: the hold is enforced by the send path and the caller retries on the
 		// HeldError either way, so a failed write only leaves the reason unrecorded.
-		_ = setHold(ctx, s, b.ID, res.Reason)
+		if herr := setHold(ctx, s, b.ID, res.Reason); herr != nil {
+			slog.WarnContext(ctx, "broadcast hold reason not recorded", "error", herr, "broadcast_id", b.ID)
+		}
 		return &HeldError{Reason: res.Reason}
 	}
 	// The Integration is busy, not blocked: the Broadcast stays sending with no hold
@@ -147,7 +150,9 @@ func (d *Delivery) retryLater(ctx context.Context, s *ent.Scoped, b *ent.Broadca
 	}
 	retry := res.Retry(ahead)
 	// Best effort, like the count: it only sharpens later recipients' backlog.
-	_ = s.BroadcastRecipient().UpdateOneID(rec.ID).SetDeferredUntil(now.Add(retry.After)).Exec(ctx)
+	if uerr := s.BroadcastRecipient().UpdateOneID(rec.ID).SetDeferredUntil(now.Add(retry.After)).Exec(ctx); uerr != nil {
+		slog.WarnContext(ctx, "broadcast recipient deferral not recorded", "error", uerr, "recipient_id", rec.ID)
+	}
 	return &DeferredError{Delay: retry.After}
 }
 

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/getsphericon/sphericon/internal/cleanup"
 	"github.com/getsphericon/sphericon/internal/webhook"
 )
 
@@ -27,7 +28,8 @@ func confirmByGet(ctx context.Context, url string) error {
 		return err
 	}
 	defer func() { _ = resp.Body.Close() }()
-	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 64<<10))
+	_, drainErr := io.Copy(io.Discard, io.LimitReader(resp.Body, 64<<10))
+	cleanup.Report("read the confirmation answer", drainErr)
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return fmt.Errorf("confirm subscription: status %d", resp.StatusCode)
 	}

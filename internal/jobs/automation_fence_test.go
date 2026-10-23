@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/internal/automations"
+	"github.com/getsphericon/sphericon/internal/cleanup"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -88,7 +89,7 @@ func newRealEnv(t *testing.T) *realEnv {
 	url := testhelper.RealDBURL(t)
 	sqlDB, err := sql.Open("pgx", url)
 	require.NoError(t, err)
-	t.Cleanup(func() { _ = sqlDB.Close() })
+	t.Cleanup(func() { cleanup.Close(sqlDB, "sqlDB") })
 	client := db.NewEntClient(sqlDB)
 	return &realEnv{client: client, scoped: client.Scoped(fixtures.AcmeID), fence: automations.FenceOn(client), url: url}
 }
@@ -97,7 +98,7 @@ func (e *realEnv) mod(t *testing.T, sender messaging.EmailSender) *outbound.Modu
 	t.Helper()
 	sqlDB, err := sql.Open("pgx", e.url)
 	require.NoError(t, err)
-	t.Cleanup(func() { _ = sqlDB.Close() })
+	t.Cleanup(func() { cleanup.Close(sqlDB, "sqlDB") })
 	return outbound.New(events.New(sqlDB), holds.New(func() bool { return true }, time.Now), resolvingTo(sender), tracking.New("test-secret", "http://local"))
 }
 
@@ -172,7 +173,7 @@ func TestExitDuringAnHTTPStepWaitsForTheCall(t *testing.T) {
 	require.NoError(t, err)
 	pool, err := sql.Open("pgx", e.url)
 	require.NoError(t, err)
-	t.Cleanup(func() { _ = pool.Close() })
+	t.Cleanup(func() { cleanup.Close(pool, "pool") })
 	queue, err := river.NewClient(riverdatabasesql.New(pool), &river.Config{})
 	require.NoError(t, err)
 	workCtx := rivertest.WorkContext(ctx, queue)
@@ -191,7 +192,7 @@ func TestExitDuringAnHTTPStepWaitsForTheCall(t *testing.T) {
 	}}
 	busDB, err := sql.Open("pgx", e.url)
 	require.NoError(t, err)
-	t.Cleanup(func() { _ = busDB.Close() })
+	t.Cleanup(func() { cleanup.Close(busDB, "busDB") })
 	mod := automations.New(cipher, events.New(busDB))
 	_, err = mod.Update(ctx, e.scoped, fixtures.AutomationNotifySlackID, automations.UpdateInput{Steps: &steps})
 	require.NoError(t, err)

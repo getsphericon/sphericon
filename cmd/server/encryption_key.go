@@ -85,7 +85,7 @@ func keysetCommand(d deps, change func(string) (string, error), note string) cli
 			return err
 		}
 		_, _ = fmt.Fprintln(out(cmd), next)
-		_, _ = io.WriteString(cmd.Root().ErrWriter, note)
+		_, _ = fmt.Fprint(cmd.Root().ErrWriter, note)
 		return nil
 	}
 }

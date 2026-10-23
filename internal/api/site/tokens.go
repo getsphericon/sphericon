@@ -3,10 +3,12 @@ package site
 import (
 	"context"
 	"errors"
-	"github.com/getsphericon/sphericon/internal/accounts"
-	"github.com/samber/lo"
 	"net/http"
 	"time"
+
+	"github.com/samber/lo"
+
+	"github.com/getsphericon/sphericon/internal/accounts"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/apitoken"
@@ -68,7 +70,7 @@ func (h *Handlers) SiteTokensCreate(ctx context.Context, req *siteapi.SiteCreate
 		v := siteapi.SiteTokensCreateUnprocessableEntity(problemWithErrors(
 			http.StatusUnprocessableEntity,
 			i18n.T("errors.name_empty", nil),
-			map[string][]string{"name": {i18n.T("errors.name_empty", nil)}},
+			map[string][]string{fieldName: {i18n.T("errors.name_empty", nil)}},
 		))
 		return &v, nil
 	case err != nil:
@@ -102,7 +104,7 @@ func (h *Handlers) SiteTokensUpdate(ctx context.Context, req *siteapi.SiteUpdate
 		v := siteapi.SiteTokensUpdateUnprocessableEntity(problemWithErrors(
 			http.StatusUnprocessableEntity,
 			i18n.T("errors.name_empty", nil),
-			map[string][]string{"name": {i18n.T("errors.name_empty", nil)}},
+			map[string][]string{fieldName: {i18n.T("errors.name_empty", nil)}},
 		))
 		return &v, nil
 	case errors.Is(err, apitokens.ErrNotFound):

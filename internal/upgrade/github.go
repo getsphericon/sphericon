@@ -16,6 +16,7 @@ import (
 	"golang.org/x/net/http/httpproxy"
 
 	"github.com/getsphericon/sphericon/internal/buildinfo"
+	"github.com/getsphericon/sphericon/internal/cleanup"
 )
 
 const (
@@ -106,7 +107,7 @@ func (g *GitHub) Fetch(ctx context.Context, version string, p Platform) (Release
 		ArchiveName:   name,
 		ArchivePath:   filepath.Join(dir, name),
 		ChecksumsPath: filepath.Join(dir, "checksums.txt"),
-		Cleanup:       func() { _ = os.RemoveAll(dir) },
+		Cleanup:       func() { cleanup.Report("remove the downloaded release", os.RemoveAll(dir)) },
 	}
 	for _, f := range []struct{ asset, path string }{{name, rel.ArchivePath}, {"checksums.txt", rel.ChecksumsPath}} {
 		a := asset(r, f.asset)

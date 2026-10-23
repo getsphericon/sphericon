@@ -40,16 +40,25 @@ func fieldsDetail(fields map[string][]string) string {
 	return i18n.T("errors.check_fields", map[string]any{"Fields": joinWords(names)})
 }
 
+// The json names of the fields a form sends and an error is reported against.
+const (
+	fieldName        = "name"
+	fieldEmail       = "email"
+	fieldNewEmail    = "newEmail"
+	fieldPassword    = "password"
+	fieldNewPassword = "newPassword"
+)
+
 // fieldOrder is the order fields appear in on the forms, which the detail follows.
-var fieldOrder = []string{"name", "email", "newEmail", "password", "newPassword"}
+var fieldOrder = []string{fieldName, fieldEmail, fieldNewEmail, fieldPassword, fieldNewPassword}
 
 // fieldLabels words a field for a person, by its json name.
 var fieldLabels = map[string]string{
-	"name":        "fields.name",
-	"email":       "fields.email",
-	"newEmail":    "fields.new_email",
-	"password":    "fields.password",
-	"newPassword": "fields.new_password",
+	fieldName:        "fields.name",
+	fieldEmail:       "fields.email",
+	fieldNewEmail:    "fields.new_email",
+	fieldPassword:    "fields.password",
+	fieldNewPassword: "fields.new_password",
 }
 
 // joinWords lists words the English way, "a, b and c" (English is the only locale).
@@ -62,10 +71,10 @@ func joinWords(words []string) string {
 
 // requiredMessages words an empty required field, by its json name.
 var requiredMessages = map[string]string{
-	"name":     "errors.name_required",
-	"email":    "errors.email_required",
-	"password": "errors.password_required",
-	"newEmail": "errors.new_email_required",
+	fieldName:     "errors.name_required",
+	fieldEmail:    "errors.email_required",
+	fieldPassword: "errors.password_required",
+	fieldNewEmail: "errors.new_email_required",
 }
 
 // ruleMessages words a failed rule of internal/validation, whatever the field.

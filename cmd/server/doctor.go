@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/internal/buildinfo"
+	"github.com/getsphericon/sphericon/internal/cleanup"
 	appdb "github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/doctor"
 )
@@ -70,7 +71,7 @@ func doctorCommand(d deps) *cli.Command {
 				if err != nil {
 					in.DBErr = err
 				} else {
-					defer func() { _ = db.Close() }()
+					defer cleanup.Close(db, "database")
 					in.DB, in.Ent = db, appdb.NewEntClient(db)
 				}
 			}
@@ -101,7 +102,7 @@ func openProbe(ctx context.Context, url string) (*sql.DB, error) {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 	if err := db.PingContext(ctx); err != nil {
-		_ = db.Close()
+		cleanup.Close(db, "database")
 		return nil, err
 	}
 	return db, nil

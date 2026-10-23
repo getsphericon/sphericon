@@ -65,7 +65,8 @@ func TestMintWithinNeverGrantsAScopeTheMinterLacks(t *testing.T) {
 	count, err := s.ApiToken().Query().Count(ctx)
 	require.NoError(t, err)
 	before := count
-	_, _ = apitokens.MintWithin(ctx, s, minter, apitokens.Input{Name: "denied", Scopes: []string{"mcp:send"}})
+	_, err = apitokens.MintWithin(ctx, s, minter, apitokens.Input{Name: "denied", Scopes: []string{"mcp:send"}})
+	require.Error(t, err)
 	count, err = s.ApiToken().Query().Count(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, before, count, "a refused mint creates nothing")

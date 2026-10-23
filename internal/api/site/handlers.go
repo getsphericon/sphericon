@@ -1,8 +1,11 @@
+// Package site implements the /site surface: the API of the frontend SPA, authenticated by the
+// session cookie.
 package site
 
 import (
 	"context"
 	"io"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"time"
@@ -339,4 +342,11 @@ func (secondFactorRequiredError) Unwrap() error { return secondfactor.ErrRequire
 // Problem is the 403 second_factor_required answer.
 func (secondFactorRequiredError) Problem() (status int, code, detail string) {
 	return http.StatusForbidden, string(siteapi.ProblemCodeSecondFactorRequired), i18n.T("errors.second_factor_required", nil)
+}
+
+// mailNotQueued logs a notice mail that could not be queued. The response never depends on it (a
+// failure shown to the caller would tell whether an address has an account) and a lost mail is
+// asked for again.
+func mailNotQueued(ctx context.Context, mail string, err error) {
+	slog.WarnContext(ctx, "mail not enqueued", "mail", mail, "error", err)
 }

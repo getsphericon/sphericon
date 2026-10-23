@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/internal/cleanup"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -21,8 +22,8 @@ func TestMetricsServerServesExpositionOnItsOwnListener(t *testing.T) {
 
 	srv := NewMetricsServer("127.0.0.1:0")
 	require.NoError(t, srv.Listen(t.Context()))
-	go func() { _ = srv.Serve() }()
-	t.Cleanup(func() { _ = srv.Shutdown(context.Background()) })
+	go func() { cleanup.Served("srv", srv.Serve()) }()
+	t.Cleanup(func() { cleanup.Report("shut srv down", srv.Shutdown(context.Background())) })
 	base := "http://" + srv.Addr()
 
 	code, body := testhelper.HTTPGet(t, base+"/metrics")
@@ -41,7 +42,7 @@ func TestMetricsServerAddrIsEmptyBeforeListen(t *testing.T) {
 func TestMetricsServerListenFailsOnOccupiedAddress(t *testing.T) {
 	occupied, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", "127.0.0.1:0")
 	require.NoError(t, err)
-	t.Cleanup(func() { _ = occupied.Close() })
+	t.Cleanup(func() { cleanup.Close(occupied, "occupied") })
 
 	srv := NewMetricsServer(occupied.Addr().String())
 	require.Error(t, srv.Listen(t.Context()))

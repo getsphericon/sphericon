@@ -2,14 +2,15 @@ package db_test
 
 import (
 	"database/sql"
-	"entgo.io/ent/dialect"
-	entsql "entgo.io/ent/dialect/sql"
 	"io/fs"
 	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
 	"testing/fstest"
+
+	"entgo.io/ent/dialect"
+	entsql "entgo.io/ent/dialect/sql"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/samber/lo"
@@ -22,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
+	"github.com/getsphericon/sphericon/internal/cleanup"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/refsettle"
@@ -34,7 +36,7 @@ func openEmpty(t *testing.T) *sql.DB {
 	sqlDB, err := sql.Open("pgx", testhelper.EmptyDBURL(t))
 	require.NoError(t, err)
 	sqlDB.SetMaxOpenConns(4)
-	t.Cleanup(func() { _ = sqlDB.Close() })
+	t.Cleanup(func() { cleanup.Close(sqlDB, "sqlDB") })
 	return sqlDB
 }
 
@@ -110,7 +112,7 @@ func TestMigrateGivesExistingWorkspacesAnIdAndEndsRequired(t *testing.T) {
 	require.NoError(t, err)
 
 	client := ent.NewClient(ent.Driver(entsql.OpenDB(dialect.Postgres, sqlDB)))
-	t.Cleanup(func() { _ = client.Close() })
+	t.Cleanup(func() { cleanup.Close(client, "client") })
 	workspaces, err := client.Workspace.Query().All(t.Context())
 	require.NoError(t, err)
 	require.Len(t, workspaces, 3)
@@ -205,7 +207,7 @@ func TestMigrateCarriesTheSendingDomainFlagIntoMoments(t *testing.T) {
 	require.NoError(t, err)
 
 	client := db.NewEntClient(sqlDB)
-	t.Cleanup(func() { _ = client.Close() })
+	t.Cleanup(func() { cleanup.Close(client, "client") })
 	domains, err := client.SendingDomain.Query().All(t.Context())
 	require.NoError(t, err)
 	moments := map[string][2]bool{}
@@ -236,7 +238,7 @@ func TestMigrateCarriesTheWebhookEndpointFlagIntoDisabledAt(t *testing.T) {
 	require.NoError(t, err)
 
 	client := db.NewEntClient(sqlDB)
-	t.Cleanup(func() { _ = client.Close() })
+	t.Cleanup(func() { cleanup.Close(client, "client") })
 	endpoints, err := client.WebhookEndpoint.Query().All(t.Context())
 	require.NoError(t, err)
 	off := map[string]bool{}
@@ -269,7 +271,7 @@ func TestMigrateCarriesTheUsageFlagIntoFinalizedAt(t *testing.T) {
 	require.NoError(t, err)
 
 	client := db.NewEntClient(sqlDB)
-	t.Cleanup(func() { _ = client.Close() })
+	t.Cleanup(func() { cleanup.Close(client, "client") })
 	rows, err := client.Usage.Query().All(t.Context())
 	require.NoError(t, err)
 	finalizedAt := map[string]string{}
@@ -299,7 +301,7 @@ func TestMigrateCarriesTheIntegrationQuotaFlagIntoFailedAt(t *testing.T) {
 	require.NoError(t, err)
 
 	client := db.NewEntClient(sqlDB)
-	t.Cleanup(func() { _ = client.Close() })
+	t.Cleanup(func() { cleanup.Close(client, "client") })
 	rows, err := client.Integration.Query().All(t.Context())
 	require.NoError(t, err)
 	failedAt := map[string]string{}
@@ -386,7 +388,7 @@ func migrateWithDanglingOutboundRefs(t *testing.T, sqlDB *sql.DB) *ent.Client {
 	_, err = db.MigrateFS(t.Context(), sqlDB, upTo)
 	require.NoError(t, err)
 	client := db.NewEntClient(sqlDB)
-	t.Cleanup(func() { _ = client.Close() })
+	t.Cleanup(func() { cleanup.Close(client, "client") })
 	return client
 }
 
@@ -446,7 +448,7 @@ func migrateWithDanglingContactRefs(t *testing.T, sqlDB *sql.DB) *ent.Client {
 	_, err = db.MigrateFS(t.Context(), sqlDB, all)
 	require.NoError(t, err)
 	client := db.NewEntClient(sqlDB)
-	t.Cleanup(func() { _ = client.Close() })
+	t.Cleanup(func() { cleanup.Close(client, "client") })
 	return client
 }
 
@@ -484,7 +486,7 @@ func TestBackfillGivesEveryAutomationVersionOneAndMovesItsEnrollments(t *testing
 	_, err = db.MigrateFS(t.Context(), sqlDB, beforeDrop)
 	require.NoError(t, err)
 	client := db.NewEntClient(sqlDB)
-	t.Cleanup(func() { _ = client.Close() })
+	t.Cleanup(func() { cleanup.Close(client, "client") })
 
 	// A batch of one makes the job loop, and a second run finds nothing left.
 	made, pointed, err := jobs.BackfillAutomationVersions(t.Context(), client, 1)

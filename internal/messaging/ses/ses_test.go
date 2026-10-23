@@ -53,7 +53,7 @@ func newSESAPIWithErrorType(t *testing.T, status int, errorType, body string) *s
 			w.Header().Set("X-Amzn-Errortype", errorType)
 		}
 		w.WriteHeader(status)
-		_, _ = io.WriteString(w, body)
+		_, _ = fmt.Fprint(w, body)
 	}))
 	t.Cleanup(api.srv.Close)
 	return api

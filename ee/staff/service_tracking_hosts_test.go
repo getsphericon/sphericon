@@ -31,7 +31,7 @@ func hostChanges(t *testing.T, c *serviceapi.Client, cursor string, limit int32)
 }
 
 // hostChangesFrom reads every page from cursor and returns the entries and the cursor to save.
-func hostChangesFrom(t *testing.T, c *serviceapi.Client, cursor string) ([]serviceapi.ServiceTrackingHostChange, string) {
+func hostChangesFrom(t *testing.T, c *serviceapi.Client, cursor string) (changes []serviceapi.ServiceTrackingHostChange, next string) {
 	t.Helper()
 	var all []serviceapi.ServiceTrackingHostChange
 	for {

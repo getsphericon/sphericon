@@ -49,7 +49,10 @@ func Check(root, specDir string) ([]string, error) {
 		if err != nil {
 			return err
 		}
-		rel, _ := filepath.Rel(root, path)
+		rel, err := filepath.Rel(root, path)
+		if err != nil {
+			return err
+		}
 		rel = filepath.ToSlash(rel)
 		if d.IsDir() {
 			if skipDir(rel, d.Name()) {

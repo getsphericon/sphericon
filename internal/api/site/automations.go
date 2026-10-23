@@ -218,8 +218,7 @@ func (h *Handlers) SiteAutomationsActivate(ctx context.Context, params siteapi.S
 		return &v, nil
 	}
 	if err != nil {
-		v := siteapi.SiteAutomationsActivateBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &v, nil
+		return nil, err
 	}
 	res := mapper.AutomationToResource(a)
 	return &res, nil
@@ -232,8 +231,7 @@ func (h *Handlers) SiteAutomationsDeactivate(ctx context.Context, params siteapi
 		return &v, nil
 	}
 	if err != nil {
-		v := siteapi.SiteAutomationsDeactivateBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &v, nil
+		return nil, err
 	}
 	res := mapper.AutomationToResource(a)
 	return &res, nil

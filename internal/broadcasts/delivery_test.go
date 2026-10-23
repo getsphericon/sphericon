@@ -28,7 +28,7 @@ type mailbox struct {
 	err  error
 }
 
-func (m *mailbox) DefaultFrom() (string, string) { return "hello@codebasics.dev", "CodeBasics" }
+func (m *mailbox) DefaultFrom() (address, name string) { return "hello@codebasics.dev", "CodeBasics" }
 
 func (m *mailbox) Send(_ context.Context, msg messaging.EmailMessage) (messaging.Receipt, error) {
 	if m.err != nil {

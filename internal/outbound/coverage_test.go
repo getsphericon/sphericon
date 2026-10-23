@@ -562,7 +562,7 @@ type takeoverSender struct {
 	takeOver func(context.Context)
 }
 
-func (s takeoverSender) DefaultFrom() (string, string) {
+func (s takeoverSender) DefaultFrom() (address, name string) {
 	return s.EmailSender.(messaging.DefaultFromer).DefaultFrom()
 }
 

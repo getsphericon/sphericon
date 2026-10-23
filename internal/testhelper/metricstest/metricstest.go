@@ -1,3 +1,5 @@
+// Package metricstest scrapes the real /metrics handler for tests and reads its Prometheus
+// exposition.
 package metricstest
 
 import (
@@ -27,7 +29,7 @@ func StartMetrics(t *testing.T) {
 	t.Helper()
 	stop, err := telemetry.Setup(context.Background(), &config.Config{OtelServiceName: "sphericon-test"}, "test", telemetry.BuildInfo{})
 	require.NoError(t, err)
-	t.Cleanup(func() { _ = stop(context.Background()) })
+	t.Cleanup(func() { require.NoError(t, stop(context.Background())) })
 }
 
 // ScrapeMetrics reads /metrics through the same handler the metrics listener serves.

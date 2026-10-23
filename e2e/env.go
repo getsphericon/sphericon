@@ -23,6 +23,7 @@ import (
 	apiauth "github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/app"
 	"github.com/getsphericon/sphericon/internal/brandkit"
+	"github.com/getsphericon/sphericon/internal/cleanup"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/templates"
 )
@@ -91,7 +92,7 @@ func Boot() (*Env, func(), error) {
 	}
 	a, err := app.New("e2e", app.WithListener(ln), app.WithE2EDKIMLookup())
 	if err != nil {
-		_ = ln.Close()
+		cleanup.Close(ln, "listener")
 		stopMailpit()
 		return nil, nil, fmt.Errorf("start application: %w", err)
 	}
@@ -99,13 +100,13 @@ func Boot() (*Env, func(), error) {
 	// application's container (no second pool).
 	acc, err := a.Accounts()
 	if err != nil {
-		_ = a.Close(ctx)
+		cleanup.Report("close the application", a.Close(ctx))
 		stopMailpit()
 		return nil, nil, fmt.Errorf("resolve accounts: %w", err)
 	}
 	bus, err := a.Bus()
 	if err != nil {
-		_ = a.Close(ctx)
+		cleanup.Report("close the application", a.Close(ctx))
 		stopMailpit()
 		return nil, nil, fmt.Errorf("resolve bus: %w", err)
 	}
@@ -118,7 +119,7 @@ func Boot() (*Env, func(), error) {
 	stop := func() {
 		cctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
-		_ = a.Close(cctx)
+		cleanup.Report("close the application", a.Close(cctx))
 		stopMailpit()
 	}
 	return &Env{

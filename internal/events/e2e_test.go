@@ -6,13 +6,15 @@ import (
 	"testing"
 
 	"github.com/ThreeDotsLabs/watermill/message"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/cleanup"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 // TestDomainEventsRouterDelivery proves the full transport end-to-end against the
@@ -27,7 +29,7 @@ func TestDomainEventsRouterDelivery(t *testing.T) {
 
 	router, err := events.NewRouter()
 	require.NoError(t, err)
-	t.Cleanup(func() { _ = router.Close() })
+	t.Cleanup(func() { cleanup.Close(router, "router") })
 	sub, err := events.NewSubscriber(sqlDB, "capture", testhelper.PrivateOutbox())
 	require.NoError(t, err)
 
@@ -47,7 +49,7 @@ func TestDomainEventsRouterDelivery(t *testing.T) {
 
 	runCtx, cancel := context.WithCancel(ctx)
 	t.Cleanup(cancel)
-	go func() { _ = router.Run(runCtx) }()
+	go func() { cleanup.Report("run the router", router.Run(runCtx)) }()
 	<-router.Running()
 
 	bus := events.New(sqlDB)
@@ -79,7 +81,7 @@ func TestDeliveryIgnoresTransactionsOfOtherDatabases(t *testing.T) {
 	sqlDB := testhelper.RealDB(t)
 	router, err := events.NewRouter()
 	require.NoError(t, err)
-	t.Cleanup(func() { _ = router.Close() })
+	t.Cleanup(func() { cleanup.Close(router, "router") })
 	sub, err := events.NewSubscriber(sqlDB, "capture", testhelper.PrivateOutbox())
 	require.NoError(t, err)
 	got := make(chan events.Envelope, 1)
@@ -93,7 +95,7 @@ func TestDeliveryIgnoresTransactionsOfOtherDatabases(t *testing.T) {
 	})
 	runCtx, cancel := context.WithCancel(ctx)
 	t.Cleanup(cancel)
-	go func() { _ = router.Run(runCtx) }()
+	go func() { cleanup.Report("run the router", router.Run(runCtx)) }()
 	<-router.Running()
 
 	require.NoError(t, events.New(sqlDB).WithinTx(ctx, func(_ *ent.Client, pub events.Publisher) error {

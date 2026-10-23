@@ -220,8 +220,16 @@ func newReceiver(t *testing.T, secret string, status int) *receiver {
 	t.Helper()
 	r := &receiver{}
 	r.srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		body, _ := io.ReadAll(req.Body)
-		wh, _ := standardwebhooks.NewWebhook(secret)
+		body, err := io.ReadAll(req.Body)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		wh, err := standardwebhooks.NewWebhook(secret)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 		r.mu.Lock()
 		r.got = append(r.got, delivery{body: body, event: req.Header.Get(webhook.EventHeader), verified: wh.Verify(body, req.Header)})
 		r.mu.Unlock()

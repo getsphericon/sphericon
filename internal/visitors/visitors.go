@@ -1,3 +1,5 @@
+// Package visitors resolves the anonymous visitors of a customer site to Contacts: it tells which
+// Contact a tracked visitor id is, once an identify call has linked them.
 package visitors
 
 import (
@@ -160,8 +162,11 @@ func resolveIdentity(ctx context.Context, s *ent.Scoped, visitorID string) (*ide
 		return &identityResolution{}, nil // anonymous
 	}
 	c, err := s.Contact().Get(ctx, *vis.ContactID)
-	if err != nil {
+	if ent.IsNotFound(err) {
 		return &identityResolution{}, nil // contact gone; treat as anonymous
+	}
+	if err != nil {
+		return nil, err
 	}
 	return &identityResolution{
 		contactID: c.ID,

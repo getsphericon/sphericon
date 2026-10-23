@@ -77,16 +77,16 @@ func newFakeInbox(t *testing.T) (*Inbox, *fakeMailpit) {
 			return
 		}
 		q := strings.Trim(strings.TrimPrefix(r.URL.Query().Get("query"), "to:"), `"`)
-		_ = json.NewEncoder(w).Encode(map[string]any{"messages": f.rows(q)})
+		assert.NoError(t, json.NewEncoder(w).Encode(map[string]any{"messages": f.rows(q)}))
 	})
 	mux.HandleFunc("GET /api/v1/messages", func(w http.ResponseWriter, _ *http.Request) {
-		_ = json.NewEncoder(w).Encode(map[string]any{"messages": f.rows("")})
+		assert.NoError(t, json.NewEncoder(w).Encode(map[string]any{"messages": f.rows("")}))
 	})
 	mux.HandleFunc("DELETE /api/v1/messages", func(w http.ResponseWriter, r *http.Request) {
 		var body struct {
 			IDs []string `json:"IDs"`
 		}
-		_ = json.NewDecoder(r.Body).Decode(&body)
+		assert.NoError(t, json.NewDecoder(r.Body).Decode(&body))
 		f.mu.Lock()
 		f.deleted = append(f.deleted, body.IDs...)
 		f.mu.Unlock()
@@ -98,7 +98,7 @@ func newFakeInbox(t *testing.T) (*Inbox, *fakeMailpit) {
 	mux.HandleFunc("GET /api/v1/message/{id}", func(w http.ResponseWriter, r *http.Request) {
 		for _, row := range f.rows("") {
 			if row["ID"] == r.PathValue("id") {
-				_ = json.NewEncoder(w).Encode(row)
+				assert.NoError(t, json.NewEncoder(w).Encode(row))
 				return
 			}
 		}
@@ -204,14 +204,14 @@ func (r *recordingTB) FailNow() {
 	runtime.Goexit()
 }
 
-func (r *recordingTB) report() (bool, string) {
+func (r *recordingTB) report() (failed bool, message string) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	return r.failed, strings.Join(r.logs, "\n")
 }
 
 // runFailing runs fn on its own goroutine and reports whether it failed the test.
-func runFailing(rec *recordingTB, fn func()) (bool, string) {
+func runFailing(rec *recordingTB, fn func()) (failed bool, message string) {
 	done := make(chan struct{})
 	go func() {
 		defer close(done)

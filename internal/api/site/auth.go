@@ -107,9 +107,13 @@ func (h *Handlers) SiteAuthRegister(ctx context.Context, req *siteapi.SiteRegist
 		return nil, err
 	}
 	if u.EmailVerifiedAt != nil {
-		_ = h.sysmail.EnqueueAddressTakenNotice(ctx, u.Email, granted)
+		if err := h.sysmail.EnqueueAddressTakenNotice(ctx, u.Email, granted); err != nil {
+			mailNotQueued(ctx, "AddressTakenNotice", err)
+		}
 	} else {
-		_ = h.sysmail.EnqueueEmailVerification(ctx, u.Email, token, granted)
+		if err := h.sysmail.EnqueueEmailVerification(ctx, u.Email, token, granted); err != nil {
+			mailNotQueued(ctx, "EmailVerification", err)
+		}
 	}
 	return &siteapi.SiteAuthRegisterAccepted{SetCookie: siteapi.NewOptString(cookie.String())}, nil
 }
@@ -137,7 +141,9 @@ func (h *Handlers) registerVerified(ctx context.Context, name, email, password s
 	if err != nil {
 		return nil, err
 	}
-	_ = h.welcome.EnqueueWelcome(ctx, u.Email, u.Name)
+	if err := h.welcome.EnqueueWelcome(ctx, u.Email, u.Name); err != nil {
+		mailNotQueued(ctx, "Welcome", err)
+	}
 	return &siteapi.SiteAuthRegisterAccepted{}, nil
 }
 
@@ -146,7 +152,7 @@ func emailTaken() siteapi.SiteAuthRegisterRes {
 	v := siteapi.SiteAuthRegisterConflict(problemWithErrors(
 		http.StatusConflict,
 		i18n.T("errors.email_exists", nil),
-		map[string][]string{"email": {i18n.T("errors.email_exists", nil)}},
+		map[string][]string{fieldEmail: {i18n.T("errors.email_exists", nil)}},
 	))
 	return &v
 }
@@ -184,6 +190,8 @@ func (h *Handlers) SiteAuthResendVerification(ctx context.Context, req *siteapi.
 	if err != nil {
 		return nil, err
 	}
-	_ = h.sysmail.EnqueueEmailVerification(ctx, to, token, u != nil && u.EmailVerifiedAt == nil)
+	if err := h.sysmail.EnqueueEmailVerification(ctx, to, token, u != nil && u.EmailVerifiedAt == nil); err != nil {
+		mailNotQueued(ctx, "EmailVerification", err)
+	}
 	return &siteapi.SiteAuthResendVerificationAccepted{}, nil
 }

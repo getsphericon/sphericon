@@ -2,6 +2,7 @@ package jobs_test
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -49,7 +50,11 @@ func newHookReceiver(t *testing.T) *hookReceiver {
 	t.Helper()
 	r := &hookReceiver{status: http.StatusOK, onCall: func() {}}
 	r.srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		body, _ := io.ReadAll(req.Body)
+		body, err := io.ReadAll(req.Body)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 		r.onCall()
 		r.mu.Lock()
 		defer r.mu.Unlock()
@@ -58,7 +63,7 @@ func newHookReceiver(t *testing.T) *hookReceiver {
 			w.Header().Set("Retry-After", r.retryAfter)
 		}
 		w.WriteHeader(r.status)
-		_, _ = io.WriteString(w, r.answer)
+		_, _ = fmt.Fprint(w, r.answer)
 	}))
 	t.Cleanup(r.srv.Close)
 	u, err := url.Parse(r.srv.URL)

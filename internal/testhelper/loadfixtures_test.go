@@ -6,10 +6,12 @@ import (
 	"testing/synctest"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/internal/cleanup"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/stretchr/testify/require"
 )
 
 // A test package whose first test runs inside a testing/synctest bubble loads the fixtures
@@ -26,7 +28,7 @@ func TestFixturesLoadedInsideASynctestBubbleAreDatedByTheRealClock(t *testing.T)
 	synctest.Test(t, func(t *testing.T) {
 		sqlDB, err := sql.Open("pgx", url)
 		require.NoError(t, err)
-		t.Cleanup(func() { _ = sqlDB.Close() })
+		t.Cleanup(func() { cleanup.Close(sqlDB, "sqlDB") })
 		require.NoError(t, migrateSchema(t.Context(), sqlDB))
 		require.NoError(t, loadFixtures(t.Context(), sqlDB, cfg, projectRoot()))
 

@@ -1,3 +1,5 @@
+// Command sphericon is the one binary: the server, and the commands an operator runs against an
+// Instance (migrate, doctor, upgrade, user, workspace, staff, preset and the others).
 package main
 
 import (
@@ -12,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/app"
 	"github.com/getsphericon/sphericon/internal/buildinfo"
 	"github.com/getsphericon/sphericon/internal/changelog"
+	"github.com/getsphericon/sphericon/internal/cleanup"
 )
 
 // commandOps is everything the staff member commands need from the app. The app
@@ -53,7 +56,7 @@ func newDeps(env string) deps {
 			if err != nil {
 				return nil, nil, err
 			}
-			return a, func() { _ = a.Shutdown(ctx) }, nil
+			return a, func() { cleanup.Shutdown(a.Shutdown(ctx)) }, nil
 		},
 	}
 }

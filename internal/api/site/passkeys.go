@@ -7,12 +7,13 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/go-faster/jx"
+
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/secondfactor"
-	"github.com/go-faster/jx"
 )
 
 // SitePasskeysList lists the session User's Passkeys, oldest first (ADR 0052).
@@ -104,7 +105,9 @@ func (h *Handlers) SitePasskeysFinishRegistration(ctx context.Context, req *site
 	if err != nil {
 		return nil, err
 	}
-	_ = h.sysmail.EnqueuePasskeyNotice(ctx, u.Email, jobs.PasskeyAdded, row.Name)
+	if err := h.sysmail.EnqueuePasskeyNotice(ctx, u.Email, jobs.PasskeyAdded, row.Name); err != nil {
+		mailNotQueued(ctx, "PasskeyNotice", err)
+	}
 	return &siteapi.SitePasskeyHeaders{SetCookie: cookie.String(), Response: mapper.PasskeyToResource(row)}, nil
 }
 
@@ -221,7 +224,7 @@ func passkeyName(name string) (trimmed string, invalid *siteapi.ProblemDetails) 
 	trimmed = strings.TrimSpace(name)
 	if trimmed == "" {
 		msg := i18n.T("errors.passkey_name_invalid", nil)
-		v := problemWithErrors(http.StatusUnprocessableEntity, msg, map[string][]string{"name": {msg}})
+		v := problemWithErrors(http.StatusUnprocessableEntity, msg, map[string][]string{fieldName: {msg}})
 		return "", &v
 	}
 	return trimmed, nil
@@ -290,6 +293,8 @@ func (h *Handlers) SitePasskeysRemove(ctx context.Context, req *siteapi.SitePass
 	if err != nil {
 		return nil, err
 	}
-	_ = h.sysmail.EnqueuePasskeyNotice(ctx, u.Email, jobs.PasskeyRemoved, row.Name)
+	if err := h.sysmail.EnqueuePasskeyNotice(ctx, u.Email, jobs.PasskeyRemoved, row.Name); err != nil {
+		mailNotQueued(ctx, "PasskeyNotice", err)
+	}
 	return &siteapi.SitePasskeysRemoveNoContent{SetCookie: cookie.String()}, nil
 }

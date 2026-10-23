@@ -33,11 +33,11 @@ func InstallOtel(t *testing.T, setup func(context.Context) (func(context.Context
 	IsolateOtel(t)
 	stop, err := setup(t.Context())
 	require.NoError(t, err)
-	t.Cleanup(func() { _ = stop(context.WithoutCancel(t.Context())) })
+	t.Cleanup(func() { require.NoError(t, stop(context.WithoutCancel(t.Context()))) })
 }
 
 // HTTPGet performs a GET against a real listener and returns the status and body.
-func HTTPGet(t *testing.T, url string) (int, string) {
+func HTTPGet(t *testing.T, url string) (status int, body string) {
 	t.Helper()
 	code, body, err := TryHTTPGet(t.Context(), url)
 	require.NoError(t, err)
@@ -46,7 +46,7 @@ func HTTPGet(t *testing.T, url string) (int, string) {
 
 // TryHTTPGet is HTTPGet without test assertions, safe to call from a polling
 // goroutine such as require.Eventually.
-func TryHTTPGet(ctx context.Context, url string) (int, string, error) {
+func TryHTTPGet(ctx context.Context, url string) (status int, body string, err error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
 	if err != nil {
 		return 0, "", err
@@ -56,9 +56,9 @@ func TryHTTPGet(ctx context.Context, url string) (int, string, error) {
 		return 0, "", err
 	}
 	defer func() { _ = resp.Body.Close() }()
-	body, err := io.ReadAll(resp.Body)
+	raw, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return 0, "", err
 	}
-	return resp.StatusCode, string(body), nil
+	return resp.StatusCode, string(raw), nil
 }

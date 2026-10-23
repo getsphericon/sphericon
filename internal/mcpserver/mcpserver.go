@@ -21,10 +21,11 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/modelcontextprotocol/go-sdk/mcp"
+
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	apiauth "github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
-	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 // apiPrefix is where the external ogen server is mounted.
@@ -312,7 +313,10 @@ func scalar(v any) string {
 // (the RFC 7807 problem) as a tool error otherwise.
 func result(resp *http.Response) *mcp.CallToolResult {
 	defer func() { _ = resp.Body.Close() }()
-	raw, _ := io.ReadAll(resp.Body)
+	raw, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return toolError(fmt.Sprintf("HTTP %d %s: the response body could not be read: %v", resp.StatusCode, http.StatusText(resp.StatusCode), err))
+	}
 	body := strings.TrimSpace(string(raw))
 	if resp.StatusCode >= http.StatusBadRequest {
 		return toolError(fmt.Sprintf("HTTP %d %s: %s", resp.StatusCode, http.StatusText(resp.StatusCode), body))

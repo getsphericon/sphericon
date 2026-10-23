@@ -90,14 +90,16 @@ func TestActivatingAndArchivingARuleAtOnceNeverLeaveItArchivedAndActive(t *testi
 	m := rules.New(nil, events.New(sqlDB))
 	s := client.Scoped(fixtures.AcmeID)
 
+	// Either may be refused because the other won; what matters is the state they leave.
+	var activateErr, archiveErr error
 	var wg sync.WaitGroup
-	wg.Go(func() { _, _ = m.Activate(t.Context(), s, fixtures.RuleDraftID) })
-	wg.Go(func() { _ = m.Archive(t.Context(), s, fixtures.RuleDraftID) })
+	wg.Go(func() { _, activateErr = m.Activate(t.Context(), s, fixtures.RuleDraftID) })
+	wg.Go(func() { archiveErr = m.Archive(t.Context(), s, fixtures.RuleDraftID) })
 	wg.Wait()
 
 	got, err := m.Get(t.Context(), s, fixtures.RuleDraftID)
 	require.NoError(t, err)
-	assert.False(t, got.DiscardedAt != nil && got.Status == rule.StatusActive, "archived and active")
+	assert.False(t, got.DiscardedAt != nil && got.Status == rule.StatusActive, "archived and active (activate: %v, archive: %v)", activateErr, archiveErr)
 }
 
 func TestDeletePurgesARuleWithNoFirings(t *testing.T) {

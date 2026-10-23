@@ -27,7 +27,6 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/getsphericon/sphericon/config"
 	promclient "github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/contrib/instrumentation/runtime"
@@ -37,6 +36,9 @@ import (
 	otelprom "go.opentelemetry.io/otel/exporters/prometheus"
 	otelmetric "go.opentelemetry.io/otel/metric"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
+
+	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/internal/cleanup"
 )
 
 // configFileEnv names the declarative configuration file, per the OpenTelemetry
@@ -126,13 +128,17 @@ func Setup(ctx context.Context, cfg *config.Config, env string, build BuildInfo)
 // ObserveReleaseAvailable registers sphericon_release_available{latest} 1 next to
 // sphericon_build_info: present while the Release check (ADR 0032) has cached a newer
 // release, absent otherwise. latest reads that cached result (it asks nobody) and runs on
-// every scrape; a read that fails reports nothing. Call it after Setup.
+// every scrape; a read that fails reports nothing and goes to OpenTelemetry's error handler. Call it
+// after Setup.
 func ObserveReleaseAvailable(latest func(context.Context) (string, error)) error {
 	_, err := otel.GetMeterProvider().Meter("sphericon").Int64ObservableGauge("sphericon_release_available",
 		otelmetric.WithDescription("A newer release exists than the one this process runs; always 1, labelled with it."),
 		otelmetric.WithInt64Callback(func(ctx context.Context, o otelmetric.Int64Observer) error {
 			v, err := latest(ctx)
-			if err != nil || v == "" {
+			if err != nil {
+				return err
+			}
+			if v == "" {
 				return nil
 			}
 			o.Observe(1, otelmetric.WithAttributes(attribute.String("latest", v)))
@@ -203,8 +209,10 @@ func addResource(otelCfg *otelconf.OpenTelemetryConfiguration, cfg *config.Confi
 // and the Prometheus reader added above), so the variable is hidden for the call.
 func newSDK(ctx context.Context, otelCfg otelconf.OpenTelemetryConfiguration, meterOpts ...sdkmetric.Option) (otelconf.SDK, error) {
 	if path, ok := os.LookupEnv(configFileEnv); ok {
-		_ = os.Unsetenv(configFileEnv)
-		defer func() { _ = os.Setenv(configFileEnv, path) }()
+		if err := os.Unsetenv(configFileEnv); err != nil {
+			return otelconf.SDK{}, fmt.Errorf("hide %s: %w", configFileEnv, err)
+		}
+		defer func() { cleanup.Report("restore "+configFileEnv, os.Setenv(configFileEnv, path)) }()
 	}
 	return otelconf.NewSDK(
 		otelconf.WithContext(ctx),

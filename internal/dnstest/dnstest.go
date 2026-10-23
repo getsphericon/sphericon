@@ -9,6 +9,8 @@ import (
 	"testing"
 
 	"github.com/foxcpp/go-mockdns"
+
+	"github.com/getsphericon/sphericon/internal/cleanup"
 )
 
 // Resolver serves zones (keys are fully qualified, with the trailing dot) and
@@ -20,7 +22,7 @@ func Resolver(tb testing.TB, zones map[string]mockdns.Zone) *net.Resolver {
 	if err != nil {
 		tb.Fatalf("start mock DNS server: %v", err)
 	}
-	tb.Cleanup(func() { _ = srv.Close() })
+	tb.Cleanup(func() { cleanup.Report("stop the mock DNS server", srv.Close()) })
 	return srv.NewResolver()
 }
 
@@ -43,7 +45,7 @@ func NewZone(tb testing.TB) *Zone {
 	if err != nil {
 		tb.Fatalf("start mock DNS server: %v", err)
 	}
-	tb.Cleanup(func() { _ = srv.Close() })
+	tb.Cleanup(func() { cleanup.Report("stop the mock DNS server", srv.Close()) })
 	return &Zone{srv: srv, r: srv.NewResolver()}
 }
 

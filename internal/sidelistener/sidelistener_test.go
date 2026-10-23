@@ -1,10 +1,13 @@
 package sidelistener_test
 
 import (
-	"github.com/getsphericon/sphericon/internal/testhelper"
+	"fmt"
 	"io"
 	"net/http"
 	"testing"
+
+	"github.com/getsphericon/sphericon/internal/cleanup"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -14,7 +17,7 @@ import (
 
 func TestServerBindsServesAndStops(t *testing.T) {
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /service/ping", func(w http.ResponseWriter, _ *http.Request) { _, _ = io.WriteString(w, "pong") })
+	mux.HandleFunc("GET /service/ping", func(w http.ResponseWriter, _ *http.Request) { _, _ = fmt.Fprint(w, "pong") })
 	s := sidelistener.New("internal", "127.0.0.1:0", mux)
 	require.NoError(t, s.Listen(t.Context()))
 	served := make(chan error, 1)
@@ -38,7 +41,7 @@ func TestServerBindsServesAndStops(t *testing.T) {
 func TestListenFailsWhenTheAddressIsTaken(t *testing.T) {
 	first := sidelistener.New("internal", "127.0.0.1:0", http.NotFoundHandler())
 	require.NoError(t, first.Listen(t.Context()))
-	t.Cleanup(func() { _ = first.Shutdown(t.Context()) })
+	t.Cleanup(func() { cleanup.Report("shut first down", first.Shutdown(t.Context())) })
 
 	second := sidelistener.New("internal", first.Addr(), http.NotFoundHandler())
 	require.Error(t, second.Listen(t.Context()))

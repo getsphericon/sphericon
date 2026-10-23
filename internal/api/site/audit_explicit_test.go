@@ -325,7 +325,10 @@ func recordAuditCallSites(t *testing.T) []string {
 			if rerr != nil {
 				return rerr
 			}
-			rel, _ := filepath.Rel(root, path)
+			rel, relErr := filepath.Rel(root, path)
+			if relErr != nil {
+				return relErr
+			}
 			rel = filepath.ToSlash(rel)
 			// events/scoped.go is the automatic path (the generated scoped-client
 			// wrappers publish through it), not an explicit call.

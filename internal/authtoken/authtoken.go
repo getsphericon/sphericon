@@ -24,6 +24,15 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+// BindingError is the failure of the binding lookup a Parse was given: the lookup failed, which
+// says nothing about the token. A caller tells a user that is gone (the token is stale) from a
+// storage failure (the answer is a server error, not "invalid link") by what Err is.
+type BindingError struct{ Err error }
+
+func (e *BindingError) Error() string { return "authtoken: binding lookup: " + e.Err.Error() }
+
+func (e *BindingError) Unwrap() error { return e.Err }
+
 // Purpose scopes a token to one flow. It is both baked into the signing key and
 // carried as a validated claim.
 type Purpose string
@@ -100,11 +109,11 @@ func (s *Signer) Mint(purpose Purpose, userID int64, binding string, ttl time.Du
 // any extra claims. bindingFor loads the current binding value for the decoded
 // user id (e.g. their password hash) so a completed action invalidates the token;
 // it is called with the claimed user id before the signature is verified.
-func (s *Signer) Parse(token string, purpose Purpose, bindingFor func(userID int64) (string, error)) (int64, map[string]string, error) {
+func (s *Signer) Parse(token string, purpose Purpose, bindingFor func(userID int64) (string, error)) (userID int64, extra map[string]string, err error) {
 	var c claims
 	// golang-jwt hands keyFunc the parsed (not-yet-verified) claims, so we resolve
 	// the per-user signing key here from the claimed uid + its current binding.
-	_, err := jwt.ParseWithClaims(token, &c, func(tok *jwt.Token) (any, error) {
+	_, err = jwt.ParseWithClaims(token, &c, func(tok *jwt.Token) (any, error) {
 		cl, ok := tok.Claims.(*claims)
 		if !ok {
 			return nil, errors.New("authtoken: unexpected claims type")
@@ -117,7 +126,7 @@ func (s *Signer) Parse(token string, purpose Purpose, bindingFor func(userID int
 		}
 		binding, err := bindingFor(cl.UserID)
 		if err != nil {
-			return nil, err
+			return nil, &BindingError{Err: err}
 		}
 		return s.deriveKey(purpose, cl.UserID, binding), nil
 	}, jwt.WithValidMethods([]string{"HS256"}), jwt.WithExpirationRequired(), jwt.WithTimeFunc(s.now))

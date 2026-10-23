@@ -98,7 +98,9 @@ func (h *Handlers) SiteUserDeleteUser(ctx context.Context, req *siteapi.SiteDele
 	}
 
 	// The deletion is committed and cannot be undone: a mail that fails to queue does not undo it.
-	_ = h.sysmail.EnqueueUserDeletedNotice(ctx, deleted.Email)
+	if err := h.sysmail.EnqueueUserDeletedNotice(ctx, deleted.Email); err != nil {
+		mailNotQueued(ctx, "UserDeletedNotice", err)
+	}
 	return &siteapi.SiteUserDeleteUserNoContent{SetCookie: h.sessions.Cleared().String()}, nil
 }
 
@@ -128,7 +130,9 @@ func (h *Handlers) SiteUserDeleteUserLink(ctx context.Context, req *siteapi.Site
 	if err != nil {
 		return nil, err
 	}
-	_ = h.sysmail.EnqueueUserDeletionLink(ctx, u.Email, token, granted)
+	if err := h.sysmail.EnqueueUserDeletionLink(ctx, u.Email, token, granted); err != nil {
+		mailNotQueued(ctx, "UserDeletionLink", err)
+	}
 	return &siteapi.SiteUserDeleteUserLinkAccepted{}, nil
 }
 
@@ -150,7 +154,7 @@ func (h *Handlers) deletionSubject(ctx context.Context, typedEmail string) (*ent
 	}
 	if !strings.EqualFold(strings.TrimSpace(typedEmail), u.Email) {
 		msg := i18n.T("errors.delete_user_email_mismatch", nil)
-		v := deleteUserProblem(msg, map[string][]string{"email": {msg}}, nil)
+		v := deleteUserProblem(msg, map[string][]string{fieldEmail: {msg}}, nil)
 		return u, &v, nil
 	}
 	return u, nil, nil

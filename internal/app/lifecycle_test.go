@@ -11,12 +11,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/internal/cleanup"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 // lifecycleApp builds an e2e-profile app on a caller-opened listener with river's
 // schema in place, so Start can bring every part up.
-func lifecycleApp(t *testing.T) (*App, string) {
+func lifecycleApp(t *testing.T) (app *App, url string) {
 	t.Helper()
 	baseline(t)
 	ln, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", "127.0.0.1:0")
@@ -82,7 +83,7 @@ func TestStartUnwindsWhenTheMetricsAddressIsTaken(t *testing.T) {
 	baseline(t)
 	taken, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", "127.0.0.1:0")
 	require.NoError(t, err)
-	t.Cleanup(func() { _ = taken.Close() })
+	t.Cleanup(func() { cleanup.Close(taken, "taken") })
 	t.Setenv("SPHERICON_METRICS_ADDR", taken.Addr().String())
 	ln, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", "127.0.0.1:0")
 	require.NoError(t, err)

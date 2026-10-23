@@ -85,7 +85,7 @@ func (h *Handlers) SiteInvitationsCreate(ctx context.Context, req *siteapi.SiteC
 	case errors.Is(err, accounts.ErrEmailEmpty):
 		v := siteapi.SiteInvitationsCreateUnprocessableEntity(problemWithErrors(
 			http.StatusUnprocessableEntity, i18n.T("errors.email_empty", nil),
-			map[string][]string{"email": {i18n.T("errors.email_empty", nil)}}))
+			map[string][]string{fieldEmail: {i18n.T("errors.email_empty", nil)}}))
 		return &v, nil
 	case errors.Is(err, accounts.ErrAlreadyMember):
 		v := siteapi.SiteInvitationsCreateConflict(problem(http.StatusConflict, i18n.T("errors.already_member", nil)))
@@ -110,7 +110,11 @@ func (h *Handlers) SiteInvitationsCreate(ctx context.Context, req *siteapi.SiteC
 		slog.WarnContext(ctx, "member invite email not enqueued", "error", merr, "invitation_id", inv.ID)
 	}
 
-	inv.Edges.Inviter, _ = h.accounts.User(ctx, a.UserID)
+	inviter, uerr := h.accounts.User(ctx, a.UserID)
+	if uerr != nil {
+		slog.WarnContext(ctx, "inviter not loaded for the invitation", "error", uerr, "invitation_id", inv.ID)
+	}
+	inv.Edges.Inviter = inviter
 	return &siteapi.SiteCreateInvitationResponse{
 		InviteUrl: inviteURL,
 		Resource:  mapper.InvitationToResource(inv),
@@ -220,8 +224,8 @@ func (h *Handlers) SitePublicInvitationsAccept(ctx context.Context, req *siteapi
 		v := siteapi.SitePublicInvitationsAcceptUnprocessableEntity(problemWithErrors(
 			http.StatusUnprocessableEntity, "name and password are required",
 			map[string][]string{
-				"name":     {"name is required"},
-				"password": {"password is required"},
+				fieldName:     {"name is required"},
+				fieldPassword: {"password is required"},
 			}))
 		return &v, nil
 	}

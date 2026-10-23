@@ -10,6 +10,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/getsphericon/sphericon/internal/cleanup"
 )
 
 const usage = `usage:
@@ -103,7 +105,7 @@ func LintFiles(paths []string) ([]Finding, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer func() { _ = os.RemoveAll(dir) }()
+	defer func() { cleanup.Report("remove the scratch directory", os.RemoveAll(dir)) }()
 	var inTx, noTx []string
 	for _, p := range paths {
 		if isRiver(filepath.Base(p)) {

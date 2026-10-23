@@ -6,13 +6,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
 	"slices"
 	"strings"
 
 	"golang.org/x/mod/semver"
 
 	"github.com/getsphericon/sphericon/internal/buildinfo"
+	"github.com/getsphericon/sphericon/internal/cleanup"
 )
 
 // Boundaries is what `sphericon migrate --status --json` prints and the walk reads: the
@@ -63,7 +63,7 @@ func Walk(ctx context.Context, o Options) ([]Result, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer func() { _ = os.Remove(probe) }()
+	defer cleanup.Remove(probe)
 	b, err := readBoundaries(ctx, o, probe, target)
 	if err != nil {
 		return nil, err

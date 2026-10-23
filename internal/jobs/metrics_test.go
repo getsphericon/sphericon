@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/internal/broadcasts"
+	"github.com/getsphericon/sphericon/internal/cleanup"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/testhelper/metricstest"
@@ -21,7 +22,7 @@ func TestQueueMetricsReportDepthAndOldestAge(t *testing.T) {
 	metricstest.StartMetrics(t)
 	unregister, err := jobs.RegisterQueueMetrics(e.pool)
 	require.NoError(t, err)
-	t.Cleanup(func() { _ = unregister() })
+	t.Cleanup(func() { cleanup.Report("unregister the gauge", unregister()) })
 
 	ctx := t.Context()
 	require.NoError(t, e.client.EnqueueWelcome(ctx, "a@example.com", "A"))

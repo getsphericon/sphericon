@@ -30,7 +30,9 @@ type fakeSender struct {
 
 // DefaultFrom is on the fixtures' verified Sending domain, so sends without an
 // explicit From pass the verified-domain gate.
-func (f *fakeSender) DefaultFrom() (string, string) { return "hello@codebasics.dev", "CodeBasics" }
+func (f *fakeSender) DefaultFrom() (address, name string) {
+	return "hello@codebasics.dev", "CodeBasics"
+}
 
 func (f *fakeSender) Send(_ context.Context, msg messaging.EmailMessage) (messaging.Receipt, error) {
 	f.sent = append(f.sent, msg)
@@ -40,7 +42,9 @@ func (f *fakeSender) Send(_ context.Context, msg messaging.EmailMessage) (messag
 // erroringSender fails every send, to exercise the delivery-failure path.
 type erroringSender struct{}
 
-func (erroringSender) DefaultFrom() (string, string) { return "hello@codebasics.dev", "CodeBasics" }
+func (erroringSender) DefaultFrom() (address, name string) {
+	return "hello@codebasics.dev", "CodeBasics"
+}
 
 func (erroringSender) Send(context.Context, messaging.EmailMessage) (messaging.Receipt, error) {
 	return messaging.Receipt{}, errors.New("smtp unavailable")

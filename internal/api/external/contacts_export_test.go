@@ -30,13 +30,12 @@ import (
 // readExport reads the streamed body to the end and decodes it as the contract's
 // ContactExportDocument, so a missing member or a malformed value fails here. It
 // also returns the raw body for the checks a typed decode cannot make.
-func readExport(t *testing.T, res externalapi.ContactsExportRes) (externalapi.ContactExportDocument, []byte, string) {
+func readExport(t *testing.T, res externalapi.ContactsExportRes) (doc externalapi.ContactExportDocument, raw []byte, contentType string) {
 	t.Helper()
 	ok, isOK := res.(*externalapi.ContactsExportOKApplicationOctetStreamHeaders)
 	require.Truef(t, isOK, "got %T", res)
 	raw, err := io.ReadAll(ok.Response)
 	require.NoError(t, err)
-	var doc externalapi.ContactExportDocument
 	require.NoError(t, doc.Decode(jx.DecodeBytes(raw)), string(raw))
 	require.NoError(t, doc.Validate())
 	return doc, raw, ok.ContentDisposition

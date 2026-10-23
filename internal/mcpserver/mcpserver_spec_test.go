@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -17,6 +18,7 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	apiauth "github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/cleanup"
 	"github.com/getsphericon/sphericon/internal/mcpserver"
 )
 
@@ -74,14 +76,18 @@ type stubAPI struct {
 func (s *stubAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var b []byte
 	if r.Body != nil {
-		b, _ = io.ReadAll(r.Body)
+		var err error
+		if b, err = io.ReadAll(r.Body); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 	}
 	s.mu.Lock()
 	s.last = recorded{method: r.Method, uri: r.URL.RequestURI(), body: string(b), header: r.Header.Clone()}
 	s.mu.Unlock()
 	code, body := s.reply(r)
 	w.WriteHeader(code)
-	_, _ = io.WriteString(w, body)
+	_, _ = fmt.Fprint(w, body)
 }
 
 func (s *stubAPI) seen() recorded {
@@ -128,7 +134,7 @@ func specSession(t *testing.T, api *stubAPI) *mcp.ClientSession {
 	}
 	s, err := mcp.NewClient(&mcp.Implementation{Name: "t", Version: "0"}, nil).Connect(t.Context(), transport, nil)
 	require.NoError(t, err)
-	t.Cleanup(func() { _ = s.Close() })
+	t.Cleanup(func() { cleanup.Close(s, "s") })
 	return s
 }
 

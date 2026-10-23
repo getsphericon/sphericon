@@ -41,7 +41,10 @@ func generateRiverMigration(dir string) error {
 			return err
 		}
 		for _, m := range riverMarker.FindAllStringSubmatch(string(data), -1) {
-			v, _ := strconv.Atoi(m[1])
+			v, err := strconv.Atoi(m[1])
+			if err != nil {
+				return fmt.Errorf("river version in %s: %w", name, err)
+			}
 			have[v] = true
 		}
 	}
@@ -65,11 +68,19 @@ func generateRiverMigration(dir string) error {
 	// some versions cannot share one (004 adds an enum value that 006 then uses).
 	base := time.Now().UTC()
 	for i, v := range pending {
-		sqlUp, err := fs.ReadFile(fsys, riverFile(fsys, v, "up"))
+		upFile, err := riverFile(fsys, v, "up")
 		if err != nil {
 			return err
 		}
-		sqlDown, err := fs.ReadFile(fsys, riverFile(fsys, v, "down"))
+		sqlUp, err := fs.ReadFile(fsys, upFile)
+		if err != nil {
+			return err
+		}
+		downFile, err := riverFile(fsys, v, "down")
+		if err != nil {
+			return err
+		}
+		sqlDown, err := fs.ReadFile(fsys, downFile)
 		if err != nil {
 			return err
 		}
@@ -161,12 +172,15 @@ func riverVersions(fsys fs.FS) ([]int, error) {
 }
 
 // riverFile is the name of the version's up or down file.
-func riverFile(fsys fs.FS, version int, direction string) string {
-	matches, _ := fs.Glob(fsys, fmt.Sprintf("%03d_*.%s.sql", version, direction))
-	if len(matches) == 0 {
-		return fmt.Sprintf("%03d.%s.sql", version, direction)
+func riverFile(fsys fs.FS, version int, direction string) (string, error) {
+	matches, err := fs.Glob(fsys, fmt.Sprintf("%03d_*.%s.sql", version, direction))
+	if err != nil {
+		return "", err
 	}
-	return matches[0]
+	if len(matches) == 0 {
+		return fmt.Sprintf("%03d.%s.sql", version, direction), nil
+	}
+	return matches[0], nil
 }
 
 // gooseBlock wraps river's SQL in one StatementBegin/End. river runs a version as a single

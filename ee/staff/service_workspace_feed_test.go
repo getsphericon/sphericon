@@ -34,7 +34,7 @@ func feedPage(t *testing.T, c *serviceapi.Client, cursor string, limit int32) *s
 }
 
 // feedFrom reads every page from cursor and returns the entries and the cursor to save.
-func feedFrom(t *testing.T, c *serviceapi.Client, cursor string) ([]serviceapi.ServiceWorkspaceResource, string) {
+func feedFrom(t *testing.T, c *serviceapi.Client, cursor string) (items []serviceapi.ServiceWorkspaceResource, next string) {
 	t.Helper()
 	var all []serviceapi.ServiceWorkspaceResource
 	for {

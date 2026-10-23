@@ -14,6 +14,7 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/internal/buildinfo"
+	"github.com/getsphericon/sphericon/internal/cleanup"
 	appdb "github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/upgrade"
 )
@@ -75,7 +76,7 @@ func withDB[T any](cfg *config.Config, fn func(db *sql.DB) (T, error)) (T, error
 		var zero T
 		return zero, err
 	}
-	defer func() { _ = db.Close() }()
+	defer cleanup.Close(db, "database")
 	return fn(db)
 }
 

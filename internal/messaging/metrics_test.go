@@ -19,7 +19,7 @@ func (s outcomeSender) Send(context.Context, messaging.EmailMessage) (messaging.
 	return messaging.Receipt{MessageID: "m1"}, s.err
 }
 
-func (outcomeSender) DefaultFrom() (string, string) { return "from@example.com", "From" }
+func (outcomeSender) DefaultFrom() (address, name string) { return "from@example.com", "From" }
 
 // Senders built through the catalog count accepted and error per provider, with
 // no other label.

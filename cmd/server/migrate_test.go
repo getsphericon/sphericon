@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/internal/cleanup"
 	appdb "github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/upgrade"
@@ -33,7 +34,7 @@ func TestApplyMigrationsCreatesRiverAndOutboxSchemaOnEmptyDatabase(t *testing.T)
 
 	pool, err := appdb.OpenRiverDB(cfg.DatabaseURL, cfg.DBPool)
 	require.NoError(t, err)
-	t.Cleanup(func() { _ = pool.Close() })
+	t.Cleanup(func() { cleanup.Close(pool, "pool") })
 	migrator, err := rivermigrate.New(riverdatabasesql.New(pool), nil)
 	require.NoError(t, err)
 	res, err := migrator.Validate(t.Context(), nil)
@@ -43,7 +44,7 @@ func TestApplyMigrationsCreatesRiverAndOutboxSchemaOnEmptyDatabase(t *testing.T)
 	// The outbox the producer writes and the consumers read exists, empty.
 	sqlDB, err := sql.Open("pgx", cfg.DatabaseURL)
 	require.NoError(t, err)
-	t.Cleanup(func() { _ = sqlDB.Close() })
+	t.Cleanup(func() { cleanup.Close(sqlDB, "sqlDB") })
 	client := appdb.NewEntClient(sqlDB)
 	messages, err := client.OutboxMessage.Query().Count(t.Context())
 	require.NoError(t, err)

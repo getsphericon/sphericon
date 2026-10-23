@@ -21,6 +21,7 @@ import (
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/cleanup"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/messaging"
@@ -54,13 +55,15 @@ func newSMTPSink(t *testing.T) *smtpSink {
 			go s.serve(conn)
 		}
 	}()
-	t.Cleanup(func() { _ = ln.Close(); <-done })
+	t.Cleanup(func() { cleanup.Close(ln, "ln"); <-done })
 	return s
 }
 
 func (s *smtpSink) serve(conn net.Conn) {
-	defer func() { _ = conn.Close() }()
-	_ = conn.SetDeadline(time.Now().Add(10 * time.Second))
+	defer func() { cleanup.Close(conn, "conn") }()
+	if err := conn.SetDeadline(time.Now().Add(10 * time.Second)); err != nil {
+		return
+	}
 	r := bufio.NewReader(conn)
 	say := func(f string, a ...any) { _, _ = fmt.Fprintf(conn, f+"\r\n", a...) }
 	say("220 sink")
@@ -138,7 +141,7 @@ func newApp(t *testing.T) *App {
 		if err := <-done; err != nil && !errors.Is(err, context.Canceled) {
 			t.Errorf("event router: %v", err)
 		}
-		_ = a.Shutdown(context.Background())
+		cleanup.Shutdown(a.Shutdown(context.Background()))
 	})
 	return a
 }
@@ -202,7 +205,7 @@ func TestNewStaffIsMinimal(t *testing.T) {
 	t.Setenv("SPHERICON_METRICS_ADDR", freeAddr(t))
 	a, err := NewCommandApp("test")
 	require.NoError(t, err)
-	t.Cleanup(func() { _ = a.Shutdown(context.Background()) })
+	t.Cleanup(func() { cleanup.Shutdown(a.Shutdown(context.Background())) })
 
 	require.NotNil(t, a.Config)
 	assert.Nil(t, a.Server)
@@ -227,11 +230,11 @@ func TestStopShutsDownTheMetricsServer(t *testing.T) {
 	t.Setenv("SPHERICON_METRICS_ADDR", freeAddr(t))
 	a, err := New("test")
 	require.NoError(t, err)
-	t.Cleanup(func() { _ = a.Shutdown(context.Background()) })
+	t.Cleanup(func() { cleanup.Shutdown(a.Shutdown(context.Background())) })
 	require.NotNil(t, a.Metrics)
 
 	require.NoError(t, a.bindMetrics(t.Context()))
-	go func() { _ = a.Metrics.Serve() }()
+	go func() { cleanup.Served("metrics", a.Metrics.Serve()) }()
 	url := "http://" + a.Metrics.Addr() + "/metrics"
 	require.Eventually(t, func() bool {
 		code, _, err := testhelper.TryHTTPGet(t.Context(), url)
@@ -255,7 +258,7 @@ func TestSuspendAndUnsuspendWorkspace(t *testing.T) {
 	baseline(t)
 	a, err := NewCommandApp("test")
 	require.NoError(t, err)
-	t.Cleanup(func() { _ = a.Shutdown(context.Background()) })
+	t.Cleanup(func() { cleanup.Shutdown(a.Shutdown(context.Background())) })
 	ctx := context.Background()
 	client, err := invokeEnt(a)
 	require.NoError(t, err)
@@ -301,7 +304,7 @@ func TestSuspendWorkspaceKeepsTheSuspensionWhenTheNoticeFails(t *testing.T) {
 	baseline(t)
 	a, err := NewCommandApp("test")
 	require.NoError(t, err)
-	t.Cleanup(func() { _ = a.Shutdown(context.Background()) })
+	t.Cleanup(func() { cleanup.Shutdown(a.Shutdown(context.Background())) })
 	ctx := context.Background()
 
 	changed, err := a.SuspendWorkspace(ctx, fixtures.KramericaPublicID, suspension.CLI, "abuse")
@@ -317,7 +320,7 @@ func TestSuspendAndUnsuspendRejectBadInput(t *testing.T) {
 	baseline(t)
 	a, err := NewCommandApp("test")
 	require.NoError(t, err)
-	t.Cleanup(func() { _ = a.Shutdown(context.Background()) })
+	t.Cleanup(func() { cleanup.Shutdown(a.Shutdown(context.Background())) })
 	ctx := context.Background()
 
 	_, err = a.SuspendWorkspace(ctx, "NoSuchId", suspension.CLI, "why")
@@ -336,7 +339,7 @@ func TestResetSecondFactorByEmail(t *testing.T) {
 	baseline(t)
 	a, err := NewCommandApp("test")
 	require.NoError(t, err)
-	t.Cleanup(func() { _ = a.Shutdown(context.Background()) })
+	t.Cleanup(func() { cleanup.Shutdown(a.Shutdown(context.Background())) })
 	ctx := context.Background()
 	client, err := invokeEnt(a)
 	require.NoError(t, err)
@@ -454,8 +457,8 @@ func TestAppServesOnACallerProvidedListener(t *testing.T) {
 		cancel()
 		sctx, scancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer scancel()
-		_ = a.stop(sctx)
-		_ = a.Shutdown(sctx)
+		cleanup.Report("stop the app", a.stop(sctx))
+		cleanup.Shutdown(a.Shutdown(sctx))
 	})
 
 	// ...and the running server answers there, on every API surface.

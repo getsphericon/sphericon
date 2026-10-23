@@ -364,7 +364,7 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 	} else if wait > 0 {
 		// Busy, not blocked: drop the claim so the retry starts clean and no attempt
 		// is consumed.
-		_, _ = s.OutboundMessage().Delete().Where(ownsClaim(msg)...).Exec(ctx)
+		m.dropClaim(ctx, s, msg)
 		return Result{Outcome: Deferral, Wait: wait}, nil
 	}
 
@@ -373,7 +373,7 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 		if errors.Is(err, messaging.ErrUnverifiedSendingDomain) {
 			// The domain lost verification between our check and the signer's: a hold,
 			// not a failure. The claim is dropped so the same Request can run again.
-			_, _ = s.OutboundMessage().Delete().Where(ownsClaim(msg)...).Exec(ctx)
+			m.dropClaim(ctx, s, msg)
 			return Result{Outcome: Held, Reason: HoldUnverifiedDomain}, nil
 		}
 		if wait := deferralBackoff(err); wait > 0 && req.Kind != outboundmessage.KindTransactional {
@@ -382,7 +382,7 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 			// is dropped, no attempt is consumed and the same Request runs again later.
 			// Transactional mail never defers (ADR 0023): it falls through to the
 			// retryable error below, which releases the claim for the caller's retry.
-			_, _ = s.OutboundMessage().Delete().Where(ownsClaim(msg)...).Exec(ctx)
+			m.dropClaim(ctx, s, msg)
 			return Result{Outcome: Deferral, Wait: wait}, nil
 		}
 		m.release(ctx, s, msg)
@@ -551,7 +551,7 @@ func (m *Module) gate(ctx context.Context, s *ent.Scoped, fromEmail, fromName st
 
 // effectiveFrom is the From the message goes out with: the given one, else the sender's
 // configured default.
-func effectiveFrom(sender messaging.EmailSender, from, name string) (string, string) {
+func effectiveFrom(sender messaging.EmailSender, from, name string) (address, displayName string) {
 	if d, ok := sender.(messaging.DefaultFromer); ok {
 		df, dn := d.DefaultFrom()
 		return messaging.FirstNonEmpty(from, df), messaging.FirstNonEmpty(name, dn)

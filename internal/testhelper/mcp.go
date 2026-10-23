@@ -8,6 +8,8 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/stretchr/testify/require"
+
+	"github.com/getsphericon/sphericon/internal/cleanup"
 )
 
 // MCPEndpoint is the in-memory URL of the MCP surface (the host is a placeholder;
@@ -32,7 +34,7 @@ func (env *TestEnv) MCPClient(t *testing.T, token string) *mcp.ClientSession {
 	client := mcp.NewClient(&mcp.Implementation{Name: "sphericon-test", Version: "0"}, nil)
 	session, err := client.Connect(context.Background(), transport, nil)
 	require.NoError(t, err, "connect MCP client")
-	t.Cleanup(func() { _ = session.Close() })
+	t.Cleanup(func() { cleanup.Report("close the MCP session", session.Close()) })
 	return session
 }
 

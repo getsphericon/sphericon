@@ -34,6 +34,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
+	"github.com/getsphericon/sphericon/internal/cleanup"
 	appdb "github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/dnstest"
 	"github.com/getsphericon/sphericon/internal/domainverify"
@@ -70,7 +71,7 @@ func newRiverEnv(t *testing.T) *riverEnv {
 	require.NoError(t, err)
 	pool, err := appdb.OpenRiverDB(cfg.DatabaseURL, cfg.DBPool)
 	require.NoError(t, err)
-	t.Cleanup(func() { _ = pool.Close() })
+	t.Cleanup(func() { cleanup.Close(pool, "pool") })
 	cipher, err := secrets.NewCipher(cfg.EncryptionKey)
 	require.NoError(t, err)
 	fs := &fakeSender{}
@@ -146,7 +147,7 @@ func TestClientRunsAnEnqueuedWelcomeJob(t *testing.T) {
 	e := newRiverEnv(t)
 	ctx := context.Background()
 	require.NoError(t, e.client.Start(ctx))
-	t.Cleanup(func() { _ = e.client.Stop(context.Background()) })
+	t.Cleanup(func() { cleanup.Report("stop the job client", e.client.Stop(context.Background())) })
 
 	require.NoError(t, e.client.EnqueueWelcome(ctx, "runtime@example.com", "Run"))
 
@@ -267,8 +268,16 @@ func newWebhookReceiver(t *testing.T) *webhookReceiver {
 	t.Helper()
 	r := &webhookReceiver{status: http.StatusOK}
 	r.srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		body, _ := io.ReadAll(req.Body)
-		wh, _ := standardwebhooks.NewWebhook(webhookSecret)
+		body, err := io.ReadAll(req.Body)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		wh, err := standardwebhooks.NewWebhook(webhookSecret)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 		r.mu.Lock()
 		defer r.mu.Unlock()
 		r.bodies = append(r.bodies, string(body))
@@ -646,7 +655,9 @@ func TestSendRecipientWorkerRecordsTerminalFailure(t *testing.T) {
 // its lease would find: the failure cannot release a claim that is no longer its own.
 type takeoverSender struct{ db *ent.Client }
 
-func (takeoverSender) DefaultFrom() (string, string) { return "hello@codebasics.dev", "CodeBasics" }
+func (takeoverSender) DefaultFrom() (address, name string) {
+	return "hello@codebasics.dev", "CodeBasics"
+}
 
 func (s takeoverSender) Send(ctx context.Context, _ messaging.EmailMessage) (messaging.Receipt, error) {
 	s.db.OutboundMessage.Update().

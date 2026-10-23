@@ -149,6 +149,14 @@ func (m *Module) release(ctx context.Context, s *ent.Scoped, msg *ent.OutboundMe
 	}
 }
 
+// dropClaim deletes the claimed message so the retry of a Held or Deferred send starts clean.
+// Best effort: if it fails, the claim's lease runs out and the retry takes over.
+func (m *Module) dropClaim(ctx context.Context, s *ent.Scoped, msg *ent.OutboundMessage) {
+	if _, err := s.OutboundMessage().Delete().Where(ownsClaim(msg)...).Exec(ctx); err != nil {
+		logging.FromContext(ctx).Warn("outbound: drop claim failed", "message_id", msg.ID, "err", err)
+	}
+}
+
 // finish records a final, non-sent status with its reason.
 func (m *Module) finish(ctx context.Context, s *ent.Scoped, msg *ent.OutboundMessage, status outboundmessage.Status, outcome Outcome, reason string) (Result, error) {
 	// A lost fence means the claim was taken over while we worked.

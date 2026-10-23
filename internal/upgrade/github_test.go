@@ -38,7 +38,7 @@ func githubFake(t *testing.T, dir string, releases ...fakeRelease) *upgrade.GitH
 	mux.HandleFunc("GET /repos/"+repo+"/releases/latest", func(w http.ResponseWriter, _ *http.Request) {
 		for _, r := range releases {
 			if !r.Prerelease {
-				_ = json.NewEncoder(w).Encode(body(r))
+				assert.NoError(t, json.NewEncoder(w).Encode(body(r)))
 				return
 			}
 		}
@@ -47,7 +47,7 @@ func githubFake(t *testing.T, dir string, releases ...fakeRelease) *upgrade.GitH
 	mux.HandleFunc("GET /repos/"+repo+"/releases/tags/{tag}", func(w http.ResponseWriter, req *http.Request) {
 		for _, r := range releases {
 			if r.Tag == req.PathValue("tag") {
-				_ = json.NewEncoder(w).Encode(body(r))
+				assert.NoError(t, json.NewEncoder(w).Encode(body(r)))
 				return
 			}
 		}
@@ -58,7 +58,7 @@ func githubFake(t *testing.T, dir string, releases ...fakeRelease) *upgrade.GitH
 		for _, r := range releases {
 			all = append(all, body(r))
 		}
-		_ = json.NewEncoder(w).Encode(all)
+		assert.NoError(t, json.NewEncoder(w).Encode(all))
 	})
 	mux.HandleFunc("GET /repos/"+repo+"/releases/assets/{id}", func(w http.ResponseWriter, req *http.Request) {
 		for _, f := range files(t, dir) {
@@ -174,7 +174,7 @@ func TestGitHubHonoursTheProxyVariables(t *testing.T) {
 	hit := make(chan string, 1)
 	proxy := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		hit <- r.URL.Path
-		_ = json.NewEncoder(w).Encode(map[string]any{"tag_name": "v9.9.9"})
+		assert.NoError(t, json.NewEncoder(w).Encode(map[string]any{"tag_name": "v9.9.9"}))
 	}))
 	t.Cleanup(proxy.Close)
 	t.Setenv("HTTP_PROXY", proxy.URL)

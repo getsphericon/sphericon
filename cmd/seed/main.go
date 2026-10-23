@@ -1,3 +1,4 @@
+// Command seed loads the committed fixtures into the development database.
 package main
 
 import (
@@ -6,11 +7,13 @@ import (
 	"log"
 	"time"
 
-	"github.com/getsphericon/sphericon/config"
-	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/go-testfixtures/testfixtures/v3"
 	_ "github.com/jackc/pgx/v5/stdlib"
+
+	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/internal/cleanup"
+	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/secrets"
 )
 
 func main() {
@@ -30,7 +33,7 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("open database: %w", err)
 	}
-	defer func() { _ = sqlDB.Close() }()
+	defer cleanup.Close(sqlDB, "database")
 
 	cipher, err := secrets.NewCipher(cfg.EncryptionKey)
 	if err != nil {

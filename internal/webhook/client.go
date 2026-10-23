@@ -16,6 +16,8 @@ import (
 
 	"github.com/doyensec/safeurl"
 	standardwebhooks "github.com/standard-webhooks/standard-webhooks/libraries/go"
+
+	"github.com/getsphericon/sphericon/internal/cleanup"
 )
 
 // maxResponseBytes caps how much of a receiver's response body we read.
@@ -104,13 +106,19 @@ func Post(ctx context.Context, client Doer, c Call) error {
 		return transportError(err)
 	}
 	defer func() { _ = resp.Body.Close() }()
-	answer, _ := io.ReadAll(io.LimitReader(resp.Body, maxResponseBytes))
-
+	// Read the answer, up to the limit, whatever its status: a connection whose body was not read
+	// to the end is not reused.
+	answer, readErr := io.ReadAll(io.LimitReader(resp.Body, maxResponseBytes))
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		failure := statusError(resp.StatusCode, resp.Header.Get("Retry-After"))
 		failure.Excerpt = excerpt(answer)
+		if readErr != nil {
+			// The status already says what the endpoint answered; the excerpt only says it stopped early.
+			failure.Excerpt += " [the answer was cut short]"
+		}
 		return failure
 	}
+	cleanup.Report("read the endpoint's answer", readErr)
 	return nil
 }
 

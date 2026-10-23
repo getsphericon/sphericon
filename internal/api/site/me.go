@@ -66,7 +66,7 @@ func (h *Handlers) SiteUserUpdateMe(ctx context.Context, req *siteapi.SiteUpdate
 			v := siteapi.SiteUserUpdateMeUnprocessableEntity(problemWithErrors(
 				http.StatusUnprocessableEntity,
 				i18n.T("errors.name_empty", nil),
-				map[string][]string{"name": {i18n.T("errors.name_empty", nil)}},
+				map[string][]string{fieldName: {i18n.T("errors.name_empty", nil)}},
 			))
 			return &v, nil
 		}
@@ -157,7 +157,7 @@ func (h *Handlers) SiteUserEmailChange(ctx context.Context, req *siteapi.SiteEma
 		v := siteapi.SiteUserEmailChangeUnprocessableEntity(problemWithErrors(
 			http.StatusUnprocessableEntity,
 			i18n.T("errors.new_email_must_differ", nil),
-			map[string][]string{"newEmail": {i18n.T("errors.new_email_must_differ", nil)}},
+			map[string][]string{fieldNewEmail: {i18n.T("errors.new_email_must_differ", nil)}},
 		))
 		return &v, nil
 	}
@@ -189,9 +189,13 @@ func (h *Handlers) SiteUserEmailChange(ctx context.Context, req *siteapi.SiteEma
 		return nil, err
 	}
 	if taken {
-		_ = h.sysmail.EnqueueAddressTakenNotice(ctx, newEmail, granted)
+		if err := h.sysmail.EnqueueAddressTakenNotice(ctx, newEmail, granted); err != nil {
+			mailNotQueued(ctx, "AddressTakenNotice", err)
+		}
 	} else {
-		_ = h.sysmail.EnqueueEmailChangeConfirm(ctx, newEmail, token, granted)
+		if err := h.sysmail.EnqueueEmailChangeConfirm(ctx, newEmail, token, granted); err != nil {
+			mailNotQueued(ctx, "EmailChangeConfirm", err)
+		}
 	}
 
 	return &siteapi.SiteUserEmailChangeAccepted{}, nil

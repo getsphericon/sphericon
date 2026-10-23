@@ -93,7 +93,7 @@ func TestRegistrationNamesAndBoundsClients(t *testing.T) {
 	register := func(body string) (*httptest.ResponseRecorder, string) {
 		rec := postJSON(t, env, "/oauth/register", body)
 		var reg map[string]any
-		_ = json.Unmarshal(rec.Body.Bytes(), &reg)
+		require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &reg))
 		id, _ := reg["client_id"].(string)
 		return rec, id
 	}

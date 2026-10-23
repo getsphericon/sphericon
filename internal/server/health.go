@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"net/http"
 	"time"
 )
@@ -18,9 +17,12 @@ func healthzHandler() http.Handler {
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+		_, _ = w.Write([]byte(statusOK))
 	})
 }
+
+// statusOK is the body of a passing probe, a JSON object and its newline.
+const statusOK = "{\"status\":\"ok\"}\n"
 
 // readyzHandler is a readiness probe: it reports 200 only when the database is
 // reachable, otherwise 503 — so orchestrators stop routing traffic to a replica
@@ -39,6 +41,6 @@ func readyzHandler(db *sql.DB) http.Handler {
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+		_, _ = w.Write([]byte(statusOK))
 	})
 }

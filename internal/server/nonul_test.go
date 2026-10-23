@@ -33,7 +33,7 @@ func TestContainsNULFindsTheByteAndTheEscape(t *testing.T) {
 	}
 }
 
-func serveNoNUL(t *testing.T, target, body string) (*httptest.ResponseRecorder, string) {
+func serveNoNUL(t *testing.T, target, body string) (rec *httptest.ResponseRecorder, logged string) {
 	t.Helper()
 	var seen string
 	handler := noNUL(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -43,7 +43,7 @@ func serveNoNUL(t *testing.T, target, body string) (*httptest.ResponseRecorder, 
 		w.WriteHeader(http.StatusNoContent)
 	}))
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, target, strings.NewReader(body))
-	rec := httptest.NewRecorder()
+	rec = httptest.NewRecorder()
 
 	handler.ServeHTTP(rec, req)
 

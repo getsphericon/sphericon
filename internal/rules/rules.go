@@ -634,6 +634,9 @@ func (m *Module) holds(ctx context.Context, s *ent.Scoped, r *ent.Rule, ev Event
 	match := contact.ID(ev.ContactID)
 	if r.Condition != nil && *r.Condition != "" {
 		pred, err := condition.RulePredicate(ctx, s, *r.Condition, ev.Properties)
+		if errors.Is(err, condition.ErrStorage) {
+			return false, err
+		}
 		if err != nil {
 			return false, nil
 		}

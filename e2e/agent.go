@@ -16,6 +16,7 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/apitokens"
 	"github.com/getsphericon/sphericon/internal/brandkit"
+	"github.com/getsphericon/sphericon/internal/cleanup"
 	"github.com/getsphericon/sphericon/internal/i18n"
 )
 
@@ -67,7 +68,7 @@ func (w *Workspace) Agent() *Agent {
 	}
 	session, err := mcp.NewClient(&mcp.Implementation{Name: "e2e-agent", Version: "0"}, nil).Connect(ctx, transport, nil)
 	require.NoError(w.t, err, "connect the agent over MCP")
-	w.t.Cleanup(func() { _ = session.Close() })
+	w.t.Cleanup(func() { cleanup.Report("close the MCP session", session.Close()) })
 	return &Agent{w: w, session: session}
 }
 
@@ -92,7 +93,7 @@ func (a *Agent) Tools() []string {
 }
 
 // call runs a tool and returns its result: the JSON object on success, the error text otherwise.
-func (a *Agent) call(name string, args map[string]any) (map[string]any, string) {
+func (a *Agent) call(name string, args map[string]any) (result map[string]any, errText string) {
 	a.w.t.Helper()
 	res, err := a.session.CallTool(a.w.t.Context(), &mcp.CallToolParams{Name: name, Arguments: args})
 	require.NoError(a.w.t, err, name)

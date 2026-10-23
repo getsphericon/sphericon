@@ -52,10 +52,11 @@ func TestWithinTxRollsBackAndRepanics(t *testing.T) {
 	ctx := context.Background()
 
 	assert.PanicsWithValue(t, "kaboom", func() {
-		_ = env.Bus.WithinTx(ctx, func(_ *ent.Client, pub events.Publisher) error {
+		err := env.Bus.WithinTx(ctx, func(_ *ent.Client, pub events.Publisher) error {
 			require.NoError(t, pub.Publish(ctx, &events.ContactCreated{WorkspaceID: fixtures.AcmeID, ContactID: 8, Email: "panicked@example.com"}))
 			panic("kaboom")
 		})
+		require.NoError(t, err) // not reached: the callback panics, and WithinTx rolls back and repanics
 	})
 	assert.Zero(t, outboxRows(t, env, "panicked@example.com"))
 }

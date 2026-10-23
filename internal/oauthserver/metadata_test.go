@@ -223,7 +223,8 @@ func TestMetadataDocumentIsFetchedAgainOnceStale(t *testing.T) {
 		if renamed.Load() {
 			name = "Claude v2"
 		}
-		body, _ := json.Marshal(map[string]any{"client_id": id, "client_name": name, "redirect_uris": []string{metadataRedirectURI}})
+		body, err := json.Marshal(map[string]any{"client_id": id, "client_name": name, "redirect_uris": []string{metadataRedirectURI}})
+		require.NoError(t, err)
 		return string(body)
 	})
 	env := setupWithFetcher(t, m)

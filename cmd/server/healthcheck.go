@@ -45,7 +45,9 @@ func healthcheckCommand(d deps) *cli.Command {
 			}
 			defer func() { _ = res.Body.Close() }()
 
-			_, _ = io.Copy(io.Discard, res.Body)
+			if _, err := io.Copy(io.Discard, res.Body); err != nil {
+				return fmt.Errorf("healthcheck: read the answer: %w", err)
+			}
 			if res.StatusCode != http.StatusOK {
 				return fmt.Errorf("healthcheck: GET %s answered %s", url, res.Status)
 			}

@@ -60,7 +60,9 @@ func (h *Handlers) SiteAuthForgotPassword(ctx context.Context, req *siteapi.Site
 		return nil, err
 	}
 	// Best-effort enqueue (mirrors the welcome email): never fail the request.
-	_ = h.sysmail.EnqueuePasswordReset(ctx, to, token, u != nil && granted)
+	if err := h.sysmail.EnqueuePasswordReset(ctx, to, token, u != nil && granted); err != nil {
+		mailNotQueued(ctx, "PasswordReset", err)
+	}
 	return &siteapi.SiteAuthForgotPasswordAccepted{}, nil
 }
 
@@ -81,6 +83,9 @@ func (h *Handlers) SiteAuthResetPassword(ctx context.Context, req *siteapi.SiteR
 	}
 	uid, _, err := h.tokens.Parse(req.Token, authtoken.PurposePasswordReset, h.passwordHashBinding(ctx))
 	if err != nil {
+		if tokenLookupFailed(err) {
+			return nil, err
+		}
 		v := siteapi.SiteAuthResetPasswordBadRequest(problem(http.StatusBadRequest, i18n.T("errors.reset_link_invalid", nil)))
 		return &v, nil
 	}
@@ -93,7 +98,9 @@ func (h *Handlers) SiteAuthResetPassword(ctx context.Context, req *siteapi.SiteR
 		return nil, err
 	}
 	if completedRegistration {
-		_ = h.welcome.EnqueueWelcome(ctx, u.Email, u.Name)
+		if err := h.welcome.EnqueueWelcome(ctx, u.Email, u.Name); err != nil {
+			mailNotQueued(ctx, "Welcome", err)
+		}
 	}
 	return &siteapi.SiteAuthResetPasswordOK{}, nil
 }
@@ -110,6 +117,9 @@ func (h *Handlers) SiteAuthResetPassword(ctx context.Context, req *siteapi.SiteR
 func (h *Handlers) SiteAuthVerifyEmail(ctx context.Context, req *siteapi.SiteVerifyEmailInput, params siteapi.SiteAuthVerifyEmailParams) (siteapi.SiteAuthVerifyEmailRes, error) {
 	uid, extra, err := h.tokens.Parse(req.Token, authtoken.PurposeEmailVerify, h.passwordHashBinding(ctx))
 	if err != nil {
+		if tokenLookupFailed(err) {
+			return nil, err
+		}
 		v := siteapi.SiteAuthVerifyEmailBadRequest(problem(http.StatusBadRequest, i18n.T("errors.verify_link_invalid", nil)))
 		return &v, nil
 	}
@@ -156,7 +166,9 @@ func (h *Handlers) SiteAuthVerifyEmail(ctx context.Context, req *siteapi.SiteVer
 	}
 	// Welcome email is a platform (transactional) send via the system sender, to an
 	// address that is now proven. Best-effort: never fail the verification.
-	_ = h.welcome.EnqueueWelcome(ctx, u.Email, u.Name)
+	if err := h.welcome.EnqueueWelcome(ctx, u.Email, u.Name); err != nil {
+		mailNotQueued(ctx, "Welcome", err)
+	}
 	// The session starts after the epoch bump VerifyEmail made, so it is the only one.
 	cookie, err := h.sessions.Issue(verified, auth.Session{Method: auth.MethodEmail})
 	if err != nil {
@@ -177,6 +189,9 @@ func (h *Handlers) SiteAuthVerifyEmail(ctx context.Context, req *siteapi.SiteVer
 func (h *Handlers) SiteAuthConfirmEmailChange(ctx context.Context, req *siteapi.SiteConfirmEmailChangeInput, params siteapi.SiteAuthConfirmEmailChangeParams) (siteapi.SiteAuthConfirmEmailChangeRes, error) {
 	uid, extra, err := h.tokens.Parse(req.Token, authtoken.PurposeEmailChange, h.currentEmailBinding(ctx))
 	if err != nil {
+		if tokenLookupFailed(err) {
+			return nil, err
+		}
 		v := problem(http.StatusBadRequest, i18n.T("errors.confirm_link_invalid", nil))
 		return &v, nil
 	}
@@ -231,6 +246,14 @@ func (h *Handlers) holdsSession(ctx context.Context, raw string, uid int64) (boo
 		return false, err
 	}
 	return u.SessionEpoch == epoch, nil
+}
+
+// tokenLookupFailed reports whether a token parse failed because storage could not be read, as
+// opposed to the token being unusable: a User that is gone makes the link stale (the 400 answer),
+// a failing database is a server error.
+func tokenLookupFailed(err error) bool {
+	var lookup *authtoken.BindingError
+	return errors.As(err, &lookup) && !ent.IsNotFound(lookup.Err)
 }
 
 // passwordHashBinding resolves a user's current password hash — the binding for

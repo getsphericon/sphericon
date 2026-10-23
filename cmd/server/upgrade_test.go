@@ -32,7 +32,7 @@ func latestIs(t *testing.T, tag string, status int) *upgrade.GitHub {
 			w.WriteHeader(status)
 			return
 		}
-		_ = json.NewEncoder(w).Encode(map[string]string{"tag_name": tag})
+		assert.NoError(t, json.NewEncoder(w).Encode(map[string]string{"tag_name": tag}))
 	}))
 	t.Cleanup(srv.Close)
 	gh, err := upgrade.NewGitHubAt(srv.URL)

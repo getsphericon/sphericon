@@ -16,6 +16,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/getsphericon/sphericon/internal/cleanup"
 )
 
 // Address is a mailbox as Mailpit reports it.
@@ -86,7 +88,10 @@ func (m *Mailpit) do(ctx context.Context, method, path string, body, out any) er
 	}
 	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode/100 != 2 {
-		b, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
+		b, readErr := io.ReadAll(io.LimitReader(resp.Body, 512))
+		if readErr != nil {
+			return fmt.Errorf("mailpit %s %s: %s (the body is unreadable: %w)", method, path, resp.Status, readErr)
+		}
 		return fmt.Errorf("mailpit %s %s: %s: %s", method, path, resp.Status, strings.TrimSpace(string(b)))
 	}
 	if out == nil {
@@ -176,8 +181,12 @@ func StartMailpit(ctx context.Context) (*Mailpit, func(), error) {
 		return nil, nil, fmt.Errorf("start mailpit (is it on PATH? run through mise): %w", err)
 	}
 	stop := func() {
-		_ = cmd.Process.Kill()
-		_ = cmd.Wait()
+		cleanup.Report("kill mailpit", cmd.Process.Kill())
+		// Waiting for a killed process always ends in an *exec.ExitError (signal: killed).
+		var exited *exec.ExitError
+		if err := cmd.Wait(); err != nil && !errors.As(err, &exited) {
+			cleanup.Report("wait for mailpit", err)
+		}
 	}
 	mp := NewMailpit(fmt.Sprintf("http://127.0.0.1:%d", httpPort))
 	mp.SMTPHost, mp.SMTPPort = "127.0.0.1", smtpPort
@@ -204,7 +213,7 @@ func freePort(ctx context.Context) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	defer func() { _ = ln.Close() }()
+	defer cleanup.Close(ln, "listener")
 	addr, ok := ln.Addr().(*net.TCPAddr)
 	if !ok {
 		return 0, fmt.Errorf("a tcp listener has a %T address", ln.Addr())

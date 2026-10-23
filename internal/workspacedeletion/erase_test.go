@@ -200,7 +200,7 @@ func TestASecondEraseRunChangesNothing(t *testing.T) {
 }
 
 // feedTail reads the Workspace feed after cursor and returns its entries and the next cursor.
-func feedTail(t *testing.T, env *testhelper.TestEnv, cursor string) ([]staff.FeedEntry, string) {
+func feedTail(t *testing.T, env *testhelper.TestEnv, cursor string) (entries []staff.FeedEntry, next string) {
 	t.Helper()
 	page, err := env.StaffMembers.WorkspaceFeed(t.Context(), cursor, 200)
 	require.NoError(t, err)

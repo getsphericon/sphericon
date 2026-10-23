@@ -24,6 +24,7 @@ import (
 	"golang.org/x/mod/semver"
 
 	"github.com/getsphericon/sphericon/internal/buildinfo"
+	"github.com/getsphericon/sphericon/internal/cleanup"
 )
 
 // Errors a caller maps to an exit code or a message.
@@ -135,7 +136,7 @@ func Step(ctx context.Context, o Options) (Result, error) {
 	}
 	res, err := install(ctx, o, current, staged, version)
 	if err != nil {
-		_ = os.Remove(staged)
+		cleanup.Remove(staged)
 		return Result{}, err
 	}
 	return res, o.PostSwap(ctx, res)
@@ -155,7 +156,7 @@ func stage(ctx context.Context, o Options, version, dst string) (string, error) 
 		return "", err
 	}
 	if err := unpack(rel.ArchivePath, dst); err != nil {
-		_ = os.Remove(dst)
+		cleanup.Remove(dst)
 		return "", err
 	}
 	return dst, nil
@@ -207,7 +208,7 @@ func swap(target, staged, old string) error {
 		return fmt.Errorf("keep the old binary as %s: %w", old, err)
 	}
 	if err := os.Rename(staged, target); err != nil {
-		_ = os.Remove(old)
+		cleanup.Remove(old)
 		return err
 	}
 	return nil
@@ -255,7 +256,7 @@ func verify(rel Release) error {
 	if err != nil {
 		return err
 	}
-	defer func() { _ = f.Close() }()
+	defer cleanup.Close(f, "archive")
 	h := sha256.New()
 	if _, err := io.Copy(h, f); err != nil {
 		return err
@@ -272,12 +273,12 @@ func unpack(archive, dst string) error {
 	if err != nil {
 		return err
 	}
-	defer func() { _ = f.Close() }()
+	defer cleanup.Close(f, "archive")
 	gz, err := gzip.NewReader(f)
 	if err != nil {
 		return err
 	}
-	defer func() { _ = gz.Close() }()
+	defer cleanup.Close(gz, "archive reader")
 	tr := tar.NewReader(gz)
 	for {
 		h, err := tr.Next()

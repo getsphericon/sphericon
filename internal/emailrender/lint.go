@@ -342,10 +342,16 @@ func pixels(v string) float64 {
 	v = strings.ToLower(strings.TrimSpace(v))
 	switch {
 	case strings.HasSuffix(v, "px"):
-		f, _ := strconv.ParseFloat(strings.TrimSuffix(v, "px"), 64)
+		f, err := strconv.ParseFloat(strings.TrimSuffix(v, "px"), 64)
+		if err != nil {
+			return 0
+		}
 		return f
 	case strings.HasSuffix(v, "pt"):
-		f, _ := strconv.ParseFloat(strings.TrimSuffix(v, "pt"), 64)
+		f, err := strconv.ParseFloat(strings.TrimSuffix(v, "pt"), 64)
+		if err != nil {
+			return 0
+		}
 		return f * 4 / 3
 	}
 	return 0
@@ -416,10 +422,11 @@ func normalizeColor(v string) (string, bool) {
 	if m := rgbColor.FindStringSubmatch(v); m != nil {
 		var rgb [3]int
 		for i := range rgb {
-			rgb[i], _ = strconv.Atoi(m[i+1])
-			if rgb[i] > 255 {
+			n, err := strconv.Atoi(m[i+1])
+			if err != nil || n > 255 {
 				return "", false
 			}
+			rgb[i] = n
 		}
 		return fmt.Sprintf("#%02x%02x%02x", rgb[0], rgb[1], rgb[2]), true
 	}

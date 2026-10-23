@@ -418,7 +418,9 @@ type reentrantSender struct {
 	onSend func()
 }
 
-func (s *reentrantSender) DefaultFrom() (string, string) { return "hello@codebasics.dev", "CodeBasics" }
+func (s *reentrantSender) DefaultFrom() (address, name string) {
+	return "hello@codebasics.dev", "CodeBasics"
+}
 
 func (s *reentrantSender) Send(ctx context.Context, msg messaging.EmailMessage) (messaging.Receipt, error) {
 	if s.onSend != nil {

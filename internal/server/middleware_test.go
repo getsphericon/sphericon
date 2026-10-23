@@ -10,11 +10,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/getsphericon/sphericon/config"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/ogen-go/ogen/ogenerrors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/internal/cleanup"
 )
 
 func do(t *testing.T, h http.Handler, method, path string, headers map[string]string) *httptest.ResponseRecorder {
@@ -31,7 +33,7 @@ func do(t *testing.T, h http.Handler, method, path string, headers map[string]st
 func TestProbesOnlyAnswerGet(t *testing.T) {
 	db, err := sql.Open("pgx", "postgres://127.0.0.1:1/none")
 	require.NoError(t, err)
-	t.Cleanup(func() { _ = db.Close() })
+	t.Cleanup(func() { cleanup.Close(db, "db") })
 
 	for name, h := range map[string]http.Handler{"healthz": healthzHandler(), "readyz": readyzHandler(db)} {
 		rec := do(t, h, http.MethodPost, "/"+name, nil)
@@ -43,7 +45,7 @@ func TestProbesOnlyAnswerGet(t *testing.T) {
 func TestReadyzIsUnavailableWhenTheDatabaseIsUnreachable(t *testing.T) {
 	db, err := sql.Open("pgx", "postgres://127.0.0.1:1/none?connect_timeout=1")
 	require.NoError(t, err)
-	t.Cleanup(func() { _ = db.Close() })
+	t.Cleanup(func() { cleanup.Close(db, "db") })
 
 	rec := do(t, readyzHandler(db), http.MethodGet, "/readyz", nil)
 	assert.Equal(t, http.StatusServiceUnavailable, rec.Code)

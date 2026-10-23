@@ -109,7 +109,7 @@ func nameEmptyProblem() siteapi.ProblemDetails {
 	return problemWithErrors(
 		http.StatusUnprocessableEntity,
 		i18n.T("errors.name_empty", nil),
-		map[string][]string{"name": {i18n.T("errors.name_empty", nil)}},
+		map[string][]string{fieldName: {i18n.T("errors.name_empty", nil)}},
 	)
 }
 
@@ -275,7 +275,7 @@ func (h *Handlers) SiteWorkspacesDelete(ctx context.Context, req *siteapi.SiteDe
 		v := siteapi.SiteWorkspacesDeleteUnprocessableEntity(problemWithErrors(
 			http.StatusUnprocessableEntity,
 			i18n.T("errors.workspace_name_mismatch", nil),
-			map[string][]string{"name": {i18n.T("errors.workspace_name_mismatch", nil)}},
+			map[string][]string{fieldName: {i18n.T("errors.workspace_name_mismatch", nil)}},
 		))
 		return &v, nil
 	}

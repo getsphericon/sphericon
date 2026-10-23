@@ -21,18 +21,17 @@ func asDeferred(err error) (*broadcasts.DeferredError, bool) {
 	return d, ok
 }
 
-// asHeld returns the HeldError in err's chain, if any.
-func asHeld(err error) (*broadcasts.HeldError, bool) {
+// isHeld reports whether err carries a HeldError in its chain.
+func isHeld(err error) bool {
 	var h *broadcasts.HeldError
-	ok := errors.As(err, &h)
-	return h, ok
+	return errors.As(err, &h)
 }
 
 // snoozeIfDeferrable converts a deferrable error into the River snooze for the job
 // (which does not count against MaxAttempts), passing any other error through.
 // Workers call it on the error from their pure function.
 func snoozeIfDeferrable(err error) error {
-	if _, held := asHeld(err); held {
+	if isHeld(err) {
 		retry := outbound.HoldRetry()
 		return river.JobSnooze(retry.After)
 	}

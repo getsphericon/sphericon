@@ -10,8 +10,6 @@ import (
 	"time"
 
 	"github.com/ThreeDotsLabs/watermill/message"
-	"github.com/getsphericon/sphericon/internal/broadcasts"
-	"github.com/getsphericon/sphericon/internal/db"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/prometheus/common/expfmt"
 	"github.com/prometheus/common/model"
@@ -19,6 +17,10 @@ import (
 	"github.com/riverqueue/river/riverdriver/riverdatabasesql"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/getsphericon/sphericon/internal/broadcasts"
+	"github.com/getsphericon/sphericon/internal/cleanup"
+	"github.com/getsphericon/sphericon/internal/db"
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent"
@@ -51,8 +53,8 @@ func TestMetricsExpositionCarriesNoTenantLabels(t *testing.T) {
 
 	srv := telemetry.NewMetricsServer("127.0.0.1:0")
 	require.NoError(t, srv.Listen(t.Context()))
-	go func() { _ = srv.Serve() }()
-	t.Cleanup(func() { _ = srv.Shutdown(context.Background()) })
+	go func() { cleanup.Served("srv", srv.Serve()) }()
+	t.Cleanup(func() { cleanup.Report("shut srv down", srv.Shutdown(context.Background())) })
 
 	env := testhelper.Setup(t)
 	// Loaded after Setup: it points DATABASE_URL at this process's database, where river's
@@ -97,7 +99,7 @@ func runHandledDomainEvent(t *testing.T, srvAddr, contactEmail string) {
 
 	router, err := events.NewRouter()
 	require.NoError(t, err)
-	t.Cleanup(func() { _ = router.Close() })
+	t.Cleanup(func() { cleanup.Close(router, "router") })
 	sub, err := events.NewSubscriber(sqlDB, "label-policy", testhelper.PrivateOutbox())
 	require.NoError(t, err)
 	handled := make(chan struct{}, 1)
@@ -114,7 +116,7 @@ func runHandledDomainEvent(t *testing.T, srvAddr, contactEmail string) {
 	})
 	runCtx, cancel := context.WithCancel(ctx)
 	t.Cleanup(cancel)
-	go func() { _ = router.Run(runCtx) }()
+	go func() { cleanup.Report("run the router", router.Run(runCtx)) }()
 	<-router.Running()
 
 	require.NoError(t, events.New(sqlDB).WithinTx(ctx, func(_ *ent.Client, pub events.Publisher) error {
@@ -135,7 +137,7 @@ func runJob(t *testing.T, env *testhelper.TestEnv, cfg *config.Config, srvAddr, 
 	ctx := context.Background()
 	pool, err := db.OpenRiverDB(cfg.DatabaseURL, cfg.DBPool)
 	require.NoError(t, err)
-	t.Cleanup(func() { _ = pool.Close() })
+	t.Cleanup(func() { cleanup.Close(pool, "pool") })
 	cipher, err := secrets.NewCipher(cfg.EncryptionKey)
 	require.NoError(t, err)
 	mod := outbound.New(env.Bus, env.Holds, nil, tracking.New("test-secret", "http://local"))
@@ -144,12 +146,13 @@ func runJob(t *testing.T, env *testhelper.TestEnv, cfg *config.Config, srvAddr, 
 	admin, err := river.NewClient(riverdatabasesql.New(pool), &river.Config{})
 	require.NoError(t, err)
 	purge := func() {
-		_, _ = admin.JobDeleteMany(context.Background(), river.NewJobDeleteManyParams().Queues(river.QueueDefault, broadcasts.Queue, jobs.QueueWebhooks))
+		_, err := admin.JobDeleteMany(context.Background(), river.NewJobDeleteManyParams().Queues(river.QueueDefault, broadcasts.Queue, jobs.QueueWebhooks))
+		require.NoError(t, err)
 	}
 	purge()
 	t.Cleanup(purge)
 	require.NoError(t, client.Start(ctx))
-	t.Cleanup(func() { _ = client.Stop(context.Background()) })
+	t.Cleanup(func() { cleanup.Report("stop the job client", client.Stop(context.Background())) })
 
 	require.NoError(t, client.EnqueueWelcome(ctx, contactEmail, "Policy"))
 	require.Eventually(t, func() bool {

@@ -348,12 +348,16 @@ func isIndexKey(key string) bool {
 	return len(key) > 2 && key[0] == '[' && key[len(key)-1] == ']'
 }
 
+// ErrStorage marks a failure to read what compiling needs from the database, as opposed to a
+// condition that does not compile.
+var ErrStorage = errors.New("condition: storage")
+
 // requireCustomField checks key against the Workspace's Custom field catalogue.
 func (c *compiler) requireCustomField(ctx context.Context, key string) error {
 	if c.keys == nil {
 		fields, err := c.s.CustomField().Query().All(ctx)
 		if err != nil {
-			return fmt.Errorf("load custom fields: %w", err)
+			return fmt.Errorf("%w: load custom fields: %w", ErrStorage, err)
 		}
 		c.keys = make(map[string]struct{}, len(fields))
 		for _, f := range fields {

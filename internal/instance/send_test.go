@@ -31,7 +31,11 @@ func newReceiver(t *testing.T, status int) *receiver {
 	t.Helper()
 	r := &receiver{}
 	r.Server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		body, _ := io.ReadAll(req.Body)
+		body, err := io.ReadAll(req.Body)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 		r.mu.Lock()
 		r.bodies = append(r.bodies, body)
 		r.mu.Unlock()

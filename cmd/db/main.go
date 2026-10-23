@@ -1,3 +1,5 @@
+// Command db runs the development database tasks: it creates and drops this checkout's database,
+// writes the next goose migration from the ent schema and writes the migration for river's schema.
 package main
 
 import (
@@ -21,6 +23,7 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent/migrate"
+	"github.com/getsphericon/sphericon/internal/cleanup"
 )
 
 func main() {
@@ -97,7 +100,7 @@ func admin(ctx context.Context, fn func(ctx context.Context, adminDB *sql.DB, db
 	if err != nil {
 		return fmt.Errorf("open admin db: %w", err)
 	}
-	defer func() { _ = adminDB.Close() }()
+	defer cleanup.Close(adminDB, "database")
 	return fn(ctx, adminDB, dbName)
 }
 

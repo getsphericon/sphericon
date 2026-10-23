@@ -9,18 +9,20 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/getsphericon/sphericon/config"
-	"github.com/getsphericon/sphericon/ent/apitoken"
-	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/oauthserver"
-	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/modelcontextprotocol/go-sdk/auth"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/modelcontextprotocol/go-sdk/oauthex"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/oauth2"
+
+	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/ent/apitoken"
+	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/cleanup"
+	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/oauthserver"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 // consent plays the signed-in owner of workspace acme answering the consent screen.
@@ -353,7 +355,7 @@ func TestStandardMCPClientConnectsThroughOAuth(t *testing.T) {
 	}
 	session, err := mcp.NewClient(&mcp.Implementation{Name: "test-agent", Version: "0"}, nil).Connect(t.Context(), transport, nil)
 	require.NoError(t, err, "connect through OAuth")
-	t.Cleanup(func() { _ = session.Close() })
+	t.Cleanup(func() { cleanup.Close(session, "session") })
 
 	tools, err := session.ListTools(t.Context(), nil)
 	require.NoError(t, err)

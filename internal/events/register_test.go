@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/suppression"
+	"github.com/getsphericon/sphericon/internal/cleanup"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -40,7 +41,7 @@ func TestRegisterSubscribersFansEveryEventOutToAllConsumers(t *testing.T) {
 
 	router, err := events.NewRouter()
 	require.NoError(t, err)
-	t.Cleanup(func() { _ = router.Close() })
+	t.Cleanup(func() { cleanup.Close(router, "router") })
 	cfg, err := config.Load("test")
 	require.NoError(t, err)
 	cipher, err := secrets.NewCipher(cfg.EncryptionKey)
@@ -55,7 +56,7 @@ func TestRegisterSubscribersFansEveryEventOutToAllConsumers(t *testing.T) {
 
 	runCtx, cancel := context.WithCancel(ctx)
 	t.Cleanup(cancel)
-	go func() { _ = router.Run(runCtx) }()
+	go func() { cleanup.Report("run the router", router.Run(runCtx)) }()
 	<-router.Running()
 
 	require.NoError(t, events.New(sqlDB).WithinTx(ctx, func(_ *ent.Client, pub events.Publisher) error {
@@ -66,8 +67,10 @@ func TestRegisterSubscribersFansEveryEventOutToAllConsumers(t *testing.T) {
 	}))
 
 	require.Eventually(t, func() bool {
-		persisted, _ := client.Event.Query().Where(event.SubjectID(dest)).Exist(ctx)
-		suppressed, _ := client.Suppression.Query().Where(suppression.Destination(dest)).Exist(ctx)
+		persisted, err := client.Event.Query().Where(event.SubjectID(dest)).Exist(ctx)
+		assert.NoError(t, err)
+		suppressed, err := client.Suppression.Query().Where(suppression.Destination(dest)).Exist(ctx)
+		assert.NoError(t, err)
 		return persisted && suppressed && queued(ctx, t, reader, jobkind.EvaluateTrigger.Kind) >= 1 && queued(ctx, t, reader, jobkind.DeliverWebhook.Kind) >= 1
 	}, 15*time.Second, 50*time.Millisecond, "persist, suppression, automations and webhooks must all see the event")
 	// Delivery is at-least-once: a serialization failure while acking redelivers the

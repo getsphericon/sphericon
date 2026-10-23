@@ -2,10 +2,11 @@ package server
 
 import (
 	"context"
-	"encoding/base64"
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
@@ -17,13 +18,14 @@ import (
 	"github.com/getsphericon/sphericon/internal/machine"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
 	"github.com/getsphericon/sphericon/internal/tracking"
-	"github.com/samber/lo"
 )
 
 // pixelGIF is a 1x1 transparent GIF served by the open-tracking endpoint.
-var pixelGIF, _ = base64.StdEncoding.DecodeString(
-	"R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
-)
+var pixelGIF = []byte{
+	0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x01, 0x00, 0x01, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0xff, 0xff, 0xff, 0x21, 0xf9, 0x04, 0x01, 0x00, 0x00, 0x00, 0x00, 0x2c, 0x00, 0x00, 0x00, 0x00,
+	0x01, 0x00, 0x01, 0x00, 0x00, 0x02, 0x01, 0x44, 0x00, 0x3b,
+}
 
 // trackingHandler serves the public email engagement endpoints:
 //

@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/internal/cleanup"
 	appdb "github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -23,7 +24,7 @@ func TestGeneratedRiverMigrationsApplyAndRiverRecognisesThem(t *testing.T) {
 	url := testhelper.EmptyDBURL(t)
 	sqlDB, err := sql.Open("pgx", url)
 	require.NoError(t, err)
-	t.Cleanup(func() { _ = sqlDB.Close() })
+	t.Cleanup(func() { cleanup.Close(sqlDB, "sqlDB") })
 	applied, err := appdb.MigrateFS(t.Context(), sqlDB, os.DirFS(dir))
 	require.NoError(t, err)
 	require.NotZero(t, applied)

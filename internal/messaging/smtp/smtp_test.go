@@ -2,6 +2,7 @@ package smtp_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -15,6 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/internal/cleanup"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/messaging/smtp"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -55,12 +57,15 @@ func newTestServer(ctx context.Context, t *testing.T, rejectData bool) *testServ
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
-		_ = srv.Serve(ln)
+		// Closing the server and its listener is how the test stops it.
+		if err := srv.Serve(ln); err != nil && !errors.Is(err, gosmtp.ErrServerClosed) && !errors.Is(err, net.ErrClosed) {
+			cleanup.Report("serve smtp", err)
+		}
 	}()
 	t.Cleanup(func() {
 		// Close the listener too: srv.Close() misses it when Serve has not started yet.
-		_ = ln.Close()
-		_ = srv.Close()
+		cleanup.Close(ln, "ln")
+		cleanup.Close(srv, "srv")
 		<-done
 	})
 	return ts

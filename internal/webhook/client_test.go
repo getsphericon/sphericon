@@ -56,8 +56,16 @@ func TestClientReachesAnAllowlistedReceiverAndItVerifiesTheSignature(t *testing.
 	var gotEvent string
 	srv, allow := receiver(t, func(w http.ResponseWriter, r *http.Request) {
 		gotEvent = r.Header.Get(webhook.EventHeader)
-		received, _ := io.ReadAll(r.Body)
-		wh, _ := standardwebhooks.NewWebhook(testSecret)
+		received, err := io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		wh, err := standardwebhooks.NewWebhook(testSecret)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 		verifyErr = wh.Verify(received, r.Header)
 		w.WriteHeader(http.StatusAccepted)
 	})

@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/cleanup"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -21,7 +22,7 @@ func TestOutboxLagIsReportedPerConsumerGroup(t *testing.T) {
 	metricstest.StartMetrics(t)
 	unregister, err := events.RegisterLagGauge(env.DB)
 	require.NoError(t, err)
-	t.Cleanup(func() { _ = unregister() })
+	t.Cleanup(func() { cleanup.Report("unregister the gauge", unregister()) })
 
 	err = env.Bus.WithinTx(t.Context(), func(_ *ent.Client, pub events.Publisher) error {
 		return pub.Publish(t.Context(), &events.ContactCreated{WorkspaceID: fixtures.AcmeID, ContactID: 7, Email: "lag@example.com"})

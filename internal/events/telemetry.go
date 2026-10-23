@@ -20,15 +20,21 @@ const otelScope = "github.com/getsphericon/sphericon/internal/events"
 func otelMiddleware() message.HandlerMiddleware {
 	tracer := otel.Tracer(otelScope)
 	meter := otel.Meter(otelScope)
-	processed, _ := meter.Int64Counter(
+	processed, err := meter.Int64Counter(
 		"watermill.messages.processed",
 		metric.WithDescription("Domain-event messages processed, by handler and outcome."),
 	)
-	duration, _ := meter.Float64Histogram(
+	if err != nil {
+		otel.Handle(err)
+	}
+	duration, err := meter.Float64Histogram(
 		"watermill.handler.duration",
 		metric.WithUnit("s"),
 		metric.WithDescription("Domain-event handler execution time."),
 	)
+	if err != nil {
+		otel.Handle(err)
+	}
 
 	return func(next message.HandlerFunc) message.HandlerFunc {
 		return func(msg *message.Message) ([]*message.Message, error) {

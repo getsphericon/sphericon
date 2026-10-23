@@ -26,13 +26,13 @@ func isolate(t *testing.T) {
 	t.Cleanup(func() { metricsHandler = prevHandler })
 }
 
-func scrape(t *testing.T) (int, string) {
+func scrape(t *testing.T) (status int, body string) {
 	t.Helper()
 	rec := httptest.NewRecorder()
 	MetricsHandler().ServeHTTP(rec, httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/metrics", nil))
-	body, err := io.ReadAll(rec.Result().Body)
+	raw, err := io.ReadAll(rec.Result().Body)
 	require.NoError(t, err)
-	return rec.Code, string(body)
+	return rec.Code, string(raw)
 }
 
 func TestMetricsHandlerIsA503StubBeforeSetup(t *testing.T) {
@@ -114,7 +114,10 @@ func TestSetupWithOTLPPush(t *testing.T) {
 
 	var hits atomic.Int64
 	collector := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, _ = io.Copy(io.Discard, r.Body)
+		if _, err := io.Copy(io.Discard, r.Body); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 		hits.Add(1)
 		w.WriteHeader(http.StatusOK)
 	}))

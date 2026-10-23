@@ -24,9 +24,9 @@ const outboxFloor = 7 * 24 * time.Hour
 // pruneEnv publishes n bounce events (one outbox row each) and returns their
 // offsets. Inside the test's transaction every row shares one transaction id, so
 // the rows differ by offset alone.
-func pruneEnv(t *testing.T, n int) (*testhelper.TestEnv, []int64) {
+func pruneEnv(t *testing.T, n int) (env *testhelper.TestEnv, ids []int64) {
 	t.Helper()
-	env := testhelper.Setup(t)
+	env = testhelper.Setup(t)
 	ctx := context.Background()
 	for range n {
 		require.NoError(t, env.Bus.WithinTx(ctx, func(_ *ent.Client, pub events.Publisher) error {

@@ -32,9 +32,9 @@ func TestConcurrentOwnerDemotionAndRemovalKeepOneOwner(t *testing.T) {
 	assertOneRefused(t, w, w.DemoteAndRemoveConcurrently(owners[0], owners[1]))
 }
 
-func workspaceWithTwoOwners(t *testing.T) (*Workspace, []int64) {
+func workspaceWithTwoOwners(t *testing.T) (w *Workspace, ownerIDs []int64) {
 	t.Helper()
-	w := env.NewWorkspace(t)
+	w = env.NewWorkspace(t)
 	owners := w.AddOwner()
 	require.Len(t, owners, 2)
 	return w, owners

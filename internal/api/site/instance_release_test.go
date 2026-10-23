@@ -23,16 +23,16 @@ type releases struct {
 	status atomic.Int64
 }
 
-func newReleases(t *testing.T, tag string) (*releases, string) {
+func newReleases(t *testing.T, tag string) (r *releases, url string) {
 	t.Helper()
-	r := &releases{}
+	r = &releases{}
 	r.tag.Store(tag)
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		if s := int(r.status.Load()); s != 0 {
 			http.Error(w, "down", s)
 			return
 		}
-		_ = json.NewEncoder(w).Encode(map[string]any{"tag_name": r.tag.Load(), "assets": []any{}})
+		assert.NoError(t, json.NewEncoder(w).Encode(map[string]any{"tag_name": r.tag.Load(), "assets": []any{}}))
 	}))
 	t.Cleanup(srv.Close)
 	return r, srv.URL
@@ -111,7 +111,7 @@ func TestReleaseCheckSwitchedOffAsksNobodyAndShowsNothing(t *testing.T) {
 	var asked atomic.Bool
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		asked.Store(true)
-		_ = json.NewEncoder(w).Encode(map[string]any{"tag_name": "v0.2.0", "assets": []any{}})
+		assert.NoError(t, json.NewEncoder(w).Encode(map[string]any{"tag_name": "v0.2.0", "assets": []any{}}))
 	}))
 	t.Cleanup(srv.Close)
 	env, _ := releaseEnv(t, "0.1.0", srv.URL, func(c *config.Config) {
@@ -156,7 +156,7 @@ func TestABuildThatIsNotAReleaseNeitherAsksNorShowsABanner(t *testing.T) {
 	var asked atomic.Bool
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		asked.Store(true)
-		_ = json.NewEncoder(w).Encode(map[string]any{"tag_name": "v9.0.0", "assets": []any{}})
+		assert.NoError(t, json.NewEncoder(w).Encode(map[string]any{"tag_name": "v9.0.0", "assets": []any{}}))
 	}))
 	t.Cleanup(srv.Close)
 	env, _ := releaseEnv(t, "dev", srv.URL)
@@ -174,7 +174,7 @@ func TestADevelopmentEnvironmentNeverAsksForANewerRelease(t *testing.T) {
 	var asked atomic.Bool
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		asked.Store(true)
-		_ = json.NewEncoder(w).Encode(map[string]any{"tag_name": "v9.0.0", "assets": []any{}})
+		assert.NoError(t, json.NewEncoder(w).Encode(map[string]any{"tag_name": "v9.0.0", "assets": []any{}}))
 	}))
 	t.Cleanup(srv.Close)
 	env, _ := releaseEnv(t, "0.1.0", srv.URL, func(c *config.Config) { c.IsDev = true })

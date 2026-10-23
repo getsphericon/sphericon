@@ -4,6 +4,7 @@ package e2e
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -16,6 +17,8 @@ import (
 	standardwebhooks "github.com/standard-webhooks/standard-webhooks/libraries/go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/getsphericon/sphericon/internal/cleanup"
 )
 
 // HookTimeout bounds every wait for a call to a Hook; asynchronous steps are polled, never slept.
@@ -50,15 +53,23 @@ func StartHooks(ctx context.Context) (*Hooks, func(), error) {
 	}
 	h := &Hooks{ln: ln, calls: map[string][]HookCall{}}
 	h.srv = &http.Server{Handler: http.HandlerFunc(h.record), ReadHeaderTimeout: 10 * time.Second}
-	go func() { _ = h.srv.Serve(ln) }()
-	return h, func() { _ = h.srv.Close() }, nil
+	go func() {
+		if err := h.srv.Serve(ln); !errors.Is(err, http.ErrServerClosed) {
+			cleanup.Report("serve the hooks", err)
+		}
+	}()
+	return h, func() { cleanup.Report("close the hooks server", h.srv.Close()) }, nil
 }
 
 // Addr is the receiver's host:port, the entry for SPHERICON_OUTBOUND_ALLOW.
 func (h *Hooks) Addr() string { return h.ln.Addr().String() }
 
 func (h *Hooks) record(w http.ResponseWriter, r *http.Request) {
-	body, _ := io.ReadAll(r.Body)
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 	h.mu.Lock()
 	h.calls[r.URL.Path] = append(h.calls[r.URL.Path], HookCall{Header: r.Header.Clone(), Body: string(body)})
 	h.mu.Unlock()

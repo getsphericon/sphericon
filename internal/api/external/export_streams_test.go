@@ -30,8 +30,7 @@ type exportPage struct {
 
 // pageThrough reads a stream in pages of limit until a page comes back empty (or maxPages have
 // been read) and returns every row id in the order served, with the cursor the last page left.
-func pageThrough(read func(cursor string, limit int32) exportPage, limit int32, maxPages int) ([]int64, string) {
-	var seen []int64
+func pageThrough(read func(cursor string, limit int32) exportPage, limit int32, maxPages int) (seen []int64, last string) {
 	cursor := ""
 	for range maxPages {
 		page := read(cursor, limit)

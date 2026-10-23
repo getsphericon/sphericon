@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/internal/cleanup"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/workspacefeed"
@@ -22,7 +23,7 @@ func TestPlainClientRefusesAChangeToTheFeed(t *testing.T) {
 	require.NoError(t, err)
 	pool, err := sql.Open("pgx", cfg.DatabaseURL)
 	require.NoError(t, err)
-	t.Cleanup(func() { _ = pool.Close() })
+	t.Cleanup(func() { cleanup.Close(pool, "pool") })
 	client := db.NewEntClient(pool)
 
 	// test writes: the hook fires on this write

@@ -325,7 +325,11 @@ func (p *Preset) Test(ctx context.Context) error {
 func (p *Preset) runCase(ctx context.Context, c testCase) error {
 	now := time.Unix(0, 0)
 	if c.Now != "" {
-		now, _ = time.Parse(time.RFC3339, c.Now) // validated at load
+		parsed, err := time.Parse(time.RFC3339, c.Now)
+		if err != nil {
+			return fmt.Errorf("now: %w", err)
+		}
+		now = parsed
 	}
 	header := http.Header{}
 	for k, v := range c.Request.Headers {

@@ -172,7 +172,9 @@ func (in *Inbox) cleanup() {
 	in.mu.Lock()
 	ids := in.ids
 	in.mu.Unlock()
-	_ = in.mp.remove(context.WithoutCancel(in.t.Context()), ids...)
+	if err := in.mp.remove(context.WithoutCancel(in.t.Context()), ids...); err != nil {
+		in.t.Logf("remove the observed messages: %v", err)
+	}
 }
 
 // noMailError is a wait's timeout: it lists what the inbox held instead, so a failing
