@@ -17,7 +17,7 @@ import (
 func TestUserByLoginAddressIgnoresTheCaseOfTheStoredEmail(t *testing.T) {
 	env := testhelper.Setup(t)
 	acc := accounts.New(env.DB, env.Bus)
-	u, err := acc.Register(t.Context(), "Grace", "Grace@Example.com", "hash")
+	u, err := acc.Register(t.Context(), "Grace", "Grace@Example.com", "hash", false)
 	require.NoError(t, err)
 
 	found, err := acc.UserByLoginAddress(t.Context(), "grace@example.com")

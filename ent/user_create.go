@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/passkey"
 	"github.com/getsphericon/sphericon/ent/recoverycode"
+	"github.com/getsphericon/sphericon/ent/signupsurveyresponse"
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/ent/useridentity"
 )
@@ -165,6 +166,20 @@ func (_c *UserCreate) SetNillableSecondFactorLastStep(v *int64) *UserCreate {
 	return _c
 }
 
+// SetSignupSurveyDueAt sets the "signup_survey_due_at" field.
+func (_c *UserCreate) SetSignupSurveyDueAt(v time.Time) *UserCreate {
+	_c.mutation.SetSignupSurveyDueAt(v)
+	return _c
+}
+
+// SetNillableSignupSurveyDueAt sets the "signup_survey_due_at" field if the given value is not nil.
+func (_c *UserCreate) SetNillableSignupSurveyDueAt(v *time.Time) *UserCreate {
+	if v != nil {
+		_c.SetSignupSurveyDueAt(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *UserCreate) SetID(v int64) *UserCreate {
 	_c.mutation.SetID(v)
@@ -244,6 +259,25 @@ func (_c *UserCreate) AddIdentities(v ...*UserIdentity) *UserCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddIdentityIDs(ids...)
+}
+
+// SetSignupSurveyResponseID sets the "signup_survey_response" edge to the SignupSurveyResponse entity by ID.
+func (_c *UserCreate) SetSignupSurveyResponseID(id int64) *UserCreate {
+	_c.mutation.SetSignupSurveyResponseID(id)
+	return _c
+}
+
+// SetNillableSignupSurveyResponseID sets the "signup_survey_response" edge to the SignupSurveyResponse entity by ID if the given value is not nil.
+func (_c *UserCreate) SetNillableSignupSurveyResponseID(id *int64) *UserCreate {
+	if id != nil {
+		_c = _c.SetSignupSurveyResponseID(*id)
+	}
+	return _c
+}
+
+// SetSignupSurveyResponse sets the "signup_survey_response" edge to the SignupSurveyResponse entity.
+func (_c *UserCreate) SetSignupSurveyResponse(v *SignupSurveyResponse) *UserCreate {
+	return _c.SetSignupSurveyResponseID(v.ID)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -406,6 +440,10 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 		_spec.SetField(user.FieldSecondFactorLastStep, field.TypeInt64, value)
 		_node.SecondFactorLastStep = value
 	}
+	if value, ok := _c.mutation.SignupSurveyDueAt(); ok {
+		_spec.SetField(user.FieldSignupSurveyDueAt, field.TypeTime, value)
+		_node.SignupSurveyDueAt = &value
+	}
 	if nodes := _c.mutation.MembershipsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -479,6 +517,22 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(useridentity.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.SignupSurveyResponseIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   user.SignupSurveyResponseTable,
+			Columns: []string{user.SignupSurveyResponseColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(signupsurveyresponse.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -697,6 +751,24 @@ func (u *UserUpsert) UpdateSecondFactorLastStep() *UserUpsert {
 // AddSecondFactorLastStep adds v to the "second_factor_last_step" field.
 func (u *UserUpsert) AddSecondFactorLastStep(v int64) *UserUpsert {
 	u.Add(user.FieldSecondFactorLastStep, v)
+	return u
+}
+
+// SetSignupSurveyDueAt sets the "signup_survey_due_at" field.
+func (u *UserUpsert) SetSignupSurveyDueAt(v time.Time) *UserUpsert {
+	u.Set(user.FieldSignupSurveyDueAt, v)
+	return u
+}
+
+// UpdateSignupSurveyDueAt sets the "signup_survey_due_at" field to the value that was provided on create.
+func (u *UserUpsert) UpdateSignupSurveyDueAt() *UserUpsert {
+	u.SetExcluded(user.FieldSignupSurveyDueAt)
+	return u
+}
+
+// ClearSignupSurveyDueAt clears the value of the "signup_survey_due_at" field.
+func (u *UserUpsert) ClearSignupSurveyDueAt() *UserUpsert {
+	u.SetNull(user.FieldSignupSurveyDueAt)
 	return u
 }
 
@@ -937,6 +1009,27 @@ func (u *UserUpsertOne) AddSecondFactorLastStep(v int64) *UserUpsertOne {
 func (u *UserUpsertOne) UpdateSecondFactorLastStep() *UserUpsertOne {
 	return u.Update(func(s *UserUpsert) {
 		s.UpdateSecondFactorLastStep()
+	})
+}
+
+// SetSignupSurveyDueAt sets the "signup_survey_due_at" field.
+func (u *UserUpsertOne) SetSignupSurveyDueAt(v time.Time) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetSignupSurveyDueAt(v)
+	})
+}
+
+// UpdateSignupSurveyDueAt sets the "signup_survey_due_at" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdateSignupSurveyDueAt() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateSignupSurveyDueAt()
+	})
+}
+
+// ClearSignupSurveyDueAt clears the value of the "signup_survey_due_at" field.
+func (u *UserUpsertOne) ClearSignupSurveyDueAt() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearSignupSurveyDueAt()
 	})
 }
 
@@ -1343,6 +1436,27 @@ func (u *UserUpsertBulk) AddSecondFactorLastStep(v int64) *UserUpsertBulk {
 func (u *UserUpsertBulk) UpdateSecondFactorLastStep() *UserUpsertBulk {
 	return u.Update(func(s *UserUpsert) {
 		s.UpdateSecondFactorLastStep()
+	})
+}
+
+// SetSignupSurveyDueAt sets the "signup_survey_due_at" field.
+func (u *UserUpsertBulk) SetSignupSurveyDueAt(v time.Time) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetSignupSurveyDueAt(v)
+	})
+}
+
+// UpdateSignupSurveyDueAt sets the "signup_survey_due_at" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdateSignupSurveyDueAt() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateSignupSurveyDueAt()
+	})
+}
+
+// ClearSignupSurveyDueAt clears the value of the "signup_survey_due_at" field.
+func (u *UserUpsertBulk) ClearSignupSurveyDueAt() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearSignupSurveyDueAt()
 	})
 }
 

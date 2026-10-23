@@ -96,6 +96,8 @@ type Tx struct {
 	SendingDomain *SendingDomainClient
 	// ServiceCredential is the client for interacting with the ServiceCredential builders.
 	ServiceCredential *ServiceCredentialClient
+	// SignupSurveyResponse is the client for interacting with the SignupSurveyResponse builders.
+	SignupSurveyResponse *SignupSurveyResponseClient
 	// StaffMember is the client for interacting with the StaffMember builders.
 	StaffMember *StaffMemberClient
 	// Suppression is the client for interacting with the Suppression builders.
@@ -290,6 +292,7 @@ func (tx *Tx) init() {
 	tx.SendLimiter = NewSendLimiterClient(tx.config)
 	tx.SendingDomain = NewSendingDomainClient(tx.config)
 	tx.ServiceCredential = NewServiceCredentialClient(tx.config)
+	tx.SignupSurveyResponse = NewSignupSurveyResponseClient(tx.config)
 	tx.StaffMember = NewStaffMemberClient(tx.config)
 	tx.Suppression = NewSuppressionClient(tx.config)
 	tx.Tag = NewTagClient(tx.config)

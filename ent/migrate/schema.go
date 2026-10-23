@@ -1637,6 +1637,35 @@ var (
 		Columns:    ServiceCredentialsColumns,
 		PrimaryKey: []*schema.Column{ServiceCredentialsColumns[0]},
 	}
+	// SignupSurveyResponsesColumns holds the columns for the "signup_survey_responses" table.
+	SignupSurveyResponsesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "role", Type: field.TypeEnum, Enums: []string{"founder", "marketer", "developer", "product", "other"}},
+		{Name: "role_other_text", Type: field.TypeString, Nullable: true, Size: 100, SchemaType: map[string]string{"postgres": "varchar(100)"}},
+		{Name: "company_size", Type: field.TypeEnum, Enums: []string{"1", "2_10", "11_50", "51_200", "201_1000", "1000_plus", "other"}},
+		{Name: "company_size_other_text", Type: field.TypeString, Nullable: true, Size: 100, SchemaType: map[string]string{"postgres": "varchar(100)"}},
+		{Name: "main_goal", Type: field.TypeEnum, Enums: []string{"broadcasts", "automations", "tracking", "migrating", "other"}},
+		{Name: "main_goal_other_text", Type: field.TypeString, Nullable: true, Size: 100, SchemaType: map[string]string{"postgres": "varchar(100)"}},
+		{Name: "heard_from", Type: field.TypeEnum, Nullable: true, Enums: []string{"search", "github", "social", "recommendation", "other"}},
+		{Name: "heard_from_other_text", Type: field.TypeString, Nullable: true, Size: 100, SchemaType: map[string]string{"postgres": "varchar(100)"}},
+		{Name: "user_id", Type: field.TypeInt64, Unique: true},
+	}
+	// SignupSurveyResponsesTable holds the schema information for the "signup_survey_responses" table.
+	SignupSurveyResponsesTable = &schema.Table{
+		Name:       "signup_survey_responses",
+		Columns:    SignupSurveyResponsesColumns,
+		PrimaryKey: []*schema.Column{SignupSurveyResponsesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "signup_survey_responses_users_signup_survey_response",
+				Columns:    []*schema.Column{SignupSurveyResponsesColumns[11]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
 	// StaffMembersColumns holds the columns for the "staff_members" table.
 	StaffMembersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -1853,6 +1882,7 @@ var (
 		{Name: "second_factor_secret_encrypted", Type: field.TypeString, Nullable: true},
 		{Name: "second_factor_confirmed_at", Type: field.TypeTime, Nullable: true},
 		{Name: "second_factor_last_step", Type: field.TypeInt64, Default: 0},
+		{Name: "signup_survey_due_at", Type: field.TypeTime, Nullable: true},
 	}
 	// UsersTable holds the schema information for the "users" table.
 	UsersTable = &schema.Table{
@@ -2053,6 +2083,7 @@ var (
 		SendLimitersTable,
 		SendingDomainsTable,
 		ServiceCredentialsTable,
+		SignupSurveyResponsesTable,
 		StaffMembersTable,
 		SuppressionsTable,
 		TagsTable,
@@ -2285,6 +2316,16 @@ func init() {
 	}
 	ServiceCredentialsTable.Annotation = &entsql.Annotation{
 		Table: "service_credentials",
+	}
+	SignupSurveyResponsesTable.ForeignKeys[0].RefTable = UsersTable
+	SignupSurveyResponsesTable.Annotation = &entsql.Annotation{
+		Table: "signup_survey_responses",
+	}
+	SignupSurveyResponsesTable.Annotation.Checks = map[string]string{
+		"signup_survey_responses_company_size_check": "company_size IN ('1', '2_10', '11_50', '51_200', '201_1000', '1000_plus', 'other')",
+		"signup_survey_responses_heard_from_check":   "heard_from IN ('search', 'github', 'social', 'recommendation', 'other')",
+		"signup_survey_responses_main_goal_check":    "main_goal IN ('broadcasts', 'automations', 'tracking', 'migrating', 'other')",
+		"signup_survey_responses_role_check":         "role IN ('founder', 'marketer', 'developer', 'product', 'other')",
 	}
 	StaffMembersTable.Annotation = &entsql.Annotation{
 		Table: "staff_members",

@@ -8,6 +8,7 @@ import "../common/pagination.tsp";
 import "./resources/auth.tsp";
 import "./resources/workspaces.tsp";
 import "./resources/audit.tsp";
+import "./resources/signup-survey.tsp";
 
 using TypeSpec.OpenAPI;
 using TypeSpec.Http;

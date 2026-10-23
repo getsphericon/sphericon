@@ -128,6 +128,10 @@ func (e *Edition) Holds() *holds.Holds { return holds.New(e.HoldsHonoured, e.now
 // agree on it.
 func (e *Edition) HoldsHonoured() bool { return e.lic.Has(licensekey.FeatureStaff) }
 
+// StaffLicensed reports whether the `staff` license is held: what the Sign-up survey needs,
+// since only the Staff console reads its answers.
+func (e *Edition) StaffLicensed() bool { return e.lic.Has(licensekey.FeatureStaff) }
+
 // LicenseLapsedAt is when the license key expired, false unless it has lapsed (ADR 0035).
 func (e *Edition) LicenseLapsedAt() (time.Time, bool) { return e.lic.LapsedAt() }
 

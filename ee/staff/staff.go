@@ -33,6 +33,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/login"
 	"github.com/getsphericon/sphericon/internal/secrets"
+	"github.com/getsphericon/sphericon/internal/signupsurvey"
 )
 
 // Issuer names the instance in the authenticator app.
@@ -113,6 +114,7 @@ type Module struct {
 	watch      *abuse.Watch
 	support    string
 	holdMax    time.Duration
+	survey     *signupsurvey.Reader
 }
 
 // NewModule builds the module over the raw client.
@@ -126,7 +128,7 @@ func NewModule(client *ent.Client, lic *licensekey.License, auditLog *audit.Log,
 		holdMax = DefaultHoldMaxExpiry
 	}
 	m := &Module{
-		ent: client, lic: lic, audit: auditLog, cipher: cipher, now: now, watch: abuse.NewWatch(lic, cfg.Abuse), support: cfg.SupportEmail, holdMax: holdMax,
+		ent: client, lic: lic, audit: auditLog, cipher: cipher, now: now, watch: abuse.NewWatch(lic, cfg.Abuse), support: cfg.SupportEmail, holdMax: holdMax, survey: signupsurvey.NewReader(client),
 		challenges: authtoken.New(cfg.Secret).WithClock(now),
 	}
 	m.login = m.newLogin(cfg.Attempts.For(loginKind))

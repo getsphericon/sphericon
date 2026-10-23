@@ -265,6 +265,74 @@ func (o OptNilStaffAuditEntryResourceDiff) Or(d StaffAuditEntryResourceDiff) Sta
 	return d
 }
 
+// NewOptNilStaffSignupSource returns new OptNilStaffSignupSource with value set to v.
+func NewOptNilStaffSignupSource(v StaffSignupSource) OptNilStaffSignupSource {
+	return OptNilStaffSignupSource{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilStaffSignupSource is optional nullable StaffSignupSource.
+type OptNilStaffSignupSource struct {
+	Value StaffSignupSource
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilStaffSignupSource was set.
+func (o OptNilStaffSignupSource) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilStaffSignupSource) Reset() {
+	var v StaffSignupSource
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilStaffSignupSource) SetTo(v StaffSignupSource) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilStaffSignupSource) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilStaffSignupSource) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v StaffSignupSource
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilStaffSignupSource) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilStaffSignupSource) Get() (v StaffSignupSource, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilStaffSignupSource) Or(d StaffSignupSource) StaffSignupSource {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptNilStaffSuspension returns new OptNilStaffSuspension with value set to v.
 func NewOptNilStaffSuspension(v StaffSuspension) OptNilStaffSuspension {
 	return OptNilStaffSuspension{
@@ -1044,11 +1112,12 @@ func (s *ProblemDetails) SetDebug(val OptProblemDebug) {
 	s.Debug = val
 }
 
-func (*ProblemDetails) staffAuthLoginRes()        {}
-func (*ProblemDetails) staffAuthLogoutRes()       {}
-func (*ProblemDetails) staffAuthSecondFactorRes() {}
-func (*ProblemDetails) staffMeGetRes()            {}
-func (*ProblemDetails) staffWorkspacesListRes()   {}
+func (*ProblemDetails) staffAuthLoginRes()          {}
+func (*ProblemDetails) staffAuthLogoutRes()         {}
+func (*ProblemDetails) staffAuthSecondFactorRes()   {}
+func (*ProblemDetails) staffMeGetRes()              {}
+func (*ProblemDetails) staffSignupSurveyCountsRes() {}
+func (*ProblemDetails) staffWorkspacesListRes()     {}
 
 // Validation errors grouped by field.
 type ProblemDetailsErrors map[string][]string
@@ -2113,6 +2182,655 @@ func (s *StaffSecondFactorInput) SetChallenge(val string) {
 func (s *StaffSecondFactorInput) SetCode(val string) {
 	s.Code = val
 }
+
+// How many people work at the User's company (second question).
+// Ref: #/components/schemas/StaffSignupCompanySize
+type StaffSignupCompanySize string
+
+const (
+	StaffSignupCompanySize1        StaffSignupCompanySize = "1"
+	StaffSignupCompanySize210      StaffSignupCompanySize = "2_10"
+	StaffSignupCompanySize1150     StaffSignupCompanySize = "11_50"
+	StaffSignupCompanySize51200    StaffSignupCompanySize = "51_200"
+	StaffSignupCompanySize2011000  StaffSignupCompanySize = "201_1000"
+	StaffSignupCompanySize1000Plus StaffSignupCompanySize = "1000_plus"
+	StaffSignupCompanySizeOther    StaffSignupCompanySize = "other"
+)
+
+// AllValues returns all StaffSignupCompanySize values.
+func (StaffSignupCompanySize) AllValues() []StaffSignupCompanySize {
+	return []StaffSignupCompanySize{
+		StaffSignupCompanySize1,
+		StaffSignupCompanySize210,
+		StaffSignupCompanySize1150,
+		StaffSignupCompanySize51200,
+		StaffSignupCompanySize2011000,
+		StaffSignupCompanySize1000Plus,
+		StaffSignupCompanySizeOther,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s StaffSignupCompanySize) MarshalText() ([]byte, error) {
+	switch s {
+	case StaffSignupCompanySize1:
+		return []byte(s), nil
+	case StaffSignupCompanySize210:
+		return []byte(s), nil
+	case StaffSignupCompanySize1150:
+		return []byte(s), nil
+	case StaffSignupCompanySize51200:
+		return []byte(s), nil
+	case StaffSignupCompanySize2011000:
+		return []byte(s), nil
+	case StaffSignupCompanySize1000Plus:
+		return []byte(s), nil
+	case StaffSignupCompanySizeOther:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *StaffSignupCompanySize) UnmarshalText(data []byte) error {
+	switch StaffSignupCompanySize(data) {
+	case StaffSignupCompanySize1:
+		*s = StaffSignupCompanySize1
+		return nil
+	case StaffSignupCompanySize210:
+		*s = StaffSignupCompanySize210
+		return nil
+	case StaffSignupCompanySize1150:
+		*s = StaffSignupCompanySize1150
+		return nil
+	case StaffSignupCompanySize51200:
+		*s = StaffSignupCompanySize51200
+		return nil
+	case StaffSignupCompanySize2011000:
+		*s = StaffSignupCompanySize2011000
+		return nil
+	case StaffSignupCompanySize1000Plus:
+		*s = StaffSignupCompanySize1000Plus
+		return nil
+	case StaffSignupCompanySizeOther:
+		*s = StaffSignupCompanySizeOther
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// How many Users chose a company size.
+// Ref: #/components/schemas/StaffSignupCompanySizeCount
+type StaffSignupCompanySizeCount struct {
+	Choice StaffSignupCompanySize `json:"choice"`
+	Count  int32                  `json:"count"`
+}
+
+// GetChoice returns the value of Choice.
+func (s *StaffSignupCompanySizeCount) GetChoice() StaffSignupCompanySize {
+	return s.Choice
+}
+
+// GetCount returns the value of Count.
+func (s *StaffSignupCompanySizeCount) GetCount() int32 {
+	return s.Count
+}
+
+// SetChoice sets the value of Choice.
+func (s *StaffSignupCompanySizeCount) SetChoice(val StaffSignupCompanySize) {
+	s.Choice = val
+}
+
+// SetCount sets the value of Count.
+func (s *StaffSignupCompanySizeCount) SetCount(val int32) {
+	s.Count = val
+}
+
+// What the User mainly wants to do with the product (third question).
+// Ref: #/components/schemas/StaffSignupGoal
+type StaffSignupGoal string
+
+const (
+	StaffSignupGoalBroadcasts  StaffSignupGoal = "broadcasts"
+	StaffSignupGoalAutomations StaffSignupGoal = "automations"
+	StaffSignupGoalTracking    StaffSignupGoal = "tracking"
+	StaffSignupGoalMigrating   StaffSignupGoal = "migrating"
+	StaffSignupGoalOther       StaffSignupGoal = "other"
+)
+
+// AllValues returns all StaffSignupGoal values.
+func (StaffSignupGoal) AllValues() []StaffSignupGoal {
+	return []StaffSignupGoal{
+		StaffSignupGoalBroadcasts,
+		StaffSignupGoalAutomations,
+		StaffSignupGoalTracking,
+		StaffSignupGoalMigrating,
+		StaffSignupGoalOther,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s StaffSignupGoal) MarshalText() ([]byte, error) {
+	switch s {
+	case StaffSignupGoalBroadcasts:
+		return []byte(s), nil
+	case StaffSignupGoalAutomations:
+		return []byte(s), nil
+	case StaffSignupGoalTracking:
+		return []byte(s), nil
+	case StaffSignupGoalMigrating:
+		return []byte(s), nil
+	case StaffSignupGoalOther:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *StaffSignupGoal) UnmarshalText(data []byte) error {
+	switch StaffSignupGoal(data) {
+	case StaffSignupGoalBroadcasts:
+		*s = StaffSignupGoalBroadcasts
+		return nil
+	case StaffSignupGoalAutomations:
+		*s = StaffSignupGoalAutomations
+		return nil
+	case StaffSignupGoalTracking:
+		*s = StaffSignupGoalTracking
+		return nil
+	case StaffSignupGoalMigrating:
+		*s = StaffSignupGoalMigrating
+		return nil
+	case StaffSignupGoalOther:
+		*s = StaffSignupGoalOther
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// How many Users chose a main goal.
+// Ref: #/components/schemas/StaffSignupGoalCount
+type StaffSignupGoalCount struct {
+	Choice StaffSignupGoal `json:"choice"`
+	Count  int32           `json:"count"`
+}
+
+// GetChoice returns the value of Choice.
+func (s *StaffSignupGoalCount) GetChoice() StaffSignupGoal {
+	return s.Choice
+}
+
+// GetCount returns the value of Count.
+func (s *StaffSignupGoalCount) GetCount() int32 {
+	return s.Count
+}
+
+// SetChoice sets the value of Choice.
+func (s *StaffSignupGoalCount) SetChoice(val StaffSignupGoal) {
+	s.Choice = val
+}
+
+// SetCount sets the value of Count.
+func (s *StaffSignupGoalCount) SetCount(val int32) {
+	s.Count = val
+}
+
+// An `other` text and how many Users wrote it.
+// Ref: #/components/schemas/StaffSignupOtherTextCount
+type StaffSignupOtherTextCount struct {
+	Text  string `json:"text"`
+	Count int32  `json:"count"`
+}
+
+// GetText returns the value of Text.
+func (s *StaffSignupOtherTextCount) GetText() string {
+	return s.Text
+}
+
+// GetCount returns the value of Count.
+func (s *StaffSignupOtherTextCount) GetCount() int32 {
+	return s.Count
+}
+
+// SetText sets the value of Text.
+func (s *StaffSignupOtherTextCount) SetText(val string) {
+	s.Text = val
+}
+
+// SetCount sets the value of Count.
+func (s *StaffSignupOtherTextCount) SetCount(val int32) {
+	s.Count = val
+}
+
+// What the User does (Sign-up survey, first question).
+// Ref: #/components/schemas/StaffSignupRole
+type StaffSignupRole string
+
+const (
+	StaffSignupRoleFounder   StaffSignupRole = "founder"
+	StaffSignupRoleMarketer  StaffSignupRole = "marketer"
+	StaffSignupRoleDeveloper StaffSignupRole = "developer"
+	StaffSignupRoleProduct   StaffSignupRole = "product"
+	StaffSignupRoleOther     StaffSignupRole = "other"
+)
+
+// AllValues returns all StaffSignupRole values.
+func (StaffSignupRole) AllValues() []StaffSignupRole {
+	return []StaffSignupRole{
+		StaffSignupRoleFounder,
+		StaffSignupRoleMarketer,
+		StaffSignupRoleDeveloper,
+		StaffSignupRoleProduct,
+		StaffSignupRoleOther,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s StaffSignupRole) MarshalText() ([]byte, error) {
+	switch s {
+	case StaffSignupRoleFounder:
+		return []byte(s), nil
+	case StaffSignupRoleMarketer:
+		return []byte(s), nil
+	case StaffSignupRoleDeveloper:
+		return []byte(s), nil
+	case StaffSignupRoleProduct:
+		return []byte(s), nil
+	case StaffSignupRoleOther:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *StaffSignupRole) UnmarshalText(data []byte) error {
+	switch StaffSignupRole(data) {
+	case StaffSignupRoleFounder:
+		*s = StaffSignupRoleFounder
+		return nil
+	case StaffSignupRoleMarketer:
+		*s = StaffSignupRoleMarketer
+		return nil
+	case StaffSignupRoleDeveloper:
+		*s = StaffSignupRoleDeveloper
+		return nil
+	case StaffSignupRoleProduct:
+		*s = StaffSignupRoleProduct
+		return nil
+	case StaffSignupRoleOther:
+		*s = StaffSignupRoleOther
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// How many Users chose a role.
+// Ref: #/components/schemas/StaffSignupRoleCount
+type StaffSignupRoleCount struct {
+	Choice StaffSignupRole `json:"choice"`
+	Count  int32           `json:"count"`
+}
+
+// GetChoice returns the value of Choice.
+func (s *StaffSignupRoleCount) GetChoice() StaffSignupRole {
+	return s.Choice
+}
+
+// GetCount returns the value of Count.
+func (s *StaffSignupRoleCount) GetCount() int32 {
+	return s.Count
+}
+
+// SetChoice sets the value of Choice.
+func (s *StaffSignupRoleCount) SetChoice(val StaffSignupRole) {
+	s.Choice = val
+}
+
+// SetCount sets the value of Count.
+func (s *StaffSignupRoleCount) SetCount(val int32) {
+	s.Count = val
+}
+
+// Where the User heard about the product (fourth question, optional).
+// Ref: #/components/schemas/StaffSignupSource
+type StaffSignupSource string
+
+const (
+	StaffSignupSourceSearch         StaffSignupSource = "search"
+	StaffSignupSourceGithub         StaffSignupSource = "github"
+	StaffSignupSourceSocial         StaffSignupSource = "social"
+	StaffSignupSourceRecommendation StaffSignupSource = "recommendation"
+	StaffSignupSourceOther          StaffSignupSource = "other"
+)
+
+// AllValues returns all StaffSignupSource values.
+func (StaffSignupSource) AllValues() []StaffSignupSource {
+	return []StaffSignupSource{
+		StaffSignupSourceSearch,
+		StaffSignupSourceGithub,
+		StaffSignupSourceSocial,
+		StaffSignupSourceRecommendation,
+		StaffSignupSourceOther,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s StaffSignupSource) MarshalText() ([]byte, error) {
+	switch s {
+	case StaffSignupSourceSearch:
+		return []byte(s), nil
+	case StaffSignupSourceGithub:
+		return []byte(s), nil
+	case StaffSignupSourceSocial:
+		return []byte(s), nil
+	case StaffSignupSourceRecommendation:
+		return []byte(s), nil
+	case StaffSignupSourceOther:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *StaffSignupSource) UnmarshalText(data []byte) error {
+	switch StaffSignupSource(data) {
+	case StaffSignupSourceSearch:
+		*s = StaffSignupSourceSearch
+		return nil
+	case StaffSignupSourceGithub:
+		*s = StaffSignupSourceGithub
+		return nil
+	case StaffSignupSourceSocial:
+		*s = StaffSignupSourceSocial
+		return nil
+	case StaffSignupSourceRecommendation:
+		*s = StaffSignupSourceRecommendation
+		return nil
+	case StaffSignupSourceOther:
+		*s = StaffSignupSourceOther
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// How many Users chose a source.
+// Ref: #/components/schemas/StaffSignupSourceCount
+type StaffSignupSourceCount struct {
+	Choice StaffSignupSource `json:"choice"`
+	Count  int32             `json:"count"`
+}
+
+// GetChoice returns the value of Choice.
+func (s *StaffSignupSourceCount) GetChoice() StaffSignupSource {
+	return s.Choice
+}
+
+// GetCount returns the value of Count.
+func (s *StaffSignupSourceCount) GetCount() int32 {
+	return s.Count
+}
+
+// SetChoice sets the value of Choice.
+func (s *StaffSignupSourceCount) SetChoice(val StaffSignupSource) {
+	s.Choice = val
+}
+
+// SetCount sets the value of Count.
+func (s *StaffSignupSourceCount) SetCount(val int32) {
+	s.Count = val
+}
+
+// The Sign-up survey answers of every User who answered, counted per question. A choice nobody made is
+// absent from its list; a question's `other` texts are listed with their counts, most frequent first.
+// Ref: #/components/schemas/StaffSignupSurveyCounts
+type StaffSignupSurveyCounts struct {
+	// How many Users answered the survey.
+	Responses             int32                         `json:"responses"`
+	Role                  []StaffSignupRoleCount        `json:"role"`
+	RoleOtherTexts        []StaffSignupOtherTextCount   `json:"roleOtherTexts"`
+	CompanySize           []StaffSignupCompanySizeCount `json:"companySize"`
+	CompanySizeOtherTexts []StaffSignupOtherTextCount   `json:"companySizeOtherTexts"`
+	MainGoal              []StaffSignupGoalCount        `json:"mainGoal"`
+	MainGoalOtherTexts    []StaffSignupOtherTextCount   `json:"mainGoalOtherTexts"`
+	// Only the Users who answered the optional question are counted.
+	HeardFrom           []StaffSignupSourceCount    `json:"heardFrom"`
+	HeardFromOtherTexts []StaffSignupOtherTextCount `json:"heardFromOtherTexts"`
+}
+
+// GetResponses returns the value of Responses.
+func (s *StaffSignupSurveyCounts) GetResponses() int32 {
+	return s.Responses
+}
+
+// GetRole returns the value of Role.
+func (s *StaffSignupSurveyCounts) GetRole() []StaffSignupRoleCount {
+	return s.Role
+}
+
+// GetRoleOtherTexts returns the value of RoleOtherTexts.
+func (s *StaffSignupSurveyCounts) GetRoleOtherTexts() []StaffSignupOtherTextCount {
+	return s.RoleOtherTexts
+}
+
+// GetCompanySize returns the value of CompanySize.
+func (s *StaffSignupSurveyCounts) GetCompanySize() []StaffSignupCompanySizeCount {
+	return s.CompanySize
+}
+
+// GetCompanySizeOtherTexts returns the value of CompanySizeOtherTexts.
+func (s *StaffSignupSurveyCounts) GetCompanySizeOtherTexts() []StaffSignupOtherTextCount {
+	return s.CompanySizeOtherTexts
+}
+
+// GetMainGoal returns the value of MainGoal.
+func (s *StaffSignupSurveyCounts) GetMainGoal() []StaffSignupGoalCount {
+	return s.MainGoal
+}
+
+// GetMainGoalOtherTexts returns the value of MainGoalOtherTexts.
+func (s *StaffSignupSurveyCounts) GetMainGoalOtherTexts() []StaffSignupOtherTextCount {
+	return s.MainGoalOtherTexts
+}
+
+// GetHeardFrom returns the value of HeardFrom.
+func (s *StaffSignupSurveyCounts) GetHeardFrom() []StaffSignupSourceCount {
+	return s.HeardFrom
+}
+
+// GetHeardFromOtherTexts returns the value of HeardFromOtherTexts.
+func (s *StaffSignupSurveyCounts) GetHeardFromOtherTexts() []StaffSignupOtherTextCount {
+	return s.HeardFromOtherTexts
+}
+
+// SetResponses sets the value of Responses.
+func (s *StaffSignupSurveyCounts) SetResponses(val int32) {
+	s.Responses = val
+}
+
+// SetRole sets the value of Role.
+func (s *StaffSignupSurveyCounts) SetRole(val []StaffSignupRoleCount) {
+	s.Role = val
+}
+
+// SetRoleOtherTexts sets the value of RoleOtherTexts.
+func (s *StaffSignupSurveyCounts) SetRoleOtherTexts(val []StaffSignupOtherTextCount) {
+	s.RoleOtherTexts = val
+}
+
+// SetCompanySize sets the value of CompanySize.
+func (s *StaffSignupSurveyCounts) SetCompanySize(val []StaffSignupCompanySizeCount) {
+	s.CompanySize = val
+}
+
+// SetCompanySizeOtherTexts sets the value of CompanySizeOtherTexts.
+func (s *StaffSignupSurveyCounts) SetCompanySizeOtherTexts(val []StaffSignupOtherTextCount) {
+	s.CompanySizeOtherTexts = val
+}
+
+// SetMainGoal sets the value of MainGoal.
+func (s *StaffSignupSurveyCounts) SetMainGoal(val []StaffSignupGoalCount) {
+	s.MainGoal = val
+}
+
+// SetMainGoalOtherTexts sets the value of MainGoalOtherTexts.
+func (s *StaffSignupSurveyCounts) SetMainGoalOtherTexts(val []StaffSignupOtherTextCount) {
+	s.MainGoalOtherTexts = val
+}
+
+// SetHeardFrom sets the value of HeardFrom.
+func (s *StaffSignupSurveyCounts) SetHeardFrom(val []StaffSignupSourceCount) {
+	s.HeardFrom = val
+}
+
+// SetHeardFromOtherTexts sets the value of HeardFromOtherTexts.
+func (s *StaffSignupSurveyCounts) SetHeardFromOtherTexts(val []StaffSignupOtherTextCount) {
+	s.HeardFromOtherTexts = val
+}
+
+func (*StaffSignupSurveyCounts) staffSignupSurveyCountsRes() {}
+
+type StaffSignupSurveyGetNotFound ProblemDetails
+
+func (*StaffSignupSurveyGetNotFound) staffSignupSurveyGetRes() {}
+
+type StaffSignupSurveyGetUnauthorized ProblemDetails
+
+func (*StaffSignupSurveyGetUnauthorized) staffSignupSurveyGetRes() {}
+
+// One User's answers to the Sign-up survey. A User who has not answered has none.
+// Ref: #/components/schemas/StaffSignupSurveyResponseResource
+type StaffSignupSurveyResponseResource struct {
+	// The answering User's id.
+	UserId EntityId `json:"userId"`
+	// What the User does.
+	Role StaffSignupRole `json:"role"`
+	// What the User does, when `role` is `other`.
+	RoleOtherText OptNilString `json:"roleOtherText"`
+	// How many people work at the User's company.
+	CompanySize StaffSignupCompanySize `json:"companySize"`
+	// The company size, when `companySize` is `other`.
+	CompanySizeOtherText OptNilString `json:"companySizeOtherText"`
+	// What the User mainly wants to do with the product.
+	MainGoal StaffSignupGoal `json:"mainGoal"`
+	// The main goal, when `mainGoal` is `other`.
+	MainGoalOtherText OptNilString `json:"mainGoalOtherText"`
+	// Where the User heard about the product; absent when the optional question was skipped.
+	HeardFrom OptNilStaffSignupSource `json:"heardFrom"`
+	// Where the User heard about the product, when `heardFrom` is `other`.
+	HeardFromOtherText OptNilString `json:"heardFromOtherText"`
+	// When the User answered.
+	AnsweredAt Timestamp `json:"answeredAt"`
+}
+
+// GetUserId returns the value of UserId.
+func (s *StaffSignupSurveyResponseResource) GetUserId() EntityId {
+	return s.UserId
+}
+
+// GetRole returns the value of Role.
+func (s *StaffSignupSurveyResponseResource) GetRole() StaffSignupRole {
+	return s.Role
+}
+
+// GetRoleOtherText returns the value of RoleOtherText.
+func (s *StaffSignupSurveyResponseResource) GetRoleOtherText() OptNilString {
+	return s.RoleOtherText
+}
+
+// GetCompanySize returns the value of CompanySize.
+func (s *StaffSignupSurveyResponseResource) GetCompanySize() StaffSignupCompanySize {
+	return s.CompanySize
+}
+
+// GetCompanySizeOtherText returns the value of CompanySizeOtherText.
+func (s *StaffSignupSurveyResponseResource) GetCompanySizeOtherText() OptNilString {
+	return s.CompanySizeOtherText
+}
+
+// GetMainGoal returns the value of MainGoal.
+func (s *StaffSignupSurveyResponseResource) GetMainGoal() StaffSignupGoal {
+	return s.MainGoal
+}
+
+// GetMainGoalOtherText returns the value of MainGoalOtherText.
+func (s *StaffSignupSurveyResponseResource) GetMainGoalOtherText() OptNilString {
+	return s.MainGoalOtherText
+}
+
+// GetHeardFrom returns the value of HeardFrom.
+func (s *StaffSignupSurveyResponseResource) GetHeardFrom() OptNilStaffSignupSource {
+	return s.HeardFrom
+}
+
+// GetHeardFromOtherText returns the value of HeardFromOtherText.
+func (s *StaffSignupSurveyResponseResource) GetHeardFromOtherText() OptNilString {
+	return s.HeardFromOtherText
+}
+
+// GetAnsweredAt returns the value of AnsweredAt.
+func (s *StaffSignupSurveyResponseResource) GetAnsweredAt() Timestamp {
+	return s.AnsweredAt
+}
+
+// SetUserId sets the value of UserId.
+func (s *StaffSignupSurveyResponseResource) SetUserId(val EntityId) {
+	s.UserId = val
+}
+
+// SetRole sets the value of Role.
+func (s *StaffSignupSurveyResponseResource) SetRole(val StaffSignupRole) {
+	s.Role = val
+}
+
+// SetRoleOtherText sets the value of RoleOtherText.
+func (s *StaffSignupSurveyResponseResource) SetRoleOtherText(val OptNilString) {
+	s.RoleOtherText = val
+}
+
+// SetCompanySize sets the value of CompanySize.
+func (s *StaffSignupSurveyResponseResource) SetCompanySize(val StaffSignupCompanySize) {
+	s.CompanySize = val
+}
+
+// SetCompanySizeOtherText sets the value of CompanySizeOtherText.
+func (s *StaffSignupSurveyResponseResource) SetCompanySizeOtherText(val OptNilString) {
+	s.CompanySizeOtherText = val
+}
+
+// SetMainGoal sets the value of MainGoal.
+func (s *StaffSignupSurveyResponseResource) SetMainGoal(val StaffSignupGoal) {
+	s.MainGoal = val
+}
+
+// SetMainGoalOtherText sets the value of MainGoalOtherText.
+func (s *StaffSignupSurveyResponseResource) SetMainGoalOtherText(val OptNilString) {
+	s.MainGoalOtherText = val
+}
+
+// SetHeardFrom sets the value of HeardFrom.
+func (s *StaffSignupSurveyResponseResource) SetHeardFrom(val OptNilStaffSignupSource) {
+	s.HeardFrom = val
+}
+
+// SetHeardFromOtherText sets the value of HeardFromOtherText.
+func (s *StaffSignupSurveyResponseResource) SetHeardFromOtherText(val OptNilString) {
+	s.HeardFromOtherText = val
+}
+
+// SetAnsweredAt sets the value of AnsweredAt.
+func (s *StaffSignupSurveyResponseResource) SetAnsweredAt(val Timestamp) {
+	s.AnsweredAt = val
+}
+
+func (*StaffSignupSurveyResponseResource) staffSignupSurveyGetRes() {}
 
 // Why a Workspace is being suspended; the owner is told.
 // Ref: #/components/schemas/StaffSuspendInput

@@ -62,6 +62,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/server"
 	"github.com/getsphericon/sphericon/internal/sidelistener"
 	"github.com/getsphericon/sphericon/internal/signin"
+	"github.com/getsphericon/sphericon/internal/signupsurvey"
 	"github.com/getsphericon/sphericon/internal/suspension"
 	"github.com/getsphericon/sphericon/internal/tags"
 	"github.com/getsphericon/sphericon/internal/telemetry"
@@ -1681,10 +1682,14 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 	if err != nil {
 		return apisite.Deps{}, err
 	}
+	// The Sign-up survey is on only with an explicit switch and the `staff` license; the
+	// warning for a switch without the license is logged here, once, at start.
+	survey := signupsurvey.New(bus.Bus, signupsurvey.Enabled(cfg.SignupSurvey, edition.StaffLicensed(), slog.Default()))
 	return apisite.Deps{
-		Instance:    inst,
-		Deletion:    deletion,
-		AccountLink: accountLink, Holds: edition.Holds(), AbuseWatch: edition.AbuseWatch(), SupportEmail: cfg.SupportEmail, MCPURL: cfg.MCPOrigin(),
+		SignupSurvey: survey,
+		Instance:     inst,
+		Deletion:     deletion,
+		AccountLink:  accountLink, Holds: edition.Holds(), AbuseWatch: edition.AbuseWatch(), SupportEmail: cfg.SupportEmail, MCPURL: cfg.MCPOrigin(),
 		Accounts: acc, Attempts: attempts, OAuth: oauthserver.NewService(client.Client, oauthserver.NewFetcher(cfg.OutboundAllow)), Bus: bus.Bus, Webhooks: wh, Outbound: sender.Module,
 		Segments: seg, EventLog: evlog, Contacts: con, Erasure: er, Tags: tg, Templates: tpl, BrandKit: bk, Automations: auto, Rules: rl,
 		Broadcasts: bc, Welcome: jc.Client, SysMail: jc.Client, SendingDomains: sd, JoinDomains: jd, Integrations: integ,

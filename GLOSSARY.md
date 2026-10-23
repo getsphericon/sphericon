@@ -742,6 +742,16 @@ a Sending domain still waiting for DNS is a step in progress and blocks no later
 does not complete the last step.
 _Avoid_: Onboarding wizard, getting started, tour
 
+**Sign-up survey**:
+An optional set of four one-question screens (role, company size, main goal, how the User heard of the
+product) that a User who has just signed up, by password or through a Sign-in provider, answers once
+after the first sign-in and before the dashboard. An Instance turns it on explicitly and a Staff
+member reads the answers; they stay in the Instance's database and are never part of the Telemetry
+report. A User who accepts an Invitation, the first Owner made by the CLI and Users that existed
+when the survey was turned on are not asked. It completes nothing and personalizes nothing, so it is
+not the Setup checklist.
+_Avoid_: Onboarding wizard, questionnaire
+
 ### Usage & holds
 
 The core _measures_ what each Workspace does and lets a Staff member hold sending from outside; it

@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/passkey"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/recoverycode"
+	"github.com/getsphericon/sphericon/ent/signupsurveyresponse"
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/ent/useridentity"
 )
@@ -210,6 +211,26 @@ func (_u *UserUpdate) AddSecondFactorLastStep(v int64) *UserUpdate {
 	return _u
 }
 
+// SetSignupSurveyDueAt sets the "signup_survey_due_at" field.
+func (_u *UserUpdate) SetSignupSurveyDueAt(v time.Time) *UserUpdate {
+	_u.mutation.SetSignupSurveyDueAt(v)
+	return _u
+}
+
+// SetNillableSignupSurveyDueAt sets the "signup_survey_due_at" field if the given value is not nil.
+func (_u *UserUpdate) SetNillableSignupSurveyDueAt(v *time.Time) *UserUpdate {
+	if v != nil {
+		_u.SetSignupSurveyDueAt(*v)
+	}
+	return _u
+}
+
+// ClearSignupSurveyDueAt clears the value of the "signup_survey_due_at" field.
+func (_u *UserUpdate) ClearSignupSurveyDueAt() *UserUpdate {
+	_u.mutation.ClearSignupSurveyDueAt()
+	return _u
+}
+
 // AddMembershipIDs adds the "memberships" edge to the Membership entity by IDs.
 func (_u *UserUpdate) AddMembershipIDs(ids ...int64) *UserUpdate {
 	_u.mutation.AddMembershipIDs(ids...)
@@ -283,6 +304,25 @@ func (_u *UserUpdate) AddIdentities(v ...*UserIdentity) *UserUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.AddIdentityIDs(ids...)
+}
+
+// SetSignupSurveyResponseID sets the "signup_survey_response" edge to the SignupSurveyResponse entity by ID.
+func (_u *UserUpdate) SetSignupSurveyResponseID(id int64) *UserUpdate {
+	_u.mutation.SetSignupSurveyResponseID(id)
+	return _u
+}
+
+// SetNillableSignupSurveyResponseID sets the "signup_survey_response" edge to the SignupSurveyResponse entity by ID if the given value is not nil.
+func (_u *UserUpdate) SetNillableSignupSurveyResponseID(id *int64) *UserUpdate {
+	if id != nil {
+		_u = _u.SetSignupSurveyResponseID(*id)
+	}
+	return _u
+}
+
+// SetSignupSurveyResponse sets the "signup_survey_response" edge to the SignupSurveyResponse entity.
+func (_u *UserUpdate) SetSignupSurveyResponse(v *SignupSurveyResponse) *UserUpdate {
+	return _u.SetSignupSurveyResponseID(v.ID)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -393,6 +433,12 @@ func (_u *UserUpdate) RemoveIdentities(v ...*UserIdentity) *UserUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveIdentityIDs(ids...)
+}
+
+// ClearSignupSurveyResponse clears the "signup_survey_response" edge to the SignupSurveyResponse entity.
+func (_u *UserUpdate) ClearSignupSurveyResponse() *UserUpdate {
+	_u.mutation.ClearSignupSurveyResponse()
+	return _u
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -514,6 +560,12 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.AddedSecondFactorLastStep(); ok {
 		_spec.AddField(user.FieldSecondFactorLastStep, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.SignupSurveyDueAt(); ok {
+		_spec.SetField(user.FieldSignupSurveyDueAt, field.TypeTime, value)
+	}
+	if _u.mutation.SignupSurveyDueAtCleared() {
+		_spec.ClearField(user.FieldSignupSurveyDueAt, field.TypeTime)
 	}
 	if _u.mutation.MembershipsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -733,6 +785,35 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(useridentity.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.SignupSurveyResponseCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   user.SignupSurveyResponseTable,
+			Columns: []string{user.SignupSurveyResponseColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(signupsurveyresponse.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SignupSurveyResponseIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   user.SignupSurveyResponseTable,
+			Columns: []string{user.SignupSurveyResponseColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(signupsurveyresponse.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -938,6 +1019,26 @@ func (_u *UserUpdateOne) AddSecondFactorLastStep(v int64) *UserUpdateOne {
 	return _u
 }
 
+// SetSignupSurveyDueAt sets the "signup_survey_due_at" field.
+func (_u *UserUpdateOne) SetSignupSurveyDueAt(v time.Time) *UserUpdateOne {
+	_u.mutation.SetSignupSurveyDueAt(v)
+	return _u
+}
+
+// SetNillableSignupSurveyDueAt sets the "signup_survey_due_at" field if the given value is not nil.
+func (_u *UserUpdateOne) SetNillableSignupSurveyDueAt(v *time.Time) *UserUpdateOne {
+	if v != nil {
+		_u.SetSignupSurveyDueAt(*v)
+	}
+	return _u
+}
+
+// ClearSignupSurveyDueAt clears the value of the "signup_survey_due_at" field.
+func (_u *UserUpdateOne) ClearSignupSurveyDueAt() *UserUpdateOne {
+	_u.mutation.ClearSignupSurveyDueAt()
+	return _u
+}
+
 // AddMembershipIDs adds the "memberships" edge to the Membership entity by IDs.
 func (_u *UserUpdateOne) AddMembershipIDs(ids ...int64) *UserUpdateOne {
 	_u.mutation.AddMembershipIDs(ids...)
@@ -1011,6 +1112,25 @@ func (_u *UserUpdateOne) AddIdentities(v ...*UserIdentity) *UserUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.AddIdentityIDs(ids...)
+}
+
+// SetSignupSurveyResponseID sets the "signup_survey_response" edge to the SignupSurveyResponse entity by ID.
+func (_u *UserUpdateOne) SetSignupSurveyResponseID(id int64) *UserUpdateOne {
+	_u.mutation.SetSignupSurveyResponseID(id)
+	return _u
+}
+
+// SetNillableSignupSurveyResponseID sets the "signup_survey_response" edge to the SignupSurveyResponse entity by ID if the given value is not nil.
+func (_u *UserUpdateOne) SetNillableSignupSurveyResponseID(id *int64) *UserUpdateOne {
+	if id != nil {
+		_u = _u.SetSignupSurveyResponseID(*id)
+	}
+	return _u
+}
+
+// SetSignupSurveyResponse sets the "signup_survey_response" edge to the SignupSurveyResponse entity.
+func (_u *UserUpdateOne) SetSignupSurveyResponse(v *SignupSurveyResponse) *UserUpdateOne {
+	return _u.SetSignupSurveyResponseID(v.ID)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -1121,6 +1241,12 @@ func (_u *UserUpdateOne) RemoveIdentities(v ...*UserIdentity) *UserUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveIdentityIDs(ids...)
+}
+
+// ClearSignupSurveyResponse clears the "signup_survey_response" edge to the SignupSurveyResponse entity.
+func (_u *UserUpdateOne) ClearSignupSurveyResponse() *UserUpdateOne {
+	_u.mutation.ClearSignupSurveyResponse()
+	return _u
 }
 
 // Where appends a list predicates to the UserUpdate builder.
@@ -1272,6 +1398,12 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 	}
 	if value, ok := _u.mutation.AddedSecondFactorLastStep(); ok {
 		_spec.AddField(user.FieldSecondFactorLastStep, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.SignupSurveyDueAt(); ok {
+		_spec.SetField(user.FieldSignupSurveyDueAt, field.TypeTime, value)
+	}
+	if _u.mutation.SignupSurveyDueAtCleared() {
+		_spec.ClearField(user.FieldSignupSurveyDueAt, field.TypeTime)
 	}
 	if _u.mutation.MembershipsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -1491,6 +1623,35 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(useridentity.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.SignupSurveyResponseCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   user.SignupSurveyResponseTable,
+			Columns: []string{user.SignupSurveyResponseColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(signupsurveyresponse.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SignupSurveyResponseIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   user.SignupSurveyResponseTable,
+			Columns: []string{user.SignupSurveyResponseColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(signupsurveyresponse.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

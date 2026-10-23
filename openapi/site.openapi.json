@@ -2938,6 +2938,93 @@
         "tags": ["Site User"]
       }
     },
+    "/me/signup-survey": {
+      "post": {
+        "operationId": "SiteSignupSurvey_submit",
+        "description": "Answer the Sign-up survey. It belongs to the User, so it takes no Workspace. The answers\nare stored and the User stops owing the survey in one transaction (204). 409 when the User\ndoes not owe the survey: it was answered already, or the User was never asked (the\nInstance has it off, or the User joined by an Invitation). 422 for a missing required\nanswer, a value outside the lists, an `…Other` text over its length or without its\n`other` choice. Nothing is stored for a refused request.",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "There is no content to send for this request, but the headers may be useful."
+          },
+          "409": {
+            "description": "RFC 7807 conflict response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site User"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteSignupSurveyInput"
+              }
+            }
+          }
+        }
+      }
+    },
     "/oauth/authorization": {
       "get": {
         "operationId": "SiteOAuth_describe",
@@ -16550,6 +16637,85 @@
         },
         "description": "The Sign-in providers this Instance has configured. Empty on an Instance that\nconfigured none, which leaves the login and register pages as they are."
       },
+      "SiteSignupCompanySize": {
+        "type": "string",
+        "enum": ["1", "2_10", "11_50", "51_200", "201_1000", "1000_plus", "other"],
+        "description": "How many people work at the User's company (second question)"
+      },
+      "SiteSignupGoal": {
+        "type": "string",
+        "enum": ["broadcasts", "automations", "tracking", "migrating", "other"],
+        "description": "What the User mainly wants to do with the product (third question)"
+      },
+      "SiteSignupRole": {
+        "type": "string",
+        "enum": ["founder", "marketer", "developer", "product", "other"],
+        "description": "What the User does (Sign-up survey, first question)"
+      },
+      "SiteSignupSource": {
+        "type": "string",
+        "enum": ["search", "github", "social", "recommendation", "other"],
+        "description": "Where the User heard about the product (fourth question, optional)"
+      },
+      "SiteSignupSurveyInput": {
+        "type": "object",
+        "required": ["role", "companySize", "mainGoal"],
+        "properties": {
+          "role": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteSignupRole"
+              }
+            ],
+            "description": "What the User does"
+          },
+          "roleOther": {
+            "type": "string",
+            "maxLength": 100,
+            "description": "What the User does, when `role` is `other`"
+          },
+          "companySize": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteSignupCompanySize"
+              }
+            ],
+            "description": "How many people work at the User's company"
+          },
+          "companySizeOther": {
+            "type": "string",
+            "maxLength": 100,
+            "description": "The company size, when `companySize` is `other`"
+          },
+          "mainGoal": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteSignupGoal"
+              }
+            ],
+            "description": "What the User mainly wants to do with the product"
+          },
+          "mainGoalOther": {
+            "type": "string",
+            "maxLength": 100,
+            "description": "The main goal, when `mainGoal` is `other`"
+          },
+          "heardFrom": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteSignupSource"
+              }
+            ],
+            "description": "Where the User heard about the product"
+          },
+          "heardFromOther": {
+            "type": "string",
+            "maxLength": 100,
+            "description": "Where the User heard about the product, when `heardFrom` is `other`"
+          }
+        },
+        "description": "The answers to the Sign-up survey, sent once after its last screen. `role`, `companySize`\nand `mainGoal` are required; `heardFrom` is optional. Each `…Other` text is allowed only\nwith its question's `other` choice."
+      },
       "SiteSmtpConfig": {
         "type": "object",
         "required": ["kind", "host", "port", "from"],
@@ -17243,7 +17409,7 @@
       },
       "SiteUserResource": {
         "type": "object",
-        "required": ["id", "name", "email", "emailVerified", "createdAt"],
+        "required": ["id", "name", "email", "emailVerified", "signupSurveyDue", "createdAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -17268,6 +17434,10 @@
           "emailVerified": {
             "type": "boolean",
             "description": "Whether the user has confirmed ownership of their email"
+          },
+          "signupSurveyDue": {
+            "type": "boolean",
+            "description": "Whether the User owes the Sign-up survey: computed on the server, so the app reads this\none field and never the Instance setting. True after a public sign-up on an Instance that\nasks, until the survey is answered."
           },
           "createdAt": {
             "allOf": [

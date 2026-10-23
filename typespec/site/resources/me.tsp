@@ -16,6 +16,11 @@ model SiteUserResource {
   /** Whether the user has confirmed ownership of their email */
   emailVerified: boolean;
 
+  /** Whether the User owes the Sign-up survey: computed on the server, so the app reads this
+   * one field and never the Instance setting. True after a public sign-up on an Instance that
+   * asks, until the survey is answered. */
+  signupSurveyDue: boolean;
+
   /** Creation timestamp */
   createdAt: Timestamp;
 }

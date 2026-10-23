@@ -501,6 +501,18 @@ func (f ServiceCredentialFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ServiceCredentialMutation", m)
 }
 
+// The SignupSurveyResponseFunc type is an adapter to allow the use of ordinary
+// function as SignupSurveyResponse mutator.
+type SignupSurveyResponseFunc func(context.Context, *ent.SignupSurveyResponseMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f SignupSurveyResponseFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.SignupSurveyResponseMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SignupSurveyResponseMutation", m)
+}
+
 // The StaffMemberFunc type is an adapter to allow the use of ordinary
 // function as StaffMember mutator.
 type StaffMemberFunc func(context.Context, *ent.StaffMemberMutation) (ent.Value, error)

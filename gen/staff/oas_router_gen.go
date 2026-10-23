@@ -17,7 +17,7 @@ var (
 	rn5AllowedHeaders = map[string]string{
 		"POST": "Content-Type",
 	}
-	rn14AllowedHeaders = map[string]string{
+	rn17AllowedHeaders = map[string]string{
 		"POST": "Content-Type",
 	}
 )
@@ -201,6 +201,68 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 
+			case 's': // Prefix: "signup-survey"
+
+				if l := len("signup-survey"); len(elem) >= l && elem[0:l] == "signup-survey" {
+					elem = elem[l:]
+				} else {
+					break
+				}
+
+				if len(elem) == 0 {
+					switch r.Method {
+					case "GET":
+						s.handleStaffSignupSurveyCountsRequest([0]string{}, elemIsEscaped, w, r)
+					default:
+						s.notAllowed(w, r, notAllowedParams{
+							allowedMethods: "GET",
+							allowedHeaders: nil,
+							acceptPost:     "",
+							acceptPatch:    "",
+						})
+					}
+
+					return
+				}
+				switch elem[0] {
+				case '/': // Prefix: "/users/"
+
+					if l := len("/users/"); len(elem) >= l && elem[0:l] == "/users/" {
+						elem = elem[l:]
+					} else {
+						break
+					}
+
+					// Param: "userId"
+					// Leaf parameter, slashes are prohibited
+					idx := strings.IndexByte(elem, '/')
+					if idx >= 0 {
+						break
+					}
+					args[0] = elem
+					elem = ""
+
+					if len(elem) == 0 {
+						// Leaf node.
+						switch r.Method {
+						case "GET":
+							s.handleStaffSignupSurveyGetRequest([1]string{
+								args[0],
+							}, elemIsEscaped, w, r)
+						default:
+							s.notAllowed(w, r, notAllowedParams{
+								allowedMethods: "GET",
+								allowedHeaders: nil,
+								acceptPost:     "",
+								acceptPatch:    "",
+							})
+						}
+
+						return
+					}
+
+				}
+
 			case 'w': // Prefix: "workspaces"
 
 				if l := len("workspaces"); len(elem) >= l && elem[0:l] == "workspaces" {
@@ -344,7 +406,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 								default:
 									s.notAllowed(w, r, notAllowedParams{
 										allowedMethods: "POST",
-										allowedHeaders: rn14AllowedHeaders,
+										allowedHeaders: rn17AllowedHeaders,
 										acceptPost:     "application/json",
 										acceptPatch:    "",
 									})
@@ -653,6 +715,66 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 					default:
 						return
 					}
+				}
+
+			case 's': // Prefix: "signup-survey"
+
+				if l := len("signup-survey"); len(elem) >= l && elem[0:l] == "signup-survey" {
+					elem = elem[l:]
+				} else {
+					break
+				}
+
+				if len(elem) == 0 {
+					switch method {
+					case "GET":
+						r.name = StaffSignupSurveyCountsOperation
+						r.summary = ""
+						r.operationID = "StaffSignupSurvey_counts"
+						r.operationGroup = ""
+						r.pathPattern = "/signup-survey"
+						r.args = args
+						r.count = 0
+						return r, true
+					default:
+						return
+					}
+				}
+				switch elem[0] {
+				case '/': // Prefix: "/users/"
+
+					if l := len("/users/"); len(elem) >= l && elem[0:l] == "/users/" {
+						elem = elem[l:]
+					} else {
+						break
+					}
+
+					// Param: "userId"
+					// Leaf parameter, slashes are prohibited
+					idx := strings.IndexByte(elem, '/')
+					if idx >= 0 {
+						break
+					}
+					args[0] = elem
+					elem = ""
+
+					if len(elem) == 0 {
+						// Leaf node.
+						switch method {
+						case "GET":
+							r.name = StaffSignupSurveyGetOperation
+							r.summary = ""
+							r.operationID = "StaffSignupSurvey_get"
+							r.operationGroup = ""
+							r.pathPattern = "/signup-survey/users/{userId}"
+							r.args = args
+							r.count = 1
+							return r, true
+						default:
+							return
+						}
+					}
+
 				}
 
 			case 'w': // Prefix: "workspaces"

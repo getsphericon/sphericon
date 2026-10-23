@@ -1,7 +1,7 @@
 import { QueryClient } from '@tanstack/react-query'
 import { expect, test } from 'vitest'
 
-import { handleSiteWorkspacesList } from './generated/site/msw.gen.ts'
+import { handleSiteUserGetMe, handleSiteWorkspacesList } from './generated/site/msw.gen.ts'
 import { handleStaffMeGet } from './generated/staff/msw.gen.ts'
 import { createAppRouter } from './router.ts'
 import { Route as consoleHomeRoute } from './routes/console/_authed/index.tsx'
@@ -9,6 +9,7 @@ import { Route as consoleLoginRoute } from './routes/console/login.tsx'
 import { Route as indexRoute } from './routes/index.tsx'
 import { Route as loginRoute } from './routes/login.tsx'
 import { Route as oauthConsentRoute } from './routes/oauth/consent.tsx'
+import { Route as signupSurveyRoute } from './routes/signup-survey.tsx'
 import { Route as workspaceRoute } from './routes/workspaces/$workspaceId/route.tsx'
 import { Route as newWorkspaceRoute } from './routes/workspaces/new.tsx'
 import { problem } from './test/problem.ts'
@@ -135,4 +136,35 @@ test('the OAuth consent screen sends a signed-out user to login and remembers wh
   expect(router.state.location.search).toMatchObject({
     redirect: expect.stringContaining(oauthConsentRoute.to),
   })
+})
+
+const user = (signupSurveyDue: boolean) => ({
+  id: 'UserDefault01',
+  name: 'Test User',
+  email: 'user@example.test',
+  emailVerified: true,
+  signupSurveyDue,
+  createdAt: '2026-01-01T00:00:00Z',
+})
+
+test('a user who owes the Sign-up survey is sent to it from the index route', async () => {
+  const router = newRouter()
+  serveWorkspaces(['AcmeWs01'])
+  worker.use(handleSiteUserGetMe({ body: user(true) }))
+
+  await router.navigate({ to: indexRoute.to })
+
+  expect(router.state.location.pathname).toBe(signupSurveyRoute.to)
+})
+
+test('a user who does not owe the Sign-up survey is never sent to it', async () => {
+  const router = newRouter()
+  serveWorkspaces(['AcmeWs01'])
+  worker.use(handleSiteUserGetMe({ body: user(false) }))
+
+  await router.navigate({ to: signupSurveyRoute.to })
+
+  expect(router.state.location.pathname).toBe(
+    workspaceRoute.fullPath.replace('$workspaceId', 'AcmeWs01'),
+  )
 })

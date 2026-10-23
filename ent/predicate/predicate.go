@@ -129,6 +129,9 @@ type SendingDomain func(*sql.Selector)
 // ServiceCredential is the predicate function for servicecredential builders.
 type ServiceCredential func(*sql.Selector)
 
+// SignupSurveyResponse is the predicate function for signupsurveyresponse builders.
+type SignupSurveyResponse func(*sql.Selector)
+
 // StaffMember is the predicate function for staffmember builders.
 type StaffMember func(*sql.Selector)
 

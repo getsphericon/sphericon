@@ -490,3 +490,22 @@ func TestConfigLoadEventLiveWindow(t *testing.T) {
 	_, err = Load("test")
 	require.Error(t, err, "a live window under an hour must be rejected: it cannot be switched off")
 }
+
+func TestConfigLoadSignupSurveyIsOnOnlyWithAnExplicitTrue(t *testing.T) {
+	t.Setenv("DATABASE_URL", "postgres://x")
+	cases := []struct {
+		value string
+		want  bool
+	}{
+		{"true", true}, {"TRUE", true}, {" true ", true},
+		{"", false}, {"false", false}, {"yes", false}, {"1", false}, {"treu", false},
+	}
+	for _, c := range cases {
+		t.Setenv("SPHERICON_SIGNUP_SURVEY", c.value)
+
+		cfg, err := Load("test")
+
+		require.NoError(t, err)
+		require.Equalf(t, c.want, cfg.SignupSurvey, "SPHERICON_SIGNUP_SURVEY=%q", c.value)
+	}
+}

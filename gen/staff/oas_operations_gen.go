@@ -10,6 +10,8 @@ const (
 	StaffAuthLogoutOperation          OperationName = "StaffAuthLogout"
 	StaffAuthSecondFactorOperation    OperationName = "StaffAuthSecondFactor"
 	StaffMeGetOperation               OperationName = "StaffMeGet"
+	StaffSignupSurveyCountsOperation  OperationName = "StaffSignupSurveyCounts"
+	StaffSignupSurveyGetOperation     OperationName = "StaffSignupSurveyGet"
 	StaffWorkspaceAuditListOperation  OperationName = "StaffWorkspaceAuditList"
 	StaffWorkspacesExemptOperation    OperationName = "StaffWorkspacesExempt"
 	StaffWorkspacesGetOperation       OperationName = "StaffWorkspacesGet"

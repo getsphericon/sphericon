@@ -3,7 +3,7 @@
 
 import { http, type HttpHandler, HttpResponse, type HttpResponseResolver, type RequestHandlerOptions as RequestHandlerOptions2 } from 'msw';
 
-import type { ClientOptions, StaffAuthLoginData, StaffAuthLoginResponses, StaffAuthLogoutResponses, StaffAuthSecondFactorData, StaffAuthSecondFactorResponses, StaffMeGetResponses, StaffWorkspaceAuditListResponses, StaffWorkspacesExemptResponses, StaffWorkspacesGetResponses, StaffWorkspacesListResponses, StaffWorkspacesSuspendData, StaffWorkspacesSuspendResponses, StaffWorkspacesUnexemptResponses, StaffWorkspacesUnsuspendResponses } from './types.gen.ts';
+import type { ClientOptions, StaffAuthLoginData, StaffAuthLoginResponses, StaffAuthLogoutResponses, StaffAuthSecondFactorData, StaffAuthSecondFactorResponses, StaffMeGetResponses, StaffSignupSurveyCountsResponses, StaffSignupSurveyGetResponses, StaffWorkspaceAuditListResponses, StaffWorkspacesExemptResponses, StaffWorkspacesGetResponses, StaffWorkspacesListResponses, StaffWorkspacesSuspendData, StaffWorkspacesSuspendResponses, StaffWorkspacesUnexemptResponses, StaffWorkspacesUnsuspendResponses } from './types.gen.ts';
 
 export type RequestHandlerOptions = RequestHandlerOptions2 & {
   baseUrl?: ClientOptions['baseUrl'];
@@ -101,6 +101,64 @@ export type HandleStaffMeGetResponse = {
  */
 export function handleStaffMeGet(response?: HandleStaffMeGetResponse | HttpResponseResolver<never, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.get<never, never>(`${options?.baseUrl ?? '*'}/me`, info => {
+    if (typeof response === 'function') {
+      return response(info);
+    }
+    const body = response?.body;
+    if (body !== undefined) {
+      return HttpResponse.json(body, { status: response?.status ?? 200 });
+    }
+    if (options?.responseFallback === 'passthrough') {
+      return;
+    }
+    return new Response('Not Implemented', {
+      status: 501,
+      statusText: 'Not Implemented'
+    });
+  }, options);
+}
+
+export type HandleStaffSignupSurveyCountsResponse = {
+  body: StaffSignupSurveyCountsResponses[200];
+  status?: 200;
+};
+
+/**
+ * Handler for the `GET /signup-survey` operation.
+ */
+export function handleStaffSignupSurveyCounts(response?: HandleStaffSignupSurveyCountsResponse | HttpResponseResolver<never, never>, options?: RequestHandlerOptions): HttpHandler {
+  return http.get<never, never>(`${options?.baseUrl ?? '*'}/signup-survey`, info => {
+    if (typeof response === 'function') {
+      return response(info);
+    }
+    const body = response?.body;
+    if (body !== undefined) {
+      return HttpResponse.json(body, { status: response?.status ?? 200 });
+    }
+    if (options?.responseFallback === 'passthrough') {
+      return;
+    }
+    return new Response('Not Implemented', {
+      status: 501,
+      statusText: 'Not Implemented'
+    });
+  }, options);
+}
+
+export type HandleStaffSignupSurveyGetResponse = {
+  body: StaffSignupSurveyGetResponses[200];
+  status?: 200;
+};
+
+/**
+ * Handler for the `GET /signup-survey/users/{userId}` operation.
+ */
+export function handleStaffSignupSurveyGet(response?: HandleStaffSignupSurveyGetResponse | HttpResponseResolver<{
+  userId: string;
+}, never>, options?: RequestHandlerOptions): HttpHandler {
+  return http.get<{
+    userId: string;
+  }, never>(`${options?.baseUrl ?? '*'}/signup-survey/users/:userId`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -349,6 +407,14 @@ export type MswHandlerFactories = {
    */
   staffMeGet: typeof handleStaffMeGet;
   /**
+   * Handler for the `GET /signup-survey` operation.
+   */
+  staffSignupSurveyCounts: typeof handleStaffSignupSurveyCounts;
+  /**
+   * Handler for the `GET /signup-survey/users/{userId}` operation.
+   */
+  staffSignupSurveyGet: typeof handleStaffSignupSurveyGet;
+  /**
    * Handler for the `GET /workspaces` operation.
    */
   staffWorkspacesList: typeof handleStaffWorkspacesList;
@@ -397,6 +463,8 @@ export function createMswHandlers(config: RequestHandlerOptions = {}): CreateMsw
     staffAuthLogout: wrap(handleStaffAuthLogout),
     staffAuthSecondFactor: wrap(handleStaffAuthSecondFactor),
     staffMeGet: wrap(handleStaffMeGet),
+    staffSignupSurveyCounts: wrap(handleStaffSignupSurveyCounts),
+    staffSignupSurveyGet: wrap(handleStaffSignupSurveyGet),
     staffWorkspacesList: wrap(handleStaffWorkspacesList),
     staffWorkspacesGet: wrap(handleStaffWorkspacesGet),
     staffWorkspaceAuditList: wrap(handleStaffWorkspaceAuditList),
@@ -415,6 +483,7 @@ export function createMswHandlers(config: RequestHandlerOptions = {}): CreateMsw
     }
     const overrides = options.pick ?? {};
     return [
+      invoke(pick.staffSignupSurveyGet, overrides.staffSignupSurveyGet),
       invoke(pick.staffWorkspaceAuditList, overrides.staffWorkspaceAuditList),
       invoke(pick.staffWorkspacesExempt, overrides.staffWorkspacesExempt),
       invoke(pick.staffWorkspacesSuspend, overrides.staffWorkspacesSuspend),
@@ -425,6 +494,7 @@ export function createMswHandlers(config: RequestHandlerOptions = {}): CreateMsw
       invoke(pick.staffAuthSecondFactor, overrides.staffAuthSecondFactor),
       invoke(pick.staffWorkspacesGet, overrides.staffWorkspacesGet),
       invoke(pick.staffMeGet, overrides.staffMeGet),
+      invoke(pick.staffSignupSurveyCounts, overrides.staffSignupSurveyCounts),
       invoke(pick.staffWorkspacesList, overrides.staffWorkspacesList)
     ];
   };

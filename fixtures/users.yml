@@ -257,3 +257,36 @@
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
   email_verified_at: '2026-01-01 00:00:00'
+# A User who answered the Sign-up survey (fixtures/signup_survey_responses.yml): no marker, no Membership.
+- id: 5600 # fixture: SurveyAnsweredAnn
+  name: Ann
+  email: ann@survey.test
+  password_hash: '{{argonHash "password"}}'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+  email_verified_at: '2026-01-01 00:00:00'
+# Two more Users who answered the Sign-up survey, for its counts (fixtures/signup_survey_responses.yml).
+- id: 5601 # fixture: SurveyAnsweredBob
+  name: Bob
+  email: bob@survey.test
+  password_hash: '{{argonHash "password"}}'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+  email_verified_at: '2026-01-01 00:00:00'
+- id: 5602 # fixture: SurveyAnsweredCara
+  name: Cara
+  email: cara@survey.test
+  password_hash: '{{argonHash "password"}}'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+  email_verified_at: '2026-01-01 00:00:00'
+# A User who signed up in public while the Sign-up survey was on and has not answered it: the
+# marker is set, no Membership. Whether the survey is still due depends on the Instance.
+- id: 5603 # fixture: SurveyDueDan
+  name: Dan
+  email: dan@survey.test
+  password_hash: '{{argonHash "password"}}'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+  email_verified_at: '2026-01-01 00:00:00'
+  signup_survey_due_at: '2026-01-01 00:00:00'

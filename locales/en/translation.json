@@ -1470,6 +1470,46 @@
     "successTitle": "Provider unlinked",
     "working": "Unlinking the sign-in provider…"
   },
+  "signupSurvey": {
+    "back": "Back",
+    "companySize": {
+      "size1": "Just me",
+      "size1000plus": "More than 1000",
+      "size11to50": "11 to 50",
+      "size201to1000": "201 to 1000",
+      "size2to10": "2 to 10",
+      "size51to200": "51 to 200",
+      "title": "How many people work at your company?"
+    },
+    "errorTitle": "We couldn't save your answers",
+    "finish": "Finish",
+    "heardFrom": {
+      "github": "GitHub",
+      "recommendation": "A recommendation",
+      "search": "Search",
+      "social": "Social media",
+      "title": "Where did you hear about us?"
+    },
+    "mainGoal": {
+      "automations": "Automations",
+      "broadcasts": "Broadcasts",
+      "migrating": "Moving from another tool",
+      "title": "What do you mainly want to do?",
+      "tracking": "Tracking visitors"
+    },
+    "next": "Next",
+    "optional": "This question is optional. Continue without choosing if you prefer.",
+    "other": "Other",
+    "otherLabel": "Tell us more",
+    "progress": "Question {{current}} of {{total}}",
+    "role": {
+      "developer": "Developer",
+      "founder": "Founder",
+      "marketer": "Marketer",
+      "product": "Product",
+      "title": "What do you do?"
+    }
+  },
   "status": {
     "active": "Active",
     "all": "All",

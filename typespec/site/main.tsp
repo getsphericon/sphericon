@@ -19,6 +19,7 @@ import "./resources/workspaces.tsp";
 import "./resources/memberships.tsp";
 import "./resources/invitations.tsp";
 import "./resources/me.tsp";
+import "./resources/signup-survey.tsp";
 import "./resources/second-factor.tsp";
 import "./resources/identities.tsp";
 import "./resources/passkeys.tsp";

@@ -14,6 +14,9 @@
     },
     {
       "name": "StaffMember Workspaces"
+    },
+    {
+      "name": "StaffMember Sign-up survey"
     }
   ],
   "paths": {
@@ -256,6 +259,85 @@
           }
         },
         "tags": ["StaffMember"]
+      }
+    },
+    "/signup-survey": {
+      "get": {
+        "operationId": "StaffSignupSurvey_counts",
+        "description": "The Sign-up survey answers, counted per question. Read only.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffSignupSurveyCounts"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["StaffMember Sign-up survey"]
+      }
+    },
+    "/signup-survey/users/{userId}": {
+      "get": {
+        "operationId": "StaffSignupSurvey_get",
+        "description": "One User's answers. 404 when the User is unknown or has not answered the survey.",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffSignupSurveyResponseResource"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["StaffMember Sign-up survey"]
       }
     },
     "/workspaces": {
@@ -1431,6 +1513,243 @@
           }
         },
         "description": "The second login step: the challenge from the password step and a TOTP code"
+      },
+      "StaffSignupCompanySize": {
+        "type": "string",
+        "enum": ["1", "2_10", "11_50", "51_200", "201_1000", "1000_plus", "other"],
+        "description": "How many people work at the User's company (second question)"
+      },
+      "StaffSignupCompanySizeCount": {
+        "type": "object",
+        "required": ["choice", "count"],
+        "properties": {
+          "choice": {
+            "$ref": "#/components/schemas/StaffSignupCompanySize"
+          },
+          "count": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "How many Users chose a company size"
+      },
+      "StaffSignupGoal": {
+        "type": "string",
+        "enum": ["broadcasts", "automations", "tracking", "migrating", "other"],
+        "description": "What the User mainly wants to do with the product (third question)"
+      },
+      "StaffSignupGoalCount": {
+        "type": "object",
+        "required": ["choice", "count"],
+        "properties": {
+          "choice": {
+            "$ref": "#/components/schemas/StaffSignupGoal"
+          },
+          "count": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "How many Users chose a main goal"
+      },
+      "StaffSignupOtherTextCount": {
+        "type": "object",
+        "required": ["text", "count"],
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "count": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "An `other` text and how many Users wrote it"
+      },
+      "StaffSignupRole": {
+        "type": "string",
+        "enum": ["founder", "marketer", "developer", "product", "other"],
+        "description": "What the User does (Sign-up survey, first question)"
+      },
+      "StaffSignupRoleCount": {
+        "type": "object",
+        "required": ["choice", "count"],
+        "properties": {
+          "choice": {
+            "$ref": "#/components/schemas/StaffSignupRole"
+          },
+          "count": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "How many Users chose a role"
+      },
+      "StaffSignupSource": {
+        "type": "string",
+        "enum": ["search", "github", "social", "recommendation", "other"],
+        "description": "Where the User heard about the product (fourth question, optional)"
+      },
+      "StaffSignupSourceCount": {
+        "type": "object",
+        "required": ["choice", "count"],
+        "properties": {
+          "choice": {
+            "$ref": "#/components/schemas/StaffSignupSource"
+          },
+          "count": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "How many Users chose a source"
+      },
+      "StaffSignupSurveyCounts": {
+        "type": "object",
+        "required": [
+          "responses",
+          "role",
+          "roleOtherTexts",
+          "companySize",
+          "companySizeOtherTexts",
+          "mainGoal",
+          "mainGoalOtherTexts",
+          "heardFrom",
+          "heardFromOtherTexts"
+        ],
+        "properties": {
+          "responses": {
+            "type": "integer",
+            "format": "int32",
+            "description": "How many Users answered the survey"
+          },
+          "role": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StaffSignupRoleCount"
+            }
+          },
+          "roleOtherTexts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StaffSignupOtherTextCount"
+            }
+          },
+          "companySize": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StaffSignupCompanySizeCount"
+            }
+          },
+          "companySizeOtherTexts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StaffSignupOtherTextCount"
+            }
+          },
+          "mainGoal": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StaffSignupGoalCount"
+            }
+          },
+          "mainGoalOtherTexts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StaffSignupOtherTextCount"
+            }
+          },
+          "heardFrom": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StaffSignupSourceCount"
+            },
+            "description": "Only the Users who answered the optional question are counted"
+          },
+          "heardFromOtherTexts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StaffSignupOtherTextCount"
+            }
+          }
+        },
+        "description": "The Sign-up survey answers of every User who answered, counted per question. A choice nobody\nmade is absent from its list; a question's `other` texts are listed with their counts, most\nfrequent first."
+      },
+      "StaffSignupSurveyResponseResource": {
+        "type": "object",
+        "required": ["userId", "role", "companySize", "mainGoal", "answeredAt"],
+        "properties": {
+          "userId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "The answering User's id"
+          },
+          "role": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StaffSignupRole"
+              }
+            ],
+            "description": "What the User does"
+          },
+          "roleOtherText": {
+            "type": "string",
+            "nullable": true,
+            "description": "What the User does, when `role` is `other`"
+          },
+          "companySize": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StaffSignupCompanySize"
+              }
+            ],
+            "description": "How many people work at the User's company"
+          },
+          "companySizeOtherText": {
+            "type": "string",
+            "nullable": true,
+            "description": "The company size, when `companySize` is `other`"
+          },
+          "mainGoal": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StaffSignupGoal"
+              }
+            ],
+            "description": "What the User mainly wants to do with the product"
+          },
+          "mainGoalOtherText": {
+            "type": "string",
+            "nullable": true,
+            "description": "The main goal, when `mainGoal` is `other`"
+          },
+          "heardFrom": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StaffSignupSource"
+              }
+            ],
+            "nullable": true,
+            "description": "Where the User heard about the product; absent when the optional question was skipped"
+          },
+          "heardFromOtherText": {
+            "type": "string",
+            "nullable": true,
+            "description": "Where the User heard about the product, when `heardFrom` is `other`"
+          },
+          "answeredAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the User answered"
+          }
+        },
+        "description": "One User's answers to the Sign-up survey. A User who has not answered has none."
       },
       "StaffSuspendInput": {
         "type": "object",

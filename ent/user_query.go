@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/passkey"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/recoverycode"
+	"github.com/getsphericon/sphericon/ent/signupsurveyresponse"
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/ent/useridentity"
 )
@@ -25,16 +26,17 @@ import (
 // UserQuery is the builder for querying User entities.
 type UserQuery struct {
 	config
-	ctx                 *QueryContext
-	order               []user.OrderOption
-	inters              []Interceptor
-	predicates          []predicate.User
-	withMemberships     *MembershipQuery
-	withSentInvitations *InvitationQuery
-	withRecoveryCodes   *RecoveryCodeQuery
-	withPasskeys        *PasskeyQuery
-	withIdentities      *UserIdentityQuery
-	modifiers           []func(*sql.Selector)
+	ctx                      *QueryContext
+	order                    []user.OrderOption
+	inters                   []Interceptor
+	predicates               []predicate.User
+	withMemberships          *MembershipQuery
+	withSentInvitations      *InvitationQuery
+	withRecoveryCodes        *RecoveryCodeQuery
+	withPasskeys             *PasskeyQuery
+	withIdentities           *UserIdentityQuery
+	withSignupSurveyResponse *SignupSurveyResponseQuery
+	modifiers                []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -174,6 +176,28 @@ func (_q *UserQuery) QueryIdentities() *UserIdentityQuery {
 			sqlgraph.From(user.Table, user.FieldID, selector),
 			sqlgraph.To(useridentity.Table, useridentity.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, user.IdentitiesTable, user.IdentitiesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QuerySignupSurveyResponse chains the current query on the "signup_survey_response" edge.
+func (_q *UserQuery) QuerySignupSurveyResponse() *SignupSurveyResponseQuery {
+	query := (&SignupSurveyResponseClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(signupsurveyresponse.Table, signupsurveyresponse.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, user.SignupSurveyResponseTable, user.SignupSurveyResponseColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -368,16 +392,17 @@ func (_q *UserQuery) Clone() *UserQuery {
 		return nil
 	}
 	return &UserQuery{
-		config:              _q.config,
-		ctx:                 _q.ctx.Clone(),
-		order:               append([]user.OrderOption{}, _q.order...),
-		inters:              append([]Interceptor{}, _q.inters...),
-		predicates:          append([]predicate.User{}, _q.predicates...),
-		withMemberships:     _q.withMemberships.Clone(),
-		withSentInvitations: _q.withSentInvitations.Clone(),
-		withRecoveryCodes:   _q.withRecoveryCodes.Clone(),
-		withPasskeys:        _q.withPasskeys.Clone(),
-		withIdentities:      _q.withIdentities.Clone(),
+		config:                   _q.config,
+		ctx:                      _q.ctx.Clone(),
+		order:                    append([]user.OrderOption{}, _q.order...),
+		inters:                   append([]Interceptor{}, _q.inters...),
+		predicates:               append([]predicate.User{}, _q.predicates...),
+		withMemberships:          _q.withMemberships.Clone(),
+		withSentInvitations:      _q.withSentInvitations.Clone(),
+		withRecoveryCodes:        _q.withRecoveryCodes.Clone(),
+		withPasskeys:             _q.withPasskeys.Clone(),
+		withIdentities:           _q.withIdentities.Clone(),
+		withSignupSurveyResponse: _q.withSignupSurveyResponse.Clone(),
 		// clone intermediate query.
 		sql:       _q.sql.Clone(),
 		path:      _q.path,
@@ -437,6 +462,17 @@ func (_q *UserQuery) WithIdentities(opts ...func(*UserIdentityQuery)) *UserQuery
 		opt(query)
 	}
 	_q.withIdentities = query
+	return _q
+}
+
+// WithSignupSurveyResponse tells the query-builder to eager-load the nodes that are connected to
+// the "signup_survey_response" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *UserQuery) WithSignupSurveyResponse(opts ...func(*SignupSurveyResponseQuery)) *UserQuery {
+	query := (&SignupSurveyResponseClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withSignupSurveyResponse = query
 	return _q
 }
 
@@ -518,12 +554,13 @@ func (_q *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 	var (
 		nodes       = []*User{}
 		_spec       = _q.querySpec()
-		loadedTypes = [5]bool{
+		loadedTypes = [6]bool{
 			_q.withMemberships != nil,
 			_q.withSentInvitations != nil,
 			_q.withRecoveryCodes != nil,
 			_q.withPasskeys != nil,
 			_q.withIdentities != nil,
+			_q.withSignupSurveyResponse != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -579,6 +616,12 @@ func (_q *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 		if err := _q.loadIdentities(ctx, query, nodes,
 			func(n *User) { n.Edges.Identities = []*UserIdentity{} },
 			func(n *User, e *UserIdentity) { n.Edges.Identities = append(n.Edges.Identities, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withSignupSurveyResponse; query != nil {
+		if err := _q.loadSignupSurveyResponse(ctx, query, nodes, nil,
+			func(n *User, e *SignupSurveyResponse) { n.Edges.SignupSurveyResponse = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -723,6 +766,33 @@ func (_q *UserQuery) loadIdentities(ctx context.Context, query *UserIdentityQuer
 	}
 	query.Where(predicate.UserIdentity(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(user.IdentitiesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.UserID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "user_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *UserQuery) loadSignupSurveyResponse(ctx context.Context, query *SignupSurveyResponseQuery, nodes []*User, init func(*User), assign func(*User, *SignupSurveyResponse)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*User)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(signupsurveyresponse.FieldUserID)
+	}
+	query.Where(predicate.SignupSurveyResponse(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(user.SignupSurveyResponseColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

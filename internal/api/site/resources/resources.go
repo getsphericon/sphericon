@@ -87,7 +87,10 @@ type Converter interface {
 	TokenToResource(source *ent.ApiToken) siteapi.SiteApiTokenResource
 
 	// Verification is derived: a non-nil email_verified_at means verified.
+	// The Sign-up survey is due only while the Instance still asks it, which the mapper cannot
+	// see: the handler sets it from the marker and the Instance switch.
 	// goverter:map EmailVerifiedAt EmailVerified | emailVerified
+	// goverter:ignore SignupSurveyDue
 	UserToResource(source *ent.User) *siteapi.SiteUserResource
 	// The grace end and the role belong to the authenticated User's Membership,
 	// which the mapper cannot see: the handler attaches them.

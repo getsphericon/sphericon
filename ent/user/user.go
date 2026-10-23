@@ -36,6 +36,8 @@ const (
 	FieldSecondFactorConfirmedAt = "second_factor_confirmed_at"
 	// FieldSecondFactorLastStep holds the string denoting the second_factor_last_step field in the database.
 	FieldSecondFactorLastStep = "second_factor_last_step"
+	// FieldSignupSurveyDueAt holds the string denoting the signup_survey_due_at field in the database.
+	FieldSignupSurveyDueAt = "signup_survey_due_at"
 	// EdgeMemberships holds the string denoting the memberships edge name in mutations.
 	EdgeMemberships = "memberships"
 	// EdgeSentInvitations holds the string denoting the sent_invitations edge name in mutations.
@@ -46,6 +48,8 @@ const (
 	EdgePasskeys = "passkeys"
 	// EdgeIdentities holds the string denoting the identities edge name in mutations.
 	EdgeIdentities = "identities"
+	// EdgeSignupSurveyResponse holds the string denoting the signup_survey_response edge name in mutations.
+	EdgeSignupSurveyResponse = "signup_survey_response"
 	// Table holds the table name of the user in the database.
 	Table = "users"
 	// MembershipsTable is the table that holds the memberships relation/edge.
@@ -83,6 +87,13 @@ const (
 	IdentitiesInverseTable = "user_identities"
 	// IdentitiesColumn is the table column denoting the identities relation/edge.
 	IdentitiesColumn = "user_id"
+	// SignupSurveyResponseTable is the table that holds the signup_survey_response relation/edge.
+	SignupSurveyResponseTable = "signup_survey_responses"
+	// SignupSurveyResponseInverseTable is the table name for the SignupSurveyResponse entity.
+	// It exists in this package in order to avoid circular dependency with the "signupsurveyresponse" package.
+	SignupSurveyResponseInverseTable = "signup_survey_responses"
+	// SignupSurveyResponseColumn is the table column denoting the signup_survey_response relation/edge.
+	SignupSurveyResponseColumn = "user_id"
 )
 
 // Columns holds all SQL columns for user fields.
@@ -99,6 +110,7 @@ var Columns = []string{
 	FieldSecondFactorSecretEncrypted,
 	FieldSecondFactorConfirmedAt,
 	FieldSecondFactorLastStep,
+	FieldSignupSurveyDueAt,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -191,6 +203,11 @@ func BySecondFactorLastStep(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSecondFactorLastStep, opts...).ToFunc()
 }
 
+// BySignupSurveyDueAt orders the results by the signup_survey_due_at field.
+func BySignupSurveyDueAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSignupSurveyDueAt, opts...).ToFunc()
+}
+
 // ByMembershipsCount orders the results by memberships count.
 func ByMembershipsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -260,6 +277,13 @@ func ByIdentities(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newIdentitiesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// BySignupSurveyResponseField orders the results by signup_survey_response field.
+func BySignupSurveyResponseField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newSignupSurveyResponseStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newMembershipsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -293,5 +317,12 @@ func newIdentitiesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(IdentitiesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, IdentitiesTable, IdentitiesColumn),
+	)
+}
+func newSignupSurveyResponseStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(SignupSurveyResponseInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2O, false, SignupSurveyResponseTable, SignupSurveyResponseColumn),
 	)
 }

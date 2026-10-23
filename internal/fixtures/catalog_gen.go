@@ -45,6 +45,8 @@ const (
 	AnchorTokenPrefix = "testprefix01"
 	// AnchorTokenSecret is from fixtures/api_tokens.
 	AnchorTokenSecret = "test-anchor-token-secret"
+	// AnnSurveyResponseID is from fixtures/signup_survey_responses.
+	AnnSurveyResponseID = 1
 	// AutomationArchivedID is from fixtures/automations.
 	AutomationArchivedID = 107
 	// AutomationArchivedName is from fixtures/automations.
@@ -219,6 +221,8 @@ const (
 	BluthName = "Bluth"
 	// BluthPublicID is from fixtures/workspaces.
 	BluthPublicID = "BluthW12"
+	// BobSurveyResponseID is from fixtures/signup_survey_responses.
+	BobSurveyResponseID = 2
 	// BrandKitAcmeID is from fixtures/brand_kits.
 	BrandKitAcmeID = 1
 	// BrandKitGlobexID is from fixtures/brand_kits.
@@ -369,6 +373,8 @@ const (
 	BroadcastSentViaArchivedIntegrationName = "Spring digest"
 	// BroadcastSentViaArchivedIntegrationSubject is from fixtures/broadcasts.
 	BroadcastSentViaArchivedIntegrationSubject = "Your spring digest"
+	// CaraSurveyResponseID is from fixtures/signup_survey_responses.
+	CaraSurveyResponseID = 3
 	// ConfirmationErasableDestination is from fixtures/confirmations.
 	ConfirmationErasableDestination = "erin@initech.test"
 	// ConfirmationErasableID is from fixtures/confirmations.
@@ -1709,6 +1715,38 @@ const (
 	SuppressionTyrellTransactionalDestination = "txn-both@tyrell.test"
 	// SuppressionTyrellTransactionalID is from fixtures/suppressions.
 	SuppressionTyrellTransactionalID = 5507
+	// SurveyAnsweredAnnEmail is from fixtures/users.
+	SurveyAnsweredAnnEmail = "ann@survey.test"
+	// SurveyAnsweredAnnID is from fixtures/users.
+	SurveyAnsweredAnnID = 5600
+	// SurveyAnsweredAnnName is from fixtures/users.
+	SurveyAnsweredAnnName = "Ann"
+	// SurveyAnsweredAnnPassword is from fixtures/users.
+	SurveyAnsweredAnnPassword = "password"
+	// SurveyAnsweredBobEmail is from fixtures/users.
+	SurveyAnsweredBobEmail = "bob@survey.test"
+	// SurveyAnsweredBobID is from fixtures/users.
+	SurveyAnsweredBobID = 5601
+	// SurveyAnsweredBobName is from fixtures/users.
+	SurveyAnsweredBobName = "Bob"
+	// SurveyAnsweredBobPassword is from fixtures/users.
+	SurveyAnsweredBobPassword = "password"
+	// SurveyAnsweredCaraEmail is from fixtures/users.
+	SurveyAnsweredCaraEmail = "cara@survey.test"
+	// SurveyAnsweredCaraID is from fixtures/users.
+	SurveyAnsweredCaraID = 5602
+	// SurveyAnsweredCaraName is from fixtures/users.
+	SurveyAnsweredCaraName = "Cara"
+	// SurveyAnsweredCaraPassword is from fixtures/users.
+	SurveyAnsweredCaraPassword = "password"
+	// SurveyDueDanEmail is from fixtures/users.
+	SurveyDueDanEmail = "dan@survey.test"
+	// SurveyDueDanID is from fixtures/users.
+	SurveyDueDanID = 5603
+	// SurveyDueDanName is from fixtures/users.
+	SurveyDueDanName = "Dan"
+	// SurveyDueDanPassword is from fixtures/users.
+	SurveyDueDanPassword = "password"
 	// TagGlobexID is from fixtures/tags.
 	TagGlobexID = 900
 	// TagGlobexName is from fixtures/tags.

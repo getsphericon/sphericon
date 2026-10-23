@@ -27,7 +27,16 @@ func (h *Handlers) SiteUserGetMe(ctx context.Context) (*siteapi.SiteUserResource
 	if err != nil {
 		return nil, err
 	}
-	return mapper.UserToResource(u), nil
+	return h.userResource(u), nil
+}
+
+// userResource is the User's profile with the Sign-up survey due only while the User carries the
+// marker and the Instance still asks the survey: a switch turned off or a lapsed license stops
+// asking at once, for a User marked earlier too.
+func (h *Handlers) userResource(u *ent.User) *siteapi.SiteUserResource {
+	res := mapper.UserToResource(u)
+	res.SignupSurveyDue = u.SignupSurveyDueAt != nil && h.signupSurvey.Enabled()
+	return res
 }
 
 // newPasswordForm is the new password SiteUserUpdateMe sets, checked beyond the contract.
@@ -102,7 +111,7 @@ func (h *Handlers) SiteUserUpdateMe(ctx context.Context, req *siteapi.SiteUpdate
 			return nil, err
 		}
 	}
-	res := &siteapi.SiteUserResourceHeaders{Response: *mapper.UserToResource(u)}
+	res := &siteapi.SiteUserResourceHeaders{Response: *h.userResource(u)}
 	// The password change ended every session; the acting one continues under a
 	// fresh token stamped with the new epoch.
 	if newHash != nil {

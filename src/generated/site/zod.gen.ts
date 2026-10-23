@@ -1277,6 +1277,68 @@ export const zSiteSigninProviders = z.object({
 });
 
 /**
+ * How many people work at the User's company (second question)
+ */
+export const zSiteSignupCompanySize = z.enum([
+  '1',
+  '2_10',
+  '11_50',
+  '51_200',
+  '201_1000',
+  '1000_plus',
+  'other'
+]);
+
+/**
+ * What the User mainly wants to do with the product (third question)
+ */
+export const zSiteSignupGoal = z.enum([
+  'broadcasts',
+  'automations',
+  'tracking',
+  'migrating',
+  'other'
+]);
+
+/**
+ * What the User does (Sign-up survey, first question)
+ */
+export const zSiteSignupRole = z.enum([
+  'founder',
+  'marketer',
+  'developer',
+  'product',
+  'other'
+]);
+
+/**
+ * Where the User heard about the product (fourth question, optional)
+ */
+export const zSiteSignupSource = z.enum([
+  'search',
+  'github',
+  'social',
+  'recommendation',
+  'other'
+]);
+
+/**
+ * The answers to the Sign-up survey, sent once after its last screen. `role`, `companySize`
+ * and `mainGoal` are required; `heardFrom` is optional. Each `…Other` text is allowed only
+ * with its question's `other` choice.
+ */
+export const zSiteSignupSurveyInput = z.object({
+  role: zSiteSignupRole,
+  roleOther: z.exactOptional(z.string().max(100)),
+  companySize: zSiteSignupCompanySize,
+  companySizeOther: z.exactOptional(z.string().max(100)),
+  mainGoal: zSiteSignupGoal,
+  mainGoalOther: z.exactOptional(z.string().max(100)),
+  heardFrom: z.exactOptional(zSiteSignupSource),
+  heardFromOther: z.exactOptional(z.string().max(100))
+});
+
+/**
  * SMTP config without the password
  */
 export const zSiteSmtpConfig = z.object({
@@ -2139,6 +2201,7 @@ export const zSiteUserResource = z.object({
   name: z.string(),
   email: zEmailAddress,
   emailVerified: z.boolean(),
+  signupSurveyDue: z.boolean(),
   createdAt: zTimestamp
 });
 
@@ -2995,6 +3058,13 @@ export const zSiteSecondFactorRegenerateRecoveryCodesResponse = zSiteRecoveryCod
  * There is no content to send for this request, but the headers may be useful.
  */
 export const zSiteUserSignOutEverywhereResponse = z.void();
+
+export const zSiteSignupSurveySubmitBody = zSiteSignupSurveyInput;
+
+/**
+ * There is no content to send for this request, but the headers may be useful.
+ */
+export const zSiteSignupSurveySubmitResponse = z.void();
 
 export const zSiteOAuthDescribeQuery = z.object({
   clientId: z.string(),

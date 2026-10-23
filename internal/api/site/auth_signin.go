@@ -106,6 +106,7 @@ func (h *Handlers) SiteAuthSigninCallback(ctx context.Context, params siteapi.Si
 		TrustFailure: h.signin.Trust(params.Provider, profile),
 		SignupOpen:   h.signupOpen,
 		Invitation:   invite,
+		SurveyDue:    h.signupSurvey.Enabled(),
 	})
 	if refused, ok := errors.AsType[*accounts.SigninRefusedError](err); ok {
 		return h.signinRefused(flow, refused.Reason), nil

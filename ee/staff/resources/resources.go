@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ee/abuse"
 	"github.com/getsphericon/sphericon/ee/usage"
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/signupsurveyresponse"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
@@ -36,6 +37,7 @@ const PeriodLayout = "2006-01"
 // goverter:extend staffAuditDiff
 // goverter:extend nilFloat64
 // goverter:extend count
+// goverter:extend optNilSource
 type StaffConverter interface {
 	StaffMemberToResource(source *ent.StaffMember) staffapi.StaffResource
 
@@ -80,6 +82,11 @@ type StaffConverter interface {
 	// goverter:map . Actor | staffAuditActor
 	// goverter:map . Target | staffAuditTarget
 	AuditEntryToResource(source auditapi.View) staffapi.StaffAuditEntryResource
+
+	// One User's Sign-up survey answers. The enums share the contract's values.
+	// goverter:map UserID UserId
+	// goverter:map CreatedAt AnsweredAt
+	SignupSurveyResponseToResource(source *ent.SignupSurveyResponse) staffapi.StaffSignupSurveyResponseResource
 }
 
 // ServiceConverter maps ent rows and the usage figures to the service API resources.
@@ -192,5 +199,12 @@ func nilFloat64(v *float64) staffapi.NilFloat64 {
 
 // count narrows a count to the contract's int32.
 func count(n int) int32 { return int32(n) }
+
+func optNilSource(v *signupsurveyresponse.HeardFrom) staffapi.OptNilStaffSignupSource {
+	if v == nil {
+		return staffapi.OptNilStaffSignupSource{}
+	}
+	return staffapi.NewOptNilStaffSignupSource(staffapi.StaffSignupSource(*v))
+}
 
 func windowHours(d time.Duration) int32 { return int32(d / time.Hour) }
