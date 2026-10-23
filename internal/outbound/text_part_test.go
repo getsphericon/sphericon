@@ -16,6 +16,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
+// trackingBase is the origin newModule's tracker builds its links on.
+const trackingBase = "http://local"
+
 // The text part of a send is derived from its final HTML (ADR 0056): tracked links, the unsubscribe
 // link and the postal address are in it, the pixel, the hidden preheader and the CSS are not.
 const textPartBody = `<style>p{color:#123456}</style>` +
@@ -52,7 +55,7 @@ func requireCleanText(t *testing.T, text string) {
 	assert.Contains(t, text, "Hi Grace", "merge tags are resolved")
 	assert.NotContains(t, text, "Hidden preview words", "the preheader is hidden from readers")
 	assert.NotContains(t, text, "color:#123456", "no CSS")
-	assert.NotContains(t, text, "/e/o/", "no open pixel")
+	assert.NotContains(t, text, trackingBase+"/e/o/", "no open pixel")
 }
 
 func TestTrackedMarketingTextPartCarriesTrackedLinksUnsubscribeAndAddress(t *testing.T) {
@@ -61,12 +64,13 @@ func TestTrackedMarketingTextPartCarriesTrackedLinksUnsubscribeAndAddress(t *tes
 
 	requireCleanText(t, msg.Text)
 	assert.Contains(t, msg.Text, "Offer")
-	assert.Contains(t, msg.Text, "http://local/e/c/", "the tracked URL")
+	assert.Contains(t, msg.Text, trackingBase+"/e/c/", "the tracked URL")
 	assert.NotContains(t, msg.Text, "https://example.com/offer", "not the raw URL")
-	assert.Equal(t, 1, strings.Count(msg.Text, "http://local/e/u/"), "the unsubscribe link, once")
+	unsubscribeLinks := strings.Count(msg.Text, trackingBase+"/e/u/")
+	addresses := strings.Count(msg.Text, "Raccoon City")
+	assert.Equal(t, 1, unsubscribeLinks, "the unsubscribe link, once")
 	assert.Contains(t, msg.Text, "1 Umbrella Plaza")
-	assert.Contains(t, msg.Text, "Raccoon City")
-	assert.Equal(t, 1, strings.Count(msg.Text, "Raccoon City"), "the postal address, once")
+	assert.Equal(t, 1, addresses, "the postal address, once")
 }
 
 func TestUntrackedMarketingTextPartCarriesUnsubscribeAndAddress(t *testing.T) {
@@ -75,8 +79,10 @@ func TestUntrackedMarketingTextPartCarriesUnsubscribeAndAddress(t *testing.T) {
 
 	requireCleanText(t, msg.Text)
 	assert.Contains(t, msg.Text, "https://example.com/offer", "untracked links stay as written")
-	assert.Equal(t, 1, strings.Count(msg.Text, "http://local/e/u/"), "the unsubscribe link, once")
-	assert.Equal(t, 1, strings.Count(msg.Text, "Raccoon City"), "the postal address, once")
+	unsubscribeLinks := strings.Count(msg.Text, trackingBase+"/e/u/")
+	addresses := strings.Count(msg.Text, "Raccoon City")
+	assert.Equal(t, 1, unsubscribeLinks, "the unsubscribe link, once")
+	assert.Equal(t, 1, addresses, "the postal address, once")
 }
 
 func transactionalRequest(key string, track bool) outbound.Request {
@@ -89,9 +95,9 @@ func TestTrackedTransactionalTextPartCarriesTrackedLinksAndNoFooter(t *testing.T
 
 	requireCleanText(t, msg.Text)
 	assert.Contains(t, msg.Text, "Offer")
-	assert.Contains(t, msg.Text, "http://local/e/c/", "the tracked URL")
+	assert.Contains(t, msg.Text, trackingBase+"/e/c/", "the tracked URL")
 	assert.NotContains(t, msg.Text, "https://example.com/offer", "not the raw URL")
-	assert.NotContains(t, msg.Text, "/e/u/", "no unsubscribe link")
+	assert.NotContains(t, msg.Text, trackingBase+"/e/u/", "no unsubscribe link")
 	assert.NotContains(t, msg.Text, "Raccoon City", "no postal address")
 	assert.Empty(t, msg.ListUnsubscribeURL)
 }

@@ -12,7 +12,6 @@ package emailrender
 import (
 	"errors"
 	"fmt"
-	"regexp"
 	"slices"
 	"strings"
 
@@ -75,8 +74,8 @@ func RenderEmail(subject, body string, bindings map[string]any) (Email, error) {
 	if err != nil {
 		return Email{}, err
 	}
-	body = sanitizeRendered(rendered)
-	return Email{Subject: renderedSubject, HTML: body, Text: HTMLToText(body)}, nil
+	clean := sanitizeRendered(rendered)
+	return Email{Subject: renderedSubject, HTML: clean, Text: HTMLToText(clean)}, nil
 }
 
 // renderBoth runs Liquid over the subject (plain text) and the body (HTML-escaped values),
@@ -113,8 +112,8 @@ func HTMLToText(markup string) string {
 // FinalHTMLToText derives the text/plain part of a send from its final per-recipient HTML
 // (ADR 0056): tracking and the unsubscribe footer are already in it, so a link reads as its
 // text followed by the URL it carries and the footer's unsubscribe link and postal address
-// appear as they do in the HTML. Elements hidden with display:none (the open pixel, a
-// preheader) and the style, script and head content are left out.
+// appear as they do in the HTML. The style, script and head content is left out, and so is any
+// element whose inline style hides it (the open pixel, a preheader; see hidingDeclarations).
 func FinalHTMLToText(finalHTML string) string {
 	doc, err := html.Parse(strings.NewReader(finalHTML))
 	if err != nil {
@@ -128,15 +127,39 @@ func FinalHTMLToText(finalHTML string) string {
 	return html2text.HTML2TextWithOptions(sb.String(), html2text.WithLinksInnerText())
 }
 
-// hiddenStyle matches an inline style that takes an element out of the display.
-var hiddenStyle = regexp.MustCompile(`(?i)(^|;)\s*display\s*:\s*none\s*(!important\s*)?(;|$)`)
+// hidingDeclarations are the inline style declarations (property, value) mail authors use to
+// hide an element from the reader while keeping it in the HTML. Only inline styles are read:
+// hiding through a class or a <style> rule is not detected.
+var hidingDeclarations = map[string][]string{
+	"display":    {"none"},
+	"visibility": {"hidden"},
+	"mso-hide":   {"all"},
+	"opacity":    {"0"},
+	"font-size":  {"0", "0px", "0pt", "0em"},
+	"max-height": {"0", "0px", "0pt", "0em"},
+}
+
+// hidesElement reports whether an inline style carries one of the hiding declarations.
+func hidesElement(style string) bool {
+	for decl := range strings.SplitSeq(style, ";") {
+		prop, value, found := strings.Cut(decl, ":")
+		if !found {
+			continue
+		}
+		value = strings.TrimSpace(strings.TrimSuffix(strings.TrimSpace(strings.ToLower(value)), "!important"))
+		if slices.Contains(hidingDeclarations[strings.TrimSpace(strings.ToLower(prop))], value) {
+			return true
+		}
+	}
+	return false
+}
 
 // dropHidden removes, in place, every element whose inline style hides it.
 func dropHidden(n *html.Node) {
 	for c := n.FirstChild; c != nil; {
 		next := c.NextSibling
 		if c.Type == html.ElementNode && slices.ContainsFunc(c.Attr, func(a html.Attribute) bool {
-			return a.Key == "style" && hiddenStyle.MatchString(a.Val)
+			return a.Key == "style" && hidesElement(a.Val)
 		}) {
 			n.RemoveChild(c)
 		} else {

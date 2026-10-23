@@ -611,7 +611,19 @@ func (m *Module) compose(ctx context.Context, s *ent.Scoped, domain string, req 
 	if req.Source == "" && !req.Track {
 		return out, nil // Transactional, untracked: no unsubscribe, no tracking
 	}
+	out, err = m.layerTracking(ctx, s, domain, req, messageID, dest, ws, out)
+	if err != nil {
+		return composed{}, err
+	}
+	// The text part says what the HTML says, tracked links and footer included (ADR 0056).
+	out.msg.Text = emailrender.FinalHTMLToText(out.msg.HTML)
+	return out, nil
+}
 
+// layerTracking adds to a rendered message what its send needs on top: for a tracked
+// Transactional send the pixel and rewritten links; for a marketing send also the unsubscribe
+// footer and the one-click header. Its errors are compose's (see contentError).
+func (m *Module) layerTracking(ctx context.Context, s *ent.Scoped, domain string, req Request, messageID int64, dest string, ws *ent.Workspace, out composed) (composed, error) {
 	// One choice per message: every link and the List-Unsubscribe URL share one host.
 	tr := m.tracker
 	if m.trackingDomains {
@@ -625,12 +637,11 @@ func (m *Module) compose(ctx context.Context, s *ent.Scoped, domain string, req 
 	}
 	if req.Source == "" {
 		// A tracked Transactional send: pixel and rewritten links, no footer, no header (ADR 0053).
-		html, err := tr.Instrument(email.HTML, messageID)
+		html, err := tr.Instrument(out.msg.HTML, messageID)
 		if err != nil {
 			return composed{}, contentError{fmt.Errorf("tracking rewrite: %w", err)}
 		}
 		out.msg.HTML = html
-		out.msg.Text = emailrender.FinalHTMLToText(html)
 		return out, nil
 	}
 
@@ -648,7 +659,7 @@ func (m *Module) compose(ctx context.Context, s *ent.Scoped, domain string, req 
 	if req.Track {
 		// Click/open tracking is layered on after rendering so re-parsing the HTML
 		// cannot mangle the pixel or links; Rewrite also appends the footer.
-		html, err := tr.Rewrite(email.HTML, messageID, unsub, ws.PostalAddress)
+		html, err := tr.Rewrite(out.msg.HTML, messageID, unsub, ws.PostalAddress)
 		if err != nil {
 			return composed{}, contentError{fmt.Errorf("tracking rewrite: %w", err)}
 		}
@@ -658,10 +669,8 @@ func (m *Module) compose(ctx context.Context, s *ent.Scoped, domain string, req 
 		if err != nil {
 			return composed{}, contentError{fmt.Errorf("unsubscribe footer: %w", err)}
 		}
-		out.msg.HTML = email.HTML + footer
+		out.msg.HTML += footer
 	}
-	// The text part says what the HTML says, tracked links and footer included (ADR 0056).
-	out.msg.Text = emailrender.FinalHTMLToText(out.msg.HTML)
 	// RFC 8058 one-click header: the same source-scoped token the footer carries
 	// (ADR 0012); the provider adapter covers it with the DKIM signature.
 	url, err := tr.UnsubscribeURL(unsub)

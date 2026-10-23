@@ -56,8 +56,10 @@ func TestBroadcastTextPartCarriesTrackedLinkAndUnsubscribe(t *testing.T) {
 	assert.Contains(t, msg.Text, env.BaseURL+"/e/c/", "the link is the tracked one")
 	assert.NotContains(t, msg.Text, "https://example.com/start")
 	assert.NotContains(t, msg.Text, "/e/o/", "no open pixel")
-	require.NotEmpty(t, msg.UnsubscribeURL())
-	assert.Equal(t, 1, strings.Count(msg.Text, msg.UnsubscribeURL()), "the unsubscribe link, once")
+	unsubscribeURL := msg.UnsubscribeURL()
+	require.NotEmpty(t, unsubscribeURL)
+	unsubscribeLinks := strings.Count(msg.Text, unsubscribeURL)
+	assert.Equal(t, 1, unsubscribeLinks, "the unsubscribe link, once")
 }
 
 // Hostile content reaches the Inbox sanitized (ADR 0040): the saved body loses script,
