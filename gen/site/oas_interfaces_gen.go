@@ -637,6 +637,10 @@ type SiteWorkspacesSetSecondFactorRequirementRes interface {
 	siteWorkspacesSetSecondFactorRequirementRes()
 }
 
+type SiteWorkspacesSetTimezoneRes interface {
+	siteWorkspacesSetTimezoneRes()
+}
+
 type SiteWorkspacesUpdateRes interface {
 	siteWorkspacesUpdateRes()
 }

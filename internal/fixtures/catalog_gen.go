@@ -277,6 +277,12 @@ const (
 	BroadcastGlobexName = "Globex only"
 	// BroadcastGlobexSubject is from fixtures/broadcasts.
 	BroadcastGlobexSubject = "Globex only"
+	// BroadcastGothamDaylightSavingID is from fixtures/broadcasts.
+	BroadcastGothamDaylightSavingID = 20009
+	// BroadcastGothamDaylightSavingName is from fixtures/broadcasts.
+	BroadcastGothamDaylightSavingName = "Daylight saving edges"
+	// BroadcastGothamDaylightSavingSubject is from fixtures/broadcasts.
+	BroadcastGothamDaylightSavingSubject = "Daylight saving edges"
 	// BroadcastHooliID is from fixtures/broadcasts.
 	BroadcastHooliID = 910
 	// BroadcastHooliName is from fixtures/broadcasts.
@@ -793,6 +799,14 @@ const (
 	GlobexSamMembershipID = 9
 	// GlobexUsageSnapshotID is from fixtures/usages.
 	GlobexUsageSnapshotID = 2
+	// GothamCollectKey is from fixtures/workspaces.
+	GothamCollectKey = "omck_test_gotham_collect_key"
+	// GothamID is from fixtures/workspaces.
+	GothamID = 61
+	// GothamName is from fixtures/workspaces.
+	GothamName = "Gotham"
+	// GothamPublicID is from fixtures/workspaces.
+	GothamPublicID = "GothmW61"
 	// HoldAcmeLapsedID is from fixtures/holds.
 	HoldAcmeLapsedID = 1
 	// HoldAcmeLapsedKey is from fixtures/holds.

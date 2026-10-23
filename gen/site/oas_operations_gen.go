@@ -176,5 +176,6 @@ const (
 	SiteWorkspacesListDeletedOperation                OperationName = "SiteWorkspacesListDeleted"
 	SiteWorkspacesRestoreOperation                    OperationName = "SiteWorkspacesRestore"
 	SiteWorkspacesSetSecondFactorRequirementOperation OperationName = "SiteWorkspacesSetSecondFactorRequirement"
+	SiteWorkspacesSetTimezoneOperation                OperationName = "SiteWorkspacesSetTimezone"
 	SiteWorkspacesUpdateOperation                     OperationName = "SiteWorkspacesUpdate"
 )

@@ -26,6 +26,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/joindomains"
 	"github.com/getsphericon/sphericon/internal/linkclicks"
 	"github.com/getsphericon/sphericon/internal/narrow"
+	"github.com/getsphericon/sphericon/internal/reportday"
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/sendlimit"
@@ -49,6 +50,7 @@ import (
 // goverter:extend optNilEmailAddress
 // goverter:extend optNilEntityID
 // goverter:extend optNilTimeZone
+// goverter:extend workspaceTimezone
 // goverter:extend optNilTimestamp
 // goverter:extend contactCustomFields
 // goverter:extend optNilInt32
@@ -409,6 +411,11 @@ func BroadcastStats(st broadcasts.Stats) siteapi.SiteBroadcastStats {
 		UnsubscribeRate:   broadcasts.Ratio(st.Unsubscribed, st.Sent),
 		FailureRate:       broadcasts.Ratio(st.Failed, st.Recipients),
 	}
+}
+
+// workspaceTimezone is the Workspace time zone, UTC while an Owner has not set one (ADR 0057).
+func workspaceTimezone(v *string) siteapi.TimeZoneName {
+	return siteapi.TimeZoneName(reportday.Name(v))
 }
 
 func optNilTimeZone(v *string) siteapi.OptNilTimeZoneName {

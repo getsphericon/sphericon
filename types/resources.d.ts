@@ -1315,6 +1315,8 @@ export default interface Resources {
       },
       "testEventDescription": "Send a test event from your terminal, then watch it appear in the activity feed.",
       "testEventTitle": "Send a test event",
+      "timezoneDescription": "The time zone your reports count days and hours in. Only an Owner can change it; a change applies to all history at once.",
+      "timezoneLabel": "Time zone",
       "tokens": {
         "create": "Create token",
         "createError": "Failed to create token",

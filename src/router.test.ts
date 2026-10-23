@@ -25,6 +25,7 @@ const workspace = (workspaceId: string) => ({
   workspaceId,
   collectKey: 'omck',
   postalAddress: '',
+  timezone: 'UTC',
   accountLinkAvailable: false,
   mcpUrl: 'https://sphericon.test',
   holds: [],

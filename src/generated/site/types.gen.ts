@@ -4733,6 +4733,11 @@ export type SiteWorkspaceResource = {
    */
   postalAddress: string;
   /**
+   * The Workspace time zone (ADR 0057): the IANA name every analytics report counts its days
+   * in. UTC until an Owner sets it.
+   */
+  timezone: TimeZoneName;
+  /**
    * The authenticated User's role in this Workspace (from their Membership). It
    * rides the Workspace list so role-gated UI is known even while the Workspace's
    * own endpoints are withheld under a Two-factor requirement.
@@ -4785,6 +4790,16 @@ export type SiteWorkspaceResource = {
    * Creation timestamp
    */
   createdAt: Timestamp;
+};
+
+/**
+ * Set the Workspace time zone
+ */
+export type SiteWorkspaceTimezoneInput = {
+  /**
+   * An IANA time zone name such as `Europe/Berlin`; the zone database decides what is valid
+   */
+  timezone: TimeZoneName;
 };
 
 export type TimeZoneName = string;
@@ -11297,6 +11312,41 @@ export type SiteTemplatesUpdateResponses = {
 };
 
 export type SiteTemplatesUpdateResponse = SiteTemplatesUpdateResponses[keyof SiteTemplatesUpdateResponses];
+
+export type SiteWorkspacesSetTimezoneData = {
+  body: SiteWorkspaceTimezoneInput;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/timezone';
+};
+
+export type SiteWorkspacesSetTimezoneErrors = {
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+};
+
+export type SiteWorkspacesSetTimezoneError = SiteWorkspacesSetTimezoneErrors[keyof SiteWorkspacesSetTimezoneErrors];
+
+export type SiteWorkspacesSetTimezoneResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteWorkspaceResource;
+};
+
+export type SiteWorkspacesSetTimezoneResponse = SiteWorkspacesSetTimezoneResponses[keyof SiteWorkspacesSetTimezoneResponses];
 
 export type SiteTokensListData = {
   body?: never;

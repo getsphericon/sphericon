@@ -156,6 +156,20 @@ func (_c *WorkspaceCreate) SetNillableRetentionDays(v *int) *WorkspaceCreate {
 	return _c
 }
 
+// SetTimezone sets the "timezone" field.
+func (_c *WorkspaceCreate) SetTimezone(v string) *WorkspaceCreate {
+	_c.mutation.SetTimezone(v)
+	return _c
+}
+
+// SetNillableTimezone sets the "timezone" field if the given value is not nil.
+func (_c *WorkspaceCreate) SetNillableTimezone(v *string) *WorkspaceCreate {
+	if v != nil {
+		_c.SetTimezone(*v)
+	}
+	return _c
+}
+
 // SetDomainJoinEnabled sets the "domain_join_enabled" field.
 func (_c *WorkspaceCreate) SetDomainJoinEnabled(v bool) *WorkspaceCreate {
 	_c.mutation.SetDomainJoinEnabled(v)
@@ -910,6 +924,11 @@ func (_c *WorkspaceCreate) check() error {
 			return &ValidationError{Name: "retention_days", err: fmt.Errorf(`ent: validator failed for field "Workspace.retention_days": %w`, err)}
 		}
 	}
+	if v, ok := _c.mutation.Timezone(); ok {
+		if err := workspace.TimezoneValidator(v); err != nil {
+			return &ValidationError{Name: "timezone", err: fmt.Errorf(`ent: validator failed for field "Workspace.timezone": %w`, err)}
+		}
+	}
 	if _, ok := _c.mutation.DomainJoinEnabled(); !ok {
 		return &ValidationError{Name: "domain_join_enabled", err: errors.New(`ent: missing required field "Workspace.domain_join_enabled"`)}
 	}
@@ -992,6 +1011,10 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.RetentionDays(); ok {
 		_spec.SetField(workspace.FieldRetentionDays, field.TypeInt, value)
 		_node.RetentionDays = &value
+	}
+	if value, ok := _c.mutation.Timezone(); ok {
+		_spec.SetField(workspace.FieldTimezone, field.TypeString, value)
+		_node.Timezone = &value
 	}
 	if value, ok := _c.mutation.DomainJoinEnabled(); ok {
 		_spec.SetField(workspace.FieldDomainJoinEnabled, field.TypeBool, value)
@@ -1713,6 +1736,24 @@ func (u *WorkspaceUpsert) ClearRetentionDays() *WorkspaceUpsert {
 	return u
 }
 
+// SetTimezone sets the "timezone" field.
+func (u *WorkspaceUpsert) SetTimezone(v string) *WorkspaceUpsert {
+	u.Set(workspace.FieldTimezone, v)
+	return u
+}
+
+// UpdateTimezone sets the "timezone" field to the value that was provided on create.
+func (u *WorkspaceUpsert) UpdateTimezone() *WorkspaceUpsert {
+	u.SetExcluded(workspace.FieldTimezone)
+	return u
+}
+
+// ClearTimezone clears the value of the "timezone" field.
+func (u *WorkspaceUpsert) ClearTimezone() *WorkspaceUpsert {
+	u.SetNull(workspace.FieldTimezone)
+	return u
+}
+
 // SetDomainJoinEnabled sets the "domain_join_enabled" field.
 func (u *WorkspaceUpsert) SetDomainJoinEnabled(v bool) *WorkspaceUpsert {
 	u.Set(workspace.FieldDomainJoinEnabled, v)
@@ -2094,6 +2135,27 @@ func (u *WorkspaceUpsertOne) UpdateRetentionDays() *WorkspaceUpsertOne {
 func (u *WorkspaceUpsertOne) ClearRetentionDays() *WorkspaceUpsertOne {
 	return u.Update(func(s *WorkspaceUpsert) {
 		s.ClearRetentionDays()
+	})
+}
+
+// SetTimezone sets the "timezone" field.
+func (u *WorkspaceUpsertOne) SetTimezone(v string) *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetTimezone(v)
+	})
+}
+
+// UpdateTimezone sets the "timezone" field to the value that was provided on create.
+func (u *WorkspaceUpsertOne) UpdateTimezone() *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateTimezone()
+	})
+}
+
+// ClearTimezone clears the value of the "timezone" field.
+func (u *WorkspaceUpsertOne) ClearTimezone() *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.ClearTimezone()
 	})
 }
 
@@ -2678,6 +2740,27 @@ func (u *WorkspaceUpsertBulk) UpdateRetentionDays() *WorkspaceUpsertBulk {
 func (u *WorkspaceUpsertBulk) ClearRetentionDays() *WorkspaceUpsertBulk {
 	return u.Update(func(s *WorkspaceUpsert) {
 		s.ClearRetentionDays()
+	})
+}
+
+// SetTimezone sets the "timezone" field.
+func (u *WorkspaceUpsertBulk) SetTimezone(v string) *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetTimezone(v)
+	})
+}
+
+// UpdateTimezone sets the "timezone" field to the value that was provided on create.
+func (u *WorkspaceUpsertBulk) UpdateTimezone() *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateTimezone()
+	})
+}
+
+// ClearTimezone clears the value of the "timezone" field.
+func (u *WorkspaceUpsertBulk) ClearTimezone() *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.ClearTimezone()
 	})
 }
 

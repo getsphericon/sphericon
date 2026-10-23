@@ -186,6 +186,7 @@ var operationRolesApiKeyAuth = map[string][]string{
 	SiteWorkspacesListDeletedOperation:                []string{},
 	SiteWorkspacesRestoreOperation:                    []string{},
 	SiteWorkspacesSetSecondFactorRequirementOperation: []string{},
+	SiteWorkspacesSetTimezoneOperation:                []string{},
 	SiteWorkspacesUpdateOperation:                     []string{},
 }
 

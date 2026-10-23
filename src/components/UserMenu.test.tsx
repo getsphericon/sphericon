@@ -143,6 +143,7 @@ test('lists the deleted workspaces with their erase date and restores one', asyn
         name: 'Initech',
         collectKey: 'omck_test_key',
         postalAddress: '',
+        timezone: 'UTC',
         accountLinkAvailable: false,
         mcpUrl: 'https://sphericon.test',
         holds: [],

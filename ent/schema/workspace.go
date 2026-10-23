@@ -74,6 +74,13 @@ func (Workspace) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			Positive(),
+		// The Workspace time zone (ADR 0057): the IANA name the analytics reports count their days
+		// in. NULL reads as UTC. The name is checked against the zone database by
+		// internal/accounts, which the database cannot do.
+		field.String("timezone").
+			Optional().
+			Nillable().
+			NotEmpty(),
 		// Domain join (ADR 0051): whether Users who prove an address on one of the Workspace's
 		// verified Join domains become its members. Off until an Owner switches it on.
 		field.Bool("domain_join_enabled").

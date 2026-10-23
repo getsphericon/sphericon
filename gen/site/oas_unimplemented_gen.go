@@ -1717,6 +1717,17 @@ func (UnimplementedHandler) SiteWorkspacesSetSecondFactorRequirement(ctx context
 	return r, ht.ErrNotImplemented
 }
 
+// SiteWorkspacesSetTimezone implements SiteWorkspaces_setTimezone operation.
+//
+// Set the Workspace time zone (Owner only), the zone of every Report day (ADR 0057). 422 for a name
+// the zone database does not know. A change is recorded as an Audit entry and applies to all history
+// at once.
+//
+// PUT /workspaces/{workspaceId}/timezone
+func (UnimplementedHandler) SiteWorkspacesSetTimezone(ctx context.Context, req *SiteWorkspaceTimezoneInput, params SiteWorkspacesSetTimezoneParams) (r SiteWorkspacesSetTimezoneRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteWorkspacesUpdate implements SiteWorkspaces_update operation.
 //
 // Rename a workspace or change its postal address (Owner and Admin only). The id never changes.

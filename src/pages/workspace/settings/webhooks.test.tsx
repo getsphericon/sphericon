@@ -16,6 +16,7 @@ const workspace = {
 
   collectKey: 'omck_test_key',
   postalAddress: '',
+  timezone: 'UTC',
   accountLinkAvailable: false,
   mcpUrl: 'https://sphericon.test',
   holds: [],

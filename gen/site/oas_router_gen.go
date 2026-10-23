@@ -183,6 +183,9 @@ var (
 	rn173AllowedHeaders = map[string]string{
 		"PUT": "Content-Type",
 	}
+	rn199AllowedHeaders = map[string]string{
+		"PUT": "Content-Type",
+	}
 	rn174AllowedHeaders = map[string]string{
 		"POST": "Content-Type",
 	}
@@ -4581,6 +4584,33 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 										return
 									}
 
+								}
+
+							case 'i': // Prefix: "imezone"
+
+								if l := len("imezone"); len(elem) >= l && elem[0:l] == "imezone" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch r.Method {
+									case "PUT":
+										s.handleSiteWorkspacesSetTimezoneRequest([1]string{
+											args[0],
+										}, elemIsEscaped, w, r)
+									default:
+										s.notAllowed(w, r, notAllowedParams{
+											allowedMethods: "PUT",
+											allowedHeaders: rn199AllowedHeaders,
+											acceptPost:     "",
+											acceptPatch:    "",
+										})
+									}
+
+									return
 								}
 
 							case 'o': // Prefix: "okens"
@@ -9199,6 +9229,31 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 										}
 									}
 
+								}
+
+							case 'i': // Prefix: "imezone"
+
+								if l := len("imezone"); len(elem) >= l && elem[0:l] == "imezone" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch method {
+									case "PUT":
+										r.name = SiteWorkspacesSetTimezoneOperation
+										r.summary = ""
+										r.operationID = "SiteWorkspaces_setTimezone"
+										r.operationGroup = ""
+										r.pathPattern = "/workspaces/{workspaceId}/timezone"
+										r.args = args
+										r.count = 1
+										return r, true
+									default:
+										return
+									}
 								}
 
 							case 'o': // Prefix: "okens"

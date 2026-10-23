@@ -2017,6 +2017,7 @@ var (
 		{Name: "require_confirmed_opt_in", Type: field.TypeBool, Default: false},
 		{Name: "postal_address", Type: field.TypeString, Nullable: true, Default: ""},
 		{Name: "retention_days", Type: field.TypeInt, Nullable: true},
+		{Name: "timezone", Type: field.TypeString, Nullable: true},
 		{Name: "domain_join_enabled", Type: field.TypeBool, Default: false},
 		{Name: "second_factor_required_at", Type: field.TypeTime, Nullable: true},
 		{Name: "feed_position", Type: field.TypeInt64, Default: 0},
@@ -2039,7 +2040,7 @@ var (
 			{
 				Name:    "workspace_feed_position_id",
 				Unique:  false,
-				Columns: []*schema.Column{WorkspacesColumns[12], WorkspacesColumns[0]},
+				Columns: []*schema.Column{WorkspacesColumns[13], WorkspacesColumns[0]},
 			},
 		},
 	}

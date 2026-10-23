@@ -1,9 +1,10 @@
-import { Box, Button, Group, Stack, Textarea, TextInput } from '@mantine/core'
+import { Box, Button, Group, Select, Stack, Textarea, TextInput } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { useTranslation } from 'react-i18next'
 
 import {
   siteWorkspacesListQueryKey,
+  siteWorkspacesSetTimezoneMutation,
   siteWorkspacesUpdateMutation,
 } from '../../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteWorkspaceResource } from '../../../generated/site/types.gen.ts'
@@ -69,6 +70,54 @@ function GeneralSection({ workspace }: { workspace: SiteWorkspaceResource }) {
   )
 }
 
+// The zones a browser knows; UTC is the default and not always among them.
+const TIMEZONES = ['UTC', ...Intl.supportedValuesOf('timeZone').filter((zone) => zone !== 'UTC')]
+
+// TimezoneSection sets the Workspace time zone (ADR 0057): the zone every report counts its days
+// in. Only an Owner changes it; everyone else sees it read-only.
+function TimezoneSection({ workspace }: { workspace: SiteWorkspaceResource }) {
+  const { t } = useTranslation()
+  const form = useForm<{ timezone: string }>({ initialValues: { timezone: workspace.timezone } })
+  const canEdit = workspace.role === 'owner'
+
+  const mutation = useResourceMutation({
+    mutation: siteWorkspacesSetTimezoneMutation(),
+    invalidate: [siteWorkspacesListQueryKey()],
+    successMessage: t(($) => $.settings.saved),
+    errorTitle: t(($) => $.settings.errorTitle),
+  })
+
+  return (
+    <form
+      onSubmit={form.onSubmit((values) =>
+        mutation.mutate({
+          path: { workspaceId: workspace.id },
+          body: { timezone: values.timezone },
+        }),
+      )}
+    >
+      <Stack maw={420}>
+        <Select
+          label={t(($) => $.settings.timezoneLabel)}
+          description={t(($) => $.settings.timezoneDescription)}
+          data={TIMEZONES}
+          searchable
+          allowDeselect={false}
+          disabled={!canEdit}
+          {...form.getInputProps('timezone')}
+        />
+        {canEdit ? (
+          <Group justify="flex-end">
+            <Button type="submit" loading={mutation.isPending}>
+              {t(($) => $.actions.save)}
+            </Button>
+          </Group>
+        ) : null}
+      </Stack>
+    </form>
+  )
+}
+
 export function GeneralPage() {
   const { t } = useTranslation()
   const { workspaceId } = generalRoute.useParams()
@@ -78,6 +127,7 @@ export function GeneralPage() {
       {(workspace) => (
         <Stack gap="xl">
           <GeneralSection workspace={workspace} />
+          <TimezoneSection workspace={workspace} />
           <DangerZoneSection workspace={workspace} />
         </Stack>
       )}

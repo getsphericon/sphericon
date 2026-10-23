@@ -19,6 +19,7 @@ const workspace = (over: Partial<SiteWorkspaceResource> = {}): SiteWorkspaceReso
 
   collectKey: 'ck',
   postalAddress: '',
+  timezone: 'UTC',
   accountLinkAvailable: false,
   mcpUrl: 'https://sphericon.test',
   holds: [],

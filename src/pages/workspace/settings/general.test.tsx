@@ -5,6 +5,7 @@ import {
   handleSiteWorkspacesDelete,
   handleSiteWorkspacesLeave,
   handleSiteWorkspacesList,
+  handleSiteWorkspacesSetTimezone,
   handleSiteWorkspacesUpdate,
 } from '../../../generated/site/msw.gen.ts'
 import { Route as generalRoute } from '../../../routes/workspaces/$workspaceId/settings/index.tsx'
@@ -22,6 +23,7 @@ const workspace = {
 
   collectKey: 'omck_test_key',
   postalAddress: '',
+  timezone: 'UTC',
   accountLinkAvailable: false,
   mcpUrl: 'https://sphericon.test',
   holds: [],
@@ -57,6 +59,36 @@ test('a plain member sees the name read-only', async () => {
   const { screen } = await renderWithRouter(<GeneralPage />, GENERAL_ROUTE)
 
   await expect.element(screen.getByLabelText(/^Workspace name/)).toBeDisabled()
+})
+
+test('an owner sets the time zone', async () => {
+  const bodies: string[] = []
+  worker.use(
+    handleSiteWorkspacesList({ body: [workspace] }),
+    handleSiteWorkspacesSetTimezone(async ({ request }) => {
+      bodies.push(await request.text())
+      return HttpResponse.json({ ...workspace, timezone: 'Europe/Berlin' })
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<GeneralPage />, GENERAL_ROUTE)
+
+  const zone = screen.getByRole('combobox', { name: 'Time zone' })
+  await expect.element(zone).toHaveValue('UTC')
+  await zone.fill('Europe/Berlin')
+  await screen.getByRole('option', { name: 'Europe/Berlin' }).click()
+  await screen.getByRole('button', { name: 'Save' }).nth(1).click()
+
+  await expect.poll(() => bodies.length).toBe(1)
+  expect(bodies[0]).toContain('"timezone":"Europe/Berlin"')
+})
+
+test('an admin sees the time zone read-only', async () => {
+  worker.use(handleSiteWorkspacesList({ body: [{ ...workspace, role: 'admin' as const }] }))
+
+  const { screen } = await renderWithRouter(<GeneralPage />, GENERAL_ROUTE)
+
+  await expect.element(screen.getByRole('combobox', { name: 'Time zone' })).toBeDisabled()
 })
 
 test('shows an error alert when the workspaces fail to load', async () => {

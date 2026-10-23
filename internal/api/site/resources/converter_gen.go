@@ -598,6 +598,7 @@ func (c *ConverterImpl) WorkspaceToResource(source *ent.Workspace) site.SiteWork
 		siteapiSiteWorkspaceResource.Name = (*source).Name
 		siteapiSiteWorkspaceResource.CollectKey = (*source).CollectKey
 		siteapiSiteWorkspaceResource.PostalAddress = (*source).PostalAddress
+		siteapiSiteWorkspaceResource.Timezone = workspaceTimezone((*source).Timezone)
 		siteapiSiteWorkspaceResource.SuspendedAt = optNilTimestamp((*source).SuspendedAt)
 		siteapiSiteWorkspaceResource.SuspensionReason = optNilString((*source).SuspensionReason)
 		siteapiSiteWorkspaceResource.SecondFactorRequiredAt = optNilTimestamp((*source).SecondFactorRequiredAt)

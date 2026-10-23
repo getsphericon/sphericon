@@ -1626,6 +1626,13 @@ export const zSiteUpdateContactInput = z.object({
   tags: z.exactOptional(z.array(z.string()))
 });
 
+/**
+ * Set the Workspace time zone
+ */
+export const zSiteWorkspaceTimezoneInput = z.object({
+  timezone: zTimeZoneName
+});
+
 export const zTimestamp = z.iso.datetime();
 
 /**
@@ -2374,6 +2381,7 @@ export const zSiteWorkspaceResource = z.object({
   name: z.string(),
   collectKey: z.string(),
   postalAddress: z.string(),
+  timezone: zTimeZoneName,
   role: zSiteMembershipRole,
   suspendedAt: z.exactOptional(zTimestamp.nullable()),
   suspensionReason: z.exactOptional(z.string().nullable()),
@@ -4249,6 +4257,17 @@ export const zSiteTemplatesUpdatePath = z.object({
  * The request has succeeded.
  */
 export const zSiteTemplatesUpdateResponse = zSiteEmailTemplateResource;
+
+export const zSiteWorkspacesSetTimezoneBody = zSiteWorkspaceTimezoneInput;
+
+export const zSiteWorkspacesSetTimezonePath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteWorkspacesSetTimezoneResponse = zSiteWorkspaceResource;
 
 export const zSiteTokensListPath = z.object({
   workspaceId: zWorkspaceId

@@ -26,6 +26,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/reportday"
 	"github.com/getsphericon/sphericon/internal/workspaceid"
 )
 
@@ -179,6 +180,40 @@ func (a *Accounts) SetAuditRetention(ctx context.Context, s *ent.Scoped, actor e
 			Diff:        map[string]any{"retention_days": events.Change(before.RetentionDays, days)},
 		})
 	})
+}
+
+// SetTimezone sets the Workspace time zone (ADR 0057) and records the change as a
+// `workspace.update` Audit entry in the same transaction. A name the zone database does not
+// know is refused with reportday.ErrUnknownZone. The caller has checked the role.
+func (a *Accounts) SetTimezone(ctx context.Context, s *ent.Scoped, actor events.Actor, name string) (*ent.Workspace, error) {
+	if _, err := reportday.Load(name); err != nil {
+		return nil, err
+	}
+	var updated *ent.Workspace
+	err := a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+		before, err := tx.Workspace.Get(ctx, s.WorkspaceID())
+		if err != nil {
+			return err
+		}
+		updated, err = tx.Workspace.UpdateOneID(s.WorkspaceID()).SetTimezone(name).Save(ctx)
+		if err != nil {
+			return err
+		}
+		from, to := reportday.Name(before.Timezone), reportday.Name(updated.Timezone)
+		if from == to {
+			return nil
+		}
+		return events.RecordAudit(ctx, pub, &events.AuditEntry{
+			WorkspaceID: s.WorkspaceID(),
+			Actor:       actor,
+			Action:      events.ActionWorkspaceUpdate,
+			TargetType:  workspace.Label,
+			TargetID:    strconv.FormatInt(before.ID, 10),
+			TargetName:  before.Name,
+			Diff:        map[string]any{workspace.FieldTimezone: events.Change(from, to)},
+		})
+	})
+	return updated, err
 }
 
 // SetSecondFactorRequirement switches the scoped Workspace's Two-factor requirement

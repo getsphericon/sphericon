@@ -20884,6 +20884,9 @@ type SiteWorkspaceResource struct {
 	// Physical postal address printed in the marketing email footer (CAN-SPAM 15 U.S.C. §7704(a)(5)).
 	// Empty until the workspace sets one.
 	PostalAddress string `json:"postalAddress"`
+	// The Workspace time zone (ADR 0057): the IANA name every analytics report counts its days in. UTC
+	// until an Owner sets it.
+	Timezone TimeZoneName `json:"timezone"`
 	// The authenticated User's role in this Workspace (from their Membership). It rides the Workspace list
 	// so role-gated UI is known even while the Workspace's own endpoints are withheld under a Two-factor
 	// requirement.
@@ -20935,6 +20938,11 @@ func (s *SiteWorkspaceResource) GetCollectKey() string {
 // GetPostalAddress returns the value of PostalAddress.
 func (s *SiteWorkspaceResource) GetPostalAddress() string {
 	return s.PostalAddress
+}
+
+// GetTimezone returns the value of Timezone.
+func (s *SiteWorkspaceResource) GetTimezone() TimeZoneName {
+	return s.Timezone
 }
 
 // GetRole returns the value of Role.
@@ -21007,6 +21015,11 @@ func (s *SiteWorkspaceResource) SetPostalAddress(val string) {
 	s.PostalAddress = val
 }
 
+// SetTimezone sets the value of Timezone.
+func (s *SiteWorkspaceResource) SetTimezone(val TimeZoneName) {
+	s.Timezone = val
+}
+
 // SetRole sets the value of Role.
 func (s *SiteWorkspaceResource) SetRole(val SiteMembershipRole) {
 	s.Role = val
@@ -21060,7 +21073,25 @@ func (s *SiteWorkspaceResource) SetCreatedAt(val Timestamp) {
 func (*SiteWorkspaceResource) siteWorkspacesCreateRes()                     {}
 func (*SiteWorkspaceResource) siteWorkspacesRestoreRes()                    {}
 func (*SiteWorkspaceResource) siteWorkspacesSetSecondFactorRequirementRes() {}
+func (*SiteWorkspaceResource) siteWorkspacesSetTimezoneRes()                {}
 func (*SiteWorkspaceResource) siteWorkspacesUpdateRes()                     {}
+
+// Set the Workspace time zone.
+// Ref: #/components/schemas/SiteWorkspaceTimezoneInput
+type SiteWorkspaceTimezoneInput struct {
+	// An IANA time zone name such as `Europe/Berlin`; the zone database decides what is valid.
+	Timezone TimeZoneName `json:"timezone"`
+}
+
+// GetTimezone returns the value of Timezone.
+func (s *SiteWorkspaceTimezoneInput) GetTimezone() TimeZoneName {
+	return s.Timezone
+}
+
+// SetTimezone sets the value of Timezone.
+func (s *SiteWorkspaceTimezoneInput) SetTimezone(val TimeZoneName) {
+	s.Timezone = val
+}
 
 type SiteWorkspacesAccountLinkForbidden ProblemDetails
 
@@ -21120,6 +21151,18 @@ type SiteWorkspacesSetSecondFactorRequirementNotFound ProblemDetails
 
 func (*SiteWorkspacesSetSecondFactorRequirementNotFound) siteWorkspacesSetSecondFactorRequirementRes() {
 }
+
+type SiteWorkspacesSetTimezoneForbidden ProblemDetails
+
+func (*SiteWorkspacesSetTimezoneForbidden) siteWorkspacesSetTimezoneRes() {}
+
+type SiteWorkspacesSetTimezoneNotFound ProblemDetails
+
+func (*SiteWorkspacesSetTimezoneNotFound) siteWorkspacesSetTimezoneRes() {}
+
+type SiteWorkspacesSetTimezoneUnprocessableEntity ProblemDetails
+
+func (*SiteWorkspacesSetTimezoneUnprocessableEntity) siteWorkspacesSetTimezoneRes() {}
 
 type SiteWorkspacesUpdateForbidden ProblemDetails
 

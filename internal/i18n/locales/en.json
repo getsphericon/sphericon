@@ -126,6 +126,7 @@
   "errors.delete_user_use_password": "confirm with your password instead of a link",
   "errors.delete_user_proof_stale": "your sign-in method changed while you were confirming: start the deletion again",
   "errors.delete_user_email_mismatch": "type your own email address to confirm",
+  "errors.timezone_unknown": "unknown time zone: use an IANA name such as Europe/Berlin",
   "errors.leave_only_owner": "you are the only owner: make another member an owner or delete the workspace first",
   "errors.integration_kind_mismatch": "kind must match the integration provider",
   "errors.integration_archived_default": "an archived integration cannot be the default: restore it first",

@@ -10079,6 +10079,75 @@
         "tags": ["Site Templates"]
       }
     },
+    "/workspaces/{workspaceId}/timezone": {
+      "put": {
+        "operationId": "SiteWorkspaces_setTimezone",
+        "description": "Set the Workspace time zone (Owner only), the zone of every Report day (ADR 0057). 422 for\na name the zone database does not know. A change is recorded as an Audit entry and applies\nto all history at once.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteWorkspaceResource"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Workspaces"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteWorkspaceTimezoneInput"
+              }
+            }
+          }
+        }
+      }
+    },
     "/workspaces/{workspaceId}/tokens": {
       "get": {
         "operationId": "SiteTokens_list",
@@ -17667,6 +17736,7 @@
           "name",
           "collectKey",
           "postalAddress",
+          "timezone",
           "role",
           "mcpUrl",
           "holds",
@@ -17693,6 +17763,14 @@
           "postalAddress": {
             "type": "string",
             "description": "Physical postal address printed in the marketing email footer (CAN-SPAM\n15 U.S.C. §7704(a)(5)). Empty until the workspace sets one."
+          },
+          "timezone": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TimeZoneName"
+              }
+            ],
+            "description": "The Workspace time zone (ADR 0057): the IANA name every analytics report counts its days\nin. UTC until an Owner sets it."
           },
           "role": {
             "allOf": [
@@ -17767,6 +17845,21 @@
           }
         },
         "description": "Workspace the current user belongs to"
+      },
+      "SiteWorkspaceTimezoneInput": {
+        "type": "object",
+        "required": ["timezone"],
+        "properties": {
+          "timezone": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TimeZoneName"
+              }
+            ],
+            "description": "An IANA time zone name such as `Europe/Berlin`; the zone database decides what is valid"
+          }
+        },
+        "description": "Set the Workspace time zone"
       },
       "TimeZoneName": {
         "type": "string"

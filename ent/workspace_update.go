@@ -176,6 +176,26 @@ func (_u *WorkspaceUpdate) ClearRetentionDays() *WorkspaceUpdate {
 	return _u
 }
 
+// SetTimezone sets the "timezone" field.
+func (_u *WorkspaceUpdate) SetTimezone(v string) *WorkspaceUpdate {
+	_u.mutation.SetTimezone(v)
+	return _u
+}
+
+// SetNillableTimezone sets the "timezone" field if the given value is not nil.
+func (_u *WorkspaceUpdate) SetNillableTimezone(v *string) *WorkspaceUpdate {
+	if v != nil {
+		_u.SetTimezone(*v)
+	}
+	return _u
+}
+
+// ClearTimezone clears the value of the "timezone" field.
+func (_u *WorkspaceUpdate) ClearTimezone() *WorkspaceUpdate {
+	_u.mutation.ClearTimezone()
+	return _u
+}
+
 // SetDomainJoinEnabled sets the "domain_join_enabled" field.
 func (_u *WorkspaceUpdate) SetDomainJoinEnabled(v bool) *WorkspaceUpdate {
 	_u.mutation.SetDomainJoinEnabled(v)
@@ -1610,6 +1630,11 @@ func (_u *WorkspaceUpdate) check() error {
 			return &ValidationError{Name: "retention_days", err: fmt.Errorf(`ent: validator failed for field "Workspace.retention_days": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Timezone(); ok {
+		if err := workspace.TimezoneValidator(v); err != nil {
+			return &ValidationError{Name: "timezone", err: fmt.Errorf(`ent: validator failed for field "Workspace.timezone": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.SuspendedByKind(); ok {
 		if err := workspace.SuspendedByKindValidator(v); err != nil {
 			return &ValidationError{Name: "suspended_by_kind", err: fmt.Errorf(`ent: validator failed for field "Workspace.suspended_by_kind": %w`, err)}
@@ -1668,6 +1693,12 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.RetentionDaysCleared() {
 		_spec.ClearField(workspace.FieldRetentionDays, field.TypeInt)
+	}
+	if value, ok := _u.mutation.Timezone(); ok {
+		_spec.SetField(workspace.FieldTimezone, field.TypeString, value)
+	}
+	if _u.mutation.TimezoneCleared() {
+		_spec.ClearField(workspace.FieldTimezone, field.TypeString)
 	}
 	if value, ok := _u.mutation.DomainJoinEnabled(); ok {
 		_spec.SetField(workspace.FieldDomainJoinEnabled, field.TypeBool, value)
@@ -3312,6 +3343,26 @@ func (_u *WorkspaceUpdateOne) ClearRetentionDays() *WorkspaceUpdateOne {
 	return _u
 }
 
+// SetTimezone sets the "timezone" field.
+func (_u *WorkspaceUpdateOne) SetTimezone(v string) *WorkspaceUpdateOne {
+	_u.mutation.SetTimezone(v)
+	return _u
+}
+
+// SetNillableTimezone sets the "timezone" field if the given value is not nil.
+func (_u *WorkspaceUpdateOne) SetNillableTimezone(v *string) *WorkspaceUpdateOne {
+	if v != nil {
+		_u.SetTimezone(*v)
+	}
+	return _u
+}
+
+// ClearTimezone clears the value of the "timezone" field.
+func (_u *WorkspaceUpdateOne) ClearTimezone() *WorkspaceUpdateOne {
+	_u.mutation.ClearTimezone()
+	return _u
+}
+
 // SetDomainJoinEnabled sets the "domain_join_enabled" field.
 func (_u *WorkspaceUpdateOne) SetDomainJoinEnabled(v bool) *WorkspaceUpdateOne {
 	_u.mutation.SetDomainJoinEnabled(v)
@@ -4759,6 +4810,11 @@ func (_u *WorkspaceUpdateOne) check() error {
 			return &ValidationError{Name: "retention_days", err: fmt.Errorf(`ent: validator failed for field "Workspace.retention_days": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Timezone(); ok {
+		if err := workspace.TimezoneValidator(v); err != nil {
+			return &ValidationError{Name: "timezone", err: fmt.Errorf(`ent: validator failed for field "Workspace.timezone": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.SuspendedByKind(); ok {
 		if err := workspace.SuspendedByKindValidator(v); err != nil {
 			return &ValidationError{Name: "suspended_by_kind", err: fmt.Errorf(`ent: validator failed for field "Workspace.suspended_by_kind": %w`, err)}
@@ -4834,6 +4890,12 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 	}
 	if _u.mutation.RetentionDaysCleared() {
 		_spec.ClearField(workspace.FieldRetentionDays, field.TypeInt)
+	}
+	if value, ok := _u.mutation.Timezone(); ok {
+		_spec.SetField(workspace.FieldTimezone, field.TypeString, value)
+	}
+	if _u.mutation.TimezoneCleared() {
+		_spec.ClearField(workspace.FieldTimezone, field.TypeString)
 	}
 	if value, ok := _u.mutation.DomainJoinEnabled(); ok {
 		_spec.SetField(workspace.FieldDomainJoinEnabled, field.TypeBool, value)

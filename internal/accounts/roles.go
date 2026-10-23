@@ -92,6 +92,12 @@ func CanRenameWorkspace(role membership.Role) bool {
 	return role == membership.RoleOwner || role == membership.RoleAdmin
 }
 
+// CanSetTimezone reports whether role may set the Workspace time zone (ADR 0057), which moves
+// every report's days for everyone. Owner only.
+func CanSetTimezone(role membership.Role) bool {
+	return role == membership.RoleOwner
+}
+
 // CanDeleteWorkspace reports whether role may delete the Workspace and restore it within its
 // deletion window (ADR 0043). Owner only.
 func CanDeleteWorkspace(role membership.Role) bool {

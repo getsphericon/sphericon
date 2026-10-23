@@ -1202,6 +1202,14 @@ type Handler interface {
 	//
 	// PUT /workspaces/{workspaceId}/second-factor-requirement
 	SiteWorkspacesSetSecondFactorRequirement(ctx context.Context, req *SiteSecondFactorRequirementInput, params SiteWorkspacesSetSecondFactorRequirementParams) (SiteWorkspacesSetSecondFactorRequirementRes, error)
+	// SiteWorkspacesSetTimezone implements SiteWorkspaces_setTimezone operation.
+	//
+	// Set the Workspace time zone (Owner only), the zone of every Report day (ADR 0057). 422 for a name
+	// the zone database does not know. A change is recorded as an Audit entry and applies to all history
+	// at once.
+	//
+	// PUT /workspaces/{workspaceId}/timezone
+	SiteWorkspacesSetTimezone(ctx context.Context, req *SiteWorkspaceTimezoneInput, params SiteWorkspacesSetTimezoneParams) (SiteWorkspacesSetTimezoneRes, error)
 	// SiteWorkspacesUpdate implements SiteWorkspaces_update operation.
 	//
 	// Rename a workspace or change its postal address (Owner and Admin only). The id never changes.
