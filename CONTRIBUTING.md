@@ -177,14 +177,14 @@ The local stack is a set of [mise daemons](https://mise.jdx.dev) (`[daemons]` in
 The entry point is **https://sphericon.localhost** (Caddy terminates TLS with its internal CA).
 Daemons:
 
-| Daemon   | URL / port            | Notes                                                                  |
-| -------- | --------------------- | ---------------------------------------------------------------------- |
-| caddy    | `:443`                | TLS + routing, see `Caddyfile`                                         |
-| frontend | `:5173` (Vite)        | proxied by Caddy                                                       |
-| backend  | `:3300`               | proxied by Caddy under `/site`, `/api`, `/collect`, `/auth`            |
-| demo     | `:5373` (Vite)        | Brightpath storefront on https://brightpath.localhost, sends events    |
-| db       | `127.0.0.1:15432`     | one mise `postgres` preset server for all checkouts (`mise run db:up`) |
-| mailpit  | http://localhost:8025 | captured outbound email (SMTP UI on `:1025`)                           |
+| Daemon   | URL / port                | Notes                                                                  |
+| -------- | ------------------------- | ---------------------------------------------------------------------- |
+| caddy    | `:443`                    | TLS + routing, see `Caddyfile`                                         |
+| frontend | `:5173` (Vite)            | proxied by Caddy                                                       |
+| backend  | `:3300`                   | proxied by Caddy under `/site`, `/api`, `/collect`, `/auth`            |
+| demo     | `:5373` (Vite)            | Brightpath storefront on https://brightpath.localhost, sends events    |
+| db       | `127.0.0.1:15432`         | one mise `postgres` preset server for all checkouts (`mise run db:up`) |
+| mailpit  | https://mailpit.localhost | captured outbound email (UI `:8025` behind Caddy, SMTP `:1025`)        |
 
 > These are the primary checkout's ports. A linked git worktree gets offset ports and its own origin
 > (`https://<dir>.sphericon.localhost:<port>`, printed by `mise env`), so stacks never collide; there

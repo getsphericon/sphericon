@@ -3,7 +3,7 @@ import { identify, initTracking, track, trackPageView } from '@sphericon/analyti
 import { ENROLL_PATH } from '../server/enroll.ts'
 import type { EnrollRequest } from '../server/enroll.ts'
 
-// The tracker posts to the app origin (SPHERICON_APP_URL), not to the `api.` host: Caddy rewrites
+// The tracker posts to the `collect.` host (COLLECT_HOST), not to the `api.` host: Caddy rewrites
 // every path there to /api/*, so /collect would resolve to /api/collect.
 export function startTracking(): void {
   initTracking({

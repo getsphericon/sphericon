@@ -54,6 +54,12 @@ SPHERICON_ENV = "development"
 # ports of one host, so a per-worktree host keeps the session cookies apart.
 APP_HOST = "{% if env.CADDY_PORT == '443' %}sphericon.localhost{% else %}{{ config_root | basename | lower | replace(from='_', to='-') }}.sphericon.localhost{% endif %}"
 API_HOST = "api.{{ env.APP_HOST }}"
+# The tracking ingestion on a host of its own, like a customer site reaches it in production. The tracker
+# keeps the /collect prefix in its paths, so the edge proxies without a rewrite.
+COLLECT_HOST = "collect.{{ env.APP_HOST }}"
+# Mailpit's web UI behind Caddy, an external tool on a domain of its own: mailpit.localhost, or
+# mailpit.<dir>.sphericon.localhost in a linked worktree (like the demo storefront's host).
+MAIL_HOST = "{% if env.CADDY_PORT == '443' %}mailpit.localhost{% else %}mailpit.{{ env.APP_HOST }}{% endif %}"
 SPHERICON_APP_URL = "https://{{ env.APP_HOST }}{% if env.CADDY_PORT != '443' %}:{{ env.CADDY_PORT }}{% endif %}"
 # Caddy's admin API (2019 + offset) and HTTP listener (80 in the primary checkout, otherwise
 # 4000 + offset, clear of every other base + offset range).
@@ -74,10 +80,10 @@ SPHERICON_STAFF_JWT_SECRET = "dev-staff-secret-change-in-production"
 SPHERICON_ENCRYPTION_KEY = "CIamsc4JEmQKWAowdHlwZS5nb29nbGVhcGlzLmNvbS9nb29nbGUuY3J5cHRvLnRpbmsuQWVzR2NtS2V5EiIaIIOWohIqGhyD2NeiOazlLrnrHqCirukTjCjD1iMFPqiEGAEQARiGprHOCSAB"
 # The demo storefront (packages/storefront) is a customer site on its own origin: brightpath.localhost
 # in the primary checkout, brightpath.<dir>.sphericon.localhost in a linked worktree. Its tracker
-# posts to the app origin (not the `api.` host, where Caddy rewrites /collect to /api/collect) with
+# posts to the `collect.` host (not the `api.` host, where Caddy rewrites /collect to /api/collect) with
 # the Brightpath collect key from the fixtures.
 DEMO_HOST = "{% if env.CADDY_PORT == '443' %}brightpath.localhost{% else %}brightpath.{{ env.APP_HOST }}{% endif %}"
-DEMO_COLLECT_URL = "{{ env.SPHERICON_APP_URL }}"
+DEMO_COLLECT_URL = "https://{{ env.COLLECT_HOST }}{% if env.CADDY_PORT != '443' %}:{{ env.CADDY_PORT }}{% endif %}"
 DEMO_COLLECT_KEY = "omck_test_brightpath_collect_key"
 # The storefront's server calls the external API at the api. host with the "Demo site" token
 # (committed dev secret: fixtures/api_tokens.yml).
