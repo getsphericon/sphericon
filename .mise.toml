@@ -79,6 +79,10 @@ SPHERICON_ENCRYPTION_KEY = "CIamsc4JEmQKWAowdHlwZS5nb29nbGVhcGlzLmNvbS9nb29nbGUu
 DEMO_HOST = "{% if env.CADDY_PORT == '443' %}brightpath.localhost{% else %}brightpath.{{ env.APP_HOST }}{% endif %}"
 DEMO_COLLECT_URL = "{{ env.SPHERICON_APP_URL }}"
 DEMO_COLLECT_KEY = "omck_test_brightpath_collect_key"
+# The storefront's server calls the external API at the api. host with the "Demo site" token
+# (committed dev secret: fixtures/api_tokens.yml).
+DEMO_API_URL = "https://{{ env.API_HOST }}{% if env.CADDY_PORT != '443' %}:{{ env.CADDY_PORT }}{% endif %}"
+DEMO_API_TOKEN = "omtk_demosite0001_demo-token-secret"
 SPHERICON_SMTP_HOST = "127.0.0.1"
 SPHERICON_SMTP_PORT = "{{ env.MAILPIT_PORT | int - 8025 + 1025 }}"
 # One Postgres serves every checkout: the primary checkout's `db` daemon (below), started

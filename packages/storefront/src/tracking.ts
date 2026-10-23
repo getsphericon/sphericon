@@ -1,5 +1,8 @@
 import { identify, initTracking, track, trackPageView } from '@sphericon/analytics'
 
+import { ENROLL_PATH } from '../server/enroll.ts'
+import type { EnrollRequest } from '../server/enroll.ts'
+
 // The tracker posts to the app origin (SPHERICON_APP_URL), not to the `api.` host: Caddy rewrites
 // every path there to /api/*, so /collect would resolve to /api/collect.
 export function startTracking(): void {
@@ -28,7 +31,7 @@ export function addedToCart(course: string, price: number): void {
 }
 
 // The subject id has the shape of the Brightpath fixtures (`user:<email>`). The storefront's
-// server will send `purchase` with the same email and subject id, so both sides land on one
+// server sends `purchase` with the same email and subject id, so both sides land on one
 // Contact (ADR 0002).
 export function subjectIdFor(email: string): string {
   return `user:${email}`
@@ -37,4 +40,20 @@ export function subjectIdFor(email: string): string {
 export async function signedUp(email: string): Promise<void> {
   await identify({ email, subjectId: subjectIdFor(email) })
   track('signup')
+}
+
+// "Enroll" identifies the person in the browser, then asks the storefront's server to record the
+// purchase: the server sends the same email and subject id, so front and back events share a Contact.
+export async function enrolled(email: string, courses: readonly string[]): Promise<void> {
+  const subjectId = subjectIdFor(email)
+  await identify({ email, subjectId })
+  const body: EnrollRequest = { email, subjectId, courses: [...courses] }
+  const response = await fetch(ENROLL_PATH, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  if (!response.ok) {
+    throw new Error(`Enroll failed: ${response.status}`)
+  }
 }
