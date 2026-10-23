@@ -13,6 +13,7 @@ import {
   Stack,
   TextInput,
   Title,
+  Tooltip,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { useDisclosure } from '@mantine/hooks'
@@ -27,6 +28,7 @@ import {
   siteTokensDeleteMutation,
   siteTokensListOptions,
   siteTokensListQueryKey,
+  siteTokensUpdateMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { ApiTokenScope } from '../../generated/site/types.gen.ts'
 import { zApiTokenScope } from '../../generated/site/zod.gen.ts'
@@ -41,6 +43,7 @@ const SCOPE_OPTIONS = zApiTokenScope.options
 export function ApiKeysSection({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
   const confirmRevoke = useDeleteConfirmation()
+  const [renaming, setRenaming] = useState<{ id: string; name: string } | null>(null)
   const [newSecret, setNewSecret] = useState<string | null>(null)
   const [createOpened, { open: openCreate, close }] = useDisclosure(false)
   const closeCreate = () => {
@@ -50,6 +53,12 @@ export function ApiKeysSection({ workspaceId }: { workspaceId: string }) {
 
   const queryKey = siteTokensListQueryKey({ path: { workspaceId } })
   const tokensQuery = useQuery(siteTokensListOptions({ path: { workspaceId } }))
+
+  const renameForm = useForm({ initialValues: { name: '' } })
+  const openRename = (record: { id: string; name: string }) => {
+    renameForm.setValues({ name: record.name })
+    setRenaming(record)
+  }
 
   const form = useForm<{ name: string; scopes: ApiTokenScope[] }>({
     initialValues: { name: '', scopes: [] },
@@ -64,6 +73,14 @@ export function ApiKeysSection({ workspaceId }: { workspaceId: string }) {
       setNewSecret(data.token)
       form.reset()
     },
+  })
+
+  const renameMutation = useResourceMutation({
+    mutation: siteTokensUpdateMutation(),
+    invalidate: [queryKey],
+    errorTitle: t(($) => $.settings.tokens.renameError),
+    forbiddenMessage: t(($) => $.settings.tokens.forbidden),
+    onDone: () => setRenaming(null),
   })
 
   const deleteMutation = useResourceMutation({
@@ -87,7 +104,9 @@ export function ApiKeysSection({ workspaceId }: { workspaceId: string }) {
     <Box>
       <Group justify="space-between" mb="sm">
         <Title order={4}>{t(($) => $.settings.apiKeysTitle)}</Title>
-        <Button onClick={openCreate}>{t(($) => $.settings.tokens.create)}</Button>
+        <Button size="xs" onClick={openCreate}>
+          {t(($) => $.settings.tokens.create)}
+        </Button>
       </Group>
 
       {tokensQuery.isError ? (
@@ -105,16 +124,27 @@ export function ApiKeysSection({ workspaceId }: { workspaceId: string }) {
         idAccessor="id"
         columns={[
           { accessor: 'name' },
-          { accessor: 'prefix', title: t(($) => $.settings.tokens.prefix) },
           {
             accessor: 'scopes',
             title: t(($) => $.settings.tokens.scopesLabel),
-            render: (record) => record.scopes.join(', '),
+            render: (record) => (
+              <Tooltip label={record.scopes.join(', ')} multiline maw={320} withArrow>
+                <Badge variant="light" color="gray">
+                  {t(($) => $.settings.tokens.scopesCount, { count: record.scopes.length })}
+                </Badge>
+              </Tooltip>
+            ),
           },
           {
             accessor: 'createdAt',
             title: t(($) => $.settings.tokens.created),
             render: (record) => formatDate(record.createdAt),
+          },
+          {
+            accessor: 'expiresAt',
+            title: t(($) => $.settings.tokens.expires),
+            render: (record) =>
+              record.expiresAt ? formatDate(record.expiresAt) : t(($) => $.settings.tokens.never),
           },
           {
             accessor: 'actions',
@@ -127,6 +157,9 @@ export function ApiKeysSection({ workspaceId }: { workspaceId: string }) {
               ) : (
                 <Group justify="flex-end">
                   <RowActionsMenu>
+                    <Menu.Item onClick={() => openRename(record)}>
+                      {t(($) => $.settings.tokens.rename)}
+                    </Menu.Item>
                     <Menu.Item color="red" onClick={() => onRevoke(record.id)}>
                       {t(($) => $.settings.tokens.revoke)}
                     </Menu.Item>
@@ -137,6 +170,34 @@ export function ApiKeysSection({ workspaceId }: { workspaceId: string }) {
         ]}
         emptyState={<EmptyState title={t(($) => $.settings.tokens.empty)} />}
       />
+      <Modal
+        opened={renaming !== null}
+        onClose={() => setRenaming(null)}
+        title={t(($) => $.settings.tokens.rename)}
+      >
+        <form
+          onSubmit={renameForm.onSubmit((values) => {
+            if (renaming) {
+              renameMutation.mutate({
+                path: { workspaceId, id: renaming.id },
+                body: { name: values.name.trim() },
+              })
+            }
+          })}
+        >
+          <Stack>
+            <TextInput
+              label={t(($) => $.settings.tokens.nameLabel)}
+              required
+              data-autofocus
+              {...renameForm.getInputProps('name')}
+            />
+            <Button type="submit" loading={renameMutation.isPending}>
+              {t(($) => $.actions.save)}
+            </Button>
+          </Stack>
+        </form>
+      </Modal>
       <Modal opened={createOpened} onClose={closeCreate} title={t(($) => $.settings.tokens.create)}>
         {newSecret ? (
           <Alert color="yellow" title={t(($) => $.settings.tokens.secretNotice)}>
@@ -144,7 +205,7 @@ export function ApiKeysSection({ workspaceId }: { workspaceId: string }) {
               <Code>{newSecret}</Code>
               <CopyButton value={newSecret}>
                 {({ copied, copy }) => (
-                  <Button size="compact-sm" variant="light" onClick={copy}>
+                  <Button size="compact-xs" variant="light" onClick={copy}>
                     {copied ? t(($) => $.settings.copied) : t(($) => $.settings.copy)}
                   </Button>
                 )}

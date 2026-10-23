@@ -1470,6 +1470,13 @@ export const zSiteUpdateMembershipInput = z.object({
 });
 
 /**
+ * Rename an API token
+ */
+export const zSiteUpdateTokenInput = z.object({
+  name: z.string()
+});
+
+/**
  * Site request body for updating a webhook endpoint
  */
 export const zSiteUpdateWebhookEndpointInput = z.object({
@@ -4202,6 +4209,18 @@ export const zSiteTokensDeletePath = z.object({
  * There is no content to send for this request, but the headers may be useful.
  */
 export const zSiteTokensDeleteResponse = z.void();
+
+export const zSiteTokensUpdateBody = zSiteUpdateTokenInput;
+
+export const zSiteTokensUpdatePath = z.object({
+  workspaceId: zWorkspaceId,
+  id: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteTokensUpdateResponse = zSiteApiTokenResource;
 
 export const zSiteTransactionalEmailsListPath = z.object({
   workspaceId: zWorkspaceId

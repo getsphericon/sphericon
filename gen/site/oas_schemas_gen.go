@@ -6211,6 +6211,8 @@ func (s *SiteApiTokenResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
 }
 
+func (*SiteApiTokenResource) siteTokensUpdateRes() {}
+
 // Site request body for applying a tag to a contact.
 // Ref: #/components/schemas/SiteApplyTagInput
 type SiteApplyTagInput struct {
@@ -18416,6 +18418,18 @@ type SiteTokensListOKApplicationJSON []SiteApiTokenResource
 
 func (*SiteTokensListOKApplicationJSON) siteTokensListRes() {}
 
+type SiteTokensUpdateForbidden ProblemDetails
+
+func (*SiteTokensUpdateForbidden) siteTokensUpdateRes() {}
+
+type SiteTokensUpdateNotFound ProblemDetails
+
+func (*SiteTokensUpdateNotFound) siteTokensUpdateRes() {}
+
+type SiteTokensUpdateUnprocessableEntity ProblemDetails
+
+func (*SiteTokensUpdateUnprocessableEntity) siteTokensUpdateRes() {}
+
 // Why a Tracking domain is held back although its CNAME may be right: `host_taken` means another
 // Workspace already has this host verified (ADR 0038).
 // Ref: #/components/schemas/SiteTrackingReason
@@ -19494,6 +19508,22 @@ func (s *SiteUpdateSegmentInput) SetName(val OptString) {
 // SetCondition sets the value of Condition.
 func (s *SiteUpdateSegmentInput) SetCondition(val OptSiteConditionGroup) {
 	s.Condition = val
+}
+
+// Rename an API token.
+// Ref: #/components/schemas/SiteUpdateTokenInput
+type SiteUpdateTokenInput struct {
+	Name string `json:"name"`
+}
+
+// GetName returns the value of Name.
+func (s *SiteUpdateTokenInput) GetName() string {
+	return s.Name
+}
+
+// SetName sets the value of Name.
+func (s *SiteUpdateTokenInput) SetName(val string) {
+	s.Name = val
 }
 
 // Site request body for updating a webhook endpoint.

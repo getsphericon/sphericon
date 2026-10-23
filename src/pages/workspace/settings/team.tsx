@@ -15,7 +15,7 @@ export function TeamPage() {
   return (
     <SettingsFrame workspaceId={workspaceId} title={t(($) => $.settings.nav.team)}>
       {(workspace) => (
-        <Stack>
+        <Stack gap="xl">
           <MembersSection workspaceId={workspace.id} />
           <SecondFactorRequirementSection workspace={workspace} />
           {canManageJoinDomains(workspace.role) ? (

@@ -1461,6 +1461,15 @@ func (UnimplementedHandler) SiteTokensList(ctx context.Context, params SiteToken
 	return r, ht.ErrNotImplemented
 }
 
+// SiteTokensUpdate implements SiteTokens_update operation.
+//
+// Rename an active API token. Owners and admins only.
+//
+// PUT /workspaces/{workspaceId}/tokens/{id}
+func (UnimplementedHandler) SiteTokensUpdate(ctx context.Context, req *SiteUpdateTokenInput, params SiteTokensUpdateParams) (r SiteTokensUpdateRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteTransactionalEmailsList implements SiteTransactionalEmails_list operation.
 //
 // List transactional sends, most recent first.

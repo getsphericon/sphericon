@@ -120,6 +120,27 @@ func Revoke(ctx context.Context, s *ent.Scoped, id int64) error {
 	return nil
 }
 
+// Rename changes the name of an active token and returns the updated row. A token that
+// is unknown, belongs to another Workspace or is revoked is ErrNotFound; a blank name is
+// ErrNameEmpty.
+func Rename(ctx context.Context, s *ent.Scoped, id int64, name string) (*ent.ApiToken, error) {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return nil, ErrNameEmpty
+	}
+	n, err := s.ApiToken().Update().
+		Where(apitoken.ID(id), apitoken.RevokedAtIsNil()).
+		SetName(name).
+		Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if n == 0 {
+		return nil, ErrNotFound
+	}
+	return s.ApiToken().Get(ctx, id)
+}
+
 func validScope(scope string) bool {
 	return slices.Contains(externalapi.ApiTokenScope("").AllValues(), externalapi.ApiTokenScope(scope))
 }

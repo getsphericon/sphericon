@@ -162,6 +162,7 @@ var operationRolesApiKeyAuth = map[string][]string{
 	SiteTokensCreateOperation:                         []string{},
 	SiteTokensDeleteOperation:                         []string{},
 	SiteTokensListOperation:                           []string{},
+	SiteTokensUpdateOperation:                         []string{},
 	SiteTransactionalEmailsListOperation:              []string{},
 	SiteUserDeleteUserOperation:                       []string{},
 	SiteUserDeleteUserLinkOperation:                   []string{},

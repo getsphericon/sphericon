@@ -14,7 +14,7 @@ export function DevelopersPage() {
   return (
     <SettingsFrame workspaceId={workspaceId} title={t(($) => $.settings.nav.developers)}>
       {(workspace) => (
-        <Stack>
+        <Stack gap="xl">
           <ApiKeysSection workspaceId={workspace.id} />
           {canManage(workspace.role) ? <WebhooksSection workspaceId={workspace.id} /> : null}
         </Stack>

@@ -4362,6 +4362,13 @@ export type SiteUpdateSegmentInput = {
 };
 
 /**
+ * Rename an API token
+ */
+export type SiteUpdateTokenInput = {
+  name: string;
+};
+
+/**
  * Site request body for updating a webhook endpoint
  */
 export type SiteUpdateWebhookEndpointInput = {
@@ -11250,6 +11257,49 @@ export type SiteTokensDeleteResponses = {
 };
 
 export type SiteTokensDeleteResponse = SiteTokensDeleteResponses[keyof SiteTokensDeleteResponses];
+
+export type SiteTokensUpdateData = {
+  body: SiteUpdateTokenInput;
+  path: {
+    /**
+     * The Workspace id: its short opaque public address and the route key for nested
+     * workspace resources (ADR 0043)
+     */
+    workspaceId: WorkspaceId;
+    /**
+     * Unique identifier
+     */
+    id: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/tokens/{id}';
+};
+
+export type SiteTokensUpdateErrors = {
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+};
+
+export type SiteTokensUpdateError = SiteTokensUpdateErrors[keyof SiteTokensUpdateErrors];
+
+export type SiteTokensUpdateResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteApiTokenResource;
+};
+
+export type SiteTokensUpdateResponse = SiteTokensUpdateResponses[keyof SiteTokensUpdateResponses];
 
 export type SiteTransactionalEmailsListData = {
   body?: never;

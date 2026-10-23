@@ -7767,6 +7767,30 @@ func (s SiteTokensListOKApplicationJSON) Validate() error {
 	return nil
 }
 
+func (s *SiteTokensUpdateForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteTokensUpdateNotFound) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteTokensUpdateUnprocessableEntity) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s SiteTrackingReason) Validate() error {
 	switch s {
 	case "host_taken":

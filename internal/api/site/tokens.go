@@ -81,6 +81,40 @@ func (h *Handlers) SiteTokensCreate(ctx context.Context, req *siteapi.SiteCreate
 	}, nil
 }
 
+// SiteTokensUpdate renames an active workspace API token.
+func (h *Handlers) SiteTokensUpdate(ctx context.Context, req *siteapi.SiteUpdateTokenInput, params siteapi.SiteTokensUpdateParams) (siteapi.SiteTokensUpdateRes, error) {
+	scoped, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
+	if ent.IsNotFound(err) {
+		v := siteapi.SiteTokensUpdateNotFound(problem(http.StatusNotFound, "workspace not found"))
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	if !accounts.CanManageTokens(role) {
+		v := siteapi.SiteTokensUpdateForbidden(problem(http.StatusForbidden, "only owners and admins can manage API tokens"))
+		return &v, nil
+	}
+
+	row, err := apitokens.Rename(ctx, scoped, int64(params.ID), req.Name)
+	switch {
+	case errors.Is(err, apitokens.ErrNameEmpty):
+		v := siteapi.SiteTokensUpdateUnprocessableEntity(problemWithErrors(
+			http.StatusUnprocessableEntity,
+			i18n.T("errors.name_empty", nil),
+			map[string][]string{"name": {i18n.T("errors.name_empty", nil)}},
+		))
+		return &v, nil
+	case errors.Is(err, apitokens.ErrNotFound):
+		v := siteapi.SiteTokensUpdateNotFound(problem(http.StatusNotFound, "token not found"))
+		return &v, nil
+	case err != nil:
+		return nil, err
+	}
+	res := mapper.TokenToResource(row)
+	return &res, nil
+}
+
 // SiteTokensDelete revokes (soft-deletes) a workspace API token.
 func (h *Handlers) SiteTokensDelete(ctx context.Context, params siteapi.SiteTokensDeleteParams) (siteapi.SiteTokensDeleteRes, error) {
 	scoped, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)

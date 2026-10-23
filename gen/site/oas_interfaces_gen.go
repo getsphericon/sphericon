@@ -557,6 +557,10 @@ type SiteTokensListRes interface {
 	siteTokensListRes()
 }
 
+type SiteTokensUpdateRes interface {
+	siteTokensUpdateRes()
+}
+
 type SiteTransactionalEmailsListRes interface {
 	siteTransactionalEmailsListRes()
 }

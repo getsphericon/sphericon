@@ -152,6 +152,7 @@ const (
 	SiteTokensCreateOperation                         OperationName = "SiteTokensCreate"
 	SiteTokensDeleteOperation                         OperationName = "SiteTokensDelete"
 	SiteTokensListOperation                           OperationName = "SiteTokensList"
+	SiteTokensUpdateOperation                         OperationName = "SiteTokensUpdate"
 	SiteTransactionalEmailsListOperation              OperationName = "SiteTransactionalEmailsList"
 	SiteUserDeleteUserOperation                       OperationName = "SiteUserDeleteUser"
 	SiteUserDeleteUserLinkOperation                   OperationName = "SiteUserDeleteUserLink"

@@ -42,6 +42,11 @@ model SiteCreateTokenInput {
   expiresAt?: Timestamp | null;
 }
 
+/** Rename an API token */
+model SiteUpdateTokenInput {
+  name: string;
+}
+
 /** Token creation result — `token` is the full secret, shown only once */
 model SiteCreateTokenResponse {
   token: string;
@@ -75,6 +80,19 @@ namespace SiteTokens {
         @statusCode statusCode: 201;
         @body body: SiteCreateTokenResponse;
       }
+    | ForbiddenProblem
+    | NotFoundProblem
+    | UnprocessableEntityProblem;
+
+  /** Rename an active API token. Owners and admins only. */
+  @updatesResource(SiteApiTokenResource)
+  @put
+  @autoRoute
+  op update(
+    ...ResourceParameters<SiteApiTokenResource>,
+    @body body: SiteUpdateTokenInput,
+  ):
+    | SiteApiTokenResource
     | ForbiddenProblem
     | NotFoundProblem
     | UnprocessableEntityProblem;

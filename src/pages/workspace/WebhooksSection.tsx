@@ -228,7 +228,9 @@ export function WebhooksSection({ workspaceId }: { workspaceId: string }) {
     <Box>
       <Group justify="space-between" mb="sm">
         <Title order={4}>{t(($) => $.settings.webhooksTitle)}</Title>
-        <Button onClick={openCreate}>{t(($) => $.settings.webhooks.create)}</Button>
+        <Button size="xs" onClick={openCreate}>
+          {t(($) => $.settings.webhooks.create)}
+        </Button>
       </Group>
 
       {webhooksQuery.isError ? (
@@ -293,7 +295,7 @@ export function WebhooksSection({ workspaceId }: { workspaceId: string }) {
             render: (record) => (
               <CopyButton value={record.secret}>
                 {({ copied, copy }) => (
-                  <Button size="compact-sm" variant="light" onClick={copy}>
+                  <Button size="compact-xs" variant="light" onClick={copy}>
                     {copied
                       ? t(($) => $.settings.copied)
                       : t(($) => $.settings.webhooks.copySecret)}

@@ -10072,6 +10072,71 @@
       }
     },
     "/workspaces/{workspaceId}/tokens/{id}": {
+      "put": {
+        "operationId": "SiteTokens_update",
+        "description": "Rename an active API token. Owners and admins only.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SiteApiTokenResourceKey.workspaceId"
+          },
+          {
+            "$ref": "#/components/parameters/SiteApiTokenResourceKey.id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteApiTokenResource"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Tokens"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteUpdateTokenInput"
+              }
+            }
+          }
+        }
+      },
       "delete": {
         "operationId": "SiteTokens_delete",
         "description": "Revoke an API token. Owners and admins only.",
@@ -17112,6 +17177,16 @@
           }
         },
         "description": "Site request body for updating a segment"
+      },
+      "SiteUpdateTokenInput": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        },
+        "description": "Rename an API token"
       },
       "SiteUpdateWebhookEndpointInput": {
         "type": "object",

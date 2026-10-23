@@ -1018,6 +1018,12 @@ type Handler interface {
 	//
 	// GET /workspaces/{workspaceId}/tokens
 	SiteTokensList(ctx context.Context, params SiteTokensListParams) (SiteTokensListRes, error)
+	// SiteTokensUpdate implements SiteTokens_update operation.
+	//
+	// Rename an active API token. Owners and admins only.
+	//
+	// PUT /workspaces/{workspaceId}/tokens/{id}
+	SiteTokensUpdate(ctx context.Context, req *SiteUpdateTokenInput, params SiteTokensUpdateParams) (SiteTokensUpdateRes, error)
 	// SiteTransactionalEmailsList implements SiteTransactionalEmails_list operation.
 	//
 	// List transactional sends, most recent first.

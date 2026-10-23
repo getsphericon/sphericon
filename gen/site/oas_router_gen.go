@@ -183,6 +183,9 @@ var (
 	rn172AllowedHeaders = map[string]string{
 		"POST": "Content-Type",
 	}
+	rn174AllowedHeaders = map[string]string{
+		"PUT": "Content-Type",
+	}
 	rn182AllowedHeaders = map[string]string{
 		"POST": "Content-Type",
 	}
@@ -4593,10 +4596,15 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 												args[0],
 												args[1],
 											}, elemIsEscaped, w, r)
+										case "PUT":
+											s.handleSiteTokensUpdateRequest([2]string{
+												args[0],
+												args[1],
+											}, elemIsEscaped, w, r)
 										default:
 											s.notAllowed(w, r, notAllowedParams{
-												allowedMethods: "DELETE",
-												allowedHeaders: nil,
+												allowedMethods: "DELETE,PUT",
+												allowedHeaders: rn174AllowedHeaders,
 												acceptPost:     "",
 												acceptPatch:    "",
 											})
@@ -9169,6 +9177,15 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 											r.name = SiteTokensDeleteOperation
 											r.summary = ""
 											r.operationID = "SiteTokens_delete"
+											r.operationGroup = ""
+											r.pathPattern = "/workspaces/{workspaceId}/tokens/{id}"
+											r.args = args
+											r.count = 2
+											return r, true
+										case "PUT":
+											r.name = SiteTokensUpdateOperation
+											r.summary = ""
+											r.operationID = "SiteTokens_update"
 											r.operationGroup = ""
 											r.pathPattern = "/workspaces/{workspaceId}/tokens/{id}"
 											r.args = args

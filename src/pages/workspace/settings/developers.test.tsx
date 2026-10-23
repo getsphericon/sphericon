@@ -1,9 +1,11 @@
+import { HttpResponse } from 'msw'
 import { expect, test } from 'vitest'
 
 import {
   handleSiteMembershipsList,
   handleSiteUserGetMe,
   handleSiteTokensList,
+  handleSiteTokensUpdate,
   handleSiteWebhooksList,
   handleSiteWorkspacesList,
 } from '../../../generated/site/msw.gen.ts'
@@ -99,4 +101,38 @@ test('does not offer a member the webhooks, whose secrets only owners and admins
 
   await expect.element(screen.getByRole('heading', { name: 'API keys' })).toBeInTheDocument()
   await expect.element(screen.getByRole('heading', { name: 'Webhooks' })).not.toBeInTheDocument()
+})
+
+test('renames an API key from its row menu', async () => {
+  const token = {
+    id: '7',
+    name: 'CI',
+    prefix: 'omk_ab12',
+    scopes: ['contacts:read' as const],
+    createdAt: '2026-01-01T00:00:00Z',
+  }
+  const renamed: unknown[] = []
+  worker.use(
+    handleSiteWorkspacesList({ body: [workspace] }),
+    handleSiteTokensList({ body: [token] }),
+    handleSiteTokensUpdate(async ({ request }) => {
+      renamed.push(await request.json())
+      return HttpResponse.json({ ...token, name: 'Deploys' })
+    }),
+    handleSiteWebhooksList({
+      body: { items: [], page: 1, pageSize: 20, totalItems: 0, totalPages: 1 },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(
+    <DevelopersPage />,
+    routeMount(developersRoute, { workspaceId: 'TestWs01' }),
+  )
+
+  await screen.getByRole('button', { name: 'More actions' }).click()
+  await screen.getByRole('menuitem', { name: 'Rename' }).click()
+  await screen.getByLabelText(/^Token name/).fill('Deploys')
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect.poll(() => renamed).toEqual([{ name: 'Deploys' }])
 })
