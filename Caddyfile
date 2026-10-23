@@ -47,3 +47,10 @@
 	rewrite * /api{uri}
 	reverse_proxy localhost:{$BACKEND_PORT}
 }
+
+# The demo storefront: a customer site on its own origin, so its tracker runs cross-origin like
+# a real one (packages/storefront).
+{$DEMO_HOST}:{$CADDY_PORT} {
+	tls internal
+	reverse_proxy localhost:{$DEMO_PORT}
+}

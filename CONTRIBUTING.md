@@ -165,6 +165,7 @@ Daemons:
 | caddy    | `:443`                | TLS + routing, see `Caddyfile`                                         |
 | frontend | `:5173` (Vite)        | proxied by Caddy                                                       |
 | backend  | `:3300`               | proxied by Caddy under `/site`, `/api`, `/collect`, `/auth`            |
+| demo     | `:5373` (Vite)        | Brightpath storefront on https://brightpath.localhost, sends events    |
 | db       | `127.0.0.1:15432`     | one mise `postgres` preset server for all checkouts (`mise run db:up`) |
 | mailpit  | http://localhost:8025 | captured outbound email (SMTP UI on `:1025`)                           |
 
