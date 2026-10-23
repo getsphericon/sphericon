@@ -404,6 +404,22 @@ func EncryptionKey(envName string) (string, error) {
 	return vars["SPHERICON_ENCRYPTION_KEY"], nil
 }
 
+// Port is PORT as the process sees it, without loading the rest of the config: the
+// container health check needs no database and no secrets.
+func Port(envName string) (string, error) {
+	vars, err := loadVars(envName)
+	if err != nil {
+		return "", err
+	}
+	var e struct {
+		Port string `env:"PORT" envDefault:"3000"` // the same default as environment.Port
+	}
+	if err := env.ParseWithOptions(&e, env.Options{Environment: vars}); err != nil {
+		return "", fmt.Errorf("read environment: %w", err)
+	}
+	return e.Port, nil
+}
+
 // Load reads the configuration from the process environment layered over the .env
 // files (see envFiles): a variable the process sets wins over every file.
 func Load(envName string) (*Config, error) {

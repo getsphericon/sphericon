@@ -333,8 +333,8 @@ sphericon's `licensekey.ProductionKey` is one public key (internal/app/app.go:76
 ## 3. sphericon today (primary files)
 
 - **Formats.** Release tarballs for linux and darwin on amd64 and arm64 with `checksums.txt`
-  ([.goreleaser.yaml](../../.goreleaser.yaml)); a multi-arch image `ghcr.io/getsphericon/sphericon` from `alpine:3.24`,
-  non-root, `HEALTHCHECK` on `/healthz`, `SPHERICON_ENV=production` by default
+  ([.goreleaser.yaml](../../.goreleaser.yaml)); a multi-arch image `ghcr.io/getsphericon/sphericon` on `scratch`,
+  non-root, `HEALTHCHECK` through `sphericon healthcheck` on `/healthz`, `SPHERICON_ENV=production` by default
   ([Dockerfile.release](../../Dockerfile.release)); a first-party OCI Helm chart with a pre-upgrade migrate Job, a
   `/readyz` probe, two replicas and a PDB
   ([charts/sphericon/templates/migrate-job.yaml](../../charts/sphericon/templates/migrate-job.yaml),
@@ -372,7 +372,7 @@ sphericon's `licensekey.ProductionKey` is one public key (internal/app/app.go:76
 
 | Concern                     | sphericon                                                  | Listmonk                                                | SigNoz                                     | Temporal                              | Hatchet                                            | Teleport                                  | Zitadel                                   | VictoriaMetrics                                                                | Coder                                      |
 | --------------------------- | ---------------------------------------------------------- | ------------------------------------------------------- | ------------------------------------------ | ------------------------------------- | -------------------------------------------------- | ----------------------------------------- | ----------------------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------ |
-| Binary and image            | one binary (linux, darwin), alpine image, non-root         | one binary, alpine image                                | two builds (community, enterprise), alpine | server and admin-tools images, alpine | several binaries, Lite bundles two                 | one binary, edition-specific              | one binary, `scratch` image               | per-component binaries, alpine or scratch                                      | one binary, many installers                |
+| Binary and image            | one binary (linux, darwin), scratch image, non-root        | one binary, alpine image                                | two builds (community, enterprise), alpine | server and admin-tools images, alpine | several binaries, Lite bundles two                 | one binary, edition-specific              | one binary, `scratch` image               | per-component binaries, alpine or scratch                                      | one binary, many installers                |
 | Compose                     | none shipped (ROADMAP says one)                            | yes, chains install, upgrade, run                       | deprecated for Foundry                     | in `samples-server` repo              | yes, with a `hatchet-migrate` service              | not read                                  | yes (Traefik)                             | yes (single and cluster)                                                       | documented                                 |
 | Helm                        | first-party OCI chart, pre-upgrade hook                    | community only                                          | via Foundry (not read)                     | `temporalio/helm-charts`              | `hatchet-stack`, `hatchet-ha` (separate repo)      | `teleport-cluster`                        | own chart, init and setup Jobs            | charts and operator                                                            | `helm/coder`                               |
 | Schema creation and upgrade | explicit `migrate`; opt-in auto under advisory lock        | explicit `--install`/`--upgrade`; boot fatal if pending | auto at construction, lock table           | separate SQL tools before server      | separate `hatchet-migrate`, goose and session lock | Auth Service migrates backend on upgrade  | `init`, `setup` each release, `start`     | n/a (own storage)                                                              | auto at boot, advisory xact lock           |
@@ -452,10 +452,10 @@ tree on 2026-10-18.
 5. **`_FILE` variants for secrets. Not worth an issue yet.** Listmonk (entrypoint) and Hatchet support them for Docker
    and Swarm secrets; sphericon's Helm chart consumes a Secret as env, and `EnvironmentFile` covers systemd. Revisit
    when someone asks for Docker secrets; a generic loader for `SPHERICON_*_FILE` is small if wanted.
-6. **A `ready` subcommand so a `scratch` or distroless image can self-probe. Not worth an issue.** Zitadel uses a
-   `scratch` image and `HEALTHCHECK NONE` plus `zitadel ready`. sphericon's alpine image with `wget` is in line with
-   Listmonk, Temporal, SigNoz and VictoriaMetrics' default; only Zitadel is smaller, and the saving is not a
-   self-hoster problem.
+6. **A `ready` subcommand so a `scratch` or distroless image can self-probe. Done.** Zitadel uses a `scratch` image
+   and `HEALTHCHECK NONE` plus `zitadel ready`. sphericon's image is now `scratch` too, and its `HEALTHCHECK` runs
+   `sphericon healthcheck`, which probes the server's own `/healthz`; Listmonk, Temporal, SigNoz and VictoriaMetrics'
+   default stay on alpine.
 7. **Release signing and SBOM. Not a new issue.** sphericon has `checksums.txt` and states signing is a separate task
    (ADR 0034, no `signs:` in `.goreleaser.yaml`); this pass did not examine how the other projects sign, so there is
    no comparison to add.
