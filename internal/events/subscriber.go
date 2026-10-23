@@ -311,10 +311,8 @@ func RuleProperties(props map[string]any) map[string]any {
 }
 
 // machineEvent reports whether ev was caused by a machine (a mail scanner's open or click, ADR
-// 0053), which never triggers a Rule. The flag on the Event does not exist yet (issue #592), so
-// no Event is a machine Event today; this is the one place that decides it once the flag lands:
-// read it from the decoded event here.
-func machineEvent(DomainEvent) bool { return false }
+// 0053), which never triggers a Rule.
+func machineEvent(ev DomainEvent) bool { return ev.Project().Machine }
 
 // rulesConsumer queues the evaluation of the event against the Workspace's Rules (ADR 0054).
 // Like the Automations consumer it skips the events that are never a trigger, and it also skips

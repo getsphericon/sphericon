@@ -103,3 +103,23 @@ func TestRulePropertiesKeepsWhatFitsTheBoundAndDropsWhatDoesNot(t *testing.T) {
 		})
 	}
 }
+
+// A machine open or click is recorded but triggers no Rule (ADR 0053, ADR 0054).
+func TestRulesConsumerSkipsMachineEngagement(t *testing.T) {
+	env := testhelper.Setup(t)
+	react := events.RulesConsumer(queueingJobs(t, env))
+
+	for _, action := range []string{events.NameEmailOpened, events.NameEmailClicked} {
+		require.NoError(t, react(msgFor(t, &events.EmailEngagement{
+			Action: action, WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID,
+			Email: fixtures.ContactAliceEmail, Machine: true,
+		})))
+	}
+	assert.Empty(t, env.JobsOf(t, jobkind.RuleEvaluate.Kind))
+
+	require.NoError(t, react(msgFor(t, &events.EmailEngagement{
+		Action: events.NameEmailOpened, WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID,
+		Email: fixtures.ContactAliceEmail,
+	})))
+	assert.Len(t, env.JobsOf(t, jobkind.RuleEvaluate.Kind), 1, "a person's open still triggers")
+}
