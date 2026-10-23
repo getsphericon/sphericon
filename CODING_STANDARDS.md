@@ -11,6 +11,17 @@ built, run and generated is in `AGENTS.md`; the vocabulary is in `GLOSSARY.md`.
   assertion, argument or condition that holds a query, a call chain or a computation inside it.
   The same goes for production code: `rows, err := ...` first, then the `if` or the `return` that
   uses them. A test that fails then shows which step produced the wrong value.
+- **No error is dropped silently, and `_ =` is not a way to drop one** (`errcheck` runs with
+  `check-blank`). Handle it; for the step after the work is done (closing a connection, shutting
+  a server down, removing a temporary file) call `internal/cleanup`, which logs it. The functions
+  whose error nobody can act on (terminal output, a response body that was only read, the rollback
+  of a committed transaction) are listed with their reason under `errcheck` in `.golangci.yml`.
+- **Narrowing an integer to the contract's `int32` goes through `narrow.Int32`**
+  (`internal/narrow`), which caps at the bounds instead of wrapping.
+- **A change to a field in an Audit entry's diff is `events.Change(from, to)` or
+  `events.Became(to)`**, keyed by the ent field constant (`membership.FieldRole`), not a literal.
+- **A linter is off only when it is harmful here, and the reason is in `.golangci.yml`.** An
+  exclusion there is scoped to the files it concerns and says why; there is no `//nolint`.
 
 ## Project checks
 

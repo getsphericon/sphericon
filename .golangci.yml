@@ -9,6 +9,36 @@ formatters:
 
 linters:
   default: standard
+  # Linters that exist and are left off because they are harmful here, each with what the findings
+  # showed (counts are of the findings at the time; these are the linters the second pass evaluated):
+  #   nilnil            23: absence is the documented answer (no such row, nothing joined, no signer
+  #                     for a domain, no Staff handler without a license), a NULL or optional *string,
+  #                     or an empty map; a sentinel error would make every caller branch on a non-error.
+  #   gochecknoglobals  114 outside tests: read-only lookup tables (no const map or slice exists in
+  #                     Go; a function returning the literal allocates per call), process singletons
+  #                     (a sync.Once or a mutex around a renderer, the i18n bundle, a certificate
+  #                     cache, the metrics handler Setup installs and tests swap) and
+  #                     buildinfo.Version/Commit/Date, which -ldflags -X can only set as package
+  #                     variables.
+  #   err113            259 outside tests: configuration, CLI and Preset validation messages that
+  #                     nothing matches with errors.Is; a sentinel per message is ceremony.
+  #   dupl              26: 22 are API handler bodies (list, export, activate, archive) repeated per
+  #                     resource over distinct generated response types, so no helper has a type to
+  #                     share; the other 4 are pairs of test bodies.
+  #   paralleltest      2910: a test rides a transaction on its package's one database, holds row locks
+  #                     on the fixture rows it changes until rollback, and 11 test files use t.Setenv
+  #                     and 7 swap OpenTelemetry globals, so t.Parallel would serialize or deadlock;
+  #                     packages already run in parallel and the end-to-end tests, which have a
+  #                     Workspace each, call t.Parallel.
+  #   exhaustruct       3704: ogen DTOs and their Opt types, ent annotations and mixins, urfave/cli and
+  #                     net/http structs, and our option structs whose zero values are the default.
+  #   wrapcheck         1607 findings; 1328 are errors of our own packages, ent and the container, which
+  #                     already name their operation, or control-flow errors (river's snooze and
+  #                     cancel, ctx.Err), and ignoring them leaves 279 stdlib and
+  #                     third-party errors: *PathError, *url.Error and the json errors carry the
+  #                     operation and the operand, so a "read file:" prefix only stutters, and the
+  #                     rest are pass-through lifecycle methods (Close, Shutdown, Start, Stop, a
+  #                     RoundTripper) and ent hooks, where wrapping is wrong.
   enable:
     - bodyclose
     - contextcheck
@@ -82,6 +112,13 @@ linters:
     - grouper
     - nakedret
     - embeddedstructfieldcheck
+    - goconst
+    - cyclop
+    - gocognit
+    - funlen
+    - maintidx
+    - nestif
+    - nilerr
     - gosec
     # Our own go/analysis checks (tools/analyzers), built into .bin/custom-gcl by `mise run build:lint`.
     - sphericon
@@ -132,24 +169,65 @@ linters:
         - style
         - performance
         - opinionated
+        - experimental
       disabled-checks:
-        # Named results fight the nonamedreturns habit of this codebase (results are named only
-        # where a defer needs them).
-        - unnamedResult
-        # The largest by-value parameters are fixed by interfaces we do not write: ogen's handler
-        # methods and goverter's Converter take their DTOs and params by value. A copy of a
-        # few hundred bytes next to a database round trip is not a cost worth a pointer elsewhere.
-        - hugeParam
-        # %q escapes what an email body and an HTML attribute must not escape.
+        # %q escapes what an email body and an HTML attribute must not escape: both findings
+        # (internal/jobs/memberinvite.go, internal/tracking/tracking.go) are a plain-text mail body
+        # and an <img src="..."> attribute.
         - sprintfQuotedString
+      settings:
+        hugeParam:
+          # A copy of up to half a kilobyte next to a database round trip or an HTTP call costs
+          # nothing worth a pointer; the 80-byte default flags ogen's and goverter's by-value
+          # interfaces, which we do not write, and every small dependency struct.
+          sizeThreshold: 512
     staticcheck:
-      # Every check but two: ST1000 (a package comment in every package, 196 of them) and ST1003
-      # (names: the ogen and ent generators spell ApiKeyAuth, ApiToken and HttpStep, and the
-      # contract names follow them).
       checks:
         - all
-        - -ST1000
-        - -ST1003
+      # The default initialisms without API and HTTP: ogen and ent spell ApiKeyAuth, ApiToken and
+      # HttpStep, and the interfaces we implement and the contract names follow them. Every other
+      # initialism (ID, URL, JSON ...) is still checked.
+      initialisms:
+        - ACL
+        - ASCII
+        - CPU
+        - CSS
+        - DNS
+        - EOF
+        - GUID
+        - HTML
+        - HTTPS
+        - ID
+        - IP
+        - JSON
+        - QPS
+        - RAM
+        - RPC
+        - SLA
+        - SMTP
+        - SQL
+        - SSH
+        - TCP
+        - TLS
+        - TTL
+        - UDP
+        - UI
+        - GID
+        - UID
+        - UUID
+        - URI
+        - URL
+        - UTF8
+        - VM
+        - XML
+        - XMPP
+        - XSRF
+        - XSS
+        - SIP
+        - RTP
+        - AMQP
+        - DB
+        - TS
     govet:
       enable-all: true
       disable:
@@ -159,9 +237,12 @@ linters:
       require-specific: true
       require-explanation: true
     revive:
-      # The default rule set minus `exported` (a comment on every exported name, 635 of them, much
-      # of it names that are generated or self-explanatory) and `package-comments`.
+      # The default rule set minus `exported`: 516 of its findings are exported names with no
+      # comment, and 450 of those are methods that an interface fixes (ent's Fields/Edges/Mixin on
+      # 234 schema types, river's Work/Kind, the ogen handlers whose docs are the TypeSpec's, review
+      # rule 6), so the rule would ask for a second copy of what the interface or the contract says.
       rules:
+        - name: package-comments
         - name: blank-imports
         - name: context-as-argument
         - name: context-keys-type
@@ -190,6 +271,44 @@ linters:
     gosmopolitan:
       # The Second factor deadlines are calendar days of the Instance's own zone.
       allow-time-local: true
+    goconst:
+      # A string that four other places repeat is a name for something (a field, a key, a kind).
+      min-len: 3
+      min-occurrences: 5
+      ignore-calls: true
+    errcheck:
+      # `_ = f()` is the way to say "ignored on purpose", so it is checked too. The functions below
+      # are the ones whose error nobody can act on; every other ignored error is handled.
+      check-blank: true
+      exclude-functions:
+        # Terminal output of the command line tools: a write to a closed terminal has no recovery.
+        - fmt.Fprint
+        - fmt.Fprintf
+        - fmt.Fprintln
+        - (*text/tabwriter.Writer).Flush
+        # The status line is sent; when the client is gone the body write fails and there is nobody to tell.
+        - (net/http.ResponseWriter).Write
+        # Closing what was only read (a response body, a row set, a zip entry) cannot lose data.
+        - (io.ReadCloser).Close
+        - (*database/sql.Rows).Close
+        # The deferred rollback of a transaction that was committed returns sql.ErrTxDone by design.
+        - (*database/sql.Tx).Rollback
+        - (*github.com/getsphericon/sphericon/ent.Tx).Rollback
+    # Complexity limits are set where the distribution of findings breaks: the functions above them
+    # (a wiring list, an invariant table, a document walker) are the ones that were split or
+    # tabulated, not a count of how many `if` a function may hold.
+    cyclop:
+      max-complexity: 30
+      skip-tests: true
+    gocognit:
+      min-complexity: 40
+    funlen:
+      lines: 150
+      statements: 100
+    nestif:
+      min-complexity: 8
+    maintidx:
+      under: 20
     dogsled:
       max-blank-identifiers: 2
     gosec:
@@ -258,6 +377,22 @@ linters:
         linters:
           - gosec
         text: G404
+      # nilerr: each file named here has a function that turns an error into the answer its result
+      # type carries, and nil is what that answer is: the typed 4xx response of an ogen handler for
+      # what the client sent (a cursor, the variables of a message, a link token, the state of a
+      # sign-in flow), an MCP tool result for arguments that are not JSON, an outbound.Result outcome,
+      # a rules.Result, an ignored delivery outcome, a Condition that no longer compiles. Each was read:
+      # the handlers whose error was not the client's (the Automation switch, the link tokens whose
+      # lookup failed) return it now. A new handler file is checked.
+      - path: ^(internal/api/external/(audit|emails)\.go|internal/api/site/(audit|auth_recovery|auth_signin|auth_signin_notme|consent)\.go|internal/mcpserver/mcpserver\.go|internal/outbound/outbound\.go|internal/jobs/rules_http\.go|internal/rules/rules\.go|internal/webhooks/delivery\.go)$
+        linters:
+          - nilerr
+      # Test data is spelled out in each test: a name or an address that five tests share is the
+      # scenario's own data (the fixtures hold the rest), and a constant for it only sends the reader
+      # to another file.
+      - path: _test\.go$
+        linters:
+          - goconst
       # `// goverter:map Field Field | helper` repeats the field name by design: source, then target.
       - source: goverter:map
         linters:
