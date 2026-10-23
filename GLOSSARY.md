@@ -34,6 +34,13 @@ Contacts are harmless. There is no separate tracking "profile": this entity is b
 behavioral identity and the marketing audience member.
 _Avoid_: Profile, tracking profile, lead, subscriber, user, recipient
 
+**Contact source**:
+How a Contact first came to exist in the Workspace: created by hand, imported, through the external
+API, identified by the tracker or through an Integration's ingest hook. Set once at creation and
+never changed, even when the same person later arrives through another door. A Contact that
+predates the field has no source. Not a **Sending source** (the unsubscribe scope).
+_Avoid_: Origin, channel, acquisition source
+
 **Custom field**:
 A workspace-defined, typed, named attribute on the Contact, beyond the core fields
 (email / phone / subject_id / name). The one attribute concept — there is no separate,
