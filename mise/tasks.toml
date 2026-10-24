@@ -452,6 +452,15 @@ go run ./cmd/prcheck disclosure
 git diff --unified=0 --no-color "$base...HEAD" | go run ./cmd/prcheck markers
 '''
 
+["check:pr-title"]
+description = "The pull request title parses as a Conventional Commit under commitlint.config.ts: the repository squashes with it and release-please reads it (PR_TITLE comes from the pull request)"
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+: "${PR_TITLE?set PR_TITLE to the pull request title}"
+printf '%s' "$PR_TITLE" | pnpm exec commitlint
+'''
+
 ["check:deps"]
 description = "Unused files, exports and dependencies (knip.ts)"
 run = "mise/scripts/heavy.sh pnpm exec knip"

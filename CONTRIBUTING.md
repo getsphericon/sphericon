@@ -25,8 +25,9 @@ Project Owner.
 
 ## Pull requests
 
-- Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/)
-  (`feat:`, `fix:`, `docs:`, ...); release notes are generated from them.
+- Commit messages and the pull request title follow
+  [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `docs:`, ...);
+  release notes are generated from them, and the `pr-title` check fails a title that does not parse.
 - Run `mise run check` and `mise run test` before you push.
 - Generated files are never edited by hand; run `mise run generate` instead.
 - A change that is more than a typo or a doc line starts from an issue a maintainer has accepted

@@ -1,8 +1,8 @@
 name: Pull request body
 
-# What a pull request body must say is checked when the body is edited, not only when code is pushed:
-# ci.yml runs on the default events, which skip an edit of the body. Nothing here has a secret to
-# lose, so it runs on pull_request from forks too.
+# What a pull request title and body must say is checked when they are edited, not only when code is
+# pushed: ci.yml runs on the default events, which skip an edit. Nothing here has a secret to lose,
+# so it runs on pull_request from forks too.
 on:
   pull_request:
     types: [opened, edited, synchronize, reopened]
@@ -45,3 +45,28 @@ jobs:
           PR_BODY: ${{ github.event.pull_request.body }}
           BASE: ${{ github.event.pull_request.base.sha }}
         run: mise run check:pr-body
+
+  # The repository squashes a pull request with its title, and release-please reads that title, so it
+  # must parse as a Conventional Commit: the rules every commit is held to (commitlint.config.ts).
+  pr-title:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup mise
+        uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # The title is attacker-controlled text: it reaches commitlint through the environment, never
+      # through the script.
+      - name: Check the pull request title
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: mise run check:pr-title
