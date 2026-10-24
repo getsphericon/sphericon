@@ -13,11 +13,11 @@ import (
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/emailrender"
-	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
+	"github.com/getsphericon/sphericon/internal/validation"
 	"github.com/samber/lo"
 )
 
@@ -107,12 +107,12 @@ func (h *Handlers) SiteBroadcastsCreate(ctx context.Context, req *siteapi.SiteCr
 		IntegrationID: integrationID,
 	})
 	if errors.Is(err, broadcasts.ErrBlankName) {
-		v := siteapi.SiteBroadcastsCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, "name must not be empty"))
+		v := siteapi.SiteBroadcastsCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
 		return &v, nil
 	}
 	if errors.Is(err, broadcasts.ErrBodyAndDoc) || errors.Is(err, emailrender.ErrInvalidContent) ||
 		errors.Is(err, broadcasts.ErrSegmentNotFound) || errors.Is(err, broadcasts.ErrIntegrationNotFound) {
-		v := siteapi.SiteBroadcastsCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
+		v := siteapi.SiteBroadcastsCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
 		return &v, nil
 	}
 	if err != nil {
@@ -141,7 +141,7 @@ func (h *Handlers) SiteBroadcastsGet(ctx context.Context, params siteapi.SiteBro
 	id := int64(params.ID)
 	b, err := h.broadcasts.Get(ctx, ws, id)
 	if errors.Is(err, broadcasts.ErrNotFound) {
-		v := siteapi.SiteBroadcastsGetNotFound(problem(http.StatusNotFound, "broadcast not found"))
+		v := siteapi.SiteBroadcastsGetNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &v, nil
 	}
 	if err != nil {
@@ -187,17 +187,17 @@ func (h *Handlers) SiteBroadcastsUpdate(ctx context.Context, req *siteapi.SiteUp
 	})
 	switch {
 	case errors.Is(err, broadcasts.ErrNotFound):
-		v := siteapi.SiteBroadcastsUpdateNotFound(problem(http.StatusNotFound, "broadcast not found"))
+		v := siteapi.SiteBroadcastsUpdateNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &v, nil
 	case errors.Is(err, broadcasts.ErrNotDraft):
-		v := siteapi.SiteBroadcastsUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, "only draft broadcasts can be edited"))
+		v := siteapi.SiteBroadcastsUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
 		return &v, nil
 	case errors.Is(err, broadcasts.ErrBlankName):
-		v := siteapi.SiteBroadcastsUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, "name must not be empty"))
+		v := siteapi.SiteBroadcastsUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
 		return &v, nil
 	case errors.Is(err, broadcasts.ErrBodyAndDoc), errors.Is(err, emailrender.ErrInvalidContent),
 		errors.Is(err, broadcasts.ErrSegmentNotFound), errors.Is(err, broadcasts.ErrIntegrationNotFound):
-		v := siteapi.SiteBroadcastsUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
+		v := siteapi.SiteBroadcastsUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
 		return &v, nil
 	case err != nil:
 		return nil, err
@@ -226,10 +226,10 @@ func (h *Handlers) SiteBroadcastsDelete(ctx context.Context, params siteapi.Site
 	err = h.broadcasts.DeleteDraft(ctx, ws, id)
 	switch {
 	case errors.Is(err, broadcasts.ErrNotFound):
-		v := siteapi.SiteBroadcastsDeleteNotFound(problem(http.StatusNotFound, "broadcast not found"))
+		v := siteapi.SiteBroadcastsDeleteNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &v, nil
 	case errors.Is(err, broadcasts.ErrNotDraft):
-		v := siteapi.SiteBroadcastsDeleteUnprocessableEntity(problem(http.StatusUnprocessableEntity, "only a draft broadcast can be deleted; archive a sent one"))
+		v := siteapi.SiteBroadcastsDeleteUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
 		return &v, nil
 	case err != nil:
 		return nil, err
@@ -253,10 +253,10 @@ func (h *Handlers) SiteBroadcastsArchive(ctx context.Context, params siteapi.Sit
 	err = h.broadcasts.Archive(ctx, ws, id)
 	switch {
 	case errors.Is(err, broadcasts.ErrNotFound):
-		v := siteapi.SiteBroadcastsArchiveNotFound(problem(http.StatusNotFound, "broadcast not found"))
+		v := siteapi.SiteBroadcastsArchiveNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &v, nil
 	case errors.Is(err, broadcasts.ErrNotArchivable):
-		v := siteapi.SiteBroadcastsArchiveUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
+		v := siteapi.SiteBroadcastsArchiveUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
 		return &v, nil
 	case err != nil:
 		return nil, err
@@ -286,7 +286,7 @@ func (h *Handlers) SiteBroadcastsUnarchive(ctx context.Context, params siteapi.S
 	id := int64(params.ID)
 	err = h.broadcasts.Unarchive(ctx, ws, id)
 	if errors.Is(err, broadcasts.ErrNotFound) {
-		v := siteapi.SiteBroadcastsUnarchiveNotFound(problem(http.StatusNotFound, "broadcast not found"))
+		v := siteapi.SiteBroadcastsUnarchiveNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &v, nil
 	}
 	if err != nil {
@@ -320,10 +320,10 @@ func (h *Handlers) SiteBroadcastsSend(ctx context.Context, params siteapi.SiteBr
 	b, err := h.broadcasts.Send(ctx, ws, id)
 	switch {
 	case errors.Is(err, broadcasts.ErrNotFound):
-		v := siteapi.SiteBroadcastsSendNotFound(problem(http.StatusNotFound, "broadcast not found"))
+		v := siteapi.SiteBroadcastsSendNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &v, nil
 	case errors.Is(err, broadcasts.ErrNotSendable):
-		v := siteapi.SiteBroadcastsSendUnprocessableEntity(problem(http.StatusUnprocessableEntity, i18n.T("errors.broadcast_already_sending", nil)))
+		v := siteapi.SiteBroadcastsSendUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
 		return &v, nil
 	case err != nil:
 		return nil, err
@@ -351,10 +351,10 @@ func (h *Handlers) SiteBroadcastsSchedule(ctx context.Context, req *siteapi.Site
 	b, err := h.broadcasts.Schedule(ctx, ws, id, time.Time(req.ScheduledAt))
 	switch {
 	case errors.Is(err, broadcasts.ErrNotFound):
-		v := siteapi.SiteBroadcastsScheduleNotFound(problem(http.StatusNotFound, "broadcast not found"))
+		v := siteapi.SiteBroadcastsScheduleNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &v, nil
 	case errors.Is(err, broadcasts.ErrNotSendable):
-		v := siteapi.SiteBroadcastsScheduleUnprocessableEntity(problem(http.StatusUnprocessableEntity, i18n.T("errors.broadcast_already_sending", nil)))
+		v := siteapi.SiteBroadcastsScheduleUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
 		return &v, nil
 	case err != nil:
 		return nil, err
@@ -382,7 +382,7 @@ func (h *Handlers) SiteBroadcastsTestSend(ctx context.Context, req *siteapi.Site
 	id := int64(params.ID)
 	b, err := h.broadcasts.Get(ctx, ws, id)
 	if errors.Is(err, broadcasts.ErrNotFound) {
-		v := siteapi.SiteBroadcastsTestSendNotFound(problem(http.StatusNotFound, "broadcast not found"))
+		v := siteapi.SiteBroadcastsTestSendNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &v, nil
 	}
 	if err != nil {

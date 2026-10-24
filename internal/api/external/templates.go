@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/templates"
+	"github.com/getsphericon/sphericon/internal/validation"
 	"github.com/samber/lo"
 )
 
@@ -51,11 +52,11 @@ func (h *Handlers) TemplatesCreate(ctx context.Context, req *externalapi.CreateT
 		Doc:     convert.DocJSON(req.Doc.Value, req.Doc.Set),
 	})
 	if errors.Is(err, templates.ErrBlankName) {
-		res := externalapi.TemplatesCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, "name must not be empty"))
+		res := externalapi.TemplatesCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
 		return &res, nil
 	}
 	if errors.Is(err, templates.ErrBodyAndDoc) || errors.Is(err, emailrender.ErrInvalidContent) {
-		res := externalapi.TemplatesCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
+		res := externalapi.TemplatesCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
 		return &res, nil
 	}
 	if err != nil {
@@ -76,7 +77,7 @@ func (h *Handlers) TemplatesGet(ctx context.Context, params externalapi.Template
 	scoped := auth.TokenScoped(ctx)
 	tpl, err := h.templates.Get(ctx, scoped, id)
 	if errors.Is(err, templates.ErrNotFound) {
-		res := externalapi.TemplatesGetNotFound(problem(http.StatusNotFound, "template not found"))
+		res := externalapi.TemplatesGetNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil
 	}
 	if err != nil {
@@ -102,15 +103,15 @@ func (h *Handlers) TemplatesUpdate(ctx context.Context, req *externalapi.UpdateT
 		Doc:     convert.DocJSON(req.Doc.Value, req.Doc.Set),
 	})
 	if errors.Is(err, templates.ErrNotFound) {
-		res := externalapi.TemplatesUpdateNotFound(problem(http.StatusNotFound, "template not found"))
+		res := externalapi.TemplatesUpdateNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil
 	}
 	if errors.Is(err, templates.ErrBlankName) {
-		res := externalapi.TemplatesUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, "name must not be empty"))
+		res := externalapi.TemplatesUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
 		return &res, nil
 	}
 	if errors.Is(err, templates.ErrBodyAndDoc) || errors.Is(err, emailrender.ErrInvalidContent) {
-		res := externalapi.TemplatesUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
+		res := externalapi.TemplatesUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
 		return &res, nil
 	}
 	if err != nil {
@@ -131,7 +132,7 @@ func (h *Handlers) TemplatesDelete(ctx context.Context, params externalapi.Templ
 	scoped := auth.TokenScoped(ctx)
 	err := h.templates.Delete(ctx, scoped, id)
 	if errors.Is(err, templates.ErrNotFound) {
-		res := externalapi.TemplatesDeleteNotFound(problem(http.StatusNotFound, "template not found"))
+		res := externalapi.TemplatesDeleteNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil
 	}
 	if err != nil {

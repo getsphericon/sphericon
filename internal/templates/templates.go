@@ -13,17 +13,18 @@ import (
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // Domain errors. Callers match with errors.Is.
 var (
 	// ErrNotFound: no such Template in this Workspace.
-	ErrNotFound = errors.New("templates: template not found")
+	ErrNotFound = validation.Refuse("templates: template not found", "errors.template_not_found")
 	// ErrBlankName: the Template name is blank.
-	ErrBlankName = errors.New("templates: name must not be empty")
+	ErrBlankName = validation.Refuse("templates: name must not be empty", "errors.name_empty")
 	// ErrBodyAndDoc: a write carries both a body and a document. A client writes one of them: the
 	// document (the server builds the body from it) or the body (which clears the document).
-	ErrBodyAndDoc = errors.New("templates: write a body or a doc, not both")
+	ErrBodyAndDoc = validation.Refuse("templates: write a body or a doc, not both", "errors.body_and_doc")
 )
 
 // Module holds no state: every call receives the Workspace-scoped client (ADR 0017).

@@ -16,14 +16,13 @@ import (
 	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // Broadcast authoring over /api (ADR 0016): drafts, audience, test send and report.
 // Nothing here sends to the audience; scheduling and sending are separate,
 // send-class operations. The state rules live in internal/broadcasts; these
 // handlers check the scope, call it and map its errors.
-
-const detailNotDraft = "only draft broadcasts can be changed"
 
 func (h *Handlers) BroadcastsList(ctx context.Context, params externalapi.BroadcastsListParams) (externalapi.BroadcastsListRes, error) {
 	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeBroadcastsRead) {
@@ -57,11 +56,11 @@ func (h *Handlers) BroadcastsCreate(ctx context.Context, req *externalapi.Create
 		Doc: convert.DocJSON(req.Doc.Value, req.Doc.Set),
 	})
 	if errors.Is(err, broadcasts.ErrBlankName) {
-		res := externalapi.BroadcastsCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, "name must not be empty"))
+		res := externalapi.BroadcastsCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
 		return &res, nil
 	}
 	if errors.Is(err, broadcasts.ErrBodyAndDoc) || errors.Is(err, emailrender.ErrInvalidContent) {
-		res := externalapi.BroadcastsCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
+		res := externalapi.BroadcastsCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
 		return &res, nil
 	}
 	if err != nil {
@@ -79,7 +78,7 @@ func (h *Handlers) BroadcastsGet(ctx context.Context, params externalapi.Broadca
 	id := int64(params.ID)
 	b, err := h.broadcasts.Get(ctx, auth.TokenScoped(ctx), id)
 	if errors.Is(err, broadcasts.ErrNotFound) {
-		res := externalapi.BroadcastsGetNotFound(problem(http.StatusNotFound, "broadcast not found"))
+		res := externalapi.BroadcastsGetNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil
 	}
 	if err != nil {
@@ -103,16 +102,16 @@ func (h *Handlers) BroadcastsUpdate(ctx context.Context, req *externalapi.Update
 		})
 	switch {
 	case errors.Is(err, broadcasts.ErrNotFound):
-		res := externalapi.BroadcastsUpdateNotFound(problem(http.StatusNotFound, "broadcast not found"))
+		res := externalapi.BroadcastsUpdateNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil
 	case errors.Is(err, broadcasts.ErrNotDraft):
-		res := externalapi.BroadcastsUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, detailNotDraft))
+		res := externalapi.BroadcastsUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
 		return &res, nil
 	case errors.Is(err, broadcasts.ErrBlankName):
-		res := externalapi.BroadcastsUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, "name must not be empty"))
+		res := externalapi.BroadcastsUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
 		return &res, nil
 	case errors.Is(err, broadcasts.ErrBodyAndDoc), errors.Is(err, emailrender.ErrInvalidContent):
-		res := externalapi.BroadcastsUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
+		res := externalapi.BroadcastsUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
 		return &res, nil
 	case err != nil:
 		return nil, err
@@ -130,10 +129,10 @@ func (h *Handlers) BroadcastsDelete(ctx context.Context, params externalapi.Broa
 	err := h.broadcasts.DeleteDraft(ctx, auth.TokenScoped(ctx), id)
 	switch {
 	case errors.Is(err, broadcasts.ErrNotFound):
-		res := externalapi.BroadcastsDeleteNotFound(problem(http.StatusNotFound, "broadcast not found"))
+		res := externalapi.BroadcastsDeleteNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil
 	case errors.Is(err, broadcasts.ErrNotDraft):
-		res := externalapi.BroadcastsDeleteUnprocessableEntity(problem(http.StatusUnprocessableEntity, detailNotDraft))
+		res := externalapi.BroadcastsDeleteUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
 		return &res, nil
 	case err != nil:
 		return nil, err
@@ -152,10 +151,10 @@ func (h *Handlers) BroadcastsArchive(ctx context.Context, params externalapi.Bro
 	err := h.broadcasts.Archive(ctx, ws, id)
 	switch {
 	case errors.Is(err, broadcasts.ErrNotFound):
-		res := externalapi.BroadcastsArchiveNotFound(problem(http.StatusNotFound, "broadcast not found"))
+		res := externalapi.BroadcastsArchiveNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil
 	case errors.Is(err, broadcasts.ErrNotArchivable):
-		res := externalapi.BroadcastsArchiveUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
+		res := externalapi.BroadcastsArchiveUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
 		return &res, nil
 	case err != nil:
 		return nil, err
@@ -178,7 +177,7 @@ func (h *Handlers) BroadcastsUnarchive(ctx context.Context, params externalapi.B
 	id := int64(params.ID)
 	err := h.broadcasts.Unarchive(ctx, ws, id)
 	if errors.Is(err, broadcasts.ErrNotFound) {
-		res := externalapi.BroadcastsUnarchiveNotFound(problem(http.StatusNotFound, "broadcast not found"))
+		res := externalapi.BroadcastsUnarchiveNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil
 	}
 	if err != nil {
@@ -206,13 +205,13 @@ func (h *Handlers) BroadcastsSetAudience(ctx context.Context, req *externalapi.S
 	b, err := h.broadcasts.SetAudience(ctx, auth.TokenScoped(ctx), id, segmentID)
 	switch {
 	case errors.Is(err, broadcasts.ErrNotFound):
-		res := externalapi.BroadcastsSetAudienceNotFound(problem(http.StatusNotFound, "broadcast not found"))
+		res := externalapi.BroadcastsSetAudienceNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil
 	case errors.Is(err, broadcasts.ErrSegmentNotFound):
-		res := externalapi.BroadcastsSetAudienceUnprocessableEntity(problem(http.StatusUnprocessableEntity, "segment not found"))
+		res := externalapi.BroadcastsSetAudienceUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
 		return &res, nil
 	case errors.Is(err, broadcasts.ErrNotDraft):
-		res := externalapi.BroadcastsSetAudienceUnprocessableEntity(problem(http.StatusUnprocessableEntity, detailNotDraft))
+		res := externalapi.BroadcastsSetAudienceUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
 		return &res, nil
 	case err != nil:
 		return nil, err
@@ -233,10 +232,10 @@ func (h *Handlers) BroadcastsSchedule(ctx context.Context, req *externalapi.Sche
 	b, err := h.broadcasts.Schedule(ctx, auth.TokenScoped(ctx), id, time.Time(req.ScheduledAt))
 	switch {
 	case errors.Is(err, broadcasts.ErrNotFound):
-		res := externalapi.BroadcastsScheduleNotFound(problem(http.StatusNotFound, "broadcast not found"))
+		res := externalapi.BroadcastsScheduleNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil
 	case errors.Is(err, broadcasts.ErrNotSendable):
-		res := externalapi.BroadcastsScheduleUnprocessableEntity(problem(http.StatusUnprocessableEntity, "only draft or scheduled broadcasts can be scheduled"))
+		res := externalapi.BroadcastsScheduleUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
 		return &res, nil
 	case err != nil:
 		return nil, err
@@ -254,10 +253,10 @@ func (h *Handlers) BroadcastsUnschedule(ctx context.Context, params externalapi.
 	b, err := h.broadcasts.Unschedule(ctx, auth.TokenScoped(ctx), id)
 	switch {
 	case errors.Is(err, broadcasts.ErrNotFound):
-		res := externalapi.BroadcastsUnscheduleNotFound(problem(http.StatusNotFound, "broadcast not found"))
+		res := externalapi.BroadcastsUnscheduleNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil
 	case errors.Is(err, broadcasts.ErrNotScheduled):
-		res := externalapi.BroadcastsUnscheduleUnprocessableEntity(problem(http.StatusUnprocessableEntity, "only scheduled broadcasts can be unscheduled"))
+		res := externalapi.BroadcastsUnscheduleUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
 		return &res, nil
 	case err != nil:
 		return nil, err
@@ -277,7 +276,7 @@ func (h *Handlers) BroadcastsTestSend(ctx context.Context, req *externalapi.Test
 	ws := auth.TokenScoped(ctx)
 	b, err := h.broadcasts.Get(ctx, ws, id)
 	if errors.Is(err, broadcasts.ErrNotFound) {
-		res := externalapi.BroadcastsTestSendNotFound(problem(http.StatusNotFound, "broadcast not found"))
+		res := externalapi.BroadcastsTestSendNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil
 	}
 	if err != nil {
@@ -299,7 +298,7 @@ func (h *Handlers) BroadcastsReport(ctx context.Context, params externalapi.Broa
 	id := int64(params.ID)
 	r, err := h.broadcasts.Report(ctx, auth.TokenScoped(ctx), id)
 	if errors.Is(err, broadcasts.ErrNotFound) {
-		res := externalapi.BroadcastsReportNotFound(problem(http.StatusNotFound, "broadcast not found"))
+		res := externalapi.BroadcastsReportNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil
 	}
 	if err != nil {

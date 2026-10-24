@@ -30,18 +30,19 @@ import (
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 var (
 	// ErrNotFound: no such Broadcast in this Workspace.
-	ErrNotFound = errors.New("broadcasts: broadcast not found")
+	ErrNotFound = validation.Refuse("broadcasts: broadcast not found", "errors.broadcast_not_found")
 	// ErrNotSendable: the Broadcast is past draft/scheduled (sending, sent, failed).
-	ErrNotSendable = errors.New("broadcasts: broadcast is not a draft or scheduled")
+	ErrNotSendable = validation.Refuse("broadcasts: broadcast is not a draft or scheduled", "errors.broadcast_not_sendable")
 	// ErrNotArchivable: only a sent or failed Broadcast is archived; a draft is deleted and a
 	// scheduled or sending one is still work in flight.
-	ErrNotArchivable = errors.New("broadcasts: only a sent or failed broadcast can be archived")
+	ErrNotArchivable = validation.Refuse("broadcasts: only a sent or failed broadcast can be archived", "errors.broadcast_not_archivable")
 	// ErrNotScheduled: the Broadcast is not scheduled, so there is no schedule to clear.
-	ErrNotScheduled = errors.New("broadcasts: broadcast is not scheduled")
+	ErrNotScheduled = validation.Refuse("broadcasts: broadcast is not scheduled", "errors.broadcast_not_scheduled")
 )
 
 // Queue is the river queue of the send jobs. A single blast fans out into one job per recipient;
@@ -125,16 +126,16 @@ func (m *Module) claim(ctx context.Context, s *ent.Scoped, id int64, t trigger, 
 var (
 	// ErrNotDraft: the Broadcast is past draft (scheduled, sending, sent, failed) and
 	// can no longer be edited, re-targeted or deleted through the authoring surface.
-	ErrNotDraft = errors.New("broadcasts: broadcast is not a draft")
+	ErrNotDraft = validation.Refuse("broadcasts: broadcast is not a draft", "errors.broadcast_not_draft")
 	// ErrSegmentNotFound: the audience Segment does not exist in this Workspace.
-	ErrSegmentNotFound = errors.New("broadcasts: segment not found")
+	ErrSegmentNotFound = validation.Refuse("broadcasts: segment not found", "errors.broadcast_segment_not_found")
 	// ErrIntegrationNotFound: the Integration does not exist in this Workspace or is archived.
-	ErrIntegrationNotFound = errors.New("broadcasts: integration not found")
+	ErrIntegrationNotFound = validation.Refuse("broadcasts: integration not found", "errors.broadcast_integration_not_found")
 	// ErrBodyAndDoc: a write carries both a body and a document. A client writes one of them: the
 	// document (the server builds the body from it) or the body (which clears the document).
-	ErrBodyAndDoc = errors.New("broadcasts: write a body or a doc, not both")
+	ErrBodyAndDoc = validation.Refuse("broadcasts: write a body or a doc, not both", "errors.body_and_doc")
 	// ErrBlankName: the Broadcast name is empty or whitespace only.
-	ErrBlankName = errors.New("broadcasts: name must not be empty")
+	ErrBlankName = validation.Refuse("broadcasts: name must not be empty", "errors.name_empty")
 )
 
 // Fields are the author-editable content of a Broadcast. A nil field is "not
