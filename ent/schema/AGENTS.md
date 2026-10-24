@@ -39,7 +39,7 @@
   release-please renders only the text of that footer into CHANGELOG.md, never a footer of its own,
   and `sphericon upgrade-notes` reads the `Upgrade:` lines from its BREAKING CHANGES section; the
   repository squashes with the PR title and the commit messages).
-- The schema is plain tables: no database functions, triggers or views (`docs/standards/coding-standards.md`).
+- The schema is plain tables: no database functions, triggers or views (`CODING_STANDARDS.md`).
 - `mise run db:reset` / `db:reset-test` to rebuild local DBs. A database made before the outbox and
   river migrations (they were created at boot) needs a `db:reset`.
 - Test DB is separate (`SPHERICON_ENV=test`); tests get it from the migrations, see docs/agents/dev-environment.md.

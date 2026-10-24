@@ -359,8 +359,8 @@ Observations:
 1. **Thin root, standards/architecture/rules under `docs/` with subfolders** (recommended). Supported by Kubernetes,
    Rust, rust-analyzer, Django, Grafana, GitLab and the first-party repos (codeql, cli, gh-ost, spec-kit, github
    docs, mcp-server): the only variance is the folder name. Root: `README.md`, `CONTRIBUTING.md`, `AGENTS.md`,
-   `GLOSSARY.md`, `LICENSE`, plus conduct and security files. `docs/` (all engineering):
-   - `docs/standards/` (or `docs/contributing/`): `coding-standards.md`, `review-rules.md`
+   `GLOSSARY.md`, `CODING_STANDARDS.md` (the vendored `code-review` and `retro` skills look for it at the root, so it stays there), `LICENSE`, plus conduct and security files. `docs/` (all engineering):
+   - `docs/standards/` (or `docs/contributing/`): `review-rules.md`
    - `docs/architecture.md` (or `docs/architecture/` with the scoping rule as its own page)
    - `docs/adr/`, `docs/design/`, `docs/research/`
    - `docs/tooling/` (the current `docs/agents/`: codegen, dev environment, worktrees, issue tracker, triage labels)

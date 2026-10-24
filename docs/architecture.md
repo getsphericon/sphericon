@@ -1,7 +1,7 @@
 # Architecture
 
 The shape of the backend and the rules its code follows. Review rules are in `docs/standards/review-rules.md`,
-coding standards in `docs/standards/coding-standards.md`.
+coding standards in `CODING_STANDARDS.md`.
 
 ## Backend architecture
 

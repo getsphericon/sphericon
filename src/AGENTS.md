@@ -22,6 +22,6 @@
   **English is the only locale.** There are no `ru`/`es` (or any other) catalogs, in `locales/` or in
   `internal/i18n/locales/`: a new string gets its `en` entry and nothing else, and no Russian or other
   non-English text goes into the repo.
-- Lint is **oxlint** (all plugins, type-aware via oxlint-tsgolint; `oxlint.config.ts`) and format is **oxfmt** (`oxfmt.config.ts`; also formats Markdown/YAML/JSON). Single quotes, no semicolons, generated dirs ignored. Never disable a lint rule (`docs/standards/coding-standards.md`).
+- Lint is **oxlint** (all plugins, type-aware via oxlint-tsgolint; `oxlint.config.ts`) and format is **oxfmt** (`oxfmt.config.ts`; also formats Markdown/YAML/JSON). Single quotes, no semicolons, generated dirs ignored. Never disable a lint rule (`CODING_STANDARDS.md`).
 - Unused deps/files/exports are caught by **knip** (`knip.ts`); secrets by **gitleaks** (`.gitleaks.toml`); workflows by **jactionlint** + **zizmor**; Go vulns by **govulncheck** (`mise run check:vulns`, nightly).
   Type-check is **tsc** (TypeScript 7, the native compiler).

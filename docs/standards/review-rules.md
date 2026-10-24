@@ -1,9 +1,9 @@
 # Review rules
 
 The concepts a change is reviewed against, the ones asked for again and again in review. This file
-is the one home of every rule it lists: `docs/standards/coding-standards.md` holds how the repo does things
+is the one home of every rule it lists: `CODING_STANDARDS.md` holds how the repo does things
 (mechanics, tools, conventions) and does not restate a rule from here. A rule about a concrete type,
-package or tool (`*ent.Scoped`, `goleak`, how a name is spelled) belongs in `docs/standards/coding-standards.md`
+package or tool (`*ent.Scoped`, `goleak`, how a name is spelled) belongs in `CODING_STANDARDS.md`
 or `AGENTS.md`.
 
 ## Enforcement
@@ -12,9 +12,9 @@ or `AGENTS.md`.
   violations.
 - A rule that needs Go types is checked by an analyzer of our own; one that needs only syntax, by an
   ast-grep rule. Which rules have a check, and how to add one, is in "Project checks" of
-  `docs/standards/coding-standards.md`: this file does not list them.
+  `CODING_STANDARDS.md`: this file does not list them.
 - A rule that code cannot check is left to the reviewer, who reads this catalog through the Standards
-  axis of the `code-review` skill (`docs/standards/coding-standards.md` and `AGENTS.md` both point here). A rule with a check is still reviewed: a check finds the form, a
+  axis of the `code-review` skill (`CODING_STANDARDS.md` and `AGENTS.md` both point here). A rule with a check is still reviewed: a check finds the form, a
   reviewer finds the intent.
 - Every check's message names the rule number and says how to fix the violation.
 
