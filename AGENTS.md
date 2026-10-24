@@ -124,6 +124,8 @@ The rest of this file is for maintainers and the agents they run: how work lands
 - **Agent guidance lives in this file, not in personal agent memory.** The repo has several
   developers: a rule an agent should follow goes here (or in `docs/`), never into one person's
   memory.
+- **`mise run land -- [--skip-test] [<issue>...]` does the landing below in one go** (rebase, check, test, push,
+  ticket check); a hand-typed push of `HEAD` to `main` skips the checks it runs.
 - **Land non-trivial work from its worktree, then clean up.** A change made in a worktree reaches
   `main` with `git push origin HEAD:main` once the checks pass and the work is rebased onto a freshly fetched `origin/main` (a
   detached `HEAD`, never a branch). Then remove that worktree (`git worktree remove <path>`) right
