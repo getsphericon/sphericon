@@ -4144,6 +4144,8 @@ func (s RuleActionType) Validate() error {
 		return nil
 	case "remove_tag":
 		return nil
+	case "enroll_automation":
+		return nil
 	case "http":
 		return nil
 	default:
@@ -6633,6 +6635,8 @@ func (s UsedByKind) Validate() error {
 	case "enrollment":
 		return nil
 	case "firing":
+		return nil
+	case "message":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)

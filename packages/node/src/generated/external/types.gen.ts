@@ -2511,6 +2511,10 @@ export type RuleAction = {
    */
   tag?: string;
   /**
+   * Automation to enroll the Contact in, once ever (enroll_automation)
+   */
+  automationId?: EntityId;
+  /**
    * Action id (http actions). Assigned on save; send it back on edit so the action keeps its secrets.
    */
   id?: string;
@@ -2578,6 +2582,7 @@ export type RuleActionStatus = typeof RuleActionStatus[keyof typeof RuleActionSt
 export const RuleActionType = {
   APPLY_TAG: 'apply_tag',
   REMOVE_TAG: 'remove_tag',
+  ENROLL_AUTOMATION: 'enroll_automation',
   HTTP: 'http'
 } as const;
 
@@ -3540,7 +3545,8 @@ export type UsedBy = {
   name: string;
   /**
    * How many rows the entry stands for; absent means one. An `enrollment` entry names the
-   * Automation (id, name) and counts its Enrollments.
+   * Automation (id, name) and counts its Enrollments; a `message` entry names it and counts its
+   * sent Outbound messages.
    */
   count?: number;
 };
@@ -3555,7 +3561,8 @@ export const UsedByKind = {
   SEGMENT: 'segment',
   RULE: 'rule',
   ENROLLMENT: 'enrollment',
-  FIRING: 'firing'
+  FIRING: 'firing',
+  MESSAGE: 'message'
 } as const;
 
 /**

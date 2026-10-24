@@ -148,6 +148,22 @@ test('deleting an automation asks for confirmation first', async () => {
   await expect.element(screen.getByText('Automation deleted')).toBeInTheDocument()
 })
 
+test('an automation that sent mail is not deleted and the count of its messages is shown', async () => {
+  worker.use(
+    handleSiteAutomationsList(() => HttpResponse.json({ items: [WELCOME], totalItems: 1 })),
+    handleSiteAutomationsDelete(() =>
+      problem(409, { usedBy: [{ kind: 'message', id: '1', name: 'Welcome flow', count: 5 }] }),
+    ),
+  )
+
+  const { screen } = await renderWithRouter(<AutomationsListPage />, LIST_ROUTE)
+  await screen.getByRole('button', { name: 'More actions' }).first().click()
+  await screen.getByRole('menuitem', { name: 'Delete' }).click()
+  await screen.getByRole('dialog').getByRole('button', { name: 'Delete' }).click()
+
+  await expect.element(screen.getByText(/5 messages sent by "Welcome flow"/)).toBeInTheDocument()
+})
+
 test('the archived view lists archived automations and restores one', async () => {
   const flags: (string | null)[] = []
   const restored: string[] = []

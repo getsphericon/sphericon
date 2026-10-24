@@ -46,9 +46,11 @@ type AutomationEdges struct {
 	Runs []*AutomationRun `json:"runs,omitempty"`
 	// Versions holds the value of the versions edge.
 	Versions []*AutomationVersion `json:"versions,omitempty"`
+	// OutboundMessages holds the value of the outbound_messages edge.
+	OutboundMessages []*OutboundMessage `json:"outbound_messages,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 }
 
 // WorkspaceOrErr returns the Workspace value or an error if the edge
@@ -78,6 +80,15 @@ func (e AutomationEdges) VersionsOrErr() ([]*AutomationVersion, error) {
 		return e.Versions, nil
 	}
 	return nil, &NotLoadedError{edge: "versions"}
+}
+
+// OutboundMessagesOrErr returns the OutboundMessages value or an error if the edge
+// was not loaded in eager-loading.
+func (e AutomationEdges) OutboundMessagesOrErr() ([]*OutboundMessage, error) {
+	if e.loadedTypes[3] {
+		return e.OutboundMessages, nil
+	}
+	return nil, &NotLoadedError{edge: "outbound_messages"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -181,6 +192,11 @@ func (_m *Automation) QueryRuns() *AutomationRunQuery {
 // QueryVersions queries the "versions" edge of the Automation entity.
 func (_m *Automation) QueryVersions() *AutomationVersionQuery {
 	return NewAutomationClient(_m.config).QueryVersions(_m)
+}
+
+// QueryOutboundMessages queries the "outbound_messages" edge of the Automation entity.
+func (_m *Automation) QueryOutboundMessages() *OutboundMessageQuery {
+	return NewAutomationClient(_m.config).QueryOutboundMessages(_m)
 }
 
 // Update returns a builder for updating this Automation.

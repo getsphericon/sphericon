@@ -65,6 +65,23 @@ func TestExternalAutomationsArchiveAndRestore(t *testing.T) {
 	assert.Contains(t, listedAutomationIDs(t, c, false), id)
 }
 
+// An Automation with no Enrollment that has sent mail is history too: the Outbound messages are
+// facts that stay, so the delete answers 409 naming them, not a 500 from the foreign key.
+func TestExternalAutomationsDeleteRefusesOneThatSentMail(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.ExternalScoped(t, "automations:write", "automations:read")
+	ctx := context.Background()
+
+	out, err := c.AutomationsDelete(ctx, externalapi.AutomationsDeleteParams{ID: entityIDString(fixtures.AutomationOnOpenID)})
+	require.NoError(t, err)
+	refused, ok := out.(*externalapi.InUseProblemDetails)
+	require.Truef(t, ok, "got %T", out)
+	require.Len(t, refused.UsedBy, 1)
+	assert.Equal(t, externalapi.UsedByKindMessage, refused.UsedBy[0].Kind)
+	assert.Positive(t, refused.UsedBy[0].Count.Or(0))
+	assert.Contains(t, listedAutomationIDs(t, c, false), entityIDString(fixtures.AutomationOnOpenID))
+}
+
 // Contact erasure reaches the Enrollments of an archived Automation.
 func TestExternalContactsEraseRemovesEnrollmentsOfAnArchivedAutomation(t *testing.T) {
 	env := testhelper.Setup(t)

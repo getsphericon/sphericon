@@ -35,6 +35,8 @@ const (
 	EdgeRuns = "runs"
 	// EdgeVersions holds the string denoting the versions edge name in mutations.
 	EdgeVersions = "versions"
+	// EdgeOutboundMessages holds the string denoting the outbound_messages edge name in mutations.
+	EdgeOutboundMessages = "outbound_messages"
 	// Table holds the table name of the automation in the database.
 	Table = "automations"
 	// WorkspaceTable is the table that holds the workspace relation/edge.
@@ -58,6 +60,13 @@ const (
 	VersionsInverseTable = "automation_versions"
 	// VersionsColumn is the table column denoting the versions relation/edge.
 	VersionsColumn = "automation_id"
+	// OutboundMessagesTable is the table that holds the outbound_messages relation/edge.
+	OutboundMessagesTable = "outbound_messages"
+	// OutboundMessagesInverseTable is the table name for the OutboundMessage entity.
+	// It exists in this package in order to avoid circular dependency with the "outboundmessage" package.
+	OutboundMessagesInverseTable = "outbound_messages"
+	// OutboundMessagesColumn is the table column denoting the outbound_messages relation/edge.
+	OutboundMessagesColumn = "automation_id"
 )
 
 // Columns holds all SQL columns for automation fields.
@@ -198,6 +207,20 @@ func ByVersions(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newVersionsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByOutboundMessagesCount orders the results by outbound_messages count.
+func ByOutboundMessagesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newOutboundMessagesStep(), opts...)
+	}
+}
+
+// ByOutboundMessages orders the results by outbound_messages terms.
+func ByOutboundMessages(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newOutboundMessagesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newWorkspaceStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -217,5 +240,12 @@ func newVersionsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(VersionsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, VersionsTable, VersionsColumn),
+	)
+}
+func newOutboundMessagesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(OutboundMessagesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, true, OutboundMessagesTable, OutboundMessagesColumn),
 	)
 }

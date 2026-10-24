@@ -55,6 +55,11 @@ func (Automation) Edges() []ent.Edge {
 		// current steps. Purging an Automation purges its versions with it.
 		edge.To("versions", AutomationVersion.Type).
 			Annotations(entsql.OnDelete(entsql.Cascade)),
+		// The mail the Automation sent: facts that outlive their Enrollments (Contact erasure
+		// removes those), so the row's key is RESTRICT and a purge needs none left. Declared for
+		// the predicate (HasOutboundMessages); the key stays on OutboundMessage.
+		edge.From("outbound_messages", OutboundMessage.Type).
+			Ref("automation"),
 	}
 }
 

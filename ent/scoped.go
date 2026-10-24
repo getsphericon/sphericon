@@ -2308,6 +2308,18 @@ func (x *AutomationScopedCreate) AddVersions(v ...*AutomationVersion) *Automatio
 	return x
 }
 
+// AddOutboundMessageIDs adds the "outbound_messages" edge to the OutboundMessage entity by IDs.
+func (x *AutomationScopedCreate) AddOutboundMessageIDs(ids ...int64) *AutomationScopedCreate {
+	x.b.AddOutboundMessageIDs(ids...)
+	return x
+}
+
+// AddOutboundMessages adds the "outbound_messages" edges to the OutboundMessage entity.
+func (x *AutomationScopedCreate) AddOutboundMessages(v ...*OutboundMessage) *AutomationScopedCreate {
+	x.b.AddOutboundMessages(v...)
+	return x
+}
+
 func (x *AutomationScopedCreate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -2316,6 +2328,9 @@ func (x *AutomationScopedCreate) check(ctx context.Context) error {
 	}
 	if err := x.s.verifyAutomationVersion(ctx, m.VersionsIDs()); err != nil {
 		return fmt.Errorf("versions: %w", err)
+	}
+	if err := x.s.verifyOutboundMessage(ctx, m.OutboundMessagesIDs()); err != nil {
+		return fmt.Errorf("outbound_messages: %w", err)
 	}
 	return nil
 }
@@ -2775,6 +2790,36 @@ func (x *AutomationScopedUpdateOne) RemoveVersions(v ...*AutomationVersion) *Aut
 	return x
 }
 
+// AddOutboundMessageIDs adds the "outbound_messages" edge to the OutboundMessage entity by IDs.
+func (x *AutomationScopedUpdateOne) AddOutboundMessageIDs(ids ...int64) *AutomationScopedUpdateOne {
+	x.b.AddOutboundMessageIDs(ids...)
+	return x
+}
+
+// AddOutboundMessages adds the "outbound_messages" edges to the OutboundMessage entity.
+func (x *AutomationScopedUpdateOne) AddOutboundMessages(v ...*OutboundMessage) *AutomationScopedUpdateOne {
+	x.b.AddOutboundMessages(v...)
+	return x
+}
+
+// ClearOutboundMessages clears the "outbound_messages" edges to the OutboundMessage entity.
+func (x *AutomationScopedUpdateOne) ClearOutboundMessages() *AutomationScopedUpdateOne {
+	x.b.ClearOutboundMessages()
+	return x
+}
+
+// RemoveOutboundMessageIDs removes the "outbound_messages" edge to OutboundMessage entities by IDs.
+func (x *AutomationScopedUpdateOne) RemoveOutboundMessageIDs(ids ...int64) *AutomationScopedUpdateOne {
+	x.b.RemoveOutboundMessageIDs(ids...)
+	return x
+}
+
+// RemoveOutboundMessages removes "outbound_messages" edges to OutboundMessage entities.
+func (x *AutomationScopedUpdateOne) RemoveOutboundMessages(v ...*OutboundMessage) *AutomationScopedUpdateOne {
+	x.b.RemoveOutboundMessages(v...)
+	return x
+}
+
 func (x *AutomationScopedUpdateOne) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -2783,6 +2828,9 @@ func (x *AutomationScopedUpdateOne) check(ctx context.Context) error {
 	}
 	if err := x.s.verifyAutomationVersion(ctx, m.VersionsIDs()); err != nil {
 		return fmt.Errorf("versions: %w", err)
+	}
+	if err := x.s.verifyOutboundMessage(ctx, m.OutboundMessagesIDs()); err != nil {
+		return fmt.Errorf("outbound_messages: %w", err)
 	}
 	return nil
 }
@@ -2973,6 +3021,36 @@ func (x *AutomationScopedUpdate) RemoveVersions(v ...*AutomationVersion) *Automa
 	return x
 }
 
+// AddOutboundMessageIDs adds the "outbound_messages" edge to the OutboundMessage entity by IDs.
+func (x *AutomationScopedUpdate) AddOutboundMessageIDs(ids ...int64) *AutomationScopedUpdate {
+	x.b.AddOutboundMessageIDs(ids...)
+	return x
+}
+
+// AddOutboundMessages adds the "outbound_messages" edges to the OutboundMessage entity.
+func (x *AutomationScopedUpdate) AddOutboundMessages(v ...*OutboundMessage) *AutomationScopedUpdate {
+	x.b.AddOutboundMessages(v...)
+	return x
+}
+
+// ClearOutboundMessages clears the "outbound_messages" edges to the OutboundMessage entity.
+func (x *AutomationScopedUpdate) ClearOutboundMessages() *AutomationScopedUpdate {
+	x.b.ClearOutboundMessages()
+	return x
+}
+
+// RemoveOutboundMessageIDs removes the "outbound_messages" edge to OutboundMessage entities by IDs.
+func (x *AutomationScopedUpdate) RemoveOutboundMessageIDs(ids ...int64) *AutomationScopedUpdate {
+	x.b.RemoveOutboundMessageIDs(ids...)
+	return x
+}
+
+// RemoveOutboundMessages removes "outbound_messages" edges to OutboundMessage entities.
+func (x *AutomationScopedUpdate) RemoveOutboundMessages(v ...*OutboundMessage) *AutomationScopedUpdate {
+	x.b.RemoveOutboundMessages(v...)
+	return x
+}
+
 func (x *AutomationScopedUpdate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -2981,6 +3059,9 @@ func (x *AutomationScopedUpdate) check(ctx context.Context) error {
 	}
 	if err := x.s.verifyAutomationVersion(ctx, m.VersionsIDs()); err != nil {
 		return fmt.Errorf("versions: %w", err)
+	}
+	if err := x.s.verifyOutboundMessage(ctx, m.OutboundMessagesIDs()); err != nil {
+		return fmt.Errorf("outbound_messages: %w", err)
 	}
 	return nil
 }

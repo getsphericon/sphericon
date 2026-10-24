@@ -152,8 +152,9 @@ model AutomationsListFilter {
 }
 
 /**
- * Delete removes an automation that has no enrollments for good; one with enrollments is
- * history and is archived instead (ADR 0049), so a delete of it is a 422.
+ * Delete removes an automation that has no enrollments and has sent nothing for good; one with
+ * either is history and is archived instead (ADR 0049), so a delete of it is a 409 whose `usedBy`
+ * carries their counts.
  */
 @tag("Automations")
 interface Automations

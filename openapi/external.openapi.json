@@ -15204,6 +15204,14 @@
             "type": "string",
             "description": "Tag name to apply to or remove from the Contact (apply_tag and remove_tag)"
           },
+          "automationId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Automation to enroll the Contact in, once ever (enroll_automation)"
+          },
           "id": {
             "type": "string",
             "description": "Action id (http actions). Assigned on save; send it back on edit so the action keeps its secrets."
@@ -15272,7 +15280,7 @@
       },
       "RuleActionType": {
         "type": "string",
-        "enum": ["apply_tag", "remove_tag", "http"],
+        "enum": ["apply_tag", "remove_tag", "enroll_automation", "http"],
         "description": "Kind of Rule action"
       },
       "RuleDryRunAction": {
@@ -16624,14 +16632,14 @@
           "count": {
             "type": "integer",
             "format": "int32",
-            "description": "How many rows the entry stands for; absent means one. An `enrollment` entry names the\nAutomation (id, name) and counts its Enrollments."
+            "description": "How many rows the entry stands for; absent means one. An `enrollment` entry names the\nAutomation (id, name) and counts its Enrollments; a `message` entry names it and counts its\nsent Outbound messages."
           }
         },
         "description": "A row that uses the one a removal was refused for: what a client shows to say what to\nchange first"
       },
       "UsedByKind": {
         "type": "string",
-        "enum": ["broadcast", "automation", "segment", "rule", "enrollment", "firing"],
+        "enum": ["broadcast", "automation", "segment", "rule", "enrollment", "firing", "message"],
         "description": "What kind of row a refused removal names as a user of the row (ADR 0049). One value per kind\nof live user a removal can find, so a client branches on it without parsing text."
       },
       "Versions": {

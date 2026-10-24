@@ -14,6 +14,7 @@ enum RuleStatus {
 enum RuleActionType {
   apply_tag,
   remove_tag,
+  enroll_automation,
   http,
 }
 
@@ -24,6 +25,9 @@ model RuleAction {
 
   /** Tag name to apply to or remove from the Contact (apply_tag and remove_tag) */
   tag?: string;
+
+  /** Automation to enroll the Contact in, once ever (enroll_automation) */
+  automationId?: EntityId;
 
   /** Action id (http actions). Assigned on save; send it back on edit so the action keeps its secrets. */
   id?: string;

@@ -3078,27 +3078,30 @@ func (m *AuthAttemptMutation) ResetEdge(name string) error {
 // AutomationMutation represents an operation that mutates the Automation nodes in the graph.
 type AutomationMutation struct {
 	config
-	op               Op
-	typ              string
-	id               *int64
-	created_at       *time.Time
-	updated_at       *time.Time
-	discarded_at     *time.Time
-	name             *string
-	status           *automation.Status
-	trigger_event    *string
-	clearedFields    map[string]struct{}
-	workspace        *int64
-	clearedworkspace bool
-	runs             map[int64]struct{}
-	removedruns      map[int64]struct{}
-	clearedruns      bool
-	versions         map[int64]struct{}
-	removedversions  map[int64]struct{}
-	clearedversions  bool
-	done             bool
-	oldValue         func(context.Context) (*Automation, error)
-	predicates       []predicate.Automation
+	op                       Op
+	typ                      string
+	id                       *int64
+	created_at               *time.Time
+	updated_at               *time.Time
+	discarded_at             *time.Time
+	name                     *string
+	status                   *automation.Status
+	trigger_event            *string
+	clearedFields            map[string]struct{}
+	workspace                *int64
+	clearedworkspace         bool
+	runs                     map[int64]struct{}
+	removedruns              map[int64]struct{}
+	clearedruns              bool
+	versions                 map[int64]struct{}
+	removedversions          map[int64]struct{}
+	clearedversions          bool
+	outbound_messages        map[int64]struct{}
+	removedoutbound_messages map[int64]struct{}
+	clearedoutbound_messages bool
+	done                     bool
+	oldValue                 func(context.Context) (*Automation, error)
+	predicates               []predicate.Automation
 }
 
 var _ ent.Mutation = (*AutomationMutation)(nil)
@@ -3605,6 +3608,60 @@ func (m *AutomationMutation) ResetVersions() {
 	m.removedversions = nil
 }
 
+// AddOutboundMessageIDs adds the "outbound_messages" edge to the OutboundMessage entity by ids.
+func (m *AutomationMutation) AddOutboundMessageIDs(ids ...int64) {
+	if m.outbound_messages == nil {
+		m.outbound_messages = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.outbound_messages[ids[i]] = struct{}{}
+	}
+}
+
+// ClearOutboundMessages clears the "outbound_messages" edge to the OutboundMessage entity.
+func (m *AutomationMutation) ClearOutboundMessages() {
+	m.clearedoutbound_messages = true
+}
+
+// OutboundMessagesCleared reports if the "outbound_messages" edge to the OutboundMessage entity was cleared.
+func (m *AutomationMutation) OutboundMessagesCleared() bool {
+	return m.clearedoutbound_messages
+}
+
+// RemoveOutboundMessageIDs removes the "outbound_messages" edge to the OutboundMessage entity by IDs.
+func (m *AutomationMutation) RemoveOutboundMessageIDs(ids ...int64) {
+	if m.removedoutbound_messages == nil {
+		m.removedoutbound_messages = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.outbound_messages, ids[i])
+		m.removedoutbound_messages[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedOutboundMessages returns the removed IDs of the "outbound_messages" edge to the OutboundMessage entity.
+func (m *AutomationMutation) RemovedOutboundMessagesIDs() (ids []int64) {
+	for id := range m.removedoutbound_messages {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// OutboundMessagesIDs returns the "outbound_messages" edge IDs in the mutation.
+func (m *AutomationMutation) OutboundMessagesIDs() (ids []int64) {
+	for id := range m.outbound_messages {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetOutboundMessages resets all changes to the "outbound_messages" edge.
+func (m *AutomationMutation) ResetOutboundMessages() {
+	m.outbound_messages = nil
+	m.clearedoutbound_messages = false
+	m.removedoutbound_messages = nil
+}
+
 // Where appends a list predicates to the AutomationMutation builder.
 func (m *AutomationMutation) Where(ps ...predicate.Automation) {
 	m.predicates = append(m.predicates, ps...)
@@ -3852,7 +3909,7 @@ func (m *AutomationMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *AutomationMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.workspace != nil {
 		edges = append(edges, automation.EdgeWorkspace)
 	}
@@ -3861,6 +3918,9 @@ func (m *AutomationMutation) AddedEdges() []string {
 	}
 	if m.versions != nil {
 		edges = append(edges, automation.EdgeVersions)
+	}
+	if m.outbound_messages != nil {
+		edges = append(edges, automation.EdgeOutboundMessages)
 	}
 	return edges
 }
@@ -3885,18 +3945,27 @@ func (m *AutomationMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case automation.EdgeOutboundMessages:
+		ids := make([]ent.Value, 0, len(m.outbound_messages))
+		for id := range m.outbound_messages {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *AutomationMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.removedruns != nil {
 		edges = append(edges, automation.EdgeRuns)
 	}
 	if m.removedversions != nil {
 		edges = append(edges, automation.EdgeVersions)
+	}
+	if m.removedoutbound_messages != nil {
+		edges = append(edges, automation.EdgeOutboundMessages)
 	}
 	return edges
 }
@@ -3917,13 +3986,19 @@ func (m *AutomationMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case automation.EdgeOutboundMessages:
+		ids := make([]ent.Value, 0, len(m.removedoutbound_messages))
+		for id := range m.removedoutbound_messages {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *AutomationMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.clearedworkspace {
 		edges = append(edges, automation.EdgeWorkspace)
 	}
@@ -3932,6 +4007,9 @@ func (m *AutomationMutation) ClearedEdges() []string {
 	}
 	if m.clearedversions {
 		edges = append(edges, automation.EdgeVersions)
+	}
+	if m.clearedoutbound_messages {
+		edges = append(edges, automation.EdgeOutboundMessages)
 	}
 	return edges
 }
@@ -3946,6 +4024,8 @@ func (m *AutomationMutation) EdgeCleared(name string) bool {
 		return m.clearedruns
 	case automation.EdgeVersions:
 		return m.clearedversions
+	case automation.EdgeOutboundMessages:
+		return m.clearedoutbound_messages
 	}
 	return false
 }
@@ -3973,6 +4053,9 @@ func (m *AutomationMutation) ResetEdge(name string) error {
 		return nil
 	case automation.EdgeVersions:
 		m.ResetVersions()
+		return nil
+	case automation.EdgeOutboundMessages:
+		m.ResetOutboundMessages()
 		return nil
 	}
 	return fmt.Errorf("unknown Automation edge %s", name)

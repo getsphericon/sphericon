@@ -31,6 +31,9 @@ const (
 	Enrollment Kind = "enrollment"
 	// Firing stands for the Firings of a Rule: one User naming the Rule, with their Count.
 	Firing Kind = "firing"
+	// Message stands for the Outbound messages an Automation has sent: one User naming the
+	// Automation, with their Count.
+	Message Kind = "message"
 )
 
 // Subject is the row a refused removal was for.
@@ -51,7 +54,7 @@ type User struct {
 	Kind Kind
 	ID   int64
 	Name string
-	// Count is how many rows an Enrollment or Firing User stands for; every other kind is one row and
+	// Count is how many rows an Enrollment, Firing or Message User stands for; every other kind is one row and
 	// leaves it zero.
 	Count int
 }
@@ -59,6 +62,11 @@ type User struct {
 // Enrollments is the User that stands for count Enrollments of the Automation.
 func Enrollments(automationID int64, name string, count int) User {
 	return User{Kind: Enrollment, ID: automationID, Name: name, Count: count}
+}
+
+// Messages is the User that stands for count Outbound messages the Automation has sent.
+func Messages(automationID int64, name string, count int) User {
+	return User{Kind: Message, ID: automationID, Name: name, Count: count}
 }
 
 // Firings is the User that stands for count Firings of the Rule.

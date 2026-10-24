@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationversion"
+	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
@@ -138,6 +139,21 @@ func (_c *AutomationCreate) AddVersions(v ...*AutomationVersion) *AutomationCrea
 		ids[i] = v[i].ID
 	}
 	return _c.AddVersionIDs(ids...)
+}
+
+// AddOutboundMessageIDs adds the "outbound_messages" edge to the OutboundMessage entity by IDs.
+func (_c *AutomationCreate) AddOutboundMessageIDs(ids ...int64) *AutomationCreate {
+	_c.mutation.AddOutboundMessageIDs(ids...)
+	return _c
+}
+
+// AddOutboundMessages adds the "outbound_messages" edges to the OutboundMessage entity.
+func (_c *AutomationCreate) AddOutboundMessages(v ...*OutboundMessage) *AutomationCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddOutboundMessageIDs(ids...)
 }
 
 // Mutation returns the AutomationMutation object of the builder.
@@ -326,6 +342,22 @@ func (_c *AutomationCreate) createSpec() (*Automation, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(automationversion.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.OutboundMessagesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   automation.OutboundMessagesTable,
+			Columns: []string{automation.OutboundMessagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(outboundmessage.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

@@ -251,6 +251,12 @@ func ScopedEntities() []ScopedEntity {
 						return s.Automation().UpdateOneID(id).AddVersionIDs(target).Exec(ctx)
 					},
 				},
+				{
+					Name: "outbound_messages", Target: "OutboundMessage",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.Automation().UpdateOneID(id).AddOutboundMessageIDs(target).Exec(ctx)
+					},
+				},
 			},
 		},
 		{

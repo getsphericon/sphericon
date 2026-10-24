@@ -812,7 +812,8 @@ export default interface Resources {
       "templateUpdated": "Template updated",
       "testSent": "Test email sent",
       "usedByEnrollments": "{{count}} enrollments of \"{{name}}\"" | "{{count}} enrollment of \"{{name}}\"" | "{{count}} enrollments of \"{{name}}\"",
-      "usedByFirings": "{{count}} firings of \"{{name}}\"" | "{{count}} firing of \"{{name}}\"" | "{{count}} firings of \"{{name}}\""
+      "usedByFirings": "{{count}} firings of \"{{name}}\"" | "{{count}} firing of \"{{name}}\"" | "{{count}} firings of \"{{name}}\"",
+      "usedByMessages": "{{count}} messages sent by \"{{name}}\"" | "{{count}} message sent by \"{{name}}\"" | "{{count}} messages sent by \"{{name}}\""
     },
     "oauthConsent": {
       "allow": "Allow access",
@@ -1626,6 +1627,7 @@ export default interface Resources {
       "broadcast": "Broadcast",
       "enrollment": "Enrollment",
       "firing": "Firing",
+      "message": "Sent message",
       "rule": "Rule",
       "segment": "Segment"
     },

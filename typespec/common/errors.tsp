@@ -124,6 +124,10 @@ enum UsedByKind {
 
   /** The Firings of a Rule, as one entry carrying their count: history that a delete would lose */
   firing,
+
+  /** The Outbound messages an Automation has sent, as one entry carrying their count: facts that
+   * a delete would orphan, which stay even when no Enrollment is left */
+  message,
 }
 
 /** A row that uses the one a removal was refused for: what a client shows to say what to
@@ -139,7 +143,8 @@ model UsedBy {
   name: string;
 
   /** How many rows the entry stands for; absent means one. An `enrollment` entry names the
-   * Automation (id, name) and counts its Enrollments. */
+   * Automation (id, name) and counts its Enrollments; a `message` entry names it and counts its
+   * sent Outbound messages. */
   count?: int32;
 }
 

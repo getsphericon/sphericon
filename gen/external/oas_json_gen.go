@@ -24733,6 +24733,12 @@ func (s *RuleAction) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.AutomationId.Set {
+			e.FieldStart("automationId")
+			s.AutomationId.Encode(e)
+		}
+	}
+	{
 		if s.ID.Set {
 			e.FieldStart("id")
 			s.ID.Encode(e)
@@ -24780,16 +24786,17 @@ func (s *RuleAction) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfRuleAction = [9]string{
+var jsonFieldsNameOfRuleAction = [10]string{
 	0: "type",
 	1: "tag",
-	2: "id",
-	3: "url",
-	4: "headers",
-	5: "body",
-	6: "secret",
-	7: "clearSecret",
-	8: "hasSecret",
+	2: "automationId",
+	3: "id",
+	4: "url",
+	5: "headers",
+	6: "body",
+	7: "secret",
+	8: "clearSecret",
+	9: "hasSecret",
 }
 
 // Decode decodes RuleAction from json.
@@ -24820,6 +24827,16 @@ func (s *RuleAction) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"tag\"")
+			}
+		case "automationId":
+			if err := func() error {
+				s.AutomationId.Reset()
+				if err := s.AutomationId.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"automationId\"")
 			}
 		case "id":
 			if err := func() error {
@@ -25143,6 +25160,8 @@ func (s *RuleActionType) Decode(d *jx.Decoder) error {
 		*s = RuleActionTypeApplyTag
 	case RuleActionTypeRemoveTag:
 		*s = RuleActionTypeRemoveTag
+	case RuleActionTypeEnrollAutomation:
+		*s = RuleActionTypeEnrollAutomation
 	case RuleActionTypeHTTP:
 		*s = RuleActionTypeHTTP
 	default:
@@ -37801,6 +37820,8 @@ func (s *UsedByKind) Decode(d *jx.Decoder) error {
 		*s = UsedByKindEnrollment
 	case UsedByKindFiring:
 		*s = UsedByKindFiring
+	case UsedByKindMessage:
+		*s = UsedByKindMessage
 	default:
 		*s = UsedByKind(v)
 	}

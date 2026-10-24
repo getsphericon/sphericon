@@ -794,7 +794,7 @@ func ruleActions(stored string) []siteapi.SiteRuleAction {
 	}
 	return lo.Map(actions, func(a rules.Action, _ int) siteapi.SiteRuleAction {
 		out := siteapi.SiteRuleAction{Type: siteapi.SiteRuleActionType(a.Type), Tag: ruleOptString(a.Tag)}
-		if a.AutomationID != 0 {
+		if a.Type == rules.ActionEnroll {
 			out.AutomationId = siteapi.NewOptEntityId(siteapi.EntityId(a.AutomationID))
 		}
 		if a.Type == rules.ActionHTTP {

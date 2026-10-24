@@ -139,6 +139,27 @@ func TestSiteAutomationsDeleteOnlyPurgesUnenrolled(t *testing.T) {
 	assert.IsType(t, &siteapi.SiteAutomationsDeleteNotFound{}, missing)
 }
 
+// An Automation with no Enrollment that has sent mail is history too: the Outbound messages are
+// facts that stay, so the delete answers 409 naming them, not a 500 from the foreign key.
+func TestSiteAutomationsDeleteRefusesOneThatSentMail(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	ctx := context.Background()
+
+	out, err := c.SiteAutomationsDelete(ctx, siteapi.SiteAutomationsDeleteParams{
+		WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(fixtures.AutomationOnOpenID),
+	})
+	require.NoError(t, err)
+	refused, ok := out.(*siteapi.InUseProblemDetails)
+	require.Truef(t, ok, "got %T", out)
+	require.Len(t, refused.UsedBy, 1)
+	assert.Equal(t, siteapi.UsedByKindMessage, refused.UsedBy[0].Kind)
+	assert.Positive(t, refused.UsedBy[0].Count.Or(0))
+	exists, err := env.DB.Automation.Query().Where(automation.ID(fixtures.AutomationOnOpenID)).Exist(ctx)
+	require.NoError(t, err)
+	assert.True(t, exists, "kept")
+}
+
 // Archive and restore are recorded in the Audit log with their actor.
 func TestSiteAutomationsArchiveIsAudited(t *testing.T) {
 	env := testhelper.Setup(t)

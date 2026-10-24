@@ -24,6 +24,7 @@ export function useApiErrorMessage() {
         segment: t(($) => $.usedByKind.segment),
         enrollment: t(($) => $.usedByKind.enrollment),
         firing: t(($) => $.usedByKind.firing),
+        message: t(($) => $.usedByKind.message),
       }
       const users = usedBy
         .map((user) => {
@@ -35,6 +36,12 @@ export function useApiErrorMessage() {
           }
           if (user.kind === 'firing') {
             return t(($) => $.notifications.usedByFirings, {
+              count: user.count ?? 1,
+              name: user.name,
+            })
+          }
+          if (user.kind === 'message') {
+            return t(($) => $.notifications.usedByMessages, {
               count: user.count ?? 1,
               name: user.name,
             })

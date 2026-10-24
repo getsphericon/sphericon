@@ -11175,6 +11175,8 @@ type RuleAction struct {
 	Type RuleActionType `json:"type"`
 	// Tag name to apply to or remove from the Contact (apply_tag and remove_tag).
 	Tag OptString `json:"tag"`
+	// Automation to enroll the Contact in, once ever (enroll_automation).
+	AutomationId OptEntityId `json:"automationId"`
 	// Action id (http actions). Assigned on save; send it back on edit so the action keeps its secrets.
 	ID OptString `json:"id"`
 	// URL to POST to (http actions). A secret: never returned. Omit it when editing to keep the stored
@@ -11202,6 +11204,11 @@ func (s *RuleAction) GetType() RuleActionType {
 // GetTag returns the value of Tag.
 func (s *RuleAction) GetTag() OptString {
 	return s.Tag
+}
+
+// GetAutomationId returns the value of AutomationId.
+func (s *RuleAction) GetAutomationId() OptEntityId {
+	return s.AutomationId
 }
 
 // GetID returns the value of ID.
@@ -11247,6 +11254,11 @@ func (s *RuleAction) SetType(val RuleActionType) {
 // SetTag sets the value of Tag.
 func (s *RuleAction) SetTag(val OptString) {
 	s.Tag = val
+}
+
+// SetAutomationId sets the value of AutomationId.
+func (s *RuleAction) SetAutomationId(val OptEntityId) {
+	s.AutomationId = val
 }
 
 // SetID sets the value of ID.
@@ -11380,9 +11392,10 @@ func (s *RuleActionStatus) UnmarshalText(data []byte) error {
 type RuleActionType string
 
 const (
-	RuleActionTypeApplyTag  RuleActionType = "apply_tag"
-	RuleActionTypeRemoveTag RuleActionType = "remove_tag"
-	RuleActionTypeHTTP      RuleActionType = "http"
+	RuleActionTypeApplyTag         RuleActionType = "apply_tag"
+	RuleActionTypeRemoveTag        RuleActionType = "remove_tag"
+	RuleActionTypeEnrollAutomation RuleActionType = "enroll_automation"
+	RuleActionTypeHTTP             RuleActionType = "http"
 )
 
 // AllValues returns all RuleActionType values.
@@ -11390,6 +11403,7 @@ func (RuleActionType) AllValues() []RuleActionType {
 	return []RuleActionType{
 		RuleActionTypeApplyTag,
 		RuleActionTypeRemoveTag,
+		RuleActionTypeEnrollAutomation,
 		RuleActionTypeHTTP,
 	}
 }
@@ -11400,6 +11414,8 @@ func (s RuleActionType) MarshalText() ([]byte, error) {
 	case RuleActionTypeApplyTag:
 		return []byte(s), nil
 	case RuleActionTypeRemoveTag:
+		return []byte(s), nil
+	case RuleActionTypeEnrollAutomation:
 		return []byte(s), nil
 	case RuleActionTypeHTTP:
 		return []byte(s), nil
@@ -11416,6 +11432,9 @@ func (s *RuleActionType) UnmarshalText(data []byte) error {
 		return nil
 	case RuleActionTypeRemoveTag:
 		*s = RuleActionTypeRemoveTag
+		return nil
+	case RuleActionTypeEnrollAutomation:
+		*s = RuleActionTypeEnrollAutomation
 		return nil
 	case RuleActionTypeHTTP:
 		*s = RuleActionTypeHTTP
@@ -15288,7 +15307,8 @@ type UsedBy struct {
 	// Its name.
 	Name string `json:"name"`
 	// How many rows the entry stands for; absent means one. An `enrollment` entry names the Automation
-	// (id, name) and counts its Enrollments.
+	// (id, name) and counts its Enrollments; a `message` entry names it and counts its sent Outbound
+	// messages.
 	Count OptInt32 `json:"count"`
 }
 
@@ -15344,6 +15364,7 @@ const (
 	UsedByKindRule       UsedByKind = "rule"
 	UsedByKindEnrollment UsedByKind = "enrollment"
 	UsedByKindFiring     UsedByKind = "firing"
+	UsedByKindMessage    UsedByKind = "message"
 )
 
 // AllValues returns all UsedByKind values.
@@ -15355,6 +15376,7 @@ func (UsedByKind) AllValues() []UsedByKind {
 		UsedByKindRule,
 		UsedByKindEnrollment,
 		UsedByKindFiring,
+		UsedByKindMessage,
 	}
 }
 
@@ -15372,6 +15394,8 @@ func (s UsedByKind) MarshalText() ([]byte, error) {
 	case UsedByKindEnrollment:
 		return []byte(s), nil
 	case UsedByKindFiring:
+		return []byte(s), nil
+	case UsedByKindMessage:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -15398,6 +15422,9 @@ func (s *UsedByKind) UnmarshalText(data []byte) error {
 		return nil
 	case UsedByKindFiring:
 		*s = UsedByKindFiring
+		return nil
+	case UsedByKindMessage:
+		*s = UsedByKindMessage
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)

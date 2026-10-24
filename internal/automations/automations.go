@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationversion"
+	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/events"
@@ -421,13 +422,17 @@ func (m *Module) saveSteps(ctx context.Context, s *ent.Scoped, automationID int6
 		Exec(ctx)
 }
 
-// Delete purges an Automation that has no Enrollments, with its versions (ADR 0049). One with
-// any Enrollment is history and is archived instead: an *inuse.Error carrying their count.
+// Delete purges an Automation that has no Enrollments and has sent nothing, with its versions
+// (ADR 0049). One with any Enrollment or Outbound message is history and is archived instead: an
+// *inuse.Error carrying their counts. The messages count apart from the Enrollments, because
+// Contact erasure removes a Contact's Enrollments and keeps the mail they sent.
 func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
 	if err := refuseWhileEnrolledByRules(ctx, s, id); err != nil {
 		return err
 	}
-	n, err := s.Automation().Purge().Where(automation.ID(id), automation.Not(automation.HasRuns())).Exec(ctx)
+	n, err := s.Automation().Purge().
+		Where(automation.ID(id), automation.Not(automation.HasRuns()), automation.Not(automation.HasOutboundMessages())).
+		Exec(ctx)
 	if err != nil {
 		return err
 	}
@@ -442,7 +447,21 @@ func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
 	if err != nil {
 		return err
 	}
-	return &inuse.Error{What: inuse.SubjectAutomation, Users: []inuse.User{inuse.Enrollments(id, a.Name, enrollments)}}
+	messages, err := s.OutboundMessage().Query().Where(outboundmessage.AutomationID(id)).Count(ctx)
+	if err != nil {
+		return err
+	}
+	var users []inuse.User
+	if enrollments > 0 {
+		users = append(users, inuse.Enrollments(id, a.Name, enrollments))
+	}
+	if messages > 0 {
+		users = append(users, inuse.Messages(id, a.Name, messages))
+	}
+	if len(users) == 0 {
+		return fmt.Errorf("automation %d: purge matched no row, yet it has no Enrollment and sent nothing", id)
+	}
+	return &inuse.Error{What: inuse.SubjectAutomation, Users: users}
 }
 
 // Archive discards an Automation (ADR 0049): it leaves the lists and enrolls nobody, and its

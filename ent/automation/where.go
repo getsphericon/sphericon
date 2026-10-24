@@ -454,6 +454,29 @@ func HasVersionsWith(preds ...predicate.AutomationVersion) predicate.Automation 
 	})
 }
 
+// HasOutboundMessages applies the HasEdge predicate on the "outbound_messages" edge.
+func HasOutboundMessages() predicate.Automation {
+	return predicate.Automation(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, OutboundMessagesTable, OutboundMessagesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasOutboundMessagesWith applies the HasEdge predicate on the "outbound_messages" edge with a given conditions (other predicates).
+func HasOutboundMessagesWith(preds ...predicate.OutboundMessage) predicate.Automation {
+	return predicate.Automation(func(s *sql.Selector) {
+		step := newOutboundMessagesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Automation) predicate.Automation {
 	return predicate.Automation(sql.AndPredicates(predicates...))

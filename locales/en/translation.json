@@ -823,7 +823,10 @@
     "usedByEnrollments_other": "{{count}} enrollments of \"{{name}}\"",
     "usedByFirings": "{{count}} firings of \"{{name}}\"",
     "usedByFirings_one": "{{count}} firing of \"{{name}}\"",
-    "usedByFirings_other": "{{count}} firings of \"{{name}}\""
+    "usedByFirings_other": "{{count}} firings of \"{{name}}\"",
+    "usedByMessages": "{{count}} messages sent by \"{{name}}\"",
+    "usedByMessages_one": "{{count}} message sent by \"{{name}}\"",
+    "usedByMessages_other": "{{count}} messages sent by \"{{name}}\""
   },
   "oauthConsent": {
     "allow": "Allow access",
@@ -1643,6 +1646,7 @@
     "broadcast": "Broadcast",
     "enrollment": "Enrollment",
     "firing": "Firing",
+    "message": "Sent message",
     "rule": "Rule",
     "segment": "Segment"
   },

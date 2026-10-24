@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationversion"
+	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
@@ -149,6 +150,21 @@ func (_u *AutomationUpdate) AddVersions(v ...*AutomationVersion) *AutomationUpda
 	return _u.AddVersionIDs(ids...)
 }
 
+// AddOutboundMessageIDs adds the "outbound_messages" edge to the OutboundMessage entity by IDs.
+func (_u *AutomationUpdate) AddOutboundMessageIDs(ids ...int64) *AutomationUpdate {
+	_u.mutation.AddOutboundMessageIDs(ids...)
+	return _u
+}
+
+// AddOutboundMessages adds the "outbound_messages" edges to the OutboundMessage entity.
+func (_u *AutomationUpdate) AddOutboundMessages(v ...*OutboundMessage) *AutomationUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddOutboundMessageIDs(ids...)
+}
+
 // Mutation returns the AutomationMutation object of the builder.
 func (_u *AutomationUpdate) Mutation() *AutomationMutation {
 	return _u.mutation
@@ -200,6 +216,27 @@ func (_u *AutomationUpdate) RemoveVersions(v ...*AutomationVersion) *AutomationU
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveVersionIDs(ids...)
+}
+
+// ClearOutboundMessages clears all "outbound_messages" edges to the OutboundMessage entity.
+func (_u *AutomationUpdate) ClearOutboundMessages() *AutomationUpdate {
+	_u.mutation.ClearOutboundMessages()
+	return _u
+}
+
+// RemoveOutboundMessageIDs removes the "outbound_messages" edge to OutboundMessage entities by IDs.
+func (_u *AutomationUpdate) RemoveOutboundMessageIDs(ids ...int64) *AutomationUpdate {
+	_u.mutation.RemoveOutboundMessageIDs(ids...)
+	return _u
+}
+
+// RemoveOutboundMessages removes "outbound_messages" edges to OutboundMessage entities.
+func (_u *AutomationUpdate) RemoveOutboundMessages(v ...*OutboundMessage) *AutomationUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveOutboundMessageIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -416,6 +453,51 @@ func (_u *AutomationUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.OutboundMessagesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   automation.OutboundMessagesTable,
+			Columns: []string{automation.OutboundMessagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(outboundmessage.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedOutboundMessagesIDs(); len(nodes) > 0 && !_u.mutation.OutboundMessagesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   automation.OutboundMessagesTable,
+			Columns: []string{automation.OutboundMessagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(outboundmessage.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.OutboundMessagesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   automation.OutboundMessagesTable,
+			Columns: []string{automation.OutboundMessagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(outboundmessage.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -555,6 +637,21 @@ func (_u *AutomationUpdateOne) AddVersions(v ...*AutomationVersion) *AutomationU
 	return _u.AddVersionIDs(ids...)
 }
 
+// AddOutboundMessageIDs adds the "outbound_messages" edge to the OutboundMessage entity by IDs.
+func (_u *AutomationUpdateOne) AddOutboundMessageIDs(ids ...int64) *AutomationUpdateOne {
+	_u.mutation.AddOutboundMessageIDs(ids...)
+	return _u
+}
+
+// AddOutboundMessages adds the "outbound_messages" edges to the OutboundMessage entity.
+func (_u *AutomationUpdateOne) AddOutboundMessages(v ...*OutboundMessage) *AutomationUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddOutboundMessageIDs(ids...)
+}
+
 // Mutation returns the AutomationMutation object of the builder.
 func (_u *AutomationUpdateOne) Mutation() *AutomationMutation {
 	return _u.mutation
@@ -606,6 +703,27 @@ func (_u *AutomationUpdateOne) RemoveVersions(v ...*AutomationVersion) *Automati
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveVersionIDs(ids...)
+}
+
+// ClearOutboundMessages clears all "outbound_messages" edges to the OutboundMessage entity.
+func (_u *AutomationUpdateOne) ClearOutboundMessages() *AutomationUpdateOne {
+	_u.mutation.ClearOutboundMessages()
+	return _u
+}
+
+// RemoveOutboundMessageIDs removes the "outbound_messages" edge to OutboundMessage entities by IDs.
+func (_u *AutomationUpdateOne) RemoveOutboundMessageIDs(ids ...int64) *AutomationUpdateOne {
+	_u.mutation.RemoveOutboundMessageIDs(ids...)
+	return _u
+}
+
+// RemoveOutboundMessages removes "outbound_messages" edges to OutboundMessage entities.
+func (_u *AutomationUpdateOne) RemoveOutboundMessages(v ...*OutboundMessage) *AutomationUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveOutboundMessageIDs(ids...)
 }
 
 // Where appends a list predicates to the AutomationUpdate builder.
@@ -845,6 +963,51 @@ func (_u *AutomationUpdateOne) sqlSave(ctx context.Context) (_node *Automation, 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(automationversion.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.OutboundMessagesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   automation.OutboundMessagesTable,
+			Columns: []string{automation.OutboundMessagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(outboundmessage.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedOutboundMessagesIDs(); len(nodes) > 0 && !_u.mutation.OutboundMessagesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   automation.OutboundMessagesTable,
+			Columns: []string{automation.OutboundMessagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(outboundmessage.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.OutboundMessagesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   automation.OutboundMessagesTable,
+			Columns: []string{automation.OutboundMessagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(outboundmessage.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

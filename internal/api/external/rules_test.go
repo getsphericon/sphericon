@@ -12,6 +12,22 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
+// A Rule that enrolls Contacts in an Automation reads as it is stored: the action kind and the
+// Automation it names, the same as on the site API.
+func TestExternalRulesReadAnEnrollAction(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	reader := env.ExternalScoped(t, "automations:read")
+
+	got, err := reader.RulesGet(ctx, externalapi.RulesGetParams{ID: entityIDString(fixtures.RuleEnrollGreetingID)})
+	require.NoError(t, err)
+	rule, ok := got.(*externalapi.RuleResource)
+	require.Truef(t, ok, "got %T", got)
+	require.Len(t, rule.Actions, 1)
+	assert.Equal(t, externalapi.RuleActionTypeEnrollAutomation, rule.Actions[0].Type)
+	assert.Equal(t, entityIDString(fixtures.AutomationJobsGreetingID), rule.Actions[0].AutomationId.Or(0))
+}
+
 func TestExternalRulesReadNeedsTheAutomationsReadScope(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()

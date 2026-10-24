@@ -52998,6 +52998,8 @@ func (s *UsedByKind) Decode(d *jx.Decoder) error {
 		*s = UsedByKindEnrollment
 	case UsedByKindFiring:
 		*s = UsedByKindFiring
+	case UsedByKindMessage:
+		*s = UsedByKindMessage
 	default:
 		*s = UsedByKind(v)
 	}

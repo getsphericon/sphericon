@@ -21821,7 +21821,8 @@ type UsedBy struct {
 	// Its name.
 	Name string `json:"name"`
 	// How many rows the entry stands for; absent means one. An `enrollment` entry names the Automation
-	// (id, name) and counts its Enrollments.
+	// (id, name) and counts its Enrollments; a `message` entry names it and counts its sent Outbound
+	// messages.
 	Count OptInt32 `json:"count"`
 }
 
@@ -21877,6 +21878,7 @@ const (
 	UsedByKindRule       UsedByKind = "rule"
 	UsedByKindEnrollment UsedByKind = "enrollment"
 	UsedByKindFiring     UsedByKind = "firing"
+	UsedByKindMessage    UsedByKind = "message"
 )
 
 // AllValues returns all UsedByKind values.
@@ -21888,6 +21890,7 @@ func (UsedByKind) AllValues() []UsedByKind {
 		UsedByKindRule,
 		UsedByKindEnrollment,
 		UsedByKindFiring,
+		UsedByKindMessage,
 	}
 }
 
@@ -21905,6 +21908,8 @@ func (s UsedByKind) MarshalText() ([]byte, error) {
 	case UsedByKindEnrollment:
 		return []byte(s), nil
 	case UsedByKindFiring:
+		return []byte(s), nil
+	case UsedByKindMessage:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -21931,6 +21936,9 @@ func (s *UsedByKind) UnmarshalText(data []byte) error {
 		return nil
 	case UsedByKindFiring:
 		*s = UsedByKindFiring
+		return nil
+	case UsedByKindMessage:
+		*s = UsedByKindMessage
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
