@@ -78,9 +78,7 @@ func (h *Handlers) SiteSendingDomainsCreate(ctx context.Context, req *siteapi.Si
 	var verr *validation.Error
 	switch {
 	case errors.As(err, &verr):
-		v := siteapi.SiteSendingDomainsCreateUnprocessableEntity(problemWithErrors(http.StatusUnprocessableEntity, i18n.T("errors.validation_failed", nil), map[string][]string{
-			verr.Field: {verr.Message},
-		}))
+		v := siteapi.SiteSendingDomainsCreateUnprocessableEntity(validationProblem(i18n.T("errors.validation_failed", nil), verr))
 		return &v, nil
 	case errors.Is(err, sendingdomains.ErrAlreadyExists):
 		v := siteapi.SiteSendingDomainsCreateConflict(problem(http.StatusConflict, "this domain is already added"))

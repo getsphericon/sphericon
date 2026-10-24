@@ -66,9 +66,7 @@ func (h *Handlers) SiteBrandKitSave(ctx context.Context, req *siteapi.SiteSaveBr
 	var verr *validation.Error
 	switch {
 	case errors.As(err, &verr):
-		v := siteapi.SiteBrandKitSaveUnprocessableEntity(problemWithErrors(
-			http.StatusUnprocessableEntity, verr.Message, map[string][]string{verr.Field: {verr.Message}},
-		))
+		v := siteapi.SiteBrandKitSaveUnprocessableEntity(validationProblem(verr.Message, verr))
 		return &v, nil
 	case errors.Is(err, emailrender.ErrInvalidContent):
 		v := siteapi.SiteBrandKitSaveUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))

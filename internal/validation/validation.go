@@ -1,7 +1,8 @@
 // Package validation checks request fields beyond what the API contract states: ogen has
 // already decoded the body and applied the contract's constraints, and a handler copies the
 // fields it checks further into a local struct tagged for go-playground/validator. Errors name
-// a field by its json tag, the name the contract and the client use.
+// a field by its json tag, the name the contract and the client use. A domain module that refuses
+// an input on a rule of its own returns an Error, which a handler answers with a 422 naming the field.
 package validation
 
 import (

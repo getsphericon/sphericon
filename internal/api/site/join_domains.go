@@ -58,9 +58,7 @@ func (h *Handlers) SiteJoinDomainsAdd(ctx context.Context, req *siteapi.SiteAddJ
 	var verr *validation.Error
 	switch {
 	case errors.As(err, &verr):
-		v := siteapi.SiteJoinDomainsAddUnprocessableEntity(problemWithErrors(http.StatusUnprocessableEntity, i18n.T("errors.validation_failed", nil), map[string][]string{
-			verr.Field: {verr.Message},
-		}))
+		v := siteapi.SiteJoinDomainsAddUnprocessableEntity(validationProblem(i18n.T("errors.validation_failed", nil), verr))
 		return &v, nil
 	case errors.Is(err, joindomains.ErrAlreadyExists):
 		v := siteapi.SiteJoinDomainsAddConflict(problem(http.StatusConflict, i18n.T("errors.join_domain_exists", nil)))

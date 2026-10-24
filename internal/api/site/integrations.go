@@ -87,9 +87,7 @@ func (h *Handlers) SiteIntegrationsCreate(ctx context.Context, req *siteapi.Site
 	var verr *validation.Error
 	switch {
 	case errors.As(err, &verr):
-		v := siteapi.SiteIntegrationsCreateUnprocessableEntity(problemWithErrors(
-			http.StatusUnprocessableEntity, verr.Message, map[string][]string{verr.Field: {verr.Message}},
-		))
+		v := siteapi.SiteIntegrationsCreateUnprocessableEntity(validationProblem(verr.Message, verr))
 		return &v, nil
 	case errors.Is(err, integrations.ErrDefaultConflict):
 		v := siteapi.SiteIntegrationsCreateConflict(problem(http.StatusConflict, err.Error()))
@@ -180,9 +178,7 @@ func (h *Handlers) SiteIntegrationsUpdate(ctx context.Context, req *siteapi.Site
 		r := siteapi.SiteIntegrationsUpdateNotFound(problem(http.StatusNotFound, "integration not found"))
 		return &r, nil
 	case errors.As(err, &verr):
-		r := siteapi.SiteIntegrationsUpdateUnprocessableEntity(problemWithErrors(
-			http.StatusUnprocessableEntity, verr.Message, map[string][]string{verr.Field: {verr.Message}},
-		))
+		r := siteapi.SiteIntegrationsUpdateUnprocessableEntity(validationProblem(verr.Message, verr))
 		return &r, nil
 	case errors.Is(err, integrations.ErrDefaultConflict):
 		r := siteapi.SiteIntegrationsUpdateConflict(problem(http.StatusConflict, err.Error()))
