@@ -102,9 +102,8 @@ func TestAutomationStepDefersWhenTransactionalTrafficSpendsTheLimit(t *testing.T
 		mod := outbound.New(env.Bus, env.CoreHolds(), resolvingTo(fs), tracking.New("test-secret", "http://local"))
 		env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(1).ExecX(ctx)
 
-		runIDs, err := jobs.EvaluateTrigger(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactHoldDemoID, "hold_demo", 0)
-		require.NoError(t, err)
-		require.Len(t, runIDs, 1)
+		require.NoError(t, jobs.EvaluateTrigger(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactHoldDemoID, "hold_demo", 0))
+		runID := env.DB.AutomationRun.Query().Where(automationrun.AutomationID(fixtures.AutomationHoldDemoID)).OnlyIDX(ctx)
 
 		for _, key := range []string{"tx:1", "tx:2", "tx:3"} {
 			res, err := mod.Send(ctx, env.DB.Scoped(fixtures.AcmeID), outbound.Request{
@@ -119,9 +118,9 @@ func TestAutomationStepDefersWhenTransactionalTrafficSpendsTheLimit(t *testing.T
 		before := time.Now()
 		step := stepperWith(env, mod)
 		require.True(t, env.RunNextStep(t, step), "a Deferral is not a failure, so no attempt is consumed")
-		require.Equal(t, []map[string]any{stepJob(runIDs[0], 0)}, queuedSteps(t, env), "the same step is queued again")
+		require.Equal(t, []map[string]any{stepJob(runID, 0)}, queuedSteps(t, env), "the same step is queued again")
 		assert.GreaterOrEqual(t, env.JobSchedules(t, stepping.RunStepArgs{}.Kind())[0].Sub(before), 3*time.Second, "pushed out by the Transactional debt")
-		run := env.DB.AutomationRun.GetX(ctx, runIDs[0])
+		run := env.DB.AutomationRun.GetX(ctx, runID)
 		assert.Equal(t, automationrun.StatusActive, run.Status)
 		assert.Zero(t, run.CurrentStep, "the enrollment keeps its place")
 		assert.Len(t, fs.sent, 3, "the step has not sent")
@@ -129,7 +128,7 @@ func TestAutomationStepDefersWhenTransactionalTrafficSpendsTheLimit(t *testing.T
 		testhelper.Elapse(3 * time.Second)
 		require.True(t, env.RunNextStep(t, step))
 		assert.Len(t, fs.sent, 4, "the step sends once capacity returns")
-		assert.Equal(t, 1, env.DB.AutomationRun.GetX(ctx, runIDs[0]).CurrentStep)
+		assert.Equal(t, 1, env.DB.AutomationRun.GetX(ctx, runID).CurrentStep)
 	})
 }
 
@@ -141,10 +140,10 @@ func TestAutomationStepAndBroadcastRecipientShareTheLimit(t *testing.T) {
 		mod := outbound.New(e.Bus, e.CoreHolds(), resolvingTo(e.sender), tracking.New("test-secret", "http://local"))
 		e.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(1).ExecX(ctx)
 
-		runIDs, err := jobs.EvaluateTrigger(ctx, e.Bus, e.DB.Scoped(fixtures.AcmeID), fixtures.ContactHoldDemoID, "hold_demo", 0)
-		require.NoError(t, err)
+		require.NoError(t, jobs.EvaluateTrigger(ctx, e.Bus, e.DB.Scoped(fixtures.AcmeID), fixtures.ContactHoldDemoID, "hold_demo", 0))
+		runID := e.DB.AutomationRun.Query().Where(automationrun.AutomationID(fixtures.AutomationHoldDemoID)).OnlyIDX(ctx)
 		require.True(t, e.RunNextStep(t, stepperWith(e.TestEnv, mod)))
-		require.Equal(t, []map[string]any{stepJob(runIDs[0], 1)}, queuedSteps(t, e.TestEnv), "the first send takes the only token and the Enrollment moves on")
+		require.Equal(t, []map[string]any{stepJob(runID, 1)}, queuedSteps(t, e.TestEnv), "the first send takes the only token and the Enrollment moves on")
 		require.Len(t, e.sender.sent, 1)
 
 		ids, err := planAudience(ctx, e.DB, mod, fixtures.BroadcastDraftID)

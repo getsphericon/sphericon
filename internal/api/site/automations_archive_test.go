@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/stepping"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -96,15 +97,13 @@ func TestArchivedAutomationEnrollsNobody(t *testing.T) {
 
 	_, err := archiveAutomation(c, id)
 	require.NoError(t, err)
-	enrolled, err := jobs.EvaluateTrigger(ctx, env.Bus, acme, fixtures.ContactAliceID, "hold_demo", 0)
-	require.NoError(t, err)
-	assert.Empty(t, enrolled)
+	require.NoError(t, jobs.EvaluateTrigger(ctx, env.Bus, acme, fixtures.ContactAliceID, "hold_demo", 0))
+	assert.Empty(t, env.JobsOf(t, stepping.RunStepArgs{}.Kind()), "an archived Automation starts no Enrollment")
 
 	_, err = c.SiteAutomationsUnarchive(ctx, siteapi.SiteAutomationsUnarchiveParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(id)})
 	require.NoError(t, err)
-	enrolled, err = jobs.EvaluateTrigger(ctx, env.Bus, acme, fixtures.ContactAliceID, "hold_demo", 0)
-	require.NoError(t, err)
-	assert.Len(t, enrolled, 1)
+	require.NoError(t, jobs.EvaluateTrigger(ctx, env.Bus, acme, fixtures.ContactAliceID, "hold_demo", 0))
+	assert.Len(t, env.JobsOf(t, stepping.RunStepArgs{}.Kind()), 1, "the unarchived Automation enrolls the Contact")
 }
 
 // Delete purges an Automation with no Enrollments; one with any Enrollment is history and

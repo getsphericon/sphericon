@@ -7,7 +7,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
-	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/jobkind"
 	"github.com/getsphericon/sphericon/internal/stepping"
@@ -45,18 +44,16 @@ func (w *EvaluateTriggerWorker) Work(ctx context.Context, job *river.Job[Evaluat
 	if c.WorkspaceID != job.Args.WorkspaceID {
 		return nil // stale or forged job args; never enroll across Workspaces
 	}
-	_, err = EvaluateTrigger(ctx, w.bus, w.ent.Scoped(c.WorkspaceID), c.ID, job.Args.Action, job.Args.SourceAutomationID)
-	return err
+	return EvaluateTrigger(ctx, w.bus, w.ent.Scoped(c.WorkspaceID), c.ID, job.Args.Action, job.Args.SourceAutomationID)
 }
 
 // EvaluateTrigger enrolls a contact into every active automation in the workspace
 // whose trigger_event matches action: one AutomationRun each (enroll-once-ever via the
-// unique index), committed together with the job that starts stepping it, so a failed
-// queue insert leaves no Enrollment that nothing will move and a retry starts over. A
-// Contact already enrolled keeps its run and its job. Returns the new run IDs. An Event
+// unique index), committed together with the job that starts stepping it (stepping.Enroll), one
+// transaction per Automation. A Contact already enrolled keeps its run and its job. An Event
 // from an Automation's own email (sourceAutomationID) never enrolls the Contact into that
 // Automation, so an open-triggered Automation cannot feed itself (ADR 0053).
-func EvaluateTrigger(ctx context.Context, bus *events.Bus, s *ent.Scoped, contactID int64, action string, sourceAutomationID int64) ([]int64, error) {
+func EvaluateTrigger(ctx context.Context, bus *events.Bus, s *ent.Scoped, contactID int64, action string, sourceAutomationID int64) error {
 	autos, err := s.Automation().Query().
 		Where(
 			automation.StatusEQ(automation.StatusActive),
@@ -64,27 +61,17 @@ func EvaluateTrigger(ctx context.Context, bus *events.Bus, s *ent.Scoped, contac
 		).
 		All(ctx)
 	if err != nil {
-		return nil, err
+		return err
 	}
-
-	var runIDs []int64
 	for _, a := range autos {
 		if a.ID == sourceAutomationID {
 			continue
 		}
-		err := bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, q events.Enqueuer) error {
-			runID, enrolled, err := automations.Enroll(ctx, ts, a.ID, contactID)
-			if err != nil || !enrolled {
-				return err
-			}
-			runIDs = append(runIDs, runID)
-			return q.Enqueue(ctx, stepping.RunStepArgs{RunID: runID, Step: 0}, nil)
-		})
-		if err != nil {
-			return nil, err
+		if _, err := stepping.Enroll(ctx, bus, s, a.ID, contactID); err != nil {
+			return err
 		}
 	}
-	return runIDs, nil
+	return nil
 }
 
 // --- run stepping: the adapter of the Enrollment stepping module (internal/stepping) ---
