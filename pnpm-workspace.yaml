@@ -112,3 +112,10 @@ overrides:
   js-yaml: '>=5.4.1'
   esbuild: '>=0.28.1'
   happy-dom: '>=21.0.4'
+permissions:
+  '@tanstack/react-router':
+    skills: true
+  '@tanstack/router-plugin':
+    skills: true
+  react-querybuilder:
+    skills: true
