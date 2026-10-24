@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strings"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
@@ -78,6 +79,9 @@ func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.EmailTe
 // Create stores a Template. A blank name is ErrBlankName; a subject, body or document that
 // cannot render is emailrender.ErrInvalidContent; the body is stored sanitized.
 func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*ent.EmailTemplate, error) {
+	if err := checkName(&in.Name); err != nil {
+		return nil, err
+	}
 	var c emailrender.Content
 	if in.Prepared != nil && len(in.Doc) > 0 && in.Body == nil {
 		c = emailrender.Content{Body: &in.Prepared.Body, Authored: in.Prepared}
@@ -100,6 +104,9 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 
 // Update applies the given fields. A blank name is ErrBlankName.
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateInput) (*ent.EmailTemplate, error) {
+	if err := checkName(in.Name); err != nil {
+		return nil, err
+	}
 	c, err := emailrender.ResolveContent(ctx, in.Subject, in.Body, in.Doc, ErrBodyAndDoc)
 	if err != nil {
 		return nil, err
@@ -128,6 +135,14 @@ func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
 		return ErrNotFound
 	}
 	return err
+}
+
+// checkName refuses a given name that is blank after trimming; an absent name is not checked.
+func checkName(name *string) error {
+	if name != nil && strings.TrimSpace(*name) == "" {
+		return ErrBlankName
+	}
+	return nil
 }
 
 // mapWriteError relabels only a validation failure of the name field; any other

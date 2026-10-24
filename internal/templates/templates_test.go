@@ -112,3 +112,20 @@ func TestDelete(t *testing.T) {
 	require.ErrorIs(t, m.Delete(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateWelcomeID), templates.ErrNotFound)
 	assert.ErrorIs(t, m.Delete(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateGlobexID), templates.ErrNotFound)
 }
+
+func TestCreateRefusesAWhitespaceName(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+
+	_, err := templates.New().Create(ctx, env.DB.Scoped(fixtures.AcmeID), templates.CreateInput{Name: "   "})
+	require.ErrorIs(t, err, templates.ErrBlankName)
+}
+
+func TestUpdateRefusesAWhitespaceName(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+
+	_, err := templates.New().Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateWelcomeID, templates.UpdateInput{Name: new("  ")})
+	require.ErrorIs(t, err, templates.ErrBlankName)
+	assert.Equal(t, fixtures.TemplateWelcomeName, env.DB.EmailTemplate.GetX(ctx, fixtures.TemplateWelcomeID).Name)
+}
