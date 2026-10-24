@@ -105,7 +105,7 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
      through the `holds` module, which holds no raw client); the abuse detector
      (ADR 0026) scopes over the Workspace being judged, after its row is loaded, to read the
      rates (`abuse.Watch`, which the console's `Module.WorkspaceAbuse` and the `/site`
-     dashboard's warning also read through the `site.AbuseWatch` seam); and the service usage
+     dashboard's warning also read through the `abusewatch.Watch` seam (`internal/abusewatch`, a leaf that `ee` implements and `site` consumes)); and the service usage
      read (`Module.WorkspaceUsage`, `ee/staff/service_usage.go`), scoped over the one
      Workspace a call names, after its row is loaded, to read its stored Usage figures; and
      `Module.TrackingHostFeed` (ADR 0038) reads the Instance-wide tracking host change log, which

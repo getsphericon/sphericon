@@ -24,7 +24,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
-	"github.com/getsphericon/sphericon/internal/api/site"
+	"github.com/getsphericon/sphericon/internal/abusewatch"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/jobs"
@@ -144,16 +144,16 @@ func (e *Edition) Abuse(bus *events.Bus, sender messaging.EmailSender) *abuse.De
 
 // AbuseWatch is the read side of the detector for /site: the Workspace's warning, none
 // without the `staff` license.
-func (e *Edition) AbuseWatch() site.AbuseWatch { return siteWatch{e.StaffMembers.Watch()} }
+func (e *Edition) AbuseWatch() abusewatch.Watch { return siteWatch{e.StaffMembers.Watch()} }
 
 type siteWatch struct{ watch *abuse.Watch }
 
-func (w siteWatch) Warning(ctx context.Context, s *ent.Scoped, ws *ent.Workspace, now time.Time) (*site.AbuseWarning, error) {
+func (w siteWatch) Warning(ctx context.Context, s *ent.Scoped, ws *ent.Workspace, now time.Time) (*abusewatch.Warning, error) {
 	b, err := w.watch.Warning(ctx, s, ws, now)
 	if err != nil || b.Tier == abuse.TierNone {
 		return nil, err
 	}
-	return &site.AbuseWarning{Domain: b.Domain, Metric: string(b.Metric), Rate: b.Rate()}, nil
+	return &abusewatch.Warning{Domain: b.Domain, Metric: string(b.Metric), Rate: b.Rate()}, nil
 }
 
 // Jobs is the Edition's river extension: the advanced-retention prune job (ADR 0014),

@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/membership"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/abusewatch"
 	"github.com/getsphericon/sphericon/internal/accountlink"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/analytics"
@@ -119,7 +120,7 @@ type Handlers struct {
 	rules          *rules.Module
 	oauth          *oauthserver.Service
 	audit          AuditLog
-	abuseWatch     AbuseWatch
+	abuseWatch     abusewatch.Watch
 	supportEmail   string
 	analytics      *analytics.Module
 	sessions       *auth.Sessions
@@ -160,23 +161,6 @@ type AuditLog interface {
 	RetentionLicensed() bool
 }
 
-// AbuseWarning is a Sending domain in the abuse detector's warning tier (ADR 0026).
-type AbuseWarning struct {
-	Domain string
-	// Metric is "complaint" or "bounce".
-	Metric string
-	// Rate is 0–1.
-	Rate float64
-}
-
-// AbuseWatch is the read seam of the Enterprise abuse detector (ADR 0026), implemented
-// by ee. Core knows only this interface; nil, or an unlicensed instance, shows no warning.
-type AbuseWatch interface {
-	// Warning is the Workspace's warning at now, or nil when it is in no warning tier
-	// (exempt and suspended Workspaces are never in one).
-	Warning(ctx context.Context, s *ent.Scoped, ws *ent.Workspace, now time.Time) (*AbuseWarning, error)
-}
-
 // Deps is everything the /site handlers are built from. The domain modules are
 // the shared singletons the composition root registers once, so /site and /api
 // cannot diverge on how a module is constructed.
@@ -212,7 +196,7 @@ type Deps struct {
 	Tracker        *tracking.Tracker
 	AppURL         string
 	Audit          AuditLog
-	AbuseWatch     AbuseWatch
+	AbuseWatch     abusewatch.Watch
 	// SupportEmail is where a suspended Workspace's owner appeals (SPHERICON_SUPPORT_EMAIL).
 	SupportEmail string
 	// MCPURL is the public origin of the MCP endpoint (config.MCPOrigin).
