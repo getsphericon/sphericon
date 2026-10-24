@@ -10,6 +10,12 @@ import (
 // (ADR 0053, GLOSSARY: Machine engagement).
 const MachineProperty = "machine"
 
+// IsMachine reports whether the properties of a stored Event mark it as made by software.
+func IsMachine(props map[string]any) bool {
+	machine, _ := props[MachineProperty].(bool)
+	return machine
+}
+
 // IsEngagement reports whether action is an open or a click, the Events a machine can make.
 func IsEngagement(action string) bool {
 	return action == NameEmailOpened || action == NameEmailClicked

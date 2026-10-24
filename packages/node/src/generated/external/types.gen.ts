@@ -2612,6 +2612,7 @@ export const RuleDryRunOutcome = {
   WOULD_FIRE: 'would_fire',
   NOT_TRIGGERED: 'not_triggered',
   NO_CONTACT: 'no_contact',
+  MACHINE: 'machine',
   CONDITION_NOT_MET: 'condition_not_met'
 } as const;
 

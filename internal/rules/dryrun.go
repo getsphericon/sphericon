@@ -17,6 +17,9 @@ const (
 	WouldFire DryRunOutcome = "would_fire"
 	// NotTriggered: the Event's action is none of the Rule's Trigger events.
 	NotTriggered DryRunOutcome = "not_triggered"
+	// Machine: software made the Event (a mail scanner's open or click, ADR 0053), and an Event
+	// like that never triggers a Rule.
+	Machine DryRunOutcome = "machine"
 	// NoContact: the Event is about no Contact, so a Rule never reacts to it.
 	NoContact DryRunOutcome = "no_contact"
 	// ConditionNotMet: the Condition does not hold for the Contact right now.
@@ -57,7 +60,9 @@ func (a Action) Summary() string {
 // DryRun evaluates a stored Event against one Rule exactly as Evaluate does (the same Trigger
 // event match and the same Condition evaluation, against the Contact's data now) and reports
 // what would happen. It writes nothing and runs nothing: no Firing, no job, no Action. Unlike a
-// real firing it ignores the Rule's status and activation time, so a draft can be tried.
+// real firing it ignores the Rule's status and activation time, so a draft can be tried. An
+// Event loaded as a Backfill is not told apart: the row does not keep that flag, so a dry run
+// reports what the Rule would do with a live Event.
 func (m *Module) DryRun(ctx context.Context, s *ent.Scoped, ruleID, eventID int64) (DryRun, error) {
 	r, err := m.Get(ctx, s, ruleID)
 	if err != nil {
@@ -69,6 +74,9 @@ func (m *Module) DryRun(ctx context.Context, s *ent.Scoped, ruleID, eventID int6
 	}
 	if err != nil {
 		return DryRun{}, err
+	}
+	if events.IsMachine(stored.Properties) {
+		return DryRun{Outcome: Machine}, nil
 	}
 	if stored.ContactID == nil {
 		return DryRun{Outcome: NoContact}, nil

@@ -4876,6 +4876,13 @@
   workspace_id: 1
   occurred_at: '{{daysAgo 1}}'
   created_at: '{{daysAgo 1}}'
+- id: 9106 # fixture: EventRuleClickMachine
+  contact_id: 100
+  action: rule_click
+  properties: '{"machine":true}'
+  workspace_id: 1
+  occurred_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
 - id: 9103 # fixture: EventRuleUrlPricing
   contact_id: 100
   action: rule_url

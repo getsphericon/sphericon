@@ -933,6 +933,7 @@ export default interface Resources {
       "dryRunHint": "Try the saved rule on a recorded event. Nothing is changed and no action runs.",
       "dryRunOutcome": {
         "condition_not_met": "Would not fire: the contact does not match the condition",
+        "machine": "Would not fire: the event was made by software, such as a mail scanner",
         "no_contact": "Would not fire: the event has no contact",
         "not_triggered": "Would not fire: the event is not one of the trigger events",
         "would_fire": "Would fire. These actions would run:"

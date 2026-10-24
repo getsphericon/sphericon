@@ -147,6 +147,7 @@ enum RuleDryRunOutcome {
   would_fire,
   not_triggered,
   no_contact,
+  machine,
   condition_not_met,
 }
 

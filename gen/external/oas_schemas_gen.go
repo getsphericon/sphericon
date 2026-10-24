@@ -11481,6 +11481,7 @@ const (
 	RuleDryRunOutcomeWouldFire       RuleDryRunOutcome = "would_fire"
 	RuleDryRunOutcomeNotTriggered    RuleDryRunOutcome = "not_triggered"
 	RuleDryRunOutcomeNoContact       RuleDryRunOutcome = "no_contact"
+	RuleDryRunOutcomeMachine         RuleDryRunOutcome = "machine"
 	RuleDryRunOutcomeConditionNotMet RuleDryRunOutcome = "condition_not_met"
 )
 
@@ -11490,6 +11491,7 @@ func (RuleDryRunOutcome) AllValues() []RuleDryRunOutcome {
 		RuleDryRunOutcomeWouldFire,
 		RuleDryRunOutcomeNotTriggered,
 		RuleDryRunOutcomeNoContact,
+		RuleDryRunOutcomeMachine,
 		RuleDryRunOutcomeConditionNotMet,
 	}
 }
@@ -11502,6 +11504,8 @@ func (s RuleDryRunOutcome) MarshalText() ([]byte, error) {
 	case RuleDryRunOutcomeNotTriggered:
 		return []byte(s), nil
 	case RuleDryRunOutcomeNoContact:
+		return []byte(s), nil
+	case RuleDryRunOutcomeMachine:
 		return []byte(s), nil
 	case RuleDryRunOutcomeConditionNotMet:
 		return []byte(s), nil
@@ -11521,6 +11525,9 @@ func (s *RuleDryRunOutcome) UnmarshalText(data []byte) error {
 		return nil
 	case RuleDryRunOutcomeNoContact:
 		*s = RuleDryRunOutcomeNoContact
+		return nil
+	case RuleDryRunOutcomeMachine:
+		*s = RuleDryRunOutcomeMachine
 		return nil
 	case RuleDryRunOutcomeConditionNotMet:
 		*s = RuleDryRunOutcomeConditionNotMet

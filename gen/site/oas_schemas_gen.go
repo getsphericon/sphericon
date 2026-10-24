@@ -15917,6 +15917,7 @@ const (
 	SiteRuleDryRunOutcomeWouldFire       SiteRuleDryRunOutcome = "would_fire"
 	SiteRuleDryRunOutcomeNotTriggered    SiteRuleDryRunOutcome = "not_triggered"
 	SiteRuleDryRunOutcomeNoContact       SiteRuleDryRunOutcome = "no_contact"
+	SiteRuleDryRunOutcomeMachine         SiteRuleDryRunOutcome = "machine"
 	SiteRuleDryRunOutcomeConditionNotMet SiteRuleDryRunOutcome = "condition_not_met"
 )
 
@@ -15926,6 +15927,7 @@ func (SiteRuleDryRunOutcome) AllValues() []SiteRuleDryRunOutcome {
 		SiteRuleDryRunOutcomeWouldFire,
 		SiteRuleDryRunOutcomeNotTriggered,
 		SiteRuleDryRunOutcomeNoContact,
+		SiteRuleDryRunOutcomeMachine,
 		SiteRuleDryRunOutcomeConditionNotMet,
 	}
 }
@@ -15938,6 +15940,8 @@ func (s SiteRuleDryRunOutcome) MarshalText() ([]byte, error) {
 	case SiteRuleDryRunOutcomeNotTriggered:
 		return []byte(s), nil
 	case SiteRuleDryRunOutcomeNoContact:
+		return []byte(s), nil
+	case SiteRuleDryRunOutcomeMachine:
 		return []byte(s), nil
 	case SiteRuleDryRunOutcomeConditionNotMet:
 		return []byte(s), nil
@@ -15957,6 +15961,9 @@ func (s *SiteRuleDryRunOutcome) UnmarshalText(data []byte) error {
 		return nil
 	case SiteRuleDryRunOutcomeNoContact:
 		*s = SiteRuleDryRunOutcomeNoContact
+		return nil
+	case SiteRuleDryRunOutcomeMachine:
+		*s = SiteRuleDryRunOutcomeMachine
 		return nil
 	case SiteRuleDryRunOutcomeConditionNotMet:
 		*s = SiteRuleDryRunOutcomeConditionNotMet

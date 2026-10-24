@@ -25319,6 +25319,8 @@ func (s *RuleDryRunOutcome) Decode(d *jx.Decoder) error {
 		*s = RuleDryRunOutcomeNotTriggered
 	case RuleDryRunOutcomeNoContact:
 		*s = RuleDryRunOutcomeNoContact
+	case RuleDryRunOutcomeMachine:
+		*s = RuleDryRunOutcomeMachine
 	case RuleDryRunOutcomeConditionNotMet:
 		*s = RuleDryRunOutcomeConditionNotMet
 	default:

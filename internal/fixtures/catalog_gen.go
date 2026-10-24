@@ -779,6 +779,10 @@ const (
 	EventRuleClickLiamAction = "rule_click"
 	// EventRuleClickLiamID is from fixtures/events.
 	EventRuleClickLiamID = 9100
+	// EventRuleClickMachineAction is from fixtures/events.
+	EventRuleClickMachineAction = "rule_click"
+	// EventRuleClickMachineID is from fixtures/events.
+	EventRuleClickMachineID = 9106
 	// EventRuleUrlDocsAction is from fixtures/events.
 	EventRuleUrlDocsAction = "rule_url"
 	// EventRuleUrlDocsID is from fixtures/events.

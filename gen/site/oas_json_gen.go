@@ -35161,6 +35161,8 @@ func (s *SiteRuleDryRunOutcome) Decode(d *jx.Decoder) error {
 		*s = SiteRuleDryRunOutcomeNotTriggered
 	case SiteRuleDryRunOutcomeNoContact:
 		*s = SiteRuleDryRunOutcomeNoContact
+	case SiteRuleDryRunOutcomeMachine:
+		*s = SiteRuleDryRunOutcomeMachine
 	case SiteRuleDryRunOutcomeConditionNotMet:
 		*s = SiteRuleDryRunOutcomeConditionNotMet
 	default:

@@ -4161,6 +4161,8 @@ func (s RuleDryRunOutcome) Validate() error {
 		return nil
 	case "no_contact":
 		return nil
+	case "machine":
+		return nil
 	case "condition_not_met":
 		return nil
 	default:

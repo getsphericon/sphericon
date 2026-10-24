@@ -56,6 +56,16 @@ func TestDryRunSaysWhyARuleWouldNotFire(t *testing.T) {
 	assert.Empty(t, dryRun(t, env, fixtures.RuleVipOnlyID, fixtures.EventRuleVipLiamID).Actions)
 }
 
+// A mail scanner's open or click never fires a Rule, so a dry run on one must not say it would.
+func TestDryRunSaysAMachineEventNeverFires(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	res := dryRun(t, env, fixtures.RuleTagClickedID, fixtures.EventRuleClickMachineID)
+
+	assert.Equal(t, rules.Machine, res.Outcome)
+	assert.Empty(t, res.Actions)
+}
+
 func TestDryRunTestsTheStoredEventsProperties(t *testing.T) {
 	env := testhelper.Setup(t)
 

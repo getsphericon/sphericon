@@ -16429,7 +16429,7 @@
       },
       "SiteRuleDryRunOutcome": {
         "type": "string",
-        "enum": ["would_fire", "not_triggered", "no_contact", "condition_not_met"],
+        "enum": ["would_fire", "not_triggered", "no_contact", "machine", "condition_not_met"],
         "description": "Whether a stored Event would fire a Rule, and if not, why"
       },
       "SiteRuleDryRunResource": {
