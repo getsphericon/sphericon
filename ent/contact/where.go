@@ -650,6 +650,36 @@ func TimeZoneContainsFold(v string) predicate.Contact {
 	return predicate.Contact(sql.FieldContainsFold(FieldTimeZone, v))
 }
 
+// SourceEQ applies the EQ predicate on the "source" field.
+func SourceEQ(v Source) predicate.Contact {
+	return predicate.Contact(sql.FieldEQ(FieldSource, v))
+}
+
+// SourceNEQ applies the NEQ predicate on the "source" field.
+func SourceNEQ(v Source) predicate.Contact {
+	return predicate.Contact(sql.FieldNEQ(FieldSource, v))
+}
+
+// SourceIn applies the In predicate on the "source" field.
+func SourceIn(vs ...Source) predicate.Contact {
+	return predicate.Contact(sql.FieldIn(FieldSource, vs...))
+}
+
+// SourceNotIn applies the NotIn predicate on the "source" field.
+func SourceNotIn(vs ...Source) predicate.Contact {
+	return predicate.Contact(sql.FieldNotIn(FieldSource, vs...))
+}
+
+// SourceIsNil applies the IsNil predicate on the "source" field.
+func SourceIsNil() predicate.Contact {
+	return predicate.Contact(sql.FieldIsNull(FieldSource))
+}
+
+// SourceNotNil applies the NotNil predicate on the "source" field.
+func SourceNotNil() predicate.Contact {
+	return predicate.Contact(sql.FieldNotNull(FieldSource))
+}
+
 // CustomFieldsIsNil applies the IsNil predicate on the "custom_fields" field.
 func CustomFieldsIsNil() predicate.Contact {
 	return predicate.Contact(sql.FieldIsNull(FieldCustomFields))

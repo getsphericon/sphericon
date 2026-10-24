@@ -4899,6 +4899,130 @@
   occurred_at: '{{daysAgo 1}}'
   created_at: '{{daysAgo 1}}'
 
+# Subscribed people report (Gotham, America/New_York): fixed moments around the spring-forward change.
+- id: 9300 # fixture: EventGothamSubscribedLateOnThe7th
+  email: a@gotham.test
+  action: marketing.confirmed
+  workspace_id: 61
+  occurred_at: '2026-03-08 04:59:00+00' # 23:59 EST on 7 March
+  created_at: '2026-03-08 04:59:00+00'
+- id: 9301 # fixture: EventGothamSubscribedAtMidnightOnThe8th
+  email: b@gotham.test
+  action: marketing.confirmed
+  workspace_id: 61
+  occurred_at: '2026-03-08 05:00:00+00' # midnight EST on 8 March
+  created_at: '2026-03-08 05:00:00+00'
+- id: 9302 # fixture: EventGothamSubscribedLateOnThe8th
+  email: c@gotham.test
+  action: marketing.confirmed
+  workspace_id: 61
+  occurred_at: '2026-03-09 03:59:00+00' # 23:59 EDT on 8 March
+  created_at: '2026-03-09 03:59:00+00'
+- id: 9303 # fixture: EventGothamUnsubscribedAtMidnightOnThe9th
+  email: d@gotham.test
+  action: email.unsubscribed
+  workspace_id: 61
+  occurred_at: '2026-03-09 04:00:00+00' # midnight EDT on 9 March
+  created_at: '2026-03-09 04:00:00+00'
+- id: 9304 # fixture: EventGothamUnsubscribedOnThe8th
+  email: e@gotham.test
+  action: email.unsubscribed
+  workspace_id: 61
+  occurred_at: '2026-03-08 06:00:00+00' # 01:00 EST on 8 March
+  created_at: '2026-03-08 06:00:00+00'
+# No occurred_at: the creation time is the moment (10:00 EST on 6 March).
+- id: 9305 # fixture: EventGothamSubscribedWithoutOccurredAt
+  email: f@gotham.test
+  action: marketing.confirmed
+  workspace_id: 61
+  created_at: '2026-03-06 15:00:00+00'
+# Backfilled: it happened on 9 March but was recorded on 10 March, so it lands on the 9th.
+- id: 9306 # fixture: EventGothamSubscribedBackfilled
+  email: g@gotham.test
+  action: marketing.confirmed
+  workspace_id: 61
+  occurred_at: '2026-03-09 15:00:00+00'
+  created_at: '2026-03-10 09:00:00+00'
+# Before every window of the tests.
+- id: 9307 # fixture: EventGothamUnsubscribedLongAgo
+  email: h@gotham.test
+  action: email.unsubscribed
+  workspace_id: 61
+  occurred_at: '2026-02-01 12:00:00+00'
+  created_at: '2026-02-01 12:00:00+00'
+# A customer action: never a subscription change.
+- id: 9308 # fixture: EventGothamSignup
+  email: i@gotham.test
+  action: signup
+  workspace_id: 61
+  occurred_at: '2026-03-08 15:00:00+00'
+  created_at: '2026-03-08 15:00:00+00'
+# Events report (#626), Acme only. `report_view`: four Events, two Contacts (Liam, Emma) and one
+# anonymous, last seen one day ago. `report_backfill` happened 20 days ago but was recorded one day
+# ago (the window follows occurred_at, ADR 0044); `report_unstamped` has no occurred_at, so its
+# creation time (2 days ago) is its moment; `report_old` is only in the 90-day window. Acme has no
+# other email.opened, so the two human opens (one Contact) and the machine one are the whole action.
+- id: 5600
+  contact_id: 100
+  action: report_view
+  workspace_id: 1
+  occurred_at: '{{daysAgo 3}}'
+  created_at: '{{daysAgo 3}}'
+- id: 5601
+  contact_id: 101
+  action: report_view
+  workspace_id: 1
+  occurred_at: '{{daysAgo 2}}'
+  created_at: '{{daysAgo 2}}'
+- id: 5602
+  contact_id: 100
+  action: report_view
+  workspace_id: 1
+  occurred_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+- id: 5603
+  visitor_id: anon-report-1
+  action: report_view
+  workspace_id: 1
+  occurred_at: '{{daysAgo 5}}'
+  created_at: '{{daysAgo 5}}'
+- id: 5604
+  contact_id: 100
+  action: report_backfill
+  workspace_id: 1
+  occurred_at: '{{daysAgo 20}}'
+  created_at: '{{daysAgo 1}}'
+- id: 5605
+  contact_id: 101
+  action: report_unstamped
+  workspace_id: 1
+  created_at: '{{daysAgo 2}}'
+- id: 5606
+  contact_id: 100
+  action: report_old
+  workspace_id: 1
+  occurred_at: '{{daysAgo 60}}'
+  created_at: '{{daysAgo 60}}'
+- id: 5607
+  contact_id: 100
+  action: email.opened
+  workspace_id: 1
+  occurred_at: '{{daysAgo 2}}'
+  created_at: '{{daysAgo 2}}'
+- id: 5608
+  contact_id: 100
+  action: email.opened
+  workspace_id: 1
+  occurred_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+- id: 5609
+  contact_id: 101
+  action: email.opened
+  properties: '{"machine":true}'
+  workspace_id: 1
+  occurred_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+
 # The export of ContactExportHeavy (5703) streams 1200 Events across the keyset pages.
 # {{range $i := seq 58000 59199}}
 - id: '{{$i}}'
@@ -4908,3 +5032,77 @@
   occurred_at: '{{daysAgo 10}}'
   created_at: '{{daysAgo 10}}'
 # {{end}}
+
+# Clicks by link (the Workspace-wide report): Broadcast 200 carries the pricing link twice and the docs
+# link once (twenty days ago, outside the 7-day window), Automation 102 carries pricing once, and a
+# machine click on pricing (ADR 0053) is in no count.
+- id: 9320 # fixture: EventLinkClickBroadcastPricing
+  contact_id: 100
+  action: email.clicked
+  properties: '{"broadcastId":200,"url":"https://codebasics.dev/pricing"}'
+  workspace_id: 1
+  occurred_at: '{{daysAgo 2}}'
+  created_at: '{{daysAgo 2}}'
+- id: 9321
+  contact_id: 101
+  action: email.clicked
+  properties: '{"broadcastId":200,"url":"https://codebasics.dev/pricing"}'
+  workspace_id: 1
+  occurred_at: '{{daysAgo 2}}'
+  created_at: '{{daysAgo 2}}'
+- id: 9322
+  contact_id: 100
+  action: email.clicked
+  properties: '{"broadcastId":200,"url":"https://codebasics.dev/docs"}'
+  workspace_id: 1
+  occurred_at: '{{daysAgo 20}}'
+  created_at: '{{daysAgo 20}}'
+- id: 9323 # fixture: EventLinkClickMachine
+  contact_id: 100
+  action: email.clicked
+  properties: '{"broadcastId":200,"url":"https://codebasics.dev/pricing","machine":true}'
+  workspace_id: 1
+  occurred_at: '{{daysAgo 2}}'
+  created_at: '{{daysAgo 2}}'
+- id: 9324
+  contact_id: 101
+  action: email.clicked
+  properties: '{"automationId":102,"url":"https://codebasics.dev/pricing"}'
+  workspace_id: 1
+  occurred_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+# Gotham (workspace 61, America/New_York): opens at fixed moments for the Opens by hour report.
+# 2026-07-15 02:30Z and 02:50Z are Tuesday 22:30 and 22:50 EDT; 15:00Z is a machine open
+# (Apple Mail Privacy Protection) and 2026-01-10 14:00Z lies outside every window the tests use.
+- id: 20410
+  contact_id: 20049
+  email: edge1@gotham.example
+  action: email.opened
+  properties: '{"broadcastId":20009}'
+  workspace_id: 61
+  occurred_at: '2026-07-15 02:30:00+00'
+  created_at: '2026-07-15 02:30:00+00'
+- id: 20411
+  contact_id: 20050
+  email: edge2@gotham.example
+  action: email.opened
+  properties: '{"broadcastId":20009}'
+  workspace_id: 61
+  occurred_at: '2026-07-15 02:50:00+00'
+  created_at: '2026-07-15 02:50:00+00'
+- id: 20412
+  contact_id: 20051
+  email: edge3@gotham.example
+  action: email.opened
+  properties: '{"broadcastId":20009,"machine":true}'
+  workspace_id: 61
+  occurred_at: '2026-07-15 15:00:00+00'
+  created_at: '2026-07-15 15:00:00+00'
+- id: 20413
+  contact_id: 20052
+  email: edge4@gotham.example
+  action: email.opened
+  properties: '{"broadcastId":20009}'
+  workspace_id: 61
+  occurred_at: '2026-01-10 14:00:00+00'
+  created_at: '2026-01-10 14:00:00+00'

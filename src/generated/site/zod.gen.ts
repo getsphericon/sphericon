@@ -45,6 +45,15 @@ export const zApiTokenScope = z.enum([
  */
 export const zContactExportJson = z.record(z.string(), z.unknown());
 
+/**
+ * How the contact first came to exist
+ */
+export const zContactExportSource = z.enum([
+  'manual',
+  'api',
+  'tracker'
+]);
+
 export const zEmailAddress = z.email().max(320);
 
 /**
@@ -236,6 +245,55 @@ export const zSiteAnalyticsEmail = z.object({
 });
 
 /**
+ * Human opens of one weekday and hour of day in the Workspace time zone
+ */
+export const zSiteAnalyticsOpensCell = z.object({
+  weekday: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  hour: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  opens: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
+ * Opens by hour report: a cell for every weekday and hour, Monday 00:00 first; machine opens are left out
+ */
+export const zSiteAnalyticsOpensByHour = z.object({
+  cells: z.array(zSiteAnalyticsOpensCell),
+  total: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
+ * What carried a clicked link: a Broadcast or an Automation
+ */
+export const zSiteAnalyticsOwnerKind = z.enum(['broadcast', 'automation']);
+
+/**
+ * The clicks of one link in the emails of one Broadcast or Automation
+ */
+export const zSiteAnalyticsLinkOwner = z.object({
+  kind: zSiteAnalyticsOwnerKind,
+  id: zEntityId,
+  name: z.string(),
+  clicks: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
+ * One clicked link with its clicks in the range, split by the Broadcast or Automation that carried it
+ */
+export const zSiteAnalyticsLink = z.object({
+  url: z.string(),
+  clicks: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  owners: z.array(zSiteAnalyticsLinkOwner)
+});
+
+/**
+ * The Clicks by link report
+ */
+export const zSiteAnalyticsClicksByLink = z.object({
+  links: z.array(zSiteAnalyticsLink),
+  eventsRetentionDays: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
  * One UTC send-day of the cohort, zero-filled across the range. Opened/clicked
  * count the messages sent that day that were later opened/clicked.
  */
@@ -265,6 +323,25 @@ export const zSiteAnalyticsRange = z.enum([
   '30d',
   '90d'
 ]);
+
+/**
+ * One Report day of the Subscribed people report, zero-filled across the range
+ */
+export const zSiteAnalyticsSubscribedPoint = z.object({
+  date: z.string(),
+  subscribed: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  unsubscribed: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  net: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
+ * The Subscribed people report: the daily flow plus the current number, which is read from
+ * current state and is never reconstructed from the flow
+ */
+export const zSiteAnalyticsSubscribedPeople = z.object({
+  current: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  series: z.array(zSiteAnalyticsSubscribedPoint)
+});
 
 /**
  * Site request body for applying a tag to a contact
@@ -762,6 +839,26 @@ export const zSiteMembershipSource = z.enum([
   'invitation',
   'domain'
 ]);
+
+/**
+ * One Report day of the New people report: the Contacts created that day by the door they
+ * came through, zero-filled across the range.
+ */
+export const zSiteNewPeoplePoint = z.object({
+  date: z.string(),
+  manual: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  api: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  tracker: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  unknown: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
+ * New people: Contacts created in the selected range, per Report day and by Contact source
+ */
+export const zSiteNewPeopleReport = z.object({
+  total: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  timeseries: z.array(zSiteNewPeoplePoint)
+});
 
 /**
  * What an MCP client (dynamically registered) is asking permission for, as
@@ -1626,6 +1723,13 @@ export const zSiteUpdateContactInput = z.object({
   tags: z.exactOptional(z.array(z.string()))
 });
 
+/**
+ * Set the Workspace time zone
+ */
+export const zSiteWorkspaceTimezoneInput = z.object({
+  timezone: zTimeZoneName
+});
+
 export const zTimestamp = z.iso.datetime();
 
 /**
@@ -1663,6 +1767,7 @@ export const zContactExportContact = z.object({
   lastName: z.exactOptional(z.string().nullable()),
   timeZone: z.exactOptional(z.string().nullable()),
   customFields: z.exactOptional(zContactExportJson.nullable()),
+  source: z.exactOptional(zContactExportSource.nullable()),
   createdAt: zTimestamp,
   updatedAt: zTimestamp
 });
@@ -1775,6 +1880,24 @@ export const zSiteAccountLinkResource = z.object({
   url: z.string(),
   token: z.string(),
   expiresAt: zTimestamp
+});
+
+/**
+ * One action of the Events report
+ */
+export const zSiteAnalyticsEventAction = z.object({
+  action: z.string(),
+  count: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  contacts: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  lastAt: zTimestamp
+});
+
+/**
+ * The Events report: each action in the range, most frequent first. Machine opens and
+ * clicks are left out.
+ */
+export const zSiteAnalyticsEvents = z.object({
+  actions: z.array(zSiteAnalyticsEventAction)
 });
 
 /**
@@ -2374,6 +2497,7 @@ export const zSiteWorkspaceResource = z.object({
   name: z.string(),
   collectKey: z.string(),
   postalAddress: z.string(),
+  timezone: zTimeZoneName,
   role: zSiteMembershipRole,
   suspendedAt: z.exactOptional(zTimestamp.nullable()),
   suspensionReason: z.exactOptional(z.string().nullable()),
@@ -3135,6 +3259,58 @@ export const zSiteWorkspacesAccountLinkPath = z.object({
  */
 export const zSiteWorkspacesAccountLinkResponse = zSiteAccountLinkResource;
 
+export const zSiteAnalyticsClicksByLinkPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+export const zSiteAnalyticsClicksByLinkQuery = z.object({
+  range: z.exactOptional(zSiteAnalyticsRange)
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteAnalyticsClicksByLinkResponse = zSiteAnalyticsClicksByLink;
+
+export const zSiteAnalyticsEventsPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+export const zSiteAnalyticsEventsQuery = z.object({
+  range: z.exactOptional(zSiteAnalyticsRange)
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteAnalyticsEventsResponse = zSiteAnalyticsEvents;
+
+export const zSiteAnalyticsNewPeoplePath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+export const zSiteAnalyticsNewPeopleQuery = z.object({
+  range: z.exactOptional(zSiteAnalyticsRange)
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteAnalyticsNewPeopleResponse = zSiteNewPeopleReport;
+
+export const zSiteAnalyticsOpensByHourPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+export const zSiteAnalyticsOpensByHourQuery = z.object({
+  range: z.exactOptional(zSiteAnalyticsRange)
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteAnalyticsOpensByHourResponse = zSiteAnalyticsOpensByHour;
+
 export const zSiteAnalyticsOverviewPath = z.object({
   workspaceId: zWorkspaceId
 });
@@ -3147,6 +3323,19 @@ export const zSiteAnalyticsOverviewQuery = z.object({
  * The request has succeeded.
  */
 export const zSiteAnalyticsOverviewResponse = zSiteAnalyticsOverview;
+
+export const zSiteAnalyticsSubscribedPeoplePath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+export const zSiteAnalyticsSubscribedPeopleQuery = z.object({
+  range: z.exactOptional(zSiteAnalyticsRange)
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteAnalyticsSubscribedPeopleResponse = zSiteAnalyticsSubscribedPeople;
 
 export const zSiteAuditListPath = z.object({
   workspaceId: zWorkspaceId
@@ -4249,6 +4438,17 @@ export const zSiteTemplatesUpdatePath = z.object({
  * The request has succeeded.
  */
 export const zSiteTemplatesUpdateResponse = zSiteEmailTemplateResource;
+
+export const zSiteWorkspacesSetTimezoneBody = zSiteWorkspaceTimezoneInput;
+
+export const zSiteWorkspacesSetTimezonePath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteWorkspacesSetTimezoneResponse = zSiteWorkspaceResource;
 
 export const zSiteTokensListPath = z.object({
   workspaceId: zWorkspaceId

@@ -480,6 +480,7 @@ var (
 		{Name: "first_name", Type: field.TypeString, Nullable: true},
 		{Name: "last_name", Type: field.TypeString, Nullable: true},
 		{Name: "time_zone", Type: field.TypeString, Nullable: true},
+		{Name: "source", Type: field.TypeEnum, Nullable: true, Enums: []string{"manual", "api", "tracker"}},
 		{Name: "custom_fields", Type: field.TypeJSON, Nullable: true},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
@@ -491,7 +492,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "contacts_workspaces_contacts",
-				Columns:    []*schema.Column{ContactsColumns[10]},
+				Columns:    []*schema.Column{ContactsColumns[11]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -500,27 +501,27 @@ var (
 			{
 				Name:    "contacts_email_workspace_id",
 				Unique:  true,
-				Columns: []*schema.Column{ContactsColumns[4], ContactsColumns[10]},
+				Columns: []*schema.Column{ContactsColumns[4], ContactsColumns[11]},
 			},
 			{
 				Name:    "contacts_subject_id_workspace_id",
 				Unique:  true,
-				Columns: []*schema.Column{ContactsColumns[3], ContactsColumns[10]},
+				Columns: []*schema.Column{ContactsColumns[3], ContactsColumns[11]},
 			},
 			{
 				Name:    "contacts_phone_workspace_id",
 				Unique:  true,
-				Columns: []*schema.Column{ContactsColumns[5], ContactsColumns[10]},
+				Columns: []*schema.Column{ContactsColumns[5], ContactsColumns[11]},
 			},
 			{
 				Name:    "contact_workspace_id_updated_at_id",
 				Unique:  false,
-				Columns: []*schema.Column{ContactsColumns[10], ContactsColumns[2], ContactsColumns[0]},
+				Columns: []*schema.Column{ContactsColumns[11], ContactsColumns[2], ContactsColumns[0]},
 			},
 			{
 				Name:    "contacts_workspace_id_identified",
 				Unique:  false,
-				Columns: []*schema.Column{ContactsColumns[10]},
+				Columns: []*schema.Column{ContactsColumns[11]},
 				Annotation: &entsql.IndexAnnotation{
 					Where: "email IS NOT NULL AND email <> ''",
 				},
@@ -2017,6 +2018,7 @@ var (
 		{Name: "require_confirmed_opt_in", Type: field.TypeBool, Default: false},
 		{Name: "postal_address", Type: field.TypeString, Nullable: true, Default: ""},
 		{Name: "retention_days", Type: field.TypeInt, Nullable: true},
+		{Name: "timezone", Type: field.TypeString, Nullable: true},
 		{Name: "domain_join_enabled", Type: field.TypeBool, Default: false},
 		{Name: "second_factor_required_at", Type: field.TypeTime, Nullable: true},
 		{Name: "feed_position", Type: field.TypeInt64, Default: 0},
@@ -2039,7 +2041,7 @@ var (
 			{
 				Name:    "workspace_feed_position_id",
 				Unique:  false,
-				Columns: []*schema.Column{WorkspacesColumns[12], WorkspacesColumns[0]},
+				Columns: []*schema.Column{WorkspacesColumns[13], WorkspacesColumns[0]},
 			},
 		},
 	}
@@ -2169,6 +2171,9 @@ func init() {
 	ContactsTable.ForeignKeys[0].RefTable = WorkspacesTable
 	ContactsTable.Annotation = &entsql.Annotation{
 		Table: "contacts",
+	}
+	ContactsTable.Annotation.Checks = map[string]string{
+		"contacts_source_check": "source IN ('manual', 'api', 'tracker')",
 	}
 	ContactTagsTable.ForeignKeys[0].RefTable = ContactsTable
 	ContactTagsTable.ForeignKeys[1].RefTable = TagsTable

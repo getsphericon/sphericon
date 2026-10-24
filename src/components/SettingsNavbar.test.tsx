@@ -35,6 +35,7 @@ const workspace = (role: SiteMembershipRole) => ({
   name: 'Acme',
   collectKey: 'omck_test_key',
   postalAddress: '',
+  timezone: 'UTC',
   accountLinkAvailable: false,
   mcpUrl: 'https://mcp.sphericon.test/',
   holds: [],

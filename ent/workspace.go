@@ -35,6 +35,8 @@ type Workspace struct {
 	PostalAddress string `json:"postal_address,omitempty"`
 	// RetentionDays holds the value of the "retention_days" field.
 	RetentionDays *int `json:"retention_days,omitempty"`
+	// Timezone holds the value of the "timezone" field.
+	Timezone *string `json:"timezone,omitempty"`
 	// DomainJoinEnabled holds the value of the "domain_join_enabled" field.
 	DomainJoinEnabled bool `json:"domain_join_enabled,omitempty"`
 	// SecondFactorRequiredAt holds the value of the "second_factor_required_at" field.
@@ -433,7 +435,7 @@ func (*Workspace) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case workspace.FieldID, workspace.FieldRetentionDays, workspace.FieldFeedPosition:
 			values[i] = new(sql.NullInt64)
-		case workspace.FieldName, workspace.FieldPublicID, workspace.FieldCollectKey, workspace.FieldPostalAddress, workspace.FieldSuspendedByKind, workspace.FieldSuspendedByID, workspace.FieldSuspensionReason:
+		case workspace.FieldName, workspace.FieldPublicID, workspace.FieldCollectKey, workspace.FieldPostalAddress, workspace.FieldTimezone, workspace.FieldSuspendedByKind, workspace.FieldSuspendedByID, workspace.FieldSuspensionReason:
 			values[i] = new(sql.NullString)
 		case workspace.FieldCreatedAt, workspace.FieldUpdatedAt, workspace.FieldDiscardedAt, workspace.FieldSecondFactorRequiredAt, workspace.FieldErasedAt, workspace.FieldSuspendedAt, workspace.FieldClearedAt, workspace.FieldAbuseWarningNotifiedAt, workspace.FieldAbuseFreezeNotifiedAt:
 			values[i] = new(sql.NullTime)
@@ -513,6 +515,13 @@ func (_m *Workspace) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.RetentionDays = new(int)
 				*_m.RetentionDays = int(value.Int64)
+			}
+		case workspace.FieldTimezone:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field timezone", values[i])
+			} else if value.Valid {
+				_m.Timezone = new(string)
+				*_m.Timezone = value.String
 			}
 		case workspace.FieldDomainJoinEnabled:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -819,6 +828,11 @@ func (_m *Workspace) String() string {
 	if v := _m.RetentionDays; v != nil {
 		builder.WriteString("retention_days=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.Timezone; v != nil {
+		builder.WriteString("timezone=")
+		builder.WriteString(*v)
 	}
 	builder.WriteString(", ")
 	builder.WriteString("domain_join_enabled=")

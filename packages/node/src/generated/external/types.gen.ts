@@ -745,6 +745,10 @@ export type ContactExportContact = {
    */
   customFields?: ContactExportJson | null;
   /**
+   * The door the contact came through; absent for a contact that predates the field
+   */
+  source?: ContactExportSource | null;
+  /**
    * Creation timestamp
    */
   createdAt: Timestamp;
@@ -932,6 +936,20 @@ export type ContactExportOutboundMessage = {
    */
   createdAt: Timestamp;
 };
+
+/**
+ * How the contact first came to exist
+ */
+export const ContactExportSource = {
+  MANUAL: 'manual',
+  API: 'api',
+  TRACKER: 'tracker'
+} as const;
+
+/**
+ * How the contact first came to exist
+ */
+export type ContactExportSource = typeof ContactExportSource[keyof typeof ContactExportSource];
 
 /**
  * A suppression of a channel destination

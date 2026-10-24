@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/lifecycle"
+	"github.com/getsphericon/sphericon/internal/reportday"
 	"github.com/getsphericon/sphericon/internal/secondfactor"
 	"github.com/getsphericon/sphericon/internal/suspension"
 	"github.com/getsphericon/sphericon/internal/workspacedeletion"
@@ -215,6 +216,39 @@ func (h *Handlers) SiteWorkspacesUpdate(ctx context.Context, req *siteapi.SiteUp
 		postal = &v
 	}
 	w, err := h.accounts.UpdateWorkspace(ctx, s, h.actor(ctx), name, postal)
+	if err != nil {
+		return nil, err
+	}
+	resource, err := h.workspaceResource(ctx, s, withWorkspace(m, w))
+	if err != nil {
+		return nil, err
+	}
+	return &resource, nil
+}
+
+// SiteWorkspacesSetTimezone sets the Workspace time zone (Owner only, ADR 0057).
+func (h *Handlers) SiteWorkspacesSetTimezone(ctx context.Context, req *siteapi.SiteWorkspaceTimezoneInput, params siteapi.SiteWorkspacesSetTimezoneParams) (siteapi.SiteWorkspacesSetTimezoneRes, error) {
+	s, m, err := h.membershipFor(ctx, params.WorkspaceId)
+	if ent.IsNotFound(err) {
+		v := siteapi.SiteWorkspacesSetTimezoneNotFound(workspaceNotFoundProblem())
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	if !accounts.CanSetTimezone(m.Role) {
+		v := siteapi.SiteWorkspacesSetTimezoneForbidden(problem(http.StatusForbidden, "only owners can set the workspace time zone"))
+		return &v, nil
+	}
+	w, err := h.accounts.SetTimezone(ctx, s, h.actor(ctx), string(req.Timezone))
+	if errors.Is(err, reportday.ErrUnknownZone) {
+		v := siteapi.SiteWorkspacesSetTimezoneUnprocessableEntity(problemWithErrors(
+			http.StatusUnprocessableEntity,
+			i18n.T("errors.timezone_unknown", nil),
+			map[string][]string{"timezone": {i18n.T("errors.timezone_unknown", nil)}},
+		))
+		return &v, nil
+	}
 	if err != nil {
 		return nil, err
 	}

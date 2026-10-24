@@ -1367,8 +1367,12 @@ func registerContent(injector do.Injector) {
 		return eventlog.New(bus.Bus, eventlog.LivePolicy{Window: cfg.EventLiveWindow, Now: time.Now}), nil
 	})
 
-	do.Provide(injector, func(do.Injector) (*analytics.Module, error) {
-		return analytics.New(), nil
+	do.Provide(injector, func(i do.Injector) (*analytics.Module, error) {
+		cfg, err := do.Invoke[*config.Config](i)
+		if err != nil {
+			return nil, err
+		}
+		return analytics.New().WithRetention(cfg.EventsRetention), nil
 	})
 
 	do.Provide(injector, func(do.Injector) (*reputation.Module, error) {

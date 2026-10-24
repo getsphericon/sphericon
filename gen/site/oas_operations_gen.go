@@ -6,7 +6,12 @@ package siteapi
 type OperationName = string
 
 const (
+	SiteAnalyticsClicksByLinkOperation                OperationName = "SiteAnalyticsClicksByLink"
+	SiteAnalyticsEventsOperation                      OperationName = "SiteAnalyticsEvents"
+	SiteAnalyticsNewPeopleOperation                   OperationName = "SiteAnalyticsNewPeople"
+	SiteAnalyticsOpensByHourOperation                 OperationName = "SiteAnalyticsOpensByHour"
 	SiteAnalyticsOverviewOperation                    OperationName = "SiteAnalyticsOverview"
+	SiteAnalyticsSubscribedPeopleOperation            OperationName = "SiteAnalyticsSubscribedPeople"
 	SiteAuditExportOperation                          OperationName = "SiteAuditExport"
 	SiteAuditGetRetentionOperation                    OperationName = "SiteAuditGetRetention"
 	SiteAuditListOperation                            OperationName = "SiteAuditList"
@@ -176,5 +181,6 @@ const (
 	SiteWorkspacesListDeletedOperation                OperationName = "SiteWorkspacesListDeleted"
 	SiteWorkspacesRestoreOperation                    OperationName = "SiteWorkspacesRestore"
 	SiteWorkspacesSetSecondFactorRequirementOperation OperationName = "SiteWorkspacesSetSecondFactorRequirement"
+	SiteWorkspacesSetTimezoneOperation                OperationName = "SiteWorkspacesSetTimezone"
 	SiteWorkspacesUpdateOperation                     OperationName = "SiteWorkspacesUpdate"
 )

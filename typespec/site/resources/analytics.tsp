@@ -116,6 +116,147 @@ model SiteAnalyticsOverview {
   abuseWarning?: SiteAbuseWarning | null;
 }
 
+/**
+ * One Report day of the New people report: the Contacts created that day by the door they
+ * came through, zero-filled across the range.
+ */
+model SiteNewPeoplePoint {
+  /** Report day, YYYY-MM-DD in the Workspace time zone */
+  date: string;
+
+  /** Contacts created by hand that day */
+  manual: int32;
+
+  /** Contacts created through the API that day */
+  api: int32;
+
+  /** Contacts created by the tracker that day */
+  tracker: int32;
+
+  /** Contacts that predate the Contact source */
+  `unknown`: int32;
+}
+
+/** New people: Contacts created in the selected range, per Report day and by Contact source */
+model SiteNewPeopleReport {
+  /** Contacts created within the range */
+  total: int32;
+
+  /** One point per Report day in the range, oldest first */
+  timeseries: SiteNewPeoplePoint[];
+}
+
+/** One Report day of the Subscribed people report, zero-filled across the range */
+model SiteAnalyticsSubscribedPoint {
+  /** Report day, YYYY-MM-DD in the Workspace time zone */
+  date: string;
+
+  /** People who subscribed that day (marketing.confirmed events) */
+  subscribed: int32;
+
+  /** People who unsubscribed that day (email.unsubscribed events) */
+  unsubscribed: int32;
+
+  /** Subscribed minus unsubscribed; negative when more people left than joined */
+  net: int32;
+}
+
+/** The Subscribed people report: the daily flow plus the current number, which is read from
+ * current state and is never reconstructed from the flow */
+model SiteAnalyticsSubscribedPeople {
+  /** Contacts that are not globally opted out of email now */
+  current: int32;
+
+  /** Daily flow, oldest first, one point per Report day in the range */
+  series: SiteAnalyticsSubscribedPoint[];
+}
+
+/** What carried a clicked link: a Broadcast or an Automation */
+enum SiteAnalyticsOwnerKind {
+  broadcast,
+  automation,
+}
+
+/** The clicks of one link in the emails of one Broadcast or Automation */
+model SiteAnalyticsLinkOwner {
+  /** Whether the Broadcast report or the Automation report is the one to open */
+  kind: SiteAnalyticsOwnerKind;
+
+  /** The Broadcast's or Automation's id */
+  id: EntityId;
+
+  /** The Broadcast's or Automation's name */
+  name: string;
+
+  /** Human clicks on the link in its emails during the range */
+  clicks: int32;
+}
+
+/** One clicked link with its clicks in the range, split by the Broadcast or Automation that carried it */
+model SiteAnalyticsLink {
+  /** The link's destination URL */
+  url: string;
+
+  /** Human clicks on the link during the range (every click counted, not unique per contact) */
+  clicks: int32;
+
+  /** Where the clicks came from, most clicked first */
+  owners: SiteAnalyticsLinkOwner[];
+}
+
+/** The Clicks by link report */
+model SiteAnalyticsClicksByLink {
+  /** Each link with clicks in the range, most clicked first; machine clicks are left out */
+  links: SiteAnalyticsLink[];
+
+  /** The configured Event retention in days (SPHERICON_EVENTS_RETENTION_DAYS); 0 means Events
+   * are kept forever. Clicks are Events, so a range longer than this is counted only over the
+   * retained days. */
+  eventsRetentionDays: int32;
+}
+
+/** Human opens of one weekday and hour of day in the Workspace time zone */
+model SiteAnalyticsOpensCell {
+  /** ISO weekday: 1 is Monday, 7 is Sunday */
+  weekday: int32;
+
+  /** Hour of day, 0-23 */
+  hour: int32;
+
+  /** Human opens in that hour of that weekday within the range */
+  opens: int32;
+}
+
+/** Opens by hour report: a cell for every weekday and hour, Monday 00:00 first; machine opens are left out */
+model SiteAnalyticsOpensByHour {
+  cells: SiteAnalyticsOpensCell[];
+
+  /** Human opens in the range */
+  total: int32;
+}
+
+/** One action of the Events report */
+model SiteAnalyticsEventAction {
+  /** The Event action, reserved `email.*` or tracked by the customer */
+  action: string;
+
+  /** How many times it happened in the range */
+  count: int32;
+
+  /** How many distinct Contacts it happened to; anonymous Events count in `count` only */
+  contacts: int32;
+
+  /** When it last happened in the range */
+  lastAt: Timestamp;
+}
+
+/** The Events report: each action in the range, most frequent first. Machine opens and
+ * clicks are left out. */
+model SiteAnalyticsEvents {
+  /** One row per action */
+  actions: SiteAnalyticsEventAction[];
+}
+
 // Not a CRUD resource — a single workspace-scoped aggregate with no key, so it
 // keeps an explicit nested route rather than @parentResource/@autoRoute.
 @route("/workspaces/{workspaceId}/analytics")
@@ -130,4 +271,54 @@ namespace SiteAnalytics {
     /** Window to aggregate over (defaults to 30d) */
     @query range?: SiteAnalyticsRange,
   ): SiteAnalyticsOverview | NotFoundProblem;
+
+  /** New people report: Contacts created per Report day, split by Contact source */
+  @get
+  @route("/new-people")
+  op newPeople(
+    @path workspaceId: WorkspaceId,
+
+    /** Window to aggregate over (defaults to 30d) */
+    @query range?: SiteAnalyticsRange,
+  ): SiteNewPeopleReport | NotFoundProblem;
+
+  /** Subscribed people report: who subscribed and unsubscribed per Report day, and how many are subscribed now */
+  @get
+  @route("/subscribed-people")
+  op subscribedPeople(
+    @path workspaceId: WorkspaceId,
+
+    /** Window to report over (defaults to 30d) */
+    @query range?: SiteAnalyticsRange,
+  ): SiteAnalyticsSubscribedPeople | NotFoundProblem;
+
+  /** Clicks by link over the whole workspace, split by the Broadcast or Automation that carried each link */
+  @get
+  @route("/clicks-by-link")
+  op clicksByLink(
+    @path workspaceId: WorkspaceId,
+
+    /** Window to aggregate over (defaults to 30d) */
+    @query range?: SiteAnalyticsRange,
+  ): SiteAnalyticsClicksByLink | NotFoundProblem;
+
+  /** Human opens by hour of day and day of week in the Workspace time zone */
+  @get
+  @route("/opens-by-hour")
+  op opensByHour(
+    @path workspaceId: WorkspaceId,
+
+    /** Window to aggregate over (defaults to 30d) */
+    @query range?: SiteAnalyticsRange,
+  ): SiteAnalyticsOpensByHour | NotFoundProblem;
+
+  /** Events in the range, grouped by action */
+  @get
+  @route("/events")
+  op events(
+    @path workspaceId: WorkspaceId,
+
+    /** Window to report over (defaults to 30d) */
+    @query range?: SiteAnalyticsRange,
+  ): SiteAnalyticsEvents | NotFoundProblem;
 }

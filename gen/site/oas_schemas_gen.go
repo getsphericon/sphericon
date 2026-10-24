@@ -442,6 +442,8 @@ type ContactExportContact struct {
 	TimeZone OptNilString `json:"timeZone"`
 	// Typed custom field values keyed by the field's machine key.
 	CustomFields OptNilContactExportJson `json:"customFields"`
+	// The door the contact came through; absent for a contact that predates the field.
+	Source OptNilContactExportSource `json:"source"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -486,6 +488,11 @@ func (s *ContactExportContact) GetTimeZone() OptNilString {
 // GetCustomFields returns the value of CustomFields.
 func (s *ContactExportContact) GetCustomFields() OptNilContactExportJson {
 	return s.CustomFields
+}
+
+// GetSource returns the value of Source.
+func (s *ContactExportContact) GetSource() OptNilContactExportSource {
+	return s.Source
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -536,6 +543,11 @@ func (s *ContactExportContact) SetTimeZone(val OptNilString) {
 // SetCustomFields sets the value of CustomFields.
 func (s *ContactExportContact) SetCustomFields(val OptNilContactExportJson) {
 	s.CustomFields = val
+}
+
+// SetSource sets the value of Source.
+func (s *ContactExportContact) SetSource(val OptNilContactExportSource) {
+	s.Source = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.
@@ -1059,6 +1071,56 @@ func (s *ContactExportOutboundMessage) SetTemplateId(val OptNilEntityId) {
 // SetCreatedAt sets the value of CreatedAt.
 func (s *ContactExportOutboundMessage) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
+}
+
+// How the contact first came to exist.
+// Ref: #/components/schemas/ContactExportSource
+type ContactExportSource string
+
+const (
+	ContactExportSourceManual  ContactExportSource = "manual"
+	ContactExportSourceAPI     ContactExportSource = "api"
+	ContactExportSourceTracker ContactExportSource = "tracker"
+)
+
+// AllValues returns all ContactExportSource values.
+func (ContactExportSource) AllValues() []ContactExportSource {
+	return []ContactExportSource{
+		ContactExportSourceManual,
+		ContactExportSourceAPI,
+		ContactExportSourceTracker,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ContactExportSource) MarshalText() ([]byte, error) {
+	switch s {
+	case ContactExportSourceManual:
+		return []byte(s), nil
+	case ContactExportSourceAPI:
+		return []byte(s), nil
+	case ContactExportSourceTracker:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ContactExportSource) UnmarshalText(data []byte) error {
+	switch ContactExportSource(data) {
+	case ContactExportSourceManual:
+		*s = ContactExportSourceManual
+		return nil
+	case ContactExportSourceAPI:
+		*s = ContactExportSourceAPI
+		return nil
+	case ContactExportSourceTracker:
+		*s = ContactExportSourceTracker
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
 }
 
 // A suppression of a channel destination.
@@ -2296,6 +2358,74 @@ func (o OptNilContactExportJson) Get() (v ContactExportJson, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptNilContactExportJson) Or(d ContactExportJson) ContactExportJson {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptNilContactExportSource returns new OptNilContactExportSource with value set to v.
+func NewOptNilContactExportSource(v ContactExportSource) OptNilContactExportSource {
+	return OptNilContactExportSource{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilContactExportSource is optional nullable ContactExportSource.
+type OptNilContactExportSource struct {
+	Value ContactExportSource
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilContactExportSource was set.
+func (o OptNilContactExportSource) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilContactExportSource) Reset() {
+	var v ContactExportSource
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilContactExportSource) SetTo(v ContactExportSource) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilContactExportSource) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilContactExportSource) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v ContactExportSource
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilContactExportSource) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilContactExportSource) Get() (v ContactExportSource, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilContactExportSource) Or(d ContactExportSource) ContactExportSource {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -5437,7 +5567,12 @@ func (s *ProblemDetails) SetDebug(val OptProblemDebug) {
 	s.Debug = val
 }
 
+func (*ProblemDetails) siteAnalyticsClicksByLinkRes()          {}
+func (*ProblemDetails) siteAnalyticsEventsRes()                {}
+func (*ProblemDetails) siteAnalyticsNewPeopleRes()             {}
+func (*ProblemDetails) siteAnalyticsOpensByHourRes()           {}
 func (*ProblemDetails) siteAnalyticsOverviewRes()              {}
+func (*ProblemDetails) siteAnalyticsSubscribedPeopleRes()      {}
 func (*ProblemDetails) siteAuthConfirmEmailChangeRes()         {}
 func (*ProblemDetails) siteAuthSecondFactorRes()               {}
 func (*ProblemDetails) siteAuthSigninNotMeRes()                {}
@@ -5856,6 +5991,38 @@ func (s *SiteAnalyticsAutomations) SetRunsCompleted(val int32) {
 	s.RunsCompleted = val
 }
 
+// The Clicks by link report.
+// Ref: #/components/schemas/SiteAnalyticsClicksByLink
+type SiteAnalyticsClicksByLink struct {
+	// Each link with clicks in the range, most clicked first; machine clicks are left out.
+	Links []SiteAnalyticsLink `json:"links"`
+	// The configured Event retention in days (SPHERICON_EVENTS_RETENTION_DAYS); 0 means Events are kept
+	// forever. Clicks are Events, so a range longer than this is counted only over the retained days.
+	EventsRetentionDays int32 `json:"eventsRetentionDays"`
+}
+
+// GetLinks returns the value of Links.
+func (s *SiteAnalyticsClicksByLink) GetLinks() []SiteAnalyticsLink {
+	return s.Links
+}
+
+// GetEventsRetentionDays returns the value of EventsRetentionDays.
+func (s *SiteAnalyticsClicksByLink) GetEventsRetentionDays() int32 {
+	return s.EventsRetentionDays
+}
+
+// SetLinks sets the value of Links.
+func (s *SiteAnalyticsClicksByLink) SetLinks(val []SiteAnalyticsLink) {
+	s.Links = val
+}
+
+// SetEventsRetentionDays sets the value of EventsRetentionDays.
+func (s *SiteAnalyticsClicksByLink) SetEventsRetentionDays(val int32) {
+	s.EventsRetentionDays = val
+}
+
+func (*SiteAnalyticsClicksByLink) siteAnalyticsClicksByLinkRes() {}
+
 // Current contact counts (point-in-time snapshot, not range-scoped).
 // Ref: #/components/schemas/SiteAnalyticsContacts
 type SiteAnalyticsContacts struct {
@@ -5987,6 +6154,245 @@ func (s *SiteAnalyticsEmail) SetClickToOpenRate(val float32) {
 	s.ClickToOpenRate = val
 }
 
+// One action of the Events report.
+// Ref: #/components/schemas/SiteAnalyticsEventAction
+type SiteAnalyticsEventAction struct {
+	// The Event action, reserved `email.*` or tracked by the customer.
+	Action string `json:"action"`
+	// How many times it happened in the range.
+	Count int32 `json:"count"`
+	// How many distinct Contacts it happened to; anonymous Events count in `count` only.
+	Contacts int32 `json:"contacts"`
+	// When it last happened in the range.
+	LastAt Timestamp `json:"lastAt"`
+}
+
+// GetAction returns the value of Action.
+func (s *SiteAnalyticsEventAction) GetAction() string {
+	return s.Action
+}
+
+// GetCount returns the value of Count.
+func (s *SiteAnalyticsEventAction) GetCount() int32 {
+	return s.Count
+}
+
+// GetContacts returns the value of Contacts.
+func (s *SiteAnalyticsEventAction) GetContacts() int32 {
+	return s.Contacts
+}
+
+// GetLastAt returns the value of LastAt.
+func (s *SiteAnalyticsEventAction) GetLastAt() Timestamp {
+	return s.LastAt
+}
+
+// SetAction sets the value of Action.
+func (s *SiteAnalyticsEventAction) SetAction(val string) {
+	s.Action = val
+}
+
+// SetCount sets the value of Count.
+func (s *SiteAnalyticsEventAction) SetCount(val int32) {
+	s.Count = val
+}
+
+// SetContacts sets the value of Contacts.
+func (s *SiteAnalyticsEventAction) SetContacts(val int32) {
+	s.Contacts = val
+}
+
+// SetLastAt sets the value of LastAt.
+func (s *SiteAnalyticsEventAction) SetLastAt(val Timestamp) {
+	s.LastAt = val
+}
+
+// The Events report: each action in the range, most frequent first. Machine opens and clicks are left
+// out.
+// Ref: #/components/schemas/SiteAnalyticsEvents
+type SiteAnalyticsEvents struct {
+	// One row per action.
+	Actions []SiteAnalyticsEventAction `json:"actions"`
+}
+
+// GetActions returns the value of Actions.
+func (s *SiteAnalyticsEvents) GetActions() []SiteAnalyticsEventAction {
+	return s.Actions
+}
+
+// SetActions sets the value of Actions.
+func (s *SiteAnalyticsEvents) SetActions(val []SiteAnalyticsEventAction) {
+	s.Actions = val
+}
+
+func (*SiteAnalyticsEvents) siteAnalyticsEventsRes() {}
+
+// One clicked link with its clicks in the range, split by the Broadcast or Automation that carried it.
+// Ref: #/components/schemas/SiteAnalyticsLink
+type SiteAnalyticsLink struct {
+	// The link's destination URL.
+	URL string `json:"url"`
+	// Human clicks on the link during the range (every click counted, not unique per contact).
+	Clicks int32 `json:"clicks"`
+	// Where the clicks came from, most clicked first.
+	Owners []SiteAnalyticsLinkOwner `json:"owners"`
+}
+
+// GetURL returns the value of URL.
+func (s *SiteAnalyticsLink) GetURL() string {
+	return s.URL
+}
+
+// GetClicks returns the value of Clicks.
+func (s *SiteAnalyticsLink) GetClicks() int32 {
+	return s.Clicks
+}
+
+// GetOwners returns the value of Owners.
+func (s *SiteAnalyticsLink) GetOwners() []SiteAnalyticsLinkOwner {
+	return s.Owners
+}
+
+// SetURL sets the value of URL.
+func (s *SiteAnalyticsLink) SetURL(val string) {
+	s.URL = val
+}
+
+// SetClicks sets the value of Clicks.
+func (s *SiteAnalyticsLink) SetClicks(val int32) {
+	s.Clicks = val
+}
+
+// SetOwners sets the value of Owners.
+func (s *SiteAnalyticsLink) SetOwners(val []SiteAnalyticsLinkOwner) {
+	s.Owners = val
+}
+
+// The clicks of one link in the emails of one Broadcast or Automation.
+// Ref: #/components/schemas/SiteAnalyticsLinkOwner
+type SiteAnalyticsLinkOwner struct {
+	// Whether the Broadcast report or the Automation report is the one to open.
+	Kind SiteAnalyticsOwnerKind `json:"kind"`
+	// The Broadcast's or Automation's id.
+	ID EntityId `json:"id"`
+	// The Broadcast's or Automation's name.
+	Name string `json:"name"`
+	// Human clicks on the link in its emails during the range.
+	Clicks int32 `json:"clicks"`
+}
+
+// GetKind returns the value of Kind.
+func (s *SiteAnalyticsLinkOwner) GetKind() SiteAnalyticsOwnerKind {
+	return s.Kind
+}
+
+// GetID returns the value of ID.
+func (s *SiteAnalyticsLinkOwner) GetID() EntityId {
+	return s.ID
+}
+
+// GetName returns the value of Name.
+func (s *SiteAnalyticsLinkOwner) GetName() string {
+	return s.Name
+}
+
+// GetClicks returns the value of Clicks.
+func (s *SiteAnalyticsLinkOwner) GetClicks() int32 {
+	return s.Clicks
+}
+
+// SetKind sets the value of Kind.
+func (s *SiteAnalyticsLinkOwner) SetKind(val SiteAnalyticsOwnerKind) {
+	s.Kind = val
+}
+
+// SetID sets the value of ID.
+func (s *SiteAnalyticsLinkOwner) SetID(val EntityId) {
+	s.ID = val
+}
+
+// SetName sets the value of Name.
+func (s *SiteAnalyticsLinkOwner) SetName(val string) {
+	s.Name = val
+}
+
+// SetClicks sets the value of Clicks.
+func (s *SiteAnalyticsLinkOwner) SetClicks(val int32) {
+	s.Clicks = val
+}
+
+// Opens by hour report: a cell for every weekday and hour, Monday 00:00 first; machine opens are left
+// out.
+// Ref: #/components/schemas/SiteAnalyticsOpensByHour
+type SiteAnalyticsOpensByHour struct {
+	Cells []SiteAnalyticsOpensCell `json:"cells"`
+	// Human opens in the range.
+	Total int32 `json:"total"`
+}
+
+// GetCells returns the value of Cells.
+func (s *SiteAnalyticsOpensByHour) GetCells() []SiteAnalyticsOpensCell {
+	return s.Cells
+}
+
+// GetTotal returns the value of Total.
+func (s *SiteAnalyticsOpensByHour) GetTotal() int32 {
+	return s.Total
+}
+
+// SetCells sets the value of Cells.
+func (s *SiteAnalyticsOpensByHour) SetCells(val []SiteAnalyticsOpensCell) {
+	s.Cells = val
+}
+
+// SetTotal sets the value of Total.
+func (s *SiteAnalyticsOpensByHour) SetTotal(val int32) {
+	s.Total = val
+}
+
+func (*SiteAnalyticsOpensByHour) siteAnalyticsOpensByHourRes() {}
+
+// Human opens of one weekday and hour of day in the Workspace time zone.
+// Ref: #/components/schemas/SiteAnalyticsOpensCell
+type SiteAnalyticsOpensCell struct {
+	// ISO weekday: 1 is Monday, 7 is Sunday.
+	Weekday int32 `json:"weekday"`
+	// Hour of day, 0-23.
+	Hour int32 `json:"hour"`
+	// Human opens in that hour of that weekday within the range.
+	Opens int32 `json:"opens"`
+}
+
+// GetWeekday returns the value of Weekday.
+func (s *SiteAnalyticsOpensCell) GetWeekday() int32 {
+	return s.Weekday
+}
+
+// GetHour returns the value of Hour.
+func (s *SiteAnalyticsOpensCell) GetHour() int32 {
+	return s.Hour
+}
+
+// GetOpens returns the value of Opens.
+func (s *SiteAnalyticsOpensCell) GetOpens() int32 {
+	return s.Opens
+}
+
+// SetWeekday sets the value of Weekday.
+func (s *SiteAnalyticsOpensCell) SetWeekday(val int32) {
+	s.Weekday = val
+}
+
+// SetHour sets the value of Hour.
+func (s *SiteAnalyticsOpensCell) SetHour(val int32) {
+	s.Hour = val
+}
+
+// SetOpens sets the value of Opens.
+func (s *SiteAnalyticsOpensCell) SetOpens(val int32) {
+	s.Opens = val
+}
+
 // Workspace analytics overview powering the dashboard.
 // Ref: #/components/schemas/SiteAnalyticsOverview
 type SiteAnalyticsOverview struct {
@@ -6051,6 +6457,49 @@ func (s *SiteAnalyticsOverview) SetAbuseWarning(val OptNilSiteAbuseWarning) {
 }
 
 func (*SiteAnalyticsOverview) siteAnalyticsOverviewRes() {}
+
+// What carried a clicked link: a Broadcast or an Automation.
+// Ref: #/components/schemas/SiteAnalyticsOwnerKind
+type SiteAnalyticsOwnerKind string
+
+const (
+	SiteAnalyticsOwnerKindBroadcast  SiteAnalyticsOwnerKind = "broadcast"
+	SiteAnalyticsOwnerKindAutomation SiteAnalyticsOwnerKind = "automation"
+)
+
+// AllValues returns all SiteAnalyticsOwnerKind values.
+func (SiteAnalyticsOwnerKind) AllValues() []SiteAnalyticsOwnerKind {
+	return []SiteAnalyticsOwnerKind{
+		SiteAnalyticsOwnerKindBroadcast,
+		SiteAnalyticsOwnerKindAutomation,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteAnalyticsOwnerKind) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteAnalyticsOwnerKindBroadcast:
+		return []byte(s), nil
+	case SiteAnalyticsOwnerKindAutomation:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteAnalyticsOwnerKind) UnmarshalText(data []byte) error {
+	switch SiteAnalyticsOwnerKind(data) {
+	case SiteAnalyticsOwnerKindBroadcast:
+		*s = SiteAnalyticsOwnerKindBroadcast
+		return nil
+	case SiteAnalyticsOwnerKindAutomation:
+		*s = SiteAnalyticsOwnerKindAutomation
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
 
 // One UTC send-day of the cohort, zero-filled across the range. Opened/clicked count the messages sent
 // that day that were later opened/clicked.
@@ -6154,6 +6603,91 @@ func (s *SiteAnalyticsRange) UnmarshalText(data []byte) error {
 	default:
 		return errors.Errorf("invalid value: %q", data)
 	}
+}
+
+// The Subscribed people report: the daily flow plus the current number, which is read from current
+// state and is never reconstructed from the flow.
+// Ref: #/components/schemas/SiteAnalyticsSubscribedPeople
+type SiteAnalyticsSubscribedPeople struct {
+	// Contacts that are not globally opted out of email now.
+	Current int32 `json:"current"`
+	// Daily flow, oldest first, one point per Report day in the range.
+	Series []SiteAnalyticsSubscribedPoint `json:"series"`
+}
+
+// GetCurrent returns the value of Current.
+func (s *SiteAnalyticsSubscribedPeople) GetCurrent() int32 {
+	return s.Current
+}
+
+// GetSeries returns the value of Series.
+func (s *SiteAnalyticsSubscribedPeople) GetSeries() []SiteAnalyticsSubscribedPoint {
+	return s.Series
+}
+
+// SetCurrent sets the value of Current.
+func (s *SiteAnalyticsSubscribedPeople) SetCurrent(val int32) {
+	s.Current = val
+}
+
+// SetSeries sets the value of Series.
+func (s *SiteAnalyticsSubscribedPeople) SetSeries(val []SiteAnalyticsSubscribedPoint) {
+	s.Series = val
+}
+
+func (*SiteAnalyticsSubscribedPeople) siteAnalyticsSubscribedPeopleRes() {}
+
+// One Report day of the Subscribed people report, zero-filled across the range.
+// Ref: #/components/schemas/SiteAnalyticsSubscribedPoint
+type SiteAnalyticsSubscribedPoint struct {
+	// Report day, YYYY-MM-DD in the Workspace time zone.
+	Date string `json:"date"`
+	// People who subscribed that day (marketing.confirmed events).
+	Subscribed int32 `json:"subscribed"`
+	// People who unsubscribed that day (email.unsubscribed events).
+	Unsubscribed int32 `json:"unsubscribed"`
+	// Subscribed minus unsubscribed; negative when more people left than joined.
+	Net int32 `json:"net"`
+}
+
+// GetDate returns the value of Date.
+func (s *SiteAnalyticsSubscribedPoint) GetDate() string {
+	return s.Date
+}
+
+// GetSubscribed returns the value of Subscribed.
+func (s *SiteAnalyticsSubscribedPoint) GetSubscribed() int32 {
+	return s.Subscribed
+}
+
+// GetUnsubscribed returns the value of Unsubscribed.
+func (s *SiteAnalyticsSubscribedPoint) GetUnsubscribed() int32 {
+	return s.Unsubscribed
+}
+
+// GetNet returns the value of Net.
+func (s *SiteAnalyticsSubscribedPoint) GetNet() int32 {
+	return s.Net
+}
+
+// SetDate sets the value of Date.
+func (s *SiteAnalyticsSubscribedPoint) SetDate(val string) {
+	s.Date = val
+}
+
+// SetSubscribed sets the value of Subscribed.
+func (s *SiteAnalyticsSubscribedPoint) SetSubscribed(val int32) {
+	s.Subscribed = val
+}
+
+// SetUnsubscribed sets the value of Unsubscribed.
+func (s *SiteAnalyticsSubscribedPoint) SetUnsubscribed(val int32) {
+	s.Unsubscribed = val
+}
+
+// SetNet sets the value of Net.
+func (s *SiteAnalyticsSubscribedPoint) SetNet(val int32) {
+	s.Net = val
 }
 
 // A workspace API token (secret shown only once, at creation).
@@ -13272,6 +13806,103 @@ func (*SiteMembershipsUpdateNotFound) siteMembershipsUpdateRes() {}
 type SiteMembershipsUpdateUnprocessableEntity ProblemDetails
 
 func (*SiteMembershipsUpdateUnprocessableEntity) siteMembershipsUpdateRes() {}
+
+// One Report day of the New people report: the Contacts created that day by the door they came
+// through, zero-filled across the range.
+// Ref: #/components/schemas/SiteNewPeoplePoint
+type SiteNewPeoplePoint struct {
+	// Report day, YYYY-MM-DD in the Workspace time zone.
+	Date string `json:"date"`
+	// Contacts created by hand that day.
+	Manual int32 `json:"manual"`
+	// Contacts created through the API that day.
+	API int32 `json:"api"`
+	// Contacts created by the tracker that day.
+	Tracker int32 `json:"tracker"`
+	// Contacts that predate the Contact source.
+	Unknown int32 `json:"unknown"`
+}
+
+// GetDate returns the value of Date.
+func (s *SiteNewPeoplePoint) GetDate() string {
+	return s.Date
+}
+
+// GetManual returns the value of Manual.
+func (s *SiteNewPeoplePoint) GetManual() int32 {
+	return s.Manual
+}
+
+// GetAPI returns the value of API.
+func (s *SiteNewPeoplePoint) GetAPI() int32 {
+	return s.API
+}
+
+// GetTracker returns the value of Tracker.
+func (s *SiteNewPeoplePoint) GetTracker() int32 {
+	return s.Tracker
+}
+
+// GetUnknown returns the value of Unknown.
+func (s *SiteNewPeoplePoint) GetUnknown() int32 {
+	return s.Unknown
+}
+
+// SetDate sets the value of Date.
+func (s *SiteNewPeoplePoint) SetDate(val string) {
+	s.Date = val
+}
+
+// SetManual sets the value of Manual.
+func (s *SiteNewPeoplePoint) SetManual(val int32) {
+	s.Manual = val
+}
+
+// SetAPI sets the value of API.
+func (s *SiteNewPeoplePoint) SetAPI(val int32) {
+	s.API = val
+}
+
+// SetTracker sets the value of Tracker.
+func (s *SiteNewPeoplePoint) SetTracker(val int32) {
+	s.Tracker = val
+}
+
+// SetUnknown sets the value of Unknown.
+func (s *SiteNewPeoplePoint) SetUnknown(val int32) {
+	s.Unknown = val
+}
+
+// New people: Contacts created in the selected range, per Report day and by Contact source.
+// Ref: #/components/schemas/SiteNewPeopleReport
+type SiteNewPeopleReport struct {
+	// Contacts created within the range.
+	Total int32 `json:"total"`
+	// One point per Report day in the range, oldest first.
+	Timeseries []SiteNewPeoplePoint `json:"timeseries"`
+}
+
+// GetTotal returns the value of Total.
+func (s *SiteNewPeopleReport) GetTotal() int32 {
+	return s.Total
+}
+
+// GetTimeseries returns the value of Timeseries.
+func (s *SiteNewPeopleReport) GetTimeseries() []SiteNewPeoplePoint {
+	return s.Timeseries
+}
+
+// SetTotal sets the value of Total.
+func (s *SiteNewPeopleReport) SetTotal(val int32) {
+	s.Total = val
+}
+
+// SetTimeseries sets the value of Timeseries.
+func (s *SiteNewPeopleReport) SetTimeseries(val []SiteNewPeoplePoint) {
+	s.Timeseries = val
+}
+
+func (*SiteNewPeopleReport) siteAnalyticsNewPeopleRes() {}
 
 // What an MCP client (dynamically registered) is asking permission for, as validated by the
 // authorization server. Rendered on the consent screen.
@@ -20884,6 +21515,9 @@ type SiteWorkspaceResource struct {
 	// Physical postal address printed in the marketing email footer (CAN-SPAM 15 U.S.C. §7704(a)(5)).
 	// Empty until the workspace sets one.
 	PostalAddress string `json:"postalAddress"`
+	// The Workspace time zone (ADR 0057): the IANA name every analytics report counts its days in. UTC
+	// until an Owner sets it.
+	Timezone TimeZoneName `json:"timezone"`
 	// The authenticated User's role in this Workspace (from their Membership). It rides the Workspace list
 	// so role-gated UI is known even while the Workspace's own endpoints are withheld under a Two-factor
 	// requirement.
@@ -20935,6 +21569,11 @@ func (s *SiteWorkspaceResource) GetCollectKey() string {
 // GetPostalAddress returns the value of PostalAddress.
 func (s *SiteWorkspaceResource) GetPostalAddress() string {
 	return s.PostalAddress
+}
+
+// GetTimezone returns the value of Timezone.
+func (s *SiteWorkspaceResource) GetTimezone() TimeZoneName {
+	return s.Timezone
 }
 
 // GetRole returns the value of Role.
@@ -21007,6 +21646,11 @@ func (s *SiteWorkspaceResource) SetPostalAddress(val string) {
 	s.PostalAddress = val
 }
 
+// SetTimezone sets the value of Timezone.
+func (s *SiteWorkspaceResource) SetTimezone(val TimeZoneName) {
+	s.Timezone = val
+}
+
 // SetRole sets the value of Role.
 func (s *SiteWorkspaceResource) SetRole(val SiteMembershipRole) {
 	s.Role = val
@@ -21060,7 +21704,25 @@ func (s *SiteWorkspaceResource) SetCreatedAt(val Timestamp) {
 func (*SiteWorkspaceResource) siteWorkspacesCreateRes()                     {}
 func (*SiteWorkspaceResource) siteWorkspacesRestoreRes()                    {}
 func (*SiteWorkspaceResource) siteWorkspacesSetSecondFactorRequirementRes() {}
+func (*SiteWorkspaceResource) siteWorkspacesSetTimezoneRes()                {}
 func (*SiteWorkspaceResource) siteWorkspacesUpdateRes()                     {}
+
+// Set the Workspace time zone.
+// Ref: #/components/schemas/SiteWorkspaceTimezoneInput
+type SiteWorkspaceTimezoneInput struct {
+	// An IANA time zone name such as `Europe/Berlin`; the zone database decides what is valid.
+	Timezone TimeZoneName `json:"timezone"`
+}
+
+// GetTimezone returns the value of Timezone.
+func (s *SiteWorkspaceTimezoneInput) GetTimezone() TimeZoneName {
+	return s.Timezone
+}
+
+// SetTimezone sets the value of Timezone.
+func (s *SiteWorkspaceTimezoneInput) SetTimezone(val TimeZoneName) {
+	s.Timezone = val
+}
 
 type SiteWorkspacesAccountLinkForbidden ProblemDetails
 
@@ -21120,6 +21782,18 @@ type SiteWorkspacesSetSecondFactorRequirementNotFound ProblemDetails
 
 func (*SiteWorkspacesSetSecondFactorRequirementNotFound) siteWorkspacesSetSecondFactorRequirementRes() {
 }
+
+type SiteWorkspacesSetTimezoneForbidden ProblemDetails
+
+func (*SiteWorkspacesSetTimezoneForbidden) siteWorkspacesSetTimezoneRes() {}
+
+type SiteWorkspacesSetTimezoneNotFound ProblemDetails
+
+func (*SiteWorkspacesSetTimezoneNotFound) siteWorkspacesSetTimezoneRes() {}
+
+type SiteWorkspacesSetTimezoneUnprocessableEntity ProblemDetails
+
+func (*SiteWorkspacesSetTimezoneUnprocessableEntity) siteWorkspacesSetTimezoneRes() {}
 
 type SiteWorkspacesUpdateForbidden ProblemDetails
 

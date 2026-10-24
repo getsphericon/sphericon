@@ -3,6 +3,13 @@ namespace Sphericon;
 /** An arbitrary JSON object: typed custom field values or event properties */
 model ContactExportJson is Record<unknown>;
 
+/** How the contact first came to exist */
+enum ContactExportSource {
+  manual,
+  api,
+  tracker,
+}
+
 /** The contact itself */
 model ContactExportContact {
   /** Unique identifier */
@@ -28,6 +35,9 @@ model ContactExportContact {
 
   /** Typed custom field values keyed by the field's machine key */
   customFields?: ContactExportJson | null;
+
+  /** The door the contact came through; absent for a contact that predates the field */
+  source?: ContactExportSource | null;
 
   /** Creation timestamp */
   createdAt: Timestamp;

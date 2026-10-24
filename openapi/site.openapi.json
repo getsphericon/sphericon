@@ -3419,6 +3419,202 @@
         "tags": ["Site Workspaces"]
       }
     },
+    "/workspaces/{workspaceId}/analytics/clicks-by-link": {
+      "get": {
+        "operationId": "SiteAnalytics_clicksByLink",
+        "description": "Clicks by link over the whole workspace, split by the Broadcast or Automation that carried each link",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          },
+          {
+            "name": "range",
+            "in": "query",
+            "required": false,
+            "description": "Window to aggregate over (defaults to 30d)",
+            "schema": {
+              "$ref": "#/components/schemas/SiteAnalyticsRange"
+            },
+            "explode": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteAnalyticsClicksByLink"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Analytics"]
+      }
+    },
+    "/workspaces/{workspaceId}/analytics/events": {
+      "get": {
+        "operationId": "SiteAnalytics_events",
+        "description": "Events in the range, grouped by action",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          },
+          {
+            "name": "range",
+            "in": "query",
+            "required": false,
+            "description": "Window to report over (defaults to 30d)",
+            "schema": {
+              "$ref": "#/components/schemas/SiteAnalyticsRange"
+            },
+            "explode": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteAnalyticsEvents"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Analytics"]
+      }
+    },
+    "/workspaces/{workspaceId}/analytics/new-people": {
+      "get": {
+        "operationId": "SiteAnalytics_newPeople",
+        "description": "New people report: Contacts created per Report day, split by Contact source",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          },
+          {
+            "name": "range",
+            "in": "query",
+            "required": false,
+            "description": "Window to aggregate over (defaults to 30d)",
+            "schema": {
+              "$ref": "#/components/schemas/SiteAnalyticsRange"
+            },
+            "explode": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteNewPeopleReport"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Analytics"]
+      }
+    },
+    "/workspaces/{workspaceId}/analytics/opens-by-hour": {
+      "get": {
+        "operationId": "SiteAnalytics_opensByHour",
+        "description": "Human opens by hour of day and day of week in the Workspace time zone",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          },
+          {
+            "name": "range",
+            "in": "query",
+            "required": false,
+            "description": "Window to aggregate over (defaults to 30d)",
+            "schema": {
+              "$ref": "#/components/schemas/SiteAnalyticsRange"
+            },
+            "explode": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteAnalyticsOpensByHour"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Analytics"]
+      }
+    },
     "/workspaces/{workspaceId}/analytics/overview": {
       "get": {
         "operationId": "SiteAnalytics_overview",
@@ -3450,6 +3646,55 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SiteAnalyticsOverview"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Analytics"]
+      }
+    },
+    "/workspaces/{workspaceId}/analytics/subscribed-people": {
+      "get": {
+        "operationId": "SiteAnalytics_subscribedPeople",
+        "description": "Subscribed people report: who subscribed and unsubscribed per Report day, and how many are subscribed now",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          },
+          {
+            "name": "range",
+            "in": "query",
+            "required": false,
+            "description": "Window to report over (defaults to 30d)",
+            "schema": {
+              "$ref": "#/components/schemas/SiteAnalyticsRange"
+            },
+            "explode": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteAnalyticsSubscribedPeople"
                 }
               }
             }
@@ -10079,6 +10324,75 @@
         "tags": ["Site Templates"]
       }
     },
+    "/workspaces/{workspaceId}/timezone": {
+      "put": {
+        "operationId": "SiteWorkspaces_setTimezone",
+        "description": "Set the Workspace time zone (Owner only), the zone of every Report day (ADR 0057). 422 for\na name the zone database does not know. A change is recorded as an Audit entry and applies\nto all history at once.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteWorkspaceResource"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Workspaces"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteWorkspaceTimezoneInput"
+              }
+            }
+          }
+        }
+      }
+    },
     "/workspaces/{workspaceId}/tokens": {
       "get": {
         "operationId": "SiteTokens_list",
@@ -11621,6 +11935,15 @@
             "nullable": true,
             "description": "Typed custom field values keyed by the field's machine key"
           },
+          "source": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContactExportSource"
+              }
+            ],
+            "nullable": true,
+            "description": "The door the contact came through; absent for a contact that predates the field"
+          },
           "createdAt": {
             "allOf": [
               {
@@ -11939,6 +12262,11 @@
           }
         },
         "description": "Delivery metadata of one outbound message; the rendered message is not included"
+      },
+      "ContactExportSource": {
+        "type": "string",
+        "enum": ["manual", "api", "tracker"],
+        "description": "How the contact first came to exist"
       },
       "ContactExportSuppression": {
         "type": "object",
@@ -12458,6 +12786,25 @@
         },
         "description": "Automation counts (point-in-time snapshot)"
       },
+      "SiteAnalyticsClicksByLink": {
+        "type": "object",
+        "required": ["links", "eventsRetentionDays"],
+        "properties": {
+          "links": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteAnalyticsLink"
+            },
+            "description": "Each link with clicks in the range, most clicked first; machine clicks are left out"
+          },
+          "eventsRetentionDays": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The configured Event retention in days (SPHERICON_EVENTS_RETENTION_DAYS); 0 means Events\nare kept forever. Clicks are Events, so a range longer than this is counted only over the\nretained days."
+          }
+        },
+        "description": "The Clicks by link report"
+      },
       "SiteAnalyticsContacts": {
         "type": "object",
         "required": ["total", "active", "unsubscribed", "newInRange"],
@@ -12529,6 +12876,144 @@
         },
         "description": "Email engagement for the messages sent in the selected range (the send\ncohort), from delivery logs. Opens/clicks are counted among that cohort, so\nthe counts reconcile and the rates stay in [0,1]."
       },
+      "SiteAnalyticsEventAction": {
+        "type": "object",
+        "required": ["action", "count", "contacts", "lastAt"],
+        "properties": {
+          "action": {
+            "type": "string",
+            "description": "The Event action, reserved `email.*` or tracked by the customer"
+          },
+          "count": {
+            "type": "integer",
+            "format": "int32",
+            "description": "How many times it happened in the range"
+          },
+          "contacts": {
+            "type": "integer",
+            "format": "int32",
+            "description": "How many distinct Contacts it happened to; anonymous Events count in `count` only"
+          },
+          "lastAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When it last happened in the range"
+          }
+        },
+        "description": "One action of the Events report"
+      },
+      "SiteAnalyticsEvents": {
+        "type": "object",
+        "required": ["actions"],
+        "properties": {
+          "actions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteAnalyticsEventAction"
+            },
+            "description": "One row per action"
+          }
+        },
+        "description": "The Events report: each action in the range, most frequent first. Machine opens and\nclicks are left out."
+      },
+      "SiteAnalyticsLink": {
+        "type": "object",
+        "required": ["url", "clicks", "owners"],
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "The link's destination URL"
+          },
+          "clicks": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Human clicks on the link during the range (every click counted, not unique per contact)"
+          },
+          "owners": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteAnalyticsLinkOwner"
+            },
+            "description": "Where the clicks came from, most clicked first"
+          }
+        },
+        "description": "One clicked link with its clicks in the range, split by the Broadcast or Automation that carried it"
+      },
+      "SiteAnalyticsLinkOwner": {
+        "type": "object",
+        "required": ["kind", "id", "name", "clicks"],
+        "properties": {
+          "kind": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteAnalyticsOwnerKind"
+              }
+            ],
+            "description": "Whether the Broadcast report or the Automation report is the one to open"
+          },
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "The Broadcast's or Automation's id"
+          },
+          "name": {
+            "type": "string",
+            "description": "The Broadcast's or Automation's name"
+          },
+          "clicks": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Human clicks on the link in its emails during the range"
+          }
+        },
+        "description": "The clicks of one link in the emails of one Broadcast or Automation"
+      },
+      "SiteAnalyticsOpensByHour": {
+        "type": "object",
+        "required": ["cells", "total"],
+        "properties": {
+          "cells": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteAnalyticsOpensCell"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Human opens in the range"
+          }
+        },
+        "description": "Opens by hour report: a cell for every weekday and hour, Monday 00:00 first; machine opens are left out"
+      },
+      "SiteAnalyticsOpensCell": {
+        "type": "object",
+        "required": ["weekday", "hour", "opens"],
+        "properties": {
+          "weekday": {
+            "type": "integer",
+            "format": "int32",
+            "description": "ISO weekday: 1 is Monday, 7 is Sunday"
+          },
+          "hour": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Hour of day, 0-23"
+          },
+          "opens": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Human opens in that hour of that weekday within the range"
+          }
+        },
+        "description": "Human opens of one weekday and hour of day in the Workspace time zone"
+      },
       "SiteAnalyticsOverview": {
         "type": "object",
         "required": ["contacts", "email", "automations", "timeseries"],
@@ -12562,6 +13047,11 @@
         },
         "description": "Workspace analytics overview powering the dashboard"
       },
+      "SiteAnalyticsOwnerKind": {
+        "type": "string",
+        "enum": ["broadcast", "automation"],
+        "description": "What carried a clicked link: a Broadcast or an Automation"
+      },
       "SiteAnalyticsPoint": {
         "type": "object",
         "required": ["date", "sent", "opened", "clicked"],
@@ -12592,6 +13082,51 @@
         "type": "string",
         "enum": ["7d", "30d", "90d"],
         "description": "Selectable window for the analytics overview"
+      },
+      "SiteAnalyticsSubscribedPeople": {
+        "type": "object",
+        "required": ["current", "series"],
+        "properties": {
+          "current": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Contacts that are not globally opted out of email now"
+          },
+          "series": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteAnalyticsSubscribedPoint"
+            },
+            "description": "Daily flow, oldest first, one point per Report day in the range"
+          }
+        },
+        "description": "The Subscribed people report: the daily flow plus the current number, which is read from\ncurrent state and is never reconstructed from the flow"
+      },
+      "SiteAnalyticsSubscribedPoint": {
+        "type": "object",
+        "required": ["date", "subscribed", "unsubscribed", "net"],
+        "properties": {
+          "date": {
+            "type": "string",
+            "description": "Report day, YYYY-MM-DD in the Workspace time zone"
+          },
+          "subscribed": {
+            "type": "integer",
+            "format": "int32",
+            "description": "People who subscribed that day (marketing.confirmed events)"
+          },
+          "unsubscribed": {
+            "type": "integer",
+            "format": "int32",
+            "description": "People who unsubscribed that day (email.unsubscribed events)"
+          },
+          "net": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Subscribed minus unsubscribed; negative when more people left than joined"
+          }
+        },
+        "description": "One Report day of the Subscribed people report, zero-filled across the range"
       },
       "SiteApiTokenResource": {
         "type": "object",
@@ -15185,6 +15720,56 @@
         "enum": ["creator", "invitation", "domain"],
         "description": "How a member got in"
       },
+      "SiteNewPeoplePoint": {
+        "type": "object",
+        "required": ["date", "manual", "api", "tracker", "unknown"],
+        "properties": {
+          "date": {
+            "type": "string",
+            "description": "Report day, YYYY-MM-DD in the Workspace time zone"
+          },
+          "manual": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Contacts created by hand that day"
+          },
+          "api": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Contacts created through the API that day"
+          },
+          "tracker": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Contacts created by the tracker that day"
+          },
+          "unknown": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Contacts that predate the Contact source"
+          }
+        },
+        "description": "One Report day of the New people report: the Contacts created that day by the door they\ncame through, zero-filled across the range."
+      },
+      "SiteNewPeopleReport": {
+        "type": "object",
+        "required": ["total", "timeseries"],
+        "properties": {
+          "total": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Contacts created within the range"
+          },
+          "timeseries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteNewPeoplePoint"
+            },
+            "description": "One point per Report day in the range, oldest first"
+          }
+        },
+        "description": "New people: Contacts created in the selected range, per Report day and by Contact source"
+      },
       "SiteOAuthAuthorizationRequest": {
         "type": "object",
         "required": ["clientName", "redirectUri", "localRedirect", "scopes", "sendScopes"],
@@ -17667,6 +18252,7 @@
           "name",
           "collectKey",
           "postalAddress",
+          "timezone",
           "role",
           "mcpUrl",
           "holds",
@@ -17693,6 +18279,14 @@
           "postalAddress": {
             "type": "string",
             "description": "Physical postal address printed in the marketing email footer (CAN-SPAM\n15 U.S.C. §7704(a)(5)). Empty until the workspace sets one."
+          },
+          "timezone": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TimeZoneName"
+              }
+            ],
+            "description": "The Workspace time zone (ADR 0057): the IANA name every analytics report counts its days\nin. UTC until an Owner sets it."
           },
           "role": {
             "allOf": [
@@ -17767,6 +18361,21 @@
           }
         },
         "description": "Workspace the current user belongs to"
+      },
+      "SiteWorkspaceTimezoneInput": {
+        "type": "object",
+        "required": ["timezone"],
+        "properties": {
+          "timezone": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TimeZoneName"
+              }
+            ],
+            "description": "An IANA time zone name such as `Europe/Berlin`; the zone database decides what is valid"
+          }
+        },
+        "description": "Set the Workspace time zone"
       },
       "TimeZoneName": {
         "type": "string"

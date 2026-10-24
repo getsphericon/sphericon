@@ -37,6 +37,8 @@ type Contact struct {
 	LastName *string `json:"last_name,omitempty"`
 	// TimeZone holds the value of the "time_zone" field.
 	TimeZone *string `json:"time_zone,omitempty"`
+	// Source holds the value of the "source" field.
+	Source *contact.Source `json:"source,omitempty"`
 	// CustomFields holds the value of the "custom_fields" field.
 	CustomFields map[string]interface{} `json:"custom_fields,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -118,7 +120,7 @@ func (*Contact) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case contact.FieldID, contact.FieldWorkspaceID:
 			values[i] = new(sql.NullInt64)
-		case contact.FieldSubjectID, contact.FieldEmail, contact.FieldPhone, contact.FieldFirstName, contact.FieldLastName, contact.FieldTimeZone:
+		case contact.FieldSubjectID, contact.FieldEmail, contact.FieldPhone, contact.FieldFirstName, contact.FieldLastName, contact.FieldTimeZone, contact.FieldSource:
 			values[i] = new(sql.NullString)
 		case contact.FieldCreatedAt, contact.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -202,6 +204,13 @@ func (_m *Contact) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.TimeZone = new(string)
 				*_m.TimeZone = value.String
+			}
+		case contact.FieldSource:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field source", values[i])
+			} else if value.Valid {
+				_m.Source = new(contact.Source)
+				*_m.Source = contact.Source(value.String)
 			}
 		case contact.FieldCustomFields:
 			if value, ok := values[i].(*[]byte); !ok {
@@ -309,6 +318,11 @@ func (_m *Contact) String() string {
 	if v := _m.TimeZone; v != nil {
 		builder.WriteString("time_zone=")
 		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	if v := _m.Source; v != nil {
+		builder.WriteString("source=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")
 	builder.WriteString("custom_fields=")

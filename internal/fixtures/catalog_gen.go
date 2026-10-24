@@ -277,6 +277,12 @@ const (
 	BroadcastGlobexName = "Globex only"
 	// BroadcastGlobexSubject is from fixtures/broadcasts.
 	BroadcastGlobexSubject = "Globex only"
+	// BroadcastGothamDaylightSavingID is from fixtures/broadcasts.
+	BroadcastGothamDaylightSavingID = 20009
+	// BroadcastGothamDaylightSavingName is from fixtures/broadcasts.
+	BroadcastGothamDaylightSavingName = "Daylight saving edges"
+	// BroadcastGothamDaylightSavingSubject is from fixtures/broadcasts.
+	BroadcastGothamDaylightSavingSubject = "Daylight saving edges"
 	// BroadcastHooliID is from fixtures/broadcasts.
 	BroadcastHooliID = 910
 	// BroadcastHooliName is from fixtures/broadcasts.
@@ -637,6 +643,68 @@ const (
 	EventGlobexAction = "globex_only"
 	// EventGlobexID is from fixtures/events.
 	EventGlobexID = 900
+	// EventGothamSignupAction is from fixtures/events.
+	EventGothamSignupAction = "signup"
+	// EventGothamSignupEmail is from fixtures/events.
+	EventGothamSignupEmail = "i@gotham.test"
+	// EventGothamSignupID is from fixtures/events.
+	EventGothamSignupID = 9308
+	// EventGothamSubscribedAtMidnightOnThe8thAction is from fixtures/events.
+	EventGothamSubscribedAtMidnightOnThe8thAction = "marketing.confirmed"
+	// EventGothamSubscribedAtMidnightOnThe8thEmail is from fixtures/events.
+	EventGothamSubscribedAtMidnightOnThe8thEmail = "b@gotham.test"
+	// EventGothamSubscribedAtMidnightOnThe8thID is from fixtures/events.
+	EventGothamSubscribedAtMidnightOnThe8thID = 9301
+	// EventGothamSubscribedBackfilledAction is from fixtures/events.
+	EventGothamSubscribedBackfilledAction = "marketing.confirmed"
+	// EventGothamSubscribedBackfilledEmail is from fixtures/events.
+	EventGothamSubscribedBackfilledEmail = "g@gotham.test"
+	// EventGothamSubscribedBackfilledID is from fixtures/events.
+	EventGothamSubscribedBackfilledID = 9306
+	// EventGothamSubscribedLateOnThe7thAction is from fixtures/events.
+	EventGothamSubscribedLateOnThe7thAction = "marketing.confirmed"
+	// EventGothamSubscribedLateOnThe7thEmail is from fixtures/events.
+	EventGothamSubscribedLateOnThe7thEmail = "a@gotham.test"
+	// EventGothamSubscribedLateOnThe7thID is from fixtures/events.
+	EventGothamSubscribedLateOnThe7thID = 9300
+	// EventGothamSubscribedLateOnThe8thAction is from fixtures/events.
+	EventGothamSubscribedLateOnThe8thAction = "marketing.confirmed"
+	// EventGothamSubscribedLateOnThe8thEmail is from fixtures/events.
+	EventGothamSubscribedLateOnThe8thEmail = "c@gotham.test"
+	// EventGothamSubscribedLateOnThe8thID is from fixtures/events.
+	EventGothamSubscribedLateOnThe8thID = 9302
+	// EventGothamSubscribedWithoutOccurredAtAction is from fixtures/events.
+	EventGothamSubscribedWithoutOccurredAtAction = "marketing.confirmed"
+	// EventGothamSubscribedWithoutOccurredAtEmail is from fixtures/events.
+	EventGothamSubscribedWithoutOccurredAtEmail = "f@gotham.test"
+	// EventGothamSubscribedWithoutOccurredAtID is from fixtures/events.
+	EventGothamSubscribedWithoutOccurredAtID = 9305
+	// EventGothamUnsubscribedAtMidnightOnThe9thAction is from fixtures/events.
+	EventGothamUnsubscribedAtMidnightOnThe9thAction = "email.unsubscribed"
+	// EventGothamUnsubscribedAtMidnightOnThe9thEmail is from fixtures/events.
+	EventGothamUnsubscribedAtMidnightOnThe9thEmail = "d@gotham.test"
+	// EventGothamUnsubscribedAtMidnightOnThe9thID is from fixtures/events.
+	EventGothamUnsubscribedAtMidnightOnThe9thID = 9303
+	// EventGothamUnsubscribedLongAgoAction is from fixtures/events.
+	EventGothamUnsubscribedLongAgoAction = "email.unsubscribed"
+	// EventGothamUnsubscribedLongAgoEmail is from fixtures/events.
+	EventGothamUnsubscribedLongAgoEmail = "h@gotham.test"
+	// EventGothamUnsubscribedLongAgoID is from fixtures/events.
+	EventGothamUnsubscribedLongAgoID = 9307
+	// EventGothamUnsubscribedOnThe8thAction is from fixtures/events.
+	EventGothamUnsubscribedOnThe8thAction = "email.unsubscribed"
+	// EventGothamUnsubscribedOnThe8thEmail is from fixtures/events.
+	EventGothamUnsubscribedOnThe8thEmail = "e@gotham.test"
+	// EventGothamUnsubscribedOnThe8thID is from fixtures/events.
+	EventGothamUnsubscribedOnThe8thID = 9304
+	// EventLinkClickBroadcastPricingAction is from fixtures/events.
+	EventLinkClickBroadcastPricingAction = "email.clicked"
+	// EventLinkClickBroadcastPricingID is from fixtures/events.
+	EventLinkClickBroadcastPricingID = 9320
+	// EventLinkClickMachineAction is from fixtures/events.
+	EventLinkClickMachineAction = "email.clicked"
+	// EventLinkClickMachineID is from fixtures/events.
+	EventLinkClickMachineID = 9323
 	// EventOldAnalyticalAction is from fixtures/events.
 	EventOldAnalyticalAction = "page_view"
 	// EventOldAnalyticalEmail is from fixtures/events.
@@ -793,6 +861,14 @@ const (
 	GlobexSamMembershipID = 9
 	// GlobexUsageSnapshotID is from fixtures/usages.
 	GlobexUsageSnapshotID = 2
+	// GothamCollectKey is from fixtures/workspaces.
+	GothamCollectKey = "omck_test_gotham_collect_key"
+	// GothamID is from fixtures/workspaces.
+	GothamID = 61
+	// GothamName is from fixtures/workspaces.
+	GothamName = "Gotham"
+	// GothamPublicID is from fixtures/workspaces.
+	GothamPublicID = "GothmW61"
 	// HoldAcmeLapsedID is from fixtures/holds.
 	HoldAcmeLapsedID = 1
 	// HoldAcmeLapsedKey is from fixtures/holds.

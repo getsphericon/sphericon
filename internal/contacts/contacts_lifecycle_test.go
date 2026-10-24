@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -53,7 +54,7 @@ func TestUpdateClearsExplicitlyClearedAttributes(t *testing.T) {
 	m := contacts.New(env.Bus)
 	ctx := context.Background()
 
-	full, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), contacts.Attributes{
+	full, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.Attributes{
 		SubjectID: new("user-1"), Email: new("clear.me@example.com"), Phone: new("+15559990"),
 		FirstName: new("Clear"), LastName: new("Me"), TimeZone: new("Europe/Berlin"),
 		CustomFields: map[string]any{"plan": "pro"},
@@ -81,7 +82,7 @@ func TestUpsertBatchRunsEachItemIndependentlyAndInOrder(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := contacts.New(env.Bus)
 
-	out := m.UpsertBatch(context.Background(), env.DB.Scoped(fixtures.AcmeID), []contacts.Attributes{
+	out := m.UpsertBatch(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, []contacts.Attributes{
 		{Email: new("batch.new@example.com"), CustomFields: map[string]any{"source": "import"}},
 		{Email: lo.ToPtr(fixtures.ContactAliceEmail), FirstName: new("Ignored")},
 		{FirstName: new("No identity")},
@@ -106,10 +107,10 @@ func TestUpsertEnrichesAnExistingContactFoundByAnotherKey(t *testing.T) {
 	m := contacts.New(env.Bus)
 	ctx := context.Background()
 
-	bare, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), contacts.Attributes{Phone: new("+15557770")})
+	bare, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.Attributes{Phone: new("+15557770")})
 	require.NoError(t, err)
 
-	res, err := m.Upsert(ctx, env.DB.Scoped(fixtures.AcmeID), contacts.Attributes{
+	res, err := m.Upsert(ctx, env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.Attributes{
 		Phone: new("+15557770"), Email: new("Filled.In@Example.com"), SubjectID: new("sub-9"),
 		CustomFields: map[string]any{"tier": "gold"},
 	})
@@ -120,7 +121,7 @@ func TestUpsertEnrichesAnExistingContactFoundByAnotherKey(t *testing.T) {
 	assert.Equal(t, "sub-9", lo.FromPtr(res.Contact.SubjectID))
 	assert.Equal(t, "gold", res.Contact.CustomFields["tier"])
 
-	again, err := m.Upsert(ctx, env.DB.Scoped(fixtures.AcmeID), contacts.Attributes{Phone: new("+15557770"), CustomFields: map[string]any{"visits": float64(1)}})
+	again, err := m.Upsert(ctx, env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.Attributes{Phone: new("+15557770"), CustomFields: map[string]any{"visits": float64(1)}})
 	require.NoError(t, err)
 	assert.Equal(t, map[string]any{"tier": "gold", "visits": float64(1)}, again.Contact.CustomFields, "custom fields merge")
 }
@@ -129,7 +130,7 @@ func TestUpsertIsScopedToTheWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := contacts.New(env.Bus)
 
-	res, err := m.Upsert(context.Background(), env.DB.Scoped(fixtures.GlobexID), contacts.Attributes{Email: lo.ToPtr(fixtures.ContactAliceEmail)})
+	res, err := m.Upsert(context.Background(), env.DB.Scoped(fixtures.GlobexID), contact.SourceManual, contacts.Attributes{Email: lo.ToPtr(fixtures.ContactAliceEmail)})
 	require.NoError(t, err)
 	assert.True(t, res.Created, "Acme's Alice is not Globex's contact")
 	assert.NotEqual(t, int64(fixtures.ContactAliceID), res.Contact.ID)
@@ -141,9 +142,9 @@ func TestResolvePrefersSubjectThenEmailThenPhone(t *testing.T) {
 	m := contacts.New(env.Bus)
 	ctx := context.Background()
 
-	bySubject, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), contacts.Attributes{SubjectID: new("resolve-subject")})
+	bySubject, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.Attributes{SubjectID: new("resolve-subject")})
 	require.NoError(t, err)
-	byPhone, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), contacts.Attributes{Phone: new("+15558880")})
+	byPhone, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.Attributes{Phone: new("+15558880")})
 	require.NoError(t, err)
 
 	got, err := contacts.Resolve(ctx, env.DB.Scoped(fixtures.AcmeID), new(" resolve-subject "), lo.ToPtr(fixtures.ContactAliceEmail), nil)

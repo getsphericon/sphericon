@@ -117,6 +117,7 @@ func (c *ConverterImpl) ContactToExport(source *ent.Contact) site.ContactExportC
 		siteapiContactExportContact.LastName = optNilString((*source).LastName)
 		siteapiContactExportContact.TimeZone = optNilString((*source).TimeZone)
 		siteapiContactExportContact.CustomFields = exportJSON((*source).CustomFields)
+		siteapiContactExportContact.Source = optNilContactSource((*source).Source)
 		siteapiContactExportContact.CreatedAt = timestamp((*source).CreatedAt)
 		siteapiContactExportContact.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
@@ -598,6 +599,7 @@ func (c *ConverterImpl) WorkspaceToResource(source *ent.Workspace) site.SiteWork
 		siteapiSiteWorkspaceResource.Name = (*source).Name
 		siteapiSiteWorkspaceResource.CollectKey = (*source).CollectKey
 		siteapiSiteWorkspaceResource.PostalAddress = (*source).PostalAddress
+		siteapiSiteWorkspaceResource.Timezone = workspaceTimezone((*source).Timezone)
 		siteapiSiteWorkspaceResource.SuspendedAt = optNilTimestamp((*source).SuspendedAt)
 		siteapiSiteWorkspaceResource.SuspensionReason = optNilString((*source).SuspensionReason)
 		siteapiSiteWorkspaceResource.SecondFactorRequiredAt = optNilTimestamp((*source).SecondFactorRequiredAt)

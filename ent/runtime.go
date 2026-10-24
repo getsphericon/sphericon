@@ -1242,16 +1242,20 @@ func init() {
 	workspaceDescRetentionDays := workspaceFields[6].Descriptor()
 	// workspace.RetentionDaysValidator is a validator for the "retention_days" field. It is called by the builders before save.
 	workspace.RetentionDaysValidator = workspaceDescRetentionDays.Validators[0].(func(int) error)
+	// workspaceDescTimezone is the schema descriptor for timezone field.
+	workspaceDescTimezone := workspaceFields[7].Descriptor()
+	// workspace.TimezoneValidator is a validator for the "timezone" field. It is called by the builders before save.
+	workspace.TimezoneValidator = workspaceDescTimezone.Validators[0].(func(string) error)
 	// workspaceDescDomainJoinEnabled is the schema descriptor for domain_join_enabled field.
-	workspaceDescDomainJoinEnabled := workspaceFields[7].Descriptor()
+	workspaceDescDomainJoinEnabled := workspaceFields[8].Descriptor()
 	// workspace.DefaultDomainJoinEnabled holds the default value on creation for the domain_join_enabled field.
 	workspace.DefaultDomainJoinEnabled = workspaceDescDomainJoinEnabled.Default.(bool)
 	// workspaceDescFeedPosition is the schema descriptor for feed_position field.
-	workspaceDescFeedPosition := workspaceFields[9].Descriptor()
+	workspaceDescFeedPosition := workspaceFields[10].Descriptor()
 	// workspace.DefaultFeedPosition holds the default value on creation for the feed_position field.
 	workspace.DefaultFeedPosition = workspaceDescFeedPosition.Default.(int64)
 	// workspaceDescAbuseExempt is the schema descriptor for abuse_exempt field.
-	workspaceDescAbuseExempt := workspaceFields[16].Descriptor()
+	workspaceDescAbuseExempt := workspaceFields[17].Descriptor()
 	// workspace.DefaultAbuseExempt holds the default value on creation for the abuse_exempt field.
 	workspace.DefaultAbuseExempt = workspaceDescAbuseExempt.Default.(bool)
 }

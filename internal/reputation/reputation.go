@@ -111,15 +111,7 @@ func (m *Module) Rates(ctx context.Context, s *ent.Scoped, w Window) ([]DomainRa
 // inWindow selects Events by their own occurrence time (falling back to ingest time).
 func inWindow(w Window) predicate.Event {
 	return func(s *sql.Selector) {
-		at := "COALESCE(" + s.C(event.FieldOccurredAt) + ", " + s.C(event.FieldCreatedAt) + ")"
-		// raw sql: a range over COALESCE(occurred_at, created_at); ent has no COALESCE operand in a
-		// predicate.
-		s.Where(sql.P(func(b *sql.Builder) {
-			b.WriteString(at)
-			b.WriteOp(sql.OpGTE).Arg(w.Since)
-			b.WriteString(" AND " + at)
-			b.WriteOp(sql.OpLT).Arg(w.Until)
-		}))
+		events.MomentBetween(s, w.Since, w.Until)
 	}
 }
 

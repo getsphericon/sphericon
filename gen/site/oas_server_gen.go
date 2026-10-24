@@ -8,12 +8,43 @@ import (
 
 // Handler handles operations described by OpenAPI v3 specification.
 type Handler interface {
+	// SiteAnalyticsClicksByLink implements SiteAnalytics_clicksByLink operation.
+	//
+	// Clicks by link over the whole workspace, split by the Broadcast or Automation that carried each link.
+	//
+	// GET /workspaces/{workspaceId}/analytics/clicks-by-link
+	SiteAnalyticsClicksByLink(ctx context.Context, params SiteAnalyticsClicksByLinkParams) (SiteAnalyticsClicksByLinkRes, error)
+	// SiteAnalyticsEvents implements SiteAnalytics_events operation.
+	//
+	// Events in the range, grouped by action.
+	//
+	// GET /workspaces/{workspaceId}/analytics/events
+	SiteAnalyticsEvents(ctx context.Context, params SiteAnalyticsEventsParams) (SiteAnalyticsEventsRes, error)
+	// SiteAnalyticsNewPeople implements SiteAnalytics_newPeople operation.
+	//
+	// New people report: Contacts created per Report day, split by Contact source.
+	//
+	// GET /workspaces/{workspaceId}/analytics/new-people
+	SiteAnalyticsNewPeople(ctx context.Context, params SiteAnalyticsNewPeopleParams) (SiteAnalyticsNewPeopleRes, error)
+	// SiteAnalyticsOpensByHour implements SiteAnalytics_opensByHour operation.
+	//
+	// Human opens by hour of day and day of week in the Workspace time zone.
+	//
+	// GET /workspaces/{workspaceId}/analytics/opens-by-hour
+	SiteAnalyticsOpensByHour(ctx context.Context, params SiteAnalyticsOpensByHourParams) (SiteAnalyticsOpensByHourRes, error)
 	// SiteAnalyticsOverview implements SiteAnalytics_overview operation.
 	//
 	// Aggregate metrics for the workspace dashboard.
 	//
 	// GET /workspaces/{workspaceId}/analytics/overview
 	SiteAnalyticsOverview(ctx context.Context, params SiteAnalyticsOverviewParams) (SiteAnalyticsOverviewRes, error)
+	// SiteAnalyticsSubscribedPeople implements SiteAnalytics_subscribedPeople operation.
+	//
+	// Subscribed people report: who subscribed and unsubscribed per Report day, and how many are
+	// subscribed now.
+	//
+	// GET /workspaces/{workspaceId}/analytics/subscribed-people
+	SiteAnalyticsSubscribedPeople(ctx context.Context, params SiteAnalyticsSubscribedPeopleParams) (SiteAnalyticsSubscribedPeopleRes, error)
 	// SiteAuditExport implements SiteAudit_export operation.
 	//
 	// Export the Audit log as CSV, newest first, narrowed by the same filter as the list (Enterprise;
@@ -1202,6 +1233,14 @@ type Handler interface {
 	//
 	// PUT /workspaces/{workspaceId}/second-factor-requirement
 	SiteWorkspacesSetSecondFactorRequirement(ctx context.Context, req *SiteSecondFactorRequirementInput, params SiteWorkspacesSetSecondFactorRequirementParams) (SiteWorkspacesSetSecondFactorRequirementRes, error)
+	// SiteWorkspacesSetTimezone implements SiteWorkspaces_setTimezone operation.
+	//
+	// Set the Workspace time zone (Owner only), the zone of every Report day (ADR 0057). 422 for a name
+	// the zone database does not know. A change is recorded as an Audit entry and applies to all history
+	// at once.
+	//
+	// PUT /workspaces/{workspaceId}/timezone
+	SiteWorkspacesSetTimezone(ctx context.Context, req *SiteWorkspaceTimezoneInput, params SiteWorkspacesSetTimezoneParams) (SiteWorkspacesSetTimezoneRes, error)
 	// SiteWorkspacesUpdate implements SiteWorkspaces_update operation.
 	//
 	// Rename a workspace or change its postal address (Owner and Admin only). The id never changes.

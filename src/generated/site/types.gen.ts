@@ -140,6 +140,10 @@ export type ContactExportContact = {
    */
   customFields?: ContactExportJson | null;
   /**
+   * The door the contact came through; absent for a contact that predates the field
+   */
+  source?: ContactExportSource | null;
+  /**
    * Creation timestamp
    */
   createdAt: Timestamp;
@@ -327,6 +331,20 @@ export type ContactExportOutboundMessage = {
    */
   createdAt: Timestamp;
 };
+
+/**
+ * How the contact first came to exist
+ */
+export const ContactExportSource = {
+  MANUAL: 'manual',
+  API: 'api',
+  TRACKER: 'tracker'
+} as const;
+
+/**
+ * How the contact first came to exist
+ */
+export type ContactExportSource = typeof ContactExportSource[keyof typeof ContactExportSource];
 
 /**
  * A suppression of a channel destination
@@ -787,6 +805,22 @@ export type SiteAnalyticsAutomations = {
 };
 
 /**
+ * The Clicks by link report
+ */
+export type SiteAnalyticsClicksByLink = {
+  /**
+   * Each link with clicks in the range, most clicked first; machine clicks are left out
+   */
+  links: Array<SiteAnalyticsLink>;
+  /**
+   * The configured Event retention in days (SPHERICON_EVENTS_RETENTION_DAYS); 0 means Events
+   * are kept forever. Clicks are Events, so a range longer than this is counted only over the
+   * retained days.
+   */
+  eventsRetentionDays: number;
+};
+
+/**
  * Current contact counts (point-in-time snapshot, not range-scoped)
  */
 export type SiteAnalyticsContacts = {
@@ -841,6 +875,108 @@ export type SiteAnalyticsEmail = {
 };
 
 /**
+ * One action of the Events report
+ */
+export type SiteAnalyticsEventAction = {
+  /**
+   * The Event action, reserved `email.*` or tracked by the customer
+   */
+  action: string;
+  /**
+   * How many times it happened in the range
+   */
+  count: number;
+  /**
+   * How many distinct Contacts it happened to; anonymous Events count in `count` only
+   */
+  contacts: number;
+  /**
+   * When it last happened in the range
+   */
+  lastAt: Timestamp;
+};
+
+/**
+ * The Events report: each action in the range, most frequent first. Machine opens and
+ * clicks are left out.
+ */
+export type SiteAnalyticsEvents = {
+  /**
+   * One row per action
+   */
+  actions: Array<SiteAnalyticsEventAction>;
+};
+
+/**
+ * One clicked link with its clicks in the range, split by the Broadcast or Automation that carried it
+ */
+export type SiteAnalyticsLink = {
+  /**
+   * The link's destination URL
+   */
+  url: string;
+  /**
+   * Human clicks on the link during the range (every click counted, not unique per contact)
+   */
+  clicks: number;
+  /**
+   * Where the clicks came from, most clicked first
+   */
+  owners: Array<SiteAnalyticsLinkOwner>;
+};
+
+/**
+ * The clicks of one link in the emails of one Broadcast or Automation
+ */
+export type SiteAnalyticsLinkOwner = {
+  /**
+   * Whether the Broadcast report or the Automation report is the one to open
+   */
+  kind: SiteAnalyticsOwnerKind;
+  /**
+   * The Broadcast's or Automation's id
+   */
+  id: EntityId;
+  /**
+   * The Broadcast's or Automation's name
+   */
+  name: string;
+  /**
+   * Human clicks on the link in its emails during the range
+   */
+  clicks: number;
+};
+
+/**
+ * Opens by hour report: a cell for every weekday and hour, Monday 00:00 first; machine opens are left out
+ */
+export type SiteAnalyticsOpensByHour = {
+  cells: Array<SiteAnalyticsOpensCell>;
+  /**
+   * Human opens in the range
+   */
+  total: number;
+};
+
+/**
+ * Human opens of one weekday and hour of day in the Workspace time zone
+ */
+export type SiteAnalyticsOpensCell = {
+  /**
+   * ISO weekday: 1 is Monday, 7 is Sunday
+   */
+  weekday: number;
+  /**
+   * Hour of day, 0-23
+   */
+  hour: number;
+  /**
+   * Human opens in that hour of that weekday within the range
+   */
+  opens: number;
+};
+
+/**
  * Workspace analytics overview powering the dashboard
  */
 export type SiteAnalyticsOverview = {
@@ -857,6 +993,16 @@ export type SiteAnalyticsOverview = {
    */
   abuseWarning?: SiteAbuseWarning | null;
 };
+
+/**
+ * What carried a clicked link: a Broadcast or an Automation
+ */
+export const SiteAnalyticsOwnerKind = { BROADCAST: 'broadcast', AUTOMATION: 'automation' } as const;
+
+/**
+ * What carried a clicked link: a Broadcast or an Automation
+ */
+export type SiteAnalyticsOwnerKind = typeof SiteAnalyticsOwnerKind[keyof typeof SiteAnalyticsOwnerKind];
 
 /**
  * One UTC send-day of the cohort, zero-filled across the range. Opened/clicked
@@ -894,6 +1040,43 @@ export const SiteAnalyticsRange = {
  * Selectable window for the analytics overview
  */
 export type SiteAnalyticsRange = typeof SiteAnalyticsRange[keyof typeof SiteAnalyticsRange];
+
+/**
+ * The Subscribed people report: the daily flow plus the current number, which is read from
+ * current state and is never reconstructed from the flow
+ */
+export type SiteAnalyticsSubscribedPeople = {
+  /**
+   * Contacts that are not globally opted out of email now
+   */
+  current: number;
+  /**
+   * Daily flow, oldest first, one point per Report day in the range
+   */
+  series: Array<SiteAnalyticsSubscribedPoint>;
+};
+
+/**
+ * One Report day of the Subscribed people report, zero-filled across the range
+ */
+export type SiteAnalyticsSubscribedPoint = {
+  /**
+   * Report day, YYYY-MM-DD in the Workspace time zone
+   */
+  date: string;
+  /**
+   * People who subscribed that day (marketing.confirmed events)
+   */
+  subscribed: number;
+  /**
+   * People who unsubscribed that day (email.unsubscribed events)
+   */
+  unsubscribed: number;
+  /**
+   * Subscribed minus unsubscribed; negative when more people left than joined
+   */
+  net: number;
+};
 
 /**
  * A workspace API token (secret shown only once, at creation)
@@ -2805,6 +2988,47 @@ export const SiteMembershipSource = {
  * How a member got in
  */
 export type SiteMembershipSource = typeof SiteMembershipSource[keyof typeof SiteMembershipSource];
+
+/**
+ * One Report day of the New people report: the Contacts created that day by the door they
+ * came through, zero-filled across the range.
+ */
+export type SiteNewPeoplePoint = {
+  /**
+   * Report day, YYYY-MM-DD in the Workspace time zone
+   */
+  date: string;
+  /**
+   * Contacts created by hand that day
+   */
+  manual: number;
+  /**
+   * Contacts created through the API that day
+   */
+  api: number;
+  /**
+   * Contacts created by the tracker that day
+   */
+  tracker: number;
+  /**
+   * Contacts that predate the Contact source
+   */
+  unknown: number;
+};
+
+/**
+ * New people: Contacts created in the selected range, per Report day and by Contact source
+ */
+export type SiteNewPeopleReport = {
+  /**
+   * Contacts created within the range
+   */
+  total: number;
+  /**
+   * One point per Report day in the range, oldest first
+   */
+  timeseries: Array<SiteNewPeoplePoint>;
+};
 
 /**
  * What an MCP client (dynamically registered) is asking permission for, as
@@ -4733,6 +4957,11 @@ export type SiteWorkspaceResource = {
    */
   postalAddress: string;
   /**
+   * The Workspace time zone (ADR 0057): the IANA name every analytics report counts its days
+   * in. UTC until an Owner sets it.
+   */
+  timezone: TimeZoneName;
+  /**
    * The authenticated User's role in this Workspace (from their Membership). It
    * rides the Workspace list so role-gated UI is known even while the Workspace's
    * own endpoints are withheld under a Two-factor requirement.
@@ -4785,6 +5014,16 @@ export type SiteWorkspaceResource = {
    * Creation timestamp
    */
   createdAt: Timestamp;
+};
+
+/**
+ * Set the Workspace time zone
+ */
+export type SiteWorkspaceTimezoneInput = {
+  /**
+   * An IANA time zone name such as `Europe/Berlin`; the zone database decides what is valid
+   */
+  timezone: TimeZoneName;
 };
 
 export type TimeZoneName = string;
@@ -6640,6 +6879,134 @@ export type SiteWorkspacesAccountLinkResponses = {
 
 export type SiteWorkspacesAccountLinkResponse = SiteWorkspacesAccountLinkResponses[keyof SiteWorkspacesAccountLinkResponses];
 
+export type SiteAnalyticsClicksByLinkData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: {
+    /**
+     * Window to aggregate over (defaults to 30d)
+     */
+    range?: SiteAnalyticsRange;
+  };
+  url: '/workspaces/{workspaceId}/analytics/clicks-by-link';
+};
+
+export type SiteAnalyticsClicksByLinkErrors = {
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteAnalyticsClicksByLinkError = SiteAnalyticsClicksByLinkErrors[keyof SiteAnalyticsClicksByLinkErrors];
+
+export type SiteAnalyticsClicksByLinkResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteAnalyticsClicksByLink;
+};
+
+export type SiteAnalyticsClicksByLinkResponse = SiteAnalyticsClicksByLinkResponses[keyof SiteAnalyticsClicksByLinkResponses];
+
+export type SiteAnalyticsEventsData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: {
+    /**
+     * Window to report over (defaults to 30d)
+     */
+    range?: SiteAnalyticsRange;
+  };
+  url: '/workspaces/{workspaceId}/analytics/events';
+};
+
+export type SiteAnalyticsEventsErrors = {
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteAnalyticsEventsError = SiteAnalyticsEventsErrors[keyof SiteAnalyticsEventsErrors];
+
+export type SiteAnalyticsEventsResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteAnalyticsEvents;
+};
+
+export type SiteAnalyticsEventsResponse = SiteAnalyticsEventsResponses[keyof SiteAnalyticsEventsResponses];
+
+export type SiteAnalyticsNewPeopleData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: {
+    /**
+     * Window to aggregate over (defaults to 30d)
+     */
+    range?: SiteAnalyticsRange;
+  };
+  url: '/workspaces/{workspaceId}/analytics/new-people';
+};
+
+export type SiteAnalyticsNewPeopleErrors = {
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteAnalyticsNewPeopleError = SiteAnalyticsNewPeopleErrors[keyof SiteAnalyticsNewPeopleErrors];
+
+export type SiteAnalyticsNewPeopleResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteNewPeopleReport;
+};
+
+export type SiteAnalyticsNewPeopleResponse = SiteAnalyticsNewPeopleResponses[keyof SiteAnalyticsNewPeopleResponses];
+
+export type SiteAnalyticsOpensByHourData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: {
+    /**
+     * Window to aggregate over (defaults to 30d)
+     */
+    range?: SiteAnalyticsRange;
+  };
+  url: '/workspaces/{workspaceId}/analytics/opens-by-hour';
+};
+
+export type SiteAnalyticsOpensByHourErrors = {
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteAnalyticsOpensByHourError = SiteAnalyticsOpensByHourErrors[keyof SiteAnalyticsOpensByHourErrors];
+
+export type SiteAnalyticsOpensByHourResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteAnalyticsOpensByHour;
+};
+
+export type SiteAnalyticsOpensByHourResponse = SiteAnalyticsOpensByHourResponses[keyof SiteAnalyticsOpensByHourResponses];
+
 export type SiteAnalyticsOverviewData = {
   body?: never;
   path: {
@@ -6671,6 +7038,38 @@ export type SiteAnalyticsOverviewResponses = {
 };
 
 export type SiteAnalyticsOverviewResponse = SiteAnalyticsOverviewResponses[keyof SiteAnalyticsOverviewResponses];
+
+export type SiteAnalyticsSubscribedPeopleData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: {
+    /**
+     * Window to report over (defaults to 30d)
+     */
+    range?: SiteAnalyticsRange;
+  };
+  url: '/workspaces/{workspaceId}/analytics/subscribed-people';
+};
+
+export type SiteAnalyticsSubscribedPeopleErrors = {
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteAnalyticsSubscribedPeopleError = SiteAnalyticsSubscribedPeopleErrors[keyof SiteAnalyticsSubscribedPeopleErrors];
+
+export type SiteAnalyticsSubscribedPeopleResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteAnalyticsSubscribedPeople;
+};
+
+export type SiteAnalyticsSubscribedPeopleResponse = SiteAnalyticsSubscribedPeopleResponses[keyof SiteAnalyticsSubscribedPeopleResponses];
 
 export type SiteAuditListData = {
   body?: never;
@@ -11297,6 +11696,41 @@ export type SiteTemplatesUpdateResponses = {
 };
 
 export type SiteTemplatesUpdateResponse = SiteTemplatesUpdateResponses[keyof SiteTemplatesUpdateResponses];
+
+export type SiteWorkspacesSetTimezoneData = {
+  body: SiteWorkspaceTimezoneInput;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/timezone';
+};
+
+export type SiteWorkspacesSetTimezoneErrors = {
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+};
+
+export type SiteWorkspacesSetTimezoneError = SiteWorkspacesSetTimezoneErrors[keyof SiteWorkspacesSetTimezoneErrors];
+
+export type SiteWorkspacesSetTimezoneResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteWorkspaceResource;
+};
+
+export type SiteWorkspacesSetTimezoneResponse = SiteWorkspacesSetTimezoneResponses[keyof SiteWorkspacesSetTimezoneResponses];
 
 export type SiteTokensListData = {
   body?: never;

@@ -10657,6 +10657,7 @@ type ContactMutation struct {
 	first_name       *string
 	last_name        *string
 	time_zone        *string
+	source           *contact.Source
 	custom_fields    *map[string]interface{}
 	clearedFields    map[string]struct{}
 	workspace        *int64
@@ -11181,6 +11182,55 @@ func (m *ContactMutation) ResetTimeZone() {
 	delete(m.clearedFields, contact.FieldTimeZone)
 }
 
+// SetSource sets the "source" field.
+func (m *ContactMutation) SetSource(c contact.Source) {
+	m.source = &c
+}
+
+// Source returns the value of the "source" field in the mutation.
+func (m *ContactMutation) Source() (r contact.Source, exists bool) {
+	v := m.source
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSource returns the old "source" field's value of the Contact entity.
+// If the Contact object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactMutation) OldSource(ctx context.Context) (v *contact.Source, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSource is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSource requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSource: %w", err)
+	}
+	return oldValue.Source, nil
+}
+
+// ClearSource clears the value of the "source" field.
+func (m *ContactMutation) ClearSource() {
+	m.source = nil
+	m.clearedFields[contact.FieldSource] = struct{}{}
+}
+
+// SourceCleared returns if the "source" field was cleared in this mutation.
+func (m *ContactMutation) SourceCleared() bool {
+	_, ok := m.clearedFields[contact.FieldSource]
+	return ok
+}
+
+// ResetSource resets all changes to the "source" field.
+func (m *ContactMutation) ResetSource() {
+	m.source = nil
+	delete(m.clearedFields, contact.FieldSource)
+}
+
 // SetCustomFields sets the "custom_fields" field.
 func (m *ContactMutation) SetCustomFields(value map[string]interface{}) {
 	m.custom_fields = &value
@@ -11453,7 +11503,7 @@ func (m *ContactMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ContactMutation) Fields() []string {
-	fields := make([]string, 0, 10)
+	fields := make([]string, 0, 11)
 	if m.created_at != nil {
 		fields = append(fields, contact.FieldCreatedAt)
 	}
@@ -11480,6 +11530,9 @@ func (m *ContactMutation) Fields() []string {
 	}
 	if m.time_zone != nil {
 		fields = append(fields, contact.FieldTimeZone)
+	}
+	if m.source != nil {
+		fields = append(fields, contact.FieldSource)
 	}
 	if m.custom_fields != nil {
 		fields = append(fields, contact.FieldCustomFields)
@@ -11510,6 +11563,8 @@ func (m *ContactMutation) Field(name string) (ent.Value, bool) {
 		return m.LastName()
 	case contact.FieldTimeZone:
 		return m.TimeZone()
+	case contact.FieldSource:
+		return m.Source()
 	case contact.FieldCustomFields:
 		return m.CustomFields()
 	}
@@ -11539,6 +11594,8 @@ func (m *ContactMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldLastName(ctx)
 	case contact.FieldTimeZone:
 		return m.OldTimeZone(ctx)
+	case contact.FieldSource:
+		return m.OldSource(ctx)
 	case contact.FieldCustomFields:
 		return m.OldCustomFields(ctx)
 	}
@@ -11613,6 +11670,13 @@ func (m *ContactMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetTimeZone(v)
 		return nil
+	case contact.FieldSource:
+		v, ok := value.(contact.Source)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSource(v)
+		return nil
 	case contact.FieldCustomFields:
 		v, ok := value.(map[string]interface{})
 		if !ok {
@@ -11671,6 +11735,9 @@ func (m *ContactMutation) ClearedFields() []string {
 	if m.FieldCleared(contact.FieldTimeZone) {
 		fields = append(fields, contact.FieldTimeZone)
 	}
+	if m.FieldCleared(contact.FieldSource) {
+		fields = append(fields, contact.FieldSource)
+	}
 	if m.FieldCleared(contact.FieldCustomFields) {
 		fields = append(fields, contact.FieldCustomFields)
 	}
@@ -11705,6 +11772,9 @@ func (m *ContactMutation) ClearField(name string) error {
 		return nil
 	case contact.FieldTimeZone:
 		m.ClearTimeZone()
+		return nil
+	case contact.FieldSource:
+		m.ClearSource()
 		return nil
 	case contact.FieldCustomFields:
 		m.ClearCustomFields()
@@ -11743,6 +11813,9 @@ func (m *ContactMutation) ResetField(name string) error {
 		return nil
 	case contact.FieldTimeZone:
 		m.ResetTimeZone()
+		return nil
+	case contact.FieldSource:
+		m.ResetSource()
 		return nil
 	case contact.FieldCustomFields:
 		m.ResetCustomFields()
@@ -47603,6 +47676,7 @@ type WorkspaceMutation struct {
 	postal_address              *string
 	retention_days              *int
 	addretention_days           *int
+	timezone                    *string
 	domain_join_enabled         *bool
 	second_factor_required_at   *time.Time
 	feed_position               *int64
@@ -48204,6 +48278,55 @@ func (m *WorkspaceMutation) ResetRetentionDays() {
 	m.retention_days = nil
 	m.addretention_days = nil
 	delete(m.clearedFields, workspace.FieldRetentionDays)
+}
+
+// SetTimezone sets the "timezone" field.
+func (m *WorkspaceMutation) SetTimezone(s string) {
+	m.timezone = &s
+}
+
+// Timezone returns the value of the "timezone" field in the mutation.
+func (m *WorkspaceMutation) Timezone() (r string, exists bool) {
+	v := m.timezone
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTimezone returns the old "timezone" field's value of the Workspace entity.
+// If the Workspace object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WorkspaceMutation) OldTimezone(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTimezone is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTimezone requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTimezone: %w", err)
+	}
+	return oldValue.Timezone, nil
+}
+
+// ClearTimezone clears the value of the "timezone" field.
+func (m *WorkspaceMutation) ClearTimezone() {
+	m.timezone = nil
+	m.clearedFields[workspace.FieldTimezone] = struct{}{}
+}
+
+// TimezoneCleared returns if the "timezone" field was cleared in this mutation.
+func (m *WorkspaceMutation) TimezoneCleared() bool {
+	_, ok := m.clearedFields[workspace.FieldTimezone]
+	return ok
+}
+
+// ResetTimezone resets all changes to the "timezone" field.
+func (m *WorkspaceMutation) ResetTimezone() {
+	m.timezone = nil
+	delete(m.clearedFields, workspace.FieldTimezone)
 }
 
 // SetDomainJoinEnabled sets the "domain_join_enabled" field.
@@ -50537,7 +50660,7 @@ func (m *WorkspaceMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *WorkspaceMutation) Fields() []string {
-	fields := make([]string, 0, 21)
+	fields := make([]string, 0, 22)
 	if m.created_at != nil {
 		fields = append(fields, workspace.FieldCreatedAt)
 	}
@@ -50564,6 +50687,9 @@ func (m *WorkspaceMutation) Fields() []string {
 	}
 	if m.retention_days != nil {
 		fields = append(fields, workspace.FieldRetentionDays)
+	}
+	if m.timezone != nil {
+		fields = append(fields, workspace.FieldTimezone)
 	}
 	if m.domain_join_enabled != nil {
 		fields = append(fields, workspace.FieldDomainJoinEnabled)
@@ -50627,6 +50753,8 @@ func (m *WorkspaceMutation) Field(name string) (ent.Value, bool) {
 		return m.PostalAddress()
 	case workspace.FieldRetentionDays:
 		return m.RetentionDays()
+	case workspace.FieldTimezone:
+		return m.Timezone()
 	case workspace.FieldDomainJoinEnabled:
 		return m.DomainJoinEnabled()
 	case workspace.FieldSecondFactorRequiredAt:
@@ -50678,6 +50806,8 @@ func (m *WorkspaceMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldPostalAddress(ctx)
 	case workspace.FieldRetentionDays:
 		return m.OldRetentionDays(ctx)
+	case workspace.FieldTimezone:
+		return m.OldTimezone(ctx)
 	case workspace.FieldDomainJoinEnabled:
 		return m.OldDomainJoinEnabled(ctx)
 	case workspace.FieldSecondFactorRequiredAt:
@@ -50773,6 +50903,13 @@ func (m *WorkspaceMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetRetentionDays(v)
+		return nil
+	case workspace.FieldTimezone:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTimezone(v)
 		return nil
 	case workspace.FieldDomainJoinEnabled:
 		v, ok := value.(bool)
@@ -50924,6 +51061,9 @@ func (m *WorkspaceMutation) ClearedFields() []string {
 	if m.FieldCleared(workspace.FieldRetentionDays) {
 		fields = append(fields, workspace.FieldRetentionDays)
 	}
+	if m.FieldCleared(workspace.FieldTimezone) {
+		fields = append(fields, workspace.FieldTimezone)
+	}
 	if m.FieldCleared(workspace.FieldSecondFactorRequiredAt) {
 		fields = append(fields, workspace.FieldSecondFactorRequiredAt)
 	}
@@ -50973,6 +51113,9 @@ func (m *WorkspaceMutation) ClearField(name string) error {
 		return nil
 	case workspace.FieldRetentionDays:
 		m.ClearRetentionDays()
+		return nil
+	case workspace.FieldTimezone:
+		m.ClearTimezone()
 		return nil
 	case workspace.FieldSecondFactorRequiredAt:
 		m.ClearSecondFactorRequiredAt()
@@ -51035,6 +51178,9 @@ func (m *WorkspaceMutation) ResetField(name string) error {
 		return nil
 	case workspace.FieldRetentionDays:
 		m.ResetRetentionDays()
+		return nil
+	case workspace.FieldTimezone:
+		m.ResetTimezone()
 		return nil
 	case workspace.FieldDomainJoinEnabled:
 		m.ResetDomainJoinEnabled()

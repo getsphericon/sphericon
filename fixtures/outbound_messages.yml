@@ -4380,3 +4380,126 @@
   workspace_id: 1
   created_at: '{{daysAgo 400}}'
   updated_at: '{{daysAgo 400}}'
+
+# Gotham (workspace 61): the eight sends around the 2026 daylight-saving changes in America/New_York.
+# Each comment gives the local moment; the UTC send time is what is stored.
+# A: 23:59 EST the day before the spring-forward day
+- id: 31014
+  kind: broadcast
+  idempotency_key: 'broadcast:20186'
+  channel: email
+  contact_id: 20049
+  sending_source: broadcasts
+  status: sent
+  sent_at: '2026-03-08 04:59:00+00'
+  claimed_at: '2026-03-08 04:59:00+00'
+  broadcast_id: 20009
+  broadcast_recipient_id: 20186
+  workspace_id: 61
+  created_at: '2026-03-08 04:59:00+00'
+  updated_at: '2026-03-08 04:59:00+00'
+# B: midnight EST that opens the 23-hour day
+- id: 31015
+  kind: broadcast
+  idempotency_key: 'broadcast:20187'
+  channel: email
+  contact_id: 20050
+  sending_source: broadcasts
+  status: sent
+  sent_at: '2026-03-08 05:00:00+00'
+  claimed_at: '2026-03-08 05:00:00+00'
+  broadcast_id: 20009
+  broadcast_recipient_id: 20187
+  workspace_id: 61
+  created_at: '2026-03-08 05:00:00+00'
+  updated_at: '2026-03-08 05:00:00+00'
+# C: 23:59 EDT that closes the 23-hour day
+- id: 31016
+  kind: broadcast
+  idempotency_key: 'broadcast:20188'
+  channel: email
+  contact_id: 20051
+  sending_source: broadcasts
+  status: sent
+  sent_at: '2026-03-09 03:59:00+00'
+  claimed_at: '2026-03-09 03:59:00+00'
+  broadcast_id: 20009
+  broadcast_recipient_id: 20188
+  workspace_id: 61
+  created_at: '2026-03-09 03:59:00+00'
+  updated_at: '2026-03-09 03:59:00+00'
+# D: midnight EDT after it
+- id: 31017
+  kind: broadcast
+  idempotency_key: 'broadcast:20189'
+  channel: email
+  contact_id: 20052
+  sending_source: broadcasts
+  status: sent
+  sent_at: '2026-03-09 04:00:00+00'
+  claimed_at: '2026-03-09 04:00:00+00'
+  broadcast_id: 20009
+  broadcast_recipient_id: 20189
+  workspace_id: 61
+  created_at: '2026-03-09 04:00:00+00'
+  updated_at: '2026-03-09 04:00:00+00'
+# E: 23:59 EDT the day before the fall-back day
+- id: 31018
+  kind: broadcast
+  idempotency_key: 'broadcast:20190'
+  channel: email
+  contact_id: 20053
+  sending_source: broadcasts
+  status: sent
+  sent_at: '2026-11-01 03:59:00+00'
+  claimed_at: '2026-11-01 03:59:00+00'
+  broadcast_id: 20009
+  broadcast_recipient_id: 20190
+  workspace_id: 61
+  created_at: '2026-11-01 03:59:00+00'
+  updated_at: '2026-11-01 03:59:00+00'
+# F: midnight EDT that opens the 25-hour day
+- id: 31019
+  kind: broadcast
+  idempotency_key: 'broadcast:20191'
+  channel: email
+  contact_id: 20054
+  sending_source: broadcasts
+  status: sent
+  sent_at: '2026-11-01 04:00:00+00'
+  claimed_at: '2026-11-01 04:00:00+00'
+  broadcast_id: 20009
+  broadcast_recipient_id: 20191
+  workspace_id: 61
+  created_at: '2026-11-01 04:00:00+00'
+  updated_at: '2026-11-01 04:00:00+00'
+# G: 23:59 EST that closes the 25-hour day
+- id: 31020
+  kind: broadcast
+  idempotency_key: 'broadcast:20192'
+  channel: email
+  contact_id: 20055
+  sending_source: broadcasts
+  status: sent
+  sent_at: '2026-11-02 04:59:00+00'
+  claimed_at: '2026-11-02 04:59:00+00'
+  broadcast_id: 20009
+  broadcast_recipient_id: 20192
+  workspace_id: 61
+  created_at: '2026-11-02 04:59:00+00'
+  updated_at: '2026-11-02 04:59:00+00'
+# H: midnight EST after it
+- id: 31021
+  kind: broadcast
+  idempotency_key: 'broadcast:20193'
+  channel: email
+  contact_id: 20056
+  sending_source: broadcasts
+  status: sent
+  sent_at: '2026-11-02 05:00:00+00'
+  claimed_at: '2026-11-02 05:00:00+00'
+  broadcast_id: 20009
+  broadcast_recipient_id: 20193
+  workspace_id: 61
+  created_at: '2026-11-02 05:00:00+00'
+  updated_at: '2026-11-02 05:00:00+00'

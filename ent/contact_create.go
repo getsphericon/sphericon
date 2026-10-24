@@ -144,6 +144,20 @@ func (_c *ContactCreate) SetNillableTimeZone(v *string) *ContactCreate {
 	return _c
 }
 
+// SetSource sets the "source" field.
+func (_c *ContactCreate) SetSource(v contact.Source) *ContactCreate {
+	_c.mutation.SetSource(v)
+	return _c
+}
+
+// SetNillableSource sets the "source" field if the given value is not nil.
+func (_c *ContactCreate) SetNillableSource(v *contact.Source) *ContactCreate {
+	if v != nil {
+		_c.SetSource(*v)
+	}
+	return _c
+}
+
 // SetCustomFields sets the "custom_fields" field.
 func (_c *ContactCreate) SetCustomFields(v map[string]interface{}) *ContactCreate {
 	_c.mutation.SetCustomFields(v)
@@ -262,6 +276,11 @@ func (_c *ContactCreate) check() error {
 	if _, ok := _c.mutation.WorkspaceID(); !ok {
 		return &ValidationError{Name: "workspace_id", err: errors.New(`ent: missing required field "Contact.workspace_id"`)}
 	}
+	if v, ok := _c.mutation.Source(); ok {
+		if err := contact.SourceValidator(v); err != nil {
+			return &ValidationError{Name: "source", err: fmt.Errorf(`ent: validator failed for field "Contact.source": %w`, err)}
+		}
+	}
 	if len(_c.mutation.WorkspaceIDs()) == 0 {
 		return &ValidationError{Name: "workspace", err: errors.New(`ent: missing required edge "Contact.workspace"`)}
 	}
@@ -329,6 +348,10 @@ func (_c *ContactCreate) createSpec() (*Contact, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.TimeZone(); ok {
 		_spec.SetField(contact.FieldTimeZone, field.TypeString, value)
 		_node.TimeZone = &value
+	}
+	if value, ok := _c.mutation.Source(); ok {
+		_spec.SetField(contact.FieldSource, field.TypeEnum, value)
+		_node.Source = &value
 	}
 	if value, ok := _c.mutation.CustomFields(); ok {
 		_spec.SetField(contact.FieldCustomFields, field.TypeJSON, value)
@@ -620,6 +643,9 @@ func (u *ContactUpsertOne) UpdateNewValues() *ContactUpsertOne {
 		}
 		if _, exists := u.create.mutation.CreatedAt(); exists {
 			s.SetIgnore(contact.FieldCreatedAt)
+		}
+		if _, exists := u.create.mutation.Source(); exists {
+			s.SetIgnore(contact.FieldSource)
 		}
 	}))
 	return u
@@ -1011,6 +1037,9 @@ func (u *ContactUpsertBulk) UpdateNewValues() *ContactUpsertBulk {
 			}
 			if _, exists := b.mutation.CreatedAt(); exists {
 				s.SetIgnore(contact.FieldCreatedAt)
+			}
+			if _, exists := b.mutation.Source(); exists {
+				s.SetIgnore(contact.FieldSource)
 			}
 		}
 	}))

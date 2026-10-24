@@ -9099,6 +9099,18 @@ func (x *ContactScopedCreate) SetNillableTimeZone(v *string) *ContactScopedCreat
 	return x
 }
 
+// SetSource sets the "source" field.
+func (x *ContactScopedCreate) SetSource(v contact.Source) *ContactScopedCreate {
+	x.b.SetSource(v)
+	return x
+}
+
+// SetNillableSource sets the "source" field if the given value is not nil.
+func (x *ContactScopedCreate) SetNillableSource(v *contact.Source) *ContactScopedCreate {
+	x.b.SetNillableSource(v)
+	return x
+}
+
 // SetCustomFields sets the "custom_fields" field.
 func (x *ContactScopedCreate) SetCustomFields(v map[string]interface{}) *ContactScopedCreate {
 	x.b.SetCustomFields(v)

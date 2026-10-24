@@ -100,6 +100,11 @@ func RetentionDays(v int) predicate.Workspace {
 	return predicate.Workspace(sql.FieldEQ(FieldRetentionDays, v))
 }
 
+// Timezone applies equality check predicate on the "timezone" field. It's identical to TimezoneEQ.
+func Timezone(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEQ(FieldTimezone, v))
+}
+
 // DomainJoinEnabled applies equality check predicate on the "domain_join_enabled" field. It's identical to DomainJoinEnabledEQ.
 func DomainJoinEnabled(v bool) predicate.Workspace {
 	return predicate.Workspace(sql.FieldEQ(FieldDomainJoinEnabled, v))
@@ -613,6 +618,81 @@ func RetentionDaysIsNil() predicate.Workspace {
 // RetentionDaysNotNil applies the NotNil predicate on the "retention_days" field.
 func RetentionDaysNotNil() predicate.Workspace {
 	return predicate.Workspace(sql.FieldNotNull(FieldRetentionDays))
+}
+
+// TimezoneEQ applies the EQ predicate on the "timezone" field.
+func TimezoneEQ(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEQ(FieldTimezone, v))
+}
+
+// TimezoneNEQ applies the NEQ predicate on the "timezone" field.
+func TimezoneNEQ(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldNEQ(FieldTimezone, v))
+}
+
+// TimezoneIn applies the In predicate on the "timezone" field.
+func TimezoneIn(vs ...string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldIn(FieldTimezone, vs...))
+}
+
+// TimezoneNotIn applies the NotIn predicate on the "timezone" field.
+func TimezoneNotIn(vs ...string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldNotIn(FieldTimezone, vs...))
+}
+
+// TimezoneGT applies the GT predicate on the "timezone" field.
+func TimezoneGT(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldGT(FieldTimezone, v))
+}
+
+// TimezoneGTE applies the GTE predicate on the "timezone" field.
+func TimezoneGTE(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldGTE(FieldTimezone, v))
+}
+
+// TimezoneLT applies the LT predicate on the "timezone" field.
+func TimezoneLT(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldLT(FieldTimezone, v))
+}
+
+// TimezoneLTE applies the LTE predicate on the "timezone" field.
+func TimezoneLTE(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldLTE(FieldTimezone, v))
+}
+
+// TimezoneContains applies the Contains predicate on the "timezone" field.
+func TimezoneContains(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldContains(FieldTimezone, v))
+}
+
+// TimezoneHasPrefix applies the HasPrefix predicate on the "timezone" field.
+func TimezoneHasPrefix(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldHasPrefix(FieldTimezone, v))
+}
+
+// TimezoneHasSuffix applies the HasSuffix predicate on the "timezone" field.
+func TimezoneHasSuffix(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldHasSuffix(FieldTimezone, v))
+}
+
+// TimezoneIsNil applies the IsNil predicate on the "timezone" field.
+func TimezoneIsNil() predicate.Workspace {
+	return predicate.Workspace(sql.FieldIsNull(FieldTimezone))
+}
+
+// TimezoneNotNil applies the NotNil predicate on the "timezone" field.
+func TimezoneNotNil() predicate.Workspace {
+	return predicate.Workspace(sql.FieldNotNull(FieldTimezone))
+}
+
+// TimezoneEqualFold applies the EqualFold predicate on the "timezone" field.
+func TimezoneEqualFold(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEqualFold(FieldTimezone, v))
+}
+
+// TimezoneContainsFold applies the ContainsFold predicate on the "timezone" field.
+func TimezoneContainsFold(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldContainsFold(FieldTimezone, v))
 }
 
 // DomainJoinEnabledEQ applies the EQ predicate on the "domain_join_enabled" field.

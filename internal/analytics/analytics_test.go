@@ -13,6 +13,22 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
+func overviewAt(t *testing.T, env *testhelper.TestEnv, ws int64, w analytics.Window, now time.Time) *analytics.Overview {
+	t.Helper()
+	m := analytics.New().WithClock(func() time.Time { return now })
+	ov, err := m.Overview(context.Background(), env.DB.Scoped(ws), w)
+	require.NoError(t, err)
+	return ov
+}
+
+func sentPerDay(ov *analytics.Overview) map[string]int {
+	days := map[string]int{}
+	for _, p := range ov.Series {
+		days[p.Date] = p.Sent
+	}
+	return days
+}
+
 func overview(t *testing.T, ws int64, w analytics.Window) *analytics.Overview {
 	t.Helper()
 	env := testhelper.Setup(t)
@@ -110,4 +126,58 @@ func TestArchivedAutomationsAreNotCounted(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, before.Automations.Total-1, after.Automations.Total)
 	assert.Equal(t, before.Automations.Active-1, after.Automations.Active)
+}
+
+// Fixtures (Gotham, America/New_York): sends at 2026-03-08 04:59Z (23:59 EST on 7 March), 05:00Z
+// (midnight EST, opened and clicked), 2026-03-09 03:59Z (23:59 EDT on 8 March) and 04:00Z (9 March);
+// and at 2026-11-01 03:59Z (23:59 EDT on 31 October), 04:00Z (opened), 2026-11-02 04:59Z (23:59 EST
+// on 1 November, opened and clicked) and 05:00Z (2 November).
+func TestTheSpringForwardDayIsOneTwentyThreeHourBucket(t *testing.T) {
+	env := testhelper.Setup(t)
+	ov := overviewAt(t, env, fixtures.GothamID, analytics.Window7Days, time.Date(2026, 3, 10, 12, 0, 0, 0, time.UTC))
+
+	want := map[string]int{
+		"2026-03-04": 0, "2026-03-05": 0, "2026-03-06": 0, "2026-03-07": 1,
+		"2026-03-08": 2, "2026-03-09": 1, "2026-03-10": 0,
+	}
+	assert.Equal(t, want, sentPerDay(ov))
+	assert.Len(t, ov.Series, 7, "no day is skipped or doubled")
+	assert.Equal(t, 4, ov.Email.Sent, "the cards and the series agree on the window")
+}
+
+func TestTheFallBackDayIsOneTwentyFiveHourBucket(t *testing.T) {
+	env := testhelper.Setup(t)
+	ov := overviewAt(t, env, fixtures.GothamID, analytics.Window7Days, time.Date(2026, 11, 3, 12, 0, 0, 0, time.UTC))
+
+	want := map[string]int{
+		"2026-10-28": 0, "2026-10-29": 0, "2026-10-30": 0, "2026-10-31": 1,
+		"2026-11-01": 2, "2026-11-02": 1, "2026-11-03": 0,
+	}
+	assert.Equal(t, want, sentPerDay(ov))
+	assert.Len(t, ov.Series, 7, "no day is skipped or doubled")
+	assert.Equal(t, 2, ov.Series[4].Opened)
+	assert.Equal(t, 1, ov.Series[4].Clicked)
+}
+
+func TestAZoneChangeMovesTheSameSendsToOtherDays(t *testing.T) {
+	env := testhelper.Setup(t)
+	now := time.Date(2026, 3, 10, 12, 0, 0, 0, time.UTC)
+	inNewYork := sentPerDay(overviewAt(t, env, fixtures.GothamID, analytics.Window7Days, now))
+
+	require.NoError(t, env.DB.Workspace.UpdateOneID(fixtures.GothamID).SetTimezone("UTC").Exec(context.Background()))
+	inUTC := sentPerDay(overviewAt(t, env, fixtures.GothamID, analytics.Window7Days, now))
+
+	assert.Equal(t, 1, inNewYork["2026-03-07"])
+	assert.Equal(t, 0, inUTC["2026-03-07"])
+	assert.Equal(t, 2, inUTC["2026-03-08"])
+	assert.Equal(t, 2, inUTC["2026-03-09"])
+}
+
+func TestTodayIsTheLocalDayNotTheUTCDay(t *testing.T) {
+	env := testhelper.Setup(t)
+	// 02:00 UTC on 9 March is still 8 March (22:00 EDT) in New York.
+	ov := overviewAt(t, env, fixtures.GothamID, analytics.Window7Days, time.Date(2026, 3, 9, 2, 0, 0, 0, time.UTC))
+
+	assert.Equal(t, "2026-03-08", ov.Series[6].Date)
+	assert.Equal(t, 2, ov.Series[6].Sent)
 }

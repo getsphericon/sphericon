@@ -42,6 +42,10 @@ model SiteWorkspaceResource {
    * 15 U.S.C. §7704(a)(5)). Empty until the workspace sets one. */
   postalAddress: string;
 
+  /** The Workspace time zone (ADR 0057): the IANA name every analytics report counts its days
+   * in. UTC until an Owner sets it. */
+  timezone: TimeZoneName;
+
   /** The authenticated User's role in this Workspace (from their Membership). It
    * rides the Workspace list so role-gated UI is known even while the Workspace's
    * own endpoints are withheld under a Two-factor requirement. */
@@ -149,6 +153,12 @@ model SiteSecondFactorRequirementInput {
   required: boolean;
 }
 
+/** Set the Workspace time zone */
+model SiteWorkspaceTimezoneInput {
+  /** An IANA time zone name such as `Europe/Berlin`; the zone database decides what is valid */
+  timezone: TimeZoneName;
+}
+
 @route("/workspaces")
 @tag("Site Workspaces")
 namespace SiteWorkspaces {
@@ -241,6 +251,20 @@ namespace SiteWorkspaces {
     @path workspaceId: WorkspaceId,
     @body body: SiteSecondFactorRequirementInput,
   ): SiteWorkspaceResource | ForbiddenProblem | NotFoundProblem;
+
+  /** Set the Workspace time zone (Owner only), the zone of every Report day (ADR 0057). 422 for
+   * a name the zone database does not know. A change is recorded as an Audit entry and applies
+   * to all history at once. */
+  @put
+  @route("/{workspaceId}/timezone")
+  op setTimezone(
+    @path workspaceId: WorkspaceId,
+    @body body: SiteWorkspaceTimezoneInput,
+  ):
+    | SiteWorkspaceResource
+    | ForbiddenProblem
+    | NotFoundProblem
+    | UnprocessableEntityProblem;
 
   /** Mint an Account link token (Owner only). Answers 404 when the installation has no
    * Account link configured. */

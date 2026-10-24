@@ -1,6 +1,9 @@
 // Package analytics computes the dashboard's Overview: contacts, Engagement rates,
 // automations and the daily time series (GLOSSARY "Engagement rates").
 //
+// Days are Report days (ADR 0057): calendar days in the Workspace time zone, cut by
+// internal/reportday, so the whole history is re-bucketed the moment the zone changes.
+//
 // Engagement rates are a send cohort: the denominator is the Broadcast recipients
 // sent in the window, and opens and clicks are counted among that same cohort, so
 // opened never exceeds sent and every rate is within [0, 1]. They are not the
@@ -21,9 +24,10 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/eligibility"
+	"github.com/getsphericon/sphericon/internal/reportday"
 )
 
-// Window is the selectable trailing window in UTC days, today included.
+// Window is the selectable trailing window in Report days, today included.
 type Window int
 
 const (
@@ -31,8 +35,6 @@ const (
 	Window30Days Window = 30
 	Window90Days Window = 90
 )
-
-const dayFormat = "2006-01-02"
 
 // Overview is everything the dashboard shows for one Workspace and window.
 type Overview struct {
@@ -58,7 +60,7 @@ type Automations struct {
 	Total, Active, RunsActive, RunsCompleted int
 }
 
-// Point is one UTC day of the send cohort.
+// Point is one Report day of the send cohort.
 type Point struct {
 	Date                  string
 	Sent, Opened, Clicked int
@@ -66,22 +68,65 @@ type Point struct {
 
 // Module computes Overviews. Its clock is time.Now.
 type Module struct {
-	now func() time.Time
+	now       func() time.Time
+	retention time.Duration
 }
 
 func New() *Module { return &Module{now: time.Now} }
 
+// WithClock returns the module reading now from the given clock.
+func (m *Module) WithClock(now func() time.Time) *Module {
+	c := *m
+	c.now = now
+	return &c
+}
+
+// WithRetention returns the module that reports d as the Event retention (config.EventsRetention):
+// the age past which Events are deleted, 0 when they are kept forever.
+func (m *Module) WithRetention(d time.Duration) *Module {
+	c := *m
+	c.retention = d
+	return &c
+}
+
+// RetentionDays is the Event retention in whole days, which a report over history states next
+// to its figures.
+func (m *Module) RetentionDays() int { return int(m.retention / (24 * time.Hour)) }
+
+// days is the trailing Report-day window of w days for the Workspace behind s, read in its
+// time zone; every report of the module cuts its window here.
+func (m *Module) days(ctx context.Context, s *ent.Scoped, w Window) (reportday.Window, error) {
+	ws, err := s.Workspace(ctx)
+	if err != nil {
+		return reportday.Window{}, err
+	}
+	loc, err := reportday.Location(ws.Timezone)
+	if err != nil {
+		return reportday.Window{}, err
+	}
+	return reportday.Trailing(m.now(), loc, int(w)), nil
+}
+
+// localDay is the Report-day label (YYYY-MM-DD) of a timestamp column in loc. The zone is a
+// bound argument, never spliced into the statement.
+func localDay(column string, loc *time.Location) sql.Querier {
+	// raw sql: ent has no AT TIME ZONE expression; the zone is a bound argument
+	return sql.ExprFunc(func(b *sql.Builder) {
+		b.WriteString("to_char(").WriteString(column).WriteString(" AT TIME ZONE ").Arg(loc.String()).WriteString(", 'YYYY-MM-DD')")
+	})
+}
+
 // Overview computes the dashboard for the Workspace behind s over the window.
 func (m *Module) Overview(ctx context.Context, s *ent.Scoped, w Window) (*Overview, error) {
-	today := m.now().UTC().Truncate(24 * time.Hour)
-	since := today.AddDate(0, 0, -(int(w) - 1))
-	until := today.AddDate(0, 0, 1) // exclusive: midnight tomorrow UTC
-
-	contacts, err := contactCounts(ctx, s, since)
+	days, err := m.days(ctx, s, w)
 	if err != nil {
 		return nil, err
 	}
-	email, err := emailCounts(ctx, s, since, until)
+	contacts, err := contactCounts(ctx, s, days.Since)
+	if err != nil {
+		return nil, err
+	}
+	email, err := emailCounts(ctx, s, days.Since, days.Until)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +134,7 @@ func (m *Module) Overview(ctx context.Context, s *ent.Scoped, w Window) (*Overvi
 	if err != nil {
 		return nil, err
 	}
-	series, err := timeSeries(ctx, s, since, until)
+	series, err := timeSeries(ctx, s, days)
 	if err != nil {
 		return nil, err
 	}
@@ -170,10 +215,9 @@ func automationCounts(ctx context.Context, s *ent.Scoped) (Automations, error) {
 	return Automations{Total: total, Active: active, RunsActive: runsActive, RunsCompleted: runsCompleted}, nil
 }
 
-// timeSeries buckets the send cohort by UTC send day, then zero-fills every day in
-// [since, until). date_trunc is forced to UTC so the labels match the zero-fill loop
-// whatever the DB session zone.
-func timeSeries(ctx context.Context, s *ent.Scoped, since, until time.Time) ([]Point, error) {
+// timeSeries buckets the send cohort by the Report day of its send time, then zero-fills
+// every day of the window from the local dates, so a 23- or 25-hour day is one bucket.
+func timeSeries(ctx context.Context, s *ent.Scoped, days reportday.Window) ([]Point, error) {
 	var rows []struct {
 		Day     string `sql:"day"`
 		Sent    int    `sql:"sent"`
@@ -187,14 +231,14 @@ func timeSeries(ctx context.Context, s *ent.Scoped, since, until time.Time) ([]P
 			sel.Join(m).On(sel.C(broadcastrecipient.FieldID), m.C(outboundmessage.FieldBroadcastRecipientID))
 			sentAt := m.C(outboundmessage.FieldSentAt)
 			sel.Select(
-				sql.As(fmt.Sprintf("to_char(date_trunc('day', %s AT TIME ZONE 'UTC'), 'YYYY-MM-DD')", sentAt), "day"),
 				sql.As("COUNT(*)", "sent"),
 				sql.As(fmt.Sprintf("COUNT(%s)", sel.C(broadcastrecipient.FieldOpenedAt)), "opened"),
 				sql.As(fmt.Sprintf("COUNT(%s)", sel.C(broadcastrecipient.FieldClickedAt)), "clicked"),
-			).
+			)
+			sel.AppendSelectExprAs(localDay(sentAt, days.Loc), "day").
 				Where(sql.And(
 					sql.EQ(m.C(outboundmessage.FieldStatus), string(outboundmessage.StatusSent)),
-					sql.GTE(sentAt, since), sql.LT(sentAt, until),
+					sql.GTE(sentAt, days.Since), sql.LT(sentAt, days.Until),
 				)).
 				GroupBy("day")
 		}).
@@ -206,9 +250,8 @@ func timeSeries(ctx context.Context, s *ent.Scoped, since, until time.Time) ([]P
 	for _, r := range rows {
 		byDay[r.Day] = Point{Date: r.Day, Sent: r.Sent, Opened: r.Opened, Clicked: r.Clicked}
 	}
-	var points []Point
-	for d := since; d.Before(until); d = d.AddDate(0, 0, 1) {
-		day := d.Format(dayFormat)
+	points := make([]Point, 0, len(days.Dates))
+	for _, day := range days.Dates {
 		p := byDay[day]
 		p.Date = day
 		points = append(points, p)

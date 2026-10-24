@@ -377,3 +377,17 @@
   workspace_id: 1
   created_at: '{{daysAgo 2}}'
   updated_at: '{{daysAgo 1}}'
+
+# Gotham (workspace 61): the Broadcast whose eight sends fall on the edges of the two daylight-saving
+# days of 2026 (recipients and their messages in broadcast_recipients.yml and outbound_messages.yml).
+- id: 20009 # fixture: BroadcastGothamDaylightSaving
+  name: Daylight saving edges
+  subject: Daylight saving edges
+  from_name: Gotham
+  from_email: hello@gotham.example
+  body: '<p>Edges.</p>'
+  status: sent
+  sent_at: '2026-03-08 05:00:00+00'
+  workspace_id: 61
+  created_at: '2026-01-02 00:00:00'
+  updated_at: '2026-03-08 05:00:00+00'

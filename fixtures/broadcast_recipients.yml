@@ -1904,3 +1904,74 @@
     created_at: '{{daysAgo 5}}',
     updated_at: '{{daysAgo 5}}',
   }
+
+# Gotham (workspace 61): the recipients of the daylight-saving Broadcast; each send moment is in its message.
+- {
+    id: 20186,
+    broadcast_id: 20009,
+    contact_id: 20049,
+    workspace_id: 61,
+    created_at: '2026-01-02 00:00:00',
+    updated_at: '2026-01-02 00:00:00',
+  }
+- {
+    id: 20187,
+    broadcast_id: 20009,
+    contact_id: 20050,
+    workspace_id: 61,
+    opened_at: '2026-03-08 05:00:00+00',
+    clicked_at: '2026-03-08 05:00:00+00',
+    created_at: '2026-01-02 00:00:00',
+    updated_at: '2026-01-02 00:00:00',
+  }
+- {
+    id: 20188,
+    broadcast_id: 20009,
+    contact_id: 20051,
+    workspace_id: 61,
+    created_at: '2026-01-02 00:00:00',
+    updated_at: '2026-01-02 00:00:00',
+  }
+- {
+    id: 20189,
+    broadcast_id: 20009,
+    contact_id: 20052,
+    workspace_id: 61,
+    created_at: '2026-01-02 00:00:00',
+    updated_at: '2026-01-02 00:00:00',
+  }
+- {
+    id: 20190,
+    broadcast_id: 20009,
+    contact_id: 20053,
+    workspace_id: 61,
+    created_at: '2026-01-02 00:00:00',
+    updated_at: '2026-01-02 00:00:00',
+  }
+- {
+    id: 20191,
+    broadcast_id: 20009,
+    contact_id: 20054,
+    workspace_id: 61,
+    opened_at: '2026-11-01 04:00:00+00',
+    created_at: '2026-01-02 00:00:00',
+    updated_at: '2026-01-02 00:00:00',
+  }
+- {
+    id: 20192,
+    broadcast_id: 20009,
+    contact_id: 20055,
+    workspace_id: 61,
+    opened_at: '2026-11-02 04:59:00+00',
+    clicked_at: '2026-11-02 04:59:00+00',
+    created_at: '2026-01-02 00:00:00',
+    updated_at: '2026-01-02 00:00:00',
+  }
+- {
+    id: 20193,
+    broadcast_id: 20009,
+    contact_id: 20056,
+    workspace_id: 61,
+    created_at: '2026-01-02 00:00:00',
+    updated_at: '2026-01-02 00:00:00',
+  }

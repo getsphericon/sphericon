@@ -175,3 +175,14 @@
   collect_key: omck_test_meter_collect_key
   created_at: '{{monthAgo 22 1 0 0}}'
   updated_at: '{{monthAgo 22 1 0 0}}'
+
+# Gotham: reports in America/New_York (ADR 0057). Its sends sit at fixed moments around the two
+# daylight-saving changes of 2026 (8 March, 1 November) rather than relative dates, so the Report-day
+# tests do not drift near midnight.
+- id: 61 # fixture: Gotham
+  name: Gotham
+  public_id: GothmW61
+  collect_key: omck_test_gotham_collect_key
+  timezone: America/New_York
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

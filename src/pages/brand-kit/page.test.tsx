@@ -23,6 +23,7 @@ const workspace = (role: SiteWorkspaceResource['role']): SiteWorkspaceResource =
 
   collectKey: 'ck',
   postalAddress: '',
+  timezone: 'UTC',
   accountLinkAvailable: false,
   holds: [],
   mcpUrl: 'https://example.com/mcp',

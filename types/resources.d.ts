@@ -49,7 +49,7 @@ export default interface Resources {
       "subject": "Subject",
       "subjectId": "Subject ID",
       "time": "Time",
-      "title": "Activity"
+      "title": "Recent activity"
     },
     "alerts": {
       "automationArchiveErrorTitle": "Failed to archive automation",
@@ -108,6 +108,17 @@ export default interface Resources {
         "runsCompleted": "Completed runs",
         "total": "Total"
       },
+      "clicksByLink": {
+        "automation": "Automation",
+        "broadcast": "Broadcast",
+        "carriedBy": "Sent in",
+        "clicks": "Clicks",
+        "empty": "No links were clicked in this window",
+        "hint": "Every human click counts, so a link clicked twice by one person shows twice. Link scanners and other software are left out.",
+        "ownerClicks": "{{kind}}: {{clicks}}",
+        "retentionNote": "Clicks are kept for {{days}} days on this instance, so this window counts only the last {{days}} days.",
+        "url": "Link"
+      },
       "contacts": {
         "active": "Active",
         "empty": "No contacts yet",
@@ -119,12 +130,52 @@ export default interface Resources {
         "clickRate": "Click rate",
         "clickToOpenRate": "Click-to-open",
         "clicked": "Clicked",
+        "empty": "No email sent in this window",
         "openRate": "Open rate",
         "opened": "Opened",
         "rangeNote": "Aggregated over the selected window, from delivery logs.",
         "sent": "Sent"
       },
+      "events": {
+        "action": "Action",
+        "contacts": "Contacts",
+        "count": "Times",
+        "empty": "No events in this window",
+        "lastAt": "Last occurrence",
+        "loadError": "Failed to load events"
+      },
       "loadError": "Failed to load analytics",
+      "nav": {
+        "audience": "Audience",
+        "clicksByLink": "Clicks by link",
+        "email": "Email",
+        "emailMetrics": "Email metrics",
+        "events": "Events",
+        "newPeople": "New people",
+        "opensByHour": "Opens by hour",
+        "recentActivity": "Recent activity",
+        "subscribedPeople": "Subscribed people",
+        "tracking": "Tracking"
+      },
+      "newPeople": {
+        "empty": "No new people in this window",
+        "note": "Contacts created per day in your workspace time zone, by how each one first came to exist.",
+        "total": "New people"
+      },
+      "opensByHour": {
+        "cell": "{{day}} {{hour}}:00, {{count}} open" | "{{day}} {{hour}}:00, {{count}} opens",
+        "empty": "No opens in this window",
+        "note": "Human opens by hour of day in the workspace time zone. Opens by mail software that fetches images for the reader are left out.",
+        "weekdays": {
+          "friday": "Friday",
+          "monday": "Monday",
+          "saturday": "Saturday",
+          "sunday": "Sunday",
+          "thursday": "Thursday",
+          "tuesday": "Tuesday",
+          "wednesday": "Wednesday"
+        }
+      },
       "range": {
         "30d": "Last 30 days",
         "7d": "Last 7 days",
@@ -139,6 +190,21 @@ export default interface Resources {
         "clicked": "Clicked",
         "opened": "Opened",
         "sent": "Sent"
+      },
+      "sources": {
+        "api": "API",
+        "manual": "Manual",
+        "tracker": "Tracker",
+        "unknown": "Unknown"
+      },
+      "subscribedPeople": {
+        "current": "Subscribed now",
+        "day": "Day",
+        "empty": "Nobody subscribed or unsubscribed in this window",
+        "flow": "Subscriptions per day",
+        "net": "Net",
+        "subscribed": "Subscribed",
+        "unsubscribed": "Unsubscribed"
       }
     },
     "app": {
@@ -675,7 +741,6 @@ export default interface Resources {
       }
     },
     "nav": {
-      "activity": "Activity",
       "analytics": "Analytics",
       "automations": "Automations",
       "banners": "Banners",
@@ -1315,6 +1380,8 @@ export default interface Resources {
       },
       "testEventDescription": "Send a test event from your terminal, then watch it appear in the activity feed.",
       "testEventTitle": "Send a test event",
+      "timezoneDescription": "The time zone your reports count days and hours in. Only an Owner can change it; a change applies to all history at once.",
+      "timezoneLabel": "Time zone",
       "tokens": {
         "create": "Create token",
         "createError": "Failed to create token",
