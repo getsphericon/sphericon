@@ -34,10 +34,18 @@ shellcheck = "latest"
 version = "0.1.3"
 
 [tools."github:mokevnin/schemalens".platforms]
-macos-arm64 = { asset_pattern = "schemalens_*_darwin_arm64.tar.gz", additional_asset_patterns = ["schemalens-adapter-ent_*_darwin_arm64.tar.gz"] }
-macos-x64 = { asset_pattern = "schemalens_*_darwin_amd64.tar.gz", additional_asset_patterns = ["schemalens-adapter-ent_*_darwin_amd64.tar.gz"] }
-linux-x64 = { asset_pattern = "schemalens_*_linux_amd64.tar.gz", additional_asset_patterns = ["schemalens-adapter-ent_*_linux_amd64.tar.gz"] }
-linux-arm64 = { asset_pattern = "schemalens_*_linux_arm64.tar.gz", additional_asset_patterns = ["schemalens-adapter-ent_*_linux_arm64.tar.gz"] }
+macos-arm64 = { asset_pattern = "schemalens_*_darwin_arm64.tar.gz", additional_asset_patterns = [
+  "schemalens-adapter-ent_*_darwin_arm64.tar.gz",
+] }
+macos-x64 = { asset_pattern = "schemalens_*_darwin_amd64.tar.gz", additional_asset_patterns = [
+  "schemalens-adapter-ent_*_darwin_amd64.tar.gz",
+] }
+linux-x64 = { asset_pattern = "schemalens_*_linux_amd64.tar.gz", additional_asset_patterns = [
+  "schemalens-adapter-ent_*_linux_amd64.tar.gz",
+] }
+linux-arm64 = { asset_pattern = "schemalens_*_linux_arm64.tar.gz", additional_asset_patterns = [
+  "schemalens-adapter-ent_*_linux_arm64.tar.gz",
+] }
 
 # Install the git hooks (hk.pkl) once the toolchain is in place. `--mise` runs hk through
 # `mise x`, so a hook needs no shim on PATH. hk's version must match the package:// import
