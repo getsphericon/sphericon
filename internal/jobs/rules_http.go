@@ -121,12 +121,8 @@ func (w *RunRuleHTTPWorker) Work(ctx context.Context, job *river.Job[RunRuleHTTP
 		}
 		return river.JobSnooze(HookSnooze(limited.RetryAfter, now)) // never an attempt
 	}
-	var delivery *webhook.DeliveryError
-	if errors.As(sendErr, &delivery) && delivery.Kind == webhook.KindBlockedAddress {
-		return record(failed) // no retry opens a blocked address
-	}
-	if job.Attempt >= job.MaxAttempts {
-		return record(failed)
+	if !webhook.Retryable(sendErr) || job.Attempt >= job.MaxAttempts {
+		return record(failed) // no retry opens a blocked address or turns a 4xx into a 2xx
 	}
 	return sendErr
 }

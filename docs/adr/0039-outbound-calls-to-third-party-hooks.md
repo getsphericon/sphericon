@@ -20,7 +20,9 @@ a second caller never builds its own, because the one prior-art project whose ca
   consecutive failures, last error and reason for being disabled. A 410, or persistent failure over
   a window of time (a count alone would let a restart in a burst retire a healthy endpoint),
   disables it and mails its owners; a 429 is not a failure and honours `Retry-After`. The retry
-  horizon is days, not river's default of about four hours. Threshold, window and horizon are
+  horizon is days, not river's default of about four hours. An HTTP step and a Rule's HTTP Action
+  retry only what another attempt can fix (`webhook.Retryable`: a timeout, a transport error, a 5xx,
+  a 408); a blocked address or any other 4xx fails at once. Threshold, window and horizon are
   constants, not settings. There is no delivery table and no replay: the endpoint's state is the
   record, and a lost event is not redelivered. The secret can be regenerated (the old one stops
   at once) and a sample event of a chosen type can be sent to check the URL and the signature.

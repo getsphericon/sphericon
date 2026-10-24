@@ -133,8 +133,8 @@ func (w *RunHTTPStepWorker) Work(ctx context.Context, job *river.Job[RunHTTPStep
 		}
 		return river.JobSnooze(HookSnooze(limited.RetryAfter, now)) // never an attempt
 	}
-	if delivery.Kind == webhook.KindBlockedAddress {
-		return w.fail(ctx, run, f, river.JobCancel(sendErr)) // no retry opens a blocked address
+	if !webhook.Retryable(sendErr) {
+		return w.fail(ctx, run, f, river.JobCancel(sendErr)) // no retry opens a blocked address or turns a 4xx into a 2xx
 	}
 	if job.Attempt >= job.MaxAttempts {
 		return w.fail(ctx, run, f, sendErr)

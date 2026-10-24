@@ -170,6 +170,19 @@ func TestAnHTTPActionThatKeepsFailingIsRecordedFailedWithTheStatusAndTheAnswerOn
 	assert.NotNil(t, f.CompletedAt)
 }
 
+func TestAnHTTPActionIsNotRetriedOnAClientError(t *testing.T) {
+	env := testhelper.Setup(t)
+	h := fireHTTPRule(t, env, `{}`, nil)
+	h.rcv.respond(http.StatusNotFound, "gone", "")
+
+	require.NoError(t, h.attempt(h.allowing(), 1), "a 404 would answer the same: the job ends")
+
+	assert.Len(t, h.rcv.received(), 1)
+	results := resultsOf(t, h.reload())
+	assert.Equal(t, rules.Failed, results[0].Status)
+	assert.Equal(t, "http_status 404: gone", results[0].Detail)
+}
+
 func TestAnHTTPActionKeepsOnlyTheFirstKiBOfTheAnswer(t *testing.T) {
 	env := testhelper.Setup(t)
 	h := fireHTTPRule(t, env, `{}`, nil)

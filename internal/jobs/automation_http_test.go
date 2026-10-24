@@ -201,6 +201,20 @@ func TestHTTPStepFailsTheEnrollmentWhenRetriesAreSpent(t *testing.T) {
 	assert.Empty(t, h.queued(t), "a failed Enrollment queues no next step")
 }
 
+func TestHTTPStepAnsweredWithAClientErrorFailsAtOnce(t *testing.T) {
+	h := newHTTPStepHarness(t, `{"ok":true}`, true)
+	runID := h.enroll(t, fixtures.ContactAliceID)
+	h.rcv.respond(http.StatusNotFound, "gone", "")
+
+	err := h.attempt(h.worker(h.rcv.allow), runID, 1)
+
+	var cancelled *rivertype.JobCancelError
+	require.ErrorAs(t, err, &cancelled)
+	r := h.run(runID)
+	assert.Equal(t, automationrun.StatusFailed, r.status)
+	assert.Equal(t, http.StatusNotFound, *r.httpStatus)
+}
+
 func TestHTTPStepToABlockedAddressFailsAtOnce(t *testing.T) {
 	h := newHTTPStepHarness(t, `{"ok":true}`, true)
 	runID := h.enroll(t, fixtures.ContactAliceID)

@@ -92,6 +92,25 @@ func transportError(err error) *DeliveryError {
 	return &DeliveryError{Kind: KindNetwork, cause: err}
 }
 
+// Retryable reports whether another attempt can succeed where this failure did not: a timeout, a
+// transport error, a 5xx, a 408 or a 429. A blocked address, and any other status (a 400, a 401, a
+// 404, a 410), would answer the same however long the retries run (ADR 0039).
+func Retryable(sendErr error) bool {
+	var d *DeliveryError
+	if !errors.As(sendErr, &d) {
+		return true
+	}
+	switch d.Kind {
+	case KindTimeout, KindNetwork:
+		return true
+	case KindHTTPStatus:
+		return d.Status >= http.StatusInternalServerError || d.Status == http.StatusRequestTimeout || d.Status == http.StatusTooManyRequests
+	case KindBlockedAddress:
+		return false
+	}
+	return false
+}
+
 // RateLimited returns the receiver's 429 answer, or nil for any other outcome. A 429 is
 // neither a success nor a failure: the receiver is alive and asking us to slow down.
 func RateLimited(sendErr error) *DeliveryError {
