@@ -36,6 +36,11 @@ override it. `SPHERICON_PG_HOST` / `SPHERICON_PG_PORT` point every checkout at a
 external Postgres): one that answers is used as is and never started. CI runs the same path: its
 single checkout is its own primary.
 
+Postgres refuses to run as root, so the `db` daemon does not start in a container that runs as root
+and `db:up` fails with that error. Run mise as a regular user there, or start a Postgres 18 of your
+own on `PGHOST:PGPORT` (as another user, or via `SPHERICON_PG_HOST` / `SPHERICON_PG_PORT`):
+`db:up` uses a server that already answers.
+
 Never hand-name a scratch database. `mise run worktrees:gc` (also run by `setup` and
 `worktrees:prune`; `--apply` to act, a dry run otherwise) drops the shared server's databases that
 no live worktree's `DB_NAMES` covers and runs `mise daemons prune --yes` for dead state; it

@@ -46,7 +46,8 @@ if ! nc -z "$PGHOST" "$PGPORT" 2>/dev/null; then
     *) echo "db:up: no Postgres answers at $PGHOST:$PGPORT and it is not local, so it is not started" >&2; exit 1 ;;
   esac
   primary=$(git worktree list --porcelain | sed -n '1s/^worktree //p')
-  mise -C "$primary" daemons start db >/dev/null 2>&1 || true
+  # stderr stays visible: a start that fails outright (Postgres refuses to run as root, say) says why.
+  mise -C "$primary" daemons start db >/dev/null || { echo "db:up: the db daemon did not start (error above)" >&2; exit 1; }
   for _ in $(seq 1 120); do nc -z "$PGHOST" "$PGPORT" 2>/dev/null && break; sleep 0.5; done
   nc -z "$PGHOST" "$PGPORT" 2>/dev/null || { echo "db:up: Postgres did not come up at $PGHOST:$PGPORT; see: mise -C $primary daemons logs db" >&2; exit 1; }
 fi

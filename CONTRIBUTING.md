@@ -98,8 +98,8 @@ installs the git hooks.
 mise install # install the pinned toolchain (also installs the git hooks)
 mise run setup   # install deps, start Postgres, create dev/test/diff DBs, migrate, seed
 mise run dev     # start the whole dev stack (mise daemons)
-mise run test    # creates test DB, then `go test -p 1 ./...`
-mise run check   # tsc, oxlint, oxfmt --check, knip, golangci-lint, govulncheck, gitleaks, jactionlint, zizmor
+mise run test    # creates test DB, then `go test ./...` (packages in parallel)
+mise run check   # tsc, oxlint, oxfmt --check, knip, golangci-lint, gitleaks, jactionlint, zizmor
 mise run generate # regenerate TypeSpec → OpenAPI → Go + TS
 ```
 
