@@ -359,23 +359,13 @@ func (m *Module) Unarchive(ctx context.Context, s *ent.Scoped, id int64) error {
 	return err
 }
 
-// Report is a Broadcast's delivery report. Rates are ratios in [0,1]; a zero
-// denominator yields 0.
+// Report is a Broadcast's delivery report: its status, why it is held and its Stats. The
+// rates are Stats methods, ratios in [0,1] where a zero denominator yields 0.
 type Report struct {
-	Status       broadcast.Status
-	HoldReason   *string
-	Recipients   int
-	Sent         int
-	Skipped      int
-	Failed       int
-	Opened       int
-	Clicked      int
-	Unsubscribed int
-	Delivered    int
-	Bounced      int
-	Complained   int
-	OpenRate     float32
-	ClickRate    float32
+	Stats
+
+	Status     broadcast.Status
+	HoldReason *string
 }
 
 // Report reads the Broadcast's delivery figures (see Stats).
@@ -388,14 +378,7 @@ func (m *Module) Report(ctx context.Context, s *ent.Scoped, id int64) (Report, e
 	if err != nil {
 		return Report{}, err
 	}
-	st := figures[id]
-	return Report{
-		Status: b.Status, HoldReason: b.HoldReason,
-		Recipients: st.Recipients, Sent: st.Sent, Skipped: st.Skipped, Failed: st.Failed,
-		Opened: st.Opened, Clicked: st.Clicked, Unsubscribed: st.Unsubscribed,
-		Delivered: st.Delivered, Bounced: st.Bounced, Complained: st.Complained,
-		OpenRate: Ratio(st.Opened, st.Sent), ClickRate: Ratio(st.Clicked, st.Sent),
-	}, nil
+	return Report{Status: b.Status, HoldReason: b.HoldReason, Stats: figures[id]}, nil
 }
 
 func draftOf(id int64) predicate.Broadcast {

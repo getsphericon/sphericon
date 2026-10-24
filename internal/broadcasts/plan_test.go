@@ -280,9 +280,10 @@ func TestProgressEstimateUsesThePlannersInterval(t *testing.T) {
 	d.recipient(fixtures.ContactBobID)
 	now := fixedNow
 
-	p, err := broadcasts.ProgressOf(d.t.Context(), d.s, d.broadcastRow(), now)
+	detail, err := broadcasts.DetailOf(d.t.Context(), d.s, d.broadcastRow(), now)
 
 	require.NoError(t, err)
+	p := detail.Progress
 	require.NotNil(t, p.EstimatedCompletion)
 	assert.Equal(t, 2*500*time.Millisecond, p.EstimatedCompletion.Sub(now))
 }

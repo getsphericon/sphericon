@@ -129,6 +129,11 @@ type Converter interface {
 	// goverter:map DiscardedAt ArchivedAt
 	BroadcastToResource(source *ent.Broadcast) siteapi.SiteBroadcastResource
 
+	// goverter:map Processed ProcessedCount
+	// goverter:map Remaining RemainingCount
+	// goverter:map EstimatedCompletion EstimatedCompletionAt
+	BroadcastProgressToResource(source broadcasts.Progress) siteapi.SiteBroadcastProgress
+
 	// goverter:ignore Warnings
 	EmailTemplateToResource(source *ent.EmailTemplate) siteapi.SiteEmailTemplateResource
 
@@ -408,8 +413,8 @@ func BroadcastStats(st broadcasts.Stats) siteapi.SiteBroadcastStats {
 		BouncedCount:      narrow.Int32(st.Bounced),
 		ComplainedCount:   narrow.Int32(st.Complained),
 		DeliveryRate:      broadcasts.Ratio(st.Sent, st.Recipients),
-		OpenRate:          broadcasts.Ratio(st.Opened, st.Sent),
-		ClickRate:         broadcasts.Ratio(st.Clicked, st.Sent),
+		OpenRate:          st.OpenRate(),
+		ClickRate:         st.ClickRate(),
 		ClickToOpenRate:   broadcasts.Ratio(st.Clicked, st.Opened),
 		UnsubscribeRate:   broadcasts.Ratio(st.Unsubscribed, st.Sent),
 		FailureRate:       broadcasts.Ratio(st.Failed, st.Recipients),

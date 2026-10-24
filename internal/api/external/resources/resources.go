@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/auditapi"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/brandkit"
+	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/dkimstate"
@@ -106,6 +107,8 @@ func AutomationSteps(steps []externalapi.AutomationStep) []automations.Step {
 // goverter:extend optNilEmailAddress
 // goverter:extend optNilTimeZone
 // goverter:extend optNilTimestamp
+// goverter:extend openRate
+// goverter:extend clickRate
 // goverter:extend optNilEntityID
 // goverter:extend contactCustomFields
 // goverter:extend optNilInt32
@@ -132,6 +135,21 @@ type Converter interface {
 	// The contract names the discarded state "archived" (ADR 0049).
 	// goverter:map DiscardedAt ArchivedAt
 	BroadcastToResource(source *ent.Broadcast) externalapi.BroadcastResource
+
+	// The figures are the report's Stats; the rates are Stats methods.
+	// goverter:map Stats.Recipients RecipientsTotal
+	// goverter:map Stats.Sent SentCount
+	// goverter:map Stats.Skipped SkippedCount
+	// goverter:map Stats.Failed FailedCount
+	// goverter:map Stats.Opened OpenedCount
+	// goverter:map Stats.Clicked ClickedCount
+	// goverter:map Stats.Unsubscribed UnsubscribedCount
+	// goverter:map Stats.Delivered DeliveredCount
+	// goverter:map Stats.Bounced BouncedCount
+	// goverter:map Stats.Complained ComplainedCount
+	// goverter:map Stats OpenRate | openRate
+	// goverter:map Stats ClickRate | clickRate
+	BroadcastReportToResource(source broadcasts.Report) externalapi.BroadcastReport
 	ApiTokenToInfo(source *ent.ApiToken) externalapi.ApiTokenInfo
 	// The contract names the discarded state \"archived\" (ADR 0049).
 	// goverter:map DiscardedAt ArchivedAt
@@ -254,6 +272,10 @@ func (m ExportMapper) BroadcastRecipient(r *ent.BroadcastRecipient) json.Marshal
 func sendLimitWarning(w sendlimit.Warning) externalapi.SendLimitWarning {
 	return externalapi.SendLimitWarning(w)
 }
+
+// openRate and clickRate are the report's rates, which Stats computes.
+func openRate(st broadcasts.Stats) float32  { return st.OpenRate() }
+func clickRate(st broadcasts.Stats) float32 { return st.ClickRate() }
 
 // count narrows a message count to the contract's int32.
 func count(n int) int32 { return narrow.Int32(n) }

@@ -305,27 +305,6 @@ func (h *Handlers) BroadcastsReport(ctx context.Context, params externalapi.Broa
 	if err != nil {
 		return nil, err
 	}
-	return &externalapi.BroadcastReport{
-		Status:            externalapi.BroadcastStatus(r.Status),
-		HoldReason:        optNilString(r.HoldReason),
-		RecipientsTotal:   narrow.Int32(r.Recipients),
-		SentCount:         narrow.Int32(r.Sent),
-		SkippedCount:      narrow.Int32(r.Skipped),
-		FailedCount:       narrow.Int32(r.Failed),
-		OpenedCount:       narrow.Int32(r.Opened),
-		ClickedCount:      narrow.Int32(r.Clicked),
-		UnsubscribedCount: narrow.Int32(r.Unsubscribed),
-		DeliveredCount:    narrow.Int32(r.Delivered),
-		BouncedCount:      narrow.Int32(r.Bounced),
-		ComplainedCount:   narrow.Int32(r.Complained),
-		OpenRate:          r.OpenRate,
-		ClickRate:         r.ClickRate,
-	}, nil
-}
-
-func optNilString(v *string) externalapi.OptNilString {
-	if v == nil {
-		return externalapi.OptNilString{}
-	}
-	return externalapi.NewOptNilString(*v)
+	res := mapper.BroadcastReportToResource(r)
+	return &res, nil
 }

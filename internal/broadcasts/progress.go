@@ -21,21 +21,36 @@ type Progress struct {
 	EstimatedCompletion *time.Time
 }
 
-// ProgressOf computes the progress of a Broadcast, or nil when it is not sending.
+// Detail is one Broadcast's figures and, while it is sending, its Progress, both from a
+// single count of its recipients. A list of Broadcasts reads StatsOf instead: no Progress,
+// two grouped queries for the page (ADR 0023).
+type Detail struct {
+	Stats    Stats
+	Progress *Progress
+}
+
+// DetailOf reads a Broadcast's figures and, when it is sending, its Progress.
+func DetailOf(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, now time.Time) (Detail, error) {
+	figures, err := StatsOf(ctx, s, b.ID)
+	if err != nil {
+		return Detail{}, err
+	}
+	d := Detail{Stats: figures[b.ID]}
+	if b.Status != broadcast.StatusSending {
+		return d, nil
+	}
+	d.Progress, err = progressOf(ctx, s, b, d.Stats, now)
+	return d, err
+}
+
+// progressOf computes the progress of a sending Broadcast from its figures.
 // The estimate is the last scheduled recipient job while that is still ahead; once it
 // has passed (jobs were deferred, or the limit was lowered mid-send) it falls back to
 // the remaining recipients at the Integration's current rate. A hold has no estimate:
 // the source is blocked, not busy, and nothing says when it lifts.
-func ProgressOf(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, now time.Time) (*Progress, error) {
-	if b.Status != broadcast.StatusSending {
-		return nil, nil
-	}
-	figures, err := StatsOf(ctx, s, b.ID)
-	if err != nil {
-		return nil, err
-	}
-	pending := figures[b.ID].Pending
-	p := &Progress{Remaining: pending, Processed: figures[b.ID].Processed()}
+func progressOf(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, st Stats, now time.Time) (*Progress, error) {
+	pending := st.Pending
+	p := &Progress{Remaining: pending, Processed: st.Processed()}
 	if pending == 0 || b.HoldReason != nil {
 		return p, nil
 	}

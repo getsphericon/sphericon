@@ -37,22 +37,15 @@ func withStats(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (siteapi.Si
 // and ETA (ADR 0023), derived on the server from its recipients. Only the single-row
 // responses (get, send) use it: the list leaves progress out.
 func broadcastResource(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (siteapi.SiteBroadcastResource, error) {
-	res, err := withStats(ctx, s, b)
+	d, err := broadcasts.DetailOf(ctx, s, b, time.Now())
 	if err != nil {
-		return res, err
+		return siteapi.SiteBroadcastResource{}, err
 	}
-	p, err := broadcasts.ProgressOf(ctx, s, b, time.Now())
-	if err != nil || p == nil {
-		return res, err
+	res := mapper.BroadcastToResource(b)
+	res.Stats = resources.BroadcastStats(d.Stats)
+	if d.Progress != nil {
+		res.Progress = siteapi.NewOptNilSiteBroadcastProgress(mapper.BroadcastProgressToResource(*d.Progress))
 	}
-	progress := siteapi.SiteBroadcastProgress{
-		ProcessedCount: narrow.Int32(p.Processed),
-		RemainingCount: narrow.Int32(p.Remaining),
-	}
-	if p.EstimatedCompletion != nil {
-		progress.EstimatedCompletionAt = siteapi.NewOptNilTimestamp(siteapi.Timestamp(*p.EstimatedCompletion))
-	}
-	res.Progress = siteapi.NewOptNilSiteBroadcastProgress(progress)
 	return res, nil
 }
 

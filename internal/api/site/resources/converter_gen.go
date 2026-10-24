@@ -8,6 +8,7 @@ import (
 	site "github.com/getsphericon/sphericon/gen/site"
 	auditapi "github.com/getsphericon/sphericon/internal/auditapi"
 	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
+	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
 	integrations "github.com/getsphericon/sphericon/internal/integrations"
 	linkclicks "github.com/getsphericon/sphericon/internal/linkclicks"
 	rules "github.com/getsphericon/sphericon/internal/rules"
@@ -58,6 +59,13 @@ func (c *ConverterImpl) BrandKitToResource(source brandkit.Kit) site.SiteBrandKi
 	siteapiSiteBrandKitResource.FooterText = source.FooterText
 	siteapiSiteBrandKitResource.UpdatedAt = brandKitUpdatedAt(source)
 	return siteapiSiteBrandKitResource
+}
+func (c *ConverterImpl) BroadcastProgressToResource(source broadcasts.Progress) site.SiteBroadcastProgress {
+	var siteapiSiteBroadcastProgress site.SiteBroadcastProgress
+	siteapiSiteBroadcastProgress.ProcessedCount = count(source.Processed)
+	siteapiSiteBroadcastProgress.RemainingCount = count(source.Remaining)
+	siteapiSiteBroadcastProgress.EstimatedCompletionAt = optNilTimestamp(source.EstimatedCompletion)
+	return siteapiSiteBroadcastProgress
 }
 func (c *ConverterImpl) BroadcastRecipientToExport(source *ent.BroadcastRecipient) site.ContactExportBroadcastRecipient {
 	var siteapiContactExportBroadcastRecipient site.ContactExportBroadcastRecipient

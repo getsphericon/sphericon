@@ -8,6 +8,7 @@ import (
 	external "github.com/getsphericon/sphericon/gen/external"
 	auditapi "github.com/getsphericon/sphericon/internal/auditapi"
 	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
+	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
 	integrations "github.com/getsphericon/sphericon/internal/integrations"
 	rules "github.com/getsphericon/sphericon/internal/rules"
 	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
@@ -88,6 +89,24 @@ func (c *ConverterImpl) BroadcastRecipientToExport(source *ent.BroadcastRecipien
 		externalapiContactExportBroadcastRecipient.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return externalapiContactExportBroadcastRecipient
+}
+func (c *ConverterImpl) BroadcastReportToResource(source broadcasts.Report) external.BroadcastReport {
+	var externalapiBroadcastReport external.BroadcastReport
+	externalapiBroadcastReport.Status = external.BroadcastStatus(source.Status)
+	externalapiBroadcastReport.HoldReason = optNilString(source.HoldReason)
+	externalapiBroadcastReport.RecipientsTotal = count(source.Stats.Recipients)
+	externalapiBroadcastReport.SentCount = count(source.Stats.Sent)
+	externalapiBroadcastReport.SkippedCount = count(source.Stats.Skipped)
+	externalapiBroadcastReport.FailedCount = count(source.Stats.Failed)
+	externalapiBroadcastReport.OpenedCount = count(source.Stats.Opened)
+	externalapiBroadcastReport.ClickedCount = count(source.Stats.Clicked)
+	externalapiBroadcastReport.UnsubscribedCount = count(source.Stats.Unsubscribed)
+	externalapiBroadcastReport.DeliveredCount = count(source.Stats.Delivered)
+	externalapiBroadcastReport.BouncedCount = count(source.Stats.Bounced)
+	externalapiBroadcastReport.ComplainedCount = count(source.Stats.Complained)
+	externalapiBroadcastReport.OpenRate = openRate(source.Stats)
+	externalapiBroadcastReport.ClickRate = clickRate(source.Stats)
+	return externalapiBroadcastReport
 }
 func (c *ConverterImpl) BroadcastToResource(source *ent.Broadcast) external.BroadcastResource {
 	var externalapiBroadcastResource external.BroadcastResource

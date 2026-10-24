@@ -34,6 +34,12 @@ type Stats struct {
 // Processed counts the recipients whose send has ended.
 func (st Stats) Processed() int { return st.Recipients - st.Pending }
 
+// OpenRate is the share of sent messages that were opened, in [0,1].
+func (st Stats) OpenRate() float32 { return Ratio(st.Opened, st.Sent) }
+
+// ClickRate is the share of sent messages that were clicked, in [0,1].
+func (st Stats) ClickRate() float32 { return Ratio(st.Clicked, st.Sent) }
+
 // Ratio is num/denom as a float32 in [0,1]; a zero denominator yields 0.
 func Ratio(num, denom int) float32 {
 	if denom <= 0 {

@@ -54,8 +54,9 @@ func TestProgressETAFallsBackToTheEffectiveRate(t *testing.T) {
 			b := env.DB.Broadcast.GetX(ctx, f.id)
 
 			now := time.Now()
-			p, err := broadcasts.ProgressOf(ctx, env.DB.Scoped(fixtures.AcmeID), b, now)
+			detail, err := broadcasts.DetailOf(ctx, env.DB.Scoped(fixtures.AcmeID), b, now)
 			require.NoError(t, err)
+			p := detail.Progress
 			require.NotNil(t, p.EstimatedCompletion)
 			assert.WithinDuration(t, now.Add(c.want), *p.EstimatedCompletion, time.Millisecond)
 		})
@@ -67,8 +68,30 @@ func TestProgressHasNoETAWithoutALimit(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	f := sendingWithPending(t, env, 3)
-	p, err := broadcasts.ProgressOf(ctx, env.DB.Scoped(fixtures.AcmeID), env.DB.Broadcast.GetX(ctx, f.id), time.Now())
+	detail, err := broadcasts.DetailOf(ctx, env.DB.Scoped(fixtures.AcmeID), env.DB.Broadcast.GetX(ctx, f.id), time.Now())
 	require.NoError(t, err)
+	p := detail.Progress
+	require.NotNil(t, p)
 	assert.Equal(t, 3, p.Remaining)
 	assert.Nil(t, p.EstimatedCompletion)
+}
+
+// A Broadcast that is not sending has its figures but no Progress, and a sending one gets
+// both from the same count.
+func TestDetailHasProgressOnlyWhileSending(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	s := env.DB.Scoped(fixtures.AcmeID)
+
+	sent, err := broadcasts.DetailOf(ctx, s, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastSentID), time.Now())
+	require.NoError(t, err)
+	assert.Nil(t, sent.Progress)
+	assert.Equal(t, 11, sent.Stats.Sent)
+
+	f := sendingWithPending(t, env, 2)
+	sending, err := broadcasts.DetailOf(ctx, s, env.DB.Broadcast.GetX(ctx, f.id), time.Now())
+	require.NoError(t, err)
+	require.NotNil(t, sending.Progress)
+	assert.Equal(t, sending.Stats.Pending, sending.Progress.Remaining)
+	assert.Equal(t, sending.Stats.Processed(), sending.Progress.Processed)
 }

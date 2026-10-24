@@ -149,13 +149,13 @@ func TestReport(t *testing.T) {
 	assert.Equal(t, 5, r.Opened)
 	assert.Equal(t, 2, r.Clicked)
 	assert.Equal(t, 1, r.Unsubscribed)
-	assert.InDelta(t, 5.0/11, r.OpenRate, 1e-6)
-	assert.InDelta(t, 2.0/11, r.ClickRate, 1e-6)
+	assert.InDelta(t, 5.0/11, r.OpenRate(), 1e-6)
+	assert.InDelta(t, 2.0/11, r.ClickRate(), 1e-6)
 
 	zero, err := m.Report(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID)
 	require.NoError(t, err)
-	assert.Zero(t, zero.OpenRate, "no sends means a zero rate, not NaN")
-	assert.Zero(t, zero.ClickRate)
+	assert.Zero(t, zero.OpenRate(), "no sends means a zero rate, not NaN")
+	assert.Zero(t, zero.ClickRate())
 
 	_, err = m.Report(ctx, env.DB.Scoped(fixtures.GlobexID), fixtures.BroadcastSentID)
 	assert.ErrorIs(t, err, broadcasts.ErrNotFound)
