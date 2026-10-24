@@ -49,9 +49,15 @@ type RunHTTPStepArgs struct {
 
 func (RunHTTPStepArgs) Kind() string { return jobkind.HTTPStep.Kind }
 
-// InsertOpts puts the call on its own queue with the retry horizon of a hook.
+// InsertOpts puts the call on its own queue with the retry horizon of a hook. The job is unique
+// by its args: an HTTP step makes no move of the Enrollment, so a step job delivered again while
+// the call is in flight would queue a second one and the receiver would be called twice.
 func (RunHTTPStepArgs) InsertOpts() river.InsertOpts {
-	return river.InsertOpts{Queue: QueueHTTPSteps, MaxAttempts: webhook.HookMaxAttempts()}
+	return river.InsertOpts{
+		Queue:       QueueHTTPSteps,
+		MaxAttempts: webhook.HookMaxAttempts(),
+		UniqueOpts:  river.UniqueOpts{ByArgs: true},
+	}
 }
 
 // Module executes the steps of Enrollments.
@@ -163,6 +169,16 @@ func (m *Module) Step(ctx context.Context, s *ent.Scoped, runID int64, step int)
 // the call was in flight, or an earlier attempt of the call already moved it.
 func (m *Module) FinishHTTPStep(ctx context.Context, s *ent.Scoped, runID int64, step int) error {
 	return m.advance(ctx, s, runID, step, nil, nil)
+}
+
+// FailHTTPStep ends the Enrollment `failed` with the record of the call that could not
+// succeed. An Enrollment that already left `active` (an exit won) or is gone stays as it is.
+func (m *Module) FailHTTPStep(ctx context.Context, s *ent.Scoped, runID int64, f automations.Failure) error {
+	err := automations.Fail(ctx, s, runID, f)
+	if automations.Stale(err) {
+		return nil
+	}
+	return err
 }
 
 func (m *Module) email(ctx context.Context, s *ent.Scoped, a *ent.Automation, run *ent.AutomationRun, st automations.Step) error {
