@@ -1,5 +1,0 @@
-- id: 1
-  name: b
-  workspace_id: 1
-  created_at: '{{now}}'
-  updated_at: '{{now}}'

@@ -40,8 +40,10 @@
   and `sphericon upgrade-notes` reads the `Upgrade:` lines from its BREAKING CHANGES section; the
   repository squashes with the PR title and the commit messages).
 - The schema is plain tables: no database functions, triggers or views (`CODING_STANDARDS.md`).
-- `mise run db:reset` / `db:reset-test` to rebuild local DBs. A database made before the outbox and
-  river migrations (they were created at boot) needs a `db:reset`.
+- `mise run db:reset` / `db:reset-test` to rebuild local DBs. A database made before the history
+  collapse (`20261024175209_init.sql` holds the whole app schema, the outbox and river's tables stay
+  their own migrations) needs a `db:reset`. The project is greenfield, so the next collapse is the
+  same one `History-Collapse:` line and a `db:reset` for everyone.
 - Test DB is separate (`SPHERICON_ENV=test`); tests get it from the migrations, see docs/agents/dev-environment.md.
 
 

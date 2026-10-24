@@ -72,7 +72,7 @@ func TestMigrationStatusListsPendingAndChangesNothing(t *testing.T) {
 	require.Contains(t, before.String(), "schema:  empty")
 	require.Contains(t, before.String(), "pending: ")
 	require.NotContains(t, before.String(), "pending: none")
-	require.Contains(t, before.String(), "operator_to_staff_member.sql")
+	require.Contains(t, before.String(), "_init.sql")
 
 	var again bytes.Buffer
 	require.NoError(t, printMigrationStatus(t.Context(), cfg, &again, false))
