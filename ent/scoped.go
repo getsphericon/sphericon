@@ -12376,6 +12376,18 @@ func (x *EventScopedCreate) SetNillableOccurredAt(v *time.Time) *EventScopedCrea
 	return x
 }
 
+// SetBackfill sets the "backfill" field.
+func (x *EventScopedCreate) SetBackfill(v bool) *EventScopedCreate {
+	x.b.SetBackfill(v)
+	return x
+}
+
+// SetNillableBackfill sets the "backfill" field if the given value is not nil.
+func (x *EventScopedCreate) SetNillableBackfill(v *bool) *EventScopedCreate {
+	x.b.SetNillableBackfill(v)
+	return x
+}
+
 // SetContact sets the "contact" edge to the Contact entity.
 func (x *EventScopedCreate) SetContact(v *Contact) *EventScopedCreate {
 	x.b.SetContact(v)
@@ -12612,6 +12624,18 @@ func (u *EventScopedUpsert) UpdateOccurredAt() *EventScopedUpsert {
 // ClearOccurredAt clears the value of the "occurred_at" field.
 func (u *EventScopedUpsert) ClearOccurredAt() *EventScopedUpsert {
 	u.u.SetNull(event.FieldOccurredAt)
+	return u
+}
+
+// SetBackfill sets the "backfill" field.
+func (u *EventScopedUpsert) SetBackfill(v bool) *EventScopedUpsert {
+	u.u.Set(event.FieldBackfill, v)
+	return u
+}
+
+// UpdateBackfill sets the "backfill" field to the value that was provided on create.
+func (u *EventScopedUpsert) UpdateBackfill() *EventScopedUpsert {
+	u.u.SetExcluded(event.FieldBackfill)
 	return u
 }
 
@@ -12917,6 +12941,18 @@ func (x *EventScopedUpdateOne) ClearOccurredAt() *EventScopedUpdateOne {
 	return x
 }
 
+// SetBackfill sets the "backfill" field.
+func (x *EventScopedUpdateOne) SetBackfill(v bool) *EventScopedUpdateOne {
+	x.b.SetBackfill(v)
+	return x
+}
+
+// SetNillableBackfill sets the "backfill" field if the given value is not nil.
+func (x *EventScopedUpdateOne) SetNillableBackfill(v *bool) *EventScopedUpdateOne {
+	x.b.SetNillableBackfill(v)
+	return x
+}
+
 // SetContact sets the "contact" edge to the Contact entity.
 func (x *EventScopedUpdateOne) SetContact(v *Contact) *EventScopedUpdateOne {
 	x.b.SetContact(v)
@@ -13141,6 +13177,18 @@ func (x *EventScopedUpdate) SetNillableOccurredAt(v *time.Time) *EventScopedUpda
 // ClearOccurredAt clears the value of the "occurred_at" field.
 func (x *EventScopedUpdate) ClearOccurredAt() *EventScopedUpdate {
 	x.b.ClearOccurredAt()
+	return x
+}
+
+// SetBackfill sets the "backfill" field.
+func (x *EventScopedUpdate) SetBackfill(v bool) *EventScopedUpdate {
+	x.b.SetBackfill(v)
+	return x
+}
+
+// SetNillableBackfill sets the "backfill" field if the given value is not nil.
+func (x *EventScopedUpdate) SetNillableBackfill(v *bool) *EventScopedUpdate {
+	x.b.SetNillableBackfill(v)
 	return x
 }
 

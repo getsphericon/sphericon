@@ -72,6 +72,10 @@ func (Event) Fields() []ent.Field {
 		field.Time("occurred_at").
 			Optional().
 			Nillable(),
+		// Loaded as history (a Backfill): recorded, but no Automation enrolls, no Webhook
+		// receives it and no Rule fires on it.
+		field.Bool("backfill").
+			Default(false),
 	}
 }
 

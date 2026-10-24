@@ -214,6 +214,7 @@ func (c *ConverterImpl) EventToExport(source *ent.Event) external.ContactExportE
 		externalapiContactExportEvent.Action = (*source).Action
 		externalapiContactExportEvent.Properties = exportJSON((*source).Properties)
 		externalapiContactExportEvent.OccurredAt = optNilTimestamp((*source).OccurredAt)
+		externalapiContactExportEvent.Backfill = (*source).Backfill
 		externalapiContactExportEvent.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return externalapiContactExportEvent

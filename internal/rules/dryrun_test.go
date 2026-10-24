@@ -66,6 +66,17 @@ func TestDryRunSaysAMachineEventNeverFires(t *testing.T) {
 	assert.Empty(t, res.Actions)
 }
 
+// History loaded with a backfill is recorded and never reacted to, so a dry run on it must not say
+// the Rule would fire.
+func TestDryRunSaysABackfilledEventNeverFires(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	res := dryRun(t, env, fixtures.RuleTagClickedID, fixtures.EventRuleClickBackfillID)
+
+	assert.Equal(t, rules.Backfill, res.Outcome)
+	assert.Empty(t, res.Actions)
+}
+
 func TestDryRunTestsTheStoredEventsProperties(t *testing.T) {
 	env := testhelper.Setup(t)
 

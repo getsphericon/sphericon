@@ -238,6 +238,10 @@ export type ContactExportEvent = {
    */
   occurredAt?: Timestamp | null;
   /**
+   * Whether the event was loaded as history rather than tracked live
+   */
+  backfill: boolean;
+  /**
    * Creation timestamp
    */
   createdAt: Timestamp;
@@ -3554,6 +3558,7 @@ export const SiteRuleDryRunOutcome = {
   NOT_TRIGGERED: 'not_triggered',
   NO_CONTACT: 'no_contact',
   MACHINE: 'machine',
+  BACKFILL: 'backfill',
   CONDITION_NOT_MET: 'condition_not_met'
 } as const;
 

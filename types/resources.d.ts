@@ -932,6 +932,7 @@ export default interface Resources {
       "dryRunEventPlaceholder": "Pick a recorded event",
       "dryRunHint": "Try the saved rule on a recorded event. Nothing is changed and no action runs.",
       "dryRunOutcome": {
+        "backfill": "Would not fire: the event was loaded as history, and history never triggers a rule",
         "condition_not_met": "Would not fire: the contact does not match the condition",
         "machine": "Would not fire: the event was made by software, such as a mail scanner",
         "no_contact": "Would not fire: the event has no contact",

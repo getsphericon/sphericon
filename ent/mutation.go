@@ -14874,6 +14874,7 @@ type EventMutation struct {
 	action           *string
 	properties       *map[string]interface{}
 	occurred_at      *time.Time
+	backfill         *bool
 	clearedFields    map[string]struct{}
 	workspace        *int64
 	clearedworkspace bool
@@ -15524,6 +15525,42 @@ func (m *EventMutation) ResetOccurredAt() {
 	delete(m.clearedFields, event.FieldOccurredAt)
 }
 
+// SetBackfill sets the "backfill" field.
+func (m *EventMutation) SetBackfill(b bool) {
+	m.backfill = &b
+}
+
+// Backfill returns the value of the "backfill" field in the mutation.
+func (m *EventMutation) Backfill() (r bool, exists bool) {
+	v := m.backfill
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBackfill returns the old "backfill" field's value of the Event entity.
+// If the Event object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EventMutation) OldBackfill(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBackfill is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBackfill requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBackfill: %w", err)
+	}
+	return oldValue.Backfill, nil
+}
+
+// ResetBackfill resets all changes to the "backfill" field.
+func (m *EventMutation) ResetBackfill() {
+	m.backfill = nil
+}
+
 // ClearWorkspace clears the "workspace" edge to the Workspace entity.
 func (m *EventMutation) ClearWorkspace() {
 	m.clearedworkspace = true
@@ -15612,7 +15649,7 @@ func (m *EventMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *EventMutation) Fields() []string {
-	fields := make([]string, 0, 12)
+	fields := make([]string, 0, 13)
 	if m.created_at != nil {
 		fields = append(fields, event.FieldCreatedAt)
 	}
@@ -15649,6 +15686,9 @@ func (m *EventMutation) Fields() []string {
 	if m.occurred_at != nil {
 		fields = append(fields, event.FieldOccurredAt)
 	}
+	if m.backfill != nil {
+		fields = append(fields, event.FieldBackfill)
+	}
 	return fields
 }
 
@@ -15681,6 +15721,8 @@ func (m *EventMutation) Field(name string) (ent.Value, bool) {
 		return m.Properties()
 	case event.FieldOccurredAt:
 		return m.OccurredAt()
+	case event.FieldBackfill:
+		return m.Backfill()
 	}
 	return nil, false
 }
@@ -15714,6 +15756,8 @@ func (m *EventMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldProperties(ctx)
 	case event.FieldOccurredAt:
 		return m.OldOccurredAt(ctx)
+	case event.FieldBackfill:
+		return m.OldBackfill(ctx)
 	}
 	return nil, fmt.Errorf("unknown Event field %s", name)
 }
@@ -15806,6 +15850,13 @@ func (m *EventMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetOccurredAt(v)
+		return nil
+	case event.FieldBackfill:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBackfill(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Event field %s", name)
@@ -15945,6 +15996,9 @@ func (m *EventMutation) ResetField(name string) error {
 		return nil
 	case event.FieldOccurredAt:
 		m.ResetOccurredAt()
+		return nil
+	case event.FieldBackfill:
+		m.ResetBackfill()
 		return nil
 	}
 	return fmt.Errorf("unknown Event field %s", name)

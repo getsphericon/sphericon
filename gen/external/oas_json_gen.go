@@ -8792,22 +8792,27 @@ func (s *ContactExportEvent) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		e.FieldStart("backfill")
+		e.Bool(s.Backfill)
+	}
+	{
 		e.FieldStart("createdAt")
 		s.CreatedAt.Encode(e)
 	}
 }
 
-var jsonFieldsNameOfContactExportEvent = [10]string{
-	0: "id",
-	1: "sourceId",
-	2: "visitorId",
-	3: "subjectId",
-	4: "email",
-	5: "phone",
-	6: "action",
-	7: "properties",
-	8: "occurredAt",
-	9: "createdAt",
+var jsonFieldsNameOfContactExportEvent = [11]string{
+	0:  "id",
+	1:  "sourceId",
+	2:  "visitorId",
+	3:  "subjectId",
+	4:  "email",
+	5:  "phone",
+	6:  "action",
+	7:  "properties",
+	8:  "occurredAt",
+	9:  "backfill",
+	10: "createdAt",
 }
 
 // Decode decodes ContactExportEvent from json.
@@ -8913,8 +8918,20 @@ func (s *ContactExportEvent) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"occurredAt\"")
 			}
-		case "createdAt":
+		case "backfill":
 			requiredBitSet[1] |= 1 << 1
+			if err := func() error {
+				v, err := d.Bool()
+				s.Backfill = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"backfill\"")
+			}
+		case "createdAt":
+			requiredBitSet[1] |= 1 << 2
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -8934,7 +8951,7 @@ func (s *ContactExportEvent) Decode(d *jx.Decoder) error {
 	var failures []validate.FieldError
 	for i, mask := range [2]uint8{
 		0b01001001,
-		0b00000010,
+		0b00000110,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -25323,6 +25340,8 @@ func (s *RuleDryRunOutcome) Decode(d *jx.Decoder) error {
 		*s = RuleDryRunOutcomeNoContact
 	case RuleDryRunOutcomeMachine:
 		*s = RuleDryRunOutcomeMachine
+	case RuleDryRunOutcomeBackfill:
+		*s = RuleDryRunOutcomeBackfill
 	case RuleDryRunOutcomeConditionNotMet:
 		*s = RuleDryRunOutcomeConditionNotMet
 	default:

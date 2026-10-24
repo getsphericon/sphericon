@@ -102,6 +102,9 @@ model ContactExportEvent {
   /** Event occurrence timestamp */
   occurredAt?: Timestamp | null;
 
+  /** Whether the event was loaded as history rather than tracked live */
+  backfill: boolean;
+
   /** Creation timestamp */
   createdAt: Timestamp;
 }

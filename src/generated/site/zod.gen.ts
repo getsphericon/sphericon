@@ -1165,6 +1165,7 @@ export const zSiteRuleDryRunOutcome = z.enum([
   'not_triggered',
   'no_contact',
   'machine',
+  'backfill',
   'condition_not_met'
 ]);
 
@@ -1787,6 +1788,7 @@ export const zContactExportEvent = z.object({
   action: z.string(),
   properties: z.exactOptional(zContactExportJson.nullable()),
   occurredAt: z.exactOptional(zTimestamp.nullable()),
+  backfill: z.boolean(),
   createdAt: zTimestamp
 });
 

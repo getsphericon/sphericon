@@ -38,6 +38,8 @@ const (
 	FieldProperties = "properties"
 	// FieldOccurredAt holds the string denoting the occurred_at field in the database.
 	FieldOccurredAt = "occurred_at"
+	// FieldBackfill holds the string denoting the backfill field in the database.
+	FieldBackfill = "backfill"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
 	EdgeWorkspace = "workspace"
 	// EdgeContact holds the string denoting the contact edge name in mutations.
@@ -75,6 +77,7 @@ var Columns = []string{
 	FieldAction,
 	FieldProperties,
 	FieldOccurredAt,
+	FieldBackfill,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -96,6 +99,8 @@ var (
 	UpdateDefaultUpdatedAt func() time.Time
 	// ActionValidator is a validator for the "action" field. It is called by the builders before save.
 	ActionValidator func(string) error
+	// DefaultBackfill holds the default value on creation for the "backfill" field.
+	DefaultBackfill bool
 )
 
 // OrderOption defines the ordering options for the Event queries.
@@ -159,6 +164,11 @@ func ByAction(opts ...sql.OrderTermOption) OrderOption {
 // ByOccurredAt orders the results by the occurred_at field.
 func ByOccurredAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldOccurredAt, opts...).ToFunc()
+}
+
+// ByBackfill orders the results by the backfill field.
+func ByBackfill(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldBackfill, opts...).ToFunc()
 }
 
 // ByWorkspaceField orders the results by workspace field.

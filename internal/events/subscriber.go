@@ -422,7 +422,8 @@ func Persist(ctx context.Context, client *ent.Client, env Envelope) error {
 		SetSubjectID(p.Subject).
 		SetAction(p.Action).
 		SetProperties(p.Properties).
-		SetOccurredAt(env.OccurredAt)
+		SetOccurredAt(env.OccurredAt).
+		SetBackfill(IsBackfill(ev))
 	// Dedup on the DedupKey when the event carries a natural upstream id, else the
 	// envelope ULID. Empty ⇒ leave source_id NULL (distinct under the unique index)
 	// rather than "", so a missing id never collides and false-dedupes a distinct event.

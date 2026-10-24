@@ -12773,7 +12773,7 @@
       },
       "ContactExportEvent": {
         "type": "object",
-        "required": ["id", "subjectId", "action", "createdAt"],
+        "required": ["id", "subjectId", "action", "backfill", "createdAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -12830,6 +12830,10 @@
             ],
             "nullable": true,
             "description": "Event occurrence timestamp"
+          },
+          "backfill": {
+            "type": "boolean",
+            "description": "Whether the event was loaded as history rather than tracked live"
           },
           "createdAt": {
             "allOf": [
@@ -15300,7 +15304,14 @@
       },
       "RuleDryRunOutcome": {
         "type": "string",
-        "enum": ["would_fire", "not_triggered", "no_contact", "machine", "condition_not_met"],
+        "enum": [
+          "would_fire",
+          "not_triggered",
+          "no_contact",
+          "machine",
+          "backfill",
+          "condition_not_met"
+        ],
         "description": "Whether a stored Event would fire a Rule, and if not, why"
       },
       "RuleDryRunResource": {

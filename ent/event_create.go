@@ -168,6 +168,20 @@ func (_c *EventCreate) SetNillableOccurredAt(v *time.Time) *EventCreate {
 	return _c
 }
 
+// SetBackfill sets the "backfill" field.
+func (_c *EventCreate) SetBackfill(v bool) *EventCreate {
+	_c.mutation.SetBackfill(v)
+	return _c
+}
+
+// SetNillableBackfill sets the "backfill" field if the given value is not nil.
+func (_c *EventCreate) SetNillableBackfill(v *bool) *EventCreate {
+	if v != nil {
+		_c.SetBackfill(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *EventCreate) SetID(v int64) *EventCreate {
 	_c.mutation.SetID(v)
@@ -227,6 +241,10 @@ func (_c *EventCreate) defaults() {
 		v := event.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.Backfill(); !ok {
+		v := event.DefaultBackfill
+		_c.mutation.SetBackfill(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -247,6 +265,9 @@ func (_c *EventCreate) check() error {
 		if err := event.ActionValidator(v); err != nil {
 			return &ValidationError{Name: "action", err: fmt.Errorf(`ent: validator failed for field "Event.action": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.Backfill(); !ok {
+		return &ValidationError{Name: "backfill", err: errors.New(`ent: missing required field "Event.backfill"`)}
 	}
 	if len(_c.mutation.WorkspaceIDs()) == 0 {
 		return &ValidationError{Name: "workspace", err: errors.New(`ent: missing required edge "Event.workspace"`)}
@@ -323,6 +344,10 @@ func (_c *EventCreate) createSpec() (*Event, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.OccurredAt(); ok {
 		_spec.SetField(event.FieldOccurredAt, field.TypeTime, value)
 		_node.OccurredAt = &value
+	}
+	if value, ok := _c.mutation.Backfill(); ok {
+		_spec.SetField(event.FieldBackfill, field.TypeBool, value)
+		_node.Backfill = value
 	}
 	if nodes := _c.mutation.WorkspaceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -590,6 +615,18 @@ func (u *EventUpsert) ClearOccurredAt() *EventUpsert {
 	return u
 }
 
+// SetBackfill sets the "backfill" field.
+func (u *EventUpsert) SetBackfill(v bool) *EventUpsert {
+	u.Set(event.FieldBackfill, v)
+	return u
+}
+
+// UpdateBackfill sets the "backfill" field to the value that was provided on create.
+func (u *EventUpsert) UpdateBackfill() *EventUpsert {
+	u.SetExcluded(event.FieldBackfill)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -848,6 +885,20 @@ func (u *EventUpsertOne) UpdateOccurredAt() *EventUpsertOne {
 func (u *EventUpsertOne) ClearOccurredAt() *EventUpsertOne {
 	return u.Update(func(s *EventUpsert) {
 		s.ClearOccurredAt()
+	})
+}
+
+// SetBackfill sets the "backfill" field.
+func (u *EventUpsertOne) SetBackfill(v bool) *EventUpsertOne {
+	return u.Update(func(s *EventUpsert) {
+		s.SetBackfill(v)
+	})
+}
+
+// UpdateBackfill sets the "backfill" field to the value that was provided on create.
+func (u *EventUpsertOne) UpdateBackfill() *EventUpsertOne {
+	return u.Update(func(s *EventUpsert) {
+		s.UpdateBackfill()
 	})
 }
 
@@ -1275,6 +1326,20 @@ func (u *EventUpsertBulk) UpdateOccurredAt() *EventUpsertBulk {
 func (u *EventUpsertBulk) ClearOccurredAt() *EventUpsertBulk {
 	return u.Update(func(s *EventUpsert) {
 		s.ClearOccurredAt()
+	})
+}
+
+// SetBackfill sets the "backfill" field.
+func (u *EventUpsertBulk) SetBackfill(v bool) *EventUpsertBulk {
+	return u.Update(func(s *EventUpsert) {
+		s.SetBackfill(v)
+	})
+}
+
+// UpdateBackfill sets the "backfill" field to the value that was provided on create.
+func (u *EventUpsertBulk) UpdateBackfill() *EventUpsertBulk {
+	return u.Update(func(s *EventUpsert) {
+		s.UpdateBackfill()
 	})
 }
 

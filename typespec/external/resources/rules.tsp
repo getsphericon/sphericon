@@ -149,6 +149,7 @@ enum RuleDryRunOutcome {
   not_triggered,
   no_contact,
   machine,
+  backfill,
   condition_not_met,
 }
 

@@ -404,6 +404,10 @@ func init() {
 	eventDescAction := eventFields[7].Descriptor()
 	// event.ActionValidator is a validator for the "action" field. It is called by the builders before save.
 	event.ActionValidator = eventDescAction.Validators[0].(func(string) error)
+	// eventDescBackfill is the schema descriptor for backfill field.
+	eventDescBackfill := eventFields[10].Descriptor()
+	// event.DefaultBackfill holds the default value on creation for the backfill field.
+	event.DefaultBackfill = eventDescBackfill.Default.(bool)
 	holdMixin := schema.Hold{}.Mixin()
 	holdMixinFields0 := holdMixin[0].Fields()
 	_ = holdMixinFields0

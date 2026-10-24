@@ -5946,6 +5946,8 @@ func (s SiteRuleDryRunOutcome) Validate() error {
 		return nil
 	case "machine":
 		return nil
+	case "backfill":
+		return nil
 	case "condition_not_met":
 		return nil
 	default:

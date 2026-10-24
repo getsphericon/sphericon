@@ -775,6 +775,10 @@ const (
 	EventRuleClickAnonymousAction = "rule_click"
 	// EventRuleClickAnonymousID is from fixtures/events.
 	EventRuleClickAnonymousID = 9102
+	// EventRuleClickBackfillAction is from fixtures/events.
+	EventRuleClickBackfillAction = "rule_click"
+	// EventRuleClickBackfillID is from fixtures/events.
+	EventRuleClickBackfillID = 9107
 	// EventRuleClickLiamAction is from fixtures/events.
 	EventRuleClickLiamAction = "rule_click"
 	// EventRuleClickLiamID is from fixtures/events.

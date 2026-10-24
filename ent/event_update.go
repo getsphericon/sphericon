@@ -217,6 +217,20 @@ func (_u *EventUpdate) ClearOccurredAt() *EventUpdate {
 	return _u
 }
 
+// SetBackfill sets the "backfill" field.
+func (_u *EventUpdate) SetBackfill(v bool) *EventUpdate {
+	_u.mutation.SetBackfill(v)
+	return _u
+}
+
+// SetNillableBackfill sets the "backfill" field if the given value is not nil.
+func (_u *EventUpdate) SetNillableBackfill(v *bool) *EventUpdate {
+	if v != nil {
+		_u.SetBackfill(*v)
+	}
+	return _u
+}
+
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_u *EventUpdate) SetWorkspace(v *Workspace) *EventUpdate {
 	return _u.SetWorkspaceID(v.ID)
@@ -358,6 +372,9 @@ func (_u *EventUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.OccurredAtCleared() {
 		_spec.ClearField(event.FieldOccurredAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.Backfill(); ok {
+		_spec.SetField(event.FieldBackfill, field.TypeBool, value)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -625,6 +642,20 @@ func (_u *EventUpdateOne) ClearOccurredAt() *EventUpdateOne {
 	return _u
 }
 
+// SetBackfill sets the "backfill" field.
+func (_u *EventUpdateOne) SetBackfill(v bool) *EventUpdateOne {
+	_u.mutation.SetBackfill(v)
+	return _u
+}
+
+// SetNillableBackfill sets the "backfill" field if the given value is not nil.
+func (_u *EventUpdateOne) SetNillableBackfill(v *bool) *EventUpdateOne {
+	if v != nil {
+		_u.SetBackfill(*v)
+	}
+	return _u
+}
+
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_u *EventUpdateOne) SetWorkspace(v *Workspace) *EventUpdateOne {
 	return _u.SetWorkspaceID(v.ID)
@@ -796,6 +827,9 @@ func (_u *EventUpdateOne) sqlSave(ctx context.Context) (_node *Event, err error)
 	}
 	if _u.mutation.OccurredAtCleared() {
 		_spec.ClearField(event.FieldOccurredAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.Backfill(); ok {
+		_spec.SetField(event.FieldBackfill, field.TypeBool, value)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{

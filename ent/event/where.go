@@ -110,6 +110,11 @@ func OccurredAt(v time.Time) predicate.Event {
 	return predicate.Event(sql.FieldEQ(FieldOccurredAt, v))
 }
 
+// Backfill applies equality check predicate on the "backfill" field. It's identical to BackfillEQ.
+func Backfill(v bool) predicate.Event {
+	return predicate.Event(sql.FieldEQ(FieldBackfill, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Event {
 	return predicate.Event(sql.FieldEQ(FieldCreatedAt, v))
@@ -738,6 +743,16 @@ func OccurredAtIsNil() predicate.Event {
 // OccurredAtNotNil applies the NotNil predicate on the "occurred_at" field.
 func OccurredAtNotNil() predicate.Event {
 	return predicate.Event(sql.FieldNotNull(FieldOccurredAt))
+}
+
+// BackfillEQ applies the EQ predicate on the "backfill" field.
+func BackfillEQ(v bool) predicate.Event {
+	return predicate.Event(sql.FieldEQ(FieldBackfill, v))
+}
+
+// BackfillNEQ applies the NEQ predicate on the "backfill" field.
+func BackfillNEQ(v bool) predicate.Event {
+	return predicate.Event(sql.FieldNEQ(FieldBackfill, v))
 }
 
 // HasWorkspace applies the HasEdge predicate on the "workspace" edge.

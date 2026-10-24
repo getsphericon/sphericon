@@ -723,6 +723,8 @@ type ContactExportEvent struct {
 	Properties OptNilContactExportJson `json:"properties"`
 	// Event occurrence timestamp.
 	OccurredAt OptNilTimestamp `json:"occurredAt"`
+	// Whether the event was loaded as history rather than tracked live.
+	Backfill bool `json:"backfill"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 }
@@ -770,6 +772,11 @@ func (s *ContactExportEvent) GetProperties() OptNilContactExportJson {
 // GetOccurredAt returns the value of OccurredAt.
 func (s *ContactExportEvent) GetOccurredAt() OptNilTimestamp {
 	return s.OccurredAt
+}
+
+// GetBackfill returns the value of Backfill.
+func (s *ContactExportEvent) GetBackfill() bool {
+	return s.Backfill
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -820,6 +827,11 @@ func (s *ContactExportEvent) SetProperties(val OptNilContactExportJson) {
 // SetOccurredAt sets the value of OccurredAt.
 func (s *ContactExportEvent) SetOccurredAt(val OptNilTimestamp) {
 	s.OccurredAt = val
+}
+
+// SetBackfill sets the value of Backfill.
+func (s *ContactExportEvent) SetBackfill(val bool) {
+	s.Backfill = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.
@@ -15913,6 +15925,7 @@ const (
 	SiteRuleDryRunOutcomeNotTriggered    SiteRuleDryRunOutcome = "not_triggered"
 	SiteRuleDryRunOutcomeNoContact       SiteRuleDryRunOutcome = "no_contact"
 	SiteRuleDryRunOutcomeMachine         SiteRuleDryRunOutcome = "machine"
+	SiteRuleDryRunOutcomeBackfill        SiteRuleDryRunOutcome = "backfill"
 	SiteRuleDryRunOutcomeConditionNotMet SiteRuleDryRunOutcome = "condition_not_met"
 )
 
@@ -15923,6 +15936,7 @@ func (SiteRuleDryRunOutcome) AllValues() []SiteRuleDryRunOutcome {
 		SiteRuleDryRunOutcomeNotTriggered,
 		SiteRuleDryRunOutcomeNoContact,
 		SiteRuleDryRunOutcomeMachine,
+		SiteRuleDryRunOutcomeBackfill,
 		SiteRuleDryRunOutcomeConditionNotMet,
 	}
 }
@@ -15937,6 +15951,8 @@ func (s SiteRuleDryRunOutcome) MarshalText() ([]byte, error) {
 	case SiteRuleDryRunOutcomeNoContact:
 		return []byte(s), nil
 	case SiteRuleDryRunOutcomeMachine:
+		return []byte(s), nil
+	case SiteRuleDryRunOutcomeBackfill:
 		return []byte(s), nil
 	case SiteRuleDryRunOutcomeConditionNotMet:
 		return []byte(s), nil
@@ -15959,6 +15975,9 @@ func (s *SiteRuleDryRunOutcome) UnmarshalText(data []byte) error {
 		return nil
 	case SiteRuleDryRunOutcomeMachine:
 		*s = SiteRuleDryRunOutcomeMachine
+		return nil
+	case SiteRuleDryRunOutcomeBackfill:
+		*s = SiteRuleDryRunOutcomeBackfill
 		return nil
 	case SiteRuleDryRunOutcomeConditionNotMet:
 		*s = SiteRuleDryRunOutcomeConditionNotMet

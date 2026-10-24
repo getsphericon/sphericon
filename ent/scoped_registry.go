@@ -910,6 +910,7 @@ func ScopedEntities() []ScopedEntity {
 				if src.OccurredAt != nil {
 					b.SetOccurredAt(*src.OccurredAt)
 				}
+				b.SetBackfill(src.Backfill)
 				created, err := b.Save(ctx)
 				if err != nil {
 					return 0, err
