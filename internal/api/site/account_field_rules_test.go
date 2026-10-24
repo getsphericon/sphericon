@@ -2,6 +2,7 @@ package site_test
 
 import (
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -12,10 +13,53 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// Every way a person sets a password or names an address of their own goes through the same
+// Every way a person sets a password, a name or an address of their own goes through the same
 // rules as registration (internal/validation), so none of them is a way around it.
 
-const shortPasswordMessage = "the password must be 8 to 256 characters long"
+const (
+	shortPasswordMessage = "the password must be 8 to 256 characters long"
+	badNameMessage       = "the name must be at most 100 characters on one line, with no control characters"
+)
+
+func TestRegisteringWithANameThatBreaksALineIsRefused(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	res := registerWithPassword(t, env, "Grace\r\nBcc: all@example.com", "grace@example.com", "grace-password-1")
+	problem, ok := res.(*siteapi.SiteAuthRegisterUnprocessableEntity)
+	require.Truef(t, ok, "got %T", res)
+	assert.Equal(t, siteapi.ProblemDetailsErrors{"name": {badNameMessage}}, problem.Errors.Value)
+	assert.Empty(t, env.SystemMail.Messages())
+}
+
+func TestAcceptingAnInvitationWithATooLongNameIsRefused(t *testing.T) {
+	env := testhelper.Setup(t)
+	token := inviteToAcme(t, env, "newuser@example.com")
+
+	res, err := env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
+		&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptString(strings.Repeat("a", 101)), Password: siteapi.NewOptString(formPassword)},
+		siteapi.SitePublicInvitationsAcceptParams{Token: token})
+	require.NoError(t, err)
+	problem, ok := res.(*siteapi.SitePublicInvitationsAcceptUnprocessableEntity)
+	require.Truef(t, ok, "got %T", res)
+	assert.Equal(t, siteapi.ProblemDetailsErrors{"name": {badNameMessage}}, problem.Errors.Value)
+	assert.Equal(t, http.StatusUnauthorized, loginStatus(t, env, "newuser@example.com", formPassword), "no account was made")
+}
+
+func TestRenamingToANameWithABidiOverrideIsRefusedAndKeepsTheOldOne(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	before, err := c.SiteUserGetMe(t.Context())
+	require.NoError(t, err)
+
+	res, err := c.SiteUserUpdateMe(t.Context(), &siteapi.SiteUpdateMeInput{Name: siteapi.NewOptString("John \u202eetisoppo")})
+	require.NoError(t, err)
+	problem, ok := res.(*siteapi.SiteUserUpdateMeUnprocessableEntity)
+	require.Truef(t, ok, "got %T", res)
+	assert.Equal(t, siteapi.ProblemDetailsErrors{"name": {badNameMessage}}, problem.Errors.Value)
+	after, err := c.SiteUserGetMe(t.Context())
+	require.NoError(t, err)
+	assert.Equal(t, before.Name, after.Name)
+}
 
 func TestRegisteringWithAPasswordOfSpacesIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)

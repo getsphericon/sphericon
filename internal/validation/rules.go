@@ -27,6 +27,21 @@ func PasswordNotBlank(s string) bool {
 	return strings.IndexFunc(s, func(r rune) bool { return !unicode.IsSpace(r) }) >= 0
 }
 
+// NameMaxLength is the most characters a User's name has. A name is shown in the app, in the
+// mail sent to and about the User and in the Audit log, so it is a line of text, not a document.
+// contract-copy: a name limit of internal/validation, not the contract's Passkey name limit
+const NameMaxLength = 100
+
+// DisplayName reports whether s is valid UTF-8 of at most NameMaxLength characters with no
+// control or bidirectional formatting character (the `display_name` tag). Control characters
+// break the lines of a mail header or a log; a bidirectional override reorders the text around
+// it, so a name could read as something else in a notice. Every script, and emoji with their
+// joiners, stays allowed. An empty name is the `required` tag's to refuse.
+func DisplayName(s string) bool {
+	return utf8.ValidString(s) && utf8.RuneCountInString(s) <= NameMaxLength &&
+		!strings.ContainsFunc(s, func(r rune) bool { return unicode.IsControl(r) || unicode.Is(unicode.Bidi_Control, r) })
+}
+
 // The limits of RFC 5321: a forward path of 256 octets holds an address of 254 between its angle
 // brackets, a local part of 64 and a domain label of 63.
 const (
