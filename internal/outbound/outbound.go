@@ -38,6 +38,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/suppression"
@@ -907,4 +908,17 @@ func (m *Module) sendTestFromSystem(ctx context.Context, s *ent.Scoped, ws *ent.
 		}
 	}
 	return sendTestMessage(ctx, m.system, msg, from, name, to)
+}
+
+// ListTransactional returns one page of the Workspace's Transactional Outbound messages,
+// most recent first.
+func (m *Module) ListTransactional(ctx context.Context, s *ent.Scoped, p pagination.Params) (pagination.Page[*ent.OutboundMessage], error) {
+	query := func() *ent.OutboundMessageQuery {
+		return s.OutboundMessage().Query().Where(outboundmessage.KindEQ(outboundmessage.KindTransactional))
+	}
+	return pagination.List(ctx, p,
+		func(ctx context.Context) (int, error) { return query().Count(ctx) },
+		func(ctx context.Context, limit, offset int) ([]*ent.OutboundMessage, error) {
+			return query().Order(ent.Desc(outboundmessage.FieldID)).Limit(limit).Offset(offset).All(ctx)
+		})
 }

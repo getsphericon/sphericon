@@ -45,6 +45,12 @@ func EnsureCustomFields(ctx context.Context, s *ent.Scoped, kv map[string]any) (
 	return out, nil
 }
 
+// CustomFields returns the Workspace's whole Custom field catalogue, ascending by key.
+// The catalogue is small and unpaginated.
+func CustomFields(ctx context.Context, s *ent.Scoped) ([]*ent.CustomField, error) {
+	return s.CustomField().Query().Order(ent.Asc(customfield.FieldKey)).All(ctx)
+}
+
 // inferFieldType maps a JSON-decoded value to a CustomField type. Numbers decode to
 // float64 (encoding/json) or json.Number; booleans to bool; everything else
 // (strings, objects, arrays, null) is treated as a string definition.

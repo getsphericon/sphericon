@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/customfield"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/narrow"
 )
 
@@ -24,9 +24,7 @@ func (h *Handlers) SiteCustomFieldsList(ctx context.Context, params siteapi.Site
 		return nil, err
 	}
 
-	items, err := scoped.CustomField().Query().
-		Order(ent.Asc(customfield.FieldKey)).
-		All(ctx)
+	items, err := contacts.CustomFields(ctx, scoped)
 	if err != nil {
 		return nil, err
 	}

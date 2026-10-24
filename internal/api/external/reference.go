@@ -5,10 +5,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/customfield"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/reputation"
 )
@@ -19,9 +18,7 @@ func (h *Handlers) CustomFieldsList(ctx context.Context) (externalapi.CustomFiel
 		res := problem(http.StatusUnauthorized, "insufficient scope")
 		return &res, nil
 	}
-	items, err := auth.TokenScoped(ctx).CustomField().Query().
-		Order(ent.Asc(customfield.FieldKey)).
-		All(ctx)
+	items, err := contacts.CustomFields(ctx, auth.TokenScoped(ctx))
 	if err != nil {
 		return nil, err
 	}

@@ -414,6 +414,17 @@ func domainError(err error) error {
 	return err
 }
 
+// Get returns the Contact with its Tags loaded, sorted by name, or ErrNotFound.
+func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.Contact, error) {
+	c, err := s.Contact().Query().Where(contact.ID(id)).
+		WithTags(func(q *ent.TagQuery) { q.Order(ent.Asc(tag.FieldName)) }).
+		Only(ctx)
+	if err != nil {
+		return nil, domainError(err)
+	}
+	return c, nil
+}
+
 // Filter narrows a list of Contacts; the zero value keeps them all.
 type Filter struct {
 	// EmailContains keeps the Contacts whose address contains it, ignoring case.

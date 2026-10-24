@@ -10,7 +10,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
-	"github.com/getsphericon/sphericon/ent/tag"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/contacts"
@@ -82,7 +81,7 @@ func (h *Handlers) SiteContactsGet(ctx context.Context, params siteapi.SiteConta
 	}
 
 	res, err := h.contactResource(ctx, scoped, int64(params.ID), nil)
-	if ent.IsNotFound(err) {
+	if errors.Is(err, contacts.ErrNotFound) {
 		v := siteapi.SiteContactsGetNotFound(problem(http.StatusNotFound, "contact not found"))
 		return &v, nil
 	}
@@ -179,7 +178,7 @@ func (h *Handlers) contactResource(ctx context.Context, s *ent.Scoped, id int64,
 			return siteapi.SiteContactResource{}, err
 		}
 	}
-	c, err := s.Contact().Query().Where(contact.ID(id)).WithTags(func(q *ent.TagQuery) { q.Order(ent.Asc(tag.FieldName)) }).Only(ctx)
+	c, err := h.contacts.Get(ctx, s, id)
 	if err != nil {
 		return siteapi.SiteContactResource{}, err
 	}
