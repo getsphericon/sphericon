@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/subtle"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -12,7 +13,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/apitokens"
 	"github.com/samber/lo"
-	"github.com/samber/oops"
 )
 
 func (h *Handlers) AuthMeGet(ctx context.Context) (externalapi.AuthMeGetRes, error) {
@@ -70,7 +70,7 @@ func (h *Handlers) AuthTokensCreate(ctx context.Context, req *externalapi.Create
 		res := externalapi.AuthTokensCreateBadRequest(problem(http.StatusBadRequest, err.Error()))
 		return &res, nil
 	case err != nil:
-		return nil, oops.In("external-auth").Public("could not create token").Wrap(err)
+		return nil, fmt.Errorf("create token: %w", err)
 	}
 	return mintedResponse(minted), nil
 }
@@ -84,7 +84,7 @@ func (h *Handlers) AuthTokensBootstrap(ctx context.Context, req *externalapi.Cre
 	// Bootstrap has no caller token: the first token goes to the oldest workspace.
 	s, err := h.accounts.BootstrapScope(ctx)
 	if err != nil {
-		return nil, oops.In("external-auth").Public("no workspace to bootstrap").Wrap(err)
+		return nil, fmt.Errorf("bootstrap scope: %w", err)
 	}
 	minted, err := apitokens.Mint(ctx, s, mintInput(req))
 	switch {
@@ -92,7 +92,7 @@ func (h *Handlers) AuthTokensBootstrap(ctx context.Context, req *externalapi.Cre
 		res := externalapi.AuthTokensBootstrapBadRequest(problem(http.StatusBadRequest, err.Error()))
 		return &res, nil
 	case err != nil:
-		return nil, oops.In("external-auth").Public("could not create token").Wrap(err)
+		return nil, fmt.Errorf("create token: %w", err)
 	}
 	return mintedResponse(minted), nil
 }

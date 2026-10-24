@@ -65,7 +65,6 @@ require (
 	github.com/rs/cors v1.11.1
 	github.com/samber/do/v2 v2.1.0
 	github.com/samber/lo v1.53.0
-	github.com/samber/oops v1.23.2
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.3
 	github.com/standard-webhooks/standard-webhooks/libraries v0.0.1
 	github.com/stretchr/testify v1.12.1

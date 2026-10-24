@@ -16,6 +16,12 @@ built, run and generated is in `AGENTS.md`; the vocabulary is in `GLOSSARY.md`.
   a server down, removing a temporary file) call `internal/cleanup`, which logs it. The functions
   whose error nobody can act on (terminal output, a response body that was only read, the rollback
   of a committed transaction) are listed with their reason under `errcheck` in `.golangci.yml`.
+- **An error is the standard library's: `fmt.Errorf("<operation>: %w", err)`, `errors.Is`,
+  `errors.AsType` and `errors.Join`; no error library.** The wrap prefix names the operation, which is
+  all a log line needs: a stack taken where the error is wrapped is not where it arose, so it would
+  need a wrap at every source (ent, pgx, river) to help. A caller that branches takes a sentinel
+  (it only matches a condition) or a typed error (it needs the data), such as `validation.Error`
+  for a refused input of a domain module.
 - **Narrowing an integer to the contract's `int32` goes through `narrow.Int32`**
   (`internal/narrow`), which caps at the bounds instead of wrapping.
 - **A change to a field in an Audit entry's diff is `events.Change(from, to)` or
