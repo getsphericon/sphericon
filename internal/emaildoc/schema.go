@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 	"sync"
@@ -69,7 +70,7 @@ func (s Schema) Listing() string {
 }
 
 func writeTypes(b *strings.Builder, types map[string]SchemaType) {
-	for _, name := range sortedKeys(types) {
+	for _, name := range slices.Sorted(maps.Keys(types)) {
 		t := types[name]
 		fmt.Fprintf(b, "- %s", name)
 		if t.Content != "" {
@@ -77,7 +78,7 @@ func writeTypes(b *strings.Builder, types map[string]SchemaType) {
 		}
 		if len(t.Attrs) > 0 {
 			attrs := make([]string, 0, len(t.Attrs))
-			for _, attr := range sortedKeys(t.Attrs) {
+			for _, attr := range slices.Sorted(maps.Keys(t.Attrs)) {
 				def := mustMarshal(t.Attrs[attr])
 				attrs = append(attrs, attr+"="+string(def))
 			}
@@ -85,15 +86,6 @@ func writeTypes(b *strings.Builder, types map[string]SchemaType) {
 		}
 		b.WriteString("\n")
 	}
-}
-
-func sortedKeys[V any](m map[string]V) []string {
-	keys := make([]string, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
-	}
-	slices.Sort(keys)
-	return keys
 }
 
 // mustMarshal encodes a default value that was itself decoded from JSON (the bundle's schema), so

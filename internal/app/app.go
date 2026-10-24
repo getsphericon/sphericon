@@ -3,6 +3,7 @@
 package app
 
 import (
+	"cmp"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -1636,7 +1637,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 // messaging catalog: smtp (dev → mailpit) or ses (prod). Same abstraction as
 // customer sends, just sphericon's own provider.
 func buildSystemSender(cfg *config.Config, catalog *messaging.Catalog) (messaging.EmailSender, error) {
-	from := messaging.FirstNonEmpty(cfg.SystemEmailFrom, cfg.SMTPFrom)
+	from := cmp.Or(cfg.SystemEmailFrom, cfg.SMTPFrom)
 	switch cfg.SystemEmailProvider {
 	case "ses":
 		blob, err := json.Marshal(map[string]any{

@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"flag"
+	"maps"
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strconv"
 	"testing"
 
@@ -79,15 +81,7 @@ func requireBodiesAreRenders(t *testing.T, file string, messages []authored) {
 		rewriteFixtureBodies(t, file, rewrites)
 		return
 	}
-	require.Empty(t, keys(rewrites), "these rows of %s have a body that is not the render of their document (rerun with -update)", file)
-}
-
-func keys(m map[int64]string) []int64 {
-	out := make([]int64, 0, len(m))
-	for k := range m {
-		out = append(out, k)
-	}
-	return out
+	require.Empty(t, slices.Sorted(maps.Keys(rewrites)), "these rows of %s have a body that is not the render of their document (rerun with -update)", file)
 }
 
 // rewriteFixtureBodies replaces the `body:` line of each named row in the fixture file

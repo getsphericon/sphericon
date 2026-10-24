@@ -19,6 +19,7 @@
 package outbound
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -561,7 +562,7 @@ func (m *Module) gate(ctx context.Context, s *ent.Scoped, fromEmail, fromName st
 func effectiveFrom(sender messaging.EmailSender, from, name string) (address, displayName string) {
 	if d, ok := sender.(messaging.DefaultFromer); ok {
 		df, dn := d.DefaultFrom()
-		return messaging.FirstNonEmpty(from, df), messaging.FirstNonEmpty(name, dn)
+		return cmp.Or(from, df), cmp.Or(name, dn)
 	}
 	return from, name
 }

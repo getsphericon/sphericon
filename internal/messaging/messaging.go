@@ -80,16 +80,6 @@ type Signer interface {
 	DKIMSigner(ctx context.Context, fromEmail string) (*mail.DKIMSigner, error)
 }
 
-// FirstNonEmpty returns the first non-empty string, or "" if all are empty.
-func FirstNonEmpty(values ...string) string {
-	for _, v := range values {
-		if v != "" {
-			return v
-		}
-	}
-	return ""
-}
-
 // FormatSender renders an email sender as "Name <addr>" when a display name is
 // present, otherwise just the address.
 func FormatSender(addr, name string) string {

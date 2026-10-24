@@ -17,6 +17,7 @@ import (
 	"io"
 	"net/http"
 	"net/netip"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -177,7 +178,7 @@ func (d *Detector) replace(ctx context.Context, prefixes []netip.Prefix) error {
 	if _, err := tx.PrivateRelayRange.Delete().Exec(ctx); err != nil {
 		return err
 	}
-	for batch := range chunks(prefixes, insertBatch) {
+	for batch := range slices.Chunk(prefixes, insertBatch) {
 		builders := make([]*ent.PrivateRelayRangeCreate, len(batch))
 		for i, p := range batch {
 			builders[i] = tx.PrivateRelayRange.Create().SetCidr(p.String())
@@ -187,18 +188,6 @@ func (d *Detector) replace(ctx context.Context, prefixes []netip.Prefix) error {
 		}
 	}
 	return tx.Commit()
-}
-
-func chunks[T any](s []T, n int) func(yield func([]T) bool) {
-	return func(yield func([]T) bool) {
-		for len(s) > 0 {
-			k := min(n, len(s))
-			if !yield(s[:k]) {
-				return
-			}
-			s = s[k:]
-		}
-	}
 }
 
 // parseRanges reads the first column of each row as a CIDR range, masked and without

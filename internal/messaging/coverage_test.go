@@ -15,12 +15,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func TestFirstNonEmpty(t *testing.T) {
-	assert.Equal(t, "b", messaging.FirstNonEmpty("", "b", "c"))
-	assert.Empty(t, messaging.FirstNonEmpty("", ""))
-	assert.Empty(t, messaging.FirstNonEmpty())
-}
-
 func TestFormatSender(t *testing.T) {
 	assert.Equal(t, "Acme <hi@acme.com>", messaging.FormatSender("hi@acme.com", "Acme"))
 	assert.Equal(t, "hi@acme.com", messaging.FormatSender("hi@acme.com", ""))

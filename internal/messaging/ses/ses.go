@@ -10,6 +10,7 @@ package ses
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"encoding/json"
 	"errors"
@@ -118,8 +119,8 @@ type sender struct {
 func (s *sender) DefaultFrom() (address, name string) { return s.cfg.From, s.cfg.FromName }
 
 func (s *sender) Send(ctx context.Context, msg messaging.EmailMessage) (messaging.Receipt, error) {
-	msg.From = messaging.FirstNonEmpty(msg.From, s.cfg.From)
-	msg.FromName = messaging.FirstNonEmpty(msg.FromName, s.cfg.FromName)
+	msg.From = cmp.Or(msg.From, s.cfg.From)
+	msg.FromName = cmp.Or(msg.FromName, s.cfg.FromName)
 
 	m, err := messaging.BuildSignedMIME(ctx, msg, s.signer)
 	if err != nil {

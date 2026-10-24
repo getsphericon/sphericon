@@ -10,11 +10,11 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
-	"regexp"
 	"strings"
 
 	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/secrets"
+	"golang.org/x/net/http/httpguts"
 )
 
 // Limits of a call (ADR 0039): they keep one call from exhausting the queue.
@@ -55,8 +55,6 @@ type Opened struct {
 	Headers map[string]string
 	Secret  string
 }
-
-var headerName = regexp.MustCompile("^[!#$%&'*+.^_`|~0-9A-Za-z-]+$")
 
 // reservedHeaders are set by sphericon itself and cannot be overridden by a call.
 var reservedHeaders = map[string]bool{
@@ -186,7 +184,7 @@ func Seal(c *secrets.Cipher, in, prev Spec, what string) (Spec, error) {
 	names := map[string]bool{}
 	for _, h := range in.Headers {
 		key := strings.ToLower(h.Name)
-		if !headerName.MatchString(h.Name) || reservedHeaders[key] || names[key] {
+		if !httpguts.ValidHeaderFieldName(h.Name) || reservedHeaders[key] || names[key] {
 			return out, invalid("header %q is not allowed", h.Name)
 		}
 		names[key] = true
