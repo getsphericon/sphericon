@@ -33,8 +33,8 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   `mise run build:lint` -> `.bin/custom-gcl`) and enabled as the linter `sphericon` in `.golangci.yml`.
   `check:be`, CI and the heavy-command wrapper all run that build, never a stock `golangci-lint`.
   The `golang.org/x/tools` and `plugin-module-register` versions in `tools/analyzers/go.mod` must be
-  the ones the pinned golangci-lint uses, and `.custom-gcl.yml`'s `version` must be the one in
-  `mise.lock`; `mise run check:lint-pins` fails otherwise and prints the command that fixes it.
+  the ones the pinned golangci-lint uses (`build:lint` builds the golangci-lint of `mise.lock`);
+  `mise run check:lint-pins` fails otherwise and prints the command that fixes it.
 - **Message contract.** A finding begins with the rule number and ends with how to fix it:
   `rule <n>: <what is wrong>; fix: <what to do instead>`. Build it with `rule.Message(n, what, fix)`
   (`tools/analyzers/rule`), never by hand.

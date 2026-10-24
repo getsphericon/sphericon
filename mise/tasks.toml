@@ -493,11 +493,11 @@ sources = [
   "mise.lock",
 ]
 outputs = [".bin/custom-gcl"]
-run = "mise/scripts/heavy.sh golangci-lint custom"
+run = "mise/scripts/heavy.sh golangci-lint custom --version v$(mise current golangci-lint)"
 
 ["check:lint-pins"]
-description = "The golangci-lint version of .custom-gcl.yml is the pinned one, and the analyzers' x/tools and plugin-register versions are the ones that golangci-lint itself uses"
-run = "mise/scripts/check-lint-pins.sh"
+description = "The analyzers' x/tools and plugin-register versions are the ones that golangci-lint itself uses"
+run = "node mise/scripts/check-lint-pins.ts"
 
 ["check:schema"]
 description = "schemalens: the ent schema and the migrated database agree, and the database passes its rules"

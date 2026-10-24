@@ -1,8 +1,8 @@
 # `golangci-lint custom` builds .bin/custom-gcl: golangci-lint plus our own analyzers
 # (tools/analyzers, docs/standards/review-rules.md). `mise run build:lint` runs it, and check:be,
-# CI and the heavy-command wrapper use that binary. The version is the golangci-lint of
-# .mise.toml / mise.lock; `mise run check:lint-pins` fails when it or the analyzers' x/tools drift.
-version: v2.15.0
+# CI and the heavy-command wrapper use that binary. The version is not here: build:lint passes the
+# golangci-lint of .mise.toml / mise.lock (`--version`); `mise run check:lint-pins` fails when the
+# analyzers' x/tools drifts from it.
 name: custom-gcl
 destination: .bin
 plugins:
