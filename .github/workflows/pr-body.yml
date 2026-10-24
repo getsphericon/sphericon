@@ -16,10 +16,15 @@ concurrency:
 
 jobs:
   # The AI assistance section of the pull request template is filled in, and each `contract-copy:`
-  # marker the change adds is declared in the body. A bot's pull request (dependabot,
-  # release-please) has no template to fill in: a skipped job counts as passed for a required check.
+  # marker the change adds is declared in the body. A bot's pull request (dependabot) has no template
+  # to fill in, and neither has the release pull request, which release-please opens as the maintainer
+  # when it runs with a personal access token: a skipped job counts as passed for a required check.
+  # A fork cannot borrow the release branch name, because the head must live in this repository.
   pr-body:
-    if: github.event.pull_request.user.type != 'Bot'
+    if: >-
+      github.event.pull_request.user.type != 'Bot'
+      && !(github.event.pull_request.head.repo.full_name == github.repository
+      && github.event.pull_request.head.ref == 'release-please--branches--main')
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
