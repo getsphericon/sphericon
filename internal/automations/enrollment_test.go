@@ -149,7 +149,7 @@ func TestEnrollRefusesAContactOrAutomationOfAnotherWorkspace(t *testing.T) {
 	assert.ErrorIs(t, err, ent.ErrNotInWorkspace, "Acme cannot enroll into a Globex Automation")
 }
 
-func TestAdvanceMovesOnlyAnActiveEnrollment(t *testing.T) {
+func TestAdvanceMovesOnlyAnActiveEnrollmentStandingOnTheExpectedStep(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
@@ -160,8 +160,10 @@ func TestAdvanceMovesOnlyAnActiveEnrollment(t *testing.T) {
 	require.NoError(t, automations.ExitRun(ctx, s, gone))
 	resume := time.Now().Add(time.Hour)
 
-	require.NoError(t, automations.Advance(ctx, s, live, 1, &resume))
-	require.ErrorIs(t, automations.Advance(ctx, s, gone, 1, &resume), lifecycle.ErrInvalidTransition)
+	require.ErrorIs(t, automations.Advance(ctx, s, live, 5, 6, &resume), lifecycle.ErrInvalidTransition, "an Enrollment elsewhere than the expected step stays put")
+	require.NoError(t, automations.Advance(ctx, s, live, 0, 1, &resume))
+	require.ErrorIs(t, automations.Advance(ctx, s, live, 0, 1, &resume), lifecycle.ErrInvalidTransition, "the same move cannot be made twice")
+	require.ErrorIs(t, automations.Advance(ctx, s, gone, 0, 1, &resume), lifecycle.ErrInvalidTransition)
 
 	run, err := s.AutomationRun().Get(ctx, live)
 	require.NoError(t, err)

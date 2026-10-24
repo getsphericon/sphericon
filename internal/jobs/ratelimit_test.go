@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/outbound"
+	"github.com/getsphericon/sphericon/internal/stepping"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/tracking"
 )
@@ -116,20 +117,17 @@ func TestAutomationStepDefersWhenTransactionalTrafficSpendsTheLimit(t *testing.T
 		require.Len(t, fs.sent, 3)
 
 		before := time.Now()
-		res, err := jobs.RunStep(ctx, env.DB, noFence, mod, runIDs[0])
-		require.NoError(t, err, "a Deferral is not a failure, so no attempt is consumed")
-		assert.False(t, res.Done)
-		require.NotNil(t, res.ResumeAt, "the worker reschedules the same step")
-		assert.GreaterOrEqual(t, res.ResumeAt.Sub(before), 3*time.Second, "pushed out by the Transactional debt")
+		step := stepperWith(env, mod)
+		require.True(t, env.RunNextStep(t, step), "a Deferral is not a failure, so no attempt is consumed")
+		require.Equal(t, []map[string]any{stepJob(runIDs[0], 0)}, queuedSteps(t, env), "the same step is queued again")
+		assert.GreaterOrEqual(t, env.JobSchedules(t, stepping.RunStepArgs{}.Kind())[0].Sub(before), 3*time.Second, "pushed out by the Transactional debt")
 		run := env.DB.AutomationRun.GetX(ctx, runIDs[0])
 		assert.Equal(t, automationrun.StatusActive, run.Status)
 		assert.Zero(t, run.CurrentStep, "the enrollment keeps its place")
 		assert.Len(t, fs.sent, 3, "the step has not sent")
 
 		testhelper.Elapse(3 * time.Second)
-		res, err = jobs.RunStep(ctx, env.DB, noFence, mod, runIDs[0])
-		require.NoError(t, err)
-		assert.Nil(t, res.ResumeAt)
+		require.True(t, env.RunNextStep(t, step))
 		assert.Len(t, fs.sent, 4, "the step sends once capacity returns")
 		assert.Equal(t, 1, env.DB.AutomationRun.GetX(ctx, runIDs[0]).CurrentStep)
 	})
@@ -145,9 +143,8 @@ func TestAutomationStepAndBroadcastRecipientShareTheLimit(t *testing.T) {
 
 		runIDs, err := jobs.EvaluateTrigger(ctx, e.Bus, e.DB.Scoped(fixtures.AcmeID), fixtures.ContactHoldDemoID, "hold_demo", 0)
 		require.NoError(t, err)
-		res, err := jobs.RunStep(ctx, e.DB, noFence, mod, runIDs[0])
-		require.NoError(t, err)
-		require.Nil(t, res.ResumeAt, "the first send takes the only token")
+		require.True(t, e.RunNextStep(t, stepperWith(e.TestEnv, mod)))
+		require.Equal(t, []map[string]any{stepJob(runIDs[0], 1)}, queuedSteps(t, e.TestEnv), "the first send takes the only token and the Enrollment moves on")
 		require.Len(t, e.sender.sent, 1)
 
 		ids, err := planAudience(ctx, e.DB, mod, fixtures.BroadcastDraftID)

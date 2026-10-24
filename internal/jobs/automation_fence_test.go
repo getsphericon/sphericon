@@ -28,6 +28,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/secrets"
+	"github.com/getsphericon/sphericon/internal/stepping"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/tracking"
 	"github.com/getsphericon/sphericon/internal/webhook"
@@ -94,12 +95,25 @@ func newRealEnv(t *testing.T) *realEnv {
 	return &realEnv{client: client, scoped: client.Scoped(fixtures.AcmeID), fence: automations.FenceOn(client), url: url}
 }
 
-func (e *realEnv) mod(t *testing.T, sender messaging.EmailSender) *outbound.Module {
+// bus is a bus of its own over a pool of its own, with a queue to insert the jobs it enqueues into.
+func (e *realEnv) bus(t *testing.T) *events.Bus {
 	t.Helper()
 	sqlDB, err := sql.Open("pgx", e.url)
 	require.NoError(t, err)
 	t.Cleanup(func() { cleanup.Close(sqlDB, "sqlDB") })
-	return outbound.New(events.New(sqlDB), holds.New(func() bool { return true }, time.Now), resolvingTo(sender), tracking.New("test-secret", "http://local"))
+	bus := events.New(sqlDB)
+	queue, err := jobs.NewInserter(sqlDB)
+	require.NoError(t, err)
+	bus.UseJobs(queue)
+	return bus
+}
+
+// stepper is the stepping module over a provider that sends through sender.
+func (e *realEnv) stepper(t *testing.T, sender messaging.EmailSender) *stepping.Module {
+	t.Helper()
+	bus := e.bus(t)
+	mod := outbound.New(bus, holds.New(func() bool { return true }, time.Now), resolvingTo(sender), tracking.New("test-secret", "http://local"))
+	return stepping.New(bus, mod, e.fence)
 }
 
 // runRowIsLocked reports whether another writer would have to wait for the Enrollment's row:
@@ -129,15 +143,14 @@ func TestExitDuringAnEmailStepWaitsForTheSendAndNothingFollows(t *testing.T) {
 	ctx := context.Background()
 	bs := newBlockingSender()
 	t.Cleanup(bs.release) // a failed assertion must not leave the send blocked
-	mod := e.mod(t, bs)
+	stepper := e.stepper(t, bs)
 	runID, enrolled, err := automations.Enroll(ctx, e.scoped, fixtures.AutomationWelcomeSeriesID, fixtures.ContactAliceID)
 	require.NoError(t, err)
 	require.True(t, enrolled)
 
 	stepDone := make(chan error, 1)
 	go func() {
-		_, err := jobs.RunStep(ctx, e.client, e.fence, mod, runID)
-		stepDone <- err
+		stepDone <- stepper.Step(ctx, e.scoped, runID, 0)
 	}()
 	<-bs.started
 	require.True(t, e.runRowIsLocked(t, runID), "an in-flight send holds the Enrollment")
@@ -157,9 +170,7 @@ func TestExitDuringAnEmailStepWaitsForTheSendAndNothingFollows(t *testing.T) {
 	assert.Equal(t, automationrun.StatusExited, e.client.AutomationRun.GetX(ctx, runID).Status)
 	assert.Len(t, bs.sent, 1, "exactly one mail for the step")
 
-	res, err := jobs.RunStep(ctx, e.client, e.fence, mod, runID)
-	require.NoError(t, err)
-	assert.True(t, res.Done)
+	require.NoError(t, stepper.Step(ctx, e.scoped, runID, 0))
 	assert.Len(t, bs.sent, 1, "no later step sends")
 }
 
@@ -190,22 +201,20 @@ func TestExitDuringAnHTTPStepWaitsForTheCall(t *testing.T) {
 		Type: automations.StepHTTP, ID: "01J00000000000000000000001", URL: rcv.srv.URL, Body: `{"ok":true}`,
 		Headers: []automations.Header{{Name: "Authorization"}},
 	}}
-	busDB, err := sql.Open("pgx", e.url)
-	require.NoError(t, err)
-	t.Cleanup(func() { cleanup.Close(busDB, "busDB") })
-	mod := automations.New(cipher, events.New(busDB))
+	bus := e.bus(t)
+	mod := automations.New(cipher, bus)
 	_, err = mod.Update(ctx, e.scoped, fixtures.AutomationNotifySlackID, automations.UpdateInput{Steps: &steps})
 	require.NoError(t, err)
 	runID, enrolled, err := automations.Enroll(ctx, e.scoped, fixtures.AutomationNotifySlackID, fixtures.ContactAliceID)
 	require.NoError(t, err)
 	require.True(t, enrolled)
-	w := jobs.NewRunHTTPStepWorker(e.client, e.fence, mod, webhook.NewClientAllowing(2*time.Second, rcv.allow), time.Now)
+	w := jobs.NewRunHTTPStepWorker(e.client, e.fence, mod, stepping.New(bus, nil, e.fence), webhook.NewClientAllowing(2*time.Second, rcv.allow), time.Now)
 
 	workDone := make(chan error, 1)
 	go func() {
-		workDone <- w.Work(workCtx, &river.Job[jobs.RunHTTPStepArgs]{
-			JobRow: &rivertype.JobRow{Attempt: 1, MaxAttempts: jobs.RunHTTPStepArgs{}.InsertOpts().MaxAttempts, CreatedAt: time.Now()},
-			Args:   jobs.RunHTTPStepArgs{RunID: runID},
+		workDone <- w.Work(workCtx, &river.Job[stepping.RunHTTPStepArgs]{
+			JobRow: &rivertype.JobRow{Attempt: 1, MaxAttempts: stepping.RunHTTPStepArgs{}.InsertOpts().MaxAttempts, CreatedAt: time.Now()},
+			Args:   stepping.RunHTTPStepArgs{RunID: runID},
 		})
 	}()
 	<-started

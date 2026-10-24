@@ -44,6 +44,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/messaging/registry"
 	"github.com/getsphericon/sphericon/internal/secrets"
+	"github.com/getsphericon/sphericon/internal/stepping"
 	"github.com/getsphericon/sphericon/internal/suspension"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/webhook"
@@ -93,7 +94,7 @@ func (e *riverEnv) workCtx() context.Context {
 // clearQueue removes every job from the real queue.
 func (e *riverEnv) clearQueue(t *testing.T) {
 	t.Helper()
-	_, err := e.client.River().JobDeleteMany(context.Background(), river.NewJobDeleteManyParams().Queues(river.QueueDefault, broadcasts.Queue, jobs.QueueWebhooks, jobs.QueueHTTPSteps))
+	_, err := e.client.River().JobDeleteMany(context.Background(), river.NewJobDeleteManyParams().Queues(river.QueueDefault, broadcasts.Queue, jobs.QueueWebhooks, stepping.QueueHTTPSteps))
 	require.NoError(t, err)
 }
 
@@ -562,27 +563,26 @@ func TestEvaluateTriggerAndRunStepWorkers(t *testing.T) {
 	require.NoError(t, jobs.NewEvaluateTriggerWorker(e.DB, e.Bus).Work(ctx, job(jobs.EvaluateTriggerArgs{
 		WorkspaceID: fixtures.AcmeID, ContactID: c.ID, Action: trigger,
 	})))
-	require.Len(t, e.JobsOf(t, jobs.RunStepArgs{}.Kind()), 1, "the Enrollment is queued with its first step")
+	require.Len(t, e.JobsOf(t, stepping.RunStepArgs{}.Kind()), 1, "the Enrollment is queued with its first step")
 	run := e.DB.AutomationRun.Query().Where(automationrun.AutomationID(fixtures.AutomationJobsGreetingID), automationrun.ContactID(c.ID)).OnlyX(ctx)
 
-	// Step 1 sends and schedules the next step; the wait step schedules a delayed
-	// one; the last step finishes the run without queueing more.
-	w := jobs.NewRunStepWorker(e.DB, noFence, newMod(e.TestEnv, resolvingTo(e.sender)))
-	require.NoError(t, w.Work(ctx, job(jobs.RunStepArgs{RunID: run.ID})))
+	// Step 1 sends and queues the next step; the wait step queues a delayed one; the last
+	// step finishes the run without queueing more.
+	w := jobs.NewRunStepWorker(e.DB, stepperOf(e.TestEnv, resolvingTo(e.sender)))
+	require.NoError(t, w.Work(ctx, job(stepping.RunStepArgs{RunID: run.ID, Step: 0})))
 	assert.Len(t, e.sender.sent, 1)
-	assert.Len(t, e.queued(t), 1)
-	require.NoError(t, w.Work(ctx, job(jobs.RunStepArgs{RunID: run.ID})))
-	assert.Len(t, e.queued(t), 2, "the wait step queues a delayed follow-up")
-	e.DB.AutomationRun.UpdateOneID(run.ID).ClearResumeAt().ExecX(ctx) // the follow-up's time has come
-	require.NoError(t, w.Work(ctx, job(jobs.RunStepArgs{RunID: run.ID})))
+	assert.Len(t, e.JobsOf(t, stepping.RunStepArgs{}.Kind()), 2)
+	require.NoError(t, w.Work(ctx, job(stepping.RunStepArgs{RunID: run.ID, Step: 1})))
+	assert.Len(t, e.JobsOf(t, stepping.RunStepArgs{}.Kind()), 3, "the wait step queues a delayed follow-up")
+	require.NoError(t, w.Work(ctx, job(stepping.RunStepArgs{RunID: run.ID, Step: 2})))
 	assert.Len(t, e.sender.sent, 2)
-	assert.Len(t, e.queued(t), 3)
-	require.NoError(t, w.Work(ctx, job(jobs.RunStepArgs{RunID: run.ID})))
+	assert.Len(t, e.JobsOf(t, stepping.RunStepArgs{}.Kind()), 4)
+	require.NoError(t, w.Work(ctx, job(stepping.RunStepArgs{RunID: run.ID, Step: 3})))
 	assert.Equal(t, automationrun.StatusCompleted, e.DB.AutomationRun.GetX(ctx, run.ID).Status)
-	assert.Len(t, e.queued(t), 3, "a finished run queues nothing")
+	assert.Len(t, e.JobsOf(t, stepping.RunStepArgs{}.Kind()), 4, "a finished run queues nothing")
 
 	// An unknown run (erased with its Contact) is finished, not retried.
-	require.NoError(t, w.Work(ctx, job(jobs.RunStepArgs{RunID: 424242})))
+	require.NoError(t, w.Work(ctx, job(stepping.RunStepArgs{RunID: 424242})))
 }
 
 // failingQueue is a job queue that cannot take the job.
@@ -613,7 +613,7 @@ func TestEvaluateTriggerRetryAfterTheFirstStepFailedToQueueLeavesAQueuedEnrollme
 
 	runs := e.DB.AutomationRun.Query().Where(automationrun.AutomationID(fixtures.AutomationJobsGreetingID), automationrun.ContactID(fixtures.ContactLiamID)).AllX(ctx)
 	require.Len(t, runs, 1)
-	queued := e.JobsOf(t, jobs.RunStepArgs{}.Kind())
+	queued := e.JobsOf(t, stepping.RunStepArgs{}.Kind())
 	require.Len(t, queued, 1, "the Enrollment has its first step queued")
 	assert.EqualValues(t, runs[0].ID, queued[0]["run_id"])
 }

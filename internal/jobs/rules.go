@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/jobkind"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/rules"
+	"github.com/getsphericon/sphericon/internal/stepping"
 	"github.com/getsphericon/sphericon/internal/tags"
 )
 
@@ -134,7 +135,7 @@ func (a enrollAction) Run(ctx context.Context, s *ent.Scoped, in rules.ActionInp
 			return err
 		}
 		enrolled = true
-		return q.Enqueue(ctx, RunStepArgs{RunID: runID}, nil)
+		return q.Enqueue(ctx, stepping.RunStepArgs{RunID: runID, Step: 0}, nil)
 	})
 	switch {
 	case err != nil:

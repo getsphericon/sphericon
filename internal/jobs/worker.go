@@ -28,6 +28,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/sending"
+	"github.com/getsphericon/sphericon/internal/stepping"
 	"github.com/getsphericon/sphericon/internal/trackingdomain"
 	"github.com/getsphericon/sphericon/internal/webhook"
 	"github.com/getsphericon/sphericon/internal/webhooks"
@@ -80,8 +81,9 @@ func NewClient(riverDB *sql.DB, entClient *ent.Client, mod *outbound.Module, cip
 	workers := river.NewWorkers()
 	river.AddWorker(workers, &SendBroadcastWorker{ent: entClient, del: broadcasts.NewDelivery(mod)})
 	river.AddWorker(workers, &SendRecipientWorker{ent: entClient, del: broadcasts.NewDelivery(mod)})
+	stepper := stepping.New(bus, mod, automations.FenceOn(entClient))
 	river.AddWorker(workers, &EvaluateTriggerWorker{ent: entClient, bus: bus})
-	river.AddWorker(workers, &RunStepWorker{ent: entClient, mod: mod, fence: automations.FenceOn(entClient)})
+	river.AddWorker(workers, NewRunStepWorker(entClient, stepper))
 	ruleMod := rules.New(cipher, bus)
 	river.AddWorker(workers, &EvaluateRulesWorker{ent: entClient, mod: ruleMod})
 	river.AddWorker(workers, &RunRuleActionsWorker{ent: entClient, mod: ruleMod, runners: RuleActionRunners(mod, bus)})
@@ -89,6 +91,7 @@ func NewClient(riverDB *sql.DB, entClient *ent.Client, mod *outbound.Module, cip
 	river.AddWorker(workers, &RunHTTPStepWorker{
 		ent:    entClient,
 		mod:    automations.New(cipher, bus),
+		step:   stepper,
 		client: webhook.NewClientAllowing(webhookDeliveryTimeout, outboundAllow),
 		now:    time.Now,
 		fence:  automations.FenceOn(entClient),
@@ -167,10 +170,10 @@ func newRiverConfig(workers *river.Workers, logger *slog.Logger, extra ...*river
 		CancelledJobRetentionPeriod: cancelledJobRetention,
 		DiscardedJobRetentionPeriod: discardedJobRetention,
 		Queues: map[string]river.QueueConfig{
-			river.QueueDefault: {MaxWorkers: 5},
-			broadcasts.Queue:   {MaxWorkers: 10},
-			QueueWebhooks:      {MaxWorkers: 5},
-			QueueHTTPSteps:     {MaxWorkers: 5},
+			river.QueueDefault:      {MaxWorkers: 5},
+			broadcasts.Queue:        {MaxWorkers: 10},
+			QueueWebhooks:           {MaxWorkers: 5},
+			stepping.QueueHTTPSteps: {MaxWorkers: 5},
 		},
 		// The database/sql driver has no LISTEN connection: the client polls for new jobs.
 		PollOnly:     true,

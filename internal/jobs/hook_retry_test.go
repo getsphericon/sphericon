@@ -26,23 +26,23 @@ import (
 
 func TestHookRetryPolicyLastAttemptFallsAboutThreeDaysAfterTheFirst(t *testing.T) {
 	var elapsed time.Duration
-	for attempt := 1; attempt < jobs.HookMaxAttempts(); attempt++ {
-		elapsed += jobs.HookRetryDelay(attempt)
+	for attempt := 1; attempt < webhook.HookMaxAttempts(); attempt++ {
+		elapsed += webhook.HookRetryDelay(attempt)
 	}
-	assert.GreaterOrEqual(t, elapsed, jobs.HookRetryHorizon)
-	assert.Less(t, elapsed, jobs.HookRetryHorizon+jobs.HookRetryMaxDelay)
-	assert.Equal(t, jobs.HookRetryFirstDelay, jobs.HookRetryDelay(1))
-	assert.Equal(t, jobs.HookRetryMaxDelay, jobs.HookRetryDelay(jobs.HookMaxAttempts()))
+	assert.GreaterOrEqual(t, elapsed, webhook.HookRetryHorizon)
+	assert.Less(t, elapsed, webhook.HookRetryHorizon+webhook.HookRetryMaxDelay)
+	assert.Equal(t, webhook.HookRetryFirstDelay, webhook.HookRetryDelay(1))
+	assert.Equal(t, webhook.HookRetryMaxDelay, webhook.HookRetryDelay(webhook.HookMaxAttempts()))
 }
 
 func TestHookSnoozeReadsRetryAfter(t *testing.T) {
 	now := time.Date(2026, 10, 18, 9, 0, 0, 0, time.UTC)
-	assert.Equal(t, 120*time.Second, jobs.HookSnooze("120", now))
-	assert.Equal(t, 5*time.Minute, jobs.HookSnooze(httpDate(now.Add(5*time.Minute)), now))
-	assert.Equal(t, jobs.HookSnoozeDefault, jobs.HookSnooze("", now))
-	assert.Equal(t, jobs.HookSnoozeDefault, jobs.HookSnooze("soon", now))
-	assert.Equal(t, jobs.HookSnoozeDefault, jobs.HookSnooze(httpDate(now.Add(-time.Hour)), now))
-	assert.Equal(t, jobs.HookSnoozeMax, jobs.HookSnooze("999999999", now))
+	assert.Equal(t, 120*time.Second, webhook.HookSnooze("120", now))
+	assert.Equal(t, 5*time.Minute, webhook.HookSnooze(httpDate(now.Add(5*time.Minute)), now))
+	assert.Equal(t, webhook.HookSnoozeDefault, webhook.HookSnooze("", now))
+	assert.Equal(t, webhook.HookSnoozeDefault, webhook.HookSnooze("soon", now))
+	assert.Equal(t, webhook.HookSnoozeDefault, webhook.HookSnooze(httpDate(now.Add(-time.Hour)), now))
+	assert.Equal(t, webhook.HookSnoozeMax, webhook.HookSnooze("999999999", now))
 }
 
 func httpDate(at time.Time) string { return at.UTC().Format(http.TimeFormat) }
@@ -115,12 +115,12 @@ func (h *hookRetryHarness) endpoint() *ent.WebhookEndpoint {
 func TestDeliverWebhookRetriesOnTheHookPolicy(t *testing.T) {
 	h := newHookRetryHarness(t, http.StatusServiceUnavailable, "")
 
-	res, err := h.work(jobs.HookMaxAttempts())
+	res, err := h.work(webhook.HookMaxAttempts())
 
 	require.Error(t, err)
 	assert.Equal(t, rivertype.JobStateRetryable, res.Job.State)
 	assert.Equal(t, 1, res.Job.Attempt)
-	assert.WithinDuration(t, h.now.Add(jobs.HookRetryDelay(1)), res.Job.ScheduledAt, time.Second)
+	assert.WithinDuration(t, h.now.Add(webhook.HookRetryDelay(1)), res.Job.ScheduledAt, time.Second)
 	assert.Equal(t, 1, *h.endpoint().ConsecutiveFailures)
 }
 
@@ -136,7 +136,7 @@ func TestDeliverWebhookFinalFailureEndsTheJob(t *testing.T) {
 func TestDeliverWebhookRateLimitSnoozesWithoutSpendingAnAttempt(t *testing.T) {
 	h := newHookRetryHarness(t, http.StatusTooManyRequests, "120")
 
-	res, err := h.work(jobs.HookMaxAttempts())
+	res, err := h.work(webhook.HookMaxAttempts())
 	require.NoError(t, err)
 
 	assert.Equal(t, rivertype.JobStateScheduled, res.Job.State)
@@ -155,7 +155,7 @@ func TestDeliverWebhookRateLimitLeavesAFailingRunAsItWas(t *testing.T) {
 		SetConsecutiveFailures(3).SetFailingSince(h.now.Add(-time.Hour)).Save(context.Background())
 	require.NoError(t, err)
 
-	res, err := h.work(jobs.HookMaxAttempts())
+	res, err := h.work(webhook.HookMaxAttempts())
 	require.NoError(t, err)
 
 	assert.Equal(t, rivertype.JobStateScheduled, res.Job.State)
@@ -166,17 +166,17 @@ func TestDeliverWebhookRateLimitLeavesAFailingRunAsItWas(t *testing.T) {
 func TestDeliverWebhookRateLimitWithoutRetryAfterUsesTheDefault(t *testing.T) {
 	h := newHookRetryHarness(t, http.StatusTooManyRequests, "")
 
-	res, err := h.work(jobs.HookMaxAttempts())
+	res, err := h.work(webhook.HookMaxAttempts())
 	require.NoError(t, err)
 
-	assert.WithinDuration(t, h.now.Add(jobs.HookSnoozeDefault), res.Job.ScheduledAt, time.Second)
+	assert.WithinDuration(t, h.now.Add(webhook.HookSnoozeDefault), res.Job.ScheduledAt, time.Second)
 }
 
 func TestDeliverWebhookRateLimitEndsTheJobPastTheHorizon(t *testing.T) {
 	h := newHookRetryHarness(t, http.StatusTooManyRequests, "1")
-	h.now = h.now.Add(jobs.HookRetryHorizon + time.Hour)
+	h.now = h.now.Add(webhook.HookRetryHorizon + time.Hour)
 
-	res, err := h.work(jobs.HookMaxAttempts())
+	res, err := h.work(webhook.HookMaxAttempts())
 	require.NoError(t, err)
 
 	assert.Equal(t, rivertype.JobStateCancelled, res.Job.State)
@@ -185,7 +185,7 @@ func TestDeliverWebhookRateLimitEndsTheJobPastTheHorizon(t *testing.T) {
 func TestDeliverWebhookGoneDisablesTheEndpointAndTheJobEnds(t *testing.T) {
 	h := newHookRetryHarness(t, http.StatusGone, "")
 
-	res, err := h.work(jobs.HookMaxAttempts())
+	res, err := h.work(webhook.HookMaxAttempts())
 	require.Error(t, err)
 	require.Equal(t, rivertype.JobStateRetryable, res.Job.State)
 	assert.NotNil(t, h.endpoint().DisabledAt)

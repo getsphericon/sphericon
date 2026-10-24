@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/httpcall"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/rules"
+	"github.com/getsphericon/sphericon/internal/stepping"
 	"github.com/getsphericon/sphericon/internal/webhook"
 )
 
@@ -27,12 +28,12 @@ type RunRuleHTTPArgs struct {
 func (RunRuleHTTPArgs) Kind() string { return "rule_http_action" }
 
 // InsertOpts puts the call on the queue of the HTTP steps with the retry horizon of a hook
-// (HookMaxAttempts), as an Automation's HTTP step: an Action that calls a third party can be
+// (webhook.HookMaxAttempts), as an Automation's HTTP step: an Action that calls a third party can be
 // retried for days and must not hold the Actions job, or the Actions after it.
 func (RunRuleHTTPArgs) InsertOpts() river.InsertOpts {
 	return river.InsertOpts{
-		Queue:       QueueHTTPSteps,
-		MaxAttempts: HookMaxAttempts(),
+		Queue:       stepping.QueueHTTPSteps,
+		MaxAttempts: webhook.HookMaxAttempts(),
 		UniqueOpts:  river.UniqueOpts{ByArgs: true},
 	}
 }
@@ -116,10 +117,10 @@ func (w *RunRuleHTTPWorker) Work(ctx context.Context, job *river.Job[RunRuleHTTP
 	failed := rules.Result{Status: rules.Failed, Detail: failureDetail(sendErr)}
 	now := w.now()
 	if limited := webhook.RateLimited(sendErr); limited != nil {
-		if now.Sub(job.CreatedAt) >= HookRetryHorizon {
+		if now.Sub(job.CreatedAt) >= webhook.HookRetryHorizon {
 			return record(failed) // a receiver that never lets up
 		}
-		return river.JobSnooze(HookSnooze(limited.RetryAfter, now)) // never an attempt
+		return river.JobSnooze(webhook.HookSnooze(limited.RetryAfter, now)) // never an attempt
 	}
 	if !webhook.Retryable(sendErr) || job.Attempt >= job.MaxAttempts {
 		return record(failed) // no retry opens a blocked address or turns a 4xx into a 2xx
@@ -127,12 +128,12 @@ func (w *RunRuleHTTPWorker) Work(ctx context.Context, job *river.Job[RunRuleHTTP
 	return sendErr
 }
 
-// NextRetry is the call's retry policy (HookNextRetry): days, as for a Webhook delivery.
+// NextRetry is the call's retry policy (webhook.HookNextRetry): days, as for a Webhook delivery.
 func (w *RunRuleHTTPWorker) NextRetry(job *river.Job[RunRuleHTTPArgs]) time.Time {
 	if job.AttemptedAt == nil {
 		return time.Time{} // river falls back to its default
 	}
-	return HookNextRetry(*job.AttemptedAt, job.Attempt)
+	return webhook.HookNextRetry(*job.AttemptedAt, job.Attempt)
 }
 
 // pendingHTTPAction is the http Action at index of the Firing, and whether it still waits for its
