@@ -125,7 +125,8 @@ The rest of this file is for maintainers and the agents they run: how work lands
   developers: a rule an agent should follow goes here (or in `docs/`), never into one person's
   memory.
 - **`mise run land -- [--skip-test] [<issue>...]` does the landing below in one go** (rebase, check, test, push,
-  ticket check); a hand-typed push of `HEAD` to `main` skips the checks it runs.
+  ticket check); a hand-typed push of `HEAD` to `main` skips the checks it runs, so a Claude Code hook
+  (`.claude/settings.json`, `mise/scripts/agent-guard.py`) refuses that push and any `--no-verify`.
 - **Land non-trivial work from its worktree, then clean up.** A change made in a worktree reaches
   `main` with `git push origin HEAD:main` once the checks pass and the work is rebased onto a freshly fetched `origin/main` (a
   detached `HEAD`, never a branch). Then remove that worktree (`git worktree remove <path>`) right
