@@ -1,0 +1,47 @@
+name: Pull request body
+
+# What a pull request body must say is checked when the body is edited, not only when code is pushed:
+# ci.yml runs on the default events, which skip an edit of the body. Nothing here has a secret to
+# lose, so it runs on pull_request from forks too.
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  # The AI assistance section of the pull request template is filled in, and each `contract-copy:`
+  # marker the change adds is declared in the body. A bot's pull request (dependabot,
+  # release-please) has no template to fill in: a skipped job counts as passed for a required check.
+  pr-body:
+    if: github.event.pull_request.user.type != 'Bot'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup mise
+        uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
+
+      - name: Cache Go
+        uses: $/.github/actions/go-cache
+        with:
+          scope: pr-body
+
+      # The body is attacker-controlled text: it reaches the program through the environment, never
+      # through the script.
+      - name: Check the pull request body
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: mise run check:pr-body

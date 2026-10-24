@@ -1,8 +1,10 @@
 # Contributing to sphericon
 
 Thanks for helping. This page covers the legal side, the pull request rules and how to run the
-project locally. Architecture and conventions are in [`AGENTS.md`](AGENTS.md), the domain language
-in [`GLOSSARY.md`](GLOSSARY.md) and the decisions behind it in [`docs/adr/`](docs/adr/).
+project locally. The architecture is in [`docs/architecture.md`](docs/architecture.md), the coding
+standards and the rules every change is reviewed against in [`docs/standards/`](docs/standards/),
+the domain language in [`GLOSSARY.md`](GLOSSARY.md) and the decisions behind it in
+[`docs/adr/`](docs/adr/). A coding agent starts from [`AGENTS.md`](AGENTS.md).
 
 ## Contributor License Agreement
 
@@ -27,6 +29,25 @@ Project Owner.
   (`feat:`, `fix:`, `docs:`, ...); release notes are generated from them.
 - Run `mise run check` and `mise run test` before you push.
 - Generated files are never edited by hand; run `mise run generate` instead.
+- A change that is more than a typo or a doc line starts from an issue a maintainer has accepted
+  (label `ready-for-agent` or `ready-for-human`); name it in the pull request.
+- Fill in the pull request template. The `pr-body` check fails until exactly one option of its
+  "AI assistance" section is checked, and until each `contract-copy:` marker your change adds has a
+  `Contract-Copy: <file>: <reason>` line in the body.
+
+## AI-assisted contributions
+
+Pull requests written with an AI tool are welcome on the same terms as any other. You are the author:
+you answer for every line, for its license and for what it does.
+
+- Read the whole diff before you open the pull request, and understand it. Open it yourself; an agent
+  does not open it for you. Write the description in your own words: what changed and why.
+- Say how an AI tool was used in the "AI assistance" section of the pull request template.
+- A commit written with an agent may end with a `Co-Authored-By:` or an `Assisted-by:` trailer naming
+  the tool; either is accepted. `Signed-off-by` and the signature of the CLA are yours alone.
+- The checks that run on every pull request run on yours; an agent that skips them (`mise run check`,
+  `mise run test`) only moves the failure to your review.
+- Maintainers may close a pull request that does not meet these terms, without a review.
 
 ## Stack
 

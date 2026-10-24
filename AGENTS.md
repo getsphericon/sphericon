@@ -12,7 +12,9 @@ maintainer rules further down (worktrees, no branches, pushing to `main`, closin
   (label `ready-for-agent` or `ready-for-human`); name that issue in the pull request.
 - A human opens the pull request, after reading the whole diff, and answers for every line of it:
   an agent does not open it on its own. The description says what changed and why, in the human's
-  own words, and says whether and how an AI tool helped.
+  own words. The "AI assistance" section of the pull request template says how an AI tool was
+  used: check exactly one option, or the `pr-body` check fails. A `contract-copy:` marker you add
+  needs a `Contract-Copy: <file>: <reason>` line in the body.
 - A commit written with an agent may end with `Co-Authored-By:` or `Assisted-by:` naming the tool;
   both are accepted. The CLA and any `Signed-off-by` are the human's, never the agent's.
 - Before you push: `mise run generate` after a TypeSpec or `ent/schema` change, then

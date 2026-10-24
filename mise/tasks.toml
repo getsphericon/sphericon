@@ -437,6 +437,17 @@ go run ./cmd/upgradecheck breaking "${args[@]}" ${PR_BODY_FILE:+--body-file "$PR
 go run ./cmd/upgradecheck immutable --base "$base" ${PR_BODY_FILE:+--body-file "$PR_BODY_FILE"}
 '''
 
+["check:pr-body"]
+description = "What a pull request body must say: the AI assistance option is checked and each added `contract-copy:` marker has a `Contract-Copy: <file>: <reason>` line (cmd/prcheck; PR_BODY and BASE come from the pull request, BASE defaults to origin/main)"
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+: "${PR_BODY?set PR_BODY to the pull request body}"
+base="${BASE:-origin/main}"
+go run ./cmd/prcheck disclosure
+git diff --unified=0 --no-color "$base...HEAD" | go run ./cmd/prcheck markers
+'''
+
 ["check:deps"]
 description = "Unused files, exports and dependencies (knip.ts)"
 run = "mise/scripts/heavy.sh pnpm exec knip"
