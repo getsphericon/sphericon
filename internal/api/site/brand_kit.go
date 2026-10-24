@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/brandkit"
 	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 const errBrandKitForbidden = "only owners can change the Brand kit"
@@ -62,7 +63,7 @@ func (h *Handlers) SiteBrandKitSave(ctx context.Context, req *siteapi.SiteSaveBr
 		ButtonRadius:    int(req.ButtonRadius),
 		FooterText:      req.FooterText,
 	})
-	var verr *brandkit.ValidationError
+	var verr *validation.Error
 	switch {
 	case errors.As(err, &verr):
 		v := siteapi.SiteBrandKitSaveUnprocessableEntity(problemWithErrors(

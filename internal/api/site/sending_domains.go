@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 const errSendingDomainsForbidden = "only owners and admins can manage sending domains"
@@ -74,7 +75,7 @@ func (h *Handlers) SiteSendingDomainsCreate(ctx context.Context, req *siteapi.Si
 	}
 
 	d, err := h.sendingDomains.Create(ctx, s, sendingdomains.CreateInput{Domain: req.Domain, Selector: req.DkimSelector.Or("")})
-	var verr *sendingdomains.ValidationError
+	var verr *validation.Error
 	switch {
 	case errors.As(err, &verr):
 		v := siteapi.SiteSendingDomainsCreateUnprocessableEntity(problemWithErrors(http.StatusUnprocessableEntity, i18n.T("errors.validation_failed", nil), map[string][]string{

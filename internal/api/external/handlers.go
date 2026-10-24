@@ -27,6 +27,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/tags"
 	"github.com/getsphericon/sphericon/internal/templates"
 	"github.com/getsphericon/sphericon/internal/transactional"
+	"github.com/getsphericon/sphericon/internal/validation"
 	"github.com/getsphericon/sphericon/internal/webhooks"
 )
 
@@ -121,4 +122,11 @@ func problem(code int, detail string) externalapi.ProblemDetails {
 		Title:  externalapi.NewOptString(http.StatusText(code)),
 		Detail: externalapi.NewOptString(detail),
 	}
+}
+
+// validationProblem is the 422 for a refused input of a domain module, naming the field.
+func validationProblem(v *validation.Error) externalapi.ProblemDetails {
+	p := problem(http.StatusUnprocessableEntity, v.Message)
+	p.Errors = externalapi.NewOptProblemDetailsErrors(externalapi.ProblemDetailsErrors{v.Field: {v.Message}})
+	return p
 }

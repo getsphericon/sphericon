@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/sendlimit"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // The Integration operations are thin adapters over internal/integrations, the module
@@ -78,7 +79,7 @@ func (h *Handlers) IntegrationsCreate(ctx context.Context, req *externalapi.Crea
 			Params:       inParams,
 		})
 	}
-	var verr *integrations.ValidationError
+	var verr *validation.Error
 	switch {
 	case errors.As(err, &verr):
 		res := externalapi.IntegrationsCreateUnprocessableEntity(validationProblem(verr))
@@ -150,7 +151,7 @@ func (h *Handlers) IntegrationsUpdate(ctx context.Context, req *externalapi.Upda
 		in.Params = inParams
 		row, err = h.integrations.Update(ctx, s, id, in)
 	}
-	var verr *integrations.ValidationError
+	var verr *validation.Error
 	switch {
 	case ent.IsNotFound(err):
 		res := externalapi.IntegrationsUpdateNotFound(problem(http.StatusNotFound, "integration not found"))
@@ -289,12 +290,6 @@ func configInput(in externalapi.IntegrationConfigInput) (integrations.ConfigInpu
 		}}, nil
 	}
 	return integrations.ConfigInput{}, errors.New("unsupported provider")
-}
-
-func validationProblem(v *integrations.ValidationError) externalapi.ProblemDetails {
-	p := problem(http.StatusUnprocessableEntity, v.Message)
-	p.Errors = externalapi.NewOptProblemDetailsErrors(externalapi.ProblemDetailsErrors{v.Field: {v.Message}})
-	return p
 }
 
 // integrationOne renders a single row with its 24-hour usage.

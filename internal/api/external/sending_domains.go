@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // The Sending domain operations are thin adapters over internal/sendingdomains, the
@@ -52,10 +53,10 @@ func (h *Handlers) SendingDomainsCreate(ctx context.Context, req *externalapi.Cr
 	row, err := h.sendingDomains.Create(ctx, auth.TokenScoped(ctx), sendingdomains.CreateInput{
 		Domain: req.Domain, Selector: req.DkimSelector.Or(""),
 	})
-	var verr *sendingdomains.ValidationError
+	var verr *validation.Error
 	switch {
 	case errors.As(err, &verr):
-		res := externalapi.SendingDomainsCreateUnprocessableEntity(sendingDomainValidationProblem(verr))
+		res := externalapi.SendingDomainsCreateUnprocessableEntity(validationProblem(verr))
 		return &res, nil
 	case errors.Is(err, sendingdomains.ErrAlreadyExists):
 		res := externalapi.SendingDomainsCreateConflict(problem(http.StatusConflict, err.Error()))
@@ -96,13 +97,13 @@ func (h *Handlers) SendingDomainsUpdate(ctx context.Context, req *externalapi.Up
 	row, err := h.sendingDomains.Update(ctx, auth.TokenScoped(ctx), id, sendingdomains.UpdateInput{
 		Selector: convert.Ptr(req.DkimSelector),
 	})
-	var verr *sendingdomains.ValidationError
+	var verr *validation.Error
 	switch {
 	case ent.IsNotFound(err):
 		res := externalapi.SendingDomainsUpdateNotFound(problem(http.StatusNotFound, "sending domain not found"))
 		return &res, nil
 	case errors.As(err, &verr):
-		res := externalapi.SendingDomainsUpdateUnprocessableEntity(sendingDomainValidationProblem(verr))
+		res := externalapi.SendingDomainsUpdateUnprocessableEntity(validationProblem(verr))
 		return &res, nil
 	case err != nil:
 		return nil, err
@@ -190,12 +191,6 @@ func (h *Handlers) SendingDomainsVerify(ctx context.Context, params externalapi.
 	}
 	res := h.sendingDomainResource(row)
 	return &res, nil
-}
-
-func sendingDomainValidationProblem(v *sendingdomains.ValidationError) externalapi.ProblemDetails {
-	p := problem(http.StatusUnprocessableEntity, v.Message)
-	p.Errors = externalapi.NewOptProblemDetailsErrors(externalapi.ProblemDetailsErrors{v.Field: {v.Message}})
-	return p
 }
 
 // sendingDomainResource maps the row, then attaches the DNS records the user publishes, which

@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/joindomains"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // SiteJoinDomainsList lists the Workspace's Join domains. Owners only.
@@ -54,7 +55,7 @@ func (h *Handlers) SiteJoinDomainsAdd(ctx context.Context, req *siteapi.SiteAddJ
 	}
 
 	d, err := h.joinDomains.Add(ctx, s, req.Domain)
-	var verr *joindomains.ValidationError
+	var verr *validation.Error
 	switch {
 	case errors.As(err, &verr):
 		v := siteapi.SiteJoinDomainsAddUnprocessableEntity(problemWithErrors(http.StatusUnprocessableEntity, i18n.T("errors.validation_failed", nil), map[string][]string{

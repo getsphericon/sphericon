@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/sendlimit"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 const errIntegrationsForbidden = "only owners and admins can manage integrations"
@@ -83,7 +84,7 @@ func (h *Handlers) SiteIntegrationsCreate(ctx context.Context, req *siteapi.Site
 			Params:       inParams,
 		})
 	}
-	var verr *integrations.ValidationError
+	var verr *validation.Error
 	switch {
 	case errors.As(err, &verr):
 		v := siteapi.SiteIntegrationsCreateUnprocessableEntity(problemWithErrors(
@@ -173,7 +174,7 @@ func (h *Handlers) SiteIntegrationsUpdate(ctx context.Context, req *siteapi.Site
 		in.Params = inParams
 		updated, err = h.integrations.Update(ctx, s, id, in)
 	}
-	var verr *integrations.ValidationError
+	var verr *validation.Error
 	switch {
 	case ent.IsNotFound(err):
 		r := siteapi.SiteIntegrationsUpdateNotFound(problem(http.StatusNotFound, "integration not found"))

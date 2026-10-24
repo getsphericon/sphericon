@@ -7,6 +7,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/internal/messaging/ses"
 	"github.com/getsphericon/sphericon/internal/messaging/smtp"
+	"github.com/getsphericon/sphericon/internal/validation"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -42,7 +43,7 @@ func TestMergeSecretsSMTP(t *testing.T) {
 		"username": {Host: "smtp.acme", Port: 587, Username: "other"},
 	} {
 		_, err := mergeSecrets(integration.ProviderSMTP, marshal(t, moved), prev)
-		var verr *ValidationError
+		var verr *validation.Error
 		assert.ErrorAs(t, err, &verr, name)
 	}
 }
@@ -71,7 +72,7 @@ func TestMergeSecretsSES(t *testing.T) {
 		"cleared":  {Region: "eu-west-1", AccessKeyID: "AKIA"},
 	} {
 		_, err := mergeSecrets(integration.ProviderSes, marshal(t, moved), prev)
-		var verr *ValidationError
+		var verr *validation.Error
 		assert.ErrorAs(t, err, &verr, name)
 	}
 }

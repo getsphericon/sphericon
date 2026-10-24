@@ -4,7 +4,7 @@
 // cannot diverge on how a credential is stored or what is refused.
 //
 // Handlers hand in a *ent.Scoped and domain-typed input (not their DTOs) and get back
-// the row or a domain error: ValidationError (a 422), ErrDefaultConflict (a 409), or
+// the row or a domain error: validation.Error (a 422), ErrDefaultConflict (a 409), or
 // ent's not-found for an unknown id.
 package integrations
 
@@ -30,21 +30,13 @@ import (
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/preset"
 	"github.com/getsphericon/sphericon/internal/secrets"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // ErrDefaultConflict means another default Integration already exists for the channel.
 var ErrDefaultConflict = errors.New("a default provider already exists for this channel")
 
 var errUnknownProvider = errors.New("unsupported provider")
-
-// ValidationError is a refused input: Field names the request field, Message is what to
-// show for it.
-type ValidationError struct {
-	Field   string
-	Message string
-}
-
-func (e *ValidationError) Error() string { return e.Message }
 
 // QuotaEnqueuer schedules a read of one Integration's provider send quota (ADR 0023).
 type QuotaEnqueuer interface {
@@ -257,7 +249,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 	// default first, in the same transaction as the update.
 	promote := in.IsDefault != nil && *in.IsDefault && !row.IsDefault
 	if promote && row.DiscardedAt != nil {
-		return nil, &ValidationError{Field: "isDefault", Message: i18n.T("errors.integration_archived_default", nil)}
+		return nil, &validation.Error{Field: "isDefault", Message: i18n.T("errors.integration_archived_default", nil)}
 	}
 
 	var updated *ent.Integration
@@ -298,7 +290,7 @@ func (m *Module) sealEditedConfig(row *ent.Integration, cfg *ConfigInput) (*stri
 		return nil, err
 	}
 	if provider.String() != row.Provider.String() {
-		return nil, &ValidationError{Field: "config", Message: i18n.T("errors.integration_kind_mismatch", nil)}
+		return nil, &validation.Error{Field: "config", Message: i18n.T("errors.integration_kind_mismatch", nil)}
 	}
 	prev, err := m.cipher.Decrypt(row.ConfigEncrypted)
 	if err != nil {
@@ -416,7 +408,7 @@ func validName(raw string) (string, error) {
 	name := strings.TrimSpace(raw)
 	if name == "" {
 		msg := i18n.T("errors.name_empty", nil)
-		return "", &ValidationError{Field: "name", Message: msg}
+		return "", &validation.Error{Field: "name", Message: msg}
 	}
 	return name, nil
 }
@@ -481,8 +473,8 @@ func (m *Module) encode(in ConfigInput) (integration.Provider, integration.Chann
 	return provider, integration.Channel(channel), plaintext, nil
 }
 
-func configError(err error) *ValidationError {
-	return &ValidationError{Field: "config", Message: err.Error()}
+func configError(err error) *validation.Error {
+	return &validation.Error{Field: "config", Message: err.Error()}
 }
 
 // mergeSecrets carries forward a stored secret that the client did not resupply. Secrets
@@ -529,8 +521,8 @@ func mergeSecrets(provider integration.Provider, next, prev []byte) ([]byte, err
 	return next, nil
 }
 
-func secretRequired() *ValidationError {
-	return &ValidationError{Field: "config", Message: i18n.T("errors.integration_secret_required", nil)}
+func secretRequired() *validation.Error {
+	return &validation.Error{Field: "config", Message: i18n.T("errors.integration_secret_required", nil)}
 }
 
 // RedactedConfig is the read-side provider config: no password, no secret key.

@@ -3,7 +3,7 @@
 // rule, and triggering a live verification. /site and /api are thin adapters over it.
 //
 // Handlers hand in a *ent.Scoped and domain-typed input (not their DTOs) and get back
-// the row or a domain error: ValidationError (a 422), ErrAlreadyExists (a 409), or
+// the row or a domain error: validation.Error (a 422), ErrAlreadyExists (a 409), or
 // ent's not-found for an unknown id. The DKIM private key never leaves the module:
 // callers see the public record only, through Records.
 //
@@ -33,6 +33,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/sending"
+	"github.com/getsphericon/sphericon/internal/validation"
 	"github.com/qmuntal/stateless"
 	"github.com/samber/lo"
 )
@@ -45,15 +46,6 @@ var ErrAlreadyExists = errors.New("this domain is already added")
 
 // selectorPattern is a DNS label sequence: letters, digits and hyphens, dot-separated.
 var selectorPattern = regexp.MustCompile(`^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*$`)
-
-// ValidationError is a refused input: Field names the request field, Message is what to
-// show for it.
-type ValidationError struct {
-	Field   string
-	Message string
-}
-
-func (e *ValidationError) Error() string { return e.Message }
 
 // VerifyEnqueuer schedules an immediate DKIM re-check of one Sending domain.
 type VerifyEnqueuer interface {
@@ -120,7 +112,7 @@ type UpdateInput struct {
 func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*ent.SendingDomain, error) {
 	domain, ok := sending.NormalizeDomain(in.Domain)
 	if !ok {
-		return nil, &ValidationError{Field: "domain", Message: i18n.T("errors.sending_domain_invalid", nil)}
+		return nil, &validation.Error{Field: "domain", Message: i18n.T("errors.sending_domain_invalid", nil)}
 	}
 	selector := DefaultSelector
 	if strings.TrimSpace(in.Selector) != "" {
@@ -384,7 +376,7 @@ func (m *Module) Records(d *ent.SendingDomain) DNSRecords {
 func validSelector(raw string) (string, error) {
 	sel := strings.ToLower(strings.TrimSpace(raw))
 	if !selectorPattern.MatchString(sel) {
-		return "", &ValidationError{Field: "dkimSelector", Message: i18n.T("errors.dkim_selector_invalid", nil)}
+		return "", &validation.Error{Field: "dkimSelector", Message: i18n.T("errors.dkim_selector_invalid", nil)}
 	}
 	return sel, nil
 }

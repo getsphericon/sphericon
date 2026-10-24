@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/preset"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // The inbound side of an Integration (ADR 0037): the Preset its provider callbacks are
@@ -60,7 +61,7 @@ func ParamsOf[M ~map[string]jx.Raw](raw M) (map[string]any, error) {
 	for k, v := range raw {
 		var x any
 		if err := json.Unmarshal(v, &x); err != nil {
-			return nil, &ValidationError{Field: "params", Message: err.Error()}
+			return nil, &validation.Error{Field: "params", Message: err.Error()}
 		}
 		out[k] = x
 	}
@@ -176,13 +177,13 @@ func (m *Module) sealInbound(row *ent.Integration, in inboundChange) (inbound, e
 	}
 	if name == nil {
 		if len(in.params) > 0 {
-			return inbound{}, &ValidationError{Field: "params", Message: i18n.T("errors.preset_params_without_preset", nil)}
+			return inbound{}, &validation.Error{Field: "params", Message: i18n.T("errors.preset_params_without_preset", nil)}
 		}
 		return inbound{apply: row != nil && changed}, nil
 	}
 	p, ok := m.presets.Get(*name)
 	if !ok {
-		return inbound{}, &ValidationError{Field: "preset", Message: i18n.T("errors.preset_unknown", map[string]any{"Name": *name})}
+		return inbound{}, &validation.Error{Field: "preset", Message: i18n.T("errors.preset_unknown", map[string]any{"Name": *name})}
 	}
 
 	var prev map[string]any
@@ -194,7 +195,7 @@ func (m *Module) sealInbound(row *ent.Integration, in inboundChange) (inbound, e
 	}
 	stored, plain := mergeParams(p, prev, in.params)
 	if err := p.ValidateParams(plain); err != nil {
-		return inbound{}, &ValidationError{Field: "params", Message: i18n.T("errors.preset_params_invalid", map[string]any{"Detail": err.Error()})}
+		return inbound{}, &validation.Error{Field: "params", Message: i18n.T("errors.preset_params_invalid", map[string]any{"Detail": err.Error()})}
 	}
 	if in.retireSecrets {
 		for _, s := range p.SecretParams() {

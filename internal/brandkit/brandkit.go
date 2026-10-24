@@ -13,22 +13,12 @@ import (
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/templates"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // ErrNotSaved means the Workspace has no saved Brand kit, so there is nothing to make starter
 // Templates from.
 var ErrNotSaved = errors.New("brandkit: the Brand kit is not saved yet")
-
-// ValidationError is a field of a save that cannot be written into a message: the kit's values
-// are inlined into the CSS and HTML of the starter documents, so they are checked strictly.
-type ValidationError struct {
-	// Field is the API field name, e.g. "accentColor".
-	Field string
-	// Message is the reason, in the instance locale.
-	Message string
-}
-
-func (e *ValidationError) Error() string { return e.Message }
 
 // Module reads and saves the Brand kit and makes the starter Templates from it. It holds no
 // Workspace: every call receives the Workspace-scoped client (ADR 0017).
@@ -84,7 +74,8 @@ func (m *Module) Lint(ctx context.Context, s *ent.Scoped, subject, body string) 
 // Save stores the Brand kit. The first save creates it and, in the same transaction, the starter
 // Templates in its brand; a later save replaces the values and creates nothing. No message
 // already written is read or written: the values were copied into each when it was authored.
-// An invalid value is a *ValidationError.
+// An invalid value is a *validation.Error: the kit's values are inlined into the CSS and HTML of the
+// starter documents, so they are checked strictly.
 func (m *Module) Save(ctx context.Context, s *ent.Scoped, in Input) (Kit, error) {
 	in, err := validate(in)
 	if err != nil {
@@ -271,7 +262,7 @@ func validate(in Input) (Input, error) {
 		{"buttonTextColor", &in.ButtonTextColor},
 	} {
 		if !hexColor.MatchString(*c.value) {
-			return in, &ValidationError{Field: c.field, Message: i18n.T("errors.brandkit_color", map[string]any{"Field": c.field})}
+			return in, &validation.Error{Field: c.field, Message: i18n.T("errors.brandkit_color", map[string]any{"Field": c.field})}
 		}
 		*c.value = strings.ToLower(*c.value)
 	}
@@ -280,14 +271,14 @@ func validate(in Input) (Input, error) {
 		value string
 	}{{"headingFont", in.HeadingFont}, {"bodyFont", in.BodyFont}} {
 		if !fontFamily.MatchString(f.value) {
-			return in, &ValidationError{Field: f.field, Message: i18n.T("errors.brandkit_font", map[string]any{"Field": f.field})}
+			return in, &validation.Error{Field: f.field, Message: i18n.T("errors.brandkit_font", map[string]any{"Field": f.field})}
 		}
 	}
 	if !validLogo(in.LogoURL) {
-		return in, &ValidationError{Field: "logoUrl", Message: i18n.T("errors.brandkit_logo", nil)}
+		return in, &validation.Error{Field: "logoUrl", Message: i18n.T("errors.brandkit_logo", nil)}
 	}
 	if !validFooter(in.FooterText) {
-		return in, &ValidationError{Field: "footerText", Message: i18n.T("errors.brandkit_footer", nil)}
+		return in, &validation.Error{Field: "footerText", Message: i18n.T("errors.brandkit_footer", nil)}
 	}
 	return in, nil
 }

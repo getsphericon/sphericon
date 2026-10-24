@@ -30,6 +30,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/ownernotice"
 	"github.com/getsphericon/sphericon/internal/sending"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // RecordLabel is the label the TXT record sits under: _sphericon-join.<domain>.
@@ -44,15 +45,6 @@ var (
 	// its record.
 	ErrHeldElsewhere = errors.New("another workspace has verified this domain")
 )
-
-// ValidationError is a refused input: Field names the request field, Message is what to
-// show for it.
-type ValidationError struct {
-	Field   string
-	Message string
-}
-
-func (e *ValidationError) Error() string { return e.Message }
 
 // Record is the DNS TXT record an Owner publishes to prove a domain.
 type Record struct {
@@ -90,13 +82,13 @@ func (m *Module) List(ctx context.Context, s *ent.Scoped) ([]*ent.JoinDomain, er
 }
 
 // Add stores a pending claim of the domain with a fresh token. The domain is canonicalized
-// (lower case, IDN as punycode); a malformed one is a *ValidationError, one the Workspace
+// (lower case, IDN as punycode); a malformed one is a *validation.Error, one the Workspace
 // already has is ErrAlreadyExists. Another Workspace's claim, pending or verified, never
 // blocks it.
 func (m *Module) Add(ctx context.Context, s *ent.Scoped, raw string) (*ent.JoinDomain, error) {
 	domain, ok := sending.NormalizeDomain(raw)
 	if !ok {
-		return nil, &ValidationError{Field: "domain", Message: i18n.T("errors.join_domain_invalid", nil)}
+		return nil, &validation.Error{Field: "domain", Message: i18n.T("errors.join_domain_invalid", nil)}
 	}
 	token := "sphericon-join=" + rand.Text()
 
