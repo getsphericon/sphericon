@@ -50,8 +50,10 @@ sequence stays an Automation. The Rule belongs to the core (AGPL), like Segment 
   (`inuse`). A Firing is analytical: it expires with the retention window (ADR 0019) and goes with
   its Contact on erasure (ADR 0021). A dry run on a stored Event shows what would fire and runs and
   writes nothing.
-- **Limits and access.** A cap on the Actions in one Rule and on the size of a Condition, none on
-  the number of Rules. Rules are Audited (ADR 0022) and edited by the roles that edit an Automation.
+- **Limits and access.** A cap on the Actions in one Rule (20, of which at most 5 call a URL) and on
+  the size of a Condition, none on the number of Rules. A Rule acts only on Events recorded at or
+  after its activation, so activating one never reaches back into the log; a dry run ignores that
+  and tries a draft. Rules are Audited (ADR 0022) and edited by the roles that edit an Automation.
   They are reachable on `/site` and the external API, and so on MCP (ADR 0016).
 - **Shape.** `internal/rules` takes a `*ent.Scoped` and holds no raw client; the shared tree and
   its compiler are one package used by Segment and Rule.

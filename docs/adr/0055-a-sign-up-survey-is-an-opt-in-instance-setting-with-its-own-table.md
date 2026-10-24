@@ -20,7 +20,9 @@ a new User's first sign-in, and keeps the answers on the Instance for a Staff me
   an Owner Membership (ADR 0030, 0043, 0048), so "has no Membership" would never be true. The two
   public sign-up paths (password, Sign-in provider) set a nullable "survey due" marker on the User
   when the survey is on. Invitation accept, `sphericon user create-owner`, join-domain admission
-  (ADR 0051) and Users that existed before the switch never set it. The column is additive and
+  (ADR 0051) and Users that existed before the switch never set it, and accepting an invitation or
+  being admitted by a join domain clears a marker an earlier public sign-up set: that User is an
+  invitee now. The column is additive and
   nullable (ADR 0033).
 - **Due is computed on the server.** The current-user resource carries a boolean, true only while
   the User has the marker and the Instance still asks the survey, so a switch turned off or a

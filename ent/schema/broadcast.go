@@ -13,7 +13,8 @@ import (
 
 // Broadcast is a workspace-scoped one-off email campaign. Its lifecycle is
 // draft -> scheduled -> sending -> sent (or failed). The body is authored as
-// HTML; body_text is derived for the plain-text part. Audience is the segment
+// HTML; the plain-text part is derived from the final HTML of each send (ADR 0056), and body_text
+// is a dead column that waits for a Major to be dropped (ADR 0033). Audience is the segment
 // when segment_id is set, otherwise all active contacts in the workspace.
 // Aggregate counters are denormalized for cheap reporting; per-recipient state
 // lives in BroadcastRecipient.
