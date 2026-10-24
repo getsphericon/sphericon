@@ -11,7 +11,7 @@
 // a change to the feed outside a transaction, where the position would be a separate
 // statement that a crash loses and a concurrent change commits out of order. The hook
 // reads Memberships of any Workspace to find the one a change belongs to, which is why
-// this package is on the closed list of raw-client packages in docs/agents/workspace-scoping.md.
+// this package is on the closed list of raw-client packages in docs/architecture.md.
 package workspacefeed
 
 import (

@@ -1,4 +1,4 @@
-// Package testwrites enforces rule 10 of docs/agents/review-rules.md: a test creates rows itself only
+// Package testwrites enforces rule 10 of docs/standards/review-rules.md: a test creates rows itself only
 // when creating them is the operation under test. A call to an ent `Create` or `CreateBulk` builder
 // (the raw client's, a transaction's or a scoped wrapper's) in a `_test.go` file must carry a comment
 // `// test writes: <why the write is the subject>` on the line above the statement that holds it, or

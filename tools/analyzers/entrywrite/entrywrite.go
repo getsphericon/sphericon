@@ -1,10 +1,10 @@
-// Package entrywrite enforces rule 5 of docs/agents/review-rules.md for writes: a handler of any surface,
+// Package entrywrite enforces rule 5 of docs/standards/review-rules.md for writes: a handler of any surface,
 // an MCP tool, a job or an event subscriber receives input and calls a domain module; it does not write
 // through ent itself. A write is a call that starts an ent mutation (Create, CreateBulk, Update,
 // UpdateOne, UpdateOneID, Delete, DeleteOne, DeleteOneID) or an upsert (OnConflict, OnConflictColumns,
 // OnConflictColumnsWhere) on a type of the ent package, which covers the raw client, a transaction and
 // the generated scoped wrappers (`*ent.Scoped` and its per-entity wrappers). Reads are allowed. The
-// raw-client packages listed in docs/agents/workspace-scoping.md are domain modules and are not entry points, so only the
+// raw-client packages listed in docs/architecture.md are domain modules and are not entry points, so only the
 // entry-point packages below are checked; test files are not. `ee/staff` holds the Staff surface's
 // handlers and its domain module in one package, so there only the methods of the handler types are
 // checked (`*Module` is the domain module).

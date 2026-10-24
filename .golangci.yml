@@ -151,7 +151,7 @@ linters:
           pkg: '^github\.com/getsphericon/sphericon/ent$'
           msg: entity-level Update() bypasses the workspace scope; use the scoped client's UpdateOneID (ADR 0017)
         - pattern: ^time\.Sleep$
-          msg: no sleeps; wait on the condition, take a clock, or call testhelper.Elapse inside a synctest bubble (CODING_STANDARDS.md)
+          msg: no sleeps; wait on the condition, take a clock, or call testhelper.Elapse inside a synctest bubble (docs/standards/coding-standards.md)
         - pattern: sql\.DB\)?\.(Exec|Query|QueryRow)(Context)?$
           msg: no direct SQL in tests; use ent (env.DB) or a testhelper abstraction (e.g. env.Outbox*)
     depguard:

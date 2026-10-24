@@ -1,7 +1,7 @@
 # Coding standards
 
 How the repo does things: mechanics, tools and conventions. The rules a change is reviewed against
-are in `docs/agents/review-rules.md`: read it too, and do not restate a rule here. How the repo is
+are in `docs/standards/review-rules.md`: read it too, and do not restate a rule here. How the repo is
 built, run and generated is in `AGENTS.md`; the vocabulary is in `GLOSSARY.md`.
 
 ## Code shape
@@ -25,7 +25,7 @@ built, run and generated is in `AGENTS.md`; the vocabulary is in `GLOSSARY.md`.
 
 ## Project checks
 
-Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs/agents/review-rules.md`).
+Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs/standards/review-rules.md`).
 
 - **Syntax only: an ast-grep rule** (`ast-grep/rules`, tests in `ast-grep/tests`, run by `mise run check:ast`).
 - **Needs Go types: an analyzer of our own** (`tools/analyzers`, its own Go module). It is a
@@ -70,7 +70,7 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   the Staff handlers and their domain module in one package, so only the methods of its handler types
   (`Handlers`, `ServiceHandlers`, `SecurityHandler`, `ServiceSecurityHandler`, `Surface`, `ServiceSurface`) are
   checked and `*Module` is the domain module; a new handler type there is added to `mixedPackages`. The write
-  goes into the domain module that owns the entity (the raw-client packages of `docs/agents/workspace-scoping.md`), which the entry
+  goes into the domain module that owns the entity (the raw-client packages of `docs/architecture.md`), which the entry
   point calls. The helpers the analyzers share about the generated package are in `tools/analyzers/entx`.
 - **Adding an analyzer.** (1) Create `tools/analyzers/<name>/` with `Analyzer` (see `noprint`) and report
   through `rule.Message`. (2) Write `<name>_test.go` with `analysistest.Run` and a test data package per

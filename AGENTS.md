@@ -49,7 +49,7 @@ mise run dev            # db:migrate (db:up first), then mise daemons start cadd
 mise run dev:down       # stop this checkout's dev stack (never the shared Postgres)
 mise run dev:restart    # dev:down, then dev
 mise run test           # creates the test DB, then `go test ./...` (packages in parallel)
-mise run check          # tsc + oxlint + oxfmt --check + knip + golangci-lint with our analyzers (tools/analyzers, see CODING_STANDARDS.md; incl. gofmt) + gitleaks + jactionlint + zizmor + links in the Markdown (lychee --offline)
+mise run check          # tsc + oxlint + oxfmt --check + knip + golangci-lint with our analyzers (tools/analyzers, see docs/standards/coding-standards.md; incl. gofmt) + gitleaks + jactionlint + zizmor + links in the Markdown (lychee --offline)
 mise run test:cover     # Go suite with coverage, fails under the total in .testcoverage.yml (nightly in CI)
 mise run check:vulns    # govulncheck (nightly in CI, not part of `check`)
 mise run fix            # i18n extract + oxlint --fix + tsp format + oxfmt + go fmt
@@ -67,23 +67,26 @@ mise run test -- ./internal/api/site -run TestSiteContactsRequireAuth
 
 Frontend tests: `mise run test:watch`.
 
-Rules for writing tests (what to assert, no direct SQL, no manual cleanup) are in `CODING_STANDARDS.md`.
+Rules for writing tests (what to assert, no direct SQL, no manual cleanup) are in `docs/standards/coding-standards.md`.
 
 ## Where the rules live
 
-The rules below are in the file for the directory or topic they bind; open it before you work there.
+The rules of the code are in `docs/`, read before you write or review:
 
-- Before you change TypeSpec, `ent/schema` or anything a generator writes: `docs/agents/codegen.md`
-  (the pipeline diagram, goverter).
-- In `ent/schema/` or `migrations/`: `ent/schema/AGENTS.md` (migrations, Squawk, schemalens).
-- In `src/`: `src/AGENTS.md` (generated client, routing, i18n, lint).
-- In `e2e/`: `e2e/AGENTS.md`. In Go tests: `internal/AGENTS.md` (fixtures, actors).
-- Before you touch code that queries the database, builds a `*ent.Scoped` or adds a package that
-  needs the ent client: `docs/agents/workspace-scoping.md` (the two closed lists).
-- For the API surfaces, sign-in, the Enterprise Edition, async work and email:
-  `docs/agents/backend-architecture.md`.
-- To run the dev stack, Postgres, ports, the heavy-task queue or the toolchain:
-  `docs/agents/dev-environment.md`.
+- `docs/architecture.md`, before you touch code that queries the database, builds a `*ent.Scoped` or adds
+  a package that needs the ent client (section "Workspace scoping", the two closed lists), and for the
+  API surfaces, sign-in, the Enterprise Edition, async work and email.
+- `docs/standards/review-rules.md`: the numbered rules every change is checked against; a check's message names
+  its number.
+- `docs/standards/coding-standards.md`: tests, plain-table schema, no custom CSS, theming, lint.
+
+The rules of a directory are in its own `AGENTS.md`, loaded when you work there: `ent/schema/`
+(migrations, Squawk, schemalens), `src/` (generated client, routing, i18n, lint), `e2e/`, and
+`internal/` (the Go test harness).
+
+How to run things is in `docs/agents/`: `codegen.md` (the pipeline diagram, goverter, read it
+before you change TypeSpec or `ent/schema`) and `dev-environment.md` (the dev stack, Postgres, ports,
+the heavy-task queue, the toolchain).
 
 The costliest of these rules, in short:
 
@@ -141,8 +144,8 @@ The rest of this file is for maintainers and the agents they run: how work lands
   and re-check after merging `main`: parallel branches pick the same one.
 - After changing TypeSpec or `ent/schema`, run `mise run generate` and commit the generated output.
 - Coding standards (tests, plain-table schema, no custom CSS, theming, lint) are in
-  `CODING_STANDARDS.md`: read it before writing code. The numbered review rules every change is
-  checked against are in `docs/agents/review-rules.md`.
+  `docs/standards/coding-standards.md`: read it before writing code. The numbered review rules every change is
+  checked against are in `docs/standards/review-rules.md`.
 - A commit made with an agent ends with the `Co-Authored-By:` trailer naming it: the agent wrote and
   reasoned about the change, and the trailer says so. Outside contributors may use `Co-Authored-By:` or
   `Assisted-by:`; the person who opens the pull request answers for the code either way.

@@ -24,7 +24,7 @@ import (
 
 // hooksHandler serves inbound provider callbacks (ADR 0037): POST /hooks/{key}. The key
 // belongs to one Integration and so names its Workspace. This is a composition root of
-// the scoped client (see docs/agents/workspace-scoping.md): it resolves the Integration by key with the raw
+// the scoped client (see docs/architecture.md): it resolves the Integration by key with the raw
 // client, then scopes to the Integration's Workspace.
 //
 // A Workspace in its deletion window takes no new data (ADR 0043): its keys answer 404.

@@ -1,5 +1,5 @@
 // Command contractcopy fails when Go, TypeScript or a fixture repeats an enum, a limit or a scope
-// that a TypeSpec declaration already holds (rule 6, docs/agents/review-rules.md).
+// that a TypeSpec declaration already holds (rule 6, docs/standards/review-rules.md).
 package main
 
 import (

@@ -51,7 +51,7 @@ func applyDomainJoin(ctx context.Context, tx *ent.Client, pub events.Publisher, 
 		return nil, err
 	}
 
-	// The scope of a Workspace the User has no session in: the closed list of docs/agents/workspace-scoping.md names
+	// The scope of a Workspace the User has no session in: the closed list of docs/architecture.md names
 	// this step, right after the Join domain row named the Workspace. It carries no actor, so
 	// the Membership insert is not audited on its own; the entry below is the one record.
 	ts := tx.Scoped(ws.ID)

@@ -2,7 +2,7 @@
 // Owner proves control of with a DNS TXT record so that, in a later step, Users with an
 // address on it can join the Workspace. /site is a thin adapter over it.
 //
-// It is one of the few holders of the raw *ent.Client (docs/agents/workspace-scoping.md): a domain is verified by
+// It is one of the few holders of the raw *ent.Client (docs/architecture.md): a domain is verified by
 // one Workspace across the Instance, so looking up who holds it, and moving it from the
 // Workspace that held it to the one that now proves it, happens before and across
 // Workspace scopes. Everything else goes through the caller's *ent.Scoped. The periodic

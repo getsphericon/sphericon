@@ -1,4 +1,4 @@
-// Package handmapper enforces rule 1 of docs/agents/review-rules.md: an ent entity becomes an API
+// Package handmapper enforces rule 1 of docs/standards/review-rules.md: an ent entity becomes an API
 // resource only through the generated goverter converter. A function that takes an ent entity and
 // returns a type of a generated API package (gen/...) is a hand-written mapper, unless it is a
 // helper the package registers with `goverter:extend` or a `goverter:map ... | helper` line, or a

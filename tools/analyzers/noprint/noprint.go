@@ -1,6 +1,6 @@
 // Package noprint is the sample analyzer that proves the check infrastructure: it refuses the
 // predeclared print and println, which write to stderr past the logger. It carries rule number 0,
-// the "infrastructure" rule; the first analyzer for a rule of docs/agents/review-rules.md is
+// the "infrastructure" rule; the first analyzer for a rule of docs/standards/review-rules.md is
 // written the same way and uses that rule's number.
 package noprint
 

@@ -1,4 +1,4 @@
-// Package statemoment enforces rule 7 of docs/agents/review-rules.md for a state kept as a moment
+// Package statemoment enforces rule 7 of docs/standards/review-rules.md for a state kept as a moment
 // (`verified_at`, `disabled_at`, `suspended_at`, `finalized_at`, `provider_quota_failed_at`): a field a background job moves on its own races with
 // users, so the move is a compare-and-swap, an update that matches only while the row is still in the
 // state it leaves. A write of such a field through an ent update builder must carry a `Where` on that
