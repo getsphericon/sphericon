@@ -817,7 +817,7 @@ func ruleActions(stored string) []siteapi.SiteRuleAction {
 func RuleActions(actions []siteapi.SiteRuleAction) []rules.Action {
 	return lo.Map(actions, func(a siteapi.SiteRuleAction, _ int) rules.Action {
 		return rules.Action{
-			Type: string(a.Type), Tag: a.Tag.Or(""), AutomationID: int64(a.AutomationId.Or(0)),
+			Type: rules.ActionType(a.Type), Tag: a.Tag.Or(""), AutomationID: int64(a.AutomationId.Or(0)),
 			ID: a.ID.Or(""), URL: a.URL.Or(""), Body: a.Body.Or(""),
 			Headers: lo.Map(a.Headers, func(h siteapi.SiteAutomationHttpHeader, _ int) httpcall.Header {
 				return httpcall.Header{Name: h.Name, Value: h.Value.Or("")}

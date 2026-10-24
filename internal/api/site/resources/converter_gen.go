@@ -615,7 +615,7 @@ func (c *ConverterImpl) linkclicksClicksToSiteapiSiteLinkClicks(source linkclick
 }
 func (c *ConverterImpl) rulesPlannedActionToSiteapiSiteRuleDryRunAction(source rules.PlannedAction) site.SiteRuleDryRunAction {
 	var siteapiSiteRuleDryRunAction site.SiteRuleDryRunAction
-	siteapiSiteRuleDryRunAction.Type = source.Type
+	siteapiSiteRuleDryRunAction.Type = string(source.Type)
 	siteapiSiteRuleDryRunAction.Summary = source.Summary
 	return siteapiSiteRuleDryRunAction
 }

@@ -46,14 +46,17 @@ const (
 	MaxConditionNodes = 50
 )
 
+// ActionType is the kind of an Action; its values are the contract's SiteRuleActionType.
+type ActionType string
+
 // The Action types. Each has a Runner (ActionRunners) that does it.
 const (
-	ActionApplyTag  = "apply_tag"
-	ActionRemoveTag = "remove_tag"
+	ActionApplyTag  ActionType = "apply_tag"
+	ActionRemoveTag ActionType = "remove_tag"
 	// ActionEnroll enrolls the Contact in an Automation (once ever, ADR 0046).
-	ActionEnroll = "enroll_automation"
+	ActionEnroll ActionType = "enroll_automation"
 	// ActionHTTP calls a URL with a body rendered for the Contact and the Event.
-	ActionHTTP = "http"
+	ActionHTTP ActionType = "http"
 )
 
 // MaxHTTPActionsPerRule keeps one Rule from queueing an unbounded number of outbound calls.
@@ -73,7 +76,7 @@ var (
 
 // Action is one Action of a Rule as stored: its type and the parameters of that type.
 type Action struct {
-	Type string `json:"type"`
+	Type ActionType `json:"type"`
 	// Tag is the Tag name of apply_tag and remove_tag.
 	Tag string `json:"tag,omitempty"`
 	// AutomationID is the Automation enroll_automation enrolls the Contact in.
@@ -92,6 +95,16 @@ type Action struct {
 	ClearSecret bool              `json:"-"`
 }
 
+// NamesTag reports whether the Action applies or removes the Tag.
+func (a Action) NamesTag(name string) bool {
+	return (a.Type == ActionApplyTag || a.Type == ActionRemoveTag) && a.Tag == name
+}
+
+// EnrollsInto reports whether the Action enrolls Contacts in the Automation.
+func (a Action) EnrollsInto(automationID int64) bool {
+	return a.Type == ActionEnroll && a.AutomationID == automationID
+}
+
 // Outcome is how one Action ended.
 type Outcome string
 
@@ -108,9 +121,9 @@ const (
 
 // Result is what one Action did, as stored on its Firing.
 type Result struct {
-	Type   string  `json:"type"`
-	Status Outcome `json:"status"`
-	Detail string  `json:"detail,omitempty"`
+	Type   ActionType `json:"type"`
+	Status Outcome    `json:"status"`
+	Detail string     `json:"detail,omitempty"`
 
 	// Job is set by a Runner that hands the Action to a job (Status Pending): Record queues it, with
 	// the options its args declare, in the transaction that records the Pending result. It is
@@ -136,7 +149,7 @@ type Runner interface {
 }
 
 // ActionRunners maps an Action type to the Runner that does it.
-type ActionRunners map[string]Runner
+type ActionRunners map[ActionType]Runner
 
 // Module is the one place a Rule is written, validated, evaluated and run.
 type Module struct {
@@ -347,9 +360,7 @@ func UsingTag(ctx context.Context, s *ent.Scoped, name string) ([]*ent.Rule, err
 			return true
 		}
 		actions, err := DecodeActions(r.Actions)
-		return err == nil && slices.ContainsFunc(actions, func(a Action) bool {
-			return (a.Type == ActionApplyTag || a.Type == ActionRemoveTag) && a.Tag == name
-		})
+		return err == nil && slices.ContainsFunc(actions, func(a Action) bool { return a.NamesTag(name) })
 	}), nil
 }
 
@@ -806,9 +817,7 @@ func EnrollingInto(ctx context.Context, s *ent.Scoped, automationID int64) ([]*e
 		if err != nil {
 			return nil, err
 		}
-		if slices.ContainsFunc(actions, func(a Action) bool {
-			return a.Type == ActionEnroll && a.AutomationID == automationID
-		}) {
+		if slices.ContainsFunc(actions, func(a Action) bool { return a.EnrollsInto(automationID) }) {
 			using = append(using, r)
 		}
 	}

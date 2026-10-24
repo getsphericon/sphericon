@@ -555,7 +555,7 @@ func ruleActions(stored string) []externalapi.RuleAction {
 func RuleActions(actions []externalapi.RuleAction) []rules.Action {
 	return lo.Map(actions, func(a externalapi.RuleAction, _ int) rules.Action {
 		return rules.Action{
-			Type: string(a.Type), Tag: a.Tag.Or(""), AutomationID: int64(a.AutomationId.Or(0)),
+			Type: rules.ActionType(a.Type), Tag: a.Tag.Or(""), AutomationID: int64(a.AutomationId.Or(0)),
 			ID: a.ID.Or(""), URL: a.URL.Or(""), Body: a.Body.Or(""),
 			Headers: lo.Map(a.Headers, func(h externalapi.AutomationHttpHeader, _ int) httpcall.Header {
 				return httpcall.Header{Name: h.Name, Value: h.Value.Or("")}

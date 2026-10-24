@@ -29,7 +29,7 @@ const (
 // PlannedAction is one Action a Rule would run, described for a person: its type and a one-line
 // summary. A new Action kind needs only a case in Summary; an unknown one shows its type.
 type PlannedAction struct {
-	Type    string
+	Type    ActionType
 	Summary string
 }
 
@@ -53,7 +53,7 @@ func (a Action) Summary() string {
 		// The URL is stored sealed and may carry a secret: never described here.
 		return "Call an HTTP endpoint"
 	default:
-		return a.Type
+		return string(a.Type)
 	}
 }
 

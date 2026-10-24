@@ -462,7 +462,7 @@ func (c *ConverterImpl) WebhookToResource(source *ent.WebhookEndpoint) external.
 }
 func (c *ConverterImpl) rulesPlannedActionToExternalapiRuleDryRunAction(source rules.PlannedAction) external.RuleDryRunAction {
 	var externalapiRuleDryRunAction external.RuleDryRunAction
-	externalapiRuleDryRunAction.Type = source.Type
+	externalapiRuleDryRunAction.Type = string(source.Type)
 	externalapiRuleDryRunAction.Summary = source.Summary
 	return externalapiRuleDryRunAction
 }
