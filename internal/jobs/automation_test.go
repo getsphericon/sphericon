@@ -32,6 +32,8 @@ func drive(t *testing.T, env *testhelper.TestEnv, resolver outbound.Senders, run
 		if res.Done {
 			return
 		}
+		// The queue would run the next step at ResumeAt: let that time pass.
+		env.DB.AutomationRun.UpdateOneID(runID).ClearResumeAt().ExecX(ctx)
 	}
 	t.Fatal("run did not finish within cap")
 }
@@ -45,7 +47,7 @@ func triggerOf(t *testing.T, env *testhelper.TestEnv, automationID int64) string
 // enrollVia enrolls the Contact through the Automation's own trigger and returns its one run.
 func enrollVia(t *testing.T, env *testhelper.TestEnv, automationID, contactID int64) int64 {
 	t.Helper()
-	runIDs, err := jobs.EvaluateTrigger(context.Background(), env.DB.Scoped(fixtures.AcmeID), contactID, triggerOf(t, env, automationID), 0)
+	runIDs, err := jobs.EvaluateTrigger(context.Background(), env.Bus, env.DB.Scoped(fixtures.AcmeID), contactID, triggerOf(t, env, automationID), 0)
 	require.NoError(t, err)
 	require.Len(t, runIDs, 1)
 	return runIDs[0]
@@ -58,7 +60,7 @@ func TestAutomationEnrollAndRun(t *testing.T) {
 	runID := enrollVia(t, env, fixtures.AutomationJobsGreetingID, alice.ID)
 
 	// Enroll-once: a second matching event creates no new run.
-	again, err := jobs.EvaluateTrigger(ctx, env.DB.Scoped(fixtures.AcmeID), alice.ID, triggerOf(t, env, fixtures.AutomationJobsGreetingID), 0)
+	again, err := jobs.EvaluateTrigger(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), alice.ID, triggerOf(t, env, fixtures.AutomationJobsGreetingID), 0)
 	require.NoError(t, err)
 	assert.Empty(t, again)
 
@@ -144,7 +146,7 @@ func TestAutomationInactiveDoesNotEnroll(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	runIDs, err := jobs.EvaluateTrigger(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID, triggerOf(t, env, fixtures.AutomationWinBackID), 0)
+	runIDs, err := jobs.EvaluateTrigger(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID, triggerOf(t, env, fixtures.AutomationWinBackID), 0)
 	require.NoError(t, err)
 	assert.Empty(t, runIDs, "the win-back automation is a draft")
 }
@@ -162,6 +164,26 @@ func TestAutomationWaitDefersNextStep(t *testing.T) {
 	require.NotNil(t, res.ResumeAt)
 	assert.NotNil(t, env.DB.AutomationRun.GetX(ctx, runID).ResumeAt)
 	assert.Empty(t, fs.sent)
+}
+
+// A wait step whose follow-up job failed to queue is run again: the retry finds the wait already
+// recorded and does not run the next step before its resume time.
+func TestRetriedWaitStepDoesNotRunTheNextStepBeforeTheResumeTime(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	runID := enrollVia(t, env, fixtures.AutomationJobsWaitFirstID, fixtures.ContactAliceID)
+	fs := &fakeSender{}
+	mod := newMod(env, resolvingTo(fs))
+
+	_, err := jobs.RunStep(ctx, env.DB, noFence, mod, runID)
+	require.NoError(t, err)
+	_, err = jobs.RunStep(ctx, env.DB, noFence, mod, runID)
+	require.NoError(t, err)
+
+	assert.Empty(t, fs.sent, "the email after the wait is not sent before the resume time")
+	run := env.DB.AutomationRun.GetX(ctx, runID)
+	assert.Equal(t, 1, run.CurrentStep, "the Enrollment stays on the step after the wait")
+	assert.Equal(t, automationrun.StatusActive, run.Status)
 }
 
 // A hold on the source (here: a suspended Workspace) leaves the enrollment exactly
@@ -301,11 +323,11 @@ func TestAnAutomationIsNotStartedByItsOwnEmail(t *testing.T) {
 	ctx := t.Context()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 
-	own, err := jobs.EvaluateTrigger(ctx, acme, fixtures.ContactAliceID, events.NameEmailOpened, fixtures.AutomationOnOpenID)
+	own, err := jobs.EvaluateTrigger(ctx, env.Bus, acme, fixtures.ContactAliceID, events.NameEmailOpened, fixtures.AutomationOnOpenID)
 	require.NoError(t, err)
 	assert.Empty(t, own, "the open of its own email enrolls nobody")
 
-	other, err := jobs.EvaluateTrigger(ctx, acme, fixtures.ContactAliceID, events.NameEmailOpened, fixtures.AutomationWelcomeSeriesID)
+	other, err := jobs.EvaluateTrigger(ctx, env.Bus, acme, fixtures.ContactAliceID, events.NameEmailOpened, fixtures.AutomationWelcomeSeriesID)
 	require.NoError(t, err)
 	assert.Len(t, other, 1, "the open of another Automation's email starts On open")
 }

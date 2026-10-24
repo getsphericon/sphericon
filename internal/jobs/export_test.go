@@ -87,8 +87,8 @@ func NewPruneEventsWorker(client *ent.Client, retention time.Duration) *PruneEve
 	return &PruneEventsWorker{ent: client, retention: retention}
 }
 
-func NewEvaluateTriggerWorker(client *ent.Client) *EvaluateTriggerWorker {
-	return &EvaluateTriggerWorker{ent: client}
+func NewEvaluateTriggerWorker(client *ent.Client, bus *events.Bus) *EvaluateTriggerWorker {
+	return &EvaluateTriggerWorker{ent: client, bus: bus}
 }
 
 func NewRunStepWorker(client *ent.Client, fence automations.Fencer, mod *outbound.Module) *RunStepWorker {

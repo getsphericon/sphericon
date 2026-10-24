@@ -96,13 +96,13 @@ func TestArchivedAutomationEnrollsNobody(t *testing.T) {
 
 	_, err := archiveAutomation(c, id)
 	require.NoError(t, err)
-	enrolled, err := jobs.EvaluateTrigger(ctx, acme, fixtures.ContactAliceID, "hold_demo", 0)
+	enrolled, err := jobs.EvaluateTrigger(ctx, env.Bus, acme, fixtures.ContactAliceID, "hold_demo", 0)
 	require.NoError(t, err)
 	assert.Empty(t, enrolled)
 
 	_, err = c.SiteAutomationsUnarchive(ctx, siteapi.SiteAutomationsUnarchiveParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(id)})
 	require.NoError(t, err)
-	enrolled, err = jobs.EvaluateTrigger(ctx, acme, fixtures.ContactAliceID, "hold_demo", 0)
+	enrolled, err = jobs.EvaluateTrigger(ctx, env.Bus, acme, fixtures.ContactAliceID, "hold_demo", 0)
 	require.NoError(t, err)
 	assert.Len(t, enrolled, 1)
 }

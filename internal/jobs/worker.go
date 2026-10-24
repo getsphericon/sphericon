@@ -80,7 +80,7 @@ func NewClient(riverDB *sql.DB, entClient *ent.Client, mod *outbound.Module, cip
 	workers := river.NewWorkers()
 	river.AddWorker(workers, &SendBroadcastWorker{ent: entClient, del: broadcasts.NewDelivery(mod)})
 	river.AddWorker(workers, &SendRecipientWorker{ent: entClient, del: broadcasts.NewDelivery(mod)})
-	river.AddWorker(workers, &EvaluateTriggerWorker{ent: entClient})
+	river.AddWorker(workers, &EvaluateTriggerWorker{ent: entClient, bus: bus})
 	river.AddWorker(workers, &RunStepWorker{ent: entClient, mod: mod, fence: automations.FenceOn(entClient)})
 	ruleMod := rules.New(cipher, bus)
 	river.AddWorker(workers, &EvaluateRulesWorker{ent: entClient, mod: ruleMod})

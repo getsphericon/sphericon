@@ -559,10 +559,10 @@ func TestEvaluateTriggerAndRunStepWorkers(t *testing.T) {
 	c := e.DB.Contact.GetX(ctx, fixtures.ContactLiamID)
 	trigger := triggerOf(t, e.TestEnv, fixtures.AutomationJobsGreetingID)
 
-	require.NoError(t, jobs.NewEvaluateTriggerWorker(e.DB).Work(ctx, job(jobs.EvaluateTriggerArgs{
+	require.NoError(t, jobs.NewEvaluateTriggerWorker(e.DB, e.Bus).Work(ctx, job(jobs.EvaluateTriggerArgs{
 		WorkspaceID: fixtures.AcmeID, ContactID: c.ID, Action: trigger,
 	})))
-	require.Equal(t, []string{"automation_run_step"}, e.queued(t))
+	require.Len(t, e.JobsOf(t, jobs.RunStepArgs{}.Kind()), 1, "the Enrollment is queued with its first step")
 	run := e.DB.AutomationRun.Query().Where(automationrun.AutomationID(fixtures.AutomationJobsGreetingID), automationrun.ContactID(c.ID)).OnlyX(ctx)
 
 	// Step 1 sends and schedules the next step; the wait step schedules a delayed
@@ -570,18 +570,52 @@ func TestEvaluateTriggerAndRunStepWorkers(t *testing.T) {
 	w := jobs.NewRunStepWorker(e.DB, noFence, newMod(e.TestEnv, resolvingTo(e.sender)))
 	require.NoError(t, w.Work(ctx, job(jobs.RunStepArgs{RunID: run.ID})))
 	assert.Len(t, e.sender.sent, 1)
-	assert.Len(t, e.queued(t), 2)
+	assert.Len(t, e.queued(t), 1)
 	require.NoError(t, w.Work(ctx, job(jobs.RunStepArgs{RunID: run.ID})))
-	assert.Len(t, e.queued(t), 3, "the wait step queues a delayed follow-up")
+	assert.Len(t, e.queued(t), 2, "the wait step queues a delayed follow-up")
+	e.DB.AutomationRun.UpdateOneID(run.ID).ClearResumeAt().ExecX(ctx) // the follow-up's time has come
 	require.NoError(t, w.Work(ctx, job(jobs.RunStepArgs{RunID: run.ID})))
 	assert.Len(t, e.sender.sent, 2)
-	assert.Len(t, e.queued(t), 4)
+	assert.Len(t, e.queued(t), 3)
 	require.NoError(t, w.Work(ctx, job(jobs.RunStepArgs{RunID: run.ID})))
 	assert.Equal(t, automationrun.StatusCompleted, e.DB.AutomationRun.GetX(ctx, run.ID).Status)
-	assert.Len(t, e.queued(t), 4, "a finished run queues nothing")
+	assert.Len(t, e.queued(t), 3, "a finished run queues nothing")
 
 	// An unknown run (erased with its Contact) is finished, not retried.
 	require.NoError(t, w.Work(ctx, job(jobs.RunStepArgs{RunID: 424242})))
+}
+
+// failingQueue is a job queue that cannot take the job.
+type failingQueue struct{ err error }
+
+func (q failingQueue) InsertTx(context.Context, *sql.Tx, river.JobArgs, *river.InsertOpts) (*rivertype.JobInsertResult, error) {
+	return nil, q.err
+}
+
+// The Enrollment and the job that starts stepping it commit together: when the queue refuses the
+// first step, no Enrollment is left behind, so the trigger's retry enrolls and queues it.
+func TestEvaluateTriggerRetryAfterTheFirstStepFailedToQueueLeavesAQueuedEnrollment(t *testing.T) {
+	e := newRiverEnv(t)
+	ctx := e.workCtx()
+	args := jobs.EvaluateTriggerArgs{
+		WorkspaceID: fixtures.AcmeID,
+		ContactID:   fixtures.ContactLiamID,
+		Action:      triggerOf(t, e.TestEnv, fixtures.AutomationJobsGreetingID),
+	}
+	realQueue, err := jobs.NewInserter(e.SQLDB)
+	require.NoError(t, err)
+	w := jobs.NewEvaluateTriggerWorker(e.DB, e.Bus)
+
+	e.Bus.UseJobs(failingQueue{err: errors.New("queue is down")})
+	require.Error(t, w.Work(ctx, job(args)), "the trigger fails when its first step cannot be queued")
+	e.Bus.UseJobs(realQueue)
+	require.NoError(t, w.Work(ctx, job(args)))
+
+	runs := e.DB.AutomationRun.Query().Where(automationrun.AutomationID(fixtures.AutomationJobsGreetingID), automationrun.ContactID(fixtures.ContactLiamID)).AllX(ctx)
+	require.Len(t, runs, 1)
+	queued := e.JobsOf(t, jobs.RunStepArgs{}.Kind())
+	require.Len(t, queued, 1, "the Enrollment has its first step queued")
+	assert.EqualValues(t, runs[0].ID, queued[0]["run_id"])
 }
 
 func TestBroadcastWorkers(t *testing.T) {

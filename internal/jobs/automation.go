@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/internal/automations"
+	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/jobkind"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/tags"
@@ -33,6 +34,7 @@ type EvaluateTriggerWorker struct {
 	river.WorkerDefaults[EvaluateTriggerArgs]
 
 	ent *ent.Client
+	bus *events.Bus
 }
 
 func (w *EvaluateTriggerWorker) Work(ctx context.Context, job *river.Job[EvaluateTriggerArgs]) error {
@@ -48,26 +50,18 @@ func (w *EvaluateTriggerWorker) Work(ctx context.Context, job *river.Job[Evaluat
 	if c.WorkspaceID != job.Args.WorkspaceID {
 		return nil // stale or forged job args; never enroll across Workspaces
 	}
-	runIDs, err := EvaluateTrigger(ctx, w.ent.Scoped(c.WorkspaceID), c.ID, job.Args.Action, job.Args.SourceAutomationID)
-	if err != nil {
-		return err
-	}
-	rc := river.ClientFromContext[*sql.Tx](ctx)
-	for _, id := range runIDs {
-		if _, err := rc.Insert(ctx, RunStepArgs{RunID: id}, nil); err != nil {
-			return err
-		}
-	}
-	return nil
+	_, err = EvaluateTrigger(ctx, w.bus, w.ent.Scoped(c.WorkspaceID), c.ID, job.Args.Action, job.Args.SourceAutomationID)
+	return err
 }
 
 // EvaluateTrigger enrolls a contact into every active automation in the workspace
-// whose trigger_event matches action, creating one AutomationRun each (enroll-
-// once-ever via the unique index). Returns the new run IDs to advance. Pure (no
-// queue) so it can be tested directly. An Event from an Automation's own email (sourceAutomationID)
-// never enrolls the Contact into that Automation, so an open-triggered Automation cannot feed itself
-// (ADR 0053).
-func EvaluateTrigger(ctx context.Context, s *ent.Scoped, contactID int64, action string, sourceAutomationID int64) ([]int64, error) {
+// whose trigger_event matches action: one AutomationRun each (enroll-once-ever via the
+// unique index), committed together with the job that starts stepping it, so a failed
+// queue insert leaves no Enrollment that nothing will move and a retry starts over. A
+// Contact already enrolled keeps its run and its job. Returns the new run IDs. An Event
+// from an Automation's own email (sourceAutomationID) never enrolls the Contact into that
+// Automation, so an open-triggered Automation cannot feed itself (ADR 0053).
+func EvaluateTrigger(ctx context.Context, bus *events.Bus, s *ent.Scoped, contactID int64, action string, sourceAutomationID int64) ([]int64, error) {
 	autos, err := s.Automation().Query().
 		Where(
 			automation.StatusEQ(automation.StatusActive),
@@ -83,14 +77,17 @@ func EvaluateTrigger(ctx context.Context, s *ent.Scoped, contactID int64, action
 		if a.ID == sourceAutomationID {
 			continue
 		}
-		runID, enrolled, err := automations.Enroll(ctx, s, a.ID, contactID)
+		err := bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, q events.Enqueuer) error {
+			runID, enrolled, err := automations.Enroll(ctx, ts, a.ID, contactID)
+			if err != nil || !enrolled {
+				return err
+			}
+			runIDs = append(runIDs, runID)
+			return q.Enqueue(ctx, RunStepArgs{RunID: runID}, nil)
+		})
 		if err != nil {
 			return nil, err
 		}
-		if !enrolled {
-			continue
-		}
-		runIDs = append(runIDs, runID)
 	}
 	return runIDs, nil
 }
@@ -181,6 +178,12 @@ func RunStep(ctx context.Context, client *ent.Client, fence automations.Fencer, 
 	steps, err := automations.Decode(version.Steps)
 	if err != nil {
 		return failRun(ctx, scoped, run.ID, fmt.Errorf("automation %d version %d steps: %w", a.ID, version.Version, err))
+	}
+
+	// A step that runs before the recorded resume time (a retried wait) queues itself for that
+	// time and does nothing else.
+	if run.ResumeAt != nil && run.ResumeAt.After(time.Now()) {
+		return StepResult{ResumeAt: run.ResumeAt}, nil
 	}
 
 	if run.CurrentStep >= len(steps) {
