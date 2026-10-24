@@ -15,13 +15,10 @@ var ErrUnknownZone = errors.New("unknown time zone")
 // Format is the layout of a Report day's label.
 const Format = "2006-01-02"
 
-// UTC is the name of the zone a Workspace reports in until an Owner sets another.
-const UTC = "UTC"
-
 // Name is the zone name a Workspace's timezone column stands for: UTC while unset.
 func Name(name *string) string {
 	if name == nil {
-		return UTC
+		return "UTC"
 	}
 	return *name
 }

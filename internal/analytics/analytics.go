@@ -68,13 +68,30 @@ type Point struct {
 
 // Module computes Overviews. Its clock is time.Now.
 type Module struct {
-	now func() time.Time
+	now       func() time.Time
+	retention time.Duration
 }
 
 func New() *Module { return &Module{now: time.Now} }
 
 // WithClock returns the module reading now from the given clock.
-func (m *Module) WithClock(now func() time.Time) *Module { return &Module{now: now} }
+func (m *Module) WithClock(now func() time.Time) *Module {
+	c := *m
+	c.now = now
+	return &c
+}
+
+// WithRetention returns the module that reports d as the Event retention (config.EventsRetention):
+// the age past which Events are deleted, 0 when they are kept forever.
+func (m *Module) WithRetention(d time.Duration) *Module {
+	c := *m
+	c.retention = d
+	return &c
+}
+
+// RetentionDays is the Event retention in whole days, which a report over history states next
+// to its figures.
+func (m *Module) RetentionDays() int { return int(m.retention / (24 * time.Hour)) }
 
 // days is the trailing Report-day window of w days for the Workspace behind s, read in its
 // time zone; every report of the module cuts its window here.

@@ -3,14 +3,13 @@ import { useQuery } from '@tanstack/react-query'
 import { DataTable } from 'mantine-datatable'
 import { useTranslation } from 'react-i18next'
 
-import { ApiErrorAlert } from '../../../components/ApiErrorAlert.tsx'
 import { AnchorLink } from '../../../components/RouterLink.tsx'
-import { BlockSkeleton } from '../../../components/Skeletons.tsx'
 import { siteAnalyticsEventsOptions } from '../../../generated/site/@tanstack/react-query.gen.ts'
 import { useAnalyticsRange } from '../../../hooks/useAnalyticsRange.ts'
 import { Route as eventsRoute } from '../../../routes/workspaces/$workspaceId/analytics/events.tsx'
 import { Route as recentActivityRoute } from '../../../routes/workspaces/$workspaceId/analytics/recent-activity.tsx'
 import { formatDateTime } from '../../../utils/datetime.ts'
+import { ReportState } from './ReportState.tsx'
 
 // EventsReportPage is the Events report: every action of the section's window with how often it
 // happened, for how many Contacts and when it last did. An action opens Recent activity on it.
@@ -26,15 +25,7 @@ export function EventsReportPage() {
 
   return (
     <Stack>
-      {eventsQuery.isLoading && <BlockSkeleton />}
-
-      {eventsQuery.isError && (
-        <ApiErrorAlert
-          error={eventsQuery.error}
-          title={t(($) => $.analytics.events.loadError)}
-          fallback={t(($) => $.analytics.events.loadError)}
-        />
-      )}
+      <ReportState query={eventsQuery} errorMessage={t(($) => $.analytics.events.loadError)} />
 
       {eventsQuery.data &&
         (actions.length === 0 ? (

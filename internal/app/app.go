@@ -1367,8 +1367,12 @@ func registerContent(injector do.Injector) {
 		return eventlog.New(bus.Bus, eventlog.LivePolicy{Window: cfg.EventLiveWindow, Now: time.Now}), nil
 	})
 
-	do.Provide(injector, func(do.Injector) (*analytics.Module, error) {
-		return analytics.New(), nil
+	do.Provide(injector, func(i do.Injector) (*analytics.Module, error) {
+		cfg, err := do.Invoke[*config.Config](i)
+		if err != nil {
+			return nil, err
+		}
+		return analytics.New().WithRetention(cfg.EventsRetention), nil
 	})
 
 	do.Provide(injector, func(do.Injector) (*reputation.Module, error) {
@@ -1617,7 +1621,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		SignupSurvey: survey,
 		Instance:     inst,
 		Deletion:     deletion,
-		AccountLink:  accountLink, Holds: edition.Holds(), AbuseWatch: edition.AbuseWatch(), SupportEmail: cfg.SupportEmail, MCPURL: cfg.MCPOrigin(), EventsRetention: cfg.EventsRetention,
+		AccountLink:  accountLink, Holds: edition.Holds(), AbuseWatch: edition.AbuseWatch(), SupportEmail: cfg.SupportEmail, MCPURL: cfg.MCPOrigin(),
 		Accounts: acc, Attempts: attempts, OAuth: oauthserver.NewService(client.Client, oauthserver.NewFetcher(cfg.OutboundAllow)), Bus: bus.Bus, Webhooks: wh, Outbound: sender.Module,
 		Segments: seg, EventLog: evlog, Contacts: con, Erasure: er, Tags: tg, Templates: tpl, BrandKit: bk, Automations: auto, Rules: rl,
 		Broadcasts: bc, Welcome: jc.Client, SysMail: jc.Client, SendingDomains: sd, JoinDomains: jd, Integrations: integ,

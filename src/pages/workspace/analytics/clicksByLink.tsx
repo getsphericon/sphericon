@@ -2,15 +2,14 @@ import { Alert, EmptyState, Group, Stack, Table, Text } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
-import { ApiErrorAlert } from '../../../components/ApiErrorAlert.tsx'
 import { AnchorLink } from '../../../components/RouterLink.tsx'
-import { BlockSkeleton } from '../../../components/Skeletons.tsx'
 import { siteAnalyticsClicksByLinkOptions } from '../../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteAnalyticsLinkOwner } from '../../../generated/site/types.gen.ts'
 import { useAnalyticsRange } from '../../../hooks/useAnalyticsRange.ts'
 import { Route as clicksByLinkRoute } from '../../../routes/workspaces/$workspaceId/analytics/clicks-by-link.tsx'
 import { Route as automationRoute } from '../../../routes/workspaces/$workspaceId/automations/$automationId/index.tsx'
 import { Route as broadcastReportRoute } from '../../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/report.tsx'
+import { ReportState } from './ReportState.tsx'
 
 // The window is `<days>d`; the retention note compares its days with the instance's retention.
 function windowDays(range: string): number {
@@ -48,15 +47,7 @@ export function ClicksByLinkPage() {
 
   return (
     <Stack>
-      {reportQuery.isLoading && <BlockSkeleton />}
-
-      {reportQuery.isError && (
-        <ApiErrorAlert
-          error={reportQuery.error}
-          title={t(($) => $.analytics.loadError)}
-          fallback={t(($) => $.analytics.loadError)}
-        />
-      )}
+      <ReportState query={reportQuery} />
 
       {report && retentionDays > 0 && retentionDays < windowDays(range) && (
         <Alert color="yellow">

@@ -3,13 +3,12 @@ import { Alert, EmptyState, SimpleGrid, Stack, Text, Title } from '@mantine/core
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
-import { ApiErrorAlert } from '../../../components/ApiErrorAlert.tsx'
-import { BlockSkeleton } from '../../../components/Skeletons.tsx'
 import { StatCard } from '../../../components/StatCard.tsx'
 import { siteAnalyticsOverviewOptions } from '../../../generated/site/@tanstack/react-query.gen.ts'
 import { useAnalyticsRange } from '../../../hooks/useAnalyticsRange.ts'
 import { Route as emailMetricsRoute } from '../../../routes/workspaces/$workspaceId/analytics/email-metrics.tsx'
 import { formatPercent } from '../../../utils/percent.ts'
+import { ReportState } from './ReportState.tsx'
 
 // EmailMetricsPage is the Email metrics report: KPI cards and charts for the section's window.
 export function EmailMetricsPage() {
@@ -25,15 +24,7 @@ export function EmailMetricsPage() {
 
   return (
     <Stack>
-      {analyticsQuery.isLoading && <BlockSkeleton />}
-
-      {analyticsQuery.isError && (
-        <ApiErrorAlert
-          error={analyticsQuery.error}
-          title={t(($) => $.analytics.loadError)}
-          fallback={t(($) => $.analytics.loadError)}
-        />
-      )}
+      <ReportState query={analyticsQuery} />
 
       {abuseWarning && (
         <Alert color="yellow" title={t(($) => $.analytics.abuseWarning.title)}>

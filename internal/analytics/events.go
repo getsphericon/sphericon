@@ -38,20 +38,13 @@ func (m *Module) Events(ctx context.Context, s *ent.Scoped, w Window) ([]EventAc
 	err = s.Event().Query().
 		Modify(func(sel *sql.Selector) {
 			events.HumanOnly(sel)
-			// raw sql: an Event's moment is occurred_at falling back to created_at, which ent's
-			// predicates and aggregates cannot express as one expression.
-			moment := "COALESCE(" + sel.C(event.FieldOccurredAt) + ", " + sel.C(event.FieldCreatedAt) + ")"
-			// raw sql: the window bounds compare that same coalesced expression, bound as arguments.
-			sel.Where(sql.P(func(b *sql.Builder) {
-				b.WriteString(moment).WriteString(" >= ").Arg(days.Since).
-					WriteString(" AND ").WriteString(moment).WriteString(" < ").Arg(days.Until)
-			}))
+			events.MomentBetween(sel, days.Since, days.Until)
 			action := sel.C(event.FieldAction)
 			sel.Select(
 				sql.As(action, "action"),
 				sql.As(sql.Count("*"), "count"),
 				sql.As(sql.Count(sql.Distinct(sel.C(event.FieldContactID))), "contacts"),
-				sql.As("MAX("+moment+")", "last_at"),
+				sql.As("MAX("+events.Moment(sel)+")", "last_at"),
 			).GroupBy(action)
 			// raw sql: order by the aggregate's alias, which ent's order terms cannot name here.
 			sel.OrderExpr(sql.Expr("count DESC, " + action))

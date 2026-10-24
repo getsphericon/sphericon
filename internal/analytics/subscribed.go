@@ -59,20 +59,15 @@ func subscriptionSeries(ctx context.Context, s *ent.Scoped, days reportday.Windo
 	}
 	err := s.Event().Query().
 		Modify(func(sel *sql.Selector) {
-			moment := "COALESCE(" + sel.C(event.FieldOccurredAt) + ", " + sel.C(event.FieldCreatedAt) + ")"
+			events.MomentBetween(sel, days.Since, days.Until)
+			moment := events.Moment(sel)
 			action := sel.C(event.FieldAction)
 			sel.Select(
 				sql.As("COUNT(*) FILTER (WHERE "+action+" = '"+events.NameMarketingConfirmed+"')", "subscribed"),
 				sql.As("COUNT(*) FILTER (WHERE "+action+" = '"+events.NameEmailUnsubscribed+"')", "unsubscribed"),
 			)
 			sel.AppendSelectExprAs(localDay(moment, days.Loc), "day").
-				Where(sql.And(
-					sql.In(action, events.NameMarketingConfirmed, events.NameEmailUnsubscribed),
-					// raw sql: the moment is COALESCE(occurred_at, created_at), which ent has no predicate for
-					sql.P(func(b *sql.Builder) { b.WriteString(moment + " >= ").Arg(days.Since) }),
-					// raw sql: the same moment, the exclusive end of the window
-					sql.P(func(b *sql.Builder) { b.WriteString(moment + " < ").Arg(days.Until) }),
-				)).
+				Where(sql.In(action, events.NameMarketingConfirmed, events.NameEmailUnsubscribed)).
 				GroupBy("day")
 		}).
 		Scan(ctx, &rows)

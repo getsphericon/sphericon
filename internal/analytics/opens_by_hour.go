@@ -38,9 +38,9 @@ func (m *Module) OpensByHour(ctx context.Context, s *ent.Scoped, w Window) (*Ope
 	err = s.Event().Query().
 		Where(event.ActionEQ(events.NameEmailOpened)).
 		Modify(func(sel *sql.Selector) {
-			happened := "COALESCE(" + sel.C(event.FieldOccurredAt) + ", " + sel.C(event.FieldCreatedAt) + ")"
+			happened := events.Moment(sel)
 			events.HumanOnly(sel)
-			sel.Where(sql.And(sql.GTE(happened, days.Since), sql.LT(happened, days.Until)))
+			events.MomentBetween(sel, days.Since, days.Until)
 			local := func(field string) sql.Querier {
 				// raw sql: ent has no AT TIME ZONE or EXTRACT expression; the zone is a bound argument
 				return sql.ExprFunc(func(b *sql.Builder) {

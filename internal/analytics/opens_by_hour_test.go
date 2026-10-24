@@ -21,14 +21,10 @@ func opensByHourAt(t *testing.T, env *testhelper.TestEnv, ws int64, w analytics.
 	return r
 }
 
-// opens is the count of one cell, weekday 1 (Monday) to 7 (Sunday).
+// opens is the count of one cell, weekday 1 (Monday) to 7 (Sunday). The report holds a cell for
+// every weekday and hour, Monday 00:00 first, so the cell is at a fixed position.
 func opens(r *analytics.OpensByHour, weekday, hour int) int {
-	for _, c := range r.Cells {
-		if c.Weekday == weekday && c.Hour == hour {
-			return c.Opens
-		}
-	}
-	return -1
+	return r.Cells[(weekday-1)*24+hour].Opens
 }
 
 // Fixtures (events.yml, Gotham, America/New_York): human opens at 2026-07-15 02:30Z and 02:50Z

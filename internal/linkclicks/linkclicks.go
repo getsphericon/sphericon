@@ -120,12 +120,7 @@ func clicks(s *ent.Scoped, in Between, shape func(*sql.Selector)) *ent.EventSele
 		Modify(func(sel *sql.Selector) {
 			events.HumanOnly(sel)
 			if in != (Between{}) {
-				// raw sql: the moment is occurred_at, falling back to the creation time.
-				at := "COALESCE(" + sel.C(event.FieldOccurredAt) + ", " + sel.C(event.FieldCreatedAt) + ")"
-				// raw sql: the span bounds the COALESCE of two columns, with the bounds as bound arguments.
-				sel.Where(sql.P(func(b *sql.Builder) {
-					b.WriteString(at + " >= ").Arg(in.Since).WriteString(" AND " + at + " < ").Arg(in.Until)
-				}))
+				events.MomentBetween(sel, in.Since, in.Until)
 			}
 			shape(sel)
 		})

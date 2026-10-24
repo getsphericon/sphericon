@@ -2,11 +2,10 @@ import { EmptyState, Stack, Table, Text } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
-import { ApiErrorAlert } from '../../../components/ApiErrorAlert.tsx'
-import { BlockSkeleton } from '../../../components/Skeletons.tsx'
 import { siteAnalyticsOpensByHourOptions } from '../../../generated/site/@tanstack/react-query.gen.ts'
 import { useAnalyticsRange } from '../../../hooks/useAnalyticsRange.ts'
 import { Route as opensByHourRoute } from '../../../routes/workspaces/$workspaceId/analytics/opens-by-hour.tsx'
+import { ReportState } from './ReportState.tsx'
 
 // ISO weekdays, Monday first: the report's `weekday` 1 to 7.
 const WEEKDAYS = [
@@ -40,20 +39,8 @@ export function OpensByHourPage() {
     siteAnalyticsOpensByHourOptions({ path: { workspaceId }, query: { range } }),
   )
 
-  if (query.isLoading) {
-    return <BlockSkeleton />
-  }
-  if (query.isError) {
-    return (
-      <ApiErrorAlert
-        error={query.error}
-        title={t(($) => $.analytics.loadError)}
-        fallback={t(($) => $.analytics.loadError)}
-      />
-    )
-  }
   if (!query.data) {
-    return null
+    return <ReportState query={query} />
   }
   if (query.data.total === 0) {
     return <EmptyState title={t(($) => $.analytics.opensByHour.empty)} />

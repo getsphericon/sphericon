@@ -3,12 +3,11 @@ import { EmptyState, SimpleGrid, Stack, Text } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
-import { ApiErrorAlert } from '../../../components/ApiErrorAlert.tsx'
-import { BlockSkeleton } from '../../../components/Skeletons.tsx'
 import { StatCard } from '../../../components/StatCard.tsx'
 import { siteAnalyticsNewPeopleOptions } from '../../../generated/site/@tanstack/react-query.gen.ts'
 import { useAnalyticsRange } from '../../../hooks/useAnalyticsRange.ts'
 import { Route as newPeopleRoute } from '../../../routes/workspaces/$workspaceId/analytics/new-people.tsx'
+import { ReportState } from './ReportState.tsx'
 
 // NewPeoplePage is the New people report: the Contacts created per Report day, by Contact source.
 export function NewPeoplePage() {
@@ -22,15 +21,7 @@ export function NewPeoplePage() {
 
   return (
     <Stack>
-      {reportQuery.isLoading && <BlockSkeleton />}
-
-      {reportQuery.isError && (
-        <ApiErrorAlert
-          error={reportQuery.error}
-          title={t(($) => $.analytics.loadError)}
-          fallback={t(($) => $.analytics.loadError)}
-        />
-      )}
+      <ReportState query={reportQuery} />
 
       {reportQuery.data && (
         <Stack gap="md">

@@ -3,12 +3,11 @@ import { EmptyState, SimpleGrid, Stack, Table, Text, Title } from '@mantine/core
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
-import { ApiErrorAlert } from '../../../components/ApiErrorAlert.tsx'
-import { BlockSkeleton } from '../../../components/Skeletons.tsx'
 import { StatCard } from '../../../components/StatCard.tsx'
 import { siteAnalyticsSubscribedPeopleOptions } from '../../../generated/site/@tanstack/react-query.gen.ts'
 import { useAnalyticsRange } from '../../../hooks/useAnalyticsRange.ts'
 import { Route as subscribedPeopleRoute } from '../../../routes/workspaces/$workspaceId/analytics/subscribed-people.tsx'
+import { ReportState } from './ReportState.tsx'
 
 // signed is a net with its sign spelled out, so a day that lost people reads at a glance.
 function signed(net: number) {
@@ -29,15 +28,7 @@ export function SubscribedPeoplePage() {
 
   return (
     <Stack>
-      {reportQuery.isLoading && <BlockSkeleton />}
-
-      {reportQuery.isError && (
-        <ApiErrorAlert
-          error={reportQuery.error}
-          title={t(($) => $.analytics.loadError)}
-          fallback={t(($) => $.analytics.loadError)}
-        />
-      )}
+      <ReportState query={reportQuery} />
 
       {report && (
         <Stack gap="xl">
