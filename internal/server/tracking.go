@@ -207,10 +207,13 @@ type engaged struct {
 }
 
 // loadEngaged resolves a token's message to its Workspace scope and Contact. A message whose
-// Contact is gone (erased) records nothing, and neither does one whose address was cleared.
+// Contact is gone (erased) records nothing, and neither does one whose address was cleared: those
+// are expected and silent. A read that fails for any other reason records nothing too, and is
+// logged, since the engagement is lost.
 func loadEngaged(ctx context.Context, client *ent.Client, messageID int64) (engaged, bool) {
 	msg, err := client.OutboundMessage.Get(ctx, messageID)
 	if err != nil {
+		logEngagedLookup(ctx, messageID, err)
 		return engaged{}, false
 	}
 	s := client.Scoped(msg.WorkspaceID) // the Workspace comes from the message row the token names
@@ -222,9 +225,18 @@ func loadEngaged(ctx context.Context, client *ent.Client, messageID int64) (enga
 	}
 	c, err := s.Contact().Get(ctx, *msg.ContactID)
 	if err != nil {
+		logEngagedLookup(ctx, messageID, err)
 		return engaged{}, false
 	}
 	return engaged{msg: msg, contact: c, email: lo.FromPtr(c.Email), scope: s}, true
+}
+
+// logEngagedLookup logs a failed lookup of an engagement's message or Contact, unless the row is
+// simply gone.
+func logEngagedLookup(ctx context.Context, messageID int64, err error) {
+	if !ent.IsNotFound(err) {
+		logging.FromContext(ctx).Error("tracking: engagement lookup failed", "message_id", messageID, "err", err)
+	}
 }
 
 func (e engaged) engagement(action, dest string, software bool) *events.EmailEngagement {

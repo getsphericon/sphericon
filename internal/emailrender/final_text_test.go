@@ -16,9 +16,7 @@ var hidingStyles = []string{
 	"visibility:hidden",
 	"mso-hide:all",
 	"opacity:0",
-	"font-size:0",
-	"font-size: 0px",
-	"max-height:0",
+	"max-height:0;overflow:hidden",
 	"color:red;MAX-HEIGHT : 0px;overflow:hidden",
 }
 
@@ -37,6 +35,19 @@ func TestFinalHTMLToTextKeepsVisibleStyledElements(t *testing.T) {
 	text := emailrender.FinalHTMLToText(`<p style="font-size:16px;opacity:0.5;max-height:40px">Visible</p>`)
 
 	assert.Contains(t, text, "Visible")
+}
+
+// A layout table sets font-size:0 to close the gaps between its columns, and the text inside
+// sets its own size: it is the body of the mail, not hidden. A zero max-height that clips
+// nothing hides nothing either.
+func TestFinalHTMLToTextKeepsTextInsideAZeroSizeWrapper(t *testing.T) {
+	for _, style := range []string{"font-size:0", "font-size: 0px", "max-height:0"} {
+		t.Run(style, func(t *testing.T) {
+			text := emailrender.FinalHTMLToText(`<div style="` + style + `"><p style="font-size:16px">Body</p></div>`)
+
+			assert.Contains(t, text, "Body")
+		})
+	}
 }
 
 func TestFinalHTMLToTextDropsStyleAndHeadContent(t *testing.T) {

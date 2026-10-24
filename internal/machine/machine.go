@@ -26,6 +26,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/privaterelayrange"
+	"github.com/getsphericon/sphericon/internal/logging"
 )
 
 // RangesURL is where Apple publishes the Private Relay egress ranges, one CSV row per range
@@ -35,6 +36,8 @@ const RangesURL = "https://mask-api.icloud.com/egress-ip-ranges.csv"
 const (
 	// reloadAfter is how long the in-memory copy of the table serves before it is read again.
 	reloadAfter = time.Hour
+	// reloadRetry is how long after a failed read the table is read again.
+	reloadRetry = time.Minute
 	// insertBatch bounds the rows of one INSERT while the table is replaced.
 	insertBatch = 5000
 	fetchLimit  = 64 << 20
@@ -86,6 +89,8 @@ type Detector struct {
 	mu       sync.RWMutex
 	ranges   *bart.Lite
 	loadedAt time.Time
+	// retryAt is when a failed read may be tried again.
+	retryAt time.Time
 }
 
 // New builds the detector over the raw client and the source of the published list.
@@ -104,29 +109,33 @@ func (d *Detector) IsMachine(ctx context.Context, userAgent, clientAddr string) 
 	if err != nil {
 		return false
 	}
-	ranges, err := d.loaded(ctx)
-	if err != nil {
-		return false
-	}
-	return ranges.Lookup(addr.Unmap())
+	ranges := d.loaded(ctx)
+	return ranges != nil && ranges.Lookup(addr.Unmap())
 }
 
-// loaded is the in-memory copy of the table, read again when it is older than reloadAfter.
-func (d *Detector) loaded(ctx context.Context) (*bart.Lite, error) {
+// loaded is the in-memory copy of the table, read again when it is older than reloadAfter. A
+// read that fails is logged and keeps serving the last table (nil before the first good read),
+// and is tried again after reloadRetry rather than on every hit.
+func (d *Detector) loaded(ctx context.Context) *bart.Lite {
 	d.mu.RLock()
 	ranges, at := d.ranges, d.loadedAt
 	d.mu.RUnlock()
 	if ranges != nil && d.now().Sub(at) < reloadAfter {
-		return ranges, nil
+		return ranges
 	}
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	if d.ranges != nil && d.now().Sub(d.loadedAt) < reloadAfter {
-		return d.ranges, nil
+		return d.ranges
+	}
+	if d.now().Before(d.retryAt) {
+		return d.ranges
 	}
 	rows, err := d.client.PrivateRelayRange.Query().Select(privaterelayrange.FieldCidr).Strings(ctx)
 	if err != nil {
-		return nil, err
+		logging.FromContext(ctx).Error("machine: the Private Relay ranges cannot be read, the last table keeps serving", "err", err)
+		d.retryAt = d.now().Add(reloadRetry)
+		return d.ranges
 	}
 	table := new(bart.Lite)
 	for _, cidr := range rows {
@@ -135,7 +144,7 @@ func (d *Detector) loaded(ctx context.Context) (*bart.Lite, error) {
 		}
 	}
 	d.ranges, d.loadedAt = table, d.now()
-	return table, nil
+	return table
 }
 
 // Refresh replaces the stored ranges with the published list. A failure of any kind, a fetch

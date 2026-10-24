@@ -129,29 +129,37 @@ func FinalHTMLToText(finalHTML string) string {
 
 // hidingDeclarations are the inline style declarations (property, value) mail authors use to
 // hide an element from the reader while keeping it in the HTML. Only inline styles are read:
-// hiding through a class or a <style> rule is not detected.
+// hiding through a class or a <style> rule is not detected. A zero font size is not one of
+// them: it is how a layout table removes the gaps between its columns, and the text inside
+// sets its own size.
 var hidingDeclarations = map[string][]string{
 	"display":    {"none"},
 	"visibility": {"hidden"},
 	"mso-hide":   {"all"},
 	"opacity":    {"0"},
-	"font-size":  {"0", "0px", "0pt", "0em"},
-	"max-height": {"0", "0px", "0pt", "0em"},
 }
 
-// hidesElement reports whether an inline style carries one of the hiding declarations.
+// zeroLengths are the values of a zero max-height.
+var zeroLengths = []string{"0", "0px", "0pt", "0em"}
+
+// hidesElement reports whether an inline style hides its element: one of the hiding
+// declarations, or a zero max-height that clips its content (overflow:hidden), the shape of a
+// preheader. A zero max-height alone clips nothing.
 func hidesElement(style string) bool {
+	declared := map[string]string{}
 	for decl := range strings.SplitSeq(style, ";") {
 		prop, value, found := strings.Cut(decl, ":")
 		if !found {
 			continue
 		}
 		value = strings.TrimSpace(strings.TrimSuffix(strings.TrimSpace(strings.ToLower(value)), "!important"))
-		if slices.Contains(hidingDeclarations[strings.TrimSpace(strings.ToLower(prop))], value) {
+		prop = strings.TrimSpace(strings.ToLower(prop))
+		if slices.Contains(hidingDeclarations[prop], value) {
 			return true
 		}
+		declared[prop] = value
 	}
-	return false
+	return slices.Contains(zeroLengths, declared["max-height"]) && declared["overflow"] == "hidden"
 }
 
 // dropHidden removes, in place, every element whose inline style hides it.
