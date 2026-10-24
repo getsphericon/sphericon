@@ -31,8 +31,9 @@ func IsUnavailable(err error) bool {
 		return true
 	case errors.As(err, &pgErr):
 		// Class 08 connection exception, a server shutting down, restarting or dropping the
-		// session, too many connections. Not the whole class 57: query_canceled is a statement
-		// timeout or a cancelled context, not an unreachable database.
+		// session (57P01 to 57P05, the operator-intervention codes that end a connection),
+		// too many connections. A query_canceled (57014) is a statement timeout or a cancelled
+		// context, not an unreachable database, and is not listed.
 		switch pgErr.Code {
 		case pgerrcode.AdminShutdown, pgerrcode.CrashShutdown, pgerrcode.CannotConnectNow,
 			pgerrcode.DatabaseDropped, pgerrcode.IdleSessionTimeout, pgerrcode.TooManyConnections:
