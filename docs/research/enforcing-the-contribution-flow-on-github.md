@@ -339,7 +339,7 @@ A PR can edit the workflow file, the `mise` tasks, `.golangci.yml`, `tools/analy
    so a PR cannot weaken them in its own run.
 4. **Reusable workflow pinned by SHA** called from the PR's workflow: the callee version is fixed
    (reusable workflows can be referenced by SHA, tag or branch, per
-   https://docs.github.com/en/actions/reference/workflows-and-actions/reuse-workflows) but the
+   https://docs.github.com/en/actions/reference/workflows-and-actions/reusing-workflow-configurations) but the
    _caller_ is the PR's file, so a PR can simply delete the call. Alone this does **not** protect;
    it is only useful combined with (1) or (2). (The page says nothing about forks: **unverified**.)
 5. `strict_required_status_checks_policy` (up-to-date branch) does not help here.
