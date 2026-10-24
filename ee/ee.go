@@ -144,11 +144,11 @@ func (e *Edition) Abuse(bus *events.Bus, sender messaging.EmailSender) *abuse.De
 
 // AbuseWatch is the read side of the detector for /site: the Workspace's warning, none
 // without the `staff` license.
-func (e *Edition) AbuseWatch() abusewatch.Watch { return siteWatch{e.StaffMembers.Watch()} }
+func (e *Edition) AbuseWatch() abusewatch.Watch { return abuseWatchAdapter{e.StaffMembers.Watch()} }
 
-type siteWatch struct{ watch *abuse.Watch }
+type abuseWatchAdapter struct{ watch *abuse.Watch }
 
-func (w siteWatch) Warning(ctx context.Context, s *ent.Scoped, ws *ent.Workspace, now time.Time) (*abusewatch.Warning, error) {
+func (w abuseWatchAdapter) Warning(ctx context.Context, s *ent.Scoped, ws *ent.Workspace, now time.Time) (*abusewatch.Warning, error) {
 	b, err := w.watch.Warning(ctx, s, ws, now)
 	if err != nil || b.Tier == abuse.TierNone {
 		return nil, err

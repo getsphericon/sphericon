@@ -36,18 +36,26 @@ func (e *SoleOwnerError) Unwrap() error { return ErrLastOwner }
 // password was set or removed between the proof and the transaction that locked the row.
 var ErrProofStale = errors.New("accounts: the deletion proof no longer fits the user")
 
-// DeleteProof is what DeleteUser runs inside its transaction, with the User's row locked and
-// freshly read: the caller's last check that its proof still holds, and the spending of a
-// second-factor code. The transaction's client stays inside the closure's builder (the
-// second-factor module), never in a handler.
-type DeleteProof func(ctx context.Context, tx *ent.Client, pub events.Publisher, u *ent.User) error
+// DeleteConfirm is the spending of a second-factor code inside DeleteUser's transaction, with
+// the User's row locked and freshly read. The transaction's client stays inside the closure's
+// builder (the second-factor module), never in a handler.
+type DeleteConfirm func(ctx context.Context, tx *ent.Client, pub events.Publisher, u *ent.User) error
+
+// DeleteProof is what the caller's proof of a deletion assumed, re-checked inside the
+// transaction: HadPassword is whether the User had a password when the proof was read, and
+// Confirm (nil for none) spends the second-factor code.
+type DeleteProof struct {
+	HadPassword bool
+	Confirm     DeleteConfirm
+}
 
 // DeleteUser erases the User userID at once and for good (User deletion, ADR 0050), in one
 // transaction, and returns the deleted User (its name and address, for the mail that tells
-// the owner of the mailbox). The caller has proven who is asking; confirm runs inside the
-// transaction, after the refusal check and before anything is removed, with the User's row
-// locked and freshly read, so a second-factor code is spent only if the deletion commits
-// (nil confirms nothing) and the caller can check that what its proof assumed still holds.
+// the owner of the mailbox). The caller has proven who is asking; proof is re-checked inside
+// the transaction, after the refusal check and before anything is removed, with the User's
+// row locked and freshly read: a password set or removed since the proof was read is an
+// ErrProofStale, and a second-factor code is spent only if the deletion commits (a nil proof
+// checks nothing).
 //
 // The transaction locks the User row, then the Owner rows of every Workspace the User
 // belongs to, in ascending Workspace id order, so two co-Owners deleting at once serialize
@@ -61,7 +69,7 @@ type DeleteProof func(ctx context.Context, tx *ent.Client, pub events.Publisher,
 // rewritten), and the User row is deleted: Linked identities and Recovery codes follow by
 // cascade, an Invitation the User sent keeps its place with no sender. Sessions need
 // nothing: the security handler finds no User.
-func (a *Accounts) DeleteUser(ctx context.Context, userID int64, confirm DeleteProof) (*ent.User, error) {
+func (a *Accounts) DeleteUser(ctx context.Context, userID int64, proof *DeleteProof) (*ent.User, error) {
 	var deleted *ent.User
 	err := a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
 		u, err := tx.User.Query().Where(user.ID(userID)).ForUpdate().Only(ctx)
@@ -80,9 +88,14 @@ func (a *Accounts) DeleteUser(ctx context.Context, userID int64, confirm DeleteP
 		if len(live) > 0 {
 			return &SoleOwnerError{Workspaces: live}
 		}
-		if confirm != nil {
-			if err := confirm(ctx, tx, pub, u); err != nil {
-				return err
+		if proof != nil {
+			if (u.PasswordHash != "") != proof.HadPassword {
+				return ErrProofStale
+			}
+			if proof.Confirm != nil {
+				if err := proof.Confirm(ctx, tx, pub, u); err != nil {
+					return err
+				}
 			}
 		}
 		for _, m := range memberships {

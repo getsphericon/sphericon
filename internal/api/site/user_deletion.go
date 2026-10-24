@@ -60,7 +60,7 @@ func (h *Handlers) SiteUserDeleteUser(ctx context.Context, req *siteapi.SiteDele
 		}
 	}
 
-	deleted, err := h.accounts.DeleteUser(ctx, u.ID, h.secondFactor.DeletionProof(hadPassword, req.Code.Or("")))
+	deleted, err := h.accounts.DeleteUser(ctx, u.ID, &accounts.DeleteProof{HadPassword: hadPassword, Confirm: h.secondFactor.DeletionCode(req.Code.Or(""))})
 	var sole *accounts.SoleOwnerError
 	switch {
 	case errors.As(err, &sole):

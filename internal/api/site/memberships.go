@@ -136,17 +136,16 @@ func (h *Handlers) SiteMembershipsResetSecondFactor(ctx context.Context, params 
 	}
 
 	id := int64(params.ID)
-	target, err := s.Membership().Get(ctx, id)
-	if ent.IsNotFound(err) {
+	target, err := accounts.SecondFactorResetTarget(ctx, s, callerRole, id)
+	switch {
+	case ent.IsNotFound(err):
 		v := siteapi.SiteMembershipsResetSecondFactorNotFound(problem(http.StatusNotFound, "member not found"))
 		return &v, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	if accounts.IsOwner(target.Role) && !accounts.IsOwner(callerRole) {
+	case errors.Is(err, accounts.ErrOwnerOnly):
 		v := siteapi.SiteMembershipsResetSecondFactorForbidden(problem(http.StatusForbidden, "only an owner may reset an owner's second factor"))
 		return &v, nil
+	case err != nil:
+		return nil, err
 	}
 	if a := auth.GetSiteAuth(ctx); a != nil && a.UserID == target.UserID {
 		v := siteapi.SiteMembershipsResetSecondFactorUnprocessableEntity(problemWithErrors(

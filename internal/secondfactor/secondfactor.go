@@ -288,15 +288,11 @@ func (m *Module) VerifyIn(ctx context.Context, tx *ent.Client, pub events.Publis
 	return m.verify(ctx, tx, pub, u, code)
 }
 
-// DeletionProof is the accounts.DeleteProof of User deletion (ADR 0050): inside the deletion's
-// transaction it refuses with accounts.ErrProofStale when the User's password was set or
-// removed since the caller read hadPassword, and with a Second factor spends code (ErrInvalidCode
-// on a wrong one) in that transaction, so the code is spent only if the deletion commits.
-func (m *Module) DeletionProof(hadPassword bool, code string) accounts.DeleteProof {
+// DeletionCode is the accounts.DeleteConfirm of User deletion (ADR 0050): with a Second factor
+// it spends code in the deletion's transaction (ErrInvalidCode on a wrong one), so the code is
+// spent only if the deletion commits; without one it confirms nothing.
+func (m *Module) DeletionCode(code string) accounts.DeleteConfirm {
 	return func(ctx context.Context, tx *ent.Client, pub events.Publisher, locked *ent.User) error {
-		if (locked.PasswordHash != "") != hadPassword {
-			return accounts.ErrProofStale
-		}
 		if !Active(locked) {
 			return nil
 		}

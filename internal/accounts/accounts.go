@@ -124,6 +124,20 @@ func PendingInvitations(ctx context.Context, s *ent.Scoped) ([]*ent.Invitation, 
 		All(ctx)
 }
 
+// SecondFactorResetTarget loads the Membership targetID of the Workspace s as the target of a
+// Second factor reset by a caller holding callerRole: only an Owner resets an Owner's
+// (ErrOwnerOnly). A target outside the Workspace is an ent NotFound error.
+func SecondFactorResetTarget(ctx context.Context, s *ent.Scoped, callerRole membership.Role, targetID int64) (*ent.Membership, error) {
+	target, err := s.Membership().Get(ctx, targetID)
+	if err != nil {
+		return nil, err
+	}
+	if IsOwner(target.Role) && !IsOwner(callerRole) {
+		return nil, ErrOwnerOnly
+	}
+	return target, nil
+}
+
 // UpdateWorkspace renames the scoped Workspace and, when postalAddress is non-nil,
 // sets (or clears, with "") its postal address. A change is recorded as a
 // `workspace.update` Audit entry in the same transaction (ADR 0022): the Workspace is
