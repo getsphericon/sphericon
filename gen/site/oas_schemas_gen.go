@@ -15781,6 +15781,7 @@ const (
 	SiteRuleActionStatusSucceeded SiteRuleActionStatus = "succeeded"
 	SiteRuleActionStatusFailed    SiteRuleActionStatus = "failed"
 	SiteRuleActionStatusSkipped   SiteRuleActionStatus = "skipped"
+	SiteRuleActionStatusPending   SiteRuleActionStatus = "pending"
 )
 
 // AllValues returns all SiteRuleActionStatus values.
@@ -15789,6 +15790,7 @@ func (SiteRuleActionStatus) AllValues() []SiteRuleActionStatus {
 		SiteRuleActionStatusSucceeded,
 		SiteRuleActionStatusFailed,
 		SiteRuleActionStatusSkipped,
+		SiteRuleActionStatusPending,
 	}
 }
 
@@ -15800,6 +15802,8 @@ func (s SiteRuleActionStatus) MarshalText() ([]byte, error) {
 	case SiteRuleActionStatusFailed:
 		return []byte(s), nil
 	case SiteRuleActionStatusSkipped:
+		return []byte(s), nil
+	case SiteRuleActionStatusPending:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -15817,6 +15821,9 @@ func (s *SiteRuleActionStatus) UnmarshalText(data []byte) error {
 		return nil
 	case SiteRuleActionStatusSkipped:
 		*s = SiteRuleActionStatusSkipped
+		return nil
+	case SiteRuleActionStatusPending:
+		*s = SiteRuleActionStatusPending
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)

@@ -2568,7 +2568,8 @@ export type RuleActionResult = {
 export const RuleActionStatus = {
   SUCCEEDED: 'succeeded',
   FAILED: 'failed',
-  SKIPPED: 'skipped'
+  SKIPPED: 'skipped',
+  PENDING: 'pending'
 } as const;
 
 /**

@@ -3512,7 +3512,8 @@ export type SiteRuleActionResult = {
 export const SiteRuleActionStatus = {
   SUCCEEDED: 'succeeded',
   FAILED: 'failed',
-  SKIPPED: 'skipped'
+  SKIPPED: 'skipped',
+  PENDING: 'pending'
 } as const;
 
 /**

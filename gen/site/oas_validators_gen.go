@@ -5914,6 +5914,8 @@ func (s SiteRuleActionStatus) Validate() error {
 		return nil
 	case "skipped":
 		return nil
+	case "pending":
+		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
 	}

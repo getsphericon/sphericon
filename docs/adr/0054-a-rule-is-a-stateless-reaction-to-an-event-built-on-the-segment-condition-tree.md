@@ -35,14 +35,17 @@ sequence stays an Automation. The Rule belongs to the core (AGPL), like Segment 
   **Firing** (unique on Rule and the envelope's id, the `source_id` persist uses, so a redelivered
   Event does nothing twice) and enqueues its Actions job in the same transaction
   (`WithinScopedEnqueueTx`). A Rule whose Condition is false leaves no Firing. The Actions job runs
-  them in order, each independent: its result is stored on the Firing, an HTTP call retries as an HTTP step does
-  (ADR 0039), and a failed Action does not cancel the others. Enrolling into an Automation that is
-  not active, or a Contact already enrolled, is recorded as skipped, not as a failure.
+  them in order, each independent: its result is stored on the Firing and a failed Action does not
+  cancel the others. An HTTP call is the one Action that outlives the job: it is recorded `pending`
+  and runs as a job of its own on the HTTP steps' queue, retried as an HTTP step is (ADR 0039: days,
+  `Retry-After` honoured), so the Actions after it do not wait for it, and the Firing finishes when
+  the last pending Action has its result. Enrolling into an Automation that is not active, or a
+  Contact already enrolled, is recorded as skipped, not as a failure.
 - **Actions today:** apply Tag, remove Tag, HTTP call (its template sees the Contact and the
   triggering Event), enroll in an Automation. Adding one is a new implementation of the Action seam;
   `internal/rules` imports none of the modules the Actions call.
-- **Lifecycle.** `draft` and `active`; deactivating stops new Firings (nothing is in flight to
-  finish). A Rule has Firings, which are history, so removing one is Archive (ADR 0049) and only a
+- **Lifecycle.** `draft` and `active`; deactivating stops new Firings; a pending HTTP call of
+  an existing Firing still runs to its end. A Rule has Firings, which are history, so removing one is Archive (ADR 0049) and only a
   Rule with no Firings is purged. A Tag, Segment or Automation used by an active Rule is not removed
   (`inuse`). A Firing is analytical: it expires with the retention window (ADR 0019) and goes with
   its Contact on erasure (ADR 0021). A dry run on a stored Event shows what would fire and runs and

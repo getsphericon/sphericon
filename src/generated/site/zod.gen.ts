@@ -1110,7 +1110,8 @@ export const zSiteResetPasswordInput = z.object({
 export const zSiteRuleActionStatus = z.enum([
   'succeeded',
   'failed',
-  'skipped'
+  'skipped',
+  'pending'
 ]);
 
 /**

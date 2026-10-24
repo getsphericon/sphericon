@@ -949,6 +949,7 @@ export default interface Resources {
       "firingInProgress": "In progress",
       "firingStatus": {
         "failed": "Failed",
+        "pending": "Calling",
         "skipped": "Skipped",
         "succeeded": "Succeeded"
       },

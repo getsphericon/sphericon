@@ -101,6 +101,9 @@ const (
 	// Skipped is an expected outcome (an Automation that is not active, a Contact already
 	// enrolled), not an error.
 	Skipped Outcome = "skipped"
+	// Pending is an Action handed to a job of its own (an http Action, which is retried for days):
+	// it has no outcome yet, and that job records it with Record.
+	Pending Outcome = "pending"
 )
 
 // Result is what one Action did, as stored on its Firing.
@@ -108,18 +111,26 @@ type Result struct {
 	Type   string  `json:"type"`
 	Status Outcome `json:"status"`
 	Detail string  `json:"detail,omitempty"`
+
+	// Job is set by a Runner that hands the Action to a job (Status Pending): Record queues it, with
+	// the options its args declare, in the transaction that records the Pending result. It is
+	// never stored.
+	Job river.JobArgs `json:"-"`
 }
 
-// ActionInput is what a Runner is handed: the Action and the Firing it runs for.
+// ActionInput is what a Runner is handed: the Action and the Firing it runs for, and the
+// Action's position in the Firing (where its Result is recorded).
 type ActionInput struct {
 	Action    Action
+	Index     int
 	ContactID int64
 	Firing    *ent.RuleFiring
 }
 
 // Runner performs one kind of Action. It reports how it ended in the Result and never fails the
 // others: an Action that cannot be done returns a Failed Result, and only an infrastructure
-// error (the database) is returned as an error, which retries the Actions job.
+// error (the database) is returned as an error, which retries the Actions job. A Runner for an
+// Action that outlives the Actions job returns a Pending Result with the job that finishes it.
 type Runner interface {
 	Run(ctx context.Context, s *ent.Scoped, in ActionInput) (Result, error)
 }
@@ -681,7 +692,10 @@ func (m *Module) fire(ctx context.Context, s *ent.Scoped, r *ent.Rule, ev Event)
 // RunActions runs a Firing's Actions in order, each independent of the others: one that fails
 // is recorded as failed and the next still runs. Each result is stored as soon as it is known,
 // so a retry of the job (after a database error) resumes after the last recorded Action instead
-// of repeating it. A Firing that is gone (erased with its Contact) or finished does nothing.
+// of repeating it. An Action that outlives this job (an http call, retried for days) is recorded
+// Pending and its own job queued in the same transaction; the Actions after it do not wait for
+// it, and the Firing finishes when the last Pending one is recorded. A Firing that is gone
+// (erased with its Contact) or finished does nothing.
 func (m *Module) RunActions(ctx context.Context, s *ent.Scoped, firingID int64, runners ActionRunners) error {
 	f, err := s.RuleFiring().Get(ctx, firingID)
 	if ent.IsNotFound(err) || (err == nil && f.CompletedAt != nil) {
@@ -698,26 +712,66 @@ func (m *Module) RunActions(ctx context.Context, s *ent.Scoped, firingID int64, 
 	if err != nil {
 		return fmt.Errorf("firing %d results: %w", f.ID, err)
 	}
-	pending := actions[min(len(results), len(actions)):]
-	for i := range pending {
-		a := &pending[i]
+	for len(results) < len(actions) {
+		i := len(results)
+		a := &actions[i]
 		res := Result{Type: a.Type, Status: Failed, Detail: "no runner for this action type"}
 		if runner, ok := runners[a.Type]; ok {
-			if res, err = runner.Run(ctx, s, ActionInput{Action: *a, ContactID: f.ContactID, Firing: f}); err != nil {
+			if res, err = runner.Run(ctx, s, ActionInput{Action: *a, Index: i, ContactID: f.ContactID, Firing: f}); err != nil {
 				return err
 			}
 			res.Type = a.Type
 		}
-		results = append(results, res)
+		if results, err = m.Record(ctx, s, f.ID, i, res); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// Record stores the Result of the index-th Action of a Firing and finishes the Firing when none
+// is left to run or Pending. It locks the Firing row, because the Actions job and the job of a
+// Pending Action write the same results. A new Result also queues the job it carries, in the
+// same transaction. A Result already recorded (a retry of the writer) changes nothing. It
+// returns the Firing's results as stored.
+func (m *Module) Record(ctx context.Context, s *ent.Scoped, firingID int64, index int, res Result) ([]Result, error) {
+	var results []Result
+	err := m.bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, q events.Enqueuer) error {
+		f, err := ts.RuleFiring().Query().Where(rulefiring.ID(firingID)).ForUpdate().Only(ctx)
+		if err != nil {
+			return err
+		}
+		actions, err := DecodeActions(f.Actions)
+		if err != nil {
+			return fmt.Errorf("firing %d actions: %w", f.ID, err)
+		}
+		if results, err = DecodeResults(f.Results); err != nil {
+			return fmt.Errorf("firing %d results: %w", f.ID, err)
+		}
+		switch {
+		case index == len(results):
+			results = append(results, res)
+			if res.Job != nil {
+				if err := q.Enqueue(ctx, res.Job, nil); err != nil {
+					return err
+				}
+			}
+		case index < len(results) && results[index].Status == Pending && res.Status != Pending:
+			results[index] = res
+		default:
+			return nil
+		}
 		encoded, err := json.Marshal(results)
 		if err != nil {
 			return err
 		}
-		if err := s.RuleFiring().UpdateOneID(f.ID).SetResults(string(encoded)).Exec(ctx); err != nil {
-			return err
+		update := ts.RuleFiring().UpdateOneID(f.ID).SetResults(string(encoded))
+		if len(results) == len(actions) && !slices.ContainsFunc(results, func(r Result) bool { return r.Status == Pending }) {
+			update.SetCompletedAt(time.Now())
 		}
-	}
-	return s.RuleFiring().UpdateOneID(f.ID).SetCompletedAt(time.Now()).Exec(ctx)
+		return update.Exec(ctx)
+	})
+	return results, err
 }
 
 // requireAutomations refuses an enroll Action whose Automation is not a kept Automation of the

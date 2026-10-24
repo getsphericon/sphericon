@@ -1,7 +1,6 @@
 package jobs
 
 import (
-	"context"
 	"database/sql"
 	"log/slog"
 	"time"
@@ -25,12 +24,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/workspacedeletion"
 )
 
-// RuleActionRunnersWithoutWait are the Rule Actions' Runners with no pause between the attempts
-// of an http Action, so a test of its retries does not wait seconds.
-func RuleActionRunnersWithoutWait(mod *outbound.Module, ruleMod *rules.Module, bus *events.Bus, client webhook.Doer) rules.ActionRunners {
-	runners := RuleActionRunners(mod, ruleMod, bus, client)
-	runners[rules.ActionHTTP] = httpAction{mod: ruleMod, client: client, wait: func(context.Context, time.Duration) error { return nil }}
-	return runners
+func NewRunRuleHTTPWorker(client *ent.Client, mod *rules.Module, doer webhook.Doer, now func() time.Time) *RunRuleHTTPWorker {
+	return &RunRuleHTTPWorker{ent: client, mod: mod, client: doer, now: now}
 }
 
 // Worker constructors for the external jobs_test package: Work is exercised

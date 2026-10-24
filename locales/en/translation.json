@@ -962,6 +962,7 @@
     "firingInProgress": "In progress",
     "firingStatus": {
       "failed": "Failed",
+      "pending": "Calling",
       "skipped": "Skipped",
       "succeeded": "Succeeded"
     },

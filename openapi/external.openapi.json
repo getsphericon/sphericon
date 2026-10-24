@@ -15275,7 +15275,7 @@
       },
       "RuleActionStatus": {
         "type": "string",
-        "enum": ["succeeded", "failed", "skipped"],
+        "enum": ["succeeded", "failed", "skipped", "pending"],
         "description": "How one Action of a Firing ended"
       },
       "RuleActionType": {

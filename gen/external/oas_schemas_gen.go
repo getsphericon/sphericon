@@ -11345,6 +11345,7 @@ const (
 	RuleActionStatusSucceeded RuleActionStatus = "succeeded"
 	RuleActionStatusFailed    RuleActionStatus = "failed"
 	RuleActionStatusSkipped   RuleActionStatus = "skipped"
+	RuleActionStatusPending   RuleActionStatus = "pending"
 )
 
 // AllValues returns all RuleActionStatus values.
@@ -11353,6 +11354,7 @@ func (RuleActionStatus) AllValues() []RuleActionStatus {
 		RuleActionStatusSucceeded,
 		RuleActionStatusFailed,
 		RuleActionStatusSkipped,
+		RuleActionStatusPending,
 	}
 }
 
@@ -11364,6 +11366,8 @@ func (s RuleActionStatus) MarshalText() ([]byte, error) {
 	case RuleActionStatusFailed:
 		return []byte(s), nil
 	case RuleActionStatusSkipped:
+		return []byte(s), nil
+	case RuleActionStatusPending:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -11381,6 +11385,9 @@ func (s *RuleActionStatus) UnmarshalText(data []byte) error {
 		return nil
 	case RuleActionStatusSkipped:
 		*s = RuleActionStatusSkipped
+		return nil
+	case RuleActionStatusPending:
+		*s = RuleActionStatusPending
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)

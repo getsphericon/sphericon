@@ -27,6 +27,7 @@ const resultColor = {
   [SiteRuleActionStatus.SUCCEEDED]: 'teal',
   [SiteRuleActionStatus.FAILED]: 'red',
   [SiteRuleActionStatus.SKIPPED]: 'gray',
+  [SiteRuleActionStatus.PENDING]: 'blue',
 }
 
 // The Rule with its Firings: each Event that fired it, the Contact and what every Action did.

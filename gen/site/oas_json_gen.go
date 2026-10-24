@@ -34962,6 +34962,8 @@ func (s *SiteRuleActionStatus) Decode(d *jx.Decoder) error {
 		*s = SiteRuleActionStatusFailed
 	case SiteRuleActionStatusSkipped:
 		*s = SiteRuleActionStatusSkipped
+	case SiteRuleActionStatusPending:
+		*s = SiteRuleActionStatusPending
 	default:
 		*s = SiteRuleActionStatus(v)
 	}

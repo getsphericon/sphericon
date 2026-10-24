@@ -25120,6 +25120,8 @@ func (s *RuleActionStatus) Decode(d *jx.Decoder) error {
 		*s = RuleActionStatusFailed
 	case RuleActionStatusSkipped:
 		*s = RuleActionStatusSkipped
+	case RuleActionStatusPending:
+		*s = RuleActionStatusPending
 	default:
 		*s = RuleActionStatus(v)
 	}

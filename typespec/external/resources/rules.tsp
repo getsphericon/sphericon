@@ -56,6 +56,7 @@ enum RuleActionStatus {
   succeeded,
   failed,
   skipped,
+  pending,
 }
 
 /** What one Action did when a Rule fired */
