@@ -43,4 +43,4 @@ Every Workspace-owned entity (GLOSSARY "Workspace") is reached through a **scope
 ## Consequences
 
 - One isolation test at the scoped-client seam covers every mixin entity; the list is taken from the generated code, so a new entity is covered without editing the test.
-- The codegen pipeline gains a step (`ent/template/scoped*.tmpl` via entc), documented in AGENTS.md.
+- The codegen pipeline gains a step (`ent/template/scoped*.tmpl` via entc), documented in docs/agents/codegen.md.

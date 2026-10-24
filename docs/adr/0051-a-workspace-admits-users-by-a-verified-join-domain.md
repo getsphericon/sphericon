@@ -56,7 +56,7 @@ door, and this lands in the core for good.
   `workspace.update` entry with a `domain_join_enabled` diff, like the Two-factor requirement.
   The Join domain rows are Audited entities.
 - **Scoping (ADR 0017).** The join builds a `*ent.Scoped` for a Workspace the User has no session
-  in, right after the Join domain row named it: a new entry in the closed list in `AGENTS.md`. The
+  in, right after the Join domain row named it: a new entry in the closed list in `docs/agents/workspace-scoping.md`. The
   Instance-wide lookup of a domain to its verified row runs before any scope exists, so it sits in
   the new `internal/joindomains` package, which joins the raw-client list.
 - **Operations.** Listing, adding, verifying and removing Join domains and reading and setting the

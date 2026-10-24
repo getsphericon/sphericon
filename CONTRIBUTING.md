@@ -190,7 +190,7 @@ Daemons:
 > (`https://<dir>.sphericon.localhost:<port>`, printed by `mise env`), so stacks never collide; there
 > `caddy trust --address "$CADDY_ADMIN"` trusts Caddy's CA. Postgres is one server for every
 > checkout (the primary's `db` daemon, started by `mise run db:up`); each checkout gets its own
-> databases on it, named `sphericon_<dir>`. See AGENTS.md, "Common commands" and "Dev environment".
+> databases on it, named `sphericon_<dir>`. See docs/agents/dev-environment.md.
 >
 > The backend runs the real Go server under [air](https://github.com/air-verse/air) for
 > hot reload. Migrations run via goose (`mise run db:migrate`); the dev backend itself does not

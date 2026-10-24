@@ -4,7 +4,7 @@
 // its own session cookie and JWT secret, and the /staff API surface.
 //
 // A Staff member belongs to no Workspace, so this package works on the raw *ent.Client
-// (it is in AGENTS.md's closed list): the Staff member table, and the Workspace rows, the
+// (it is in the closed list of docs/agents/workspace-scoping.md): the Staff member table, and the Workspace rows, the
 // suspension state and the rates the console shows, which are tenant metadata rather
 // than a Workspace's data. Two reads build a Workspace scope, each over the one
 // Workspace the Staff member is looking at, because the module they ride takes one: the

@@ -12,7 +12,7 @@
 // runs on the plain client (db.NewEntClient) and refuses a change to a host outside a
 // transaction, where the log row would be a separate statement that a crash loses.
 // The hook reads Sending domains of any Workspace to find the hosts a change touches,
-// which is why this package is on the closed list of raw-client packages in AGENTS.md.
+// which is why this package is on the closed list of raw-client packages in docs/agents/workspace-scoping.md.
 package trackinghostlog
 
 import (

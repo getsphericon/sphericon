@@ -37,7 +37,7 @@ The Staff member, its console and the detector ship under a single license featu
   The console is a lazily loaded route subtree in the same SPA; without the license the surface
   answers 404.
 - One Staff member role. Roles wait for a second support person.
-- Staff member handlers need the raw `*ent.Client`, so `ee/staff` joins the closed list in AGENTS.md.
+- Staff member handlers need the raw `*ent.Client`, so `ee/staff` joins the closed list in docs/agents/workspace-scoping.md.
 
 ### Service credential: the machine identity of the Staff surface
 
