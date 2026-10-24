@@ -171,6 +171,12 @@ floor in `.testcoverage.yml` is raised when coverage rises, never lowered. A new
 `check:vulns` with no change on our side, so it is deliberately not part of `check`: put a check
 there when its result does not depend on the diff under review.
 
+**Tool versions.** `.mise.toml` declares most tools as `latest`; `mise.lock` pins them, and
+Dependabot has no mise ecosystem, so nothing moves the lock but a commit. `.github/workflows/tools.yml`
+runs weekly and keeps one `ready-for-agent` issue ("Update the mise tools") listing the tools behind
+their newest release, closing it when the lock is current. Bump with `mise upgrade <tool>` (it
+rewrites `mise.lock`), run `mise run check`, commit as `build(deps):`.
+
 Schema consistency: `mise run check:schema` runs [schemalens](https://github.com/mokevnin/schemalens)
 (pinned in `.mise.toml`, its ent adapter fetched into the user cache by `mise/scripts/schemalens.sh`)
 against the migrated dev database and compares it with the ent schema. Each finding carries a `fix`

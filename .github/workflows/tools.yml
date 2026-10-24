@@ -1,0 +1,36 @@
+name: Tools
+
+# Dependabot has no mise ecosystem, so mise.lock moves only when someone bumps it. This keeps one
+# issue open while a tool is behind its newest release, and closes it when the lock catches up.
+on:
+  schedule:
+    - cron: '41 5 * * 1'
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  outdated:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup mise
+        uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
+
+      - name: Update the issue
+        run: mise/scripts/outdated-issue.sh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
