@@ -380,6 +380,22 @@ func Encode(group json.Marshaler) (string, error) {
 	return string(b), nil
 }
 
+// EncodeOptional is Encode for a condition the request may leave out: nil when it is absent.
+func EncodeOptional[G any, P interface {
+	*G
+	json.Marshaler
+}](opt interface{ Get() (G, bool) }) (*string, error) {
+	group, ok := opt.Get()
+	if !ok {
+		return nil, nil
+	}
+	def, err := Encode(P(&group))
+	if err != nil {
+		return nil, err
+	}
+	return &def, nil
+}
+
 // Decode loads a stored condition into an API DTO.
 func Decode(def string, into json.Unmarshaler) error {
 	if err := into.UnmarshalJSON([]byte(def)); err != nil {

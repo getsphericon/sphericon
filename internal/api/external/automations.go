@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/validation"
 	"github.com/samber/lo"
 )
 
@@ -49,7 +50,7 @@ func (h *Handlers) AutomationsCreate(ctx context.Context, req *externalapi.Creat
 	}
 	a, err := h.automations.Create(ctx, auth.TokenScoped(ctx), in)
 	if automations.IsInvalid(err) {
-		res := externalapi.AutomationsCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
+		res := externalapi.AutomationsCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
 		return &res, nil
 	}
 	if err != nil {
@@ -67,7 +68,7 @@ func (h *Handlers) AutomationsGet(ctx context.Context, params externalapi.Automa
 	id := int64(params.ID)
 	a, err := h.automations.Get(ctx, auth.TokenScoped(ctx), id)
 	if errors.Is(err, automations.ErrNotFound) {
-		res := externalapi.AutomationsGetNotFound(problem(http.StatusNotFound, "automation not found"))
+		res := externalapi.AutomationsGetNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil
 	}
 	if err != nil {
@@ -95,10 +96,10 @@ func (h *Handlers) AutomationsUpdate(ctx context.Context, req *externalapi.Updat
 	a, err := h.automations.Update(ctx, auth.TokenScoped(ctx), id, in)
 	switch {
 	case errors.Is(err, automations.ErrNotFound):
-		res := externalapi.AutomationsUpdateNotFound(problem(http.StatusNotFound, "automation not found"))
+		res := externalapi.AutomationsUpdateNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil
 	case automations.IsInvalid(err):
-		res := externalapi.AutomationsUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
+		res := externalapi.AutomationsUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
 		return &res, nil
 	case err != nil:
 		return nil, err
@@ -120,7 +121,7 @@ func (h *Handlers) AutomationsDelete(ctx context.Context, params externalapi.Aut
 	}
 	switch {
 	case errors.Is(err, automations.ErrNotFound):
-		res := externalapi.AutomationsDeleteNotFound(problem(http.StatusNotFound, "automation not found"))
+		res := externalapi.AutomationsDeleteNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil
 	case err != nil:
 		return nil, err
@@ -142,7 +143,7 @@ func (h *Handlers) AutomationsArchive(ctx context.Context, params externalapi.Au
 		return &res, nil
 	}
 	if errors.Is(err, automations.ErrNotFound) {
-		res := externalapi.AutomationsArchiveNotFound(problem(http.StatusNotFound, "automation not found"))
+		res := externalapi.AutomationsArchiveNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil
 	}
 	if err != nil {
@@ -166,7 +167,7 @@ func (h *Handlers) AutomationsUnarchive(ctx context.Context, params externalapi.
 	id := int64(params.ID)
 	err := h.automations.Unarchive(ctx, ws, id)
 	if errors.Is(err, automations.ErrNotFound) {
-		res := externalapi.AutomationsUnarchiveNotFound(problem(http.StatusNotFound, "automation not found"))
+		res := externalapi.AutomationsUnarchiveNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil
 	}
 	if err != nil {
@@ -191,7 +192,7 @@ func (h *Handlers) AutomationsActivate(ctx context.Context, params externalapi.A
 	id := int64(params.ID)
 	a, err := h.automations.Activate(ctx, auth.TokenScoped(ctx), id)
 	if errors.Is(err, automations.ErrNotFound) {
-		res := externalapi.AutomationsActivateNotFound(problem(http.StatusNotFound, "automation not found"))
+		res := externalapi.AutomationsActivateNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil
 	}
 	if err != nil {
@@ -209,7 +210,7 @@ func (h *Handlers) AutomationsDeactivate(ctx context.Context, params externalapi
 	id := int64(params.ID)
 	a, err := h.automations.Deactivate(ctx, auth.TokenScoped(ctx), id)
 	if errors.Is(err, automations.ErrNotFound) {
-		res := externalapi.AutomationsDeactivateNotFound(problem(http.StatusNotFound, "automation not found"))
+		res := externalapi.AutomationsDeactivateNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil
 	}
 	if err != nil {

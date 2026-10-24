@@ -85,7 +85,7 @@ func (h *Handlers) IntegrationsCreate(ctx context.Context, req *externalapi.Crea
 		res := externalapi.IntegrationsCreateUnprocessableEntity(validationProblem(verr))
 		return &res, nil
 	case errors.Is(err, integrations.ErrDefaultConflict):
-		res := externalapi.IntegrationsCreateConflict(problem(http.StatusConflict, err.Error()))
+		res := externalapi.IntegrationsCreateConflict(problem(http.StatusConflict, validation.Message(err)))
 		return &res, nil
 	case err != nil:
 		return nil, err
@@ -105,9 +105,9 @@ func (h *Handlers) IntegrationsGet(ctx context.Context, params externalapi.Integ
 	}
 	id := int64(params.ID)
 	s := auth.TokenScoped(ctx)
-	row, err := s.Integration().Get(ctx, id)
-	if ent.IsNotFound(err) {
-		res := externalapi.IntegrationsGetNotFound(problem(http.StatusNotFound, "integration not found"))
+	row, err := h.integrations.Get(ctx, s, id)
+	if errors.Is(err, integrations.ErrNotFound) {
+		res := externalapi.IntegrationsGetNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil
 	}
 	if err != nil {
@@ -153,14 +153,14 @@ func (h *Handlers) IntegrationsUpdate(ctx context.Context, req *externalapi.Upda
 	}
 	var verr *validation.Error
 	switch {
-	case ent.IsNotFound(err):
-		res := externalapi.IntegrationsUpdateNotFound(problem(http.StatusNotFound, "integration not found"))
+	case errors.Is(err, integrations.ErrNotFound):
+		res := externalapi.IntegrationsUpdateNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil
 	case errors.As(err, &verr):
 		res := externalapi.IntegrationsUpdateUnprocessableEntity(validationProblem(verr))
 		return &res, nil
 	case errors.Is(err, integrations.ErrDefaultConflict):
-		res := externalapi.IntegrationsUpdateConflict(problem(http.StatusConflict, err.Error()))
+		res := externalapi.IntegrationsUpdateConflict(problem(http.StatusConflict, validation.Message(err)))
 		return &res, nil
 	case err != nil:
 		return nil, err
@@ -181,8 +181,8 @@ func (h *Handlers) IntegrationsRegenerateKey(ctx context.Context, params externa
 	}
 	s := auth.TokenScoped(ctx)
 	row, err := h.integrations.RegenerateKey(ctx, s, int64(params.ID))
-	if ent.IsNotFound(err) {
-		res := externalapi.IntegrationsRegenerateKeyNotFound(problem(http.StatusNotFound, "integration not found"))
+	if errors.Is(err, integrations.ErrNotFound) {
+		res := externalapi.IntegrationsRegenerateKeyNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil
 	}
 	if err != nil {
@@ -231,8 +231,8 @@ func (h *Handlers) IntegrationsArchive(ctx context.Context, params externalapi.I
 		res := inUseProblem(refused)
 		return &res, nil
 	}
-	if ent.IsNotFound(err) {
-		res := externalapi.IntegrationsArchiveNotFound(problem(http.StatusNotFound, "integration not found"))
+	if errors.Is(err, integrations.ErrNotFound) {
+		res := externalapi.IntegrationsArchiveNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil
 	}
 	if err != nil {
@@ -250,8 +250,8 @@ func (h *Handlers) IntegrationsUnarchive(ctx context.Context, params externalapi
 	s := auth.TokenScoped(ctx)
 	id := int64(params.ID)
 	err := h.integrations.Unarchive(ctx, s, id)
-	if ent.IsNotFound(err) {
-		res := externalapi.IntegrationsUnarchiveNotFound(problem(http.StatusNotFound, "integration not found"))
+	if errors.Is(err, integrations.ErrNotFound) {
+		res := externalapi.IntegrationsUnarchiveNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil
 	}
 	if err != nil {
@@ -262,7 +262,7 @@ func (h *Handlers) IntegrationsUnarchive(ctx context.Context, params externalapi
 
 // archivedOrRestored reads the Integration back after an archive or an unarchive.
 func (h *Handlers) archivedOrRestored(ctx context.Context, s *ent.Scoped, id int64) (*externalapi.IntegrationResource, error) {
-	row, err := s.Integration().Get(ctx, id)
+	row, err := h.integrations.Get(ctx, s, id)
 	if err != nil {
 		return nil, err
 	}

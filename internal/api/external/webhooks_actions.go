@@ -5,10 +5,10 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/getsphericon/sphericon/ent"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/narrow"
+	"github.com/getsphericon/sphericon/internal/validation"
 	"github.com/getsphericon/sphericon/internal/webhooks"
 )
 
@@ -20,8 +20,8 @@ func (h *Handlers) WebhooksRegenerateSecret(ctx context.Context, params external
 		return &res, nil
 	}
 	e, err := h.webhooks.RegenerateSecret(ctx, auth.TokenScoped(ctx), int64(params.ID))
-	if ent.IsNotFound(err) {
-		res := externalapi.WebhooksRegenerateSecretNotFound(problem(http.StatusNotFound, "webhook not found"))
+	if errors.Is(err, webhooks.ErrNotFound) {
+		res := externalapi.WebhooksRegenerateSecretNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil
 	}
 	if err != nil {
@@ -40,13 +40,11 @@ func (h *Handlers) WebhooksTest(ctx context.Context, req *externalapi.TestWebhoo
 	}
 	res, err := h.webhooks.TestSend(ctx, auth.TokenScoped(ctx), int64(params.ID), req.EventType)
 	if errors.Is(err, webhooks.ErrInvalidEventType) {
-		p := problem(http.StatusUnprocessableEntity, err.Error())
-		p.Errors = externalapi.NewOptProblemDetailsErrors(externalapi.ProblemDetailsErrors{"eventType": {err.Error()}})
-		v := externalapi.WebhooksTestUnprocessableEntity(p)
+		v := externalapi.WebhooksTestUnprocessableEntity(fieldProblem(err, "eventType"))
 		return &v, nil
 	}
-	if ent.IsNotFound(err) {
-		v := externalapi.WebhooksTestNotFound(problem(http.StatusNotFound, "webhook not found"))
+	if errors.Is(err, webhooks.ErrNotFound) {
+		v := externalapi.WebhooksTestNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &v, nil
 	}
 	if err != nil {

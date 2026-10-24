@@ -307,7 +307,7 @@ func (m *Module) RegenerateKey(ctx context.Context, s *ent.Scoped, id int64) (*e
 		return err
 	})
 	if err != nil {
-		return nil, err
+		return nil, missing(err)
 	}
 	return row, nil
 }

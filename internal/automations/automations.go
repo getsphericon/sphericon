@@ -26,6 +26,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/secrets"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // Step kinds.
@@ -66,13 +67,13 @@ type Step struct {
 // Domain errors. Callers match with errors.Is.
 var (
 	// ErrNotFound: no such Automation in this Workspace.
-	ErrNotFound = errors.New("automations: automation not found")
+	ErrNotFound = validation.Refuse("automations: automation not found", "errors.automation_not_found")
 	// ErrInvalidStep: a step has an unknown type, a negative wait, or a tag step
 	// without a tag name, or an email step whose content cannot render.
-	ErrInvalidStep = errors.New("automations: invalid step")
+	ErrInvalidStep = validation.Refuse("automations: invalid step", "errors.automation_step_invalid")
 	// ErrInvalidTrigger: the trigger is an infrastructure Event (a send or a delivery notice)
 	// that no Automation may start from (ADR 0053).
-	ErrInvalidTrigger = errors.New("automations: invalid trigger")
+	ErrInvalidTrigger = validation.Refuse("automations: invalid trigger", "errors.automation_trigger_invalid")
 
 	// ErrNoVersion: the Automation has no version yet. Only an Automation made before versions
 	// existed can be in that state, until the backfill job (internal/jobs) has run.
@@ -100,9 +101,9 @@ func build(ctx context.Context, steps []Step) ([]Step, error) {
 		c, err := emailrender.ResolveContent(ctx, &s.Subject, body, s.Doc, errBodyAndDoc)
 		switch {
 		case errors.Is(err, errBodyAndDoc):
-			return nil, fmt.Errorf("%w: step %d: write a body or a doc, not both", ErrInvalidStep, i+1)
+			return nil, ErrInvalidStep.With(fmt.Sprintf("step %d: write a body or a doc, not both", i+1))
 		case errors.Is(err, emailrender.ErrInvalidContent):
-			return nil, fmt.Errorf("%w: step %d: %w", ErrInvalidStep, i+1, err)
+			return nil, ErrInvalidStep.With(fmt.Sprintf("step %d: %s", i+1, err))
 		case err != nil:
 			return nil, err
 		}
@@ -154,7 +155,7 @@ func validate(steps []Step) error {
 		switch s.Type {
 		case StepEmail:
 			if err := emailrender.Lint(s.Subject, s.Body, nil).Error; err != nil {
-				return fmt.Errorf("%w: %w", ErrInvalidStep, err)
+				return ErrInvalidStep.With(err.Error())
 			}
 		case StepHTTP:
 		case StepWait:
@@ -198,7 +199,7 @@ var engagementTriggers = []string{events.NameEmailOpened, events.NameEmailClicke
 func validateTrigger(trigger string) error {
 	t := strings.ToLower(strings.TrimSpace(trigger))
 	if strings.HasPrefix(t, "email.") && !slices.Contains(engagementTriggers, t) {
-		return fmt.Errorf("%w: %q is not a trigger; use %s", ErrInvalidTrigger, trigger, strings.Join(engagementTriggers, ", "))
+		return ErrInvalidTrigger.With(fmt.Sprintf("%q is not a trigger; use %s", trigger, strings.Join(engagementTriggers, ", ")))
 	}
 	return nil
 }

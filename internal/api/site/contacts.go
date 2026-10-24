@@ -166,6 +166,12 @@ func problemWithErrors(code int, detail string, fieldErrors map[string][]string)
 	return p
 }
 
+// fieldProblem is the 422 for a refused input whose error carries its message, naming the field.
+func fieldProblem(err error, field string) siteapi.ProblemDetails {
+	msg := validation.Message(err)
+	return problemWithErrors(http.StatusUnprocessableEntity, msg, map[string][]string{field: {msg}})
+}
+
 // validationProblem is the 422 for a refused input of a domain module: detail is the problem's own
 // message and the field-level error names the field the module refused.
 func validationProblem(detail string, v *validation.Error) siteapi.ProblemDetails {

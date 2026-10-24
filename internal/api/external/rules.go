@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/rules"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // Rules reuse the Automation scopes: a Rule is the light form of an Automation, so reading
@@ -54,14 +55,14 @@ func (h *Handlers) RulesCreate(ctx context.Context, req *externalapi.CreateRuleI
 		TriggerEvents: req.TriggerEvents,
 		Actions:       resources.RuleActions(req.Actions),
 	}
-	def, err := ruleCondition(req.Condition)
+	def, err := condition.EncodeOptional(req.Condition)
 	if err != nil {
 		return nil, err
 	}
 	in.Condition = def
 	r, err := h.rules.Create(ctx, auth.TokenScoped(ctx), in)
 	if errors.Is(err, rules.ErrInvalid) {
-		res := externalapi.RulesCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
+		res := externalapi.RulesCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
 		return &res, nil
 	}
 	if err != nil {
@@ -78,7 +79,7 @@ func (h *Handlers) RulesGet(ctx context.Context, params externalapi.RulesGetPara
 	}
 	r, err := h.rules.Get(ctx, auth.TokenScoped(ctx), int64(params.ID))
 	if errors.Is(err, rules.ErrNotFound) {
-		res := externalapi.RulesGetNotFound(problem(http.StatusNotFound, "rule not found"))
+		res := externalapi.RulesGetNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil
 	}
 	if err != nil {
@@ -102,7 +103,7 @@ func (h *Handlers) RulesUpdate(ctx context.Context, req *externalapi.UpdateRuleI
 		actions := resources.RuleActions(req.Actions)
 		in.Actions = &actions
 	}
-	def, err := ruleCondition(req.Condition)
+	def, err := condition.EncodeOptional(req.Condition)
 	if err != nil {
 		return nil, err
 	}
@@ -110,10 +111,10 @@ func (h *Handlers) RulesUpdate(ctx context.Context, req *externalapi.UpdateRuleI
 	r, err := h.rules.Update(ctx, auth.TokenScoped(ctx), int64(params.ID), in)
 	switch {
 	case errors.Is(err, rules.ErrNotFound):
-		res := externalapi.RulesUpdateNotFound(problem(http.StatusNotFound, "rule not found"))
+		res := externalapi.RulesUpdateNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil
 	case errors.Is(err, rules.ErrInvalid):
-		res := externalapi.RulesUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
+		res := externalapi.RulesUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
 		return &res, nil
 	case err != nil:
 		return nil, err
@@ -135,7 +136,7 @@ func (h *Handlers) RulesDelete(ctx context.Context, params externalapi.RulesDele
 	}
 	switch {
 	case errors.Is(err, rules.ErrNotFound):
-		res := externalapi.RulesDeleteNotFound(problem(http.StatusNotFound, "rule not found"))
+		res := externalapi.RulesDeleteNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil
 	case err != nil:
 		return nil, err
@@ -153,7 +154,7 @@ func (h *Handlers) RulesArchive(ctx context.Context, params externalapi.RulesArc
 	id := int64(params.ID)
 	err := h.rules.Archive(ctx, ws, id)
 	if errors.Is(err, rules.ErrNotFound) {
-		res := externalapi.RulesArchiveNotFound(problem(http.StatusNotFound, "rule not found"))
+		res := externalapi.RulesArchiveNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil
 	}
 	if err != nil {
@@ -177,7 +178,7 @@ func (h *Handlers) RulesUnarchive(ctx context.Context, params externalapi.RulesU
 	id := int64(params.ID)
 	err := h.rules.Unarchive(ctx, ws, id)
 	if errors.Is(err, rules.ErrNotFound) {
-		res := externalapi.RulesUnarchiveNotFound(problem(http.StatusNotFound, "rule not found"))
+		res := externalapi.RulesUnarchiveNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil
 	}
 	if err != nil {
@@ -201,10 +202,10 @@ func (h *Handlers) RulesActivate(ctx context.Context, params externalapi.RulesAc
 	r, err := h.rules.Activate(ctx, auth.TokenScoped(ctx), int64(params.ID))
 	switch {
 	case errors.Is(err, rules.ErrNotFound):
-		res := externalapi.RulesActivateNotFound(problem(http.StatusNotFound, "rule not found"))
+		res := externalapi.RulesActivateNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil
 	case errors.Is(err, rules.ErrInvalid):
-		res := externalapi.RulesActivateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
+		res := externalapi.RulesActivateUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
 		return &res, nil
 	case err != nil:
 		return nil, err
@@ -220,7 +221,7 @@ func (h *Handlers) RulesDeactivate(ctx context.Context, params externalapi.Rules
 	}
 	r, err := h.rules.Deactivate(ctx, auth.TokenScoped(ctx), int64(params.ID))
 	if errors.Is(err, rules.ErrNotFound) {
-		res := externalapi.RulesDeactivateNotFound(problem(http.StatusNotFound, "rule not found"))
+		res := externalapi.RulesDeactivateNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil
 	}
 	if err != nil {
@@ -240,10 +241,10 @@ func (h *Handlers) RulesDryRun(ctx context.Context, req *externalapi.DryRunRuleI
 	dry, err := h.rules.DryRun(ctx, auth.TokenScoped(ctx), int64(params.ID), int64(req.EventId))
 	switch {
 	case errors.Is(err, rules.ErrNotFound):
-		res := externalapi.RulesDryRunNotFound(problem(http.StatusNotFound, "rule not found"))
+		res := externalapi.RulesDryRunNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil
 	case errors.Is(err, rules.ErrEventNotFound):
-		res := externalapi.RulesDryRunNotFound(problem(http.StatusNotFound, "event not found"))
+		res := externalapi.RulesDryRunNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil
 	case err != nil:
 		return nil, err
@@ -260,7 +261,7 @@ func (h *Handlers) RuleFiringsList(ctx context.Context, params externalapi.RuleF
 	}
 	page, err := h.rules.Firings(ctx, auth.TokenScoped(ctx), int64(params.RuleId), pagination.ParamsOf(params.Page, params.PageSize))
 	if errors.Is(err, rules.ErrNotFound) {
-		res := externalapi.RuleFiringsListNotFound(problem(http.StatusNotFound, "rule not found"))
+		res := externalapi.RuleFiringsListNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil
 	}
 	if err != nil {
@@ -275,17 +276,4 @@ func (h *Handlers) RuleFiringsList(ctx context.Context, params externalapi.RuleF
 		TotalItems: narrow.Int32(page.TotalItems),
 		TotalPages: narrow.Int32(page.TotalPages),
 	}, nil
-}
-
-// ruleCondition is the stored form of the Condition a request carries, nil when it carries none.
-func ruleCondition(opt externalapi.OptConditionGroup) (*string, error) {
-	group, ok := opt.Get()
-	if !ok {
-		return nil, nil
-	}
-	def, err := condition.Encode(&group)
-	if err != nil {
-		return nil, err
-	}
-	return &def, nil
 }

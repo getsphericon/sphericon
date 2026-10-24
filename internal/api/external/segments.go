@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/segments"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 func (h *Handlers) SegmentsList(ctx context.Context, params externalapi.SegmentsListParams) (externalapi.SegmentsListRes, error) {
@@ -55,7 +56,7 @@ func (h *Handlers) SegmentsCreate(ctx context.Context, req *externalapi.CreateSe
 		Condition: &def,
 	})
 	if errors.Is(err, segments.ErrInvalidCondition) {
-		res := externalapi.SegmentsCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
+		res := externalapi.SegmentsCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
 		return &res, nil
 	}
 	if err != nil {
@@ -73,9 +74,9 @@ func (h *Handlers) SegmentsGet(ctx context.Context, params externalapi.SegmentsG
 
 	ws := auth.TokenScoped(ctx)
 	id := int64(params.ID)
-	s, err := ws.Segment().Get(ctx, id)
-	if ent.IsNotFound(err) {
-		res := externalapi.SegmentsGetNotFound(problem(http.StatusNotFound, "segment not found"))
+	s, err := h.segments.Get(ctx, ws, id)
+	if errors.Is(err, segments.ErrNotFound) {
+		res := externalapi.SegmentsGetNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil
 	}
 	if err != nil {
@@ -93,21 +94,18 @@ func (h *Handlers) SegmentsUpdate(ctx context.Context, req *externalapi.UpdateSe
 
 	ws := auth.TokenScoped(ctx)
 	id := int64(params.ID)
-	in := segments.UpdateInput{Name: convert.StringPtr(req.Name)}
-	if group, ok := req.Condition.Get(); ok {
-		def, err := condition.Encode(&group)
-		if err != nil {
-			return nil, err
-		}
-		in.Condition = &def
+	cond, err := condition.EncodeOptional(req.Condition)
+	if err != nil {
+		return nil, err
 	}
+	in := segments.UpdateInput{Name: convert.StringPtr(req.Name), Condition: cond}
 	s, err := h.segments.Update(ctx, ws, id, in)
 	if errors.Is(err, segments.ErrInvalidCondition) {
-		res := externalapi.SegmentsUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
+		res := externalapi.SegmentsUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
 		return &res, nil
 	}
 	if errors.Is(err, segments.ErrNotFound) {
-		res := externalapi.SegmentsUpdateNotFound(problem(http.StatusNotFound, "segment not found"))
+		res := externalapi.SegmentsUpdateNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil
 	}
 	if err != nil {
@@ -132,13 +130,13 @@ func (h *Handlers) SegmentsArchive(ctx context.Context, params externalapi.Segme
 		return &res, nil
 	}
 	if errors.Is(err, segments.ErrNotFound) {
-		res := externalapi.SegmentsArchiveNotFound(problem(http.StatusNotFound, "segment not found"))
+		res := externalapi.SegmentsArchiveNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	s, err := ws.Segment().Get(ctx, id)
+	s, err := h.segments.Get(ctx, ws, id)
 	if err != nil {
 		return nil, err
 	}
@@ -157,13 +155,13 @@ func (h *Handlers) SegmentsUnarchive(ctx context.Context, params externalapi.Seg
 	id := int64(params.ID)
 	err := h.segments.Unarchive(ctx, ws, id)
 	if errors.Is(err, segments.ErrNotFound) {
-		res := externalapi.SegmentsUnarchiveNotFound(problem(http.StatusNotFound, "segment not found"))
+		res := externalapi.SegmentsUnarchiveNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	s, err := ws.Segment().Get(ctx, id)
+	s, err := h.segments.Get(ctx, ws, id)
 	if err != nil {
 		return nil, err
 	}
@@ -187,7 +185,7 @@ func (h *Handlers) SegmentsPreview(ctx context.Context, req *externalapi.Preview
 	}
 	count, err := h.segments.Preview(ctx, ws, def)
 	if errors.Is(err, segments.ErrInvalidCondition) {
-		res := externalapi.SegmentsPreviewUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
+		res := externalapi.SegmentsPreviewUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
 		return &res, nil
 	}
 	if err != nil {

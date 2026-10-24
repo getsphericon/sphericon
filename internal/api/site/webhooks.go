@@ -10,9 +10,9 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
-	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/validation"
 	"github.com/getsphericon/sphericon/internal/webhooks"
 )
 
@@ -31,12 +31,9 @@ func webhookResource(e webhooks.Endpoint) siteapi.SiteWebhookEndpointResource {
 func webhookRuleProblem(err error) (siteapi.ProblemDetails, bool) {
 	switch {
 	case errors.Is(err, webhooks.ErrInvalidURL):
-		return problemWithErrors(http.StatusUnprocessableEntity, i18n.T("errors.url_invalid", nil), map[string][]string{
-			"url": {i18n.T("errors.url_must_be_absolute", nil)},
-		}), true
+		return fieldProblem(err, "url"), true
 	case errors.Is(err, webhooks.ErrAuditNeedsLicense):
-		const detail = "audit.entry needs an Enterprise license"
-		return problemWithErrors(http.StatusUnprocessableEntity, detail, map[string][]string{"eventTypes": {detail}}), true
+		return fieldProblem(err, "eventTypes"), true
 	}
 	return siteapi.ProblemDetails{}, false
 }
@@ -115,8 +112,8 @@ func (h *Handlers) SiteWebhooksGet(ctx context.Context, params siteapi.SiteWebho
 
 	id := int64(params.ID)
 	e, err := h.webhooks.Get(ctx, scoped, id)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteWebhooksGetNotFound(problem(http.StatusNotFound, "webhook not found"))
+	if errors.Is(err, webhooks.ErrNotFound) {
+		v := siteapi.SiteWebhooksGetNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &v, nil
 	}
 	if err != nil {
@@ -153,8 +150,8 @@ func (h *Handlers) SiteWebhooksUpdate(ctx context.Context, req *siteapi.SiteUpda
 		v := siteapi.SiteWebhooksUpdateUnprocessableEntity(p)
 		return &v, nil
 	}
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteWebhooksUpdateNotFound(problem(http.StatusNotFound, "webhook not found"))
+	if errors.Is(err, webhooks.ErrNotFound) {
+		v := siteapi.SiteWebhooksUpdateNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &v, nil
 	}
 	if err != nil {
@@ -180,8 +177,8 @@ func (h *Handlers) SiteWebhooksDelete(ctx context.Context, params siteapi.SiteWe
 
 	id := int64(params.ID)
 	err = h.webhooks.Delete(ctx, scoped, id)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteWebhooksDeleteNotFound(problem(http.StatusNotFound, "webhook not found"))
+	if errors.Is(err, webhooks.ErrNotFound) {
+		v := siteapi.SiteWebhooksDeleteNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &v, nil
 	}
 	if err != nil {

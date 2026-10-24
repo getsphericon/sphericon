@@ -90,7 +90,7 @@ func (h *Handlers) SiteIntegrationsCreate(ctx context.Context, req *siteapi.Site
 		v := siteapi.SiteIntegrationsCreateUnprocessableEntity(validationProblem(verr.Message, verr))
 		return &v, nil
 	case errors.Is(err, integrations.ErrDefaultConflict):
-		v := siteapi.SiteIntegrationsCreateConflict(problem(http.StatusConflict, err.Error()))
+		v := siteapi.SiteIntegrationsCreateConflict(problem(http.StatusConflict, validation.Message(err)))
 		return &v, nil
 	case err != nil:
 		return nil, err
@@ -114,9 +114,9 @@ func (h *Handlers) SiteIntegrationsGet(ctx context.Context, params siteapi.SiteI
 	}
 
 	id := int64(params.ID)
-	row, err := s.Integration().Get(ctx, id)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteIntegrationsGetNotFound(problem(http.StatusNotFound, "integration not found"))
+	row, err := h.integrations.Get(ctx, s, id)
+	if errors.Is(err, integrations.ErrNotFound) {
+		v := siteapi.SiteIntegrationsGetNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &v, nil
 	}
 	if err != nil {
@@ -174,14 +174,14 @@ func (h *Handlers) SiteIntegrationsUpdate(ctx context.Context, req *siteapi.Site
 	}
 	var verr *validation.Error
 	switch {
-	case ent.IsNotFound(err):
-		r := siteapi.SiteIntegrationsUpdateNotFound(problem(http.StatusNotFound, "integration not found"))
+	case errors.Is(err, integrations.ErrNotFound):
+		r := siteapi.SiteIntegrationsUpdateNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &r, nil
 	case errors.As(err, &verr):
 		r := siteapi.SiteIntegrationsUpdateUnprocessableEntity(validationProblem(verr.Message, verr))
 		return &r, nil
 	case errors.Is(err, integrations.ErrDefaultConflict):
-		r := siteapi.SiteIntegrationsUpdateConflict(problem(http.StatusConflict, err.Error()))
+		r := siteapi.SiteIntegrationsUpdateConflict(problem(http.StatusConflict, validation.Message(err)))
 		return &r, nil
 	case err != nil:
 		return nil, err
@@ -209,8 +209,8 @@ func (h *Handlers) SiteIntegrationsRegenerateKey(ctx context.Context, params sit
 		return &v, nil
 	}
 	row, err := h.integrations.RegenerateKey(ctx, s, int64(params.ID))
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteIntegrationsRegenerateKeyNotFound(problem(http.StatusNotFound, "integration not found"))
+	if errors.Is(err, integrations.ErrNotFound) {
+		v := siteapi.SiteIntegrationsRegenerateKeyNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &v, nil
 	}
 	if err != nil {
@@ -259,14 +259,14 @@ func (h *Handlers) SiteIntegrationsArchive(ctx context.Context, params siteapi.S
 		v := inUseProblem(refused)
 		return &v, nil
 	}
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteIntegrationsArchiveNotFound(problem(http.StatusNotFound, "integration not found"))
+	if errors.Is(err, integrations.ErrNotFound) {
+		v := siteapi.SiteIntegrationsArchiveNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &v, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	row, err := s.Integration().Get(ctx, id)
+	row, err := h.integrations.Get(ctx, s, id)
 	if err != nil {
 		return nil, err
 	}
@@ -295,14 +295,14 @@ func (h *Handlers) SiteIntegrationsUnarchive(ctx context.Context, params siteapi
 
 	id := int64(params.ID)
 	err = h.integrations.Unarchive(ctx, s, id)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteIntegrationsUnarchiveNotFound(problem(http.StatusNotFound, "integration not found"))
+	if errors.Is(err, integrations.ErrNotFound) {
+		v := siteapi.SiteIntegrationsUnarchiveNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &v, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	row, err := s.Integration().Get(ctx, id)
+	row, err := h.integrations.Get(ctx, s, id)
 	if err != nil {
 		return nil, err
 	}

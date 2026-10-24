@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/segments"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 func (h *Handlers) SiteSegmentsList(ctx context.Context, params siteapi.SiteSegmentsListParams) (siteapi.SiteSegmentsListRes, error) {
@@ -62,7 +63,7 @@ func (h *Handlers) SiteSegmentsCreate(ctx context.Context, req *siteapi.SiteCrea
 		Condition: &def,
 	})
 	if errors.Is(err, segments.ErrInvalidCondition) {
-		v := siteapi.SiteSegmentsCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
+		v := siteapi.SiteSegmentsCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
 		return &v, nil
 	}
 	if err != nil {
@@ -83,9 +84,9 @@ func (h *Handlers) SiteSegmentsGet(ctx context.Context, params siteapi.SiteSegme
 	}
 
 	id := int64(params.ID)
-	s, err := ws.Segment().Get(ctx, id)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteSegmentsGetNotFound(problem(http.StatusNotFound, "segment not found"))
+	s, err := h.segments.Get(ctx, ws, id)
+	if errors.Is(err, segments.ErrNotFound) {
+		v := siteapi.SiteSegmentsGetNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &v, nil
 	}
 	if err != nil {
@@ -107,20 +108,17 @@ func (h *Handlers) SiteSegmentsUpdate(ctx context.Context, req *siteapi.SiteUpda
 
 	id := int64(params.ID)
 	in := segments.UpdateInput{Name: convert.StringPtr(req.Name)}
-	if group, ok := req.Condition.Get(); ok {
-		def, err := condition.Encode(&group)
-		if err != nil {
-			return nil, err
-		}
-		in.Condition = &def
+	in.Condition, err = condition.EncodeOptional(req.Condition)
+	if err != nil {
+		return nil, err
 	}
 	s, err := h.segments.Update(ctx, ws, id, in)
 	if errors.Is(err, segments.ErrInvalidCondition) {
-		v := siteapi.SiteSegmentsUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
+		v := siteapi.SiteSegmentsUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
 		return &v, nil
 	}
 	if errors.Is(err, segments.ErrNotFound) {
-		v := siteapi.SiteSegmentsUpdateNotFound(problem(http.StatusNotFound, "segment not found"))
+		v := siteapi.SiteSegmentsUpdateNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &v, nil
 	}
 	if err != nil {
@@ -149,13 +147,13 @@ func (h *Handlers) SiteSegmentsArchive(ctx context.Context, params siteapi.SiteS
 		return &v, nil
 	}
 	if errors.Is(err, segments.ErrNotFound) {
-		v := siteapi.SiteSegmentsArchiveNotFound(problem(http.StatusNotFound, "segment not found"))
+		v := siteapi.SiteSegmentsArchiveNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &v, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	s, err := ws.Segment().Get(ctx, id)
+	s, err := h.segments.Get(ctx, ws, id)
 	if err != nil {
 		return nil, err
 	}
@@ -177,13 +175,13 @@ func (h *Handlers) SiteSegmentsUnarchive(ctx context.Context, params siteapi.Sit
 	id := int64(params.ID)
 	err = h.segments.Unarchive(ctx, ws, id)
 	if errors.Is(err, segments.ErrNotFound) {
-		v := siteapi.SiteSegmentsUnarchiveNotFound(problem(http.StatusNotFound, "segment not found"))
+		v := siteapi.SiteSegmentsUnarchiveNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &v, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	s, err := ws.Segment().Get(ctx, id)
+	s, err := h.segments.Get(ctx, ws, id)
 	if err != nil {
 		return nil, err
 	}
@@ -204,15 +202,13 @@ func (h *Handlers) SiteSegmentsPreview(ctx context.Context, req *siteapi.SitePre
 		return nil, err
 	}
 
-	def := ""
-	if group, ok := req.Condition.Get(); ok {
-		if def, err = condition.Encode(&group); err != nil {
-			return nil, err
-		}
+	def, err := condition.EncodeOptional(req.Condition)
+	if err != nil {
+		return nil, err
 	}
-	count, err := h.segments.Preview(ctx, ws, def)
+	count, err := h.segments.Preview(ctx, ws, lo.FromPtr(def))
 	if errors.Is(err, segments.ErrInvalidCondition) {
-		v := siteapi.SiteSegmentsPreviewUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
+		v := siteapi.SiteSegmentsPreviewUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
 		return &v, nil
 	}
 	if err != nil {
@@ -235,7 +231,7 @@ func (h *Handlers) SiteSegmentContactsList(ctx context.Context, params siteapi.S
 
 	page, err := h.segments.Contacts(ctx, ws, int64(params.SegmentId), pagination.ParamsOf(params.Page, params.PageSize))
 	if errors.Is(err, segments.ErrNotFound) {
-		v := siteapi.SiteSegmentContactsListNotFound(problem(http.StatusNotFound, "segment not found"))
+		v := siteapi.SiteSegmentContactsListNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &v, nil
 	}
 	if err != nil {

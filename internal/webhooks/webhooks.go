@@ -28,16 +28,19 @@ import (
 	"github.com/getsphericon/sphericon/internal/ownernotice"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/secrets"
+	"github.com/getsphericon/sphericon/internal/validation"
 	"github.com/getsphericon/sphericon/internal/webhook"
 )
 
 // Domain errors. Callers match with errors.Is.
 var (
 	// ErrInvalidURL: the URL is not an absolute http(s) URL (a 422 on `url`).
-	ErrInvalidURL = errors.New("webhooks: url must be an absolute http or https URL")
+	ErrInvalidURL = validation.Refuse("webhooks: url must be an absolute http or https URL", "errors.webhook_url_invalid")
 	// ErrAuditNeedsLicense: audit.entry was selected without an Enterprise license
 	// (a 422 on `eventTypes`).
-	ErrAuditNeedsLicense = errors.New("webhooks: audit.entry needs an Enterprise license")
+	ErrAuditNeedsLicense = validation.Refuse("webhooks: audit.entry needs an Enterprise license", "errors.webhook_audit_needs_license")
+	// ErrNotFound: no such endpoint in this Workspace.
+	ErrNotFound = validation.Refuse("webhooks: webhook not found", "errors.webhook_not_found")
 )
 
 // Licensing reports whether the Enterprise license is active. A nil Licensing
@@ -93,7 +96,7 @@ type TestResult struct {
 }
 
 // ErrInvalidEventType means the event type to send a sample of is blank or too long.
-var ErrInvalidEventType = errors.New("webhooks: the event type must be 1 to 100 characters")
+var ErrInvalidEventType = validation.Refuse("webhooks: the event type must be 1 to 100 characters", "errors.webhook_event_type_invalid")
 
 // RegenerateSecret replaces the signing secret at once: the old one stops verifying
 // with the next delivery. The row update is audited by the scoped client
@@ -109,7 +112,7 @@ func (m *Module) RegenerateSecret(ctx context.Context, s *ent.Scoped, id int64) 
 	}
 	e, err := s.WebhookEndpoint().UpdateOneID(id).SetSecretEncrypted(sealed).Save(ctx)
 	if err != nil {
-		return Endpoint{}, err
+		return Endpoint{}, missing(err)
 	}
 	return m.open(e)
 }
@@ -251,7 +254,7 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (End
 	return m.open(e)
 }
 
-// Update applies the set fields. An unknown id is ent.IsNotFound.
+// Update applies the set fields. An unknown id is ErrNotFound.
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateInput) (Endpoint, error) {
 	if in.URL != nil && !validURL(*in.URL) {
 		return Endpoint{}, ErrInvalidURL
@@ -269,7 +272,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 	if in.Enabled == nil {
 		e, err := build().Save(ctx)
 		if err != nil {
-			return Endpoint{}, err
+			return Endpoint{}, missing(err)
 		}
 		return m.open(e)
 	}
@@ -280,7 +283,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 			ClearConsecutiveFailures().ClearFailingSince().ClearLastErrorKind().
 			ClearLastErrorStatus().ClearLastFailureAt().Save(ctx)
 		if err != nil {
-			return Endpoint{}, err
+			return Endpoint{}, missing(err)
 		}
 		return m.open(e)
 	}
@@ -293,21 +296,29 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		e, err = build().Save(ctx)
 	}
 	if err != nil {
-		return Endpoint{}, err
+		return Endpoint{}, missing(err)
 	}
 	return m.open(e)
 }
 
-// Delete removes the endpoint. An unknown id is ent.IsNotFound.
+// Delete removes the endpoint. An unknown id is ErrNotFound.
 func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
-	return s.WebhookEndpoint().DeleteOneID(id).Exec(ctx)
+	return missing(s.WebhookEndpoint().DeleteOneID(id).Exec(ctx))
 }
 
-// Get returns one endpoint. An unknown id is ent.IsNotFound.
+// missing turns the store's miss into ErrNotFound.
+func missing(err error) error {
+	if ent.IsNotFound(err) {
+		return ErrNotFound
+	}
+	return err
+}
+
+// Get returns one endpoint. An unknown id is ErrNotFound.
 func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (Endpoint, error) {
 	e, err := s.WebhookEndpoint().Get(ctx, id)
 	if err != nil {
-		return Endpoint{}, err
+		return Endpoint{}, missing(err)
 	}
 	return m.open(e)
 }

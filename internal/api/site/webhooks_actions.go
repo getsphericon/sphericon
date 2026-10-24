@@ -9,6 +9,7 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/narrow"
+	"github.com/getsphericon/sphericon/internal/validation"
 	"github.com/getsphericon/sphericon/internal/webhooks"
 )
 
@@ -28,8 +29,8 @@ func (h *Handlers) SiteWebhooksRegenerateSecret(ctx context.Context, params site
 		return &v, nil
 	}
 	e, err := h.webhooks.RegenerateSecret(ctx, scoped, int64(params.ID))
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteWebhooksRegenerateSecretNotFound(problem(http.StatusNotFound, "webhook not found"))
+	if errors.Is(err, webhooks.ErrNotFound) {
+		v := siteapi.SiteWebhooksRegenerateSecretNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &v, nil
 	}
 	if err != nil {
@@ -56,13 +57,11 @@ func (h *Handlers) SiteWebhooksTest(ctx context.Context, req *siteapi.SiteTestWe
 	}
 	res, err := h.webhooks.TestSend(ctx, scoped, int64(params.ID), req.EventType)
 	if errors.Is(err, webhooks.ErrInvalidEventType) {
-		p := problem(http.StatusUnprocessableEntity, err.Error())
-		p.Errors = siteapi.NewOptProblemDetailsErrors(siteapi.ProblemDetailsErrors{"eventType": {err.Error()}})
-		v := siteapi.SiteWebhooksTestUnprocessableEntity(p)
+		v := siteapi.SiteWebhooksTestUnprocessableEntity(fieldProblem(err, "eventType"))
 		return &v, nil
 	}
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteWebhooksTestNotFound(problem(http.StatusNotFound, "webhook not found"))
+	if errors.Is(err, webhooks.ErrNotFound) {
+		v := siteapi.SiteWebhooksTestNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &v, nil
 	}
 	if err != nil {

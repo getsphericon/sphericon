@@ -8,6 +8,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/automations"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // SiteAutomationsDryRunHttpStep renders an HTTP step's body for a Contact and
@@ -24,7 +25,7 @@ func (h *Handlers) SiteAutomationsDryRunHttpStep(ctx context.Context, req *sitea
 
 	res, err := h.automations.DryRun(ctx, ws, int64(req.ContactId), req.Body)
 	if errors.Is(err, automations.ErrContactNotFound) {
-		v := siteapi.SiteAutomationsDryRunHttpStepNotFound(problem(http.StatusNotFound, "contact not found"))
+		v := siteapi.SiteAutomationsDryRunHttpStepNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &v, nil
 	}
 	if err != nil {

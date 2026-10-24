@@ -192,14 +192,14 @@ func TestDeleteAndWorkspaceIsolation(t *testing.T) {
 	ctx := context.Background()
 
 	_, err := m.Get(ctx, acme, fixtures.WebhookGlobexID)
-	assert.True(t, ent.IsNotFound(err))
+	require.ErrorIs(t, err, webhooks.ErrNotFound)
 	_, err = m.Update(ctx, acme, fixtures.WebhookGlobexID, webhooks.UpdateInput{})
-	assert.True(t, ent.IsNotFound(err))
-	assert.True(t, ent.IsNotFound(m.Delete(ctx, acme, fixtures.WebhookGlobexID)))
+	require.ErrorIs(t, err, webhooks.ErrNotFound)
+	require.ErrorIs(t, m.Delete(ctx, acme, fixtures.WebhookGlobexID), webhooks.ErrNotFound)
 
 	require.NoError(t, m.Delete(ctx, acme, fixtures.WebhookCodebasicsDisabledID))
 	_, err = m.Get(ctx, acme, fixtures.WebhookCodebasicsDisabledID)
-	assert.True(t, ent.IsNotFound(err))
+	require.ErrorIs(t, err, webhooks.ErrNotFound)
 }
 
 // receiver is a webhook receiver that verifies the signature of every request with the
@@ -284,7 +284,7 @@ func TestRegenerateSecretSignsWithTheNewSecretOnly(t *testing.T) {
 func TestRegenerateSecretOfAnotherWorkspaceIsNotFound(t *testing.T) {
 	env := testhelper.Setup(t)
 	_, err := module(env, nil).RegenerateSecret(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.WebhookGlobexID)
-	assert.True(t, ent.IsNotFound(err))
+	require.ErrorIs(t, err, webhooks.ErrNotFound)
 }
 
 func TestTestSendDeliversASignedSampleOfTheChosenTypeAndReportsTheStatus(t *testing.T) {
@@ -352,7 +352,7 @@ func TestTestSendWorksOnADisabledEndpointAndRefusesABlankType(t *testing.T) {
 	_, err = m.TestSend(ctx, acme, fixtures.WebhookCodebasicsDisabledID, " ")
 	require.ErrorIs(t, err, webhooks.ErrInvalidEventType)
 	_, err = m.TestSend(ctx, acme, fixtures.WebhookGlobexID, "contact.created")
-	assert.True(t, ent.IsNotFound(err))
+	require.ErrorIs(t, err, webhooks.ErrNotFound)
 }
 
 func TestTestSendIsAuditedAsAWebhookEndpointTest(t *testing.T) {

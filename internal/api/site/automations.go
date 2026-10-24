@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/validation"
 	"github.com/samber/lo"
 )
 
@@ -56,7 +57,7 @@ func (h *Handlers) SiteAutomationsCreate(ctx context.Context, req *siteapi.SiteC
 	}
 	a, err := h.automations.Create(ctx, ws, in)
 	if automations.IsInvalid(err) {
-		v := siteapi.SiteAutomationsCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
+		v := siteapi.SiteAutomationsCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
 		return &v, nil
 	}
 	if err != nil {
@@ -79,7 +80,7 @@ func (h *Handlers) SiteAutomationsGet(ctx context.Context, params siteapi.SiteAu
 	id := int64(params.ID)
 	a, err := h.automations.Get(ctx, ws, id)
 	if errors.Is(err, automations.ErrNotFound) {
-		v := siteapi.SiteAutomationsGetNotFound(problem(http.StatusNotFound, "automation not found"))
+		v := siteapi.SiteAutomationsGetNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &v, nil
 	}
 	if err != nil {
@@ -110,11 +111,11 @@ func (h *Handlers) SiteAutomationsUpdate(ctx context.Context, req *siteapi.SiteU
 	}
 	a, err := h.automations.Update(ctx, ws, id, in)
 	if errors.Is(err, automations.ErrNotFound) {
-		v := siteapi.SiteAutomationsUpdateNotFound(problem(http.StatusNotFound, "automation not found"))
+		v := siteapi.SiteAutomationsUpdateNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &v, nil
 	}
 	if automations.IsInvalid(err) {
-		v := siteapi.SiteAutomationsUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
+		v := siteapi.SiteAutomationsUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
 		return &v, nil
 	}
 	if err != nil {
@@ -142,7 +143,7 @@ func (h *Handlers) SiteAutomationsDelete(ctx context.Context, params siteapi.Sit
 	}
 	switch {
 	case errors.Is(err, automations.ErrNotFound):
-		v := siteapi.SiteAutomationsDeleteNotFound(problem(http.StatusNotFound, "automation not found"))
+		v := siteapi.SiteAutomationsDeleteNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &v, nil
 	case err != nil:
 		return nil, err
@@ -169,7 +170,7 @@ func (h *Handlers) SiteAutomationsArchive(ctx context.Context, params siteapi.Si
 		return &v, nil
 	}
 	if errors.Is(err, automations.ErrNotFound) {
-		v := siteapi.SiteAutomationsArchiveNotFound(problem(http.StatusNotFound, "automation not found"))
+		v := siteapi.SiteAutomationsArchiveNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &v, nil
 	}
 	if err != nil {
@@ -197,7 +198,7 @@ func (h *Handlers) SiteAutomationsUnarchive(ctx context.Context, params siteapi.
 	id := int64(params.ID)
 	err = h.automations.Unarchive(ctx, ws, id)
 	if errors.Is(err, automations.ErrNotFound) {
-		v := siteapi.SiteAutomationsUnarchiveNotFound(problem(http.StatusNotFound, "automation not found"))
+		v := siteapi.SiteAutomationsUnarchiveNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &v, nil
 	}
 	if err != nil {
@@ -213,8 +214,12 @@ func (h *Handlers) SiteAutomationsUnarchive(ctx context.Context, params siteapi.
 
 func (h *Handlers) SiteAutomationsActivate(ctx context.Context, params siteapi.SiteAutomationsActivateParams) (siteapi.SiteAutomationsActivateRes, error) {
 	a, err := h.setAutomationActive(ctx, params.WorkspaceId, params.ID, true)
-	if errors.Is(err, automations.ErrNotFound) || ent.IsNotFound(err) {
-		v := siteapi.SiteAutomationsActivateNotFound(problem(http.StatusNotFound, "automation not found"))
+	switch {
+	case errors.Is(err, automations.ErrNotFound):
+		v := siteapi.SiteAutomationsActivateNotFound(problem(http.StatusNotFound, validation.Message(err)))
+		return &v, nil
+	case ent.IsNotFound(err):
+		v := siteapi.SiteAutomationsActivateNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil
 	}
 	if err != nil {
@@ -226,8 +231,12 @@ func (h *Handlers) SiteAutomationsActivate(ctx context.Context, params siteapi.S
 
 func (h *Handlers) SiteAutomationsDeactivate(ctx context.Context, params siteapi.SiteAutomationsDeactivateParams) (siteapi.SiteAutomationsDeactivateRes, error) {
 	a, err := h.setAutomationActive(ctx, params.WorkspaceId, params.ID, false)
-	if errors.Is(err, automations.ErrNotFound) || ent.IsNotFound(err) {
-		v := siteapi.SiteAutomationsDeactivateNotFound(problem(http.StatusNotFound, "automation not found"))
+	switch {
+	case errors.Is(err, automations.ErrNotFound):
+		v := siteapi.SiteAutomationsDeactivateNotFound(problem(http.StatusNotFound, validation.Message(err)))
+		return &v, nil
+	case ent.IsNotFound(err):
+		v := siteapi.SiteAutomationsDeactivateNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil
 	}
 	if err != nil {

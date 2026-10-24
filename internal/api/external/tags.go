@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/tags"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 func (h *Handlers) TagsList(ctx context.Context, params externalapi.TagsListParams) (externalapi.TagsListRes, error) {
@@ -48,7 +49,7 @@ func (h *Handlers) TagsListForContact(ctx context.Context, params externalapi.Ta
 	scoped := auth.TokenScoped(ctx)
 	mine, err := h.tags.ForContact(ctx, scoped, id)
 	if errors.Is(err, tags.ErrContactNotFound) {
-		res := externalapi.TagsListForContactNotFound(problem(http.StatusNotFound, "contact not found"))
+		res := externalapi.TagsListForContactNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil
 	}
 	if err != nil {
@@ -74,11 +75,11 @@ func (h *Handlers) TagsApply(ctx context.Context, req *externalapi.ApplyTagInput
 	scoped := auth.TokenScoped(ctx)
 	t, err := h.tags.Apply(ctx, scoped, id, req.Name)
 	if errors.Is(err, tags.ErrContactNotFound) {
-		res := externalapi.TagsApplyNotFound(problem(http.StatusNotFound, "contact not found"))
+		res := externalapi.TagsApplyNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil
 	}
 	if errors.Is(err, tags.ErrInvalidName) {
-		res := externalapi.TagsApplyUnprocessableEntity(problem(http.StatusUnprocessableEntity, "name is required"))
+		res := externalapi.TagsApplyUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
 		return &res, nil
 	}
 	if err != nil {
@@ -98,7 +99,7 @@ func (h *Handlers) TagsRemove(ctx context.Context, params externalapi.TagsRemove
 	scoped := auth.TokenScoped(ctx)
 	err := h.tags.Remove(ctx, scoped, id, params.Name)
 	if errors.Is(err, tags.ErrContactNotFound) {
-		res := externalapi.TagsRemoveNotFound(problem(http.StatusNotFound, "contact not found"))
+		res := externalapi.TagsRemoveNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil
 	}
 	if err != nil {
@@ -120,7 +121,7 @@ func (h *Handlers) TagsDelete(ctx context.Context, params externalapi.TagsDelete
 		return &res, nil
 	}
 	if errors.Is(err, tags.ErrNotFound) {
-		res := externalapi.TagsDeleteNotFound(problem(http.StatusNotFound, "tag not found"))
+		res := externalapi.TagsDeleteNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil
 	}
 	if err != nil {

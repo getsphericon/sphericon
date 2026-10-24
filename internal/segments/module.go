@@ -4,8 +4,6 @@ package segments
 
 import (
 	"context"
-	"errors"
-	"fmt"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcast"
@@ -16,15 +14,16 @@ import (
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // Domain errors returned by Module. Callers match with errors.Is.
 var (
 	// ErrInvalidCondition: the condition does not parse or does not fit the
 	// Contact schema. The wrapped message is safe to show to the author.
-	ErrInvalidCondition = errors.New("segments: invalid condition")
+	ErrInvalidCondition = validation.Refuse("segments: invalid condition", "errors.segment_condition_invalid")
 	// ErrNotFound: no such Segment in this Workspace.
-	ErrNotFound = errors.New("segments: segment not found")
+	ErrNotFound = validation.Refuse("segments: segment not found", "errors.segment_not_found")
 )
 
 // Module is the one place a Segment is written, validated, previewed and counted
@@ -59,7 +58,7 @@ func (s *Module) Validate(ctx context.Context, ws *ent.Scoped, cond string) erro
 		return nil
 	}
 	if _, err := condition.ContactPredicate(ctx, ws, cond); err != nil {
-		return fmt.Errorf("%w: %s", ErrInvalidCondition, err.Error())
+		return ErrInvalidCondition.With(err.Error())
 	}
 	return nil
 }
@@ -75,6 +74,15 @@ func (s *Module) Create(ctx context.Context, ws *ent.Scoped, in CreateInput) (*e
 		SetName(in.Name).
 		SetNillableCondition(in.Condition).
 		Save(ctx)
+}
+
+// Get returns one Segment. An unknown id is ErrNotFound.
+func (s *Module) Get(ctx context.Context, ws *ent.Scoped, id int64) (*ent.Segment, error) {
+	seg, err := ws.Segment().Get(ctx, id)
+	if ent.IsNotFound(err) {
+		return nil, ErrNotFound
+	}
+	return seg, err
 }
 
 // Update validates a changed condition exactly as Create does, then applies the change.
@@ -98,7 +106,7 @@ func (s *Module) Update(ctx context.Context, ws *ent.Scoped, id int64, in Update
 func (s *Module) Preview(ctx context.Context, ws *ent.Scoped, cond string) (int, error) {
 	pred, err := condition.ContactPredicate(ctx, ws, cond)
 	if err != nil {
-		return 0, fmt.Errorf("%w: %s", ErrInvalidCondition, err.Error())
+		return 0, ErrInvalidCondition.With(err.Error())
 	}
 	return ws.Contact().Query().Where(pred).Count(ctx)
 }
@@ -134,7 +142,7 @@ func (s *Module) Contacts(ctx context.Context, ws *ent.Scoped, id int64, p pagin
 	}
 	pred, err := condition.ContactPredicate(ctx, ws, cond)
 	if err != nil {
-		return pagination.Page[*ent.Contact]{}, fmt.Errorf("%w: %s", ErrInvalidCondition, err.Error())
+		return pagination.Page[*ent.Contact]{}, ErrInvalidCondition.With(err.Error())
 	}
 	rows := func() *ent.ContactQuery {
 		return ws.Contact().Query().Where(pred).WithTags(func(q *ent.TagQuery) { q.Order(ent.Asc(tag.FieldName)) })

@@ -34,7 +34,10 @@ import (
 )
 
 // ErrDefaultConflict means another default Integration already exists for the channel.
-var ErrDefaultConflict = errors.New("a default provider already exists for this channel")
+var ErrDefaultConflict = validation.Refuse("a default provider already exists for this channel", "errors.integration_default_conflict")
+
+// ErrNotFound means there is no such Integration in this Workspace.
+var ErrNotFound = validation.Refuse("integrations: integration not found", "errors.integration_not_found")
 
 var errUnknownProvider = errors.New("unsupported provider")
 
@@ -52,6 +55,23 @@ type Module struct {
 	presets *preset.Registry
 	appURL  string
 	confirm func(ctx context.Context, url string) error
+}
+
+// missing turns the store's miss into ErrNotFound.
+func missing(err error) error {
+	if ent.IsNotFound(err) {
+		return ErrNotFound
+	}
+	return err
+}
+
+// Get returns one Integration of the Workspace. An unknown id is ErrNotFound.
+func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.Integration, error) {
+	row, err := s.Integration().Get(ctx, id)
+	if err != nil {
+		return nil, missing(err)
+	}
+	return row, nil
 }
 
 // Option tunes the module.
@@ -218,9 +238,9 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 	return row, nil
 }
 
-// Update applies a partial edit. An unknown id is ent's not-found error.
+// Update applies a partial edit. An unknown id is ErrNotFound.
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateInput) (*ent.Integration, error) {
-	row, err := s.Integration().Get(ctx, id)
+	row, err := m.Get(ctx, s, id)
 	if err != nil {
 		return nil, err
 	}
@@ -337,10 +357,9 @@ func applyEdit(upd *ent.IntegrationScopedUpdateOne, in UpdateInput, name, sealed
 // and the default one when it names none; an active Automation that sends email uses the default
 // one, which is where its email steps go. A sent or failed Broadcast is history and does not
 // block. An archived Integration gives up the default: its channel has none until another is
-// picked. Archiving an archived Integration changes nothing. An unknown id is ent's not-found
-// error.
+// picked. Archiving an archived Integration changes nothing. An unknown id is ErrNotFound.
 func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) error {
-	return m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+	return missing(m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		row, err := ts.Integration().Get(ctx, id)
 		if err != nil {
 			return err
@@ -361,14 +380,14 @@ func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) error {
 			}
 		}
 		return ts.Integration().Discard(ctx, id)
-	})
+	}))
 }
 
 // Unarchive brings an archived Integration back to the lists. It does not become the default
-// again. Restoring an Integration that is not archived changes nothing. An unknown id is ent's
-// not-found error.
+// again. Restoring an Integration that is not archived changes nothing. An unknown id is
+// ErrNotFound.
 func (m *Module) Unarchive(ctx context.Context, s *ent.Scoped, id int64) error {
-	return s.Integration().Restore(ctx, id)
+	return missing(s.Integration().Restore(ctx, id))
 }
 
 // liveUsers is the live work that uses the Integration.

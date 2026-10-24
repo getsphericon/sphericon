@@ -21,16 +21,17 @@ import (
 	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/segments"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // Domain errors. Callers match with errors.Is.
 var (
 	// ErrContactNotFound: no such Contact in this Workspace.
-	ErrContactNotFound = errors.New("tags: contact not found")
+	ErrContactNotFound = validation.Refuse("tags: contact not found", "errors.contact_not_found")
 	// ErrInvalidName: the Tag name is blank.
-	ErrInvalidName = errors.New("tags: name is required")
+	ErrInvalidName = validation.Refuse("tags: name is required", "errors.name_required")
 	// ErrNotFound: no such Tag in this Workspace.
-	ErrNotFound = errors.New("tags: tag not found")
+	ErrNotFound = validation.Refuse("tags: tag not found", "errors.tag_not_found")
 )
 
 // Module is the tags module. It holds no state: every call receives the

@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/httpcall"
 	"github.com/getsphericon/sphericon/internal/outbound"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // Limits of an HTTP step (ADR 0039): they keep one step from exhausting the queue.
@@ -26,7 +27,7 @@ const ErrorKindInvalidBody = "invalid_body"
 
 var (
 	// ErrContactNotFound: no such Contact in this Workspace.
-	ErrContactNotFound = errors.New("automations: contact not found")
+	ErrContactNotFound = validation.Refuse("automations: contact not found", "errors.contact_not_found")
 	// ErrInvalidBody: the body did not render to valid JSON within the size limit.
 	ErrInvalidBody = httpcall.ErrInvalidBody
 )
@@ -86,7 +87,7 @@ func spec(s Step) httpcall.Spec {
 }
 
 func invalid(format string, a ...any) error {
-	return fmt.Errorf("%w: "+format, append([]any{ErrInvalidStep}, a...)...)
+	return ErrInvalidStep.With(fmt.Sprintf(format, a...))
 }
 
 // sealSteps validates the steps and turns every HTTP step into its stored form:

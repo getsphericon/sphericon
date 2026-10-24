@@ -35,6 +35,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/secrets"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // The fixed caps on a Rule (ADR 0054). There is none on the number of Rules.
@@ -67,11 +68,11 @@ var (
 	// ErrInvalid: the Rule does not fit the rules of a Rule (no Trigger event, an unknown
 	// Action, a tag Action without a tag, a Condition that does not parse or does not fit
 	// the Contact schema). The wrapped message is safe to show to the author.
-	ErrInvalid = errors.New("rules: invalid rule")
+	ErrInvalid = validation.Refuse("rules: invalid rule", "errors.rule_invalid")
 	// ErrNotFound: no such Rule in this Workspace.
-	ErrNotFound = errors.New("rules: rule not found")
+	ErrNotFound = validation.Refuse("rules: rule not found", "errors.rule_not_found")
 	// ErrEventNotFound: no such Event in this Workspace (a dry run reads a stored Event).
-	ErrEventNotFound = errors.New("rules: event not found")
+	ErrEventNotFound = validation.Refuse("rules: event not found", "errors.event_not_found")
 )
 
 // Action is one Action of a Rule as stored: its type and the parameters of that type.
@@ -387,7 +388,7 @@ func (m *Module) Activate(ctx context.Context, s *ent.Scoped, id int64) (*ent.Ru
 		return nil, err
 	}
 	if len(actions) == 0 {
-		return nil, fmt.Errorf("%w: a Rule needs at least one Action to be activated", ErrInvalid)
+		return nil, ErrInvalid.With("a Rule needs at least one Action to be activated")
 	}
 	if _, err := s.Rule().Update().
 		Where(rule.ID(id), rule.DiscardedAtIsNil(), rule.StatusEQ(rule.StatusDraft)).
@@ -465,7 +466,7 @@ func cleanTriggers(in []string) ([]string, error) {
 		return a, a != ""
 	}))
 	if len(out) == 0 {
-		return nil, fmt.Errorf("%w: a Rule needs at least one Trigger event", ErrInvalid)
+		return nil, ErrInvalid.With("a Rule needs at least one Trigger event")
 	}
 	return out, nil
 }
@@ -485,10 +486,10 @@ func (m *Module) validateCondition(ctx context.Context, s *ent.Scoped, cond *str
 		return nil
 	}
 	if g, err := condition.Parse(*cond); err == nil && g.Size() > MaxConditionNodes {
-		return fmt.Errorf("%w: a Condition has at most %d groups and rules, this one has %d", ErrInvalid, MaxConditionNodes, g.Size())
+		return ErrInvalid.With(fmt.Sprintf("a Condition has at most %d groups and rules, this one has %d", MaxConditionNodes, g.Size()))
 	}
 	if _, err := condition.RulePredicate(ctx, s, *cond, nil); err != nil {
-		return fmt.Errorf("%w: %s", ErrInvalid, err.Error())
+		return ErrInvalid.With(err.Error())
 	}
 	return nil
 }
@@ -498,7 +499,7 @@ func (m *Module) validateCondition(ctx context.Context, s *ent.Scoped, cond *str
 // http Action that names one of them by ID keeps the secrets it does not resend.
 func (m *Module) encodeActions(actions, stored []Action) (string, error) {
 	if len(actions) > MaxActions {
-		return "", fmt.Errorf("%w: a Rule runs at most %d Actions, this one has %d", ErrInvalid, MaxActions, len(actions))
+		return "", ErrInvalid.With(fmt.Sprintf("a Rule runs at most %d Actions, this one has %d", MaxActions, len(actions)))
 	}
 	prev := map[string]Action{}
 	for i := range stored {
@@ -515,32 +516,32 @@ func (m *Module) encodeActions(actions, stored []Action) (string, error) {
 		case ActionApplyTag, ActionRemoveTag:
 			tag := strings.TrimSpace(a.Tag)
 			if tag == "" {
-				return "", fmt.Errorf("%w: action %d: a tag action needs a tag", ErrInvalid, i+1)
+				return "", ErrInvalid.With(fmt.Sprintf("action %d: a tag action needs a tag", i+1))
 			}
 			out = append(out, Action{Type: a.Type, Tag: tag})
 		case ActionEnroll:
 			if a.AutomationID <= 0 {
-				return "", fmt.Errorf("%w: action %d: an enroll action needs an automation", ErrInvalid, i+1)
+				return "", ErrInvalid.With(fmt.Sprintf("action %d: an enroll action needs an automation", i+1))
 			}
 			out = append(out, Action{Type: a.Type, AutomationID: a.AutomationID})
 		case ActionHTTP:
 			if len(seen) >= MaxHTTPActionsPerRule {
-				return "", fmt.Errorf("%w: a Rule has at most %d http Actions", ErrInvalid, MaxHTTPActionsPerRule)
+				return "", ErrInvalid.With(fmt.Sprintf("a Rule has at most %d http Actions", MaxHTTPActionsPerRule))
 			}
 			sealed, err := m.sealHTTP(*a, prev)
 			if bad, ok := errors.AsType[httpcall.InvalidError](err); ok {
-				return "", fmt.Errorf("%w: action %d: %w", ErrInvalid, i+1, bad)
+				return "", ErrInvalid.With(fmt.Sprintf("action %d: %s", i+1, bad))
 			}
 			if err != nil {
 				return "", err
 			}
 			if seen[sealed.ID] {
-				return "", fmt.Errorf("%w: action %d: duplicate http Action id", ErrInvalid, i+1)
+				return "", ErrInvalid.With(fmt.Sprintf("action %d: duplicate http Action id", i+1))
 			}
 			seen[sealed.ID] = true
 			out = append(out, sealed)
 		default:
-			return "", fmt.Errorf("%w: action %d: unknown action type %q", ErrInvalid, i+1, a.Type)
+			return "", ErrInvalid.With(fmt.Sprintf("action %d: unknown action type %q", i+1, a.Type))
 		}
 	}
 	b, err := json.Marshal(out)
@@ -798,7 +799,7 @@ func requireAutomations(ctx context.Context, s *ent.Scoped, actions []Action) er
 			return err
 		}
 		if !ok {
-			return fmt.Errorf("%w: action %d: automation %d not found", ErrInvalid, i+1, a.AutomationID)
+			return ErrInvalid.With(fmt.Sprintf("action %d: automation %d not found", i+1, a.AutomationID))
 		}
 	}
 	return nil
