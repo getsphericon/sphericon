@@ -59,15 +59,15 @@ config reaches it too. `worktrees:gc` keeps these with their checkout. The end-t
 one database and `-p 1`.
 
 **Heavy tasks queue machine-wide.** The CPU-heavy commands (`go test`, `golangci-lint`, `tsc`,
-`knip`, vitest, ent/ogen/goverter generation) run through `mise/scripts/heavy.sh`, which holds one
-of a few `flock` slots (files in `${TMPDIR}/sphericon-heavy`, shared by every checkout and agent on
-the machine) for the command's duration. A run that finds all slots busy prints `heavy: all N slots
-are busy` and waits, so ten agents starting `mise run check` together take turns instead of
-starving each other. `SPHERICON_HEAVY_SLOTS` sets how many run at once (default: a quarter of the
-cores, at least one), `SPHERICON_LOCK_DIR` moves the directory. It needs `flock` on the PATH
-(`brew install flock` on macOS; util-linux ships it), which is not pinned in mise: without it, and
-in CI, a heavy command runs at once with no queue. A heavy command started inside a held slot runs
-at once too. Wrap a new heavy command the same way: `mise/scripts/heavy.sh <command>`.
+`knip`, vitest, ent/ogen/goverter generation) run through `node mise/scripts/heavy.ts`, which holds
+one of a few slots for the command's duration. A slot is a loopback TCP port, `SPHERICON_HEAVY_PORT`
+(default 47810) and the ones after it: whoever has it bound holds the slot, shared by every checkout
+and agent on the machine, and the kernel frees it when the holder dies however it dies. A run that
+finds all slots busy prints `heavy: all N slots are busy` and waits, so ten agents starting
+`mise run check` together take turns instead of starving each other. `SPHERICON_HEAVY_SLOTS` sets
+how many run at once (default: a quarter of the cores, at least one). In CI a heavy command runs at
+once with no queue, and so does one started inside a held slot (`SPHERICON_HEAVY_HELD`). Wrap a new
+heavy command the same way: `node mise/scripts/heavy.ts <command>`.
 
 CI runs the Go tests with `-shuffle=on` (the seed is printed; reproduce an order with
 `mise run test -- -shuffle=<seed>`), so a test must not depend on another's side effects. Locally

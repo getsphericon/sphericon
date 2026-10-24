@@ -8,11 +8,7 @@
 
 [install]
 description = "Install frontend and Go dependencies"
-run = [
-  "pnpm install",
-  "go mod download",
-  "command -v flock >/dev/null || echo 'warning: flock not found, heavy tasks will not queue (macOS: brew install flock)'",
-]
+run = ["pnpm install", "go mod download"]
 
 [setup]
 description = "Install deps, start Postgres, create this checkout's DBs, migrate and seed, drop the databases of deleted worktrees"
@@ -203,13 +199,13 @@ description = "Go tests, packages in parallel, each on a database of its own (cr
 depends = ["db:up"]
 env = { SPHERICON_ENV = "test", DATABASE_URL = "{{env.TEST_DB_URL}}" }
 usage = 'arg "[go_test_args]" var=#true default="./..." help="packages and flags for go test"'
-run = 'eval "set -- $usage_go_test_args"; mise/scripts/heavy.sh go test ${CI:+-shuffle=on} "$@"'
+run = 'eval "set -- $usage_go_test_args"; node mise/scripts/heavy.ts go test ${CI:+-shuffle=on} "$@"'
 
 ["test:race"]
 description = "Go tests under the race detector, two packages at a time (the JavaScript runtime is several times slower with it, so this runs nightly, not per pull request)"
 depends = ["db:up"]
 env = { SPHERICON_ENV = "test", DATABASE_URL = "{{env.TEST_DB_URL}}", CGO_ENABLED = "1" }
-run = "mise/scripts/heavy.sh go test -race -shuffle=on -p 2 ./..."
+run = "node mise/scripts/heavy.ts go test -race -shuffle=on -p 2 ./..."
 
 ["test:mutation"]
 description = "Mutation testing of the packages whose logic decides what is sent (go-mutesting, three workers); pass other packages after `--`. A surviving mutant is a change the tests do not notice: nightly, not per pull request"
@@ -234,7 +230,7 @@ description = "Go tests with coverage over cmd/ and internal/ (ee/ too), failing
 depends = ["db:up"]
 env = { SPHERICON_ENV = "test", DATABASE_URL = "{{env.TEST_DB_URL}}" }
 run = [
-  "mise/scripts/heavy.sh go test -shuffle=on ./... -coverpkg=./cmd/...,./internal/...,./ee/... -coverprofile=cover.out -covermode=atomic",
+  "node mise/scripts/heavy.ts go test -shuffle=on ./... -coverpkg=./cmd/...,./internal/...,./ee/... -coverprofile=cover.out -covermode=atomic",
   "go tool go-test-coverage --config=.testcoverage.yml",
 ]
 
@@ -247,7 +243,7 @@ run = [
   "go run ./cmd/db drop",
   "go run ./cmd/db create",
   "go run ./cmd/server migrate",
-  '''eval "set -- $usage_go_test_args"; mise/scripts/heavy.sh go test -tags e2e -count=1 -p 1 -shuffle=on "$@"''',
+  '''eval "set -- $usage_go_test_args"; node mise/scripts/heavy.ts go test -tags e2e -count=1 -p 1 -shuffle=on "$@"''',
 ]
 
 ["test:watch"]
@@ -256,7 +252,7 @@ run = "pnpm exec vitest"
 
 ["test:frontend"]
 description = "One-shot frontend run with v8 coverage and thresholds (Vitest Browser Mode, headless Chromium); html report in coverage/. CI runs it as test:frontend:shard + test:frontend:merge"
-run = "mise/scripts/heavy.sh pnpm exec vitest run --coverage"
+run = "node mise/scripts/heavy.ts pnpm exec vitest run --coverage"
 
 # CI splits the frontend suite over runners: each shard writes a blob report that carries its coverage
 # (.vitest/blob), and test:frontend:merge joins them and checks the thresholds. A shard sees a third of
@@ -264,7 +260,7 @@ run = "mise/scripts/heavy.sh pnpm exec vitest run --coverage"
 ["test:frontend:shard"]
 description = "One shard of the frontend suite (CI): blob report with coverage in .vitest/blob, no thresholds"
 usage = 'arg "<shard>" help="shard as index/count, e.g. 1/3"'
-run = '''mise/scripts/heavy.sh pnpm exec vitest run --coverage --reporter=blob --shard="${usage_shard}" --coverage.thresholds.statements=0 --coverage.thresholds.branches=0 --coverage.thresholds.functions=0 --coverage.thresholds.lines=0'''
+run = '''node mise/scripts/heavy.ts pnpm exec vitest run --coverage --reporter=blob --shard="${usage_shard}" --coverage.thresholds.statements=0 --coverage.thresholds.branches=0 --coverage.thresholds.functions=0 --coverage.thresholds.lines=0'''
 
 ["test:frontend:merge"]
 description = "Join the shards' blob reports from .vitest/blob and enforce the coverage thresholds (CI)"
@@ -331,14 +327,14 @@ run = "pnpm run i18n:types"
 ["generate:backend"]
 description = "OpenAPI/ent -> Go (ent, ogen, goverter)"
 run = [
-  "cd ent && ../mise/scripts/heavy.sh go run -mod=mod entc.go",
-  "mise/scripts/heavy.sh go tool ogen --target gen/site --package siteapi --clean openapi/site.openapi.json",
-  "mise/scripts/heavy.sh go tool ogen --target gen/external --package externalapi --clean openapi/external.openapi.json",
-  "mise/scripts/heavy.sh go tool ogen --target gen/collect --package collectapi --clean openapi/collect.openapi.json",
-  "mise/scripts/heavy.sh go tool ogen --target gen/staff --package staffapi --clean openapi/staff.openapi.json",
-  "mise/scripts/heavy.sh go tool ogen --target gen/service --package serviceapi --clean openapi/service.openapi.json",
-  "mise/scripts/heavy.sh go tool ogen --config ogen.telemetry.yml --target gen/telemetry --package telemetryapi --clean openapi/telemetry.openapi.json",
-  "mise/scripts/heavy.sh go tool goverter gen ./internal/api/site/resources ./internal/api/external/resources ./ee/staff/resources",
+  "cd ent && node ../mise/scripts/heavy.ts go run -mod=mod entc.go",
+  "node mise/scripts/heavy.ts go tool ogen --target gen/site --package siteapi --clean openapi/site.openapi.json",
+  "node mise/scripts/heavy.ts go tool ogen --target gen/external --package externalapi --clean openapi/external.openapi.json",
+  "node mise/scripts/heavy.ts go tool ogen --target gen/collect --package collectapi --clean openapi/collect.openapi.json",
+  "node mise/scripts/heavy.ts go tool ogen --target gen/staff --package staffapi --clean openapi/staff.openapi.json",
+  "node mise/scripts/heavy.ts go tool ogen --target gen/service --package serviceapi --clean openapi/service.openapi.json",
+  "node mise/scripts/heavy.ts go tool ogen --config ogen.telemetry.yml --target gen/telemetry --package telemetryapi --clean openapi/telemetry.openapi.json",
+  "node mise/scripts/heavy.ts go tool goverter gen ./internal/api/site/resources ./internal/api/external/resources ./ee/staff/resources",
 ]
 
 ["generate:mocks"]
@@ -396,7 +392,6 @@ depends = [
   "check:typos",
   "check:adr",
   "check:helm",
-  "check:shell",
   "check:links",
 ]
 
@@ -404,7 +399,7 @@ depends = [
 description = "tsc, oxlint, oxfmt --check, no custom CSS"
 depends = ["check:css"]
 run = [
-  "mise/scripts/heavy.sh pnpm exec tsc --noEmit",
+  "node mise/scripts/heavy.ts pnpm exec tsc --noEmit",
   "pnpm exec oxlint",
   "pnpm exec oxfmt --check",
 ]
@@ -463,7 +458,7 @@ printf '%s' "$PR_TITLE" | pnpm exec commitlint
 
 ["check:deps"]
 description = "Unused files, exports and dependencies (knip.ts)"
-run = "mise/scripts/heavy.sh pnpm exec knip"
+run = "node mise/scripts/heavy.ts pnpm exec knip"
 
 ["check:i18n"]
 description = "i18n key drift (read-only: --dry-run never writes, --ci exits non-zero on drift)"
@@ -477,8 +472,8 @@ run = [
 description = "golangci-lint with our analyzers (incl. the gofmt formatter), the analyzers' own tests, and go.mod tidiness"
 depends = ["build:lint", "check:lint-pins"]
 run = [
-  "mise/scripts/heavy.sh .bin/custom-gcl run --allow-serial-runners ./...",
-  "cd tools/analyzers && ../../mise/scripts/heavy.sh ../../.bin/custom-gcl run --allow-serial-runners --config ../../.golangci.yml ./... && go test ./...",
+  "node mise/scripts/heavy.ts .bin/custom-gcl run --allow-serial-runners ./...",
+  "cd tools/analyzers && node ../../mise/scripts/heavy.ts ../../.bin/custom-gcl run --allow-serial-runners --config ../../.golangci.yml ./... && go test ./...",
   "go mod tidy -diff",
   "cd tools/analyzers && go mod tidy -diff",
 ]
@@ -493,7 +488,7 @@ sources = [
   "mise.lock",
 ]
 outputs = [".bin/custom-gcl"]
-run = "mise/scripts/heavy.sh golangci-lint custom --version v$(mise current golangci-lint)"
+run = "node mise/scripts/heavy.ts golangci-lint custom --version v$(mise current golangci-lint)"
 
 ["check:lint-pins"]
 description = "The analyzers' x/tools and plugin-register versions are the ones that golangci-lint itself uses"
@@ -599,10 +594,6 @@ run = '''
 mise daemons logs contract | grep '"msg":"request failed"' | sort -u | head -20 || true
 mise daemons stop contract
 '''
-
-["check:shell"]
-description = "shellcheck the scripts under mise/scripts/"
-run = "shellcheck -x --source-path=SCRIPTDIR mise/scripts/*.sh"
 
 ["check:links"]
 description = "Links between the Markdown files of the repository and their #fragments resolve (lychee --offline, lychee.toml)"
