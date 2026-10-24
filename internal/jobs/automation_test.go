@@ -15,27 +15,56 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/outbound"
+	"github.com/getsphericon/sphericon/internal/stepping"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/tracking"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-// drive runs RunStep until the run finishes (or a safety cap). tracker may be nil
-// (most tests don't assert on the unsubscribe footer).
-func drive(t *testing.T, env *testhelper.TestEnv, resolver outbound.Senders, runID int64) {
-	t.Helper()
-	ctx := context.Background()
-	for range 20 {
-		res, err := jobs.RunStep(ctx, env.DB, noFence, newMod(env, resolver), runID)
-		require.NoError(t, err)
-		if res.Done {
-			return
-		}
-		// The queue would run the next step at ResumeAt: let that time pass.
-		env.DB.AutomationRun.UpdateOneID(runID).ClearResumeAt().ExecX(ctx)
+// passingClock is a clock that has passed a year more every time it is read: whatever time a
+// wait recorded, the queue's run of its follow-up finds that time gone by. A test that drives an
+// Automation to its end lets waits pass this way.
+func passingClock() func() time.Time {
+	now := time.Now()
+	return func() time.Time {
+		now = now.Add(365 * 24 * time.Hour)
+		return now
 	}
-	t.Fatal("run did not finish within cap")
+}
+
+// stepperOf is the stepping module over the sender resolver, its clock passing every wait.
+func stepperOf(env *testhelper.TestEnv, resolver outbound.Senders) *stepping.Module {
+	return stepperWith(env, newMod(env, resolver), stepping.WithClock(passingClock()))
+}
+
+// stepperWith is the stepping module over mod, as configured.
+func stepperWith(env *testhelper.TestEnv, mod *outbound.Module, opts ...stepping.Option) *stepping.Module {
+	return stepping.New(env.Bus, mod, noFence, opts...)
+}
+
+// queueStep queues the step job of an Enrollment standing on a fixture, as the enroll or the
+// previous step would have.
+func queueStep(t *testing.T, env *testhelper.TestEnv, runID int64) {
+	t.Helper()
+	env.EnqueueJob(t, stepping.RunStepArgs{RunID: runID, Step: env.DB.AutomationRun.GetX(t.Context(), runID).CurrentStep})
+}
+
+// stepOnce executes the step an Enrollment of Acme stands on, and returns what the step returned.
+func stepOnce(t *testing.T, env *testhelper.TestEnv, mod *stepping.Module, runID int64) error {
+	t.Helper()
+	return mod.Step(t.Context(), env.DB.Scoped(fixtures.AcmeID), runID, env.DB.AutomationRun.GetX(t.Context(), runID).CurrentStep)
+}
+
+// queuedSteps are the args of the step jobs waiting in the queue.
+func queuedSteps(t *testing.T, env *testhelper.TestEnv) []map[string]any {
+	t.Helper()
+	return env.JobsOf(t, stepping.RunStepArgs{}.Kind())
+}
+
+// stepJob is the args of a queued step job as JobsOf reads them.
+func stepJob(runID int64, step int) map[string]any {
+	return map[string]any{"run_id": float64(runID), "step": float64(step)}
 }
 
 // triggerOf is the event that enrolls a fixture Automation.
@@ -65,7 +94,7 @@ func TestAutomationEnrollAndRun(t *testing.T) {
 	assert.Empty(t, again)
 
 	fs := &fakeSender{}
-	drive(t, env, resolvingTo(fs), runID)
+	env.RunQueuedSteps(t, stepperOf(env, resolvingTo(fs)))
 
 	// Two email steps fired (the wait step does not send).
 	require.Len(t, fs.sent, 2)
@@ -90,10 +119,11 @@ func TestAutomationExitsOnUnsubscribe(t *testing.T) {
 	runID := enrollVia(t, env, fixtures.AutomationWelcomeSeriesID, fixtures.ContactOptedOutOfWelcomeID)
 
 	fs := &fakeSender{}
-	drive(t, env, resolvingTo(fs), runID)
+	env.RunQueuedSteps(t, stepperOf(env, resolvingTo(fs)))
 
 	assert.Empty(t, fs.sent, "ineligible destination receives no email")
 	assert.Equal(t, automationrun.StatusExited, env.DB.AutomationRun.GetX(ctx, runID).Status)
+	assert.Empty(t, queuedSteps(t, env), "an exit queues no further step")
 }
 
 // A suppression exits the enrollment too (the global hard floor).
@@ -103,7 +133,7 @@ func TestAutomationExitsOnSuppression(t *testing.T) {
 	runID := enrollVia(t, env, fixtures.AutomationJobsSingleEmailID, fixtures.ContactComplainedID)
 
 	fs := &fakeSender{}
-	drive(t, env, resolvingTo(fs), runID)
+	env.RunQueuedSteps(t, stepperOf(env, resolvingTo(fs)))
 
 	assert.Empty(t, fs.sent)
 	assert.Equal(t, automationrun.StatusExited, env.DB.AutomationRun.GetX(ctx, runID).Status)
@@ -117,7 +147,7 @@ func TestAutomationUnaffectedByBroadcastUnsubscribe(t *testing.T) {
 	runID := enrollVia(t, env, fixtures.AutomationJobsSingleEmailID, fixtures.ContactBobID)
 
 	fs := &fakeSender{}
-	drive(t, env, resolvingTo(fs), runID)
+	env.RunQueuedSteps(t, stepperOf(env, resolvingTo(fs)))
 
 	assert.Len(t, fs.sent, 1, "broadcasts opt-out must not block the automation")
 	assert.Equal(t, automationrun.StatusCompleted, env.DB.AutomationRun.GetX(ctx, runID).Status)
@@ -127,13 +157,11 @@ func TestAutomationUnaffectedByBroadcastUnsubscribe(t *testing.T) {
 // the recipient can opt out (which exits the enrollment: see the endpoint test).
 func TestAutomationSendIncludesUnsubscribeFooter(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
-	runID := enrollVia(t, env, fixtures.AutomationJobsSingleEmailID, fixtures.ContactLiamID)
+	enrollVia(t, env, fixtures.AutomationJobsSingleEmailID, fixtures.ContactLiamID)
 
 	fs := &fakeSender{}
 	mod := outbound.New(env.Bus, env.Holds, resolvingTo(fs), tracking.New("secret", "https://app.test"))
-	_, err := jobs.RunStep(ctx, env.DB, noFence, mod, runID)
-	require.NoError(t, err)
+	env.RunQueuedSteps(t, stepperWith(env, mod))
 
 	require.Len(t, fs.sent, 1)
 	assert.Contains(t, fs.sent[0].HTML, "https://app.test/e/u/", "automation email carries an unsubscribe link")
@@ -151,43 +179,97 @@ func TestAutomationInactiveDoesNotEnroll(t *testing.T) {
 	assert.Empty(t, runIDs, "the win-back automation is a draft")
 }
 
-func TestAutomationWaitDefersNextStep(t *testing.T) {
+func TestAutomationWaitParksTheEnrollmentAndQueuesTheNextStepForTheResumeTime(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	runID := enrollVia(t, env, fixtures.AutomationJobsWaitFirstID, fixtures.ContactAliceID)
 
-	// First step is a wait: it defers (ResumeAt set), no send yet.
 	fs := &fakeSender{}
-	res, err := jobs.RunStep(ctx, env.DB, noFence, newMod(env, resolvingTo(fs)), runID)
-	require.NoError(t, err)
-	assert.False(t, res.Done)
-	require.NotNil(t, res.ResumeAt)
-	assert.NotNil(t, env.DB.AutomationRun.GetX(ctx, runID).ResumeAt)
+	require.True(t, env.RunNextStep(t, stepperWith(env, newMod(env, resolvingTo(fs)))))
+
+	run := env.DB.AutomationRun.GetX(ctx, runID)
+	require.NotNil(t, run.ResumeAt)
+	assert.Equal(t, 1, run.CurrentStep)
+	assert.Equal(t, []map[string]any{stepJob(runID, 1)}, queuedSteps(t, env), "the step after the wait is queued, and nothing else")
+	assert.WithinDuration(t, *run.ResumeAt, env.JobSchedules(t, stepping.RunStepArgs{}.Kind())[0], time.Second, "for the resume time")
 	assert.Empty(t, fs.sent)
 }
 
-// A wait step whose follow-up job failed to queue is run again: the retry finds the wait already
-// recorded and does not run the next step before its resume time.
-func TestRetriedWaitStepDoesNotRunTheNextStepBeforeTheResumeTime(t *testing.T) {
+// A step that runs before the Enrollment's recorded resume time (a retried wait) queues itself
+// for that time and does nothing else: the email after the wait is not sent early.
+func TestAStepRunningBeforeTheResumeTimeQueuesItselfAndDoesNothingElse(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	runID := enrollVia(t, env, fixtures.AutomationJobsWaitFirstID, fixtures.ContactAliceID)
 	fs := &fakeSender{}
-	mod := newMod(env, resolvingTo(fs))
+	mod := stepperWith(env, newMod(env, resolvingTo(fs)))
 
-	_, err := jobs.RunStep(ctx, env.DB, noFence, mod, runID)
-	require.NoError(t, err)
-	_, err = jobs.RunStep(ctx, env.DB, noFence, mod, runID)
-	require.NoError(t, err)
+	require.True(t, env.RunNextStep(t, mod)) // the wait
+	require.True(t, env.RunNextStep(t, mod)) // the email, delivered before the resume time
 
 	assert.Empty(t, fs.sent, "the email after the wait is not sent before the resume time")
 	run := env.DB.AutomationRun.GetX(ctx, runID)
 	assert.Equal(t, 1, run.CurrentStep, "the Enrollment stays on the step after the wait")
 	assert.Equal(t, automationrun.StatusActive, run.Status)
+	assert.Equal(t, []map[string]any{stepJob(runID, 1)}, queuedSteps(t, env), "the step waits for its time")
+	assert.WithinDuration(t, *run.ResumeAt, env.JobSchedules(t, stepping.RunStepArgs{}.Kind())[0], time.Second)
+}
+
+// A step job delivered again after its transaction committed (the queue completes a job in a
+// separate step) finds the Enrollment on the next step: it does nothing and queues nothing.
+func TestAStepJobExecutedTwiceMovesTheEnrollmentOnce(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	runID := enrollVia(t, env, fixtures.AutomationJobsWaitFirstID, fixtures.ContactAliceID)
+	mod := stepperOf(env, resolvingTo(&fakeSender{}))
+	acme := env.DB.Scoped(fixtures.AcmeID)
+
+	require.NoError(t, mod.Step(ctx, acme, runID, 0))
+	afterFirst := queuedSteps(t, env)
+	runAfterFirst := env.DB.AutomationRun.GetX(ctx, runID)
+
+	require.NoError(t, mod.Step(ctx, acme, runID, 0))
+
+	assert.Equal(t, afterFirst, queuedSteps(t, env), "the second execution queues nothing")
+	runAfterSecond := env.DB.AutomationRun.GetX(ctx, runID)
+	assert.Equal(t, 1, runAfterSecond.CurrentStep, "the Enrollment moved once")
+	assert.Equal(t, runAfterFirst.UpdatedAt, runAfterSecond.UpdatedAt, "the second execution wrote nothing")
+	assert.Equal(t, runAfterFirst.ResumeAt, runAfterSecond.ResumeAt)
+}
+
+// A tag step delivered twice tags once and moves once.
+func TestATagStepJobExecutedTwiceQueuesTheNextStepOnce(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	runID := enrollVia(t, env, fixtures.AutomationJobsSystemTagID, fixtures.ContactAliceID)
+	mod := stepperOf(env, resolvingTo(&fakeSender{}))
+	acme := env.DB.Scoped(fixtures.AcmeID)
+
+	require.NoError(t, mod.Step(ctx, acme, runID, 0))
+	require.NoError(t, mod.Step(ctx, acme, runID, 0))
+
+	assert.Equal(t, []map[string]any{stepJob(runID, 0), stepJob(runID, 1)}, queuedSteps(t, env), "the enrolling job and one follow-up")
+	assert.Equal(t, 1, env.DB.AutomationRun.GetX(ctx, runID).CurrentStep)
+}
+
+// A Contact erased after its step was queued takes the Enrollment with it: the step finds
+// nothing, ends quietly and sends nothing.
+func TestAStepOfAnEnrollmentErasedWithItsContactEndsQuietly(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	runID := enrollVia(t, env, fixtures.AutomationJobsSingleEmailID, fixtures.ContactLiamID)
+	env.DB.Contact.DeleteOneID(fixtures.ContactLiamID).ExecX(ctx)
+	fs := &fakeSender{}
+
+	env.RunQueuedSteps(t, stepperOf(env, resolvingTo(fs)))
+
+	assert.False(t, env.DB.AutomationRun.Query().Where(automationrun.ID(runID)).ExistX(ctx), "the Enrollment went with its Contact")
+	assert.Empty(t, fs.sent)
+	assert.Empty(t, queuedSteps(t, env))
 }
 
 // A hold on the source (here: a suspended Workspace) leaves the enrollment exactly
-// where it was and asks to be run again later; the run is neither failed nor exited.
+// where it was and queues the same step for later; the run is neither failed nor exited.
 func TestAutomationHeldStepWaitsAndResumes(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
@@ -195,20 +277,19 @@ func TestAutomationHeldStepWaitsAndResumes(t *testing.T) {
 	runID := enrollVia(t, env, fixtures.AutomationHoldDemoID, fixtures.ContactHoldDemoID)
 
 	fs := &fakeSender{}
-	mod := newMod(env, resolvingTo(fs))
+	mod := stepperOf(env, resolvingTo(fs))
 	env.SuspendWorkspace(ctx, fixtures.AcmeID, time.Now())
 
-	res, err := jobs.RunStep(ctx, env.DB, noFence, mod, runID)
-	require.NoError(t, err)
-	assert.False(t, res.Done)
-	require.NotNil(t, res.ResumeAt, "the worker reschedules the same step")
+	require.True(t, env.RunNextStep(t, mod))
+
 	run := env.DB.AutomationRun.GetX(ctx, runID)
 	assert.Equal(t, automationrun.StatusActive, run.Status)
 	assert.Zero(t, run.CurrentStep, "a hold does not advance the enrollment")
+	assert.Equal(t, []map[string]any{stepJob(runID, 0)}, queuedSteps(t, env), "the worker reschedules the same step")
 	assert.Empty(t, fs.sent)
 
 	env.UnsuspendWorkspace(ctx, fixtures.AcmeID)
-	drive(t, env, resolvingTo(fs), runID)
+	env.RunQueuedSteps(t, mod)
 	assert.Len(t, fs.sent, 1, "after the unfreeze the step sends")
 }
 
@@ -219,6 +300,7 @@ func TestAutomationExitedMidStepStaysExitedAndTheLateStepFinishesQuietly(t *test
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	run := env.DB.AutomationRun.GetX(ctx, fixtures.AutomationRunJobsBrokenTemplateID)
+	queueStep(t, env, run.ID)
 
 	// The Contact unsubscribes while the step is already running: the provider lookup
 	// is inside the step, after the run was read.
@@ -228,10 +310,10 @@ func TestAutomationExitedMidStepStaysExitedAndTheLateStepFinishesQuietly(t *test
 		return &fakeSender{}, nil
 	}}
 
-	res, err := jobs.RunStep(ctx, env.DB, noFence, newMod(env, resolver), run.ID)
-	require.NoError(t, err)
-	assert.True(t, res.Done)
+	env.RunQueuedSteps(t, stepperOf(env, resolver))
+
 	assert.Equal(t, automationrun.StatusExited, env.DB.AutomationRun.GetX(ctx, run.ID).Status)
+	assert.Empty(t, queuedSteps(t, env))
 }
 
 func TestStepOnAnExitedRunSendsNothingAndStaysPut(t *testing.T) {
@@ -239,15 +321,15 @@ func TestStepOnAnExitedRunSendsNothingAndStaysPut(t *testing.T) {
 	ctx := context.Background()
 	fs := &fakeSender{}
 	runID := int64(fixtures.AutomationRunJobsExitedOnEmailID)
+	queueStep(t, env, runID)
 
-	res, err := jobs.RunStep(ctx, env.DB, noFence, newMod(env, resolvingTo(fs)), runID)
+	env.RunQueuedSteps(t, stepperOf(env, resolvingTo(fs)))
 
-	require.NoError(t, err)
-	assert.True(t, res.Done)
 	assert.Empty(t, fs.sent, "nothing is sent after an exit")
 	run := env.DB.AutomationRun.GetX(ctx, runID)
 	assert.Equal(t, automationrun.StatusExited, run.Status)
 	assert.Equal(t, 0, run.CurrentStep)
+	assert.Empty(t, queuedSteps(t, env))
 }
 
 func TestTagStepOnAnExitedRunChangesNoTagAndDoesNotAdvance(t *testing.T) {
@@ -255,29 +337,28 @@ func TestTagStepOnAnExitedRunChangesNoTagAndDoesNotAdvance(t *testing.T) {
 	ctx := context.Background()
 	runID := int64(fixtures.AutomationRunJobsExitedOnTagID)
 	run := env.DB.AutomationRun.GetX(ctx, runID)
+	queueStep(t, env, runID)
 
-	res, err := jobs.RunStep(ctx, env.DB, noFence, newMod(env, resolvingTo(&fakeSender{})), runID)
+	env.RunQueuedSteps(t, stepperOf(env, resolvingTo(&fakeSender{})))
 
-	require.NoError(t, err)
-	assert.True(t, res.Done)
 	assert.False(t, env.DB.Contact.GetX(ctx, run.ContactID).QueryTags().Where(tag.Name("system-made")).ExistX(ctx), "the exited Contact was not tagged")
 	assert.Equal(t, 0, env.DB.AutomationRun.GetX(ctx, runID).CurrentStep)
+	assert.Empty(t, queuedSteps(t, env))
 }
 
 func TestWaitStepOnAnExitedRunDoesNotSetResumeAt(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	runID := int64(fixtures.AutomationRunJobsExitedOnWaitID) // exited with the wait step next
+	queueStep(t, env, runID)
 
-	res, err := jobs.RunStep(ctx, env.DB, noFence, newMod(env, resolvingTo(&fakeSender{})), runID)
+	env.RunQueuedSteps(t, stepperOf(env, resolvingTo(&fakeSender{})))
 
-	require.NoError(t, err)
-	assert.True(t, res.Done)
-	assert.Nil(t, res.ResumeAt)
 	run := env.DB.AutomationRun.GetX(ctx, runID)
 	assert.Equal(t, automationrun.StatusExited, run.Status)
 	assert.Nil(t, run.ResumeAt)
 	assert.Equal(t, 1, run.CurrentStep)
+	assert.Empty(t, queuedSteps(t, env))
 }
 
 // An Enrollment finishes on the steps it began with, however the Automation is edited after
@@ -291,12 +372,12 @@ func TestAutomationEnrollmentFinishesOnItsOwnVersionAfterAnEdit(t *testing.T) {
 	early := enrollVia(t, env, fixtures.AutomationJobsEditableID, fixtures.ContactAliceID)
 	// The first step (the wait) runs; the Enrollment now stands on the email step.
 	fs := &fakeSender{}
-	_, err := jobs.RunStep(ctx, env.DB, noFence, newMod(env, resolvingTo(fs)), early)
-	require.NoError(t, err)
+	stepper := stepperOf(env, resolvingTo(fs))
+	require.True(t, env.RunNextStep(t, stepper))
 
 	// The owner edits the steps: a wait is inserted ahead and the email is reworded. Were the
 	// Enrollment to read the live steps, its index 1 would now be the new wait.
-	_, err = mod.Update(ctx, acme, fixtures.AutomationJobsEditableID, automations.UpdateInput{Steps: &[]automations.Step{
+	_, err := mod.Update(ctx, acme, fixtures.AutomationJobsEditableID, automations.UpdateInput{Steps: &[]automations.Step{
 		{Type: automations.StepWait, Seconds: 1},
 		{Type: automations.StepWait, Seconds: 2},
 		{Type: automations.StepEmail, Subject: "New steps", Body: "<p>new</p>"},
@@ -305,8 +386,7 @@ func TestAutomationEnrollmentFinishesOnItsOwnVersionAfterAnEdit(t *testing.T) {
 
 	late := enrollVia(t, env, fixtures.AutomationJobsEditableID, fixtures.ContactCarolID)
 
-	drive(t, env, resolvingTo(fs), early)
-	drive(t, env, resolvingTo(fs), late)
+	env.RunQueuedSteps(t, stepper)
 
 	require.Len(t, fs.sent, 2)
 	assert.Equal(t, "Old steps", fs.sent[0].Subject, "the Enrollment begun before the edit finished on its own version")

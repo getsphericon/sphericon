@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobkind"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/stepping"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -31,8 +32,8 @@ func TestCancelPendingRemovesTheContactsQueuedCallsAndKeepsOthers(t *testing.T) 
 		fixtures.AutomationRunErasableID, fixtures.AutomationRunErasableHTTPFailedID,
 		fixtures.AutomationRunBystanderHTTPFailedID,
 	} {
-		env.EnqueueJob(t, jobs.RunStepArgs{RunID: id})
-		env.EnqueueJob(t, jobs.RunHTTPStepArgs{RunID: id})
+		env.EnqueueJob(t, stepping.RunStepArgs{RunID: id})
+		env.EnqueueJob(t, stepping.RunHTTPStepArgs{RunID: id})
 	}
 	env.EnqueueJob(t, jobs.EvaluateTriggerArgs{WorkspaceID: fixtures.InitechID, ContactID: fixtures.ContactErasableID, Action: "x"})
 	env.EnqueueJob(t, jobs.EvaluateTriggerArgs{WorkspaceID: fixtures.InitechID, ContactID: fixtures.ContactBystanderID, Action: "x"})

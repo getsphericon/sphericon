@@ -1,10 +1,6 @@
-package jobs
+package webhook
 
-import (
-	"time"
-
-	"github.com/getsphericon/sphericon/internal/webhook"
-)
+import "time"
 
 // The retry policy of an outbound call to a third-party hook (ADR 0039): a Webhook delivery
 // and, through the same functions, an HTTP step. A receiver that is down for a weekend
@@ -52,7 +48,7 @@ func HookNextRetry(attemptedAt time.Time, attempt int) time.Time {
 // HookSnooze is how long to snooze a job whose receiver answered 429 with the given
 // Retry-After value.
 func HookSnooze(retryAfter string, now time.Time) time.Duration {
-	wait, ok := webhook.ParseRetryAfter(retryAfter, now)
+	wait, ok := ParseRetryAfter(retryAfter, now)
 	if !ok || wait <= 0 {
 		return HookSnoozeDefault
 	}

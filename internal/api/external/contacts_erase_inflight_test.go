@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobkind"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/stepping"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -81,7 +82,7 @@ func TestExternalContactsEraseClearsOutboxAndJobArguments(t *testing.T) {
 
 	env.EnqueueJob(t, jobs.EvaluateTriggerArgs{WorkspaceID: fixtures.InitechID, ContactID: erasedID, Action: "x"})
 	env.EnqueueJob(t, jobs.EvaluateTriggerArgs{WorkspaceID: fixtures.InitechID, ContactID: bystanderID, Action: "x"})
-	env.EnqueueJob(t, jobs.RunStepArgs{RunID: fixtures.AutomationRunErasableID})
+	env.EnqueueJob(t, stepping.RunStepArgs{RunID: fixtures.AutomationRunErasableID})
 	env.EnqueueJob(t, jobs.SendRecipientArgs{RecipientID: fixtures.BroadcastRecipientErasablePendingID, BroadcastID: fixtures.BroadcastInitechSendingID})
 	env.EnqueueJob(t, jobs.SendRecipientArgs{RecipientID: fixtures.BroadcastRecipientBystanderPendingID, BroadcastID: fixtures.BroadcastInitechSendingID})
 
@@ -94,7 +95,7 @@ func TestExternalContactsEraseClearsOutboxAndJobArguments(t *testing.T) {
 	evaluate := env.JobsOf(t, jobs.EvaluateTriggerArgs{}.Kind())
 	require.Len(t, evaluate, 1)
 	assert.EqualValues(t, bystanderID, evaluate[0]["contact_id"])
-	assert.Empty(t, env.JobsOf(t, jobs.RunStepArgs{}.Kind()))
+	assert.Empty(t, env.JobsOf(t, stepping.RunStepArgs{}.Kind()))
 	recipients := env.JobsOf(t, jobs.SendRecipientArgs{}.Kind())
 	require.Len(t, recipients, 1)
 	assert.EqualValues(t, fixtures.BroadcastRecipientBystanderPendingID, recipients[0]["recipient_id"])
@@ -136,7 +137,7 @@ func TestExternalContactsEraseClearsQueuedHTTPStepCallsAndFailureExcerpts(t *tes
 		fixtures.AutomationRunErasableID, fixtures.AutomationRunErasableHTTPFailedID,
 		fixtures.AutomationRunBystanderHTTPFailedID, fixtures.AutomationRunHTTPFailedID,
 	} {
-		env.EnqueueJob(t, jobs.RunHTTPStepArgs{RunID: id})
+		env.EnqueueJob(t, stepping.RunHTTPStepArgs{RunID: id})
 	}
 
 	eraseErasable(t, env)

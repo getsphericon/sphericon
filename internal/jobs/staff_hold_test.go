@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/outbound"
+	"github.com/getsphericon/sphericon/internal/stepping"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/tracking"
 )
@@ -73,17 +74,15 @@ func TestAnStaffHoldMakesAnAutomationStepWaitAndContinue(t *testing.T) {
 	require.Len(t, runIDs, 1)
 	setHold(t, env, clock.t.Add(time.Hour))
 
-	res, err := jobs.RunStep(ctx, env.DB, noFence, heldMod(env, clock, resolvingTo(fs)), runIDs[0])
-	require.NoError(t, err)
-	assert.False(t, res.Done)
-	require.NotNil(t, res.ResumeAt)
+	held := stepperWith(env, heldMod(env, clock, resolvingTo(fs)), stepping.WithClock(clock.now))
+	require.True(t, env.RunNextStep(t, held))
 	run := env.DB.AutomationRun.GetX(ctx, runIDs[0])
 	assert.Equal(t, automationrun.StatusActive, run.Status)
 	assert.Zero(t, run.CurrentStep)
+	assert.Equal(t, []map[string]any{stepJob(runIDs[0], 0)}, queuedSteps(t, env), "the same step is queued again")
 	assert.Empty(t, fs.sent)
 
 	clock.t = clock.t.Add(2 * time.Hour)
-	_, err = jobs.RunStep(ctx, env.DB, noFence, heldMod(env, clock, resolvingTo(fs)), runIDs[0])
-	require.NoError(t, err)
+	env.RunQueuedSteps(t, held)
 	assert.Len(t, fs.sent, 1, "the step sends once the hold has lapsed")
 }

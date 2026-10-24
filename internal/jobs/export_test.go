@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/secrets"
+	"github.com/getsphericon/sphericon/internal/stepping"
 	"github.com/getsphericon/sphericon/internal/webhook"
 	"github.com/getsphericon/sphericon/internal/webhooks"
 	"github.com/getsphericon/sphericon/internal/workspacedeletion"
@@ -91,12 +92,8 @@ func NewEvaluateTriggerWorker(client *ent.Client, bus *events.Bus) *EvaluateTrig
 	return &EvaluateTriggerWorker{ent: client, bus: bus}
 }
 
-func NewRunStepWorker(client *ent.Client, fence automations.Fencer, mod *outbound.Module) *RunStepWorker {
-	return &RunStepWorker{ent: client, mod: mod, fence: fence}
-}
-
-func NewRunHTTPStepWorker(client *ent.Client, fence automations.Fencer, mod *automations.Module, doer webhook.Doer, now func() time.Time) *RunHTTPStepWorker {
-	return &RunHTTPStepWorker{ent: client, mod: mod, client: doer, now: now, fence: fence}
+func NewRunHTTPStepWorker(client *ent.Client, fence automations.Fencer, mod *automations.Module, step *stepping.Module, doer webhook.Doer, now func() time.Time) *RunHTTPStepWorker {
+	return &RunHTTPStepWorker{ent: client, mod: mod, step: step, client: doer, now: now, fence: fence}
 }
 
 func NewSendBroadcastWorker(client *ent.Client, mod *outbound.Module) *SendBroadcastWorker {

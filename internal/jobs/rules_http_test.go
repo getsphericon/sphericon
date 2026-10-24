@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/httpcall"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/rules"
+	"github.com/getsphericon/sphericon/internal/stepping"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/webhook"
 )
@@ -240,10 +241,10 @@ func TestAnHTTPActionRateLimitEndsAtTheRetryHorizon(t *testing.T) {
 	h := fireHTTPRule(t, env, `{}`, nil)
 	h.rcv.respond(http.StatusTooManyRequests, "", "")
 	w := h.allowing()
-	h.clock = h.clock.Add(jobs.HookRetryHorizon) // the job was created a horizon ago
+	h.clock = h.clock.Add(webhook.HookRetryHorizon) // the job was created a horizon ago
 
 	err := w.Work(context.Background(), &river.Job[jobs.RunRuleHTTPArgs]{
-		JobRow: &rivertype.JobRow{Attempt: 1, MaxAttempts: 3, CreatedAt: h.clock.Add(-jobs.HookRetryHorizon)},
+		JobRow: &rivertype.JobRow{Attempt: 1, MaxAttempts: 3, CreatedAt: h.clock.Add(-webhook.HookRetryHorizon)},
 		Args:   jobs.RunRuleHTTPArgs{FiringID: h.firing.ID},
 	})
 
@@ -280,11 +281,11 @@ func TestAnHTTPActionRunsOnAQueueOfItsOwnWithTheRetryHorizonOfAHook(t *testing.T
 
 	// The Actions job queues the call with the options its args declare.
 	opts := jobs.RunRuleHTTPArgs{}.InsertOpts()
-	assert.Equal(t, jobs.QueueHTTPSteps, opts.Queue)
+	assert.Equal(t, stepping.QueueHTTPSteps, opts.Queue)
 	assert.NotEqual(t, jobs.QueueWebhooks, opts.Queue)
-	assert.Equal(t, jobs.HookMaxAttempts(), opts.MaxAttempts)
+	assert.Equal(t, webhook.HookMaxAttempts(), opts.MaxAttempts)
 	assert.True(t, opts.UniqueOpts.ByArgs, "a redelivered Actions job does not queue the call twice")
 
 	next := h.allowing().NextRetry(&river.Job[jobs.RunRuleHTTPArgs]{JobRow: &rivertype.JobRow{Attempt: 2, AttemptedAt: &h.clock}})
-	assert.Equal(t, jobs.HookNextRetry(h.clock, 2), next)
+	assert.Equal(t, webhook.HookNextRetry(h.clock, 2), next)
 }

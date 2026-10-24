@@ -64,21 +64,21 @@ func (w *DeliverWebhookWorker) Work(ctx context.Context, job *river.Job[DeliverW
 	}
 	if limited := webhook.RateLimited(sendErr); limited != nil {
 		now := w.now()
-		if now.Sub(job.CreatedAt) >= HookRetryHorizon {
+		if now.Sub(job.CreatedAt) >= webhook.HookRetryHorizon {
 			return river.JobCancel(sendErr) // a receiver that never lets up ends the delivery too
 		}
-		return river.JobSnooze(HookSnooze(limited.RetryAfter, now))
+		return river.JobSnooze(webhook.HookSnooze(limited.RetryAfter, now))
 	}
 	return sendErr
 }
 
-// NextRetry is the delivery's retry policy (HookNextRetry), so a failed delivery is retried
+// NextRetry is the delivery's retry policy (webhook.HookNextRetry), so a failed delivery is retried
 // for days rather than river's default hours; Dispatch inserts with the matching MaxAttempts.
 func (w *DeliverWebhookWorker) NextRetry(job *river.Job[DeliverWebhookArgs]) time.Time {
 	if job.AttemptedAt == nil {
 		return time.Time{} // river falls back to its default
 	}
-	return HookNextRetry(*job.AttemptedAt, job.Attempt)
+	return webhook.HookNextRetry(*job.AttemptedAt, job.Attempt)
 }
 
 // Dispatch fans a domain event out to every enabled endpoint in the workspace
@@ -101,7 +101,7 @@ func (c *Client) Dispatch(ctx context.Context, s *ent.Scoped, eventName, deliver
 			EventName:  eventName,
 			DeliveryID: deliveryID,
 			Body:       body,
-		}, &river.InsertOpts{Queue: QueueWebhooks, MaxAttempts: HookMaxAttempts()}); err != nil {
+		}, &river.InsertOpts{Queue: QueueWebhooks, MaxAttempts: webhook.HookMaxAttempts()}); err != nil {
 			return err
 		}
 	}

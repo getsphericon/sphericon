@@ -1,7 +1,6 @@
 package jobs_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -9,7 +8,6 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -17,12 +15,9 @@ import (
 // actor (ADR 0022); the Contact edge itself is not an audited field change.
 func TestAutomationApplyTagIsAuditedUnderSystem(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
+	enrollVia(t, env, fixtures.AutomationJobsSystemTagID, fixtures.ContactAliceID)
 
-	runID := enrollVia(t, env, fixtures.AutomationJobsSystemTagID, fixtures.ContactAliceID)
-
-	_, err := jobs.RunStep(ctx, env.DB, noFence, newMod(env, resolvingTo(&fakeSender{})), runID)
-	require.NoError(t, err)
+	require.True(t, env.RunNextStep(t, stepperOf(env, resolvingTo(&fakeSender{}))))
 
 	got := env.OutboxEvents(t, events.NameAuditEntry)
 	require.Len(t, got, 1)

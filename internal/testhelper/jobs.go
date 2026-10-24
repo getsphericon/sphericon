@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/stepping"
 )
 
 // Tests run jobs inline, so a test that needs a job to be waiting in the queue puts
@@ -105,4 +106,61 @@ func (env *TestEnv) CancelPendingFor(t *testing.T, contactID int64, cancel func(
 	return env.Bus.WithinScopedPurgeTx(ctx, s, func(ts *ent.Scoped, pub events.PurgingPublisher) error {
 		return cancel(ctx, ts, contactID, pub)
 	})
+}
+
+// RunNextStep takes the oldest waiting step job of an Enrollment from the queue, executes its
+// step through mod as the worker would and deletes the job, the way a finished job leaves the
+// queue. It reports whether there was a job. The job is run whatever its schedule says: a step
+// that is early for its Enrollment's resume time queues itself again, so a test that lets
+// waits pass gives the module a clock past them.
+func (env *TestEnv) RunNextStep(t *testing.T, mod *stepping.Module) bool {
+	t.Helper()
+	rc := env.riverClient(t)
+	res, err := rc.JobList(t.Context(), river.NewJobListParams().
+		Kinds(stepping.RunStepArgs{}.Kind()).
+		States(rivertype.JobStateAvailable, rivertype.JobStateScheduled, rivertype.JobStateRetryable).
+		OrderBy(river.JobListOrderByID, river.SortOrderAsc).First(1))
+	require.NoError(t, err)
+	if len(res.Jobs) == 0 {
+		return false
+	}
+	row := res.Jobs[0]
+	var args stepping.RunStepArgs
+	require.NoError(t, json.Unmarshal(row.EncodedArgs, &args))
+	require.NoError(t, jobs.NewRunStepWorker(env.DB, mod).Work(t.Context(), &river.Job[stepping.RunStepArgs]{JobRow: row, Args: args}))
+	_, err = rc.JobDelete(t.Context(), row.ID)
+	require.NoError(t, err)
+	return true
+}
+
+// JobRowsOf returns the queued jobs of kind as river holds them, oldest first.
+func (env *TestEnv) JobRowsOf(t *testing.T, kind string) []*rivertype.JobRow {
+	t.Helper()
+	res, err := env.riverClient(t).JobList(t.Context(), river.NewJobListParams().Kinds(kind).OrderBy(river.JobListOrderByID, river.SortOrderAsc).First(maxQueuedJobs))
+	require.NoError(t, err)
+	return res.Jobs
+}
+
+// JobSchedules returns when the queued jobs of kind are due, oldest first.
+func (env *TestEnv) JobSchedules(t *testing.T, kind string) []time.Time {
+	t.Helper()
+	rows := env.JobRowsOf(t, kind)
+	out := make([]time.Time, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, row.ScheduledAt)
+	}
+	return out
+}
+
+// RunQueuedSteps runs the waiting step jobs through mod, oldest first, until none is left: the
+// steps an Enrollment's own jobs queue are run too, so an Automation is driven to its end
+// (or to the HTTP step job, which this does not run).
+func (env *TestEnv) RunQueuedSteps(t *testing.T, mod *stepping.Module) {
+	t.Helper()
+	for range maxQueuedJobs {
+		if !env.RunNextStep(t, mod) {
+			return
+		}
+	}
+	require.FailNow(t, "the queued steps did not run out")
 }
