@@ -37,8 +37,6 @@ const (
 	FieldDoc = "doc"
 	// FieldEditorVersion holds the string denoting the editor_version field in the database.
 	FieldEditorVersion = "editor_version"
-	// FieldBodyText holds the string denoting the body_text field in the database.
-	FieldBodyText = "body_text"
 	// FieldSegmentID holds the string denoting the segment_id field in the database.
 	FieldSegmentID = "segment_id"
 	// FieldIntegrationID holds the string denoting the integration_id field in the database.
@@ -107,7 +105,6 @@ var Columns = []string{
 	FieldBody,
 	FieldDoc,
 	FieldEditorVersion,
-	FieldBodyText,
 	FieldSegmentID,
 	FieldIntegrationID,
 	FieldStatus,
@@ -140,8 +137,6 @@ var (
 	DefaultSubject string
 	// DefaultBody holds the default value on creation for the "body" field.
 	DefaultBody string
-	// DefaultBodyText holds the default value on creation for the "body_text" field.
-	DefaultBodyText string
 )
 
 // Status defines the type for the "status" enum field.
@@ -229,11 +224,6 @@ func ByBody(opts ...sql.OrderTermOption) OrderOption {
 // ByEditorVersion orders the results by the editor_version field.
 func ByEditorVersion(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldEditorVersion, opts...).ToFunc()
-}
-
-// ByBodyText orders the results by the body_text field.
-func ByBodyText(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldBodyText, opts...).ToFunc()
 }
 
 // BySegmentID orders the results by the segment_id field.

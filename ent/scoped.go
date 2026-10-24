@@ -6031,18 +6031,6 @@ func (x *BroadcastScopedCreate) SetNillableEditorVersion(v *string) *BroadcastSc
 	return x
 }
 
-// SetBodyText sets the "body_text" field.
-func (x *BroadcastScopedCreate) SetBodyText(v string) *BroadcastScopedCreate {
-	x.b.SetBodyText(v)
-	return x
-}
-
-// SetNillableBodyText sets the "body_text" field if the given value is not nil.
-func (x *BroadcastScopedCreate) SetNillableBodyText(v *string) *BroadcastScopedCreate {
-	x.b.SetNillableBodyText(v)
-	return x
-}
-
 // SetSegmentID sets the "segment_id" field.
 func (x *BroadcastScopedCreate) SetSegmentID(v int64) *BroadcastScopedCreate {
 	x.b.SetSegmentID(v)
@@ -6392,18 +6380,6 @@ func (u *BroadcastScopedUpsert) UpdateEditorVersion() *BroadcastScopedUpsert {
 // ClearEditorVersion clears the value of the "editor_version" field.
 func (u *BroadcastScopedUpsert) ClearEditorVersion() *BroadcastScopedUpsert {
 	u.u.SetNull(broadcast.FieldEditorVersion)
-	return u
-}
-
-// SetBodyText sets the "body_text" field.
-func (u *BroadcastScopedUpsert) SetBodyText(v string) *BroadcastScopedUpsert {
-	u.u.Set(broadcast.FieldBodyText, v)
-	return u
-}
-
-// UpdateBodyText sets the "body_text" field to the value that was provided on create.
-func (u *BroadcastScopedUpsert) UpdateBodyText() *BroadcastScopedUpsert {
-	u.u.SetExcluded(broadcast.FieldBodyText)
 	return u
 }
 
@@ -6825,18 +6801,6 @@ func (x *BroadcastScopedUpdateOne) ClearEditorVersion() *BroadcastScopedUpdateOn
 	return x
 }
 
-// SetBodyText sets the "body_text" field.
-func (x *BroadcastScopedUpdateOne) SetBodyText(v string) *BroadcastScopedUpdateOne {
-	x.b.SetBodyText(v)
-	return x
-}
-
-// SetNillableBodyText sets the "body_text" field if the given value is not nil.
-func (x *BroadcastScopedUpdateOne) SetNillableBodyText(v *string) *BroadcastScopedUpdateOne {
-	x.b.SetNillableBodyText(v)
-	return x
-}
-
 // SetSegmentID sets the "segment_id" field.
 func (x *BroadcastScopedUpdateOne) SetSegmentID(v int64) *BroadcastScopedUpdateOne {
 	x.b.SetSegmentID(v)
@@ -7221,18 +7185,6 @@ func (x *BroadcastScopedUpdate) SetNillableEditorVersion(v *string) *BroadcastSc
 // ClearEditorVersion clears the value of the "editor_version" field.
 func (x *BroadcastScopedUpdate) ClearEditorVersion() *BroadcastScopedUpdate {
 	x.b.ClearEditorVersion()
-	return x
-}
-
-// SetBodyText sets the "body_text" field.
-func (x *BroadcastScopedUpdate) SetBodyText(v string) *BroadcastScopedUpdate {
-	x.b.SetBodyText(v)
-	return x
-}
-
-// SetNillableBodyText sets the "body_text" field if the given value is not nil.
-func (x *BroadcastScopedUpdate) SetNillableBodyText(v *string) *BroadcastScopedUpdate {
-	x.b.SetNillableBodyText(v)
 	return x
 }
 

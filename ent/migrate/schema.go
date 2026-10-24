@@ -317,7 +317,6 @@ var (
 		{Name: "body", Type: field.TypeString, Default: ""},
 		{Name: "doc", Type: field.TypeJSON, Nullable: true},
 		{Name: "editor_version", Type: field.TypeString, Nullable: true},
-		{Name: "body_text", Type: field.TypeString, Default: ""},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"draft", "scheduled", "sending", "sent", "failed"}, Default: "draft"},
 		{Name: "scheduled_at", Type: field.TypeTime, Nullable: true},
 		{Name: "sent_at", Type: field.TypeTime, Nullable: true},
@@ -335,19 +334,19 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "broadcasts_segments_segment",
-				Columns:    []*schema.Column{BroadcastsColumns[17]},
+				Columns:    []*schema.Column{BroadcastsColumns[16]},
 				RefColumns: []*schema.Column{SegmentsColumns[0]},
 				OnDelete:   schema.Restrict,
 			},
 			{
 				Symbol:     "broadcasts_integrations_integration",
-				Columns:    []*schema.Column{BroadcastsColumns[18]},
+				Columns:    []*schema.Column{BroadcastsColumns[17]},
 				RefColumns: []*schema.Column{IntegrationsColumns[0]},
 				OnDelete:   schema.Restrict,
 			},
 			{
 				Symbol:     "broadcasts_workspaces_broadcasts",
-				Columns:    []*schema.Column{BroadcastsColumns[19]},
+				Columns:    []*schema.Column{BroadcastsColumns[18]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -356,17 +355,17 @@ var (
 			{
 				Name:    "broadcast_workspace_id",
 				Unique:  false,
-				Columns: []*schema.Column{BroadcastsColumns[19]},
+				Columns: []*schema.Column{BroadcastsColumns[18]},
 			},
 			{
 				Name:    "broadcast_segment_id",
 				Unique:  false,
-				Columns: []*schema.Column{BroadcastsColumns[17]},
+				Columns: []*schema.Column{BroadcastsColumns[16]},
 			},
 			{
 				Name:    "broadcast_integration_id",
 				Unique:  false,
-				Columns: []*schema.Column{BroadcastsColumns[18]},
+				Columns: []*schema.Column{BroadcastsColumns[17]},
 			},
 		},
 	}

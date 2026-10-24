@@ -13674,17 +13674,7 @@
       },
       "SiteBroadcastResource": {
         "type": "object",
-        "required": [
-          "id",
-          "name",
-          "subject",
-          "body",
-          "bodyText",
-          "status",
-          "stats",
-          "createdAt",
-          "updatedAt"
-        ],
+        "required": ["id", "name", "subject", "body", "status", "stats", "createdAt", "updatedAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -13738,10 +13728,6 @@
               "$ref": "#/components/schemas/LintFinding"
             },
             "description": "Warnings of the lint over the stored content (ADR 0040); set on the response of a save, never blocks it"
-          },
-          "bodyText": {
-            "type": "string",
-            "description": "Derived plain-text body"
           },
           "segmentId": {
             "type": "string",

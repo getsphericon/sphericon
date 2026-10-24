@@ -7184,7 +7184,6 @@ type BroadcastMutation struct {
 	doc                *jsontext.Value
 	appenddoc          jsontext.Value
 	editor_version     *string
-	body_text          *string
 	status             *broadcast.Status
 	scheduled_at       *time.Time
 	sent_at            *time.Time
@@ -7786,42 +7785,6 @@ func (m *BroadcastMutation) ResetEditorVersion() {
 	delete(m.clearedFields, broadcast.FieldEditorVersion)
 }
 
-// SetBodyText sets the "body_text" field.
-func (m *BroadcastMutation) SetBodyText(s string) {
-	m.body_text = &s
-}
-
-// BodyText returns the value of the "body_text" field in the mutation.
-func (m *BroadcastMutation) BodyText() (r string, exists bool) {
-	v := m.body_text
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldBodyText returns the old "body_text" field's value of the Broadcast entity.
-// If the Broadcast object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *BroadcastMutation) OldBodyText(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldBodyText is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldBodyText requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldBodyText: %w", err)
-	}
-	return oldValue.BodyText, nil
-}
-
-// ResetBodyText resets all changes to the "body_text" field.
-func (m *BroadcastMutation) ResetBodyText() {
-	m.body_text = nil
-}
-
 // SetSegmentID sets the "segment_id" field.
 func (m *BroadcastMutation) SetSegmentID(i int64) {
 	m.segment = &i
@@ -8321,7 +8284,7 @@ func (m *BroadcastMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BroadcastMutation) Fields() []string {
-	fields := make([]string, 0, 19)
+	fields := make([]string, 0, 18)
 	if m.created_at != nil {
 		fields = append(fields, broadcast.FieldCreatedAt)
 	}
@@ -8354,9 +8317,6 @@ func (m *BroadcastMutation) Fields() []string {
 	}
 	if m.editor_version != nil {
 		fields = append(fields, broadcast.FieldEditorVersion)
-	}
-	if m.body_text != nil {
-		fields = append(fields, broadcast.FieldBodyText)
 	}
 	if m.segment != nil {
 		fields = append(fields, broadcast.FieldSegmentID)
@@ -8409,8 +8369,6 @@ func (m *BroadcastMutation) Field(name string) (ent.Value, bool) {
 		return m.Doc()
 	case broadcast.FieldEditorVersion:
 		return m.EditorVersion()
-	case broadcast.FieldBodyText:
-		return m.BodyText()
 	case broadcast.FieldSegmentID:
 		return m.SegmentID()
 	case broadcast.FieldIntegrationID:
@@ -8456,8 +8414,6 @@ func (m *BroadcastMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldDoc(ctx)
 	case broadcast.FieldEditorVersion:
 		return m.OldEditorVersion(ctx)
-	case broadcast.FieldBodyText:
-		return m.OldBodyText(ctx)
 	case broadcast.FieldSegmentID:
 		return m.OldSegmentID(ctx)
 	case broadcast.FieldIntegrationID:
@@ -8557,13 +8513,6 @@ func (m *BroadcastMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetEditorVersion(v)
-		return nil
-	case broadcast.FieldBodyText:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetBodyText(v)
 		return nil
 	case broadcast.FieldSegmentID:
 		v, ok := value.(int64)
@@ -8767,9 +8716,6 @@ func (m *BroadcastMutation) ResetField(name string) error {
 		return nil
 	case broadcast.FieldEditorVersion:
 		m.ResetEditorVersion()
-		return nil
-	case broadcast.FieldBodyText:
-		m.ResetBodyText()
 		return nil
 	case broadcast.FieldSegmentID:
 		m.ResetSegmentID()

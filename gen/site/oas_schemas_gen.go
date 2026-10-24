@@ -8372,8 +8372,6 @@ type SiteBroadcastResource struct {
 	// Warnings of the lint over the stored content (ADR 0040); set on the response of a save, never blocks
 	// it.
 	Warnings []LintFinding `json:"warnings"`
-	// Derived plain-text body.
-	BodyText string `json:"bodyText"`
 	// Target segment; null means all active contacts.
 	SegmentId OptNilEntityId `json:"segmentId"`
 	// Sending integration; null means the workspace default.
@@ -8444,11 +8442,6 @@ func (s *SiteBroadcastResource) GetEditorVersion() OptNilString {
 // GetWarnings returns the value of Warnings.
 func (s *SiteBroadcastResource) GetWarnings() []LintFinding {
 	return s.Warnings
-}
-
-// GetBodyText returns the value of BodyText.
-func (s *SiteBroadcastResource) GetBodyText() string {
-	return s.BodyText
 }
 
 // GetSegmentId returns the value of SegmentId.
@@ -8549,11 +8542,6 @@ func (s *SiteBroadcastResource) SetEditorVersion(val OptNilString) {
 // SetWarnings sets the value of Warnings.
 func (s *SiteBroadcastResource) SetWarnings(val []LintFinding) {
 	s.Warnings = val
-}
-
-// SetBodyText sets the value of BodyText.
-func (s *SiteBroadcastResource) SetBodyText(val string) {
-	s.BodyText = val
 }
 
 // SetSegmentId sets the value of SegmentId.

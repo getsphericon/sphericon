@@ -1551,10 +1551,6 @@ export type SiteBroadcastResource = {
    */
   warnings?: Array<LintFinding>;
   /**
-   * Derived plain-text body
-   */
-  bodyText: string;
-  /**
    * Target segment; null means all active contacts
    */
   segmentId?: EntityId | null;

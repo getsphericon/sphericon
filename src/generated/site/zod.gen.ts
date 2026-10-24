@@ -1997,7 +1997,6 @@ export const zSiteBroadcastResource = z.object({
   doc: z.exactOptional(z.record(z.string(), z.unknown()).nullable()),
   editorVersion: z.exactOptional(z.string().nullable()),
   warnings: z.exactOptional(z.array(zLintFinding)),
-  bodyText: z.string(),
   segmentId: z.exactOptional(zEntityId.nullable()),
   integrationId: z.exactOptional(zEntityId.nullable()),
   status: zSiteBroadcastStatus,

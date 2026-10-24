@@ -44,8 +44,6 @@ type Broadcast struct {
 	Doc jsontext.Value `json:"doc,omitempty"`
 	// EditorVersion holds the value of the "editor_version" field.
 	EditorVersion *string `json:"editor_version,omitempty"`
-	// BodyText holds the value of the "body_text" field.
-	BodyText string `json:"body_text,omitempty"`
 	// SegmentID holds the value of the "segment_id" field.
 	SegmentID *int64 `json:"segment_id,omitempty"`
 	// IntegrationID holds the value of the "integration_id" field.
@@ -132,7 +130,7 @@ func (*Broadcast) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case broadcast.FieldID, broadcast.FieldWorkspaceID, broadcast.FieldSegmentID, broadcast.FieldIntegrationID:
 			values[i] = new(sql.NullInt64)
-		case broadcast.FieldName, broadcast.FieldSubject, broadcast.FieldFromName, broadcast.FieldFromEmail, broadcast.FieldBody, broadcast.FieldEditorVersion, broadcast.FieldBodyText, broadcast.FieldStatus, broadcast.FieldHoldReason:
+		case broadcast.FieldName, broadcast.FieldSubject, broadcast.FieldFromName, broadcast.FieldFromEmail, broadcast.FieldBody, broadcast.FieldEditorVersion, broadcast.FieldStatus, broadcast.FieldHoldReason:
 			values[i] = new(sql.NullString)
 		case broadcast.FieldCreatedAt, broadcast.FieldUpdatedAt, broadcast.FieldDiscardedAt, broadcast.FieldScheduledAt, broadcast.FieldSentAt, broadcast.FieldLastScheduledAt:
 			values[i] = new(sql.NullTime)
@@ -228,12 +226,6 @@ func (_m *Broadcast) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.EditorVersion = new(string)
 				*_m.EditorVersion = value.String
-			}
-		case broadcast.FieldBodyText:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field body_text", values[i])
-			} else if value.Valid {
-				_m.BodyText = value.String
 			}
 		case broadcast.FieldSegmentID:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -379,9 +371,6 @@ func (_m *Broadcast) String() string {
 		builder.WriteString("editor_version=")
 		builder.WriteString(*v)
 	}
-	builder.WriteString(", ")
-	builder.WriteString("body_text=")
-	builder.WriteString(_m.BodyText)
 	builder.WriteString(", ")
 	if v := _m.SegmentID; v != nil {
 		builder.WriteString("segment_id=")

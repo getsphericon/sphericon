@@ -195,20 +195,6 @@ func (_u *BroadcastUpdate) ClearEditorVersion() *BroadcastUpdate {
 	return _u
 }
 
-// SetBodyText sets the "body_text" field.
-func (_u *BroadcastUpdate) SetBodyText(v string) *BroadcastUpdate {
-	_u.mutation.SetBodyText(v)
-	return _u
-}
-
-// SetNillableBodyText sets the "body_text" field if the given value is not nil.
-func (_u *BroadcastUpdate) SetNillableBodyText(v *string) *BroadcastUpdate {
-	if v != nil {
-		_u.SetBodyText(*v)
-	}
-	return _u
-}
-
 // SetSegmentID sets the "segment_id" field.
 func (_u *BroadcastUpdate) SetSegmentID(v int64) *BroadcastUpdate {
 	_u.mutation.SetSegmentID(v)
@@ -535,9 +521,6 @@ func (_u *BroadcastUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.EditorVersionCleared() {
 		_spec.ClearField(broadcast.FieldEditorVersion, field.TypeString)
-	}
-	if value, ok := _u.mutation.BodyText(); ok {
-		_spec.SetField(broadcast.FieldBodyText, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(broadcast.FieldStatus, field.TypeEnum, value)
@@ -877,20 +860,6 @@ func (_u *BroadcastUpdateOne) SetNillableEditorVersion(v *string) *BroadcastUpda
 // ClearEditorVersion clears the value of the "editor_version" field.
 func (_u *BroadcastUpdateOne) ClearEditorVersion() *BroadcastUpdateOne {
 	_u.mutation.ClearEditorVersion()
-	return _u
-}
-
-// SetBodyText sets the "body_text" field.
-func (_u *BroadcastUpdateOne) SetBodyText(v string) *BroadcastUpdateOne {
-	_u.mutation.SetBodyText(v)
-	return _u
-}
-
-// SetNillableBodyText sets the "body_text" field if the given value is not nil.
-func (_u *BroadcastUpdateOne) SetNillableBodyText(v *string) *BroadcastUpdateOne {
-	if v != nil {
-		_u.SetBodyText(*v)
-	}
 	return _u
 }
 
@@ -1250,9 +1219,6 @@ func (_u *BroadcastUpdateOne) sqlSave(ctx context.Context) (_node *Broadcast, er
 	}
 	if _u.mutation.EditorVersionCleared() {
 		_spec.ClearField(broadcast.FieldEditorVersion, field.TypeString)
-	}
-	if value, ok := _u.mutation.BodyText(); ok {
-		_spec.SetField(broadcast.FieldBodyText, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(broadcast.FieldStatus, field.TypeEnum, value)

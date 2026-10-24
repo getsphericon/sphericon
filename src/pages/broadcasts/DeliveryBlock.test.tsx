@@ -22,7 +22,6 @@ const draft: SiteBroadcastResource = {
   name: 'Launch',
   subject: 'Hello',
   body: '<p></p>',
-  bodyText: 'Hello',
   status: 'draft',
   stats: {
     recipientsTotal: 0,

@@ -113,9 +113,6 @@ model SiteBroadcastResource {
   /** Warnings of the lint over the stored content (ADR 0040); set on the response of a save, never blocks it */
   warnings?: LintFinding[];
 
-  /** Derived plain-text body */
-  bodyText: string;
-
   /** Target segment; null means all active contacts */
   segmentId?: EntityId | null;
 

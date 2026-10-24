@@ -263,10 +263,6 @@ func init() {
 	broadcastDescBody := broadcastFields[5].Descriptor()
 	// broadcast.DefaultBody holds the default value on creation for the body field.
 	broadcast.DefaultBody = broadcastDescBody.Default.(string)
-	// broadcastDescBodyText is the schema descriptor for body_text field.
-	broadcastDescBodyText := broadcastFields[8].Descriptor()
-	// broadcast.DefaultBodyText holds the default value on creation for the body_text field.
-	broadcast.DefaultBodyText = broadcastDescBodyText.Default.(string)
 	broadcastrecipientMixin := schema.BroadcastRecipient{}.Mixin()
 	broadcastrecipientMixinFields0 := broadcastrecipientMixin[0].Fields()
 	_ = broadcastrecipientMixinFields0

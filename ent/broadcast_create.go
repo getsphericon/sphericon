@@ -157,20 +157,6 @@ func (_c *BroadcastCreate) SetNillableEditorVersion(v *string) *BroadcastCreate 
 	return _c
 }
 
-// SetBodyText sets the "body_text" field.
-func (_c *BroadcastCreate) SetBodyText(v string) *BroadcastCreate {
-	_c.mutation.SetBodyText(v)
-	return _c
-}
-
-// SetNillableBodyText sets the "body_text" field if the given value is not nil.
-func (_c *BroadcastCreate) SetNillableBodyText(v *string) *BroadcastCreate {
-	if v != nil {
-		_c.SetBodyText(*v)
-	}
-	return _c
-}
-
 // SetSegmentID sets the "segment_id" field.
 func (_c *BroadcastCreate) SetSegmentID(v int64) *BroadcastCreate {
 	_c.mutation.SetSegmentID(v)
@@ -356,10 +342,6 @@ func (_c *BroadcastCreate) defaults() {
 		v := broadcast.DefaultBody
 		_c.mutation.SetBody(v)
 	}
-	if _, ok := _c.mutation.BodyText(); !ok {
-		v := broadcast.DefaultBodyText
-		_c.mutation.SetBodyText(v)
-	}
 	if _, ok := _c.mutation.Status(); !ok {
 		v := broadcast.DefaultStatus
 		_c.mutation.SetStatus(v)
@@ -390,9 +372,6 @@ func (_c *BroadcastCreate) check() error {
 	}
 	if _, ok := _c.mutation.Body(); !ok {
 		return &ValidationError{Name: "body", err: errors.New(`ent: missing required field "Broadcast.body"`)}
-	}
-	if _, ok := _c.mutation.BodyText(); !ok {
-		return &ValidationError{Name: "body_text", err: errors.New(`ent: missing required field "Broadcast.body_text"`)}
 	}
 	if _, ok := _c.mutation.Status(); !ok {
 		return &ValidationError{Name: "status", err: errors.New(`ent: missing required field "Broadcast.status"`)}
@@ -477,10 +456,6 @@ func (_c *BroadcastCreate) createSpec() (*Broadcast, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.EditorVersion(); ok {
 		_spec.SetField(broadcast.FieldEditorVersion, field.TypeString, value)
 		_node.EditorVersion = &value
-	}
-	if value, ok := _c.mutation.BodyText(); ok {
-		_spec.SetField(broadcast.FieldBodyText, field.TypeString, value)
-		_node.BodyText = value
 	}
 	if value, ok := _c.mutation.Status(); ok {
 		_spec.SetField(broadcast.FieldStatus, field.TypeEnum, value)
@@ -768,18 +743,6 @@ func (u *BroadcastUpsert) UpdateEditorVersion() *BroadcastUpsert {
 // ClearEditorVersion clears the value of the "editor_version" field.
 func (u *BroadcastUpsert) ClearEditorVersion() *BroadcastUpsert {
 	u.SetNull(broadcast.FieldEditorVersion)
-	return u
-}
-
-// SetBodyText sets the "body_text" field.
-func (u *BroadcastUpsert) SetBodyText(v string) *BroadcastUpsert {
-	u.Set(broadcast.FieldBodyText, v)
-	return u
-}
-
-// UpdateBodyText sets the "body_text" field to the value that was provided on create.
-func (u *BroadcastUpsert) UpdateBodyText() *BroadcastUpsert {
-	u.SetExcluded(broadcast.FieldBodyText)
 	return u
 }
 
@@ -1126,20 +1089,6 @@ func (u *BroadcastUpsertOne) UpdateEditorVersion() *BroadcastUpsertOne {
 func (u *BroadcastUpsertOne) ClearEditorVersion() *BroadcastUpsertOne {
 	return u.Update(func(s *BroadcastUpsert) {
 		s.ClearEditorVersion()
-	})
-}
-
-// SetBodyText sets the "body_text" field.
-func (u *BroadcastUpsertOne) SetBodyText(v string) *BroadcastUpsertOne {
-	return u.Update(func(s *BroadcastUpsert) {
-		s.SetBodyText(v)
-	})
-}
-
-// UpdateBodyText sets the "body_text" field to the value that was provided on create.
-func (u *BroadcastUpsertOne) UpdateBodyText() *BroadcastUpsertOne {
-	return u.Update(func(s *BroadcastUpsert) {
-		s.UpdateBodyText()
 	})
 }
 
@@ -1672,20 +1621,6 @@ func (u *BroadcastUpsertBulk) UpdateEditorVersion() *BroadcastUpsertBulk {
 func (u *BroadcastUpsertBulk) ClearEditorVersion() *BroadcastUpsertBulk {
 	return u.Update(func(s *BroadcastUpsert) {
 		s.ClearEditorVersion()
-	})
-}
-
-// SetBodyText sets the "body_text" field.
-func (u *BroadcastUpsertBulk) SetBodyText(v string) *BroadcastUpsertBulk {
-	return u.Update(func(s *BroadcastUpsert) {
-		s.SetBodyText(v)
-	})
-}
-
-// UpdateBodyText sets the "body_text" field to the value that was provided on create.
-func (u *BroadcastUpsertBulk) UpdateBodyText() *BroadcastUpsertBulk {
-	return u.Update(func(s *BroadcastUpsert) {
-		s.UpdateBodyText()
 	})
 }
 

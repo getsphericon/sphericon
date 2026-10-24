@@ -307,7 +307,6 @@ func (e *Broadcast) auditFields() map[string]any {
 		"body":              e.Body,
 		"doc":               e.Doc,
 		"editor_version":    derefAudit(e.EditorVersion),
-		"body_text":         e.BodyText,
 		"segment_id":        derefAudit(e.SegmentID),
 		"integration_id":    derefAudit(e.IntegrationID),
 		"status":            e.Status,
