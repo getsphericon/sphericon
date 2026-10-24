@@ -20,12 +20,24 @@ uv = "latest"
 "aqua:boyter/scc" = "latest"
 "github:daveshanley/vacuum" = "latest"
 "github:google/osv-scanner" = "latest"
-"github:mokevnin/schemalens" = "0.1.3"
 "github:sbdchd/squawk" = "latest"
 zizmor = "latest"
 jq = "latest"
 lychee = "latest"
 shellcheck = "latest"
+
+# schemalens ships its CLI and each adapter as separate archives of one release: the CLI is the
+# primary asset and the ent adapter is extracted into the same install directory, so both are on
+# PATH. The patterns are per platform because mise resolves a templated pattern for the host, which
+# would write the wrong URLs into mise.lock.
+[tools."github:mokevnin/schemalens"]
+version = "0.1.3"
+
+[tools."github:mokevnin/schemalens".platforms]
+macos-arm64 = { asset_pattern = "schemalens_*_darwin_arm64.tar.gz", additional_asset_patterns = ["schemalens-adapter-ent_*_darwin_arm64.tar.gz"] }
+macos-x64 = { asset_pattern = "schemalens_*_darwin_amd64.tar.gz", additional_asset_patterns = ["schemalens-adapter-ent_*_darwin_amd64.tar.gz"] }
+linux-x64 = { asset_pattern = "schemalens_*_linux_amd64.tar.gz", additional_asset_patterns = ["schemalens-adapter-ent_*_linux_amd64.tar.gz"] }
+linux-arm64 = { asset_pattern = "schemalens_*_linux_arm64.tar.gz", additional_asset_patterns = ["schemalens-adapter-ent_*_linux_arm64.tar.gz"] }
 
 # Install the git hooks (hk.pkl) once the toolchain is in place. `--mise` runs hk through
 # `mise x`, so a hook needs no shim on PATH. hk's version must match the package:// import
