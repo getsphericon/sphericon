@@ -68,7 +68,7 @@ func TestAnStaffHoldMakesAnAutomationStepWaitAndContinue(t *testing.T) {
 	clock := &holdClock{t: time.Now()}
 	fs := &fakeSender{}
 
-	runIDs, err := jobs.EvaluateTrigger(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactHoldDemoID, "hold_demo", 0)
+	runIDs, err := jobs.EvaluateTrigger(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactHoldDemoID, "hold_demo", 0)
 	require.NoError(t, err)
 	require.Len(t, runIDs, 1)
 	setHold(t, env, clock.t.Add(time.Hour))
