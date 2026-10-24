@@ -17,7 +17,7 @@ import (
 // retried job or request never sends twice; the outcome and the `email.sent` Event
 // are written in one transaction afterwards. It carries provenance and outcome
 // only — never the rendered content (PII + volume) — and references the surface's
-// own records by foreign keys (CODING_STANDARDS rule 8): RESTRICT for a Broadcast, an
+// own records by foreign keys (review rule 8): RESTRICT for a Broadcast, an
 // Automation and an Integration, which are discarded and never deleted (ADR 0049), SET NULL
 // for a Contact, a Template, an Automation run and a Broadcast recipient, which a physical delete or an
 // Erasure removes while the message stays as a delivery record.
