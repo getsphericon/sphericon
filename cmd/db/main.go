@@ -17,6 +17,7 @@ import (
 	"ariga.io/atlas/sql/sqltool"
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql/schema"
+	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/urfave/cli/v3"
@@ -123,7 +124,7 @@ func createDatabase(ctx context.Context, adminDB *sql.DB, dbName string) error {
 	}
 	// raw sql: CREATE DATABASE is a server command with an identifier, not a table operation.
 	if _, err := adminDB.ExecContext(ctx, "CREATE DATABASE "+ident); err != nil {
-		if pgErr := new(pgconn.PgError); errors.As(err, &pgErr) && pgErr.Code == "42P04" {
+		if pgErr := new(pgconn.PgError); errors.As(err, &pgErr) && pgErr.Code == pgerrcode.DuplicateDatabase {
 			log.Printf("database %s already exists, skipping", strconv.Quote(dbName))
 			return nil
 		}

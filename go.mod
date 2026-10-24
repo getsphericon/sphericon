@@ -35,10 +35,12 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/go-github/v88 v88.0.0
 	github.com/itchyny/gojq v0.12.19
+	github.com/jackc/pgerrcode v0.0.0-20250907135507-afb5586c32a6
 	github.com/jackc/pgx/v5 v5.11.0
 	github.com/joho/godotenv v1.5.1
 	github.com/k3a/html2text v1.5.1
 	github.com/lmittmann/tint v1.2.1
+	github.com/maypok86/otter/v2 v2.4.0
 	github.com/microcosm-cc/bluemonday v1.0.27
 	github.com/modelcontextprotocol/go-sdk v1.8.0
 	github.com/mokevnin/dbcleaner v1.0.0

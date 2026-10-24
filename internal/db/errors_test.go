@@ -40,6 +40,7 @@ func TestIsUnavailableRecognizesALostOrOverloadedDatabase(t *testing.T) {
 		"plain":            errors.New("plain"),
 		"unique violation": &pgconn.PgError{Code: "23505"},
 		"syntax error":     &pgconn.PgError{Code: "42601"},
+		"query canceled":   &pgconn.PgError{Code: "57014"},
 	} {
 		assert.False(t, db.IsUnavailable(err), name)
 	}

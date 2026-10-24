@@ -8,6 +8,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/buildinfo"
+	"github.com/jackc/pgerrcode"
 	"golang.org/x/mod/semver"
 )
 
@@ -138,5 +139,5 @@ func pendingMigrations(ctx context.Context, sqlDB *sql.DB) (int, error) {
 
 func isUndefinedTable(err error) bool {
 	var pgErr interface{ SQLState() string }
-	return errors.As(err, &pgErr) && pgErr.SQLState() == "42P01"
+	return errors.As(err, &pgErr) && pgErr.SQLState() == pgerrcode.UndefinedTable
 }

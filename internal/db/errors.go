@@ -5,17 +5,15 @@ import (
 	"database/sql/driver"
 	"errors"
 	"net"
-	"strings"
 
+	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"
 )
-
-const pgUniqueViolation = "23505"
 
 // IsUniqueViolation reports whether err is a Postgres unique-constraint violation.
 func IsUniqueViolation(err error) bool {
 	var pgErr *pgconn.PgError
-	return errors.As(err, &pgErr) && pgErr.Code == pgUniqueViolation
+	return errors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation
 }
 
 // IsUnavailable reports whether err means the database cannot be reached right now: a
@@ -32,9 +30,15 @@ func IsUnavailable(err error) bool {
 	case errors.As(err, &connect), errors.Is(err, driver.ErrBadConn), errors.Is(err, sql.ErrConnDone):
 		return true
 	case errors.As(err, &pgErr):
-		// 08 connection exception, 57P admin shutdown / crash / cannot connect now,
-		// 53300 too many connections.
-		return strings.HasPrefix(pgErr.Code, "08") || strings.HasPrefix(pgErr.Code, "57P") || pgErr.Code == "53300"
+		// Class 08 connection exception, a server shutting down, restarting or dropping the
+		// session, too many connections. Not the whole class 57: query_canceled is a statement
+		// timeout or a cancelled context, not an unreachable database.
+		switch pgErr.Code {
+		case pgerrcode.AdminShutdown, pgerrcode.CrashShutdown, pgerrcode.CannotConnectNow,
+			pgerrcode.DatabaseDropped, pgerrcode.IdleSessionTimeout, pgerrcode.TooManyConnections:
+			return true
+		}
+		return pgerrcode.IsConnectionException(pgErr.Code)
 	default:
 		return errors.As(err, &netErr)
 	}

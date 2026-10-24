@@ -22,6 +22,7 @@ import (
 	"log/slog"
 	"strings"
 
+	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/samber/lo"
 
@@ -404,7 +405,7 @@ func domainError(err error) error {
 		return ErrNotFound
 	}
 	var pgErr *pgconn.PgError
-	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+	if errors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation {
 		for _, f := range []string{FieldSubjectID, FieldPhone, FieldEmail} {
 			if strings.Contains(pgErr.ConstraintName, f) {
 				return &ConflictError{Field: f}

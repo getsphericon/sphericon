@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/internal/webhook"
+	"github.com/maypok86/otter/v2"
 )
 
 // The `sns` verify kind: the signature of an Amazon SNS message (both signature versions),
@@ -71,54 +72,30 @@ func parseCertificate(data []byte) (*x509.Certificate, error) {
 }
 
 // certCache keeps the certificates fetched so far, so a flood of notifications costs one
-// fetch per certificate, not one each. It is bounded: the URL is checked against the SNS
-// host pattern, but a caller still picks which of its many hosts to name.
-var certCache = &boundedCerts{max: 16, ttl: 6 * time.Hour, entries: map[string]cachedCert{}}
-
-type cachedCert struct {
-	cert    *x509.Certificate
-	fetched time.Time
-}
-
-type boundedCerts struct {
-	mu      sync.Mutex
-	max     int
-	ttl     time.Duration
-	entries map[string]cachedCert
-}
-
-func (c *boundedCerts) get(certURL string, now time.Time) (*x509.Certificate, bool) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	e, ok := c.entries[certURL]
-	if !ok || now.Sub(e.fetched) > c.ttl {
-		return nil, false
-	}
-	return e.cert, true
-}
-
-func (c *boundedCerts) put(certURL string, cert *x509.Certificate, now time.Time) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	if _, ok := c.entries[certURL]; !ok && len(c.entries) >= c.max {
-		for k := range c.entries { // evict any one: the cache holds a few entries
-			delete(c.entries, k)
-			break
-		}
-	}
-	c.entries[certURL] = cachedCert{cert: cert, fetched: now}
-}
-
-func fetchSNSCertificate(ctx context.Context, certURL string) (*x509.Certificate, error) {
-	if cert, ok := certCache.get(certURL, time.Now()); ok {
-		return cert, nil
-	}
-	cert, err := downloadSNSCertificate(ctx, certURL)
+// fetch per certificate, not one each: concurrent misses of a URL share a single download.
+// It is bounded: the URL is checked against the SNS host pattern, but a caller still picks
+// which of its many hosts to name. A cache with an expiry runs a clean-up goroutine from its
+// creation, so it is made on the first fetch: a process that never fetches (a test binary
+// checked by goleak) starts none.
+var certCache = sync.OnceValue(func() *otter.Cache[string, *x509.Certificate] {
+	c, err := otter.New(&otter.Options[string, *x509.Certificate]{
+		MaximumSize:      16,
+		ExpiryCalculator: otter.ExpiryWriting[string, *x509.Certificate](6 * time.Hour),
+	})
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
-	certCache.put(certURL, cert, time.Now())
-	return cert, nil
+	return c
+})
+
+// fetchSNSCertificate downloads a certificate once for every waiter of its URL, so the
+// download must not end with the request that happened to start it: the client timeout
+// bounds it instead.
+func fetchSNSCertificate(ctx context.Context, certURL string) (*x509.Certificate, error) {
+	return certCache().Get(ctx, certURL, otter.LoaderFunc[string, *x509.Certificate](
+		func(ctx context.Context, certURL string) (*x509.Certificate, error) {
+			return downloadSNSCertificate(context.WithoutCancel(ctx), certURL)
+		}))
 }
 
 func downloadSNSCertificate(ctx context.Context, certURL string) (*x509.Certificate, error) {
