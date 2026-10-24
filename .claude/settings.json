@@ -7,7 +7,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR/mise/scripts/agent-guard.py\""
+            "command": "node \"$CLAUDE_PROJECT_DIR/mise/scripts/agent-guard.ts\""
           }
         ]
       }
