@@ -2,7 +2,6 @@ package jobs
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -96,14 +95,7 @@ func (w *RunHTTPStepWorker) Work(ctx context.Context, job *river.Job[stepping.Ru
 	}
 
 	now := w.now()
-	var delivery *webhook.DeliveryError
-	if !errors.As(sendErr, &delivery) {
-		delivery = &webhook.DeliveryError{Kind: webhook.KindNetwork}
-	}
-	f := automations.Failure{Kind: automationrun.FailureKind(delivery.Kind), Excerpt: delivery.Excerpt}
-	if delivery.Kind == webhook.KindHTTPStatus {
-		f.Status = delivery.Status
-	}
+	f := automations.FailureOfDelivery(sendErr)
 	if limited := webhook.RateLimited(sendErr); limited != nil {
 		if now.Sub(job.CreatedAt) >= webhook.HookRetryHorizon {
 			return w.fail(ctx, run, f, river.JobCancel(sendErr)) // a receiver that never lets up
@@ -134,14 +126,9 @@ func (w *RunHTTPStepWorker) finish(ctx context.Context, run *ent.AutomationRun) 
 	return w.step.FinishHTTPStep(ctx, w.ent.Scoped(run.WorkspaceID), run.ID, run.CurrentStep)
 }
 
-// fail ends the Enrollment `failed` with the reason and returns result for the job. A run
-// that already left `active` (an exit won) stays as it is and the job ends quietly.
+// fail ends the Enrollment `failed` with the reason and returns result for the job.
 func (w *RunHTTPStepWorker) fail(ctx context.Context, run *ent.AutomationRun, f automations.Failure, result error) error {
-	err := automations.Fail(ctx, w.ent.Scoped(run.WorkspaceID), run.ID, f)
-	if automations.Stale(err) {
-		return nil
-	}
-	if err != nil {
+	if err := w.step.FailHTTPStep(ctx, w.ent.Scoped(run.WorkspaceID), run.ID, f); err != nil {
 		return err
 	}
 	return result

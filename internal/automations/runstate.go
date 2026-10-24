@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/internal/lifecycle"
+	"github.com/getsphericon/sphericon/internal/webhook"
 )
 
 // The Enrollment's lifecycle (ADR 0046): it starts `active` and leaves it exactly once, for
@@ -30,6 +31,21 @@ type Failure struct {
 	Kind    automationrun.FailureKind
 	Status  int
 	Excerpt string
+}
+
+// FailureOfDelivery is the record of a call to a third party that failed: the kind of the
+// delivery error, with the answer's status and excerpt where the receiver gave one. An error that
+// is not a delivery error is a network failure.
+func FailureOfDelivery(sendErr error) Failure {
+	var delivery *webhook.DeliveryError
+	if !errors.As(sendErr, &delivery) {
+		delivery = &webhook.DeliveryError{Kind: webhook.KindNetwork}
+	}
+	f := Failure{Kind: automationrun.FailureKind(delivery.Kind), Excerpt: delivery.Excerpt}
+	if delivery.Kind == webhook.KindHTTPStatus {
+		f.Status = delivery.Status
+	}
+	return f
 }
 
 // machine is the Enrollment's table over its stored status. extra adds fields to the write.

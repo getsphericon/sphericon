@@ -327,3 +327,14 @@ func TestHTTPStepOnAnExitedRunCallsNothingAndQueuesNothing(t *testing.T) {
 	assert.Equal(t, 0, r.step)
 	assert.Empty(t, queuedSteps(t, h.TestEnv))
 }
+
+// A step job delivered again while its HTTP step is still in flight finds the Enrollment where it
+// was (an HTTP step makes no move): the call is queued once, so the receiver is not called twice.
+func TestAStepJobExecutedTwiceOnAnHTTPStepQueuesTheCallOnce(t *testing.T) {
+	h := newHTTPStepHarness(t, `{"ok":true}`, true)
+	runID := h.enroll(t, fixtures.ContactAliceID)
+
+	require.NoError(t, h.stepper().Step(t.Context(), h.DB.Scoped(fixtures.AcmeID), runID, 0))
+
+	assert.Equal(t, []map[string]any{{"run_id": float64(runID), "step": float64(0)}}, h.JobsOf(t, stepping.RunHTTPStepArgs{}.Kind()))
+}
