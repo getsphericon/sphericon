@@ -942,6 +942,41 @@ checksum = "sha256:9964ed64ec9a387391eb4cc006ad5c531154821aef29b793e02c448de4686
 url = "https://github.com/google/osv-scanner/releases/download/v2.7.0/osv-scanner_windows_amd64.exe"
 url_api = "https://api.github.com/repos/google/osv-scanner/releases/assets/632251671"
 
+[[tools."github:mokevnin/heavy"]]
+version = "0.1.1"
+backend = "github:mokevnin/heavy"
+specifiers = ["0.1.1"]
+
+[tools."github:mokevnin/heavy"."platforms.linux-arm64"]
+checksum = "sha256:119b6c16031b8bbd6543e38e63c38ea73886c763331900220432144633135b13"
+url = "https://github.com/mokevnin/heavy/releases/download/v0.1.1/heavy-aarch64-unknown-linux-gnu.tar.xz"
+url_api = "https://api.github.com/repos/mokevnin/heavy/releases/assets/672575468"
+
+[tools."github:mokevnin/heavy"."platforms.linux-arm64-musl"]
+checksum = "sha256:119b6c16031b8bbd6543e38e63c38ea73886c763331900220432144633135b13"
+url = "https://github.com/mokevnin/heavy/releases/download/v0.1.1/heavy-aarch64-unknown-linux-gnu.tar.xz"
+url_api = "https://api.github.com/repos/mokevnin/heavy/releases/assets/672575468"
+
+[tools."github:mokevnin/heavy"."platforms.linux-x64"]
+checksum = "sha256:77fa49a29ea5b4727048e301045e8523e86ba0b0fce15751e8d319da6a96ef66"
+url = "https://github.com/mokevnin/heavy/releases/download/v0.1.1/heavy-x86_64-unknown-linux-gnu.tar.xz"
+url_api = "https://api.github.com/repos/mokevnin/heavy/releases/assets/672575534"
+
+[tools."github:mokevnin/heavy"."platforms.linux-x64-musl"]
+checksum = "sha256:77fa49a29ea5b4727048e301045e8523e86ba0b0fce15751e8d319da6a96ef66"
+url = "https://github.com/mokevnin/heavy/releases/download/v0.1.1/heavy-x86_64-unknown-linux-gnu.tar.xz"
+url_api = "https://api.github.com/repos/mokevnin/heavy/releases/assets/672575534"
+
+[tools."github:mokevnin/heavy"."platforms.macos-arm64"]
+checksum = "sha256:69d5e966845a0ee54b82a464abc471ab6d2702992aa9c2e484a605cb34e2106e"
+url = "https://github.com/mokevnin/heavy/releases/download/v0.1.1/heavy-aarch64-apple-darwin.tar.xz"
+url_api = "https://api.github.com/repos/mokevnin/heavy/releases/assets/672575465"
+
+[tools."github:mokevnin/heavy"."platforms.macos-x64"]
+checksum = "sha256:8b1af6285de3139d069157eff0113702e2038648f9c40e6c28f6eda772b98ed2"
+url = "https://github.com/mokevnin/heavy/releases/download/v0.1.1/heavy-x86_64-apple-darwin.tar.xz"
+url_api = "https://api.github.com/repos/mokevnin/heavy/releases/assets/672575531"
+
 [[tools."github:mokevnin/schemalens"]]
 version = "0.1.3"
 backend = "github:mokevnin/schemalens"
