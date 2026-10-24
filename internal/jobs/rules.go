@@ -9,7 +9,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
-	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/jobkind"
 	"github.com/getsphericon/sphericon/internal/outbound"
@@ -128,15 +127,7 @@ func (a enrollAction) Run(ctx context.Context, s *ent.Scoped, in rules.ActionInp
 	case auto.Status != automation.StatusActive:
 		return rules.Result{Status: rules.Skipped, Detail: "the automation is not active"}, nil
 	}
-	enrolled := false
-	err = a.bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, q events.Enqueuer) error {
-		runID, ok, err := automations.Enroll(ctx, ts, auto.ID, in.ContactID)
-		if err != nil || !ok {
-			return err
-		}
-		enrolled = true
-		return q.Enqueue(ctx, stepping.RunStepArgs{RunID: runID, Step: 0}, nil)
-	})
+	enrolled, err := stepping.Enroll(ctx, a.bus, s, auto.ID, in.ContactID)
 	switch {
 	case err != nil:
 		return rules.Result{}, err

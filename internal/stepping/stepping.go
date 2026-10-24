@@ -60,6 +60,23 @@ func (RunHTTPStepArgs) InsertOpts() river.InsertOpts {
 	}
 }
 
+// Enroll enrolls the Contact in the Automation, once ever (ADR 0046), and queues the job of its
+// first step in the same transaction: a failed queue insert leaves no Enrollment that nothing
+// will move, and a retry starts over. enrolled is false, and nothing is queued, when the Contact
+// was enrolled before or another writer won the race. It is the one way a trigger or a Rule
+// Action starts an Enrollment.
+func Enroll(ctx context.Context, bus *events.Bus, s *ent.Scoped, automationID, contactID int64) (enrolled bool, err error) {
+	err = bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, q events.Enqueuer) error {
+		runID, ok, err := automations.Enroll(ctx, ts, automationID, contactID)
+		if err != nil || !ok {
+			return err
+		}
+		enrolled = true
+		return q.Enqueue(ctx, RunStepArgs{RunID: runID}, nil)
+	})
+	return enrolled, err
+}
+
 // Module executes the steps of Enrollments.
 type Module struct {
 	bus   *events.Bus
@@ -135,21 +152,21 @@ func (m *Module) Step(ctx context.Context, s *ent.Scoped, runID int64, step int)
 	switch st := steps[step]; st.Type {
 	case automations.StepWait:
 		resume := m.now().Add(time.Duration(st.Seconds) * time.Second)
-		return m.advance(ctx, s, run.ID, step, &resume, nil)
+		return m.advance(ctx, s, run.ID, step, move{resumeAt: &resume})
 
 	case automations.StepApplyTag, automations.StepRemoveTag:
 		// A tag step changes the Contact's Tags and moves straight on; it sends nothing. The
 		// move is made first, so a step that lost a race tags nothing, and the change commits
 		// with it. The change is the `system` actor's (ADR 0022): a Tag the step creates is
 		// audited.
-		return m.advance(ctx, s, run.ID, step, nil, func(ts *ent.Scoped) error {
+		return m.advance(ctx, s, run.ID, step, move{with: func(ts *ent.Scoped) error {
 			sys := m.out.AsSystem(ts)
 			if st.Type == automations.StepApplyTag {
 				_, err := tags.New().Apply(ctx, sys, run.ContactID, st.Tag)
 				return err
 			}
 			return tags.New().Remove(ctx, sys, run.ContactID, st.Tag)
-		})
+		}})
 
 	case automations.StepHTTP:
 		// The call runs on its own queue (ADR 0039); the job queued here makes it and moves
@@ -157,7 +174,7 @@ func (m *Module) Step(ctx context.Context, s *ent.Scoped, runID int64, step int)
 		return m.enqueue(ctx, s, RunHTTPStepArgs{RunID: run.ID, Step: step}, nil)
 
 	case automations.StepEmail:
-		return m.email(ctx, s, a, run, st)
+		return m.email(ctx, s, a, run, step, st)
 
 	default:
 		return m.fail(ctx, s, run.ID, fmt.Errorf("unknown step type %q", st.Type))
@@ -168,20 +185,16 @@ func (m *Module) Step(ctx context.Context, s *ent.Scoped, runID int64, step int)
 // transaction. Nothing happens when the Enrollment no longer stands on step: an exit won while
 // the call was in flight, or an earlier attempt of the call already moved it.
 func (m *Module) FinishHTTPStep(ctx context.Context, s *ent.Scoped, runID int64, step int) error {
-	return m.advance(ctx, s, runID, step, nil, nil)
+	return m.advance(ctx, s, runID, step, move{})
 }
 
 // FailHTTPStep ends the Enrollment `failed` with the record of the call that could not
 // succeed. An Enrollment that already left `active` (an exit won) or is gone stays as it is.
 func (m *Module) FailHTTPStep(ctx context.Context, s *ent.Scoped, runID int64, f automations.Failure) error {
-	err := automations.Fail(ctx, s, runID, f)
-	if automations.Stale(err) {
-		return nil
-	}
-	return err
+	return quiet(automations.Fail(ctx, s, runID, f))
 }
 
-func (m *Module) email(ctx context.Context, s *ent.Scoped, a *ent.Automation, run *ent.AutomationRun, st automations.Step) error {
+func (m *Module) email(ctx context.Context, s *ent.Scoped, a *ent.Automation, run *ent.AutomationRun, step int, st automations.Step) error {
 	c, err := s.Contact().Get(ctx, run.ContactID)
 	if err != nil {
 		return err
@@ -191,7 +204,6 @@ func (m *Module) email(ctx context.Context, s *ent.Scoped, a *ent.Automation, ru
 	if c.Email == nil {
 		return m.complete(ctx, s, run.ID)
 	}
-	step := run.CurrentStep
 	// The send is fenced against an exit (Fencer): it starts only on an Enrollment that is
 	// still active and an exit waits for it, so nothing is sent after an exit.
 	var res outbound.Result
@@ -215,7 +227,7 @@ func (m *Module) email(ctx context.Context, s *ent.Scoped, a *ent.Automation, ru
 	case outbound.Sent:
 		// A crash between the send and this move replays the recorded Sent on retry, so the
 		// step never sends twice.
-		return m.advance(ctx, s, run.ID, step, nil, nil)
+		return m.advance(ctx, s, run.ID, step, move{})
 	case outbound.Skipped:
 		// An ineligible destination (suppressed, or unsubscribed from this Automation or from
 		// everything) exits the Enrollment: a run never silently keeps walking steps while
@@ -226,21 +238,27 @@ func (m *Module) email(ctx context.Context, s *ent.Scoped, a *ent.Automation, ru
 	}
 }
 
+// move is what an advance does besides moving the Enrollment: resumeAt, when set, parks it and
+// schedules the next job for then; with makes writes of its own in the same transaction.
+type move struct {
+	resumeAt *time.Time
+	with     func(*ent.Scoped) error
+}
+
 // advance moves the Enrollment from step to the next one and queues that step's job, in one
-// transaction with with's own writes. resumeAt, when set, parks the Enrollment and schedules
-// the job for then. A move that finds the Enrollment gone or elsewhere writes nothing and
-// returns nil.
-func (m *Module) advance(ctx context.Context, s *ent.Scoped, runID int64, from int, resumeAt *time.Time, with func(*ent.Scoped) error) error {
+// transaction with mv's own writes. A move that finds the Enrollment gone or elsewhere writes
+// nothing and returns nil.
+func (m *Module) advance(ctx context.Context, s *ent.Scoped, runID int64, from int, mv move) error {
 	err := m.bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, q events.Enqueuer) error {
-		if err := automations.Advance(ctx, ts, runID, from, from+1, resumeAt); err != nil {
+		if err := automations.Advance(ctx, ts, runID, from, from+1, mv.resumeAt); err != nil {
 			return err
 		}
-		if with != nil {
-			if err := with(ts); err != nil {
+		if mv.with != nil {
+			if err := mv.with(ts); err != nil {
 				return err
 			}
 		}
-		return q.Enqueue(ctx, RunStepArgs{RunID: runID, Step: from + 1}, scheduled(resumeAt))
+		return q.Enqueue(ctx, RunStepArgs{RunID: runID, Step: from + 1}, scheduled(mv.resumeAt))
 	})
 	return quiet(err)
 }

@@ -76,10 +76,18 @@ func triggerOf(t *testing.T, env *testhelper.TestEnv, automationID int64) string
 // enrollVia enrolls the Contact through the Automation's own trigger and returns its one run.
 func enrollVia(t *testing.T, env *testhelper.TestEnv, automationID, contactID int64) int64 {
 	t.Helper()
-	runIDs, err := jobs.EvaluateTrigger(context.Background(), env.Bus, env.DB.Scoped(fixtures.AcmeID), contactID, triggerOf(t, env, automationID), 0)
-	require.NoError(t, err)
+	require.NoError(t, jobs.EvaluateTrigger(context.Background(), env.Bus, env.DB.Scoped(fixtures.AcmeID), contactID, triggerOf(t, env, automationID), 0))
+	runIDs := enrollmentsOf(t, env, automationID, contactID)
 	require.Len(t, runIDs, 1)
 	return runIDs[0]
+}
+
+// enrollmentsOf is the ids of the Contact's Enrollments in the Automation.
+func enrollmentsOf(t *testing.T, env *testhelper.TestEnv, automationID, contactID int64) []int64 {
+	t.Helper()
+	return env.DB.AutomationRun.Query().
+		Where(automationrun.AutomationID(automationID), automationrun.ContactID(contactID)).
+		IDsX(context.Background())
 }
 
 func TestAutomationEnrollAndRun(t *testing.T) {
@@ -89,9 +97,8 @@ func TestAutomationEnrollAndRun(t *testing.T) {
 	runID := enrollVia(t, env, fixtures.AutomationJobsGreetingID, alice.ID)
 
 	// Enroll-once: a second matching event creates no new run.
-	again, err := jobs.EvaluateTrigger(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), alice.ID, triggerOf(t, env, fixtures.AutomationJobsGreetingID), 0)
-	require.NoError(t, err)
-	assert.Empty(t, again)
+	require.NoError(t, jobs.EvaluateTrigger(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), alice.ID, triggerOf(t, env, fixtures.AutomationJobsGreetingID), 0))
+	assert.Equal(t, []int64{runID}, enrollmentsOf(t, env, fixtures.AutomationJobsGreetingID, alice.ID))
 
 	fs := &fakeSender{}
 	env.RunQueuedSteps(t, stepperOf(env, resolvingTo(fs)))
@@ -174,9 +181,8 @@ func TestAutomationInactiveDoesNotEnroll(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	runIDs, err := jobs.EvaluateTrigger(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID, triggerOf(t, env, fixtures.AutomationWinBackID), 0)
-	require.NoError(t, err)
-	assert.Empty(t, runIDs, "the win-back automation is a draft")
+	require.NoError(t, jobs.EvaluateTrigger(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID, triggerOf(t, env, fixtures.AutomationWinBackID), 0))
+	assert.Empty(t, enrollmentsOf(t, env, fixtures.AutomationWinBackID, fixtures.ContactAliceID), "the win-back automation is a draft")
 }
 
 func TestAutomationWaitParksTheEnrollmentAndQueuesTheNextStepForTheResumeTime(t *testing.T) {
@@ -403,11 +409,9 @@ func TestAnAutomationIsNotStartedByItsOwnEmail(t *testing.T) {
 	ctx := t.Context()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 
-	own, err := jobs.EvaluateTrigger(ctx, env.Bus, acme, fixtures.ContactAliceID, events.NameEmailOpened, fixtures.AutomationOnOpenID)
-	require.NoError(t, err)
-	assert.Empty(t, own, "the open of its own email enrolls nobody")
+	require.NoError(t, jobs.EvaluateTrigger(ctx, env.Bus, acme, fixtures.ContactAliceID, events.NameEmailOpened, fixtures.AutomationOnOpenID))
+	assert.Empty(t, enrollmentsOf(t, env, fixtures.AutomationOnOpenID, fixtures.ContactAliceID), "the open of its own email enrolls nobody")
 
-	other, err := jobs.EvaluateTrigger(ctx, env.Bus, acme, fixtures.ContactAliceID, events.NameEmailOpened, fixtures.AutomationWelcomeSeriesID)
-	require.NoError(t, err)
-	assert.Len(t, other, 1, "the open of another Automation's email starts On open")
+	require.NoError(t, jobs.EvaluateTrigger(ctx, env.Bus, acme, fixtures.ContactAliceID, events.NameEmailOpened, fixtures.AutomationWelcomeSeriesID))
+	assert.Len(t, enrollmentsOf(t, env, fixtures.AutomationOnOpenID, fixtures.ContactAliceID), 1, "the open of another Automation's email starts On open")
 }
