@@ -1,0 +1,44 @@
+# Who reviews a change to what holds the flow itself: the checks, the rules they enforce, the
+# instructions agents read, the migrations and the Enterprise Edition. A pull request that edits
+# one of these paths needs the owner's review (a ruleset requires it), so a change cannot loosen
+# the check that would have refused it. Patterns are read from the base branch, not from the
+# pull request.
+
+# CI, the hooks and the tasks that run the checks
+/.github/           @mokevnin
+/mise/              @mokevnin
+/.mise.toml         @mokevnin
+/mise.lock          @mokevnin
+/hk.pkl             @mokevnin
+
+# The checks and their configuration
+/.golangci.yml      @mokevnin
+/.custom-gcl.yml    @mokevnin
+/oxlint.config.ts   @mokevnin
+/oxfmt.config.ts    @mokevnin
+/knip.ts            @mokevnin
+/commitlint.config.ts @mokevnin
+/schemalens.yml     @mokevnin
+/sgconfig.yml       @mokevnin
+/ast-grep/          @mokevnin
+/_typos.toml        @mokevnin
+/.gitleaks.toml     @mokevnin
+/lychee.toml        @mokevnin
+/tools/analyzers/   @mokevnin
+/cmd/upgradecheck/  @mokevnin
+/cmd/contractcopy/  @mokevnin
+/cmd/prcheck/       @mokevnin
+/internal/contractcopy/ @mokevnin
+
+# The rules and the instructions agents and contributors read
+AGENTS.md           @mokevnin
+/CONTRIBUTING.md    @mokevnin
+/docs/standards/    @mokevnin
+/docs/architecture.md @mokevnin
+/docs/agents/       @mokevnin
+/.agents/           @mokevnin
+/.claude/           @mokevnin
+
+# The schema history and the closed-source edition
+/migrations/        @mokevnin
+/ee/                @mokevnin
