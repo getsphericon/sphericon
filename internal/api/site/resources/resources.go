@@ -6,6 +6,7 @@ package resources
 
 import (
 	"encoding/json"
+	"log/slog"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -785,11 +786,13 @@ func ruleOptString(s string) siteapi.OptString {
 	return siteapi.NewOptString(s)
 }
 
-// ruleActions decodes a Rule's stored Actions into the typed DTO. Malformed or missing actions
-// yield none rather than an error.
+// ruleActions decodes a Rule's stored Actions into the typed DTO. Stored text the module cannot
+// decode (only ever written by the module itself) yields none, and is logged: a converter has
+// no way to fail a response, and nobody reading the page can act on it.
 func ruleActions(stored string) []siteapi.SiteRuleAction {
 	actions, err := rules.DecodeActions(stored)
 	if err != nil {
+		slog.Error("rule: stored actions cannot be decoded", "error", err)
 		return nil
 	}
 	return lo.Map(actions, func(a rules.Action, _ int) siteapi.SiteRuleAction {
@@ -824,10 +827,12 @@ func RuleActions(actions []siteapi.SiteRuleAction) []rules.Action {
 	})
 }
 
-// ruleResults decodes a Firing's stored results into the typed DTO.
+// ruleResults decodes a Firing's stored results into the typed DTO; stored text the module
+// cannot decode yields none and is logged, as ruleActions does.
 func ruleResults(stored string) []siteapi.SiteRuleActionResult {
 	results, err := rules.DecodeResults(stored)
 	if err != nil {
+		slog.Error("rule: stored results cannot be decoded", "error", err)
 		return nil
 	}
 	return lo.Map(results, func(r rules.Result, _ int) siteapi.SiteRuleActionResult {
