@@ -14,20 +14,41 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func TestExternalBroadcastsCreateRefusesABlankName(t *testing.T) {
-	env := testhelper.Setup(t)
-	ctx := context.Background()
-	c := env.ExternalScoped(t, authorScopes...)
-	before, err := env.DB.Broadcast.Query().Where(broadcast.WorkspaceID(fixtures.AcmeID)).Count(ctx)
-	require.NoError(t, err)
+// A blank name, empty or whitespace only, is refused with the same 422 on create and update, and
+// nothing is stored or changed.
+func TestExternalBroadcastsRefuseABlankName(t *testing.T) {
+	for _, name := range []string{"", "   "} {
+		t.Run("create "+name, func(t *testing.T) {
+			env := testhelper.Setup(t)
+			ctx := context.Background()
+			c := env.ExternalScoped(t, authorScopes...)
+			before, err := env.DB.Broadcast.Query().Where(broadcast.WorkspaceID(fixtures.AcmeID)).Count(ctx)
+			require.NoError(t, err)
 
-	res, err := c.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{Name: ""})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsCreateUnprocessableEntity{}, res)
+			res, err := c.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{Name: name})
+			require.NoError(t, err)
+			refused, ok := res.(*externalapi.BroadcastsCreateUnprocessableEntity)
+			require.Truef(t, ok, "got %T", res)
+			assert.Equal(t, "name must not be empty", refused.Detail.Value)
 
-	after, err := env.DB.Broadcast.Query().Where(broadcast.WorkspaceID(fixtures.AcmeID)).Count(ctx)
-	require.NoError(t, err)
-	assert.Equal(t, before, after, "nothing is stored")
+			after, err := env.DB.Broadcast.Query().Where(broadcast.WorkspaceID(fixtures.AcmeID)).Count(ctx)
+			require.NoError(t, err)
+			assert.Equal(t, before, after, "nothing is stored")
+		})
+		t.Run("update "+name, func(t *testing.T) {
+			env := testhelper.Setup(t)
+			ctx := context.Background()
+			c := env.ExternalScoped(t, authorScopes...)
+
+			res, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Name: externalapi.NewOptString(name)},
+				externalapi.BroadcastsUpdateParams{ID: draftBroadcast})
+			require.NoError(t, err)
+			refused, ok := res.(*externalapi.BroadcastsUpdateUnprocessableEntity)
+			require.Truef(t, ok, "got %T", res)
+			assert.Equal(t, "name must not be empty", refused.Detail.Value)
+			assert.Equal(t, fixtures.BroadcastDraftName, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID).Name)
+		})
+	}
 }
 
 // A provider failure on a test send is a 422 with the cause, never a 500, and

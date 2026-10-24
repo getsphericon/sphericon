@@ -229,3 +229,19 @@ func TestArchiveKeepsABroadcastAddressableAndIsWorkspaceScoped(t *testing.T) {
 	_, err = m.Get(ctx, s, fixtures.BroadcastDraftID)
 	assert.NoError(t, err)
 }
+
+func TestCreateAndUpdateRefuseABlankName(t *testing.T) {
+	env := testhelper.Setup(t)
+	m := broadcasts.New(env.Bus)
+	ctx := context.Background()
+	s := env.DB.Scoped(fixtures.AcmeID)
+
+	for _, name := range []string{"", "  \t\n"} {
+		_, err := m.Create(ctx, s, broadcasts.Fields{Name: &name})
+		require.ErrorIs(t, err, broadcasts.ErrBlankName)
+
+		_, err = m.Update(ctx, s, fixtures.BroadcastDraftID, broadcasts.Fields{Name: &name})
+		require.ErrorIs(t, err, broadcasts.ErrBlankName)
+		assert.Equal(t, fixtures.BroadcastDraftName, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID).Name)
+	}
+}

@@ -16,6 +16,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/riverqueue/river"
@@ -132,6 +133,8 @@ var (
 	// ErrBodyAndDoc: a write carries both a body and a document. A client writes one of them: the
 	// document (the server builds the body from it) or the body (which clears the document).
 	ErrBodyAndDoc = errors.New("broadcasts: write a body or a doc, not both")
+	// ErrBlankName: the Broadcast name is empty or whitespace only.
+	ErrBlankName = errors.New("broadcasts: name must not be empty")
 )
 
 // Fields are the author-editable content of a Broadcast. A nil field is "not
@@ -157,9 +160,21 @@ type Fields struct {
 	ClearIntegration bool
 }
 
-// Create makes a draft Broadcast. Nothing here schedules or sends. A subject, body or document
-// that cannot render is emailrender.ErrInvalidContent; the body is stored sanitized.
+// checkName refuses a given name that is blank after trimming; an absent name is not checked.
+func checkName(name *string) error {
+	if name != nil && strings.TrimSpace(*name) == "" {
+		return ErrBlankName
+	}
+	return nil
+}
+
+// Create makes a draft Broadcast. Nothing here schedules or sends. A blank name is ErrBlankName; a
+// subject, body or document that cannot render is emailrender.ErrInvalidContent; the body is
+// stored sanitized.
 func (m *Module) Create(ctx context.Context, s *ent.Scoped, f Fields) (*ent.Broadcast, error) {
+	if err := checkName(f.Name); err != nil {
+		return nil, err
+	}
 	c, err := emailrender.ResolveContent(ctx, f.Subject, f.Body, f.Doc, ErrBodyAndDoc)
 	if err != nil {
 		return nil, err
@@ -238,8 +253,11 @@ func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params, a
 }
 
 // Update edits a draft. The UPDATE only matches a draft row, so a Broadcast that was
-// claimed for sending in the meantime is never edited.
+// claimed for sending in the meantime is never edited. A blank name is ErrBlankName.
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, f Fields) (*ent.Broadcast, error) {
+	if err := checkName(f.Name); err != nil {
+		return nil, err
+	}
 	c, err := emailrender.ResolveContent(ctx, f.Subject, f.Body, f.Doc, ErrBodyAndDoc)
 	if err != nil {
 		return nil, err

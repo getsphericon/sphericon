@@ -113,6 +113,10 @@ func (h *Handlers) SiteBroadcastsCreate(ctx context.Context, req *siteapi.SiteCr
 		SegmentID:     segmentID,
 		IntegrationID: integrationID,
 	})
+	if errors.Is(err, broadcasts.ErrBlankName) {
+		v := siteapi.SiteBroadcastsCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, "name must not be empty"))
+		return &v, nil
+	}
 	if errors.Is(err, broadcasts.ErrBodyAndDoc) || errors.Is(err, emailrender.ErrInvalidContent) ||
 		errors.Is(err, broadcasts.ErrSegmentNotFound) || errors.Is(err, broadcasts.ErrIntegrationNotFound) {
 		v := siteapi.SiteBroadcastsCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
@@ -194,6 +198,9 @@ func (h *Handlers) SiteBroadcastsUpdate(ctx context.Context, req *siteapi.SiteUp
 		return &v, nil
 	case errors.Is(err, broadcasts.ErrNotDraft):
 		v := siteapi.SiteBroadcastsUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, "only draft broadcasts can be edited"))
+		return &v, nil
+	case errors.Is(err, broadcasts.ErrBlankName):
+		v := siteapi.SiteBroadcastsUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, "name must not be empty"))
 		return &v, nil
 	case errors.Is(err, broadcasts.ErrBodyAndDoc), errors.Is(err, emailrender.ErrInvalidContent),
 		errors.Is(err, broadcasts.ErrSegmentNotFound), errors.Is(err, broadcasts.ErrIntegrationNotFound):

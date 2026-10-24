@@ -49,10 +49,6 @@ func (h *Handlers) BroadcastsCreate(ctx context.Context, req *externalapi.Create
 		res := externalapi.BroadcastsCreateUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
-	if req.Name == "" {
-		res := externalapi.BroadcastsCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, "name must not be empty"))
-		return &res, nil
-	}
 	ws := auth.TokenScoped(ctx)
 
 	b, err := h.broadcasts.Create(ctx, ws, broadcasts.Fields{
@@ -60,6 +56,10 @@ func (h *Handlers) BroadcastsCreate(ctx context.Context, req *externalapi.Create
 		FromEmail: convert.StringPtr(req.FromEmail), Body: convert.StringPtr(req.Body),
 		Doc: convert.DocJSON(req.Doc.Value, req.Doc.Set),
 	})
+	if errors.Is(err, broadcasts.ErrBlankName) {
+		res := externalapi.BroadcastsCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, "name must not be empty"))
+		return &res, nil
+	}
 	if errors.Is(err, broadcasts.ErrBodyAndDoc) || errors.Is(err, emailrender.ErrInvalidContent) {
 		res := externalapi.BroadcastsCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
 		return &res, nil
@@ -107,6 +107,9 @@ func (h *Handlers) BroadcastsUpdate(ctx context.Context, req *externalapi.Update
 		return &res, nil
 	case errors.Is(err, broadcasts.ErrNotDraft):
 		res := externalapi.BroadcastsUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, detailNotDraft))
+		return &res, nil
+	case errors.Is(err, broadcasts.ErrBlankName):
+		res := externalapi.BroadcastsUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, "name must not be empty"))
 		return &res, nil
 	case errors.Is(err, broadcasts.ErrBodyAndDoc), errors.Is(err, emailrender.ErrInvalidContent):
 		res := externalapi.BroadcastsUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
