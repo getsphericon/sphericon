@@ -24,7 +24,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/machine"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/outbound"
-	"github.com/getsphericon/sphericon/internal/refsettle"
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/sending"
@@ -130,12 +129,6 @@ func NewClient(riverDB *sql.DB, entClient *ent.Client, mod *outbound.Module, cip
 	river.AddWorker(workers, &PruneEventsWorker{ent: entClient, retention: retention.Events})
 	river.AddWorker(workers, &PruneUnverifiedUsersWorker{accounts: accounts.New(entClient, bus), retention: retention.UnverifiedUsers})
 	river.AddWorker(workers, &PrunePasskeyChallengesWorker{ent: entClient, now: time.Now})
-	river.AddWorker(workers, &BackfillAutomationVersionsWorker{ent: entClient})
-	refs := refsettle.New(entClient)
-	river.AddWorker(workers, &refSettleWorker[ClearOutboundMessageRefsArgs]{
-		settle: refs.ClearOutboundMessageRefs, message: "dangling Outbound message references cleared"})
-	river.AddWorker(workers, &refSettleWorker[ClearContactRefsArgs]{
-		settle: refs.ClearContactRefs, message: "dangling Contact references settled"})
 	river.AddWorker(workers, &EraseWorkspacesWorker{deletion: workspacedeletion.New(entClient, bus), now: time.Now})
 
 	var extraPeriodic []*river.PeriodicJob
@@ -263,18 +256,6 @@ func newRiverConfig(workers *river.Workers, logger *slog.Logger, extra ...*river
 				},
 				&river.PeriodicJobOpts{RunOnStart: true},
 			),
-			// Move the steps of Automations made before versions into their version 1 (ADR 0049).
-			river.NewPeriodicJob(
-				river.PeriodicInterval(backfillVersionsInterval),
-				func() (river.JobArgs, *river.InsertOpts) {
-					return BackfillAutomationVersionsArgs{}, nil
-				},
-				&river.PeriodicJobOpts{RunOnStart: true},
-			),
-			// Clear Outbound message references that point at nothing, then validate the keys.
-			refSettlePeriodic(ClearOutboundMessageRefsArgs{}),
-			// Settle rows that name a Contact which is gone, then validate the keys.
-			refSettlePeriodic(ClearContactRefsArgs{}),
 			// Delete stale Unverified Users daily at 04:00 UTC (ADR 0030).
 			river.NewPeriodicJob(
 				dailyAtUTC{hour: unverifiedUsersHourUTC},
