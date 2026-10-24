@@ -5,6 +5,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
+
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/apitoken"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/accounts"
@@ -72,6 +75,24 @@ func TestExternalAuthTokensListIsWorkspaceScoped(t *testing.T) {
 	denied, err := env.ExternalScoped(t, "contacts:read").AuthTokensList(ctx)
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.AuthTokensListForbidden{}, denied)
+}
+
+func TestExternalAuthTokensListIsInCreationOrder(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+
+	res, err := env.ExternalAnchor(t).AuthTokensList(ctx)
+	require.NoError(t, err)
+	list, ok := res.(*externalapi.ApiTokenListResponse)
+	require.Truef(t, ok, "got %T", res)
+	got := lo.Map(list.Items, func(it externalapi.ApiTokenInfo, _ int) int64 { return int64(it.ID) })
+
+	want, err := env.DB.ApiToken.Query().
+		Where(apitoken.WorkspaceID(fixtures.AcmeID)).
+		Order(ent.Asc(apitoken.FieldID)).
+		IDs(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, want, got)
 }
 
 func TestExternalAuthTokensCreate(t *testing.T) {

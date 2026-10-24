@@ -11,7 +11,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/accounts"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/apitoken"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/apitokens"
 	"github.com/getsphericon/sphericon/internal/i18n"
@@ -29,9 +28,7 @@ func (h *Handlers) SiteTokensList(ctx context.Context, params siteapi.SiteTokens
 		return nil, err
 	}
 
-	tokens, err := scoped.ApiToken().Query().
-		Order(ent.Asc(apitoken.FieldID)).
-		All(ctx)
+	tokens, err := apitokens.List(ctx, scoped)
 	if err != nil {
 		return nil, err
 	}

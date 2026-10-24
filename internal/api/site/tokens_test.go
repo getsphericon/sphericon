@@ -4,6 +4,9 @@ import (
 	"context"
 	"testing"
 
+	"github.com/samber/lo"
+
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/apitoken"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/credentials"
@@ -45,6 +48,25 @@ func TestSiteTokensCreateListRevoke(t *testing.T) {
 	revoked, err := env.DB.ApiToken.Query().Where(apitoken.Prefix(resp.Resource.Prefix)).Only(ctx)
 	require.NoError(t, err)
 	assert.NotNil(t, revoked.RevokedAt, "revoked token carries a revoked_at timestamp")
+}
+
+func TestSiteTokensListIsInCreationOrderAndKeepsRevoked(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	ctx := context.Background()
+
+	res, err := c.SiteTokensList(ctx, siteapi.SiteTokensListParams{WorkspaceId: fixtures.AcmePublicID})
+	require.NoError(t, err)
+	list, ok := res.(*siteapi.SiteTokensListOKApplicationJSON)
+	require.Truef(t, ok, "got %T", res)
+	got := lo.Map(*list, func(it siteapi.SiteApiTokenResource, _ int) int64 { return int64(it.ID) })
+
+	want, err := env.DB.ApiToken.Query().
+		Where(apitoken.WorkspaceID(fixtures.AcmeID)).
+		Order(ent.Asc(apitoken.FieldID)).
+		IDs(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, want, got)
 }
 
 func TestSiteTokensDeleteUnknown(t *testing.T) {

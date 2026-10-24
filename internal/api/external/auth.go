@@ -41,7 +41,7 @@ func (h *Handlers) AuthTokensList(ctx context.Context) (externalapi.AuthTokensLi
 		return &res, nil
 	}
 
-	tokens, err := auth.TokenScoped(ctx).ApiToken().Query().All(ctx)
+	tokens, err := apitokens.List(ctx, auth.TokenScoped(ctx))
 	if err != nil {
 		return nil, err
 	}

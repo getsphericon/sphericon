@@ -104,6 +104,14 @@ func MintWithin(ctx context.Context, s *ent.Scoped, minter []string, in Input) (
 	return Mint(ctx, s, in)
 }
 
+// List returns the Workspace's tokens in display order, oldest first. A revoked token
+// stays listed, marked by its revoked_at, so an owner sees a connector that was revoked
+// (by hand or by reuse detection). Both the /site settings screen and the /api token
+// read call it, so the shape of the query is written once.
+func List(ctx context.Context, s *ent.Scoped) ([]*ent.ApiToken, error) {
+	return s.ApiToken().Query().Order(ent.Asc(apitoken.FieldID)).All(ctx)
+}
+
 // Revoke retires an active token (it stays listed with revoked_at). A token that
 // is unknown, belongs to another Workspace or is already revoked is ErrNotFound.
 func Revoke(ctx context.Context, s *ent.Scoped, id int64) error {
