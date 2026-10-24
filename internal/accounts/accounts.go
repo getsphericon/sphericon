@@ -106,6 +106,24 @@ func (a *Accounts) MembershipsOf(ctx context.Context, userID int64) ([]*ent.Memb
 		All(ctx)
 }
 
+// Members lists the Memberships of the Workspace s with their Users, oldest first.
+func Members(ctx context.Context, s *ent.Scoped) ([]*ent.Membership, error) {
+	return s.Membership().Query().
+		WithUser().
+		Order(ent.Asc(membership.FieldID)).
+		All(ctx)
+}
+
+// PendingInvitations lists the unaccepted Invitations of the Workspace s with their inviters,
+// oldest first.
+func PendingInvitations(ctx context.Context, s *ent.Scoped) ([]*ent.Invitation, error) {
+	return s.Invitation().Query().
+		Where(invitation.AcceptedAtIsNil()).
+		WithInviter().
+		Order(ent.Asc(invitation.FieldID)).
+		All(ctx)
+}
+
 // UpdateWorkspace renames the scoped Workspace and, when postalAddress is non-nil,
 // sets (or clears, with "") its postal address. A change is recorded as a
 // `workspace.update` Audit entry in the same transaction (ADR 0022): the Workspace is

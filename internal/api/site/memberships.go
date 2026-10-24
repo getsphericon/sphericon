@@ -25,10 +25,7 @@ func (h *Handlers) SiteMembershipsList(ctx context.Context, params siteapi.SiteM
 		return nil, err
 	}
 
-	members, err := s.Membership().Query().
-		WithUser().
-		Order(ent.Asc(membership.FieldID)).
-		All(ctx)
+	members, err := accounts.Members(ctx, s)
 	if err != nil {
 		return nil, err
 	}

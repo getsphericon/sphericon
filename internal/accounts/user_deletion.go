@@ -2,6 +2,7 @@ package accounts
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"slices"
 	"strings"
@@ -31,6 +32,16 @@ func (e *SoleOwnerError) Error() string {
 // Unwrap makes errors.Is(err, ErrLastOwner) true for the refusal.
 func (e *SoleOwnerError) Unwrap() error { return ErrLastOwner }
 
+// ErrProofStale is the refusal of a deletion whose proof no longer fits the User: the User's
+// password was set or removed between the proof and the transaction that locked the row.
+var ErrProofStale = errors.New("accounts: the deletion proof no longer fits the user")
+
+// DeleteProof is what DeleteUser runs inside its transaction, with the User's row locked and
+// freshly read: the caller's last check that its proof still holds, and the spending of a
+// second-factor code. The transaction's client stays inside the closure's builder (the
+// second-factor module), never in a handler.
+type DeleteProof func(ctx context.Context, tx *ent.Client, pub events.Publisher, u *ent.User) error
+
 // DeleteUser erases the User userID at once and for good (User deletion, ADR 0050), in one
 // transaction, and returns the deleted User (its name and address, for the mail that tells
 // the owner of the mailbox). The caller has proven who is asking; confirm runs inside the
@@ -50,7 +61,7 @@ func (e *SoleOwnerError) Unwrap() error { return ErrLastOwner }
 // rewritten), and the User row is deleted: Linked identities and Recovery codes follow by
 // cascade, an Invitation the User sent keeps its place with no sender. Sessions need
 // nothing: the security handler finds no User.
-func (a *Accounts) DeleteUser(ctx context.Context, userID int64, confirm func(ctx context.Context, tx *ent.Client, pub events.Publisher, u *ent.User) error) (*ent.User, error) {
+func (a *Accounts) DeleteUser(ctx context.Context, userID int64, confirm DeleteProof) (*ent.User, error) {
 	var deleted *ent.User
 	err := a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
 		u, err := tx.User.Query().Where(user.ID(userID)).ForUpdate().Only(ctx)

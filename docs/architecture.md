@@ -73,7 +73,9 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
      contact and scopes from its Workspace; `events.Persist`/`Suppress`, and the webhooks
      consumer, which builds the scope it hands to `Dispatch` from the event envelope: the
      bus subscriber is the raw-client entry, an envelope carries only a Workspace id), and
-     `workspacedeletion.Module.EraseDue`, which lists the due Workspaces with the raw client and
+     `secondfactor.RemindDeadlines` (the deadline reminder job: it lists the Memberships of every
+     Workspace with the raw client and scopes each claim to the Workspace of the Membership it
+     loaded), and `workspacedeletion.Module.EraseDue`, which lists the due Workspaces with the raw client and
      scopes each erase step's transaction (`tx.Scoped(id)`) to the Workspace it is erasing;
   5. transactions: `events.Bus.WithinScopedTx`, and `tx.Scoped(...)` inside
      `accounts.AcceptInvitation`, re-scope a transaction's client to the same Workspace;
@@ -89,7 +91,9 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
   6. the Workspace comes from a secret rather than a login: the ingest hook
      `POST /hooks/{key}` (`internal/server/hooks.go`, ADR 0037), where the key belongs to one
      Integration, so the hook resolves the Integration by key with the raw client and then
-     scopes to its Workspace (`row.WorkspaceID`); signed unsubscribe/confirm tokens
+     scopes to its Workspace (`row.WorkspaceID`); the tracking endpoints (`loadEngaged` in
+     `internal/server/tracking.go`), where the token names an outbound message that is loaded
+     with the raw client and scoped to its Workspace; signed unsubscribe/confirm tokens
      (`internal/consent`), and `accounts.BootstrapScope` (the bootstrap token);
   7. the platform Staff member (ADR 0026): `ee/staff` scopes over the one Workspace the console
      is looking at, in two reads, each after the Workspace row is loaded and each through
@@ -105,7 +109,9 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
      read (`Module.WorkspaceUsage`, `ee/staff/service_usage.go`), scoped over the one
      Workspace a call names, after its row is loaded, to read its stored Usage figures; and
      `Module.TrackingHostFeed` (ADR 0038) reads the Instance-wide tracking host change log, which
-     holds hosts and states, no Workspace data, so it scopes over nothing.
+     holds hosts and states, no Workspace data, so it scopes over nothing; and the contacts peak
+     of `ee/usage` (`raise`, run by its ent hook), which scopes over each
+     Workspace id it is given only after loading that Workspace's row and finding it live.
 - **The raw `*ent.Client` is allowed only in:** `internal/accounts` (User, Membership,
   Workspace incl. Workspace id resolution, invitation by token), `internal/api/auth` (credentials, token and key lookup),
   `internal/consent` (signed unsubscribe/confirm tokens: the Workspace comes from the token,
@@ -142,7 +148,7 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
   Membership change belongs to; `ee/staff` serves the feed in `Module.WorkspaceFeed`), `internal/trackinghostlog` (the same
   pair of hooks for the Tracking host change log, ADR 0038: it reads Sending domains of any Workspace
   to log the hosts a change adds or removes; `ee/staff` serves it in `Module.TrackingHostFeed`) and the composition roots
-  (`internal/app`, `internal/db`, `internal/testhelper`). Needing raw access anywhere else
+  (`internal/app`, `internal/db`, `internal/testhelper`, and `ee.Edition`, which only hands the client to the `ee/*` packages listed above). Needing raw access anywhere else
   means a new small package in this list, not a field on `Handlers`.
   `internal/eligibility` holds no raw client: it takes a `*ent.Scoped` and passes
   `s.WorkspaceID()` as a bound SQL argument inside one raw expression (the correlated

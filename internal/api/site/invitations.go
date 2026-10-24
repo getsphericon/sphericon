@@ -26,11 +26,7 @@ func (h *Handlers) SiteInvitationsList(ctx context.Context, params siteapi.SiteI
 		return nil, err
 	}
 
-	invites, err := s.Invitation().Query().
-		Where(invitation.AcceptedAtIsNil()).
-		WithInviter().
-		Order(ent.Asc(invitation.FieldID)).
-		All(ctx)
+	invites, err := accounts.PendingInvitations(ctx, s)
 	if err != nil {
 		return nil, err
 	}

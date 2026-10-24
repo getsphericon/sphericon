@@ -14,7 +14,6 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/authtoken"
-	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/secondfactor"
 )
@@ -61,19 +60,7 @@ func (h *Handlers) SiteUserDeleteUser(ctx context.Context, req *siteapi.SiteDele
 		}
 	}
 
-	confirm := func(ctx context.Context, tx *ent.Client, pub events.Publisher, locked *ent.User) error {
-		// The proof above was read before the transaction: a password set or removed since
-		// then makes it the wrong proof for this User.
-		if (locked.PasswordHash != "") != hadPassword {
-			return errProofStale
-		}
-		if !secondfactor.Active(locked) {
-			return nil
-		}
-		_, err := h.secondFactor.VerifyIn(ctx, tx, pub, locked, req.Code.Or(""))
-		return err
-	}
-	deleted, err := h.accounts.DeleteUser(ctx, u.ID, confirm)
+	deleted, err := h.accounts.DeleteUser(ctx, u.ID, h.secondFactor.DeletionProof(hadPassword, req.Code.Or("")))
 	var sole *accounts.SoleOwnerError
 	switch {
 	case errors.As(err, &sole):
@@ -83,7 +70,7 @@ func (h *Handlers) SiteUserDeleteUser(ctx context.Context, req *siteapi.SiteDele
 		})
 		v := deleteUserProblem(msg, nil, listed)
 		return &v, nil
-	case errors.Is(err, errProofStale):
+	case errors.Is(err, accounts.ErrProofStale):
 		v := deleteUserProblem(i18n.T("errors.delete_user_proof_stale", nil), nil, nil)
 		return &v, nil
 	case errors.Is(err, secondfactor.ErrInvalidCode):
@@ -135,10 +122,6 @@ func (h *Handlers) SiteUserDeleteUserLink(ctx context.Context, req *siteapi.Site
 	}
 	return &siteapi.SiteUserDeleteUserLinkAccepted{}, nil
 }
-
-// errProofStale is the refusal of a deletion whose proof no longer fits the User: the User's
-// password was set or removed between the proof and the transaction that locked the row.
-var errProofStale = errors.New("the deletion proof no longer fits the user")
 
 // deletionSubject is the start of both deletion operations: the User of the session and the
 // check that the typed email is theirs. A mismatch is the 422 to answer with, nil when the
