@@ -179,3 +179,10 @@ Before running the `to-spec` skill, call the `advisor` tool first and take its a
 In `implement-spec`, before marking the draft PR ready, rebase the integration branch onto a freshly
 fetched `origin/main`, push it with `--force-with-lease`, and merge the PR at once: `main` moves while the integration runs, and a
 conflicting PR runs no CI. The skill is vendored, so this rule lives here rather than in the skill.
+
+### Pull request body
+
+The `pr` skill's template is extended by `.github/pull_request_template.md`: a body also carries its
+"Issue" and "AI assistance" sections, with the option that says how an AI tool was used checked (the
+maintainer confirms it when they read the diff), or the `pr-body` check fails. The skill is vendored,
+so this rule lives here rather than in the skill.
