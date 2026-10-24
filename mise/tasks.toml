@@ -570,7 +570,19 @@ description = "osv-scanner over go.mod and pnpm-lock.yaml (nightly, like govulnc
 run = "osv-scanner scan source --recursive --config osv-scanner.toml ."
 
 ["check:contract"]
-description = "Schemathesis fuzzes the external API against openapi/external.openapi.json: rebuilds the dedicated e2e DB (never the dev one: the fuzzer writes and deletes), seeds it, boots the server on it (nightly: a minute or two)"
+description = "Schemathesis fuzzes the external API against openapi/external.openapi.json: rebuilds the dedicated e2e DB (never the dev one: the fuzzer writes and deletes), seeds it, boots the server on it as the `contract` daemon (nightly: a minute or two)"
+depends = ["db:up", "check:contract:prepare"]
+depends_post = ["check:contract:stop"]
+# The daemon starts here, not through `daemons`: that starts it before `depends` has built the binary.
+# The anchor API token of the fixtures (fixtures/api_tokens.yml ContractToken): every scope, so no
+# operation answers 403. The omtk_ token format is omtk_<prefix>_<secret>.
+run = [
+  "mise daemons start contract",
+  '''uvx schemathesis run openapi/external.openapi.json --url "http://localhost:$CONTRACT_PORT/api" -H "Authorization: Bearer omtk_contractfz01_contract-token-secret" --max-examples 25 --workers 2''',
+]
+
+["check:contract:prepare"]
+description = "The e2e database rebuilt and seeded, and the server binary the contract daemon runs"
 depends = ["db:up"]
 env = { SPHERICON_ENV = "e2e", DATABASE_URL = "{{env.E2E_DB_URL}}", SPHERICON_METRICS_ADDR = "" }
 run = [
@@ -578,8 +590,15 @@ run = [
   "go run ./cmd/db create",
   "go run ./cmd/server migrate",
   "go run ./cmd/seed",
-  "mise/scripts/contract.sh",
+  "go build -o .bin/contract-server ./cmd/server",
 ]
+
+["check:contract:stop"]
+description = "Stop the contract daemon; a 500 tells the client nothing, so show what the server logged for failed requests"
+run = '''
+mise daemons logs contract | grep '"msg":"request failed"' | sort -u | head -20 || true
+mise daemons stop contract
+'''
 
 ["check:shell"]
 description = "shellcheck the scripts under mise/scripts/"

@@ -169,6 +169,15 @@ port = { auto = true, base = 5373 }
 ready_cmd = "nc -z 127.0.0.1 $DEMO_PORT"
 proxy = false
 
+# The server `mise run check:contract` fuzzes: the binary check:contract:prepare builds, on the
+# seeded e2e database. The rate limits are off (the failed-authentication one too: the fuzzer sends
+# bad credentials on purpose) so a 429 does not stand in for an answer.
+[daemons.contract]
+run = "exec env SPHERICON_ENV=e2e DATABASE_URL=$E2E_DB_URL SPHERICON_METRICS_ADDR= PORT=$CONTRACT_PORT SPHERICON_RATE_LIMIT_API_BURST_PER_SECOND=0 SPHERICON_RATE_LIMIT_API_PER_MINUTE=0 SPHERICON_RATE_LIMIT_FAILED_AUTH_PER_MINUTE=0 .bin/contract-server"
+port = { auto = true, base = 3990 }
+ready_cmd = "curl -fsS http://localhost:$CONTRACT_PORT/healthz"
+proxy = false
+
 [daemons.caddy]
 run = "exec caddy run --config Caddyfile --adapter caddyfile"
 port = { auto = true, base = 443 }
