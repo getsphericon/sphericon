@@ -62,12 +62,11 @@ func (w *DeliverWebhookWorker) Work(ctx context.Context, job *river.Job[DeliverW
 	if err := w.mod.RecordDelivery(ctx, w.ent.Scoped(e.WorkspaceID), e, sendErr, w.now()); err != nil {
 		return err
 	}
-	if limited := webhook.RateLimited(sendErr); limited != nil {
-		now := w.now()
-		if now.Sub(job.CreatedAt) >= webhook.HookRetryHorizon {
+	if verdict, limited := webhook.DecideRateLimited(sendErr, job.CreatedAt, w.now()); limited {
+		if verdict.GiveUp {
 			return river.JobCancel(sendErr) // a receiver that never lets up ends the delivery too
 		}
-		return river.JobSnooze(webhook.HookSnooze(limited.RetryAfter, now))
+		return river.JobSnooze(verdict.Wait)
 	}
 	return sendErr
 }

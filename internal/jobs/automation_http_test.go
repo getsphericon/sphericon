@@ -280,6 +280,7 @@ func TestHTTPStepRateLimitEndsAtTheRetryHorizon(t *testing.T) {
 	r := h.run(runID)
 	assert.Equal(t, automationrun.StatusFailed, r.status)
 	assert.Equal(t, http.StatusTooManyRequests, *r.httpStatus)
+	assert.Equal(t, automationrun.FailureKindHTTPStatus, *r.kind)
 }
 
 func TestHTTPStepOfAnErasedContactSendsNothing(t *testing.T) {

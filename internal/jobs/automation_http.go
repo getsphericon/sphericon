@@ -96,11 +96,11 @@ func (w *RunHTTPStepWorker) Work(ctx context.Context, job *river.Job[stepping.Ru
 
 	now := w.now()
 	f := automations.FailureOfDelivery(sendErr)
-	if limited := webhook.RateLimited(sendErr); limited != nil {
-		if now.Sub(job.CreatedAt) >= webhook.HookRetryHorizon {
+	if verdict, limited := webhook.DecideRateLimited(sendErr, job.CreatedAt, now); limited {
+		if verdict.GiveUp {
 			return w.fail(ctx, run, f, river.JobCancel(sendErr)) // a receiver that never lets up
 		}
-		return river.JobSnooze(webhook.HookSnooze(limited.RetryAfter, now)) // never an attempt
+		return river.JobSnooze(verdict.Wait) // never an attempt
 	}
 	if !webhook.Retryable(sendErr) {
 		return w.fail(ctx, run, f, river.JobCancel(sendErr)) // no retry opens a blocked address or turns a 4xx into a 2xx

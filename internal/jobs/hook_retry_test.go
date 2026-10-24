@@ -180,6 +180,9 @@ func TestDeliverWebhookRateLimitEndsTheJobPastTheHorizon(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, rivertype.JobStateCancelled, res.Job.State)
+	e := h.endpoint()
+	assert.Nil(t, e.ConsecutiveFailures, "giving up on a rate limited delivery is not a failure of the endpoint")
+	assert.Nil(t, e.DisabledAt)
 }
 
 func TestDeliverWebhookGoneDisablesTheEndpointAndTheJobEnds(t *testing.T) {
