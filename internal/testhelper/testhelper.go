@@ -70,6 +70,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/tags"
 	"github.com/getsphericon/sphericon/internal/templates"
 	"github.com/getsphericon/sphericon/internal/tracking"
+	"github.com/getsphericon/sphericon/internal/transactional"
 	"github.com/getsphericon/sphericon/internal/upgrade"
 	"github.com/getsphericon/sphericon/internal/webhook"
 	"github.com/getsphericon/sphericon/internal/webhooks"
@@ -431,7 +432,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	acc := accounts.New(client, bus)
 	external, err := server.NewExternalAPI(client, apiexternal.Deps{
 		Accounts: acc, Bus: bus, Webhooks: webhooksModule, Outbound: sender,
-		Segments: segmentsModule, EventLog: eventLog, Contacts: contactsModule, Erasure: erasureModule, Tags: tagsModule, Templates: templatesModule,
+		Segments: segmentsModule, EventLog: eventLog, Contacts: contactsModule, Erasure: erasureModule, Tags: tagsModule, Templates: templatesModule, Transactional: transactional.New(templatesModule, sender),
 		Automations: automationsModule, Rules: rulesModule, Broadcasts: broadcastsModule, Reputation: reputation.New(), Integrations: integrationsModule, SendingDomains: sendingDomainsModule,
 		BootstrapToken: baseCfg.BootstrapToken, Audit: edition.Audit, Export: edition.Export,
 	})

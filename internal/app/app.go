@@ -75,6 +75,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/templates"
 	"github.com/getsphericon/sphericon/internal/tracking"
 	"github.com/getsphericon/sphericon/internal/trackingdomain"
+	"github.com/getsphericon/sphericon/internal/transactional"
 	"github.com/getsphericon/sphericon/internal/upgrade"
 	"github.com/getsphericon/sphericon/internal/webhook"
 	"github.com/getsphericon/sphericon/internal/webhooks"
@@ -1567,7 +1568,7 @@ func externalDeps(i do.Injector) (apiexternal.Deps, error) {
 	}
 	return apiexternal.Deps{
 		Accounts: acc, Bus: bus.Bus, Webhooks: wh, Outbound: sender.Module,
-		Segments: seg, EventLog: evlog, Contacts: con, Erasure: er, Tags: tg, Templates: tpl, BrandKit: bk, Automations: auto, Rules: rl,
+		Segments: seg, EventLog: evlog, Contacts: con, Erasure: er, Tags: tg, Templates: tpl, Transactional: transactional.New(tpl, sender.Module), BrandKit: bk, Automations: auto, Rules: rl,
 		Broadcasts: bc, Reputation: rep, Integrations: integ, SendingDomains: sd, BootstrapToken: cfg.BootstrapToken, Audit: edition.Audit, Export: edition.Export,
 	}, nil
 }

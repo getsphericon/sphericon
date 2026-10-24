@@ -4,106 +4,65 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
+
+	"github.com/go-faster/jx"
+	"github.com/samber/lo"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/outbound"
-	"github.com/getsphericon/sphericon/internal/suppression"
-	"github.com/getsphericon/sphericon/internal/templates"
+	"github.com/getsphericon/sphericon/internal/transactional"
 )
 
-// EmailsSend is the transactional send surface (ADR 0005): a single-recipient
-// email rendered from a referenced Template with per-call variables at send time.
-// It binds the template by reference (the Template's current content is handed to
-// Outbound send), and carries no sending source, so it skips Unsubscribe but still
-// respects Suppression.
-//
-// Everything between "this email is wanted" and "the provider accepted it" —
-// idempotency, the freeze check, the Sending-domain gate, eligibility, rendering,
-// the provider call and the send record — is the Outbound send module's
-// (ADR 0015). This handler only resolves the request into a Request and maps the
-// Outcome to the HTTP contract. The optional Idempotency-Key becomes the module's
-// claim key: a repeated key replays the recorded outcome instead of sending again,
-// and a key whose first request is still in flight returns 409.
+// EmailsSend is the transactional send surface (ADR 0005). The whole operation is the
+// transactional module's; this handler only unpacks the request, calls it and renders its
+// Result as the HTTP contract. The optional Idempotency-Key becomes the send's claim key: a
+// repeated key replays the recorded outcome instead of sending again, and a key whose first
+// request is still in flight returns 409.
 func (h *Handlers) EmailsSend(ctx context.Context, req *externalapi.SendTransactionalEmailInput, params externalapi.EmailsSendParams) (externalapi.EmailsSendRes, error) {
 	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeEmailsSend) {
 		res := externalapi.EmailsSendUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
 
-	dest := suppression.NormalizeDestination(string(req.Destination))
-	if dest == "" {
-		res := externalapi.EmailsSendUnprocessableEntity(problem(http.StatusUnprocessableEntity, "destination must not be empty"))
-		return &res, nil
-	}
-
-	templateID := int64(req.TemplateId)
-	// Workspace-scoped: another workspace's template id must 404, never send.
-	tmpl, err := h.templates.Get(ctx, auth.TokenScoped(ctx), templateID)
-	if errors.Is(err, templates.ErrNotFound) {
-		res := externalapi.EmailsSendNotFound(problem(http.StatusNotFound, "template not found"))
-		return &res, nil
-	}
-	if err != nil {
+	res, err := h.transactional.Send(ctx, auth.TokenScoped(ctx), transactional.Request{
+		TemplateID:     int64(req.TemplateId),
+		Destination:    string(req.Destination),
+		Variables:      lo.MapValues(req.Variables.Or(nil), func(v jx.Raw, _ string) json.RawMessage { return json.RawMessage(v) }),
+		IdempotencyKey: params.IdempotencyKey.Or(""),
+		Track:          req.Track.Or(false),
+	})
+	var invalid *transactional.InvalidVariablesError
+	switch {
+	case errors.Is(err, transactional.ErrEmptyDestination):
+		r := externalapi.EmailsSendUnprocessableEntity(problem(http.StatusUnprocessableEntity, "destination must not be empty"))
+		return &r, nil
+	case errors.Is(err, transactional.ErrTemplateNotFound):
+		r := externalapi.EmailsSendNotFound(problem(http.StatusNotFound, "template not found"))
+		return &r, nil
+	case errors.As(err, &invalid):
+		r := externalapi.EmailsSendUnprocessableEntity(problem(http.StatusUnprocessableEntity, "invalid variables: "+invalid.Error()))
+		return &r, nil
+	case err != nil:
 		return nil, err
 	}
 
-	vars, err := decodeVariables(req.Variables)
-	if err != nil {
-		res := externalapi.EmailsSendUnprocessableEntity(problem(http.StatusUnprocessableEntity, "invalid variables: "+err.Error()))
-		return &res, nil
-	}
-
-	// The contact this destination resolves to, when one exists (transactional mail
-	// may go to an address with no contact); the send fact attaches to it.
-	contactID, err := contacts.ResolveID(ctx, auth.TokenScoped(ctx), "", &dest, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	// A client key makes the send idempotent; without one every call is its own send.
-	res, err := h.outbound.Send(ctx, auth.TokenScoped(ctx), outbound.Transactional(outbound.TransactionalMessage{
-		ClientKey:   params.IdempotencyKey.Or(""),
-		Destination: dest,
-		ContactID:   contactID,
-		TemplateID:  templateID,
-		Subject:     tmpl.Subject,
-		Body:        tmpl.Body,
-		Variables:   vars,
-		Track:       req.Track.Or(false),
-	}))
-	if errors.Is(err, outbound.ErrInProgress) {
+	switch res.Status {
+	case transactional.Sent:
+		return sendResponse(res.MessageID, externalapi.TransactionalSendStatusSent, res.Destination), nil
+	case transactional.Suppressed:
+		return sendResponse(res.MessageID, externalapi.TransactionalSendStatusSuppressed, res.Destination), nil
+	case transactional.InProgress:
 		r := externalapi.EmailsSendConflict(problem(http.StatusConflict, "a send with this Idempotency-Key is already in progress"))
 		return &r, nil
-	}
-	if err != nil {
-		return nil, fmt.Errorf("transactional send: %w", err)
-	}
-
-	switch res.Outcome {
-	case outbound.Sent:
-		return sendResponse(res.MessageID, externalapi.TransactionalSendStatusSent, dest), nil
-	case outbound.Skipped:
-		// Transactional skips only on Suppression (the global hard floor).
-		return sendResponse(res.MessageID, externalapi.TransactionalSendStatusSuppressed, dest), nil
-	case outbound.Failed:
-		if res.Replayed {
-			// A failed key is spent: the caller should retry under a fresh key.
-			r := externalapi.EmailsSendConflict(problem(http.StatusConflict, "a previous send with this Idempotency-Key failed; retry with a new key"))
-			return &r, nil
-		}
+	case transactional.ReplayedFailed:
+		r := externalapi.EmailsSendConflict(problem(http.StatusConflict, "a previous send with this Idempotency-Key failed; retry with a new key"))
+		return &r, nil
+	case transactional.FailedRender:
 		r := externalapi.EmailsSendUnprocessableEntity(problem(http.StatusUnprocessableEntity, "render template: "+res.Reason))
 		return &r, nil
-	case outbound.Deferral:
-		// Transactional is neither reserved against the Send rate limit nor deferred on a
-		// provider "too fast" reply (ADR 0023), so this is unreachable here; refuse
-		// reversibly rather than misreport a failed send should that ever change.
-		r := externalapi.EmailsSendUnprocessableEntity(problem(http.StatusUnprocessableEntity, "the send rate limit is spent; retry shortly"))
-		return &r, nil
-	default: // outbound.Held: a reversible hold on the source, never a failed send
+	default: // transactional.Held: a reversible hold on the source, never a failed send
 		r := externalapi.EmailsSendUnprocessableEntity(problem(http.StatusUnprocessableEntity, outbound.Detail(res.Reason)))
 		return &r, nil
 	}
@@ -116,23 +75,4 @@ func sendResponse(id int64, status externalapi.TransactionalSendStatus, dest str
 // entityID renders an int64 primary key as the API's string EntityId.
 func entityID(id int64) externalapi.EntityId {
 	return externalapi.EntityId(id)
-}
-
-// decodeVariables turns the per-call variables (raw JSON values) into the binding
-// map Liquid renders against. Each value is decoded to its natural Go type
-// (string/number/bool/nested) so merge tags like {{ amount }} render correctly.
-func decodeVariables(opt externalapi.OptSendTransactionalEmailInputVariables) (map[string]any, error) {
-	raw, ok := opt.Get()
-	if !ok || len(raw) == 0 {
-		return map[string]any{}, nil
-	}
-	out := make(map[string]any, len(raw))
-	for k, v := range raw {
-		var val any
-		if err := json.Unmarshal([]byte(v), &val); err != nil {
-			return nil, fmt.Errorf("variable %q: %w", k, err)
-		}
-		out[k] = val
-	}
-	return out, nil
 }
