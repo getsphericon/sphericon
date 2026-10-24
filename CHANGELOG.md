@@ -1,5 +1,67 @@
 # Changelog
 
+## [0.3.0](https://github.com/getsphericon/sphericon/compare/v0.2.0...v0.3.0) (2026-10-24)
+
+
+### ⚠ BREAKING CHANGES
+
+* the site API's Broadcast resource no longer has `bodyText`, and the `broadcasts` table no longer has `body_text`.
+* the Segment field `definition` is `condition` in the site and external APIs, and the segments.definition column is renamed to segments.condition. Upgrade: run the migrations (sphericon migrate); API clients send and read `condition` instead of `definition` on Segments and their preview.
+
+### Features
+
+* a Rule applies and removes Tags on an Event (tracer bullet, ADR 0054) ([73991d1](https://github.com/getsphericon/sphericon/commit/73991d11345e052c9e5899ff7ef638bb8379393d))
+* a Rule can call a URL when it fires (HTTP Action, ADR 0054) ([f7d954c](https://github.com/getsphericon/sphericon/commit/f7d954c0001f2177e43c93aeaa3061608d226daa))
+* a Rule enrolls a Contact in an Automation (ADR 0054) ([efe6bb3](https://github.com/getsphericon/sphericon/commit/efe6bb34514c19030e550bc91ddc6507816bba96))
+* add the Rules UI with list, editor and Firings ([#598](https://github.com/getsphericon/sphericon/issues/598)) ([40ff2e0](https://github.com/getsphericon/sphericon/commit/40ff2e0ece984d92226365b54f3f2b04356afc92))
+* add Workflows and Website groups to the sidebar ([d8733cf](https://github.com/getsphericon/sphericon/commit/d8733cf5910d5666e12d816b813b9e5feffab1e9))
+* an opt-in Sign-up survey asked once after first sign-in (ADR 0055) ([2f5c5d5](https://github.com/getsphericon/sphericon/commit/2f5c5d504dcdb2c55554efde25aa6ce1845f5a90)), closes [#562](https://github.com/getsphericon/sphericon/issues/562) [#563](https://github.com/getsphericon/sphericon/issues/563) [#564](https://github.com/getsphericon/sphericon/issues/564) [#565](https://github.com/getsphericon/sphericon/issues/565) [#566](https://github.com/getsphericon/sphericon/issues/566) [#567](https://github.com/getsphericon/sphericon/issues/567)
+* analytics section with reports in the Workspace time zone ([#627](https://github.com/getsphericon/sphericon/issues/627)) ([140bf60](https://github.com/getsphericon/sphericon/commit/140bf60356f2a6c61f086777e5ff6ffdef3e02d6))
+* archive, purge and limit Rules; Firings expire with the analytical window (ADR 0054) ([4fbfbba](https://github.com/getsphericon/sphericon/commit/4fbfbba5a778382d5d85e697174797358fb63f94))
+* archive, restore and delete Rules in the UI ([5441e81](https://github.com/getsphericon/sphericon/commit/5441e81ffb1e4cff75e4e198d5aa78fb63945b81))
+* check passwords and account addresses beyond the contract ([#612](https://github.com/getsphericon/sphericon/issues/612)) ([72322d1](https://github.com/getsphericon/sphericon/commit/72322d1f05d9febcb84d2df5e32b7efa3240e0c4))
+* derive the marketing text part from the final HTML of a send ([c2574c6](https://github.com/getsphericon/sphericon/commit/c2574c692cfe0c32cc5e42ceee7e522962307a54)), closes [#617](https://github.com/getsphericon/sphericon/issues/617)
+* dev Workspace and live demo storefront on brightpath.localhost ([#609](https://github.com/getsphericon/sphericon/issues/609)) ([bd52b64](https://github.com/getsphericon/sphericon/commit/bd52b6409f97cd04dcf0a3209ac2273ccc50e003))
+* dry-run a Rule on a stored Event ([#603](https://github.com/getsphericon/sphericon/issues/603)) ([6936510](https://github.com/getsphericon/sphericon/commit/6936510f490ff386cb20f6cfba837feb7f60ab73))
+* move leaving a workspace into the danger zone and calm the buttons ([60ca144](https://github.com/getsphericon/sphericon/commit/60ca144cd7a4fc41ea351f72efd21bfb1a4ab431))
+* rename API keys, compact Developers settings page ([c2e3fc9](https://github.com/getsphericon/sphericon/commit/c2e3fc90e4ce06b93f9a2d8a0cad6cea42c21d4b))
+* show skeletons instead of spinners while pages and lists load ([8ec36d7](https://github.com/getsphericon/sphericon/commit/8ec36d70e34038a38594632c2084e728a6b70fdf))
+* test the triggering Event's properties in a Rule's Condition ([#602](https://github.com/getsphericon/sphericon/issues/602)) ([244b50a](https://github.com/getsphericon/sphericon/commit/244b50a01860e596d0c5633c401acc075bbf3492))
+* track every email event for every send (ADR 0053) ([5e61e1f](https://github.com/getsphericon/sphericon/commit/5e61e1f53d1bb234314f6efae03c51fc4837e3df))
+
+
+### Bug Fixes
+
+* a dry run says a machine Event never fires a Rule ([369061a](https://github.com/getsphericon/sphericon/commit/369061abe712f6c702f985da011f4dafa901ee9d))
+* a machine open or click triggers no Rule ([30a10ae](https://github.com/getsphericon/sphericon/commit/30a10aee73393691cce6c408b72077b04da885d2))
+* an HTTP step and a Rule's HTTP Action fail at once on a 4xx ([2a14157](https://github.com/getsphericon/sphericon/commit/2a14157abf9864f922c648d0e73d83f32c6c3bb7))
+* archive a Rule in one guarded write that locks the row ([c7cff7c](https://github.com/getsphericon/sphericon/commit/c7cff7c022e5bd04a253311066481fdc21464da4))
+* call the sign-in test helpers with their current signatures in the survey tests ([75b089a](https://github.com/getsphericon/sphericon/commit/75b089abd2b4a26109618c83e1c22fd7fb08c799))
+* derive the text part in one step and hide more than display:none ([8bbabef](https://github.com/getsphericon/sphericon/commit/8bbabefbe98baf67ee47cefdc976432881761a02)), closes [#616](https://github.com/getsphericon/sphericon/issues/616) [#617](https://github.com/getsphericon/sphericon/issues/617) [#618](https://github.com/getsphericon/sphericon/issues/618)
+* enroll a Contact and queue its first step in one transaction ([ddb86ec](https://github.com/getsphericon/sphericon/commit/ddb86ece45d39deede3f58bd0c7a7509f9115ee3))
+* have the server quote database names and quote them in the log ([7a39dfa](https://github.com/getsphericon/sphericon/commit/7a39dfa06b58f23ef21c0d559b46e9d132d1ed31))
+* index rule_firings by workspace_id for its foreign key ([b5dfc47](https://github.com/getsphericon/sphericon/commit/b5dfc475c8cf733a991d5499101d119c24196a53)), closes [#595](https://github.com/getsphericon/sphericon/issues/595) [#596](https://github.com/getsphericon/sphericon/issues/596) [#597](https://github.com/getsphericon/sphericon/issues/597) [#598](https://github.com/getsphericon/sphericon/issues/598) [#599](https://github.com/getsphericon/sphericon/issues/599) [#600](https://github.com/getsphericon/sphericon/issues/600) [#601](https://github.com/getsphericon/sphericon/issues/601) [#602](https://github.com/getsphericon/sphericon/issues/602) [#603](https://github.com/getsphericon/sphericon/issues/603)
+* keep the backfill flag on the stored Event so a dry run tells history from a live Event ([68dab50](https://github.com/getsphericon/sphericon/commit/68dab507c5d8d9b99b69b364d8652778b2a52d17))
+* log a Rule's stored actions or results that cannot be decoded ([7422502](https://github.com/getsphericon/sphericon/commit/7422502b000299d203b8672e1df8490571c68532))
+* log the lost lookups and the table that cannot load, keep the text part's visible body ([e29e05c](https://github.com/getsphericon/sphericon/commit/e29e05c4f222c47564ac60fa128864365e127f49))
+* refuse a blank Broadcast name in the Broadcasts module on every surface ([9e8b48f](https://github.com/getsphericon/sphericon/commit/9e8b48fa933e9c6e6c0e9c8bbd7745b83510dbcc)), closes [#630](https://github.com/getsphericon/sphericon/issues/630)
+* refuse a whitespace-only Template name in the Templates module ([8de1d95](https://github.com/getsphericon/sphericon/commit/8de1d951e7d4339008b1f1b650a2619667874932))
+* refuse deleting an Automation that sent mail, and expose enroll_automation in /api ([e9c1d9e](https://github.com/getsphericon/sphericon/commit/e9c1d9ecb1b0aafd5a3c9a32c5bed2ad5187673f))
+* retry a Rule's HTTP call as an HTTP step does, on a job of its own ([848b5e9](https://github.com/getsphericon/sphericon/commit/848b5e988264003ff68f3abc0b4e632db15acc3a))
+* retry a send whose tracking host lookup failed instead of failing it for good ([2010e5b](https://github.com/getsphericon/sphericon/commit/2010e5b8fee067ca81b19ee15c33317e8c61f25c))
+* return to the requested page after login, neutral Sign out, document the white editor sheet ([e65422a](https://github.com/getsphericon/sphericon/commit/e65422af3c4cbb3c712a04ccb38f904edb43aa7d))
+* show a Rule the same bounded Event properties in Condition, Firing and dry run ([165a0e6](https://github.com/getsphericon/sphericon/commit/165a0e6efd7afc91394e51c0ec6fe942b84b7f6d))
+* stop full page reloads in the dev server and lint for the causes ([a2df4f8](https://github.com/getsphericon/sphericon/commit/a2df4f8c8b728d6b85e62ce32adbb2a21146c21b))
+* stop swallowing errors, and log the ones nobody can act on ([1fae86f](https://github.com/getsphericon/sphericon/commit/1fae86feae8d137a47fbd3e6c89f8e1130ef5b4b))
+* store account addresses lower-cased so one address is one account ([#613](https://github.com/getsphericon/sphericon/issues/613)) ([e1acc6d](https://github.com/getsphericon/sphericon/commit/e1acc6d1b961c18d7cda64247672e58b28d2e808))
+* **testhelper:** take pgtestdb's template lock on the shared test database ([c93bd69](https://github.com/getsphericon/sphericon/commit/c93bd69acf6d96a41e0d10de6e012fa67314651f)), closes [#615](https://github.com/getsphericon/sphericon/issues/615)
+
+
+### Code Refactoring
+
+* drop the Broadcast body_text column and the bodyText field of its resource ([e02122a](https://github.com/getsphericon/sphericon/commit/e02122a44f9b73ee52c1dc76951e10b6950bce4c))
+* name the Segment's rule tree a shared Condition ([d564770](https://github.com/getsphericon/sphericon/commit/d564770bb8d71fe3ec91fc63010aec239ba3099e))
+
 ## [0.2.0](https://github.com/getsphericon/sphericon/compare/v0.1.2...v0.2.0) (2026-10-21)
 
 ### ⚠ BREAKING CHANGES
