@@ -22,8 +22,8 @@ const config: KnipConfig = {
   ignoreExportsUsedInFile: true,
   workspaces: {
     '.': {
-      // The hook that .claude/settings.json runs with node.
-      entry: ['i18next.config.ts', 'mise/scripts/agent-guard.ts'],
+      // Scripts that node runs: the hook of .claude/settings.json and mise run land.
+      entry: ['i18next.config.ts', 'mise/scripts/agent-guard.ts', 'mise/scripts/land.ts'],
     },
     'packages/emaildoc': {
       // esbuild reads the entry and the shims; `editor-image-extension` is a virtual module that

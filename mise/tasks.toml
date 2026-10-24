@@ -111,7 +111,7 @@ run = "go run ./cmd/server genkey"
 
 ["land"]
 description = "Land the work of this worktree on main: rebase onto origin/main, mise run check and test, push HEAD to main, close the tickets. `mise run land -- [--skip-test] [<issue>...]`; a detached HEAD with a clean tree"
-run = "mise/scripts/land.sh"
+run = "node mise/scripts/land.ts"
 
 ["worktrees:prune"]
 description = "Remove clean worktrees whose branch is already in origin/main, then run worktrees:gc; dry run unless --apply"
