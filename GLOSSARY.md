@@ -456,7 +456,8 @@ _Avoid_: Inbox message, email log
 The hostname `track.<sending domain>`, a CNAME to the Instance's edge, under which the links in mail
 sent from that Sending domain (click, open, unsubscribe, confirm) are built, so recipients see the
 sender's own domain. Set up with the Sending domain's DNS records but verified on its own; it serves
-only those link paths, and until it is serving, new mail uses the Instance's own host.
+only those link paths and the first-party tracker (`/t.js`, `/collect`, for its own Workspace's collect
+key, ADR 0059), and until it is serving, new mail uses the Instance's own host.
 _Avoid_: Click domain, link domain, custom domain (unqualified)
 
 **Sending domain**:

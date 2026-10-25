@@ -45,6 +45,7 @@ as the CNAME, while a CloudFront multi-tenant distribution validates over HTTP a
   logged, and an advisory lock taken in that transaction makes positions commit in the order they were taken. A caller applies entries in
   order and starts from an empty cursor to rebuild the set.
 - **Only link paths move.** The first-party tracker (`/t.js`, `/collect`) is a separate decision.
+  (Decided by ADR 0059: the same host serves the tracker paths, and only its own Workspace's collect key.)
 - **The edge is outside the core.** On the hosted service a closed service in `getsphericon/platform`
   reads the domains that are `dns_verified` through a new `domains:read` scope of the service surface
   (like the Workspace feed: an opaque cursor, at-least-once) and creates and removes CloudFront multi-tenant distribution tenants with
