@@ -97,7 +97,7 @@ _Avoid_: Historical import, replay, silent event
 **Erasure**:
 Removing a Contact's personal data at the Workspace's request (GDPR Art. 17). It is what deleting
 a Contact _is_ — there is no softer delete that keeps personal data. The Contact, its Visitors,
-Custom field values, Tags and Confirmation are removed, as are its customer-tracked Events; the
+Custom field values, Tags and Confirmation are removed, as are its customer-tracked Events and the Captured messages sent to its Destinations; the
 reserved `email.*` Events and delivery records stay as anonymous rows, so deliverability and
 metering counts do not change. What survives is the minimum that keeps the refusal honored: the
 Unsubscribe rows and the active Suppression rows for its Destinations (lifted ones refuse
@@ -109,7 +109,7 @@ the processor, so Erasure is a Workspace action, never a data-subject self-servi
 names a person by address, so the Workspace's owners and admins can also start it from an address
 (a **Privacy request**), even when no Contact holds that address any more: then only the delivery
 records of the address are anonymized. A Privacy request starts with a lookup that shows counts
-only, never content; "nothing held" is a valid result (zeros, not a not-found). Erase is offered
+only, never content (Captured messages are counted too); "nothing held" is a valid result (zeros, not a not-found). Erase is offered
 only while a Contact or delivery records hold the address: opt-outs alone are not erasable.
 _Avoid_: Anonymization (that is only what happens to the delivery rows), forget, purge (purge is
 bulk retention policy, a separate concern)
@@ -258,8 +258,9 @@ _Avoid_: Delivery pipeline, send path (unqualified), mailer
 **Test send**:
 A Broadcast's author sending it to one address they name, to see the mail before it goes out. It
 skips Send-eligibility and leaves no Outbound message or `email.sent` Event, so it never shows in
-Activity or the rates. While the Workspace has no verified Sending domain it goes from the System
-sender, and only to the address of the User who asks.
+Activity or the rates. While the Workspace has no Integration and no verified Sending domain it goes from the System
+sender, and only to the address of the User who asks. Through a Test inbox it is captured like any
+other message and the editor says it was not sent to that address.
 _Avoid_: Preview (that is rendering without sending), dry run
 
 **System sender**:
@@ -430,12 +431,25 @@ _Avoid_: Soft delete, archive (as the mechanism), trash, tombstone (a tombstone 
 erased Workspace leaves)
 
 **Integration**:
-A workspace-scoped, **outbound** connection to an external sending provider — channel-agnostic
-by design (email today via smtp/ses; sms reserved), with encrypted credentials and at most one
-default per (workspace, channel). Broadcasts and Automations send _through_ an Integration (the
+A workspace-scoped, **outbound** connection to a sending provider, external or built in (the Test
+inbox) — channel-agnostic by design (email today via smtp/ses/inbox; sms reserved), with encrypted
+credentials where the provider has any and at most one default per (workspace, channel). Broadcasts and Automations send _through_ an Integration (the
 workspace default when unspecified). Sending is one half of a loop: bounces and complaints come
 back via the Integration's Ingest hook and land in Suppression.
 _Avoid_: Provider (alone), ESP, sender, connector
+
+**Test inbox**:
+An Integration provider that sends nothing outside: the messages of an Outbound send through it are
+kept as Captured messages and read in the app. It is chosen, set as default and rate-limited like any
+other Integration, and the send path has no case of its own for it. The way to see what a Workspace's
+mail would look like and do before any real provider or DNS exists.
+_Avoid_: Sandbox (a provider's own test mode), Mailpit, fake provider
+
+**Captured message**:
+The kept copy of one message sent through a Test inbox: its headers, HTML and text parts and the links
+in it, owned by the Workspace and the Integration. It is the only place rendered content is stored (an
+Outbound message holds none), expires with the Test inbox's retention and is never a record of a send.
+_Avoid_: Inbox message, email log
 
 **Tracking domain**:
 The hostname `track.<sending domain>`, a CNAME to the Instance's edge, under which the links in mail
