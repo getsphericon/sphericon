@@ -480,6 +480,7 @@ depends = [
   "check:copies",
   "check:typos",
   "check:adr",
+  "check:arch",
   "check:helm",
   "check:links",
 ]
@@ -507,6 +508,10 @@ if [ -n "$dup" ]; then
   echo "error: duplicate ADR numbers in docs/adr: $(echo $dup); renumber the newer file (next free: $next)"; exit 1
 fi
 '''
+
+["check:arch"]
+description = "Package boundaries in easement.yml, Go and frontend: a surface never imports another surface, core imports neither a surface nor ee, a route file never imports a page, shared UI never imports a page (easement; `easement check --format json` for a machine-readable report)"
+run = "easement check"
 
 ["check:upgrade"]
 description = "ADR 0033 in CI: a destructive migration needs a breaking PR title, a migration that locks a live table fails under any title, a breaking change needs an `Upgrade:` line in its `BREAKING CHANGE:` footer (cmd/upgradecheck runs Squawk over the added migrations; PR_TITLE, PR_BODY_FILE and BASE come from the pull request, default to the last commit against origin/main)"

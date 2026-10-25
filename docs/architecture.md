@@ -38,6 +38,11 @@ coding standards in `CODING_STANDARDS.md`.
   `accounts.Attempts.For(kind)`, a `Counter` bound to one `Kind` (`KindLogin`, `KindStaffLogin`),
   which satisfies `login.Throttle`. Handlers switch on the per-step outcomes (`login.Outcome`,
   `login.SecondOutcome`).
+- **Package boundaries are checked by easement (`easement.yml`, `mise run check:arch`).** A surface
+  package (`internal/api/{site,external,collect}`) never imports another surface, `internal/**` core
+  imports neither a surface nor `ee/`, and only the wiring packages (`internal/app`,
+  `internal/server`, `internal/mcpserver`, `internal/testhelper`, `internal/doctor`, `cmd/server`)
+  assemble them. A new wiring package is added to the `wiring` component, never to a baseline.
 - **Resource DTOs come from goverter, not from struct literals (review rule 1, analyzer `handmapper`).** Add a method to the surface's
   `Converter` (`internal/api/{site,external}/resources`, `ee/staff/resources`) with
   `goverter:map` / `extend` helpers, and attach in the handler only what the mapper cannot see

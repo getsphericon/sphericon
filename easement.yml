@@ -1,0 +1,93 @@
+# Architecture gate (https://github.com/mokevnin/easement): `mise run check:arch`.
+# The boundaries below are the ones docs/architecture.md states in prose; a violation names
+# the rule's `because`, so read it before reaching for a baseline entry.
+version: 1
+
+components:
+  # The four public API surfaces. Each has its own TypeSpec contract, handler package and auth scheme.
+  api-site: { in: internal/api/site }
+  api-external: { in: internal/api/external }
+  api-collect: { in: internal/api/collect }
+  # The security handlers every surface shares.
+  api-auth: { in: internal/api/auth }
+
+  # The wiring: the places that may build the whole program, and so may reach the Enterprise Edition.
+  wiring:
+    in:
+      [
+        internal/app,
+        internal/server,
+        internal/mcpserver,
+        internal/testhelper,
+        internal/doctor,
+        cmd/server,
+      ]
+
+  # Enterprise Edition, one binary gated by the license key.
+  ee: { in: 'ee/**' }
+
+  # Frontend (src/AGENTS.md). Generated clients are leaves; a route file binds a page lazily and
+  # never imports it, so a page may import its route's `Route` without a cycle.
+  web-generated: { in: src/generated }
+  web-routes: { in: src/routes }
+  # `foo.lazy.tsx` is where the page is bound; `foo.tsx` (guards, search schemas) never sees it.
+  web-route-lazy: { in: 'src/routes/**/*.lazy.tsx' }
+  web-pages: { in: src/pages }
+  web-console: { in: src/console }
+  web-shared: { in: [src/components, src/hooks, src/layouts, src/resources, src/utils] }
+  # The files directly under src/: router, guards, theme, instance, i18n, entry points.
+  web-app: { in: 'src/*' }
+
+  # Everything else under internal/ is the core domain.
+  core: { in: 'internal/**' }
+
+# Files that are not part of a component's own layer (tests drive whole programs, generated
+# code follows the contract).
+exclude:
+  ['**/*_test.go', '**/*_gen.go', '**/*.test.ts', '**/*.test.tsx', '**/*.gen.ts', 'src/test/**']
+
+rules:
+  api-site:
+    may_depend_on: [api-auth, core]
+    because: a surface depends on the shared auth handlers and the core, never on another surface
+  api-external:
+    may_depend_on: [api-auth, core]
+    because: a surface depends on the shared auth handlers and the core, never on another surface
+  api-collect:
+    may_depend_on: [api-auth, core]
+    because: a surface depends on the shared auth handlers and the core, never on another surface
+  api-auth:
+    may_depend_on: [core]
+    because: the security handlers sit below every surface
+  core:
+    may_depend_on: []
+    because: core depends on neither a surface nor the Enterprise Edition; it reaches them through interfaces (site.AuditLog, events.Consumer) wired in internal/app
+  ee:
+    may_depend_on: [core, api-auth]
+    because: the Enterprise Edition builds on the core and never on the open surfaces' handlers
+  wiring:
+    may_depend_on: [core, ee, api-site, api-external, api-collect, api-auth]
+    because: wiring is where the program is assembled
+
+  web-generated:
+    may_depend_on: []
+    because: generated clients come from the OpenAPI contract and import nothing of ours
+  web-shared:
+    may_depend_on: [web-generated, web-routes, web-app]
+    because: shared components, hooks and layouts sit below the pages; a page imports them, never the reverse (they link through a route's `Route`, never a path string)
+  web-routes:
+    may_depend_on: [web-generated, web-shared, web-app]
+    because: a route file holds guards and search schemas and never imports a page (src/AGENTS.md)
+  web-route-lazy:
+    may_depend_on: [web-generated, web-shared, web-routes, web-pages, web-console, web-app]
+    because: the lazy route file is the one place a page is bound to its route
+  web-pages:
+    forbid_external: ['@mantine/notifications']
+    may_depend_on: [web-generated, web-shared, web-routes, web-app]
+    because: a page reaches its route through the route file's `Route` and never imports a lazy route file; toasts go through useNotify (src/hooks/useNotify.ts), never @mantine/notifications
+  web-console:
+    may_depend_on: [web-generated, web-shared, web-routes, web-app]
+    because: the Staff console is its own feature and does not import the workspace pages
+  web-app:
+    may_depend_on: [web-generated, web-shared, web-routes, web-pages, web-console]
+    because: the files directly under src/ assemble the application

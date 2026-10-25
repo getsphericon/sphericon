@@ -942,6 +942,52 @@ checksum = "sha256:9964ed64ec9a387391eb4cc006ad5c531154821aef29b793e02c448de4686
 url = "https://github.com/google/osv-scanner/releases/download/v2.7.0/osv-scanner_windows_amd64.exe"
 url_api = "https://api.github.com/repos/google/osv-scanner/releases/assets/632251671"
 
+[[tools."github:mokevnin/easement"]]
+version = "0.1.1"
+backend = "github:mokevnin/easement"
+specifiers = ["0.1.1"]
+
+[tools."github:mokevnin/easement"."platforms.linux-arm64"]
+checksum = "sha256:3ac0f4fdd8ef6c6a6e5ca95e5531a31f0f6bdb060e999ab442cab270aa4aa017"
+checksum_source = "mise-versions"
+url = "https://github.com/mokevnin/easement/releases/download/v0.1.1/easement-aarch64-unknown-linux-gnu.tar.xz"
+url_api = "https://api.github.com/repos/mokevnin/easement/releases/assets/675311103"
+
+[tools."github:mokevnin/easement"."platforms.linux-arm64-musl"]
+checksum = "sha256:3ac0f4fdd8ef6c6a6e5ca95e5531a31f0f6bdb060e999ab442cab270aa4aa017"
+checksum_source = "mise-versions"
+url = "https://github.com/mokevnin/easement/releases/download/v0.1.1/easement-aarch64-unknown-linux-gnu.tar.xz"
+url_api = "https://api.github.com/repos/mokevnin/easement/releases/assets/675311103"
+
+[tools."github:mokevnin/easement"."platforms.linux-x64"]
+checksum = "sha256:22b5a6fa8b8945bd2c6f15757e80521d340da47297379dd13b7a05e41ca3d1a9"
+checksum_source = "mise-versions"
+url = "https://github.com/mokevnin/easement/releases/download/v0.1.1/easement-x86_64-unknown-linux-gnu.tar.xz"
+url_api = "https://api.github.com/repos/mokevnin/easement/releases/assets/675311153"
+
+[tools."github:mokevnin/easement"."platforms.linux-x64-musl"]
+checksum = "sha256:22b5a6fa8b8945bd2c6f15757e80521d340da47297379dd13b7a05e41ca3d1a9"
+checksum_source = "mise-versions"
+url = "https://github.com/mokevnin/easement/releases/download/v0.1.1/easement-x86_64-unknown-linux-gnu.tar.xz"
+url_api = "https://api.github.com/repos/mokevnin/easement/releases/assets/675311153"
+
+[tools."github:mokevnin/easement"."platforms.macos-arm64"]
+checksum = "sha256:bf233582237009f08e670a9949fa1a514f178780723a5186106be8035cd5ecc2"
+url = "https://github.com/mokevnin/easement/releases/download/v0.1.1/easement-aarch64-apple-darwin.tar.xz"
+url_api = "https://api.github.com/repos/mokevnin/easement/releases/assets/675311105"
+
+[tools."github:mokevnin/easement"."platforms.macos-x64"]
+checksum = "sha256:b222de8267886bdbd01fe70b73ac7b7cd50d3bfc924c40c0abc855a825057b4f"
+checksum_source = "mise-versions"
+url = "https://github.com/mokevnin/easement/releases/download/v0.1.1/easement-x86_64-apple-darwin.tar.xz"
+url_api = "https://api.github.com/repos/mokevnin/easement/releases/assets/675311135"
+
+[tools."github:mokevnin/easement"."platforms.windows-x64"]
+checksum = "sha256:bc8704ad7bbd5a5f192980a47a5251ca8e3c10d5970aa05392184d95fc7972dd"
+checksum_source = "mise-versions"
+url = "https://github.com/mokevnin/easement/releases/download/v0.1.1/easement-x86_64-pc-windows-msvc.zip"
+url_api = "https://api.github.com/repos/mokevnin/easement/releases/assets/675311144"
+
 [[tools."github:mokevnin/heavy"]]
 version = "0.1.1"
 backend = "github:mokevnin/heavy"
@@ -982,48 +1028,29 @@ version = "0.1.3"
 backend = "github:mokevnin/schemalens"
 specifiers = ["0.1.3"]
 
-[tools."github:mokevnin/schemalens"."platforms.windows-x64"]
-checksum = "sha256:7dd12c017f0d1ea5c4443f47a1fa00dc64f8abe512d3eb1b07264dec0e9a1530"
-url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.3/schemalens_0.1.3_windows_amd64.zip"
-url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/660414988"
-
-[[tools."github:mokevnin/schemalens"]]
-version = "0.1.3"
-backend = "github:mokevnin/schemalens"
-specifiers = ["0.1.3"]
-
 [tools."github:mokevnin/schemalens".options]
-additional_asset_patterns = "schemalens-adapter-ent_*_darwin_amd64.tar.gz"
-asset_pattern = "schemalens_*_darwin_amd64.tar.gz"
+additional_asset_patterns = "schemalens-adapter-ent_*_linux_arm64.tar.gz"
+asset_pattern = "schemalens_*_linux_arm64.tar.gz"
 
-[tools."github:mokevnin/schemalens"."platforms.macos-x64"]
-checksum = "sha256:9d120859cd88e368f2df1130358c5c36231af76595fad820961e0d4b6f11c157"
-url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.3/schemalens_0.1.3_darwin_amd64.tar.gz"
-url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/660414997"
+[tools."github:mokevnin/schemalens"."platforms.linux-arm64"]
+checksum = "sha256:02057f9972ebed2587eaf7f7d5233613e6bfbaeed4aeea961ef4a85074860603"
+url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.3/schemalens_0.1.3_linux_arm64.tar.gz"
+url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/660415046"
 
-[[tools."github:mokevnin/schemalens"."platforms.macos-x64".additional_artifacts]]
-checksum = "sha256:494cecbcc2bb250522cb28e41a065290376929ef423ece069b266f17e6f0e368"
-url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.3/schemalens-adapter-ent_0.1.3_darwin_amd64.tar.gz"
-url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/660415110"
+[[tools."github:mokevnin/schemalens"."platforms.linux-arm64".additional_artifacts]]
+checksum = "sha256:23e8afa2a900d28e9462c6944a442c4181611b492625ae91e61b8d665ccf945d"
+url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.3/schemalens-adapter-ent_0.1.3_linux_arm64.tar.gz"
+url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/660415050"
 
-[[tools."github:mokevnin/schemalens"]]
-version = "0.1.3"
-backend = "github:mokevnin/schemalens"
-specifiers = ["0.1.3"]
+[tools."github:mokevnin/schemalens"."platforms.linux-arm64-musl"]
+checksum = "sha256:02057f9972ebed2587eaf7f7d5233613e6bfbaeed4aeea961ef4a85074860603"
+url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.3/schemalens_0.1.3_linux_arm64.tar.gz"
+url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/660415046"
 
-[tools."github:mokevnin/schemalens".options]
-additional_asset_patterns = "schemalens-adapter-ent_*_darwin_arm64.tar.gz"
-asset_pattern = "schemalens_*_darwin_arm64.tar.gz"
-
-[tools."github:mokevnin/schemalens"."platforms.macos-arm64"]
-checksum = "sha256:a7067a53773dfe6210ca40ae1990f79271db6b1f2ee5036afe8ce484fd5e3d65"
-url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.3/schemalens_0.1.3_darwin_arm64.tar.gz"
-url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/660415000"
-
-[[tools."github:mokevnin/schemalens"."platforms.macos-arm64".additional_artifacts]]
-checksum = "sha256:837b037d4dcdbef251e28a8b299dbb02c09ccd21cbcba1599bc48405f4ebd2da"
-url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.3/schemalens-adapter-ent_0.1.3_darwin_arm64.tar.gz"
-url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/660415107"
+[[tools."github:mokevnin/schemalens"."platforms.linux-arm64-musl".additional_artifacts]]
+checksum = "sha256:23e8afa2a900d28e9462c6944a442c4181611b492625ae91e61b8d665ccf945d"
+url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.3/schemalens-adapter-ent_0.1.3_linux_arm64.tar.gz"
+url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/660415050"
 
 [[tools."github:mokevnin/schemalens"]]
 version = "0.1.3"
@@ -1060,28 +1087,47 @@ backend = "github:mokevnin/schemalens"
 specifiers = ["0.1.3"]
 
 [tools."github:mokevnin/schemalens".options]
-additional_asset_patterns = "schemalens-adapter-ent_*_linux_arm64.tar.gz"
-asset_pattern = "schemalens_*_linux_arm64.tar.gz"
+additional_asset_patterns = "schemalens-adapter-ent_*_darwin_arm64.tar.gz"
+asset_pattern = "schemalens_*_darwin_arm64.tar.gz"
 
-[tools."github:mokevnin/schemalens"."platforms.linux-arm64"]
-checksum = "sha256:02057f9972ebed2587eaf7f7d5233613e6bfbaeed4aeea961ef4a85074860603"
-url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.3/schemalens_0.1.3_linux_arm64.tar.gz"
-url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/660415046"
+[tools."github:mokevnin/schemalens"."platforms.macos-arm64"]
+checksum = "sha256:a7067a53773dfe6210ca40ae1990f79271db6b1f2ee5036afe8ce484fd5e3d65"
+url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.3/schemalens_0.1.3_darwin_arm64.tar.gz"
+url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/660415000"
 
-[[tools."github:mokevnin/schemalens"."platforms.linux-arm64".additional_artifacts]]
-checksum = "sha256:23e8afa2a900d28e9462c6944a442c4181611b492625ae91e61b8d665ccf945d"
-url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.3/schemalens-adapter-ent_0.1.3_linux_arm64.tar.gz"
-url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/660415050"
+[[tools."github:mokevnin/schemalens"."platforms.macos-arm64".additional_artifacts]]
+checksum = "sha256:837b037d4dcdbef251e28a8b299dbb02c09ccd21cbcba1599bc48405f4ebd2da"
+url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.3/schemalens-adapter-ent_0.1.3_darwin_arm64.tar.gz"
+url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/660415107"
 
-[tools."github:mokevnin/schemalens"."platforms.linux-arm64-musl"]
-checksum = "sha256:02057f9972ebed2587eaf7f7d5233613e6bfbaeed4aeea961ef4a85074860603"
-url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.3/schemalens_0.1.3_linux_arm64.tar.gz"
-url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/660415046"
+[[tools."github:mokevnin/schemalens"]]
+version = "0.1.3"
+backend = "github:mokevnin/schemalens"
+specifiers = ["0.1.3"]
 
-[[tools."github:mokevnin/schemalens"."platforms.linux-arm64-musl".additional_artifacts]]
-checksum = "sha256:23e8afa2a900d28e9462c6944a442c4181611b492625ae91e61b8d665ccf945d"
-url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.3/schemalens-adapter-ent_0.1.3_linux_arm64.tar.gz"
-url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/660415050"
+[tools."github:mokevnin/schemalens".options]
+additional_asset_patterns = "schemalens-adapter-ent_*_darwin_amd64.tar.gz"
+asset_pattern = "schemalens_*_darwin_amd64.tar.gz"
+
+[tools."github:mokevnin/schemalens"."platforms.macos-x64"]
+checksum = "sha256:9d120859cd88e368f2df1130358c5c36231af76595fad820961e0d4b6f11c157"
+url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.3/schemalens_0.1.3_darwin_amd64.tar.gz"
+url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/660414997"
+
+[[tools."github:mokevnin/schemalens"."platforms.macos-x64".additional_artifacts]]
+checksum = "sha256:494cecbcc2bb250522cb28e41a065290376929ef423ece069b266f17e6f0e368"
+url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.3/schemalens-adapter-ent_0.1.3_darwin_amd64.tar.gz"
+url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/660415110"
+
+[[tools."github:mokevnin/schemalens"]]
+version = "0.1.3"
+backend = "github:mokevnin/schemalens"
+specifiers = ["0.1.3"]
+
+[tools."github:mokevnin/schemalens"."platforms.windows-x64"]
+checksum = "sha256:7dd12c017f0d1ea5c4443f47a1fa00dc64f8abe512d3eb1b07264dec0e9a1530"
+url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.3/schemalens_0.1.3_windows_amd64.zip"
+url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/660414988"
 
 [[tools."github:sbdchd/squawk"]]
 version = "2.70.0"
@@ -1285,31 +1331,37 @@ specifiers = ["latest"]
 checksum = "sha256:50d7b26988ce8aff77697188a2e1e9d01162de203e7b9ace7ec0d42365c4ea61"
 url = "https://github.com/jdx/hk/releases/download/v2.8.1/hk-aarch64-unknown-linux-gnu.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
+repository_ids = { repository = "922514152" }
 
 [tools.hk."platforms.linux-arm64-musl"]
 checksum = "sha256:5ca76be1457f3d96705c4dbb17c6b929311d3f6d790c6d1facb9682bd9930727"
 url = "https://github.com/jdx/hk/releases/download/v2.8.1/hk-aarch64-unknown-linux-musl.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
+repository_ids = { repository = "922514152" }
 
 [tools.hk."platforms.linux-x64"]
 checksum = "sha256:8033ca42aaf88412e789c281f7e2766526e60e12f95a16c03574aeb0a2c7a657"
 url = "https://github.com/jdx/hk/releases/download/v2.8.1/hk-x86_64-unknown-linux-gnu.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
+repository_ids = { repository = "922514152" }
 
 [tools.hk."platforms.linux-x64-musl"]
 checksum = "sha256:ac8669939ba502cc8d5ba178c22bc0f84ff7b7283fdd05ea4de1296cac262d85"
 url = "https://github.com/jdx/hk/releases/download/v2.8.1/hk-x86_64-unknown-linux-musl.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
+repository_ids = { repository = "922514152" }
 
 [tools.hk."platforms.macos-arm64"]
 checksum = "sha256:87d5288c1d19acd45885e35722f655a1e1498a1cb92f42c1490e7f1623aedddd"
 url = "https://github.com/jdx/hk/releases/download/v2.8.1/hk-aarch64-apple-darwin.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
+repository_ids = { repository = "922514152" }
 
 [tools.hk."platforms.windows-x64"]
 checksum = "sha256:411cbe34d53764162dd36d69fe5bf7ec39ccd2a8166890c92c3531284355487d"
 url = "https://github.com/jdx/hk/releases/download/v2.8.1/hk-x86_64-pc-windows-msvc.zip"
 signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
+repository_ids = { repository = "922514152" }
 
 [[tools.jactionlint]]
 version = "2.3.0"
@@ -1614,21 +1666,25 @@ specifiers = ["latest"]
 checksum = "sha256:a844c71051d34eeb440180d84173ef4a13d945f81aefa7096ab98a0ebf7eb9c5"
 url = "https://github.com/jdx/pitchfork/releases/download/v2.32.2/pitchfork-aarch64-unknown-linux-gnu.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/pitchfork/.github/workflows/release.yml"
+repository_ids = { repository = "899500793" }
 
 [tools.pitchfork."platforms.linux-x64"]
 checksum = "sha256:035b2e7bc62080bf4bc8a942cb049b1f8ac1bf1a78bb4f4563c909d84b8df628"
 url = "https://github.com/jdx/pitchfork/releases/download/v2.32.2/pitchfork-x86_64-unknown-linux-gnu.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/pitchfork/.github/workflows/release.yml"
+repository_ids = { repository = "899500793" }
 
 [tools.pitchfork."platforms.macos-arm64"]
 checksum = "sha256:7b5bd43a910fad7123e086dcc73b5034438e3f5009eca111ed58a6b25ceefe4f"
 url = "https://github.com/jdx/pitchfork/releases/download/v2.32.2/pitchfork-aarch64-apple-darwin.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/pitchfork/.github/workflows/release.yml"
+repository_ids = { repository = "899500793" }
 
 [tools.pitchfork."platforms.windows-x64"]
 checksum = "sha256:8482df89cda241689326172ba652556fa33839475d9b18c62eb71f95e9d93624"
 url = "https://github.com/jdx/pitchfork/releases/download/v2.32.2/pitchfork-x86_64-pc-windows-msvc.zip"
 signer = "sigstore-oidc:https://github.com/jdx/pitchfork/.github/workflows/release.yml"
+repository_ids = { repository = "899500793" }
 
 [[tools.pkl]]
 version = "0.32.2"

@@ -42,7 +42,7 @@ import type {
 } from '../../generated/site/types.gen.ts'
 import { canManage, useCurrentRole } from '../../hooks/useCurrentRole.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
-import { AUDIT_TARGET_INTEGRATION } from './auditFilter.ts'
+import { AUDIT_TARGET_INTEGRATION } from '../../utils/auditFilter.ts'
 import { ChangeHistoryLink } from './AuditLogSection.tsx'
 import { InboundModal } from './InboundModal.tsx'
 import { NO_LIMITS, toLimit, useSendLimitValidators } from './sendLimit.ts'

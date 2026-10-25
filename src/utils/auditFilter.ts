@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { zSiteAuditActorKind } from '../../generated/site/zod.gen.ts'
+import { zSiteAuditActorKind } from '../generated/site/zod.gen.ts'
 
 // The Audit log filter lives in the settings route's search, so a Change history link
 // (and a reload) opens the log already narrowed. Every field is optional text; `from`

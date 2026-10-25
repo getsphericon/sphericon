@@ -37,9 +37,9 @@ import { useNotify } from '../../hooks/useNotify.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as auditLogRoute } from '../../routes/workspaces/$workspaceId/settings/audit-log.tsx'
 import { hasErrorStatus } from '../../utils/apiErrors.ts'
+import { auditQuery } from '../../utils/auditFilter.ts'
+import type { AuditFilter } from '../../utils/auditFilter.ts'
 import { formatDateTime } from '../../utils/datetime.ts'
-import { auditQuery } from './auditFilter.ts'
-import type { AuditFilter } from './auditFilter.ts'
 
 const PAGE_SIZE = 25
 // The API answers 402 without an Enterprise license and 403 to a plain member; in both

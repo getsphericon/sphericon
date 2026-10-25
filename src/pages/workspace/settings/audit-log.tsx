@@ -2,7 +2,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
 import { Route as auditLogRoute } from '../../../routes/workspaces/$workspaceId/settings/audit-log.tsx'
-import type { AuditFilter } from '../auditFilter.ts'
+import type { AuditFilter } from '../../../utils/auditFilter.ts'
 import { AuditLogSection } from '../AuditLogSection.tsx'
 import { SettingsFrame } from './SettingsFrame.tsx'
 

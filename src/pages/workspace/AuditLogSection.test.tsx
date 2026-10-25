@@ -11,7 +11,7 @@ import type { SiteAuditEntryResource } from '../../generated/site/types.gen.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { worker } from '../../test/worker.ts'
-import type { AuditFilter } from './auditFilter.ts'
+import type { AuditFilter } from '../../utils/auditFilter.ts'
 import { AuditLogSection, ChangeHistoryLink } from './AuditLogSection.tsx'
 
 const WORKSPACE_ID = 'TestWs01'

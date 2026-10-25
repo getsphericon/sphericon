@@ -13,6 +13,10 @@
   rebuild the tree by hand. Route guards read the workspaces list through `requireWorkspaces`
   (`src/guards.ts`, the shared query cache) and redirect to `/login` on 401. Tests mount a page with
   `renderWithRouter(ui, routeMount(Route, params))`, which mirrors the route's ancestry.
+- Layers are checked by easement (`easement.yml`, `mise run check:arch`): `src/components`, `hooks`,
+  `layouts`, `resources` and `utils` never import a page; a page never imports a `*.lazy.tsx`;
+  only `*.lazy.tsx` route files import a page; `src/generated` imports nothing
+  of ours. Something a route's search schema needs lives in `src/utils`, not next to its page.
 - Toasts go through `useNotify()` (`src/hooks/useNotify.ts`), never Mantine's global `notifications`
   (lint refuses it): a `NotificationsProvider` owns one store per mount, and `renderWithProviders`
   mounts its own, so no test needs to clean toasts up. `renderWithProviders` also sets Mantine

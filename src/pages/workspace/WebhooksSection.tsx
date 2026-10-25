@@ -41,7 +41,7 @@ import type {
 } from '../../generated/site/types.gen.ts'
 import { useConfirmation } from '../../hooks/useConfirmation.tsx'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
-import { AUDIT_TARGET_WEBHOOK_ENDPOINT } from './auditFilter.ts'
+import { AUDIT_TARGET_WEBHOOK_ENDPOINT } from '../../utils/auditFilter.ts'
 import { ChangeHistoryLink } from './AuditLogSection.tsx'
 
 // The domain events an endpoint can subscribe to. An empty selection means all customer
