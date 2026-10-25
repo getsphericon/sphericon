@@ -20,11 +20,18 @@ import {
   IconUsers,
   IconUsersGroup,
 } from '@tabler/icons-react'
-import { useMatchRoute } from '@tanstack/react-router'
+import { useMatchRoute, useSearch } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { Route as analyticsRoute } from '../routes/workspaces/$workspaceId/analytics/route.tsx'
+import { zSiteAnalyticsRange } from '../generated/site/zod.gen.ts'
+import { Route as clicksByLinkRoute } from '../routes/workspaces/$workspaceId/analytics/clicks-by-link.tsx'
+import { Route as emailMetricsRoute } from '../routes/workspaces/$workspaceId/analytics/email-metrics.tsx'
+import { Route as eventsRoute } from '../routes/workspaces/$workspaceId/analytics/events.tsx'
+import { Route as newPeopleRoute } from '../routes/workspaces/$workspaceId/analytics/new-people.tsx'
+import { Route as opensByHourRoute } from '../routes/workspaces/$workspaceId/analytics/opens-by-hour.tsx'
+import { Route as recentActivityRoute } from '../routes/workspaces/$workspaceId/analytics/recent-activity.tsx'
+import { Route as subscribedPeopleRoute } from '../routes/workspaces/$workspaceId/analytics/subscribed-people.tsx'
 import { Route as automationsRoute } from '../routes/workspaces/$workspaceId/automations/index.tsx'
 import { Route as brandKitRoute } from '../routes/workspaces/$workspaceId/brand-kit.tsx'
 import { Route as broadcastsRoute } from '../routes/workspaces/$workspaceId/broadcasts/index.tsx'
@@ -45,6 +52,8 @@ import { NavLinkLink } from './RouterLink.tsx'
 export function AppNavbar({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
   const matchRoute = useMatchRoute()
+  // The analytics window rides along from one report to the next; outside analytics it is the default.
+  const range = zSiteAnalyticsRange.catch('30d').parse(useSearch({ strict: false }).range)
 
   const link = ({
     route,
@@ -110,6 +119,17 @@ export function AppNavbar({ workspaceId }: { workspaceId: string }) {
     { label: t(($) => $.nav.banners), icon: <IconBell size={18} /> },
   ]
 
+  // The reports, grouped by what they measure; every link carries the chosen window.
+  const reports = [
+    { route: newPeopleRoute, label: t(($) => $.analytics.nav.newPeople) },
+    { route: subscribedPeopleRoute, label: t(($) => $.analytics.nav.subscribedPeople) },
+    { route: emailMetricsRoute, label: t(($) => $.analytics.nav.emailMetrics) },
+    { route: clicksByLinkRoute, label: t(($) => $.analytics.nav.clicksByLink) },
+    { route: opensByHourRoute, label: t(($) => $.analytics.nav.opensByHour) },
+    { route: eventsRoute, label: t(($) => $.analytics.nav.events) },
+    { route: recentActivityRoute, label: t(($) => $.analytics.nav.recentActivity) },
+  ]
+
   return (
     <Stack gap="xs">
       {link({
@@ -150,11 +170,21 @@ export function AppNavbar({ workspaceId }: { workspaceId: string }) {
           />
         ))}
       </NavLink>
-      {link({
-        route: analyticsRoute,
-        label: t(($) => $.nav.analytics),
-        icon: <IconChartBar size={18} />,
-      })}
+      <NavLink
+        label={t(($) => $.nav.analytics)}
+        leftSection={<IconChartBar size={18} />}
+        defaultOpened={viewing(reports)}
+      >
+        {reports.map((item) => (
+          <NavLinkLink
+            key={item.route.to}
+            to={item.route.to}
+            params={{ workspaceId }}
+            search={{ range }}
+            label={item.label}
+          />
+        ))}
+      </NavLink>
       {link({
         route: settingsRoute,
         label: t(($) => $.nav.settings),

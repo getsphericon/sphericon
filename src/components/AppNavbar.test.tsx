@@ -1,6 +1,12 @@
 import { expect, test } from 'vitest'
 
-import { Route as analyticsRoute } from '../routes/workspaces/$workspaceId/analytics/route.tsx'
+import { Route as clicksByLinkRoute } from '../routes/workspaces/$workspaceId/analytics/clicks-by-link.tsx'
+import { Route as emailMetricsRoute } from '../routes/workspaces/$workspaceId/analytics/email-metrics.tsx'
+import { Route as eventsRoute } from '../routes/workspaces/$workspaceId/analytics/events.tsx'
+import { Route as newPeopleRoute } from '../routes/workspaces/$workspaceId/analytics/new-people.tsx'
+import { Route as opensByHourRoute } from '../routes/workspaces/$workspaceId/analytics/opens-by-hour.tsx'
+import { Route as recentActivityRoute } from '../routes/workspaces/$workspaceId/analytics/recent-activity.tsx'
+import { Route as subscribedPeopleRoute } from '../routes/workspaces/$workspaceId/analytics/subscribed-people.tsx'
 import { Route as automationsRoute } from '../routes/workspaces/$workspaceId/automations/index.tsx'
 import { Route as brandKitRoute } from '../routes/workspaces/$workspaceId/brand-kit.tsx'
 import { Route as broadcastsRoute } from '../routes/workspaces/$workspaceId/broadcasts/index.tsx'
@@ -19,7 +25,6 @@ import { AppNavbar } from './AppNavbar.tsx'
 
 const SECTIONS = [
   ['Overview', overviewRoute],
-  ['Analytics', analyticsRoute],
   ['Settings', settingsRoute],
 ] as const
 
@@ -43,6 +48,18 @@ const EMAIL_SECTIONS = [
 const WORKFLOW_SECTIONS = [
   ['Automations', automationsRoute],
   ['Rules', rulesRoute],
+] as const
+
+// Under the Analytics group, which is closed until one of its reports is viewed. Every link
+// carries the analytics window, the default one outside the section.
+const ANALYTICS_SECTIONS = [
+  ['New people', newPeopleRoute],
+  ['Subscribed people', subscribedPeopleRoute],
+  ['Email metrics', emailMetricsRoute],
+  ['Clicks by link', clicksByLinkRoute],
+  ['Opens by hour', opensByHourRoute],
+  ['Events', eventsRoute],
+  ['Recent activity', recentActivityRoute],
 ] as const
 
 test.each(SECTIONS)('%s links to its workspace-scoped route', async (label, target) => {
@@ -78,6 +95,36 @@ test.each(WORKFLOW_SECTIONS)('%s links to its workspace-scoped route', async (la
   await expect
     .element(screen.getByRole('link', { name: label, exact: true }))
     .toHaveAttribute('href', routeMount(target, { workspaceId: 'AcmeWs01' }).initialPath)
+})
+
+test.each(ANALYTICS_SECTIONS)(
+  '%s links to its report in the default window',
+  async (label, target) => {
+    const { screen } = await renderWithRouter(<AppNavbar workspaceId="AcmeWs01" />)
+    await screen.getByText('Analytics', { exact: true }).click()
+
+    await expect
+      .element(screen.getByRole('link', { name: label, exact: true }))
+      .toHaveAttribute(
+        'href',
+        `${routeMount(target, { workspaceId: 'AcmeWs01' }).initialPath}?range=30d`,
+      )
+  },
+)
+
+test('the analytics group is open on one of its reports, and keeps the chosen window', async () => {
+  const { initialPath, ...rest } = routeMount(newPeopleRoute, { workspaceId: 'AcmeWs01' })
+  const { screen } = await renderWithRouter(<AppNavbar workspaceId="AcmeWs01" />, {
+    ...rest,
+    initialPath: `${initialPath}?range=7d`,
+  })
+
+  await expect
+    .element(screen.getByRole('link', { name: 'Email metrics', exact: true }))
+    .toHaveAttribute(
+      'href',
+      `${routeMount(emailMetricsRoute, { workspaceId: 'AcmeWs01' }).initialPath}?range=7d`,
+    )
 })
 
 test('only the section being viewed is current, the overview not on a page under it', async () => {

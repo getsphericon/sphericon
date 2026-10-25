@@ -146,16 +146,13 @@ export default interface Resources {
       },
       "loadError": "Failed to load analytics",
       "nav": {
-        "audience": "Audience",
         "clicksByLink": "Clicks by link",
-        "email": "Email",
         "emailMetrics": "Email metrics",
         "events": "Events",
         "newPeople": "New people",
         "opensByHour": "Opens by hour",
         "recentActivity": "Recent activity",
-        "subscribedPeople": "Subscribed people",
-        "tracking": "Tracking"
+        "subscribedPeople": "Subscribed people"
       },
       "newPeople": {
         "empty": "No new people in this window",
