@@ -61,3 +61,32 @@
   workspace_id: 1
   created_at: '{{daysAgo 6}}'
   updated_at: '{{daysAgo 6}}'
+# Umbrella's two expired ones: older than the seven-day window the purge job applies.
+- id: 5 # fixture: CapturedMessageUmbrellaExpiredOne
+  integration_id: 911
+  surface: transactional
+  recipient: sam@umbrella.test
+  from_email: hello@umbrella.test
+  subject: Old hello from Umbrella
+  html: '<p>Old.</p>'
+  text: 'Old.'
+  headers: '[]'
+  links: '[]'
+  from_unverified: true
+  workspace_id: 4
+  created_at: '{{daysAgo 10}}'
+  updated_at: '{{daysAgo 10}}'
+- id: 6 # fixture: CapturedMessageUmbrellaExpiredTwo
+  integration_id: 911
+  surface: transactional
+  recipient: sam@umbrella.test
+  from_email: hello@umbrella.test
+  subject: Older hello from Umbrella
+  html: '<p>Older.</p>'
+  text: 'Older.'
+  headers: '[]'
+  links: '[]'
+  from_unverified: true
+  workspace_id: 4
+  created_at: '{{daysAgo 9}}'
+  updated_at: '{{daysAgo 9}}'

@@ -834,8 +834,12 @@ func registerMessaging(injector do.Injector, o options) {
 
 	// The Test inbox keeps its messages here; the resolver binds it to a Workspace and an
 	// Integration, and the site API reads it.
-	do.Provide(injector, func(do.Injector) (*capturedmessages.Module, error) {
-		return capturedmessages.New(), nil
+	do.Provide(injector, func(i do.Injector) (*capturedmessages.Module, error) {
+		cfg, err := do.Invoke[*config.Config](i)
+		if err != nil {
+			return nil, err
+		}
+		return capturedmessages.New(cfg.TestInboxMaxMessages), nil
 	})
 
 	do.Provide(injector, func(i do.Injector) (*systemSender, error) {
@@ -1039,7 +1043,7 @@ func registerJobs(injector do.Injector) {
 			return nil, err
 		}
 		jc, err := jobs.NewClient(pool.DB, client.Client, sender.Module, cipher, bus.Bus, sys.EmailSender, lookup.TXTLookup, trackingVerifier(cfg, bus.Bus), catalog, cfg.AppURL, cfg.OutboundAllow, detector,
-			jobs.Retention{OutboxFloor: cfg.OutboxFloor, Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention},
+			jobs.Retention{OutboxFloor: cfg.OutboxFloor, Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention, CapturedMessages: cfg.TestInboxRetention},
 			edition.Jobs(bus.Bus, sys.EmailSender), edition.ExportJobs(cfg.EventsRetention), inst.Jobs(), reporter.Jobs())
 		if err != nil {
 			return nil, err

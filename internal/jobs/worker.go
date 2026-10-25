@@ -67,6 +67,9 @@ type Retention struct {
 	// UnverifiedUsers is the age past which an Unverified User with no Membership is
 	// deleted (0 disables; ADR 0030).
 	UnverifiedUsers time.Duration
+	// CapturedMessages is the age past which a Test inbox's Captured message is deleted
+	// (0 disables; ADR 0058).
+	CapturedMessages time.Duration
 }
 
 // NewClient builds the river client with all workers registered. Workers carry
@@ -127,6 +130,7 @@ func NewClient(riverDB *sql.DB, entClient *ent.Client, mod *outbound.Module, cip
 	river.AddWorker(workers, &PruneOutboxWorker{ent: entClient, floor: retention.OutboxFloor})
 	river.AddWorker(workers, &RefreshPrivateRelayWorker{ranges: ranges})
 	river.AddWorker(workers, &PruneEventsWorker{ent: entClient, retention: retention.Events})
+	river.AddWorker(workers, &PruneCapturedMessagesWorker{ent: entClient, retention: retention.CapturedMessages})
 	river.AddWorker(workers, &PruneUnverifiedUsersWorker{accounts: accounts.New(entClient, bus), retention: retention.UnverifiedUsers})
 	river.AddWorker(workers, &PrunePasskeyChallengesWorker{ent: entClient, now: time.Now})
 	river.AddWorker(workers, &EraseWorkspacesWorker{deletion: workspacedeletion.New(entClient, bus), now: time.Now})
@@ -261,6 +265,14 @@ func newRiverConfig(workers *river.Workers, logger *slog.Logger, extra ...*river
 				dailyAtUTC{hour: unverifiedUsersHourUTC},
 				func() (river.JobArgs, *river.InsertOpts) {
 					return PruneUnverifiedUsersArgs{}, nil
+				},
+				nil,
+			),
+			// Delete Captured messages past the Test inbox's retention window daily at 06:00 UTC (ADR 0058).
+			river.NewPeriodicJob(
+				dailyAtUTC{hour: capturedMessagesHourUTC},
+				func() (river.JobArgs, *river.InsertOpts) {
+					return PruneCapturedMessagesArgs{}, nil
 				},
 				nil,
 			),

@@ -206,6 +206,35 @@ func TestConfigLoadUnverifiedUserRetention(t *testing.T) {
 	require.Error(t, err, "a negative retention must be rejected")
 }
 
+func TestConfigLoadTestInboxSettings(t *testing.T) {
+	t.Setenv("DATABASE_URL", "postgres://x")
+	cfg, err := Load("test")
+	require.NoError(t, err)
+	require.Equal(t, 7*24*time.Hour, cfg.TestInboxRetention, "default retention is 7 days")
+	require.Equal(t, 200, cfg.TestInboxMaxMessages, "default number kept is 200")
+
+	t.Setenv("SPHERICON_TEST_INBOX_RETENTION_DAYS", "2")
+	t.Setenv("SPHERICON_TEST_INBOX_MAX_MESSAGES", "50")
+	cfg, err = Load("test")
+	require.NoError(t, err)
+	require.Equal(t, 2*24*time.Hour, cfg.TestInboxRetention)
+	require.Equal(t, 50, cfg.TestInboxMaxMessages)
+}
+
+func TestConfigLoadRejectsATestInboxThatKeepsNothing(t *testing.T) {
+	t.Setenv("DATABASE_URL", "postgres://x")
+	for name, value := range map[string]string{
+		"SPHERICON_TEST_INBOX_RETENTION_DAYS": "0",
+		"SPHERICON_TEST_INBOX_MAX_MESSAGES":   "0",
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Setenv(name, value)
+			_, err := Load("test")
+			require.ErrorContains(t, err, name)
+		})
+	}
+}
+
 type addrCase struct {
 	name string
 	port string

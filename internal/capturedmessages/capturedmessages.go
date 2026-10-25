@@ -9,6 +9,7 @@ package capturedmessages
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/samber/lo"
 
@@ -20,21 +21,25 @@ import (
 	"github.com/getsphericon/sphericon/internal/suppression"
 )
 
-// Module is stateless: the Workspace comes with each call.
-type Module struct{}
+// Module holds the one setting a capture needs: how many Captured messages a Workspace keeps. The
+// Workspace comes with each call.
+type Module struct {
+	kept int
+}
 
-// New builds the module.
-func New() *Module { return &Module{} }
+// New builds the module; a Workspace keeps its newest `kept` Captured messages (at least one).
+func New(kept int) *Module { return &Module{kept: max(kept, 1)} }
 
 // Capturer is the messaging.Capturer of one Workspace's Test inbox: what it is sent is kept as
 // a Captured message owned by that Workspace and Integration.
 func (m *Module) Capturer(s *ent.Scoped, integrationID int64) messaging.Capturer {
-	return capturer{s: s, integrationID: integrationID}
+	return capturer{s: s, integrationID: integrationID, kept: m.kept}
 }
 
 type capturer struct {
 	s             *ent.Scoped
 	integrationID int64
+	kept          int
 }
 
 // Capture keeps the message. The From is flagged when it is not on a verified Sending domain of
@@ -75,7 +80,62 @@ func (c capturer) Capture(ctx context.Context, captured messaging.Captured) erro
 	if err := create.Exec(ctx); err != nil {
 		return fmt.Errorf("capturedmessages: keep message: %w", err)
 	}
+	return c.trim(ctx)
+}
+
+// trim deletes what lies beyond the newest `kept` messages of the Workspace. It runs after the
+// insert has committed, as a statement of its own: concurrent captures each insert and then trim, and
+// whichever trim runs last started after every insert had committed, so it sees them all and the
+// Workspace ends at the cap. (Holding a lock instead would serialize every send through a Test inbox.)
+// A capture inside a wider transaction would lose that guarantee, so none runs in one.
+func (c capturer) trim(ctx context.Context) error {
+	edge, err := c.s.CapturedMessage().Query().
+		Order(ent.Desc(capturedmessage.FieldCreatedAt), ent.Desc(capturedmessage.FieldID)).
+		Offset(c.kept - 1).First(ctx)
+	if ent.IsNotFound(err) {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("capturedmessages: find the cap: %w", err)
+	}
+	// The kept-th newest message is the oldest one kept: everything sorting before it goes.
+	_, err = c.s.CapturedMessage().Delete().Where(capturedmessage.Or(
+		capturedmessage.CreatedAtLT(edge.CreatedAt),
+		capturedmessage.And(capturedmessage.CreatedAt(edge.CreatedAt), capturedmessage.IDLT(edge.ID)),
+	)).Exec(ctx)
+	if err != nil {
+		return fmt.Errorf("capturedmessages: trim to the newest %d: %w", c.kept, err)
+	}
 	return nil
+}
+
+// Purge deletes the Captured messages of every Workspace that are older than retention, in batches
+// of batch rows so a large backlog never holds a long lock, and returns how many went. It is
+// Instance-wide, so it takes the raw client; a retention of zero or less deletes nothing.
+func Purge(ctx context.Context, client *ent.Client, retention time.Duration, batch int) (int64, error) {
+	if retention <= 0 {
+		return 0, nil
+	}
+	cutoff := time.Now().Add(-retention)
+	var total int64
+	for {
+		ids, err := client.CapturedMessage.Query().
+			Where(capturedmessage.CreatedAtLT(cutoff)).
+			Order(capturedmessage.ByID()).
+			Limit(batch).
+			IDs(ctx)
+		if err != nil {
+			return total, fmt.Errorf("capturedmessages: find expired: %w", err)
+		}
+		if len(ids) == 0 {
+			return total, nil
+		}
+		n, err := client.CapturedMessage.Delete().Where(capturedmessage.IDIn(ids...)).Exec(ctx)
+		if err != nil {
+			return total, fmt.Errorf("capturedmessages: purge expired: %w", err)
+		}
+		total += int64(n)
+	}
 }
 
 // List returns one page of the Workspace's Captured messages, newest first.

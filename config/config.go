@@ -166,7 +166,13 @@ type Config struct {
 	// UnverifiedUserRetention is the age past which an Unverified User with no Membership
 	// is deleted (SPHERICON_UNVERIFIED_USER_RETENTION_DAYS, default 7, 0 disables; ADR 0030).
 	UnverifiedUserRetention time.Duration
-	DBPool                  DBPool
+	// TestInboxRetention is how long a Test inbox keeps a Captured message
+	// (SPHERICON_TEST_INBOX_RETENTION_DAYS, default 7, at least 1; ADR 0058).
+	TestInboxRetention time.Duration
+	// TestInboxMaxMessages is how many Captured messages a Workspace keeps, the newest ones
+	// (SPHERICON_TEST_INBOX_MAX_MESSAGES, default 200, at least 1; ADR 0058).
+	TestInboxMaxMessages int
+	DBPool               DBPool
 	// IsDev is true for non-production envs (development/test). Used to relax
 	// production-only behaviour locally — e.g. the sending-domain DKIM re-check
 	// trusts seeded domains instead of hitting real DNS (ADR 0010).
@@ -347,6 +353,8 @@ type environment struct {
 	EventsRetentionDays         int `env:"SPHERICON_EVENTS_RETENTION_DAYS" envDefault:"400"`
 	UnverifiedUserRetentionDays int `env:"SPHERICON_UNVERIFIED_USER_RETENTION_DAYS" envDefault:"7"`
 	EventLiveWindowHours        int `env:"SPHERICON_EVENT_LIVE_WINDOW_HOURS" envDefault:"72"`
+	TestInboxRetentionDays      int `env:"SPHERICON_TEST_INBOX_RETENTION_DAYS" envDefault:"7"`
+	TestInboxMaxMessages        int `env:"SPHERICON_TEST_INBOX_MAX_MESSAGES" envDefault:"200"`
 
 	DBMaxOpenConns    int           `env:"SPHERICON_DB_MAX_OPEN_CONNS" envDefault:"15"`
 	DBMaxIdleConns    *int          `env:"SPHERICON_DB_MAX_IDLE_CONNS"`
@@ -539,6 +547,8 @@ func Load(envName string) (*Config, error) {
 		EventsRetention:         time.Duration(e.EventsRetentionDays) * 24 * time.Hour,
 		EventLiveWindow:         time.Duration(e.EventLiveWindowHours) * time.Hour,
 		UnverifiedUserRetention: time.Duration(e.UnverifiedUserRetentionDays) * 24 * time.Hour,
+		TestInboxRetention:      time.Duration(e.TestInboxRetentionDays) * 24 * time.Hour,
+		TestInboxMaxMessages:    e.TestInboxMaxMessages,
 		IsDev:                   isDevEnv(envName),
 		SMTPAllowPrivateHosts:   e.SMTPAllowPrivateHosts,
 		OutboundAllow:           outboundAllow,
@@ -801,6 +811,8 @@ func (c *Config) requirements() []requirement {
 		{c.EventsRetention >= 0, "SPHERICON_EVENTS_RETENTION_DAYS must not be negative"},
 		{c.EventLiveWindow >= time.Hour, "SPHERICON_EVENT_LIVE_WINDOW_HOURS must be at least 1"},
 		{c.UnverifiedUserRetention >= 0, "SPHERICON_UNVERIFIED_USER_RETENTION_DAYS must not be negative"},
+		{c.TestInboxRetention >= 24*time.Hour, "SPHERICON_TEST_INBOX_RETENTION_DAYS must be at least 1"},
+		{c.TestInboxMaxMessages >= 1, "SPHERICON_TEST_INBOX_MAX_MESSAGES must be at least 1"},
 		{pool.MaxOpenConns > 0, "SPHERICON_DB_MAX_OPEN_CONNS must be positive"},
 		{pool.MaxIdleConns >= 0 && pool.MaxIdleConns <= pool.MaxOpenConns, "SPHERICON_DB_MAX_IDLE_CONNS must be between 0 and SPHERICON_DB_MAX_OPEN_CONNS"},
 		{pool.ConnMaxLifetime > 0, "SPHERICON_DB_CONN_MAX_LIFETIME must be positive"},

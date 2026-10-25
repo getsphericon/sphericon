@@ -351,7 +351,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	// synchronously against capturing senders, so tests assert the real effect.
 	systemMail := &CapturingSender{}
 	customerMail := &CapturingSender{}
-	capturedModule := capturedmessages.New()
+	capturedModule := capturedmessages.New(cfg.TestInboxMaxMessages)
 	// stubTXT keeps sending-domain verification off real DNS: every lookup is
 	// NXDOMAIN, so an inline verify deterministically resolves to "not published".
 	var stubTXT sending.TXTLookup = func(context.Context, string) ([]string, error) {

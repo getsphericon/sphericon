@@ -80,6 +80,10 @@ func NewPruneUnverifiedUsersWorker(acc *accounts.Accounts, retention time.Durati
 	return &PruneUnverifiedUsersWorker{accounts: acc, retention: retention}
 }
 
+func NewPruneCapturedMessagesWorker(client *ent.Client, retention time.Duration) *PruneCapturedMessagesWorker {
+	return &PruneCapturedMessagesWorker{ent: client, retention: retention}
+}
+
 func NewRefreshPrivateRelayWorker(ranges *machine.Detector) *RefreshPrivateRelayWorker {
 	return &RefreshPrivateRelayWorker{ranges: ranges}
 }

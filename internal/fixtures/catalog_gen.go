@@ -391,6 +391,14 @@ const (
 	CapturedMessageGlobexWelcomeID = 1
 	// CapturedMessageGlobexWelcomeSubject is from fixtures/captured_messages.
 	CapturedMessageGlobexWelcomeSubject = "Welcome to Globex"
+	// CapturedMessageUmbrellaExpiredOneID is from fixtures/captured_messages.
+	CapturedMessageUmbrellaExpiredOneID = 5
+	// CapturedMessageUmbrellaExpiredOneSubject is from fixtures/captured_messages.
+	CapturedMessageUmbrellaExpiredOneSubject = "Old hello from Umbrella"
+	// CapturedMessageUmbrellaExpiredTwoID is from fixtures/captured_messages.
+	CapturedMessageUmbrellaExpiredTwoID = 6
+	// CapturedMessageUmbrellaExpiredTwoSubject is from fixtures/captured_messages.
+	CapturedMessageUmbrellaExpiredTwoSubject = "Older hello from Umbrella"
 	// CapturedMessageUmbrellaID is from fixtures/captured_messages.
 	CapturedMessageUmbrellaID = 3
 	// CapturedMessageUmbrellaSubject is from fixtures/captured_messages.
