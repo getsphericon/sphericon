@@ -108,8 +108,8 @@ func encodeBroadcastsScheduleRequest(
 	return nil
 }
 
-func encodeBroadcastsSetAudienceRequest(
-	req *SetBroadcastAudienceInput,
+func encodeBroadcastsSetSegmentRequest(
+	req *SetBroadcastSegmentInput,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"

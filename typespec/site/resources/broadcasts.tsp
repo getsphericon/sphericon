@@ -116,7 +116,7 @@ model SiteBroadcastResource {
   /** Warnings of the lint over the stored content (ADR 0040); set on the response of a save, never blocks it */
   warnings?: LintFinding[];
 
-  /** Target segment; null means all active contacts */
+  /** Target segment; null means all contacts */
   segmentId?: EntityId | null;
 
   /** Sending integration; null means the workspace default */
@@ -175,7 +175,7 @@ model SiteCreateBroadcastInput {
    * body from it in the same save; a document that cannot be rendered is a 422. */
   doc?: Record<unknown>;
 
-  /** Target segment; null/omitted means all active contacts */
+  /** Target segment; null/omitted means all contacts */
   segmentId?: EntityId | null;
 
   /** Sending integration; null/omitted means the workspace default */
@@ -203,7 +203,7 @@ model SiteUpdateBroadcastInput {
    * body from it in the same save; a document that cannot be rendered is a 422. */
   doc?: Record<unknown>;
 
-  /** Target segment; null means all active contacts */
+  /** Target segment; null means all contacts */
   segmentId?: EntityId | null;
 
   /** Sending integration; null means the workspace default */

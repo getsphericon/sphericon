@@ -6295,17 +6295,17 @@ func (s *BroadcastsScheduleUnprocessableEntity) UnmarshalJSON(data []byte) error
 	return s.Decode(d)
 }
 
-// Encode encodes BroadcastsSetAudienceBadRequest as json.
-func (s *BroadcastsSetAudienceBadRequest) Encode(e *jx.Encoder) {
+// Encode encodes BroadcastsSetSegmentBadRequest as json.
+func (s *BroadcastsSetSegmentBadRequest) Encode(e *jx.Encoder) {
 	unwrapped := (*ProblemDetails)(s)
 
 	unwrapped.Encode(e)
 }
 
-// Decode decodes BroadcastsSetAudienceBadRequest from json.
-func (s *BroadcastsSetAudienceBadRequest) Decode(d *jx.Decoder) error {
+// Decode decodes BroadcastsSetSegmentBadRequest from json.
+func (s *BroadcastsSetSegmentBadRequest) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode BroadcastsSetAudienceBadRequest to nil")
+		return errors.New("invalid: unable to decode BroadcastsSetSegmentBadRequest to nil")
 	}
 	var unwrapped ProblemDetails
 	if err := func() error {
@@ -6316,34 +6316,34 @@ func (s *BroadcastsSetAudienceBadRequest) Decode(d *jx.Decoder) error {
 	}(); err != nil {
 		return errors.Wrap(err, "alias")
 	}
-	*s = BroadcastsSetAudienceBadRequest(unwrapped)
+	*s = BroadcastsSetSegmentBadRequest(unwrapped)
 	return nil
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s *BroadcastsSetAudienceBadRequest) MarshalJSON() ([]byte, error) {
+func (s *BroadcastsSetSegmentBadRequest) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *BroadcastsSetAudienceBadRequest) UnmarshalJSON(data []byte) error {
+func (s *BroadcastsSetSegmentBadRequest) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
 
-// Encode encodes BroadcastsSetAudienceNotFound as json.
-func (s *BroadcastsSetAudienceNotFound) Encode(e *jx.Encoder) {
+// Encode encodes BroadcastsSetSegmentNotFound as json.
+func (s *BroadcastsSetSegmentNotFound) Encode(e *jx.Encoder) {
 	unwrapped := (*ProblemDetails)(s)
 
 	unwrapped.Encode(e)
 }
 
-// Decode decodes BroadcastsSetAudienceNotFound from json.
-func (s *BroadcastsSetAudienceNotFound) Decode(d *jx.Decoder) error {
+// Decode decodes BroadcastsSetSegmentNotFound from json.
+func (s *BroadcastsSetSegmentNotFound) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode BroadcastsSetAudienceNotFound to nil")
+		return errors.New("invalid: unable to decode BroadcastsSetSegmentNotFound to nil")
 	}
 	var unwrapped ProblemDetails
 	if err := func() error {
@@ -6354,34 +6354,34 @@ func (s *BroadcastsSetAudienceNotFound) Decode(d *jx.Decoder) error {
 	}(); err != nil {
 		return errors.Wrap(err, "alias")
 	}
-	*s = BroadcastsSetAudienceNotFound(unwrapped)
+	*s = BroadcastsSetSegmentNotFound(unwrapped)
 	return nil
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s *BroadcastsSetAudienceNotFound) MarshalJSON() ([]byte, error) {
+func (s *BroadcastsSetSegmentNotFound) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *BroadcastsSetAudienceNotFound) UnmarshalJSON(data []byte) error {
+func (s *BroadcastsSetSegmentNotFound) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
 
-// Encode encodes BroadcastsSetAudienceUnauthorized as json.
-func (s *BroadcastsSetAudienceUnauthorized) Encode(e *jx.Encoder) {
+// Encode encodes BroadcastsSetSegmentUnauthorized as json.
+func (s *BroadcastsSetSegmentUnauthorized) Encode(e *jx.Encoder) {
 	unwrapped := (*ProblemDetails)(s)
 
 	unwrapped.Encode(e)
 }
 
-// Decode decodes BroadcastsSetAudienceUnauthorized from json.
-func (s *BroadcastsSetAudienceUnauthorized) Decode(d *jx.Decoder) error {
+// Decode decodes BroadcastsSetSegmentUnauthorized from json.
+func (s *BroadcastsSetSegmentUnauthorized) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode BroadcastsSetAudienceUnauthorized to nil")
+		return errors.New("invalid: unable to decode BroadcastsSetSegmentUnauthorized to nil")
 	}
 	var unwrapped ProblemDetails
 	if err := func() error {
@@ -6392,34 +6392,34 @@ func (s *BroadcastsSetAudienceUnauthorized) Decode(d *jx.Decoder) error {
 	}(); err != nil {
 		return errors.Wrap(err, "alias")
 	}
-	*s = BroadcastsSetAudienceUnauthorized(unwrapped)
+	*s = BroadcastsSetSegmentUnauthorized(unwrapped)
 	return nil
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s *BroadcastsSetAudienceUnauthorized) MarshalJSON() ([]byte, error) {
+func (s *BroadcastsSetSegmentUnauthorized) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *BroadcastsSetAudienceUnauthorized) UnmarshalJSON(data []byte) error {
+func (s *BroadcastsSetSegmentUnauthorized) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
 
-// Encode encodes BroadcastsSetAudienceUnprocessableEntity as json.
-func (s *BroadcastsSetAudienceUnprocessableEntity) Encode(e *jx.Encoder) {
+// Encode encodes BroadcastsSetSegmentUnprocessableEntity as json.
+func (s *BroadcastsSetSegmentUnprocessableEntity) Encode(e *jx.Encoder) {
 	unwrapped := (*ProblemDetails)(s)
 
 	unwrapped.Encode(e)
 }
 
-// Decode decodes BroadcastsSetAudienceUnprocessableEntity from json.
-func (s *BroadcastsSetAudienceUnprocessableEntity) Decode(d *jx.Decoder) error {
+// Decode decodes BroadcastsSetSegmentUnprocessableEntity from json.
+func (s *BroadcastsSetSegmentUnprocessableEntity) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode BroadcastsSetAudienceUnprocessableEntity to nil")
+		return errors.New("invalid: unable to decode BroadcastsSetSegmentUnprocessableEntity to nil")
 	}
 	var unwrapped ProblemDetails
 	if err := func() error {
@@ -6430,19 +6430,19 @@ func (s *BroadcastsSetAudienceUnprocessableEntity) Decode(d *jx.Decoder) error {
 	}(); err != nil {
 		return errors.Wrap(err, "alias")
 	}
-	*s = BroadcastsSetAudienceUnprocessableEntity(unwrapped)
+	*s = BroadcastsSetSegmentUnprocessableEntity(unwrapped)
 	return nil
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s *BroadcastsSetAudienceUnprocessableEntity) MarshalJSON() ([]byte, error) {
+func (s *BroadcastsSetSegmentUnprocessableEntity) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *BroadcastsSetAudienceUnprocessableEntity) UnmarshalJSON(data []byte) error {
+func (s *BroadcastsSetSegmentUnprocessableEntity) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -33588,28 +33588,28 @@ func (s *SesConfigKind) UnmarshalJSON(data []byte) error {
 }
 
 // Encode implements json.Marshaler.
-func (s *SetBroadcastAudienceInput) Encode(e *jx.Encoder) {
+func (s *SetBroadcastSegmentInput) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
 	e.ObjEnd()
 }
 
 // encodeFields encodes fields.
-func (s *SetBroadcastAudienceInput) encodeFields(e *jx.Encoder) {
+func (s *SetBroadcastSegmentInput) encodeFields(e *jx.Encoder) {
 	{
 		e.FieldStart("segmentId")
 		s.SegmentId.Encode(e)
 	}
 }
 
-var jsonFieldsNameOfSetBroadcastAudienceInput = [1]string{
+var jsonFieldsNameOfSetBroadcastSegmentInput = [1]string{
 	0: "segmentId",
 }
 
-// Decode decodes SetBroadcastAudienceInput from json.
-func (s *SetBroadcastAudienceInput) Decode(d *jx.Decoder) error {
+// Decode decodes SetBroadcastSegmentInput from json.
+func (s *SetBroadcastSegmentInput) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode SetBroadcastAudienceInput to nil")
+		return errors.New("invalid: unable to decode SetBroadcastSegmentInput to nil")
 	}
 	var requiredBitSet [1]uint8
 
@@ -33630,7 +33630,7 @@ func (s *SetBroadcastAudienceInput) Decode(d *jx.Decoder) error {
 		}
 		return nil
 	}); err != nil {
-		return errors.Wrap(err, "decode SetBroadcastAudienceInput")
+		return errors.Wrap(err, "decode SetBroadcastSegmentInput")
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
@@ -33647,8 +33647,8 @@ func (s *SetBroadcastAudienceInput) Decode(d *jx.Decoder) error {
 				bitIdx := bits.TrailingZeros8(result)
 				fieldIdx := i*8 + bitIdx
 				var name string
-				if fieldIdx < len(jsonFieldsNameOfSetBroadcastAudienceInput) {
-					name = jsonFieldsNameOfSetBroadcastAudienceInput[fieldIdx]
+				if fieldIdx < len(jsonFieldsNameOfSetBroadcastSegmentInput) {
+					name = jsonFieldsNameOfSetBroadcastSegmentInput[fieldIdx]
 				} else {
 					name = strconv.Itoa(fieldIdx)
 				}
@@ -33669,14 +33669,14 @@ func (s *SetBroadcastAudienceInput) Decode(d *jx.Decoder) error {
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s *SetBroadcastAudienceInput) MarshalJSON() ([]byte, error) {
+func (s *SetBroadcastSegmentInput) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *SetBroadcastAudienceInput) UnmarshalJSON(data []byte) error {
+func (s *SetBroadcastSegmentInput) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

@@ -1809,7 +1809,7 @@ type BroadcastResource struct {
 	Doc OptNilBroadcastResourceDoc `json:"doc"`
 	// Version of the editor that rendered the document; null with it.
 	EditorVersion OptNilString `json:"editorVersion"`
-	// Audience: the Segment this broadcast goes to; null means all active contacts.
+	// Segment this broadcast goes to; null means all contacts.
 	SegmentId OptNilEntityId `json:"segmentId"`
 	// Lifecycle status. Broadcasts created here are always drafts.
 	Status BroadcastStatus `json:"status"`
@@ -1975,14 +1975,14 @@ func (s *BroadcastResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
 
-func (*BroadcastResource) broadcastsArchiveRes()     {}
-func (*BroadcastResource) broadcastsCreateRes()      {}
-func (*BroadcastResource) broadcastsGetRes()         {}
-func (*BroadcastResource) broadcastsScheduleRes()    {}
-func (*BroadcastResource) broadcastsSetAudienceRes() {}
-func (*BroadcastResource) broadcastsUnarchiveRes()   {}
-func (*BroadcastResource) broadcastsUnscheduleRes()  {}
-func (*BroadcastResource) broadcastsUpdateRes()      {}
+func (*BroadcastResource) broadcastsArchiveRes()    {}
+func (*BroadcastResource) broadcastsCreateRes()     {}
+func (*BroadcastResource) broadcastsGetRes()        {}
+func (*BroadcastResource) broadcastsScheduleRes()   {}
+func (*BroadcastResource) broadcastsSetSegmentRes() {}
+func (*BroadcastResource) broadcastsUnarchiveRes()  {}
+func (*BroadcastResource) broadcastsUnscheduleRes() {}
+func (*BroadcastResource) broadcastsUpdateRes()     {}
 
 // The editor's JSON document the body was built from; null when the body was written as HTML.
 type BroadcastResourceDoc map[string]jx.Raw
@@ -2227,21 +2227,21 @@ type BroadcastsScheduleUnprocessableEntity ProblemDetails
 
 func (*BroadcastsScheduleUnprocessableEntity) broadcastsScheduleRes() {}
 
-type BroadcastsSetAudienceBadRequest ProblemDetails
+type BroadcastsSetSegmentBadRequest ProblemDetails
 
-func (*BroadcastsSetAudienceBadRequest) broadcastsSetAudienceRes() {}
+func (*BroadcastsSetSegmentBadRequest) broadcastsSetSegmentRes() {}
 
-type BroadcastsSetAudienceNotFound ProblemDetails
+type BroadcastsSetSegmentNotFound ProblemDetails
 
-func (*BroadcastsSetAudienceNotFound) broadcastsSetAudienceRes() {}
+func (*BroadcastsSetSegmentNotFound) broadcastsSetSegmentRes() {}
 
-type BroadcastsSetAudienceUnauthorized ProblemDetails
+type BroadcastsSetSegmentUnauthorized ProblemDetails
 
-func (*BroadcastsSetAudienceUnauthorized) broadcastsSetAudienceRes() {}
+func (*BroadcastsSetSegmentUnauthorized) broadcastsSetSegmentRes() {}
 
-type BroadcastsSetAudienceUnprocessableEntity ProblemDetails
+type BroadcastsSetSegmentUnprocessableEntity ProblemDetails
 
-func (*BroadcastsSetAudienceUnprocessableEntity) broadcastsSetAudienceRes() {}
+func (*BroadcastsSetSegmentUnprocessableEntity) broadcastsSetSegmentRes() {}
 
 type BroadcastsTestSendBadRequest ProblemDetails
 
@@ -11320,7 +11320,7 @@ func (s *PresetsListOK) SetTotalPages(val int32) {
 
 func (*PresetsListOK) presetsListRes() {}
 
-// Request body for previewing a condition's audience.
+// Request body for previewing a condition's segment.
 // Ref: #/components/schemas/PreviewSegmentInput
 type PreviewSegmentInput struct {
 	// Condition; absent means all contacts.
@@ -11722,7 +11722,7 @@ func (*ProblemDetailsHeaders) broadcastsGetRes()             {}
 func (*ProblemDetailsHeaders) broadcastsListRes()            {}
 func (*ProblemDetailsHeaders) broadcastsReportRes()          {}
 func (*ProblemDetailsHeaders) broadcastsScheduleRes()        {}
-func (*ProblemDetailsHeaders) broadcastsSetAudienceRes()     {}
+func (*ProblemDetailsHeaders) broadcastsSetSegmentRes()      {}
 func (*ProblemDetailsHeaders) broadcastsTestSendRes()        {}
 func (*ProblemDetailsHeaders) broadcastsUnarchiveRes()       {}
 func (*ProblemDetailsHeaders) broadcastsUnscheduleRes()      {}
@@ -14133,20 +14133,20 @@ func (s *SesConfigKind) UnmarshalText(data []byte) error {
 	}
 }
 
-// Request body for setting a broadcast's audience.
-// Ref: #/components/schemas/SetBroadcastAudienceInput
-type SetBroadcastAudienceInput struct {
-	// The Segment to send to; null means all active contacts.
+// Request body for setting a broadcast's Segment.
+// Ref: #/components/schemas/SetBroadcastSegmentInput
+type SetBroadcastSegmentInput struct {
+	// The Segment to send to; null means all contacts.
 	SegmentId NilEntityId `json:"segmentId"`
 }
 
 // GetSegmentId returns the value of SegmentId.
-func (s *SetBroadcastAudienceInput) GetSegmentId() NilEntityId {
+func (s *SetBroadcastSegmentInput) GetSegmentId() NilEntityId {
 	return s.SegmentId
 }
 
 // SetSegmentId sets the value of SegmentId.
-func (s *SetBroadcastAudienceInput) SetSegmentId(val NilEntityId) {
+func (s *SetBroadcastSegmentInput) SetSegmentId(val NilEntityId) {
 	s.SegmentId = val
 }
 

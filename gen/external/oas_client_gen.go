@@ -169,12 +169,12 @@ type Invoker interface {
 	//
 	// POST /broadcasts/{id}/schedule
 	BroadcastsSchedule(ctx context.Context, request *ScheduleBroadcastInput, params BroadcastsScheduleParams) (BroadcastsScheduleRes, error)
-	// BroadcastsSetAudience invokes Broadcasts_setAudience operation.
+	// BroadcastsSetSegment invokes Broadcasts_setSegment operation.
 	//
-	// Set the audience of a draft broadcast: a Segment, or null for all active contacts. Does not send.
+	// Set the Segment of a draft broadcast, or null for all contacts. Does not send.
 	//
-	// PUT /broadcasts/{id}/audience
-	BroadcastsSetAudience(ctx context.Context, request *SetBroadcastAudienceInput, params BroadcastsSetAudienceParams) (BroadcastsSetAudienceRes, error)
+	// PUT /broadcasts/{id}/segment
+	BroadcastsSetSegment(ctx context.Context, request *SetBroadcastSegmentInput, params BroadcastsSetSegmentParams) (BroadcastsSetSegmentRes, error)
 	// BroadcastsTestSend invokes Broadcasts_testSend operation.
 	//
 	// Send a rendered preview with sample merge data to a single address. Never sends to the audience.
@@ -4058,21 +4058,21 @@ func (c *Client) sendBroadcastsSchedule(ctx context.Context, request *ScheduleBr
 	return result, nil
 }
 
-// BroadcastsSetAudience invokes Broadcasts_setAudience operation.
+// BroadcastsSetSegment invokes Broadcasts_setSegment operation.
 //
-// Set the audience of a draft broadcast: a Segment, or null for all active contacts. Does not send.
+// Set the Segment of a draft broadcast, or null for all contacts. Does not send.
 //
-// PUT /broadcasts/{id}/audience
-func (c *Client) BroadcastsSetAudience(ctx context.Context, request *SetBroadcastAudienceInput, params BroadcastsSetAudienceParams) (BroadcastsSetAudienceRes, error) {
-	res, err := c.sendBroadcastsSetAudience(ctx, request, params)
+// PUT /broadcasts/{id}/segment
+func (c *Client) BroadcastsSetSegment(ctx context.Context, request *SetBroadcastSegmentInput, params BroadcastsSetSegmentParams) (BroadcastsSetSegmentRes, error) {
+	res, err := c.sendBroadcastsSetSegment(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendBroadcastsSetAudience(ctx context.Context, request *SetBroadcastAudienceInput, params BroadcastsSetAudienceParams) (res BroadcastsSetAudienceRes, err error) {
+func (c *Client) sendBroadcastsSetSegment(ctx context.Context, request *SetBroadcastSegmentInput, params BroadcastsSetSegmentParams) (res BroadcastsSetSegmentRes, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("Broadcasts_setAudience"),
+		otelogen.OperationID("Broadcasts_setSegment"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
-		semconv.URLTemplateKey.String("/broadcasts/{id}/audience"),
+		semconv.URLTemplateKey.String("/broadcasts/{id}/segment"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -4088,7 +4088,7 @@ func (c *Client) sendBroadcastsSetAudience(ctx context.Context, request *SetBroa
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, BroadcastsSetAudienceOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, BroadcastsSetSegmentOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -4128,7 +4128,7 @@ func (c *Client) sendBroadcastsSetAudience(ctx context.Context, request *SetBroa
 		}
 		pathParts[1] = encoded
 	}
-	pathParts[2] = "/audience"
+	pathParts[2] = "/segment"
 	uri.AddPathParts(u, pathParts[:]...)
 
 	stage = "EncodeRequest"
@@ -4136,7 +4136,7 @@ func (c *Client) sendBroadcastsSetAudience(ctx context.Context, request *SetBroa
 	if err != nil {
 		return res, errors.Wrap(err, "create request")
 	}
-	if err := encodeBroadcastsSetAudienceRequest(request, r); err != nil {
+	if err := encodeBroadcastsSetSegmentRequest(request, r); err != nil {
 		return res, errors.Wrap(err, "encode request")
 	}
 
@@ -4145,7 +4145,7 @@ func (c *Client) sendBroadcastsSetAudience(ctx context.Context, request *SetBroa
 		var satisfied bitset
 		{
 			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, BroadcastsSetAudienceOperation, r); {
+			switch err := c.securityBearerAuth(ctx, BroadcastsSetSegmentOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -4188,7 +4188,7 @@ func (c *Client) sendBroadcastsSetAudience(ctx context.Context, request *SetBroa
 	}()
 
 	stage = "DecodeResponse"
-	result, err := decodeBroadcastsSetAudienceResponse(resp)
+	result, err := decodeBroadcastsSetSegmentResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}

@@ -321,9 +321,6 @@
   },
   "broadcasts": {
     "addBroadcast": "New broadcast",
-    "audienceAll": "All active contacts",
-    "audienceLabel": "Audience",
-    "audienceNote": "Unsubscribed contacts are always excluded.",
     "createTitle": "New broadcast",
     "deliveryHint": "Send now, or schedule it for a future time. Only draft broadcasts can be sent.",
     "deliveryLabel": "Delivery",
@@ -358,6 +355,9 @@
     "report": "Report",
     "schedule": "Schedule",
     "scheduleLabel": "Schedule for",
+    "segmentAll": "All contacts",
+    "segmentLabel": "Segment",
+    "segmentNote": "Unsubscribed contacts are always excluded.",
     "sendNow": "Send now",
     "showArchived": "Show archived",
     "stats": {
@@ -1121,7 +1121,7 @@
     "nameLabel": "Name",
     "noMatchingContacts": "No contacts match this segment",
     "noRecords": "No segments yet",
-    "previewButton": "Preview audience",
+    "previewButton": "Preview segment",
     "previewCount": "{{count}} matching contacts",
     "previewCount_one": "{{count}} matching contact",
     "previewCount_other": "{{count}} matching contacts",

@@ -148,12 +148,12 @@ type Handler interface {
 	//
 	// POST /broadcasts/{id}/schedule
 	BroadcastsSchedule(ctx context.Context, req *ScheduleBroadcastInput, params BroadcastsScheduleParams) (BroadcastsScheduleRes, error)
-	// BroadcastsSetAudience implements Broadcasts_setAudience operation.
+	// BroadcastsSetSegment implements Broadcasts_setSegment operation.
 	//
-	// Set the audience of a draft broadcast: a Segment, or null for all active contacts. Does not send.
+	// Set the Segment of a draft broadcast, or null for all contacts. Does not send.
 	//
-	// PUT /broadcasts/{id}/audience
-	BroadcastsSetAudience(ctx context.Context, req *SetBroadcastAudienceInput, params BroadcastsSetAudienceParams) (BroadcastsSetAudienceRes, error)
+	// PUT /broadcasts/{id}/segment
+	BroadcastsSetSegment(ctx context.Context, req *SetBroadcastSegmentInput, params BroadcastsSetSegmentParams) (BroadcastsSetSegmentRes, error)
 	// BroadcastsTestSend implements Broadcasts_testSend operation.
 	//
 	// Send a rendered preview with sample merge data to a single address. Never sends to the audience.

@@ -108,7 +108,7 @@ model UpdateSegmentInput {
   condition?: ConditionGroup;
 }
 
-/** Request body for previewing a condition's audience */
+/** Request body for previewing a condition's segment */
 model PreviewSegmentInput {
   /** Condition; absent means all contacts */
   condition?: ConditionGroup;

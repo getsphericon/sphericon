@@ -2656,7 +2656,7 @@ export const zSiteCreateSegmentInput = z.object({
 });
 
 /**
- * Request body for previewing a condition's audience
+ * Request body for previewing a condition's segment
  */
 export const zSitePreviewSegmentInput = z.object({
   condition: z.exactOptional(zSiteConditionGroup)

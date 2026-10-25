@@ -8716,7 +8716,7 @@ func decodeBroadcastsScheduleResponse(resp *http.Response) (res BroadcastsSchedu
 	return res, validate.UnexpectedStatusCodeWithResponse(resp)
 }
 
-func decodeBroadcastsSetAudienceResponse(resp *http.Response) (res BroadcastsSetAudienceRes, _ error) {
+func decodeBroadcastsSetSegmentResponse(resp *http.Response) (res BroadcastsSetSegmentRes, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -8776,7 +8776,7 @@ func decodeBroadcastsSetAudienceResponse(resp *http.Response) (res BroadcastsSet
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response BroadcastsSetAudienceBadRequest
+			var response BroadcastsSetSegmentBadRequest
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -8820,7 +8820,7 @@ func decodeBroadcastsSetAudienceResponse(resp *http.Response) (res BroadcastsSet
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response BroadcastsSetAudienceUnauthorized
+			var response BroadcastsSetSegmentUnauthorized
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -8864,7 +8864,7 @@ func decodeBroadcastsSetAudienceResponse(resp *http.Response) (res BroadcastsSet
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response BroadcastsSetAudienceNotFound
+			var response BroadcastsSetSegmentNotFound
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -8908,7 +8908,7 @@ func decodeBroadcastsSetAudienceResponse(resp *http.Response) (res BroadcastsSet
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response BroadcastsSetAudienceUnprocessableEntity
+			var response BroadcastsSetSegmentUnprocessableEntity
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err

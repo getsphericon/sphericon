@@ -2944,7 +2944,7 @@ func encodeBroadcastsScheduleResponse(response BroadcastsScheduleRes, w http.Res
 	}
 }
 
-func encodeBroadcastsSetAudienceResponse(response BroadcastsSetAudienceRes, w http.ResponseWriter, span trace.Span) error {
+func encodeBroadcastsSetSegmentResponse(response BroadcastsSetSegmentRes, w http.ResponseWriter, span trace.Span) error {
 	switch response := response.(type) {
 	case *BroadcastResource:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -2958,7 +2958,7 @@ func encodeBroadcastsSetAudienceResponse(response BroadcastsSetAudienceRes, w ht
 
 		return nil
 
-	case *BroadcastsSetAudienceBadRequest:
+	case *BroadcastsSetSegmentBadRequest:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(400)
 
@@ -2970,7 +2970,7 @@ func encodeBroadcastsSetAudienceResponse(response BroadcastsSetAudienceRes, w ht
 
 		return nil
 
-	case *BroadcastsSetAudienceUnauthorized:
+	case *BroadcastsSetSegmentUnauthorized:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(401)
 
@@ -2982,7 +2982,7 @@ func encodeBroadcastsSetAudienceResponse(response BroadcastsSetAudienceRes, w ht
 
 		return nil
 
-	case *BroadcastsSetAudienceNotFound:
+	case *BroadcastsSetSegmentNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
 
@@ -2994,7 +2994,7 @@ func encodeBroadcastsSetAudienceResponse(response BroadcastsSetAudienceRes, w ht
 
 		return nil
 
-	case *BroadcastsSetAudienceUnprocessableEntity:
+	case *BroadcastsSetSegmentUnprocessableEntity:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(422)
 

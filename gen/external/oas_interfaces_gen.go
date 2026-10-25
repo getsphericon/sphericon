@@ -97,8 +97,8 @@ type BroadcastsScheduleRes interface {
 	broadcastsScheduleRes()
 }
 
-type BroadcastsSetAudienceRes interface {
-	broadcastsSetAudienceRes()
+type BroadcastsSetSegmentRes interface {
+	broadcastsSetSegmentRes()
 }
 
 type BroadcastsTestSendRes interface {

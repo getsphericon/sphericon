@@ -2121,13 +2121,13 @@ func decodeBroadcastsScheduleParams(args [1]string, argsEscaped bool, r *http.Re
 	return params, nil
 }
 
-// BroadcastsSetAudienceParams is parameters of Broadcasts_setAudience operation.
-type BroadcastsSetAudienceParams struct {
+// BroadcastsSetSegmentParams is parameters of Broadcasts_setSegment operation.
+type BroadcastsSetSegmentParams struct {
 	// Unique identifier.
 	ID EntityId
 }
 
-func unpackBroadcastsSetAudienceParams(packed middleware.Parameters) (params BroadcastsSetAudienceParams) {
+func unpackBroadcastsSetSegmentParams(packed middleware.Parameters) (params BroadcastsSetSegmentParams) {
 	{
 		key := middleware.ParameterKey{
 			Name: "id",
@@ -2138,7 +2138,7 @@ func unpackBroadcastsSetAudienceParams(packed middleware.Parameters) (params Bro
 	return params
 }
 
-func decodeBroadcastsSetAudienceParams(args [1]string, argsEscaped bool, r *http.Request) (params BroadcastsSetAudienceParams, _ error) {
+func decodeBroadcastsSetSegmentParams(args [1]string, argsEscaped bool, r *http.Request) (params BroadcastsSetSegmentParams, _ error) {
 	// Decode path: id.
 	if err := func() error {
 		param := args[0]

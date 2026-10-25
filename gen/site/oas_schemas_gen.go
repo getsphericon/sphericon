@@ -8468,7 +8468,7 @@ type SiteBroadcastResource struct {
 	// Warnings of the lint over the stored content (ADR 0040); set on the response of a save, never blocks
 	// it.
 	Warnings []LintFinding `json:"warnings"`
-	// Target segment; null means all active contacts.
+	// Target segment; null means all contacts.
 	SegmentId OptNilEntityId `json:"segmentId"`
 	// Sending integration; null means the workspace default.
 	IntegrationId OptNilEntityId `json:"integrationId"`
@@ -10588,7 +10588,7 @@ type SiteCreateBroadcastInput struct {
 	// The editor's JSON document, an opaque object checked by the server. The server renders the body from
 	// it in the same save; a document that cannot be rendered is a 422.
 	Doc OptSiteCreateBroadcastInputDoc `json:"doc"`
-	// Target segment; null/omitted means all active contacts.
+	// Target segment; null/omitted means all contacts.
 	SegmentId OptNilEntityId `json:"segmentId"`
 	// Sending integration; null/omitted means the workspace default.
 	IntegrationId OptNilEntityId `json:"integrationId"`
@@ -16169,7 +16169,7 @@ func (s *SitePresetResourceParamsSchema) init() SitePresetResourceParamsSchema {
 	return m
 }
 
-// Request body for previewing a condition's audience.
+// Request body for previewing a condition's segment.
 // Ref: #/components/schemas/SitePreviewSegmentInput
 type SitePreviewSegmentInput struct {
 	// Condition; absent means all contacts.
@@ -20895,7 +20895,7 @@ type SiteUpdateBroadcastInput struct {
 	// The editor's JSON document, an opaque object checked by the server. The server renders the body from
 	// it in the same save; a document that cannot be rendered is a 422.
 	Doc OptSiteUpdateBroadcastInputDoc `json:"doc"`
-	// Target segment; null means all active contacts.
+	// Target segment; null means all contacts.
 	SegmentId OptNilEntityId `json:"segmentId"`
 	// Sending integration; null means the workspace default.
 	IntegrationId OptNilEntityId `json:"integrationId"`

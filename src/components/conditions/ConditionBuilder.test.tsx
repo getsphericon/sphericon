@@ -29,7 +29,7 @@ function serve(previewBodies: unknown[] = []) {
   )
 }
 
-test('sends the current rule to the audience preview', async () => {
+test('sends the current rule to the segment preview', async () => {
   const previews: unknown[] = []
   serve(previews)
   const value: SiteConditionGroup = {
@@ -41,14 +41,14 @@ test('sends the current rule to the audience preview', async () => {
     <ConditionBuilder workspaceId="TestWs01" value={value} onChange={vi.fn<() => void>()} />,
   )
 
-  await screen.getByRole('button', { name: 'Preview audience' }).click()
+  await screen.getByRole('button', { name: 'Preview segment' }).click()
 
   await expect.poll(() => previews.length).toBe(1)
   expect(previews).toEqual([{ condition: value }])
   await expect.element(screen.getByText('3 matching contacts')).toBeInTheDocument()
 })
 
-test('a rule edits an Event property and has no audience preview', async () => {
+test('a rule edits an Event property and has no segment preview', async () => {
   serve()
   const value: SiteConditionGroup = {
     kind: 'group',
@@ -66,7 +66,7 @@ test('a rule edits an Event property and has no audience preview', async () => {
 
   await expect.element(screen.getByLabelText('Event property name')).toHaveValue('url')
   await expect
-    .element(screen.getByRole('button', { name: 'Preview audience' }))
+    .element(screen.getByRole('button', { name: 'Preview segment' }))
     .not.toBeInTheDocument()
 })
 
@@ -81,7 +81,7 @@ test('a segment offers no Event property', async () => {
     <ConditionBuilder workspaceId="TestWs01" value={value} onChange={vi.fn<() => void>()} />,
   )
 
-  await expect.element(screen.getByRole('button', { name: 'Preview audience' })).toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Preview segment' })).toBeInTheDocument()
   await expect.element(screen.getByLabelText('Event property name')).not.toBeInTheDocument()
 })
 

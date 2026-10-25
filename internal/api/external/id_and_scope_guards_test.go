@@ -48,9 +48,9 @@ func idGuardCases() []guardCase {
 		{"BroadcastsDelete", func(c *externalapi.Client, id externalapi.EntityId) (any, error) {
 			return c.BroadcastsDelete(ctx, externalapi.BroadcastsDeleteParams{ID: id})
 		}, &externalapi.BroadcastsDeleteUnauthorized{}, &externalapi.BroadcastsDeleteBadRequest{}},
-		{"BroadcastsSetAudience", func(c *externalapi.Client, id externalapi.EntityId) (any, error) {
-			return c.BroadcastsSetAudience(ctx, &externalapi.SetBroadcastAudienceInput{SegmentId: externalapi.NilEntityId{Null: true}}, externalapi.BroadcastsSetAudienceParams{ID: id})
-		}, &externalapi.BroadcastsSetAudienceUnauthorized{}, &externalapi.BroadcastsSetAudienceBadRequest{}},
+		{"BroadcastsSetSegment", func(c *externalapi.Client, id externalapi.EntityId) (any, error) {
+			return c.BroadcastsSetSegment(ctx, &externalapi.SetBroadcastSegmentInput{SegmentId: externalapi.NilEntityId{Null: true}}, externalapi.BroadcastsSetSegmentParams{ID: id})
+		}, &externalapi.BroadcastsSetSegmentUnauthorized{}, &externalapi.BroadcastsSetSegmentBadRequest{}},
 		{"BroadcastsSchedule", func(c *externalapi.Client, id externalapi.EntityId) (any, error) {
 			return c.BroadcastsSchedule(ctx, &externalapi.ScheduleBroadcastInput{ScheduledAt: externalapi.Timestamp(time.Now().Add(time.Hour))}, externalapi.BroadcastsScheduleParams{ID: id})
 		}, &externalapi.BroadcastsScheduleUnauthorized{}, &externalapi.BroadcastsScheduleBadRequest{}},

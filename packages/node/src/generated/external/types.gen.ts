@@ -490,7 +490,7 @@ export type BroadcastResource = {
    */
   editorVersion?: string | null;
   /**
-   * Audience: the Segment this broadcast goes to; null means all active contacts
+   * Segment this broadcast goes to; null means all contacts
    */
   segmentId?: EntityId | null;
   /**
@@ -2554,7 +2554,7 @@ export type PresetResource = {
 };
 
 /**
- * Request body for previewing a condition's audience
+ * Request body for previewing a condition's segment
  */
 export type PreviewSegmentInput = {
   /**
@@ -3245,11 +3245,11 @@ export type SesConfigInput = {
 };
 
 /**
- * Request body for setting a broadcast's audience
+ * Request body for setting a broadcast's Segment
  */
-export type SetBroadcastAudienceInput = {
+export type SetBroadcastSegmentInput = {
   /**
-   * The Segment to send to; null means all active contacts
+   * The Segment to send to; null means all contacts
    */
   segmentId: EntityId | null;
 };
@@ -5242,52 +5242,6 @@ export type BroadcastsArchiveResponses = {
 
 export type BroadcastsArchiveResponse = BroadcastsArchiveResponses[keyof BroadcastsArchiveResponses];
 
-export type BroadcastsSetAudienceData = {
-  body: SetBroadcastAudienceInput;
-  path: {
-    /**
-     * Unique identifier
-     */
-    id: EntityId;
-  };
-  query?: never;
-  url: '/broadcasts/{id}/audience';
-};
-
-export type BroadcastsSetAudienceErrors = {
-  /**
-   * RFC 7807 bad request response
-   */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 unauthorized response
-   */
-  401: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
-  /**
-   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
-   */
-  429: ProblemDetails;
-};
-
-export type BroadcastsSetAudienceError = BroadcastsSetAudienceErrors[keyof BroadcastsSetAudienceErrors];
-
-export type BroadcastsSetAudienceResponses = {
-  /**
-   * The request has succeeded.
-   */
-  200: BroadcastResource;
-};
-
-export type BroadcastsSetAudienceResponse = BroadcastsSetAudienceResponses[keyof BroadcastsSetAudienceResponses];
-
 export type BroadcastsReportData = {
   body?: never;
   path: {
@@ -5375,6 +5329,52 @@ export type BroadcastsScheduleResponses = {
 };
 
 export type BroadcastsScheduleResponse = BroadcastsScheduleResponses[keyof BroadcastsScheduleResponses];
+
+export type BroadcastsSetSegmentData = {
+  body: SetBroadcastSegmentInput;
+  path: {
+    /**
+     * Unique identifier
+     */
+    id: EntityId;
+  };
+  query?: never;
+  url: '/broadcasts/{id}/segment';
+};
+
+export type BroadcastsSetSegmentErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 unauthorized response
+   */
+  401: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+  /**
+   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
+   */
+  429: ProblemDetails;
+};
+
+export type BroadcastsSetSegmentError = BroadcastsSetSegmentErrors[keyof BroadcastsSetSegmentErrors];
+
+export type BroadcastsSetSegmentResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: BroadcastResource;
+};
+
+export type BroadcastsSetSegmentResponse = BroadcastsSetSegmentResponses[keyof BroadcastsSetSegmentResponses];
 
 export type BroadcastsTestSendData = {
   body: TestSendBroadcastInput;

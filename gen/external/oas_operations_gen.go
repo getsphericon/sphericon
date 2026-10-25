@@ -30,7 +30,7 @@ const (
 	BroadcastsListOperation            OperationName = "BroadcastsList"
 	BroadcastsReportOperation          OperationName = "BroadcastsReport"
 	BroadcastsScheduleOperation        OperationName = "BroadcastsSchedule"
-	BroadcastsSetAudienceOperation     OperationName = "BroadcastsSetAudience"
+	BroadcastsSetSegmentOperation      OperationName = "BroadcastsSetSegment"
 	BroadcastsTestSendOperation        OperationName = "BroadcastsTestSend"
 	BroadcastsUnarchiveOperation       OperationName = "BroadcastsUnarchive"
 	BroadcastsUnscheduleOperation      OperationName = "BroadcastsUnschedule"

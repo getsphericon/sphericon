@@ -25,22 +25,22 @@ type Broadcast struct {
 }
 
 // SendBroadcast creates a Broadcast from the Workspace's FromEmail/FromName, sets its
-// audience to all active Contacts and schedules it for now. The send itself is an
+// Segment to all Contacts and schedules it for now. The send itself is an
 // asynchronous job: observe it with Inbox.Wait.
 func (w *Workspace) SendBroadcast(b Broadcast) {
 	w.t.Helper()
 	w.ActivateBroadcast(w.createBroadcast(b))
 }
 
-// ActivateBroadcast is a person's activation of a draft: it sets the audience to all active
+// ActivateBroadcast is a person's activation of a draft: it sets the Segment to all
 // Contacts and schedules the Broadcast for now, with the Workspace's own token, which carries the
 // send scope an agent's token does not.
 func (w *Workspace) ActivateBroadcast(id externalapi.EntityId) {
 	w.t.Helper()
 	ctx := w.t.Context()
-	aud, err := w.api.BroadcastsSetAudience(ctx, &externalapi.SetBroadcastAudienceInput{SegmentId: externalapi.NilEntityId{Null: true}},
-		externalapi.BroadcastsSetAudienceParams{ID: id})
-	ok[externalapi.BroadcastResource](w.t, "set audience", aud, err)
+	aud, err := w.api.BroadcastsSetSegment(ctx, &externalapi.SetBroadcastSegmentInput{SegmentId: externalapi.NilEntityId{Null: true}},
+		externalapi.BroadcastsSetSegmentParams{ID: id})
+	ok[externalapi.BroadcastResource](w.t, "set segment", aud, err)
 
 	sched, err := w.api.BroadcastsSchedule(ctx, &externalapi.ScheduleBroadcastInput{ScheduledAt: externalapi.Timestamp(time.Now())},
 		externalapi.BroadcastsScheduleParams{ID: id})

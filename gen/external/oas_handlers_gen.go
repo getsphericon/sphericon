@@ -4529,24 +4529,24 @@ func (s *Server) handleBroadcastsScheduleRequest(args [1]string, argsEscaped boo
 	}
 }
 
-// handleBroadcastsSetAudienceRequest handles Broadcasts_setAudience operation.
+// handleBroadcastsSetSegmentRequest handles Broadcasts_setSegment operation.
 //
-// Set the audience of a draft broadcast: a Segment, or null for all active contacts. Does not send.
+// Set the Segment of a draft broadcast, or null for all contacts. Does not send.
 //
-// PUT /broadcasts/{id}/audience
-func (s *Server) handleBroadcastsSetAudienceRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// PUT /broadcasts/{id}/segment
+func (s *Server) handleBroadcastsSetSegmentRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("Broadcasts_setAudience"),
+		otelogen.OperationID("Broadcasts_setSegment"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
-		semconv.HTTPRouteKey.String("/broadcasts/{id}/audience"),
+		semconv.HTTPRouteKey.String("/broadcasts/{id}/segment"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), BroadcastsSetAudienceOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), BroadcastsSetSegmentOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -4601,15 +4601,15 @@ func (s *Server) handleBroadcastsSetAudienceRequest(args [1]string, argsEscaped 
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: BroadcastsSetAudienceOperation,
-			ID:   "Broadcasts_setAudience",
+			Name: BroadcastsSetSegmentOperation,
+			ID:   "Broadcasts_setSegment",
 		}
 	)
 	{
 		type bitset = [1]uint8
 		var satisfied bitset
 		{
-			sctx, ok, err := s.securityBearerAuth(ctx, BroadcastsSetAudienceOperation, r)
+			sctx, ok, err := s.securityBearerAuth(ctx, BroadcastsSetSegmentOperation, r)
 			if err != nil {
 				err = &ogenerrors.SecurityError{
 					OperationContext: opErrContext,
@@ -4649,7 +4649,7 @@ func (s *Server) handleBroadcastsSetAudienceRequest(args [1]string, argsEscaped 
 			return
 		}
 	}
-	params, err := decodeBroadcastsSetAudienceParams(args, argsEscaped, r)
+	params, err := decodeBroadcastsSetSegmentParams(args, argsEscaped, r)
 	if err != nil {
 		err = &ogenerrors.DecodeParamsError{
 			OperationContext: opErrContext,
@@ -4661,7 +4661,7 @@ func (s *Server) handleBroadcastsSetAudienceRequest(args [1]string, argsEscaped 
 	}
 
 	var rawBody []byte
-	request, rawBody, close, err := s.decodeBroadcastsSetAudienceRequest(r)
+	request, rawBody, close, err := s.decodeBroadcastsSetSegmentRequest(r)
 	if err != nil {
 		err = &ogenerrors.DecodeRequestError{
 			OperationContext: opErrContext,
@@ -4677,13 +4677,13 @@ func (s *Server) handleBroadcastsSetAudienceRequest(args [1]string, argsEscaped 
 		}
 	}()
 
-	var response BroadcastsSetAudienceRes
+	var response BroadcastsSetSegmentRes
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    BroadcastsSetAudienceOperation,
+			OperationName:    BroadcastsSetSegmentOperation,
 			OperationSummary: "",
-			OperationID:      "Broadcasts_setAudience",
+			OperationID:      "Broadcasts_setSegment",
 			Body:             request,
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
@@ -4696,9 +4696,9 @@ func (s *Server) handleBroadcastsSetAudienceRequest(args [1]string, argsEscaped 
 		}
 
 		type (
-			Request  = *SetBroadcastAudienceInput
-			Params   = BroadcastsSetAudienceParams
-			Response = BroadcastsSetAudienceRes
+			Request  = *SetBroadcastSegmentInput
+			Params   = BroadcastsSetSegmentParams
+			Response = BroadcastsSetSegmentRes
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -4707,14 +4707,14 @@ func (s *Server) handleBroadcastsSetAudienceRequest(args [1]string, argsEscaped 
 		](
 			m,
 			mreq,
-			unpackBroadcastsSetAudienceParams,
+			unpackBroadcastsSetSegmentParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.BroadcastsSetAudience(ctx, request, params)
+				response, err = s.h.BroadcastsSetSegment(ctx, request, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.BroadcastsSetAudience(ctx, request, params)
+		response, err = s.h.BroadcastsSetSegment(ctx, request, params)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -4722,7 +4722,7 @@ func (s *Server) handleBroadcastsSetAudienceRequest(args [1]string, argsEscaped 
 		return
 	}
 
-	if err := encodeBroadcastsSetAudienceResponse(response, w, span); err != nil {
+	if err := encodeBroadcastsSetSegmentResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)

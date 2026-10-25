@@ -551,8 +551,8 @@ func (s *Server) decodeBroadcastsScheduleRequest(r *http.Request) (
 	}
 }
 
-func (s *Server) decodeBroadcastsSetAudienceRequest(r *http.Request) (
-	req *SetBroadcastAudienceInput,
+func (s *Server) decodeBroadcastsSetSegmentRequest(r *http.Request) (
+	req *SetBroadcastSegmentInput,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -599,7 +599,7 @@ func (s *Server) decodeBroadcastsSetAudienceRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request SetBroadcastAudienceInput
+		var request SetBroadcastSegmentInput
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err

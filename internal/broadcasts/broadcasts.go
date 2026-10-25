@@ -121,13 +121,13 @@ func (m *Module) claim(ctx context.Context, s *ent.Scoped, id int64, t trigger, 
 	return claimed, nil
 }
 
-// --- Authoring (ADR 0016): drafts, audience, report ---
+// --- Authoring (ADR 0016): drafts, Segment, report ---
 
 var (
 	// ErrNotDraft: the Broadcast is past draft (scheduled, sending, sent, failed) and
 	// can no longer be edited, re-targeted or deleted through the authoring surface.
 	ErrNotDraft = validation.Refuse("broadcasts: broadcast is not a draft", "errors.broadcast_not_draft")
-	// ErrSegmentNotFound: the audience Segment does not exist in this Workspace.
+	// ErrSegmentNotFound: the Segment does not exist in this Workspace.
 	ErrSegmentNotFound = validation.Refuse("broadcasts: segment not found", "errors.broadcast_segment_not_found")
 	// ErrIntegrationNotFound: the Integration does not exist in this Workspace or is archived.
 	ErrIntegrationNotFound = validation.Refuse("broadcasts: integration not found", "errors.broadcast_integration_not_found")
@@ -295,9 +295,9 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, f Fields) 
 	return m.editDraft(ctx, s, id, u)
 }
 
-// SetAudience points a draft at a Segment, or at all active contacts when segmentID
+// SetSegment points a draft at a Segment, or at all contacts when segmentID
 // is nil. It never schedules or sends.
-func (m *Module) SetAudience(ctx context.Context, s *ent.Scoped, id int64, segmentID *int64) (*ent.Broadcast, error) {
+func (m *Module) SetSegment(ctx context.Context, s *ent.Scoped, id int64, segmentID *int64) (*ent.Broadcast, error) {
 	if segmentID != nil {
 		ok, err := s.Segment().Query().Where(segment.ID(*segmentID)).Exist(ctx)
 		if err != nil {

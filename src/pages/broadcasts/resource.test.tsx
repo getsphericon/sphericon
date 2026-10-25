@@ -107,7 +107,7 @@ test('creating a broadcast sends only the filled keys, refreshes the list and op
   })
 })
 
-test('editing a draft; a cleared sender name is sent as null and the audience is cleared too', async () => {
+test('editing a draft; a cleared sender name is sent as null and the Segment is cleared too', async () => {
   const { bodies, fetches } = serve('draft')
 
   const { screen } = await renderWithRouter(

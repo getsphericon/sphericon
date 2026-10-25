@@ -1565,7 +1565,7 @@ export type SiteBroadcastResource = {
    */
   warnings?: Array<LintFinding>;
   /**
-   * Target segment; null means all active contacts
+   * Target segment; null means all contacts
    */
   segmentId?: EntityId | null;
   /**
@@ -2100,7 +2100,7 @@ export type SiteCreateBroadcastInput = {
     [key: string]: unknown;
   };
   /**
-   * Target segment; null/omitted means all active contacts
+   * Target segment; null/omitted means all contacts
    */
   segmentId?: EntityId | null;
   /**
@@ -3597,7 +3597,7 @@ export type SitePresetResource = {
 };
 
 /**
- * Request body for previewing a condition's audience
+ * Request body for previewing a condition's segment
  */
 export type SitePreviewSegmentInput = {
   /**
@@ -4776,7 +4776,7 @@ export type SiteUpdateBroadcastInput = {
     [key: string]: unknown;
   };
   /**
-   * Target segment; null means all active contacts
+   * Target segment; null means all contacts
    */
   segmentId?: EntityId | null;
   /**

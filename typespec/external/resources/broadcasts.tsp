@@ -42,7 +42,7 @@ model BroadcastResource {
   /** Version of the editor that rendered the document; null with it */
   editorVersion?: string | null;
 
-  /** Audience: the Segment this broadcast goes to; null means all active contacts */
+  /** Segment this broadcast goes to; null means all contacts */
   segmentId?: EntityId | null;
 
   /** Lifecycle status. Broadcasts created here are always drafts. */
@@ -108,9 +108,9 @@ model UpdateBroadcastInput {
   doc?: Record<unknown>;
 }
 
-/** Request body for setting a broadcast's audience */
-model SetBroadcastAudienceInput {
-  /** The Segment to send to; null means all active contacts */
+/** Request body for setting a broadcast's Segment */
+model SetBroadcastSegmentInput {
+  /** The Segment to send to; null means all contacts */
   segmentId: EntityId | null;
 }
 
@@ -214,13 +214,13 @@ interface Broadcasts
     | TooManyRequestsProblem
     | NotFoundProblem;
 
-  /** Set the audience of a draft broadcast: a Segment, or null for all active contacts. Does not send. */
-  @action("audience")
+  /** Set the Segment of a draft broadcast, or null for all contacts. Does not send. */
+  @action("segment")
   @put
   @autoRoute
-  setAudience(
+  setSegment(
     ...ResourceParameters<BroadcastResource>,
-    @body body: SetBroadcastAudienceInput,
+    @body body: SetBroadcastSegmentInput,
   ):
     | BroadcastResource
     | BadRequestProblem

@@ -14004,7 +14004,7 @@
               }
             ],
             "nullable": true,
-            "description": "Target segment; null means all active contacts"
+            "description": "Target segment; null means all contacts"
           },
           "integrationId": {
             "type": "string",
@@ -14798,7 +14798,7 @@
               }
             ],
             "nullable": true,
-            "description": "Target segment; null/omitted means all active contacts"
+            "description": "Target segment; null/omitted means all contacts"
           },
           "integrationId": {
             "type": "string",
@@ -16836,7 +16836,7 @@
             "description": "Condition; absent means all contacts"
           }
         },
-        "description": "Request body for previewing a condition's audience"
+        "description": "Request body for previewing a condition's segment"
       },
       "SitePreviewSegmentResult": {
         "type": "object",
@@ -18352,7 +18352,7 @@
               }
             ],
             "nullable": true,
-            "description": "Target segment; null means all active contacts"
+            "description": "Target segment; null means all contacts"
           },
           "integrationId": {
             "type": "string",

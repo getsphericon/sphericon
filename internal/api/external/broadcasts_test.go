@@ -43,7 +43,7 @@ func TestExternalBroadcastsAreCreatedAsDraftsAndEditedWhileDraft(t *testing.T) {
 	require.Truef(t, ok, "got %T", created)
 	assert.Equal(t, externalapi.BroadcastStatusDraft, b.Status)
 	assert.Equal(t, "Big news", b.Subject)
-	assert.False(t, b.SegmentId.IsSet(), "no audience yet")
+	assert.False(t, b.SegmentId.IsSet(), "no Segment yet")
 
 	got, err := c.BroadcastsGet(ctx, externalapi.BroadcastsGetParams{ID: b.ID})
 	require.NoError(t, err)
@@ -99,34 +99,34 @@ func TestExternalBroadcastsDeleteOnlyDrafts(t *testing.T) {
 	assert.IsType(t, &externalapi.BroadcastsDeleteUnprocessableEntity{}, out, "a sent broadcast is history")
 }
 
-func TestExternalBroadcastAudienceIsASegmentOrEveryone(t *testing.T) {
+func TestExternalBroadcastSegmentIsASegmentOrEveryone(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, authorScopes...)
 	ctx := context.Background()
 
-	set, err := c.BroadcastsSetAudience(ctx, &externalapi.SetBroadcastAudienceInput{SegmentId: externalapi.NewNilEntityId(proSegment)},
-		externalapi.BroadcastsSetAudienceParams{ID: draftBroadcast})
+	set, err := c.BroadcastsSetSegment(ctx, &externalapi.SetBroadcastSegmentInput{SegmentId: externalapi.NewNilEntityId(proSegment)},
+		externalapi.BroadcastsSetSegmentParams{ID: draftBroadcast})
 	require.NoError(t, err)
 	b := set.(*externalapi.BroadcastResource)
 	id, ok := b.SegmentId.Get()
 	require.True(t, ok)
 	assert.Equal(t, proSegment, id)
-	assert.Equal(t, externalapi.BroadcastStatusDraft, b.Status, "audience never sends or schedules")
+	assert.Equal(t, externalapi.BroadcastStatusDraft, b.Status, "setting a Segment never sends or schedules")
 
-	cleared, err := c.BroadcastsSetAudience(ctx, &externalapi.SetBroadcastAudienceInput{SegmentId: externalapi.NilEntityId{Null: true}},
-		externalapi.BroadcastsSetAudienceParams{ID: draftBroadcast})
+	cleared, err := c.BroadcastsSetSegment(ctx, &externalapi.SetBroadcastSegmentInput{SegmentId: externalapi.NilEntityId{Null: true}},
+		externalapi.BroadcastsSetSegmentParams{ID: draftBroadcast})
 	require.NoError(t, err)
 	assert.False(t, cleared.(*externalapi.BroadcastResource).SegmentId.IsSet())
 
-	unknown, err := c.BroadcastsSetAudience(ctx, &externalapi.SetBroadcastAudienceInput{SegmentId: externalapi.NewNilEntityId(999999)},
-		externalapi.BroadcastsSetAudienceParams{ID: draftBroadcast})
+	unknown, err := c.BroadcastsSetSegment(ctx, &externalapi.SetBroadcastSegmentInput{SegmentId: externalapi.NewNilEntityId(999999)},
+		externalapi.BroadcastsSetSegmentParams{ID: draftBroadcast})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsSetAudienceUnprocessableEntity{}, unknown)
+	assert.IsType(t, &externalapi.BroadcastsSetSegmentUnprocessableEntity{}, unknown)
 
-	locked, err := c.BroadcastsSetAudience(ctx, &externalapi.SetBroadcastAudienceInput{SegmentId: externalapi.NewNilEntityId(proSegment)},
-		externalapi.BroadcastsSetAudienceParams{ID: schedBroadcast})
+	locked, err := c.BroadcastsSetSegment(ctx, &externalapi.SetBroadcastSegmentInput{SegmentId: externalapi.NewNilEntityId(proSegment)},
+		externalapi.BroadcastsSetSegmentParams{ID: schedBroadcast})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsSetAudienceUnprocessableEntity{}, locked)
+	assert.IsType(t, &externalapi.BroadcastsSetSegmentUnprocessableEntity{}, locked)
 }
 
 func TestExternalBroadcastTestSendGoesToOneAddressOnly(t *testing.T) {
@@ -182,7 +182,7 @@ func TestExternalBroadcastsRequireScopes(t *testing.T) {
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.BroadcastReport{}, rep)
 
-	// ...but cannot write, set the audience or test-send.
+	// ...but cannot write, set the Segment or test-send.
 	created, err := readOnly.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{Name: "x"})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.BroadcastsCreateUnauthorized{}, created)
@@ -192,10 +192,10 @@ func TestExternalBroadcastsRequireScopes(t *testing.T) {
 	del, err := readOnly.BroadcastsDelete(ctx, externalapi.BroadcastsDeleteParams{ID: draftBroadcast})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.BroadcastsDeleteUnauthorized{}, del)
-	aud, err := readOnly.BroadcastsSetAudience(ctx, &externalapi.SetBroadcastAudienceInput{SegmentId: externalapi.NilEntityId{Null: true}},
-		externalapi.BroadcastsSetAudienceParams{ID: draftBroadcast})
+	aud, err := readOnly.BroadcastsSetSegment(ctx, &externalapi.SetBroadcastSegmentInput{SegmentId: externalapi.NilEntityId{Null: true}},
+		externalapi.BroadcastsSetSegmentParams{ID: draftBroadcast})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsSetAudienceUnauthorized{}, aud)
+	assert.IsType(t, &externalapi.BroadcastsSetSegmentUnauthorized{}, aud)
 	ts, err := readOnly.BroadcastsTestSend(ctx, &externalapi.TestSendBroadcastInput{Email: "qa@test.dev"}, externalapi.BroadcastsTestSendParams{ID: draftBroadcast})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.BroadcastsTestSendUnauthorized{}, ts)
@@ -305,32 +305,32 @@ func TestExternalBroadcastsAreIsolatedToTheTokensWorkspace(t *testing.T) {
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.BroadcastsTestSendNotFound{}, ts)
 	assert.Empty(t, env.CustomerMail.Messages())
-	aud, err := c.BroadcastsSetAudience(ctx, &externalapi.SetBroadcastAudienceInput{SegmentId: externalapi.NilEntityId{Null: true}}, externalapi.BroadcastsSetAudienceParams{ID: foreignID})
+	aud, err := c.BroadcastsSetSegment(ctx, &externalapi.SetBroadcastSegmentInput{SegmentId: externalapi.NilEntityId{Null: true}}, externalapi.BroadcastsSetSegmentParams{ID: foreignID})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsSetAudienceNotFound{}, aud)
+	assert.IsType(t, &externalapi.BroadcastsSetSegmentNotFound{}, aud)
 
-	// Another workspace's segment cannot be the audience of our broadcast.
-	cross, err := c.BroadcastsSetAudience(ctx, &externalapi.SetBroadcastAudienceInput{SegmentId: externalapi.NewNilEntityId(externalapi.EntityId(foreignSegID))},
-		externalapi.BroadcastsSetAudienceParams{ID: draftBroadcast})
+	// Another workspace's segment cannot be the Segment of our broadcast.
+	cross, err := c.BroadcastsSetSegment(ctx, &externalapi.SetBroadcastSegmentInput{SegmentId: externalapi.NewNilEntityId(externalapi.EntityId(foreignSegID))},
+		externalapi.BroadcastsSetSegmentParams{ID: draftBroadcast})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsSetAudienceUnprocessableEntity{}, cross)
+	assert.IsType(t, &externalapi.BroadcastsSetSegmentUnprocessableEntity{}, cross)
 
 	assert.Equal(t, fixtures.BroadcastGlobexName, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastGlobexID).Name, "the foreign broadcast is untouched")
 }
 
 // An archived Segment leaves new work: a draft cannot be pointed at it, and a refused call
 // changes nothing.
-func TestExternalBroadcastAudienceRefusesAnArchivedSegment(t *testing.T) {
+func TestExternalBroadcastSegmentRefusesAnArchivedSegment(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, authorScopes...)
 	ctx := context.Background()
 	before := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID)
 
-	refused, err := c.BroadcastsSetAudience(ctx,
-		&externalapi.SetBroadcastAudienceInput{SegmentId: externalapi.NewNilEntityId(entityIDString(fixtures.SegmentArchivedID))},
-		externalapi.BroadcastsSetAudienceParams{ID: draftBroadcast})
+	refused, err := c.BroadcastsSetSegment(ctx,
+		&externalapi.SetBroadcastSegmentInput{SegmentId: externalapi.NewNilEntityId(entityIDString(fixtures.SegmentArchivedID))},
+		externalapi.BroadcastsSetSegmentParams{ID: draftBroadcast})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsSetAudienceUnprocessableEntity{}, refused)
+	assert.IsType(t, &externalapi.BroadcastsSetSegmentUnprocessableEntity{}, refused)
 
 	after := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID)
 	assert.Equal(t, before.SegmentID, after.SegmentID)
@@ -351,15 +351,15 @@ func TestExternalBroadcastKeepsShowingItsArchivedSegment(t *testing.T) {
 	assert.Equal(t, entityIDString(fixtures.SegmentArchivedID), segmentID)
 }
 
-func TestExternalBroadcastAudienceRefusesAForeignSegment(t *testing.T) {
+func TestExternalBroadcastSegmentRefusesAForeignSegment(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, authorScopes...)
 	ctx := context.Background()
 	before := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID).SegmentID
 
-	got, err := c.BroadcastsSetAudience(ctx, &externalapi.SetBroadcastAudienceInput{SegmentId: externalapi.NewNilEntityId(entityIDString(fixtures.SegmentGlobexID))},
-		externalapi.BroadcastsSetAudienceParams{ID: draftBroadcast})
+	got, err := c.BroadcastsSetSegment(ctx, &externalapi.SetBroadcastSegmentInput{SegmentId: externalapi.NewNilEntityId(entityIDString(fixtures.SegmentGlobexID))},
+		externalapi.BroadcastsSetSegmentParams{ID: draftBroadcast})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsSetAudienceUnprocessableEntity{}, got)
+	assert.IsType(t, &externalapi.BroadcastsSetSegmentUnprocessableEntity{}, got)
 	assert.Equal(t, before, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID).SegmentID)
 }

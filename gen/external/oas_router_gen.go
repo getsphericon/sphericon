@@ -72,14 +72,14 @@ var (
 	rn25AllowedHeaders = map[string]string{
 		"POST": "Authorization",
 	}
-	rn31AllowedHeaders = map[string]string{
-		"PUT": "Authorization,Content-Type",
-	}
 	rn28AllowedHeaders = map[string]string{
 		"GET": "Authorization",
 	}
 	rn29AllowedHeaders = map[string]string{
 		"POST": "Authorization,Content-Type",
+	}
+	rn31AllowedHeaders = map[string]string{
+		"PUT": "Authorization,Content-Type",
 	}
 	rn32AllowedHeaders = map[string]string{
 		"POST": "Authorization,Content-Type",
@@ -944,72 +944,31 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 								break
 							}
 							switch elem[0] {
-							case 'a': // Prefix: "a"
+							case 'a': // Prefix: "archive"
 
-								if l := len("a"); len(elem) >= l && elem[0:l] == "a" {
+								if l := len("archive"); len(elem) >= l && elem[0:l] == "archive" {
 									elem = elem[l:]
 								} else {
 									break
 								}
 
 								if len(elem) == 0 {
-									break
-								}
-								switch elem[0] {
-								case 'r': // Prefix: "rchive"
-
-									if l := len("rchive"); len(elem) >= l && elem[0:l] == "rchive" {
-										elem = elem[l:]
-									} else {
-										break
+									// Leaf node.
+									switch r.Method {
+									case "POST":
+										s.handleBroadcastsArchiveRequest([1]string{
+											args[0],
+										}, elemIsEscaped, w, r)
+									default:
+										s.notAllowed(w, r, notAllowedParams{
+											allowedMethods: "POST",
+											allowedHeaders: rn25AllowedHeaders,
+											acceptPost:     "",
+											acceptPatch:    "",
+										})
 									}
 
-									if len(elem) == 0 {
-										// Leaf node.
-										switch r.Method {
-										case "POST":
-											s.handleBroadcastsArchiveRequest([1]string{
-												args[0],
-											}, elemIsEscaped, w, r)
-										default:
-											s.notAllowed(w, r, notAllowedParams{
-												allowedMethods: "POST",
-												allowedHeaders: rn25AllowedHeaders,
-												acceptPost:     "",
-												acceptPatch:    "",
-											})
-										}
-
-										return
-									}
-
-								case 'u': // Prefix: "udience"
-
-									if l := len("udience"); len(elem) >= l && elem[0:l] == "udience" {
-										elem = elem[l:]
-									} else {
-										break
-									}
-
-									if len(elem) == 0 {
-										// Leaf node.
-										switch r.Method {
-										case "PUT":
-											s.handleBroadcastsSetAudienceRequest([1]string{
-												args[0],
-											}, elemIsEscaped, w, r)
-										default:
-											s.notAllowed(w, r, notAllowedParams{
-												allowedMethods: "PUT",
-												allowedHeaders: rn31AllowedHeaders,
-												acceptPost:     "",
-												acceptPatch:    "",
-											})
-										}
-
-										return
-									}
-
+									return
 								}
 
 							case 'r': // Prefix: "report"
@@ -1039,31 +998,72 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 
-							case 's': // Prefix: "schedule"
+							case 's': // Prefix: "s"
 
-								if l := len("schedule"); len(elem) >= l && elem[0:l] == "schedule" {
+								if l := len("s"); len(elem) >= l && elem[0:l] == "s" {
 									elem = elem[l:]
 								} else {
 									break
 								}
 
 								if len(elem) == 0 {
-									// Leaf node.
-									switch r.Method {
-									case "POST":
-										s.handleBroadcastsScheduleRequest([1]string{
-											args[0],
-										}, elemIsEscaped, w, r)
-									default:
-										s.notAllowed(w, r, notAllowedParams{
-											allowedMethods: "POST",
-											allowedHeaders: rn29AllowedHeaders,
-											acceptPost:     "application/json",
-											acceptPatch:    "",
-										})
+									break
+								}
+								switch elem[0] {
+								case 'c': // Prefix: "chedule"
+
+									if l := len("chedule"); len(elem) >= l && elem[0:l] == "chedule" {
+										elem = elem[l:]
+									} else {
+										break
 									}
 
-									return
+									if len(elem) == 0 {
+										// Leaf node.
+										switch r.Method {
+										case "POST":
+											s.handleBroadcastsScheduleRequest([1]string{
+												args[0],
+											}, elemIsEscaped, w, r)
+										default:
+											s.notAllowed(w, r, notAllowedParams{
+												allowedMethods: "POST",
+												allowedHeaders: rn29AllowedHeaders,
+												acceptPost:     "application/json",
+												acceptPatch:    "",
+											})
+										}
+
+										return
+									}
+
+								case 'e': // Prefix: "egment"
+
+									if l := len("egment"); len(elem) >= l && elem[0:l] == "egment" {
+										elem = elem[l:]
+									} else {
+										break
+									}
+
+									if len(elem) == 0 {
+										// Leaf node.
+										switch r.Method {
+										case "PUT":
+											s.handleBroadcastsSetSegmentRequest([1]string{
+												args[0],
+											}, elemIsEscaped, w, r)
+										default:
+											s.notAllowed(w, r, notAllowedParams{
+												allowedMethods: "PUT",
+												allowedHeaders: rn31AllowedHeaders,
+												acceptPost:     "",
+												acceptPatch:    "",
+											})
+										}
+
+										return
+									}
+
 								}
 
 							case 't': // Prefix: "test-send"
@@ -3818,68 +3818,29 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 								break
 							}
 							switch elem[0] {
-							case 'a': // Prefix: "a"
+							case 'a': // Prefix: "archive"
 
-								if l := len("a"); len(elem) >= l && elem[0:l] == "a" {
+								if l := len("archive"); len(elem) >= l && elem[0:l] == "archive" {
 									elem = elem[l:]
 								} else {
 									break
 								}
 
 								if len(elem) == 0 {
-									break
-								}
-								switch elem[0] {
-								case 'r': // Prefix: "rchive"
-
-									if l := len("rchive"); len(elem) >= l && elem[0:l] == "rchive" {
-										elem = elem[l:]
-									} else {
-										break
+									// Leaf node.
+									switch method {
+									case "POST":
+										r.name = BroadcastsArchiveOperation
+										r.summary = ""
+										r.operationID = "Broadcasts_archive"
+										r.operationGroup = ""
+										r.pathPattern = "/broadcasts/{id}/archive"
+										r.args = args
+										r.count = 1
+										return r, true
+									default:
+										return
 									}
-
-									if len(elem) == 0 {
-										// Leaf node.
-										switch method {
-										case "POST":
-											r.name = BroadcastsArchiveOperation
-											r.summary = ""
-											r.operationID = "Broadcasts_archive"
-											r.operationGroup = ""
-											r.pathPattern = "/broadcasts/{id}/archive"
-											r.args = args
-											r.count = 1
-											return r, true
-										default:
-											return
-										}
-									}
-
-								case 'u': // Prefix: "udience"
-
-									if l := len("udience"); len(elem) >= l && elem[0:l] == "udience" {
-										elem = elem[l:]
-									} else {
-										break
-									}
-
-									if len(elem) == 0 {
-										// Leaf node.
-										switch method {
-										case "PUT":
-											r.name = BroadcastsSetAudienceOperation
-											r.summary = ""
-											r.operationID = "Broadcasts_setAudience"
-											r.operationGroup = ""
-											r.pathPattern = "/broadcasts/{id}/audience"
-											r.args = args
-											r.count = 1
-											return r, true
-										default:
-											return
-										}
-									}
-
 								}
 
 							case 'r': // Prefix: "report"
@@ -3907,29 +3868,68 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 									}
 								}
 
-							case 's': // Prefix: "schedule"
+							case 's': // Prefix: "s"
 
-								if l := len("schedule"); len(elem) >= l && elem[0:l] == "schedule" {
+								if l := len("s"); len(elem) >= l && elem[0:l] == "s" {
 									elem = elem[l:]
 								} else {
 									break
 								}
 
 								if len(elem) == 0 {
-									// Leaf node.
-									switch method {
-									case "POST":
-										r.name = BroadcastsScheduleOperation
-										r.summary = ""
-										r.operationID = "Broadcasts_schedule"
-										r.operationGroup = ""
-										r.pathPattern = "/broadcasts/{id}/schedule"
-										r.args = args
-										r.count = 1
-										return r, true
-									default:
-										return
+									break
+								}
+								switch elem[0] {
+								case 'c': // Prefix: "chedule"
+
+									if l := len("chedule"); len(elem) >= l && elem[0:l] == "chedule" {
+										elem = elem[l:]
+									} else {
+										break
 									}
+
+									if len(elem) == 0 {
+										// Leaf node.
+										switch method {
+										case "POST":
+											r.name = BroadcastsScheduleOperation
+											r.summary = ""
+											r.operationID = "Broadcasts_schedule"
+											r.operationGroup = ""
+											r.pathPattern = "/broadcasts/{id}/schedule"
+											r.args = args
+											r.count = 1
+											return r, true
+										default:
+											return
+										}
+									}
+
+								case 'e': // Prefix: "egment"
+
+									if l := len("egment"); len(elem) >= l && elem[0:l] == "egment" {
+										elem = elem[l:]
+									} else {
+										break
+									}
+
+									if len(elem) == 0 {
+										// Leaf node.
+										switch method {
+										case "PUT":
+											r.name = BroadcastsSetSegmentOperation
+											r.summary = ""
+											r.operationID = "Broadcasts_setSegment"
+											r.operationGroup = ""
+											r.pathPattern = "/broadcasts/{id}/segment"
+											r.args = args
+											r.count = 1
+											return r, true
+										default:
+											return
+										}
+									}
+
 								}
 
 							case 't': // Prefix: "test-send"

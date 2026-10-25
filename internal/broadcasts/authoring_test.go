@@ -89,34 +89,34 @@ func TestUpdateOnlyEditsDraftsAndKeepsUnsetFields(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestSetAudience(t *testing.T) {
+func TestSetSegment(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := broadcasts.New(env.Bus)
 	ctx := context.Background()
 	seg := int64(fixtures.SegmentProPlanID)
 
-	b, err := m.SetAudience(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, &seg)
+	b, err := m.SetSegment(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, &seg)
 	require.NoError(t, err)
 	require.NotNil(t, b.SegmentID)
 	assert.Equal(t, seg, *b.SegmentID)
 
-	b, err = m.SetAudience(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, nil)
+	b, err = m.SetSegment(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, nil)
 	require.NoError(t, err)
-	assert.Nil(t, b.SegmentID, "nil audience means all active contacts")
+	assert.Nil(t, b.SegmentID, "nil Segment means all contacts")
 
 	globexSeg := int64(fixtures.SegmentGlobexID)
-	_, err = m.SetAudience(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, &globexSeg)
+	_, err = m.SetSegment(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, &globexSeg)
 	require.ErrorIs(t, err, broadcasts.ErrSegmentNotFound, "another workspace's segment is not usable")
 
-	_, err = m.SetAudience(ctx, env.DB.Scoped(fixtures.AcmeID), 987654, &globexSeg)
+	_, err = m.SetSegment(ctx, env.DB.Scoped(fixtures.AcmeID), 987654, &globexSeg)
 	require.ErrorIs(t, err, broadcasts.ErrNotFound, "an unknown broadcast is reported before the segment")
 
-	_, err = m.SetAudience(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastScheduledID, &seg)
+	_, err = m.SetSegment(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastScheduledID, &seg)
 	require.ErrorIs(t, err, broadcasts.ErrNotDraft)
 
-	_, err = m.SetAudience(canceled(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, &seg)
+	_, err = m.SetSegment(canceled(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, &seg)
 	require.Error(t, err, "segment lookup failure")
-	_, err = m.SetAudience(canceled(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, nil)
+	_, err = m.SetSegment(canceled(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, nil)
 	assert.Error(t, err, "update failure")
 }
 
@@ -196,7 +196,7 @@ func TestTransitionStoreErrors(t *testing.T) {
 }
 
 // Another Workspace's rows are invisible through the scoped client: a foreign
-// Broadcast is not found, and a foreign Segment cannot become the audience.
+// Broadcast is not found, and a foreign Segment cannot become the Segment.
 func TestAnotherWorkspacesBroadcastAndSegmentAreRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := broadcasts.New(env.Bus)
@@ -208,7 +208,7 @@ func TestAnotherWorkspacesBroadcastAndSegmentAreRefused(t *testing.T) {
 	_, err = m.Send(ctx, acme, fixtures.BroadcastGlobexID)
 	require.ErrorIs(t, err, broadcasts.ErrNotFound)
 
-	_, err = m.SetAudience(ctx, acme, fixtures.BroadcastDraftID, new(int64(fixtures.SegmentGlobexID)))
+	_, err = m.SetSegment(ctx, acme, fixtures.BroadcastDraftID, new(int64(fixtures.SegmentGlobexID)))
 	assert.ErrorIs(t, err, broadcasts.ErrSegmentNotFound)
 }
 

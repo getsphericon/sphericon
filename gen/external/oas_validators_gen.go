@@ -1157,7 +1157,7 @@ func (s *BroadcastsScheduleUnprocessableEntity) Validate() error {
 	return nil
 }
 
-func (s *BroadcastsSetAudienceBadRequest) Validate() error {
+func (s *BroadcastsSetSegmentBadRequest) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -1165,7 +1165,7 @@ func (s *BroadcastsSetAudienceBadRequest) Validate() error {
 	return nil
 }
 
-func (s *BroadcastsSetAudienceNotFound) Validate() error {
+func (s *BroadcastsSetSegmentNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -1173,7 +1173,7 @@ func (s *BroadcastsSetAudienceNotFound) Validate() error {
 	return nil
 }
 
-func (s *BroadcastsSetAudienceUnauthorized) Validate() error {
+func (s *BroadcastsSetSegmentUnauthorized) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -1181,7 +1181,7 @@ func (s *BroadcastsSetAudienceUnauthorized) Validate() error {
 	return nil
 }
 
-func (s *BroadcastsSetAudienceUnprocessableEntity) Validate() error {
+func (s *BroadcastsSetSegmentUnprocessableEntity) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err

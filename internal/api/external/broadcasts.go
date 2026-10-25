@@ -19,7 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
-// Broadcast authoring over /api (ADR 0016): drafts, audience, test send and report.
+// Broadcast authoring over /api (ADR 0016): drafts, Segment, test send and report.
 // Nothing here sends to the audience; scheduling and sending are separate,
 // send-class operations. The state rules live in internal/broadcasts; these
 // handlers check the scope, call it and map its errors.
@@ -191,9 +191,9 @@ func (h *Handlers) BroadcastsUnarchive(ctx context.Context, params externalapi.B
 	return &res, nil
 }
 
-func (h *Handlers) BroadcastsSetAudience(ctx context.Context, req *externalapi.SetBroadcastAudienceInput, params externalapi.BroadcastsSetAudienceParams) (externalapi.BroadcastsSetAudienceRes, error) {
+func (h *Handlers) BroadcastsSetSegment(ctx context.Context, req *externalapi.SetBroadcastSegmentInput, params externalapi.BroadcastsSetSegmentParams) (externalapi.BroadcastsSetSegmentRes, error) {
 	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeBroadcastsWrite) {
-		res := externalapi.BroadcastsSetAudienceUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
+		res := externalapi.BroadcastsSetSegmentUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
 	id := int64(params.ID)
@@ -202,16 +202,16 @@ func (h *Handlers) BroadcastsSetAudience(ctx context.Context, req *externalapi.S
 		sid := int64(req.SegmentId.Value)
 		segmentID = &sid
 	}
-	b, err := h.broadcasts.SetAudience(ctx, auth.TokenScoped(ctx), id, segmentID)
+	b, err := h.broadcasts.SetSegment(ctx, auth.TokenScoped(ctx), id, segmentID)
 	switch {
 	case errors.Is(err, broadcasts.ErrNotFound):
-		res := externalapi.BroadcastsSetAudienceNotFound(problem(http.StatusNotFound, validation.Message(err)))
+		res := externalapi.BroadcastsSetSegmentNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil
 	case errors.Is(err, broadcasts.ErrSegmentNotFound):
-		res := externalapi.BroadcastsSetAudienceUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
+		res := externalapi.BroadcastsSetSegmentUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
 		return &res, nil
 	case errors.Is(err, broadcasts.ErrNotDraft):
-		res := externalapi.BroadcastsSetAudienceUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
+		res := externalapi.BroadcastsSetSegmentUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
 		return &res, nil
 	case err != nil:
 		return nil, err

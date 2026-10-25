@@ -28,7 +28,7 @@ export function BroadcastForm({
     siteSegmentsListOptions({ path: { workspaceId }, query: { pageSize: 100 } }),
   )
   const segmentOptions = [
-    { value: '', label: t(($) => $.broadcasts.audienceAll) },
+    { value: '', label: t(($) => $.broadcasts.segmentAll) },
     ...(segmentsQuery.data?.items ?? []).map((s) => ({ value: s.id, label: s.name })),
   ]
 
@@ -101,13 +101,13 @@ export function BroadcastForm({
         </Group>
 
         <Select
-          label={t(($) => $.broadcasts.audienceLabel)}
+          label={t(($) => $.broadcasts.segmentLabel)}
           data={segmentOptions}
           allowDeselect={false}
           {...form.getInputProps('segmentId')}
         />
         <Alert color="blue" variant="light">
-          {t(($) => $.broadcasts.audienceNote)}
+          {t(($) => $.broadcasts.segmentNote)}
         </Alert>
 
         {templates.length > 0 ? (

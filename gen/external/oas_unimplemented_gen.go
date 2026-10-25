@@ -225,12 +225,12 @@ func (UnimplementedHandler) BroadcastsSchedule(ctx context.Context, req *Schedul
 	return r, ht.ErrNotImplemented
 }
 
-// BroadcastsSetAudience implements Broadcasts_setAudience operation.
+// BroadcastsSetSegment implements Broadcasts_setSegment operation.
 //
-// Set the audience of a draft broadcast: a Segment, or null for all active contacts. Does not send.
+// Set the Segment of a draft broadcast, or null for all contacts. Does not send.
 //
-// PUT /broadcasts/{id}/audience
-func (UnimplementedHandler) BroadcastsSetAudience(ctx context.Context, req *SetBroadcastAudienceInput, params BroadcastsSetAudienceParams) (r BroadcastsSetAudienceRes, _ error) {
+// PUT /broadcasts/{id}/segment
+func (UnimplementedHandler) BroadcastsSetSegment(ctx context.Context, req *SetBroadcastSegmentInput, params BroadcastsSetSegmentParams) (r BroadcastsSetSegmentRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

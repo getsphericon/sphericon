@@ -130,8 +130,8 @@ func TestBroadcastRefusalsReadTheSameOnBothSurfaces(t *testing.T) {
 				return res, err
 			},
 			ext: func(c *externalapi.Client) (any, error) {
-				res, err := c.BroadcastsSetAudience(t.Context(), &externalapi.SetBroadcastAudienceInput{SegmentId: externalapi.NewNilEntityId(missing)},
-					externalapi.BroadcastsSetAudienceParams{ID: ext(fixtures.BroadcastDraftID)})
+				res, err := c.BroadcastsSetSegment(t.Context(), &externalapi.SetBroadcastSegmentInput{SegmentId: externalapi.NewNilEntityId(missing)},
+					externalapi.BroadcastsSetSegmentParams{ID: ext(fixtures.BroadcastDraftID)})
 				return res, err
 			},
 		},

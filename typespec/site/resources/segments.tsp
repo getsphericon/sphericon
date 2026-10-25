@@ -109,7 +109,7 @@ model SiteUpdateSegmentInput {
   condition?: SiteConditionGroup;
 }
 
-/** Request body for previewing a condition's audience */
+/** Request body for previewing a condition's segment */
 model SitePreviewSegmentInput {
   /** Condition; absent means all contacts */
   condition?: SiteConditionGroup;

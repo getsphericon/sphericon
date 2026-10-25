@@ -57,7 +57,7 @@ interface ConditionBuilderProps {
   value: SiteConditionGroup
   onChange: (group: SiteConditionGroup) => void
   // Offer the tests on the triggering Event's properties. Only a Rule has an Event: a
-  // Segment refuses them, and so does the audience preview, which is hidden with them.
+  // Segment refuses them, and so does the segment preview, which is hidden with them.
   triggerLeaves?: boolean
 }
 

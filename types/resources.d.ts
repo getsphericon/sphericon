@@ -322,9 +322,6 @@ export default interface Resources {
     },
     "broadcasts": {
       "addBroadcast": "New broadcast",
-      "audienceAll": "All active contacts",
-      "audienceLabel": "Audience",
-      "audienceNote": "Unsubscribed contacts are always excluded.",
       "createTitle": "New broadcast",
       "deliveryHint": "Send now, or schedule it for a future time. Only draft broadcasts can be sent.",
       "deliveryLabel": "Delivery",
@@ -355,6 +352,9 @@ export default interface Resources {
       "report": "Report",
       "schedule": "Schedule",
       "scheduleLabel": "Schedule for",
+      "segmentAll": "All contacts",
+      "segmentLabel": "Segment",
+      "segmentNote": "Unsubscribed contacts are always excluded.",
       "sendNow": "Send now",
       "showArchived": "Show archived",
       "stats": {
@@ -1106,7 +1106,7 @@ export default interface Resources {
       "nameLabel": "Name",
       "noMatchingContacts": "No contacts match this segment",
       "noRecords": "No segments yet",
-      "previewButton": "Preview audience",
+      "previewButton": "Preview segment",
       "previewCount": "{{count}} matching contacts" | "{{count}} matching contact" | "{{count}} matching contacts",
       "showArchived": "Show archived",
       "triggerKeyLabel": "Event property name"

@@ -18,9 +18,9 @@ Goal: prepare a Broadcast draft aimed at Contacts who used to engage and stopped
 2. Define "quiet" with the human if it is not clear (for example no engagement in 90 days). Build the rule and check it with `segments_preview()` before saving: if the count is zero or implausibly large, revisit the rule.
 3. Save it with `segments_create()`, named so a human recognises it (for example `Win-back: quiet 90 days`).
 4. Call `templates_list()` for existing content worth copying, then call `brand_get()` for the Workspace's Brand kit and `email_schema()` for the editor's document format. Copy a starter Template (read it with `templates_get()` and take its `doc`) and write the Broadcast with `broadcasts_create()`: a subject that is honest and specific, a short message with one clear call to action, and a plain reason why the Contact is hearing from you. The editor's document is the format: write it as `doc` (never an HTML `body`, and never both). The server renders the body and refuses an invalid document with the reason: fix the document, do not work around it. Check it with `email_lint()` before you hand it over: errors must be empty, and fix the warnings.
-5. Point the draft at the Segment with `broadcasts_set_audience()`.
+5. Point the draft at the Segment with `broadcasts_set_segment()`.
 6. Preview it to a single address you were given with `broadcasts_test_send()`. It never reaches the audience. Skip this step if the human gave no address.
-7. Read the draft back with `broadcasts_get()` and check that it is still a `draft` with the right audience.
+7. Read the draft back with `broadcasts_get()` and check that it is still a `draft` with the right Segment.
 
 ## Hand-off
 
