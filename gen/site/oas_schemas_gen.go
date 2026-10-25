@@ -40,37 +40,39 @@ func (s *ApiKeyAuth) SetRoles(val []string) {
 type ApiTokenScope string
 
 const (
-	ApiTokenScopeContactsRead        ApiTokenScope = "contacts:read"
-	ApiTokenScopeContactsWrite       ApiTokenScope = "contacts:write"
-	ApiTokenScopeEventsRead          ApiTokenScope = "events:read"
-	ApiTokenScopeEventsWrite         ApiTokenScope = "events:write"
-	ApiTokenScopeSegmentsRead        ApiTokenScope = "segments:read"
-	ApiTokenScopeSegmentsWrite       ApiTokenScope = "segments:write"
-	ApiTokenScopeBroadcastsRead      ApiTokenScope = "broadcasts:read"
-	ApiTokenScopeBroadcastsWrite     ApiTokenScope = "broadcasts:write"
-	ApiTokenScopeAutomationsRead     ApiTokenScope = "automations:read"
-	ApiTokenScopeAutomationsWrite    ApiTokenScope = "automations:write"
-	ApiTokenScopeEnrollmentsRead     ApiTokenScope = "enrollments:read"
-	ApiTokenScopeTemplatesRead       ApiTokenScope = "templates:read"
-	ApiTokenScopeTemplatesWrite      ApiTokenScope = "templates:write"
-	ApiTokenScopeWebhooksRead        ApiTokenScope = "webhooks:read"
-	ApiTokenScopeWebhooksWrite       ApiTokenScope = "webhooks:write"
-	ApiTokenScopeWebhooksRegenerate  ApiTokenScope = "webhooks:regenerate"
-	ApiTokenScopeWebhooksTest        ApiTokenScope = "webhooks:test"
-	ApiTokenScopeCustomFieldsRead    ApiTokenScope = "custom_fields:read"
-	ApiTokenScopeSendingDomainsRead  ApiTokenScope = "sending_domains:read"
-	ApiTokenScopeIntegrationsRead    ApiTokenScope = "integrations:read"
-	ApiTokenScopeEmailsSend          ApiTokenScope = "emails:send"
-	ApiTokenScopeBroadcastsSend      ApiTokenScope = "broadcasts:send"
-	ApiTokenScopeAutomationsActivate ApiTokenScope = "automations:activate"
-	ApiTokenScopeMcpSend             ApiTokenScope = "mcp:send"
-	ApiTokenScopeContactsErase       ApiTokenScope = "contacts:erase"
-	ApiTokenScopeSendingDomainsWrite ApiTokenScope = "sending_domains:write"
-	ApiTokenScopeIntegrationsWrite   ApiTokenScope = "integrations:write"
-	ApiTokenScopeTokensRead          ApiTokenScope = "tokens:read"
-	ApiTokenScopeTokensWrite         ApiTokenScope = "tokens:write"
-	ApiTokenScopeAuditRead           ApiTokenScope = "audit:read"
-	ApiTokenScopeExportRead          ApiTokenScope = "export:read"
+	ApiTokenScopeContactsRead          ApiTokenScope = "contacts:read"
+	ApiTokenScopeContactsWrite         ApiTokenScope = "contacts:write"
+	ApiTokenScopeEventsRead            ApiTokenScope = "events:read"
+	ApiTokenScopeEventsWrite           ApiTokenScope = "events:write"
+	ApiTokenScopeSegmentsRead          ApiTokenScope = "segments:read"
+	ApiTokenScopeSegmentsWrite         ApiTokenScope = "segments:write"
+	ApiTokenScopeBroadcastsRead        ApiTokenScope = "broadcasts:read"
+	ApiTokenScopeBroadcastsWrite       ApiTokenScope = "broadcasts:write"
+	ApiTokenScopeAutomationsRead       ApiTokenScope = "automations:read"
+	ApiTokenScopeAutomationsWrite      ApiTokenScope = "automations:write"
+	ApiTokenScopeEnrollmentsRead       ApiTokenScope = "enrollments:read"
+	ApiTokenScopeTemplatesRead         ApiTokenScope = "templates:read"
+	ApiTokenScopeTemplatesWrite        ApiTokenScope = "templates:write"
+	ApiTokenScopeWebhooksRead          ApiTokenScope = "webhooks:read"
+	ApiTokenScopeWebhooksWrite         ApiTokenScope = "webhooks:write"
+	ApiTokenScopeWebhooksRegenerate    ApiTokenScope = "webhooks:regenerate"
+	ApiTokenScopeWebhooksTest          ApiTokenScope = "webhooks:test"
+	ApiTokenScopeCustomFieldsRead      ApiTokenScope = "custom_fields:read"
+	ApiTokenScopeSendingDomainsRead    ApiTokenScope = "sending_domains:read"
+	ApiTokenScopeIntegrationsRead      ApiTokenScope = "integrations:read"
+	ApiTokenScopeEmailsSend            ApiTokenScope = "emails:send"
+	ApiTokenScopeBroadcastsSend        ApiTokenScope = "broadcasts:send"
+	ApiTokenScopeAutomationsActivate   ApiTokenScope = "automations:activate"
+	ApiTokenScopeMcpSend               ApiTokenScope = "mcp:send"
+	ApiTokenScopeContactsErase         ApiTokenScope = "contacts:erase"
+	ApiTokenScopeSendingDomainsWrite   ApiTokenScope = "sending_domains:write"
+	ApiTokenScopeIntegrationsWrite     ApiTokenScope = "integrations:write"
+	ApiTokenScopeCapturedMessagesRead  ApiTokenScope = "captured_messages:read"
+	ApiTokenScopeCapturedMessagesWrite ApiTokenScope = "captured_messages:write"
+	ApiTokenScopeTokensRead            ApiTokenScope = "tokens:read"
+	ApiTokenScopeTokensWrite           ApiTokenScope = "tokens:write"
+	ApiTokenScopeAuditRead             ApiTokenScope = "audit:read"
+	ApiTokenScopeExportRead            ApiTokenScope = "export:read"
 )
 
 // AllValues returns all ApiTokenScope values.
@@ -103,6 +105,8 @@ func (ApiTokenScope) AllValues() []ApiTokenScope {
 		ApiTokenScopeContactsErase,
 		ApiTokenScopeSendingDomainsWrite,
 		ApiTokenScopeIntegrationsWrite,
+		ApiTokenScopeCapturedMessagesRead,
+		ApiTokenScopeCapturedMessagesWrite,
 		ApiTokenScopeTokensRead,
 		ApiTokenScopeTokensWrite,
 		ApiTokenScopeAuditRead,
@@ -166,6 +170,10 @@ func (s ApiTokenScope) MarshalText() ([]byte, error) {
 	case ApiTokenScopeSendingDomainsWrite:
 		return []byte(s), nil
 	case ApiTokenScopeIntegrationsWrite:
+		return []byte(s), nil
+	case ApiTokenScopeCapturedMessagesRead:
+		return []byte(s), nil
+	case ApiTokenScopeCapturedMessagesWrite:
 		return []byte(s), nil
 	case ApiTokenScopeTokensRead:
 		return []byte(s), nil
@@ -263,6 +271,12 @@ func (s *ApiTokenScope) UnmarshalText(data []byte) error {
 		return nil
 	case ApiTokenScopeIntegrationsWrite:
 		*s = ApiTokenScopeIntegrationsWrite
+		return nil
+	case ApiTokenScopeCapturedMessagesRead:
+		*s = ApiTokenScopeCapturedMessagesRead
+		return nil
+	case ApiTokenScopeCapturedMessagesWrite:
+		*s = ApiTokenScopeCapturedMessagesWrite
 		return nil
 	case ApiTokenScopeTokensRead:
 		*s = ApiTokenScopeTokensRead
@@ -5647,6 +5661,7 @@ func (*ProblemDetails) siteAuthSecondFactorRes()               {}
 func (*ProblemDetails) siteAuthSigninNotMeRes()                {}
 func (*ProblemDetails) siteAuthSigninStartRes()                {}
 func (*ProblemDetails) siteBrandKitGetRes()                    {}
+func (*ProblemDetails) siteCapturedMessagesDeleteAllRes()      {}
 func (*ProblemDetails) siteEventsActionsRes()                  {}
 func (*ProblemDetails) siteEventsListRes()                     {}
 func (*ProblemDetails) siteIdentitiesLinkRes()                 {}
@@ -9188,6 +9203,11 @@ type SiteCapturedMessageResource struct {
 	FromName NilString `json:"fromName"`
 	// The subject.
 	Subject string `json:"subject"`
+	// True when the From is not on a verified Sending domain: the message would not pass the
+	// Sending-domain gate at a provider that delivers outside.
+	FromUnverified bool `json:"fromUnverified"`
+	// When the message was captured.
+	CreatedAt Timestamp `json:"createdAt"`
 	// The HTML part.
 	HTML string `json:"html"`
 	// The text part.
@@ -9196,11 +9216,6 @@ type SiteCapturedMessageResource struct {
 	Headers []SiteCapturedMessageHeader `json:"headers"`
 	// The URLs of the links of the HTML part, tracker links as the recipient would get them.
 	Links []string `json:"links"`
-	// True when the From is not on a verified Sending domain: the message would not pass the
-	// Sending-domain gate at a provider that delivers outside.
-	FromUnverified bool `json:"fromUnverified"`
-	// When the message was captured.
-	CreatedAt Timestamp `json:"createdAt"`
 }
 
 // GetID returns the value of ID.
@@ -9248,6 +9263,16 @@ func (s *SiteCapturedMessageResource) GetSubject() string {
 	return s.Subject
 }
 
+// GetFromUnverified returns the value of FromUnverified.
+func (s *SiteCapturedMessageResource) GetFromUnverified() bool {
+	return s.FromUnverified
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *SiteCapturedMessageResource) GetCreatedAt() Timestamp {
+	return s.CreatedAt
+}
+
 // GetHTML returns the value of HTML.
 func (s *SiteCapturedMessageResource) GetHTML() string {
 	return s.HTML
@@ -9266,16 +9291,6 @@ func (s *SiteCapturedMessageResource) GetHeaders() []SiteCapturedMessageHeader {
 // GetLinks returns the value of Links.
 func (s *SiteCapturedMessageResource) GetLinks() []string {
 	return s.Links
-}
-
-// GetFromUnverified returns the value of FromUnverified.
-func (s *SiteCapturedMessageResource) GetFromUnverified() bool {
-	return s.FromUnverified
-}
-
-// GetCreatedAt returns the value of CreatedAt.
-func (s *SiteCapturedMessageResource) GetCreatedAt() Timestamp {
-	return s.CreatedAt
 }
 
 // SetID sets the value of ID.
@@ -9323,6 +9338,16 @@ func (s *SiteCapturedMessageResource) SetSubject(val string) {
 	s.Subject = val
 }
 
+// SetFromUnverified sets the value of FromUnverified.
+func (s *SiteCapturedMessageResource) SetFromUnverified(val bool) {
+	s.FromUnverified = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *SiteCapturedMessageResource) SetCreatedAt(val Timestamp) {
+	s.CreatedAt = val
+}
+
 // SetHTML sets the value of HTML.
 func (s *SiteCapturedMessageResource) SetHTML(val string) {
 	s.HTML = val
@@ -9343,13 +9368,143 @@ func (s *SiteCapturedMessageResource) SetLinks(val []string) {
 	s.Links = val
 }
 
+func (*SiteCapturedMessageResource) siteCapturedMessagesGetRes() {}
+
+// A Captured message as the list shows it: without the content.
+// Ref: #/components/schemas/SiteCapturedMessageSummary
+type SiteCapturedMessageSummary struct {
+	// Unique identifier.
+	ID EntityId `json:"id"`
+	// The Test inbox (Integration) that captured the message.
+	IntegrationId EntityId `json:"integrationId"`
+	// The Outbound message of the send; null for a Test send, which records none.
+	OutboundMessageId NilEntityId `json:"outboundMessageId"`
+	// The surface that asked for the send.
+	Surface SiteCapturedMessageSurface `json:"surface"`
+	// The Sending source of a Broadcast or Automation send; null for a Transactional or Test send.
+	SendingSource NilString `json:"sendingSource"`
+	// Normalized (lower-cased) recipient address.
+	Recipient string `json:"recipient"`
+	// The From address as it was, not rewritten.
+	From string `json:"from"`
+	// The From name; null when the message has none.
+	FromName NilString `json:"fromName"`
+	// The subject.
+	Subject string `json:"subject"`
+	// True when the From is not on a verified Sending domain: the message would not pass the
+	// Sending-domain gate at a provider that delivers outside.
+	FromUnverified bool `json:"fromUnverified"`
+	// When the message was captured.
+	CreatedAt Timestamp `json:"createdAt"`
+}
+
+// GetID returns the value of ID.
+func (s *SiteCapturedMessageSummary) GetID() EntityId {
+	return s.ID
+}
+
+// GetIntegrationId returns the value of IntegrationId.
+func (s *SiteCapturedMessageSummary) GetIntegrationId() EntityId {
+	return s.IntegrationId
+}
+
+// GetOutboundMessageId returns the value of OutboundMessageId.
+func (s *SiteCapturedMessageSummary) GetOutboundMessageId() NilEntityId {
+	return s.OutboundMessageId
+}
+
+// GetSurface returns the value of Surface.
+func (s *SiteCapturedMessageSummary) GetSurface() SiteCapturedMessageSurface {
+	return s.Surface
+}
+
+// GetSendingSource returns the value of SendingSource.
+func (s *SiteCapturedMessageSummary) GetSendingSource() NilString {
+	return s.SendingSource
+}
+
+// GetRecipient returns the value of Recipient.
+func (s *SiteCapturedMessageSummary) GetRecipient() string {
+	return s.Recipient
+}
+
+// GetFrom returns the value of From.
+func (s *SiteCapturedMessageSummary) GetFrom() string {
+	return s.From
+}
+
+// GetFromName returns the value of FromName.
+func (s *SiteCapturedMessageSummary) GetFromName() NilString {
+	return s.FromName
+}
+
+// GetSubject returns the value of Subject.
+func (s *SiteCapturedMessageSummary) GetSubject() string {
+	return s.Subject
+}
+
+// GetFromUnverified returns the value of FromUnverified.
+func (s *SiteCapturedMessageSummary) GetFromUnverified() bool {
+	return s.FromUnverified
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *SiteCapturedMessageSummary) GetCreatedAt() Timestamp {
+	return s.CreatedAt
+}
+
+// SetID sets the value of ID.
+func (s *SiteCapturedMessageSummary) SetID(val EntityId) {
+	s.ID = val
+}
+
+// SetIntegrationId sets the value of IntegrationId.
+func (s *SiteCapturedMessageSummary) SetIntegrationId(val EntityId) {
+	s.IntegrationId = val
+}
+
+// SetOutboundMessageId sets the value of OutboundMessageId.
+func (s *SiteCapturedMessageSummary) SetOutboundMessageId(val NilEntityId) {
+	s.OutboundMessageId = val
+}
+
+// SetSurface sets the value of Surface.
+func (s *SiteCapturedMessageSummary) SetSurface(val SiteCapturedMessageSurface) {
+	s.Surface = val
+}
+
+// SetSendingSource sets the value of SendingSource.
+func (s *SiteCapturedMessageSummary) SetSendingSource(val NilString) {
+	s.SendingSource = val
+}
+
+// SetRecipient sets the value of Recipient.
+func (s *SiteCapturedMessageSummary) SetRecipient(val string) {
+	s.Recipient = val
+}
+
+// SetFrom sets the value of From.
+func (s *SiteCapturedMessageSummary) SetFrom(val string) {
+	s.From = val
+}
+
+// SetFromName sets the value of FromName.
+func (s *SiteCapturedMessageSummary) SetFromName(val NilString) {
+	s.FromName = val
+}
+
+// SetSubject sets the value of Subject.
+func (s *SiteCapturedMessageSummary) SetSubject(val string) {
+	s.Subject = val
+}
+
 // SetFromUnverified sets the value of FromUnverified.
-func (s *SiteCapturedMessageResource) SetFromUnverified(val bool) {
+func (s *SiteCapturedMessageSummary) SetFromUnverified(val bool) {
 	s.FromUnverified = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.
-func (s *SiteCapturedMessageResource) SetCreatedAt(val Timestamp) {
+func (s *SiteCapturedMessageSummary) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
 }
 
@@ -9410,6 +9565,32 @@ func (s *SiteCapturedMessageSurface) UnmarshalText(data []byte) error {
 	}
 }
 
+// SiteCapturedMessagesDeleteAllNoContent is response for SiteCapturedMessagesDeleteAll operation.
+type SiteCapturedMessagesDeleteAllNoContent struct{}
+
+func (*SiteCapturedMessagesDeleteAllNoContent) siteCapturedMessagesDeleteAllRes() {}
+
+type SiteCapturedMessagesDeleteBadRequest ProblemDetails
+
+func (*SiteCapturedMessagesDeleteBadRequest) siteCapturedMessagesDeleteRes() {}
+
+// SiteCapturedMessagesDeleteNoContent is response for SiteCapturedMessagesDelete operation.
+type SiteCapturedMessagesDeleteNoContent struct{}
+
+func (*SiteCapturedMessagesDeleteNoContent) siteCapturedMessagesDeleteRes() {}
+
+type SiteCapturedMessagesDeleteNotFound ProblemDetails
+
+func (*SiteCapturedMessagesDeleteNotFound) siteCapturedMessagesDeleteRes() {}
+
+type SiteCapturedMessagesGetBadRequest ProblemDetails
+
+func (*SiteCapturedMessagesGetBadRequest) siteCapturedMessagesGetRes() {}
+
+type SiteCapturedMessagesGetNotFound ProblemDetails
+
+func (*SiteCapturedMessagesGetNotFound) siteCapturedMessagesGetRes() {}
+
 type SiteCapturedMessagesListBadRequest ProblemDetails
 
 func (*SiteCapturedMessagesListBadRequest) siteCapturedMessagesListRes() {}
@@ -9421,7 +9602,7 @@ func (*SiteCapturedMessagesListNotFound) siteCapturedMessagesListRes() {}
 // Paginated response.
 type SiteCapturedMessagesListOK struct {
 	// List of items.
-	Items []SiteCapturedMessageResource `json:"items"`
+	Items []SiteCapturedMessageSummary `json:"items"`
 	// Page number (1-based).
 	Page int32 `json:"page"`
 	// Page size.
@@ -9433,7 +9614,7 @@ type SiteCapturedMessagesListOK struct {
 }
 
 // GetItems returns the value of Items.
-func (s *SiteCapturedMessagesListOK) GetItems() []SiteCapturedMessageResource {
+func (s *SiteCapturedMessagesListOK) GetItems() []SiteCapturedMessageSummary {
 	return s.Items
 }
 
@@ -9458,7 +9639,7 @@ func (s *SiteCapturedMessagesListOK) GetTotalPages() int32 {
 }
 
 // SetItems sets the value of Items.
-func (s *SiteCapturedMessagesListOK) SetItems(val []SiteCapturedMessageResource) {
+func (s *SiteCapturedMessagesListOK) SetItems(val []SiteCapturedMessageSummary) {
 	s.Items = val
 }
 

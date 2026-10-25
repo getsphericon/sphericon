@@ -8,6 +8,7 @@ package capturedmessages
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -136,6 +137,41 @@ func Purge(ctx context.Context, client *ent.Client, retention time.Duration, bat
 		}
 		total += int64(n)
 	}
+}
+
+// ErrNotFound reports a Captured message that does not exist in the Workspace.
+var ErrNotFound = errors.New("captured message not found")
+
+// Get returns one Captured message of the Workspace, or ErrNotFound.
+func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.CapturedMessage, error) {
+	row, err := s.CapturedMessage().Query().Where(capturedmessage.ID(id)).Only(ctx)
+	if ent.IsNotFound(err) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("capturedmessages: get: %w", err)
+	}
+	return row, nil
+}
+
+// Delete removes one Captured message of the Workspace, or reports ErrNotFound.
+func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
+	n, err := s.CapturedMessage().Delete().Where(capturedmessage.ID(id)).Exec(ctx)
+	if err != nil {
+		return fmt.Errorf("capturedmessages: delete: %w", err)
+	}
+	if n == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+// DeleteAll removes every Captured message of the Workspace.
+func (m *Module) DeleteAll(ctx context.Context, s *ent.Scoped) error {
+	if _, err := s.CapturedMessage().Delete().Exec(ctx); err != nil {
+		return fmt.Errorf("capturedmessages: delete all: %w", err)
+	}
+	return nil
 }
 
 // List returns one page of the Workspace's Captured messages, newest first.

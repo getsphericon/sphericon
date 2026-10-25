@@ -17,6 +17,9 @@ namespace Sphericon;
 // Regenerating an Integration's hook key breaks a working URL and needs a person (ADR 0037).
 @@extension(Integrations.regenerateKey, "x-mcp", #{ hidden: true });
 
+// Deleting every Captured message in one call needs a person (ADR 0058).
+@@extension(CapturedMessages.deleteAll, "x-mcp", #{ hidden: true });
+
 // The Audit log is never an agent capability (ADR 0016, ADR 0022).
 @@extension(AuditEntries.list, "x-mcp", #{ hidden: true });
 

@@ -41,6 +41,8 @@ enum TokenOnlyScope {
   contactsErase: "contacts:erase",
   sendingDomainsWrite: "sending_domains:write",
   integrationsWrite: "integrations:write",
+  capturedMessagesRead: "captured_messages:read",
+  capturedMessagesWrite: "captured_messages:write",
   tokensRead: "tokens:read",
   tokensWrite: "tokens:write",
   auditRead: "audit:read",

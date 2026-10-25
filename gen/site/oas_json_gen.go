@@ -83,6 +83,10 @@ func (s *ApiTokenScope) Decode(d *jx.Decoder) error {
 		*s = ApiTokenScopeSendingDomainsWrite
 	case ApiTokenScopeIntegrationsWrite:
 		*s = ApiTokenScopeIntegrationsWrite
+	case ApiTokenScopeCapturedMessagesRead:
+		*s = ApiTokenScopeCapturedMessagesRead
+	case ApiTokenScopeCapturedMessagesWrite:
+		*s = ApiTokenScopeCapturedMessagesWrite
 	case ApiTokenScopeTokensRead:
 		*s = ApiTokenScopeTokensRead
 	case ApiTokenScopeTokensWrite:
@@ -16175,6 +16179,14 @@ func (s *SiteCapturedMessageResource) encodeFields(e *jx.Encoder) {
 		e.Str(s.Subject)
 	}
 	{
+		e.FieldStart("fromUnverified")
+		e.Bool(s.FromUnverified)
+	}
+	{
+		e.FieldStart("createdAt")
+		s.CreatedAt.Encode(e)
+	}
+	{
 		e.FieldStart("html")
 		e.Str(s.HTML)
 	}
@@ -16198,14 +16210,6 @@ func (s *SiteCapturedMessageResource) encodeFields(e *jx.Encoder) {
 		}
 		e.ArrEnd()
 	}
-	{
-		e.FieldStart("fromUnverified")
-		e.Bool(s.FromUnverified)
-	}
-	{
-		e.FieldStart("createdAt")
-		s.CreatedAt.Encode(e)
-	}
 }
 
 var jsonFieldsNameOfSiteCapturedMessageResource = [15]string{
@@ -16218,12 +16222,12 @@ var jsonFieldsNameOfSiteCapturedMessageResource = [15]string{
 	6:  "from",
 	7:  "fromName",
 	8:  "subject",
-	9:  "html",
-	10: "text",
-	11: "headers",
-	12: "links",
-	13: "fromUnverified",
-	14: "createdAt",
+	9:  "fromUnverified",
+	10: "createdAt",
+	11: "html",
+	12: "text",
+	13: "headers",
+	14: "links",
 }
 
 // Decode decodes SiteCapturedMessageResource from json.
@@ -16331,8 +16335,30 @@ func (s *SiteCapturedMessageResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"subject\"")
 			}
-		case "html":
+		case "fromUnverified":
 			requiredBitSet[1] |= 1 << 1
+			if err := func() error {
+				v, err := d.Bool()
+				s.FromUnverified = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"fromUnverified\"")
+			}
+		case "createdAt":
+			requiredBitSet[1] |= 1 << 2
+			if err := func() error {
+				if err := s.CreatedAt.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"createdAt\"")
+			}
+		case "html":
+			requiredBitSet[1] |= 1 << 3
 			if err := func() error {
 				v, err := d.Str()
 				s.HTML = string(v)
@@ -16344,7 +16370,7 @@ func (s *SiteCapturedMessageResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"html\"")
 			}
 		case "text":
-			requiredBitSet[1] |= 1 << 2
+			requiredBitSet[1] |= 1 << 4
 			if err := func() error {
 				v, err := d.Str()
 				s.Text = string(v)
@@ -16356,7 +16382,7 @@ func (s *SiteCapturedMessageResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"text\"")
 			}
 		case "headers":
-			requiredBitSet[1] |= 1 << 3
+			requiredBitSet[1] |= 1 << 5
 			if err := func() error {
 				s.Headers = make([]SiteCapturedMessageHeader, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
@@ -16374,7 +16400,7 @@ func (s *SiteCapturedMessageResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"headers\"")
 			}
 		case "links":
-			requiredBitSet[1] |= 1 << 4
+			requiredBitSet[1] |= 1 << 6
 			if err := func() error {
 				s.Links = make([]string, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
@@ -16392,28 +16418,6 @@ func (s *SiteCapturedMessageResource) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"links\"")
-			}
-		case "fromUnverified":
-			requiredBitSet[1] |= 1 << 5
-			if err := func() error {
-				v, err := d.Bool()
-				s.FromUnverified = bool(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"fromUnverified\"")
-			}
-		case "createdAt":
-			requiredBitSet[1] |= 1 << 6
-			if err := func() error {
-				if err := s.CreatedAt.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"createdAt\"")
 			}
 		default:
 			return d.Skip()
@@ -16472,6 +16476,259 @@ func (s *SiteCapturedMessageResource) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode implements json.Marshaler.
+func (s *SiteCapturedMessageSummary) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SiteCapturedMessageSummary) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("id")
+		s.ID.Encode(e)
+	}
+	{
+		e.FieldStart("integrationId")
+		s.IntegrationId.Encode(e)
+	}
+	{
+		e.FieldStart("outboundMessageId")
+		s.OutboundMessageId.Encode(e)
+	}
+	{
+		e.FieldStart("surface")
+		s.Surface.Encode(e)
+	}
+	{
+		e.FieldStart("sendingSource")
+		s.SendingSource.Encode(e)
+	}
+	{
+		e.FieldStart("recipient")
+		e.Str(s.Recipient)
+	}
+	{
+		e.FieldStart("from")
+		e.Str(s.From)
+	}
+	{
+		e.FieldStart("fromName")
+		s.FromName.Encode(e)
+	}
+	{
+		e.FieldStart("subject")
+		e.Str(s.Subject)
+	}
+	{
+		e.FieldStart("fromUnverified")
+		e.Bool(s.FromUnverified)
+	}
+	{
+		e.FieldStart("createdAt")
+		s.CreatedAt.Encode(e)
+	}
+}
+
+var jsonFieldsNameOfSiteCapturedMessageSummary = [11]string{
+	0:  "id",
+	1:  "integrationId",
+	2:  "outboundMessageId",
+	3:  "surface",
+	4:  "sendingSource",
+	5:  "recipient",
+	6:  "from",
+	7:  "fromName",
+	8:  "subject",
+	9:  "fromUnverified",
+	10: "createdAt",
+}
+
+// Decode decodes SiteCapturedMessageSummary from json.
+func (s *SiteCapturedMessageSummary) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteCapturedMessageSummary to nil")
+	}
+	var requiredBitSet [2]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "id":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.ID.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"id\"")
+			}
+		case "integrationId":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.IntegrationId.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"integrationId\"")
+			}
+		case "outboundMessageId":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				if err := s.OutboundMessageId.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"outboundMessageId\"")
+			}
+		case "surface":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				if err := s.Surface.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"surface\"")
+			}
+		case "sendingSource":
+			requiredBitSet[0] |= 1 << 4
+			if err := func() error {
+				if err := s.SendingSource.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"sendingSource\"")
+			}
+		case "recipient":
+			requiredBitSet[0] |= 1 << 5
+			if err := func() error {
+				v, err := d.Str()
+				s.Recipient = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"recipient\"")
+			}
+		case "from":
+			requiredBitSet[0] |= 1 << 6
+			if err := func() error {
+				v, err := d.Str()
+				s.From = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"from\"")
+			}
+		case "fromName":
+			requiredBitSet[0] |= 1 << 7
+			if err := func() error {
+				if err := s.FromName.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"fromName\"")
+			}
+		case "subject":
+			requiredBitSet[1] |= 1 << 0
+			if err := func() error {
+				v, err := d.Str()
+				s.Subject = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"subject\"")
+			}
+		case "fromUnverified":
+			requiredBitSet[1] |= 1 << 1
+			if err := func() error {
+				v, err := d.Bool()
+				s.FromUnverified = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"fromUnverified\"")
+			}
+		case "createdAt":
+			requiredBitSet[1] |= 1 << 2
+			if err := func() error {
+				if err := s.CreatedAt.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"createdAt\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SiteCapturedMessageSummary")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [2]uint8{
+		0b11111111,
+		0b00000111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSiteCapturedMessageSummary) {
+					name = jsonFieldsNameOfSiteCapturedMessageSummary[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteCapturedMessageSummary) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteCapturedMessageSummary) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes SiteCapturedMessageSurface as json.
 func (s SiteCapturedMessageSurface) Encode(e *jx.Encoder) {
 	e.Str(string(s))
@@ -16512,6 +16769,158 @@ func (s SiteCapturedMessageSurface) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *SiteCapturedMessageSurface) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SiteCapturedMessagesDeleteBadRequest as json.
+func (s *SiteCapturedMessagesDeleteBadRequest) Encode(e *jx.Encoder) {
+	unwrapped := (*ProblemDetails)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes SiteCapturedMessagesDeleteBadRequest from json.
+func (s *SiteCapturedMessagesDeleteBadRequest) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteCapturedMessagesDeleteBadRequest to nil")
+	}
+	var unwrapped ProblemDetails
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = SiteCapturedMessagesDeleteBadRequest(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteCapturedMessagesDeleteBadRequest) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteCapturedMessagesDeleteBadRequest) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SiteCapturedMessagesDeleteNotFound as json.
+func (s *SiteCapturedMessagesDeleteNotFound) Encode(e *jx.Encoder) {
+	unwrapped := (*ProblemDetails)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes SiteCapturedMessagesDeleteNotFound from json.
+func (s *SiteCapturedMessagesDeleteNotFound) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteCapturedMessagesDeleteNotFound to nil")
+	}
+	var unwrapped ProblemDetails
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = SiteCapturedMessagesDeleteNotFound(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteCapturedMessagesDeleteNotFound) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteCapturedMessagesDeleteNotFound) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SiteCapturedMessagesGetBadRequest as json.
+func (s *SiteCapturedMessagesGetBadRequest) Encode(e *jx.Encoder) {
+	unwrapped := (*ProblemDetails)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes SiteCapturedMessagesGetBadRequest from json.
+func (s *SiteCapturedMessagesGetBadRequest) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteCapturedMessagesGetBadRequest to nil")
+	}
+	var unwrapped ProblemDetails
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = SiteCapturedMessagesGetBadRequest(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteCapturedMessagesGetBadRequest) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteCapturedMessagesGetBadRequest) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SiteCapturedMessagesGetNotFound as json.
+func (s *SiteCapturedMessagesGetNotFound) Encode(e *jx.Encoder) {
+	unwrapped := (*ProblemDetails)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes SiteCapturedMessagesGetNotFound from json.
+func (s *SiteCapturedMessagesGetNotFound) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteCapturedMessagesGetNotFound to nil")
+	}
+	var unwrapped ProblemDetails
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = SiteCapturedMessagesGetNotFound(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteCapturedMessagesGetNotFound) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteCapturedMessagesGetNotFound) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -16647,9 +17056,9 @@ func (s *SiteCapturedMessagesListOK) Decode(d *jx.Decoder) error {
 		case "items":
 			requiredBitSet[0] |= 1 << 0
 			if err := func() error {
-				s.Items = make([]SiteCapturedMessageResource, 0)
+				s.Items = make([]SiteCapturedMessageSummary, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
-					var elem SiteCapturedMessageResource
+					var elem SiteCapturedMessageSummary
 					if err := elem.Decode(d); err != nil {
 						return err
 					}

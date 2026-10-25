@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/brandkit"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
+	"github.com/getsphericon/sphericon/internal/capturedmessages"
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/erasure"
 	"github.com/getsphericon/sphericon/internal/eventlog"
@@ -44,6 +45,7 @@ type Handlers struct {
 	segments       *segments.Module
 	webhooks       *webhooks.Module
 	integrations   *integrations.Module
+	captured       *capturedmessages.Module
 	sendingDomains *sendingdomains.Module
 	broadcasts     *broadcasts.Module
 	reputation     *reputation.Module
@@ -81,32 +83,34 @@ type ExportStreams interface {
 // the shared singletons the composition root registers once, so /api and /site
 // cannot diverge on how a module is constructed.
 type Deps struct {
-	Accounts       *accounts.Accounts
-	Bus            *events.Bus
-	Webhooks       *webhooks.Module
-	Integrations   *integrations.Module
-	SendingDomains *sendingdomains.Module
-	Outbound       *outbound.Module
-	Segments       *segments.Module
-	EventLog       *eventlog.Module
-	Contacts       *contacts.Module
-	Erasure        *erasure.Module
-	Tags           *tags.Module
-	Templates      *templates.Module
-	Transactional  *transactional.Module
-	BrandKit       *brandkit.Module
-	Automations    *automations.Module
-	Rules          *rules.Module
-	Broadcasts     *broadcasts.Module
-	Reputation     *reputation.Module
-	BootstrapToken string
-	Audit          AuditLog
-	Export         ExportStreams
+	Accounts     *accounts.Accounts
+	Bus          *events.Bus
+	Webhooks     *webhooks.Module
+	Integrations *integrations.Module
+	// CapturedMessages is the store of what the Workspace's Test inbox kept.
+	CapturedMessages *capturedmessages.Module
+	SendingDomains   *sendingdomains.Module
+	Outbound         *outbound.Module
+	Segments         *segments.Module
+	EventLog         *eventlog.Module
+	Contacts         *contacts.Module
+	Erasure          *erasure.Module
+	Tags             *tags.Module
+	Templates        *templates.Module
+	Transactional    *transactional.Module
+	BrandKit         *brandkit.Module
+	Automations      *automations.Module
+	Rules            *rules.Module
+	Broadcasts       *broadcasts.Module
+	Reputation       *reputation.Module
+	BootstrapToken   string
+	Audit            AuditLog
+	Export           ExportStreams
 }
 
 func NewHandlers(d Deps) *Handlers {
 	return &Handlers{
-		accounts: d.Accounts, bus: d.Bus, webhooks: d.Webhooks, integrations: d.Integrations, sendingDomains: d.SendingDomains, outbound: d.Outbound, segments: d.Segments,
+		accounts: d.Accounts, bus: d.Bus, webhooks: d.Webhooks, integrations: d.Integrations, captured: d.CapturedMessages, sendingDomains: d.SendingDomains, outbound: d.Outbound, segments: d.Segments,
 		eventlog: d.EventLog, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, templates: d.Templates, transactional: d.Transactional, brandKit: d.BrandKit, automations: d.Automations, rules: d.Rules,
 		broadcasts: d.Broadcasts, reputation: d.Reputation, bootstrapToken: d.BootstrapToken,
 		audit: d.Audit, export: d.Export,

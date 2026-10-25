@@ -271,6 +271,42 @@ func (UnimplementedHandler) BroadcastsUpdate(ctx context.Context, req *UpdateBro
 	return r, ht.ErrNotImplemented
 }
 
+// CapturedMessagesDelete implements CapturedMessages_delete operation.
+//
+// Delete one Captured message.
+//
+// DELETE /captured-messages/{id}
+func (UnimplementedHandler) CapturedMessagesDelete(ctx context.Context, params CapturedMessagesDeleteParams) (r CapturedMessagesDeleteRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// CapturedMessagesDeleteAll implements CapturedMessages_deleteAll operation.
+//
+// Delete every Captured message of the Workspace. Needs a person: hidden from MCP.
+//
+// DELETE /captured-messages/all
+func (UnimplementedHandler) CapturedMessagesDeleteAll(ctx context.Context) (r CapturedMessagesDeleteAllRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// CapturedMessagesGet implements CapturedMessages_get operation.
+//
+// Read one Captured message in full: headers, HTML, text and links.
+//
+// GET /captured-messages/{id}
+func (UnimplementedHandler) CapturedMessagesGet(ctx context.Context, params CapturedMessagesGetParams) (r CapturedMessagesGetRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// CapturedMessagesList implements CapturedMessages_list operation.
+//
+// List the Captured messages, newest first, without their content (read one for it).
+//
+// GET /captured-messages
+func (UnimplementedHandler) CapturedMessagesList(ctx context.Context, params CapturedMessagesListParams) (r CapturedMessagesListRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // ContactsBatchUpsert implements ContactsBatch_upsert operation.
 //
 // Upsert up to 1000 contacts by alias keys; a failing item does not affect the others.

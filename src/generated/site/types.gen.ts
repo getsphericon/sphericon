@@ -36,6 +36,8 @@ export const ApiTokenScope = {
   CONTACTS_ERASE: 'contacts:erase',
   SENDING_DOMAINS_WRITE: 'sending_domains:write',
   INTEGRATIONS_WRITE: 'integrations:write',
+  CAPTURED_MESSAGES_READ: 'captured_messages:read',
+  CAPTURED_MESSAGES_WRITE: 'captured_messages:write',
   TOKENS_READ: 'tokens:read',
   TOKENS_WRITE: 'tokens:write',
   AUDIT_READ: 'audit:read',
@@ -1697,6 +1699,52 @@ export const SiteBroadcastStatus = {
 export type SiteBroadcastStatus = typeof SiteBroadcastStatus[keyof typeof SiteBroadcastStatus];
 
 /**
+ * What a Captured message list shows of each message: everything but the content
+ */
+export type SiteCapturedMessageFields = {
+  /**
+   * The Test inbox (Integration) that captured the message
+   */
+  integrationId: EntityId;
+  /**
+   * The Outbound message of the send; null for a Test send, which records none
+   */
+  outboundMessageId: EntityId | null;
+  /**
+   * The surface that asked for the send
+   */
+  surface: SiteCapturedMessageSurface;
+  /**
+   * The Sending source of a Broadcast or Automation send; null for a Transactional or Test send
+   */
+  sendingSource: string | null;
+  /**
+   * Normalized (lower-cased) recipient address
+   */
+  recipient: string;
+  /**
+   * The From address as it was, not rewritten
+   */
+  from: string;
+  /**
+   * The From name; null when the message has none
+   */
+  fromName: string | null;
+  /**
+   * The subject
+   */
+  subject: string;
+  /**
+   * True when the From is not on a verified Sending domain: the message would not pass the Sending-domain gate at a provider that delivers outside
+   */
+  fromUnverified: boolean;
+  /**
+   * When the message was captured
+   */
+  createdAt: Timestamp;
+};
+
+/**
  * One header line of a Captured message
  */
 export type SiteCapturedMessageHeader = {
@@ -1745,6 +1793,14 @@ export type SiteCapturedMessageResource = {
    */
   subject: string;
   /**
+   * True when the From is not on a verified Sending domain: the message would not pass the Sending-domain gate at a provider that delivers outside
+   */
+  fromUnverified: boolean;
+  /**
+   * When the message was captured
+   */
+  createdAt: Timestamp;
+  /**
    * The HTML part
    */
   html: string;
@@ -1760,6 +1816,48 @@ export type SiteCapturedMessageResource = {
    * The URLs of the links of the HTML part, tracker links as the recipient would get them
    */
   links: Array<string>;
+};
+
+/**
+ * A Captured message as the list shows it: without the content
+ */
+export type SiteCapturedMessageSummary = {
+  /**
+   * Unique identifier
+   */
+  id: EntityId;
+  /**
+   * The Test inbox (Integration) that captured the message
+   */
+  integrationId: EntityId;
+  /**
+   * The Outbound message of the send; null for a Test send, which records none
+   */
+  outboundMessageId: EntityId | null;
+  /**
+   * The surface that asked for the send
+   */
+  surface: SiteCapturedMessageSurface;
+  /**
+   * The Sending source of a Broadcast or Automation send; null for a Transactional or Test send
+   */
+  sendingSource: string | null;
+  /**
+   * Normalized (lower-cased) recipient address
+   */
+  recipient: string;
+  /**
+   * The From address as it was, not rewritten
+   */
+  from: string;
+  /**
+   * The From name; null when the message has none
+   */
+  fromName: string | null;
+  /**
+   * The subject
+   */
+  subject: string;
   /**
    * True when the From is not on a verified Sending domain: the message would not pass the Sending-domain gate at a provider that delivers outside
    */
@@ -5181,6 +5279,8 @@ export const TokenOnlyScope = {
   CONTACTS_ERASE: 'contacts:erase',
   SENDING_DOMAINS_WRITE: 'sending_domains:write',
   INTEGRATIONS_WRITE: 'integrations:write',
+  CAPTURED_MESSAGES_READ: 'captured_messages:read',
+  CAPTURED_MESSAGES_WRITE: 'captured_messages:write',
   TOKENS_READ: 'tokens:read',
   TOKENS_WRITE: 'tokens:write',
   AUDIT_READ: 'audit:read',
@@ -5363,6 +5463,17 @@ export type SiteBroadcastResourceParentKey = WorkspaceId;
  * true lists the archived broadcasts instead of the kept ones; the default hides them
  */
 export type SiteBroadcastsListFilter = boolean;
+
+/**
+ * Unique identifier
+ */
+export type SiteCapturedMessageResourceKeyId = EntityId;
+
+/**
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
+ */
+export type SiteCapturedMessageResourceKeyWorkspaceId = WorkspaceId;
 
 /**
  * The Workspace id: its short opaque public address and the route key for nested
@@ -8648,7 +8759,7 @@ export type SiteCapturedMessagesListResponses = {
     /**
      * List of items
      */
-    items: Array<SiteCapturedMessageResource>;
+    items: Array<SiteCapturedMessageSummary>;
     /**
      * Page number (1-based)
      */
@@ -8669,6 +8780,115 @@ export type SiteCapturedMessagesListResponses = {
 };
 
 export type SiteCapturedMessagesListResponse = SiteCapturedMessagesListResponses[keyof SiteCapturedMessagesListResponses];
+
+export type SiteCapturedMessagesDeleteAllData = {
+  body?: never;
+  path: {
+    /**
+     * The Workspace id: its short opaque public address and the route key for nested
+     * workspace resources (ADR 0043)
+     */
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/captured-messages/all';
+};
+
+export type SiteCapturedMessagesDeleteAllErrors = {
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteCapturedMessagesDeleteAllError = SiteCapturedMessagesDeleteAllErrors[keyof SiteCapturedMessagesDeleteAllErrors];
+
+export type SiteCapturedMessagesDeleteAllResponses = {
+  /**
+   * There is no content to send for this request, but the headers may be useful.
+   */
+  204: void;
+};
+
+export type SiteCapturedMessagesDeleteAllResponse = SiteCapturedMessagesDeleteAllResponses[keyof SiteCapturedMessagesDeleteAllResponses];
+
+export type SiteCapturedMessagesDeleteData = {
+  body?: never;
+  path: {
+    /**
+     * The Workspace id: its short opaque public address and the route key for nested
+     * workspace resources (ADR 0043)
+     */
+    workspaceId: WorkspaceId;
+    /**
+     * Unique identifier
+     */
+    id: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/captured-messages/{id}';
+};
+
+export type SiteCapturedMessagesDeleteErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteCapturedMessagesDeleteError = SiteCapturedMessagesDeleteErrors[keyof SiteCapturedMessagesDeleteErrors];
+
+export type SiteCapturedMessagesDeleteResponses = {
+  /**
+   * There is no content to send for this request, but the headers may be useful.
+   */
+  204: void;
+};
+
+export type SiteCapturedMessagesDeleteResponse = SiteCapturedMessagesDeleteResponses[keyof SiteCapturedMessagesDeleteResponses];
+
+export type SiteCapturedMessagesGetData = {
+  body?: never;
+  path: {
+    /**
+     * The Workspace id: its short opaque public address and the route key for nested
+     * workspace resources (ADR 0043)
+     */
+    workspaceId: WorkspaceId;
+    /**
+     * Unique identifier
+     */
+    id: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/captured-messages/{id}';
+};
+
+export type SiteCapturedMessagesGetErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteCapturedMessagesGetError = SiteCapturedMessagesGetErrors[keyof SiteCapturedMessagesGetErrors];
+
+export type SiteCapturedMessagesGetResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteCapturedMessageResource;
+};
+
+export type SiteCapturedMessagesGetResponse = SiteCapturedMessagesGetResponses[keyof SiteCapturedMessagesGetResponses];
 
 export type SiteContactsListData = {
   body?: never;

@@ -2,10 +2,12 @@ package site
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/capturedmessages"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
@@ -27,9 +29,9 @@ func (h *Handlers) SiteCapturedMessagesList(ctx context.Context, params siteapi.
 		return nil, err
 	}
 
-	res := make([]siteapi.SiteCapturedMessageResource, len(page.Items))
+	res := make([]siteapi.SiteCapturedMessageSummary, len(page.Items))
 	for i, m := range page.Items {
-		res[i] = mapper.CapturedMessageToResource(m)
+		res[i] = mapper.CapturedMessageToSummary(m)
 	}
 	return &siteapi.SiteCapturedMessagesListOK{
 		Items:      res,
@@ -38,4 +40,64 @@ func (h *Handlers) SiteCapturedMessagesList(ctx context.Context, params siteapi.
 		TotalItems: narrow.Int32(page.TotalItems),
 		TotalPages: narrow.Int32(page.TotalPages),
 	}, nil
+}
+
+// SiteCapturedMessagesGet returns one Captured message in full. Every member may read.
+func (h *Handlers) SiteCapturedMessagesGet(ctx context.Context, params siteapi.SiteCapturedMessagesGetParams) (siteapi.SiteCapturedMessagesGetRes, error) {
+	s, err := h.scopedFor(ctx, params.WorkspaceId)
+	if ent.IsNotFound(err) {
+		v := siteapi.SiteCapturedMessagesGetNotFound(problem(http.StatusNotFound, "workspace not found"))
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	row, err := h.captured.Get(ctx, s, int64(params.ID))
+	if errors.Is(err, capturedmessages.ErrNotFound) {
+		v := siteapi.SiteCapturedMessagesGetNotFound(problem(http.StatusNotFound, err.Error()))
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	res := mapper.CapturedMessageToResource(row)
+	return &res, nil
+}
+
+// SiteCapturedMessagesDelete deletes one Captured message. Every member may delete.
+func (h *Handlers) SiteCapturedMessagesDelete(ctx context.Context, params siteapi.SiteCapturedMessagesDeleteParams) (siteapi.SiteCapturedMessagesDeleteRes, error) {
+	s, err := h.scopedFor(ctx, params.WorkspaceId)
+	if ent.IsNotFound(err) {
+		v := siteapi.SiteCapturedMessagesDeleteNotFound(problem(http.StatusNotFound, "workspace not found"))
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	err = h.captured.Delete(ctx, s, int64(params.ID))
+	if errors.Is(err, capturedmessages.ErrNotFound) {
+		v := siteapi.SiteCapturedMessagesDeleteNotFound(problem(http.StatusNotFound, err.Error()))
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &siteapi.SiteCapturedMessagesDeleteNoContent{}, nil
+}
+
+// SiteCapturedMessagesDeleteAll deletes every Captured message of the workspace. Every member
+// may delete.
+func (h *Handlers) SiteCapturedMessagesDeleteAll(ctx context.Context, params siteapi.SiteCapturedMessagesDeleteAllParams) (siteapi.SiteCapturedMessagesDeleteAllRes, error) {
+	s, err := h.scopedFor(ctx, params.WorkspaceId)
+	if ent.IsNotFound(err) {
+		v := problem(http.StatusNotFound, "workspace not found")
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	if err := h.captured.DeleteAll(ctx, s); err != nil {
+		return nil, err
+	}
+	return &siteapi.SiteCapturedMessagesDeleteAllNoContent{}, nil
 }

@@ -356,9 +356,28 @@ type Handler interface {
 	//
 	// PUT /workspaces/{workspaceId}/broadcasts/{id}
 	SiteBroadcastsUpdate(ctx context.Context, req *SiteUpdateBroadcastInput, params SiteBroadcastsUpdateParams) (SiteBroadcastsUpdateRes, error)
+	// SiteCapturedMessagesDelete implements SiteCapturedMessages_delete operation.
+	//
+	// Delete one Captured message. Every member may delete.
+	//
+	// DELETE /workspaces/{workspaceId}/captured-messages/{id}
+	SiteCapturedMessagesDelete(ctx context.Context, params SiteCapturedMessagesDeleteParams) (SiteCapturedMessagesDeleteRes, error)
+	// SiteCapturedMessagesDeleteAll implements SiteCapturedMessages_deleteAll operation.
+	//
+	// Delete every Captured message of the workspace. Every member may delete.
+	//
+	// DELETE /workspaces/{workspaceId}/captured-messages/all
+	SiteCapturedMessagesDeleteAll(ctx context.Context, params SiteCapturedMessagesDeleteAllParams) (SiteCapturedMessagesDeleteAllRes, error)
+	// SiteCapturedMessagesGet implements SiteCapturedMessages_get operation.
+	//
+	// Read one Captured message in full: headers, HTML, text and links. Every member may read.
+	//
+	// GET /workspaces/{workspaceId}/captured-messages/{id}
+	SiteCapturedMessagesGet(ctx context.Context, params SiteCapturedMessagesGetParams) (SiteCapturedMessagesGetRes, error)
 	// SiteCapturedMessagesList implements SiteCapturedMessages_list operation.
 	//
-	// List the Captured messages of the workspace, newest first. Every member may read.
+	// List the Captured messages of the workspace, newest first, without their content (read one for it).
+	// Every member may read.
 	//
 	// GET /workspaces/{workspaceId}/captured-messages
 	SiteCapturedMessagesList(ctx context.Context, params SiteCapturedMessagesListParams) (SiteCapturedMessagesListRes, error)

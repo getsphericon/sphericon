@@ -140,7 +140,6 @@ func TestSiteCapturedMessagesAreListedNewestFirstAndOnlyForTheOwnWorkspace(t *te
 	assert.Equal(t, fixtures.CapturedMessageGlobexWelcomeSubject, welcome.Subject)
 	assert.True(t, welcome.FromUnverified)
 	assert.True(t, welcome.OutboundMessageId.Null, "a message with no Outbound message names none")
-	assert.Equal(t, []string{"https://globex.test/start"}, welcome.Links)
 	empty, ok := other.(*siteapi.SiteCapturedMessagesListOK)
 	require.Truef(t, ok, "got %T", other)
 	require.Len(t, empty.Items, 1)

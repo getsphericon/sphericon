@@ -34,6 +34,8 @@ export const zApiTokenScope = z.enum([
   'contacts:erase',
   'sending_domains:write',
   'integrations:write',
+  'captured_messages:read',
+  'captured_messages:write',
   'tokens:read',
   'tokens:write',
   'audit:read',
@@ -2056,6 +2058,22 @@ export const zSiteBroadcastResource = z.object({
 });
 
 /**
+ * What a Captured message list shows of each message: everything but the content
+ */
+export const zSiteCapturedMessageFields = z.object({
+  integrationId: zEntityId,
+  outboundMessageId: zEntityId.nullable(),
+  surface: zSiteCapturedMessageSurface,
+  sendingSource: z.string().nullable(),
+  recipient: z.string(),
+  from: z.string(),
+  fromName: z.string().nullable(),
+  subject: z.string(),
+  fromUnverified: z.boolean(),
+  createdAt: zTimestamp
+});
+
+/**
  * A message a Test inbox kept instead of sending it out: what the recipient would have received
  */
 export const zSiteCapturedMessageResource = z.object({
@@ -2068,10 +2086,27 @@ export const zSiteCapturedMessageResource = z.object({
   from: z.string(),
   fromName: z.string().nullable(),
   subject: z.string(),
+  fromUnverified: z.boolean(),
+  createdAt: zTimestamp,
   html: z.string(),
   text: z.string(),
   headers: z.array(zSiteCapturedMessageHeader),
-  links: z.array(z.string()),
+  links: z.array(z.string())
+});
+
+/**
+ * A Captured message as the list shows it: without the content
+ */
+export const zSiteCapturedMessageSummary = z.object({
+  id: zEntityId,
+  integrationId: zEntityId,
+  outboundMessageId: zEntityId.nullable(),
+  surface: zSiteCapturedMessageSurface,
+  sendingSource: z.string().nullable(),
+  recipient: z.string(),
+  from: z.string(),
+  fromName: z.string().nullable(),
+  subject: z.string(),
   fromUnverified: z.boolean(),
   createdAt: zTimestamp
 });
@@ -2443,6 +2478,8 @@ export const zTokenOnlyScope = z.enum([
   'contacts:erase',
   'sending_domains:write',
   'integrations:write',
+  'captured_messages:read',
+  'captured_messages:write',
   'tokens:read',
   'tokens:write',
   'audit:read',
@@ -2790,6 +2827,17 @@ export const zSiteBroadcastResourceParentKey = zWorkspaceId;
  * true lists the archived broadcasts instead of the kept ones; the default hides them
  */
 export const zSiteBroadcastsListFilter = z.boolean();
+
+/**
+ * Unique identifier
+ */
+export const zSiteCapturedMessageResourceKeyId = zEntityId;
+
+/**
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
+ */
+export const zSiteCapturedMessageResourceKeyWorkspaceId = zWorkspaceId;
 
 /**
  * The Workspace id: its short opaque public address and the route key for nested
@@ -3805,12 +3853,41 @@ export const zSiteCapturedMessagesListQuery = z.object({
  * Paginated response
  */
 export const zSiteCapturedMessagesListResponse = z.object({
-  items: z.array(zSiteCapturedMessageResource),
+  items: z.array(zSiteCapturedMessageSummary),
   page: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   totalItems: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   totalPages: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
 });
+
+export const zSiteCapturedMessagesDeleteAllPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * There is no content to send for this request, but the headers may be useful.
+ */
+export const zSiteCapturedMessagesDeleteAllResponse = z.void();
+
+export const zSiteCapturedMessagesDeletePath = z.object({
+  workspaceId: zWorkspaceId,
+  id: zEntityId
+});
+
+/**
+ * There is no content to send for this request, but the headers may be useful.
+ */
+export const zSiteCapturedMessagesDeleteResponse = z.void();
+
+export const zSiteCapturedMessagesGetPath = z.object({
+  workspaceId: zWorkspaceId,
+  id: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteCapturedMessagesGetResponse = zSiteCapturedMessageResource;
 
 export const zSiteContactsListPath = z.object({
   workspaceId: zWorkspaceId

@@ -117,6 +117,22 @@ type BroadcastsUpdateRes interface {
 	broadcastsUpdateRes()
 }
 
+type CapturedMessagesDeleteAllRes interface {
+	capturedMessagesDeleteAllRes()
+}
+
+type CapturedMessagesDeleteRes interface {
+	capturedMessagesDeleteRes()
+}
+
+type CapturedMessagesGetRes interface {
+	capturedMessagesGetRes()
+}
+
+type CapturedMessagesListRes interface {
+	capturedMessagesListRes()
+}
+
 type ContactsBatchUpsertRes interface {
 	contactsBatchUpsertRes()
 }

@@ -1577,6 +1577,7 @@ func externalDeps(i do.Injector) (apiexternal.Deps, error) {
 	bc := invoke[*broadcasts.Module](r)
 	rep := invoke[*reputation.Module](r)
 	integ := invoke[*integrations.Module](r)
+	captured := invoke[*capturedmessages.Module](r)
 	sd := invoke[*sendingdomains.Module](r)
 	edition := invoke[*ee.Edition](r)
 	if r.err != nil {
@@ -1585,7 +1586,7 @@ func externalDeps(i do.Injector) (apiexternal.Deps, error) {
 	return apiexternal.Deps{
 		Accounts: acc, Bus: bus.Bus, Webhooks: wh, Outbound: sender.Module,
 		Segments: seg, EventLog: evlog, Contacts: con, Erasure: er, Tags: tg, Templates: tpl, Transactional: transactional.New(tpl, sender.Module), BrandKit: bk, Automations: auto, Rules: rl,
-		Broadcasts: bc, Reputation: rep, Integrations: integ, SendingDomains: sd, BootstrapToken: cfg.BootstrapToken, Audit: edition.Audit, Export: edition.Export,
+		Broadcasts: bc, Reputation: rep, Integrations: integ, CapturedMessages: captured, SendingDomains: sd, BootstrapToken: cfg.BootstrapToken, Audit: edition.Audit, Export: edition.Export,
 	}, nil
 }
 

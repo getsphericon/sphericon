@@ -20,15 +20,8 @@ model SiteCapturedMessageHeader {
   value: string;
 }
 
-/** A message a Test inbox kept instead of sending it out: what the recipient would have received */
-@resource("captured-messages")
-@segment("captured-messages")
-@parentResource(SiteWorkspaceResource)
-model SiteCapturedMessageResource {
-  /** Unique identifier */
-  @key
-  id: EntityId;
-
+/** What a Captured message list shows of each message: everything but the content */
+model SiteCapturedMessageFields {
   /** The Test inbox (Integration) that captured the message */
   integrationId: EntityId;
 
@@ -53,6 +46,32 @@ model SiteCapturedMessageResource {
   /** The subject */
   subject: string;
 
+  /** True when the From is not on a verified Sending domain: the message would not pass the Sending-domain gate at a provider that delivers outside */
+  fromUnverified: boolean;
+
+  /** When the message was captured */
+  createdAt: Timestamp;
+}
+
+/** A Captured message as the list shows it: without the content */
+model SiteCapturedMessageSummary {
+  /** Unique identifier */
+  id: EntityId;
+
+  ...SiteCapturedMessageFields;
+}
+
+/** A message a Test inbox kept instead of sending it out: what the recipient would have received */
+@resource("captured-messages")
+@segment("captured-messages")
+@parentResource(SiteWorkspaceResource)
+model SiteCapturedMessageResource {
+  /** Unique identifier */
+  @key
+  id: EntityId;
+
+  ...SiteCapturedMessageFields;
+
   /** The HTML part */
   html: string;
 
@@ -64,18 +83,12 @@ model SiteCapturedMessageResource {
 
   /** The URLs of the links of the HTML part, tracker links as the recipient would get them */
   links: string[];
-
-  /** True when the From is not on a verified Sending domain: the message would not pass the Sending-domain gate at a provider that delivers outside */
-  fromUnverified: boolean;
-
-  /** When the message was captured */
-  createdAt: Timestamp;
 }
 
-// Read side of the Test inbox. Nested via @parentResource + @autoRoute.
+// Read and delete side of the Test inbox. Nested via @parentResource + @autoRoute.
 @tag("Site Captured Messages")
 namespace SiteCapturedMessages {
-  /** List the Captured messages of the workspace, newest first. Every member may read. */
+  /** List the Captured messages of the workspace, newest first, without their content (read one for it). Every member may read. */
   @listsResource(SiteCapturedMessageResource)
   @get
   @autoRoute
@@ -83,8 +96,34 @@ namespace SiteCapturedMessages {
     ...ResourceCollectionParameters<SiteCapturedMessageResource>,
     ...PageQuery,
   ):
-    | Page<SiteCapturedMessageResource>
+    | Page<SiteCapturedMessageSummary>
     | BadRequestProblem
     | NotFoundProblem
     | UnprocessableEntityProblem;
+
+  /** Read one Captured message in full: headers, HTML, text and links. Every member may read. */
+  @readsResource(SiteCapturedMessageResource)
+  @get
+  @autoRoute
+  op get(...ResourceParameters<SiteCapturedMessageResource>):
+    | SiteCapturedMessageResource
+    | BadRequestProblem
+    | NotFoundProblem;
+
+  /** Delete one Captured message. Every member may delete. */
+  @deletesResource(SiteCapturedMessageResource)
+  @delete
+  @autoRoute
+  op delete(...ResourceParameters<SiteCapturedMessageResource>):
+    | NoContentResponse
+    | BadRequestProblem
+    | NotFoundProblem;
+
+  /** Delete every Captured message of the workspace. Every member may delete. */
+  @collectionAction(SiteCapturedMessageResource, "all")
+  @delete
+  @autoRoute
+  op deleteAll(...ResourceCollectionParameters<SiteCapturedMessageResource>):
+    | NoContentResponse
+    | NotFoundProblem;
 }

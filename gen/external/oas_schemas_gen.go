@@ -126,37 +126,39 @@ func (*ApiTokenListResponse) authTokensListRes() {}
 type ApiTokenScope string
 
 const (
-	ApiTokenScopeContactsRead        ApiTokenScope = "contacts:read"
-	ApiTokenScopeContactsWrite       ApiTokenScope = "contacts:write"
-	ApiTokenScopeEventsRead          ApiTokenScope = "events:read"
-	ApiTokenScopeEventsWrite         ApiTokenScope = "events:write"
-	ApiTokenScopeSegmentsRead        ApiTokenScope = "segments:read"
-	ApiTokenScopeSegmentsWrite       ApiTokenScope = "segments:write"
-	ApiTokenScopeBroadcastsRead      ApiTokenScope = "broadcasts:read"
-	ApiTokenScopeBroadcastsWrite     ApiTokenScope = "broadcasts:write"
-	ApiTokenScopeAutomationsRead     ApiTokenScope = "automations:read"
-	ApiTokenScopeAutomationsWrite    ApiTokenScope = "automations:write"
-	ApiTokenScopeEnrollmentsRead     ApiTokenScope = "enrollments:read"
-	ApiTokenScopeTemplatesRead       ApiTokenScope = "templates:read"
-	ApiTokenScopeTemplatesWrite      ApiTokenScope = "templates:write"
-	ApiTokenScopeWebhooksRead        ApiTokenScope = "webhooks:read"
-	ApiTokenScopeWebhooksWrite       ApiTokenScope = "webhooks:write"
-	ApiTokenScopeWebhooksRegenerate  ApiTokenScope = "webhooks:regenerate"
-	ApiTokenScopeWebhooksTest        ApiTokenScope = "webhooks:test"
-	ApiTokenScopeCustomFieldsRead    ApiTokenScope = "custom_fields:read"
-	ApiTokenScopeSendingDomainsRead  ApiTokenScope = "sending_domains:read"
-	ApiTokenScopeIntegrationsRead    ApiTokenScope = "integrations:read"
-	ApiTokenScopeEmailsSend          ApiTokenScope = "emails:send"
-	ApiTokenScopeBroadcastsSend      ApiTokenScope = "broadcasts:send"
-	ApiTokenScopeAutomationsActivate ApiTokenScope = "automations:activate"
-	ApiTokenScopeMcpSend             ApiTokenScope = "mcp:send"
-	ApiTokenScopeContactsErase       ApiTokenScope = "contacts:erase"
-	ApiTokenScopeSendingDomainsWrite ApiTokenScope = "sending_domains:write"
-	ApiTokenScopeIntegrationsWrite   ApiTokenScope = "integrations:write"
-	ApiTokenScopeTokensRead          ApiTokenScope = "tokens:read"
-	ApiTokenScopeTokensWrite         ApiTokenScope = "tokens:write"
-	ApiTokenScopeAuditRead           ApiTokenScope = "audit:read"
-	ApiTokenScopeExportRead          ApiTokenScope = "export:read"
+	ApiTokenScopeContactsRead          ApiTokenScope = "contacts:read"
+	ApiTokenScopeContactsWrite         ApiTokenScope = "contacts:write"
+	ApiTokenScopeEventsRead            ApiTokenScope = "events:read"
+	ApiTokenScopeEventsWrite           ApiTokenScope = "events:write"
+	ApiTokenScopeSegmentsRead          ApiTokenScope = "segments:read"
+	ApiTokenScopeSegmentsWrite         ApiTokenScope = "segments:write"
+	ApiTokenScopeBroadcastsRead        ApiTokenScope = "broadcasts:read"
+	ApiTokenScopeBroadcastsWrite       ApiTokenScope = "broadcasts:write"
+	ApiTokenScopeAutomationsRead       ApiTokenScope = "automations:read"
+	ApiTokenScopeAutomationsWrite      ApiTokenScope = "automations:write"
+	ApiTokenScopeEnrollmentsRead       ApiTokenScope = "enrollments:read"
+	ApiTokenScopeTemplatesRead         ApiTokenScope = "templates:read"
+	ApiTokenScopeTemplatesWrite        ApiTokenScope = "templates:write"
+	ApiTokenScopeWebhooksRead          ApiTokenScope = "webhooks:read"
+	ApiTokenScopeWebhooksWrite         ApiTokenScope = "webhooks:write"
+	ApiTokenScopeWebhooksRegenerate    ApiTokenScope = "webhooks:regenerate"
+	ApiTokenScopeWebhooksTest          ApiTokenScope = "webhooks:test"
+	ApiTokenScopeCustomFieldsRead      ApiTokenScope = "custom_fields:read"
+	ApiTokenScopeSendingDomainsRead    ApiTokenScope = "sending_domains:read"
+	ApiTokenScopeIntegrationsRead      ApiTokenScope = "integrations:read"
+	ApiTokenScopeEmailsSend            ApiTokenScope = "emails:send"
+	ApiTokenScopeBroadcastsSend        ApiTokenScope = "broadcasts:send"
+	ApiTokenScopeAutomationsActivate   ApiTokenScope = "automations:activate"
+	ApiTokenScopeMcpSend               ApiTokenScope = "mcp:send"
+	ApiTokenScopeContactsErase         ApiTokenScope = "contacts:erase"
+	ApiTokenScopeSendingDomainsWrite   ApiTokenScope = "sending_domains:write"
+	ApiTokenScopeIntegrationsWrite     ApiTokenScope = "integrations:write"
+	ApiTokenScopeCapturedMessagesRead  ApiTokenScope = "captured_messages:read"
+	ApiTokenScopeCapturedMessagesWrite ApiTokenScope = "captured_messages:write"
+	ApiTokenScopeTokensRead            ApiTokenScope = "tokens:read"
+	ApiTokenScopeTokensWrite           ApiTokenScope = "tokens:write"
+	ApiTokenScopeAuditRead             ApiTokenScope = "audit:read"
+	ApiTokenScopeExportRead            ApiTokenScope = "export:read"
 )
 
 // AllValues returns all ApiTokenScope values.
@@ -189,6 +191,8 @@ func (ApiTokenScope) AllValues() []ApiTokenScope {
 		ApiTokenScopeContactsErase,
 		ApiTokenScopeSendingDomainsWrite,
 		ApiTokenScopeIntegrationsWrite,
+		ApiTokenScopeCapturedMessagesRead,
+		ApiTokenScopeCapturedMessagesWrite,
 		ApiTokenScopeTokensRead,
 		ApiTokenScopeTokensWrite,
 		ApiTokenScopeAuditRead,
@@ -252,6 +256,10 @@ func (s ApiTokenScope) MarshalText() ([]byte, error) {
 	case ApiTokenScopeSendingDomainsWrite:
 		return []byte(s), nil
 	case ApiTokenScopeIntegrationsWrite:
+		return []byte(s), nil
+	case ApiTokenScopeCapturedMessagesRead:
+		return []byte(s), nil
+	case ApiTokenScopeCapturedMessagesWrite:
 		return []byte(s), nil
 	case ApiTokenScopeTokensRead:
 		return []byte(s), nil
@@ -349,6 +357,12 @@ func (s *ApiTokenScope) UnmarshalText(data []byte) error {
 		return nil
 	case ApiTokenScopeIntegrationsWrite:
 		*s = ApiTokenScopeIntegrationsWrite
+		return nil
+	case ApiTokenScopeCapturedMessagesRead:
+		*s = ApiTokenScopeCapturedMessagesRead
+		return nil
+	case ApiTokenScopeCapturedMessagesWrite:
+		*s = ApiTokenScopeCapturedMessagesWrite
 		return nil
 	case ApiTokenScopeTokensRead:
 		*s = ApiTokenScopeTokensRead
@@ -2293,6 +2307,528 @@ func (*BroadcastsUpdateUnauthorized) broadcastsUpdateRes() {}
 type BroadcastsUpdateUnprocessableEntity ProblemDetails
 
 func (*BroadcastsUpdateUnprocessableEntity) broadcastsUpdateRes() {}
+
+// One header line of a Captured message.
+// Ref: #/components/schemas/CapturedMessageHeader
+type CapturedMessageHeader struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+
+// GetName returns the value of Name.
+func (s *CapturedMessageHeader) GetName() string {
+	return s.Name
+}
+
+// GetValue returns the value of Value.
+func (s *CapturedMessageHeader) GetValue() string {
+	return s.Value
+}
+
+// SetName sets the value of Name.
+func (s *CapturedMessageHeader) SetName(val string) {
+	s.Name = val
+}
+
+// SetValue sets the value of Value.
+func (s *CapturedMessageHeader) SetValue(val string) {
+	s.Value = val
+}
+
+// A message a Test inbox kept instead of sending it out: what the recipient would have received.
+// Ref: #/components/schemas/CapturedMessageResource
+type CapturedMessageResource struct {
+	// Unique identifier.
+	ID EntityId `json:"id"`
+	// The Test inbox (Integration) that captured the message.
+	IntegrationId EntityId `json:"integrationId"`
+	// The Outbound message of the send; null for a Test send, which records none.
+	OutboundMessageId NilEntityId `json:"outboundMessageId"`
+	// The surface that asked for the send.
+	Surface CapturedMessageSurface `json:"surface"`
+	// The Sending source of a Broadcast or Automation send; null for a Transactional or Test send.
+	SendingSource NilString `json:"sendingSource"`
+	// Normalized (lower-cased) recipient address.
+	Recipient string `json:"recipient"`
+	// The From address as it was, not rewritten.
+	From string `json:"from"`
+	// The From name; null when the message has none.
+	FromName NilString `json:"fromName"`
+	// The subject.
+	Subject string `json:"subject"`
+	// True when the From is not on a verified Sending domain: the message would not pass the
+	// Sending-domain gate at a provider that delivers outside.
+	FromUnverified bool `json:"fromUnverified"`
+	// When the message was captured.
+	CreatedAt Timestamp `json:"createdAt"`
+	// The HTML part.
+	HTML string `json:"html"`
+	// The text part.
+	Text string `json:"text"`
+	// The header lines the message would carry on the wire, in order.
+	Headers []CapturedMessageHeader `json:"headers"`
+	// The URLs of the links of the HTML part, tracker links as the recipient would get them.
+	Links []string `json:"links"`
+}
+
+// GetID returns the value of ID.
+func (s *CapturedMessageResource) GetID() EntityId {
+	return s.ID
+}
+
+// GetIntegrationId returns the value of IntegrationId.
+func (s *CapturedMessageResource) GetIntegrationId() EntityId {
+	return s.IntegrationId
+}
+
+// GetOutboundMessageId returns the value of OutboundMessageId.
+func (s *CapturedMessageResource) GetOutboundMessageId() NilEntityId {
+	return s.OutboundMessageId
+}
+
+// GetSurface returns the value of Surface.
+func (s *CapturedMessageResource) GetSurface() CapturedMessageSurface {
+	return s.Surface
+}
+
+// GetSendingSource returns the value of SendingSource.
+func (s *CapturedMessageResource) GetSendingSource() NilString {
+	return s.SendingSource
+}
+
+// GetRecipient returns the value of Recipient.
+func (s *CapturedMessageResource) GetRecipient() string {
+	return s.Recipient
+}
+
+// GetFrom returns the value of From.
+func (s *CapturedMessageResource) GetFrom() string {
+	return s.From
+}
+
+// GetFromName returns the value of FromName.
+func (s *CapturedMessageResource) GetFromName() NilString {
+	return s.FromName
+}
+
+// GetSubject returns the value of Subject.
+func (s *CapturedMessageResource) GetSubject() string {
+	return s.Subject
+}
+
+// GetFromUnverified returns the value of FromUnverified.
+func (s *CapturedMessageResource) GetFromUnverified() bool {
+	return s.FromUnverified
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *CapturedMessageResource) GetCreatedAt() Timestamp {
+	return s.CreatedAt
+}
+
+// GetHTML returns the value of HTML.
+func (s *CapturedMessageResource) GetHTML() string {
+	return s.HTML
+}
+
+// GetText returns the value of Text.
+func (s *CapturedMessageResource) GetText() string {
+	return s.Text
+}
+
+// GetHeaders returns the value of Headers.
+func (s *CapturedMessageResource) GetHeaders() []CapturedMessageHeader {
+	return s.Headers
+}
+
+// GetLinks returns the value of Links.
+func (s *CapturedMessageResource) GetLinks() []string {
+	return s.Links
+}
+
+// SetID sets the value of ID.
+func (s *CapturedMessageResource) SetID(val EntityId) {
+	s.ID = val
+}
+
+// SetIntegrationId sets the value of IntegrationId.
+func (s *CapturedMessageResource) SetIntegrationId(val EntityId) {
+	s.IntegrationId = val
+}
+
+// SetOutboundMessageId sets the value of OutboundMessageId.
+func (s *CapturedMessageResource) SetOutboundMessageId(val NilEntityId) {
+	s.OutboundMessageId = val
+}
+
+// SetSurface sets the value of Surface.
+func (s *CapturedMessageResource) SetSurface(val CapturedMessageSurface) {
+	s.Surface = val
+}
+
+// SetSendingSource sets the value of SendingSource.
+func (s *CapturedMessageResource) SetSendingSource(val NilString) {
+	s.SendingSource = val
+}
+
+// SetRecipient sets the value of Recipient.
+func (s *CapturedMessageResource) SetRecipient(val string) {
+	s.Recipient = val
+}
+
+// SetFrom sets the value of From.
+func (s *CapturedMessageResource) SetFrom(val string) {
+	s.From = val
+}
+
+// SetFromName sets the value of FromName.
+func (s *CapturedMessageResource) SetFromName(val NilString) {
+	s.FromName = val
+}
+
+// SetSubject sets the value of Subject.
+func (s *CapturedMessageResource) SetSubject(val string) {
+	s.Subject = val
+}
+
+// SetFromUnverified sets the value of FromUnverified.
+func (s *CapturedMessageResource) SetFromUnverified(val bool) {
+	s.FromUnverified = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *CapturedMessageResource) SetCreatedAt(val Timestamp) {
+	s.CreatedAt = val
+}
+
+// SetHTML sets the value of HTML.
+func (s *CapturedMessageResource) SetHTML(val string) {
+	s.HTML = val
+}
+
+// SetText sets the value of Text.
+func (s *CapturedMessageResource) SetText(val string) {
+	s.Text = val
+}
+
+// SetHeaders sets the value of Headers.
+func (s *CapturedMessageResource) SetHeaders(val []CapturedMessageHeader) {
+	s.Headers = val
+}
+
+// SetLinks sets the value of Links.
+func (s *CapturedMessageResource) SetLinks(val []string) {
+	s.Links = val
+}
+
+func (*CapturedMessageResource) capturedMessagesGetRes() {}
+
+// A Captured message as the list shows it: without the content.
+// Ref: #/components/schemas/CapturedMessageSummary
+type CapturedMessageSummary struct {
+	// Unique identifier.
+	ID EntityId `json:"id"`
+	// The Test inbox (Integration) that captured the message.
+	IntegrationId EntityId `json:"integrationId"`
+	// The Outbound message of the send; null for a Test send, which records none.
+	OutboundMessageId NilEntityId `json:"outboundMessageId"`
+	// The surface that asked for the send.
+	Surface CapturedMessageSurface `json:"surface"`
+	// The Sending source of a Broadcast or Automation send; null for a Transactional or Test send.
+	SendingSource NilString `json:"sendingSource"`
+	// Normalized (lower-cased) recipient address.
+	Recipient string `json:"recipient"`
+	// The From address as it was, not rewritten.
+	From string `json:"from"`
+	// The From name; null when the message has none.
+	FromName NilString `json:"fromName"`
+	// The subject.
+	Subject string `json:"subject"`
+	// True when the From is not on a verified Sending domain: the message would not pass the
+	// Sending-domain gate at a provider that delivers outside.
+	FromUnverified bool `json:"fromUnverified"`
+	// When the message was captured.
+	CreatedAt Timestamp `json:"createdAt"`
+}
+
+// GetID returns the value of ID.
+func (s *CapturedMessageSummary) GetID() EntityId {
+	return s.ID
+}
+
+// GetIntegrationId returns the value of IntegrationId.
+func (s *CapturedMessageSummary) GetIntegrationId() EntityId {
+	return s.IntegrationId
+}
+
+// GetOutboundMessageId returns the value of OutboundMessageId.
+func (s *CapturedMessageSummary) GetOutboundMessageId() NilEntityId {
+	return s.OutboundMessageId
+}
+
+// GetSurface returns the value of Surface.
+func (s *CapturedMessageSummary) GetSurface() CapturedMessageSurface {
+	return s.Surface
+}
+
+// GetSendingSource returns the value of SendingSource.
+func (s *CapturedMessageSummary) GetSendingSource() NilString {
+	return s.SendingSource
+}
+
+// GetRecipient returns the value of Recipient.
+func (s *CapturedMessageSummary) GetRecipient() string {
+	return s.Recipient
+}
+
+// GetFrom returns the value of From.
+func (s *CapturedMessageSummary) GetFrom() string {
+	return s.From
+}
+
+// GetFromName returns the value of FromName.
+func (s *CapturedMessageSummary) GetFromName() NilString {
+	return s.FromName
+}
+
+// GetSubject returns the value of Subject.
+func (s *CapturedMessageSummary) GetSubject() string {
+	return s.Subject
+}
+
+// GetFromUnverified returns the value of FromUnverified.
+func (s *CapturedMessageSummary) GetFromUnverified() bool {
+	return s.FromUnverified
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *CapturedMessageSummary) GetCreatedAt() Timestamp {
+	return s.CreatedAt
+}
+
+// SetID sets the value of ID.
+func (s *CapturedMessageSummary) SetID(val EntityId) {
+	s.ID = val
+}
+
+// SetIntegrationId sets the value of IntegrationId.
+func (s *CapturedMessageSummary) SetIntegrationId(val EntityId) {
+	s.IntegrationId = val
+}
+
+// SetOutboundMessageId sets the value of OutboundMessageId.
+func (s *CapturedMessageSummary) SetOutboundMessageId(val NilEntityId) {
+	s.OutboundMessageId = val
+}
+
+// SetSurface sets the value of Surface.
+func (s *CapturedMessageSummary) SetSurface(val CapturedMessageSurface) {
+	s.Surface = val
+}
+
+// SetSendingSource sets the value of SendingSource.
+func (s *CapturedMessageSummary) SetSendingSource(val NilString) {
+	s.SendingSource = val
+}
+
+// SetRecipient sets the value of Recipient.
+func (s *CapturedMessageSummary) SetRecipient(val string) {
+	s.Recipient = val
+}
+
+// SetFrom sets the value of From.
+func (s *CapturedMessageSummary) SetFrom(val string) {
+	s.From = val
+}
+
+// SetFromName sets the value of FromName.
+func (s *CapturedMessageSummary) SetFromName(val NilString) {
+	s.FromName = val
+}
+
+// SetSubject sets the value of Subject.
+func (s *CapturedMessageSummary) SetSubject(val string) {
+	s.Subject = val
+}
+
+// SetFromUnverified sets the value of FromUnverified.
+func (s *CapturedMessageSummary) SetFromUnverified(val bool) {
+	s.FromUnverified = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *CapturedMessageSummary) SetCreatedAt(val Timestamp) {
+	s.CreatedAt = val
+}
+
+// The surface that asked for the send a Captured message belongs to.
+// Ref: #/components/schemas/CapturedMessageSurface
+type CapturedMessageSurface string
+
+const (
+	CapturedMessageSurfaceBroadcast     CapturedMessageSurface = "broadcast"
+	CapturedMessageSurfaceAutomation    CapturedMessageSurface = "automation"
+	CapturedMessageSurfaceTransactional CapturedMessageSurface = "transactional"
+	CapturedMessageSurfaceTest          CapturedMessageSurface = "test"
+)
+
+// AllValues returns all CapturedMessageSurface values.
+func (CapturedMessageSurface) AllValues() []CapturedMessageSurface {
+	return []CapturedMessageSurface{
+		CapturedMessageSurfaceBroadcast,
+		CapturedMessageSurfaceAutomation,
+		CapturedMessageSurfaceTransactional,
+		CapturedMessageSurfaceTest,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s CapturedMessageSurface) MarshalText() ([]byte, error) {
+	switch s {
+	case CapturedMessageSurfaceBroadcast:
+		return []byte(s), nil
+	case CapturedMessageSurfaceAutomation:
+		return []byte(s), nil
+	case CapturedMessageSurfaceTransactional:
+		return []byte(s), nil
+	case CapturedMessageSurfaceTest:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *CapturedMessageSurface) UnmarshalText(data []byte) error {
+	switch CapturedMessageSurface(data) {
+	case CapturedMessageSurfaceBroadcast:
+		*s = CapturedMessageSurfaceBroadcast
+		return nil
+	case CapturedMessageSurfaceAutomation:
+		*s = CapturedMessageSurfaceAutomation
+		return nil
+	case CapturedMessageSurfaceTransactional:
+		*s = CapturedMessageSurfaceTransactional
+		return nil
+	case CapturedMessageSurfaceTest:
+		*s = CapturedMessageSurfaceTest
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// CapturedMessagesDeleteAllNoContent is response for CapturedMessagesDeleteAll operation.
+type CapturedMessagesDeleteAllNoContent struct{}
+
+func (*CapturedMessagesDeleteAllNoContent) capturedMessagesDeleteAllRes() {}
+
+type CapturedMessagesDeleteBadRequest ProblemDetails
+
+func (*CapturedMessagesDeleteBadRequest) capturedMessagesDeleteRes() {}
+
+// CapturedMessagesDeleteNoContent is response for CapturedMessagesDelete operation.
+type CapturedMessagesDeleteNoContent struct{}
+
+func (*CapturedMessagesDeleteNoContent) capturedMessagesDeleteRes() {}
+
+type CapturedMessagesDeleteNotFound ProblemDetails
+
+func (*CapturedMessagesDeleteNotFound) capturedMessagesDeleteRes() {}
+
+type CapturedMessagesDeleteUnauthorized ProblemDetails
+
+func (*CapturedMessagesDeleteUnauthorized) capturedMessagesDeleteRes() {}
+
+type CapturedMessagesGetBadRequest ProblemDetails
+
+func (*CapturedMessagesGetBadRequest) capturedMessagesGetRes() {}
+
+type CapturedMessagesGetNotFound ProblemDetails
+
+func (*CapturedMessagesGetNotFound) capturedMessagesGetRes() {}
+
+type CapturedMessagesGetUnauthorized ProblemDetails
+
+func (*CapturedMessagesGetUnauthorized) capturedMessagesGetRes() {}
+
+type CapturedMessagesListBadRequest ProblemDetails
+
+func (*CapturedMessagesListBadRequest) capturedMessagesListRes() {}
+
+// Paginated response.
+type CapturedMessagesListOK struct {
+	// List of items.
+	Items []CapturedMessageSummary `json:"items"`
+	// Page number (1-based).
+	Page int32 `json:"page"`
+	// Page size.
+	PageSize int32 `json:"pageSize"`
+	// Total number of elements.
+	TotalItems int32 `json:"totalItems"`
+	// Total number of pages.
+	TotalPages int32 `json:"totalPages"`
+}
+
+// GetItems returns the value of Items.
+func (s *CapturedMessagesListOK) GetItems() []CapturedMessageSummary {
+	return s.Items
+}
+
+// GetPage returns the value of Page.
+func (s *CapturedMessagesListOK) GetPage() int32 {
+	return s.Page
+}
+
+// GetPageSize returns the value of PageSize.
+func (s *CapturedMessagesListOK) GetPageSize() int32 {
+	return s.PageSize
+}
+
+// GetTotalItems returns the value of TotalItems.
+func (s *CapturedMessagesListOK) GetTotalItems() int32 {
+	return s.TotalItems
+}
+
+// GetTotalPages returns the value of TotalPages.
+func (s *CapturedMessagesListOK) GetTotalPages() int32 {
+	return s.TotalPages
+}
+
+// SetItems sets the value of Items.
+func (s *CapturedMessagesListOK) SetItems(val []CapturedMessageSummary) {
+	s.Items = val
+}
+
+// SetPage sets the value of Page.
+func (s *CapturedMessagesListOK) SetPage(val int32) {
+	s.Page = val
+}
+
+// SetPageSize sets the value of PageSize.
+func (s *CapturedMessagesListOK) SetPageSize(val int32) {
+	s.PageSize = val
+}
+
+// SetTotalItems sets the value of TotalItems.
+func (s *CapturedMessagesListOK) SetTotalItems(val int32) {
+	s.TotalItems = val
+}
+
+// SetTotalPages sets the value of TotalPages.
+func (s *CapturedMessagesListOK) SetTotalPages(val int32) {
+	s.TotalPages = val
+}
+
+func (*CapturedMessagesListOK) capturedMessagesListRes() {}
+
+type CapturedMessagesListUnauthorized ProblemDetails
+
+func (*CapturedMessagesListUnauthorized) capturedMessagesListRes() {}
+
+type CapturedMessagesListUnprocessableEntity ProblemDetails
+
+func (*CapturedMessagesListUnprocessableEntity) capturedMessagesListRes() {}
 
 // How a condition group combines its entries.
 // Ref: #/components/schemas/ConditionCombinator
@@ -11073,10 +11609,11 @@ func (s *ProblemDetails) SetDebug(val OptProblemDebug) {
 	s.Debug = val
 }
 
-func (*ProblemDetails) brandKitGetRes()      {}
-func (*ProblemDetails) customFieldsListRes() {}
-func (*ProblemDetails) emailSchemaGetRes()   {}
-func (*ProblemDetails) presetsListRes()      {}
+func (*ProblemDetails) brandKitGetRes()               {}
+func (*ProblemDetails) capturedMessagesDeleteAllRes() {}
+func (*ProblemDetails) customFieldsListRes()          {}
+func (*ProblemDetails) emailSchemaGetRes()            {}
+func (*ProblemDetails) presetsListRes()               {}
 
 // Validation errors grouped by field.
 type ProblemDetailsErrors map[string][]string
@@ -11190,6 +11727,10 @@ func (*ProblemDetailsHeaders) broadcastsTestSendRes()        {}
 func (*ProblemDetailsHeaders) broadcastsUnarchiveRes()       {}
 func (*ProblemDetailsHeaders) broadcastsUnscheduleRes()      {}
 func (*ProblemDetailsHeaders) broadcastsUpdateRes()          {}
+func (*ProblemDetailsHeaders) capturedMessagesDeleteAllRes() {}
+func (*ProblemDetailsHeaders) capturedMessagesDeleteRes()    {}
+func (*ProblemDetailsHeaders) capturedMessagesGetRes()       {}
+func (*ProblemDetailsHeaders) capturedMessagesListRes()      {}
 func (*ProblemDetailsHeaders) contactsBatchUpsertRes()       {}
 func (*ProblemDetailsHeaders) contactsCreateRes()            {}
 func (*ProblemDetailsHeaders) contactsDeleteRes()            {}

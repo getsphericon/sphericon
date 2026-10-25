@@ -115,6 +115,8 @@ func (c *ConverterImpl) CapturedMessageToResource(source *ent.CapturedMessage) s
 		siteapiSiteCapturedMessageResource.From = (*source).FromEmail
 		siteapiSiteCapturedMessageResource.FromName = nilString((*source).FromName)
 		siteapiSiteCapturedMessageResource.Subject = (*source).Subject
+		siteapiSiteCapturedMessageResource.FromUnverified = (*source).FromUnverified
+		siteapiSiteCapturedMessageResource.CreatedAt = timestamp((*source).CreatedAt)
 		siteapiSiteCapturedMessageResource.HTML = (*source).HTML
 		siteapiSiteCapturedMessageResource.Text = (*source).Text
 		if (*source).Headers != nil {
@@ -129,10 +131,25 @@ func (c *ConverterImpl) CapturedMessageToResource(source *ent.CapturedMessage) s
 				siteapiSiteCapturedMessageResource.Links[j] = (*source).Links[j]
 			}
 		}
-		siteapiSiteCapturedMessageResource.FromUnverified = (*source).FromUnverified
-		siteapiSiteCapturedMessageResource.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return siteapiSiteCapturedMessageResource
+}
+func (c *ConverterImpl) CapturedMessageToSummary(source *ent.CapturedMessage) site.SiteCapturedMessageSummary {
+	var siteapiSiteCapturedMessageSummary site.SiteCapturedMessageSummary
+	if source != nil {
+		siteapiSiteCapturedMessageSummary.ID = site.EntityId((*source).ID)
+		siteapiSiteCapturedMessageSummary.IntegrationId = site.EntityId((*source).IntegrationID)
+		siteapiSiteCapturedMessageSummary.OutboundMessageId = nilEntityID((*source).OutboundMessageID)
+		siteapiSiteCapturedMessageSummary.Surface = site.SiteCapturedMessageSurface((*source).Surface)
+		siteapiSiteCapturedMessageSummary.SendingSource = nilString((*source).SendingSource)
+		siteapiSiteCapturedMessageSummary.Recipient = (*source).Recipient
+		siteapiSiteCapturedMessageSummary.From = (*source).FromEmail
+		siteapiSiteCapturedMessageSummary.FromName = nilString((*source).FromName)
+		siteapiSiteCapturedMessageSummary.Subject = (*source).Subject
+		siteapiSiteCapturedMessageSummary.FromUnverified = (*source).FromUnverified
+		siteapiSiteCapturedMessageSummary.CreatedAt = timestamp((*source).CreatedAt)
+	}
+	return siteapiSiteCapturedMessageSummary
 }
 func (c *ConverterImpl) ConfirmationToExport(source *ent.Confirmation) site.ContactExportConfirmation {
 	var siteapiContactExportConfirmation site.ContactExportConfirmation

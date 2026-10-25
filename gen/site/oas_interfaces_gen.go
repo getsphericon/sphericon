@@ -181,6 +181,18 @@ type SiteBroadcastsUpdateRes interface {
 	siteBroadcastsUpdateRes()
 }
 
+type SiteCapturedMessagesDeleteAllRes interface {
+	siteCapturedMessagesDeleteAllRes()
+}
+
+type SiteCapturedMessagesDeleteRes interface {
+	siteCapturedMessagesDeleteRes()
+}
+
+type SiteCapturedMessagesGetRes interface {
+	siteCapturedMessagesGetRes()
+}
+
 type SiteCapturedMessagesListRes interface {
 	siteCapturedMessagesListRes()
 }

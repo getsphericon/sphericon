@@ -505,9 +505,37 @@ func (UnimplementedHandler) SiteBroadcastsUpdate(ctx context.Context, req *SiteU
 	return r, ht.ErrNotImplemented
 }
 
+// SiteCapturedMessagesDelete implements SiteCapturedMessages_delete operation.
+//
+// Delete one Captured message. Every member may delete.
+//
+// DELETE /workspaces/{workspaceId}/captured-messages/{id}
+func (UnimplementedHandler) SiteCapturedMessagesDelete(ctx context.Context, params SiteCapturedMessagesDeleteParams) (r SiteCapturedMessagesDeleteRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteCapturedMessagesDeleteAll implements SiteCapturedMessages_deleteAll operation.
+//
+// Delete every Captured message of the workspace. Every member may delete.
+//
+// DELETE /workspaces/{workspaceId}/captured-messages/all
+func (UnimplementedHandler) SiteCapturedMessagesDeleteAll(ctx context.Context, params SiteCapturedMessagesDeleteAllParams) (r SiteCapturedMessagesDeleteAllRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteCapturedMessagesGet implements SiteCapturedMessages_get operation.
+//
+// Read one Captured message in full: headers, HTML, text and links. Every member may read.
+//
+// GET /workspaces/{workspaceId}/captured-messages/{id}
+func (UnimplementedHandler) SiteCapturedMessagesGet(ctx context.Context, params SiteCapturedMessagesGetParams) (r SiteCapturedMessagesGetRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteCapturedMessagesList implements SiteCapturedMessages_list operation.
 //
-// List the Captured messages of the workspace, newest first. Every member may read.
+// List the Captured messages of the workspace, newest first, without their content (read one for it).
+// Every member may read.
 //
 // GET /workspaces/{workspaceId}/captured-messages
 func (UnimplementedHandler) SiteCapturedMessagesList(ctx context.Context, params SiteCapturedMessagesListParams) (r SiteCapturedMessagesListRes, _ error) {

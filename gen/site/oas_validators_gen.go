@@ -65,6 +65,10 @@ func (s ApiTokenScope) Validate() error {
 		return nil
 	case "integrations:write":
 		return nil
+	case "captured_messages:read":
+		return nil
+	case "captured_messages:write":
+		return nil
 	case "tokens:read":
 		return nil
 	case "tokens:write":
@@ -2289,6 +2293,29 @@ func (s *SiteCapturedMessageResource) Validate() error {
 	return nil
 }
 
+func (s *SiteCapturedMessageSummary) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Surface.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "surface",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
 func (s SiteCapturedMessageSurface) Validate() error {
 	switch s {
 	case "broadcast":
@@ -2302,6 +2329,38 @@ func (s SiteCapturedMessageSurface) Validate() error {
 	default:
 		return errors.Errorf("invalid value: %v", s)
 	}
+}
+
+func (s *SiteCapturedMessagesDeleteBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteCapturedMessagesDeleteNotFound) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteCapturedMessagesGetBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteCapturedMessagesGetNotFound) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *SiteCapturedMessagesListBadRequest) Validate() error {

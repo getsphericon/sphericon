@@ -58,6 +58,9 @@
       "name": "Broadcasts"
     },
     {
+      "name": "Captured Messages"
+    },
+    {
       "name": "Templates"
     },
     {
@@ -3454,6 +3457,395 @@
         "x-mcp": {
           "send": true
         }
+      }
+    },
+    "/captured-messages": {
+      "get": {
+        "operationId": "CapturedMessages_list",
+        "description": "List the Captured messages, newest first, without their content (read one for it)",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PageQuery.page"
+          },
+          {
+            "$ref": "#/components/parameters/PageQuery.pageSize"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CapturedMessageSummary"
+                      },
+                      "description": "List of items"
+                    },
+                    "page": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "Page number (1-based)"
+                    },
+                    "pageSize": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "Page size"
+                    },
+                    "totalItems": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "Total number of elements"
+                    },
+                    "totalPages": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "Total number of pages"
+                    }
+                  },
+                  "description": "Paginated response"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Captured Messages"]
+      }
+    },
+    "/captured-messages/all": {
+      "delete": {
+        "operationId": "CapturedMessages_deleteAll",
+        "description": "Delete every Captured message of the Workspace. Needs a person: hidden from MCP.",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "There is no content to send for this request, but the headers may be useful."
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Captured Messages"],
+        "x-mcp": {
+          "hidden": true
+        }
+      }
+    },
+    "/captured-messages/{id}": {
+      "get": {
+        "operationId": "CapturedMessages_get",
+        "description": "Read one Captured message in full: headers, HTML, text and links",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CapturedMessageResourceKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CapturedMessageResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Captured Messages"]
+      },
+      "delete": {
+        "operationId": "CapturedMessages_delete",
+        "description": "Delete one Captured message",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CapturedMessageResourceKey"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "There is no content to send for this request, but the headers may be useful."
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Captured Messages"]
       }
     },
     "/contacts": {
@@ -11559,6 +11951,15 @@
         },
         "explode": false
       },
+      "CapturedMessageResourceKey": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "description": "Unique identifier",
+        "schema": {
+          "$ref": "#/components/schemas/EntityId"
+        }
+      },
       "ContactResourceKey": {
         "name": "id",
         "in": "path",
@@ -11788,6 +12189,8 @@
           "contacts:erase",
           "sending_domains:write",
           "integrations:write",
+          "captured_messages:read",
+          "captured_messages:write",
           "tokens:read",
           "tokens:write",
           "audit:read",
@@ -12395,6 +12798,313 @@
         "type": "string",
         "enum": ["draft", "scheduled", "sending", "sent", "failed"],
         "description": "Broadcast lifecycle status"
+      },
+      "CapturedMessageFields": {
+        "type": "object",
+        "required": [
+          "integrationId",
+          "outboundMessageId",
+          "surface",
+          "sendingSource",
+          "recipient",
+          "from",
+          "fromName",
+          "subject",
+          "fromUnverified",
+          "createdAt"
+        ],
+        "properties": {
+          "integrationId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "The Test inbox (Integration) that captured the message"
+          },
+          "outboundMessageId": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "nullable": true,
+            "description": "The Outbound message of the send; null for a Test send, which records none"
+          },
+          "surface": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CapturedMessageSurface"
+              }
+            ],
+            "description": "The surface that asked for the send"
+          },
+          "sendingSource": {
+            "type": "string",
+            "nullable": true,
+            "description": "The Sending source of a Broadcast or Automation send; null for a Transactional or Test send"
+          },
+          "recipient": {
+            "type": "string",
+            "description": "Normalized (lower-cased) recipient address"
+          },
+          "from": {
+            "type": "string",
+            "description": "The From address as it was, not rewritten"
+          },
+          "fromName": {
+            "type": "string",
+            "nullable": true,
+            "description": "The From name; null when the message has none",
+            "x-untrusted": true
+          },
+          "subject": {
+            "type": "string",
+            "description": "The subject",
+            "x-untrusted": true
+          },
+          "fromUnverified": {
+            "type": "boolean",
+            "description": "True when the From is not on a verified Sending domain: the message would not pass the Sending-domain gate at a provider that delivers outside"
+          },
+          "createdAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the message was captured"
+          }
+        },
+        "description": "What a Captured message list shows of each message: everything but the content"
+      },
+      "CapturedMessageHeader": {
+        "type": "object",
+        "required": ["name", "value"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "x-untrusted": true
+          },
+          "value": {
+            "type": "string",
+            "x-untrusted": true
+          }
+        },
+        "description": "One header line of a Captured message"
+      },
+      "CapturedMessageResource": {
+        "type": "object",
+        "required": [
+          "id",
+          "integrationId",
+          "outboundMessageId",
+          "surface",
+          "sendingSource",
+          "recipient",
+          "from",
+          "fromName",
+          "subject",
+          "fromUnverified",
+          "createdAt",
+          "html",
+          "text",
+          "headers",
+          "links"
+        ],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Unique identifier"
+          },
+          "integrationId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "The Test inbox (Integration) that captured the message"
+          },
+          "outboundMessageId": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "nullable": true,
+            "description": "The Outbound message of the send; null for a Test send, which records none"
+          },
+          "surface": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CapturedMessageSurface"
+              }
+            ],
+            "description": "The surface that asked for the send"
+          },
+          "sendingSource": {
+            "type": "string",
+            "nullable": true,
+            "description": "The Sending source of a Broadcast or Automation send; null for a Transactional or Test send"
+          },
+          "recipient": {
+            "type": "string",
+            "description": "Normalized (lower-cased) recipient address"
+          },
+          "from": {
+            "type": "string",
+            "description": "The From address as it was, not rewritten"
+          },
+          "fromName": {
+            "type": "string",
+            "nullable": true,
+            "description": "The From name; null when the message has none",
+            "x-untrusted": true
+          },
+          "subject": {
+            "type": "string",
+            "description": "The subject",
+            "x-untrusted": true
+          },
+          "fromUnverified": {
+            "type": "boolean",
+            "description": "True when the From is not on a verified Sending domain: the message would not pass the Sending-domain gate at a provider that delivers outside"
+          },
+          "createdAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the message was captured"
+          },
+          "html": {
+            "type": "string",
+            "description": "The HTML part",
+            "x-untrusted": true
+          },
+          "text": {
+            "type": "string",
+            "description": "The text part",
+            "x-untrusted": true
+          },
+          "headers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CapturedMessageHeader"
+            },
+            "description": "The header lines the message would carry on the wire, in order"
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The URLs of the links of the HTML part, tracker links as the recipient would get them",
+            "x-untrusted": true
+          }
+        },
+        "description": "A message a Test inbox kept instead of sending it out: what the recipient would have received"
+      },
+      "CapturedMessageSummary": {
+        "type": "object",
+        "required": [
+          "id",
+          "integrationId",
+          "outboundMessageId",
+          "surface",
+          "sendingSource",
+          "recipient",
+          "from",
+          "fromName",
+          "subject",
+          "fromUnverified",
+          "createdAt"
+        ],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Unique identifier"
+          },
+          "integrationId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "The Test inbox (Integration) that captured the message"
+          },
+          "outboundMessageId": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "nullable": true,
+            "description": "The Outbound message of the send; null for a Test send, which records none"
+          },
+          "surface": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CapturedMessageSurface"
+              }
+            ],
+            "description": "The surface that asked for the send"
+          },
+          "sendingSource": {
+            "type": "string",
+            "nullable": true,
+            "description": "The Sending source of a Broadcast or Automation send; null for a Transactional or Test send"
+          },
+          "recipient": {
+            "type": "string",
+            "description": "Normalized (lower-cased) recipient address"
+          },
+          "from": {
+            "type": "string",
+            "description": "The From address as it was, not rewritten"
+          },
+          "fromName": {
+            "type": "string",
+            "nullable": true,
+            "description": "The From name; null when the message has none",
+            "x-untrusted": true
+          },
+          "subject": {
+            "type": "string",
+            "description": "The subject",
+            "x-untrusted": true
+          },
+          "fromUnverified": {
+            "type": "boolean",
+            "description": "True when the From is not on a verified Sending domain: the message would not pass the Sending-domain gate at a provider that delivers outside"
+          },
+          "createdAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the message was captured"
+          }
+        },
+        "description": "A Captured message as the list shows it: without the content"
+      },
+      "CapturedMessageSurface": {
+        "type": "string",
+        "enum": ["broadcast", "automation", "transactional", "test"],
+        "description": "The surface that asked for the send a Captured message belongs to"
       },
       "ConditionCombinator": {
         "type": "string",
@@ -16228,6 +16938,8 @@
           "contacts:erase",
           "sending_domains:write",
           "integrations:write",
+          "captured_messages:read",
+          "captured_messages:write",
           "tokens:read",
           "tokens:write",
           "audit:read",

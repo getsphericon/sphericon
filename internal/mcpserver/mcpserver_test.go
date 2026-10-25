@@ -69,6 +69,7 @@ var (
 		"events_record", "events_actions_list", "whoami",
 		"custom_fields_list", "sending_domains_list", "sending_domains_create", "sending_domains_get", "sending_domains_update", "sending_domains_archive", "sending_domains_unarchive", "sending_domains_verify", "sending_domains_rates",
 		"integrations_list", "integrations_create", "integrations_get", "integrations_update", "integrations_archive", "integrations_unarchive", "presets_list",
+		"captured_messages_list", "captured_messages_get", "captured_messages_delete",
 		"suppressions_create", "unsubscribes_create",
 		"email_lint", "email_schema", "brand_get", "templates_list", "templates_create", "templates_get", "templates_update", "templates_delete",
 		"webhooks_list", "webhooks_create", "webhooks_get", "webhooks_update", "webhooks_delete",
@@ -156,6 +157,18 @@ func TestMCPRegenerateKeyIsHiddenAndPresetsListIsATool(t *testing.T) {
 		assert.NotContains(t, name, "integrations_regenerate")
 	}
 	assert.Contains(t, toolNames(got), "presets_list")
+}
+
+// Captured messages can be listed, read and deleted one by one by an agent, but wiping all of
+// them in one call needs a person (ADR 0058).
+func TestMCPCapturedMessagesHideDeleteAll(t *testing.T) {
+	env := testhelper.Setup(t)
+	got := toolNames(listedTools(t, env.MCPClient(t, env.ScopedBearer(t, "captured_messages:read", "captured_messages:write"))))
+
+	assert.Contains(t, got, "captured_messages_list")
+	assert.Contains(t, got, "captured_messages_get")
+	assert.Contains(t, got, "captured_messages_delete")
+	assert.NotContains(t, got, "captured_messages_delete_all")
 }
 
 func TestMCPToolsAreTheContractMinusHiddenOperations(t *testing.T) {

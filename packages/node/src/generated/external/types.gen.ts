@@ -51,6 +51,8 @@ export const ApiTokenScope = {
   CONTACTS_ERASE: 'contacts:erase',
   SENDING_DOMAINS_WRITE: 'sending_domains:write',
   INTEGRATIONS_WRITE: 'integrations:write',
+  CAPTURED_MESSAGES_READ: 'captured_messages:read',
+  CAPTURED_MESSAGES_WRITE: 'captured_messages:write',
   TOKENS_READ: 'tokens:read',
   TOKENS_WRITE: 'tokens:write',
   AUDIT_READ: 'audit:read',
@@ -532,6 +534,191 @@ export const BroadcastStatus = {
  * Broadcast lifecycle status
  */
 export type BroadcastStatus = typeof BroadcastStatus[keyof typeof BroadcastStatus];
+
+/**
+ * What a Captured message list shows of each message: everything but the content
+ */
+export type CapturedMessageFields = {
+  /**
+   * The Test inbox (Integration) that captured the message
+   */
+  integrationId: EntityId;
+  /**
+   * The Outbound message of the send; null for a Test send, which records none
+   */
+  outboundMessageId: EntityId | null;
+  /**
+   * The surface that asked for the send
+   */
+  surface: CapturedMessageSurface;
+  /**
+   * The Sending source of a Broadcast or Automation send; null for a Transactional or Test send
+   */
+  sendingSource: string | null;
+  /**
+   * Normalized (lower-cased) recipient address
+   */
+  recipient: string;
+  /**
+   * The From address as it was, not rewritten
+   */
+  from: string;
+  /**
+   * The From name; null when the message has none
+   */
+  fromName: string | null;
+  /**
+   * The subject
+   */
+  subject: string;
+  /**
+   * True when the From is not on a verified Sending domain: the message would not pass the Sending-domain gate at a provider that delivers outside
+   */
+  fromUnverified: boolean;
+  /**
+   * When the message was captured
+   */
+  createdAt: Timestamp;
+};
+
+/**
+ * One header line of a Captured message
+ */
+export type CapturedMessageHeader = {
+  name: string;
+  value: string;
+};
+
+/**
+ * A message a Test inbox kept instead of sending it out: what the recipient would have received
+ */
+export type CapturedMessageResource = {
+  /**
+   * Unique identifier
+   */
+  id: EntityId;
+  /**
+   * The Test inbox (Integration) that captured the message
+   */
+  integrationId: EntityId;
+  /**
+   * The Outbound message of the send; null for a Test send, which records none
+   */
+  outboundMessageId: EntityId | null;
+  /**
+   * The surface that asked for the send
+   */
+  surface: CapturedMessageSurface;
+  /**
+   * The Sending source of a Broadcast or Automation send; null for a Transactional or Test send
+   */
+  sendingSource: string | null;
+  /**
+   * Normalized (lower-cased) recipient address
+   */
+  recipient: string;
+  /**
+   * The From address as it was, not rewritten
+   */
+  from: string;
+  /**
+   * The From name; null when the message has none
+   */
+  fromName: string | null;
+  /**
+   * The subject
+   */
+  subject: string;
+  /**
+   * True when the From is not on a verified Sending domain: the message would not pass the Sending-domain gate at a provider that delivers outside
+   */
+  fromUnverified: boolean;
+  /**
+   * When the message was captured
+   */
+  createdAt: Timestamp;
+  /**
+   * The HTML part
+   */
+  html: string;
+  /**
+   * The text part
+   */
+  text: string;
+  /**
+   * The header lines the message would carry on the wire, in order
+   */
+  headers: Array<CapturedMessageHeader>;
+  /**
+   * The URLs of the links of the HTML part, tracker links as the recipient would get them
+   */
+  links: Array<string>;
+};
+
+/**
+ * A Captured message as the list shows it: without the content
+ */
+export type CapturedMessageSummary = {
+  /**
+   * Unique identifier
+   */
+  id: EntityId;
+  /**
+   * The Test inbox (Integration) that captured the message
+   */
+  integrationId: EntityId;
+  /**
+   * The Outbound message of the send; null for a Test send, which records none
+   */
+  outboundMessageId: EntityId | null;
+  /**
+   * The surface that asked for the send
+   */
+  surface: CapturedMessageSurface;
+  /**
+   * The Sending source of a Broadcast or Automation send; null for a Transactional or Test send
+   */
+  sendingSource: string | null;
+  /**
+   * Normalized (lower-cased) recipient address
+   */
+  recipient: string;
+  /**
+   * The From address as it was, not rewritten
+   */
+  from: string;
+  /**
+   * The From name; null when the message has none
+   */
+  fromName: string | null;
+  /**
+   * The subject
+   */
+  subject: string;
+  /**
+   * True when the From is not on a verified Sending domain: the message would not pass the Sending-domain gate at a provider that delivers outside
+   */
+  fromUnverified: boolean;
+  /**
+   * When the message was captured
+   */
+  createdAt: Timestamp;
+};
+
+/**
+ * The surface that asked for the send a Captured message belongs to
+ */
+export const CapturedMessageSurface = {
+  BROADCAST: 'broadcast',
+  AUTOMATION: 'automation',
+  TRANSACTIONAL: 'transactional',
+  TEST: 'test'
+} as const;
+
+/**
+ * The surface that asked for the send a Captured message belongs to
+ */
+export type CapturedMessageSurface = typeof CapturedMessageSurface[keyof typeof CapturedMessageSurface];
 
 /**
  * How a condition group combines its entries
@@ -3217,6 +3404,8 @@ export const TokenOnlyScope = {
   CONTACTS_ERASE: 'contacts:erase',
   SENDING_DOMAINS_WRITE: 'sending_domains:write',
   INTEGRATIONS_WRITE: 'integrations:write',
+  CAPTURED_MESSAGES_READ: 'captured_messages:read',
+  CAPTURED_MESSAGES_WRITE: 'captured_messages:write',
   TOKENS_READ: 'tokens:read',
   TOKENS_WRITE: 'tokens:write',
   AUDIT_READ: 'audit:read',
@@ -3817,6 +4006,11 @@ export type BroadcastResourceKey = EntityId;
  * true lists the archived broadcasts instead of the kept ones; the default hides them
  */
 export type BroadcastsListFilter = boolean;
+
+/**
+ * Unique identifier
+ */
+export type CapturedMessageResourceKey = EntityId;
 
 /**
  * Unique identifier
@@ -5315,6 +5509,186 @@ export type BroadcastsUnscheduleResponses = {
 };
 
 export type BroadcastsUnscheduleResponse = BroadcastsUnscheduleResponses[keyof BroadcastsUnscheduleResponses];
+
+export type CapturedMessagesListData = {
+  body?: never;
+  path?: never;
+  query?: {
+    /**
+     * Page number (1-based)
+     */
+    page?: number;
+    /**
+     * Page size
+     */
+    pageSize?: number;
+  };
+  url: '/captured-messages';
+};
+
+export type CapturedMessagesListErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 unauthorized response
+   */
+  401: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+  /**
+   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
+   */
+  429: ProblemDetails;
+};
+
+export type CapturedMessagesListError = CapturedMessagesListErrors[keyof CapturedMessagesListErrors];
+
+export type CapturedMessagesListResponses = {
+  /**
+   * Paginated response
+   */
+  200: {
+    /**
+     * List of items
+     */
+    items: Array<CapturedMessageSummary>;
+    /**
+     * Page number (1-based)
+     */
+    page: number;
+    /**
+     * Page size
+     */
+    pageSize: number;
+    /**
+     * Total number of elements
+     */
+    totalItems: number;
+    /**
+     * Total number of pages
+     */
+    totalPages: number;
+  };
+};
+
+export type CapturedMessagesListResponse = CapturedMessagesListResponses[keyof CapturedMessagesListResponses];
+
+export type CapturedMessagesDeleteAllData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/captured-messages/all';
+};
+
+export type CapturedMessagesDeleteAllErrors = {
+  /**
+   * RFC 7807 unauthorized response
+   */
+  401: ProblemDetails;
+  /**
+   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
+   */
+  429: ProblemDetails;
+};
+
+export type CapturedMessagesDeleteAllError = CapturedMessagesDeleteAllErrors[keyof CapturedMessagesDeleteAllErrors];
+
+export type CapturedMessagesDeleteAllResponses = {
+  /**
+   * There is no content to send for this request, but the headers may be useful.
+   */
+  204: void;
+};
+
+export type CapturedMessagesDeleteAllResponse = CapturedMessagesDeleteAllResponses[keyof CapturedMessagesDeleteAllResponses];
+
+export type CapturedMessagesDeleteData = {
+  body?: never;
+  path: {
+    /**
+     * Unique identifier
+     */
+    id: EntityId;
+  };
+  query?: never;
+  url: '/captured-messages/{id}';
+};
+
+export type CapturedMessagesDeleteErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 unauthorized response
+   */
+  401: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
+   */
+  429: ProblemDetails;
+};
+
+export type CapturedMessagesDeleteError = CapturedMessagesDeleteErrors[keyof CapturedMessagesDeleteErrors];
+
+export type CapturedMessagesDeleteResponses = {
+  /**
+   * There is no content to send for this request, but the headers may be useful.
+   */
+  204: void;
+};
+
+export type CapturedMessagesDeleteResponse = CapturedMessagesDeleteResponses[keyof CapturedMessagesDeleteResponses];
+
+export type CapturedMessagesGetData = {
+  body?: never;
+  path: {
+    /**
+     * Unique identifier
+     */
+    id: EntityId;
+  };
+  query?: never;
+  url: '/captured-messages/{id}';
+};
+
+export type CapturedMessagesGetErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 unauthorized response
+   */
+  401: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
+   */
+  429: ProblemDetails;
+};
+
+export type CapturedMessagesGetError = CapturedMessagesGetErrors[keyof CapturedMessagesGetErrors];
+
+export type CapturedMessagesGetResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: CapturedMessageResource;
+};
+
+export type CapturedMessagesGetResponse = CapturedMessagesGetResponses[keyof CapturedMessagesGetResponses];
 
 export type ContactsListData = {
   body?: never;

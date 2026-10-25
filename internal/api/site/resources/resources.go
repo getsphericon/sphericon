@@ -184,6 +184,13 @@ type Converter interface {
 	// goverter:map FromName FromName | nilString
 	// goverter:map SendingSource SendingSource | nilString
 	CapturedMessageToResource(source *ent.CapturedMessage) siteapi.SiteCapturedMessageResource
+	// The list leaves the content out.
+	// goverter:map FromEmail From
+	// goverter:map IntegrationID IntegrationId
+	// goverter:map OutboundMessageID OutboundMessageId | nilEntityID
+	// goverter:map FromName FromName | nilString
+	// goverter:map SendingSource SendingSource | nilString
+	CapturedMessageToSummary(source *ent.CapturedMessage) siteapi.SiteCapturedMessageSummary
 
 	// The member's identity comes from the loaded User edge.
 	// goverter:map Edges.User.Email Email

@@ -179,6 +179,30 @@ type Handler interface {
 	//
 	// PUT /broadcasts/{id}
 	BroadcastsUpdate(ctx context.Context, req *UpdateBroadcastInput, params BroadcastsUpdateParams) (BroadcastsUpdateRes, error)
+	// CapturedMessagesDelete implements CapturedMessages_delete operation.
+	//
+	// Delete one Captured message.
+	//
+	// DELETE /captured-messages/{id}
+	CapturedMessagesDelete(ctx context.Context, params CapturedMessagesDeleteParams) (CapturedMessagesDeleteRes, error)
+	// CapturedMessagesDeleteAll implements CapturedMessages_deleteAll operation.
+	//
+	// Delete every Captured message of the Workspace. Needs a person: hidden from MCP.
+	//
+	// DELETE /captured-messages/all
+	CapturedMessagesDeleteAll(ctx context.Context) (CapturedMessagesDeleteAllRes, error)
+	// CapturedMessagesGet implements CapturedMessages_get operation.
+	//
+	// Read one Captured message in full: headers, HTML, text and links.
+	//
+	// GET /captured-messages/{id}
+	CapturedMessagesGet(ctx context.Context, params CapturedMessagesGetParams) (CapturedMessagesGetRes, error)
+	// CapturedMessagesList implements CapturedMessages_list operation.
+	//
+	// List the Captured messages, newest first, without their content (read one for it).
+	//
+	// GET /captured-messages
+	CapturedMessagesList(ctx context.Context, params CapturedMessagesListParams) (CapturedMessagesListRes, error)
 	// ContactsBatchUpsert implements ContactsBatch_upsert operation.
 	//
 	// Upsert up to 1000 contacts by alias keys; a failing item does not affect the others.

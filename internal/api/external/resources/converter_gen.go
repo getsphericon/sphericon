@@ -5,6 +5,7 @@ package resources
 
 import (
 	ent "github.com/getsphericon/sphericon/ent"
+	schema "github.com/getsphericon/sphericon/ent/schema"
 	external "github.com/getsphericon/sphericon/gen/external"
 	auditapi "github.com/getsphericon/sphericon/internal/auditapi"
 	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
@@ -129,6 +130,54 @@ func (c *ConverterImpl) BroadcastToResource(source *ent.Broadcast) external.Broa
 		externalapiBroadcastResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
 	return externalapiBroadcastResource
+}
+func (c *ConverterImpl) CapturedMessageToResource(source *ent.CapturedMessage) external.CapturedMessageResource {
+	var externalapiCapturedMessageResource external.CapturedMessageResource
+	if source != nil {
+		externalapiCapturedMessageResource.ID = external.EntityId((*source).ID)
+		externalapiCapturedMessageResource.IntegrationId = external.EntityId((*source).IntegrationID)
+		externalapiCapturedMessageResource.OutboundMessageId = nilEntityID((*source).OutboundMessageID)
+		externalapiCapturedMessageResource.Surface = external.CapturedMessageSurface((*source).Surface)
+		externalapiCapturedMessageResource.SendingSource = nilString((*source).SendingSource)
+		externalapiCapturedMessageResource.Recipient = (*source).Recipient
+		externalapiCapturedMessageResource.From = (*source).FromEmail
+		externalapiCapturedMessageResource.FromName = nilString((*source).FromName)
+		externalapiCapturedMessageResource.Subject = (*source).Subject
+		externalapiCapturedMessageResource.FromUnverified = (*source).FromUnverified
+		externalapiCapturedMessageResource.CreatedAt = timestamp((*source).CreatedAt)
+		externalapiCapturedMessageResource.HTML = (*source).HTML
+		externalapiCapturedMessageResource.Text = (*source).Text
+		if (*source).Headers != nil {
+			externalapiCapturedMessageResource.Headers = make([]external.CapturedMessageHeader, len((*source).Headers))
+			for i := 0; i < len((*source).Headers); i++ {
+				externalapiCapturedMessageResource.Headers[i] = c.schemaCapturedHeaderToExternalapiCapturedMessageHeader((*source).Headers[i])
+			}
+		}
+		if (*source).Links != nil {
+			externalapiCapturedMessageResource.Links = make([]string, len((*source).Links))
+			for j := 0; j < len((*source).Links); j++ {
+				externalapiCapturedMessageResource.Links[j] = (*source).Links[j]
+			}
+		}
+	}
+	return externalapiCapturedMessageResource
+}
+func (c *ConverterImpl) CapturedMessageToSummary(source *ent.CapturedMessage) external.CapturedMessageSummary {
+	var externalapiCapturedMessageSummary external.CapturedMessageSummary
+	if source != nil {
+		externalapiCapturedMessageSummary.ID = external.EntityId((*source).ID)
+		externalapiCapturedMessageSummary.IntegrationId = external.EntityId((*source).IntegrationID)
+		externalapiCapturedMessageSummary.OutboundMessageId = nilEntityID((*source).OutboundMessageID)
+		externalapiCapturedMessageSummary.Surface = external.CapturedMessageSurface((*source).Surface)
+		externalapiCapturedMessageSummary.SendingSource = nilString((*source).SendingSource)
+		externalapiCapturedMessageSummary.Recipient = (*source).Recipient
+		externalapiCapturedMessageSummary.From = (*source).FromEmail
+		externalapiCapturedMessageSummary.FromName = nilString((*source).FromName)
+		externalapiCapturedMessageSummary.Subject = (*source).Subject
+		externalapiCapturedMessageSummary.FromUnverified = (*source).FromUnverified
+		externalapiCapturedMessageSummary.CreatedAt = timestamp((*source).CreatedAt)
+	}
+	return externalapiCapturedMessageSummary
 }
 func (c *ConverterImpl) ConfirmationToExport(source *ent.Confirmation) external.ContactExportConfirmation {
 	var externalapiContactExportConfirmation external.ContactExportConfirmation
@@ -487,6 +536,12 @@ func (c *ConverterImpl) rulesPlannedActionToExternalapiRuleDryRunAction(source r
 	externalapiRuleDryRunAction.Type = string(source.Type)
 	externalapiRuleDryRunAction.Summary = source.Summary
 	return externalapiRuleDryRunAction
+}
+func (c *ConverterImpl) schemaCapturedHeaderToExternalapiCapturedMessageHeader(source schema.CapturedHeader) external.CapturedMessageHeader {
+	var externalapiCapturedMessageHeader external.CapturedMessageHeader
+	externalapiCapturedMessageHeader.Name = source.Name
+	externalapiCapturedMessageHeader.Value = source.Value
+	return externalapiCapturedMessageHeader
 }
 func (c *ConverterImpl) sendlimitValueToExternalapiSendLimitValue(source sendlimit.Value) external.SendLimitValue {
 	var externalapiSendLimitValue external.SendLimitValue

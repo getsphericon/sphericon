@@ -173,6 +173,21 @@ type Converter interface {
 	// goverter:ignore SendLimit
 	// goverter:map DiscardedAt ArchivedAt
 	IntegrationToResource(source *ent.Integration) externalapi.IntegrationResource
+
+	// A Captured message names its From as the contract does, and the nullable parts as null.
+	// goverter:map FromEmail From
+	// goverter:map IntegrationID IntegrationId
+	// goverter:map OutboundMessageID OutboundMessageId | nilEntityID
+	// goverter:map FromName FromName | nilString
+	// goverter:map SendingSource SendingSource | nilString
+	CapturedMessageToResource(source *ent.CapturedMessage) externalapi.CapturedMessageResource
+	// The list leaves the content out.
+	// goverter:map FromEmail From
+	// goverter:map IntegrationID IntegrationId
+	// goverter:map OutboundMessageID OutboundMessageId | nilEntityID
+	// goverter:map FromName FromName | nilString
+	// goverter:map SendingSource SendingSource | nilString
+	CapturedMessageToSummary(source *ent.CapturedMessage) externalapi.CapturedMessageSummary
 	// The redacted provider configs: the handler only wraps the one that is set in the
 	// contract's oneOf, which goverter cannot express. Empty optional fields are omitted.
 	// goverter:map . Kind | smtpConfigKind
@@ -287,6 +302,14 @@ func nilString(v *string) externalapi.NilString {
 		return externalapi.NilString{Null: true}
 	}
 	return externalapi.NewNilString(*v)
+}
+
+// nilEntityID renders an optional reference: null when there is none.
+func nilEntityID(v *int64) externalapi.NilEntityId {
+	if v == nil {
+		return externalapi.NilEntityId{Null: true}
+	}
+	return externalapi.NewNilEntityId(externalapi.EntityId(*v))
 }
 
 // nilInt32 renders a limit: null when there is none.

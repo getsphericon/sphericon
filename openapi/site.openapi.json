@@ -5743,7 +5743,7 @@
     "/workspaces/{workspaceId}/captured-messages": {
       "get": {
         "operationId": "SiteCapturedMessages_list",
-        "description": "List the Captured messages of the workspace, newest first. Every member may read.",
+        "description": "List the Captured messages of the workspace, newest first, without their content (read one for it). Every member may read.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteCapturedMessageResourceParentKey"
@@ -5767,7 +5767,7 @@
                     "items": {
                       "type": "array",
                       "items": {
-                        "$ref": "#/components/schemas/SiteCapturedMessageResource"
+                        "$ref": "#/components/schemas/SiteCapturedMessageSummary"
                       },
                       "description": "List of items"
                     },
@@ -5819,6 +5819,118 @@
           },
           "422": {
             "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Captured Messages"]
+      }
+    },
+    "/workspaces/{workspaceId}/captured-messages/all": {
+      "delete": {
+        "operationId": "SiteCapturedMessages_deleteAll",
+        "description": "Delete every Captured message of the workspace. Every member may delete.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SiteCapturedMessageResourceParentKey"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "There is no content to send for this request, but the headers may be useful."
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Captured Messages"]
+      }
+    },
+    "/workspaces/{workspaceId}/captured-messages/{id}": {
+      "get": {
+        "operationId": "SiteCapturedMessages_get",
+        "description": "Read one Captured message in full: headers, HTML, text and links. Every member may read.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SiteCapturedMessageResourceKey.workspaceId"
+          },
+          {
+            "$ref": "#/components/parameters/SiteCapturedMessageResourceKey.id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteCapturedMessageResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Captured Messages"]
+      },
+      "delete": {
+        "operationId": "SiteCapturedMessages_delete",
+        "description": "Delete one Captured message. Every member may delete.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SiteCapturedMessageResourceKey.workspaceId"
+          },
+          {
+            "$ref": "#/components/parameters/SiteCapturedMessageResourceKey.id"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "There is no content to send for this request, but the headers may be useful."
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -11515,6 +11627,24 @@
         },
         "explode": false
       },
+      "SiteCapturedMessageResourceKey.id": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "description": "Unique identifier",
+        "schema": {
+          "$ref": "#/components/schemas/EntityId"
+        }
+      },
+      "SiteCapturedMessageResourceKey.workspaceId": {
+        "name": "workspaceId",
+        "in": "path",
+        "required": true,
+        "description": "The Workspace id: its short opaque public address and the route key for nested\nworkspace resources (ADR 0043)",
+        "schema": {
+          "$ref": "#/components/schemas/WorkspaceId"
+        }
+      },
       "SiteCapturedMessageResourceParentKey": {
         "name": "workspaceId",
         "in": "path",
@@ -11893,6 +12023,8 @@
           "contacts:erase",
           "sending_domains:write",
           "integrations:write",
+          "captured_messages:read",
+          "captured_messages:write",
           "tokens:read",
           "tokens:write",
           "audit:read",
@@ -14073,6 +14205,84 @@
         "enum": ["draft", "scheduled", "sending", "sent", "failed"],
         "description": "Broadcast lifecycle status"
       },
+      "SiteCapturedMessageFields": {
+        "type": "object",
+        "required": [
+          "integrationId",
+          "outboundMessageId",
+          "surface",
+          "sendingSource",
+          "recipient",
+          "from",
+          "fromName",
+          "subject",
+          "fromUnverified",
+          "createdAt"
+        ],
+        "properties": {
+          "integrationId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "The Test inbox (Integration) that captured the message"
+          },
+          "outboundMessageId": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "nullable": true,
+            "description": "The Outbound message of the send; null for a Test send, which records none"
+          },
+          "surface": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteCapturedMessageSurface"
+              }
+            ],
+            "description": "The surface that asked for the send"
+          },
+          "sendingSource": {
+            "type": "string",
+            "nullable": true,
+            "description": "The Sending source of a Broadcast or Automation send; null for a Transactional or Test send"
+          },
+          "recipient": {
+            "type": "string",
+            "description": "Normalized (lower-cased) recipient address"
+          },
+          "from": {
+            "type": "string",
+            "description": "The From address as it was, not rewritten"
+          },
+          "fromName": {
+            "type": "string",
+            "nullable": true,
+            "description": "The From name; null when the message has none"
+          },
+          "subject": {
+            "type": "string",
+            "description": "The subject"
+          },
+          "fromUnverified": {
+            "type": "boolean",
+            "description": "True when the From is not on a verified Sending domain: the message would not pass the Sending-domain gate at a provider that delivers outside"
+          },
+          "createdAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the message was captured"
+          }
+        },
+        "description": "What a Captured message list shows of each message: everything but the content"
+      },
       "SiteCapturedMessageHeader": {
         "type": "object",
         "required": ["name", "value"],
@@ -14098,10 +14308,119 @@
           "from",
           "fromName",
           "subject",
+          "fromUnverified",
+          "createdAt",
           "html",
           "text",
           "headers",
-          "links",
+          "links"
+        ],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Unique identifier"
+          },
+          "integrationId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "The Test inbox (Integration) that captured the message"
+          },
+          "outboundMessageId": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "nullable": true,
+            "description": "The Outbound message of the send; null for a Test send, which records none"
+          },
+          "surface": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteCapturedMessageSurface"
+              }
+            ],
+            "description": "The surface that asked for the send"
+          },
+          "sendingSource": {
+            "type": "string",
+            "nullable": true,
+            "description": "The Sending source of a Broadcast or Automation send; null for a Transactional or Test send"
+          },
+          "recipient": {
+            "type": "string",
+            "description": "Normalized (lower-cased) recipient address"
+          },
+          "from": {
+            "type": "string",
+            "description": "The From address as it was, not rewritten"
+          },
+          "fromName": {
+            "type": "string",
+            "nullable": true,
+            "description": "The From name; null when the message has none"
+          },
+          "subject": {
+            "type": "string",
+            "description": "The subject"
+          },
+          "fromUnverified": {
+            "type": "boolean",
+            "description": "True when the From is not on a verified Sending domain: the message would not pass the Sending-domain gate at a provider that delivers outside"
+          },
+          "createdAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the message was captured"
+          },
+          "html": {
+            "type": "string",
+            "description": "The HTML part"
+          },
+          "text": {
+            "type": "string",
+            "description": "The text part"
+          },
+          "headers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteCapturedMessageHeader"
+            },
+            "description": "The header lines the message would carry on the wire, in order"
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The URLs of the links of the HTML part, tracker links as the recipient would get them"
+          }
+        },
+        "description": "A message a Test inbox kept instead of sending it out: what the recipient would have received"
+      },
+      "SiteCapturedMessageSummary": {
+        "type": "object",
+        "required": [
+          "id",
+          "integrationId",
+          "outboundMessageId",
+          "surface",
+          "sendingSource",
+          "recipient",
+          "from",
+          "fromName",
+          "subject",
           "fromUnverified",
           "createdAt"
         ],
@@ -14162,28 +14481,6 @@
             "type": "string",
             "description": "The subject"
           },
-          "html": {
-            "type": "string",
-            "description": "The HTML part"
-          },
-          "text": {
-            "type": "string",
-            "description": "The text part"
-          },
-          "headers": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/SiteCapturedMessageHeader"
-            },
-            "description": "The header lines the message would carry on the wire, in order"
-          },
-          "links": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "description": "The URLs of the links of the HTML part, tracker links as the recipient would get them"
-          },
           "fromUnverified": {
             "type": "boolean",
             "description": "True when the From is not on a verified Sending domain: the message would not pass the Sending-domain gate at a provider that delivers outside"
@@ -14197,7 +14494,7 @@
             "description": "When the message was captured"
           }
         },
-        "description": "A message a Test inbox kept instead of sending it out: what the recipient would have received"
+        "description": "A Captured message as the list shows it: without the content"
       },
       "SiteCapturedMessageSurface": {
         "type": "string",
@@ -18718,6 +19015,8 @@
           "contacts:erase",
           "sending_domains:write",
           "integrations:write",
+          "captured_messages:read",
+          "captured_messages:write",
           "tokens:read",
           "tokens:write",
           "audit:read",
