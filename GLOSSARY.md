@@ -232,7 +232,8 @@ A one-off email send to an audience, authored and sent once (draft → scheduled
 sent / failed). Its audience is a Segment (or all Contacts) resolved and **frozen into
 Recipients at send time**, then filtered per-recipient by Send-eligibility. Sends under the
 shared "broadcasts" unsubscribe scope. There is no "active contacts" audience — eligibility is
-derived, not a contact status.
+derived, not a contact status. "Audience" is prose for whoever a Broadcast reaches; the thing
+that picks them is always a Segment, and names say Segment.
 _Avoid_: Campaign, newsletter blast, mailshot, email blast
 
 **Broadcast recipient**:
