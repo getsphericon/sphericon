@@ -158,6 +158,9 @@ type Result struct {
 	Replayed bool
 	// From is, for a Test send that was Sent, the From address it went out from.
 	From string
+	// Captured is true for a Test send that went through a sender that delivers nowhere
+	// outside: the message was kept, not sent to the address named (ADR 0058).
+	Captured bool
 }
 
 // Senders resolves a Workspace's email provider adapter (its default Integration).
@@ -842,10 +845,12 @@ func (m *Module) SendBroadcastTest(ctx context.Context, s *ent.Scoped, b *ent.Br
 // suspended Workspace sends nothing, test or not (ADR 0015). Outcomes are Sent,
 // Failed (the content did not render) or Held; there is no replay.
 //
-// With an Asker and no verified Sending domain in the Workspace it goes from the System
-// sender instead (ADR 0041): after the same freeze check, only to the Asker's own address,
+// With an Asker, no verified Sending domain in the Workspace and no default Integration
+// that delivers nowhere outside (a Test inbox) it goes from the System sender instead
+// (ADR 0041, ADR 0058): after the same freeze check, only to the Asker's own address,
 // within the per-User and per-Workspace caps, and Refused when the Instance has no System
-// sender. The gate stays here: no other module decides which sender a Test send uses.
+// sender. A Test inbox takes the Test send itself and the Result is Captured. The gate
+// stays here: no other module decides which sender a Test send uses.
 func (m *Module) SendTest(ctx context.Context, s *ent.Scoped, req TestRequest) (Result, error) {
 	ws, err := m.workspace(ctx, s)
 	if err != nil {
@@ -857,7 +862,16 @@ func (m *Module) SendTest(ctx context.Context, s *ent.Scoped, req TestRequest) (
 			return Result{}, fmt.Errorf("outbound: check sending domains: %w", err)
 		}
 		if !anyVerified {
-			return m.sendTestFromSystem(ctx, s, ws, req)
+			// The System sender stands in only where no Integration of the Workspace
+			// would deliver outside; a sender that keeps its mail takes the Test send
+			// itself, so it is captured (ADR 0041, ADR 0058).
+			sender, err := m.senders.EmailSender(ctx, s)
+			if err != nil && !errors.Is(err, messaging.ErrNoProvider) {
+				return Result{}, fmt.Errorf("outbound: resolve sender: %w", err)
+			}
+			if err != nil || messaging.DeliversOutside(sender) {
+				return m.sendTestFromSystem(ctx, s, ws, req)
+			}
 		}
 	}
 	g, err := m.gate(ctx, s, req.FromEmail, req.FromName)
@@ -872,7 +886,9 @@ func (m *Module) SendTest(ctx context.Context, s *ent.Scoped, req TestRequest) (
 	if err != nil {
 		return failedContent(err)
 	}
-	return sendTestMessage(ctx, g.sender, msg, g.from, g.fromName, to)
+	res, err := sendTestMessage(ctx, g.sender, msg, g.from, g.fromName, to)
+	res.Captured = res.Outcome == Sent && !messaging.DeliversOutside(g.sender)
+	return res, err
 }
 
 // failedContent is a Test send whose compose failed: a content error is the Failed result, any other

@@ -17768,7 +17768,7 @@
       },
       "SiteTestSendBroadcastResult": {
         "type": "object",
-        "required": ["from"],
+        "required": ["from", "captured"],
         "properties": {
           "from": {
             "allOf": [
@@ -17777,6 +17777,10 @@
               }
             ],
             "description": "The From address of the preview. A Workspace with a verified Sending domain gets its own\ndomain; one without gets the System sender, which is not the address Contacts will see."
+          },
+          "captured": {
+            "type": "boolean",
+            "description": "true when the Workspace's default Integration keeps what it is sent (a Test inbox): the\npreview was captured there, not sent to the address named."
           }
         },
         "description": "What a test send did: the address the preview went out from"

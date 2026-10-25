@@ -71,7 +71,7 @@ test('a test send posts the typed address and confirms without navigating', asyn
   worker.use(
     handleSiteBroadcastsTestSend(async ({ request }) => {
       bodies.push(await request.json())
-      return HttpResponse.json({ from: 'noreply@sphericon.test' })
+      return HttpResponse.json({ from: 'noreply@sphericon.test', captured: false })
     }),
   )
   const { screen, navigate } = await renderWithRouter(<DeliveryBlock broadcast={draft} />, MOUNT)
@@ -83,6 +83,23 @@ test('a test send posts the typed address and confirms without navigating', asyn
   await expect.element(screen.getByText(/Sent from noreply@sphericon\.test/)).toBeInTheDocument()
   expect(bodies).toEqual([{ email: 'qa@example.com' }])
   expect(navigate).not.toHaveBeenCalled()
+})
+
+test('a test send captured by a Test inbox says it was not sent to the address named', async () => {
+  worker.use(
+    handleSiteBroadcastsTestSend(() =>
+      HttpResponse.json({ from: 'hello@acme.test', captured: true }),
+    ),
+  )
+  const { screen } = await renderWithRouter(<DeliveryBlock broadcast={draft} />, MOUNT)
+
+  await screen.getByLabelText('Send a test to').fill('qa@example.com')
+  await screen.getByRole('button', { name: 'Send test' }).click()
+
+  await expect
+    .element(screen.getByText('Captured in your Test inbox, not sent to the address you named.'))
+    .toBeInTheDocument()
+  await expect.element(screen.getByText(/Sent from/)).not.toBeInTheDocument()
 })
 
 test('a rejected test send shows the error toast', async () => {

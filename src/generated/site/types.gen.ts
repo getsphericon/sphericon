@@ -4475,6 +4475,11 @@ export type SiteTestSendBroadcastResult = {
    * domain; one without gets the System sender, which is not the address Contacts will see.
    */
   from: EmailAddress;
+  /**
+   * true when the Workspace's default Integration keeps what it is sent (a Test inbox): the
+   * preview was captured there, not sent to the address named.
+   */
+  captured: boolean;
 };
 
 /**

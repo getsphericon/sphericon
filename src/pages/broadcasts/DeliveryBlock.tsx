@@ -109,7 +109,9 @@ export function DeliveryBlock({ broadcast }: { broadcast: SiteBroadcastResource 
       </Group>
       {testSendMutation.data && (
         <Text size="sm" c="dimmed">
-          {t(($) => $.broadcasts.testSendFrom, { from: testSendMutation.data.from })}
+          {testSendMutation.data.captured
+            ? t(($) => $.broadcasts.testSendCaptured)
+            : t(($) => $.broadcasts.testSendFrom, { from: testSendMutation.data.from })}
         </Text>
       )}
     </>

@@ -403,5 +403,5 @@ func (h *Handlers) SiteBroadcastsTestSend(ctx context.Context, req *siteapi.Site
 		v := siteapi.SiteBroadcastsTestSendUnprocessableEntity(problem(http.StatusUnprocessableEntity, report.Detail))
 		return &v, nil
 	}
-	return &siteapi.SiteTestSendBroadcastResult{From: siteapi.EmailAddress(report.From)}, nil
+	return &siteapi.SiteTestSendBroadcastResult{From: siteapi.EmailAddress(report.From), Captured: report.Captured}, nil
 }

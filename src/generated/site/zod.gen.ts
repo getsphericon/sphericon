@@ -1565,7 +1565,8 @@ export const zSiteTestSendBroadcastInput = z.object({
  * What a test send did: the address the preview went out from
  */
 export const zSiteTestSendBroadcastResult = z.object({
-  from: zEmailAddress
+  from: zEmailAddress,
+  captured: z.boolean()
 });
 
 /**

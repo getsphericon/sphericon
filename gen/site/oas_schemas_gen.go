@@ -20012,6 +20012,9 @@ type SiteTestSendBroadcastResult struct {
 	// The From address of the preview. A Workspace with a verified Sending domain gets its own domain; one
 	// without gets the System sender, which is not the address Contacts will see.
 	From EmailAddress `json:"from"`
+	// True when the Workspace's default Integration keeps what it is sent (a Test inbox): the preview was
+	// captured there, not sent to the address named.
+	Captured bool `json:"captured"`
 }
 
 // GetFrom returns the value of From.
@@ -20019,9 +20022,19 @@ func (s *SiteTestSendBroadcastResult) GetFrom() EmailAddress {
 	return s.From
 }
 
+// GetCaptured returns the value of Captured.
+func (s *SiteTestSendBroadcastResult) GetCaptured() bool {
+	return s.Captured
+}
+
 // SetFrom sets the value of From.
 func (s *SiteTestSendBroadcastResult) SetFrom(val EmailAddress) {
 	s.From = val
+}
+
+// SetCaptured sets the value of Captured.
+func (s *SiteTestSendBroadcastResult) SetCaptured(val bool) {
+	s.Captured = val
 }
 
 func (*SiteTestSendBroadcastResult) siteBroadcastsTestSendRes() {}
