@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.3.2](https://github.com/getsphericon/sphericon/compare/v0.3.1...v0.3.2) (2026-10-25)
+
+
+### Features
+
+* a Test inbox provider keeps what it is sent as Captured messages ([d9dab34](https://github.com/getsphericon/sphericon/commit/d9dab3476ed844823934e52fb64b8a488745166a))
+* add a Setup checklist step that creates a Test inbox without making it the default ([0f6c664](https://github.com/getsphericon/sphericon/commit/0f6c6643bd9fe1e59f3eea5e4c5835f59da1005b))
+* bound the Test inbox to 200 a day, 7 days and 200 kept ([64116e4](https://github.com/getsphericon/sphericon/commit/64116e42fbb9812fcc63f34deafcdafd887b2896))
+* capture a Test send through a Test inbox instead of the System sender ([44dfd52](https://github.com/getsphericon/sphericon/commit/44dfd528f93a1027cdeb2b0ca265b332009df51f))
+* **erasure:** erase Captured messages with a Contact's address ([b054673](https://github.com/getsphericon/sphericon/commit/b054673d17dcd3c4ebc7b8782357adad7a45addf))
+* read, delete one and delete all Captured messages in the site and external API ([0450067](https://github.com/getsphericon/sphericon/commit/04500678062efd7a40b56d13446db2db328e377b))
+* say "captured, not delivered" on every report of a send through a Test inbox ([e74a5c8](https://github.com/getsphericon/sphericon/commit/e74a5c85b9de2542a48295b7d20f55e1e485cd1c))
+* serve the first-party tracker on a Tracking domain and pick its host in the snippet ([df6838b](https://github.com/getsphericon/sphericon/commit/df6838b5ad867515d8033db7d245fb01fb5a4976))
+* **ui:** build the tracking snippet on the tracker's own origin and link the SDKs and the guide ([d3d8c6e](https://github.com/getsphericon/sphericon/commit/d3d8c6e85275fbb1f642a4ba63d91fbea07f4607))
+* **ui:** choose the Test inbox and read its Captured messages ([77269aa](https://github.com/getsphericon/sphericon/commit/77269aa0a38e0c83972f179a92e240d548d5028c))
+* **ui:** move the analytics reports menu into the workspace sidebar ([e221298](https://github.com/getsphericon/sphericon/commit/e2212984adc026e2848fb26a151507f9477085f8))
+
+
+### Bug Fixes
+
+* **ee:** replace the embedded license public key ([8f36872](https://github.com/getsphericon/sphericon/commit/8f36872adca055772c5e3b4708223ff648318378))
+* follow the confirmation hook rename, type the Origin surface, cover the Test inbox scenarios ([1ab4d7a](https://github.com/getsphericon/sphericon/commit/1ab4d7a2bc0e7916ae313dff6480ba3dc942a8d7))
+* **i18n:** add a Passkey instead of register it, and sign up in the verify error ([701ac22](https://github.com/getsphericon/sphericon/commit/701ac2259551d55a49b995d22742d33c9661778e))
+* **ui:** ask for the Sending domains with the page size the other forms use ([85aea49](https://github.com/getsphericon/sphericon/commit/85aea49910e720625a54271d489afd183546220d))
+* **ui:** fit the header, setup checklist and analytics layout on phones ([e05d165](https://github.com/getsphericon/sphericon/commit/e05d165182bf45a94a3b19bd2d3345fe77474295))
+* **ui:** hide the telemetry notice while the environment keeps the report off ([490d43e](https://github.com/getsphericon/sphericon/commit/490d43e061051703e2aa8b95cbacaa42ce7bb44d))
+* **ui:** keep analytics subpages within the screen on phones ([b16399e](https://github.com/getsphericon/sphericon/commit/b16399eef9c2b0708fbf2ec7942d5a4c4958a08c))
+* **ui:** keep the header and the automation builder bar usable on narrow screens ([b780df8](https://github.com/getsphericon/sphericon/commit/b780df80901c5d9babe5d75766faf49ec27ed9dc))
+* **ui:** say sign up instead of register in the sign-up page and the mail ([6e8d8bb](https://github.com/getsphericon/sphericon/commit/6e8d8bb58d91586492464606a779a34a3174f079))
+* **ui:** send a signed-in visitor from the login and register pages to the app ([a0a4f40](https://github.com/getsphericon/sphericon/commit/a0a4f4068c321747507ff4b1c837ace4c4057f3d))
+
 ## [0.3.1](https://github.com/getsphericon/sphericon/compare/v0.3.0...v0.3.1) (2026-10-25)
 
 
