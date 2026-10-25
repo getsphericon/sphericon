@@ -58,6 +58,7 @@ for (const issue of issues) {
 }
 
 process.stdout.write(
-  `landed ${sha}. Remove this worktree, then update the checkout you work from:\n` +
+  `landed ${sha}. Remove this worktree from the primary checkout (it drops the databases too), then update it:\n` +
+    `  mise run worktrees:rm ${output('git', ['rev-parse', '--show-toplevel'])}\n` +
     '  git fetch origin && git rebase origin/main\n',
 )

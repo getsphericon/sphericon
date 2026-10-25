@@ -11,4 +11,9 @@ primary checkout (gitignored; Vite ignores it).
 - Never use `git worktree add ../sphericon-<name>` or any other sibling directory.
 - The directory name feeds the checkout's database and origin (`sphericon_<dir>`,
   `<dir>.sphericon.localhost`), so keep `<name>` short and unique.
-- Cleanup after a merge is described under "Conventions" in `AGENTS.md`.
+- Cleanup after a merge is described under "Conventions" in `AGENTS.md`. A session standing in the
+  worktree leaves it with `ExitWorktree` (`keep`), then runs `mise run worktrees:rm <path>` from the
+  primary checkout; `ExitWorktree` with `remove` and a plain `git worktree remove` leave the
+  worktree's databases behind. `--force` removes a worktree with uncommitted changes.
+- `EnterWorktree` starts the worktree on a branch: `git switch --detach` there, and `worktrees:rm`
+  deletes that branch once it is in `origin/main`.

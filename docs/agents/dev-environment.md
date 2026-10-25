@@ -41,14 +41,20 @@ and `db:up` fails with that error. Run mise as a regular user there, or start a 
 own on `PGHOST:PGPORT` (as another user, or via `SPHERICON_PG_HOST` / `SPHERICON_PG_PORT`):
 `db:up` uses a server that already answers.
 
-Never hand-name a scratch database. `mise run worktrees:gc` (also run by `setup` and
-`worktrees:prune`; `--apply` to act, a dry run otherwise) drops the shared server's databases that
+Never hand-name a scratch database. `mise run worktrees:rm <path>` removes a worktree with its
+databases (the four of `DB_NAMES`, the test workers' `_w<i>` clones and `_tpl_<hash>` templates) and
+its daemons, from the primary checkout. `mise run worktrees:gc` (also run by `setup` and
+`worktrees:prune`, and by `db:up` in the background at most once a day, never on CI or with
+`SPHERICON_PG_HOST` set; its log is `<git dir>/sphericon-gc.log`) is the net under it for a worktree
+deleted any other way; `--apply` to act, a dry run otherwise. It drops the shared server's databases that
 no live worktree's `DB_NAMES` covers and runs `mise daemons prune --yes` for dead state; it
 refuses to drop anything when it cannot enumerate or read a live worktree, including one on a
 commit from before `DB_NAMES` (rebase it onto main), and never touches the primary's daemon.
-It skips the `testdb_tpl_*` databases: those are pgtestdb's template and per-test databases (the
-`testhelper.RealDB` family, below), owned by a test that may be running in any checkout, and
-pgtestdb drops each when its test ends.
+The `testdb_tpl_*` databases are pgtestdb's template and per-test databases (the
+`testhelper.RealDB` family, below), owned by a test that may be running in any checkout: pgtestdb
+drops each instance when its test ends, so gc drops only the leftovers of a killed run: an
+instance after a day (a plain `DROP DATABASE`, refused while anything is connected) and a template
+after a week (pgtestdb rebuilds it).
 `mise run worktrees:prune -- --apply` first removes the worktrees whose branch is already in
 `origin/main`. A worktree from before this setup still runs its own `db` daemon: it retires with
 its next rebase onto main plus `mise daemons stop`. Several tasks in one command need `:::` between

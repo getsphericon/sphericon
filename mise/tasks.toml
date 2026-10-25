@@ -59,6 +59,19 @@ select pg_advisory_lock(1982370041);
 select format('create database %I', n) from unnest(string_to_array('$DB_NAMES', ' ')) as n
   where not exists (select from pg_database where datname = n) \\gexec
 SQL
+# A worktree that was deleted without worktrees:rm leaves its databases behind, so worktrees:gc
+# sweeps them at most once a day, in the background (its output goes to <git dir>/sphericon-gc.log).
+# Never on CI or on an external server (SPHERICON_PG_HOST): there the databases are not ours alone.
+# A failed sweep never fails db:up, which every test run goes through.
+if [ -z "${CI:-}" ] && [ -z "${SPHERICON_PG_HOST:-}" ]; then
+  common=$(git rev-parse --path-format=absolute --git-common-dir)
+  stamp="$common/sphericon-gc.stamp"
+  if [ -z "$(find "$stamp" -mmin -1440 2>/dev/null)" ]; then
+    touch "$stamp"
+    (mise run worktrees:gc --apply >"$common/sphericon-gc.log" 2>&1 || true) &
+    disown
+  fi
+fi
 '''
 
 ["db:drop"]
@@ -130,6 +143,62 @@ done
 mise run worktrees:gc ${usage_apply:+--apply}
 '''
 
+["worktrees:rm"]
+description = "Remove one worktree together with its databases (the dev, test, e2e and diff ones and the test workers' clones) and its daemons; run it from the primary checkout, not from inside the worktree"
+usage = '''
+arg "<path>" help="the worktree's directory"
+flag "--force" help="remove it although it has uncommitted changes"
+'''
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+force=${usage_force:-}
+
+path=$(cd "$usage_path" && pwd -P) || { echo "worktrees:rm: no such directory: $usage_path" >&2; exit 1; }
+primary=$(git worktree list --porcelain | sed -n '1s/^worktree //p')
+[ "$path" != "$primary" ] || { echo "worktrees:rm: $path is the primary checkout" >&2; exit 1; }
+git worktree list --porcelain | sed -n 's/^worktree //p' | grep -qxF "$path" || { echo "worktrees:rm: $path is not a worktree of this repository" >&2; exit 1; }
+case "$PWD/" in "$path"/*) echo "worktrees:rm: run it from the primary checkout, this directory is going away" >&2; exit 1 ;; esac
+if [ -z "$force" ] && [ -n "$(git -C "$path" status --porcelain)" ]; then
+  echo "worktrees:rm: $path has uncommitted changes (--force removes it anyway)" >&2; exit 1
+fi
+branch=$(git -C "$path" branch --show-current)
+
+# The names come from the worktree's own mise environment (the long ones are shortened there), so
+# they are read before the directory goes. When they cannot be read the databases stay for worktrees:gc.
+names=""
+if out=$(mise -C "$path" env 2>/dev/null); then
+  names=$(printf '%s\n' "$out" | sed -n "s/^export DB_NAMES=//p" | tr -d "'")
+fi
+mise -C "$path" daemons stop caddy backend frontend demo mailpit >/dev/null 2>&1 || true
+
+if [ -z "$names" ]; then
+  echo "worktrees:rm: cannot read DB_NAMES of $path, its databases are left for worktrees:gc" >&2
+elif nc -z "$PGHOST" "$PGPORT" 2>/dev/null; then
+  psql=psql
+  command -v psql >/dev/null || psql="mise x postgres@18 -- psql"
+  psql="$psql -X -A -t -q -h $PGHOST -p $PGPORT -U $PGUSER -d postgres"
+  # Exactly this checkout's names, each with the test workers' clones (`<name>_w<i>`) and
+  # templates (`<name>_tpl_<hash>`): never a prefix match, which would take another worktree's.
+  re=$(printf '%s\n' $names | paste -sd'|' -)
+  for d in $($psql -c "select datname from pg_database where datname ~ '^($re)(_w[0-9]+|_tpl_[0-9a-f]+)?\$'"); do
+    if $psql -c "drop database \"$d\" with (force)" >/dev/null; then echo "dropped database $d"; else echo "worktrees:rm: could not drop $d, worktrees:gc will retry" >&2; fi
+  done
+else
+  echo "worktrees:rm: no Postgres at $PGHOST:$PGPORT, the databases are left for worktrees:gc" >&2
+fi
+
+git worktree unlock "$path" 2>/dev/null || true
+git worktree remove ${force:+--force} "$path"
+git worktree prune
+echo "removed $path"
+# A branch only when it is already in origin/main: a worktree made by EnterWorktree has one.
+if [ -n "$branch" ]; then
+  if git merge-base --is-ancestor "$branch" origin/main 2>/dev/null; then git branch -D "$branch" >/dev/null && echo "deleted branch $branch"; else echo "kept branch $branch: not in origin/main"; fi
+fi
+mise daemons prune --yes
+'''
+
 ["worktrees:gc"]
 description = "Drop the databases of deleted worktrees from the shared Postgres and the daemon state they left (mise daemons prune); idempotent, dry run unless --apply"
 usage = 'flag "--apply" help="actually drop and prune, instead of listing"'
@@ -164,19 +233,20 @@ while IFS=$'\t' read -r path prunable; do
   echo "live    $path -> ${names%% *}"
 done <<< "$worktrees"
 
+psql=psql
+command -v psql >/dev/null || psql="mise x postgres@18 -- psql"
+psql="$psql -X -A -t -q -h $PGHOST -p $PGPORT -U $PGUSER -d postgres"
+
 status=0
 if [ -n "$refuse" ]; then
   echo "db: refusing to drop anything: ${refuse#; }" >&2
 elif ! nc -z "$PGHOST" "$PGPORT" 2>/dev/null; then
   echo "db: no Postgres at $PGHOST:$PGPORT, nothing to sweep (mise run db:up starts it)"
 else
-  psql=psql
-  command -v psql >/dev/null || psql="mise x postgres@18 -- psql"
-  psql="$psql -X -A -t -q -h $PGHOST -p $PGPORT -U $PGUSER -d postgres"
   for d in $($psql -c "select datname from pg_database where not datistemplate and datname <> 'postgres'"); do
     if grep -qxF "$d" "$keep"; then continue; fi
     case "$d" in *\"*) echo "keep    database $d (unusual name)"; continue ;; esac
-    # pgtestdb's per-test databases belong to a test that may be running in any checkout.
+    # pgtestdb's databases belong to a test that may be running in any checkout: step 2 sweeps them.
     case "$d" in testdb_tpl_*) echo "keep    database $d (pgtestdb)"; continue ;; esac
     # A live checkout's test process databases: `<test db>_w<i>` and `<test db>_tpl_<hash>`
     # (dbcleaner.WithTemplate, wired in internal/testhelper). They go with the checkout's `<test db>`.
@@ -187,7 +257,24 @@ else
   done
 fi
 
-# 2. Daemon state of deleted worktrees and projects (stops their daemons, deletes state and
+# 2. pgtestdb's databases (testhelper.RealDB), which no worktree owns. A test drops its instance
+#    when it ends, so one that outlived its test belongs to a killed run: an instance goes after a
+#    day, and only if nothing is connected (a plain DROP DATABASE refuses otherwise). A template
+#    (datistemplate) is rebuilt by pgtestdb when it is missing, so the ones of old schema hashes go
+#    after a week; a test starting in that very moment may fail once and passes on a rerun.
+if [ -z "$refuse" ] && nc -z "$PGHOST" "$PGPORT" 2>/dev/null; then
+  age="(pg_stat_file('base/' || oid)).modification"
+  for d in $($psql -c "select datname from pg_database where datname ~ '^testdb_tpl_[0-9a-f]+_inst_[0-9a-f]+\$' and $age < now() - interval '1 day'" || true); do
+    if [ -z "$apply" ]; then echo "would drop database $d (stale pgtestdb instance)"; continue; fi
+    if $psql -c "drop database \"$d\"" >/dev/null 2>&1; then echo "dropped database $d"; else echo "keep    database $d (in use)"; fi
+  done
+  for d in $($psql -c "select datname from pg_database where datistemplate and datname ~ '^testdb_tpl_[0-9a-f]+\$' and $age < now() - interval '7 days'" || true); do
+    if [ -z "$apply" ]; then echo "would drop database $d (old pgtestdb template)"; continue; fi
+    if $psql -c "alter database \"$d\" is_template false" -c "drop database \"$d\"" >/dev/null 2>&1; then echo "dropped database $d"; else echo "keep    database $d (in use)"; fi
+  done
+fi
+
+# 3. Daemon state of deleted worktrees and projects (stops their daemons, deletes state and
 #    data). Live checkouts, the primary and its Postgres included, are never touched.
 if [ -z "$apply" ]; then mise daemons prune --dry-run; else mise daemons prune --yes; fi
 exit "$status"
