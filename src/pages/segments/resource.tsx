@@ -1,5 +1,6 @@
 import * as z from 'zod'
 
+import { conditionCodec, emptyGroup } from '../../components/conditions/condition.ts'
 import {
   siteSegmentsCreateMutation,
   siteSegmentsGetOptions,
@@ -11,7 +12,6 @@ import { zSiteCreateSegmentInput } from '../../generated/site/zod.gen.ts'
 import { defineResource } from '../../resources/defineResource.tsx'
 import { resourceFormSchema } from '../../resources/resourceFormSchema.ts'
 import { Route as segmentsEditRoute } from '../../routes/workspaces/$workspaceId/segments/$segmentId/edit.tsx'
-import { conditionCodec, emptyGroup } from './condition.ts'
 import { SegmentForm } from './SegmentForm.tsx'
 
 // A Segment is always a Condition: a stored segment without a condition loads as the empty

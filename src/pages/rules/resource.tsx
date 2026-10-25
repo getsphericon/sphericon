@@ -1,5 +1,6 @@
 import * as z from 'zod'
 
+import { conditionCodec, emptyGroup } from '../../components/conditions/condition.ts'
 import {
   siteRulesCreateMutation,
   siteRulesGetOptions,
@@ -11,7 +12,6 @@ import { zSiteCreateRuleInput } from '../../generated/site/zod.gen.ts'
 import { defineResource } from '../../resources/defineResource.tsx'
 import { resourceFormSchema } from '../../resources/resourceFormSchema.ts'
 import { Route as rulesEditRoute } from '../../routes/workspaces/$workspaceId/rules/$ruleId/edit.tsx'
-import { conditionCodec, emptyGroup } from '../segments/condition.ts'
 import { actionsCodec, triggerEventsCodec } from './actions.ts'
 import { RuleDryRun } from './RuleDryRun.tsx'
 import { RuleForm } from './RuleForm.tsx'

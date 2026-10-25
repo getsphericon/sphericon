@@ -3,13 +3,13 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import * as z from 'zod'
 
+import { conditionCodec, emptyGroup } from '../../components/conditions/condition.ts'
+import { ConditionBuilder } from '../../components/conditions/ConditionBuilder.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
 import type { SiteConditionGroup } from '../../generated/site/types.gen.ts'
 import type { ResourceFormProps } from '../../resources/defineResource.tsx'
 import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
 import { Route as segmentsRoute } from '../../routes/workspaces/$workspaceId/segments/index.tsx'
-import { conditionCodec, emptyGroup } from './condition.ts'
-import { ConditionBuilder } from './ConditionBuilder.tsx'
 
 // A Segment is always a Condition, so the payload carries one.
 export interface SegmentPayload {

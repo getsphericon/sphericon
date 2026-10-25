@@ -15,8 +15,11 @@
   `renderWithRouter(ui, routeMount(Route, params))`, which mirrors the route's ancestry.
 - Layers are checked by easement (`easement.yml`, `mise run check:arch`): `src/components`, `hooks`,
   `layouts`, `resources` and `utils` never import a page; a page never imports a `*.lazy.tsx`;
-  only `*.lazy.tsx` route files import a page; `src/generated` imports nothing
-  of ours. Something a route's search schema needs lives in `src/utils`, not next to its page.
+  only `*.lazy.tsx` route files import a page; a feature directory under `src/pages` never imports
+  another feature's (what two features share, such as the Condition builder, lives in
+  `src/components`); `src/generated` imports nothing of ours. Something a route's search schema
+  needs lives in `src/utils`, not next to its page. Every file under `src/` must belong to a
+  component (`strict`), so a new top-level directory is added to `easement.yml`.
 - Toasts go through `useNotify()` (`src/hooks/useNotify.ts`), never Mantine's global `notifications`
   (lint refuses it): a `NotificationsProvider` owns one store per mount, and `renderWithProviders`
   mounts its own, so no test needs to clean toasts up. `renderWithProviders` also sets Mantine

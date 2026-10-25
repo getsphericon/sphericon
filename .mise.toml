@@ -26,7 +26,7 @@ zizmor = "latest"
 jq = "latest"
 lychee = "latest"
 shellcheck = "latest"
-"github:mokevnin/easement" = "0.1.1"
+"github:mokevnin/easement" = "0.1.2"
 
 # schemalens ships its CLI and each adapter as separate archives of one release: the CLI is the
 # primary asset and the ent adapter is extracted into the same install directory, so both are on
