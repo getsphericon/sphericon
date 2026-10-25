@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
+import { CenteredLayout } from '../../components/CenteredLayout.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
 import { UserMenu } from '../../components/UserMenu.tsx'
 import {
@@ -34,7 +35,7 @@ export function CreateWorkspacePage() {
   })
 
   return (
-    <Stack maw={420} mx="auto" mt="xl" px="md">
+    <CenteredLayout maw={420}>
       <Group justify="flex-end">
         <UserMenu />
       </Group>
@@ -69,6 +70,6 @@ export function CreateWorkspacePage() {
           </Group>
         </Stack>
       </form>
-    </Stack>
+    </CenteredLayout>
   )
 }
