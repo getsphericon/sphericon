@@ -18758,7 +18758,7 @@ func (s *SiteSetDomainJoinInput) SetEnabled(val bool) {
 // Ref: #/components/schemas/SiteSetupProgress
 type SiteSetupProgress struct {
 	Steps SiteSetupSteps `json:"steps"`
-	// Every step is done.
+	// Every step but the optional Test inbox is done.
 	Complete bool `json:"complete"`
 }
 
@@ -18834,11 +18834,14 @@ func (s *SiteSetupStepStatus) UnmarshalText(data []byte) error {
 	}
 }
 
-// The four Setup checklist steps, in the order the checklist shows them; none blocks another.
+// The Setup checklist steps, in the order the checklist shows them; none blocks another.
 // Ref: #/components/schemas/SiteSetupSteps
 type SiteSetupSteps struct {
-	// At least one Integration exists.
+	// At least one Integration exists (a Test inbox is one).
 	Integration SiteSetupStepStatus `json:"integration"`
+	// A Test inbox exists and is not archived; the step is optional, so it does not count towards
+	// `complete`, and its action never makes the inbox the default.
+	TestInbox SiteSetupStepStatus `json:"testInbox"`
 	// At least one Sending domain is verified; pending while one exists unverified.
 	SendingDomain SiteSetupStepStatus `json:"sendingDomain"`
 	// At least one Contact exists, from any source.
@@ -18850,6 +18853,11 @@ type SiteSetupSteps struct {
 // GetIntegration returns the value of Integration.
 func (s *SiteSetupSteps) GetIntegration() SiteSetupStepStatus {
 	return s.Integration
+}
+
+// GetTestInbox returns the value of TestInbox.
+func (s *SiteSetupSteps) GetTestInbox() SiteSetupStepStatus {
+	return s.TestInbox
 }
 
 // GetSendingDomain returns the value of SendingDomain.
@@ -18870,6 +18878,11 @@ func (s *SiteSetupSteps) GetSentEmail() SiteSetupStepStatus {
 // SetIntegration sets the value of Integration.
 func (s *SiteSetupSteps) SetIntegration(val SiteSetupStepStatus) {
 	s.Integration = val
+}
+
+// SetTestInbox sets the value of TestInbox.
+func (s *SiteSetupSteps) SetTestInbox(val SiteSetupStepStatus) {
+	s.TestInbox = val
 }
 
 // SetSendingDomain sets the value of SendingDomain.

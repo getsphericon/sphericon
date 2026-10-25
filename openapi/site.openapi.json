@@ -17723,7 +17723,7 @@
           },
           "complete": {
             "type": "boolean",
-            "description": "Every step is done"
+            "description": "Every step but the optional Test inbox is done"
           }
         },
         "description": "The Workspace's Setup checklist: a point-in-time read model, never ticked by hand"
@@ -17735,7 +17735,7 @@
       },
       "SiteSetupSteps": {
         "type": "object",
-        "required": ["integration", "sendingDomain", "contact", "sentEmail"],
+        "required": ["integration", "testInbox", "sendingDomain", "contact", "sentEmail"],
         "properties": {
           "integration": {
             "allOf": [
@@ -17743,7 +17743,15 @@
                 "$ref": "#/components/schemas/SiteSetupStepStatus"
               }
             ],
-            "description": "At least one Integration exists"
+            "description": "At least one Integration exists (a Test inbox is one)"
+          },
+          "testInbox": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteSetupStepStatus"
+              }
+            ],
+            "description": "A Test inbox exists and is not archived; the step is optional, so it does not count towards `complete`, and its action never makes the inbox the default"
           },
           "sendingDomain": {
             "allOf": [
@@ -17770,7 +17778,7 @@
             "description": "At least one Outbound message was sent, from any surface (a Test send is not one)"
           }
         },
-        "description": "The four Setup checklist steps, in the order the checklist shows them; none blocks another"
+        "description": "The Setup checklist steps, in the order the checklist shows them; none blocks another"
       },
       "SiteSigninError": {
         "type": "string",

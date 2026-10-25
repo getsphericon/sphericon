@@ -4254,7 +4254,7 @@ export type SiteSetDomainJoinInput = {
 export type SiteSetupProgress = {
   steps: SiteSetupSteps;
   /**
-   * Every step is done
+   * Every step but the optional Test inbox is done
    */
   complete: boolean;
 };
@@ -4274,13 +4274,17 @@ export const SiteSetupStepStatus = {
 export type SiteSetupStepStatus = typeof SiteSetupStepStatus[keyof typeof SiteSetupStepStatus];
 
 /**
- * The four Setup checklist steps, in the order the checklist shows them; none blocks another
+ * The Setup checklist steps, in the order the checklist shows them; none blocks another
  */
 export type SiteSetupSteps = {
   /**
-   * At least one Integration exists
+   * At least one Integration exists (a Test inbox is one)
    */
   integration: SiteSetupStepStatus;
+  /**
+   * A Test inbox exists and is not archived; the step is optional, so it does not count towards `complete`, and its action never makes the inbox the default
+   */
+  testInbox: SiteSetupStepStatus;
   /**
    * At least one Sending domain is verified; pending while one exists unverified
    */

@@ -23,7 +23,13 @@ const mount = routeMount(overviewRoute, { workspaceId: 'TestWs01' })
 
 const checklist = (sendingDomain: SiteSetupStepStatus) =>
   ({
-    steps: { integration: 'done', sendingDomain, contact: 'todo', sentEmail: 'todo' },
+    steps: {
+      integration: 'done',
+      testInbox: 'todo',
+      sendingDomain,
+      contact: 'todo',
+      sentEmail: 'todo',
+    },
     complete: false,
   }) as const
 

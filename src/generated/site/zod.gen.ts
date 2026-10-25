@@ -1360,10 +1360,11 @@ export const zSiteSetupStepStatus = z.enum([
 ]);
 
 /**
- * The four Setup checklist steps, in the order the checklist shows them; none blocks another
+ * The Setup checklist steps, in the order the checklist shows them; none blocks another
  */
 export const zSiteSetupSteps = z.object({
   integration: zSiteSetupStepStatus,
+  testInbox: zSiteSetupStepStatus,
   sendingDomain: zSiteSetupStepStatus,
   contact: zSiteSetupStepStatus,
   sentEmail: zSiteSetupStepStatus

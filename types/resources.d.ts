@@ -1511,7 +1511,7 @@ export default interface Resources {
       "copied": "Copied",
       "copy": "Copy",
       "copyDkim": "Copy DKIM value",
-      "description": "Four steps to your first email. Each turns done by itself when the thing exists, in any order.",
+      "description": "Your path to your first email. Each turns done by itself when the thing exists, in any order.",
       "done": "Done",
       "loadError": "Failed to load the setup checklist",
       "recordHint": "Add this DNS record for {{domain}} at your DNS provider:",
@@ -1535,8 +1535,14 @@ export default interface Resources {
           "action": "Create a Broadcast",
           "description": "Create a Broadcast. A test send does not count.",
           "title": "Send your first email"
+        },
+        "testInbox": {
+          "action": "Create a Test inbox",
+          "description": "See your mail go through before a provider exists: the inbox keeps every message and delivers none. It is never made your default Integration.",
+          "title": "Try it with a Test inbox"
         }
       },
+      "testInboxError": "Could not create the Test inbox",
       "title": "Set up Sphericon",
       "waitingForDns": "Waiting for DNS"
     },

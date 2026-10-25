@@ -43647,6 +43647,10 @@ func (s *SiteSetupSteps) encodeFields(e *jx.Encoder) {
 		s.Integration.Encode(e)
 	}
 	{
+		e.FieldStart("testInbox")
+		s.TestInbox.Encode(e)
+	}
+	{
 		e.FieldStart("sendingDomain")
 		s.SendingDomain.Encode(e)
 	}
@@ -43660,11 +43664,12 @@ func (s *SiteSetupSteps) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteSetupSteps = [4]string{
+var jsonFieldsNameOfSiteSetupSteps = [5]string{
 	0: "integration",
-	1: "sendingDomain",
-	2: "contact",
-	3: "sentEmail",
+	1: "testInbox",
+	2: "sendingDomain",
+	3: "contact",
+	4: "sentEmail",
 }
 
 // Decode decodes SiteSetupSteps from json.
@@ -43686,8 +43691,18 @@ func (s *SiteSetupSteps) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"integration\"")
 			}
-		case "sendingDomain":
+		case "testInbox":
 			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.TestInbox.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"testInbox\"")
+			}
+		case "sendingDomain":
+			requiredBitSet[0] |= 1 << 2
 			if err := func() error {
 				if err := s.SendingDomain.Decode(d); err != nil {
 					return err
@@ -43697,7 +43712,7 @@ func (s *SiteSetupSteps) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"sendingDomain\"")
 			}
 		case "contact":
-			requiredBitSet[0] |= 1 << 2
+			requiredBitSet[0] |= 1 << 3
 			if err := func() error {
 				if err := s.Contact.Decode(d); err != nil {
 					return err
@@ -43707,7 +43722,7 @@ func (s *SiteSetupSteps) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"contact\"")
 			}
 		case "sentEmail":
-			requiredBitSet[0] |= 1 << 3
+			requiredBitSet[0] |= 1 << 4
 			if err := func() error {
 				if err := s.SentEmail.Decode(d); err != nil {
 					return err
@@ -43726,7 +43741,7 @@ func (s *SiteSetupSteps) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00001111,
+		0b00011111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

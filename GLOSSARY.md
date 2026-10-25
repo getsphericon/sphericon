@@ -781,7 +781,9 @@ The Workspace's path to its first sent Broadcast, shown on the Overview until it
 with a sent outcome, from any surface). Each step is
 read off the Workspace's own data, never ticked by hand, so it cannot disagree with the Workspace;
 a Sending domain still waiting for DNS is a step in progress and blocks no later step. A Test send
-does not complete the last step.
+does not complete the last step. An optional step, "Try it with a Test inbox", is done while a live
+Test inbox exists; its action creates one and never makes it the default, and it is not needed for
+the checklist to be complete.
 _Avoid_: Onboarding wizard, getting started, tour
 
 **Sign-up survey**:

@@ -26,6 +26,7 @@ func (h *Handlers) SiteSetupChecklistGet(ctx context.Context, params siteapi.Sit
 	return &siteapi.SiteSetupProgress{
 		Steps: siteapi.SiteSetupSteps{
 			Integration:   siteapi.SiteSetupStepStatus(c.Steps.Integration),
+			TestInbox:     siteapi.SiteSetupStepStatus(c.Steps.TestInbox),
 			SendingDomain: siteapi.SiteSetupStepStatus(c.Steps.SendingDomain),
 			Contact:       siteapi.SiteSetupStepStatus(c.Steps.Contact),
 			SentEmail:     siteapi.SiteSetupStepStatus(c.Steps.SentEmail),
