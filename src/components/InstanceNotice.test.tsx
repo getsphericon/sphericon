@@ -38,7 +38,7 @@ test('an owner sees the notice until they acknowledge it', async () => {
 test('the notice says the environment decides when the setting is locked', async () => {
   worker.use(
     handleSiteInstanceGetState({
-      body: state({ telemetry: { enabled: false, locked: true, lockedBy: 'environment' } }),
+      body: state({ telemetry: { enabled: true, locked: true, lockedBy: 'environment' } }),
     }),
   )
   const { screen } = await renderWithRouter(<InstanceNotice />)
@@ -46,6 +46,17 @@ test('the notice says the environment decides when the setting is locked', async
   await expect
     .element(screen.getByText(/The server environment decides whether it is sent/))
     .toBeInTheDocument()
+})
+
+test('the notice is not shown while the environment keeps the report off', async () => {
+  worker.use(
+    handleSiteInstanceGetState({
+      body: state({ telemetry: { enabled: false, locked: true, lockedBy: 'environment' } }),
+    }),
+  )
+  const { screen } = await renderWithRouter(<InstanceNotice />)
+
+  await expect.poll(() => screen.getByText('Anonymous usage report').query()).toBeNull()
 })
 
 test('an acknowledged notice is not shown again', async () => {

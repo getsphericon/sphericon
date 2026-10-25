@@ -13,7 +13,9 @@ import { TelemetryReportActions } from './TelemetryReportActions.tsx'
 
 // InstanceNotice tells an Owner of the oldest Workspace, once, that the Instance sends an
 // anonymous Telemetry report (ADR 0032) and lets them decide. It shows until acknowledged
-// and renders nothing for anyone else (the state is refused to them).
+// and renders nothing for anyone else (the state is refused to them). It also renders nothing
+// while the environment keeps the report off (the SaaS deployment, DO_NOT_TRACK): nothing is
+// sent, so there is nothing to tell or to decide.
 export function InstanceNotice() {
   const { t } = useTranslation()
   const state = useInstanceState()
@@ -24,6 +26,9 @@ export function InstanceNotice() {
   })
 
   if (!state.data || state.data.noticeAcknowledged) {
+    return null
+  }
+  if (state.data.telemetry.locked && !state.data.telemetry.enabled) {
     return null
   }
   return (
