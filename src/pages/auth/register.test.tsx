@@ -15,7 +15,7 @@ async function fillAndSubmit(screen: Awaited<ReturnType<typeof renderWithRouter>
   await screen.getByLabelText(/^Email/).fill(' ada@example.com ')
   await screen.getByLabelText(/^Password/).fill('correct horse battery')
   await screen.getByLabelText(/^Confirm password/).fill('correct horse battery')
-  await screen.getByRole('button', { name: 'Register' }).click()
+  await screen.getByRole('button', { name: 'Sign up' }).click()
 }
 
 test('registers with trimmed name and email and the password, then asks to check the email', async () => {
@@ -44,8 +44,8 @@ test('shows the API error and stays on the form when registration fails', async 
   await fillAndSubmit(screen)
 
   await expect.element(screen.getByText('Name is required')).toBeInTheDocument()
-  await expect.element(screen.getByText('Registration failed')).toBeInTheDocument()
-  await expect.element(screen.getByRole('button', { name: 'Register' })).toBeInTheDocument()
+  await expect.element(screen.getByText('Sign-up failed')).toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Sign up' })).toBeInTheDocument()
 })
 
 test('falls back to the generic message when the error has no detail', async () => {
@@ -87,7 +87,7 @@ test('with the gate off it asks for a password, sends it and points to sign in',
   await screen.getByLabelText(/^Email/).fill('ada@example.com')
   await screen.getByLabelText(/^Password/).fill('correct horse battery')
   await screen.getByLabelText(/^Confirm password/).fill('correct horse battery')
-  await screen.getByRole('button', { name: 'Register' }).click()
+  await screen.getByRole('button', { name: 'Sign up' }).click()
 
   await expect.element(screen.getByText('Account created')).toBeInTheDocument()
   expect(bodies).toEqual([
@@ -109,7 +109,7 @@ test('sends nothing when the confirmation differs', async () => {
   await screen.getByLabelText(/^Email/).fill('ada@example.com')
   await screen.getByLabelText(/^Password/).fill('correct horse battery')
   await screen.getByLabelText(/^Confirm password/).fill('something else')
-  await screen.getByRole('button', { name: 'Register' }).click()
+  await screen.getByRole('button', { name: 'Sign up' }).click()
 
   await expect.element(screen.getByText('Passwords do not match')).toBeInTheDocument()
   expect(bodies).toEqual([])
