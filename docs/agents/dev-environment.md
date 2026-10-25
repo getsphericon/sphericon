@@ -44,7 +44,7 @@ own on `PGHOST:PGPORT` (as another user, or via `SPHERICON_PG_HOST` / `SPHERICON
 Never hand-name a scratch database. `mise run worktrees:rm <path>` removes a worktree with its
 databases (the four of `DB_NAMES`, the test workers' `_w<i>` clones and `_tpl_<hash>` templates) and
 its daemons, from the primary checkout. `mise run worktrees:gc` (also run by `setup` and
-`worktrees:prune`, and by `db:up` in the background at most once a day, never on CI or with
+`worktrees:prune`, and by `db:up` of the primary checkout in the background at most once a day, never on CI or with
 `SPHERICON_PG_HOST` set; its log is `<git dir>/sphericon-gc.log`) is the net under it for a worktree
 deleted any other way; `--apply` to act, a dry run otherwise. It drops the shared server's databases that
 no live worktree's `DB_NAMES` covers and runs `mise daemons prune --yes` for dead state; it

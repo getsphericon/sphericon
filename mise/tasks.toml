@@ -61,10 +61,11 @@ select format('create database %I', n) from unnest(string_to_array('$DB_NAMES', 
 SQL
 # A worktree that was deleted without worktrees:rm leaves its databases behind, so worktrees:gc
 # sweeps them at most once a day, in the background (its output goes to <git dir>/sphericon-gc.log).
-# Never on CI or on an external server (SPHERICON_PG_HOST): there the databases are not ours alone.
-# A failed sweep never fails db:up, which every test run goes through.
-if [ -z "${CI:-}" ] && [ -z "${SPHERICON_PG_HOST:-}" ]; then
-  common=$(git rev-parse --path-format=absolute --git-common-dir)
+# Only from the primary checkout (a linked worktree's test run must not drop what its neighbours
+# keep), never on CI or on an external server (SPHERICON_PG_HOST): there the databases are not
+# ours alone. A failed sweep never fails db:up, which every test run goes through.
+common=$(git rev-parse --path-format=absolute --git-common-dir)
+if [ -z "${CI:-}" ] && [ -z "${SPHERICON_PG_HOST:-}" ] && [ "$(git rev-parse --absolute-git-dir)" = "$common" ]; then
   stamp="$common/sphericon-gc.stamp"
   if [ -z "$(find "$stamp" -mmin -1440 2>/dev/null)" ]; then
     touch "$stamp"
