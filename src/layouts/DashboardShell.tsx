@@ -56,6 +56,7 @@ export function DashboardShell({
               target="_blank"
               rel="noreferrer"
               variant="subtle"
+              visibleFrom="sm"
               leftSection={<IconBook size={18} />}
             >
               {t(($) => $.nav.docs)}

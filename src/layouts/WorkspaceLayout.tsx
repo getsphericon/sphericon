@@ -216,7 +216,7 @@ export function WorkspaceLayout() {
         standing.kind === 'blocked' ? <SecondFactorBlocked workspace={current} /> : undefined
       }
       headerRight={
-        <Group gap="sm">
+        <Group gap="sm" wrap="nowrap">
           <WorkspaceSwitcher workspaceId={workspaceId} workspaces={workspaces} />
           <UserMenu
             workspaceId={workspaceId}

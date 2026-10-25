@@ -145,18 +145,20 @@ function BuilderBar({
   return (
     <Paper withBorder shadow="sm" p="xs" pos="absolute" top={16} left={16} right={16}>
       <Group justify="space-between" wrap="nowrap">
-        <Group wrap="nowrap">
+        <Group wrap="nowrap" flex={1} miw={0}>
           <ButtonLink variant="default" to={automationsRoute.to} params={{ workspaceId }}>
             {t(($) => $.actions.back)}
           </ButtonLink>
           <TextInput
             aria-label={t(($) => $.automations.nameLabel)}
             placeholder={t(($) => $.automations.nameLabel)}
-            w={320}
+            flex={1}
+            miw={0}
+            maw={320}
             {...form.getInputProps('name')}
           />
         </Group>
-        <Group wrap="nowrap">
+        <Group wrap="nowrap" flex="none">
           <FailedEnrollments workspaceId={workspaceId} automationId={automationId} />
           <Button
             loading={saveMutation.isPending}
@@ -313,7 +315,7 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
           <ThemeSync />
           <QuietRestore />
           <LeaveGuard name={form.values.name} saved={saved} />
-          <Box pos="relative" w="100vw" h="100vh">
+          <Box pos="relative" w="100%" h="100dvh">
             <WorkflowBuilder.Canvas />
             <I18nextProvider i18n={i18n}>
               <BuilderBar
@@ -326,7 +328,13 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
             <Box pos="absolute" top={88} left={16}>
               <WorkflowBuilder.Palette />
             </Box>
-            <Box pos="absolute" top={88} right={16}>
+            <Box
+              pos="absolute"
+              top={{ base: 'auto', sm: 88 }}
+              bottom={{ base: 16, sm: 'auto' }}
+              right={16}
+              maw="calc(100% - 32px)"
+            >
               <WorkflowBuilder.PropertiesPanel />
             </Box>
           </Box>
