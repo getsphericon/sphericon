@@ -51,18 +51,35 @@ components:
 # Files that are not part of a component's own layer (tests drive whole programs, generated
 # code follows the contract).
 exclude:
-  ['**/*_test.go', '**/*_gen.go', '**/*.test.ts', '**/*.test.tsx', '**/*.gen.ts', 'src/test/**']
+  [
+    '**/*_test.go',
+    '**/*_gen.go',
+    '**/*.test.ts',
+    '**/*.test.tsx',
+    '**/*.gen.ts',
+    'src/test/**',
+    '**/testdata/**',
+  ]
 
 rules:
   api-site:
     may_depend_on: [api-auth, core]
     because: a surface depends on the shared auth handlers and the core, never on another surface
+    forbid_symbol:
+      - name: github.com/getsphericon/sphericon/ent.Client
+        because: a handler takes a *ent.Scoped so every query is workspace-bound (docs/architecture.md, Workspace scoping)
   api-external:
     may_depend_on: [api-auth, core]
     because: a surface depends on the shared auth handlers and the core, never on another surface
+    forbid_symbol:
+      - name: github.com/getsphericon/sphericon/ent.Client
+        because: a handler takes a *ent.Scoped so every query is workspace-bound (docs/architecture.md, Workspace scoping)
   api-collect:
     may_depend_on: [api-auth, core]
     because: a surface depends on the shared auth handlers and the core, never on another surface
+    forbid_symbol:
+      - name: github.com/getsphericon/sphericon/ent.Client
+        because: a handler takes a *ent.Scoped so every query is workspace-bound (docs/architecture.md, Workspace scoping)
   api-auth:
     may_depend_on: [core]
     because: the security handlers sit below every surface
@@ -70,7 +87,7 @@ rules:
     may_depend_on: []
     because: core depends on neither a surface nor the Enterprise Edition; it reaches them through interfaces (site.AuditLog, events.Consumer) wired in internal/app
   ee:
-    may_depend_on: [core, api-auth]
+    may_depend_on: [core]
     because: the Enterprise Edition builds on the core and never on the open surfaces' handlers
   wiring:
     may_depend_on: [core, ee, api-site, api-external, api-collect, api-auth]
@@ -86,7 +103,7 @@ rules:
     may_depend_on: [web-generated, web-shared, web-app]
     because: a route file holds guards and search schemas and never imports a page (src/AGENTS.md)
   web-route-lazy:
-    may_depend_on: [web-generated, web-shared, web-routes, web-pages, web-console, web-app]
+    may_depend_on: [web-generated, web-shared, web-pages, web-console, web-app]
     because: the lazy route file is the one place a page is bound to its route
   web-pages:
     forbid_external:
@@ -98,7 +115,7 @@ rules:
     may_depend_on: [web-generated, web-shared, web-routes, web-app]
     because: the Staff console is its own feature and does not import the workspace pages
   web-app:
-    may_depend_on: [web-generated, web-shared, web-routes, web-pages, web-console]
+    may_depend_on: [web-generated, web-shared, web-routes]
     because: the files directly under src/ assemble the application
 
 # Every checked file belongs to a component, so a new package must be assigned to one. These

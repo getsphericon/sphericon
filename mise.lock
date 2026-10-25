@@ -863,44 +863,50 @@ url = "https://github.com/caddyserver/caddy/releases/download/v2.11.7/caddy_2.11
 url_api = "https://api.github.com/repos/caddyserver/caddy/releases/assets/607244987"
 
 [[tools."github:daveshanley/vacuum"]]
-version = "0.35.0"
+version = "0.35.2"
 backend = "github:daveshanley/vacuum"
 specifiers = ["latest"]
 
 [tools."github:daveshanley/vacuum"."platforms.linux-arm64"]
-checksum = "sha256:76417f0fd6f5bfd69cbd8fd1d8367aaff5c2122416a5eaeda82b469965942b8a"
-url = "https://github.com/daveshanley/vacuum/releases/download/v0.35.0/vacuum_0.35.0_linux_arm64.tar.gz"
-url_api = "https://api.github.com/repos/daveshanley/vacuum/releases/assets/665972174"
+checksum = "sha256:a02c237b5915b33f7dfd12b7ae920b154b855da22c21876182477a56c845fede"
+checksum_source = "mise-versions"
+url = "https://github.com/daveshanley/vacuum/releases/download/v0.35.2/vacuum_0.35.2_linux_arm64.tar.gz"
+url_api = "https://api.github.com/repos/daveshanley/vacuum/releases/assets/673186211"
 
 [tools."github:daveshanley/vacuum"."platforms.linux-arm64-musl"]
-checksum = "sha256:76417f0fd6f5bfd69cbd8fd1d8367aaff5c2122416a5eaeda82b469965942b8a"
-url = "https://github.com/daveshanley/vacuum/releases/download/v0.35.0/vacuum_0.35.0_linux_arm64.tar.gz"
-url_api = "https://api.github.com/repos/daveshanley/vacuum/releases/assets/665972174"
+checksum = "sha256:a02c237b5915b33f7dfd12b7ae920b154b855da22c21876182477a56c845fede"
+checksum_source = "mise-versions"
+url = "https://github.com/daveshanley/vacuum/releases/download/v0.35.2/vacuum_0.35.2_linux_arm64.tar.gz"
+url_api = "https://api.github.com/repos/daveshanley/vacuum/releases/assets/673186211"
 
 [tools."github:daveshanley/vacuum"."platforms.linux-x64"]
-checksum = "sha256:1732561b38f065b16b60a89bdc248e690c643a1fbfd34a4fbcbf423b27177d4e"
-url = "https://github.com/daveshanley/vacuum/releases/download/v0.35.0/vacuum_0.35.0_linux_x86_64.tar.gz"
-url_api = "https://api.github.com/repos/daveshanley/vacuum/releases/assets/665972161"
+checksum = "sha256:1acc9f25cfa05dea7c76fb0b20dacd28e4f4c1bf6fe8cc2ee6b8091465dd1e95"
+checksum_source = "mise-versions"
+url = "https://github.com/daveshanley/vacuum/releases/download/v0.35.2/vacuum_0.35.2_linux_x86_64.tar.gz"
+url_api = "https://api.github.com/repos/daveshanley/vacuum/releases/assets/673186213"
 
 [tools."github:daveshanley/vacuum"."platforms.linux-x64-musl"]
-checksum = "sha256:1732561b38f065b16b60a89bdc248e690c643a1fbfd34a4fbcbf423b27177d4e"
-url = "https://github.com/daveshanley/vacuum/releases/download/v0.35.0/vacuum_0.35.0_linux_x86_64.tar.gz"
-url_api = "https://api.github.com/repos/daveshanley/vacuum/releases/assets/665972161"
+checksum = "sha256:1acc9f25cfa05dea7c76fb0b20dacd28e4f4c1bf6fe8cc2ee6b8091465dd1e95"
+checksum_source = "mise-versions"
+url = "https://github.com/daveshanley/vacuum/releases/download/v0.35.2/vacuum_0.35.2_linux_x86_64.tar.gz"
+url_api = "https://api.github.com/repos/daveshanley/vacuum/releases/assets/673186213"
 
 [tools."github:daveshanley/vacuum"."platforms.macos-arm64"]
-checksum = "sha256:fe0b79f10bde0c1fb13da12aadc1f6c938a1a63e6b5ae833f940fc35b0dc7fbd"
-url = "https://github.com/daveshanley/vacuum/releases/download/v0.35.0/vacuum_0.35.0_darwin_arm64.tar.gz"
-url_api = "https://api.github.com/repos/daveshanley/vacuum/releases/assets/665971992"
+checksum = "sha256:078821285bb3b78559fcb1de93a6ecb23defac913a45cc4dd1bc037a4b7034a9"
+url = "https://github.com/daveshanley/vacuum/releases/download/v0.35.2/vacuum_0.35.2_darwin_arm64.tar.gz"
+url_api = "https://api.github.com/repos/daveshanley/vacuum/releases/assets/673186322"
 
 [tools."github:daveshanley/vacuum"."platforms.macos-x64"]
-checksum = "sha256:c698367c1639f8225b4608fa23e5854104a3a076ce419125abb34ba24dbafb3a"
-url = "https://github.com/daveshanley/vacuum/releases/download/v0.35.0/vacuum_0.35.0_darwin_x86_64.tar.gz"
-url_api = "https://api.github.com/repos/daveshanley/vacuum/releases/assets/665972000"
+checksum = "sha256:f4bb2ec51ed599c92192c08cf09b151c5918d5b507253b72582ab65bbc47370b"
+checksum_source = "mise-versions"
+url = "https://github.com/daveshanley/vacuum/releases/download/v0.35.2/vacuum_0.35.2_darwin_x86_64.tar.gz"
+url_api = "https://api.github.com/repos/daveshanley/vacuum/releases/assets/673186321"
 
 [tools."github:daveshanley/vacuum"."platforms.windows-x64"]
-checksum = "sha256:743ec02a21e80c6e80ea4668be7a581e7862c3c462b7d844122daf63be2e86c1"
-url = "https://github.com/daveshanley/vacuum/releases/download/v0.35.0/vacuum_0.35.0_windows_x86_64.tar.gz"
-url_api = "https://api.github.com/repos/daveshanley/vacuum/releases/assets/665972155"
+checksum = "sha256:db2303b151252d04ad1160d5b617d2dfd6aa9aa108fa5cac68b5a2b1aa65c948"
+checksum_source = "mise-versions"
+url = "https://github.com/daveshanley/vacuum/releases/download/v0.35.2/vacuum_0.35.2_windows_x86_64.tar.gz"
+url_api = "https://api.github.com/repos/daveshanley/vacuum/releases/assets/673186216"
 
 [[tools."github:google/osv-scanner"]]
 version = "2.7.0"
@@ -943,51 +949,51 @@ url = "https://github.com/google/osv-scanner/releases/download/v2.7.0/osv-scanne
 url_api = "https://api.github.com/repos/google/osv-scanner/releases/assets/632251671"
 
 [[tools."github:mokevnin/easement"]]
-version = "0.1.2"
+version = "0.2.0"
 backend = "github:mokevnin/easement"
-specifiers = ["0.1.2"]
+specifiers = ["0.2.0"]
 
 [tools."github:mokevnin/easement"."platforms.linux-arm64"]
-checksum = "sha256:a30b777ae7939681cfc57c8a62f527563de2ba3939b0d1a7d0ddaac61c8de1a7"
+checksum = "sha256:a8f60f216080d5d9812036007749f654dda77dab3e15f8cd0d46957a2f921e67"
 checksum_source = "mise-versions"
-url = "https://github.com/mokevnin/easement/releases/download/v0.1.2/easement-aarch64-unknown-linux-gnu.tar.xz"
-url_api = "https://api.github.com/repos/mokevnin/easement/releases/assets/675402227"
+url = "https://github.com/mokevnin/easement/releases/download/v0.2.0/easement-aarch64-unknown-linux-gnu.tar.xz"
+url_api = "https://api.github.com/repos/mokevnin/easement/releases/assets/676335034"
 
 [tools."github:mokevnin/easement"."platforms.linux-arm64-musl"]
-checksum = "sha256:a30b777ae7939681cfc57c8a62f527563de2ba3939b0d1a7d0ddaac61c8de1a7"
+checksum = "sha256:a8f60f216080d5d9812036007749f654dda77dab3e15f8cd0d46957a2f921e67"
 checksum_source = "mise-versions"
-url = "https://github.com/mokevnin/easement/releases/download/v0.1.2/easement-aarch64-unknown-linux-gnu.tar.xz"
-url_api = "https://api.github.com/repos/mokevnin/easement/releases/assets/675402227"
+url = "https://github.com/mokevnin/easement/releases/download/v0.2.0/easement-aarch64-unknown-linux-gnu.tar.xz"
+url_api = "https://api.github.com/repos/mokevnin/easement/releases/assets/676335034"
 
 [tools."github:mokevnin/easement"."platforms.linux-x64"]
-checksum = "sha256:47e94b4b8c352125ac6913ffec5fdd2d5d9c9444a1a63ffd5cfcdf3a57af5620"
+checksum = "sha256:16b0959e577c0d4f783d8c8272c1133c64c1d7ce84e39b55ef66c1ac9f3a4edd"
 checksum_source = "mise-versions"
-url = "https://github.com/mokevnin/easement/releases/download/v0.1.2/easement-x86_64-unknown-linux-gnu.tar.xz"
-url_api = "https://api.github.com/repos/mokevnin/easement/releases/assets/675402303"
+url = "https://github.com/mokevnin/easement/releases/download/v0.2.0/easement-x86_64-unknown-linux-gnu.tar.xz"
+url_api = "https://api.github.com/repos/mokevnin/easement/releases/assets/676335091"
 
 [tools."github:mokevnin/easement"."platforms.linux-x64-musl"]
-checksum = "sha256:47e94b4b8c352125ac6913ffec5fdd2d5d9c9444a1a63ffd5cfcdf3a57af5620"
+checksum = "sha256:16b0959e577c0d4f783d8c8272c1133c64c1d7ce84e39b55ef66c1ac9f3a4edd"
 checksum_source = "mise-versions"
-url = "https://github.com/mokevnin/easement/releases/download/v0.1.2/easement-x86_64-unknown-linux-gnu.tar.xz"
-url_api = "https://api.github.com/repos/mokevnin/easement/releases/assets/675402303"
+url = "https://github.com/mokevnin/easement/releases/download/v0.2.0/easement-x86_64-unknown-linux-gnu.tar.xz"
+url_api = "https://api.github.com/repos/mokevnin/easement/releases/assets/676335091"
 
 [tools."github:mokevnin/easement"."platforms.macos-arm64"]
-checksum = "sha256:9894bac6fd878ab72af9913acd60f413383f740af8a156dcc35e7f91d3a61dfd"
+checksum = "sha256:511706aa095151a0055a71035f9b662768d33b05d1fe2fbd9792e261a2896238"
 checksum_source = "mise-versions"
-url = "https://github.com/mokevnin/easement/releases/download/v0.1.2/easement-aarch64-apple-darwin.tar.xz"
-url_api = "https://api.github.com/repos/mokevnin/easement/releases/assets/675402222"
+url = "https://github.com/mokevnin/easement/releases/download/v0.2.0/easement-aarch64-apple-darwin.tar.xz"
+url_api = "https://api.github.com/repos/mokevnin/easement/releases/assets/676335026"
 
 [tools."github:mokevnin/easement"."platforms.macos-x64"]
-checksum = "sha256:759849a6f04e5ffe34e6b56dd7ed41f77bd5af8d5499f552617b380deb8d76a8"
+checksum = "sha256:851b66cd32257721f4caefc14cf7828d43019ae1805aac0e4fcae619c6999ceb"
 checksum_source = "mise-versions"
-url = "https://github.com/mokevnin/easement/releases/download/v0.1.2/easement-x86_64-apple-darwin.tar.xz"
-url_api = "https://api.github.com/repos/mokevnin/easement/releases/assets/675402279"
+url = "https://github.com/mokevnin/easement/releases/download/v0.2.0/easement-x86_64-apple-darwin.tar.xz"
+url_api = "https://api.github.com/repos/mokevnin/easement/releases/assets/676335068"
 
 [tools."github:mokevnin/easement"."platforms.windows-x64"]
-checksum = "sha256:b214d684d9a27feacd573bd0587791c1ce5d4a91ec734ab3a71334f50938d82a"
+checksum = "sha256:10e746b75989b6e8b0d49d7f71c0bcf119438167e4954f812d6e2a3c7a18b267"
 checksum_source = "mise-versions"
-url = "https://github.com/mokevnin/easement/releases/download/v0.1.2/easement-x86_64-pc-windows-msvc.zip"
-url_api = "https://api.github.com/repos/mokevnin/easement/releases/assets/675402285"
+url = "https://github.com/mokevnin/easement/releases/download/v0.2.0/easement-x86_64-pc-windows-msvc.zip"
+url_api = "https://api.github.com/repos/mokevnin/easement/releases/assets/676335084"
 
 [[tools."github:mokevnin/heavy"]]
 version = "0.1.1"
@@ -1242,6 +1248,11 @@ url = "https://dl.google.com/go/go1.27.3.darwin-amd64.tar.gz"
 [tools.go."platforms.windows-x64"]
 checksum = "sha256:f26081f438319757f8a1b46d7d0b2c5ec7583d4038e485e0aa725cfde7885fff"
 url = "https://dl.google.com/go/go1.27.3.windows-amd64.zip"
+
+[[tools."go:github.com/scip-code/scip-go/cmd/scip-go"]]
+version = "0.2.9"
+backend = "go:github.com/scip-code/scip-go/cmd/scip-go"
+specifiers = ["latest"]
 
 [[tools.golangci-lint]]
 version = "2.15.0"
@@ -1610,6 +1621,12 @@ url = "https://nodejs.org/dist/v26.12.1/node-v26.12.1-darwin-x64.tar.gz"
 [tools.node."platforms.windows-x64"]
 checksum = "sha256:b3efd5c70cba3308ed46e7e699a9b8aac075bbc6b027fcb39c84c31acc25e2b4"
 url = "https://nodejs.org/dist/v26.12.1/node-v26.12.1-win-x64.zip"
+
+[[tools."npm:@sourcegraph/scip-typescript"]]
+version = "0.5.2"
+aube = { path = ".mise/locks/npm-sourcegraph-scip-typescript/0.5.2", digest = "sha256:92956e6fa7a7887190926d37ebb48ab5f8db640e63ac5ef6457cd65947d4d229" }
+backend = "npm:@sourcegraph/scip-typescript"
+specifiers = ["latest"]
 
 [[tools.pinact]]
 version = "5.0.1"

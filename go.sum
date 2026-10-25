@@ -101,10 +101,10 @@ github.com/descope/virtualwebauthn v1.0.5 h1:fMXji5UMepJC51Ge6d4v5IAjiJQRKmXE9hl
 github.com/descope/virtualwebauthn v1.0.5/go.mod h1:lLCfN+DpCM3iisM4bCILZlFEWkC1Zo7ZgsxC45CUapI=
 github.com/dlclark/regexp2 v1.12.0 h1:0j4c5qQmnC6XOWNjP3PIXURXN2gWx76rd3KvgdPkCz8=
 github.com/dlclark/regexp2 v1.12.0/go.mod h1:DHkYz0B9wPfa6wondMfaivmHpzrQ3v9q8cnmRbL6yW8=
-github.com/dlclark/regexp2/v2 v2.9.1 h1:q6bZW/NN9VodqMjYXpuic2lZxdHPfFTzGS+MJxIJmKQ=
-github.com/dlclark/regexp2/v2 v2.9.1/go.mod h1:avUrQvPaLz2DrFNHJF0taWAFFX2C1GMSSoeiqFjcBmU=
-github.com/dop251/goja v0.0.0-20261023133238-1622cea953df h1:ldUmgGjVsJuNgA14RtTooak1yTfNlEvXyhq8ibidEx8=
-github.com/dop251/goja v0.0.0-20261023133238-1622cea953df/go.mod h1:Cp9NYOLrEKg/ypIRkUWYXWLuKAyyFGkDmGeJ95Sw0zI=
+github.com/dlclark/regexp2/v2 v2.10.1 h1:OfLIsGwI1ROq2rHdukCvJzojKjWiEIawRTr5Hqdzd5w=
+github.com/dlclark/regexp2/v2 v2.10.1/go.mod h1:avUrQvPaLz2DrFNHJF0taWAFFX2C1GMSSoeiqFjcBmU=
+github.com/dop251/goja v0.0.0-20261024144015-2a9269b6b6de h1:TZ5ozdZ1dej3o0xsj2s+MUgM2UIm6pUSof+PoWLM2/g=
+github.com/dop251/goja v0.0.0-20261024144015-2a9269b6b6de/go.mod h1:Cp9NYOLrEKg/ypIRkUWYXWLuKAyyFGkDmGeJ95Sw0zI=
 github.com/doyensec/safeurl v0.2.5 h1:kKu0JNQy0tJ8jkDyB5h6Aml9vWWniq+mpoa12EGLcOQ=
 github.com/doyensec/safeurl v0.2.5/go.mod h1:3H0cgRpPYPSpgxRRn5yGD35Ns/LgGX/BVWSBbzUqXtY=
 github.com/dustin/go-humanize v1.1.0 h1:dbKTrvD0klcbBV/h4AWJdMuZogJACoMlvWIWZ5b2xWg=
@@ -292,8 +292,8 @@ github.com/modelcontextprotocol/go-sdk v1.8.0 h1:KIvahhYqwtbeniWVPs3TcXEA7b8jEtw
 github.com/modelcontextprotocol/go-sdk v1.8.0/go.mod h1:dL7u98E/zjJTGzEq+j30jQ8K2k1mb6LeAH4inEcSGts=
 github.com/mokevnin/dbcleaner v1.0.0 h1:jSWT4B3bWeZ6OX8IwP7FpZFC7wcDRat5KW/kvItBBEg=
 github.com/mokevnin/dbcleaner v1.0.0/go.mod h1:cp/E9aKtgx0sly/P1DsEW7GlXvj2qtIJ6jZ5tAiuysM=
-github.com/monperrus/crawler-user-agents v1.62.0 h1:JtyzOdQ50CAQ0BMpcew75bA9giEAW5kIVPrdXkFCMq8=
-github.com/monperrus/crawler-user-agents v1.62.0/go.mod h1:GfRyKbsbxSrRxTPYnVi4U/0stQd6BcFCxDy6i6IxQ0M=
+github.com/monperrus/crawler-user-agents v1.65.0 h1:5Ct1dPknQUMrcGAaF3VXBAzYsKH7iaTAGitHAo9GtGU=
+github.com/monperrus/crawler-user-agents v1.65.0/go.mod h1:GfRyKbsbxSrRxTPYnVi4U/0stQd6BcFCxDy6i6IxQ0M=
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 h1:C3w9PqII01/Oq1c1nUAm88MOHcQC9l5mIlSMApZMrHA=
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822/go.mod h1:+n7T8mK8HuQTcFwEeznm/DIxMOiR9yIdICNftLE1DvQ=
 github.com/narqo/go-badge v0.0.0-20230821190521-c9a75c019a59 h1:kbREB9muGo4sHLoZJD/E/IV8yK3Y15eEA9mYi/ztRsk=
