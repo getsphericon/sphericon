@@ -16,6 +16,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { CenteredLayout } from '../components/CenteredLayout.tsx'
 import {
   staffAuthLoginMutation,
   staffAuthSecondFactorMutation,
@@ -82,7 +83,7 @@ export function ConsoleLoginPage() {
   if (step) {
     const { challenge, enrolment } = step
     return (
-      <Stack maw={400} mx="auto" mt="xl" p="md">
+      <CenteredLayout maw={400}>
         <Title order={3}>
           {enrolment
             ? t(($) => $.console.login.enrolmentTitle)
@@ -136,12 +137,12 @@ export function ConsoleLoginPage() {
             </Group>
           </Stack>
         </form>
-      </Stack>
+      </CenteredLayout>
     )
   }
 
   return (
-    <Stack maw={400} mx="auto" mt="xl" p="md">
+    <CenteredLayout maw={400}>
       <Title order={3}>{t(($) => $.console.login.title)}</Title>
 
       <form
@@ -172,6 +173,6 @@ export function ConsoleLoginPage() {
           </Group>
         </Stack>
       </form>
-    </Stack>
+    </CenteredLayout>
   )
 }

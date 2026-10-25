@@ -2,6 +2,7 @@ import { Alert, Anchor, Button, Card, Stack, Text, Title } from '@mantine/core'
 import { useMutation } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
+import { CenteredLayout } from '../components/CenteredLayout.tsx'
 import { sitePublicUnsubscribesPerformMutation } from '../generated/site/@tanstack/react-query.gen.ts'
 import { Route as unsubscribeRoute } from '../routes/unsubscribe.tsx'
 
@@ -22,7 +23,7 @@ export function Unsubscribe({ token, all }: { token: string; all?: string | unde
   const confirm = () => mutation.mutate({ path: { token } })
 
   return (
-    <Stack maw={460} mx="auto" mt="xl" align="center">
+    <CenteredLayout maw={460} align="center">
       <Card withBorder w="100%" padding="xl">
         {mutation.isSuccess ? (
           <Stack align="center" gap="sm">
@@ -53,6 +54,6 @@ export function Unsubscribe({ token, all }: { token: string; all?: string | unde
           </Stack>
         )}
       </Card>
-    </Stack>
+    </CenteredLayout>
   )
 }

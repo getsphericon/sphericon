@@ -3,6 +3,7 @@ import { useForm } from '@mantine/form'
 import { useMutation } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
+import { CenteredLayout } from '../../components/CenteredLayout.tsx'
 import { AnchorLink } from '../../components/RouterLink.tsx'
 import { siteAuthForgotPasswordMutation } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { useApiErrorMessage } from '../../hooks/useApiErrorMessage.ts'
@@ -25,7 +26,7 @@ export function ForgotPasswordPage() {
 
   if (mutation.isSuccess) {
     return (
-      <Stack maw={420} mx="auto" mt="xl">
+      <CenteredLayout maw={420}>
         <Card withBorder padding="xl">
           <Stack gap="sm">
             <Title order={3}>{t(($) => $.forgotPassword.successTitle)}</Title>
@@ -35,12 +36,12 @@ export function ForgotPasswordPage() {
             </AnchorLink>
           </Stack>
         </Card>
-      </Stack>
+      </CenteredLayout>
     )
   }
 
   return (
-    <Stack maw={420} mx="auto" mt="xl">
+    <CenteredLayout maw={420}>
       <Title order={3}>{t(($) => $.forgotPassword.title)}</Title>
       <Text c="dimmed" size="sm">
         {t(($) => $.forgotPassword.description)}
@@ -72,6 +73,6 @@ export function ForgotPasswordPage() {
           </Group>
         </Stack>
       </form>
-    </Stack>
+    </CenteredLayout>
   )
 }

@@ -15,6 +15,7 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { CenteredLayout } from '../../components/CenteredLayout.tsx'
 import {
   siteOAuthDecideMutation,
   siteOAuthDescribeOptions,
@@ -92,19 +93,19 @@ export function OAuthConsent({ request }: { request: ConsentRequest }) {
 
   if (describe.isLoading || workspaces.isLoading) {
     return (
-      <Stack maw={480} mx="auto" mt="xl" align="center">
+      <CenteredLayout maw={480} align="center">
         <Loader />
-      </Stack>
+      </CenteredLayout>
     )
   }
 
   if (describe.isError || !describe.data) {
     return (
-      <Stack maw={480} mx="auto" mt="xl">
+      <CenteredLayout maw={480}>
         <Alert color="red" title={t(($) => $.oauthConsent.errorTitle)}>
           {t(($) => $.oauthConsent.invalid)}
         </Alert>
-      </Stack>
+      </CenteredLayout>
     )
   }
 
@@ -131,7 +132,7 @@ export function OAuthConsent({ request }: { request: ConsentRequest }) {
   }
 
   return (
-    <Stack maw={480} mx="auto" mt="xl">
+    <CenteredLayout maw={480}>
       <Title order={3}>{t(($) => $.oauthConsent.title, { client: info.clientName })}</Title>
       <Text>{t(($) => $.oauthConsent.intro, { client: info.clientName })}</Text>
       {info.clientHost ? (
@@ -194,6 +195,6 @@ export function OAuthConsent({ request }: { request: ConsentRequest }) {
           {t(($) => $.oauthConsent.allow)}
         </Button>
       </Group>
-    </Stack>
+    </CenteredLayout>
   )
 }

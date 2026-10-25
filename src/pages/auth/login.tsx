@@ -2,7 +2,6 @@ import {
   Alert,
   Anchor,
   Button,
-  Center,
   Group,
   PasswordInput,
   Stack,
@@ -23,6 +22,7 @@ import { useNavigate, useRouter, useSearch } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { CenteredLayout } from '../../components/CenteredLayout.tsx'
 import { AnchorLink } from '../../components/RouterLink.tsx'
 import { SigninProviders } from '../../components/SigninProviders.tsx'
 import {
@@ -182,38 +182,36 @@ export function LoginPage() {
 
   if (challenge) {
     return (
-      <Center mih="100vh">
-        <Stack w="100%" maw={400}>
-          <Title order={3}>{t(($) => $.login.secondStepTitle)}</Title>
-          <Text size="sm" c="dimmed">
-            {t(($) => $.login.secondStepDescription)}
-          </Text>
+      <CenteredLayout>
+        <Title order={3}>{t(($) => $.login.secondStepTitle)}</Title>
+        <Text size="sm" c="dimmed">
+          {t(($) => $.login.secondStepDescription)}
+        </Text>
 
-          <form
-            onSubmit={codeForm.onSubmit((values) =>
-              secondStepMutation.mutate({ body: { challenge, code: values.code.trim() } }),
-            )}
-          >
-            <Stack>
-              <TextInput
-                label={t(($) => $.login.codeLabel)}
-                autoComplete="one-time-code"
-                required
-                data-autofocus
-                {...codeForm.getInputProps('code')}
-              />
-              <Group justify="space-between" align="center">
-                <Anchor component="button" type="button" size="sm" onClick={startOver}>
-                  {t(($) => $.login.startOver)}
-                </Anchor>
-                <Button type="submit" loading={secondStepMutation.isPending}>
-                  {t(($) => $.login.verifyButton)}
-                </Button>
-              </Group>
-            </Stack>
-          </form>
-        </Stack>
-      </Center>
+        <form
+          onSubmit={codeForm.onSubmit((values) =>
+            secondStepMutation.mutate({ body: { challenge, code: values.code.trim() } }),
+          )}
+        >
+          <Stack>
+            <TextInput
+              label={t(($) => $.login.codeLabel)}
+              autoComplete="one-time-code"
+              required
+              data-autofocus
+              {...codeForm.getInputProps('code')}
+            />
+            <Group justify="space-between" align="center">
+              <Anchor component="button" type="button" size="sm" onClick={startOver}>
+                {t(($) => $.login.startOver)}
+              </Anchor>
+              <Button type="submit" loading={secondStepMutation.isPending}>
+                {t(($) => $.login.verifyButton)}
+              </Button>
+            </Group>
+          </Stack>
+        </form>
+      </CenteredLayout>
     )
   }
 
@@ -228,76 +226,74 @@ export function LoginPage() {
   }
 
   return (
-    <Center mih="100vh">
-      <Stack w="100%" maw={400}>
-        <Title order={3}>{t(($) => $.login.title)}</Title>
+    <CenteredLayout>
+      <Title order={3}>{t(($) => $.login.title)}</Title>
 
-        {signinError ? (
-          <Alert color="red" title={t(($) => $.signin.errorTitle)}>
-            {t(($) => $.signin.errors[signinError])}
-          </Alert>
-        ) : null}
+      {signinError ? (
+        <Alert color="red" title={t(($) => $.signin.errorTitle)}>
+          {t(($) => $.signin.errors[signinError])}
+        </Alert>
+      ) : null}
 
-        {unverifiedEmail ? (
-          <Alert color="yellow" title={t(($) => $.login.verifyRequiredTitle)}>
-            <Stack gap="xs" align="flex-start">
-              <Text size="sm">{t(($) => $.login.verifyRequiredMessage)}</Text>
-              <Button
-                variant="light"
-                size="xs"
-                loading={resendMutation.isPending}
-                onClick={() => resendMutation.mutate({ body: { email: unverifiedEmail } })}
-              >
-                {t(($) => $.login.resendVerification)}
-              </Button>
-            </Stack>
-          </Alert>
-        ) : null}
-
-        <form onSubmit={form.onSubmit(handleSubmit)}>
-          <Stack>
-            <TextInput
-              label={t(($) => $.login.emailLabel)}
-              type="email"
-              autoComplete="username webauthn"
-              required
-              {...form.getInputProps('email')}
-            />
-            <PasswordInput
-              label={t(($) => $.login.passwordLabel)}
-              required
-              {...form.getInputProps('password')}
-            />
-
-            <Group justify="space-between" align="center">
-              <Stack gap={2}>
-                <AnchorLink to={registerRoute.to} size="sm">
-                  {t(($) => $.login.registerLink)}
-                </AnchorLink>
-                <AnchorLink to={forgotPasswordRoute.to} size="sm">
-                  {t(($) => $.login.forgotPasswordLink)}
-                </AnchorLink>
-              </Stack>
-              <Button type="submit" loading={loginMutation.isPending}>
-                {t(($) => $.login.submitButton)}
-              </Button>
-            </Group>
+      {unverifiedEmail ? (
+        <Alert color="yellow" title={t(($) => $.login.verifyRequiredTitle)}>
+          <Stack gap="xs" align="flex-start">
+            <Text size="sm">{t(($) => $.login.verifyRequiredMessage)}</Text>
+            <Button
+              variant="light"
+              size="xs"
+              loading={resendMutation.isPending}
+              onClick={() => resendMutation.mutate({ body: { email: unverifiedEmail } })}
+            >
+              {t(($) => $.login.resendVerification)}
+            </Button>
           </Stack>
-        </form>
+        </Alert>
+      ) : null}
 
-        <SigninProviders returnTo={redirect} separator="above" />
+      <form onSubmit={form.onSubmit(handleSubmit)}>
+        <Stack>
+          <TextInput
+            label={t(($) => $.login.emailLabel)}
+            type="email"
+            autoComplete="username webauthn"
+            required
+            {...form.getInputProps('email')}
+          />
+          <PasswordInput
+            label={t(($) => $.login.passwordLabel)}
+            required
+            {...form.getInputProps('password')}
+          />
 
-        {browserSupportsWebAuthn() ? (
-          <Button
-            variant="default"
-            leftSection={<IconFingerprint size={18} />}
-            loading={passkeyMutation.isPending && !passkeyMutation.variables}
-            onClick={() => passkeyLogin(false)}
-          >
-            {t(($) => $.login.passkeyButton)}
-          </Button>
-        ) : null}
-      </Stack>
-    </Center>
+          <Group justify="space-between" align="center">
+            <Stack gap={2}>
+              <AnchorLink to={registerRoute.to} size="sm">
+                {t(($) => $.login.registerLink)}
+              </AnchorLink>
+              <AnchorLink to={forgotPasswordRoute.to} size="sm">
+                {t(($) => $.login.forgotPasswordLink)}
+              </AnchorLink>
+            </Stack>
+            <Button type="submit" loading={loginMutation.isPending}>
+              {t(($) => $.login.submitButton)}
+            </Button>
+          </Group>
+        </Stack>
+      </form>
+
+      <SigninProviders returnTo={redirect} separator="above" />
+
+      {browserSupportsWebAuthn() ? (
+        <Button
+          variant="default"
+          leftSection={<IconFingerprint size={18} />}
+          loading={passkeyMutation.isPending && !passkeyMutation.variables}
+          onClick={() => passkeyLogin(false)}
+        >
+          {t(($) => $.login.passkeyButton)}
+        </Button>
+      ) : null}
+    </CenteredLayout>
   )
 }

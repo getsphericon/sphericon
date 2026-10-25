@@ -1,6 +1,7 @@
 import { Anchor, Card, Stack, Text, Title } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
 
+import { CenteredLayout } from '../components/CenteredLayout.tsx'
 import { Route as unsubscribedRoute } from '../routes/unsubscribed.tsx'
 
 // Public confirmation page the unsubscribe endpoint (/e/u/{token}) redirects to
@@ -12,7 +13,7 @@ export function UnsubscribedPage() {
   const { all } = unsubscribedRoute.useSearch()
 
   return (
-    <Stack maw={460} mx="auto" mt="xl" align="center">
+    <CenteredLayout maw={460} align="center">
       <Card withBorder w="100%" padding="xl">
         <Stack align="center" gap="sm">
           <Title order={3}>{t(($) => $.unsubscribed.title)}</Title>
@@ -26,6 +27,6 @@ export function UnsubscribedPage() {
           ) : null}
         </Stack>
       </Card>
-    </Stack>
+    </CenteredLayout>
   )
 }

@@ -4,6 +4,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { CenteredLayout } from '../../components/CenteredLayout.tsx'
 import {
   siteSignupSurveySubmitMutation,
   siteUserGetMeQueryKey,
@@ -155,7 +156,7 @@ export function SignupSurveyPage() {
   }
 
   return (
-    <Stack maw={520} mx="auto" mt="xl">
+    <CenteredLayout maw={520}>
       <Card withBorder padding="xl">
         <Stack>
           <Progress value={((index + 1) / steps.length) * 100} aria-hidden />
@@ -204,6 +205,6 @@ export function SignupSurveyPage() {
           </Group>
         </Stack>
       </Card>
-    </Stack>
+    </CenteredLayout>
   )
 }

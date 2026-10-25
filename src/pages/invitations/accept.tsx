@@ -14,6 +14,7 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { useLocation, useNavigate, useSearch } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
+import { CenteredLayout } from '../../components/CenteredLayout.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
 import { SigninProviders } from '../../components/SigninProviders.tsx'
 import {
@@ -81,20 +82,20 @@ export function AcceptInvitationPage() {
 
   if (lookup.isLoading || session.isLoading) {
     return (
-      <Stack maw={420} mx="auto" mt="xl" align="center">
+      <CenteredLayout maw={420} align="center">
         <Loader />
         <Text c="dimmed">{t(($) => $.acceptInvitation.loading)}</Text>
-      </Stack>
+      </CenteredLayout>
     )
   }
 
   if (lookup.isError || !lookup.data) {
     return (
-      <Stack maw={420} mx="auto" mt="xl">
+      <CenteredLayout maw={420}>
         <Alert color="red" title={t(($) => $.acceptInvitation.errorTitle)}>
           {t(($) => $.acceptInvitation.invalid)}
         </Alert>
-      </Stack>
+      </CenteredLayout>
     )
   }
 
@@ -109,7 +110,7 @@ export function AcceptInvitationPage() {
   }
 
   return (
-    <Stack maw={420} mx="auto" mt="xl">
+    <CenteredLayout maw={420}>
       <Title order={3}>{t(($) => $.acceptInvitation.title)}</Title>
       <Text>{t(($) => $.acceptInvitation.intro, { workspace: invite.workspaceName })}</Text>
       <Text c="dimmed" size="sm">
@@ -157,6 +158,6 @@ export function AcceptInvitationPage() {
           {t(($) => $.acceptInvitation.signInButton)}
         </ButtonLink>
       )}
-    </Stack>
+    </CenteredLayout>
   )
 }

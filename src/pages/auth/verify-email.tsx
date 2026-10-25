@@ -5,6 +5,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { CenteredLayout } from '../../components/CenteredLayout.tsx'
 import { AnchorLink } from '../../components/RouterLink.tsx'
 import { siteAuthVerifyEmailMutation } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { useNotify } from '../../hooks/useNotify.ts'
@@ -79,7 +80,7 @@ export function VerifyEmailPage() {
 
   if (token === '' || (mutation.isError && hasErrorStatus(mutation.error, [400]))) {
     return (
-      <Stack maw={460} mx="auto" mt="xl">
+      <CenteredLayout maw={460}>
         <Card withBorder padding="xl">
           <Stack align="center" gap="sm">
             <Title order={3}>{t(($) => $.verifyEmail.errorTitle)}</Title>
@@ -91,13 +92,13 @@ export function VerifyEmailPage() {
             </AnchorLink>
           </Stack>
         </Card>
-      </Stack>
+      </CenteredLayout>
     )
   }
 
   if (!needsPassword) {
     return (
-      <Stack maw={460} mx="auto" mt="xl" align="center">
+      <CenteredLayout maw={460} align="center">
         <Card withBorder w="100%" padding="xl">
           <Stack align="center" gap="sm">
             {mutation.isError ? (
@@ -121,12 +122,12 @@ export function VerifyEmailPage() {
             )}
           </Stack>
         </Card>
-      </Stack>
+      </CenteredLayout>
     )
   }
 
   return (
-    <Stack maw={420} mx="auto" mt="xl">
+    <CenteredLayout maw={420}>
       <Title order={3}>{t(($) => $.verifyEmail.title)}</Title>
       <Text c="dimmed">{t(($) => $.verifyEmail.otherBrowserBody)}</Text>
 
@@ -155,6 +156,6 @@ export function VerifyEmailPage() {
           </Group>
         </Stack>
       </form>
-    </Stack>
+    </CenteredLayout>
   )
 }

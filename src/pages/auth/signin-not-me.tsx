@@ -3,6 +3,7 @@ import { useMutation } from '@tanstack/react-query'
 import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { CenteredLayout } from '../../components/CenteredLayout.tsx'
 import { AnchorLink } from '../../components/RouterLink.tsx'
 import { siteAuthSigninNotMeMutation } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { Route as loginRoute } from '../../routes/login.tsx'
@@ -26,7 +27,7 @@ export function SigninNotMePage() {
   }, [mutate, token])
 
   return (
-    <Stack maw={460} mx="auto" mt="xl" align="center">
+    <CenteredLayout maw={460} align="center">
       <Card withBorder w="100%" padding="xl">
         <Stack align="center" gap="sm">
           {mutation.isSuccess ? (
@@ -54,6 +55,6 @@ export function SigninNotMePage() {
           )}
         </Stack>
       </Card>
-    </Stack>
+    </CenteredLayout>
   )
 }
