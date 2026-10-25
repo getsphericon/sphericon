@@ -10,6 +10,7 @@ import {
   IconMail,
   IconMailbox,
   IconMailFast,
+  IconMailOpened,
   IconPalette,
   IconRobot,
   IconRoute,
@@ -35,6 +36,7 @@ import { Route as subscribedPeopleRoute } from '../routes/workspaces/$workspaceI
 import { Route as automationsRoute } from '../routes/workspaces/$workspaceId/automations/index.tsx'
 import { Route as brandKitRoute } from '../routes/workspaces/$workspaceId/brand-kit.tsx'
 import { Route as broadcastsRoute } from '../routes/workspaces/$workspaceId/broadcasts/index.tsx'
+import { Route as capturedMessagesRoute } from '../routes/workspaces/$workspaceId/captured-messages/index.tsx'
 import { Route as contactsRoute } from '../routes/workspaces/$workspaceId/contacts/index.tsx'
 import { Route as customFieldsRoute } from '../routes/workspaces/$workspaceId/custom-fields/index.tsx'
 import { Route as overviewRoute } from '../routes/workspaces/$workspaceId/index.tsx'
@@ -103,6 +105,11 @@ export function AppNavbar({ workspaceId }: { workspaceId: string }) {
       icon: <IconMailFast size={18} />,
     },
     { route: brandKitRoute, label: t(($) => $.nav.brandKit), icon: <IconPalette size={18} /> },
+    {
+      route: capturedMessagesRoute,
+      label: t(($) => $.nav.capturedMessages),
+      icon: <IconMailOpened size={18} />,
+    },
   ]
 
   // What a workspace does on its own: Automations walk a contact through steps, Rules react to

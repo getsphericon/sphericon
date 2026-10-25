@@ -20,7 +20,7 @@ import {
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { useDisclosure } from '@mantine/hooks'
-import { IconBrandAws, IconPlugConnected, IconServer } from '@tabler/icons-react'
+import { IconBrandAws, IconMailOpened, IconPlugConnected, IconServer } from '@tabler/icons-react'
 import { useQuery } from '@tanstack/react-query'
 import { DataTable } from 'mantine-datatable'
 import { useState } from 'react'
@@ -55,10 +55,10 @@ type ProviderKind = SiteIntegrationProvider
 
 // What the first step offers: SES-compatible services speak the SES API at an endpoint of their own.
 // contract-copy: the first step's tiles, a UI choice that adds sesCompatible to the provider enum
-type Tile = 'ses' | 'sesCompatible' | 'smtp'
+type Tile = 'ses' | 'sesCompatible' | 'smtp' | 'inbox'
 
 // contract-copy: the same tiles in display order
-const TILES: Tile[] = ['ses', 'sesCompatible', 'smtp']
+const TILES: Tile[] = ['ses', 'sesCompatible', 'smtp', 'inbox']
 
 // Flat form state; the provider-specific config object is assembled on submit
 // from whichever fields the selected provider uses.
@@ -189,6 +189,11 @@ export function IntegrationsSection({ workspaceId }: { workspaceId: string }) {
       title: t(($) => $.settings.integrations.providers.sesCompatible),
       hint: t(($) => $.settings.integrations.providers.sesCompatibleHint),
       icon: <IconPlugConnected size={22} />,
+    },
+    inbox: {
+      title: t(($) => $.settings.integrations.providers.inbox),
+      hint: t(($) => $.settings.integrations.providers.inboxHint),
+      icon: <IconMailOpened size={22} />,
     },
     smtp: {
       title: 'SMTP',
@@ -330,7 +335,31 @@ export function IntegrationsSection({ workspaceId }: { workspaceId: string }) {
           size="lg"
           title={t(($) => $.settings.integrations.create)}
         >
-          {tile !== null ? (
+          {tile === 'inbox' ? (
+            <Stack>
+              <Text size="sm">{t(($) => $.settings.integrations.inboxExplanation)}</Text>
+              <Group justify="space-between">
+                <Button variant="default" onClick={() => setTile(null)}>
+                  {t(($) => $.settings.integrations.back)}
+                </Button>
+                <Button
+                  loading={createMutation.isPending}
+                  onClick={() =>
+                    createMutation.mutate({
+                      path: { workspaceId },
+                      body: {
+                        name: t(($) => $.settings.integrations.providers.inbox),
+                        isDefault: false,
+                        config: { kind: 'inbox' },
+                      },
+                    })
+                  }
+                >
+                  {t(($) => $.settings.integrations.create)}
+                </Button>
+              </Group>
+            </Stack>
+          ) : tile !== null ? (
             <form
               onSubmit={form.onSubmit((values) =>
                 createMutation.mutate({

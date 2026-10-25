@@ -222,6 +222,46 @@ test('Amazon SES asks for no endpoint', async () => {
   await expect.element(dialog.getByLabelText(/^Custom endpoint/)).not.toBeInTheDocument()
 })
 
+test('connects the Test inbox with no credentials form', async () => {
+  const bodies: unknown[] = []
+  worker.use(list([smtp]), create(bodies))
+  const { screen } = await renderWithRouter(<IntegrationsSection workspaceId={WORKSPACE_ID} />)
+
+  await screen.getByRole('button', { name: 'Connect provider' }).click()
+  const dialog = screen.getByRole('dialog')
+  await dialog.getByRole('button', { name: 'Test inbox' }).click()
+
+  await expect
+    .element(dialog.getByText(/keeps every message it is given and delivers none/))
+    .toBeInTheDocument()
+  await expect.element(dialog.getByLabelText(/^SMTP host/)).not.toBeInTheDocument()
+  await expect.element(dialog.getByLabelText(/^From address/)).not.toBeInTheDocument()
+  await dialog.getByRole('button', { name: 'Connect provider' }).click()
+
+  await expect
+    .poll(() => bodies)
+    .toMatchObject([{ name: 'Test inbox', isDefault: false, config: { kind: 'inbox' } }])
+})
+
+test('says why a second Test inbox is refused', async () => {
+  worker.use(
+    list([]),
+    handleSiteIntegrationsCreate(() =>
+      problem(409, { detail: 'The workspace already has a Test inbox' }),
+    ),
+  )
+  const { screen } = await renderWithRouter(<IntegrationsSection workspaceId={WORKSPACE_ID} />)
+
+  await screen.getByRole('button', { name: 'Connect provider' }).click()
+  const dialog = screen.getByRole('dialog')
+  await dialog.getByRole('button', { name: 'Test inbox' }).click()
+  await dialog.getByRole('button', { name: 'Connect provider' }).click()
+
+  await expect
+    .element(screen.getByText('The workspace already has a Test inbox'))
+    .toBeInTheDocument()
+})
+
 test('archives a provider', async () => {
   let archived = false
   worker.use(

@@ -392,6 +392,40 @@ export default interface Resources {
       "useTemplate": "Start from template",
       "useTemplateNone": "— none —"
     },
+    "capturedMessages": {
+      "capturedAt": "Captured at",
+      "deleteAll": "Delete all",
+      "deleteAllDescription": "Every captured message of this workspace is removed. This cannot be undone.",
+      "deleteAllTitle": "Delete all captured messages?",
+      "deleteError": "Failed to delete captured messages",
+      "deleted": "Captured message deleted",
+      "deletedAll": "Captured messages deleted",
+      "description": "What the Test inbox kept instead of sending. Opening a message here counts as a real open, and its links work.",
+      "envelope": "From {{from}} to {{recipient}}, captured {{at}}",
+      "fromUnverified": "From not verified",
+      "loadError": "Failed to load captured messages",
+      "messageLoadError": "Failed to load the captured message",
+      "noLinks": "This message has no links.",
+      "noRecords": "No captured messages yet",
+      "recipient": "Recipient",
+      "renderedTitle": "Rendered message",
+      "subject": "Subject",
+      "surface": "Sent by",
+      "surfaces": {
+        "automation": "Automation",
+        "broadcast": "Broadcast",
+        "test": "Test send",
+        "transactional": "Transactional email"
+      },
+      "tabs": {
+        "headers": "Headers",
+        "html": "HTML",
+        "links": "Links",
+        "rendered": "Rendered",
+        "text": "Text"
+      },
+      "title": "Captured messages"
+    },
     "comingSoon": {
       "description": "This section is not available yet.",
       "title": "Coming soon"
@@ -747,6 +781,7 @@ export default interface Resources {
       "banners": "Banners",
       "brandKit": "Brand kit",
       "broadcasts": "Broadcasts",
+      "capturedMessages": "Captured messages",
       "contacts": "Contacts",
       "customFields": "Custom fields",
       "docs": "Docs",
@@ -1195,6 +1230,7 @@ export default interface Resources {
           "showSchema": "Show the params schema",
           "title": "Inbound callbacks: {{name}}"
         },
+        "inboxExplanation": "The Test inbox keeps every message it is given and delivers none. Read them on the Captured messages page. A workspace has one.",
         "limits": {
           "cancel": "Cancel",
           "description": "Cap how fast this provider sends so a large send does not trip its own limits. Leave a field blank for no limit.",
@@ -1224,6 +1260,8 @@ export default interface Resources {
         "nameLabel": "Name",
         "providerLabel": "Provider",
         "providers": {
+          "inbox": "Test inbox",
+          "inboxHint": "Keeps messages instead of sending them. No credentials.",
           "sesCompatible": "SES-compatible service",
           "sesCompatibleHint": "Any provider with the SES API, such as Yandex Cloud Postbox. Needs its endpoint URL.",
           "sesHint": "AWS SES. Needs a region and an access key.",

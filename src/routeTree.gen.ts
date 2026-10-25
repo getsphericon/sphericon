@@ -50,6 +50,7 @@ import { Route as WorkspacesWorkspaceIdAnalyticsSubscribedPeopleRouteImport } fr
 import { Route as WorkspacesWorkspaceIdAutomationsIndexRouteImport } from './routes/workspaces/$workspaceId/automations/index'
 import { Route as WorkspacesWorkspaceIdBroadcastsIndexRouteImport } from './routes/workspaces/$workspaceId/broadcasts/index'
 import { Route as WorkspacesWorkspaceIdBroadcastsNewRouteImport } from './routes/workspaces/$workspaceId/broadcasts/new'
+import { Route as WorkspacesWorkspaceIdCapturedMessagesIndexRouteImport } from './routes/workspaces/$workspaceId/captured-messages/index'
 import { Route as WorkspacesWorkspaceIdContactsIndexRouteImport } from './routes/workspaces/$workspaceId/contacts/index'
 import { Route as WorkspacesWorkspaceIdCustomFieldsIndexRouteImport } from './routes/workspaces/$workspaceId/custom-fields/index'
 import { Route as WorkspacesWorkspaceIdRulesIndexRouteImport } from './routes/workspaces/$workspaceId/rules/index'
@@ -73,6 +74,7 @@ import { Route as WorkspacesWorkspaceIdAutomationsAutomationIdIndexRouteImport }
 import { Route as WorkspacesWorkspaceIdAutomationsAutomationIdEditRouteImport } from './routes/workspaces/$workspaceId/automations/$automationId/edit'
 import { Route as WorkspacesWorkspaceIdBroadcastsBroadcastIdEditRouteImport } from './routes/workspaces/$workspaceId/broadcasts/$broadcastId/edit'
 import { Route as WorkspacesWorkspaceIdBroadcastsBroadcastIdReportRouteImport } from './routes/workspaces/$workspaceId/broadcasts/$broadcastId/report'
+import { Route as WorkspacesWorkspaceIdCapturedMessagesMessageIdIndexRouteImport } from './routes/workspaces/$workspaceId/captured-messages/$messageId/index'
 import { Route as WorkspacesWorkspaceIdContactsContactIdIndexRouteImport } from './routes/workspaces/$workspaceId/contacts/$contactId/index'
 import { Route as WorkspacesWorkspaceIdContactsContactIdEditRouteImport } from './routes/workspaces/$workspaceId/contacts/$contactId/edit'
 import { Route as WorkspacesWorkspaceIdRulesRuleIdIndexRouteImport } from './routes/workspaces/$workspaceId/rules/$ruleId/index'
@@ -378,6 +380,16 @@ const WorkspacesWorkspaceIdBroadcastsNewRoute =
       (d) => d.Route,
     ),
   )
+const WorkspacesWorkspaceIdCapturedMessagesIndexRoute =
+  WorkspacesWorkspaceIdCapturedMessagesIndexRouteImport.update({
+    id: '/captured-messages/',
+    path: '/captured-messages/',
+    getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
+  } as any).lazy(() =>
+    import('./routes/workspaces/$workspaceId/captured-messages/index.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const WorkspacesWorkspaceIdContactsIndexRoute =
   WorkspacesWorkspaceIdContactsIndexRouteImport.update({
     id: '/contacts/',
@@ -608,6 +620,16 @@ const WorkspacesWorkspaceIdBroadcastsBroadcastIdReportRoute =
       (d) => d.Route,
     ),
   )
+const WorkspacesWorkspaceIdCapturedMessagesMessageIdIndexRoute =
+  WorkspacesWorkspaceIdCapturedMessagesMessageIdIndexRouteImport.update({
+    id: '/captured-messages/$messageId/',
+    path: '/captured-messages/$messageId/',
+    getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
+  } as any).lazy(() =>
+    import('./routes/workspaces/$workspaceId/captured-messages/$messageId/index.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const WorkspacesWorkspaceIdContactsContactIdIndexRoute =
   WorkspacesWorkspaceIdContactsContactIdIndexRouteImport.update({
     id: '/contacts/$contactId/',
@@ -731,6 +753,7 @@ export interface FileRoutesByFullPath {
   '/workspaces/$workspaceId/analytics/': typeof WorkspacesWorkspaceIdAnalyticsIndexRoute
   '/workspaces/$workspaceId/automations/': typeof WorkspacesWorkspaceIdAutomationsIndexRoute
   '/workspaces/$workspaceId/broadcasts/': typeof WorkspacesWorkspaceIdBroadcastsIndexRoute
+  '/workspaces/$workspaceId/captured-messages/': typeof WorkspacesWorkspaceIdCapturedMessagesIndexRoute
   '/workspaces/$workspaceId/contacts/': typeof WorkspacesWorkspaceIdContactsIndexRoute
   '/workspaces/$workspaceId/custom-fields/': typeof WorkspacesWorkspaceIdCustomFieldsIndexRoute
   '/workspaces/$workspaceId/rules/': typeof WorkspacesWorkspaceIdRulesIndexRoute
@@ -747,6 +770,7 @@ export interface FileRoutesByFullPath {
   '/workspaces/$workspaceId/segments/$segmentId/edit': typeof WorkspacesWorkspaceIdSegmentsSegmentIdEditRoute
   '/workspaces/$workspaceId/templates/$templateId/edit': typeof WorkspacesWorkspaceIdTemplatesTemplateIdEditRoute
   '/workspaces/$workspaceId/automations/$automationId/': typeof WorkspacesWorkspaceIdAutomationsAutomationIdIndexRoute
+  '/workspaces/$workspaceId/captured-messages/$messageId/': typeof WorkspacesWorkspaceIdCapturedMessagesMessageIdIndexRoute
   '/workspaces/$workspaceId/contacts/$contactId/': typeof WorkspacesWorkspaceIdContactsContactIdIndexRoute
   '/workspaces/$workspaceId/rules/$ruleId/': typeof WorkspacesWorkspaceIdRulesRuleIdIndexRoute
   '/workspaces/$workspaceId/segments/$segmentId/': typeof WorkspacesWorkspaceIdSegmentsSegmentIdIndexRoute
@@ -798,6 +822,7 @@ export interface FileRoutesByTo {
   '/workspaces/$workspaceId/analytics': typeof WorkspacesWorkspaceIdAnalyticsIndexRoute
   '/workspaces/$workspaceId/automations': typeof WorkspacesWorkspaceIdAutomationsIndexRoute
   '/workspaces/$workspaceId/broadcasts': typeof WorkspacesWorkspaceIdBroadcastsIndexRoute
+  '/workspaces/$workspaceId/captured-messages': typeof WorkspacesWorkspaceIdCapturedMessagesIndexRoute
   '/workspaces/$workspaceId/contacts': typeof WorkspacesWorkspaceIdContactsIndexRoute
   '/workspaces/$workspaceId/custom-fields': typeof WorkspacesWorkspaceIdCustomFieldsIndexRoute
   '/workspaces/$workspaceId/rules': typeof WorkspacesWorkspaceIdRulesIndexRoute
@@ -814,6 +839,7 @@ export interface FileRoutesByTo {
   '/workspaces/$workspaceId/segments/$segmentId/edit': typeof WorkspacesWorkspaceIdSegmentsSegmentIdEditRoute
   '/workspaces/$workspaceId/templates/$templateId/edit': typeof WorkspacesWorkspaceIdTemplatesTemplateIdEditRoute
   '/workspaces/$workspaceId/automations/$automationId': typeof WorkspacesWorkspaceIdAutomationsAutomationIdIndexRoute
+  '/workspaces/$workspaceId/captured-messages/$messageId': typeof WorkspacesWorkspaceIdCapturedMessagesMessageIdIndexRoute
   '/workspaces/$workspaceId/contacts/$contactId': typeof WorkspacesWorkspaceIdContactsContactIdIndexRoute
   '/workspaces/$workspaceId/rules/$ruleId': typeof WorkspacesWorkspaceIdRulesRuleIdIndexRoute
   '/workspaces/$workspaceId/segments/$segmentId': typeof WorkspacesWorkspaceIdSegmentsSegmentIdIndexRoute
@@ -872,6 +898,7 @@ export interface FileRoutesById {
   '/workspaces/$workspaceId/analytics/': typeof WorkspacesWorkspaceIdAnalyticsIndexRoute
   '/workspaces/$workspaceId/automations/': typeof WorkspacesWorkspaceIdAutomationsIndexRoute
   '/workspaces/$workspaceId/broadcasts/': typeof WorkspacesWorkspaceIdBroadcastsIndexRoute
+  '/workspaces/$workspaceId/captured-messages/': typeof WorkspacesWorkspaceIdCapturedMessagesIndexRoute
   '/workspaces/$workspaceId/contacts/': typeof WorkspacesWorkspaceIdContactsIndexRoute
   '/workspaces/$workspaceId/custom-fields/': typeof WorkspacesWorkspaceIdCustomFieldsIndexRoute
   '/workspaces/$workspaceId/rules/': typeof WorkspacesWorkspaceIdRulesIndexRoute
@@ -888,6 +915,7 @@ export interface FileRoutesById {
   '/workspaces/$workspaceId/segments/$segmentId/edit': typeof WorkspacesWorkspaceIdSegmentsSegmentIdEditRoute
   '/workspaces/$workspaceId/templates/$templateId/edit': typeof WorkspacesWorkspaceIdTemplatesTemplateIdEditRoute
   '/workspaces/$workspaceId/automations/$automationId/': typeof WorkspacesWorkspaceIdAutomationsAutomationIdIndexRoute
+  '/workspaces/$workspaceId/captured-messages/$messageId/': typeof WorkspacesWorkspaceIdCapturedMessagesMessageIdIndexRoute
   '/workspaces/$workspaceId/contacts/$contactId/': typeof WorkspacesWorkspaceIdContactsContactIdIndexRoute
   '/workspaces/$workspaceId/rules/$ruleId/': typeof WorkspacesWorkspaceIdRulesRuleIdIndexRoute
   '/workspaces/$workspaceId/segments/$segmentId/': typeof WorkspacesWorkspaceIdSegmentsSegmentIdIndexRoute
@@ -946,6 +974,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/analytics/'
     | '/workspaces/$workspaceId/automations/'
     | '/workspaces/$workspaceId/broadcasts/'
+    | '/workspaces/$workspaceId/captured-messages/'
     | '/workspaces/$workspaceId/contacts/'
     | '/workspaces/$workspaceId/custom-fields/'
     | '/workspaces/$workspaceId/rules/'
@@ -962,6 +991,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/segments/$segmentId/edit'
     | '/workspaces/$workspaceId/templates/$templateId/edit'
     | '/workspaces/$workspaceId/automations/$automationId/'
+    | '/workspaces/$workspaceId/captured-messages/$messageId/'
     | '/workspaces/$workspaceId/contacts/$contactId/'
     | '/workspaces/$workspaceId/rules/$ruleId/'
     | '/workspaces/$workspaceId/segments/$segmentId/'
@@ -1013,6 +1043,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/analytics'
     | '/workspaces/$workspaceId/automations'
     | '/workspaces/$workspaceId/broadcasts'
+    | '/workspaces/$workspaceId/captured-messages'
     | '/workspaces/$workspaceId/contacts'
     | '/workspaces/$workspaceId/custom-fields'
     | '/workspaces/$workspaceId/rules'
@@ -1029,6 +1060,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/segments/$segmentId/edit'
     | '/workspaces/$workspaceId/templates/$templateId/edit'
     | '/workspaces/$workspaceId/automations/$automationId'
+    | '/workspaces/$workspaceId/captured-messages/$messageId'
     | '/workspaces/$workspaceId/contacts/$contactId'
     | '/workspaces/$workspaceId/rules/$ruleId'
     | '/workspaces/$workspaceId/segments/$segmentId'
@@ -1086,6 +1118,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/analytics/'
     | '/workspaces/$workspaceId/automations/'
     | '/workspaces/$workspaceId/broadcasts/'
+    | '/workspaces/$workspaceId/captured-messages/'
     | '/workspaces/$workspaceId/contacts/'
     | '/workspaces/$workspaceId/custom-fields/'
     | '/workspaces/$workspaceId/rules/'
@@ -1102,6 +1135,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/segments/$segmentId/edit'
     | '/workspaces/$workspaceId/templates/$templateId/edit'
     | '/workspaces/$workspaceId/automations/$automationId/'
+    | '/workspaces/$workspaceId/captured-messages/$messageId/'
     | '/workspaces/$workspaceId/contacts/$contactId/'
     | '/workspaces/$workspaceId/rules/$ruleId/'
     | '/workspaces/$workspaceId/segments/$segmentId/'
@@ -1417,6 +1451,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspacesWorkspaceIdBroadcastsNewRouteImport
       parentRoute: typeof WorkspacesWorkspaceIdRouteRoute
     }
+    '/workspaces/$workspaceId/captured-messages/': {
+      id: '/workspaces/$workspaceId/captured-messages/'
+      path: '/captured-messages'
+      fullPath: '/workspaces/$workspaceId/captured-messages/'
+      preLoaderRoute: typeof WorkspacesWorkspaceIdCapturedMessagesIndexRouteImport
+      parentRoute: typeof WorkspacesWorkspaceIdRouteRoute
+    }
     '/workspaces/$workspaceId/contacts/': {
       id: '/workspaces/$workspaceId/contacts/'
       path: '/contacts'
@@ -1576,6 +1617,13 @@ declare module '@tanstack/react-router' {
       path: '/broadcasts/$broadcastId/report'
       fullPath: '/workspaces/$workspaceId/broadcasts/$broadcastId/report'
       preLoaderRoute: typeof WorkspacesWorkspaceIdBroadcastsBroadcastIdReportRouteImport
+      parentRoute: typeof WorkspacesWorkspaceIdRouteRoute
+    }
+    '/workspaces/$workspaceId/captured-messages/$messageId/': {
+      id: '/workspaces/$workspaceId/captured-messages/$messageId/'
+      path: '/captured-messages/$messageId'
+      fullPath: '/workspaces/$workspaceId/captured-messages/$messageId/'
+      preLoaderRoute: typeof WorkspacesWorkspaceIdCapturedMessagesMessageIdIndexRouteImport
       parentRoute: typeof WorkspacesWorkspaceIdRouteRoute
     }
     '/workspaces/$workspaceId/contacts/$contactId/': {
@@ -1762,6 +1810,7 @@ interface WorkspacesWorkspaceIdRouteRouteChildren {
   WorkspacesWorkspaceIdTemplatesNewRoute: typeof WorkspacesWorkspaceIdTemplatesNewRoute
   WorkspacesWorkspaceIdAutomationsIndexRoute: typeof WorkspacesWorkspaceIdAutomationsIndexRoute
   WorkspacesWorkspaceIdBroadcastsIndexRoute: typeof WorkspacesWorkspaceIdBroadcastsIndexRoute
+  WorkspacesWorkspaceIdCapturedMessagesIndexRoute: typeof WorkspacesWorkspaceIdCapturedMessagesIndexRoute
   WorkspacesWorkspaceIdContactsIndexRoute: typeof WorkspacesWorkspaceIdContactsIndexRoute
   WorkspacesWorkspaceIdCustomFieldsIndexRoute: typeof WorkspacesWorkspaceIdCustomFieldsIndexRoute
   WorkspacesWorkspaceIdRulesIndexRoute: typeof WorkspacesWorkspaceIdRulesIndexRoute
@@ -1777,6 +1826,7 @@ interface WorkspacesWorkspaceIdRouteRouteChildren {
   WorkspacesWorkspaceIdSegmentsSegmentIdEditRoute: typeof WorkspacesWorkspaceIdSegmentsSegmentIdEditRoute
   WorkspacesWorkspaceIdTemplatesTemplateIdEditRoute: typeof WorkspacesWorkspaceIdTemplatesTemplateIdEditRoute
   WorkspacesWorkspaceIdAutomationsAutomationIdIndexRoute: typeof WorkspacesWorkspaceIdAutomationsAutomationIdIndexRoute
+  WorkspacesWorkspaceIdCapturedMessagesMessageIdIndexRoute: typeof WorkspacesWorkspaceIdCapturedMessagesMessageIdIndexRoute
   WorkspacesWorkspaceIdContactsContactIdIndexRoute: typeof WorkspacesWorkspaceIdContactsContactIdIndexRoute
   WorkspacesWorkspaceIdRulesRuleIdIndexRoute: typeof WorkspacesWorkspaceIdRulesRuleIdIndexRoute
   WorkspacesWorkspaceIdSegmentsSegmentIdIndexRoute: typeof WorkspacesWorkspaceIdSegmentsSegmentIdIndexRoute
@@ -1801,6 +1851,8 @@ const WorkspacesWorkspaceIdRouteRouteChildren: WorkspacesWorkspaceIdRouteRouteCh
       WorkspacesWorkspaceIdAutomationsIndexRoute,
     WorkspacesWorkspaceIdBroadcastsIndexRoute:
       WorkspacesWorkspaceIdBroadcastsIndexRoute,
+    WorkspacesWorkspaceIdCapturedMessagesIndexRoute:
+      WorkspacesWorkspaceIdCapturedMessagesIndexRoute,
     WorkspacesWorkspaceIdContactsIndexRoute:
       WorkspacesWorkspaceIdContactsIndexRoute,
     WorkspacesWorkspaceIdCustomFieldsIndexRoute:
@@ -1829,6 +1881,8 @@ const WorkspacesWorkspaceIdRouteRouteChildren: WorkspacesWorkspaceIdRouteRouteCh
       WorkspacesWorkspaceIdTemplatesTemplateIdEditRoute,
     WorkspacesWorkspaceIdAutomationsAutomationIdIndexRoute:
       WorkspacesWorkspaceIdAutomationsAutomationIdIndexRoute,
+    WorkspacesWorkspaceIdCapturedMessagesMessageIdIndexRoute:
+      WorkspacesWorkspaceIdCapturedMessagesMessageIdIndexRoute,
     WorkspacesWorkspaceIdContactsContactIdIndexRoute:
       WorkspacesWorkspaceIdContactsContactIdIndexRoute,
     WorkspacesWorkspaceIdRulesRuleIdIndexRoute:
