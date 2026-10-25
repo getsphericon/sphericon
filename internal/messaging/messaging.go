@@ -57,14 +57,19 @@ type EmailMessage struct {
 
 // Origin is where a message came from: the Outbound message of its send (zero for a
 // Test send, which records none), the surface that asked for it and, for a marketing
-// send, its Sending source.
+// send, its Sending source. A message with no Origin is a Test send.
 type Origin struct {
 	OutboundMessageID int64
-	// Surface is the surface that asked for the send: broadcast, automation, transactional
-	// or test (a Test send of a Broadcast); empty is read as test.
-	Surface string
-	Source  string
+	Surface           Surface
+	Source            string
 }
+
+// Surface is the part of the product that asked for a send. Its values are those of the
+// Outbound message kinds (broadcast, automation, transactional), plus SurfaceTest.
+type Surface string
+
+// SurfaceTest is a Test send of a Broadcast or a template, which has no Outbound message.
+const SurfaceTest Surface = "test"
 
 // EmailSender is implemented by every email provider (smtp, ses, …).
 type EmailSender interface {

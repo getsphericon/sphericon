@@ -278,3 +278,28 @@ func TestSuppressionAndAFreezeApplyToTheTestInboxAsToAnyIntegration(t *testing.T
 	after := env.DB.CapturedMessage.Query().Where(capturedmessage.WorkspaceID(fixtures.AcmeID)).CountX(ctx)
 	assert.Equal(t, before, after, "neither message reached the inbox")
 }
+
+// Disabling the Test inbox stops it capturing; what it kept stays readable until it expires.
+func TestDisablingTheTestInboxStopsCapturingAndKeepsWhatWasCaptured(t *testing.T) {
+	env := testhelper.Setup(t)
+	jane := env.SiteActor(t, fixtures.OwnerJaneEmail)
+	makeDefault(t, jane, fixtures.GlobexPublicID, fixtures.IntegrationGlobexInboxID)
+	sent := sendGlobexTransactional(t, env, "ada@example.com").(*externalapi.SendTransactionalEmailResponse)
+	kept := env.DB.CapturedMessage.Query().Where(capturedmessage.OutboundMessageID(int64(sent.ID))).OnlyX(t.Context())
+	before := env.DB.CapturedMessage.Query().Where(capturedmessage.WorkspaceID(fixtures.GlobexID)).CountX(t.Context())
+
+	disabled, err := jane.SiteIntegrationsUpdate(t.Context(), &siteapi.SiteUpdateIntegrationInput{
+		Enabled: siteapi.NewOptBool(false),
+	}, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.GlobexPublicID, ID: idStr(fixtures.IntegrationGlobexInboxID)})
+	require.NoError(t, err)
+	require.IsType(t, &siteapi.SiteIntegrationResource{}, disabled)
+	sendGlobexTransactional(t, env, "grace@example.com")
+
+	after := env.DB.CapturedMessage.Query().Where(capturedmessage.WorkspaceID(fixtures.GlobexID)).CountX(t.Context())
+	assert.Equal(t, before, after, "nothing is captured once the Test inbox is disabled")
+	read, err := jane.SiteCapturedMessagesGet(t.Context(), siteapi.SiteCapturedMessagesGetParams{
+		WorkspaceId: fixtures.GlobexPublicID, ID: idStr(kept.ID),
+	})
+	require.NoError(t, err)
+	assert.IsType(t, &siteapi.SiteCapturedMessageResource{}, read, "what was captured stays readable")
+}

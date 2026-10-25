@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -82,4 +83,21 @@ func TestExternalCapturedMessagesAreDeletedOneAndAllWithinTheWorkspace(t *testin
 	require.NoError(t, err)
 	assert.Empty(t, list.(*externalapi.CapturedMessagesListOK).Items)
 	assert.Equal(t, 4, env.DB.CapturedMessage.Query().CountX(t.Context()), "the other Workspaces' messages are untouched")
+}
+
+func TestExternalCapturedMessageOfAnotherWorkspaceIsNeitherListedNorDeleted(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := globexClient(t, env, "captured_messages:read", "captured_messages:write")
+	foreign := externalapi.EntityId(fixtures.CapturedMessageUmbrellaID)
+
+	list, err := c.CapturedMessagesList(t.Context(), externalapi.CapturedMessagesListParams{})
+	require.NoError(t, err)
+	deleted, err := c.CapturedMessagesDelete(t.Context(), externalapi.CapturedMessagesDeleteParams{ID: foreign})
+	require.NoError(t, err)
+
+	for _, item := range list.(*externalapi.CapturedMessagesListOK).Items {
+		assert.NotEqual(t, int64(foreign), int64(item.ID), "another Workspace's message is not listed")
+	}
+	assert.IsType(t, &externalapi.CapturedMessagesDeleteNotFound{}, deleted)
+	assert.True(t, env.DB.CapturedMessage.Query().Where(capturedmessage.ID(int64(foreign))).ExistX(t.Context()), "and it survives")
 }

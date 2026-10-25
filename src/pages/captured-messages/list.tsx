@@ -7,7 +7,7 @@ import {
   siteCapturedMessagesListOptions,
   siteCapturedMessagesListQueryKey,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation.tsx'
+import { useConfirmation } from '../../hooks/useConfirmation.tsx'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as capturedMessageRoute } from '../../routes/workspaces/$workspaceId/captured-messages/$messageId/index.tsx'
 import { Route as capturedMessagesRoute } from '../../routes/workspaces/$workspaceId/captured-messages/index.tsx'
@@ -17,7 +17,7 @@ export function CapturedMessagesListPage() {
   const { t } = useTranslation()
   const { workspaceId } = capturedMessagesRoute.useParams()
   const navigate = capturedMessagesRoute.useNavigate()
-  const confirmDelete = useDeleteConfirmation()
+  const confirm = useConfirmation()
 
   const deleteAll = useResourceMutation({
     mutation: siteCapturedMessagesDeleteAllMutation(),
@@ -33,14 +33,14 @@ export function CapturedMessagesListPage() {
         <Button
           color="red"
           variant="light"
-          onClick={() =>
-            confirmDelete({
+          onClick={() => {
+            confirm({
               title: t(($) => $.capturedMessages.deleteAllTitle),
               description: t(($) => $.capturedMessages.deleteAllDescription),
               confirmLabel: t(($) => $.capturedMessages.deleteAll),
               onConfirm: () => deleteAll.mutate({ path: { workspaceId } }),
             })
-          }
+          }}
         >
           {t(($) => $.capturedMessages.deleteAll)}
         </Button>

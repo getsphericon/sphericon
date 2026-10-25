@@ -52,9 +52,9 @@ func (c capturer) Capture(ctx context.Context, captured messaging.Captured) erro
 		return fmt.Errorf("capturedmessages: check sending domain: %w", err)
 	}
 	origin := lo.FromPtr(msg.Origin)
-	surface := capturedmessage.Surface(origin.Surface)
-	if origin.Surface == "" {
-		surface = capturedmessage.SurfaceTest
+	surface := capturedmessage.Surface(messaging.SurfaceTest)
+	if msg.Origin != nil {
+		surface = capturedmessage.Surface(origin.Surface)
 	}
 	create := c.s.CapturedMessage().Create().
 		SetIntegrationID(c.integrationID).

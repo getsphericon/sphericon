@@ -10,7 +10,7 @@ import {
   siteCapturedMessagesGetOptions,
   siteCapturedMessagesListQueryKey,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation.tsx'
+import { useConfirmation } from '../../hooks/useConfirmation.tsx'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as capturedMessageRoute } from '../../routes/workspaces/$workspaceId/captured-messages/$messageId/index.tsx'
 import { Route as capturedMessagesRoute } from '../../routes/workspaces/$workspaceId/captured-messages/index.tsx'
@@ -20,7 +20,7 @@ export function CapturedMessagePage() {
   const { t } = useTranslation()
   const { workspaceId, messageId } = capturedMessageRoute.useParams()
   const navigate = capturedMessageRoute.useNavigate()
-  const confirmDelete = useDeleteConfirmation()
+  const confirm = useConfirmation()
 
   const messageQuery = useQuery(
     siteCapturedMessagesGetOptions({ path: { workspaceId, id: messageId } }),
@@ -61,11 +61,11 @@ export function CapturedMessagePage() {
             color="red"
             variant="light"
             loading={deleteMessage.isPending}
-            onClick={() =>
-              confirmDelete({
+            onClick={() => {
+              confirm({
                 onConfirm: () => deleteMessage.mutate({ path: { workspaceId, id: message.id } }),
               })
-            }
+            }}
           >
             {t(($) => $.actions.delete)}
           </Button>
