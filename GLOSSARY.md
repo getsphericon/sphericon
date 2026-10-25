@@ -139,7 +139,7 @@ _Avoid_: Filter, query, predicate, rule (a Rule is something else)
 A named, reusable Condition: "which contacts match these conditions", the one targeting
 primitive. Membership is never materialized and shifts as data changes. There is no other
 segment kind; a segment is always a Condition.
-_Avoid_: List, audience, group, filter, snapshot
+_Avoid_: List, group, filter, snapshot, and "audience" as a name (it stays prose for who a Broadcast reaches)
 
 **Rule**:
 A workspace-scoped, stateless reaction: when any of its **Trigger events** is recorded for a

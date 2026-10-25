@@ -22,7 +22,7 @@ modelled and stay out.
 - **Contract first.** `/api` today lacks most of what parity needs (its segments and broadcasts
   operations have no handlers). It is extended, additively and without a new version, to: contacts
   (+ batch upsert by alias keys, ADR 0002), tags, segments, broadcasts (drafts, `schedule`,
-  `unschedule`, `test-send`, audience, report), automations (CRUD, `activate`/`deactivate`),
+  `unschedule`, `test-send`, segment, report), automations (CRUD, `activate`/`deactivate`),
   templates, events (+ batch), webhooks, and read-only custom fields and the
   complaint/bounce rates (ADR 0011), integrations and sending domains (ADR 0024: credentials and the DKIM
   private key are never returned; `integrations:write` and `sending_domains:write` are not OAuth-grantable;

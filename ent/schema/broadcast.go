@@ -14,8 +14,8 @@ import (
 // Broadcast is a workspace-scoped one-off email campaign. Its lifecycle is
 // draft -> scheduled -> sending -> sent (or failed). The body is authored as
 // HTML; the plain-text part is derived from the final HTML of each send and never stored
-// (ADR 0056). Audience is the segment
-// when segment_id is set, otherwise all active contacts in the workspace.
+// (ADR 0056). Its Segment is the one named by
+// segment_id, or all contacts in the workspace when it is unset.
 // Aggregate counters are denormalized for cheap reporting; per-recipient state
 // lives in BroadcastRecipient.
 type Broadcast struct {
@@ -59,7 +59,7 @@ func (Broadcast) Fields() []ent.Field {
 		field.String("editor_version").
 			Optional().
 			Nillable(),
-		// Nil segment_id means "all active contacts in the workspace".
+		// Nil segment_id means "all contacts in the workspace".
 		field.Int64("segment_id").
 			Optional().
 			Nillable(),
