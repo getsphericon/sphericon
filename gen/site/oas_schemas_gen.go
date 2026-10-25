@@ -1852,6 +1852,51 @@ func (s *LintFinding) SetDetail(val OptString) {
 	s.Detail = val
 }
 
+// NewNilEntityId returns new NilEntityId with value set to v.
+func NewNilEntityId(v EntityId) NilEntityId {
+	return NilEntityId{
+		Value: v,
+	}
+}
+
+// NilEntityId is nullable EntityId.
+type NilEntityId struct {
+	Value EntityId
+	Null  bool
+}
+
+// SetTo sets value to v.
+func (o *NilEntityId) SetTo(v EntityId) {
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o NilEntityId) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *NilEntityId) SetToNull() {
+	o.Null = true
+	var v EntityId
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o NilEntityId) Get() (v EntityId, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o NilEntityId) Or(d EntityId) EntityId {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewNilInt32 returns new NilInt32 with value set to v.
 func NewNilInt32(v int32) NilInt32 {
 	return NilInt32{
@@ -9059,6 +9104,354 @@ type SiteBroadcastsUpdateUnprocessableEntity ProblemDetails
 
 func (*SiteBroadcastsUpdateUnprocessableEntity) siteBroadcastsUpdateRes() {}
 
+// One header line of a Captured message.
+// Ref: #/components/schemas/SiteCapturedMessageHeader
+type SiteCapturedMessageHeader struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+
+// GetName returns the value of Name.
+func (s *SiteCapturedMessageHeader) GetName() string {
+	return s.Name
+}
+
+// GetValue returns the value of Value.
+func (s *SiteCapturedMessageHeader) GetValue() string {
+	return s.Value
+}
+
+// SetName sets the value of Name.
+func (s *SiteCapturedMessageHeader) SetName(val string) {
+	s.Name = val
+}
+
+// SetValue sets the value of Value.
+func (s *SiteCapturedMessageHeader) SetValue(val string) {
+	s.Value = val
+}
+
+// A message a Test inbox kept instead of sending it out: what the recipient would have received.
+// Ref: #/components/schemas/SiteCapturedMessageResource
+type SiteCapturedMessageResource struct {
+	// Unique identifier.
+	ID EntityId `json:"id"`
+	// The Test inbox (Integration) that captured the message.
+	IntegrationId EntityId `json:"integrationId"`
+	// The Outbound message of the send; null for a Test send, which records none.
+	OutboundMessageId NilEntityId `json:"outboundMessageId"`
+	// The surface that asked for the send.
+	Surface SiteCapturedMessageSurface `json:"surface"`
+	// The Sending source of a Broadcast or Automation send; null for a Transactional or Test send.
+	SendingSource NilString `json:"sendingSource"`
+	// Normalized (lower-cased) recipient address.
+	Recipient string `json:"recipient"`
+	// The From address as it was, not rewritten.
+	From string `json:"from"`
+	// The From name; null when the message has none.
+	FromName NilString `json:"fromName"`
+	// The subject.
+	Subject string `json:"subject"`
+	// The HTML part.
+	HTML string `json:"html"`
+	// The text part.
+	Text string `json:"text"`
+	// The header lines the message would carry on the wire, in order.
+	Headers []SiteCapturedMessageHeader `json:"headers"`
+	// The URLs of the links of the HTML part, tracker links as the recipient would get them.
+	Links []string `json:"links"`
+	// True when the From is not on a verified Sending domain: the message would not pass the
+	// Sending-domain gate at a provider that delivers outside.
+	FromUnverified bool `json:"fromUnverified"`
+	// When the message was captured.
+	CreatedAt Timestamp `json:"createdAt"`
+}
+
+// GetID returns the value of ID.
+func (s *SiteCapturedMessageResource) GetID() EntityId {
+	return s.ID
+}
+
+// GetIntegrationId returns the value of IntegrationId.
+func (s *SiteCapturedMessageResource) GetIntegrationId() EntityId {
+	return s.IntegrationId
+}
+
+// GetOutboundMessageId returns the value of OutboundMessageId.
+func (s *SiteCapturedMessageResource) GetOutboundMessageId() NilEntityId {
+	return s.OutboundMessageId
+}
+
+// GetSurface returns the value of Surface.
+func (s *SiteCapturedMessageResource) GetSurface() SiteCapturedMessageSurface {
+	return s.Surface
+}
+
+// GetSendingSource returns the value of SendingSource.
+func (s *SiteCapturedMessageResource) GetSendingSource() NilString {
+	return s.SendingSource
+}
+
+// GetRecipient returns the value of Recipient.
+func (s *SiteCapturedMessageResource) GetRecipient() string {
+	return s.Recipient
+}
+
+// GetFrom returns the value of From.
+func (s *SiteCapturedMessageResource) GetFrom() string {
+	return s.From
+}
+
+// GetFromName returns the value of FromName.
+func (s *SiteCapturedMessageResource) GetFromName() NilString {
+	return s.FromName
+}
+
+// GetSubject returns the value of Subject.
+func (s *SiteCapturedMessageResource) GetSubject() string {
+	return s.Subject
+}
+
+// GetHTML returns the value of HTML.
+func (s *SiteCapturedMessageResource) GetHTML() string {
+	return s.HTML
+}
+
+// GetText returns the value of Text.
+func (s *SiteCapturedMessageResource) GetText() string {
+	return s.Text
+}
+
+// GetHeaders returns the value of Headers.
+func (s *SiteCapturedMessageResource) GetHeaders() []SiteCapturedMessageHeader {
+	return s.Headers
+}
+
+// GetLinks returns the value of Links.
+func (s *SiteCapturedMessageResource) GetLinks() []string {
+	return s.Links
+}
+
+// GetFromUnverified returns the value of FromUnverified.
+func (s *SiteCapturedMessageResource) GetFromUnverified() bool {
+	return s.FromUnverified
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *SiteCapturedMessageResource) GetCreatedAt() Timestamp {
+	return s.CreatedAt
+}
+
+// SetID sets the value of ID.
+func (s *SiteCapturedMessageResource) SetID(val EntityId) {
+	s.ID = val
+}
+
+// SetIntegrationId sets the value of IntegrationId.
+func (s *SiteCapturedMessageResource) SetIntegrationId(val EntityId) {
+	s.IntegrationId = val
+}
+
+// SetOutboundMessageId sets the value of OutboundMessageId.
+func (s *SiteCapturedMessageResource) SetOutboundMessageId(val NilEntityId) {
+	s.OutboundMessageId = val
+}
+
+// SetSurface sets the value of Surface.
+func (s *SiteCapturedMessageResource) SetSurface(val SiteCapturedMessageSurface) {
+	s.Surface = val
+}
+
+// SetSendingSource sets the value of SendingSource.
+func (s *SiteCapturedMessageResource) SetSendingSource(val NilString) {
+	s.SendingSource = val
+}
+
+// SetRecipient sets the value of Recipient.
+func (s *SiteCapturedMessageResource) SetRecipient(val string) {
+	s.Recipient = val
+}
+
+// SetFrom sets the value of From.
+func (s *SiteCapturedMessageResource) SetFrom(val string) {
+	s.From = val
+}
+
+// SetFromName sets the value of FromName.
+func (s *SiteCapturedMessageResource) SetFromName(val NilString) {
+	s.FromName = val
+}
+
+// SetSubject sets the value of Subject.
+func (s *SiteCapturedMessageResource) SetSubject(val string) {
+	s.Subject = val
+}
+
+// SetHTML sets the value of HTML.
+func (s *SiteCapturedMessageResource) SetHTML(val string) {
+	s.HTML = val
+}
+
+// SetText sets the value of Text.
+func (s *SiteCapturedMessageResource) SetText(val string) {
+	s.Text = val
+}
+
+// SetHeaders sets the value of Headers.
+func (s *SiteCapturedMessageResource) SetHeaders(val []SiteCapturedMessageHeader) {
+	s.Headers = val
+}
+
+// SetLinks sets the value of Links.
+func (s *SiteCapturedMessageResource) SetLinks(val []string) {
+	s.Links = val
+}
+
+// SetFromUnverified sets the value of FromUnverified.
+func (s *SiteCapturedMessageResource) SetFromUnverified(val bool) {
+	s.FromUnverified = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *SiteCapturedMessageResource) SetCreatedAt(val Timestamp) {
+	s.CreatedAt = val
+}
+
+// The surface that asked for the send a Captured message belongs to.
+// Ref: #/components/schemas/SiteCapturedMessageSurface
+type SiteCapturedMessageSurface string
+
+const (
+	SiteCapturedMessageSurfaceBroadcast     SiteCapturedMessageSurface = "broadcast"
+	SiteCapturedMessageSurfaceAutomation    SiteCapturedMessageSurface = "automation"
+	SiteCapturedMessageSurfaceTransactional SiteCapturedMessageSurface = "transactional"
+	SiteCapturedMessageSurfaceTest          SiteCapturedMessageSurface = "test"
+)
+
+// AllValues returns all SiteCapturedMessageSurface values.
+func (SiteCapturedMessageSurface) AllValues() []SiteCapturedMessageSurface {
+	return []SiteCapturedMessageSurface{
+		SiteCapturedMessageSurfaceBroadcast,
+		SiteCapturedMessageSurfaceAutomation,
+		SiteCapturedMessageSurfaceTransactional,
+		SiteCapturedMessageSurfaceTest,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteCapturedMessageSurface) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteCapturedMessageSurfaceBroadcast:
+		return []byte(s), nil
+	case SiteCapturedMessageSurfaceAutomation:
+		return []byte(s), nil
+	case SiteCapturedMessageSurfaceTransactional:
+		return []byte(s), nil
+	case SiteCapturedMessageSurfaceTest:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteCapturedMessageSurface) UnmarshalText(data []byte) error {
+	switch SiteCapturedMessageSurface(data) {
+	case SiteCapturedMessageSurfaceBroadcast:
+		*s = SiteCapturedMessageSurfaceBroadcast
+		return nil
+	case SiteCapturedMessageSurfaceAutomation:
+		*s = SiteCapturedMessageSurfaceAutomation
+		return nil
+	case SiteCapturedMessageSurfaceTransactional:
+		*s = SiteCapturedMessageSurfaceTransactional
+		return nil
+	case SiteCapturedMessageSurfaceTest:
+		*s = SiteCapturedMessageSurfaceTest
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type SiteCapturedMessagesListBadRequest ProblemDetails
+
+func (*SiteCapturedMessagesListBadRequest) siteCapturedMessagesListRes() {}
+
+type SiteCapturedMessagesListNotFound ProblemDetails
+
+func (*SiteCapturedMessagesListNotFound) siteCapturedMessagesListRes() {}
+
+// Paginated response.
+type SiteCapturedMessagesListOK struct {
+	// List of items.
+	Items []SiteCapturedMessageResource `json:"items"`
+	// Page number (1-based).
+	Page int32 `json:"page"`
+	// Page size.
+	PageSize int32 `json:"pageSize"`
+	// Total number of elements.
+	TotalItems int32 `json:"totalItems"`
+	// Total number of pages.
+	TotalPages int32 `json:"totalPages"`
+}
+
+// GetItems returns the value of Items.
+func (s *SiteCapturedMessagesListOK) GetItems() []SiteCapturedMessageResource {
+	return s.Items
+}
+
+// GetPage returns the value of Page.
+func (s *SiteCapturedMessagesListOK) GetPage() int32 {
+	return s.Page
+}
+
+// GetPageSize returns the value of PageSize.
+func (s *SiteCapturedMessagesListOK) GetPageSize() int32 {
+	return s.PageSize
+}
+
+// GetTotalItems returns the value of TotalItems.
+func (s *SiteCapturedMessagesListOK) GetTotalItems() int32 {
+	return s.TotalItems
+}
+
+// GetTotalPages returns the value of TotalPages.
+func (s *SiteCapturedMessagesListOK) GetTotalPages() int32 {
+	return s.TotalPages
+}
+
+// SetItems sets the value of Items.
+func (s *SiteCapturedMessagesListOK) SetItems(val []SiteCapturedMessageResource) {
+	s.Items = val
+}
+
+// SetPage sets the value of Page.
+func (s *SiteCapturedMessagesListOK) SetPage(val int32) {
+	s.Page = val
+}
+
+// SetPageSize sets the value of PageSize.
+func (s *SiteCapturedMessagesListOK) SetPageSize(val int32) {
+	s.PageSize = val
+}
+
+// SetTotalItems sets the value of TotalItems.
+func (s *SiteCapturedMessagesListOK) SetTotalItems(val int32) {
+	s.TotalItems = val
+}
+
+// SetTotalPages sets the value of TotalPages.
+func (s *SiteCapturedMessagesListOK) SetTotalPages(val int32) {
+	s.TotalPages = val
+}
+
+func (*SiteCapturedMessagesListOK) siteCapturedMessagesListRes() {}
+
+type SiteCapturedMessagesListUnprocessableEntity ProblemDetails
+
+func (*SiteCapturedMessagesListUnprocessableEntity) siteCapturedMessagesListRes() {}
+
 // How a condition group combines its entries.
 // Ref: #/components/schemas/SiteConditionCombinator
 type SiteConditionCombinator string
@@ -10243,7 +10636,9 @@ func (s *SiteCreateEmailTemplateInputDoc) init() SiteCreateEmailTemplateInputDoc
 	return m
 }
 
-// Create a workspace integration. The provider/channel are derived from `config.kind`.
+// Create a workspace integration. The provider/channel are derived from `config.kind`. A Test inbox
+// (`inbox`) takes no credentials, never becomes the default by itself, and a second one is refused
+// with 409.
 // Ref: #/components/schemas/SiteCreateIntegrationInput
 type SiteCreateIntegrationInput struct {
 	Name      string  `json:"name"`
@@ -12189,6 +12584,106 @@ type SiteIdentitiesUnlinkNotFound ProblemDetails
 
 func (*SiteIdentitiesUnlinkNotFound) siteIdentitiesUnlinkRes() {}
 
+// The Test inbox has no settings.
+// Ref: #/components/schemas/SiteInboxConfig
+type SiteInboxConfig struct {
+	Kind SiteInboxConfigKind `json:"kind"`
+}
+
+// GetKind returns the value of Kind.
+func (s *SiteInboxConfig) GetKind() SiteInboxConfigKind {
+	return s.Kind
+}
+
+// SetKind sets the value of Kind.
+func (s *SiteInboxConfig) SetKind(val SiteInboxConfigKind) {
+	s.Kind = val
+}
+
+// The Test inbox takes no credentials: a Workspace has at most one.
+// Ref: #/components/schemas/SiteInboxConfigInput
+type SiteInboxConfigInput struct {
+	Kind SiteInboxConfigInputKind `json:"kind"`
+}
+
+// GetKind returns the value of Kind.
+func (s *SiteInboxConfigInput) GetKind() SiteInboxConfigInputKind {
+	return s.Kind
+}
+
+// SetKind sets the value of Kind.
+func (s *SiteInboxConfigInput) SetKind(val SiteInboxConfigInputKind) {
+	s.Kind = val
+}
+
+type SiteInboxConfigInputKind string
+
+const (
+	SiteInboxConfigInputKindInbox SiteInboxConfigInputKind = "inbox"
+)
+
+// AllValues returns all SiteInboxConfigInputKind values.
+func (SiteInboxConfigInputKind) AllValues() []SiteInboxConfigInputKind {
+	return []SiteInboxConfigInputKind{
+		SiteInboxConfigInputKindInbox,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteInboxConfigInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteInboxConfigInputKindInbox:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteInboxConfigInputKind) UnmarshalText(data []byte) error {
+	switch SiteInboxConfigInputKind(data) {
+	case SiteInboxConfigInputKindInbox:
+		*s = SiteInboxConfigInputKindInbox
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type SiteInboxConfigKind string
+
+const (
+	SiteInboxConfigKindInbox SiteInboxConfigKind = "inbox"
+)
+
+// AllValues returns all SiteInboxConfigKind values.
+func (SiteInboxConfigKind) AllValues() []SiteInboxConfigKind {
+	return []SiteInboxConfigKind{
+		SiteInboxConfigKindInbox,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteInboxConfigKind) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteInboxConfigKindInbox:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteInboxConfigKind) UnmarshalText(data []byte) error {
+	switch SiteInboxConfigKind(data) {
+	case SiteInboxConfigKindInbox:
+		*s = SiteInboxConfigKindInbox
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 type SiteInstancePreviewTelemetryReportOK map[string]jx.Raw
 
 func (s *SiteInstancePreviewTelemetryReportOK) init() SiteInstancePreviewTelemetryReportOK {
@@ -12462,9 +12957,10 @@ func (s *SiteIntegrationConfigInput) SetOneOf(val SiteIntegrationConfigInputSum)
 // SiteIntegrationConfigInputSum represents sum type.
 type SiteIntegrationConfigInputSum struct {
 	// Type selects the active sum variant, switch on this field.
-	Type                SiteIntegrationConfigInputSumType
-	SiteSmtpConfigInput SiteSmtpConfigInput
-	SiteSesConfigInput  SiteSesConfigInput
+	Type                 SiteIntegrationConfigInputSumType
+	SiteSmtpConfigInput  SiteSmtpConfigInput
+	SiteSesConfigInput   SiteSesConfigInput
+	SiteInboxConfigInput SiteInboxConfigInput
 }
 
 // SiteIntegrationConfigInputSumType is oneOf type of SiteIntegrationConfigInputSum.
@@ -12472,8 +12968,9 @@ type SiteIntegrationConfigInputSumType string
 
 // Possible values for SiteIntegrationConfigInputSumType.
 const (
-	SiteSmtpConfigInputSiteIntegrationConfigInputSum SiteIntegrationConfigInputSumType = "smtp"
-	SiteSesConfigInputSiteIntegrationConfigInputSum  SiteIntegrationConfigInputSumType = "ses"
+	SiteSmtpConfigInputSiteIntegrationConfigInputSum  SiteIntegrationConfigInputSumType = "smtp"
+	SiteSesConfigInputSiteIntegrationConfigInputSum   SiteIntegrationConfigInputSumType = "ses"
+	SiteInboxConfigInputSiteIntegrationConfigInputSum SiteIntegrationConfigInputSumType = "inbox"
 )
 
 // IsSiteSmtpConfigInput reports whether SiteIntegrationConfigInputSum is SiteSmtpConfigInput.
@@ -12484,6 +12981,11 @@ func (s SiteIntegrationConfigInputSum) IsSiteSmtpConfigInput() bool {
 // IsSiteSesConfigInput reports whether SiteIntegrationConfigInputSum is SiteSesConfigInput.
 func (s SiteIntegrationConfigInputSum) IsSiteSesConfigInput() bool {
 	return s.Type == SiteSesConfigInputSiteIntegrationConfigInputSum
+}
+
+// IsSiteInboxConfigInput reports whether SiteIntegrationConfigInputSum is SiteInboxConfigInput.
+func (s SiteIntegrationConfigInputSum) IsSiteInboxConfigInput() bool {
+	return s.Type == SiteInboxConfigInputSiteIntegrationConfigInputSum
 }
 
 // SetSiteSmtpConfigInput sets SiteIntegrationConfigInputSum to SiteSmtpConfigInput.
@@ -12528,12 +13030,34 @@ func NewSiteSesConfigInputSiteIntegrationConfigInputSum(v SiteSesConfigInput) Si
 	return s
 }
 
+// SetSiteInboxConfigInput sets SiteIntegrationConfigInputSum to SiteInboxConfigInput.
+func (s *SiteIntegrationConfigInputSum) SetSiteInboxConfigInput(v SiteInboxConfigInput) {
+	s.Type = SiteInboxConfigInputSiteIntegrationConfigInputSum
+	s.SiteInboxConfigInput = v
+}
+
+// GetSiteInboxConfigInput returns SiteInboxConfigInput and true boolean if SiteIntegrationConfigInputSum is SiteInboxConfigInput.
+func (s SiteIntegrationConfigInputSum) GetSiteInboxConfigInput() (v SiteInboxConfigInput, ok bool) {
+	if !s.IsSiteInboxConfigInput() {
+		return v, false
+	}
+	return s.SiteInboxConfigInput, true
+}
+
+// NewSiteInboxConfigInputSiteIntegrationConfigInputSum returns new SiteIntegrationConfigInputSum from SiteInboxConfigInput.
+func NewSiteInboxConfigInputSiteIntegrationConfigInputSum(v SiteInboxConfigInput) SiteIntegrationConfigInputSum {
+	var s SiteIntegrationConfigInputSum
+	s.SetSiteInboxConfigInput(v)
+	return s
+}
+
 // SiteIntegrationConfigSum represents sum type.
 type SiteIntegrationConfigSum struct {
 	// Type selects the active sum variant, switch on this field.
-	Type           SiteIntegrationConfigSumType
-	SiteSmtpConfig SiteSmtpConfig
-	SiteSesConfig  SiteSesConfig
+	Type            SiteIntegrationConfigSumType
+	SiteSmtpConfig  SiteSmtpConfig
+	SiteSesConfig   SiteSesConfig
+	SiteInboxConfig SiteInboxConfig
 }
 
 // SiteIntegrationConfigSumType is oneOf type of SiteIntegrationConfigSum.
@@ -12541,8 +13065,9 @@ type SiteIntegrationConfigSumType string
 
 // Possible values for SiteIntegrationConfigSumType.
 const (
-	SiteSmtpConfigSiteIntegrationConfigSum SiteIntegrationConfigSumType = "smtp"
-	SiteSesConfigSiteIntegrationConfigSum  SiteIntegrationConfigSumType = "ses"
+	SiteSmtpConfigSiteIntegrationConfigSum  SiteIntegrationConfigSumType = "smtp"
+	SiteSesConfigSiteIntegrationConfigSum   SiteIntegrationConfigSumType = "ses"
+	SiteInboxConfigSiteIntegrationConfigSum SiteIntegrationConfigSumType = "inbox"
 )
 
 // IsSiteSmtpConfig reports whether SiteIntegrationConfigSum is SiteSmtpConfig.
@@ -12553,6 +13078,11 @@ func (s SiteIntegrationConfigSum) IsSiteSmtpConfig() bool {
 // IsSiteSesConfig reports whether SiteIntegrationConfigSum is SiteSesConfig.
 func (s SiteIntegrationConfigSum) IsSiteSesConfig() bool {
 	return s.Type == SiteSesConfigSiteIntegrationConfigSum
+}
+
+// IsSiteInboxConfig reports whether SiteIntegrationConfigSum is SiteInboxConfig.
+func (s SiteIntegrationConfigSum) IsSiteInboxConfig() bool {
+	return s.Type == SiteInboxConfigSiteIntegrationConfigSum
 }
 
 // SetSiteSmtpConfig sets SiteIntegrationConfigSum to SiteSmtpConfig.
@@ -12597,13 +13127,35 @@ func NewSiteSesConfigSiteIntegrationConfigSum(v SiteSesConfig) SiteIntegrationCo
 	return s
 }
 
+// SetSiteInboxConfig sets SiteIntegrationConfigSum to SiteInboxConfig.
+func (s *SiteIntegrationConfigSum) SetSiteInboxConfig(v SiteInboxConfig) {
+	s.Type = SiteInboxConfigSiteIntegrationConfigSum
+	s.SiteInboxConfig = v
+}
+
+// GetSiteInboxConfig returns SiteInboxConfig and true boolean if SiteIntegrationConfigSum is SiteInboxConfig.
+func (s SiteIntegrationConfigSum) GetSiteInboxConfig() (v SiteInboxConfig, ok bool) {
+	if !s.IsSiteInboxConfig() {
+		return v, false
+	}
+	return s.SiteInboxConfig, true
+}
+
+// NewSiteInboxConfigSiteIntegrationConfigSum returns new SiteIntegrationConfigSum from SiteInboxConfig.
+func NewSiteInboxConfigSiteIntegrationConfigSum(v SiteInboxConfig) SiteIntegrationConfigSum {
+	var s SiteIntegrationConfigSum
+	s.SetSiteInboxConfig(v)
+	return s
+}
+
 // Concrete sending provider.
 // Ref: #/components/schemas/SiteIntegrationProvider
 type SiteIntegrationProvider string
 
 const (
-	SiteIntegrationProviderSMTP SiteIntegrationProvider = "smtp"
-	SiteIntegrationProviderSes  SiteIntegrationProvider = "ses"
+	SiteIntegrationProviderSMTP  SiteIntegrationProvider = "smtp"
+	SiteIntegrationProviderSes   SiteIntegrationProvider = "ses"
+	SiteIntegrationProviderInbox SiteIntegrationProvider = "inbox"
 )
 
 // AllValues returns all SiteIntegrationProvider values.
@@ -12611,6 +13163,7 @@ func (SiteIntegrationProvider) AllValues() []SiteIntegrationProvider {
 	return []SiteIntegrationProvider{
 		SiteIntegrationProviderSMTP,
 		SiteIntegrationProviderSes,
+		SiteIntegrationProviderInbox,
 	}
 }
 
@@ -12620,6 +13173,8 @@ func (s SiteIntegrationProvider) MarshalText() ([]byte, error) {
 	case SiteIntegrationProviderSMTP:
 		return []byte(s), nil
 	case SiteIntegrationProviderSes:
+		return []byte(s), nil
+	case SiteIntegrationProviderInbox:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -12634,6 +13189,9 @@ func (s *SiteIntegrationProvider) UnmarshalText(data []byte) error {
 		return nil
 	case SiteIntegrationProviderSes:
 		*s = SiteIntegrationProviderSes
+		return nil
+	case SiteIntegrationProviderInbox:
+		*s = SiteIntegrationProviderInbox
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -12928,6 +13486,10 @@ func (*SiteIntegrationsRegenerateKeyNotFound) siteIntegrationsRegenerateKeyRes()
 type SiteIntegrationsUnarchiveBadRequest ProblemDetails
 
 func (*SiteIntegrationsUnarchiveBadRequest) siteIntegrationsUnarchiveRes() {}
+
+type SiteIntegrationsUnarchiveConflict ProblemDetails
+
+func (*SiteIntegrationsUnarchiveConflict) siteIntegrationsUnarchiveRes() {}
 
 type SiteIntegrationsUnarchiveForbidden ProblemDetails
 

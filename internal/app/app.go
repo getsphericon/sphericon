@@ -39,6 +39,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/brandkit"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/buildinfo"
+	"github.com/getsphericon/sphericon/internal/capturedmessages"
 	"github.com/getsphericon/sphericon/internal/cleanup"
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/db"
@@ -824,7 +825,17 @@ func registerMessaging(injector do.Injector, o options) {
 		if err != nil {
 			return nil, err
 		}
-		return messaging.NewResolver(cipher, catalog), nil
+		captured, err := do.Invoke[*capturedmessages.Module](i)
+		if err != nil {
+			return nil, err
+		}
+		return messaging.NewResolver(cipher, catalog, messaging.WithCapturers(captured.Capturer)), nil
+	})
+
+	// The Test inbox keeps its messages here; the resolver binds it to a Workspace and an
+	// Integration, and the site API reads it.
+	do.Provide(injector, func(do.Injector) (*capturedmessages.Module, error) {
+		return capturedmessages.New(), nil
 	})
 
 	do.Provide(injector, func(i do.Injector) (*systemSender, error) {
@@ -1602,6 +1613,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 	edition := invoke[*ee.Edition](r)
 	attempts := invoke[*accounts.Attempts](r)
 	integ := invoke[*integrations.Module](r)
+	captured := invoke[*capturedmessages.Module](r)
 	sd := invoke[*sendingdomains.Module](r)
 	jd := invoke[*joindomains.Module](r)
 	sf := invoke[*secondfactor.Module](r)
@@ -1626,7 +1638,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		AccountLink:  accountLink, Holds: edition.Holds(), AbuseWatch: edition.AbuseWatch(), SupportEmail: cfg.SupportEmail, Origins: apisite.Origins{MCP: cfg.MCPOrigin(), Tracker: cfg.TrackerOrigin()},
 		Accounts: acc, Attempts: attempts, OAuth: oauthserver.NewService(client.Client, oauthserver.NewFetcher(cfg.OutboundAllow)), Bus: bus.Bus, Webhooks: wh, Outbound: sender.Module,
 		Segments: seg, EventLog: evlog, Contacts: con, Erasure: er, Tags: tg, Templates: tpl, BrandKit: bk, Automations: auto, Rules: rl,
-		Broadcasts: bc, Welcome: jc.Client, SysMail: jc.Client, SendingDomains: sd, JoinDomains: jd, Integrations: integ,
+		Broadcasts: bc, Welcome: jc.Client, SysMail: jc.Client, SendingDomains: sd, JoinDomains: jd, Integrations: integ, CapturedMessages: captured,
 		Tokens: tokens, Tracker: tracker, AppURL: cfg.AppURL, Audit: edition.Audit, SecondFactor: sf, Passkeys: pk, Analytics: an,
 		RequireEmailVerification: cfg.RequireEmailVerification, SignupOpen: cfg.SignupOpen,
 		Signin: signin.FromConfig(cfg, nil),

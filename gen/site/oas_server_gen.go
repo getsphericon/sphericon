@@ -356,6 +356,12 @@ type Handler interface {
 	//
 	// PUT /workspaces/{workspaceId}/broadcasts/{id}
 	SiteBroadcastsUpdate(ctx context.Context, req *SiteUpdateBroadcastInput, params SiteBroadcastsUpdateParams) (SiteBroadcastsUpdateRes, error)
+	// SiteCapturedMessagesList implements SiteCapturedMessages_list operation.
+	//
+	// List the Captured messages of the workspace, newest first. Every member may read.
+	//
+	// GET /workspaces/{workspaceId}/captured-messages
+	SiteCapturedMessagesList(ctx context.Context, params SiteCapturedMessagesListParams) (SiteCapturedMessagesListRes, error)
 	// SiteContactsCreate implements SiteContacts_create operation.
 	//
 	// Create a resource from the site UI.
@@ -539,7 +545,7 @@ type Handler interface {
 	// SiteIntegrationsUnarchive implements SiteIntegrations_unarchive operation.
 	//
 	// Restore an archived integration to the list. It is not the default; promote it with an update.
-	// Owners and admins only.
+	// Refused with 409 when it is a Test inbox and the Workspace keeps another. Owners and admins only.
 	//
 	// POST /workspaces/{workspaceId}/integrations/{id}/unarchive
 	SiteIntegrationsUnarchive(ctx context.Context, params SiteIntegrationsUnarchiveParams) (SiteIntegrationsUnarchiveRes, error)

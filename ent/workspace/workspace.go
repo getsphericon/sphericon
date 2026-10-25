@@ -113,6 +113,8 @@ const (
 	EdgeConfirmations = "confirmations"
 	// EdgeOutboundMessages holds the string denoting the outbound_messages edge name in mutations.
 	EdgeOutboundMessages = "outbound_messages"
+	// EdgeCapturedMessages holds the string denoting the captured_messages edge name in mutations.
+	EdgeCapturedMessages = "captured_messages"
 	// EdgeMemberships holds the string denoting the memberships edge name in mutations.
 	EdgeMemberships = "memberships"
 	// EdgeInvitations holds the string denoting the invitations edge name in mutations.
@@ -314,6 +316,13 @@ const (
 	OutboundMessagesInverseTable = "outbound_messages"
 	// OutboundMessagesColumn is the table column denoting the outbound_messages relation/edge.
 	OutboundMessagesColumn = "workspace_id"
+	// CapturedMessagesTable is the table that holds the captured_messages relation/edge.
+	CapturedMessagesTable = "captured_messages"
+	// CapturedMessagesInverseTable is the table name for the CapturedMessage entity.
+	// It exists in this package in order to avoid circular dependency with the "capturedmessage" package.
+	CapturedMessagesInverseTable = "captured_messages"
+	// CapturedMessagesColumn is the table column denoting the captured_messages relation/edge.
+	CapturedMessagesColumn = "workspace_id"
 	// MembershipsTable is the table that holds the memberships relation/edge.
 	MembershipsTable = "memberships"
 	// MembershipsInverseTable is the table name for the Membership entity.
@@ -935,6 +944,20 @@ func ByOutboundMessages(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption 
 	}
 }
 
+// ByCapturedMessagesCount orders the results by captured_messages count.
+func ByCapturedMessagesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newCapturedMessagesStep(), opts...)
+	}
+}
+
+// ByCapturedMessages orders the results by captured_messages terms.
+func ByCapturedMessages(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newCapturedMessagesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByMembershipsCount orders the results by memberships count.
 func ByMembershipsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -1191,6 +1214,13 @@ func newOutboundMessagesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(OutboundMessagesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, OutboundMessagesTable, OutboundMessagesColumn),
+	)
+}
+func newCapturedMessagesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(CapturedMessagesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, CapturedMessagesTable, CapturedMessagesColumn),
 	)
 }
 func newMembershipsStep() *sqlgraph.Step {

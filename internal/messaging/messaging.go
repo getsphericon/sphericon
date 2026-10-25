@@ -32,6 +32,9 @@ type Provider string
 const (
 	ProviderSMTP Provider = "smtp"
 	ProviderSES  Provider = "ses"
+	// ProviderInbox is the Test inbox: it keeps what it is sent as Captured messages and
+	// delivers nothing outside (ADR 0058).
+	ProviderInbox Provider = "inbox"
 )
 
 // EmailMessage is the channel-specific payload for email sends. HTML is used
@@ -47,6 +50,20 @@ type EmailMessage struct {
 	// headers (List-Unsubscribe + List-Unsubscribe-Post). Set only on marketing
 	// surfaces (Broadcast, Automation); never on Transactional (ADR 0012).
 	ListUnsubscribeURL string
+	// Origin says which send the message belongs to. A provider that delivers outside ignores
+	// it; the Test inbox records it on the Captured message. Nil for a message with no send behind it.
+	Origin *Origin
+}
+
+// Origin is where a message came from: the Outbound message of its send (zero for a
+// Test send, which records none), the surface that asked for it and, for a marketing
+// send, its Sending source.
+type Origin struct {
+	OutboundMessageID int64
+	// Surface is the surface that asked for the send: broadcast, automation, transactional
+	// or test (a Test send of a Broadcast); empty is read as test.
+	Surface string
+	Source  string
 }
 
 // EmailSender is implemented by every email provider (smtp, ses, …).

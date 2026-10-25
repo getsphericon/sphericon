@@ -467,6 +467,24 @@ export const zSiteBroadcastStatus = z.enum([
 ]);
 
 /**
+ * One header line of a Captured message
+ */
+export const zSiteCapturedMessageHeader = z.object({
+  name: z.string(),
+  value: z.string()
+});
+
+/**
+ * The surface that asked for the send a Captured message belongs to
+ */
+export const zSiteCapturedMessageSurface = z.enum([
+  'broadcast',
+  'automation',
+  'transactional',
+  'test'
+]);
+
+/**
  * How a condition group combines its entries
  */
 export const zSiteConditionCombinator = z.enum(['and', 'or']);
@@ -705,6 +723,20 @@ export const zSiteForgotPasswordInput = z.object({
 });
 
 /**
+ * The Test inbox has no settings
+ */
+export const zSiteInboxConfig = z.object({
+  kind: z.enum(['inbox'])
+});
+
+/**
+ * The Test inbox takes no credentials: a Workspace has at most one
+ */
+export const zSiteInboxConfigInput = z.object({
+  kind: z.enum(['inbox'])
+});
+
+/**
  * Switch the Telemetry report on or off
  */
 export const zSiteInstanceTelemetryInput = z.object({
@@ -733,7 +765,11 @@ export const zSiteIntegrationChannel = z.enum(['email', 'sms']);
 /**
  * Concrete sending provider
  */
-export const zSiteIntegrationProvider = z.enum(['smtp', 'ses']);
+export const zSiteIntegrationProvider = z.enum([
+  'smtp',
+  'ses',
+  'inbox'
+]);
 
 /**
  * Roles that may be invited. owner is never invited — it is transferred.
@@ -1455,7 +1491,8 @@ export const zSiteSmtpConfig = z.object({
  */
 export const zSiteIntegrationConfig = z.discriminatedUnion('kind', [
   zSiteSmtpConfig.extend({ kind: z.literal('smtp') }),
-  zSiteSesConfig.extend({ kind: z.literal('ses') })
+  zSiteSesConfig.extend({ kind: z.literal('ses') }),
+  zSiteInboxConfig.extend({ kind: z.literal('inbox') })
 ]);
 
 /**
@@ -1476,11 +1513,12 @@ export const zSiteSmtpConfigInput = z.object({
  */
 export const zSiteIntegrationConfigInput = z.discriminatedUnion('kind', [
   zSiteSmtpConfigInput.extend({ kind: z.literal('smtp') }),
-  zSiteSesConfigInput.extend({ kind: z.literal('ses') })
+  zSiteSesConfigInput.extend({ kind: z.literal('ses') }),
+  zSiteInboxConfigInput.extend({ kind: z.literal('inbox') })
 ]);
 
 /**
- * Create a workspace integration. The provider/channel are derived from `config.kind`.
+ * Create a workspace integration. The provider/channel are derived from `config.kind`. A Test inbox (`inbox`) takes no credentials, never becomes the default by itself, and a second one is refused with 409.
  */
 export const zSiteCreateIntegrationInput = z.object({
   name: z.string(),
@@ -2010,6 +2048,27 @@ export const zSiteBroadcastResource = z.object({
   archivedAt: z.exactOptional(zTimestamp.nullable()),
   createdAt: zTimestamp,
   updatedAt: zTimestamp
+});
+
+/**
+ * A message a Test inbox kept instead of sending it out: what the recipient would have received
+ */
+export const zSiteCapturedMessageResource = z.object({
+  id: zEntityId,
+  integrationId: zEntityId,
+  outboundMessageId: zEntityId.nullable(),
+  surface: zSiteCapturedMessageSurface,
+  sendingSource: z.string().nullable(),
+  recipient: z.string(),
+  from: z.string(),
+  fromName: z.string().nullable(),
+  subject: z.string(),
+  html: z.string(),
+  text: z.string(),
+  headers: z.array(zSiteCapturedMessageHeader),
+  links: z.array(z.string()),
+  fromUnverified: z.boolean(),
+  createdAt: zTimestamp
 });
 
 /**
@@ -2725,6 +2784,12 @@ export const zSiteBroadcastResourceParentKey = zWorkspaceId;
  * true lists the archived broadcasts instead of the kept ones; the default hides them
  */
 export const zSiteBroadcastsListFilter = z.boolean();
+
+/**
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
+ */
+export const zSiteCapturedMessageResourceParentKey = zWorkspaceId;
 
 /**
  * Unique identifier
@@ -3720,6 +3785,26 @@ export const zSiteBroadcastsUnarchivePath = z.object({
  * The request has succeeded.
  */
 export const zSiteBroadcastsUnarchiveResponse = zSiteBroadcastResource;
+
+export const zSiteCapturedMessagesListPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+export const zSiteCapturedMessagesListQuery = z.object({
+  page: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
+  pageSize: z.int().gte(1).lte(100).optional().default(25)
+});
+
+/**
+ * Paginated response
+ */
+export const zSiteCapturedMessagesListResponse = z.object({
+  items: z.array(zSiteCapturedMessageResource),
+  page: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  totalItems: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  totalPages: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
 
 export const zSiteContactsListPath = z.object({
   workspaceId: zWorkspaceId

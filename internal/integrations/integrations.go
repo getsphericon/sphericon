@@ -15,6 +15,8 @@ import (
 	"log/slog"
 	"strings"
 
+	"github.com/jackc/pgx/v5/pgconn"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/integration"
@@ -38,6 +40,30 @@ var ErrDefaultConflict = validation.Refuse("a default provider already exists fo
 
 // ErrNotFound means there is no such Integration in this Workspace.
 var ErrNotFound = validation.Refuse("integrations: integration not found", "errors.integration_not_found")
+
+// ErrOneInbox means the Workspace already keeps a Test inbox: it has at most one (ADR 0058).
+var ErrOneInbox = validation.Refuse("a workspace has at most one Test inbox", "errors.integration_one_inbox")
+
+// IsConflict reports whether err is one of the refusals a handler answers with 409.
+func IsConflict(err error) bool {
+	return errors.Is(err, ErrDefaultConflict) || errors.Is(err, ErrOneInbox)
+}
+
+// oneInboxIndex is the partial unique index that keeps at most one kept Test inbox per Workspace.
+const oneInboxIndex = "integrations_one_inbox_per_workspace"
+
+// conflictOf names which rule a unique violation broke: the one Test inbox per Workspace, else
+// the one default per channel. Any other error is returned as it is.
+func conflictOf(err error) error {
+	if !db.IsUniqueViolation(err) {
+		return err
+	}
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.ConstraintName == oneInboxIndex {
+		return ErrOneInbox
+	}
+	return ErrDefaultConflict
+}
 
 var errUnknownProvider = errors.New("unsupported provider")
 
@@ -95,6 +121,9 @@ func New(bus *events.Bus, cipher *secrets.Cipher, catalog *messaging.Catalog, qu
 
 // SMTPConfig and SESConfig are the write-side provider settings, secrets included.
 type (
+	// InboxConfig is the Test inbox's settings: it has none.
+	InboxConfig struct{}
+
 	SMTPConfig struct {
 		Host     string
 		Port     int
@@ -115,8 +144,9 @@ type (
 
 // ConfigInput carries exactly one provider's settings.
 type ConfigInput struct {
-	SMTP *SMTPConfig
-	SES  *SESConfig
+	SMTP  *SMTPConfig
+	SES   *SESConfig
+	Inbox *InboxConfig
 }
 
 // Limit is a Send rate limit in a request: unset keeps the stored value (update) or
@@ -228,11 +258,8 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 		row, err = create.Save(ctx)
 		return err
 	})
-	if db.IsUniqueViolation(err) {
-		return nil, ErrDefaultConflict
-	}
 	if err != nil {
-		return nil, err
+		return nil, conflictOf(err)
 	}
 	m.discoverQuota(ctx, row)
 	return row, nil
@@ -285,11 +312,8 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		updated, err = upd.Save(ctx)
 		return err
 	})
-	if db.IsUniqueViolation(err) {
-		return nil, ErrDefaultConflict
-	}
 	if err != nil {
-		return nil, err
+		return nil, conflictOf(err)
 	}
 	if sealed != nil {
 		// New credentials or endpoint: what the provider allows may have changed.
@@ -387,7 +411,7 @@ func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) error {
 // again. Restoring an Integration that is not archived changes nothing. An unknown id is
 // ErrNotFound.
 func (m *Module) Unarchive(ctx context.Context, s *ent.Scoped, id int64) error {
-	return missing(s.Integration().Restore(ctx, id))
+	return conflictOf(missing(s.Integration().Restore(ctx, id)))
 }
 
 // liveUsers is the live work that uses the Integration.
@@ -432,16 +456,32 @@ func validName(raw string) (string, error) {
 	return name, nil
 }
 
-// discoverQuota schedules a saved SES Integration's send quota lookup (ADR 0023).
+// discoverQuota schedules a saved Integration's send quota lookup (ADR 0023), when its provider
+// can report one (SES; the Test inbox its own ceiling).
 // Best-effort: a failure is logged, never returned, so it cannot fail the save (the
-// hourly job picks the Integration up anyway). Providers without a quota are skipped.
+// hourly job picks an SES Integration up anyway). Providers without a quota are skipped.
 func (m *Module) discoverQuota(ctx context.Context, row *ent.Integration) {
-	if row.Provider != integration.ProviderSes || m.quota == nil {
+	if m.quota == nil || !m.reportsQuota(row) {
 		return
 	}
 	if err := m.quota.EnqueueIntegrationQuotaRefresh(ctx, row.ID); err != nil {
 		slog.WarnContext(ctx, "enqueue integration quota refresh failed", "integration_id", row.ID, "err", err)
 	}
+}
+
+// reportsQuota reports whether the Integration's provider can say what it allows: whether its
+// sender is a messaging.QuotaReader.
+func (m *Module) reportsQuota(row *ent.Integration) bool {
+	config, err := m.cipher.Decrypt(row.ConfigEncrypted)
+	if err != nil {
+		return false
+	}
+	built, err := m.catalog.BuildEmail(messaging.Provider(row.Provider), config, messaging.Deps{})
+	if err != nil {
+		return false
+	}
+	_, ok := messaging.AsQuotaReader(built)
+	return ok
 }
 
 // clearDefault unsets the existing default Integration for the channel.
@@ -475,6 +515,9 @@ func (m *Module) encode(in ConfigInput) (integration.Provider, integration.Chann
 			Region: c.Region, AccessKeyID: c.AccessKeyID, SecretAccessKey: c.SecretAccessKey,
 			From: c.From, FromName: c.FromName, Endpoint: c.Endpoint,
 		})
+	case in.Inbox != nil:
+		provider = integration.ProviderInbox
+		plaintext = []byte("{}")
 	default:
 		return "", "", nil, configError(errUnknownProvider)
 	}
@@ -536,6 +579,8 @@ func mergeSecrets(provider integration.Provider, next, prev []byte) ([]byte, err
 			n.SecretAccessKey = p.SecretAccessKey
 		}
 		return json.Marshal(n)
+	case integration.ProviderInbox:
+		return next, nil // no secret
 	}
 	return next, nil
 }
@@ -546,11 +591,15 @@ func secretRequired() *validation.Error {
 
 // RedactedConfig is the read-side provider config: no password, no secret key.
 type RedactedConfig struct {
-	SMTP *RedactedSMTP
-	SES  *RedactedSES
+	SMTP  *RedactedSMTP
+	SES   *RedactedSES
+	Inbox *RedactedInbox
 }
 
 type (
+	// RedactedInbox is the Test inbox's config: it has no field.
+	RedactedInbox struct{}
+
 	RedactedSMTP struct {
 		Host     string
 		Port     int
@@ -594,6 +643,8 @@ func (m *Module) Redact(row *ent.Integration) (RedactedConfig, error) {
 		return RedactedConfig{SES: &RedactedSES{
 			Region: c.Region, From: c.From, FromName: c.FromName, Endpoint: c.Endpoint, AccessKeyIDLast4: last4,
 		}}, nil
+	case integration.ProviderInbox:
+		return RedactedConfig{Inbox: &RedactedInbox{}}, nil
 	}
 	return RedactedConfig{}, errUnknownProvider
 }

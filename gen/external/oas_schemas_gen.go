@@ -4546,7 +4546,9 @@ func (s *CreateContactInputCustomFields) init() CreateContactInputCustomFields {
 	return m
 }
 
-// Create an Integration. The provider and channel are derived from `config.kind`.
+// Create an Integration. The provider and channel are derived from `config.kind`. A Test inbox
+// (`inbox`) takes no credentials, never becomes the default by itself, and a second one is refused
+// with 409.
 // Ref: #/components/schemas/CreateIntegrationInput
 type CreateIntegrationInput struct {
 	Name      string  `json:"name"`
@@ -6664,6 +6666,106 @@ func (s *InUseProblemDetailsFields) init() InUseProblemDetailsFields {
 	return m
 }
 
+// The Test inbox has no settings.
+// Ref: #/components/schemas/InboxConfig
+type InboxConfig struct {
+	Kind InboxConfigKind `json:"kind"`
+}
+
+// GetKind returns the value of Kind.
+func (s *InboxConfig) GetKind() InboxConfigKind {
+	return s.Kind
+}
+
+// SetKind sets the value of Kind.
+func (s *InboxConfig) SetKind(val InboxConfigKind) {
+	s.Kind = val
+}
+
+// The Test inbox takes no credentials: a Workspace has at most one.
+// Ref: #/components/schemas/InboxConfigInput
+type InboxConfigInput struct {
+	Kind InboxConfigInputKind `json:"kind"`
+}
+
+// GetKind returns the value of Kind.
+func (s *InboxConfigInput) GetKind() InboxConfigInputKind {
+	return s.Kind
+}
+
+// SetKind sets the value of Kind.
+func (s *InboxConfigInput) SetKind(val InboxConfigInputKind) {
+	s.Kind = val
+}
+
+type InboxConfigInputKind string
+
+const (
+	InboxConfigInputKindInbox InboxConfigInputKind = "inbox"
+)
+
+// AllValues returns all InboxConfigInputKind values.
+func (InboxConfigInputKind) AllValues() []InboxConfigInputKind {
+	return []InboxConfigInputKind{
+		InboxConfigInputKindInbox,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s InboxConfigInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case InboxConfigInputKindInbox:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *InboxConfigInputKind) UnmarshalText(data []byte) error {
+	switch InboxConfigInputKind(data) {
+	case InboxConfigInputKindInbox:
+		*s = InboxConfigInputKindInbox
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type InboxConfigKind string
+
+const (
+	InboxConfigKindInbox InboxConfigKind = "inbox"
+)
+
+// AllValues returns all InboxConfigKind values.
+func (InboxConfigKind) AllValues() []InboxConfigKind {
+	return []InboxConfigKind{
+		InboxConfigKindInbox,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s InboxConfigKind) MarshalText() ([]byte, error) {
+	switch s {
+	case InboxConfigKindInbox:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *InboxConfigKind) UnmarshalText(data []byte) error {
+	switch InboxConfigKind(data) {
+	case InboxConfigKindInbox:
+		*s = InboxConfigKindInbox
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // Delivery channel an integration belongs to.
 // Ref: #/components/schemas/IntegrationChannel
 type IntegrationChannel string
@@ -6742,9 +6844,10 @@ func (s *IntegrationConfigInput) SetOneOf(val IntegrationConfigInputSum) {
 // IntegrationConfigInputSum represents sum type.
 type IntegrationConfigInputSum struct {
 	// Type selects the active sum variant, switch on this field.
-	Type            IntegrationConfigInputSumType
-	SmtpConfigInput SmtpConfigInput
-	SesConfigInput  SesConfigInput
+	Type             IntegrationConfigInputSumType
+	SmtpConfigInput  SmtpConfigInput
+	SesConfigInput   SesConfigInput
+	InboxConfigInput InboxConfigInput
 }
 
 // IntegrationConfigInputSumType is oneOf type of IntegrationConfigInputSum.
@@ -6752,8 +6855,9 @@ type IntegrationConfigInputSumType string
 
 // Possible values for IntegrationConfigInputSumType.
 const (
-	SmtpConfigInputIntegrationConfigInputSum IntegrationConfigInputSumType = "smtp"
-	SesConfigInputIntegrationConfigInputSum  IntegrationConfigInputSumType = "ses"
+	SmtpConfigInputIntegrationConfigInputSum  IntegrationConfigInputSumType = "smtp"
+	SesConfigInputIntegrationConfigInputSum   IntegrationConfigInputSumType = "ses"
+	InboxConfigInputIntegrationConfigInputSum IntegrationConfigInputSumType = "inbox"
 )
 
 // IsSmtpConfigInput reports whether IntegrationConfigInputSum is SmtpConfigInput.
@@ -6764,6 +6868,11 @@ func (s IntegrationConfigInputSum) IsSmtpConfigInput() bool {
 // IsSesConfigInput reports whether IntegrationConfigInputSum is SesConfigInput.
 func (s IntegrationConfigInputSum) IsSesConfigInput() bool {
 	return s.Type == SesConfigInputIntegrationConfigInputSum
+}
+
+// IsInboxConfigInput reports whether IntegrationConfigInputSum is InboxConfigInput.
+func (s IntegrationConfigInputSum) IsInboxConfigInput() bool {
+	return s.Type == InboxConfigInputIntegrationConfigInputSum
 }
 
 // SetSmtpConfigInput sets IntegrationConfigInputSum to SmtpConfigInput.
@@ -6808,12 +6917,34 @@ func NewSesConfigInputIntegrationConfigInputSum(v SesConfigInput) IntegrationCon
 	return s
 }
 
+// SetInboxConfigInput sets IntegrationConfigInputSum to InboxConfigInput.
+func (s *IntegrationConfigInputSum) SetInboxConfigInput(v InboxConfigInput) {
+	s.Type = InboxConfigInputIntegrationConfigInputSum
+	s.InboxConfigInput = v
+}
+
+// GetInboxConfigInput returns InboxConfigInput and true boolean if IntegrationConfigInputSum is InboxConfigInput.
+func (s IntegrationConfigInputSum) GetInboxConfigInput() (v InboxConfigInput, ok bool) {
+	if !s.IsInboxConfigInput() {
+		return v, false
+	}
+	return s.InboxConfigInput, true
+}
+
+// NewInboxConfigInputIntegrationConfigInputSum returns new IntegrationConfigInputSum from InboxConfigInput.
+func NewInboxConfigInputIntegrationConfigInputSum(v InboxConfigInput) IntegrationConfigInputSum {
+	var s IntegrationConfigInputSum
+	s.SetInboxConfigInput(v)
+	return s
+}
+
 // IntegrationConfigSum represents sum type.
 type IntegrationConfigSum struct {
 	// Type selects the active sum variant, switch on this field.
-	Type       IntegrationConfigSumType
-	SmtpConfig SmtpConfig
-	SesConfig  SesConfig
+	Type        IntegrationConfigSumType
+	SmtpConfig  SmtpConfig
+	SesConfig   SesConfig
+	InboxConfig InboxConfig
 }
 
 // IntegrationConfigSumType is oneOf type of IntegrationConfigSum.
@@ -6821,8 +6952,9 @@ type IntegrationConfigSumType string
 
 // Possible values for IntegrationConfigSumType.
 const (
-	SmtpConfigIntegrationConfigSum IntegrationConfigSumType = "smtp"
-	SesConfigIntegrationConfigSum  IntegrationConfigSumType = "ses"
+	SmtpConfigIntegrationConfigSum  IntegrationConfigSumType = "smtp"
+	SesConfigIntegrationConfigSum   IntegrationConfigSumType = "ses"
+	InboxConfigIntegrationConfigSum IntegrationConfigSumType = "inbox"
 )
 
 // IsSmtpConfig reports whether IntegrationConfigSum is SmtpConfig.
@@ -6830,6 +6962,9 @@ func (s IntegrationConfigSum) IsSmtpConfig() bool { return s.Type == SmtpConfigI
 
 // IsSesConfig reports whether IntegrationConfigSum is SesConfig.
 func (s IntegrationConfigSum) IsSesConfig() bool { return s.Type == SesConfigIntegrationConfigSum }
+
+// IsInboxConfig reports whether IntegrationConfigSum is InboxConfig.
+func (s IntegrationConfigSum) IsInboxConfig() bool { return s.Type == InboxConfigIntegrationConfigSum }
 
 // SetSmtpConfig sets IntegrationConfigSum to SmtpConfig.
 func (s *IntegrationConfigSum) SetSmtpConfig(v SmtpConfig) {
@@ -6873,13 +7008,35 @@ func NewSesConfigIntegrationConfigSum(v SesConfig) IntegrationConfigSum {
 	return s
 }
 
+// SetInboxConfig sets IntegrationConfigSum to InboxConfig.
+func (s *IntegrationConfigSum) SetInboxConfig(v InboxConfig) {
+	s.Type = InboxConfigIntegrationConfigSum
+	s.InboxConfig = v
+}
+
+// GetInboxConfig returns InboxConfig and true boolean if IntegrationConfigSum is InboxConfig.
+func (s IntegrationConfigSum) GetInboxConfig() (v InboxConfig, ok bool) {
+	if !s.IsInboxConfig() {
+		return v, false
+	}
+	return s.InboxConfig, true
+}
+
+// NewInboxConfigIntegrationConfigSum returns new IntegrationConfigSum from InboxConfig.
+func NewInboxConfigIntegrationConfigSum(v InboxConfig) IntegrationConfigSum {
+	var s IntegrationConfigSum
+	s.SetInboxConfig(v)
+	return s
+}
+
 // Concrete sending provider.
 // Ref: #/components/schemas/IntegrationProvider
 type IntegrationProvider string
 
 const (
-	IntegrationProviderSMTP IntegrationProvider = "smtp"
-	IntegrationProviderSes  IntegrationProvider = "ses"
+	IntegrationProviderSMTP  IntegrationProvider = "smtp"
+	IntegrationProviderSes   IntegrationProvider = "ses"
+	IntegrationProviderInbox IntegrationProvider = "inbox"
 )
 
 // AllValues returns all IntegrationProvider values.
@@ -6887,6 +7044,7 @@ func (IntegrationProvider) AllValues() []IntegrationProvider {
 	return []IntegrationProvider{
 		IntegrationProviderSMTP,
 		IntegrationProviderSes,
+		IntegrationProviderInbox,
 	}
 }
 
@@ -6896,6 +7054,8 @@ func (s IntegrationProvider) MarshalText() ([]byte, error) {
 	case IntegrationProviderSMTP:
 		return []byte(s), nil
 	case IntegrationProviderSes:
+		return []byte(s), nil
+	case IntegrationProviderInbox:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -6910,6 +7070,9 @@ func (s *IntegrationProvider) UnmarshalText(data []byte) error {
 		return nil
 	case IntegrationProviderSes:
 		*s = IntegrationProviderSes
+		return nil
+	case IntegrationProviderInbox:
+		*s = IntegrationProviderInbox
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -7283,6 +7446,10 @@ func (*IntegrationsRegenerateKeyUnauthorized) integrationsRegenerateKeyRes() {}
 type IntegrationsUnarchiveBadRequest ProblemDetails
 
 func (*IntegrationsUnarchiveBadRequest) integrationsUnarchiveRes() {}
+
+type IntegrationsUnarchiveConflict ProblemDetails
+
+func (*IntegrationsUnarchiveConflict) integrationsUnarchiveRes() {}
 
 type IntegrationsUnarchiveNotFound ProblemDetails
 

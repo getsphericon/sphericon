@@ -33,9 +33,26 @@ type Deps struct {
 	Capturer Capturer
 }
 
-// Capturer keeps a message a provider accepted instead of sending it out.
+// Capturer keeps a message a provider accepted instead of sending it out. It is bound to
+// one Workspace and one Integration.
 type Capturer interface {
-	Capture(ctx context.Context, msg EmailMessage) error
+	Capture(ctx context.Context, c Captured) error
+}
+
+// Captured is a message as a provider that delivers nowhere outside keeps it: the message,
+// the Message-ID it gave it, the header lines it would carry on the wire in order, and the
+// URLs of the links of its HTML part.
+type Captured struct {
+	Message   EmailMessage
+	MessageID string
+	Headers   []Header
+	Links     []string
+}
+
+// Header is one header line of a message.
+type Header struct {
+	Name  string
+	Value string
 }
 
 // Catalog holds the registered provider descriptors keyed by (channel, provider).

@@ -72,7 +72,21 @@
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 
-# Globex (workspace 2).
+# Globex (workspace 2). Its Test inbox (ADR 0058) is kept, not the default, and holds Captured
+# messages (captured_messages.yml). Globex has no verified Sending domain.
+- id: 902 # fixture: IntegrationGlobexInbox
+  ingest_key: omik_test_integrationglobexinbox
+  name: Test inbox
+  channel: email
+  provider: inbox
+  config_encrypted: '{{ encrypt "{}" }}'
+  enabled: true
+  is_default: false
+  provider_max_per_day: 200
+  provider_quota_checked_at: '2026-01-01 00:00:00'
+  workspace_id: 2
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
 - id: 900 # fixture: IntegrationGlobex
   ingest_key: omik_test_integrationglobex
   name: Globex SMTP
@@ -99,6 +113,38 @@
   workspace_id: 2
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+
+# Umbrella's Test inbox, with one Captured message: a Workspace deletion removes both.
+- id: 911 # fixture: IntegrationUmbrellaInbox
+  ingest_key: omik_test_integrationumbrellainbox
+  name: Test inbox
+  channel: email
+  provider: inbox
+  config_encrypted: '{{ encrypt "{}" }}'
+  enabled: true
+  is_default: false
+  provider_max_per_day: 200
+  provider_quota_checked_at: '2026-01-01 00:00:00'
+  workspace_id: 4
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+
+# Acme's archived Test inbox: archiving stops capturing and keeps what was captured until it
+# expires (ADR 0058), so it frees the place for a new inbox and still holds a Captured message.
+- id: 7 # fixture: IntegrationAcmeInboxArchived
+  ingest_key: omik_test_integrationacmeinboxarchived
+  name: Test inbox (archived)
+  channel: email
+  provider: inbox
+  config_encrypted: '{{ encrypt "{}" }}'
+  enabled: true
+  is_default: false
+  provider_max_per_day: 200
+  provider_quota_checked_at: '2026-01-01 00:00:00'
+  discarded_at: '{{daysAgo 5}}'
+  workspace_id: 1
+  created_at: '{{daysAgo 20}}'
+  updated_at: '{{daysAgo 5}}'
 
 # Two Integrations of Acme read their callbacks with the generic Preset, each with a secret of its
 # own: a callback signed for one must never be accepted by the other.

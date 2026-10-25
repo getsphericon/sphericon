@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/sendlimiter"
@@ -22,13 +23,14 @@ import (
 // IntegrationQuery is the builder for querying Integration entities.
 type IntegrationQuery struct {
 	config
-	ctx             *QueryContext
-	order           []integration.OrderOption
-	inters          []Interceptor
-	predicates      []predicate.Integration
-	withWorkspace   *WorkspaceQuery
-	withSendLimiter *SendLimiterQuery
-	modifiers       []func(*sql.Selector)
+	ctx                  *QueryContext
+	order                []integration.OrderOption
+	inters               []Interceptor
+	predicates           []predicate.Integration
+	withWorkspace        *WorkspaceQuery
+	withSendLimiter      *SendLimiterQuery
+	withCapturedMessages *CapturedMessageQuery
+	modifiers            []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -102,6 +104,28 @@ func (_q *IntegrationQuery) QuerySendLimiter() *SendLimiterQuery {
 			sqlgraph.From(integration.Table, integration.FieldID, selector),
 			sqlgraph.To(sendlimiter.Table, sendlimiter.FieldID),
 			sqlgraph.Edge(sqlgraph.O2O, false, integration.SendLimiterTable, integration.SendLimiterColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryCapturedMessages chains the current query on the "captured_messages" edge.
+func (_q *IntegrationQuery) QueryCapturedMessages() *CapturedMessageQuery {
+	query := (&CapturedMessageClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(integration.Table, integration.FieldID, selector),
+			sqlgraph.To(capturedmessage.Table, capturedmessage.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, integration.CapturedMessagesTable, integration.CapturedMessagesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -296,13 +320,14 @@ func (_q *IntegrationQuery) Clone() *IntegrationQuery {
 		return nil
 	}
 	return &IntegrationQuery{
-		config:          _q.config,
-		ctx:             _q.ctx.Clone(),
-		order:           append([]integration.OrderOption{}, _q.order...),
-		inters:          append([]Interceptor{}, _q.inters...),
-		predicates:      append([]predicate.Integration{}, _q.predicates...),
-		withWorkspace:   _q.withWorkspace.Clone(),
-		withSendLimiter: _q.withSendLimiter.Clone(),
+		config:               _q.config,
+		ctx:                  _q.ctx.Clone(),
+		order:                append([]integration.OrderOption{}, _q.order...),
+		inters:               append([]Interceptor{}, _q.inters...),
+		predicates:           append([]predicate.Integration{}, _q.predicates...),
+		withWorkspace:        _q.withWorkspace.Clone(),
+		withSendLimiter:      _q.withSendLimiter.Clone(),
+		withCapturedMessages: _q.withCapturedMessages.Clone(),
 		// clone intermediate query.
 		sql:       _q.sql.Clone(),
 		path:      _q.path,
@@ -329,6 +354,17 @@ func (_q *IntegrationQuery) WithSendLimiter(opts ...func(*SendLimiterQuery)) *In
 		opt(query)
 	}
 	_q.withSendLimiter = query
+	return _q
+}
+
+// WithCapturedMessages tells the query-builder to eager-load the nodes that are connected to
+// the "captured_messages" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *IntegrationQuery) WithCapturedMessages(opts ...func(*CapturedMessageQuery)) *IntegrationQuery {
+	query := (&CapturedMessageClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withCapturedMessages = query
 	return _q
 }
 
@@ -410,9 +446,10 @@ func (_q *IntegrationQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*
 	var (
 		nodes       = []*Integration{}
 		_spec       = _q.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
 			_q.withWorkspace != nil,
 			_q.withSendLimiter != nil,
+			_q.withCapturedMessages != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -445,6 +482,15 @@ func (_q *IntegrationQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*
 	if query := _q.withSendLimiter; query != nil {
 		if err := _q.loadSendLimiter(ctx, query, nodes, nil,
 			func(n *Integration, e *SendLimiter) { n.Edges.SendLimiter = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withCapturedMessages; query != nil {
+		if err := _q.loadCapturedMessages(ctx, query, nodes,
+			func(n *Integration) { n.Edges.CapturedMessages = []*CapturedMessage{} },
+			func(n *Integration, e *CapturedMessage) {
+				n.Edges.CapturedMessages = append(n.Edges.CapturedMessages, e)
+			}); err != nil {
 			return nil, err
 		}
 	}
@@ -492,6 +538,36 @@ func (_q *IntegrationQuery) loadSendLimiter(ctx context.Context, query *SendLimi
 	}
 	query.Where(predicate.SendLimiter(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(integration.SendLimiterColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.IntegrationID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "integration_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *IntegrationQuery) loadCapturedMessages(ctx context.Context, query *CapturedMessageQuery, nodes []*Integration, init func(*Integration), assign func(*Integration, *CapturedMessage)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Integration)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(capturedmessage.FieldIntegrationID)
+	}
+	query.Where(predicate.CapturedMessage(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(integration.CapturedMessagesColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

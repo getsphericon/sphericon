@@ -1,0 +1,63 @@
+# Captured messages (ADR 0058): what a Test inbox kept instead of sending it out. Globex's Test
+# inbox (integration 902) holds two, a Transactional one (the newer) and a Broadcast one whose From
+# is not a verified Sending domain; Umbrella's holds one, for the Workspace deletion step.
+# outbound_message_id is nullable: a Test send records no Outbound message.
+- id: 1 # fixture: CapturedMessageGlobexWelcome
+  integration_id: 902
+  surface: transactional
+  recipient: ada@globex.test
+  from_email: hello@globex.test
+  from_name: Globex
+  subject: Welcome to Globex
+  html: '<p>Welcome, <a href="https://globex.test/start">start here</a>.</p>'
+  text: 'Welcome, start here: https://globex.test/start'
+  headers: '[{"name":"From","value":"Globex <hello@globex.test>"},{"name":"To","value":"ada@globex.test"},{"name":"Subject","value":"Welcome to Globex"}]'
+  links: '["https://globex.test/start"]'
+  from_unverified: true
+  workspace_id: 2
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 2 # fixture: CapturedMessageGlobexNewsletter
+  integration_id: 902
+  surface: broadcast
+  sending_source: newsletter
+  recipient: grace@globex.test
+  from_email: news@globex.test
+  subject: This month at Globex
+  html: '<p>News.</p>'
+  text: 'News.'
+  headers: '[{"name":"From","value":"news@globex.test"},{"name":"To","value":"grace@globex.test"},{"name":"Subject","value":"This month at Globex"}]'
+  links: '[]'
+  from_unverified: true
+  workspace_id: 2
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 3}}'
+- id: 3 # fixture: CapturedMessageUmbrella
+  integration_id: 911
+  surface: transactional
+  recipient: sam@umbrella.test
+  from_email: hello@umbrella.test
+  subject: Hello from Umbrella
+  html: '<p>Hello.</p>'
+  text: 'Hello.'
+  headers: '[]'
+  links: '[]'
+  from_unverified: true
+  workspace_id: 4
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+# Acme's archived Test inbox keeps what it captured.
+- id: 4 # fixture: CapturedMessageAcmeArchivedInbox
+  integration_id: 7
+  surface: transactional
+  recipient: tester@codebasics.dev
+  from_email: hello@codebasics.dev
+  subject: Old test
+  html: '<p>Old.</p>'
+  text: 'Old.'
+  headers: '[]'
+  links: '[]'
+  from_unverified: false
+  workspace_id: 1
+  created_at: '{{daysAgo 6}}'
+  updated_at: '{{daysAgo 6}}'

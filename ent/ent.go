@@ -21,6 +21,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/brandkit"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
+	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/contacttag"
@@ -134,6 +135,7 @@ func checkColumn(t, c string) error {
 			brandkit.Table:             brandkit.ValidColumn,
 			broadcast.Table:            broadcast.ValidColumn,
 			broadcastrecipient.Table:   broadcastrecipient.ValidColumn,
+			capturedmessage.Table:      capturedmessage.ValidColumn,
 			confirmation.Table:         confirmation.ValidColumn,
 			contact.Table:              contact.ValidColumn,
 			contacttag.Table:           contacttag.ValidColumn,

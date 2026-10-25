@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/messaging/inbox"
 	"github.com/getsphericon/sphericon/internal/messaging/ses"
 	"github.com/getsphericon/sphericon/internal/messaging/smtp"
 )
@@ -94,5 +95,5 @@ func catalogWith(fake *FakeSES) *messaging.Catalog {
 		}
 		return quotaSender{EmailSender: sender, fake: fake}, nil
 	}
-	return messaging.NewCatalog(smtp.Descriptor(), descriptor)
+	return messaging.NewCatalog(smtp.Descriptor(), descriptor, inbox.Descriptor())
 }

@@ -379,6 +379,22 @@ const (
 	BroadcastSentViaArchivedIntegrationName = "Spring digest"
 	// BroadcastSentViaArchivedIntegrationSubject is from fixtures/broadcasts.
 	BroadcastSentViaArchivedIntegrationSubject = "Your spring digest"
+	// CapturedMessageAcmeArchivedInboxID is from fixtures/captured_messages.
+	CapturedMessageAcmeArchivedInboxID = 4
+	// CapturedMessageAcmeArchivedInboxSubject is from fixtures/captured_messages.
+	CapturedMessageAcmeArchivedInboxSubject = "Old test"
+	// CapturedMessageGlobexNewsletterID is from fixtures/captured_messages.
+	CapturedMessageGlobexNewsletterID = 2
+	// CapturedMessageGlobexNewsletterSubject is from fixtures/captured_messages.
+	CapturedMessageGlobexNewsletterSubject = "This month at Globex"
+	// CapturedMessageGlobexWelcomeID is from fixtures/captured_messages.
+	CapturedMessageGlobexWelcomeID = 1
+	// CapturedMessageGlobexWelcomeSubject is from fixtures/captured_messages.
+	CapturedMessageGlobexWelcomeSubject = "Welcome to Globex"
+	// CapturedMessageUmbrellaID is from fixtures/captured_messages.
+	CapturedMessageUmbrellaID = 3
+	// CapturedMessageUmbrellaSubject is from fixtures/captured_messages.
+	CapturedMessageUmbrellaSubject = "Hello from Umbrella"
 	// CaraSurveyResponseID is from fixtures/signup_survey_responses.
 	CaraSurveyResponseID = 3
 	// ConfirmationErasableDestination is from fixtures/confirmations.
@@ -433,6 +449,10 @@ const (
 	ContactGlobexEmail = "pat@globex.test"
 	// ContactGlobexID is from fixtures/contacts.
 	ContactGlobexID = 900
+	// ContactGlobexReaderEmail is from fixtures/contacts.
+	ContactGlobexReaderEmail = "reader@globex.test"
+	// ContactGlobexReaderID is from fixtures/contacts.
+	ContactGlobexReaderID = 901
 	// ContactHoldDemoEmail is from fixtures/contacts.
 	ContactHoldDemoEmail = "hold.demo@codebasics.dev"
 	// ContactHoldDemoID is from fixtures/contacts.
@@ -1019,6 +1039,14 @@ const (
 	IntegrationAcmeGenericBName = "Relay B (generic Preset)"
 	// IntegrationAcmeGenericBProvider is from fixtures/integrations.
 	IntegrationAcmeGenericBProvider = "smtp"
+	// IntegrationAcmeInboxArchivedID is from fixtures/integrations.
+	IntegrationAcmeInboxArchivedID = 7
+	// IntegrationAcmeInboxArchivedIngestKey is from fixtures/integrations.
+	IntegrationAcmeInboxArchivedIngestKey = "omik_test_integrationacmeinboxarchived"
+	// IntegrationAcmeInboxArchivedName is from fixtures/integrations.
+	IntegrationAcmeInboxArchivedName = "Test inbox (archived)"
+	// IntegrationAcmeInboxArchivedProvider is from fixtures/integrations.
+	IntegrationAcmeInboxArchivedProvider = "inbox"
 	// IntegrationAcmeMailgunID is from fixtures/integrations.
 	IntegrationAcmeMailgunID = 21
 	// IntegrationAcmeMailgunIngestKey is from fixtures/integrations.
@@ -1053,6 +1081,14 @@ const (
 	IntegrationAcmeSesProvider = "ses"
 	// IntegrationGlobexID is from fixtures/integrations.
 	IntegrationGlobexID = 900
+	// IntegrationGlobexInboxID is from fixtures/integrations.
+	IntegrationGlobexInboxID = 902
+	// IntegrationGlobexInboxIngestKey is from fixtures/integrations.
+	IntegrationGlobexInboxIngestKey = "omik_test_integrationglobexinbox"
+	// IntegrationGlobexInboxName is from fixtures/integrations.
+	IntegrationGlobexInboxName = "Test inbox"
+	// IntegrationGlobexInboxProvider is from fixtures/integrations.
+	IntegrationGlobexInboxProvider = "inbox"
 	// IntegrationGlobexIngestKey is from fixtures/integrations.
 	IntegrationGlobexIngestKey = "omik_test_integrationglobex"
 	// IntegrationGlobexName is from fixtures/integrations.
@@ -1075,6 +1111,14 @@ const (
 	IntegrationUmbrellaDefaultName = "Umbrella SMTP"
 	// IntegrationUmbrellaDefaultProvider is from fixtures/integrations.
 	IntegrationUmbrellaDefaultProvider = "smtp"
+	// IntegrationUmbrellaInboxID is from fixtures/integrations.
+	IntegrationUmbrellaInboxID = 911
+	// IntegrationUmbrellaInboxIngestKey is from fixtures/integrations.
+	IntegrationUmbrellaInboxIngestKey = "omik_test_integrationumbrellainbox"
+	// IntegrationUmbrellaInboxName is from fixtures/integrations.
+	IntegrationUmbrellaInboxName = "Test inbox"
+	// IntegrationUmbrellaInboxProvider is from fixtures/integrations.
+	IntegrationUmbrellaInboxProvider = "inbox"
 	// InvitationAcmeAliceMemberEmail is from fixtures/invitations.
 	InvitationAcmeAliceMemberEmail = "alice@acme.test"
 	// InvitationAcmeAliceMemberID is from fixtures/invitations.

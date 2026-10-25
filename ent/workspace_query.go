@@ -21,6 +21,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/brandkit"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
+	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/customfield"
@@ -83,6 +84,7 @@ type WorkspaceQuery struct {
 	withUnsubscribes        *UnsubscribeQuery
 	withConfirmations       *ConfirmationQuery
 	withOutboundMessages    *OutboundMessageQuery
+	withCapturedMessages    *CapturedMessageQuery
 	withMemberships         *MembershipQuery
 	withInvitations         *InvitationQuery
 	withAuditEntries        *AuditEntryQuery
@@ -719,6 +721,28 @@ func (_q *WorkspaceQuery) QueryOutboundMessages() *OutboundMessageQuery {
 	return query
 }
 
+// QueryCapturedMessages chains the current query on the "captured_messages" edge.
+func (_q *WorkspaceQuery) QueryCapturedMessages() *CapturedMessageQuery {
+	query := (&CapturedMessageClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
+			sqlgraph.To(capturedmessage.Table, capturedmessage.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.CapturedMessagesTable, workspace.CapturedMessagesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // QueryMemberships chains the current query on the "memberships" edge.
 func (_q *WorkspaceQuery) QueryMemberships() *MembershipQuery {
 	query := (&MembershipClient{config: _q.config}).Query()
@@ -1048,6 +1072,7 @@ func (_q *WorkspaceQuery) Clone() *WorkspaceQuery {
 		withUnsubscribes:        _q.withUnsubscribes.Clone(),
 		withConfirmations:       _q.withConfirmations.Clone(),
 		withOutboundMessages:    _q.withOutboundMessages.Clone(),
+		withCapturedMessages:    _q.withCapturedMessages.Clone(),
 		withMemberships:         _q.withMemberships.Clone(),
 		withInvitations:         _q.withInvitations.Clone(),
 		withAuditEntries:        _q.withAuditEntries.Clone(),
@@ -1357,6 +1382,17 @@ func (_q *WorkspaceQuery) WithOutboundMessages(opts ...func(*OutboundMessageQuer
 	return _q
 }
 
+// WithCapturedMessages tells the query-builder to eager-load the nodes that are connected to
+// the "captured_messages" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *WorkspaceQuery) WithCapturedMessages(opts ...func(*CapturedMessageQuery)) *WorkspaceQuery {
+	query := (&CapturedMessageClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withCapturedMessages = query
+	return _q
+}
+
 // WithMemberships tells the query-builder to eager-load the nodes that are connected to
 // the "memberships" edge. The optional arguments are used to configure the query builder of the edge.
 func (_q *WorkspaceQuery) WithMemberships(opts ...func(*MembershipQuery)) *WorkspaceQuery {
@@ -1490,7 +1526,7 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 	var (
 		nodes       = []*Workspace{}
 		_spec       = _q.querySpec()
-		loadedTypes = [32]bool{
+		loadedTypes = [33]bool{
 			_q.withContacts != nil,
 			_q.withCustomFields != nil,
 			_q.withTags != nil,
@@ -1518,6 +1554,7 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 			_q.withUnsubscribes != nil,
 			_q.withConfirmations != nil,
 			_q.withOutboundMessages != nil,
+			_q.withCapturedMessages != nil,
 			_q.withMemberships != nil,
 			_q.withInvitations != nil,
 			_q.withAuditEntries != nil,
@@ -1736,6 +1773,13 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 		if err := _q.loadOutboundMessages(ctx, query, nodes,
 			func(n *Workspace) { n.Edges.OutboundMessages = []*OutboundMessage{} },
 			func(n *Workspace, e *OutboundMessage) { n.Edges.OutboundMessages = append(n.Edges.OutboundMessages, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withCapturedMessages; query != nil {
+		if err := _q.loadCapturedMessages(ctx, query, nodes,
+			func(n *Workspace) { n.Edges.CapturedMessages = []*CapturedMessage{} },
+			func(n *Workspace, e *CapturedMessage) { n.Edges.CapturedMessages = append(n.Edges.CapturedMessages, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -2572,6 +2616,36 @@ func (_q *WorkspaceQuery) loadOutboundMessages(ctx context.Context, query *Outbo
 	}
 	query.Where(predicate.OutboundMessage(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(workspace.OutboundMessagesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.WorkspaceID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "workspace_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *WorkspaceQuery) loadCapturedMessages(ctx context.Context, query *CapturedMessageQuery, nodes []*Workspace, init func(*Workspace), assign func(*Workspace, *CapturedMessage)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Workspace)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(capturedmessage.FieldWorkspaceID)
+	}
+	query.Where(predicate.CapturedMessage(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(workspace.CapturedMessagesColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

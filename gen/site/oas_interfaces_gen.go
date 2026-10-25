@@ -181,6 +181,10 @@ type SiteBroadcastsUpdateRes interface {
 	siteBroadcastsUpdateRes()
 }
 
+type SiteCapturedMessagesListRes interface {
+	siteCapturedMessagesListRes()
+}
+
 type SiteContactsCreateRes interface {
 	siteContactsCreateRes()
 }

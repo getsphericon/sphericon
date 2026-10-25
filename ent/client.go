@@ -24,6 +24,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/brandkit"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
+	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/contacttag"
@@ -95,6 +96,8 @@ type Client struct {
 	Broadcast *BroadcastClient
 	// BroadcastRecipient is the client for interacting with the BroadcastRecipient builders.
 	BroadcastRecipient *BroadcastRecipientClient
+	// CapturedMessage is the client for interacting with the CapturedMessage builders.
+	CapturedMessage *CapturedMessageClient
 	// Confirmation is the client for interacting with the Confirmation builders.
 	Confirmation *ConfirmationClient
 	// Contact is the client for interacting with the Contact builders.
@@ -203,6 +206,7 @@ func (c *Client) init() {
 	c.BrandKit = NewBrandKitClient(c.config)
 	c.Broadcast = NewBroadcastClient(c.config)
 	c.BroadcastRecipient = NewBroadcastRecipientClient(c.config)
+	c.CapturedMessage = NewCapturedMessageClient(c.config)
 	c.Confirmation = NewConfirmationClient(c.config)
 	c.Contact = NewContactClient(c.config)
 	c.ContactTag = NewContactTagClient(c.config)
@@ -348,6 +352,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		BrandKit:             NewBrandKitClient(cfg),
 		Broadcast:            NewBroadcastClient(cfg),
 		BroadcastRecipient:   NewBroadcastRecipientClient(cfg),
+		CapturedMessage:      NewCapturedMessageClient(cfg),
 		Confirmation:         NewConfirmationClient(cfg),
 		Contact:              NewContactClient(cfg),
 		ContactTag:           NewContactTagClient(cfg),
@@ -420,6 +425,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		BrandKit:             NewBrandKitClient(cfg),
 		Broadcast:            NewBroadcastClient(cfg),
 		BroadcastRecipient:   NewBroadcastRecipientClient(cfg),
+		CapturedMessage:      NewCapturedMessageClient(cfg),
 		Confirmation:         NewConfirmationClient(cfg),
 		Contact:              NewContactClient(cfg),
 		ContactTag:           NewContactTagClient(cfg),
@@ -495,12 +501,12 @@ func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.ApiToken, c.AuditEntry, c.AuthAttempt, c.Automation, c.AutomationRun,
 		c.AutomationVersion, c.BrandKit, c.Broadcast, c.BroadcastRecipient,
-		c.Confirmation, c.Contact, c.ContactTag, c.CustomField, c.EmailTemplate,
-		c.Erasure, c.Event, c.Hold, c.InstanceState, c.Integration, c.Invitation,
-		c.JoinDomain, c.Membership, c.OAuthClient, c.OAuthCode, c.OAuthRefreshToken,
-		c.OutboundMessage, c.OutboxMessage, c.OutboxOffset, c.Passkey,
-		c.PasskeyChallenge, c.PrivateRelayRange, c.RecoveryCode, c.RiverJob, c.Rule,
-		c.RuleFiring, c.RuleTrigger, c.SchemaState, c.Segment, c.SendLimiter,
+		c.CapturedMessage, c.Confirmation, c.Contact, c.ContactTag, c.CustomField,
+		c.EmailTemplate, c.Erasure, c.Event, c.Hold, c.InstanceState, c.Integration,
+		c.Invitation, c.JoinDomain, c.Membership, c.OAuthClient, c.OAuthCode,
+		c.OAuthRefreshToken, c.OutboundMessage, c.OutboxMessage, c.OutboxOffset,
+		c.Passkey, c.PasskeyChallenge, c.PrivateRelayRange, c.RecoveryCode, c.RiverJob,
+		c.Rule, c.RuleFiring, c.RuleTrigger, c.SchemaState, c.Segment, c.SendLimiter,
 		c.SendingDomain, c.ServiceCredential, c.SignupSurveyResponse, c.StaffMember,
 		c.Suppression, c.Tag, c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User,
 		c.UserIdentity, c.Visitor, c.WebhookEndpoint, c.Workspace,
@@ -515,12 +521,12 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.ApiToken, c.AuditEntry, c.AuthAttempt, c.Automation, c.AutomationRun,
 		c.AutomationVersion, c.BrandKit, c.Broadcast, c.BroadcastRecipient,
-		c.Confirmation, c.Contact, c.ContactTag, c.CustomField, c.EmailTemplate,
-		c.Erasure, c.Event, c.Hold, c.InstanceState, c.Integration, c.Invitation,
-		c.JoinDomain, c.Membership, c.OAuthClient, c.OAuthCode, c.OAuthRefreshToken,
-		c.OutboundMessage, c.OutboxMessage, c.OutboxOffset, c.Passkey,
-		c.PasskeyChallenge, c.PrivateRelayRange, c.RecoveryCode, c.RiverJob, c.Rule,
-		c.RuleFiring, c.RuleTrigger, c.SchemaState, c.Segment, c.SendLimiter,
+		c.CapturedMessage, c.Confirmation, c.Contact, c.ContactTag, c.CustomField,
+		c.EmailTemplate, c.Erasure, c.Event, c.Hold, c.InstanceState, c.Integration,
+		c.Invitation, c.JoinDomain, c.Membership, c.OAuthClient, c.OAuthCode,
+		c.OAuthRefreshToken, c.OutboundMessage, c.OutboxMessage, c.OutboxOffset,
+		c.Passkey, c.PasskeyChallenge, c.PrivateRelayRange, c.RecoveryCode, c.RiverJob,
+		c.Rule, c.RuleFiring, c.RuleTrigger, c.SchemaState, c.Segment, c.SendLimiter,
 		c.SendingDomain, c.ServiceCredential, c.SignupSurveyResponse, c.StaffMember,
 		c.Suppression, c.Tag, c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User,
 		c.UserIdentity, c.Visitor, c.WebhookEndpoint, c.Workspace,
@@ -550,6 +556,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Broadcast.mutate(ctx, m)
 	case *BroadcastRecipientMutation:
 		return c.BroadcastRecipient.mutate(ctx, m)
+	case *CapturedMessageMutation:
+		return c.CapturedMessage.mutate(ctx, m)
 	case *ConfirmationMutation:
 		return c.Confirmation.mutate(ctx, m)
 	case *ContactMutation:
@@ -2176,6 +2184,187 @@ func (c *BroadcastRecipientClient) mutate(ctx context.Context, m *BroadcastRecip
 	}
 }
 
+// CapturedMessageClient is a client for the CapturedMessage schema.
+type CapturedMessageClient struct {
+	config
+}
+
+// NewCapturedMessageClient returns a client for the CapturedMessage from the given config.
+func NewCapturedMessageClient(c config) *CapturedMessageClient {
+	return &CapturedMessageClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `capturedmessage.Hooks(f(g(h())))`.
+func (c *CapturedMessageClient) Use(hooks ...Hook) {
+	c.hooks.CapturedMessage = append(c.hooks.CapturedMessage, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `capturedmessage.Intercept(f(g(h())))`.
+func (c *CapturedMessageClient) Intercept(interceptors ...Interceptor) {
+	c.inters.CapturedMessage = append(c.inters.CapturedMessage, interceptors...)
+}
+
+// Create returns a builder for creating a CapturedMessage entity.
+func (c *CapturedMessageClient) Create() *CapturedMessageCreate {
+	mutation := newCapturedMessageMutation(c.config, OpCreate)
+	return &CapturedMessageCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of CapturedMessage entities.
+func (c *CapturedMessageClient) CreateBulk(builders ...*CapturedMessageCreate) *CapturedMessageCreateBulk {
+	return &CapturedMessageCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *CapturedMessageClient) MapCreateBulk(slice any, setFunc func(*CapturedMessageCreate, int)) *CapturedMessageCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &CapturedMessageCreateBulk{err: fmt.Errorf("calling to CapturedMessageClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*CapturedMessageCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &CapturedMessageCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for CapturedMessage.
+func (c *CapturedMessageClient) Update() *CapturedMessageUpdate {
+	mutation := newCapturedMessageMutation(c.config, OpUpdate)
+	return &CapturedMessageUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *CapturedMessageClient) UpdateOne(_m *CapturedMessage) *CapturedMessageUpdateOne {
+	mutation := newCapturedMessageMutation(c.config, OpUpdateOne, withCapturedMessage(_m))
+	return &CapturedMessageUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *CapturedMessageClient) UpdateOneID(id int64) *CapturedMessageUpdateOne {
+	mutation := newCapturedMessageMutation(c.config, OpUpdateOne, withCapturedMessageID(id))
+	return &CapturedMessageUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for CapturedMessage.
+func (c *CapturedMessageClient) Delete() *CapturedMessageDelete {
+	mutation := newCapturedMessageMutation(c.config, OpDelete)
+	return &CapturedMessageDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *CapturedMessageClient) DeleteOne(_m *CapturedMessage) *CapturedMessageDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *CapturedMessageClient) DeleteOneID(id int64) *CapturedMessageDeleteOne {
+	builder := c.Delete().Where(capturedmessage.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &CapturedMessageDeleteOne{builder}
+}
+
+// Query returns a query builder for CapturedMessage.
+func (c *CapturedMessageClient) Query() *CapturedMessageQuery {
+	return &CapturedMessageQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeCapturedMessage},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a CapturedMessage entity by its id.
+func (c *CapturedMessageClient) Get(ctx context.Context, id int64) (*CapturedMessage, error) {
+	return c.Query().Where(capturedmessage.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *CapturedMessageClient) GetX(ctx context.Context, id int64) *CapturedMessage {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryWorkspace queries the workspace edge of a CapturedMessage.
+func (c *CapturedMessageClient) QueryWorkspace(_m *CapturedMessage) *WorkspaceQuery {
+	query := (&WorkspaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(capturedmessage.Table, capturedmessage.FieldID, id),
+			sqlgraph.To(workspace.Table, workspace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, capturedmessage.WorkspaceTable, capturedmessage.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryIntegration queries the integration edge of a CapturedMessage.
+func (c *CapturedMessageClient) QueryIntegration(_m *CapturedMessage) *IntegrationQuery {
+	query := (&IntegrationClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(capturedmessage.Table, capturedmessage.FieldID, id),
+			sqlgraph.To(integration.Table, integration.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, capturedmessage.IntegrationTable, capturedmessage.IntegrationColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryOutboundMessage queries the outbound_message edge of a CapturedMessage.
+func (c *CapturedMessageClient) QueryOutboundMessage(_m *CapturedMessage) *OutboundMessageQuery {
+	query := (&OutboundMessageClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(capturedmessage.Table, capturedmessage.FieldID, id),
+			sqlgraph.To(outboundmessage.Table, outboundmessage.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, capturedmessage.OutboundMessageTable, capturedmessage.OutboundMessageColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *CapturedMessageClient) Hooks() []Hook {
+	return c.hooks.CapturedMessage
+}
+
+// Interceptors returns the client interceptors.
+func (c *CapturedMessageClient) Interceptors() []Interceptor {
+	return c.inters.CapturedMessage
+}
+
+func (c *CapturedMessageClient) mutate(ctx context.Context, m *CapturedMessageMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&CapturedMessageCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&CapturedMessageUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&CapturedMessageUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&CapturedMessageDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown CapturedMessage mutation op: %q", m.Op())
+	}
+}
+
 // ConfirmationClient is a client for the Confirmation schema.
 type ConfirmationClient struct {
 	config
@@ -3697,6 +3886,22 @@ func (c *IntegrationClient) QuerySendLimiter(_m *Integration) *SendLimiterQuery 
 			sqlgraph.From(integration.Table, integration.FieldID, id),
 			sqlgraph.To(sendlimiter.Table, sendlimiter.FieldID),
 			sqlgraph.Edge(sqlgraph.O2O, false, integration.SendLimiterTable, integration.SendLimiterColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryCapturedMessages queries the captured_messages edge of a Integration.
+func (c *IntegrationClient) QueryCapturedMessages(_m *Integration) *CapturedMessageQuery {
+	query := (&CapturedMessageClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(integration.Table, integration.FieldID, id),
+			sqlgraph.To(capturedmessage.Table, capturedmessage.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, integration.CapturedMessagesTable, integration.CapturedMessagesColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -9490,6 +9695,22 @@ func (c *WorkspaceClient) QueryOutboundMessages(_m *Workspace) *OutboundMessageQ
 	return query
 }
 
+// QueryCapturedMessages queries the captured_messages edge of a Workspace.
+func (c *WorkspaceClient) QueryCapturedMessages(_m *Workspace) *CapturedMessageQuery {
+	query := (&CapturedMessageClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, id),
+			sqlgraph.To(capturedmessage.Table, capturedmessage.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.CapturedMessagesTable, workspace.CapturedMessagesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryMemberships queries the memberships edge of a Workspace.
 func (c *WorkspaceClient) QueryMemberships(_m *Workspace) *MembershipQuery {
 	query := (&MembershipClient{config: c.config}).Query()
@@ -9599,27 +9820,27 @@ func (c *WorkspaceClient) mutate(ctx context.Context, m *WorkspaceMutation) (Val
 type (
 	hooks struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, AutomationVersion,
-		BrandKit, Broadcast, BroadcastRecipient, Confirmation, Contact, ContactTag,
-		CustomField, EmailTemplate, Erasure, Event, Hold, InstanceState, Integration,
-		Invitation, JoinDomain, Membership, OAuthClient, OAuthCode, OAuthRefreshToken,
-		OutboundMessage, OutboxMessage, OutboxOffset, Passkey, PasskeyChallenge,
-		PrivateRelayRange, RecoveryCode, RiverJob, Rule, RuleFiring, RuleTrigger,
-		SchemaState, Segment, SendLimiter, SendingDomain, ServiceCredential,
-		SignupSurveyResponse, StaffMember, Suppression, Tag, TrackingHostChange,
-		Unsubscribe, Usage, User, UserIdentity, Visitor, WebhookEndpoint,
-		Workspace []ent.Hook
+		BrandKit, Broadcast, BroadcastRecipient, CapturedMessage, Confirmation,
+		Contact, ContactTag, CustomField, EmailTemplate, Erasure, Event, Hold,
+		InstanceState, Integration, Invitation, JoinDomain, Membership, OAuthClient,
+		OAuthCode, OAuthRefreshToken, OutboundMessage, OutboxMessage, OutboxOffset,
+		Passkey, PasskeyChallenge, PrivateRelayRange, RecoveryCode, RiverJob, Rule,
+		RuleFiring, RuleTrigger, SchemaState, Segment, SendLimiter, SendingDomain,
+		ServiceCredential, SignupSurveyResponse, StaffMember, Suppression, Tag,
+		TrackingHostChange, Unsubscribe, Usage, User, UserIdentity, Visitor,
+		WebhookEndpoint, Workspace []ent.Hook
 	}
 	inters struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, AutomationVersion,
-		BrandKit, Broadcast, BroadcastRecipient, Confirmation, Contact, ContactTag,
-		CustomField, EmailTemplate, Erasure, Event, Hold, InstanceState, Integration,
-		Invitation, JoinDomain, Membership, OAuthClient, OAuthCode, OAuthRefreshToken,
-		OutboundMessage, OutboxMessage, OutboxOffset, Passkey, PasskeyChallenge,
-		PrivateRelayRange, RecoveryCode, RiverJob, Rule, RuleFiring, RuleTrigger,
-		SchemaState, Segment, SendLimiter, SendingDomain, ServiceCredential,
-		SignupSurveyResponse, StaffMember, Suppression, Tag, TrackingHostChange,
-		Unsubscribe, Usage, User, UserIdentity, Visitor, WebhookEndpoint,
-		Workspace []ent.Interceptor
+		BrandKit, Broadcast, BroadcastRecipient, CapturedMessage, Confirmation,
+		Contact, ContactTag, CustomField, EmailTemplate, Erasure, Event, Hold,
+		InstanceState, Integration, Invitation, JoinDomain, Membership, OAuthClient,
+		OAuthCode, OAuthRefreshToken, OutboundMessage, OutboxMessage, OutboxOffset,
+		Passkey, PasskeyChallenge, PrivateRelayRange, RecoveryCode, RiverJob, Rule,
+		RuleFiring, RuleTrigger, SchemaState, Segment, SendLimiter, SendingDomain,
+		ServiceCredential, SignupSurveyResponse, StaffMember, Suppression, Tag,
+		TrackingHostChange, Unsubscribe, Usage, User, UserIdentity, Visitor,
+		WebhookEndpoint, Workspace []ent.Interceptor
 	}
 )
 

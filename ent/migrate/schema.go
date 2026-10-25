@@ -425,6 +425,74 @@ var (
 			},
 		},
 	}
+	// CapturedMessagesColumns holds the columns for the "captured_messages" table.
+	CapturedMessagesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "surface", Type: field.TypeEnum, Enums: []string{"broadcast", "automation", "transactional", "test"}},
+		{Name: "sending_source", Type: field.TypeString, Nullable: true},
+		{Name: "recipient", Type: field.TypeString},
+		{Name: "from_email", Type: field.TypeString},
+		{Name: "from_name", Type: field.TypeString, Nullable: true},
+		{Name: "subject", Type: field.TypeString},
+		{Name: "html", Type: field.TypeString, Size: 2147483647},
+		{Name: "text", Type: field.TypeString, Size: 2147483647},
+		{Name: "headers", Type: field.TypeJSON},
+		{Name: "links", Type: field.TypeJSON},
+		{Name: "from_unverified", Type: field.TypeBool, Default: false},
+		{Name: "outbound_message_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "integration_id", Type: field.TypeInt64},
+		{Name: "workspace_id", Type: field.TypeInt64},
+	}
+	// CapturedMessagesTable holds the schema information for the "captured_messages" table.
+	CapturedMessagesTable = &schema.Table{
+		Name:       "captured_messages",
+		Columns:    CapturedMessagesColumns,
+		PrimaryKey: []*schema.Column{CapturedMessagesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "captured_messages_outbound_messages_outbound_message",
+				Columns:    []*schema.Column{CapturedMessagesColumns[14]},
+				RefColumns: []*schema.Column{OutboundMessagesColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "captured_messages_integrations_captured_messages",
+				Columns:    []*schema.Column{CapturedMessagesColumns[15]},
+				RefColumns: []*schema.Column{IntegrationsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "captured_messages_workspaces_captured_messages",
+				Columns:    []*schema.Column{CapturedMessagesColumns[16]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "capturedmessage_workspace_id_created_at_id",
+				Unique:  false,
+				Columns: []*schema.Column{CapturedMessagesColumns[16], CapturedMessagesColumns[1], CapturedMessagesColumns[0]},
+			},
+			{
+				Name:    "capturedmessage_workspace_id_recipient",
+				Unique:  false,
+				Columns: []*schema.Column{CapturedMessagesColumns[16], CapturedMessagesColumns[5]},
+			},
+			{
+				Name:    "captured_messages_integration_id",
+				Unique:  false,
+				Columns: []*schema.Column{CapturedMessagesColumns[15]},
+			},
+			{
+				Name:    "captured_messages_outbound_message_id",
+				Unique:  false,
+				Columns: []*schema.Column{CapturedMessagesColumns[14]},
+			},
+		},
+	}
 	// ConfirmationsColumns holds the columns for the "confirmations" table.
 	ConfirmationsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -795,7 +863,7 @@ var (
 		{Name: "discarded_at", Type: field.TypeTime, Nullable: true},
 		{Name: "name", Type: field.TypeString},
 		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email", "sms"}, Default: "email"},
-		{Name: "provider", Type: field.TypeEnum, Enums: []string{"smtp", "ses"}},
+		{Name: "provider", Type: field.TypeEnum, Enums: []string{"smtp", "ses", "inbox"}},
 		{Name: "config_encrypted", Type: field.TypeString},
 		{Name: "preset", Type: field.TypeString, Nullable: true},
 		{Name: "params_encrypted", Type: field.TypeString, Nullable: true},
@@ -836,6 +904,14 @@ var (
 				Name:    "integration_workspace_id",
 				Unique:  false,
 				Columns: []*schema.Column{IntegrationsColumns[19]},
+			},
+			{
+				Name:    "integrations_one_inbox_per_workspace",
+				Unique:  true,
+				Columns: []*schema.Column{IntegrationsColumns[19], IntegrationsColumns[6]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "provider = 'inbox' AND discarded_at IS NULL",
+				},
 			},
 		},
 	}
@@ -2056,6 +2132,7 @@ var (
 		BrandKitsTable,
 		BroadcastsTable,
 		BroadcastRecipientsTable,
+		CapturedMessagesTable,
 		ConfirmationsTable,
 		ContactsTable,
 		ContactTagsTable,
@@ -2159,6 +2236,15 @@ func init() {
 	BroadcastRecipientsTable.Annotation = &entsql.Annotation{
 		Table: "broadcast_recipients",
 	}
+	CapturedMessagesTable.ForeignKeys[0].RefTable = OutboundMessagesTable
+	CapturedMessagesTable.ForeignKeys[1].RefTable = IntegrationsTable
+	CapturedMessagesTable.ForeignKeys[2].RefTable = WorkspacesTable
+	CapturedMessagesTable.Annotation = &entsql.Annotation{
+		Table: "captured_messages",
+	}
+	CapturedMessagesTable.Annotation.Checks = map[string]string{
+		"captured_messages_surface_check": "surface IN ('broadcast', 'automation', 'transactional', 'test')",
+	}
 	ConfirmationsTable.ForeignKeys[0].RefTable = ContactsTable
 	ConfirmationsTable.ForeignKeys[1].RefTable = WorkspacesTable
 	ConfirmationsTable.Annotation = &entsql.Annotation{
@@ -2213,7 +2299,7 @@ func init() {
 	}
 	IntegrationsTable.Annotation.Checks = map[string]string{
 		"integrations_channel_check":  "channel IN ('email', 'sms')",
-		"integrations_provider_check": "provider IN ('smtp', 'ses')",
+		"integrations_provider_check": "provider IN ('smtp', 'ses', 'inbox')",
 	}
 	InvitationsTable.ForeignKeys[0].RefTable = UsersTable
 	InvitationsTable.ForeignKeys[1].RefTable = WorkspacesTable

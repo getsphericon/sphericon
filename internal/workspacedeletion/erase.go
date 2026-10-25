@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/brandkit"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
+	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/customfield"
@@ -210,6 +211,7 @@ var eraseSteps = []eraseStep{
 	stepOf((*ent.Scoped).AuditEntry, auditentry.IDIn),
 	stepOf((*ent.Scoped).Erasure, erasure.IDIn),
 	stepOf((*ent.Scoped).Event, event.IDIn),
+	stepOf((*ent.Scoped).CapturedMessage, capturedmessage.IDIn),
 	stepOf((*ent.Scoped).OutboundMessage, outboundmessage.IDIn),
 	stepOf((*ent.Scoped).BroadcastRecipient, broadcastrecipient.IDIn),
 	stepOf((*ent.Scoped).RuleFiring, rulefiring.IDIn),

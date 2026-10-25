@@ -3204,6 +3204,70 @@ func (s InUseProblemDetailsErrors) Validate() error {
 	return nil
 }
 
+func (s *InboxConfig) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Kind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "kind",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *InboxConfigInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Kind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "kind",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s InboxConfigInputKind) Validate() error {
+	switch s {
+	case "inbox":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s InboxConfigKind) Validate() error {
+	switch s {
+	case "inbox":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s IntegrationChannel) Validate() error {
 	switch s {
 	case "email":
@@ -3273,6 +3337,11 @@ func (s IntegrationConfigInputSum) Validate() error {
 			return err
 		}
 		return nil
+	case InboxConfigInputIntegrationConfigInputSum:
+		if err := s.InboxConfigInput.Validate(); err != nil {
+			return err
+		}
+		return nil
 	default:
 		return errors.Errorf("invalid type %q", s.Type)
 	}
@@ -3290,6 +3359,11 @@ func (s IntegrationConfigSum) Validate() error {
 			return err
 		}
 		return nil
+	case InboxConfigIntegrationConfigSum:
+		if err := s.InboxConfig.Validate(); err != nil {
+			return err
+		}
+		return nil
 	default:
 		return errors.Errorf("invalid type %q", s.Type)
 	}
@@ -3300,6 +3374,8 @@ func (s IntegrationProvider) Validate() error {
 	case "smtp":
 		return nil
 	case "ses":
+		return nil
+	case "inbox":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
@@ -3542,6 +3618,14 @@ func (s *IntegrationsRegenerateKeyUnauthorized) Validate() error {
 }
 
 func (s *IntegrationsUnarchiveBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *IntegrationsUnarchiveConflict) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err

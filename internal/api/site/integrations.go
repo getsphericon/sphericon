@@ -89,7 +89,7 @@ func (h *Handlers) SiteIntegrationsCreate(ctx context.Context, req *siteapi.Site
 	case errors.As(err, &verr):
 		v := siteapi.SiteIntegrationsCreateUnprocessableEntity(validationProblem(verr.Message, verr))
 		return &v, nil
-	case errors.Is(err, integrations.ErrDefaultConflict):
+	case integrations.IsConflict(err):
 		v := siteapi.SiteIntegrationsCreateConflict(problem(http.StatusConflict, validation.Message(err)))
 		return &v, nil
 	case err != nil:
@@ -180,7 +180,7 @@ func (h *Handlers) SiteIntegrationsUpdate(ctx context.Context, req *siteapi.Site
 	case errors.As(err, &verr):
 		r := siteapi.SiteIntegrationsUpdateUnprocessableEntity(validationProblem(verr.Message, verr))
 		return &r, nil
-	case errors.Is(err, integrations.ErrDefaultConflict):
+	case integrations.IsConflict(err):
 		r := siteapi.SiteIntegrationsUpdateConflict(problem(http.StatusConflict, validation.Message(err)))
 		return &r, nil
 	case err != nil:
@@ -295,11 +295,14 @@ func (h *Handlers) SiteIntegrationsUnarchive(ctx context.Context, params siteapi
 
 	id := int64(params.ID)
 	err = h.integrations.Unarchive(ctx, s, id)
-	if errors.Is(err, integrations.ErrNotFound) {
+	switch {
+	case errors.Is(err, integrations.ErrNotFound):
 		v := siteapi.SiteIntegrationsUnarchiveNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &v, nil
-	}
-	if err != nil {
+	case integrations.IsConflict(err):
+		v := siteapi.SiteIntegrationsUnarchiveConflict(problem(http.StatusConflict, validation.Message(err)))
+		return &v, nil
+	case err != nil:
 		return nil, err
 	}
 	row, err := h.integrations.Get(ctx, s, id)
@@ -330,6 +333,8 @@ func configInput(in siteapi.SiteIntegrationConfigInput) (integrations.ConfigInpu
 			Region: c.Region, AccessKeyID: c.AccessKeyId, SecretAccessKey: c.SecretAccessKey,
 			From: string(c.From), FromName: c.FromName.Or(""), Endpoint: c.Endpoint.Or(""),
 		}}, nil
+	case siteapi.SiteInboxConfigInputSiteIntegrationConfigInputSum:
+		return integrations.ConfigInput{Inbox: &integrations.InboxConfig{}}, nil
 	}
 	return integrations.ConfigInput{}, errUnknownProvider
 }
@@ -359,6 +364,8 @@ func (h *Handlers) integrationToResource(row *ent.Integration, limit sendlimit.S
 		res.Config = siteapi.SiteIntegrationConfig{OneOf: siteapi.NewSiteSmtpConfigSiteIntegrationConfigSum(mapper.SmtpConfigToResource(*cfg.SMTP))}
 	case cfg.SES != nil:
 		res.Config = siteapi.SiteIntegrationConfig{OneOf: siteapi.NewSiteSesConfigSiteIntegrationConfigSum(mapper.SesConfigToResource(*cfg.SES))}
+	case cfg.Inbox != nil:
+		res.Config = siteapi.SiteIntegrationConfig{OneOf: siteapi.NewSiteInboxConfigSiteIntegrationConfigSum(siteapi.SiteInboxConfig{Kind: siteapi.SiteInboxConfigKindInbox})}
 	}
 	return res, nil
 }

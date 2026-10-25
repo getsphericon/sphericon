@@ -79,6 +79,9 @@
       "name": "Site Transactional Emails"
     },
     {
+      "name": "Site Captured Messages"
+    },
+    {
       "name": "Site OAuth"
     },
     {
@@ -5737,6 +5740,97 @@
         "tags": ["Site Broadcasts"]
       }
     },
+    "/workspaces/{workspaceId}/captured-messages": {
+      "get": {
+        "operationId": "SiteCapturedMessages_list",
+        "description": "List the Captured messages of the workspace, newest first. Every member may read.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SiteCapturedMessageResourceParentKey"
+          },
+          {
+            "$ref": "#/components/parameters/PageQuery.page"
+          },
+          {
+            "$ref": "#/components/parameters/PageQuery.pageSize"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/SiteCapturedMessageResource"
+                      },
+                      "description": "List of items"
+                    },
+                    "page": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "Page number (1-based)"
+                    },
+                    "pageSize": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "Page size"
+                    },
+                    "totalItems": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "Total number of elements"
+                    },
+                    "totalPages": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "Total number of pages"
+                    }
+                  },
+                  "description": "Paginated response"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Captured Messages"]
+      }
+    },
     "/workspaces/{workspaceId}/contacts": {
       "get": {
         "operationId": "SiteContacts_list",
@@ -7267,7 +7361,7 @@
     "/workspaces/{workspaceId}/integrations/{id}/unarchive": {
       "post": {
         "operationId": "SiteIntegrations_unarchive",
-        "description": "Restore an archived integration to the list. It is not the default; promote it with an update. Owners and admins only.",
+        "description": "Restore an archived integration to the list. It is not the default; promote it with an update. Refused with 409 when it is a Test inbox and the Workspace keeps another. Owners and admins only.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteIntegrationResourceKey.workspaceId"
@@ -7309,6 +7403,16 @@
           },
           "404": {
             "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "RFC 7807 conflict response",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -11411,6 +11515,15 @@
         },
         "explode": false
       },
+      "SiteCapturedMessageResourceParentKey": {
+        "name": "workspaceId",
+        "in": "path",
+        "required": true,
+        "description": "The Workspace id: its short opaque public address and the route key for nested\nworkspace resources (ADR 0043)",
+        "schema": {
+          "$ref": "#/components/schemas/WorkspaceId"
+        }
+      },
       "SiteContactResourceKey.id": {
         "name": "id",
         "in": "path",
@@ -13936,6 +14049,137 @@
         "enum": ["draft", "scheduled", "sending", "sent", "failed"],
         "description": "Broadcast lifecycle status"
       },
+      "SiteCapturedMessageHeader": {
+        "type": "object",
+        "required": ["name", "value"],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        },
+        "description": "One header line of a Captured message"
+      },
+      "SiteCapturedMessageResource": {
+        "type": "object",
+        "required": [
+          "id",
+          "integrationId",
+          "outboundMessageId",
+          "surface",
+          "sendingSource",
+          "recipient",
+          "from",
+          "fromName",
+          "subject",
+          "html",
+          "text",
+          "headers",
+          "links",
+          "fromUnverified",
+          "createdAt"
+        ],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Unique identifier"
+          },
+          "integrationId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "The Test inbox (Integration) that captured the message"
+          },
+          "outboundMessageId": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "nullable": true,
+            "description": "The Outbound message of the send; null for a Test send, which records none"
+          },
+          "surface": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteCapturedMessageSurface"
+              }
+            ],
+            "description": "The surface that asked for the send"
+          },
+          "sendingSource": {
+            "type": "string",
+            "nullable": true,
+            "description": "The Sending source of a Broadcast or Automation send; null for a Transactional or Test send"
+          },
+          "recipient": {
+            "type": "string",
+            "description": "Normalized (lower-cased) recipient address"
+          },
+          "from": {
+            "type": "string",
+            "description": "The From address as it was, not rewritten"
+          },
+          "fromName": {
+            "type": "string",
+            "nullable": true,
+            "description": "The From name; null when the message has none"
+          },
+          "subject": {
+            "type": "string",
+            "description": "The subject"
+          },
+          "html": {
+            "type": "string",
+            "description": "The HTML part"
+          },
+          "text": {
+            "type": "string",
+            "description": "The text part"
+          },
+          "headers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteCapturedMessageHeader"
+            },
+            "description": "The header lines the message would carry on the wire, in order"
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The URLs of the links of the HTML part, tracker links as the recipient would get them"
+          },
+          "fromUnverified": {
+            "type": "boolean",
+            "description": "True when the From is not on a verified Sending domain: the message would not pass the Sending-domain gate at a provider that delivers outside"
+          },
+          "createdAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the message was captured"
+          }
+        },
+        "description": "A message a Test inbox kept instead of sending it out: what the recipient would have received"
+      },
+      "SiteCapturedMessageSurface": {
+        "type": "string",
+        "enum": ["broadcast", "automation", "transactional", "test"],
+        "description": "The surface that asked for the send a Captured message belongs to"
+      },
       "SiteConditionCombinator": {
         "type": "string",
         "enum": ["and", "or"],
@@ -14364,7 +14608,7 @@
             "description": "The Preset's params, validated against its `paramsSchema`: read the schema first"
           }
         },
-        "description": "Create a workspace integration. The provider/channel are derived from `config.kind`."
+        "description": "Create a workspace integration. The provider/channel are derived from `config.kind`. A Test inbox (`inbox`) takes no credentials, never becomes the default by itself, and a second one is refused with 409."
       },
       "SiteCreateInvitationInput": {
         "type": "object",
@@ -15122,6 +15366,28 @@
         },
         "description": "Request a password-reset link (always accepted; no account enumeration)"
       },
+      "SiteInboxConfig": {
+        "type": "object",
+        "required": ["kind"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["inbox"]
+          }
+        },
+        "description": "The Test inbox has no settings"
+      },
+      "SiteInboxConfigInput": {
+        "type": "object",
+        "required": ["kind"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["inbox"]
+          }
+        },
+        "description": "The Test inbox takes no credentials: a Workspace has at most one"
+      },
       "SiteInstanceState": {
         "type": "object",
         "required": ["telemetry", "noticeAcknowledged", "telemetrySchemaUrl"],
@@ -15209,13 +15475,17 @@
           },
           {
             "$ref": "#/components/schemas/SiteSesConfig"
+          },
+          {
+            "$ref": "#/components/schemas/SiteInboxConfig"
           }
         ],
         "discriminator": {
           "propertyName": "kind",
           "mapping": {
             "smtp": "#/components/schemas/SiteSmtpConfig",
-            "ses": "#/components/schemas/SiteSesConfig"
+            "ses": "#/components/schemas/SiteSesConfig",
+            "inbox": "#/components/schemas/SiteInboxConfig"
           }
         },
         "description": "Provider config returned to the UI, discriminated by `kind`. Secrets are omitted."
@@ -15228,20 +15498,24 @@
           },
           {
             "$ref": "#/components/schemas/SiteSesConfigInput"
+          },
+          {
+            "$ref": "#/components/schemas/SiteInboxConfigInput"
           }
         ],
         "discriminator": {
           "propertyName": "kind",
           "mapping": {
             "smtp": "#/components/schemas/SiteSmtpConfigInput",
-            "ses": "#/components/schemas/SiteSesConfigInput"
+            "ses": "#/components/schemas/SiteSesConfigInput",
+            "inbox": "#/components/schemas/SiteInboxConfigInput"
           }
         },
         "description": "Provider config submitted by the UI, discriminated by `kind`."
       },
       "SiteIntegrationProvider": {
         "type": "string",
-        "enum": ["smtp", "ses"],
+        "enum": ["smtp", "ses", "inbox"],
         "description": "Concrete sending provider"
       },
       "SiteIntegrationResource": {

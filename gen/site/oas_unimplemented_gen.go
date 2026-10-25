@@ -505,6 +505,15 @@ func (UnimplementedHandler) SiteBroadcastsUpdate(ctx context.Context, req *SiteU
 	return r, ht.ErrNotImplemented
 }
 
+// SiteCapturedMessagesList implements SiteCapturedMessages_list operation.
+//
+// List the Captured messages of the workspace, newest first. Every member may read.
+//
+// GET /workspaces/{workspaceId}/captured-messages
+func (UnimplementedHandler) SiteCapturedMessagesList(ctx context.Context, params SiteCapturedMessagesListParams) (r SiteCapturedMessagesListRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteContactsCreate implements SiteContacts_create operation.
 //
 // Create a resource from the site UI.
@@ -769,7 +778,7 @@ func (UnimplementedHandler) SiteIntegrationsRegenerateKey(ctx context.Context, p
 // SiteIntegrationsUnarchive implements SiteIntegrations_unarchive operation.
 //
 // Restore an archived integration to the list. It is not the default; promote it with an update.
-// Owners and admins only.
+// Refused with 409 when it is a Test inbox and the Workspace keeps another. Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/integrations/{id}/unarchive
 func (UnimplementedHandler) SiteIntegrationsUnarchive(ctx context.Context, params SiteIntegrationsUnarchiveParams) (r SiteIntegrationsUnarchiveRes, _ error) {

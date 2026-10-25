@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/sendlimiter"
@@ -381,6 +382,21 @@ func (_u *IntegrationUpdate) SetSendLimiter(v *SendLimiter) *IntegrationUpdate {
 	return _u.SetSendLimiterID(v.ID)
 }
 
+// AddCapturedMessageIDs adds the "captured_messages" edge to the CapturedMessage entity by IDs.
+func (_u *IntegrationUpdate) AddCapturedMessageIDs(ids ...int64) *IntegrationUpdate {
+	_u.mutation.AddCapturedMessageIDs(ids...)
+	return _u
+}
+
+// AddCapturedMessages adds the "captured_messages" edges to the CapturedMessage entity.
+func (_u *IntegrationUpdate) AddCapturedMessages(v ...*CapturedMessage) *IntegrationUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddCapturedMessageIDs(ids...)
+}
+
 // Mutation returns the IntegrationMutation object of the builder.
 func (_u *IntegrationUpdate) Mutation() *IntegrationMutation {
 	return _u.mutation
@@ -396,6 +412,27 @@ func (_u *IntegrationUpdate) ClearWorkspace() *IntegrationUpdate {
 func (_u *IntegrationUpdate) ClearSendLimiter() *IntegrationUpdate {
 	_u.mutation.ClearSendLimiter()
 	return _u
+}
+
+// ClearCapturedMessages clears all "captured_messages" edges to the CapturedMessage entity.
+func (_u *IntegrationUpdate) ClearCapturedMessages() *IntegrationUpdate {
+	_u.mutation.ClearCapturedMessages()
+	return _u
+}
+
+// RemoveCapturedMessageIDs removes the "captured_messages" edge to CapturedMessage entities by IDs.
+func (_u *IntegrationUpdate) RemoveCapturedMessageIDs(ids ...int64) *IntegrationUpdate {
+	_u.mutation.RemoveCapturedMessageIDs(ids...)
+	return _u
+}
+
+// RemoveCapturedMessages removes "captured_messages" edges to CapturedMessage entities.
+func (_u *IntegrationUpdate) RemoveCapturedMessages(v ...*CapturedMessage) *IntegrationUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveCapturedMessageIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -636,6 +673,51 @@ func (_u *IntegrationUpdate) sqlSave(ctx context.Context) (_node int, err error)
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(sendlimiter.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.CapturedMessagesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   integration.CapturedMessagesTable,
+			Columns: []string{integration.CapturedMessagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(capturedmessage.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedCapturedMessagesIDs(); len(nodes) > 0 && !_u.mutation.CapturedMessagesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   integration.CapturedMessagesTable,
+			Columns: []string{integration.CapturedMessagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(capturedmessage.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.CapturedMessagesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   integration.CapturedMessagesTable,
+			Columns: []string{integration.CapturedMessagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(capturedmessage.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -1015,6 +1097,21 @@ func (_u *IntegrationUpdateOne) SetSendLimiter(v *SendLimiter) *IntegrationUpdat
 	return _u.SetSendLimiterID(v.ID)
 }
 
+// AddCapturedMessageIDs adds the "captured_messages" edge to the CapturedMessage entity by IDs.
+func (_u *IntegrationUpdateOne) AddCapturedMessageIDs(ids ...int64) *IntegrationUpdateOne {
+	_u.mutation.AddCapturedMessageIDs(ids...)
+	return _u
+}
+
+// AddCapturedMessages adds the "captured_messages" edges to the CapturedMessage entity.
+func (_u *IntegrationUpdateOne) AddCapturedMessages(v ...*CapturedMessage) *IntegrationUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddCapturedMessageIDs(ids...)
+}
+
 // Mutation returns the IntegrationMutation object of the builder.
 func (_u *IntegrationUpdateOne) Mutation() *IntegrationMutation {
 	return _u.mutation
@@ -1030,6 +1127,27 @@ func (_u *IntegrationUpdateOne) ClearWorkspace() *IntegrationUpdateOne {
 func (_u *IntegrationUpdateOne) ClearSendLimiter() *IntegrationUpdateOne {
 	_u.mutation.ClearSendLimiter()
 	return _u
+}
+
+// ClearCapturedMessages clears all "captured_messages" edges to the CapturedMessage entity.
+func (_u *IntegrationUpdateOne) ClearCapturedMessages() *IntegrationUpdateOne {
+	_u.mutation.ClearCapturedMessages()
+	return _u
+}
+
+// RemoveCapturedMessageIDs removes the "captured_messages" edge to CapturedMessage entities by IDs.
+func (_u *IntegrationUpdateOne) RemoveCapturedMessageIDs(ids ...int64) *IntegrationUpdateOne {
+	_u.mutation.RemoveCapturedMessageIDs(ids...)
+	return _u
+}
+
+// RemoveCapturedMessages removes "captured_messages" edges to CapturedMessage entities.
+func (_u *IntegrationUpdateOne) RemoveCapturedMessages(v ...*CapturedMessage) *IntegrationUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveCapturedMessageIDs(ids...)
 }
 
 // Where appends a list predicates to the IntegrationUpdate builder.
@@ -1300,6 +1418,51 @@ func (_u *IntegrationUpdateOne) sqlSave(ctx context.Context) (_node *Integration
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(sendlimiter.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.CapturedMessagesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   integration.CapturedMessagesTable,
+			Columns: []string{integration.CapturedMessagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(capturedmessage.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedCapturedMessagesIDs(); len(nodes) > 0 && !_u.mutation.CapturedMessagesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   integration.CapturedMessagesTable,
+			Columns: []string{integration.CapturedMessagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(capturedmessage.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.CapturedMessagesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   integration.CapturedMessagesTable,
+			Columns: []string{integration.CapturedMessagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(capturedmessage.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

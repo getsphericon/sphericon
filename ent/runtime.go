@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/brandkit"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
+	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/customfield"
@@ -278,6 +279,33 @@ func init() {
 	broadcastrecipient.DefaultUpdatedAt = broadcastrecipientDescUpdatedAt.Default.(func() time.Time)
 	// broadcastrecipient.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	broadcastrecipient.UpdateDefaultUpdatedAt = broadcastrecipientDescUpdatedAt.UpdateDefault.(func() time.Time)
+	capturedmessageMixin := schema.CapturedMessage{}.Mixin()
+	capturedmessageMixinFields0 := capturedmessageMixin[0].Fields()
+	_ = capturedmessageMixinFields0
+	capturedmessageFields := schema.CapturedMessage{}.Fields()
+	_ = capturedmessageFields
+	// capturedmessageDescCreatedAt is the schema descriptor for created_at field.
+	capturedmessageDescCreatedAt := capturedmessageMixinFields0[0].Descriptor()
+	// capturedmessage.DefaultCreatedAt holds the default value on creation for the created_at field.
+	capturedmessage.DefaultCreatedAt = capturedmessageDescCreatedAt.Default.(func() time.Time)
+	// capturedmessageDescUpdatedAt is the schema descriptor for updated_at field.
+	capturedmessageDescUpdatedAt := capturedmessageMixinFields0[1].Descriptor()
+	// capturedmessage.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	capturedmessage.DefaultUpdatedAt = capturedmessageDescUpdatedAt.Default.(func() time.Time)
+	// capturedmessage.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	capturedmessage.UpdateDefaultUpdatedAt = capturedmessageDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// capturedmessageDescRecipient is the schema descriptor for recipient field.
+	capturedmessageDescRecipient := capturedmessageFields[5].Descriptor()
+	// capturedmessage.RecipientValidator is a validator for the "recipient" field. It is called by the builders before save.
+	capturedmessage.RecipientValidator = capturedmessageDescRecipient.Validators[0].(func(string) error)
+	// capturedmessageDescFromEmail is the schema descriptor for from_email field.
+	capturedmessageDescFromEmail := capturedmessageFields[6].Descriptor()
+	// capturedmessage.FromEmailValidator is a validator for the "from_email" field. It is called by the builders before save.
+	capturedmessage.FromEmailValidator = capturedmessageDescFromEmail.Validators[0].(func(string) error)
+	// capturedmessageDescFromUnverified is the schema descriptor for from_unverified field.
+	capturedmessageDescFromUnverified := capturedmessageFields[13].Descriptor()
+	// capturedmessage.DefaultFromUnverified holds the default value on creation for the from_unverified field.
+	capturedmessage.DefaultFromUnverified = capturedmessageDescFromUnverified.Default.(bool)
 	confirmationMixin := schema.Confirmation{}.Mixin()
 	confirmationMixinFields0 := confirmationMixin[0].Fields()
 	_ = confirmationMixinFields0

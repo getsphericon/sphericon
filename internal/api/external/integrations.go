@@ -84,7 +84,7 @@ func (h *Handlers) IntegrationsCreate(ctx context.Context, req *externalapi.Crea
 	case errors.As(err, &verr):
 		res := externalapi.IntegrationsCreateUnprocessableEntity(validationProblem(verr))
 		return &res, nil
-	case errors.Is(err, integrations.ErrDefaultConflict):
+	case integrations.IsConflict(err):
 		res := externalapi.IntegrationsCreateConflict(problem(http.StatusConflict, validation.Message(err)))
 		return &res, nil
 	case err != nil:
@@ -159,7 +159,7 @@ func (h *Handlers) IntegrationsUpdate(ctx context.Context, req *externalapi.Upda
 	case errors.As(err, &verr):
 		res := externalapi.IntegrationsUpdateUnprocessableEntity(validationProblem(verr))
 		return &res, nil
-	case errors.Is(err, integrations.ErrDefaultConflict):
+	case integrations.IsConflict(err):
 		res := externalapi.IntegrationsUpdateConflict(problem(http.StatusConflict, validation.Message(err)))
 		return &res, nil
 	case err != nil:
@@ -250,11 +250,14 @@ func (h *Handlers) IntegrationsUnarchive(ctx context.Context, params externalapi
 	s := auth.TokenScoped(ctx)
 	id := int64(params.ID)
 	err := h.integrations.Unarchive(ctx, s, id)
-	if errors.Is(err, integrations.ErrNotFound) {
+	switch {
+	case errors.Is(err, integrations.ErrNotFound):
 		res := externalapi.IntegrationsUnarchiveNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil
-	}
-	if err != nil {
+	case integrations.IsConflict(err):
+		res := externalapi.IntegrationsUnarchiveConflict(problem(http.StatusConflict, validation.Message(err)))
+		return &res, nil
+	case err != nil:
 		return nil, err
 	}
 	return h.archivedOrRestored(ctx, s, id)
@@ -288,6 +291,8 @@ func configInput(in externalapi.IntegrationConfigInput) (integrations.ConfigInpu
 			Region: c.Region, AccessKeyID: c.AccessKeyId, SecretAccessKey: c.SecretAccessKey,
 			From: string(c.From), FromName: c.FromName.Or(""), Endpoint: c.Endpoint.Or(""),
 		}}, nil
+	case externalapi.InboxConfigInputIntegrationConfigInputSum:
+		return integrations.ConfigInput{Inbox: &integrations.InboxConfig{}}, nil
 	}
 	return integrations.ConfigInput{}, errors.New("unsupported provider")
 }
@@ -325,6 +330,8 @@ func (h *Handlers) integrationResource(row *ent.Integration, limit sendlimit.Sta
 		res.Config = externalapi.IntegrationConfig{OneOf: externalapi.NewSmtpConfigIntegrationConfigSum(mapper.SmtpConfigToResource(*cfg.SMTP))}
 	case cfg.SES != nil:
 		res.Config = externalapi.IntegrationConfig{OneOf: externalapi.NewSesConfigIntegrationConfigSum(mapper.SesConfigToResource(*cfg.SES))}
+	case cfg.Inbox != nil:
+		res.Config = externalapi.IntegrationConfig{OneOf: externalapi.NewInboxConfigIntegrationConfigSum(externalapi.InboxConfig{Kind: externalapi.InboxConfigKindInbox})}
 	}
 	return res, nil
 }

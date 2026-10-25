@@ -6,6 +6,7 @@ package registry
 
 import (
 	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/messaging/inbox"
 	"github.com/getsphericon/sphericon/internal/messaging/ses"
 	"github.com/getsphericon/sphericon/internal/messaging/smtp"
 )
@@ -17,6 +18,7 @@ func New(allowPrivateSMTP bool) *messaging.Catalog {
 	return messaging.NewCatalog(
 		smtp.NewDescriptor(allowPrivateSMTP),
 		ses.Descriptor(),
+		inbox.Descriptor(),
 	)
 }
 

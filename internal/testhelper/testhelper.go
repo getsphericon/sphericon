@@ -38,6 +38,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/brandkit"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/buildinfo"
+	"github.com/getsphericon/sphericon/internal/capturedmessages"
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/db"
@@ -350,7 +351,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	// synchronously against capturing senders, so tests assert the real effect.
 	systemMail := &CapturingSender{}
 	customerMail := &CapturingSender{}
-	resolver := fixedResolver{sender: customerMail}
+	capturedModule := capturedmessages.New()
 	// stubTXT keeps sending-domain verification off real DNS: every lookup is
 	// NXDOMAIN, so an inline verify deterministically resolves to "not published".
 	var stubTXT sending.TXTLookup = func(context.Context, string) ([]string, error) {
@@ -399,9 +400,13 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	default:
 		outboundOpts = append(outboundOpts, outbound.WithSystemSender(systemMailFrom{systemMail}))
 	}
-	sender := outbound.New(bus, edition.Holds(), resolver, tracker, outboundOpts...)
 	fakeSES := &FakeSES{}
 	catalog := catalogWith(fakeSES)
+	resolver := inboxResolver{
+		fixed: fixedResolver{sender: customerMail},
+		real:  messaging.NewResolver(cipher, catalog, messaging.WithCapturers(capturedModule.Capturer)),
+	}
+	sender := outbound.New(bus, edition.Holds(), resolver, tracker, outboundOpts...)
 	inline := jobs.NewInline(client, sender, systemMail, domainverify.New(client, stubTXT, nil, accounts.OwnerNotifier(client, systemMail)), cipher, catalog, cfg.AppURL)
 	// The transactional send surface resolves a workspace sender directly (not via
 	// river), so it gets the same capturing resolver — its sends land in CustomerMail.
@@ -469,7 +474,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		Accounts: acc, Attempts: attempts, OAuth: oauthserver.NewService(client, oauthFetcher), Bus: bus, Webhooks: webhooksModule, Outbound: sender,
 		Segments: segmentsModule, EventLog: eventLog, Contacts: contactsModule, Erasure: erasureModule, Tags: tagsModule, Templates: templatesModule, BrandKit: brandKitModule,
 		Automations: automationsModule, Rules: rulesModule, Broadcasts: broadcastsModule,
-		Welcome: inline, SysMail: inline, SendingDomains: sendingDomainsModule, JoinDomains: joinDomainsModule, Integrations: integrationsModule,
+		Welcome: inline, SysMail: inline, SendingDomains: sendingDomainsModule, JoinDomains: joinDomainsModule, Integrations: integrationsModule, CapturedMessages: capturedModule,
 		Tokens: authtoken.New(baseCfg.JWTSecret).WithClock(st.now), Tracker: tracker, AppURL: baseCfg.AppURL, Audit: edition.Audit, Analytics: analytics.New().WithRetention(cfg.EventsRetention),
 		SecondFactor:             secondFactor,
 		Passkeys:                 passkeys,
@@ -550,6 +555,23 @@ type fixedResolver struct{ sender messaging.EmailSender }
 
 func (r fixedResolver) EmailSender(context.Context, *ent.Scoped) (messaging.EmailSender, error) {
 	return r.sender, nil
+}
+
+// inboxResolver is the capturing sender for every Workspace, except one whose default email
+// Integration is a Test inbox: that one is resolved as in production (the real Resolver over the
+// harness catalog, its Captured messages written to the database), so a Test inbox scenario sends
+// through the real provider while every other test keeps the capturing sender.
+type inboxResolver struct {
+	fixed fixedResolver
+	real  *messaging.Resolver
+}
+
+func (r inboxResolver) EmailSender(ctx context.Context, s *ent.Scoped) (messaging.EmailSender, error) {
+	integ, err := messaging.DefaultEmailIntegration(ctx, s)
+	if err == nil && messaging.Provider(integ.Provider) == messaging.ProviderInbox {
+		return r.real.EmailSender(ctx, s)
+	}
+	return r.fixed.EmailSender(ctx, s)
 }
 
 // Transport returns an ogen http.Client that dispatches in-memory to the

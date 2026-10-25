@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/brandkit"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
+	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/customfield"
@@ -591,6 +592,69 @@ func ScopedEntities() []ScopedEntity {
 			},
 		},
 		{
+			Name:    "CapturedMessage",
+			Audited: false,
+			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
+				return c.CapturedMessage.Query().Where(capturedmessage.WorkspaceID(ws)).Order(Asc(capturedmessage.FieldID)).IDs(ctx)
+			},
+			Get: func(ctx context.Context, s *Scoped, id int64) error {
+				_, err := s.CapturedMessage().Get(ctx, id)
+				return err
+			},
+			Touch: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.CapturedMessage().UpdateOneID(id).Exec(ctx)
+			},
+			BulkTouch: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.CapturedMessage().Update().Where(capturedmessage.ID(id)).Save(ctx)
+			},
+			Delete: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.CapturedMessage().DeleteOneID(id).Exec(ctx)
+			},
+			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.CapturedMessage().Delete().Where(capturedmessage.ID(id)).Exec(ctx)
+			},
+			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
+				src, err := s.c.CapturedMessage.Get(ctx, id)
+				if err != nil {
+					return 0, err
+				}
+				_ = remap
+				b := s.CapturedMessage().Create()
+				b.SetIntegrationID(remap("Integration", src.IntegrationID))
+				if src.OutboundMessageID != nil {
+					b.SetOutboundMessageID(remap("OutboundMessage", *src.OutboundMessageID))
+				}
+				b.SetSurface(src.Surface)
+				if src.SendingSource != nil {
+					b.SetSendingSource(*src.SendingSource)
+				}
+				b.SetRecipient(src.Recipient)
+				b.SetFromEmail(src.FromEmail)
+				if src.FromName != nil {
+					b.SetFromName(*src.FromName)
+				}
+				b.SetSubject(src.Subject)
+				b.SetHTML(src.HTML)
+				b.SetText(src.Text)
+				b.SetHeaders(src.Headers)
+				b.SetLinks(src.Links)
+				b.SetFromUnverified(src.FromUnverified)
+				created, err := b.Save(ctx)
+				if err != nil {
+					return 0, err
+				}
+				return created.WorkspaceID, nil
+			},
+			Refs: []ScopedRef{
+				{
+					Name: "outbound_message", Target: "OutboundMessage",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.CapturedMessage().UpdateOneID(id).SetOutboundMessageID(target).Exec(ctx)
+					},
+				},
+			},
+		},
+		{
 			Name:    "Confirmation",
 			Audited: false,
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
@@ -1045,6 +1109,12 @@ func ScopedEntities() []ScopedEntity {
 					Name: "send_limiter", Target: "SendLimiter",
 					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
 						return s.Integration().UpdateOneID(id).SetSendLimiterID(target).Exec(ctx)
+					},
+				},
+				{
+					Name: "captured_messages", Target: "CapturedMessage",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.Integration().UpdateOneID(id).AddCapturedMessageIDs(target).Exec(ctx)
 					},
 				},
 			},

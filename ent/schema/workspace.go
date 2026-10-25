@@ -180,6 +180,7 @@ func (Workspace) Edges() []ent.Edge {
 		edge.To("unsubscribes", Unsubscribe.Type),
 		edge.To("confirmations", Confirmation.Type),
 		edge.To("outbound_messages", OutboundMessage.Type),
+		edge.To("captured_messages", CapturedMessage.Type),
 		edge.To("memberships", Membership.Type),
 		edge.To("invitations", Invitation.Type),
 		edge.To("audit_entries", AuditEntry.Type),

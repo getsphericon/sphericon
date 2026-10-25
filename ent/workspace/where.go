@@ -1856,6 +1856,29 @@ func HasOutboundMessagesWith(preds ...predicate.OutboundMessage) predicate.Works
 	})
 }
 
+// HasCapturedMessages applies the HasEdge predicate on the "captured_messages" edge.
+func HasCapturedMessages() predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, CapturedMessagesTable, CapturedMessagesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasCapturedMessagesWith applies the HasEdge predicate on the "captured_messages" edge with a given conditions (other predicates).
+func HasCapturedMessagesWith(preds ...predicate.CapturedMessage) predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := newCapturedMessagesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasMemberships applies the HasEdge predicate on the "memberships" edge.
 func HasMemberships() predicate.Workspace {
 	return predicate.Workspace(func(s *sql.Selector) {

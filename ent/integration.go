@@ -69,9 +69,11 @@ type IntegrationEdges struct {
 	Workspace *Workspace `json:"workspace,omitempty"`
 	// SendLimiter holds the value of the send_limiter edge.
 	SendLimiter *SendLimiter `json:"send_limiter,omitempty"`
+	// CapturedMessages holds the value of the captured_messages edge.
+	CapturedMessages []*CapturedMessage `json:"captured_messages,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 }
 
 // WorkspaceOrErr returns the Workspace value or an error if the edge
@@ -94,6 +96,15 @@ func (e IntegrationEdges) SendLimiterOrErr() (*SendLimiter, error) {
 		return nil, &NotFoundError{label: sendlimiter.Label}
 	}
 	return nil, &NotLoadedError{edge: "send_limiter"}
+}
+
+// CapturedMessagesOrErr returns the CapturedMessages value or an error if the edge
+// was not loaded in eager-loading.
+func (e IntegrationEdges) CapturedMessagesOrErr() ([]*CapturedMessage, error) {
+	if e.loadedTypes[2] {
+		return e.CapturedMessages, nil
+	}
+	return nil, &NotLoadedError{edge: "captured_messages"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -273,6 +284,11 @@ func (_m *Integration) QueryWorkspace() *WorkspaceQuery {
 // QuerySendLimiter queries the "send_limiter" edge of the Integration entity.
 func (_m *Integration) QuerySendLimiter() *SendLimiterQuery {
 	return NewIntegrationClient(_m.config).QuerySendLimiter(_m)
+}
+
+// QueryCapturedMessages queries the "captured_messages" edge of the Integration entity.
+func (_m *Integration) QueryCapturedMessages() *CapturedMessageQuery {
+	return NewIntegrationClient(_m.config).QueryCapturedMessages(_m)
 }
 
 // Update returns a builder for updating this Integration.

@@ -57,6 +57,8 @@ const (
 	EdgeWorkspace = "workspace"
 	// EdgeSendLimiter holds the string denoting the send_limiter edge name in mutations.
 	EdgeSendLimiter = "send_limiter"
+	// EdgeCapturedMessages holds the string denoting the captured_messages edge name in mutations.
+	EdgeCapturedMessages = "captured_messages"
 	// Table holds the table name of the integration in the database.
 	Table = "integrations"
 	// WorkspaceTable is the table that holds the workspace relation/edge.
@@ -73,6 +75,13 @@ const (
 	SendLimiterInverseTable = "send_limiters"
 	// SendLimiterColumn is the table column denoting the send_limiter relation/edge.
 	SendLimiterColumn = "integration_id"
+	// CapturedMessagesTable is the table that holds the captured_messages relation/edge.
+	CapturedMessagesTable = "captured_messages"
+	// CapturedMessagesInverseTable is the table name for the CapturedMessage entity.
+	// It exists in this package in order to avoid circular dependency with the "capturedmessage" package.
+	CapturedMessagesInverseTable = "captured_messages"
+	// CapturedMessagesColumn is the table column denoting the captured_messages relation/edge.
+	CapturedMessagesColumn = "integration_id"
 )
 
 // Columns holds all SQL columns for integration fields.
@@ -163,8 +172,9 @@ type Provider string
 
 // Provider values.
 const (
-	ProviderSMTP Provider = "smtp"
-	ProviderSes  Provider = "ses"
+	ProviderSMTP  Provider = "smtp"
+	ProviderSes   Provider = "ses"
+	ProviderInbox Provider = "inbox"
 )
 
 func (pr Provider) String() string {
@@ -174,7 +184,7 @@ func (pr Provider) String() string {
 // ProviderValidator is a validator for the "provider" field enum values. It is called by the builders before save.
 func ProviderValidator(pr Provider) error {
 	switch pr {
-	case ProviderSMTP, ProviderSes:
+	case ProviderSMTP, ProviderSes, ProviderInbox:
 		return nil
 	default:
 		return fmt.Errorf("integration: invalid enum value for provider field: %q", pr)
@@ -297,6 +307,20 @@ func BySendLimiterField(field string, opts ...sql.OrderTermOption) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newSendLimiterStep(), sql.OrderByField(field, opts...))
 	}
 }
+
+// ByCapturedMessagesCount orders the results by captured_messages count.
+func ByCapturedMessagesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newCapturedMessagesStep(), opts...)
+	}
+}
+
+// ByCapturedMessages orders the results by captured_messages terms.
+func ByCapturedMessages(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newCapturedMessagesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newWorkspaceStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -309,5 +333,12 @@ func newSendLimiterStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(SendLimiterInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2O, false, SendLimiterTable, SendLimiterColumn),
+	)
+}
+func newCapturedMessagesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(CapturedMessagesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, CapturedMessagesTable, CapturedMessagesColumn),
 	)
 }

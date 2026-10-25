@@ -18498,6 +18498,270 @@ func (s *InUseProblemDetailsFields) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode implements json.Marshaler.
+func (s *InboxConfig) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *InboxConfig) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("kind")
+		s.Kind.Encode(e)
+	}
+}
+
+var jsonFieldsNameOfInboxConfig = [1]string{
+	0: "kind",
+}
+
+// Decode decodes InboxConfig from json.
+func (s *InboxConfig) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode InboxConfig to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "kind":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Kind.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"kind\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode InboxConfig")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000001,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfInboxConfig) {
+					name = jsonFieldsNameOfInboxConfig[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *InboxConfig) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *InboxConfig) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *InboxConfigInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *InboxConfigInput) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("kind")
+		s.Kind.Encode(e)
+	}
+}
+
+var jsonFieldsNameOfInboxConfigInput = [1]string{
+	0: "kind",
+}
+
+// Decode decodes InboxConfigInput from json.
+func (s *InboxConfigInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode InboxConfigInput to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "kind":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Kind.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"kind\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode InboxConfigInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000001,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfInboxConfigInput) {
+					name = jsonFieldsNameOfInboxConfigInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *InboxConfigInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *InboxConfigInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes InboxConfigInputKind as json.
+func (s InboxConfigInputKind) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes InboxConfigInputKind from json.
+func (s *InboxConfigInputKind) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode InboxConfigInputKind to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch InboxConfigInputKind(v) {
+	case InboxConfigInputKindInbox:
+		*s = InboxConfigInputKindInbox
+	default:
+		*s = InboxConfigInputKind(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s InboxConfigInputKind) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *InboxConfigInputKind) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes InboxConfigKind as json.
+func (s InboxConfigKind) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes InboxConfigKind from json.
+func (s *InboxConfigKind) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode InboxConfigKind to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch InboxConfigKind(v) {
+	case InboxConfigKindInbox:
+		*s = InboxConfigKindInbox
+	default:
+		*s = InboxConfigKind(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s InboxConfigKind) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *InboxConfigKind) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes IntegrationChannel as json.
 func (s IntegrationChannel) Encode(e *jx.Encoder) {
 	e.Str(string(s))
@@ -18717,6 +18981,9 @@ func (s IntegrationConfigInputSum) encodeFields(e *jx.Encoder) {
 				}
 			}
 		}
+	case InboxConfigInputIntegrationConfigInputSum:
+		e.FieldStart("kind")
+		e.Str("inbox")
 	}
 }
 
@@ -18749,6 +19016,9 @@ func (s *IntegrationConfigInputSum) Decode(d *jx.Decoder) error {
 				case "ses":
 					s.Type = SesConfigInputIntegrationConfigInputSum
 					found = true
+				case "inbox":
+					s.Type = InboxConfigInputIntegrationConfigInputSum
+					found = true
 				default:
 					return errors.Errorf("unknown type %s", typ)
 				}
@@ -18769,6 +19039,10 @@ func (s *IntegrationConfigInputSum) Decode(d *jx.Decoder) error {
 		}
 	case SesConfigInputIntegrationConfigInputSum:
 		if err := s.SesConfigInput.Decode(d); err != nil {
+			return err
+		}
+	case InboxConfigInputIntegrationConfigInputSum:
+		if err := s.InboxConfigInput.Decode(d); err != nil {
 			return err
 		}
 	default:
@@ -18861,6 +19135,9 @@ func (s IntegrationConfigSum) encodeFields(e *jx.Encoder) {
 				}
 			}
 		}
+	case InboxConfigIntegrationConfigSum:
+		e.FieldStart("kind")
+		e.Str("inbox")
 	}
 }
 
@@ -18893,6 +19170,9 @@ func (s *IntegrationConfigSum) Decode(d *jx.Decoder) error {
 				case "ses":
 					s.Type = SesConfigIntegrationConfigSum
 					found = true
+				case "inbox":
+					s.Type = InboxConfigIntegrationConfigSum
+					found = true
 				default:
 					return errors.Errorf("unknown type %s", typ)
 				}
@@ -18913,6 +19193,10 @@ func (s *IntegrationConfigSum) Decode(d *jx.Decoder) error {
 		}
 	case SesConfigIntegrationConfigSum:
 		if err := s.SesConfig.Decode(d); err != nil {
+			return err
+		}
+	case InboxConfigIntegrationConfigSum:
+		if err := s.InboxConfig.Decode(d); err != nil {
 			return err
 		}
 	default:
@@ -18954,6 +19238,8 @@ func (s *IntegrationProvider) Decode(d *jx.Decoder) error {
 		*s = IntegrationProviderSMTP
 	case IntegrationProviderSes:
 		*s = IntegrationProviderSes
+	case IntegrationProviderInbox:
+		*s = IntegrationProviderInbox
 	default:
 		*s = IntegrationProvider(v)
 	}
@@ -20208,6 +20494,44 @@ func (s *IntegrationsUnarchiveBadRequest) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *IntegrationsUnarchiveBadRequest) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes IntegrationsUnarchiveConflict as json.
+func (s *IntegrationsUnarchiveConflict) Encode(e *jx.Encoder) {
+	unwrapped := (*ProblemDetails)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes IntegrationsUnarchiveConflict from json.
+func (s *IntegrationsUnarchiveConflict) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode IntegrationsUnarchiveConflict to nil")
+	}
+	var unwrapped ProblemDetails
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = IntegrationsUnarchiveConflict(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *IntegrationsUnarchiveConflict) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *IntegrationsUnarchiveConflict) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

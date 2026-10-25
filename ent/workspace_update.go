@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/brandkit"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
+	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/customfield"
@@ -830,6 +831,21 @@ func (_u *WorkspaceUpdate) AddOutboundMessages(v ...*OutboundMessage) *Workspace
 	return _u.AddOutboundMessageIDs(ids...)
 }
 
+// AddCapturedMessageIDs adds the "captured_messages" edge to the CapturedMessage entity by IDs.
+func (_u *WorkspaceUpdate) AddCapturedMessageIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.AddCapturedMessageIDs(ids...)
+	return _u
+}
+
+// AddCapturedMessages adds the "captured_messages" edges to the CapturedMessage entity.
+func (_u *WorkspaceUpdate) AddCapturedMessages(v ...*CapturedMessage) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddCapturedMessageIDs(ids...)
+}
+
 // AddMembershipIDs adds the "memberships" edge to the Membership entity by IDs.
 func (_u *WorkspaceUpdate) AddMembershipIDs(ids ...int64) *WorkspaceUpdate {
 	_u.mutation.AddMembershipIDs(ids...)
@@ -1475,6 +1491,27 @@ func (_u *WorkspaceUpdate) RemoveOutboundMessages(v ...*OutboundMessage) *Worksp
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveOutboundMessageIDs(ids...)
+}
+
+// ClearCapturedMessages clears all "captured_messages" edges to the CapturedMessage entity.
+func (_u *WorkspaceUpdate) ClearCapturedMessages() *WorkspaceUpdate {
+	_u.mutation.ClearCapturedMessages()
+	return _u
+}
+
+// RemoveCapturedMessageIDs removes the "captured_messages" edge to CapturedMessage entities by IDs.
+func (_u *WorkspaceUpdate) RemoveCapturedMessageIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.RemoveCapturedMessageIDs(ids...)
+	return _u
+}
+
+// RemoveCapturedMessages removes "captured_messages" edges to CapturedMessage entities.
+func (_u *WorkspaceUpdate) RemoveCapturedMessages(v ...*CapturedMessage) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveCapturedMessageIDs(ids...)
 }
 
 // ClearMemberships clears all "memberships" edges to the Membership entity.
@@ -2981,6 +3018,51 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.CapturedMessagesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.CapturedMessagesTable,
+			Columns: []string{workspace.CapturedMessagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(capturedmessage.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedCapturedMessagesIDs(); len(nodes) > 0 && !_u.mutation.CapturedMessagesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.CapturedMessagesTable,
+			Columns: []string{workspace.CapturedMessagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(capturedmessage.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.CapturedMessagesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.CapturedMessagesTable,
+			Columns: []string{workspace.CapturedMessagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(capturedmessage.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _u.mutation.MembershipsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -3997,6 +4079,21 @@ func (_u *WorkspaceUpdateOne) AddOutboundMessages(v ...*OutboundMessage) *Worksp
 	return _u.AddOutboundMessageIDs(ids...)
 }
 
+// AddCapturedMessageIDs adds the "captured_messages" edge to the CapturedMessage entity by IDs.
+func (_u *WorkspaceUpdateOne) AddCapturedMessageIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.AddCapturedMessageIDs(ids...)
+	return _u
+}
+
+// AddCapturedMessages adds the "captured_messages" edges to the CapturedMessage entity.
+func (_u *WorkspaceUpdateOne) AddCapturedMessages(v ...*CapturedMessage) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddCapturedMessageIDs(ids...)
+}
+
 // AddMembershipIDs adds the "memberships" edge to the Membership entity by IDs.
 func (_u *WorkspaceUpdateOne) AddMembershipIDs(ids ...int64) *WorkspaceUpdateOne {
 	_u.mutation.AddMembershipIDs(ids...)
@@ -4642,6 +4739,27 @@ func (_u *WorkspaceUpdateOne) RemoveOutboundMessages(v ...*OutboundMessage) *Wor
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveOutboundMessageIDs(ids...)
+}
+
+// ClearCapturedMessages clears all "captured_messages" edges to the CapturedMessage entity.
+func (_u *WorkspaceUpdateOne) ClearCapturedMessages() *WorkspaceUpdateOne {
+	_u.mutation.ClearCapturedMessages()
+	return _u
+}
+
+// RemoveCapturedMessageIDs removes the "captured_messages" edge to CapturedMessage entities by IDs.
+func (_u *WorkspaceUpdateOne) RemoveCapturedMessageIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.RemoveCapturedMessageIDs(ids...)
+	return _u
+}
+
+// RemoveCapturedMessages removes "captured_messages" edges to CapturedMessage entities.
+func (_u *WorkspaceUpdateOne) RemoveCapturedMessages(v ...*CapturedMessage) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveCapturedMessageIDs(ids...)
 }
 
 // ClearMemberships clears all "memberships" edges to the Membership entity.
@@ -6171,6 +6289,51 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(outboundmessage.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.CapturedMessagesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.CapturedMessagesTable,
+			Columns: []string{workspace.CapturedMessagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(capturedmessage.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedCapturedMessagesIDs(); len(nodes) > 0 && !_u.mutation.CapturedMessagesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.CapturedMessagesTable,
+			Columns: []string{workspace.CapturedMessagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(capturedmessage.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.CapturedMessagesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.CapturedMessagesTable,
+			Columns: []string{workspace.CapturedMessagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(capturedmessage.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

@@ -177,6 +177,14 @@ type Converter interface {
 	// goverter:map TemplateID TemplateId
 	TransactionalMessageToResource(source *ent.OutboundMessage) siteapi.SiteTransactionalEmailResource
 
+	// A Captured message names its From as the contract does, and the nullable parts as null.
+	// goverter:map FromEmail From
+	// goverter:map IntegrationID IntegrationId
+	// goverter:map OutboundMessageID OutboundMessageId | nilEntityID
+	// goverter:map FromName FromName | nilString
+	// goverter:map SendingSource SendingSource | nilString
+	CapturedMessageToResource(source *ent.CapturedMessage) siteapi.SiteCapturedMessageResource
+
 	// The member's identity comes from the loaded User edge.
 	// goverter:map Edges.User.Email Email
 	// goverter:map Edges.User.Name Name
@@ -300,6 +308,14 @@ func nilString(v *string) siteapi.NilString {
 		return siteapi.NilString{Null: true}
 	}
 	return siteapi.NewNilString(*v)
+}
+
+// nilEntityID renders an optional reference: null when there is none.
+func nilEntityID(v *int64) siteapi.NilEntityId {
+	if v == nil {
+		return siteapi.NilEntityId{Null: true}
+	}
+	return siteapi.NewNilEntityId(siteapi.EntityId(*v))
 }
 
 // nilInt32 renders a limit: null when there is none.

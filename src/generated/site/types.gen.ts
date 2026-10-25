@@ -1685,6 +1685,95 @@ export const SiteBroadcastStatus = {
 export type SiteBroadcastStatus = typeof SiteBroadcastStatus[keyof typeof SiteBroadcastStatus];
 
 /**
+ * One header line of a Captured message
+ */
+export type SiteCapturedMessageHeader = {
+  name: string;
+  value: string;
+};
+
+/**
+ * A message a Test inbox kept instead of sending it out: what the recipient would have received
+ */
+export type SiteCapturedMessageResource = {
+  /**
+   * Unique identifier
+   */
+  id: EntityId;
+  /**
+   * The Test inbox (Integration) that captured the message
+   */
+  integrationId: EntityId;
+  /**
+   * The Outbound message of the send; null for a Test send, which records none
+   */
+  outboundMessageId: EntityId | null;
+  /**
+   * The surface that asked for the send
+   */
+  surface: SiteCapturedMessageSurface;
+  /**
+   * The Sending source of a Broadcast or Automation send; null for a Transactional or Test send
+   */
+  sendingSource: string | null;
+  /**
+   * Normalized (lower-cased) recipient address
+   */
+  recipient: string;
+  /**
+   * The From address as it was, not rewritten
+   */
+  from: string;
+  /**
+   * The From name; null when the message has none
+   */
+  fromName: string | null;
+  /**
+   * The subject
+   */
+  subject: string;
+  /**
+   * The HTML part
+   */
+  html: string;
+  /**
+   * The text part
+   */
+  text: string;
+  /**
+   * The header lines the message would carry on the wire, in order
+   */
+  headers: Array<SiteCapturedMessageHeader>;
+  /**
+   * The URLs of the links of the HTML part, tracker links as the recipient would get them
+   */
+  links: Array<string>;
+  /**
+   * True when the From is not on a verified Sending domain: the message would not pass the Sending-domain gate at a provider that delivers outside
+   */
+  fromUnverified: boolean;
+  /**
+   * When the message was captured
+   */
+  createdAt: Timestamp;
+};
+
+/**
+ * The surface that asked for the send a Captured message belongs to
+ */
+export const SiteCapturedMessageSurface = {
+  BROADCAST: 'broadcast',
+  AUTOMATION: 'automation',
+  TRANSACTIONAL: 'transactional',
+  TEST: 'test'
+} as const;
+
+/**
+ * The surface that asked for the send a Captured message belongs to
+ */
+export type SiteCapturedMessageSurface = typeof SiteCapturedMessageSurface[keyof typeof SiteCapturedMessageSurface];
+
+/**
  * How a condition group combines its entries
  */
 export const SiteConditionCombinator = { AND: 'and', OR: 'or' } as const;
@@ -1966,7 +2055,7 @@ export type SiteCreateEmailTemplateInput = {
 };
 
 /**
- * Create a workspace integration. The provider/channel are derived from `config.kind`.
+ * Create a workspace integration. The provider/channel are derived from `config.kind`. A Test inbox (`inbox`) takes no credentials, never becomes the default by itself, and a second one is refused with 409.
  */
 export type SiteCreateIntegrationInput = {
   name: string;
@@ -2555,6 +2644,20 @@ export type SiteForgotPasswordInput = {
 };
 
 /**
+ * The Test inbox has no settings
+ */
+export type SiteInboxConfig = {
+  kind: 'inbox';
+};
+
+/**
+ * The Test inbox takes no credentials: a Workspace has at most one
+ */
+export type SiteInboxConfigInput = {
+  kind: 'inbox';
+};
+
+/**
  * What an Instance's Owner sees and decides about the Instance itself: it belongs to no
  * Workspace. Only the Owners of the oldest existing Workspace may read or change it.
  */
@@ -2639,7 +2742,9 @@ export type SiteIntegrationConfig = ({
   kind: 'smtp';
 } & SiteSmtpConfig) | ({
   kind: 'ses';
-} & SiteSesConfig);
+} & SiteSesConfig) | ({
+  kind: 'inbox';
+} & SiteInboxConfig);
 
 /**
  * Provider config submitted by the UI, discriminated by `kind`.
@@ -2648,12 +2753,18 @@ export type SiteIntegrationConfigInput = ({
   kind: 'smtp';
 } & SiteSmtpConfigInput) | ({
   kind: 'ses';
-} & SiteSesConfigInput);
+} & SiteSesConfigInput) | ({
+  kind: 'inbox';
+} & SiteInboxConfigInput);
 
 /**
  * Concrete sending provider
  */
-export const SiteIntegrationProvider = { SMTP: 'smtp', SES: 'ses' } as const;
+export const SiteIntegrationProvider = {
+  SMTP: 'smtp',
+  SES: 'ses',
+  INBOX: 'inbox'
+} as const;
 
 /**
  * Concrete sending provider
@@ -5227,6 +5338,12 @@ export type SiteBroadcastResourceParentKey = WorkspaceId;
  * true lists the archived broadcasts instead of the kept ones; the default hides them
  */
 export type SiteBroadcastsListFilter = boolean;
+
+/**
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
+ */
+export type SiteCapturedMessageResourceParentKey = WorkspaceId;
 
 /**
  * Unique identifier
@@ -8459,6 +8576,75 @@ export type SiteBroadcastsUnarchiveResponses = {
 
 export type SiteBroadcastsUnarchiveResponse = SiteBroadcastsUnarchiveResponses[keyof SiteBroadcastsUnarchiveResponses];
 
+export type SiteCapturedMessagesListData = {
+  body?: never;
+  path: {
+    /**
+     * The Workspace id: its short opaque public address and the route key for nested
+     * workspace resources (ADR 0043)
+     */
+    workspaceId: WorkspaceId;
+  };
+  query?: {
+    /**
+     * Page number (1-based)
+     */
+    page?: number;
+    /**
+     * Page size
+     */
+    pageSize?: number;
+  };
+  url: '/workspaces/{workspaceId}/captured-messages';
+};
+
+export type SiteCapturedMessagesListErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+};
+
+export type SiteCapturedMessagesListError = SiteCapturedMessagesListErrors[keyof SiteCapturedMessagesListErrors];
+
+export type SiteCapturedMessagesListResponses = {
+  /**
+   * Paginated response
+   */
+  200: {
+    /**
+     * List of items
+     */
+    items: Array<SiteCapturedMessageResource>;
+    /**
+     * Page number (1-based)
+     */
+    page: number;
+    /**
+     * Page size
+     */
+    pageSize: number;
+    /**
+     * Total number of elements
+     */
+    totalItems: number;
+    /**
+     * Total number of pages
+     */
+    totalPages: number;
+  };
+};
+
+export type SiteCapturedMessagesListResponse = SiteCapturedMessagesListResponses[keyof SiteCapturedMessagesListResponses];
+
 export type SiteContactsListData = {
   body?: never;
   path: {
@@ -9519,6 +9705,10 @@ export type SiteIntegrationsUnarchiveErrors = {
    * RFC 7807 not found response
    */
   404: ProblemDetails;
+  /**
+   * RFC 7807 conflict response
+   */
+  409: ProblemDetails;
 };
 
 export type SiteIntegrationsUnarchiveError = SiteIntegrationsUnarchiveErrors[keyof SiteIntegrationsUnarchiveErrors];

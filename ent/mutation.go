@@ -21,6 +21,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/brandkit"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
+	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/contacttag"
@@ -49,6 +50,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/ent/rulefiring"
 	"github.com/getsphericon/sphericon/ent/ruletrigger"
+	"github.com/getsphericon/sphericon/ent/schema"
 	"github.com/getsphericon/sphericon/ent/schemastate"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
@@ -86,6 +88,7 @@ const (
 	TypeBrandKit             = "BrandKit"
 	TypeBroadcast            = "Broadcast"
 	TypeBroadcastRecipient   = "BroadcastRecipient"
+	TypeCapturedMessage      = "CapturedMessage"
 	TypeConfirmation         = "Confirmation"
 	TypeContact              = "Contact"
 	TypeContactTag           = "ContactTag"
@@ -9891,6 +9894,1389 @@ func (m *BroadcastRecipientMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown BroadcastRecipient edge %s", name)
 }
 
+// CapturedMessageMutation represents an operation that mutates the CapturedMessage nodes in the graph.
+type CapturedMessageMutation struct {
+	config
+	op                      Op
+	typ                     string
+	id                      *int64
+	created_at              *time.Time
+	updated_at              *time.Time
+	surface                 *capturedmessage.Surface
+	sending_source          *string
+	recipient               *string
+	from_email              *string
+	from_name               *string
+	subject                 *string
+	html                    *string
+	text                    *string
+	headers                 *[]schema.CapturedHeader
+	appendheaders           []schema.CapturedHeader
+	links                   *[]string
+	appendlinks             []string
+	from_unverified         *bool
+	clearedFields           map[string]struct{}
+	workspace               *int64
+	clearedworkspace        bool
+	integration             *int64
+	clearedintegration      bool
+	outbound_message        *int64
+	clearedoutbound_message bool
+	done                    bool
+	oldValue                func(context.Context) (*CapturedMessage, error)
+	predicates              []predicate.CapturedMessage
+}
+
+var _ ent.Mutation = (*CapturedMessageMutation)(nil)
+
+// capturedmessageOption allows management of the mutation configuration using functional options.
+type capturedmessageOption func(*CapturedMessageMutation)
+
+// newCapturedMessageMutation creates new mutation for the CapturedMessage entity.
+func newCapturedMessageMutation(c config, op Op, opts ...capturedmessageOption) *CapturedMessageMutation {
+	m := &CapturedMessageMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeCapturedMessage,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withCapturedMessageID sets the ID field of the mutation.
+func withCapturedMessageID(id int64) capturedmessageOption {
+	return func(m *CapturedMessageMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *CapturedMessage
+		)
+		m.oldValue = func(ctx context.Context) (*CapturedMessage, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().CapturedMessage.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withCapturedMessage sets the old CapturedMessage of the mutation.
+func withCapturedMessage(node *CapturedMessage) capturedmessageOption {
+	return func(m *CapturedMessageMutation) {
+		m.oldValue = func(context.Context) (*CapturedMessage, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m CapturedMessageMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m CapturedMessageMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of CapturedMessage entities.
+func (m *CapturedMessageMutation) SetID(id int64) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *CapturedMessageMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *CapturedMessageMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().CapturedMessage.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *CapturedMessageMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *CapturedMessageMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the CapturedMessage entity.
+// If the CapturedMessage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CapturedMessageMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *CapturedMessageMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *CapturedMessageMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *CapturedMessageMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the CapturedMessage entity.
+// If the CapturedMessage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CapturedMessageMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *CapturedMessageMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetWorkspaceID sets the "workspace_id" field.
+func (m *CapturedMessageMutation) SetWorkspaceID(i int64) {
+	m.workspace = &i
+}
+
+// WorkspaceID returns the value of the "workspace_id" field in the mutation.
+func (m *CapturedMessageMutation) WorkspaceID() (r int64, exists bool) {
+	v := m.workspace
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWorkspaceID returns the old "workspace_id" field's value of the CapturedMessage entity.
+// If the CapturedMessage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CapturedMessageMutation) OldWorkspaceID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWorkspaceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWorkspaceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWorkspaceID: %w", err)
+	}
+	return oldValue.WorkspaceID, nil
+}
+
+// ResetWorkspaceID resets all changes to the "workspace_id" field.
+func (m *CapturedMessageMutation) ResetWorkspaceID() {
+	m.workspace = nil
+}
+
+// SetIntegrationID sets the "integration_id" field.
+func (m *CapturedMessageMutation) SetIntegrationID(i int64) {
+	m.integration = &i
+}
+
+// IntegrationID returns the value of the "integration_id" field in the mutation.
+func (m *CapturedMessageMutation) IntegrationID() (r int64, exists bool) {
+	v := m.integration
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIntegrationID returns the old "integration_id" field's value of the CapturedMessage entity.
+// If the CapturedMessage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CapturedMessageMutation) OldIntegrationID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIntegrationID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIntegrationID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIntegrationID: %w", err)
+	}
+	return oldValue.IntegrationID, nil
+}
+
+// ResetIntegrationID resets all changes to the "integration_id" field.
+func (m *CapturedMessageMutation) ResetIntegrationID() {
+	m.integration = nil
+}
+
+// SetOutboundMessageID sets the "outbound_message_id" field.
+func (m *CapturedMessageMutation) SetOutboundMessageID(i int64) {
+	m.outbound_message = &i
+}
+
+// OutboundMessageID returns the value of the "outbound_message_id" field in the mutation.
+func (m *CapturedMessageMutation) OutboundMessageID() (r int64, exists bool) {
+	v := m.outbound_message
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOutboundMessageID returns the old "outbound_message_id" field's value of the CapturedMessage entity.
+// If the CapturedMessage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CapturedMessageMutation) OldOutboundMessageID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOutboundMessageID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOutboundMessageID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOutboundMessageID: %w", err)
+	}
+	return oldValue.OutboundMessageID, nil
+}
+
+// ClearOutboundMessageID clears the value of the "outbound_message_id" field.
+func (m *CapturedMessageMutation) ClearOutboundMessageID() {
+	m.outbound_message = nil
+	m.clearedFields[capturedmessage.FieldOutboundMessageID] = struct{}{}
+}
+
+// OutboundMessageIDCleared returns if the "outbound_message_id" field was cleared in this mutation.
+func (m *CapturedMessageMutation) OutboundMessageIDCleared() bool {
+	_, ok := m.clearedFields[capturedmessage.FieldOutboundMessageID]
+	return ok
+}
+
+// ResetOutboundMessageID resets all changes to the "outbound_message_id" field.
+func (m *CapturedMessageMutation) ResetOutboundMessageID() {
+	m.outbound_message = nil
+	delete(m.clearedFields, capturedmessage.FieldOutboundMessageID)
+}
+
+// SetSurface sets the "surface" field.
+func (m *CapturedMessageMutation) SetSurface(c capturedmessage.Surface) {
+	m.surface = &c
+}
+
+// Surface returns the value of the "surface" field in the mutation.
+func (m *CapturedMessageMutation) Surface() (r capturedmessage.Surface, exists bool) {
+	v := m.surface
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSurface returns the old "surface" field's value of the CapturedMessage entity.
+// If the CapturedMessage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CapturedMessageMutation) OldSurface(ctx context.Context) (v capturedmessage.Surface, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSurface is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSurface requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSurface: %w", err)
+	}
+	return oldValue.Surface, nil
+}
+
+// ResetSurface resets all changes to the "surface" field.
+func (m *CapturedMessageMutation) ResetSurface() {
+	m.surface = nil
+}
+
+// SetSendingSource sets the "sending_source" field.
+func (m *CapturedMessageMutation) SetSendingSource(s string) {
+	m.sending_source = &s
+}
+
+// SendingSource returns the value of the "sending_source" field in the mutation.
+func (m *CapturedMessageMutation) SendingSource() (r string, exists bool) {
+	v := m.sending_source
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSendingSource returns the old "sending_source" field's value of the CapturedMessage entity.
+// If the CapturedMessage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CapturedMessageMutation) OldSendingSource(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSendingSource is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSendingSource requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSendingSource: %w", err)
+	}
+	return oldValue.SendingSource, nil
+}
+
+// ClearSendingSource clears the value of the "sending_source" field.
+func (m *CapturedMessageMutation) ClearSendingSource() {
+	m.sending_source = nil
+	m.clearedFields[capturedmessage.FieldSendingSource] = struct{}{}
+}
+
+// SendingSourceCleared returns if the "sending_source" field was cleared in this mutation.
+func (m *CapturedMessageMutation) SendingSourceCleared() bool {
+	_, ok := m.clearedFields[capturedmessage.FieldSendingSource]
+	return ok
+}
+
+// ResetSendingSource resets all changes to the "sending_source" field.
+func (m *CapturedMessageMutation) ResetSendingSource() {
+	m.sending_source = nil
+	delete(m.clearedFields, capturedmessage.FieldSendingSource)
+}
+
+// SetRecipient sets the "recipient" field.
+func (m *CapturedMessageMutation) SetRecipient(s string) {
+	m.recipient = &s
+}
+
+// Recipient returns the value of the "recipient" field in the mutation.
+func (m *CapturedMessageMutation) Recipient() (r string, exists bool) {
+	v := m.recipient
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRecipient returns the old "recipient" field's value of the CapturedMessage entity.
+// If the CapturedMessage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CapturedMessageMutation) OldRecipient(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRecipient is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRecipient requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRecipient: %w", err)
+	}
+	return oldValue.Recipient, nil
+}
+
+// ResetRecipient resets all changes to the "recipient" field.
+func (m *CapturedMessageMutation) ResetRecipient() {
+	m.recipient = nil
+}
+
+// SetFromEmail sets the "from_email" field.
+func (m *CapturedMessageMutation) SetFromEmail(s string) {
+	m.from_email = &s
+}
+
+// FromEmail returns the value of the "from_email" field in the mutation.
+func (m *CapturedMessageMutation) FromEmail() (r string, exists bool) {
+	v := m.from_email
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFromEmail returns the old "from_email" field's value of the CapturedMessage entity.
+// If the CapturedMessage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CapturedMessageMutation) OldFromEmail(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFromEmail is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFromEmail requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFromEmail: %w", err)
+	}
+	return oldValue.FromEmail, nil
+}
+
+// ResetFromEmail resets all changes to the "from_email" field.
+func (m *CapturedMessageMutation) ResetFromEmail() {
+	m.from_email = nil
+}
+
+// SetFromName sets the "from_name" field.
+func (m *CapturedMessageMutation) SetFromName(s string) {
+	m.from_name = &s
+}
+
+// FromName returns the value of the "from_name" field in the mutation.
+func (m *CapturedMessageMutation) FromName() (r string, exists bool) {
+	v := m.from_name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFromName returns the old "from_name" field's value of the CapturedMessage entity.
+// If the CapturedMessage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CapturedMessageMutation) OldFromName(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFromName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFromName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFromName: %w", err)
+	}
+	return oldValue.FromName, nil
+}
+
+// ClearFromName clears the value of the "from_name" field.
+func (m *CapturedMessageMutation) ClearFromName() {
+	m.from_name = nil
+	m.clearedFields[capturedmessage.FieldFromName] = struct{}{}
+}
+
+// FromNameCleared returns if the "from_name" field was cleared in this mutation.
+func (m *CapturedMessageMutation) FromNameCleared() bool {
+	_, ok := m.clearedFields[capturedmessage.FieldFromName]
+	return ok
+}
+
+// ResetFromName resets all changes to the "from_name" field.
+func (m *CapturedMessageMutation) ResetFromName() {
+	m.from_name = nil
+	delete(m.clearedFields, capturedmessage.FieldFromName)
+}
+
+// SetSubject sets the "subject" field.
+func (m *CapturedMessageMutation) SetSubject(s string) {
+	m.subject = &s
+}
+
+// Subject returns the value of the "subject" field in the mutation.
+func (m *CapturedMessageMutation) Subject() (r string, exists bool) {
+	v := m.subject
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSubject returns the old "subject" field's value of the CapturedMessage entity.
+// If the CapturedMessage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CapturedMessageMutation) OldSubject(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSubject is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSubject requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSubject: %w", err)
+	}
+	return oldValue.Subject, nil
+}
+
+// ResetSubject resets all changes to the "subject" field.
+func (m *CapturedMessageMutation) ResetSubject() {
+	m.subject = nil
+}
+
+// SetHTML sets the "html" field.
+func (m *CapturedMessageMutation) SetHTML(s string) {
+	m.html = &s
+}
+
+// HTML returns the value of the "html" field in the mutation.
+func (m *CapturedMessageMutation) HTML() (r string, exists bool) {
+	v := m.html
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldHTML returns the old "html" field's value of the CapturedMessage entity.
+// If the CapturedMessage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CapturedMessageMutation) OldHTML(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldHTML is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldHTML requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldHTML: %w", err)
+	}
+	return oldValue.HTML, nil
+}
+
+// ResetHTML resets all changes to the "html" field.
+func (m *CapturedMessageMutation) ResetHTML() {
+	m.html = nil
+}
+
+// SetText sets the "text" field.
+func (m *CapturedMessageMutation) SetText(s string) {
+	m.text = &s
+}
+
+// Text returns the value of the "text" field in the mutation.
+func (m *CapturedMessageMutation) Text() (r string, exists bool) {
+	v := m.text
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldText returns the old "text" field's value of the CapturedMessage entity.
+// If the CapturedMessage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CapturedMessageMutation) OldText(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldText is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldText requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldText: %w", err)
+	}
+	return oldValue.Text, nil
+}
+
+// ResetText resets all changes to the "text" field.
+func (m *CapturedMessageMutation) ResetText() {
+	m.text = nil
+}
+
+// SetHeaders sets the "headers" field.
+func (m *CapturedMessageMutation) SetHeaders(sh []schema.CapturedHeader) {
+	m.headers = &sh
+	m.appendheaders = nil
+}
+
+// Headers returns the value of the "headers" field in the mutation.
+func (m *CapturedMessageMutation) Headers() (r []schema.CapturedHeader, exists bool) {
+	v := m.headers
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldHeaders returns the old "headers" field's value of the CapturedMessage entity.
+// If the CapturedMessage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CapturedMessageMutation) OldHeaders(ctx context.Context) (v []schema.CapturedHeader, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldHeaders is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldHeaders requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldHeaders: %w", err)
+	}
+	return oldValue.Headers, nil
+}
+
+// AppendHeaders adds sh to the "headers" field.
+func (m *CapturedMessageMutation) AppendHeaders(sh []schema.CapturedHeader) {
+	m.appendheaders = append(m.appendheaders, sh...)
+}
+
+// AppendedHeaders returns the list of values that were appended to the "headers" field in this mutation.
+func (m *CapturedMessageMutation) AppendedHeaders() ([]schema.CapturedHeader, bool) {
+	if len(m.appendheaders) == 0 {
+		return nil, false
+	}
+	return m.appendheaders, true
+}
+
+// ResetHeaders resets all changes to the "headers" field.
+func (m *CapturedMessageMutation) ResetHeaders() {
+	m.headers = nil
+	m.appendheaders = nil
+}
+
+// SetLinks sets the "links" field.
+func (m *CapturedMessageMutation) SetLinks(s []string) {
+	m.links = &s
+	m.appendlinks = nil
+}
+
+// Links returns the value of the "links" field in the mutation.
+func (m *CapturedMessageMutation) Links() (r []string, exists bool) {
+	v := m.links
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLinks returns the old "links" field's value of the CapturedMessage entity.
+// If the CapturedMessage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CapturedMessageMutation) OldLinks(ctx context.Context) (v []string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLinks is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLinks requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLinks: %w", err)
+	}
+	return oldValue.Links, nil
+}
+
+// AppendLinks adds s to the "links" field.
+func (m *CapturedMessageMutation) AppendLinks(s []string) {
+	m.appendlinks = append(m.appendlinks, s...)
+}
+
+// AppendedLinks returns the list of values that were appended to the "links" field in this mutation.
+func (m *CapturedMessageMutation) AppendedLinks() ([]string, bool) {
+	if len(m.appendlinks) == 0 {
+		return nil, false
+	}
+	return m.appendlinks, true
+}
+
+// ResetLinks resets all changes to the "links" field.
+func (m *CapturedMessageMutation) ResetLinks() {
+	m.links = nil
+	m.appendlinks = nil
+}
+
+// SetFromUnverified sets the "from_unverified" field.
+func (m *CapturedMessageMutation) SetFromUnverified(b bool) {
+	m.from_unverified = &b
+}
+
+// FromUnverified returns the value of the "from_unverified" field in the mutation.
+func (m *CapturedMessageMutation) FromUnverified() (r bool, exists bool) {
+	v := m.from_unverified
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFromUnverified returns the old "from_unverified" field's value of the CapturedMessage entity.
+// If the CapturedMessage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CapturedMessageMutation) OldFromUnverified(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFromUnverified is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFromUnverified requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFromUnverified: %w", err)
+	}
+	return oldValue.FromUnverified, nil
+}
+
+// ResetFromUnverified resets all changes to the "from_unverified" field.
+func (m *CapturedMessageMutation) ResetFromUnverified() {
+	m.from_unverified = nil
+}
+
+// ClearWorkspace clears the "workspace" edge to the Workspace entity.
+func (m *CapturedMessageMutation) ClearWorkspace() {
+	m.clearedworkspace = true
+	m.clearedFields[capturedmessage.FieldWorkspaceID] = struct{}{}
+}
+
+// WorkspaceCleared reports if the "workspace" edge to the Workspace entity was cleared.
+func (m *CapturedMessageMutation) WorkspaceCleared() bool {
+	return m.clearedworkspace
+}
+
+// WorkspaceIDs returns the "workspace" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// WorkspaceID instead. It exists only for internal usage by the builders.
+func (m *CapturedMessageMutation) WorkspaceIDs() (ids []int64) {
+	if id := m.workspace; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetWorkspace resets all changes to the "workspace" edge.
+func (m *CapturedMessageMutation) ResetWorkspace() {
+	m.workspace = nil
+	m.clearedworkspace = false
+}
+
+// ClearIntegration clears the "integration" edge to the Integration entity.
+func (m *CapturedMessageMutation) ClearIntegration() {
+	m.clearedintegration = true
+	m.clearedFields[capturedmessage.FieldIntegrationID] = struct{}{}
+}
+
+// IntegrationCleared reports if the "integration" edge to the Integration entity was cleared.
+func (m *CapturedMessageMutation) IntegrationCleared() bool {
+	return m.clearedintegration
+}
+
+// IntegrationIDs returns the "integration" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// IntegrationID instead. It exists only for internal usage by the builders.
+func (m *CapturedMessageMutation) IntegrationIDs() (ids []int64) {
+	if id := m.integration; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetIntegration resets all changes to the "integration" edge.
+func (m *CapturedMessageMutation) ResetIntegration() {
+	m.integration = nil
+	m.clearedintegration = false
+}
+
+// ClearOutboundMessage clears the "outbound_message" edge to the OutboundMessage entity.
+func (m *CapturedMessageMutation) ClearOutboundMessage() {
+	m.clearedoutbound_message = true
+	m.clearedFields[capturedmessage.FieldOutboundMessageID] = struct{}{}
+}
+
+// OutboundMessageCleared reports if the "outbound_message" edge to the OutboundMessage entity was cleared.
+func (m *CapturedMessageMutation) OutboundMessageCleared() bool {
+	return m.OutboundMessageIDCleared() || m.clearedoutbound_message
+}
+
+// OutboundMessageIDs returns the "outbound_message" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// OutboundMessageID instead. It exists only for internal usage by the builders.
+func (m *CapturedMessageMutation) OutboundMessageIDs() (ids []int64) {
+	if id := m.outbound_message; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetOutboundMessage resets all changes to the "outbound_message" edge.
+func (m *CapturedMessageMutation) ResetOutboundMessage() {
+	m.outbound_message = nil
+	m.clearedoutbound_message = false
+}
+
+// Where appends a list predicates to the CapturedMessageMutation builder.
+func (m *CapturedMessageMutation) Where(ps ...predicate.CapturedMessage) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the CapturedMessageMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *CapturedMessageMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.CapturedMessage, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *CapturedMessageMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *CapturedMessageMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (CapturedMessage).
+func (m *CapturedMessageMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *CapturedMessageMutation) Fields() []string {
+	fields := make([]string, 0, 16)
+	if m.created_at != nil {
+		fields = append(fields, capturedmessage.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, capturedmessage.FieldUpdatedAt)
+	}
+	if m.workspace != nil {
+		fields = append(fields, capturedmessage.FieldWorkspaceID)
+	}
+	if m.integration != nil {
+		fields = append(fields, capturedmessage.FieldIntegrationID)
+	}
+	if m.outbound_message != nil {
+		fields = append(fields, capturedmessage.FieldOutboundMessageID)
+	}
+	if m.surface != nil {
+		fields = append(fields, capturedmessage.FieldSurface)
+	}
+	if m.sending_source != nil {
+		fields = append(fields, capturedmessage.FieldSendingSource)
+	}
+	if m.recipient != nil {
+		fields = append(fields, capturedmessage.FieldRecipient)
+	}
+	if m.from_email != nil {
+		fields = append(fields, capturedmessage.FieldFromEmail)
+	}
+	if m.from_name != nil {
+		fields = append(fields, capturedmessage.FieldFromName)
+	}
+	if m.subject != nil {
+		fields = append(fields, capturedmessage.FieldSubject)
+	}
+	if m.html != nil {
+		fields = append(fields, capturedmessage.FieldHTML)
+	}
+	if m.text != nil {
+		fields = append(fields, capturedmessage.FieldText)
+	}
+	if m.headers != nil {
+		fields = append(fields, capturedmessage.FieldHeaders)
+	}
+	if m.links != nil {
+		fields = append(fields, capturedmessage.FieldLinks)
+	}
+	if m.from_unverified != nil {
+		fields = append(fields, capturedmessage.FieldFromUnverified)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *CapturedMessageMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case capturedmessage.FieldCreatedAt:
+		return m.CreatedAt()
+	case capturedmessage.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case capturedmessage.FieldWorkspaceID:
+		return m.WorkspaceID()
+	case capturedmessage.FieldIntegrationID:
+		return m.IntegrationID()
+	case capturedmessage.FieldOutboundMessageID:
+		return m.OutboundMessageID()
+	case capturedmessage.FieldSurface:
+		return m.Surface()
+	case capturedmessage.FieldSendingSource:
+		return m.SendingSource()
+	case capturedmessage.FieldRecipient:
+		return m.Recipient()
+	case capturedmessage.FieldFromEmail:
+		return m.FromEmail()
+	case capturedmessage.FieldFromName:
+		return m.FromName()
+	case capturedmessage.FieldSubject:
+		return m.Subject()
+	case capturedmessage.FieldHTML:
+		return m.HTML()
+	case capturedmessage.FieldText:
+		return m.Text()
+	case capturedmessage.FieldHeaders:
+		return m.Headers()
+	case capturedmessage.FieldLinks:
+		return m.Links()
+	case capturedmessage.FieldFromUnverified:
+		return m.FromUnverified()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *CapturedMessageMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case capturedmessage.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case capturedmessage.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case capturedmessage.FieldWorkspaceID:
+		return m.OldWorkspaceID(ctx)
+	case capturedmessage.FieldIntegrationID:
+		return m.OldIntegrationID(ctx)
+	case capturedmessage.FieldOutboundMessageID:
+		return m.OldOutboundMessageID(ctx)
+	case capturedmessage.FieldSurface:
+		return m.OldSurface(ctx)
+	case capturedmessage.FieldSendingSource:
+		return m.OldSendingSource(ctx)
+	case capturedmessage.FieldRecipient:
+		return m.OldRecipient(ctx)
+	case capturedmessage.FieldFromEmail:
+		return m.OldFromEmail(ctx)
+	case capturedmessage.FieldFromName:
+		return m.OldFromName(ctx)
+	case capturedmessage.FieldSubject:
+		return m.OldSubject(ctx)
+	case capturedmessage.FieldHTML:
+		return m.OldHTML(ctx)
+	case capturedmessage.FieldText:
+		return m.OldText(ctx)
+	case capturedmessage.FieldHeaders:
+		return m.OldHeaders(ctx)
+	case capturedmessage.FieldLinks:
+		return m.OldLinks(ctx)
+	case capturedmessage.FieldFromUnverified:
+		return m.OldFromUnverified(ctx)
+	}
+	return nil, fmt.Errorf("unknown CapturedMessage field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *CapturedMessageMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case capturedmessage.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case capturedmessage.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case capturedmessage.FieldWorkspaceID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWorkspaceID(v)
+		return nil
+	case capturedmessage.FieldIntegrationID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIntegrationID(v)
+		return nil
+	case capturedmessage.FieldOutboundMessageID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOutboundMessageID(v)
+		return nil
+	case capturedmessage.FieldSurface:
+		v, ok := value.(capturedmessage.Surface)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSurface(v)
+		return nil
+	case capturedmessage.FieldSendingSource:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSendingSource(v)
+		return nil
+	case capturedmessage.FieldRecipient:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRecipient(v)
+		return nil
+	case capturedmessage.FieldFromEmail:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFromEmail(v)
+		return nil
+	case capturedmessage.FieldFromName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFromName(v)
+		return nil
+	case capturedmessage.FieldSubject:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSubject(v)
+		return nil
+	case capturedmessage.FieldHTML:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetHTML(v)
+		return nil
+	case capturedmessage.FieldText:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetText(v)
+		return nil
+	case capturedmessage.FieldHeaders:
+		v, ok := value.([]schema.CapturedHeader)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetHeaders(v)
+		return nil
+	case capturedmessage.FieldLinks:
+		v, ok := value.([]string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLinks(v)
+		return nil
+	case capturedmessage.FieldFromUnverified:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFromUnverified(v)
+		return nil
+	}
+	return fmt.Errorf("unknown CapturedMessage field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *CapturedMessageMutation) AddedFields() []string {
+	var fields []string
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *CapturedMessageMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *CapturedMessageMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown CapturedMessage numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *CapturedMessageMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(capturedmessage.FieldOutboundMessageID) {
+		fields = append(fields, capturedmessage.FieldOutboundMessageID)
+	}
+	if m.FieldCleared(capturedmessage.FieldSendingSource) {
+		fields = append(fields, capturedmessage.FieldSendingSource)
+	}
+	if m.FieldCleared(capturedmessage.FieldFromName) {
+		fields = append(fields, capturedmessage.FieldFromName)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *CapturedMessageMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *CapturedMessageMutation) ClearField(name string) error {
+	switch name {
+	case capturedmessage.FieldOutboundMessageID:
+		m.ClearOutboundMessageID()
+		return nil
+	case capturedmessage.FieldSendingSource:
+		m.ClearSendingSource()
+		return nil
+	case capturedmessage.FieldFromName:
+		m.ClearFromName()
+		return nil
+	}
+	return fmt.Errorf("unknown CapturedMessage nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *CapturedMessageMutation) ResetField(name string) error {
+	switch name {
+	case capturedmessage.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case capturedmessage.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case capturedmessage.FieldWorkspaceID:
+		m.ResetWorkspaceID()
+		return nil
+	case capturedmessage.FieldIntegrationID:
+		m.ResetIntegrationID()
+		return nil
+	case capturedmessage.FieldOutboundMessageID:
+		m.ResetOutboundMessageID()
+		return nil
+	case capturedmessage.FieldSurface:
+		m.ResetSurface()
+		return nil
+	case capturedmessage.FieldSendingSource:
+		m.ResetSendingSource()
+		return nil
+	case capturedmessage.FieldRecipient:
+		m.ResetRecipient()
+		return nil
+	case capturedmessage.FieldFromEmail:
+		m.ResetFromEmail()
+		return nil
+	case capturedmessage.FieldFromName:
+		m.ResetFromName()
+		return nil
+	case capturedmessage.FieldSubject:
+		m.ResetSubject()
+		return nil
+	case capturedmessage.FieldHTML:
+		m.ResetHTML()
+		return nil
+	case capturedmessage.FieldText:
+		m.ResetText()
+		return nil
+	case capturedmessage.FieldHeaders:
+		m.ResetHeaders()
+		return nil
+	case capturedmessage.FieldLinks:
+		m.ResetLinks()
+		return nil
+	case capturedmessage.FieldFromUnverified:
+		m.ResetFromUnverified()
+		return nil
+	}
+	return fmt.Errorf("unknown CapturedMessage field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *CapturedMessageMutation) AddedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.workspace != nil {
+		edges = append(edges, capturedmessage.EdgeWorkspace)
+	}
+	if m.integration != nil {
+		edges = append(edges, capturedmessage.EdgeIntegration)
+	}
+	if m.outbound_message != nil {
+		edges = append(edges, capturedmessage.EdgeOutboundMessage)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *CapturedMessageMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case capturedmessage.EdgeWorkspace:
+		if id := m.workspace; id != nil {
+			return []ent.Value{*id}
+		}
+	case capturedmessage.EdgeIntegration:
+		if id := m.integration; id != nil {
+			return []ent.Value{*id}
+		}
+	case capturedmessage.EdgeOutboundMessage:
+		if id := m.outbound_message; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *CapturedMessageMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 3)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *CapturedMessageMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *CapturedMessageMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.clearedworkspace {
+		edges = append(edges, capturedmessage.EdgeWorkspace)
+	}
+	if m.clearedintegration {
+		edges = append(edges, capturedmessage.EdgeIntegration)
+	}
+	if m.clearedoutbound_message {
+		edges = append(edges, capturedmessage.EdgeOutboundMessage)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *CapturedMessageMutation) EdgeCleared(name string) bool {
+	switch name {
+	case capturedmessage.EdgeWorkspace:
+		return m.clearedworkspace
+	case capturedmessage.EdgeIntegration:
+		return m.clearedintegration
+	case capturedmessage.EdgeOutboundMessage:
+		return m.clearedoutbound_message
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *CapturedMessageMutation) ClearEdge(name string) error {
+	switch name {
+	case capturedmessage.EdgeWorkspace:
+		m.ClearWorkspace()
+		return nil
+	case capturedmessage.EdgeIntegration:
+		m.ClearIntegration()
+		return nil
+	case capturedmessage.EdgeOutboundMessage:
+		m.ClearOutboundMessage()
+		return nil
+	}
+	return fmt.Errorf("unknown CapturedMessage unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *CapturedMessageMutation) ResetEdge(name string) error {
+	switch name {
+	case capturedmessage.EdgeWorkspace:
+		m.ResetWorkspace()
+		return nil
+	case capturedmessage.EdgeIntegration:
+		m.ResetIntegration()
+		return nil
+	case capturedmessage.EdgeOutboundMessage:
+		m.ResetOutboundMessage()
+		return nil
+	}
+	return fmt.Errorf("unknown CapturedMessage edge %s", name)
+}
+
 // ConfirmationMutation represents an operation that mutates the Confirmation nodes in the graph.
 type ConfirmationMutation struct {
 	config
@@ -17761,6 +19147,9 @@ type IntegrationMutation struct {
 	clearedworkspace           bool
 	send_limiter               *int64
 	clearedsend_limiter        bool
+	captured_messages          map[int64]struct{}
+	removedcaptured_messages   map[int64]struct{}
+	clearedcaptured_messages   bool
 	done                       bool
 	oldValue                   func(context.Context) (*Integration, error)
 	predicates                 []predicate.Integration
@@ -18821,6 +20210,60 @@ func (m *IntegrationMutation) ResetSendLimiter() {
 	m.clearedsend_limiter = false
 }
 
+// AddCapturedMessageIDs adds the "captured_messages" edge to the CapturedMessage entity by ids.
+func (m *IntegrationMutation) AddCapturedMessageIDs(ids ...int64) {
+	if m.captured_messages == nil {
+		m.captured_messages = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.captured_messages[ids[i]] = struct{}{}
+	}
+}
+
+// ClearCapturedMessages clears the "captured_messages" edge to the CapturedMessage entity.
+func (m *IntegrationMutation) ClearCapturedMessages() {
+	m.clearedcaptured_messages = true
+}
+
+// CapturedMessagesCleared reports if the "captured_messages" edge to the CapturedMessage entity was cleared.
+func (m *IntegrationMutation) CapturedMessagesCleared() bool {
+	return m.clearedcaptured_messages
+}
+
+// RemoveCapturedMessageIDs removes the "captured_messages" edge to the CapturedMessage entity by IDs.
+func (m *IntegrationMutation) RemoveCapturedMessageIDs(ids ...int64) {
+	if m.removedcaptured_messages == nil {
+		m.removedcaptured_messages = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.captured_messages, ids[i])
+		m.removedcaptured_messages[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedCapturedMessages returns the removed IDs of the "captured_messages" edge to the CapturedMessage entity.
+func (m *IntegrationMutation) RemovedCapturedMessagesIDs() (ids []int64) {
+	for id := range m.removedcaptured_messages {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// CapturedMessagesIDs returns the "captured_messages" edge IDs in the mutation.
+func (m *IntegrationMutation) CapturedMessagesIDs() (ids []int64) {
+	for id := range m.captured_messages {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetCapturedMessages resets all changes to the "captured_messages" edge.
+func (m *IntegrationMutation) ResetCapturedMessages() {
+	m.captured_messages = nil
+	m.clearedcaptured_messages = false
+	m.removedcaptured_messages = nil
+}
+
 // Where appends a list predicates to the IntegrationMutation builder.
 func (m *IntegrationMutation) Where(ps ...predicate.Integration) {
 	m.predicates = append(m.predicates, ps...)
@@ -19368,12 +20811,15 @@ func (m *IntegrationMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *IntegrationMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.workspace != nil {
 		edges = append(edges, integration.EdgeWorkspace)
 	}
 	if m.send_limiter != nil {
 		edges = append(edges, integration.EdgeSendLimiter)
+	}
+	if m.captured_messages != nil {
+		edges = append(edges, integration.EdgeCapturedMessages)
 	}
 	return edges
 }
@@ -19390,30 +20836,50 @@ func (m *IntegrationMutation) AddedIDs(name string) []ent.Value {
 		if id := m.send_limiter; id != nil {
 			return []ent.Value{*id}
 		}
+	case integration.EdgeCapturedMessages:
+		ids := make([]ent.Value, 0, len(m.captured_messages))
+		for id := range m.captured_messages {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *IntegrationMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
+	if m.removedcaptured_messages != nil {
+		edges = append(edges, integration.EdgeCapturedMessages)
+	}
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *IntegrationMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case integration.EdgeCapturedMessages:
+		ids := make([]ent.Value, 0, len(m.removedcaptured_messages))
+		for id := range m.removedcaptured_messages {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *IntegrationMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.clearedworkspace {
 		edges = append(edges, integration.EdgeWorkspace)
 	}
 	if m.clearedsend_limiter {
 		edges = append(edges, integration.EdgeSendLimiter)
+	}
+	if m.clearedcaptured_messages {
+		edges = append(edges, integration.EdgeCapturedMessages)
 	}
 	return edges
 }
@@ -19426,6 +20892,8 @@ func (m *IntegrationMutation) EdgeCleared(name string) bool {
 		return m.clearedworkspace
 	case integration.EdgeSendLimiter:
 		return m.clearedsend_limiter
+	case integration.EdgeCapturedMessages:
+		return m.clearedcaptured_messages
 	}
 	return false
 }
@@ -19453,6 +20921,9 @@ func (m *IntegrationMutation) ResetEdge(name string) error {
 		return nil
 	case integration.EdgeSendLimiter:
 		m.ResetSendLimiter()
+		return nil
+	case integration.EdgeCapturedMessages:
+		m.ResetCapturedMessages()
 		return nil
 	}
 	return fmt.Errorf("unknown Integration edge %s", name)
@@ -47855,6 +49326,9 @@ type WorkspaceMutation struct {
 	outbound_messages           map[int64]struct{}
 	removedoutbound_messages    map[int64]struct{}
 	clearedoutbound_messages    bool
+	captured_messages           map[int64]struct{}
+	removedcaptured_messages    map[int64]struct{}
+	clearedcaptured_messages    bool
 	memberships                 map[int64]struct{}
 	removedmemberships          map[int64]struct{}
 	clearedmemberships          bool
@@ -50439,6 +51913,60 @@ func (m *WorkspaceMutation) ResetOutboundMessages() {
 	m.removedoutbound_messages = nil
 }
 
+// AddCapturedMessageIDs adds the "captured_messages" edge to the CapturedMessage entity by ids.
+func (m *WorkspaceMutation) AddCapturedMessageIDs(ids ...int64) {
+	if m.captured_messages == nil {
+		m.captured_messages = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.captured_messages[ids[i]] = struct{}{}
+	}
+}
+
+// ClearCapturedMessages clears the "captured_messages" edge to the CapturedMessage entity.
+func (m *WorkspaceMutation) ClearCapturedMessages() {
+	m.clearedcaptured_messages = true
+}
+
+// CapturedMessagesCleared reports if the "captured_messages" edge to the CapturedMessage entity was cleared.
+func (m *WorkspaceMutation) CapturedMessagesCleared() bool {
+	return m.clearedcaptured_messages
+}
+
+// RemoveCapturedMessageIDs removes the "captured_messages" edge to the CapturedMessage entity by IDs.
+func (m *WorkspaceMutation) RemoveCapturedMessageIDs(ids ...int64) {
+	if m.removedcaptured_messages == nil {
+		m.removedcaptured_messages = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.captured_messages, ids[i])
+		m.removedcaptured_messages[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedCapturedMessages returns the removed IDs of the "captured_messages" edge to the CapturedMessage entity.
+func (m *WorkspaceMutation) RemovedCapturedMessagesIDs() (ids []int64) {
+	for id := range m.removedcaptured_messages {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// CapturedMessagesIDs returns the "captured_messages" edge IDs in the mutation.
+func (m *WorkspaceMutation) CapturedMessagesIDs() (ids []int64) {
+	for id := range m.captured_messages {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetCapturedMessages resets all changes to the "captured_messages" edge.
+func (m *WorkspaceMutation) ResetCapturedMessages() {
+	m.captured_messages = nil
+	m.clearedcaptured_messages = false
+	m.removedcaptured_messages = nil
+}
+
 // AddMembershipIDs adds the "memberships" edge to the Membership entity by ids.
 func (m *WorkspaceMutation) AddMembershipIDs(ids ...int64) {
 	if m.memberships == nil {
@@ -51307,7 +52835,7 @@ func (m *WorkspaceMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *WorkspaceMutation) AddedEdges() []string {
-	edges := make([]string, 0, 32)
+	edges := make([]string, 0, 33)
 	if m.contacts != nil {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -51388,6 +52916,9 @@ func (m *WorkspaceMutation) AddedEdges() []string {
 	}
 	if m.outbound_messages != nil {
 		edges = append(edges, workspace.EdgeOutboundMessages)
+	}
+	if m.captured_messages != nil {
+		edges = append(edges, workspace.EdgeCapturedMessages)
 	}
 	if m.memberships != nil {
 		edges = append(edges, workspace.EdgeMemberships)
@@ -51573,6 +53104,12 @@ func (m *WorkspaceMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case workspace.EdgeCapturedMessages:
+		ids := make([]ent.Value, 0, len(m.captured_messages))
+		for id := range m.captured_messages {
+			ids = append(ids, id)
+		}
+		return ids
 	case workspace.EdgeMemberships:
 		ids := make([]ent.Value, 0, len(m.memberships))
 		for id := range m.memberships {
@@ -51609,7 +53146,7 @@ func (m *WorkspaceMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *WorkspaceMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 32)
+	edges := make([]string, 0, 33)
 	if m.removedcontacts != nil {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -51690,6 +53227,9 @@ func (m *WorkspaceMutation) RemovedEdges() []string {
 	}
 	if m.removedoutbound_messages != nil {
 		edges = append(edges, workspace.EdgeOutboundMessages)
+	}
+	if m.removedcaptured_messages != nil {
+		edges = append(edges, workspace.EdgeCapturedMessages)
 	}
 	if m.removedmemberships != nil {
 		edges = append(edges, workspace.EdgeMemberships)
@@ -51875,6 +53415,12 @@ func (m *WorkspaceMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case workspace.EdgeCapturedMessages:
+		ids := make([]ent.Value, 0, len(m.removedcaptured_messages))
+		for id := range m.removedcaptured_messages {
+			ids = append(ids, id)
+		}
+		return ids
 	case workspace.EdgeMemberships:
 		ids := make([]ent.Value, 0, len(m.removedmemberships))
 		for id := range m.removedmemberships {
@@ -51911,7 +53457,7 @@ func (m *WorkspaceMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *WorkspaceMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 32)
+	edges := make([]string, 0, 33)
 	if m.clearedcontacts {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -51993,6 +53539,9 @@ func (m *WorkspaceMutation) ClearedEdges() []string {
 	if m.clearedoutbound_messages {
 		edges = append(edges, workspace.EdgeOutboundMessages)
 	}
+	if m.clearedcaptured_messages {
+		edges = append(edges, workspace.EdgeCapturedMessages)
+	}
 	if m.clearedmemberships {
 		edges = append(edges, workspace.EdgeMemberships)
 	}
@@ -52069,6 +53618,8 @@ func (m *WorkspaceMutation) EdgeCleared(name string) bool {
 		return m.clearedconfirmations
 	case workspace.EdgeOutboundMessages:
 		return m.clearedoutbound_messages
+	case workspace.EdgeCapturedMessages:
+		return m.clearedcaptured_messages
 	case workspace.EdgeMemberships:
 		return m.clearedmemberships
 	case workspace.EdgeInvitations:
@@ -52175,6 +53726,9 @@ func (m *WorkspaceMutation) ResetEdge(name string) error {
 		return nil
 	case workspace.EdgeOutboundMessages:
 		m.ResetOutboundMessages()
+		return nil
+	case workspace.EdgeCapturedMessages:
+		m.ResetCapturedMessages()
 		return nil
 	case workspace.EdgeMemberships:
 		m.ResetMemberships()

@@ -14,6 +14,9 @@ enum SiteIntegrationChannel {
 enum SiteIntegrationProvider {
   smtp,
   ses,
+
+  /** The Test inbox: sends nothing outside and keeps each message as a Captured message */
+  inbox,
 }
 
 /** A per-second Send rate limit the user may set */
@@ -94,11 +97,17 @@ model SiteSesConfig {
   accessKeyIdLast4?: string | null;
 }
 
+/** The Test inbox has no settings */
+model SiteInboxConfig {
+  kind: "inbox";
+}
+
 /** Provider config returned to the UI, discriminated by `kind`. Secrets are omitted. */
 @discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
 union SiteIntegrationConfig {
   smtp: SiteSmtpConfig,
   ses: SiteSesConfig,
+  inbox: SiteInboxConfig,
 }
 
 // --- Input config (carries secrets; write-only) ---
@@ -127,11 +136,17 @@ model SiteSesConfigInput {
   endpoint?: string | null;
 }
 
+/** The Test inbox takes no credentials: a Workspace has at most one */
+model SiteInboxConfigInput {
+  kind: "inbox";
+}
+
 /** Provider config submitted by the UI, discriminated by `kind`. */
 @discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
 union SiteIntegrationConfigInput {
   smtp: SiteSmtpConfigInput,
   ses: SiteSesConfigInput,
+  inbox: SiteInboxConfigInput,
 }
 
 // --- Resource + request bodies ---
@@ -194,7 +209,7 @@ model SiteIntegrationResource {
   updatedAt: Timestamp;
 }
 
-/** Create a workspace integration. The provider/channel are derived from `config.kind`. */
+/** Create a workspace integration. The provider/channel are derived from `config.kind`. A Test inbox (`inbox`) takes no credentials, never becomes the default by itself, and a second one is refused with 409. */
 model SiteCreateIntegrationInput {
   name: string;
   enabled?: boolean;
@@ -325,7 +340,7 @@ namespace SiteIntegrations {
     | NotFoundProblem
     | InUseProblem;
 
-  /** Restore an archived integration to the list. It is not the default; promote it with an update. Owners and admins only. */
+  /** Restore an archived integration to the list. It is not the default; promote it with an update. Refused with 409 when it is a Test inbox and the Workspace keeps another. Owners and admins only. */
   @action("unarchive")
   @post
   @autoRoute
@@ -333,7 +348,8 @@ namespace SiteIntegrations {
     | SiteIntegrationResource
     | BadRequestProblem
     | ForbiddenProblem
-    | NotFoundProblem;
+    | NotFoundProblem
+    | ConflictProblem;
 }
 
 // A Preset's params are dynamic by nature, so the contract carries the Preset's JSON Schema

@@ -5,6 +5,7 @@ package resources
 
 import (
 	ent "github.com/getsphericon/sphericon/ent"
+	schema "github.com/getsphericon/sphericon/ent/schema"
 	site "github.com/getsphericon/sphericon/gen/site"
 	auditapi "github.com/getsphericon/sphericon/internal/auditapi"
 	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
@@ -101,6 +102,37 @@ func (c *ConverterImpl) BroadcastToResource(source *ent.Broadcast) site.SiteBroa
 		siteapiSiteBroadcastResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
 	return siteapiSiteBroadcastResource
+}
+func (c *ConverterImpl) CapturedMessageToResource(source *ent.CapturedMessage) site.SiteCapturedMessageResource {
+	var siteapiSiteCapturedMessageResource site.SiteCapturedMessageResource
+	if source != nil {
+		siteapiSiteCapturedMessageResource.ID = site.EntityId((*source).ID)
+		siteapiSiteCapturedMessageResource.IntegrationId = site.EntityId((*source).IntegrationID)
+		siteapiSiteCapturedMessageResource.OutboundMessageId = nilEntityID((*source).OutboundMessageID)
+		siteapiSiteCapturedMessageResource.Surface = site.SiteCapturedMessageSurface((*source).Surface)
+		siteapiSiteCapturedMessageResource.SendingSource = nilString((*source).SendingSource)
+		siteapiSiteCapturedMessageResource.Recipient = (*source).Recipient
+		siteapiSiteCapturedMessageResource.From = (*source).FromEmail
+		siteapiSiteCapturedMessageResource.FromName = nilString((*source).FromName)
+		siteapiSiteCapturedMessageResource.Subject = (*source).Subject
+		siteapiSiteCapturedMessageResource.HTML = (*source).HTML
+		siteapiSiteCapturedMessageResource.Text = (*source).Text
+		if (*source).Headers != nil {
+			siteapiSiteCapturedMessageResource.Headers = make([]site.SiteCapturedMessageHeader, len((*source).Headers))
+			for i := 0; i < len((*source).Headers); i++ {
+				siteapiSiteCapturedMessageResource.Headers[i] = c.schemaCapturedHeaderToSiteapiSiteCapturedMessageHeader((*source).Headers[i])
+			}
+		}
+		if (*source).Links != nil {
+			siteapiSiteCapturedMessageResource.Links = make([]string, len((*source).Links))
+			for j := 0; j < len((*source).Links); j++ {
+				siteapiSiteCapturedMessageResource.Links[j] = (*source).Links[j]
+			}
+		}
+		siteapiSiteCapturedMessageResource.FromUnverified = (*source).FromUnverified
+		siteapiSiteCapturedMessageResource.CreatedAt = timestamp((*source).CreatedAt)
+	}
+	return siteapiSiteCapturedMessageResource
 }
 func (c *ConverterImpl) ConfirmationToExport(source *ent.Confirmation) site.ContactExportConfirmation {
 	var siteapiContactExportConfirmation site.ContactExportConfirmation
@@ -626,6 +658,12 @@ func (c *ConverterImpl) rulesPlannedActionToSiteapiSiteRuleDryRunAction(source r
 	siteapiSiteRuleDryRunAction.Type = string(source.Type)
 	siteapiSiteRuleDryRunAction.Summary = source.Summary
 	return siteapiSiteRuleDryRunAction
+}
+func (c *ConverterImpl) schemaCapturedHeaderToSiteapiSiteCapturedMessageHeader(source schema.CapturedHeader) site.SiteCapturedMessageHeader {
+	var siteapiSiteCapturedMessageHeader site.SiteCapturedMessageHeader
+	siteapiSiteCapturedMessageHeader.Name = source.Name
+	siteapiSiteCapturedMessageHeader.Value = source.Value
+	return siteapiSiteCapturedMessageHeader
 }
 func (c *ConverterImpl) sendlimitValueToSiteapiSiteSendLimitValue(source sendlimit.Value) site.SiteSendLimitValue {
 	var siteapiSiteSendLimitValue site.SiteSendLimitValue

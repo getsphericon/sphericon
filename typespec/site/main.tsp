@@ -41,6 +41,7 @@ import "./resources/analytics.tsp";
 import "./resources/setup-checklist.tsp";
 import "./resources/suppressions.tsp";
 import "./resources/transactional-emails.tsp";
+import "./resources/captured-messages.tsp";
 import "./resources/oauth.tsp";
 import "./resources/audit.tsp";
 import "./resources/instance.tsp";

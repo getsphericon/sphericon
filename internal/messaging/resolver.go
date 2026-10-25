@@ -20,15 +20,15 @@ var ErrNoProvider = errors.New("no default provider configured")
 type Resolver struct {
 	cipher    *secrets.Cipher
 	catalog   *Catalog
-	capturers func(*ent.Scoped) Capturer
+	capturers func(s *ent.Scoped, integrationID int64) Capturer
 }
 
 // ResolverOption configures a Resolver.
 type ResolverOption func(*Resolver)
 
 // WithCapturers binds the Capturer a provider builder receives to the Workspace's scoped
-// handle.
-func WithCapturers(bind func(*ent.Scoped) Capturer) ResolverOption {
+// handle and to the Integration the sender is built for.
+func WithCapturers(bind func(s *ent.Scoped, integrationID int64) Capturer) ResolverOption {
 	return func(r *Resolver) { r.capturers = bind }
 }
 
@@ -55,7 +55,7 @@ func (r *Resolver) EmailSender(ctx context.Context, s *ent.Scoped) (EmailSender,
 	}
 	deps := Deps{Signer: NewDKIMSigner(s, r.cipher)}
 	if r.capturers != nil {
-		deps.Capturer = r.capturers(s)
+		deps.Capturer = r.capturers(s, row.ID)
 	}
 	return r.catalog.BuildEmail(Provider(row.Provider), config, deps)
 }

@@ -23,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/brandkit"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
+	"github.com/getsphericon/sphericon/internal/capturedmessages"
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/erasure"
 	"github.com/getsphericon/sphericon/internal/eventlog"
@@ -105,6 +106,7 @@ type Handlers struct {
 	sendingDomains *sendingdomains.Module
 	joinDomains    *joindomains.Module
 	integrations   *integrations.Module
+	captured       *capturedmessages.Module
 	tokens         *authtoken.Signer
 	tracker        *tracking.Tracker
 	appURL         string
@@ -200,11 +202,13 @@ type Deps struct {
 	SendingDomains *sendingdomains.Module
 	JoinDomains    *joindomains.Module
 	Integrations   *integrations.Module
-	Tokens         *authtoken.Signer
-	Tracker        *tracking.Tracker
-	AppURL         string
-	Audit          AuditLog
-	AbuseWatch     abusewatch.Watch
+	// CapturedMessages is the store of what the Workspace's Test inbox kept.
+	CapturedMessages *capturedmessages.Module
+	Tokens           *authtoken.Signer
+	Tracker          *tracking.Tracker
+	AppURL           string
+	Audit            AuditLog
+	AbuseWatch       abusewatch.Watch
 	// SupportEmail is where a suspended Workspace's owner appeals (SPHERICON_SUPPORT_EMAIL).
 	SupportEmail string
 	// Origins are the public origins a Workspace's pages point at besides the app's own.
@@ -249,7 +253,7 @@ func NewHandlers(d Deps) *Handlers {
 		accounts: d.Accounts, deletion: d.Deletion, attempts: d.Attempts, bus: d.Bus, webhooks: d.Webhooks, outbound: d.Outbound,
 		segments: d.Segments, eventlog: d.EventLog, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, templates: d.Templates, brandKit: d.BrandKit,
 		automations: d.Automations, rules: d.Rules, broadcasts: d.Broadcasts, welcome: d.Welcome,
-		sysmail: d.SysMail, sendingDomains: d.SendingDomains, joinDomains: d.JoinDomains, integrations: d.Integrations, tokens: d.Tokens, tracker: d.Tracker, appURL: d.AppURL,
+		sysmail: d.SysMail, sendingDomains: d.SendingDomains, joinDomains: d.JoinDomains, integrations: d.Integrations, captured: d.CapturedMessages, tokens: d.Tokens, tracker: d.Tracker, appURL: d.AppURL,
 		oauth: d.OAuth, audit: d.Audit, abuseWatch: d.AbuseWatch, supportEmail: d.SupportEmail, origins: d.Origins, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, passkeys: d.Passkeys, now: now, instance: d.Instance, accountLink: d.AccountLink, holds: d.Holds, requireVerification: d.RequireEmailVerification, signupOpen: d.SignupOpen, signupSurvey: d.SignupSurvey,
 		signin:     d.Signin,
 		challenges: d.Tokens.WithClock(d.Clock),

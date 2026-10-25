@@ -54,6 +54,7 @@ const (
 	SiteBroadcastsTestSendOperation                   OperationName = "SiteBroadcastsTestSend"
 	SiteBroadcastsUnarchiveOperation                  OperationName = "SiteBroadcastsUnarchive"
 	SiteBroadcastsUpdateOperation                     OperationName = "SiteBroadcastsUpdate"
+	SiteCapturedMessagesListOperation                 OperationName = "SiteCapturedMessagesList"
 	SiteContactsCreateOperation                       OperationName = "SiteContactsCreate"
 	SiteContactsDeleteOperation                       OperationName = "SiteContactsDelete"
 	SiteContactsEraseOperation                        OperationName = "SiteContactsErase"

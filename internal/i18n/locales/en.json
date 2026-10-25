@@ -141,6 +141,7 @@
   "errors.webhook_event_type_invalid": "the event type must be 1 to 100 characters",
   "errors.integration_not_found": "integration not found",
   "errors.integration_default_conflict": "a default provider already exists for this channel",
+  "errors.integration_one_inbox": "a workspace has at most one Test inbox: use the one it has, or archive it first",
   "errors.body_and_doc": "write a body or a doc, not both",
   "errors.already_member": "already a member",
   "errors.keep_one_owner": "the workspace must keep at least one owner",

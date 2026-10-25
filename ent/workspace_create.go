@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/brandkit"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
+	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/customfield"
@@ -747,6 +748,21 @@ func (_c *WorkspaceCreate) AddOutboundMessages(v ...*OutboundMessage) *Workspace
 		ids[i] = v[i].ID
 	}
 	return _c.AddOutboundMessageIDs(ids...)
+}
+
+// AddCapturedMessageIDs adds the "captured_messages" edge to the CapturedMessage entity by IDs.
+func (_c *WorkspaceCreate) AddCapturedMessageIDs(ids ...int64) *WorkspaceCreate {
+	_c.mutation.AddCapturedMessageIDs(ids...)
+	return _c
+}
+
+// AddCapturedMessages adds the "captured_messages" edges to the CapturedMessage entity.
+func (_c *WorkspaceCreate) AddCapturedMessages(v ...*CapturedMessage) *WorkspaceCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddCapturedMessageIDs(ids...)
 }
 
 // AddMembershipIDs adds the "memberships" edge to the Membership entity by IDs.
@@ -1489,6 +1505,22 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(outboundmessage.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.CapturedMessagesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.CapturedMessagesTable,
+			Columns: []string{workspace.CapturedMessagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(capturedmessage.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

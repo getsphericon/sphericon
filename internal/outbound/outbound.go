@@ -363,6 +363,7 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 	}
 	built.msg.From, built.msg.FromName = g.from, g.fromName
 	built.msg.To = dest
+	built.msg.Origin = &messaging.Origin{OutboundMessageID: msg.ID, Surface: string(req.Kind), Source: req.Source}
 
 	// Send rate limit: the last gate before the provider, so a message that was
 	// Skipped, Held or failed to render never spends capacity.

@@ -42,7 +42,7 @@ func (Integration) Fields() []ent.Field {
 			Values("email", "sms").
 			Default("email"),
 		field.Enum("provider").
-			Values("smtp", "ses"),
+			Values("smtp", "ses", "inbox"),
 		// Encrypted JSON blob produced by internal/secrets.Cipher.
 		field.String("config_encrypted").
 			Sensitive().
@@ -108,6 +108,10 @@ func (Integration) Edges() []ent.Edge {
 		edge.To("send_limiter", SendLimiter.Type).
 			Unique().
 			Annotations(entsql.OnDelete(entsql.Cascade)),
+		// What a Test inbox kept (ADR 0058) dies with the Integration; only Workspace deletion
+		// removes an Integration, since an Integration is archived, never deleted (ADR 0049).
+		edge.To("captured_messages", CapturedMessage.Type).
+			Annotations(entsql.OnDelete(entsql.Cascade)),
 	}
 }
 
@@ -119,5 +123,11 @@ func (Integration) Indexes() []ent.Index {
 			Annotations(entsql.IndexWhere("is_default AND discarded_at IS NULL")).
 			Unique(),
 		index.Fields("workspace_id"),
+		// At most one Test inbox per Workspace (ADR 0058); an archived one frees the place,
+		// so restoring it while another is kept trips this index.
+		index.Fields("workspace_id", "provider").
+			StorageKey("integrations_one_inbox_per_workspace").
+			Annotations(entsql.IndexWhere("provider = 'inbox' AND discarded_at IS NULL")).
+			Unique(),
 	}
 }

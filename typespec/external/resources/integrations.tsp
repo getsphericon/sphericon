@@ -41,11 +41,17 @@ model SesConfig {
   accessKeyIdLast4?: string | null;
 }
 
+/** The Test inbox has no settings */
+model InboxConfig {
+  kind: "inbox";
+}
+
 /** Provider config as returned, discriminated by `kind`. Secrets are omitted. */
 @discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
 union IntegrationConfig {
   smtp: SmtpConfig,
   ses: SesConfig,
+  inbox: InboxConfig,
 }
 
 // --- Input config (carries secrets; write-only) ---
@@ -74,11 +80,17 @@ model SesConfigInput {
   endpoint?: string | null;
 }
 
+/** The Test inbox takes no credentials: a Workspace has at most one */
+model InboxConfigInput {
+  kind: "inbox";
+}
+
 /** Provider config submitted by the caller, discriminated by `kind`. */
 @discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
 union IntegrationConfigInput {
   smtp: SmtpConfigInput,
   ses: SesConfigInput,
+  inbox: InboxConfigInput,
 }
 
 // --- Resource + request bodies ---
@@ -141,7 +153,7 @@ model IntegrationResource {
   updatedAt: Timestamp;
 }
 
-/** Create an Integration. The provider and channel are derived from `config.kind`. */
+/** Create an Integration. The provider and channel are derived from `config.kind`. A Test inbox (`inbox`) takes no credentials, never becomes the default by itself, and a second one is refused with 409. */
 model CreateIntegrationInput {
   name: string;
   enabled?: boolean;
@@ -277,7 +289,8 @@ interface Integrations {
     | BadRequestProblem
     | UnauthorizedProblem
     | TooManyRequestsProblem
-    | NotFoundProblem;
+    | NotFoundProblem
+    | ConflictProblem;
 
   /** Replace the Integration's hook key: the old hook URL stops working at once and the new one must be pasted into the provider. Needs a person: hidden from MCP. */
   @action("regenerate-key")

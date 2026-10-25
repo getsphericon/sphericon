@@ -117,6 +117,18 @@ func (f BroadcastRecipientFunc) Mutate(ctx context.Context, m ent.Mutation) (ent
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.BroadcastRecipientMutation", m)
 }
 
+// The CapturedMessageFunc type is an adapter to allow the use of ordinary
+// function as CapturedMessage mutator.
+type CapturedMessageFunc func(context.Context, *ent.CapturedMessageMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f CapturedMessageFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.CapturedMessageMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CapturedMessageMutation", m)
+}
+
 // The ConfirmationFunc type is an adapter to allow the use of ordinary
 // function as Confirmation mutator.
 type ConfirmationFunc func(context.Context, *ent.ConfirmationMutation) (ent.Value, error)

@@ -32,6 +32,8 @@ type Tx struct {
 	Broadcast *BroadcastClient
 	// BroadcastRecipient is the client for interacting with the BroadcastRecipient builders.
 	BroadcastRecipient *BroadcastRecipientClient
+	// CapturedMessage is the client for interacting with the CapturedMessage builders.
+	CapturedMessage *CapturedMessageClient
 	// Confirmation is the client for interacting with the Confirmation builders.
 	Confirmation *ConfirmationClient
 	// Contact is the client for interacting with the Contact builders.
@@ -260,6 +262,7 @@ func (tx *Tx) init() {
 	tx.BrandKit = NewBrandKitClient(tx.config)
 	tx.Broadcast = NewBroadcastClient(tx.config)
 	tx.BroadcastRecipient = NewBroadcastRecipientClient(tx.config)
+	tx.CapturedMessage = NewCapturedMessageClient(tx.config)
 	tx.Confirmation = NewConfirmationClient(tx.config)
 	tx.Contact = NewContactClient(tx.config)
 	tx.ContactTag = NewContactTagClient(tx.config)

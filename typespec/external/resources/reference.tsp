@@ -45,6 +45,9 @@ enum IntegrationChannel {
 enum IntegrationProvider {
   smtp,
   ses,
+
+  /** The Test inbox: sends nothing outside and keeps each message as a Captured message */
+  inbox,
 }
 
 /** Where an effective Send rate limit comes from */

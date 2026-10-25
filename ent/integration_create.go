@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/sendlimiter"
 	"github.com/getsphericon/sphericon/ent/workspace"
@@ -280,6 +281,21 @@ func (_c *IntegrationCreate) SetSendLimiter(v *SendLimiter) *IntegrationCreate {
 	return _c.SetSendLimiterID(v.ID)
 }
 
+// AddCapturedMessageIDs adds the "captured_messages" edge to the CapturedMessage entity by IDs.
+func (_c *IntegrationCreate) AddCapturedMessageIDs(ids ...int64) *IntegrationCreate {
+	_c.mutation.AddCapturedMessageIDs(ids...)
+	return _c
+}
+
+// AddCapturedMessages adds the "captured_messages" edges to the CapturedMessage entity.
+func (_c *IntegrationCreate) AddCapturedMessages(v ...*CapturedMessage) *IntegrationCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddCapturedMessageIDs(ids...)
+}
+
 // Mutation returns the IntegrationMutation object of the builder.
 func (_c *IntegrationCreate) Mutation() *IntegrationMutation {
 	return _c.mutation
@@ -538,6 +554,22 @@ func (_c *IntegrationCreate) createSpec() (*Integration, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(sendlimiter.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.CapturedMessagesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   integration.CapturedMessagesTable,
+			Columns: []string{integration.CapturedMessagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(capturedmessage.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

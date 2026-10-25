@@ -107,6 +107,7 @@ func TestEraseDueRemovesWhatAWorkspaceOwnedAndKeepsATombstone(t *testing.T) {
 	before := env.DB.Workspace.GetX(t.Context(), fixtures.UmbrellaID)
 	acme := rowsOf(t, env, fixtures.AcmeID)
 	require.NotZero(t, rowsOf(t, env, fixtures.UmbrellaID)["SendingDomain"])
+	require.NotZero(t, rowsOf(t, env, fixtures.UmbrellaID)["CapturedMessage"], "Umbrella's Test inbox holds a Captured message")
 
 	runErase(t, env)
 

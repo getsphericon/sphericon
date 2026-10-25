@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/brandkit"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
+	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/customfield"
@@ -35,6 +36,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/ent/rulefiring"
 	"github.com/getsphericon/sphericon/ent/ruletrigger"
+	"github.com/getsphericon/sphericon/ent/schema"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/sendlimiter"
@@ -235,6 +237,22 @@ func (s *Scoped) verifyBroadcastRecipient(ctx context.Context, ids []int64) erro
 	}
 	if n != len(ids) {
 		return fmt.Errorf("BroadcastRecipient: %w", ErrNotInWorkspace)
+	}
+	return nil
+}
+
+// verifyCapturedMessage fails with ErrNotInWorkspace unless every id is a CapturedMessage of the Workspace.
+func (s *Scoped) verifyCapturedMessage(ctx context.Context, ids []int64) error {
+	ids = uniqueIDs(ids)
+	if len(ids) == 0 {
+		return nil
+	}
+	n, err := s.c.CapturedMessage.Query().Where(capturedmessage.IDIn(ids...), capturedmessage.WorkspaceID(s.ws)).Count(ctx)
+	if err != nil {
+		return err
+	}
+	if n != len(ids) {
+		return fmt.Errorf("CapturedMessage: %w", ErrNotInWorkspace)
 	}
 	return nil
 }
@@ -8284,6 +8302,625 @@ func (x *BroadcastRecipientScopedUpdate) Exec(ctx context.Context) error {
 	return err
 }
 
+// CapturedMessageScoped reaches CapturedMessage entities of one Workspace.
+type CapturedMessageScoped struct{ s *Scoped }
+
+// CapturedMessage returns the CapturedMessage entities of the Workspace.
+func (s *Scoped) CapturedMessage() *CapturedMessageScoped { return &CapturedMessageScoped{s: s} }
+
+// Query returns a CapturedMessage query already confined to the Workspace.
+func (t *CapturedMessageScoped) Query() *CapturedMessageQuery {
+	return t.s.c.CapturedMessage.Query().Where(capturedmessage.WorkspaceID(t.s.ws))
+}
+
+// Get returns the CapturedMessage with the id; a row of another Workspace is not found.
+func (t *CapturedMessageScoped) Get(ctx context.Context, id int64) (*CapturedMessage, error) {
+	return t.Query().Where(capturedmessage.ID(id)).Only(ctx)
+}
+
+// CapturedMessageScopedDeleteOne wraps CapturedMessageDeleteOne.
+type CapturedMessageScopedDeleteOne struct {
+	s *Scoped
+	b *CapturedMessageDeleteOne
+}
+
+// DeleteOneID deletes the CapturedMessage with the id; a row of another Workspace is not found.
+func (t *CapturedMessageScoped) DeleteOneID(id int64) *CapturedMessageScopedDeleteOne {
+	return &CapturedMessageScopedDeleteOne{s: t.s, b: t.s.c.CapturedMessage.DeleteOneID(id).Where(capturedmessage.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *CapturedMessageScopedDeleteOne) Where(ps ...predicate.CapturedMessage) *CapturedMessageScopedDeleteOne {
+	x.b.Where(ps...)
+	return x
+}
+
+// Exec deletes the row; a missing row is a NotFoundError.
+func (x *CapturedMessageScopedDeleteOne) Exec(ctx context.Context) error {
+	return x.b.Exec(ctx)
+}
+
+// CapturedMessageScopedDelete wraps CapturedMessageDelete.
+type CapturedMessageScopedDelete struct {
+	s *Scoped
+	b *CapturedMessageDelete
+}
+
+// Delete deletes the CapturedMessage entities of the Workspace that match the predicates.
+func (t *CapturedMessageScoped) Delete() *CapturedMessageScopedDelete {
+	return &CapturedMessageScopedDelete{s: t.s, b: t.s.c.CapturedMessage.Delete().Where(capturedmessage.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *CapturedMessageScopedDelete) Where(ps ...predicate.CapturedMessage) *CapturedMessageScopedDelete {
+	x.b.Where(ps...)
+	return x
+}
+
+// Exec deletes the rows and returns how many were deleted.
+func (x *CapturedMessageScopedDelete) Exec(ctx context.Context) (int, error) {
+	return x.b.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- create
+
+// CapturedMessageScopedCreate wraps CapturedMessageCreate. It has no way to name a Workspace.
+type CapturedMessageScopedCreate struct {
+	s *Scoped
+	b *CapturedMessageCreate
+}
+
+// Create starts a CapturedMessage in the Workspace.
+func (t *CapturedMessageScoped) Create() *CapturedMessageScopedCreate {
+	return &CapturedMessageScopedCreate{s: t.s, b: t.s.c.CapturedMessage.Create().SetWorkspaceID(t.s.ws)}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (x *CapturedMessageScopedCreate) SetCreatedAt(v time.Time) *CapturedMessageScopedCreate {
+	x.b.SetCreatedAt(v)
+	return x
+}
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (x *CapturedMessageScopedCreate) SetNillableCreatedAt(v *time.Time) *CapturedMessageScopedCreate {
+	x.b.SetNillableCreatedAt(v)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *CapturedMessageScopedCreate) SetUpdatedAt(v time.Time) *CapturedMessageScopedCreate {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (x *CapturedMessageScopedCreate) SetNillableUpdatedAt(v *time.Time) *CapturedMessageScopedCreate {
+	x.b.SetNillableUpdatedAt(v)
+	return x
+}
+
+// SetIntegrationID sets the "integration_id" field.
+func (x *CapturedMessageScopedCreate) SetIntegrationID(v int64) *CapturedMessageScopedCreate {
+	x.b.SetIntegrationID(v)
+	return x
+}
+
+// SetOutboundMessageID sets the "outbound_message_id" field.
+func (x *CapturedMessageScopedCreate) SetOutboundMessageID(v int64) *CapturedMessageScopedCreate {
+	x.b.SetOutboundMessageID(v)
+	return x
+}
+
+// SetNillableOutboundMessageID sets the "outbound_message_id" field if the given value is not nil.
+func (x *CapturedMessageScopedCreate) SetNillableOutboundMessageID(v *int64) *CapturedMessageScopedCreate {
+	x.b.SetNillableOutboundMessageID(v)
+	return x
+}
+
+// SetSurface sets the "surface" field.
+func (x *CapturedMessageScopedCreate) SetSurface(v capturedmessage.Surface) *CapturedMessageScopedCreate {
+	x.b.SetSurface(v)
+	return x
+}
+
+// SetSendingSource sets the "sending_source" field.
+func (x *CapturedMessageScopedCreate) SetSendingSource(v string) *CapturedMessageScopedCreate {
+	x.b.SetSendingSource(v)
+	return x
+}
+
+// SetNillableSendingSource sets the "sending_source" field if the given value is not nil.
+func (x *CapturedMessageScopedCreate) SetNillableSendingSource(v *string) *CapturedMessageScopedCreate {
+	x.b.SetNillableSendingSource(v)
+	return x
+}
+
+// SetRecipient sets the "recipient" field.
+func (x *CapturedMessageScopedCreate) SetRecipient(v string) *CapturedMessageScopedCreate {
+	x.b.SetRecipient(v)
+	return x
+}
+
+// SetFromEmail sets the "from_email" field.
+func (x *CapturedMessageScopedCreate) SetFromEmail(v string) *CapturedMessageScopedCreate {
+	x.b.SetFromEmail(v)
+	return x
+}
+
+// SetFromName sets the "from_name" field.
+func (x *CapturedMessageScopedCreate) SetFromName(v string) *CapturedMessageScopedCreate {
+	x.b.SetFromName(v)
+	return x
+}
+
+// SetNillableFromName sets the "from_name" field if the given value is not nil.
+func (x *CapturedMessageScopedCreate) SetNillableFromName(v *string) *CapturedMessageScopedCreate {
+	x.b.SetNillableFromName(v)
+	return x
+}
+
+// SetSubject sets the "subject" field.
+func (x *CapturedMessageScopedCreate) SetSubject(v string) *CapturedMessageScopedCreate {
+	x.b.SetSubject(v)
+	return x
+}
+
+// SetHTML sets the "html" field.
+func (x *CapturedMessageScopedCreate) SetHTML(v string) *CapturedMessageScopedCreate {
+	x.b.SetHTML(v)
+	return x
+}
+
+// SetText sets the "text" field.
+func (x *CapturedMessageScopedCreate) SetText(v string) *CapturedMessageScopedCreate {
+	x.b.SetText(v)
+	return x
+}
+
+// SetHeaders sets the "headers" field.
+func (x *CapturedMessageScopedCreate) SetHeaders(v []schema.CapturedHeader) *CapturedMessageScopedCreate {
+	x.b.SetHeaders(v)
+	return x
+}
+
+// SetLinks sets the "links" field.
+func (x *CapturedMessageScopedCreate) SetLinks(v []string) *CapturedMessageScopedCreate {
+	x.b.SetLinks(v)
+	return x
+}
+
+// SetFromUnverified sets the "from_unverified" field.
+func (x *CapturedMessageScopedCreate) SetFromUnverified(v bool) *CapturedMessageScopedCreate {
+	x.b.SetFromUnverified(v)
+	return x
+}
+
+// SetNillableFromUnverified sets the "from_unverified" field if the given value is not nil.
+func (x *CapturedMessageScopedCreate) SetNillableFromUnverified(v *bool) *CapturedMessageScopedCreate {
+	x.b.SetNillableFromUnverified(v)
+	return x
+}
+
+// SetIntegration sets the "integration" edge to the Integration entity.
+func (x *CapturedMessageScopedCreate) SetIntegration(v *Integration) *CapturedMessageScopedCreate {
+	x.b.SetIntegration(v)
+	return x
+}
+
+// SetOutboundMessage sets the "outbound_message" edge to the OutboundMessage entity.
+func (x *CapturedMessageScopedCreate) SetOutboundMessage(v *OutboundMessage) *CapturedMessageScopedCreate {
+	x.b.SetOutboundMessage(v)
+	return x
+}
+
+func (x *CapturedMessageScopedCreate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	if err := x.s.verifyIntegration(ctx, m.IntegrationIDs()); err != nil {
+		return fmt.Errorf("integration: %w", err)
+	}
+	if err := x.s.verifyOutboundMessage(ctx, m.OutboundMessageIDs()); err != nil {
+		return fmt.Errorf("outbound_message: %w", err)
+	}
+	return nil
+}
+
+// Save verifies the references against the Workspace, then creates the CapturedMessage.
+func (x *CapturedMessageScopedCreate) Save(ctx context.Context) (*CapturedMessage, error) {
+	if err := x.check(ctx); err != nil {
+		return nil, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *CapturedMessageScopedCreate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- create bulk
+
+// CapturedMessageScopedCreateBulk creates several CapturedMessage entities of one Workspace at once.
+type CapturedMessageScopedCreateBulk struct {
+	s  *Scoped
+	xs []*CapturedMessageScopedCreate
+}
+
+// CreateBulk batches creates started on this Workspace.
+func (t *CapturedMessageScoped) CreateBulk(xs ...*CapturedMessageScopedCreate) *CapturedMessageScopedCreateBulk {
+	return &CapturedMessageScopedCreateBulk{s: t.s, xs: xs}
+}
+
+func (b *CapturedMessageScopedCreateBulk) raw(ctx context.Context) (*CapturedMessageCreateBulk, error) {
+	builders := make([]*CapturedMessageCreate, len(b.xs))
+	for i, x := range b.xs {
+		if x.s.ws != b.s.ws {
+			return nil, fmt.Errorf("CapturedMessage: builder of another scope: %w", ErrNotInWorkspace)
+		}
+		if err := x.check(ctx); err != nil {
+			return nil, err
+		}
+		builders[i] = x.b
+	}
+	return b.s.c.CapturedMessage.CreateBulk(builders...), nil
+}
+
+// Save verifies every builder's references, then creates the CapturedMessage entities.
+func (b *CapturedMessageScopedCreateBulk) Save(ctx context.Context) ([]*CapturedMessage, error) {
+	raw, err := b.raw(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return raw.Save(ctx)
+}
+
+// Exec is like Save, discarding the entities.
+func (b *CapturedMessageScopedCreateBulk) Exec(ctx context.Context) error {
+	_, err := b.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- upsert
+
+// CapturedMessageScopedUpsert is the "ON CONFLICT ... DO UPDATE" setter. It cannot move a row to
+// another Workspace or point a reference at a value that was not verified on create.
+type CapturedMessageScopedUpsert struct{ u *sql.UpdateSet }
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *CapturedMessageScopedUpsert) SetUpdatedAt(v time.Time) *CapturedMessageScopedUpsert {
+	u.u.Set(capturedmessage.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *CapturedMessageScopedUpsert) UpdateUpdatedAt() *CapturedMessageScopedUpsert {
+	u.u.SetExcluded(capturedmessage.FieldUpdatedAt)
+	return u
+}
+
+// UpdateOutboundMessageID sets the "outbound_message_id" field to the value that was provided on create.
+func (u *CapturedMessageScopedUpsert) UpdateOutboundMessageID() *CapturedMessageScopedUpsert {
+	u.u.SetExcluded(capturedmessage.FieldOutboundMessageID)
+	return u
+}
+
+// ClearOutboundMessageID clears the value of the "outbound_message_id" field.
+func (u *CapturedMessageScopedUpsert) ClearOutboundMessageID() *CapturedMessageScopedUpsert {
+	u.u.SetNull(capturedmessage.FieldOutboundMessageID)
+	return u
+}
+
+// conflictOptions confines the DO UPDATE part to rows of the Workspace.
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *CapturedMessageScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
+		sql.ConflictColumns(columns...),
+		sql.UpdateWhere(sql.EQ(capturedmessage.FieldWorkspaceID, t.s.ws)),
+	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
+}
+
+// CapturedMessageScopedUpsertOne is the "upsert" of one CapturedMessage.
+type CapturedMessageScopedUpsertOne struct {
+	x *CapturedMessageScopedCreate
+	u *CapturedMessageUpsertOne
+	// doNothing: the conflict action is DO NOTHING (the only upsert an audited entity allows).
+	doNothing bool
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (x *CapturedMessageScopedCreate) OnConflictColumns(columns ...string) *CapturedMessageScopedUpsertOne {
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *CapturedMessageScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *CapturedMessageScopedUpsertOne {
+	return &CapturedMessageScopedUpsertOne{x: x, u: x.b.OnConflict((&CapturedMessageScoped{s: x.s}).conflictOptions(columns, target)...)}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *CapturedMessageScopedUpsertOne) UpdateNewValues() *CapturedMessageScopedUpsertOne {
+	u.u.UpdateNewValues()
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *CapturedMessageScopedUpsertOne) Ignore() *CapturedMessageScopedUpsertOne {
+	u.u.Ignore()
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *CapturedMessageScopedUpsertOne) DoNothing() *CapturedMessageScopedUpsertOne {
+	u.u.DoNothing()
+	u.doNothing = true
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *CapturedMessageScopedUpsertOne) Update(set func(*CapturedMessageScopedUpsert)) *CapturedMessageScopedUpsertOne {
+	u.u.Update(func(s *CapturedMessageUpsert) { set(&CapturedMessageScopedUpsert{u: s.UpdateSet}) })
+	return u
+}
+
+// Exec verifies the references, then executes the upsert.
+func (u *CapturedMessageScopedUpsertOne) Exec(ctx context.Context) error {
+	if err := u.x.check(ctx); err != nil {
+		return err
+	}
+	return u.u.Exec(ctx)
+}
+
+// ID is like Exec, returning the inserted or updated id.
+func (u *CapturedMessageScopedUpsertOne) ID(ctx context.Context) (int64, error) {
+	if err := u.x.check(ctx); err != nil {
+		return 0, err
+	}
+	return u.u.ID(ctx)
+}
+
+// CapturedMessageScopedUpsertBulk is the "upsert" of several CapturedMessage entities.
+type CapturedMessageScopedUpsertBulk struct {
+	b       *CapturedMessageScopedCreateBulk
+	t       *CapturedMessageScoped
+	columns []string
+	opts    []func(*CapturedMessageUpsertBulk)
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (b *CapturedMessageScopedCreateBulk) OnConflictColumns(columns ...string) *CapturedMessageScopedUpsertBulk {
+	return &CapturedMessageScopedUpsertBulk{b: b, t: &CapturedMessageScoped{s: b.s}, columns: columns}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *CapturedMessageScopedUpsertBulk) UpdateNewValues() *CapturedMessageScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *CapturedMessageUpsertBulk) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *CapturedMessageScopedUpsertBulk) Ignore() *CapturedMessageScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *CapturedMessageUpsertBulk) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *CapturedMessageScopedUpsertBulk) DoNothing() *CapturedMessageScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *CapturedMessageUpsertBulk) { r.DoNothing() })
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *CapturedMessageScopedUpsertBulk) Update(set func(*CapturedMessageScopedUpsert)) *CapturedMessageScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *CapturedMessageUpsertBulk) {
+		r.Update(func(s *CapturedMessageUpsert) { set(&CapturedMessageScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// Exec verifies every builder's references, then executes the upsert.
+func (u *CapturedMessageScopedUpsertBulk) Exec(ctx context.Context) error {
+	raw, err := u.b.raw(ctx)
+	if err != nil {
+		return err
+	}
+	r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
+	for _, o := range u.opts {
+		o(r)
+	}
+	return r.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- update
+
+// CapturedMessageScopedUpdateOne wraps CapturedMessageUpdateOne. It has no way to move the row to another Workspace.
+type CapturedMessageScopedUpdateOne struct {
+	s *Scoped
+	b *CapturedMessageUpdateOne
+}
+
+// UpdateOneID updates the CapturedMessage with the id; a row of another Workspace is not found.
+func (t *CapturedMessageScoped) UpdateOneID(id int64) *CapturedMessageScopedUpdateOne {
+	return &CapturedMessageScopedUpdateOne{s: t.s, b: t.s.c.CapturedMessage.UpdateOneID(id).Where(capturedmessage.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *CapturedMessageScopedUpdateOne) Where(ps ...predicate.CapturedMessage) *CapturedMessageScopedUpdateOne {
+	x.b.Where(ps...)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *CapturedMessageScopedUpdateOne) SetUpdatedAt(v time.Time) *CapturedMessageScopedUpdateOne {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetOutboundMessageID sets the "outbound_message_id" field.
+func (x *CapturedMessageScopedUpdateOne) SetOutboundMessageID(v int64) *CapturedMessageScopedUpdateOne {
+	x.b.SetOutboundMessageID(v)
+	return x
+}
+
+// SetNillableOutboundMessageID sets the "outbound_message_id" field if the given value is not nil.
+func (x *CapturedMessageScopedUpdateOne) SetNillableOutboundMessageID(v *int64) *CapturedMessageScopedUpdateOne {
+	x.b.SetNillableOutboundMessageID(v)
+	return x
+}
+
+// ClearOutboundMessageID clears the value of the "outbound_message_id" field.
+func (x *CapturedMessageScopedUpdateOne) ClearOutboundMessageID() *CapturedMessageScopedUpdateOne {
+	x.b.ClearOutboundMessageID()
+	return x
+}
+
+// SetOutboundMessage sets the "outbound_message" edge to the OutboundMessage entity.
+func (x *CapturedMessageScopedUpdateOne) SetOutboundMessage(v *OutboundMessage) *CapturedMessageScopedUpdateOne {
+	x.b.SetOutboundMessage(v)
+	return x
+}
+
+// ClearOutboundMessage clears the "outbound_message" edge to the OutboundMessage entity.
+func (x *CapturedMessageScopedUpdateOne) ClearOutboundMessage() *CapturedMessageScopedUpdateOne {
+	x.b.ClearOutboundMessage()
+	return x
+}
+
+func (x *CapturedMessageScopedUpdateOne) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	if err := x.s.verifyIntegration(ctx, m.IntegrationIDs()); err != nil {
+		return fmt.Errorf("integration: %w", err)
+	}
+	if err := x.s.verifyOutboundMessage(ctx, m.OutboundMessageIDs()); err != nil {
+		return fmt.Errorf("outbound_message: %w", err)
+	}
+	return nil
+}
+
+// Save verifies the references against the Workspace, then updates the CapturedMessage.
+func (x *CapturedMessageScopedUpdateOne) Save(ctx context.Context) (*CapturedMessage, error) {
+	if err := x.check(ctx); err != nil {
+		return nil, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *CapturedMessageScopedUpdateOne) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// CapturedMessageScopedUpdate wraps CapturedMessageUpdate: a conditional bulk update of one Workspace.
+type CapturedMessageScopedUpdate struct {
+	s *Scoped
+	b *CapturedMessageUpdate
+	// modErr is set when a Modify modifier tried to assign workspace_id.
+	modErr error
+}
+
+// Update updates the CapturedMessage entities of the Workspace that match the predicates.
+func (t *CapturedMessageScoped) Update() *CapturedMessageScopedUpdate {
+	return &CapturedMessageScopedUpdate{s: t.s, b: t.s.c.CapturedMessage.Update().Where(capturedmessage.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *CapturedMessageScopedUpdate) Where(ps ...predicate.CapturedMessage) *CapturedMessageScopedUpdate {
+	x.b.Where(ps...)
+	return x
+}
+
+// Modify adds a statement modifier for computed assignments the typed setters cannot
+// express (SET col = LEAST(col + ..., ...)). A modifier gets assignment-only access
+// (ScopedAssign), so it cannot widen the Workspace predicate; an assignment to
+// workspace_id is refused: each modifier is probed against a scratch statement here, and
+// Save fails with ErrWorkspaceAssign.
+func (x *CapturedMessageScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *CapturedMessageScopedUpdate {
+	for _, m := range modifiers {
+		probe := &ScopedAssign{u: sql.Update(capturedmessage.Table)}
+		m(probe)
+		if probe.workspace {
+			x.modErr = ErrWorkspaceAssign
+		}
+		x.b.Modify(func(u *sql.UpdateBuilder) { m(&ScopedAssign{u: u}) })
+	}
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *CapturedMessageScopedUpdate) SetUpdatedAt(v time.Time) *CapturedMessageScopedUpdate {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetOutboundMessageID sets the "outbound_message_id" field.
+func (x *CapturedMessageScopedUpdate) SetOutboundMessageID(v int64) *CapturedMessageScopedUpdate {
+	x.b.SetOutboundMessageID(v)
+	return x
+}
+
+// SetNillableOutboundMessageID sets the "outbound_message_id" field if the given value is not nil.
+func (x *CapturedMessageScopedUpdate) SetNillableOutboundMessageID(v *int64) *CapturedMessageScopedUpdate {
+	x.b.SetNillableOutboundMessageID(v)
+	return x
+}
+
+// ClearOutboundMessageID clears the value of the "outbound_message_id" field.
+func (x *CapturedMessageScopedUpdate) ClearOutboundMessageID() *CapturedMessageScopedUpdate {
+	x.b.ClearOutboundMessageID()
+	return x
+}
+
+// SetOutboundMessage sets the "outbound_message" edge to the OutboundMessage entity.
+func (x *CapturedMessageScopedUpdate) SetOutboundMessage(v *OutboundMessage) *CapturedMessageScopedUpdate {
+	x.b.SetOutboundMessage(v)
+	return x
+}
+
+// ClearOutboundMessage clears the "outbound_message" edge to the OutboundMessage entity.
+func (x *CapturedMessageScopedUpdate) ClearOutboundMessage() *CapturedMessageScopedUpdate {
+	x.b.ClearOutboundMessage()
+	return x
+}
+
+func (x *CapturedMessageScopedUpdate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	if err := x.s.verifyIntegration(ctx, m.IntegrationIDs()); err != nil {
+		return fmt.Errorf("integration: %w", err)
+	}
+	if err := x.s.verifyOutboundMessage(ctx, m.OutboundMessageIDs()); err != nil {
+		return fmt.Errorf("outbound_message: %w", err)
+	}
+	return nil
+}
+
+// Save verifies the references against the Workspace, then updates the rows and
+// returns how many changed.
+func (x *CapturedMessageScopedUpdate) Save(ctx context.Context) (int, error) {
+	if x.modErr != nil {
+		return 0, x.modErr
+	}
+	if err := x.check(ctx); err != nil {
+		return 0, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the count.
+func (x *CapturedMessageScopedUpdate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
 // ConfirmationScoped reaches Confirmation entities of one Workspace.
 type ConfirmationScoped struct{ s *Scoped }
 
@@ -14417,11 +15054,26 @@ func (x *IntegrationScopedCreate) SetSendLimiter(v *SendLimiter) *IntegrationSco
 	return x
 }
 
+// AddCapturedMessageIDs adds the "captured_messages" edge to the CapturedMessage entity by IDs.
+func (x *IntegrationScopedCreate) AddCapturedMessageIDs(ids ...int64) *IntegrationScopedCreate {
+	x.b.AddCapturedMessageIDs(ids...)
+	return x
+}
+
+// AddCapturedMessages adds the "captured_messages" edges to the CapturedMessage entity.
+func (x *IntegrationScopedCreate) AddCapturedMessages(v ...*CapturedMessage) *IntegrationScopedCreate {
+	x.b.AddCapturedMessages(v...)
+	return x
+}
+
 func (x *IntegrationScopedCreate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
 	if err := x.s.verifySendLimiter(ctx, m.SendLimiterIDs()); err != nil {
 		return fmt.Errorf("send_limiter: %w", err)
+	}
+	if err := x.s.verifyCapturedMessage(ctx, m.CapturedMessagesIDs()); err != nil {
+		return fmt.Errorf("captured_messages: %w", err)
 	}
 	return nil
 }
@@ -15277,11 +15929,44 @@ func (x *IntegrationScopedUpdateOne) ClearSendLimiter() *IntegrationScopedUpdate
 	return x
 }
 
+// AddCapturedMessageIDs adds the "captured_messages" edge to the CapturedMessage entity by IDs.
+func (x *IntegrationScopedUpdateOne) AddCapturedMessageIDs(ids ...int64) *IntegrationScopedUpdateOne {
+	x.b.AddCapturedMessageIDs(ids...)
+	return x
+}
+
+// AddCapturedMessages adds the "captured_messages" edges to the CapturedMessage entity.
+func (x *IntegrationScopedUpdateOne) AddCapturedMessages(v ...*CapturedMessage) *IntegrationScopedUpdateOne {
+	x.b.AddCapturedMessages(v...)
+	return x
+}
+
+// ClearCapturedMessages clears the "captured_messages" edges to the CapturedMessage entity.
+func (x *IntegrationScopedUpdateOne) ClearCapturedMessages() *IntegrationScopedUpdateOne {
+	x.b.ClearCapturedMessages()
+	return x
+}
+
+// RemoveCapturedMessageIDs removes the "captured_messages" edge to CapturedMessage entities by IDs.
+func (x *IntegrationScopedUpdateOne) RemoveCapturedMessageIDs(ids ...int64) *IntegrationScopedUpdateOne {
+	x.b.RemoveCapturedMessageIDs(ids...)
+	return x
+}
+
+// RemoveCapturedMessages removes "captured_messages" edges to CapturedMessage entities.
+func (x *IntegrationScopedUpdateOne) RemoveCapturedMessages(v ...*CapturedMessage) *IntegrationScopedUpdateOne {
+	x.b.RemoveCapturedMessages(v...)
+	return x
+}
+
 func (x *IntegrationScopedUpdateOne) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
 	if err := x.s.verifySendLimiter(ctx, m.SendLimiterIDs()); err != nil {
 		return fmt.Errorf("send_limiter: %w", err)
+	}
+	if err := x.s.verifyCapturedMessage(ctx, m.CapturedMessagesIDs()); err != nil {
+		return fmt.Errorf("captured_messages: %w", err)
 	}
 	return nil
 }
@@ -15652,11 +16337,44 @@ func (x *IntegrationScopedUpdate) ClearSendLimiter() *IntegrationScopedUpdate {
 	return x
 }
 
+// AddCapturedMessageIDs adds the "captured_messages" edge to the CapturedMessage entity by IDs.
+func (x *IntegrationScopedUpdate) AddCapturedMessageIDs(ids ...int64) *IntegrationScopedUpdate {
+	x.b.AddCapturedMessageIDs(ids...)
+	return x
+}
+
+// AddCapturedMessages adds the "captured_messages" edges to the CapturedMessage entity.
+func (x *IntegrationScopedUpdate) AddCapturedMessages(v ...*CapturedMessage) *IntegrationScopedUpdate {
+	x.b.AddCapturedMessages(v...)
+	return x
+}
+
+// ClearCapturedMessages clears the "captured_messages" edges to the CapturedMessage entity.
+func (x *IntegrationScopedUpdate) ClearCapturedMessages() *IntegrationScopedUpdate {
+	x.b.ClearCapturedMessages()
+	return x
+}
+
+// RemoveCapturedMessageIDs removes the "captured_messages" edge to CapturedMessage entities by IDs.
+func (x *IntegrationScopedUpdate) RemoveCapturedMessageIDs(ids ...int64) *IntegrationScopedUpdate {
+	x.b.RemoveCapturedMessageIDs(ids...)
+	return x
+}
+
+// RemoveCapturedMessages removes "captured_messages" edges to CapturedMessage entities.
+func (x *IntegrationScopedUpdate) RemoveCapturedMessages(v ...*CapturedMessage) *IntegrationScopedUpdate {
+	x.b.RemoveCapturedMessages(v...)
+	return x
+}
+
 func (x *IntegrationScopedUpdate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
 	if err := x.s.verifySendLimiter(ctx, m.SendLimiterIDs()); err != nil {
 		return fmt.Errorf("send_limiter: %w", err)
+	}
+	if err := x.s.verifyCapturedMessage(ctx, m.CapturedMessagesIDs()); err != nil {
+		return fmt.Errorf("captured_messages: %w", err)
 	}
 	return nil
 }

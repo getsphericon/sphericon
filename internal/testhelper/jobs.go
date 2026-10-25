@@ -86,6 +86,13 @@ func (env *TestEnv) JobsOf(t *testing.T, kind string) []map[string]any {
 // sends a Broadcast and then needs it delivered calls this.
 func (env *TestEnv) DeliverQueuedBroadcasts(t *testing.T) {
 	t.Helper()
+	require.NoError(t, env.TryDeliverQueuedBroadcasts(t))
+}
+
+// TryDeliverQueuedBroadcasts is DeliverQueuedBroadcasts for a test that expects the send to be
+// refused (a Hold): it returns the first error a send returns instead of failing the test.
+func (env *TestEnv) TryDeliverQueuedBroadcasts(t *testing.T) error {
+	t.Helper()
 	ids := map[int64]bool{}
 	for _, args := range env.JobsOf(t, broadcasts.SendArgs{}.Kind()) {
 		id, ok := args["broadcast_id"].(float64)
@@ -93,8 +100,11 @@ func (env *TestEnv) DeliverQueuedBroadcasts(t *testing.T) {
 		ids[int64(id)] = true // a schedule and a later send queue two jobs for one Broadcast
 	}
 	for id := range ids {
-		require.NoError(t, jobs.SendBroadcast(t.Context(), env.DB, env.sender, id))
+		if err := jobs.SendBroadcast(t.Context(), env.DB, env.sender, id); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 // CancelPendingFor runs an owner's CancelPending for a Contact of the Initech Workspace the

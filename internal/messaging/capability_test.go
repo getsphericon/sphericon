@@ -22,8 +22,8 @@ func (keepingSender) DeliversOutside() bool { return false }
 
 type recordingCapturer struct{ got []messaging.EmailMessage }
 
-func (r *recordingCapturer) Capture(_ context.Context, msg messaging.EmailMessage) error {
-	r.got = append(r.got, msg)
+func (r *recordingCapturer) Capture(_ context.Context, c messaging.Captured) error {
+	r.got = append(r.got, c.Message)
 	return nil
 }
 
@@ -66,7 +66,7 @@ func TestBuilderReceivesItsDependencies(t *testing.T) {
 	_, err := catalog.BuildEmail(messaging.ProviderSMTP, nil, messaging.Deps{Capturer: capturer})
 	require.NoError(t, err)
 
-	require.NoError(t, got.Capturer.Capture(context.Background(), messaging.EmailMessage{Subject: "kept"}))
+	require.NoError(t, got.Capturer.Capture(context.Background(), messaging.Captured{Message: messaging.EmailMessage{Subject: "kept"}}))
 	require.Len(t, capturer.got, 1)
 	assert.Equal(t, "kept", capturer.got[0].Subject)
 }

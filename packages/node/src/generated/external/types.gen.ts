@@ -1189,7 +1189,7 @@ export type CreateContactInput = {
 };
 
 /**
- * Create an Integration. The provider and channel are derived from `config.kind`.
+ * Create an Integration. The provider and channel are derived from `config.kind`. A Test inbox (`inbox`) takes no credentials, never becomes the default by itself, and a second one is refused with 409.
  */
 export type CreateIntegrationInput = {
   name: string;
@@ -2105,6 +2105,20 @@ export type InUseProblemDetails = {
 };
 
 /**
+ * The Test inbox has no settings
+ */
+export type InboxConfig = {
+  kind: 'inbox';
+};
+
+/**
+ * The Test inbox takes no credentials: a Workspace has at most one
+ */
+export type InboxConfigInput = {
+  kind: 'inbox';
+};
+
+/**
  * Delivery channel an integration belongs to
  */
 export const IntegrationChannel = { EMAIL: 'email', SMS: 'sms' } as const;
@@ -2121,7 +2135,9 @@ export type IntegrationConfig = ({
   kind: 'smtp';
 } & SmtpConfig) | ({
   kind: 'ses';
-} & SesConfig);
+} & SesConfig) | ({
+  kind: 'inbox';
+} & InboxConfig);
 
 /**
  * Provider config submitted by the caller, discriminated by `kind`.
@@ -2130,12 +2146,18 @@ export type IntegrationConfigInput = ({
   kind: 'smtp';
 } & SmtpConfigInput) | ({
   kind: 'ses';
-} & SesConfigInput);
+} & SesConfigInput) | ({
+  kind: 'inbox';
+} & InboxConfigInput);
 
 /**
  * Concrete sending provider
  */
-export const IntegrationProvider = { SMTP: 'smtp', SES: 'ses' } as const;
+export const IntegrationProvider = {
+  SMTP: 'smtp',
+  SES: 'ses',
+  INBOX: 'inbox'
+} as const;
 
 /**
  * Concrete sending provider
@@ -6685,6 +6707,10 @@ export type IntegrationsUnarchiveErrors = {
    * RFC 7807 not found response
    */
   404: ProblemDetails;
+  /**
+   * RFC 7807 conflict response
+   */
+  409: ProblemDetails;
   /**
    * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
    */
