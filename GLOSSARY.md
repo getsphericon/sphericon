@@ -258,9 +258,10 @@ _Avoid_: Delivery pipeline, send path (unqualified), mailer
 **Test send**:
 A Broadcast's author sending it to one address they name, to see the mail before it goes out. It
 skips Send-eligibility and leaves no Outbound message or `email.sent` Event, so it never shows in
-Activity or the rates. While the Workspace has no Integration and no verified Sending domain it goes from the System
-sender, and only to the address of the User who asks. Through a Test inbox it is captured like any
-other message and the editor says it was not sent to that address.
+Activity or the rates. While none of the Workspace's Sending domains is verified and its default Integration delivers
+outside (or it has none), it goes from the System sender, and only to the address of the User who
+asks. Through a Test inbox, which delivers nowhere outside, it goes through that Integration and is
+captured, and the editor says it was not sent to that address.
 _Avoid_: Preview (that is rendering without sending), dry run
 
 **System sender**:
