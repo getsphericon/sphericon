@@ -128,6 +128,9 @@ model SiteContactHoldings {
 
   /** Suppressions on the address */
   suppressions: int32;
+
+  /** Captured messages (Test inbox) sent to the address; a count, never their content */
+  capturedMessages: int32;
 }
 
 /** Narrows the Contacts list */

@@ -45,6 +45,7 @@ const held: SiteContactHoldings = {
   deliveryRecords: 3,
   unsubscribes: 1,
   suppressions: 2,
+  capturedMessages: 4,
 }
 
 async function lookUp(
@@ -73,6 +74,7 @@ test('an owner looks up an address and sees what is held as counts', async () =>
   await expect.element(screen.getByText('Delivery records: 3')).toBeInTheDocument()
   await expect.element(screen.getByText('Unsubscribes: 1')).toBeInTheDocument()
   await expect.element(screen.getByText('Suppressions: 2')).toBeInTheDocument()
+  await expect.element(screen.getByText('Captured messages: 4')).toBeInTheDocument()
   expect(asked).toEqual(['alice@example.com'])
 })
 
@@ -80,7 +82,14 @@ test('an address nothing holds says nothing is held', async () => {
   worker.use(
     handleSiteWorkspacesList({ body: [workspace] }),
     handleSiteContactsLookup({
-      body: { contactHeld: false, events: 0, deliveryRecords: 0, unsubscribes: 0, suppressions: 0 },
+      body: {
+        contactHeld: false,
+        events: 0,
+        deliveryRecords: 0,
+        unsubscribes: 0,
+        suppressions: 0,
+        capturedMessages: 0,
+      },
     }),
   )
 
@@ -149,7 +158,14 @@ test('Export is disabled when the address has no Contact', async () => {
   worker.use(
     handleSiteWorkspacesList({ body: [workspace] }),
     handleSiteContactsLookup({
-      body: { contactHeld: false, events: 4, deliveryRecords: 0, unsubscribes: 0, suppressions: 0 },
+      body: {
+        contactHeld: false,
+        events: 4,
+        deliveryRecords: 0,
+        unsubscribes: 0,
+        suppressions: 0,
+        capturedMessages: 0,
+      },
     }),
   )
 
@@ -169,7 +185,7 @@ test('a plain member is not offered the section', async () => {
   await expect.element(screen.getByLabelText('Email address')).not.toBeInTheDocument()
 })
 
-const noOptOuts = { unsubscribes: 0, suppressions: 0 }
+const noOptOuts = { unsubscribes: 0, suppressions: 0, capturedMessages: 0 }
 
 test('Erase asks for a confirmation that says what is removed, anonymized and kept, then erases', async () => {
   const erased: (string | null)[] = []
@@ -179,7 +195,9 @@ test('Erase asks for a confirmation that says what is removed, anonymized and ke
     handleSiteContactsLookup(() => {
       lookups += 1
       return Response.json(
-        lookups === 1 ? held : { ...held, contactHeld: false, events: 0, deliveryRecords: 0 },
+        lookups === 1
+          ? held
+          : { ...held, contactHeld: false, events: 0, deliveryRecords: 0, capturedMessages: 0 },
       )
     }),
     handleSiteContactsErase(({ request }) => {
@@ -214,7 +232,14 @@ test('after an Erase the lookup shows only the kept opt-outs and Erase is disabl
       return Response.json(
         lookups === 1
           ? held
-          : { contactHeld: false, events: 0, deliveryRecords: 0, unsubscribes: 1, suppressions: 2 },
+          : {
+              contactHeld: false,
+              events: 0,
+              deliveryRecords: 0,
+              unsubscribes: 1,
+              suppressions: 2,
+              capturedMessages: 0,
+            },
       )
     }),
     handleSiteContactsErase(() => new Response(null, { status: 204 })),
@@ -241,7 +266,14 @@ test('Erase is enabled for delivery records alone and disabled when only opt-out
       return Response.json(
         email === 'records@example.com'
           ? { contactHeld: false, events: 0, deliveryRecords: 2, ...noOptOuts }
-          : { contactHeld: false, events: 0, deliveryRecords: 0, unsubscribes: 1, suppressions: 1 },
+          : {
+              contactHeld: false,
+              events: 0,
+              deliveryRecords: 0,
+              unsubscribes: 1,
+              suppressions: 1,
+              capturedMessages: 0,
+            },
       )
     }),
   )
@@ -255,6 +287,27 @@ test('Erase is enabled for delivery records alone and disabled when only opt-out
   await expect.element(screen.getByRole('button', { name: 'Erase' })).toBeDisabled()
 })
 
+test('Erase is enabled for captured messages alone, shown as a count', async () => {
+  worker.use(
+    handleSiteWorkspacesList({ body: [workspace] }),
+    handleSiteContactsLookup({
+      body: {
+        contactHeld: false,
+        events: 0,
+        deliveryRecords: 0,
+        ...noOptOuts,
+        capturedMessages: 2,
+      },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<PrivacyPage />, PRIVACY_ROUTE)
+  await lookUp(screen, 'tester@example.com')
+
+  await expect.element(screen.getByText('Captured messages: 2')).toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Erase' })).toBeEnabled()
+})
+
 test('a not-found answer says nothing was found and refreshes the lookup', async () => {
   let lookups = 0
   worker.use(
@@ -262,7 +315,9 @@ test('a not-found answer says nothing was found and refreshes the lookup', async
     handleSiteContactsLookup(() => {
       lookups += 1
       return Response.json(
-        lookups === 1 ? held : { ...held, contactHeld: false, events: 0, deliveryRecords: 0 },
+        lookups === 1
+          ? held
+          : { ...held, contactHeld: false, events: 0, deliveryRecords: 0, capturedMessages: 0 },
       )
     }),
     handleSiteContactsErase(() => problem(404, { detail: 'nothing found for the address' })),

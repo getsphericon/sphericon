@@ -17522,14 +17522,19 @@ func (s *SiteContactHoldings) encodeFields(e *jx.Encoder) {
 		e.FieldStart("suppressions")
 		e.Int32(s.Suppressions)
 	}
+	{
+		e.FieldStart("capturedMessages")
+		e.Int32(s.CapturedMessages)
+	}
 }
 
-var jsonFieldsNameOfSiteContactHoldings = [5]string{
+var jsonFieldsNameOfSiteContactHoldings = [6]string{
 	0: "contactHeld",
 	1: "events",
 	2: "deliveryRecords",
 	3: "unsubscribes",
 	4: "suppressions",
+	5: "capturedMessages",
 }
 
 // Decode decodes SiteContactHoldings from json.
@@ -17601,6 +17606,18 @@ func (s *SiteContactHoldings) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"suppressions\"")
 			}
+		case "capturedMessages":
+			requiredBitSet[0] |= 1 << 5
+			if err := func() error {
+				v, err := d.Int32()
+				s.CapturedMessages = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"capturedMessages\"")
+			}
 		default:
 			return d.Skip()
 		}
@@ -17611,7 +17628,7 @@ func (s *SiteContactHoldings) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00011111,
+		0b00111111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

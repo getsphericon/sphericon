@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
@@ -25,6 +26,8 @@ type Holdings struct {
 	DeliveryRecords int
 	Unsubscribes    int
 	Suppressions    int
+	// CapturedMessages are the Captured messages (Test inbox) sent to the address.
+	CapturedMessages int
 }
 
 // canonicalEmail is the one rule for the form an address is matched in: trimmed and
@@ -45,8 +48,8 @@ func NormalizeEmail(raw string) (string, error) {
 }
 
 // Lookup counts what the Workspace of s holds for the address: the Contact with it,
-// that Contact's Events and the Events carrying it, the delivery records to it, and
-// the Unsubscribes and Suppressions on it. It reads only through s, so another
+// that Contact's Events and the Events carrying it, the delivery records to it, the
+// Captured messages sent to it, and the Unsubscribes and Suppressions on it. It reads only through s, so another
 // Workspace's rows never match, and changes nothing.
 func Lookup(ctx context.Context, s *ent.Scoped, email string) (Holdings, error) {
 	var h Holdings
@@ -78,5 +81,9 @@ func Lookup(ctx context.Context, s *ent.Scoped, email string) (Holdings, error) 
 		return h, err
 	}
 	h.Suppressions, err = s.Suppression().Query().Where(suppression.Destination(address)).Count(ctx)
+	if err != nil {
+		return h, err
+	}
+	h.CapturedMessages, err = s.CapturedMessage().Query().Where(capturedmessage.Recipient(address)).Count(ctx)
 	return h, err
 }

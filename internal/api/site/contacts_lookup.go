@@ -36,10 +36,11 @@ func (h *Handlers) SiteContactsLookup(ctx context.Context, params siteapi.SiteCo
 		return nil, err
 	}
 	return &siteapi.SiteContactHoldings{
-		ContactHeld:     held.ContactHeld,
-		Events:          narrow.Int32(held.Events),
-		DeliveryRecords: narrow.Int32(held.DeliveryRecords),
-		Unsubscribes:    narrow.Int32(held.Unsubscribes),
-		Suppressions:    narrow.Int32(held.Suppressions),
+		ContactHeld:      held.ContactHeld,
+		Events:           narrow.Int32(held.Events),
+		DeliveryRecords:  narrow.Int32(held.DeliveryRecords),
+		Unsubscribes:     narrow.Int32(held.Unsubscribes),
+		Suppressions:     narrow.Int32(held.Suppressions),
+		CapturedMessages: narrow.Int32(held.CapturedMessages),
 	}, nil
 }

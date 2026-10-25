@@ -46,11 +46,11 @@
   workspace_id: 4
   created_at: '{{daysAgo 1}}'
   updated_at: '{{daysAgo 1}}'
-# Acme's archived Test inbox keeps what it captured.
+# Acme's archived Test inbox keeps what it captured, here a message to a Contact (the export subject).
 - id: 4 # fixture: CapturedMessageAcmeArchivedInbox
   integration_id: 7
   surface: transactional
-  recipient: tester@codebasics.dev
+  recipient: export.subject@example.com
   from_email: hello@codebasics.dev
   subject: Old test
   html: '<p>Old.</p>'

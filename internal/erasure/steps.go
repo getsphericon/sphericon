@@ -9,6 +9,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
+	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
@@ -194,6 +195,17 @@ func anonymizeDelivery(ctx context.Context, s *ent.Scoped, t *Target, _ events.P
 	}
 	_, err := s.OutboundMessage().Update().Where(outboundmessage.DestinationIn(t.Destinations...)).
 		ClearContactID().ClearDestination().Save(ctx)
+	return err
+}
+
+// eraseCapturedMessages deletes the Captured messages (Test inbox, ADR 0058) addressed to the
+// subject's Destinations: they hold the rendered mail, so unlike a delivery record there is nothing
+// to keep. Those kept by an archived Test inbox go too.
+func eraseCapturedMessages(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
+	if len(t.Destinations) == 0 {
+		return nil
+	}
+	_, err := s.CapturedMessage().Delete().Where(capturedmessage.RecipientIn(t.Destinations...)).Exec(ctx)
 	return err
 }
 

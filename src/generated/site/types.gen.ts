@@ -1891,6 +1891,10 @@ export type SiteContactHoldings = {
    * Suppressions on the address
    */
   suppressions: number;
+  /**
+   * Captured messages (Test inbox) sent to the address; a count, never their content
+   */
+  capturedMessages: number;
 };
 
 /**

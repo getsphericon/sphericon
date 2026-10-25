@@ -9888,6 +9888,8 @@ type SiteContactHoldings struct {
 	Unsubscribes int32 `json:"unsubscribes"`
 	// Suppressions on the address.
 	Suppressions int32 `json:"suppressions"`
+	// Captured messages (Test inbox) sent to the address; a count, never their content.
+	CapturedMessages int32 `json:"capturedMessages"`
 }
 
 // GetContactHeld returns the value of ContactHeld.
@@ -9915,6 +9917,11 @@ func (s *SiteContactHoldings) GetSuppressions() int32 {
 	return s.Suppressions
 }
 
+// GetCapturedMessages returns the value of CapturedMessages.
+func (s *SiteContactHoldings) GetCapturedMessages() int32 {
+	return s.CapturedMessages
+}
+
 // SetContactHeld sets the value of ContactHeld.
 func (s *SiteContactHoldings) SetContactHeld(val bool) {
 	s.ContactHeld = val
@@ -9938,6 +9945,11 @@ func (s *SiteContactHoldings) SetUnsubscribes(val int32) {
 // SetSuppressions sets the value of Suppressions.
 func (s *SiteContactHoldings) SetSuppressions(val int32) {
 	s.Suppressions = val
+}
+
+// SetCapturedMessages sets the value of CapturedMessages.
+func (s *SiteContactHoldings) SetCapturedMessages(val int32) {
+	s.CapturedMessages = val
 }
 
 func (*SiteContactHoldings) siteContactsLookupRes() {}

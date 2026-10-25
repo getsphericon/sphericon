@@ -14289,7 +14289,14 @@
       },
       "SiteContactHoldings": {
         "type": "object",
-        "required": ["contactHeld", "events", "deliveryRecords", "unsubscribes", "suppressions"],
+        "required": [
+          "contactHeld",
+          "events",
+          "deliveryRecords",
+          "unsubscribes",
+          "suppressions",
+          "capturedMessages"
+        ],
         "properties": {
           "contactHeld": {
             "type": "boolean",
@@ -14314,6 +14321,11 @@
             "type": "integer",
             "format": "int32",
             "description": "Suppressions on the address"
+          },
+          "capturedMessages": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Captured messages (Test inbox) sent to the address; a count, never their content"
           }
         },
         "description": "What a Workspace holds for one email address, as counts only (a Privacy request lookup). Nothing held is all zeros and `contactHeld: false`."

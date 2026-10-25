@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
@@ -153,6 +154,7 @@ func (m *Module) steps() []step {
 		eraseFirings,
 		detachOptOuts,
 		anonymizeDelivery,
+		eraseCapturedMessages,
 		eraseContact,
 		publishErased,
 	}
@@ -227,6 +229,9 @@ func resolveContactless(ctx context.Context, s *ent.Scoped, id Identifier) (*Tar
 	case id.email != "":
 		t = &Target{Destinations: []string{id.email}}
 		known, err = s.OutboundMessage().Query().Where(outboundmessage.Destination(id.email)).Exist(ctx)
+		if err == nil && !known {
+			known, err = s.CapturedMessage().Query().Where(capturedmessage.Recipient(id.email)).Exist(ctx)
+		}
 	case id.visitorID != "":
 		t = &Target{VisitorIDs: []string{id.visitorID}, SubjectID: id.visitorID}
 		known, err = s.Visitor().Query().Where(visitor.VisitorID(id.visitorID)).Exist(ctx)

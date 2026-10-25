@@ -16,10 +16,10 @@ import { useNotify } from '../../hooks/useNotify.ts'
 import { hasErrorStatus } from '../../utils/apiErrors.ts'
 
 // The two decisions the lookup drives. Erase is possible exactly while Erasure would find
-// something: a Contact or delivery records hold the address (kept opt-outs alone do not
-// count). Nothing is held when every count is zero and no Contact exists.
+// something: a Contact, delivery records or captured messages hold the address (kept
+// opt-outs alone do not count). Nothing is held when every count is zero and no Contact exists.
 function canErase(held: SiteContactHoldings): boolean {
-  return held.contactHeld || held.deliveryRecords > 0
+  return held.contactHeld || held.deliveryRecords > 0 || held.capturedMessages > 0
 }
 
 function holdsNothing(held: SiteContactHoldings): boolean {
@@ -28,7 +28,8 @@ function holdsNothing(held: SiteContactHoldings): boolean {
     held.events === 0 &&
     held.deliveryRecords === 0 &&
     held.unsubscribes === 0 &&
-    held.suppressions === 0
+    held.suppressions === 0 &&
+    held.capturedMessages === 0
   )
 }
 
@@ -128,6 +129,7 @@ function LookupResult({
       </Text>
       <Text>{t(($) => $.settings.privacy.events, { n: held.events })}</Text>
       <Text>{t(($) => $.settings.privacy.deliveryRecords, { n: held.deliveryRecords })}</Text>
+      <Text>{t(($) => $.settings.privacy.capturedMessages, { n: held.capturedMessages })}</Text>
       <Text>{t(($) => $.settings.privacy.unsubscribes, { n: held.unsubscribes })}</Text>
       <Text>{t(($) => $.settings.privacy.suppressions, { n: held.suppressions })}</Text>
       <Group>
