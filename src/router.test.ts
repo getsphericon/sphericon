@@ -34,13 +34,18 @@ const workspace = (workspaceId: string) => ({
   createdAt: '2026-01-01T00:00:00Z',
 })
 
-// The guards only ever call the workspaces list, so one stub per scenario is enough.
+// The guards read the signed-in user and then the workspaces list. The setup signs a user in by
+// default, so a signed-out visitor is a 401 on both: with only the list refused, the login page would
+// see a signed-in user and send the visitor back to the app.
 function serveWorkspaces(ids: string[] | 'unauthorized') {
-  worker.use(
-    ids === 'unauthorized'
-      ? handleSiteWorkspacesList(() => problem(401, { detail: 'unauthorized' }))
-      : handleSiteWorkspacesList({ body: ids.map((workspaceId) => workspace(workspaceId)) }),
-  )
+  if (ids === 'unauthorized') {
+    worker.use(
+      handleSiteUserGetMe(() => problem(401, { detail: 'unauthorized' })),
+      handleSiteWorkspacesList(() => problem(401, { detail: 'unauthorized' })),
+    )
+    return
+  }
+  worker.use(handleSiteWorkspacesList({ body: ids.map((workspaceId) => workspace(workspaceId)) }))
 }
 
 test('the index route sends a signed-in user to their first workspace', async () => {

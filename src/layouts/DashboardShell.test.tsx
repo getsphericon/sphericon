@@ -14,6 +14,8 @@ import { renderWithProviders } from '../test/renderWithProviders.tsx'
 import { DOCS_URL } from '../utils/docs.ts'
 import { DashboardShell } from './DashboardShell.tsx'
 
+const DESKTOP_WIDTH = 1280
+const DESKTOP_HEIGHT = 800
 const MOBILE_WIDTH = 500
 const MOBILE_HEIGHT = 800
 const FIRST_PATH = '/'
@@ -64,6 +66,8 @@ test('renders the slots around the routed page', async () => {
 })
 
 test('the header links to the documentation', async () => {
+  // The link is hidden below the `sm` breakpoint, where the header has no room for it.
+  await page.viewport(DESKTOP_WIDTH, DESKTOP_HEIGHT)
   const screen = await mountShell()
 
   await expect
