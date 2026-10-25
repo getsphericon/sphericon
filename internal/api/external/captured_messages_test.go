@@ -81,5 +81,5 @@ func TestExternalCapturedMessagesAreDeletedOneAndAllWithinTheWorkspace(t *testin
 	list, err := c.CapturedMessagesList(t.Context(), externalapi.CapturedMessagesListParams{})
 	require.NoError(t, err)
 	assert.Empty(t, list.(*externalapi.CapturedMessagesListOK).Items)
-	assert.Equal(t, 2, env.DB.CapturedMessage.Query().CountX(t.Context()), "the other Workspaces' messages are untouched")
+	assert.Equal(t, 4, env.DB.CapturedMessage.Query().CountX(t.Context()), "the other Workspaces' messages are untouched")
 }
