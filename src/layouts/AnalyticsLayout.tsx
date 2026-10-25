@@ -51,7 +51,11 @@ export function AnalyticsLayout() {
   ]
 
   return (
-    <Flex direction={{ base: 'column', sm: 'row' }} align="flex-start" gap="xl">
+    <Flex
+      direction={{ base: 'column', sm: 'row' }}
+      align={{ base: 'stretch', sm: 'flex-start' }}
+      gap="xl"
+    >
       <Stack gap="md" miw={{ sm: 200 }}>
         {groups.map((group) => (
           <Stack key={group.label} gap={2}>
