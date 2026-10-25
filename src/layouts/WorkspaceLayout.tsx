@@ -70,7 +70,7 @@ function WorkspaceSwitcher({
           void navigate({ to: overviewRoute.to, params: { workspaceId: value } })
         }
       }}
-      w={{ base: 140, sm: 220 }}
+      w={{ base: 88, sm: 220 }}
     />
   )
 }

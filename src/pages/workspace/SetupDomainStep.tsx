@@ -44,7 +44,7 @@ export function SetupDomainStep({ workspaceId }: { workspaceId: string }) {
         <Code>{dkimRecord.host}</Code>
       </Group>
       <Group gap="xs" wrap="nowrap" align="flex-start">
-        <Code block maw={420}>
+        <Code block flex={1} miw={0} maw={420}>
           {dkimRecord.value}
         </Code>
         <CopyButton value={dkimRecord.value}>

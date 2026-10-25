@@ -46,7 +46,7 @@ export function DashboardShell({
       padding="md"
     >
       <AppShell.Header>
-        <Group h="100%" px="md" justify="space-between" wrap="nowrap">
+        <Group h="100%" px={{ base: 'xs', sm: 'md' }} justify="space-between" wrap="nowrap">
           <Group gap="sm" wrap="nowrap">
             <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
             <Title order={3}>{t(($) => $.app.name)}</Title>

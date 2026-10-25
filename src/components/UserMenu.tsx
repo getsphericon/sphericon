@@ -1,4 +1,4 @@
-import { Avatar, Group, Menu, Text, UnstyledButton } from '@mantine/core'
+import { Avatar, Box, Group, Menu, Text, UnstyledButton } from '@mantine/core'
 import {
   IconChevronDown,
   IconExternalLink,
@@ -76,12 +76,14 @@ export function UserMenu({
     <Menu position="bottom-end" withinPortal>
       <Menu.Target>
         <UnstyledButton>
-          <Group gap="xs">
+          <Group gap="xs" wrap="nowrap">
             <Avatar radius="xl" size={32} color="blue">
               {label ? label.charAt(0).toUpperCase() : <IconUser size={18} />}
             </Avatar>
             {label ? <Text size="sm">{label}</Text> : null}
-            <IconChevronDown size={16} />
+            <Box visibleFrom="sm" lh={0}>
+              <IconChevronDown size={16} />
+            </Box>
           </Group>
         </UnstyledButton>
       </Menu.Target>

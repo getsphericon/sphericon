@@ -77,7 +77,7 @@ export function SetupChecklist({
             <Group key={step} justify="space-between" align="center" wrap="wrap" gap="sm">
               <Group gap="sm" wrap="nowrap" align="flex-start" flex={1} miw={220}>
                 <StatusIcon status={status} />
-                <Stack gap={0}>
+                <Stack gap={0} flex={1} miw={0}>
                   <Group gap="xs">
                     <Text fw={500}>{t(($) => $.setupChecklist.steps[step].title)}</Text>
                     {status === 'pending' && (

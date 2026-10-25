@@ -1,4 +1,4 @@
-import { Group, SegmentedControl, Stack, Text } from '@mantine/core'
+import { Flex, SegmentedControl, Stack, Text } from '@mantine/core'
 import { Outlet, useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
@@ -51,8 +51,8 @@ export function AnalyticsLayout() {
   ]
 
   return (
-    <Group align="flex-start" wrap="nowrap" gap="xl">
-      <Stack gap="md" miw={200}>
+    <Flex direction={{ base: 'column', sm: 'row' }} align="flex-start" gap="xl">
+      <Stack gap="md" miw={{ sm: 200 }}>
         {groups.map((group) => (
           <Stack key={group.label} gap={2}>
             <Text size="xs" fw={600} c="dimmed" tt="uppercase">
@@ -72,7 +72,7 @@ export function AnalyticsLayout() {
       </Stack>
       <Stack flex={1} miw={0}>
         <SegmentedControl
-          w="fit-content"
+          w={{ base: '100%', sm: 'fit-content' }}
           value={range}
           onChange={(next) =>
             void navigate({
@@ -84,6 +84,6 @@ export function AnalyticsLayout() {
         />
         <Outlet />
       </Stack>
-    </Group>
+    </Flex>
   )
 }
