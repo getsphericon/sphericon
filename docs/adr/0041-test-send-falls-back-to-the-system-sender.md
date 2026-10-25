@@ -19,6 +19,9 @@ sign with); it authenticates through its provider, as the SaaS's SES identity do
 So this Test send is not the mail the Workspace will send, and the editor says so: it shows the From it
 used.
 
+(Amended by ADR 0058: the fallback applies while the default Integration delivers outside, or there is none.
+Through a Test inbox, which sends nothing outside, the Test send goes through the Integration and is captured.)
+
 ## Considered options
 
 - **Keep the gate on Test send (ADR 0015 as written).** No exception, but the first email waits on DNS
