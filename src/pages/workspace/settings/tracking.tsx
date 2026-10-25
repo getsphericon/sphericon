@@ -6,15 +6,21 @@ import {
   Code,
   CopyButton,
   Group,
+  Select,
   Stack,
   Text,
   Title,
 } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { AnchorLink } from '../../../components/RouterLink.tsx'
-import { siteEventsListOptions } from '../../../generated/site/@tanstack/react-query.gen.ts'
+import {
+  siteEventsListOptions,
+  siteSendingDomainsListOptions,
+} from '../../../generated/site/@tanstack/react-query.gen.ts'
+import type { SiteWorkspaceResource } from '../../../generated/site/types.gen.ts'
 import { Route as recentActivityRoute } from '../../../routes/workspaces/$workspaceId/analytics/recent-activity.tsx'
 import { Route as trackingRoute } from '../../../routes/workspaces/$workspaceId/settings/tracking.tsx'
 import { DOCS_URL, SDK_SOURCE_URL } from '../../../utils/docs.ts'
@@ -55,19 +61,13 @@ function InstallStatus({ workspaceId }: { workspaceId: string }) {
   )
 }
 
-// trackerOrigin is the tracker's public origin without a trailing slash, so paths append cleanly.
-function trackerOrigin(trackerUrl: string) {
-  return trackerUrl.replace(/\/$/, '')
-}
-
 // TestEvent shows a copy-paste curl command that posts a real event through the
 // /collect pipeline (RudderStack-style): the user runs it, then watches it land
 // in the activity feed. No in-app injection, so test traffic stays explicit.
 function TestEvent({ collectKey, trackerUrl }: { collectKey: string; trackerUrl: string }) {
   const { t } = useTranslation()
-  const origin = trackerOrigin(trackerUrl)
   const command = [
-    `curl -X POST "${origin}/collect/events" \\`,
+    `curl -X POST "${trackerUrl}/collect/events" \\`,
     `  -H "content-type: application/json" \\`,
     `  -H "x-collect-key: ${collectKey}" \\`,
     `  -d '{"events":[{"visitorId":"test","action":"test.event"}]}'`,
@@ -105,16 +105,15 @@ function TrackingSection({
   workspaceId: string
 }) {
   const { t } = useTranslation()
-  const origin = trackerOrigin(trackerUrl)
   // The stub creates the command queue the tracker drains once t.js has loaded, so
   // `_omq.push(['track', …])` works from the first line while t.js loads asynchronously.
   const snippet = `<script>
   window._omq = window._omq || [];
-  _omq.push(['init', { collectKey: ${JSON.stringify(collectKey)}, baseUrl: ${JSON.stringify(origin)} }]);
+  _omq.push(['init', { collectKey: ${JSON.stringify(collectKey)}, baseUrl: ${JSON.stringify(trackerUrl)} }]);
   (function () {
     var s = document.createElement('script');
     s.async = true;
-    s.src = ${JSON.stringify(`${origin}/t.js`)};
+    s.src = ${JSON.stringify(`${trackerUrl}/t.js`)};
     document.head.appendChild(s);
   })();
 </script>`
@@ -143,6 +142,11 @@ function TrackingSection({
 // SendEvents points to the ways of sending events beyond the snippet: the guide and the SDK sources.
 function SendEvents() {
   const { t } = useTranslation()
+  const links = [
+    { href: `${DOCS_URL}/guide/tracking`, label: t(($) => $.settings.sendEventsGuideLink) },
+    { href: `${SDK_SOURCE_URL}/analytics`, label: t(($) => $.settings.browserSdkLink) },
+    { href: `${SDK_SOURCE_URL}/node`, label: t(($) => $.settings.nodeSdkLink) },
+  ]
 
   return (
     <Box>
@@ -153,17 +157,57 @@ function SendEvents() {
         {t(($) => $.settings.sendEventsDescription)}
       </Text>
       <Stack gap="xs">
-        <Anchor href={`${DOCS_URL}/guide/tracking`} target="_blank" rel="noreferrer" size="sm">
-          {t(($) => $.settings.sendEventsGuideLink)}
-        </Anchor>
-        <Anchor href={`${SDK_SOURCE_URL}/analytics`} target="_blank" rel="noreferrer" size="sm">
-          {t(($) => $.settings.browserSdkLink)}
-        </Anchor>
-        <Anchor href={`${SDK_SOURCE_URL}/node`} target="_blank" rel="noreferrer" size="sm">
-          {t(($) => $.settings.nodeSdkLink)}
-        </Anchor>
+        {links.map((link) => (
+          <Anchor key={link.href} href={link.href} target="_blank" rel="noreferrer" size="sm">
+            {link.label}
+          </Anchor>
+        ))}
       </Stack>
     </Box>
+  )
+}
+
+// TrackerSetup lets the Owner pick the host the snippet is built on: the Instance's tracker origin, or
+// the Tracking domain of a Sending domain once it serves (ADR 0059). A host under the site's own
+// registrable domain is first-party, which the hint says; the app cannot know the site, so it checks nothing.
+function TrackerSetup({ workspace }: { workspace: SiteWorkspaceResource }) {
+  const { t } = useTranslation()
+  const domainsQuery = useQuery(
+    siteSendingDomainsListOptions({
+      path: { workspaceId: workspace.id },
+      query: { archived: false },
+    }),
+  )
+  const [selected, setSelected] = useState(workspace.trackerUrl)
+
+  const hosts = (domainsQuery.data?.items ?? []).flatMap((domain) =>
+    domain.trackingRecord?.state === 'serving' ? [`https://${domain.trackingRecord.host}`] : [],
+  )
+  const options = [workspace.trackerUrl, ...hosts]
+  // A host that stopped serving (or was archived) drops out of the list: fall back to the default.
+  const trackerUrl = options.includes(selected) ? selected : workspace.trackerUrl
+
+  return (
+    <Stack gap="xl">
+      {hosts.length > 0 ? (
+        <Select
+          maw={480}
+          label={t(($) => $.settings.trackerHostLabel)}
+          description={t(($) => $.settings.trackerHostDescription)}
+          data={options}
+          value={trackerUrl}
+          allowDeselect={false}
+          onChange={(value) => setSelected(value ?? '')}
+        />
+      ) : null}
+      <TrackingSection
+        collectKey={workspace.collectKey}
+        trackerUrl={trackerUrl}
+        workspaceId={workspace.id}
+      />
+      <TestEvent collectKey={workspace.collectKey} trackerUrl={trackerUrl} />
+      <SendEvents />
+    </Stack>
   )
 }
 
@@ -173,17 +217,7 @@ export function TrackingPage() {
 
   return (
     <SettingsFrame workspaceId={workspaceId} title={t(($) => $.settings.nav.tracking)}>
-      {(workspace) => (
-        <Stack gap="xl">
-          <TrackingSection
-            collectKey={workspace.collectKey}
-            trackerUrl={workspace.trackerUrl}
-            workspaceId={workspace.id}
-          />
-          <TestEvent collectKey={workspace.collectKey} trackerUrl={workspace.trackerUrl} />
-          <SendEvents />
-        </Stack>
-      )}
+      {(workspace) => <TrackerSetup workspace={workspace} />}
     </SettingsFrame>
   )
 }

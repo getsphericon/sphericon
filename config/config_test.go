@@ -91,6 +91,20 @@ func TestConfigLoad_JWTSecretAcceptsAStrongOneAndAnyInDevelopment(t *testing.T) 
 	}
 }
 
+func TestConfigTrackerOrigin(t *testing.T) {
+	cases := map[string]struct{ trackerURL, want string }{
+		"unset falls back to the app origin": {"", "http://localhost:3000"},
+		"a host of its own":                  {"https://t.example.com", "https://t.example.com"},
+		"a trailing slash is dropped":        {"https://t.example.com/", "https://t.example.com"},
+	}
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			cfg := &Config{AppURL: "http://localhost:3000", TrackerURL: c.trackerURL}
+			require.Equal(t, c.want, cfg.TrackerOrigin())
+		})
+	}
+}
+
 func TestConfigLoadDBPoolDefaults(t *testing.T) {
 	t.Setenv("DATABASE_URL", "postgres://x")
 	cfg, err := Load("test")

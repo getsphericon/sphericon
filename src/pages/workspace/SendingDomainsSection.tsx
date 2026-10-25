@@ -39,6 +39,7 @@ import type {
   SiteTrackingReason,
   SiteTrackingState,
 } from '../../generated/site/types.gen.ts'
+import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation.tsx'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 
 interface DomainFormValues {
@@ -200,6 +201,7 @@ export function SendingDomainsSection({
   canEdit: boolean
 }) {
   const { t } = useTranslation()
+  const confirmArchive = useDeleteConfirmation()
   const [archived, setArchived] = useState(false)
   const [addOpened, { open: openAdd, close: closeAdd }] = useDisclosure(false)
 
@@ -332,9 +334,28 @@ export function SendingDomainsSection({
                         <Menu.Item
                           color="red"
                           disabled={archiveMutation.isPending}
-                          onClick={() =>
-                            archiveMutation.mutate({ path: { workspaceId, id: record.id } })
-                          }
+                          onClick={() => {
+                            const archive = () =>
+                              archiveMutation.mutate({ path: { workspaceId, id: record.id } })
+                            // An archived domain stops serving its Tracking host, so a tracker
+                            // snippet installed on it stops collecting (ADR 0059): say so first.
+                            if (
+                              record.trackingRecord &&
+                              record.trackingRecord.state !== 'pending'
+                            ) {
+                              confirmArchive({
+                                title: t(($) => $.settings.sendingDomains.archiveServingTitle),
+                                description: t(
+                                  ($) => $.settings.sendingDomains.archiveServingDescription,
+                                  { host: record.trackingRecord.host },
+                                ),
+                                confirmLabel: t(($) => $.actions.archive),
+                                onConfirm: archive,
+                              })
+                              return
+                            }
+                            archive()
+                          }}
                         >
                           {t(($) => $.actions.archive)}
                         </Menu.Item>

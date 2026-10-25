@@ -890,7 +890,7 @@ func (c *Config) MCPOrigin() string {
 // /t.js and /collect on a host of its own, otherwise AppURL.
 func (c *Config) TrackerOrigin() string {
 	if c.TrackerURL != "" {
-		return c.TrackerURL
+		return strings.TrimRight(c.TrackerURL, "/")
 	}
 	return c.AppURL
 }

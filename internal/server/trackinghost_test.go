@@ -33,8 +33,9 @@ func hostReq(env *testhelper.TestEnv, method, host, path string) *httptest.Respo
 	return w
 }
 
-// A verified Tracking host serves the link paths and nothing else (ADR 0038).
-func TestTrackingHostServesOnlyLinkPaths(t *testing.T) {
+// A verified Tracking host serves the link paths, scoped to its own Workspace, and no other
+// surface of the Instance (ADR 0038).
+func TestTrackingHostScopesLinkPathsToItsWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	cfg, err := config.Load("test")
@@ -92,8 +93,34 @@ func TestTrackingHostServesOnlyLinkPaths(t *testing.T) {
 	assert.Equal(t, http.StatusFound, hostReq(env, http.MethodGet, "", "/e/c/"+ctok).Code)
 
 	// Everything else is a 404: the SPA, the API prefixes, sign-in, probes.
-	for _, p := range []string{"/", "/login", "/site/workspaces", "/api/contacts", "/mcp", "/collect/v1/batch", "/healthz", "/t.js", "/staff/me"} {
+	for _, p := range []string{"/", "/login", "/site/workspaces", "/api/contacts", "/mcp", "/healthz", "/staff/me"} {
 		assert.Equalf(t, http.StatusNotFound, hostReq(env, http.MethodGet, host, p).Code, "path %s", p)
+	}
+}
+
+// A verified Tracking host also serves the first-party tracker (ADR 0059): the script, and the
+// collect API for its own Workspace's key only.
+func TestTrackingHostServesTheFirstPartyTracker(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	collect := func(host, key string) int {
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/collect/events", strings.NewReader(`{"events":[{"visitorId":"v1","action":"test.event"}]}`))
+		req.Host = host
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("X-Collect-Key", key)
+		w := httptest.NewRecorder()
+		env.Server.ServeHTTP(w, req)
+		return w.Code
+	}
+
+	// A host serves the tracker from dns_verified on, like the probe (ADR 0059).
+	for _, domain := range []string{fixtures.SendingDomainTrackingServingDomain, fixtures.SendingDomainTrackingDNSVerifiedDomain} {
+		host := trackHost(domain)
+		script := hostReq(env, http.MethodGet, host, "/t.js")
+		assert.Equalf(t, http.StatusOK, script.Code, "script on %s", host)
+		assert.Contains(t, script.Header().Get("Content-Type"), "javascript")
+		assert.Equalf(t, http.StatusNoContent, collect(host, fixtures.UmbrellaCollectKey), "the host's own key on %s", host)
+		assert.Equalf(t, http.StatusUnauthorized, collect(host, fixtures.AcmeCollectKey), "another Workspace's key on %s is refused like a wrong one", host)
 	}
 }
 
@@ -120,6 +147,25 @@ func TestTrackingHostServesTheProbeValue(t *testing.T) {
 }
 
 // viaPeer serves GET /healthz from a peer address, with the host header set when given.
+// Through the edge's header the tracker paths are scoped to the host's Workspace too (ADR 0059).
+func TestTrackingHostFromTheEdgeServesTheTrackerForItsWorkspaceOnly(t *testing.T) {
+	env := testhelper.Setup(t, testhelper.WithConfig(func(c *config.Config) { c.TrackingHostHeader = edgeHeader }))
+	host := trackHost(fixtures.SendingDomainTrackingServingDomain)
+
+	collect := func(key string) int {
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/collect/events", strings.NewReader(`{"events":[{"visitorId":"v1","action":"test.event"}]}`))
+		req.RemoteAddr = "127.0.0.1:4444"
+		req.Header.Set(edgeHeader, host)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("X-Collect-Key", key)
+		w := httptest.NewRecorder()
+		env.Server.ServeHTTP(w, req)
+		return w.Code
+	}
+	assert.Equal(t, http.StatusNoContent, collect(fixtures.UmbrellaCollectKey))
+	assert.Equal(t, http.StatusUnauthorized, collect(fixtures.AcmeCollectKey))
+}
+
 func viaPeer(env *testhelper.TestEnv, peer, header string) int {
 	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/healthz", nil)
 	req.RemoteAddr = peer

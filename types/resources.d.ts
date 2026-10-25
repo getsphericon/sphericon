@@ -1320,6 +1320,8 @@ export default interface Resources {
       "sendEventsTitle": "Send events from your code",
       "sendingDomains": {
         "archiveError": "Failed to archive domain",
+        "archiveServingDescription": "{{host}} stops serving the tracker and the links in mail. A tracker snippet installed on it stops collecting events until the domain is restored and verified again.",
+        "archiveServingTitle": "Archive this domain?",
         "archived": "Domain archived",
         "create": "Add domain",
         "createError": "Failed to add domain",
@@ -1409,6 +1411,8 @@ export default interface Resources {
         "scopesLabel": "Scopes",
         "secretNotice": "Copy this token now — it won't be shown again."
       },
+      "trackerHostDescription": "Use the host under your own site's domain (for example track.example.com on www.example.com), so the script and the events come from your domain.",
+      "trackerHostLabel": "Tracker host",
       "trackingDescription": "Paste this snippet into the <head> of your site to start collecting events. It loads the tracker without blocking the page, and calls such as _omq.push(['track', 'signed_up']) made before it has loaded are queued and sent once it is ready.",
       "trackingTitle": "Embed snippet",
       "viewActivity": "Open activity feed",

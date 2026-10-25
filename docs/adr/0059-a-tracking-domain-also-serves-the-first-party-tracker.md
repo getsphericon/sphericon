@@ -17,11 +17,11 @@ adding a second host.
   or `serving`, ADR 0038) the gate also answers `GET /t.js` and `/collect/*`; every other path stays a 404. There is no new entity, no new DNS record for the customer and no new verification: the CNAME the
   customer already points at the Edge target carries both.
 - **A customer host accepts only its own Workspace's collect key.** The gate knows the Workspace that
-  owns the host (ADR 0038 does the same for link tokens). `/collect` on that host is refused with the
-  same 404 for a collect key of another Workspace, so a verified host is never an ingestion path for
-  someone else's key.
-- **The Instance's own tracker host stays the default.** `SPHERICON_TRACKER_URL` (the app origin when
-  unset) is what the Tracking settings page puts in the snippet and the test command. A Workspace with a
+  owns the host (ADR 0038 does the same for link tokens). `/collect` on that host refuses a collect key of
+  another Workspace as it refuses a wrong one (401, counted against the failed-authentication limit of
+  ADR 0025), so a verified host is never an ingestion path for someone else's key.
+- **The Instance's own tracker host stays the default.** `SPHERICON_TRACKER_URL`, new with this ADR (the app origin
+  when unset, a trailing slash dropped), is what the Tracking settings page puts in the snippet and the test command. A Workspace with a
   Tracking domain in `serving` also sees a snippet built on that host, with the hint to use the one
   under its own site's registrable domain. Nothing is removed: snippets installed on the Instance's
   host keep working (ADR 0036).

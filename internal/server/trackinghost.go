@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/trackingdomain"
 	"github.com/getsphericon/sphericon/internal/trackinghostlog"
@@ -30,9 +31,9 @@ func trackingHostFrom(ctx context.Context) (trackingHost, bool) {
 	return h, ok
 }
 
-// trackingHostGate serves a verified Tracking host link paths only (ADR 0038). The host
-// is the configured header when the peer is inside the edge ranges, else the connection's
-// Host. A host that is not track.<a Sending domain in dns_verified or serving> goes to
+// trackingHostGate serves a verified Tracking host link paths and the first-party tracker
+// only (ADR 0038, 0059). The host is the configured header when the peer is inside the edge
+// ranges, else the connection's Host. A host that is not track.<a Sending domain in dns_verified or serving> goes to
 // next unchanged, so the Instance's own host serves everything as before; the one
 // exception is a header the edge set that names a customer host which is not verified:
 // it answers 404 instead of falling through to the SPA. link is the link-path handler
@@ -62,10 +63,19 @@ func trackingHostGate(cfg *config.Config, client *ent.Client, next, link http.Ha
 		case isLinkPath(r.URL.Path):
 			ctx := context.WithValue(r.Context(), trackingHostKey{}, trackingHost{host: host, workspaceID: ws})
 			link.ServeHTTP(w, r.WithContext(ctx))
+		case isTrackerPath(r.URL.Path):
+			// The first-party tracker (ADR 0059): the script and the ingestion, which refuses
+			// another Workspace's collect key on this host.
+			next.ServeHTTP(w, r.WithContext(auth.WithHostWorkspace(r.Context(), ws)))
 		default:
 			http.NotFound(w, r)
 		}
 	})
+}
+
+// isTrackerPath is the first-party tracker: the script and the collect API.
+func isTrackerPath(p string) bool {
+	return p == "/t.js" || isCollectPath(p)
 }
 
 // isLinkPath is the link surface of /e/: open, click, unsubscribe and confirm.

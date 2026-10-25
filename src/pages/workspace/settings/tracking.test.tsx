@@ -1,6 +1,11 @@
 import { expect, test } from 'vitest'
 
-import { handleSiteEventsList, handleSiteWorkspacesList } from '../../../generated/site/msw.gen.ts'
+import {
+  handleSiteEventsList,
+  handleSiteSendingDomainsList,
+  handleSiteWorkspacesList,
+} from '../../../generated/site/msw.gen.ts'
+import type { SiteSendingDomainResource } from '../../../generated/site/types.gen.ts'
 import { Route as recentActivityRoute } from '../../../routes/workspaces/$workspaceId/analytics/recent-activity.tsx'
 import { Route as trackingRoute } from '../../../routes/workspaces/$workspaceId/settings/tracking.tsx'
 import { problem } from '../../../test/problem.ts'
@@ -28,9 +33,12 @@ const workspace = {
 }
 
 // The page lists the workspaces and polls the events feed for the install status.
-function serveWorkspace(totalItems = 0) {
+function serveWorkspace(totalItems = 0, domains: SiteSendingDomainResource[] = []) {
   worker.use(
     handleSiteWorkspacesList({ body: [workspace] }),
+    handleSiteSendingDomainsList({
+      body: { items: domains, page: 1, pageSize: 20, totalItems: domains.length, totalPages: 1 },
+    }),
     handleSiteEventsList({ body: { items: [], page: 1, pageSize: 1, totalItems, totalPages: 0 } }),
   )
 }
@@ -64,6 +72,46 @@ test('the snippet and the test command use the tracker origin, not the app origi
     .toBeInTheDocument()
   await expect
     .element(screen.getByText(/curl -X POST "https:\/\/t\.sphericon\.test\/collect\/events"/))
+    .toBeInTheDocument()
+})
+
+const sendingDomain = (host: string, state: 'pending' | 'serving') =>
+  ({
+    id: host,
+    domain: host.replace('track.', ''),
+    dkimSelector: 'om1',
+    verified: true,
+    dkimRecord: { type: 'TXT', host: 'x', value: 'x' },
+    spfRecord: { type: 'TXT', host: 'x', value: 'x' },
+    dmarcRecord: { type: 'TXT', host: 'x', value: 'x' },
+    trackingRecord: { type: 'CNAME', host, target: 'edge.sphericon.test', state },
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
+  }) satisfies SiteSendingDomainResource
+
+test('offers the Tracking host of a serving Sending domain and builds the snippet on it', async () => {
+  serveWorkspace(0, [
+    sendingDomain('track.acme.test', 'serving'),
+    sendingDomain('track.pending.test', 'pending'),
+  ])
+
+  const { screen } = await renderWithRouter(<TrackingPage />, TRACKING_ROUTE)
+
+  // Only the serving host is offered, beside the Instance's tracker origin.
+  await screen.getByRole('combobox', { name: 'Tracker host' }).click()
+  await expect
+    .element(screen.getByRole('option', { name: 'https://track.acme.test' }))
+    .toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('option', { name: 'https://track.pending.test' }))
+    .not.toBeInTheDocument()
+
+  await screen.getByRole('option', { name: 'https://track.acme.test' }).click()
+  await expect
+    .element(screen.getByText(/s\.src = "https:\/\/track\.acme\.test\/t\.js"/))
+    .toBeInTheDocument()
+  await expect
+    .element(screen.getByText(/curl -X POST "https:\/\/track\.acme\.test\/collect\/events"/))
     .toBeInTheDocument()
 })
 

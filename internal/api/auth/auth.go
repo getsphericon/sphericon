@@ -195,6 +195,14 @@ func CollectScoped(ctx context.Context) *ent.Scoped {
 	return nil
 }
 
+var hostWorkspaceKey = struct{ name string }{"hostWorkspace"}
+
+// WithHostWorkspace marks a request that arrived on a Workspace's own Tracking host (ADR 0059):
+// the collect key must then be that Workspace's, so the host is no ingestion path for another key.
+func WithHostWorkspace(ctx context.Context, workspaceID int64) context.Context {
+	return context.WithValue(ctx, hostWorkspaceKey, workspaceID)
+}
+
 // CollectSecurityHandler implements collectapi.SecurityHandler: resolves the
 // per-workspace collect write-key (x-collect-key) to its workspace.
 type CollectSecurityHandler struct {
@@ -230,7 +238,13 @@ func (h *CollectSecurityHandler) workspaceByKey(ctx context.Context, key string)
 	if ent.IsNotFound(err) {
 		return nil, ErrUnauthorized
 	}
-	return ws, err
+	if err != nil {
+		return nil, err
+	}
+	if host, onHost := ctx.Value(hostWorkspaceKey).(int64); onHost && host != ws.ID {
+		return nil, ErrUnauthorized
+	}
+	return ws, nil
 }
 
 // SiteAuth holds the authenticated dashboard user resolved from the JWT cookie.

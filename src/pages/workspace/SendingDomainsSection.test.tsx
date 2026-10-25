@@ -139,6 +139,39 @@ test('archives a domain', async () => {
   await expect.element(screen.getByText('Domain archived')).toBeInTheDocument()
 })
 
+test('archiving a domain whose Tracking host serves asks first and says the tracker stops', async () => {
+  let archived = false
+  const serving = domain({
+    trackingRecord: {
+      type: 'CNAME',
+      host: 'track.mail.acme.com',
+      target: 'edge.sphericon.test',
+      state: 'serving',
+    },
+  })
+  worker.use(
+    list([serving]),
+    handleSiteSendingDomainsArchive(() => {
+      archived = true
+      return HttpResponse.json({ ...serving, archivedAt: '2026-02-01T00:00:00Z' })
+    }),
+  )
+  const { screen } = await renderWithRouter(
+    <SendingDomainsSection workspaceId={WORKSPACE_ID} canEdit />,
+  )
+
+  await screen.getByRole('button', { name: 'More actions' }).click()
+  await screen.getByRole('menuitem', { name: 'Archive' }).click()
+
+  await expect
+    .element(screen.getByText(/track\.mail\.acme\.com stops serving the tracker/))
+    .toBeInTheDocument()
+  expect(archived).toBe(false)
+
+  await screen.getByRole('button', { name: 'Archive', exact: true }).click()
+  await expect.poll(() => archived).toBe(true)
+})
+
 test('a domain that live work sends from is not archived and the work is named', async () => {
   worker.use(
     list([domain()]),
