@@ -143,6 +143,9 @@ func initBaseline() {
 			errLoad = err
 			return
 		}
+		// A developer's own .env may enable Sign-in providers; no test starts from them, each one
+		// enables what it needs (WithSignin, WithSigninGitHub).
+		cfg.Signin = nil
 		baseCfg = cfg
 	})
 }
