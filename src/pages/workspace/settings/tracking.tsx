@@ -167,8 +167,6 @@ function SendEvents() {
   )
 }
 
-const MAX_SENDING_DOMAINS = 100
-
 // TrackerSetup lets the Owner pick the host the snippet is built on: the Instance's tracker origin, or
 // the Tracking domain of a Sending domain once it serves (ADR 0059). A host under the site's own
 // registrable domain is first-party, which the hint says; the app cannot know the site, so it checks nothing.
@@ -178,7 +176,7 @@ function TrackerSetup({ workspace }: { workspace: SiteWorkspaceResource }) {
     siteSendingDomainsListOptions({
       path: { workspaceId: workspace.id },
       // A Workspace has few Sending domains; one large page lists every serving host.
-      query: { archived: false, pageSize: MAX_SENDING_DOMAINS },
+      query: { archived: false, pageSize: 100 },
     }),
   )
   const [selected, setSelected] = useState(workspace.trackerUrl)
