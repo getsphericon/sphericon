@@ -419,9 +419,7 @@ Kept short on purpose (the scope moved to outbound hooks). Facts only.
   ([core/internal/service/collect/collect.go#L10-L52](https://github.com/Billionmail/BillionMail/blob/fc36c76/core/internal/service/collect/collect.go#L10-L52),
   registered in `service/timers/timers.go`); whether it can be switched off was not checked. Keila checks for a release only
   ([instance.ex#L58](https://github.com/pentacent/keila/blob/2308beb/lib/keila/instance.ex#L58)).
-- **Sphericon.** ADR 0032 defines a daily anonymous Telemetry report (opt-out, fire-and-forget, 5 s timeout, no retry) and a separate release check; the receiver lives outside the repo
-  (`gh issue view 1 --repo getsphericon/platform` worked with the available credentials: "Telemetry report receiver", open, no comments; one `POST` endpoint, validates against the published schema, drops source address,
-  never retried by the sender). ADR 0035: an expired license key loads the core instead of failing boot (`docs/adr/0035-an-expired-license-key-falls-back-to-the-core.md`).
+- **Sphericon.** ADR 0032 defines a daily anonymous Telemetry report (opt-out, fire-and-forget, 5 s timeout, no retry) and a separate release check; the receiver lives outside the repo. ADR 0035: an expired license key loads the core instead of failing boot (`docs/adr/0035-an-expired-license-key-falls-back-to-the-core.md`).
 - **Platform-to-instance direction (ADR 0026).** A platform service calls the `/service/*` endpoints with a Service credential `smsc_<prefix>_<secret>` (SHA-256 stored), limited to scopes (`usage:read`,
   `workspaces:read`, `holds:write`), created, rotated (a second credential, then revoke the old) and revoked only by CLI, served only on the internal listener, 404 on the public mux
   ([docs/adr/0026-operator-console-and-abuse-detector.md#L40-L58](../../docs/adr/0026-operator-console-and-abuse-detector.md);

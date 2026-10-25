@@ -143,8 +143,7 @@ The rest of this file is for maintainers and the agents they run: how work lands
   `Required status check "license/cla" is expected` and still succeeds: that is how the
   repository is set up, so it is expected. Do not mention it, flag it or call it a bypass.
 - **The open app stays neutral about the hosted offering.** No plans, prices, trials, payment
-  providers, billing or the words that describe them in code, docs, UI strings or contracts: the
-  closed services live in `getsphericon/platform`. A Staff hold carries a free-form reason code, a
+  providers, billing or the words that describe them in code, docs, UI strings or contracts. A Staff hold carries a free-form reason code, a
   message and an optional action URL, and the core attaches no meaning to the code.
 - ADR numbers are unique (`mise run check:adr`). Take the next free number when you add an ADR,
   and re-check after merging `main`: parallel branches pick the same one.
