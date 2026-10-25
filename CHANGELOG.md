@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.3.1](https://github.com/getsphericon/sphericon/compare/v0.3.0...v0.3.1) (2026-10-25)
+
+
+### Bug Fixes
+
+* centre the sign-in and standalone pages inside a Container ([db9166e](https://github.com/getsphericon/sphericon/commit/db9166e3106d5fcf38da1474fb14b99deb35e793))
+* **dev:** drop a worktree's databases when it is removed ([ed8aa9b](https://github.com/getsphericon/sphericon/commit/ed8aa9bc9750dc3ffdf9dd8fddbf593db798402e))
+* **dev:** make db:up show why the db daemon did not start ([7626540](https://github.com/getsphericon/sphericon/commit/762654049272fed7f8db01a98e35247dc15460ba))
+* **dev:** run the daily worktrees:gc only from the primary checkout ([3604d72](https://github.com/getsphericon/sphericon/commit/3604d723797131fb3205a1ac6dcc5404c6cea960))
+
 ## [0.3.0](https://github.com/getsphericon/sphericon/compare/v0.2.0...v0.3.0) (2026-10-24)
 
 
