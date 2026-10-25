@@ -210,6 +210,9 @@ model ContactExportOutboundMessage {
   /** When the provider first reported a spam complaint about the message */
   complainedAt?: Timestamp | null;
 
+  /** True when the message went through a Test inbox: captured, not delivered */
+  captured: boolean;
+
   /** Broadcast that produced the message */
   broadcastId?: EntityId | null;
 

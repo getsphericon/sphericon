@@ -18913,6 +18913,18 @@ func (x *OutboundMessageScopedCreate) SetNillableComplainedAt(v *time.Time) *Out
 	return x
 }
 
+// SetCaptured sets the "captured" field.
+func (x *OutboundMessageScopedCreate) SetCaptured(v bool) *OutboundMessageScopedCreate {
+	x.b.SetCaptured(v)
+	return x
+}
+
+// SetNillableCaptured sets the "captured" field if the given value is not nil.
+func (x *OutboundMessageScopedCreate) SetNillableCaptured(v *bool) *OutboundMessageScopedCreate {
+	x.b.SetNillableCaptured(v)
+	return x
+}
+
 // SetBroadcastID sets the "broadcast_id" field.
 func (x *OutboundMessageScopedCreate) SetBroadcastID(v int64) *OutboundMessageScopedCreate {
 	x.b.SetBroadcastID(v)
@@ -19359,6 +19371,18 @@ func (u *OutboundMessageScopedUpsert) UpdateComplainedAt() *OutboundMessageScope
 // ClearComplainedAt clears the value of the "complained_at" field.
 func (u *OutboundMessageScopedUpsert) ClearComplainedAt() *OutboundMessageScopedUpsert {
 	u.u.SetNull(outboundmessage.FieldComplainedAt)
+	return u
+}
+
+// SetCaptured sets the "captured" field.
+func (u *OutboundMessageScopedUpsert) SetCaptured(v bool) *OutboundMessageScopedUpsert {
+	u.u.Set(outboundmessage.FieldCaptured, v)
+	return u
+}
+
+// UpdateCaptured sets the "captured" field to the value that was provided on create.
+func (u *OutboundMessageScopedUpsert) UpdateCaptured() *OutboundMessageScopedUpsert {
+	u.u.SetExcluded(outboundmessage.FieldCaptured)
 	return u
 }
 
@@ -19823,6 +19847,18 @@ func (x *OutboundMessageScopedUpdateOne) SetNillableComplainedAt(v *time.Time) *
 // ClearComplainedAt clears the value of the "complained_at" field.
 func (x *OutboundMessageScopedUpdateOne) ClearComplainedAt() *OutboundMessageScopedUpdateOne {
 	x.b.ClearComplainedAt()
+	return x
+}
+
+// SetCaptured sets the "captured" field.
+func (x *OutboundMessageScopedUpdateOne) SetCaptured(v bool) *OutboundMessageScopedUpdateOne {
+	x.b.SetCaptured(v)
+	return x
+}
+
+// SetNillableCaptured sets the "captured" field if the given value is not nil.
+func (x *OutboundMessageScopedUpdateOne) SetNillableCaptured(v *bool) *OutboundMessageScopedUpdateOne {
+	x.b.SetNillableCaptured(v)
 	return x
 }
 
@@ -20338,6 +20374,18 @@ func (x *OutboundMessageScopedUpdate) SetNillableComplainedAt(v *time.Time) *Out
 // ClearComplainedAt clears the value of the "complained_at" field.
 func (x *OutboundMessageScopedUpdate) ClearComplainedAt() *OutboundMessageScopedUpdate {
 	x.b.ClearComplainedAt()
+	return x
+}
+
+// SetCaptured sets the "captured" field.
+func (x *OutboundMessageScopedUpdate) SetCaptured(v bool) *OutboundMessageScopedUpdate {
+	x.b.SetCaptured(v)
+	return x
+}
+
+// SetNillableCaptured sets the "captured" field if the given value is not nil.
+func (x *OutboundMessageScopedUpdate) SetNillableCaptured(v *bool) *OutboundMessageScopedUpdate {
+	x.b.SetNillableCaptured(v)
 	return x
 }
 

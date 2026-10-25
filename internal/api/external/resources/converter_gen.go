@@ -104,6 +104,7 @@ func (c *ConverterImpl) BroadcastReportToResource(source broadcasts.Report) exte
 	externalapiBroadcastReport.DeliveredCount = count(source.Stats.Delivered)
 	externalapiBroadcastReport.BouncedCount = count(source.Stats.Bounced)
 	externalapiBroadcastReport.ComplainedCount = count(source.Stats.Complained)
+	externalapiBroadcastReport.CapturedCount = count(source.Stats.Captured)
 	externalapiBroadcastReport.OpenRate = openRate(source.Stats)
 	externalapiBroadcastReport.ClickRate = clickRate(source.Stats)
 	return externalapiBroadcastReport
@@ -273,6 +274,7 @@ func (c *ConverterImpl) OutboundMessageToExport(source *ent.OutboundMessage) ext
 		externalapiContactExportOutboundMessage.DeliveredAt = optNilTimestamp((*source).DeliveredAt)
 		externalapiContactExportOutboundMessage.BouncedAt = optNilTimestamp((*source).BouncedAt)
 		externalapiContactExportOutboundMessage.ComplainedAt = optNilTimestamp((*source).ComplainedAt)
+		externalapiContactExportOutboundMessage.Captured = (*source).Captured
 		externalapiContactExportOutboundMessage.BroadcastId = optNilEntityID((*source).BroadcastID)
 		externalapiContactExportOutboundMessage.AutomationId = optNilEntityID((*source).AutomationID)
 		externalapiContactExportOutboundMessage.AutomationStep = optNilInt32((*source).AutomationStep)

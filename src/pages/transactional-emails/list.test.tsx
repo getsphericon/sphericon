@@ -18,6 +18,7 @@ const SENT = {
   templateId: '1',
   destination: 'alice@example.com',
   status: 'sent' as const,
+  captured: false,
   createdAt: '2026-03-04T10:15:00Z',
 }
 const FAILED = {
@@ -26,6 +27,7 @@ const FAILED = {
   templateId: '1',
   destination: 'bob@example.com',
   status: 'failed' as const,
+  captured: false,
   error: 'mailbox full',
   createdAt: '2026-03-05T11:30:00Z',
 }
@@ -42,6 +44,24 @@ test('lists transactional emails with status, error and sent time', async () => 
   await expect.element(screen.getByText('Failed', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByText('mailbox full')).toBeInTheDocument()
   await expect.element(screen.getByText(formatDateTime(SENT.createdAt))).toBeInTheDocument()
+})
+
+test('says a message sent through a Test inbox was captured, not delivered', async () => {
+  worker.use(
+    handleSiteTransactionalEmailsList({
+      body: page(
+        [
+          { ...SENT, captured: true },
+          { ...FAILED, id: '3', captured: false },
+        ],
+        2,
+      ),
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<TransactionalEmailsListPage />, LIST_ROUTE)
+
+  await expect.element(screen.getByText('Captured, not delivered')).toBeInTheDocument()
 })
 
 test('shows the empty message when there are no emails', async () => {

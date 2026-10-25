@@ -233,6 +233,9 @@ model SiteAutomationReport {
   /** Messages a recipient complained about, read from the delivery result stamped on each message; not bounded by Event retention */
   complained: int32;
 
+  /** Messages that went through a Test inbox: captured, not delivered; they count as delivered too */
+  captured: int32;
+
   /** One entry per clicked link, most clicked first */
   links: SiteLinkClicks[];
 }

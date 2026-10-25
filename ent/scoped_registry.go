@@ -1320,6 +1320,7 @@ func ScopedEntities() []ScopedEntity {
 				if src.ComplainedAt != nil {
 					b.SetComplainedAt(*src.ComplainedAt)
 				}
+				b.SetCaptured(src.Captured)
 				if src.BroadcastID != nil {
 					b.SetBroadcastID(remap("Broadcast", *src.BroadcastID))
 				}

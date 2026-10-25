@@ -315,6 +315,10 @@ export type ContactExportOutboundMessage = {
    */
   complainedAt?: Timestamp | null;
   /**
+   * True when the message went through a Test inbox: captured, not delivered
+   */
+  captured: boolean;
+  /**
    * Broadcast that produced the message
    */
   broadcastId?: EntityId | null;
@@ -1295,6 +1299,10 @@ export type SiteAutomationReport = {
    */
   complained: number;
   /**
+   * Messages that went through a Test inbox: captured, not delivered; they count as delivered too
+   */
+  captured: number;
+  /**
    * One entry per clicked link, most clicked first
    */
   links: Array<SiteLinkClicks>;
@@ -1642,6 +1650,10 @@ export type SiteBroadcastStats = {
    * Messages a recipient complained about, read from the delivery result stamped on each message
    */
   complainedCount: number;
+  /**
+   * Messages that went through a Test inbox: captured, not delivered; they count as delivered too
+   */
+  capturedCount: number;
   /**
    * Messages handed to the provider ÷ recipients targeted (0–1)
    */
@@ -4596,6 +4608,10 @@ export type SiteTransactionalEmailResource = {
    * Provider error message, present when status is `failed`
    */
   error?: string | null;
+  /**
+   * True when the send went through a Test inbox: captured, not delivered
+   */
+  captured: boolean;
   /**
    * Creation timestamp
    */

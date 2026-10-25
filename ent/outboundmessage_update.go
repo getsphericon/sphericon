@@ -299,6 +299,20 @@ func (_u *OutboundMessageUpdate) ClearComplainedAt() *OutboundMessageUpdate {
 	return _u
 }
 
+// SetCaptured sets the "captured" field.
+func (_u *OutboundMessageUpdate) SetCaptured(v bool) *OutboundMessageUpdate {
+	_u.mutation.SetCaptured(v)
+	return _u
+}
+
+// SetNillableCaptured sets the "captured" field if the given value is not nil.
+func (_u *OutboundMessageUpdate) SetNillableCaptured(v *bool) *OutboundMessageUpdate {
+	if v != nil {
+		_u.SetCaptured(*v)
+	}
+	return _u
+}
+
 // SetBroadcastID sets the "broadcast_id" field.
 func (_u *OutboundMessageUpdate) SetBroadcastID(v int64) *OutboundMessageUpdate {
 	_u.mutation.SetBroadcastID(v)
@@ -676,6 +690,9 @@ func (_u *OutboundMessageUpdate) sqlSave(ctx context.Context) (_node int, err er
 	}
 	if _u.mutation.ComplainedAtCleared() {
 		_spec.ClearField(outboundmessage.FieldComplainedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.Captured(); ok {
+		_spec.SetField(outboundmessage.FieldCaptured, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.AutomationStep(); ok {
 		_spec.SetField(outboundmessage.FieldAutomationStep, field.TypeInt, value)
@@ -1205,6 +1222,20 @@ func (_u *OutboundMessageUpdateOne) ClearComplainedAt() *OutboundMessageUpdateOn
 	return _u
 }
 
+// SetCaptured sets the "captured" field.
+func (_u *OutboundMessageUpdateOne) SetCaptured(v bool) *OutboundMessageUpdateOne {
+	_u.mutation.SetCaptured(v)
+	return _u
+}
+
+// SetNillableCaptured sets the "captured" field if the given value is not nil.
+func (_u *OutboundMessageUpdateOne) SetNillableCaptured(v *bool) *OutboundMessageUpdateOne {
+	if v != nil {
+		_u.SetCaptured(*v)
+	}
+	return _u
+}
+
 // SetBroadcastID sets the "broadcast_id" field.
 func (_u *OutboundMessageUpdateOne) SetBroadcastID(v int64) *OutboundMessageUpdateOne {
 	_u.mutation.SetBroadcastID(v)
@@ -1612,6 +1643,9 @@ func (_u *OutboundMessageUpdateOne) sqlSave(ctx context.Context) (_node *Outboun
 	}
 	if _u.mutation.ComplainedAtCleared() {
 		_spec.ClearField(outboundmessage.FieldComplainedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.Captured(); ok {
+		_spec.SetField(outboundmessage.FieldCaptured, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.AutomationStep(); ok {
 		_spec.SetField(outboundmessage.FieldAutomationStep, field.TypeInt, value)

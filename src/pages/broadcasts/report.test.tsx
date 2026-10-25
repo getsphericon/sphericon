@@ -27,6 +27,7 @@ const STATS = {
   deliveredCount: 171,
   bouncedCount: 13,
   complainedCount: 6,
+  capturedCount: 9,
   deliveryRate: 0.95,
   openRate: 0.5,
   clickRate: 0.125,
@@ -61,6 +62,8 @@ test('renders the broadcast header, counters and rates', async () => {
   await expect.element(screen.getByText('13')).toBeInTheDocument()
   await expect.element(screen.getByText('Complained', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByText('6', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('Captured, not delivered')).toBeInTheDocument()
+  await expect.element(screen.getByText('9', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByText('95%')).toBeInTheDocument()
   await expect.element(screen.getByText('12.5%')).toBeInTheDocument()
   await expect.element(screen.getByText('Sending is on hold')).not.toBeInTheDocument()

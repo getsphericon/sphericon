@@ -28,7 +28,15 @@ test('shows the automation and the contacts enrolled in it', async () => {
       },
     }),
     handleSiteAutomationReportsGet({
-      body: { opens: 0, clicks: 0, delivered: 0, bounced: 0, complained: 0, links: [] },
+      body: {
+        opens: 0,
+        clicks: 0,
+        delivered: 0,
+        bounced: 0,
+        complained: 0,
+        captured: 0,
+        links: [],
+      },
     }),
     handleSiteEnrollmentsList({
       body: page(
@@ -73,6 +81,7 @@ test('shows the opens, the clicks and the clicked links of the automation', asyn
         delivered: 31,
         bounced: 4,
         complained: 5,
+        captured: 8,
         links: [
           { url: 'https://dest.test/a', clicks: 7 },
           { url: 'https://dest.test/b', clicks: 2 },
@@ -92,6 +101,8 @@ test('shows the opens, the clicks and the clicked links of the automation', asyn
   await expect.element(screen.getByText('4', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByText('Complained', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByText('5', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('Captured, not delivered')).toBeInTheDocument()
+  await expect.element(screen.getByText('8', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByText('https://dest.test/a')).toBeInTheDocument()
   await expect.element(screen.getByText('https://dest.test/b')).toBeInTheDocument()
 })
@@ -109,7 +120,15 @@ test('marks a draft automation as a draft', async () => {
       },
     }),
     handleSiteAutomationReportsGet({
-      body: { opens: 0, clicks: 0, delivered: 0, bounced: 0, complained: 0, links: [] },
+      body: {
+        opens: 0,
+        clicks: 0,
+        delivered: 0,
+        bounced: 0,
+        complained: 0,
+        captured: 0,
+        links: [],
+      },
     }),
     handleSiteEnrollmentsList({ body: page([], 0) }),
   )

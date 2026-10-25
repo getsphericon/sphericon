@@ -1,4 +1,4 @@
-import { Badge, Stack, Title } from '@mantine/core'
+import { Badge, Group, Stack, Title } from '@mantine/core'
 import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 
@@ -41,7 +41,16 @@ export function TransactionalEmailsListPage() {
           {
             accessor: 'status',
             title: t(($) => $.transactionalEmails.statusLabel),
-            render: (record) => <StatusBadge t={t} status={record.status} />,
+            render: (record) => (
+              <Group gap="xs">
+                <StatusBadge t={t} status={record.status} />
+                {record.captured ? (
+                  <Badge color="gray" variant="outline">
+                    {t(($) => $.transactionalEmails.captured)}
+                  </Badge>
+                ) : null}
+              </Group>
+            ),
           },
           {
             accessor: 'error',

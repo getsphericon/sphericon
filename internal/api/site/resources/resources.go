@@ -429,6 +429,7 @@ func BroadcastStats(st broadcasts.Stats) siteapi.SiteBroadcastStats {
 		DeliveredCount:    narrow.Int32(st.Delivered),
 		BouncedCount:      narrow.Int32(st.Bounced),
 		ComplainedCount:   narrow.Int32(st.Complained),
+		CapturedCount:     narrow.Int32(st.Captured),
 		DeliveryRate:      broadcasts.Ratio(st.Sent, st.Recipients),
 		OpenRate:          st.OpenRate(),
 		ClickRate:         st.ClickRate(),

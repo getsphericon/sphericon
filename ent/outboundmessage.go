@@ -61,6 +61,8 @@ type OutboundMessage struct {
 	BouncedAt *time.Time `json:"bounced_at,omitempty"`
 	// ComplainedAt holds the value of the "complained_at" field.
 	ComplainedAt *time.Time `json:"complained_at,omitempty"`
+	// Captured holds the value of the "captured" field.
+	Captured bool `json:"captured,omitempty"`
 	// BroadcastID holds the value of the "broadcast_id" field.
 	BroadcastID *int64 `json:"broadcast_id,omitempty"`
 	// BroadcastRecipientID holds the value of the "broadcast_recipient_id" field.
@@ -199,6 +201,8 @@ func (*OutboundMessage) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case outboundmessage.FieldCaptured:
+			values[i] = new(sql.NullBool)
 		case outboundmessage.FieldID, outboundmessage.FieldWorkspaceID, outboundmessage.FieldContactID, outboundmessage.FieldBroadcastID, outboundmessage.FieldBroadcastRecipientID, outboundmessage.FieldAutomationID, outboundmessage.FieldAutomationRunID, outboundmessage.FieldAutomationStep, outboundmessage.FieldIntegrationID, outboundmessage.FieldTemplateID:
 			values[i] = new(sql.NullInt64)
 		case outboundmessage.FieldKind, outboundmessage.FieldIdempotencyKey, outboundmessage.FieldChannel, outboundmessage.FieldDestination, outboundmessage.FieldSendingSource, outboundmessage.FieldSendingDomain, outboundmessage.FieldProviderMessageID, outboundmessage.FieldStatus, outboundmessage.FieldReason, outboundmessage.FieldAppOrigin:
@@ -342,6 +346,12 @@ func (_m *OutboundMessage) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.ComplainedAt = new(time.Time)
 				*_m.ComplainedAt = value.Time
+			}
+		case outboundmessage.FieldCaptured:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field captured", values[i])
+			} else if value.Valid {
+				_m.Captured = value.Bool
 			}
 		case outboundmessage.FieldBroadcastID:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -546,6 +556,9 @@ func (_m *OutboundMessage) String() string {
 		builder.WriteString("complained_at=")
 		builder.WriteString(v.Format(time.ANSIC))
 	}
+	builder.WriteString(", ")
+	builder.WriteString("captured=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Captured))
 	builder.WriteString(", ")
 	if v := _m.BroadcastID; v != nil {
 		builder.WriteString("broadcast_id=")

@@ -12239,7 +12239,16 @@
       },
       "ContactExportOutboundMessage": {
         "type": "object",
-        "required": ["id", "kind", "channel", "destination", "status", "claimedAt", "createdAt"],
+        "required": [
+          "id",
+          "kind",
+          "channel",
+          "destination",
+          "status",
+          "claimedAt",
+          "captured",
+          "createdAt"
+        ],
         "properties": {
           "id": {
             "allOf": [
@@ -12332,6 +12341,10 @@
             ],
             "nullable": true,
             "description": "When the provider first reported a spam complaint about the message"
+          },
+          "captured": {
+            "type": "boolean",
+            "description": "True when the message went through a Test inbox: captured, not delivered"
           },
           "broadcastId": {
             "type": "string",
@@ -13496,7 +13509,7 @@
       },
       "SiteAutomationReport": {
         "type": "object",
-        "required": ["opens", "clicks", "delivered", "bounced", "complained", "links"],
+        "required": ["opens", "clicks", "delivered", "bounced", "complained", "captured", "links"],
         "properties": {
           "opens": {
             "type": "integer",
@@ -13522,6 +13535,11 @@
             "type": "integer",
             "format": "int32",
             "description": "Messages a recipient complained about, read from the delivery result stamped on each message; not bounded by Event retention"
+          },
+          "captured": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Messages that went through a Test inbox: captured, not delivered; they count as delivered too"
           },
           "links": {
             "type": "array",
@@ -13958,6 +13976,7 @@
           "deliveredCount",
           "bouncedCount",
           "complainedCount",
+          "capturedCount",
           "deliveryRate",
           "openRate",
           "clickRate",
@@ -14010,6 +14029,11 @@
             "type": "integer",
             "format": "int32",
             "description": "Messages a recipient complained about, read from the delivery result stamped on each message"
+          },
+          "capturedCount": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Messages that went through a Test inbox: captured, not delivered; they count as delivered too"
           },
           "deliveryRate": {
             "type": "number",
@@ -17881,7 +17905,15 @@
       },
       "SiteTransactionalEmailResource": {
         "type": "object",
-        "required": ["id", "channel", "destination", "templateId", "status", "createdAt"],
+        "required": [
+          "id",
+          "channel",
+          "destination",
+          "templateId",
+          "status",
+          "captured",
+          "createdAt"
+        ],
         "properties": {
           "id": {
             "allOf": [
@@ -17933,6 +17965,10 @@
             "type": "string",
             "nullable": true,
             "description": "Provider error message, present when status is `failed`"
+          },
+          "captured": {
+            "type": "boolean",
+            "description": "True when the send went through a Test inbox: captured, not delivered"
           },
           "createdAt": {
             "allOf": [

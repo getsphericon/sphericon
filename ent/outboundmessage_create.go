@@ -258,6 +258,20 @@ func (_c *OutboundMessageCreate) SetNillableComplainedAt(v *time.Time) *Outbound
 	return _c
 }
 
+// SetCaptured sets the "captured" field.
+func (_c *OutboundMessageCreate) SetCaptured(v bool) *OutboundMessageCreate {
+	_c.mutation.SetCaptured(v)
+	return _c
+}
+
+// SetNillableCaptured sets the "captured" field if the given value is not nil.
+func (_c *OutboundMessageCreate) SetNillableCaptured(v *bool) *OutboundMessageCreate {
+	if v != nil {
+		_c.SetCaptured(*v)
+	}
+	return _c
+}
+
 // SetBroadcastID sets the "broadcast_id" field.
 func (_c *OutboundMessageCreate) SetBroadcastID(v int64) *OutboundMessageCreate {
 	_c.mutation.SetBroadcastID(v)
@@ -471,6 +485,10 @@ func (_c *OutboundMessageCreate) defaults() {
 		v := outboundmessage.DefaultClaimedAt()
 		_c.mutation.SetClaimedAt(v)
 	}
+	if _, ok := _c.mutation.Captured(); !ok {
+		v := outboundmessage.DefaultCaptured
+		_c.mutation.SetCaptured(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -518,6 +536,9 @@ func (_c *OutboundMessageCreate) check() error {
 	}
 	if _, ok := _c.mutation.ClaimedAt(); !ok {
 		return &ValidationError{Name: "claimed_at", err: errors.New(`ent: missing required field "OutboundMessage.claimed_at"`)}
+	}
+	if _, ok := _c.mutation.Captured(); !ok {
+		return &ValidationError{Name: "captured", err: errors.New(`ent: missing required field "OutboundMessage.captured"`)}
 	}
 	if len(_c.mutation.WorkspaceIDs()) == 0 {
 		return &ValidationError{Name: "workspace", err: errors.New(`ent: missing required edge "OutboundMessage.workspace"`)}
@@ -618,6 +639,10 @@ func (_c *OutboundMessageCreate) createSpec() (*OutboundMessage, *sqlgraph.Creat
 	if value, ok := _c.mutation.ComplainedAt(); ok {
 		_spec.SetField(outboundmessage.FieldComplainedAt, field.TypeTime, value)
 		_node.ComplainedAt = &value
+	}
+	if value, ok := _c.mutation.Captured(); ok {
+		_spec.SetField(outboundmessage.FieldCaptured, field.TypeBool, value)
+		_node.Captured = value
 	}
 	if value, ok := _c.mutation.AutomationStep(); ok {
 		_spec.SetField(outboundmessage.FieldAutomationStep, field.TypeInt, value)
@@ -1052,6 +1077,18 @@ func (u *OutboundMessageUpsert) UpdateComplainedAt() *OutboundMessageUpsert {
 // ClearComplainedAt clears the value of the "complained_at" field.
 func (u *OutboundMessageUpsert) ClearComplainedAt() *OutboundMessageUpsert {
 	u.SetNull(outboundmessage.FieldComplainedAt)
+	return u
+}
+
+// SetCaptured sets the "captured" field.
+func (u *OutboundMessageUpsert) SetCaptured(v bool) *OutboundMessageUpsert {
+	u.Set(outboundmessage.FieldCaptured, v)
+	return u
+}
+
+// UpdateCaptured sets the "captured" field to the value that was provided on create.
+func (u *OutboundMessageUpsert) UpdateCaptured() *OutboundMessageUpsert {
+	u.SetExcluded(outboundmessage.FieldCaptured)
 	return u
 }
 
@@ -1524,6 +1561,20 @@ func (u *OutboundMessageUpsertOne) UpdateComplainedAt() *OutboundMessageUpsertOn
 func (u *OutboundMessageUpsertOne) ClearComplainedAt() *OutboundMessageUpsertOne {
 	return u.Update(func(s *OutboundMessageUpsert) {
 		s.ClearComplainedAt()
+	})
+}
+
+// SetCaptured sets the "captured" field.
+func (u *OutboundMessageUpsertOne) SetCaptured(v bool) *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.SetCaptured(v)
+	})
+}
+
+// UpdateCaptured sets the "captured" field to the value that was provided on create.
+func (u *OutboundMessageUpsertOne) UpdateCaptured() *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.UpdateCaptured()
 	})
 }
 
@@ -2184,6 +2235,20 @@ func (u *OutboundMessageUpsertBulk) UpdateComplainedAt() *OutboundMessageUpsertB
 func (u *OutboundMessageUpsertBulk) ClearComplainedAt() *OutboundMessageUpsertBulk {
 	return u.Update(func(s *OutboundMessageUpsert) {
 		s.ClearComplainedAt()
+	})
+}
+
+// SetCaptured sets the "captured" field.
+func (u *OutboundMessageUpsertBulk) SetCaptured(v bool) *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.SetCaptured(v)
+	})
+}
+
+// UpdateCaptured sets the "captured" field to the value that was provided on create.
+func (u *OutboundMessageUpsertBulk) UpdateCaptured() *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.UpdateCaptured()
 	})
 }
 

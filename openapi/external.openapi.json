@@ -12188,6 +12188,7 @@
           "deliveredCount",
           "bouncedCount",
           "complainedCount",
+          "capturedCount",
           "openRate",
           "clickRate"
         ],
@@ -12254,6 +12255,11 @@
             "type": "integer",
             "format": "int32",
             "description": "Messages a recipient complained about, read from the delivery result stamped on each message"
+          },
+          "capturedCount": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Messages that went through a Test inbox: captured, not delivered; they count as delivered too"
           },
           "openRate": {
             "type": "number",
@@ -12863,7 +12869,16 @@
       },
       "ContactExportOutboundMessage": {
         "type": "object",
-        "required": ["id", "kind", "channel", "destination", "status", "claimedAt", "createdAt"],
+        "required": [
+          "id",
+          "kind",
+          "channel",
+          "destination",
+          "status",
+          "claimedAt",
+          "captured",
+          "createdAt"
+        ],
         "properties": {
           "id": {
             "allOf": [
@@ -12956,6 +12971,10 @@
             ],
             "nullable": true,
             "description": "When the provider first reported a spam complaint about the message"
+          },
+          "captured": {
+            "type": "boolean",
+            "description": "True when the message went through a Test inbox: captured, not delivered"
           },
           "broadcastId": {
             "type": "string",
@@ -14400,6 +14419,7 @@
           "delivered_at",
           "bounced_at",
           "complained_at",
+          "captured",
           "created_at",
           "updated_at"
         ],
@@ -14562,6 +14582,10 @@
             ],
             "nullable": true,
             "description": "When the provider first reported a spam complaint about the message"
+          },
+          "captured": {
+            "type": "boolean",
+            "description": "True when the message went through a Test inbox: captured, not delivered"
           },
           "created_at": {
             "allOf": [

@@ -523,6 +523,8 @@ type gateResult struct {
 	from        string
 	fromName    string
 	domain      string
+	// captured is the sender's own word that its mail stays inside (ADR 0058).
+	captured bool
 }
 
 // gate runs the source-level checks, in order: Workspace freeze (the reason holds names:
@@ -563,7 +565,7 @@ func (m *Module) gate(ctx context.Context, s *ent.Scoped, fromEmail, fromName st
 	if err != nil && !errors.Is(err, messaging.ErrNoProvider) {
 		return gateResult{}, fmt.Errorf("outbound: load integration: %w", err)
 	}
-	return gateResult{sender: sender, integration: integ, from: from, fromName: name, domain: messaging.DomainOf(from)}, nil
+	return gateResult{sender: sender, integration: integ, from: from, fromName: name, domain: messaging.DomainOf(from), captured: !messaging.DeliversOutside(sender)}, nil
 }
 
 // effectiveFrom is the From the message goes out with: the given one, else the sender's
@@ -736,6 +738,9 @@ func (m *Module) recordSent(ctx context.Context, s *ent.Scoped, req Request, msg
 			if receipt.MessageID != "" {
 				upd.SetProviderMessageID(receipt.MessageID)
 			}
+			if g.captured {
+				upd.SetCaptured(true)
+			}
 		}); err != nil {
 			return err
 		}
@@ -752,6 +757,7 @@ func (m *Module) recordSent(ctx context.Context, s *ent.Scoped, req Request, msg
 			AutomationID:      req.Ref.AutomationID,
 			OutboundMessageID: msg.ID,
 			ProviderMessageID: receipt.MessageID,
+			Captured:          g.captured,
 		}); err != nil {
 			return err
 		}
@@ -776,6 +782,7 @@ func (m *Module) recordSent(ctx context.Context, s *ent.Scoped, req Request, msg
 			SendingSource:     req.Source,
 			BroadcastID:       req.Ref.BroadcastID,
 			AutomationID:      req.Ref.AutomationID,
+			Captured:          g.captured,
 		})
 	})
 	if err != nil {

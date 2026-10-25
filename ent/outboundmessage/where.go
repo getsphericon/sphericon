@@ -130,6 +130,11 @@ func ComplainedAt(v time.Time) predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldEQ(FieldComplainedAt, v))
 }
 
+// Captured applies equality check predicate on the "captured" field. It's identical to CapturedEQ.
+func Captured(v bool) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldEQ(FieldCaptured, v))
+}
+
 // BroadcastID applies equality check predicate on the "broadcast_id" field. It's identical to BroadcastIDEQ.
 func BroadcastID(v int64) predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldEQ(FieldBroadcastID, v))
@@ -1038,6 +1043,16 @@ func ComplainedAtIsNil() predicate.OutboundMessage {
 // ComplainedAtNotNil applies the NotNil predicate on the "complained_at" field.
 func ComplainedAtNotNil() predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldNotNull(FieldComplainedAt))
+}
+
+// CapturedEQ applies the EQ predicate on the "captured" field.
+func CapturedEQ(v bool) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldEQ(FieldCaptured, v))
+}
+
+// CapturedNEQ applies the NEQ predicate on the "captured" field.
+func CapturedNEQ(v bool) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNEQ(FieldCaptured, v))
 }
 
 // BroadcastIDEQ applies the EQ predicate on the "broadcast_id" field.

@@ -161,6 +161,9 @@ model BroadcastReport {
   /** Messages a recipient complained about, read from the delivery result stamped on each message */
   complainedCount: int32;
 
+  /** Messages that went through a Test inbox: captured, not delivered; they count as delivered too */
+  capturedCount: int32;
+
   /** Unique opens ÷ messages sent (0-1) */
   openRate: float32;
 

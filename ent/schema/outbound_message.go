@@ -100,6 +100,11 @@ func (OutboundMessage) Fields() []ent.Field {
 		field.Time("delivered_at").Optional().Nillable(),
 		field.Time("bounced_at").Optional().Nillable(),
 		field.Time("complained_at").Optional().Nillable(),
+		// True when the sender the message went through said it delivers nowhere outside (a
+		// Test inbox, ADR 0058): the message was captured, not delivered. Stamped with the
+		// send from the sender's own capability, so it outlives the Integration's state and
+		// every report can say so without joining to the provider.
+		field.Bool("captured").Default(false),
 		// Surface provenance, foreign keys declared in Edges.
 		field.Int64("broadcast_id").Optional().Nillable(),
 		field.Int64("broadcast_recipient_id").Optional().Nillable(),

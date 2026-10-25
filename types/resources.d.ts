@@ -38,6 +38,7 @@ export default interface Resources {
     },
     "activity": {
       "action": "Action",
+      "captured": "Captured, not delivered",
       "createdAt": "Recorded at",
       "details": "Event details",
       "filterActionPlaceholder": "Filter by action",
@@ -221,6 +222,7 @@ export default interface Resources {
       "bounced": "Bounced",
       "branchesUnsupported": "Only a single linear path is saved. Nodes off the main chain were ignored.",
       "branchesUnsupportedTitle": "Branches not supported yet",
+      "captured": "Captured, not delivered",
       "clicks": "Clicks",
       "complained": "Complained",
       "createTitle": "New automation",
@@ -357,6 +359,7 @@ export default interface Resources {
       "showArchived": "Show archived",
       "stats": {
         "bounced": "Bounced",
+        "captured": "Captured, not delivered",
         "clickRate": "Click rate",
         "clickToOpenRate": "Click-to-open",
         "clicked": "Clicked",
@@ -1608,6 +1611,7 @@ export default interface Resources {
       "toggleLabel": "Toggle color scheme"
     },
     "transactionalEmails": {
+      "captured": "Captured, not delivered",
       "destinationLabel": "Email",
       "errorLabel": "Error",
       "noRecords": "No transactional emails yet",

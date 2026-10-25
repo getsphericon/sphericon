@@ -21,6 +21,9 @@ type Report struct {
 	// Delivered, Bounced and Complained count the Automation's Outbound messages by their
 	// delivery result stamp (ADR 0053), so they do not shrink when Events expire.
 	Delivered, Bounced, Complained int
+	// Captured counts the messages that went through a sender delivering nowhere outside (a Test
+	// inbox): captured, not delivered.
+	Captured int
 	// Links counts the clicks by link, most clicked first.
 	Links []linkclicks.Clicks
 }
@@ -49,6 +52,7 @@ func (m *Module) ReportOf(ctx context.Context, s *ent.Scoped, id int64) (Report,
 		Delivered  int `json:"delivered"`
 		Bounced    int `json:"bounced"`
 		Complained int `json:"complained"`
+		Captured   int `json:"captured"`
 	}
 	err = s.OutboundMessage().Query().
 		Where(outboundmessage.AutomationID(id)).
@@ -56,6 +60,7 @@ func (m *Module) ReportOf(ctx context.Context, s *ent.Scoped, id int64) (Report,
 			aggregates.CountSet(outboundmessage.FieldDeliveredAt, "delivered"),
 			aggregates.CountSet(outboundmessage.FieldBouncedAt, "bounced"),
 			aggregates.CountSet(outboundmessage.FieldComplainedAt, "complained"),
+			aggregates.CountTrue(outboundmessage.FieldCaptured, "captured"),
 		).
 		Scan(ctx, &results)
 	if err != nil {
@@ -64,6 +69,7 @@ func (m *Module) ReportOf(ctx context.Context, s *ent.Scoped, id int64) (Report,
 	report := Report{Opens: opens, Clicks: linkclicks.Total(links), Links: links}
 	if len(results) > 0 {
 		report.Delivered, report.Bounced, report.Complained = results[0].Delivered, results[0].Bounced, results[0].Complained
+		report.Captured = results[0].Captured
 	}
 	return report, nil
 }

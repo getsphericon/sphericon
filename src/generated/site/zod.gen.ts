@@ -447,6 +447,7 @@ export const zSiteBroadcastStats = z.object({
   deliveredCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   bouncedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   complainedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  capturedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   deliveryRate: z.number(),
   openRate: z.number(),
   clickRate: z.number(),
@@ -810,6 +811,7 @@ export const zSiteAutomationReport = z.object({
   delivered: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   bounced: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   complained: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  captured: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   links: z.array(zSiteLinkClicks)
 });
 
@@ -1850,6 +1852,7 @@ export const zContactExportOutboundMessage = z.object({
   deliveredAt: z.exactOptional(zTimestamp.nullable()),
   bouncedAt: z.exactOptional(zTimestamp.nullable()),
   complainedAt: z.exactOptional(zTimestamp.nullable()),
+  captured: z.boolean(),
   broadcastId: z.exactOptional(zEntityId.nullable()),
   automationId: z.exactOptional(zEntityId.nullable()),
   automationStep: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable()),
@@ -2377,6 +2380,7 @@ export const zSiteTransactionalEmailResource = z.object({
   contactId: z.exactOptional(zEntityId.nullable()),
   status: zSiteTransactionalEmailStatus,
   error: z.exactOptional(z.string().nullable()),
+  captured: z.boolean(),
   createdAt: zTimestamp
 });
 

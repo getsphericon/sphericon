@@ -29,6 +29,10 @@ type Stats struct {
 	// Delivered, Bounced and Complained count the messages whose delivery result is stamped
 	// (ADR 0053). They are read from the stamps, never from Events, so they outlive retention.
 	Delivered, Bounced, Complained int
+	// Captured counts the messages that went through a sender delivering nowhere outside (a
+	// Test inbox): captured, not delivered. They are stamped delivered too, so a reader
+	// can tell them apart from a real delivery.
+	Captured int
 }
 
 // Processed counts the recipients whose send has ended.
@@ -105,6 +109,7 @@ func StatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (map[int64]Stats,
 		Delivered   int                    `json:"delivered"`
 		Bounced     int                    `json:"bounced"`
 		Complained  int                    `json:"complained"`
+		Captured    int                    `json:"captured"`
 	}
 	if err := s.OutboundMessage().Query().
 		Where(outboundmessage.BroadcastIDIn(ids...)).
@@ -114,6 +119,7 @@ func StatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (map[int64]Stats,
 			aggregates.CountSet(outboundmessage.FieldDeliveredAt, "delivered"),
 			aggregates.CountSet(outboundmessage.FieldBouncedAt, "bounced"),
 			aggregates.CountSet(outboundmessage.FieldComplainedAt, "complained"),
+			aggregates.CountTrue(outboundmessage.FieldCaptured, "captured"),
 		).
 		Scan(ctx, &messages); err != nil {
 		return nil, err
@@ -123,6 +129,7 @@ func StatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (map[int64]Stats,
 		st.Delivered += m.Delivered
 		st.Bounced += m.Bounced
 		st.Complained += m.Complained
+		st.Captured += m.Captured
 		switch m.Status {
 		case outboundmessage.StatusSent:
 			st.Sent = m.Count

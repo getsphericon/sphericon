@@ -4501,6 +4501,10 @@ func (s *BroadcastReport) encodeFields(e *jx.Encoder) {
 		e.Int32(s.ComplainedCount)
 	}
 	{
+		e.FieldStart("capturedCount")
+		e.Int32(s.CapturedCount)
+	}
+	{
 		e.FieldStart("openRate")
 		e.Float32(s.OpenRate)
 	}
@@ -4510,7 +4514,7 @@ func (s *BroadcastReport) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfBroadcastReport = [14]string{
+var jsonFieldsNameOfBroadcastReport = [15]string{
 	0:  "status",
 	1:  "holdReason",
 	2:  "recipientsTotal",
@@ -4523,8 +4527,9 @@ var jsonFieldsNameOfBroadcastReport = [14]string{
 	9:  "deliveredCount",
 	10: "bouncedCount",
 	11: "complainedCount",
-	12: "openRate",
-	13: "clickRate",
+	12: "capturedCount",
+	13: "openRate",
+	14: "clickRate",
 }
 
 // Decode decodes BroadcastReport from json.
@@ -4676,8 +4681,20 @@ func (s *BroadcastReport) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"complainedCount\"")
 			}
-		case "openRate":
+		case "capturedCount":
 			requiredBitSet[1] |= 1 << 4
+			if err := func() error {
+				v, err := d.Int32()
+				s.CapturedCount = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"capturedCount\"")
+			}
+		case "openRate":
+			requiredBitSet[1] |= 1 << 5
 			if err := func() error {
 				v, err := d.Float32()
 				s.OpenRate = float32(v)
@@ -4689,7 +4706,7 @@ func (s *BroadcastReport) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"openRate\"")
 			}
 		case "clickRate":
-			requiredBitSet[1] |= 1 << 5
+			requiredBitSet[1] |= 1 << 6
 			if err := func() error {
 				v, err := d.Float32()
 				s.ClickRate = float32(v)
@@ -4711,7 +4728,7 @@ func (s *BroadcastReport) Decode(d *jx.Decoder) error {
 	var failures []validate.FieldError
 	for i, mask := range [2]uint8{
 		0b11111101,
-		0b00111111,
+		0b01111111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -9137,6 +9154,10 @@ func (s *ContactExportOutboundMessage) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		e.FieldStart("captured")
+		e.Bool(s.Captured)
+	}
+	{
 		if s.BroadcastId.Set {
 			e.FieldStart("broadcastId")
 			s.BroadcastId.Encode(e)
@@ -9166,7 +9187,7 @@ func (s *ContactExportOutboundMessage) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfContactExportOutboundMessage = [19]string{
+var jsonFieldsNameOfContactExportOutboundMessage = [20]string{
 	0:  "id",
 	1:  "kind",
 	2:  "channel",
@@ -9181,11 +9202,12 @@ var jsonFieldsNameOfContactExportOutboundMessage = [19]string{
 	11: "deliveredAt",
 	12: "bouncedAt",
 	13: "complainedAt",
-	14: "broadcastId",
-	15: "automationId",
-	16: "automationStep",
-	17: "templateId",
-	18: "createdAt",
+	14: "captured",
+	15: "broadcastId",
+	16: "automationId",
+	17: "automationStep",
+	18: "templateId",
+	19: "createdAt",
 }
 
 // Decode decodes ContactExportOutboundMessage from json.
@@ -9345,6 +9367,18 @@ func (s *ContactExportOutboundMessage) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"complainedAt\"")
 			}
+		case "captured":
+			requiredBitSet[1] |= 1 << 6
+			if err := func() error {
+				v, err := d.Bool()
+				s.Captured = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"captured\"")
+			}
 		case "broadcastId":
 			if err := func() error {
 				s.BroadcastId.Reset()
@@ -9386,7 +9420,7 @@ func (s *ContactExportOutboundMessage) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"templateId\"")
 			}
 		case "createdAt":
-			requiredBitSet[2] |= 1 << 2
+			requiredBitSet[2] |= 1 << 3
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -9406,8 +9440,8 @@ func (s *ContactExportOutboundMessage) Decode(d *jx.Decoder) error {
 	var failures []validate.FieldError
 	for i, mask := range [3]uint8{
 		0b10001111,
-		0b00000010,
-		0b00000100,
+		0b01000010,
+		0b00001000,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

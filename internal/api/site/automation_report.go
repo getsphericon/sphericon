@@ -34,6 +34,7 @@ func (h *Handlers) SiteAutomationReportsGet(ctx context.Context, params siteapi.
 		Delivered:  narrow.Int32(report.Delivered),
 		Bounced:    narrow.Int32(report.Bounced),
 		Complained: narrow.Int32(report.Complained),
+		Captured:   narrow.Int32(report.Captured),
 		Links:      mapper.LinkClicksToResource(report.Links),
 	}, nil
 }

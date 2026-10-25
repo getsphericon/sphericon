@@ -883,6 +883,8 @@ type ContactExportOutboundMessage struct {
 	BouncedAt OptNilTimestamp `json:"bouncedAt"`
 	// When the provider first reported a spam complaint about the message.
 	ComplainedAt OptNilTimestamp `json:"complainedAt"`
+	// True when the message went through a Test inbox: captured, not delivered.
+	Captured bool `json:"captured"`
 	// Broadcast that produced the message.
 	BroadcastId OptNilEntityId `json:"broadcastId"`
 	// Automation that produced the message.
@@ -963,6 +965,11 @@ func (s *ContactExportOutboundMessage) GetBouncedAt() OptNilTimestamp {
 // GetComplainedAt returns the value of ComplainedAt.
 func (s *ContactExportOutboundMessage) GetComplainedAt() OptNilTimestamp {
 	return s.ComplainedAt
+}
+
+// GetCaptured returns the value of Captured.
+func (s *ContactExportOutboundMessage) GetCaptured() bool {
+	return s.Captured
 }
 
 // GetBroadcastId returns the value of BroadcastId.
@@ -1058,6 +1065,11 @@ func (s *ContactExportOutboundMessage) SetBouncedAt(val OptNilTimestamp) {
 // SetComplainedAt sets the value of ComplainedAt.
 func (s *ContactExportOutboundMessage) SetComplainedAt(val OptNilTimestamp) {
 	s.ComplainedAt = val
+}
+
+// SetCaptured sets the value of Captured.
+func (s *ContactExportOutboundMessage) SetCaptured(val bool) {
+	s.Captured = val
 }
 
 // SetBroadcastId sets the value of BroadcastId.
@@ -7523,6 +7535,8 @@ type SiteAutomationReport struct {
 	// Messages a recipient complained about, read from the delivery result stamped on each message; not
 	// bounded by Event retention.
 	Complained int32 `json:"complained"`
+	// Messages that went through a Test inbox: captured, not delivered; they count as delivered too.
+	Captured int32 `json:"captured"`
 	// One entry per clicked link, most clicked first.
 	Links []SiteLinkClicks `json:"links"`
 }
@@ -7550,6 +7564,11 @@ func (s *SiteAutomationReport) GetBounced() int32 {
 // GetComplained returns the value of Complained.
 func (s *SiteAutomationReport) GetComplained() int32 {
 	return s.Complained
+}
+
+// GetCaptured returns the value of Captured.
+func (s *SiteAutomationReport) GetCaptured() int32 {
+	return s.Captured
 }
 
 // GetLinks returns the value of Links.
@@ -7580,6 +7599,11 @@ func (s *SiteAutomationReport) SetBounced(val int32) {
 // SetComplained sets the value of Complained.
 func (s *SiteAutomationReport) SetComplained(val int32) {
 	s.Complained = val
+}
+
+// SetCaptured sets the value of Captured.
+func (s *SiteAutomationReport) SetCaptured(val int32) {
+	s.Captured = val
 }
 
 // SetLinks sets the value of Links.
@@ -8697,6 +8721,8 @@ type SiteBroadcastStats struct {
 	BouncedCount int32 `json:"bouncedCount"`
 	// Messages a recipient complained about, read from the delivery result stamped on each message.
 	ComplainedCount int32 `json:"complainedCount"`
+	// Messages that went through a Test inbox: captured, not delivered; they count as delivered too.
+	CapturedCount int32 `json:"capturedCount"`
 	// Messages handed to the provider ÷ recipients targeted (0–1).
 	DeliveryRate float32 `json:"deliveryRate"`
 	// Unique opens ÷ messages sent (0–1).
@@ -8754,6 +8780,11 @@ func (s *SiteBroadcastStats) GetBouncedCount() int32 {
 // GetComplainedCount returns the value of ComplainedCount.
 func (s *SiteBroadcastStats) GetComplainedCount() int32 {
 	return s.ComplainedCount
+}
+
+// GetCapturedCount returns the value of CapturedCount.
+func (s *SiteBroadcastStats) GetCapturedCount() int32 {
+	return s.CapturedCount
 }
 
 // GetDeliveryRate returns the value of DeliveryRate.
@@ -8829,6 +8860,11 @@ func (s *SiteBroadcastStats) SetBouncedCount(val int32) {
 // SetComplainedCount sets the value of ComplainedCount.
 func (s *SiteBroadcastStats) SetComplainedCount(val int32) {
 	s.ComplainedCount = val
+}
+
+// SetCapturedCount sets the value of CapturedCount.
+func (s *SiteBroadcastStats) SetCapturedCount(val int32) {
+	s.CapturedCount = val
 }
 
 // SetDeliveryRate sets the value of DeliveryRate.
@@ -20380,6 +20416,8 @@ type SiteTransactionalEmailResource struct {
 	Status SiteTransactionalEmailStatus `json:"status"`
 	// Provider error message, present when status is `failed`.
 	Error OptNilString `json:"error"`
+	// True when the send went through a Test inbox: captured, not delivered.
+	Captured bool `json:"captured"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 }
@@ -20417,6 +20455,11 @@ func (s *SiteTransactionalEmailResource) GetStatus() SiteTransactionalEmailStatu
 // GetError returns the value of Error.
 func (s *SiteTransactionalEmailResource) GetError() OptNilString {
 	return s.Error
+}
+
+// GetCaptured returns the value of Captured.
+func (s *SiteTransactionalEmailResource) GetCaptured() bool {
+	return s.Captured
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -20457,6 +20500,11 @@ func (s *SiteTransactionalEmailResource) SetStatus(val SiteTransactionalEmailSta
 // SetError sets the value of Error.
 func (s *SiteTransactionalEmailResource) SetError(val OptNilString) {
 	s.Error = val
+}
+
+// SetCaptured sets the value of Captured.
+func (s *SiteTransactionalEmailResource) SetCaptured(val bool) {
+	s.Captured = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.

@@ -33,6 +33,7 @@ const draft: SiteBroadcastResource = {
     deliveredCount: 0,
     bouncedCount: 0,
     complainedCount: 0,
+    capturedCount: 0,
     deliveryRate: 0,
     failureRate: 0,
     openRate: 0,

@@ -31,6 +31,7 @@ function statEntries(t: TFunction, stats: SiteBroadcastStats): { label: string; 
     { label: t(($) => $.broadcasts.stats.delivered), value: stats.deliveredCount },
     { label: t(($) => $.broadcasts.stats.bounced), value: stats.bouncedCount },
     { label: t(($) => $.broadcasts.stats.complained), value: stats.complainedCount },
+    { label: t(($) => $.broadcasts.stats.captured), value: stats.capturedCount },
     { label: t(($) => $.broadcasts.stats.opened), value: stats.openedCount },
     { label: t(($) => $.broadcasts.stats.clicked), value: stats.clickedCount },
     { label: t(($) => $.broadcasts.stats.unsubscribed), value: stats.unsubscribedCount },

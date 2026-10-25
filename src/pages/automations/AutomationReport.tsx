@@ -39,6 +39,7 @@ export function AutomationReport({
         <StatCard label={t(($) => $.automations.delivered)} value={report.delivered} />
         <StatCard label={t(($) => $.automations.bounced)} value={report.bounced} />
         <StatCard label={t(($) => $.automations.complained)} value={report.complained} />
+        <StatCard label={t(($) => $.automations.captured)} value={report.captured} />
       </SimpleGrid>
       <LinkClickTable links={report.links} />
     </Stack>

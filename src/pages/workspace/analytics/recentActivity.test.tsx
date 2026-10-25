@@ -52,3 +52,31 @@ test('expands a row to reveal the full event properties', async () => {
   await expect.element(screen.getByText('user:bob@example.com')).toBeInTheDocument()
   await expect.element(screen.getByText(/"plan": "pro"/)).toBeInTheDocument()
 })
+
+test('says an email event of a send through a Test inbox was captured, not delivered', async () => {
+  worker.use(
+    handleSiteEventsList({
+      body: {
+        items: [
+          {
+            id: '3',
+            subjectId: 'user:cy@example.com',
+            email: 'cy@example.com',
+            action: 'email.delivered',
+            properties: { captured: true },
+            createdAt: '2026-01-03T00:00:00Z',
+          },
+        ],
+        page: 1,
+        pageSize: 25,
+        totalItems: 1,
+        totalPages: 1,
+      },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<RecentActivityPage />, mount)
+
+  await expect.element(screen.getByText('email.delivered')).toBeInTheDocument()
+  await expect.element(screen.getByText('Captured, not delivered')).toBeInTheDocument()
+})

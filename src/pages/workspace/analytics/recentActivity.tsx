@@ -1,4 +1,14 @@
-import { EmptyState, Alert, Group, Stack, Switch, TextInput, Title } from '@mantine/core'
+import {
+  EmptyState,
+  Alert,
+  Badge,
+  Group,
+  Stack,
+  Switch,
+  Text,
+  TextInput,
+  Title,
+} from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { useQuery } from '@tanstack/react-query'
 import { DataTable } from 'mantine-datatable'
@@ -89,7 +99,20 @@ export function RecentActivityPage() {
             title: t(($) => $.activity.time),
             render: (record) => formatDateTime(record.createdAt),
           },
-          { accessor: 'action', title: t(($) => $.activity.action) },
+          {
+            accessor: 'action',
+            title: t(($) => $.activity.action),
+            render: (record) => (
+              <Group gap="xs">
+                <Text span>{record.action}</Text>
+                {record.properties?.captured === true ? (
+                  <Badge color="gray" variant="outline">
+                    {t(($) => $.activity.captured)}
+                  </Badge>
+                ) : null}
+              </Group>
+            ),
+          },
           {
             accessor: 'subject',
             title: t(($) => $.activity.subject),

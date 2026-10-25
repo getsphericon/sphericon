@@ -289,6 +289,9 @@ type EmailEngagement struct {
 	AutomationID      int64  `json:"automationId,omitempty"`
 	OutboundMessageID int64  `json:"outboundMessageId,omitempty"`
 	ProviderMessageID string `json:"providerMessageId,omitempty"`
+	// Captured is set when the send went through a sender that delivers nowhere outside (a
+	// Test inbox): Activity says "captured, not delivered".
+	Captured bool `json:"captured,omitempty"`
 }
 
 func (e *EmailEngagement) EventName() string { return e.Action }
@@ -320,6 +323,9 @@ func (e *EmailEngagement) Project() Projection {
 	}
 	if e.OutboundMessageID != 0 {
 		props["outboundMessageId"] = e.OutboundMessageID
+	}
+	if e.Captured {
+		props[CapturedProperty] = true
 	}
 	if e.Machine {
 		props[MachineProperty] = true
@@ -359,6 +365,8 @@ type EmailDelivery struct {
 	// DedupID is the stable upstream id (e.g. SNS messageId + recipient) used as
 	// the envelope id so a redelivered provider notification dedupes at persist.
 	DedupID string `json:"dedupId,omitempty"`
+	// Captured is set when the message went through a sender that delivers nowhere outside.
+	Captured bool `json:"captured,omitempty"`
 }
 
 func (e *EmailDelivery) EventName() string { return e.Action }
@@ -388,6 +396,9 @@ func (e *EmailDelivery) Project() Projection {
 		if v != 0 {
 			props[k] = v
 		}
+	}
+	if e.Captured {
+		props[CapturedProperty] = true
 	}
 	return Projection{Subject: e.Email, Action: e.Action, Email: e.Email, Properties: props, ContactID: e.ContactID}
 }

@@ -147,6 +147,7 @@ type Converter interface {
 	// goverter:map Stats.Delivered DeliveredCount
 	// goverter:map Stats.Bounced BouncedCount
 	// goverter:map Stats.Complained ComplainedCount
+	// goverter:map Stats.Captured CapturedCount
 	// goverter:map Stats OpenRate | openRate
 	// goverter:map Stats ClickRate | clickRate
 	BroadcastReportToResource(source broadcasts.Report) externalapi.BroadcastReport

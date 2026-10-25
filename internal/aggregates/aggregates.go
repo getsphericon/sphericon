@@ -13,3 +13,10 @@ func CountSet(column, alias string) ent.AggregateFunc {
 		return sql.As(sql.Count(sel.C(column)), alias)
 	}
 }
+
+// CountTrue counts the rows whose boolean column is true, under alias.
+func CountTrue(column, alias string) ent.AggregateFunc {
+	return func(sel *sql.Selector) string {
+		return sql.As("COUNT(*) FILTER (WHERE "+sel.C(column)+")", alias)
+	}
+}

@@ -690,6 +690,10 @@ func init() {
 	outboundmessageDescClaimedAt := outboundmessageFields[11].Descriptor()
 	// outboundmessage.DefaultClaimedAt holds the default value on creation for the claimed_at field.
 	outboundmessage.DefaultClaimedAt = outboundmessageDescClaimedAt.Default.(func() time.Time)
+	// outboundmessageDescCaptured is the schema descriptor for captured field.
+	outboundmessageDescCaptured := outboundmessageFields[16].Descriptor()
+	// outboundmessage.DefaultCaptured holds the default value on creation for the captured field.
+	outboundmessage.DefaultCaptured = outboundmessageDescCaptured.Default.(bool)
 	passkeyMixin := schema.Passkey{}.Mixin()
 	passkeyMixinFields0 := passkeyMixin[0].Fields()
 	_ = passkeyMixinFields0

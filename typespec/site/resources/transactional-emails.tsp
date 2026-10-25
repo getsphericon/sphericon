@@ -51,6 +51,9 @@ model SiteTransactionalEmailResource {
   /** Provider error message, present when status is `failed` */
   error?: string | null;
 
+  /** True when the send went through a Test inbox: captured, not delivered */
+  captured: boolean;
+
   /** Creation timestamp */
   createdAt: Timestamp;
 }

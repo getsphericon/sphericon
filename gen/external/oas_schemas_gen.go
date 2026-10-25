@@ -1616,6 +1616,8 @@ type BroadcastReport struct {
 	BouncedCount int32 `json:"bouncedCount"`
 	// Messages a recipient complained about, read from the delivery result stamped on each message.
 	ComplainedCount int32 `json:"complainedCount"`
+	// Messages that went through a Test inbox: captured, not delivered; they count as delivered too.
+	CapturedCount int32 `json:"capturedCount"`
 	// Unique opens ÷ messages sent (0-1).
 	OpenRate float32 `json:"openRate"`
 	// Unique clicks ÷ messages sent (0-1).
@@ -1680,6 +1682,11 @@ func (s *BroadcastReport) GetBouncedCount() int32 {
 // GetComplainedCount returns the value of ComplainedCount.
 func (s *BroadcastReport) GetComplainedCount() int32 {
 	return s.ComplainedCount
+}
+
+// GetCapturedCount returns the value of CapturedCount.
+func (s *BroadcastReport) GetCapturedCount() int32 {
+	return s.CapturedCount
 }
 
 // GetOpenRate returns the value of OpenRate.
@@ -1750,6 +1757,11 @@ func (s *BroadcastReport) SetBouncedCount(val int32) {
 // SetComplainedCount sets the value of ComplainedCount.
 func (s *BroadcastReport) SetComplainedCount(val int32) {
 	s.ComplainedCount = val
+}
+
+// SetCapturedCount sets the value of CapturedCount.
+func (s *BroadcastReport) SetCapturedCount(val int32) {
+	s.CapturedCount = val
 }
 
 // SetOpenRate sets the value of OpenRate.
@@ -3389,6 +3401,8 @@ type ContactExportOutboundMessage struct {
 	BouncedAt OptNilTimestamp `json:"bouncedAt"`
 	// When the provider first reported a spam complaint about the message.
 	ComplainedAt OptNilTimestamp `json:"complainedAt"`
+	// True when the message went through a Test inbox: captured, not delivered.
+	Captured bool `json:"captured"`
 	// Broadcast that produced the message.
 	BroadcastId OptNilEntityId `json:"broadcastId"`
 	// Automation that produced the message.
@@ -3469,6 +3483,11 @@ func (s *ContactExportOutboundMessage) GetBouncedAt() OptNilTimestamp {
 // GetComplainedAt returns the value of ComplainedAt.
 func (s *ContactExportOutboundMessage) GetComplainedAt() OptNilTimestamp {
 	return s.ComplainedAt
+}
+
+// GetCaptured returns the value of Captured.
+func (s *ContactExportOutboundMessage) GetCaptured() bool {
+	return s.Captured
 }
 
 // GetBroadcastId returns the value of BroadcastId.
@@ -3564,6 +3583,11 @@ func (s *ContactExportOutboundMessage) SetBouncedAt(val OptNilTimestamp) {
 // SetComplainedAt sets the value of ComplainedAt.
 func (s *ContactExportOutboundMessage) SetComplainedAt(val OptNilTimestamp) {
 	s.ComplainedAt = val
+}
+
+// SetCaptured sets the value of Captured.
+func (s *ContactExportOutboundMessage) SetCaptured(val bool) {
+	s.Captured = val
 }
 
 // SetBroadcastId sets the value of BroadcastId.

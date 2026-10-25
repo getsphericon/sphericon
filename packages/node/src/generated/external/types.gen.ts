@@ -436,6 +436,10 @@ export type BroadcastReport = {
    */
   complainedCount: number;
   /**
+   * Messages that went through a Test inbox: captured, not delivered; they count as delivered too
+   */
+  capturedCount: number;
+  /**
    * Unique opens ÷ messages sent (0-1)
    */
   openRate: number;
@@ -919,6 +923,10 @@ export type ContactExportOutboundMessage = {
    * When the provider first reported a spam complaint about the message
    */
   complainedAt?: Timestamp | null;
+  /**
+   * True when the message went through a Test inbox: captured, not delivered
+   */
+  captured: boolean;
   /**
    * Broadcast that produced the message
    */
@@ -1994,6 +2002,10 @@ export type ExportMessageRow = {
    * When the provider first reported a spam complaint about the message
    */
   complained_at: Timestamp | null;
+  /**
+   * True when the message went through a Test inbox: captured, not delivered
+   */
+  captured: boolean;
   /**
    * Creation timestamp
    */

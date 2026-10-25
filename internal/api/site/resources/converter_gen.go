@@ -374,6 +374,7 @@ func (c *ConverterImpl) OutboundMessageToExport(source *ent.OutboundMessage) sit
 		siteapiContactExportOutboundMessage.DeliveredAt = optNilTimestamp((*source).DeliveredAt)
 		siteapiContactExportOutboundMessage.BouncedAt = optNilTimestamp((*source).BouncedAt)
 		siteapiContactExportOutboundMessage.ComplainedAt = optNilTimestamp((*source).ComplainedAt)
+		siteapiContactExportOutboundMessage.Captured = (*source).Captured
 		siteapiContactExportOutboundMessage.BroadcastId = optNilEntityID((*source).BroadcastID)
 		siteapiContactExportOutboundMessage.AutomationId = optNilEntityID((*source).AutomationID)
 		siteapiContactExportOutboundMessage.AutomationStep = optNilInt32((*source).AutomationStep)
@@ -579,6 +580,7 @@ func (c *ConverterImpl) TransactionalMessageToResource(source *ent.OutboundMessa
 		siteapiSiteTransactionalEmailResource.ContactId = optNilEntityID((*source).ContactID)
 		siteapiSiteTransactionalEmailResource.Status = transactionalStatus((*source))
 		siteapiSiteTransactionalEmailResource.Error = transactionalError((*source))
+		siteapiSiteTransactionalEmailResource.Captured = (*source).Captured
 		siteapiSiteTransactionalEmailResource.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return siteapiSiteTransactionalEmailResource

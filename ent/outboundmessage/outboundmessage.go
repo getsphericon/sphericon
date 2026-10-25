@@ -51,6 +51,8 @@ const (
 	FieldBouncedAt = "bounced_at"
 	// FieldComplainedAt holds the string denoting the complained_at field in the database.
 	FieldComplainedAt = "complained_at"
+	// FieldCaptured holds the string denoting the captured field in the database.
+	FieldCaptured = "captured"
 	// FieldBroadcastID holds the string denoting the broadcast_id field in the database.
 	FieldBroadcastID = "broadcast_id"
 	// FieldBroadcastRecipientID holds the string denoting the broadcast_recipient_id field in the database.
@@ -164,6 +166,7 @@ var Columns = []string{
 	FieldDeliveredAt,
 	FieldBouncedAt,
 	FieldComplainedAt,
+	FieldCaptured,
 	FieldBroadcastID,
 	FieldBroadcastRecipientID,
 	FieldAutomationID,
@@ -195,6 +198,8 @@ var (
 	IdempotencyKeyValidator func(string) error
 	// DefaultClaimedAt holds the default value on creation for the "claimed_at" field.
 	DefaultClaimedAt func() time.Time
+	// DefaultCaptured holds the default value on creation for the "captured" field.
+	DefaultCaptured bool
 )
 
 // Kind defines the type for the "kind" enum field.
@@ -370,6 +375,11 @@ func ByBouncedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByComplainedAt orders the results by the complained_at field.
 func ByComplainedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldComplainedAt, opts...).ToFunc()
+}
+
+// ByCaptured orders the results by the captured field.
+func ByCaptured(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCaptured, opts...).ToFunc()
 }
 
 // ByBroadcastID orders the results by the broadcast_id field.

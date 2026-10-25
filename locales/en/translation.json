@@ -36,6 +36,7 @@
   },
   "activity": {
     "action": "Action",
+    "captured": "Captured, not delivered",
     "createdAt": "Recorded at",
     "details": "Event details",
     "filterActionPlaceholder": "Filter by action",
@@ -220,6 +221,7 @@
     "bounced": "Bounced",
     "branchesUnsupported": "Only a single linear path is saved. Nodes off the main chain were ignored.",
     "branchesUnsupportedTitle": "Branches not supported yet",
+    "captured": "Captured, not delivered",
     "clicks": "Clicks",
     "complained": "Complained",
     "createTitle": "New automation",
@@ -360,6 +362,7 @@
     "showArchived": "Show archived",
     "stats": {
       "bounced": "Bounced",
+      "captured": "Captured, not delivered",
       "clicked": "Clicked",
       "clickRate": "Click rate",
       "clickToOpenRate": "Click-to-open",
@@ -1627,6 +1630,7 @@
     "toggleLabel": "Toggle color scheme"
   },
   "transactionalEmails": {
+    "captured": "Captured, not delivered",
     "destinationLabel": "Email",
     "errorLabel": "Error",
     "noRecords": "No transactional emails yet",

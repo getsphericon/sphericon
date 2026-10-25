@@ -79,7 +79,7 @@ func (m *Module) Rates(ctx context.Context, s *ent.Scoped, w Window) ([]DomainRa
 		count := func(action string, extra ...predicate.Event) (int, error) {
 			preds := append([]predicate.Event{
 				event.Action(action),
-				inWindow(w), onDomain(d.Domain),
+				inWindow(w), onDomain(d.Domain), notCaptured(),
 			}, extra...)
 			return s.Event().Query().Where(preds...).Count(ctx)
 		}
@@ -114,6 +114,9 @@ func inWindow(w Window) predicate.Event {
 		events.MomentBetween(s, w.Since, w.Until)
 	}
 }
+
+// notCaptured leaves out the Events of mail kept in a Test inbox: it reached no mailbox.
+func notCaptured() predicate.Event { return events.NotCaptured }
 
 func onDomain(domain string) predicate.Event {
 	return func(s *sql.Selector) {

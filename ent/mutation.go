@@ -25982,6 +25982,7 @@ type OutboundMessageMutation struct {
 	delivered_at               *time.Time
 	bounced_at                 *time.Time
 	complained_at              *time.Time
+	captured                   *bool
 	automation_step            *int
 	addautomation_step         *int
 	app_origin                 *string
@@ -26889,6 +26890,42 @@ func (m *OutboundMessageMutation) ResetComplainedAt() {
 	delete(m.clearedFields, outboundmessage.FieldComplainedAt)
 }
 
+// SetCaptured sets the "captured" field.
+func (m *OutboundMessageMutation) SetCaptured(b bool) {
+	m.captured = &b
+}
+
+// Captured returns the value of the "captured" field in the mutation.
+func (m *OutboundMessageMutation) Captured() (r bool, exists bool) {
+	v := m.captured
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCaptured returns the old "captured" field's value of the OutboundMessage entity.
+// If the OutboundMessage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OutboundMessageMutation) OldCaptured(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCaptured is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCaptured requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCaptured: %w", err)
+	}
+	return oldValue.Captured, nil
+}
+
+// ResetCaptured resets all changes to the "captured" field.
+func (m *OutboundMessageMutation) ResetCaptured() {
+	m.captured = nil
+}
+
 // SetBroadcastID sets the "broadcast_id" field.
 func (m *OutboundMessageMutation) SetBroadcastID(i int64) {
 	m.broadcast = &i
@@ -27552,7 +27589,7 @@ func (m *OutboundMessageMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *OutboundMessageMutation) Fields() []string {
-	fields := make([]string, 0, 26)
+	fields := make([]string, 0, 27)
 	if m.created_at != nil {
 		fields = append(fields, outboundmessage.FieldCreatedAt)
 	}
@@ -27606,6 +27643,9 @@ func (m *OutboundMessageMutation) Fields() []string {
 	}
 	if m.complained_at != nil {
 		fields = append(fields, outboundmessage.FieldComplainedAt)
+	}
+	if m.captured != nil {
+		fields = append(fields, outboundmessage.FieldCaptured)
 	}
 	if m.broadcast != nil {
 		fields = append(fields, outboundmessage.FieldBroadcastID)
@@ -27675,6 +27715,8 @@ func (m *OutboundMessageMutation) Field(name string) (ent.Value, bool) {
 		return m.BouncedAt()
 	case outboundmessage.FieldComplainedAt:
 		return m.ComplainedAt()
+	case outboundmessage.FieldCaptured:
+		return m.Captured()
 	case outboundmessage.FieldBroadcastID:
 		return m.BroadcastID()
 	case outboundmessage.FieldBroadcastRecipientID:
@@ -27736,6 +27778,8 @@ func (m *OutboundMessageMutation) OldField(ctx context.Context, name string) (en
 		return m.OldBouncedAt(ctx)
 	case outboundmessage.FieldComplainedAt:
 		return m.OldComplainedAt(ctx)
+	case outboundmessage.FieldCaptured:
+		return m.OldCaptured(ctx)
 	case outboundmessage.FieldBroadcastID:
 		return m.OldBroadcastID(ctx)
 	case outboundmessage.FieldBroadcastRecipientID:
@@ -27886,6 +27930,13 @@ func (m *OutboundMessageMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetComplainedAt(v)
+		return nil
+	case outboundmessage.FieldCaptured:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCaptured(v)
 		return nil
 	case outboundmessage.FieldBroadcastID:
 		v, ok := value.(int64)
@@ -28171,6 +28222,9 @@ func (m *OutboundMessageMutation) ResetField(name string) error {
 		return nil
 	case outboundmessage.FieldComplainedAt:
 		m.ResetComplainedAt()
+		return nil
+	case outboundmessage.FieldCaptured:
+		m.ResetCaptured()
 		return nil
 	case outboundmessage.FieldBroadcastID:
 		m.ResetBroadcastID()
