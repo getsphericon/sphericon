@@ -39,7 +39,7 @@ const (
 
 // ProductionKey is the Ed25519 public key production licenses are verified against.
 // The matching private key stays with the license issuer.
-var ProductionKey = mustDecodeKey("GAQfTzJEjCIbmnwiSJLtjL/aiEwabOdZ2SVYIG9ZxZk=")
+var ProductionKey = mustDecodeKey("QUXvHjTiKlcXQBD1EdbPCMViXZbXUnzdmTBlba4CzTA=")
 
 // ErrInvalid means a non-empty key failed verification: malformed or forged. An expired key
 // with a valid signature is not an error (ADR 0035): it loads as a License that licenses nothing.
