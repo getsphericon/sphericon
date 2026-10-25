@@ -130,8 +130,7 @@ type Handlers struct {
 	accountLink    *accountlink.Link
 	instance       *instance.Module
 	holds          *holds.Holds
-	mcpURL         string
-	trackerURL     string
+	origins        Origins
 	// requireVerification is the email verification gate (ADR 0030): off only on an
 	// install that set SPHERICON_REQUIRE_EMAIL_VERIFICATION=false.
 	requireVerification bool
@@ -160,6 +159,14 @@ type AuditLog interface {
 	ExportCSV(ctx context.Context, s *ent.Scoped, f events.AuditFilter, w io.Writer) error
 	// RetentionLicensed reports whether the retention window may be set (ADR 0014).
 	RetentionLicensed() bool
+}
+
+// Origins are the public origins besides the app's own that a Workspace resource names: where an
+// AI agent connects (config.MCPOrigin) and where the tracker snippet loads from and posts to
+// (config.TrackerOrigin). A new one is a field here, one line in the resource and one in the wiring.
+type Origins struct {
+	MCP     string
+	Tracker string
 }
 
 // Deps is everything the /site handlers are built from. The domain modules are
@@ -200,11 +207,9 @@ type Deps struct {
 	AbuseWatch     abusewatch.Watch
 	// SupportEmail is where a suspended Workspace's owner appeals (SPHERICON_SUPPORT_EMAIL).
 	SupportEmail string
-	// MCPURL is the public origin of the MCP endpoint (config.MCPOrigin).
-	MCPURL string
-	// TrackerURL is the public origin of the tracker (config.TrackerOrigin).
-	TrackerURL string
-	Analytics  *analytics.Module
+	// Origins are the public origins a Workspace's pages point at besides the app's own.
+	Origins   Origins
+	Analytics *analytics.Module
 	// Sessions issues the session cookie on login (ADR 0020). The composition
 	// root (server.New) builds it from the instance secret and SPHERICON_SESSION_TTL.
 	Sessions *auth.Sessions
@@ -245,7 +250,7 @@ func NewHandlers(d Deps) *Handlers {
 		segments: d.Segments, eventlog: d.EventLog, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, templates: d.Templates, brandKit: d.BrandKit,
 		automations: d.Automations, rules: d.Rules, broadcasts: d.Broadcasts, welcome: d.Welcome,
 		sysmail: d.SysMail, sendingDomains: d.SendingDomains, joinDomains: d.JoinDomains, integrations: d.Integrations, tokens: d.Tokens, tracker: d.Tracker, appURL: d.AppURL,
-		oauth: d.OAuth, audit: d.Audit, abuseWatch: d.AbuseWatch, supportEmail: d.SupportEmail, mcpURL: d.MCPURL, trackerURL: d.TrackerURL, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, passkeys: d.Passkeys, now: now, instance: d.Instance, accountLink: d.AccountLink, holds: d.Holds, requireVerification: d.RequireEmailVerification, signupOpen: d.SignupOpen, signupSurvey: d.SignupSurvey,
+		oauth: d.OAuth, audit: d.Audit, abuseWatch: d.AbuseWatch, supportEmail: d.SupportEmail, origins: d.Origins, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, passkeys: d.Passkeys, now: now, instance: d.Instance, accountLink: d.AccountLink, holds: d.Holds, requireVerification: d.RequireEmailVerification, signupOpen: d.SignupOpen, signupSurvey: d.SignupSurvey,
 		signin:     d.Signin,
 		challenges: d.Tokens.WithClock(d.Clock),
 	}

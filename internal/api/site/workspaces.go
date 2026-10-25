@@ -53,8 +53,8 @@ func (h *Handlers) workspaceResource(ctx context.Context, s *ent.Scoped, m *ent.
 	if suspension.Is(m.Edges.Workspace) && h.supportEmail != "" {
 		r.SupportEmail = siteapi.NewOptNilString(h.supportEmail)
 	}
-	r.McpUrl = h.mcpURL
-	r.TrackerUrl = h.trackerURL
+	r.McpUrl = h.origins.MCP
+	r.TrackerUrl = h.origins.Tracker
 	r.AccountLinkAvailable = h.accountLink != nil && accounts.IsOwner(m.Role)
 	// A strong session (a Passkey login or a Second factor step) meets the requirement, so it has
 	// no grace to count down: this is the decision secondfactor.Withheld makes.

@@ -28,7 +28,7 @@ import {
   siteSuppressionsListQueryKey,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteSuppressionReason } from '../../generated/site/types.gen.ts'
-import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation.tsx'
+import { useConfirmation } from '../../hooks/useConfirmation.tsx'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 
 const REASON_COLORS: Record<SiteSuppressionReason, string> = {
@@ -48,7 +48,7 @@ const PAGE_SIZE = 20
 // separate, per-source opt-out, not a suppression.)
 export function SuppressionsSection({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
-  const confirmLift = useDeleteConfirmation()
+  const confirmLift = useConfirmation()
   const [page, pageHandlers] = useCounter(1, { min: 1 })
   const [lifted, setLifted] = useState(false)
   const [createOpened, { open: openCreate, close: closeCreate }] = useDisclosure(false)

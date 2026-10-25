@@ -38,8 +38,8 @@ import {
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteInvitableRole } from '../../generated/site/types.gen.ts'
 import { zSiteInvitableRole, zSiteMembershipRole } from '../../generated/site/zod.gen.ts'
+import { useConfirmation } from '../../hooks/useConfirmation.tsx'
 import { canManage, useCurrentRole } from '../../hooks/useCurrentRole.ts'
-import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation.tsx'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { formatDate } from '../../utils/datetime.ts'
 
@@ -48,7 +48,7 @@ const INVITABLE_ROLES = zSiteInvitableRole.options
 
 export function MembersSection({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
-  const confirmRemove = useDeleteConfirmation()
+  const confirmRemove = useConfirmation()
   const [inviteUrl, setInviteUrl] = useState<string | null>(null)
   const [inviteOpened, { open: openInvite, close }] = useDisclosure(false)
   const closeInvite = () => {

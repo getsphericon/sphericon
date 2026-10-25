@@ -1,6 +1,6 @@
 import type { QueryKey, UseMutationOptions } from '@tanstack/react-query'
 
-import { useDeleteConfirmation } from './useDeleteConfirmation.tsx'
+import { useConfirmation } from './useConfirmation.tsx'
 import { useResourceMutation } from './useResourceMutation.ts'
 
 interface DeleteResourceOptions<TData, TError, TCtx> {
@@ -21,7 +21,7 @@ export function useDeleteResource<TData, TError, TCtx>({
   successMessage,
   errorTitle,
 }: DeleteResourceOptions<TData, TError, TCtx>) {
-  const confirmDelete = useDeleteConfirmation()
+  const confirmDelete = useConfirmation()
   const deletion = useResourceMutation({
     mutation,
     invalidate: [listQueryKey],

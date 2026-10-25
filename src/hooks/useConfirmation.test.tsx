@@ -1,14 +1,14 @@
 import { expect, test, vi } from 'vitest'
 
 import { renderWithProviders } from '../test/renderWithProviders.tsx'
-import { useDeleteConfirmation } from './useDeleteConfirmation.tsx'
+import { useConfirmation } from './useConfirmation.tsx'
 
-type Options = Parameters<ReturnType<typeof useDeleteConfirmation>>[0]
+type Options = Parameters<ReturnType<typeof useConfirmation>>[0]
 
 const OPEN = 'Open'
 
 function Harness({ options }: { options: Options }) {
-  const confirmDelete = useDeleteConfirmation()
+  const confirmDelete = useConfirmation()
   return (
     <button type="button" onClick={() => confirmDelete(options)}>
       {OPEN}

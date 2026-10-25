@@ -10,8 +10,8 @@ import {
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteContactHoldings } from '../../generated/site/types.gen.ts'
 import { useApiErrorMessage } from '../../hooks/useApiErrorMessage.ts'
+import { useConfirmation } from '../../hooks/useConfirmation.tsx'
 import { useContactExport } from '../../hooks/useContactExport.ts'
-import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation.tsx'
 import { useNotify } from '../../hooks/useNotify.ts'
 import { hasErrorStatus } from '../../utils/apiErrors.ts'
 
@@ -46,7 +46,7 @@ function EraseAction({
   const { t } = useTranslation()
   const notify = useNotify()
   const queryClient = useQueryClient()
-  const confirm = useDeleteConfirmation()
+  const confirm = useConfirmation()
   const apiErrorMessage = useApiErrorMessage()
   const refreshLookup = async () =>
     queryClient.invalidateQueries({

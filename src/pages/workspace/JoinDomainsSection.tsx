@@ -33,7 +33,7 @@ import {
   siteJoinDomainsVerifyMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteJoinDomainResource } from '../../generated/site/types.gen.ts'
-import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation.tsx'
+import { useConfirmation } from '../../hooks/useConfirmation.tsx'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 
 interface DomainFormValues {
@@ -120,7 +120,7 @@ function JoinDomainRow({
 // anyone else, and the API refuses them.
 export function JoinDomainsSection({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
-  const confirmDelete = useDeleteConfirmation()
+  const confirmDelete = useConfirmation()
   const queryKey = siteJoinDomainsListQueryKey({ path: { workspaceId } })
   const domainsQuery = useQuery(siteJoinDomainsListOptions({ path: { workspaceId } }))
   const joinKey = siteDomainJoinGetQueryKey({ path: { workspaceId } })

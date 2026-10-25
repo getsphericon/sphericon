@@ -7,7 +7,7 @@ import {
   siteWorkspacesListQueryKey,
 } from '../../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteWorkspaceResource } from '../../../generated/site/types.gen.ts'
-import { useDeleteConfirmation } from '../../../hooks/useDeleteConfirmation.tsx'
+import { useConfirmation } from '../../../hooks/useConfirmation.tsx'
 import { useResourceMutation } from '../../../hooks/useResourceMutation.ts'
 import { Route as indexRoute } from '../../../routes/index.tsx'
 
@@ -16,7 +16,7 @@ import { Route as indexRoute } from '../../../routes/index.tsx'
 export function LeaveWorkspaceSection({ workspace }: { workspace: SiteWorkspaceResource }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const confirmLeave = useDeleteConfirmation()
+  const confirmLeave = useConfirmation()
 
   const leaveMutation = useResourceMutation({
     mutation: siteWorkspacesLeaveMutation(),

@@ -39,7 +39,7 @@ import type {
   SiteTrackingReason,
   SiteTrackingState,
 } from '../../generated/site/types.gen.ts'
-import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation.tsx'
+import { useConfirmation } from '../../hooks/useConfirmation.tsx'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 
 interface DomainFormValues {
@@ -201,7 +201,7 @@ export function SendingDomainsSection({
   canEdit: boolean
 }) {
   const { t } = useTranslation()
-  const confirmArchive = useDeleteConfirmation()
+  const confirmArchive = useConfirmation()
   const [archived, setArchived] = useState(false)
   const [addOpened, { open: openAdd, close: closeAdd }] = useDisclosure(false)
 
@@ -237,6 +237,25 @@ export function SendingDomainsSection({
     successMessage: t(($) => $.settings.sendingDomains.archived),
     errorTitle: t(($) => $.settings.sendingDomains.archiveError),
   })
+
+  // An archived domain stops serving its Tracking host, so a tracker snippet installed on it stops
+  // collecting (ADR 0059): a host that already answers is archived only after saying so.
+  const onArchive = (record: SiteSendingDomainResource) => {
+    const archive = () => archiveMutation.mutate({ path: { workspaceId, id: record.id } })
+    const tracking = record.trackingRecord
+    if (!tracking || tracking.state === 'pending') {
+      archive()
+      return
+    }
+    confirmArchive({
+      title: t(($) => $.settings.sendingDomains.archiveServingTitle),
+      description: t(($) => $.settings.sendingDomains.archiveServingDescription, {
+        host: tracking.host,
+      }),
+      confirmLabel: t(($) => $.actions.archive),
+      onConfirm: archive,
+    })
+  }
 
   const restoreMutation = useResourceMutation({
     mutation: siteSendingDomainsUnarchiveMutation(),
@@ -334,28 +353,7 @@ export function SendingDomainsSection({
                         <Menu.Item
                           color="red"
                           disabled={archiveMutation.isPending}
-                          onClick={() => {
-                            const archive = () =>
-                              archiveMutation.mutate({ path: { workspaceId, id: record.id } })
-                            // An archived domain stops serving its Tracking host, so a tracker
-                            // snippet installed on it stops collecting (ADR 0059): say so first.
-                            if (
-                              record.trackingRecord &&
-                              record.trackingRecord.state !== 'pending'
-                            ) {
-                              confirmArchive({
-                                title: t(($) => $.settings.sendingDomains.archiveServingTitle),
-                                description: t(
-                                  ($) => $.settings.sendingDomains.archiveServingDescription,
-                                  { host: record.trackingRecord.host },
-                                ),
-                                confirmLabel: t(($) => $.actions.archive),
-                                onConfirm: archive,
-                              })
-                              return
-                            }
-                            archive()
-                          }}
+                          onClick={() => onArchive(record)}
                         >
                           {t(($) => $.actions.archive)}
                         </Menu.Item>

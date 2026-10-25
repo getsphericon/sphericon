@@ -39,7 +39,7 @@ import type {
   SiteWebhookFailure,
   SiteWebhookTestResult,
 } from '../../generated/site/types.gen.ts'
-import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation.tsx'
+import { useConfirmation } from '../../hooks/useConfirmation.tsx'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { AUDIT_TARGET_WEBHOOK_ENDPOINT } from './auditFilter.ts'
 import { ChangeHistoryLink } from './AuditLogSection.tsx'
@@ -157,7 +157,7 @@ function TestEventModal({
 
 export function WebhooksSection({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
-  const confirmDelete = useDeleteConfirmation()
+  const confirmDelete = useConfirmation()
   const [createOpened, { open: openCreate, close: closeCreate }] = useDisclosure(false)
   const [testingId, setTestingId] = useState<string | null>(null)
 

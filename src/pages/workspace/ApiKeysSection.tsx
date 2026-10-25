@@ -32,7 +32,7 @@ import {
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { ApiTokenScope } from '../../generated/site/types.gen.ts'
 import { zApiTokenScope } from '../../generated/site/zod.gen.ts'
-import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation.tsx'
+import { useConfirmation } from '../../hooks/useConfirmation.tsx'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { formatDate } from '../../utils/datetime.ts'
 import { ScopePicker } from './ScopePicker.tsx'
@@ -42,7 +42,7 @@ const SCOPE_OPTIONS = zApiTokenScope.options
 
 export function ApiKeysSection({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
-  const confirmRevoke = useDeleteConfirmation()
+  const confirmRevoke = useConfirmation()
   const [renaming, setRenaming] = useState<{ id: string; name: string } | null>(null)
   const [newSecret, setNewSecret] = useState<string | null>(null)
   const [createOpened, { open: openCreate, close }] = useDisclosure(false)

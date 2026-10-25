@@ -26,9 +26,9 @@ import {
   siteContactsListQueryKey,
   siteEventsListOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
+import { useConfirmation } from '../../hooks/useConfirmation.tsx'
 import { useContactExport } from '../../hooks/useContactExport.ts'
 import { canManage, useCurrentRole } from '../../hooks/useCurrentRole.ts'
-import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation.tsx'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as contactsEditRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/edit.tsx'
 import { Route as contactsDetailRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/index.tsx'
@@ -63,7 +63,7 @@ function formatCustomValue(value: unknown): string {
 function ContactActions({ workspaceId, contactId }: { workspaceId: string; contactId: string }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const confirm = useDeleteConfirmation()
+  const confirm = useConfirmation()
   const role = useCurrentRole(workspaceId)
   // Erasure is irreversible, so it is offered to owners and admins only (the API
   // refuses everyone else with 403).
