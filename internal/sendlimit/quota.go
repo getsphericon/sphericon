@@ -33,7 +33,7 @@ func RefreshQuota(ctx context.Context, s *ent.Scoped, cipher *secrets.Cipher, ca
 	if err != nil {
 		return fmt.Errorf("decrypt integration %d config: %w", integ.ID, err)
 	}
-	built, err := catalog.BuildEmail(messaging.Provider(integ.Provider), config, nil)
+	built, err := catalog.BuildEmail(messaging.Provider(integ.Provider), config, messaging.Deps{})
 	if err != nil {
 		return err
 	}

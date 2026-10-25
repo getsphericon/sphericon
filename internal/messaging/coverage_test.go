@@ -57,7 +57,7 @@ func TestCatalogBuildEmail(t *testing.T) {
 	cat := messaging.NewCatalog(
 		messaging.ProviderDescriptor{
 			Channel: messaging.ChannelEmail, Provider: messaging.ProviderSMTP,
-			Build: func([]byte, messaging.Signer) (any, error) {
+			Build: func([]byte, messaging.Deps) (any, error) {
 				return &EmailSenderMock{SendFunc: func(context.Context, messaging.EmailMessage) (messaging.Receipt, error) {
 					return messaging.Receipt{MessageID: "stub"}, nil
 				}}, nil
@@ -65,25 +65,25 @@ func TestCatalogBuildEmail(t *testing.T) {
 		},
 		messaging.ProviderDescriptor{
 			Channel: messaging.ChannelEmail, Provider: messaging.ProviderSES,
-			Build: func([]byte, messaging.Signer) (any, error) { return nil, boom },
+			Build: func([]byte, messaging.Deps) (any, error) { return nil, boom },
 		},
 		messaging.ProviderDescriptor{
 			Channel: messaging.ChannelEmail, Provider: messaging.Provider("wrong"),
-			Build: func([]byte, messaging.Signer) (any, error) { return "not a sender", nil },
+			Build: func([]byte, messaging.Deps) (any, error) { return "not a sender", nil },
 		},
 	)
 
-	sender, err := cat.BuildEmail(messaging.ProviderSMTP, nil, nil)
+	sender, err := cat.BuildEmail(messaging.ProviderSMTP, nil, messaging.Deps{})
 	require.NoError(t, err)
 	assert.NotNil(t, sender, "built sender is wrapped by the outcome counter, so assert behaviour in metrics_test.go")
 
-	_, err = cat.BuildEmail(messaging.ProviderSES, nil, nil)
+	_, err = cat.BuildEmail(messaging.ProviderSES, nil, messaging.Deps{})
 	require.ErrorIs(t, err, boom)
 
-	_, err = cat.BuildEmail(messaging.Provider("wrong"), nil, nil)
+	_, err = cat.BuildEmail(messaging.Provider("wrong"), nil, messaging.Deps{})
 	require.ErrorContains(t, err, "did not build an EmailSender")
 
-	_, err = cat.BuildEmail(messaging.Provider("missing"), nil, nil)
+	_, err = cat.BuildEmail(messaging.Provider("missing"), nil, messaging.Deps{})
 	assert.ErrorContains(t, err, "unknown email provider")
 }
 

@@ -58,8 +58,8 @@ func NewDescriptor(client aws.HTTPClient) messaging.ProviderDescriptor {
 		Channel:  messaging.ChannelEmail,
 		Provider: messaging.ProviderSES,
 		Validate: validate,
-		Build: func(raw []byte, signer messaging.Signer) (any, error) {
-			return build(raw, signer, client)
+		Build: func(raw []byte, deps messaging.Deps) (any, error) {
+			return build(raw, deps.Signer, client)
 		},
 	}
 }

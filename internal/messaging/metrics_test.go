@@ -29,23 +29,23 @@ func TestCatalogSenderCountsSendOutcomes(t *testing.T) {
 	catalog := messaging.NewCatalog(
 		messaging.ProviderDescriptor{
 			Channel: messaging.ChannelEmail, Provider: messaging.ProviderSMTP,
-			Build: func([]byte, messaging.Signer) (any, error) { return outcomeSender{}, nil },
+			Build: func([]byte, messaging.Deps) (any, error) { return outcomeSender{}, nil },
 		},
 		messaging.ProviderDescriptor{
 			Channel: messaging.ChannelEmail, Provider: messaging.ProviderSES,
-			Build: func([]byte, messaging.Signer) (any, error) { return outcomeSender{err: failing}, nil },
+			Build: func([]byte, messaging.Deps) (any, error) { return outcomeSender{err: failing}, nil },
 		},
 	)
 	ctx := t.Context()
 
-	smtp, err := catalog.BuildEmail(messaging.ProviderSMTP, nil, nil)
+	smtp, err := catalog.BuildEmail(messaging.ProviderSMTP, nil, messaging.Deps{})
 	require.NoError(t, err)
 	_, err = smtp.Send(ctx, messaging.EmailMessage{})
 	require.NoError(t, err)
 	_, err = smtp.Send(ctx, messaging.EmailMessage{})
 	require.NoError(t, err)
 
-	ses, err := catalog.BuildEmail(messaging.ProviderSES, nil, nil)
+	ses, err := catalog.BuildEmail(messaging.ProviderSES, nil, messaging.Deps{})
 	require.NoError(t, err)
 	_, err = ses.Send(ctx, messaging.EmailMessage{})
 	require.ErrorIs(t, err, failing)
@@ -78,7 +78,7 @@ func TestCatalogSenderCountsDeferralsApartFromErrors(t *testing.T) {
 	metricstest.StartMetrics(t)
 	catalog := messaging.NewCatalog(messaging.ProviderDescriptor{
 		Channel: messaging.ChannelEmail, Provider: messaging.ProviderSES,
-		Build: func(cfg []byte, _ messaging.Signer) (any, error) {
+		Build: func(cfg []byte, _ messaging.Deps) (any, error) {
 			switch string(cfg) {
 			case "busy":
 				return outcomeSender{err: fmt.Errorf("throttled: %w", messaging.ErrBusy)}, nil
@@ -91,7 +91,7 @@ func TestCatalogSenderCountsDeferralsApartFromErrors(t *testing.T) {
 	})
 	ctx := t.Context()
 	for _, cfg := range []string{"busy", "quota", "quota", "other"} {
-		s, err := catalog.BuildEmail(messaging.ProviderSES, []byte(cfg), nil)
+		s, err := catalog.BuildEmail(messaging.ProviderSES, []byte(cfg), messaging.Deps{})
 		require.NoError(t, err)
 		_, err = s.Send(ctx, messaging.EmailMessage{})
 		require.Error(t, err)

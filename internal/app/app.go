@@ -1651,7 +1651,7 @@ func buildSystemSender(cfg *config.Config, catalog *messaging.Catalog) (messagin
 			return nil, err
 		}
 		// nil signer: platform mail is not signed with a workspace sending domain.
-		return catalog.BuildEmail(messaging.ProviderSES, blob, nil)
+		return catalog.BuildEmail(messaging.ProviderSES, blob, messaging.Deps{})
 	default: // smtp (dev → mailpit)
 		blob, err := json.Marshal(map[string]any{
 			"host":     cfg.SMTPHost,
@@ -1664,7 +1664,7 @@ func buildSystemSender(cfg *config.Config, catalog *messaging.Catalog) (messagin
 		if err != nil {
 			return nil, err
 		}
-		return catalog.BuildEmail(messaging.ProviderSMTP, blob, nil)
+		return catalog.BuildEmail(messaging.ProviderSMTP, blob, messaging.Deps{})
 	}
 }
 

@@ -40,8 +40,8 @@ func NewDescriptor(allowPrivate bool) messaging.ProviderDescriptor {
 		Channel:  messaging.ChannelEmail,
 		Provider: messaging.ProviderSMTP,
 		Validate: func(raw []byte) error { return validate(raw, allowPrivate) },
-		Build: func(raw []byte, signer messaging.Signer) (any, error) {
-			return build(raw, signer, allowPrivate)
+		Build: func(raw []byte, deps messaging.Deps) (any, error) {
+			return build(raw, deps.Signer, allowPrivate)
 		},
 	}
 }

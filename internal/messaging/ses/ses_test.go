@@ -70,7 +70,7 @@ func throttledBody(message string) string {
 func build(t *testing.T, endpoint string) messaging.EmailSender {
 	t.Helper()
 	raw := fmt.Sprintf(`{"region":"eu-west-1","accessKeyId":"AKIATEST","secretAccessKey":"shh","from":"noreply@acme.com","fromName":"Acme","endpoint":%q}`, endpoint)
-	built, err := ses.NewDescriptor(http.DefaultClient).Build([]byte(raw), nil)
+	built, err := ses.NewDescriptor(http.DefaultClient).Build([]byte(raw), messaging.Deps{})
 	require.NoError(t, err)
 	sender, ok := built.(messaging.EmailSender)
 	require.True(t, ok)
@@ -193,7 +193,7 @@ func TestDescriptorValidate(t *testing.T) {
 }
 
 func TestBuildRejectsMalformedConfig(t *testing.T) {
-	_, err := ses.Descriptor().Build([]byte(`{`), nil)
+	_, err := ses.Descriptor().Build([]byte(`{`), messaging.Deps{})
 	assert.ErrorContains(t, err, "invalid config")
 }
 
@@ -247,7 +247,7 @@ func TestSendQuota(t *testing.T) {
 func TestSendRefusesPrivateEndpoint(t *testing.T) {
 	api := newSESAPI(t, http.StatusOK, okBody)
 	raw := fmt.Sprintf(`{"region":"eu-west-1","accessKeyId":"AKIATEST","secretAccessKey":"shh","from":"noreply@acme.com","endpoint":%q}`, api.srv.URL)
-	built, err := ses.Descriptor().Build([]byte(raw), nil)
+	built, err := ses.Descriptor().Build([]byte(raw), messaging.Deps{})
 	require.NoError(t, err)
 
 	_, err = built.(messaging.EmailSender).Send(context.Background(), messaging.EmailMessage{To: "rcpt@example.com", Subject: "Hello", Text: "body"})

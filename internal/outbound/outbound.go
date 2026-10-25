@@ -543,12 +543,17 @@ func (m *Module) gate(ctx context.Context, s *ent.Scoped, fromEmail, fromName st
 	// the address that will really go on the wire, so the domain gate and the
 	// Sending-domain stamp agree with the DKIM signer.
 	from, name := effectiveFrom(sender, fromEmail, fromName)
-	verified, err := messaging.HasVerifiedSendingDomain(ctx, s, from)
-	if err != nil {
-		return gateResult{}, fmt.Errorf("outbound: check sending domain: %w", err)
-	}
-	if !verified {
-		return gateResult{hold: HoldUnverifiedDomain}, nil
+	// Only a sender that delivers outside needs a verified Sending domain: nothing a
+	// sender that keeps its mail sends can reach anyone under a domain the Workspace
+	// does not own (ADR 0058).
+	if messaging.DeliversOutside(sender) {
+		verified, err := messaging.HasVerifiedSendingDomain(ctx, s, from)
+		if err != nil {
+			return gateResult{}, fmt.Errorf("outbound: check sending domain: %w", err)
+		}
+		if !verified {
+			return gateResult{hold: HoldUnverifiedDomain}, nil
+		}
 	}
 	integ, err := messaging.DefaultEmailIntegration(ctx, s)
 	if err != nil && !errors.Is(err, messaging.ErrNoProvider) {
@@ -730,7 +735,7 @@ func (m *Module) recordSent(ctx context.Context, s *ent.Scoped, req Request, msg
 		}); err != nil {
 			return err
 		}
-		return pub.Publish(ctx, &events.EmailEngagement{
+		if err := pub.Publish(ctx, &events.EmailEngagement{
 			Action:            events.NameEmailSent,
 			WorkspaceID:       s.WorkspaceID(),
 			ContactID:         contactID,
@@ -743,6 +748,30 @@ func (m *Module) recordSent(ctx context.Context, s *ent.Scoped, req Request, msg
 			AutomationID:      req.Ref.AutomationID,
 			OutboundMessageID: msg.ID,
 			ProviderMessageID: receipt.MessageID,
+		}); err != nil {
+			return err
+		}
+		if !receipt.DeliveryConfirmed {
+			return nil
+		}
+		// The provider confirmed delivery on acceptance: the same stamp and Event a
+		// Delivery notice yields, in this transaction. The fence above makes it once.
+		if err := StampDelivery(ctx, ts, msg.ID, ResultDelivered, now); err != nil {
+			return err
+		}
+		return pub.Publish(ctx, &events.EmailDelivery{
+			Action:            events.NameEmailDelivered,
+			WorkspaceID:       s.WorkspaceID(),
+			ContactID:         contactID,
+			Email:             dest,
+			ProviderMessageID: receipt.MessageID,
+			SendingDomain:     g.domain,
+			DedupID:           fmt.Sprintf("%s:%d/%s", events.NameEmailDelivered, msg.ID, dest),
+			OutboundMessageID: msg.ID,
+			Surface:           string(req.Kind),
+			SendingSource:     req.Source,
+			BroadcastID:       req.Ref.BroadcastID,
+			AutomationID:      req.Ref.AutomationID,
 		})
 	})
 	if err != nil {

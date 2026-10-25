@@ -1,6 +1,9 @@
 package messaging
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 // ProviderDescriptor is the extensibility seam: it teaches the catalog how to
 // validate and build one provider. Build returns a channel-specific sender as
@@ -13,9 +16,26 @@ type ProviderDescriptor struct {
 	// blob (the typed API union already enforces shape and required fields).
 	Validate func(config []byte) error
 
-	// Build constructs the live sender from a decrypted config blob. The signer
-	// (may be nil) is stored by the sender to DKIM-sign outbound mail per ADR 0010.
-	Build func(config []byte, signer Signer) (any, error)
+	// Build constructs the live sender from a decrypted config blob and the
+	// dependencies bound to the Workspace it sends for. A provider uses what it needs
+	// and ignores the rest.
+	Build func(config []byte, deps Deps) (any, error)
+}
+
+// Deps is what the catalog hands every provider builder, bound to one Workspace's
+// scoped handle (zero fields when a sender is built outside a send, e.g. for a quota
+// lookup).
+type Deps struct {
+	// Signer DKIM-signs outbound mail per ADR 0010; may be nil.
+	Signer Signer
+	// Capturer keeps the messages of a provider that delivers nowhere outside (the
+	// Test inbox); may be nil, and a provider that delivers outside ignores it.
+	Capturer Capturer
+}
+
+// Capturer keeps a message a provider accepted instead of sending it out.
+type Capturer interface {
+	Capture(ctx context.Context, msg EmailMessage) error
 }
 
 // Catalog holds the registered provider descriptors keyed by (channel, provider).
@@ -66,14 +86,13 @@ func (c *Catalog) Validate(channel Channel, provider Provider, config []byte) er
 	return d.Validate(config)
 }
 
-// BuildEmail builds an EmailSender for an email-channel provider. signer (may be
-// nil) is passed to the provider for native DKIM signing.
-func (c *Catalog) BuildEmail(provider Provider, config []byte, signer Signer) (EmailSender, error) {
+// BuildEmail builds an EmailSender for an email-channel provider from deps.
+func (c *Catalog) BuildEmail(provider Provider, config []byte, deps Deps) (EmailSender, error) {
 	d, ok := c.Descriptor(ChannelEmail, provider)
 	if !ok {
 		return nil, fmt.Errorf("unknown email provider %q", provider)
 	}
-	built, err := d.Build(config, signer)
+	built, err := d.Build(config, deps)
 	if err != nil {
 		return nil, err
 	}

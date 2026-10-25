@@ -59,6 +59,11 @@ type Receipt struct {
 	// MessageID is the provider's id for the accepted message (SES MessageId, or the
 	// MIME Message-ID for SMTP). Recorded on the Outbound message for correlation.
 	MessageID string
+	// DeliveryConfirmed is set by a provider that confirmed delivery when it accepted the
+	// message (a Test inbox keeps it, so nothing later reports it). Recording the send then
+	// stamps the delivery result. SMTP and SES never set it: their Delivery notices arrive
+	// later from the provider.
+	DeliveryConfirmed bool
 }
 
 // DefaultFromer is implemented by senders that fall back to the integration's
@@ -67,6 +72,27 @@ type Receipt struct {
 // Sending-domain stamp use the address that will really go on the wire.
 type DefaultFromer interface {
 	DefaultFrom() (addr, name string)
+}
+
+// OutsideDeliverer is implemented by a sender that says whether its provider delivers
+// outside sphericon. A sender that does not implement it delivers outside (SMTP, SES).
+// Outbound send reads it through DeliversOutside, never by the provider's name: the
+// Sending-domain gate and DKIM signing apply only to a sender that delivers outside.
+type OutsideDeliverer interface {
+	DeliversOutside() bool
+}
+
+// DeliversOutside reports whether sender's provider delivers outside, looking through the
+// metrics decorator Catalog.BuildEmail wraps every sender in. A sender that says nothing
+// delivers outside.
+func DeliversOutside(sender EmailSender) bool {
+	if i, ok := sender.(instrumentedSender); ok {
+		sender = i.EmailSender
+	}
+	if d, ok := sender.(OutsideDeliverer); ok {
+		return d.DeliversOutside()
+	}
+	return true
 }
 
 // Signer resolves the native DKIM signer for an outbound message (ADR 0010).

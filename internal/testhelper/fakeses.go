@@ -54,11 +54,11 @@ func (f *FakeSES) Catalog() *messaging.Catalog {
 	return messaging.NewCatalog(
 		messaging.ProviderDescriptor{
 			Channel: messaging.ChannelEmail, Provider: messaging.ProviderSES,
-			Build: func([]byte, messaging.Signer) (any, error) { return f, nil },
+			Build: func([]byte, messaging.Deps) (any, error) { return f, nil },
 		},
 		messaging.ProviderDescriptor{
 			Channel: messaging.ChannelEmail, Provider: messaging.ProviderSMTP,
-			Build: func([]byte, messaging.Signer) (any, error) { return plainSender{}, nil },
+			Build: func([]byte, messaging.Deps) (any, error) { return plainSender{}, nil },
 		},
 	)
 }
@@ -83,8 +83,8 @@ func (s quotaSender) SendQuota(ctx context.Context) (messaging.Quota, error) {
 // catalogWith is the built-in catalog with SES's quota lookup answered by fake.
 func catalogWith(fake *FakeSES) *messaging.Catalog {
 	descriptor := ses.Descriptor()
-	descriptor.Build = func(config []byte, signer messaging.Signer) (any, error) {
-		built, err := ses.Descriptor().Build(config, signer)
+	descriptor.Build = func(config []byte, deps messaging.Deps) (any, error) {
+		built, err := ses.Descriptor().Build(config, deps)
 		if err != nil {
 			return nil, err
 		}
