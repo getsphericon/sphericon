@@ -182,7 +182,7 @@ test('a refused registration is reported', async () => {
   worker.use(
     handleSitePasskeysBeginRegistration({ body: { options: OPTIONS } }),
     handleSitePasskeysFinishRegistration(() =>
-      problem(422, 'the passkey could not be registered: start again'),
+      problem(422, 'the passkey could not be added: start again'),
     ),
   )
   const { screen } = await renderWithRouter(<Passkeys returnTo="/account/security" />)
