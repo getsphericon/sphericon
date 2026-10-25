@@ -24,6 +24,7 @@ const existing: SiteWorkspaceResource = {
   timezone: 'UTC',
   accountLinkAvailable: false,
   mcpUrl: 'https://sphericon.test',
+  trackerUrl: 'https://t.sphericon.test',
   holds: [],
   role: 'owner',
   createdAt: '2026-01-01T00:00:00Z',

@@ -21554,6 +21554,9 @@ type SiteWorkspaceResource struct {
 	// The public origin an AI agent connects to as `<mcpUrl>/mcp`: SPHERICON_MCP_URL when MCP has its own
 	// host, otherwise the app origin.
 	McpUrl string `json:"mcpUrl"`
+	// The public origin the tracker snippet loads `/t.js` from and posts `/collect` to:
+	// SPHERICON_TRACKER_URL when the tracker has its own host, otherwise the app origin.
+	TrackerUrl string `json:"trackerUrl"`
 	// The Staff holds active now, oldest key first; empty while nothing holds sending. Any one freezes
 	// every send surface, like a suspension, but a lapsed hold is never listed.
 	Holds []SiteWorkspaceHold `json:"holds"`
@@ -21620,6 +21623,11 @@ func (s *SiteWorkspaceResource) GetSupportEmail() OptNilString {
 // GetMcpUrl returns the value of McpUrl.
 func (s *SiteWorkspaceResource) GetMcpUrl() string {
 	return s.McpUrl
+}
+
+// GetTrackerUrl returns the value of TrackerUrl.
+func (s *SiteWorkspaceResource) GetTrackerUrl() string {
+	return s.TrackerUrl
 }
 
 // GetHolds returns the value of Holds.
@@ -21695,6 +21703,11 @@ func (s *SiteWorkspaceResource) SetSupportEmail(val OptNilString) {
 // SetMcpUrl sets the value of McpUrl.
 func (s *SiteWorkspaceResource) SetMcpUrl(val string) {
 	s.McpUrl = val
+}
+
+// SetTrackerUrl sets the value of TrackerUrl.
+func (s *SiteWorkspaceResource) SetTrackerUrl(val string) {
+	s.TrackerUrl = val
 }
 
 // SetHolds sets the value of Holds.

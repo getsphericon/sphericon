@@ -110,7 +110,10 @@ type Config struct {
 	AppURL     string
 	// MCPURL is the public origin of a dedicated MCP host (SPHERICON_MCP_URL); empty means the
 	// MCP resource lives on AppURL. Read it through MCPOrigin.
-	MCPURL        string
+	MCPURL string
+	// TrackerURL is the public origin the tracker snippet loads t.js from and posts /collect to
+	// (SPHERICON_TRACKER_URL); empty means AppURL. Read it through TrackerOrigin.
+	TrackerURL    string
 	SMTPHost      string
 	SMTPPort      int
 	SMTPUser      string
@@ -288,6 +291,7 @@ type environment struct {
 	Port        string `env:"PORT" envDefault:"3000"`
 	AppURL      string `env:"SPHERICON_APP_URL" envDefault:"http://localhost:3000"`
 	MCPURL      string `env:"SPHERICON_MCP_URL"`
+	TrackerURL  string `env:"SPHERICON_TRACKER_URL"`
 
 	CollectSiteKey     string        `env:"SPHERICON_COLLECT_SITE_KEY"`
 	BootstrapToken     string        `env:"SPHERICON_BOOTSTRAP_TOKEN"`
@@ -481,6 +485,7 @@ func Load(envName string) (*Config, error) {
 		SessionTTL:         e.SessionTTL,
 		AppURL:             e.AppURL,
 		MCPURL:             e.MCPURL,
+		TrackerURL:         e.TrackerURL,
 		SMTPHost:           e.SMTPHost,
 		SMTPPort:           e.SMTPPort,
 		SMTPUser:           e.SMTPUser,
@@ -877,6 +882,15 @@ func ValidateJWTSecret(secret string) error {
 func (c *Config) MCPOrigin() string {
 	if c.MCPURL != "" {
 		return c.MCPURL
+	}
+	return c.AppURL
+}
+
+// TrackerOrigin is the public origin of the tracker: SPHERICON_TRACKER_URL when the deployment serves
+// /t.js and /collect on a host of its own, otherwise AppURL.
+func (c *Config) TrackerOrigin() string {
+	if c.TrackerURL != "" {
+		return c.TrackerURL
 	}
 	return c.AppURL
 }

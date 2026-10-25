@@ -1117,6 +1117,7 @@ export default interface Resources {
         "to": "To"
       },
       "backToWorkspace": "Back to workspace",
+      "browserSdkLink": "Browser SDK (@sphericon/analytics)",
       "copied": "Copied",
       "copy": "Copy",
       "danger": {
@@ -1288,6 +1289,7 @@ export default interface Resources {
         "tracking": "Tracking",
         "webhooks": "Webhooks"
       },
+      "nodeSdkLink": "Node SDK (@sphericon/node)",
       "postalAddressDescription": "Shown in the footer of every marketing email. US law (CAN-SPAM) requires a valid physical postal address.",
       "postalAddressLabel": "Postal address",
       "postalAddressPlaceholder": "Acme Inc, 123 Main St, Springfield, IL 62704, USA",
@@ -1313,6 +1315,9 @@ export default interface Resources {
         "unsubscribes": "Unsubscribes: {{n}}"
       },
       "saved": "Workspace updated",
+      "sendEventsDescription": "The snippet above tracks page views in the browser. To send events yourself, use an SDK or the API.",
+      "sendEventsGuideLink": "How to send events",
+      "sendEventsTitle": "Send events from your code",
       "sendingDomains": {
         "archiveError": "Failed to archive domain",
         "archived": "Domain archived",

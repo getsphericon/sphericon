@@ -4990,6 +4990,11 @@ export type SiteWorkspaceResource = {
    */
   mcpUrl: string;
   /**
+   * The public origin the tracker snippet loads `/t.js` from and posts `/collect` to:
+   * SPHERICON_TRACKER_URL when the tracker has its own host, otherwise the app origin.
+   */
+  trackerUrl: string;
+  /**
    * The Staff holds active now, oldest key first; empty while nothing holds sending.
    * Any one freezes every send surface, like a suspension, but a lapsed hold is never
    * listed.

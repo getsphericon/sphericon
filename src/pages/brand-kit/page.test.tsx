@@ -27,6 +27,7 @@ const workspace = (role: SiteWorkspaceResource['role']): SiteWorkspaceResource =
   accountLinkAvailable: false,
   holds: [],
   mcpUrl: 'https://example.com/mcp',
+  trackerUrl: 'https://t.sphericon.test',
   role,
   createdAt: '2026-01-01T00:00:00Z',
 })

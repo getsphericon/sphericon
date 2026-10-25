@@ -22,6 +22,7 @@ const workspace = (over: Partial<SiteWorkspaceResource> = {}): SiteWorkspaceReso
   timezone: 'UTC',
   accountLinkAvailable: false,
   mcpUrl: 'https://sphericon.test',
+  trackerUrl: 'https://t.sphericon.test',
   holds: [],
   role: 'member',
   createdAt: NOW,

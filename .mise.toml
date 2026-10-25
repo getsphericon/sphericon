@@ -106,6 +106,8 @@ SPHERICON_ENCRYPTION_KEY = "CIamsc4JEmQKWAowdHlwZS5nb29nbGVhcGlzLmNvbS9nb29nbGUu
 # the Brightpath collect key from the fixtures.
 DEMO_HOST = "{% if env.CADDY_PORT == '443' %}brightpath.localhost{% else %}brightpath.{{ env.APP_HOST }}{% endif %}"
 DEMO_COLLECT_URL = "https://{{ env.COLLECT_HOST }}{% if env.CADDY_PORT != '443' %}:{{ env.CADDY_PORT }}{% endif %}"
+# The snippet on the Tracking settings page shows the same tracker host.
+SPHERICON_TRACKER_URL = "{{ env.DEMO_COLLECT_URL }}"
 DEMO_COLLECT_KEY = "omck_test_brightpath_collect_key"
 # The storefront's server calls the external API at the api. host with the "Demo site" token
 # (committed dev secret: fixtures/api_tokens.yml).

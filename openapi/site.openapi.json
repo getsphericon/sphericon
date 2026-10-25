@@ -18252,6 +18252,7 @@
           "timezone",
           "role",
           "mcpUrl",
+          "trackerUrl",
           "holds",
           "accountLinkAvailable",
           "createdAt"
@@ -18316,6 +18317,10 @@
           "mcpUrl": {
             "type": "string",
             "description": "The public origin an AI agent connects to as `<mcpUrl>/mcp`: SPHERICON_MCP_URL when MCP has its\nown host, otherwise the app origin."
+          },
+          "trackerUrl": {
+            "type": "string",
+            "description": "The public origin the tracker snippet loads `/t.js` from and posts `/collect` to:\nSPHERICON_TRACKER_URL when the tracker has its own host, otherwise the app origin."
           },
           "holds": {
             "type": "array",

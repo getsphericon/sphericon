@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/getsphericon/sphericon/config"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -98,6 +99,25 @@ func TestSiteWorkspacesListExposesSuspension(t *testing.T) {
 	assert.False(t, time.Time(at).IsZero())
 	reason, _ := list[0].SuspensionReason.Get()
 	assert.Equal(t, "complaint rate above 0.3%", reason)
+}
+
+// The tracker snippet is built on the tracker's own host when the instance has one
+// (SPHERICON_TRACKER_URL) and on the app origin otherwise.
+func TestSiteWorkspacesListExposesTrackerURL(t *testing.T) {
+	const trackerURL = "https://t.sphericon.example"
+	ctx := context.Background()
+
+	env := testhelper.Setup(t)
+	list, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteWorkspacesList(ctx)
+	require.NoError(t, err)
+	require.Len(t, list, 1)
+	assert.Equal(t, env.AppURL, list[0].TrackerUrl, "without a tracker host the app origin serves it")
+
+	split := testhelper.Setup(t, testhelper.WithConfig(func(c *config.Config) { c.TrackerURL = trackerURL }))
+	list, err = split.SiteActor(t, fixtures.OwnerJohnEmail).SiteWorkspacesList(ctx)
+	require.NoError(t, err)
+	require.Len(t, list, 1)
+	assert.Equal(t, trackerURL, list[0].TrackerUrl)
 }
 
 // Every member sees the Staff holds on their Workspace (ADR 0009), told apart from a

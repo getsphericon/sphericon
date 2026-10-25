@@ -7,6 +7,7 @@ import { problem } from '../../../test/problem.ts'
 import { renderWithRouter } from '../../../test/renderWithRouter.tsx'
 import { routeMount } from '../../../test/routeMount.ts'
 import { worker } from '../../../test/worker.ts'
+import { DOCS_URL, SDK_SOURCE_URL } from '../../../utils/docs.ts'
 import { TrackingPage } from './tracking.tsx'
 
 const TRACKING_ROUTE = routeMount(trackingRoute, { workspaceId: 'TestWs01' })
@@ -20,6 +21,7 @@ const workspace = {
   timezone: 'UTC',
   accountLinkAvailable: false,
   mcpUrl: 'https://sphericon.test',
+  trackerUrl: 'https://t.sphericon.test',
   holds: [],
   role: 'owner' as const,
   createdAt: '2026-01-01T00:00:00Z',
@@ -47,6 +49,38 @@ test('shows the tracking snippet and the test command with the collect key', asy
   await expect.element(screen.getByText(/x-collect-key: omck_test_key/)).toBeInTheDocument()
   // No events yet → waiting state.
   await expect.element(screen.getByText('Waiting for the first event…')).toBeInTheDocument()
+})
+
+test('the snippet and the test command use the tracker origin, not the app origin', async () => {
+  serveWorkspace()
+
+  const { screen } = await renderWithRouter(<TrackingPage />, TRACKING_ROUTE)
+
+  await expect
+    .element(screen.getByText(/s\.src = "https:\/\/t\.sphericon\.test\/t\.js"/))
+    .toBeInTheDocument()
+  await expect
+    .element(screen.getByText(/baseUrl: "https:\/\/t\.sphericon\.test"/))
+    .toBeInTheDocument()
+  await expect
+    .element(screen.getByText(/curl -X POST "https:\/\/t\.sphericon\.test\/collect\/events"/))
+    .toBeInTheDocument()
+})
+
+test('links to the guide on sending events and to the SDK sources', async () => {
+  serveWorkspace()
+
+  const { screen } = await renderWithRouter(<TrackingPage />, TRACKING_ROUTE)
+
+  await expect
+    .element(screen.getByRole('link', { name: 'How to send events' }))
+    .toHaveAttribute('href', `${DOCS_URL}/guide/tracking`)
+  await expect
+    .element(screen.getByRole('link', { name: /Browser SDK/ }))
+    .toHaveAttribute('href', `${SDK_SOURCE_URL}/analytics`)
+  await expect
+    .element(screen.getByRole('link', { name: /Node SDK/ }))
+    .toHaveAttribute('href', `${SDK_SOURCE_URL}/node`)
 })
 
 test('shows the connected install status once events arrive', async () => {

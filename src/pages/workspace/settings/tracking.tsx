@@ -1,4 +1,15 @@
-import { Box, Badge, Button, Code, CopyButton, Group, Stack, Text, Title } from '@mantine/core'
+import {
+  Anchor,
+  Box,
+  Badge,
+  Button,
+  Code,
+  CopyButton,
+  Group,
+  Stack,
+  Text,
+  Title,
+} from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
@@ -6,6 +17,7 @@ import { AnchorLink } from '../../../components/RouterLink.tsx'
 import { siteEventsListOptions } from '../../../generated/site/@tanstack/react-query.gen.ts'
 import { Route as recentActivityRoute } from '../../../routes/workspaces/$workspaceId/analytics/recent-activity.tsx'
 import { Route as trackingRoute } from '../../../routes/workspaces/$workspaceId/settings/tracking.tsx'
+import { DOCS_URL, SDK_SOURCE_URL } from '../../../utils/docs.ts'
 import { SettingsFrame } from './SettingsFrame.tsx'
 
 // InstallStatus polls the events feed and tells the user whether their tracker
@@ -43,12 +55,17 @@ function InstallStatus({ workspaceId }: { workspaceId: string }) {
   )
 }
 
+// trackerOrigin is the tracker's public origin without a trailing slash, so paths append cleanly.
+function trackerOrigin(trackerUrl: string) {
+  return trackerUrl.replace(/\/$/, '')
+}
+
 // TestEvent shows a copy-paste curl command that posts a real event through the
 // /collect pipeline (RudderStack-style): the user runs it, then watches it land
 // in the activity feed. No in-app injection, so test traffic stays explicit.
-function TestEvent({ collectKey }: { collectKey: string }) {
+function TestEvent({ collectKey, trackerUrl }: { collectKey: string; trackerUrl: string }) {
   const { t } = useTranslation()
-  const origin = window.location.origin
+  const origin = trackerOrigin(trackerUrl)
   const command = [
     `curl -X POST "${origin}/collect/events" \\`,
     `  -H "content-type: application/json" \\`,
@@ -77,10 +94,18 @@ function TestEvent({ collectKey }: { collectKey: string }) {
 }
 
 // TrackingSection shows the embed snippet customers paste into their site. The
-// host is derived from the current origin; the collect key identifies the workspace.
-function TrackingSection({ collectKey, workspaceId }: { collectKey: string; workspaceId: string }) {
+// host is the instance's tracker origin; the collect key identifies the workspace.
+function TrackingSection({
+  collectKey,
+  trackerUrl,
+  workspaceId,
+}: {
+  collectKey: string
+  trackerUrl: string
+  workspaceId: string
+}) {
   const { t } = useTranslation()
-  const origin = window.location.origin
+  const origin = trackerOrigin(trackerUrl)
   // The stub creates the command queue the tracker drains once t.js has loaded, so
   // `_omq.push(['track', …])` works from the first line while t.js loads asynchronously.
   const snippet = `<script>
@@ -115,6 +140,33 @@ function TrackingSection({ collectKey, workspaceId }: { collectKey: string; work
   )
 }
 
+// SendEvents points to the ways of sending events beyond the snippet: the guide and the SDK sources.
+function SendEvents() {
+  const { t } = useTranslation()
+
+  return (
+    <Box>
+      <Title order={4} mb="xs">
+        {t(($) => $.settings.sendEventsTitle)}
+      </Title>
+      <Text c="dimmed" size="sm" mb="sm">
+        {t(($) => $.settings.sendEventsDescription)}
+      </Text>
+      <Stack gap="xs">
+        <Anchor href={`${DOCS_URL}/guide/tracking`} target="_blank" rel="noreferrer" size="sm">
+          {t(($) => $.settings.sendEventsGuideLink)}
+        </Anchor>
+        <Anchor href={`${SDK_SOURCE_URL}/analytics`} target="_blank" rel="noreferrer" size="sm">
+          {t(($) => $.settings.browserSdkLink)}
+        </Anchor>
+        <Anchor href={`${SDK_SOURCE_URL}/node`} target="_blank" rel="noreferrer" size="sm">
+          {t(($) => $.settings.nodeSdkLink)}
+        </Anchor>
+      </Stack>
+    </Box>
+  )
+}
+
 export function TrackingPage() {
   const { t } = useTranslation()
   const { workspaceId } = trackingRoute.useParams()
@@ -123,8 +175,13 @@ export function TrackingPage() {
     <SettingsFrame workspaceId={workspaceId} title={t(($) => $.settings.nav.tracking)}>
       {(workspace) => (
         <Stack gap="xl">
-          <TrackingSection collectKey={workspace.collectKey} workspaceId={workspace.id} />
-          <TestEvent collectKey={workspace.collectKey} />
+          <TrackingSection
+            collectKey={workspace.collectKey}
+            trackerUrl={workspace.trackerUrl}
+            workspaceId={workspace.id}
+          />
+          <TestEvent collectKey={workspace.collectKey} trackerUrl={workspace.trackerUrl} />
+          <SendEvents />
         </Stack>
       )}
     </SettingsFrame>
