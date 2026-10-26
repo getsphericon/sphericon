@@ -19,10 +19,10 @@ import (
 const reminderAppURL = "https://app.example/"
 
 // Umbrella's requirement started 2026-03-01: Rita's grace ends 2026-03-08, Nina's (she
-// joined 2026-03-05) 2026-03-12. Sam has a Second factor. Fixture times are local times.
+// joined 2026-03-05) 2026-03-12. Sam has a Second factor. Fixture times are UTC.
 var (
-	ritaDeadline = time.Date(2026, 3, 8, 0, 0, 0, 0, time.Local)
-	ninaDeadline = time.Date(2026, 3, 12, 0, 0, 0, 0, time.Local)
+	ritaDeadline = time.Date(2026, 3, 8, 0, 0, 0, 0, time.UTC)
+	ninaDeadline = time.Date(2026, 3, 12, 0, 0, 0, 0, time.UTC)
 )
 
 func remind(t *testing.T, env *testhelper.TestEnv, now time.Time) {

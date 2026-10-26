@@ -16,10 +16,10 @@ import (
 )
 
 // Umbrella's requirement started 2026-03-01: Rita's grace ends 2026-03-08, Nina's (she
-// joined 2026-03-05) 2026-03-12. Fixture times are local times.
+// joined 2026-03-05) 2026-03-12. Fixture times are UTC.
 var (
-	ritaGraceEnds = time.Date(2026, 3, 8, 0, 0, 0, 0, time.Local)
-	ninaGraceEnds = time.Date(2026, 3, 12, 0, 0, 0, 0, time.Local)
+	ritaGraceEnds = time.Date(2026, 3, 8, 0, 0, 0, 0, time.UTC)
+	ninaGraceEnds = time.Date(2026, 3, 12, 0, 0, 0, 0, time.UTC)
 )
 
 type reminded struct{ userIDs []int64 }

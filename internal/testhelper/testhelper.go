@@ -645,6 +645,9 @@ func loadFixtureDir(ctx context.Context, sqlDB *sql.DB, cfg *config.Config, dir 
 	loader, err := testfixtures.New(
 		testfixtures.Database(sqlDB),
 		testfixtures.Dialect("postgres"),
+		// A date the YAML writes without a zone is UTC, whatever the machine's zone: the
+		// library parses it in time.Local otherwise, a shift of the machine's UTC offset.
+		testfixtures.Location(time.UTC),
 		// Template options MUST precede Directory: Directory eagerly reads and
 		// renders the files when its option is applied. Fixtures use templating
 		// for relative dates and load-time encryption (internal/fixtures).
