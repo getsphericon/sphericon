@@ -127,7 +127,7 @@ The rest of this file is for maintainers and the agents they run: how work lands
 - **`mise run land -- [--skip-test] [<issue>...]` does the landing below in one go** (rebase, check, test, push,
   ticket check); a hand-typed push of `HEAD` to `main` skips the checks it runs, so a Claude Code hook
   (`.claude/settings.json`, `mise/scripts/agent-guard.ts`) refuses that push and any `--no-verify`.
-- **Land non-trivial work from its worktree, then clean up.** A change made in a worktree reaches
+- **Land every change from its worktree, then clean up.** A change made in a worktree reaches
   `main` with `git push origin HEAD:main` once the checks pass and the work is rebased onto a freshly fetched `origin/main` (a
   detached `HEAD`, never a branch). Then remove that worktree with `mise run worktrees:rm <path>` right
   away, without asking: it also drops the worktree's databases, which `git worktree remove` leaves on
@@ -171,7 +171,7 @@ Single-context: one `GLOSSARY.md` at the repo root plus `docs/adr/`. See `docs/a
 
 ### Worktrees
 
-A trivial change is committed straight to `main` in the primary checkout. Anything else is done in a worktree, created in Claude's default `.claude/worktrees/<name>`, never in a sibling directory. Never create a branch, in the primary checkout or in a worktree. See `docs/agents/worktrees.md`.
+Every change, however small, is made in a worktree, created in Claude's default `.claude/worktrees/<name>`, never in a sibling directory. Nothing is edited or committed in the primary checkout: it stays on a clean `main` that tracks `origin/main`. Never create a branch, in the primary checkout or in a worktree. See `docs/agents/worktrees.md`.
 
 ### Advisor before /to-spec
 
