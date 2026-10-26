@@ -174,22 +174,23 @@ func checkName(name *string) error {
 }
 
 // checkFrom refuses a From email whose domain is not a verified Sending domain of the Workspace,
-// by the same check the send gate uses (ADR 0010). It runs only when a write sets or changes the
-// From: `stored` is the From already saved (nil on create), and an unchanged one is not checked,
-// so a Broadcast held for a domain that lost verification stays editable. The Integration plays no
-// part: the identity is independent of it.
-func checkFrom(ctx context.Context, s *ent.Scoped, from, stored *string) error {
-	if from == nil || *from == "" || (stored != nil && *stored == *from) {
-		return nil
-	}
-	ok, err := messaging.HasVerifiedSendingDomain(ctx, s, *from)
+// by the same check the send gate uses (ADR 0010); the refusal names the domain. The caller asks
+// only when a write sets or changes the From, so a Broadcast held for a domain that lost
+// verification stays editable. The Integration plays no part: the identity is independent of it.
+func checkFrom(ctx context.Context, s *ent.Scoped, from string) error {
+	ok, err := messaging.HasVerifiedSendingDomain(ctx, s, from)
 	if err != nil {
 		return err
 	}
 	if !ok {
-		return ErrFromNotVerified
+		return ErrFromNotVerified.With(messaging.DomainOf(from))
 	}
 	return nil
+}
+
+// setsFrom reports whether a write sets a non-empty From other than the stored one (nil on create).
+func setsFrom(from, stored *string) bool {
+	return from != nil && *from != "" && (stored == nil || *stored != *from)
 }
 
 // Create makes a draft Broadcast. Nothing here schedules or sends. A blank name is ErrBlankName; a
@@ -206,8 +207,10 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, f Fields) (*ent.Broa
 	if err := m.checkRefs(ctx, s, f); err != nil {
 		return nil, err
 	}
-	if err := checkFrom(ctx, s, f.FromEmail, nil); err != nil {
-		return nil, err
+	if setsFrom(f.FromEmail, nil) {
+		if err := checkFrom(ctx, s, *f.FromEmail); err != nil {
+			return nil, err
+		}
 	}
 	body := c.Body
 	q := s.Broadcast().Create().
@@ -297,8 +300,10 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, f Fields) 
 		if err != nil {
 			return nil, err
 		}
-		if err := checkFrom(ctx, s, f.FromEmail, cur.FromEmail); err != nil {
-			return nil, err
+		if setsFrom(f.FromEmail, cur.FromEmail) {
+			if err := checkFrom(ctx, s, *f.FromEmail); err != nil {
+				return nil, err
+			}
 		}
 	}
 	u := s.Broadcast().Update().Where(draftOf(id)).

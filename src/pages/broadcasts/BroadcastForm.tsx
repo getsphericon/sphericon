@@ -16,6 +16,7 @@ import type { ResourceFormProps } from '../../resources/defineResource.tsx'
 import { Route as broadcastsRoute } from '../../routes/workspaces/$workspaceId/broadcasts/index.tsx'
 import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
 import { Route as emailsRoute } from '../../routes/workspaces/$workspaceId/settings/emails.tsx'
+import { joinEmail, splitEmail } from '../../utils/emailAddress.ts'
 import { docCodec } from '../../utils/messageDoc.ts'
 
 export function BroadcastForm({
@@ -43,10 +44,7 @@ export function BroadcastForm({
   const verifiedDomains = (domainsQuery.data?.items ?? [])
     .filter((d) => d.verified)
     .map((d) => d.domain)
-  const savedFrom = form.values.fromEmail ?? ''
-  const at = savedFrom.lastIndexOf('@')
-  const fromLocal = at < 0 ? savedFrom : savedFrom.slice(0, at)
-  const savedDomain = at < 0 ? '' : savedFrom.slice(at + 1)
+  const { local: fromLocal, domain: savedDomain } = splitEmail(form.values.fromEmail ?? '')
   const [chosenDomain, setChosenDomain] = useState('')
   const fromDomain = savedDomain || chosenDomain || (verifiedDomains[0] ?? '')
   const domainOptions = [
@@ -63,7 +61,7 @@ export function BroadcastForm({
   // An empty local part is an empty From: the Integration's default.
   const setFrom = (local: string, domain: string) => {
     setChosenDomain(domain)
-    form.setFieldValue('fromEmail', local ? `${local}@${domain}` : '')
+    form.setFieldValue('fromEmail', joinEmail(local, domain))
   }
 
   const templatesQuery = useQuery(

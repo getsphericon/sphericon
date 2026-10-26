@@ -280,7 +280,7 @@ test('the From is a local part on a verified Sending domain, and an empty one is
 
   const { screen } = await renderWithRouter(<BroadcastCreatePage />, CREATE_ROUTE)
   await screen.getByLabelText(/^Name/).fill('Launch')
-  await screen.getByLabelText('From email').fill('news')
+  await screen.getByLabelText('From address').fill('news')
   await screen.getByRole('button', { name: 'Save' }).click()
 
   await expect.poll(() => bodies).toEqual([{ name: 'Launch', fromEmail: 'news@news.example.com' }])
@@ -293,7 +293,7 @@ test('a workspace with no verified Sending domain sees a hint with a link to set
 
   await expect.element(screen.getByText(/Verify a sending domain/)).toBeInTheDocument()
   await expect.element(screen.getByRole('link', { name: 'Sending domains' })).toBeInTheDocument()
-  await expect.element(screen.getByLabelText('From email')).toBeDisabled()
+  await expect.element(screen.getByLabelText('From address')).toBeDisabled()
 })
 
 test('a saved From whose domain lost verification stays visible, marked, and saves as it is', async () => {
@@ -301,7 +301,7 @@ test('a saved From whose domain lost verification stays visible, marked, and sav
 
   const { screen } = await renderWithRouter(<BroadcastEditPage />, EDIT_ROUTE)
 
-  await expect.element(screen.getByLabelText('From email')).toHaveValue('ada')
+  await expect.element(screen.getByLabelText('From address')).toHaveValue('ada')
   await expect
     .element(screen.getByRole('combobox', { name: 'From domain' }))
     .toHaveValue('example.com (not verified)')

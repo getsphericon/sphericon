@@ -328,7 +328,7 @@ export default interface Resources {
       "editTitle": "Edit broadcast",
       "emptyState": "Create your first broadcast.",
       "fromDomainLabel": "From domain",
-      "fromEmailLabel": "From email",
+      "fromEmailLabel": "From address",
       "fromNameLabel": "From name",
       "fromNoDomain": "Verify a sending domain to choose a From address. Until then the integration's default is used.",
       "fromNoDomainLink": "Sending domains",
