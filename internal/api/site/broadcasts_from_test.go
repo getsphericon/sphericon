@@ -37,6 +37,11 @@ func TestSiteBroadcastsFromEmailMustBeAVerifiedSendingDomain(t *testing.T) {
 	} {
 		assert.IsType(t, &siteapi.SiteBroadcastsCreateUnprocessableEntity{}, create(from), from)
 	}
+	refused := create("news@" + fixtures.SendingDomainUnverifiedDomain)
+	problem, ok := refused.(*siteapi.SiteBroadcastsCreateUnprocessableEntity)
+	require.True(t, ok)
+	assert.Contains(t, problem.Detail.Or(""), fixtures.SendingDomainUnverifiedDomain, "the refusal names the domain")
+
 	res, err := c.SiteBroadcastsCreate(ctx, &siteapi.SiteCreateBroadcastInput{Name: "no from"}, createParams)
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteBroadcastResource{}, res)
