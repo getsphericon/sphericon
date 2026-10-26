@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.4](https://github.com/getsphericon/sphericon/compare/v0.3.3...v0.3.4) (2026-10-26)
+
+
+### Bug Fixes
+
+* start the document renderer's runtime at boot, not on the first save ([6109285](https://github.com/getsphericon/sphericon/commit/61092851c1ed3eaf0ad49b063a84501a3db49eb9))
+
 ## [0.3.3](https://github.com/getsphericon/sphericon/compare/v0.3.2...v0.3.3) (2026-10-26)
 
 
