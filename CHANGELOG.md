@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.3](https://github.com/getsphericon/sphericon/compare/v0.3.2...v0.3.3) (2026-10-26)
+
+
+### Features
+
+* log every request and the reason a request was refused ([f133d3f](https://github.com/getsphericon/sphericon/commit/f133d3fb4d08e2138c6ad29a03e48a3ea9f82c8f))
+* pick a Broadcast's From from the verified Sending domains ([40e6e99](https://github.com/getsphericon/sphericon/commit/40e6e990594b4480aec69e16ec55afc92840f1bf)), closes [#656](https://github.com/getsphericon/sphericon/issues/656)
+
+
+### Bug Fixes
+
+* center the create workspace page ([55d9c7f](https://github.com/getsphericon/sphericon/commit/55d9c7ffd151a0878bfa80c0be34c4702135335c))
+* commit the mise lock sidecar of scip-typescript ([ceb1a49](https://github.com/getsphericon/sphericon/commit/ceb1a496bb969ca1444972cb9734cc22aec9c301))
+
 ## [0.3.2](https://github.com/getsphericon/sphericon/compare/v0.3.1...v0.3.2) (2026-10-25)
 
 
