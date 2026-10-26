@@ -139,10 +139,11 @@ func New(cfg *config.Config, db *sql.DB, client *ent.Client, site apisite.Deps, 
 		return nil, err
 	}
 
-	// Order (ADR 0025): recoverer, requestID, CORS, client address, rate limit,
-	// timeout. CORS precedes the limiter so a 429 still reaches the browser; guard
+	// Order (ADR 0025): recoverer, requestID, access log, CORS, client address, rate limit,
+	// timeout. The access log sees the status every inner layer produced, including the
+	// timeout's; CORS precedes the limiter so a 429 still reaches the browser; guard
 	// sits inside CORS so preflights are answered before the check.
-	outer := chi.Middlewares{recoverer, requestID, corsMiddleware(cfg.CORSOrigins)}
+	outer := chi.Middlewares{recoverer, requestID, accessLog, corsMiddleware(cfg.CORSOrigins)}
 	if cfg.IsDev {
 		// Development only: a 500 carries what failed, for the page to show (devdebug.go).
 		outer = append(chi.Middlewares{devDebug}, outer...)
@@ -209,7 +210,7 @@ func NewInternal(cfg *config.Config, client *ent.Client, surface ServiceSurface)
 		mux.Handle(paths.Service+"/", srv)
 	}
 	limiter := ratelimit.New(cfg.RateLimits)
-	return chi.Chain(recoverer, requestID, clientip.Middleware, limiter.Middleware, middleware.Timeout(requestTimeout), bodyLimit(cfg.BodyLimits), noNUL).Handler(mux), nil
+	return chi.Chain(recoverer, requestID, accessLog, clientip.Middleware, limiter.Middleware, middleware.Timeout(requestTimeout), bodyLimit(cfg.BodyLimits), noNUL).Handler(mux), nil
 }
 
 // collectRetryAfter is the Retry-After (seconds) of a /collect 503: long enough for a
@@ -246,6 +247,7 @@ func problemErrorHandler(ctx context.Context, w http.ResponseWriter, r *http.Req
 	// second_factor_required, ADR 0020) is rendered as it says.
 	if known, ok := errors.AsType[problemError](err); ok {
 		status, code, detail := known.Problem()
+		logging.FromContext(ctx).WarnContext(ctx, "request refused", "method", r.Method, "path", loggedPath(r.URL.Path), "status", status, "code", code, "detail", detail)
 		writeCodedProblem(w, status, code, detail)
 		return
 	}
@@ -278,6 +280,9 @@ func problemErrorHandler(ctx context.Context, w http.ResponseWriter, r *http.Req
 	// The client is told nothing about a server fault, so the log is the only place it shows.
 	if code >= http.StatusInternalServerError {
 		slog.ErrorContext(ctx, "request failed", "method", r.Method, "path", loggedPath(r.URL.Path), "error", err)
+	} else {
+		// The client gets this text as the problem's detail; the log keeps it beside the access line.
+		logging.FromContext(ctx).WarnContext(ctx, "request refused", "method", r.Method, "path", loggedPath(r.URL.Path), "status", code, "detail", err.Error())
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(code)
