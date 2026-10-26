@@ -51,15 +51,11 @@ components:
 # Files that are not part of a component's own layer (tests drive whole programs, generated
 # code follows the contract).
 exclude:
-  [
-    '**/*_test.go',
-    '**/*_gen.go',
-    '**/*.test.ts',
-    '**/*.test.tsx',
-    '**/*.gen.ts',
-    'src/test/**',
-    '**/testdata/**',
-  ]
+  ['**/*_test.go', '**/*_gen.go', '**/*.test.ts', '**/*.test.tsx', 'src/test/**', '**/testdata/**']
+
+# Generated code stays in the graph as a target (a page may import a client, nothing may import
+# the other way) but its own imports are not checked.
+target_only: ['src/generated/**', '**/*.gen.ts']
 
 rules:
   api-site:
@@ -97,10 +93,10 @@ rules:
     may_depend_on: []
     because: generated clients come from the OpenAPI contract and import nothing of ours
   web-shared:
-    may_depend_on: [web-routes, web-app]
+    may_depend_on: [web-generated, web-routes, web-app]
     because: shared components, hooks and layouts sit below the pages; a page imports them, never the reverse (they link through a route's `Route`, never a path string)
   web-routes:
-    may_depend_on: [web-shared, web-app]
+    may_depend_on: [web-generated, web-shared, web-app]
     because: a route file holds guards and search schemas and never imports a page (src/AGENTS.md)
   web-route-lazy:
     may_depend_on: [web-shared, web-pages, web-console, web-app]
@@ -109,13 +105,13 @@ rules:
     forbid_external:
       - name: '@mantine/notifications'
         because: toasts go through useNotify (src/hooks/useNotify.ts), never Mantine's global store
-    may_depend_on: [web-shared, web-routes, web-app]
+    may_depend_on: [web-generated, web-shared, web-routes, web-app]
     because: a page reaches its route through the route file's `Route` and never imports a lazy route file
   web-console:
-    may_depend_on: [web-shared, web-routes, web-app]
+    may_depend_on: [web-generated, web-shared, web-routes, web-app]
     because: the Staff console is its own feature and does not import the workspace pages
   web-app:
-    may_depend_on: [web-shared, web-routes]
+    may_depend_on: [web-generated, web-shared, web-routes]
     because: the files directly under src/ assemble the application
 
 # Every checked file belongs to a component, so a new package must be assigned to one. These
@@ -135,8 +131,6 @@ uncovered_ok:
     because: the twin of spa_embed.go, built when embed_spa is off
   - name: internal/emaildoc/assets/emaildoc.js
     because: the generated document renderer bundle, not source
-  - name: 'src/generated/**/index.ts'
-    because: generated barrels outside the tsconfig include; the clients import nothing of ours
   - name: ent/entc.go
     because: the ent codegen entry point, built with the `ignore` tag
   - name: ent/internal/schema.go
