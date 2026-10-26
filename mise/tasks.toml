@@ -369,17 +369,10 @@ run = "pnpm exec ncu -u --reject @hey-api/openapi-ts && pnpm update"
 run = "go get -u ./... && go mod tidy"
 
 ["update:skills"]
-description = "Update the vendored skills and remove the ones their upstream deleted (`skills update` only warns about them)"
-run = '''
-#!/usr/bin/env bash
-set -euo pipefail
-out=$(NO_COLOR=1 npx skills@latest update -y 2>&1 | tee /dev/stderr)
-# The warning lists each deleted skill as a bullet line under "appear to have been deleted upstream".
-deleted=$(printf '%s\n' "$out" | sed $'s/\x1b\\[[0-9;]*m//g' | awk '/deleted upstream/ {on=1; next} on && /•/ {print $2; next} on {on=0}')
-for skill in $deleted; do
-  npx skills@latest remove "$skill" -y
-done
-'''
+# No -y: in a terminal skills asks whether to remove the skills their upstream deleted, and it
+# only warns in a run without a TTY. -p picks the project scope so nothing else is asked.
+description = "Update the vendored skills; in a terminal it offers to remove the ones their upstream deleted"
+run = "npx skills@latest update -p"
 
 # --- code generation (TypeSpec -> OpenAPI -> Go + TS) -----------------------------
 
