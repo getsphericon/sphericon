@@ -132,8 +132,9 @@ The rest of this file is for maintainers and the agents they run: how work lands
   detached `HEAD`, never a branch). Then remove that worktree with `mise run worktrees:rm <path>` right
   away, without asking: it also drops the worktree's databases, which `git worktree remove` leaves on
   the shared Postgres. Only the worktree made for that change.
-  **After the work is on `main`, update the checkout you work from:** `git fetch origin && git rebase
-  origin/main` (never `git merge`), so the next piece of work starts from the merged state.
+  **After the work is on `main`, update the primary checkout, which stays on a clean `main`:** `git
+  fetch origin && git rebase origin/main` (never `git merge`), so the next worktree starts from the
+  merged state.
   **Landing also closes the ticket.** When the user says to land or finish ("заливай", "завершай",
   "land it"), that covers the issue the work was for: put `Closes #<n>` in the footer of the
   commit that reaches `main` (one per ticket), then confirm with `gh issue view <n> --json state`
