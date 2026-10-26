@@ -79,13 +79,20 @@ type hookRetryHarness struct {
 
 func newHookRetryHarness(t *testing.T, status int, retryAfter string) *hookRetryHarness {
 	t.Helper()
+	return newHookRetryHarnessAt(t, status, retryAfter, time.Now().UTC().Truncate(time.Second))
+}
+
+// newHookRetryHarnessAt fixes the harness clock to now, for a test whose Retry-After is a date:
+// it is built from the same instant the worker reads, however long the harness takes to set up.
+func newHookRetryHarnessAt(t *testing.T, status int, retryAfter string, now time.Time) *hookRetryHarness {
+	t.Helper()
 	env := newRiverEnv(t)
 	ctx := context.Background()
 	receiverURL, allow := newRetryReceiver(t, status, retryAfter)
 	_, err := env.DB.Scoped(fixtures.AcmeID).WebhookEndpoint().UpdateOneID(fixtures.WebhookCodebasicsID).SetURL(receiverURL).Save(ctx)
 	require.NoError(t, err)
 
-	h := &hookRetryHarness{t: t, env: env, clock: &riversharedtest.TimeStub{}, now: time.Now().UTC().Truncate(time.Second)}
+	h := &hookRetryHarness{t: t, env: env, clock: &riversharedtest.TimeStub{}, now: now}
 	h.clock.StubNow(h.now)
 	w := jobs.NewDeliverWebhookWorker(env.DB, env.cipher, webhook.NewClientAllowing(2*time.Second, allow), h.clock.Now, env.Bus, env.SystemMail)
 	h.worker = rivertest.NewWorker(t, riverdatabasesql.New(env.pool), &river.Config{Test: river.TestConfig{Time: h.clock}}, river.Worker[jobs.DeliverWebhookArgs](w))
@@ -149,8 +156,8 @@ func TestDeliverWebhookRateLimitSnoozesWithoutSpendingAnAttempt(t *testing.T) {
 }
 
 func TestDeliverWebhookRateLimitLeavesAFailingRunAsItWas(t *testing.T) {
-	retryAt := time.Now().Add(10 * time.Minute)
-	h := newHookRetryHarness(t, http.StatusTooManyRequests, httpDate(retryAt))
+	now := time.Now().UTC().Truncate(time.Second)
+	h := newHookRetryHarnessAt(t, http.StatusTooManyRequests, httpDate(now.Add(10*time.Minute)), now)
 	_, err := h.env.DB.Scoped(fixtures.AcmeID).WebhookEndpoint().UpdateOneID(fixtures.WebhookCodebasicsID).
 		SetConsecutiveFailures(3).SetFailingSince(h.now.Add(-time.Hour)).Save(context.Background())
 	require.NoError(t, err)
