@@ -123,7 +123,8 @@ The rest of this file is for maintainers and the agents they run: how work lands
   links to the page. All public documentation lives in that repository, not here.
 - **Agent guidance lives in this file, not in personal agent memory.** The repo has several
   developers: a rule an agent should follow goes here (or in `docs/`), never into one person's
-  memory.
+  memory. Auto memory is off for this project (`autoMemoryEnabled: false` in
+  `.claude/settings.json`), so what an agent needs to know is written down in a Markdown file.
 - **`mise run land -- [--skip-test] [<issue>...]` does the landing below in one go** (rebase, check, test, push,
   ticket check); a hand-typed push of `HEAD` to `main` skips the checks it runs, so a Claude Code hook
   (`.claude/settings.json`, `mise/scripts/agent-guard.ts`) refuses that push and any `--no-verify`.
