@@ -55,7 +55,8 @@ What shaped this decision:
    editable as text, and is never loaded into the editor.
 3. **The render runs in an embedded JavaScript runtime in the Go binary** (goja), the editor's own
    export code, with no Node sidecar and no renderer for the document's schema written in Go. One or two
-   runtimes, started on the first save and not at boot, behind a queue: saving is rare and the send path
+   runtimes, started in the background at boot (a start takes longer than a request may run on a small
+   machine, so the first save must not wait for it), behind a queue: saving is rare and the send path
    never renders a document. A runtime that hit its time or memory limit is discarded and a new one
    started. Inputs are capped (size, depth, node count) before they reach it. The editor version is stored
    with the `doc`, and a test renders the fixtures against a known output on every dependency change.

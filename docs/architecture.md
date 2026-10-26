@@ -219,7 +219,7 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
 - `internal/emaildoc` (ADR 0040) turns an editor document into email HTML inside the binary: the editor's own
   export code, bundled by `packages/emaildoc` (`mise run build:emaildoc`; rerun it after any change to the pinned
   `@react-email/editor`, then `go test ./internal/emaildoc -update` to accept the new golden HTML) and run in goja,
-  no cgo. The runtime starts on the first call, limits are enforced before and during a render. Editor and
+  no cgo. The server starts the runtime in the background at boot (`Warm`; a library caller's first call does it otherwise), limits are enforced before and during a render. Editor and
   bundle dependencies in `packages/emaildoc/package.json` are pinned exactly.
 - The tracker snippet (`/t.js`) is the `@sphericon/analytics` IIFE bundle, built and embedded:
   `mise run build:tracker` copies `packages/analytics/dist/t.js` into `internal/server/assets/`.

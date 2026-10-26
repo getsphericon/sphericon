@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/internal/app"
 	"github.com/getsphericon/sphericon/internal/buildinfo"
+	"github.com/getsphericon/sphericon/internal/emaildoc"
 	"github.com/getsphericon/sphericon/internal/logging"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/telemetry"
@@ -122,6 +123,10 @@ func runServer(ctx context.Context, env string) {
 	if err := application.Start(ctx); err != nil {
 		fatal("start app", err)
 	}
+
+	// The document renderer's runtime takes longer to start than a request may run on a small
+	// machine, so it starts now, in the background, and not on the first save of a Broadcast.
+	emaildoc.Default().Warm(ctx)
 
 	select {
 	case <-ctx.Done():

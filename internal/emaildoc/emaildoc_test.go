@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/getsphericon/sphericon/internal/emaildoc"
 	"github.com/stretchr/testify/require"
@@ -91,6 +92,14 @@ func TestRuntimeStartsOnFirstRender(t *testing.T) {
 
 	require.NoError(t, shared().Validate(context.Background(), readDoc(t, "newsletter.json")))
 	require.True(t, shared().Started())
+}
+
+func TestWarmStartsTheRuntimeWithoutACall(t *testing.T) {
+	r := emaildoc.New()
+
+	r.Warm(t.Context())
+
+	require.Eventually(t, r.Started, 2*time.Minute, 50*time.Millisecond, "the runtime starts in the background")
 }
 
 func TestLimitsRefuseBeforeTheRuntime(t *testing.T) {

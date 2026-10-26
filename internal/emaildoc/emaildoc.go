@@ -3,8 +3,9 @@
 //
 // A document is the JSON of @react-email/editor. The render is the editor's own export code (a
 // generated bundle, `mise run build:emaildoc`) run in an embedded JavaScript runtime (goja): no Node,
-// no sidecar, no cgo. A runtime takes seconds to start and tens of megabytes, so it starts on the
-// first call, not at boot; calls queue for it. A call that runs past its time or memory limit is
+// no sidecar, no cgo. A runtime takes seconds to start and tens of megabytes, so a Renderer starts
+// nothing itself: Warm starts it in the background (the server does, at boot) or the first call
+// does; calls queue for it. A call that runs past its time or memory limit is
 // stopped and its runtime is discarded (a stopped runtime does not recover), and a fresh one starts
 // on the next call. Inputs are capped (size, depth, node count) before they reach a runtime.
 //
@@ -17,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -105,7 +107,7 @@ type Option func(*Renderer, *int)
 // MB and seconds to start, the first about 68 MB.
 func WithRuntimes(n int) Option { return func(_ *Renderer, runtimes *int) { *runtimes = max(n, 1) } }
 
-// New returns a Renderer. It starts nothing: the first call does.
+// New returns a Renderer. It starts nothing: the first call does, or Warm.
 func New(opts ...Option) *Renderer {
 	r := &Renderer{limits: DefaultLimits()}
 	runtimes := 1
@@ -132,6 +134,24 @@ func Default() *Renderer {
 
 // Started reports whether a runtime has been started yet.
 func (r *Renderer) Started() bool { return r.started.Load() }
+
+// Warm starts the runtime in the background and returns at once, so a server that calls it at boot
+// has a runtime ready by the time the first document is saved. Without it that first call waits
+// for the start, which takes longer than a request may run on a small machine, and gives up with
+// ErrRenderUnavailable. A start that fails leaves the runtime to the first call, as before. How long
+// the start took is logged, since it varies with the machine. The start itself cannot be
+// interrupted, so ctx ending only stops waiting for it.
+func (r *Renderer) Warm(ctx context.Context) {
+	go func() {
+		began := time.Now()
+		err := r.withRuntime(ctx, r.config(), func(*vm) error { return nil })
+		if err != nil {
+			slog.Warn("document runtime warm-up failed", "error", err, "duration_ms", time.Since(began).Milliseconds())
+			return
+		}
+		slog.Info("document runtime ready", "duration_ms", time.Since(began).Milliseconds())
+	}()
+}
 
 type callConfig struct {
 	timeout      time.Duration
