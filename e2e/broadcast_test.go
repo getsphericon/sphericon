@@ -119,7 +119,7 @@ func TestTestSendBeforeAnyDomainReachesTheOwnerFromTheSystemSender(t *testing.T)
 	t.Parallel()
 	w := env.NewWorkspace(t) // no Integration, no Sending domain
 
-	from := w.RequestTestSend(Broadcast{Subject: "Preview me", Body: HTML("Early look at the product")})
+	from := w.RequestTestSend(Broadcast{Subject: "Preview me", Body: HTML("Early look at the product"), WithoutFrom: true})
 	msg := w.Inbox.Wait(Match{To: w.OwnerEmail})
 
 	assert.Equal(t, SystemSenderFrom, from, "the answer names the From it used")

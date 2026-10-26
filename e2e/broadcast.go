@@ -22,6 +22,9 @@ type Broadcast struct {
 	// Doc is the editor's JSON document; the server builds the body from it, so a Broadcast
 	// carries a Body or a Doc, not both.
 	Doc json.RawMessage
+	// WithoutFrom leaves the From unset, as a Workspace with no verified Sending domain has to:
+	// the Workspace's FromEmail is refused until its domain is verified.
+	WithoutFrom bool
 }
 
 // SendBroadcast creates a Broadcast from the Workspace's FromEmail/FromName, sets its
@@ -54,10 +57,12 @@ func (w *Workspace) createBroadcast(b Broadcast) externalapi.EntityId {
 		b.Name = "e2e broadcast " + uniq()
 	}
 	in := &externalapi.CreateBroadcastInput{
-		Name:      b.Name,
-		Subject:   externalapi.NewOptString(b.Subject),
-		FromName:  externalapi.NewOptString(w.FromName),
-		FromEmail: externalapi.NewOptEmailAddress(externalapi.EmailAddress(w.FromEmail)),
+		Name:    b.Name,
+		Subject: externalapi.NewOptString(b.Subject),
+	}
+	if !b.WithoutFrom {
+		in.FromName = externalapi.NewOptString(w.FromName)
+		in.FromEmail = externalapi.NewOptEmailAddress(externalapi.EmailAddress(w.FromEmail))
 	}
 	if len(b.Doc) > 0 {
 		in.Doc = externalapi.NewOptCreateBroadcastInputDoc(docObject[externalapi.CreateBroadcastInputDoc](w.t, b.Doc))
