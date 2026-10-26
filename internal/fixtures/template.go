@@ -17,10 +17,11 @@ import (
 )
 
 // timeLayout is the Postgres-friendly timestamp layout the template date helpers
-// emit. go-testfixtures hands these strings straight to the driver, and Postgres reads
-// a zoneless string in the session's TimeZone, which shifts every fixture time by the
-// server's UTC offset (a UTC day boundary then lands in the wrong day). The explicit
-// UTC offset makes the instant the same on every server.
+// emit. go-testfixtures parses a date string in its Location (time.Local unless the
+// loader sets one), so a zoneless string would shift by the machine's UTC offset (a UTC
+// day boundary then lands in the wrong day). The explicit UTC offset makes the instant
+// the same on every machine; the loaders also set testfixtures.Location(time.UTC) for the
+// literal dates the YAML writes without a zone.
 const timeLayout = "2006-01-02 15:04:05-07"
 
 // TemplateFuncs returns the funcs available inside fixture YAML when the loader

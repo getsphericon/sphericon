@@ -21,10 +21,10 @@ import (
 
 // Umbrella's requirement started 2026-03-01: Rita's Membership predates it (grace
 // ends 2026-03-08), Nina joined 2026-03-05 (grace ends 2026-03-12). Fixture times
-// are local times.
+// are UTC.
 var (
-	ritaGraceEnds = time.Date(2026, 3, 1, 0, 0, 0, 0, time.Local).Add(7 * 24 * time.Hour)
-	ninaGraceEnds = time.Date(2026, 3, 5, 0, 0, 0, 0, time.Local).Add(7 * 24 * time.Hour)
+	ritaGraceEnds = time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC).Add(7 * 24 * time.Hour)
+	ninaGraceEnds = time.Date(2026, 3, 5, 0, 0, 0, 0, time.UTC).Add(7 * 24 * time.Hour)
 )
 
 type requirementClock struct{ t time.Time }
@@ -118,7 +118,7 @@ func TestOwnerAndAdminSwitchTheRequirementAndAMemberCannot(t *testing.T) {
 }
 
 func TestGraceEndsSevenDaysAfterTheLaterOfTheRequirementAndTheMembership(t *testing.T) {
-	env := requirementEnv(t, time.Date(2026, 3, 4, 0, 0, 0, 0, time.Local))
+	env := requirementEnv(t, time.Date(2026, 3, 4, 0, 0, 0, 0, time.UTC))
 
 	rita := workspaceOf(t, env.SiteActor(t, fixtures.UmbrellaOwnerRitaEmail), fixtures.UmbrellaPublicID)
 	assert.True(t, time.Time(rita.SecondFactorGraceEndsAt.Value).Equal(ritaGraceEnds), "existing Membership")

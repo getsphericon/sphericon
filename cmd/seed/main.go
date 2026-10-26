@@ -44,6 +44,8 @@ func run() error {
 		testfixtures.Database(sqlDB),
 		testfixtures.Dialect("postgres"),
 		testfixtures.DangerousSkipTestDatabaseCheck(),
+		// A date the YAML writes without a zone is UTC, as in the test loader.
+		testfixtures.Location(time.UTC),
 		// Template options MUST precede Directory (it renders files eagerly). Same
 		// templating + sequence handling as the test loader (internal/testhelper)
 		// so dev and test load identical fixtures.

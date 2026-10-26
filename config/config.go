@@ -397,11 +397,10 @@ type environment struct {
 // loadVars reads the variables of the process: the env files, then the environment over
 // them, then the `_FILE` siblings of the secrets.
 func loadVars(envName string) (map[string]string, error) {
-	_, file, _, ok := runtime.Caller(0)
-	if !ok {
-		return nil, errors.New("locate the config package's source to find the .env files")
+	rootDir, err := envRoot()
+	if err != nil {
+		return nil, err
 	}
-	rootDir := filepath.Join(filepath.Dir(file), "..")
 
 	vars, err := readEnvFiles(envFiles(rootDir, envName))
 	if err != nil {
@@ -930,6 +929,17 @@ func isE2E(envName string) bool { return envName == EnvE2E }
 // security secrets are tolerated (so local dev and tests boot without ceremony).
 func isDevEnv(envName string) bool {
 	return envName == "" || envName == "development" || envName == "test"
+}
+
+// envRoot is the directory the .env files are read from: the repository root, found from this
+// file's source path. The package's tests point it at a directory holding only the committed
+// files, so a developer's own (gitignored) ones change nothing they load.
+var envRoot = func() (string, error) {
+	_, file, _, ok := runtime.Caller(0)
+	if !ok {
+		return "", errors.New("locate the config package's source to find the .env files")
+	}
+	return filepath.Join(filepath.Dir(file), ".."), nil
 }
 
 func envFiles(rootDir, envName string) []string {
