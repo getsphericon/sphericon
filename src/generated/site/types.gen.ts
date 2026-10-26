@@ -2085,7 +2085,7 @@ export type SiteCreateBroadcastInput = {
    */
   fromName?: string | null;
   /**
-   * Sender email address
+   * Sender email address: its domain must be a verified Sending domain of the workspace, or the write is a 422. Empty means the integration's default.
    */
   fromEmail?: EmailAddress | null;
   /**
@@ -4761,7 +4761,7 @@ export type SiteUpdateBroadcastInput = {
    */
   fromName?: string | null;
   /**
-   * Sender email address
+   * Sender email address: a changed value must be on a verified Sending domain of the workspace, or the write is a 422. An unchanged one is not re-checked, so a draft whose domain lost verification stays editable.
    */
   fromEmail?: EmailAddress | null;
   /**

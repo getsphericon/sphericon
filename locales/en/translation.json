@@ -326,8 +326,12 @@
     "deliveryLabel": "Delivery",
     "editTitle": "Edit broadcast",
     "emptyState": "Create your first broadcast.",
+    "fromDomainLabel": "From domain",
     "fromEmailLabel": "From email",
     "fromNameLabel": "From name",
+    "fromNoDomain": "Verify a sending domain to choose a From address. Until then the integration's default is used.",
+    "fromNoDomainLink": "Sending domains",
+    "fromNotVerified": "{{domain}} (not verified)",
     "hold": {
       "badge": "On hold",
       "description": "Sending is paused. Nothing is lost: the remaining recipients are sent automatically once the hold lifts.",

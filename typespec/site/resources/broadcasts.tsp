@@ -165,7 +165,7 @@ model SiteCreateBroadcastInput {
   /** Sender display name */
   fromName?: string | null;
 
-  /** Sender email address */
+  /** Sender email address: its domain must be a verified Sending domain of the workspace, or the write is a 422. Empty means the integration's default. */
   fromEmail?: EmailAddress | null;
 
   /** HTML body with Liquid merge tags. Write this or `doc`, not both. */
@@ -193,7 +193,7 @@ model SiteUpdateBroadcastInput {
   /** Sender display name */
   fromName?: string | null;
 
-  /** Sender email address */
+  /** Sender email address: a changed value must be on a verified Sending domain of the workspace, or the write is a 422. An unchanged one is not re-checked, so a draft whose domain lost verification stays editable. */
   fromEmail?: EmailAddress | null;
 
   /** HTML body. Writing only a body clears the stored document. Write this or `doc`, not both. */

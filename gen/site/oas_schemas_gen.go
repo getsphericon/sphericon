@@ -10581,7 +10581,8 @@ type SiteCreateBroadcastInput struct {
 	Subject OptString `json:"subject"`
 	// Sender display name.
 	FromName OptNilString `json:"fromName"`
-	// Sender email address.
+	// Sender email address: its domain must be a verified Sending domain of the workspace, or the write is
+	// a 422. Empty means the integration's default.
 	FromEmail OptNilEmailAddress `json:"fromEmail"`
 	// HTML body with Liquid merge tags. Write this or `doc`, not both.
 	Body OptString `json:"body"`
@@ -20888,7 +20889,9 @@ type SiteUpdateBroadcastInput struct {
 	Subject OptString `json:"subject"`
 	// Sender display name.
 	FromName OptNilString `json:"fromName"`
-	// Sender email address.
+	// Sender email address: a changed value must be on a verified Sending domain of the workspace, or the
+	// write is a 422. An unchanged one is not re-checked, so a draft whose domain lost verification stays
+	// editable.
 	FromEmail OptNilEmailAddress `json:"fromEmail"`
 	// HTML body. Writing only a body clears the stored document. Write this or `doc`, not both.
 	Body OptString `json:"body"`

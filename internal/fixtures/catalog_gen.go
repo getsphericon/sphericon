@@ -253,6 +253,12 @@ const (
 	BroadcastAuthoredName = "Product update announcement"
 	// BroadcastAuthoredSubject is from fixtures/broadcasts.
 	BroadcastAuthoredSubject = "What is new at CodeBasics"
+	// BroadcastDraftFromLostDomainID is from fixtures/broadcasts.
+	BroadcastDraftFromLostDomainID = 111
+	// BroadcastDraftFromLostDomainName is from fixtures/broadcasts.
+	BroadcastDraftFromLostDomainName = "Lapsed domain draft"
+	// BroadcastDraftFromLostDomainSubject is from fixtures/broadcasts.
+	BroadcastDraftFromLostDomainSubject = "Still a draft"
 	// BroadcastDraftID is from fixtures/broadcasts.
 	BroadcastDraftID = 100
 	// BroadcastDraftName is from fixtures/broadcasts.

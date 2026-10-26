@@ -5,15 +5,17 @@ import { useTranslation } from 'react-i18next'
 import * as z from 'zod'
 
 import { MessageEditor } from '../../components/MessageEditor.tsx'
-import { ButtonLink } from '../../components/RouterLink.tsx'
+import { AnchorLink, ButtonLink } from '../../components/RouterLink.tsx'
 import {
   siteSegmentsListOptions,
+  siteSendingDomainsListOptions,
   siteTemplatesListOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteCreateBroadcastInput } from '../../generated/site/types.gen.ts'
 import type { ResourceFormProps } from '../../resources/defineResource.tsx'
 import { Route as broadcastsRoute } from '../../routes/workspaces/$workspaceId/broadcasts/index.tsx'
 import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
+import { Route as emailsRoute } from '../../routes/workspaces/$workspaceId/settings/emails.tsx'
 import { docCodec } from '../../utils/messageDoc.ts'
 
 export function BroadcastForm({
@@ -31,6 +33,38 @@ export function BroadcastForm({
     { value: '', label: t(($) => $.broadcasts.segmentAll) },
     ...(segmentsQuery.data?.items ?? []).map((s) => ({ value: s.id, label: s.name })),
   ]
+
+  // From is a local part on one of the verified Sending domains (ADR 0010); the server is the
+  // source of truth and refuses another. A saved From whose domain lost verification stays
+  // visible, marked, so the reason for a hold can be seen.
+  const domainsQuery = useQuery(
+    siteSendingDomainsListOptions({ path: { workspaceId }, query: { pageSize: 100 } }),
+  )
+  const verifiedDomains = (domainsQuery.data?.items ?? [])
+    .filter((d) => d.verified)
+    .map((d) => d.domain)
+  const savedFrom = form.values.fromEmail ?? ''
+  const at = savedFrom.lastIndexOf('@')
+  const fromLocal = at < 0 ? savedFrom : savedFrom.slice(0, at)
+  const savedDomain = at < 0 ? '' : savedFrom.slice(at + 1)
+  const [chosenDomain, setChosenDomain] = useState('')
+  const fromDomain = savedDomain || chosenDomain || (verifiedDomains[0] ?? '')
+  const domainOptions = [
+    ...verifiedDomains.map((domain) => ({ value: domain, label: domain })),
+    ...(savedDomain && !verifiedDomains.includes(savedDomain)
+      ? [
+          {
+            value: savedDomain,
+            label: t(($) => $.broadcasts.fromNotVerified, { domain: savedDomain }),
+          },
+        ]
+      : []),
+  ]
+  // An empty local part is an empty From: the Integration's default.
+  const setFrom = (local: string, domain: string) => {
+    setChosenDomain(domain)
+    form.setFieldValue('fromEmail', local ? `${local}@${domain}` : '')
+  }
 
   const templatesQuery = useQuery(
     siteTemplatesListOptions({ path: { workspaceId }, query: { pageSize: 100 } }),
@@ -95,10 +129,28 @@ export function BroadcastForm({
           />
           <TextInput
             label={t(($) => $.broadcasts.fromEmailLabel)}
-            type="email"
-            {...form.getInputProps('fromEmail')}
+            value={fromLocal}
+            disabled={domainOptions.length === 0}
+            onChange={(e) => setFrom(e.currentTarget.value.trim(), fromDomain)}
+            error={form.errors.fromEmail}
+          />
+          <Select
+            label={t(($) => $.broadcasts.fromDomainLabel)}
+            data={domainOptions}
+            value={fromDomain}
+            disabled={domainOptions.length === 0}
+            allowDeselect={false}
+            onChange={(domain) => setFrom(fromLocal, domain ?? '')}
           />
         </Group>
+        {domainsQuery.isSuccess && verifiedDomains.length === 0 ? (
+          <Alert color="blue" variant="light">
+            {t(($) => $.broadcasts.fromNoDomain)}{' '}
+            <AnchorLink to={emailsRoute.to} params={{ workspaceId }}>
+              {t(($) => $.broadcasts.fromNoDomainLink)}
+            </AnchorLink>
+          </Alert>
+        ) : null}
 
         <Select
           label={t(($) => $.broadcasts.segmentLabel)}

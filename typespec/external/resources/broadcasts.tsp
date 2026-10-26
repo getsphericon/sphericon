@@ -75,7 +75,7 @@ model CreateBroadcastInput {
   /** Sender display name */
   fromName?: string;
 
-  /** Sender email address */
+  /** Sender email address: its domain must be a verified Sending domain of the workspace, or the write is a 422. Omit it for the integration's default. */
   fromEmail?: EmailAddress;
 
   /** HTML body with Liquid merge tags. Write this or `doc`, not both. */
@@ -97,7 +97,7 @@ model UpdateBroadcastInput {
   /** Sender display name */
   fromName?: string;
 
-  /** Sender email address */
+  /** Sender email address: a changed value must be on a verified Sending domain of the workspace, or the write is a 422. An unchanged one is not re-checked. */
   fromEmail?: EmailAddress;
 
   /** HTML body. Writing only a body clears the stored document. Write this or `doc`, not both. */

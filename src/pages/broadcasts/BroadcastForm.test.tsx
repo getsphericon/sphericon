@@ -4,6 +4,7 @@ import { expect, test } from 'vitest'
 import {
   handleSiteBroadcastsCreate,
   handleSiteSegmentsList,
+  handleSiteSendingDomainsList,
   handleSiteTemplatesList,
 } from '../../generated/site/msw.gen.ts'
 import { Route as broadcastsRoute } from '../../routes/workspaces/$workspaceId/broadcasts/index.tsx'
@@ -39,6 +40,7 @@ function serve(templates: ReturnType<typeof template>[], bodies: unknown[] = [])
     handleSiteTemplatesList(() =>
       HttpResponse.json({ items: templates, totalItems: templates.length }),
     ),
+    handleSiteSendingDomainsList(() => HttpResponse.json({ items: [], totalItems: 0 })),
     handleSiteBroadcastsCreate(async ({ request }) => {
       bodies.push(await request.json())
       return HttpResponse.json({ id: '42', name: 'x' }, { status: 201 })

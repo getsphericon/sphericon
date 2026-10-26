@@ -124,6 +124,7 @@
   "errors.broadcast_not_archivable": "only a sent or failed broadcast can be archived",
   "errors.broadcast_segment_not_found": "segment not found",
   "errors.broadcast_integration_not_found": "integration not found",
+  "errors.broadcast_from_not_verified": "from email must be on a verified sending domain",
   "errors.template_not_found": "template not found",
   "errors.rule_invalid": "invalid rule",
   "errors.rule_not_found": "rule not found",

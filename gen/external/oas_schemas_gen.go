@@ -4921,7 +4921,8 @@ type CreateBroadcastInput struct {
 	Subject OptString `json:"subject"`
 	// Sender display name.
 	FromName OptString `json:"fromName"`
-	// Sender email address.
+	// Sender email address: its domain must be a verified Sending domain of the workspace, or the write is
+	// a 422. Omit it for the integration's default.
 	FromEmail OptEmailAddress `json:"fromEmail"`
 	// HTML body with Liquid merge tags. Write this or `doc`, not both.
 	Body OptString `json:"body"`
@@ -15407,7 +15408,8 @@ type UpdateBroadcastInput struct {
 	Subject OptString `json:"subject"`
 	// Sender display name.
 	FromName OptString `json:"fromName"`
-	// Sender email address.
+	// Sender email address: a changed value must be on a verified Sending domain of the workspace, or the
+	// write is a 422. An unchanged one is not re-checked.
 	FromEmail OptEmailAddress `json:"fromEmail"`
 	// HTML body. Writing only a body clears the stored document. Write this or `doc`, not both.
 	Body OptString `json:"body"`

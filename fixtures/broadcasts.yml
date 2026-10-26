@@ -211,6 +211,18 @@
   created_at: '{{daysAgo 2}}'
   updated_at: '{{daysAgo 1}}'
 
+# A draft whose saved From domain lost its verification: still editable, its From marked "not verified".
+- id: 111 # fixture: BroadcastDraftFromLostDomain
+  name: Lapsed domain draft
+  subject: Still a draft
+  from_name: CodeBasics
+  from_email: hello@lost.acme.com
+  body: '<p>Lorem ipsum learning content.</p>'
+  status: draft
+  workspace_id: 1
+  created_at: '{{daysAgo 2}}'
+  updated_at: '{{daysAgo 1}}'
+
 # --- Globex (workspace 2) foreign row — DO NOT change ---
 - id: 900 # fixture: BroadcastGlobex
   name: Globex only

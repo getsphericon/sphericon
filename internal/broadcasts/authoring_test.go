@@ -56,7 +56,7 @@ func TestCreateReportsErrors(t *testing.T) {
 
 func TestCreateMakesADraftWithTheGivenFields(t *testing.T) {
 	env := testhelper.Setup(t)
-	name, subject, body, from := "N", "S", "<p></p>", "a@b.com"
+	name, subject, body, from := "N", "S", "<p></p>", "a@"+fixtures.SendingDomainVerifiedDomain
 
 	b, err := broadcasts.New(env.Bus).Create(context.Background(), env.DB.Scoped(fixtures.AcmeID),
 		broadcasts.Fields{Name: &name, Subject: &subject, Body: &body, FromEmail: &from})
@@ -66,7 +66,7 @@ func TestCreateMakesADraftWithTheGivenFields(t *testing.T) {
 	assert.Equal(t, "S", b.Subject)
 	assert.Equal(t, "<p></p>", b.Body)
 	require.NotNil(t, b.FromEmail)
-	assert.Equal(t, "a@b.com", *b.FromEmail)
+	assert.Equal(t, from, *b.FromEmail)
 }
 
 func TestUpdateOnlyEditsDraftsAndKeepsUnsetFields(t *testing.T) {

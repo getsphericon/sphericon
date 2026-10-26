@@ -13,6 +13,7 @@ import {
   handleSiteBroadcastsSend,
   handleSiteBroadcastsUpdate,
   handleSiteSegmentsList,
+  handleSiteSendingDomainsList,
   handleSiteTemplatesList,
 } from '../../generated/site/msw.gen.ts'
 import { Route as broadcastsEditRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/edit.tsx'
@@ -53,8 +54,27 @@ function empty() {
   return HttpResponse.json({ items: [], totalItems: 0 })
 }
 
-// Serves the broadcasts API: records write bodies and counts list/detail fetches.
-function serve(status: string, detailGate?: Promise<void>) {
+function sendingDomain(domain: string, verified: boolean) {
+  return { id: domain, domain, dkimSelector: 'sphericon', verified }
+}
+
+function domainsPage(items: ReturnType<typeof sendingDomain>[]) {
+  return HttpResponse.json({
+    items,
+    page: 1,
+    pageSize: 100,
+    totalItems: items.length,
+    totalPages: 1,
+  })
+}
+
+// Serves the broadcasts API: records write bodies and counts list/detail fetches. The Workspace
+// has one verified Sending domain unless `domains` says otherwise.
+function serve(
+  status: string,
+  detailGate?: Promise<void>,
+  domains = [sendingDomain('example.com', true)],
+) {
   const bodies: unknown[] = []
   const fetches = { list: 0, detail: 0 }
   worker.use(
@@ -78,6 +98,7 @@ function serve(status: string, detailGate?: Promise<void>) {
     }),
     handleSiteSegmentsList(empty),
     handleSiteTemplatesList(empty),
+    handleSiteSendingDomainsList(() => domainsPage(domains)),
   )
   return { bodies, fetches }
 }
@@ -183,6 +204,7 @@ test('editing shows an error alert when the broadcast cannot be loaded', async (
     ),
     handleSiteSegmentsList(empty),
     handleSiteTemplatesList(empty),
+    handleSiteSendingDomainsList(() => domainsPage([])),
   )
 
   const { screen } = await renderWithRouter(<BroadcastEditPage />, EDIT_ROUTE)
@@ -248,4 +270,42 @@ test('a refused save shows the reason the server gave', async () => {
   await screen.getByRole('button', { name: 'Save' }).click()
 
   await expect.element(screen.getByText('heading level 9 is not allowed')).toBeInTheDocument()
+})
+
+test('the From is a local part on a verified Sending domain, and an empty one is not sent', async () => {
+  const { bodies } = serve('draft', undefined, [
+    sendingDomain('news.example.com', true),
+    sendingDomain('pending.example.com', false),
+  ])
+
+  const { screen } = await renderWithRouter(<BroadcastCreatePage />, CREATE_ROUTE)
+  await screen.getByLabelText(/^Name/).fill('Launch')
+  await screen.getByLabelText('From email').fill('news')
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect.poll(() => bodies).toEqual([{ name: 'Launch', fromEmail: 'news@news.example.com' }])
+})
+
+test('a workspace with no verified Sending domain sees a hint with a link to set one up', async () => {
+  serve('draft', undefined, [sendingDomain('pending.example.com', false)])
+
+  const { screen } = await renderWithRouter(<BroadcastCreatePage />, CREATE_ROUTE)
+
+  await expect.element(screen.getByText(/Verify a sending domain/)).toBeInTheDocument()
+  await expect.element(screen.getByRole('link', { name: 'Sending domains' })).toBeInTheDocument()
+  await expect.element(screen.getByLabelText('From email')).toBeDisabled()
+})
+
+test('a saved From whose domain lost verification stays visible, marked, and saves as it is', async () => {
+  const { bodies } = serve('draft', undefined, [sendingDomain('news.example.com', true)])
+
+  const { screen } = await renderWithRouter(<BroadcastEditPage />, EDIT_ROUTE)
+
+  await expect.element(screen.getByLabelText('From email')).toHaveValue('ada')
+  await expect
+    .element(screen.getByRole('combobox', { name: 'From domain' }))
+    .toHaveValue('example.com (not verified)')
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect.poll(() => bodies).toMatchObject([{ fromEmail: 'ada@example.com' }])
 })

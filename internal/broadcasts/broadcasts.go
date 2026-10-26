@@ -29,6 +29,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/lifecycle"
+	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
@@ -134,6 +135,9 @@ var (
 	// ErrBodyAndDoc: a write carries both a body and a document. A client writes one of them: the
 	// document (the server builds the body from it) or the body (which clears the document).
 	ErrBodyAndDoc = validation.Refuse("broadcasts: write a body or a doc, not both", "errors.body_and_doc")
+	// ErrFromNotVerified: the From email's domain is not a verified Sending domain of this
+	// Workspace (ADR 0010).
+	ErrFromNotVerified = validation.Refuse("broadcasts: from email must be on a verified sending domain", "errors.broadcast_from_not_verified")
 	// ErrBlankName: the Broadcast name is empty or whitespace only.
 	ErrBlankName = validation.Refuse("broadcasts: name must not be empty", "errors.name_empty")
 )
@@ -169,6 +173,25 @@ func checkName(name *string) error {
 	return nil
 }
 
+// checkFrom refuses a From email whose domain is not a verified Sending domain of the Workspace,
+// by the same check the send gate uses (ADR 0010). It runs only when a write sets or changes the
+// From: `stored` is the From already saved (nil on create), and an unchanged one is not checked,
+// so a Broadcast held for a domain that lost verification stays editable. The Integration plays no
+// part: the identity is independent of it.
+func checkFrom(ctx context.Context, s *ent.Scoped, from, stored *string) error {
+	if from == nil || *from == "" || (stored != nil && *stored == *from) {
+		return nil
+	}
+	ok, err := messaging.HasVerifiedSendingDomain(ctx, s, *from)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return ErrFromNotVerified
+	}
+	return nil
+}
+
 // Create makes a draft Broadcast. Nothing here schedules or sends. A blank name is ErrBlankName; a
 // subject, body or document that cannot render is emailrender.ErrInvalidContent; the body is
 // stored sanitized.
@@ -181,6 +204,9 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, f Fields) (*ent.Broa
 		return nil, err
 	}
 	if err := m.checkRefs(ctx, s, f); err != nil {
+		return nil, err
+	}
+	if err := checkFrom(ctx, s, f.FromEmail, nil); err != nil {
 		return nil, err
 	}
 	body := c.Body
@@ -265,6 +291,15 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, f Fields) 
 	}
 	if err := m.checkRefs(ctx, s, f); err != nil {
 		return nil, err
+	}
+	if f.FromEmail != nil {
+		cur, err := m.Get(ctx, s, id)
+		if err != nil {
+			return nil, err
+		}
+		if err := checkFrom(ctx, s, f.FromEmail, cur.FromEmail); err != nil {
+			return nil, err
+		}
 	}
 	u := s.Broadcast().Update().Where(draftOf(id)).
 		SetNillableName(f.Name).

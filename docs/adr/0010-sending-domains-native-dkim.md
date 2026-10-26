@@ -40,10 +40,9 @@ from the free-string `from_email` and needs a migration + an onboarding step.
 - Distinct from **Sending source** (the unsubscribe scope) despite the similar name — one is an
   authenticated identity, the other a consent boundary.
 - **Still open after the enforcement slice.** The send gate and the verified→unverified owner
-  notification are built, but two consequences the decision names are not: (1) an **onboarding +
-  migration** path — `from_email` is still a free string, and the hard cutover means any workspace
-  whose From domain isn't already verified has all sends rejected the moment enforcement ships;
-  (2) **local dev sending** now requires a verified domain, and the periodic re-check runs against
+  notification are built, but one consequence the decision names is not (the Broadcast `from_email`
+  is no longer a free string, see the amendment on the Broadcast From below):
+  **local dev sending** now requires a verified domain, and the periodic re-check runs against
   real DNS, so a seeded dev domain re-verts unless its DKIM TXT is actually published — the
   Mailpit send loop needs a dev escape (a dev `LookupTXT` that trusts seeded domains, or a
   dev-only gate bypass) or it stays blocked.
@@ -56,3 +55,15 @@ background re-check (no live DNS lookup per message). An unverified domain is a 
 **`Held`** outcome: a Broadcast pauses and resumes when the domain is verified again, instead of
 failing every remaining recipient permanently because a DKIM record blipped. The plan-time
 duplicate of the check is removed; planning asks the same module.
+
+## Amendment: a Broadcast's From is checked when it is saved
+
+A Broadcast's From email is a verified Sending domain plus a local part; there is no per-address
+entity and the domain match is exact. Setting or changing it to an address on any other domain is a
+422 on every surface (site, external API, MCP), by the same `messaging.HasVerifiedSendingDomain`
+check the send gate uses, so the two cannot drift. The check is independent of the Integration
+(identity is independent of it): a Workspace with only a Test inbox and no Sending domain leaves the
+From empty, which keeps meaning the Integration's default. A write that leaves the From unchanged is
+not re-checked, so a Broadcast held for a domain that lost verification after the save stays
+editable; the send-time hold remains for that case. The form builds the From from a local part and a
+Select of the verified Sending domains.
