@@ -2,6 +2,7 @@ package site
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strings"
 
@@ -30,7 +31,7 @@ func (h *Handlers) SiteAuthRegister(ctx context.Context, req *siteapi.SiteRegist
 		})
 		return &v, nil
 	}
-	name := strings.TrimSpace(req.Name)
+	name := strings.TrimSpace(string(req.Name))
 	email := strings.TrimSpace(string(req.Email))
 
 	// Required-field validation is done here (and likewise, by hand, in
@@ -48,6 +49,11 @@ func (h *Handlers) SiteAuthRegister(ctx context.Context, req *siteapi.SiteRegist
 	}
 	if fieldErrors != nil {
 		v := siteapi.SiteAuthRegisterUnprocessableEntity(fieldsProblem(fieldErrors))
+		return &v, nil
+	}
+	// Before the address is looked up: a refused name answers the same whether it is Taken.
+	if errors.Is(accounts.CheckName(name), accounts.ErrNameInvalid) {
+		v := siteapi.SiteAuthRegisterUnprocessableEntity(nameInvalidProblem())
 		return &v, nil
 	}
 
@@ -120,7 +126,7 @@ func (h *Handlers) SiteAuthRegister(ctx context.Context, req *siteapi.SiteRegist
 
 // registerForm is what SiteAuthRegister checks beyond the contract, the values already trimmed.
 type registerForm struct {
-	Name     string `json:"name" validate:"required,display_name"`
+	Name     string `json:"name" validate:"required"`
 	Email    string `json:"email" validate:"required,account_email"`
 	Password string `json:"password" validate:"required,password_not_blank,password_length"`
 }

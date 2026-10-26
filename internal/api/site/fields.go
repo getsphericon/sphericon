@@ -80,22 +80,23 @@ var requiredMessages = map[string]string{
 // ruleMessages words a failed rule of internal/validation, whatever the field.
 var ruleMessages = map[string]string{
 	"account_email":      "errors.email_invalid",
-	"display_name":       "errors.name_invalid",
 	"password_length":    "errors.password_length",
 	"password_not_blank": "errors.password_blank",
 }
 
-// ruleLimits fills the bounds into errors.password_length and errors.name_invalid; the other
-// messages ignore them.
-var ruleLimits = map[string]any{
-	"Min":     validation.PasswordMinLength,
-	"Max":     validation.PasswordMaxLength,
-	"NameMax": validation.NameMaxLength,
-}
+// passwordLength fills the bounds into errors.password_length; the other messages ignore it.
+var passwordLength = map[string]any{"Min": validation.PasswordMinLength, "Max": validation.PasswordMaxLength}
 
 func fieldMessage(f validator.FieldError) string {
 	if f.Tag() == "required" {
 		return i18n.T(requiredMessages[f.Field()], nil)
 	}
-	return i18n.T(ruleMessages[f.Tag()], ruleLimits)
+	return i18n.T(ruleMessages[f.Tag()], passwordLength)
+}
+
+// nameInvalidProblem is the 422 for a name internal/accounts refuses (accounts.ErrNameInvalid).
+func nameInvalidProblem() siteapi.ProblemDetails {
+	return fieldsProblem(map[string][]string{
+		fieldName: {i18n.T("errors.name_invalid", map[string]any{"Max": validation.NameMaxLength})},
+	})
 }

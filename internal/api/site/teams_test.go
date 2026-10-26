@@ -63,7 +63,7 @@ func TestSiteInvitationAcceptNewUser(t *testing.T) {
 	assert.Equal(t, "Acme", found.WorkspaceName)
 
 	accept, err := c.SitePublicInvitationsAccept(ctx,
-		&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptString("New Bie"), Password: siteapi.NewOptString("s3cret-pass")},
+		&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptUserName("New Bie"), Password: siteapi.NewOptString("s3cret-pass")},
 		siteapi.SitePublicInvitationsAcceptParams{Token: "inv_fixture_token_acme"})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SitePublicInvitationsAcceptOK{}, accept)

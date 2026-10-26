@@ -18,7 +18,7 @@ import (
 
 const (
 	shortPasswordMessage = "the password must be 8 to 256 characters long"
-	badNameMessage       = "the name must be at most 100 characters on one line, with no control characters"
+	badNameMessage       = "the name must be at most 100 characters on one line, with at least one visible character and no control or invisible ones"
 )
 
 func TestRegisteringWithANameThatBreaksALineIsRefused(t *testing.T) {
@@ -31,12 +31,34 @@ func TestRegisteringWithANameThatBreaksALineIsRefused(t *testing.T) {
 	assert.Empty(t, env.SystemMail.Messages())
 }
 
-func TestAcceptingAnInvitationWithATooLongNameIsRefused(t *testing.T) {
+func TestRegisteringATakenAddressWithABadNameIsAnsweredAsANewOne(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	res := registerWithPassword(t, env, "John\u2028Smith", fixtures.OwnerJohnEmail, "john-password-12")
+	problem, ok := res.(*siteapi.SiteAuthRegisterUnprocessableEntity)
+	require.Truef(t, ok, "got %T", res)
+	assert.Equal(t, siteapi.ProblemDetailsErrors{"name": {badNameMessage}}, problem.Errors.Value)
+	assert.Empty(t, env.SystemMail.Messages(), "nothing says the address is taken")
+}
+
+func TestAcceptingAnInvitationWithATooLongNameIsRefusedByTheContract(t *testing.T) {
+	env := testhelper.Setup(t)
+	token := inviteToAcme(t, env, "newuser@example.com")
+
+	_, err := env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
+		&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptUserName(siteapi.UserName(strings.Repeat("a", 101))), Password: siteapi.NewOptString(formPassword)},
+		siteapi.SitePublicInvitationsAcceptParams{Token: token})
+
+	require.Error(t, err)
+	assert.Equal(t, http.StatusUnauthorized, loginStatus(t, env, "newuser@example.com", formPassword), "no account was made")
+}
+
+func TestAcceptingAnInvitationWithAnInvisibleNameIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 	token := inviteToAcme(t, env, "newuser@example.com")
 
 	res, err := env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
-		&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptString(strings.Repeat("a", 101)), Password: siteapi.NewOptString(formPassword)},
+		&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptUserName("\u200b\u200d"), Password: siteapi.NewOptString(formPassword)},
 		siteapi.SitePublicInvitationsAcceptParams{Token: token})
 	require.NoError(t, err)
 	problem, ok := res.(*siteapi.SitePublicInvitationsAcceptUnprocessableEntity)
@@ -51,7 +73,7 @@ func TestRenamingToANameWithABidiOverrideIsRefusedAndKeepsTheOldOne(t *testing.T
 	before, err := c.SiteUserGetMe(t.Context())
 	require.NoError(t, err)
 
-	res, err := c.SiteUserUpdateMe(t.Context(), &siteapi.SiteUpdateMeInput{Name: siteapi.NewOptString("John \u202eetisoppo")})
+	res, err := c.SiteUserUpdateMe(t.Context(), &siteapi.SiteUpdateMeInput{Name: siteapi.NewOptUserName("John \u202eetisoppo")})
 	require.NoError(t, err)
 	problem, ok := res.(*siteapi.SiteUserUpdateMeUnprocessableEntity)
 	require.Truef(t, ok, "got %T", res)
@@ -109,7 +131,7 @@ func TestAcceptingAnInvitationWithAShortPasswordIsRefused(t *testing.T) {
 	token := inviteToAcme(t, env, "newcomer@example.com")
 
 	res, err := env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
-		&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptString("Newcomer"), Password: siteapi.NewOptString("1")},
+		&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptUserName("Newcomer"), Password: siteapi.NewOptString("1")},
 		siteapi.SitePublicInvitationsAcceptParams{Token: token})
 	require.NoError(t, err)
 	problem, ok := res.(*siteapi.SitePublicInvitationsAcceptUnprocessableEntity)

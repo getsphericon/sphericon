@@ -172,13 +172,24 @@ func (a *Accounts) signinFacts(ctx context.Context, in ProviderLogin) (known, ho
 	return nil, holder, err
 }
 
+// providerName is the provider's name for the User, trimmed, or "" when it gives none or one a
+// User may not have (CheckName). A third party's name never refuses a sign-in: it is dropped as
+// an absent one would be.
+func providerName(in ProviderLogin) string {
+	name := strings.TrimSpace(in.Name)
+	if CheckName(name) != nil {
+		return ""
+	}
+	return name
+}
+
 // createFromProvider creates a Verified User for a trusted provider email, with the Linked
 // identity, its first Workspace and `user.email_verify`, in one transaction, as a
 // registration does when its link is followed (ADR 0030). The User has no password: the
 // provider proved the address, so no mail is sent. Its email is proven now.
 func (a *Accounts) createFromProvider(ctx context.Context, in ProviderLogin) (*ent.User, error) {
 	email := strings.TrimSpace(in.Email)
-	name := strings.TrimSpace(in.Name)
+	name := providerName(in)
 	if name == "" {
 		name, _, _ = strings.Cut(email, "@")
 	}
@@ -331,12 +342,13 @@ func (a *Accounts) linkToHolder(ctx context.Context, holderID int64, in Provider
 }
 
 // takeOver is the provider's proof winning over a registration nobody proved: the Unverified
-// User becomes Verified with the provider's name, its pending password is cleared, earlier
+// User becomes Verified with the provider's name (its own when the provider's is dropped, see
+// providerName), its pending password is cleared, earlier
 // sessions end, and it gets the identity and its first Workspace, as a verify link would
 // give it. A pending Invitation to the address is not touched. ErrAlreadyVerified when the
 // User is no longer Unverified.
 func (a *Accounts) takeOver(ctx context.Context, holderID int64, in ProviderLogin) (*ent.User, error) {
-	name := strings.TrimSpace(in.Name)
+	name := providerName(in)
 	u, _, err := a.verified(ctx, &proof{SignupPermits: true}, func(tx *ent.Client) (*ent.User, error) {
 		now := time.Now()
 		upd := tx.User.Update().

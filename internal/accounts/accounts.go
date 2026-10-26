@@ -27,6 +27,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/reportday"
+	"github.com/getsphericon/sphericon/internal/validation"
 	"github.com/getsphericon/sphericon/internal/workspaceid"
 )
 
@@ -376,11 +377,29 @@ func (a *Accounts) EmailTaken(ctx context.Context, email string) (bool, error) {
 	return a.ent.User.Query().Where(user.Email(NormalizeEmail(email))).Exist(ctx)
 }
 
+// ErrNameInvalid means a User's name is one validation.DisplayName refuses: too long, empty to
+// the eye, or holding a character that breaks a line or hides. Every way a person names a User
+// is checked here; a Sign-in provider's name is replaced instead (createFromProvider, takeOver).
+var ErrNameInvalid = errors.New("accounts: the name is not a valid display name")
+
+// CheckName is ErrNameInvalid when name is not one a User may have. Registration asks it before
+// it looks the address up, so a refused name answers the same whether the address is taken.
+func CheckName(name string) error {
+	if !validation.DisplayName(name) {
+		return ErrNameInvalid
+	}
+	return nil
+}
+
 // Register creates an Unverified User (ADR 0030): a name, an email and the password hash
 // from the registration form, no Membership. The password goes live only when the address
 // is verified from the Registration browser, or replaced on the link. The unique index on the email refuses a taken address (see
 // db.IsUniqueViolation). surveyDue marks the User as owing the Sign-up survey (the Instance asks it).
+// ErrNameInvalid when the name is not one a User may have.
 func (a *Accounts) Register(ctx context.Context, name, email, passwordHash string, surveyDue bool) (*ent.User, error) {
+	if err := CheckName(name); err != nil {
+		return nil, err
+	}
 	return a.ent.User.Create().SetName(name).SetEmail(email).SetPasswordHash(passwordHash).
 		SetNillableSignupSurveyDueAt(surveyDueAt(surveyDue)).Save(ctx)
 }
@@ -403,6 +422,9 @@ func (a *Accounts) ReplaceUnverifiedPassword(ctx context.Context, id int64, pass
 // CreateUser creates a User whose email is already proven, with a password hash: a
 // User made by the platform itself rather than by a registration.
 func (a *Accounts) CreateUser(ctx context.Context, name, email, passwordHash string) (*ent.User, error) {
+	if err := CheckName(name); err != nil {
+		return nil, err
+	}
 	return a.ent.User.Create().SetName(name).SetEmail(email).SetPasswordHash(passwordHash).SetEmailVerifiedAt(time.Now()).Save(ctx)
 }
 
@@ -458,7 +480,11 @@ func (a *Accounts) VerifyEmail(ctx context.Context, id int64, passwordHash *stri
 // once with its password, and the first Workspace (FirstWorkspaceName), exactly as VerifyEmail does. The
 // unique index on the email refuses a taken address (see db.IsUniqueViolation). surveyDue marks
 // the User as owing the Sign-up survey; create-owner, which is no public sign-up, passes false.
+// ErrNameInvalid when the name is not one a User may have.
 func (a *Accounts) RegisterVerified(ctx context.Context, name, email, passwordHash string, surveyDue bool) (*ent.User, error) {
+	if err := CheckName(name); err != nil {
+		return nil, err
+	}
 	u, _, err := a.verified(ctx, noJoin, func(tx *ent.Client) (*ent.User, error) {
 		return tx.User.Create().
 			SetName(name).
@@ -532,8 +558,8 @@ func (a *Accounts) verified(ctx context.Context, p *proof, write func(tx *ent.Cl
 }
 
 // UpdateProfile sets the User's name and/or password hash (nil leaves a field
-// unchanged) and returns the stored User. A password change bumps the session
-// epoch, ending every session issued before it (ADR 0020), and is recorded as an
+// unchanged) and returns the stored User; ErrNameInvalid when the name is not one a User may
+// have. A password change bumps the session epoch, ending every session issued before it (ADR 0020), and is recorded as an
 // Audit entry in every Workspace the User belongs to, in the same transaction.
 func (a *Accounts) UpdateProfile(ctx context.Context, id int64, name, passwordHash *string) (*ent.User, error) {
 	return a.updateProfile(ctx, id, name, passwordHash, false)
@@ -542,6 +568,11 @@ func (a *Accounts) UpdateProfile(ctx context.Context, id int64, name, passwordHa
 // updateProfile is UpdateProfile; proven also stamps the address as proven (a reset link
 // was followed, which was mailed to it).
 func (a *Accounts) updateProfile(ctx context.Context, id int64, name, passwordHash *string, proven bool) (*ent.User, error) {
+	if name != nil {
+		if err := CheckName(*name); err != nil {
+			return nil, err
+		}
+	}
 	var saved *ent.User
 	err := a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
 		// The mailed link proves the address; only a stamp from empty is a domain-join step,
@@ -714,8 +745,8 @@ func (a *Accounts) PendingInvitation(ctx context.Context, token string) (*ent.In
 // attached only with their own session (ErrSignInRequired without one, ErrWrongAccount
 // for another User's), decided on the row read inside the transaction. For an address with
 // no User or an Unverified User (ADR 0030) the name and password are required
-// (ErrCredentialsRequired otherwise): the link proves control of the address, so the
-// User is created, or the Unverified User's row completed (name and password set,
+// (ErrCredentialsRequired otherwise, ErrNameInvalid for a name a User may not have): the link
+// proves control of the address, so the User is created, or the Unverified User's row completed (name and password set,
 // Verified email stamped, session epoch bumped, `user.email_verify` audited), and
 // nothing the registrant set survives; if the address was verified meanwhile that is ErrAlreadyVerified. A
 // Verified User is attached as is. The Membership is created (a
@@ -794,6 +825,9 @@ func invitee(ctx context.Context, tx *ent.Client, inv *ent.Invitation, name, pas
 	name = strings.TrimSpace(name)
 	if name == "" || password == "" {
 		return nil, acceptProof{}, ErrCredentialsRequired
+	}
+	if err := CheckName(name); err != nil {
+		return nil, acceptProof{}, err
 	}
 	hash, herr := credentials.HashPassword(password)
 	if herr != nil {

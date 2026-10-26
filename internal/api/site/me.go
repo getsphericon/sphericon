@@ -2,6 +2,7 @@ package site
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strings"
 
@@ -39,11 +40,6 @@ func (h *Handlers) userResource(u *ent.User) *siteapi.SiteUserResource {
 	return res
 }
 
-// nameForm is the new name SiteUserUpdateMe sets, trimmed, checked beyond the contract.
-type nameForm struct {
-	Name string `json:"name" validate:"display_name"`
-}
-
 // newPasswordForm is the new password SiteUserUpdateMe sets, checked beyond the contract.
 type newPasswordForm struct {
 	NewPassword string `json:"newPassword" validate:"password_not_blank,password_length"`
@@ -65,22 +61,14 @@ func (h *Handlers) SiteUserUpdateMe(ctx context.Context, req *siteapi.SiteUpdate
 
 	var newName, newHash *string
 
-	if name, ok := req.Name.Get(); ok {
-		name = strings.TrimSpace(name)
+	if sent, ok := req.Name.Get(); ok {
+		name := strings.TrimSpace(string(sent))
 		if name == "" {
 			v := siteapi.SiteUserUpdateMeUnprocessableEntity(problemWithErrors(
 				http.StatusUnprocessableEntity,
 				i18n.T("errors.name_empty", nil),
 				map[string][]string{fieldName: {i18n.T("errors.name_empty", nil)}},
 			))
-			return &v, nil
-		}
-		fieldErrors, err := checkFields(nameForm{Name: name})
-		if err != nil {
-			return nil, err
-		}
-		if fieldErrors != nil {
-			v := siteapi.SiteUserUpdateMeUnprocessableEntity(fieldsProblem(fieldErrors))
 			return &v, nil
 		}
 		newName = &name
@@ -120,6 +108,10 @@ func (h *Handlers) SiteUserUpdateMe(ctx context.Context, req *siteapi.SiteUpdate
 
 	if newName != nil || newHash != nil {
 		u, err = h.accounts.UpdateProfile(ctx, u.ID, newName, newHash)
+		if errors.Is(err, accounts.ErrNameInvalid) {
+			v := siteapi.SiteUserUpdateMeUnprocessableEntity(nameInvalidProblem())
+			return &v, nil
+		}
 		if err != nil {
 			return nil, err
 		}

@@ -35,7 +35,7 @@ func TestSiteUserUpdateMeName(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 
-	res, err := c.SiteUserUpdateMe(ctx, &siteapi.SiteUpdateMeInput{Name: siteapi.NewOptString("Renamed")})
+	res, err := c.SiteUserUpdateMe(ctx, &siteapi.SiteUpdateMeInput{Name: siteapi.NewOptUserName("Renamed")})
 	require.NoError(t, err)
 	updated, ok := res.(*siteapi.SiteUserResourceHeaders)
 	require.Truef(t, ok, "got %T", res)
@@ -52,7 +52,7 @@ func TestSiteUserUpdateMeRejectsBlankName(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
 	res, err := c.SiteUserUpdateMe(context.Background(),
-		&siteapi.SiteUpdateMeInput{Name: siteapi.NewOptString("   ")})
+		&siteapi.SiteUpdateMeInput{Name: siteapi.NewOptUserName("   ")})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteUserUpdateMeUnprocessableEntity{}, res)
 }
