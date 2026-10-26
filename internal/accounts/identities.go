@@ -198,6 +198,16 @@ func factsOf(known, holder *ent.User, in ProviderLogin) SigninFacts {
 	return facts
 }
 
+// providerName is the provider's trimmed name, or empty when it gives none or one a User
+// may not have. A third party's name never refuses a sign-in.
+func providerName(in ProviderLogin) string {
+	name := strings.TrimSpace(in.Name)
+	if CheckName(name) != nil {
+		return ""
+	}
+	return name
+}
+
 // createFromProvider creates a Verified User for a trusted provider email, with the Linked
 // identity, its first Workspace and `user.email_verify`, in one transaction, as a
 // Sign-up does when its link is followed (ADR 0030). The User has no password: the
@@ -213,7 +223,7 @@ func (a *Accounts) createFromProvider(ctx context.Context, in ProviderLogin) (*e
 // in tx: the provider's name, or the address's local part when it gave none, and no password.
 func createProviderUser(ctx context.Context, tx *ent.Client, in ProviderLogin) (*ent.User, error) {
 	email := strings.TrimSpace(in.Email)
-	name := strings.TrimSpace(in.Name)
+	name := providerName(in)
 	if name == "" {
 		name, _, _ = strings.Cut(email, "@")
 	}
@@ -381,7 +391,7 @@ func takeOverIn(ctx context.Context, tx *ent.Client, holderID int64, in Provider
 		SetEmailProvenAt(now).
 		ClearPasswordHash().
 		AddSessionEpoch(1)
-	if name := strings.TrimSpace(in.Name); name != "" {
+	if name := providerName(in); name != "" {
 		upd = upd.SetName(name)
 	}
 	n, err := upd.Save(ctx)

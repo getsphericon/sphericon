@@ -7,7 +7,7 @@ namespace Sphericon;
  * address is proven (ADR 0030); the password is trusted only when the verification link
  * is opened in the Sign-up browser. */
 model SiteSignUpInput {
-  name: string;
+  name: UserName;
   email: EmailAddress;
 
   /** Required whenever sign-up is open. Stored hashed on the Unverified User; a repeated

@@ -26,7 +26,7 @@ const formPassword = "form-password-1"
 func signUpIn(t *testing.T, env *testhelper.TestEnv, browser *siteapi.Client, name, email, password string) string {
 	t.Helper()
 	res, err := browser.SiteAuthSignUp(t.Context(), &siteapi.SiteSignUpInput{
-		Name: name, Email: siteapi.EmailAddress(email), Password: siteapi.NewOptString(password),
+		Name: siteapi.UserName(name), Email: siteapi.EmailAddress(email), Password: siteapi.NewOptString(password),
 	})
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SiteAuthSignUpAccepted{}, res)
@@ -257,7 +257,7 @@ func TestVerifyingIsRecordedInTheNewWorkspacesAuditLog(t *testing.T) {
 func signUpWithPassword(t *testing.T, env *testhelper.TestEnv, name, email, password string) siteapi.SiteAuthSignUpRes {
 	t.Helper()
 	res, err := env.SiteAnonymous(t).SiteAuthSignUp(t.Context(), &siteapi.SiteSignUpInput{
-		Name: name, Email: siteapi.EmailAddress(email), Password: siteapi.NewOptString(password),
+		Name: siteapi.UserName(name), Email: siteapi.EmailAddress(email), Password: siteapi.NewOptString(password),
 	})
 	require.NoError(t, err)
 	return res
@@ -462,7 +462,7 @@ func TestPasswordResetEndsEveryEarlierSession(t *testing.T) {
 func signUpQuiet(t *testing.T, env *testhelper.TestEnv, name, email string) siteapi.SiteAuthSignUpRes {
 	t.Helper()
 	res, err := env.SiteAnonymous(t).SiteAuthSignUp(t.Context(),
-		&siteapi.SiteSignUpInput{Name: name, Email: siteapi.EmailAddress(email), Password: siteapi.NewOptString(formPassword)})
+		&siteapi.SiteSignUpInput{Name: siteapi.UserName(name), Email: siteapi.EmailAddress(email), Password: siteapi.NewOptString(formPassword)})
 	require.NoError(t, err)
 	return res
 }

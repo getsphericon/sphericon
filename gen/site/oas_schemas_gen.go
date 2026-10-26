@@ -7227,6 +7227,52 @@ func (o OptTimestamp) Or(d Timestamp) Timestamp {
 	return d
 }
 
+// NewOptUserName returns new OptUserName with value set to v.
+func NewOptUserName(v UserName) OptUserName {
+	return OptUserName{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptUserName is optional UserName.
+type OptUserName struct {
+	Value UserName
+	Set   bool
+}
+
+// IsSet returns true if OptUserName was set.
+func (o OptUserName) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptUserName) Reset() {
+	var v UserName
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptUserName) SetTo(v UserName) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptUserName) Get() (v UserName, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptUserName) Or(d UserName) UserName {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 type PasskeyName string
 
 // A named action in a Workspace that a Role allows (ADR 0061, GLOSSARY "Permission"), written
@@ -8454,8 +8500,8 @@ func (s *SiteAbuseWarning) SetRate(val float64) {
 // nothing is asked again (ADR 0062).
 // Ref: #/components/schemas/SiteAcceptInvitationInput
 type SiteAcceptInvitationInput struct {
-	Name     OptString `json:"name"`
-	Password OptString `json:"password"`
+	Name     OptUserName `json:"name"`
+	Password OptString   `json:"password"`
 	// The answers to the Sign-up items in effect, read only when the accept sets up the account (ADR
 	// 0062). Every required acceptance must be answered ticked at its current version, or the field
 	// `signupItems.<key>` is refused; an optional consent left out is not recorded. Each answered item is
@@ -8465,7 +8511,7 @@ type SiteAcceptInvitationInput struct {
 }
 
 // GetName returns the value of Name.
-func (s *SiteAcceptInvitationInput) GetName() OptString {
+func (s *SiteAcceptInvitationInput) GetName() OptUserName {
 	return s.Name
 }
 
@@ -8480,7 +8526,7 @@ func (s *SiteAcceptInvitationInput) GetSignupItems() []SiteSignupItemAnswer {
 }
 
 // SetName sets the value of Name.
-func (s *SiteAcceptInvitationInput) SetName(val OptString) {
+func (s *SiteAcceptInvitationInput) SetName(val OptUserName) {
 	s.Name = val
 }
 
@@ -23981,7 +24027,7 @@ func (s *SiteSetupSteps) SetSentEmail(val SiteSetupStepStatus) {
 // browser.
 // Ref: #/components/schemas/SiteSignUpInput
 type SiteSignUpInput struct {
-	Name  string       `json:"name"`
+	Name  UserName     `json:"name"`
 	Email EmailAddress `json:"email"`
 	// Required whenever sign-up is open. Stored hashed on the Unverified User; a repeated Sign-up of the
 	// address replaces it.
@@ -23994,7 +24040,7 @@ type SiteSignUpInput struct {
 }
 
 // GetName returns the value of Name.
-func (s *SiteSignUpInput) GetName() string {
+func (s *SiteSignUpInput) GetName() UserName {
 	return s.Name
 }
 
@@ -24014,7 +24060,7 @@ func (s *SiteSignUpInput) GetSignupItems() []SiteSignupItemAnswer {
 }
 
 // SetName sets the value of Name.
-func (s *SiteSignUpInput) SetName(val string) {
+func (s *SiteSignUpInput) SetName(val UserName) {
 	s.Name = val
 }
 
@@ -26385,7 +26431,7 @@ func (s *SiteUpdateContactInput) SetTags(val []string) {
 // Ref: #/components/schemas/SiteUpdateMeInput
 type SiteUpdateMeInput struct {
 	// New display name.
-	Name OptString `json:"name"`
+	Name OptUserName `json:"name"`
 	// New User time zone, an IANA name (422 when the zone database does not know it); null clears it, so
 	// the app follows the browser again.
 	Timezone OptNilTimeZoneName `json:"timezone"`
@@ -26396,7 +26442,7 @@ type SiteUpdateMeInput struct {
 }
 
 // GetName returns the value of Name.
-func (s *SiteUpdateMeInput) GetName() OptString {
+func (s *SiteUpdateMeInput) GetName() OptUserName {
 	return s.Name
 }
 
@@ -26416,7 +26462,7 @@ func (s *SiteUpdateMeInput) GetNewPassword() OptString {
 }
 
 // SetName sets the value of Name.
-func (s *SiteUpdateMeInput) SetName(val OptString) {
+func (s *SiteUpdateMeInput) SetName(val OptUserName) {
 	s.Name = val
 }
 
@@ -28522,5 +28568,7 @@ func (s *UsedByKind) UnmarshalText(data []byte) error {
 		return errors.Errorf("invalid value: %q", data)
 	}
 }
+
+type UserName string
 
 type WorkspaceId string

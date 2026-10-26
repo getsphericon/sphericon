@@ -72,13 +72,11 @@ func (h *Handlers) SiteUserUpdateMe(ctx context.Context, req *siteapi.SiteUpdate
 		return nil, err
 	}
 	change := accounts.ProfileChange{
+		Name:            convert.StringPtr(req.Name),
 		Timezone:        convert.StringPtr(req.Timezone),
 		ClearTimezone:   req.Timezone.IsNull(),
 		NewPassword:     req.NewPassword.Or(""),
 		CurrentPassword: req.CurrentPassword.Or(""),
-	}
-	if name, ok := req.Name.Get(); ok {
-		change.Name = &name
 	}
 	changed, err := h.accounts.ChangeProfile(ctx, u, change, h.proveCurrentPassword)
 	if err != nil {

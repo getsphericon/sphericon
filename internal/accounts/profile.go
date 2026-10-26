@@ -84,10 +84,6 @@ type newPasswordForm struct {
 	NewPassword string `json:"newPassword" validate:"password_not_blank,password_length"`
 }
 
-type nameForm struct {
-	Name string `json:"name" validate:"display_name"`
-}
-
 // ChangeProfile changes the name, the time zone and/or the password of the User u. A blank name
 // is refused, and so is a time zone the zone database does not know (ErrUnknownZone); a new
 // password is checked against the password rule before the current one is proven, so a
@@ -102,7 +98,7 @@ func (a *Accounts) ChangeProfile(ctx context.Context, u *ent.User, c ProfileChan
 		if trimmed == "" {
 			return ProfileChanged{}, validation.Refused("name", i18n.T(i18n.ErrorsNameEmpty, nil))
 		}
-		if err := validation.Form(nameForm{Name: trimmed}); err != nil {
+		if err := CheckName(trimmed); err != nil {
 			return ProfileChanged{}, err
 		}
 		w.Name = &trimmed

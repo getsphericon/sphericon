@@ -22,7 +22,7 @@ const inviteeAddress = "newcomer@example.com"
 func setUpAccountAnswering(t *testing.T, env *testhelper.TestEnv, token string, answers ...siteapi.SiteSignupItemAnswer) siteapi.SitePublicInvitationsAcceptRes {
 	t.Helper()
 	return acceptInvitation(t, env.SiteAnonymous(t), token, &siteapi.SiteAcceptInvitationInput{
-		Name: siteapi.NewOptString("Newcomer"), Password: siteapi.NewOptString(formPassword), SignupItems: answers,
+		Name: siteapi.NewOptUserName("Newcomer"), Password: siteapi.NewOptString(formPassword), SignupItems: answers,
 	})
 }
 

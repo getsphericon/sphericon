@@ -119,8 +119,15 @@ func TestDisplayName(t *testing.T) {
 		"\u0645\u0631\u06cc\u200c\u0645":   true, // a zero-width non-joiner is part of the spelling
 		"\U0001F469\u200d\U0001F4bb Grace": true, // an emoji with its joiner
 		strings.Repeat("\u00e9", 100):      true, // characters, not bytes
-		"":                                 true, // `required` refuses it
+		"\U0001F44D\uFE0F":                 true, // a variation selector is not a format character
 		strings.Repeat("a", 101):           false,
+		"":                                 false,
+		"\u200d\u200c":                     false, // joiners alone draw nothing
+		"Grace\u200bHopper":                false, // a zero-width space
+		"\u3164":                           false, // a Hangul filler
+		"Grace\u00adHopper":                false, // a soft hyphen
+		"Grace\u2028Hopper":                false, // a line separator
+		"Grace\u2029Hopper":                false, // a paragraph separator
 		"Grace\nBcc: all@example.com":      false,
 		"Grace\tHopper":                    false,
 		"Grace\x00":                        false,
@@ -135,7 +142,7 @@ func TestDisplayName(t *testing.T) {
 }
 
 func FuzzDisplayName(f *testing.F) {
-	for _, seed := range []string{"Grace Hopper", "", "Grace\nHopper", "Grace \u202eetisoppo", "\U0001F469\u200d\U0001F4bb", "\xff"} {
+	for _, seed := range []string{"Grace Hopper", "", "Grace\nHopper", "Grace \u202eetisoppo", "\U0001F469\u200d\U0001F4bb", "\xff", "\u2028", "\u200b"} {
 		f.Add(seed)
 	}
 	f.Fuzz(func(t *testing.T, s string) {
@@ -144,5 +151,7 @@ func FuzzDisplayName(f *testing.F) {
 		require.Truef(t, !ok || utf8.RuneCountInString(s) <= validation.NameMaxLength, "%q: accepted past the limit", s)
 		require.Truef(t, !ok || !strings.ContainsFunc(s, unicode.IsControl), "%q: accepted a control character", s)
 		require.Truef(t, !ok || !strings.ContainsFunc(s, func(r rune) bool { return unicode.Is(unicode.Bidi_Control, r) }), "%q: accepted a bidirectional control", s)
+		require.Truef(t, !ok || !strings.ContainsFunc(s, func(r rune) bool { return unicode.In(r, unicode.Zl, unicode.Zp) }), "%q: accepted a line or paragraph separator", s)
+		require.Truef(t, !ok || strings.Trim(s, " \u200c\u200d") != "", "%q: accepted a name that draws nothing", s)
 	})
 }

@@ -1337,7 +1337,7 @@ export type SiteAbuseWarning = {
  * follows the User, so nothing is asked again (ADR 0062).
  */
 export type SiteAcceptInvitationInput = {
-  name?: string;
+  name?: UserName;
   password?: string;
   /**
    * The answers to the Sign-up items in effect, read only when the accept sets up the account
@@ -5661,7 +5661,7 @@ export type SiteSetupSteps = {
  * is opened in the Sign-up browser.
  */
 export type SiteSignUpInput = {
-  name: string;
+  name: UserName;
   email: EmailAddress;
   /**
    * Required whenever sign-up is open. Stored hashed on the Unverified User; a repeated
@@ -6270,7 +6270,7 @@ export type SiteUpdateMeInput = {
   /**
    * New display name
    */
-  name?: string;
+  name?: UserName;
   /**
    * New User time zone, an IANA name (422 when the zone database does not know it); null
    * clears it, so the app follows the browser again
@@ -6961,6 +6961,13 @@ export const UsedByKind = {
  * of live user a removal can find, so a client branches on it without parsing text.
  */
 export type UsedByKind = typeof UsedByKind[keyof typeof UsedByKind];
+
+/**
+ * What a User is called, as a person sets it: at most 100 characters. Surrounding spaces are
+ * trimmed; an empty name, or one with a control, line-breaking or invisible character, is refused
+ * by the handler (422), which applies the same limit to a Sign-in provider's name.
+ */
+export type UserName = string;
 
 /**
  * A Workspace id (ADR 0043): 8 random base62 characters, assigned once at creation and the

@@ -3,6 +3,12 @@ using TypeSpec.OpenAPI;
 
 namespace Sphericon;
 
+/** What a User is called, as a person sets it: at most 100 characters. Surrounding spaces are
+ * trimmed; an empty name, or one with a control, line-breaking or invisible character, is refused
+ * by the handler (422), which applies the same limit to a Sign-in provider's name. */
+@maxLength(100)
+scalar UserName extends string;
+
 /** The authenticated dashboard user */
 model SiteUserResource {
   /** Unique identifier */
@@ -52,7 +58,7 @@ model SiteEmailChangeInput {
  * both currentPassword and newPassword. */
 model SiteUpdateMeInput {
   /** New display name */
-  name?: string;
+  name?: UserName;
 
   /** New User time zone, an IANA name (422 when the zone database does not know it); null
    * clears it, so the app follows the browser again */
